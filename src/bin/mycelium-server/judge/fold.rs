@@ -98,6 +98,11 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             sig_home: p.section.sig,
             sig_witness: section.sig,
             identities: p.epochs.len() as u32,
+            // The K range the witness fetched, named on the descriptor so
+            // it stands without the payload it is about to shed (45.8).
+            first: p.k0,
+            count: receipts.len() as u32,
+            at: None,
             receipts,
         });
     }

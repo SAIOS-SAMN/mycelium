@@ -217,6 +217,13 @@ pub struct Kernel {
     pub(crate) height_override: Option<u64>,
     /// Set on home_install, glue Admitted, mint, and slash.
     pub(crate) persist_due: bool,
+    /// 45.8 — THE COLD SEGMENT: where a sealed era's receipts live once
+    /// the fold has shed them. Append-only, written once per fold, and
+    /// never rewritten by a snapshot: the hot ledger carries only the era
+    /// DESCRIPTORS, so persisting state does not re-serialise the whole
+    /// history. `None` on a kernel with no home — the fixture and the
+    /// tests — where a sealed era keeps its payload in hand as before.
+    pub(crate) eras_path: Option<std::path::PathBuf>,
     /// C6: a TEST knob, `None` on any live fleet. Production reads
     /// `dynamic_lane_capacity`, which is measured; a cap that can be set is
     /// a free constant (rule 5), so the SETTER is behind `cfg(test)`.
@@ -432,6 +439,53 @@ impl Kernel {
     /// The genesis covering bond, if measured.
     pub fn set_genesis_cover(&mut self, bond: [u64; 4]) {
         self.genesis_cover = Some(bond);
+    }
+
+    /// Bind the cold segment a fold sheds into (45.8). Called at boot
+    /// beside the ledger path; a kernel without one keeps a sealed era's
+    /// receipts in hand, which is what a fixture wants and what a live
+    /// court must not do.
+    pub fn bind_eras(&mut self, path: std::path::PathBuf) {
+        self.eras_path = Some(path);
+    }
+
+    /// File a sealed era: its payload appended to the cold segment, and
+    /// the descriptor — root, signers, signatures, K range and offset —
+    /// kept. `None` from the append leaves the era whole in memory rather
+    /// than losing it (rule 11: a write that did not happen is not a write
+    /// that did).
+    pub(crate) fn file_era(&mut self, era: crate::chronometry::Era) {
+        let Some(path) = self.eras_path.clone() else {
+            self.archive.push(era);
+            return;
+        };
+        let payload = era.payload();
+        let at = match std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+            Ok(mut f) => {
+                use std::io::{Seek, Write};
+                f.stream_position().and_then(|at| f.write_all(&payload).map(|()| at)).ok()
+            }
+            Err(_) => None,
+        };
+        match at {
+            Some(at) => self.archive.push(era.filed_at(at)),
+            None => self.archive.push(era),
+        }
+    }
+
+    /// A filed era's receipts, paged from the cold segment on demand. An
+    /// era that still holds its payload answers from memory.
+    pub(crate) fn era_receipts(
+        &self,
+        era: &crate::chronometry::Era,
+    ) -> Option<Vec<crate::chronometry::KStepReceipt>> {
+        let Some(at) = era.at else {
+            return Some(era.receipts.clone());
+        };
+        let path = self.eras_path.as_ref()?;
+        let bytes = std::fs::read(path).ok()?;
+        let mut pos = usize::try_from(at).ok()?;
+        crate::chronometry::Era::read_payload(&bytes, &mut pos)
     }
 
     pub fn genesis_cover(&self) -> Option<[u64; 4]> {

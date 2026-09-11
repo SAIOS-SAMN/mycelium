@@ -186,6 +186,10 @@ fn main() {
             );
         }
         k.bind_identity(vk);
+        // 45.8: where a fold sheds to. Beside the ledger, append-only, and
+        // written once per fold — the ledger itself then carries only the
+        // era descriptors and stops growing with the history.
+        k.bind_eras(home.join("eras"));
         if let Some(held) = k.treasury().bond_of(&vk) {
             eprintln!("[{tag}] bond from ledger {held:?}");
         }

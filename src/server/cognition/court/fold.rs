@@ -107,13 +107,23 @@ impl Kernel {
             }
         };
         let identities = folded.rows as u32;
-        self.archive.push(Era {
+        // THE FOLD SHEDS. `archive.push` kept every folded receipt on the
+        // heap and the snapshot then wrote all of them on every persist;
+        // `file_era` appends the payload to the cold segment once and
+        // keeps the descriptor.
+        // `k0` above is this era's own first K, read once where the fold
+        // cut the chain; it is not read a second time here (law 12).
+        let count = cold.len() as u32;
+        self.file_era(Era {
             root,
             signer: me,
             witness: wk,
             sig_home,
             sig_witness: witness.sig,
             identities,
+            first: k0,
+            count,
+            at: None,
             receipts: cold,
         });
         let done = FoldDone {
@@ -173,8 +183,12 @@ impl Kernel {
 
     /// The witness files the era it co-signed under the home's key, so
     /// the archived prefix has two holders (45.8).
+    /// A WITNESS SHEDS TOO. This pushed the whole era, receipts and all,
+    /// onto the heap and into every later snapshot — the same rename the
+    /// home's own fold was doing, and a witness holds one era per fold of
+    /// every court it witnesses for.
     pub fn hold_era(&mut self, era: Era) {
-        self.archive.push(era);
+        self.file_era(era);
         self.mark_persist();
     }
 

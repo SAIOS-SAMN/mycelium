@@ -20,6 +20,20 @@ pub struct Root {
 /// identities the fold's epoch rows named, and the receipts of the folded
 /// prefix, cold — held by the home and by the witness that fetched them,
 /// extracted by K range, never rewritten.
+///
+/// COLD MEANS OFF THE HEAP. `receipts` is the payload only while an era is
+/// being sealed or carried on the wire; once it is filed, the court holds
+/// the DESCRIPTOR — root, signer, witness, signatures, identities, and
+/// `first`/`count`/`at`, the K range and the byte offset of the payload in
+/// the cold segment — and `receipts` is empty.
+///
+/// A fold that moved receipts from one in-memory `Vec` to another, and
+/// then wrote every one of them into the hot ledger on every persist, is
+/// not an eviction: it is a rename. Measured on the fleet, 2026-09-11,
+/// after genesis adoption unblocked folding — 71 folds on one court in a
+/// single boot, `ARC1` 3561 MiB of a 3567 MiB ledger, and two courts at
+/// 4146 MiB and 2343 MiB of resident memory within 106 seconds of restore.
+/// That is what crashed the machine.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Era {
     pub root: Root,
@@ -28,13 +42,31 @@ pub struct Era {
     pub sig_home: [u8; 64],
     pub sig_witness: [u8; 64],
     pub identities: u32,
+    /// The first K this era holds; `root.k` is its last. Written out
+    /// rather than read off `receipts`, so a descriptor whose payload is
+    /// on disk still names its own range.
+    pub first: u64,
+    /// How many receipts the payload holds.
+    pub count: u32,
+    /// Where the payload begins in the cold segment. `None` on an era
+    /// that has not been filed — one being sealed, or one read off a wire.
+    pub at: Option<u64>,
+    /// The payload, present only while the era is being sealed or carried.
     pub receipts: Vec<KStepReceipt>,
 }
 
 impl Era {
     /// The first K the era holds; the root is its last.
     pub fn first_k(&self) -> Option<u64> {
-        self.receipts.first().map(|r| r.step_index)
+        Some(self.first)
+    }
+
+    /// The era with its payload shed: what the court keeps once the
+    /// receipts are on disk at `at`.
+    pub fn filed_at(mut self, at: u64) -> Era {
+        self.at = Some(at);
+        self.receipts = Vec::new();
+        self
     }
 
     pub fn write(&self, out: &mut Vec<u8>) {
@@ -44,10 +76,48 @@ impl Era {
         out.extend_from_slice(&self.sig_home);
         out.extend_from_slice(&self.sig_witness);
         out.extend_from_slice(&self.identities.to_le_bytes());
+        out.extend_from_slice(&self.first.to_le_bytes());
+        out.extend_from_slice(&self.count.to_le_bytes());
+        // `at` is the payload's place in the cold segment; a descriptor
+        // that has one carries no receipts on this tape, and one that does
+        // not carries them all (it is being sealed, or it is on a wire).
+        match self.at {
+            Some(at) => {
+                out.push(1);
+                out.extend_from_slice(&at.to_le_bytes());
+            }
+            None => {
+                out.push(0);
+                out.extend_from_slice(&(self.receipts.len() as u32).to_le_bytes());
+                for r in &self.receipts {
+                    r.write(out);
+                }
+            }
+        }
+    }
+
+    /// The payload alone, as it is appended to the cold segment.
+    pub fn payload(&self) -> Vec<u8> {
+        let mut out = Vec::new();
         out.extend_from_slice(&(self.receipts.len() as u32).to_le_bytes());
         for r in &self.receipts {
-            r.write(out);
+            r.write(&mut out);
         }
+        out
+    }
+
+    /// Read a payload back: the count and the receipts behind it.
+    pub fn read_payload(b: &[u8], pos: &mut usize) -> Option<Vec<KStepReceipt>> {
+        let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
+        *pos += 4;
+        if n > b.len().saturating_sub(*pos) / KStepReceipt::MIN_TAPE {
+            return None;
+        }
+        let mut out = Vec::with_capacity(n);
+        for _ in 0..n {
+            out.push(KStepReceipt::read(b, pos)?);
+        }
+        Some(out)
     }
 
     pub fn read(b: &[u8], pos: &mut usize) -> Option<Era> {
@@ -62,15 +132,15 @@ impl Era {
         let sig_home: [u8; 64] = take(pos, 64)?.try_into().ok()?;
         let sig_witness: [u8; 64] = take(pos, 64)?.try_into().ok()?;
         let identities = u32::from_le_bytes(take(pos, 4)?.try_into().ok()?);
-        let n = u32::from_le_bytes(take(pos, 4)?.try_into().ok()?) as usize;
-        if n > b.len().saturating_sub(*pos) / KStepReceipt::MIN_TAPE {
-            return None;
-        }
-        let mut receipts = Vec::with_capacity(n);
-        for _ in 0..n {
-            receipts.push(KStepReceipt::read(b, pos)?);
-        }
-        Some(Era { root, signer, witness, sig_home, sig_witness, identities, receipts })
+        let first = u64::from_le_bytes(take(pos, 8)?.try_into().ok()?);
+        let count = u32::from_le_bytes(take(pos, 4)?.try_into().ok()?);
+        let filed = *take(pos, 1)?.first()?;
+        let (at, receipts) = match filed {
+            1 => (Some(u64::from_le_bytes(take(pos, 8)?.try_into().ok()?)), Vec::new()),
+            0 => (None, Era::read_payload(b, pos)?),
+            _ => return None,
+        };
+        Some(Era { root, signer, witness, sig_home, sig_witness, identities, first, count, at, receipts })
     }
 }
 
