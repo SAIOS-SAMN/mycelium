@@ -76,7 +76,7 @@ impl Entity {
     /// Hold a withheld sentence as a bubble: form, remainder, cover. A word
     /// that is not a sentence is held as the form of its chain.
     pub fn hold_sentence(&mut self, word: &Element) {
-        if let Some(f) = crate::transducer::sentence::from_element_form(word) {
+        if let Some(f) = word.form().cloned() {
             self.hold_form(&f, &[], &[]);
         } else {
             self.hold_chain(word.sub().to_vec());
@@ -239,7 +239,7 @@ impl Entity {
             return;
         }
         let (depth, vertices, glued, faces, torsion) =
-            match crate::transducer::sentence::from_element_form(e) {
+            match e.form() {
                 Some(f) => (
                     f.depth,
                     f.vertices.len(),

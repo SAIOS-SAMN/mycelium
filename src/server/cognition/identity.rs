@@ -20,9 +20,12 @@ impl crate::transducer::family::Crystal for Kernel {
             .fiber(class)
             .into_iter()
             .filter_map(|addr| {
-                let e = self.word_at(&addr)?.clone();
-                let f = crate::transducer::sentence::from_element_form(&e)?;
-                Some((e, f, crate::transducer::stalk::Standing::Ruled))
+                // The court's ruled word, read off the element it HOLDS
+                // (L16), so the tape is parsed once per word and not once
+                // per read of it.
+                let held = self.word_at(&addr)?;
+                let f = held.form()?.clone();
+                Some((held.clone(), f, crate::transducer::stalk::Standing::Ruled))
             })
             .collect()
     }
@@ -58,9 +61,9 @@ impl crate::transducer::family::Crystal for Kernel {
         &self,
         addr: &[u8],
     ) -> Option<(Element, crate::transducer::sentence::Form)> {
-        let e = self.word_at(addr)?.clone();
-        let f = crate::transducer::sentence::from_element_form(&e)?;
-        Some((e, f))
+        let held = self.word_at(addr)?;
+        let f = held.form()?.clone();
+        Some((held.clone(), f))
     }
 
     fn on_axis(
@@ -109,8 +112,8 @@ impl Kernel {
         family: &crate::transducer::family::Family,
         placement: &crate::transducer::alphabet::Word,
     ) -> [u64; 4] {
-        if let Some(f) = crate::transducer::sentence::from_element_form(form) {
-            return crate::transducer::family::form_descent_at(&f, family, self, placement).0;
+        if let Some(f) = form.form() {
+            return crate::transducer::family::form_descent_at(f, family, self, placement).0;
         }
         [0; 4]
     }

@@ -142,7 +142,7 @@ for (x, y) in &family {
     }
 }
 assert!(expect.iter().any(|&x| x > 0), "the family has descent");
-let decoded = crate::transducer::sentence::from_element_form(&spoken).expect("v2 form");
+let decoded = spoken.form().cloned().expect("v2 form");
 assert_eq!(
     crate::transducer::family::form_descent(&decoded, &family, &crate::transducer::family::NoCrystal).0,
     expect,

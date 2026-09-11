@@ -83,6 +83,5 @@ pub(crate) fn edge_pair(addrs: &[Address]) -> Option<(Address, Address)> {
 
 
 pub(crate) fn sentence_rule_of(form: &Element) -> Option<crate::transducer::sentence::SentenceRule> {
-    use crate::transducer::sentence::{from_element_form, rule_of_form};
-    Some(rule_of_form(from_element_form(form)?))
+    Some(crate::transducer::sentence::rule_of_form(form.form()?.clone()))
 }

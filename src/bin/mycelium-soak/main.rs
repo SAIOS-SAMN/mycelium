@@ -13,7 +13,7 @@
 
 use mycelium::client::sdk::Epigenome;
 use mycelium::transducer::family::{extract_rule_with, mint_sentence};
-use mycelium::transducer::sentence::{from_element_form, Vertex};
+use mycelium::transducer::sentence::Vertex;
 
 /// What one walk of the corpus read. Every field is a count of acts, read
 /// and never branched on (rule 2).
@@ -212,7 +212,7 @@ fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, Strin
         };
         // Only a closed form is citable (13.6, `Form::glue`), so only a
         // closed form is stood here for the next family to reach.
-        let Some(form) = from_element_form(&spoken) else {
+        let Some(form) = spoken.form() else {
             continue;
         };
         let Some(()) = form.is_closed().then_some(()) else {
@@ -236,7 +236,7 @@ fn read_engine(epi: &mut Epigenome, r: &mut Reading) {
     let mut seen: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
     let mut charts: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
     for e in epi.genome() {
-        let Some(f) = from_element_form(e) else {
+        let Some(f) = e.form() else {
             continue;
         };
         charts.insert(mycelium::transducer::stalk::invariant_of(e).key(), ());

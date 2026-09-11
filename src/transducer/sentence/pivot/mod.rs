@@ -15,7 +15,6 @@ pub use words::*;
 
 use super::class::*;
 use super::form::*;
-use super::tape::from_element_form;
 use super::transport::*;
 use crate::network::nerve::{Keyed, ROOT};
 use crate::physics::Budget;

@@ -121,7 +121,7 @@ impl Kernel {
         if pay.iter().all(|&m| m == 0) {
             return Vec::new();
         }
-        let Some(f) = crate::transducer::sentence::from_element_form(w) else {
+        let Some(f) = w.form() else {
             return Vec::new();
         };
         let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();

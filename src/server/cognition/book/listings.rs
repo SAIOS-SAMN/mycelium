@@ -261,11 +261,16 @@ impl Kernel {
         if word.is_sentence() {
             let inv = crate::transducer::stalk::invariant_of(&word);
             let members: Vec<Vec<u8>> = self.stalks.fiber(&inv).iter().filter(|&a| a != addr).cloned().collect();
-            if let Some(na) = crate::transducer::sentence::from_element_form(&word) {
+            if let Some(na) = word.form().cloned() {
                 let mut survivor = crate::transducer::address::Address::from_bytes(addr);
                 for sib in members {
-                    let Some(other) = self.word_at(&sib).cloned() else { continue };
-                    let Some(nb) = crate::transducer::sentence::from_element_form(&other) else { continue };
+                    // The sibling's form off the HELD element (L16): the
+                    // sibling stays in the book and its tape is parsed
+                    // once, where cloning it first parsed the tape again
+                    // on every comparison.
+                    let Some(nb) = self.word_at(&sib).and_then(|e| e.form()).cloned() else {
+                        continue;
+                    };
                     if crate::transducer::sentence::coboundary_gauge(&na, &nb).is_some() {
                         survivor = self.absorb_pair(survivor, crate::transducer::address::Address::from(sib));
                     }
@@ -458,7 +463,7 @@ impl Kernel {
             // court can compose a spoken path through (50.2 step 2). Read
             // before the carriers are touched, so the word's borrow ends
             // here and not across them.
-            let form = crate::transducer::sentence::from_element_form(w);
+            let form = w.form().cloned();
             self.ruled.admit(&inv, addr);
             crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words);
             if let Some(f) = form {

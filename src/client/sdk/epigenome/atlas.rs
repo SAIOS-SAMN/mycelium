@@ -74,7 +74,7 @@ impl Epigenome {
         }
         // 1.8: the form's word vertices are the generators it contributes
         // to this mind's presentation.
-        if let Some(f) = crate::transducer::sentence::from_element_form(e) {
+        if let Some(f) = e.form().cloned() {
             crate::transducer::sentence::admit_generators(&mut self.generators, &addr, &f);
             // 37.7: a generator the alphabet cannot spell, learned. Read
             // from the vertex — cites nothing and A22 cannot spell its
@@ -104,8 +104,8 @@ impl Epigenome {
                 bucket.remove(&addr);
             }
         }
-        if let Some(f) = crate::transducer::sentence::from_element_form(e) {
-            crate::transducer::sentence::retract_generators(&mut self.generators, &addr, &f);
+        if let Some(f) = e.form() {
+            crate::transducer::sentence::retract_generators(&mut self.generators, &addr, f);
         }
     }
 
@@ -127,7 +127,7 @@ impl Epigenome {
 /// `Vertex::Word` states the chart it acts on (18.2); nothing is measured
 /// here and no cell is read.
 pub(crate) fn body_charts_of(e: &Element) -> Vec<crate::transducer::stalk::Invariant> {
-    let Some(f) = crate::transducer::sentence::from_element_form(e) else {
+    let Some(f) = e.form() else {
         return Vec::new();
     };
     if !f.is_closed() {

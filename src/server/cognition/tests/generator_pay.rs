@@ -269,7 +269,7 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
 
     // TWO DERIVATIONS, each naming its own mind's teacher.
     let cites = |e: &crate::transducer::element::Element| -> Vec<crate::transducer::address::Address> {
-        crate::transducer::sentence::from_element_form(e)
+        e.form().cloned()
             .expect("the tape reads back")
             .vertices
             .iter()

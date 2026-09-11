@@ -7,7 +7,7 @@
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::element::Element;
 use crate::transducer::family::{extract_rule, mint_sentence, pair_form_uncrystallized, sentence_measure, Grid, NoCrystal};
-use crate::transducer::sentence::{as_element_form, from_element_form, Vertex};
+use crate::transducer::sentence::{as_element_form, Vertex};
 use crate::verdict::*;
 
 fn digits(rows: &[&str]) -> Grid {
@@ -44,7 +44,7 @@ fn a_remainder_a_demand_names_is_valid_and_replays_on_the_family() {
 #[test]
 fn an_undeclared_remainder_refuses_the_sentence_as_not_closed() {
     let (family, e) = a_recolour_with_a_creation();
-    let mut f = from_element_form(&e).expect("the tape reads back");
+    let mut f = e.form().cloned().expect("the tape reads back");
     f.vertices.retain(|v| !matches!(v, Vertex::Demand { .. }));
     f.reindex();
     let tampered = as_element_form(&f, e.magnitude()).expect("a tape");

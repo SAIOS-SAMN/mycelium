@@ -35,7 +35,7 @@ impl Entity {
         task: &[u8],
     ) -> Contracted {
         use crate::transducer::family::{form_descent, mint_sentence};
-        use crate::transducer::sentence::{form_vertex_key, from_element_form, rule_of_form};
+        use crate::transducer::sentence::{form_vertex_key, rule_of_form};
         let addr = spoken.address();
         eprintln!(
             "  adjudicated {}: refused {} at {} receipt {}",
@@ -48,7 +48,7 @@ impl Entity {
         // own chain; the address is sealed in the utterance index.
         let k = self.session.seal(crate::chronometry::ActKind::Refused, addr.as_bytes());
         self.sealed.insert(&addr, k);
-        let Some(mut form) = from_element_form(spoken) else {
+        let Some(mut form) = spoken.form().cloned() else {
             return self.quiescent(spoken, train);
         };
         if kind == RefusalKind::MalformedComplex {
@@ -105,7 +105,7 @@ impl Entity {
     /// Structural collapse (50.9 move 4): the form is held as an inert
     /// idea, not dirty, and nothing is re-spoken until the language moves.
     fn quiescent(&mut self, spoken: &Element, train: &crate::transducer::family::Family) -> Contracted {
-        use crate::transducer::sentence::{form_vertex_key, from_element_form};
+        use crate::transducer::sentence::form_vertex_key;
         let addr = spoken.address();
         let chart = crate::transducer::stalk::invariant_of(spoken);
         eprintln!(
@@ -113,7 +113,7 @@ impl Entity {
             hx(addr.as_bytes()),
             hx(chart.key().as_bytes())
         );
-        if let Some(f) = from_element_form(spoken) {
+        if let Some(f) = spoken.form().cloned() {
             self.hold_form(&f, train, &[]);
             self.contemplation.dirty.remove(&form_vertex_key(&f));
         }
@@ -173,8 +173,8 @@ impl Entity {
     /// The certificate a sentence cites: the contraction that produced the
     /// form it was minted from, read by the form's vertex key.
     pub(crate) fn certificate_for(&self, e: &Element) -> Option<Contraction> {
-        let f = crate::transducer::sentence::from_element_form(e)?;
-        self.contractions.get(&crate::transducer::sentence::form_vertex_key(&f)).cloned()
+        let k = crate::transducer::sentence::form_vertex_key(e.form()?);
+        self.contractions.get(&k).cloned()
     }
 
     /// The K at which this mind sealed a refused address, if it did.

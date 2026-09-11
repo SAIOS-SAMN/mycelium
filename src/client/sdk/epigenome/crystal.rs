@@ -19,12 +19,18 @@ impl crate::transducer::family::Crystal for Epigenome {
             .fiber(class)
             .into_iter()
             .filter_map(|(a, st)| {
-                let e = self.working_word(&a)?.clone();
-                let f = crate::transducer::sentence::from_element_form(&e)?;
+                // THE FORM IS READ OFF THE HELD ELEMENT (L16), which
+                // memoises the decode: the tape is parsed once for a word
+                // this mind holds, not once per read of it. Decoding a
+                // fresh clone instead re-parsed the tape every call, which
+                // made the cipher's carrier the working memory of the
+                // organ.
+                let held = self.working_word(&a)?;
+                let f = held.form()?.clone();
                 if !f.is_closed() {
                     return None;
                 }
-                Some((e, f, st))
+                Some((held.clone(), f, st))
             })
             .collect()
     }
@@ -47,12 +53,12 @@ impl crate::transducer::family::Crystal for Epigenome {
             .fiber(crate::network::nerve::ROOT)
             .filter_map(|(a, ())| {
                 let st = self.standing_of(&a)?;
-                let e = self.working_word(&a)?.clone();
-                let f = crate::transducer::sentence::from_element_form(&e)?;
+                let held = self.working_word(&a)?;
+                let f = held.form()?.clone();
                 if !f.is_closed() {
                     return None;
                 }
-                Some((e, f, st))
+                Some((held.clone(), f, st))
             })
             .collect()
     }
@@ -70,9 +76,9 @@ impl crate::transducer::family::Crystal for Epigenome {
         &self,
         addr: &[u8],
     ) -> Option<(Element, crate::transducer::sentence::Form)> {
-        let e = self.working_word(addr)?.clone();
-        let f = crate::transducer::sentence::from_element_form(&e)?;
-        Some((e, f))
+        let held = self.working_word(addr)?;
+        let f = held.form()?.clone();
+        Some((held.clone(), f))
     }
 
     fn on_axis(
@@ -103,9 +109,8 @@ impl crate::transducer::family::Crystal for Epigenome {
         crate::transducer::sentence::generators_under(&self.generators, chart, budget)
             .into_iter()
             .filter_map(|(form, vertex)| {
-                let e = self.working_word(form.as_bytes())?;
-                let f = crate::transducer::sentence::from_element_form(e)?;
-                let w = crate::transducer::sentence::word_at_vertex(&f, vertex.as_bytes())?;
+                let f = self.working_word(form.as_bytes())?.form()?;
+                let w = crate::transducer::sentence::word_at_vertex(f, vertex.as_bytes())?;
                 Some((form, vertex, w))
             })
             .collect()

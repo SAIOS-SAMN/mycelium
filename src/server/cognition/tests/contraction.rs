@@ -7,7 +7,7 @@ use crate::anastome::dialogue::{self, Adjudication, Spoken};
 use crate::cognition::*;
 use crate::transducer::family::{mint_sentence, pair_form_uncrystallized, sentence_measure, NoCrystal, TrainPair};
 use crate::transducer::sentence::{
-    as_element_form, form_vertex_key, from_element_form, rule_of_form, Contracted, Contraction, RefusalKind,
+    as_element_form, form_vertex_key, rule_of_form, Contracted, Contraction, RefusalKind,
 };
 
 /// A bar and a cell of two hues carried together (50.3's rigid pair): two
@@ -75,7 +75,7 @@ fn the_court_verifies_a_contraction_before_it_replays_the_sentence() {
     assert_eq!(*kind, RefusalKind::VertexBody);
     // THE VOICE'S MOVE, on its own copy of the form: the demand's bodies
     // are the remainder the contracted form leaves on the voice's family.
-    let mut f = from_element_form(&s).expect("the tape reads back");
+    let mut f = s.form().cloned().expect("the tape reads back");
     let mut probe = f.clone();
     assert_eq!(probe.contract(*kind, at, &[]), Some(Contracted::Moved));
     let remainder: Vec<(i64, i64, u8, u8)> =

@@ -43,7 +43,7 @@ impl Epigenome {
         // A taught sentence is re-derived as a form: vertices, faces, loops.
         // Understanding is re-deriving its cochain, not matching its bytes.
         if utterance.is_sentence() {
-            if let Some(f) = crate::transducer::sentence::from_element_form(utterance) {
+            if let Some(f) = utterance.form().cloned() {
                 return self.comprehend_form(&f);
             }
             // A sentence tape that does not re-derive as a form: what the
@@ -324,8 +324,9 @@ impl Epigenome {
         let e = Element::from_bytes(taught, pos)?;
         let addr = e.address();
         let resolve = |a: &[u8]| {
-            self.working_word(a)
-                .and_then(crate::transducer::sentence::from_element_form)
+            // The resolver reads the form off the HELD element (L16):
+            // a citation resolved twice parses the tape once.
+            self.working_word(a).and_then(|e| e.form().cloned())
         };
         match crate::verdict::blind_replay_with(&e, &resolve) {
             Some(crate::verdict::REFUSE_GLUED_UNRULED)
@@ -339,7 +340,7 @@ impl Epigenome {
                 return None;
             }
             None => {
-                if let Some(f) = crate::transducer::sentence::from_element_form(&e) {
+                if let Some(f) = e.form() {
                     if f.rank().is_none() {
                         eprintln!(
                             "  syllabus refused {:02x}{:02x}…: {}",

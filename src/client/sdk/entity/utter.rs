@@ -341,8 +341,8 @@ impl Entity {
             let e = sentences[i].clone();
             self.session.seal(crate::chronometry::ActKind::Uttered, e.address().as_bytes());
             self.file_taught(&e);
-            if let Some(f) = crate::transducer::sentence::from_element_form(&e) {
-                self.contractions.remove(&crate::transducer::sentence::form_vertex_key(&f));
+            if let Some(k) = e.form().map(crate::transducer::sentence::form_vertex_key) {
+                self.contractions.remove(&k);
             }
         }
         for (j, &i) in fresh.iter().enumerate() {

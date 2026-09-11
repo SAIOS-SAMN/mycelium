@@ -162,7 +162,7 @@ assert_eq!(cells.len(), 4, "both pairs' created cells ride it: {cells:?}");
 let word = mint_sentence(&rule, &family, &NoCrystal).expect("a sentence with demands mints whole");
 assert!(word.is_sentence());
 assert!(word.magnitude().iter().any(|&m| m > 0), "it measures what it asks for: {:?}", word.magnitude());
-let back = crate::transducer::sentence::from_element_form(&word).expect("its tape decodes");
+let back = word.form().cloned().expect("its tape decodes");
 assert_eq!(back.demand_vertices().count(), 1, "the demand rides the tape");
 assert!(!back.is_closed());
 }

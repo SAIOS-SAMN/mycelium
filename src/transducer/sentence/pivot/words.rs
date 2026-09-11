@@ -29,8 +29,8 @@ pub fn words_of_form(f: &Form) -> Vec<Word> {
 /// connection's letters.
 pub fn words_of_element(e: &Element) -> Vec<Word> {
     if e.is_sentence() {
-        return match from_element_form(e) {
-            Some(f) => words_of_form(&f),
+        return match e.form() {
+            Some(f) => words_of_form(f),
             None => Vec::new(),
         };
     }

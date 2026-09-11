@@ -118,7 +118,7 @@ impl Kernel {
             if !w.is_sentence() {
                 continue;
             }
-            let Some(mut form) = crate::transducer::sentence::from_element_form(&w) else {
+            let Some(mut form) = w.form().cloned() else {
                 continue;
             };
             let Some(gamma) = form.solve_coboundary() else {

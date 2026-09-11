@@ -110,7 +110,7 @@ let class = form_torsion(&e)
 /// filed loop's class key, never the element's empty section.
 #[test]
 fn court_torsion_on_v2_form_is_consilient_or_filed_or_refused() {
-use crate::transducer::sentence::{carries_torsion, from_element_form, torsion_loop_rotor};
+use crate::transducer::sentence::{carries_torsion, torsion_loop_rotor};
 let (spoken, inv, class) = filed_v2_form();
 assert!(
     spoken.torsion().is_empty(),
@@ -141,7 +141,7 @@ assert_eq!(
     None,
     "second hearing is consilient"
 );
-let f = from_element_form(&spoken).expect("v2 form");
+let f = spoken.form().cloned().expect("v2 form");
 let rep = torsion_loop_rotor(&f, &class).expect("the loop names the class");
 let mut k2 = Kernel::new();
 let mut cx = crate::transducer::cech::Complex::new();

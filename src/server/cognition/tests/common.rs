@@ -52,8 +52,8 @@ pub fn speak_pair(k: &mut Kernel, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], vo
 /// by the blind replay as `REFUSE_NOT_A_SENTENCE`. The tamper a forged word
 /// carries where a chain-era fixture inflated a magnitude.
 pub fn strip_words(spoken: &Element) -> Element {
-    use crate::transducer::sentence::{as_element_form, from_element_form, Vertex};
-    let mut f = from_element_form(spoken).expect("a sentence tape reads back");
+    use crate::transducer::sentence::{as_element_form, Vertex};
+    let mut f = spoken.form().cloned().expect("a sentence tape reads back");
     f.vertices.retain(|v| !matches!(v, Vertex::Word { .. }));
     f.reindex();
     as_element_form(&f, spoken.magnitude()).expect("a tape")

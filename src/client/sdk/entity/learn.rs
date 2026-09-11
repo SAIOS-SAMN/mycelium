@@ -250,10 +250,11 @@ impl Entity {
         // its own replay.
         words.sort_by_key(|w| {
             let mut pos = 0usize;
-            match crate::transducer::element::Element::from_bytes(w, &mut pos)
-                .and_then(|e| crate::transducer::sentence::from_element_form(&e))
-            {
-                Some(f) => (0u8, f.depth),
+            match crate::transducer::element::Element::from_bytes(w, &mut pos) {
+                Some(e) => match e.form() {
+                    Some(f) => (0u8, f.depth),
+                    None => (1u8, 0),
+                },
                 None => (1u8, 0),
             }
         });

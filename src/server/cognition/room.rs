@@ -86,7 +86,10 @@ impl Kernel {
             let Some(e) = self.word_at(&addr) else {
                 continue;
             };
-            let Some(f) = crate::transducer::sentence::from_element_form(e) else {
+            // The court's own ruled word, read off the element it holds
+            // (L16): the tape is parsed once per word, not once per room
+            // reading.
+            let Some(f) = e.form() else {
                 continue;
             };
             for v in &f.vertices {

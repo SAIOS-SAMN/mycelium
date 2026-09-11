@@ -178,9 +178,9 @@ fn ratio_and_sections_are_on_the_form_key() {
     let ec = as_element_form(&c, [1, 0, 0, 0]).expect("c");
     assert_ne!(ea.address(), eb.address(), "the frame ratio is on the key");
     assert_ne!(ea.address(), ec.address(), "a section is on the key");
-    let back_b = from_element_form(&eb).expect("v2 tape");
+    let back_b = eb.form().cloned().expect("v2 tape");
     assert_eq!(back_b.ratio, ((2, 1), (2, 1)));
-    let back_c = from_element_form(&ec).expect("v2 tape");
+    let back_c = ec.form().cloned().expect("v2 tape");
     assert_eq!(back_c.sections.get(&form_addr(7)), Some(&vec![1u16]));
     // Zero the height denominator on the tape: after certificates the
     // tail is ratio (8) + sections count (2) + torsion count (2) + axes
@@ -191,7 +191,7 @@ fn ratio_and_sections_are_on_the_form_key() {
     bytes[n - 11] = 0;
     let mut broken = ea.clone();
     broken.set_description(bytes);
-    assert!(from_element_form(&broken).is_none(), "a zero denominator refuses the tape");
+    assert!(broken.form().cloned().is_none(), "a zero denominator refuses the tape");
 }
 
 /// Depth is one plus the deepest glued form; gluing at equal depth is refused.

@@ -235,7 +235,7 @@ impl Kernel {
         if held.kind != c.kind || held.at != c.at || held.receipt != c.receipt {
             return false;
         }
-        crate::transducer::sentence::from_element_form(s).is_some_and(|f| f.is_contraction_at(c.kind, &c.at))
+        s.form().is_some_and(|f| f.is_contraction_at(c.kind, &c.at))
     }
 
     /// ONE SENTENCE AT THE COURT (50.2 G, 23.1), the outcome alone — what

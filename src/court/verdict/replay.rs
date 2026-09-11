@@ -119,7 +119,7 @@ pub fn replay_form_at(
     crystal: &dyn crate::transducer::family::Crystal,
 ) -> Option<Refusal> {
     let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
-    let Some(f) = sentence::from_element_form(spoken) else {
+    let Some(f) = spoken.form() else {
         return Some(tape(REFUSE_FORM_TAPE));
     };
     if f.depth != f.depth_of() {
@@ -157,13 +157,13 @@ pub fn replay_form_at(
     // deferral a `Glued` citation already takes above — the sentence is
     // docketed and the syllabus serves the generator (21 step 3), one
     // mechanism at two levels.
-    if let Some(refusal) = derivations_compose(&f, resolve) {
+    if let Some(refusal) = derivations_compose(f, resolve) {
         return Some(refusal);
     }
     // 37.7 P2: a demand that names a prime must carry a witness that
     // carries it. Read before anything is docketed, so `list_demands`
     // never opens a letter on a witness the arithmetic refuses.
-    if let Some(refusal) = witnesses_carry_their_primes(&f) {
+    if let Some(refusal) = witnesses_carry_their_primes(f) {
         return Some(refusal);
     }
     // 23.1 step 3, 50.6 (L7): a tape whose only vertices are the Frame and
@@ -171,13 +171,13 @@ pub fn replay_form_at(
     if !f.acts() {
         return Some(tape(REFUSE_NOT_A_SENTENCE));
     }
-    if let Some(reason) = vertex_tape_and_moves(&f, family) {
+    if let Some(reason) = vertex_tape_and_moves(f, family) {
         return Some(tape(reason));
     }
     // G steps 2–3 (50.2) on the court's copy of the family: every word
     // vertex carries its body onto its image, exactly (L7).
     if let Some(fam) = family {
-        if let Some(refusal) = vertices_carry_family(&f, fam) {
+        if let Some(refusal) = vertices_carry_family(f, fam) {
             return Some(refusal);
         }
     }
@@ -200,7 +200,7 @@ pub fn replay_form_at(
         // with the family, L7).
         if let Some(edge) = &face.edge {
             if matches!(edge.word.order(), crate::transducer::alphabet::Order::Infinite) {
-                return Some(face_refusal(&f, face));
+                return Some(face_refusal(f, face));
             }
         }
         if f.face_of(face.i, face.j).as_ref() == Some(&face.transport) {

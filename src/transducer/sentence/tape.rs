@@ -449,7 +449,18 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
 }
 
 /// Read a Form from a v6 tape. Every other version is refused.
-pub fn from_element_form(e: &Element) -> Option<Form> {
+/// THE DECODER, AND THE ONE CALLER IT HAS (L16). It is `pub(crate)` and
+/// reached only through [`crate::transducer::element::Element::form`],
+/// which memoises the result on the element: the tape is parsed once for
+/// a word an organ holds, not once per read of it.
+///
+/// It was `pub` and called at 81 sites — the epigenome's genome and
+/// dialect, the court's ruled cover and provisional docket, every replay,
+/// every glue, every listing — so the cipher's carrier was the working
+/// memory of both organs and every read re-parsed it. Narrowing the
+/// visibility is what keeps that from coming back: a new caller cannot
+/// reach the bytes without going through the form the organ already holds.
+pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     if !e.is_sentence() {
         return None;
     }

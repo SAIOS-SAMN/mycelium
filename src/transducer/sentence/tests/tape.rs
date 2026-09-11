@@ -63,7 +63,7 @@ fn form_tape_v6_round_trips() {
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("v4 tape");
     assert!(e.is_sentence());
     assert_eq!(e.description()[1], FORM_TAPE_VERSION, "the tape names its version");
-    let back = from_element_form(&e).expect("decode v4");
+    let back = e.form().cloned().expect("decode v4");
     assert_eq!(back.vertices.len(), f.vertices.len());
     assert_eq!(back.faces.len(), f.faces.len());
     assert_eq!(back.loops.len(), f.loops.len());
@@ -220,7 +220,7 @@ fn tape_v4_refuses_short_or_partial() {
     truncated.set_description(short);
     truncated.set_magnitude([1, 0, 0, 0]);
     assert!(
-        from_element_form(&truncated).is_none(),
+        truncated.form().cloned().is_none(),
         "a short v4 tape is refused"
     );
     let mut v2 = e.description().to_vec();
@@ -229,7 +229,7 @@ fn tape_v4_refuses_short_or_partial() {
     old.set_description(v2);
     old.set_magnitude([1, 0, 0, 0]);
     assert!(
-        from_element_form(&old).is_none(),
+        old.form().cloned().is_none(),
         "a v2 tape is refused"
     );
 }
@@ -239,7 +239,7 @@ fn a_sentence_round_trips_its_nerve() {
     let f = star_form(2, Vec::new());
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("form element");
     assert!(e.is_sentence());
-    let back = from_element_form(&e).expect("the form survives the tape");
+    let back = e.form().cloned().expect("the form survives the tape");
     assert_eq!(back.vertices.len(), f.vertices.len());
     assert_eq!(back.faces.len(), f.faces.len());
     assert_eq!(back.loops.len(), f.loops.len());

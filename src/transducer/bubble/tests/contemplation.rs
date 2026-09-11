@@ -288,7 +288,7 @@ fn a_closed_idea_crystallizes_with_its_descent_and_leaves_the_contemplation() {
     assert_eq!(e.address(), minted.address(), "the crystallized idea is the minted word");
     assert_eq!(e.magnitude(), minted.magnitude(), "its magnitude is the descent over the bundle");
     assert!(
-        sentence::from_element_form(e).is_some_and(|f| f.is_closed()),
+        e.form().cloned().is_some_and(|f| f.is_closed()),
         "the tape reads back closed"
     );
     assert_eq!(

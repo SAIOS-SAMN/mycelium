@@ -35,7 +35,7 @@ impl Kernel {
         s: &Element,
     ) -> Option<crate::transducer::address::Address> {
         use crate::transducer::sentence::Vertex;
-        let f = crate::transducer::sentence::from_element_form(s)?;
+        let f = s.form()?;
         for v in &f.vertices {
             match v {
                 Vertex::Glued { address, .. } if !self.ruled_contains(address.as_bytes()) => {
