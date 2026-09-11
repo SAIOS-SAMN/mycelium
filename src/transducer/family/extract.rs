@@ -82,16 +82,62 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
 }
 
 
-/// The tail of an extraction that RAN TO THE END of its bundle: the
-/// demands ride the rule and the form is closed out with its depth,
-/// loops, ratio and sections. An extraction cut off by its budget never
-/// reaches here — it measured nothing and says nothing (50.2's
-/// `Unmeasured`, rule 11).
+/// The germ of one pair: what the input carries onto the output, as the
+/// cells of the change. `None` for a pair with no scene.
+fn germ_of_pair(a: &Grid, b: &Grid) -> Option<Vec<crate::transducer::sentence::Cell>> {
+    let (ho, wo) = frame_of(b);
+    if a.is_empty() || ho == 0 || wo == 0 {
+        return None;
+    }
+    let x = crate::arc::grid_to_cells(&crate::arc::embed(a, ho, wo));
+    let y = crate::arc::grid_to_cells(b);
+    crate::transducer::germinate::germinate(&x, &y)
+}
+
+/// THE SPEND ONE EXTRACTION OF THIS FAMILY IS SIZED BY (rule 10, L8w).
+///
+/// A fixed `spend_unit()` — three on an eight-core box — is not a budget
+/// for a family, it is a budget for nothing: step 0 spends one per pair
+/// and `pair_form` spends its cover walk out of the same purse, so the
+/// third pair of a three-pair family was never reached and on the fleet
+/// 469 of 474 families extracted to nothing. Worse, the size of that
+/// purse is `reserve_max()/8`, which is read off the machine's free
+/// memory at boot: whether a family could be spelled at all depended on
+/// what else the box was doing.
+///
+/// The spend is intrinsic instead — the pairs and the carrier each one
+/// spans, which is the boundary the extraction has to walk. Two courts on
+/// two machines therefore give one family the same budget, and a family
+/// the mesh hands over is a family that can be measured.
+pub fn extraction_spend(family: &[(Grid, Grid)]) -> usize {
+    let mut n = 0usize;
+    for (a, b) in family {
+        for g in [a, b] {
+            // `frame_of` is the one reader of a grid's carrier (law 12).
+            let (h, w) = frame_of(g);
+            n = n.saturating_add(h * w);
+        }
+    }
+    n
+}
+
+/// The tail of an extraction: the demands ride the rule and the form is
+/// closed out with its depth, loops, ratio and sections.
+///
+/// `unreached` is the part of the bundle the budget did not get to. IT IS
+/// NOT DROPPED. Step 0 returned `None` the moment the purse emptied,
+/// discarding every pair form it had already assembled along with the
+/// whole boundary of the family — 469 families a pass, conserving
+/// nothing, and re-pulled on the next stroke to be discarded identically.
+/// An unreached pair is cells of the family this form does not account
+/// for, which is exactly the charge `contract` emits for an undeclared
+/// remainder, and it rides the rule as one.
 fn finish(
     mut form: Form,
     pair_forms: &[Form],
     scale: ((usize, usize), (usize, usize)),
     sections: crate::network::nerve::Keyed<Vec<u16>>,
+    unreached: &[(Grid, Grid)],
 ) -> Option<crate::transducer::sentence::SentenceRule> {
     // 50.5 (F step 5): the demands of every pair ride the rule, one vertex
     // per (kind, chart) over the bundle, carrying every pair's cells.
@@ -104,6 +150,22 @@ fn finish(
                 None => {
                     by_demand.insert(key, (kind.clone(), chart.clone(), cells.to_vec()));
                 }
+            }
+        }
+    }
+    for (a, b) in unreached {
+        let Some(germ) = germ_of_pair(a, b) else { continue };
+        let chart = crate::transducer::stalk::invariant(&germ);
+        let multiplicity = crate::transducer::sentence::pieces(&germ).len() as u32;
+        let kind = crate::transducer::sentence::Demand::Source { multiplicity };
+        if kind.typed().is_err() {
+            continue;
+        }
+        let key = crate::transducer::sentence::demand_key(&kind, &chart);
+        match by_demand.get_mut(&key) {
+            Some((_, _, held)) => held.extend_from_slice(&germ),
+            None => {
+                by_demand.insert(key, (kind, chart, germ));
             }
         }
     }
@@ -150,17 +212,30 @@ pub fn extract_rule_with(
     let scale = family_ratio(family)?;
     trace::trace_n("extract/0 pair-forms", family.len(), budget);
     let mut pair_forms: Vec<Form> = Vec::with_capacity(family.len());
+    // WHAT THE BUDGET DID NOT REACH, kept (radical conservation). Both
+    // this loop's arms discarded the whole family: the spend check
+    // returned `None`, and `pair_form(...)?` did the same for a pair it
+    // could not factor. Every pair form already assembled went with them.
+    // A pair that was not reached is not a refusal and not a smaller rule
+    // — it is cells of the family this form does not account for, and it
+    // rides out as the demand `finish` emits for it.
+    let mut unreached: Vec<(Grid, Grid)> = Vec::new();
     for (i, (a, b)) in family.iter().enumerate() {
         trace::trace_n("extract/0 pair", i, budget);
         if !budget.spend() {
-            return None;
+            unreached.push((a.clone(), b.clone()));
+            continue;
         }
         // 50.2 step 2: the extraction's own crystal is the presentation
         // its word vertices derive against, so a mind extracts in its own
         // language and `NoCrystal` extracts in the cipher's. `None` is a
         // vertex the budget could not factor — unmeasured, not spelled —
-        // and the whole extraction is unmeasured with it (rule 11, L8w).
-        pair_forms.push(pair_form(crystal, budget, a, b, Some(scale))?);
+        // and the pair is carried out as a demand rather than taking the
+        // bundle with it (rule 11, L8w).
+        match pair_form(crystal, budget, a, b, Some(scale)) {
+            Some(pf) => pair_forms.push(pf),
+            None => unreached.push((a.clone(), b.clone())),
+        }
     }
     let n_pairs = pair_forms.len();
     trace::trace_n("extract/1 correspondence", n_pairs, budget);
@@ -277,7 +352,7 @@ pub fn extract_rule_with(
     let ends = index_ends(&form);
     for (_, (ea, eb)) in candidates.fiber(crate::network::nerve::ROOT) {
         if !budget.spend() {
-            return finish(form, &pair_forms, scale, sections);
+            return finish(form, &pair_forms, scale, sections, &unreached);
         }
         // 21 step 2, 25 (Stage 12 S12.2): the face word between two ends,
         // read on every pair of the bundle. Constant, it is the rule's face.
@@ -351,8 +426,11 @@ pub fn extract_rule_with(
         .filter_map(|v| Some((transport_class(v)?, class_of_vertex(v)?)))
         .collect();
     for (tc, moduli) in glued_classes {
+        // The glue is what the mind already holds; a budget that ends here
+        // leaves the form it has, ungLued, rather than unsaying the pairs
+        // it measured to get here.
         if !budget.spend() {
-            return None;
+            return finish(form, &pair_forms, scale, sections, &unreached);
         }
         let Some(placement) = placement_of_class(&pair_forms, &tc) else {
             continue;
@@ -392,8 +470,10 @@ pub fn extract_rule_with(
     let nverts = form.vertices.len();
     trace::trace_n("extract/6 contact", nverts, budget);
     for vi in 0..nverts {
+        // A contact ring not read is a vertex that keeps its carriage,
+        // which is what it had; it is not a reason to unsay the form.
         if !budget.spend() {
-            return None;
+            return finish(form, &pair_forms, scale, sections, &unreached);
         }
         let Some(tc) = transport_class(&form.vertices[vi]) else {
             continue;
@@ -446,7 +526,7 @@ pub fn extract_rule_with(
         }
     }
     trace::trace("extract/8 finish", budget);
-    finish(form, &pair_forms, scale, sections)
+    finish(form, &pair_forms, scale, sections, &unreached)
 }
 
 
@@ -482,13 +562,20 @@ pub fn extract_rule_cached(
         return cache.get(fam).and_then(|(_, r)| r.clone());
     }
     let rule = extract_rule_with(family, crystal, budget);
-    // An extraction that ended on its budget measured nothing, so nothing
-    // is cached: the next stroke asks again (L8w). Cached, the mind would
-    // hold "this family has no rule" for as long as its language stood
-    // still, and a family too large for one stroke would never be spoken.
-    if budget.remaining() > 0 {
-        cache.insert(fam, (atlas_root, rule.clone()));
-    }
+    // THE PARTIAL IS CACHED WITH THE WHOLE. An extraction that ended on
+    // its budget used to measure nothing, so nothing was cached and the
+    // next stroke asked again — the same family, the same purse, the same
+    // point of exhaustion, the same nothing, for as long as the node ran.
+    // That was the groundhog cycle behind 3763 idle strokes in a row.
+    //
+    // An extraction now always says what it measured, and what it did not
+    // reach rides out as a demand. Caching that is not caching "this
+    // family has no rule": it is holding the form the mind HAS, whose
+    // demands go to the market to be answered. The entry is keyed by the
+    // atlas root, so the moment this mind's language moves — which is the
+    // only thing that could spell more of it — the extraction runs again
+    // and reaches further.
+    cache.insert(fam, (atlas_root, rule.clone()));
     rule
 }
 

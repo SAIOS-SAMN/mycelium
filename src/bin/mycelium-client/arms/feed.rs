@@ -52,7 +52,11 @@ pub(crate) fn feed_arm(
         StrokeOutcome::add(&mut outcome.fed, &mag);
         let fam = mycelium::registry::task_id(&task);
         let gen = entity.epigenome.atlas_root();
-        let mut extract_budget = physics.stroke();
+        // Sized by the family, not by the box (L8w): a fixed spend unit is
+        // three on this machine, and step 0 alone needs one per pair with
+        // the cover walk out of the same purse.
+        let mut extract_budget = physics
+            .stroke_n(mycelium::transducer::family::extraction_spend(&task.train));
         let extracted = mycelium::transducer::family::extract_rule_cached(
             extract_memo,
             &fam,

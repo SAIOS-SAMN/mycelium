@@ -194,7 +194,13 @@ pub(crate) fn withhold_unextracted(
     let fam = format!("{:02x}{:02x}…", family[0], family[1]);
     let scale = mycelium::transducer::family::family_ratio(train);
     for (a, b) in train {
-        let mut budget = entity.stroke();
+        // One pair, sized by the pair (L8w): `entity.stroke()` is the same
+        // three-spend purse that could not reach a single `pair_form`, so
+        // this fallback withheld as much as the extraction it stands in
+        // for — 469 families a pass, both arms saying nothing.
+        let pair = [(a.clone(), b.clone())];
+        let mut budget = entity
+            .stroke_n(mycelium::transducer::family::extraction_spend(&pair));
         // `None` is a vertex the stroke could not factor through this
         // mind's presentation: unmeasured, so this pair is left for the
         // next stroke rather than withheld with a reach never read.

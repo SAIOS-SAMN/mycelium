@@ -13,6 +13,13 @@ impl Entity {
         self.physics.stroke()
     }
 
+    /// A stroke of a MEASURED size — what a caller with a boundary in hand
+    /// spends on it (L8w, law 9). The count is read off the work, never
+    /// off the machine.
+    pub fn stroke_n(&mut self, n: usize) -> crate::physics::Budget {
+        self.physics.stroke_n(n)
+    }
+
     pub fn add_hypha(&mut self, addr: &str) {
         self.session.add_peer(addr);
     }

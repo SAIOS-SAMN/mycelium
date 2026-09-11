@@ -32,7 +32,9 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
         StrokeOutcome::add(&mut outcome.fed, &mag);
     }
     let gen = entity.epigenome.atlas_root();
-    let mut extract_budget = physics.stroke();
+    // Sized by the family, not by the box (L8w).
+    let mut extract_budget =
+        physics.stroke_n(mycelium::transducer::family::extraction_spend(&train));
     let extracted = mycelium::transducer::family::extract_rule_cached(
         extract_memo,
         &tid,

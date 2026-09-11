@@ -26,9 +26,13 @@ impl Entity {
         };
         let scale = family_ratio(std::slice::from_ref(&scene));
         // 50.2 step 2: this mind's own presentation is what its word
-        // vertices derive against, under one stroke like every other
-        // keyed read (rule 10).
-        let mut budget = self.physics.stroke();
+        // vertices derive against, under a stroke sized by the scene it is
+        // handed (L8w) — a fixed spend unit is three on an eight-core box
+        // and does not reach one `pair_form`, so every chain held here was
+        // held as nothing.
+        let mut budget = self
+            .physics
+            .stroke_n(crate::transducer::family::extraction_spend(std::slice::from_ref(&scene)));
         // `None` is a vertex the stroke could not factor through this
         // mind's presentation: unmeasured, so nothing is held rather than
         // a form held with the presentation's reach asserted unread.
