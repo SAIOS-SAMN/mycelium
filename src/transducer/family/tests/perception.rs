@@ -167,16 +167,30 @@ assert_eq!(back.demand_vertices().count(), 1, "the demand rides the tape");
 assert!(!back.is_closed());
 }
 
+/// The supports a form hands `star_and_cell_faces`, keyed by each
+/// vertex's own coordinate. A test writes them in vertex order because
+/// that is what it is asserting about; the reader is keyed, so a vertex
+/// with no support simply has no entry.
+fn supports_at(rows: &[Vec<(i64, i64)>]) -> crate::network::nerve::Keyed<Vec<(i64, i64)>> {
+    let mut k = crate::network::nerve::Keyed::new();
+    for (i, s) in rows.iter().enumerate() {
+        if !s.is_empty() {
+            k.insert(crate::transducer::sentence::vertex_ix_key(i as u16), s.clone());
+        }
+    }
+    k
+}
+
 /// Three touching after-supports: two adjacency faces besides the
 /// Frame star, and the 1-skeleton is not a tree.
 #[test]
 fn a_row_of_three_touching_bodies_has_two_adjacency_faces_and_a_loop() {
-let supports = vec![
+let supports = supports_at(&[
     vec![],
     vec![(0, 0), (0, 1)],
     vec![(0, 2), (0, 3)],
     vec![(0, 4), (0, 5)],
-];
+]);
 let pairs = star_and_cell_faces(4, Some(0), &supports);
 let adj: Vec<_> = pairs
     .iter()
@@ -203,9 +217,9 @@ let run = |n: usize| -> u64 {
     reset_face_work();
     let mut supports = vec![Vec::new()];
     for i in 0..n {
-        supports.push(vec![(0, (i as i64) * 3)]);
+        supports.push(vec![(0i64, (i as i64) * 3)]);
     }
-    let _ = star_and_cell_faces(n + 1, Some(0), &supports);
+    let _ = star_and_cell_faces(n + 1, Some(0), &supports_at(&supports));
     face_work()
 };
 let w = run(8);

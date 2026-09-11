@@ -69,7 +69,6 @@ pub(crate) const GATE: Gate = Gate {
         ("transducer/element/letters.rs", 3),
         ("transducer/element/vertex.rs", 1),
         ("transducer/family/descent.rs", 1),
-        ("transducer/family/pairing.rs", 1),
         ("transducer/family/speak.rs", 4),
         ("transducer/rewrite.rs", 1),
         ("transducer/sentence/chart.rs", 3),

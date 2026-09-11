@@ -1,12 +1,27 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 21 step 2 — THE PAIRING PASS: the scene's candidate bodies, the charts
-//! they group under, the carriage that pairs one with another, and the
-//! faces a bundle's supports name.
+//! 21 step 2 — THE SCENE AS A COMPLEX, and the pairing over it: the
+//! candidate bodies a grid presents, the charts they group under, the
+//! carriage that pairs one with another, and the faces their supports
+//! name.
 //!
-//! Split from `pair.rs` at the §1.1 600-line reading bound; the items are
-//! moved, not rewritten (§1.6). What stays there is what the pairing
-//! leaves behind — the demands of the unpaired and the form they become.
+//! THE SCENE IS NOT FOUR ARRAYS. It was: `ins` and `outs` as `Vec<Cand>`
+//! indexed by the order `perceive` happened to return bodies in, `used_in`
+//! and `used_out` as `Vec<bool>` aligned to them by arithmetic, `pairs` as
+//! index triples into both, and `group_by_chart` answering lists of
+//! indices. Every one of those is a member named by its arrival position
+//! (rule 15) and a presence held as a boolean rather than read from a
+//! keyed set (rule 2) — and the parallel arrays are the shape that made
+//! `usize::MAX` reachable for as "no member here".
+//!
+//! A candidate is addressed by its own CONTENT: the shell kind it came
+//! from and its cells written out, which `body_of` has already sorted. The
+//! scene is a `Keyed` of those; consumption is a keyed set; a pair is
+//! keyed by its two ends the way a carriage is (`carriage_key`); and a
+//! chart group is a list of addresses. Nothing in the scene is indexed by
+//! when it was perceived.
+//!
+//! Split from `pair.rs` at the §1.1 600-line reading bound.
 
 use super::*;
 
@@ -32,11 +47,16 @@ pub(crate) fn face_work() -> u64 {
 /// plus pairs whose after-supports overlap or sit at ring distance one.
 /// Occupancy is keyed by cell; related pairs are a Keyed set. Cost is
 /// occupied + ring cells, never n².
+///
+/// The supports arrive KEYED BY VERTEX INDEX, which is the form's own
+/// coordinate and rides the tape as `FormFace.i` and `.j` — not as a slice
+/// whose position a caller had to keep aligned by hand.
 pub(crate) fn star_and_cell_faces(
     n: usize,
     frame: Option<usize>,
-    supports: &[Vec<(i64, i64)>],
+    supports: &crate::network::nerve::Keyed<Vec<(i64, i64)>>,
 ) -> Vec<(u16, u16)> {
+    use crate::transducer::sentence::vertex_ix_key;
     let mut related: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     if let Some(frame) = frame {
         for j in 0..n {
@@ -47,10 +67,13 @@ pub(crate) fn star_and_cell_faces(
         }
     }
     let mut occ: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
-    for (vi, supp) in supports.iter().enumerate() {
+    for vi in 0..n {
         if Some(vi) == frame {
             continue;
         }
+        let Some(supp) = supports.get(&vertex_ix_key(vi as u16)) else {
+            continue;
+        };
         let id = vi as u16;
         for &(r, c) in supp {
             note_face_work();
@@ -68,9 +91,6 @@ pub(crate) fn star_and_cell_faces(
         }
     }
     for (_k, verts) in occ.fiber(crate::network::nerve::ROOT) {
-        if verts.len() < 2 {
-            continue;
-        }
         // Unordered pairs of this cell's own vertices, bounded by the cell.
         for a in 0..verts.len() {
             for b in (a + 1)..verts.len() {
@@ -78,10 +98,13 @@ pub(crate) fn star_and_cell_faces(
             }
         }
     }
-    for (vi, supp) in supports.iter().enumerate() {
+    for vi in 0..n {
         if Some(vi) == frame {
             continue;
         }
+        let Some(supp) = supports.get(&vertex_ix_key(vi as u16)) else {
+            continue;
+        };
         let v = vi as u16;
         let cells: Vec<(i64, i64, u8)> = supp.iter().map(|&(r, c)| (r, c, 0)).collect();
         for (r, c, _) in crate::transducer::blade::adjacent_ring(&cells) {
@@ -114,25 +137,66 @@ pub(crate) fn hue_map_from_pairs(pairs: &[(u8, u8)]) -> HueMap {
     m
 }
 
+/// ONE CANDIDATE BODY of a scene: a perceived body, or a shell of one.
+/// `parent` is the ADDRESS of the whole body it came from, so consuming a
+/// body consumes its shells without either naming the other by position.
 pub(crate) struct Cand {
     pub(crate) body: Body,
     pub(crate) kind: crate::transducer::peel::ShellKind,
-    pub(crate) parent: usize,
+    pub(crate) parent: Vec<u8>,
 }
 
-pub(crate) fn scene_cands(grid: &Grid, scale: Option<((usize, usize), (usize, usize))>) -> Vec<Cand> {
-    let mut out = Vec::new();
-    // index: bodies of this scene; shells are peel fibre, not extra vertices
-    for (p, b) in perceive(grid).into_iter().enumerate() {
-        out.push(Cand { body: b.clone(), kind: crate::transducer::peel::ShellKind::Whole, parent: p });
+/// THE ADDRESS OF A CANDIDATE, as content (A21): the shell kind it came
+/// from and its cells written out, length-prefixed. `body_of` has sorted
+/// them, so the address is canonical. No digest and no arrival index — a
+/// hash would key perception by bytes, and a position would make the
+/// scene's order part of its meaning (rule 2, rule 6, rule 15).
+pub(crate) fn cand_key(kind: crate::transducer::peel::ShellKind, body: &Body) -> Vec<u8> {
+    let mut k = vec![kind.as_u8()];
+    k.extend_from_slice(&(body.cells.len() as u32).to_le_bytes());
+    for &(r, c, h) in &body.cells {
+        k.extend_from_slice(&r.to_le_bytes());
+        k.extend_from_slice(&c.to_le_bytes());
+        k.push(h);
+    }
+    k
+}
+
+/// ONE SCENE AS A COMPLEX: its candidates by their own addresses, and the
+/// shells each whole body owns, so a consumption reaches them without a
+/// scan.
+pub(crate) struct Scene {
+    pub(crate) cands: crate::network::nerve::Keyed<Cand>,
+    pub(crate) by_parent: crate::network::nerve::Keyed<Vec<Vec<u8>>>,
+}
+
+impl Scene {
+    pub(crate) fn get(&self, addr: &[u8]) -> Option<&Cand> {
+        self.cands.get(addr)
+    }
+}
+
+pub(crate) fn scene_cands(grid: &Grid, scale: Option<((usize, usize), (usize, usize))>) -> Scene {
+    let mut cands: crate::network::nerve::Keyed<Cand> = crate::network::nerve::Keyed::new();
+    let mut by_parent: crate::network::nerve::Keyed<Vec<Vec<u8>>> =
+        crate::network::nerve::Keyed::new();
+    for b in perceive(grid) {
+        let whole = crate::transducer::peel::ShellKind::Whole;
+        let parent = cand_key(whole, &b);
+        let mut own = vec![parent.clone()];
+        cands.insert(&parent, Cand { body: b.clone(), kind: whole, parent: parent.clone() });
         for shell in crate::transducer::peel::peel_body_scaled(&b.cells, scale) {
-            if shell.kind == crate::transducer::peel::ShellKind::Whole || shell.cells.is_empty() || shell.cells == b.cells {
+            if shell.kind == whole || shell.cells.is_empty() || shell.cells == b.cells {
                 continue;
             }
-            out.push(Cand { body: body_of(shell.cells), kind: shell.kind, parent: p });
+            let body = body_of(shell.cells);
+            let k = cand_key(shell.kind, &body);
+            own.push(k.clone());
+            cands.insert(k, Cand { body, kind: shell.kind, parent: parent.clone() });
         }
+        by_parent.insert(parent, own);
     }
-    out
+    Scene { cands, by_parent }
 }
 
 pub(crate) fn pair_rank(ic: &Cand, oc: &Cand) -> Option<(u8, Carriage)> {
@@ -152,31 +216,41 @@ pub(crate) fn pair_rank(ic: &Cand, oc: &Cand) -> Option<(u8, Carriage)> {
     Some((r, car))
 }
 
-pub(crate) fn mark_parent(used: &mut [bool], cands: &[Cand], idx: usize) {
-    let p = cands[idx].parent;
-    for (k, c) in cands.iter().enumerate() {
-        if c.parent == p {
-            used[k] = true;
-        }
+/// Consume a candidate AND every shell of the body it came from: a body is
+/// spoken once, whole or by a shell, never twice.
+pub(crate) fn consume(used: &mut crate::network::nerve::Keyed<()>, scene: &Scene, addr: &[u8]) {
+    let Some(c) = scene.get(addr) else {
+        return;
+    };
+    let Some(siblings) = scene.by_parent.get(&c.parent) else {
+        used.insert(addr, ());
+        return;
+    };
+    for k in siblings.clone() {
+        used.insert(k, ());
     }
 }
 
 /// Partition candidates by exact chart axes (`Invariant` equality), never
 /// a digest of those axes. A hash of moduli isolates congruent bodies
 /// whose packing or orientation differs; the axes themselves are the chart.
-pub(crate) fn group_by_chart(cands: &[Cand], used: Option<&[bool]>, peel: bool) -> Vec<(Invariant, Vec<usize>)> {
-    let mut by_key: crate::network::nerve::Keyed<(Invariant, Vec<usize>)> =
+pub(crate) fn group_by_chart(
+    scene: &Scene,
+    used: Option<&crate::network::nerve::Keyed<()>>,
+    peel: bool,
+) -> Vec<(Invariant, Vec<Vec<u8>>)> {
+    let mut by_key: crate::network::nerve::Keyed<(Invariant, Vec<Vec<u8>>)> =
         crate::network::nerve::Keyed::new();
-    for (i, c) in cands.iter().enumerate() {
-        if used.is_some_and(|u| u[i]) {
+    for (addr, c) in scene.cands.fiber(crate::network::nerve::ROOT) {
+        if used.is_some_and(|u| u.contains(&addr)) {
             continue;
         }
         let inv = if peel { c.body.moduli.peel() } else { c.body.moduli.clone() };
         let k = inv.key();
         match by_key.get_mut(&k) {
-            Some((_, v)) => v.push(i),
+            Some((_, v)) => v.push(addr.clone()),
             None => {
-                by_key.insert(k, (inv, vec![i]));
+                by_key.insert(k, (inv, vec![addr.clone()]));
             }
         }
     }
@@ -186,59 +260,70 @@ pub(crate) fn group_by_chart(cands: &[Cand], used: Option<&[bool]>, peel: bool) 
         .collect()
 }
 
-/// THE STATE OF ONE PAIRING PASS: the candidates on each side, which of
-/// them a pass has consumed, and the pairs it has made. A pass reads all
-/// five or none of them — they are the same object at five names.
-pub(crate) struct Pairing<'a> {
-    pub(crate) ins: &'a [Cand],
-    pub(crate) outs: &'a [Cand],
-    pub(crate) used_in: &'a mut [bool],
-    pub(crate) used_out: &'a mut [bool],
-    pub(crate) pairs: &'a mut Vec<(usize, usize, Carriage)>,
+/// ONE PAIR: the two candidates by their own addresses and the carriage
+/// taking one to the other.
+pub(crate) struct Paired {
+    pub(crate) input: Vec<u8>,
+    pub(crate) image: Vec<u8>,
+    pub(crate) carriage: Carriage,
 }
 
-pub(crate) fn greedy_within(p: &mut Pairing<'_>, ii: &[usize], oo: &[usize], want: u8) {
-    let Pairing { ins, outs, used_in, used_out, pairs } = p;
-    for &i in ii {
-        if used_in[i] {
+/// THE STATE OF ONE PAIRING PASS: the two scenes, which candidates a pass
+/// has consumed, and the pairs it has made. A pass reads all five or none
+/// of them — they are the same object at five names.
+pub(crate) struct Pairing<'a> {
+    pub(crate) ins: &'a Scene,
+    pub(crate) outs: &'a Scene,
+    pub(crate) used_in: &'a mut crate::network::nerve::Keyed<()>,
+    pub(crate) used_out: &'a mut crate::network::nerve::Keyed<()>,
+    pub(crate) pairs: &'a mut crate::network::nerve::Keyed<Paired>,
+}
+
+pub(crate) fn greedy_within(p: &mut Pairing<'_>, ii: &[Vec<u8>], oo: &[Vec<u8>], want: u8) {
+    for i in ii {
+        if p.used_in.contains(i) {
             continue;
         }
-        // First in the support's own order for which a carriage exists.
-        // Interchangeable under the class; no distance is measured to choose.
-        let mut found: Option<(usize, Carriage)> = None;
-        for &j in oo {
-            if used_out[j] {
+        let Some(ic) = p.ins.get(i) else { continue };
+        // First in the candidates' own KEY order for which a carriage
+        // exists. Key order is content order; interchangeable under the
+        // class, and no distance is measured to choose.
+        let mut found: Option<(Vec<u8>, Carriage)> = None;
+        for j in oo {
+            if p.used_out.contains(j) {
                 continue;
             }
-            let Some((r, car)) = pair_rank(&ins[i], &outs[j]) else {
+            let Some(oc) = p.outs.get(j) else { continue };
+            let Some((r, car)) = pair_rank(ic, oc) else {
                 continue;
             };
             if r != want {
                 continue;
             }
-            found = Some((j, car));
+            found = Some((j.clone(), car));
             break;
         }
         if let Some((j, car)) = found {
-            mark_parent(used_in, ins, i);
-            mark_parent(used_out, outs, j);
-            pairs.push((i, j, car));
+            consume(p.used_in, p.ins, i);
+            consume(p.used_out, p.outs, &j);
+            let key = super::pieces::carriage_key(i, &j);
+            p.pairs.insert(key, Paired { input: i.clone(), image: j, carriage: car });
         }
     }
 }
 
 pub(crate) fn pair_groups(
     p: &mut Pairing<'_>,
-    in_g: &[(Invariant, Vec<usize>)],
-    out_g: &[(Invariant, Vec<usize>)],
+    in_g: &[(Invariant, Vec<Vec<u8>>)],
+    out_g: &[(Invariant, Vec<Vec<u8>>)],
     want: u8,
 ) {
-    let mut out_by: crate::network::nerve::Keyed<&[usize]> = crate::network::nerve::Keyed::new();
+    let mut out_by: crate::network::nerve::Keyed<&[Vec<u8>]> = crate::network::nerve::Keyed::new();
     for (inv, oo) in out_g {
         out_by.insert(inv.key(), oo.as_slice());
     }
     for (inv, ii) in in_g {
-        let Some(oo) = out_by.get(&inv.key()) else {
+        let Some(oo) = out_by.get(&inv.key()).copied() else {
             continue;
         };
         greedy_within(p, ii, oo, want);
@@ -247,18 +332,16 @@ pub(crate) fn pair_groups(
 
 /// WHAT PAIRING TWO SCENES YIELDS.
 pub(crate) struct PairedScene {
-    /// The candidate bodies read off the input scene.
-    pub(crate) ins: Vec<Cand>,
-    /// The candidate bodies read off the output scene.
-    pub(crate) outs: Vec<Cand>,
-    /// For each pair that matched: the input candidate, the output
-    /// candidate, and the carriage taking one to the other.
-    pub(crate) pairs: Vec<(usize, usize, Carriage)>,
-    /// Which input candidates a pass consumed. The UNCONSUMED are the
-    /// residual — what the form does not speak.
-    pub(crate) used_in: Vec<bool>,
+    pub(crate) ins: Scene,
+    pub(crate) outs: Scene,
+    /// The pairs that matched, by the carriage's own address.
+    pub(crate) pairs: crate::network::nerve::Keyed<Paired>,
+    /// Which input candidates a pass consumed — a keyed SET, not a boolean
+    /// per arrival slot. The unconsumed are the residual: what the form
+    /// does not speak.
+    pub(crate) used_in: crate::network::nerve::Keyed<()>,
     /// Which output candidates a pass consumed.
-    pub(crate) used_out: Vec<bool>,
+    pub(crate) used_out: crate::network::nerve::Keyed<()>,
 }
 
 pub(crate) fn pair_scene(
@@ -268,9 +351,9 @@ pub(crate) fn pair_scene(
 ) -> PairedScene {
     let ins = scene_cands(a, scale);
     let outs = scene_cands(b, scale);
-    let mut used_in = vec![false; ins.len()];
-    let mut used_out = vec![false; outs.len()];
-    let mut pairs: Vec<(usize, usize, Carriage)> = Vec::new();
+    let mut used_in: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let mut used_out: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let mut pairs: crate::network::nerve::Keyed<Paired> = crate::network::nerve::Keyed::new();
     let in_exact = group_by_chart(&ins, None, false);
     let out_exact = group_by_chart(&outs, None, false);
     {
@@ -297,32 +380,6 @@ pub(crate) fn pair_scene(
         };
         for want in 2u8..=3 {
             pair_groups(&mut pass, &in_peel, &out_peel, want);
-        }
-    }
-    // Leftover wholes: ∃V even when the chart axes disagree. Not a
-    // cartesian of peel shells — unused wholes only.
-    let ii: Vec<usize> = ins
-        .iter()
-        .enumerate()
-        .filter(|(i, c)| !used_in[*i] && c.kind == crate::transducer::peel::ShellKind::Whole)
-        .map(|(i, _)| i)
-        .collect();
-    let oo: Vec<usize> = outs
-        .iter()
-        .enumerate()
-        .filter(|(i, c)| !used_out[*i] && c.kind == crate::transducer::peel::ShellKind::Whole)
-        .map(|(i, _)| i)
-        .collect();
-    {
-        let mut pass = Pairing {
-            ins: &ins,
-            outs: &outs,
-            used_in: &mut used_in,
-            used_out: &mut used_out,
-            pairs: &mut pairs,
-        };
-        for want in 2u8..=3 {
-            greedy_within(&mut pass, &ii, &oo, want);
         }
     }
     PairedScene { ins, outs, pairs, used_in, used_out }
