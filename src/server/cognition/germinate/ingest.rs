@@ -112,7 +112,21 @@ impl Kernel {
                 }
             }
         }
-        let Some(gf) = s.letters().and_then(|l| l.spelling.word.form()) else {
+        // THE SPELLING IS THE WORD'S, NOT ITS SUBSTANCE'S. `substance()`
+        // empties the description tape — that is its job, the address is
+        // BASE-only — and `letters()` parses that tape, so read here it
+        // answered `None` for every word and this whole A12 path has never
+        // run: every pure-algebra element that was not the terminal above
+        // reported `Irreducible`. Measured at c1e9e0b: a basis holding `q`
+        // and `q²` reported `q²` irreducible.
+        //
+        // The substance is the right object for the ACTION — the terminal
+        // above compares actions and keeps using it — and the wrong one
+        // for the SPELLING, which a translation does not change. The basis
+        // loop below already reads `gen.letters()` off the held word and
+        // not off its substance; this line is the same reading on the
+        // candidate's side.
+        let Some(gf) = g.letters().and_then(|l| l.spelling.word.form()) else {
             return NormalForm::Irreducible;
         };
         let mut slots = Vec::new();

@@ -282,3 +282,134 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
         "one class, one period: a court holding another is not natural"
     );
 }
+
+/// Install `w` on a court by the path a word actually takes: spoken,
+/// docketed, ruled, and confirmed held by a second organ (arity 2). No
+/// direct insertion — the claim below is about what the COURTS do with the
+/// rewrite, so the words it is about must be language the same way every
+/// other word is.
+fn install(k: &mut Kernel, voice: [u8; 32], w: &Element) {
+    assert_eq!(
+        k.perceive_speech(voice, &[0; 32], std::slice::from_ref(w)),
+        vec![crate::anastome::dialogue::SPEECH_STOOD],
+        "the transport stands"
+    );
+    k.rule_all_provisionals();
+    let cover = k.genesis_cover().expect("measured");
+    k.enroll([9; 32], cover);
+    let ruled: Vec<Vec<u8>> =
+        k.ruled_addrs.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
+    for a in &ruled {
+        k.confirm_peer_holds_addrs(&[Address::from(a.clone())], [9; 32]);
+    }
+}
+
+/// L17 DEPTH 5, ON THE SAME FIXTURE — THE REWRITE IS ADJOINED AS A
+/// GENERATOR IS. The triangle above left `q²` as its relator; a court that
+/// holds the transport `q` as language already speaks `q²`, so the
+/// standing word for `q²` is REDUNDANT and the rewrite that retires it is
+/// the 2-cell relating the two derivations of it (3.8, chapter 27, T10).
+///
+/// WHAT MAKES IT DEPTH 5 AND NOT A HOST ARM. The rewrite is an ELEMENT
+/// with an address measured from its own content, docketed by the same
+/// `docket_connection` a letter takes, and TWO COURTS THAT NEVER SPEAK
+/// REACH THE SAME ADDRESS for it. Nothing about it is a branch written in
+/// the host; the host's `RewriteKind` is a tag on content, the way
+/// `Vertex::Word` is.
+///
+/// THE DERIVABILITY IS RE-DERIVED, twice, by the redundancy probe itself
+/// (`reduce_excluding`, A12 over the plane forms of the other held words)
+/// — not asserted by the bidder and not voted on. Chapter 44's refusals
+/// stand: there is no completion here, no critical pair, and no minimal
+/// path chosen by a scalar. One reading answers the whole question.
+///
+/// AND THE MEANING IS UNCHANGED. After the retirement the language still
+/// speaks `q²`: the structure changed, the result did not, which is what
+/// makes this convergence and not a vote.
+#[test]
+fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
+    use crate::transducer::rewrite::{RewriteKind, RewritePayload};
+    // The transport the triangle is built from, and the relator it left.
+    let t = transport(&quarter(1));
+    let relator = transport(&quarter(2));
+    assert_ne!(t.address(), relator.address(), "two words, two addresses");
+
+    let mut minted: Vec<Address> = Vec::new();
+    for (id, voice) in [([31u8; 32], [41u8; 32]), ([32u8; 32], [42u8; 32])] {
+        let mut k = Kernel::new();
+        k.set_court_voice(id);
+        install(&mut k, voice, &t);
+        install(&mut k, voice, &relator);
+        let addr = relator.address();
+        assert!(k.ruled_contains(addr.as_bytes()), "the relator is language here");
+
+        // THE DERIVABILITY, RE-DERIVED by the redundancy probe over this
+        // court's own basis with the candidate excluded.
+        let decomposed = k.reduce_excluding(&relator, Some(addr.as_bytes()));
+        let NormalForm::Decomposed(through) = decomposed else {
+            panic!("the relator must decompose through the transport: {decomposed:?}");
+        };
+        assert!(
+            !through.is_empty(),
+            "and it decomposes through a word that is not itself"
+        );
+
+        // THE 2-CELL. `freed` is the lane vector the language stops
+        // carrying, read off the retired word's own magnitude.
+        let payload = RewritePayload::Retire {
+            cites: vec![t.address()],
+            freed: relator.magnitude(),
+        };
+        assert!(
+            k.mint_rewrite(
+                RewriteKind::Retire,
+                std::slice::from_ref(&relator),
+                &relator,
+                payload,
+                voice,
+            ),
+            "the rewrite mints and is docketed"
+        );
+
+        // IT IS ON THE DOCKET, by the path a letter takes: a provisional
+        // word this court holds, awaiting a second organ.
+        let rw: Vec<Vec<u8>> = k
+            .provisional
+            .fiber(crate::network::nerve::ROOT)
+            .filter(|(_, e)| e.is_rewrite())
+            .map(|(a, _)| a)
+            .collect();
+        assert_eq!(rw.len(), 1, "one 2-cell on the docket, addressed by its content");
+        minted.push(Address::from(rw[0].clone()));
+
+        // AND IT RETIRES WHAT IT NAMES. The inputs go to the cavity, not
+        // to nothing: a retired word is a boundary the language keeps.
+        let held = k.provisional.get(&rw[0]).cloned().expect("the docketed rewrite");
+        k.retire_rewrite_inputs(&held);
+        assert!(
+            !k.basis.contains(addr.as_bytes()),
+            "the relator leaves the basis"
+        );
+        assert!(
+            k.cavity_book.contains(addr.as_bytes()),
+            "onto the cavity book, which is where a retired word lives"
+        );
+
+        // THE MEANING IS UNCHANGED: the language still speaks it.
+        assert!(
+            matches!(
+                k.reduce_excluding(&relator, None),
+                NormalForm::Decomposed(_)
+            ),
+            "the structure changed and the result did not"
+        );
+    }
+
+    // TWO COURTS, ONE ADDRESS. Neither court was told the other's answer;
+    // they agree because a rewrite is content and its address measures it.
+    assert_eq!(
+        minted[0].as_bytes(),
+        minted[1].as_bytes(),
+        "two courts, one 2-cell"
+    );
+}
