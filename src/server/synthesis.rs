@@ -54,7 +54,14 @@ pub fn probe(
     let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
     let view = g.market_open();
     drop(g);
-    let Some((listing, _)) = view.pending.get(target) else {
+    // A TARGET MAY NAME ONE DEMAND VERTEX of the listing (L8q). The
+    // listing it stands on is what the book is asked for; the settlement
+    // is the court's, under the lock, because it speaks a form.
+    let at = match crate::transducer::sentence::read_demand_at(target) {
+        Some((at, _)) => at,
+        None => target.to_vec(),
+    };
+    let Some((listing, _)) = view.pending.get(&at) else {
         return (crate::anastome::dialogue::PROBE_SETTLED, [0; 4], [0; 4]);
     };
     // The utterance is verified as spoken — its operators against the

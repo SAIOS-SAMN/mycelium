@@ -430,6 +430,13 @@ impl Kernel {
     ) -> (u8, [u64; 4], [u64; 4]) {
         use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_DESCENT, PROBE_NOTHING};
         use crate::transducer::stalk::Closure;
+        // A PROBE MAY NAME ONE DEMAND VERTEX of the listing (L8q), and
+        // then it is not a deflation of the listing's cells at all: the
+        // court replays the cited form onto THAT demand's own scene and
+        // settles on what it reproduces.
+        if let Some((at, demand)) = crate::transducer::sentence::read_demand_at(target) {
+            return self.settle_demand(voice, &at, &demand, cites);
+        }
         let Some((listing, _)) = self.pending.get(target) else {
             return (PROBE_NOTHING, [0; 4], [0; 4]);
         };
@@ -567,29 +574,6 @@ impl Kernel {
         self.physics.syntropy(&mag);
         self.append_step(crate::chronometry::ActKind::Settled, target, voice);
         (PROBE_DESCENT, [0; 4], after)
-    }
-
-    pub(crate) fn record_flat(
-        &mut self,
-        listing: &[u8],
-        chart: crate::transducer::stalk::Invariant,
-        voice: [u8; 32],
-        g: element::Versor,
-    ) {
-        let key = loop_key(&chart, &voice);
-        if self.flat_loops.get(listing).is_some_and(|m| m.contains(&key)) {
-            return;
-        }
-        match self.flat_loops.get_mut(listing) {
-            Some(m) => {
-                m.insert(key, (chart, g));
-            }
-            None => {
-                let mut m = crate::network::nerve::Keyed::new();
-                m.insert(key, (chart, g));
-                self.flat_loops.insert(listing, m);
-            }
-        }
     }
 
 }

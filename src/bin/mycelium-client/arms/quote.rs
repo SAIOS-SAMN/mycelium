@@ -62,6 +62,16 @@ match entity.quote() {
         m.dwell_remaining[2] = 0;
         let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
         let (mut n_closing, mut n_ruled_hit, mut n_stood, mut n_held) = (0u32, 0u32, 0u32, 0u32);
+        // ANSWERING A DEMAND SPEAKS A FORM, and speaking one perceives a
+        // whole grid. Trying every held carrier of every demand of every
+        // listing served is a product of three carriers with `apply_form`
+        // at the bottom of it, and nothing in the shape of a quote bounds
+        // any of the three — the page is as wide as the market, a sentence
+        // has as many demands as it has, and a chart holds what it holds.
+        // That is rule 10's loop with no boundary, and it is paid for
+        // here: one spend per carrier the voice actually speaks. A page
+        // beyond one stroke is answered across quotes, never in one.
+        let mut spend = physics.stroke();
         for cluster in &q.clusters {
             // THE LISTING ARRIVES WHOLE (L8q). It was a chain of cells, so
             // the only move here was `conclude_listing` — subtract the
@@ -97,22 +107,41 @@ match entity.quote() {
                 demands.len()
             );
             for (kind, chart, cells) in &demands {
-                // 50.5, L8r: the held CLOSED forms carrying a body on this
-                // demand's own chart. The chart routes; what decides is
-                // whether the form reproduces the demand's cells, which is
-                // exactly how extraction step 3 decides a glue.
-                let carriers = mycelium::transducer::family::Crystal::on_body(
-                    &entity.epigenome,
-                    chart,
-                );
+                // 50.5, L8r: the addresses standing on this demand's own
+                // chart — THE STRATUM AS COORDINATES, not as forms. The
+                // chart routes; what decides is whether the form
+                // reproduces the demand's cells, which is exactly how
+                // extraction step 3 decides a glue, and the form for that
+                // is fetched by key at the one member about to speak.
+                let stratum = entity.epigenome.chart_stratum(chart);
                 let mut answered = false;
-                for (el, f, st) in carriers {
+                for addr in &stratum {
+                    // ONE SPEND PER FORM THIS VOICE SPEAKS. Below this is
+                    // `apply_form`, which perceives a whole grid, and
+                    // nothing in the shape of a quote bounds how many
+                    // times it would be reached: the page is as wide as
+                    // the market, a sentence has as many demands as it
+                    // has, and a chart holds what it holds. A stratum
+                    // beyond one stroke is answered on the next quote.
+                    if !spend.spend() {
+                        break;
+                    }
+                    let Some(word) = entity.epigenome.working_word(addr) else {
+                        continue;
+                    };
+                    let Some(st) = entity.epigenome.standing_of(addr) else {
+                        continue;
+                    };
+                    let Some(f) = word.form().cloned() else {
+                        continue;
+                    };
                     if !f.is_closed() {
                         continue;
                     }
                     if !reproduces(&entity.epigenome, &f, cells) {
                         continue;
                     }
+                    let cited = word.address();
                     match mycelium::sdk::Standing::from_u8(st.as_u8()) {
                         Some(mycelium::sdk::Standing::Stood) => n_stood += 1,
                         Some(mycelium::sdk::Standing::Held) => n_held += 1,
@@ -124,15 +153,16 @@ match entity.quote() {
                     // the listing's address and the demand's own key, so
                     // the court resolves which vertex is being answered
                     // (50.5 files one vertex per kind and chart).
-                    let mut target = cluster.address.clone().into_vec();
-                    target.extend_from_slice(
-                        &mycelium::transducer::sentence::demand_key(kind, chart),
+                    let target = mycelium::transducer::sentence::demand_at(
+                        cluster.address.as_bytes(),
+                        kind,
+                        chart,
                     );
                     // The cited form speaks in its OWN frame, so the
                     // placement is the identity (L14) and the transport
                     // carrying it there is the identity versor.
                     let cite = mycelium::anastome::dialogue::CiteWire {
-                        addr: el.address(),
+                        addr: cited.clone(),
                         standing: st.as_u8(),
                         transport: mycelium::transducer::element::identity_versor(),
                         gauge: 0,
@@ -152,8 +182,8 @@ match entity.quote() {
                                     kind.label(),
                                     cluster.address[0],
                                     cluster.address[1],
-                                    el.address()[0],
-                                    el.address()[1]
+                                    cited[0],
+                                    cited[1]
                                 );
                             }
                             mycelium::anastome::dialogue::PROBE_DESCENT => {

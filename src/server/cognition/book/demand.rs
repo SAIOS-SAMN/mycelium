@@ -1,0 +1,170 @@
+// L8q, 50.5 — A PROBE THAT ANSWERS ONE DEMAND VERTEX of a listed
+// sentence, settled on that vertex's own cells.
+//
+//! The older probe deflated a listing: subtract the cells the voice's
+//! words already cover and record what is left. It cannot produce a held
+//! generator, because nothing it does names a word — it names a smaller
+//! chain. A sentence carries demand vertices (50.5), each a (kind, chart)
+//! and the bodies it stands for; answering one is a claim about a FORM,
+//! and the court settles it by speaking that form itself.
+
+use crate::cognition::*;
+use crate::transducer::address::Address;
+
+/// The first two coordinate bytes of a key, for a journal line.
+fn short(k: &[u8]) -> String {
+    k.iter().take(2).map(|b| format!("{b:02x}")).collect()
+}
+
+impl Kernel {
+    /// SETTLE A PROBE AGAINST ONE DEMAND VERTEX.
+    ///
+    /// `at` is the listing; `demand` is the key 50.5 files the vertex
+    /// under. The court resolves the vertex on the listed sentence, frames
+    /// the demand's own bodies as a scene (`scene_at_of_chain`, 50.6 seam
+    /// 1 — both sides at one corner), and SPEAKS THE CITED FORM onto the
+    /// before side with `apply_form`. What the form says is measured
+    /// against the after side, cell by cell, in the demand's own
+    /// coordinates.
+    ///
+    /// THE COURT REPLAYS; IT DOES NOT TAKE THE VOICE'S WORD. The cited
+    /// address must be one this court holds, and the form spoken is the
+    /// one the court holds under it, so a voice cannot answer a demand by
+    /// asserting that it did.
+    ///
+    /// An empty residual is `PROBE_CLOSED`: the demand is answered, the
+    /// discoverer of the cited form is paid for the use, and WHAT answered
+    /// is recorded in `answered` — the address and the transport. The
+    /// listing stays on the book: a sentence has as many demands as it
+    /// has, and one answered vertex is not a closed sentence. What retires
+    /// it is the expansion (item 5).
+    ///
+    /// A non-empty residual is `PROBE_DESCENT`: the demand's chart carries
+    /// what the form did not reproduce, on the field, and NOTHING is
+    /// written to any magnitude — c50ef5f stands. A descent that writes a
+    /// cell count into a word's lanes makes the court slash its own
+    /// listing on the next circuit.
+    pub(crate) fn settle_demand(
+        &mut self,
+        voice: [u8; 32],
+        at: &[u8],
+        demand: &[u8],
+        cites: &[crate::anastome::dialogue::CiteWire],
+    ) -> (u8, [u64; 4], [u64; 4]) {
+        use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_DESCENT, PROBE_NOTHING};
+        use crate::transducer::family::{apply_form, scene_at_of_chain};
+        use crate::transducer::stalk::Closure;
+        let Some((listed, _)) = self.pending.get(at) else {
+            return (PROBE_NOTHING, [0; 4], [0; 4]);
+        };
+        let held = crate::transducer::element::Held::of(listed.clone());
+        let Some(form) = held.form() else {
+            return (PROBE_NOTHING, [0; 4], [0; 4]);
+        };
+        let Some(&vi) = form.demands.get(demand) else {
+            return (PROBE_NOTHING, [0; 4], [0; 4]);
+        };
+        let Some(crate::transducer::sentence::Vertex::Demand { chart, bodies, .. }) =
+            form.vertices.get(vi as usize)
+        else {
+            return (PROBE_NOTHING, [0; 4], [0; 4]);
+        };
+        let (chart, bodies) = (chart.clone(), bodies.clone());
+        let Some(((r0, c0), scene, image)) = scene_at_of_chain(&bodies) else {
+            return (PROBE_NOTHING, [0; 4], [0; 4]);
+        };
+        let _ = &image;
+        self.record_spoken(Address::from(at), voice);
+        // The measure the settlement is read against is the DEMAND's, not
+        // the listing's: this probe is about one vertex.
+        let before = element::measure_lanes(&bodies);
+        let placement = crate::transducer::alphabet::Word::identity();
+        // WHAT THE DEMAND STILL ASKS FOR, over all the cites the court can
+        // speak: a cell is still demanded only where NOTHING said its
+        // after colour. That is a fiber — the cells no citation reached —
+        // and never the shortest of several leftovers: choosing the cite
+        // with the fewest cells left would be a count deciding a branch
+        // (rule 2), and it would throw away what the other cites did say.
+        //
+        // A cite naming an address this court does not hold is not a
+        // refusal of the probe; it is a citation this court cannot replay,
+        // and the probe stands on the ones it can.
+        let mut open: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for &(r, c, _, _) in &bodies {
+            open.insert(crate::transducer::family::cell_pos_key(r, c), ());
+        }
+        let mut spoke: Option<(Address, element::Versor)> = None;
+        // ONE SPEND PER FORM THE COURT SPEAKS. `apply_form` perceives a
+        // whole grid, and how many citations a probe carries is the
+        // voice's to choose, not this court's — a settlement that speaks
+        // every one of them has no boundary of its own (rule 10). The
+        // citations beyond the stroke are not refused: what they would
+        // have said stays demanded, which is what the field records.
+        let mut spend = self.physics.stroke();
+        for cite in cites {
+            if !spend.spend() {
+                break;
+            }
+            let Some(word) = self.basis.get(&cite.addr) else { continue };
+            let Some(f) = word.form().cloned() else { continue };
+            let Some(sp) = apply_form(&f, &scene, &placement, self) else { continue };
+            let spoken = sp.grid();
+            // `scene_at_of_chain` gives the corner the framing subtracted,
+            // so the spoken cell goes back where the chain had it and
+            // nothing re-derives that corner here (law 12).
+            for &(r, c, _, a) in &bodies {
+                let said = spoken
+                    .get((r - r0) as usize)
+                    .and_then(|row| row.get((c - c0) as usize))
+                    .copied();
+                if said == Some(a) {
+                    open.remove(&crate::transducer::family::cell_pos_key(r, c));
+                }
+            }
+            if spoke.is_none() {
+                spoke = Some((Address::from_bytes(&cite.addr), cite.transport.clone()));
+            }
+        }
+        let Some((cited, transport)) = spoke else {
+            return (PROBE_NOTHING, [0; 4], [0; 4]);
+        };
+        let residual: Vec<(i64, i64, u8, u8)> = bodies
+            .iter()
+            .copied()
+            .filter(|&(r, c, _, _)| open.contains(&crate::transducer::family::cell_pos_key(r, c)))
+            .collect();
+        let after = element::measure_lanes(&residual);
+        if residual.is_empty() {
+            let anchor = self.anchor();
+            if let Some(word) = self.basis.get(cited.as_bytes()) {
+                let mag = word.magnitude();
+                if let Some(disc) = self.discoverer_of(cited.as_bytes()) {
+                    self.treasury.settle_use(voice, disc, mag, anchor);
+                }
+            }
+            let by = short(cited.as_bytes());
+            self.answered.nested_insert(at, demand, (cited, transport));
+            self.write_field(at, chart, Closure::Flat, Vec::new(), &before, &[0; 4]);
+            self.physics.relieve(&before);
+            self.physics.syntropy(&before);
+            self.append_step(crate::chronometry::ActKind::Settled, at, voice);
+            eprintln!("  court demand answered on {}… by {by}…", short(at));
+            return (PROBE_CLOSED, [0; 4], [0; 4]);
+        }
+        // WHAT WAS RELEASED IS WHAT WAS SAID, measured on the cells the
+        // citations actually reached — not the difference of two measures.
+        // Subtracting `after` from `before` assumes the residual's measure
+        // is below the demand's on every lane, which is a claim about
+        // `measure_lanes` and not something this settlement knows.
+        let reached: Vec<(i64, i64, u8, u8)> = bodies
+            .iter()
+            .copied()
+            .filter(|&(r, c, _, _)| !open.contains(&crate::transducer::family::cell_pos_key(r, c)))
+            .collect();
+        self.write_field(at, chart, Closure::Cavity, residual, &before, &after);
+        self.physics.relieve(&element::measure_lanes(&reached));
+        self.book_gen += 1;
+        self.append_step(crate::chronometry::ActKind::Settled, at, voice);
+        (PROBE_DESCENT, [0; 4], after)
+    }
+}

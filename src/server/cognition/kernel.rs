@@ -165,6 +165,19 @@ pub struct Kernel {
     /// Demand vertices this court has listed under a sentence (50.5, L7):
     /// a wire read of the `court demand listed` lines, never branched on.
     pub(crate) court_demands_listed: u64,
+    /// L8q — WHAT ANSWERED EACH DEMAND: per listing, per demand key, the
+    /// address of the form the court replayed onto that demand's own cells
+    /// and the transport it was carried by. This is the ONLY demand
+    /// carrier at the court: the demand vertices themselves live on the
+    /// sentence, which the book already holds, and a second copy of them
+    /// here would be the carrier that drifts (law 12).
+    ///
+    /// It is what item 5's expansion reads to know which vertex to expand
+    /// and by what, and what makes a probe's closure a fact about ONE
+    /// vertex rather than about a count of cells.
+    pub(crate) answered: crate::network::nerve::Keyed<
+        crate::network::nerve::Keyed<(crate::transducer::address::Address, element::Versor)>,
+    >,
     pub(crate) crt_imported: bool,
     /// Čech complex per chart: vertices are covering hyphas, coefficients
     /// are Rotor. One Keyed entry per cell; never Elements.

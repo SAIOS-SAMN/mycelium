@@ -118,7 +118,7 @@ impl Epigenome {
     /// The standing of a held address, read in the strata's own order
     /// (24.1): Ruled, then Stood. A word this epigenome does not hold has
     /// no standing here.
-    pub(crate) fn standing_of(&self, addr: &[u8]) -> Option<Standing> {
+    pub fn standing_of(&self, addr: &[u8]) -> Option<Standing> {
         if self.index.contains(addr) {
             return Some(Standing::Ruled);
         }
@@ -206,6 +206,24 @@ impl Epigenome {
     pub fn working_word(&self, addr: &[u8]) -> Option<&Held> {
         self.word_at(addr)
             .or_else(|| self.dialect.get(addr).map(|d| &d.sentence))
+    }
+
+    /// THE ADDRESSES STANDING ON ONE CHART (21 step 3) — the stratum, as
+    /// coordinates and nothing more.
+    ///
+    /// `Crystal::on_body` answers the same stratum with every element and
+    /// every form in it CLONED. A caller that means to speak one of them
+    /// and stop at the first that answers pays for all of them to find
+    /// out, and a caller that asks once per demand of a served page pays
+    /// that per demand: the page's charts times the words on each, with a
+    /// whole `Form` copied at every crossing. Thirty-two bytes per member
+    /// is the read; the form is fetched by key when it is about to be
+    /// spoken.
+    pub fn chart_stratum(&self, chart: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
+        let Some(bucket) = self.by_moduli.get(chart.key().as_bytes()) else {
+            return Vec::new();
+        };
+        bucket.fiber(crate::network::nerve::ROOT).map(|(a, ())| a).collect()
     }
 
     pub fn take_promoted(&mut self) -> Vec<Vec<u8>> {

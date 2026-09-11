@@ -25,6 +25,11 @@ pub const TAG_CELL: u8 = 14;
 pub const TAG_COCYCLE: u8 = 15;
 pub const TAG_TASK: u8 = 16;
 pub const TAG_DEMAND: u8 = 17;
+/// One demand vertex OF one listing (L8q): what a probe names when it
+/// answers a sentence rather than deflating it. 50.5 files one vertex per
+/// (kind, chart), so the listing's address alone cannot say which vertex
+/// a probe closes.
+pub const TAG_DEMAND_AT: u8 = 18;
 
 /// Canonical A21 coordinates of a form, listing, or class. Coarse-first:
 /// a proper prefix is a coarser stratum of the same kind, never a sibling.

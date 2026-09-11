@@ -186,3 +186,33 @@ pub fn demand_key(kind: &Demand, chart: &Invariant) -> Vec<u8> {
     crate::transducer::address::put_bytes(&mut buf, chart.key().as_bytes());
     buf
 }
+
+/// THE TARGET A PROBE NAMES WHEN IT ANSWERS ONE DEMAND (L8q): the
+/// listing's address and the demand's own key, both under one tag and
+/// each length-delimited, so the court reads them back apart without
+/// knowing how long either is. A probe at the listing's address alone
+/// cannot say which vertex it closes, and a court that cannot say that
+/// can only subtract cells.
+pub fn demand_at(listing: &[u8], kind: &Demand, chart: &Invariant) -> Vec<u8> {
+    let mut buf = vec![crate::transducer::address::TAG_DEMAND_AT];
+    crate::transducer::address::put_bytes(&mut buf, listing);
+    buf.extend_from_slice(&demand_key(kind, chart));
+    buf
+}
+
+/// Read such a target back as (listing address, demand key). `None` when
+/// the target names a listing and no vertex of it — which is the older
+/// probe, and stays a probe against the listing's own chain.
+pub fn read_demand_at(target: &[u8]) -> Option<(Vec<u8>, Vec<u8>)> {
+    let (&tag, _) = target.split_first()?;
+    if tag != crate::transducer::address::TAG_DEMAND_AT {
+        return None;
+    }
+    let mut p = 1usize;
+    let listing = crate::transducer::address::take_bytes(target, &mut p)?;
+    let demand = target.get(p..)?.to_vec();
+    if listing.is_empty() || demand.is_empty() {
+        return None;
+    }
+    Some((listing, demand))
+}

@@ -199,4 +199,30 @@ impl Kernel {
         &mut self.physics
     }
 
+    /// A VOICE HAS CLOSED ONE CHART OF A LISTING, and the transport it
+    /// closed by: the flat loop, filed once per (chart, voice). Recorded
+    /// beside the field because it is a reading of the same settlement.
+    pub(crate) fn record_flat(
+        &mut self,
+        listing: &[u8],
+        chart: crate::transducer::stalk::Invariant,
+        voice: [u8; 32],
+        g: element::Versor,
+    ) {
+        let key = crate::cognition::loop_key(&chart, &voice);
+        if self.flat_loops.get(listing).is_some_and(|m| m.contains(&key)) {
+            return;
+        }
+        match self.flat_loops.get_mut(listing) {
+            Some(m) => {
+                m.insert(key, (chart, g));
+            }
+            None => {
+                let mut m = crate::network::nerve::Keyed::new();
+                m.insert(key, (chart, g));
+                self.flat_loops.insert(listing, m);
+            }
+        }
+    }
+
 }

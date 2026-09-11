@@ -5,6 +5,7 @@
 //! it, and the language snapshot a reduction runs against.
 
 pub mod awaiting;
+pub mod demand;
 pub mod language;
 pub mod rewrite;
 pub mod listings;

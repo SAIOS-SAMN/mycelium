@@ -45,6 +45,15 @@ pub fn cells_to_grid(cells: &[(i64, i64, u8)]) -> Grid {
 /// artefact of two origins. `None` for an empty chain, which describes
 /// no scene.
 pub fn scene_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<(Grid, Grid)> {
+    scene_at_of_chain(chain).map(|(_, before, after)| (before, after))
+}
+
+/// The same scene, with THE CORNER IT WAS FRAMED AT. A caller that has to
+/// put a spoken cell back where the chain had it needs the origin the
+/// framing subtracted, and re-deriving that corner beside this reader is
+/// the second carrier for one fact (law 12) — one of them would be the
+/// one that drifts.
+pub fn scene_at_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<((i64, i64), Grid, Grid)> {
     let &(r0, c0, _, _) = chain.first()?;
     let (mut min_r, mut min_c, mut max_r, mut max_c) = (r0, c0, r0, c0);
     for &(r, c, _, _) in chain {
@@ -69,7 +78,7 @@ pub fn scene_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<(Grid, Grid)> {
         before[(r - min_r) as usize][(c - min_c) as usize] = b;
         after[(r - min_r) as usize][(c - min_c) as usize] = a;
     }
-    Some((before, after))
+    Some(((min_r, min_c), before, after))
 }
 
 #[cfg(test)]
