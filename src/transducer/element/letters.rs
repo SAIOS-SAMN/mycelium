@@ -186,7 +186,8 @@ pub fn dilator_of(v: &Versor) -> Option<Versor> {
 /// Ask it about a ROTATION and it answers exactly. Ask it to classify a
 /// versor — its order, whether it is the identity, what class it carries —
 /// and it answers wrongly, because a translation and a dilation both have
-/// the identity for a block. `meet_class` is that question's reader.
+/// the identity for a block. `cech::classify` is that question's reader,
+/// and it takes the rotor and the carriage rather than a versor.
 pub fn sensor_plane_block(v: &Versor) -> Option<[[Q; 2]; 2]> {
     let qn = |n: i64| num_rational::BigRational::from_integer(BigInt::from(n));
     let at = |r, c| crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&qn(r), &qn(c))));
@@ -196,127 +197,19 @@ pub fn sensor_plane_block(v: &Versor) -> Option<[[Q; 2]; 2]> {
     Some([[&er.0 - &o.0, &ec.0 - &o.0], [&er.1 - &o.1, &ec.1 - &o.1]])
 }
 
-/// WHAT A MEET'S TRANSITION IS (12.6, 15.5, 50.8 case 3). Three readings
-/// and none of them is a choice.
-#[derive(Debug, Clone)]
-pub enum MeetClass {
-    /// The two charts agree across the seam. Nothing to fill.
-    Flat,
-    /// A rotor of FINITE order about a point, with no placement or
-    /// dilation residue left over: a torsion class of this form, filed at
-    /// the period it closes at (15.5, A17). The sentence then carries the
-    /// class as its theorem and the demand does not stand on it.
-    Finite { ell: u32, rotor: Box<crate::transducer::alphabet::Rotor> },
-    /// Everything else the seventeen DO spell: an infinite-order rotor, a
-    /// placement residue, a dilation residue, or any product of them.
-    /// Nothing is filed and the demand stands CARRYING THIS CLASS, which
-    /// is what lets an arriving generator of the conjugate class close it
-    /// without a coordinator.
-    Standing { kappa: Box<crate::transducer::sentence::ClassVector> },
-    /// THE ROTOR PART EXISTS AND THE ALPHABET DOES NOT SPELL IT (37.7).
-    ///
-    /// This is not a worse `Standing`, and it is emphatically not `Flat`.
-    /// It is the adjunction's own condition met at a seam: a rotation the
-    /// seventeen cannot reach, standing on a prime outside them. It gets
-    /// its own arm because the alternative is to hand `ClassVector::read`
-    /// the identity word and file a class that says "this seam turns by
-    /// nothing", which is the invented value rule 11 refuses — and which
-    /// would silently consume every adjunction candidate the cover finds.
-    Unspellable { rotor: Box<crate::transducer::alphabet::Rotor>, carriage: Box<Versor> },
-}
-
-/// CLASSIFY A MEET'S TRANSITION, ON THE VERSOR (12.6).
-///
-/// The versor is factored exactly, `V = D(ρ)·T(t)·R`, by the three readers
-/// above; the rotor part is `R = T⁻¹·D⁻¹·V` and its order is read from the
-/// rotor, not from a matrix. `Finite` is returned ONLY when both residues
-/// are the identity, so a rotation carried along a translation is not
-/// mistaken for a pure rotation of the same order.
-///
-/// A rotation about a point away from the origin is `T_p R T_p⁻¹ =
-/// T(p − Rp)·R`: the placement residue is `p − Rp` and the rotor part is
-/// `R`, so this reads its order correctly where a block reading either
-/// mis-orders it or, for a pure translation or dilation, reads it as the
-/// identity and files nothing at all. That was measured: sixteen covers
-/// over twelve tasks filed nothing, and the last of them had a meet whose
-/// Γ was a translation and whose block was the identity.
-///
-/// `None` is not a class of transition: it is a versor these readers
-/// cannot factor — one that sends `e_∞` off itself or the origin to
-/// infinity — and an unfactored versor is unmeasured, never `Flat`
-/// (rule 11).
-pub fn meet_class(
-    gamma: &Versor,
-    hue: crate::transducer::sentence::CycleType,
-) -> Option<MeetClass> {
-    use crate::transducer::alphabet::{rotor_of_block, Order, PLANE_COL, PLANE_ROW};
-    use crate::transducer::sentence::ClassVector;
-    // Projective, because versors act projectively on the cone (1.5): a
-    // nonzero rational multiple of the identity is the identity.
-    if same_versor(gamma, &identity_versor()) {
-        return Some(MeetClass::Flat);
-    }
-    let t = translator_of(gamma)?;
-    let d = dilator_of(gamma)?;
-    let carriage = d.geo(&t);
-    let r = t.versor_inverse()?.geo(&d.versor_inverse()?).geo(gamma);
-    let flat_carriage = same_versor(&carriage, &identity_versor());
-    let plane = (PLANE_ROW, PLANE_COL);
-    let rotor = rotor_of_block(&sensor_plane_block(&r)?, plane);
-    // THE DUAL PLANE CANNOT REACH THIS READER, and it is worth saying why
-    // rather than adding a check that never fires. Spin(4) is SU(2) ×
-    // SU(2): a rotation of the rank-4 chart is two independent commuting
-    // rotations, in `e₀∧e₁` and in `e₂∧e₃`, and a reader that takes one
-    // plane's block reports a partial rotation as the whole transition —
-    // losing exactly the case where the two turn in OPPOSITE senses and
-    // the pair's order is the `lcm` of the two, an order neither plane has.
-    //
-    // But `gamma` is a VERSOR, and the versor algebra here is Cl(3,1) over
-    // `e1, e2, e+, e−`: the conformal algebra of a TWO-dimensional base,
-    // with exactly one rotation plane. The rank-4 chart with six planes is
-    // the ROTOR's algebra, Cl(4,0), a different space. Nothing off the
-    // sensor plane can be present in `gamma` to be discarded.
-    //
-    // The bridge between the two algebras is `sensor_action_of`, and that
-    // is where a second angle is lost.
-    // The rotor part is asked its ORDER, and the block is only how the
-    // rotor is recovered from the action. `Finite` needs both residues to
-    // be the identity: a quarter turn carried along a translation has the
-    // same rotor order as one about a fixed point and is not the same
-    // class, so filing it at period 4 would put a theorem on the form that
-    // the seam does not satisfy.
-    // Infinite order, or a rotor with no order over ℚ, falls through to
-    // the standing reading below, which writes the residues out even
-    // though they are the identity here — a class vector that omitted
-    // them would not be comparable with one that carries them.
-    if let (true, Some(Order::Finite(ell))) =
-        (flat_carriage, rotor.as_ref().and_then(|r| r.order()))
-    {
-        if let Some(rotor) = rotor {
-            return Some(MeetClass::Finite { ell, rotor: Box::new(rotor) });
-        }
-    }
-    // 12.6's order: the rotor's conjugacy class first, then the placement
-    // and dilation residues, which ride on the carriage. The word is the
-    // rotor's OWN spelling, and where the seventeen do not reach it there
-    // is no word to read a class from — that is 37.7's arm, not a class of
-    // the identity.
-    // A rotor part the rationals do not induce is one this reader could
-    // not factor. That is UNMEASURED and returns `None`: writing a class
-    // with the identity word and the true residues would assert the seam
-    // turns by nothing, which is the same invented value one line down.
-    // A pure translation does not land here — its rotor part is the
-    // identity versor, whose block is the identity and whose rotor is the
-    // identity rotor — so it stands with its placement residue, which is
-    // the reading the block collapse could not produce.
-    let r = rotor?;
-    match crate::transducer::alphabet::word_of_rotor(&r) {
-        Some(word) => Some(MeetClass::Standing {
-            kappa: Box::new(ClassVector::read(&word, carriage, hue)?),
-        }),
-        None => Some(MeetClass::Unspellable { rotor: Box::new(r), carriage: Box::new(carriage) }),
-    }
-}
+// A SECOND CLASSIFIER WAS HERE, on a versor, beside `cech::classify`
+// (L23b). It is deleted, name and all.
+//
+// One object in two carriers is law 12's own shape, and these two were
+// not even the same reading: this one took a versor and re-derived
+// `D(ρ)·T(t)·R` from it, so it could hold only the sensor plane's rotor
+// and lost the other five; `classify` is handed the two halves already
+// separated — the rotor in Cl(4,0) over all six planes, the carriage in
+// Cl(3,1) — by the caller that built them. The cover was still on this
+// one while L11e's commit claimed it was gone, so the voice read a
+// collapsed transition the court did not.
+//
+// Its five claims are asserted on `Fill` in `cech/tests/classify.rs`.
 
 /// `by V by⁻¹` on versors — the same conjugation `Rotor::conjugate` does,
 /// one algebra up. A conjugator that does not invert leaves `v` unmoved,

@@ -98,12 +98,32 @@ fn tally(f: impl Fn(&mut CoverTally)) {
 /// discrete: the two copies land apart, no ring touches, no 1-simplex is
 /// formed, and no cycle exists for a holonomy to be read around.
 struct Placed {
-    by: Versor,
+    /// The carriage's ROTOR and its `D(ρ)·T(t)`, kept apart (L11e). They
+    /// are not factored here: `word_or_demand` already separated them when
+    /// it built the vertex — the derivation's rotor and the vertex's
+    /// carriage — so the meet composes each half against its neighbour's
+    /// and hands both to `cech::classify`, exactly as `extend` does.
+    ///
+    /// A versor was kept instead, and the meet re-derived `D·T·R` from it
+    /// through a second classifier that could not hold a dual-plane rotor.
+    rotor: Rotor,
+    carriage: Versor,
     /// The hue map this carriage read cell by cell, which the transition
     /// at a meet composes against its neighbour's.
     sigma: Vec<(u8, u8)>,
     domain: Vec<(i64, i64)>,
     codomain: Vec<(i64, i64)>,
+}
+
+/// The rotor and the carriage a word vertex already carries. `None` for a
+/// vertex that is not a word, which the cover never places.
+fn halves_of(v: &Vertex) -> Option<(Rotor, Versor)> {
+    match v {
+        Vertex::Word { derivation, carriage, .. } => {
+            Some((derivation.rotor(), carriage.as_ref().clone()))
+        }
+        _ => None,
+    }
 }
 
 /// What the cover of one deformation reached. Every field is content, and
@@ -297,6 +317,7 @@ pub(crate) fn cover_deformation(
             // reader can factor, which is unmeasured and not a demand.
             None => continue,
         };
+        let Some((rotor, carriage)) = halves_of(&v) else { continue };
         for &(r, c, _) in pre.cells.iter().chain(op.body.cells.iter()) {
             reached.insert(cell_pos_key(r, c), ());
         }
@@ -306,7 +327,8 @@ pub(crate) fn cover_deformation(
         placed.insert(
             &key,
             Placed {
-                by: car.v.clone(),
+                rotor,
+                carriage,
                 sigma: car.sigma.clone(),
                 domain: support_of(&pre),
                 codomain: support_of(&op.body),
@@ -363,6 +385,7 @@ pub(crate) fn cover_deformation(
                 }
                 None => continue,
             };
+            let Some((rotor, carriage)) = halves_of(&v) else { continue };
             for &(r, c, _) in ip.body.cells.iter().chain(op.body.cells.iter()) {
                 reached.insert(cell_pos_key(r, c), ());
             }
@@ -370,7 +393,8 @@ pub(crate) fn cover_deformation(
             placed.insert(
                 &key,
                 Placed {
-                    by: car.v.clone(),
+                    rotor,
+                    carriage,
                     sigma: car.sigma.clone(),
                     domain: support_of(&ip.body),
                     codomain: support_of(&op.body),
@@ -443,11 +467,20 @@ pub(crate) fn cover_deformation(
                 let (Some(pa), Some(pb)) = (placed.get(&here[a]), placed.get(&here[b])) else {
                     continue;
                 };
-                let Some(inv) = pa.by.versor_inverse() else {
-                    // No versor: a remainder edge (13.9 step 7).
+                // THE TRANSITION, ON BOTH HALVES. Each is composed against
+                // its neighbour's in its own algebra — the rotors in
+                // Cl(4,0) over all six planes, the carriages in Cl(3,1) —
+                // exactly as `extend` composes a cell's. Nothing is
+                // re-factored: `word_or_demand` separated them when it
+                // built the vertex.
+                let (Some(ri), Some(ci)) =
+                    (pa.rotor.inverse(), pa.carriage.versor_inverse())
+                else {
+                    // No inverse: a remainder edge (13.9 step 7).
                     continue;
                 };
-                let gamma = pb.by.geo(&inv);
+                let gamma_r = pb.rotor.geo(&ri);
+                let gamma_c = pb.carriage.geo(&ci);
                 // THE GAUGE AROUND THE SEAM, composed and not assumed:
                 // σ_a takes the input's hues to a's, σ_b to b's, so the
                 // transition's own hue map is σ_b ∘ σ_a⁻¹. Passing the
@@ -456,11 +489,13 @@ pub(crate) fn cover_deformation(
                 let hue = crate::transducer::sentence::CycleType::of(&hue_transition(
                     &pa.sigma, &pb.sigma,
                 ));
-                // CLASSIFIED ON THE VERSOR (12.6). A `None` is a versor
-                // these readers cannot factor, which is unmeasured and
-                // neither flat nor standing.
-                match crate::transducer::element::meet_class(&gamma, hue) {
-                    Some(crate::transducer::element::MeetClass::Flat) => {
+                // ONE CLASSIFIER FOR BOTH ORGANS (L23b). The court reaches
+                // it through `extend`; the voice reaches it here. A second
+                // reader stood beside it, on a versor, which could not hold
+                // a dual-plane rotor and re-derived the factorisation this
+                // call is handed already separated.
+                match crate::transducer::cech::classify(&gamma_r, &gamma_c, hue) {
+                    crate::transducer::cech::Fill::Filled(..) => {
                         // Held locally, not tallied here. A cover that
                         // returns `Unmeasured` must contribute NOTHING —
                         // counting the flat meets it happened to reach
@@ -473,10 +508,10 @@ pub(crate) fn cover_deformation(
                         // where two pieces were placed.
                         flat += 1;
                     }
-                    Some(crate::transducer::element::MeetClass::Finite { ell, rotor }) => {
-                        cover.filed.insert(&key, (*rotor, ell));
+                    crate::transducer::cech::Fill::Congruent(rotor, ell) => {
+                        cover.filed.insert(&key, (rotor, ell));
                     }
-                    Some(crate::transducer::element::MeetClass::Standing { kappa }) => {
+                    crate::transducer::cech::Fill::Class(kappa, _) => {
                         cover.standing.insert(&key, *kappa);
                     }
                     // 37.7 AT A SEAM. Kept apart from `standing` because
@@ -485,10 +520,14 @@ pub(crate) fn cover_deformation(
                     // this is one the alphabet does not name at all. It is
                     // an adjunction candidate, and Vent 1 measures how many
                     // the cover finds.
-                    Some(crate::transducer::element::MeetClass::Unspellable { rotor, .. }) => {
+                    crate::transducer::cech::Fill::Unspellable(rotor) => {
                         cover.unspellable.insert(&key, *rotor);
                     }
-                    None => {}
+                    // `Open` is a transition these readers could not
+                    // factor: unmeasured, and neither flat nor standing.
+                    // `Already` never comes from `classify`.
+                    crate::transducer::cech::Fill::Open
+                    | crate::transducer::cech::Fill::Already => {}
                 }
             }
         }
@@ -512,4 +551,5 @@ pub(crate) fn cover_deformation(
 // `rotor_of_transition` was here. It classified a meet's transition by the
 // transition's sensor-plane block alone, which reads a translation or a
 // dilation as the identity and mis-orders a rotation about any point but
-// the origin. `element::meet_class` replaces it, on the versor.
+// the origin. `cech::classify` replaces it — the same reader the court
+// uses, taking the rotor and the carriage rather than a versor.

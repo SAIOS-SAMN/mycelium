@@ -4,4 +4,5 @@
 pub mod common;
 
 mod bianchi;
+mod classify;
 mod transitions;

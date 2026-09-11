@@ -132,10 +132,9 @@ pub fn classify(
         crate::transducer::alphabet::PLANE_ROW,
         crate::transducer::alphabet::PLANE_COL,
     );
-    if let Some(block) = crate::transducer::alphabet::rotor_block_on(rotor, plane) {
-        if crate::transducer::alphabet::word_of_block(&block, plane).is_none() {
-            return Fill::Unspellable(Box::new(rotor.clone()));
-        }
+    let acts_on_sensor = crate::transducer::alphabet::rotor_block_on(rotor, plane).is_some();
+    if acts_on_sensor && crate::transducer::alphabet::word_of_rotor(rotor).is_none() {
+        return Fill::Unspellable(Box::new(rotor.clone()));
     }
     match crate::transducer::sentence::ClassVector::of_rotor(rotor, carriage.clone(), hue) {
         Some(kappa) => Fill::Class(Box::new(kappa), Box::new(rotor.clone())),
