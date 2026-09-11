@@ -383,7 +383,15 @@ impl Exchange {
                             eprintln!("  court exchange deferred by {d}");
                             continue;
                         }
-                        if !admit_peer_digest(&mesh, &reply, &router) {
+                        // The digest is admitted BEFORE its receipt section
+                        // is read, and its refusal is tallied: a `continue`
+                        // here used to leave the exchange line saying
+                        // nothing at all, so three courts read zero
+                        // admitted receipts with no way to tell a refused
+                        // digest from a path that never ran (rule 11).
+                        let digest = admit_peer_digest(&mesh, &reply, &router);
+                        tally.note_digest(digest);
+                        if digest.is_err() {
                             continue;
                         }
                         let mut admitted = admit_peer_receipt(&kernel, &mesh, &reply);

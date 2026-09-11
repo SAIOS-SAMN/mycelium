@@ -116,6 +116,24 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> 
     out
 }
 
+/// Why one peer's digest was not admitted AT ALL — before any question of
+/// a receipt section. `admit_peer_digest` answered a bare `bool`, which is
+/// the same rule-11 fault [`NoAdmission`] names one paragraph down: the
+/// caller `continue`d on `false` and the exchange tally was never touched,
+/// so three courts read `court receipts … all zeros` while every digest
+/// was being dropped, and nothing in the journal could tell a refusal
+/// from a path that never ran. Measured on the fleet, epoch 10: 480 asks
+/// across three hyphae, zero receipts admitted, and no line saying why.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum NoDigest {
+    /// The body is not a cover digest — or two readings of it each consume
+    /// the buffer, and an ambiguity is a refusal (rule 11).
+    Unreadable,
+    /// The signature over the cover prefix does not verify under the key
+    /// the digest names.
+    Signature,
+}
+
 /// Why one peer's digest carried no admission. A `None` return with no
 /// reason is the rule-11 fault itself: an admission path that cannot say
 /// whether it refused, or never ran, is UNMEASURED, and a fleet reading
@@ -195,6 +213,9 @@ pub(crate) struct AdmissionTally {
     pub(crate) no_section: usize,
     pub(crate) malformed: usize,
     pub(crate) no_origin: usize,
+    /// The digest itself was refused, so no receipt was ever looked for.
+    pub(crate) digest_unreadable: usize,
+    pub(crate) digest_signature: usize,
 }
 
 impl AdmissionTally {
@@ -220,11 +241,20 @@ impl AdmissionTally {
         }
     }
 
+    /// A digest refused before any receipt could be read out of it.
+    pub(crate) fn note_digest(&mut self, r: Result<(), NoDigest>) {
+        match r {
+            Ok(()) => {}
+            Err(NoDigest::Unreadable) => self.digest_unreadable += 1,
+            Err(NoDigest::Signature) => self.digest_signature += 1,
+        }
+    }
+
     pub(crate) fn line(&self) -> String {
         format!(
             "  court receipts parent {} gap {} stale {} equivocation {} \
 refused-origin {} refused-signature {} refused-receipt {} \
-none {} malformed {} no-origin {}",
+none {} malformed {} no-origin {} digest-unreadable {} digest-signature {}",
             self.parent,
             self.gap,
             self.stale,
@@ -234,20 +264,26 @@ none {} malformed {} no-origin {}",
             self.receipt,
             self.no_section,
             self.malformed,
-            self.no_origin
+            self.no_origin,
+            self.digest_unreadable,
+            self.digest_signature
         )
     }
 }
 
-pub(crate) fn admit_peer_digest(mesh: &Mesh, body: &[u8], router: &Mutex<Router>) -> bool {
+pub(crate) fn admit_peer_digest(
+    mesh: &Mesh,
+    body: &[u8],
+    router: &Mutex<Router>,
+) -> Result<(), NoDigest> {
     let Some(dialogue::CoverDigest { charts, room, cover_roots, ruled_root, vk, bind: addr, sig }) =
         dialogue::decode_cover_digest(body)
     else {
-        return false;
+        return Err(NoDigest::Unreadable);
     };
     let prefix = dialogue::cover_signed_prefix(&cover_roots, &ruled_root, &room);
     if !mycelium::court::identity::verify(&vk, &prefix, &sig) {
-        return false;
+        return Err(NoDigest::Signature);
     }
     if let Ok(mut c) = mesh.cover.lock() {
         c.retract_hypha(&vk);
@@ -264,5 +300,5 @@ pub(crate) fn admit_peer_digest(mesh: &Mesh, body: &[u8], router: &Mutex<Router>
     if let Ok(mut r) = router.lock() {
         r.insert(vk, addr);
     }
-    true
+    Ok(())
 }
