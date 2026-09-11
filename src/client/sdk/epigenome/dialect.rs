@@ -96,9 +96,11 @@ impl Epigenome {
         }
         let inv = crate::transducer::stalk::invariant_of(&sentence);
         self.dialect_atlas.admit(&inv, addr.clone());
+        let shape = crate::transducer::element::shape_of_chain(sentence.sub());
+        // ONE DECODE, HERE, where the sentence stands (L16).
+        let sentence = crate::transducer::element::Held::of(sentence);
         self.axis_admit(&sentence);
         self.moduli_admit(&sentence);
-        let shape = crate::transducer::element::shape_of_chain(sentence.sub());
         self.dialect.insert(
             addr.clone(),
             Dialect {

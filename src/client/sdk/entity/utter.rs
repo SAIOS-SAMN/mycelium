@@ -137,9 +137,12 @@ impl Entity {
             .collect();
         let word_of = |i: usize| -> Option<&Element> {
             if i < n_genome {
-                self.epigenome.genome().get(i)
+                self.epigenome.genome().get(i).map(|h| h.element())
             } else {
-                dialect_addrs.get(i - n_genome).and_then(|a| self.epigenome.working_word(a))
+                dialect_addrs
+                    .get(i - n_genome)
+                    .and_then(|a| self.epigenome.working_word(a))
+                    .map(|h| h.element())
             }
         };
         // Standing is a coordinate on the cited word (Ruled, Stood, Held),
@@ -357,7 +360,7 @@ impl Entity {
                 // citer (chapter 6's depth order). The mind HOLDS it,
                 // because it derived through it.
                 Some(dialogue::Adjudication::Awaiting { form }) => {
-                    match self.epigenome.working_word(form.as_bytes()).cloned() {
+                    match self.epigenome.working_word(form.as_bytes()).map(|h| h.element().clone()) {
                         Some(cited) => {
                             eprintln!(
                                 "  awaiting {:02x}{:02x}…: the court has not ruled {:02x}{:02x}…, teaching it first",

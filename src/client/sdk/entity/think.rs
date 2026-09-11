@@ -218,7 +218,11 @@ impl Entity {
         let crate::transducer::bubble::drive::Expanded { pivoted, crystallized, orbit, .. } = {
             let epigenome = &self.epigenome;
             let atlas = epigenome.working_atlas();
-            let rotor_at = |a: &[u8]| epigenome.working_word(a).and_then(crate::transducer::cech::rotor_of);
+            let rotor_at = |a: &[u8]| {
+                epigenome
+                    .working_word(a)
+                    .and_then(|h| crate::transducer::cech::rotor_of(h.element()))
+            };
             self.contemplation
                 .expand_all(&atlas, &rotor_at, epigenome, &mut budget)
         };
@@ -294,7 +298,10 @@ impl Entity {
         if n <= self.thought_gen {
             return 0;
         }
-        let added: Vec<Element> = self.epigenome.genome()[self.thought_gen..].to_vec();
+        let added: Vec<Element> = self.epigenome.genome()[self.thought_gen..]
+            .iter()
+            .map(|h| h.element().clone())
+            .collect();
         self.thought_gen = n;
         let mut spoken = 0usize;
         for w in &added {

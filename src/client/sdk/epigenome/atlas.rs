@@ -2,11 +2,13 @@
 // the index that reaches it by address.
 
 use crate::client::sdk::*;
-use crate::transducer::element::Element;
+use crate::transducer::element::{Element, Held};
 
 impl Epigenome {
-    /// The held word at an address, read from the key.
-    pub fn word_at(&self, addr: &[u8]) -> Option<&Element> {
+    /// The held word at an address, read from the key. A `Held`, so its
+    /// form is a field and not a decode this read performs (L16); it
+    /// derefs to the element, so every element reader takes it unchanged.
+    pub fn word_at(&self, addr: &[u8]) -> Option<&Held> {
         self.index.get(addr).and_then(|&i| self.genome.get(i))
     }
 
@@ -36,8 +38,10 @@ impl Epigenome {
     }
 
     /// Deepen a held word's fiber with a section this genome verified.
+    /// Through `Held::update`, so the form is re-decoded with the word and
+    /// the two cannot describe different tapes.
     pub fn puncture(&mut self, i: usize, asg: Vec<(u8, u8)>) -> bool {
-        self.genome.get_mut(i).is_some_and(|w| w.puncture(asg))
+        self.genome.get_mut(i).is_some_and(|w| w.update(|e| e.puncture(asg)))
     }
 
     pub fn new() -> Self {
@@ -67,7 +71,7 @@ impl Epigenome {
     /// closed is not filed — 13.6 lets a citer reuse a cited form's verdict
     /// only because the cited form is closed, and `Form::glue` refuses an
     /// unclosed one.
-    pub(crate) fn moduli_admit(&mut self, e: &Element) {
+    pub(crate) fn moduli_admit(&mut self, e: &Held) {
         let addr = e.address();
         for chart in body_charts_of(e) {
             self.by_moduli.nested_insert(chart.key(), &addr, ());
@@ -98,7 +102,7 @@ impl Epigenome {
 
     /// Empty what `moduli_admit` filled: a word that sheds, is retired, or
     /// is promoted leaves the index with the stratum it left.
-    pub(crate) fn moduli_retract(&mut self, e: &Element) {
+    pub(crate) fn moduli_retract(&mut self, e: &Held) {
         let addr = e.address();
         for chart in body_charts_of(e) {
             if let Some(bucket) = self.by_moduli.get_mut(chart.key().as_bytes()) {
@@ -128,7 +132,7 @@ impl Epigenome {
 /// The charts of the bodies a closed sentence's word vertices carry. A
 /// `Vertex::Word` states the chart it acts on (18.2); nothing is measured
 /// here and no cell is read.
-pub(crate) fn body_charts_of(e: &Element) -> Vec<crate::transducer::stalk::Invariant> {
+pub(crate) fn body_charts_of(e: &Held) -> Vec<crate::transducer::stalk::Invariant> {
     let Some(f) = e.form() else {
         return Vec::new();
     };
@@ -157,7 +161,7 @@ impl Epigenome {
         self.genome.len()
     }
 
-    pub fn genome(&self) -> &[Element] {
+    pub fn genome(&self) -> &[Held] {
         &self.genome
     }
 
@@ -197,8 +201,9 @@ impl Epigenome {
         }
     }
 
-    /// A word on the working language: genome first, then dialect.
-    pub fn working_word(&self, addr: &[u8]) -> Option<&Element> {
+    /// A word on the working language: genome first, then dialect. Both
+    /// strata hold a `Held`, so the form is read and never decoded here.
+    pub fn working_word(&self, addr: &[u8]) -> Option<&Held> {
         self.word_at(addr)
             .or_else(|| self.dialect.get(addr).map(|d| &d.sentence))
     }
@@ -280,9 +285,11 @@ impl Epigenome {
         let shapes = &self.shapes;
         let word_at = |i: usize| -> Option<&Element> {
             if i < n {
-                genome.get(i)
+                genome.get(i).map(|h| h.element())
             } else {
-                dialect_addrs.get(i - n).and_then(|a| dialect.get(a).map(|d| &d.sentence))
+                dialect_addrs
+                    .get(i - n)
+                    .and_then(|a| dialect.get(a).map(|d| d.sentence.element()))
             }
         };
         let index_of = |a: &[u8]| -> Option<usize> {

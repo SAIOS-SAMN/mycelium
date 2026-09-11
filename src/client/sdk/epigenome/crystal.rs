@@ -19,18 +19,19 @@ impl crate::transducer::family::Crystal for Epigenome {
             .fiber(class)
             .into_iter()
             .filter_map(|(a, st)| {
-                // THE FORM IS READ OFF THE HELD ELEMENT (L16), which
-                // memoises the decode: the tape is parsed once for a word
-                // this mind holds, not once per read of it. Decoding a
-                // fresh clone instead re-parsed the tape every call, which
-                // made the cipher's carrier the working memory of the
-                // organ.
+                // THE FORM IS A FIELD OF THE HELD WORD (L16). The tape was
+                // decoded once, when this mind took the word in; this read
+                // performs no decode at all. Read off a fresh clone, the
+                // tape was re-parsed every call, which made the cipher's
+                // carrier the working memory of the organ — the workaround
+                // was to read off the held element, and `Held` is what that
+                // workaround was reaching for.
                 let held = self.working_word(&a)?;
                 let f = held.form()?.clone();
                 if !f.is_closed() {
                     return None;
                 }
-                Some((held.clone(), f, st))
+                Some((held.element().clone(), f, st))
             })
             .collect()
     }
@@ -58,7 +59,7 @@ impl crate::transducer::family::Crystal for Epigenome {
                 if !f.is_closed() {
                     return None;
                 }
-                Some((held.clone(), f, st))
+                Some((held.element().clone(), f, st))
             })
             .collect()
     }
@@ -78,7 +79,7 @@ impl crate::transducer::family::Crystal for Epigenome {
     ) -> Option<(Element, crate::transducer::sentence::Form)> {
         let held = self.working_word(addr)?;
         let f = held.form()?.clone();
-        Some((held.clone(), f))
+        Some((held.element().clone(), f))
     }
 
     fn on_axis(

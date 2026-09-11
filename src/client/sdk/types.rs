@@ -61,7 +61,9 @@ impl Eq for Comprehension {}
 /// Memory only; never serialized.
 #[derive(Debug, Clone)]
 pub struct Dialect {
-    pub sentence: Element,
+    /// The sentence AS THIS MIND HOLDS IT (L16): its tape decoded once
+    /// when it stood, not once per reader that asks for its form.
+    pub sentence: crate::transducer::element::Held,
     pub last_used_k: u64,
     /// TUniversal of last working-atlas read or stand.
     pub last_used_tu: u64,
@@ -266,7 +268,11 @@ pub struct GenomeView<'a> {
 
 #[derive(Default)]
 pub struct Epigenome {
-    pub(crate) genome: Vec<Element>,
+    /// THE CRYSTALLIZED LANGUAGE AS THIS MIND HOLDS IT (L16): each word
+    /// with the form its tape decodes to, decoded once at the admission.
+    /// Held as `Element`, every reader that wanted a form decoded the tape
+    /// behind a `OnceLock` that a clone did not carry.
+    pub(crate) genome: Vec<crate::transducer::element::Held>,
     /// Expression weighting per genome word — how often this entity speaks/hears
     /// it (the recollection efficiency; parallel to `genome`).
     pub(crate) expression: Vec<u64>,

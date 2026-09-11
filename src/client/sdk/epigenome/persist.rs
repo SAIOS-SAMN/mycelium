@@ -50,7 +50,9 @@ impl Epigenome {
             pos += len;
             let mut ep = 0usize;
             match Element::from_bytes(slice, &mut ep) {
-                Some(e) => genome.push(e),
+                // The tape is decoded to a form HERE, once, as the word is
+                // taken in — not on the first read of its form (L16).
+                Some(e) => genome.push(crate::transducer::element::Held::of(e)),
                 None => {
                     // Previous GEN1 layouts (pre-fibre-index tails, a
                     // word that will not uncrystallize) must not sink the
@@ -87,7 +89,7 @@ impl Epigenome {
             );
             self.shapes.push(std::sync::OnceLock::new());
         }
-        let restored: Vec<crate::transducer::element::Element> = self.genome.clone();
+        let restored: Vec<crate::transducer::element::Held> = self.genome.clone();
         for w in &restored {
             self.moduli_admit(w);
         }

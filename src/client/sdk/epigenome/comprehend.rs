@@ -213,7 +213,9 @@ impl Epigenome {
             // spoke the number; the chain those cells form is the element
             // the mind lacks, and a hypha can docket that.
             _ => {
-                let open = located.open(self.genome(), utterance.sub());
+                let genome = &self.genome;
+                let open = located
+                    .open_at(&|i| genome.get(i).map(|h| h.element()), utterance.sub());
                 let understood: Vec<(Vec<u8>, Standing)> = located
                     .cites
                     .iter()
@@ -391,34 +393,39 @@ impl Epigenome {
             let uses = self.dialect.get(&da).map(|d| d.uses).unwrap_or(1);
             self.drop_dialect(&da);
             if let Some(i) = self.same_vertex_in_genome(&e) {
-                let _ = self.genome[i].merge_fibre(&e);
+                // Through `Held::update`: the fibre deepens and the form is
+                // re-decoded with it, so the two describe one tape (L16).
+                let _ = self.genome[i].update(|w| w.merge_fibre(&e));
                 if let Some(x) = self.expression.get_mut(i) {
                     *x = x.saturating_add(uses);
                 }
             } else {
-                self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
-                self.axis_admit(&e);
-                self.moduli_admit(&e);
+                let held = crate::transducer::element::Held::of(e);
+                self.atlas.admit(&crate::transducer::stalk::invariant_of(&held), held.address());
+                self.axis_admit(&held);
+                self.moduli_admit(&held);
                 self.shapes.push(std::sync::OnceLock::new());
                 self.atlas_len = self.atlas_len.saturating_add(1);
-                self.index.insert(e.address(), self.genome.len());
-                self.genome.push(e);
+                self.index.insert(held.address(), self.genome.len());
+                self.genome.push(held);
                 self.expression.push(uses);
             }
             self.promoted.push(addr.into_vec());
             return Some(heard);
         }
         let arrived = e.clone();
+        // ONE DECODE, HERE, where the word is taken in.
+        let held = crate::transducer::element::Held::of(e);
         match self.index.get(&addr).copied() {
-            Some(i) => self.genome[i] = e,
+            Some(i) => self.genome[i] = held,
             None => {
-                self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
-                self.axis_admit(&e);
-                self.moduli_admit(&e);
+                self.atlas.admit(&crate::transducer::stalk::invariant_of(&held), held.address());
+                self.axis_admit(&held);
+                self.moduli_admit(&held);
                 self.shapes.push(std::sync::OnceLock::new());
                 self.atlas_len = self.atlas_len.saturating_add(1);
-                self.index.insert(e.address(), self.genome.len());
-                self.genome.push(e);
+                self.index.insert(held.address(), self.genome.len());
+                self.genome.push(held);
                 self.expression.push(0);
             }
         }
