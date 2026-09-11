@@ -520,7 +520,12 @@ pub struct YieldQuote {
 pub struct Cluster {
     pub address: crate::transducer::address::Address,
     pub mu: [u64; 4],
-    pub chain: Vec<(i64, i64, u8, u8)>,
+    /// The listing WHOLE, as the judge served it (L8q). It was the
+    /// coboundary cells alone, so a served sentence reached the voice with
+    /// its demand vertices stripped and the only move left was to subtract
+    /// cells; `Held::of` rebuilds the form and `demand_vertices` names what
+    /// it could not spell.
+    pub element: Vec<u8>,
     /// Open (non-flat) charts of the listing's coherence field. The entity
     /// reads these against its own atlas; several may close, none is ranked.
     pub open: Vec<crate::transducer::stalk::Invariant>,

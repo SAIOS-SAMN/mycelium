@@ -63,115 +63,117 @@ match entity.quote() {
         let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
         let (mut n_closing, mut n_ruled_hit, mut n_stood, mut n_held) = (0u32, 0u32, 0u32, 0u32);
         for cluster in &q.clusters {
-            if cluster.chain.is_empty() {
+            // THE LISTING ARRIVES WHOLE (L8q). It was a chain of cells, so
+            // the only move here was `conclude_listing` — subtract the
+            // cells held words already cover and probe with what deflated.
+            // That is deflation, and it never produced a held generator on
+            // any fleet reading: a listing closed by subtraction leaves no
+            // word behind it.
+            let mut pos = 0usize;
+            let Some(e) = mycelium::transducer::element::Element::from_bytes(&cluster.element, &mut pos)
+            else {
                 continue;
-            }
-            // THINK, then CONVERSE. Incidence is deconstruction:
-            // every served listing is concluded. Chart keys route;
-            // they never decide comprehension.
-            let mycelium::sdk::Concluded { cites, residual, familiar } =
-                entity.conclude_listing(&cluster.chain);
-            eprintln!(
-                "[{tag}] [{}] cluster {} cells: concluded -> {} cites, {} residual{}",
-                mycelium::chronometry::Height::stamp_of(entity.now_tu()),
-                cluster.chain.len(),
-                cites.len(),
-                residual.len(),
-                if familiar { " (familiar)" } else { "" },
-            );
-            if residual == cluster.chain {
+            };
+            let held = mycelium::transducer::element::Held::of(e);
+            // A SENTENCE IS WHAT CAN BE ANSWERED. A listing that is not one
+            // carries no demand vertex and asks this voice nothing; it is
+            // silent here rather than deflated (rule 11).
+            let Some(form) = held.form() else {
                 n_silent += 1;
-                eprintln!(
-                    "[{tag}] listing {:02x}{:02x}… held: no held word deflates it",
-                    cluster.address[0], cluster.address[1]
-                );
+                continue;
+            };
+            let demands: Vec<_> = form
+                .demand_vertices()
+                .map(|(_, kind, chart, cells)| (kind.clone(), chart.clone(), cells.to_vec()))
+                .collect();
+            if demands.is_empty() {
+                n_silent += 1;
                 continue;
             }
             eprintln!(
-                "[{tag}] listing {:02x}{:02x}… reduced by {} cites: residual {} of {}",
+                "[{tag}] listing {:02x}{:02x}… carries {} demands",
                 cluster.address[0],
                 cluster.address[1],
-                cites.len(),
-                residual.len(),
-                cluster.chain.len()
+                demands.len()
             );
-            n_closing += cites.len() as u32;
-            for mycelium::anastome::dialogue::CiteWire { standing: st, .. } in &cites {
-                match mycelium::sdk::Standing::from_u8(*st) {
-                    Some(mycelium::sdk::Standing::Stood) => n_stood += 1,
-                    Some(mycelium::sdk::Standing::Held) => n_held += 1,
-                    Some(mycelium::sdk::Standing::Ruled) => n_ruled_hit += 1,
-                    None => {}
-                }
-            }
-            // MULTIPLICITY: several held words deflated one listing.
-            // The glue between them is a new coordinate, never a
-            // failure axis. A held cite carries the body its vertex
-            // reconstructed (24.1), and the glue is read off the bodies.
-            let held: Vec<Vec<(i64, i64, u8, u8)>> = cites
-                .iter()
-                .filter(|c| c.standing == mycelium::sdk::Standing::Held.as_u8())
-                .map(|c| c.body.clone())
-                .collect();
-            // "MULTIPLICITY OPENS AN AXIS. `open_axis` fires when several
-            // held words deflate one listing at once, and the glue between
-            // them is the new coordinate" (24.3). Several is a SHAPE -- two
-            // or more, so there is a glue to be the coordinate -- and it is
-            // read off the slice. `held.len() >= 2` is rule 2's "a count is
-            // never a branch"; the shape says which case it is without
-            // measuring anything.
-            if let [_, _, ..] = held.as_slice() {
-                match entity.open_axis(&cluster.address, &cluster.chain, &held) {
-                    Ok(a) => eprintln!(
-                        "[{tag}] axis opened on {:02x}{:02x}…: {} held words deflated, glue spoken as {:02x}{:02x}…",
-                        cluster.address[0],
-                        cluster.address[1],
-                        held.len(),
-                        a[0],
-                        a[1]
-                    ),
-                    // Tried in this language already: said once, not per quote.
-                    Err(mycelium::sdk::AXIS_TRIED) => {}
-                    Err(why) => eprintln!(
-                        "[{tag}] axis refused {:02x}{:02x}…: {why}",
-                        cluster.address[0], cluster.address[1]
-                    ),
-                }
-            }
-            // One utterance: the sentence probes the listing. A residual
-            // no held word covers is this voice's own thought, held
-            // (24.2) and never attested as a chain (law 8, ruled
-            // 2026-09-10). Puncture cites (u32::MAX sections) are speech,
-            // not silence.
-            if let (0, []) = (cites.len(), residual.as_slice()) {
-                n_silent += 1;
-                continue;
-            }
-            let mag = measure_lanes(&cluster.chain);
-            StrokeOutcome::add(&mut outcome.uttered, &mag);
-            if !cites.is_empty() {
-                match entity.probe(&cluster.address, &cites) {
-                    Ok((code, _paid, _remaining)) => match code {
-                        mycelium::anastome::dialogue::PROBE_CLOSED => {
-                            c.derived += 1;
-                            n_closed += 1;
-                            physics.bump(&mag);
-                            StrokeOutcome::add(&mut outcome.closed, &mag);
-                            let _ = entity.puncture_verified(&cites);
-                        }
-                        mycelium::anastome::dialogue::PROBE_DESCENT => {
-                            c.witnessed += 1;
-                            n_descent += 1;
-                            physics.bump(&mag);
-                            let _ = entity.puncture_verified(&cites);
-                        }
-                        mycelium::anastome::dialogue::PROBE_SETTLED => n_settled += 1,
-                        _ => n_nothing += 1,
-                    },
-                    Err(_) => {
-                        c.errors += 1;
-                        n_err += 1;
+            for (kind, chart, cells) in &demands {
+                // 50.5, L8r: the held CLOSED forms carrying a body on this
+                // demand's own chart. The chart routes; what decides is
+                // whether the form reproduces the demand's cells, which is
+                // exactly how extraction step 3 decides a glue.
+                let carriers = mycelium::transducer::family::Crystal::on_body(
+                    &entity.epigenome,
+                    chart,
+                );
+                let mut answered = false;
+                for (el, f, st) in carriers {
+                    if !f.is_closed() {
+                        continue;
                     }
+                    if !reproduces(&entity.epigenome, &f, cells) {
+                        continue;
+                    }
+                    match mycelium::sdk::Standing::from_u8(st.as_u8()) {
+                        Some(mycelium::sdk::Standing::Stood) => n_stood += 1,
+                        Some(mycelium::sdk::Standing::Held) => n_held += 1,
+                        Some(mycelium::sdk::Standing::Ruled) => n_ruled_hit += 1,
+                        None => {}
+                    }
+                    n_closing += 1;
+                    // THE TARGET NAMES THE DEMAND, not just the sentence:
+                    // the listing's address and the demand's own key, so
+                    // the court resolves which vertex is being answered
+                    // (50.5 files one vertex per kind and chart).
+                    let mut target = cluster.address.clone().into_vec();
+                    target.extend_from_slice(
+                        &mycelium::transducer::sentence::demand_key(kind, chart),
+                    );
+                    // The cited form speaks in its OWN frame, so the
+                    // placement is the identity (L14) and the transport
+                    // carrying it there is the identity versor.
+                    let cite = mycelium::anastome::dialogue::CiteWire {
+                        addr: el.address(),
+                        standing: st.as_u8(),
+                        transport: mycelium::transducer::element::identity_versor(),
+                        gauge: 0,
+                        body: cells.clone(),
+                    };
+                    let mag = measure_lanes(cells);
+                    StrokeOutcome::add(&mut outcome.uttered, &mag);
+                    match entity.probe(&target, std::slice::from_ref(&cite)) {
+                        Ok((code, _paid, _remaining)) => match code {
+                            mycelium::anastome::dialogue::PROBE_CLOSED => {
+                                c.derived += 1;
+                                n_closed += 1;
+                                physics.bump(&mag);
+                                StrokeOutcome::add(&mut outcome.closed, &mag);
+                                eprintln!(
+                                    "[{tag}] demand {} on {:02x}{:02x}… closed by {:02x}{:02x}…",
+                                    kind.label(),
+                                    cluster.address[0],
+                                    cluster.address[1],
+                                    el.address()[0],
+                                    el.address()[1]
+                                );
+                            }
+                            mycelium::anastome::dialogue::PROBE_DESCENT => {
+                                c.witnessed += 1;
+                                n_descent += 1;
+                                physics.bump(&mag);
+                            }
+                            mycelium::anastome::dialogue::PROBE_SETTLED => n_settled += 1,
+                            _ => n_nothing += 1,
+                        },
+                        Err(_) => {
+                            c.errors += 1;
+                            n_err += 1;
+                        }
+                    }
+                    answered = true;
+                    break;
+                }
+                if !answered {
+                    n_silent += 1;
                 }
             }
         }
@@ -217,4 +219,36 @@ if !occluded
         }
     }
 }
+}
+
+/// DOES THIS HELD FORM REPRODUCE THE DEMAND'S CELLS (50.5, 21 step 3)?
+///
+/// The demand carries the bodies it stands for as `(row, col, before,
+/// after)` (50.5), which is a scene and its image in one carrier. The form
+/// is spoken on the BEFORE side and what it says must lie in the AFTER
+/// side — `cells_subset_of_grid`, exactly the test extraction's step 3
+/// uses to decide a glue, so a voice answering a demand and a mind gluing
+/// a form apply one reading.
+///
+/// BOTH GRIDS ARE FRAMED FROM ONE MIN-CORNER by `scene_of_chain`, which is
+/// 50.6 seam 1's own reader and already says why: "both at the chain's own
+/// min-corner, so the motion between them is the chain's and never an
+/// artefact of two origins". Framing each side separately would let a
+/// before-side with no cell in row 0 slide against its after-side.
+///
+/// The placement is the IDENTITY: a cited form speaks in its own frame
+/// (L14), which is what `apply_form` places by.
+fn reproduces(
+    epi: &mycelium::sdk::Epigenome,
+    f: &mycelium::transducer::sentence::Form,
+    cells: &[(i64, i64, u8, u8)],
+) -> bool {
+    let Some((before, after)) = mycelium::transducer::family::scene_of_chain(cells) else {
+        return false;
+    };
+    let placement = mycelium::transducer::alphabet::Word::identity();
+    mycelium::transducer::family::Crystal::speak_form(epi, f, &before, &placement)
+        .is_some_and(|sp| {
+            mycelium::transducer::family::cells_subset_of_grid(&sp.cells, &after)
+        })
 }

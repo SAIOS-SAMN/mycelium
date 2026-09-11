@@ -21,10 +21,25 @@ fn the_five_acts_round_trip() {
         body: chain.clone(),
     }];
     assert_eq!(decode_quote_request(&encode_quote_request(&voice)).unwrap(), (voice, Vec::new()));
+    // L8q: the listing rides WHOLE. The field carries an element's own
+    // bytes, so the round trip is over what the court actually serves and
+    // what the voice actually decodes — not over a chain of cells the
+    // voice could only subtract from.
+    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
+    let word = crate::transducer::alphabet::Word::from_letters(&[(q, false)]);
+    let element = crate::transducer::element::from_connection(
+        &word,
+        &crate::transducer::element::identity_versor(),
+        &[],
+        &Vec::new(),
+        [1, 0, 0, 0],
+    )
+    .expect("a connection on the plane")
+    .to_bytes();
     let items = vec![WorkItem {
         addr: listing.clone(),
         mu: [1, 2, 30, 4],
-        chain: chain.clone(),
+        element,
         open: Vec::new(),
     }];
     let (h, s, k, it) = decode_quote_reply(&encode_quote_reply(3, &[5, 0, 9, 0], 4208, &items)).unwrap();

@@ -470,16 +470,26 @@ pub const SOLVE_NOTHING: u8 = 0;
 /// One centered coboundary cell `(row, col, before, after)`.
 pub type Cell = (i64, i64, u8, u8);
 
-/// One quoted work item: the residual's address, its priced μ⃗, the chain,
-/// and the open (non-flat) charts of its coherence field.
+/// One quoted work item: the listing's address, its priced μ⃗, the listing
+/// WHOLE, and the open (non-flat) charts of its coherence field.
+///
+/// THE WHOLE ELEMENT, NOT ITS CELLS (L8q). This carried `chain: Vec<Cell>`
+/// — a flat projection of a coboundary — so the only move a voice had was
+/// to subtract cells it held, which is deflation and not comprehension. A
+/// listing is an `Element`, and served whole it may be a SENTENCE carrying
+/// demand vertices (50.5) naming what it could not spell; answering one
+/// with a word another mind holds is the market.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WorkItem {
-    /// The residual's address — what a demand for it is filed under.
+    /// The listing's address — what a demand for it is filed under.
     pub addr: Address,
     /// Its priced μ⃗, per lane.
     pub mu: [u64; 4],
-    /// The chain itself: real, attemptable work, not a pointer to it.
-    pub chain: Vec<Cell>,
+    /// The listing itself. The encoding is injective — `from_element_form`
+    /// rebuilds the same vertices, faces, loops and demands — so nothing is
+    /// flattened by crossing; what is refused is READING these bytes, since
+    /// identity is re-derived by `same_vertex` (law 2, 1.7).
+    pub element: Vec<u8>,
     /// The OPEN (non-flat) charts of its coherence field.
     pub open: Vec<crate::transducer::stalk::Invariant>,
 }

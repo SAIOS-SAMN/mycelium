@@ -310,7 +310,10 @@ pub(crate) fn frame_of(g: &Grid) -> (usize, usize) {
     (g.len(), g.first().map_or(0, |r| r.len()))
 }
 
-pub(crate) fn cells_subset_of_grid(cells: &[Cell3], g: &Grid) -> bool {
+/// Does everything a form spoke lie inside the grid it was spoken against?
+/// The test extraction's step 3 decides a glue by, and the same test a
+/// voice answers a demand by (L8q), so the two organs read one thing.
+pub fn cells_subset_of_grid(cells: &[Cell3], g: &Grid) -> bool {
     cells.iter().all(|&(r, c, h)| {
         g.get(r as usize)
             .and_then(|row| row.get(c as usize))

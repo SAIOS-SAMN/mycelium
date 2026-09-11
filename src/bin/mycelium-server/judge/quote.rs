@@ -26,7 +26,11 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         .map(|p| dialogue::WorkItem {
             addr: p.word.address(),
             mu: p.mu,
-            chain: p.word.sub().to_vec(),
+            // THE LISTING WHOLE (L8q). Served as `sub()` this carried the
+            // coboundary cells alone, so a sentence listing reached a voice
+            // with its demand vertices stripped and the only move left was
+            // to subtract cells.
+            element: p.word.to_bytes(),
             open: p.open.clone(),
         })
         .collect();

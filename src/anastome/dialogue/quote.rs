@@ -132,15 +132,17 @@ pub fn encode_quote_reply_within(height: u64, surface: &[u64; 4], k: u64, items:
     let count_at = out.len();
     out.push(0);
     let mut served = 0u8;
-    for WorkItem { addr, mu, chain, open } in items.iter().take(255) {
+    for WorkItem { addr, mu, element, open } in items.iter().take(255) {
         let open_len: usize = 1 + open.iter().map(|i| 1 + 8 * i.0.len().min(255)).sum::<usize>();
-        let item_len = 2 + addr.len() + 32 + 4 + chain.len() * 18 + open_len;
+        let item_len = 2 + addr.len() + 32 + 4 + element.len() + open_len;
         if out.len() + item_len > budget {
             break;
         }
         let _ = put_addr(&mut out, addr);
         push_mu(&mut out, mu);
-        push_chain(&mut out, chain);
+        // The listing whole, length-prefixed as the cells were.
+        out.extend_from_slice(&(element.len() as u32).to_le_bytes());
+        out.extend_from_slice(element);
         out.push(open.len().min(255) as u8);
         for inv in open.iter().take(255) {
             push_invariant(&mut out, inv);
@@ -167,14 +169,19 @@ pub fn decode_quote_reply(body: &[u8]) -> Option<(u64, [u64; 4], u64, Vec<WorkIt
     for _ in 0..n {
         let addr = take_addr(body, &mut p)?;
         let mu = read_mu(body, &mut p)?;
-        let chain = read_chain(body, &mut p)?;
+        // The listing whole, refused before it is allocated if the count
+        // does not fit what is left (an untrusted length, as everywhere).
+        let tlen = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+        p += 4;
+        let element = body.get(p..p + tlen)?.to_vec();
+        p += tlen;
         let nopen = *body.get(p)? as usize;
         p += 1;
         let mut open = Vec::with_capacity(nopen);
         for _ in 0..nopen {
             open.push(read_invariant(body, &mut p)?);
         }
-        items.push(WorkItem { addr, mu, chain, open });
+        items.push(WorkItem { addr, mu, element, open });
     }
     Some((height, surface, k, items))
 }

@@ -342,7 +342,7 @@ impl Session {
                         .map(|i| Cluster {
                             address: i.addr,
                             mu: i.mu,
-                            chain: i.chain,
+                            element: i.element,
                             open: i.open,
                         })
                         .collect(),
