@@ -21,13 +21,27 @@ where
     *h.finalize().as_bytes()
 }
 
-/// Bytes one nerve act may carry: one spend-unit of KiB, floored at a
-/// small frame and capped by the wire MTU — a ratio of the measured
-/// reserve, never a laptop-sized constant on the cognition path.
+/// Bytes one nerve act may carry.
+///
+/// A WIRE FRAME IS A TRANSPORT CONSTRUCT, NOT A LOCAL MEMORY CACHE (the
+/// wire-MTU ruling, 2026-09-11). This was `spend_unit() * 1024`, and
+/// `spend_unit()` is `reserve_max()/8`, read off the host's free memory at
+/// boot: three on an eight-core box, so the frame clamped to its 4 KiB
+/// floor. Two nodes of the same mesh therefore disagreed about how large a
+/// frame is, and whether a chain could be paged AT ALL depended on what
+/// else the machine was doing.
+///
+/// Measured on the fleet at epoch 11: hypha a holds every receipt from 0
+/// to 2000 and could serve none of `1111..1112` — two receipts of ~5.5 KiB
+/// against a 4 KiB frame — so the back-fill stopped there and could never
+/// pass it. Receipts on either side, 1.9 KiB, served fine.
+///
+/// The budget is now the same on every node of the mesh: one number, so a
+/// page that one node can build another can read, and no node's memory
+/// pressure changes what the protocol is. `BODY_BUDGET` remains the hard
+/// ceiling the codec refuses past.
 pub fn frame_budget() -> usize {
-    (crate::physics::spend_unit() as usize)
-        .saturating_mul(1024)
-        .clamp(4096, BODY_BUDGET)
+    64 * 1024
 }
 
 /// The four orthogonal polytonic lanes (𝒮 spatial, 𝒢 gauge, 𝒯 temporal,

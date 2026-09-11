@@ -60,7 +60,6 @@ pub(crate) const GATE: Gate = Gate {
         ("network/nerve/cover.rs", 5),
         ("network/nerve/keyed/relation.rs", 1),
         ("network/nerve/keyed/trie.rs", 3),
-        ("network/wire.rs", 1),
         ("src/physics/mod.rs", 11),
         ("server/cognition/basis.rs", 8),
         ("server/cognition/book/listings.rs", 4),

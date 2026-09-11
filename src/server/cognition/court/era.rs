@@ -60,13 +60,16 @@ impl Kernel {
         }
         let eras = self.archive.iter().filter(|e| e.signer == *signer).flat_map(|e| e.receipts.iter());
         if *signer == self.identity {
-            for r in eras.chain(self.chain.receipts().iter()) {
-                if out.len() >= budget {
-                    break;
-                }
-                if r.step_index >= from && r.step_index <= to {
-                    out.push(r.clone());
-                }
+            // THE DESTINATION IS ALREADY KNOWN (law 3). This walked the
+            // whole hot chain to find a K range, so every back-fill page
+            // scanned two thousand receipts for one of them — a loop over
+            // a carrier that names each of its members by its own step
+            // index. The hot chain is contiguous, so `at_k` is arithmetic;
+            // the cold eras are few and are read as the archive names them.
+            let hot = (from..=to).filter_map(|k| self.chain.at_k(k));
+            let cold = eras.filter(|r| r.step_index >= from && r.step_index <= to);
+            for r in cold.chain(hot).take(budget) {
+                out.push(r.clone());
             }
             return out;
         }

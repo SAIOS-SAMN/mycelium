@@ -101,6 +101,25 @@ impl ReceiptChain {
         self.root.map_or(0, |r| r.k + 1) + self.receipts.len() as u64
     }
 
+    /// THE RECEIPT AT ONE K, by arithmetic and not by a walk (law 3). The
+    /// hot chain is contiguous from one past the fold root, so a K names
+    /// its own position: `k − first_k`. The read is verified against the
+    /// receipt it lands on, so a chain that is not contiguous answers
+    /// nothing rather than the wrong receipt (rule 11).
+    ///
+    /// `receipts_range` walked `self.receipts` end to end to find one K —
+    /// "no loop over peers, pairs, degrees, or planes that the carrier
+    /// does not already name", and this carrier names every one of them.
+    /// Every back-fill page on the fleet scanned the whole chain: at
+    /// epoch 11, two thousand receipts per request, a hundred requests a
+    /// minute, for a destination the index already knew.
+    pub fn at_k(&self, k: u64) -> Option<&KStepReceipt> {
+        let first = self.root.map_or(0, |r| r.k + 1);
+        let i = k.checked_sub(first)?;
+        let r = self.receipts.get(usize::try_from(i).ok()?)?;
+        (r.step_index == k).then_some(r)
+    }
+
     /// The head's chain hash (the fold root's before the first hot receipt;
     /// all zeros before genesis).
     pub fn head_hash(&self) -> [u8; 32] {

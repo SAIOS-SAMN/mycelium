@@ -174,18 +174,55 @@ pub fn decode_receipts_request(body: &[u8]) -> Option<ReceiptsRequest> {
 
 /// The K-range reply: as many of `receipts`, in order, as fit `budget`
 /// bytes — a page, never a receipt cut short.
+///
+/// A PAGE ALWAYS CARRIES ITS FIRST RECEIPT, whatever the budget says. The
+/// fit test ran on every receipt including the first, so a receipt larger
+/// than one frame was never served — and `break`, not `continue`, meant
+/// every page that STARTED at that K came back empty, forever. A paging
+/// protocol that cannot guarantee one item per page does not page, it
+/// stops: the reader asks for the K it is missing, is told nothing, and
+/// has no way to ask differently.
+///
+/// Measured on the fleet at epoch 11: hypha a held receipts 0..2000 and
+/// answered `1111..1111` with count 0, `1110..1112` with count 1 and
+/// `1109..1112` with count 2 — the page walking up to the oversized
+/// receipt and halting on it, so the back-fill could never pass K 1111 and
+/// no peer receipt was ever admitted as a parent.
+///
+/// The only bound left is `BODY_BUDGET`, which the frame codec refuses
+/// past: a receipt over the protocol ceiling cannot ride any wire, and
+/// that is a refusal rather than a silent short page (rule 11).
 pub fn encode_receipts_reply(receipts: &[crate::chronometry::KStepReceipt], budget: usize) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(&0u32.to_le_bytes());
     let mut n = 0u32;
-    for r in receipts {
+    // THE WALK IS BOUNDED BY THE PAGE, not by a `break` it hopes to reach:
+    // a page cannot carry more than its budget divided by the smallest a
+    // receipt can be, so that is how far this reads (rule 10). `receipts`
+    // is a slice the caller chose the length of, and nothing in this
+    // function's own shape stopped it.
+    let cap = budget / crate::chronometry::KStepReceipt::MIN_TAPE;
+    // THE SHAPE SAYS WHICH RECEIPT IS THE FIRST, not a tally of how many
+    // have been written (rule 2): the head of the slice always rides, and
+    // the tail rides only while it fits.
+    if let Some((head, rest)) = receipts.split_first() {
         let mut rb = Vec::new();
-        r.write(&mut rb);
-        if out.len() + rb.len() > budget {
-            break;
+        head.write(&mut rb);
+        let size = out.len() + rb.len();
+        if size <= crate::network::wire::BODY_BUDGET {
+            out.extend_from_slice(&rb);
+            n += 1;
+            for r in rest.iter().take(cap) {
+                let mut rb = Vec::new();
+                r.write(&mut rb);
+                let size = out.len() + rb.len();
+                if size > budget {
+                    break;
+                }
+                out.extend_from_slice(&rb);
+                n += 1;
+            }
         }
-        out.extend_from_slice(&rb);
-        n += 1;
     }
     out[..4].copy_from_slice(&n.to_le_bytes());
     out
