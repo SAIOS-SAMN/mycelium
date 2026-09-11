@@ -6,6 +6,7 @@
 
 pub mod carrier;
 pub mod gauge;
+pub mod held;
 pub mod letters;
 pub mod residual;
 pub mod sensor;
@@ -14,6 +15,7 @@ pub mod vertex;
 
 pub use carrier::*;
 pub use gauge::*;
+pub use held::*;
 pub use letters::*;
 pub use residual::*;
 pub use sensor::*;
