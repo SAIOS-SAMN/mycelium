@@ -16,7 +16,11 @@ use super::*;
 /// by `apply_form` as `w_i` at `p_i + t`; nothing is spelled for `t`.
 pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
     let named: Vec<FormFace> = form.faces.clone();
-    for face in &named {
+    // The face's own index IS the chord it closes on where it closes: this
+    // is a clone of `form.faces` and the rebase adds no face, so the two
+    // agree throughout. A caller that walked a face knows which one; it is
+    // passed and never searched for (15.5).
+    for (fi, face) in named.iter().enumerate() {
         let (i, j) = (face.i as usize, face.j as usize);
         if matches!(form.vertices.get(j), Some(Vertex::Rebased { .. })) {
             continue;
@@ -58,7 +62,7 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
             }
         });
         if constant {
-            let _ = form.rebase(face.i, face.j, relative);
+            let _ = form.rebase(face.i, face.j, relative, fi as u16);
             trace::trace_at("extract/4 rebased", j);
         }
     }
@@ -312,6 +316,11 @@ pub fn extract_rule_with(
         else {
             continue;
         };
+        // A face whose two ends are ONE end lands as `i == j`: two bodies
+        // of one transport class, related on a pair form, map to one rule
+        // vertex. It is NOT dropped. It is a closed orbit at that vertex —
+        // an element of its stabilizer — and `Form::rebase` evaluates its
+        // boundary holonomy when move 4 reaches it (L20).
         let mut sections_of_face = words.into_iter();
         let Some((_, first_pairs)) = sections_of_face.next() else {
             continue;

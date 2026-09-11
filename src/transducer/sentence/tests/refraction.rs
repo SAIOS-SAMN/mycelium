@@ -101,7 +101,10 @@ fn rebase_conjugates_by_a_versor_never_subtracts() {
         "face_of composes carriages by the geometric product"
     );
     let of = f
-        .rebase(0, 1, element::carriage(&q1(), &(q0(), q1())))
+        // Face 0 is the star the fixture pushed: the chord this rebase
+        // would close on, were it a closed orbit. It is not — 0 and 1 are
+        // two vertices — so nothing is filed and the vertex is rebased.
+        .rebase(0, 1, element::carriage(&q1(), &(q0(), q1())), 0)
         .expect("rebase");
     assert!(matches!(f.vertices[of as usize], Vertex::Rebased { .. }));
     let t = f.face_of(0, of).expect("rebased face");

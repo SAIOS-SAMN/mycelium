@@ -214,42 +214,11 @@ impl Form {
         gamma.into_iter().collect()
     }
 
-    /// Replace vertex `of` by `by` read in `of`'s frame (3.2). `of`'s own
-    /// dilation, hue map and chart are kept on the Rebased vertex; only
-    /// its word is now `by`'s. A vertex that is not a `Word` is left as it
-    /// is, and `of` is returned either way.
-    pub fn rebase(
-        &mut self,
-        by: u16,
-        of: u16,
-        carriage: Versor,
-    ) -> Option<u16> {
-        if (by as usize) >= self.vertices.len() {
-            return None;
-        }
-        let Vertex::Word {
-            gauge,
-            class,
-            ..
-        } = self.vertices.get(of as usize).cloned()?
-        else {
-            return None;
-        };
-        self.vertices[of as usize] = Vertex::Rebased {
-            by,
-            of,
-            carriage: Box::new(carriage),
-            gauge,
-            class,
-        };
-        Some(of)
-    }
-
-    pub fn unfold(&mut self, measure: Measure) -> u16 {
-        let idx = self.vertices.len() as u16;
-        self.vertices.push(Vertex::Unfolded { measure });
-        idx
-    }
+    // `rebase`, `rebase_reaches`, `close_stabilizer_orbit` and `unfold`
+    // were here and are now `sentence/rebase.rs`: an edge that returns to
+    // its own basepoint is an element of the stabilizer, evaluating it is
+    // a reading of its own (L20), and this file went over the §1.1 bound
+    // with it. Moved, not rewritten (§1.6).
 }
 
 #[derive(Debug, Clone)]

@@ -389,45 +389,11 @@ impl Form {
     }
 }
 
-impl Vertex {
+// `impl Vertex` — `word_in`, `class`, `depth` — was here and is now
+// `form/vertex.rs`. `word_in` WALKS the rebase chain instead of
+// recursing on it (L20), and this file went over the §1.1 reading bound
+// with the walk in it. Moved, not rewritten (§1.6).
 
-    /// The word a vertex speaks; a demand vertex speaks none (50.5), so no
-    /// face reaches it and it enters no loop.
-    pub fn word_in(&self, form: &Form) -> Option<Word> {
-        match self {
-            Vertex::Frame | Vertex::Unfolded { .. } => Some(Word::identity()),
-            // A face reads the ACTION spelled, not the residue: a cited
-            // vertex spells its rotor by A22 (L14, 50.2 step 2).
-            Vertex::Word { derivation, .. } => derivation.spelling(),
-            Vertex::Glued { placement, .. } => Some(placement.clone()),
-            // THE CHAIN A REBASE MAKES, and the line that named L20's loop:
-            // this recurses on `by` and the recursion is bounded by nothing
-            // here. A `by` chain that returns to a vertex it has already
-            // visited never ends. The trace prints the vertex being
-            // resolved, so a repeat in the line IS the cycle.
-            Vertex::Rebased { by, .. } => {
-                crate::transducer::family::trace::trace_at("word_in/rebased by", *by as usize);
-                form.vertices.get(*by as usize)?.word_in(form)
-            }
-            Vertex::Demand { .. } => None,
-        }
-    }
-
-    pub fn class(&self) -> stalk::Invariant {
-        match self {
-            Vertex::Word { class, .. } | Vertex::Rebased { class, .. } => class.clone(),
-            Vertex::Glued { chart, .. } | Vertex::Demand { chart, .. } => chart.clone(),
-            Vertex::Frame | Vertex::Unfolded { .. } => stalk::Invariant::default(),
-        }
-    }
-
-    pub fn depth(&self) -> u16 {
-        match self {
-            Vertex::Glued { depth, .. } => *depth,
-            _ => 0,
-        }
-    }
-}
 
 impl Form {
 

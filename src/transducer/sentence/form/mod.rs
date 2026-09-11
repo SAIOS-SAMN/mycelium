@@ -9,6 +9,7 @@ pub mod carrier;
 pub mod certificate;
 pub mod contract;
 pub mod keys;
+pub mod vertex;
 
 pub use carrier::*;
 pub use certificate::*;

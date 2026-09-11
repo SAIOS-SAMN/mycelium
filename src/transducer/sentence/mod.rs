@@ -13,6 +13,7 @@ pub mod class;
 pub mod pivot;
 pub mod tape;
 pub mod chart;
+pub mod rebase;
 pub mod reading;
 pub mod demand;
 

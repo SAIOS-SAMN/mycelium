@@ -71,7 +71,7 @@ pub(crate) const GATE: Gate = Gate {
         ("transducer/family/descent.rs", 1),
         ("transducer/family/speak.rs", 4),
         ("transducer/rewrite.rs", 1),
-        ("transducer/sentence/chart.rs", 3),
+        ("transducer/sentence/chart.rs", 2),
         ("transducer/sentence/demand.rs", 1),
         ("transducer/sentence/form/carrier.rs", 1),
         ("transducer/sheaf.rs", 1),
