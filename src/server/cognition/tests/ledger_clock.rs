@@ -225,10 +225,7 @@ fn a_lapsed_citation_seals_a_receipt() {
     k.standing_h.insert(&laddr, 0);
     k.set_height(crate::physics::aperture_cycle() as u64 + 1);
     let before = k.k_step();
-    k.lapse_docket(
-        &mut crate::physics::Physics::default().stroke(),
-        super::common::one_stroke_transport,
-    );
+    k.lapse_docket(super::common::one_stroke_transport);
     assert_eq!(k.k_step(), before + 1, "a lapsed citation is one step");
     assert!(
         k.chain().receipts().last().is_some_and(|r| r.delta == laddr),
@@ -269,18 +266,12 @@ fn an_unmeasured_transport_lapses_against_this_courts_own_horizon() {
     // the horizon is a horizon, not an eviction on sight.
     k.set_height(1);
     let before = k.k_step();
-    k.lapse_docket(
-        &mut crate::physics::Physics::default().stroke(),
-        super::common::unmeasured_transport,
-    );
+    k.lapse_docket(super::common::unmeasured_transport);
     assert_eq!(k.k_step(), before, "inside the horizon, no lapse and no receipt");
     assert!(k.pending.get(&laddr).is_some(), "and the listing stands");
     // PAST it, the listing leaves whatever the network is doing.
     k.set_height(crate::physics::aperture_cycle() as u64 * 4);
-    k.lapse_docket(
-        &mut crate::physics::Physics::default().stroke(),
-        super::common::unmeasured_transport,
-    );
+    k.lapse_docket(super::common::unmeasured_transport);
     assert_eq!(k.k_step(), before + 1, "past the horizon it lapses, and that is one step");
     assert!(
         k.pending.get(&laddr).is_none(),

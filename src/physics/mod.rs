@@ -142,6 +142,15 @@ pub fn idle_park(rtt: Option<u64>) -> std::time::Duration {
     }
 }
 
+/// AN APERTURE OF STROKES: what a pass that MUST finish is given, rather
+/// than the one stroke a pass that can resume next time is given. The
+/// eviction sweep above the book's ceiling is such a pass — a book past
+/// the manifold is not a pacing question — and it is read here so the
+/// spend unit stays inside physics (rules 1, 8).
+pub fn aperture_strokes() -> usize {
+    spend_unit() as usize * aperture_cycle() as usize
+}
+
 /// THE BOOK'S CEILING: how many open listings this node's memory can
 /// carry, measured from the same live headroom the reserve is (rule 5 —
 /// measured, never declared). A listing on the fleet weighs about 26 KiB

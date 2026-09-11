@@ -46,9 +46,13 @@ impl Kernel {
     /// all at once in one. The extent each lapse reports is the one read
     /// when it was measured, not a second read guarded by `unwrap_or(now)`
     /// — a default standing in for a height (checklist (i)).
+    /// THE SWEEP TAKES NO BUDGET FROM ITS CALLER. It was handed
+    /// `court_stroke`'s one stroke, after the docket orbit had already
+    /// spent from it, so on a busy court the eviction walk reached no
+    /// listing at all — a book whose only sink competes with whatever ran
+    /// before it in the same function has no sink.
     pub(crate) fn lapse_docket(
         &mut self,
-        budget: &mut crate::physics::Budget,
         lambda: impl Fn(&crate::transducer::stalk::Invariant, &[u64; 4], &[u64; 4]) -> Option<u64>,
     ) {
         let now = self.height();
@@ -59,6 +63,25 @@ impl Kernel {
         // Is the book past what this node's memory can carry? Read once
         // for the pass, against the measured ceiling.
         let over = self.pending.len() > crate::physics::book_ceiling();
+        // THE SWEEP HAS ITS OWN QUOTA. `court_stroke` builds ONE stroke
+        // and hands it to the docket orbit first, then here, then to the
+        // fills — so on a busy court the orbit spent all three and the
+        // eviction walk reached no listing at all. A book whose only sink
+        // is starved by whatever ran before it in the same function has no
+        // sink. Measured on the fleet at epoch 11: hypha b's book climbed
+        // 1701 → 1920 while a and c, with nothing on their dockets, held
+        // at zero.
+        //
+        // The quota is the court's own stroke, taken fresh, so the sweep
+        // is paced by the same metabolism as everything else and is not
+        // competing with it (45.7, rule 10). Above the ceiling it is an
+        // aperture of strokes, because a book past the manifold is not a
+        // pacing question.
+        let mut sweep = match over {
+            true => self.physics.stroke_n(crate::physics::aperture_strokes()),
+            false => self.physics.stroke(),
+        };
+        let budget = &mut sweep;
         {
             let from = self.lapse_cursor.clone();
             for (addr, (listed, _)) in self.pending.cursor(&from, budget) {

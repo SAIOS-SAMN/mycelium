@@ -218,7 +218,7 @@ impl Kernel {
             self.rule_own(&addr);
             eprintln!("  court section {:02x}{:02x}… ruled cover, escrow held", addr[0], addr[1]);
         }
-        self.lapse_docket(&mut budget, &lambda);
+        self.lapse_docket(&lambda);
         self.relocate_t_exhausted();
         self.stroke_fills(&mut budget);
     }
