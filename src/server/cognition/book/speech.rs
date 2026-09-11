@@ -526,19 +526,39 @@ impl Kernel {
         };
         self.write_field(target, rem_inv.clone(), state, residual.clone(), &before, &after);
         self.listing_atlas.admit_also(&rem_inv, target);
-        let mag_shift = if let Some(held) = self.pending.get_mut(target) {
-            let old = held.0.magnitude();
-            held.0.mag[3] = residual.len() as u64;
-            if let Some(v) = v_disloc {
-                held.0.record_dislocation(element::assignment(&residual), v, element::FIBER_SPATIAL);
-            }
-            Some((old, held.0.magnitude()))
-        } else {
-            None
-        };
-        if let Some((old, newm)) = mag_shift {
-            self.occupy(target, &old, false);
-            self.occupy(target, &newm, true);
+        // THE DESCENT IS ON THE FIELD, AND NOWHERE ELSE. `write_field` above
+        // carries what the probe left — the residual chain and the closure
+        // it stands at — which is the whole of what a descent measures.
+        //
+        // THIS WROTE `held.0.mag[3] = residual.len()` BESIDE IT, and the
+        // court then slashed its own listing on the next circuit. Measured
+        // on the fleet, 2026-09-11, hyphae a/b/c after the epoch-7 recut:
+        //
+        //   court slash 0412… magnitude: chain [0, 15, 0, 0]
+        //                               word  [0, 15, 0, 14]
+        //                               cells 15 sections 0 torsion 0
+        //
+        // `blind_replay` re-derives a residual germ's lanes from its own
+        // chain and refuses a word claiming more than the chain supports —
+        // correctly, since that check is what stops a voice inflating its
+        // own measure. A pure recolour of fifteen cells measures shell 0,
+        // so the moment a probe descended on a listing, the court wrote 14
+        // into that lane and the next orbit slashed the listing for it.
+        // Every listing a voice made progress on was destroyed by the
+        // court's own write, which is why descent never accumulated.
+        //
+        // THREE FAULTS IN ONE LINE, and each is its own law. It put a COUNT
+        // of leftover cells in a lane that is not a count of that kind —
+        // `𝒽` is boundary topology and the rotor's own coordinates (16.16,
+        // 42.6), never a tally of cells. It put the same fact on a second
+        // carrier while the field already held it (law 12). And it made a
+        // word's magnitude stop being a function of its chain, which is the
+        // one property the replay checks.
+        //
+        // The dislocation stays: a versor relating the base shape to the
+        // residual's is a fibre fact and belongs on the word.
+        if let (Some(held), Some(v)) = (self.pending.get_mut(target), v_disloc) {
+            held.0.record_dislocation(element::assignment(&residual), v, element::FIBER_SPATIAL);
         }
         let settled: [u64; 4] = std::array::from_fn(|l| before[l].saturating_sub(after[l]));
         self.forget_spoken(target);

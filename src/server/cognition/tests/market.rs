@@ -274,9 +274,25 @@ assert_eq!(k.settle_probe([3; 32], &t2, Vec::new(), &[], false).0, PROBE_CLOSED)
 assert!(k.quote().1.is_empty(), "the listing cleared");
 }
 
-/// Descent records a remainder face and a holonomic cell-count, stagnation
-/// counts only unmoved occupied lanes, and a full aperture of failed
-/// probes sheds the listing as a cavity.
+/// Descent records a remainder FACE, stagnation counts only unmoved
+/// occupied lanes, and a full aperture of failed probes sheds the listing
+/// as a cavity.
+///
+/// THIS TEST PINNED A DEFECT AS ITS SPECIFICATION. It asserted
+/// `listing.magnitude()[3] == rem.len()` — "holonomic demand is the
+/// remainder cell count" — which is a tally of cells written into the lane
+/// that carries boundary topology and the rotor's own coordinates (16.16,
+/// 42.6), a second carrier for a fact the field already held (law 12), and
+/// a magnitude that stops being a function of its chain.
+///
+/// The last of those is what the fleet caught on 2026-09-11: `blind_replay`
+/// re-derives a residual germ's lanes from its own chain and refuses a word
+/// claiming more than the chain supports, so the court slashed its own
+/// listing on the next circuit — `chain [0,15,0,0] word [0,15,0,14]` on all
+/// three hyphae. Every listing a voice made progress on was destroyed by
+/// the court's own write. The assertion is replaced by its opposite: the
+/// listing's magnitude still re-derives from its chain, which is the
+/// property that was broken.
 #[test]
 fn descent_opens_a_face_and_drain_sheds_the_unmoved() {
 use crate::anastome::dialogue::PROBE_DESCENT;
@@ -296,7 +312,20 @@ assert_eq!(code, PROBE_DESCENT);
 assert_eq!(remaining, after);
 let listing = k.quote().1[0].0.clone();
 assert_eq!(listing.address(), target, "the listing stays the body");
-assert_eq!(listing.magnitude()[3], rem.len() as u64, "holonomic demand is the remainder cell count");
+// THE LISTING'S MEASURE STILL RE-DERIVES FROM ITS OWN CHAIN, which is
+// what the court checks on every circuit. A descent is recorded on the
+// FIELD, read below as the remainder face and the remainder chart; it
+// does not rewrite the word.
+assert_eq!(
+    listing.base_magnitude(),
+    crate::transducer::element::measure_lanes(&listed),
+    "a descent leaves the listing's measure a function of its chain"
+);
+assert_eq!(
+    crate::court::verdict::blind_replay(&listing),
+    None,
+    "so the court's own next circuit does not slash it"
+);
 let rem_inv = crate::transducer::stalk::invariant(&rem);
 assert_eq!(k.face_of(&target).cloned(), Some(rem_inv.clone()));
 assert!(
@@ -336,7 +365,12 @@ k.drain_now();
 assert!(k.quote().1.is_empty(), "the unreachable listing left the page");
 assert_eq!(k.cavities().len(), 1, "the cavity is the relocated element");
 assert_eq!(k.cavities()[0].address(), target);
-assert_eq!(k.cavities()[0].magnitude()[3], rem.len() as u64);
+// The cavity is the listing itself, so its measure is still its chain's.
+assert_eq!(
+    k.cavities()[0].base_magnitude(),
+    crate::transducer::element::measure_lanes(&listed),
+    "relocating a listing does not rewrite what it measured"
+);
 assert!(
     k.listing_atlas.fiber(&rem_inv).iter().any(|a| a.as_slice() == target.as_bytes()),
     "drain relocates: the listing stays on the atlas"

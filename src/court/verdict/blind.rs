@@ -164,6 +164,21 @@ pub(crate) fn blind_replay_on_inner(
                     // chain; reading them here slashed every deepened word
                     // a peer served.
                     if rederived.base_magnitude() != spoken.chain_magnitude() {
+                        // 34.2: A REFUSAL NAMES ITS COORDINATE. This said
+                        // only that the two disagreed, so a fleet reading
+                        // of it named no lane and no reader could tell a
+                        // shell that moved from a gauge that did — which is
+                        // a four-lane fact reported as one bit (law 5).
+                        eprintln!(
+                            "  court slash {:02x}{:02x}… magnitude: chain {:?} word {:?} cells {} sections {} torsion {}",
+                            spoken.address()[0],
+                            spoken.address()[1],
+                            rederived.base_magnitude(),
+                            spoken.chain_magnitude(),
+                            chain.len(),
+                            spoken.sections().len(),
+                            spoken.torsion().len()
+                        );
                         return Some("magnitude does not re-derive from the chain");
                     }
                 }
