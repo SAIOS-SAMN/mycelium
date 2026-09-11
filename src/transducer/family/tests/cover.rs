@@ -69,6 +69,54 @@ fn the_meets_are_faces_and_the_faces_close_into_loops() {
     }
 }
 
+/// WHAT `flat N / standing 0` ACTUALLY MEASURES — and it is not the scene.
+///
+/// EVERY face of a pair form carries `face_of(i, j)`, which is the
+/// COBOUNDARY of the two vertices' placements: `w_j ∘ w_i⁻¹`. A cycle of
+/// those telescopes —
+///
+///   (w₂w₁⁻¹)(w₃w₂⁻¹)…(w₁wₙ⁻¹) = 1
+///
+/// — so every loop of such a form is flat BY CONSTRUCTION, whatever the
+/// scene was. The cover's meets are pushed as `FormFace::new(i, j, t.word)`
+/// with `t = face_of(i, j)`, and the star and cell faces come from the same
+/// reader, so no face of a pair form is anything else.
+///
+/// The corpus reading `loops flat 3444 filed 0 standing 0` at 1<<20 is
+/// therefore a tautology and not a measurement: the construction cannot
+/// produce a non-flat loop, so 3 444 flat ones say only that 3 444 cycles
+/// were walked. A palindrome — `x x⁻¹ = 1`, 1-D backtracking — is all a
+/// coboundary can be.
+///
+/// THE CONTRAST IS ALREADY IN THE TREE, one file over:
+/// `relator.rs` builds a form whose CHORD carries an independently ruled
+/// word rather than a coboundary, and that form files a class of period 2.
+/// A non-trivial holonomy needs transports that are not the coboundary of
+/// one global assignment — three charts each ruled on its own, `[x, y] =
+/// xyx⁻¹y⁻¹ ≠ 1` — which is what L17's depth 4 proves and what the cover
+/// does not yet build.
+#[test]
+fn every_loop_of_a_pair_form_is_flat_because_every_face_is_a_coboundary() {
+    let (a, b) = notched();
+    let f = measured(&a, &b);
+    assert!(!f.loops.is_empty(), "the fixture walks cycles at all");
+    for lp in &f.loops {
+        assert!(
+            lp.holonomy.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()),
+            "a cycle of coboundaries telescopes: {:?}",
+            lp.holonomy
+        );
+    }
+    // And so the form files nothing and stands nothing — not because the
+    // notched block has no curvature, but because this construction has
+    // nowhere to put any.
+    assert_eq!(
+        f.torsion.fiber(ROOT).count(),
+        0,
+        "no cell is filled, and a coboundary could not have filled one"
+    );
+}
+
 /// 50.8 CASE 3 — WHERE A CELL IS FILLED it is filed on the form's own
 /// torsion carrier, keyed by the holonomy's class, with the period the
 /// rotation closes at and the chord it closes on. Nothing else is a filled
