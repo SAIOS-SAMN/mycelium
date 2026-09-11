@@ -411,3 +411,9 @@ order.
   foreground `cargo test --release` then `cd xtask && cargo run` (§6.1).
 - Commit locally only; trailer `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
 - Nothing outside the repository changes without the operator's word.
+- The auditor's rule (2026-09-11, after three half landings were
+  reported as landings): an audit reproduces each landed row's OWN
+  claim against the code, not the suite; it updates the status column of
+  every row it touches; and it reads and updates the Owed ledger in
+  `MU-RECURSION-TASKS.md` first. A row is `done` only when the
+  observable its Owed line names has been reproduced.
