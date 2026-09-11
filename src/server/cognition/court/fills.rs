@@ -44,12 +44,12 @@ impl Kernel {
                 (cx.fill(&sim_key), addrs)
             };
             match filled {
-                (crate::transducer::cech::Fill::Filled(gamma), addrs) => {
+                (crate::transducer::cech::Fill::Filled(gamma, carriage), addrs) => {
                     eprintln!(
                         "  court cell filled {:02x}{:02x}… γ recorded",
                         sim_key[0], sim_key[1]
                     );
-                    self.record_gamma(&addrs, &gamma);
+                    self.record_gamma(&addrs, &gamma, &carriage);
                     self.pay_cell_volume(&inv, &addrs);
                     if !gamma.is_identity() {
                         if let Some((a, b)) = edge_pair(&addrs) {
@@ -73,7 +73,8 @@ impl Kernel {
                     self.pay_cell_volume(&inv, &addrs);
                     self.pay_torse(&addrs);
                 }
-                (crate::transducer::cech::Fill::Class(class), _) => {
+                (crate::transducer::cech::Fill::Class(_, class), _) => {
+                    let class = *class;
                     eprintln!(
                         "  court cell class {:02x}{:02x}…",
                         sim_key[0], sim_key[1]
@@ -81,12 +82,23 @@ impl Kernel {
                     let degree = self
                         .complexes
                         .get(&inv.key())
-                        .and_then(|c| c.class(&sim_key).map(|(_, d)| d as u8))
+                        .and_then(|c| c.class(&sim_key).map(|(_, _, d)| d as u8))
                         .unwrap_or(2);
                     self.mark_class(&inv, class.clone(), degree);
                     if degree >= 3 {
                         self.pending_refine.insert(inv.key(), (inv.clone(), class, degree));
                     }
+                }
+                // 37.7 AT THE COURT: a cell whose transition is a rotation
+                // the seventeen do not spell. It fills nothing and files no
+                // class, and it is the court's own adjunction candidate —
+                // named on its own line so the day one appears is a
+                // measurement and not an anecdote.
+                (crate::transducer::cech::Fill::Unspellable(_), _) => {
+                    eprintln!(
+                        "  court cell unspellable {:02x}{:02x}… 37.7",
+                        sim_key[0], sim_key[1]
+                    );
                 }
                 (crate::transducer::cech::Fill::Open, _) | (crate::transducer::cech::Fill::Already, _) => {}
             }

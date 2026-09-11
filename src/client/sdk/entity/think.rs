@@ -186,7 +186,7 @@ impl Entity {
     /// that would translate one frame into the other is a translation word.
     pub(crate) fn open_contemplation_axis(&mut self) -> Option<crate::transducer::address::Address> {
         let classes = self.contemplation.classes_held();
-        for (class, _degree) in classes {
+        for (_kappa, class, _degree) in classes {
             let a = [0u8; 32];
             let b = class.key();
             let Some(t) = crate::transducer::element::from_translation(&class, a, b) else {

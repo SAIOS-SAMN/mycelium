@@ -219,10 +219,10 @@ impl Contemplation {
         };
         self.complex.set_section(
             &key,
-            Section {
-                addr: crate::transducer::address::Address::from(key.clone()),
-                gamma: Rotor::identity(),
-            },
+            // A bubble's section carries a rotation and no placement, so
+            // the carriage is the identity — which is TRUE of it, not a
+            // value stood in for one it has (L11e).
+            Section::at(crate::transducer::address::Address::from(key.clone()), Rotor::identity()),
             vol0,
         );
         let mut neighbors = Keyed::new();
@@ -244,7 +244,13 @@ impl Contemplation {
             }
             let vol = volume_of(&rems, &[key.as_slice(), n.as_slice()]);
             match self.rotor_between(&key, n) {
-                Some(rotor) => self.complex.set_edge(&key, n, rotor, vol),
+                Some(rotor) => self.complex.set_edge(
+                    &key,
+                    n,
+                    rotor,
+                    crate::transducer::element::identity_versor(),
+                    vol,
+                ),
                 None => {
                     let both_remainder = self.bubbles.get(&key).is_some_and(|b| b.form.is_none())
                         && self.bubbles.get(n).is_some_and(|b| b.form.is_none());
@@ -406,7 +412,7 @@ impl Contemplation {
         while let Some(v) = stack.pop() {
             for ck in self.complex.link(&v, 1) {
                 let Some((fill, vertices)) = self.complex.cell(&ck).map(|c| {
-                    (matches!(c.fill, Fill::Filled(_)), c.vertices.clone())
+                    (matches!(c.fill, Fill::Filled(..)), c.vertices.clone())
                 }) else {
                     continue;
                 };
@@ -442,7 +448,7 @@ impl Contemplation {
                     continue;
                 }
                 let all_in = cell.vertices.iter().all(|u| held.contains(u));
-                if all_in && !matches!(cell.fill, Fill::Filled(_)) {
+                if all_in && !matches!(cell.fill, Fill::Filled(..)) {
                     return false;
                 }
             }
@@ -519,7 +525,9 @@ impl Contemplation {
     }
 
     /// Classes on the contemplation, any degree.
-    pub fn classes_held(&self) -> Vec<(Rotor, usize)> {
+    pub fn classes_held(
+        &self,
+    ) -> Vec<(crate::transducer::sentence::ClassVector, Rotor, usize)> {
         self.complex.classes()
     }
 

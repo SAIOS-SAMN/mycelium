@@ -21,6 +21,7 @@ impl Complex {
             crate::transducer::address::put_addr(out, k);
             crate::transducer::address::put_addr(out, &s.addr);
             s.gamma.to_bytes(out);
+            s.carriage.to_bytes(out);
         });
         out.extend_from_slice(&(self.degrees.len() as u32).to_le_bytes());
         for layer in &self.degrees {
@@ -31,23 +32,35 @@ impl Complex {
                     crate::transducer::address::put_addr(out, v);
                 }
                 c.coefficient.to_bytes(out);
+                c.carriage.to_bytes(out);
                 for x in &c.volume {
                     out.extend_from_slice(&x.to_le_bytes());
                 }
+                // A CLASS IS WRITTEN AS ITS COORDINATES. `class_key` already
+                // writes 12.6's axes out in order — conjugacy invariants,
+                // plane slots, hue, carriage — and `from_key` reads them
+                // back, so the wire carries the coordinates and no second
+                // codec exists to drift from them (law 12).
                 match &c.fill {
                     Fill::Open | Fill::Already => out.push(0),
-                    Fill::Filled(g) => {
+                    Fill::Filled(g, carriage) => {
                         out.push(1);
                         g.to_bytes(out);
+                        carriage.to_bytes(out);
                     }
-                    Fill::Class(g) => {
+                    Fill::Class(k, r) => {
                         out.push(2);
-                        g.to_bytes(out);
+                        crate::transducer::address::put_addr(out, k.class_key());
+                        r.to_bytes(out);
                     }
                     Fill::Congruent(g, ell) => {
                         out.push(3);
                         g.to_bytes(out);
                         out.extend_from_slice(&ell.to_le_bytes());
+                    }
+                    Fill::Unspellable(r) => {
+                        out.push(4);
+                        r.to_bytes(out);
                     }
                 }
             });
@@ -71,7 +84,8 @@ impl Complex {
             let v = take_id(b, pos)?;
             let addr = take_id(b, pos)?;
             let gamma = Rotor::from_bytes(b, pos)?;
-            c.sections.insert(v, Section { addr, gamma });
+            let carriage = Versor::from_bytes(b, pos)?;
+            c.sections.insert(v, Section { addr, gamma, carriage });
         }
         let nd = take_u32(b, pos)? as usize;
         for _ in 0..nd.min(64) {
@@ -84,6 +98,7 @@ impl Complex {
                     verts.push(take_id(b, pos)?);
                 }
                 let coefficient = Rotor::from_bytes(b, pos)?;
+                let carriage = Versor::from_bytes(b, pos)?;
                 let mut volume = [0u64; 4];
                 for x in &mut volume {
                     *x = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -92,19 +107,29 @@ impl Complex {
                 let tag = *b.get(*pos)?;
                 *pos += 1;
                 let fill = match tag {
-                    1 => Fill::Filled(Rotor::from_bytes(b, pos)?),
-                    2 => Fill::Class(Rotor::from_bytes(b, pos)?),
+                    1 => Fill::Filled(
+                        Rotor::from_bytes(b, pos)?,
+                        Box::new(Versor::from_bytes(b, pos)?),
+                    ),
+                    2 => {
+                        let k = take_id(b, pos)?;
+                        let kappa =
+                            crate::transducer::sentence::ClassVector::from_key(k.as_bytes())?;
+                        Fill::Class(Box::new(kappa), Box::new(Rotor::from_bytes(b, pos)?))
+                    }
                     3 => {
                         let g = Rotor::from_bytes(b, pos)?;
                         let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
                         *pos += 4;
                         Fill::Congruent(g, ell)
                     }
+                    4 => Fill::Unspellable(Box::new(Rotor::from_bytes(b, pos)?)),
                     _ => Fill::Open,
                 };
                 c.remember(Cell {
                     vertices: sorted_verts(verts),
                     coefficient,
+                    carriage,
                     volume,
                     fill,
                 });

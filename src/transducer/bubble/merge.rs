@@ -85,7 +85,7 @@ impl Contemplation {
             let vol_nz = volume.iter().any(|&x| x > 0);
             let outcome = self.complex.fill(&ck);
             match outcome {
-                Fill::Filled(gamma) if vol_nz => {
+                Fill::Filled(gamma, carriage) if vol_nz => {
                     self.fills += 1;
                     for v in &vertices {
                         if let Some(b) = self.bubbles.get_mut(v) {
@@ -94,6 +94,7 @@ impl Contemplation {
                             for sk in keys {
                                 if let Some(sec) = b.nerve.sections.get_mut(&sk) {
                                     sec.gamma = gamma.geo(&sec.gamma);
+                                    sec.carriage = carriage.geo(&sec.carriage);
                                 }
                             }
                         }
@@ -134,13 +135,16 @@ impl Contemplation {
                     return;
                 }
                 Fill::Already | Fill::Open => {}
-                Fill::Filled(_) | Fill::Congruent(_, _) => {}
-                Fill::Class(r) => {
+                // 37.7 at a cell: a rotation the seventeen do not spell,
+                // which merges nothing and seeds no horizon.
+                Fill::Unspellable(_) => {}
+                Fill::Filled(..) | Fill::Congruent(_, _) => {}
+                Fill::Class(_, r) => {
                     self.classes += 1;
                     for v in &vertices {
                         if let Some(b) = self.bubbles.get_mut(v) {
                             if r.class_key().is_none_or(|ck| !b.horizon.contains(ck.as_bytes())) {
-                                horizon_put(&mut b.horizon, r.clone(), Standing::Held);
+                                horizon_put(&mut b.horizon, r.as_ref().clone(), Standing::Held);
                             }
                         }
                     }

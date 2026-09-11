@@ -33,6 +33,14 @@ pub fn sheet() -> Rotor {
     crate::transducer::alphabet::Word::from_letters(&[(id, false), (id, false)]).rotor()
 }
 
+/// A quarter turn on `e₀∧e₂`: a letter of the seventeen that takes `e₀`
+/// OFF the sensor plane, so it has no sensor-plane block and no versor.
+/// This is the transition `Cl(3,1)` cannot carry.
+pub fn off_plane_quarter() -> Rotor {
+    let id = crate::transducer::alphabet::LetterId::quarter((0, 2)).unwrap();
+    crate::transducer::alphabet::Word::from_letters(&[(id, false)]).rotor()
+}
+
 pub fn pythag5() -> Rotor {
     let id = crate::transducer::alphabet::LetterId::pythagorean_5((0, 1)).unwrap();
     crate::transducer::alphabet::Word::from_letters(&[(id, false)]).rotor()

@@ -5,45 +5,164 @@ use super::common::*;
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::*;
 
-/// Four vertices with a coboundary 1-cochain have δh = 1; a rotation on
-/// one pair and a sheet on the opposite edge is a class at degree 3.
+/// K4 with an identity 1-cochain is exact at every degree: the tetra's
+/// coboundary coefficient is the identity and it fills by the identity
+/// gauge, with no class anywhere on the link.
+///
+/// The claim was written as `fill == Filled(identity) || class().is_none()`
+/// — a disjunction whose second arm holds whenever the first fails, since
+/// `class` reads `None` for every fill that is not `Class`. It could not
+/// fail and so said nothing. Each half is asserted on its own here.
 #[test]
-fn a_class_at_degree_three_is_the_bianchi_form() {
-    let mut c = Complex::new();
-    let vs = [v(1), v(2), v(3), v(4)];
-    for x in &vs {
-        c.set_section(x, Section { addr: x.clone(), gamma: Rotor::identity() }, vol());
-    }
-    let id = Rotor::identity();
-    for i in 0..4 {
-        for j in i + 1..4 {
-            c.set_edge(&vs[i], &vs[j], id.clone(), vol());
-        }
-    }
-    c.coboundary_on_link(&vs[0], |_| vol());
-    let tets = c.link(&vs[0], 3);
+fn an_exact_cochain_on_k4_fills_at_every_degree() {
+    let mut c = exact_k4();
+    let tets = c.link(&vs()[0], 3);
     assert_eq!(tets.len(), 1, "the link of one vertex of K4 is one tetra");
     let key = tets[0].clone();
-    assert!(c.fill(&key) == Fill::Filled(Rotor::identity()) || c.class(&key).is_none());
-    c.set_edge(&vs[0], &vs[1], pythag5(), vol());
-    c.set_edge(&vs[2], &vs[3], sheet(), vol());
-    c.coboundary_on_link(&vs[0], |_| vol());
-    let mut found = false;
-    // index: link of vs[0]
-    for key in c.link_of(&vs[0]) {
-        let Some(d) = c.cell(&key).map(|c| c.degree()) else {
-            continue;
-        };
-        if d < 2 {
-            continue;
+    let coeff = c.cell(&key).expect("the tetra is held").coefficient.clone();
+    assert!(coeff.is_identity(), "an exact cochain's coboundary is the identity: {coeff:?}");
+    match c.fill(&key) {
+        Fill::Filled(g, carriage) => {
+            assert!(g.is_identity(), "the gauge that closed it is the identity");
+            assert!(
+                crate::transducer::element::same_versor(
+                    &carriage,
+                    &crate::transducer::element::identity_versor()
+                ),
+                "and carries no placement"
+            );
         }
-        let outcome = c.fill(&key);
-        if matches!(outcome, Fill::Class(_) | Fill::Congruent(_, _)) || c.class(&key).is_some() {
-            found = true;
+        other => panic!("an exact cochain fills by a gauge, not {other:?}"),
+    }
+    assert!(c.class(&key).is_none(), "a filled cell carries no class");
+    for k in c.link_of(&vs()[0]) {
+        assert!(c.class(&k).is_none(), "no cell of an exact link carries a class");
+    }
+    assert!(c.byte_len() < 4096, "four covering vertices stay in kilobytes");
+}
+
+/// An INFINITE-order edge is a class at degree 2, and the class names the
+/// rotor that caused it. `pythag5` is the (3,4,5) rotor on the sensor
+/// plane: it has no finite order, so the triangle carrying it cannot be
+/// congruent and cannot be filled.
+///
+/// The claim was `found` — set if ANY cell of degree ≥ 2 carried a class
+/// OR a congruence OR `class()` was some. It named no cell, no class and
+/// no order, and one congruent cell anywhere satisfied it.
+#[test]
+fn an_infinite_order_edge_is_a_class_naming_its_rotor() {
+    let mut c = exact_k4();
+    let vs = vs();
+    c.set_edge(&vs[0], &vs[1], pythag5(), ident(), vol());
+    c.coboundary_on_link(&vs[0], |_| vol());
+    let key = triangle(&c, &vs[0], &[&vs[0], &vs[1], &vs[2]]);
+    match c.fill(&key) {
+        Fill::Class(kappa, r) => {
+            assert!(
+                r.projective_eq(&pythag5()) || r.inverse().is_some_and(|i| i.projective_eq(&pythag5())),
+                "the class names the rotor that caused it, not some other: {r:?}"
+            );
+            assert!(
+                crate::transducer::element::same_versor(
+                    &kappa.carriage,
+                    &crate::transducer::element::identity_versor()
+                ),
+                "the triangle's placements close, so the class carries no placement residue"
+            );
+        }
+        other => panic!("an infinite-order holonomy is a class, not {other:?}"),
+    }
+    let (_, r, d) = c.class(&key).expect("the filled class is readable back");
+    assert_eq!(d, 2, "it is a class at degree two");
+    assert_eq!(
+        r.order(),
+        Some(crate::transducer::alphabet::Order::Infinite),
+        "the (3,4,5) rotor is a versor of infinite order — `None` would be no class at all"
+    );
+}
+
+/// A FINITE-order edge is a congruence at its own period, and the period
+/// is the rotor's order and not a number chosen at the call site.
+/// `sheet` is a half turn on `e₁∧e₂` — a letter of the seventeen acting
+/// OFF the sensor plane, which is exactly the transition a versor-only
+/// section could not hold at all.
+#[test]
+fn a_finite_order_edge_off_the_sensor_plane_is_congruent_at_its_period() {
+    // `sheet()` is the DOUBLED quarter on `e₁∧e₂` — a half turn, which
+    // sends `e₁ → −e₁` and so KEEPS the sensor plane and does have a block
+    // there. The single quarter is the one that leaves it.
+    assert!(
+        crate::transducer::alphabet::rotor_block_on(&sheet(), (0, 1)).is_some(),
+        "a half turn on e₁∧e₂ keeps the sensor plane"
+    );
+    let s = off_plane_quarter();
+    assert_eq!(
+        s.order(),
+        Some(crate::transducer::alphabet::Order::Finite(4)),
+        "a quarter turn closes at four, on whichever plane it acts"
+    );
+    assert!(
+        crate::transducer::alphabet::rotor_block_on(&s, (0, 1)).is_none(),
+        "and it takes e₀ off the sensor plane, so it has no block there and no versor — \
+         the transition Cl(3,1) cannot carry"
+    );
+    let mut c = exact_k4();
+    let vs = vs();
+    c.set_edge(&vs[1], &vs[2], s.clone(), ident(), vol());
+    c.coboundary_on_link(&vs[0], |_| vol());
+    let key = triangle(&c, &vs[0], &[&vs[0], &vs[1], &vs[2]]);
+    match c.fill(&key) {
+        Fill::Congruent(g, ell) => {
+            assert_eq!(ell, 4, "the period is the rotor's order");
+            assert_eq!(g.order(), Some(crate::transducer::alphabet::Order::Finite(4)));
+            assert!(
+                g.projective_eq(&s) || g.inverse().is_some_and(|i| i.projective_eq(&s)),
+                "and the filed rotor is the one that caused it: {g:?}"
+            );
+        }
+        other => panic!("a half-turn holonomy is congruent at two, not {other:?}"),
+    }
+}
+
+/// K4 with every edge the identity, sections placed, and the link climbed.
+fn exact_k4() -> Complex {
+    let mut c = Complex::new();
+    let vs = vs();
+    for x in &vs {
+        c.set_section(x, Section::at(x.clone(), Rotor::identity()), vol());
+    }
+    for i in 0..4 {
+        for j in i + 1..4 {
+            c.set_edge(&vs[i], &vs[j], Rotor::identity(), ident(), vol());
         }
     }
-    assert!(found, "an inconsistent link carries a class or a finite congruence");
-    assert!(c.byte_len() < 4096, "four covering vertices stay in kilobytes");
+    c.coboundary_on_link(&vs[0], |_| vol());
+    c
+}
+
+fn vs() -> [crate::transducer::address::Address; 4] {
+    [v(1), v(2), v(3), v(4)]
+}
+
+fn ident() -> crate::transducer::element::Versor {
+    crate::transducer::element::identity_versor()
+}
+
+/// The key of the named triangle on `at`'s link, or a panic saying it is
+/// absent — never a silent skip that would leave the test asserting
+/// nothing.
+fn triangle(
+    c: &Complex,
+    at: &crate::transducer::address::Address,
+    want: &[&crate::transducer::address::Address],
+) -> Vec<u8> {
+    let want = sorted_verts(want.iter().map(|a| a.as_bytes().to_vec()));
+    for k in c.link_of(at.as_bytes()) {
+        if c.cell(&k).is_some_and(|cell| cell.vertices == want) {
+            return k;
+        }
+    }
+    panic!("the triangle {want:?} is not on the link of {at:?}");
 }
 
 /// Work of filling the link of one vertex does not grow with N isolated
@@ -55,15 +174,15 @@ fn work_of_one_fetched_vertex_is_independent_of_n() {
         let mut c = Complex::new();
         let (a, b, cc) = (v(1), v(2), v(3));
         for x in [&a, &b, &cc] {
-            c.set_section(x, Section { addr: (*x).clone(), gamma: Rotor::identity() }, vol());
+            c.set_section(x, Section::at((*x).clone(), Rotor::identity()), vol());
         }
         let id = Rotor::identity();
-        c.set_edge(&a, &b, id.clone(), vol());
-        c.set_edge(&a, &cc, id.clone(), vol());
-        c.set_edge(&b, &cc, id, vol());
+        c.set_edge(&a, &b, id.clone(), ident(), vol());
+        c.set_edge(&a, &cc, id.clone(), ident(), vol());
+        c.set_edge(&b, &cc, id, ident(), vol());
         for i in 0..n {
             let x = crate::transducer::address::Address::from((1000 + i).to_le_bytes().to_vec());
-            c.set_section(&x, Section { addr: x.clone(), gamma: Rotor::identity() }, vol());
+            c.set_section(&x, Section::at(x.clone(), Rotor::identity()), vol());
         }
         work::reset();
         c.coboundary_on_link(&a, |_| vol());
@@ -82,7 +201,7 @@ fn work_of_one_fetched_vertex_is_independent_of_n() {
     let mut thirty = Complex::new();
     for i in 0..30u64 {
         let x = crate::transducer::address::Address::from(i.to_le_bytes().to_vec());
-        thirty.set_section(&x, Section { addr: x.clone(), gamma: Rotor::identity() }, vol());
+        thirty.set_section(&x, Section::at(x.clone(), Rotor::identity()), vol());
     }
     assert!(
         thirty.degrees.get(3).is_none_or(|l| l.is_empty()),
@@ -92,7 +211,7 @@ fn work_of_one_fetched_vertex_is_independent_of_n() {
         let mut c = thirty.clone();
         for i in 0..n {
             let x = crate::transducer::address::Address::from((2000 + i).to_le_bytes().to_vec());
-            c.set_section(&x, Section { addr: x.clone(), gamma: Rotor::identity() }, vol());
+            c.set_section(&x, Section::at(x.clone(), Rotor::identity()), vol());
         }
         let v0 = crate::transducer::address::Address::from(0u64.to_le_bytes().to_vec());
         work::reset();

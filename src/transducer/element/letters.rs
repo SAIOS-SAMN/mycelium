@@ -318,6 +318,17 @@ pub fn meet_class(
     }
 }
 
+/// `by V by⁻¹` on versors — the same conjugation `Rotor::conjugate` does,
+/// one algebra up. A conjugator that does not invert leaves `v` unmoved,
+/// as the rotor's does: a non-invertible transport is not a change of
+/// frame and cannot move a class.
+pub fn versor_conjugate(v: &Versor, by: &Versor) -> Versor {
+    match by.versor_inverse() {
+        Some(inv) => by.geo(v).geo(&inv),
+        None => v.clone(),
+    }
+}
+
 /// The translator by an integer lattice offset — the lattice peel's transport
 /// as a rational versor.
 pub fn translator_versor(r: i64, c: i64) -> Versor {

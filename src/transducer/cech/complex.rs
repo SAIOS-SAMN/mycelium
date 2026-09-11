@@ -80,15 +80,26 @@ impl Complex {
             self.remember(Cell {
                 vertices: vec![vertex],
                 coefficient: Rotor::identity(),
+                carriage: crate::transducer::element::identity_versor(),
                 volume,
-                fill: Fill::Filled(Rotor::identity()),
+                fill: Fill::Filled(
+                    Rotor::identity(),
+                    Box::new(crate::transducer::element::identity_versor()),
+                ),
             });
         }
     }
 
     /// Degree-1 cell: the transition rotor, or a remainder if it does not
     /// realise. Remainder edges form no higher cells.
-    pub fn set_edge(&mut self, a: impl AsRef<[u8]>, b: impl AsRef<[u8]>, g: Rotor, volume: [u64; 4]) {
+    pub fn set_edge(
+        &mut self,
+        a: impl AsRef<[u8]>,
+        b: impl AsRef<[u8]>,
+        g: Rotor,
+        carriage: Versor,
+        volume: [u64; 4],
+    ) {
         let a = a.as_ref();
         let b = b.as_ref();
         let vertices = sorted_verts(vec![a, b]);
@@ -97,17 +108,21 @@ impl Complex {
         }
         let key = cell_key(&vertices);
         self.remainder.remove(&key);
-        let stored = if vertices[0].as_slice() == a {
-            g
+        // Both halves are oriented together: an edge stored against its
+        // given direction inverts the rotor AND the carriage, or it is not
+        // stored at all.
+        let (stored_r, stored_c) = if vertices[0].as_slice() == a {
+            (g, carriage)
         } else {
-            let Some(inv) = g.inverse() else {
+            let (Some(gi), Some(ci)) = (g.inverse(), carriage.versor_inverse()) else {
                 return;
             };
-            inv
+            (gi, ci)
         };
         self.remember(Cell {
             vertices,
-            coefficient: Self::store_coeff(stored),
+            coefficient: Self::store_coeff(stored_r),
+            carriage: stored_c,
             volume,
             fill: Fill::Open,
         });
@@ -122,6 +137,10 @@ impl Complex {
         self.remember(Cell {
             vertices,
             coefficient: g.clone(),
+            // A filed congruence is residue-free by construction: it is a
+            // finite-order rotation about a point, which `classify` returns
+            // only where both residues are the identity.
+            carriage: crate::transducer::element::identity_versor(),
             volume: [1, 0, 0, 0],
             fill: Fill::Congruent(g, ell),
         });
@@ -150,13 +169,13 @@ impl Complex {
     }
 
     /// Oriented edge rotor from a to b.
-    pub fn edge(&self, a: &[u8], b: &[u8]) -> Option<Rotor> {
+    pub fn edge(&self, a: &[u8], b: &[u8]) -> Option<(Rotor, Versor)> {
         let vertices = sorted_verts([a, b]);
         let cell = self.get(&vertices)?;
         if vertices[0] == *a {
-            Some(cell.coefficient.clone())
+            Some((cell.coefficient.clone(), cell.carriage.clone()))
         } else {
-            cell.coefficient.inverse()
+            Some((cell.coefficient.inverse()?, cell.carriage.versor_inverse()?))
         }
     }
 
@@ -177,19 +196,22 @@ impl Complex {
     /// Reopen a stored cell only when its coboundary coefficient moved.
     /// Absence of a rotor is remainder: the fill stands.
     pub(crate) fn reopen_on_coeff_change(&mut self, key: &[u8], verts: &[Vec<u8>]) {
-        let Some(coefficient) = self.coboundary_coeff(verts) else {
+        let Some((coefficient, carriage)) = self.coboundary_coeff(verts) else {
             return;
         };
         let coefficient = Self::store_coeff(coefficient);
         let Some(c) = self.stored_mut(key) else {
             return;
         };
-        match c.coefficient.projective_eq(&coefficient) {
-            true => {}
-            false => {
-                c.coefficient = coefficient;
-                c.fill = Fill::Open;
-            }
+        // EITHER half moving reopens the cell. A cell whose rotor is
+        // unchanged and whose placement moved is a different transition,
+        // and leaving it filled would keep a gauge that no longer closes it.
+        let same = c.coefficient.projective_eq(&coefficient)
+            && crate::transducer::element::same_versor(&c.carriage, &carriage);
+        if !same {
+            c.coefficient = coefficient;
+            c.carriage = carriage;
+            c.fill = Fill::Open;
         }
     }
 
@@ -230,11 +252,14 @@ impl Complex {
         out
     }
 
-    pub(crate) fn holonomy(&self, i: &[u8], j: &[u8], k: &[u8]) -> Option<Rotor> {
-        let g_ij = self.edge(i, j)?;
-        let g_jk = self.edge(j, k)?;
-        let g_ki = self.edge(k, i)?;
-        Some(g_ij.geo(&g_jk).geo(&g_ki))
+    /// The holonomy around a triangle, on both halves. A rotor-only
+    /// composite reads the identity for a triangle whose placements do not
+    /// close, which is the obstruction the reading exists to find.
+    pub(crate) fn holonomy(&self, i: &[u8], j: &[u8], k: &[u8]) -> Option<(Rotor, Versor)> {
+        let (r_ij, c_ij) = self.edge(i, j)?;
+        let (r_jk, c_jk) = self.edge(j, k)?;
+        let (r_ki, c_ki) = self.edge(k, i)?;
+        Some((r_ij.geo(&r_jk).geo(&r_ki), c_ij.geo(&c_jk).geo(&c_ki)))
     }
 
     /// Drop every cell that contains `vertex`. Used when bubbles merge.

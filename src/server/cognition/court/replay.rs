@@ -360,8 +360,17 @@ impl Kernel {
             .collect()
     }
 
-    pub(crate) fn record_gamma<A: AsRef<[u8]>>(&mut self, addrs: &[A], gamma: &crate::transducer::alphabet::Rotor) {
-        let Some(v) = rotor_versor(gamma) else {
+    /// Record a filled cell's gauge as a dislocation on each section's
+    /// word. The gauge arrives as a ROTOR and a CARRIAGE (L11e); the
+    /// dislocation is the whole transport, so the two are composed here
+    /// rather than the placement being dropped.
+    pub(crate) fn record_gamma<A: AsRef<[u8]>>(
+        &mut self,
+        addrs: &[A],
+        gamma: &crate::transducer::alphabet::Rotor,
+        carriage: &crate::transducer::element::Versor,
+    ) {
+        let Some(v) = rotor_versor(gamma).map(|r| carriage.geo(&r)) else {
             return;
         };
         for addr in addrs {

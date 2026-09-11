@@ -4,6 +4,7 @@
 //! one algebra run in two directions — speaking a sentence from geometry, and
 //! comprehending a received chain back into the words that compose it.
 
+pub mod axis;
 pub mod chain;
 pub mod codec;
 pub mod form;

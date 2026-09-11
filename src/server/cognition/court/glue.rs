@@ -71,10 +71,10 @@ impl Kernel {
         };
         cx.set_section(
             peer,
-            crate::transducer::cech::Section {
-                addr: addr.clone(),
-                gamma: peer_gamma,
-            },
+            // The peer's section carries a rotation and no placement (its
+            // translation's letters have none), so the carriage is the
+            // identity — true of it, not stood in for.
+            crate::transducer::cech::Section::at(addr.clone(), peer_gamma),
             vol0,
         );
         let self_rep = cx.sections.get(self_id.as_slice()).map(|s| s.addr.clone());
@@ -121,7 +121,13 @@ impl Kernel {
                 crate::transducer::element::shape_of_chain(spoken.sub()),
             );
             match crate::transducer::cech::transition(w, &spoken).and_then(|g| crate::transducer::cech::rotor_of(&g)) {
-                Some(g) => cx.set_edge(v, peer.as_slice(), g, vol0),
+                Some(g) => cx.set_edge(
+                    v,
+                    peer.as_slice(),
+                    g,
+                    crate::transducer::element::identity_versor(),
+                    vol0,
+                ),
                 None => match bodies {
                     (Some(a), Some(b)) => match crate::transducer::blade::versor_between(&a, &b) {
                         Some(between)
@@ -130,7 +136,13 @@ impl Kernel {
                                 &crate::transducer::element::identity_versor(),
                             ) =>
                         {
-                            cx.set_edge(v, peer.as_slice(), crate::transducer::alphabet::Rotor::identity(), vol0)
+                            cx.set_edge(
+                                v,
+                                peer.as_slice(),
+                                crate::transducer::alphabet::Rotor::identity(),
+                                crate::transducer::element::identity_versor(),
+                                vol0,
+                            )
                         }
                         Some(_) => cx.set_remainder_edge(v, peer.as_slice()),
                         None => {}
@@ -148,6 +160,7 @@ impl Kernel {
         let mut class_cell: Option<(crate::transducer::alphabet::Rotor, u8)> = None;
         let mut congruent: Option<(crate::transducer::alphabet::Rotor, u32, Vec<Address>)> = None;
         let mut fill_gamma = crate::transducer::alphabet::Rotor::identity();
+        let mut fill_carriage = crate::transducer::element::identity_versor();
         let mut fill_addrs: Vec<Address> = Vec::new();
         let mut budget = self.physics.stroke();
         let spoken_rotor = spoken.letters().map(|l| l.spelling.word.rotor());
@@ -166,7 +179,11 @@ impl Kernel {
             }
             let outcome_fill = if spoken.is_translation() {
                 if let Some(g) = &spoken_rotor {
-                    cx.fill_by_gauge(&key, g)
+                    cx.fill_by_gauge(
+                        &key,
+                        g,
+                        &crate::transducer::element::identity_versor(),
+                    )
                 } else {
                     cx.fill(&key)
                 }
@@ -174,10 +191,11 @@ impl Kernel {
                 cx.fill(&key)
             };
             match outcome_fill {
-                crate::transducer::cech::Fill::Filled(gamma) => {
+                crate::transducer::cech::Fill::Filled(gamma, carriage) => {
                     if volume.iter().any(|&x| x > 0) {
                         filled = true;
                         fill_gamma = gamma;
+                        fill_carriage = *carriage;
                         fill_addrs = vertices
                             .iter()
                             .filter_map(|v| cx.sections.get(v).map(|s| s.addr.clone()))
@@ -199,7 +217,8 @@ impl Kernel {
                         key[0], key[1]
                     );
                 }
-                crate::transducer::cech::Fill::Class(class) => {
+                crate::transducer::cech::Fill::Class(_, class) => {
+                    let class = class.as_ref().clone();
                     class_cell = Some((class.clone(), d as u8));
                     let dkey = chart_simplex_key(&inv, &key);
                     self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
@@ -208,6 +227,17 @@ impl Kernel {
                     }
                     eprintln!(
                         "  court cell class degree {d} {:02x}{:02x}…",
+                        key[0], key[1]
+                    );
+                }
+                // 37.7 at the court's glue: a rotation the seventeen do
+                // not spell. It fills nothing and files no class; the cell
+                // stays unfilled and is named for what it is.
+                crate::transducer::cech::Fill::Unspellable(_) => {
+                    let dkey = chart_simplex_key(&inv, &key);
+                    self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
+                    eprintln!(
+                        "  court cell unspellable degree {d} {:02x}{:02x}… 37.7",
                         key[0], key[1]
                     );
                 }
@@ -224,7 +254,7 @@ impl Kernel {
             return Glue::Slashed(reason);
         }
         if filled {
-            self.record_gamma(&fill_addrs, &fill_gamma);
+            self.record_gamma(&fill_addrs, &fill_gamma, &fill_carriage);
             self.pay_cell_volume(&inv, &fill_addrs);
             if !fill_gamma.is_identity() {
                 if let Some((a, b)) = edge_pair(&fill_addrs) {
@@ -403,6 +433,7 @@ impl Kernel {
             crate::transducer::cech::Section {
                 addr: addr.clone(),
                 gamma: crate::transducer::alphabet::Rotor::identity(),
+                carriage: crate::transducer::element::identity_versor(),
             },
             vol,
         );

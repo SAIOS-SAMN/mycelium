@@ -214,22 +214,22 @@ impl Bubble {
                     v
                 },
                 coefficient: gamma_b.clone(),
+                // An idea carries a rotation and no placement, so the
+                // carriage is the identity — true of it, not a stand-in.
+                carriage: crate::transducer::element::identity_versor(),
                 volume: vol,
                 fill: Fill::Open,
             };
             let Some(gamma) = self.rotor() else {
                 return;
             };
-            let a = Section {
-                addr: self.key(),
-                gamma,
-            };
-            let b = Section {
-                addr: crate::transducer::address::Address::from(head.clone()),
-                gamma: gamma_b,
-            };
+            let a = Section::at(self.key(), gamma);
+            let b = Section::at(
+                crate::transducer::address::Address::from(head.clone()),
+                gamma_b,
+            );
             match cech::extend(&a, &b, &cell) {
-                Fill::Filled(_) => {
+                Fill::Filled(..) => {
                     self.cover.insert(ck, ());
                     self.moved_k = now;
                 }
@@ -238,11 +238,14 @@ impl Bubble {
                     self.moved_k = now;
                     self.nerve.file_congruent(self.key(), head, g, ell);
                 }
-                Fill::Class(r) => {
+                Fill::Class(_, r) => {
                     if r.class_key().is_none_or(|ck| !self.horizon.contains(ck.as_bytes())) {
-                        horizon_put(&mut self.horizon, r, Standing::Held);
+                        horizon_put(&mut self.horizon, *r, Standing::Held);
                     }
                 }
+                // 37.7 at a cell: a rotation the seventeen do not spell,
+                // which seeds no horizon and closes nothing.
+                Fill::Unspellable(_) => {}
                 Fill::Open | Fill::Already => {}
             }
         });

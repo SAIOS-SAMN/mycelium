@@ -25,7 +25,7 @@ impl Kernel {
         let mut out = Vec::new();
         for p in inv.prefixes() {
             if let Some(cx) = self.complexes.get(&p.key()) {
-                for (r, d) in cx.classes() {
+                for (_kappa, r, d) in cx.classes() {
                     out.push((r, d as u8));
                 }
             }
@@ -75,7 +75,7 @@ impl Kernel {
                             crate::transducer::cech::Fill::Congruent(r, ell) => {
                                 push(&mut out, &mut seen, r, *ell)
                             }
-                            crate::transducer::cech::Fill::Class(r) => {
+                            crate::transducer::cech::Fill::Class(_, r) => {
                                 push(&mut out, &mut seen, r, 0)
                             }
                             _ => {}
@@ -92,7 +92,7 @@ impl Kernel {
                                 crate::transducer::cech::Fill::Congruent(r, ell) => {
                                     push(&mut out, &mut seen, r, *ell)
                                 }
-                                crate::transducer::cech::Fill::Class(r) => {
+                                crate::transducer::cech::Fill::Class(_, r) => {
                                     push(&mut out, &mut seen, r, 0)
                                 }
                                 _ => {}

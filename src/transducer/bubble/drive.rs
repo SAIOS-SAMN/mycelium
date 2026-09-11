@@ -182,7 +182,11 @@ impl Contemplation {
                                 *g == c.coefficient || g.inverse().as_ref() == Some(&c.coefficient)
                             });
                             if coeff_hit {
-                                self.complex.fill_by_gauge(&key, g)
+                                self.complex.fill_by_gauge(
+                                    &key,
+                                    g,
+                                    &crate::transducer::element::identity_versor(),
+                                )
                             } else {
                                 self.complex.fill(&key)
                             }
@@ -193,7 +197,7 @@ impl Contemplation {
                     self.complex.fill(&key)
                 };
                     match outcome {
-                        Fill::Filled(gamma) => {
+                        Fill::Filled(gamma, _carriage) => {
                             fills += 1;
                             self.fills += 1;
                             if d == 1 && !gamma.is_identity() {
@@ -229,17 +233,23 @@ impl Contemplation {
                                 }
                             }
                         }
-                        Fill::Class(r) => {
+                        Fill::Class(_, r) => {
                             new_classes += 1;
                             self.classes += 1;
                             for v in &vertices {
                                 if let Some(b) = self.bubbles.get_mut(v) {
                                     if r.class_key().is_none_or(|ck| !b.horizon.contains(ck.as_bytes())) {
-                                        horizon_put(&mut b.horizon, r.clone(), Standing::Held);
+                                        horizon_put(&mut b.horizon, r.as_ref().clone(), Standing::Held);
                                     }
                                 }
                             }
                         }
+                        // 37.7 at a cell: a rotation the seventeen do not
+                        // spell. Not a class the horizon can seed a pivot
+                        // from and not a fill — it is an adjunction
+                        // candidate, and it is left standing rather than
+                        // folded into a catch-all that would lose it.
+                        Fill::Unspellable(_) => {}
                         Fill::Open | Fill::Already => {}
                     }
             }
