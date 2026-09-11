@@ -115,4 +115,27 @@ impl crate::transducer::family::Crystal for Epigenome {
             })
             .collect()
     }
+
+    /// 42.6 as amended: this mind's four covers, read on the lane asked
+    /// for. `lanes[3]` holds the same members `generators` does, under the
+    /// same chart, so the holonomic reading is unchanged.
+    fn generators_on_lane(
+        &self,
+        lane: usize,
+        chart: &crate::transducer::stalk::Invariant,
+        budget: &mut crate::physics::Budget,
+    ) -> Vec<(
+        crate::transducer::address::Address,
+        crate::transducer::address::Address,
+        crate::transducer::alphabet::Word,
+    )> {
+        crate::transducer::sentence::generators_under_lane(&self.lanes, lane, chart, budget)
+            .into_iter()
+            .filter_map(|(form, vertex)| {
+                let f = self.working_word(form.as_bytes())?.form()?;
+                let w = crate::transducer::sentence::word_at_vertex(f, vertex.as_bytes())?;
+                Some((form, vertex, w))
+            })
+            .collect()
+    }
 }

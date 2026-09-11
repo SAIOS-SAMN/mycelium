@@ -73,6 +73,33 @@ pub trait Crystal {
         crate::transducer::address::Address,
         super::alphabet::Word,
     )>;
+
+    /// 42.6 AS AMENDED, L12 — THE PRESENTATION ON ONE LANE. The cover of
+    /// the language is the product of four, and a reduction is bounded by
+    /// a presentation only when it runs against the lane's own basis:
+    /// reducing a target that occupies `𝒢` against a generator occupying
+    /// only `𝒽` is a basis no lane has.
+    ///
+    /// The default answers the `𝒽` cover for lane 3 and nothing for the
+    /// others, which is what a crystal that has not split its index holds:
+    /// `versor_chart` IS the holonomic lane's chart, so lane 3 was never
+    /// missing — the other three were, and answering them from it would
+    /// be the union this row exists to refuse.
+    fn generators_on_lane(
+        &self,
+        lane: usize,
+        chart: &Invariant,
+        budget: &mut crate::physics::Budget,
+    ) -> Vec<(
+        crate::transducer::address::Address,
+        crate::transducer::address::Address,
+        super::alphabet::Word,
+    )> {
+        match lane {
+            3 => self.generators_under(chart, budget),
+            _ => Vec::new(),
+        }
+    }
 }
 
 /// A crystal that holds nothing. Glue is a no-op.

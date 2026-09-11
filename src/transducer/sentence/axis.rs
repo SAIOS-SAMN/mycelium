@@ -50,6 +50,44 @@ impl Axis {
         }
     }
 
+    /// THE LANE THIS AXIS CARRIES CONTENT ON — 42.6's table, which is
+    /// 16.16's definition of the pressure applied to 12.6's coordinates:
+    /// `𝒮` the cells a word fails to speak, `𝒢` the hue transitions it
+    /// fails to carry, `𝒯` the extent held in receipts, `𝒽` the shells it
+    /// spans.
+    ///
+    /// - `Placement` is the translator and `Dilation` the dilator. Both say
+    ///   where the support is and how large, which is the atlas: `𝒮`.
+    /// - `Hue` is the gauge map, and the fibre over the word is the gauge
+    ///   cover, so the fibre's sections and torsion cycles sit here too:
+    ///   `𝒢`. The physics' own test is the proof — a two-cell recolour
+    ///   reads `[false, true, false, false]`.
+    /// - The plane slots — orientation, unit, and the two prime exponents
+    ///   on each of the six planes — and `OffPlane` are the ROTOR's own
+    ///   coordinates (15.3). What the loop turns by is the nerve: `𝒽`.
+    /// - `Open` is an OPENED AXIS, and 42.6's table puts it on `𝒢` with
+    ///   the fibre's sections and torsion cycles: the gauge cover is the
+    ///   fibre over the word, and opening an axis widens that fibre. It is
+    ///   not a coordinate of the class VECTOR — `occupies` returns false
+    ///   for it and says why — but it is content on a lane, and the lane
+    ///   is the one whose cover it moved.
+    ///
+    /// NO AXIS IS TEMPORAL, and that is not an omission. 16.16 reads `𝒯`
+    /// as the extent held in RECEIPTS, and `measure_lanes` writes lane 2
+    /// as zero with that reason at the line. It is why every `uncarried`
+    /// vector the cover has read has the shape `[𝒮, 0, 0, 𝒽]`.
+    pub fn lane(self) -> usize {
+        match self {
+            Axis::Placement | Axis::Dilation => 0,
+            Axis::Hue | Axis::Open => 1,
+            Axis::Orientation(_)
+            | Axis::Unit(_)
+            | Axis::Prime5(_)
+            | Axis::Prime13(_)
+            | Axis::OffPlane => 3,
+        }
+    }
+
     pub(crate) fn from_byte(b: u8) -> Option<Axis> {
         let p = b & 7;
         match (b >> 3, p) {

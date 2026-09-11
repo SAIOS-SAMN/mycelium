@@ -241,8 +241,14 @@ fn adjoined_basis(
     let Some(chart) = crate::transducer::sentence::versor_chart_of(&target) else {
         return Some(Vec::new());
     };
+    // THE LANE THE TARGET OCCUPIES (42.6 as amended, L12). The target here
+    // is a ROTOR, so what it occupies is the holonomic lane and the basis
+    // is `𝒽`'s — which is the cover `versor_chart` already keys, so the
+    // reading does not move. It is asked by lane rather than taken from
+    // the only index there was, so a target occupying `𝒢` or `𝒮` reduces
+    // against that lane's basis and not against this one.
     let mut out = Vec::new();
-    for (form, vertex, g) in crystal.generators_under(&chart, budget) {
+    for (form, vertex, g) in crystal.generators_on_lane(3, &chart, budget) {
         if !g.letters().is_empty() {
             continue;
         }

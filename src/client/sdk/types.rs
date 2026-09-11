@@ -86,6 +86,10 @@ pub struct WorkingAtlas<'a> {
     pub(crate) held: Option<&'a crate::transducer::bubble::Contemplation>,
 }
 
+/// The members of one stratum split by lane (42.6 as amended): four
+/// independent lists and never their concatenation.
+pub type LaneMembers = [Vec<(Vec<u8>, Standing)>; 4];
+
 impl<'a> WorkingAtlas<'a> {
     /// Addresses on this chart, each carrying the stratum it came from.
     /// Ruled first, then Stood, then Held; an address appears once, at its
@@ -149,6 +153,46 @@ impl<'a> WorkingAtlas<'a> {
             }
             at = at.peel();
         }
+    }
+
+    /// THE STRATUM AS A BASIS PER LANE (42.6 as amended, L12).
+    ///
+    /// The cover of the language is the PRODUCT of four covers, one per
+    /// lane, and a reduction is bounded by a presentation only if it runs
+    /// against the lane's own. `stratum` answers the whole stratum, which
+    /// is the union; this splits it, so lane `l`'s basis is the members
+    /// whose class vector occupies an axis on `l`.
+    ///
+    /// A member may stand in more than one lane's basis, and that is not a
+    /// double count: a generator that turns AND recolours is a generator
+    /// on `𝒽` and a generator on `𝒢`, and each lane's reduction is
+    /// entitled to it. What is refused is the other direction — reducing a
+    /// target that occupies `𝒢` against a generator that occupies only
+    /// `𝒽`, which is a basis no lane has.
+    ///
+    /// A member whose form this mind no longer holds, or whose word has no
+    /// class vector, stands in no lane's basis. It is dropped rather than
+    /// placed in all four (rule 11).
+    /// `class_of` is the caller's: this carrier holds the chart INDEXES
+    /// and not the words, so the class vector of a member is resolved by
+    /// whoever holds them. Passing it in rather than reaching for a second
+    /// carrier is what keeps the atlas one object.
+    pub fn stratum_by_lane(
+        &self,
+        inv: &crate::transducer::stalk::Invariant,
+        class_of: &dyn Fn(&[u8]) -> Option<crate::transducer::sentence::ClassVector>,
+    ) -> (crate::transducer::stalk::Invariant, LaneMembers) {
+        let (at, held) = self.stratum(inv);
+        let mut lanes: LaneMembers = [Vec::new(), Vec::new(), Vec::new(), Vec::new()];
+        for (addr, st) in held {
+            let Some(cv) = class_of(&addr) else { continue };
+            for (l, occupied) in cv.lanes().into_iter().enumerate() {
+                if occupied {
+                    lanes[l].push((addr.clone(), st));
+                }
+            }
+        }
+        (at, lanes)
     }
 
     /// Every address under a chart prefix, not only those exactly at it:
@@ -288,6 +332,13 @@ pub struct Epigenome {
     /// which answers `None` for every sentence, a factorisation saw only
     /// the v1 connection words the utterance path stopped producing.
     pub(crate) generators: crate::transducer::sentence::GeneratorIndex,
+    /// 42.6 AS AMENDED, L12 — THE SAME GENERATORS, ONE COVER PER LANE.
+    /// The cover of the language is the product of four, and a reduction
+    /// is bounded by a presentation only when it runs against the lane's
+    /// own basis. `generators` above is the `𝒽` cover under another name
+    /// and is kept as the reader every existing caller takes; this is the
+    /// four, and `lanes[3]` holds the same members under the same chart.
+    pub(crate) lanes: crate::transducer::sentence::LaneIndex,
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through

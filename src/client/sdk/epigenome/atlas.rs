@@ -76,6 +76,7 @@ impl Epigenome {
         // to this mind's presentation.
         if let Some(f) = e.form().cloned() {
             crate::transducer::sentence::admit_generators(&mut self.generators, &addr, &f);
+            crate::transducer::sentence::admit_generators_by_lane(&mut self.lanes, &addr, &f);
             // 37.7: a generator the alphabet cannot spell, learned. Read
             // from the vertex — cites nothing and A22 cannot spell its
             // action — never from a flag on the tape.
@@ -106,6 +107,7 @@ impl Epigenome {
         }
         if let Some(f) = e.form() {
             crate::transducer::sentence::retract_generators(&mut self.generators, &addr, f);
+            crate::transducer::sentence::retract_generators_by_lane(&mut self.lanes, &addr, f);
         }
     }
 

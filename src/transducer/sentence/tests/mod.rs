@@ -6,6 +6,7 @@ pub mod common;
 
 mod form;
 mod gauge;
+mod lanes;
 mod pivot;
 mod pivot_loop;
 mod refraction;

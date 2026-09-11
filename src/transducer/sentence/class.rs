@@ -305,6 +305,22 @@ impl ClassVector {
         out
     }
 
+    /// THE LANES THIS CLASS OCCUPIES (42.6 as amended, law 5): one flag
+    /// per lane, read from the occupied coordinates through `Axis::lane`.
+    ///
+    /// Four flags and never their sum. A class occupying S and 𝒽 is not
+    /// "two lanes of content": it is content on S and content on 𝒽, and
+    /// the two are independent covers that a reduction must not mix.
+    pub fn lanes(&self) -> [bool; 4] {
+        let mut out = [false; 4];
+        for axis in self.coordinates() {
+            if let Some(slot) = out.get_mut(axis.lane()) {
+                *slot = true;
+            }
+        }
+        out
+    }
+
     /// The occupied axes: the coordinates, then `Open` last whenever the
     /// loop is held at all (the one move that is not a coordinate).
     pub fn occupied(&self) -> Vec<Axis> {
