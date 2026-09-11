@@ -92,7 +92,7 @@ pub(crate) fn sign_position(
 pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> {
     let (charts, room) = rebuild_own_cover(kernel, mesh);
     let ruled_root = match kernel.lock() {
-        Ok(k) => k.ruled_root(),
+        Ok(mut k) => k.ruled_root(),
         Err(_) => return Vec::new(),
     };
     let cover_roots = mesh.cover.lock().map(|c| c.roots()).unwrap_or([[0u8; 32]; 4]);

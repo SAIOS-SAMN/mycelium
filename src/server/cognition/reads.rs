@@ -20,8 +20,10 @@ impl Kernel {
         self.basis.len()
     }
 
-    pub fn ruled_root(&self) -> [u8; 32] {
-        self.ruled_root
+    /// The root over the ruled cover. Measured here, where it is asked
+    /// for, rather than rebuilt on every ruling (see `refresh_ruled_root`).
+    pub fn ruled_root(&mut self) -> [u8; 32] {
+        self.measure_ruled_root()
     }
 
     pub fn court_federation_len(&self) -> usize {

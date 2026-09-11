@@ -50,7 +50,10 @@ impl Kernel {
         let epochs = nets_of(&self.treasury.rows_below(head_k))?.rows;
         let receipts = self.chain.receipts();
         let k0 = receipts.first().ok_or(REFUSE_FOLD_OPEN)?.step_index;
-        let at = receipts.iter().find(|r| r.step_index == head_k).ok_or(REFUSE_FOLD_OPEN)?;
+        // `at_k` is arithmetic on a contiguous chain; this scanned it for a
+        // K the index already names (law 3). The scan `at_k` was written
+        // to replace was in `receipts_range`; this site was missed.
+        let at = self.chain.at_k(head_k).ok_or(REFUSE_FOLD_OPEN)?;
         let root = Root { k: at.step_index, hash: at.chain_hash, height: at.height };
         let p = Proposal { k0, root, epochs };
         self.fold_pending = Some(p.clone());

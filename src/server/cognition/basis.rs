@@ -222,13 +222,34 @@ impl Kernel {
         }
     }
 
+    /// THE COVER MOVED. The root over it is not rebuilt here.
+    ///
+    /// This called `sheaf::digests`, which materialises every stratum with
+    /// every member and sorts each one — on EVERY ruling. Admitting the Nth
+    /// word cost O(N log N) and admitting N words cost O(N² log N), on the
+    /// one path the whole engine exists to reach. It is a walk of an
+    /// append-only carrier driven by that carrier's own growth.
+    ///
+    /// The root is a reading of the cover, and a reading is taken when it
+    /// is asked for (law 12). It is asked for once per exchange cycle, by
+    /// `sign_cover_digest`; it was being computed once per ruling.
     pub(crate) fn refresh_ruled_root(&mut self) {
-        let digests = crate::transducer::sheaf::digests(&self.ruled);
-        let mut buf = Vec::new();
-        for d in &digests {
-            crate::transducer::address::put_bytes(&mut buf, &d.root);
+        self.ruled_root_due = true;
+    }
+
+    /// The root over the ruled cover, measured if the cover has moved
+    /// since the last reading.
+    pub(crate) fn measure_ruled_root(&mut self) -> [u8; 32] {
+        if self.ruled_root_due {
+            let digests = crate::transducer::sheaf::digests(&self.ruled);
+            let mut buf = Vec::new();
+            for d in &digests {
+                crate::transducer::address::put_bytes(&mut buf, &d.root);
+            }
+            self.ruled_root = crate::chronometry::payload_hash(&buf);
+            self.ruled_root_due = false;
         }
-        self.ruled_root = crate::chronometry::payload_hash(&buf);
+        self.ruled_root
     }
 
     /// Place a word on the basis with no syntropic stroke: restore and the

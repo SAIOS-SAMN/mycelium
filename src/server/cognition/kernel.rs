@@ -363,6 +363,8 @@ pub struct Kernel {
     pub(crate) ruled_addrs: crate::network::nerve::Keyed<()>,
     /// Ruled cover root, maintained on admit/remove.
     pub(crate) ruled_root: [u8; 32],
+    /// Whether the cover has moved since the root over it was measured.
+    pub(crate) ruled_root_due: bool,
     /// Per-lane occupancy of in-flight execution leases, not the book
     /// row count. Cold listings exert zero occupancy. Lane 2 is quote
     /// leases keyed in `t_leases`.

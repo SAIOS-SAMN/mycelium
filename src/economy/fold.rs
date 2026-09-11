@@ -96,8 +96,24 @@ impl Treasury {
 
     /// The rows anchored in `from..=to`, in journal order: what `ACT_ROWS`
     /// serves a witness.
+    /// THE JOURNAL IS IN K ORDER, so the span is a run of it and not a
+    /// filter over the whole of it. This cloned every matching row out of
+    /// an append-only ledger on every `ACT_ROWS` page — O(journal) for a
+    /// page of a few rows, per witness, per fold (law 3: `k_step` is the
+    /// coordinate that orders them).
     pub fn rows_span(&self, from: u64, to: u64) -> Vec<Entry> {
-        self.entries.iter().filter(|e| e.k_step >= from && e.k_step <= to).cloned().collect()
+        let at = self.entries.partition_point(|e| e.k_step < from);
+        let Some(run) = self.entries.get(at..) else {
+            return Vec::new();
+        };
+        let mut out = Vec::new();
+        for e in run {
+            if e.k_step > to {
+                break;
+            }
+            out.push(e.clone());
+        }
+        out
     }
 
     /// `nets_of` over the rows anchored at or below `k_head`, with the
