@@ -418,6 +418,9 @@ pub fn extract_rule_with(
     form.loops = Form::loops_of(&form.faces, form.vertices.len());
     form.reindex();
     trace::trace_n("extract/3 glue", form.faces.len(), budget);
+    // The carriages as the pair forms measured them, by address, so the
+    // three steps that alter a vertex can each be asked whether they did.
+    let measured = trace::carriage_of(&form);
     // 3. Glue: placement is the relative word Frame → class, constant across the bundle.
     // Crystal is indexed by the section coordinate (moduli); correspondence is transport class.
     let glued_classes: Vec<(TransportClass, Invariant)> = form
@@ -457,6 +460,7 @@ pub fn extract_rule_with(
             }
         }
     }
+    trace::trace_carriage("extract/3 glue", &measured, &form);
     trace::trace_n("extract/4 rebase", form.vertices.len(), budget);
     // 4. Rebase: w_j = t · w_i · t⁻¹ with t the relative placement, on
     // every pair. Named faces only; Frame is not a conjugator.
@@ -468,6 +472,7 @@ pub fn extract_rule_with(
     }
     // 6. Contact: placement differs across pairs, peel ring to Frame is one value.
     let nverts = form.vertices.len();
+    trace::trace_carriage("extract/4 rebase", &measured, &form);
     trace::trace_n("extract/6 contact", nverts, budget);
     for vi in 0..nverts {
         // A contact ring not read is a vertex that keeps its carriage,
@@ -518,6 +523,7 @@ pub fn extract_rule_with(
             }
         }
     }
+    trace::trace_carriage("extract/6 contact", &measured, &form);
     trace::trace_n("extract/7 coherence", form.loops.len(), budget);
     // 7. Coherence: tree gauge, else hold the loops.
     if !form.coheres() {

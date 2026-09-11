@@ -172,7 +172,10 @@ impl Kernel {
             // circuit per stroke, and read per circuit its window was one
             // receipt or none (`comprehension 0/0` at period 1).
             let aperture = u64::from(crate::physics::aperture_cycle());
-            if n / aperture != n.saturating_sub(u64::from(circuit)) / aperture {
+            // THE WINDOW, read once and used by both the phase and the
+            // fold: one reading, two consumers (law 12).
+            let window = n / aperture != n.saturating_sub(u64::from(circuit)) / aperture;
+            if window {
                 self.read_phase();
             }
             // 45.8, S13.9, S13.10: an orbit that completes while a lane is
@@ -180,7 +183,19 @@ impl Kernel {
             // consolidation stroke in it — proposed here, carried to a
             // witness by the exchange, sealed on both signatures (47.3). A
             // prefix that is not final proposes nothing and writes no line.
-            if self.fold_pending.is_none()
+            //
+            // ONCE PER APERTURE OF ORBITS, NOT ONCE PER ORBIT. A docket
+            // that fits one budget completes a circuit every stroke, so
+            // this proposed a fold on every one of them where any lane was
+            // short — which is most of them. Measured at epoch 12: 374
+            // folds in six minutes, ~250 MiB a minute into the cold
+            // segments, 620 MiB and 662 MiB in two and a half minutes, on
+            // a root filesystem with 13 GiB left. An era is a
+            // consolidation of the ledger, not a per-stroke act, and it is
+            // paced by the same window the phase reading is — the aperture
+            // of docket orbits this court has actually completed.
+            if window
+                && self.fold_pending.is_none()
                 && !crate::economy::lanes_short(&self.physics.reserve_shortfall([true; 4])).is_empty()
             {
                 let _ = self.propose_fold();
