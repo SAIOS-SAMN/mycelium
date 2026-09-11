@@ -6,6 +6,7 @@
 
 pub mod correspondence;
 pub mod cover;
+pub mod cursor;
 pub mod derivation;
 pub mod descent;
 pub mod extract;

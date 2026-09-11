@@ -124,8 +124,12 @@ fn main() {
             // `cells filled 0` cannot be told from `no cover ran`, which is
             // the ambiguity every reading of this chain has carried.
             println!(
-                "  soak cover measured {} unmeasured {} spend {} carried {}",
-                r.cover.measured, r.cover.unmeasured, r.cover.spend, r.cover.carried
+                "  soak cover measured {} unmeasured {} pending {} spend {} carried {}",
+                r.cover.measured,
+                r.cover.unmeasured,
+                r.cover.pending,
+                r.cover.spend,
+                r.cover.carried
             );
             println!(
                 "  soak cover meets flat {} filed {} standing {} unspellable {} \

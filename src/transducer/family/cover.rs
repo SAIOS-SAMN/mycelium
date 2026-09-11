@@ -51,6 +51,13 @@ pub struct CoverTally {
     /// ended first.
     pub measured: u64,
     pub unmeasured: u64,
+    /// COVERS STILL PARKED at the end of the walk (L20): a stroke ended
+    /// inside them and the placements are held for the next one. Read off
+    /// the cursor's own carrier at the end and counted nowhere, so it
+    /// cannot disagree with what is actually held. An `unmeasured` that
+    /// leaves nothing pending was re-covered from the first piece; one
+    /// that leaves a pending entry will resume.
+    pub pending: usize,
     /// Reads spent inside covers, apart from the peel's own.
     pub spend: u64,
     /// Carriages placed and 1-simplices of the nerve recorded.
@@ -73,9 +80,14 @@ thread_local! {
     static TALLY: std::cell::Cell<CoverTally> = std::cell::Cell::new(CoverTally::default());
 }
 
-/// Read the walk's covers and clear the count.
+/// Read the walk's covers and clear the count. `pending` is read from the
+/// cursor's own carrier here and not accumulated as the walk goes: what is
+/// parked at the end IS what is parked, and a counter beside it could say
+/// otherwise (law 12).
 pub fn take_cover_tally() -> CoverTally {
-    TALLY.with(|t| t.replace(CoverTally::default()))
+    let mut t = TALLY.with(|t| t.replace(CoverTally::default()));
+    t.pending = super::cursor::parked();
+    t
 }
 
 /// Count one loop the FORM classified over the cover's carriages. Called
@@ -110,9 +122,9 @@ fn tally(f: impl Fn(&mut CoverTally)) {
 /// shape is visible at all. Meets on the codomain are the merge case.
 /// Reading only the codomain — measured with `carried 2` on a family of
 /// one input piece and ten output pieces — leaves the nerve discrete.
-struct Supports {
-    domain: Vec<(i64, i64)>,
-    codomain: Vec<(i64, i64)>,
+pub(crate) struct Supports {
+    pub(crate) domain: Vec<(i64, i64)>,
+    pub(crate) codomain: Vec<(i64, i64)>,
 }
 
 /// ONE PIECE THE COVER CARRIED: the word vertex it became, the versor
@@ -177,7 +189,7 @@ pub(crate) struct Cover {
 pub(crate) struct Unmeasured;
 
 impl Cover {
-    fn new() -> Cover {
+    pub(crate) fn new() -> Cover {
         Cover {
             carried: crate::network::nerve::Keyed::new(),
             meets: crate::network::nerve::Keyed::new(),
@@ -216,11 +228,20 @@ pub(crate) fn cover_deformation(
     scale: Option<((usize, usize), (usize, usize))>,
     budget: &mut crate::physics::Budget,
 ) -> Result<Cover, Unmeasured> {
+    use super::cursor::{self, Stage};
     use crate::network::nerve::ROOT;
     let opened = budget.remaining();
     let ins = pieces_of(&input.cells, scale);
     let outs = pieces_of(&image.cells, scale);
-    let mut cover = Cover::new();
+    // WHERE THIS COVER STOPPED, if a stroke stopped it (L20, S13.3). A
+    // fresh deformation starts at the pullback's first piece; one a stroke
+    // parked starts where that stroke left off, with what it had placed.
+    let ckey = cursor::deformation_key(&input.cells, &image.cells, scale);
+    let mut st = match cursor::take(&ckey) {
+        Some(p) => p,
+        None => cursor::Pending::new(),
+    };
+    let mut cover = std::mem::replace(&mut st.cover, Cover::new());
 
     // Cell position → the input piece holding it. This is Φ: the
     // positional correspondence over the two supports, which is what a
@@ -232,14 +253,44 @@ pub(crate) fn cover_deformation(
         }
     }
 
-    let mut placed: crate::network::nerve::Keyed<Supports> = crate::network::nerve::Keyed::new();
-    let mut consumed: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    let mut reached: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let mut placed = std::mem::replace(&mut st.placed, crate::network::nerve::Keyed::new());
+    let mut consumed = std::mem::replace(&mut st.consumed, crate::network::nerve::Keyed::new());
+    let mut reached = std::mem::replace(&mut st.reached, crate::network::nerve::Keyed::new());
     let out_keys: Vec<Vec<u8>> = outs.fiber(ROOT).map(|(k, _)| k).collect();
+    // THE PARK, written once: everything the stroke has and where it
+    // stopped. It is taken by value at each site, so there is one place a
+    // half-run cover is stored and no site can forget a carrier.
+    macro_rules! park {
+        ($stage:expr) => {{
+            tally(|t| t.unmeasured += 1);
+            cursor::park(
+                &ckey,
+                cursor::Pending { cover, placed, consumed, reached, stage: $stage },
+            );
+            return Err(Unmeasured);
+        }};
+    }
 
-    // (a) THE PULLBACK, in place.
-    for ko in &out_keys {
-        let Some(op) = outs.get(ko) else { continue };
+    // (a) THE PULLBACK, in place. Resumed at the piece after the last one
+    // a stroke FINISHED — key order, never a count of how many were done.
+    // `done_a` only advances when a piece is complete, so a piece the
+    // budget cut in half is redone whole next stroke; every write inside
+    // one is keyed, so redoing it writes the same entries at the same
+    // addresses and the result does not depend on where a stroke fell.
+    let (in_a, mut done_a) = match &st.stage {
+        Stage::Pullback(after) => (true, after.clone()),
+        _ => (false, None),
+    };
+    for ko in out_keys.iter().filter(|_| in_a) {
+        if done_a.as_ref().is_some_and(|after| ko <= after) {
+            continue;
+        }
+        // THE PIECE IS ONE UNIT OF WORK. Every way out of it but the park
+        // leaves it FINISHED — a piece with no preimage, no carriage or no
+        // spelling is a piece read to its end — so the cursor advances
+        // once, below, and no exit can forget to move it.
+        'piece: {
+        let Some(op) = outs.get(ko) else { break 'piece };
         // The preimage: the input pieces named under this piece's own
         // cells, deduped by their address and read in key order.
         let mut named: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
@@ -259,10 +310,6 @@ pub(crate) fn cover_deformation(
         let mut cells: Vec<Cell3> = Vec::new();
         let mut parts: Vec<Vec<u8>> = Vec::new();
         for (ki, ()) in named.fiber(ROOT) {
-            if !budget.spend() {
-                tally(|t| t.unmeasured += 1);
-                return Err(Unmeasured);
-            }
             let Some(ip) = ins.get(&ki) else { continue };
             cells.extend_from_slice(&ip.body.cells);
             parts.push(ki);
@@ -270,9 +317,31 @@ pub(crate) fn cover_deformation(
         // No preimage is no piece to carry, not a piece that failed to
         // carry (rule 11): nothing is reached and nothing is consumed.
         let Some(pre) = (!cells.is_empty()).then(|| body_of(cells)) else {
-            continue;
+            break 'piece;
         };
-        let Some(car) = carriage(&pre, &op.body) else { continue };
+        // ONE READ PER CARRIAGE ATTEMPT, charged where the attempt is.
+        //
+        // THE CHARGE AND THE CURSOR MUST BE THE SAME UNIT, or a stroke that
+        // can pay for one unit does not advance by one. This charged once
+        // per PART of a preimage while resuming per PIECE: measured, a
+        // four-read stroke on the notched fixture then never finished a
+        // piece and never advanced — 4 096 strokes re-running the first
+        // one. That is the starvation the cursor exists to end, reproduced
+        // by the cursor. A piece that reaches here costs exactly one, so a
+        // stroke with one read advances by one piece.
+        //
+        // It is charged HERE and not at the top of the piece: a piece with
+        // no preimage is not work, and charging for it made the machine
+        // stroke pay for every empty piece of every peel — measured,
+        // `carried 4 → 0` on the twelve.
+        //
+        // `ins.get(&ki)` in the assembly above is a keyed read of a
+        // structure already in hand, not a read of the scene; charging for
+        // it charged the index walk rather than the geometry.
+        if !budget.spend() {
+            park!(Stage::Pullback(done_a));
+        }
+        let Some(car) = carriage(&pre, &op.body) else { break 'piece };
         let key = carriage_key(&preimage_key(&parts), ko);
         // The carriage is CONFIRMED here — a versor exists and carries the
         // preimage onto this piece. If its rotor does not spell, that is
@@ -283,11 +352,11 @@ pub(crate) fn cover_deformation(
             Some(Ok(v)) => v,
             Some(Err(demanded)) => {
                 cover.refused.insert(&key, demanded);
-                continue;
+                break 'piece;
             }
             // No sensor-plane block at all: the versor is not one this
             // reader can factor, which is unmeasured and not a demand.
-            None => continue,
+            None => break 'piece,
         };
         for &(r, c, _) in pre.cells.iter().chain(op.body.cells.iter()) {
             reached.insert(cell_pos_key(r, c), ());
@@ -298,6 +367,8 @@ pub(crate) fn cover_deformation(
         let codomain = support_of(&op.body);
         placed.insert(&key, Supports { domain: support_of(&pre), codomain: codomain.clone() });
         cover.carried.insert(&key, (v, car.v, codomain));
+        }
+        done_a = Some(ko.clone());
     }
 
     // (b) BY STRUCTURE, for what the pullback left. The correspondence is
@@ -316,12 +387,33 @@ pub(crate) fn cover_deformation(
         }
     }
     let in_keys: Vec<Vec<u8>> = ins.fiber(ROOT).map(|(k, _)| k).collect();
-    for ki in &in_keys {
-        if consumed.contains(ki) {
+    // Resumed like the pullback: after the last input piece a stroke
+    // finished. Arriving from a completed (a), the cursor is at the start
+    // of (b) and nothing is skipped.
+    let mut done_b = match &st.stage {
+        Stage::Structure(after) => after.clone(),
+        _ => None,
+    };
+    let in_b = !matches!(&st.stage, Stage::Meets(_));
+    for ki in in_keys.iter().filter(|_| in_b) {
+        // The input piece the cursor stopped in is RE-ENTERED, not skipped:
+        // the attempt inside it resumes at the output piece after the last
+        // one paid for.
+        if done_b.as_ref().is_some_and(|(after_in, _)| ki < after_in) {
             continue;
         }
-        let Some(ip) = ins.get(ki) else { continue };
-        let Some(fiber) = by_kind_hue.get(&[ip.kind.as_u8(), ip.hue]).cloned() else { continue };
+        let resume_out = match &done_b {
+            Some((after_in, after_out)) if ki == after_in => Some(after_out.clone()),
+            _ => None,
+        };
+        'piece: {
+        if consumed.contains(ki) {
+            break 'piece;
+        }
+        let Some(ip) = ins.get(ki) else { break 'piece };
+        let Some(fiber) = by_kind_hue.get(&[ip.kind.as_u8(), ip.hue]).cloned() else {
+            break 'piece;
+        };
         // EVERY output of this kind and hue is tried, and one that carries
         // is placed — not the first one only. A shape occurring once in
         // the input and several times in the image is ONE piece carried by
@@ -331,11 +423,16 @@ pub(crate) fn cover_deformation(
         // rather than by geometry, and then no transition can be anything
         // but the identity.
         for ko in fiber {
-            if !budget.spend() {
-                tally(|t| t.unmeasured += 1);
-                return Err(Unmeasured);
+            if resume_out.as_ref().is_some_and(|after| &ko <= after) {
+                continue;
             }
             let Some(op) = outs.get(&ko) else { continue };
+            // One read per carriage ATTEMPT, charged where the attempt is,
+            // and the cursor records exactly this pair.
+            if !budget.spend() {
+                park!(Stage::Structure(done_b));
+            }
+            done_b = Some((ki.clone(), ko.clone()));
             let Some(car) = carriage(&ip.body, &op.body) else { continue };
             let key = carriage_key(ki, &ko);
             // As in the pullback: a confirmed carriage whose rotor does not
@@ -358,6 +455,7 @@ pub(crate) fn cover_deformation(
                 Supports { domain: support_of(&ip.body), codomain: codomain.clone() },
             );
             cover.carried.insert(&key, (v, car.v, codomain));
+        }
         }
     }
 
@@ -408,7 +506,28 @@ pub(crate) fn cover_deformation(
             }
         }
     }
+    // Resumed after the last CELL a stroke finished. A cell is one unit of
+    // work here for the same reason a piece is above: every pair in it is
+    // keyed, so redoing a cell writes the same meets at the same
+    // addresses.
+    let mut done_d = match &st.stage {
+        Stage::Meets(after) => after.clone(),
+        _ => None,
+    };
     for (_pos, here) in occ.fiber(ROOT) {
+        if done_d.as_ref().is_some_and(|after| &_pos <= after) {
+            continue;
+        }
+        // ONE READ PER CELL THAT YIELDS A MEET, charged on the first meet
+        // it yields. The cursor resumes at a cell, so a cell is what a
+        // stroke pays for — and a cell that yields nothing is not work, so
+        // it costs nothing. Charged unconditionally at the top instead,
+        // every single-occupant cell of every placed support was paid for:
+        // measured on the twelve, `measured 13 → 11` and `carried 4 → 0`.
+        //
+        // `paid` is bookkeeping about this stroke's payment, not a reading
+        // of the cell: nothing in the cover branches on it.
+        let mut paid = false;
         // A cell's OWN occupants: rule 1 allows this walk, because the
         // cell is the boundary the pair is read out of.
         for a in 0..here.len() {
@@ -417,9 +536,11 @@ pub(crate) fn cover_deformation(
                 if cover.meets.contains(&key) {
                     continue;
                 }
-                if !budget.spend() {
-                    tally(|t| t.unmeasured += 1);
-                    return Err(Unmeasured);
+                if !paid {
+                    if !budget.spend() {
+                        park!(Stage::Meets(done_d));
+                    }
+                    paid = true;
                 }
                 // THE MEET IS RECORDED AND NOT READ. Two pieces overlap;
                 // that is a 1-simplex of the nerve and nothing more. The
@@ -430,6 +551,7 @@ pub(crate) fn cover_deformation(
                 cover.meets.insert(&key, (here[a].clone(), here[b].clone()));
             }
         }
+        done_d = Some(_pos.clone());
     }
     // Exact, not saturating: a budget's remaining only falls, so the
     // opening read is never below the closing one (rule 11).

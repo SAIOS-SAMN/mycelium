@@ -111,6 +111,71 @@ fn an_uncarried_remainder_leaves_the_deformation_standing() {
     assert!(stands, "cells no piece reached leave the deformation on the form");
 }
 
+/// L20, S13.3 — A COVER THAT ENDS RESUMES WHERE IT STOPPED. The same
+/// deformation covered in one large stroke and in a run of small ones
+/// reaches THE SAME COVER: the same carriages under the same addresses and
+/// the same meets. That is the claim the cursor has to earn — a resume
+/// that restarted at the first piece would still terminate here, and would
+/// simply never get further than one stroke's worth.
+///
+/// So the test also asserts the two facts that tell a resume from a
+/// restart: the small stroke does NOT finish in one pass, and a cover that
+/// ended is PARKED rather than discarded. Measured at 754d192, the cover
+/// needs 4 374 reads over twelve tasks and the machine's stroke gives it
+/// 16, which is the starvation this exists to end.
+#[test]
+fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
+    use crate::transducer::family::cover::cover_deformation;
+    use crate::transducer::family::cursor;
+    let (ga, gb) = notched();
+    let (ia, ib) = (perceive(&ga), perceive(&gb));
+    let (Some(input), Some(image)) = (ia.first(), ib.first()) else {
+        panic!("the notched fixture perceives one body on each side");
+    };
+    fn keys<T>(k: &crate::network::nerve::Keyed<T>) -> Vec<Vec<u8>> {
+        k.fiber(ROOT).map(|(a, _)| a).collect()
+    }
+
+    // WHOLE, in a stroke that cannot end.
+    cursor::clear();
+    let whole = cover_deformation(
+        input,
+        image,
+        None,
+        &mut crate::physics::Physics::default().stroke_n(1 << 20),
+    )
+    .expect("a cover that runs to its end");
+    assert_eq!(cursor::parked(), 0, "a cover that completed leaves nothing parked");
+
+    // THE SAME DEFORMATION, one small stroke at a time.
+    cursor::clear();
+    let mut strokes = 0u32;
+    let piecewise = loop {
+        let mut small = crate::physics::Physics::default().stroke_n(4);
+        match cover_deformation(input, image, None, &mut small) {
+            Ok(c) => break c,
+            Err(_) => {
+                strokes += 1;
+                assert_eq!(
+                    cursor::parked(),
+                    1,
+                    "a cover that ended is parked, not discarded"
+                );
+                assert!(strokes < 4096, "and each stroke gets further than the last");
+            }
+        }
+    };
+    assert!(strokes > 0, "four reads do not cover this deformation in one stroke");
+    assert_eq!(
+        keys(&whole.carried),
+        keys(&piecewise.carried),
+        "the same carriages, under the same addresses"
+    );
+    assert_eq!(keys(&whole.meets), keys(&piecewise.meets), "and the same meets");
+    assert_eq!(whole.uncarried, piecewise.uncarried, "and the same uncarried volume");
+    assert_eq!(cursor::parked(), 0, "and the finished cover is taken off the carrier");
+}
+
 /// THE COVER CLASSIFIES NOTHING (L23c): the reading is the form's, so it
 /// is a function of the form's loops and not of the order the cover
 /// happened to walk its meets in. Two builds of one pair agree exactly.
