@@ -69,53 +69,27 @@ fn the_meets_are_faces_and_the_faces_close_into_loops() {
     }
 }
 
-/// WHAT `flat N / standing 0` ACTUALLY MEASURES — and it is not the scene.
-///
-/// EVERY face of a pair form carries `face_of(i, j)`, which is the
-/// COBOUNDARY of the two vertices' placements: `w_j ∘ w_i⁻¹`. A cycle of
-/// those telescopes —
-///
-///   (w₂w₁⁻¹)(w₃w₂⁻¹)…(w₁wₙ⁻¹) = 1
-///
-/// — so every loop of such a form is flat BY CONSTRUCTION, whatever the
-/// scene was. The cover's meets are pushed as `FormFace::new(i, j, t.word)`
-/// with `t = face_of(i, j)`, and the star and cell faces come from the same
-/// reader, so no face of a pair form is anything else.
-///
-/// The corpus reading `loops flat 3444 filed 0 standing 0` at 1<<20 is
-/// therefore a tautology and not a measurement: the construction cannot
-/// produce a non-flat loop, so 3 444 flat ones say only that 3 444 cycles
-/// were walked. A palindrome — `x x⁻¹ = 1`, 1-D backtracking — is all a
-/// coboundary can be.
-///
-/// THE CONTRAST IS ALREADY IN THE TREE, one file over:
-/// `relator.rs` builds a form whose CHORD carries an independently ruled
-/// word rather than a coboundary, and that form files a class of period 2.
-/// A non-trivial holonomy needs transports that are not the coboundary of
-/// one global assignment — three charts each ruled on its own, `[x, y] =
-/// xyx⁻¹y⁻¹ ≠ 1` — which is what L17's depth 4 proves and what the cover
-/// does not yet build.
-#[test]
-fn every_loop_of_a_pair_form_is_flat_because_every_face_is_a_coboundary() {
-    let (a, b) = notched();
-    let f = measured(&a, &b);
-    assert!(!f.loops.is_empty(), "the fixture walks cycles at all");
-    for lp in &f.loops {
-        assert!(
-            lp.holonomy.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()),
-            "a cycle of coboundaries telescopes: {:?}",
-            lp.holonomy
-        );
-    }
-    // And so the form files nothing and stands nothing — not because the
-    // notched block has no curvature, but because this construction has
-    // nowhere to put any.
-    assert_eq!(
-        f.torsion.fiber(ROOT).count(),
-        0,
-        "no cell is filled, and a coboundary could not have filled one"
-    );
-}
+// `every_loop_of_a_pair_form_is_flat_because_every_face_is_a_coboundary`
+// was here and is DELETED, with its reasoning, because both were wrong.
+//
+// Its argument was that a cycle of `face_of` transports telescopes:
+// `(w₂w₁⁻¹)(w₃w₂⁻¹)(w₁w₃⁻¹) = 1`. That holds only in an ABELIAN group —
+// written out, the middle terms `w₁⁻¹w₃` do not cancel — and the
+// sensor-plane group is not abelian once the orientation character is
+// present (`S R S⁻¹ = R⁻¹`, asserted in `rotor_class.rs`).
+//
+// And the fixture proved nothing either way: `notched` is a pure
+// translation, so every vertex's rotor is the identity, every `face_of`
+// word is the identity, and every loop is flat for the most trivial
+// reason there is. It confirmed what it was written to confirm.
+//
+// THE MEASURED FACT IT WAS REACHING FOR is narrower and stands on the
+// code rather than on this fixture: `spell_peel_with` is called at
+// `(PLANE_ROW, PLANE_COL)` and nowhere else, so every word a pair form
+// composes is a sensor-plane word, and on this corpus they are rotations
+// in one plane, which commute. That is L22 §51.6's four-letter
+// sub-alphabet appearing as a consequence. Its observable is a fleet
+// number, not an assertion here (L25).
 
 /// 50.8 CASE 3 — WHERE A CELL IS FILLED it is filed on the form's own
 /// torsion carrier, keyed by the holonomy's class, with the period the
