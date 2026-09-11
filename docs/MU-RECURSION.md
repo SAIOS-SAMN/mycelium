@@ -7664,3 +7664,297 @@ beside `PivotCertificate`; tests: `a_refusal_contracts_the_held_form_and_seals_t
 `a_sealed_tape_is_refused_by_the_mind_before_the_wire`,
 `the_court_verifies_a_contraction_before_it_replays_the_sentence`,
 `two_courts_of_distinct_identity_reach_one_standing_through_the_codec`.
+
+# Part XI — The frame axis
+
+Written 2026-09-11 against c27ea76. A DRAFT, doctrine only: no code in the
+tree changes for it, and nothing here is landed until the operator rules
+it. It settles the ten points row L22 names, so that the ruling has
+something exact to accept or refuse.
+
+## 51. `k` is a coordinate of the base (L22 draft, 2026-09-11)
+
+Carried from 36.2: "A third spatial axis…, the frame index as a coordinate
+the geometry can act on, and transformations that move structure across
+frames have no coordinate on the base and land only as remainder or fibre
+tag. The alphabet already acts on four axes and six planes; three of the
+six touch the fourth axis and are unused by perception. The upgrade is to
+let perception write on them."
+
+Today `k` is the position of a pair in `task.train`. That is a member
+named by its position in a carrier — rule 15's own shape — and "all pairs
+agree" is then a correspondence search across forms that were perceived
+separately, which is L8v's cost and L20's loop. The whole of this chapter
+is one move: `k` stops being a position and becomes a coordinate.
+
+### 51.1 The coordinate
+
+`k` is the third **point coordinate of the base**, carried on `e₃`.
+
+- **Origin.** `k = 0` is the family's first pair as the corpus writes it.
+  The origin is the corpus's, not the engine's, and it is not measured:
+  a family arrives as an ordered list of pairs and that order is the
+  datum. What changes is what the order MEANS — a coordinate, on which a
+  translation is a versor, rather than an index, on which nothing acts.
+- **Unit.** One pair. Not seconds, not receipts, not a tick: `k` is
+  spatial, and 16.16's `𝒯` lane — extent held in receipts — is untouched
+  by it. A family with three pairs occupies `k ∈ {0, 1, 2}` exactly as a
+  body of three cells occupies three rows.
+- **It is the BASE's coordinate, not a fibre tag.** A fibre tag is
+  something a transformation lands on when it has nowhere to go on the
+  base (36.2's own words). The point of putting `k` on `e₃` is that a
+  transformation across frames HAS somewhere to go: it is a versor on a
+  plane touching `e₃`, acting on the same body every other letter acts
+  on. If `k` were a tag, `e₃` would be a second carrier beside the
+  support and rule 12 would be broken — one fact, one carrier.
+- **A consequence, stated so it is not discovered later.** 18.2 quotients
+  the body's absolute position on `(e₀, e₁)`: two bodies differing by a
+  translation are one word. With `k` on `e₃` the SAME quotient applies
+  along `e₃`, so a family and the same family with its pairs shifted by
+  one frame are one body. That is correct and it is what makes agreement
+  a symmetry rather than a coincidence; it also means the frame origin
+  carries no meaning, which is why 51.1 gives it none.
+
+### 51.2 The algebra, derived
+
+18.1's rule is that the algebra is derived from what the base carries and
+is never asserted. Today:
+
+- `Rotor` is `Cl(4,0)` over `e₀..e₃`: sixteen blades, six planes. This is
+  the LETTERS' chart and it does not move — the seventeen already act on
+  four axes (51.6).
+- `Versor` is `cga::Mv`, `Cl(3,1)` over `e₁, e₂, e₊, e₋`: sixteen blades,
+  the conformal model of a base with TWO point coordinates. That is the
+  bridge, and `sensor_action_of` is lossy across it by construction.
+
+With `k` on the base the base has THREE point coordinates `(r, c, k)`.
+The conformal model of an `n`-dimensional base is `Cl(n+1, 1)`, so the
+versor algebra becomes `Cl(4,1)`: **thirty-two blades**, one rotation
+plane becoming three.
+
+**Sixty-four blades are DROPPED, and here is the derivation.** `Cl(5,1)`
+is the conformal model of FOUR point coordinates. The base does not have
+four. The letters' chart has four AXES, but `e₂` is not a point
+coordinate of it: `LetterId::SHEET` is the quarter turn on `(1,2)` and two
+of them are the ORIENTATION CHARACTER of the sensor plane — `PlaneForm`
+reads `orientation` as `det/ρ² = −1` on exactly that composite. An
+orientation character is a ±1 the chart carries, not a place a cell sits
+at. So the base's point coordinates are `e₀` (row), `e₁` (column) and `e₃`
+(frame); `e₂` keeps the role it has and gains nothing.
+
+`Cl(4,1)` it is, and the sheet plane's role is unchanged — which is 51.3's
+first requirement and is why the two points agree.
+
+### 51.3 The cell, the body, the shape, the moduli
+
+A cell becomes `(r, c, k, before, after)`. It was `(r, c, before, after)`
+and `k` was outside it, in the name of the carrier the cell was found in.
+
+- **`Body`** — cells, shape, moduli — is unchanged in kind. Its `cells`
+  carry three coordinates; its connectivity is 4-adjacency on `(r, c)`
+  WITHIN a frame and adjacency along `k` BETWEEN frames, which is
+  6-adjacency on the three axes. A body is then a connected component of
+  one hue across the whole family, not within one pair.
+- **`Shape`** is the blade of the support and gains the third coordinate
+  with it. `blade::shape_of` takes positions; positions gain a third
+  component.
+- **Moduli** are `blade::moduli` of that blade. They gain the harmonics
+  the third axis contributes and lose nothing: a chart that distinguished
+  two bodies on two axes still distinguishes them on three.
+- **The harmonics** are read on the support as they are now. The one
+  thing that must be said out loud: a family of three identical pairs has
+  a body that is PERIODIC along `e₃` with period one, and its moduli must
+  say so, or "all pairs agree" is not readable from the chart. That
+  periodicity is the whole mechanism of 51.5.
+- **The sheet plane's role is unchanged.** `(1,2)` is still where
+  orientation lives; nothing in 51.3 puts a cell coordinate on `e₂`.
+
+### 51.4 The family is one body
+
+`TrainPair` and `Family` retire as CARRIERS. They stay as what the corpus
+serves — a task's JSON is still a list of pairs — and they stop being
+what the engine reasons over.
+
+- The family is ONE body, on `(r, c, k)`.
+- A pair is that body's **section along `e₃`**: the slice at `k = i`.
+  `Form.sections` is already the carrier for sections, `Keyed<Vec<u16>>`,
+  and a section along `e₃` is one of them.
+- The **test pair is the frame with an open output**: the slice at
+  `k = n` whose `after` is unwritten. Speaking the rule is then not a
+  separate move — it is filling the one section the body leaves open,
+  which is what `speak_rule` does today with an extra concept.
+- `perceive` runs ONCE, on the whole family, and returns bodies of three
+  coordinates. `pair_form` — one form per pair — is what disappears, and
+  with it the correspondence between separately perceived forms.
+
+### 51.5 Extraction is a symmetry along `e₃`
+
+Today: seven moves over `m` separately perceived pair forms, matching
+vertices across them by transport class. With one body:
+
+- **Agreement across pairs is the body's symmetry along `e₃`.** A rule
+  that holds in every pair is a translation along `e₃` that carries the
+  body onto itself: a versor on a plane touching `e₃`, read as holonomy
+  around the loop that translation closes. That is ONE loop check, on one
+  form, by the machinery 12.2 already has.
+- **Which of the seven moves survive.**
+  1. *Correspondence by transport class* — GONE. It exists to match
+     vertices across forms and there is one form.
+  2. *Constancy of faces* — SURVIVES, unchanged in kind: faces are still
+     the star from the Frame and the bodies whose supports meet. Their
+     supports now meet along `e₃` as well, which is what makes the
+     periodic body connected.
+  3. *Gluing* — SURVIVES unchanged. It asks the crystal at a body's
+     chart; the chart is richer and the question is the same.
+  4. *Rebasing* — SURVIVES unchanged. "Do to B what A did to itself" is
+     a relation between two vertices of one form and never used the pair
+     index.
+  5. *Unfolding* — SURVIVES and becomes NATURAL: "the output is the input
+     under `k` applications" is, with `k` a coordinate, a statement that
+     the body is periodic along `e₃`. The `Measure` and the stop
+     criterion stay; what goes is that `k` was a count in a carrier.
+  6. *Contact* — SURVIVES unchanged. A ring distance to an anchor is
+     measured on the support and the support gained an axis.
+  7. *Coherence* — SURVIVES, and becomes the WHOLE of extraction's
+     verdict: `coheres`, then `solve_coboundary` and `regauge`, then a
+     held form with the offending loop. Move 1's work lands here as one
+     loop rather than a search.
+
+  So: one move deleted, one move (5) restated, one move (7) taking the
+  weight, and four unchanged. **No completion, no critical pairs, no
+  minimal path by a scalar** — chapter 44's refusals stand here as they
+  stand at L17.
+- **This is why it bounds.** A search over `m` forms is the compiler's own
+  cost (L8v); a loop check on one form is bounded by the form. That is
+  the claim, and 51.10 is how it is proved rather than argued.
+
+### 51.6 The letters, and that nothing is added
+
+The seventeen already act on `e₃`. Read off `letters.rs` rather than
+recalled:
+
+- `SLOT_PLANES_SIX` = `(0,1) (0,2) (0,3) (1,2) (1,3) (2,3)`; quarters are
+  slots 1–6 and the (3,4,5) rotors slots 7–12 on those same six planes;
+  `SLOT_PLANES_13` = `(0,1) (0,2) (0,3) (1,2)` carries the (5,12,13)
+  rotors at slots 13–16; slot 0 is the identity and has no plane.
+- The three planes touching `e₃` are `(0,3)`, `(1,3)`, `(2,3)`. Seven
+  letters act on them: quarters 3, 5, 6; (3,4,5) rotors 9, 11, 12; and the
+  (5,12,13) rotor 15.
+- The letters acting on the sensor plane `(0,1)` are 1, 7 and 13, plus the
+  identity at 0. **So the language writes today in a four-letter
+  sub-alphabet of a seventeen-letter alphabet**, and thirteen letters act
+  on planes no spelling path has ever peeled — `spell_peel_on` is called
+  at `(PLANE_ROW, PLANE_COL)` and nowhere else.
+
+**Nothing is added.** `CAYLEY_ALPHABET_LEN` stays 17, the relators of 1.2
+stay as stated, and no letter changes its rotor. What changes is that
+seven letters that were unreachable become reachable, because there is
+finally something on `e₃` for them to act on. A22's peel gains planes to
+peel on; it does not gain primes.
+
+### 51.7 The tape
+
+The tape's vertex, face and cell codecs gain the third coordinate: a cell
+is five fields where it was four, a support is a list of triples where it
+was pairs, and a versor serialises thirty-two components where it
+serialised sixteen.
+
+**No version is spent, and here is why.** `FORM_TAPE_VERSION` is 7 today.
+v7's layout is fixed at a recut, and the recut is a procedure the OPERATOR
+runs (§10) — it has not happened. So this draft does not choose a version
+byte, does not add v8, and does not write a migration. It records that the
+codec change is a recut's business and that the recut takes it whole:
+every tape in the tree is rewritten at once, or none is. A tape carrying
+two coordinates and a tape carrying three are not two versions of one
+format; they are two bases, and 33's "one migration, then never again"
+is the rule that applies.
+
+### 51.8 The court
+
+- **`G` runs on a three-axis body.** The court's re-derivation is
+  unchanged in kind: it perceives, it replays, it compares by the algebra.
+  It perceives one body instead of `m` pairs, which is strictly less work
+  and strictly the same check.
+- **`vertices_carry_family` becomes `vertices_carry_frames`** in meaning
+  and keeps its name's job: today it asks that every rule vertex speaks
+  in every pair of the family. With one body it asks that every rule
+  vertex's support meets every FRAME — that the vertex is present along
+  the whole of `e₃` and is not a section of some frames only. That is the
+  same refusal on a coordinate instead of on a list, and it is the point
+  at which a section is told from a rule.
+- **`edges_rederive_family` likewise**: an edge transport re-derived per
+  pair becomes an edge transport re-derived at each frame, which is the
+  same computation indexed by a coordinate.
+- Nothing about WHO replays, or how many vantages a ruling needs, moves.
+  47.3's witness, arity 2, and the ruling path are untouched.
+
+### 51.9 The economy and the receipts are unchanged
+
+- **The four lanes are unchanged.** 42.6's table assigns `𝒮` placement and
+  dilation, `𝒢` the gauge, `𝒯` extent in receipts, `𝒽` the rotor's own
+  coordinates. A third BASE coordinate is more `𝒮` and more `𝒽` — a wider
+  support and more planes for the rotor — and it is not a fifth lane. Law
+  5 is about what the lanes ARE, not how many coordinates the base has.
+- **`measure_lanes` is unchanged in kind**: spatial counts cells where
+  support appears or vanishes, gauge counts hue transitions, shell reads
+  the boundary cochain. All three read a support and all three take a
+  third coordinate without changing what they mean.
+- **Receipts are unchanged, and the reason matters**: a receipt records an
+  act on the ledger and `𝒯` is extent in receipts. `k` is spatial (51.1),
+  so it touches neither. A family occupying three frames does not age
+  three times.
+- **The door, room, bonds and the mint are unchanged** for the same
+  reason: every one of them reads a lane vector, and the lane vectors keep
+  their meaning.
+
+### 51.10 The proof
+
+Three claims, in process, with no corpus in the first two:
+
+1. **A family whose rule is one translation along `e₃`.** Construct a
+   family of three pairs where each output is the input translated by a
+   fixed vector. As one body this is a body with a translational symmetry
+   along `e₃`; extraction reads it as ONE loop whose holonomy is that
+   translation, and the trace shows no correspondence pass ran — move 1
+   is not merely fast, it is absent.
+2. **The same address on two courts.** Two kernels of distinct identity,
+   no shared runtime memory, each perceiving the same family as one body
+   and reaching the same form address and the same standing. This is
+   50.9's intelligibility assertion on a three-axis body and it is what
+   makes the coordinate content rather than an implementation.
+3. **`0607ce86.json` returns under the machine stroke.** Three train pairs
+   at 21×22; it does not complete `extract_rule_with` in 900 s today, and
+   the twelve tasks before it complete in 6 s together (L8v, re-measured
+   at 250feeb). It is the reproduction of the search's cost, so it is the
+   proof that the search is gone. The line to beat is the machine stroke,
+   and the machine stroke is not comparable across machines — see the
+   note in 51.11.
+
+### 51.11 What is NOT in this draft
+
+- **The third SPATIAL axis.** 36.2 names one; no corpus carries one; a
+  base coordinate with no datum behind it is an invented value (rule 11).
+  `e₃` here carries the frame index, which `task.train` already supplies.
+- **Any datum not already in `task.train`.** No metadata, no task name, no
+  ordering hint, no annotation. If the corpus does not write it, the
+  engine does not read it.
+- **Any change to the seventeen** (51.6).
+- **The version byte and the migration** (51.7): a recut's business.
+- **A machine-stroke number.** `reserve_max` is
+  `((cores × (1 + MemAvailable_GiB)).max(16) / 8) × 8` read at boot, so
+  the stroke depends on the machine AND on what else that machine was
+  doing when the process started. Measured 2026-09-11: the same corpus at
+  the same commit read `extracted 9` on a quiet box and `extracted 4` in
+  a run begun immediately after a release build. 51.10's third claim is
+  "returns", not "returns in `n`".
+
+**Binding** (what the ruling would touch, named so the cost is visible
+before it is paid, and NOT written): `transducer/family/perceive.rs`
+(`Cell3`, `Body`, `perceive`), `transducer/blade` (`shape_of`, `moduli`,
+`components`, `adjacent_ring`), `transducer/cga` (`Mv` to `Cl(4,1)`),
+`transducer/element/sensor.rs` (`carry_center`, `cell_of`),
+`transducer/sentence/tape.rs` (the codecs), `transducer/family/extract.rs`
+and `pair.rs` (the seven moves), `court/verdict/body.rs`
+(`vertices_carry_family`, `edges_rederive_family`), and every fixture that
+writes a grid. Nothing in `economy/`, nothing in `chronometry/`, nothing
+in `network/`.
