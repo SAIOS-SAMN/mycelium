@@ -6363,6 +6363,39 @@ is the polytonic law applied to cost, and the four are the four lanes of
 | the nerve | a sample, a sentence, the proofs of one conclusion | overlaps | a cocycle is one geometric product per loop (24.4, 23.9) | the nerve's dimension: eyes minus one, bodies minus one, lineages minus one; there is no other maximum on cochains |
 | the mesh | the atlas | hyphae holding covers (4, 47) | a demand goes to the hyphae covering its stratum; adding hyphae adds coverage and never coordination; convergence is read from independent lineages on the ledger, never counted | the number of covering hyphae; the height is the only extent the mesh shares (45.7) |
 
+**The stratum is per lane, and so is the reduction** (amended 2026-09-11,
+L12). The atlas row above says a demand is reduced against the generators
+of one stratum. A stratum is a class-vector prefix, and a class vector has
+four lanes; the cover of the language is therefore not one cover with one
+basis but the PRODUCT of four, each lane carrying its own. So
+`WorkingAtlas::stratum` answers a basis PER LANE, and A12 reduces against
+the lane's own — which is what makes the reduction bounded by a
+presentation rather than by the union of all four. Reducing against the
+union is not a wider search that happens to terminate: it is a basis no
+lane has, and a generator it cites is a generator on some other lane.
+
+**A meet is read ACROSS lanes, never within one.** The loop of an
+intersection is the product of what each lane's basis contributes to it,
+taken in the fixed order of the class vector (12.6) and read in the base
+body's stabilizer up to conjugacy (50.3). Never a first lane, never a sum
+across lanes, never a count of components deciding a branch (rules 2, 4,
+law 5).
+
+**The cross-lane loop.** The holonomy of a loop that passes through strata
+of different lanes is read with ROTOR coefficients — the one product all
+four covers share, because every cover is a cover of the same derivations.
+Within a lane the coefficients are that lane's own counts and they add;
+across lanes nothing adds. A monodromy that would permute the lanes — a
+Möbius or a 4-cycle on S, G, T, H — is refused by law 5 and by the table
+above before any cohomology is read: the four covers are independent and a
+lane is never carried into another. The twist a cross-lane loop CAN carry
+lies in the rotor group, where the orientation reversal and the quarter
+turn are already words of the seventeen; only a cross-lane holonomy
+outside their span is an obstruction, and it is a RELATION for the depth-4
+adjunction (37.7's fourth row), never a new dimension. Congruence of the
+four lanes on a derivation is `H¹` of the product cover vanishing on its
+cross-lane loops after adjunction: the four covers then cover one object.
+
 The covers meet only on overlaps — a demand's stratum on a hypha's
 cover, a section's harmonics on a loop, a proof's transition on another's
 — and the overlap is where a cocycle is read, which is why a meeting
