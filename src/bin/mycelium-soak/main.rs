@@ -132,10 +132,10 @@ fn main() {
                 r.cover.carried
             );
             println!(
-                "  soak cover meets flat {} filed {} standing {} unspellable {} \
+                "  soak cover edges {} meets flat {} filed {} standing {} unspellable {} \
                  pieces refused {}",
-                r.cover.flat, r.cover.filed, r.cover.standing, r.cover.unspellable,
-                r.cover.refused
+                r.cover.edges, r.cover.flat, r.cover.filed, r.cover.standing,
+                r.cover.unspellable, r.cover.refused
             );
         }
         Err(e) => {

@@ -71,6 +71,37 @@ impl Scenery {
     }
 }
 
+/// THE EDGE OF A MEET (50.3, 13.9 step 7): the transition between two
+/// carried pieces' OWN frames, `V_b ∘ V_a⁻¹`, split into the three
+/// coordinates a `Transport` carries — the rotor as a word by A22's peel,
+/// the placement and dilation as the carriage, and the hue transition
+/// `σ_b ∘ σ_a⁻¹` as the gauge.
+///
+/// THE THREE ARE THE THREE LANES a class vector reads (42.6): the word is
+/// `𝒽`, the carriage is `𝒮`, the gauge is `𝒢`. Dropping any of them makes
+/// the loop above blind on that lane before it is classified.
+///
+/// `None` where the transition has no sensor block or A22 cannot spell it:
+/// that meet is a remainder edge and its loop is not evaluated, which is
+/// what `edge_holonomy` answers `None` for. A rotor the seventeen cannot
+/// spell is 37.7's business and not an edge to invent one for (rule 11).
+fn meet_edge(
+    va: &Vertex,
+    sa: &Versor,
+    vb: &Vertex,
+    sb: &Versor,
+) -> Option<crate::transducer::sentence::Transport> {
+    let gamma = sb.geo(&sa.versor_inverse()?);
+    let word = peel_versor(&gamma)?.ok()?;
+    let t = element::translator_of(&gamma)?;
+    let d = element::dilator_of(&gamma)?;
+    let gauge = crate::transducer::sentence::relative_gauge(
+        &crate::transducer::sentence::vertex_gauge(va),
+        &crate::transducer::sentence::vertex_gauge(vb),
+    );
+    Some(crate::transducer::sentence::Transport { word, carriage: d.geo(&t), gauge })
+}
+
 /// A DEFORMATION AND THE COVER THAT READ IT. The two travel together
 /// because the demand's fate is not decided here: whether it dissolves
 /// depends on what the FORM reads off the cover's loops, and the form is
@@ -352,14 +383,30 @@ pub(crate) fn pair_form_uncached(
     // THE COVER'S MEETS ARE FACES. A meet is a 1-simplex of the nerve;
     // the transport across it is `face_of`'s to compute from the two
     // vertices, and a meet with no transport gets no face (13.9 step 7).
+    //
+    // AND THE FACE CARRIES ITS EDGE (50.3). `face_of` gives the COBOUNDARY
+    // of the two pieces' placements, which telescopes around a cycle over
+    // words that commute — and every word here is a sensor-plane word — so
+    // a loop read from transports alone is flat however curved the scene
+    // is. The edge is the other object: the transition between the two
+    // pieces' OWN frames, `V_b ∘ V_a⁻¹`, which the cover already holds
+    // both halves of in `carried`. `FormFace::new` left it `None`, so
+    // `edge_holonomy` answered `None` for every loop in the tree and the
+    // reader has never been fed.
     for c in &covers {
         for (_k, (ka, kb)) in c.cover.meets.fiber(crate::network::nerve::ROOT) {
             let (Some(&i), Some(&j)) = (cover_vertex.get(ka), cover_vertex.get(kb)) else {
                 continue;
             };
-            if let Some(t) = form.face_of(i, j) {
-                form.faces.push(FormFace::new(i, j, t.word));
+            let Some(t) = form.face_of(i, j) else { continue };
+            let edge = match (c.cover.carried.get(ka), c.cover.carried.get(kb)) {
+                (Some((va, sa, _)), Some((vb, sb, _))) => meet_edge(va, sa, vb, sb),
+                _ => None,
+            };
+            if edge.is_some() {
+                crate::transducer::family::cover::tally(|t| t.edges += 1);
             }
+            form.faces.push(FormFace { i, j, transport: t, edge });
         }
     }
     form.loops = Form::loops_of(&form.faces, form.vertices.len());
@@ -388,10 +435,25 @@ pub(crate) fn pair_form_uncached(
         let (Some(ci), false) = (which, mixed) else {
             continue;
         };
-        let sigma: Vec<(u8, u8)> =
-            lp.vertices.windows(2).map(|p| (p[0] as u8, p[1] as u8)).collect();
-        let hue = crate::transducer::sentence::CycleType::of(&sigma);
-        let fill = crate::transducer::cech::classify(&lp.holonomy.rotor(), &lp.carriage, hue);
+        // THE EDGE HOLONOMY IS WHAT IS CLASSIFIED (50.3), not the loop's
+        // transport composite. A loop the cover did not evaluate — a
+        // remainder edge anywhere on it — answers `None` and is not
+        // classified at all, which is 13.9 step 7 and not a flat reading.
+        let Some(e) = form.edge_holonomy(&lp) else {
+            continue;
+        };
+        // AND THE HUE IS THE COMPOSED GAUGE. This read
+        // `lp.vertices.windows(2).map(|p| (p[0] as u8, p[1] as u8))` — the
+        // loop's VERTEX INDICES cast to bytes — and handed them to
+        // `CycleType::of` as if they were a hue permutation. A member's
+        // position in a vector stood in for the colours it carries (rule
+        // 15), so the `𝒢` coordinate of every cover loop was a function of
+        // where its vertices happened to sit, and `Form::class_vector`
+        // beside it has always read the composed gauge instead: the cover
+        // and the pivot disagreed about what a loop's hue is.
+        let hue = crate::transducer::sentence::CycleType::of(&e.gauge);
+        let sigma = e.gauge.clone();
+        let fill = crate::transducer::cech::classify(&e.word.rotor(), &e.carriage, hue);
         crate::transducer::family::cover::tally_loop(&fill);
         match fill {
             crate::transducer::cech::Fill::Congruent(g, ell) => {

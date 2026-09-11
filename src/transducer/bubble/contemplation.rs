@@ -322,6 +322,24 @@ impl Contemplation {
         }
         let mut horizon = Keyed::new();
         self.paint_seeded(&mut horizon);
+        // THE FORM'S OWN STANDING LOOPS ENTER THE HORIZON (L24). A bubble
+        // was seeded from the mesh's classes alone, so a loop this form
+        // carries — a cover's meet cycle whose edge holonomy stands —
+        // reached `pivot_loop` as nothing at all: the pivot read the
+        // horizon it was given, and the class the perception had just
+        // measured was not in it.
+        //
+        // `Bubble::expand_with` already does exactly this for a cell it
+        // meets on the atlas (`Fill::Class` → `horizon_put`). This is the
+        // same admission for the classes the form ARRIVED with, so a
+        // perceived obstruction and a contemplated one are one kind of
+        // object.
+        //
+        // `Standing::Held`, as the atlas arm writes: the class is met and
+        // not ruled. A loop whose class vector occupies nothing is not a
+        // horizon member — there is nothing to discharge — and a rotor
+        // with no order or no class key is refused by `horizon_put`.
+        self.paint_standing(f, &mut horizon);
         let certs = f.certificates.clone();
         let bundle = if train.is_empty() {
             None

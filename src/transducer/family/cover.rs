@@ -63,6 +63,12 @@ pub struct CoverTally {
     /// Carriages placed and 1-simplices of the nerve recorded.
     pub carried: u64,
     pub meets: u64,
+    /// MEETS THAT BECAME A FACE CARRYING 50.3's EDGE — the transition
+    /// between the two pieces' own frames. Counted because `flat` alone
+    /// cannot tell a loop that was evaluated and found flat from a loop
+    /// whose faces carry no edge to evaluate: without this, wiring the
+    /// edge and not wiring it read the same on the line.
+    pub edges: u64,
     /// THE LOOPS THE FORM CLASSIFIED over those carriages, by their
     /// reading. They are counted where they are read — on the form, over a
     /// whole cycle — and not in the cover, which classifies nothing.
@@ -103,7 +109,7 @@ pub(crate) fn tally_loop(fill: &crate::transducer::cech::Fill) {
     });
 }
 
-fn tally(f: impl Fn(&mut CoverTally)) {
+pub(crate) fn tally(f: impl Fn(&mut CoverTally)) {
     TALLY.with(|t| {
         let mut v = t.get();
         f(&mut v);

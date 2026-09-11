@@ -27,6 +27,14 @@ impl Form {
     /// composed around `lp.vertices` (A4). A loop whose class is an axis
     /// the form opened reads as the zero vector: its holonomy is the
     /// transition on that axis and no longer a defect (I6, 15.5, T14).
+    /// THE TRANSPORT COMPOSITE, which is one of a loop's two obstructions
+    /// and not the only one. `FormFace.edge` carries the other — 50.3's
+    /// stabilizer element — and it is read by [`Form::edge_class_vector`].
+    /// Measured: reading the edge HERE instead zeroed the class of the one
+    /// loop in the tree the pivot actually fires on (a turned L across two
+    /// pairs, occupying `Unit(0)`), because an extraction's faces carry an
+    /// edge whose composite is the identity while their transports carry
+    /// the half turn. They are two objects and neither replaces the other.
     pub fn class_vector(&self, idx: usize) -> Option<ClassVector> {
         let lp = self.loops.get(idx)?;
         if self.opened_axis_of(lp).is_some() {

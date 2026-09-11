@@ -82,6 +82,7 @@ impl Form {
     pub fn edge_holonomy(&self, lp: &Loop) -> Option<Transport> {
         let mut acc_word = Word::identity();
         let mut acc_carriage = element::identity_versor();
+        let mut acc_gauge = Vec::new();
         for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
             let f = self.faces.get(fi as usize)?;
             // The Frame is the trivialization every body is read against
@@ -94,8 +95,17 @@ impl Form {
             let step = if f.i == win[0] && f.j == win[1] { edge.clone() } else { edge.inverse()? };
             acc_carriage = step.carriage.geo(&acc_carriage);
             acc_word = step.word.compose(&acc_word);
+            // THE GAUGE COMPOSES TOO, and it was thrown away here. A
+            // holonomy has three coordinates — the rotor on `𝒽`, the
+            // carriage on `𝒮`, the hue cycle on `𝒢` (42.6) — and this
+            // returned `gauge: Vec::new()` unconditionally, so every class
+            // vector read off an edge holonomy was blind on one lane
+            // before it was read. `loop_transport` beside it composes the
+            // gauge the same way; the two now answer the same kind of
+            // object.
+            acc_gauge = compose_gauge(&step.gauge, &acc_gauge);
         }
-        Some(Transport { word: acc_word.normal_form(), carriage: acc_carriage, gauge: Vec::new() })
+        Some(Transport { word: acc_word.normal_form(), carriage: acc_carriage, gauge: acc_gauge })
     }
 
     /// The class the edge holonomy belongs to (15.4), read up to
@@ -103,6 +113,25 @@ impl Form {
     /// not a versor.
     pub fn edge_class(&self, lp: &Loop) -> Option<crate::transducer::address::Address> {
         self.edge_holonomy(lp)?.word.rotor().class_key()
+    }
+
+    /// THE CLASS VECTOR OF A LOOP'S EDGE HOLONOMY (12.6 over 50.3): the
+    /// four coordinates of the stabilizer composite, as `class_vector`
+    /// gives them for the transport composite. A loop carries BOTH and
+    /// neither replaces the other — an extraction's loop can hold a half
+    /// turn on its transports while its edges compose to the identity, and
+    /// a cover's loop is the other way round, since every word it composes
+    /// is a sensor-plane word and those commute.
+    ///
+    /// This is the reading that can occupy `𝒮`: the edge's carriage
+    /// composes `D(ρ)` with `T(t)`, which do not commute, so a triangle of
+    /// placements is a genuine commutator where a triangle of words is not.
+    ///
+    /// `None` when the loop is not evaluated (a remainder edge anywhere on
+    /// it) or the holonomy is not a versor.
+    pub fn edge_class_vector(&self, lp: &Loop) -> Option<ClassVector> {
+        let e = self.edge_holonomy(lp)?;
+        ClassVector::read(&e.word, e.carriage, CycleType::of(&e.gauge))
     }
 
     /// A loop's edge holonomy coheres when it is not evaluated, is the
