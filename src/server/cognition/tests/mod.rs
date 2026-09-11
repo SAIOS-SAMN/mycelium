@@ -21,4 +21,5 @@ mod mint;
 mod persistence;
 mod phase;
 mod receiver;
+mod relator;
 mod room;
