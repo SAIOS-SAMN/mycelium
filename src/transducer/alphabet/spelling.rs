@@ -4,6 +4,7 @@
 //! a shrinking governor, and refuses when no word spells it. Each step reads
 //! the block's own unit and the residual it leaves, never a candidate list.
 
+use crate::core::gaussian::Gauss;
 use crate::transducer::alphabet::{rational_sqrt, LetterId, Word, Q};
 use crate::transducer::peel::{peel_nest, PeelNest, ShellMotion, ShellStep, ShrinkGovernor};
 use num_bigint::BigInt;
@@ -36,52 +37,13 @@ impl Spelling {
     }
 }
 
-/// A Gaussian integer `p + q·i`.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct Gauss {
-    p: BigInt,
-    q: BigInt,
-}
-
-impl Gauss {
-    fn new(p: i64, q: i64) -> Gauss {
-        Gauss { p: BigInt::from(p), q: BigInt::from(q) }
-    }
-    fn mul(&self, o: &Gauss) -> Gauss {
-        Gauss { p: &self.p * &o.p - &self.q * &o.q, q: &self.p * &o.q + &self.q * &o.p }
-    }
-    fn conj(&self) -> Gauss {
-        Gauss { p: self.p.clone(), q: -&self.q }
-    }
-    fn norm(&self) -> BigInt {
-        &self.p * &self.p + &self.q * &self.q
-    }
-    /// Exact division, or `None` when `o` does not divide `self`.
-    fn div_exact(&self, o: &Gauss) -> Option<Gauss> {
-        let n = o.norm();
-        let num = self.mul(&o.conj());
-        let (pd, pr) = num.p.div_rem(&n);
-        let (qd, qr) = num.q.div_rem(&n);
-        if !pr.is_zero() || !qr.is_zero() {
-            return None;
-        }
-        Some(Gauss { p: pd, q: qd })
-    }
-    /// The valuation at `pi`: how many times `pi` divides exactly, and
-    /// what remains. A peel — each division strictly lowers the norm.
-    fn valuation(&self, pi: &Gauss) -> (i64, Gauss) {
-        let mut v = 0i64;
-        let mut z = self.clone();
-        while let Some(next) = z.div_exact(pi) {
-            if next.norm() >= z.norm() {
-                break; // a unit divisor would loop; the alphabet's primes never are
-            }
-            z = next;
-            v += 1;
-        }
-        (v, z)
-    }
-}
+// `Gauss` was defined here, privately, with fields `p, q` and its own
+// `mul`, `conj`, `norm`, `div_exact` and `valuation` — a second Gaussian
+// integer beside `core::gaussian::Gauss`, which had `mul`, `conj`, `norm`
+// and the Euclidean division already. One object in two carriers is law
+// 12's own shape, and the two could drift on a sign or a rounding without
+// anything noticing. The peel uses the core's, which gained `div_exact`
+// and `valuation` (the exact division and the shell count) to serve it.
 
 /// The residual of the spelling peel: the rotation as a Gaussian integer
 /// over its weight, and the orientation sheet still to be peeled.
@@ -122,7 +84,7 @@ pub(crate) fn unit_of_block(b: &[[Q; 2]; 2]) -> Option<Gauss> {
             None
         }
     };
-    Some(Gauss { p: as_int(&b[0][0])?, q: as_int(&b[1][0])? })
+    Some(Gauss::new(as_int(&b[0][0])?, as_int(&b[1][0])?))
 }
 
 impl SpellStep {
@@ -136,8 +98,8 @@ impl SpellStep {
         let third = (0u8..4).find(|k| *k != plane.0 && *k != plane.1)?;
         let flip = LetterId::quarter((plane.1.min(third), plane.1.max(third)))?;
         let quarter_unit = unit_of_block(&Word::raw(vec![(quarter, false)]).block_on(plane)?)?;
-        let pi5 = Gauss::new(2, 1);
-        let pi13 = Gauss::new(3, 2);
+        let pi5 = Gauss::from_i64(2, 1);
+        let pi13 = Gauss::from_i64(3, 2);
         // ((2+i)/(2−i))² = (2+i)⁴/25 and ((3+2i)/(3−2i))² = (3+2i)⁴/169:
         // compare with the letters' measured actions.
         let t5 = pi5.mul(&pi5).mul(&pi5).mul(&pi5);
@@ -201,7 +163,7 @@ impl SpellStep {
         if (v5p + v5m) % 2 != 0 || (v13p + v13m) % 2 != 0 {
             return None;
         }
-        let unit = rest.div_exact(&Gauss { p: n, q: BigInt::zero() })?;
+        let unit = rest.div_exact(&Gauss::new(n, BigInt::zero()))?;
         if !unit.norm().is_one() {
             return None;
         }
@@ -213,7 +175,7 @@ impl SpellStep {
 
     /// Steps of the quarter letter from a unit back to 1.
     fn unit_steps(&self, u: &Gauss) -> Option<u64> {
-        let one = Gauss::new(1, 0);
+        let one = Gauss::from_i64(1, 0);
         let mut cur = one.clone();
         for k in 0..4u64 {
             if &cur == u {
@@ -265,7 +227,7 @@ impl ShellStep for SpellStep {
             return None;
         }
         // The unit: one quarter letter toward 1, oriented by the shorter arc.
-        let one = Gauss::new(1, 0);
+        let one = Gauss::from_i64(1, 0);
         if unit == one {
             return None; // identity: the governor reads Closed before this
         }
@@ -285,7 +247,7 @@ pub(crate) struct SpellGovernor<'a> {
 impl ShrinkGovernor for SpellGovernor<'_> {
     type Residual = SpellResidual;
     fn read(&mut self, r: &SpellResidual) -> ShellMotion {
-        if !r.flipped && r.z.q.is_zero() && r.z.p == r.n {
+        if !r.flipped && r.z.b.is_zero() && r.z.a == r.n {
             return ShellMotion::Closed;
         }
         let d = self.step.distance(r);
@@ -365,7 +327,7 @@ pub fn spell_peel_on(plane: (u8, u8), block: &[[Q; 2]; 2]) -> Option<(PeelNest<S
         return None;
     }
     let n = r00.denom().lcm(r10.denom());
-    let z = Gauss { p: (&r00 * &n).to_integer(), q: (&r10 * &n).to_integer() };
+    let z = Gauss::new((&r00 * &n).to_integer(), (&r10 * &n).to_integer());
     if z.norm() != &n * &n {
         return None;
     }
@@ -376,7 +338,7 @@ pub fn spell_peel_on(plane: (u8, u8), block: &[[Q; 2]; 2]) -> Option<(PeelNest<S
         PeelNest::Closed { cores } => PeelNest::Closed { cores },
         PeelNest::Standing { cores, arc } => PeelNest::Standing {
             cores,
-            arc: SpellResidualView { p: arc.z.p, q: arc.z.q, weight: arc.n, flipped: arc.flipped },
+            arc: SpellResidualView { p: arc.z.a, q: arc.z.b, weight: arc.n, flipped: arc.flipped },
         },
     };
     Some((view, rho))

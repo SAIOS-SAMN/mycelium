@@ -59,6 +59,51 @@ impl Gauss {
         Gauss::new(&self.a - &o.a, &self.b - &o.b)
     }
 
+    /// `a − b·i`. The conjugate of a prime is a prime, and the two are the
+    /// two shells a rotation peels: `π` and `π̄` divide a rotor's arc
+    /// independently and their exponents need not agree.
+    pub fn conj(&self) -> Gauss {
+        Gauss::new(self.a.clone(), -&self.b)
+    }
+
+    /// EXACT division, or `None` when `o` does not divide `self` in ℤ[i].
+    /// This is the division a peel does — as against `div_round`, which is
+    /// Euclid's step and always answers. A shell that does not divide
+    /// exactly is a shell the peel does not take (rule 11).
+    pub fn div_exact(&self, o: &Gauss) -> Option<Gauss> {
+        use num_integer::Integer;
+        let n = o.norm();
+        if n.is_zero() {
+            return None;
+        }
+        let num = self.mul(&o.conj());
+        let (ad, ar) = num.a.div_rem(&n);
+        let (bd, br) = num.b.div_rem(&n);
+        if !ar.is_zero() || !br.is_zero() {
+            return None;
+        }
+        Some(Gauss::new(ad, bd))
+    }
+
+    /// THE VALUATION AT `pi`: how many times `pi` divides exactly, and what
+    /// remains. A peel, and bounded by the norm's own descent — each
+    /// division strictly lowers it, so the loop's bound is the target's
+    /// size and not a count chosen for it (rule 10). A unit divisor would
+    /// not descend and is refused by that same reading rather than by a
+    /// guard placed ahead of it.
+    pub fn valuation(&self, pi: &Gauss) -> (i64, Gauss) {
+        let mut v = 0i64;
+        let mut z = self.clone();
+        while let Some(next) = z.div_exact(pi) {
+            if next.norm() >= z.norm() {
+                break;
+            }
+            z = next;
+            v += 1;
+        }
+        (v, z)
+    }
+
     /// Euclidean division in ℤ[i]: the quotient whose coefficients are the
     /// NEAREST rational integers to the exact quotient, which is what makes
     /// the remainder's norm strictly smaller. Division by zero has no
