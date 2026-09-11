@@ -130,7 +130,8 @@ impl ActKind {
     }
 }
 
-/// One K-step receipt: `chain_hash = blake3(step ‖ height ‖ parents ‖ kind ‖ delta ‖ op ‖ prev)`.
+/// One K-step receipt:
+/// `chain_hash = blake3(step ‖ height ‖ parents ‖ kind ‖ μ⃗ ‖ delta ‖ op ‖ prev)`.
 /// The delta is the Address bytes themselves, never a digest of content.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KStepReceipt {
@@ -142,6 +143,18 @@ pub struct KStepReceipt {
     pub parents: Vec<Parent>,
     /// The act admitted (45.1).
     pub kind: ActKind,
+    /// WHAT THE ACT MEASURED, per lane (45.1, 45.9). Four coordinates, in
+    /// the chain hash, never summed and never compared across lanes (law
+    /// 5). It is on the receipt because a phase reads the ledger by kind
+    /// AND by what each act carried: `generators held`, `derived through`,
+    /// `cells filled` are readings over receipts, and a reader that has
+    /// only the kind must go back to the carriers the act may since have
+    /// changed.
+    ///
+    /// The zero vector is a reading and not an absence: an act whose delta
+    /// names no word this court holds — a fold names a root — measured
+    /// nothing on the lanes, and says so.
+    pub mu: [u64; 4],
     /// This kernel's verifying key.
     pub vk: [u8; 32],
     /// The committed address, written out.
@@ -169,10 +182,19 @@ pub fn operator_hash(voice: &[u8; 32], court_head: &[u8; 32]) -> [u8; 32] {
 
 impl KStepReceipt {
     /// The tape of a receipt with no parent and an empty delta: step,
-    /// height, vk, the parent count, the kind, the delta length, and the
-    /// three hashes — the least a reader may allot one receipt when it
+    /// height, vk, the parent count, the kind, μ⃗, the delta length, and
+    /// the three hashes — the least a reader may allot one receipt when it
     /// bounds an untrusted count.
-    pub const MIN_TAPE: usize = 8 + 8 + 32 + 4 + 1 + 4 + 32 + 32 + 32;
+    pub const MIN_TAPE: usize = 8 + 8 + 32 + 4 + 1 + 32 + 4 + 32 + 32 + 32;
+
+    /// μ⃗ on the tape and in the hash: four lanes written out, in order,
+    /// never a sum and never a length-prefixed list (law 5 — there are
+    /// four, always).
+    fn put_mu(buf: &mut Vec<u8>, mu: &[u64; 4]) {
+        for lane in mu {
+            buf.extend_from_slice(&lane.to_le_bytes());
+        }
+    }
 
     fn put_parents(buf: &mut Vec<u8>, parents: &[Parent]) {
         buf.extend_from_slice(&(parents.len() as u32).to_le_bytes());
@@ -183,11 +205,13 @@ impl KStepReceipt {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn bytes(
         step_index: u64,
         height: u64,
         parents: &[Parent],
         kind: ActKind,
+        mu: &[u64; 4],
         delta: &[u8],
         op: &[u8; 32],
         prev: &[u8; 32],
@@ -197,6 +221,7 @@ impl KStepReceipt {
         buf.extend_from_slice(&height.to_le_bytes());
         Self::put_parents(&mut buf, parents);
         buf.push(kind.to_byte());
+        Self::put_mu(&mut buf, mu);
         buf.extend_from_slice(&(delta.len() as u32).to_le_bytes());
         buf.extend_from_slice(delta);
         buf.extend_from_slice(op);
@@ -204,16 +229,19 @@ impl KStepReceipt {
         buf
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn hash(
         step_index: u64,
         height: u64,
         parents: &[Parent],
         kind: ActKind,
+        mu: &[u64; 4],
         delta: &[u8],
         op: &[u8; 32],
         prev: &[u8; 32],
     ) -> [u8; 32] {
-        *blake3::hash(&Self::bytes(step_index, height, parents, kind, delta, op, prev)).as_bytes()
+        *blake3::hash(&Self::bytes(step_index, height, parents, kind, mu, delta, op, prev))
+            .as_bytes()
     }
 
     /// Does this receipt's chain hash re-derive from its own fields. A
@@ -228,6 +256,7 @@ impl KStepReceipt {
                 self.height,
                 &self.parents,
                 self.kind,
+                &self.mu,
                 &self.delta,
                 &self.operator_hash,
                 &self.prev_receipt_hash,
@@ -240,6 +269,7 @@ impl KStepReceipt {
         out.extend_from_slice(&self.vk);
         Self::put_parents(out, &self.parents);
         out.push(self.kind.to_byte());
+        Self::put_mu(out, &self.mu);
         out.extend_from_slice(&(self.delta.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.delta);
         out.extend_from_slice(&self.operator_hash);
@@ -270,6 +300,11 @@ impl KStepReceipt {
         }
         let kind = ActKind::from_byte(*b.get(*pos)?)?;
         *pos += 1;
+        let mut mu = [0u64; 4];
+        for lane in mu.iter_mut() {
+            *lane = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+            *pos += 8;
+        }
         let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
         *pos += 4;
         let delta = b.get(*pos..*pos + n)?.to_vec();
@@ -279,6 +314,7 @@ impl KStepReceipt {
             height,
             parents,
             kind,
+            mu,
             vk,
             delta,
             operator_hash: take32(pos)?,

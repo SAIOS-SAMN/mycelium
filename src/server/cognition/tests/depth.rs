@@ -62,7 +62,7 @@ fn a_word_committed_by_two_organs_reads_depth_two() {
     // address. Admitted onto the chain as a peer receipt is admitted.
     let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
     let r = peer
-        .append(ActKind::Install, addr.as_bytes(), [0; 32], Vec::new())
+        .append(ActKind::Install, [0; 4], addr.as_bytes(), [0; 32], Vec::new())
         .cloned()
         .expect("the peer's receipt");
     k.note_attestor(&r);
@@ -89,7 +89,7 @@ fn one_signer_acting_twice_is_still_one_vantage() {
     let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
     for kind in [ActKind::Install, ActKind::Ruling] {
         let r = peer
-            .append(kind, addr.as_bytes(), [0; 32], Vec::new())
+            .append(kind, [0; 4], addr.as_bytes(), [0; 32], Vec::new())
             .cloned()
             .expect("a receipt");
         k.note_attestor(&r);
@@ -107,7 +107,7 @@ fn an_act_about_a_word_is_not_a_vantage_behind_it() {
     let mut mind = crate::chronometry::ReceiptChain::with_vk([8; 32]);
     for kind in [ActKind::Learned, ActKind::Uttered, ActKind::Attest] {
         let r = mind
-            .append(kind, addr.as_bytes(), [0; 32], Vec::new())
+            .append(kind, [0; 4], addr.as_bytes(), [0; 32], Vec::new())
             .cloned()
             .expect("a receipt");
         k.note_attestor(&r);
@@ -115,7 +115,7 @@ fn an_act_about_a_word_is_not_a_vantage_behind_it() {
     assert_eq!(k.depth_of(addr.as_bytes()), 0, "acts about it commit nobody to it");
     // The same signer, now committing: one vantage, read from the kind.
     let r = mind
-        .append(ActKind::Adopted, addr.as_bytes(), [0; 32], Vec::new())
+        .append(ActKind::Adopted, [0; 4], addr.as_bytes(), [0; 32], Vec::new())
         .cloned()
         .expect("a receipt");
     k.note_attestor(&r);

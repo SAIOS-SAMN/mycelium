@@ -28,7 +28,7 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
     let sig = [7u8; 64];
 
     let mut chain = crate::chronometry::ReceiptChain::with_vk(vk);
-    chain.append(crate::chronometry::ActKind::List,b"an address", [0; 32], Vec::new()).expect("appends");
+    chain.append(crate::chronometry::ActKind::List, [0; 4],b"an address", [0; 32], Vec::new()).expect("appends");
     let head = chain.receipts()[0].clone();
     let prefix = crate::court::admission::SignedPrefix {
         genesis: [8; 32],
@@ -106,7 +106,7 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
 #[test]
 fn a_prefix_that_does_not_fit_the_wire_is_refused_not_wrapped() {
     let mut chain = crate::chronometry::ReceiptChain::with_vk([6u8; 32]);
-    chain.append(crate::chronometry::ActKind::List,b"an address", [0; 32], Vec::new()).expect("appends");
+    chain.append(crate::chronometry::ActKind::List, [0; 4],b"an address", [0; 32], Vec::new()).expect("appends");
     let head = chain.receipts()[0].clone();
     let prefix = |chart: Vec<u64>| crate::court::admission::SignedPrefix {
         genesis: [8; 32],

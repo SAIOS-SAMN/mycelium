@@ -17,7 +17,7 @@ use crate::verdict::{
 fn co_sign(name: &str, root_hash: [u8; 32]) -> ReceiptSection {
     let key = super::common::court_key(name);
     let mut c = ReceiptChain::with_vk(key.vk_bytes());
-    c.append(ActKind::List, b"w", [0; 32], Vec::new()).expect("appends");
+    c.append(ActKind::List, [0; 4], b"w", [0; 32], Vec::new()).expect("appends");
     let head = c.receipts()[0].clone();
     let prefix = SignedPrefix {
         genesis: [7; 32],

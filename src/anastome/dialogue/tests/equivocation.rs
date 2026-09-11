@@ -5,7 +5,7 @@ use crate::anastome::dialogue::*;
 
 fn section(delta: &[u8], sig: u8) -> ReceiptSection {
     let mut c = crate::chronometry::ReceiptChain::with_vk([0x5c; 32]);
-    c.append(crate::chronometry::ActKind::List,delta, [0; 32], Vec::new()).expect("appends");
+    c.append(crate::chronometry::ActKind::List, [0; 4], delta, [0; 32], Vec::new()).expect("appends");
     let r = c.receipts()[0].clone();
     ReceiptSection {
         prefix: crate::court::admission::SignedPrefix {

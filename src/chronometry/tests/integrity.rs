@@ -7,9 +7,9 @@ use crate::chronometry::*;
 fn the_chain_is_temporal_authority_and_tamper_evident() {
     let mut c = ReceiptChain::new();
     assert_eq!(c.next_step_index(), 0, "genesis K = 0");
-    c.append(ActKind::List, [1u8], [9; 32], Vec::new()).unwrap();
-    c.append(ActKind::List, [2u8], [9; 32], Vec::new()).unwrap();
-    let r = c.append(ActKind::List, [3u8], [8; 32], Vec::new()).unwrap();
+    c.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).unwrap();
+    c.append(ActKind::List, [0; 4], [2u8], [9; 32], Vec::new()).unwrap();
+    let r = c.append(ActKind::List, [0; 4], [3u8], [8; 32], Vec::new()).unwrap();
     assert_eq!(r.step_index, 2, "K is the algebraic clock");
     assert_eq!(c.head_k(), 2, "head_k is the last receipt");
     assert_eq!(c.next_step_index(), 3, "next is one past the head");
@@ -26,8 +26,8 @@ fn the_chain_is_temporal_authority_and_tamper_evident() {
 #[test]
 fn the_receipt_carries_its_kind_on_the_tape_and_in_the_hash() {
     let mut c = ReceiptChain::with_vk([1; 32]);
-    c.append(ActKind::List, [1u8], [9; 32], Vec::new()).unwrap();
-    let r = c.append(ActKind::Install, [2u8], [9; 32], Vec::new()).unwrap().clone();
+    c.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).unwrap();
+    let r = c.append(ActKind::Install, [0; 4], [2u8], [9; 32], Vec::new()).unwrap().clone();
     assert_eq!(r.kind, ActKind::Install);
     let mut tape = Vec::new();
     r.write(&mut tape);

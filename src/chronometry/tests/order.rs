@@ -7,9 +7,9 @@ use crate::chronometry::*;
 #[test]
 fn precedes_implies_lower_height_and_concurrency_is_kept() {
     let mut c = ReceiptChain::with_vk([1; 32]);
-    c.append(ActKind::List, [1u8], [9; 32], Vec::new()).unwrap();
-    c.append(ActKind::List, [2u8], [9; 32], Vec::new()).unwrap();
-    c.append(ActKind::List, [3u8], [9; 32], Vec::new()).unwrap();
+    c.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).unwrap();
+    c.append(ActKind::List, [0; 4], [2u8], [9; 32], Vec::new()).unwrap();
+    c.append(ActKind::List, [0; 4], [3u8], [9; 32], Vec::new()).unwrap();
     let r0 = &c.receipts()[0];
     let r1 = &c.receipts()[1];
     let r2 = &c.receipts()[2];
@@ -26,15 +26,16 @@ fn precedes_implies_lower_height_and_concurrency_is_kept() {
     );
     assert!(r0.height < r1.height && r1.height < r2.height);
     let mut d = ReceiptChain::with_vk([3; 32]);
-    d.append(ActKind::List, [1u8], [9; 32], Vec::new()).unwrap();
+    d.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).unwrap();
     let mut e = ReceiptChain::with_vk([4; 32]);
-    e.append(ActKind::List, [1u8], [9; 32], Vec::new()).unwrap();
+    e.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).unwrap();
     let mut mix = ReceiptChain::with_vk([1; 32]);
-    mix.append(ActKind::List, [0u8], [9; 32], Vec::new()).unwrap();
+    mix.append(ActKind::List, [0; 4], [0u8], [9; 32], Vec::new()).unwrap();
     mix.admit(d.receipts()[0].clone());
     mix.admit(e.receipts()[0].clone());
     mix.append(
         ActKind::List,
+        [0; 4],
         [9u8],
         [9; 32],
         vec![
@@ -65,9 +66,9 @@ fn precedes_implies_lower_height_and_concurrency_is_kept() {
 #[test]
 fn a_frontier_the_budget_cannot_finish_is_refused_not_shortened() {
     let mut c = ReceiptChain::with_vk([1; 32]);
-    c.append(ActKind::List, [1u8], [9; 32], Vec::new()).unwrap();
-    c.append(ActKind::List, [2u8], [9; 32], Vec::new()).unwrap();
-    c.append(ActKind::List, [3u8], [9; 32], Vec::new()).unwrap();
+    c.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).unwrap();
+    c.append(ActKind::List, [0; 4], [2u8], [9; 32], Vec::new()).unwrap();
+    c.append(ActKind::List, [0; 4], [3u8], [9; 32], Vec::new()).unwrap();
     let (r0, r2) = (&c.receipts()[0], &c.receipts()[2]);
     // r0 costs one visit, r2 three: one unit reaches neither pair.
     let mut short = budget(1);
@@ -81,8 +82,8 @@ fn a_frontier_the_budget_cannot_finish_is_refused_not_shortened() {
 #[test]
 fn frontier_visits_each_receipt_once() {
     let mut c = ReceiptChain::with_vk([7; 32]);
-    c.append(ActKind::List, [1u8], [9; 32], Vec::new()).unwrap();
-    c.append(ActKind::List, [2u8], [9; 32], Vec::new()).unwrap();
+    c.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).unwrap();
+    c.append(ActKind::List, [0; 4], [2u8], [9; 32], Vec::new()).unwrap();
     let mut b = budget(8);
     let f = c.frontier(&mut b).expect("measured");
     assert_eq!(f.get(&[7; 32]).copied(), Some(1), "greatest K of this vk");

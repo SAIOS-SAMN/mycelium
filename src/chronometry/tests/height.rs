@@ -6,14 +6,14 @@ use crate::chronometry::*;
 #[test]
 fn height_is_one_plus_max_of_prev_and_parents() {
     let mut a = ReceiptChain::with_vk([1; 32]);
-    a.append(ActKind::List, [1u8], [9; 32], Vec::new()).expect("genesis");
+    a.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).expect("genesis");
     assert_eq!(a.head_height(), 0, "h(genesis) = 0");
-    a.append(ActKind::List, [2u8], [9; 32], Vec::new()).expect("second");
+    a.append(ActKind::List, [0; 4], [2u8], [9; 32], Vec::new()).expect("second");
     assert_eq!(a.head_height(), 1, "h = 1 + h(prev)");
     let mut b = ReceiptChain::with_vk([2; 32]);
-    b.append(ActKind::List, [1u8], [9; 32], Vec::new()).expect("b genesis");
-    b.append(ActKind::List, [2u8], [9; 32], Vec::new()).expect("b second");
-    b.append(ActKind::List, [3u8], [9; 32], Vec::new()).expect("b third");
+    b.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).expect("b genesis");
+    b.append(ActKind::List, [0; 4], [2u8], [9; 32], Vec::new()).expect("b second");
+    b.append(ActKind::List, [0; 4], [3u8], [9; 32], Vec::new()).expect("b third");
     assert_eq!(b.head_height(), 2);
     let parent = Parent {
         vk: [2; 32],
@@ -21,7 +21,7 @@ fn height_is_one_plus_max_of_prev_and_parents() {
         hash: b.head_hash(),
     };
     a.admit(b.receipts().last().unwrap().clone());
-    a.append(ActKind::List, [3u8], [9; 32], vec![parent]).expect("cite b");
+    a.append(ActKind::List, [0; 4], [3u8], [9; 32], vec![parent]).expect("cite b");
     assert_eq!(
         a.head_height(),
         1 + 2,
@@ -38,10 +38,10 @@ fn height_is_one_plus_max_of_prev_and_parents() {
 #[test]
 fn a_chains_own_receipts_are_found_by_hash_like_the_ones_it_admitted() {
     let mut peer = ReceiptChain::with_vk([2; 32]);
-    peer.append(ActKind::List, [1u8], [9; 32], Vec::new()).expect("peer genesis");
+    peer.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).expect("peer genesis");
     let mut c = ReceiptChain::with_vk([1; 32]);
-    c.append(ActKind::List, [1u8], [9; 32], Vec::new()).expect("genesis");
-    c.append(ActKind::List, [2u8], [9; 32], Vec::new()).expect("second");
+    c.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).expect("genesis");
+    c.append(ActKind::List, [0; 4], [2u8], [9; 32], Vec::new()).expect("second");
     c.admit(peer.receipts()[0].clone());
     for r in c.receipts() {
         assert_eq!(c.height_of(&r.chain_hash), Some(r.height), "its own, by hash");

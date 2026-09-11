@@ -204,6 +204,20 @@ impl Kernel {
         voice: [u8; 32],
     ) {
         let op = crate::chronometry::operator_hash(&voice, &self.court_head);
+        // WHAT THE ACT MEASURED, read HERE from this court's own carriers
+        // at the address the receipt stamps (45.1, law 12) — never handed
+        // in by the caller, so no site can invent one and no two sites can
+        // disagree about the same word.
+        //
+        // THE ZERO VECTOR IS A READING. An act whose delta names no word
+        // this court holds measured nothing on the lanes: `Fold` stamps a
+        // root hash and not an address, and `Lapse` stamps a listing this
+        // court has already unlisted. Both say so rather than reaching for
+        // a number (rule 11).
+        let mu = match self.word_at(addr.as_ref()) {
+            Some(w) => w.magnitude(),
+            None => [0; 4],
+        };
         let queued = std::mem::take(&mut self.pending_parents);
         let parents: Vec<_> = queued
             .fiber(crate::network::nerve::ROOT)
@@ -213,11 +227,11 @@ impl Kernel {
         // the chain, so the two cannot disagree. `append` hands back the
         // receipt it wrote, which is the one to record — not a member
         // read back by position (rule 15).
-        let written = match self.chain.append(kind, addr.as_ref(), op, parents) {
+        let written = match self.chain.append(kind, mu, addr.as_ref(), op, parents) {
             Some(r) => Some(r.clone()),
             None => {
                 self.pending_parents = queued;
-                self.chain.append(kind, addr.as_ref(), op, Vec::new()).cloned()
+                self.chain.append(kind, mu, addr.as_ref(), op, Vec::new()).cloned()
             }
         };
         if let Some(r) = written {

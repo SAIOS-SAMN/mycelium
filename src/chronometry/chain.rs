@@ -153,9 +153,13 @@ impl ReceiptChain {
 
     /// Append the next receipt, naming the act it admits (45.1). Height is
     /// 0 at genesis, else `1 + max(h(prev), max parent heights)`.
+    /// `mu` is WHAT THE ACT MEASURED, per lane (45.1, 45.9), and it is in
+    /// the chain hash: an act's measure is part of what the receipt
+    /// commits to, so a ledger read by kind and by lane reads one object.
     pub fn append(
         &mut self,
         kind: ActKind,
+        mu: [u64; 4],
         delta: impl AsRef<[u8]>,
         operator_hash: [u8; 32],
         parents: Vec<Parent>,
@@ -172,14 +176,23 @@ impl ReceiptChain {
             }
             1 + m
         };
-        let chain_hash =
-            KStepReceipt::hash(step_index, height, &parents, kind, &delta, &operator_hash, &prev);
+        let chain_hash = KStepReceipt::hash(
+            step_index,
+            height,
+            &parents,
+            kind,
+            &mu,
+            &delta,
+            &operator_hash,
+            &prev,
+        );
         self.mine.insert(chain_hash, self.receipts.len());
         self.receipts.push(KStepReceipt {
             step_index,
             height,
             parents,
             kind,
+            mu,
             vk: self.vk,
             delta,
             operator_hash,
@@ -220,6 +233,7 @@ impl ReceiptChain {
                 r.height,
                 &r.parents,
                 r.kind,
+                &r.mu,
                 &r.delta,
                 &r.operator_hash,
                 &prev,

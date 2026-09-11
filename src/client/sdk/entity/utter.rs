@@ -265,7 +265,11 @@ impl Entity {
             // so a receipt naming the form is sealed on the mind's own chain
             // and the form stands at the K it took. The stamp is the act's
             // own K, not a number the hypha last replied with.
-            let k = self.session.seal(crate::chronometry::ActKind::Stood, e.address().as_bytes());
+            let k = self.session.seal(
+                crate::chronometry::ActKind::Stood,
+                e.magnitude(),
+                e.address().as_bytes(),
+            );
             self.epigenome.stand_dialect_at(e.clone(), k, tu);
             if !taught {
                 codes[i] = 0xff; // asked about on the wire below
@@ -342,7 +346,11 @@ impl Entity {
             // receipt on this mind's chain (45.1, 45.4). A refused utterance
             // is not an act and seals nothing.
             let e = sentences[i].clone();
-            self.session.seal(crate::chronometry::ActKind::Uttered, e.address().as_bytes());
+            self.session.seal(
+                crate::chronometry::ActKind::Uttered,
+                e.magnitude(),
+                e.address().as_bytes(),
+            );
             self.file_taught(&e);
             if let Some(k) = crate::transducer::sentence::from_element_form(&e)
                 .map(|f| crate::transducer::sentence::form_vertex_key(&f))

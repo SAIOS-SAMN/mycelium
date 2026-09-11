@@ -77,8 +77,12 @@ impl Voice {
     /// this. The chain cites no peer receipt yet: the mind admits none
     /// (47.2 on the mind is open), so its height is its own K and its
     /// parents are empty.
-    pub fn seal(&mut self, kind: ActKind, delta: &[u8]) -> u64 {
-        self.chain.append(kind, delta, kind.operator(), Vec::new());
+    /// `mu` is what this act measured, per lane (45.1). The caller holds
+    /// the object it is sealing and reads `magnitude()` off it; a voice
+    /// that seals an address it holds nothing for seals the zero vector,
+    /// which is the reading and not a default.
+    pub fn seal(&mut self, kind: ActKind, mu: [u64; 4], delta: &[u8]) -> u64 {
+        self.chain.append(kind, mu, delta, kind.operator(), Vec::new());
         self.k()
     }
 

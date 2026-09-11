@@ -19,14 +19,24 @@ fn a_voice_seals_one_receipt_per_admitted_act_and_its_k_is_the_chain() {
     assert_eq!(v.k(), 0, "a voice that has spoken nothing accrues nothing");
     assert!(v.chain().receipts().is_empty(), "and holds no receipt");
 
-    assert_eq!(v.seal(ActKind::Stood, b"a stood form"), 1, "one admitted act is one receipt");
-    assert_eq!(v.seal(ActKind::Uttered, b"an utterance"), 2);
-    assert_eq!(v.seal(ActKind::Learned, b"a learned page"), 3);
+    // Three acts of distinct measure, so the receipts can be told apart by
+    // what they carried and not only by what kind they were.
+    assert_eq!(
+        v.seal(ActKind::Stood, [1, 0, 0, 0], b"a stood form"),
+        1,
+        "one admitted act is one receipt"
+    );
+    assert_eq!(v.seal(ActKind::Uttered, [0, 2, 0, 0], b"an utterance"), 2);
+    assert_eq!(v.seal(ActKind::Learned, [0, 0, 0, 3], b"a learned page"), 3);
     assert_eq!(v.k(), 3, "K is the chain's length");
 
     let rs = v.chain().receipts();
     assert_eq!(rs.len(), 3);
     assert_eq!(rs[0].delta, b"a stood form".to_vec(), "the receipt names what was admitted");
+    // 45.1: and what it measured, per lane, on the receipt itself.
+    assert_eq!(rs[0].mu, [1, 0, 0, 0], "the act's own measure rides the receipt");
+    assert_eq!(rs[1].mu, [0, 2, 0, 0]);
+    assert_eq!(rs[2].mu, [0, 0, 0, 3]);
     assert_eq!(rs[0].vk, v.identity(), "under this voice's key");
     assert_eq!(rs[0].step_index, 0);
     assert_eq!(rs[1].prev_receipt_hash, rs[0].chain_hash, "and links to its predecessor");

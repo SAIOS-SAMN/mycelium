@@ -277,6 +277,10 @@ impl Entity {
         // The page's addresses, written out (A21), are what the receipt
         // names: the words this mind learned, never the page's bytes.
         let mut page: Vec<u8> = Vec::new();
+        // WHAT THE PAGE MEASURED, per lane: the sum over the words it
+        // carried, lane by lane and never across lanes (law 5). A page is
+        // one act and its measure is what it brought.
+        let mut mu = [0u64; 4];
         while pos < taught.len() {
             let before = pos;
             let Some(e) = Element::from_bytes(taught, &mut pos) else {
@@ -285,13 +289,17 @@ impl Entity {
             if pos == before {
                 break;
             }
+            let m = e.magnitude();
+            for (lane, add) in mu.iter_mut().zip(m) {
+                *lane = lane.saturating_add(add);
+            }
             let _ = crate::transducer::address::put_addr(&mut page, e.address());
             let _ = self.pivot_on(&e);
         }
         // 45.1, 45.4: a page LEARNED is an admitted act of this mind, so a
         // receipt naming the words is sealed on its own chain and the page
         // is learned at the K it took.
-        let k = self.session.seal(crate::chronometry::ActKind::Learned, &page);
+        let k = self.session.seal(crate::chronometry::ActKind::Learned, mu, &page);
         self.epigenome.learn_at(taught, k, self.now_tu())
     }
 

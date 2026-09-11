@@ -46,7 +46,13 @@ impl Entity {
         );
         // 45.1: the refusal is an admitted act of this mind, sealed on its
         // own chain; the address is sealed in the utterance index.
-        let k = self.session.seal(crate::chronometry::ActKind::Refused, addr.as_bytes());
+        // μ⃗ is the REFUSED SENTENCE'S OWN measure: what the mind staked and
+        // did not get through. It is the sentence in hand, not a number.
+        let k = self.session.seal(
+            crate::chronometry::ActKind::Refused,
+            spoken.magnitude(),
+            addr.as_bytes(),
+        );
         self.sealed.insert(&addr, k);
         let Some(mut form) = crate::transducer::sentence::from_element_form(spoken) else {
             return self.quiescent(spoken, train);

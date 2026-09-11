@@ -165,7 +165,7 @@ mod tests {
         let mut op = [0u8; 32];
         op[0] = crate::anastome::dialogue::RULING_UPHELD;
         chain
-            .append(crate::chronometry::ActKind::Ruling, &addr, op, Vec::new())
+            .append(crate::chronometry::ActKind::Ruling, word.magnitude(), &addr, op, Vec::new())
             .expect("genesis receipt");
         let state = CourtState {
             chain,

@@ -36,14 +36,15 @@ fn the_phase_is_read_off_the_kinds_and_the_cover_at_the_windows_ends() {
         ActKind::Settled,
         ActKind::Ruling,
     ] {
-        c.append(kind, [1u8], [9; 32], Vec::new()).expect("appends");
+        c.append(kind, [0; 4], [1u8], [9; 32], Vec::new()).expect("appends");
     }
     let mut peer = ReceiptChain::with_vk([2; 32]);
-    peer.append(ActKind::List, [7u8], [9; 32], Vec::new()).expect("appends");
+    peer.append(ActKind::List, [0; 4], [7u8], [9; 32], Vec::new()).expect("appends");
     let cited = peer.receipts()[0].clone();
     c.admit(cited.clone());
     c.append(
         ActKind::Install,
+        [0; 4],
         [2u8],
         [9; 32],
         vec![crate::chronometry::Parent { vk: [2; 32], k: 0, hash: cited.chain_hash }],

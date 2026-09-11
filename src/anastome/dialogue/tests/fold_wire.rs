@@ -9,7 +9,7 @@ use crate::economy::{Entry, Kind};
 #[test]
 fn the_fold_proposal_the_witness_answers_and_the_rows_round_trip() {
     let mut c = ReceiptChain::with_vk([6; 32]);
-    c.append(ActKind::List, b"x", [0; 32], Vec::new()).expect("appends");
+    c.append(ActKind::List, [0; 4], b"x", [0; 32], Vec::new()).expect("appends");
     let head = c.receipts()[0].clone();
     let root = Root { k: 4, hash: [5; 32], height: 9 };
     let section = ReceiptSection {

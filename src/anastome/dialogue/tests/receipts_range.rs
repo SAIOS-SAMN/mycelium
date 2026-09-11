@@ -15,7 +15,7 @@ fn the_receipts_request_and_reply_round_trip_within_the_budget() {
 
     let mut c = ReceiptChain::with_vk([2; 32]);
     for d in [b"a".as_slice(), b"b", b"c"] {
-        c.append(ActKind::List, d, [0; 32], Vec::new()).expect("appends");
+        c.append(ActKind::List, [0; 4], d, [0; 32], Vec::new()).expect("appends");
     }
     let all = encode_receipts_reply(c.receipts(), 1 << 16);
     assert_eq!(decode_receipts_reply(&all).as_deref(), Some(c.receipts()), "the page reads back whole");

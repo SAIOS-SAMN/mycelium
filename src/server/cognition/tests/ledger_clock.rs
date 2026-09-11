@@ -65,7 +65,7 @@ k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), mine);
 
 let key = super::common::court_key("peer");
 let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
-peer.append(crate::chronometry::ActKind::List, b"p0", [0; 32], Vec::new()).expect("appends");
+peer.append(crate::chronometry::ActKind::List, [0; 4], b"p0", [0; 32], Vec::new()).expect("appends");
 let pr = peer.receipts()[0].clone();
 let pre = crate::court::admission::SignedPrefix {
     genesis: [7; 32],
