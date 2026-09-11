@@ -166,6 +166,160 @@ fn a_witness_that_does_not_carry_its_prime_is_refused_at_the_vertex() {
     );
 }
 
+/// A one-word sentence whose vertex carries `d`.
+///
+/// NO STAR FACE, and that is the vertex's own doing: the face to the Frame
+/// is this vertex's action, and a vertex derived through a letter acts by
+/// a rotor the seventeen cannot spell, so `face_of` has no transport word
+/// to give it. `letter_of` in `family/tests/derivation.rs` says the same
+/// at its own line (L11 2/2). The claim here is about the derivation, and
+/// a face invented for it would be a claim about a spelling that does not
+/// exist.
+fn derived_sentence(d: Derivation, tag: u8) -> Element {
+    let (one, zero) = (q(1), q(0));
+    let mut f = Form::default();
+    f.vertices.push(Vertex::Word {
+        address: Address::from_bytes([TAG_FORM, tag]),
+        derivation: d,
+        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        gauge: Vec::new(),
+        class: crate::transducer::stalk::Invariant::default(),
+        contact: None,
+    });
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    as_element_form(&f, [1, 0, 0, 0]).expect("a tape")
+}
+
+/// The versor whose sensor block is the arc `s + t·i`. A rotor
+/// `x + y·e01` has block arc `(x² − y²) + 2xy·i`, so the arc is reached
+/// from its square root in ℤ[i].
+fn versor_of_arc(s: i64, t: i64) -> element::Versor {
+    use crate::transducer::alphabet::{Rotor, Word};
+    let r = Rotor::scalar(q(s)).add(&Rotor::blade(0b0011, q(t)));
+    element::versor_of_word(&Word::formed(r)).expect("a plane versor")
+}
+
+/// L11, THE WHOLE CHAIN AS ONE CLAIM — the row's three facts joined end to
+/// end, each one's output the next one's input, with no fixture between
+/// them:
+///
+///   1. A COURT OPENS a letter the seventeen cannot spell, from the witness
+///      on a voice's demand, and rules it (37.7 P2–P3).
+///   2. THE SYLLABUS CARRIES IT and a mind learns it from the page's own
+///      bytes — not by insertion, so what is proved is that it travels.
+///   3. THE MIND DERIVES THROUGH IT: a versor whose arc is π₁₇², which A22
+///      refuses, factors against that mind's presentation and CITES the
+///      letter at multiplicity two (50.2 step 2).
+///   4. A COURT COMPOSES THE CITATION: the derived sentence is spoken to
+///      the court that ruled the letter, and `blind_replay`'s
+///      `derivations_compose` resolves the citation through its own ruled
+///      cover and agrees. The sentence STANDS.
+///
+/// EACH HALF WAS ALREADY PROVED AND THE JOIN WAS NOT. The three tests this
+/// sits beside prove the opening, the teaching, and — in
+/// `family/tests/derivation.rs` — a derivation through a letter against a
+/// hand-built `Holds` crystal verified by a hand-built cover closure. What
+/// none of them proved is that the SAME letter survives every hop: the
+/// court's address, the page's bytes, the mind's index, the derivation's
+/// citation, and the court's resolution of that citation. A break at any
+/// hop leaves every existing test green.
+#[test]
+fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it() {
+    use crate::client::sdk::Epigenome;
+    let voice = [1u8; 32];
+    let said = demanding_sentence(quarter(1), 1, seventeen());
+
+    // 1. THE COURT OPENS IT, from the witness and nothing else.
+    let mut k = Kernel::new();
+    assert_eq!(
+        k.perceive_speech(voice, &[0; 32], std::slice::from_ref(&said)),
+        vec![crate::anastome::dialogue::SPEECH_STOOD]
+    );
+    k.rule_all_provisionals();
+    let cover = k.genesis_cover().expect("measured");
+    k.enroll([9; 32], cover);
+    let ruled: Vec<Vec<u8>> =
+        k.ruled_addrs.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
+    for a in &ruled {
+        k.confirm_peer_holds_addrs(&[Address::from(a.clone())], [9; 32]);
+    }
+    assert_eq!(k.adjoined(), 1, "the court opened exactly one letter");
+
+    // 2. THE PAGE CARRIES IT and a mind learns it from the bytes.
+    let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20);
+    let mut epi = Epigenome::new();
+    for bytes in &page {
+        let _ = epi.learn(bytes);
+    }
+
+    // 3. THE MIND DERIVES THROUGH IT. (4 + i)² = 15 + 8i, so the target's
+    //    arc is π₁₇² and the peel divides it out twice. The premise is
+    //    asserted first: a mind that holds NOTHING cannot spell this, so
+    //    what the taught mind does is the letter's doing and not the
+    //    alphabet's.
+    let target = versor_of_arc(15, 8);
+    let bare = crate::transducer::family::factor_versor(
+        &crate::transducer::family::NoCrystal,
+        &mut crate::physics::Physics::default().stroke_n(1 << 20),
+        &target,
+        &[],
+    )
+    .expect("a linear block");
+    assert!(bare.is_err(), "the seventeen cannot spell π₁₇²: {bare:?}");
+
+    let derived = crate::transducer::family::factor_versor(
+        &epi,
+        &mut crate::physics::Physics::default().stroke_n(1 << 20),
+        &target,
+        &[],
+    )
+    .expect("a linear block")
+    .expect("the taught mind reaches what the alphabet cannot");
+    assert!(!derived.is_spelled(), "it cites the letter it was taught");
+    assert_eq!(
+        derived.generators.first().map(|(_, _, e)| *e),
+        Some(2),
+        "at the multiplicity the arc carries"
+    );
+    let (cited_form, _, _) = derived.generators.first().cloned().expect("one citation");
+    assert!(
+        ruled.iter().any(|a| a.as_slice() == cited_form.as_bytes()),
+        "and the form it cites is the one THIS court ruled — the address survived the page"
+    );
+    assert!(derived.residue.is_identity(), "nothing is left for the alphabet");
+
+    // 4. THE COURT COMPOSES IT. Spoken to the court that ruled the letter:
+    //    `blind_replay` resolves the citation through its own ruled cover,
+    //    re-derives the rotor, and agrees. A court that had not ruled the
+    //    letter would refuse at this vertex, which is what makes standing
+    //    here a fact about the LANGUAGE and not about the arithmetic.
+    let speaks = derived_sentence(derived, 5);
+    // A court with NO cover cannot resolve the citation, and says so. This
+    // is the control: it is what standing below is measured against, and
+    // it is why standing is a fact about this court's ruled language.
+    assert_eq!(
+        crate::court::verdict::blind_replay(&speaks),
+        Some(crate::court::verdict::REFUSE_DERIVATION),
+        "a court that resolves nothing cannot compose the citation"
+    );
+    assert_eq!(
+        crate::court::verdict::blind_replay_on(
+            &speaks,
+            &|a| k.resolve_form(a),
+            None,
+            &crate::transducer::family::NoCrystal,
+        ),
+        None,
+        "the court that ruled the letter re-derives the citation through it and agrees"
+    );
+    assert_eq!(
+        k.perceive_speech([3u8; 32], &[0; 32], std::slice::from_ref(&speaks)),
+        vec![crate::anastome::dialogue::SPEECH_STOOD],
+        "and the sentence that derives through the letter stands on that court"
+    );
+}
+
 /// 37.7 — THE SYLLABUS TEACHES THE LETTER. A court that ruled a letter
 /// serves it as any ruled form; the mind learns it from the page's own
 /// bytes, files it under the versor chart of its rotor, and answers it as
