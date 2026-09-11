@@ -219,10 +219,7 @@ impl Kernel {
             None => [0; 4],
         };
         let queued = std::mem::take(&mut self.pending_parents);
-        let parents: Vec<_> = queued
-            .fiber(crate::network::nerve::ROOT)
-            .map(|(_, p)| p.clone())
-            .collect();
+        let parents = self.antichain_of(&queued);
         // L15: this court's own act joins the depth index where it joins
         // the chain, so the two cannot disagree. `append` hands back the
         // receipt it wrote, which is the one to record — not a member
@@ -237,6 +234,69 @@ impl Kernel {
         if let Some(r) = written {
             self.note_attestor(&r);
         }
+    }
+
+    /// THE MAXIMAL ANTICHAIN of what this step has admitted: the
+    /// un-dominated heads of the peer DAG, which is what 47.2 step 3 means
+    /// by citing a parent.
+    ///
+    /// `append_step` cited `take(&mut pending_parents)` — EVERY peer
+    /// receipt admitted since the last step, the ingestion log rather than
+    /// the frontier. If a peer emitted K₁, K₂, K₃ and each cites the one
+    /// before, citing K₃ already subsumes K₁ and K₂; dumping all three in
+    /// is `O(admitted history)` bytes of pure redundancy, at 72 bytes a
+    /// citation, on every receipt this court ever writes.
+    ///
+    /// WHAT THAT COST, measured on the fleet at epoch 11: receipts of
+    /// 5.5 KiB beside neighbours of 1.9 KiB, and — against a wire frame
+    /// that was then 4 KiB — two receipts of hypha a that no node of the
+    /// mesh could ever fetch, so the back-fill stopped at K 1111 and no
+    /// peer receipt was admitted as a parent at all. The arity explosion
+    /// is what made the chain unservable.
+    ///
+    /// TWO PRUNES, BOTH BOUNDED BY THE MESH'S WIDTH.
+    ///
+    /// The first is per signer: a chain is a line, so only its highest K
+    /// is un-dominated and every earlier one it names is reached through
+    /// it. That alone is the whole of `O(peer count)`.
+    ///
+    /// The second drops a head another head CITES DIRECTLY — one level,
+    /// read off the citing receipt's own parents, which the carrier
+    /// already names (law 3). Full transitive domination across signers is
+    /// deliberately NOT computed: it is a product over peers with an
+    /// ancestry descent in every cell, which at a thousand peers is a
+    /// million walks to save a few bytes. What the one-level prune leaves
+    /// is a superset of the antichain, never a subset, so no citation this
+    /// court can re-derive a height through is dropped (rule 11).
+    fn antichain_of(
+        &self,
+        queued: &crate::network::nerve::Keyed<crate::chronometry::Parent>,
+    ) -> Vec<crate::chronometry::Parent> {
+        let mut heads: crate::network::nerve::Keyed<crate::chronometry::Parent> =
+            crate::network::nerve::Keyed::new();
+        for (_, p) in queued.fiber(crate::network::nerve::ROOT) {
+            match heads.get(&p.vk) {
+                Some(h) if h.k >= p.k => {}
+                _ => {
+                    heads.insert(p.vk, p.clone());
+                }
+            }
+        }
+        // What the surviving heads name among themselves, read off each
+        // one's own receipt: a head some other head cites is reached
+        // through it and is not a head.
+        let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for (_, p) in heads.fiber(crate::network::nerve::ROOT) {
+            let Some(r) = self.chain.known(&p.hash) else { continue };
+            for q in &r.parents {
+                cited.insert(q.hash, ());
+            }
+        }
+        heads
+            .fiber(crate::network::nerve::ROOT)
+            .map(|(_, p)| p.clone())
+            .filter(|p| !cited.contains(&p.hash))
+            .collect()
     }
 
     /// A voice spoke on a listing in its current state.
