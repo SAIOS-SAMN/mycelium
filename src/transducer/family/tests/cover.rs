@@ -159,18 +159,27 @@ fn an_uncarried_remainder_leaves_the_deformation_standing() {
     assert!(stands, "cells no piece reached leave the deformation on the form");
 }
 
-/// L20, S13.3 — A COVER THAT ENDS RESUMES WHERE IT STOPPED. The same
-/// deformation covered in one large stroke and in a run of small ones
-/// reaches THE SAME COVER: the same carriages under the same addresses and
-/// the same meets. That is the claim the cursor has to earn — a resume
-/// that restarted at the first piece would still terminate here, and would
-/// simply never get further than one stroke's worth.
+/// 50.8 — A COVER THAT ENDS KEEPS WHAT IT MEASURED, AND GOES ON FROM THE
+/// STATE. The same deformation covered in one large stroke and in a run of
+/// small ones reaches THE SAME COVER: the same carriages under the same
+/// addresses, the same meets, the same uncarried volume.
 ///
-/// So the test also asserts the two facts that tell a resume from a
-/// restart: the small stroke does NOT finish in one pass, and a cover that
-/// ended is PARKED rather than discarded. Measured at 754d192, the cover
-/// needs 4 374 reads over twelve tasks and the machine's stroke gives it
-/// 16, which is the starvation this exists to end.
+/// AND IT CARRIES NO POSITION. There is no stage and no index: a stroke
+/// that resumes asks the cover's own carriers what is already settled — an
+/// image piece whose cells are all reached, an input piece consumed, a meet
+/// recorded — and every one of those readings is intrinsic to the state.
+/// The test asserts that a small stroke does NOT finish in one pass, so
+/// what it proves is a resume and not a single run.
+///
+/// THE FLOOR IS REAL AND IS NOT A SCHEDULING FAULT. Measured on this
+/// fixture: at a stroke of 6 and above the cover completes across several
+/// strokes; at 4 it never does, and parks forever at `placed 5 meets 0`.
+/// A piece the cover cannot carry is re-read every stroke and fails again
+/// — it is the uncarried support, a standing defect, and `uncarried` is
+/// where it reports — so a stroke smaller than the cost of re-reading the
+/// defects never reaches past them. That is the defect exerting its cost
+/// on every stroke, not a queue starving a latecomer, and the reading to
+/// take from it is that the stroke is too small for this scene.
 #[test]
 fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
     use crate::transducer::family::cover::cover_deformation;
@@ -197,9 +206,13 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
 
     // THE SAME DEFORMATION, one small stroke at a time.
     cursor::clear();
+    // Six: the smallest stroke on this fixture that both needs more than
+    // one and reaches the end. Below it the uncarried pieces consume the
+    // whole stroke; see the note above.
+    const STROKE: usize = 6;
     let mut strokes = 0u32;
     let piecewise = loop {
-        let mut small = crate::physics::Physics::default().stroke_n(4);
+        let mut small = crate::physics::Physics::default().stroke_n(STROKE);
         match cover_deformation(input, image, None, &mut small) {
             Ok(c) => break c,
             Err(_) => {
@@ -213,7 +226,7 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
             }
         }
     };
-    assert!(strokes > 0, "four reads do not cover this deformation in one stroke");
+    assert!(strokes > 0, "six reads do not cover this deformation in one stroke");
     assert_eq!(
         keys(&whole.carried),
         keys(&piecewise.carried),

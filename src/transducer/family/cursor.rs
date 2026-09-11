@@ -1,26 +1,39 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! L20, S13.3 — WHERE A COVER STOPPED. A stroke that ends mid-cover leaves
-//! the cover PENDING and the next stroke resumes where it stopped, rather
-//! than re-covering from the first piece. That is what turns the cover's
-//! cost into strokes.
+//! 50.8 — WHAT A COVER HAS SETTLED. A cover that a stroke did not finish
+//! keeps what it MEASURED — the pieces it placed, the cells it reached,
+//! the input pieces it consumed — and the next stroke goes on from that
+//! state. Nothing it measured is discarded (rule 7).
 //!
-//! THE MECHANISM ALREADY EXISTS IN THE TREE and this is its second use:
-//! `stroke_fills` resumes from `fill_cursor` under S13.3 and never
-//! restarts at the first key. Measured at 754d192, the cover needs 4 374
-//! reads over twelve tasks and the machine's stroke gives it 16, so
-//! covers that cannot complete were re-doing their first pieces every
-//! stroke and reaching no further.
+//! THERE IS NO CURSOR HERE, and the first version of this file had one.
+//! It held a `Stage` naming which pass was owed and the last key that pass
+//! finished — an ITINERARY, an extrinsic index into a walk, which is the
+//! shape of a tape machine and not of a complex. Its own commit message
+//! said why it was unnecessary without seeing it: "every write in it is
+//! keyed, so redoing it writes the same entries at the same addresses."
+//! A carrier that can be recomputed exactly carries no information, and
+//! this one carried only the order a previous stroke happened to walk in.
+//!
+//! WHAT IS OWED IS READ FROM THE STATE, not from a finger pointing at an
+//! index. An image piece whose cells are all in `reached` is carried; an
+//! input piece in `consumed` is spoken; a meet already in `cover.meets` is
+//! recorded. Each of the three passes asks its own carrier and skips what
+//! that carrier already answers. Two of the three were already doing it —
+//! `consumed.contains(ki)` and `cover.meets.contains(&key)` were in the
+//! tree before any cursor was — and the cursor was bolted over readers
+//! that did not need it.
+//!
+//! WHAT REMAINS UNCARRIED IS NOT A QUEUE POSITION. A piece the cover
+//! cannot carry is read again on the next stroke and fails again; it is
+//! not "waiting its turn", it is the uncarried support — a standing defect
+//! the flow has not relaxed — and `Cover::uncarried` is where it already
+//! reports. The cover is incomplete because of it, and saying so is the
+//! reading.
 //!
 //! IT IS NOT A SHARE AND NOT A RATIO. `cover_share` was struck for hiding
 //! starvation behind a constant and `Budget::halve` after it for putting a
-//! chosen proportion in the same place; `physics/budget` records both. The
-//! cover spends the caller's budget and its cost shows in `exhausted` and
-//! `unmeasured` with no number in front of it. What a cursor changes is
-//! that the spend ACCUMULATES across strokes instead of being paid again.
+//! chosen proportion in the same place; `physics/budget` records both.
 //!
-//! WHAT IS NOT ROLLED BACK ANY MORE, said plainly: a cover that ends used
-//! to discard everything it had placed, and the caller read `Unmeasured`.
 //! The caller still reads `Unmeasured` and the demand still stands exactly
 //! as F typed it — nothing a half-run cover placed reaches a form (rule
 //! 11) — but the placements are KEPT here, off the form, to be finished.
@@ -29,35 +42,16 @@ use super::cover::{Cover, Supports};
 use crate::network::nerve::Keyed;
 use std::cell::RefCell;
 
-/// WHICH STAGE OF THE COVER IS OWED, and the last key that stage finished.
-/// The key is the piece's own address, so a resume skips what is already
-/// behind it in key order and never counts how many were done.
-#[derive(Clone)]
-pub(crate) enum Stage {
-    /// (a) the pullback, over the image's pieces.
-    Pullback(Option<Vec<u8>>),
-    /// (b) the structural pass, over the input's unconsumed pieces. TWO
-    /// keys, because the charge there is per carriage ATTEMPT and one
-    /// input piece is tried against every output of its kind and hue: the
-    /// input piece and the output piece within it. The charge and the
-    /// cursor are the same unit here as everywhere else, or a stroke that
-    /// pays for one attempt does not advance by one.
-    Structure(Option<(Vec<u8>, Vec<u8>)>),
-    /// (d) the meets, over the occupancy of the placed supports.
-    Meets(Option<Vec<u8>>),
-}
-
-/// A COVER PART-WAY THROUGH, with everything the next stroke needs to go
-/// on: what it has placed, what it has consumed, what it has reached, and
-/// where it stopped. `occ` is NOT kept — it is re-derived from `placed` on
-/// the resume, because it is a reading of `placed` and law 12 keeps one
-/// fact on one carrier.
+/// A COVER PART-WAY THROUGH: what it has placed, what it has consumed,
+/// what it has reached. That is the whole of its state and it is
+/// coordinate-free — no index, no stage, no position in a walk. `occ` is
+/// not kept either: it is a reading of `placed` and is re-derived, because
+/// law 12 keeps one fact on one carrier.
 pub(crate) struct Pending {
     pub(crate) cover: Cover,
     pub(crate) placed: Keyed<Supports>,
     pub(crate) consumed: Keyed<()>,
     pub(crate) reached: Keyed<()>,
-    pub(crate) stage: Stage,
 }
 
 impl Pending {
@@ -67,7 +61,6 @@ impl Pending {
             placed: Keyed::new(),
             consumed: Keyed::new(),
             reached: Keyed::new(),
-            stage: Stage::Pullback(None),
         }
     }
 }
@@ -116,16 +109,10 @@ pub(crate) fn take(key: &[u8]) -> Option<Pending> {
 
 /// Park a cover that ran out of budget, and say so on the line.
 pub(crate) fn park(key: &[u8], pending: Pending) {
-    // The line names the STAGE and what is placed so far, not a prefix of
-    // the key: the key is a deformation's cells written out, and two bytes
-    // of it name nothing a reader can use.
-    let stage = match &pending.stage {
-        Stage::Pullback(_) => "pullback",
-        Stage::Structure(_) => "structure",
-        Stage::Meets(_) => "meets",
-    };
+    // The line names WHAT IS SETTLED, which is the state: no stage and no
+    // position, because there is neither.
     eprintln!(
-        "  cover pending at {stage} placed {} meets {}",
+        "  cover pending placed {} meets {}",
         pending.placed.fiber(crate::network::nerve::ROOT).count(),
         pending.cover.meets.fiber(crate::network::nerve::ROOT).count()
     );
