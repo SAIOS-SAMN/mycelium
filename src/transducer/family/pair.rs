@@ -16,11 +16,26 @@ use super::*;
 /// each unpaired output body its support overlaps, on the axes their
 /// charts differ, and toward the empty chart on every axis when nothing
 /// overlaps it — it vanished.
-/// WHAT CARRIED ONE VERTEX (50.3): the versor, and the two scene bodies
-/// it was carried between where there are two. A cover piece is a piece of
-/// ONE body and names no pair, so the edge transport of 50.3 — which reads
-/// the stabilizer element a pair's rigid motion picks out — is not asked
-/// for it and no index is invented to ask with.
+/// ONE VERTEX OF A PAIR FORM AS IT IS BUILT: the vertex, the support it
+/// stands on, and what carried it.
+///
+/// THE THREE WERE THREE PARALLEL ARRAYS, index-aligned by discipline and
+/// by nothing else. Every site that added a vertex had to remember to push
+/// to all three, and R2 added two such sites; the first bug that produced
+/// was a vertex whose "no pair" had to be ENCODED as `usize::MAX` because
+/// there was no way to have a vertex without an entry. One struct, one
+/// push, and absence is absence.
+pub(crate) struct Placing {
+    pub(crate) vertex: Vertex,
+    pub(crate) support: Vec<(i64, i64)>,
+    /// The versor that carried it and the two scene bodies it was carried
+    /// between, where there are two. A cover piece is a piece of ONE body
+    /// and names no pair, so 50.3's edge transport — the stabilizer
+    /// element a pair's rigid motion picks out — is not asked for it.
+    pub(crate) carried: Option<Carried>,
+}
+
+/// WHAT CARRIED ONE VERTEX (50.3).
 pub(crate) struct Carried {
     pub(crate) pair: Option<(usize, usize)>,
     pub(crate) versor: Versor,
@@ -211,21 +226,20 @@ pub(crate) fn pair_form_uncached(
     budget: &mut crate::physics::Budget,
 ) -> Form {
     let PairedScene { ins, outs, pairs, used_in, used_out } = pair_scene(a, b, scale);
-    let mut vertices = vec![frame_vertex()];
-    let mut supports: Vec<Vec<(i64, i64)>> = vec![Vec::new()];
-    // Per vertex, what carried it (50.3): the Frame and the demand
-    // vertices carry nothing, a paired vertex names the two scene bodies
-    // it was carried between, and a COVER PIECE names none — it is a piece
-    // of one body, not a pair of them, so `pair` is absent rather than an
-    // impossible index (rule 11, rule 15).
-    let mut carried: Vec<Option<Carried>> = vec![None];
+    let mut placing = vec![Placing {
+        vertex: frame_vertex(),
+        support: Vec::new(),
+        carried: None,
+    }];
     let mut demanded: Vec<Demanded> = Vec::new();
     for (i, j, car) in &pairs {
         match word_or_demand(&ins[*i].body, &outs[*j].body) {
             Some(Ok(v)) => {
-                vertices.push(v);
-                supports.push(support_of(&outs[*j].body));
-                carried.push(Some(Carried { pair: Some((*i, *j)), versor: car.v.clone() }));
+                placing.push(Placing {
+                    vertex: v,
+                    support: support_of(&outs[*j].body),
+                    carried: Some(Carried { pair: Some((*i, *j)), versor: car.v.clone() }),
+                });
             }
             Some(Err(d)) => demanded.push(d),
             None => {}
@@ -248,15 +262,14 @@ pub(crate) fn pair_form_uncached(
     let mut owner: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
     for (ci, c) in covers.iter().enumerate() {
         for (key, (v, versor, codomain)) in c.cover.carried.fiber(crate::network::nerve::ROOT) {
-            let ix = vertices.len() as u16;
+            let ix = placing.len() as u16;
             cover_vertex.insert(&key, ix);
             owner.insert(vertex_ix_key(ix), ci);
-            vertices.push(v.clone());
-            supports.push(codomain.clone());
-            // A cover piece names no pair of the SCENE's bodies — it is a
-            // piece of one — so it carries its versor and no pair indices,
-            // and `edge_transport` is not asked for it.
-            carried.push(Some(Carried { pair: None, versor: versor.clone() }));
+            placing.push(Placing {
+                vertex: v.clone(),
+                support: codomain.clone(),
+                carried: Some(Carried { pair: None, versor: versor.clone() }),
+            });
         }
     }
     // One demand vertex per (kind, chart) (50.5), the bodies it stands for
@@ -272,7 +285,7 @@ pub(crate) fn pair_form_uncached(
         }
     }
     let mut form = Form {
-        vertices,
+        vertices: placing.iter().map(|p| p.vertex.clone()).collect(),
         faces: Vec::new(),
         loops: Vec::new(),
         remainder: Vec::new(),
@@ -384,10 +397,17 @@ pub(crate) fn pair_form_uncached(
         let mut support: Vec<(i64, i64)> = cells.iter().map(|&(r, c, _, _)| (r, c)).collect();
         support.sort_unstable();
         support.dedup();
-        form.vertices.push(demand_vertex(kind.clone(), chart, cells));
-        supports.push(support);
-        carried.push(None);
+        placing.push(Placing {
+            vertex: demand_vertex(kind.clone(), chart, cells),
+            support,
+            carried: None,
+        });
     }
+    // ONE TRUTH: the form's vertices are a projection of `placing`, so a
+    // vertex without a support or a carriage cannot exist, and the two
+    // cannot drift apart between here and `star_and_cell_faces`.
+    form.vertices = placing.iter().map(|p| p.vertex.clone()).collect();
+    let supports: Vec<Vec<(i64, i64)>> = placing.iter().map(|p| p.support.clone()).collect();
     let n = form.vertices.len();
     let frame = 0usize;
     for (i, j) in star_and_cell_faces(n, Some(frame), &supports) {
@@ -396,10 +416,13 @@ pub(crate) fn pair_form_uncached(
         };
         // The edge transport between two carried bodies (50.3); a face to
         // the Frame or to an uncarried body carries none.
-        let edge = match (carried.get(i as usize), carried.get(j as usize)) {
+        let edge = match (
+            placing.get(i as usize).and_then(|p| p.carried.as_ref()),
+            placing.get(j as usize).and_then(|p| p.carried.as_ref()),
+        ) {
             (
-                Some(Some(Carried { pair: Some((ai, bi)), versor })),
-                Some(Some(Carried { pair: Some((aj, bj)), .. })),
+                Some(Carried { pair: Some((ai, bi)), versor }),
+                Some(Carried { pair: Some((aj, bj)), .. }),
             ) => edge_transport(
                 versor,
                 &ins[*ai].body,
