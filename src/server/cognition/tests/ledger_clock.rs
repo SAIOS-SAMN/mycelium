@@ -237,13 +237,27 @@ fn a_lapsed_citation_seals_a_receipt() {
 }
 
 /// 47.5: Λ is `from_transport(rtt_floor, aperture_cycle())`, "never a
-/// constant". A home this node has measured no round trip to has no Λ, so
-/// nothing lapses against it — an unmeasured transport is not a fast one
-/// (rule 11), and `transport_deadline` says the same of an unmeasured RTT.
-/// The lapse read `aperture_cycle()` alone, so a citation waited a number
-/// that had nothing to do with the home it waits on.
+/// constant" — and a home this node has measured no round trip to has no
+/// Λ, so nothing lapses AGAINST IT. That much stands. What this test used
+/// to assert beside it does not: that a listing on an unmeasured transport
+/// therefore stands FOREVER.
+///
+/// THE BOOK IS NOT NETWORK HOSTAGE (the stroke-duration ruling,
+/// 2026-09-11). `lapse_docket` read `let Some(lam) = lambda(…) else {
+/// continue }`, so memory reclamation depended on a packet: a court that
+/// could not reach a peer could not measure a transport, so it had no Λ,
+/// so it evicted nothing, so the book became an append-only sink.
+/// Measured on the fleet at epoch 10 — 250 listings a minute at ~26 KiB
+/// each, `pending` never shrinking, until the node ran out of memory. A
+/// node in a complete partition must still run its cycles and stay
+/// solvent.
+///
+/// So the unmeasured case falls back to THIS COURT'S OWN APERTURE, read
+/// off its own clock: nothing waits on a number that has anything to do
+/// with a home it cannot reach, and nothing stands past this court's own
+/// causal horizon either.
 #[test]
-fn a_citation_does_not_lapse_against_an_unmeasured_transport() {
+fn an_unmeasured_transport_lapses_against_this_courts_own_horizon() {
     let mut k = Kernel::new();
     k.bind_identity([0x5d; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -251,13 +265,25 @@ fn a_citation_does_not_lapse_against_an_unmeasured_transport() {
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     let laddr = k.pending.fiber(crate::network::nerve::ROOT).next().unwrap().0;
     k.standing_h.insert(&laddr, 0);
-    // Standing far past any aperture: the extent is not what holds it.
-    k.set_height(crate::physics::aperture_cycle() as u64 * 4);
+    // WITHIN the court's own aperture, an unmeasured transport holds it:
+    // the horizon is a horizon, not an eviction on sight.
+    k.set_height(1);
     let before = k.k_step();
     k.lapse_docket(
         &mut crate::physics::Physics::default().stroke(),
         super::common::unmeasured_transport,
     );
-    assert_eq!(k.k_step(), before, "no lapse, so no receipt");
+    assert_eq!(k.k_step(), before, "inside the horizon, no lapse and no receipt");
     assert!(k.pending.get(&laddr).is_some(), "and the listing stands");
+    // PAST it, the listing leaves whatever the network is doing.
+    k.set_height(crate::physics::aperture_cycle() as u64 * 4);
+    k.lapse_docket(
+        &mut crate::physics::Physics::default().stroke(),
+        super::common::unmeasured_transport,
+    );
+    assert_eq!(k.k_step(), before + 1, "past the horizon it lapses, and that is one step");
+    assert!(
+        k.pending.get(&laddr).is_none(),
+        "and the book is not held open by a transport nobody measured"
+    );
 }

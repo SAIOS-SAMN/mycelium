@@ -105,6 +105,61 @@ pub fn from_transport(rtt: u64, strokes: u64) -> u64 {
     rtt.saturating_mul(strokes.max(1))
 }
 
+/// THE MINIMAL OPERATIONAL FLOOR OF ONE STROKE, as a duration the
+/// processor understands (the stroke-duration ruling, 2026-09-11).
+///
+/// A stroke had no duration. `Physics::spend` is `saturating_sub` on the
+/// reserve — arithmetic — so every site that "paid a stroke and retried"
+/// paid three integer decrements and came straight back, and every
+/// `yield_now` beside one returned at once when no other thread on that
+/// core was ready. Measured on the fleet at epoch 10: 32,767 of 32,768
+/// exchange cycles idle, one thread per court at 99–115% CPU, and every
+/// peer read `silent` because its listener had not been scheduled inside
+/// the microseconds a poll budget of yields allows.
+///
+/// THE COST OF THAT WAS NOT CPU. A court that never reaches a peer never
+/// measures a round trip, so `rtt_floor` stays unmeasured, so 47.5's Λ is
+/// `None` for every chart, so `lapse_docket` `continue`s on every listing
+/// and NOTHING IS EVER EVICTED: the book grew 250 listings a minute at
+/// ~26 KB each and the node ran out of memory. The spin was the head of
+/// that chain.
+///
+/// This is a FLOOR, not a pace. The pace stays the stroke and the measured
+/// transport; what this says is that one stroke of waiting costs the
+/// processor at least this much, so the thread the wait exists for can
+/// actually run. It is deliberately the smallest quantity that lets a
+/// scheduler place another thread.
+pub const STROKE_FLOOR: std::time::Duration = std::time::Duration::from_millis(1);
+
+/// How long an idle stroke parks: the measured transport where one has
+/// been measured, and the floor where none has. `rtt` is in polls — the
+/// instrument's own resolution — so a measured wire parks a poll's worth
+/// per stroke and an unmeasured one parks the floor.
+pub fn idle_park(rtt: Option<u64>) -> std::time::Duration {
+    match rtt {
+        Some(r) => STROKE_FLOOR * (r.clamp(1, 64) as u32),
+        None => STROKE_FLOOR,
+    }
+}
+
+/// THE BOOK'S CEILING: how many open listings this node's memory can
+/// carry, measured from the same live headroom the reserve is (rule 5 —
+/// measured, never declared). A listing on the fleet weighs about 26 KiB
+/// with its element and cells, and the book is held twice while a market
+/// view stands, so a GiB of headroom carries roughly twenty thousand.
+///
+/// A NODE'S MEMORY IS A FINITE MANIFOLD. `pending` carried the comment
+/// "capacity is thermodynamic (`dynamic_lane_capacity`)… eviction is by
+/// ACTION POTENTIAL, never FIFO. No static cap exists" — and
+/// `dynamic_lane_capacity` is a test helper with no production caller.
+/// There was no cap of any kind: the only sink was `lapse_docket`, gated
+/// on a round trip that had never been measured. Measured at epoch 10, the
+/// book grew 250 listings a minute and the node ran out of memory.
+pub fn book_ceiling() -> usize {
+    const PER_GIB: u64 = 20_000;
+    (mem_available_gib().max(1) * PER_GIB) as usize
+}
+
 /// Deadline for one nerve dial, in strokes: an aperture of the measured
 /// transport. Unmeasured RTT has no deadline.
 pub fn transport_deadline(rtt: u64) -> u64 {

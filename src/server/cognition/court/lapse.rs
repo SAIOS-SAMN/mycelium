@@ -56,6 +56,9 @@ impl Kernel {
         let room: [u64; 4] = std::array::from_fn(|l| room[l] as u64);
         let mut lapse: Vec<(Address, u64)> = Vec::new();
         let mut last: Option<Vec<u8>> = None;
+        // Is the book past what this node's memory can carry? Read once
+        // for the pass, against the measured ceiling.
+        let over = self.pending.len() > crate::physics::book_ceiling();
         {
             let from = self.lapse_cursor.clone();
             for (addr, (listed, _)) in self.pending.cursor(&from, budget) {
@@ -64,8 +67,35 @@ impl Kernel {
                     continue;
                 };
                 let chart = crate::transducer::stalk::invariant_of(listed);
-                let Some(lam) = lambda(&chart, &listed.magnitude(), &room) else {
-                    continue;
+                // THE BOOK HAS A HORIZON OF ITS OWN, and it does not
+                // depend on a packet. This read `let Some(lam) = … else {
+                // continue }`: where no round trip had been measured to
+                // the hypha homing the chart, Λ was unmeasured and the
+                // listing stood forever. That is a circular dependency,
+                // not a conservation law — a court that cannot reach a
+                // peer cannot measure a transport, so it cannot evict, so
+                // the book becomes an append-only sink. Measured on the
+                // fleet at epoch 10: 250 listings a minute at ~26 KB each,
+                // nothing ever leaving, until the node ran out of memory.
+                //
+                // Λ REMAINS THE BOUND WHERE IT IS MEASURED — an unmeasured
+                // transport is still not a fast one (rule 11), and nothing
+                // here lapses a citation early against a number the court
+                // does not hold. What the unmeasured case gets instead is
+                // the court's OWN aperture, read off its own clock: a
+                // listing standing longer than that against `standing_h`
+                // is past this court's causal horizon whatever the network
+                // is doing, and it leaves as the others do.
+                //
+                // AND ABOVE THE CEILING THE HORIZON COLLAPSES. A book past
+                // what this node's memory can carry evicts whatever has
+                // stood at all, oldest reached first as the orbit walks it:
+                // the manifold is finite and the book is not entitled to
+                // exceed it whatever Λ says.
+                let lam = match (over, lambda(&chart, &listed.magnitude(), &room)) {
+                    (true, _) => 0,
+                    (false, Some(l)) => l,
+                    (false, None) => crate::physics::aperture_cycle() as u64,
                 };
                 let extent = now.saturating_sub(h0);
                 if extent >= lam {

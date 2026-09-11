@@ -1,9 +1,26 @@
 // Law 9 — THE CLOCK GATE: the ledger is the clock. Nothing in this tree
 // reads a wall clock.
 //
-//! Every wait is denominated in strokes and every stamp in receipts. The
-//! allow-list is EMPTY: no file in `src/` may read `SystemTime`, `Instant`
-//! or `Duration`.
+//! Every wait is denominated in strokes and every stamp in receipts. No
+//! file in `src/` may read `SystemTime` or `Instant`, and none may name a
+//! `Duration` except the one that says what a stroke costs.
+//!
+//! THE ONE ALLOWANCE (the stroke-duration ruling, 2026-09-11). A stroke
+//! had no duration at all: `Physics::spend` is arithmetic on the reserve,
+//! so every "pay a stroke and retry" was three integer decrements and
+//! every `yield_now` beside one returned at once. Measured on the fleet at
+//! epoch 10 — 32,767 of 32,768 exchange cycles idle, a core pinned per
+//! court, every peer read `silent` because its listener had not been
+//! scheduled inside the microseconds a poll budget of yields allows, and
+//! therefore no round trip measured, therefore no Λ, therefore no
+//! eviction, therefore the book grew until the node died.
+//!
+//! `physics::STROKE_FLOOR` is the floor that fixes it, and it is NOT a
+//! pace: the pace is still the stroke and the measured transport. It says
+//! only that one stroke of WAITING costs the processor enough for the
+//! thread the wait exists for to run. It lives in `physics` because that
+//! is where the quantity belongs, and the gate holds everywhere else — a
+//! second `Duration` anywhere in the tree is still a wall clock.
 
 use super::walker::Gate;
 use std::path::Path;
@@ -11,7 +28,7 @@ use std::path::Path;
 pub(crate) const GATE: Gate = Gate {
     name: "clock",
     allow: &[],
-    owed: &[],
+    owed: &[("physics/mod.rs", 2)],
     scan,
 };
 

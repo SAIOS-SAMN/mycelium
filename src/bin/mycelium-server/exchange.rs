@@ -308,18 +308,14 @@ impl Exchange {
                 eprintln!("  court exchange cycle {cycles} idle {idle}");
             }
             if dests.is_empty() {
-                // NOT A SLEEP AND NOT A SPIN: with no destination there
-                // is nothing to exchange, and `yield_now` alone burned a
-                // core doing the whole preamble again. The stroke is the
-                // pace (law 9), so the loop pays one before retrying.
+                // AN IDLE STROKE COSTS THE PROCESSOR (the stroke-duration
+                // ruling). This paid `while b.spend() {}` — three integer
+                // decrements on the reserve, no time at all — and called
+                // it a pace. 32,767 of 32,768 cycles took this branch and
+                // the thread sat at 99% of a core, which is what starved
+                // the listener the peers were asking through.
                 idle += 1;
-                // One stroke of this court's own metabolism, not a default's
-                // (rule 5); a court that cannot be read waits on nothing and
-                // tries again.
-                let Some(mut b) = kernel.lock().ok().map(|mut k| k.stroke()) else {
-                    continue;
-                };
-                while b.spend() {}
+                std::thread::sleep(mycelium::physics::idle_park(None));
                 continue;
             }
             let req = dialogue::encode_digests_request(&mesh.vk);
@@ -569,10 +565,11 @@ impl Exchange {
             // court's own stroke; `idle` counts those orbits on the cycle
             // line.
             if !asked_any {
+                // The same tick, and the same ruling: no peer was due, so
+                // this cycle did nothing and must cost the processor
+                // something rather than a decrement.
                 idle += 1;
-                if let Some(mut b) = kernel.lock().ok().map(|mut k| k.stroke()) {
-                    while b.spend() {}
-                }
+                std::thread::sleep(mycelium::physics::idle_park(None));
             }
             // Written when the READING CHANGES, not every cycle. As
             // first shipped this fired on any silence and logged 17,588

@@ -137,8 +137,12 @@ let want_chart = crate::transducer::stalk::invariant_of(&listed);
 let want_mag = listed.magnitude();
 let room = k.lane_room();
 let want_room: [u64; 4] = std::array::from_fn(|l| room[l] as u64);
-let lambda = crate::physics::aperture_cycle() as u64;
-k.set_height(k.height().saturating_add(lambda));
+// INSIDE this court's own horizon, so what the pass proves is WHAT Λ IS
+// ASKED WITH and not what an unmeasured answer does with it: past the
+// horizon the listing now leaves on the court's own aperture (the
+// stroke-duration ruling), which would empty the book before the
+// assertions below could read it.
+k.set_height(1);
 let asked = std::cell::RefCell::new(Vec::new());
 k.court_stroke(|chart, mag, room| {
     asked.borrow_mut().push((chart.clone(), *mag, *room));
@@ -149,7 +153,7 @@ assert_eq!(asked.len(), 1, "Λ is asked once, for the one pending listing: {aske
 assert_eq!(asked[0].0, want_chart, "with the listing's chart, never its address");
 assert_eq!(asked[0].1, want_mag, "with the listing's magnitude, so the occupied lanes route it");
 assert_eq!(asked[0].2, want_room, "and with this court's room, so it is a candidate home");
-assert_eq!(k.pending.len(), 1, "an unmeasured transport lapses nothing");
+assert_eq!(k.pending.len(), 1, "and inside the horizon the listing stands");
 }
 
 /// D12 — THE ESCROW-PRICED DOOR: a calm mesh keeps a free door; a

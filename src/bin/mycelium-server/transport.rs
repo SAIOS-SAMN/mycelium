@@ -149,7 +149,14 @@ pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: usize) -> 
                 if !budget.spend() {
                     return None;
                 }
-                std::thread::yield_now();
+                // A POLL COSTS THE PROCESSOR (the stroke-duration ruling).
+                // `yield_now` returns at once when no other thread on this
+                // core is ready, so the whole poll budget passed in
+                // microseconds and a peer whose listener had merely not
+                // been scheduled was counted SILENT — which is what every
+                // court read of every peer on the epoch-10 fleet, while
+                // each of them pinned a core in its own idle loop.
+                std::thread::sleep(mycelium::physics::STROKE_FLOOR);
             }
             Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
             Err(_) => return None,
