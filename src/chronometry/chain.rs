@@ -28,6 +28,45 @@ pub struct ReceiptChain {
     /// carrier that grows for as long as the node runs. A chain hash names
     /// one receipt, and that is a keyed read.
     mine: Keyed<usize>,
+    /// THE FRONTIER IS CARRIED, NOT RE-WALKED (45.3). `F(i)` is
+    /// `peers[peer_at[i]]` raised at receipt `i`'s own signer to its step
+    /// index: the join over everything receipt `i` reaches. It is monotone
+    /// along the chain, so a receipt with no parents and the same signer as
+    /// the one before it REUSES that snapshot — a new one is materialized
+    /// only where the chain actually gains ancestry (a receipt with
+    /// parents) or changes signer.
+    ///
+    /// Re-deriving `F` by walking the ancestry made causal order cost the
+    /// chain's whole length per question, charged to a stroke budget: on a
+    /// four-receipt chain with `Budget { remaining: 3 }` the walk ran out,
+    /// `precedes` answered `None`, and the transition that demonstrably
+    /// followed its incumbent was held concurrent instead of superseding
+    /// it. Supersession on the dialect book was decided by how much memory
+    /// the machine had free — the same machine-stroke instability that is
+    /// not comparable even within one box. A frontier is state of the
+    /// chain; carrying it makes `precedes` two keyed reads.
+    peer_at: Vec<u32>,
+    /// The shared snapshots `peer_at` indexes. `peers[0]` is empty.
+    peers: Vec<Keyed<u64>>,
+}
+
+/// Raise `f` at `vk` to `k` — a frontier component only ever grows.
+fn raise(f: &mut Keyed<u64>, vk: &[u8; 32], k: u64) {
+    match f.get(vk) {
+        Some(&held) if held >= k => {}
+        _ => {
+            f.insert(*vk, k);
+        }
+    }
+}
+
+/// Join `src` into `dst` componentwise.
+fn join(dst: &mut Keyed<u64>, src: &Keyed<u64>) {
+    for (vk, &k) in src.fiber(crate::network::nerve::ROOT) {
+        if let Ok(vk) = <[u8; 32]>::try_from(vk.as_slice()) {
+            raise(dst, &vk, k);
+        }
+    }
 }
 
 impl Default for ReceiptChain {
@@ -38,6 +77,8 @@ impl Default for ReceiptChain {
             vk: [0u8; 32],
             known: Keyed::new(),
             mine: Keyed::new(),
+            peer_at: Vec::new(),
+            peers: vec![Keyed::new()],
         }
     }
 }
@@ -102,6 +143,10 @@ impl ReceiptChain {
         let root = Root { k: last.step_index, hash: last.chain_hash, height: last.height };
         let tail = self.receipts.split_off(n);
         let cold = std::mem::replace(&mut self.receipts, tail);
+        // The snapshots the hot receipts stand on are kept: each was built
+        // over the whole history, so a folded prefix does not lower any
+        // frontier that already reads it (45.8).
+        self.peer_at = self.peer_at.split_off(n);
         self.mine = Keyed::new();
         for (i, r) in self.receipts.iter().enumerate() {
             self.mine.insert(r.chain_hash, i);
@@ -146,6 +191,88 @@ impl ReceiptChain {
         self.known.insert(r.chain_hash, r);
     }
 
+    /// The frontier of the receipt at `i`: the snapshot it stands on,
+    /// raised at its own signer to its own step index. Two reads, no walk.
+    fn frontier_of_index(&self, i: usize) -> Option<Keyed<u64>> {
+        let r = self.receipts.get(i)?;
+        let mut f = self.peers.get(*self.peer_at.get(i)? as usize)?.clone();
+        raise(&mut f, &r.vk, r.step_index);
+        Some(f)
+    }
+
+    /// Record the snapshot the receipt about to be appended stands on.
+    /// Called with `self.receipts` still ending at the PREVIOUS receipt.
+    ///
+    /// A receipt with no parents whose signer is the one before it reaches
+    /// exactly what that one reached, plus itself — so it reuses the
+    /// snapshot and the join of its own `(vk, k)` is left to the read. A
+    /// receipt that names parents gains ancestry, and that is where a new
+    /// snapshot is materialized: the previous receipt's whole frontier
+    /// joined with each parent's.
+    fn extend_frontier(&mut self, vk: [u8; 32], parents: &[Parent]) {
+        let prev_i = self.receipts.len().checked_sub(1);
+        let same_signer = prev_i
+            .and_then(|i| self.receipts.get(i))
+            .is_none_or(|p| p.vk == vk);
+        // THE FIRST RECEIPT OF A HOT CHAIN STANDS ON THE EMPTY SNAPSHOT:
+        // it reaches nothing but itself, and that is exact, not a default.
+        if parents.is_empty() && same_signer {
+            let mut at = 0u32;
+            if let Some(&held) = prev_i.and_then(|i| self.peer_at.get(i)) {
+                at = held;
+            }
+            self.peer_at.push(at);
+            return;
+        }
+        let mut snap = Keyed::new();
+        if let Some(f) = prev_i.and_then(|i| self.frontier_of_index(i)) {
+            snap = f;
+        }
+        for p in parents {
+            join(&mut snap, &self.frontier_of_admitted(&p.hash));
+        }
+        self.peers.push(snap);
+        self.peer_at.push((self.peers.len() - 1) as u32);
+    }
+
+    /// The frontier of an ADMITTED peer receipt: what its held ancestry
+    /// supports. The descent runs over the admitted set only — it splices
+    /// a stored frontier and stops the moment it reaches a receipt of this
+    /// chain's own, so it is bounded by the peer receipts held and never
+    /// by the chain's length. Ancestry this node does not hold contributes
+    /// nothing, which is what an unheld receipt contributed before.
+    fn frontier_of_admitted(&self, head: &[u8; 32]) -> Keyed<u64> {
+        let mut f = Keyed::new();
+        let mut seen: Keyed<()> = Keyed::new();
+        let mut stack: Vec<[u8; 32]> = vec![*head];
+        let mut left = self.known.len() + 1;
+        while let Some(hash) = stack.pop() {
+            if left == 0 {
+                break;
+            }
+            left -= 1;
+            if seen.contains(&hash) {
+                continue;
+            }
+            seen.insert(hash, ());
+            if let Some(&i) = self.mine.get(&hash) {
+                if let Some(stored) = self.frontier_of_index(i) {
+                    join(&mut f, &stored);
+                }
+                continue;
+            }
+            let Some(r) = self.known.get(&hash) else { continue };
+            raise(&mut f, &r.vk, r.step_index);
+            if r.prev_receipt_hash != [0u8; 32] {
+                stack.push(r.prev_receipt_hash);
+            }
+            for p in &r.parents {
+                stack.push(p.hash);
+            }
+        }
+        f
+    }
+
     /// A peer receipt this chain admitted, by its chain hash.
     pub fn known(&self, hash: &[u8; 32]) -> Option<&KStepReceipt> {
         self.known.get(hash)
@@ -187,6 +314,7 @@ impl ReceiptChain {
             &prev,
         );
         self.mine.insert(chain_hash, self.receipts.len());
+        self.extend_frontier(self.vk, &parents);
         self.receipts.push(KStepReceipt {
             step_index,
             height,
@@ -260,39 +388,19 @@ impl ReceiptChain {
         }
     }
 
-    /// Frontier reachable from one receipt: vk ↦ greatest K reachable through
-    /// prev and parents. Each reached receipt is visited once, one spend per
-    /// visit. `None` when the budget is spent with the walk unfinished: a
-    /// truncated frontier is UNMEASURED, never a smaller one. Reporting a
-    /// short frontier as the frontier is what let `precedes` answer `false`
-    /// for receipts that do precede (rule 11: exact or refused).
+    /// Frontier reachable from one receipt: vk ↦ greatest K reachable
+    /// through prev and parents. One spend: a receipt of this chain's own
+    /// reads the frontier it carries, and a peer receipt's is the join over
+    /// the admitted ancestry that stands behind it. `None` when the budget
+    /// is spent — an unmeasured frontier, never a short one (rule 11).
     fn frontier_from(&self, head: [u8; 32], budget: &mut Budget) -> Option<Keyed<u64>> {
-        let mut f = Keyed::new();
-        let mut seen: Keyed<()> = Keyed::new();
-        let mut stack: Vec<[u8; 32]> = vec![head];
-        while let Some(hash) = stack.pop() {
-            if !budget.spend() {
-                return None;
-            }
-            if seen.contains(&hash) {
-                continue;
-            }
-            seen.insert(hash, ());
-            let Some(r) = self.by_hash(&hash) else {
-                continue;
-            };
-            let cur = f.get(&r.vk).copied().unwrap_or(0);
-            if r.step_index >= cur {
-                f.insert(r.vk, r.step_index);
-            }
-            if r.prev_receipt_hash != [0u8; 32] {
-                stack.push(r.prev_receipt_hash);
-            }
-            for p in &r.parents {
-                stack.push(p.hash);
-            }
+        if !budget.spend() {
+            return None;
         }
-        Some(f)
+        match self.mine.get(&head) {
+            Some(&i) => self.frontier_of_index(i),
+            None => Some(self.frontier_of_admitted(&head)),
+        }
     }
 
     /// Frontier of the head. An empty chain has an empty frontier; a walk
@@ -371,13 +479,24 @@ impl ReceiptChain {
         for (i, r) in receipts.iter().enumerate() {
             mine.insert(r.chain_hash, i);
         }
-        let c = ReceiptChain {
-            receipts,
+        // The carried frontiers are rebuilt by the same rule that appends
+        // them, receipt by receipt in chain order: a rehydrated chain and a
+        // chain that ran answer causal order identically. Parents whose
+        // receipts this node has not readmitted contribute nothing, which
+        // is what an unheld ancestor contributed while it ran.
+        let mut c = ReceiptChain {
+            receipts: Vec::new(),
             root,
             vk,
             known: Keyed::new(),
             mine,
+            peer_at: Vec::new(),
+            peers: vec![Keyed::new()],
         };
+        for r in receipts {
+            c.extend_frontier(r.vk, &r.parents);
+            c.receipts.push(r);
+        }
         if c.verify_chain_integrity() {
             Some(c)
         } else {

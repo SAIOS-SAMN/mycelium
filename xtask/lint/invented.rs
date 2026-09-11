@@ -36,7 +36,7 @@ pub(crate) const GATE: Gate = Gate {
         ("bin/mycelium-server/main.rs", 5),
         ("bin/mycelium-server/offer.rs", 1),
         ("bin/mycelium-server/transport.rs", 4),
-        ("chronometry/chain.rs", 6),
+        ("chronometry/chain.rs", 5),
         ("chronometry/era.rs", 1),
         ("client/sdk/entity/boot.rs", 1),
         ("client/sdk/entity/learn.rs", 5),

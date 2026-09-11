@@ -13,7 +13,7 @@ fn precedes_implies_lower_height_and_concurrency_is_kept() {
     let r0 = &c.receipts()[0];
     let r1 = &c.receipts()[1];
     let r2 = &c.receipts()[2];
-    // Each pair pays for the two walks it reaches: 1+2, 2+3, 3+1 visits.
+    // Each pair pays for the two frontiers it reads, and no more.
     let mut b = budget(8);
     assert_eq!(c.precedes(r0, r1, &mut b), Some(true), "earlier ≺ later");
     let mut b = budget(8);
@@ -60,23 +60,38 @@ fn precedes_implies_lower_height_and_concurrency_is_kept() {
     );
 }
 
-/// An exhausted walk is unmeasured, never "does not precede": a budget
-/// that cannot reach the second frontier refuses, and the caller holds
-/// the pair as concurrent (45.3) instead of ordering it on a short read.
+/// An unmeasured frontier is refused, never shortened: a budget with
+/// nothing left answers `None` and the caller holds the pair as concurrent
+/// (45.3) instead of ordering it on a short read.
+///
+/// AND THE COST OF ASKING DOES NOT GROW WITH THE CHAIN. It did: the
+/// frontier was re-walked over the whole ancestry per question, one spend
+/// per visit, so ordering two receipts cost the chain's length — and a
+/// four-receipt chain under `Budget { remaining: 3 }` refused an order
+/// that plainly held, leaving supersession on the dialect book to depend
+/// on how much memory the machine had free. A frontier is carried state;
+/// reading one is a keyed read, and two of them order any pair.
 #[test]
-fn a_frontier_the_budget_cannot_finish_is_refused_not_shortened() {
+fn ordering_costs_one_read_per_frontier_and_an_empty_budget_refuses() {
     let mut c = ReceiptChain::with_vk([1; 32]);
-    c.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).unwrap();
-    c.append(ActKind::List, [0; 4], [2u8], [9; 32], Vec::new()).unwrap();
-    c.append(ActKind::List, [0; 4], [3u8], [9; 32], Vec::new()).unwrap();
-    let (r0, r2) = (&c.receipts()[0], &c.receipts()[2]);
-    // r0 costs one visit, r2 three: one unit reaches neither pair.
-    let mut short = budget(1);
-    assert_eq!(c.precedes(r0, r2, &mut short), None, "unmeasured, not false");
-    let mut short = budget(2);
-    assert!(c.frontier(&mut short).is_none(), "the head walk is three deep");
-    let mut enough = budget(3);
-    assert!(c.frontier(&mut enough).is_some(), "measured at its own size");
+    for i in 1..=64u8 {
+        c.append(ActKind::List, [0; 4], [i], [9; 32], Vec::new()).unwrap();
+    }
+    let (r0, rn) = (&c.receipts()[0], &c.receipts()[63]);
+    let mut two = budget(2);
+    assert_eq!(
+        c.precedes(r0, rn, &mut two),
+        Some(true),
+        "sixty-four receipts deep and two reads answer it"
+    );
+    let mut two = budget(2);
+    assert_eq!(c.precedes(rn, r0, &mut two), Some(false), "and the other way");
+    let mut one = budget(1);
+    assert_eq!(c.precedes(r0, rn, &mut one), None, "unmeasured, not false");
+    let mut one = budget(1);
+    assert!(c.frontier(&mut one).is_some(), "the head reads its own");
+    let mut none = budget(0);
+    assert!(c.frontier(&mut none).is_none(), "nothing left is unmeasured");
 }
 
 #[test]
