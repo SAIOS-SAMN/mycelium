@@ -2,7 +2,6 @@
 // receipt index, and the cohesion witness.
 
 use crate::cognition::*;
-use crate::transducer::element::Element;
 
 impl Kernel {
     /// A read-only view of the germinated basis in canonical key order — a
@@ -11,7 +10,7 @@ impl Kernel {
     /// `language.words` is a snapshot that diverges from the carrier the
     /// moment `word_mut` makes an `Arc` unique, so a view onto it reports the
     /// word as it was before the puncture (rule 12, one fact one carrier).
-    pub fn basis(&self) -> Vec<std::sync::Arc<Element>> {
+    pub fn basis(&self) -> Vec<std::sync::Arc<crate::transducer::element::Held>> {
         self.basis
             .fiber(crate::network::nerve::ROOT)
             .map(|(_, w)| std::sync::Arc::clone(w))

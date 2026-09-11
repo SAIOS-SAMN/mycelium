@@ -123,7 +123,10 @@ impl Kernel {
         self.discoverers.get(addr).copied()
     }
 
-    pub(crate) fn word_mut(&mut self, addr: &[u8]) -> Option<&mut Element> {
+    /// A held word, to change. `Held::update` is the only way through it:
+    /// the element is mutated and the form re-decoded together, so a form
+    /// cannot describe a tape the element no longer has (L16).
+    pub(crate) fn word_mut(&mut self, addr: &[u8]) -> Option<&mut crate::transducer::element::Held> {
         self.basis.get_mut(addr).map(std::sync::Arc::make_mut)
     }
 
@@ -234,7 +237,8 @@ impl Kernel {
     pub(crate) fn basis_insert(&mut self, word: Element, discoverer: [u8; 32]) {
         let addr = word.address();
         self.index_word(&word);
-        let arc = std::sync::Arc::new(word);
+        // ONE DECODE, HERE, where the court places the word (L16).
+        let arc = std::sync::Arc::new(crate::transducer::element::Held::of(word));
         self.basis.insert(&addr, std::sync::Arc::clone(&arc));
         self.note_discovered(&addr, discoverer);
         self.basis_gen += 1;
@@ -331,18 +335,22 @@ impl Kernel {
         let Some(seed) = word.versor() else {
             let asg = element::assignment(word.sub());
             if let Some(w) = self.word_mut(addr) {
-                w.record_dislocation(asg, fail.clone(), element::FIBER_SPATIAL);
+                w.update(|e| e.record_dislocation(asg, fail.clone(), element::FIBER_SPATIAL));
             }
             self.touch_at(addr);
             return;
         };
         let asg = element::assignment(word.sub());
         let axis = match self.word_mut(addr) {
-            Some(w) => {
-                let axis = w.open_axis(seed);
-                w.record_dislocation(asg, fail.clone(), axis);
+            // ONE `update`, not two: opening the axis and recording the
+            // dislocation on it are one change to the word, and a re-decode
+            // between them would file the dislocation against a form that
+            // does not yet have the axis.
+            Some(w) => w.update(|e| {
+                let axis = e.open_axis(seed);
+                e.record_dislocation(asg, fail.clone(), axis);
                 axis
-            }
+            }),
             None => return,
         };
         self.touch_at(addr);
@@ -371,7 +379,10 @@ impl Kernel {
                     nd.insert(addr, d);
                 }
             } else {
-                nb.insert(addr, std::sync::Arc::new(elem.clone()));
+                nb.insert(
+                    addr,
+                    std::sync::Arc::new(crate::transducer::element::Held::of(elem.clone())),
+                );
             }
         }
         if seen.is_empty() {
@@ -386,7 +397,7 @@ impl Kernel {
         let mut stalks = crate::transducer::stalk::Stalks::default();
         let mut ruled = crate::transducer::stalk::Stalks::default();
         self.ruled_addrs = crate::network::nerve::Keyed::new();
-        let held: Vec<(Vec<u8>, std::sync::Arc<Element>)> = self
+        let held: Vec<(Vec<u8>, std::sync::Arc<crate::transducer::element::Held>)> = self
             .basis
             .fiber(crate::network::nerve::ROOT)
             .map(|(a, w)| (a, std::sync::Arc::clone(w)))

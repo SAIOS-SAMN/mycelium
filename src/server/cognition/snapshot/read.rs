@@ -532,7 +532,7 @@ impl Kernel {
             .basis
             .fiber(crate::network::nerve::ROOT)
             .filter(|(_, w)| w.is_connection())
-            .map(|(_, w)| (**w).clone())
+            .map(|(_, w)| w.element().clone())
             .collect();
         let Some((_, &ratifier)) = self.discoverers.fiber(crate::network::nerve::ROOT).next() else {
             return true;

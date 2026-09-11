@@ -83,13 +83,12 @@ impl Kernel {
     pub fn adjoined(&self) -> u64 {
         let mut n = 0u64;
         for (addr, ()) in self.ruled_addrs.fiber(crate::network::nerve::ROOT) {
-            let Some(e) = self.word_at(&addr) else {
-                continue;
-            };
-            // The court's own ruled word, read off the element it holds
-            // (L16): the tape is parsed once per word, not once per room
-            // reading.
-            let Some(f) = e.form() else {
+            // The court's own ruled word, read off the word it HOLDS (L16):
+            // the form is a field of the basis entry, decoded once when the
+            // court installed it, and this read parses nothing. `word_at`
+            // falls through to the cavity and the provisional on purpose,
+            // and neither is a word this court installed.
+            let Some(f) = self.held_word(&addr).and_then(|e| e.form()) else {
                 continue;
             };
             for v in &f.vertices {
@@ -120,7 +119,7 @@ impl Kernel {
     pub fn cells_filled(&self) -> u64 {
         let mut n = 0u64;
         for (addr, ()) in self.ruled_addrs.fiber(crate::network::nerve::ROOT) {
-            let Some(f) = self.word_at(&addr).and_then(|e| e.form()) else {
+            let Some(f) = self.held_word(&addr).and_then(|e| e.form()) else {
                 continue;
             };
             // The form's torsion carrier holds one entry per filled cell,

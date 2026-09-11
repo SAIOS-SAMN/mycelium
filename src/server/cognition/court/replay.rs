@@ -90,7 +90,7 @@ impl Kernel {
                 self.redocket_citers_of(addr);
                 // A slashed word leaves the language and is admitted as a
                 // cavity chart: the residual is a boundary, never garbage.
-                if let Some(elem) = self.basis.get(addr).map(|w| (**w).clone()) {
+                if let Some(elem) = self.basis.get(addr).map(|w| w.element().clone()) {
                     self.basis_remove(addr);
                     let inv = crate::transducer::stalk::invariant_of(&elem);
                     self.listing_atlas.admit(&inv, addr);
@@ -379,7 +379,7 @@ impl Kernel {
                 continue;
             };
             if let Some(w) = self.word_mut(key) {
-                w.record_dislocation(asg, v.clone(), element::FIBER_SPATIAL);
+                w.update(|e| e.record_dislocation(asg, v.clone(), element::FIBER_SPATIAL));
             }
             self.touch_at(key);
         }

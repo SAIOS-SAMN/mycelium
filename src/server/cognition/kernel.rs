@@ -11,10 +11,14 @@ use super::*;
 /// admission ledger + the Čech peer table.
 #[derive(Default)]
 pub struct Kernel {
-    /// The germinated basis, each word reached by its address. In-place
-    /// writes go through `word_mut` / `touch_at`. Language snapshots still
-    /// carry an insertion-order slice for Decomposed citations.
-    pub(crate) basis: crate::network::nerve::Keyed<std::sync::Arc<Element>>,
+    /// The germinated basis, each word reached by its address AND HELD WITH
+    /// THE FORM ITS TAPE DECODES TO (L16): the decode happens once, where
+    /// the court installs the word, not on the first read of its form.
+    /// In-place writes go through `word_mut` / `touch_at`, and `word_mut`
+    /// answers a `Held`, so a mutation re-decodes and the two cannot drift.
+    /// Language snapshots still carry an insertion-order slice for
+    /// Decomposed citations.
+    pub(crate) basis: crate::network::nerve::Keyed<std::sync::Arc<crate::transducer::element::Held>>,
     /// Empty-sub group words by M1 action key, written on admit.
     pub(crate) by_action: crate::network::nerve::Keyed<crate::transducer::address::Address>,
     /// Chart+footprint → addresses on that base, written on admit.

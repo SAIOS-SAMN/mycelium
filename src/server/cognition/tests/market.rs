@@ -252,7 +252,7 @@ assert_eq!(void, vec![(0, 3, 3, 4)]);
 assert_eq!(cites.len(), 1);
 let basis = k.basis();
 assert_eq!(
-    replay_at(&|i| basis.get(i).map(|w| w.as_ref()), &cites, &chain),
+    replay_at(&|i| basis.get(i).map(|w| w.element()), &cites, &chain),
     void,
     "the replay reproduces the residual"
 );

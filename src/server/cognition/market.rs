@@ -159,7 +159,7 @@ impl Kernel {
             // the bundle (sections, connection) — the genome converges in
             // volume, not only in vocabulary.
             if let Some(w) = self.word_mut(&addr) {
-                w.merge_fibre(word);
+                w.update(|e| e.merge_fibre(word));
             }
             self.touch_at(&addr);
             // Presence is not finality: an unruled connection stays on the
@@ -424,8 +424,8 @@ impl Kernel {
     /// unknown address.
     pub fn apply_rebind(&mut self, addr: &[u8], pi: crate::transducer::anchor::Sel) -> bool {
         let mut bound = false;
-        if let Some(held) = self.basis.get(addr).map(|w| (**w).clone()) {
-            let rebound = held.with_anchor(pi.clone());
+        if let Some(held) = self.basis.get(addr).map(|w| w.element().clone()) {
+            let rebound = crate::transducer::element::Held::of(held.with_anchor(pi.clone()));
             self.basis.insert(addr, std::sync::Arc::new(rebound));
             self.touch_at(addr);
             bound = true;

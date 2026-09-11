@@ -313,15 +313,19 @@ impl Kernel {
         ) else {
             return new;
         };
-        let Some(card) = self.basis.get(&absorbed).map(|w| (**w).clone()) else {
+        let Some(card) = self.basis.get(&absorbed).map(|w| w.element().clone()) else {
             return new;
         };
         let Some(disc) = self.discoverer_of(&absorbed) else {
             return new;
         };
         self.basis_remove(&absorbed);
-        if self.word_mut(&base).map(|w| w.attach(&card, &g)).unwrap_or(0) > 0 {
-            let after = self.basis.get(&base).map(|w| (**w).clone()).unwrap_or_else(|| card.clone());
+        if self.word_mut(&base).map(|w| w.update(|e| e.attach(&card, &g))).unwrap_or(0) > 0 {
+            let after = self
+                .basis
+                .get(&base)
+                .map(|w| w.element().clone())
+                .unwrap_or_else(|| card.clone());
             let payload = crate::transducer::rewrite::RewritePayload::Condense {
                 sections: after.sections().to_vec(),
                 gauge: g.clone(),
@@ -343,7 +347,7 @@ impl Kernel {
     /// lane immediately, not on the idle cursor.
     pub(crate) fn torse_at(&mut self, addr: &[u8]) {
         let spanned = match self.word_mut(addr) {
-            Some(w) => w.torse(),
+            Some(w) => w.update(|e| e.torse()),
             None => return,
         };
         if spanned == 0 {
@@ -433,9 +437,17 @@ impl Kernel {
     pub fn word_at(&self, addr: &[u8]) -> Option<&Element> {
         self.basis
             .get(addr)
-            .map(|w| w.as_ref())
+            .map(|w| w.element())
             .or_else(|| self.cavity_book.get(addr))
             .or_else(|| self.provisional.get(addr))
+    }
+
+    /// THE HELD WORD THIS COURT INSTALLED (L16): the element AND the form
+    /// its tape decoded to, for a reader that needs the form. The basis
+    /// alone — a cavity and a provisional are elements this court has not
+    /// installed, and `word_at` falls through to them on purpose.
+    pub(crate) fn held_word(&self, addr: &[u8]) -> Option<&crate::transducer::element::Held> {
+        self.basis.get(addr).map(|w| w.as_ref())
     }
 
     /// The word this court INSTALLED, never a provisional one. `word_at`
@@ -444,7 +456,7 @@ impl Kernel {
     /// is crystallized on the receiver (24.1). Chapter 23.2 states the same
     /// rule for `resolve_form`: provisional and dialect return `None`.
     pub(crate) fn installed_word(&self, addr: &[u8]) -> Option<&Element> {
-        self.basis.get(addr).map(|w| w.as_ref())
+        self.basis.get(addr).map(|w| w.element())
     }
 
     /// A word the court finalized here joins the ruled cover (keyed admit).

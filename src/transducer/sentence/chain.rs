@@ -126,7 +126,7 @@ impl Sentence {
 /// receiving side of speech: the hearer's language deepens on what it
 /// verified, never on what it was told.
 pub fn puncture_from(
-    words: &mut Keyed<std::sync::Arc<Element>>,
+    words: &mut Keyed<std::sync::Arc<crate::transducer::element::Held>>,
     cites: &[crate::anastome::dialogue::CiteWire],
 ) -> usize {
     let mut deepened = 0usize;
@@ -154,7 +154,9 @@ pub fn puncture_from(
         if held_asg.contains(&element::assignment_key(&asg)) {
             continue;
         }
-        if std::sync::Arc::make_mut(word).puncture(asg) {
+        // Through `Held::update`: the fibre deepens and the form is
+        // re-decoded with it, one change to one held word (L16).
+        if std::sync::Arc::make_mut(word).update(|e| e.puncture(asg)) {
             deepened += 1;
         }
     }

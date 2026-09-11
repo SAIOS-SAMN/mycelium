@@ -223,7 +223,7 @@ k.basis_insert(
     [1; 32],
 );
 let addr = k.basis()[k.basis_len() - 1].address();
-k.provisional.insert(&addr, (*k.basis()[k.basis_len() - 1]).clone());
+k.provisional.insert(&addr, k.basis()[k.basis_len() - 1].element().clone());
 let sentence = vec![crate::anastome::dialogue::CiteWire {
     addr: k.basis()[0].address(),
     standing: 0,

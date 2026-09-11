@@ -388,7 +388,7 @@ impl Kernel {
         let Some(disc) = self.discoverer_of(sibling) else {
             return 0;
         };
-        let gained = self.word_mut(base).map(|w| w.attach(&sib, g)).unwrap_or(0);
+        let gained = self.word_mut(base).map(|w| w.update(|e| e.attach(&sib, g))).unwrap_or(0);
         self.touch_at(base);
         self.basis_remove(sibling);
         if gained > 0 {

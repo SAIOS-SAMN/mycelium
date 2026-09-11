@@ -63,7 +63,6 @@ pub(crate) const GATE: Gate = Gate {
         ("network/wire.rs", 1),
         ("src/physics/mod.rs", 11),
         ("server/cognition/basis.rs", 8),
-        ("server/cognition/book/language.rs", 1),
         ("server/cognition/book/listings.rs", 4),
         ("server/cognition/book/speech.rs", 4),
         ("server/cognition/book/tension.rs", 3),

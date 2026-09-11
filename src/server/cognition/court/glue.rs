@@ -281,7 +281,13 @@ impl Kernel {
                     self.basis_push(spoken.clone(), peer);
                 }
                 if let Some(w) = self.word_mut(&addr) {
-                    w.record_dislocation(asg, element::identity_versor(), element::FIBER_SPATIAL);
+                    w.update(|e| {
+                        e.record_dislocation(
+                            asg,
+                            element::identity_versor(),
+                            element::FIBER_SPATIAL,
+                        )
+                    });
                     self.touch_at(&addr);
                 }
                 self.ruled_admit(&addr);
@@ -301,7 +307,9 @@ impl Kernel {
                     if let Some(g) = crate::transducer::cech::transition(&rep, &spoken) {
                         if let Some(v) = crate::transducer::stalk::placement_of(&g) {
                             if let Some(w) = self.word_mut(&rep.address()) {
-                                w.record_dislocation(asg, v, element::FIBER_SPATIAL);
+                                w.update(|e| {
+                                    e.record_dislocation(asg, v, element::FIBER_SPATIAL)
+                                });
                                 self.touch_at(&rep.address());
                             }
                         }

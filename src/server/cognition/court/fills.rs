@@ -198,7 +198,7 @@ impl Kernel {
             return;
         };
         if let Some(wm) = self.word_mut(addr) {
-            wm.record_torsion(asg, ell, element::FIBER_SPATIAL);
+            wm.update(|e| e.record_torsion(asg, ell, element::FIBER_SPATIAL));
         }
         self.touch_at(addr);
     }

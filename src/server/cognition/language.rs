@@ -80,7 +80,7 @@ pub struct Language {
     /// owned so an admit MODIFIES this snapshot in place through
     /// `Arc::make_mut` rather than building a new one beside it; a copy is
     /// paid once, and only when a reader is actually holding the old one.
-    pub words: Vec<std::sync::Arc<Element>>,
+    pub words: Vec<std::sync::Arc<crate::transducer::element::Held>>,
     pub stalks: std::sync::Arc<crate::transducer::stalk::Stalks>,
     /// Each word's shape, lifted once on first use and shared by every
     /// lookup over this snapshot (a measurement memoized, never persisted).
@@ -93,6 +93,12 @@ pub struct Language {
 
 impl Language {
     pub fn get(&self, i: usize) -> Option<&Element> {
+        self.words.get(i).map(|w| w.element())
+    }
+
+    /// The held word at a slot: the element AND the form its tape decodes
+    /// to (L16), for a reader that needs the form.
+    pub fn held(&self, i: usize) -> Option<&crate::transducer::element::Held> {
         self.words.get(i).map(|w| w.as_ref())
     }
 

@@ -14,7 +14,7 @@ impl Kernel {
 
     /// Remove the word at `addr` from the basis, its discoverer, and its stalk.
     pub(crate) fn basis_remove(&mut self, addr: &[u8]) -> Element {
-        let Some(held) = self.basis.get(addr).map(|w| (**w).clone()) else {
+        let Some(held) = self.basis.get(addr).map(|w| w.element().clone()) else {
             return Element::identity();
         };
         self.unindex_word(&held);
@@ -29,9 +29,9 @@ impl Kernel {
         }
         self.basis_gen += 1;
         self.retire_gen += 1;
-        let removed = self.basis.remove(addr).unwrap_or_else(|| std::sync::Arc::new(held.clone()));
+        self.basis.remove(addr);
         self.language_drop(addr);
-        (*removed).clone()
+        held
     }
 
     pub(crate) fn basis_clear(&mut self) {
@@ -63,7 +63,7 @@ impl Kernel {
 
     pub(crate) fn language_from_words(
         &self,
-        words: Vec<std::sync::Arc<Element>>,
+        words: Vec<std::sync::Arc<crate::transducer::element::Held>>,
         stalks: std::sync::Arc<crate::transducer::stalk::Stalks>,
         index: crate::network::nerve::Keyed<usize>,
     ) -> Language {
@@ -90,7 +90,7 @@ impl Kernel {
     }
 
     pub(crate) fn language_drop(&mut self, addr: &[u8]) {
-        let words: Vec<std::sync::Arc<Element>> = self
+        let words: Vec<std::sync::Arc<crate::transducer::element::Held>> = self
             .language
             .words
             .iter()
@@ -106,9 +106,12 @@ impl Kernel {
         self.language_gen = self.basis_gen;
     }
 
-    pub(crate) fn language_append_arc(&mut self, word: std::sync::Arc<Element>) {
+    pub(crate) fn language_append_arc(
+        &mut self,
+        word: std::sync::Arc<crate::transducer::element::Held>,
+    ) {
         let addr = word.address();
-        let inv = crate::transducer::stalk::invariant_of(word.as_ref());
+        let inv = crate::transducer::stalk::invariant_of(word.element());
         std::sync::Arc::make_mut(&mut self.stalks).admit(&inv, &addr);
         if self.retire_gen != self.language.retire_gen {
             self.language_rebuild();
