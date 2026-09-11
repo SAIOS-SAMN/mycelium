@@ -34,6 +34,8 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
         if di.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
             continue;
         }
+        trace::trace_at("extract/4 face-i", i);
+        trace::trace_at("extract/4 face-j", j);
         let Some(tc_i) = transport_class(&form.vertices[i]) else {
             continue;
         };
@@ -57,17 +59,21 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
         });
         if constant {
             let _ = form.rebase(face.i, face.j, relative);
+            trace::trace_at("extract/4 rebased", j);
         }
     }
+    trace::trace_at("extract/4 reindex", form.vertices.len());
     form.reindex();
     for (_, &fi) in form.star.fiber(crate::network::nerve::ROOT) {
         let Some(face) = form.faces.get(fi as usize) else {
             continue;
         };
         let (i, j) = (face.i, face.j);
+        trace::trace_at("extract/4 star-face", fi as usize);
         if let Some(t) = form.face_of(i, j) {
             form.faces[fi as usize].transport = t;
         }
+        trace::trace_at("extract/4 star-face-done", fi as usize);
     }
 }
 
@@ -138,8 +144,10 @@ pub fn extract_rule_with(
         return None;
     }
     let scale = family_ratio(family)?;
+    trace::trace_n("extract/0 pair-forms", family.len(), budget);
     let mut pair_forms: Vec<Form> = Vec::with_capacity(family.len());
-    for (a, b) in family {
+    for (i, (a, b)) in family.iter().enumerate() {
+        trace::trace_n("extract/0 pair", i, budget);
         if !budget.spend() {
             return None;
         }
@@ -151,6 +159,7 @@ pub fn extract_rule_with(
         pair_forms.push(pair_form(crystal, budget, a, b, Some(scale))?);
     }
     let n_pairs = pair_forms.len();
+    trace::trace_n("extract/1 correspondence", n_pairs, budget);
     // 1. Correspondence by transport class (kind, word class).
     // The hue map is a section on Form.hue_maps. Moduli stay a section
     // coordinate. Presence is a keyed set of pair indices, never a scan
@@ -240,6 +249,7 @@ pub fn extract_rule_with(
         by_unfolded: crate::network::nerve::Keyed::new(),
         demands: crate::network::nerve::Keyed::new(),
     };
+    trace::trace_n("extract/2 faces", form.vertices.len(), budget);
     // 2. Faces named by the pair forms (star + cell overlap). Constancy is
     // over the pairs where both ends exist; a missing end is not a violation.
     let mut candidates: crate::network::nerve::Keyed<(End, End)> = crate::network::nerve::Keyed::new();
@@ -323,6 +333,7 @@ pub fn extract_rule_with(
     }
     form.loops = Form::loops_of(&form.faces, form.vertices.len());
     form.reindex();
+    trace::trace_n("extract/3 glue", form.faces.len(), budget);
     // 3. Glue: placement is the relative word Frame → class, constant across the bundle.
     // Crystal is indexed by the section coordinate (moduli); correspondence is transport class.
     let glued_classes: Vec<(TransportClass, Invariant)> = form
@@ -359,15 +370,18 @@ pub fn extract_rule_with(
             }
         }
     }
+    trace::trace_n("extract/4 rebase", form.vertices.len(), budget);
     // 4. Rebase: w_j = t · w_i · t⁻¹ with t the relative placement, on
     // every pair. Named faces only; Frame is not a conjugator.
     rebase_named_faces(&mut form, &pair_forms);
+    trace::trace("extract/5 unfold", budget);
     // 5. Unfold grow-to-frame.
     if family.iter().all(|(a, b)| grows_to_frame(a, b)) {
         form.unfold(crate::transducer::sentence::Measure::Occupied);
     }
     // 6. Contact: placement differs across pairs, peel ring to Frame is one value.
     let nverts = form.vertices.len();
+    trace::trace_n("extract/6 contact", nverts, budget);
     for vi in 0..nverts {
         if !budget.spend() {
             return None;
@@ -415,12 +429,14 @@ pub fn extract_rule_with(
             }
         }
     }
+    trace::trace_n("extract/7 coherence", form.loops.len(), budget);
     // 7. Coherence: tree gauge, else hold the loops.
     if !form.coheres() {
         if let Some(gamma) = form.solve_coboundary() {
             let _ = form.regauge(&gamma);
         }
     }
+    trace::trace("extract/8 finish", budget);
     finish(form, &pair_forms, scale, sections)
 }
 

@@ -67,6 +67,11 @@ pub fn pair_form(
             form
         }
     };
+    crate::transducer::family::trace::trace_n(
+        "pair/5 derive_against",
+        peeled.vertices.len(),
+        budget,
+    );
     derive_against(peeled, crystal, budget)
 }
 

@@ -262,7 +262,9 @@ pub(crate) fn pair_form_uncached(
     scale: Option<((usize, usize), (usize, usize))>,
     budget: &mut crate::physics::Budget,
 ) -> Form {
+    trace::trace("pair/0 bodies+pairing", budget);
     let PairedScene { ins, outs, pairs, used_in, used_out } = pair_scene(a, b, scale);
+    trace::trace_n("pair/1 paired", pairs.len(), budget);
     let mut scenery = Scenery::new();
     let frame = scenery.place(frame_vertex(), Vec::new(), None);
     let mut demanded: Vec<Demanded> = Vec::new();
@@ -285,8 +287,10 @@ pub(crate) fn pair_form_uncached(
             None => {}
         }
     }
+    trace::trace_n("pair/2 versors", scenery.vertices.len(), budget);
     let mut covers: Vec<Covered> = Vec::new();
     demanded.extend(unpaired_demands(&ins, &outs, &used_in, &used_out, scale, budget, &mut covers));
+    trace::trace_n("pair/3 covers", covers.len(), budget);
     // 50.8, L23(c) — THE COVER'S PIECES ARE VERTICES OF THIS FORM. Each
     // carried piece is a word vertex like any other, at the support it
     // landed on; the cover's meets are the faces between them; and the
@@ -466,5 +470,6 @@ pub(crate) fn pair_form_uncached(
     }
     form.loops = Form::loops_of(&form.faces, n);
     form.reindex();
+    trace::trace_n("pair/4 done", n, budget);
     form
 }

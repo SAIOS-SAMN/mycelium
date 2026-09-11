@@ -400,7 +400,15 @@ impl Vertex {
             // vertex spells its rotor by A22 (L14, 50.2 step 2).
             Vertex::Word { derivation, .. } => derivation.spelling(),
             Vertex::Glued { placement, .. } => Some(placement.clone()),
-            Vertex::Rebased { by, .. } => form.vertices.get(*by as usize)?.word_in(form),
+            // THE CHAIN A REBASE MAKES, and the line that named L20's loop:
+            // this recurses on `by` and the recursion is bounded by nothing
+            // here. A `by` chain that returns to a vertex it has already
+            // visited never ends. The trace prints the vertex being
+            // resolved, so a repeat in the line IS the cycle.
+            Vertex::Rebased { by, .. } => {
+                crate::transducer::family::trace::trace_at("word_in/rebased by", *by as usize);
+                form.vertices.get(*by as usize)?.word_in(form)
+            }
             Vertex::Demand { .. } => None,
         }
     }
@@ -426,6 +434,7 @@ impl Form {
     pub fn face_of(&self, i: u16, j: u16) -> Option<Transport> {
         let va = self.vertices.get(i as usize)?;
         let vb = self.vertices.get(j as usize)?;
+        crate::transducer::family::trace::trace_at("face_of", j as usize);
         let wa = va.word_in(self)?;
         let wb = vb.word_in(self)?;
         let word = wb.compose(&wa.inverse()).normal_form();

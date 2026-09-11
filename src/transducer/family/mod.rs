@@ -16,6 +16,7 @@ pub mod perceive;
 pub mod pairing;
 pub mod pieces;
 pub mod speak;
+pub mod trace;
 
 pub(crate) use correspondence::*;
 pub use derivation::*;
