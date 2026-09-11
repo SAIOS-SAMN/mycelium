@@ -769,6 +769,28 @@ the only things that decide; a composition of them is content at depth
 nothing until two courts have ruled it. The interpreter, the geometric
 product over exact ℚ, is never content.
 
+**The procedure's carrier** (ruled 2026-09-11, L18). The master
+algorithms are named the way the seventeen letters are: by their slot in
+Part III at genesis (A1 … A22, M1 … M9), a content name fixed by doctrine
+and never assigned in open order, so a citation of a crystal is its slot
+byte and nothing else. A **procedure** is a word over those names: a
+sequence of (crystal, exponent) in application order, exactly as a
+derivation is a sequence of (generator, exponent), carried on a form as a
+word vertex whose citations name crystals rather than generators. Its
+**witness** is the object it is run on — a versor, a form, a remainder —
+named by that object's own address, and its **result** is the canonical
+object the run yields, named by address; a procedure is replayed by
+running it on the witness on a second ledger and comparing the results by
+the algebra, projectively. A **relation between two procedures** is a
+sentence at this level: two procedures with one witness and one result
+are a loop whose holonomy is the identity, and two courts re-deriving
+that closure adjoin the relation. The court adjoins a procedure as it
+adjoins a generator, on two courts' re-derivation of one witness, under
+`ActKind::Ruling` with the procedure's address; the syllabus teaches it;
+a use of it pays room. No new act byte, no new tape kind: the derivation
+carrier and the form carry it, with the citation's target being a crystal
+slot where it was a generator address.
+
 **What is still refused.** Chapter 44's refusals stand at every depth:
 no completion of the rewrites into a confluent system, no critical-pair
 procedure that manufactures 2-cells, no unique minimal path chosen by a
@@ -5294,7 +5316,10 @@ a length or any scalar (rule 4) — and the 2-cell is the substitution of
 its derivation into every citer, minted by `mint_rewrite` as
 `Retire` with the citers re-docketed (`redocket_citers_of`), ruled on
 two courts' re-derivation of the derivability, paid as E2 pays a
-rewrite. No carrier is invented for either depth.
+rewrite. No carrier is invented for either depth, and **no act byte is
+spent for either** (ruled 2026-09-11): a relator and a rewrite are
+attested by `ActKind::Ruling` with the object's address, as a letter is;
+the depth reader of L15 counts them as it counts any ruling.
 
 **v7's layout is fixed at the recut.** Until the fleet is recut on v7,
 a change to v7's layout (the presence byte above) is v7, and no
@@ -6395,6 +6420,27 @@ outside their span is an obstruction, and it is a RELATION for the depth-4
 adjunction (37.7's fourth row), never a new dimension. Congruence of the
 four lanes on a derivation is `H¹` of the product cover vanishing on its
 cross-lane loops after adjunction: the four covers then cover one object.
+
+**Which axis of κ(ℓ) lies on which lane** (ruled 2026-09-11, so that a
+basis per lane can be read at all). The assignment is not chosen; it is
+16.16's definition of the pressure — S the cells it fails to speak, G the
+hue transitions it fails to carry, T the extent held in receipts, H the
+shells it spans — applied to 12.6's coordinates, and it agrees with the
+scaling table above (the atlas is S, the fibre G, the nerve H, the mesh T):
+
+| lane | axes of the class vector | the cover it is |
+|---|---|---|
+| S, spatial | placement residue, dilation residue | the atlas: where and how large on the base |
+| G, gauge | hue cycle type; the fibre's sections and torsion cycles; opened axes | the fibre over the word |
+| H, holonomic | orientation per plane, unit turns per plane, prime exponents per plane, off-plane invariants of the rotor | the nerve: what the loop turns by |
+| T, temporal | none | the mesh: extent is read from receipts, never from a class vector |
+
+So the S stratum of a word is its placement and dilation, the G stratum
+its gauge and fibre, the H stratum its rotor class, and every reading
+of a remainder on this engine has been `[S, 0, 0, H]` because no class
+vector carries extent and the corpus's bodies are one hue. A basis per
+lane is the fiber of the generator index under that lane's axes alone;
+the meet read is the intersection of the three, T contributing nothing.
 
 The covers meet only on overlaps — a demand's stratum on a hypha's
 cover, a section's harmonics on a loop, a proof's transition on another's
