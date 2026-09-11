@@ -119,7 +119,21 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
         let Vertex::Word { address, class, .. } = v else {
             continue;
         };
+        // A VERTEX IS ASKED FOR THE PAIRS ITS RULE CLAIMS. A class whose
+        // placement varies across the bundle is a section (18.2), and the
+        // rule names the pairs it was measured on; asking it for the rest
+        // is asking it to answer for a claim it did not make. This checked
+        // every word vertex against every pair, so a section was refused
+        // for being one — 80 of 87 vertex-body refusals at epoch 13.
+        //
+        // A class the rule declares no section for is claimed whole and is
+        // checked whole, which is what it says of itself.
+        let only = crate::transducer::family::transport_class(v)
+            .and_then(|tc| f.sections.get(&tc.key()).cloned());
         for (pair, (x, y)) in family.iter().enumerate() {
+            if only.as_ref().is_some_and(|ps| !ps.contains(&(pair as u16))) {
+                continue;
+            }
             if let Carried::Fails(why) = vertex_carries_pair(v, x, y) {
                 // WHICH PAIR AND WHICH FAULT. The refusal's coordinate is
                 // the vertex (50.9 contracts there), so the pair and the

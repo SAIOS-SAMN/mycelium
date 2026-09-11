@@ -514,6 +514,28 @@ pub fn extract_rule_with(
                 None => ring_one = false,
             }
         }
+        // A PLACEMENT THAT VARIES AND CANNOT BE CONTACTED IS A SECTION.
+        //
+        // `place_varies && ring_one` puts the vertex on its orbit and drops
+        // the carriage, and the court then reads it as placed-by-orbit and
+        // passes over it. `place_varies && !ring_one` did NOTHING: the rule
+        // kept whichever pair's carriage it was read from and asserted it
+        // for the whole bundle, and the court — which checks every word
+        // vertex against every pair — refused it on the pairs it was never
+        // measured against. Measured at epoch 13: 80 of 87 vertex-body
+        // refusals, all on pair 0, one sentence repeating.
+        //
+        // Two carriages on one class are two sections (18.2), and the face
+        // path already says so. The class path now says it too: the vertex
+        // states the pairs it was actually measured on, and nothing is
+        // claimed about the rest.
+        if place_varies && !ring_one {
+            if let Some(tc) = transport_class(&form.vertices[vi]) {
+                if let Some(pairs) = class_pairs.get(&tc.key()) {
+                    sections.insert(tc.key(), pairs.clone());
+                }
+            }
+        }
         if place_varies && ring_one {
             if let Some(r) = rings {
                 if let Vertex::Word { contact, carriage, .. } = &mut form.vertices[vi] {

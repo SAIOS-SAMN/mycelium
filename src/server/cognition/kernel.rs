@@ -455,8 +455,34 @@ impl Kernel {
     /// than losing it (rule 11: a write that did not happen is not a write
     /// that did).
     pub(crate) fn file_era(&mut self, era: crate::chronometry::Era) {
+        // AN ERA IS FILED ONCE. `fold_round` re-asks every witness on every
+        // exchange cycle while a proposal is pending, and a witness filed
+        // whatever it was asked to co-sign — so one uncommitted proposal
+        // was re-fetched and re-written by every peer, every cycle. At
+        // epoch 13 that put 7.3 GiB per court into the cold segments in
+        // about four minutes and filled the disk.
+        //
+        // The root names the era, and the archive is in K order, so the
+        // question is a descent and not a scan (law 3).
+        // AND IT IS FILED IN K ORDER. `push` appended, so an archive that
+        // interleaves signers — a witness holds its own folds and the ones
+        // it co-signed — was not ordered by `root.k` at all, and the
+        // descent `eras_over` makes over it was unsound. Inserting at the
+        // position the coordinate names keeps the one invariant both reads
+        // depend on.
+        let seat = self.archive.partition_point(|e| e.root.k < era.root.k);
+        if let Some(run) = self.archive.get(seat..) {
+            for held in run {
+                if held.root.k != era.root.k {
+                    break;
+                }
+                if held.root.hash == era.root.hash && held.signer == era.signer {
+                    return;
+                }
+            }
+        }
         let Some(path) = self.eras_path.clone() else {
-            self.archive.push(era);
+            self.archive.insert(seat, era);
             return;
         };
         let payload = era.payload();
@@ -468,8 +494,8 @@ impl Kernel {
             Err(_) => None,
         };
         match at {
-            Some(at) => self.archive.push(era.filed_at(at)),
-            None => self.archive.push(era),
+            Some(at) => self.archive.insert(seat, era.filed_at(at)),
+            None => self.archive.insert(seat, era),
         }
     }
 

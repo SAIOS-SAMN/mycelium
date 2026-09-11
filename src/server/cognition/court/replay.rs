@@ -163,7 +163,11 @@ impl Kernel {
             cur.circuit()
         };
         if let Some((n, period)) = self.docket_orbit.stroke(u64::from(circuit)) {
-            eprintln!("  court orbit docket {n} period {period}");
+            // ONCE PER APERTURE, NOT PER CIRCUIT. A docket that fits one
+            // budget completes a circuit every stroke, so "written once
+            // per circuit" was written every stroke: 43,596 of these in
+            // forty minutes. The window below is the reading's own pace.
+            let _ = period;
             // 45.9, S13.7, R7: the phase over the window, read off the
             // receipts and the cover and written; nothing stores or gates
             // on it. The window is an aperture of docket orbits, so the
@@ -176,6 +180,7 @@ impl Kernel {
             // fold: one reading, two consumers (law 12).
             let window = n / aperture != n.saturating_sub(u64::from(circuit)) / aperture;
             if window {
+                eprintln!("  court orbit docket {n} period {period}");
                 self.read_phase();
             }
             // 45.8, S13.9, S13.10: an orbit that completes while a lane is

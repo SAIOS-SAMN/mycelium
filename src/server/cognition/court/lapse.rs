@@ -141,11 +141,22 @@ impl Kernel {
             self.lapse_cursor = k;
         }
         let me = self.identity;
-        for (addr, extent) in lapse {
+        // ONE LINE PER SWEEP, NOT PER LISTING. A lapse was exceptional when
+        // it was written — a citation nobody answered inside Λ — and it is
+        // routine now that the book has a horizon: 105,389 of these in
+        // forty minutes, 58% of everything the fleet said, and the journal
+        // they fill is 18 GiB of the disk. What a reader needs from a
+        // sweep is that it ran and how far it reached, which is one line;
+        // WHICH listings left is the field's to say, and it says it.
+        if let [(addr, extent), ..] = lapse.as_slice() {
             eprintln!(
-                "  court citation lapsed {:02x}{:02x}… after {extent} receipts",
-                addr[0], addr[1]
+                "  court citations lapsed {} from {:02x}{:02x}… after {extent} receipts",
+                lapse.len(),
+                addr[0],
+                addr[1]
             );
+        }
+        for (addr, _) in lapse {
             let _ = self.treasury.revoke_award(&addr, false);
             self.unlist(&addr, false);
             // 45.1: the release is this court's own act -- it returns an
