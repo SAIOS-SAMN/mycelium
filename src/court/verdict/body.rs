@@ -20,9 +20,21 @@ pub(crate) enum Carried {
     /// gauged hue, and every touched image body is reached whole.
     Carries,
     /// A cell landed off its image, on the wrong hue, or an image body was
-    /// reached in part.
-    Fails,
+    /// reached in part — and WHICH of those, because they are five
+    /// different faults and `REFUSE_VERTEX_BODY` said only that one of
+    /// them happened. On the fleet at epoch 11 that refusal was the
+    /// court's commonest by a factor of five and the journal could not
+    /// distinguish a voice whose rotor is wrong from a voice reading a
+    /// different frame than the court replays against (rule 11).
+    Fails(&'static str),
 }
+
+/// What a vertex failed at, for the journal. Coordinates, not a verdict.
+pub(crate) const FAIL_NO_VERSOR: &str = "the rotor and carriage lift to no versor";
+pub(crate) const FAIL_NO_CARRY: &str = "a cell of its body carries nowhere";
+pub(crate) const FAIL_OFF_FRAME: &str = "a cell lands outside the image frame";
+pub(crate) const FAIL_HUE: &str = "a cell lands on the wrong hue";
+pub(crate) const FAIL_PART: &str = "an image body is reached in part";
 
 /// The bodies of `x` on the vertex's chart, read by the chart's key.
 fn fiber_on<'a>(bodies: &'a [Body], class: &stalk::Invariant) -> Vec<&'a Body> {
@@ -61,7 +73,7 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
         return Carried::Silent;
     }
     let Some(versor) = element::conformal_of_rotor(&rotor, carriage) else {
-        return Carried::Fails;
+        return Carried::Fails(FAIL_NO_VERSOR);
     };
     let bodies = perceive(x);
     let fiber = fiber_on(&bodies, class);
@@ -72,17 +84,17 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
     for body in fiber {
         for &(r, c, h) in &body.cells {
             let Some(p) = element::carry_center(&versor, r, c) else {
-                return Carried::Fails;
+                return Carried::Fails(FAIL_NO_CARRY);
             };
             let (tr, tc) = element::cell_of(&p);
             let (Ok(ur), Ok(uc)) = (usize::try_from(tr), usize::try_from(tc)) else {
-                return Carried::Fails;
+                return Carried::Fails(FAIL_OFF_FRAME);
             };
             let Some(&observed) = y.get(ur).and_then(|row| row.get(uc)) else {
-                return Carried::Fails;
+                return Carried::Fails(FAIL_OFF_FRAME);
             };
             if observed != hue_under(gauge, h) {
-                return Carried::Fails;
+                return Carried::Fails(FAIL_HUE);
             }
             landed.insert(cell_key(tr, tc), ());
         }
@@ -92,7 +104,7 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
     for image in perceive(y) {
         let touched = image.cells.iter().any(|&(r, c, _)| landed.contains(&cell_key(r, c)));
         if touched && !image.cells.iter().all(|&(r, c, _)| landed.contains(&cell_key(r, c))) {
-            return Carried::Fails;
+            return Carried::Fails(FAIL_PART);
         }
     }
     Carried::Carries
@@ -107,8 +119,21 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
         let Vertex::Word { address, class, .. } = v else {
             continue;
         };
-        for (x, y) in family {
-            if let Carried::Fails = vertex_carries_pair(v, x, y) {
+        for (pair, (x, y)) in family.iter().enumerate() {
+            if let Carried::Fails(why) = vertex_carries_pair(v, x, y) {
+                // WHICH PAIR AND WHICH FAULT. The refusal's coordinate is
+                // the vertex (50.9 contracts there), so the pair and the
+                // fault ride the journal instead: a voice whose rotor is
+                // wrong and a voice reading a different frame than this
+                // court replays against produced the same line, and on the
+                // fleet at epoch 11 that line was the commonest refusal
+                // the court made.
+                let at: String =
+                    address.iter().take(2).map(|b| format!("{b:02x}")).collect();
+                eprintln!(
+                    "  court vertex body {at}… pair {pair} of {}: {why}",
+                    family.len()
+                );
                 return Some(Refusal {
                     reason: REFUSE_VERTEX_BODY,
                     at: sentence::At::Vertex { address: address.clone(), chart: class.clone() },
