@@ -22,14 +22,34 @@ use std::sync::Mutex;
 /// reporting frame again.
 pub(crate) fn pages(kernel: &Mutex<Kernel>, mesh: &Mesh, dest: &str, vk: [u8; 32], to: u64) -> bool {
     let Some(hi0) = to.checked_sub(1) else { return true };
-    let Some(mut budget) = kernel.lock().ok().map(|mut k| k.stroke()) else { return false };
+    // A GAP MUST BE CLOSED, NOT NIBBLED. This took one stroke — three
+    // spends on this box, so three pages — and a gap of thousands of
+    // receipts needs twenty or more. `pages` then returned false, the
+    // caller never re-admitted the frame that reported the gap, and the
+    // whole chase was thrown away and begun again on the next exchange.
+    // Measured on the fleet at epoch 11 after the routing was fixed: 48
+    // pages in three minutes, 115–176 receipts admitted on each of them,
+    // and `parent 0` on every court — the receipts were arriving and the
+    // citation they were fetched for was never closed.
+    //
+    // An aperture of strokes is what a pass that MUST finish is given
+    // (`physics::aperture_strokes`), the same quantity the eviction sweep
+    // takes when the book is past its ceiling. The frontier is still
+    // bounded by it, and by `asked`, so a cycle ends and a peer that
+    // cannot serve still returns.
+    let Some(mut budget) = kernel
+        .lock()
+        .ok()
+        .map(|mut k| k.stroke_n(mycelium::physics::aperture_strokes()))
+    else {
+        return false;
+    };
     // THE FETCH FRONTIER: the signer this gap was reported for, and every
     // signer a fetched receipt turns out to cite and this node does not
     // hold. A back-fill of one linear chain cannot close on a mesh whose
     // receipts cite each other — the causal order is a poset — so a hole
     // across signers is pushed here and chased, rather than ending the
-    // page (47.2 step 3). The frontier is bounded by the exchange's own
-    // stroke, which every fetch spends from.
+    // page (47.2 step 3).
     let mut frontier: Vec<([u8; 32], u64)> = vec![(vk, hi0)];
     let mut asked: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
     while let Some((who, hi)) = frontier.pop() {

@@ -192,6 +192,14 @@ impl Kernel {
         self.physics.stroke()
     }
 
+    /// A stroke of a MEASURED size — what a caller with work in hand that
+    /// must FINISH spends on it, rather than the one stroke a caller that
+    /// can resume next time gets (L8w, law 9). The count is read off the
+    /// work, never off the machine.
+    pub fn stroke_n(&mut self, n: usize) -> crate::physics::Budget {
+        self.physics.stroke_n(n)
+    }
+
     /// Crate-internal: the deliberative arm (synthesis::contemplate) spends
     /// the reserve through here — thought is metabolically real.
     #[cfg(test)]
