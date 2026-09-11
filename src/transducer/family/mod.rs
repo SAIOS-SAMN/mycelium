@@ -6,6 +6,7 @@
 
 pub mod correspondence;
 pub mod cover;
+pub mod derivation;
 pub mod descent;
 pub mod extract;
 pub mod memo;
@@ -17,6 +18,7 @@ pub mod pieces;
 pub mod speak;
 
 pub(crate) use correspondence::*;
+pub use derivation::*;
 pub use descent::*;
 
 /// ONE TRAIN PAIR — the scene a rule is shown and the scene it must speak
@@ -101,6 +103,81 @@ pub trait Crystal {
             3 => self.generators_under(chart, budget),
             _ => Vec::new(),
         }
+    }
+
+    /// 42.6 AS AMENDED, L12 — THE PRESENTATION AT THE MEET OF THE LANES A
+    /// TARGET OCCUPIES. `occupied` is one entry per lane the target carries
+    /// content on, with that lane's own chart (`lane_charts_of`).
+    ///
+    /// THE MEET, NEVER THE UNION. A target occupying `𝒮` and `𝒽` is not
+    /// reducible against a generator that lives only on `𝒽`: dividing by it
+    /// leaves the `𝒮` content untouched and asserts a bound the presentation
+    /// does not give. It is reducible against a generator that lies in BOTH
+    /// covers, because that generator moves both coordinates at once, which
+    /// is what a single group element does. So a generator enters the basis
+    /// when it is held on EVERY occupied lane, and is dropped when any lane
+    /// does not hold it.
+    ///
+    /// FOUR FLAGS, NOT A COUNT. Membership is read per lane and the four
+    /// readings are never summed (law 5). A count of lanes hit compared
+    /// against a length would be a number deciding a branch (rule 2), and
+    /// it cannot tell a generator held twice on one lane from one held on
+    /// two — which is the exact confusion the four covers exist to prevent.
+    ///
+    /// A target occupying NO lane gets no basis. The meet over an empty
+    /// family is formally everything, and answering everything here is the
+    /// union this row exists to refuse; a target on no lane is the identity
+    /// and has nothing to reduce.
+    fn generators_at_meet(
+        &self,
+        occupied: &[(usize, Invariant)],
+        budget: &mut crate::physics::Budget,
+    ) -> Vec<(
+        crate::transducer::address::Address,
+        crate::transducer::address::Address,
+        super::alphabet::Word,
+    )> {
+        if occupied.is_empty() {
+            return Vec::new();
+        }
+        let mut lanes_hit: crate::network::nerve::Keyed<[bool; 4]> =
+            crate::network::nerve::Keyed::new();
+        let mut held: crate::network::nerve::Keyed<(
+            crate::transducer::address::Address,
+            crate::transducer::address::Address,
+            super::alphabet::Word,
+        )> = crate::network::nerve::Keyed::new();
+        for (lane, chart) in occupied {
+            for (form, vertex, w) in self.generators_on_lane(*lane, chart, budget) {
+                let k = crate::transducer::sentence::generator_key(&form, &vertex);
+                match lanes_hit.get_mut(&k) {
+                    Some(flags) => {
+                        if let Some(slot) = flags.get_mut(*lane) {
+                            *slot = true;
+                        }
+                    }
+                    None => {
+                        let mut flags = [false; 4];
+                        if let Some(slot) = flags.get_mut(*lane) {
+                            *slot = true;
+                        }
+                        lanes_hit.insert(&k, flags);
+                    }
+                }
+                held.insert(k, (form, vertex, w));
+            }
+        }
+        let mut out = Vec::new();
+        for (k, g) in held.fiber(crate::network::nerve::ROOT) {
+            let Some(flags) = lanes_hit.get(&k) else { continue };
+            let on_every = occupied
+                .iter()
+                .all(|(lane, _)| matches!(flags.get(*lane), Some(true)));
+            if on_every {
+                out.push(g.clone());
+            }
+        }
+        out
     }
 }
 

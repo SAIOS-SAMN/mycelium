@@ -93,13 +93,19 @@ fn budget() -> crate::physics::Budget {
     crate::physics::Physics::default().stroke()
 }
 
+/// NO GAUGE. Every target in this file is a bare plane versor measured
+/// with no hue map beside it, so the `𝒢` lane is unoccupied — which is the
+/// truth about these targets, not a placeholder. The claims here are about
+/// the presentation on `𝒽`, which is the only lane they occupy.
+const NO_GAUGE: &[(u8, u8)] = &[];
+
 /// THE CIPHER'S CASE, kept as the boundary it is: a mind that holds
 /// nothing has no presentation to factor through, so the word is the
 /// residue A22 peeled from the identity and the derivation cites nobody.
 #[test]
 fn a_voice_that_holds_nothing_spells_from_the_identity() {
     let v = element::versor_of_word(&quarter(2)).expect("a plane versor");
-    let d = factor_versor(&NoCrystal, &mut budget(), &v)
+    let d = factor_versor(&NoCrystal, &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
     assert!(d.is_spelled(), "no citation, because nothing is held");
@@ -115,7 +121,7 @@ fn a_voice_that_holds_nothing_spells_from_the_identity() {
 fn a_voice_that_holds_a_generator_derives_through_it() {
     let held = Holds::of(quarter(1), 1);
     let v = element::versor_of_word(&quarter(2)).expect("a plane versor");
-    let d = factor_versor(&held, &mut budget(), &v)
+    let d = factor_versor(&held, &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
     assert!(!d.is_spelled(), "the mind factored through what it holds");
@@ -138,10 +144,10 @@ fn a_voice_that_holds_a_generator_derives_through_it() {
 #[test]
 fn two_presentations_read_one_versor_as_two_derivations_of_one_vertex() {
     let v = element::versor_of_word(&quarter(2)).expect("a plane versor");
-    let a = factor_versor(&Holds::of(quarter(1), 1), &mut budget(), &v)
+    let a = factor_versor(&Holds::of(quarter(1), 1), &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
-    let b = factor_versor(&Holds::of(quarter(3), 3), &mut budget(), &v)
+    let b = factor_versor(&Holds::of(quarter(3), 3), &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
     assert_ne!(a.generators, b.generators, "two presentations, two proofs");
@@ -159,15 +165,15 @@ fn two_presentations_read_one_versor_as_two_derivations_of_one_vertex() {
 #[test]
 fn one_memoised_percept_gives_each_mind_its_own_derivation() {
     let v = element::versor_of_word(&quarter(2)).expect("a plane versor");
-    let a = factor_versor(&Holds::of(quarter(1), 1), &mut budget(), &v)
+    let a = factor_versor(&Holds::of(quarter(1), 1), &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
-    let bare = factor_versor(&NoCrystal, &mut budget(), &v)
+    let bare = factor_versor(&NoCrystal, &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
     // Re-read by the first mind after the second: no root was consulted
     // and no entry was overwritten, because there is no entry.
-    let again = factor_versor(&Holds::of(quarter(1), 1), &mut budget(), &v)
+    let again = factor_versor(&Holds::of(quarter(1), 1), &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
     assert!(bare.is_spelled(), "the mind that holds nothing still spells");
@@ -234,7 +240,7 @@ fn versor_of_arc(s: i64, t: i64) -> crate::transducer::element::Versor {
 fn a_mind_taught_an_adjoined_generator_derives_through_it() {
     let held = Holds::of_letter(4, 1, 7);
     let v = versor_of_arc(4, 1);
-    let d = factor_versor(&held, &mut budget(), &v)
+    let d = factor_versor(&held, &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the ring reaches it where the peel could not");
     assert!(!d.is_spelled(), "it cites the letter it was taught");
@@ -254,7 +260,7 @@ fn the_ring_cites_a_generator_at_its_full_multiplicity() {
     let held = Holds::of_letter(4, 1, 7);
     // (4 + i)² = 15 + 8i.
     let v = versor_of_arc(15, 8);
-    let d = factor_versor(&held, &mut budget(), &v)
+    let d = factor_versor(&held, &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the ring reaches it");
     assert_eq!(
@@ -272,7 +278,7 @@ fn the_ring_cites_a_generator_at_its_full_multiplicity() {
 #[test]
 fn a_mind_without_the_letter_still_demands_it() {
     let v = versor_of_arc(4, 1);
-    let demanded = factor_versor(&NoCrystal, &mut budget(), &v)
+    let demanded = factor_versor(&NoCrystal, &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect_err("the seventeen cannot spell it");
     assert!(
@@ -289,7 +295,7 @@ fn a_court_holding_the_letter_composes_a_citation_of_it() {
     use crate::transducer::alphabet::Verified;
     let held = Holds::of_letter(4, 1, 7);
     let (letter_addr, letter_form) = letter_of(4, 1, 7);
-    let d = factor_versor(&held, &mut budget(), &versor_of_arc(15, 8))
+    let d = factor_versor(&held, &mut budget(), &versor_of_arc(15, 8), NO_GAUGE)
         .expect("a linear block")
         .expect("the ring reaches it");
     let cover = |form: &Address, vertex: &Address| -> Option<crate::transducer::alphabet::Rotor> {

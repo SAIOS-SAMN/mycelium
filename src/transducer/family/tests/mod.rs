@@ -7,6 +7,7 @@ mod cover;
 mod deflation;
 mod derivation;
 mod extraction;
+mod lanes;
 mod orbit;
 mod perception;
 mod speech;

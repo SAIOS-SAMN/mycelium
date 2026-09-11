@@ -86,8 +86,14 @@ fn derive_against(
 ) -> Option<Form> {
     for v in &mut peeled.vertices {
         match v {
-            Vertex::Word { derivation, .. } => {
-                *derivation = derivation_of_spelled(crystal, budget, derivation)?;
+            // THE `𝒢` LANE IS THE VERTEX'S (42.6 as amended, L12). A
+            // vertex's GAUGE says whether it recolours, and a target that
+            // recolours is not derived by a generator that only turns.
+            // Read from the derivation alone, every target looked purely
+            // holonomic and reduced against `𝒽`'s basis whatever hue it
+            // carried.
+            Vertex::Word { derivation, gauge, .. } => {
+                *derivation = derivation_of_spelled(crystal, budget, derivation, gauge)?;
             }
             // 37.7 AT THE SECOND STEP. A demand the peel typed is not
             // final: the peel spells with the seventeen alone, and this
@@ -141,6 +147,9 @@ fn ring_answer(
     }
     let (a, b) = (body_of(before), body_of(after));
     let car = carriage(&a, &b)?;
-    let derivation = factor_versor(crystal, budget, &car.v)?.ok()?;
+    // The carriage's OWN hue map is the gauge: this demand's target
+    // recolours exactly where `sigma` is not the identity, so the `𝒢` lane
+    // is occupied or not by what was measured (L12).
+    let derivation = factor_versor(crystal, budget, &car.v, &car.sigma)?.ok()?;
     word_vertex_with(&a, &b, &car, derivation)
 }

@@ -203,18 +203,14 @@ pub fn admit_generators_by_lane(
     f: &Form,
 ) {
     for v in &f.vertices {
-        let Vertex::Word { address, derivation, .. } = v else {
+        let Vertex::Word { address, derivation, gauge, .. } = v else {
             continue;
         };
-        let Some(cv) = class_of_vertex(derivation) else {
+        let Some(cv) = class_of_vertex(derivation, gauge) else {
             continue;
         };
-        for (lane, cover) in index.iter_mut().enumerate() {
-            let chart = match lane {
-                3 => versor_chart_of(&derivation.rotor()),
-                _ => lane_chart(&cv, lane),
-            };
-            let Some(chart) = chart else { continue };
+        for (lane, chart) in lane_charts_of(&cv, &derivation.rotor()) {
+            let Some(cover) = index.get_mut(lane) else { continue };
             cover.nested_insert(chart.key(), address, form.clone());
         }
     }
@@ -227,18 +223,14 @@ pub fn retract_generators_by_lane(
     f: &Form,
 ) {
     for v in &f.vertices {
-        let Vertex::Word { address, derivation, .. } = v else {
+        let Vertex::Word { address, derivation, gauge, .. } = v else {
             continue;
         };
-        let Some(cv) = class_of_vertex(derivation) else {
+        let Some(cv) = class_of_vertex(derivation, gauge) else {
             continue;
         };
-        for (lane, cover) in index.iter_mut().enumerate() {
-            let chart = match lane {
-                3 => versor_chart_of(&derivation.rotor()),
-                _ => lane_chart(&cv, lane),
-            };
-            let Some(chart) = chart else { continue };
+        for (lane, chart) in lane_charts_of(&cv, &derivation.rotor()) {
+            let Some(cover) = index.get_mut(lane) else { continue };
             if let Some(bucket) = cover.get_mut(chart.key().as_bytes()) {
                 bucket.remove(address);
             }
@@ -248,17 +240,67 @@ pub fn retract_generators_by_lane(
 
 /// The class vector of a vertex's derivation, read from its ROTOR so an
 /// adjoined generator the seventeen do not spell still carries a class
-/// (L11e's `of_rotor`). The carriage is the identity here: a vertex's own
-/// placement rides on `Vertex::Word.carriage` and is not part of the
-/// generator's class.
+/// (L11e's `of_rotor`), and from its GAUGE, so a generator that recolours
+/// is filed on `𝒢` as well as on `𝒽` and a target that recolours can
+/// reach it (L12).
+///
+/// The carriage is the identity: a vertex's own placement rides on
+/// `Vertex::Word.carriage`, 18.2 quotients the body's absolute position,
+/// and a derivation claims a rotor and never a placement. This is the same
+/// reading `family::derivation::occupied_lanes` asks the index with — one
+/// class vector on both sides, or a generator is filed under one key and
+/// looked up under another.
 fn class_of_vertex(
     d: &crate::transducer::alphabet::Derivation,
+    gauge: &[(u8, u8)],
 ) -> Option<crate::transducer::sentence::ClassVector> {
     crate::transducer::sentence::ClassVector::of_rotor(
         &d.rotor(),
         crate::transducer::element::identity_versor(),
-        crate::transducer::sentence::CycleType::Identity,
+        crate::transducer::sentence::CycleType::of(gauge),
     )
+}
+
+/// EVERY LANE A CLASS OCCUPIES, AND THE CHART IT OCCUPIES EACH ON (42.6
+/// as amended, L12). Lane 3 is `versor_chart_of` — the rotor's conjugacy
+/// axes ARE the holonomic lane's chart, so nothing filed under it moves —
+/// and the other three are `lane_chart` over that lane's own axes. A lane
+/// the class does not occupy is absent from the answer: a member of no
+/// basis, never a member of an empty one.
+///
+/// ONE READER. Admission, retraction and the meet read each had their own
+/// copy of the `match lane { 3 => …, _ => … }`, which is three chances for
+/// a generator to be filed under one key and looked up under another.
+pub fn lane_charts_of(
+    cv: &crate::transducer::sentence::ClassVector,
+    rotor: &crate::transducer::alphabet::Rotor,
+) -> Vec<(usize, stalk::Invariant)> {
+    (0..4)
+        .filter_map(|lane| {
+            let chart = match lane {
+                3 => versor_chart_of(rotor),
+                _ => lane_chart(cv, lane),
+            };
+            chart.map(|c| (lane, c))
+        })
+        .collect()
+}
+
+/// THE ADDRESS OF ONE GENERATOR inside a presentation: the form that
+/// carries it and the vertex inside that form, in that order, each
+/// length-prefixed. Content, so the same generator reached through two
+/// lanes' covers is recognised as ONE member of the meet.
+pub fn generator_key(
+    form: &crate::transducer::address::Address,
+    vertex: &crate::transducer::address::Address,
+) -> Vec<u8> {
+    let (f, v) = (form.as_bytes(), vertex.as_bytes());
+    let mut k = Vec::with_capacity(f.len() + v.len() + 8);
+    k.extend_from_slice(&(f.len() as u32).to_le_bytes());
+    k.extend_from_slice(f);
+    k.extend_from_slice(&(v.len() as u32).to_le_bytes());
+    k.extend_from_slice(v);
+    k
 }
 
 /// THE BASIS ON ONE LANE (42.6 as amended): the fiber of that lane's
