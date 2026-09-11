@@ -13,7 +13,6 @@ pub mod orbit;
 pub mod pair;
 pub mod perceive;
 pub mod pieces;
-pub mod ring;
 pub mod speak;
 
 pub(crate) use correspondence::*;

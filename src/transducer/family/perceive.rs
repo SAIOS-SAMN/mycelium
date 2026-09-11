@@ -175,27 +175,104 @@ pub fn factor_versor(
     budget: &mut crate::physics::Budget,
     v: &Versor,
 ) -> Option<Result<crate::transducer::alphabet::Derivation, crate::transducer::sentence::Demand>> {
-    Some(match peel_versor(v)? {
+    // THE BASIS THIS MIND PEELS WITH (L23a): the seventeen, and whatever
+    // it has adjoined on this target's own chart. There is no second
+    // branch after the peel any more — the ring WAS that branch, running a
+    // second division loop over a second basis on a target this peel had
+    // already refused, and it is the same loop.
+    let adjoined = adjoined_basis(crystal, budget, v)?;
+    Some(match peel_versor_with(v, adjoined.clone())? {
         // `None` from the factorisation is the budget ending, which is
         // UNMEASURED and not a spelling: answering `spelled(w)` there
         // would assert "no held generator reached this" without having
         // looked, which is exactly the invented value rule 11 refuses.
         // It propagates as `None` — the same refusal a versor with no
-        // linear block gives — and the caller withholds (L8w).
-        Ok(w) => Ok(derivation_of(crystal, budget, w)?),
-        // THE RING BRANCH, and it belongs HERE rather than inside
-        // `derivation_of` (a departure from the queue's placement, named:
-        // §8.6). `derivation_of` runs only where the peel CLOSED, and a
-        // closed peel is a proof that no prime outside the seventeen
-        // divides the target's norm — so an adjoined generator can never
-        // divide it and the branch would be unreachable there. Where an
-        // adjoined generator CAN divide is exactly where the peel stood,
-        // which is this arm.
-        Err(demand) => match crate::transducer::family::ring::ring_derivation(crystal, budget, v, &demand) {
-            Some(d) => Ok(d),
-            None => Err(demand),
-        },
+        // sensor block gives — and the caller withholds (L8w).
+        //
+        // A peel that cited nothing is the letter branch exactly as it
+        // was: A12 over the letter exponents of the word it produced.
+        Ok((cited, residue)) if cited.is_empty() => {
+            Ok(derivation_of(crystal, budget, residue)?)
+        }
+        // A peel that CITED is a derivation through an adjoined generator.
+        // The composition is replayed against the target before it is
+        // returned: the arithmetic is exact, but the map from a block to a
+        // rotor is a half-angle, and a mismatch is not a guess to ship
+        // (rule 11).
+        Ok((cited, residue)) => {
+            let composed = compose_citations(&adjoined, &cited, &residue)?;
+            match rotor_of_versor(v).is_some_and(|t| composed.projective_eq(&t)) {
+                true => Ok(crate::transducer::alphabet::Derivation::factored(
+                    cited, residue, composed,
+                )),
+                false => {
+                    eprintln!("  derivation refused: the citations do not compose to the target");
+                    return None;
+                }
+            }
+        }
+        Err(demand) => Err(demand),
     })
+}
+
+/// The rotor a versor's sensor block is the action of.
+fn rotor_of_versor(v: &Versor) -> Option<crate::transducer::alphabet::Rotor> {
+    use crate::transducer::alphabet::{rotor_of_block, PLANE_COL, PLANE_ROW};
+    rotor_of_block(&sensor_plane_block(v)?, (PLANE_ROW, PLANE_COL))
+}
+
+/// 37.7, L23a — THE ADJOINED GENERATORS THIS MIND HOLDS on the target's
+/// own chart, as primes the peel may divide by. A generator that spells in
+/// letters is A12's and not the basis's; one whose rotor has no arc on the
+/// sensor plane divides nothing here.
+///
+/// The chart is the TARGET's, as it is for the letter branch (42.6), so a
+/// mind is asked what it holds where the target acts and nowhere else.
+fn adjoined_basis(
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    v: &Versor,
+) -> Option<Vec<crate::transducer::alphabet::AdjoinedPrime>> {
+    use crate::transducer::alphabet::{gauss_of_block, rotor_block_on, AdjoinedPrime, PLANE_COL, PLANE_ROW};
+    let plane = (PLANE_ROW, PLANE_COL);
+    let Some(target) = rotor_of_versor(v) else {
+        return Some(Vec::new());
+    };
+    let Some(chart) = crate::transducer::sentence::versor_chart_of(&target) else {
+        return Some(Vec::new());
+    };
+    let mut out = Vec::new();
+    for (form, vertex, g) in crystal.generators_under(&chart, budget) {
+        if !g.letters().is_empty() {
+            continue;
+        }
+        let Some(block) = rotor_block_on(&g.rotor(), plane) else { continue };
+        let Some(pi) = gauss_of_block(&block) else { continue };
+        if pi.is_unit() || pi.is_zero() {
+            continue;
+        }
+        out.push(AdjoinedPrime { pi, form, vertex, rotor: g.rotor() });
+    }
+    Some(out)
+}
+
+/// The rotor the citations and the residue compose to: each generator's
+/// rotor at its exponent, then the residue's own.
+fn compose_citations(
+    basis: &[crate::transducer::alphabet::AdjoinedPrime],
+    cited: &[crate::transducer::alphabet::Cited],
+    residue: &crate::transducer::alphabet::Word,
+) -> Option<crate::transducer::alphabet::Rotor> {
+    use crate::transducer::alphabet::{rotor_power, Rotor};
+    let mut composed = Rotor::identity();
+    for (form, vertex, e) in cited {
+        let held = basis
+            .iter()
+            .find(|g| &g.form == form && &g.vertex == vertex)
+            .map(|g| g.rotor.clone())?;
+        composed = composed.geo(&rotor_power(&held, *e)?);
+    }
+    Some(composed.geo(&residue.rotor()))
 }
 
 
@@ -222,20 +299,38 @@ pub(crate) fn derivation_of_spelled(
 pub(crate) fn peel_versor(
     v: &Versor,
 ) -> Option<Result<crate::transducer::alphabet::Word, crate::transducer::sentence::Demand>> {
-    use crate::transducer::alphabet::{spell_peel_on, PLANE_COL, PLANE_ROW};
+    Some(match peel_versor_with(v, Vec::new())? {
+        Ok((_, w)) => Ok(w),
+        Err(d) => Err(d),
+    })
+}
+
+/// WHAT A CLOSED PEEL PRODUCED: the citations it divided out and the
+/// letters that remain. A `Derivation`'s two halves.
+pub(crate) type Peeled = (Vec<crate::transducer::alphabet::Cited>, crate::transducer::alphabet::Word);
+
+/// A22 OVER A BASIS (37.7, L23a): the ordered peel with the alphabet's own
+/// primes AND the adjoined generators the caller holds. What comes back is
+/// a DERIVATION's two halves — the citations the peel divided out and the
+/// letters that remain — or the demand the peel typed.
+///
+/// The ring branch was this, run a second time on a target this peel had
+/// already refused, from a second basis, in another file. One loop, one
+/// basis. A caller that passes no generators reads exactly what
+/// `peel_versor` always read.
+pub(crate) fn peel_versor_with(
+    v: &Versor,
+    adjoined: Vec<crate::transducer::alphabet::AdjoinedPrime>,
+) -> Option<Result<Peeled, crate::transducer::sentence::Demand>> {
+    use crate::transducer::alphabet::{spell_peel_with, PLANE_COL, PLANE_ROW};
     use crate::transducer::peel::PeelNest;
     use crate::transducer::sentence::Demand;
     let block = sensor_plane_block(v)?;
     let plane = (PLANE_ROW, PLANE_COL);
-    Some(match spell_peel_on(plane, &block) {
+    Some(match spell_peel_with(plane, &block, adjoined) {
         Some((PeelNest::Closed { cores }, _rho)) => {
-            let mut w = crate::transducer::alphabet::Word::identity();
-            for syllable in cores.iter().rev() {
-                for &(id, inv) in syllable {
-                    w.push(id, inv);
-                }
-            }
-            Ok(w)
+            let (cited, w) = crate::transducer::alphabet::cited_of_cores(&cores)?;
+            Ok((cited, w))
         }
         Some((PeelNest::Standing { arc, .. }, _)) => {
             let norm = &arc.p * &arc.p + &arc.q * &arc.q;

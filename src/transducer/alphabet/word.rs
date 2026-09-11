@@ -313,12 +313,9 @@ pub(crate) fn plane_nf(w: &Word) -> Word {
     };
     match spell_peel_on(plane, &block) {
         Some((crate::transducer::peel::PeelNest::Closed { cores }, rho)) if rho.is_one() => {
-            let mut tape = Word::identity();
-            for syllable in cores.iter().rev() {
-                for &(id, inv) in syllable {
-                    tape.push(id, inv);
-                }
-            }
+            let Some(tape) = crate::transducer::alphabet::word_of_cores(&cores) else {
+                return w.clone();
+            };
             if tape.block_on(plane).as_ref() == Some(&block) {
                 tape
             } else {

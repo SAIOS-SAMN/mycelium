@@ -162,12 +162,7 @@ fn spell_plane(plane: (u8, u8), rotor: &Rotor) -> Option<Result<Option<Word>, De
     }
     Some(match spell_peel_on(plane, &block) {
         Some((PeelNest::Closed { cores }, rho)) if rho.is_one() => {
-            let mut w = Word::identity();
-            for syllable in cores.iter().rev() {
-                for &(id, inv) in syllable {
-                    w.push(id, inv);
-                }
-            }
+            let w = crate::transducer::alphabet::word_of_cores(&cores)?;
             if w.block_on(plane).as_ref() != Some(&block) {
                 Err(Demand::Standing { block: Box::new(block) })
             } else {
