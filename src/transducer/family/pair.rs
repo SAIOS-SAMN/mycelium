@@ -5,324 +5,9 @@
 //! by exact chart, paired where a carriage exists, and the unpaired left as
 //! the residual the form does not speak.
 
+use super::pairing::{Cand, PairedScene};
+use crate::transducer::sentence::vertex_ix_key;
 use super::*;
-thread_local! {
-    static FACE_WORK: Cell<u64> = const { Cell::new(0) };
-}
-
-pub(crate) fn note_face_work() {
-    FACE_WORK.with(|c| c.set(c.get().saturating_add(1)));
-}
-
-#[cfg(test)]
-pub(crate) fn reset_face_work() {
-    FACE_WORK.with(|c| c.set(0));
-}
-
-#[cfg(test)]
-pub(crate) fn face_work() -> u64 {
-    FACE_WORK.with(|c| c.get())
-}
-
-/// Faces the bundle names: star from the Frame (when the form carries one),
-/// plus pairs whose after-supports overlap or sit at ring distance one.
-/// Occupancy is keyed by cell; related pairs are a Keyed set. Cost is
-/// occupied + ring cells, never n².
-pub(crate) fn star_and_cell_faces(
-    n: usize,
-    frame: Option<usize>,
-    supports: &[Vec<(i64, i64)>],
-) -> Vec<(u16, u16)> {
-    let mut related: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    if let Some(frame) = frame {
-        for j in 0..n {
-            if j == frame {
-                continue;
-            }
-            related.insert(pair_key(frame as u16, j as u16), ());
-        }
-    }
-    let mut occ: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
-    for (vi, supp) in supports.iter().enumerate() {
-        if Some(vi) == frame {
-            continue;
-        }
-        let id = vi as u16;
-        for &(r, c) in supp {
-            note_face_work();
-            let k = cell_pos_key(r, c);
-            match occ.get_mut(&k) {
-                Some(v) => {
-                    if !v.contains(&id) {
-                        v.push(id);
-                    }
-                }
-                None => {
-                    occ.insert(k, vec![id]);
-                }
-            }
-        }
-    }
-    for (_k, verts) in occ.fiber(crate::network::nerve::ROOT) {
-        if verts.len() < 2 {
-            continue;
-        }
-        // Unordered pairs of this cell's own vertices, bounded by the cell.
-        for a in 0..verts.len() {
-            for b in (a + 1)..verts.len() {
-                related.insert(pair_key(verts[a], verts[b]), ());
-            }
-        }
-    }
-    for (vi, supp) in supports.iter().enumerate() {
-        if Some(vi) == frame {
-            continue;
-        }
-        let v = vi as u16;
-        let cells: Vec<(i64, i64, u8)> = supp.iter().map(|&(r, c)| (r, c, 0)).collect();
-        for (r, c, _) in crate::transducer::blade::adjacent_ring(&cells) {
-            note_face_work();
-            let Some(others) = occ.get(&cell_pos_key(r, c)) else {
-                continue;
-            };
-            for &u in others {
-                if u != v {
-                    related.insert(pair_key(v, u), ());
-                }
-            }
-        }
-    }
-    related
-        .fiber(crate::network::nerve::ROOT)
-        .filter_map(|(k, _)| decode_pair_key(&k))
-        .collect()
-}
-
-/// Physical size of the hue carrier. Index by hue, never search.
-pub const PALETTE: usize = 256;
-pub type HueMap = [Option<u8>; PALETTE];
-
-pub(crate) fn hue_map_from_pairs(pairs: &[(u8, u8)]) -> HueMap {
-    let mut m = [None; PALETTE];
-    for &(f, t) in pairs {
-        m[f as usize] = Some(t);
-    }
-    m
-}
-
-pub(crate) struct Cand {
-    body: Body,
-    kind: crate::transducer::peel::ShellKind,
-    parent: usize,
-}
-
-pub(crate) fn scene_cands(grid: &Grid, scale: Option<((usize, usize), (usize, usize))>) -> Vec<Cand> {
-    let mut out = Vec::new();
-    // index: bodies of this scene; shells are peel fibre, not extra vertices
-    for (p, b) in perceive(grid).into_iter().enumerate() {
-        out.push(Cand { body: b.clone(), kind: crate::transducer::peel::ShellKind::Whole, parent: p });
-        for shell in crate::transducer::peel::peel_body_scaled(&b.cells, scale) {
-            if shell.kind == crate::transducer::peel::ShellKind::Whole || shell.cells.is_empty() || shell.cells == b.cells {
-                continue;
-            }
-            out.push(Cand { body: body_of(shell.cells), kind: shell.kind, parent: p });
-        }
-    }
-    out
-}
-
-pub(crate) fn pair_rank(ic: &Cand, oc: &Cand) -> Option<(u8, Carriage)> {
-    if oc.kind != crate::transducer::peel::ShellKind::Whole {
-        return None;
-    }
-    // Match is ∃V ∈ Spin(4,1)(ℚ) carrying the shape: carriage / versor_between.
-    // The linear block need not spell — a parabolic translation is a versor.
-    let car = carriage(&ic.body, &oc.body)?;
-    let exact = ic.body.moduli == oc.body.moduli;
-    let r = match (exact, ic.kind == crate::transducer::peel::ShellKind::Whole) {
-        (true, true) => 0,
-        (true, false) => 1,
-        (false, true) => 2,
-        (false, false) => 3,
-    };
-    Some((r, car))
-}
-
-pub(crate) fn mark_parent(used: &mut [bool], cands: &[Cand], idx: usize) {
-    let p = cands[idx].parent;
-    for (k, c) in cands.iter().enumerate() {
-        if c.parent == p {
-            used[k] = true;
-        }
-    }
-}
-
-/// Partition candidates by exact chart axes (`Invariant` equality), never
-/// a digest of those axes. A hash of moduli isolates congruent bodies
-/// whose packing or orientation differs; the axes themselves are the chart.
-pub(crate) fn group_by_chart(cands: &[Cand], used: Option<&[bool]>, peel: bool) -> Vec<(Invariant, Vec<usize>)> {
-    let mut by_key: crate::network::nerve::Keyed<(Invariant, Vec<usize>)> =
-        crate::network::nerve::Keyed::new();
-    for (i, c) in cands.iter().enumerate() {
-        if used.is_some_and(|u| u[i]) {
-            continue;
-        }
-        let inv = if peel { c.body.moduli.peel() } else { c.body.moduli.clone() };
-        let k = inv.key();
-        match by_key.get_mut(&k) {
-            Some((_, v)) => v.push(i),
-            None => {
-                by_key.insert(k, (inv, vec![i]));
-            }
-        }
-    }
-    by_key
-        .fiber(crate::network::nerve::ROOT)
-        .map(|(_, (inv, ix))| (inv.clone(), ix.clone()))
-        .collect()
-}
-
-/// THE STATE OF ONE PAIRING PASS: the candidates on each side, which of
-/// them a pass has consumed, and the pairs it has made. A pass reads all
-/// five or none of them — they are the same object at five names.
-pub(crate) struct Pairing<'a> {
-    pub(crate) ins: &'a [Cand],
-    pub(crate) outs: &'a [Cand],
-    pub(crate) used_in: &'a mut [bool],
-    pub(crate) used_out: &'a mut [bool],
-    pub(crate) pairs: &'a mut Vec<(usize, usize, Carriage)>,
-}
-
-pub(crate) fn greedy_within(p: &mut Pairing<'_>, ii: &[usize], oo: &[usize], want: u8) {
-    let Pairing { ins, outs, used_in, used_out, pairs } = p;
-    for &i in ii {
-        if used_in[i] {
-            continue;
-        }
-        // First in the support's own order for which a carriage exists.
-        // Interchangeable under the class; no distance is measured to choose.
-        let mut found: Option<(usize, Carriage)> = None;
-        for &j in oo {
-            if used_out[j] {
-                continue;
-            }
-            let Some((r, car)) = pair_rank(&ins[i], &outs[j]) else {
-                continue;
-            };
-            if r != want {
-                continue;
-            }
-            found = Some((j, car));
-            break;
-        }
-        if let Some((j, car)) = found {
-            mark_parent(used_in, ins, i);
-            mark_parent(used_out, outs, j);
-            pairs.push((i, j, car));
-        }
-    }
-}
-
-pub(crate) fn pair_groups(
-    p: &mut Pairing<'_>,
-    in_g: &[(Invariant, Vec<usize>)],
-    out_g: &[(Invariant, Vec<usize>)],
-    want: u8,
-) {
-    let mut out_by: crate::network::nerve::Keyed<&[usize]> = crate::network::nerve::Keyed::new();
-    for (inv, oo) in out_g {
-        out_by.insert(inv.key(), oo.as_slice());
-    }
-    for (inv, ii) in in_g {
-        let Some(oo) = out_by.get(&inv.key()) else {
-            continue;
-        };
-        greedy_within(p, ii, oo, want);
-    }
-}
-
-/// WHAT PAIRING TWO SCENES YIELDS.
-pub(crate) struct PairedScene {
-    /// The candidate bodies read off the input scene.
-    pub(crate) ins: Vec<Cand>,
-    /// The candidate bodies read off the output scene.
-    pub(crate) outs: Vec<Cand>,
-    /// For each pair that matched: the input candidate, the output
-    /// candidate, and the carriage taking one to the other.
-    pub(crate) pairs: Vec<(usize, usize, Carriage)>,
-    /// Which input candidates a pass consumed. The UNCONSUMED are the
-    /// residual — what the form does not speak.
-    pub(crate) used_in: Vec<bool>,
-    /// Which output candidates a pass consumed.
-    pub(crate) used_out: Vec<bool>,
-}
-
-pub(crate) fn pair_scene(
-    a: &Grid,
-    b: &Grid,
-    scale: Option<((usize, usize), (usize, usize))>,
-) -> PairedScene {
-    let ins = scene_cands(a, scale);
-    let outs = scene_cands(b, scale);
-    let mut used_in = vec![false; ins.len()];
-    let mut used_out = vec![false; outs.len()];
-    let mut pairs: Vec<(usize, usize, Carriage)> = Vec::new();
-    let in_exact = group_by_chart(&ins, None, false);
-    let out_exact = group_by_chart(&outs, None, false);
-    {
-        let mut pass = Pairing {
-            ins: &ins,
-            outs: &outs,
-            used_in: &mut used_in,
-            used_out: &mut used_out,
-            pairs: &mut pairs,
-        };
-        for want in 0u8..=1 {
-            pair_groups(&mut pass, &in_exact, &out_exact, want);
-        }
-    }
-    let in_peel = group_by_chart(&ins, Some(&used_in), true);
-    let out_peel = group_by_chart(&outs, Some(&used_out), true);
-    {
-        let mut pass = Pairing {
-            ins: &ins,
-            outs: &outs,
-            used_in: &mut used_in,
-            used_out: &mut used_out,
-            pairs: &mut pairs,
-        };
-        for want in 2u8..=3 {
-            pair_groups(&mut pass, &in_peel, &out_peel, want);
-        }
-    }
-    // Leftover wholes: ∃V even when the chart axes disagree. Not a
-    // cartesian of peel shells — unused wholes only.
-    let ii: Vec<usize> = ins
-        .iter()
-        .enumerate()
-        .filter(|(i, c)| !used_in[*i] && c.kind == crate::transducer::peel::ShellKind::Whole)
-        .map(|(i, _)| i)
-        .collect();
-    let oo: Vec<usize> = outs
-        .iter()
-        .enumerate()
-        .filter(|(i, c)| !used_out[*i] && c.kind == crate::transducer::peel::ShellKind::Whole)
-        .map(|(i, _)| i)
-        .collect();
-    {
-        let mut pass = Pairing {
-            ins: &ins,
-            outs: &outs,
-            used_in: &mut used_in,
-            used_out: &mut used_out,
-            pairs: &mut pairs,
-        };
-        for want in 2u8..=3 {
-            greedy_within(&mut pass, &ii, &oo, want);
-        }
-    }
-    PairedScene { ins, outs, pairs, used_in, used_out }
-}
 
 /// THE DEMANDS OF THE UNPAIRED (50.5): an output body no pairing consumed
 /// is a `Source` when input charts carry onto it (every one standing,
@@ -331,6 +16,26 @@ pub(crate) fn pair_scene(
 /// each unpaired output body its support overlaps, on the axes their
 /// charts differ, and toward the empty chart on every axis when nothing
 /// overlaps it — it vanished.
+/// WHAT CARRIED ONE VERTEX (50.3): the versor, and the two scene bodies
+/// it was carried between where there are two. A cover piece is a piece of
+/// ONE body and names no pair, so the edge transport of 50.3 — which reads
+/// the stabilizer element a pair's rigid motion picks out — is not asked
+/// for it and no index is invented to ask with.
+pub(crate) struct Carried {
+    pub(crate) pair: Option<(usize, usize)>,
+    pub(crate) versor: Versor,
+}
+
+/// A DEFORMATION AND THE COVER THAT READ IT. The two travel together
+/// because the demand's fate is not decided here: whether it dissolves
+/// depends on what the FORM reads off the cover's loops, and the form is
+/// built by the caller. `unpaired_demands` used to decide it on the
+/// cover's own classification, which is the reading L23(c) moves.
+pub(crate) struct Covered {
+    pub(crate) demand: Demanded,
+    pub(crate) cover: crate::transducer::family::cover::Cover,
+}
+
 fn unpaired_demands(
     ins: &[Cand],
     outs: &[Cand],
@@ -338,7 +43,7 @@ fn unpaired_demands(
     used_out: &[bool],
     scale: Option<((usize, usize), (usize, usize))>,
     budget: &mut crate::physics::Budget,
-    filed: &mut Vec<(crate::transducer::alphabet::Rotor, u32)>,
+    covered: &mut Vec<Covered>,
 ) -> Vec<Demanded> {
     use crate::transducer::peel::ShellKind::Whole;
     use crate::transducer::sentence::Demand;
@@ -399,7 +104,7 @@ fn unpaired_demands(
                     // belongs in `exhausted` and `unmeasured` where it can
                     // be read; the cursor is what turns it into strokes
                     // (L20).
-                    let covered = crate::transducer::family::cover::cover_deformation(
+                    let read = crate::transducer::family::cover::cover_deformation(
                         &ic.body,
                         &outs[*j].body,
                         scale,
@@ -410,33 +115,32 @@ fn unpaired_demands(
                     // what a half-run cover happened to reach would put a
                     // class on the form that no measurement stands behind
                     // (rule 11).
-                    if let Some(cover) = &covered {
-                        for (_meet, (g, ell)) in cover.filed.fiber(crate::network::nerve::ROOT) {
-                            filed.push((g.clone(), *ell));
-                        }
-                        // A PIECE THE COVER CARRIED AND COULD NOT SPELL is
-                        // 37.7's condition with the carriage already
-                        // confirmed, and it enters the form as the demand
-                        // the peel typed. It used to be a `continue` inside
-                        // the cover, which discarded the one place in the
-                        // engine where a versor is known to carry and its
-                        // rotor is outside the alphabet — the shortest
-                        // route the cover has to an adjoined generator.
-                        for (_piece, d) in cover.refused.fiber(crate::network::nerve::ROOT) {
-                            out.push(d.clone());
-                        }
-                    }
-                    // The demand DISSOLVES only when every cell of both
-                    // bodies is carried and no meet stands (50.8). A cover
-                    // that reached everything and left nothing standing
-                    // answered the deformation; anything else leaves it,
-                    // and an unmeasured cover leaves it untouched.
-                    if covered.is_some_and(|c| c.dissolves()) {
-                        continue;
-                    }
                     let axes = differing_axes(&ic.body.moduli, image);
                     let cells = delta_cells(&ic.body, &outs[*j].body);
-                    out.push((Demand::TopologicalDeformation { image: image.clone(), axes }, ic.body.moduli.clone(), cells));
+                    let demand = (
+                        Demand::TopologicalDeformation { image: image.clone(), axes },
+                        ic.body.moduli.clone(),
+                        cells,
+                    );
+                    let Some(cover) = read else {
+                        // An UNMEASURED cover leaves the demand exactly as
+                        // F typed it, which is what it was before any cover
+                        // existed (rule 11).
+                        out.push(demand);
+                        continue;
+                    };
+                    // A PIECE THE COVER CARRIED AND COULD NOT SPELL is
+                    // 37.7's condition with the carriage already confirmed,
+                    // and it enters the form as the demand the peel typed.
+                    for (_piece, d) in cover.refused.fiber(crate::network::nerve::ROOT) {
+                        out.push(d.clone());
+                    }
+                    // The demand's fate is the FORM's to decide: it
+                    // dissolves when every cell of both bodies is carried
+                    // AND no loop over the carried pieces stands (50.8).
+                    // The second half is a reading of the form's loops and
+                    // cannot be taken here.
+                    covered.push(Covered { demand, cover });
                 }
             }
         }
@@ -509,26 +213,52 @@ pub(crate) fn pair_form_uncached(
     let PairedScene { ins, outs, pairs, used_in, used_out } = pair_scene(a, b, scale);
     let mut vertices = vec![frame_vertex()];
     let mut supports: Vec<Vec<(i64, i64)>> = vec![Vec::new()];
-    // Per vertex, the pair it carries and the versor that carried it (50.3):
-    // the Frame and the demand vertices carry none.
-    let mut carried: Vec<Option<(usize, usize, Versor)>> = vec![None];
+    // Per vertex, what carried it (50.3): the Frame and the demand
+    // vertices carry nothing, a paired vertex names the two scene bodies
+    // it was carried between, and a COVER PIECE names none — it is a piece
+    // of one body, not a pair of them, so `pair` is absent rather than an
+    // impossible index (rule 11, rule 15).
+    let mut carried: Vec<Option<Carried>> = vec![None];
     let mut demanded: Vec<Demanded> = Vec::new();
     for (i, j, car) in &pairs {
         match word_or_demand(&ins[*i].body, &outs[*j].body) {
             Some(Ok(v)) => {
                 vertices.push(v);
                 supports.push(support_of(&outs[*j].body));
-                carried.push(Some((*i, *j, car.v.clone())));
+                carried.push(Some(Carried { pair: Some((*i, *j)), versor: car.v.clone() }));
             }
             Some(Err(d)) => demanded.push(d),
             None => {}
         }
     }
-    // 50.8: the cover's filed classes travel back with the demands. The
-    // form's torsion carrier is where they belong (15.5) and writing them
-    // onto it is not reached here — named, not hidden.
-    let mut filed: Vec<(crate::transducer::alphabet::Rotor, u32)> = Vec::new();
-    demanded.extend(unpaired_demands(&ins, &outs, &used_in, &used_out, scale, budget, &mut filed));
+    let mut covers: Vec<Covered> = Vec::new();
+    demanded.extend(unpaired_demands(&ins, &outs, &used_in, &used_out, scale, budget, &mut covers));
+    // 50.8, L23(c) — THE COVER'S PIECES ARE VERTICES OF THIS FORM. Each
+    // carried piece is a word vertex like any other, at the support it
+    // landed on; the cover's meets are the faces between them; and the
+    // class of a cycle of those faces is the form's loop holonomy, read
+    // once over the whole cycle rather than edge by edge inside the cover.
+    //
+    // The cover used to classify its own meets into carriers nothing read,
+    // so 161 carriages and 3 964 meets over twelve tasks reached no form
+    // and left only a tally.
+    let mut cover_vertex: crate::network::nerve::Keyed<u16> = crate::network::nerve::Keyed::new();
+    // Vertex index → the cover that placed it, so a loop's class is
+    // attributed to the deformation it obstructs and to no other.
+    let mut owner: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+    for (ci, c) in covers.iter().enumerate() {
+        for (key, (v, versor, codomain)) in c.cover.carried.fiber(crate::network::nerve::ROOT) {
+            let ix = vertices.len() as u16;
+            cover_vertex.insert(&key, ix);
+            owner.insert(vertex_ix_key(ix), ci);
+            vertices.push(v.clone());
+            supports.push(codomain.clone());
+            // A cover piece names no pair of the SCENE's bodies — it is a
+            // piece of one — so it carries its versor and no pair indices,
+            // and `edge_transport` is not asked for it.
+            carried.push(Some(Carried { pair: None, versor: versor.clone() }));
+        }
+    }
     // One demand vertex per (kind, chart) (50.5), the bodies it stands for
     // gathered under it; key order, never arrival order.
     let mut by_demand: crate::network::nerve::Keyed<Demanded> = crate::network::nerve::Keyed::new();
@@ -540,17 +270,6 @@ pub(crate) fn pair_form_uncached(
                 by_demand.insert(key, (kind, chart, cells));
             }
         }
-    }
-    for (_, (kind, chart, cells)) in by_demand.fiber(crate::network::nerve::ROOT) {
-        let mut cells = cells.clone();
-        cells.sort_unstable();
-        cells.dedup();
-        let mut support: Vec<(i64, i64)> = cells.iter().map(|&(r, c, _, _)| (r, c)).collect();
-        support.sort_unstable();
-        support.dedup();
-        vertices.push(demand_vertex(kind.clone(), chart, cells));
-        supports.push(support);
-        carried.push(None);
     }
     let mut form = Form {
         vertices,
@@ -574,6 +293,101 @@ pub(crate) fn pair_form_uncached(
         by_unfolded: crate::network::nerve::Keyed::new(),
         demands: crate::network::nerve::Keyed::new(),
     };
+    // THE COVER'S MEETS ARE FACES. A meet is a 1-simplex of the nerve;
+    // the transport across it is `face_of`'s to compute from the two
+    // vertices, and a meet with no transport gets no face (13.9 step 7).
+    for c in &covers {
+        for (_k, (ka, kb)) in c.cover.meets.fiber(crate::network::nerve::ROOT) {
+            let (Some(&i), Some(&j)) = (cover_vertex.get(ka), cover_vertex.get(kb)) else {
+                continue;
+            };
+            if let Some(t) = form.face_of(i, j) {
+                form.faces.push(FormFace::new(i, j, t.word));
+            }
+        }
+    }
+    form.loops = Form::loops_of(&form.faces, form.vertices.len());
+    // EACH LOOP OVER CARRIED PIECES, CLASSIFIED ONCE (50.8 case 3). The
+    // holonomy is the loop's own, composed around the whole cycle, and it
+    // is read by the one classifier both organs use.
+    let mut stood: crate::network::nerve::Keyed<Vec<crate::transducer::sentence::ClassVector>> =
+        crate::network::nerve::Keyed::new();
+    for lp in form.loops.clone() {
+        // THE LOOP'S OWNER, read off EVERY vertex and never off one of
+        // them by position (rule 15): a loop belongs to the cover that
+        // placed all of its vertices, and a loop touching a vertex no
+        // cover placed, or two covers, belongs to neither.
+        let mut which: Option<usize> = None;
+        let mut mixed = false;
+        for v in &lp.vertices {
+            match owner.get(&vertex_ix_key(*v)).copied() {
+                Some(ci) => match which {
+                    None => which = Some(ci),
+                    Some(w) if w == ci => {}
+                    Some(_) => mixed = true,
+                },
+                None => mixed = true,
+            }
+        }
+        let (Some(ci), false) = (which, mixed) else {
+            continue;
+        };
+        let sigma: Vec<(u8, u8)> =
+            lp.vertices.windows(2).map(|p| (p[0] as u8, p[1] as u8)).collect();
+        let hue = crate::transducer::sentence::CycleType::of(&sigma);
+        let fill = crate::transducer::cech::classify(&lp.holonomy.rotor(), &lp.carriage, hue);
+        crate::transducer::family::cover::tally_loop(&fill);
+        match fill {
+            crate::transducer::cech::Fill::Congruent(g, ell) => {
+                let Some(class) = g.class_key() else { continue };
+                eprintln!("  cell filled {:02x}{:02x}… class {ell}", class.as_bytes()[0], class.as_bytes()[1]);
+                form.torsion.insert(
+                    class,
+                    crate::transducer::sentence::FiledLoop { sigma, period: ell, chord: lp.chord },
+                );
+            }
+            crate::transducer::cech::Fill::Class(kappa, _) => {
+                let k = ci.to_le_bytes();
+                match stood.get_mut(&k) {
+                    Some(v) => v.push(*kappa),
+                    None => {
+                        stood.insert(k, vec![*kappa]);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    // THE DEMAND VERTICES, AFTER THE LOOPS. A deformation dissolves when
+    // every cell of both bodies is carried AND no loop over its pieces
+    // stands (50.8): a finite-order holonomy is filed as torsion and the
+    // sentence carries the class as its theorem, so a demand kept alive on
+    // it would be a demand for what the form already says.
+    for (ci, c) in covers.iter().enumerate() {
+        let standing = stood.get(&ci.to_le_bytes()).is_some();
+        if c.cover.uncarried == [0; 4] && !standing {
+            continue;
+        }
+        let (kind, chart, cells) = c.demand.clone();
+        let key = crate::transducer::sentence::demand_key(&kind, &chart);
+        match by_demand.get_mut(&key) {
+            Some((_, _, held)) => held.extend(cells),
+            None => {
+                by_demand.insert(key, (kind, chart, cells));
+            }
+        }
+    }
+    for (_, (kind, chart, cells)) in by_demand.fiber(crate::network::nerve::ROOT) {
+        let mut cells = cells.clone();
+        cells.sort_unstable();
+        cells.dedup();
+        let mut support: Vec<(i64, i64)> = cells.iter().map(|&(r, c, _, _)| (r, c)).collect();
+        support.sort_unstable();
+        support.dedup();
+        form.vertices.push(demand_vertex(kind.clone(), chart, cells));
+        supports.push(support);
+        carried.push(None);
+    }
     let n = form.vertices.len();
     let frame = 0usize;
     for (i, j) in star_and_cell_faces(n, Some(frame), &supports) {
@@ -583,9 +397,16 @@ pub(crate) fn pair_form_uncached(
         // The edge transport between two carried bodies (50.3); a face to
         // the Frame or to an uncarried body carries none.
         let edge = match (carried.get(i as usize), carried.get(j as usize)) {
-            (Some(Some((ai, bi, v_i))), Some(Some((aj, bj, _)))) => {
-                edge_transport(v_i, &ins[*ai].body, &ins[*aj].body, &outs[*bi].body, &outs[*bj].body)
-            }
+            (
+                Some(Some(Carried { pair: Some((ai, bi)), versor })),
+                Some(Some(Carried { pair: Some((aj, bj)), .. })),
+            ) => edge_transport(
+                versor,
+                &ins[*ai].body,
+                &ins[*aj].body,
+                &outs[*bi].body,
+                &outs[*bj].body,
+            ),
             _ => None,
         };
         form.faces.push(FormFace { i, j, transport: g, edge });

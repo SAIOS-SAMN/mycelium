@@ -52,6 +52,10 @@ struct Reading {
     retired: u64,
     cover_rank: u64,
     comprehended: u64,
+    /// 50.8 — cells filled, read from the forms this mind holds exactly as
+    /// a court reads them off its ruled cover: a form carrying a
+    /// `FiledLoop` has closed a cell of its cover.
+    cells_filled: u64,
     /// 50.8 — what the covers of this walk read, taken from the cover's
     /// own instrument at the end of the walk.
     cover: mycelium::transducer::family::cover::CoverTally,
@@ -110,8 +114,8 @@ fn main() {
             // measurement and not an anecdote.
             println!(
                 "  soak generators held {} adjoined {} retired {} cover rank {} \
-                 families comprehended {}",
-                r.held, r.adjoined, r.retired, r.cover_rank, r.comprehended
+                 families comprehended {} cells filled {}",
+                r.held, r.adjoined, r.retired, r.cover_rank, r.comprehended, r.cells_filled
             );
             // 50.8 — THE COVER'S OWN LINE. Its readings do not survive into
             // the form: a filed class becomes torsion and a refused
@@ -240,6 +244,7 @@ fn read_engine(epi: &mut Epigenome, r: &mut Reading) {
             continue;
         };
         charts.insert(mycelium::transducer::stalk::invariant_of(e).key(), ());
+        r.cells_filled += f.torsion.fiber(ROOT).count() as u64;
         for v in &f.vertices {
             let Vertex::Word { address, derivation, .. } = v else {
                 continue;

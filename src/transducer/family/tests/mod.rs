@@ -3,6 +3,7 @@
 
 pub mod common;
 
+mod cover;
 mod deflation;
 mod derivation;
 mod extraction;

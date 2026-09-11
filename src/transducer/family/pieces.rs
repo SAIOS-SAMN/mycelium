@@ -138,39 +138,7 @@ pub(crate) fn pieces_of(
     out
 }
 
-/// σ_b ∘ σ_a⁻¹ — the hue map of the transition between two carriages, as
-/// a listing. `a` takes the input's hues to a's image and `b` to b's, so
-/// crossing the seam is a's map undone and b's applied. A hue `a` does not
-/// list is one `a` did not move, so it enters `b` as itself.
-pub(crate) fn hue_transition(a: &[(u8, u8)], b: &[(u8, u8)]) -> Vec<(u8, u8)> {
-    use crate::network::nerve::{Keyed, ROOT};
-    let mut back: Keyed<u8> = Keyed::new();
-    for &(h, t) in a {
-        back.insert([t], h);
-    }
-    let mut forward: Keyed<u8> = Keyed::new();
-    for &(h, t) in b {
-        forward.insert([h], t);
-    }
-    let mut out: Keyed<u8> = Keyed::new();
-    for &(_, t) in a {
-        let Some(source) = back.get(&[t]).copied() else { continue };
-        // A hue `b` does not list is one `b` leaves alone, which is the
-        // listing's own convention and not a default standing in for a
-        // missing value: `cycle_lengths` reads absence as a fixed point.
-        let image = match forward.get(&[source]) {
-            Some(h) => *h,
-            None => source,
-        };
-        out.insert([t], image);
-    }
-    let mut listing: Vec<(u8, u8)> = out
-        .fiber(ROOT)
-        .filter_map(|(k, v)| match k.as_slice() {
-            [h] => Some((*h, *v)),
-            _ => None,
-        })
-        .collect();
-    listing.sort_unstable();
-    listing
-}
+// `hue_transition` was here: σ_b ∘ σ_a⁻¹, the hue map of the transition
+// between two carriages. The cover composed it to classify a meet; the
+// cover classifies nothing now (L23c), and the cycle type of a LOOP is
+// read off the loop's own vertices where the form classifies it.

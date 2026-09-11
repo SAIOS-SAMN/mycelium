@@ -33,9 +33,8 @@
 //! shell kind, hue, and its support written out — so no arrival index
 //! survives into the nerve (rule 6, rule 15).
 
-use super::pieces::{carriage_key, hue_transition, meet_key, pieces_of, preimage_key};
+use super::pieces::{carriage_key, meet_key, pieces_of, preimage_key};
 use super::*;
-use crate::transducer::alphabet::Rotor;
 
 /// WHAT THE COVERS OF ONE WALK READ. An instrument and nothing else: no
 /// cognition reads it, no branch consults it, and it is taken and cleared
@@ -54,12 +53,16 @@ pub struct CoverTally {
     pub unmeasured: u64,
     /// Reads spent inside covers, apart from the peel's own.
     pub spend: u64,
-    /// Carriages placed, and meets by their reading.
+    /// Carriages placed and 1-simplices of the nerve recorded.
     pub carried: u64,
+    pub meets: u64,
+    /// THE LOOPS THE FORM CLASSIFIED over those carriages, by their
+    /// reading. They are counted where they are read — on the form, over a
+    /// whole cycle — and not in the cover, which classifies nothing.
     pub flat: u64,
     pub filed: u64,
     pub standing: u64,
-    /// Meets whose transition the seventeen do not spell (37.7).
+    /// Loops whose holonomy the seventeen do not spell (37.7).
     pub unspellable: u64,
     /// Pieces carried geometrically whose rotor the seventeen do not
     /// spell — the adjunction candidates the cover used to discard.
@@ -75,6 +78,19 @@ pub fn take_cover_tally() -> CoverTally {
     TALLY.with(|t| t.replace(CoverTally::default()))
 }
 
+/// Count one loop the FORM classified over the cover's carriages. Called
+/// where the reading happens, which is no longer here.
+pub(crate) fn tally_loop(fill: &crate::transducer::cech::Fill) {
+    use crate::transducer::cech::Fill;
+    tally(|t| match fill {
+        Fill::Filled(..) => t.flat += 1,
+        Fill::Congruent(..) => t.filed += 1,
+        Fill::Class(..) => t.standing += 1,
+        Fill::Unspellable(..) => t.unspellable += 1,
+        Fill::Open | Fill::Already => {}
+    });
+}
+
 fn tally(f: impl Fn(&mut CoverTally)) {
     TALLY.with(|t| {
         let mut v = t.get();
@@ -83,76 +99,50 @@ fn tally(f: impl Fn(&mut CoverTally)) {
     });
 }
 
-/// One carriage the cover placed: the versor, the support it was carried
-/// FROM, and the support it landed on.
+/// The two supports of one placed carriage: what it was carried FROM and
+/// what it landed on.
 ///
-/// Both supports are kept because the nerve reads meets on both. A
-/// deformation is a map OUT OF the input, so the Čech nerve is the nerve
-/// of the cover of the SOURCE: two carriages sharing a domain overlap on
-/// the whole of it, however far apart their codomains land. That is the
-/// replication case, and it is the only case in which the transition
-/// between two copies of one shape is visible at all. Meets on the
-/// codomain are the merge case, where several domains reach one image
-/// region. Reading only the codomain — measured with `carried 2` on a
-/// family of one input piece and ten output pieces — leaves the nerve
-/// discrete: the two copies land apart, no ring touches, no 1-simplex is
-/// formed, and no cycle exists for a holonomy to be read around.
-struct Placed {
-    /// The carriage's ROTOR and its `D(ρ)·T(t)`, kept apart (L11e). They
-    /// are not factored here: `word_or_demand` already separated them when
-    /// it built the vertex — the derivation's rotor and the vertex's
-    /// carriage — so the meet composes each half against its neighbour's
-    /// and hands both to `cech::classify`, exactly as `extend` does.
-    ///
-    /// A versor was kept instead, and the meet re-derived `D·T·R` from it
-    /// through a second classifier that could not hold a dual-plane rotor.
-    rotor: Rotor,
-    carriage: Versor,
-    /// The hue map this carriage read cell by cell, which the transition
-    /// at a meet composes against its neighbour's.
-    sigma: Vec<(u8, u8)>,
+/// Both, because the nerve reads meets on both. A deformation is a map OUT
+/// OF the input, so the Čech nerve is the nerve of the cover of the
+/// SOURCE: two carriages sharing a domain overlap on the whole of it,
+/// however far apart their codomains land. That is the replication case,
+/// and the only case in which the transition between two copies of one
+/// shape is visible at all. Meets on the codomain are the merge case.
+/// Reading only the codomain — measured with `carried 2` on a family of
+/// one input piece and ten output pieces — leaves the nerve discrete.
+struct Supports {
     domain: Vec<(i64, i64)>,
     codomain: Vec<(i64, i64)>,
 }
 
-/// The rotor and the carriage a word vertex already carries. `None` for a
-/// vertex that is not a word, which the cover never places.
-fn halves_of(v: &Vertex) -> Option<(Rotor, Versor)> {
-    match v {
-        Vertex::Word { derivation, carriage, .. } => {
-            Some((derivation.rotor(), carriage.as_ref().clone()))
-        }
-        _ => None,
-    }
-}
+/// ONE PIECE THE COVER CARRIED: the word vertex it became, the versor
+/// that carried it, and the support it landed on. The support rides along
+/// because the form needs it for the vertex's place and the cover has
+/// already computed it.
+pub(crate) type CarriedPiece = (Vertex, Versor, Vec<(i64, i64)>);
 
-/// What the cover of one deformation reached. Every field is content, and
+/// WHAT THE COVER OF ONE DEFORMATION REACHED. Every field is content, and
 /// every carrier is keyed by a piece's own address.
+///
+/// THE COVER CLASSIFIES NOTHING (L23c). It carried pieces, read their
+/// meets, and then classified each meet on its own — filing torsion and
+/// standing classes into carriers that `pair.rs` never read, so the whole
+/// reading died here and only a tally survived it. A transition between
+/// two pieces is a FACE of the form they are vertices of, and the class of
+/// a cycle of faces is the form's loop holonomy. The cover hands over the
+/// pieces and the meets; the form makes them vertices and faces, runs
+/// `loops_of`, and classifies each loop once.
 pub(crate) struct Cover {
-    /// The word vertex of each carried piece and the versor that carried
-    /// it, by piece address.
-    pub(crate) carried: crate::network::nerve::Keyed<(Vertex, Versor)>,
-    /// A meet whose transition has FINITE order: a torsion cycle of this
-    /// form (15.5, A17) with the period it closes at, by meet address.
-    pub(crate) filed: crate::network::nerve::Keyed<(Rotor, u32)>,
-    /// A meet whose transition is NOT a finite-order rotation about a
-    /// point: an infinite-order rotor, a placement residue, a dilation
-    /// residue, or a product of them. Nothing is filed and the demand
-    /// stands on it (50.5) CARRYING THIS CLASS VECTOR, by meet address.
-    ///
-    /// The class travels with the demand rather than being recomputed by
-    /// whoever meets it, which is what lets an arriving generator of the
-    /// conjugate class close it with no coordinator directing the match.
-    /// A bare `Rotor` here could not carry a placement or a dilation, so
-    /// every standing transition that was one read as the identity.
-    pub(crate) standing:
-        crate::network::nerve::Keyed<crate::transducer::sentence::ClassVector>,
-    /// A meet whose transition is a rotation THE SEVENTEEN DO NOT SPELL
-    /// (37.7), by meet address. Not a standing class — a standing class is
-    /// one the alphabet names and no held generator closes; this is one
-    /// the alphabet cannot name. It is where an adjoined generator would
-    /// come from at the cover level.
-    pub(crate) unspellable: crate::network::nerve::Keyed<Rotor>,
+    /// The word vertex of each carried piece, the versor that carried it,
+    /// and the support it landed on — by `carriage_key(domain, codomain)`.
+    /// The support rides along because the form needs it for the vertex's
+    /// place and the cover has already computed it.
+    pub(crate) carried: crate::network::nerve::Keyed<CarriedPiece>,
+    /// THE 1-SIMPLICES OF THE NERVE: the unordered pair of carriage keys
+    /// that meet, by the meet's own address. No transition and no class —
+    /// the face between two vertices is the form's to compute and the
+    /// cycle's holonomy is the form's to read.
+    pub(crate) meets: crate::network::nerve::Keyed<(Vec<u8>, Vec<u8>)>,
     /// A PIECE THE COVER CARRIED GEOMETRICALLY AND COULD NOT SPELL, by
     /// cover-piece address: `carriage` found the versor and `word_or_demand`
     /// refused its rotor. Kept as the demand the peel typed, so the piece
@@ -190,27 +180,10 @@ impl Cover {
     fn new() -> Cover {
         Cover {
             carried: crate::network::nerve::Keyed::new(),
-            filed: crate::network::nerve::Keyed::new(),
-            standing: crate::network::nerve::Keyed::new(),
-            unspellable: crate::network::nerve::Keyed::new(),
+            meets: crate::network::nerve::Keyed::new(),
             refused: crate::network::nerve::Keyed::new(),
             uncarried: [0; 4],
         }
-    }
-
-    /// The deformation is answered when every cell of both bodies is
-    /// carried and no meet of infinite order stands. A finite-order
-    /// holonomy is NOT an obstruction: it is filed as torsion and the
-    /// sentence carries the class as its theorem (15.5), so a demand kept
-    /// alive on it would be a demand for what the form already says.
-    ///
-    /// A `Cover` exists only where the cover completed, so this reads the
-    /// measurement and never a flag saying whether there was one.
-    pub(crate) fn dissolves(&self) -> bool {
-        self.uncarried == [0; 4]
-            && self.standing.fiber(crate::network::nerve::ROOT).next().is_none()
-            && self.unspellable.fiber(crate::network::nerve::ROOT).next().is_none()
-            && self.refused.fiber(crate::network::nerve::ROOT).next().is_none()
     }
 }
 
@@ -245,7 +218,6 @@ pub(crate) fn cover_deformation(
 ) -> Result<Cover, Unmeasured> {
     use crate::network::nerve::ROOT;
     let opened = budget.remaining();
-    let mut flat = 0u64;
     let ins = pieces_of(&input.cells, scale);
     let outs = pieces_of(&image.cells, scale);
     let mut cover = Cover::new();
@@ -260,7 +232,7 @@ pub(crate) fn cover_deformation(
         }
     }
 
-    let mut placed: crate::network::nerve::Keyed<Placed> = crate::network::nerve::Keyed::new();
+    let mut placed: crate::network::nerve::Keyed<Supports> = crate::network::nerve::Keyed::new();
     let mut consumed: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let mut reached: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let out_keys: Vec<Vec<u8>> = outs.fiber(ROOT).map(|(k, _)| k).collect();
@@ -317,24 +289,15 @@ pub(crate) fn cover_deformation(
             // reader can factor, which is unmeasured and not a demand.
             None => continue,
         };
-        let Some((rotor, carriage)) = halves_of(&v) else { continue };
         for &(r, c, _) in pre.cells.iter().chain(op.body.cells.iter()) {
             reached.insert(cell_pos_key(r, c), ());
         }
         for ki in &parts {
             consumed.insert(ki, ());
         }
-        placed.insert(
-            &key,
-            Placed {
-                rotor,
-                carriage,
-                sigma: car.sigma.clone(),
-                domain: support_of(&pre),
-                codomain: support_of(&op.body),
-            },
-        );
-        cover.carried.insert(&key, (v, car.v));
+        let codomain = support_of(&op.body);
+        placed.insert(&key, Supports { domain: support_of(&pre), codomain: codomain.clone() });
+        cover.carried.insert(&key, (v, car.v, codomain));
     }
 
     // (b) BY STRUCTURE, for what the pullback left. The correspondence is
@@ -385,22 +348,16 @@ pub(crate) fn cover_deformation(
                 }
                 None => continue,
             };
-            let Some((rotor, carriage)) = halves_of(&v) else { continue };
             for &(r, c, _) in ip.body.cells.iter().chain(op.body.cells.iter()) {
                 reached.insert(cell_pos_key(r, c), ());
             }
             consumed.insert(ki, ());
+            let codomain = support_of(&op.body);
             placed.insert(
                 &key,
-                Placed {
-                    rotor,
-                    carriage,
-                    sigma: car.sigma.clone(),
-                    domain: support_of(&ip.body),
-                    codomain: support_of(&op.body),
-                },
+                Supports { domain: support_of(&ip.body), codomain: codomain.clone() },
             );
-            cover.carried.insert(&key, (v, car.v));
+            cover.carried.insert(&key, (v, car.v, codomain));
         }
     }
 
@@ -457,78 +414,20 @@ pub(crate) fn cover_deformation(
         for a in 0..here.len() {
             for b in (a + 1)..here.len() {
                 let key = meet_key(&here[a], &here[b]);
-                if cover.filed.contains(&key) || cover.standing.contains(&key) {
+                if cover.meets.contains(&key) {
                     continue;
                 }
                 if !budget.spend() {
                     tally(|t| t.unmeasured += 1);
-                return Err(Unmeasured);
+                    return Err(Unmeasured);
                 }
-                let (Some(pa), Some(pb)) = (placed.get(&here[a]), placed.get(&here[b])) else {
-                    continue;
-                };
-                // THE TRANSITION, ON BOTH HALVES. Each is composed against
-                // its neighbour's in its own algebra — the rotors in
-                // Cl(4,0) over all six planes, the carriages in Cl(3,1) —
-                // exactly as `extend` composes a cell's. Nothing is
-                // re-factored: `word_or_demand` separated them when it
-                // built the vertex.
-                let (Some(ri), Some(ci)) =
-                    (pa.rotor.inverse(), pa.carriage.versor_inverse())
-                else {
-                    // No inverse: a remainder edge (13.9 step 7).
-                    continue;
-                };
-                let gamma_r = pb.rotor.geo(&ri);
-                let gamma_c = pb.carriage.geo(&ci);
-                // THE GAUGE AROUND THE SEAM, composed and not assumed:
-                // σ_a takes the input's hues to a's, σ_b to b's, so the
-                // transition's own hue map is σ_b ∘ σ_a⁻¹. Passing the
-                // identity here would claim the seam permutes no hue
-                // without having composed anything (rule 11).
-                let hue = crate::transducer::sentence::CycleType::of(&hue_transition(
-                    &pa.sigma, &pb.sigma,
-                ));
-                // ONE CLASSIFIER FOR BOTH ORGANS (L23b). The court reaches
-                // it through `extend`; the voice reaches it here. A second
-                // reader stood beside it, on a versor, which could not hold
-                // a dual-plane rotor and re-derived the factorisation this
-                // call is handed already separated.
-                match crate::transducer::cech::classify(&gamma_r, &gamma_c, hue) {
-                    crate::transducer::cech::Fill::Filled(..) => {
-                        // Held locally, not tallied here. A cover that
-                        // returns `Unmeasured` must contribute NOTHING —
-                        // counting the flat meets it happened to reach
-                        // before its share ended reports readings from a
-                        // cover that did not complete, which is the same
-                        // half-measure `Result<Cover, Unmeasured>` exists
-                        // to make unrepresentable. Measured: `carried 0`
-                        // beside `flat 2`, which cannot both be true of
-                        // any completed cover, since a meet exists only
-                        // where two pieces were placed.
-                        flat += 1;
-                    }
-                    crate::transducer::cech::Fill::Congruent(rotor, ell) => {
-                        cover.filed.insert(&key, (rotor, ell));
-                    }
-                    crate::transducer::cech::Fill::Class(kappa, _) => {
-                        cover.standing.insert(&key, *kappa);
-                    }
-                    // 37.7 AT A SEAM. Kept apart from `standing` because
-                    // it is a different question: a standing class is one
-                    // the alphabet names and no held generator closes, and
-                    // this is one the alphabet does not name at all. It is
-                    // an adjunction candidate, and Vent 1 measures how many
-                    // the cover finds.
-                    crate::transducer::cech::Fill::Unspellable(rotor) => {
-                        cover.unspellable.insert(&key, *rotor);
-                    }
-                    // `Open` is a transition these readers could not
-                    // factor: unmeasured, and neither flat nor standing.
-                    // `Already` never comes from `classify`.
-                    crate::transducer::cech::Fill::Open
-                    | crate::transducer::cech::Fill::Already => {}
-                }
+                // THE MEET IS RECORDED AND NOT READ. Two pieces overlap;
+                // that is a 1-simplex of the nerve and nothing more. The
+                // transition between them is the FACE of the two vertices
+                // they become, and the class of a cycle of faces is the
+                // form's loop holonomy — both the form's to compute, once,
+                // over the whole cycle rather than edge by edge here.
+                cover.meets.insert(&key, (here[a].clone(), here[b].clone()));
             }
         }
     }
@@ -538,11 +437,8 @@ pub(crate) fn cover_deformation(
     tally(|t| {
         t.measured += 1;
         t.spend += spent;
-        t.flat += flat;
         t.carried += cover.carried.fiber(ROOT).count() as u64;
-        t.filed += cover.filed.fiber(ROOT).count() as u64;
-        t.standing += cover.standing.fiber(ROOT).count() as u64;
-        t.unspellable += cover.unspellable.fiber(ROOT).count() as u64;
+        t.meets += cover.meets.fiber(ROOT).count() as u64;
         t.refused += cover.refused.fiber(ROOT).count() as u64;
     });
     Ok(cover)

@@ -12,6 +12,7 @@ pub mod memo;
 pub mod orbit;
 pub mod pair;
 pub mod perceive;
+pub mod pairing;
 pub mod pieces;
 pub mod speak;
 
@@ -29,7 +30,8 @@ pub type Family = [TrainPair];
 pub use extract::*;
 pub use memo::*;
 pub use orbit::*;
-pub use pair::*;
+pub(crate) use pair::*;
+pub use pairing::*;
 pub use perceive::*;
 pub use speak::*;
 
