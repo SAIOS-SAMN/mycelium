@@ -494,6 +494,31 @@ impl Form {
     }
 }
 
+/// WHAT A FORM CITES, at both levels (26 as ruled 2026-09-10): a `Glued`
+/// vertex cites a whole form, and a word vertex's derivation cites a
+/// `Word` vertex inside one (50.2 step 2). In vertex order, with no
+/// deduplication — a form cited twice is cited twice, and the caller
+/// that counts uses decides what a repeat means.
+///
+/// One carrier for the reading. The court's use-credit walked the
+/// vertices for it and so did the retirement scope; two walks of one fact
+/// are two chances to disagree about what a citation is (law 12).
+pub fn cited_addresses(f: &Form) -> Vec<crate::transducer::address::Address> {
+    let mut out = Vec::new();
+    for v in &f.vertices {
+        match v {
+            Vertex::Glued { address, .. } => out.push(address.clone()),
+            Vertex::Word { derivation, .. } => {
+                for (form_addr, _, _) in &derivation.generators {
+                    out.push(form_addr.clone());
+                }
+            }
+            _ => {}
+        }
+    }
+    out
+}
+
 /// THE AXIS CARRIER AND THE LOOP, without the form between them. A loop's
 /// opened axis is a keyed read of the form's axis carrier at the loop's own
 /// class, so a trial holding that carrier reads it directly (I6).

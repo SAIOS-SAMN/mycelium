@@ -403,20 +403,45 @@ impl Kernel {
     /// Redundancy probe on the admitted word's own stratum: a plain card
     /// the rest now derives retires, and the voice whose word derived it
     /// earns the refine yield.
+    /// 27, S9.8 — WHAT THIS INSTALL MAKES REDUNDANT. A word leaves the
+    /// language when the basis DERIVES it, and the candidates are the
+    /// forms that cite what this one cites: a keyed read at each address
+    /// `new` names, never a walk of anything.
+    ///
+    /// THE STRATUM IS NOT THE SCOPE. This read `stalks.fiber(&inv)` — every
+    /// member of the stratum — which was invisibly cheap only because the
+    /// chart was the object serialised and every form was a stratum of one.
+    /// With a chart that is the rank and the loop classes (A21 §2), a tree
+    /// form shares its stratum with every other tree form, and a scope of
+    /// "the stratum" is the whole basis against every install: the
+    /// cartesian product law 3 and rule 1 refuse. A stratum ROUTES and does
+    /// not decide (21 step 3); `cited_by` is the coordinate that narrows.
     pub(crate) fn refine_stratum(&mut self, new: &[u8]) {
         let Some(after) = self.word_at(new).cloned() else {
             return;
         };
-        let inv = crate::transducer::stalk::invariant_of(&after);
-        let members: Vec<Vec<u8>> = self
-            .stalks
-            .fiber(&inv)
-            .iter().filter(|&a| a.as_slice() != new).cloned()
-            .collect();
         let Some(bidder) = self.discoverer_of(new) else {
             return;
         };
-        for addr in members {
+        let Some(mine) = crate::transducer::sentence::from_element_form(&after) else {
+            return;
+        };
+        // The candidates, by keyed read: every form that cites an address
+        // this one cites. Two forms over one bundle are where a
+        // redundancy can be, and nowhere else is read.
+        let mut candidates: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for cited in crate::transducer::sentence::cited_addresses(&mine) {
+            let Some(bucket) = self.cited_by.get(cited.as_bytes()) else {
+                continue;
+            };
+            for (citer, ()) in bucket.fiber(crate::network::nerve::ROOT) {
+                if citer.as_slice() != new {
+                    candidates.insert(&citer, ());
+                }
+            }
+        }
+        let addrs: Vec<Vec<u8>> = candidates.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
+        for addr in addrs {
             let Some(held) = self.basis.get(&addr) else {
                 continue;
             };
@@ -427,23 +452,104 @@ impl Kernel {
                 continue;
             }
             let candidate = (**held).clone();
-            if !matches!(self.reduce_excluding(&candidate, Some(addr.as_slice())), NormalForm::Decomposed(_)) {
+            if !self.basis_derives(&candidate, &addr) {
                 continue;
             }
-            let chart = crate::transducer::stalk::invariant_of(&candidate);
-            let axis = addr[0] as u64;
-            let payload = crate::transducer::rewrite::RewritePayload::Refine { chart, axis };
+            // G6: IT MINTS A RETIREMENT. This minted `Refine { chart, axis:
+            // addr[0] }` — the first byte of an A21 address is the tag
+            // naming the object KIND, so every such rewrite claimed one
+            // axis and chapter 35's "no axis is a hash fragment" fell to a
+            // fragment of an address. G6 replaced that shape at
+            // `try_refine` on 2026-09-07 and this second site kept it,
+            // invisible because the stratum was always empty. No chart is
+            // being refined here; a word is being retired.
+            let freed = candidate.magnitude();
+            let payload = crate::transducer::rewrite::RewritePayload::Retire {
+                cites: crate::transducer::sentence::cited_addresses(&mine),
+                freed,
+            };
             let _ = self.mint_rewrite(
-                crate::transducer::rewrite::RewriteKind::Refine,
+                crate::transducer::rewrite::RewriteKind::Retire,
                 std::slice::from_ref(&candidate),
-                &after,
+                &candidate,
                 payload,
                 bidder,
             );
-            self.basis_remove(&addr);
+            // A RETIREMENT KEEPS THE ADDRESS (27): the word leaves the
+            // language and stays resolvable for replay, so a citation of it
+            // still reads. `basis_remove` alone is not retirement in any
+            // reading — it is forgetting.
+            self.relocate_cavity(&addr);
             self.physics.syntropy(&candidate.magnitude());
             self.append_step(crate::chronometry::ActKind::Ruling, &addr, bidder);
         }
+    }
+
+    /// S9.8 — THE BASIS DERIVES THIS WORD, PROVED BY REPLAY. A12's witness
+    /// is the vertex's own derivation: the generators it cites, composed
+    /// from what this court HOLDS, compared to the rotor the vertex claims
+    /// — projectively, because a rotor and its negation are one rotation.
+    ///
+    /// `reduce_excluding` was the probe, and on a letter it is VACUOUS: it
+    /// opens with `g.substance()`, which empties the description tape, and
+    /// an adjoined generator carries its rotor in the derivation's rotor
+    /// field on that tape (37.7). The substance is then the identity, and
+    /// eleven lines in, the identity answers `Decomposed(Vec::new())` — the
+    /// empty basis derives it. A word derived by nothing is the identity,
+    /// and the identity needs no generator to retire it.
+    ///
+    /// A rotor outside the span of the seventeen is composed by no product
+    /// of them, so nothing here special-cases a letter: it is simply not
+    /// derived, and it stays.
+    fn basis_derives(&self, candidate: &crate::transducer::element::Element, exclude: &[u8]) -> bool {
+        let Some(f) = crate::transducer::sentence::from_element_form(candidate) else {
+            return false;
+        };
+        let mut any = false;
+        for v in &f.vertices {
+            let crate::transducer::sentence::Vertex::Word { derivation, .. } = v else {
+                continue;
+            };
+            any = true;
+            // A vertex that cites nothing is derived by nothing.
+            if derivation.generators.is_empty() {
+                return false;
+            }
+            let mut composed = crate::transducer::alphabet::Rotor::identity();
+            for (form, vertex, e) in &derivation.generators {
+                if form.as_bytes() == exclude {
+                    return false;
+                }
+                let Some(g) = self.generator_rotor(form, vertex) else {
+                    return false;
+                };
+                let Some(p) = crate::transducer::alphabet::rotor_power(&g, *e) else {
+                    return false;
+                };
+                composed = composed.geo(&p);
+            }
+            if !composed.projective_eq(&derivation.rotor()) {
+                return false;
+            }
+        }
+        any
+    }
+
+    /// The rotor a cited vertex carries, read off the form this court
+    /// holds at that address. `None` where the court does not hold it,
+    /// which is a citation it cannot replay and so cannot call derived.
+    fn generator_rotor(
+        &self,
+        form: &crate::transducer::address::Address,
+        vertex: &crate::transducer::address::Address,
+    ) -> Option<crate::transducer::alphabet::Rotor> {
+        let f = self.held_word(form.as_bytes()).and_then(|e| e.form().cloned())?;
+        let i = *f.by_address.get(vertex.as_bytes())?;
+        let crate::transducer::sentence::Vertex::Word { derivation, .. } = f.vertices.get(i as usize)?
+        else {
+            return None;
+        };
+        Some(derivation.rotor())
     }
 
     /// The word at an address, read by its coordinate. Restored keys are

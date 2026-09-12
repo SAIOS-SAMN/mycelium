@@ -244,7 +244,26 @@ fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it(
     for a in &ruled {
         k.confirm_peer_holds_addrs(&[Address::from(a.clone())], [9; 32]);
     }
-    assert_eq!(k.adjoined(), 1, "the court opened exactly one letter");
+    // THE GENERATOR IS STILL THERE, which is the claim. `adjoined()` is a
+    // COUNT and it is the pre-X4 one: growth by closure moves what the
+    // reading counts, so a fixture asserting the number asserts a number
+    // that is about to change. What must hold across that is that the
+    // letter the court opened is in the basis and is still unspellable.
+    let letter_held = k.basis().iter().any(|w| {
+        crate::transducer::sentence::from_element_form(w).is_some_and(|f| {
+            f.vertices.iter().any(|v| match v {
+                Vertex::Word { derivation, .. } => {
+                    derivation.generators.is_empty()
+                        && !matches!(
+                            crate::transducer::alphabet::factor_rotor(&derivation.rotor()),
+                            Some(Ok(_))
+                        )
+                }
+                _ => false,
+            })
+        })
+    });
+    assert!(letter_held, "the letter the court opened is held as a generator");
 
     // 2. THE PAGE CARRIES IT and a mind learns it from the bytes.
     let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20);
@@ -347,7 +366,22 @@ fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
     for a in &ruled {
         k.confirm_peer_holds_addrs(&[Address::from(a.clone())], [9; 32]);
     }
-    assert_eq!(k.adjoined(), 1, "the court holds one letter");
+    // As above: the generator, not the count (the count is pre-X4).
+    let letter_held = k.basis().iter().any(|w| {
+        crate::transducer::sentence::from_element_form(w).is_some_and(|f| {
+            f.vertices.iter().any(|v| match v {
+                Vertex::Word { derivation, .. } => {
+                    derivation.generators.is_empty()
+                        && !matches!(
+                            crate::transducer::alphabet::factor_rotor(&derivation.rotor()),
+                            Some(Ok(_))
+                        )
+                }
+                _ => false,
+            })
+        })
+    });
+    assert!(letter_held, "the court holds the letter as a generator");
 
     // THE PAGE. Served from the root as an empty mind is seeded, and
     // learned from its bytes.

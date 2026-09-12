@@ -365,14 +365,45 @@ fn a_row_of_three_has_faces_by_constancy() {
     assert!(!touching.loops.is_empty(), "the 1-skeleton is not a star tree");
 }
 
+/// A21 §2 — THE CHART LEADS WITH ITS KIND AND THEN ITS RANK. The leading
+/// 2 keeps a sentence's chart disjoint from a residual's and a
+/// connection's; the four after it are A18's rank, which is the COARSE
+/// STRATUM (R5: the rank of a union is the sum of the parts). Nothing per
+/// vertex follows, so the chart's width does not grow with the object.
 #[test]
-fn a_sentence_chart_leads_with_axis_two() {
+fn a_sentence_chart_leads_with_axis_two_then_its_rank() {
     let f = star_form(2, Vec::new());
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("form element");
     assert!(e.is_sentence());
     let inv = stalk::invariant_of(&e);
-    assert!(matches!(inv.0.as_slice(), [2, ..]), "leading axis 2");
-    assert!(inv.0.get(1).is_some_and(|&n| n >= 2), "vertex count");
+    let rank = f.rank().expect("a star tree has a rank");
+    assert_eq!(
+        inv.0.get(0..5),
+        Some(
+            [
+                2,
+                u64::from(rank.torsion),
+                u64::from(rank.free),
+                u64::from(rank.offplane),
+                u64::from(rank.axes)
+            ]
+            .as_slice()
+        ),
+        "the kind, then the rank: {inv:?}"
+    );
+    // A star tree closes no loop, so there is no class after the rank.
+    assert_eq!(inv.0.len(), 5, "and nothing per vertex: {inv:?}");
+
+    // THE SAME OBJECT WITH MORE VERTICES SITS ON THE SAME CHART. Six
+    // bodies on a star instead of two: the rank is the same, the classes
+    // are the same, and the chart does not widen by one coordinate.
+    let wide = star_form(6, Vec::new());
+    let we = as_element_form(&wide, [1, 0, 0, 0]).expect("form element");
+    assert_eq!(
+        stalk::invariant_of(&we),
+        inv,
+        "a form of six vertices and one of two hold the same thing up to gauge"
+    );
 }
 
 #[test]

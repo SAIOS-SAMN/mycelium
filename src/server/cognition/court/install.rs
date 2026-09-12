@@ -203,30 +203,16 @@ impl Kernel {
     }
 
     pub(crate) fn note_form_citations(&mut self, addr: &[u8], w: &Element) {
-        use crate::transducer::sentence::Vertex;
         // The word being INSTALLED, decoded by name (L16).
         let Some(f) = crate::transducer::sentence::from_element_form(w) else {
             return;
         };
-        // 26 as ruled 2026-09-10: BOTH LEVELS are uses. A `Glued` vertex
-        // cites a whole form; a word vertex's derivation cites a `Word`
-        // vertex inside one (50.2 step 2). One entry per citer address
-        // per cited address, so a form cited by two vertices of one
-        // sentence is one use of one verdict and two sentences citing it
-        // are two — which is what `use_credit` counts.
-        let mut cited: Vec<crate::transducer::address::Address> = Vec::new();
-        for v in &f.vertices {
-            match v {
-                Vertex::Glued { address, .. } => cited.push(address.clone()),
-                Vertex::Word { derivation, .. } => {
-                    for (form_addr, _, _) in &derivation.generators {
-                        cited.push(form_addr.clone());
-                    }
-                }
-                _ => {}
-            }
-        }
-        for address in cited {
+        // 26 as ruled 2026-09-10: BOTH LEVELS are uses, which is what
+        // `cited_addresses` reads. One entry per citer address per cited
+        // address, so a form cited by two vertices of one sentence is one
+        // use of one verdict and two sentences citing it are two — which
+        // is what `use_credit` counts.
+        for address in crate::transducer::sentence::cited_addresses(&f) {
             match self.cited_by.get_mut(&address) {
                 Some(bucket) => {
                     bucket.insert(addr, ());

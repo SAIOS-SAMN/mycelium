@@ -400,43 +400,57 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     }
     crate::transducer::address::Address::new(buf)
 }
-/// Chart of a crystallized form (M4 step 3): the form's cell counts,
-/// then per vertex its A3-reduced plane form (a rebased vertex reads the
-/// word it speaks; a glued vertex contributes the cited chart), sorted so
-/// the order of vertices is not a coordinate. None when a word is off-plane.
+/// CHART OF A CRYSTALLIZED FORM: WHAT IT HOLDS UP TO GAUGE, and nothing
+/// per vertex. Its RANK first (A18: torsion, free, off-plane, axes opened
+/// — four integers off one tree walk), then the classes its loops occupy,
+/// each written in 12.6's own fixed coordinate order, sorted and taken
+/// once. A form whose loops are all closed carries the zero vector and
+/// nothing else.
+///
+/// A21 §2 puts the coarse stratum first, and the rank IS the coarse
+/// stratum: many complexes compose by that reading (R5 — the rank of a
+/// union is the sum of the parts) and never by enumeration, so a form of
+/// three hundred vertices and a form of three sit together when they hold
+/// the same thing. T2 says gauge cannot change a class, so a pivot, a
+/// rebase and a regauge leave this chart where it is.
+///
+/// WHAT STOOD HERE WAS THE OBJECT SERIALISED: the cell counts, then ONE
+/// ROW PER VERTEX carrying that vertex's whole plane form — nineteen
+/// exponents each — sorted. Every form was therefore a stratum of one, the
+/// atlas had no fibres, and the chart's width grew with the object. On the
+/// fleet at 3d2987e that made charts wider than the axis count the cover
+/// digest writes them under, measured as `charts 65 of which 12 wider`,
+/// and no field width or page carries a row per vertex.
+///
+/// `None` where the rank or a loop's class is unmeasured — a form whose
+/// holonomy is not a versor has no class to be charted by (15.3), and that
+/// is a refusal, not a chart of zeros (rule 11).
 pub(crate) fn chart_of_form(f: &Form) -> Option<crate::transducer::stalk::Invariant> {
+    let r = f.rank()?;
     let mut axes = vec![
         2u64,
-        f.vertices.len() as u64,
-        f.faces.len() as u64,
-        f.loops.len() as u64,
+        u64::from(r.torsion),
+        u64::from(r.free),
+        u64::from(r.offplane),
+        u64::from(r.axes),
     ];
-    let mut rows: Vec<Vec<u64>> = Vec::new();
-    for v in &f.vertices {
-        match v {
-            Vertex::Word { .. } | Vertex::Rebased { .. } => {
-                let pf = v.word_in(f)?.form()?;
-                let mut row = vec![1u64, pf.orientation as u64];
-                row.extend(pf.rot.iter().map(|&x| x as u64));
-                rows.push(row);
-            }
-            Vertex::Glued { chart, .. } => {
-                let mut row = vec![3u64];
-                row.extend_from_slice(&chart.0);
-                rows.push(row);
-            }
-            Vertex::Demand { kind, chart, .. } => {
-                let mut row = vec![4u64, u64::from(kind.kind_byte())];
-                row.extend_from_slice(&chart.0);
-                rows.push(row);
-            }
-            Vertex::Frame | Vertex::Unfolded { .. } => {}
+    // THE CLASSES THE LOOPS OCCUPY, each one 12.6's coordinate vector
+    // packed in its own fixed order — one bit per axis, the zero vector
+    // where the loop is closed. Taken ONCE: a chart is what many objects
+    // share, so a form with five hundred flat loops and one with one sit
+    // on the same coordinate.
+    let mut classes: Vec<u64> = Vec::with_capacity(f.loops.len());
+    for i in 0..f.loops.len() {
+        let k = f.class_vector(i)?;
+        let mut packed = 0u64;
+        for axis in k.coordinates() {
+            packed |= 1u64 << axis.to_byte();
         }
+        classes.push(packed);
     }
-    rows.sort();
-    for row in rows {
-        axes.extend(row);
-    }
+    classes.sort_unstable();
+    classes.dedup();
+    axes.extend(classes);
     Some(crate::transducer::stalk::Invariant(axes))
 }
 

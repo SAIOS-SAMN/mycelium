@@ -216,24 +216,49 @@ use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
 let inner_a = closed_turn(None);
 let ea = as_element_form(&inner_a, [1, 0, 0, 0]).expect("A");
+// A FORM THAT HOLDS SOMETHING ELSE UP TO GAUGE, which is what a
+// different chart now means: two bodies and a CHORD between them
+// carrying a half turn, filed as torsion at its own period, so the form
+// closes a loop and its rank reads `torsion 1` where the turn's star
+// tree reads zero on every coordinate.
+//
+// A star tree would not do it. Two star trees differing only in their
+// word are one object up to gauge — the single face is a coboundary and
+// the word transports away (T2) — so they sit on one chart, which is
+// what a chart is for. The old chart wrote a row per vertex and told
+// them apart by the spelling.
 let other = {
-    let inf = Word::from_letters(&[(
-        crate::transducer::alphabet::LetterId::pythagorean_5((0, 1)).unwrap(),
-        false,
-    )]);
+    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let half = Word::from_letters(&[(q, false), (q, false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 9]),
-        derivation: crate::transducer::alphabet::Derivation::spelled(inf),
-        carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
-        gauge: Vec::new(),
-        class: crate::transducer::stalk::Invariant::default(),
-        contact: None,
-    });
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
+    for tag in [9u8, 10u8] {
+        f.vertices.push(Vertex::Word {
+            address: crate::transducer::address::Address::from_bytes([
+                crate::transducer::address::TAG_FORM,
+                tag,
+            ]),
+            derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero.clone()))),
+            gauge: Vec::new(),
+            class: crate::transducer::stalk::Invariant::default(),
+            contact: None,
+        });
+    }
+    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star 1"), edge: None });
+    f.faces.push(FormFace { i: 0, j: 2, transport: f.face_of(0, 2).expect("star 2"), edge: None });
+    f.faces.push(FormFace::new(1, 2, half.clone()));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    // A17: the loop is believed at the period it closes at, and a court
+    // replays it only where the form files it under its own class.
+    let [lp, ..] = f.loops.as_slice() else { panic!("the chord closes a loop") };
+    let chord = lp.chord;
+    f.torsion.insert(
+        half.rotor().class_key().expect("the half turn has a class"),
+        crate::transducer::sentence::FiledLoop { sigma: Vec::new(), period: 2, chord },
+    );
+    f.reindex();
     f
 };
 let eo = as_element_form(&other, [1, 0, 0, 0]).expect("other class");
