@@ -79,7 +79,7 @@ pub fn rank_over(
     // the words added since name the strata that moved, and only listings
     // in those strata are located again — a coordinate read, never the
     // whole book.
-    let reuse = prior.retire_gen == language.retire_gen && !prior.closure.is_empty();
+    let reuse = prior.retire_gen == language.retire_gen && !prior.closure_is_empty();
     let mut moved: crate::network::nerve::Keyed<crate::transducer::stalk::Invariant> =
         crate::network::nerve::Keyed::new();
     if reuse && prior.basis_gen != basis_gen && language.words.len() >= prior.basis_len {
@@ -96,17 +96,22 @@ pub fn rank_over(
         )
         .and_then(|(a, _)| language.index.get(&a).copied())
     };
-    let mut closure = crate::network::nerve::Keyed::new();
+    // THE MEASUREMENT IS OVER THE OPEN BOOK, which is what a rank is; the
+    // carrier is `pending` and its whole content is the object. What keeps
+    // it from being a walk per stroke is the generation gate above and the
+    // `reuse` path, which locates again only the listings whose stratum a
+    // new word moved -- a coordinate read, never the whole book.
+    let mut out = Rank::default();
     let mut invariants = crate::network::nerve::Keyed::new();
     match reuse {
         false => {
-            for (addr, (p, _)) in pending.fiber(crate::network::nerve::ROOT) {
+            for (addr, (p, _)) in pending.scoped() {
                 invariants.insert(&addr, crate::transducer::stalk::invariant_of(p));
-                closure.insert(&addr, locate(p));
+                out.put_closure(&addr, locate(p));
             }
         }
         true => {
-            for (addr, (p, _)) in pending.fiber(crate::network::nerve::ROOT) {
+            for (addr, (p, _)) in pending.scoped() {
                 // The prior reading where it holds this listing; the
                 // listing's own invariant where it does not. Both are
                 // measured on the word.
@@ -115,33 +120,30 @@ pub fn rank_over(
                     None => crate::transducer::stalk::invariant_of(p),
                 };
                 invariants.insert(&addr, inv);
-                match prior.closure.get(&addr) {
-                    Some(c) => {
-                        closure.insert(&addr, *c);
-                    }
-                    None => {
-                        closure.insert(&addr, locate(p));
-                    }
+                match prior.closure_of(&addr) {
+                    Some(c) => out.put_closure(&addr, *c),
+                    None => out.put_closure(&addr, locate(p)),
                 }
             }
             if !moved.is_empty() {
-                for (ck, _) in moved.fiber(crate::network::nerve::ROOT) {
+                // The strata a new word moved, and under each the listings
+                // filed on it: `link` is the keyed descent, so this is a
+                // coordinate read and not a second pass over the book.
+                for (ck, _) in moved.scoped() {
                     for (addr, _) in chart_listings.link(&ck) {
                         if let Some((p, _)) = pending.get(&addr) {
-                            closure.insert(&addr, locate(p));
+                            out.put_closure(&addr, locate(p));
                         }
                     }
                 }
             }
         }
     }
-    Rank {
-        closure,
-        invariants,
-        basis_gen,
-        basis_len: language.words.len(),
-        retire_gen: language.retire_gen,
-    }
+    out.invariants = invariants;
+    out.basis_gen = basis_gen;
+    out.basis_len = language.words.len();
+    out.retire_gen = language.retire_gen;
+    out
 }
 
 /// THE OPEN BOOK AS A QUOTE READS IT. Six keyed reads that all come off the
@@ -269,17 +271,15 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
 /// decides. Nothing compares them against a tolerance and nothing collapses
 /// them to one state: C and I are two lanes of the same object, and a scalar
 /// verdict over two lanes is the flattening law 5 refuses.
+///
+/// BOTH ARE CARRIED WHERE THE CLOSURE IS BOUND (`Rank::put_closure`), so
+/// this is a read of two integers. It walked the whole closure map, once
+/// per call, for two numbers the write already knew -- the same shape as
+/// `ListingField::nonflat`, which is kept by `write_field` for exactly
+/// this reason.
 pub fn cohesion_over(rank: &Rank) -> (u64, u64) {
-    let mut c = 0u64;
-    let mut i = 0u64;
-    for (_, closed) in rank.closure.fiber(crate::network::nerve::ROOT) {
-        if closed.is_some() {
-            c = c.saturating_add(1);
-        } else {
-            i = i.saturating_add(1);
-        }
-    }
-    (c, i)
+    let (c, i) = rank.counts();
+    (c as u64, i as u64)
 }
 
 /// THE NORMAL FORM of a chain over a language: whether the held words

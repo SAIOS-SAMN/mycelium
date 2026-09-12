@@ -323,3 +323,69 @@ assert_eq!(
     "what the court installed is what it teaches"
 );
 }
+
+/// X3, rule 1 — THE COHESION READING IS CARRIED, NOT WALKED. C and I are
+/// written when a listing's closure is bound (`Rank::put_closure`), for the
+/// same reason `ListingField::nonflat` is written by `write_field`: a read
+/// that counts what the write already knew walks a carrier that grows with
+/// the book. `cohesion_over` walked the whole closure map per call, and
+/// `synthesis`'s rank line walked it a second time, with its own filter, to
+/// print one of the two numbers.
+///
+/// Pinned against the walk itself, so the carried counts cannot drift from
+/// the carrier: whatever the book holds, the two readings agree — including
+/// after a listing is re-bound at a new closure, and across a restore.
+#[test]
+fn the_cohesion_counts_are_carried_and_agree_with_the_carrier() {
+let walk = |r: &Rank| {
+    let mut c = 0usize;
+    let mut i = 0usize;
+    for (_, closed) in r.closure_carrier().scoped() {
+        match closed {
+            Some(_) => c += 1,
+            None => i += 1,
+        }
+    }
+    (c, i)
+};
+let mut k = Kernel::new();
+assert_eq!(k.closure_now().counts(), (0, 0), "an empty book has neither");
+
+// Two voices on one pair list it; a third voice lists another.
+let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
+speak_pair(&mut k, &a, &rot, [1; 32]);
+speak_pair(&mut k, &a, &rot, [2; 32]);
+let c = vec![(0, 0, 3), (0, 1, 4)];
+let d = vec![(0, 0, 4), (0, 1, 3)];
+speak_pair(&mut k, &c, &d, [3; 32]);
+let rank = k.closure_now();
+assert_eq!(rank.counts(), walk(&rank), "the carried counts are the carrier's");
+assert_eq!(
+    rank.counts().0 + rank.counts().1,
+    rank.closure_len(),
+    "every measured listing is in one of the two"
+);
+assert_eq!(
+    cohesion_over(&rank),
+    (rank.counts().0 as u64, rank.counts().1 as u64),
+    "and the named reading is those two"
+);
+
+// A word installed closes what it derives: a listing is re-bound at a base
+// point, and the counts move with it rather than double-count.
+k.glue_local();
+let rank = k.closure_now();
+assert_eq!(rank.counts(), walk(&rank), "after a rebind, still the carrier's");
+assert_eq!(rank.counts().0 + rank.counts().1, rank.closure_len());
+
+// And across the ledger: the restore binds every closure through the same
+// door, so a court that boots reports what it reported before.
+let before = k.closure_now().counts();
+let snap = k.snapshot();
+let mut k2 = Kernel::new();
+assert!(k2.restore(&snap), "the ledger restores");
+let back = k2.closure_now();
+assert_eq!(back.counts(), walk(&back), "restored, the counts are the carrier's");
+assert_eq!(back.counts(), before, "and are what was written");
+}

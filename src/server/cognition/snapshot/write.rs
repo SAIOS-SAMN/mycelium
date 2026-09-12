@@ -73,8 +73,8 @@ impl Kernel {
         let rank = &self.closure.2;
         out.extend_from_slice(b"RNK1");
         out.extend_from_slice(&(rank.basis_len as u64).to_le_bytes());
-        out.extend_from_slice(&(rank.closure.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&rank.closure, |addr, closed| {
+        out.extend_from_slice(&(rank.closure_len() as u32).to_le_bytes());
+        crate::snapshot::persist(rank.closure_carrier(), |addr, closed| {
             put_addr(&mut out, addr);
             let c = closed.map_or(u64::MAX, |i| i as u64);
             out.extend_from_slice(&c.to_le_bytes());

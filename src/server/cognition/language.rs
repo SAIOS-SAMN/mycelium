@@ -161,7 +161,7 @@ pub struct MarketView {
 /// Identity is the listing address; there is no parallel Vec of positions.
 #[derive(Debug, Clone, Default)]
 pub struct Rank {
-    pub closure: crate::network::nerve::Keyed<Option<usize>>,
+    closure: crate::network::nerve::Keyed<Option<usize>>,
     /// Per listing, its moduli — the coordinate that says whether a word
     /// added since could have closed it.
     pub invariants: crate::network::nerve::Keyed<crate::transducer::stalk::Invariant>,
@@ -171,6 +171,68 @@ pub struct Rank {
     /// retirement since, every prior closure index still names its word.
     pub basis_len: usize,
     pub retire_gen: u64,
+    /// THE COHESION READING, CARRIED WHERE THE CLOSURE IS BOUND: listings
+    /// with a base point in the language, and listings without one. Kept
+    /// by `put_closure` for the same reason `ListingField::nonflat` is
+    /// kept by `write_field` — so a read never walks the book to count
+    /// what the write already knew (rule 1). `cohesion_over` walked the
+    /// whole closure map, and `synthesis` walked it a second time, with
+    /// its own filter, to print one of the two numbers.
+    closed: usize,
+    open: usize,
+}
+
+impl Rank {
+    /// Bind a listing's closure and keep the counts with it. The two are
+    /// one fact written once (law 12): nothing else may touch `closure`,
+    /// which is why it is private.
+    pub fn put_closure(&mut self, addr: &[u8], closed: Option<usize>) {
+        // A rebind carries its old reading out of the count first. A count
+        // at zero holding an entry is a broken count and stays at zero,
+        // which is `Keyed::remove`'s own treatment (rule 11: no floor).
+        match self.closure.insert(addr, closed) {
+            Some(Some(_)) => {
+                if let Some(n) = self.closed.checked_sub(1) {
+                    self.closed = n;
+                }
+            }
+            Some(None) => {
+                if let Some(n) = self.open.checked_sub(1) {
+                    self.open = n;
+                }
+            }
+            None => {}
+        }
+        match closed {
+            Some(_) => self.closed += 1,
+            None => self.open += 1,
+        }
+    }
+
+    /// One listing's base point: `Some(None)` is a listing measured and
+    /// not closed, `None` a listing this reading does not hold at all.
+    pub fn closure_of(&self, addr: &[u8]) -> Option<&Option<usize>> {
+        self.closure.get(addr)
+    }
+
+    /// Listings measured, closed and open. The reading `cohesion_over`
+    /// returns and the ledger writes.
+    pub fn counts(&self) -> (usize, usize) {
+        (self.closed, self.open)
+    }
+
+    pub fn closure_len(&self) -> usize {
+        self.closure.len()
+    }
+
+    pub fn closure_is_empty(&self) -> bool {
+        self.closure.is_empty()
+    }
+
+    /// The closure map for the persist walk, which writes it whole.
+    pub fn closure_carrier(&self) -> &crate::network::nerve::Keyed<Option<usize>> {
+        &self.closure
+    }
 }
 
 /// One chart a listing has been probed through, with its closure, the

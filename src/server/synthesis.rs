@@ -155,7 +155,10 @@ pub fn quote(
     eprintln!(
         "  rank: book {} listings, closed {}, sealed {sealed}, gens {:?}",
         view.pending.len(),
-        rank.closure.fiber(crate::network::nerve::ROOT).filter(|(_, c)| c.is_some()).count(),
+        // The cohesion reading's own closed count (law 12): this filtered
+        // the closure map itself, a second walk of the book for a number
+        // `cohesion_over` already names and `Rank` now carries.
+        crate::cognition::cohesion_over(&rank).0,
         view.gens,
     );
     let budget = crate::network::wire::frame_budget() - 34;

@@ -142,7 +142,10 @@ impl Kernel {
                 if n > b.len().checked_sub(*pos)? / 14 {
                     return None;
                 }
-                let mut rank = Rank { basis_gen: u64::MAX, basis_len, retire_gen: kernel.retire_gen, ..Rank::default() };
+                let mut rank = Rank::default();
+                rank.basis_gen = u64::MAX;
+                rank.basis_len = basis_len;
+                rank.retire_gen = kernel.retire_gen;
                 for _ in 0..n {
                     let addr = crate::transducer::address::take_addr(b, pos)?;
                     let closed = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -156,7 +159,7 @@ impl Kernel {
                         axes.push(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?));
                         *pos += 8;
                     }
-                    rank.closure.insert(&addr, (closed != u64::MAX).then_some(closed as usize));
+                    rank.put_closure(&addr, (closed != u64::MAX).then_some(closed as usize));
                     rank.invariants.insert(&addr, crate::transducer::stalk::Invariant(axes));
                 }
                 kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
