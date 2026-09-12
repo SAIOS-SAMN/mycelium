@@ -115,18 +115,69 @@ impl TaskWalk {
     }
 }
 
+/// WHERE THE STAND CHAIN STOPS. A warm mind is built out of what the
+/// other tasks yielded, so "nothing was standable" is only half a
+/// reading: the slice of sixty gave `closed 5` on the RULE forms and
+/// `standable 0`, which says the break is not at extraction and not at
+/// the rule's closure but somewhere after them, and an instrument that
+/// cannot say where is an instrument that has to be re-run by hand.
+///
+/// In the chain's own order, each variant being the step that refused.
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Stand {
+    #[default]
+    NoRule,
+    /// The rule extracted and its form is not closed, so it is not
+    /// citable (13.6, `Form::glue`) and there is nothing to mint.
+    RuleOpen,
+    /// The rule's form closed and `mint_sentence` returned nothing.
+    NoSentence,
+    /// A sentence was minted and its tape carries no form.
+    NoForm,
+    /// A sentence was minted, its form read back, and THAT form is not
+    /// closed — the rule closed and the sentence did not.
+    SentenceOpen,
+    /// Closed, citable, and stood.
+    Stood,
+}
+
+impl Stand {
+    fn label(self) -> &'static str {
+        match self {
+            Stand::NoRule => "no_rule",
+            Stand::RuleOpen => "rule_open",
+            Stand::NoSentence => "no_sentence",
+            Stand::NoForm => "no_form",
+            Stand::SentenceOpen => "sentence_open",
+            Stand::Stood => "stood",
+        }
+    }
+}
+
 /// The closed sentence a task yields when read COLD, which is what a warm
-/// mind stands for the other tasks of the slice. `None` where the family
-/// extracts nothing, mints nothing, or does not close — a form that is
-/// not closed is not citable (13.6) and standing it would be standing
-/// something no mind could factor through.
-fn standable(train: &mycelium::transducer::family::Family, epi: &Epigenome) -> Option<Element> {
+/// mind stands for the other tasks of the slice, and WHERE it stopped if
+/// it yields none. A form that is not closed is not citable (13.6) and
+/// standing it would be standing something no mind could factor through.
+fn standable(train: &mycelium::transducer::family::Family, epi: &Epigenome) -> (Option<Element>, Stand) {
     let mut physics = mycelium::physics::Physics::default();
     let mut budget = physics.stroke_n(DELTA_STROKE);
-    let rule = extract_rule_with(train, epi, &mut budget)?;
-    let spoken = mint_sentence(&rule, train, epi)?;
+    let Some(rule) = extract_rule_with(train, epi, &mut budget) else {
+        return (None, Stand::NoRule);
+    };
+    if !rule.form.is_closed() {
+        return (None, Stand::RuleOpen);
+    }
+    let Some(spoken) = mint_sentence(&rule, train, epi) else {
+        return (None, Stand::NoSentence);
+    };
     let held = Held::of(spoken);
-    held.form()?.is_closed().then(|| held.element().clone())
+    let Some(f) = held.form() else {
+        return (None, Stand::NoForm);
+    };
+    match f.is_closed() {
+        true => (Some(held.element().clone()), Stand::Stood),
+        false => (None, Stand::SentenceOpen),
+    }
 }
 
 /// One task of the slice, read twice.
@@ -148,6 +199,10 @@ pub(crate) struct Pair {
 pub(crate) struct Slice {
     pairs: Vec<Pair>,
     standable: usize,
+    /// Where the stand chain stopped, per task of the slice, so a
+    /// `standable 0` names the step that refused rather than sending the
+    /// reader back to run it by hand.
+    stands: Vec<Stand>,
 }
 
 /// WALK THE SLICE TWICE. `names` is the slice, in name order, so two runs
@@ -175,6 +230,7 @@ pub(crate) fn walk_twice(dir: &str, names: &[String]) -> Slice {
         TaskWalk,
         Option<Element>,
     )> = Vec::new();
+    let mut stands: Vec<Stand> = Vec::new();
     for name in names {
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else {
             continue;
@@ -184,7 +240,9 @@ pub(crate) fn walk_twice(dir: &str, names: &[String]) -> Slice {
         };
         eprintln!("  delta cold {name} pairs {}", task.train.len());
         let cold = TaskWalk::of(&task.train, &empty);
-        let stand = standable(&task.train, &empty);
+        let (stand, why) = standable(&task.train, &empty);
+        eprintln!("  delta cold {name} stand {}", why.label());
+        stands.push(why);
         tasks.push((name.clone(), task.train, cold, stand));
     }
     // Pass two: each task read by a mind holding every OTHER task's form.
@@ -216,7 +274,7 @@ pub(crate) fn walk_twice(dir: &str, names: &[String]) -> Slice {
         out.push(Pair { name: name.clone(), cold: cold.clone(), warm });
     }
     let standable = tasks.iter().filter(|(_, _, _, s)| s.is_some()).count();
-    Slice { pairs: out, standable }
+    Slice { pairs: out, standable, stands }
 }
 
 /// A cold and warm reading side by side. `→` where they differ and `=`
@@ -278,6 +336,19 @@ pub(crate) fn report(slice: &Slice) {
         pairs.len(),
         slice.standable
     );
+    // WHERE THE STAND CHAIN STOPPED, in the chain's own order. `standable
+    // 0` beside `closed 5` says the break is after the rule's closure and
+    // this line says which step refused.
+    let tally = |s: Stand| slice.stands.iter().filter(|x| **x == s).count();
+    println!(
+        "  delta stand no_rule {} rule_open {} no_sentence {} no_form {} sentence_open {} stood {}",
+        tally(Stand::NoRule),
+        tally(Stand::RuleOpen),
+        tally(Stand::NoSentence),
+        tally(Stand::NoForm),
+        tally(Stand::SentenceOpen),
+        tally(Stand::Stood),
+    );
     // THE FINDING, and the instrument must not claim a comparison it did
     // not make. A warm mind is built out of the OTHER tasks' closed forms;
     // where no task of the slice closes, there is no warm mind, the two
@@ -338,8 +409,14 @@ mod tests {
 
         // A mind holding this family's own closed form — the same form a
         // warm mind is built out of on a real slice.
-        let e = standable(&fam, &empty)
-            .expect("the simplest recolour yields a closed form, or nothing can ever be stood");
+        let (stand, why) = standable(&fam, &empty);
+        let Some(e) = stand else {
+            panic!(
+                "the simplest recolour yields a closed form, or nothing can ever be stood; \
+                 the chain stopped at {}",
+                why.label()
+            )
+        };
         let mut warm = Epigenome::new();
         assert!(
             warm.stand_dialect_at(e, 1, 1).is_some(),
