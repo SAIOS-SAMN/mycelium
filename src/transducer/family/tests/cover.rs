@@ -351,3 +351,53 @@ fn cover_attempts_are_placed_times_unplaced() {
         t.carried
     );
 }
+
+/// 13.9 STEP 7, 50.3 — A PURE-COBOUNDARY FORM YIELDS NO EVALUATED LOOP.
+/// A face whose two pieces the cover did not both carry has no transition
+/// between their frames to write, so it carries `edge: None`; a cycle
+/// through such a face has no edge holonomy, and `edge_holonomy` answers
+/// `None` rather than composing the identity.
+///
+/// That `None` is a REFUSAL TO READ and not a flat reading, and it is what
+/// both organs skip on: `pair.rs` classifies nothing there, so nothing is
+/// filed, and the court demands nothing of a loop the voice never
+/// evaluated. Reading the transport composite instead answers for such a
+/// loop anyway — it telescopes over the sensor-plane words a pair form
+/// composes — which is the flat reading this refuses to make.
+#[test]
+fn a_pure_coboundary_form_yields_no_evaluated_loop() {
+    use crate::transducer::alphabet::Word;
+    use crate::transducer::sentence::{Form, FormFace};
+    let mut f = Form::default();
+    for tag in [1u8, 2u8, 3u8] {
+        f.vertices.push(crate::transducer::sentence::Vertex::Word {
+            address: crate::transducer::address::Address::from_bytes([tag; 32]),
+            derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            carriage: Box::new(crate::transducer::element::identity_versor()),
+            gauge: Vec::new(),
+            class: crate::transducer::stalk::Invariant::default(),
+            contact: None,
+        });
+    }
+    // Every face the coboundary of its two vertices, and no edge on any of
+    // them: the pieces were not carried, so there is no frame transition.
+    for (i, j) in [(0u16, 1u16), (0, 2), (0, 3), (1, 2), (2, 3), (1, 3)] {
+        let transport = f.face_of(i, j).expect("a coboundary of two vertices");
+        f.faces.push(FormFace { i, j, transport, edge: None });
+    }
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    assert!(!f.loops.is_empty(), "the triangle among the bodies closes");
+    for lp in &f.loops {
+        assert!(
+            f.edge_holonomy(lp).is_none(),
+            "a cycle through a face with no edge is not evaluated: {lp:?}"
+        );
+        assert!(f.edge_class(lp).is_none(), "so it has no class to file under");
+        assert!(f.edge_coheres(lp), "and it owes no filing");
+    }
+    assert!(
+        f.torsion.fiber(ROOT).next().is_none(),
+        "the voice files nothing on a form it evaluated no loop of"
+    );
+}

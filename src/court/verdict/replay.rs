@@ -213,19 +213,22 @@ pub fn replay_form_at(
         if f.face_of(face.i, face.j).as_ref() == Some(&face.transport) {
             continue;
         }
-        if !torsion_chord_carries(&walked, &by_chord, i, face) {
+        if !torsion_chord_carries(&walked, &by_chord, i) {
             return Some(tape(REFUSE_FACE));
         }
     }
-    if !form_loops_replay(&walked) {
-        return Some(tape(REFUSE_LOOP));
-    }
     // 23.1 step 4, 50.3 (L7): every carried edge re-measured on the union
-    // of its two bodies, on every pair of the family.
+    // of its two bodies, on every pair of the family. BEFORE the loops,
+    // because an edge that does not re-derive is a defect at a FACE and
+    // the reading names it there; the loop reading over that same edge
+    // would answer second-hand, as an unfiled class.
     if let Some(fam) = family {
         if let Some(refusal) = edges_rederive_family(&walked, fam) {
             return Some(refusal);
         }
+    }
+    if !form_loops_replay(&walked) {
+        return Some(tape(REFUSE_LOOP));
     }
     let Some(derived) = walked.rank() else {
         return Some(tape(REFUSE_RANK_LOST));
@@ -361,23 +364,25 @@ pub(crate) fn chord_loops(f: &Form) -> Keyed<u16> {
     by_chord
 }
 
-/// The face is the last face of a non-identity loop, every other face of
-/// that loop is `face_of`, and the loop holonomy is the chord's word.
-pub(crate) fn torsion_chord_carries(
-    f: &Form,
-    by_chord: &Keyed<u16>,
-    face_idx: usize,
-    face: &crate::transducer::sentence::FormFace,
-) -> bool {
+/// 23.1 step 4 — A FACE THAT IS NOT `face_of` IS THE KRUSKAL CHORD of a
+/// loop whose every other face is. The pivot writes the chord's transport
+/// and nothing else, so the chord is exactly where a form's own word
+/// differs from the coboundary of its two vertices.
+///
+/// THE CHORD IS A FACE LIKE ANY OTHER and carries its edge like any other.
+/// What the loop then reads — flat, filed at its period, or not evaluated
+/// at all — is [`form_loops_replay`]'s, on the loop's EDGE holonomy (50.3).
+/// This clause asked for the TRANSPORT composite instead, matched against
+/// the chord's own word: a reading that telescopes over words that commute,
+/// so it certified a loop the voice never evaluated and demanded a filing
+/// under a class nothing files.
+pub(crate) fn torsion_chord_carries(f: &Form, by_chord: &Keyed<u16>, face_idx: usize) -> bool {
     let Some(&li) = by_chord.get(&face_idx_key(face_idx as u16)) else {
         return false;
     };
     let Some(lp) = f.loops.get(li as usize) else {
         return false;
     };
-    if lp.holonomy.is_identity() {
-        return false;
-    }
     for &fi in &lp.faces {
         if fi == lp.chord {
             continue;
@@ -389,42 +394,81 @@ pub(crate) fn torsion_chord_carries(
             return false;
         }
     }
-    lp.holonomy.same_form(&face.transport.word)
-        || lp.holonomy.same_form(&face.transport.word.inverse())
+    true
 }
 
-/// Identity loops, or finite open loops filed on the form's torsion carrier.
+/// THE LOOPS THE FORM EVALUATED, each flat or filed at its period.
+///
+/// The reading is the loop's EDGE HOLONOMY (50.3) — the composite of the
+/// transitions between the bodies' own frames — and it is the same reader
+/// the voice classified with since 01c0155. The TRANSPORT composite stood
+/// here, and it is a different object: it telescopes around a cycle over
+/// words that commute, and every word a pair form composes is a
+/// sensor-plane word, so a cover's loop read flat here however curved the
+/// scene was, while the class the voice actually filed — under the edge
+/// holonomy's key — was never looked for.
+///
+/// A LOOP THE FORM DID NOT EVALUATE IS NOT REPLAYED. `edge_holonomy`
+/// answers `None` where a remainder edge lies anywhere on the cycle (13.9
+/// step 7), and a loop with no transition to read carries no obligation
+/// (rule 11: that is a refusal to read, not a flat reading).
 pub(crate) fn form_loops_replay(f: &Form) -> bool {
-    use crate::transducer::alphabet::Order;
     for lp in &f.loops {
-        if lp.holonomy.is_identity() {
-            continue;
-        }
-        // An axis the form opened over this loop (I6): the holonomy is the
-        // transition on that axis, and it replays only when the recorded
-        // seed re-derives from the loop itself (law 12).
-        if let Some(chord) = f.opened_axis_of(lp) {
-            if f.axis_rederives(lp, chord) {
-                continue;
-            }
+        // THE TRANSPORT COMPOSITE — the pivot's obstruction, discharged on
+        // an axis or filed under its own class (12.6, A17).
+        if !loop_reading_replays(f, lp, &lp.holonomy) {
             return false;
         }
-        match lp.holonomy.order() {
-            Order::Infinite => return false,
-            Order::Finite(ell) => {
-                // No class, no filing: a holonomy that is not a versor is a
-                // loop that does not replay, never one keyed by its bytes.
-                let Some(k) = lp.holonomy.rotor().class_key() else {
-                    return false;
-                };
-                match f.torsion.get(k.as_bytes()) {
-                    Some(filed) if filed.period == ell => {}
-                    _ => return false,
-                }
-            }
+        // THE EDGE HOLONOMY — the cover's (50.3). A loop the form did not
+        // evaluate, a remainder edge anywhere on it, answers `None` and
+        // carries no obligation: that is a refusal to read (13.9 step 7),
+        // not a flat reading, and `pair.rs` classifies nothing there either.
+        let Some(e) = f.edge_holonomy(lp) else {
+            continue;
+        };
+        if !loop_reading_replays(f, lp, &e.word) {
+            return false;
         }
     }
     true
+}
+
+/// ONE READING OF ONE LOOP: flat, the transition on an axis the form
+/// opened, or filed as torsion under its own class at its own period.
+///
+/// It is called twice per loop because a loop HAS two obstructions and
+/// neither replaces the other (`Form::edge_class_vector`): the transport
+/// composite the pivot discharges, and the edge holonomy the cover files.
+/// The court read the first alone, so the class a cover actually filed —
+/// keyed by the edge holonomy — was never looked for, and the transport
+/// composite telescopes over the sensor-plane words a pair form composes,
+/// which read flat however curved the scene was.
+fn loop_reading_replays(
+    f: &Form,
+    lp: &crate::transducer::sentence::Loop,
+    word: &crate::transducer::alphabet::Word,
+) -> bool {
+    use crate::transducer::alphabet::Order;
+    if word.is_identity() {
+        return true;
+    }
+    // An axis the form opened over this loop (I6): the holonomy is the
+    // transition on that axis, and it replays only when the recorded
+    // seed re-derives from the loop itself (law 12).
+    if let Some(chord) = f.opened_axis_of(lp) {
+        return f.axis_rederives(lp, chord);
+    }
+    match word.order() {
+        Order::Infinite => false,
+        Order::Finite(ell) => {
+            // No class, no filing: a holonomy that is not a versor is a
+            // loop that does not replay, never one keyed by its bytes.
+            let Some(k) = word.rotor().class_key() else {
+                return false;
+            };
+            matches!(f.torsion.get(k.as_bytes()), Some(filed) if filed.period == ell)
+        }
+    }
 }
 
 pub(crate) fn face_idx_key(i: u16) -> Vec<u8> {

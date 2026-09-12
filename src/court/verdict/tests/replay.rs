@@ -563,3 +563,79 @@ fn a_derivation_that_does_not_compose_to_its_word_is_refused_at_the_vertex() {
         "the coordinate is the vertex, not the tape (50.9)"
     );
 }
+
+/// 50.3, 23.1 step 4 — THE COURT READS THE LOOP THE VOICE EVALUATED. A
+/// loop has two obstructions: the TRANSPORT composite the pivot discharges
+/// and files, and the EDGE HOLONOMY the cover classifies and files (50.3).
+/// The court read the first alone, so the class a cover actually filed was
+/// never looked for — and the transport composite telescopes over the
+/// sensor-plane words a pair form composes, so it reads flat however curved
+/// the scene is.
+///
+/// Here the transports are pure coboundaries and compose to the identity,
+/// while the faces carry a half-turn edge: the loop is flat on the reading
+/// the court had and curved on the one the voice made.
+#[test]
+fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
+    use crate::transducer::alphabet::{LetterId, Word};
+    use crate::transducer::sentence::{FiledLoop, Form, FormFace, Transport};
+    let q = LetterId::quarter((0, 1)).expect("the sensor plane");
+    let half = Word::from_letters(&[(q, false), (q, false)]);
+    let edge_of = |w: &Word| Transport {
+        word: w.clone(),
+        carriage: element::identity_versor(),
+        gauge: Vec::new(),
+    };
+    let mut f = Form::default();
+    for tag in [1u8, 2u8] {
+        f.vertices.push(Vertex::Word {
+            address: crate::transducer::address::Address::from_bytes([tag; 32]),
+            derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            carriage: Box::new(element::identity_versor()),
+            gauge: Vec::new(),
+            class: stalk::Invariant::default(),
+            contact: None,
+        });
+    }
+    // The two star faces and the body-to-body face, every transport the
+    // coboundary of its vertices; the body face carries the half turn as
+    // the transition between the two pieces' own frames.
+    for (i, j) in [(0u16, 1u16), (0, 2)] {
+        let transport = f.face_of(i, j).expect("a coboundary");
+        f.faces.push(FormFace { i, j, transport, edge: Some(edge_of(&Word::identity())) });
+    }
+    let transport = f.face_of(1, 2).expect("a coboundary");
+    f.faces.push(FormFace { i: 1, j: 2, transport, edge: Some(edge_of(&half)) });
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    let [lp, ..] = f.loops.as_slice() else { panic!("the triangle closes") };
+    assert!(
+        lp.holonomy.is_identity(),
+        "the transport composite is flat: every face is a coboundary"
+    );
+    let e = f.edge_holonomy(lp).expect("the loop is evaluated: every face carries an edge");
+    assert!(!e.word.is_identity(), "and its edge holonomy is the half turn");
+
+    // UNFILED, the loop does not replay — which the transport reading could
+    // not say, because on it the loop is flat.
+    assert!(
+        !form_loops_replay(&f),
+        "an evaluated loop with an unfiled class does not replay"
+    );
+    // FILED under the edge holonomy's own class at its own period, it does.
+    let class = f.edge_class(lp).expect("the half turn has a class");
+    let mut filed = f.clone();
+    filed.torsion.insert(
+        class,
+        FiledLoop { sigma: Vec::new(), period: 2, chord: lp.chord },
+    );
+    assert!(form_loops_replay(&filed), "filed at its period, the loop replays");
+    // And at any other period it does not: the period is the loop's order,
+    // not the filer's opinion of it (A17).
+    let mut wrong = f.clone();
+    wrong.torsion.insert(
+        f.edge_class(lp).expect("class"),
+        FiledLoop { sigma: Vec::new(), period: 3, chord: lp.chord },
+    );
+    assert!(!form_loops_replay(&wrong), "a period the loop does not close at is not a filing");
+}

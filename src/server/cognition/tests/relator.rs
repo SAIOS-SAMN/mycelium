@@ -245,6 +245,18 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     let [(_, period)] = filed.as_slice() else { panic!("one filed relator") };
     assert_eq!(*period, 2, "at the order the relator closes at");
 
+    // AND THE COURT READS IT WITH NO CHORD SPECIAL CASE. `torsion_chord_
+    // carries` asked whether the chord's own word equalled the loop's
+    // transport composite — a clause about the chord and no other face. It
+    // asks only what 23.1 step 4 asks now: the chord is the one face that
+    // is not `face_of`, and the loop's reading is the loop's. The period-2
+    // class above is what replays.
+    assert_eq!(
+        crate::court::verdict::blind_replay(&e),
+        None,
+        "the filed relator replays on the loop's own reading"
+    );
+
     // TWO COURTS, NEVER INTRODUCED. Each files on its first hearing and is
     // consilient on its second: closure paid once, per court.
     let [mut a, mut b, _] = three_courts();
