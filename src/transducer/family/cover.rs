@@ -9,25 +9,21 @@
 //! are each carried, and what is left is the transition between pieces
 //! where they meet.
 //!
-//! THE PIECES ARE PULLED BACK, NEVER COMPARED. Peeling both bodies alone
-//! and matching their charts afterwards produces two decompositions with
-//! no reason to share one: measured at 2c9fb0c, every failure was a chart
-//! miss and the carriage was never consulted once. An output piece's
-//! preimage is the set of input pieces standing under its own cells, read
-//! per cell from a keyed occupancy — so a piece in place is congruent by
-//! construction and the lookup cannot miss. That preimage is ONE set and
-//! is carried once: the two peels are under no obligation to agree on
-//! granularity, and requiring them to (one input piece against one output
-//! piece) refuses every carriage where they differ.
+//! THE PIECES ARE PULLED BACK, NEVER COMPARED. An output piece's preimage
+//! is the set of input pieces standing under its own cells, read per cell
+//! from a keyed occupancy, so a piece in place is congruent by
+//! construction. That preimage is ONE set and is carried once: the two
+//! peels are under no obligation to agree on granularity, and requiring
+//! them to — one input piece against one output piece — refuses every
+//! carriage where they differ.
 //!
-//! A purely positional pullback would find ONLY pieces carried in place,
-//! and every transition would be the identity. The second pass is what
-//! reaches a piece that MOVED, and it does not look for one: a deformation
-//! carries its pieces by the SAME versors, so the versors the pullback
-//! placed are applied to the unplaced piece and the image says where it
-//! landed. Searching for it by shell kind and hue — which is what stood
-//! here — asked `carriage` to decide `ins × outs` tries against a
-//! correspondence the cover had already measured.
+//! A purely positional pullback reaches only pieces carried in place, and
+//! every transition would be the identity. The second pass reaches a piece
+//! that MOVED, and it does not look for one: a deformation carries its
+//! pieces by the SAME versors, so each versor the pullback placed is
+//! applied to the unplaced piece and the image says where it landed. That
+//! image is ONE set too, assembled and carried once, in the same theorem
+//! the preimage stands on.
 //!
 //! Nothing is added to the tape. `Form.torsion` already carries a filled
 //! cell as `FiledLoop { sigma, period, chord }` and the court already
@@ -37,7 +33,7 @@
 //! shell kind, hue, and its support written out — so no arrival index
 //! survives into the nerve (rule 6, rule 15).
 
-use super::pieces::{carriage_key, meet_key, pieces_of, preimage_key};
+use super::pieces::{assembly_key, carriage_key, meet_key, pieces_of};
 use super::*;
 
 /// WHAT THE COVERS OF ONE WALK READ. An instrument and nothing else: no
@@ -285,24 +281,17 @@ pub(crate) fn cover_deformation(
         }};
     }
 
-    // (a) THE PULLBACK, in place. A CARRIAGE ALREADY PLACED IS SKIPPED
-    // BECAUSE IT IS PLACED, read at its own address, and not because an
-    // index passed it. That reading is intrinsic to the cover's own state,
-    // so a stroke that resumes needs no memory of the order a previous
-    // stroke walked in.
+    // (a) THE PULLBACK, in place (50.8). A carriage already placed is
+    // skipped at its own address, so a stroke that resumes carries no
+    // memory of the order a previous one walked in.
     //
-    // THE TEST IS THE CARRIAGE'S ADDRESS AND NOT THE PIECE'S CELLS. Asking
-    // instead whether every cell of the image piece is already `reached`
-    // refuses REPLICATION by bookkeeping: a piece reached from one domain
-    // would never be offered to a second, and one image piece carried from
-    // two domains is exactly the transition 50.8 exists to read. Measured
-    // on the twelve at 1<<20: `carried 161 → 158` and `flat 3444 → 3387`,
-    // three carriages and fifty-seven cycles lost to the wrong reading.
-    // `carriage_key` was introduced for this and the test now uses it.
+    // The address is the carriage's, never the image piece's cells: one
+    // image piece carried from two domains is REPLICATION, and 50.8 exists
+    // to read the transition between the two copies.
     //
-    // A piece with no carriage is read again next stroke and fails again.
-    // That is not a queue position missed: it is the uncarried support, a
-    // standing defect, and `uncarried` below is where it reports.
+    // A piece with no carriage is read again next stroke and refuses
+    // again; it is uncarried support, and `uncarried` below is where it
+    // reports (50.8 case 4).
     for ko in &out_keys {
         'piece: {
         let Some(op) = outs.get(ko) else { break 'piece };
@@ -314,14 +303,10 @@ pub(crate) fn cover_deformation(
                 named.insert(ki, ());
             }
         }
-        // Φ⁻¹(V) IS ONE SET. It is assembled whole and carried once, and
-        // it is closed up to whole pieces so no piece is cut across the
-        // preimage boundary. Measured before this line stood: tried piece
-        // by piece instead, 24 input pieces against 1 output piece carried
-        // NOTHING — a 3-cell piece has no versor onto a 60-cell image, so
-        // every carriage refused on granularity and the cover was empty.
-        // The granularity of the two peels is not required to agree; that
-        // it need not is the whole reason the preimage is taken.
+        // Φ⁻¹(V) IS ONE SET: assembled whole and carried once, closed up to
+        // whole pieces so none is cut across the preimage boundary. The two
+        // peels are under no obligation to agree on granularity, and this
+        // is why they need not (50.8).
         let mut cells: Vec<Cell3> = Vec::new();
         let mut parts: Vec<Vec<u8>> = Vec::new();
         for (ki, ()) in named.fiber(ROOT) {
@@ -335,29 +320,21 @@ pub(crate) fn cover_deformation(
             break 'piece;
         };
         // SETTLED? The preimage is a function of this piece's own cells, so
-        // the carriage's address is too, and it is the same address a
-        // previous stroke would have written. Placed or refused, this piece
-        // is read and is not read again — and the assembly that got here
-        // costs nothing, being keyed reads of structure already in hand.
-        let settled = carriage_key(&preimage_key(&parts), ko);
+        // the carriage's address is too: placed or refused, this piece is
+        // read once however many strokes the cover takes.
+        let settled = carriage_key(&assembly_key(&parts), ko);
         if cover.carried.contains(&settled) || cover.refused.contains(&settled) {
             break 'piece;
         }
-        // ONE READ PER CARRIAGE ATTEMPT, charged where the attempt is.
-        //
-        // It is charged HERE and not at the top of the piece: a piece with
-        // no preimage is not work, and charging for it made the machine
-        // stroke pay for every empty piece of every peel — measured,
-        // `carried 4 → 0` on the twelve.
-        //
-        // `ins.get(&ki)` in the assembly above is a keyed read of a
-        // structure already in hand, not a read of the scene; charging for
-        // it charged the index walk rather than the geometry.
+        // ONE READ PER CARRIAGE ATTEMPT, charged at the attempt and not at
+        // the top of the piece: a piece with no preimage is not work, and
+        // the assembly above is keyed reads of structure already in hand
+        // rather than reads of the scene (rule 10).
         if !budget.spend() {
             park!();
         }
         let Some(car) = carriage(&pre, &op.body) else { break 'piece };
-        let key = carriage_key(&preimage_key(&parts), ko);
+        let key = carriage_key(&assembly_key(&parts), ko);
         // The carriage is CONFIRMED here — a versor exists and carries the
         // preimage onto this piece. If its rotor does not spell, that is
         // 37.7 and not a failure to carry, so the piece is kept as the
@@ -385,28 +362,21 @@ pub(crate) fn cover_deformation(
         }
     }
 
-    // (b) BY PROPAGATION, for what the pullback left.
-    //
-    // THIS WAS A SEARCH. Every input piece the pullback placed nowhere was
-    // tried against EVERY output piece of its own shell kind and hue, and
-    // `carriage` was asked to decide each try: `ins × outs` attempts, each
-    // one a versor solve, over a correspondence the cover had already
-    // measured. A deformation carries its pieces by the SAME versors, and
-    // pass (a) has them — so the unplaced piece is not looked for, it is
-    // CARRIED by what is already placed, and the image says where it
-    // landed.
+    // (b) BY PROPAGATION, for what the pullback left. A deformation carries
+    // its pieces by the SAME versors, and pass (a) has them: the unplaced
+    // piece is not looked for, it is CARRIED by what is already placed and
+    // the image says where it landed.
     //
     // Each distinct placed versor is applied to the piece's own cells, the
-    // image positions are read from the output occupancy (a keyed read per
-    // cell, never a walk of the output pieces), and `carriage` confirms the
-    // ONE candidate that read names. The attempt count is
-    // `placed × unplaced`; a family with no placed carriage attempts
-    // nothing here, where the search attempted `ins × outs` regardless.
+    // image positions are read from the output occupancy by a keyed read
+    // per cell (rule 1: never a walk of the output pieces), the pieces they
+    // name are assembled into one image, and `carriage` confirms that one
+    // candidate. The attempt count is `placed × unplaced`, and a family
+    // whose pullback placed nothing attempts nothing here.
     //
     // A piece no placed versor lands on a piece is UNCARRIED and reports in
-    // `uncarried` below. It is a demand — the deformation has a part the
-    // rest of it does not explain — and not a hole in a search that a wider
-    // search would have filled.
+    // `uncarried` below: the deformation has a part the rest of it does not
+    // explain, which is a demand (50.8 case 4).
     let mut occ_out: crate::network::nerve::Keyed<Vec<u8>> = crate::network::nerve::Keyed::new();
     for (k, p) in outs.fiber(ROOT) {
         for &(r, c, _) in &p.body.cells {
@@ -425,9 +395,8 @@ pub(crate) fn cover_deformation(
     }
     let propagate: Vec<Versor> = versors.fiber(ROOT).map(|(_, v)| v.clone()).collect();
     let in_keys: Vec<Vec<u8>> = ins.fiber(ROOT).map(|(k, _)| k).collect();
-    // A CONSUMED INPUT PIECE IS SKIPPED BECAUSE IT IS CONSUMED. This
-    // reader was already intrinsic before any cursor was written, and the
-    // cursor was bolted over it.
+    // A consumed input piece is skipped at its own address, as a placed
+    // carriage is in (a): the cover's state answers it, not a cursor.
     for ki in &in_keys {
         'piece: {
         if consumed.contains(ki) {
@@ -447,29 +416,39 @@ pub(crate) fn cover_deformation(
                     named.insert(ko, ());
                 }
             }
-            // ONE CANDIDATE OR NONE. The image lies in one output piece, or
-            // this versor does not carry this piece onto a piece of the
-            // image — across two pieces is not a carriage onto either, and
-            // trying both would be the search again.
-            let candidate: Vec<Vec<u8>> = named.fiber(ROOT).map(|(k, _)| k).collect();
-            let [ko] = candidate.as_slice() else { continue };
-            // A carriage already placed between these two is not attempted
-            // again: the cover's own `carried` answers it, keyed by exactly
-            // this ordered pair.
-            let key = carriage_key(ki, ko);
+            // Φ(U) IS ONE SET, as Φ⁻¹(V) is in (a). The two peels are under
+            // no obligation to agree on granularity, so an image that lies
+            // across several output pieces is assembled whole and carried
+            // once; one candidate, not several, and no piece cut across the
+            // image boundary.
+            let mut cells: Vec<Cell3> = Vec::new();
+            let mut parts: Vec<Vec<u8>> = Vec::new();
+            for (ko, ()) in named.fiber(ROOT) {
+                let Some(op) = outs.get(&ko) else { continue };
+                cells.extend_from_slice(&op.body.cells);
+                parts.push(ko);
+            }
+            // No image is no piece to carry by this versor, not a piece that
+            // failed to carry (rule 11).
+            let Some(img) = (!cells.is_empty()).then(|| body_of(cells)) else {
+                continue;
+            };
+            // A carriage already placed between this piece and this image is
+            // not attempted again: the cover's own carriers answer it at the
+            // address the attempt would write.
+            let key = carriage_key(ki, &assembly_key(&parts));
             if cover.carried.contains(&key) || cover.refused.contains(&key) {
                 continue;
             }
-            let Some(op) = outs.get(ko) else { continue };
             // One read per carriage ATTEMPT, charged where the attempt is.
             if !budget.spend() {
                 park!();
             }
             tally(|t| t.propagated += 1);
-            let Some(car) = carriage(&ip.body, &op.body) else { continue };
+            let Some(car) = carriage(&ip.body, &img) else { continue };
             // As in the pullback: a confirmed carriage whose rotor does not
             // spell is 37.7, and it is carried out rather than dropped.
-            let v = match word_or_demand(&ip.body, &op.body) {
+            let v = match word_or_demand(&ip.body, &img) {
                 Some(Ok(v)) => v,
                 Some(Err(demanded)) => {
                     cover.refused.insert(&key, demanded);
@@ -477,11 +456,11 @@ pub(crate) fn cover_deformation(
                 }
                 None => continue,
             };
-            for &(r, c, _) in ip.body.cells.iter().chain(op.body.cells.iter()) {
+            for &(r, c, _) in ip.body.cells.iter().chain(img.cells.iter()) {
                 reached.insert(cell_pos_key(r, c), ());
             }
             consumed.insert(ki, ());
-            let codomain = support_of(&op.body);
+            let codomain = support_of(&img);
             placed.insert(
                 &key,
                 Supports { domain: support_of(&ip.body), codomain: codomain.clone() },
@@ -529,11 +508,8 @@ pub(crate) fn cover_deformation(
                     // One piece's cells are offered contiguously — the walk
                     // above is per piece — and a piece reaches one position
                     // more than once only through its own ring, so a repeat
-                    // can only be the key just pushed. This was
-                    // `!v.contains(&k)`, a walk of the cell's occupants on
-                    // every offer, comparing whole addresses: k² address
-                    // comparisons on the same cell whose pairing below was
-                    // already k².
+                    // can only be the key just pushed (rule 15: the slice
+                    // pattern reads the value this loop wrote).
                     Some(v) => match v.as_slice() {
                         [.., last] if *last == k => {}
                         _ => v.push(k.clone()),
@@ -545,25 +521,18 @@ pub(crate) fn cover_deformation(
             }
         }
     }
-    // A MEET ALREADY RECORDED IS NOT RECORDED AGAIN, and that reader —
-    // `cover.meets.contains(&key)` below — was in the tree before any
-    // cursor was. The cell needs no position of its own.
+    // A meet already recorded is not recorded again, read at its own
+    // address: the cell needs no position of its own.
     for (_pos, here) in occ.fiber(ROOT) {
         // ONE READ PER CELL THAT YIELDS A MEET, charged on the first meet
-        // it yields. A cell that yields nothing is not work and costs
-        // nothing; charged unconditionally at the top instead, every
-        // single-occupant cell of every placed support was paid for —
-        // measured on the twelve, `measured 13 → 11` and `carried 4 → 0`.
-        //
-        // `paid` is bookkeeping about this stroke's payment, not a reading
-        // of the cell: nothing in the cover branches on it.
+        // it yields (rule 10): a cell that yields nothing is not work.
+        // `paid` is this stroke's payment and not a reading of the cell —
+        // nothing in the cover branches on it.
         let mut paid = false;
-        // A cell's occupants are a simplex, not a clique: they all contain
-        // this cell, so every cycle among them bounds, and k occupants are
-        // k−1 meets. Written as k(k−1)/2, each meet became a face and a loop
-        // of the pair form — 1 806 of one form's 1 989 faces, 1 901 loops.
-        // The cycles that carry a cover's holonomy span DISTINCT cells and
-        // are untouched.
+        // A cell's occupants are a SIMPLEX, not a clique: they all contain
+        // this cell, so every cycle among them bounds and k occupants are
+        // k−1 meets. The cycles that carry a cover's holonomy span DISTINCT
+        // cells and are untouched by this.
         for w in here.windows(2) {
             let [ka, kb] = w else { continue };
             'meet: {
@@ -577,11 +546,11 @@ pub(crate) fn cover_deformation(
                     }
                     paid = true;
                 }
-                // THE MEET IS RECORDED AND NOT READ. Two pieces overlap;
-                // that is a 1-simplex of the nerve and nothing more. The
-                // transition between them is the FACE of the two vertices
-                // they become, and the class of a cycle of faces is the
-                // form's loop holonomy — both the form's to compute, once,
+                // THE MEET IS RECORDED AND NOT READ (L23c). Two pieces
+                // overlap; that is a 1-simplex of the nerve and nothing
+                // more. The transition between them is the FACE of the two
+                // vertices they become, and the class of a cycle of faces
+                // is the form's loop holonomy — both the form's to compute,
                 // over the whole cycle rather than edge by edge here.
                 cover.meets.insert(&key, ());
             }
@@ -599,9 +568,3 @@ pub(crate) fn cover_deformation(
     });
     Ok(cover)
 }
-
-// `rotor_of_transition` was here. It classified a meet's transition by the
-// transition's sensor-plane block alone, which reads a translation or a
-// dilation as the identity and mis-orders a rotation about any point but
-// the origin. `cech::classify` replaces it — the same reader the court
-// uses, taking the rotor and the carriage rather than a versor.

@@ -260,6 +260,55 @@ fn the_reading_is_the_forms_and_is_stable() {
     assert_eq!(one.loops.len(), two.loops.len(), "the same loops");
 }
 
+/// One cover run to the end of its pieces: the cover, its tally, and how
+/// many pieces the input peeled into.
+fn measured_cover(
+    a: &Grid,
+    b: &Grid,
+) -> (crate::transducer::family::cover::Cover, crate::transducer::family::cover::CoverTally, usize)
+{
+    use crate::transducer::family::cover::{cover_deformation, take_cover_tally};
+    use crate::transducer::family::cursor;
+    use crate::transducer::family::pieces::pieces_of;
+    let (ia, ib) = (perceive(a), perceive(b));
+    let ([input], [image]) = (ia.as_slice(), ib.as_slice()) else {
+        panic!("each fixture perceives one body on each side")
+    };
+    cursor::clear();
+    let _ = take_cover_tally();
+    let cover = cover_deformation(
+        input,
+        image,
+        None,
+        &mut crate::physics::Physics::default().stroke_n(1 << 20),
+    )
+    .expect("a cover that runs to its end");
+    let t = take_cover_tally();
+    let ins = pieces_of(&input.cells, None).fiber(ROOT).count();
+    (cover, t, ins)
+}
+
+/// 50.8 — Φ(U) IS ONE SET, exactly as Φ⁻¹(V) is. The two peels are under
+/// no obligation to agree on granularity, so a carried piece whose image
+/// lies across several output pieces is assembled whole and carried once.
+///
+/// Skipping that case instead refuses every carriage where the output peel
+/// is finer than the input peel — which is the same fault the pullback's
+/// own preimage exists to avoid, taken in the other direction. It is not
+/// rare: on `notched`, where the output peel splits the block into shells,
+/// EVERY propagation attempt landed across two output pieces, so the pass
+/// made no attempt at all and the skip was silent.
+#[test]
+fn an_image_across_several_output_pieces_is_assembled_and_carried_once() {
+    let (a, b) = notched();
+    let (_, t, _) = measured_cover(&a, &b);
+    assert!(
+        t.propagated > 0,
+        "the pass attempts the pieces the pullback left: {} attempts",
+        t.propagated
+    );
+}
+
 /// 50.8, rule 1 — PASS (b) PROPAGATES, IT DOES NOT SEARCH. The second pass
 /// tried every output piece of the unplaced piece's own shell kind and hue
 /// and asked `carriage` to decide each try: `ins × outs` versor solves over
@@ -273,29 +322,6 @@ fn the_reading_is_the_forms_and_is_stable() {
 /// was a piece the correspondence did not put there.
 #[test]
 fn cover_attempts_are_placed_times_unplaced() {
-    use crate::transducer::family::cover::{cover_deformation, take_cover_tally};
-    use crate::transducer::family::cursor;
-    use crate::transducer::family::pieces::pieces_of;
-
-    let measured_cover = |a: &Grid, b: &Grid| {
-        let (ia, ib) = (perceive(a), perceive(b));
-        let ([input], [image]) = (ia.as_slice(), ib.as_slice()) else {
-            panic!("each fixture perceives one body on each side")
-        };
-        cursor::clear();
-        let _ = take_cover_tally();
-        let cover = cover_deformation(
-            input,
-            image,
-            None,
-            &mut crate::physics::Physics::default().stroke_n(1 << 20),
-        )
-        .expect("a cover that runs to its end");
-        let t = take_cover_tally();
-        let ins = pieces_of(&input.cells, None).fiber(ROOT).count();
-        (cover, t, ins)
-    };
-
     // TWO BODIES THAT DO NOT MEET. No cell of the input stands under any
     // cell of the image, so the pullback names no preimage and places
     // nothing; with nothing placed there is nothing to propagate.

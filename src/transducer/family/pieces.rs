@@ -41,11 +41,17 @@ pub(crate) fn piece_key(kind: ShellKind, hue: u8, support: &[(i64, i64)]) -> Vec
     k
 }
 
-/// The address of a preimage: the pieces it is assembled from, written
-/// out length-prefixed in key order. A preimage of ONE piece is that
-/// piece and keeps its own address, so the pullback and the structural
-/// pass name the same cover piece the same way.
-pub(crate) fn preimage_key(parts: &[Vec<u8>]) -> Vec<u8> {
+/// THE ADDRESS OF AN ASSEMBLED SET OF PIECES: the pieces it is assembled
+/// from, written out length-prefixed in key order. A set of ONE piece is
+/// that piece and keeps its own address, so a carriage onto a whole piece
+/// is named the same way whichever pass placed it.
+///
+/// Both passes assemble, and in opposite directions: the pullback takes
+/// Φ⁻¹(V) over the input pieces under an output piece's cells, and the
+/// propagation takes Φ(U) over the output pieces under a carried piece's
+/// image. Neither requires the two peels to agree on granularity, which
+/// is why each is assembled whole and carried once (50.8).
+pub(crate) fn assembly_key(parts: &[Vec<u8>]) -> Vec<u8> {
     match parts {
         [only] => only.clone(),
         many => {
