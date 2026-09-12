@@ -159,8 +159,10 @@ impl Entity {
     pub fn quote(&mut self) -> io::Result<YieldQuote> {
         let thought_charts: Vec<crate::transducer::stalk::Invariant> = {
             let mut charts = Vec::new();
-            // index: held bubbles; each cover is a peel of its invariant
-            for (_, b) in self.contemplation.bubbles.fiber(crate::network::nerve::ROOT) {
+            // THE BUBBLES THIS MIND HOLDS, all of them: the charts it asks
+            // a quote on are the charts it is thinking about, and one left
+            // out is a thought the book is never asked about.
+            for (_, b) in self.contemplation.bubbles.scoped() {
                 let inv = crate::transducer::stalk::invariant(&b.remainder);
                 let mut cur = inv;
                 loop {
@@ -182,7 +184,7 @@ impl Entity {
         let bubbles: Vec<Bubbled> = self
             .contemplation
             .bubbles
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(_, b)| (b.remainder.to_vec(), b.volume))
             .collect();
         for (remainder, mag) in &bubbles {

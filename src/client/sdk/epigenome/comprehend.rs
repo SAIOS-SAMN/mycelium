@@ -19,7 +19,7 @@ impl Epigenome {
         }
         let drop: Vec<Vec<u8>> = self
             .recollections
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .filter(|(_, (addrs, _))| addrs.iter().any(|a| a.as_slice() == gone.as_bytes()))
             .map(|(k, _)| k)
             .collect();
@@ -452,8 +452,11 @@ impl Epigenome {
     pub(crate) fn resolve_withheld(&mut self, arrived: &Element) {
         let addr = arrived.address();
         let citing: Vec<Vec<u8>> = match self.waiting_on.remove(&addr) {
+            // `waiting_on.remove(&addr)` is the descent: these are the
+            // words that were waiting on THIS address, and all of them
+            // are released by its arrival.
             Some(citers) => citers
-                .fiber(crate::network::nerve::ROOT)
+                .scoped()
                 .map(|(k, _)| k)
                 .collect(),
             None => return,

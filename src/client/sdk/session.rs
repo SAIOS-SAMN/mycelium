@@ -160,8 +160,11 @@ impl Session {
         let addrs = self.addrs.borrow();
         // Impedance is a coordinate on the address entry; occluded hyphas
         // drop out of rooms rather than rebuilding a live trie.
+        // The rooms this voice has learned, one entry per hypha: bounded by
+        // the mesh, and the occluded ones are dropped from the copy rather
+        // than a second live trie being kept beside it.
         let mut open_rooms = crate::network::nerve::Keyed::new();
-        for (id, room) in rooms.fiber(crate::network::nerve::ROOT) {
+        for (id, room) in rooms.scoped() {
             if addrs.get(&id).is_some_and(|a| self.occluded_at(a)) {
                 continue;
             }
@@ -255,7 +258,7 @@ impl Session {
 
     /// The hyphas this entity knows.
     pub fn peers(&self) -> Vec<String> {
-        self.peers.fiber(crate::network::nerve::ROOT).map(|(_, a)| a.clone()).collect()
+        self.peers.scoped().map(|(_, a)| a.clone()).collect()
     }
 
     pub fn add_peer(&mut self, addr: &str) {
@@ -533,8 +536,10 @@ impl Session {
                 (Ok(_), false) => {
                     // A success anywhere means the aperture is open: every
                     // hypha's Z decays, and the working path is clear.
-                    let all: Vec<Vec<u8>> =
-                        r.fiber(crate::network::nerve::ROOT).map(|(k, _)| k).collect();
+                    // EVERY hypha's Z decays on a success anywhere, which
+                    // is the claim this reading makes: the resistance
+                    // carrier holds one entry per address dialled.
+                    let all: Vec<Vec<u8>> = r.scoped().map(|(k, _)| k).collect();
                     for k in all {
                         if let Some(z) = r.get_mut(&k) {
                             // A hypha at no resistance decays to none: the

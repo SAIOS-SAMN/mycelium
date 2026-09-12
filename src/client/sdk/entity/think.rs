@@ -7,8 +7,9 @@ impl Entity {
     /// The Čech obstructions measured after fetch: fetched words whose
     /// transition to a held word on the same fibre did not vanish.
     pub fn obstructions(&self) -> Vec<(Vec<u8>, Element)> {
+        // This mind's standing obstructions, which is what it is asked for.
         self.obstructions
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(a, g)| (a, g.clone()))
             .collect()
     }

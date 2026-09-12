@@ -137,7 +137,7 @@ impl Entity {
         let dialect_addrs: Vec<Vec<u8>> = self
             .epigenome
             .dialect
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(a, _)| a)
             .collect();
         let word_of = |i: usize| -> Option<&Element> {
@@ -444,7 +444,7 @@ impl Entity {
         // words that COULD be one vertex with this one; the exact test
         // decides over that fiber and nothing else.
         if let Some(fiber) = vertex_stratum(word).and_then(|at| self.taught_at.get(&at)) {
-            let candidates: Vec<Vec<u8>> = fiber.fiber(crate::network::nerve::ROOT).map(|(k, _)| k).collect();
+            let candidates: Vec<Vec<u8>> = fiber.scoped().map(|(k, _)| k).collect();
             for a in candidates {
                 if self.taught_up.get(&a).is_some_and(|e| e.same_vertex(word)) {
                     return true;

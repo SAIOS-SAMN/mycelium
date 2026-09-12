@@ -18,7 +18,7 @@ entity.hold_chain(vec![(9, 0, 1, 2)]);
 let idea = entity
     .contemplation
     .bubbles
-    .fiber(crate::network::nerve::ROOT)
+    .scoped()
     .next()
     .map(|(k, _)| k)
     .expect("idea");

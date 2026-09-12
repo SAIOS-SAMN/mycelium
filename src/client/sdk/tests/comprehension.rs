@@ -97,7 +97,7 @@ assert!(
 );
 assert_eq!(epi.genome_len(), 0, "withheld does not enter the genome");
 assert!(
-    epi.dialect.fiber(crate::network::nerve::ROOT).any(|(_, d)| d.withheld),
+    epi.dialect.scoped().any(|(_, d)| d.withheld),
     "the dialect holds the withheld sentence"
 );
 }
@@ -170,7 +170,7 @@ assert_eq!(
 );
 assert!(
     !epi.dialect
-        .fiber(crate::network::nerve::ROOT)
+        .scoped()
         .any(|(_, d)| d.withheld),
     "the citing sentence is no longer withheld"
 );
@@ -347,7 +347,7 @@ assert!(matches!(
 ));
 let d = epi
     .dialect
-    .fiber(crate::network::nerve::ROOT)
+    .scoped()
     .next()
     .map(|(_, d)| d)
     .expect("withheld dialect");

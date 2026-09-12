@@ -185,8 +185,10 @@ impl Epigenome {
     }
 
     pub fn recollections(&self) -> Vec<(Vec<Vec<u8>>, u64)> {
+        // This voice's own recollections, all of them: the reading is what
+        // it holds, and the shed is what bounds the carrier.
         self.recollections
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(_, (a, n))| (a.clone(), *n))
             .collect()
     }

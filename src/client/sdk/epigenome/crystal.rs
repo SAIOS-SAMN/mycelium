@@ -50,8 +50,9 @@ impl crate::transducer::family::Crystal for Epigenome {
         let Some(bucket) = self.by_moduli.get(chart.key().as_bytes()) else {
             return Vec::new();
         };
+        // The bucket a keyed read just reached: one chart's crystals.
         bucket
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .filter_map(|(a, ())| {
                 let st = self.standing_of(&a)?;
                 let held = self.working_word(&a)?;

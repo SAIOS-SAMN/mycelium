@@ -67,9 +67,11 @@ impl Epigenome {
         let Some(aperture_k) = self.aperture_k(now_k) else {
             return Vec::new();
         };
+        // Every dialect entry is asked whether it has stood past the
+        // aperture -- that IS the shed -- and the filter is the reading.
         let drop: Vec<Vec<u8>> = self
             .dialect
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             // An entry last used at a K this mind has not reached is not
             // idle; only what has stood past the aperture is shed.
             .filter(|(a, d)| {

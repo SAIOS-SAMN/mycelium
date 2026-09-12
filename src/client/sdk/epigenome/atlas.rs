@@ -227,7 +227,9 @@ impl Epigenome {
         let Some(bucket) = self.by_moduli.get(chart.key().as_bytes()) else {
             return Vec::new();
         };
-        bucket.fiber(crate::network::nerve::ROOT).map(|(a, ())| a).collect()
+        // `by_moduli.get(chart)` is the descent: the addresses on that
+        // chart, which is what this function is asked for.
+        bucket.scoped().map(|(a, ())| a).collect()
     }
 
     pub fn take_promoted(&mut self) -> Vec<Vec<u8>> {
@@ -290,11 +292,11 @@ impl Epigenome {
         H: Fn(&crate::transducer::stalk::Invariant, &[(i64, i64, u8, u8)]) -> Vec<crate::transducer::sentence::HeldCite>,
     {
         let n = self.genome.len();
-        let dialect_addrs: Vec<Vec<u8>> = self
-            .dialect
-            .fiber(crate::network::nerve::ROOT)
-            .map(|(a, _)| a)
-            .collect();
+        // THE DIALECT IS THE LANGUAGE ABOVE THE GENOME, and a deconstruction
+        // reads through all of it: a dialect word left out is a word this
+        // voice holds and cannot speak through. The carrier is bounded by
+        // the shed, which is what `shed_except` is for.
+        let dialect_addrs: Vec<Vec<u8>> = self.dialect.scoped().map(|(a, _)| a).collect();
         let mut loc: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
         for (j, a) in dialect_addrs.iter().enumerate() {
             loc.insert(a, n + j);
