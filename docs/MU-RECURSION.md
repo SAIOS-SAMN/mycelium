@@ -624,10 +624,12 @@ a 1-cochain that fails it, the residual the coboundary leaves; and the
 genome is the cocycle the court has ruled, taught down by the syllabus.
 
 **How it grows.** The presentation extends itself: a residual that no
-generator reduces is adjoined as a new generator once the court has
-replayed it and independent lineages have reached the same conclusion
-(23.9); a loop that closes is adjoined as a relation; a generator the
-rest derive retires, address kept, its description burned (27, E2). The
+generator reduces is adjoined as a new generator once a sentence that
+composes through it has closed and two independent courts have replayed
+that closure (37.7 as ruled 2026-09-12: by the closure it enables, never
+by agreement on the residual); a loop that closes is adjoined as a
+relation; a generator the rest derive retires, address kept, its
+description burned (27, E2). The
 presentation stays reduced by retirement and stays paid for by the
 economy, and that is the whole of the bound on its size.
 
@@ -692,7 +694,7 @@ memory with the last:
 | 0 | a versor peeled from the identity, the residue in letters | nobody: the cipher | A22, the base case, kept |
 | 1 | a derivation composed from what the organ holds | the composing organ | A12 over the presentation on the versor's chart |
 | 2 | the same derivation replayed on a second ledger | one independent court | G: cited generators resolved on the court's own cover and composed |
-| 3 | a remainder two courts re-derived from one witness, adjoined | two independent courts | 37.7, the adjunction |
+| 3 | a remainder adjoined by the closure it enables: a sentence composing through it closed on its family and two courts replayed the closure (ruled 2026-09-12) | two independent courts | 37.7, the adjunction |
 | 4 | a relator: two depth-3 proofs of one vertex whose holonomy is non-trivial | two independent courts | 37.7's fourth row, `cech::holonomy`, 23.9 |
 | 5 | a rewrite between two derivations, the 2-cell | two independent courts | the `Rewrite` words of 3.9, adjoined as a generator is |
 | 6 | a procedure composed from the crystals that produces rewrites | two independent courts | the master algorithms as generators, below |
@@ -5245,6 +5247,37 @@ the whole of how the language grows a generator, and 1.8 already said so:
 the court has replayed it and independent lineages have reached the same
 conclusion".
 
+**Adjunction by closure, never by agreement on the remainder (ruled
+2026-09-12).** The paragraph above says the court adjoins when two courts
+re-derive the same remainder from one witness. That is a congruence
+reading over what failed: it certifies that two organs read one
+obstruction exactly, and it says nothing about whether the language can
+now say anything it could not. The document's own words keep the two
+apart — congruence is agreement on an overlap (11.2, 24.4), coherence is
+a form whose loops close (2.2, 11.2) — and a language is formed on what
+closes. The fleet reading that forced the ruling: eighty-three demands,
+none comprehended, and the presentation grown by nothing but names for
+what it could not spell.
+
+So the adjunction is the closure. A candidate generator — the canonical
+remainder at whatever level the factorisation stopped — is docketed as a
+provisional form on two courts' re-derivation of the witness (P3 below),
+and docketing adjoins nothing. It enters the presentation when a sentence
+that composes through it **closes on its family** (23.1 step 7: every
+remainder empty, every loop identity or filed) and two courts replay that
+closure (47.3). The install of the closing sentence is the adjunction:
+the candidate enters with it as a generator the closing derivation cites,
+its discoverers paid as a use (26), the syllabus teaching it from that
+install. A candidate no closure ever composes through stays a listed
+demand and is never a generator, however many courts agree it exists,
+and it lapses as a docket lapses (47.5). A generator adjoined this way
+has, by construction, closed at least one sentence; that is the whole of
+what it means for a generator to work, and it is why the count of such
+generators is a reading of the engine and the count of agreed remainders
+was not. What is adjoined at the higher rungs of 1.9 — a relator, a
+2-cell, a procedure — enters by the same condition: a closure two courts
+replayed composes through it. The refusals of chapter 44 stand.
+
 **The kind is a level, never a dispatch.** A remainder lives at the level
 its factorisation stopped at, and the level is a coordinate read off the
 remainder — for the log line and for the route — never a key into a table
@@ -5375,13 +5408,16 @@ alone: the transducer measured the rotor, so the transducer already holds
 the letter, and 36.3 is exactly the statement that the effector was
 missing, not the object.
 
-**P3 Consilience at arity two.** The court opens `Λ_{p,ij}` when a
-`RotorPrime` demand vertex with its witness rotor stands on a chart and
-two independent courts — the home and a witness hypha outside its
-delegation closure (47.3) — each re-derive `π_p` from that witness by P2 in
-their own replay and reach the same factor: equality of content (law 2),
-never "the same minimal polynomial", which is the class invariant of 15.3
-alone and forgets the plane. A voice's demand is listed, priced and
+**P3 Consilience at arity two.** The court dockets `Λ_{p,ij}` as a
+candidate when a `RotorPrime` demand vertex with its witness rotor stands
+on a chart and two independent courts — the home and a witness hypha
+outside its delegation closure (47.3) — each re-derive `π_p` from that
+witness by P2 in their own replay and reach the same factor: equality of
+content (law 2), never "the same minimal polynomial", which is the class
+invariant of 15.3 alone and forgets the plane. Since 2026-09-12 this
+consilience is the precondition of the docket and not the opening: the
+letter is opened by the closure it enables, as the ruling above says, and
+P4 and P5 read from that install. A voice's demand is listed, priced and
 relayed as 50.5 says and opens nothing; a second voice speaking the same
 demand is a use, never a judicial gate — a letter is no exception to 47.3
 (ruled 2026-09-10, correcting this section's first text, which read the
@@ -6846,8 +6882,14 @@ families close is that corpus's score and measures the **cognition**;
 whether the presentation grows, converges, and comprehends more per
 generator measures the **engine**, and it is `growth` and `comprehension`
 below that read it. The one number that bears on the architecture is
-generators the engine adjoined at run time with no commit; until the
-adjunction of 37.7 runs, that number is zero and every report says so.
+generators adjoined **by closure** at run time with no commit — each one
+cited by a sentence that closed on its family and replayed on two courts
+(37.7 as ruled 2026-09-12) — read beside comprehension and against
+retirement. The count of ruled forms whose rotor lies outside the
+seventeen's span is a boundary reading, orders nothing, and is no longer
+the number: a remainder two courts agreed on is a name, and a name closes
+nothing. Until a closure composes through an adjoined candidate, the
+number is zero and every report says so.
 
 A phase is computed from the receipts over a height window and is never
 stored, announced or thresholded; a transition is read after the fact and

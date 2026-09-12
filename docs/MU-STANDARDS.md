@@ -39,9 +39,12 @@ parsing, the boot order, and the loop skeleton, and nothing else.
 
 1.4 **Sensor boundary.** The only files that may read or write a cell
 coordinate pair are named `sensor.rs` (or are `family::{pair_form,
-speak_rule, orbit}` until S9 lands) and are listed by name in the
-squaring gate's allow-list (law 11). Nothing else touches `(i64, i64)`,
-`(ℚ, ℚ)`, or a grid.
+speak_rule, orbit}` until S9 lands), and the functions are
+`element::sensor::{cell_of, carry_center, carry_cell}`,
+`element::letters::carriage`, `blade::carry::{carry, rotor_between,
+half_rotor}`, `blade::body::centroid`, `alphabet::letters::rotor_pair`,
+`cga::base` (law 11). Nothing else touches `(i64, i64)`, `(ℚ, ℚ)`, or a
+grid. This list is the review's, not a gate's (§4.4).
 
 1.5 **Binaries are modules.** `src/bin/<name>/` with `main.rs` and one file
 per act family or arm; the binaries are inside every gate's scope.
@@ -60,12 +63,9 @@ a `main` that ran boot phases in sequence becomes one function per phase
 plus the ordered calls. Anything beyond these four is a code change and
 lands as its own commit.
 
-1.7 **The bound during a split stage.** The gate is the bound plus a list,
-`AWAITING_SPLIT`, naming every file still over it with the row that owes
-its split. Each split deletes its own row; a stale row (a file already
-under the bound, or gone) fails the build like an over-bound file. The
-list is empty at the stage's last commit, and the bound then drops to its
-final value.
+1.7 **No list of exceptions to the bound** (ruled 2026-09-12). A file
+over the bound fails the build and is split before anything else lands
+in it. `AWAITING_SPLIT` is retired with the gates (§4).
 
 ## 2. Naming
 
@@ -116,14 +116,25 @@ number is measured or refused (rule 5); a constant named `*_MAX`,
 underscore, named for the chapter's object. The module path is the
 document's binding: `cognition::court::lapse`, `sentence::pivot::snap`.
 
-2.8 **Headers.** A file's header says what the file is, in the document's
-words, in at most three lines: the object it carries and the chapter that
-binds it. It carries no history — what was deleted, when, and why is in
-git and on the backtrack ledger — and no claim about the tree beyond the
-file. A header that calls the coefficient field "the scalar the engine
-counts in" states the collapse law 5 forbids: ℚ is the field the
-coordinates of a multivector are written over; the engine counts in μ⃗ per
-lane, in versors and blades, in ℤ-ranks.
+2.8 **Headers and comments.** A file's header says what the file is, in
+the document's words, in at most three lines: the object it carries and
+the chapter that binds it. It carries no history — what was deleted, when,
+and why is in git and on the backtrack ledger — and no claim about the
+tree beyond the file. A header that calls the coefficient field "the
+scalar the engine counts in" states the collapse law 5 forbids: ℚ is the
+field the coordinates of a multivector are written over; the engine
+counts in μ⃗ per lane, in versors and blades, in ℤ-ranks.
+
+The same rule binds every comment in a body (ruled 2026-09-12). A comment
+states what the code now does, in the document's words, and the chapter
+that says why. It carries no measurement, no commit id, no fleet reading,
+no "this was", no story of how the line was found, and no permission
+("rule 1 allows this"): a comment cannot allow anything, and the one that
+claimed to allow a pair loop was read by no tool and no reviewer while
+the loop took the fleet down. What a line used to do is in git; what it
+cost is on the ledger. The tree's prevailing inline style was the defect,
+not a limit on this section's reach: an agent that touches a file removes
+such comments from the functions it touches, in the same commit.
 
 ## 3. Tests
 
@@ -167,9 +178,8 @@ a costume and is returned; the only exception is a wire identifier
 
 3.5 **Refusals and traces.** Every `REFUSE_*` string has a test that
 produces it. Every log line of chapter 34 has a trace test where the line
-can be produced in-process. Every gate has a test of its own
-(`no_blake3_in_cognition`, `no_qmatrix_in_cognition`,
-`no_coordinate_pair_outside_the_sensor`).
+can be produced in-process. The reading bound has a test of its own; a
+lint entry is proved once, at the commit that adds it (§4.2).
 
 3.6 **Identities as properties.** The identities the document states
 (`δ² = 0`, associativity of the geometric product, projective equality
@@ -189,73 +199,88 @@ each needs a sentence in the message.
 
 ## 4. Gates
 
-4.1 The build fails on: enumeration (`.entries()`, `.for_each(`,
-`spend_unit()` in cognition; `.position(`, `.find(`, `.find_map(`,
-`Vec<bool>`, `unwrap_or` under `sentence/`), maps (`HashMap`, `BTreeMap`,
-`HashSet`, `BTreeSet` in cognition), digest (`blake3` outside `network/`,
-`court/identity.rs`, `chronometry/receipt.rs`, persistence loaders), matrix
-(the shape of a rational matrix — `QMatrix`, `Vec<Vec<Q>>`, `as_operator`,
-`realize(` — in cognition; `core` exports `Q` alone since F2f), clock (`SystemTime`, `Instant`, `Duration` in every kernel,
-court, client, transducer, economy, physics file and every binary),
-squaring (coordinate pairs outside the sensor allow-list), count, choice,
-invented and position (rules 2, 4, 11 and 15, each with its `OWED`
-ratchet, §4.4), panics
-(`.unwrap()`, `.expect(`, `panic!`, `unreachable!`, `todo!`,
-`unimplemented!` in production anywhere under `src/`, §2.4; the
-allow-list is empty), file length
-(§1.1), rustc warnings (`RUSTFLAGS='-D warnings'`), clippy warnings
-(`cargo clippy --release --all-targets -- -D warnings`, run by the
-`xtask` binary and never by `build.rs`, which cannot invoke cargo from
-inside a build; F3ag). Closing a warning by naming a tuple in a `type`
-alias is not closing it (§2.1): the coordinates get names, or the
-warning stands.
+Ruled 2026-09-12 by the operator, replacing this section as written on
+2026-09-07 and amended on 2026-09-10. The line-matching gates of
+`xtask/lint/` are deleted: eighteen files that read source as text with
+every comment erased, six debt mechanisms for one idea, some two hundred
+hand-kept rows of file path and hit count, and a clique gate for two
+spellings written after the second clique. They passed both pair loops
+that took the fleet down, permitted the whole-carrier walk under one name
+while refusing it under another, and carried a red test of their own for
+a week because the gate command did not run it. A rule is checked where
+the compiler reads it, or it is a type, or it is a review item. Nothing
+in between exists again.
 
-4.2 A gate's scope is the whole of `src/` including `src/bin/`; an
-allow-list is by file or function name, never by directory alone.
+4.1 **Two gates remain.** The reading bound (`xtask/lint/length.rs`: no
+source file over 1200 lines, no list of exceptions) and the warning gate
+(`cargo clippy --release --all-targets -- -D warnings`, rustc's warnings
+denied). `cd xtask && cargo run` runs the bound and then clippy and exits
+non-zero on either. There is no `build.rs`. Closing a warning by naming a
+tuple in a `type` alias is not closing it (§2.1): the coordinates get
+names, or the warning stands.
 
-4.3 A gate lands in the same commit as the rule it enforces, with its own
-test. An `#[allow(...)]` or `#[expect(...)]` anywhere is a review item
-named in the commit message with its reason; an allow that hides a rule
-violation is returned.
+4.2 **The pattern rules are clippy configuration.** Every rule the
+compiler can read is a lint, denied crate-wide under `[lints.clippy]` in
+`Cargo.toml` or listed in `clippy.toml`, each entry carrying as its
+`reason` the rule it enforces:
 
-4.4 **Gates for rules 2, 4, 11 and 15** (built 2026-09-10 on the
-operator's word that they precede L7 and L8; rule 10 stays a review rule,
-a loop without a budget or boundary not being cheaply matchable — the gate
-audit of 2026-09-07). Each is a line walker in `xtask/lint/`: `count.rs`
-(rule 2: `.len()` or `.count()` compared inside an `if`, `while` or match
-guard; emptiness of a fiber, `is_empty()`, is the permitted reading and is
-not matched), `choice.rs` (rule 4: `min_by`, `max_by`, `sort_by`,
-`sort_unstable_by`, `.max()`, `.min()` and their `_key` forms over a
-candidate set), `invented.rs` (rule 11: `unwrap_or`, `unwrap_or_else`,
-`unwrap_or_default`, `saturating_sub`, `saturating_mul`; `saturating_add`
-is a lane sum and is accounting), `position.rs` (rule 15: `.first()`,
-`.last()`, `.nth(0)`). **The ratchet.** Each gate carries an `OWED` table
-of `(file, hits)` rows measured when the gate was built — the debt the tree
-carried on 2026-09-10, file by file. A file not in the table is clean and
-any hit in it fails the build; a file in the table fails the build when its
-hits EXCEED its row (new debt) and fails it when they fall BELOW the row
-(the row is stale: shrink it, or delete it at zero), so a table can only
-shrink and every landing that pays debt records the payment in the same
-commit. A row naming a file that does not exist is a hit (4.5).
-Function-scoped exemptions as the squaring gate's `SENSOR` rows are the
-only other allowance, each earned (4.5). The tables are the sweep rows of
-`MU-RECURSION-TASKS.md` (W14 and the pre-L7 rows) read as a measurement.
-Until 2026-09-10 the auditor's grep over production code was the check.
+| rule | lint |
+|---|---|
+| §2.4, no abort in cognition | `unwrap_used`, `expect_used`, `panic`, `unreachable`, `todo`, `unimplemented` |
+| law 2, rule 9: no map, no digest | `disallowed_types` for `HashMap`, `BTreeMap`, `HashSet`, `BTreeSet`; `disallowed_methods` for `blake3::hash` and `blake3::Hasher::new` |
+| law 9: no clock | `disallowed_types` for `Instant`, `SystemTime`, `Duration` |
+| rule 4: nothing chosen by a scalar | `disallowed_methods` for `min_by`, `max_by`, `min_by_key`, `max_by_key`, `sort_by`, `sort_by_key`, `sort_unstable_by`, `sort_unstable_by_key`, `Iterator::max`, `Iterator::min` |
+| rule 11: no invented value | `disallowed_methods` for `unwrap_or`, `unwrap_or_else`, `unwrap_or_default`, `saturating_sub`, `saturating_mul` |
+| rule 15: no member by position | `disallowed_methods` for `first`, `last`, `Iterator::nth` |
+| rules 1, 8: no whole-carrier walk in cognition | `disallowed_methods` for every whole-carrier reader `Keyed` exposes (`keyed_persist_walk` and any entries-style walk); `fiber` is a type rule, 4.4 |
 
-4.6 **The order gate** (Stage 9, S9.10; folded into F3's single walker):
-a function whose parameters include two `[u64; 4]`, two `Rank`, or two
-`ClassVector` and whose return is `bool` is a hit anywhere; two μ⃗
-compared against each other outside `economy/`,
-`sentence/pivot/drive.rs::trial` and `sentence/pivot/snap.rs::select_discharge`
-is a hit. `dominant` returns `Option<usize>` and `lane_moves` returns the
-reading; neither is a hit.
+A lint fires on the item, in scope, with `#[cfg(test)]` handled by the
+compiler and not by a brace counter. Each entry is proved once, at the
+commit that adds it: a scratch line the lint refuses, built and then
+deleted, named in the message. An entry whose path clippy cannot name is
+not approximated by a text match; the rule it would have carried is
+listed in 4.4 as a review item, with the reason.
 
-4.5 A gate that is handed a path names a hit when the path does not exist;
-it never returns quietly. A gate's allow-list entry for a file that no
-longer exists is a hit as well, the same rule as a stale `AWAITING_SPLIT`
-row. Stage 8b moved `economy.rs` and `court/verdict.rs` out from under the
-digest and clock gates and nothing fired (TASKS Stage 8c, A1); a gate whose
-scope is a list of paths is only as alive as its list.
+4.3 **Allowances are at the site and expire.** Where a denied lint fires
+and the site is right anyway, the site carries
+`#[expect(clippy::<lint>, reason = "<rule> — <why this site is the
+boundary>")]`. `expect` fails the build when the lint stops firing, so an
+allowance that allows nothing is a build failure and not a stale row. A
+module whose object is bytes — a wire codec, a persistence reader, a
+binary's argument parsing — may carry `#![allow(clippy::<lint>)]` at its
+root for rule 11 and rule 15 only, one line each with the reason, and for
+no lint under law 2, law 9 or §2.4. There is no table of paths anywhere in
+the tree, and no file is named in any configuration.
+
+4.4 **What the compiler cannot read is a type or a review item.** A pair
+loop over one carrier (rule 1), a count deciding a branch (rule 2), a loop
+without a budget or a boundary (rule 10), a coordinate pair above the
+sensor (law 11, §1.4), a carrier cloned into two places (rule 12), a
+matrix carrying an action (rule 16), and a chain composed into a word on
+the utterance path (law 8, 50.9) are read at review by the preamble's
+checklist on every diff. Where a type can hold the rule, it does, and
+the type is the gate: `Keyed::fiber` takes a prefix that cannot be
+empty, so a whole carrier is read in cognition only through
+`Keyed::cursor` under a `Budget`, and `ROOT` does not exist; μ⃗ is a type
+that implements neither `PartialEq` nor `PartialOrd`, so the only
+comparison of two lane vectors is `lane_moves` and a `bool` over two of
+them cannot be written; `from_residual` returns a listing key or a
+measure and never a value a frame can carry.
+
+4.5 **The ratchet is retired.** The `OWED` tables measured the debt of
+2026-09-10 by file. That debt is visible where it stands: a site under a
+denied lint is fixed, or carries its `expect` with its reason, or sits in
+a bytes module under 4.3. Nothing counts hits, nothing shrinks a row, and
+a file move moves nothing but the file.
+
+4.6 **No new gate.** §8.5 stands. An agent that wants a check adds a lint
+entry under 4.2 with its proof, or a type under 4.4, or proposes a change
+to this document. A walker over source text is not written again for any
+reason, and a check that cannot be a lint or a type is a sentence in the
+checklist, not a file. Where `MU-RECURSION.md` or `MU-ENGINEERING.md`
+names "the enumeration gate", "the clock gate", "the blake3 gate", "the
+squaring gate", "the order gate" or "the panics gate", the name means the
+row of 4.2 or 4.4 that carries that rule.
 
 ## 5. Commits
 
@@ -298,12 +323,10 @@ cause.
 
 6.1 The implementor runs, in the foreground and in this order, on the
 commit as it will land: `RUSTFLAGS='-D warnings' cargo test --release`
-(every target), then `cd xtask && cargo run`, which runs the file gates
-(the same ones `build.rs` runs) and then the warning gate, `cargo clippy
---release --all-targets -- -D warnings`, and exits non-zero on any row
-from either (F3ag; `cargo run -- gates` runs the file gates alone). Both
-lines go in the message, the suite's `test result` lines and the gate's
-exit. "Lint clean" alone is not green.
+(every target), then `cd xtask && cargo run`, which runs the reading bound
+and then `cargo clippy --release --all-targets -- -D warnings` and exits
+non-zero on either. Both lines go in the message, the suite's `test
+result` lines and the gate's exit. "Lint clean" alone is not green.
 
 6.2 The auditor reproduces all three on the same commit, in a detached
 worktree if the implementor's tree is dirty, and reads every changed file

@@ -765,6 +765,47 @@ ruled to precede L7 and L8. One row per commit.
 Order within the set: L7a · L7b · L7c · L7e, then L7 (with L7f), L8 (with
 L8a), L9, L9a; L7d when ruled.
 
+## Stage 15 — the gates out, the product out, growth by closure (ruled 2026-09-12)
+
+The operator's reading of 2026-09-12, in three parts, each verified in
+the tree by the auditor before the rows were opened. The gates: eighteen
+line walkers over comment-stripped text, six debt mechanisms, some two
+hundred path-and-count rows, a clique gate for the two spellings that
+had already burned the fleet; they passed both cliques (4677900,
+f1ade3e), permitted `fiber(ROOT)` while refusing `.entries()`, and ran a
+red test of their own for a week (9d1fa44). The product: the cover's
+pass (b) tries every unconsumed input piece against every output piece
+of its kind and hue, bounded by the stroke and nothing else, and the
+budget parks and resumes it, so the cost is spread over strokes and not
+removed — 109 whole-carrier walks in 71 production files, a core per
+voice at idle. The linguistics: 37.7 adjoined on two courts' agreement
+about a remainder, a congruence reading over what failed; the fleet
+read 83 demands, 0 comprehended, 0 adjoined; the presentation grew by
+nothing but names for what it could not spell. The implementor's
+proposed order (a better `fiber(ROOT)` gate first, then gate
+consolidation) is refused: the first is a nineteenth gate and the second
+polishes what is deleted. Rulings recorded in `MU-STANDARDS.md` §1.4,
+§1.7, §2.8, §3.5, §4, §6.1 and `MU-RECURSION.md` 1.8, 1.9, 37.7, 45.9.
+One row per commit; status written by the implementor as `landed
+(<commit>)` and closed by the auditor against the observable named.
+
+| id | directive | chapters | the observable that closes it |
+|---|---|---|---|
+| X0 | **The rulings, written** (this edit; committed alone with `git commit --only` on the three documents). | §9 | — |
+| X1 | **The gates out.** Delete `xtask/lint/{choice, clique, clock, count, digest, enumeration, invented, maps, matrix, order, panics, position, residual, squaring, walker}.rs` and `build.rs`; `xtask/lint/mod.rs` declares `length` alone, `length.rs` keeps the bound and loses `AWAITING_SPLIT` and `is_declared_test_file`; `cd xtask && cargo run` is the bound then clippy, exit non-zero on either. `Cargo.toml` `[lints.clippy]` denies `unwrap_used`, `expect_used`, `panic`, `unreachable`, `todo`, `unimplemented`; `clippy.toml` carries `disallowed-types` and `disallowed-methods` per §4.2, each entry with its `reason`, each proved to fire once by a scratch line named in the message. Every site a lint then refuses is fixed, or carries `#[expect(clippy::…, reason = "…")]` (§4.3), or sits in a bytes module (`anastome/dialogue`, `*/persist.rs`, `snapshot/`, `bin/*/main.rs` argument parsing) under a one-line root `#![allow]` for rule 11 and rule 15 only. Every `OWED`, `ALLOW`, `SENSOR`, `AWAITING_*` table is gone with its file. Comments in every function touched say what the code does now (§2.8 as ruled). Two commits at most: the deletion with the lint configuration, then the sites. | §4, §2.8, §6.1 | `ls xtask/lint` shows `mod.rs`, `length.rs`, `warnings.rs`; no `build.rs`; `grep -rn 'OWED\|AWAITING\|allow: &\[' xtask src` empty; `grep -rn '#\[allow(clippy' src` shows only the root allows of §4.3, each with a reason; the suite and `cd xtask && cargo run` green; a scratch `HashMap`, a scratch `.unwrap()` in cognition and a scratch `Instant::now()` each fail the build |
+| X2 | **The product out of the cover, and the loop reads the edge.** Pass (b) of `cover_deformation` (`family/cover.rs`) is a search and is deleted as one: an input piece the pullback placed nowhere is carried by PROPAGATING the versors pass (a) already placed — each placed carriage applied to the unplaced piece, its image looked up in the output occupancy by position (a keyed read), and `carriage` confirmed on that one candidate — never by trying every output of its kind and hue. A piece no placed versor lands is uncarried and reports in `uncarried`; it is a demand, not a search. The attempt count is `placed × unplaced`, never `ins × outs`, and a family with no placed carriage attempts nothing in (b). L25 and L26 fold in here: `pair.rs` classifies `edge_holonomy(lp)` and skips a loop that returns `None`; the cover's meet faces carry `edge: Some(Transport)` with `V_b ∘ V_a⁻¹`; the torsion key is `edge_class(lp)`; the passes read what is placed at the read and none waits on another. `trial` (`sentence/pivot/drive.rs`) stops cloning the form per candidate: it acts on the loop's own faces and the vertices they touch, and the certificate is read off that. | 50.8, 13.9, 50.3, 12.2, rule 1, rule 10, L25, L26 | `face_work_is_linear_in_occupied_cells` and a new `cover_attempts_are_placed_times_unplaced` with N vs 4N counters; `0607ce86.json` and the twelve return under one machine stroke with `unmeasured 0`; an idle voice on the fleet holds under a tenth of a core; the relator fixture's period-2 class read with no chord special case; a pure-coboundary form yields no evaluated loop |
+| X3 | **The whole-carrier walk into the type.** `ROOT` is deleted. `Keyed::fiber` takes a `Prefix` that cannot be empty (a newtype whose constructor refuses `&[]`), so every one of the 109 `fiber(ROOT)` loops in 71 production files fails to compile and is decided at its site: a keyed read by the prefix the carrier already names, or `Keyed::cursor(from, budget)` where the walk is a circuit (the docket, the exchange per peer, the stroke ring, S13.3). `keyed_persist_walk` stays `pub(crate)` to `snapshot` and persistence and is a disallowed method everywhere else (X1's table). No new cursor is added to an organ that has none (L27 stands: the cursors get no new tenants; a walk that is neither a keyed read nor an existing circuit is reported as a finding, not given a cursor). One commit for the type, then one per module. | law 3, rule 1, 45.7, L27 | `grep -rn 'fiber(ROOT)\|ROOT' src --include=*.rs` empty outside the persistence module; the suite green; the count of `cursor(` call sites unchanged from X2's commit, or each new one named in the message with the circuit it is |
+| X4 | **Growth by closure.** The code of 37.7 as ruled: a remainder two courts agree on is DOCKETED as a provisional candidate and adjoins nothing (`adjoined()` no longer counts it); a sentence whose derivation cites a docketed candidate and closes on its family, replayed on two courts, installs and the candidate enters the presentation with it — one function, `adjoin_by_closure`, called from `home_install` and nowhere else; the ring instance (`family/ring.rs`, `court/letters.rs`) and the cover instance (L11c) both reach it and neither opens anything on agreement alone; a candidate no closure composes through lapses with its docket (47.5). `adjoined()` reads generators adjoined by closure from content: ruled forms cited by an installed sentence whose vertex has empty citations and a rotor outside the seventeen's span. The instrument (45.9) prints `adjoined-by-closure`, `retired`, `comprehended`; the outside-the-span count prints as `candidates` and orders nothing. Tests: two courts agree on a remainder and `adjoined() == 0`; a sentence closing through the candidate on two courts and `adjoined() == 1`; a candidate never cited lapses; the ring chain test (995069f) re-asserted to the closure. L8u's number is re-read under this row. | 37.7, 1.8, 1.9, 45.9, 26, 47.5, 23.1 | the four tests named; `court letter opened` written only on an install line; on the twelve tasks `candidates` may be non-zero while `adjoined-by-closure` is what is reported |
+| X5 | **μ⃗ is a type.** `[u64; 4]` as a lane vector becomes `Mu`, a newtype implementing neither `PartialEq` nor `PartialOrd`, with `lane_moves(after, before) -> [LaneMove; 4]` the one comparison and lane-wise `add`/`shortfall` the arithmetic; `Rank` and `ClassVector` likewise lose `PartialEq` where they had it and gain their readings. The order gate's rule (§4.4) then cannot be broken in a way that compiles. One commit per module. | law 5, §2.3, §4.4 | `grep -rn '\[u64; 4\]' src --include=*.rs` names only the wire codec and persistence, where four `u64` are bytes; no `fn .*-> bool` whose parameters carry two `Mu`; the suite green |
+
+Order: X0 · X1 · X2 · X3 · X4 · X5. X1 first because every later commit
+would otherwise pay the ratchet on every file it touches. X2 before X3
+because the fleet burns a core per voice today and X2 is two files. X3
+before X4 because X4 writes new reads of carriers and every one of them
+must already be a prefix or a circuit. X5 last: it is mechanical and
+touches every module. A blocker found mid-order is reported with the
+evidence and the proposed reorder (§8.1); the queue does not stop for it.
+
 ## Owed ledger (opened by the auditor, 2026-09-11)
 
 What a row marked landed or done still lacks against its own claim, in
