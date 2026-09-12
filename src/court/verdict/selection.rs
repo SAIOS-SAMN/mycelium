@@ -34,9 +34,14 @@ pub fn derive_pi(family: &[crate::transducer::anchor::Evidence]) -> Option<Sel> 
         })
         .cloned()
         .collect();
+    // The order is the terms' own A21 keys, so every node sorts the common
+    // set alike — and then the HEAD IS TAKEN. Where several terms carry
+    // every evidence, the one with the least key is bound as π* and the
+    // others are dropped: a choice by the sort key, not a reading of it.
+    // L9a's row, open since Stage 14.
     #[expect(
         clippy::disallowed_methods,
-        reason = "rule 4 — canonical key order: the terms are ordered by their own A21 key, so every node reads one common carrier from one set"
+        reason = "rule 4 — a choice by the term's A21 key, consumed by next(); owed to L9a"
     )]
     common.sort_by_key(sel_key);
     common.into_iter().next()

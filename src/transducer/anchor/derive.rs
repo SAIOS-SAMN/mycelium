@@ -158,16 +158,18 @@ pub fn derive_carrying_all(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -
             }
         })
         .collect();
-    // ORDERED BY THE TERM, NEVER BY THE SCENE. The rank was
-    // `(sup.len(), t.size())` — the carrier's size ON THIS SCENE first —
-    // which ranks candidates by a measurement and hands the head of that
-    // ranking to a caller that takes the first common member (rule 4).
-    // A term's node count and its A21 key are the term's own coordinates,
-    // so the order is the same on every scene and every node, and the one
-    // choice left is the beam's, made on the exact per-axis signature.
+    // ORDERED BY THE TERM, NEVER BY THE SCENE — and the order is still
+    // CONSUMED. The rank was `(sup.len(), t.size())`, the carrier's size on
+    // this scene first, which ranked candidates by a measurement; it is the
+    // term's own coordinates now, so the order is the same on every scene
+    // and every node. But `truncate(32)` below keeps the thirty-two
+    // smallest and drops the rest, which is a choice by the sort key
+    // however canonical the key is. That cut is L9a's row, open since
+    // Stage 14, and this reason says so rather than calling the site
+    // settled.
     #[expect(
         clippy::disallowed_methods,
-        reason = "rule 4 — canonical key order: the term's node count and its own A21 key, never a measurement of the scene"
+        reason = "rule 4 — a choice by node count then key, consumed by truncate(32); owed to L9a"
     )]
     ranked.sort_by_key(|a| (a.0, a.1.clone()));
     let mut out: Vec<Sel> = ranked.into_iter().map(|(_, _, t)| t).collect();
