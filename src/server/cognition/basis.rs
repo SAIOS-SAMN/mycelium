@@ -31,14 +31,20 @@ impl Kernel {
         }
     }
 
+    /// The root of this court's own stratum over `inv` — the SAME
+    /// construction a peer's digest carries, so `confirm_peer_holds` can
+    /// compare the two.
+    ///
+    /// This was a THIRD hand-rolled copy of the sorted concatenation, after
+    /// `sheaf::root_of` and the one inside `confirm_peer_holds`, and it is
+    /// stored per heard address by `heard_mark` — so every heard address
+    /// carried a full copy of its stratum's address list, which is O(C²) in
+    /// memory over a growing corpus. Thirty-two bytes now, and one
+    /// construction (law 12): when the root became a root, a copy left
+    /// behind here would have compared a hash against a concatenation and
+    /// dropped every heard address on every confirm.
     pub(crate) fn stratum_root_of(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<u8> {
-        let mut rows = self.ruled.fiber(inv);
-        rows.sort();
-        let mut buf = Vec::new();
-        for a in &rows {
-            crate::transducer::address::put_bytes(&mut buf, a);
-        }
-        buf
+        crate::transducer::sheaf::stratum_root(&self.ruled.fiber(inv))
     }
 
     pub(crate) fn heard_mark(&mut self, addr: impl AsRef<[u8]>, inv: &crate::transducer::stalk::Invariant) {

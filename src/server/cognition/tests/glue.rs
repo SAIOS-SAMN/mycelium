@@ -172,3 +172,55 @@ assert!(
     "the court records the citation as a use of the cited address (26)"
 );
 }
+
+/// ONE CONSTRUCTION OF A STRATUM'S ROOT, ACROSS THREE SITES. `heard_mark`
+/// stores the root of the chart an address was fetched under, and
+/// `confirm_peer_holds` drops a heard address when the PEER's digest for
+/// that chart shows a different root. Home and peer therefore have to build
+/// that root the same way — and they built it in three hand-rolled copies:
+/// `sheaf::root_of`, one inlined in `confirm_peer_holds`, and
+/// `Kernel::stratum_root_of`.
+///
+/// Nothing asserted they agreed. When the root became a root, the copy in
+/// `stratum_root_of` still returned the concatenation, so every heard
+/// address compared a concatenation against a hash, differed, and was
+/// dropped on every confirm — and the suite stayed green, because the
+/// install path used the other two copies and this drop path had no test.
+#[test]
+fn a_heard_address_survives_a_confirm_that_agrees_with_it() {
+let mut k = Kernel::new();
+let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+k.rule_all_provisionals();
+let strata = k.ruled.strata();
+let Some((inv, _)) = strata.into_iter().next() else {
+    panic!("the ruled word stands in a stratum");
+};
+
+// An address heard under that chart, marked with the root as it stands.
+let overheard = vec![0xABu8; 32];
+k.heard_mark(&overheard, &inv);
+assert!(k.heard.contains(&overheard), "it is heard");
+
+// A digest that AGREES: the court's own, so the root is by construction
+// the one `heard_mark` stored. The three constructions must agree here or
+// the address is dropped for a disagreement that does not exist.
+let agreeing = k.ruled_digests();
+k.confirm_peer_holds(&agreeing, [2; 32]);
+assert!(
+    k.heard.contains(&overheard),
+    "a confirm that agrees drops nothing: the stored root and the digest's are one construction"
+);
+
+// And a digest that genuinely disagrees still drops it.
+let mut moved = k.ruled_digests();
+if let [d, ..] = moved.as_mut_slice() {
+    d.root = vec![0u8; 32];
+}
+k.confirm_peer_holds(&moved, [2; 32]);
+assert!(
+    !k.heard.contains(&overheard),
+    "a root that moved drops the address heard under the old one"
+);
+}
