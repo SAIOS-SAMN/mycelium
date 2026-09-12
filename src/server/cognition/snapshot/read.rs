@@ -13,10 +13,23 @@ impl Kernel {
     /// P7 — RESTORE a snapshot into a fresh kernel. Returns `false` (leaving the
     /// kernel empty) on a bad magic or corruption — a corrupt ledger never crashes
     /// a boot, it just starts clean.
+    ///
+    /// AND IT SAYS SO, naming the section it stopped in and the byte it
+    /// stopped at. Starting clean is a whole court's memory dropped — its
+    /// basis, its chain, its treasury — and the next persist writes the
+    /// empty one over the ledger that would not read. Measured on the fleet
+    /// at fc75a59: hypha b's 16 MB ledger, written by the build that could
+    /// not read it back, restored as nothing and the boot line said
+    /// nothing either, because the only line here was the one printed when
+    /// it SUCCEEDED.
     pub fn restore(&mut self, b: &[u8]) -> bool {
         if b.get(0..4) != Some(b"MYC4") {
+            eprintln!("  ledger refused: the magic is not MYC4");
             return false;
         }
+        // WHERE THE READ IS. Set as each section opens, so a refusal names
+        // one of the tape's own sections and not a byte offset alone.
+        let at = std::cell::Cell::new("basis");
         let mut pos = 4usize;
         let read_u32 = |b: &[u8], p: &mut usize| -> Option<u32> {
             let v = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
@@ -35,7 +48,9 @@ impl Kernel {
                 *pos += 32;
                 kernel.basis_insert(spoken, who);
             }
+            at.set("treasury");
             kernel.treasury = crate::economy::Treasury::restore(b, pos)?;
+            at.set("provisional");
             // EVERY SECTION BELOW IS REQUIRED. Each read as "absent in an
             // earlier snapshot → carry on with nothing", and `snapshot`
             // writes every one of them unconditionally, so no writer in
@@ -60,7 +75,14 @@ impl Kernel {
             }
             // The chain: the court head and every k-step receipt, so the
             // hypha's clock continues across a boot.
-            let tag = |b: &[u8], p: &mut usize, want: &[u8; 4]| -> Option<()> {
+            let tag = |b: &[u8], p: &mut usize, want: &'static [u8; 4]| -> Option<()> {
+                // The section being opened, named by its own tag: a tape
+                // whose tags are not text is a tape this reader cannot
+                // name, and it says that rather than a default.
+                at.set(match std::str::from_utf8(want) {
+                    Ok(s) => s,
+                    Err(_) => "a section whose tag is not text",
+                });
                 match b.get(*p..*p + 4) == Some(want.as_slice()) {
                     true => {
                         *p += 4;
@@ -463,6 +485,11 @@ impl Kernel {
             Some(())
         };
         if load(self, b, &mut pos).is_none() {
+            eprintln!(
+                "  ledger refused in section {} at byte {pos} of {}: the court starts clean",
+                at.get(),
+                b.len()
+            );
             self.basis_clear();
             return false;
         }
