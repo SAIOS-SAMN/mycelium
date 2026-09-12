@@ -231,7 +231,7 @@ compiler can read is a lint, denied crate-wide under `[lints.clippy]` in
 | law 9: no clock | `disallowed_types` for `Instant`, `SystemTime`, `Duration` |
 | rule 4: nothing chosen by a scalar | `disallowed_methods` for `min_by`, `max_by`, `min_by_key`, `max_by_key`, `sort_by`, `sort_by_key`, `sort_unstable_by`, `sort_unstable_by_key`, `Iterator::max`, `Iterator::min` |
 | rule 11: no invented value | `disallowed_methods` for `unwrap_or`, `unwrap_or_else`, `unwrap_or_default`, `saturating_sub`, `saturating_mul` |
-| rule 15: no member by position | `disallowed_methods` for `first`, `last`, `Iterator::nth` |
+| rule 15: no member by position | `disallowed_methods` for `slice::first`, `slice::last`, `core::iter::Iterator::nth` — the slice spellings are the ones clippy 1.95 resolves; `core::slice::<impl [T]>::first` does not, and the build says so in a warning |
 | rules 1, 8: no whole-carrier walk in cognition | `disallowed_methods` for every whole-carrier reader `Keyed` exposes (`keyed_persist_walk` and any entries-style walk); `fiber` is a type rule, 4.4 |
 
 A lint fires on the item, in scope, with `#[cfg(test)]` handled by the
