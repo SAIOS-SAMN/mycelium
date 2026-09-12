@@ -71,7 +71,9 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
         else {
             continue;
         };
-        for (vk, _) in witnesses.fiber(mycelium::network::nerve::ROOT) {
+        // The witness set for THIS chart, which `Cover::witnesses` scoped;
+        // each is asked once, one per spend of the offer budget.
+        for (vk, _) in witnesses.scoped() {
             if !offer_budget.spend() {
                 break;
             }

@@ -243,7 +243,6 @@ fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, Strin
 /// walk. Every one is read from CONTENT — the forms the mind holds and
 /// the vertices in them — and nothing is counted that was not derived.
 fn read_engine(epi: &mut Epigenome, r: &mut Reading) {
-    use mycelium::network::nerve::ROOT;
     let mut seen: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
     let mut charts: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
     for e in epi.genome() {
@@ -251,7 +250,10 @@ fn read_engine(epi: &mut Epigenome, r: &mut Reading) {
             continue;
         };
         charts.insert(mycelium::transducer::stalk::invariant_of(e).key(), ());
-        r.cells_filled += f.torsion.fiber(ROOT).count() as u64;
+        // One form's torsion carrier, and one genome's charts below: both
+        // are fibers already, the first by the form that holds it and the
+        // second by being built here.
+        r.cells_filled += f.torsion.scoped().count() as u64;
         for v in &f.vertices {
             let Vertex::Word { address, derivation, .. } = v else {
                 continue;
@@ -273,6 +275,6 @@ fn read_engine(epi: &mut Epigenome, r: &mut Reading) {
             }
         }
     }
-    r.cover_rank = charts.fiber(ROOT).count() as u64;
+    r.cover_rank = charts.scoped().count() as u64;
     r.retired = epi.take_promoted().len() as u64;
 }

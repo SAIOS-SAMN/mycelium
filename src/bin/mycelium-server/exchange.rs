@@ -306,7 +306,10 @@ impl Exchange {
                 }
             }
             if let Ok(a) = mesh.addrs.lock() {
-                for (_, addr) in a.fiber(mycelium::network::nerve::ROOT) {
+                // The peers this court knows, which is what a cycle's
+                // destinations are: one entry per hypha, bounded by the
+                // mesh and not by anything that grows with use.
+                for (_, addr) in a.scoped() {
                     if addr != &mesh.bind {
                         dests.insert(addr.as_bytes(), addr.clone());
                     }
@@ -330,7 +333,7 @@ impl Exchange {
             let req = dialogue::encode_digests_request(&mesh.vk);
             let mut any_moved = false;
             let dest_list: Vec<(Vec<u8>, String)> = dests
-                .fiber(mycelium::network::nerve::ROOT)
+                .scoped()
                 .map(|(id, a)| (id, a.clone()))
                 .collect();
             let mut organ_budget = mycelium::physics::expansion_unit() as usize;

@@ -23,7 +23,7 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
     // order; each is asked once per round, one per spend.
     let witnesses: Vec<([u8; 32], String)> = match (mesh.rooms.lock(), mesh.addrs.lock()) {
         (Ok(rooms), Ok(addrs)) => rooms
-            .fiber(mycelium::network::nerve::ROOT)
+            .scoped()
             .filter(|(vk, room)| vk.as_slice() != mesh.vk.as_slice() && room.iter().any(|&r| r > 0))
             .filter_map(|(vk, _)| {
                 let key = <[u8; 32]>::try_from(vk.as_slice()).ok()?;

@@ -70,7 +70,9 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             let Ok(roots) = door.roots.lock() else { return true };
             dialogue::encode_root_reply(
                 roots.get(task.as_bytes()).and_then(|v| {
-                    v.fiber(mycelium::network::nerve::ROOT)
+                    // `get(task)` is the descent: the solvers standing on
+                    // THIS task, and the first in key order is the reply.
+                    v.scoped()
                         .next()
                         .and_then(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
                 }),
@@ -234,7 +236,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 }
             }
             if let Ok(addrs) = door.mesh.addrs.lock() {
-                for (_, a) in addrs.fiber(mycelium::network::nerve::ROOT) {
+                for (_, a) in addrs.scoped() {
                     if !nerve_addrs.iter().any(|x| x == a) {
                         nerve_addrs.push(a.clone());
                     }
@@ -452,7 +454,9 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
 /// a second, and panicked on a poisoned first (§2.4).
 fn rewind_syllabus(door: &Door) {
     let Ok(mut sy) = door.syllabus.lock() else { return };
-    let voices: Vec<Vec<u8>> = sy.served.fiber(mycelium::network::nerve::ROOT).map(|(v, _)| v).collect();
+    // EVERY voice's cursor returns to the start -- that is what a rewind
+    // is -- and the carrier holds one entry per voice.
+    let voices: Vec<Vec<u8>> = sy.served.scoped().map(|(v, _)| v).collect();
     for v in voices {
         sy.served.insert(v, 0);
     }
