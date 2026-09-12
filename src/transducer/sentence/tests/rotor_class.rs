@@ -146,7 +146,7 @@ fn filed_torsion_chord_replays_or_refuses() {
     let keyed = crate::transducer::sentence::from_element_form(&e).expect("v2 tape");
     let (class, chord) = keyed
         .torsion
-        .fiber(crate::network::nerve::ROOT)
+        .scoped()
         .next()
         .map(|(k, v)| (k, v.chord))
         .expect("filed class");

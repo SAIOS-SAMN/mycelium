@@ -2,7 +2,7 @@
 // and what a chain deconstructs into.
 
 use super::common::*;
-use crate::network::nerve::{Keyed, ROOT};
+use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::blade::Shape;
 use crate::transducer::element::{self, from_canonical};
@@ -302,7 +302,7 @@ fn deconstruct_multiplicity_is_per_body() {
     );
     let widths: Vec<usize> = s
         .multiplicity
-        .fiber(ROOT)
+        .scoped()
         .map(|(_, w)| *w)
         .collect();
     assert_eq!(
@@ -501,7 +501,7 @@ fn a_chart_names_the_word_vertices_on_it() {
     assert_eq!(f.by_class.get(&near.key()), Some(&vec![1u16, 3]), "both words on the near chart, in vertex order");
     assert_eq!(f.by_class.get(&far.key()), Some(&vec![2u16]), "the one word on the far chart");
     assert_eq!(f.by_class.get(&stalk::Invariant(vec![9]).key()), None, "a chart no vertex is on names nothing");
-    for (chart, on) in f.by_class.fiber(ROOT) {
+    for (chart, on) in f.by_class.scoped() {
         for &i in on {
             let v = f.vertices.get(i as usize).expect("an index the fiber names is a vertex");
             assert!(matches!(v, Vertex::Word { class, .. } if class.key().as_bytes() == chart.as_slice()), "vertex {i} is a Word on the chart that names it");

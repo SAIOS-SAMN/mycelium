@@ -143,7 +143,10 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
     }
     out.extend_from_slice(&f.depth.to_le_bytes());
     out.extend_from_slice(&(f.certificates.len() as u16).to_le_bytes());
-    for (_, cert) in f.certificates.fiber(crate::network::nerve::ROOT) {
+    // THE FORM'S OWN TAPE, and the tape is the object (law 2): every one of
+    // this form's four keyed carriers goes out whole, in key order, behind
+    // the count that was just written from the same carrier's length.
+    for (_, cert) in f.certificates.scoped() {
         cert.to_bytes(out);
     }
     let ((hn, hd), (wn, wd)) = f.ratio;
@@ -153,7 +156,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
     out.extend_from_slice(&(wd as u16).to_le_bytes());
     let sec: Vec<(Vec<u8>, Vec<u16>)> = f
         .sections
-        .fiber(crate::network::nerve::ROOT)
+        .scoped()
         .map(|(k, v)| (k, v.clone()))
         .collect();
     out.extend_from_slice(&(sec.len() as u16).to_le_bytes());
@@ -165,7 +168,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
         }
     }
     out.extend_from_slice(&(f.torsion.len() as u16).to_le_bytes());
-    for (k, FiledLoop { sigma, period: ell, chord }) in f.torsion.fiber(crate::network::nerve::ROOT) {
+    for (k, FiledLoop { sigma, period: ell, chord }) in f.torsion.scoped() {
         crate::transducer::address::put_addr(out, &k);
         out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
         for &(a, b) in sigma {
@@ -176,7 +179,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
         out.extend_from_slice(&chord.to_le_bytes());
     }
     out.extend_from_slice(&(f.axes.len() as u16).to_le_bytes());
-    for (k, chord) in f.axes.fiber(crate::network::nerve::ROOT) {
+    for (k, chord) in f.axes.scoped() {
         crate::transducer::address::put_addr(out, &k);
         out.extend_from_slice(&chord.to_le_bytes());
     }

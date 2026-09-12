@@ -7,7 +7,7 @@
 use super::form::*;
 use super::tape::from_element_form;
 use super::transport::*;
-use crate::network::nerve::{Keyed, ROOT};
+use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Word;
 use crate::transducer::element::{self, Element, Versor};
 use crate::transducer::stalk;
@@ -83,14 +83,19 @@ impl Form {
                 edge: f.edge.clone(),
             });
         }
+        // RENUMBERING A FORM TOUCHES EVERY CARRIER IT HAS. Each of the four
+        // below is this form's own — glued vertices, sections, torsion,
+        // opened axes — and each is rebuilt whole against the new indices,
+        // because an entry left behind names a vertex that no longer
+        // exists. There is nothing to descend on: the form IS the scope.
         let mut glued = Keyed::new();
-        for (k, &old_i) in self.glued.fiber(ROOT) {
+        for (k, &old_i) in self.glued.scoped() {
             if let Some(&Some(ni)) = old_to_new.get(old_i as usize) {
                 glued.insert(&k, ni);
             }
         }
         let mut sections = Keyed::new();
-        for (k, ix) in self.sections.fiber(ROOT) {
+        for (k, ix) in self.sections.scoped() {
             let mapped: Vec<u16> = ix
                 .iter()
                 .filter_map(|&i| old_to_new.get(i as usize).copied().flatten())
@@ -100,7 +105,7 @@ impl Form {
             }
         }
         let mut torsion = Keyed::new();
-        for (k, FiledLoop { sigma, period: ell, chord }) in self.torsion.fiber(ROOT) {
+        for (k, FiledLoop { sigma, period: ell, chord }) in self.torsion.scoped() {
             let Some(&Some(nc)) = face_old_to_new.get(*chord as usize) else {
                 continue;
             };
@@ -118,7 +123,7 @@ impl Form {
             torsion.insert(&k, FiledLoop { sigma: mapped, period: *ell, chord: nc });
         }
         let mut axes = Keyed::new();
-        for (k, chord) in self.axes.fiber(ROOT) {
+        for (k, chord) in self.axes.scoped() {
             let Some(&Some(nc)) = face_old_to_new.get(*chord as usize) else {
                 continue;
             };
@@ -235,7 +240,7 @@ pub struct SentenceRule {
 impl SentenceRule {
     pub fn section_count(&self) -> usize {
         self.sections
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(_, v)| v.len())
             .sum()
     }
@@ -386,7 +391,10 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     for x in [hn, hd, wn, wd] {
         buf.extend_from_slice(&(x as u64).to_le_bytes());
     }
-    for (class, members) in f.sections.fiber(crate::network::nerve::ROOT) {
+    // ONE FORM'S sections and opened axes, both written out whole and in
+    // key order: this is the form's identity being spelled, and a carrier
+    // read in part would be a different object (law 2).
+    for (class, members) in f.sections.scoped() {
         crate::transducer::address::put_bytes(&mut buf, &class);
         buf.extend_from_slice(&(members.len() as u16).to_le_bytes());
         for m in members {
@@ -395,7 +403,7 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     }
     // An opened axis is a coordinate of the form (I6): the class it was
     // opened on, written out, key order.
-    for (class, _) in f.axes.fiber(crate::network::nerve::ROOT) {
+    for (class, _) in f.axes.scoped() {
         crate::transducer::address::put_bytes(&mut buf, &class);
     }
     crate::transducer::address::Address::new(buf)

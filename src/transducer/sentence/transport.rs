@@ -5,7 +5,7 @@
 //! those coordinates compose and invert by.
 
 use super::form::{Form, Vertex};
-use crate::network::nerve::{Keyed, ROOT};
+use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{Derivation, Word};
 use crate::transducer::element::{self, Versor};
 
@@ -177,7 +177,9 @@ pub(crate) fn compose_gauge(second: &[(u8, u8)], first: &[(u8, u8)]) -> Vec<(u8,
         hues.insert(hue_key(y), ());
     }
     let mut out = Vec::new();
-    for (k, _) in hues.fiber(ROOT) {
+    // The hues the two gauges name between them, gathered here: the
+    // composite is read at every one of them and nowhere else.
+    for (k, _) in hues.scoped() {
         let h = k[0];
         let image = gauge_image(&b, gauge_image(&a, h));
         if image != h {
@@ -198,7 +200,9 @@ pub(crate) fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)
         hues.insert(hue_key(y), ());
     }
     let mut out = Vec::new();
-    for (k, _) in hues.fiber(ROOT) {
+    // The hues the two gauges name between them, gathered here: the
+    // composite is read at every one of them and nowhere else.
+    for (k, _) in hues.scoped() {
         let h = k[0];
         let b = gauge_image(&fm, h);
         let c = gauge_image(&tm, h);

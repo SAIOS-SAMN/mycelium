@@ -359,7 +359,8 @@ impl Form {
             }
         }
         let mut carriages = Keyed::new();
-        for (k, p) in places.fiber(ROOT) {
+        // The places this pass just gathered, one per carriage key.
+        for (k, p) in places.scoped() {
             if !place_conflict.contains(&k) {
                 carriages.insert(&k, p.clone());
             }

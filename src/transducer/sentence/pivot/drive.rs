@@ -435,7 +435,10 @@ impl Form {
                     });
                 }
                 _ => {
-                    for (_, chart) in charts.fiber(ROOT) {
+                    // The charts THIS loop stands on, gathered above from
+                    // its own classes: the candidate moves are read on each
+                    // of them, and one skipped is a move never offered.
+                    for (_, chart) in charts.scoped() {
                         for w in crystal.on_axis(chart, axis) {
                             for side in [Side::Right, Side::Left] {
                                 let wk = w.key();

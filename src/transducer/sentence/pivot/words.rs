@@ -85,8 +85,10 @@ pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Ve
         .get(&chart.key())
         .and_then(|mid| mid.get(&axis_slot(axis)))
     {
+        // Two keyed reads reached this bucket -- the chart, then the axis
+        // slot -- so what it holds is the words on that axis, all of them.
         Some(bucket) => bucket
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(_, w)| w.clone())
             .collect(),
         None => Vec::new(),
@@ -351,8 +353,10 @@ pub fn generators_at(
     budget: &mut crate::physics::Budget,
 ) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address)> {
     let mut out = Vec::new();
+    // The outer read IS a prefix descent -- one chart's buckets -- and each
+    // bucket it yields is one axis slot's words.
     for (_, bucket) in index.fiber(chart.key().as_bytes()) {
-        for (v, f) in bucket.fiber(crate::network::nerve::ROOT) {
+        for (v, f) in bucket.scoped() {
             if !budget.spend() {
                 return out;
             }

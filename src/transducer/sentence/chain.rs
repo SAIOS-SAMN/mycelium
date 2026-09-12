@@ -4,7 +4,7 @@
 //! punctures a deconstruction produces, the residual no word speaks, and the
 //! replay that measures what a proof leaves.
 
-use crate::network::nerve::{Keyed, ROOT};
+use crate::network::nerve::Keyed;
 use crate::transducer::element::{self, Element, Versor};
 use crate::transducer::beam;
 
@@ -180,7 +180,9 @@ pub fn pieces(chain: &[Cell]) -> Vec<Vec<Cell>> {
             }
         }
     }
-    by.fiber(ROOT).map(|(_, v)| v.clone()).collect()
+    // The components this function just grouped, keyed by owner: every
+    // piece of the chain is a piece of the answer.
+    by.scoped().map(|(_, v)| v.clone()).collect()
 }
 
 /// THE INCIDENCE of a support: its 1-skeleton, the pairs of cells sharing
@@ -316,8 +318,10 @@ pub fn replay_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cel
             }
         }
     }
+    // ONE CHAIN'S CELLS, keyed by position: the residual is what the word
+    // did not speak, so every cell is asked and none may be skipped.
     let mut residual: Vec<Cell> = at
-        .fiber(ROOT)
+        .scoped()
         .filter(|(k, _)| !spoken.contains(k))
         .map(|(_, t)| *t)
         .collect();
@@ -409,7 +413,8 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Ve
             }
         }
     }
-    at.fiber(ROOT)
+    // The same chain, asked for the cells two words disagree on.
+    at.scoped()
         .filter(|(k, _)| conflict.contains(k))
         .map(|(_, t)| *t)
         .collect()

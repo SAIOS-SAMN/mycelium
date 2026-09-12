@@ -111,7 +111,7 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
         crate::transducer::sentence::from_element_form(&e).expect("v2 tape");
     let fi = tampered
         .certificates
-        .fiber(crate::network::nerve::ROOT)
+        .scoped()
         .next()
         .expect("one certificate")
         .1

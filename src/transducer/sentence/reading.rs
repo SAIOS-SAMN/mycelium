@@ -4,7 +4,7 @@
 //! its moduli, puncturing a held word the body deepens, and deconstructing
 //! the whole chain into the words that speak it and the residual that stays.
 
-use crate::network::nerve::{Keyed, ROOT};
+use crate::network::nerve::Keyed;
 use crate::transducer::blade::{self, Shape};
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::chain::{
@@ -199,7 +199,9 @@ where
     let Some(to_word) = blade::versor_between(&shape, held) else { return unlocated(m) };
     let Some(v) = to_word.versor_inverse() else { return unlocated(m) };
     let agreeing = gauge_of(word, &v, piece);
-    let mut asgs = agreeing.fiber(ROOT);
+    // The gauges agreeing on THIS piece under this transport: the reading
+    // is whether there is exactly one, so the walk takes two and stops.
+    let mut asgs = agreeing.scoped();
     if let Some((_, &asg)) = asgs.next() {
         if asgs.next().is_none() {
             let cite = Cite { word: i, transport: v.clone(), gauge: asg };
@@ -257,7 +259,9 @@ fn place_located<'a, W, F, I, S, H>(
                 out.residual.extend(cells);
             }
             Some(element::GaugeFibers::Many(idx)) => {
-                for (_, fiber) in idx.fiber(ROOT) {
+                // One body's gauge fibers, each read in turn: a piece left
+                // out is a piece nothing places.
+                for (_, fiber) in idx.scoped() {
                     for sub in pieces(fiber) {
                         let loc = locate_or_puncture_on(read, &sub, exclude);
                         place_located(out, loc, &sub, read, exclude);
