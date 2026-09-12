@@ -355,7 +355,14 @@ pub fn generators_at(
     let mut out = Vec::new();
     // The outer read IS a prefix descent -- one chart's buckets -- and each
     // bucket it yields is one axis slot's words.
-    for (_, bucket) in index.fiber(chart.key().as_bytes()) {
+    // A chart with no axes is the root stratum and names no coordinate to
+    // descend on: the pairs on it are read through `serve_classes`, not
+    // here, so this answers nothing rather than everything (rule 11).
+    let key = chart.key();
+    let Some(at) = crate::network::nerve::Prefix::new(key.as_bytes()) else {
+        return out;
+    };
+    for (_, bucket) in index.fiber(at) {
         for (v, f) in bucket.scoped() {
             if !budget.spend() {
                 return out;

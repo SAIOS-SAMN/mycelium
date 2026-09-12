@@ -12,7 +12,7 @@ pub struct Fiber<'a, V> {
 
 impl<'a, V> Fiber<'a, V> {
     fn empty() -> Self {
-        Fiber { stack: Vec::new(), prefix: ROOT.to_vec() }
+        Fiber { stack: Vec::new(), prefix: Vec::new() }
     }
 }
 

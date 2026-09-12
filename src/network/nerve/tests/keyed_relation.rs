@@ -2,7 +2,7 @@
 // that each is a walk of structure rather than a search.
 
 
-use crate::network::nerve::Keyed;
+use crate::network::nerve::{Keyed, Prefix};
 
 /// Keys bind, rebind, read, and unbind exactly; a branch left with one
 /// child collapses; the walk lists everything. Prefix reads a stratum.
@@ -40,14 +40,20 @@ fn a_prefix_of_a_key_is_its_stratum() {
     k.insert([1u8, 10, 1], 2);
     k.insert([1u8, 11, 0], 3);
     k.insert([2u8, 0, 0], 4);
-    let coarse: Vec<_> = k.fiber(&[1]).map(|(key, v)| (key.to_vec(), *v)).collect();
+    let at = |p: &'static [u8]| Prefix::new(p).expect("a coordinate");
+    let coarse: Vec<_> = k.fiber(at(&[1])).map(|(key, v)| (key.to_vec(), *v)).collect();
     assert_eq!(coarse.len(), 3, "prefix [1] is the chart's coarse stratum");
     assert!(coarse.iter().all(|(key, _)| key.starts_with(&[1])));
-    let mid: Vec<_> = k.fiber(&[1, 10]).map(|(key, _)| key.to_vec()).collect();
+    let mid: Vec<_> = k.fiber(at(&[1, 10])).map(|(key, _)| key.to_vec()).collect();
     assert_eq!(mid.len(), 2);
     assert!(mid.iter().all(|key| key.starts_with(&[1, 10])));
-    assert_eq!(k.fiber(&[1, 10, 0]).count(), 1);
+    assert_eq!(k.fiber(at(&[1, 10, 0])).count(), 1);
     assert_eq!(k.get(&[2, 0, 0]), Some(&4));
+    // AN EMPTY PREFIX IS NOT A COORDINATE and cannot be built: the whole
+    // carrier is `scoped`, which says so at its site (X3).
+    assert!(Prefix::new(&[]).is_none(), "the empty prefix is not a coordinate");
+    assert!(k.fiber_at(&[]).is_none(), "and a fiber cannot be asked for it");
+    assert_eq!(k.fiber_at(&[1]).map(Iterator::count), Some(3), "a coordinate reads its stratum");
 }
 
 /// X3, rule 1 — A FIBER READ COSTS ITS FIBER, NOT THE CARRIER. `fiber`
@@ -73,8 +79,9 @@ fn a_fiber_read_visits_its_own_subtree_and_not_the_carrier() {
     assert_eq!(k.len(), 1000);
 
     // One key, by its whole coordinate: the fiber is that one entry.
+    let whole = 500u32.to_be_bytes();
     work::reset();
-    let one: Vec<_> = k.fiber(&500u32.to_be_bytes()).map(|(_, v)| *v).collect();
+    let one: Vec<_> = k.fiber(Prefix::new(&whole).expect("a coordinate")).map(|(_, v)| *v).collect();
     let narrow = work::visits();
     assert_eq!(one, vec![500], "the fiber of a whole key is that key");
     assert!(
@@ -86,7 +93,7 @@ fn a_fiber_read_visits_its_own_subtree_and_not_the_carrier() {
     // key here, so this fiber IS the carrier and visits it -- which is the
     // honest cost of the reading, and the reading the rest of X3 names.
     work::reset();
-    let coarse = k.fiber(&[0u8, 0]).count();
+    let coarse = k.fiber(Prefix::new(&[0u8, 0]).expect("a coordinate")).count();
     let wide = work::visits();
     assert_eq!(coarse, 1000, "every key carries this prefix");
     assert!(wide > narrow, "the wider stratum costs more: {wide} against {narrow}");
@@ -100,7 +107,7 @@ fn a_fiber_read_visits_its_own_subtree_and_not_the_carrier() {
     // A prefix no key carries is an EMPTY fiber, not an empty walk: the
     // descent fails at a missing child and nothing is visited at all.
     work::reset();
-    assert_eq!(k.fiber(&[0xff, 0xff]).count(), 0);
+    assert_eq!(k.fiber(Prefix::new(&[0xff, 0xff]).expect("a coordinate")).count(), 0);
     assert_eq!(work::visits(), 0, "absence costs the descent and no walk");
 }
 

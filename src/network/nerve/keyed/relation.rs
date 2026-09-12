@@ -96,19 +96,19 @@ impl<V> Keyed<V> {
         out
     }
 
-    /// Subtree under `prefix`. The empty prefix [`ROOT`] is this carrier's
-    /// own fiber — valid when the Keyed is already scoped (one bubble's
-    /// charts, one vertex's star, one chart's incidence).
+    /// SUBTREE UNDER A COORDINATE. The prefix cannot be empty: an empty
+    /// prefix is not a coordinate, it is the whole carrier, and that
+    /// reading is [`Keyed::scoped`], which says so at its site.
     ///
-    /// THE WALK IS THE SUBTREE, NOT THE CARRIER. This pushed the ROOT for
+    /// THE WALK IS THE SUBTREE, NOT THE CARRIER. This pushed the root for
     /// every prefix and filtered the leaves as they came out — `stack` held
     /// `self.root` whatever the prefix was, and `Fiber` carried the prefix
     /// only to test each leaf against it —
     /// so a fiber read of one stratum cost the whole trie — every node of
     /// it, to yield the handful of keys under the prefix. That is rule 1's
     /// whole-carrier walk arriving through the very reader the doctrine
-    /// says replaces it, and it is why the rest of X3 exists: `fiber(ROOT)`
-    /// was the only honest spelling, because a prefix bought nothing.
+    /// says replaces it, and it is why the rest of X3 existed: the empty
+    /// prefix was the only honest spelling, because a prefix bought nothing.
     ///
     /// A key is its own path (A13), so the keys carrying a prefix hang
     /// under one node, and `subtree` descends to it in O(bits). The leaf
@@ -116,12 +116,21 @@ impl<V> Keyed<V> {
     /// untested, so the subtree can hold keys that diverge from the prefix
     /// at one of them, and `key_in_fiber` is what decides. What changes is
     /// the extent — the walk visits that subtree and nothing above it.
-    pub fn fiber(&self, prefix: &[u8]) -> Fiber<'_, V> {
+    pub fn fiber(&self, prefix: Prefix<'_>) -> Fiber<'_, V> {
+        let prefix = prefix.as_bytes();
         let mut stack = Vec::new();
         if let Some(node) = self.subtree(prefix) {
             stack.push(node);
         }
         Fiber { stack, prefix: prefix.to_vec() }
+    }
+
+    /// The fiber under `prefix`, or the reading of an EMPTY prefix, which
+    /// is not a fiber: `None`. Sites that build a key from coordinates and
+    /// cannot prove it non-empty at the type level ask here and refuse the
+    /// empty case themselves (rule 11), rather than walking everything.
+    pub fn fiber_at(&self, prefix: &[u8]) -> Option<Fiber<'_, V>> {
+        Prefix::new(prefix).map(|p| self.fiber(p))
     }
 
     /// THE WHOLE OF A CARRIER THAT IS ITSELF A FIBER — one bubble's charts,
@@ -197,7 +206,7 @@ impl<V> Keyed<V> {
                     }
                     let p = parent?;
                     return Some(Shell {
-                        fiber: Fiber { stack: vec![p], prefix: ROOT.to_vec() },
+                        fiber: Fiber { stack: vec![p], prefix: Vec::new() },
                         prefix: clear_after_bit(key, parent_bit),
                     });
                 }
@@ -208,7 +217,7 @@ impl<V> Keyed<V> {
                             return None;
                         }
                         return Some(Shell {
-                            fiber: Fiber { stack: vec![node], prefix: ROOT.to_vec() },
+                            fiber: Fiber { stack: vec![node], prefix: Vec::new() },
                             prefix: clear_after_bit(key, *bit),
                         });
                     }
@@ -262,16 +271,6 @@ impl<V> Keyed<Keyed<V>> {
         self.insert(a, inner);
     }
 }
-
-/// The empty prefix: the root fiber of a keyed that is already a fiber.
-///
-/// X3 RETIRES THIS. It is the spelling of "walk everything", and it is
-/// written in 280 places because a prefix used to buy nothing (c483bab).
-/// Each of those sites is one of two readings, and the reader says which:
-/// [`Prefix`] where a coordinate is in hand, [`Keyed::scoped`] where the
-/// carrier is ALREADY one cell's fiber. When no site names it, the
-/// constant goes and `fiber` takes a `Prefix` that cannot be empty.
-pub const ROOT: &[u8] = &[];
 
 /// A NON-EMPTY KEY PREFIX — the coordinate a fiber read descends on.
 ///

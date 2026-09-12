@@ -51,7 +51,8 @@ fn chart_prefix_is_its_coarser_stratum() {
     k.insert(coarse.as_bytes(), 0);
     k.insert(fine.as_bytes(), 1);
     k.insert(sib.as_bytes(), 2);
-    let fiber: Vec<_> = k.fiber(coarse.as_bytes()).map(|(key, v)| (key, *v)).collect();
+    let at = crate::network::nerve::Prefix::new(coarse.as_bytes()).expect("a coarse key is a coordinate");
+    let fiber: Vec<_> = k.fiber(at).map(|(key, v)| (key, *v)).collect();
     assert_eq!(fiber.len(), 3, "the coarse key's fiber is the coarser stratum");
     assert!(fiber.iter().all(|(key, _)| key.starts_with(coarse.as_bytes())));
 }
