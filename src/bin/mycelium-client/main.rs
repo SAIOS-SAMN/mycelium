@@ -278,5 +278,23 @@ fn main() {
         let short = physics.reserve_shortfall(moved);
         let wait: [bool; 4] = std::array::from_fn(|l| short[l] > 0);
         m.dwell_remaining = physics.dwell(&m.last_pressure, wait);
+        // X6 — AN IDLE STROKE COSTS THE PROCESSOR (the stroke-duration
+        // ruling of 2026-09-11). A stroke that moved no lane admitted
+        // nothing: the feed is clear, the quote is not due, no task stands.
+        // It spent `physics.spend([true; 4])` above -- four integer
+        // decrements on the reserve -- and then went round again at once.
+        // Measured on the fleet at 3d2987e: every voice between 81% and
+        // 87% of a core while its own line read `stroke idle` and `quote 0
+        // clusters`, which is five cores burnt to admit nothing and the
+        // reason the courts' listeners were starved.
+        //
+        // The park is the measured transport where one has been measured
+        // and the floor where none has, which is the pace this voice
+        // already speaks at: a voice waiting on a door 40 polls away asks
+        // again in 40 polls' worth of scheduler time, not immediately.
+        // A working stroke does not park at all.
+        if moved == [false; 4] {
+            std::thread::sleep(mycelium::physics::idle_park(entity.transport_rtt()));
+        }
     }
 }
