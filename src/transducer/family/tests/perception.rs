@@ -231,6 +231,67 @@ assert!(
 );
 }
 
+/// A CELL'S OCCUPANTS ARE CHAINED, NOT CLIQUED. The test above gives every
+/// body a cell of its own, so no cell ever held two occupants and the one
+/// quadratic in `star_and_cell_faces` never fired under it: the pairing of
+/// a cell's own vertices was a complete graph, and it was not counted by
+/// `note_face_work` either, so the gauge could not see it.
+///
+/// k bodies on one cell are a simplex. The complex needs k−1 faces to
+/// connect them; the k(k−1)/2 − (k−1) chords are cycles that bound by
+/// construction, and on the fleet 223 such bodies put 24 920 of them on one
+/// form. Both the face count and the work are asserted here, so neither can
+/// go quadratic again without a red test.
+#[test]
+fn one_cell_chains_its_occupants_and_does_not_clique_them() {
+let run = |k: usize| -> (usize, usize, u64) {
+    reset_face_work();
+    let mut supports = vec![Vec::new()];
+    for _ in 0..k {
+        supports.push(vec![(0i64, 0i64)]);
+    }
+    let pairs = star_and_cell_faces(k + 1, Some(0), &supports_at(&supports));
+    let work = face_work();
+    let adj = pairs.iter().filter(|&&(i, j)| i != 0 && j != 0).count();
+    (pairs.len(), adj, work)
+};
+let (all, adj, _) = run(8);
+assert_eq!(adj, 7, "eight bodies on one cell chain in seven faces, not 28: {adj}");
+assert_eq!(all, 15, "plus the eight-body Frame star: {all}");
+let (_, adj4, w4) = run(32);
+assert_eq!(adj4, 31, "and thirty-two chain in thirty-one, not 496: {adj4}");
+// THE LOOPS ARE LINEAR IN THE OCCUPANTS, WHICH IS THE WHOLE POINT. The
+// Frame star already spans every vertex, so each intra-cell face is a
+// chord and carries one loop: Frame → a → b → Frame, whose reading is the
+// cocycle condition between two placements — `edge_holonomy` skips the
+// star faces, so what it measures is the meet, and that is a real
+// obstruction the pivot exists to discharge.
+//
+// So the chain does not abolish this cell's loops; it abolishes the
+// DEPENDENT ones. k(k−1)/2 chords carry k(k−1)/2 loops of which only k−1
+// are independent, and the rest are sums of those — fake homology inside
+// one contractible cell. k−1 in, k−1 out.
+assert_eq!(Form::loops_of(&run_faces(8), 9).len(), 7, "eight occupants carry seven loops, not 28");
+assert_eq!(Form::loops_of(&run_faces(32), 33).len(), 31, "and thirty-two carry thirty-one, not 496");
+let (_, _, w) = run(8);
+assert!(
+    w4 <= w.saturating_mul(5),
+    "the work is counted and stays linear in the occupants: {w} vs {w4}"
+);
+}
+
+/// The faces eight bodies on one cell name, as a form would hold them.
+fn run_faces(k: usize) -> Vec<FormFace> {
+let mut supports = vec![Vec::new()];
+for _ in 0..k {
+    supports.push(vec![(0i64, 0i64)]);
+}
+star_and_cell_faces(k + 1, Some(0), &supports_at(&supports))
+    .iter()
+    .map(|&(i, j)| FormFace::new(i, j, crate::transducer::alphabet::Word::identity()))
+    .collect()
+}
+
 /// Two pairs whose bodies differ in shape but share the carriage are
 /// one rule vertex. Matching by moduli would split them and leave a
 /// frame-only form.

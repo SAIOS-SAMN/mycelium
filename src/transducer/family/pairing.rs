@@ -45,8 +45,14 @@ pub(crate) fn face_work() -> u64 {
 
 /// Faces the bundle names: star from the Frame (when the form carries one),
 /// plus pairs whose after-supports overlap or sit at ring distance one.
-/// Occupancy is keyed by cell; related pairs are a Keyed set. Cost is
-/// occupied + ring cells, never n².
+/// Occupancy is keyed by cell; related pairs are a Keyed set.
+///
+/// COST IS THE CELLS, NOT THE BODIES ON THEM. A cell with k occupants
+/// contributes k−1 faces, not k(k−1)/2 — see the chain below for why the
+/// chords are not faces the complex is missing. Every face this writes is
+/// counted through `note_face_work`, so the gauge in
+/// `face_work_is_linear_in_occupied_cells` reads the whole cost and not the
+/// part that was already linear.
 ///
 /// The supports arrive KEYED BY VERTEX INDEX, which is the form's own
 /// coordinate and rides the tape as `FormFace.i` and `.j` — not as a slice
@@ -79,23 +85,44 @@ pub(crate) fn star_and_cell_faces(
             note_face_work();
             let k = cell_pos_key(r, c);
             match occ.get_mut(&k) {
-                Some(v) => {
-                    if !v.contains(&id) {
-                        v.push(id);
-                    }
-                }
+                // `vi` ascends and a vertex is offered its own support once,
+                // so a repeat can only be the one just pushed. This was
+                // `!v.contains(&id)`, a walk of the cell's occupants on every
+                // offer — k² comparisons on the same cell that the chain
+                // below was already paying k² for.
+                Some(v) => match v.as_slice() {
+                    [.., last] if *last == id => {}
+                    _ => v.push(id),
+                },
                 None => {
                     occ.insert(k, vec![id]);
                 }
             }
         }
     }
+    // A CELL'S OCCUPANTS ARE A SIMPLEX, NOT A CLIQUE. Every vertex on this
+    // cell meets every other ON IT, so the subcomplex they span is a simplex
+    // — contractible, and every cycle inside it is a boundary. This wrote
+    // all k(k−1)/2 of those pairs as faces, and `loops_of` builds a cycle
+    // basis of the 1-skeleton with no 2-cells to fill them with, so the form
+    // carried k(k−1)/2 − (k−1) loops that bound by construction and the
+    // pivot drive cloned the whole form once per candidate against each one.
+    //
+    // Measured on the fleet: 223 bodies on one cell gave a form of 24 920
+    // loops, every one of them reported "closed by the tree gauge", and two
+    // voices sat on 3 GB at 85% of a core for six minutes proving that
+    // boundaries are boundaries. The doc above this claimed "never n²".
+    //
+    // The chain is that simplex's spanning tree: k−1 faces, the same
+    // connectivity and the same components, and the only cycles that survive
+    // are the ones spanning DISTINCT cells — which are the cycles that carry
+    // a class. The occupants are read in the form's own vertex coordinate,
+    // which is content order, so two minds holding one scene chain it alike.
     for (_k, verts) in occ.fiber(crate::network::nerve::ROOT) {
-        // Unordered pairs of this cell's own vertices, bounded by the cell.
-        for a in 0..verts.len() {
-            for b in (a + 1)..verts.len() {
-                related.insert(pair_key(verts[a], verts[b]), ());
-            }
+        for w in verts.windows(2) {
+            let [a, b] = w else { continue };
+            note_face_work();
+            related.insert(pair_key(*a, *b), ());
         }
     }
     for vi in 0..n {
