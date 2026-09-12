@@ -22,27 +22,11 @@ impl Kernel {
         // word this court ruled had no speaker, so a use of it was credited
         // to the null identity and no speaker of a generator was ever paid
         // (26).
-        // WHO DREW IT, else its parties. `basis_push` records ONE key as
-        // the discoverer of the pushed word — it is the install's own
-        // party, and `note_discovered` unions it with whoever is already
-        // there — so a party is taken here and not a payee split: the
-        // parties are read again at every payment, off the carrier.
-        //
-        // `first()` on a set has no canonical order to stand on, so the
-        // parties are asked for the drawer they already hold: a court that
-        // holds parties for the address pushes under one of them, and with
-        // no drawer and no party the push is unattributed and says so.
-        let drawn = self.drawers.get(addr).copied().or_else(|| {
-            let parties = self.parties_of(addr);
-            match parties.as_slice() {
-                [only] => Some(*only),
-                // Several parties and no drawer: the push cannot name one
-                // of them without choosing by position (rule 15), and it
-                // does not need to — `note_discovered` already holds them
-                // all and every payment reads them from there.
-                _ => None,
-            }
-        });
+        let drawn = self
+            .drawers
+            .get(addr)
+            .copied()
+            .or_else(|| self.discoverer_of(addr));
         if self.basis.get(addr).is_none() {
             if let Some(w) = held.as_ref() {
                 if !(w.is_connection() && w.letters().is_none()) {
@@ -158,31 +142,16 @@ impl Kernel {
             let Some(held) = self.word_at(form_addr.as_bytes()).cloned() else {
                 return;
             };
-            // EVERY TEACHER OF THE CITED GENERATOR (X10, 37.7, L9). This
-            // read one identity, so where two minds had derived the cited
-            // form the install paid whichever of them was recorded last
-            // and the other taught for nothing — on precisely the event
-            // L9 measures the trajectory by: two minds, one address, two
-            // derivations, both installs paying each teacher under its own
-            // key.
-            let parties = self.parties_of(form_addr.as_bytes());
-            if parties.is_empty() {
+            let Some(who) = self.discoverer_of(form_addr.as_bytes()) else {
                 return;
-            }
+            };
             // The cited form's own deflation, measured on the CITER's
             // family: what it closes inside this sentence.
             let share = self.cited_deflation(addr, &held, placement);
             if share.iter().all(|&m| m == 0) {
                 return;
             }
-            // The generator's share is ITS OWN whatever the count of its
-            // teachers, so the split is across the parties and never a
-            // multiplication of the award by how many derived it.
-            let n = parties.len() as u64;
-            let each: [u64; 4] = std::array::from_fn(|l| if share[l] == 0 { 0 } else { (share[l] / n).max(1) });
-            for who in parties {
-                out.push((who, each));
-            }
+            out.push((who, share));
         };
         for v in &f.vertices {
             match v {

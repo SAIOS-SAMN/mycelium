@@ -21,8 +21,8 @@ fn novelty_pays_on_use_not_on_existence() {
     assert_eq!(t.balance_mu(&[1; 32]), [0; 4], "installing pays NOTHING — no corpus proven yet");
     // CIRCULATION: a funded demander pays the discoverer on each real use.
     t.settle_subsidy([2; 32], [0, 0, 100, 0], anchor); // the demander earned earlier
-    t.settle_use([2; 32], &[[1; 32]], magnitude(&g), anchor); // a real demand decomposed through it
-    t.settle_use([2; 32], &[[1; 32]], magnitude(&g), anchor);
+    t.settle_use([2; 32], [1; 32], magnitude(&g), anchor); // a real demand decomposed through it
+    t.settle_use([2; 32], [1; 32], magnitude(&g), anchor);
     let bal = t.balance_mu(&[1; 32]);
     assert_eq!(bal[2], 2 * magnitude(&g)[2], "reward flows with real use, per lane");
     assert_eq!(bal[0], 0, "no lane is invented");

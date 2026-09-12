@@ -182,23 +182,8 @@ impl Kernel {
         self.standing_h.remove(addr);
     }
 
-    /// EVERY KEY WHOSE DERIVATION REACHED THIS ADDRESS. Empty where this
-    /// court credits nobody for it, which is a reading and not a payee of
-    /// zeros (rule 11).
-    ///
-    /// X10 replaced `discoverer_of`, which answered ONE identity: with two
-    /// minds on one address it answered whichever wrote last, and every
-    /// one of its seven readers was a payee lookup. A settlement split
-    /// across what this returns is 37.7's consilience award; a settlement
-    /// that takes a member of it by position is rule 15's choice, and
-    /// there is no position to take here.
-    pub(crate) fn parties_of(&self, addr: &[u8]) -> Vec<[u8; 32]> {
-        let Some(parties) = self.discoverers.get(addr) else {
-            return Vec::new();
-        };
-        // `get(addr)` is the descent: these are the parties of THAT
-        // address, and all of them are parties.
-        parties.scoped().filter_map(|(k, ())| <[u8; 32]>::try_from(k.as_slice()).ok()).collect()
+    pub(crate) fn discoverer_of(&self, addr: &[u8]) -> Option<[u8; 32]> {
+        self.discoverers.get(addr).copied()
     }
 
     /// A held word, to change. `Held::update` is the only way through it:
@@ -492,11 +477,8 @@ impl Kernel {
             seen.insert(addr, ());
             if let Some(w) = self.basis.get(addr) {
                 nb.insert(addr, std::sync::Arc::clone(w));
-                // A WORD THAT SURVIVES THE PRUNE KEEPS EVERY PARTY IT HAD:
-                // carrying one of them across would unpay the rest at the
-                // next install of anything that cites it (X10).
-                if let Some(parties) = self.discoverers.get(addr) {
-                    nd.insert(addr, parties.clone());
+                if let Some(d) = self.discoverer_of(addr) {
+                    nd.insert(addr, d);
                 }
             } else {
                 nb.insert(

@@ -120,10 +120,7 @@ impl Kernel {
                     std::slice::from_ref(&candidate),
                     &candidate,
                     payload,
-                    // The bidder PROVED the redundancy: it is the actor of
-                    // this move and its only party, which is not the same
-                    // shape as the retired word's own parties.
-                    &[bidder],
+                    bidder,
                 );
                 self.basis_remove(addr);
                 self.physics.syntropy(&candidate.magnitude());
@@ -168,7 +165,7 @@ impl Kernel {
             // Presence is not finality: an unruled connection stays on the
             // docket until the court measures it.
             if (word.is_connection() || word.is_sentence() || word.is_rewrite()) && !self.ruled_contains(&addr) {
-                self.docket_connection(word, ratifier, &[ratifier]);
+                self.docket_connection(word, ratifier);
             }
             return Adoption::Known;
         }
@@ -179,7 +176,7 @@ impl Kernel {
         // up is installed as before. A sentence is the same: Offered on the
         // docket so a second organ's replay installs it as language.
         if word.is_connection() || word.is_sentence() || word.is_rewrite() {
-            self.docket_connection(word, ratifier, &[ratifier]);
+            self.docket_connection(word, ratifier);
         }
         self.basis_push(word.clone(), ratifier);
         // A word the court itself teaches is finalized language: it joins

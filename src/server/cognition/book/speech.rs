@@ -314,26 +314,14 @@ impl Kernel {
     }
 
     /// List a word on the docket if it is not already provisional.
-    ///
-    /// TWO FACTS, AND THEY WERE ONE ARGUMENT. `operator` is who ACTED —
-    /// one key, because a K-step is one act and its receipt carries one
-    /// operator hash. `parties` is every key whose derivation reached the
-    /// word — a set, because payment is split across them (X10). A voice
-    /// docketing its own utterance is both; a court stroke that mints a
-    /// Rewrite is the operator of that act while the parties are the
-    /// voices who derived the word it optimised, and passing one key for
-    /// both made the payee the operator of a receipt it never acted.
-    ///
-    /// All the parties are escrowed as payees (`escrow_award` unions),
-    /// recorded as parties, and recorded as USES — which `converge_here`
-    /// keeps separate from a vantage: the re-derivation it records is THIS
-    /// COURT'S, under this court's own identity, so no number of voices is
-    /// ever a second organ (47.3, and the convergence test that pins it).
-    pub(crate) fn docket_connection(&mut self, word: &Element, operator: [u8; 32], parties: &[[u8; 32]]) {
+    pub(crate) fn docket_connection(&mut self, word: &Element, ratifier: [u8; 32]) {
         if word.is_identity() && !word.is_rewrite() {
             return;
         }
         let addr = word.address();
+        if self.provisional.contains(&addr) {
+            return;
+        }
         let mag = word.magnitude();
         let mu = if word.is_rewrite() {
             mag
@@ -341,48 +329,21 @@ impl Kernel {
             crate::economy::price(&mag, &self.physics.pressure)
         };
         let anchor = self.anchor();
-        // A SECOND MIND REACHING A DOCKETED ADDRESS IS NEW INFORMATION,
-        // and it used to be thrown away at the guard below. The docket
-        // entry is already there and must not be written twice — that is
-        // what the guard is for — but the PARTY is not the docket: two
-        // derivations of one vertex are one address (1.5, law 2) and two
-        // parties (X10), and returning below skipped `note_discovered` for
-        // every speaker after the first, so the carrier could hold only
-        // one party per address however wide it was made.
-        //
-        // ONLY THE PARTY IS HOISTED. af15d92 lifted this court's VANTAGE
-        // and the escrow over the guard with it, and that was a change the
-        // row never asked for: `converge_here` re-recorded the home's own
-        // re-derivation on every re-docketing of an address it already
-        // held, against a `word` that need not be the tape it recorded the
-        // first time, so the home's vantage MOVED under a witness that had
-        // already replayed it. On the fleet at af15d92 the Mayer–Vietoris
-        // refusal — two organs reaching different addresses for one object
-        // (13.9 step 8) — went from 117 in 36 minutes to 1283 in 12. A
-        // vantage is recorded once, where it is established.
-        for who in parties {
-            self.note_discovered(&addr, *who);
-        }
-        if self.provisional.contains(&addr) {
-            return;
-        }
         // THIS COURT re-derived the word to docket it: its own vantage,
         // recorded so a witness's re-derivation can converge with it (47.3).
         // Every path that dockets records one, or the object waits for a
         // second organ it can never reach because the first was never there.
-        for who in parties {
-            self.converge_here(word, *who);
-        }
-        self.treasury.escrow_award(&addr, parties.to_vec(), mu, anchor);
+        self.converge_here(word, ratifier);
+        self.treasury.escrow_award(&addr, vec![ratifier], mu, anchor);
         self.deflations.insert(&addr, mag);
         let k_now = self.k_step();
         self.provisional_k.insert(&addr, k_now);
         self.provisional.insert(&addr, word.clone());
-        // L8y's note stands above the guard now, with the parties: the
-        // voices that spoke it, recorded where the court knows them.
+        // L8y: the voice that spoke it, recorded where the court knows it.
         // `drawers` is cleared by `pending_take` before the install, so the
         // install had no name to credit and wrote the null identity; a use
         // of the word was then paid to nobody (26).
+        self.note_discovered(&addr, ratifier);
         self.stamp_standing(&addr);
         self.provisional_h.insert(&addr, self.height());
         self.mark_persist();
@@ -398,7 +359,7 @@ impl Kernel {
             );
         }
         self.book_gen += 1;
-        self.append_step(crate::chronometry::ActKind::Attest, &addr, operator);
+        self.append_step(crate::chronometry::ActKind::Attest, &addr, ratifier);
     }
 
 
@@ -432,11 +393,9 @@ impl Kernel {
         if element::pullback(&base_pos, sib.sub(), g).is_none() {
             return 0;
         };
-        // The absorbed sibling's parties: the condense pays all of them.
-        let parties = self.parties_of(sibling);
-        if parties.is_empty() {
+        let Some(disc) = self.discoverer_of(sibling) else {
             return 0;
-        }
+        };
         // A base the basis does not hold gains nothing: nothing was
         // attached to it.
         let gained = match self.word_mut(base) {
@@ -456,7 +415,7 @@ impl Kernel {
                     std::slice::from_ref(&sib),
                     &after,
                     payload,
-                    &parties,
+                    disc,
                 );
                 self.torse_at(base);
             }
@@ -536,8 +495,9 @@ impl Kernel {
                 let addr = &cite.addr;
                 if let Some(w) = self.basis.get(addr) {
                     let mag = w.magnitude();
-                    let parties = self.parties_of(addr);
-                    self.treasury.settle_use(voice, &parties, mag, anchor);
+                    if let Some(disc) = self.discoverer_of(addr) {
+                        self.treasury.settle_use(voice, disc, mag, anchor);
+                    }
                 }
             }
             for chart in charts {

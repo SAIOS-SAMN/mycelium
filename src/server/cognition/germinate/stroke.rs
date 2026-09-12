@@ -137,16 +137,15 @@ impl Kernel {
                 continue;
             };
             let payload = crate::transducer::rewrite::RewritePayload::Reanchor { gamma };
-            let parties = self.parties_of(&addr);
-            if parties.is_empty() {
+            let Some(voice) = self.discoverer_of(&addr) else {
                 continue;
-            }
+            };
             let _ = self.mint_rewrite(
                 crate::transducer::rewrite::RewriteKind::Reanchor,
                 &[w],
                 &after,
                 payload,
-                &parties,
+                voice,
             );
             break;
         }

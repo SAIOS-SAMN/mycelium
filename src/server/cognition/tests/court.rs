@@ -339,7 +339,7 @@ let wider = vec![(x, y), (grid(&["10"]), grid(&["23"]))];
 let mut refusing = Kernel::new();
 let task = [7u8; 32];
 refusing.bind_task_family(task, wider);
-refusing.docket_connection(&word, [1; 32], &[[1; 32]]);
+refusing.docket_connection(&word, [1; 32]);
 refusing.speech_task.insert(&addr, Address::from_bytes(task));
 assert!(refusing.provisional.contains(&addr), "docketed");
 refusing.court_stroke(one_stroke_transport);
@@ -349,7 +349,7 @@ assert!(!refusing.ruled_contains(&addr), "never ruled");
 
 let mut ruling = Kernel::new();
 ruling.bind_task_family(task, one_pair);
-ruling.docket_connection(&word, [1; 32], &[[1; 32]]);
+ruling.docket_connection(&word, [1; 32]);
 ruling.speech_task.insert(&addr, Address::from_bytes(task));
 ruling.court_stroke(one_stroke_transport);
 assert_eq!(ruling.court_slashed, 0, "the form closes every pair of the family it is bound to");

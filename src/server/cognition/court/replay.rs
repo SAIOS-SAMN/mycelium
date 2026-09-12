@@ -291,10 +291,7 @@ impl Kernel {
             );
             return;
         }
-        // The translation is THIS COURT'S act on a ratifier's utterance:
-        // the court operates the receipt, the ratifier is its party.
-        let operator = self.identity;
-        self.docket_connection(&t, operator, &[ratifier]);
+        self.docket_connection(&t, ratifier);
         let payload = crate::transducer::rewrite::RewritePayload::Translation {
             a: a.clone(),
             b: b.clone(),
@@ -305,7 +302,7 @@ impl Kernel {
             &[],
             &t,
             payload,
-            &[ratifier],
+            ratifier,
         );
         eprintln!(
             "  court translation docked {:02x}{:02x}…",

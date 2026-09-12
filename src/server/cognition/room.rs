@@ -172,24 +172,8 @@ impl Kernel {
 
     /// Record a discovery on both readings at once, so `discoverers` and
     /// its inverse cannot disagree.
-    ///
-    /// THEY DID DISAGREE, and this docstring is what would have been
-    /// believed instead of the body (X10). `discovered_by` is a set per
-    /// voice and accumulates; `discoverers` was one identity per address
-    /// and was REBOUND here, so from the second voice on, the inverse held
-    /// a pair the forward reading denied. Both are unions now, and the
-    /// claim above is true for the first time.
     pub(crate) fn note_discovered(&mut self, addr: &[u8], who: [u8; 32]) {
-        match self.discoverers.get_mut(addr) {
-            Some(parties) => {
-                parties.insert(who, ());
-            }
-            None => {
-                let mut parties = crate::network::nerve::Keyed::new();
-                parties.insert(who, ());
-                self.discoverers.insert(addr, parties);
-            }
-        }
+        self.discoverers.insert(addr, who);
         match self.discovered_by.get_mut(who.as_slice()) {
             Some(mine) => {
                 mine.insert(addr, ());
