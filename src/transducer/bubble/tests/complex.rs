@@ -10,7 +10,7 @@ fn two_bubbles_on_one_chart_share_an_edge_not_a_triangle() {
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     c.hold(vec![(5, 5, 3, 4), (5, 6, 3, 4)]);
     assert_eq!(c.len(), 2, "disjoint remainders are two bubbles");
-    let keys: Vec<Vec<u8>> = c.bubbles.fiber(ROOT).map(|(k, _)| k).collect();
+    let keys: Vec<Vec<u8>> = c.bubbles.scoped().map(|(k, _)| k).collect();
     let edges = c.complex.link(&keys[0], 1);
     assert!(!edges.is_empty() || c.complex.degrees.get(1).is_none_or(|l| !l.is_empty()) || {
         // same chart prefix (leading axis of a bar) may or may not coincide;
@@ -29,7 +29,7 @@ fn overlapping_remainders_merge_by_fill() {
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     c.hold(vec![(0, 1, 3, 4), (0, 2, 3, 4)]);
     assert_eq!(c.len(), 1, "shared cell is Extended: the bubbles merge");
-    let keys: Vec<Vec<u8>> = c.bubbles.fiber(ROOT).map(|(k, _)| k).collect();
+    let keys: Vec<Vec<u8>> = c.bubbles.scoped().map(|(k, _)| k).collect();
     assert_eq!(keys.len(), 1);
     assert!(c.bubbles.get(&keys[0]).unwrap().potential.iter().any(|&x| x > 0));
 }
@@ -46,7 +46,7 @@ fn two_pivots_without_a_new_word_leave_fills() {
     let snap = |c: &Contemplation| {
         let mut out = Vec::new();
         for layer in &c.complex.degrees {
-            for (k, cell) in layer.fiber(ROOT) {
+            for (k, cell) in layer.scoped() {
                 out.push((k.clone(), cell.fill.clone()));
             }
         }
@@ -110,7 +110,7 @@ fn vortex_collapses_by_glue_or_ruling() {
             side: Side::Left,
         },
     };
-    let k = c.bubbles.fiber(ROOT).next().map(|(k, _)| k).expect("bubble");
+    let k = c.bubbles.scoped().next().map(|(k, _)| k).expect("bubble");
     let hit_key = hit.key();
     if let Some(b) = c.bubbles.get_mut(&k) {
         sentence::vortex_put(&mut b.vortex, hit);

@@ -19,7 +19,7 @@ pub(crate) use horizon::horizon_put;
 pub(crate) use idea::*;
 pub(crate) use merge::*;
 
-use crate::network::nerve::{Keyed, ROOT};
+use crate::network::nerve::Keyed;
 use crate::physics::Budget;
 use crate::transducer::alphabet::{Order, Rotor};
 use crate::transducer::cech::{self, Cell as CechCell, Complex, Fill, Section};

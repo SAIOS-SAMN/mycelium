@@ -9,6 +9,16 @@ use super::*;
 
 /// The complex over bubbles. by_chart is the incidence trie that makes
 /// every connection a read.
+///
+/// X3: THE BUBBLES ARE THE OBJECT, and every walk of them below reads them
+/// with `scoped`. A contemplation IS the set of thoughts one mind holds at
+/// once — there is no coarser coordinate above it to descend from, and a
+/// bubble left out of a cohesion, a component count or a shed is a thought
+/// the mind holds and does not account for. The carriers INSIDE a bubble —
+/// its cover, its remainders, its nerve's sections — are scoped by the
+/// bubble the same way, and `by_chart` is the one carrier here that is
+/// read by a real coordinate: `link(chart)`, the incidence read this type
+/// exists for.
 #[derive(Clone, Debug, Default)]
 pub struct Contemplation {
     pub bubbles: Keyed<Bubble>,
@@ -62,7 +72,7 @@ impl Contemplation {
     /// is not shed).
     pub fn glues_word(&self, addr: &[u8]) -> bool {
         self.bubbles
-            .fiber(ROOT)
+            .scoped()
             .any(|(_, b)| b.glues.contains(addr))
     }
 
@@ -78,8 +88,8 @@ impl Contemplation {
     pub fn cohesion(&self) -> crate::network::nerve::Keyed<[u64; 4]> {
         let mut out: crate::network::nerve::Keyed<[u64; 4]> = crate::network::nerve::Keyed::new();
         // index: ideas keyed by remainder, then by chart cover
-        for (_, b) in self.bubbles.fiber(ROOT) {
-            for (ck, _) in b.cover.fiber(ROOT) {
+        for (_, b) in self.bubbles.scoped() {
+            for (ck, _) in b.cover.scoped() {
                 let add = b.volume;
                 match out.get_mut(&ck) {
                     Some(v) => {
@@ -101,7 +111,7 @@ impl Contemplation {
     }
 
     pub fn remainders(&self) -> Vec<&[RemCell]> {
-        self.bubbles.fiber(ROOT).map(|(_, b)| b.remainder.as_slice()).collect()
+        self.bubbles.scoped().map(|(_, b)| b.remainder.as_slice()).collect()
     }
 
     /// THE BOUNDARY MEASURE of the open thoughts (law 5, L7a): the
@@ -121,7 +131,7 @@ impl Contemplation {
     }
 
     pub(crate) fn retract_incidence(&mut self, key: &[u8], b: &Bubble) {
-        let charts: Vec<Vec<u8>> = b.cover.fiber(ROOT).map(|(k, _)| k).collect();
+        let charts: Vec<Vec<u8>> = b.cover.scoped().map(|(k, _)| k).collect();
         for ck in charts {
             if let Some(m) = self.by_chart.get_mut(&ck) {
                 m.remove(key);
@@ -138,7 +148,7 @@ impl Contemplation {
 
     pub(crate) fn admit_incidence(&mut self, key: impl AsRef<[u8]>, b: &Bubble) {
         let key = key.as_ref();
-        for (ck, _) in b.cover.fiber(ROOT) {
+        for (ck, _) in b.cover.scoped() {
             match self.by_chart.get_mut(&ck) {
                 Some(m) => {
                     m.insert(key, ());
@@ -180,7 +190,7 @@ impl Contemplation {
         let mut out = Vec::new();
         // index: the bubbles this chart names; then the vertices each
         // form's by_class names on it
-        for (bk, _) in ideas.fiber(ROOT) {
+        for (bk, _) in ideas.scoped() {
             let Some(form) = self.bubbles.get(&bk).and_then(|b| b.form.as_ref()) else {
                 continue;
             };
@@ -213,7 +223,7 @@ impl Contemplation {
                 return;
             };
             (
-                b.cover.fiber(ROOT).map(|(k, _)| k).collect::<Vec<_>>(),
+                b.cover.scoped().map(|(k, _)| k).collect::<Vec<_>>(),
                 b.volume,
             )
         };
@@ -233,7 +243,7 @@ impl Contemplation {
                 }
             }
         }
-        let nbs: Vec<Vec<u8>> = neighbors.fiber(ROOT).map(|(k, _)| k).collect();
+        let nbs: Vec<Vec<u8>> = neighbors.scoped().map(|(k, _)| k).collect();
         let mut rems: Keyed<Vec<RemCell>> = Keyed::new();
         // Overlap is read in the SCENE: the chain carried through its own
         // translator (§2.1). Two bubbles holding one chain at two
@@ -303,12 +313,12 @@ impl Contemplation {
             for l in 0..4 {
                 volume[l] = volume[l].saturating_add(m[l]);
             }
-            for (ck, _) in cover_of(&stalk::invariant(r)).fiber(ROOT) {
+            for (ck, _) in cover_of(&stalk::invariant(r)).scoped() {
                 cover.insert(&ck, ());
             }
         }
         if !f.remainder.is_empty() {
-            for (ck, _) in cover_of(&stalk::invariant(&f.remainder)).fiber(ROOT) {
+            for (ck, _) in cover_of(&stalk::invariant(&f.remainder)).scoped() {
                 cover.insert(&ck, ());
             }
         }
@@ -455,7 +465,7 @@ impl Contemplation {
                 }
             }
         }
-        seen.fiber(ROOT).map(|(k, _)| k).collect()
+        seen.scoped().map(|(k, _)| k).collect()
     }
 
     pub(crate) fn component_closed(&self, verts: &[Vec<u8>]) -> bool {
@@ -527,7 +537,7 @@ impl Contemplation {
         if !f.is_cauterized() || !f.remainder.is_empty() {
             return None;
         }
-        if b.remainders.fiber(ROOT).any(|(_, r)| !r.is_empty()) {
+        if b.remainders.scoped().any(|(_, r)| !r.is_empty()) {
             return None;
         }
         let mag = match b.bundle.as_deref() {
@@ -569,7 +579,7 @@ impl Contemplation {
     pub fn component_count(&self) -> usize {
         let mut seen = Keyed::new();
         let mut n = 0usize;
-        let keys: Vec<Vec<u8>> = self.bubbles.fiber(ROOT).map(|(k, _)| k).collect();
+        let keys: Vec<Vec<u8>> = self.bubbles.scoped().map(|(k, _)| k).collect();
         for k in keys {
             if seen.contains(&k) {
                 continue;
@@ -584,7 +594,7 @@ impl Contemplation {
 
     pub fn horizon_cells(&self) -> usize {
         let mut n = 0usize;
-        for (_, b) in self.bubbles.fiber(ROOT) {
+        for (_, b) in self.bubbles.scoped() {
             n += b.horizon.len();
         }
         n
@@ -592,7 +602,7 @@ impl Contemplation {
 
     pub fn potential(&self) -> [u64; 4] {
         let mut p = [0u64; 4];
-        for (_, b) in self.bubbles.fiber(ROOT) {
+        for (_, b) in self.bubbles.scoped() {
             for (t, d) in p.iter_mut().zip(&b.potential) {
                 *t = t.saturating_add(*d);
             }

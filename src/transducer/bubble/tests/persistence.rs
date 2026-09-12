@@ -32,7 +32,7 @@ fn restart_refills_horizon_from_syllabus() {
     c.hold(vec![(5, 5, 3, 4)]);
     assert!(
         c.bubbles
-            .fiber(ROOT)
+            .scoped()
             .any(|(_, b)| b.horizon.contains(&rec.key)),
         "a later idea inherits the seeded class"
     );

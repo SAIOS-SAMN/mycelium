@@ -98,7 +98,7 @@ impl Contemplation {
     ) -> (u64, u64, u64, Vec<Element>) {
         let inv = stalk::invariant_of(word);
         let prefixes: Vec<Vec<u8>> = inv.prefixes().iter().map(|p| p.key().into_vec()).collect();
-        let cav: Vec<(Vec<u8>, Vec<RemCell>)> = self.cavity.fiber(ROOT).map(|(k, r)| (k, r.clone())).collect();
+        let cav: Vec<(Vec<u8>, Vec<RemCell>)> = self.cavity.scoped().map(|(k, r)| (k, r.clone())).collect();
         for (k, rem) in cav {
             let cinv = stalk::invariant(&rem);
             if cinv.prefixes().iter().any(|p| prefixes.iter().any(|q| p.key().as_bytes() == q.as_slice())) {
@@ -117,7 +117,7 @@ impl Contemplation {
         let mut new_classes = 0u64;
         let mut spoken: Vec<Element> = Vec::new();
         spoken.extend(std::mem::take(&mut self.pending_rewrites));
-        let bubble_keys: Vec<Vec<u8>> = keys.fiber(ROOT).map(|(k, _)| k).collect();
+        let bubble_keys: Vec<Vec<u8>> = keys.scoped().map(|(k, _)| k).collect();
         if word.sub().is_empty() && crate::transducer::sentence::carries_torsion(word) {
             let addr = word.address();
             for bk in &bubble_keys {

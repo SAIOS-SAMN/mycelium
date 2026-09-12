@@ -61,7 +61,7 @@ pub(crate) fn form_mag(f: &Form) -> [u64; 4] {
 
 pub(crate) fn rem_cells_of(b: &Bubble) -> Vec<RemCell> {
     let mut out = b.remainder.to_vec();
-    for (_, r) in b.remainders.fiber(ROOT) {
+    for (_, r) in b.remainders.scoped() {
         out.extend_from_slice(r);
     }
     out

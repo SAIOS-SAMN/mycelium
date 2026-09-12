@@ -56,8 +56,11 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
     }
 }
 
+/// ABSORB IS THE WHOLE OF THE SOURCE, by the meaning of the word: two
+/// bubbles merging carry every entry of each other's carriers across, and
+/// an entry left behind is a fact the merged bubble has lost.
 pub(crate) fn absorb_keyed<V: Clone>(dst: &mut Keyed<V>, src: &Keyed<V>) {
-    for (k, v) in src.fiber(ROOT) {
+    for (k, v) in src.scoped() {
         dst.insert(&k, v.clone());
     }
 }
@@ -66,7 +69,7 @@ pub(crate) fn absorb_vortex(
     dst: &mut Keyed<Keyed<sentence::PivotCertificate>>,
     src: &Keyed<Keyed<sentence::PivotCertificate>>,
 ) {
-    for (after, inner) in src.fiber(ROOT) {
+    for (after, inner) in src.scoped() {
         match dst.get_mut(&after) {
             Some(d) => absorb_keyed(d, inner),
             None => {
@@ -105,7 +108,7 @@ impl Contemplation {
                     for v in &vertices {
                         if let Some(b) = self.bubbles.get_mut(v) {
                             let keys: Vec<Vec<u8>> =
-                                b.nerve.sections.fiber(ROOT).map(|(k, _)| k).collect();
+                                b.nerve.sections.scoped().map(|(k, _)| k).collect();
                             for sk in keys {
                                 if let Some(sec) = b.nerve.sections.get_mut(&sk) {
                                     sec.gamma = gamma.geo(&sec.gamma);

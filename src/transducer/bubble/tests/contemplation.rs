@@ -69,7 +69,7 @@ fn hold_form_keeps_a_glued_open_loop() {
     let mut c = Contemplation::new();
     c.hold_form(&outer, &[], &[]);
     assert_eq!(c.bubbles.len(), 1, "the glued form is an idea");
-    let b = c.bubbles.fiber(ROOT).next().map(|(_, b)| b).expect("held");
+    let b = c.bubbles.scoped().next().map(|(_, b)| b).expect("held");
     assert!(
         b.form.as_ref().is_some_and(|f| {
             f.vertices
@@ -121,7 +121,7 @@ fn hold_form_keeps_a_glued_open_loop() {
     );
     let mut c2 = Contemplation::new();
     c2.hold_form(&open, &[], &[]);
-    let k = c2.bubbles.fiber(ROOT).next().map(|(k, _)| k).expect("held");
+    let k = c2.bubbles.scoped().next().map(|(k, _)| k).expect("held");
     assert_eq!(k.as_slice(), crate::transducer::bubble::idea::idea_key(&open).as_bytes(), "hold, merge and Bubble::key share idea_key");
     struct HoldQ(Word);
     impl crate::transducer::family::Crystal for HoldQ {
@@ -234,7 +234,7 @@ fn hold_form_carries_bundle_and_remainder() {
     let mut c = Contemplation::new();
     c.hold_form(&f, &train, &rem);
     assert_eq!(c.bubbles.len(), 1);
-    let (k, b) = c.bubbles.fiber(ROOT).next().expect("held");
+    let (k, b) = c.bubbles.scoped().next().expect("held");
     assert_eq!(k.as_slice(), crate::transducer::bubble::idea::idea_key(&f).as_bytes(), "idea_key stays the form's vertex key");
     assert!(
         b.bundle.as_ref().is_some_and(|t| t.len() == 1),
@@ -325,7 +325,7 @@ fn work_of_one_thought_is_independent_of_n() {
         let expand = work::total();
         work::reset();
         let mut charts = 0usize;
-        for (_, b) in c.bubbles.fiber(ROOT) {
+        for (_, b) in c.bubbles.scoped() {
             let mut cur = stalk::invariant(&b.remainder);
             loop {
                 if b.cover.contains(&cur.key()) {

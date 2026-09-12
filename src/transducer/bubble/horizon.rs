@@ -31,7 +31,7 @@ impl Contemplation {
             );
             n += 1;
         }
-        let keys: Vec<Vec<u8>> = self.bubbles.fiber(ROOT).map(|(k, _)| k).collect();
+        let keys: Vec<Vec<u8>> = self.bubbles.scoped().map(|(k, _)| k).collect();
         for k in keys {
             if let Some(b) = self.bubbles.get_mut(&k) {
                 for rec in records {
@@ -53,7 +53,7 @@ impl Contemplation {
     }
 
     pub(crate) fn paint_seeded(&self, horizon: &mut Keyed<(Rotor, Order, Standing)>) {
-        for (k, v) in self.seeded.fiber(ROOT) {
+        for (k, v) in self.seeded.scoped() {
             if !horizon.contains(&k) {
                 horizon.insert(&k, v.clone());
             }

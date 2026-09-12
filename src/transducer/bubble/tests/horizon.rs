@@ -16,7 +16,7 @@ fn horizon_seeded_class_is_not_rederived() {
     };
     assert_eq!(c.seed_horizon(std::slice::from_ref(&rec)), 1);
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
-    let b = c.bubbles.fiber(ROOT).next().map(|(_, b)| b).expect("bubble");
+    let b = c.bubbles.scoped().next().map(|(_, b)| b).expect("bubble");
     let (_, _, st) = b.horizon.get(&rec.key).expect("seeded");
     assert_eq!(*st, Standing::Held);
 }
@@ -30,7 +30,7 @@ fn horizon_is_keyed_by_class_key_and_round_trips() {
     let r = Word::from_letters(&[(q, false)]).rotor();
     let ck = r.class_key().expect("quarter class");
     let key = {
-        let (k, _) = c.bubbles.fiber(ROOT).next().expect("bubble");
+        let (k, _) = c.bubbles.scoped().next().expect("bubble");
         k
     };
     if let Some(b) = c.bubbles.get_mut(&key) {

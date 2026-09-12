@@ -18,7 +18,7 @@ impl Contemplation {
         }
         let now = self.now_k;
         let mut best: Option<(Vec<u8>, u64)> = None;
-        for (k, b) in self.bubbles.fiber(ROOT) {
+        for (k, b) in self.bubbles.scoped() {
             if !b.glued_by.is_empty() {
                 continue;
             }
@@ -48,7 +48,7 @@ impl Contemplation {
     pub fn shed_unglued(&mut self) -> usize {
         let drop: Vec<Vec<u8>> = self
             .bubbles
-            .fiber(ROOT)
+            .scoped()
             .filter(|(_, b)| b.glued_by.is_empty() && b.glues.is_empty() && !b.dirty)
             .map(|(k, _)| k)
             .collect();
