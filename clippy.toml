@@ -1,0 +1,34 @@
+# MU-STANDARDS 4.2 — the pattern rules of the laws, as lints. Each entry
+# carries the rule it enforces; a path clippy cannot name is a review item
+# under 4.4 and is never approximated by a text match.
+#
+# The entries arrive with their rule's commit: a rule is denied in the same
+# commit that clears its sites (§4.2, and the ruling of 2026-09-12 on the
+# per-lint split).
+
+# Tests assert; the abort rules of 2.4 bind cognition, not a claim.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+
+disallowed-types = [
+    { path = "std::collections::HashMap", reason = "law 2, rule 9: a key is a canonical coordinate in a Keyed trie, never a hash bucket" },
+    { path = "std::collections::BTreeMap", reason = "law 2, rule 9: a key is a canonical coordinate in a Keyed trie" },
+    { path = "std::collections::HashSet", reason = "law 2, rule 9: presence is read from a Keyed set" },
+    { path = "std::collections::BTreeSet", reason = "law 2, rule 9: presence is read from a Keyed set" },
+    { path = "std::time::Instant", reason = "law 9: the clock is the receipt chain's k and the height, never wall time" },
+    { path = "std::time::SystemTime", reason = "law 9: the clock is the receipt chain's k and the height" },
+    { path = "std::time::Duration", reason = "law 9: an extent is measured in strokes and heights" },
+]
+
+disallowed-methods = [
+    { path = "blake3::hash", reason = "law 2: identity is content written out, not a digest of it" },
+    { path = "blake3::Hasher::new", reason = "law 2: identity is content written out, not a digest of it" },
+
+    { path = "core::iter::Iterator::max", reason = "rule 4: nothing is chosen by a scalar; read the fiber" },
+    { path = "core::iter::Iterator::min", reason = "rule 4: nothing is chosen by a scalar; read the fiber" },
+    { path = "core::iter::Iterator::max_by", reason = "rule 4: nothing is chosen by a scalar" },
+    { path = "core::iter::Iterator::min_by", reason = "rule 4: nothing is chosen by a scalar" },
+    { path = "core::iter::Iterator::max_by_key", reason = "rule 4: nothing is chosen by a scalar" },
+    { path = "core::iter::Iterator::min_by_key", reason = "rule 4: nothing is chosen by a scalar" },
+]
