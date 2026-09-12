@@ -37,10 +37,6 @@ pub(crate) fn find(parent: &mut [usize], i: usize) -> usize {
 }
 
 /// Measure the signature of `region` as it stands in `scene`.
-#[expect(
-    clippy::manual_unwrap_or_default,
-    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a region with more edges than sides is a broken incidence and bounds nothing"
-)]
 pub fn signature(region: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Signature {
     let mut cells: Vec<(i64, i64)> = region.to_vec();
     cells.sort_unstable();
@@ -53,12 +49,10 @@ pub fn signature(region: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Signature {
     roots.sort_unstable();
     roots.dedup();
     // Every cell has four sides and every interior edge consumes two of
-    // them, so the boundary is exact; a region with more edges than sides
-    // is a broken incidence and bounds nothing.
-    let boundary = match (4 * cells.len() as u64).checked_sub(2 * edges.len() as u64) {
-        Some(b) => b,
-        None => 0,
-    };
+    // them. `incidence_of` emits at most one row-edge and one column-edge
+    // per adjacent pair of an ordered support, so edges ≤ 2n − 2 and the
+    // sides always outnumber them: the boundary is exact and total.
+    let boundary = 4 * cells.len() as u64 - 2 * edges.len() as u64;
     // Hue tally of the scene's cells inside the region: one merge walk over
     // the two ordered supports, never a lookup per cell.
     let mut ordered: Vec<(i64, i64, u8)> = scene.to_vec();

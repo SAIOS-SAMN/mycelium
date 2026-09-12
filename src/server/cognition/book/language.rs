@@ -166,7 +166,12 @@ impl Kernel {
         let now = self.height();
         let mut standing_t = crate::network::nerve::Keyed::new();
         for (addr, _) in self.pending.fiber(crate::network::nerve::ROOT) {
-            standing_t.insert(&addr, self.t_extent(&addr, now));
+            // A listing whose T cannot be measured carries no T on the
+            // view: the key is absent, which is what unmeasured is here,
+            // and not a zero every reader would take for a fresh listing.
+            if let Some(t) = self.t_extent(&addr, now) {
+                standing_t.insert(&addr, t);
+            }
         }
         MarketView {
             language: self.language(),

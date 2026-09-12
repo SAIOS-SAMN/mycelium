@@ -561,15 +561,26 @@ impl Exchange {
                 } else {
                     None
                 };
-                if let Some((g, e)) = mine {
-                    // A home whose path is not UTF-8 mints into the working
-                    // directory's default name; the key identifies the hypha.
+                'genesis: {
+                    let Some((g, e)) = mine else { break 'genesis };
+                    // A home whose path is not UTF-8 names no key file, and
+                    // minting under the bare name would put this hypha's key
+                    // in the working directory — a different key from the
+                    // one that home holds (rule 11).
                     let key_path = gen_home.join("hypha.key");
-                    let key = HyphaKey::load_or_mint(match key_path.to_str() {
-                        Some(p) => p,
-                        None => "hypha.key",
-                    });
-                    let mut rec = mycelium::network::mesh::load_or_migrate_hypha(&gen_home, &key);
+                    let Some(key_name) = key_path.to_str() else {
+                        eprintln!("  court genesis refused: home path is not UTF-8");
+                        break 'genesis;
+                    };
+                    let key = HyphaKey::load_or_mint(key_name);
+                    let rec = mycelium::network::mesh::load_or_migrate_hypha(&gen_home, &key);
+                    let mut rec = match rec {
+                        Ok(rec) => rec,
+                        Err(why) => {
+                            eprintln!("  court genesis refused: {why}");
+                            break 'genesis;
+                        }
+                    };
                     if rec.genesis != Some(g) {
                         rec.genesis = Some(g);
                         rec.epoch = e;

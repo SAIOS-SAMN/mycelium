@@ -204,6 +204,24 @@ fn congruent_is_read_by_class_key() {
     );
 }
 
+/// A CELL ON NO VERTICES IS NO SIMPLEX. It was remembered at degree zero,
+/// where a point lives, so the complex held a cell with no support beside
+/// its vertices and `degree` answered for it by flooring a subtraction.
+/// It is not remembered, and every reader of `degree` takes `n − 1` whole.
+#[test]
+fn a_cell_on_no_vertices_is_not_a_cell() {
+    let mut c = Complex::new();
+    c.remember(Cell {
+        vertices: Vec::new(),
+        coefficient: Rotor::identity(),
+        carriage: ident(),
+        volume: vol(),
+        fill: Fill::Open,
+    });
+    assert_eq!(c.cell_count(), 0, "no simplex was remembered");
+    assert!(c.get(&[]).is_none(), "and none is there to read");
+}
+
 #[test]
 fn fill_is_attempted_once() {
     let mut c = Complex::new();

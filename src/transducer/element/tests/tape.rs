@@ -131,6 +131,44 @@ fn torsion_round_trips_through_bytes() {
     assert!(t.transitions().is_empty());
 }
 
+/// A17 AND A5 AT THE TAPE. A filed period of zero is not a cycle of no
+/// extent and a chain that says two things at one cell has no canonical
+/// form, so neither is decoded into an element: the readers downstream
+/// take `ℓ − 1` whole, and no element reaches the basis whose address
+/// would be the form tag and nothing else.
+#[test]
+fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
+    let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
+    let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+    let mut t = from_canonical(&germinate(&a, &b).expect("a germ"));
+    t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
+    t.torse();
+    assert_eq!(t.torsion().len(), 1, "one cycle is filed");
+    let bytes = t.to_bytes();
+    let mut pos = 0;
+    assert!(Element::from_bytes(&bytes, &mut pos).is_some(), "the tape as filed decodes");
+    let mut zero = t.clone();
+    zero.torsion[0].period = 0;
+    let mut pos = 0;
+    assert!(
+        Element::from_bytes(&zero.to_bytes(), &mut pos).is_none(),
+        "a filed period of zero is a malformed tape, not a cycle spanning nothing"
+    );
+
+    let mut one = from_canonical(&canonical_chain(&[(0, 0, 1, 2)]).expect("one cell is a chain"));
+    let mut pos = 0;
+    assert!(Element::from_bytes(&one.to_bytes(), &mut pos).is_some(), "one transition decodes");
+    // The same cell saying two different things: A5 step 3 refuses it,
+    // `canonical_chain` has no centering for it, and the tape it was
+    // written to does not come back as an element.
+    one.sub.push((0, 0, 1, 3));
+    let mut pos = 0;
+    assert!(
+        Element::from_bytes(&one.to_bytes(), &mut pos).is_none(),
+        "a chain that says two things at one cell has no canonical form and no address"
+    );
+}
+
 #[test]
 fn rotated_connection_survives_the_tape() {
     let qid = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");

@@ -114,10 +114,6 @@ impl Entity {
     /// address is the chain's own key is passed over, since deconstruction
     /// reads other words, never the chain under locate. A citation is a use
     /// (45.4): a stood word cited here is touched at the mind's own K.
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a cite whose gauge reconstructs no body carries none"
-    )]
     pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> Cited {
         // The chain's own key, a listing key (17.2): the one address the
         // held stratum does not answer with.
@@ -168,11 +164,10 @@ impl Entity {
             .into_iter()
             .filter_map(|c| {
                 let w = word_of(c.word)?;
-                // A cite whose gauge reconstructs no body carries none.
-                let body = match crate::transducer::sentence::cited_pattern(w, c.gauge) {
-                    Some(b) => b,
-                    None => Vec::new(),
-                };
+                // L6: A CITE IS THE BODY IT RECONSTRUCTS. One whose gauge
+                // reconstructs none is not a cite carrying nothing — it is
+                // no cite, and it does not go on the wire.
+                let body = crate::transducer::sentence::cited_pattern(w, c.gauge)?;
                 Some(dialogue::CiteWire {
                     addr: w.address(),
                     standing: standing_of(c.word).as_u8(),
@@ -306,10 +301,6 @@ impl Entity {
     /// reply is one adjudication per sentence sent: a stood or ratified
     /// sentence is filed and its receipt sealed; a refused one is contracted
     /// (`receive_adjudication`) and its contraction queued.
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a reply that does not decode adjudicated nothing"
-    )]
     pub fn speak_with(
         &mut self,
         sentences: &[Element],
@@ -355,11 +346,15 @@ impl Entity {
             .collect();
         let body = dialogue::encode_speech_spoken(&voice, task, tu, &spoken);
         let reply = self.session.speak_nerve(body)?;
-        // A reply that does not decode adjudicated nothing, and no code
-        // is read back onto this mind's chain.
-        let adjudicated = match dialogue::decode_speech_reply(&reply) {
-            Some(a) => a,
-            None => Vec::new(),
+        // B7: A REPLY THAT DOES NOT DECODE IS NOT AN OUTCOME. Reading it as
+        // zero adjudications says the court answered and adjudicated
+        // nothing, which is a different fact from "this mind cannot read
+        // what came back" — and it is the second that happened.
+        let Some(adjudicated) = dialogue::decode_speech_reply(&reply) else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "speech reply does not decode",
+            ));
         };
         let got: Vec<u8> = adjudicated.iter().map(|a| a.code()).collect();
         for i in read_speech_reply(&mut codes, &got) {

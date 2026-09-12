@@ -38,7 +38,7 @@ impl PlaneForm {
     /// Read from the conjugacy representative; orientation lives on slot 0.
     #[expect(
         clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; the two planes past the sensor block carry no second moment by the rotor's own shape"
+        reason = "rule 11 — the reading of absence: 12.6 gives the second moment to four of the six slot planes, so on the other two the form carries no such coordinate and it is zero by the form's own shape"
     )]
     pub fn coordinates(&self) -> [(bool, u32, i64, i64); 6] {
         let rep = self.conjugacy_rep();
@@ -46,9 +46,10 @@ impl PlaneForm {
         for (p, slot) in plane.iter_mut().enumerate() {
             let unit = rep.rot[1 + p].rem_euclid(4) as u32;
             let m5 = rep.rot[7 + p];
-            // The four planes past the sensor block carry a second
-            // moment; the other two carry none, which is zero by the
-            // rotor's own shape and not a value put there for them.
+            // 12.6 gives the second moment to four of the six slot planes;
+            // the other two have no such coordinate, and a coordinate the
+            // form does not carry is zero by the form's own shape — the
+            // reading of absence, not a value put there for them.
             let m13 = match rep.rot.get(13 + p).copied().filter(|_| p < 4) {
                 Some(m) => m,
                 None => 0,

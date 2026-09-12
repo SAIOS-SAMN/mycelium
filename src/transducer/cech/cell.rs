@@ -119,7 +119,10 @@ pub fn classify(
     if flat && rotor.is_identity() {
         return Fill::Filled(rotor.clone(), Box::new(identity_versor()));
     }
-    if let (true, Some(Order::Finite(ell))) = (flat, rotor.order()) {
+    // A17: an order of zero is not an order — a congruence is believed only
+    // where the rotation CLOSES at ℓ — so it is not filed as one, and every
+    // reader of a filed period may take `ℓ − 1` whole.
+    if let (true, Some(Order::Finite(ell @ 1..))) = (flat, rotor.order()) {
         return Fill::Congruent(rotor.clone(), ell);
     }
     // 37.7's condition, discriminated from an off-plane rotor rather than
@@ -205,17 +208,11 @@ pub struct Cell {
 }
 
 impl Cell {
-    /// A cell on n vertices is an (n−1)-simplex; a cell on none is no
-    /// simplex, and degree zero is what the empty vertex set reads as.
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a cell on no vertices is no simplex"
-    )]
+    /// A cell on n vertices is an (n−1)-simplex. A cell on NONE is no
+    /// simplex and is never remembered by the complex, so n ≥ 1 wherever
+    /// this is asked and the subtraction is total.
     pub fn degree(&self) -> usize {
-        match self.vertices.len().checked_sub(1) {
-            Some(d) => d,
-            None => 0,
-        }
+        self.vertices.len() - 1
     }
 
     pub fn key(&self) -> crate::transducer::address::Address {

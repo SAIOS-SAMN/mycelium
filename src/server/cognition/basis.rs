@@ -8,26 +8,23 @@
 use super::*;
 
 impl Kernel {
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a stamp this court has not yet passed measures no extent"
-    )]
-    pub(crate) fn t_extent(&self, addr: &[u8], now: u64) -> u64 {
+    /// The heights a listing has stood for. A listing with NO STAMP has
+    /// stood for none — 45.4's "accrues nothing", the reading of absence on
+    /// a keyed carrier — and that is `Some(0)`.
+    ///
+    /// `None` where the stamp is ABOVE the current height: a court whose
+    /// height went backwards is a broken count, and zero read off one is a
+    /// measurement this court cannot make, not a listing stamped just now.
+    pub(crate) fn t_extent(&self, addr: &[u8], now: u64) -> Option<u64> {
         let Some(then) = self
             .provisional_h
             .get(addr)
             .copied()
             .or_else(|| self.standing_h.get(addr).copied())
         else {
-            return 0;
+            return Some(0);
         };
-        // The stamp is a height this court has already passed, so the
-        // extent is exact; a stamp in the future is a broken clock and
-        // measures no extent (rule 11).
-        match now.checked_sub(then) {
-            Some(extent) => extent,
-            None => 0,
-        }
+        now.checked_sub(then)
     }
 
     pub(crate) fn stamp_standing(&mut self, addr: impl AsRef<[u8]>) {
@@ -105,8 +102,12 @@ impl Kernel {
         let now = self.height();
         let mut tot = 0u64;
         let mut best: Option<(Vec<u8>, u64)> = None;
+        let mut unmeasured = false;
         let mut consider = |addr: Vec<u8>| {
-            let t = self.t_extent(&addr, now);
+            let Some(t) = self.t_extent(&addr, now) else {
+                unmeasured = true;
+                return;
+            };
             tot = tot.saturating_add(t);
             match best {
                 Some((_, bt)) if t <= bt => {}
@@ -118,6 +119,12 @@ impl Kernel {
         }
         for (addr, _) in self.provisional.fiber(crate::network::nerve::ROOT) {
             consider(addr);
+        }
+        // A lane holding a listing whose extent cannot be measured is not a
+        // saturated lane; it is an unread one, and nothing is relocated
+        // against it — as with a room that cannot be read, below.
+        if unmeasured {
+            return;
         }
         // A test cap where one is set; otherwise what this lane already
         // holds plus the room it still has, which is the same quantity
@@ -449,12 +456,7 @@ impl Kernel {
         );
     }
 
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a prune that did not shrink the basis dropped nothing"
-    )]
     pub fn prune_basis_to_ruled(&mut self) -> usize {
-        let before = self.basis.len();
         let mut nb = crate::network::nerve::Keyed::new();
         let mut nd = crate::network::nerve::Keyed::new();
         let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
@@ -483,13 +485,16 @@ impl Kernel {
             // No court cover: the restored or local language stands.
             return 0;
         }
-        // The new basis is a subset of the old, so the count that left is
-        // exact; a basis that GREW here is a broken prune and reports
-        // nothing dropped rather than a difference it did not measure.
-        let dropped = match before.checked_sub(nb.len()) {
-            Some(n) => n,
-            None => 0,
-        };
+        // WHAT LEFT, COUNTED WHERE IT LEFT: the words the old basis held
+        // that the new one does not. A difference of the two sizes is not
+        // that quantity — this prune also ADOPTS federation words the basis
+        // never held, so the sizes can move the other way while words are
+        // still dropping.
+        let dropped = self
+            .basis
+            .fiber(crate::network::nerve::ROOT)
+            .filter(|(addr, _)| nb.get(addr).is_none())
+            .count();
         self.basis = nb;
         self.discoverers = nd;
         self.by_action = crate::network::nerve::Keyed::new();

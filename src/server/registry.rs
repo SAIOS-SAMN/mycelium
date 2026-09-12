@@ -119,29 +119,24 @@ impl TaskRegistry {
 
     /// Next `n` tasks for first-time listing. Empty once the manifest has
     /// been walked; cover changes re-home through [`next_cover_batch`].
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a cursor past the end has nothing left to take"
-    )]
     pub fn next_intake_batch(&mut self, n: usize) -> Vec<(Address, Task)> {
         let len = self.tasks.len();
         if self.intake_done || len == 0 || n == 0 {
             return Vec::new();
         }
-        // The cursor is a seat this book has already reached, so the
-        // remainder is exact; a cursor past the end has nothing left.
-        let left = match len.checked_sub(self.intake_cursor) {
-            Some(l) => l,
-            None => 0,
+        // WHAT IS LEFT IS THE SEATS THEMSELVES, read from the cursor on: a
+        // cursor past the manifest names no seats, and the manifest says so
+        // rather than a difference of two counts standing in for it.
+        let Some(rest) = self.tasks.get(self.intake_cursor..) else {
+            self.intake_done = true;
+            return Vec::new();
         };
-        let take = n.min(left);
+        let take = n.min(rest.len());
         let mut out = Vec::with_capacity(take);
-        for _ in 0..take {
-            let i = self.intake_cursor;
-            self.intake_cursor += 1;
-            let (id, task, _) = &self.tasks[i];
+        for (id, task, _) in rest.iter().take(take) {
             out.push((id.clone(), task.clone()));
         }
+        self.intake_cursor += take;
         if self.intake_cursor >= len {
             self.intake_done = true;
         }

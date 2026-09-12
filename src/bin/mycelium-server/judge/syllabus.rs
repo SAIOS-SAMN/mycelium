@@ -38,10 +38,6 @@ pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, door: &Door) {
 
 /// The stratum fetch: the ruled words of the charts a peer named, up to
 /// the frame budget, with the class records behind them (A19).
-#[expect(
-    clippy::manual_unwrap_or_default,
-    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a page wider than the budget leaves none of it"
-)]
 pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let kernel = &door.kernel;
     let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
@@ -51,17 +47,22 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     let mut words: Vec<Vec<u8>> = Vec::new();
     let mut classes: Vec<dialogue::ClassPage> = Vec::new();
+    let mut overran = false;
     if let Ok(mut k) = kernel.lock() {
         let mut have_all: Vec<mycelium::transducer::address::Address> = Vec::new();
         for dialogue::ChartOf { inv, have } in &charts {
             have_all.extend(have.iter().cloned());
             let page = k.serve_ruled(inv, have, budget);
             // `serve_ruled` fills to the budget and no further, so what is
-            // left is exact; a page wider than the budget leaves none.
-            budget = match budget.checked_sub(page.iter().map(|w| w.len() + 4).sum::<usize>()) {
-                Some(left) => left,
-                None => 0,
+            // left is exact. A page WIDER than the budget is a broken page,
+            // and the frame it would go in cannot carry it: the fetch is
+            // answered with nothing rather than a reply the wire truncates.
+            let Some(left) = budget.checked_sub(page.iter().map(|w| w.len() + 4).sum::<usize>())
+            else {
+                overran = true;
+                break;
             };
+            budget = left;
             words.extend(page);
             classes.extend(k.class_records(inv));
             if budget == 0 {
@@ -69,6 +70,11 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             }
         }
         k.confirm_peer_holds_addrs(&have_all, fvoice);
+    }
+    if overran {
+        eprintln!("  fetch refused: a served page ran past the frame budget");
+        words.clear();
+        classes.clear();
     }
     if !words.is_empty() {
         eprintln!(

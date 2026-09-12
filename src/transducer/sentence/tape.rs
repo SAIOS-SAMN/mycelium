@@ -393,6 +393,11 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             *pos += 2;
         }
         let ell = take_u32(b, pos)?;
+        // A17: a loop is filed at the period it CLOSES at, so a filed zero
+        // is a malformed tape and not a loop of no extent.
+        if ell == 0 {
+            return None;
+        }
         let chord = take_u16(b, pos)?;
         torsion.insert(k, FiledLoop { sigma, period: ell, chord });
     }

@@ -137,11 +137,15 @@ impl Session {
 
     /// Home a word by its chart and magnitude. Occluded edges drop out of
     /// the fiber so incidence falls.
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a router that knows no hypha names none, and the empty destination is that reading"
-    )]
-    pub fn route_chart(&self, inv: &crate::transducer::stalk::Invariant, mag: &[u64; 4]) -> String {
+    /// `None` where neither the cover nor the router names a hypha: 0.11c's
+    /// own ruling on this reader — a destination that is not known is
+    /// absent, never the empty address, which every caller would then have
+    /// to tell apart from a hypha bound at one.
+    pub fn route_chart(
+        &self,
+        inv: &crate::transducer::stalk::Invariant,
+        mag: &[u64; 4],
+    ) -> Option<String> {
         use crate::network::nerve::home;
         let cover = self.cover.borrow();
         let rooms = self.rooms.borrow();
@@ -158,14 +162,10 @@ impl Session {
         let (_, dest) = home(&cover, inv, mag, &open_rooms, &addrs, None);
         if dest.is_empty() {
             // Empty cover: XOR-closest known hypha to the chart key, not
-            // the seed. A router that knows no hypha names none, and the
-            // empty destination is that reading.
-            match self.route(inv.key().as_bytes()) {
-                Some(d) => d,
-                None => String::new(),
-            }
+            // the seed. A router that knows no hypha names none.
+            self.route(inv.key().as_bytes())
         } else {
-            dest
+            Some(dest)
         }
     }
 
@@ -461,10 +461,6 @@ impl Session {
 
     /// One exchange with a named hypha on the nerve; the impedance is
     /// measured on the wire as a whole.
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a deferral whose lanes the reply does not name defers on no lane"
-    )]
     pub(crate) fn exchange_at(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let out = self.exchange_inner(addr, act_body);
         // A full reflex pool answers every act with the deferral shape (the
@@ -496,7 +492,9 @@ impl Session {
                     r.insert(addr.as_bytes(), 0);
                 }
                 _ => {
-                    // A peer with no recorded resistance has met none.
+                    // A peer with no entry in this carrier has met no
+                    // resistance: the reading of absence, zero by the
+                    // carrier's own definition and not a floor.
                     let cur = match r.get(addr.as_bytes()) {
                         Some(z) => *z,
                         None => 0,
@@ -509,18 +507,18 @@ impl Session {
             // 23.8 (S13.4): the deferral carries the door's deficit; the
             // refusal carries it up so the arm dwells on those lanes.
             let code = crate::cognition::outcome_code(&crate::cognition::Outcome::GermPending);
-            let lanes = out.as_ref().ok().and_then(|b| dialogue::deferral_lanes(b, code));
-            return Err(io::Error::new(
-                io::ErrorKind::WouldBlock,
-                // A deferral whose lanes the reply does not name defers on
-                // no lane; the arm dwells on nothing it was not told.
-                Deferral {
-                    lanes: match lanes {
-                        Some(l) => l,
-                        None => [0; 4],
-                    },
-                },
-            ));
+            // A DEFERRAL THAT NAMES NO LANE IS NOT A DEFERRAL. Four zero
+            // lanes tell the arm the door deferred and is short on nothing,
+            // which is a deficit reading this reply never made; unmeasured
+            // is what it is, and the arm is told that instead.
+            let Some(lanes) = out.as_ref().ok().and_then(|b| dialogue::deferral_lanes(b, code))
+            else {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "deferral names no lane",
+                ));
+            };
+            return Err(io::Error::new(io::ErrorKind::WouldBlock, Deferral { lanes }));
         }
         out
     }

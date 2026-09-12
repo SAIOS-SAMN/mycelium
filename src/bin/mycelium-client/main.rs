@@ -121,7 +121,13 @@ fn main() {
     let voice_key = HyphaKey::load_or_mint(key_name);
     let voice = Voice::from_identity(voice_key.vk_bytes());
     let tag = voice.name().to_string();
-    let mesh_rec = mesh::load_or_migrate_voice(&home, &voice_key);
+    let mesh_rec = match mesh::load_or_migrate_voice(&home, &voice_key) {
+        Ok(rec) => rec,
+        Err(why) => {
+            eprintln!("[{tag}] boot refused: {why}");
+            std::process::exit(2);
+        }
+    };
     let genome_path = home.join("genome").to_string_lossy().into_owned();
     let thoughts_path = home.join("thoughts").to_string_lossy().into_owned();
     let bootstrap = if mesh_rec.bootstrap.is_empty() {

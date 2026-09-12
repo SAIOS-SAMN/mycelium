@@ -120,6 +120,11 @@ impl Complex {
                     3 => {
                         let g = Rotor::from_bytes(b, pos)?;
                         let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
+                        // A17, as at every other tape: a congruence is
+                        // believed only where the rotation closes at ℓ.
+                        if ell == 0 {
+                            return None;
+                        }
                         *pos += 4;
                         Fill::Congruent(g, ell)
                     }

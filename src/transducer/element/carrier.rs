@@ -320,21 +320,15 @@ impl Element {
 
     /// The fiber's total spoken span — base + free sections + every torsion-orbit
     /// member (the volume metric; cycles count their full period).
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a period of zero is no period and spans nothing (A17)"
-    )]
     pub fn fiber_span(&self) -> usize {
         1 + self.sections.len()
             + self
                 .torsion
                 .iter()
-                // A cycle of period ℓ spans ℓ − 1 beyond its base; a period
-                // of zero is no period (A17) and spans nothing.
-                .map(|t| match (t.period as usize).checked_sub(1) {
-                    Some(beyond) => beyond,
-                    None => 0,
-                })
+                // A cycle of period ℓ spans ℓ − 1 beyond its base. A17 files
+                // a cycle only at the period it CLOSES at and the tape
+                // refuses a zero, so ℓ ≥ 1 here and the subtraction is total.
+                .map(|t| t.period as usize - 1)
                 .sum::<usize>()
     }
 

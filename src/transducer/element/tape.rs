@@ -151,6 +151,12 @@ impl Element {
             *pos += 18;
             sub.push((r, c, before, after));
         }
+        // A5 STEP 3 AT THE TAPE: a chain that says two things at one cell has
+        // no canonical form, so the element it would make has no address
+        // (law 2) and every such element would share the tag alone. The
+        // refusal travels here, where the bytes arrive, and not at the
+        // reader that later asks for the key.
+        crate::transducer::element::canonical_chain(&sub)?;
         let nsec = u32_at(b, pos)? as usize;
         if nsec > remaining(b, pos)? / 4 {
             return None;
@@ -188,6 +194,13 @@ impl Element {
                 sigma.push((f, t));
             }
             let l = u32_at(b, pos)?;
+            // A17: a cycle is believed only when the loop CLOSES at its
+            // period, so a filed period of zero is not a cycle with no
+            // extent — it is a malformed tape, and every reader downstream
+            // may then take `ℓ − 1` whole.
+            if l == 0 {
+                return None;
+            }
             let fibre = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
             *pos += 2;
             torsion.push(TorsionCycle { sigma, period: l, fibre });

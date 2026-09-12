@@ -7,14 +7,24 @@
 use crate::court::identity::{self, HyphaKey};
 use std::path::Path;
 
-pub const MAGIC: &[u8; 4] = b"MSH1";
+/// MSH2: the bind and the genesis each carry a PRESENCE BYTE. MSH1 wrote
+/// both as values — an empty string and 32 zeros — so a node that had
+/// adopted no origin and one whose origin hashed to zeros were the same
+/// record, and so were a node bound nowhere and one bound at "". A record
+/// written under the old magic does not open, and the migration path
+/// writes the node's own again.
+pub const MAGIC: &[u8; 4] = b"MSH2";
 pub const HYPHA: u8 = 0;
 pub const VOICE: u8 = 1;
 
 #[derive(Clone, Debug, Default)]
 pub struct MeshRecord {
     pub kind: u8,
-    pub bind: String,
+    /// The address this node serves on. `None` is a node that has not bound
+    /// one yet — it resolves an address at boot and writes it here — and is
+    /// not the same as an empty address, which is what the field held
+    /// before and what every reader had to tell apart by its length.
+    pub bind: Option<String>,
     pub peers: Vec<String>,
     pub bootstrap: String,
     pub hypha: Vec<([u8; 32], [u64; 4])>,
@@ -33,6 +43,33 @@ fn put_str(out: &mut Vec<u8>, s: &str) {
     let n = b.len().min(255);
     out.push(n as u8);
     out.extend_from_slice(&b[..n]);
+}
+
+/// A string that may be ABSENT: one presence byte, then the string. A bind
+/// nothing has written is not a bind of no characters, and the two are told
+/// apart here rather than by every reader guessing from an empty one.
+fn put_opt_str(out: &mut Vec<u8>, s: Option<&str>) {
+    match s {
+        Some(s) => {
+            out.push(1);
+            put_str(out, s);
+        }
+        None => out.push(0),
+    }
+}
+
+fn take_opt_str(b: &[u8], p: &mut usize) -> Option<Option<String>> {
+    match *b.get(*p)? {
+        0 => {
+            *p += 1;
+            Some(None)
+        }
+        1 => {
+            *p += 1;
+            Some(Some(take_str(b, p)?))
+        }
+        _ => None,
+    }
 }
 
 fn take_str(b: &[u8], p: &mut usize) -> Option<String> {
@@ -62,14 +99,10 @@ fn take_bond(b: &[u8], p: &mut usize) -> Option<([u8; 32], [u64; 4])> {
 }
 
 impl MeshRecord {
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a mesh with no genesis writes the empty identity, which is what no genesis is on the tape"
-    )]
     pub fn encode(&self) -> Vec<u8> {
         let mut out = Vec::from(*MAGIC);
         out.push(self.kind);
-        put_str(&mut out, &self.bind);
+        put_opt_str(&mut out, self.bind.as_deref());
         out.push(self.peers.len().min(255) as u8);
         for p in self.peers.iter().take(255) {
             put_str(&mut out, p);
@@ -83,12 +116,18 @@ impl MeshRecord {
         for (who, bond) in self.voice.iter().take(255) {
             put_bond(&mut out, who, bond);
         }
-        // A mesh with no genesis writes the empty identity, which is what
-        // "no genesis" is on the tape and not a hash put there for one.
-        out.extend_from_slice(&match self.genesis {
-            Some(g) => g,
-            None => [0u8; 32],
-        });
+        // ABSENCE IS A BYTE, NOT A VALUE. A mesh with no genesis wrote 32
+        // zeros, and the reader turned 32 zeros back into "no genesis" —
+        // so a genesis of all zeros and a node that has adopted none were
+        // one record on the tape, and 5.2f's own round-trip could only pass
+        // because no other spelling existed to tell them apart.
+        match self.genesis {
+            Some(g) => {
+                out.push(1);
+                out.extend_from_slice(&g);
+            }
+            None => out.push(0),
+        }
         out.extend_from_slice(&self.epoch.to_le_bytes());
         out
     }
@@ -100,7 +139,7 @@ impl MeshRecord {
         let mut p = 4usize;
         let kind = *b.get(p)?;
         p += 1;
-        let bind = take_str(b, &mut p)?;
+        let bind = take_opt_str(b, &mut p)?;
         let np = *b.get(p)? as usize;
         p += 1;
         let mut peers = Vec::with_capacity(np);
@@ -120,9 +159,19 @@ impl MeshRecord {
         for _ in 0..nv {
             voice.push(take_bond(b, &mut p)?);
         }
-        let genesis: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
-        let genesis = (genesis != [0u8; 32]).then_some(genesis);
-        p += 32;
+        let genesis = match *b.get(p)? {
+            0 => {
+                p += 1;
+                None
+            }
+            1 => {
+                p += 1;
+                let g: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
+                p += 32;
+                Some(g)
+            }
+            _ => return None,
+        };
         let epoch = u32::from_le_bytes(b.get(p..p + 4)?.try_into().ok()?);
         p += 4;
         Some((
@@ -166,6 +215,28 @@ impl MeshRecord {
     pub fn load(home: &Path, vk: &[u8; 32]) -> Option<Self> {
         let bytes = std::fs::read(home.join("mesh")).ok()?;
         Self::open(&bytes, vk)
+    }
+
+    /// The record at `home/mesh`, told apart from its absence: `Ok(None)`
+    /// is a home that has none and migrates, `Err` is a home that HAS one
+    /// this key cannot open. Reading the second as the first wrote a fresh
+    /// record over a node's peers, genesis and epoch — a configuration
+    /// refusal spelled as a first boot.
+    pub fn open_at(home: &Path, vk: &[u8; 32]) -> Result<Option<Self>, String> {
+        let path = home.join("mesh");
+        let bytes = match std::fs::read(&path) {
+            Ok(b) => b,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(e) => return Err(format!("{} unreadable: {e}", path.display())),
+        };
+        match Self::open(&bytes, vk) {
+            Some(rec) => Ok(Some(rec)),
+            None => Err(format!(
+                "{} does not open under this node's key: it is another node's record, \
+                 a record of another version, or a damaged one",
+                path.display()
+            )),
+        }
     }
 }
 
@@ -231,14 +302,12 @@ fn drop_loose(home: &Path, names: &[&str]) {
     }
 }
 
-/// Load `home/mesh`, or write it once from the old text files and remove them.
-#[expect(
-    clippy::manual_unwrap_or_default,
-    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a home with no bind file binds nowhere, which is the empty address"
-)]
-pub fn load_or_migrate_hypha(home: &Path, key: &HyphaKey) -> MeshRecord {
+/// Load `home/mesh`, or write it once from the old text files and remove
+/// them. `Err` is a CONFIGURATION REFUSAL with its reason: a home that
+/// holds a record this key cannot open is not a home that holds none.
+pub fn load_or_migrate_hypha(home: &Path, key: &HyphaKey) -> Result<MeshRecord, String> {
     let vk = key.vk_bytes();
-    if let Some(rec) = MeshRecord::load(home, &vk) {
+    if let Some(rec) = MeshRecord::open_at(home, &vk)? {
         drop_loose(
             home,
             &[
@@ -251,13 +320,11 @@ pub fn load_or_migrate_hypha(home: &Path, key: &HyphaKey) -> MeshRecord {
             ],
         );
         migrate_registry(home);
-        return rec;
+        return Ok(rec);
     }
-    // A home with no bind file binds nowhere, which is the empty address.
-    let bind = match read_line(&home.join("bind")) {
-        Some(b) => b,
-        None => String::new(),
-    };
+    // A home with no bind file has not bound an address. That is absence,
+    // and it stays absence: the node resolves one at boot and writes it.
+    let bind = read_line(&home.join("bind"));
     let peers = read_lines(&home.join("peers"));
     let (hypha, voice) = parse_genesis_text(&home.join("genesis"));
     let rec = MeshRecord {
@@ -283,16 +350,17 @@ pub fn load_or_migrate_hypha(home: &Path, key: &HyphaKey) -> MeshRecord {
         ],
     );
     migrate_registry(home);
-    rec
+    Ok(rec)
 }
 
 /// Load `home/mesh` for a voice, or write it once from bootstrap/tuniversal.
-pub fn load_or_migrate_voice(home: &Path, key: &HyphaKey) -> MeshRecord {
+/// `Err` is a configuration refusal, as for a hypha.
+pub fn load_or_migrate_voice(home: &Path, key: &HyphaKey) -> Result<MeshRecord, String> {
     let vk = key.vk_bytes();
-    if let Some(rec) = MeshRecord::load(home, &vk) {
+    if let Some(rec) = MeshRecord::open_at(home, &vk)? {
         drop_loose(home, &["bootstrap", "tuniversal", "thoughts", "feed", "conductor"]);
         migrate_genome(home, &vk);
-        return rec;
+        return Ok(rec);
     }
     // A voice with no bootstrap file dials the loopback door, which is
     // where a voice on one box finds its court.
@@ -302,7 +370,7 @@ pub fn load_or_migrate_voice(home: &Path, key: &HyphaKey) -> MeshRecord {
     };
     let rec = MeshRecord {
         kind: VOICE,
-        bind: String::new(),
+        bind: None,
         peers: Vec::new(),
         bootstrap,
         hypha: Vec::new(),
@@ -313,7 +381,7 @@ pub fn load_or_migrate_voice(home: &Path, key: &HyphaKey) -> MeshRecord {
     let _ = rec.save(home, key);
     drop_loose(home, &["bootstrap", "tuniversal", "thoughts", "feed", "conductor"]);
     migrate_genome(home, &vk);
-    rec
+    Ok(rec)
 }
 
 fn migrate_registry(home: &Path) {
@@ -344,7 +412,7 @@ mod tests {
         let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-test.key");
         let rec = MeshRecord {
             kind: HYPHA,
-            bind: "127.0.0.1:7500".into(),
+            bind: Some("127.0.0.1:7500".into()),
             peers: vec!["127.0.0.1:7501".into(), "127.0.0.1:7502".into()],
             bootstrap: String::new(),
             hypha: vec![([1; 32], [8, 8, 1, 8])],
@@ -364,16 +432,15 @@ mod tests {
     /// 45.5: a genesis of all zeros is not a genesis, it is the ABSENCE of
     /// one. The field held `[0u8; 32]` and every reader compared against
     /// that sentinel, so a node with no origin and a node whose origin
-    /// happened to be zero were the same value. The wire still carries 32
-    /// bytes; the type no longer lets the sentinel reach 47.2's origin
-    /// check, which would otherwise have admitted under a genesis nobody
-    /// wrote.
+    /// happened to be zero were the same value. MSH2 carries a PRESENCE
+    /// BYTE, so the tape says which it is rather than a reader inferring
+    /// it, and 47.2's origin check can never meet the sentinel.
     #[test]
     fn an_unwritten_genesis_reads_back_as_absent_not_as_zero() {
         let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-nogen.key");
         let rec = MeshRecord {
             kind: HYPHA,
-            bind: "127.0.0.1:7500".into(),
+            bind: Some("127.0.0.1:7500".into()),
             peers: vec![],
             bootstrap: String::new(),
             hypha: vec![],
@@ -388,5 +455,34 @@ mod tests {
         let written = MeshRecord { genesis: Some([9; 32]), ..rec };
         let back = MeshRecord::open(&written.signed_bytes(&key), &key.vk_bytes()).expect("verify");
         assert_eq!(back.genesis, Some([9; 32]), "a written one survives");
+
+        // The sentinel it replaces: a genesis that IS all zeros is a
+        // genesis, and reads back as one. MSH1 could not say this.
+        let zeros = MeshRecord { genesis: Some([0; 32]), ..written };
+        let back = MeshRecord::open(&zeros.signed_bytes(&key), &key.vk_bytes()).expect("verify");
+        assert_eq!(back.genesis, Some([0; 32]), "a zero origin is an origin");
+    }
+
+    /// A bind nothing has written is ABSENT, and an address that is the
+    /// empty string is a bind of no characters. Two different records.
+    #[test]
+    fn an_unbound_node_reads_back_as_unbound_not_as_the_empty_address() {
+        let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-nobind.key");
+        let rec = MeshRecord {
+            kind: HYPHA,
+            bind: None,
+            peers: vec![],
+            bootstrap: String::new(),
+            hypha: vec![],
+            voice: vec![],
+            genesis: None,
+            epoch: 0,
+        };
+        let back = MeshRecord::open(&rec.signed_bytes(&key), &key.vk_bytes()).expect("verify");
+        assert_eq!(back.bind, None, "unbound stays unbound");
+
+        let empty = MeshRecord { bind: Some(String::new()), ..rec };
+        let back = MeshRecord::open(&empty.signed_bytes(&key), &key.vk_bytes()).expect("verify");
+        assert_eq!(back.bind, Some(String::new()), "an empty address is an address");
     }
 }

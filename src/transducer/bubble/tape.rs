@@ -187,6 +187,12 @@ impl Contemplation {
                         sigma.push((a, cpair));
                     }
                     let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
+                    // A17: a loop is filed at the period it CLOSES at, so a
+                    // filed zero is a malformed tape and not a loop of no
+                    // extent.
+                    if ell == 0 {
+                        return None;
+                    }
                     *pos += 4;
                     let chord = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
                     *pos += 2;

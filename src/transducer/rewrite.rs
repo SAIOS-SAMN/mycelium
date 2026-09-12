@@ -141,7 +141,13 @@ impl Rewrite {
             return None;
         }
         let kind = RewriteKind::from_u8(*b.get(1)?)?;
-        let n = *b.get(2)? as usize;
+        // A rewrite names WHAT IT REWROTE. One that names nothing rewrote
+        // nothing, which is not a rewrite with an empty before — it is a
+        // malformed tape, and every reader may then take `n − 1` whole.
+        let n = match *b.get(2)? {
+            0 => return None,
+            n => n as usize,
+        };
         let mut pos = 3usize;
         let mut before = Vec::with_capacity(n);
         for _ in 0..n {
@@ -180,6 +186,11 @@ impl Rewrite {
                     pos += 2;
                 }
                 let period = u32::from_le_bytes(b.get(pos..pos + 4)?.try_into().ok()?);
+                // A17, as at every other tape: a torsion is believed only
+                // where the loop closes at ℓ, so a filed zero is malformed.
+                if period == 0 {
+                    return None;
+                }
                 RewritePayload::Torse { sigma, period }
             }
             RewriteKind::Refine => {
@@ -237,33 +248,23 @@ impl Rewrite {
     }
 
     /// Yield re-read from the tape's own content, never from the live basis.
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; each zero here is an empty carrier measured, not a subtraction stopped"
-    )]
     pub fn yield_from_payload(&self) -> [u64; 4] {
         let mut mu = [0u64; 4];
         match &self.payload {
             RewritePayload::Condense { sections, .. } => {
                 mu[LANE_GAUGE] = sections.len() as u64;
                 if mu[LANE_GAUGE] == 0 {
-                    // Condensing n inputs closes n − 1 joins. Condensing
-                    // none closes none — the count of an empty set, not a
-                    // subtraction stopped at zero (rule 11).
-                    mu[LANE_GAUGE] = match self.before.len().checked_sub(1) {
-                        Some(joins) => joins as u64,
-                        None => 0,
-                    };
+                    // Condensing n inputs closes n − 1 joins. A rewrite
+                    // names what it rewrote and the tape refuses one that
+                    // names nothing, so n ≥ 1 and the subtraction is total.
+                    mu[LANE_GAUGE] = self.before.len() as u64 - 1;
                 }
             }
             RewritePayload::Torse { period, .. } => {
-                // A torsion of period ℓ closes ℓ − 1. A period of zero is
-                // no period at all (A17: believed only when the loop closes
-                // at it) and closes nothing.
-                mu[LANE_SHELL] = match (*period as u64).checked_sub(1) {
-                    Some(closed) => closed,
-                    None => 0,
-                };
+                // A torsion of period ℓ closes ℓ − 1. A17 believes a period
+                // only where the loop closes at it and the tape refuses a
+                // zero, so ℓ ≥ 1 and the subtraction is total.
+                mu[LANE_SHELL] = *period as u64 - 1;
             }
             RewritePayload::Refine { .. } => {
                 mu[LANE_SHELL] = 1;
@@ -286,37 +287,30 @@ impl Rewrite {
 }
 
 /// Lane vector read on the carriers. Zero on every lane is not work.
-#[expect(
-    clippy::manual_unwrap_or_default,
-    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; each zero here is an empty gain measured, not a loss reported as none"
-)]
 pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [u64; 4] {
     let mut mu = [0u64; 4];
     match kind {
         RewriteKind::Condense => {
             let before_sec: usize = before.iter().map(|e| e.sections().len()).sum();
-            // Sections GAINED, and a condense that gained none gained none
-            // — the empty difference, not a loss reported as zero. The
-            // joins closed are the other reading and the larger stands.
-            let gained = match after.sections().len().checked_sub(before_sec) {
-                Some(n) => n,
+            // Two readings of one condense: the sections it GAINED, and the
+            // joins it CLOSED — n inputs close the n − 1 seams between
+            // them, which `split_first` counts without a subtraction, and
+            // no input closes none (the count of an empty set). Where the
+            // condense gained no section there is no gain to read, and the
+            // joins stand alone rather than a zero standing in for one.
+            let joins = match before.split_first() {
+                Some((_, rest)) => rest.len(),
                 None => 0,
             };
-            let joins = match before.len().checked_sub(1) {
-                Some(n) => n,
-                None => 0,
-            };
-            mu[LANE_GAUGE] = gained.max(joins) as u64;
+            mu[LANE_GAUGE] = after
+                .sections()
+                .len()
+                .checked_sub(before_sec)
+                .map_or(joins, |gained| gained.max(joins)) as u64;
         }
         RewriteKind::Torse => {
-            mu[LANE_SHELL] = after
-                .torsion()
-                .iter()
-                .map(|c| match (c.period as u64).checked_sub(1) {
-                    Some(closed) => closed,
-                    None => 0,
-                })
-                .sum();
+            // ℓ ≥ 1 at every filing and every tape (A17), so `ℓ − 1` is total.
+            mu[LANE_SHELL] = after.torsion().iter().map(|c| c.period as u64 - 1).sum();
         }
         RewriteKind::Refine => {
             // The chart the refine started from, and the one it reached.
@@ -327,13 +321,15 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
                 None => 0,
             };
             let aa = crate::transducer::stalk::invariant_of(after).0.len();
-            // Axes GAINED; a refine that reached no deeper still refined
-            // one stratum, which is what the floor of one says.
-            let deeper = match aa.checked_sub(ba) {
-                Some(n) => n,
-                None => 0,
+            mu[LANE_SHELL] = match aa.checked_sub(ba) {
+                // Axes GAINED: a refine that reached deeper is worth the
+                // axes it opened.
+                Some(deeper @ 1..) => deeper as u64,
+                // One that reached no deeper still SPLIT one stratum, and
+                // the split is the work this measures — the refinement
+                // itself, not a floor put under a measurement.
+                _ => 1,
             };
-            mu[LANE_SHELL] = deeper.max(1) as u64;
         }
         RewriteKind::Reanchor => {
             mu[LANE_SPATIAL] = before.len().max(1) as u64;

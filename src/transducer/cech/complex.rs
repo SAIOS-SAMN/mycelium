@@ -34,6 +34,12 @@ impl Complex {
     }
 
     pub(crate) fn remember(&mut self, mut cell: Cell) {
+        // A CELL ON NO VERTICES IS NO SIMPLEX. It is not a cell of degree
+        // zero — that is a point — so it is not remembered as one, and
+        // every reader of `degree` may then take `n − 1` whole.
+        if cell.vertices.is_empty() {
+            return;
+        }
         cell.coefficient = cell.coefficient.normalised();
         let degree = cell.degree();
         let key = cell.key();

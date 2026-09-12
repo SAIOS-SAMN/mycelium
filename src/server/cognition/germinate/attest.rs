@@ -28,7 +28,12 @@ impl Kernel {
         for (addr, _) in &mut cur {
             let Some((p, _)) = self.pending.get(&addr) else { continue };
             let mut mag = p.magnitude();
-            mag[2] = self.t_extent(&p.address(), self.height());
+            // A listing whose T cannot be measured is not priced against a
+            // zero put there for it; it is not quoted on this page.
+            let Some(t) = self.t_extent(&p.address(), self.height()) else {
+                continue;
+            };
+            mag[2] = t;
             let mu = crate::economy::price(&mag, &self.physics.pressure);
             priced.push((p.clone(), mu));
         }

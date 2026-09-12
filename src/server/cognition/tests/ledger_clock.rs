@@ -109,19 +109,24 @@ let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
 speak_pair(&mut k, &a, &b, [1; 32]);
 let addr = k.pending.fiber(crate::network::nerve::ROOT).next().expect("listed").1.0.address();
-assert_eq!(k.t_extent(addr.as_bytes(), 4), 0, "extent is zero at first vantage");
+assert_eq!(k.t_extent(addr.as_bytes(), 4), Some(0), "extent is zero at first vantage");
 k.set_height(11);
 assert_eq!(
     k.t_extent(addr.as_bytes(), 11),
-    7,
+    Some(7),
     "extent is h_now − h_install on the home chain"
+);
+assert_eq!(
+    k.t_extent(addr.as_bytes(), 3),
+    None,
+    "a height below the stamp is a count that went backwards, not an extent of zero"
 );
 let mut k2 = Kernel::new();
 k2.set_height(11);
 k2.standing_h.insert(&addr, 4);
 assert_eq!(
     k2.t_extent(addr.as_bytes(), 11),
-    7,
+    Some(7),
     "a witness re-derives the same extent from the recorded height"
 );
 }

@@ -395,7 +395,14 @@ impl Kernel {
         let mut p = self.pressure_sum;
         p[2] = 0;
         for (addr, _) in self.pending.fiber(crate::network::nerve::ROOT) {
-            p[2] = p[2].saturating_add(self.t_extent(&addr, now));
+            // A pressure that omits a listing is not the book's pressure. A
+            // listing whose extent cannot be read leaves the whole lane
+            // unmeasured, so the standing reading holds and the generation
+            // is not advanced — the next measurement re-reads it.
+            let Some(t) = self.t_extent(&addr, now) else {
+                return;
+            };
+            p[2] = p[2].saturating_add(t);
         }
         self.physics.pressure = p;
         self.pressure_gen = self.book_gen;

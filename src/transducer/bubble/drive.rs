@@ -136,7 +136,11 @@ impl Contemplation {
             };
             let horizon = b.horizon.clone();
             let bundle = b.bundle.clone();
-            let t = super::idea::held_since(self.now_k, b.moved_k);
+            // A bubble marked above this clock has no measurable extent, and
+            // the pivot loop is not paced by a count that went backwards.
+            let Some(t) = super::idea::held_since(self.now_k, b.moved_k) else {
+                continue;
+            };
             if let Some(mut form) = b.form.clone() {
                 let _ = form.pivot_loop(bk, &horizon, crystal, budget, bundle.as_deref(), t);
                 if let Some(b) = self.bubbles.get_mut(bk) {

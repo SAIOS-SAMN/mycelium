@@ -88,10 +88,6 @@ impl Contemplation {
     /// Two bubbles on one cell: extend decides. Extended merges and
     /// re-gauges; Congruent merges with a torsion axis; Class keeps both
     /// and writes each into the other's horizon. Zero volume never merges.
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a period of zero is no period and closes nothing (A17)"
-    )]
     pub(crate) fn decide_neighbors(&mut self, key: &[u8]) {
         let keys = self.complex.link(key, 1);
         for ck in keys {
@@ -154,16 +150,10 @@ impl Contemplation {
                             nk.clone(),
                             payload,
                             // What the period measures (L7b): a torsion of
-                            // period ℓ closes ℓ − 1, never floored to one.
-                            [
-                                0,
-                                0,
-                                match (ell as u64).checked_sub(1) {
-                                    Some(closed) => closed,
-                                    None => 0,
-                                },
-                                0,
-                            ],
+                            // period ℓ closes ℓ − 1. `classify` files a
+                            // congruence only at an order that closes, so
+                            // ℓ ≥ 1 and the subtraction is total.
+                            [0, 0, ell as u64 - 1, 0],
                         ) {
                             self.pending_rewrites.push(rw);
                         }

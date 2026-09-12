@@ -23,8 +23,12 @@ impl Contemplation {
                 continue;
             }
             // The receipts since the bubble's charts last moved — the FIFO
-            // head by the kernel's own K (law 9), zero when it moved now.
-            let t = super::idea::held_since(now, b.moved_k);
+            // head by the kernel's own K (law 9), zero when it moved now. A
+            // bubble marked above this clock is not shed against a count
+            // that went backwards.
+            let Some(t) = super::idea::held_since(now, b.moved_k) else {
+                continue;
+            };
             match best {
                 Some((_, bt)) if t <= bt => {}
                 _ => best = Some((k.clone(), t)),

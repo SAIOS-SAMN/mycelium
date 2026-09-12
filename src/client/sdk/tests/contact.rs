@@ -91,7 +91,7 @@ let seed = "127.0.0.1:7500";
 let mut saw_other = false;
 for i in 0..64u64 {
     let inv = crate::transducer::stalk::Invariant(vec![i, i.wrapping_mul(3), 2]);
-    let dest = s.route_chart(&inv, &[1, 0, 0, 0]);
+    let dest = s.route_chart(&inv, &[1, 0, 0, 0]).expect("a known hypha routes");
     let closest = s.route(inv.key().as_bytes()).expect("known hyphae");
     assert_eq!(dest, closest, "empty cover is router.closest(chart key)");
     if dest != seed {

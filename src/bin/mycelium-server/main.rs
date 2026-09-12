@@ -130,7 +130,10 @@ fn main() {
     let vk = hypha_key.vk_bytes();
     let id = vk;
     let tag = hypha_key.prefix();
-    let mut mesh_rec = mesh::load_or_migrate_hypha(&home, &hypha_key);
+    let mut mesh_rec = match mesh::load_or_migrate_hypha(&home, &hypha_key) {
+        Ok(rec) => rec,
+        Err(why) => refuse_boot(&tag, &why),
+    };
     let mut join_peers: Vec<String> = mesh_rec.peers.clone();
 
     let height = mycelium::chronometry::Height::default();
@@ -201,8 +204,8 @@ fn main() {
         }
     }
 
-    let (early_listener, addr) = if !mesh_rec.bind.is_empty() {
-        (None, mesh_rec.bind.clone())
+    let (early_listener, addr) = if let Some(bound) = mesh_rec.bind.clone() {
+        (None, bound)
     } else {
         let listener = match TcpListener::bind("0.0.0.0:0") {
             Ok(l) => l,
@@ -212,7 +215,7 @@ fn main() {
             Ok(local) => resolved_bind(local),
             Err(e) => refuse_boot(&tag, &format!("local address unread: {e}")),
         };
-        mesh_rec.bind = resolved.clone();
+        mesh_rec.bind = Some(resolved.clone());
         let _ = mesh_rec.save(&home, &hypha_key);
         eprintln!("[{tag}] wrote bind {resolved}");
         (Some(listener), resolved)

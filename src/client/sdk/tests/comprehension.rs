@@ -27,7 +27,7 @@ match epi.comprehend(&word) {
     }
     other => panic!("expected Understood with standing, got {other:?}"),
 }
-assert_eq!(epi.peak_expression(), 1, "the dialect's recollection weight moved");
+assert_eq!(epi.peak_expression(), Some(1), "the dialect's recollection weight moved");
 // An unrelated utterance is heard as novel — a prospective, not a failure —
 // and the genome is untouched by hearing it.
 let other = from_canonical(&germinate(&[(0, 0, 5u8)], &[(0, 0, 9u8)]).unwrap());
@@ -40,7 +40,17 @@ let mut back = Epigenome::new();
 assert!(back.uncrystallize(&frozen), "crystallized genome restores");
 assert_eq!(back.genome_len(), epi.genome_len());
 assert_eq!(back.genome()[0].address(), epi.genome()[0].address(), "words identical by address");
-assert_eq!(back.peak_expression(), 0, "expression is NOT persisted — the dialect re-forms");
+assert_eq!(
+    back.peak_expression(),
+    Some(0),
+    "expression is NOT persisted — the restored word is carried at a weight of zero, \
+     which is a weight and not the absence of one"
+);
+assert_eq!(
+    Epigenome::new().peak_expression(),
+    None,
+    "a dialect with no word expresses nothing, and nothing has no peak"
+);
 assert!(!Epigenome::new().uncrystallize(b"GEN1\xff\xff\xff\xff"), "hostile count refused");
 }
 

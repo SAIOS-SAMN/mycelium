@@ -70,10 +70,6 @@ pub struct CoverReading {
 /// retires by its count; one gone at `h1` whose refinements stand there
 /// was split, and its words are re-homed, not adjoined; one at `h1` that
 /// refines nothing gone is an axis opened with its words.
-#[expect(
-    clippy::manual_unwrap_or_default,
-    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; growth and retirement are one-directional readings and each empty difference is measured"
-)]
 pub fn phase_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverReading, h0: u64, h1: u64) -> Phase {
     let mut p = Phase { h0, h1, ..Phase::default() };
     for r in window {
@@ -92,17 +88,17 @@ pub fn phase_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverRe
         match at_h1.strata.get(&k0) {
             Some(&n1) => {
                 let n1 = n1 as u64;
-                // Growth and retirement are two one-directional readings:
-                // a stratum that grew retired nothing, and one that shrank
-                // adjoined nothing. Each empty difference is measured.
-                p.adjoined += match n1.checked_sub(n0) {
-                    Some(grew) => grew,
-                    None => 0,
-                };
-                p.retired += match n0.checked_sub(n1) {
-                    Some(left) => left,
-                    None => 0,
-                };
+                // A stratum MOVED ONE WAY between the two readings, and the
+                // direction is what says which reading it is: one that grew
+                // adjoined the difference, one that shrank retired it, and
+                // one that held did neither. Taking both differences and
+                // keeping whichever did not go negative says the same thing
+                // through a refusal, which is not what a direction is.
+                if n1 >= n0 {
+                    p.adjoined += n1 - n0;
+                } else {
+                    p.retired += n0 - n1;
+                }
             }
             None => {
                 // index: the refinements of a gone stratum, a keyed fiber
@@ -117,14 +113,14 @@ pub fn phase_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverRe
                 }
                 if any {
                     p.splits += 1;
-                    p.adjoined += match under.checked_sub(n0) {
-                        Some(grew) => grew,
-                        None => 0,
-                    };
-                    p.retired += match n0.checked_sub(under) {
-                        Some(left) => left,
-                        None => 0,
-                    };
+                    // As above: the refinements hold what the split stratum
+                    // held, more, or less, and the DIRECTION says which
+                    // reading it is.
+                    if under >= n0 {
+                        p.adjoined += under - n0;
+                    } else {
+                        p.retired += n0 - under;
+                    }
                 } else {
                     p.retired += n0;
                 }
