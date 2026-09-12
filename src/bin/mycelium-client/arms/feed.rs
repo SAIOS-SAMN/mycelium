@@ -22,7 +22,7 @@ pub(crate) fn feed_arm(
     )>,
     occluded: bool,
 ) {
-    let Stroke { entity, physics, c, outcome, tag, .. } = stroke;
+    let Stroke { entity, physics, c, outcome, m, tag } = stroke;
     // 50.9: what the last refusals contracted is uttered first, citing
     // the receipts, before any new family is presented. And 21 step 3:
     // what a court is waiting on is taught before it, so the generator a
@@ -31,6 +31,28 @@ pub(crate) fn feed_arm(
         speak_contracted(entity, tag);
         speak_owed(entity, tag);
     }
+    // X6 — THE FEED IS PACED AS THE QUOTE IS. The dwell, read exactly as
+    // `quote_arm` reads it: the T lane is excluded entirely (C4), a lane
+    // that was never pressed does not hold this voice back, and a voice
+    // that has pressed nothing yet is not paced at all.
+    let dwell_elapsed = [0usize, 1, 3]
+        .iter()
+        .any(|&l| m.last_pressure[l] > 0 && m.dwell_remaining[l] == 0);
+    if m.last_pressure != [0; 4] && !dwell_elapsed {
+        return;
+    }
+    // ONE FAMILY PER STROKE, which is what this module's own header says
+    // and what the loop below did not do before its `break`: it presented families
+    // until the reserve ran short, and `family_magnitude` is [0,0,0,0] for
+    // a family that does not germinate, so `physics.bump` of nothing never
+    // ran anything short and the drain was the whole corpus in one stroke
+    // (rule 10 — a loop bounded by neither a Budget nor one cell's
+    // boundary). The quote, the task and the syntropic arms ran after it,
+    // once, on a stroke that had already spent itself.
+    //
+    // The loop that remains steps over feed files that carry no family --
+    // each one is retired as it is read, so it advances by a file it
+    // removes -- and stops at the first family it presents.
     while let Some(path) = feed.next() {
         if occluded {
             break;
@@ -94,5 +116,6 @@ pub(crate) fn feed_arm(
         }
         retire_feed(&path);
         feed.finish();
+        break;
     }
 }
