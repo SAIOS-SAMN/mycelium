@@ -56,6 +56,102 @@ fn a_prefix_of_a_key_is_its_stratum() {
     assert_eq!(k.fiber_at(&[1]).map(Iterator::count), Some(3), "a coordinate reads its stratum");
 }
 
+/// X3 — THE DESCENT RETURNS WHAT THE FILTER RETURNED, on every prefix of
+/// every key, over tries of many shapes.
+///
+/// `fiber` used to push the root and test each leaf against the prefix on
+/// the way out; it now descends to a subtree and tests the leaves of that
+/// subtree. The second is the first only if the pruning is exact, and I
+/// changed the primitive on an ARGUMENT — that below a branch at bit `b`
+/// every key agrees on bits `[0, b)`, so one representative answers for
+/// the subtree. An argument is not a measurement, and the rule this stage
+/// paid for is that a function is read at its body.
+///
+/// So this reads the body against the definition: for every prefix of
+/// every key held, the descent's answer must equal the brute-force filter
+/// over all keys. TRIE SHAPE DEPENDS ON INSERTION ORDER, and two organs
+/// that admit the same keys in different orders hold differently shaped
+/// tries — which is exactly where an unsound prune would show up as two
+/// organs re-deriving one object and reaching different answers. So each
+/// key set is built in several orders and every one must agree.
+///
+/// Keys of MIXED LENGTH are the hard case: `key_bit` reads zero past the
+/// end of a key, so a short key sits among long ones as though padded, and
+/// a representative shorter than the prefix answers for nothing.
+#[test]
+fn the_descent_answers_what_the_filter_answered_whatever_the_trie_shape() {
+    // A spread of keys: shared prefixes, one a proper prefix of another,
+    // lengths from one byte to four, and a byte value that differs only in
+    // its lowest bit (adjacent branch points).
+    let keys: Vec<Vec<u8>> = vec![
+        vec![1],
+        vec![1, 0],
+        vec![1, 0, 0],
+        vec![1, 0, 1],
+        vec![1, 10, 0],
+        vec![1, 10, 1],
+        vec![1, 10, 1, 255],
+        vec![1, 11, 0],
+        vec![2],
+        vec![2, 0, 0],
+        vec![2, 0, 1],
+        vec![128],
+        vec![128, 128],
+        vec![129],
+        vec![255, 255, 255],
+        vec![0],
+        vec![0, 0],
+        vec![0, 0, 0],
+    ];
+    // Every prefix of every key, plus a few no key carries.
+    let mut prefixes: Vec<Vec<u8>> = Vec::new();
+    for k in &keys {
+        for n in 1..=k.len() {
+            let p = k[..n].to_vec();
+            if !prefixes.contains(&p) {
+                prefixes.push(p);
+            }
+        }
+    }
+    for p in [vec![3], vec![1, 12], vec![255, 0], vec![127], vec![0, 1]] {
+        prefixes.push(p);
+    }
+
+    // Several insertion orders of the same set: forward, reverse, and two
+    // rotations. A trie's shape is its insertion order's.
+    let mut orders: Vec<Vec<Vec<u8>>> = vec![keys.clone()];
+    let mut rev = keys.clone();
+    rev.reverse();
+    orders.push(rev);
+    for cut in [5usize, 11] {
+        let mut rot = keys[cut..].to_vec();
+        rot.extend_from_slice(&keys[..cut]);
+        orders.push(rot);
+    }
+
+    for (which, order) in orders.iter().enumerate() {
+        let mut k: Keyed<usize> = Keyed::new();
+        for (i, key) in order.iter().enumerate() {
+            k.insert(key.as_slice(), i);
+        }
+        assert_eq!(k.len(), keys.len(), "order {which}: every key is held");
+        for p in &prefixes {
+            let mut got: Vec<Vec<u8>> = k
+                .fiber(Prefix::new(p).expect("a coordinate"))
+                .map(|(key, _)| key)
+                .collect();
+            got.sort();
+            // THE DEFINITION, not the old implementation's code: the keys
+            // this carrier holds that carry the prefix.
+            let mut want: Vec<Vec<u8>> = keys.iter().filter(|key| key.starts_with(p)).cloned().collect();
+            want.sort();
+            assert_eq!(got, want, "order {which}, prefix {p:?}: the descent must answer the definition");
+        }
+        // And the scoped whole is every key, in every shape.
+        assert_eq!(k.scoped().count(), keys.len(), "order {which}: the whole carrier");
+    }
+}
+
 /// X3, rule 1 — A FIBER READ COSTS ITS FIBER, NOT THE CARRIER. `fiber`
 /// pushed the root node whatever the prefix was and filtered the leaves on
 /// the way out, so reading one stratum walked every node of the trie: the
