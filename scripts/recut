@@ -28,6 +28,22 @@ BIN="$REPO/target/release/mycelium-server"
 
 say() { printf '  recut: %s\n' "$*"; }
 
+# WHAT IS ABOUT TO BE WIPED, READ FIRST. A recut deletes every court's
+# history; the operator is entitled to see what each home holds and what
+# this build would do with it before the deletion, not after. `--check`
+# starts nothing and changes nothing it reports on. Exit 3 from it is "this
+# home will not boot on this build", which is the ordinary reading after a
+# layout change (§10) and not a reason to stop.
+say "surveying the homes (nothing is changed by this)"
+for h in "${HYPHAE[@]}"; do
+  "$BIN" --home "$ROOT/$h" --check 2>&1 | sed 's/^/    /' || true
+done
+for v in "${VOICES[@]}"; do
+  printf '    %s/%s: mesh %s, genome %s\n' "$ROOT" "$v" \
+    "$(head -c 4 "$ROOT/$v/mesh" 2>/dev/null || echo '(none)')" \
+    "$(head -c 4 "$ROOT/$v/genome" 2>/dev/null || echo '(none)')"
+done
+
 say "stopping voices"
 for v in "${VOICES[@]}"; do systemctl --user stop "mycelium-client@$v" 2>/dev/null || true; done
 say "stopping hyphae"
@@ -93,4 +109,13 @@ for h in "${HYPHAE[@]}"; do
 done
 for v in "${VOICES[@]}"; do systemctl --user start "mycelium-client@$v"; done
 
-say "done — read: court genesis … adopted from, then court receipts … refused-origin 0"
+# THE PROCEDURE TAKES ITS OWN READING. This ended at "done — read: …" and
+# left the reading to be remembered and typed by hand, eight greps of it,
+# which is how a relaunch gets reported as working because nobody looked.
+# `scripts/readings` is that reading, and it is the same one whether it is
+# run from here or on its own an hour later.
+SOAK="${SOAK:-300}"
+say "soaking ${SOAK}s before the reading"
+sleep "$SOAK"
+say "reading the fleet"
+"$REPO/scripts/readings" "-$((SOAK / 60 + 1))m" "$ROOT"
