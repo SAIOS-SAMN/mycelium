@@ -256,6 +256,12 @@ refuses instead, because a short frame read as zero is the clock-zero
 fault of law 9 and not a boundary. The count of `expect`s in a module is
 a measurement of that module and stays visible. There is no table of
 paths anywhere in the tree, and no file is named in any configuration.
+One scope statement, not an allowance: §2.4 binds cognition and never
+bound a test, and an integration test under `tests/` is a crate of its
+own that `allow-*-in-tests` cannot reach, so each such crate opens with
+`#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic,
+reason = "§2.4 binds cognition; this crate is a test")]`. `allow`, not
+`expect`: a test crate owes no abort. No other lint is allowed there.
 
 4.4 **What the compiler cannot read is a type or a review item.** A pair
 loop over one carrier (rule 1), a count deciding a branch (rule 2), a loop
