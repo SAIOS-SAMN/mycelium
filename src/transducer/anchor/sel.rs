@@ -63,6 +63,16 @@ pub(crate) fn neighbours((r, c): (i64, i64)) -> [(i64, i64); 4] {
 impl Sel {
     /// EVALUATE the term over a scene (the percept's occupied 0-cells) to its
     /// support set — exact, deterministic, replayable on any scene.
+    ///
+    /// `Ext` IS an extremum on a substrate axis and `ArgExt` IS the
+    /// component uniquely extremizing a measured invariant: the reading is
+    /// the operator's definition, not a candidate picked by a scalar, and
+    /// `ArgExt` selects nothing on a tie rather than breaking one (rule 4).
+    /// `Transport` derives its offset from the two bbox corners.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — an extremum on an axis is this algebra's operator, and a tie selects nothing"
+    )]
     pub fn eval(&self, scene: &[(i64, i64, u8)]) -> Vec<(i64, i64)> {
         match self {
             Sel::Hue(h) => sorted(
@@ -79,8 +89,21 @@ impl Sel {
                     .into_iter()
                     .map(|c| sorted(c.into_iter().map(|(r, c, _)| (r, c)).collect()))
                     .collect();
-                comps.sort_by_key(|c| c.first().copied());
-                comps.into_iter().nth(*k as usize).unwrap_or_default()
+                comps.sort_by_key(|c| match c.as_slice() {
+                    [least, ..] => Some(*least),
+                    [] => None,
+                });
+                // A term naming a component the support does not have
+                // selects nothing (§2.4), which is the empty support and
+                // not a default standing in for one (rule 11).
+                #[expect(
+                    clippy::manual_unwrap_or_default,
+                    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; the empty support is measured here, not defaulted to"
+                )]
+                match comps.into_iter().nth(*k as usize) {
+                    Some(c) => c,
+                    None => Vec::new(),
+                }
             }
             Sel::Delta(e) => {
                 let sup = e.eval(scene);
@@ -133,23 +156,25 @@ impl Sel {
                 if comps.is_empty() {
                     return Vec::new();
                 }
-                let measure = |k: &Vec<(i64, i64)>| -> i64 {
+                // A component with no cells has no diameter to measure, so
+                // the measure refuses rather than reading zero for it
+                // (rule 11); `components` returns none such, and a term
+                // whose measure refuses selects nothing below.
+                let measure = |k: &Vec<(i64, i64)>| -> Option<i64> {
                     match code {
-                        0 | 1 => k.len() as i64,
+                        0 | 1 => Some(k.len() as i64),
                         _ => {
-                            let (r0, r1) = (
-                                k.iter().map(|(r, _)| *r).min().unwrap_or(0),
-                                k.iter().map(|(r, _)| *r).max().unwrap_or(0),
-                            );
-                            let (c0, c1) = (
-                                k.iter().map(|(_, c)| *c).min().unwrap_or(0),
-                                k.iter().map(|(_, c)| *c).max().unwrap_or(0),
-                            );
-                            (r1 - r0) + (c1 - c0)
+                            let rows = || k.iter().map(|(r, _)| *r);
+                            let cols = || k.iter().map(|(_, c)| *c);
+                            let (r0, r1) = (rows().min()?, rows().max()?);
+                            let (c0, c1) = (cols().min()?, cols().max()?);
+                            Some((r1 - r0) + (c1 - c0))
                         }
                     }
                 };
-                let vals: Vec<i64> = comps.iter().map(measure).collect();
+                let Some(vals) = comps.iter().map(measure).collect::<Option<Vec<i64>>>() else {
+                    return Vec::new();
+                };
                 let target = match code {
                     0 | 2 => vals.iter().max(),
                     _ => vals.iter().min(),
@@ -191,7 +216,10 @@ impl Sel {
                 while let Some(p) = frontier.pop() {
                     for q in neighbours(p) {
                         if has(&w, q) && !has(&reached, q) {
-                            let i = reached.binary_search(&q).unwrap_err();
+                            // Either arm is the seat `q` belongs at, so the
+                            // search answers a position and never a failure
+                            // to be unwrapped (§2.4).
+                            let (Ok(i) | Err(i)) = reached.binary_search(&q);
                             reached.insert(i, q);
                             frontier.push(q);
                         }

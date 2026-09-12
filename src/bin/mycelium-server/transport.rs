@@ -180,6 +180,10 @@ pub(crate) fn exchange_due(last_asked: Option<u64>, k_now: u64, lambda: Option<u
 }
 
 /// The floor of the last aperture of measured round trips to a peer.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "rule 4 — the floor of the window is that window's extent; a peer with no measured round trip has no floor and refuses"
+)]
 pub(crate) fn rtt_floor(mesh: &Mesh, id: &[u8]) -> Option<u64> {
     mesh.rtt_window
         .lock()

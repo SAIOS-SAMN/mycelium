@@ -10,6 +10,10 @@ pub const BODY_BUDGET: usize = 768 * 1024;
 
 /// Frame-integrity digest of served bytes (corpus files, signed manifests).
 /// Not a key of mathematical structure.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "law 2 — the object is the frame's bytes, and frame integrity is a property of those bytes and of no structure they carry"
+)]
 pub fn integrity_hash<'a, I>(chunks: I) -> [u8; 32]
 where
     I: IntoIterator<Item = &'a [u8]>,

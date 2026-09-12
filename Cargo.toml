@@ -42,3 +42,6 @@ unsafe_code = "deny"
 [lints.clippy]
 float_arithmetic    = "deny"
 cast_precision_loss = "deny"
+# MU-STANDARDS 4.2: the tables of clippy.toml are read through these two.
+disallowed_types    = "deny"
+disallowed_methods  = "deny"

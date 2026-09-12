@@ -38,6 +38,10 @@ impl HyphaKey {
     /// derivable by anyone who knows the string, which is not an identity.
     /// A real voice is a keypair from the genesis manifest (46).
     #[cfg(test)]
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "law 2 — a fixture seed from a string is bytes, and is explicitly not an identity; a real voice is a keypair from the genesis manifest"
+    )]
     pub fn seed_from_name(name: &str) -> [u8; 32] {
         *blake3::hash(format!("mycelium-kernel:{name}").as_bytes()).as_bytes()
     }

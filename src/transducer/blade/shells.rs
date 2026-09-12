@@ -72,6 +72,10 @@ pub fn adjacent_ring(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
 
 /// Background cells inside the body's bbox that cannot reach the bbox
 /// border through background (enclosed interior / holes).
+#[expect(
+    clippy::disallowed_methods,
+    reason = "rule 4 — a bounding box is the extent of the cell set, content: two nodes holding one body read the same corners"
+)]
 pub fn enclosed_interior(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
     if cells.is_empty() {
         return Vec::new();
@@ -127,6 +131,10 @@ pub fn enclosed_interior(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
     out
 }
 
+#[expect(
+    clippy::disallowed_methods,
+    reason = "rule 4 — the bounding box IS this function's object, the extent of the cell set and not a candidate chosen from it; an empty set has no box and refuses"
+)]
 pub(crate) fn bbox(cells: &[(i64, i64, u8)]) -> Option<(i64, i64, i64, i64)> {
     let r0 = cells.iter().map(|c| c.0).min()?;
     let r1 = cells.iter().map(|c| c.0).max()?;

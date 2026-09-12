@@ -151,15 +151,20 @@ impl Element {
     }
 
     /// Open a germinated axis holding `v`. Returns the axis index.
+    ///
+    /// The new index is the successor of the largest germinated axis this
+    /// word already carries, which the set determines; a word carrying none
+    /// opens at the first germinated seat, which is that set's successor
+    /// too and not a value invented for it.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — the largest index a word carries is a reading of its own axis set, content"
+    )]
     pub fn open_axis(&mut self, v: Versor) -> u16 {
-        let i = self
-            .action
-            .germinated
-            .iter()
-            .map(|(i, _)| *i)
-            .max()
-            .map(|m| m.saturating_add(1).max(FIBER_GERMINATED))
-            .unwrap_or(FIBER_GERMINATED);
+        let i = match self.action.germinated.iter().map(|(i, _)| *i).max() {
+            Some(m) => m.saturating_add(1).max(FIBER_GERMINATED),
+            None => FIBER_GERMINATED,
+        };
         self.action.germinated.push((i, v));
         self.address.take();
         i
@@ -200,6 +205,10 @@ impl Element {
         a
     }
 
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — the largest axis index this word carries is a reading of the axis set, content; a word with no axes has none and refuses"
+    )]
     pub fn max_axis(&self) -> Option<u16> {
         self.axes().into_iter().max()
     }

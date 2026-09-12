@@ -23,16 +23,14 @@
 /// same binary breathes correctly on a beta laptop and a compute node.
 static CALIBRATED_RESERVE_MAX: std::sync::OnceLock<u64> = std::sync::OnceLock::new();
 
-fn mem_available_gib() -> u64 {
-    std::fs::read_to_string("/proc/meminfo")
-        .ok()
-        .and_then(|s| {
-            s.lines()
-                .find(|l| l.starts_with("MemAvailable:"))
-                .and_then(|l| l.split_whitespace().nth(1).and_then(|kb| kb.parse::<u64>().ok()))
-        })
-        .map(|kb| kb >> 20)
-        .unwrap_or(1)
+/// Available memory in GiB, or `None` where the host does not say. The
+/// field is the second word of the `MemAvailable:` line, which is that
+/// line's format and not a member picked by position (rule 15).
+fn mem_available_gib() -> Option<u64> {
+    let s = std::fs::read_to_string("/proc/meminfo").ok()?;
+    let line = s.lines().find(|l| l.starts_with("MemAvailable:"))?;
+    let kb: u64 = line.split_whitespace().nth(1)?.parse().ok()?;
+    Some(kb >> 20)
 }
 
 /// The calibrated reserve ceiling — measured, not declared: burst capacity
@@ -42,10 +40,22 @@ fn mem_available_gib() -> u64 {
 /// hardware).
 pub fn reserve_max() -> u64 {
     *CALIBRATED_RESERVE_MAX.get_or_init(|| {
-        let cores = std::thread::available_parallelism().map(|n| n.get() as u64).unwrap_or(1);
+        // A host that does not say how many cores it has, or how much
+        // memory is available, is measured at the floor: one core and no
+        // GiB of depth. That is the smallest hardware the ratio algebra
+        // stays exact on, which is what the floor below asserts — not a
+        // reading standing in for a measurement (rule 11).
+        let cores = match std::thread::available_parallelism() {
+            Ok(n) => n.get() as u64,
+            Err(_) => 1,
+        };
+        let depth = match mem_available_gib() {
+            Some(gib) => cores * (1 + gib),
+            None => cores,
+        };
         // Rounded DOWN to a whole number of strokes so the ratio algebra is
         // exact on every machine: eight spends empty a full reserve, always.
-        ((cores * (1 + mem_available_gib())).max(16) / 8) * 8
+        (depth.max(16) / 8) * 8
     })
 }
 
@@ -108,33 +118,26 @@ pub fn from_transport(rtt: u64, strokes: u64) -> u64 {
 /// THE MINIMAL OPERATIONAL FLOOR OF ONE STROKE, as a duration the
 /// processor understands (the stroke-duration ruling, 2026-09-11).
 ///
-/// A stroke had no duration. `Physics::spend` is `saturating_sub` on the
-/// reserve — arithmetic — so every site that "paid a stroke and retried"
-/// paid three integer decrements and came straight back, and every
-/// `yield_now` beside one returned at once when no other thread on that
-/// core was ready. Measured on the fleet at epoch 10: 32,767 of 32,768
-/// exchange cycles idle, one thread per court at 99–115% CPU, and every
-/// peer read `silent` because its listener had not been scheduled inside
-/// the microseconds a poll budget of yields allows.
-///
-/// THE COST OF THAT WAS NOT CPU. A court that never reaches a peer never
-/// measures a round trip, so `rtt_floor` stays unmeasured, so 47.5's Λ is
-/// `None` for every chart, so `lapse_docket` `continue`s on every listing
-/// and NOTHING IS EVER EVICTED: the book grew 250 listings a minute at
-/// ~26 KB each and the node ran out of memory. The spin was the head of
-/// that chain.
-///
-/// This is a FLOOR, not a pace. The pace stays the stroke and the measured
-/// transport; what this says is that one stroke of waiting costs the
-/// processor at least this much, so the thread the wait exists for can
-/// actually run. It is deliberately the smallest quantity that lets a
-/// scheduler place another thread.
+/// This is a FLOOR, not a pace: the pace is the stroke and the measured
+/// transport (law 9). What it says is that one stroke of WAITING costs the
+/// processor at least this much, so the thread the wait exists for can be
+/// scheduled — the smallest quantity that lets a scheduler place another
+/// thread. It is the one place the engine names wall time, and it names it
+/// for the scheduler and never for a measurement.
+#[expect(
+    clippy::disallowed_types,
+    reason = "law 9 — the parking floor is told to the scheduler in its own units; no reading is taken from it"
+)]
 pub const STROKE_FLOOR: std::time::Duration = std::time::Duration::from_millis(1);
 
 /// How long an idle stroke parks: the measured transport where one has
 /// been measured, and the floor where none has. `rtt` is in polls — the
 /// instrument's own resolution — so a measured wire parks a poll's worth
 /// per stroke and an unmeasured one parks the floor.
+#[expect(
+    clippy::disallowed_types,
+    reason = "law 9 — a park is told to the scheduler in its own units; the pace is strokes"
+)]
 pub fn idle_park(rtt: Option<u64>) -> std::time::Duration {
     match rtt {
         Some(r) => STROKE_FLOOR * (r.clamp(1, 64) as u32),
@@ -186,7 +189,13 @@ pub const BOOK_LOW: usize = 256;
 /// less memory than the watermark assumes is still bounded by its own.
 pub fn book_ceiling() -> usize {
     const PER_GIB: u64 = 20_000;
-    let measured = (mem_available_gib().max(1) * PER_GIB) as usize;
+    // A host that does not say how much memory is available is bounded by
+    // the watermark alone; one GiB is the smallest depth the ceiling is
+    // measured against where it does say.
+    let Some(gib) = mem_available_gib() else {
+        return BOOK_HIGH;
+    };
+    let measured = (gib.max(1) * PER_GIB) as usize;
     measured.min(BOOK_HIGH)
 }
 

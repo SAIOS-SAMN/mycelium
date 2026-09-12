@@ -169,10 +169,18 @@ pub struct KStepReceipt {
 
 /// Receipt payload identity of admitted content bytes (Part IX: the
 /// object of the hash is the bytes written on the receipt).
+#[expect(
+    clippy::disallowed_methods,
+    reason = "law 2, Part IX — the object of this hash is the bytes written on the receipt, which are the receipt"
+)]
 pub fn payload_hash(bytes: &[u8]) -> [u8; 32] {
     *blake3::hash(bytes).as_bytes()
 }
 
+#[expect(
+    clippy::disallowed_methods,
+    reason = "law 2, Part IX — the object is the two heads' bytes as the receipt chains them"
+)]
 pub fn operator_hash(voice: &[u8; 32], court_head: &[u8; 32]) -> [u8; 32] {
     let mut buf = [0u8; 64];
     buf[..32].copy_from_slice(voice);
@@ -229,7 +237,14 @@ impl KStepReceipt {
         buf
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "§2.1 — a receipt's chain hash covers every field it chains, and each is named rather than bundled into a tuple"
+    )]
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "law 2, Part IX — the object is the receipt's own tape, chained to its parent's"
+    )]
     pub(super) fn hash(
         step_index: u64,
         height: u64,

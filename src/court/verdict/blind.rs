@@ -52,6 +52,10 @@ pub fn blind_replay_with(spoken: &Element, resolve: &dyn Fn(&[u8]) -> Option<For
     blind_replay_on_inner(spoken, resolve, None, &crate::transducer::family::NoCrystal)
 }
 
+#[expect(
+    clippy::disallowed_methods,
+    reason = "rule 4 — a chain's min corner is its extent, content: the court checks the chain is framed to its own origin"
+)]
 pub(crate) fn blind_replay_on_inner(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
@@ -140,8 +144,15 @@ pub(crate) fn blind_replay_on_inner(
             }
         }
         (false, _) => {
-            let min_r = chain.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
-            let min_c = chain.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+            // The chain's min corner is its extent, content (rule 4). An
+            // empty chain has no corner to be at the origin, and that is
+            // not a corner of (0, 0) read for it.
+            let (Some(min_r), Some(min_c)) = (
+                chain.iter().map(|(r, _, _, _)| *r).min(),
+                chain.iter().map(|(_, c, _, _)| *c).min(),
+            ) else {
+                return Some("chain is empty and frames to no origin");
+            };
             if (min_r, min_c) != (0, 0) {
                 return Some("chain not framed to origin");
             }

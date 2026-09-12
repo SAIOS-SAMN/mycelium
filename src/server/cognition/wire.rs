@@ -25,11 +25,22 @@ pub fn germ_address(g: &Element) -> crate::transducer::address::Address {
 
 /// The frame measured from two cell scenes (their 0-cell extents) — the
 /// identity frame when both share dims; used where no grid is at hand.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "rule 4 — a scene's extent is the largest coordinate its cells occupy, content"
+)]
 pub fn frame_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> crate::arc::Frame {
+    // A scene's extent is its largest occupied coordinate plus one, which
+    // the cell set determines (rule 4). An empty scene occupies no cells
+    // and its extent is zero by measurement, not by default.
     let extent = |s: &[(i64, i64, u8)]| {
+        let axis = |m: Option<i64>| match m {
+            Some(x) => x.max(0) as usize,
+            None => 0,
+        };
         (
-            s.iter().map(|(r, _, _)| *r + 1).max().unwrap_or(0).max(0) as usize,
-            s.iter().map(|(_, c, _)| *c + 1).max().unwrap_or(0).max(0) as usize,
+            axis(s.iter().map(|(r, _, _)| *r + 1).max()),
+            axis(s.iter().map(|(_, c, _)| *c + 1).max()),
         )
     };
     let (hi, wi) = extent(a);

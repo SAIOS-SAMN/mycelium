@@ -261,6 +261,10 @@ impl Session {
         self.rtt.borrow().get(addr.as_bytes()).copied()
     }
 
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — the floor of the RTT window is that window's extent, a measured reading of the samples it holds"
+    )]
     pub(crate) fn rtt_ok(&self, addr: &str, sample: u64) {
         let n = crate::physics::aperture_cycle().max(1) as usize;
         let mut windows = self.rtt_window.borrow_mut();
@@ -275,6 +279,10 @@ impl Session {
         self.rtt.borrow_mut().insert(addr.as_bytes(), sample.min(cap));
     }
 
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — the floor of the RTT window is that window's extent; a peer with no window has no floor and refuses"
+    )]
     pub(crate) fn rtt_timeout(&self, addr: &str) {
         let Some(floor) = self
             .rtt_window

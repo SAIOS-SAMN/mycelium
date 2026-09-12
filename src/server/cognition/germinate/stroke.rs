@@ -25,6 +25,10 @@ impl Kernel {
     /// A chart stagnant on gauge is a condense candidate, holonomic torse,
     /// shell refine, spatial re-anchor. Temporal stagnation relocates on T.
     /// Candidates from open and the ruled cover.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — the least address on a chart is key order, which is content: two hyphae holding one chart must condense the same word or the language forks along insertion order"
+    )]
     pub fn syntropic_stroke(&mut self) {
         let mut budget = self.physics.stroke();
         let mut jobs: Vec<(crate::transducer::stalk::Invariant, [bool; 4])> = Vec::new();

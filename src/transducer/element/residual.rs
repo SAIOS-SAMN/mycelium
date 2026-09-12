@@ -29,12 +29,22 @@ pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
 /// chain; the antisymmetric hue tally is kept only as the δ-algebra lens.
 /// A5: translate min-corner to origin, sort, dedup. None when two
 /// distinct transitions occupy one site.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "rule 4 — the min corner is the chain's extent, content: A5 translates it to the origin so two nodes address one chain alike"
+)]
 pub fn canonical_chain(cells: &[(i64, i64, u8, u8)]) -> Option<Vec<(i64, i64, u8, u8)>> {
     if cells.is_empty() {
         return Some(Vec::new());
     }
-    let min_r = cells.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
-    let min_c = cells.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+    // A non-empty chain has a corner; the empty one returned above. The
+    // corner is read, never defaulted (rule 11).
+    let (Some(min_r), Some(min_c)) = (
+        cells.iter().map(|(r, _, _, _)| *r).min(),
+        cells.iter().map(|(_, c, _, _)| *c).min(),
+    ) else {
+        return None;
+    };
     let mut out: Vec<(i64, i64, u8, u8)> = cells
         .iter()
         .map(|(r, c, b, a)| (r - min_r, c - min_c, *b, *a))
@@ -49,6 +59,15 @@ pub fn canonical_chain(cells: &[(i64, i64, u8, u8)]) -> Option<Vec<(i64, i64, u8
     Some(out)
 }
 
+// The `min` reads below are rule 4 on the chain's extent. They sit inside
+// the fallback that rebuilds a chain `canonical_chain` REFUSED, with the
+// conflict check and the dedup skipped — a law 2 identity fault carried by
+// a rule 11 default. The next commit deletes that fallback and this
+// allowance with it; it is here only so rule 4's commit is green.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "rule 4 — the min corner is the chain's extent; the fallback this sits in is deleted by the from_residual commit"
+)]
 pub fn from_residual(g: &ResidualGerm) -> Element {
     let centered: ResidualGerm = canonical_chain(g).unwrap_or_else(|| {
         let min_r = g.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);

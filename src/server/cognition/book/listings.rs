@@ -347,6 +347,10 @@ impl Kernel {
 
     /// Torse one word: a closed orbit pays the torse coin on the residual
     /// lane immediately, not on the idle cursor.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — least by (sigma, period) is lexicographic key order over content, so two courts speak the same torse of one word"
+    )]
     pub(crate) fn torse_at(&mut self, addr: &[u8]) {
         let spanned = match self.word_mut(addr) {
             Some(w) => w.update(|e| e.torse()),

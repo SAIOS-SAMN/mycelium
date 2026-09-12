@@ -33,6 +33,10 @@ pub struct Cover {
     held: Keyed<Vec<(u8, crate::transducer::stalk::Invariant)>>,
 }
 
+#[expect(
+    clippy::disallowed_methods,
+    reason = "law 2 — a cover root is the cold routing index over bytes, not an identity of the charts it stands for"
+)]
 fn empty_cover_root() -> [u8; 32] {
     *blake3::Hasher::new().finalize().as_bytes()
 }
@@ -211,6 +215,10 @@ impl Cover {
 
     /// The four lane roots, hashed for any lane that has moved since the
     /// last reading.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "law 2 — a lane root is the cold routing index over bytes, not an identity of the charts it stands for"
+    )]
     pub fn roots(&mut self) -> [[u8; 32]; 4] {
         for lane in 0..4 {
             if self.due[lane] {

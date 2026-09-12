@@ -170,8 +170,22 @@ impl Epigenome {
     }
 
     /// The strongest-expressed word's weight (the dialect's leading edge).
+    /// A dialect expressing nothing has no leading edge, which is a weight
+    /// of zero measured on an empty carrier and not a default standing in
+    /// for one.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — the peak of the expression vector is its extent, content"
+    )]
     pub fn peak_expression(&self) -> u64 {
-        self.expression.iter().copied().max().unwrap_or(0)
+        #[expect(
+            clippy::manual_unwrap_or_default,
+            reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a dialect expressing nothing has a peak of zero by measurement"
+        )]
+        match self.expression.iter().copied().max() {
+            Some(w) => w,
+            None => 0,
+        }
     }
 
     pub fn recollections(&self) -> Vec<(Vec<Vec<u8>>, u64)> {
