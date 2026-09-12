@@ -20,6 +20,20 @@ pub const MAGIC_V1: &[u8; 4] = b"MSH1";
 pub const HYPHA: u8 = 0;
 pub const VOICE: u8 = 1;
 
+/// WHICH LAYOUT A RECORD ON DISK WAS READ UNDER. A bool here would name
+/// the question and neither of its answers (F3ah); the migration turns on
+/// it, and so does the deletion of the arm that reads the old one.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Layout {
+    /// MSH2, with the presence bytes.
+    Current,
+    /// MSH1, read under its own rules. `load_or_migrate_hypha` and
+    /// `load_or_migrate_voice` re-save such a record ONCE, at the boot
+    /// that read it, so the arm that reads MSH1 has an end: when every
+    /// node has booted once, no MSH1 record is left and the arm goes.
+    Legacy,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct MeshRecord {
     pub kind: u8,
@@ -151,11 +165,19 @@ impl MeshRecord {
     /// nowhere" there, and 32 zeros ARE "no genesis", which is exactly the
     /// conflation MSH2 exists to end — and the next `save` writes MSH2.
     pub fn decode(b: &[u8]) -> Option<(Self, usize)> {
-        let legacy = match b.get(0..4) {
-            Some(m) if m == MAGIC => false,
-            Some(m) if m == MAGIC_V1 => true,
+        Self::decode_layout(b).map(|(rec, p, _)| (rec, p))
+    }
+
+    /// The same reading, with the LAYOUT it was read under. One reader for
+    /// both (law 12): a second function that looked at the magic on its own
+    /// could disagree with the arm that parsed the body.
+    pub fn decode_layout(b: &[u8]) -> Option<(Self, usize, Layout)> {
+        let layout = match b.get(0..4) {
+            Some(m) if m == MAGIC => Layout::Current,
+            Some(m) if m == MAGIC_V1 => Layout::Legacy,
             _ => return None,
         };
+        let legacy = layout == Layout::Legacy;
         let mut p = 4usize;
         let kind = *b.get(p)?;
         p += 1;
@@ -217,6 +239,7 @@ impl MeshRecord {
                 epoch,
             },
             p,
+            layout,
         ))
     }
 
@@ -230,12 +253,18 @@ impl MeshRecord {
     }
 
     pub fn open(bytes: &[u8], vk: &[u8; 32]) -> Option<Self> {
-        let (rec, p) = Self::decode(bytes)?;
+        Self::open_layout(bytes, vk).map(|(rec, _)| rec)
+    }
+
+    /// The record and the layout it was read under, both verified under the
+    /// node's own key.
+    pub fn open_layout(bytes: &[u8], vk: &[u8; 32]) -> Option<(Self, Layout)> {
+        let (rec, p, layout) = Self::decode_layout(bytes)?;
         let sig: [u8; 64] = bytes.get(p..p + 64)?.try_into().ok()?;
         if !identity::verify(vk, &bytes[..p], &sig) {
             return None;
         }
-        Some(rec)
+        Some((rec, layout))
     }
 
     pub fn save(&self, home: &Path, key: &HyphaKey) -> std::io::Result<()> {
@@ -261,14 +290,14 @@ impl MeshRecord {
     /// this key cannot open. Reading the second as the first wrote a fresh
     /// record over a node's peers, genesis and epoch — a configuration
     /// refusal spelled as a first boot.
-    pub fn open_at(home: &Path, vk: &[u8; 32]) -> Result<Option<Self>, String> {
+    pub fn open_at(home: &Path, vk: &[u8; 32]) -> Result<Option<(Self, Layout)>, String> {
         let path = home.join("mesh");
         let bytes = match std::fs::read(&path) {
             Ok(b) => b,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
             Err(e) => return Err(format!("{} unreadable: {e}", path.display())),
         };
-        match Self::open(&bytes, vk) {
+        match Self::open_layout(&bytes, vk) {
             Some(rec) => Ok(Some(rec)),
             None => Err(format!(
                 "{} does not open under this node's key: it is another node's record, \
@@ -341,12 +370,45 @@ fn drop_loose(home: &Path, names: &[&str]) {
     }
 }
 
+/// X7 — A RECORD READ UNDER THE OLD MAGIC IS WRITTEN BACK ONCE, at the
+/// boot that read it, so the read arm for MSH1 has an END: when every node
+/// has booted once there is no MSH1 record left in the fleet and the arm
+/// is deleted.
+///
+/// Without this the arm is permanent. fc75a59 added it because the magic
+/// bump refused all eight provisioned records at once and the fleet could
+/// not boot, but a read arm that nothing retires is two layouts the tree
+/// carries forever, and MSH1's conflations (an empty bind for absence, 32
+/// zeros for no genesis) are exactly what MSH2 exists to end.
+///
+/// The re-save is a REFUSAL when it fails, not a warning: a node that
+/// cannot write its own record has a configuration fault, and continuing
+/// would read MSH1 again at the next boot while reporting nothing.
+fn resave_legacy(
+    home: &Path,
+    key: &HyphaKey,
+    rec: &MeshRecord,
+    layout: Layout,
+) -> Result<(), String> {
+    if layout == Layout::Current {
+        return Ok(());
+    }
+    match rec.save(home, key) {
+        Ok(()) => {
+            eprintln!("  mesh record read as MSH1 and written back as MSH2: {}", home.display());
+            Ok(())
+        }
+        Err(e) => Err(format!("{}/mesh was read as MSH1 and cannot be written back: {e}", home.display())),
+    }
+}
+
 /// Load `home/mesh`, or write it once from the old text files and remove
 /// them. `Err` is a CONFIGURATION REFUSAL with its reason: a home that
 /// holds a record this key cannot open is not a home that holds none.
 pub fn load_or_migrate_hypha(home: &Path, key: &HyphaKey) -> Result<MeshRecord, String> {
     let vk = key.vk_bytes();
-    if let Some(rec) = MeshRecord::open_at(home, &vk)? {
+    if let Some((rec, layout)) = MeshRecord::open_at(home, &vk)? {
+        resave_legacy(home, key, &rec, layout)?;
         drop_loose(
             home,
             &[
@@ -396,7 +458,8 @@ pub fn load_or_migrate_hypha(home: &Path, key: &HyphaKey) -> Result<MeshRecord, 
 /// `Err` is a configuration refusal, as for a hypha.
 pub fn load_or_migrate_voice(home: &Path, key: &HyphaKey) -> Result<MeshRecord, String> {
     let vk = key.vk_bytes();
-    if let Some(rec) = MeshRecord::open_at(home, &vk)? {
+    if let Some((rec, layout)) = MeshRecord::open_at(home, &vk)? {
+        resave_legacy(home, key, &rec, layout)?;
         drop_loose(home, &["bootstrap", "tuniversal", "thoughts", "feed", "conductor"]);
         migrate_genome(home, &vk);
         return Ok(rec);
@@ -572,7 +635,8 @@ mod tests {
         crate::transducer::address::put_u8_count(&mut bare,0).expect("fits");
         bare.extend_from_slice(&[0u8; 32]);
         bare.extend_from_slice(&0u32.to_le_bytes());
-        let (rec, _) = MeshRecord::decode(&bare).expect("the bare old record decodes");
+        let (rec, _, layout) = MeshRecord::decode_layout(&bare).expect("the bare old record decodes");
+        assert_eq!(layout, Layout::Legacy, "and the reading names the layout it read");
         assert_eq!(rec.bind, None, "an empty MSH1 bind is absence");
         assert_eq!(rec.genesis, None, "and 32 zeros are no genesis");
 
@@ -584,5 +648,61 @@ mod tests {
         assert_eq!(again.bind, back.bind);
         assert_eq!(again.genesis, back.genesis);
         assert_eq!(again.peers, back.peers);
+    }
+
+    /// X7 — THE OLD ARM HAS AN END. A boot that reads an MSH1 record writes
+    /// it back as MSH2 there and then, so the fleet retires the layout by
+    /// booting rather than by a flag, and the arm that reads MSH1 can be
+    /// deleted once every node has. Read here on the migration door
+    /// itself, since that is where the boot enters: the record on disk is
+    /// MSH1 before the call and MSH2 after it, with the wiring §10 says a
+    /// recut keeps — bind, peers, bootstrap, bonds, origin, epoch — intact
+    /// across the rewrite, and the second call writes nothing new.
+    #[test]
+    fn a_boot_that_reads_the_old_magic_writes_the_record_back_as_msh2() {
+        let home = std::path::PathBuf::from("/tmp/mycelium-mesh-x7");
+        let _ = std::fs::remove_dir_all(&home);
+        std::fs::create_dir_all(&home).expect("a home to boot in");
+        let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-x7.key");
+
+        let mut v1 = Vec::from(*MAGIC_V1);
+        v1.push(HYPHA);
+        put_str(&mut v1, "127.0.0.1:7500").expect("fits");
+        crate::transducer::address::put_u8_count(&mut v1, 1).expect("fits");
+        put_str(&mut v1, "127.0.0.1:7501").expect("fits");
+        put_str(&mut v1, "").expect("fits");
+        crate::transducer::address::put_u8_count(&mut v1, 1).expect("fits");
+        put_bond(&mut v1, &[5; 32], &[1, 2, 3, 4]);
+        crate::transducer::address::put_u8_count(&mut v1, 0).expect("fits");
+        v1.extend_from_slice(&[9u8; 32]);
+        v1.extend_from_slice(&7u32.to_le_bytes());
+        let mut signed = v1.clone();
+        signed.extend_from_slice(&key.sign(&v1));
+        std::fs::write(home.join("mesh"), &signed).expect("the provisioned record");
+        assert_eq!(
+            std::fs::read(home.join("mesh")).expect("on disk").get(0..4),
+            Some(&MAGIC_V1[..]),
+            "provisioned under the old magic"
+        );
+
+        let rec = load_or_migrate_hypha(&home, &key).expect("the record opens");
+        assert_eq!(rec.bind, Some("127.0.0.1:7500".into()));
+        assert_eq!(rec.peers, vec!["127.0.0.1:7501".to_string()]);
+        assert_eq!(rec.hypha, vec![([5; 32], [1, 2, 3, 4])]);
+        assert_eq!(rec.genesis, Some([9; 32]));
+        assert_eq!(rec.epoch, 7);
+        let now = std::fs::read(home.join("mesh")).expect("still on disk");
+        assert_eq!(now.get(0..4), Some(&MAGIC[..]), "and the boot wrote it back as MSH2");
+        assert_eq!(
+            MeshRecord::open_layout(&now, &key.vk_bytes()).map(|(_, l)| l),
+            Some(Layout::Current),
+            "read as the current layout from here on"
+        );
+
+        // ONCE: the second boot reads MSH2 and has nothing to write.
+        let again = load_or_migrate_hypha(&home, &key).expect("the record opens");
+        assert_eq!(std::fs::read(home.join("mesh")).expect("on disk"), now, "byte for byte");
+        assert_eq!(again.bind, rec.bind);
+        let _ = std::fs::remove_dir_all(&home);
     }
 }
