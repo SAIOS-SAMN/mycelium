@@ -32,6 +32,15 @@ disallowed-methods = [
     { path = "core::iter::Iterator::max_by_key", reason = "rule 4: nothing is chosen by a scalar" },
     { path = "core::iter::Iterator::min_by_key", reason = "rule 4: nothing is chosen by a scalar" },
 
+    # §4.2's sort family. An ORDER IS A CHOICE at every position, not only
+    # at the extremum: a sort by a canonical key is the key's own order and
+    # stands with its reason; a sort by anything measured ranks lanes
+    # against each other and is rule 4's, exactly as `min_by_key` is.
+    { path = "slice::sort_by", reason = "rule 4: an order is a choice at every position; sort by a canonical key, never by a measurement" },
+    { path = "slice::sort_by_key", reason = "rule 4: an order is a choice at every position" },
+    { path = "slice::sort_unstable_by", reason = "rule 4: an order is a choice at every position" },
+    { path = "slice::sort_unstable_by_key", reason = "rule 4: an order is a choice at every position" },
+
     { path = "core::option::Option::unwrap_or", reason = "rule 11: exact or refused; a missing value is a refusal, never a default" },
     { path = "core::option::Option::unwrap_or_else", reason = "rule 11: exact or refused" },
     { path = "core::option::Option::unwrap_or_default", reason = "rule 11: exact or refused" },

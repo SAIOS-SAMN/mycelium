@@ -155,16 +155,30 @@ fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
         "a filed period of zero is a malformed tape, not a cycle spanning nothing"
     );
 
-    let mut one = from_canonical(&canonical_chain(&[(0, 0, 1, 2)]).expect("one cell is a chain"));
+    let one = from_canonical(&canonical_chain(&[(0, 0, 1, 2)]).expect("one cell is a chain"));
+    let bytes = one.to_bytes();
     let mut pos = 0;
-    assert!(Element::from_bytes(&one.to_bytes(), &mut pos).is_some(), "one transition decodes");
-    // The same cell saying two different things: A5 step 3 refuses it,
-    // `canonical_chain` has no centering for it, and the tape it was
-    // written to does not come back as an element.
-    one.sub.push((0, 0, 1, 3));
+    assert!(Element::from_bytes(&bytes, &mut pos).is_some(), "one transition decodes");
+    // The same cell saying two different things. It cannot be put on an
+    // element at all now — `sub` is A5's chain by type — so the claim is
+    // made where such bytes could still arrive: the tape. The chain is
+    // written as a u32 count then 18 bytes per cell, straight after the
+    // magic, the word and the four lane words, so the count is at a known
+    // offset and a second row at (0,0) goes in behind the first.
+    let at = 1 + 4 + one.description().len() + 32;
+    assert_eq!(
+        u32::from_le_bytes(bytes[at..at + 4].try_into().expect("the chain count")),
+        1,
+        "the chain count is where the layout says"
+    );
+    let mut two = bytes.clone();
+    let mut clash = bytes[at + 4..at + 4 + 18].to_vec();
+    clash[17] = 3;
+    two.splice(at + 4 + 18..at + 4 + 18, clash);
+    two[at..at + 4].copy_from_slice(&2u32.to_le_bytes());
     let mut pos = 0;
     assert!(
-        Element::from_bytes(&one.to_bytes(), &mut pos).is_none(),
+        Element::from_bytes(&two, &mut pos).is_none(),
         "a chain that says two things at one cell has no canonical form and no address"
     );
 }

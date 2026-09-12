@@ -152,7 +152,17 @@ pub fn rank_beam(
             (governed, i)
         })
         .collect();
-    measured.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
+    // THE PER-AXIS MISMATCH IS CONTENT, never a score: four exact lanes in
+    // structural order, compared lexicographically and never summed
+    // (law 5). The incoming order is the tiebreak because this sort is
+    // stable — `.then(a.1.cmp(&b.1))` on the enumeration index said the
+    // same thing by ranking candidates on their arrival position (rule 15)
+    // and is gone.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: the governed per-axis mismatch in structural order is the candidate's own reading, compared lane by lane and never flattened"
+    )]
+    measured.sort_by_key(|m| m.0);
     measured.into_iter().map(|(_, i)| candidates[i].clone()).collect()
 }
 

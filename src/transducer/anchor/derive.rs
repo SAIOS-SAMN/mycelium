@@ -133,8 +133,8 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
     terms
 }
 
-/// EVERY term CARRYING the footprint on this scene (eval ⊇ footprint), ranked
-/// tightest-first (carrier size, then term size) and capped. Exact terms rank
+/// EVERY term CARRYING the footprint on this scene (eval ⊇ footprint),
+/// ordered by the TERM — node count, then its own A21 key — and capped. Exact terms rank
 /// first automatically (their eval IS the footprint). A single pair
 /// underdetermines its anchor; the train FAMILY determines it jointly: the
 /// binding term is the first member common to every pair's set — the tightest
@@ -147,18 +147,29 @@ pub fn derive_carrying_all(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -
         return Vec::new();
     }
     let fp = sorted(footprint.to_vec());
-    let mut ranked: Vec<(usize, usize, Sel)> = candidates(&fp, scene)
+    let mut ranked: Vec<(usize, crate::transducer::address::Address, Sel)> = candidates(&fp, scene)
         .into_iter()
         .filter_map(|t| {
             let sup = t.eval(scene);
             if fp.iter().all(|p| has(&sup, *p)) {
-                Some((sup.len(), t.size(), t))
+                Some((t.size(), t.key(), t))
             } else {
                 None
             }
         })
         .collect();
-    ranked.sort_by_key(|a| (a.0, a.1));
+    // ORDERED BY THE TERM, NEVER BY THE SCENE. The rank was
+    // `(sup.len(), t.size())` — the carrier's size ON THIS SCENE first —
+    // which ranks candidates by a measurement and hands the head of that
+    // ranking to a caller that takes the first common member (rule 4).
+    // A term's node count and its A21 key are the term's own coordinates,
+    // so the order is the same on every scene and every node, and the one
+    // choice left is the beam's, made on the exact per-axis signature.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: the term's node count and its own A21 key, never a measurement of the scene"
+    )]
+    ranked.sort_by_key(|a| (a.0, a.1.clone()));
     let mut out: Vec<Sel> = ranked.into_iter().map(|(_, _, t)| t).collect();
     out.dedup();
     out.truncate(32);

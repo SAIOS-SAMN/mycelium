@@ -23,6 +23,10 @@ fn pivot_candidates_are_read_from_occupied_axes_only() {
     let mut seen = occ.clone();
     seen.extend(inf.coordinates());
     let mut declaration = seen.clone();
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: 12.6's own axis order, which is what a declaration is written in"
+    )]
     declaration.sort_by_key(|a| match a {
         Axis::Orientation(i) => (0, *i),
         Axis::Unit(i) => (1, *i),

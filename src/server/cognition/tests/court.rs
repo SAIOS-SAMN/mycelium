@@ -20,17 +20,22 @@ let w = element::from_canonical(
     &germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap(),
 );
 assert!(blind_replay(&w).is_none(), "an honest derivation replays clean");
-// Tamper 1: shift the chain off origin (framing violation).
-let mut off = w.clone();
-off.sub = off.sub.iter().map(|(r, c, b, a)| (r + 3, *c, *b, *a)).collect();
-assert!(blind_replay(&off).is_some(), "un-centered chain is false speech");
+// Tamper 1 CANNOT BE BUILT any more: A5's chain is the field's type, so
+// an element cannot hold one that is off its min corner. What a shifted
+// chain is, is the same substance said at another place — A5's quotient,
+// not false speech — and it comes back as the same word.
+let shifted: Vec<(i64, i64, u8, u8)> =
+    w.sub().iter().map(|(r, c, b, a)| (r + 3, *c, *b, *a)).collect();
+let off = element::from_residual(&shifted).expect("a shift is still one transition per site");
+assert_eq!(off.address(), w.address(), "A5 quotients the translation: one substance");
+assert!(blind_replay(&off).is_none(), "so it replays clean — it is the same word");
 // Tamper 2: inflate the claimed magnitude (yield fraud).
 let mut fat = w.clone();
 fat.mag = [999, 0, 0, 0];
 assert!(blind_replay(&fat).is_some(), "inflated magnitude does not re-derive");
 // Tamper 3: an empty chain claiming work.
 let mut empty = w.clone();
-empty.sub.clear();
+empty.sub = element::CanonicalChain::default();
 assert!(blind_replay(&empty).is_some(), "no evidence, no word");
 }
 

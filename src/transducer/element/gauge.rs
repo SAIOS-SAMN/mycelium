@@ -258,7 +258,7 @@ impl Element {
     /// The single source for application/projection (the gate and the SDK's
     /// `Entity::project` both speak through this).
     pub fn variant_chains(&self) -> Vec<Vec<(i64, i64, u8, u8)>> {
-        let base = self.sub.clone();
+        let base = self.sub.to_vec();
         if base.is_empty() {
             return Vec::new();
         }

@@ -262,6 +262,10 @@ impl Entity {
         // parse has no depth; it is learned last, where it can cite
         // everything already in hand, and `learn_one` refuses it there on
         // its own replay.
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 4 — canonical key order: depth order is chapter 6's own (24.2), the order a syllabus is served in, and a tape that does not parse has no depth and is learned last"
+        )]
         words.sort_by_key(|w| {
             let mut pos = 0usize;
             match crate::transducer::element::Element::from_bytes(w, &mut pos) {

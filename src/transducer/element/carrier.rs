@@ -69,7 +69,14 @@ pub struct Element {
     /// The CENTERED COBOUNDARY CHAIN — the residual's substance with geometry
     /// preserved up to translation: `(row, col, before, after)` over the changed
     /// cells, min-corner framed to the origin, sorted. Empty for a closed word.
-    pub(crate) sub: Vec<(i64, i64, u8, u8)>,
+    ///
+    /// A5'S PROOF IS THE TYPE. As a bare `Vec` this field could hold a chain
+    /// that says two things at one cell — a chain with no canonical form and
+    /// so no address (law 2) — and every such element fell to one key. The
+    /// field is the accepted chain itself, so that element cannot be built:
+    /// `canonical_chain` is the only constructor, and the tape goes through
+    /// it.
+    pub(crate) sub: CanonicalChain,
     /// THE PUNCTURED AXIS — sections along the germinated fiber pierced through
     /// this thought: alternative per-cell transition ASSIGNMENTS over the SAME
     /// base positions. A recurring family (same geometry, different transitions)
@@ -131,7 +138,7 @@ impl Element {
             word: Vec::new(),
             action: Action::default(),
             mag: [0; 4],
-            sub: Vec::new(),
+            sub: CanonicalChain::default(),
             sections: Vec::new(),
             torsion: Vec::new(),
             transitions: Vec::new(),

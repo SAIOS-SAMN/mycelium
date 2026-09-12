@@ -206,6 +206,10 @@ pub fn incidence_of(positions: &[(i64, i64)]) -> Vec<(usize, usize)> {
         }
     }
     let mut by_column: Vec<usize> = (0..positions.len()).collect();
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: column-major over the cells' own coordinates, which is where a vertical adjacency is adjacent"
+    )]
     by_column.sort_unstable_by_key(|&i| (positions[i].1, positions[i].0));
     for w in by_column.windows(2) {
         let (p, q) = (positions[w[0]], positions[w[1]]);

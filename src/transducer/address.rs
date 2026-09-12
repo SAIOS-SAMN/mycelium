@@ -79,6 +79,64 @@ impl Deref for Address {
     }
 }
 
+/// AN ADDRESS THAT FITS ITS CITATION: one whose length writes into the
+/// u16 prefix every tape cites an address through. [`Address::cited`] is
+/// its only constructor, so a value of this type IS the proof that
+/// [`put_cited`] is total — and a key built from cited addresses needs no
+/// refusal of its own.
+///
+/// The refusal it replaces was a `?` inside `Element::address`, which had
+/// no answer but the form tag; 47.1 takes it at the constructor instead,
+/// where an element that cannot be cited is simply not built.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Cited(Address);
+
+impl Cited {
+    pub fn addr(&self) -> &Address {
+        &self.0
+    }
+
+    pub fn into_addr(self) -> Address {
+        self.0
+    }
+}
+
+impl Deref for Cited {
+    type Target = Address;
+    fn deref(&self) -> &Address {
+        &self.0
+    }
+}
+
+impl AsRef<[u8]> for Cited {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_bytes()
+    }
+}
+
+impl Address {
+    /// This address as a citation, or `None` where it does not fit the
+    /// prefix: an address too long to cite is one no tape can name, and
+    /// the element that would cite it is refused where it is built.
+    pub fn cited(&self) -> Option<Cited> {
+        u16::try_from(self.0.len()).ok()?;
+        Some(Cited(self.clone()))
+    }
+}
+
+/// Write a citation. TOTAL: the type is the proof that the length fits.
+pub fn put_cited(out: &mut Vec<u8>, c: &Cited) {
+    let b = c.addr().as_bytes();
+    out.extend_from_slice(&(b.len() as u16).to_le_bytes());
+    out.extend_from_slice(b);
+}
+
+/// Read a citation. What comes back went through the same u16 prefix, so
+/// it writes back whole.
+pub fn take_cited(b: &[u8], p: &mut usize) -> Option<Cited> {
+    take_addr(b, p)?.cited()
+}
+
 impl AsRef<[u8]> for Address {
     fn as_ref(&self) -> &[u8] {
         &self.0

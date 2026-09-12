@@ -50,6 +50,10 @@ fn two_pivots_without_a_new_word_leave_fills() {
                 out.push((k.clone(), cell.fill.clone()));
             }
         }
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 4 — canonical key order: the cells by their own keys, so two snapshots of one complex compare"
+        )]
         out.sort_by(|a, b| a.0.cmp(&b.0));
         out
     };

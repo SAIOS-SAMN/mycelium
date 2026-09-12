@@ -209,7 +209,7 @@ pub fn from_canonical(chain: &CanonicalChain) -> Element {
     e.word = residual_word(chain);
     e.address.take();
     e.mag = measure_lanes(chain);
-    e.sub = chain.to_vec();
+    e.sub = chain.clone();
     e
 }
 
@@ -273,7 +273,7 @@ pub fn from_connection(
     let v = conformal_of(rotor_word, carriage)?;
     let spelling = crate::transducer::alphabet::Spelling { word: rotor_word.clone() };
     let mut e = from_residual(remainder)?;
-    e.word = connection_word(&spelling, carriage, sigma, &e.sub);
+    e.word = connection_word(&spelling, carriage, sigma, &e.sub.to_vec());
     e.action.spatial = Some(v);
     e.action.gauge = sigma.to_vec();
     e.address.take();

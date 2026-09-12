@@ -3,15 +3,15 @@
 
 use super::*;
 
+/// The term's A21 key. One carrier for it: [`Sel::key`], which the
+/// derivation orders by as well.
+pub(crate) fn sel_key(s: &Sel) -> crate::transducer::address::Address {
+    s.key()
+}
+
 /// π* derivation from a pooled evidence family: the first anchor term
 /// common to every evidence's carrying set (the intersection move — one
 /// evidence never binds; the caller holds families of at least two).
-pub(crate) fn sel_key(s: &Sel) -> crate::transducer::address::Address {
-    let mut buf = vec![crate::transducer::address::TAG_SEL];
-    s.to_bytes(&mut buf);
-    crate::transducer::address::Address::new(buf)
-}
-
 pub fn derive_pi(family: &[crate::transducer::anchor::Evidence]) -> Option<Sel> {
     let sets: Vec<Vec<Sel>> =
         family.iter().map(|(fp, scene)| derive_carrying_all(fp, scene)).collect();
@@ -34,6 +34,10 @@ pub fn derive_pi(family: &[crate::transducer::anchor::Evidence]) -> Option<Sel> 
         })
         .cloned()
         .collect();
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: the terms are ordered by their own A21 key, so every node reads one common carrier from one set"
+    )]
     common.sort_by_key(sel_key);
     common.into_iter().next()
 }

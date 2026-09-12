@@ -173,6 +173,10 @@ pub fn lift(comp: &[(i64, i64, u8)], time_index: i64) -> Blade {
             None => gauge.push((*h, q(1))),
         }
     }
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: the tally is keyed by hue, and the hue is the key"
+    )]
     gauge.sort_by_key(|(h, _)| *h);
 
     let mut cells: Vec<(i64, i64)> = comp.iter().map(|(r, c, _)| (*r, *c)).collect();

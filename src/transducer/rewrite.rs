@@ -61,11 +61,16 @@ pub enum RewritePayload {
     Retire { cites: Vec<crate::transducer::address::Address>, freed: [u64; 4] },
 }
 
+/// A rewrite names the words it rewrote and the word it reached. Those
+/// names are CITATIONS — addresses proven to fit the prefix every tape
+/// cites them through — so writing this tape, and the key an element
+/// built from it carries, are both total. An address that does not fit is
+/// refused at [`mint`], where the element is built (47.1).
 #[derive(Debug, Clone)]
 pub struct Rewrite {
     pub kind: RewriteKind,
-    pub before: Vec<crate::transducer::address::Address>,
-    pub after: crate::transducer::address::Address,
+    pub before: Vec<crate::transducer::address::Cited>,
+    pub after: crate::transducer::address::Cited,
     pub claimed: [u64; 4],
     pub payload: RewritePayload,
 }
@@ -75,9 +80,9 @@ impl Rewrite {
         let mut out = vec![REWRITE_TAG, self.kind as u8];
         out.push(self.before.len().min(255) as u8);
         for a in self.before.iter().take(255) {
-            crate::transducer::address::put_addr(&mut out, a);
+            crate::transducer::address::put_cited(&mut out, a);
         }
-        crate::transducer::address::put_addr(&mut out, &self.after);
+        crate::transducer::address::put_cited(&mut out, &self.after);
         for m in &self.claimed {
             out.extend_from_slice(&m.to_le_bytes());
         }
@@ -151,9 +156,9 @@ impl Rewrite {
         let mut pos = 3usize;
         let mut before = Vec::with_capacity(n);
         for _ in 0..n {
-            before.push(crate::transducer::address::take_addr(b, &mut pos)?);
+            before.push(crate::transducer::address::take_cited(b, &mut pos)?);
         }
-        let after = crate::transducer::address::take_addr(b, &mut pos)?;
+        let after = crate::transducer::address::take_cited(b, &mut pos)?;
         let mut claimed = [0u64; 4];
         for m in &mut claimed {
             *m = u64::from_le_bytes(b.get(pos..pos + 8)?.try_into().ok()?);
@@ -372,7 +377,13 @@ pub fn mint(
     payload: RewritePayload,
     claimed: [u64; 4],
 ) -> Option<Element> {
-    let mut rw = Rewrite { kind, before: before.to_vec(), after, claimed, payload };
+    // 47.1: AN ADDRESS TOO LONG TO CITE IS REFUSED WHERE THE ELEMENT IS
+    // BUILT. The rewrite's tape and the key of the element carrying it
+    // both cite through a u16 prefix; one that does not fit was dropped
+    // silently by the writer and left a tape that did not decode.
+    let before: Vec<crate::transducer::address::Cited> =
+        before.iter().map(crate::transducer::address::Address::cited).collect::<Option<_>>()?;
+    let mut rw = Rewrite { kind, before, after: after.cited()?, claimed, payload };
     let y = rw.yield_from_payload();
     if y.iter().all(|&x| x == 0) {
         return None;
@@ -442,7 +453,7 @@ pub fn replay(e: &Element) -> Option<&'static str> {
             if cites.is_empty() {
                 return Some("retirement cites nothing that speaks it");
             }
-            if cites.iter().any(|c| rw.before.iter().any(|b| b == c)) {
+            if cites.iter().any(|c| rw.before.iter().any(|b| b.addr() == c)) {
                 return Some("retirement cites the word it retires");
             }
             // The result is unchanged: a retirement moves the structure and
@@ -485,6 +496,36 @@ fn hue_closed(sigma: &[(u8, u8)], period: u32) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// 47.1 AT THE CONSTRUCTOR: an address too long to cite is refused
+    /// where the element is built. The writer used to drop the slot and
+    /// leave a tape that did not decode, and the key of the element
+    /// carrying it fell through to the form tag alone — every such element
+    /// at one address, which is law 2 broken at its root.
+    #[test]
+    fn an_address_too_long_to_cite_is_refused_at_the_mint() {
+        let long = crate::transducer::address::Address::new(vec![0u8; u16::MAX as usize + 1]);
+        let short = crate::transducer::address::Address::from_bytes([7u8]);
+        assert!(long.cited().is_none(), "it does not fit the prefix");
+        assert!(short.cited().is_some(), "and an address that fits does");
+        let payload = || RewritePayload::Retire { cites: vec![short.clone()], freed: [1, 0, 0, 0] };
+        assert!(
+            mint(
+                RewriteKind::Retire,
+                std::slice::from_ref(&long),
+                short.clone(),
+                payload(),
+                [1, 0, 0, 0],
+            )
+            .is_none(),
+            "a rewrite that cannot name what it rewrote is not minted"
+        );
+        assert!(
+            mint(RewriteKind::Retire, std::slice::from_ref(&short), long, payload(), [1, 0, 0, 0])
+                .is_none(),
+            "nor one that cannot name what it reached"
+        );
+    }
 
     #[test]
     fn a_condense_rewrite_round_trips_and_replays() {
@@ -534,7 +575,7 @@ mod tests {
         assert!(replay(&e).is_none(), "it re-derives from its own tape");
         let back = Rewrite::from_element(&e).expect("round trip");
         assert_eq!(back.claimed, freed, "the yield is the measure, not a constant");
-        assert_eq!(back.after, word, "the vertex it names is the one it retires");
+        assert_eq!(back.after.addr(), &word, "the vertex it names is the one it retires");
         match back.payload {
             RewritePayload::Retire { ref cites, freed: f } => {
                 assert_eq!(cites, &vec![speaker], "the cites survive the tape");

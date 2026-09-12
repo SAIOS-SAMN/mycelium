@@ -154,6 +154,10 @@ impl Element {
                 None => germ.push((*j, w.clone())),
             }
         }
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 4 — canonical key order: a germinated axis IS its index, and the key writes the axes in it"
+        )]
         germ.sort_by_key(|(i, _)| *i);
         out.action.germinated = germ;
         out
@@ -239,7 +243,7 @@ impl Element {
         out.extend_from_slice(&(self.word.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.word);
         out.extend_from_slice(&(self.sub.len() as u32).to_le_bytes());
-        for (r, c, before, after) in &self.sub {
+        for (r, c, before, after) in self.sub.as_slice() {
             out.extend_from_slice(&r.to_le_bytes());
             out.extend_from_slice(&c.to_le_bytes());
             out.push(*before);
@@ -264,18 +268,12 @@ impl Element {
                     }
                 }
                 let mut buf = vec![crate::transducer::address::TAG_FORM];
-                // W6: AN ADDRESS IS NEVER THE TAG ALONE. The key bytes are
-                // the form's M1, carriage, σ and canonical chain; a chain
-                // A5 refuses is refused at the tape, so what remains here
-                // is a key too long to write its own length prefix. That
-                // form is still content, and content is what it is
-                // addressed by (law 2) — its own tape, never an empty key
-                // that every such form would share.
-                let keyed = match self.form_key_bytes() {
-                    Some(k) => k,
-                    None => self.to_bytes(),
-                };
-                crate::transducer::address::put_bytes(&mut buf, &keyed);
+                // W6: AN ADDRESS IS NEVER THE TAG ALONE, and never a tape.
+                // Both refusals this reader used to carry are gone by
+                // type: `sub` is A5's accepted chain, and a rewrite's
+                // names are citations proven to fit their prefix, refused
+                // at `mint` where the element is built (47.1).
+                crate::transducer::address::put_bytes(&mut buf, &self.form_key_bytes());
                 crate::transducer::address::Address::new(buf)
             })
             .clone()
@@ -283,20 +281,20 @@ impl Element {
 
     /// Meaning of a non-sentence word: M1 ‖ carriage ‖ σ ‖ chain (17.2).
     /// ρ is in the carriage, never beside it.
-    fn form_key_bytes(&self) -> Option<Vec<u8>> {
+    fn form_key_bytes(&self) -> Vec<u8> {
         let mut out = Vec::new();
         if let Some(rw) = crate::transducer::rewrite::Rewrite::from_element(self) {
             out.push(REWRITE_TAG);
             out.push(rw.kind as u8);
             out.extend_from_slice(&(rw.before.len() as u16).to_le_bytes());
             for a in &rw.before {
-                crate::transducer::address::put_addr(&mut out, a)?;
+                crate::transducer::address::put_cited(&mut out, a);
             }
-            crate::transducer::address::put_addr(&mut out, &rw.after)?;
+            crate::transducer::address::put_cited(&mut out, &rw.after);
             for m in &rw.claimed {
                 out.extend_from_slice(&m.to_le_bytes());
             }
-            return Some(out);
+            return out;
         }
         if let Some(letters) = self.letters() {
             crate::transducer::address::put_bytes(&mut out, letters.spelling.word.key().as_bytes());
@@ -311,18 +309,17 @@ impl Element {
         } else if let Some(v) = self.action.spatial.as_ref() {
             v.to_bytes(&mut out);
         }
-        // A chain with no canonical form has no key: the key IS the chain
-        // (law 2), and there is no centering of one that says two things at
-        // a site.
-        let chain = canonical_chain(&self.sub)?;
-        out.extend_from_slice(&(chain.len() as u32).to_le_bytes());
-        for (r, c, b, a) in chain.as_slice() {
+        // The key IS the chain (law 2), and the chain is A5's by type: one
+        // that says two things at a site has no centering and is refused
+        // where the element is built.
+        out.extend_from_slice(&(self.sub.len() as u32).to_le_bytes());
+        for (r, c, b, a) in self.sub.as_slice() {
             out.extend_from_slice(&r.to_le_bytes());
             out.extend_from_slice(&c.to_le_bytes());
             out.push(*b);
             out.push(*a);
         }
-        Some(out)
+        out
     }
 
 }

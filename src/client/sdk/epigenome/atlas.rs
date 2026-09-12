@@ -16,6 +16,10 @@ impl Epigenome {
     pub fn atlas_root(&self) -> crate::transducer::address::Address {
         let mut rows = crate::transducer::sheaf::digests(&self.atlas);
         rows.extend(crate::transducer::sheaf::digests(&self.dialect_atlas));
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 4 — canonical key order: the stratum roots and then the chart keys, so two minds holding one atlas write one root"
+        )]
         rows.sort_by(|a, b| a.root.cmp(&b.root).then_with(|| a.inv.key().cmp(&b.inv.key())));
         let mut buf = Vec::new();
         for r in &rows {

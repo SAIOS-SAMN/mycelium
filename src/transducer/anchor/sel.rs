@@ -89,6 +89,13 @@ impl Sel {
                     .into_iter()
                     .map(|c| sorted(c.into_iter().map(|(r, c, _)| (r, c)).collect()))
                     .collect();
+                // A component IS its least cell, in the coordinate order the
+                // support is already written in; a component with no cell
+                // has no least one and sorts after those that do.
+                #[expect(
+                    clippy::disallowed_methods,
+                    reason = "rule 4 — canonical key order: the component's least cell, the support's own coordinate"
+                )]
                 comps.sort_by_key(|c| match c.as_slice() {
                     [least, ..] => Some(*least),
                     [] => None,
@@ -228,6 +235,15 @@ impl Sel {
                 reached
             }
         }
+    }
+
+    /// A21 KEY of the term: its tape under the selection tag. The term's
+    /// own canonical coordinates, so two nodes order a set of terms alike
+    /// without measuring any of them against a scene.
+    pub fn key(&self) -> crate::transducer::address::Address {
+        let mut buf = vec![crate::transducer::address::TAG_SEL];
+        self.to_bytes(&mut buf);
+        crate::transducer::address::Address::new(buf)
     }
 
     /// Node count — the term's cost (minimality prefers shallow derivations).

@@ -45,7 +45,7 @@ impl Element {
             out.extend_from_slice(&m.to_le_bytes());
         }
         out.extend_from_slice(&(self.sub.len() as u32).to_le_bytes());
-        for (r, c, before, after) in &self.sub {
+        for (r, c, before, after) in self.sub.as_slice() {
             out.extend_from_slice(&r.to_le_bytes());
             out.extend_from_slice(&c.to_le_bytes());
             out.push(*before);
@@ -153,10 +153,11 @@ impl Element {
         }
         // A5 STEP 3 AT THE TAPE: a chain that says two things at one cell has
         // no canonical form, so the element it would make has no address
-        // (law 2) and every such element would share the tag alone. The
-        // refusal travels here, where the bytes arrive, and not at the
-        // reader that later asks for the key.
-        crate::transducer::element::canonical_chain(&sub)?;
+        // (law 2). The refusal travels here, where the bytes arrive, and
+        // what comes out is the accepted chain itself — the field's type is
+        // A5's proof, so the reader that later asks for the key has nothing
+        // left to check.
+        let sub = crate::transducer::element::canonical_chain(&sub)?;
         let nsec = u32_at(b, pos)? as usize;
         if nsec > remaining(b, pos)? / 4 {
             return None;

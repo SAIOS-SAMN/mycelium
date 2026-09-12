@@ -594,6 +594,10 @@ impl Kernel {
         for (inv, _) in self.ruled.strata() {
             out.push((0, inv));
         }
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 4 — canonical key order: a chart IS its coordinate vector, and the cover is written in it"
+        )]
         out.sort_by(|a, b| a.1 .0.cmp(&b.1 .0));
         out.dedup();
         out
