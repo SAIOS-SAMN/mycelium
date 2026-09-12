@@ -45,10 +45,23 @@ impl Kernel {
     /// citer of it. Two derivations in one sentence citing one form is
     /// one use of one verdict; two sentences citing it are two.
     ///
-    /// Both readings are keyed and neither walks: `discovered_by` gives
-    /// this voice's own addresses, and `cited_by` gives each address's
-    /// citers. Computed at the read and stored nowhere (law 12), summed
-    /// per lane and never across lanes (law 5).
+    /// `discovered_by` gives this voice's own addresses and `cited_by`
+    /// gives each address's citers. Computed at the read and stored
+    /// nowhere (law 12), summed per lane and never across lanes (law 5).
+    ///
+    /// THE CITERS ARE COUNTED, NOT WALKED. This nested
+    /// `mine.fiber(ROOT)` × `citers.fiber(ROOT)` — a product of two
+    /// carriers that only ever grow, one with the corpus and one with the
+    /// mesh — and the inner loop added the SAME `mu` once per citer, which
+    /// is `mu × citers`, arithmetic. The comment above it read "neither
+    /// walks"; both did. It is on the request path: `lane_room_of` is
+    /// reached from ACT_PEERS, from every exchange cycle, from every draw
+    /// and from every court stroke.
+    ///
+    /// What remains is one walk of this voice's own discoveries. That is
+    /// still a walk of a monotone carrier on a hot path, and the shape
+    /// that removes it is a memo sealed at `basis_gen`, as `closure` and
+    /// `language` are — owed, and named here so it is not lost.
     pub fn use_credit(&self, voice: &[u8; 32]) -> [u64; 4] {
         let Some(mine) = self.discovered_by.get(voice.as_slice()) else {
             return [0; 4];
@@ -62,10 +75,12 @@ impl Kernel {
                 continue;
             };
             let mu = form.magnitude();
-            for (_citer, ()) in citers.fiber(crate::network::nerve::ROOT) {
-                for l in 0..4 {
-                    credit[l] = credit[l].saturating_add(mu[l]);
-                }
+            // `mu × uses` is the sum the inner walk was computing, term by
+            // identical term. The lane sum stays `saturating_add`, which
+            // is accounting; the product is exact.
+            let uses = citers.len() as u64;
+            for l in 0..4 {
+                credit[l] = credit[l].saturating_add(mu[l] * uses);
             }
         }
         credit

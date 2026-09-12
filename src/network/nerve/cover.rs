@@ -27,6 +27,8 @@ pub struct Cover {
     lanes: [CoverNode; 4],
     /// Cover root per lane, hashed in trie order on admit/retract.
     roots: [[u8; 32]; 4],
+    /// Whether each lane has moved since its root was hashed.
+    due: [bool; 4],
     /// Charts each hypha holds, so retract walks those paths only.
     held: Keyed<Vec<(u8, crate::transducer::stalk::Invariant)>>,
 }
@@ -40,6 +42,7 @@ impl Default for Cover {
         Cover {
             lanes: Default::default(),
             roots: [empty_cover_root(); 4],
+            due: [false; 4],
             held: Keyed::new(),
         }
     }
@@ -191,10 +194,33 @@ impl Cover {
         }
     }
 
+    /// THE LANE MOVED. The root over it is not rehashed here.
+    ///
+    /// `admit` and `retract` called this per chart, and each call walks the
+    /// WHOLE lane trie — every hypha's charts on that lane. So
+    /// `rebuild_own_cover`, which admits one chart at a time and runs every
+    /// exchange cycle, rehashed the entire mesh cover once per chart it
+    /// holds: own charts × the whole trie, per cycle, and both grow — own
+    /// charts with every corpus body listed, the trie with peer count.
+    ///
+    /// A root is a reading of the lane, taken where it is asked for
+    /// (law 12): `roots()`, once per digest.
     fn refresh_root(&mut self, lane: u8) {
-        let mut h = blake3::Hasher::new();
-        self.lanes[(lane as usize) & 3].hash_charts(&mut h, &mut Vec::new());
-        self.roots[(lane as usize) & 3] = *h.finalize().as_bytes();
+        self.due[(lane as usize) & 3] = true;
+    }
+
+    /// The four lane roots, hashed for any lane that has moved since the
+    /// last reading.
+    pub fn roots(&mut self) -> [[u8; 32]; 4] {
+        for lane in 0..4 {
+            if self.due[lane] {
+                let mut h = blake3::Hasher::new();
+                self.lanes[lane].hash_charts(&mut h, &mut Vec::new());
+                self.roots[lane] = *h.finalize().as_bytes();
+                self.due[lane] = false;
+            }
+        }
+        self.roots
     }
 
     /// Fiber at the deepest matching prefix on `lane`. Empty at every
@@ -293,12 +319,9 @@ impl Cover {
         out
     }
 
-    pub fn root(&self, lane: u8) -> [u8; 32] {
-        self.roots[(lane as usize) & 3]
-    }
-
-    pub fn roots(&self) -> [[u8; 32]; 4] {
-        self.roots
+    /// One lane's root, hashed if that lane has moved since the last read.
+    pub fn root(&mut self, lane: u8) -> [u8; 32] {
+        self.roots()[(lane as usize) & 3]
     }
 }
 

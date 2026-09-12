@@ -278,7 +278,7 @@ impl Exchange {
             let budget = mycelium::physics::expansion_unit() as usize;
             intake_corpus(&kernel, &mesh, &registry, budget);
             rebuild_own_cover(&kernel, &mesh);
-            let roots = mesh.cover.lock().ok().map(|c| c.roots());
+            let roots = mesh.cover.lock().ok().map(|mut c| c.roots());
             // 45.7, S13.1: this court's own roots moving is one of the two
             // readings that ask a peer again; the other is the peer's Λ.
             let own_moved = roots != last_cover;

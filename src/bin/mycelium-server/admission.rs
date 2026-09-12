@@ -95,7 +95,7 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> 
         Ok(mut k) => k.ruled_root(),
         Err(_) => return Vec::new(),
     };
-    let cover_roots = mesh.cover.lock().map(|c| c.roots()).unwrap_or([[0u8; 32]; 4]);
+    let cover_roots = mesh.cover.lock().map(|mut c| c.roots()).unwrap_or([[0u8; 32]; 4]);
     let prefix = dialogue::cover_signed_prefix(&cover_roots, &ruled_root, &room);
     let sig = {
         use ed25519_dalek::Signer;
