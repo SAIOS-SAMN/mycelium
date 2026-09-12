@@ -827,6 +827,62 @@ refusal, so the fleet cannot come up until §10's procedure is run. X7's
 deletion and X6's hypha reading both wait on the same restart. Nothing
 outside the repository has been touched (§8.1).
 
+## Stage 16 — the engine, not the harness (ruled 2026-09-12)
+
+The operator's reading, and it is the correct one. Everything in this tree
+that is verified working is harness: the exact algebra, the trie, the wire,
+the receipt chain, the economy, the folds, the gates become lints become
+types, the Čech library, the transducer. Everything that is cognition is
+unfired: the pivot loop has never discharged on data, the vortex has never
+held one, no form has closed on a family nobody built, comprehension reads
+zero of twelve, and the adjoined count is zero on corpus. Part IX defends
+against an adversary lying about a derivation and there have been no
+derivations; the economy prices deflation and nothing has deflated.
+
+**Why it happened, so it is not repeated.** Harness rows close and
+cognition rows do not. "Does the lint fire", "is the walk gone", "does the
+encoder refuse 256" each have an end and a test that proves it; "does a
+form close on a real family" has neither, and if it does not close there is
+no obvious next commit. So fifteen stages selected for closeable rows and
+the tree is the fixed point of what an agent can finish and verify in a
+day. The engine's founding law is that nothing is chosen by a scalar; its
+development has been gated by one scalar, whether the suite is green, for
+its whole life.
+
+**The discipline of this stage.** No row may be a gate, a type, a codec, a
+ledger, a persistence layout or a refusal. Every row either adds a
+capability or measures one, and names in its own text what the engine can
+do after it that it could not do before. A green suite is not a landing:
+the landing is the reading of Y1 moving. A defect found while working a row
+is FILED and is not scheduled unless it demonstrably blocks a row of this
+stage — the hardening rows already open (X5, X7, X9, X10, L27) wait, and X5
+is withdrawn outright, being a way of being wrong that has never been wrong
+on live data.
+
+**The gap, stated once.** Perception produces fifteen word vertices against
+eighty-six demand vertices on twelve tasks. It describes about fifteen per
+cent of what it sees. Closure requires all of it, so nothing closes, so
+nothing mints, so no room is earned, so nothing is cited, so no generator is
+adjoined. Every zero downstream is that one ratio. One complete cognitive
+cycle HAS run — two courts, one witness, one address, a generator adjoined
+at run time with no commit (d35ac33, 65edee0), and two minds reaching one
+address by two derivations through the codec — so the mechanism is not
+vapour and the gap is single: perception does not hand that mechanism a
+witness from a real grid.
+
+| id | directive | chapters | the observable that closes it |
+|---|---|---|---|
+| Y0 | **The ruling, written** (this edit, and 45.9's amendment: comprehension is read as a difference, never a level). | §9, 45.9 | — |
+| Y1 | **The instrument: the warm–cold delta.** One fixed slice walked twice by `mycelium-soak` in process — once by a mind holding nothing, once by a mind that has already stood on every other task of the slice — reporting per task the word vertices, the demand vertices by kind, the loops by reading, and whether the form closed. The DIFFERENCE between the two walks is the stage's number and the only one any later row is judged by. It must be cheap enough to run on every landing and it sets its own stroke, so a host calibration never decides what is measured (L27 is untouched by this). A level can be raised by loosening a measurement; a difference cannot, which is why it is the difference that is reported. | 45.9, 50.2 | the two walks reported side by side on the twelve; a mind that stood nothing and a mind that stood eleven tasks are distinguishable on the line, or the delta is zero and that is the finding |
+| Y2 | **The pivot loop fires on a constructed case.** It is the only organ in the engine that does something cognitively real — read the class vector, the occupied axes ARE the moves, try each, keep every certified discharge, hold a vortex where several succeed, no search and no scalar — and it has never executed its body on data (`pivoted [0,0,0,0]` on every soak since Cut B+1). Build a family by hand whose form has a held loop, an occupied axis, and a held word on that axis that discharges it; run `pivot_loop`; assert the discharge, its certificate, and the rank move. Then a second case where two candidates discharge, and assert the vortex is held. If it cannot fire on a case built to make it fire, the cognition is broken and no other row matters. If it can, the question becomes why perception never builds such a form, which is bounded and is Y1's to measure. | 16.16, 12.6, 3.9, 25.1 | `a_held_loop_with_a_held_word_discharges_and_certifies`; `two_certified_discharges_are_held_as_a_vortex` on a constructed family, both reaching the loop's body (probe-confirmed); then the same forms' readings on Y1's line |
+| Y3 | **Partial understanding pays.** 50.5 says the closed sub-complex of a sentence is spoken, replayed and ruled at once and its deflation paid on closure. If a sentence reconstructing three of ten bodies mints nothing, then perception at fifteen per cent earns nothing forever and the economy has no signal to give at any point before perfection — which is the shape of the whole stall. MEASURE FIRST, in process: a sentence with word vertices and demand vertices heard by a court, and read what `home_install` mints and what room is earned. Fix only what the measurement names. | 50.5, 26, 23.1 step 7, E2 | a sentence of three word vertices and seven demands mints on its closed sub-complex, and the amount is the deflation those three closed and nothing else; a sentence of zero word vertices mints nothing |
+| Y4 | **The scene reading.** Perception is pairwise: faces are the star from the Frame plus bodies whose supports overlap or sit at ring distance one, and `Harmonics` is per body. Most rules in the corpus are global — the unique one, the largest, the one with a hole, the odd one out — and there is no scene-level object for such a rule to be read from. A keyed index over the scene's bodies BY THEIR OWN CHART is forbidden by nothing and is expressible today: a chart whose fiber holds exactly one body IS "the unique one", read as `nth(1).is_none()`, which W10 already ruled a reading and not a count deciding a branch. This is the first ADDITIVE change in the project's history and it is the row that moves Y1's number. | 24.4, 20, 21 step 1, W10, rule 2 | a scene of five bodies on three charts answers "the chart whose fiber holds one" without a count compared to a literal; a family whose rule selects that body extracts a rule vertex where it extracted a demand before; Y1's delta on the twelve, before and after |
+
+Order: Y0 · Y1 · Y2 · Y3 · Y4. Y1 first because a stage cannot be judged by
+a number nobody measures, and because Y2, Y3 and Y4 are each accepted or
+refused on it. Nothing in the blocking set: the instrument runs in process
+at its own stroke, so neither the fleet, the recut, X8 nor L27 gates it.
+
 ## Owed ledger (opened by the auditor, 2026-09-11)
 
 What a row marked landed or done still lacks against its own claim, in

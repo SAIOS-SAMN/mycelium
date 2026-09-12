@@ -6892,11 +6892,26 @@ the number: a remainder two courts agreed on is a name, and a name closes
 nothing. Until a closure composes through an adjoined candidate, the
 number is zero and every report says so.
 
+**Comprehension is read as a DIFFERENCE, not a level** (ruled 2026-09-12).
+A level says how good perception is on a corpus; a difference says whether
+the engine learned anything from it, and only the second bears on the
+conjecture. The reading is one slice walked twice: once by a mind holding
+nothing, once by a mind that has already stood on the rest of the slice.
+Where the two agree, the presentation did not change what the mind can
+say, and every other reading on the line is a property of the transducer
+rather than of the language. A level can be raised by loosening a
+measurement, which is the cipher's fault at the instrument; a difference
+cannot, because a looser measurement moves both walks alike. The engine's
+own words for the two halves are already here — F factors through the
+generators the mind holds (50.2 step 2), so a mind that holds more must
+describe more, and if it does not the factorisation is not reaching the
+presentation.
+
 A phase is computed from the receipts over a height window and is never
 stored, announced or thresholded; a transition is read after the fact and
 gates nothing. Four coordinates, each read from the receipt kinds (45.1)
 and the ruled cover at the window's ends: **comprehension**, listings a
-held word deflated against listings held; **congruence**, strata holding
+held word deflated against listings held, read as the difference above; **congruence**, strata holding
 more than one section and installs reached by independent lineages
 (23.9); **growth**, generators adjoined against retirements (E2), the
 language's description length against what it comprehends; **expansion**,
