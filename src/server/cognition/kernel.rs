@@ -272,18 +272,21 @@ pub struct Kernel {
     pub(crate) provisional_h: crate::network::nerve::Keyed<u64>,
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
-    /// Last key the syntropic cursor yielded; the next stroke resumes after it.
-    pub(crate) optimize_cursor: Vec<u8>,
+    /// Last key the syntropic cursor yielded; the next stroke resumes after
+    /// it. `None` is a walk that has not started, which is an ABSENCE and
+    /// not an empty key (rule 11): every one of the eight resume cursors
+    /// below reads the same way, and `Keyed::cursor` takes the option.
+    pub(crate) optimize_cursor: Option<Vec<u8>>,
     /// Keyed cursor into `open` for `syntropic_stroke` (rule 10, S13.3):
     /// the stagnation walk resumes where the last stroke left off, so a
     /// docket beyond one budget is read whole across strokes.
-    pub(crate) syntropic_cursor: Vec<u8>,
+    pub(crate) syntropic_cursor: Option<Vec<u8>>,
     /// Keyed cursor into `open` for `drain_unreachable` (rule 10, S13.3):
     /// the drain resumes where the last stroke left off.
-    pub(crate) drain_cursor: Vec<u8>,
+    pub(crate) drain_cursor: Option<Vec<u8>>,
     /// Keyed cursor into `on_page` for the local `quote` (rule 10, S13.3):
     /// a page beyond one budget is served whole across quotes.
-    pub(crate) quote_cursor: Vec<u8>,
+    pub(crate) quote_cursor: Option<Vec<u8>>,
     /// Polytonic kinematic pressure + torsion (per lane).
     pub(crate) physics: crate::physics::Physics,
     /// The settlement ledger (POW++-gated bounties, consilience splits).
@@ -346,11 +349,11 @@ pub struct Kernel {
     /// in write_field, read in key order.
     pub(crate) open: crate::network::nerve::Keyed<()>,
     /// Keyed cursor into `open` for court_stroke.
-    pub(crate) open_cursor: Vec<u8>,
+    pub(crate) open_cursor: Option<Vec<u8>>,
     /// Keyed cursor into `pending` for the lapse (45.7): the stroke's orbit
     /// over the docket resumes where the last one left off, so a book that
     /// outgrows one stroke's budget is still walked whole across strokes.
-    pub(crate) lapse_cursor: Vec<u8>,
+    pub(crate) lapse_cursor: Option<Vec<u8>>,
     /// The docket's orbit (45.7, S13.3): the circuits of `open` the court
     /// stroke completed and the strokes the last one took, written once
     /// per circuit as `court orbit docket` — the court's local time beside K.
@@ -362,8 +365,8 @@ pub struct Kernel {
     /// Keyed cursors into `unfilled` and `pending_refine` for `stroke_fills`
     /// (rule 10): each stroke resumes where the last left off, so a tail
     /// beyond one budget is reached rather than starved by the head.
-    pub(crate) fill_cursor: Vec<u8>,
-    pub(crate) refine_cursor: Vec<u8>,
+    pub(crate) fill_cursor: Option<Vec<u8>>,
+    pub(crate) refine_cursor: Option<Vec<u8>>,
     /// This hypha's cover, admitted in write_field; own_cover_charts reads it.
     pub(crate) own_cover: crate::network::nerve::Cover,
     /// Listings keyed by chart, so rank_over's moved set is a fiber.

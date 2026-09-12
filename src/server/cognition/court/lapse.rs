@@ -106,7 +106,7 @@ impl Kernel {
         let budget = &mut sweep;
         {
             let from = self.lapse_cursor.clone();
-            for (addr, (listed, _)) in self.pending.cursor(&from, budget) {
+            for (addr, (listed, _)) in self.pending.cursor(from.as_deref(), budget) {
                 last = Some(addr.clone());
                 let Some(&h0) = self.standing_h.get(&addr) else {
                     continue;
@@ -166,7 +166,7 @@ impl Kernel {
             }
         }
         if let Some(k) = last {
-            self.lapse_cursor = k;
+            self.lapse_cursor = Some(k);
         }
         let me = self.identity;
         // ONE LINE PER SWEEP, NOT PER LISTING. A lapse was exceptional when

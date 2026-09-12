@@ -48,7 +48,7 @@ impl AtlasRead for Stalks {
 
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::element::{self, Versor};
-use crate::network::nerve::{Keyed, ROOT};
+use crate::network::nerve::Keyed;
 use crate::physics::Budget;
 
 #[cfg(test)]

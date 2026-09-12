@@ -37,7 +37,7 @@ impl Kernel {
         // budget is read whole across strokes and never only its head.
         {
             let from = self.syntropic_cursor.clone();
-            let mut cur = self.open.cursor(&from, &mut budget);
+            let mut cur = self.open.cursor(from.as_deref(), &mut budget);
             for (addr, _) in &mut cur {
                 let Some(listing) = self.field.get(&addr) else {
                     continue;
@@ -53,7 +53,7 @@ impl Kernel {
                 }
             }
             if let Some(k) = cur.last_key() {
-                self.syntropic_cursor = k.to_vec();
+                self.syntropic_cursor = Some(k.to_vec());
             }
         }
         // index: ruled cover fiber
@@ -197,12 +197,13 @@ impl Kernel {
         let mut budget = self.physics.stroke();
         // The cursor orbits the basis (S13.3): past the last word it
         // continues from the first, so `None` here is an empty basis.
-        let Some((addr, word)) = self.basis.cursor(&self.optimize_cursor, &mut budget).next() else {
-            self.optimize_cursor.clear();
+        let Some((addr, word)) = self.basis.cursor(self.optimize_cursor.as_deref(), &mut budget).next()
+        else {
+            self.optimize_cursor = None;
             return None;
         };
         let own = crate::transducer::address::Address::from(addr.as_slice());
-        self.optimize_cursor = addr;
+        self.optimize_cursor = Some(addr);
         let word = (**word).clone();
         if !word.sub().is_empty() {
             let inv = crate::transducer::stalk::invariant_of(&word);

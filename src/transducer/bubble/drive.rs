@@ -45,7 +45,7 @@ impl Contemplation {
         while budget.remaining() > 0 {
             let mut nxt = None;
             {
-                let mut cur = self.dirty.cursor(&from, budget);
+                let mut cur = self.dirty.cursor(from.as_deref(), budget);
                 if let Some((k, _)) = Iterator::next(&mut cur) {
                     nxt = Some(k.clone());
                 }
@@ -59,14 +59,14 @@ impl Contemplation {
             // the ring has been applied once.
             let closed = match wraps {
                 0 => false,
-                1 => began.is_empty() || k.as_slice() > began.as_slice(),
+                1 => began.as_deref().is_none_or(|b| k.as_slice() > b),
                 _ => true,
             };
             if closed {
                 break;
             }
-            from = k.clone();
-            self.expand_cursor = k.clone();
+            from = Some(k.clone());
+            self.expand_cursor = Some(k.clone());
             if let Some(b) = self.bubbles.get_mut(&k) {
                 let (s, p) = b.expand_with(atlas, rotor_at, self.now_k, crystal, budget);
                 spent += s;

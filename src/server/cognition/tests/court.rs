@@ -249,7 +249,8 @@ for i in 0..(cap + 1) {
 }
 k.court_stroke(one_stroke_transport);
 assert_eq!(k.docket_orbit().circuits(), 0, "one stroke over cap + 1 listings is not a circuit");
-let resume = k.open_cursor.clone();
+// The stroke above yielded keys, so the docket's cursor stands.
+let resume = k.open_cursor.clone().expect("one stroke over the docket set the cursor");
 // A listing whose address sorts below the resume point, found among the
 // odd shifts — never constructed by hand.
 let below = (0..cap as i64 + 2)

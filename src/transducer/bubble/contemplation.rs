@@ -27,7 +27,9 @@ pub struct Contemplation {
     pub complex: Complex,
     /// Bubbles whose cover still has work; written when dirty is set.
     pub(crate) dirty: Keyed<()>,
-    pub(crate) expand_cursor: Vec<u8>,
+    /// The ring's resume cursor: `None` is a walk that has not started,
+    /// which is an absence and not an empty key (rule 11, X3).
+    pub(crate) expand_cursor: Option<Vec<u8>>,
     /// The dirty ring's orbit (45.7, S13.3): the circuits `expand_all`
     /// completed and the strokes the last one took — the mind's local time
     /// beside K, written once per circuit as `[{tag}] orbit ring`.

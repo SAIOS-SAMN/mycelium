@@ -21,12 +21,12 @@ impl Kernel {
             // a head that refills faster than one budget no longer starves
             // the tail, and the orbit reaches every cell.
             let from = self.fill_cursor.clone();
-            let mut cur = self.unfilled.cursor(&from, budget);
+            let mut cur = self.unfilled.cursor(from.as_deref(), budget);
             for (_, v) in &mut cur {
                 pending.push(v.clone());
             }
             if let Some(k) = cur.last_key() {
-                self.fill_cursor = k.to_vec();
+                self.fill_cursor = Some(k.to_vec());
             }
         }
         for (inv, sim_key) in pending {
@@ -112,12 +112,12 @@ impl Kernel {
         )> = Vec::new();
         {
             let from = self.refine_cursor.clone();
-            let mut cur = self.pending_refine.cursor(&from, budget);
+            let mut cur = self.pending_refine.cursor(from.as_deref(), budget);
             for (_, v) in &mut cur {
                 refine.push(v.clone());
             }
             if let Some(k) = cur.last_key() {
-                self.refine_cursor = k.to_vec();
+                self.refine_cursor = Some(k.to_vec());
             }
         }
         for (inv, class, degree) in refine {

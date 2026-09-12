@@ -91,13 +91,10 @@ impl Stalks {
         let Some(branches) = branches else {
             return after.map(|a| a.to_vec());
         };
-        // A walk with no cursor yet starts at the root of the branches.
-        let from = match after {
-            Some(a) => a,
-            None => ROOT,
-        };
+        // A walk with no cursor yet starts at the first key, and `after`
+        // already says which: the absence travels as the option it is.
         let mut last = after.map(|a| a.to_vec());
-        for (k, _) in branches.cursor(from, budget) {
+        for (k, _) in branches.cursor(after, budget) {
             last = Some(k.clone());
             let a = axis_of(&k);
             let mut axes = inv.0.clone();

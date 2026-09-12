@@ -24,7 +24,7 @@ impl Kernel {
         // orbit, so a page beyond one budget is served whole across quotes
         // rather than its head on every one.
         let from = self.quote_cursor.clone();
-        let mut cur = self.on_page.cursor(&from, &mut budget);
+        let mut cur = self.on_page.cursor(from.as_deref(), &mut budget);
         for (addr, _) in &mut cur {
             let Some((p, _)) = self.pending.get(&addr) else { continue };
             let mut mag = p.magnitude();
@@ -38,7 +38,7 @@ impl Kernel {
             priced.push((p.clone(), mu));
         }
         if let Some(k) = cur.last_key() {
-            self.quote_cursor = k.to_vec();
+            self.quote_cursor = Some(k.to_vec());
         }
         (surface, priced)
     }

@@ -39,12 +39,12 @@ impl Kernel {
         // a docket beyond one budget whole across strokes.
         {
             let from = self.drain_cursor.clone();
-            let mut cur = self.open.cursor(&from, &mut budget);
+            let mut cur = self.open.cursor(from.as_deref(), &mut budget);
             for (k, _) in &mut cur {
                 keys.push(k);
             }
             if let Some(k) = cur.last_key() {
-                self.drain_cursor = k.to_vec();
+                self.drain_cursor = Some(k.to_vec());
             }
         }
         let keys: Vec<Vec<u8>> = keys

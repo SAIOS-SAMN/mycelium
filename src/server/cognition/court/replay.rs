@@ -161,12 +161,12 @@ impl Kernel {
         // a listing admitted below the cursor is ruled on the next circuit,
         // and the circuit it completes is the docket's orbit.
         let circuit = {
-            let mut cur = self.open.cursor(&from, &mut budget);
+            let mut cur = self.open.cursor(from.as_deref(), &mut budget);
             for (addr, _) in &mut cur {
                 keys.push(addr);
             }
             if let Some(k) = cur.last_key() {
-                self.open_cursor = k.to_vec();
+                self.open_cursor = Some(k.to_vec());
             }
             cur.circuit()
         };

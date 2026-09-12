@@ -221,11 +221,18 @@ impl<V> Keyed<V> {
     }
 
     /// At most `budget` entries in key order after `from`, continuing past
-    /// the last key from the first and ending where it began (45.7).
-    /// [`ROOT`] starts at the first key. The last yielded key is the
-    /// resume cursor; `Cursor::circuit` reports a completed circuit.
-    pub fn cursor<'a>(&'a self, from: &[u8], budget: &'a mut crate::physics::Budget) -> Cursor<'a, V> {
-        let from = (!from.is_empty()).then(|| from.to_vec());
+    /// the last key from the first and ending where it began (45.7). `None`
+    /// starts at the first key. The last yielded key is the resume cursor;
+    /// `Cursor::circuit` reports a completed circuit.
+    ///
+    /// X3: A WALK THAT HAS NOT STARTED HAS NO CURSOR, and that is an
+    /// absence, not an empty key. This took `&[u8]` and spelled the
+    /// absence `ROOT` — then converted it to `Option` on its own first
+    /// line, which is the sentinel being translated one step later than it
+    /// should be (rule 11). Eight resume cursors in the kernel held a
+    /// `Vec<u8>` that was empty until the first yield for the same reason.
+    pub fn cursor<'a>(&'a self, from: Option<&[u8]>, budget: &'a mut crate::physics::Budget) -> Cursor<'a, V> {
+        let from = from.map(|f| f.to_vec());
         Cursor {
             keyed: self,
             // THE ORBIT IS THE WHOLE CARRIER BY DESIGN (45.7) and its bound

@@ -364,7 +364,9 @@ fn the_dirty_ring_orbits_and_reports_its_period() {
     assert_eq!(c.bubbles.len(), 3, "three thoughts held apart");
     assert_eq!(c.dirty.len(), 3, "three thoughts on the ring");
     let atlas = crate::transducer::stalk::Stalks::default();
-    let mut visited: Vec<Vec<u8>> = Vec::new();
+    // The ring's cursor after each stroke. `None` is a ring that has not
+    // started, and every reading here is after one stroke, so each is Some.
+    let mut visited: Vec<Option<Vec<u8>>> = Vec::new();
     for stroke in 1..=3 {
         let mut budget = crate::physics::Physics::default().stroke_n(1);
         let Expanded { orbit, .. } = c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
