@@ -245,12 +245,17 @@ listed in 4.4 as a review item, with the reason.
 and the site is right anyway, the site carries
 `#[expect(clippy::<lint>, reason = "<rule> — <why this site is the
 boundary>")]`. `expect` fails the build when the lint stops firing, so an
-allowance that allows nothing is a build failure and not a stale row. A
-module whose object is bytes — a wire codec, a persistence reader, a
-binary's argument parsing — may carry `#![allow(clippy::<lint>)]` at its
-root for rule 11 and rule 15 only, one line each with the reason, and for
-no lint under law 2, law 9 or §2.4. There is no table of paths anywhere in
-the tree, and no file is named in any configuration.
+allowance that allows nothing is a build failure and not a stale row.
+There is no module-level allowance (corrected 2026-09-12, the day it was
+written: `disallowed_methods` is one switch carrying law 2, rule 4, rule
+11 and rule 15 together, so a root `#![allow]` for "rule 11 only" allows
+a digest and a `min_by` in the same module and is a path table by another
+name). A codec that reads a tag byte by position carries an `expect` on
+that line naming rule 15; a reader that would default a missing field
+refuses instead, because a short frame read as zero is the clock-zero
+fault of law 9 and not a boundary. The count of `expect`s in a module is
+a measurement of that module and stays visible. There is no table of
+paths anywhere in the tree, and no file is named in any configuration.
 
 4.4 **What the compiler cannot read is a type or a review item.** A pair
 loop over one carrier (rule 1), a count deciding a branch (rule 2), a loop
