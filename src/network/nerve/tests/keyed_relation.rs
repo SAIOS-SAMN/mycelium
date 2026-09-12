@@ -21,7 +21,7 @@ fn the_keyed_relation_is_exact() {
     assert_eq!(k.insert(b, 20), Some(2));
     assert_eq!(k.get(b), Some(&20));
     assert_eq!(k.len(), 3);
-    assert_eq!(k.fiber(ROOT).count(), 3);
+    assert_eq!(k.scoped().count(), 3);
     assert_eq!(k.remove(b), Some(20));
     assert_eq!(k.get(b), None);
     assert_eq!(k.get(a), Some(&1));
@@ -29,7 +29,7 @@ fn the_keyed_relation_is_exact() {
     assert_eq!(k.remove(a), Some(1));
     assert_eq!(k.remove(a), None);
     assert_eq!(k.len(), 1);
-    assert_eq!(k.fiber(ROOT).count(), 1);
+    assert_eq!(k.scoped().count(), 1);
     assert_eq!(k.get(c), Some(&3));
 }
 
@@ -91,11 +91,11 @@ fn a_fiber_read_visits_its_own_subtree_and_not_the_carrier() {
     assert_eq!(coarse, 1000, "every key carries this prefix");
     assert!(wide > narrow, "the wider stratum costs more: {wide} against {narrow}");
 
-    // And the empty prefix is that same whole: ROOT is the carrier's own
-    // fiber, valid where the carrier is already scoped.
+    // And `scoped` is that same whole: the carrier's own fiber, which is
+    // the reading where the carrier was reached by a key already.
     work::reset();
-    assert_eq!(k.fiber(ROOT).count(), 1000);
-    assert_eq!(work::visits(), wide, "ROOT and the prefix every key carries are one walk");
+    assert_eq!(k.scoped().count(), 1000);
+    assert_eq!(work::visits(), wide, "the scoped whole and the prefix every key carries are one walk");
 
     // A prefix no key carries is an EMPTY fiber, not an empty walk: the
     // descent fails at a missing child and nothing is visited at all.

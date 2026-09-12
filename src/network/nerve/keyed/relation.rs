@@ -228,7 +228,11 @@ impl<V> Keyed<V> {
         let from = (!from.is_empty()).then(|| from.to_vec());
         Cursor {
             keyed: self,
-            fiber: self.fiber(ROOT),
+            // THE ORBIT IS THE WHOLE CARRIER BY DESIGN (45.7) and its bound
+            // is the Budget in its signature, not a prefix: that is what
+            // makes a carrier larger than one stroke legible across strokes
+            // instead of walked at once (rule 10).
+            fiber: self.scoped(),
             budget,
             last: from.clone(),
             from,
@@ -288,7 +292,10 @@ impl<'a> Prefix<'a> {
 
 /// Sealed persist walk: only [`crate::snapshot`] names this.
 pub(crate) fn keyed_persist_walk<V>(k: &Keyed<V>, f: &mut impl FnMut(&[u8], &V)) {
-    for (key, v) in k.fiber(ROOT) {
+    // A SNAPSHOT IS THE CARRIER. Persisting less than all of it is a
+    // ledger that loses what it does not name, which is X8's row from the
+    // other side; there is no prefix here and there should not be one.
+    for (key, v) in k.scoped() {
         f(&key, v);
     }
 }

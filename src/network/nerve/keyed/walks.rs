@@ -65,7 +65,9 @@ impl<T> Keyed<Keyed<T>> {
     pub fn link(&self, key: &[u8]) -> Link<'_, T> {
         Link {
             fiber: match self.get(key) {
-                Some(inner) => inner.fiber(ROOT),
+                // The inner trie AT a key: `get` is the descent, so what it
+                // returns is already one cell's fiber.
+                Some(inner) => inner.scoped(),
                 None => Fiber::empty(),
             },
         }
@@ -125,7 +127,7 @@ impl<'a, V> Iterator for Cursor<'a, V> {
                     self.done = true;
                     return None;
                 }
-                self.fiber = self.keyed.fiber(ROOT);
+                self.fiber = self.keyed.scoped();
                 continue;
             };
             match (&self.from, self.wrapped) {

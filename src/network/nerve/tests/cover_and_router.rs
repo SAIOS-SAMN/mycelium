@@ -164,7 +164,8 @@ fn a_form_is_offered_to_the_hyphae_covering_its_chart_and_not_to_every_peer() {
 
     // A form occupying lane 0 only.
     let w = c.witnesses(&chart, &[3, 0, 0, 0], &home);
-    let mut got: Vec<Vec<u8>> = w.fiber(ROOT).map(|(k, _)| k).collect();
+    // `witnesses` returns the witness set for one chart: a fiber already.
+    let mut got: Vec<Vec<u8>> = w.scoped().map(|(k, _)| k).collect();
     got.sort();
     assert_eq!(
         got,
@@ -182,7 +183,7 @@ fn a_form_is_offered_to_the_hyphae_covering_its_chart_and_not_to_every_peer() {
 
     // A form occupying the plane above resolves to the plane's cover.
     let up = c.witnesses(&inv(&[1, 2]), &[3, 0, 0, 0], &home);
-    let mut got: Vec<Vec<u8>> = up.fiber(ROOT).map(|(k, _)| k).collect();
+    let mut got: Vec<Vec<u8>> = up.scoped().map(|(k, _)| k).collect();
     got.sort();
     assert_eq!(got, vec![near.to_vec(), far.to_vec()], "the plane both cover");
 
@@ -196,6 +197,6 @@ fn a_form_is_offered_to_the_hyphae_covering_its_chart_and_not_to_every_peer() {
     // own rule for an empty reading — so it is witnessed on that lane and
     // nowhere else, never on all four.
     let none = c.witnesses(&chart, &[0; 4], &home);
-    let got: Vec<Vec<u8>> = none.fiber(ROOT).map(|(k, _)| k).collect();
+    let got: Vec<Vec<u8>> = none.scoped().map(|(k, _)| k).collect();
     assert_eq!(got, vec![near.to_vec()], "lane 0's cover, by that fallback");
 }

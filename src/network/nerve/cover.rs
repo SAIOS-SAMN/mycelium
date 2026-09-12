@@ -83,10 +83,13 @@ impl CoverNode {
     }
 
     fn collect_into(&self, out: &mut Keyed<()>) {
-        for (id, _) in self.here.fiber(ROOT) {
+        // Each carrier here is ALREADY one cell's fiber: `here` is the set
+        // of hyphae standing at this plane, `next` is this node's own
+        // children. The descent that scoped them is the axis path above.
+        for (id, _) in self.here.scoped() {
             out.insert(id, ());
         }
-        for (_, child) in self.next.fiber(ROOT) {
+        for (_, child) in self.next.scoped() {
             child.collect_into(out);
         }
     }
@@ -94,7 +97,8 @@ impl CoverNode {
     fn collect(&self) -> Vec<Vec<u8>> {
         let mut out = Keyed::new();
         self.collect_into(&mut out);
-        out.fiber(ROOT).map(|(k, _)| k).collect()
+        // A carrier this function built, holding exactly what it collected.
+        out.scoped().map(|(k, _)| k).collect()
     }
 
     /// Longest common prefix: descend while axes match. A miss after some
@@ -138,8 +142,10 @@ impl CoverNode {
             }
             hasher.update(&[0xff]);
         }
-        // Trie order is key order: hash without materialising a Vec of charts.
-        for (k, ch) in self.next.fiber(ROOT) {
+        // Trie order is key order: hash without materialising a Vec of
+        // charts. `next` is this node's own children (scoped by the axis
+        // path above), and every one of them is in the hash by definition.
+        for (k, ch) in self.next.scoped() {
             path.push(axis_of_le(k.as_slice()));
             ch.hash_charts(hasher, path);
             path.pop();
@@ -150,7 +156,7 @@ impl CoverNode {
         if !self.here.is_empty() {
             out.push(crate::transducer::stalk::Invariant(path.clone()));
         }
-        for (k, ch) in self.next.fiber(ROOT) {
+        for (k, ch) in self.next.scoped() {
             path.push(axis_of_le(k.as_slice()));
             ch.walk(path, out);
             path.pop();
@@ -450,7 +456,10 @@ pub fn home(
             }
         }
     };
-    for (id, _) in fiber.fiber(ROOT) {
+    // THE INTERSECTION THIS FUNCTION JUST BUILT: the hyphae standing on
+    // every occupied lane of this chart. It is a fiber by construction --
+    // `cover.fiber(lane, inv)` scoped each one and the meet narrowed them.
+    for (id, _) in fiber.scoped() {
         let Some(vk) = <[u8; 32]>::try_from(id.as_slice()).ok() else { continue };
         if let Some(room) = room_of(&vk) {
             if fits(&room) {
@@ -469,7 +478,13 @@ pub fn home(
             consider(&mut best, *sid, saddr.to_string(), *sroom);
         }
     }
-    for (id, room) in rooms.fiber(ROOT) {
+    // A CHART NO COVER NAMES HAS NO COORDINATE TO DESCEND ON: that is what
+    // novel means, and it is why this reading is the nerve's room table
+    // whole. The carrier is the mesh's peers -- bounded by how many hyphae
+    // this node knows, not by the corpus or the book -- so its whole
+    // content is the candidate set and walking it is one cell's reading.
+    // The choice among them is still the room reading, never a scalar.
+    for (id, room) in rooms.scoped() {
         if fits(room) {
             let Some(vk) = <[u8; 32]>::try_from(id.as_slice()).ok() else { continue };
             if let Some(a) = addrs.get(&vk) {
