@@ -466,9 +466,8 @@ pub(crate) fn cover_deformation(
     cover.uncarried = element::measure_lanes(&left);
 
     // (d) THE MEETS, from a keyed occupancy of the placed supports and
-    // their rings (rule 1: never a pair loop over the pieces — and see the
-    // clique that was written below anyway, under that same sentence). A
-    // cell holding two or more placed pieces IS a meet, and the meet is
+    // their rings (rule 1: never a pair loop over the pieces). A cell
+    // holding two or more placed pieces IS a meet, and the meet is
     // addressed by its two ends; a cell holding k of them is k−1 meets.
     // The two sides are filed under DISTINCT keys — a side byte ahead of
     // the position — so a domain cell and a codomain cell that happen to
