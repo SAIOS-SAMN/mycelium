@@ -70,7 +70,11 @@ impl<V> Keyed<V> {
     pub fn remove(&mut self, key: &[u8]) -> Option<V> {
         let v = remove_at(&mut self.root, key);
         if v.is_some() {
-            self.n = self.n.saturating_sub(1);
+            // A key was bound, so the count carries it; a carrier at zero
+            // holding a key is a broken count and stays at zero.
+            if let Some(next) = self.n.checked_sub(1) {
+                self.n = next;
+            }
         }
         v
     }
@@ -122,7 +126,7 @@ impl<V> Keyed<V> {
                     });
                 }
                 Node::Branch { bit, children, end } => {
-                    if Node::<V>::bits(key) == *bit {
+                    if Node::<V>::bits(key) == Some(*bit) {
                         let (k, _) = end.as_deref()?;
                         if k.as_slice() != key {
                             return None;

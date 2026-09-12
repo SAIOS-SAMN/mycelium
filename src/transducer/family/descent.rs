@@ -39,9 +39,12 @@ pub fn form_descent_at(
     let mut pay = [0u64; 4];
     let mut remainders = Vec::with_capacity(family.len());
     for (x, y) in family {
-        let before_chain = crate::arc::refine_delta(x, y)
-            .map(|r| r.delta)
-            .unwrap_or_else(|| residual_of(Some(x), y));
+        // The refined delta where the pair refines; the raw residual of
+        // the two grids where it does not. Both are measured on the pair.
+        let before_chain = match crate::arc::refine_delta(x, y) {
+            Some(r) => r.delta,
+            None => residual_of(Some(x), y),
+        };
         let spoken = apply_form(form, x, placement, crystal);
         let grid = spoken.as_ref().map(|s| s.grid());
         let after_chain = residual_of(grid.as_ref(), y);
@@ -97,9 +100,12 @@ pub fn sentence_measure(form: &Form, family: &[(Grid, Grid)], crystal: &dyn Crys
     }
     let mut mag = [0u64; 4];
     for (x, y) in family {
-        let before_chain = crate::arc::refine_delta(x, y)
-            .map(|r| r.delta)
-            .unwrap_or_else(|| residual_of(Some(x), y));
+        // The refined delta where the pair refines; the raw residual of
+        // the two grids where it does not. Both are measured on the pair.
+        let before_chain = match crate::arc::refine_delta(x, y) {
+            Some(r) => r.delta,
+            None => residual_of(Some(x), y),
+        };
         let spoken = apply_form(form, x, &crate::transducer::alphabet::Word::identity(), crystal);
         let grid = spoken.as_ref().map(|s| s.grid());
         let after_chain = residual_of(grid.as_ref(), y);

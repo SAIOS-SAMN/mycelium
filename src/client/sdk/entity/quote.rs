@@ -11,6 +11,10 @@ impl Entity {
     /// redundancy the vocabulary is carrying — a compression bid. The probe
     /// is a virtual rollout (zero mutation); the hypha's deterministic
     /// replay, not this discovery, decides retirement.
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a cite whose gauge reconstructs no body carries none"
+    )]
     pub fn seek_refinement(&mut self) -> Option<(crate::transducer::address::Address, Vec<dialogue::CiteWire>)> {
         let g = self.epigenome.genome();
         if g.len() < 2 {
@@ -39,8 +43,13 @@ impl Entity {
                     .into_iter()
                     .map(|c| {
                         let cited = g.get(c.word)?;
-                        let body = crate::transducer::sentence::cited_pattern(cited, c.gauge)
-                            .unwrap_or_default();
+                        // A cite whose gauge reconstructs no body carries
+                        // none, and the empty body is that reading.
+                        let body = match crate::transducer::sentence::cited_pattern(cited, c.gauge)
+                        {
+                            Some(b) => b,
+                            None => Vec::new(),
+                        };
                         Some(dialogue::CiteWire {
                             addr: cited.address(),
                             standing: Standing::Ruled.as_u8(),
@@ -64,8 +73,12 @@ impl Entity {
     pub fn bid_refinement(&mut self, word: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4])> {
         let voice = self.session.kernel().voice();
         let body = self.session.speak_keyed(word, dialogue::encode_refine(&voice, word, cites))?;
-        let (code, mu) =
-            dialogue::decode_solve_receipt(&body).unwrap_or((dialogue::REFINE_NOTHING, [0; 4]));
+        // A receipt that does not decode says nothing was refined and
+        // nothing was paid, which is what the bid earned.
+        let (code, mu) = match dialogue::decode_solve_receipt(&body) {
+            Some(r) => r,
+            None => (dialogue::REFINE_NOTHING, [0; 4]),
+        };
         if code == dialogue::REFINE_ACCEPTED {
             self.epigenome.retire(word);
         }
@@ -93,8 +106,10 @@ impl Entity {
                     .working_atlas()
                     .fiber(inv)
                     .first()
-                    .map(|(_, s)| s.as_u8())
-                    .unwrap_or(Standing::Held.as_u8());
+                    // A chart the working atlas does not stand on is Held:
+                    // met and not ruled, which is what standing on nothing
+                    // means here.
+                    .map_or(Standing::Held.as_u8(), |(_, s)| s.as_u8());
                 (inv.clone(), st)
             })
             .collect();
@@ -204,7 +219,12 @@ impl Entity {
         let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
         let mut out: Option<YieldQuote> = None;
         for dest in dest_order {
-            let invs = dests.get(dest.as_bytes()).cloned().unwrap_or_default();
+            // A destination the routing named no charts for is asked the
+            // whole ask below; the empty list is that reading.
+            let invs = match dests.get(dest.as_bytes()) {
+                Some(i) => i.clone(),
+                None => Vec::new(),
+            };
             let asked = if invs.is_empty() { charts.clone() } else { invs };
             let asked_st: Vec<(crate::transducer::stalk::Invariant, u8)> = asked
                 .iter()
@@ -213,8 +233,7 @@ impl Entity {
                         .working_atlas()
                         .fiber(inv)
                         .first()
-                        .map(|(_, s)| s.as_u8())
-                        .unwrap_or(Standing::Held.as_u8());
+                        .map_or(Standing::Held.as_u8(), |(_, s)| s.as_u8());
                     (inv.clone(), st)
                 })
                 .collect();

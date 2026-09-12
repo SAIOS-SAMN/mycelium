@@ -147,19 +147,31 @@ impl Treasury {
     }
 
     pub(crate) fn credit(&mut self, who: [u8; 32], mu: [u64; 4]) {
-        let mut b = self.balances.get(&who).copied().unwrap_or([0; 4]);
+        let mut b = self.balance_of(&who);
         for l in 0..4 {
             b[l] = b[l].saturating_add(mu[l]);
         }
         self.balances.insert(who, b);
     }
 
-    pub(crate) fn debit(&mut self, who: [u8; 32], mu: [u64; 4]) {
-        let mut b = self.balances.get(&who).copied().unwrap_or([0; 4]);
-        for l in 0..4 {
-            b[l] = b[l].saturating_sub(mu[l]);
+    /// THE SHORTFALL OF THE MOVEMENT, per lane: zero where the lane moved,
+    /// and what the balance lacked where it did not. Nothing moves when any
+    /// lane is short — the movement is whole or it is refused — and the
+    /// caller is handed the lanes rather than a bit it would have to
+    /// recompute (§2.3, law 5).
+    ///
+    /// Every caller clamps to the balance before asking, so a non-zero
+    /// reading is a broken clamp; it is returned rather than floored
+    /// because a floor burns the difference against §6's equation.
+    #[must_use]
+    pub(crate) fn debit(&mut self, who: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
+        let b = self.balance_of(&who);
+        let short = crate::economy::shortfall(&mu, &b);
+        if !crate::economy::lanes_short(&short).is_empty() {
+            return short;
         }
-        self.balances.insert(who, b);
+        self.balances.insert(who, std::array::from_fn(|l| b[l] - mu[l]));
+        short
     }
 
     /// ENROLL an identity with an operator-chosen per-lane bond. Tops up
@@ -167,8 +179,10 @@ impl Treasury {
     /// leftover escrow history does not enter it. Returns the vector added
     /// this call.
     pub fn enroll(&mut self, who: [u8; 32], bond: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let held = self.stakes.get(&who).copied().unwrap_or([0; 4]);
-        let asked: [u64; 4] = std::array::from_fn(|l| bond[l].saturating_sub(held[l]));
+        let held = self.staked(&who);
+        // The top-up IS the shortfall of what is staked against the bond,
+        // and that reading already exists: zero where the lane meets it.
+        let asked = crate::economy::shortfall(&bond, &held);
         // BOND IS μ AT RISK, STAKED FROM A BALANCE (§4). This inserted the
         // stake and wrote a "stake" row without debiting anything, so bond
         // existed that was never issued and §6's second equation --
@@ -178,8 +192,11 @@ impl Treasury {
         // is not staked, so an identity stakes what it holds and no more.
         let bal = self.balance_mu(&who);
         let add: [u64; 4] = std::array::from_fn(|l| asked[l].min(bal[l]));
-        if add.iter().any(|&x| x > 0) {
-            self.debit(who, add);
+        // `add` is clamped to the balance above; a debit that does not go
+        // through stakes nothing rather than creating bond nothing issued.
+        if add.iter().any(|&x| x > 0)
+            && crate::economy::lanes_short(&self.debit(who, add)).is_empty()
+        {
             let next: [u64; 4] = std::array::from_fn(|l| held[l] + add[l]);
             self.stakes.insert(who, next);
             self.write(Entry { kind: Kind::Stake, who, mu: add, k_step: anchor.0, receipt: anchor.1 });
@@ -197,7 +214,7 @@ impl Treasury {
     /// voice). Conservation holds because the μ⃗ moves between two carriers
     /// of one identity, exactly as staking it did.
     pub fn unstake(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let held = self.stakes.get(&who).copied().unwrap_or([0; 4]);
+        let held = self.staked(&who);
         let back: [u64; 4] = std::array::from_fn(|l| mu[l].min(held[l]));
         if back.iter().all(|&x| x == 0) {
             return back;
@@ -371,7 +388,7 @@ impl Treasury {
     /// it (R9). Returns the vector actually burned — never more than was
     /// held, and nothing is redistributed.
     pub fn burn(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let bond = self.stakes.get(&who).copied().unwrap_or([0; 4]);
+        let bond = self.staked(&who);
         let bal = self.balance_mu(&who);
         let from_bond: [u64; 4] = std::array::from_fn(|l| mu[l].min(bond[l]));
         let from_bal: [u64; 4] =
@@ -385,8 +402,12 @@ impl Treasury {
             self.stakes.insert(who, next);
             self.refresh_bond();
         }
-        if from_bal.iter().any(|&x| x > 0) {
-            self.debit(who, from_bal);
+        // `from_bal` is clamped to the balance above; a debit that does not
+        // go through takes nothing from it.
+        if from_bal.iter().any(|&x| x > 0)
+            && !crate::economy::lanes_short(&self.debit(who, from_bal)).is_empty()
+        {
+            return [0; 4];
         }
         self.write(Entry { kind: Kind::Burn, who, mu: took, k_step: anchor.0, receipt: anchor.1 });
         took
@@ -453,7 +474,29 @@ impl Treasury {
     /// The POLYTONIC BALANCE — per-lane orientation-weighted sums; there is no
     /// scalar balance. Mint grows supply; the stake bond is independent.
     pub fn balance_mu(&self, who: &[u8; 32]) -> [u64; 4] {
-        self.balances.get(who).copied().unwrap_or([0; 4])
+        self.balance_of(who)
+    }
+
+    /// THE READING OF ABSENCE (0.11c): a party the ledger has never seen
+    /// holds nothing on every lane, and that zero is a measurement of the
+    /// carrier rather than a value put in place of one. Every balance,
+    /// stake and escrow read passes through here.
+    fn balance_of(&self, who: &[u8; 32]) -> [u64; 4] {
+        match self.balances.get(who) {
+            Some(b) => *b,
+            None => [0; 4],
+        }
+    }
+
+    /// The stake this party holds, or nothing where the ledger has not
+    /// seen it — the same reading of absence. `stake_of` above answers
+    /// WHETHER there is a bond; this answers HOW MUCH, and an unseen party
+    /// holds zero on every lane.
+    fn staked(&self, who: &[u8; 32]) -> [u64; 4] {
+        match self.stakes.get(who) {
+            Some(s) => *s,
+            None => [0; 4],
+        }
     }
 
     pub fn entries(&self) -> &[Entry] {

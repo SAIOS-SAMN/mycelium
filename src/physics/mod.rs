@@ -93,7 +93,11 @@ impl Orbit {
         self.strokes = self.strokes.saturating_add(1);
         let n = std::num::NonZeroU64::new(circuits)?;
         self.circuits = self.circuits.saturating_add(n.get());
-        self.period = self.strokes.saturating_sub(self.at);
+        // A period is strokes since the last circuit. `at` is a stroke this
+        // counter has already passed, so the difference is exact; a mark
+        // ahead of the count is a broken counter and reports no circuit
+        // rather than a period of zero (rule 11).
+        self.period = self.strokes.checked_sub(self.at)?;
         self.at = self.strokes;
         Some((self.circuits, self.period))
     }
@@ -109,10 +113,31 @@ impl Orbit {
     }
 }
 
+/// 47.5's Λ as a reading, with its two refusing arms told apart (law 5).
+///
+/// `Unmeasured` is no horizon: no round trip to this peer has been
+/// measured, so nothing is known about how long a listing may wait.
+/// `BeyondTheLedger` is a horizon WIDER than any extent the ledger counts
+/// — arithmetic, not a failure, and it says no listing has waited that
+/// long. One `None` over both would flatten two facts onto the eviction
+/// path.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Lambda {
+    /// The horizon, in strokes.
+    Strokes(u64),
+    /// No round trip measured to this peer.
+    Unmeasured,
+    /// The product does not fit the carrier the ledger counts in.
+    BeyondTheLedger,
+}
+
 /// A duration in strokes: measured round-trip strokes times a stroke-count
 /// factor. Unmeasured RTT is not passed here.
-pub fn from_transport(rtt: u64, strokes: u64) -> u64 {
-    rtt.saturating_mul(strokes.max(1))
+pub fn from_transport(rtt: u64, strokes: u64) -> Lambda {
+    match rtt.checked_mul(strokes.max(1)) {
+        Some(n) => Lambda::Strokes(n),
+        None => Lambda::BeyondTheLedger,
+    }
 }
 
 /// THE MINIMAL OPERATIONAL FLOOR OF ONE STROKE, as a duration the
@@ -201,22 +226,22 @@ pub fn book_ceiling() -> usize {
 
 /// Deadline for one nerve dial, in strokes: an aperture of the measured
 /// transport. Unmeasured RTT has no deadline.
-pub fn transport_deadline(rtt: u64) -> u64 {
+pub fn transport_deadline(rtt: u64) -> Lambda {
     persist_dwell(rtt)
 }
 
 /// Persist dwell: a full aperture of measured transports, in strokes.
-pub fn persist_dwell(rtt: u64) -> u64 {
+pub fn persist_dwell(rtt: u64) -> Lambda {
     from_transport(rtt, aperture_cycle() as u64)
 }
 
 /// Court federation flush: two apertures of measured transport, in strokes.
-pub fn court_persist_dwell(rtt: u64) -> u64 {
+pub fn court_persist_dwell(rtt: u64) -> Lambda {
     from_transport(rtt, aperture_cycle() as u64 * 2)
 }
 
 /// Quiet-digest ceiling: a full reserve of measured transports, in strokes.
-pub fn digest_ceiling(rtt: u64) -> u64 {
+pub fn digest_ceiling(rtt: u64) -> Lambda {
     from_transport(rtt, reserve_max())
 }
 
@@ -303,10 +328,21 @@ impl Physics {
     }
 
     /// A demand closed — pressure falls by the magnitude the settlement
-    /// removed from the book.
+    /// removed from the book, per lane, and a lane is relieved of what
+    /// STANDS on it: the pressure is the metabolism's own reading, not a
+    /// conserved ledger, so relieving more than a lane carries is relieving
+    /// that lane entirely. The unrelieved remainder is the book's
+    /// disagreement and is already visible there as tension.
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a lane is relieved of what stands on it, which is that lane's own reading"
+    )]
     pub fn relieve(&mut self, m: &[u64; 4]) {
         for (p, d) in self.pressure.iter_mut().zip(m) {
-            *p = p.saturating_sub(*d);
+            *p = match p.checked_sub(*d) {
+                Some(left) => left,
+                None => 0,
+            };
         }
     }
 
@@ -316,8 +352,12 @@ impl Physics {
     /// adjudication; steady-state pressure then equilibrates where the germination
     /// rate meets this relaxation — a bounded, self-limiting metabolism.
     pub fn relax(&mut self) {
+        // A lane with no pressure has nothing to dissipate: the reading of
+        // absence, not a floor put under a subtraction (rule 11).
         for p in self.pressure.iter_mut() {
-            *p = p.saturating_sub(1);
+            if let Some(next) = p.checked_sub(1) {
+                *p = next;
+            }
         }
     }
 
@@ -337,13 +377,20 @@ impl Physics {
     /// accumulated disorder into structure, per lane (the spanned count applied
     /// on the active lanes only — polytonic, never a summed scalar), and books
     /// the same amount as syntropic order built.
-    pub fn torse_relief(&mut self, lanes: [bool; 4], spanned: u64) {
+    /// `false` where a lane's span exceeds the torsion standing on it: the
+    /// extraction and the charge disagree about what was there, and a floor
+    /// at zero would convert that into order built (rule 11).
+    pub fn torse_relief(&mut self, lanes: [bool; 4], spanned: u64) -> bool {
         for ((t, o), &on) in self.torsion.iter_mut().zip(self.syntropic.iter_mut()).zip(&lanes) {
             if on {
-                *t = t.saturating_sub(spanned);
+                let Some(next) = t.checked_sub(spanned) else {
+                    return false;
+                };
+                *t = next;
                 *o = o.saturating_add(spanned);
             }
         }
+        true
     }
 
     /// A settlement built order on these lanes — a SYNTROPIC event (negentropy).
@@ -356,10 +403,18 @@ impl Physics {
 
     /// ENTROPIC EXPANSION spends the reserve on the germinated lanes — the
     /// metabolism SHRINKS as the alphabet grows.
+    /// A lane with nothing left spends nothing: the reading of absence, and
+    /// `remaining` says so. Spending PAST empty is what a floor would
+    /// hide — the reserve would read empty either way and the governor
+    /// could not tell a lane that just emptied from one overdrawn (rule 11).
     pub fn spend(&mut self, lanes: [bool; 4]) {
         for (r, &on) in self.reserve.iter_mut().zip(&lanes) {
             if on {
-                *r = r.saturating_sub(spend_unit());
+                if let Some(next) = r.checked_sub(spend_unit()) {
+                    *r = next;
+                    continue;
+                }
+                *r = 0;
             }
         }
     }
@@ -368,7 +423,13 @@ impl Physics {
     /// that lane verified since the last aperture — not toward one scalar cap.
     pub fn regenerate(&mut self) {
         for l in 0..4 {
-            let verified = self.syntropic[l].saturating_sub(self.regen_mark[l]);
+            // The mark is a syntropic total this lane has already reached,
+            // so the difference is exact. A mark AHEAD of the total is a
+            // broken counter, and this lane regenerates toward nothing it
+            // verified rather than toward a difference of zero (rule 11).
+            let Some(verified) = self.syntropic[l].checked_sub(self.regen_mark[l]) else {
+                continue;
+            };
             let add = regen_unit() * (1 + (verified > 0) as u64);
             let target = verified.max(expand_floor());
             let next = self.reserve[l].saturating_add(add);
@@ -384,20 +445,38 @@ impl Physics {
     /// tick. `depleted()` collapsed the four lanes to one bit and
     /// `can_expand` to another, and every caller that had to act recomputed
     /// which lane the bit had thrown away.
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a lane at or above the floor falls short by nothing"
+    )]
     pub fn reserve_shortfall(&self, lanes: [bool; 4]) -> [u64; 4] {
+        // A lane at or above the floor falls short by NOTHING, and nothing
+        // is what the empty difference measures — the reading of absence,
+        // not a subtraction stopped at zero (rule 11).
         std::array::from_fn(|l| {
-            if lanes[l] {
-                expand_floor().saturating_sub(self.reserve[l])
-            } else {
-                0
+            match lanes[l] {
+                true => match expand_floor().checked_sub(self.reserve[l]) {
+                    Some(short) => short,
+                    None => 0,
+                },
+                false => 0,
             }
         })
     }
 
     /// Distance to the full reserve per lane — the DEPLETION PREMIUM the yield
     /// surface charges (a strained metabolism prices its recovery work higher).
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a lane at the ceiling is in deficit by nothing"
+    )]
     pub fn reserve_deficit(&self) -> [u64; 4] {
-        std::array::from_fn(|l| reserve_max().saturating_sub(self.reserve[l]))
+        // A lane at the ceiling is in deficit by NOTHING: the reading of
+        // absence, as the shortfall above.
+        std::array::from_fn(|l| match reserve_max().checked_sub(self.reserve[l]) {
+            Some(down) => down,
+            None => 0,
+        })
     }
 
     /// Per-lane dwell in strokes from the last reply's pressure, for the
@@ -573,12 +652,38 @@ mod tests {
 
     #[test]
     fn rtt_is_counted_in_strokes() {
-        assert_eq!(from_transport(3, 4), 12, "measured rtt × strokes");
-        assert_eq!(from_transport(3, 0), 3, "zero strokes is still one transport");
-        assert_eq!(from_transport(0, 4), 0, "a same-stroke reply is zero, not a floor");
-        let quiet = digest_ceiling(3);
-        assert!(quiet >= from_transport(3, 1));
+        assert_eq!(from_transport(3, 4), Lambda::Strokes(12), "measured rtt × strokes");
+        assert_eq!(from_transport(3, 0), Lambda::Strokes(3), "zero strokes is still one transport");
+        assert_eq!(
+            from_transport(0, 4),
+            Lambda::Strokes(0),
+            "a same-stroke reply is zero, not a floor"
+        );
+        let (Lambda::Strokes(quiet), Lambda::Strokes(one)) =
+            (digest_ceiling(3), from_transport(3, 1))
+        else {
+            panic!("a measured round trip has a horizon the ledger counts");
+        };
+        assert!(quiet >= one);
         let d = transport_deadline(5);
         assert_eq!(d, persist_dwell(5), "the deadline is an aperture of the measured transport");
+    }
+
+    /// 47.5's two refusing arms are two readings (law 5): a round trip
+    /// nobody measured, and a horizon wider than any extent the ledger
+    /// counts. One `None` over both would put an arithmetic fact and a
+    /// missing measurement on one branch of the eviction path.
+    #[test]
+    fn a_horizon_wider_than_the_ledger_is_not_an_unmeasured_one() {
+        assert_eq!(
+            from_transport(u64::MAX, 2),
+            Lambda::BeyondTheLedger,
+            "a product that does not fit is beyond the ledger, not a saturated extent"
+        );
+        assert_ne!(
+            from_transport(u64::MAX, 2),
+            Lambda::Unmeasured,
+            "and it is not the same reading as a transport nobody measured"
+        );
     }
 }

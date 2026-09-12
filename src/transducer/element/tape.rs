@@ -135,9 +135,11 @@ impl Element {
             *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;
         }
-        let remaining = |b: &[u8], p: &usize| b.len().saturating_sub(*p);
+        // A position past the end of the tape is a malformed tape, not a
+        // tape with nothing left (rule 11).
+        let remaining = |b: &[u8], p: &usize| b.len().checked_sub(*p);
         let nsub = u32_at(b, pos)? as usize;
-        if nsub > remaining(b, pos) / 18 {
+        if nsub > remaining(b, pos)? / 18 {
             return None;
         }
         let mut sub = Vec::with_capacity(nsub);
@@ -150,13 +152,13 @@ impl Element {
             sub.push((r, c, before, after));
         }
         let nsec = u32_at(b, pos)? as usize;
-        if nsec > remaining(b, pos) / 4 {
+        if nsec > remaining(b, pos)? / 4 {
             return None;
         }
         let mut sections = Vec::with_capacity(nsec);
         for _ in 0..nsec {
             let slen = u32_at(b, pos)? as usize;
-            if slen > remaining(b, pos) / 2 {
+            if slen > remaining(b, pos)? / 2 {
                 return None;
             }
             let mut s = Vec::with_capacity(slen);
@@ -169,13 +171,13 @@ impl Element {
             sections.push(s);
         }
         let ntor = u32_at(b, pos)? as usize;
-        if ntor > remaining(b, pos) / 8 {
+        if ntor > remaining(b, pos)? / 8 {
             return None;
         }
         let mut torsion = Vec::with_capacity(ntor);
         for _ in 0..ntor {
             let slen = u32_at(b, pos)? as usize;
-            if slen > remaining(b, pos) / 2 {
+            if slen > remaining(b, pos)? / 2 {
                 return None;
             }
             let mut sigma = Vec::with_capacity(slen);
@@ -201,11 +203,16 @@ impl Element {
             }
             _ => None,
         };
-        let ntr = u32_at(b, pos).unwrap_or(0) as usize;
+        // A tape that ends here carries no transitions; the count is read
+        // or it is absent, never a zero put in place of one.
+        let ntr = match u32_at(b, pos) {
+            Some(n) => n as usize,
+            None => 0,
+        };
         let mut transitions = Vec::with_capacity(ntr.min(64));
         for _ in 0..ntr {
             let alen = u32_at(b, pos)? as usize;
-            if alen > remaining(b, pos) / 2 {
+            if alen > remaining(b, pos)? / 2 {
                 return None;
             }
             let mut a = Vec::with_capacity(alen);

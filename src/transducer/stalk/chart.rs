@@ -123,10 +123,19 @@ pub fn invariant_of(word: &element::Element) -> Invariant {
         return Invariant(vec![3]);
     }
     if word.is_sentence() {
-        return crate::transducer::sentence::chart_of(word).unwrap_or_default();
+        // A sentence whose tape names no chart sits at the root stratum,
+        // which is what the empty invariant is.
+        return match crate::transducer::sentence::chart_of(word) {
+            Some(inv) => inv,
+            None => Invariant(Vec::new()),
+        };
     }
     if word.is_connection() {
-        return connection_chart(word).unwrap_or_default();
+        // A connection whose rotor names no chart sits at the root.
+        return match connection_chart(word) {
+            Some(inv) => inv,
+            None => Invariant(Vec::new()),
+        };
     }
     if !word.sub().is_empty() {
         return invariant(word.sub());

@@ -32,7 +32,7 @@ pub fn decode_syllabus_reply(body: &[u8]) -> Option<Vec<Vec<u8>>> {
     for _ in 0..n {
         let len = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
-        if len > body.len().saturating_sub(p) {
+        if len > body.len().checked_sub(p)? {
             return None; // untrusted length
         }
         words.push(body.get(p..p + len)?.to_vec());
@@ -69,7 +69,13 @@ pub fn decode_class_records(body: &[u8]) -> Vec<ClassPage> {
     if p + 2 > body.len() {
         return Vec::new();
     }
-    let n = u16::from_le_bytes(body[p..p + 2].try_into().unwrap_or([0, 0])) as usize;
+    // The two bytes are in range — the bound above says so — so the count
+    // is read exactly; a slice that does not convert is a malformed frame
+    // and names no classes.
+    let Ok(raw) = <[u8; 2]>::try_from(&body[p..p + 2]) else {
+        return Vec::new();
+    };
+    let n = u16::from_le_bytes(raw) as usize;
     p += 2;
     let mut out = Vec::new();
     for _ in 0..n.min(1024) {

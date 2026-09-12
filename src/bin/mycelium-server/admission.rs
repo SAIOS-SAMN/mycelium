@@ -16,8 +16,13 @@ pub(crate) fn room64(r: [usize; 4]) -> [u64; 4] {
 }
 
 pub(crate) fn rebuild_own_cover(kernel: &Mutex<Kernel>, mesh: &Mesh) -> (Vec<(u8, mycelium::transducer::stalk::Invariant)>, [u64; 4]) {
+    // A room that cannot be read is a broken count, and this hypha admits
+    // no cover against one — as a poisoned lock admits none.
     let (charts, room) = match kernel.lock() {
-        Ok(k) => (k.own_cover_charts(), room64(k.lane_room())),
+        Ok(k) => match k.lane_room() {
+            Some(r) => (k.own_cover_charts(), room64(r)),
+            None => return (Vec::new(), [0; 4]),
+        },
         Err(_) => return (Vec::new(), [0; 4]),
     };
     if let Ok(mut c) = mesh.cover.lock() {
@@ -95,7 +100,13 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> 
         Ok(mut k) => k.ruled_root(),
         Err(_) => return Vec::new(),
     };
-    let cover_roots = mesh.cover.lock().map(|mut c| c.roots()).unwrap_or([[0u8; 32]; 4]);
+    // A poisoned cover lock is no reading of the cover; this hypha signs
+    // no digest against one (§2.4, rule 11).
+    let Ok(mut cover) = mesh.cover.lock() else {
+        return Vec::new();
+    };
+    let cover_roots = cover.roots();
+    drop(cover);
     let prefix = dialogue::cover_signed_prefix(&cover_roots, &ruled_root, &room);
     let sig = {
         use ed25519_dalek::Signer;

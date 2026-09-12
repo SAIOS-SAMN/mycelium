@@ -98,28 +98,27 @@ impl Convergence {
 
     /// The voices that uttered this object — the settlement parties.
     pub fn parties(&self, object: &[u8]) -> Vec<[u8; 32]> {
-        self.uses
-            .get(object)
-            .map(|v| {
-                v.fiber(ROOT)
-                    .filter_map(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
-                    .collect()
-            })
-            .unwrap_or_default()
+        // An object no voice has uttered has no parties on it: the reading
+        // of absence on a keyed carrier (0.11c).
+        match self.uses.get(object) {
+            Some(v) => v
+                .fiber(ROOT)
+                .filter_map(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
+                .collect(),
+            None => Vec::new(),
+        }
     }
 
     /// The organs that have re-derived this object.
     pub fn organs(&self, object: &[u8]) -> Vec<([u8; 32], Rederivation)> {
-        self.rederived
-            .get(object)
-            .map(|by| {
-                by.fiber(ROOT)
-                    .filter_map(|(k, r)| {
-                        <[u8; 32]>::try_from(k.as_slice()).ok().map(|o| (o, r.clone()))
-                    })
-                    .collect()
-            })
-            .unwrap_or_default()
+        // As above: no re-derivation, no organs.
+        match self.rederived.get(object) {
+            Some(by) => by
+                .fiber(ROOT)
+                .filter_map(|(k, r)| <[u8; 32]>::try_from(k.as_slice()).ok().map(|o| (o, r.clone())))
+                .collect(),
+            None => Vec::new(),
+        }
     }
 
     /// Has this object converged? `independent` decides whether two organs

@@ -24,7 +24,7 @@ impl Contemplation {
             }
             // The receipts since the bubble's charts last moved — the FIFO
             // head by the kernel's own K (law 9), zero when it moved now.
-            let t = now.saturating_sub(b.moved_k);
+            let t = super::idea::held_since(now, b.moved_k);
             match best {
                 Some((_, bt)) if t <= bt => {}
                 _ => best = Some((k.clone(), t)),

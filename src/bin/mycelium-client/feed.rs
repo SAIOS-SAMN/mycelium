@@ -11,13 +11,14 @@ use std::path::{Path, PathBuf};
 
 pub(crate) fn pending_feed(home: &Path) -> Vec<PathBuf> {
     let dir = home.join("feed");
-    let mut files: Vec<_> = std::fs::read_dir(&dir)
-        .map(|rd| {
-            rd.filter_map(|e| e.ok().map(|e| e.path()))
-                .filter(|p| p.extension().is_some_and(|x| x == "json"))
-                .collect()
-        })
-        .unwrap_or_default();
+    // A directory that will not open lists no files.
+    let Ok(rd) = std::fs::read_dir(&dir) else {
+        return Vec::new();
+    };
+    let mut files: Vec<_> = rd
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().is_some_and(|x| x == "json"))
+        .collect();
     files.sort();
     files
 }
@@ -98,5 +99,6 @@ pub(crate) fn conductor_cursor(path: &str) -> usize {
     text.split("\"arc_next\":")
         .nth(1)
         .and_then(|t| t.chars().take_while(|c| c.is_ascii_digit()).collect::<String>().parse().ok())
-        .unwrap_or(0)
+        // A file that names no cursor has not been read past its start.
+        .map_or(0, |n| n)
 }

@@ -369,11 +369,13 @@ impl Admissions {
             // only through a receipt this node holds; when it does not hold
             // the predecessor the claim is UNMEASURED, which refuses, and is
             // never read as zero (rule 11).
-            let prev = Parent {
-                vk: r.vk,
-                k: r.step_index.saturating_sub(1),
-                hash: r.prev_receipt_hash,
+            // A receipt at step zero has no predecessor to claim; genesis
+            // is handled above, so this one names a parent or it is
+            // refused, never a parent at step zero invented for it.
+            let Some(k) = r.step_index.checked_sub(1) else {
+                return Admitted::Refused(REFUSE_RECEIPT);
             };
+            let prev = Parent { vk: r.vk, k, hash: r.prev_receipt_hash };
             let Some(mut m) = parent_height(&prev) else {
                 return Admitted::MissingParent(prev);
             };

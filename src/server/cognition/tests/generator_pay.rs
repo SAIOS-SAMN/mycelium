@@ -326,7 +326,10 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
             "this court credits THIS mind's teacher, under that teacher's own key"
         );
         assert!(
-            k.lane_room_of(&teacher).iter().any(|&r| r > 0),
+            k.lane_room_of(&teacher)
+                .expect("a credited teacher's room reads")
+                .iter()
+                .any(|&r| r > 0),
             "so the teacher's room rises where its generator was used"
         );
     }

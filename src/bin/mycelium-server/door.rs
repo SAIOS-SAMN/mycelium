@@ -39,7 +39,8 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     let Some((&kind, _rest)) = frame.body.split_first() else { return false };
     if kind == dialogue::ACT_ROOT {
         let Some((from, task, solver, spoken_at)) = dialogue::decode_root(&frame.body) else { return true };
-        if !door.router.lock().map(|r| r.knows(&from)).unwrap_or(false) {
+        // A poisoned router lock knows no peer; the root is not heard.
+        if !door.router.lock().is_ok_and(|r| r.knows(&from)) {
             answer(s, Frame { lane: frame.lane, body: Vec::new() });
             return true;
         }
@@ -50,7 +51,8 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         match hear {
             RootHear::Known => {}
             RootHear::First => {
-                let prioritized = door.registry.lock().map(|mut r| r.prioritize(&task)).unwrap_or(false);
+                // A poisoned registry lock prioritises nothing.
+                let prioritized = door.registry.lock().is_ok_and(|mut r| r.prioritize(&task));
                 eprintln!(
                     "  ROOT heard from {:02x}: task {:02x}{:02x}… solved by voice {:02x}; {}",
                     from[0], task[0], task[1], solver[0],
@@ -150,10 +152,12 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             match reg.settle(&tid, &outputs) {
                 mycelium::registry::SolveYield::Bounty(tension) => {
                     let snap = reg.snapshot();
-                    let dir = std::path::Path::new(&door.state_path)
-                        .parent()
-                        .map(|p| p.join("corpora"))
-                        .unwrap_or_else(|| std::path::PathBuf::from("corpora"));
+                    // A state path with no parent writes beside the
+                    // working directory, which is where it already is.
+                    let dir = match std::path::Path::new(&door.state_path).parent() {
+                        Some(p) => p.join("corpora"),
+                        None => std::path::PathBuf::from("corpora"),
+                    };
                     let _ = std::fs::create_dir_all(&dir);
                     let tmp = dir.join("registry.tmp");
                     if std::fs::write(&tmp, &snap).is_ok() {
@@ -240,7 +244,8 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 }
                 door.synth_tx.try_send(mycelium::synthesis::Deliberation::Adopt(ratifier, word)).is_ok()
             })
-            .unwrap_or(false);
+            // A word whose tape does not parse queues nothing.
+            .is_some_and(|q| q);
         answer(s, Frame { lane: frame.lane, body: vec![queued as u8] });
         return true;
     }
@@ -400,7 +405,10 @@ fn rewind_syllabus(door: &Door) {
 /// of the cover: the listing is not taken here (§2.4, rule 11).
 pub(crate) fn homes_here(mesh: &Mesh, kernel: &Mutex<Kernel>, inv: &mycelium::transducer::stalk::Invariant, mag: &[u64; 4]) -> bool {
     let room = match kernel.lock() {
-        Ok(k) => room64(k.lane_room()),
+        Ok(k) => match k.lane_room() {
+            Some(r) => room64(r),
+            None => return false,
+        },
         Err(_) => return false,
     };
     let (Ok(c), Ok(r), Ok(a)) = (mesh.cover.lock(), mesh.rooms.lock(), mesh.addrs.lock()) else {

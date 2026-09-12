@@ -127,7 +127,9 @@ impl ReceiptChain {
             .last()
             .map(|r| r.chain_hash)
             .or_else(|| self.root.map(|r| r.hash))
-            .unwrap_or([0u8; 32])
+            // A chain before genesis has no head, and the empty hash is
+            // what "no head" is on this chain — the reading of absence.
+            .map_or([0u8; 32], |h| h)
     }
 
     /// The head receipt's step index. Zero before genesis.
@@ -136,7 +138,8 @@ impl ReceiptChain {
             .last()
             .map(|r| r.step_index)
             .or_else(|| self.root.map(|r| r.k))
-            .unwrap_or(0)
+            // A chain before genesis stands at step zero.
+            .map_or(0, |k| k)
     }
 
     /// TUniversal: height of the head receipt. Zero before genesis.
@@ -145,7 +148,8 @@ impl ReceiptChain {
             .last()
             .map(|r| r.height)
             .or_else(|| self.root.map(|r| r.height))
-            .unwrap_or(0)
+            // A chain before genesis stands at height zero.
+            .map_or(0, |h| h)
     }
 
     /// The fold root this chain stands on, if it was ever folded.
@@ -564,7 +568,9 @@ impl ReceiptChain {
 
     /// Rehydrate a hot chain standing on a fold root (45.8), or on none.
     pub fn from_receipts_at(root: Option<Root>, receipts: Vec<KStepReceipt>) -> Option<ReceiptChain> {
-        let vk = receipts.first().map(|r| r.vk).unwrap_or([0u8; 32]);
+        // An empty chain names no signer; the empty key is that reading,
+        // and every receipt admitted later must agree with it.
+        let vk = receipts.first().map_or([0u8; 32], |r| r.vk);
         // The index is built before integrity is verified, because
         // verification re-derives every height through it.
         let mut mine = Keyed::new();

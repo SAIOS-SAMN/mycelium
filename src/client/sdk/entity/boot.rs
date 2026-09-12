@@ -83,7 +83,12 @@ impl Entity {
         if let Ok(bytes) = std::fs::read(genome_path) {
             if e.epigenome.uncrystallize(&bytes) {
                 let n = e.epigenome.genome_len();
-                let kb = std::fs::metadata(genome_path).map(|m| m.len() / 1024).unwrap_or(0);
+                // A file the host will not size reports no size; the word
+                // count above is the reading that matters here.
+                let kb = match std::fs::metadata(genome_path) {
+                    Ok(m) => m.len() / 1024,
+                    Err(_) => 0,
+                };
                 eprintln!("genome {n} words (GEN3, {kb} KB), epigenome empty");
             }
         } else {

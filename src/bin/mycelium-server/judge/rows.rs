@@ -9,7 +9,10 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(req) = dialogue::decode_rows_request(&frame.body) else { return };
-    let budget = mycelium::network::wire::frame_budget().saturating_sub(64);
+    // As in `receipts`: the body's share of the frame, exact.
+    let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(64) else {
+        return;
+    };
     let at_most = budget / mycelium::economy::Entry::TAPE;
     let (total, rows) = match door.kernel.lock() {
         Ok(k) => k.rows_range(&req.signer, req.from, req.to, req.cursor, at_most),

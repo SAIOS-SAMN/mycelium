@@ -157,7 +157,13 @@ impl Kernel {
             // adjudicated as normal and keeps its verdicts.
             Outcome::Awaiting(form) => Ok(Adjudication::Awaiting { form }),
             Outcome::Refused(reason) if reason == crate::verdict::REFUSE_ROOM => {
-                Err(self.room_shortfall(&voice, &s.magnitude()))
+                // A room that cannot be read defers on every lane: the
+                // voice is told to wait, not told which lane was short by
+                // a reading nobody took.
+                Err(match self.room_shortfall(&voice, &s.magnitude()) {
+                    Some(short) => short,
+                    None => s.magnitude(),
+                })
             }
             Outcome::Refused(reason) => {
                 Ok(self.refuse_sentence(voice, &addr, crate::court::verdict::Refusal::of_tape(reason, s)))
@@ -390,7 +396,12 @@ impl Kernel {
         let Some(disc) = self.discoverer_of(sibling) else {
             return 0;
         };
-        let gained = self.word_mut(base).map(|w| w.update(|e| e.attach(&sib, g))).unwrap_or(0);
+        // A base the basis does not hold gains nothing: nothing was
+        // attached to it.
+        let gained = match self.word_mut(base) {
+            Some(w) => w.update(|e| e.attach(&sib, g)),
+            None => 0,
+        };
         self.touch_at(base);
         self.basis_remove(sibling);
         if gained > 0 {
@@ -442,7 +453,12 @@ impl Kernel {
         };
         let listing = listing.clone();
         self.record_spoken(Address::from(target), voice);
-        let before = self.tension.get(target).copied().unwrap_or_else(|| listing.magnitude());
+        // A listing with no recorded tension stands at its own magnitude:
+        // nothing has been settled against it yet.
+        let before = match self.tension.get(target) {
+            Some(t) => *t,
+            None => listing.magnitude(),
+        };
         let rem = element::measure_lanes(&residual);
         let after = rem;
         let anchor = self.anchor();
@@ -499,12 +515,17 @@ impl Kernel {
         let mut listed = listing.sub().to_vec();
         listed.sort_unstable();
         if residual == listed {
-            let standing = self
+            // What the field already stands on, and this residual where the
+            // field stands on nothing.
+            let standing = match self
                 .field
                 .get(target)
                 .map(|f| union_remainders(&f.entries))
                 .filter(|r| !r.is_empty())
-                .unwrap_or_else(|| residual.clone());
+            {
+                Some(r) => r,
+                None => residual.clone(),
+            };
             for chart in charts {
                 self.write_field(target, chart, Closure::Cavity, standing.clone(), &before, &before);
             }
@@ -567,7 +588,9 @@ impl Kernel {
         if let (Some(held), Some(v)) = (self.pending.get_mut(target), v_disloc) {
             held.0.record_dislocation(element::assignment(&residual), v, element::FIBER_SPATIAL);
         }
-        let settled: [u64; 4] = std::array::from_fn(|l| before[l].saturating_sub(after[l]));
+        // What the speech SETTLED: the tension it removed, per lane, and
+        // nothing on a lane where the residual stands as high as before.
+        let settled = crate::economy::shortfall(&before, &after);
         self.forget_spoken(target);
         self.physics.relieve(&settled);
         self.book_gen += 1;

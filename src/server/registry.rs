@@ -119,12 +119,22 @@ impl TaskRegistry {
 
     /// Next `n` tasks for first-time listing. Empty once the manifest has
     /// been walked; cover changes re-home through [`next_cover_batch`].
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a cursor past the end has nothing left to take"
+    )]
     pub fn next_intake_batch(&mut self, n: usize) -> Vec<(Address, Task)> {
         let len = self.tasks.len();
         if self.intake_done || len == 0 || n == 0 {
             return Vec::new();
         }
-        let take = n.min(len.saturating_sub(self.intake_cursor));
+        // The cursor is a seat this book has already reached, so the
+        // remainder is exact; a cursor past the end has nothing left.
+        let left = match len.checked_sub(self.intake_cursor) {
+            Some(l) => l,
+            None => 0,
+        };
+        let take = n.min(left);
         let mut out = Vec::with_capacity(take);
         for _ in 0..take {
             let i = self.intake_cursor;
@@ -177,9 +187,11 @@ impl TaskRegistry {
 
     /// Withheld test pairs (input, held output) the home speaks a rule onto.
     pub fn withheld(&self, id: &[u8]) -> Vec<(Grid, Grid)> {
-        self.task(id)
-            .map(|t| t.test.iter().filter(|(_, y)| !y.is_empty()).cloned().collect())
-            .unwrap_or_default()
+        // A task this book does not hold withholds nothing.
+        match self.task(id) {
+            Some(t) => t.test.iter().filter(|(_, y)| !y.is_empty()).cloned().collect(),
+            None => Vec::new(),
+        }
     }
 
     /// REGISTER a task (idempotent by content — re-feeding under a new file

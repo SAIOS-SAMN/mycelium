@@ -20,11 +20,18 @@ impl Kernel {
     /// lane. Only what still does not fit is refused, and the refusal names
     /// the lane. The book's other moves (condense, torse, refine, puncture)
     /// act on the basis and free no room, so they are not run here.
-    pub(super) fn room_after_extending(&mut self, voice: &[u8; 32], draw: &[u64; 4]) -> [u64; 4] {
+    /// `None` where the voice's room cannot be read: a lane occupied
+    /// beyond its cover is a broken count and no shortfall is measured
+    /// against it.
+    pub(super) fn room_after_extending(
+        &mut self,
+        voice: &[u8; 32],
+        draw: &[u64; 4],
+    ) -> Option<[u64; 4]> {
         self.relocate_t_exhausted();
-        let short = self.room_shortfall(voice, draw);
+        let short = self.room_shortfall(voice, draw)?;
         if crate::economy::lanes_short(&short).is_empty() {
-            return short;
+            return Some(short);
         }
         self.drain_unreachable();
         self.room_shortfall(voice, draw)

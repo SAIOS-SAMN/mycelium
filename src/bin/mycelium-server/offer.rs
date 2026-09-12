@@ -89,17 +89,32 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
             let Ok(witness) = <[u8; 32]>::try_from(vk.as_slice()) else {
                 continue;
             };
-            let lambda = crate::transport::rtt_floor(mesh, d.as_bytes()).map(|floor| {
-                mycelium::physics::from_transport(floor, mycelium::physics::aperture_cycle() as u64)
-            });
+            // An offer lapses only against a horizon the ledger counted: a
+            // peer with no measured round trip has none, and one beyond the
+            // ledger means nothing has waited that long.
+            let lambda = match crate::transport::rtt_floor(mesh, d.as_bytes()) {
+                None => None,
+                Some(floor) => {
+                    match mycelium::physics::from_transport(
+                        floor,
+                        mycelium::physics::aperture_cycle() as u64,
+                    ) {
+                        mycelium::physics::Lambda::Strokes(n) => Some(n),
+                        mycelium::physics::Lambda::BeyondTheLedger
+                        | mycelium::physics::Lambda::Unmeasured => None,
+                    }
+                }
+            };
             let (standing, k_now) = match kernel.lock() {
                 Ok(k) => (k.offer_standing(oaddr.as_bytes(), &witness), k.k_step()),
                 Err(_) => continue,
             };
             match (standing, lambda) {
                 (Some(mycelium::cognition::OfferStanding::Answered), _) => continue,
+                // The offer was made at a K this court has passed, so the
+                // wait is exact; one made in the future has not waited.
                 (Some(mycelium::cognition::OfferStanding::Pending { k }), Some(l))
-                    if k_now.saturating_sub(k) >= l => {}
+                    if k_now.checked_sub(k).is_some_and(|waited| waited >= l) => {}
                 (Some(mycelium::cognition::OfferStanding::Pending { .. }), _) => continue,
                 (None, _) => {}
             }

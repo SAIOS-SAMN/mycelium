@@ -62,7 +62,12 @@ impl Kernel {
             self.docket_connection(rule, voice);
             self.offered.insert(rule.address(), ());
         }
-        let listings: Vec<Address> = self.task_listings.get(task).cloned().unwrap_or_default();
+        // A task with no listings bound to it has none: the reading of
+        // absence on a keyed carrier.
+        let listings: Vec<Address> = match self.task_listings.get(task) {
+            Some(l) => l.clone(),
+            None => Vec::new(),
+        };
         let mut paid = [0u64; 4];
         let anchor = self.anchor();
         for addr in &listings {

@@ -170,13 +170,15 @@ pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i
             for &(r, c, h) in &src.cells {
                 let h2 = element::carry_center(v, r, c)
                     .and_then(|p| {
-                        let (tr, tc) = element::cell_of(&p);
+                        let (tr, tc) = element::cell_of(&p)?;
                         dst.cells
                             .binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc)))
                             .ok()
                             .map(|i| dst.cells[i].2)
                     })
-                    .unwrap_or(h);
+                    // A cell the carriage lands nowhere in the image keeps
+                    // its own hue: nothing moved it.
+                    .map_or(h, |found| found);
                 chain.push((r, c, h, h2));
             }
         }

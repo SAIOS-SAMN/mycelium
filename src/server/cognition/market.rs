@@ -351,8 +351,16 @@ impl Kernel {
             k,
             t_universal: tu,
         });
-        let floor = self.k_step().saturating_sub(crate::physics::reserve_max());
-        while self.settlements.first().map(|s| s.k < floor && s.k + 1 < self.k_step()).unwrap_or(false) {
+        // A court whose clock has not yet reached a full reserve of steps
+        // has nothing behind the floor to cool.
+        let Some(floor) = self.k_step().checked_sub(crate::physics::reserve_max()) else {
+            return;
+        };
+        while self
+            .settlements
+            .first()
+            .is_some_and(|s| s.k < floor && s.k + 1 < self.k_step())
+        {
             let old = self.settlements.remove(0);
             self.settlements_cold.push(old);
         }
@@ -539,7 +547,9 @@ impl Kernel {
         // §6 keeps seeded value and earned value separable; what is already
         // held is never re-allocated.
         let held = self.treasury.balance_mu(&who);
-        let short: [u64; 4] = std::array::from_fn(|l| bond[l].saturating_sub(held[l]));
+        // What genesis must seed is the shortfall of what is held against
+        // the bond: nothing on a lane already at or above it.
+        let short = crate::economy::shortfall(&bond, &held);
         if short.iter().any(|&x| x > 0) {
             self.treasury.genesis(who, short, anchor);
         }

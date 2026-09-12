@@ -22,14 +22,25 @@ fn supply_is_the_sum_of_minted_deflations() {
 }
 
 /// A slash debits the bond and mints nothing.
+///
+/// The identity is seeded first, because a bond is μ⃗ STAKED FROM A BALANCE
+/// (§4) and an identity with no balance enrols at a bond of zero. Asserting
+/// against `bond[0].saturating_sub(8)` read that zero as a pass — the floor
+/// agreed with an empty bond, and the slash this test names was never
+/// exercised on anything.
 #[test]
 fn slash_debits_the_bond_and_mints_nothing() {
     let mut t = Treasury::new();
-    let bond = t.enroll([1; 32], [8, 8, 8, 8], (0, [0; 32]));
+    t.genesis([1; 32], [8, 0, 0, 0], (0, [0; 32]));
+    let bond = t.enroll([1; 32], [8, 0, 0, 0], (0, [0; 32]));
+    assert_eq!(bond, [8, 0, 0, 0], "the balance covered the bond asked for");
     let addr = [3u8; 32];
     t.escrow_award(addr, vec![[1; 32]], [8, 0, 0, 0], (1, [1; 32]));
     assert!(t.revoke_award(&addr, true).is_some());
-    assert_eq!(t.bond_of(&[1; 32]).unwrap()[0], bond[0].saturating_sub(8));
+    assert_eq!(
+        t.bond_of(&[1; 32]).expect("an enrolled identity holds a bond")[0],
+        bond[0].checked_sub(8).expect("the bond covered the revoked award")
+    );
     assert_eq!(t.supply().expect("supply adds up"), [0; 4]);
     assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
 }

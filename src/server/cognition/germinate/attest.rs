@@ -94,7 +94,10 @@ impl Kernel {
         let independent = move |a: &[u8; 32], b: &[u8; 32]| -> bool {
             a != b && (*a == me || *b == me) && {
                 let other = if *a == me { b } else { a };
-                bond(other).is_some() && room(other).iter().any(|&r| r > 0)
+                // A vantage whose room cannot be read is not a vantage
+                // with room: the count is broken, not spacious.
+                bond(other).is_some()
+                    && room(other).is_some_and(|r| r.iter().any(|&l| l > 0))
             }
         };
         self.convergence.state(object.as_bytes(), &independent)

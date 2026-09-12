@@ -86,7 +86,10 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
             let Some(p) = element::carry_center(&versor, r, c) else {
                 return Carried::Fails(FAIL_NO_CARRY);
             };
-            let (tr, tc) = element::cell_of(&p);
+            // A centre the sensor cannot convert is off the frame (W6).
+            let Some((tr, tc)) = element::cell_of(&p) else {
+                return Carried::Fails(FAIL_OFF_FRAME);
+            };
             let (Ok(ur), Ok(uc)) = (usize::try_from(tr), usize::try_from(tc)) else {
                 return Carried::Fails(FAIL_OFF_FRAME);
             };
@@ -166,7 +169,7 @@ fn image_body(body: &Body, versor: &Versor, images: &[Body]) -> Option<usize> {
         return None;
     };
     let (r, c) = (*r, *c);
-    let (tr, tc) = element::cell_of(&element::carry_center(versor, r, c)?);
+    let (tr, tc) = element::cell_of(&element::carry_center(versor, r, c)?)?;
     images.iter().position(|b| b.cells.iter().any(|&(br, bc, _)| (br, bc) == (tr, tc)))
 }
 

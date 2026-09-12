@@ -43,7 +43,11 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         &items,
         mycelium::network::wire::frame_budget(),
     );
-    let served = body.get(dialogue::QUOTE_COUNT_AT).copied().unwrap_or(0);
+    // A reply too short to carry a count served nothing.
+    let served = match body.get(dialogue::QUOTE_COUNT_AT) {
+        Some(n) => *n,
+        None => 0,
+    };
     if served > 0 {
         if let Ok(mut k) = kernel.lock() {
             k.grant_t_lease(qvoice);

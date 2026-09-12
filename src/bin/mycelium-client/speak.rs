@@ -125,7 +125,13 @@ fn speak_with_demands(
         return false;
     };
     let addr = word.address();
-    let hx = |b: &[u8]| format!("{:02x}{:02x}…", b.first().copied().unwrap_or(0), b.get(1).copied().unwrap_or(0));
+    // An address shorter than two bytes shows what it has; the journal
+    // line names a prefix, not a value.
+    let hx = |b: &[u8]| match b {
+        [x, y, ..] => format!("{x:02x}{y:02x}…"),
+        [x] => format!("{x:02x}…"),
+        [] => "…".to_string(),
+    };
     if entity.already_taught(&word) {
         entity.remember_spoken(&word);
         return true;

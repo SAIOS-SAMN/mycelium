@@ -123,7 +123,11 @@ fn the_phase_window_is_an_aperture_of_docket_orbits() {
     let mut strokes = 0u64;
     loop {
         strokes += 1;
-        assert!(strokes <= aperture.saturating_mul(2).saturating_add(2), "a one-listing docket circuits every stroke: {:?}", k.docket_orbit());
+        let bound = aperture
+            .checked_mul(2)
+            .and_then(|n| n.checked_add(2))
+            .expect("two apertures fit the clock this test runs on");
+        assert!(strokes <= bound, "a one-listing docket circuits every stroke: {:?}", k.docket_orbit());
         k.court_stroke(one_stroke_transport);
         let c = k.docket_orbit().circuits();
         if c < aperture {

@@ -90,7 +90,13 @@ pub(crate) fn tell_peer_within(addr: &str, body: Vec<u8>, rtt_hint: u64) -> Opti
     let frame = Frame { lane: mycelium::network::wire::Stratum::Spatial, body };
     s.write_all(&frame.encode()?).ok()?;
     s.set_nonblocking(true).ok()?;
-    let stall = mycelium::physics::transport_deadline(rtt_hint) as usize;
+    // A deadline the ledger cannot count does not end the read; an
+    // unmeasured one has no deadline to spend either.
+    let stall = match mycelium::physics::transport_deadline(rtt_hint) {
+        mycelium::physics::Lambda::Strokes(n) => n as usize,
+        mycelium::physics::Lambda::BeyondTheLedger
+        | mycelium::physics::Lambda::Unmeasured => usize::MAX,
+    };
     let mut head = [0u8; 5];
     // THE ROUND TRIP IS MEASURED HERE (45.4, W9b): the strokes this kernel
     // spent between the write and the first byte back, one stroke per poll
@@ -174,7 +180,9 @@ pub(crate) fn exchange_due(last_asked: Option<u64>, k_now: u64, lambda: Option<u
     match (last_asked, lambda) {
         (None, _) => true,
         _ if own_roots_moved => true,
-        (Some(last), Some(l)) => k_now.saturating_sub(last) >= l,
+        // The last ask was at a K this court has passed, so the gap is
+        // exact; one recorded in the future is not yet due.
+        (Some(last), Some(l)) => k_now.checked_sub(last).is_some_and(|gap| gap >= l),
         (Some(_), None) => false,
     }
 }
@@ -195,12 +203,15 @@ pub(crate) fn rtt_floor(mesh: &Mesh, id: &[u8]) -> Option<u64> {
 /// `from_transport(rtt_floor, aperture_cycle())` to the hypha the Cover
 /// homes that chart to — the fibre on the lanes the listing's magnitude
 /// occupies, then room, then identity (16.11, `nerve::home`), this court a
-/// candidate at the room the kernel read. `None` where this node has
+/// candidate at the room the kernel read. `Unmeasured` where this node has
 /// measured no round trip to that hypha — a chart homed here among them,
 /// since a court measures no transport to itself — or where a mesh lock
 /// cannot be read: an unmeasured transport has no deadline
 /// (`transport_deadline`), and a citation does not lapse against a number
-/// nobody read.
+/// nobody read. `BeyondTheLedger` where the horizon is wider than any
+/// extent the ledger counts, which is arithmetic and says no listing has
+/// waited that long; the two are told apart so the eviction path reads one
+/// fact at a time (law 5).
 ///
 /// It resolved the home by the router's XOR distance on the listing's
 /// address bytes (Stage 11 I20), which is where a percept rendezvous is
@@ -212,18 +223,17 @@ pub(crate) fn withholding_lambda(
     chart: &mycelium::transducer::stalk::Invariant,
     mag: &[u64; 4],
     room: &[u64; 4],
-) -> Option<u64> {
+) -> mycelium::physics::Lambda {
     let (Ok(c), Ok(r), Ok(a)) = (mesh.cover.lock(), mesh.rooms.lock(), mesh.addrs.lock()) else {
-        return None;
+        return mycelium::physics::Lambda::Unmeasured;
     };
     let (_, home_addr) =
         mycelium::network::nerve::home(&c, chart, mag, &r, &a, Some((&mesh.vk, room, mesh.bind.as_str())));
     drop((c, r, a));
-    let floor = rtt_floor(mesh, home_addr.as_bytes())?;
-    Some(mycelium::physics::from_transport(
-        floor,
-        mycelium::physics::aperture_cycle() as u64,
-    ))
+    let Some(floor) = rtt_floor(mesh, home_addr.as_bytes()) else {
+        return mycelium::physics::Lambda::Unmeasured;
+    };
+    mycelium::physics::from_transport(floor, mycelium::physics::aperture_cycle() as u64)
 }
 
 /// A measured round trip in strokes enters the peer's window.
@@ -231,16 +241,28 @@ pub(crate) fn note_rtt_ok(mesh: &Mesh, id: impl AsRef<[u8]>, sample: u64) {
     let id = id.as_ref();
     let n = mycelium::physics::aperture_cycle().max(1) as usize;
     if let Ok(mut w) = mesh.rtt_window.lock() {
-        let mut ring = w.get(id).cloned().unwrap_or_default();
+        // A peer with no window yet has measured no round trips.
+        let mut ring = match w.get(id) {
+            Some(r) => r.clone(),
+            None => Vec::new(),
+        };
         ring.push(sample);
         if ring.len() > n {
             ring.remove(0);
         }
         w.insert(id, ring);
     }
-    let cap = rtt_floor(mesh, id)
-        .map(mycelium::physics::persist_dwell)
-        .unwrap_or_else(|| mycelium::physics::persist_dwell(sample));
+    // The measured floor where this peer has one, this sample's own dwell
+    // where it does not; a dwell beyond the ledger caps nothing.
+    let dwell = match rtt_floor(mesh, id) {
+        Some(floor) => mycelium::physics::persist_dwell(floor),
+        None => mycelium::physics::persist_dwell(sample),
+    };
+    let cap = match dwell {
+        mycelium::physics::Lambda::Strokes(n) => n,
+        mycelium::physics::Lambda::BeyondTheLedger
+        | mycelium::physics::Lambda::Unmeasured => u64::MAX,
+    };
     if let Ok(mut m) = mesh.rtt.lock() {
         m.insert(id, sample.min(cap));
     }
@@ -255,11 +277,19 @@ pub(crate) fn note_rtt_timeout(mesh: &Mesh, id: impl AsRef<[u8]>) {
     let Some(floor) = rtt_floor(mesh, id) else {
         return;
     };
-    let cap = mycelium::physics::persist_dwell(floor);
+    let cap = match mycelium::physics::persist_dwell(floor) {
+        mycelium::physics::Lambda::Strokes(n) => n,
+        mycelium::physics::Lambda::BeyondTheLedger
+        | mycelium::physics::Lambda::Unmeasured => u64::MAX,
+    };
     if let Ok(mut m) = mesh.rtt.lock() {
         let Some(cur) = m.get(id).copied() else {
             return;
         };
-        m.insert(id, cur.saturating_mul(ratio as u64).min(cap));
+        // A backed-off deadline that does not fit is not a deadline this
+        // peer was measured at; the standing reading holds (rule 11).
+        if let Some(backed) = cur.checked_mul(ratio as u64) {
+            m.insert(id, backed.min(cap));
+        }
     }
 }

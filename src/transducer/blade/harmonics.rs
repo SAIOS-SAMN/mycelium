@@ -94,6 +94,9 @@ mod tests {
         assert_eq!(a, b);
         assert_eq!(a.components, 1);
         assert_eq!(a.turns, 6);
-        assert_eq!(a.axes().unwrap_or_default(), crate::transducer::stalk::invariant(&l).0);
+        assert_eq!(
+            a.axes().expect("a measured harmonic reading has axes"),
+            crate::transducer::stalk::invariant(&l).0
+        );
     }
 }

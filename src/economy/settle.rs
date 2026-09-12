@@ -36,8 +36,12 @@ impl Treasury {
         if paid.iter().all(|&m| m == 0) {
             return paid;
         }
+        // The row is written for μ⃗ that MOVED: the debit is taken first,
+        // and a debit that does not go through transfers nothing (§6).
+        if !crate::economy::lanes_short(&self.debit(demander, paid)).is_empty() {
+            return [0; 4];
+        }
         self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid, k_step: anchor.0, receipt: anchor.1 });
-        self.debit(demander, paid);
         self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
         self.credit(discoverer, paid);
         paid
@@ -237,8 +241,16 @@ impl Treasury {
         if paid.iter().all(|&m| m == 0) {
             return (paid, short);
         }
+        // The burn row is written for μ⃗ that LEFT: the debit is taken
+        // first, and one that does not go through burns nothing (§6).
+        let unmoved = self.debit(voice, paid);
+        if !crate::economy::lanes_short(&unmoved).is_empty() {
+            // The lanes the balance could not cover are added to what the
+            // voice still owes; nothing burned on any lane.
+            let short: [u64; 4] = std::array::from_fn(|l| short[l].saturating_add(unmoved[l]));
+            return ([0; 4], short);
+        }
         self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
-        self.debit(voice, paid);
         (paid, short)
     }
 
@@ -266,8 +278,16 @@ impl Treasury {
         if paid.iter().all(|&m| m == 0) {
             return (paid, short);
         }
+        // The burn row is written for μ⃗ that LEFT: the debit is taken
+        // first, and one that does not go through burns nothing (§6).
+        let unmoved = self.debit(voice, paid);
+        if !crate::economy::lanes_short(&unmoved).is_empty() {
+            // The lanes the balance could not cover are added to what the
+            // voice still owes; nothing burned on any lane.
+            let short: [u64; 4] = std::array::from_fn(|l| short[l].saturating_add(unmoved[l]));
+            return ([0; 4], short);
+        }
         self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
-        self.debit(voice, paid);
         (paid, short)
     }
 

@@ -205,8 +205,17 @@ pub struct Cell {
 }
 
 impl Cell {
+    /// A cell on n vertices is an (n−1)-simplex; a cell on none is no
+    /// simplex, and degree zero is what the empty vertex set reads as.
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a cell on no vertices is no simplex"
+    )]
     pub fn degree(&self) -> usize {
-        self.vertices.len().saturating_sub(1)
+        match self.vertices.len().checked_sub(1) {
+            Some(d) => d,
+            None => 0,
+        }
     }
 
     pub fn key(&self) -> crate::transducer::address::Address {

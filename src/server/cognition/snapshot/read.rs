@@ -46,7 +46,7 @@ impl Kernel {
             // and deletes the reader for the old layout; a tag that is not
             // the tag refuses the tape whole, as the header already does.
             let np = read_u32(b, pos)? as usize;
-            if np > b.len().saturating_sub(*pos) / 6 {
+            if np > b.len().checked_sub(*pos)? / 6 {
                 return None; // untrusted count: len16 + elem len at least
             }
             for _ in 0..np {
@@ -74,7 +74,7 @@ impl Kernel {
             *pos += 32;
             let root = crate::chronometry::Root::read_opt(b, pos)?;
             let n = read_u32(b, pos)? as usize;
-            if n > b.len().saturating_sub(*pos) / 106 {
+            if n > b.len().checked_sub(*pos)? / 106 {
                 return None;
             }
             let mut receipts = Vec::with_capacity(n);
@@ -87,7 +87,7 @@ impl Kernel {
             // a chain of their own below their root.
             tag(b, pos, b"ARC1")?;
             let ne = read_u32(b, pos)? as usize;
-            if ne > b.len().saturating_sub(*pos) / 56 {
+            if ne > b.len().checked_sub(*pos)? / 56 {
                 return None;
             }
             let mut archive = Vec::with_capacity(ne);
@@ -102,7 +102,7 @@ impl Kernel {
                 let basis_len = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?) as usize;
                 *pos += 8;
                 let n = read_u32(b, pos)? as usize;
-                if n > b.len().saturating_sub(*pos) / 14 {
+                if n > b.len().checked_sub(*pos)? / 14 {
                     return None;
                 }
                 let mut rank = Rank { basis_gen: u64::MAX, basis_len, retire_gen: kernel.retire_gen, ..Rank::default() };
@@ -111,7 +111,7 @@ impl Kernel {
                     let closed = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
                     let m = read_u32(b, pos)? as usize;
-                    if m > b.len().saturating_sub(*pos) / 8 {
+                    if m > b.len().checked_sub(*pos)? / 8 {
                         return None;
                     }
                     let mut axes = Vec::with_capacity(m);
@@ -128,7 +128,7 @@ impl Kernel {
             {
                 let n = read_u32(b, pos)? as usize;
                 // addr ‖ μ⃗[4] ‖ tag u8 [‖ K u64 ‖ tu u64]; refuse a count that cannot fit.
-                if n > b.len().saturating_sub(*pos) / 50 {
+                if n > b.len().checked_sub(*pos)? / 50 {
                     return None;
                 }
                 for _ in 0..n {
@@ -272,7 +272,7 @@ impl Kernel {
             tag(b, pos, b"COC1")?;
             {
                 let n = read_u32(b, pos)? as usize;
-                if n > b.len().saturating_sub(*pos) {
+                if n > b.len().checked_sub(*pos)? {
                     return None;
                 }
                 for _ in 0..n {
@@ -284,7 +284,7 @@ impl Kernel {
             tag(b, pos, b"FLC1")?;
             {
                 let n = read_u32(b, pos)? as usize;
-                if n > b.len().saturating_sub(*pos) {
+                if n > b.len().checked_sub(*pos)? {
                     return None;
                 }
                 for _ in 0..n {
@@ -351,7 +351,7 @@ impl Kernel {
             tag(b, pos, b"CYC2")?;
             {
                 let n = read_u32(b, pos)? as usize;
-                if n > b.len().saturating_sub(*pos) {
+                if n > b.len().checked_sub(*pos)? {
                     return None;
                 }
                 for _ in 0..n {
@@ -377,7 +377,7 @@ impl Kernel {
                     // Chart index is rebuilt on next glue; hot row is enough.
                 }
                 let nc = read_u32(b, pos)? as usize;
-                if nc > b.len().saturating_sub(*pos) {
+                if nc > b.len().checked_sub(*pos)? {
                     return None;
                 }
                 for _ in 0..nc {
@@ -391,7 +391,7 @@ impl Kernel {
             tag(b, pos, b"SET1")?;
             {
                 let n = read_u32(b, pos)? as usize;
-                if n > b.len().saturating_sub(*pos) {
+                if n > b.len().checked_sub(*pos)? {
                     return None;
                 }
                 for _ in 0..n {
@@ -512,7 +512,13 @@ impl Kernel {
                 if self.deflations.get(&addr).is_some_and(|d| d.iter().any(|&x| x > 0)) {
                     return None;
                 }
-                let mag = self.book_elem(&addr).map(|p| p.magnitude()).unwrap_or_else(|| spoken.magnitude());
+                // The listing's own magnitude where the book still holds it,
+                // the spoken word's where it does not. Both are measured on
+                // a word; neither stands in for the other (rule 11).
+                let mag = match self.book_elem(&addr) {
+                    Some(p) => p.magnitude(),
+                    None => spoken.magnitude(),
+                };
                 mag.iter().any(|&x| x > 0).then(|| (Address::from(addr.clone()), mag))
             })
             .collect();

@@ -296,7 +296,7 @@ pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
     for &(r, c, h) in &a.cells {
         let p = element::carry_center(&v, r, c)?;
-        let (tr, tc) = element::cell_of(&p);
+        let (tr, tc) = element::cell_of(&p)?;
         let h2 = b.cells.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))).ok().map(|i| b.cells[i].2)?;
         let k = super::element::hue_pair_key(h, 0);
         match sigma.get(&k) {

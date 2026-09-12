@@ -13,7 +13,10 @@ use mycelium::transducer::stalk::Stalks;
 use mycelium::arc::Grid;
 
 fn grid(rows: &[&str]) -> Grid {
-    rows.iter().map(|r| r.bytes().map(|b| b.saturating_sub(b'0')).collect()).collect()
+    // A byte below '0' is not a hue; the row is the fixture and says so.
+    rows.iter()
+        .map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a grid row is digits")).collect())
+        .collect()
 }
 
 fn conn(sigma: &[(u8, u8)], rem: Vec<(i64, i64, u8, u8)>, mag: [u64; 4]) -> Element {

@@ -275,7 +275,13 @@ fn delta_cells(a: &Body, b: &Body) -> Vec<crate::transducer::sentence::Cell> {
     }
     let mut cells: Vec<crate::transducer::sentence::Cell> = Vec::new();
     for &(r, c, h) in &a.cells {
-        cells.push((r, c, h, after.get(&cell_pos_key(r, c)).copied().unwrap_or(0)));
+        // A cell the image does not hold is absent there, and hue 0 IS
+        // absence in this encoding.
+        let gone = match after.get(&cell_pos_key(r, c)) {
+            Some(h2) => *h2,
+            None => 0,
+        };
+        cells.push((r, c, h, gone));
     }
     for &(r, c, h) in &b.cells {
         if !before.contains(&cell_pos_key(r, c)) {

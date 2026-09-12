@@ -74,8 +74,15 @@ pub fn lanes_fallen(reading: &[LaneMove; 4]) -> Vec<usize> {
 /// never a verdict — the caller acts on the lanes that are short, and the
 /// refusal it writes names them. The floor at zero is the accounting
 /// floor of a deficit, not a saturation of a measurement.
+#[expect(
+    clippy::manual_unwrap_or_default,
+    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a lane that fits is short by nothing, the empty difference"
+)]
 pub fn shortfall(draw: &[u64; 4], room: &[u64; 4]) -> [u64; 4] {
-    std::array::from_fn(|l| draw[l].saturating_sub(room[l]))
+    std::array::from_fn(|l| match draw[l].checked_sub(room[l]) {
+        Some(short) => short,
+        None => 0,
+    })
 }
 
 /// The lanes that are SHORT in a shortfall reading, by index.

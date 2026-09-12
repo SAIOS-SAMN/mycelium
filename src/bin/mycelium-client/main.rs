@@ -111,7 +111,14 @@ fn main() {
     };
     let _ = std::fs::create_dir_all(&home);
     let key_path = home.join("voice.key");
-    let voice_key = HyphaKey::load_or_mint(key_path.to_str().unwrap_or("voice.key"));
+    // A home whose path is not UTF-8 names no key file: minting under the
+    // bare name would put the voice's key in the working directory, which
+    // is a different key from the one that home holds (rule 11).
+    let Some(key_name) = key_path.to_str() else {
+        eprintln!("mycelium-client: --home path is not UTF-8 and names no key file");
+        std::process::exit(2);
+    };
+    let voice_key = HyphaKey::load_or_mint(key_name);
     let voice = Voice::from_identity(voice_key.vk_bytes());
     let tag = voice.name().to_string();
     let mesh_rec = mesh::load_or_migrate_voice(&home, &voice_key);
@@ -171,7 +178,11 @@ fn main() {
         }
         stroke_n = stroke_n.saturating_add(1);
         for l in 0..4 {
-            m.dwell_remaining[l] = m.dwell_remaining[l].saturating_sub(1);
+            // A lane with no dwell left has none to spend: the reading of
+            // absence, not a floor.
+            if let Some(next) = m.dwell_remaining[l].checked_sub(1) {
+                m.dwell_remaining[l] = next;
+            }
         }
         let mut outcome = StrokeOutcome::default();
         let occluded =
@@ -219,7 +230,9 @@ fn main() {
         } = c;
         let Metabolism { dwell_remaining, k_step, .. } = m;
         let cycle = mycelium::physics::aperture_cycle() as u64;
-        if last_logged_k == u64::MAX || k_step != last_logged_k || stroke_n.saturating_sub(last_logged_n) >= cycle {
+        // The mark is a stroke this voice has passed, so the gap is exact.
+        let since = stroke_n.checked_sub(last_logged_n).is_some_and(|g| g >= cycle);
+        if last_logged_k == u64::MAX || k_step != last_logged_k || since {
             let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
             if moved == [false; 4] {
                 eprintln!(

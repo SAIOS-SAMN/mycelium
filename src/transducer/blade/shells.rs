@@ -169,6 +169,10 @@ pub fn magnified(cells: &[(i64, i64, u8)], k: i64) -> Vec<(i64, i64, u8)> {
 }
 
 /// REDUCED ×k — each k×k block condenses to one hue, or None if a block is mixed.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "rule 11, content extremum — hue 0 IS absence in this encoding, so a cell the occupancy does not hold reads as unoccupied rather than as a hue put there for it"
+)]
 pub fn reduced(cells: &[(i64, i64, u8)], k: i64) -> Option<Vec<(i64, i64, u8)>> {
     if k <= 1 {
         return Some(cells.to_vec());

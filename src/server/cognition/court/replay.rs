@@ -39,7 +39,11 @@ impl Kernel {
         // rewrite arm's `return false` included. The author is the court
         // whose verdict this is (`set_court_voice`, 47.2), and this court
         // itself when it is ruling on its own stroke.
-        let ruler = self.court_voice.unwrap_or(self.identity);
+        // This court when no other voice authored the verdict.
+        let ruler = match self.court_voice {
+            Some(v) => v,
+            None => self.identity,
+        };
         self.append_step(crate::chronometry::ActKind::Ruling, addr, ruler);
         if ruling == RULING_UPHELD {
             // Upheld on this court's own book: the word joins the ruled
@@ -143,7 +147,11 @@ impl Kernel {
     /// `None`. See `lapse_docket`.
     pub fn court_stroke(
         &mut self,
-        lambda: impl Fn(&crate::transducer::stalk::Invariant, &[u64; 4], &[u64; 4]) -> Option<u64>,
+        lambda: impl Fn(
+            &crate::transducer::stalk::Invariant,
+            &[u64; 4],
+            &[u64; 4],
+        ) -> crate::physics::Lambda,
     ) {
         let mut budget = self.physics.stroke();
         let mut keys: Vec<Vec<u8>> = Vec::new();
@@ -178,7 +186,13 @@ impl Kernel {
             let aperture = u64::from(crate::physics::aperture_cycle());
             // THE WINDOW, read once and used by both the phase and the
             // fold: one reading, two consumers (law 12).
-            let window = n / aperture != n.saturating_sub(u64::from(circuit)) / aperture;
+            // The circuit just completed is part of this count, so the
+            // difference is exact; a count smaller than the circuit it
+            // just closed is a broken counter and opens no window.
+            let Some(before) = n.checked_sub(u64::from(circuit)) else {
+                return;
+            };
+            let window = n / aperture != before / aperture;
             if window {
                 eprintln!("  court orbit docket {n} period {period}");
                 self.read_phase();
@@ -436,7 +450,12 @@ impl Kernel {
         _degree: u8,
         mut cover: Option<&mut crate::network::nerve::Cover>,
     ) {
-        let axes = class.class_axes().unwrap_or_else(|| vec![0]);
+        // A class with no axes of its own refines on the leading axis,
+        // which is where a chart with no coordinate sits.
+        let axes = match class.class_axes() {
+            Some(a) => a,
+            None => vec![0],
+        };
         let cx = self.complexes.get(&inv.key()).cloned();
         let coord_of = |addr: &[u8]| -> Vec<u64> {
             if let Some(c) = &cx {
@@ -460,17 +479,12 @@ impl Kernel {
             for lane in 0..4u8 {
                 let hyphas = cover.fiber(lane, inv);
                 for h in hyphas {
-                    let side = cx
-                        .as_ref()
-                        .and_then(|c| c.sections.get(&h))
-                        .map(|sec| {
-                            if sec.gamma.is_identity() {
-                                vec![0]
-                            } else {
-                                axes.clone()
-                            }
-                        })
-                        .unwrap_or_else(|| vec![0]);
+                    // A hypha the complex holds no section for sits on the
+                    // leading axis, as one whose gamma is the identity does.
+                    let side = match cx.as_ref().and_then(|c| c.sections.get(&h)) {
+                        Some(sec) if !sec.gamma.is_identity() => axes.clone(),
+                        Some(_) | None => vec![0],
+                    };
                     let new = crate::transducer::stalk::Stalks::refine_axes(inv, &side);
                     cover.rehome(lane, inv, &new, h);
                 }

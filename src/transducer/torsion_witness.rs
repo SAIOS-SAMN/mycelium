@@ -55,11 +55,22 @@ pub fn witness_cycle(thought: &Element, sigma: &[(u8, u8)], max: u32) -> Holonom
 }
 
 /// Witness every torsion cycle a thought holds — the bundle's monodromy record.
+/// How far a witness walks a cycle of period ℓ: twice round, and at least
+/// four steps so a period of one or two is still seen to close. A period
+/// whose double does not fit the carrier is walked as far as the carrier
+/// counts, which is further than any loop this reader holds.
+fn walk_of(period: u32) -> u32 {
+    match period.checked_mul(2) {
+        Some(twice) => twice.max(4),
+        None => u32::MAX,
+    }
+}
+
 pub fn witness_thought(thought: &Element) -> Vec<HolonomicLoopWitness> {
     thought
         .torsion()
         .iter()
-        .map(|c| witness_cycle(thought, &c.sigma, c.period.saturating_mul(2).max(4)))
+        .map(|c| witness_cycle(thought, &c.sigma, walk_of(c.period)))
         .collect()
 }
 
@@ -72,7 +83,7 @@ pub fn witness_stored(thought: &Element) -> Vec<(u32, HolonomicLoopWitness)> {
     thought
         .torsion()
         .iter()
-        .map(|c| (c.period, witness_cycle(thought, &c.sigma, c.period.saturating_mul(2).max(4))))
+        .map(|c| (c.period, witness_cycle(thought, &c.sigma, walk_of(c.period))))
         .collect()
 }
 

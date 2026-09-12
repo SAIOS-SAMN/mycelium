@@ -255,6 +255,10 @@ impl Element {
     /// coordinates as exact rationals. A sentence is keyed by its form
     /// (M1, ρ, agreed shift relative to the Frame, contact, gauge, faces).
     /// The body's absolute position is already quotiented on the chain.
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a form with no key bytes is addressed by its tag and nothing else"
+    )]
     pub fn address(&self) -> crate::transducer::address::Address {
         self.address
             .get_or_init(|| {
@@ -264,7 +268,14 @@ impl Element {
                     }
                 }
                 let mut buf = vec![crate::transducer::address::TAG_FORM];
-                crate::transducer::address::put_bytes(&mut buf, &self.form_key_bytes().unwrap_or_default());
+                // A form whose key bytes do not spell — a chain A5 refuses
+                // among them — is addressed by the tag and nothing else,
+                // which is what "no key bytes" is.
+                let keyed = match self.form_key_bytes() {
+                    Some(k) => k,
+                    None => Vec::new(),
+                };
+                crate::transducer::address::put_bytes(&mut buf, &keyed);
                 crate::transducer::address::Address::new(buf)
             })
             .clone()

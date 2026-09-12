@@ -59,7 +59,12 @@ pub fn nets_of(rows: &[Entry]) -> Result<Nets, &'static str> {
         if sign == 0 {
             continue;
         }
-        let mut n = net.get(&e.who).copied().unwrap_or([0; 4]);
+        // A party with no net yet nets nothing: the reading of absence on
+        // a keyed carrier (0.11c).
+        let mut n = match net.get(&e.who) {
+            Some(n) => *n,
+            None => [0; 4],
+        };
         for (t, &m) in n.iter_mut().zip(&e.mu) {
             *t += sign * i128::from(m);
         }

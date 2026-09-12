@@ -53,12 +53,23 @@ impl Kernel {
     /// before it in the same function has no sink.
     pub(crate) fn lapse_docket(
         &mut self,
-        lambda: impl Fn(&crate::transducer::stalk::Invariant, &[u64; 4], &[u64; 4]) -> Option<u64>,
+        lambda: impl Fn(
+            &crate::transducer::stalk::Invariant,
+            &[u64; 4],
+            &[u64; 4],
+        ) -> crate::physics::Lambda,
     ) {
         let now = self.height();
-        let room = self.lane_room();
+        // A room that cannot be read is a broken count, and no listing is
+        // lapsed against one.
+        let Some(room) = self.lane_room() else {
+            return;
+        };
         let room: [u64; 4] = std::array::from_fn(|l| room[l] as u64);
         let mut lapse: Vec<(Address, u64)> = Vec::new();
+        // Listings whose horizon is wider than the ledger counts. Reported
+        // once per sweep, never per listing.
+        let mut beyond = 0usize;
         let mut last: Option<Vec<u8>> = None;
         // HOW DEEP IS THE BACKLOG? Read once for the pass, against the
         // high watermark, and answered as the DEPTH — what the book holds
@@ -126,12 +137,29 @@ impl Kernel {
                 // stood at all, oldest reached first as the orbit walks it:
                 // the manifold is finite and the book is not entitled to
                 // exceed it whatever Λ says.
+                // AND THE TWO REFUSING ARMS ARE TWO FACTS (law 5).
+                // `Unmeasured` is no horizon read, and falls back to this
+                // court's own aperture as above. `BeyondTheLedger` is a
+                // horizon WIDER than any extent the ledger counts, which is
+                // arithmetic and not a failure: no listing has waited that
+                // long, so nothing lapses on it.
                 let lam = match (over, lambda(&chart, &listed.magnitude(), &room)) {
                     (true, _) => 0,
-                    (false, Some(l)) => l,
-                    (false, None) => crate::physics::aperture_cycle() as u64,
+                    (false, crate::physics::Lambda::Strokes(l)) => l,
+                    (false, crate::physics::Lambda::Unmeasured) => {
+                        crate::physics::aperture_cycle() as u64
+                    }
+                    (false, crate::physics::Lambda::BeyondTheLedger) => {
+                        beyond += 1;
+                        continue;
+                    }
                 };
-                let extent = now.saturating_sub(h0);
+                // The stamp is a height this court has passed, so the
+                // extent is exact; a stamp in the future measures no
+                // extent and nothing lapses on it.
+                let Some(extent) = now.checked_sub(h0) else {
+                    continue;
+                };
                 if extent >= lam {
                     lapse.push((Address::from(addr), extent));
                 }
@@ -155,6 +183,12 @@ impl Kernel {
                 addr[0],
                 addr[1]
             );
+        }
+        // 34.2: a horizon the ledger cannot count is a reading, and it is
+        // said once per sweep so the two refusing arms are told apart on
+        // the line as well as in the type.
+        if beyond > 0 {
+            eprintln!("  court lambda beyond the ledger listings {beyond} cycle {}", now);
         }
         for (addr, _) in lapse {
             let _ = self.treasury.revoke_award(&addr, false);

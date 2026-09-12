@@ -164,7 +164,8 @@ impl Complex {
     }
 
     pub fn get(&self, verts: &[Vec<u8>]) -> Option<&Cell> {
-        let d = verts.len().saturating_sub(1);
+        // No vertices name no cell.
+        let d = verts.len().checked_sub(1)?;
         self.degrees.get(d)?.get(&cell_key(verts))
     }
 

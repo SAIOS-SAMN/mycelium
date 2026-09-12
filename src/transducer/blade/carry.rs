@@ -224,7 +224,11 @@ pub fn coset_representative(coset: &[(Mv, Mv)]) -> Option<Mv> {
 pub fn carries(v: &Mv, a: &Shape, b: &Shape) -> bool {
     let lands = |v: &Mv, r: i64, c: i64, held: &[(i64, i64)]| -> bool {
         match crate::transducer::element::carry_center(v, r, c) {
-            Some(p) => held.binary_search(&crate::transducer::element::cell_of(&p)).is_ok(),
+            // A centre that lands off the lattice lands on no held cell.
+            Some(p) => match crate::transducer::element::cell_of(&p) {
+                Some(cell) => held.binary_search(&cell).is_ok(),
+                None => false,
+            },
             None => false,
         }
     };

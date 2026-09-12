@@ -373,11 +373,12 @@ impl Epigenome {
         if let Comprehension::Withheld { missing } = &heard {
             let missing = missing.clone();
             if let Some(da) = self.stand_dialect_at(e, k, now_tu) {
-                let old = self
-                    .dialect
-                    .get(&da)
-                    .map(|d| d.missing.clone())
-                    .unwrap_or_default();
+                // An entry the dialect does not hold is missing nothing:
+                // the reading of absence on a keyed carrier.
+                let old = match self.dialect.get(&da) {
+                    Some(d) => d.missing.clone(),
+                    None => Vec::new(),
+                };
                 for m in &old {
                     self.retract_waiter(m, &da);
                 }
@@ -398,7 +399,12 @@ impl Epigenome {
         // The court promotes: a syllabus word that is the same vertex as a
         // dialect entry moves that entry into the genome, carrying its uses.
         if let Some(da) = self.same_vertex_in_dialect(&e) {
-            let uses = self.dialect.get(&da).map(|d| d.uses).unwrap_or(1);
+            // A promotion is itself a use, so an entry the dialect no
+            // longer holds carries the one that promoted it.
+            let uses = match self.dialect.get(&da) {
+                Some(d) => d.uses,
+                None => 1,
+            };
             self.drop_dialect(&da);
             if let Some(i) = self.same_vertex_in_genome(&e) {
                 // Through `Held::update`: the fibre deepens and the form is
@@ -456,11 +462,11 @@ impl Epigenome {
             let Some(sentence) = self.dialect.get(&sa).map(|d| d.sentence.clone()) else {
                 continue;
             };
-            let old_missing = self
-                .dialect
-                .get(&sa)
-                .map(|d| d.missing.clone())
-                .unwrap_or_default();
+            // An entry the dialect does not hold is missing nothing.
+            let old_missing = match self.dialect.get(&sa) {
+                Some(d) => d.missing.clone(),
+                None => Vec::new(),
+            };
             let heard = self.comprehend(&sentence);
             match heard {
                 Comprehension::Withheld { missing } => {

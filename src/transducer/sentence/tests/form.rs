@@ -370,7 +370,7 @@ fn a_sentence_chart_leads_with_axis_two() {
     assert!(e.is_sentence());
     let inv = stalk::invariant_of(&e);
     assert_eq!(inv.0.first().copied(), Some(2), "leading axis 2");
-    assert!(inv.0.get(1).copied().unwrap_or(0) >= 2, "vertex count");
+    assert!(inv.0.get(1).is_some_and(|&n| n >= 2), "vertex count");
 }
 
 #[test]
@@ -421,7 +421,7 @@ fn axis_index_admit_is_linear_on_axis_is_constant() {
     let (i8, g8) = run(8);
     let (i32n, g32) = run(32);
     assert!(
-        i8 > 0 && i32n >= i8 && i32n <= i8.saturating_mul(5),
+        i8 > 0 && i32n >= i8 && i8.checked_mul(5).is_some_and(|cap| i32n <= cap),
         "4N admits cost ~4× N inserts: {i8} then {i32n}"
     );
     assert_eq!(g8, g32, "on_axis get cost is independent of N: {g8} vs {g32}");

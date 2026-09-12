@@ -111,10 +111,9 @@ assert!(whole.restore(&snap), "the tape as written restores");
 // Every section tag names a boundary the old reader would have stopped
 // at and called a restore.
 for tag in [b"KCH1", b"RNK1", b"DEF1", b"FLD1", b"BOK1", b"CAV1", b"CRT1", b"COC1", b"FLC1", b"CYC2", b"SET1"] {
-    let at = snap
-        .windows(4)
-        .position(|w| w == tag)
-        .unwrap_or_else(|| panic!("the tape carries {}", String::from_utf8_lossy(tag)));
+    let Some(at) = snap.windows(4).position(|w| w == tag) else {
+        panic!("the tape carries {}", String::from_utf8_lossy(tag))
+    };
     let mut booted = Kernel::new();
     assert!(
         !booted.restore(&snap[..at]),

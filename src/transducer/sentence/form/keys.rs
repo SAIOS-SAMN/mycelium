@@ -78,7 +78,9 @@ pub(crate) fn take_count(b: &[u8], pos: usize, n: usize, item: usize) -> Option<
     if item == 0 {
         return Some(n);
     }
-    let left = b.len().saturating_sub(pos);
+    // A position past the end of the tape is a malformed tape, not a tape
+    // with nothing left (rule 11).
+    let left = b.len().checked_sub(pos)?;
     if item != 0 && n > left / item {
         return None;
     }

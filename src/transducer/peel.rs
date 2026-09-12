@@ -198,6 +198,10 @@ pub fn peel_body(cells: &[(i64, i64, u8)]) -> Vec<Shell> {
 }
 
 /// `scale` is ((h_out, h_in), (w_out, w_in)).
+#[expect(
+    clippy::manual_unwrap_or_default,
+    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a body whose blocks do not condense to one hue reduces to nothing"
+)]
 pub fn peel_body_scaled(
     cells: &[(i64, i64, u8)],
     scale: Option<((usize, usize), (usize, usize))>,
@@ -249,7 +253,12 @@ pub fn peel_body_scaled(
         if let Some((kind, k)) = scale_factor(hn, hd).or_else(|| scale_factor(wn, wd)) {
             let scaled = match kind {
                 ShellKind::Magnified => crate::transducer::blade::magnified(cells, k),
-                ShellKind::Reduced => crate::transducer::blade::reduced(cells, k).unwrap_or_default(),
+                // A body whose blocks do not condense to one hue reduces
+                // to nothing, and no shell is pushed for it below.
+                ShellKind::Reduced => match crate::transducer::blade::reduced(cells, k) {
+                    Some(r) => r,
+                    None => Vec::new(),
+                },
                 _ => Vec::new(),
             };
             if !scaled.is_empty() {

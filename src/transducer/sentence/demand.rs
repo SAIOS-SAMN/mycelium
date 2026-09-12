@@ -155,7 +155,7 @@ impl Demand {
                 let image = crate::transducer::sentence::codec::take_inv(b, pos)?;
                 let n = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?) as usize;
                 *pos += 2;
-                if n > b.len().saturating_sub(*pos) / 2 {
+                if n > b.len().checked_sub(*pos)? / 2 {
                     return None;
                 }
                 let mut axes = Vec::with_capacity(n);

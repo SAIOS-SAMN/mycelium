@@ -108,7 +108,12 @@ pub(crate) fn pages(kernel: &Mutex<Kernel>, mesh: &Mesh, dest: &str, vk: [u8; 32
             Ok(mut k) => k.admit_backfill(&receipts),
             Err(_) => return false,
         };
-        let last = lo + n.saturating_sub(1) as u64;
+        // A page that admitted nothing spans no range; the line names the
+        // step it started at.
+        let last = match n.checked_sub(1) {
+            Some(span) => lo + span as u64,
+            None => lo,
+        };
         eprintln!(
             "  court receipt backfill {:02x}{:02x}… {lo}..{last} admitted {n}{}",
             who[0],

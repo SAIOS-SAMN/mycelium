@@ -309,10 +309,12 @@ impl Kernel {
         let new_card = nw.sections().is_empty() && !crate::transducer::sentence::carries_torsion(nw);
         let sib_card = sw.sections().is_empty() && !crate::transducer::sentence::carries_torsion(sw);
         let (base, absorbed) = if new_card && !sib_card { (sib.clone(), new.clone()) } else { (new.clone(), sib.clone()) };
-        let Some(g) = element::transition(
-            self.basis.get(&absorbed).map(|w| w.sub()).unwrap_or(&[]),
-            self.basis.get(&base).map(|w| w.sub()).unwrap_or(&[]),
-        ) else {
+        // A word the basis does not hold has no chain to transition
+        // between, and there is nothing to condense.
+        let (Some(from), Some(to)) = (self.basis.get(&absorbed), self.basis.get(&base)) else {
+            return new;
+        };
+        let Some(g) = element::transition(from.sub(), to.sub()) else {
             return new;
         };
         let Some(card) = self.basis.get(&absorbed).map(|w| w.element().clone()) else {
@@ -322,12 +324,18 @@ impl Kernel {
             return new;
         };
         self.basis_remove(&absorbed);
-        if self.word_mut(&base).map(|w| w.update(|e| e.attach(&card, &g))).unwrap_or(0) > 0 {
-            let after = self
-                .basis
-                .get(&base)
-                .map(|w| w.element().clone())
-                .unwrap_or_else(|| card.clone());
+        // A base the basis does not hold gains nothing.
+        let gained = match self.word_mut(&base) {
+            Some(w) => w.update(|e| e.attach(&card, &g)),
+            None => 0,
+        };
+        if gained > 0 {
+            // The base as it now stands; the card itself where the base
+            // left the basis between the attach and this read.
+            let after = match self.basis.get(&base) {
+                Some(w) => w.element().clone(),
+                None => card.clone(),
+            };
             let payload = crate::transducer::rewrite::RewritePayload::Condense {
                 sections: after.sections().to_vec(),
                 gauge: g.clone(),

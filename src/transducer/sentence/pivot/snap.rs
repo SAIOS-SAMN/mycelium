@@ -51,8 +51,12 @@ impl Snap {
 
 pub(crate) fn mu_deflation(mu: &crate::transducer::sentence::form::Mu) -> [u64; 4] {
     match mu {
+        // The DEFLATION a move measured: what each lane fell by, and
+        // nothing on a lane that did not fall. A lane that ROSE is not a
+        // deflation of zero — `lanes_risen` is where a rise is read — so
+        // the empty difference is the reading here.
         crate::transducer::sentence::form::Mu::Measured { before, after } => {
-            std::array::from_fn(|i| before[i].saturating_sub(after[i]))
+            crate::economy::shortfall(before, after)
         }
         crate::transducer::sentence::form::Mu::Unmeasured => [0; 4],
     }

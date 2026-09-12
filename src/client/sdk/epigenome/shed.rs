@@ -51,7 +51,10 @@ impl Epigenome {
             return None;
         }
         let first = *self.stroke_k.first()?;
-        Some(now_k.saturating_sub(first))
+        // The window's first stroke is a K this mind has passed, so the
+        // aperture is exact; a first stroke ahead of now is a broken clock
+        // and measures no aperture.
+        now_k.checked_sub(first)
     }
 
     /// Returns the addresses shed, so the carriers that hang off a dialect
@@ -63,7 +66,12 @@ impl Epigenome {
         let drop: Vec<Vec<u8>> = self
             .dialect
             .fiber(crate::network::nerve::ROOT)
-            .filter(|(a, d)| now_k.saturating_sub(d.last_used_k) > aperture_k && !glued(a))
+            // An entry last used at a K this mind has not reached is not
+            // idle; only what has stood past the aperture is shed.
+            .filter(|(a, d)| {
+                now_k.checked_sub(d.last_used_k).is_some_and(|idle| idle > aperture_k)
+                    && !glued(a)
+            })
             .map(|(a, _)| a)
             .collect();
         for a in &drop {

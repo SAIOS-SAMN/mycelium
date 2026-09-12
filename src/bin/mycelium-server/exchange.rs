@@ -181,7 +181,13 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
                     // 23.8, I36: a full reflex pool's deferral is impedance,
                     // not a root reply that failed to decode.
                     if crate::transport::is_deferred(&reply) {
-                        let n = deferred.get(addr.as_bytes()).copied().unwrap_or(0).saturating_add(1);
+                        // A peer that has deferred nothing yet has deferred
+                        // none: the reading of absence on a keyed carrier.
+                        let seen = match deferred.get(addr.as_bytes()) {
+                            Some(n) => *n,
+                            None => 0,
+                        };
+                        let n = seen.saturating_add(1);
                         deferred.insert(addr.as_bytes(), n);
                         if n % aperture == 0 {
                             eprintln!("  court nerve deferred by {addr} acts {n}");
@@ -342,9 +348,22 @@ impl Exchange {
                 // the poll filled the peers' reflex pools and nothing was
                 // admitted. A peer silent since boot has no Λ and is asked
                 // again when these roots move.
-                let lambda = crate::transport::rtt_floor(&mesh, &pid).map(|floor| {
-                    mycelium::physics::from_transport(floor, mycelium::physics::aperture_cycle() as u64)
-                });
+                // The exchange is due against a horizon the ledger counted:
+                // a peer with no measured round trip has none, and one
+                // beyond the ledger means no ask has waited that long.
+                let lambda = match crate::transport::rtt_floor(&mesh, &pid) {
+                    None => None,
+                    Some(floor) => {
+                        match mycelium::physics::from_transport(
+                            floor,
+                            mycelium::physics::aperture_cycle() as u64,
+                        ) {
+                            mycelium::physics::Lambda::Strokes(n) => Some(n),
+                            mycelium::physics::Lambda::BeyondTheLedger
+                            | mycelium::physics::Lambda::Unmeasured => None,
+                        }
+                    }
+                };
                 let last = mesh.asked_at.lock().ok().and_then(|a| a.get(&pid).copied());
                 let due = crate::transport::exchange_due(last, k_now, lambda, own_moved);
                 // 45.7, S13.3: the exchange to one peer is a carrier whose
@@ -418,7 +437,11 @@ impl Exchange {
                         if let Ok(mut g) = mesh.last_roots.lock() {
                             g.insert(vk_peer, now);
                         }
-                        let remote = dialogue::decode_digests_reply(&reply).unwrap_or_default();
+                        // A reply that does not decode names no strata,
+                        // and nothing is discordant against it.
+                        let Some(remote) = dialogue::decode_digests_reply(&reply) else {
+                            continue;
+                        };
                         let charts = {
                             let mut k = match kernel.lock() {
                                 Ok(g) => g,
@@ -464,7 +487,8 @@ impl Exchange {
                                     continue;
                                 }
                                 let mut named: Vec<mycelium::transducer::address::Address> = Vec::new();
-                                for w in dialogue::decode_syllabus_reply(&page).unwrap_or_default() {
+                                // A page that does not decode names nothing.
+                                for w in dialogue::decode_syllabus_reply(&page).into_iter().flatten() {
                                     let mut p = 0usize;
                                     if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&w, &mut p)
                                     {
@@ -538,9 +562,13 @@ impl Exchange {
                     None
                 };
                 if let Some((g, e)) = mine {
-                    let key = HyphaKey::load_or_mint(
-                        gen_home.join("hypha.key").to_str().unwrap_or("hypha.key"),
-                    );
+                    // A home whose path is not UTF-8 mints into the working
+                    // directory's default name; the key identifies the hypha.
+                    let key_path = gen_home.join("hypha.key");
+                    let key = HyphaKey::load_or_mint(match key_path.to_str() {
+                        Some(p) => p,
+                        None => "hypha.key",
+                    });
                     let mut rec = mycelium::network::mesh::load_or_migrate_hypha(&gen_home, &key);
                     if rec.genesis != Some(g) {
                         rec.genesis = Some(g);

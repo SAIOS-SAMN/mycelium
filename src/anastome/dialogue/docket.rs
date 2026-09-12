@@ -183,7 +183,7 @@ pub(crate) fn decode_dockets_at(body: &[u8]) -> Option<(Vec<Docket>, usize)> {
     let mut p = 0usize;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    if n > body.len().saturating_sub(p) / 74 {
+    if n > body.len().checked_sub(p)? / 74 {
         return None; // untrusted count: address + element + voices + μ⃗ pair + k
     }
     let mut out = Vec::with_capacity(n);
@@ -191,14 +191,14 @@ pub(crate) fn decode_dockets_at(body: &[u8]) -> Option<(Vec<Docket>, usize)> {
         let addr = take_addr(body, &mut p)?;
         let el = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
-        if el > body.len().saturating_sub(p) {
+        if el > body.len().checked_sub(p)? {
             return None;
         }
         let elem = body.get(p..p + el)?.to_vec();
         p += el;
         let nv = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
-        if nv > body.len().saturating_sub(p) / 32 {
+        if nv > body.len().checked_sub(p)? / 32 {
             return None;
         }
         let mut voices = Vec::with_capacity(nv);
@@ -280,7 +280,7 @@ pub fn decode_evidence_reply(body: &[u8]) -> Option<Vec<EvidenceItem>> {
     let mut p = 0usize;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    if n > body.len().saturating_sub(p) / 10 {
+    if n > body.len().checked_sub(p)? / 10 {
         return None; // untrusted count
     }
     let mut out = Vec::with_capacity(n);
@@ -288,7 +288,7 @@ pub fn decode_evidence_reply(body: &[u8]) -> Option<Vec<EvidenceItem>> {
         let addr = take_addr(body, &mut p)?;
         let nf = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
-        if nf > body.len().saturating_sub(p) / 16 {
+        if nf > body.len().checked_sub(p)? / 16 {
             return None;
         }
         let mut fp = Vec::with_capacity(nf);
@@ -300,7 +300,7 @@ pub fn decode_evidence_reply(body: &[u8]) -> Option<Vec<EvidenceItem>> {
         }
         let ns = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
-        if ns > body.len().saturating_sub(p) / 17 {
+        if ns > body.len().checked_sub(p)? / 17 {
             return None;
         }
         let mut scene = Vec::with_capacity(ns);

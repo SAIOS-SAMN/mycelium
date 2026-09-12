@@ -63,7 +63,12 @@ impl Kernel {
             put_addr(&mut out, addr);
             let c = closed.map_or(u64::MAX, |i| i as u64);
             out.extend_from_slice(&c.to_le_bytes());
-            let inv = rank.invariants.get(addr).map(|i| i.0.as_slice()).unwrap_or(&[]);
+            // A listing the reading holds no invariant for sits at the
+            // root stratum, which the empty axis list is.
+            let inv = match rank.invariants.get(addr) {
+                Some(i) => i.0.as_slice(),
+                None => &[],
+            };
             out.extend_from_slice(&(inv.len() as u32).to_le_bytes());
             for axis in inv {
                 out.extend_from_slice(&axis.to_le_bytes());

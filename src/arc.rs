@@ -177,8 +177,9 @@ pub struct Refined {
 /// frame). Total for all dims ≥ 1; equal frames yield exactly the planar
 /// delta. Support ≤ |K_out|.
 pub fn refine_delta(a: &Grid, b: &Grid) -> Option<Refined> {
-    let (hi, wi) = (a.len(), a.first().map(|r| r.len()).unwrap_or(0));
-    let (ho, wo) = (b.len(), b.first().map(|r| r.len()).unwrap_or(0));
+    // A grid with no rows has no width, which the refusal below reads.
+    let (hi, wi) = (a.len(), a.first().map_or(0, Vec::len));
+    let (ho, wo) = (b.len(), b.first().map_or(0, Vec::len));
     if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
         return None;
     }

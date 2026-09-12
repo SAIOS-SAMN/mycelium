@@ -10,14 +10,30 @@
 use super::*;
 
 impl Kernel {
-    pub fn lane_room(&self) -> [usize; 4] {
+    /// `None` where this court's own room cannot be read: a lane occupied
+    /// beyond its cover is a broken count, not a court with no room.
+    pub fn lane_room(&self) -> Option<[usize; 4]> {
         self.lane_room_of(&self.identity)
     }
 
-    pub fn lane_room_of(&self, voice: &[u8; 32]) -> [usize; 4] {
-        let occ = self.drawn.get(voice).copied().unwrap_or([0; 4]);
+    /// `None` on a lane occupied beyond its cover: that is a broken count,
+    /// as a lane releasing more than it holds is, and zero room would be
+    /// the invariant's failure read as a measurement (rule 11).
+    pub fn lane_room_of(&self, voice: &[u8; 32]) -> Option<[usize; 4]> {
+        // A voice that has drawn nothing occupies nothing: the reading of
+        // absence on a keyed carrier, exactly zero per lane by definition.
+        let occ = match self.drawn.get(voice) {
+            Some(d) => *d,
+            None => [0; 4],
+        };
         if let Some(cap) = self.lane_cap {
-            return std::array::from_fn(|l| cap[l].saturating_sub(occ[l] as usize));
+            // A lane drawn PAST its cap is a broken count: the draw was
+            // admitted against room that was not there.
+            let mut free = [0usize; 4];
+            for (l, f) in free.iter_mut().enumerate() {
+                *f = cap[l].checked_sub(occ[l] as usize)?;
+            }
+            return Some(free);
         }
         // E2, 26 as ruled 2026-09-10: a voice whose forms other voices
         // derive through has more ROOM to speak, per lane. It is added to
@@ -32,12 +48,15 @@ impl Kernel {
         let credit = self.use_credit(voice);
         let bond = match self.treasury.bond_of(voice) {
             Some(b) => b,
-            None if credit.iter().all(|&c| c == 0) => return [0; 4],
+            None if credit.iter().all(|&c| c == 0) => return Some([0; 4]),
             None => [0; 4],
         };
-        std::array::from_fn(|l| {
-            bond[l].saturating_add(credit[l]).saturating_sub(occ[l]) as usize
-        })
+        // A voice drawn BEYOND its cover is a broken count, as above.
+        let mut free = [0usize; 4];
+        for (l, f) in free.iter_mut().enumerate() {
+            *f = bond[l].saturating_add(credit[l]).checked_sub(occ[l])? as usize;
+        }
+        Some(free)
     }
 
     /// E2, 26 — WHAT THIS VOICE'S LANGUAGE EARNS IT. Lane-wise, over the
@@ -176,7 +195,12 @@ impl Kernel {
     /// Return a T-lease when the voice's quoted work settles or expires.
     pub fn release_t_lease(&mut self, voice: [u8; 32]) {
         if self.t_leases.remove(&voice).is_some() {
-            self.occupancy[2] = self.occupancy[2].saturating_sub(1);
+            // The lease was held, so the lane carries it; a lane at zero
+            // holding a lease is a broken count, and it stays at zero
+            // rather than wrapping (rule 11).
+            if let Some(next) = self.occupancy[2].checked_sub(1) {
+                self.occupancy[2] = next;
+            }
         }
     }
 
@@ -185,9 +209,11 @@ impl Kernel {
     }
 
     /// Test helper: remaining listing room, from each lane's own bond.
-    pub fn dynamic_lane_capacity(&self) -> [usize; 4] {
-        let room = self.lane_room();
-        std::array::from_fn(|l| room[l].saturating_add(self.occupancy[l] as usize))
+    pub fn dynamic_lane_capacity(&self) -> Option<[usize; 4]> {
+        let room = self.lane_room()?;
+        Some(std::array::from_fn(|l| {
+            room[l].saturating_add(self.occupancy[l] as usize)
+        }))
     }
 
     /// THE SHORTFALL of a draw against the uttering voice's room, per lane:
@@ -205,18 +231,35 @@ impl Kernel {
     /// bond. A lane the voice owes an unpaid recall on (`recall_short`)
     /// is short by the whole draw while its claim in flight on that lane
     /// stands. A test cap (`lane_cap`) reads as a bond.
-    pub(super) fn room_shortfall(&self, voice: &[u8; 32], draw: &[u64; 4]) -> [u64; 4] {
-        let occ = self.drawn.get(voice).copied().unwrap_or([0; 4]);
-        let owed = self.recall_short.get(voice).copied().unwrap_or([0; 4]);
+    /// `None` where the voice's room cannot be read — a lane occupied
+    /// beyond its cover — since a shortfall against a broken count is not
+    /// a shortfall.
+    pub(super) fn room_shortfall(&self, voice: &[u8; 32], draw: &[u64; 4]) -> Option<[u64; 4]> {
+        // A voice with no draw and no unpaid recall occupies and owes
+        // nothing: the reading of absence on a keyed carrier.
+        let occ = match self.drawn.get(voice) {
+            Some(d) => *d,
+            None => [0; 4],
+        };
+        let owed = match self.recall_short.get(voice) {
+            Some(o) => *o,
+            None => [0; 4],
+        };
         let bonded = self.lane_cap.is_some() || self.treasury.bond_of(voice).is_some();
-        let room = self.lane_room_of(voice);
-        std::array::from_fn(|l| match (draw[l], bonded) {
+        let room = self.lane_room_of(voice)?;
+        let room: [u64; 4] = std::array::from_fn(|l| room[l] as u64);
+        // A bonded voice is short by `shortfall(draw, room)` — the reading
+        // that already exists. The other arms are not shortfalls of a room
+        // at all: an unpaid recall or an unbonded claim in flight closes
+        // the lane, and the whole draw is what does not fit.
+        let against = crate::economy::shortfall(draw, &room);
+        Some(std::array::from_fn(|l| match (draw[l], bonded) {
             (0, _) => 0,
             (d, _) if owed[l] > 0 && occ[l] > 0 => d,
-            (d, true) => d.saturating_sub(room[l] as u64),
+            (_, true) => against[l],
             (d, false) if occ[l] > 0 => d,
             (_, false) => 0,
-        })
+        }))
     }
 
     /// A recall the voice could not pay (§3.1 as ruled, S13.15): the
@@ -228,7 +271,11 @@ impl Kernel {
         if crate::economy::lanes_short(short).is_empty() {
             return;
         }
-        let mut owed = self.recall_short.get(&voice).copied().unwrap_or([0; 4]);
+        // A voice with no recorded shortfall owes nothing: absence.
+        let mut owed = match self.recall_short.get(&voice) {
+            Some(o) => *o,
+            None => [0; 4],
+        };
         for l in crate::economy::lanes_short(short) {
             owed[l] = owed[l].saturating_add(short[l]);
         }

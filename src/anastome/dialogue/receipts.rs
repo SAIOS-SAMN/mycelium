@@ -123,7 +123,7 @@ pub fn decode_fetch(body: &[u8]) -> Option<([u8; 32], Vec<Chart>)> {
     let mut p = 33usize;
     let k = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    if k > body.len().saturating_sub(p) / 5 {
+    if k > body.len().checked_sub(p)? / 5 {
         return None;
     }
     let mut charts = Vec::with_capacity(k);
@@ -131,7 +131,7 @@ pub fn decode_fetch(body: &[u8]) -> Option<([u8; 32], Vec<Chart>)> {
         let inv = read_invariant(body, &mut p)?;
         let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
-        if n > body.len().saturating_sub(p) / 2 {
+        if n > body.len().checked_sub(p)? / 2 {
             return None;
         }
         let mut have = Vec::with_capacity(n);
@@ -233,7 +233,7 @@ pub fn encode_receipts_reply(receipts: &[crate::chronometry::KStepReceipt], budg
 pub fn decode_receipts_reply(body: &[u8]) -> Option<Vec<crate::chronometry::KStepReceipt>> {
     let n = u32::from_le_bytes(body.get(0..4)?.try_into().ok()?) as usize;
     let mut p = 4usize;
-    if n > body.len().saturating_sub(p) / crate::chronometry::KStepReceipt::MIN_TAPE {
+    if n > body.len().checked_sub(p)? / crate::chronometry::KStepReceipt::MIN_TAPE {
         return None;
     }
     let mut out = Vec::with_capacity(n);

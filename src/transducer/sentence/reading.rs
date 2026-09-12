@@ -79,7 +79,7 @@ pub fn vertex_cites(vertex: &Vertex, piece: &[Cell]) -> Option<HeldCite> {
     let v = blade::versor_carrying(&shape_in, &shape_out, &linear)?;
     for &(r, c, h) in &before {
         let p = element::carry_center(&v, r, c)?;
-        let (tr, tc) = element::cell_of(&p);
+        let (tr, tc) = element::cell_of(&p)?;
         let landed = *after.get(&cell_at_key(tr, tc))?;
         if landed != hue_under(gauge, h) {
             return None;

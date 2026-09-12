@@ -136,7 +136,7 @@ impl Contemplation {
             };
             let horizon = b.horizon.clone();
             let bundle = b.bundle.clone();
-            let t = self.now_k.saturating_sub(b.moved_k);
+            let t = super::idea::held_since(self.now_k, b.moved_k);
             if let Some(mut form) = b.form.clone() {
                 let _ = form.pivot_loop(bk, &horizon, crystal, budget, bundle.as_deref(), t);
                 if let Some(b) = self.bubbles.get_mut(bk) {
@@ -227,8 +227,15 @@ impl Contemplation {
                             self.torsion_merges += 1;
                             if let Some(merged) = self.merge(&vertices) {
                                 if let Some(b) = self.bubbles.get_mut(merged.as_bytes()) {
-                                    let a = vertices[0].clone();
-                                    let c = vertices.get(1).cloned().unwrap_or_else(|| a.clone());
+                                    // A cell of one vertex is a loop at
+                                    // that vertex: both ends are it.
+                                    let Some(a) = vertices.first().cloned() else {
+                                        continue;
+                                    };
+                                    let c = match vertices.get(1) {
+                                        Some(second) => second.clone(),
+                                        None => a.clone(),
+                                    };
                                     b.nerve.file_congruent(&a, &c, g, ell);
                                 }
                             }

@@ -107,7 +107,7 @@ impl Contemplation {
             if item == 0 {
                 return Some(n);
             }
-            if n > b.len().saturating_sub(pos) / item {
+            if n > b.len().checked_sub(pos)? / item {
                 return None;
             }
             Some(n)

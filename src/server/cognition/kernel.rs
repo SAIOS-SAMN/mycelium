@@ -673,7 +673,12 @@ impl Kernel {
     }
 
     pub fn height(&self) -> u64 {
-        self.height_override.unwrap_or_else(|| self.chain.head_height())
+        // A test may hold the height; otherwise it is the chain's own head
+        // (law 9), which is where the court's clock actually stands.
+        match self.height_override {
+            Some(h) => h,
+            None => self.chain.head_height(),
+        }
     }
 
     /// C6: test only. Time is not an input to a kernel (law 9).

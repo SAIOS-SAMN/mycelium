@@ -117,7 +117,7 @@ pub fn put_bytes(out: &mut Vec<u8>, b: &[u8]) {
 pub fn take_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
-    if n > b.len().saturating_sub(*p) {
+    if n > b.len().checked_sub(*p)? {
         return None;
     }
     let s = b.get(*p..*p + n)?.to_vec();
@@ -139,7 +139,7 @@ pub fn put_addr(out: &mut Vec<u8>, addr: impl AsRef<[u8]>) -> Option<()> {
 pub fn take_addr(b: &[u8], p: &mut usize) -> Option<Address> {
     let n = u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?) as usize;
     *p += 2;
-    if n > b.len().saturating_sub(*p) {
+    if n > b.len().checked_sub(*p)? {
         return None;
     }
     let s = b.get(*p..*p + n)?.to_vec();

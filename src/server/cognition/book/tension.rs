@@ -29,6 +29,10 @@ impl Kernel {
         }
     }
 
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a listing with no field yet holds an empty one, the reading of absence on a keyed carrier"
+    )]
     pub(crate) fn write_field(
         &mut self,
         addr: &[u8],
@@ -39,12 +43,13 @@ impl Kernel {
         after: &[u64; 4],
     ) {
         use crate::transducer::stalk::Closure;
-        let mut listing = self
-            .field
-            .get(addr)
-            .cloned()
-            .or_else(|| self.field_cold.remove(addr))
-            .unwrap_or_default();
+        // A listing with no field yet stands on an empty one; this is
+        // where its first entry is written.
+        let mut listing =
+            match self.field.get(addr).cloned().or_else(|| self.field_cold.remove(addr)) {
+                Some(f) => f,
+                None => ListingField::default(),
+            };
         for e in &mut listing.entries {
             if e.state.is_flat() {
                 continue;
@@ -97,7 +102,11 @@ impl Kernel {
             if was_flat && !now_flat {
                 listing.nonflat = listing.nonflat.saturating_add(1);
             } else if !was_flat && now_flat {
-                listing.nonflat = listing.nonflat.saturating_sub(1);
+                // The entry was counted as non-flat, so the count carries
+                // it; a count at zero holding one is broken and stays.
+                if let Some(next) = listing.nonflat.checked_sub(1) {
+                    listing.nonflat = next;
+                }
             }
             }
         } else {
@@ -119,7 +128,12 @@ impl Kernel {
             self.field_cold.insert(addr, listing);
             self.field.remove(addr);
         }
-        let mag = self.tension.get(addr).copied().unwrap_or(*after);
+        // A listing with no recorded tension stands at what this reading
+        // just measured on it.
+        let mag = match self.tension.get(addr) {
+            Some(t) => *t,
+            None => *after,
+        };
         let lanes = crate::network::nerve::occupied_lanes(&mag);
         // index: the four lanes
         for lane in &lanes {

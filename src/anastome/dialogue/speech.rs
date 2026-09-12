@@ -18,6 +18,10 @@ pub fn encode_refine(voice: &[u8; 32], word: impl AsRef<[u8]>, cites: &[CiteWire
     out
 }
 
+#[expect(
+    clippy::manual_unwrap_or_default,
+    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a frame whose cite section does not parse carries no cites"
+)]
 pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], Address, Vec<CiteWire>)> {
     if body.first() != Some(&ACT_REFINE) {
         return None;
@@ -25,7 +29,12 @@ pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], Address, Vec<CiteWire>)> 
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
     let mut p = 33usize;
     let word = take_addr(body, &mut p)?;
-    let cites = read_cites(body, &mut p).unwrap_or_default();
+    // A frame whose cite section does not parse carries no cites, and the
+    // speech stands on the word alone.
+    let cites = match read_cites(body, &mut p) {
+        Some(c) => c,
+        None => Vec::new(),
+    };
     Some((voice, word, cites))
 }
 
@@ -60,7 +69,12 @@ pub fn encode_speech_standing(
         .enumerate()
         .map(|(i, s)| Spoken {
             tape: s.clone(),
-            standing: standing.get(i).copied().unwrap_or(crate::transducer::stalk::Standing::Stood.as_u8()),
+            // A sentence the caller named no standing for is spoken as
+            // Stood, which is what speaking it claims.
+            standing: match standing.get(i) {
+                Some(s) => *s,
+                None => crate::transducer::stalk::Standing::Stood.as_u8(),
+            },
             contraction: None,
         })
         .collect();

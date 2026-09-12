@@ -56,7 +56,9 @@ let h = std::thread::spawn(move || {
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
     let mut body = vec![0u8; len.min(1 << 16)];
     let _ = s.read_exact(&mut body);
-    let reply = Frame { lane: Stratum::Spatial, body: vec![0] }.encode().unwrap_or_default();
+    let reply = Frame { lane: Stratum::Spatial, body: vec![0] }
+        .encode()
+        .expect("a one-byte body encodes");
     let _ = s.write_all(&reply);
 });
 let mut s = Session::open("127.0.0.1:1", Kernel::named("z-decay"));

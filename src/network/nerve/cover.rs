@@ -336,9 +336,12 @@ impl Cover {
 /// Room on one lane: that lane's bonded μ times the host's remaining
 /// strokes per unit bond on that lane, minus occupancy. Other lanes do
 /// not enter. A zero bond yields zero room.
-pub fn lane_cover_room(bond: u64, reserve: u64, occupancy: u64, spend: u64) -> u64 {
+/// `None` where the cover a bond buys does not fit the carrier, or where
+/// occupancy stands above it — a lane occupied beyond its cover is a
+/// broken count, not a lane with no room (rule 11).
+pub fn lane_cover_room(bond: u64, reserve: u64, occupancy: u64, spend: u64) -> Option<u64> {
     let per = (reserve / spend.max(1)).max(1);
-    bond.saturating_mul(per).saturating_sub(occupancy)
+    bond.checked_mul(per)?.checked_sub(occupancy)
 }
 
 /// Occupied lanes of a magnitude — every lane the word moves, not the first.
@@ -412,7 +415,12 @@ pub fn home(
         }
         fiber = Some(next);
     }
-    let fiber = fiber.unwrap_or_default();
+    // A magnitude occupying no lane has no fiber to intersect, and the
+    // empty set is what that reads as — not a fiber put there for it.
+    let fiber = match fiber {
+        Some(f) => f,
+        None => Keyed::new(),
+    };
     let mut best: Option<([u8; 32], String, [u64; 4])> = None;
     let consider = |best: &mut Option<([u8; 32], String, [u64; 4])>, id: [u8; 32], addr: String, room: [u64; 4]| {
         match best {
@@ -469,9 +477,12 @@ pub fn home(
             }
         }
     }
-    best.map(|(id, addr, _)| (id, addr)).unwrap_or_else(|| {
-        self_id
-            .map(|(id, _, a)| (*id, a.to_string()))
-            .unwrap_or(([0u8; 32], String::new()))
-    })
+    // The best hypha the cover named; failing that this node, which is a
+    // candidate at its own room; failing that no home at all, which is the
+    // empty identity and the empty address read out.
+    match (best, self_id) {
+        (Some((id, addr, _)), _) => (id, addr),
+        (None, Some((id, _, a))) => (*id, a.to_string()),
+        (None, None) => ([0u8; 32], String::new()),
+    }
 }

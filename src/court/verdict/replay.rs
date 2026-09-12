@@ -311,7 +311,8 @@ pub(crate) fn vertex_tape_and_moves(
                     if let Some(fam) = family {
                         for (x, _) in fam {
                             let cells: Vec<_> = family::perceive(x).into_iter().flat_map(|b| b.cells).collect();
-                            let frame = (x.len(), x.first().map(|r| r.len()).unwrap_or(0));
+                            // A grid with no rows has no width.
+                            let frame = (x.len(), x.first().map_or(0, Vec::len));
                             let anchor: Vec<(i64, i64)> = cells.iter().map(|&(r, c, _)| (r, c)).collect();
                             if matches!(family::orbit(v, &cells, &anchor, frame), OrbitEnd::NoOrbit) {
                                 return Some(REFUSE_ORBIT_STILL);

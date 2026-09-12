@@ -26,7 +26,12 @@ pub(crate) fn corpus_hash(dir: &Path) -> Option<[u8; 32]> {
     files.sort();
     let mut chunks: Vec<Vec<u8>> = Vec::new();
     for f in &files {
-        let rel = f.strip_prefix(dir).unwrap_or(f.as_path());
+        // A file outside the corpus directory is named by its whole path,
+        // which is the name it has.
+        let rel = match f.strip_prefix(dir) {
+            Ok(r) => r,
+            Err(_) => f.as_path(),
+        };
         chunks.push(rel.to_string_lossy().as_bytes().to_vec());
         chunks.push(std::fs::read(f).ok()?);
     }
@@ -119,13 +124,14 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
             eprintln!("[{tag}] corpus {} signature refused", corpus_dir.display());
             continue;
         }
-        let mut files: Vec<_> = std::fs::read_dir(&corpus_dir)
-            .map(|rd| {
-                rd.filter_map(|e| e.ok().map(|e| e.path()))
-                    .filter(|p| p.extension().is_some_and(|x| x == "json"))
-                    .collect()
-            })
-            .unwrap_or_default();
+        // A directory that will not open lists no files.
+        let mut files: Vec<_> = match std::fs::read_dir(&corpus_dir) {
+            Ok(rd) => rd
+                .filter_map(|e| e.ok().map(|e| e.path()))
+                .filter(|p| p.extension().is_some_and(|x| x == "json"))
+                .collect(),
+            Err(_) => Vec::new(),
+        };
         files.sort();
         let mut tasked = 0usize;
         for f in &files {
@@ -145,7 +151,9 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
             .or_else(|_| std::fs::read(format!("{state_path}.registry")))
             .ok()
             .and_then(|b| registry.lock().ok().map(|mut r| r.overlay(&b)))
-            .unwrap_or(0);
+            // No snapshot on disk, or a poisoned registry lock, restores
+            // no tasks.
+            .map_or(0, |n| n);
         let unsolved = match registry.lock() {
             Ok(reg) => reg.unsolved(),
             Err(_) => {

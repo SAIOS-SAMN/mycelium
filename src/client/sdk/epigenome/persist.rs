@@ -31,7 +31,10 @@ impl Epigenome {
         let Some(n) = bytes.get(4..8).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) else {
             return false;
         };
-        if n > bytes.len().saturating_sub(8) / 5 {
+        let Some(left) = bytes.len().checked_sub(8) else {
+            return false;
+        };
+        if n > left / 5 {
             return false; // untrusted count vs remaining bytes
         }
         let mut genome = Vec::with_capacity(n);
@@ -43,7 +46,12 @@ impl Epigenome {
                 break;
             };
             pos += 4;
-            if len > bytes.len().saturating_sub(pos) {
+            // A position past the end is a malformed tape; the read stops
+            // there rather than reading a length against nothing.
+            let Some(left) = bytes.len().checked_sub(pos) else {
+                break;
+            };
+            if len > left {
                 break;
             }
             let slice = &bytes[pos..pos + len];

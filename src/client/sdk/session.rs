@@ -105,7 +105,12 @@ impl Session {
         let Ok(body) = self.exchange_at(addr, dialogue::encode_peers_request(&self.kernel.voice)) else {
             return;
         };
-        for a in dialogue::decode_peers_reply(&body).unwrap_or_default() {
+        // A reply that does not decode names no peers, and none are
+        // admitted from it (rule 11).
+        let Some(peers) = dialogue::decode_peers_reply(&body) else {
+            return;
+        };
+        for a in peers {
             if !self.peers.contains(a.as_bytes()) {
                 self.peers.insert(a.as_bytes(), a.clone());
             }
@@ -132,6 +137,10 @@ impl Session {
 
     /// Home a word by its chart and magnitude. Occluded edges drop out of
     /// the fiber so incidence falls.
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a router that knows no hypha names none, and the empty destination is that reading"
+    )]
     pub fn route_chart(&self, inv: &crate::transducer::stalk::Invariant, mag: &[u64; 4]) -> String {
         use crate::network::nerve::home;
         let cover = self.cover.borrow();
@@ -148,8 +157,13 @@ impl Session {
         }
         let (_, dest) = home(&cover, inv, mag, &open_rooms, &addrs, None);
         if dest.is_empty() {
-            // Empty cover: XOR-closest known hypha to the chart key, not the seed.
-            self.route(inv.key().as_bytes()).unwrap_or_default()
+            // Empty cover: XOR-closest known hypha to the chart key, not
+            // the seed. A router that knows no hypha names none, and the
+            // empty destination is that reading.
+            match self.route(inv.key().as_bytes()) {
+                Some(d) => d,
+                None => String::new(),
+            }
         } else {
             dest
         }
@@ -273,9 +287,20 @@ impl Session {
         if w.len() > n {
             w.remove(0);
         }
-        let floor = w.iter().copied().min().unwrap_or(sample);
+        // The window holds this sample, so it has a floor; a window that
+        // somehow holds none, or a dwell that does not fit, records no
+        // reading rather than one it did not take (rule 11).
+        let (Some(floor), _) = (w.iter().copied().min(), ()) else {
+            return;
+        };
         windows.insert(addr.as_bytes(), w);
-        let cap = crate::physics::persist_dwell(floor);
+        // A dwell the ledger cannot count caps nothing, and the sample
+        // stands as measured.
+        let cap = match crate::physics::persist_dwell(floor) {
+            crate::physics::Lambda::Strokes(n) => n,
+            crate::physics::Lambda::BeyondTheLedger => u64::MAX,
+            crate::physics::Lambda::Unmeasured => return,
+        };
         self.rtt.borrow_mut().insert(addr.as_bytes(), sample.min(cap));
     }
 
@@ -293,15 +318,29 @@ impl Session {
             return;
         };
         let ratio = crate::physics::aperture_cycle().max(2) as u64;
-        let cap = crate::physics::persist_dwell(floor);
+        // As above: a dwell beyond the ledger caps nothing.
+        let cap = match crate::physics::persist_dwell(floor) {
+            crate::physics::Lambda::Strokes(n) => n,
+            crate::physics::Lambda::BeyondTheLedger => u64::MAX,
+            crate::physics::Lambda::Unmeasured => return,
+        };
         let mut m = self.rtt.borrow_mut();
+        // A backed-off dwell that does not fit is not a dwell this peer
+        // was measured at; the standing reading holds (rule 11).
         if let Some(cur) = m.get(addr.as_bytes()).copied() {
-            m.insert(addr.as_bytes(), cur.saturating_mul(ratio).min(cap));
+            if let Some(backed) = cur.checked_mul(ratio) {
+                m.insert(addr.as_bytes(), backed.min(cap));
+            }
         }
     }
 
     pub(crate) fn z_at(&self, addr: &str) -> u64 {
-        self.resistance.borrow().get(addr.as_bytes()).copied().unwrap_or(0)
+        // A peer the carrier has no resistance for has met none: the
+        // reading of absence (0.11c).
+        match self.resistance.borrow().get(addr.as_bytes()) {
+            Some(z) => *z,
+            None => 0,
+        }
     }
 
     pub(crate) fn occluded_at(&self, addr: &str) -> bool {
@@ -361,11 +400,15 @@ impl Session {
             // the lanes the judge named (23.8, S13.4).
             Err(e) if e.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote {
                 height: 0,
-                surface: e
+                // A would-block that carries no deferral names no lanes,
+                // and no surface is read off one.
+                surface: match e
                     .get_ref()
                     .and_then(|inner| inner.downcast_ref::<Deferral>())
-                    .map(|d| d.lanes)
-                    .unwrap_or([0; 4]),
+                {
+                    Some(d) => d.lanes,
+                    None => [0; 4],
+                },
                 k: 0,
                 clusters: Vec::new(),
             }),
@@ -418,6 +461,10 @@ impl Session {
 
     /// One exchange with a named hypha on the nerve; the impedance is
     /// measured on the wire as a whole.
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a deferral whose lanes the reply does not name defers on no lane"
+    )]
     pub(crate) fn exchange_at(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let out = self.exchange_inner(addr, act_body);
         // A full reflex pool answers every act with the deferral shape (the
@@ -439,13 +486,21 @@ impl Session {
                         r.fiber(crate::network::nerve::ROOT).map(|(k, _)| k).collect();
                     for k in all {
                         if let Some(z) = r.get_mut(&k) {
-                            *z = z.saturating_sub(1);
+                            // A hypha at no resistance decays to none: the
+                            // reading of absence, not a floor.
+                            if let Some(next) = z.checked_sub(1) {
+                                *z = next;
+                            }
                         }
                     }
                     r.insert(addr.as_bytes(), 0);
                 }
                 _ => {
-                    let cur = r.get(addr.as_bytes()).copied().unwrap_or(0);
+                    // A peer with no recorded resistance has met none.
+                    let cur = match r.get(addr.as_bytes()) {
+                        Some(z) => *z,
+                        None => 0,
+                    };
                     r.insert(addr.as_bytes(), cur + 1);
                 }
             }
@@ -457,7 +512,14 @@ impl Session {
             let lanes = out.as_ref().ok().and_then(|b| dialogue::deferral_lanes(b, code));
             return Err(io::Error::new(
                 io::ErrorKind::WouldBlock,
-                Deferral { lanes: lanes.unwrap_or([0; 4]) },
+                // A deferral whose lanes the reply does not name defers on
+                // no lane; the arm dwells on nothing it was not told.
+                Deferral {
+                    lanes: match lanes {
+                        Some(l) => l,
+                        None => [0; 4],
+                    },
+                },
             ));
         }
         out

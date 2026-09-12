@@ -110,7 +110,7 @@ impl Era {
     pub fn read_payload(b: &[u8], pos: &mut usize) -> Option<Vec<KStepReceipt>> {
         let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
         *pos += 4;
-        if n > b.len().saturating_sub(*pos) / KStepReceipt::MIN_TAPE {
+        if n > b.len().checked_sub(*pos)? / KStepReceipt::MIN_TAPE {
             return None;
         }
         let mut out = Vec::with_capacity(n);

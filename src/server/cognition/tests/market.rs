@@ -135,7 +135,7 @@ let listed = k
     .expect("listed");
 let want_chart = crate::transducer::stalk::invariant_of(&listed);
 let want_mag = listed.magnitude();
-let room = k.lane_room();
+let room = k.lane_room().expect("this court's room reads");
 let want_room: [u64; 4] = std::array::from_fn(|l| room[l] as u64);
 // INSIDE this court's own horizon, so what the pass proves is WHAT Λ IS
 // ASKED WITH and not what an unmeasured answer does with it: past the
@@ -146,7 +146,7 @@ k.set_height(1);
 let asked = std::cell::RefCell::new(Vec::new());
 k.court_stroke(|chart, mag, room| {
     asked.borrow_mut().push((chart.clone(), *mag, *room));
-    None
+    crate::physics::Lambda::Unmeasured
 });
 let asked = asked.into_inner();
 assert_eq!(asked.len(), 1, "Λ is asked once, for the one pending listing: {asked:?}");
@@ -308,7 +308,10 @@ assert!(k.intake(&chain, &frame_of(&a, &b)), "the corpus intake lists the body")
 let target = k.quote().1[0].0.address();
 let listed = k.quote().1[0].0.sub().to_vec();
 let rem = vec![(0, 1, 1u8, 0u8)];
-let before = k.tension.get(&target).copied().unwrap_or_else(|| k.quote().1[0].0.magnitude());
+let before = match k.tension.get(&target) {
+    Some(t) => *t,
+    None => k.quote().1[0].0.magnitude(),
+};
 let after = crate::transducer::element::measure_lanes(&rem);
 assert_ne!(after, before, "the residual is a proper descent");
 let (code, _, remaining) = k.settle_probe([3; 32], &target, rem.clone(), &[], false);

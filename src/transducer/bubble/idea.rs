@@ -23,6 +23,21 @@ pub(crate) fn rem_cell_key(r: i64, c: i64) -> crate::transducer::address::Addres
     crate::transducer::address::Address::new(buf)
 }
 
+/// Receipts since a bubble's charts last moved, on the kernel's own K
+/// (law 9). The mark is a K this clock has already passed, so the extent
+/// is exact; a mark in the future is a broken clock and measures no
+/// extent (rule 11).
+#[expect(
+    clippy::manual_unwrap_or_default,
+    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a mark in the future measures no extent"
+)]
+pub(crate) fn held_since(now: u64, moved_k: u64) -> u64 {
+    match now.checked_sub(moved_k) {
+        Some(extent) => extent,
+        None => 0,
+    }
+}
+
 /// The address of a chain A5 has accepted. Total: the type is the proof,
 /// so there is nothing here to refuse.
 pub(crate) fn remainder_addr(
@@ -189,7 +204,7 @@ impl Bubble {
         // on every dirty idea under the budget (25.1); the budget is the
         // only thing that stops it.
         self.potential = element::measure_lanes(&rem_cells_of(self));
-        self.potential[2] = now.saturating_sub(self.moved_k);
+        self.potential[2] = held_since(now, self.moved_k);
         if budget.remaining() == 0 {
             return (0, [0; 4]);
         }
@@ -267,7 +282,7 @@ impl Bubble {
         if budget.remaining() > 0 {
             if let Some(mut form) = self.form.clone() {
                 let key = self.key();
-                let t = now.saturating_sub(self.moved_k);
+                let t = held_since(now, self.moved_k);
                 let snaps = form.pivot_loop(
                     key,
                     &self.horizon,

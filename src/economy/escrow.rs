@@ -62,9 +62,19 @@ impl Treasury {
             return paid;
         }
         let addr = addr.as_ref();
-        self.debit(payer, paid);
+        // `paid` is clamped to the balance above, so this holds; a debit
+        // that does not escrows nothing rather than funding an award the
+        // payer did not pay for (§6).
+        if !crate::economy::lanes_short(&self.debit(payer, paid)).is_empty() {
+            return [0; 4];
+        }
         self.escrow_award(addr, vec![payer], paid, anchor);
-        let prev = self.funded.get(addr).map(|(_, m)| *m).unwrap_or([0; 4]);
+        // An address nothing has funded yet is funded by nothing: the
+        // reading of absence on a keyed carrier (0.11c).
+        let prev = match self.funded.get(addr) {
+            Some((_, m)) => *m,
+            None => [0; 4],
+        };
         let next: [u64; 4] = std::array::from_fn(|l| prev[l] + paid[l]);
         self.funded.insert(addr, (payer, next));
         self.write(Entry { kind: Kind::Escrow, who: payer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
@@ -143,11 +153,12 @@ impl Treasury {
         if super::lanes_short(&mu).is_empty() {
             return;
         }
-        let anchor = self
-            .escrowed
-            .get(addr)
-            .map(|row| row.anchor)
-            .unwrap_or((0, [0; 32]));
+        // An address with no escrow row was anchored at no step and no
+        // receipt, which is the empty anchor read out.
+        let anchor = match self.escrowed.get(addr) {
+            Some(row) => row.anchor,
+            None => (0, [0; 32]),
+        };
         self.credit(payer, mu);
         self.write(Entry { kind, who: payer, mu, k_step: anchor.0, receipt: anchor.1 });
     }
@@ -263,7 +274,11 @@ impl Treasury {
 
     #[cfg(test)]
     pub fn escrowed_remaining(&self, addr: &[u8]) -> [u64; 4] {
-        self.escrowed.get(addr).map(|row| row.mu).unwrap_or([0; 4])
+        // An address with no escrow row holds nothing in escrow.
+        match self.escrowed.get(addr) {
+            Some(row) => row.mu,
+            None => [0; 4],
+        }
     }
 
 }

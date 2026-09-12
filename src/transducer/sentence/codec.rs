@@ -72,15 +72,17 @@ pub(crate) fn word_from_form_bytes(
     Some((w, c))
 }
 
-fn bytes_left(b: &[u8], pos: usize) -> usize {
-    b.len().saturating_sub(pos)
+/// `None` where the position is past the end: that is a malformed tape,
+/// not a tape with nothing left (rule 11).
+fn bytes_left(b: &[u8], pos: usize) -> Option<usize> {
+    b.len().checked_sub(pos)
 }
 
 pub(crate) fn take_count(b: &[u8], pos: usize, n: usize, item: usize) -> Option<usize> {
     if item == 0 {
         return Some(n);
     }
-    if n > bytes_left(b, pos) / item {
+    if n > bytes_left(b, pos)? / item {
         return None;
     }
     Some(n)

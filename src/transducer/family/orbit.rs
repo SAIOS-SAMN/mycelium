@@ -98,7 +98,13 @@ pub fn orbit(v: &Vertex, x_cells: &[Cell3], anchor: &[(i64, i64)], frame: (usize
     let state_key = |cs: &[Cell3]| -> Vec<u8> {
         let mut cells = cs.to_vec();
         cells.sort_unstable();
-        let mut buf = Vec::with_capacity(4 + cells.len().saturating_mul(17));
+        // A reservation, not a bound: a cell count whose byte width does
+        // not fit the carrier is reserved for as it is written instead.
+        let reserve = match cells.len().checked_mul(17) {
+            Some(n) => 4 + n,
+            None => 4,
+        };
+        let mut buf = Vec::with_capacity(reserve);
         buf.extend_from_slice(&(cells.len() as u32).to_le_bytes());
         for &(r, c, h) in &cells {
             buf.extend_from_slice(&r.to_le_bytes());

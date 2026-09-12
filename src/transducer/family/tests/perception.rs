@@ -226,7 +226,7 @@ let w = run(8);
 let w4 = run(32);
 assert!(w > 0 && w4 > w, "work grows with bodies, got {w} then {w4}");
 assert!(
-    w4 <= w.saturating_mul(5),
+    w.checked_mul(5).is_some_and(|cap| w4 <= cap),
     "4N work is ~4× N, not n²: {w} vs {w4}"
 );
 }
@@ -275,7 +275,7 @@ assert_eq!(Form::loops_of(&run_faces(8), 9).len(), 7, "eight occupants carry sev
 assert_eq!(Form::loops_of(&run_faces(32), 33).len(), 31, "and thirty-two carry thirty-one, not 496");
 let (_, _, w) = run(8);
 assert!(
-    w4 <= w.saturating_mul(5),
+    w.checked_mul(5).is_some_and(|cap| w4 <= cap),
     "the work is counted and stays linear in the occupants: {w} vs {w4}"
 );
 }

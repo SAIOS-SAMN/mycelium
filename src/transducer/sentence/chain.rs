@@ -332,7 +332,7 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Keyed<usize> {
         .iter()
         .filter_map(|&(wr, wc)| {
             let p = element::carry_center(v, wr, wc)?;
-            let (tr, tc) = element::cell_of(&p);
+            let (tr, tc) = element::cell_of(&p)?;
             let t = at.get(&cell_at_key(tr, tc))?;
             Some((t.2, t.3))
         })
@@ -346,7 +346,8 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Keyed<usize> {
         let Some(assignment) = held.get(k) else { continue };
         let ok = pos.iter().zip(assignment).all(|(&(wr, wc), &(wb, wa))| {
             let Some(p) = element::carry_center(v, wr, wc) else { return true };
-            let (tr, tc) = element::cell_of(&p);
+            // A centre off the lattice lands on no cell to disagree with.
+            let Some((tr, tc)) = element::cell_of(&p) else { return true };
             match at.get(&cell_at_key(tr, tc)) {
                 Some(t) => (t.2, t.3) == (wb, wa),
                 None => true,
@@ -381,7 +382,7 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Ve
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
             let Some(p) = element::carry_center(v, wr, wc) else { continue };
-            let (tr, tc) = element::cell_of(&p);
+            let Some((tr, tc)) = element::cell_of(&p) else { continue };
             let k = cell_at_key(tr, tc);
             if at.get(&k).is_none() {
                 continue;

@@ -302,7 +302,12 @@ impl Rotor {
     /// exactly, never a hash fragment.
     pub fn class_axes(&self) -> Option<Vec<u64>> {
         let n = self.normalised();
-        let w = n.weight().unwrap_or_else(Q::one);
+        // A rotor with no weight of its own is at unit weight, which is
+        // what a normalised rotor without one carries.
+        let w = match n.weight() {
+            Some(w) => w,
+            None => Q::one(),
+        };
         let a = n.c[0].clone();
         let p = n.c[15].clone();
         let mut axes = vec![2u64, u64::from(a.is_negative()), u64::from(p.is_negative())];

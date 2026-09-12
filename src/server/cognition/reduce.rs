@@ -107,11 +107,13 @@ pub fn rank_over(
         }
         true => {
             for (addr, (p, _)) in pending.fiber(crate::network::nerve::ROOT) {
-                let inv = prior
-                    .invariants
-                    .get(&addr)
-                    .cloned()
-                    .unwrap_or_else(|| crate::transducer::stalk::invariant_of(p));
+                // The prior reading where it holds this listing; the
+                // listing's own invariant where it does not. Both are
+                // measured on the word.
+                let inv = match prior.invariants.get(&addr) {
+                    Some(i) => i.clone(),
+                    None => crate::transducer::stalk::invariant_of(p),
+                };
                 invariants.insert(&addr, inv);
                 match prior.closure.get(&addr) {
                     Some(c) => {

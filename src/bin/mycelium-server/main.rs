@@ -311,7 +311,9 @@ fn main() {
     exchange::spawn_nerve(mesh.clone(), nerve_rx);
     // The roots this book already holds settled are announced to the nerve
     // at boot, so a family proven here is re-spoken on every peer's book.
-    let settled = registry.lock().map(|r| r.settled_ids()).unwrap_or_default();
+    // A poisoned registry lock is no reading of the book; no root is
+    // announced from one.
+    let settled = registry.lock().map_or_else(|_| Vec::new(), |r| r.settled_ids());
     let boot_stamp = 0u64;
     for t in &settled {
         let hear = {
@@ -334,7 +336,8 @@ fn main() {
     // behind deep projection. The bound is the machine's parallelism; a full
     // queue drops the send — speculation is optional, service is not.
     let (synth_tx, synth_rx) = std::sync::mpsc::sync_channel::<mycelium::synthesis::Deliberation>(
-        std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1),
+        // A host that does not say how many cores it has is one core.
+        std::thread::available_parallelism().map_or(1, |n| n.get()),
     );
     {
         let kernel = Arc::clone(&kernel);
@@ -348,9 +351,18 @@ fn main() {
             {
                 match work {
                     mycelium::synthesis::Deliberation::Adopt(ratifier, word) => {
-                        let before = kernel.lock().map(|k| k.volume()).unwrap_or_default();
+                        // A poisoned kernel lock is no reading of the
+                        // volume; the two readings are taken or the line
+                        // is not written.
+                        let (Ok(before), Ok(())) =
+                            (kernel.lock().map(|k| k.volume()), Ok::<(), ()>(()))
+                        else {
+                            continue;
+                        };
                         let _ = mycelium::synthesis::adopt(&kernel, ratifier, &word);
-                        let after = kernel.lock().map(|k| k.volume()).unwrap_or_default();
+                        let Ok(after) = kernel.lock().map(|k| k.volume()) else {
+                            continue;
+                        };
                         if after != before {
                             eprintln!(
                                 "  [{}] adopt {:02x}{:02x}… volume {before:?} → {after:?} (court {:02x})",
@@ -372,7 +384,8 @@ fn main() {
     // over the language snapshot with no lock held — so the listener only
     // accepts and dispatches. Sized by the machine's parallelism; a full
     // pool defers the demand (the honest "come back", which clients retry).
-    let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+    // A host that does not say how many cores it has is one core.
+    let cores = std::thread::available_parallelism().map_or(1, |n| n.get());
     let (reflex_tx, reflex_rx) = std::sync::mpsc::sync_channel::<ReflexJob>(cores);
     let reflex_rx = Arc::new(Mutex::new(reflex_rx));
     let door = Door {

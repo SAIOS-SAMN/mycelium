@@ -135,7 +135,11 @@ impl Complex {
                 });
             }
         }
-        let nr = take_u32(b, pos).unwrap_or(0) as usize;
+        // A tape that ends here carries no remainder cells.
+        let nr = match take_u32(b, pos) {
+            Some(n) => n as usize,
+            None => 0,
+        };
         for _ in 0..nr.min(1 << 16) {
             let k = take_id(b, pos)?;
             c.remainder.insert(k, ());

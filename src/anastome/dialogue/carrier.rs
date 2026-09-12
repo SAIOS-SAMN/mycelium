@@ -20,7 +20,7 @@ pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) {
 pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
-    if n > b.len().saturating_sub(*p) / 41 {
+    if n > b.len().checked_sub(*p)? / 41 {
         return None; // untrusted count: address, standing, versor, coordinate, body
     }
     let mut out = Vec::with_capacity(n);
@@ -67,7 +67,7 @@ pub(crate) fn read_grid(b: &[u8], p: &mut usize) -> Option<Vec<Vec<u8>>> {
     let h = u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?) as usize;
     let w = u16::from_le_bytes(b.get(*p + 2..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
-    if h * w > b.len().saturating_sub(*p) || h > 1024 || w > 1024 {
+    if h * w > b.len().checked_sub(*p)? || h > 1024 || w > 1024 {
         return None; // untrusted dims
     }
     let mut g = Vec::with_capacity(h);
@@ -99,7 +99,7 @@ pub fn cell_wire_width() -> usize {
 pub fn read_chain(b: &[u8], p: &mut usize) -> Option<Vec<Cell>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
-    if n > b.len().saturating_sub(*p) / 18 {
+    if n > b.len().checked_sub(*p)? / 18 {
         return None; // untrusted count: 18 bytes per cell, or refuse before allocating
     }
     let mut out = Vec::with_capacity(n);

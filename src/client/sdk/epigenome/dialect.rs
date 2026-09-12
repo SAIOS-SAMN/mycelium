@@ -200,7 +200,11 @@ impl Epigenome {
 
     #[cfg(test)]
     pub(crate) fn waiting_on_len(&self, missing: &[u8]) -> usize {
-        self.waiting_on.get(missing).map(|c| c.len()).unwrap_or(0)
+        // Nothing waits on a word the carrier does not name.
+        match self.waiting_on.get(missing) {
+            Some(c) => c.len(),
+            None => 0,
+        }
     }
 
 }

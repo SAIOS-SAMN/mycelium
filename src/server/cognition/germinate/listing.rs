@@ -212,7 +212,11 @@ impl Kernel {
         // and the book extends before it refuses (12.6, S9.7). A use of an
         // address already listed draws nothing new.
         if !self.pending.contains(&addr) {
-            let short = self.room_after_extending(&voice, &mag);
+            // A room that cannot be read refuses the draw: the listing is
+            // not admitted against a count that is broken.
+            let Some(short) = self.room_after_extending(&voice, &mag) else {
+                return Outcome::Refused(crate::verdict::REFUSE_ROOM);
+            };
             if !crate::economy::lanes_short(&short).is_empty() {
                 self.log_room_refused(&voice, &mag, &short);
                 return Outcome::Refused(crate::verdict::REFUSE_ROOM);

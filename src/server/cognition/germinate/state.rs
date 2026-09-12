@@ -20,10 +20,19 @@ impl Kernel {
     /// The basis's interior VOLUME — the full fiber span across all punctured
     /// axes (free sections + every torsion orbit to its period; the condensation
     /// metric: cardinality falls while this rises, and cycles carry span in O(1)).
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a span of zero has no sections beyond its base"
+    )]
     pub fn sections_total(&self) -> usize {
         self.basis
             .fiber(crate::network::nerve::ROOT)
-            .map(|(_, t)| t.fiber_span().saturating_sub(1))
+            // A word's span counts its base; the sections are what lies
+            // beyond it, and a span of zero has none.
+            .map(|(_, t)| match t.fiber_span().checked_sub(1) {
+                Some(beyond) => beyond,
+                None => 0,
+            })
             .sum()
     }
 

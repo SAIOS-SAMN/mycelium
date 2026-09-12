@@ -79,8 +79,8 @@ pub fn one_stroke_transport(
     _chart: &crate::transducer::stalk::Invariant,
     _mag: &[u64; 4],
     _room: &[u64; 4],
-) -> Option<u64> {
-    Some(crate::physics::from_transport(1, crate::physics::aperture_cycle() as u64))
+) -> crate::physics::Lambda {
+    crate::physics::from_transport(1, crate::physics::aperture_cycle() as u64)
 }
 
 /// A home this node has measured no round trip to: nothing lapses.
@@ -88,8 +88,8 @@ pub fn unmeasured_transport(
     _chart: &crate::transducer::stalk::Invariant,
     _mag: &[u64; 4],
     _room: &[u64; 4],
-) -> Option<u64> {
-    None
+) -> crate::physics::Lambda {
+    crate::physics::Lambda::Unmeasured
 }
 
 /// A hypha's signing key from a name, for a receipt fixture that must be

@@ -58,16 +58,20 @@ impl Kernel {
                 verts.insert(v, ());
             }
         }
-        let mut cx = self
-            .complexes
-            .remove(&inv.key())
-            .unwrap_or_default();
+        // A chart with no complex yet stands on an empty one; this is
+        // where its first section is written.
+        let mut cx = match self.complexes.remove(&inv.key()) {
+            Some(c) => c,
+            None => crate::transducer::cech::Complex::new(),
+        };
         let vol0 = self.volume_of_cell(&inv);
         let peer_gamma = if spoken.is_translation() {
-            spoken
-                .letters()
-                .map(|l| l.spelling.word.rotor())
-                .unwrap_or_else(crate::transducer::alphabet::Rotor::identity)
+            // A translation that spells no letters carries the identity
+            // rotor, which is what "no rotation" is.
+            match spoken.letters() {
+                Some(l) => l.spelling.word.rotor(),
+                None => crate::transducer::alphabet::Rotor::identity(),
+            }
         } else {
             crate::transducer::alphabet::Rotor::identity()
         };

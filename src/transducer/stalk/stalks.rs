@@ -91,7 +91,11 @@ impl Stalks {
         let Some(branches) = branches else {
             return after.map(|a| a.to_vec());
         };
-        let from = after.unwrap_or(ROOT);
+        // A walk with no cursor yet starts at the root of the branches.
+        let from = match after {
+            Some(a) => a,
+            None => ROOT,
+        };
         let mut last = after.map(|a| a.to_vec());
         for (k, _) in branches.cursor(from, budget) {
             last = Some(k.clone());

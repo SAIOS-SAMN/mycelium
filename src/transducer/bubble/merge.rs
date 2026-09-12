@@ -21,8 +21,14 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
         f.vertices.push(v.clone());
     }
     for face in &b.faces {
-        let i = if face.i == 0 { 0 } else { face.i.saturating_add(off.saturating_sub(1)) };
-        let j = if face.j == 0 { 0 } else { face.j.saturating_add(off.saturating_sub(1)) };
+        // The join's own vertices start where this form's end, less the
+        // Frame the two share. `off` is a vertex count of at least one —
+        // the Frame — so the shift is exact.
+        let Some(shift) = off.checked_sub(1) else {
+            return false;
+        };
+        let i = if face.i == 0 { 0 } else { face.i.saturating_add(shift) };
+        let j = if face.j == 0 { 0 } else { face.j.saturating_add(shift) };
         f.faces.push(sentence::FormFace {
             i,
             j,
@@ -82,6 +88,10 @@ impl Contemplation {
     /// Two bubbles on one cell: extend decides. Extended merges and
     /// re-gauges; Congruent merges with a torsion axis; Class keeps both
     /// and writes each into the other's horizon. Zero volume never merges.
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a period of zero is no period and closes nothing (A17)"
+    )]
     pub(crate) fn decide_neighbors(&mut self, key: &[u8]) {
         let keys = self.complex.link(key, 1);
         for ck in keys {
@@ -113,9 +123,18 @@ impl Contemplation {
                 }
                 Fill::Congruent(g, ell) if vol_nz => {
                     self.torsion_merges += 1;
+                    // A cell of one vertex is a loop at that vertex: both
+                    // ends are it, which is what the cell says and not a
+                    // second end invented for it.
+                    let (Some(a), b) = (vertices.first(), vertices.get(1)) else {
+                        continue;
+                    };
                     let ends = [
-                        vertices[0].clone(),
-                        vertices.get(1).cloned().unwrap_or_else(|| vertices[0].clone()),
+                        a.clone(),
+                        match b {
+                            Some(second) => second.clone(),
+                            None => a.clone(),
+                        },
                     ];
                     if let Some(nk) = self.merge(&vertices) {
                         if let Some(b) = self.bubbles.get_mut(nk.as_bytes()) {
@@ -136,7 +155,15 @@ impl Contemplation {
                             payload,
                             // What the period measures (L7b): a torsion of
                             // period ℓ closes ℓ − 1, never floored to one.
-                            [0, 0, (ell as u64).saturating_sub(1), 0],
+                            [
+                                0,
+                                0,
+                                match (ell as u64).checked_sub(1) {
+                                    Some(closed) => closed,
+                                    None => 0,
+                                },
+                                0,
+                            ],
                         ) {
                             self.pending_rewrites.push(rw);
                         }
@@ -274,7 +301,17 @@ impl Contemplation {
                 &before,
                 key.clone(),
                 payload,
-                [0, verts.len().saturating_sub(1) as u64, 0, 0],
+                // Condensing n bubbles closes n − 1 joins; condensing none
+                // closes none.
+                [
+                    0,
+                    match verts.len().checked_sub(1) {
+                        Some(joins) => joins as u64,
+                        None => 0,
+                    },
+                    0,
+                    0,
+                ],
             ) {
                 self.pending_rewrites.push(rw);
             }

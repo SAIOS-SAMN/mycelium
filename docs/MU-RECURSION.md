@@ -4791,6 +4791,7 @@ Prefix `  court ` as the existing court lines; addresses as
   court class degree {k} chart {inv} key {class_key}
   court refine chart {inv} by class {class_key}
   court organs reached {n} silent {n} moved {bool}
+  court lambda beyond the ledger listings {n} cycle {h}
   court offered {n} germs to the overlap
   court genesis {hash} epoch {e} (written once, at the first receipt)
   court goodness chart {inv} peer {peer}: good component {ckey} charts {n}

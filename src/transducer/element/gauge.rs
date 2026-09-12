@@ -56,8 +56,13 @@ pub(crate) fn compose_perm(a: &[(u8, u8)], b: &[(u8, u8)]) -> Vec<(u8, u8)> {
     if b.is_empty() {
         return a.to_vec();
     }
+    // A hue the permutation does not move maps to itself: that is what
+    // the permutation says about it (rule 11).
     let apply = |sigma: &[(u8, u8)], h: u8| -> u8 {
-        sigma.iter().find(|(f, _)| *f == h).map(|(_, t)| *t).unwrap_or(h)
+        match sigma.iter().find(|(f, _)| *f == h) {
+            Some((_, t)) => *t,
+            None => h,
+        }
     };
     let mut out: Vec<(u8, u8)> = Vec::new();
     let mut seen: Vec<u8> = Vec::new();
@@ -265,9 +270,13 @@ impl Element {
             }
             let variant: Vec<_> = base
                 .iter()
-                .map(|(r, c, b, a)| {
-                    let i = base_pairs.iter().position(|p| *p == (*b, *a)).unwrap_or(0);
-                    (*r, *c, asg[i].0, asg[i].1)
+                .filter_map(|(r, c, b, a)| {
+                    // `base_pairs` is built from these cells, so every
+                    // pair is in it; a cell whose pair is not is no
+                    // variant of this base and is not spelled (rule 11).
+                    let i = base_pairs.iter().position(|p| *p == (*b, *a))?;
+                    let (nb, na) = *asg.get(i)?;
+                    Some((*r, *c, nb, na))
                 })
                 .collect();
             out.push(variant);

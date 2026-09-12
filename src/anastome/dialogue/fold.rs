@@ -42,7 +42,7 @@ pub fn decode_fold(body: &[u8]) -> Option<FoldProposal> {
     let root = Root::read(body, &mut p)?;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    if n > body.len().saturating_sub(p) / 64 {
+    if n > body.len().checked_sub(p)? / 64 {
         return None;
     }
     let mut epochs = Vec::with_capacity(n);
@@ -156,7 +156,7 @@ pub fn decode_rows_reply(body: &[u8]) -> Option<(u32, Vec<Entry>)> {
     let total = u32::from_le_bytes(body.get(0..4)?.try_into().ok()?);
     let m = u32::from_le_bytes(body.get(4..8)?.try_into().ok()?) as usize;
     let mut p = 8usize;
-    if m > body.len().saturating_sub(p) / Entry::TAPE {
+    if m > body.len().checked_sub(p)? / Entry::TAPE {
         return None;
     }
     let mut rows = Vec::with_capacity(m);

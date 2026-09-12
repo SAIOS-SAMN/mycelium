@@ -41,7 +41,12 @@ impl Entity {
             id,
             dialogue::encode_solve_with_rule(&voice, id, outputs, bytes.as_deref()),
         )?;
-        Ok(dialogue::decode_solve_receipt(&body).unwrap_or((dialogue::SOLVE_NOTHING, [0; 4])))
+        // A receipt that does not decode says nothing was solved and
+        // nothing was paid, which is what the solve earned.
+        Ok(match dialogue::decode_solve_receipt(&body) {
+            Some(r) => r,
+            None => (dialogue::SOLVE_NOTHING, [0; 4]),
+        })
     }
 
     /// PULL THE SYLLABUS — the court-ratified teaching stream, served from
@@ -62,7 +67,11 @@ impl Entity {
         let voice = self.session.kernel().voice();
         let body = self.session.speak_keyed(&voice, dialogue::encode_digests_request(&voice))?;
         self.session.absorb_digest(&body);
-        let remote = dialogue::decode_digests_reply(&body).unwrap_or_default();
+        // A reply that does not decode names no strata, and nothing is
+        // discordant against a reading nobody took.
+        let Some(remote) = dialogue::decode_digests_reply(&body) else {
+            return Ok(0);
+        };
         // The genome's own atlas (current, admitted in place), never rebuilt here.
         let atlas = self.epigenome.atlas.clone();
         let local = sheaf::digests(&atlas);
@@ -85,7 +94,8 @@ impl Entity {
         let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::frame_budget());
         let mut learned = 0usize;
         let body = self.session.speak_keyed(&voice, request)?;
-        for w in dialogue::decode_syllabus_reply(&body).unwrap_or_default() {
+        // A reply that does not decode teaches nothing.
+        for w in dialogue::decode_syllabus_reply(&body).into_iter().flatten() {
             let mut pos = 0usize;
             let fetched = Element::from_bytes(&w, &mut pos);
             if self.absorb_taught(&w).is_some() {
@@ -227,7 +237,8 @@ impl Entity {
                 let Ok(body) = self.session.exchange_at(addr, req.clone()) else {
                     continue;
                 };
-                for w in dialogue::decode_syllabus_reply(&body).unwrap_or_default() {
+                // A reply that does not decode teaches nothing.
+        for w in dialogue::decode_syllabus_reply(&body).into_iter().flatten() {
                     if self.absorb_taught(&w).is_some() {
                         learned += 1;
                     }
@@ -237,7 +248,10 @@ impl Entity {
             return Ok(learned);
         }
         let body = self.session.speak_keyed(&voice, dialogue::encode_syllabus_request(&voice))?;
-        let mut words = dialogue::decode_syllabus_reply(&body).unwrap_or_default();
+        // A reply that does not decode teaches nothing.
+        let Some(mut words) = dialogue::decode_syllabus_reply(&body) else {
+            return Ok(0);
+        };
         // DEPTH ORDER IS THE DOCTRINE, not a choice by a scalar: "a mind
         // never receives depth d before it holds every cited form below d;
         // the syllabus serves in depth order" (chapter 6, 24.2), and

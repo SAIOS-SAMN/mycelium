@@ -122,7 +122,7 @@ pub fn encode_digests_reply(digests: &[crate::transducer::sheaf::StratumDigest])
 
 pub fn decode_digests_reply(body: &[u8]) -> Option<Vec<crate::transducer::sheaf::StratumDigest>> {
     let n = u32::from_le_bytes(body.get(0..4)?.try_into().ok()?) as usize;
-    if n > body.len().saturating_sub(4) / 9 {
+    if n > body.len().checked_sub(4)? / 9 {
         return None; // untrusted count: at least invariant + count + root per stratum
     }
     let mut p = 4usize;

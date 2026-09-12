@@ -73,13 +73,13 @@ fn market_capacity_is_thermodynamic_and_eviction_is_by_tension() {
 let mut k = Kernel::new();
 k.bind_identity([1; 32]);
 k.enroll([1; 32], [8, 8, 1, 8]);
-let calm = k.lane_room();
+let calm = k.lane_room().expect("an enrolled court's room reads");
 assert!(calm.iter().all(|&c| c > 0), "no lane is ever pinched to zero: {calm:?}");
 let s0 = calm[0];
 for _ in 0..24 {
     k.physics_mut().bump(&[0, 0, 1, 0]);
 }
-let tense = k.lane_room();
+let tense = k.lane_room().expect("an enrolled court's room reads");
 assert_eq!(tense[0], s0, "T pressure does not steal spatial room: {tense:?}");
 }
 

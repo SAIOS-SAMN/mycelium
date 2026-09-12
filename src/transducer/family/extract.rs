@@ -498,11 +498,18 @@ pub fn extract_rule_with(
             }
             let fy = frame_of(y);
             let outs: Vec<Cell3> = perceive(y).into_iter().flat_map(|b| b.cells).collect();
+            // The frame's own border. A frame with no rows or no columns
+            // has no far side, and the near side is the whole of it.
+            let (Some(last_row), Some(last_col)) =
+                (fy.0.checked_sub(1), fy.1.checked_sub(1))
+            else {
+                continue;
+            };
             let frame_anchor: Vec<(i64, i64)> = (0..fy.1 as i64)
                 .map(|c| (0, c))
-                .chain((0..fy.1 as i64).map(|c| (fy.0.saturating_sub(1) as i64, c)))
+                .chain((0..fy.1 as i64).map(|c| (last_row as i64, c)))
                 .chain((0..fy.0 as i64).map(|r| (r, 0)))
-                .chain((0..fy.0 as i64).map(|r| (r, fy.1.saturating_sub(1) as i64)))
+                .chain((0..fy.0 as i64).map(|r| (r, last_col as i64)))
                 .collect();
             let bound = (fy.0.saturating_add(fy.1)) as u32;
             match ring_dist_peel(&positions_of(&outs), &frame_anchor, bound) {

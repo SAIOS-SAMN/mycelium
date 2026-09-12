@@ -319,7 +319,13 @@ pub fn topology(cells: &[(i64, i64)]) -> (u64, u64) {
         }
     }
     let edges = 4 * n - adjacent;
-    let chi: i64 = (vertices - q(edges) + q(n)).to_integer().try_into().unwrap_or(0);
+    // χ is exact on the cell complex. A χ that does not fit an i64 is a
+    // support wider than this reader measures, and zero would be a
+    // topological claim about it (rule 11): the body reads as one
+    // component with no hole only when χ says so.
+    let Ok(chi) = i64::try_from((vertices - q(edges) + q(n)).to_integer()) else {
+        return (0, 0);
+    };
     let comps: Vec<(i64, i64, u8)> = cells.iter().map(|&(r, c)| (r, c, 0u8)).collect();
     let b0 = components(&comps).len() as i64;
     (b0 as u64, (b0 - chi).max(0) as u64)
@@ -348,7 +354,17 @@ pub fn axes_of(x: &BigRational) -> Option<[u64; 2]> {
 /// THE MODULI of a body — its coordinates on the base. Empty on A6
 /// refusal: novelty, never a saturated MAX axis.
 pub fn moduli(b: &Blade) -> Vec<u64> {
-    crate::transducer::blade::harmonics::Harmonics::of(b).axes().unwrap_or_default()
+    // A6 refusing is NOVELTY, and the empty axis list is what novelty
+    // reads as here — a measurement of this body, not a default put in
+    // place of one (rule 11).
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; empty axes is A6's refusal read out"
+    )]
+    match crate::transducer::blade::harmonics::Harmonics::of(b).axes() {
+        Some(axes) => axes,
+        None => Vec::new(),
+    }
 }
 
 /// A body as the carrier a transport is solved on and verified against.

@@ -320,9 +320,22 @@ impl Element {
 
     /// The fiber's total spoken span — base + free sections + every torsion-orbit
     /// member (the volume metric; cycles count their full period).
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a period of zero is no period and spans nothing (A17)"
+    )]
     pub fn fiber_span(&self) -> usize {
         1 + self.sections.len()
-            + self.torsion.iter().map(|t| (t.period as usize).saturating_sub(1)).sum::<usize>()
+            + self
+                .torsion
+                .iter()
+                // A cycle of period ℓ spans ℓ − 1 beyond its base; a period
+                // of zero is no period (A17) and spans nothing.
+                .map(|t| match (t.period as usize).checked_sub(1) {
+                    Some(beyond) => beyond,
+                    None => 0,
+                })
+                .sum::<usize>()
     }
 
     /// THE TORSE MOVE — extract the torsion of the punctured axis. Candidate

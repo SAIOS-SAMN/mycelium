@@ -72,7 +72,12 @@ pub(crate) fn emit_carried(
 ) {
     let hue = hue_map_from_pairs(map);
     for &(r, c, h) in &body.cells {
-        let spoken = hue[h as usize].unwrap_or(h);
+        // A hue the map does not move keeps its own colour: that is what
+        // the map says about it (rule 11).
+        let spoken = match hue[h as usize] {
+            Some(t) => t,
+            None => h,
+        };
         if let Some(image) = element::carry_cell(v, r, c) {
             for (i, j) in image {
                 if i >= 0 && j >= 0 && (i as usize) < fy.0 && (j as usize) < fy.1 {
@@ -213,7 +218,9 @@ pub fn apply_form(
         if cells.is_empty() {
             cells = bodies.iter().flat_map(|b| b.cells.iter().copied()).collect();
         }
-        let need = fy.0.saturating_mul(fy.1);
+        // A frame whose cell count does not fit the carrier is wider than
+        // this speech fills; nothing is unfolded into it.
+        let need = fy.0.checked_mul(fy.1)?;
         let mut guard = 0u32;
         while cells.len() < need && guard < need as u32 {
             guard += 1;
@@ -292,7 +299,12 @@ pub(crate) fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i
     let mut out = Vec::new();
     for (r, row) in observed.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
-            let s = spoken.and_then(|g| g.get(r)).and_then(|row| row.get(c)).copied().unwrap_or(0);
+            // A cell the speech does not reach is unoccupied there, and
+            // hue 0 IS absence in this encoding.
+            let s = match spoken.and_then(|g| g.get(r)).and_then(|row| row.get(c)) {
+                Some(h) => *h,
+                None => 0,
+            };
             if s != h {
                 out.push((r as i64, c as i64, s, h));
             }

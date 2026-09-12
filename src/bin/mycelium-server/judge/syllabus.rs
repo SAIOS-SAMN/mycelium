@@ -24,7 +24,12 @@ pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         Ok(mut k) => (k.ruled_digests_for(&dvoice), k.language()),
         Err(_) => return,
     };
-    let digests = ruled.unwrap_or_else(|| mycelium::transducer::sheaf::digests(&language.stalks));
+    // The voice's own ruled digests where this court holds them; the
+    // language's atlas where it does not. Both are measured on a cover.
+    let digests = match ruled {
+        Some(d) => d,
+        None => mycelium::transducer::sheaf::digests(&language.stalks),
+    };
     let mut body = dialogue::encode_digests_reply(&digests);
     body.extend(sign_cover_digest(kernel, mesh));
     let reply = Frame { lane: frame.lane, body };
@@ -33,10 +38,17 @@ pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, door: &Door) {
 
 /// The stratum fetch: the ruled words of the charts a peer named, up to
 /// the frame budget, with the class records behind them (A19).
+#[expect(
+    clippy::manual_unwrap_or_default,
+    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a page wider than the budget leaves none of it"
+)]
 pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let kernel = &door.kernel;
     let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
-    let mut budget = mycelium::network::wire::frame_budget().saturating_sub(64);
+    // The body's share of the frame, exact.
+    let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(64) else {
+        return;
+    };
     let mut words: Vec<Vec<u8>> = Vec::new();
     let mut classes: Vec<dialogue::ClassPage> = Vec::new();
     if let Ok(mut k) = kernel.lock() {
@@ -44,7 +56,12 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         for dialogue::ChartOf { inv, have } in &charts {
             have_all.extend(have.iter().cloned());
             let page = k.serve_ruled(inv, have, budget);
-            budget = budget.saturating_sub(page.iter().map(|w| w.len() + 4).sum::<usize>());
+            // `serve_ruled` fills to the budget and no further, so what is
+            // left is exact; a page wider than the budget leaves none.
+            budget = match budget.checked_sub(page.iter().map(|w| w.len() + 4).sum::<usize>()) {
+                Some(left) => left,
+                None => 0,
+            };
             words.extend(page);
             classes.extend(k.class_records(inv));
             if budget == 0 {

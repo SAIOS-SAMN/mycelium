@@ -59,7 +59,10 @@ fn a_peer_that_answers_is_read_whole_and_its_round_trip_is_counted_in_strokes() 
     // patience is the host's own reserve squared — a measurement, never a
     // literal — and the rtt read back is whatever it took.
     let reserve = mycelium::physics::reserve_max();
-    let out = tell_peer_within(&addr, vec![0x10, 1, 2], reserve.saturating_mul(reserve));
+    let patience = reserve
+        .checked_mul(reserve)
+        .expect("the host's reserve squared fits the clock this test runs on");
+    let out = tell_peer_within(&addr, vec![0x10, 1, 2], patience);
     let (reply, rtt) = out.expect("a peer that answers is not silence");
     assert_eq!(reply, echo, "the reply is read whole");
     assert!(rtt >= 1, "a round trip takes at least the one poll that read it: {rtt}");

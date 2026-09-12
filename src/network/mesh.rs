@@ -62,6 +62,10 @@ fn take_bond(b: &[u8], p: &mut usize) -> Option<([u8; 32], [u64; 4])> {
 }
 
 impl MeshRecord {
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a mesh with no genesis writes the empty identity, which is what no genesis is on the tape"
+    )]
     pub fn encode(&self) -> Vec<u8> {
         let mut out = Vec::from(*MAGIC);
         out.push(self.kind);
@@ -79,7 +83,12 @@ impl MeshRecord {
         for (who, bond) in self.voice.iter().take(255) {
             put_bond(&mut out, who, bond);
         }
-        out.extend_from_slice(&self.genesis.unwrap_or([0u8; 32]));
+        // A mesh with no genesis writes the empty identity, which is what
+        // "no genesis" is on the tape and not a hash put there for one.
+        out.extend_from_slice(&match self.genesis {
+            Some(g) => g,
+            None => [0u8; 32],
+        });
         out.extend_from_slice(&self.epoch.to_le_bytes());
         out
     }
@@ -168,16 +177,17 @@ fn read_line(path: &Path) -> Option<String> {
         .map(String::from)
 }
 
+/// A file that is not there lists nothing, which is the empty list read
+/// out and not a list put in place of one.
 fn read_lines(path: &Path) -> Vec<String> {
-    std::fs::read_to_string(path)
-        .map(|s| {
-            s.lines()
-                .map(|l| l.trim())
-                .filter(|l| !l.is_empty() && !l.starts_with('#'))
-                .map(String::from)
-                .collect()
-        })
-        .unwrap_or_default()
+    let Ok(s) = std::fs::read_to_string(path) else {
+        return Vec::new();
+    };
+    s.lines()
+        .map(|l| l.trim())
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .map(String::from)
+        .collect()
 }
 
 /// THE GENESIS ALLOCATIONS of one kind: a key and the μ⃗ seeded to it. §6
@@ -185,6 +195,10 @@ fn read_lines(path: &Path) -> Vec<String> {
 /// mints.
 type Allocations = Vec<([u8; 32], [u64; 4])>;
 
+#[expect(
+    clippy::manual_unwrap_or_default,
+    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a lane the genesis line does not name is seeded with nothing"
+)]
 fn parse_genesis_text(path: &Path) -> (Allocations, Allocations) {
     let mut hypha = Vec::new();
     let mut voice = Vec::new();
@@ -193,7 +207,12 @@ fn parse_genesis_text(path: &Path) -> (Allocations, Allocations) {
         let Some(kind) = it.next() else { continue };
         let Some(hex) = it.next() else { continue };
         let Some(vk) = identity::parse_hex32(hex) else { continue };
-        let n = |s: Option<&str>| s.and_then(|x| x.parse().ok()).unwrap_or(0u64);
+        // A lane the genesis line does not name is seeded with nothing,
+        // which is the absent lane read out.
+        let n = |s: Option<&str>| match s.and_then(|x| x.parse().ok()) {
+            Some(v) => v,
+            None => 0u64,
+        };
         let bond = [n(it.next()), n(it.next()), n(it.next()), n(it.next())];
         match kind {
             "hypha" => hypha.push((vk, bond)),
@@ -213,6 +232,10 @@ fn drop_loose(home: &Path, names: &[&str]) {
 }
 
 /// Load `home/mesh`, or write it once from the old text files and remove them.
+#[expect(
+    clippy::manual_unwrap_or_default,
+    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a home with no bind file binds nowhere, which is the empty address"
+)]
 pub fn load_or_migrate_hypha(home: &Path, key: &HyphaKey) -> MeshRecord {
     let vk = key.vk_bytes();
     if let Some(rec) = MeshRecord::load(home, &vk) {
@@ -230,7 +253,11 @@ pub fn load_or_migrate_hypha(home: &Path, key: &HyphaKey) -> MeshRecord {
         migrate_registry(home);
         return rec;
     }
-    let bind = read_line(&home.join("bind")).unwrap_or_default();
+    // A home with no bind file binds nowhere, which is the empty address.
+    let bind = match read_line(&home.join("bind")) {
+        Some(b) => b,
+        None => String::new(),
+    };
     let peers = read_lines(&home.join("peers"));
     let (hypha, voice) = parse_genesis_text(&home.join("genesis"));
     let rec = MeshRecord {
@@ -267,7 +294,12 @@ pub fn load_or_migrate_voice(home: &Path, key: &HyphaKey) -> MeshRecord {
         migrate_genome(home, &vk);
         return rec;
     }
-    let bootstrap = read_line(&home.join("bootstrap")).unwrap_or_else(|| "127.0.0.1:7500".into());
+    // A voice with no bootstrap file dials the loopback door, which is
+    // where a voice on one box finds its court.
+    let bootstrap = match read_line(&home.join("bootstrap")) {
+        Some(b) => b,
+        None => "127.0.0.1:7500".into(),
+    };
     let rec = MeshRecord {
         kind: VOICE,
         bind: String::new(),

@@ -161,7 +161,7 @@ impl Treasury {
         }
         let ns = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
         *pos += 4;
-        if ns > b.len().saturating_sub(*pos) / 65 {
+        if ns > b.len().checked_sub(*pos)? / 65 {
             return None; // untrusted count: 65 bytes per stake
         }
         let mut stakes = crate::network::nerve::Keyed::new();
@@ -178,7 +178,7 @@ impl Treasury {
         }
         let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
         *pos += 4;
-        if n > b.len().saturating_sub(*pos) / 105 {
+        if n > b.len().checked_sub(*pos)? / 105 {
             return None; // untrusted count: 105 bytes per entry, refuse before allocating
         }
         let mut entries = Vec::with_capacity(n);
@@ -197,14 +197,14 @@ impl Treasury {
         {
             let ne = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
             *pos += 4;
-            if ne > b.len().saturating_sub(*pos) / 108 {
+            if ne > b.len().checked_sub(*pos)? / 108 {
                 return None; // untrusted count: ≥108 bytes per award
             }
             for _ in 0..ne {
                 let addr = crate::transducer::address::take_addr(b, pos)?;
                 let nv = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
                 *pos += 4;
-                if nv > b.len().saturating_sub(*pos) / 32 {
+                if nv > b.len().checked_sub(*pos)? / 32 {
                     return None;
                 }
                 let mut voices = Vec::with_capacity(nv);
@@ -229,7 +229,7 @@ impl Treasury {
         {
             let nf = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
             *pos += 4;
-            if nf > b.len().saturating_sub(*pos) / 66 {
+            if nf > b.len().checked_sub(*pos)? / 66 {
                 return None; // untrusted count: ≥66 bytes per funded row
             }
             for _ in 0..nf {
@@ -249,7 +249,7 @@ impl Treasury {
         {
             let nb = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
             *pos += 4;
-            if nb > b.len().saturating_sub(*pos) / 64 {
+            if nb > b.len().checked_sub(*pos)? / 64 {
                 return None; // untrusted count: 64 bytes per balance row
             }
             for _ in 0..nb {

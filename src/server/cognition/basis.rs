@@ -8,6 +8,10 @@
 use super::*;
 
 impl Kernel {
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a stamp this court has not yet passed measures no extent"
+    )]
     pub(crate) fn t_extent(&self, addr: &[u8], now: u64) -> u64 {
         let Some(then) = self
             .provisional_h
@@ -17,7 +21,13 @@ impl Kernel {
         else {
             return 0;
         };
-        now.saturating_sub(then)
+        // The stamp is a height this court has already passed, so the
+        // extent is exact; a stamp in the future is a broken clock and
+        // measures no extent (rule 11).
+        match now.checked_sub(then) {
+            Some(extent) => extent,
+            None => 0,
+        }
     }
 
     pub(crate) fn stamp_standing(&mut self, addr: impl AsRef<[u8]>) {
@@ -109,10 +119,16 @@ impl Kernel {
         for (addr, _) in self.provisional.fiber(crate::network::nerve::ROOT) {
             consider(addr);
         }
-        let cap = self
-            .lane_cap
-            .map(|c| c[2] as u64)
-            .unwrap_or_else(|| tot.saturating_add(self.lane_room()[2] as u64));
+        // A test cap where one is set; otherwise what this lane already
+        // holds plus the room it still has, which is the same quantity
+        // measured rather than a cap standing in for one.
+        let cap = match (self.lane_cap, self.lane_room()) {
+            (Some(c), _) => c[2] as u64,
+            (None, Some(room)) => tot.saturating_add(room[2] as u64),
+            // A room that cannot be read is a broken count, and nothing is
+            // relocated against one.
+            (None, None) => return,
+        };
         if tot < cap {
             return;
         }
@@ -143,7 +159,11 @@ impl Kernel {
         self.offered.remove(addr);
         self.offered_to.remove(addr);
         if self.lane_listings[2].contains(addr) {
-            self.occupancy[2] = self.occupancy[2].saturating_sub(1);
+            // The lane lists it, so the lane carries it; a lane at zero
+            // listing something is a broken count and stays at zero.
+            if let Some(next) = self.occupancy[2].checked_sub(1) {
+                self.occupancy[2] = next;
+            }
             self.lane_listings[2].remove(addr);
         }
         self.standing_h.remove(addr);
@@ -215,21 +235,40 @@ impl Kernel {
                     self.lane_listings[l].insert(addr, ());
                 }
             } else {
-                self.occupancy[l] = self.occupancy[l].saturating_sub(m);
+                // The listing occupied this lane by exactly `m`, so the
+                // release is exact; a lane holding less than it releases is
+                // a broken count and stays where it is (rule 11).
+                if let Some(next) = self.occupancy[l].checked_sub(m) {
+                    self.occupancy[l] = next;
+                }
                 if m > 0 {
                     self.lane_listings[l].remove(addr);
                 }
             }
             if add {
                 self.pressure_sum[l] = self.pressure_sum[l].saturating_add(m);
-            } else {
-                self.pressure_sum[l] = self.pressure_sum[l].saturating_sub(m);
+            } else if let Some(next) = self.pressure_sum[l].checked_sub(m) {
+                self.pressure_sum[l] = next;
             }
         }
         if let Some(v) = voice {
-            let mut d = self.drawn.get(&v).copied().unwrap_or([0; 4]);
+            // A voice that has drawn nothing draws nothing: absence.
+            let mut d = match self.drawn.get(&v) {
+                Some(d) => *d,
+                None => [0; 4],
+            };
             for (t, &m) in d.iter_mut().zip(mag) {
-                *t = if add { t.saturating_add(m) } else { t.saturating_sub(m) };
+                match add {
+                    true => *t = t.saturating_add(m),
+                    // The voice drew exactly `m` on this lane, so the
+                    // return is exact; a draw smaller than its return is a
+                    // broken count and stays where it is.
+                    false => {
+                        if let Some(next) = t.checked_sub(m) {
+                            *t = next;
+                        }
+                    }
+                }
             }
             // §3.1 as ruled (S13.15): the voice's claim in flight on a lane
             // closed, so the recall shortfall that closed its room there
@@ -410,6 +449,10 @@ impl Kernel {
         );
     }
 
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a prune that did not shrink the basis dropped nothing"
+    )]
     pub fn prune_basis_to_ruled(&mut self) -> usize {
         let before = self.basis.len();
         let mut nb = crate::network::nerve::Keyed::new();
@@ -440,7 +483,13 @@ impl Kernel {
             // No court cover: the restored or local language stands.
             return 0;
         }
-        let dropped = before.saturating_sub(nb.len());
+        // The new basis is a subset of the old, so the count that left is
+        // exact; a basis that GREW here is a broken prune and reports
+        // nothing dropped rather than a difference it did not measure.
+        let dropped = match before.checked_sub(nb.len()) {
+            Some(n) => n,
+            None => 0,
+        };
         self.basis = nb;
         self.discoverers = nd;
         self.by_action = crate::network::nerve::Keyed::new();

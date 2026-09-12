@@ -46,8 +46,11 @@ pub(crate) fn first_difference(a: &[u8], b: &[u8]) -> Option<usize> {
 }
 
 impl<V> Node<V> {
-    pub(crate) fn bits(key: &[u8]) -> usize {
-        key.len().saturating_mul(8)
+    /// `None` for a key whose bit count does not fit the carrier: such a
+    /// key is longer than any address this trie routes, and the widest
+    /// usize would be a depth nothing measured (rule 11).
+    pub(crate) fn bits(key: &[u8]) -> Option<usize> {
+        key.len().checked_mul(8)
     }
 
     /// The key of the leaf this key's path reaches.
@@ -57,7 +60,7 @@ impl<V> Node<V> {
             match node {
                 Node::Leaf(k, _) => return k,
                 Node::Branch { bit, children, end } => {
-                    if Self::bits(key) <= *bit {
+                    if Self::bits(key).is_some_and(|b| b <= *bit) {
                         if let Some((k, _)) = end.as_deref() {
                             return k;
                         }
@@ -78,10 +81,10 @@ impl<V> Node<V> {
             match node {
                 Node::Leaf(k, v) => return (k.as_slice() == key).then_some(v),
                 Node::Branch { bit, children, end } => {
-                    if Self::bits(key) == *bit {
+                    if Self::bits(key) == Some(*bit) {
                         return end.as_deref().and_then(|(k, v)| (k.as_slice() == key).then_some(v));
                     }
-                    if Self::bits(key) < *bit {
+                    if Self::bits(key).is_some_and(|b| b < *bit) {
                         return None;
                     }
                     node = children[key_bit(key, *bit)].as_deref()?;
@@ -94,10 +97,10 @@ impl<V> Node<V> {
         match self {
             Node::Leaf(k, v) => (k.as_slice() == key).then_some(v),
             Node::Branch { bit, children, end } => {
-                if Node::<V>::bits(key) == *bit {
+                if Node::<V>::bits(key) == Some(*bit) {
                     return end.as_mut().and_then(|e| (e.0.as_slice() == key).then_some(&mut e.1));
                 }
-                if Node::<V>::bits(key) < *bit {
+                if Node::<V>::bits(key).is_some_and(|b| b < *bit) {
                     return None;
                 }
                 children[key_bit(key, *bit)].as_deref_mut()?.get_mut(key)
@@ -108,11 +111,16 @@ impl<V> Node<V> {
     pub(crate) fn representative(&self) -> &[u8] {
         match self {
             Node::Leaf(k, _) => k,
-            Node::Branch { children, end, .. } => children
+            // A branch holding neither a child nor an end holds no key,
+            // and the empty key is what that reads as.
+            Node::Branch { children, end, .. } => match children
                 .iter()
                 .find_map(|c| c.as_deref().map(|n| n.representative()))
                 .or_else(|| end.as_deref().map(|(k, _)| k.as_slice()))
-                .unwrap_or(&[]),
+            {
+                Some(k) => k,
+                None => &[],
+            },
         }
     }
 }
@@ -133,16 +141,16 @@ pub(crate) fn meet_nodes<V, W>(a: Option<&Node<V>>, b: Option<&Node<W>>, out: &m
             }
         }
         (Some(leaf @ Node::Leaf(k, _)), Some(Node::Branch { bit, children, end })) => {
-            if Node::<V>::bits(k) == *bit {
+            if Node::<V>::bits(k) == Some(*bit) {
                 meet_end(end.as_deref(), Some(leaf), out);
-            } else if Node::<V>::bits(k) > *bit {
+            } else if Node::<V>::bits(k).is_none_or(|b| b > *bit) {
                 meet_nodes(Some(leaf), children[key_bit(k, *bit)].as_deref(), out);
             }
         }
         (Some(Node::Branch { bit, children, end }), Some(leaf @ Node::Leaf(k, _))) => {
-            if Node::<W>::bits(k) == *bit {
+            if Node::<W>::bits(k) == Some(*bit) {
                 meet_end(end.as_deref(), Some(leaf), out);
-            } else if Node::<W>::bits(k) > *bit {
+            } else if Node::<W>::bits(k).is_none_or(|b| b > *bit) {
                 meet_nodes(children[key_bit(k, *bit)].as_deref(), Some(leaf), out);
             }
         }
@@ -201,7 +209,7 @@ pub(crate) fn collapse<V>(slot: &mut Option<Box<Node<V>>>) {
 /// Insert into the subtree at `slot`, splitting at bit `d` (the first bit
 /// at which `key` differs from the leaf its path reaches).
 pub(crate) fn insert_at<V>(slot: &mut Option<Box<Node<V>>>, key: Vec<u8>, value: V, d: usize) {
-    let key_ends = Node::<V>::bits(&key) == d;
+    let key_ends = Node::<V>::bits(&key) == Some(d);
     let descend = match slot.as_deref() {
         Some(Node::Branch { bit, .. }) if *bit < d => Some(key_bit(&key, *bit)),
         Some(Node::Branch { bit, .. }) if *bit == d && !key_ends => Some(key_bit(&key, *bit)),
@@ -221,14 +229,19 @@ pub(crate) fn insert_at<V>(slot: &mut Option<Box<Node<V>>>, key: Vec<u8>, value:
     }
     let old = slot.take();
     if key_ends {
-        let side = old.as_ref().map(|n| key_bit(n.representative(), d)).unwrap_or(0);
+        // An empty slot has no key to read a side from, and the zero side
+        // is where nothing sits — the branch it builds holds only `end`.
+        let side = match old.as_ref() {
+            Some(n) => key_bit(n.representative(), d),
+            None => 0,
+        };
         let mut children: [Option<Box<Node<V>>>; 2] = [None, None];
         children[side] = old;
         *slot = Some(branch(d, children, Some(Box::new((key, value)))));
         return;
     }
     let old_ends = match old.as_deref() {
-        Some(Node::Leaf(k, _)) if Node::<V>::bits(k) == d => true,
+        Some(Node::Leaf(k, _)) if Node::<V>::bits(k) == Some(d) => true,
         Some(Node::Branch { bit, end, .. }) if *bit == d && end.is_some() => {
             // old already splits at d; should have descended. Fall through.
             false
@@ -267,7 +280,7 @@ pub(crate) fn remove_at<V>(slot: &mut Option<Box<Node<V>>>, key: &[u8]) -> Optio
     let Some(Node::Branch { bit, children, end }) = slot.as_deref_mut() else {
         return None;
     };
-    if Node::<V>::bits(key) == *bit {
+    if Node::<V>::bits(key) == Some(*bit) {
         let taken = end.take().and_then(|e| {
             let (k, v) = *e;
             (k.as_slice() == key).then_some(v)
@@ -277,7 +290,7 @@ pub(crate) fn remove_at<V>(slot: &mut Option<Box<Node<V>>>, key: &[u8]) -> Optio
         }
         return taken;
     }
-    if Node::<V>::bits(key) < *bit {
+    if Node::<V>::bits(key).is_some_and(|b| b < *bit) {
         return None;
     }
     let b = key_bit(key, *bit);

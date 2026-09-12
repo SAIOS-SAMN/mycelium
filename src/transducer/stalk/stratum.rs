@@ -49,7 +49,12 @@ impl Stratum {
     pub(crate) fn fiber(&self, axes: &[u64]) -> Vec<Vec<u8>> {
         match axes.split_first() {
             None => self.members.fiber(ROOT).map(|(k, _)| k).collect(),
-            Some((&a, rest)) => self.branches.get(&axis_key(a)).map(|s| s.fiber(rest)).unwrap_or_default(),
+            // A stratum with no branch on this axis holds no members
+            // under it: the empty fiber is that reading (0.11c).
+            Some((&a, rest)) => match self.branches.get(&axis_key(a)) {
+                Some(s) => s.fiber(rest),
+                None => Vec::new(),
+            },
         }
     }
 
@@ -106,11 +111,11 @@ impl Stratum {
                 }
                 out
             }
-            Some((&a, rest)) => self
-                .branches
-                .get(&axis_key(a))
-                .map(|s| s.child_axes(rest))
-                .unwrap_or_default(),
+            // No branch on this axis, no axes under it.
+            Some((&a, rest)) => match self.branches.get(&axis_key(a)) {
+                Some(s) => s.child_axes(rest),
+                None => Vec::new(),
+            },
         }
     }
 
@@ -137,11 +142,11 @@ impl Stratum {
                 self.collect_members(&mut out);
                 out
             }
-            Some((&a, rest)) => self
-                .branches
-                .get(&axis_key(a))
-                .map(|s| s.fiber_under(rest))
-                .unwrap_or_default(),
+            // No branch on this axis, no members under it.
+            Some((&a, rest)) => match self.branches.get(&axis_key(a)) {
+                Some(s) => s.fiber_under(rest),
+                None => Vec::new(),
+            },
         }
     }
 }
