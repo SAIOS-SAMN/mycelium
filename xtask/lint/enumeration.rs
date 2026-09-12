@@ -82,7 +82,11 @@ mod tests {
         super::scan(Path::new("src/economy/treasury.rs"), src, &mut hit);
         assert_eq!(hit.len(), 1, "elsewhere it is a number standing in: {hit:?}");
 
-        for owner in ["src/physics.rs", "src/network/wire.rs"] {
+        // `src/physics.rs` became `src/physics/mod.rs` at the §1.1 reading
+        // bound and the gate's condition moved with it; this row did not,
+        // so the test asserted the exemption against a path that has not
+        // existed since, and failed.
+        for owner in ["src/physics/mod.rs", "src/network/wire.rs"] {
             let mut clean = Vec::new();
             super::scan(Path::new(owner), src, &mut clean);
             assert!(clean.is_empty(), "{owner} may name it: {clean:?}");
