@@ -6,8 +6,9 @@ use super::*;
 impl Complex {
     pub fn byte_len(&self) -> usize {
         let mut n = 0usize;
-        // index: keyed cells of this complex (persistence size)
-        for (k, d) in self.by_key.fiber(ROOT) {
+        // The cells of THIS complex — one chart's nerve — and the size on
+        // the tape is the size of all of them.
+        for (k, d) in self.by_key.scoped() {
             if let Some(c) = self.degrees.get(*d as usize).and_then(|l| l.get(&k)) {
                 n += 32 * c.vertices.len() + 32 + 32;
             }

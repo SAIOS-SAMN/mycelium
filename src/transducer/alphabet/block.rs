@@ -95,7 +95,7 @@ pub(crate) fn word_of_cores(cores: &[SpellCore]) -> Option<Word> {
 /// adjoined shells with their exponents summed per generator, and the
 /// letters that remain as a word. This is a `Derivation`'s two halves.
 pub(crate) fn cited_of_cores(cores: &[SpellCore]) -> Option<(Vec<super::Cited>, Word)> {
-    use crate::network::nerve::{Keyed, ROOT};
+    use crate::network::nerve::Keyed;
     let mut w = Word::identity();
     let mut by_gen: Keyed<super::Cited> = Keyed::new();
     for core in cores.iter().rev() {
@@ -121,8 +121,11 @@ pub(crate) fn cited_of_cores(cores: &[SpellCore]) -> Option<(Vec<super::Cited>, 
             }
         }
     }
+    // The generators this word cites, accumulated here by (form, vertex):
+    // the whole of that index is the citation list, and a zero exponent
+    // drops out of it.
     let cited: Vec<_> = by_gen
-        .fiber(ROOT)
+        .scoped()
         .map(|(_, v)| v.clone())
         .filter(|(_, _, e)| *e != 0)
         .collect();

@@ -312,7 +312,9 @@ impl Element {
         torsion: &crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop>,
     ) {
         self.torsion.clear();
-        for (_, filed) in torsion.fiber(crate::network::nerve::ROOT) {
+        // ONE FORM'S torsion carrier, taken WHOLE — that is what adopting
+        // it means, and a subset would be a second list (law 12).
+        for (_, filed) in torsion.scoped() {
             let (sigma, ell) = (&filed.sigma, &filed.period);
             if *ell > 0 {
                 self.torsion.push(TorsionCycle {

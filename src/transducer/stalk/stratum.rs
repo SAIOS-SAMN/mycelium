@@ -7,6 +7,13 @@ use super::*;
 /// chart, a keyed relation over the axis value (read by its bits, never
 /// scanned among siblings); the members are the addresses whose chart
 /// ends here.
+///
+/// X3: BOTH CARRIERS ARE ALREADY ONE CELL'S FIBER, and every walk below
+/// reads them with `scoped`. A `Stratum` is reached by descending the
+/// chart's axes — `branches.get(&axis_key(a))`, one keyed read per axis —
+/// so `members` is the addresses at THIS chart and `branches` is this
+/// node's own children. There is no prefix to descend on inside either:
+/// the descent already happened, above.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Stratum {
     branches: Keyed<Stratum>,
@@ -48,7 +55,7 @@ impl Stratum {
 
     pub(crate) fn fiber(&self, axes: &[u64]) -> Vec<Vec<u8>> {
         match axes.split_first() {
-            None => self.members.fiber(ROOT).map(|(k, _)| k).collect(),
+            None => self.members.scoped().map(|(k, _)| k).collect(),
             // A stratum with no branch on this axis holds no members
             // under it: the empty fiber is that reading (0.11c).
             Some((&a, rest)) => match self.branches.get(&axis_key(a)) {
@@ -84,7 +91,7 @@ impl Stratum {
 
     pub(crate) fn len(&self) -> usize {
         let mut n = self.members.len();
-        for (_, s) in self.branches.fiber(ROOT) {
+        for (_, s) in self.branches.scoped() {
             n += s.len();
         }
         n
@@ -92,10 +99,10 @@ impl Stratum {
 
     pub(crate) fn strata(&self, path: &mut Vec<u64>, out: &mut Vec<(Invariant, Vec<Vec<u8>>)>) {
         if !self.members.is_empty() {
-            let members: Vec<Vec<u8>> = self.members.fiber(ROOT).map(|(k, _)| k).collect();
+            let members: Vec<Vec<u8>> = self.members.scoped().map(|(k, _)| k).collect();
             out.push((Invariant(path.clone()), members));
         }
-        for (k, s) in self.branches.fiber(ROOT) {
+        for (k, s) in self.branches.scoped() {
             path.push(axis_of(&k));
             s.strata(path, out);
             path.pop();
@@ -106,7 +113,7 @@ impl Stratum {
         match axes.split_first() {
             None => {
                 let mut out = Vec::new();
-                for (k, _) in self.branches.fiber(ROOT) {
+                for (k, _) in self.branches.scoped() {
                     out.push(axis_of(&k));
                 }
                 out
@@ -127,10 +134,10 @@ impl Stratum {
     }
 
     pub(crate) fn collect_members(&self, out: &mut Vec<Vec<u8>>) {
-        for (k, _) in self.members.fiber(ROOT) {
+        for (k, _) in self.members.scoped() {
             out.push(k);
         }
-        for (_, s) in self.branches.fiber(ROOT) {
+        for (_, s) in self.branches.scoped() {
             s.collect_members(out);
         }
     }

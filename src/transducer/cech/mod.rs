@@ -23,7 +23,7 @@ pub use cell::*;
 pub use coboundary::*;
 pub use complex::*;
 
-use crate::network::nerve::{Keyed, ROOT};
+use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::element::{Element, Versor};
 

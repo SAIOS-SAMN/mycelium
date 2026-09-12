@@ -276,8 +276,9 @@ impl Complex {
             return;
         };
         let mut drop: Vec<Vec<u8>> = Vec::new();
-        // index: keyed fiber of star(vertex)
-        for (k, _) in keys.fiber(ROOT) {
+        // THE STAR OF ONE VERTEX: `star.remove(vertex)` is the descent, so
+        // these are the cells containing it and every one of them drops.
+        for (k, _) in keys.scoped() {
             drop.push(k);
         }
         for k in drop {

@@ -374,8 +374,9 @@ impl Complex {
     /// compare classes need the first.
     pub fn classes(&self) -> Vec<(crate::transducer::sentence::ClassVector, Rotor, usize)> {
         let mut out = Vec::new();
-        // index: keyed cells of this complex (one chart's nerve)
-        for (k, d) in self.by_key.fiber(ROOT) {
+        // EVERY standing class, as the name says: the cells of this
+        // complex, which is one chart's nerve and a fiber already.
+        for (k, d) in self.by_key.scoped() {
             let d = *d as usize;
             if let Some(c) = self.degrees.get(d).and_then(|l| l.get(&k)) {
                 if let Fill::Class(kappa, r) = &c.fill {
@@ -388,8 +389,9 @@ impl Complex {
 
     pub fn unfilled(&self) -> Vec<(usize, Vec<u8>)> {
         let mut out = Vec::new();
-        // index: keyed cells of this complex (one chart's nerve)
-        for (k, d) in self.by_key.fiber(ROOT) {
+        // As above: this complex's own cells, all of them, since an
+        // unfilled cell anywhere in the nerve is a demand.
+        for (k, d) in self.by_key.scoped() {
             let d = *d as usize;
             if d >= 1 {
                 if let Some(c) = self.degrees.get(d).and_then(|l| l.get(&k)) {

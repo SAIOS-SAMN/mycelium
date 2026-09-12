@@ -236,7 +236,10 @@ pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Option<GaugeFibers> {
     }
     let mut first = None;
     let mut many = false;
-    for (k, fiber) in idx.fiber(crate::network::nerve::ROOT) {
+    // The index this function just built, keyed by hue pair: the question
+    // is whether it holds ONE class or more, so it is read as a whole and
+    // the walk stops at the second.
+    for (k, fiber) in idx.scoped() {
         match first {
             None => first = Some((hue_pair_of(&k)?, fiber.clone())),
             Some(_) => {
