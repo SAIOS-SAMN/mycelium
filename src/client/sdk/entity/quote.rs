@@ -102,7 +102,15 @@ impl Entity {
                 (inv.clone(), self.working_atlas().standing_on(inv).as_u8())
             })
             .collect();
-        let req = dialogue::encode_quote_request_standing(&self.session.kernel().voice(), &asked_st);
+        // An ask whose charts do not fit the count the frame writes is not
+        // asked short (47.1).
+        let Some(req) = dialogue::encode_quote_request_standing(&self.session.kernel().voice(), &asked_st)
+        else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "the ask does not fit the lengths its frame writes",
+            ));
+        };
         for i in 0..n {
             if !budget.spend() {
                 break;
@@ -226,7 +234,14 @@ impl Entity {
                     (inv.clone(), self.working_atlas().standing_on(inv).as_u8())
                 })
                 .collect();
-            let req = dialogue::encode_quote_request_standing(&self.session.kernel().voice(), &asked_st);
+            let Some(req) =
+                dialogue::encode_quote_request_standing(&self.session.kernel().voice(), &asked_st)
+            else {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "the ask does not fit the lengths its frame writes",
+                ));
+            };
             match self.session.exchange_at(&dest, req.clone()).or_else(|e| {
                 if e.kind() == io::ErrorKind::WouldBlock {
                     self.session.speak_nerve(req)

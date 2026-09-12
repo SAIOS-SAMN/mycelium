@@ -91,7 +91,14 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     })
                     .count()
             };
-            let reply = Frame { lane: frame.lane, body: vec![accepted.min(255) as u8] };
+            // The reply is the count ACCEPTED, in one byte. A deposit of
+            // more than 255 items cannot be answered in it, and answering
+            // 255 would tell the peer a number this door did not measure.
+            let Ok(accepted) = u8::try_from(accepted) else {
+                eprintln!("  evidence refused: {accepted} accepted does not fit the reply");
+                return true;
+            };
+            let reply = Frame { lane: frame.lane, body: vec![accepted] };
             answer(s, reply);
             return true;
         }
@@ -110,10 +117,19 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             let Ok(mut reg) = door.registry.lock() else { return true };
             reg.dispatch().map(|(tid, task)| (tid, task.clone()))
         };
+        // An envelope that does not fit the lengths it writes is not sent
+        // short: the voice would study a family this registry did not
+        // dispatch. An empty body is "no work", which it already reads.
         let body = match &dispatched {
             Some((tid, task)) => {
                 let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
-                dialogue::encode_task_envelope(tid, &task.train, &tests)
+                match dialogue::encode_task_envelope(tid, &task.train, &tests) {
+                    Some(b) => b,
+                    None => {
+                        eprintln!("  task refused: the envelope does not fit its lengths");
+                        Vec::new()
+                    }
+                }
             }
             None => Vec::new(),
         };
@@ -271,7 +287,11 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             }
             out
         };
-        let reply = Frame { lane: frame.lane, body: dialogue::encode_syllabus_reply(&words) };
+        let Some(body) = dialogue::encode_syllabus_reply(&words) else {
+            eprintln!("  syllabus refused: the page does not fit its count");
+            return true;
+        };
+        let reply = Frame { lane: frame.lane, body };
         answer(s, reply);
         return true;
     }
@@ -363,7 +383,10 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 }
             }
         }
-        let mut body = dialogue::encode_syllabus_reply(&words);
+        let Some(mut body) = dialogue::encode_syllabus_reply(&words) else {
+            eprintln!("  syllabus refused: the page does not fit its count");
+            return true;
+        };
         dialogue::append_class_records(&mut body, &classes);
         let reply = Frame { lane: frame.lane, body };
         answer(s, reply);

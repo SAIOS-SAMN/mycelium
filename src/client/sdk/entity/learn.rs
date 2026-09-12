@@ -37,10 +37,16 @@ impl Entity {
     ) -> io::Result<(u8, [u64; 4])> {
         let voice = self.session.kernel().voice();
         let bytes = rule.map(|e| e.to_bytes());
-        let body = self.session.speak_keyed(
-            id,
-            dialogue::encode_solve_with_rule(&voice, id, outputs, bytes.as_deref()),
-        )?;
+        // A solve that does not fit the lengths the frame writes is not
+        // sent short: it is not sent (47.1).
+        let Some(act) = dialogue::encode_solve_with_rule(&voice, id, outputs, bytes.as_deref())
+        else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "solve does not fit the lengths its frame writes",
+            ));
+        };
+        let body = self.session.speak_keyed(id, act)?;
         // A receipt that does not decode says nothing was solved and
         // nothing was paid, which is what the solve earned.
         Ok(match dialogue::decode_solve_receipt(&body) {

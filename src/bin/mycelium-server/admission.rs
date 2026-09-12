@@ -112,8 +112,15 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> 
         use ed25519_dalek::Signer;
         mesh.sk.sign(&prefix).to_bytes()
     };
-    let mut out =
-        dialogue::encode_cover_digest(&charts, &room, &cover_roots, &ruled_root, &mesh.vk, &mesh.bind, &sig);
+    // A digest whose charts or bind do not fit the lengths it writes is
+    // not sent short (47.1): the peer would read a cover this node does
+    // not hold and sign its own reading of it.
+    let Some(mut out) = dialogue::encode_cover_digest(
+        &charts, &room, &cover_roots, &ruled_root, &mesh.vk, &mesh.bind, &sig,
+    ) else {
+        eprintln!("  cover digest refused: it does not fit the lengths it writes");
+        return Vec::new();
+    };
     // 47.1: the signer's causal position travels with its signature. The
     // head receipt and the prefix it is signed over are appended, so the
     // peer can run 47.2 and cite this receipt as a parent of its next step.

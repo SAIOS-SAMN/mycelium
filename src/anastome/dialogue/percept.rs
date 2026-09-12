@@ -24,19 +24,19 @@ pub fn encode_task_envelope(
     id: impl AsRef<[u8]>,
     train: &crate::transducer::family::Family,
     tests: &[Vec<Vec<u8>>],
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
     let mut out = Vec::new();
-    let _ = put_addr(&mut out, id);
-    out.push(train.len().min(255) as u8);
-    for (a, b) in train.iter().take(255) {
+    put_addr(&mut out, id)?;
+    crate::transducer::address::put_u8_count(&mut out, train.len())?;
+    for (a, b) in train {
         push_grid(&mut out, a);
         push_grid(&mut out, b);
     }
-    out.push(tests.len().min(255) as u8);
-    for x in tests.iter().take(255) {
+    crate::transducer::address::put_u8_count(&mut out, tests.len())?;
+    for x in tests {
         push_grid(&mut out, x);
     }
-    out
+    Some(out)
 }
 
 /// A REGISTERED TASK as the registry hands it over: the family to learn
@@ -73,7 +73,11 @@ pub fn decode_task_envelope(body: &[u8]) -> Option<TaskEnvelope> {
 
 /// solve submission: `[ACT_SOLVE][voice 32][task_id address][n u8][grid·n]`
 /// and optionally `[RULE][len u32][element]` so the home speaks the rule.
-pub fn encode_solve(voice: &[u8; 32], id: impl AsRef<[u8]>, outputs: &[Vec<Vec<u8>>]) -> Vec<u8> {
+pub fn encode_solve(
+    voice: &[u8; 32],
+    id: impl AsRef<[u8]>,
+    outputs: &[Vec<Vec<u8>>],
+) -> Option<Vec<u8>> {
     encode_solve_with_rule(voice, id, outputs, None)
 }
 
@@ -82,12 +86,12 @@ pub fn encode_solve_with_rule(
     id: impl AsRef<[u8]>,
     outputs: &[Vec<Vec<u8>>],
     rule: Option<&[u8]>,
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
     let mut out = vec![ACT_SOLVE];
     out.extend_from_slice(voice);
-    let _ = put_addr(&mut out, id);
-    out.push(outputs.len().min(255) as u8);
-    for g in outputs.iter().take(255) {
+    put_addr(&mut out, id)?;
+    crate::transducer::address::put_u8_count(&mut out, outputs.len())?;
+    for g in outputs {
         push_grid(&mut out, g);
     }
     if let Some(r) = rule {
@@ -95,7 +99,7 @@ pub fn encode_solve_with_rule(
         out.extend_from_slice(&(r.len() as u32).to_le_bytes());
         out.extend_from_slice(r);
     }
-    out
+    Some(out)
 }
 
 pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {

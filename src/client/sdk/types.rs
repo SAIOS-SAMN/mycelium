@@ -126,19 +126,23 @@ impl<'a> WorkingAtlas<'a> {
         out
     }
 
-    /// THE STRONGEST STANDING this mind has on a chart. `fiber` writes the
-    /// ruled words first, then the stood, then the held, so its head is
-    /// the strongest standing on the chart and not the entry that arrived
-    /// first (rule 15). A chart this mind stands on at all is `Held`:
-    /// met and not ruled, which is what standing on nothing is.
+    /// THE STRONGEST STANDING this mind has on a chart — whether ANY word
+    /// on it is ruled, else whether any stands, else held.
     ///
-    /// One carrier for it: the ask built it inline at two sites.
+    /// No member is taken. 24.1 puts several words on one stratum as
+    /// multiplicity, so the head of the fiber is one of possibly many
+    /// ruled words, and taking it would be a choice (rule 15) even though
+    /// the value read off it is the same for all of them. The reading is
+    /// over the fiber, so the multiplicity never has to be resolved.
     pub fn standing_on(&self, inv: &crate::transducer::stalk::Invariant) -> Standing {
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "rule 15 — canonical key order: `fiber` writes ruled, then stood, then held, so the head is the strongest standing"
-        )]
-        self.fiber(inv).first().map_or(Standing::Held, |(_, s)| *s)
+        let on = self.fiber(inv);
+        if on.iter().any(|(_, s)| matches!(s, Standing::Ruled)) {
+            Standing::Ruled
+        } else if on.iter().any(|(_, s)| matches!(s, Standing::Stood)) {
+            Standing::Stood
+        } else {
+            Standing::Held
+        }
     }
 
     /// THE GENERATORS OF ONE STRATUM (42.6, 16.12, A21 §2): every address

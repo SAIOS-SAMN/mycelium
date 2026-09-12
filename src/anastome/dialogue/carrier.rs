@@ -60,11 +60,19 @@ pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
     Some(out)
 }
 
-pub(crate) fn push_invariant(out: &mut Vec<u8>, inv: &crate::transducer::stalk::Invariant) {
-    out.push(inv.0.len().min(255) as u8);
-    for v in inv.0.iter().take(255) {
+/// A chart's coordinates behind a one-byte axis count. `None` where the
+/// chart has more axes than the field can name: a truncated chart is a
+/// DIFFERENT chart, and writing 255 of its axes under a count of 255 said
+/// so to every reader while the sender believed it named its own.
+pub(crate) fn push_invariant(
+    out: &mut Vec<u8>,
+    inv: &crate::transducer::stalk::Invariant,
+) -> Option<()> {
+    crate::transducer::address::put_u8_count(out, inv.0.len())?;
+    for v in &inv.0 {
         out.extend_from_slice(&v.to_le_bytes());
     }
+    Some(())
 }
 
 pub(crate) fn read_invariant(b: &[u8], p: &mut usize) -> Option<crate::transducer::stalk::Invariant> {

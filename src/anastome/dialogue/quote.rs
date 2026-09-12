@@ -9,37 +9,37 @@ use super::*;
 
 /// `[ACT_QUOTE][voice 32][n u8][invariants…]` — the question, carrying the
 /// charts of the voice's own atlas so the hypha can answer by incidence.
-pub fn encode_quote_request(voice: &[u8; 32]) -> Vec<u8> {
+pub fn encode_quote_request(voice: &[u8; 32]) -> Option<Vec<u8>> {
     encode_quote_request_charts(voice, &[])
 }
 
 pub fn encode_quote_request_charts(
     voice: &[u8; 32],
     charts: &[crate::transducer::stalk::Invariant],
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
     let mut out = vec![ACT_QUOTE];
     out.extend_from_slice(voice);
-    out.push(charts.len().min(255) as u8);
-    for inv in charts.iter().take(255) {
-        push_invariant(&mut out, inv);
+    crate::transducer::address::put_u8_count(&mut out, charts.len())?;
+    for inv in charts {
+        push_invariant(&mut out, inv)?;
         out.push(0); // Ruled unless the caller uses encode_quote_request_standing
     }
-    out
+    Some(out)
 }
 
 /// Quote request with the standing of each chart the mind rests on.
 pub fn encode_quote_request_standing(
     voice: &[u8; 32],
     charts: &[(crate::transducer::stalk::Invariant, u8)],
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
     let mut out = vec![ACT_QUOTE];
     out.extend_from_slice(voice);
-    out.push(charts.len().min(255) as u8);
-    for (inv, st) in charts.iter().take(255) {
-        push_invariant(&mut out, inv);
+    crate::transducer::address::put_u8_count(&mut out, charts.len())?;
+    for (inv, st) in charts {
+        push_invariant(&mut out, inv)?;
         out.push(*st);
     }
-    out
+    Some(out)
 }
 
 pub fn decode_quote_request(body: &[u8]) -> Option<([u8; 32], Vec<crate::transducer::stalk::Invariant>)> {
@@ -62,7 +62,12 @@ pub fn decode_quote_request(body: &[u8]) -> Option<([u8; 32], Vec<crate::transdu
 }
 
 
-pub fn encode_quote_reply(height: u64, surface: &[u64; 4], k: u64, items: &[WorkItem]) -> Vec<u8> {
+pub fn encode_quote_reply(
+    height: u64,
+    surface: &[u64; 4],
+    k: u64,
+    items: &[WorkItem],
+) -> Option<Vec<u8>> {
     encode_quote_reply_within(height, surface, k, items, usize::MAX)
 }
 
@@ -124,33 +129,38 @@ pub fn is_deferral(body: &[u8], code: u8) -> bool {
 /// until the next would not fit. The frame budget decides what a contact
 /// can carry; a wide book is served across contacts, never as a frame the
 /// wire refuses.
-pub fn encode_quote_reply_within(height: u64, surface: &[u64; 4], k: u64, items: &[WorkItem], budget: usize) -> Vec<u8> {
+pub fn encode_quote_reply_within(height: u64, surface: &[u64; 4], k: u64, items: &[WorkItem], budget: usize) -> Option<Vec<u8>> {
     let mut out = vec![ACT_QUOTE];
     out.extend_from_slice(&height.to_le_bytes());
     push_mu(&mut out, surface);
     out.extend_from_slice(&k.to_le_bytes());
     let count_at = out.len();
     out.push(0);
+    // THE COUNT IS WHAT WAS SERVED, and the budget below is what stops the
+    // page — so the served count is bounded by the frame, not by the
+    // field. A page whose own count overflows the field is refused with
+    // the rest of the reply rather than sent naming fewer items than it
+    // carries.
     let mut served = 0u8;
-    for WorkItem { addr, mu, element, open } in items.iter().take(255) {
-        let open_len: usize = 1 + open.iter().map(|i| 1 + 8 * i.0.len().min(255)).sum::<usize>();
+    for WorkItem { addr, mu, element, open } in items {
+        let open_len: usize = 1 + open.iter().map(|i| 1 + 8 * i.0.len()).sum::<usize>();
         let item_len = 2 + addr.len() + 32 + 4 + element.len() + open_len;
         if out.len() + item_len > budget {
             break;
         }
-        let _ = put_addr(&mut out, addr);
+        put_addr(&mut out, addr)?;
         push_mu(&mut out, mu);
         // The listing whole, length-prefixed as the cells were.
         out.extend_from_slice(&(element.len() as u32).to_le_bytes());
         out.extend_from_slice(element);
-        out.push(open.len().min(255) as u8);
-        for inv in open.iter().take(255) {
-            push_invariant(&mut out, inv);
+        crate::transducer::address::put_u8_count(&mut out, open.len())?;
+        for inv in open {
+            push_invariant(&mut out, inv)?;
         }
-        served += 1;
+        served = served.checked_add(1)?;
     }
-    out[count_at] = served;
-    out
+    *out.get_mut(count_at)? = served;
+    Some(out)
 }
 
 pub fn decode_quote_reply(body: &[u8]) -> Option<(u64, [u64; 4], u64, Vec<WorkItem>)> {

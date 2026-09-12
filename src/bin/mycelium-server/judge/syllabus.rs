@@ -84,7 +84,10 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             charts.len()
         );
     }
-    let mut body = dialogue::encode_syllabus_reply(&words);
+    let Some(mut body) = dialogue::encode_syllabus_reply(&words) else {
+        eprintln!("  fetch refused: the page does not fit its count");
+        return;
+    };
     dialogue::append_class_records(&mut body, &classes);
     let reply = Frame { lane: frame.lane, body };
     answer(stream, reply);

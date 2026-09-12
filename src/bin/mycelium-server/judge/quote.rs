@@ -36,13 +36,16 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         .collect();
     // The frame budget bounds what one contact carries: items ride in
     // rank order until the next would not fit.
-    let body = dialogue::encode_quote_reply_within(
+    let Some(body) = dialogue::encode_quote_reply_within(
         height,
         &surface,
         k_step,
         &items,
         mycelium::network::wire::frame_budget(),
-    );
+    ) else {
+        eprintln!("  quote refused: the page does not fit the lengths it writes");
+        return;
+    };
     // A reply too short to carry a count served nothing.
     let served = match body.get(dialogue::QUOTE_COUNT_AT) {
         Some(n) => *n,

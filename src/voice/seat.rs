@@ -91,8 +91,9 @@ impl Voice {
     // and chains to a court (law 8, ruled 2026-09-10); a voice speaks
     // sentences (`Entity::speak`), probes, quotes, learns and solves.
 
-    /// A QUOTE request: "what is the highest-yield work?"
-    pub fn quote(&self) -> Vec<u8> {
+    /// A QUOTE request: "what is the highest-yield work?" `None` where the
+    /// act does not fit the lengths its frame writes (47.1).
+    pub fn quote(&self) -> Option<Vec<u8>> {
         dialogue::encode_quote_request(&self.identity)
     }
 
@@ -107,7 +108,8 @@ impl Voice {
     }
 
     /// A SOLVE: the outputs this voice speaks for a dispatched family.
-    pub fn solve(&self, id: &[u8; 32], outputs: &[crate::arc::Grid]) -> Vec<u8> {
+    /// `None` where the act does not fit the lengths its frame writes.
+    pub fn solve(&self, id: &[u8; 32], outputs: &[crate::arc::Grid]) -> Option<Vec<u8>> {
         dialogue::encode_solve(&self.identity, id, outputs)
     }
 

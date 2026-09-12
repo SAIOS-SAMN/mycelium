@@ -142,14 +142,18 @@ pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
 /// CITED ADDRESS length-prefixed in the receipt's place — a wait admitted
 /// no act, so there is no chain position to write and none is invented
 /// (rule 11).
-pub fn encode_speech_reply(adjudications: &[Adjudication]) -> Vec<u8> {
-    let mut out = vec![ACT_SPEECH, adjudications.len().min(255) as u8];
-    for a in adjudications.iter().take(255) {
+/// `None` where more adjudications stand than the count can name: a reply
+/// that answers 255 of 300 sentences is not this court's answer.
+pub fn encode_speech_reply(adjudications: &[Adjudication]) -> Option<Vec<u8>> {
+    let mut out = vec![ACT_SPEECH];
+    crate::transducer::address::put_u8_count(&mut out, adjudications.len())?;
+    for a in adjudications {
         out.push(a.code());
         match a {
-            Adjudication::Awaiting { form } => {
-                let _ = put_addr(&mut out, form);
-            }
+            // A wait NAMES the form it waits on; one whose address does
+            // not fit its prefix names nothing, and the reply is refused
+            // rather than sent with the field dropped.
+            Adjudication::Awaiting { form } => put_addr(&mut out, form)?,
             _ => {
                 if let Some(r) = a.receipt() {
                     out.extend_from_slice(&r);
@@ -161,7 +165,7 @@ pub fn encode_speech_reply(adjudications: &[Adjudication]) -> Vec<u8> {
             }
         }
     }
-    out
+    Some(out)
 }
 
 pub fn decode_speech_reply(body: &[u8]) -> Option<Vec<Adjudication>> {

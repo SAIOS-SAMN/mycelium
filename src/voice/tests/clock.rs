@@ -43,6 +43,7 @@ fn a_voice_seals_one_receipt_per_admitted_act_and_its_k_is_the_chain() {
     assert_ne!(rs[0].operator_hash, rs[1].operator_hash, "the act is on the receipt");
     assert!(v.chain().verify_chain_integrity(), "the chain re-derives end to end");
 
-    assert_eq!(v.quote()[0], dialogue::ACT_QUOTE);
+    let ask = v.quote().expect("the ask fits its lengths");
+    assert_eq!(dialogue::act_tag(&ask), Some(dialogue::ACT_QUOTE));
     assert_eq!(v.k(), 3, "a request is not an admitted act and seals nothing");
 }

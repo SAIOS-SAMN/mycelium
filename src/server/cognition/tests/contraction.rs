@@ -51,7 +51,9 @@ fn court(id: u8, task: &Address, family: Vec<TrainPair>) -> Kernel {
 fn hear(k: &mut Kernel, frame: &[u8]) -> Vec<u8> {
     let act = dialogue::decode_speech(frame).expect("the frame decodes");
     match k.hear_frame(&act) {
-        Ok(adjudicated) => dialogue::encode_speech_reply(&adjudicated),
+        Ok(adjudicated) => {
+            dialogue::encode_speech_reply(&adjudicated).expect("the reply fits its count")
+        }
         Err(lanes) => dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &lanes),
     }
 }

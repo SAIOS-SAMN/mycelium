@@ -161,12 +161,12 @@ pub fn encode_cover_digest(
     vk: &[u8; 32],
     addr: &str,
     sig: &[u8; 64],
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     out.extend_from_slice(&(charts.len() as u32).to_le_bytes());
     for (lane, inv) in charts {
         out.push(*lane);
-        push_invariant(&mut out, inv);
+        push_invariant(&mut out, inv)?;
     }
     for x in room {
         out.extend_from_slice(&x.to_le_bytes());
@@ -176,11 +176,12 @@ pub fn encode_cover_digest(
     }
     out.extend_from_slice(ruled_root);
     out.extend_from_slice(vk);
-    let ab = addr.as_bytes();
-    out.push(ab.len().min(255) as u8);
-    out.extend_from_slice(&ab[..ab.len().min(255)]);
+    // A bind address longer than its length field is not shortened to fit:
+    // a digest signed over a truncated address names a door that is not
+    // this one, and every peer that dialled it would be dialling nothing.
+    crate::transducer::address::put_u8_bytes(&mut out, addr.as_bytes())?;
     out.extend_from_slice(sig);
-    out
+    Some(out)
 }
 
 /// One cover digest read from `at`, with the offset one past its
@@ -278,18 +279,20 @@ pub fn cover_digest_end(body: &[u8]) -> Option<usize> {
 }
 
 /// Cover: `[ACT_COVER][vk 32][alen u8][addr][n u32]([lane u8][invariant])*`
-pub fn encode_cover(vk: &[u8; 32], addr: &str, charts: &[(u8, crate::transducer::stalk::Invariant)]) -> Vec<u8> {
+pub fn encode_cover(
+    vk: &[u8; 32],
+    addr: &str,
+    charts: &[(u8, crate::transducer::stalk::Invariant)],
+) -> Option<Vec<u8>> {
     let mut out = vec![ACT_COVER];
     out.extend_from_slice(vk);
-    let ab = addr.as_bytes();
-    out.push(ab.len().min(255) as u8);
-    out.extend_from_slice(&ab[..ab.len().min(255)]);
+    crate::transducer::address::put_u8_bytes(&mut out, addr.as_bytes())?;
     out.extend_from_slice(&(charts.len() as u32).to_le_bytes());
     for (lane, inv) in charts {
         out.push(*lane);
-        push_invariant(&mut out, inv);
+        push_invariant(&mut out, inv)?;
     }
-    out
+    Some(out)
 }
 
 pub fn decode_cover(body: &[u8]) -> Option<Cover> {

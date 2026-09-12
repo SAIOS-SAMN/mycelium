@@ -376,7 +376,13 @@ impl Session {
     /// open-demand market's top clusters, each carrying its chain so this kernel
     /// can actually attempt the reduction.
     pub fn quote(&self, charts: &[crate::transducer::stalk::Invariant]) -> io::Result<YieldQuote> {
-        match self.speak_nerve(dialogue::encode_quote_request_charts(&self.kernel.voice, charts)) {
+        let Some(req) = dialogue::encode_quote_request_charts(&self.kernel.voice, charts) else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "the ask does not fit the lengths its frame writes",
+            ));
+        };
+        match self.speak_nerve(req) {
             Ok(body) => {
                 let (height, surface, k, items) = dialogue::decode_quote_reply(&body)
                     .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;

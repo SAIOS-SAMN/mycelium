@@ -76,10 +76,14 @@ pub struct Rewrite {
 }
 
 impl Rewrite {
-    pub fn to_tape(&self) -> Vec<u8> {
+    /// `None` where a count does not fit its field: a rewrite naming more
+    /// than 255 words, or a refine reaching a chart of more than 255 axes.
+    /// The truncating form wrote the tape short and `from_tape` then read
+    /// a different rewrite out of it.
+    pub fn to_tape(&self) -> Option<Vec<u8>> {
         let mut out = vec![REWRITE_TAG, self.kind as u8];
-        out.push(self.before.len().min(255) as u8);
-        for a in self.before.iter().take(255) {
+        crate::transducer::address::put_u8_count(&mut out, self.before.len())?;
+        for a in &self.before {
             crate::transducer::address::put_cited(&mut out, a);
         }
         crate::transducer::address::put_cited(&mut out, &self.after);
@@ -107,8 +111,8 @@ impl Rewrite {
                 out.extend_from_slice(&period.to_le_bytes());
             }
             RewritePayload::Refine { chart, axis } => {
-                out.push(chart.0.len().min(255) as u8);
-                for a in chart.0.iter().take(255) {
+                crate::transducer::address::put_u8_count(&mut out, chart.0.len())?;
+                for a in &chart.0 {
                     out.extend_from_slice(&a.to_le_bytes());
                 }
                 out.extend_from_slice(&axis.to_le_bytes());
@@ -124,21 +128,21 @@ impl Rewrite {
                 class.to_bytes(&mut out);
             }
             RewritePayload::Translation { a, b, gauge } => {
-                crate::transducer::address::put_addr(&mut out, a);
-                crate::transducer::address::put_addr(&mut out, b);
+                crate::transducer::address::put_addr(&mut out, a)?;
+                crate::transducer::address::put_addr(&mut out, b)?;
                 gauge.to_bytes(&mut out);
             }
             RewritePayload::Retire { cites, freed } => {
                 out.extend_from_slice(&(cites.len() as u16).to_le_bytes());
                 for a in cites {
-                    crate::transducer::address::put_addr(&mut out, a);
+                    crate::transducer::address::put_addr(&mut out, a)?;
                 }
                 for m in freed {
                     out.extend_from_slice(&m.to_le_bytes());
                 }
             }
         }
-        out
+        Some(out)
     }
 
     pub fn from_tape(b: &[u8]) -> Option<Self> {
@@ -389,7 +393,7 @@ pub fn mint(
         return None;
     }
     rw.claimed = y;
-    Some(Element::from_rewrite_tape(rw.to_tape(), y))
+    Some(Element::from_rewrite_tape(rw.to_tape()?, y))
 }
 
 /// Blind replay of a Rewrite: both directions, then the yield re-read.

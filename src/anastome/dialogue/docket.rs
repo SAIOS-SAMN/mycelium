@@ -492,15 +492,18 @@ pub fn decode_teach(body: &[u8]) -> Option<Vec<u8>> {
 // ── settle: the two-voice consilience receipt ────────────────────────────────
 
 /// `[ACT_SETTLE][germ address][nvoices u8][voices 32×n][μ⃗ 4×u64]`
-pub fn encode_settle(germ: impl AsRef<[u8]>, voices: &[[u8; 32]], mu: &[u64; 4]) -> Vec<u8> {
+/// `None` where the settlement names more parties than the count can
+/// carry: a receipt that pays 255 of 300 voices is not the settlement the
+/// court made.
+pub fn encode_settle(germ: impl AsRef<[u8]>, voices: &[[u8; 32]], mu: &[u64; 4]) -> Option<Vec<u8>> {
     let mut out = vec![ACT_SETTLE];
-    let _ = put_addr(&mut out, germ);
-    out.push(voices.len().min(255) as u8);
-    for v in voices.iter().take(255) {
+    put_addr(&mut out, germ)?;
+    crate::transducer::address::put_u8_count(&mut out, voices.len())?;
+    for v in voices {
         out.extend_from_slice(v);
     }
     push_mu(&mut out, mu);
-    out
+    Some(out)
 }
 
 pub fn decode_settle(body: &[u8]) -> Option<(Address, Vec<[u8; 32]>, [u64; 4])> {

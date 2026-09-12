@@ -215,7 +215,12 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
                 if !chart.0.is_empty() && !open_set.contains(&chart_key) {
                     continue;
                 }
-                let open_len: usize = 1 + open.iter().map(|c| 1 + 8 * c.0.len().min(255)).sum::<usize>();
+                // The width is the width the encoder writes. It mirrored
+                // the encoder's truncation at 255 axes, so a chart wider
+                // than that was measured short here and then refused on
+                // the wire; the encoder refuses it now and this measures
+                // what it would write.
+                let open_len: usize = 1 + open.iter().map(|c| 1 + 8 * c.0.len()).sum::<usize>();
                 let wire = 68 + p.sub().len() * cell + open_len;
                 // THE PAGE IS FULL, SO THE WALK IS OVER. This was
                 // `continue`: a listing that did not fit was skipped and

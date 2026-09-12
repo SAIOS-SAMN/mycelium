@@ -3,6 +3,39 @@
 
 use crate::anastome::dialogue::*;
 
+/// 7.1, 47.1 — A COUNT THAT DOES NOT FIT ITS FIELD IS A REFUSAL, not a
+/// shorter frame. `len().min(255) as u8` wrote 255 and then 255 members,
+/// so the reader took a frame that ended inside the next field and refused
+/// the whole act while the sender believed it spoke.
+#[test]
+fn a_count_past_its_field_refuses_the_frame() {
+    let voice = [3u8; 32];
+    let charts: Vec<crate::transducer::stalk::Invariant> =
+        (0..256u64).map(|i| crate::transducer::stalk::Invariant(vec![i])).collect();
+    assert!(
+        encode_quote_request_charts(&voice, &charts[..255]).is_some(),
+        "255 charts fit the count the ask writes"
+    );
+    assert!(
+        encode_quote_request_charts(&voice, &charts).is_none(),
+        "256 do not, and the ask is refused rather than sent naming 255"
+    );
+
+    // The same at a settlement's parties and a syllabus page.
+    let voices: Vec<[u8; 32]> = (0..=255u16).map(|i| [i as u8; 32]).collect();
+    let listing = crate::transducer::element::listing_key(
+        &[(0i64, 0i64, 1u8, 4u8)],
+        &crate::transducer::element::IDENTITY_FRAME,
+    )
+    .expect("a one-cell chain is A5's");
+    assert!(encode_settle(&listing, &voices[..255], &[0; 4]).is_some());
+    assert!(encode_settle(&listing, &voices, &[0; 4]).is_none());
+
+    let words: Vec<Vec<u8>> = (0..256).map(|_| vec![0u8]).collect();
+    assert!(encode_syllabus_reply(&words[..255]).is_some());
+    assert!(encode_syllabus_reply(&words).is_none());
+}
+
 /// Every act round-trips exactly — the calculus is closed and lossless.
 #[test]
 fn the_five_acts_round_trip() {
@@ -21,7 +54,8 @@ fn the_five_acts_round_trip() {
         gauge: 1,
         body: chain.clone(),
     }];
-    assert_eq!(decode_quote_request(&encode_quote_request(&voice)).unwrap(), (voice, Vec::new()));
+    let ask = encode_quote_request(&voice).expect("the ask fits its lengths");
+    assert_eq!(decode_quote_request(&ask).unwrap(), (voice, Vec::new()));
     // L8q: the listing rides WHOLE. The field carries an element's own
     // bytes, so the round trip is over what the court actually serves and
     // what the voice actually decodes — not over a chain of cells the
@@ -43,7 +77,8 @@ fn the_five_acts_round_trip() {
         element,
         open: Vec::new(),
     }];
-    let (h, s, k, it) = decode_quote_reply(&encode_quote_reply(3, &[5, 0, 9, 0], 4208, &items)).unwrap();
+    let reply = encode_quote_reply(3, &[5, 0, 9, 0], 4208, &items).expect("the reply fits");
+    let (h, s, k, it) = decode_quote_reply(&reply).unwrap();
     assert_eq!(h, 3, "book height rides the quote");
     assert_eq!(s, [5, 0, 9, 0]);
     assert_eq!(k, 4208, "receipt-chain head K rides the quote, not TUniversal");
@@ -80,7 +115,8 @@ fn the_five_acts_round_trip() {
     assert_eq!((w, s, n), (1, 1, 1));
     assert_eq!(decode_cavities(&paged), vec![cavity]);
     assert_eq!(decode_teach(&encode_teach(&[0xAB, 0xCD])).unwrap(), vec![0xAB, 0xCD]);
-    let (g2, vs, mu) = decode_settle(&encode_settle(&listing, &[voice, solver], &[0, 0, 12, 0])).unwrap();
+    let settle = encode_settle(&listing, &[voice, solver], &[0, 0, 12, 0]).expect("it fits");
+    let (g2, vs, mu) = decode_settle(&settle).unwrap();
     assert_eq!((g2, vs, mu), (listing, vec![voice, solver], [0, 0, 12, 0]));
     let (held, at) = decode_root_reply(&encode_root_reply(Some(solver), 9)).unwrap();
     assert_eq!((held, at), (Some(solver), 9));

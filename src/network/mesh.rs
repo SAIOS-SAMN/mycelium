@@ -33,28 +33,32 @@ pub struct MeshRecord {
     /// `None` is UNMEASURED -- a node that has adopted no origin -- and is
     /// not the same as a genesis of all zeros, which is what the field held
     /// before and what every 47.2 origin check would have compared against.
-    /// The wire still carries 32 bytes; all-zeros there IS the absence.
+    /// MSH2 carries a presence byte, so the tape says which it is.
     pub genesis: Option<[u8; 32]>,
     pub epoch: u32,
 }
 
-fn put_str(out: &mut Vec<u8>, s: &str) {
-    let b = s.as_bytes();
-    let n = b.len().min(255);
-    out.push(n as u8);
-    out.extend_from_slice(&b[..n]);
+/// A string behind a one-byte length. `None` where it does not fit: the
+/// truncating form wrote the first 255 bytes of a longer bind or peer
+/// address and signed the record over the short one, so the node
+/// advertised a door nobody could dial.
+fn put_str(out: &mut Vec<u8>, s: &str) -> Option<()> {
+    crate::transducer::address::put_u8_bytes(out, s.as_bytes())
 }
 
 /// A string that may be ABSENT: one presence byte, then the string. A bind
 /// nothing has written is not a bind of no characters, and the two are told
 /// apart here rather than by every reader guessing from an empty one.
-fn put_opt_str(out: &mut Vec<u8>, s: Option<&str>) {
+fn put_opt_str(out: &mut Vec<u8>, s: Option<&str>) -> Option<()> {
     match s {
         Some(s) => {
             out.push(1);
-            put_str(out, s);
+            put_str(out, s)
         }
-        None => out.push(0),
+        None => {
+            out.push(0);
+            Some(())
+        }
     }
 }
 
@@ -99,21 +103,25 @@ fn take_bond(b: &[u8], p: &mut usize) -> Option<([u8; 32], [u64; 4])> {
 }
 
 impl MeshRecord {
-    pub fn encode(&self) -> Vec<u8> {
+    /// `None` where a field does not fit the length the record writes for
+    /// it — a peer list past 255, a bind or bootstrap string past 255
+    /// bytes. The truncating form wrote the short one and SIGNED IT, so
+    /// the node stood by a record it did not hold (47.1, 7.1).
+    pub fn encode(&self) -> Option<Vec<u8>> {
         let mut out = Vec::from(*MAGIC);
         out.push(self.kind);
-        put_opt_str(&mut out, self.bind.as_deref());
-        out.push(self.peers.len().min(255) as u8);
-        for p in self.peers.iter().take(255) {
-            put_str(&mut out, p);
+        put_opt_str(&mut out, self.bind.as_deref())?;
+        crate::transducer::address::put_u8_count(&mut out, self.peers.len())?;
+        for p in &self.peers {
+            put_str(&mut out, p)?;
         }
-        put_str(&mut out, &self.bootstrap);
-        out.push(self.hypha.len().min(255) as u8);
-        for (who, bond) in self.hypha.iter().take(255) {
+        put_str(&mut out, &self.bootstrap)?;
+        crate::transducer::address::put_u8_count(&mut out, self.hypha.len())?;
+        for (who, bond) in &self.hypha {
             put_bond(&mut out, who, bond);
         }
-        out.push(self.voice.len().min(255) as u8);
-        for (who, bond) in self.voice.iter().take(255) {
+        crate::transducer::address::put_u8_count(&mut out, self.voice.len())?;
+        for (who, bond) in &self.voice {
             put_bond(&mut out, who, bond);
         }
         // ABSENCE IS A BYTE, NOT A VALUE. A mesh with no genesis wrote 32
@@ -129,7 +137,7 @@ impl MeshRecord {
             None => out.push(0),
         }
         out.extend_from_slice(&self.epoch.to_le_bytes());
-        out
+        Some(out)
     }
 
     pub fn decode(b: &[u8]) -> Option<(Self, usize)> {
@@ -189,11 +197,13 @@ impl MeshRecord {
         ))
     }
 
-    pub fn signed_bytes(&self, key: &HyphaKey) -> Vec<u8> {
-        let mut b = self.encode();
+    /// `None` where the record does not encode: a record that cannot be
+    /// written whole is never signed.
+    pub fn signed_bytes(&self, key: &HyphaKey) -> Option<Vec<u8>> {
+        let mut b = self.encode()?;
         let sig = key.sign(&b);
         b.extend_from_slice(&sig);
-        b
+        Some(b)
     }
 
     pub fn open(bytes: &[u8], vk: &[u8; 32]) -> Option<Self> {
@@ -208,7 +218,13 @@ impl MeshRecord {
     pub fn save(&self, home: &Path, key: &HyphaKey) -> std::io::Result<()> {
         let path = home.join("mesh");
         let tmp = home.join("mesh.tmp");
-        std::fs::write(&tmp, self.signed_bytes(key))?;
+        let Some(bytes) = self.signed_bytes(key) else {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "mesh record does not fit the lengths it writes",
+            ));
+        };
+        std::fs::write(&tmp, bytes)?;
         std::fs::rename(&tmp, path)
     }
 
@@ -420,7 +436,7 @@ mod tests {
             genesis: Some([7; 32]),
             epoch: 2,
         };
-        let bytes = rec.signed_bytes(&key);
+        let bytes = rec.signed_bytes(&key).expect("the record fits its lengths");
         let back = MeshRecord::open(&bytes, &key.vk_bytes()).expect("verify");
         assert_eq!(back.bind, rec.bind);
         assert_eq!(back.peers, rec.peers);
@@ -448,18 +464,18 @@ mod tests {
             genesis: None,
             epoch: 2,
         };
-        let bytes = rec.signed_bytes(&key);
+        let bytes = rec.signed_bytes(&key).expect("the record fits its lengths");
         let back = MeshRecord::open(&bytes, &key.vk_bytes()).expect("verify");
         assert_eq!(back.genesis, None, "unwritten stays unwritten");
 
         let written = MeshRecord { genesis: Some([9; 32]), ..rec };
-        let back = MeshRecord::open(&written.signed_bytes(&key), &key.vk_bytes()).expect("verify");
+        let back = MeshRecord::open(&written.signed_bytes(&key).expect("fits"), &key.vk_bytes()).expect("verify");
         assert_eq!(back.genesis, Some([9; 32]), "a written one survives");
 
         // The sentinel it replaces: a genesis that IS all zeros is a
         // genesis, and reads back as one. MSH1 could not say this.
         let zeros = MeshRecord { genesis: Some([0; 32]), ..written };
-        let back = MeshRecord::open(&zeros.signed_bytes(&key), &key.vk_bytes()).expect("verify");
+        let back = MeshRecord::open(&zeros.signed_bytes(&key).expect("fits"), &key.vk_bytes()).expect("verify");
         assert_eq!(back.genesis, Some([0; 32]), "a zero origin is an origin");
     }
 
@@ -478,11 +494,11 @@ mod tests {
             genesis: None,
             epoch: 0,
         };
-        let back = MeshRecord::open(&rec.signed_bytes(&key), &key.vk_bytes()).expect("verify");
+        let back = MeshRecord::open(&rec.signed_bytes(&key).expect("fits"), &key.vk_bytes()).expect("verify");
         assert_eq!(back.bind, None, "unbound stays unbound");
 
         let empty = MeshRecord { bind: Some(String::new()), ..rec };
-        let back = MeshRecord::open(&empty.signed_bytes(&key), &key.vk_bytes()).expect("verify");
+        let back = MeshRecord::open(&empty.signed_bytes(&key).expect("fits"), &key.vk_bytes()).expect("verify");
         assert_eq!(back.bind, Some(String::new()), "an empty address is an address");
     }
 }

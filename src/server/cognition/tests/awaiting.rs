@@ -137,7 +137,7 @@ fn one_frame_adjudicates_a_stood_sentence_and_a_waiting_one_apart() {
 
     // The reply survives the codec: the cited address travels where a
     // verdict's receipt would be.
-    let wire = dialogue::encode_speech_reply(&heard);
+    let wire = dialogue::encode_speech_reply(&heard).expect("the reply fits its count");
     let back = dialogue::decode_speech_reply(&wire).expect("the reply decodes");
     assert_eq!(back, heard, "the wait and the verdict beside it both round trip");
 }

@@ -49,9 +49,10 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
     // The shape `judge` sends: the stratum-digest reply, the cover
     // digest, and the receipt section on the end.
     let mut body = encode_digests_reply(&digests);
-    body.extend(encode_cover_digest(
-        &charts, &room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig,
-    ));
+    body.extend(
+        encode_cover_digest(&charts, &room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig)
+            .expect("the digest fits its lengths"),
+    );
     let bare = body.len();
     body.extend(encode_receipt_section(&prefix, &rsig, &head).expect("a prefix that fits frames"));
 
@@ -86,9 +87,9 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
     );
 
     // The unframed shape is genuinely ambiguous and refuses.
-    let mut lone = encode_cover_digest(
-        &charts, &room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig,
-    );
+    let mut lone =
+        encode_cover_digest(&charts, &room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig)
+            .expect("the digest fits its lengths");
     lone.extend(encode_receipt_section(&prefix, &rsig, &head).expect("frames"));
     assert!(
         decode_cover_digest(&lone).is_none(),

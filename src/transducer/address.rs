@@ -180,6 +180,26 @@ pub fn tag_of(b: &[u8]) -> Option<u8> {
     b.first().copied()
 }
 
+/// A COUNT IN ONE BYTE, or a refusal. `len().min(255) as u8` wrote 255
+/// for any larger count and the writer then emitted 255 members, so the
+/// reader took a frame that ended in the middle of the next field and
+/// refused the whole act while the sender believed it spoke (7.1). 47.1's
+/// rule: a length that does not fit its wire field is refused where the
+/// frame is built.
+pub fn put_u8_count(out: &mut Vec<u8>, n: usize) -> Option<()> {
+    out.push(u8::try_from(n).ok()?);
+    Some(())
+}
+
+/// A byte string behind a one-byte length, or a refusal. The truncating
+/// form silently shortened an address or a bind string and signed the
+/// short one.
+pub fn put_u8_bytes(out: &mut Vec<u8>, b: &[u8]) -> Option<()> {
+    put_u8_count(out, b.len())?;
+    out.extend_from_slice(b);
+    Some(())
+}
+
 pub fn put_bytes(out: &mut Vec<u8>, b: &[u8]) {
     out.extend_from_slice(&(b.len() as u32).to_le_bytes());
     out.extend_from_slice(b);

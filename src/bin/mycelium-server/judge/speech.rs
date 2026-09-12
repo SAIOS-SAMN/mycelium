@@ -27,7 +27,13 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         Err(_) => return,
     };
     let body = match heard {
-        Ok(adjudicated) => dialogue::encode_speech_reply(&adjudicated),
+        Ok(adjudicated) => match dialogue::encode_speech_reply(&adjudicated) {
+            Some(b) => b,
+            None => {
+                eprintln!("  speech refused: the reply does not fit its count");
+                return;
+            }
+        },
         Err(lanes) => dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &lanes),
     };
     let reply = Frame { lane: frame.lane, body };

@@ -16,13 +16,17 @@ pub fn decode_syllabus_request(body: &[u8]) -> Option<[u8; 32]> {
     body.get(1..33)?.try_into().ok()
 }
 
-pub fn encode_syllabus_reply(words: &[Vec<u8>]) -> Vec<u8> {
-    let mut out = vec![words.len().min(255) as u8];
-    for w in words.iter().take(255) {
+/// `None` where the page holds more words than the count can name: a
+/// reply that carries 255 of them under a count of 255 is a shorter page
+/// than the one served, and the fetch that asked cannot tell.
+pub fn encode_syllabus_reply(words: &[Vec<u8>]) -> Option<Vec<u8>> {
+    let mut out = Vec::new();
+    crate::transducer::address::put_u8_count(&mut out, words.len())?;
+    for w in words {
         out.extend_from_slice(&(w.len() as u32).to_le_bytes());
         out.extend_from_slice(w);
     }
-    out
+    Some(out)
 }
 
 pub fn decode_syllabus_reply(body: &[u8]) -> Option<Vec<Vec<u8>>> {
