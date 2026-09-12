@@ -48,14 +48,20 @@ fn substance_is_the_centered_chain() {
     // The same deformation transposed +7 rows, +5 cols.
     let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 7, c + 5, *h)).collect();
     let b_far: Vec<_> = b.iter().map(|(r, c, h)| (r + 7, c + 5, *h)).collect();
-    let here = from_residual(&germinate(&a, &b).unwrap());
-    let far = from_residual(&germinate(&a_far, &b_far).unwrap());
+    let here = from_canonical(&germinate(&a, &b).unwrap());
+    let far = from_canonical(&germinate(&a_far, &b_far).unwrap());
     assert_eq!(here.address(), far.address(), "same deformation, any position — ONE word");
     assert!(here.carriage(&far).is_some(), "one thought: a versor carries one onto the other");
     // Equal tally, different geometry — the cured conflation: {1→0 here, 0→4
     // there} at two different relative offsets must stay DISTINCT.
-    let g1 = from_residual(&vec![(0, 0, 1, 0), (1, 1, 0, 4)]);
-    let g2 = from_residual(&vec![(1, 0, 1, 0), (0, 2, 0, 4)]);
+    let chain = |cells: &[(i64, i64, u8, u8)]| {
+        from_canonical(
+            &crate::transducer::element::canonical_chain(cells)
+                .expect("one entry per position is A5's chain"),
+        )
+    };
+    let g1 = chain(&[(0, 0, 1, 0), (1, 1, 0, 4)]);
+    let g2 = chain(&[(1, 0, 1, 0), (0, 2, 0, 4)]);
     assert!(g1.carriage(&g2).is_none(), "equal tally, different geometry — no versor relates them");
     assert_ne!(g1.address(), g2.address(), "and distinct identity");
 }

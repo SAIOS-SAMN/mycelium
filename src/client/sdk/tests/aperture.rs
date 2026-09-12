@@ -77,11 +77,11 @@ assert!(
 /// inside the aperture does not drop the mind's own speech.
 #[test]
 fn expressed_word_survives_shed_within_the_aperture() {
-use crate::transducer::element::from_residual;
+use crate::transducer::element::{canonical_chain, from_canonical};
 let mut epi = Epigenome::new();
 let residual = [(0i64, 0i64, 1u8, 2u8)];
 assert!(epi.express(&residual, 7, 10), "the residual is claimed");
-let addr = from_residual(&residual.to_vec()).address();
+let addr = from_canonical(&canonical_chain(&residual).expect("one cell is A5's chain")).address();
 let d = epi.dialect.get(&addr).expect("stood");
 assert_eq!(d.last_used_k, 7, "k is the voice's K");
 assert_eq!(d.last_used_tu, 10, "tu is the standing extent in heights");
@@ -106,13 +106,13 @@ assert!(epi.working_word(&addr).is_some());
 /// what it holds whether or not anyone answered it.
 #[test]
 fn a_mind_sheds_on_its_own_k_though_the_mesh_never_advances() {
-use crate::transducer::element::from_residual;
+use crate::transducer::element::{canonical_chain, from_canonical};
 let mut epi = Epigenome::new();
 let residual = [(0i64, 0i64, 1u8, 2u8)];
 // Stood at the mind's K 1, with TUniversal frozen at 0 throughout:
 // no receipt was ever admitted.
 assert!(epi.express(&residual, 1, 0), "the residual is claimed");
-let addr = from_residual(&residual.to_vec()).address();
+let addr = from_canonical(&canonical_chain(&residual).expect("one cell is A5's chain")).address();
 assert_eq!(epi.dialect_len(), 1);
 let aperture = crate::physics::aperture_cycle() as u64;
 let now = 1 + aperture + 1;

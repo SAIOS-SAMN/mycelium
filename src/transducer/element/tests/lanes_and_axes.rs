@@ -16,7 +16,7 @@ fn a_residual_germinates_as_a_coboundary_germ() {
     let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
     let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
     let g = germinate(&a, &b).unwrap();
-    let germ = from_residual(&g);
+    let germ = from_canonical(&g);
     // A hue transition on a standing cell measures as GAUGE content
     // alongside the residual defect (the four-lane projection).
     assert_eq!(germ.lanes(), [false, true, false, false], "a recolour is 𝒢 content; temporal and holonomic are empty until standing or punctured");
@@ -27,7 +27,7 @@ fn a_residual_germinates_as_a_coboundary_germ() {
     // its solution is the reverse coboundary (from_residual of b→a), not a
     // matrix inverse — the group solution() correctly declines.
     assert!(germ.solution().is_none(), "no single-matrix inverse for a coboundary");
-    let reverse = from_residual(&germinate(&b, &a).unwrap());
+    let reverse = from_canonical(&germinate(&b, &a).unwrap());
     assert_ne!(germ.address(), reverse.address(), "the reverse description is a distinct germ");
 }
 
@@ -38,14 +38,14 @@ fn a_residual_germinates_as_a_coboundary_germ() {
 fn a_bidirectional_swap_does_not_collapse_to_zero() {
     let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)]; // L
     let b = [(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]; // bar
-    let l_to_bar = from_residual(&germinate(&a, &b).unwrap());
+    let l_to_bar = from_canonical(&germinate(&a, &b).unwrap());
     // One cell vacates and one appears: SPATIAL content (mass moved)
     // alongside the two-cell residual defect — measured, not defaulted.
     assert_eq!(l_to_bar.magnitude(), [2, 0, 0, 0], "two moved cells, exact — not a canceled 0; the fibre lane is empty until punctured");
     assert_eq!(l_to_bar.lanes(), [true, false, false, false], "a real spatial germ");
     assert!(!l_to_bar.is_identity(), "the chain decides — a canceled tally is not identity");
     assert!(!l_to_bar.substance().is_identity(), "and its substance is real");
-    let bar_to_l = from_residual(&germinate(&b, &a).unwrap());
+    let bar_to_l = from_canonical(&germinate(&b, &a).unwrap());
     assert_ne!(l_to_bar.address(), bar_to_l.address(), "distinct descriptions, distinct address");
     // The two descriptions share one base geometry: a versor carries one
     // support onto the other, and the reversed gauge is a second section

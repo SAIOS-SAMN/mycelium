@@ -2,12 +2,12 @@
 // and every settlement is a vector of four lanes.
 
 use crate::economy::*;
-use crate::transducer::element::{from_residual, Element};
+use crate::transducer::element::{from_canonical, Element};
 use crate::transducer::germinate::germinate;
 
 fn germ() -> Element {
     // A germinated pattern (post-excision, the only species of germ).
-    from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap())
+    from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap())
 }
 
 #[test]

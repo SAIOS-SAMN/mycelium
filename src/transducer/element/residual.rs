@@ -29,21 +29,149 @@ pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
 /// chain; the antisymmetric hue tally is kept only as the δ-algebra lens.
 /// A5: translate min-corner to origin, sort, dedup. None when two
 /// distinct transitions occupy one site.
+/// A5'S CHAIN: centered on its min corner, sorted, and carrying at most
+/// one transition per site. [`canonical_chain`] is its only constructor,
+/// so a value of this type IS the proof A5 accepted the chain, and every
+/// reading that needs one takes it by type rather than re-deriving it.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct CanonicalChain(Vec<(i64, i64, u8, u8)>);
+
+impl CanonicalChain {
+    /// The cells this chain dropped, re-centered. Total: a subset of a
+    /// conflict-free set is conflict-free, and centering and sorting are
+    /// total.
+    pub fn without(&self, drop: &[(i64, i64)]) -> CanonicalChain {
+        let kept: Vec<(i64, i64, u8, u8)> = self
+            .0
+            .iter()
+            .copied()
+            .filter(|(r, c, _, _)| !drop.contains(&(*r, *c)))
+            .collect();
+        CanonicalChain(center(&kept))
+    }
+
+    /// Both chains' cells. `None` where the two name one site with
+    /// different transitions: that is a conflict and A5 refuses it. Equal
+    /// transitions at one site are the same cell and deduplicate.
+    ///
+    /// Keeping this one's transition and dropping the other's would be a
+    /// member chosen by arrival (rule 15) inventing a consistency the two
+    /// chains do not have (rule 11).
+    pub fn union(&self, other: &CanonicalChain) -> Option<CanonicalChain> {
+        let mut both = self.0.clone();
+        both.extend_from_slice(&other.0);
+        canonical_chain(&both)
+    }
+
+    pub fn as_slice(&self) -> &[(i64, i64, u8, u8)] {
+        &self.0
+    }
+
+    pub fn to_vec(&self) -> Vec<(i64, i64, u8, u8)> {
+        self.0.clone()
+    }
+}
+
+impl std::ops::Deref for CanonicalChain {
+    type Target = [(i64, i64, u8, u8)];
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+/// §2.1 ONE LEVEL DOWN: the canonical object and its carriage. A5's chain
+/// is the identity — the same deformation anywhere is one substance — and
+/// the translator is where that substance sits in the scene. Two bubbles
+/// holding one chain at two translators are one substance said at two
+/// places.
+///
+/// The corner is measured at the sensor and leaves it as a versor, so the
+/// pair never travels (law 11); placements compose by the geometric
+/// product where corners would compose by subtraction (3.3).
+#[derive(Debug, Clone)]
+pub struct PlacedChain {
+    chain: CanonicalChain,
+    at: Versor,
+}
+
+impl Default for PlacedChain {
+    /// The empty chain at the origin: no cells, and the identity placement
+    /// that is true of them rather than standing in for one.
+    fn default() -> Self {
+        PlacedChain { chain: CanonicalChain::default(), at: identity_versor() }
+    }
+}
+
+impl PlacedChain {
+    pub fn chain(&self) -> &CanonicalChain {
+        &self.chain
+    }
+
+    pub fn at(&self) -> &Versor {
+        &self.at
+    }
+
+    /// The chain as it sits in the scene: each canonical cell carried
+    /// through the translator, its transition unchanged. `carry_cell` is
+    /// the sensor's, and this is the one place the pair reappears.
+    pub fn placed(&self) -> Vec<(i64, i64, u8, u8)> {
+        let mut out = Vec::new();
+        for &(r, c, hb, ha) in self.chain.as_slice() {
+            let Some(cells) = crate::transducer::element::sensor::carry_cell(&self.at, r, c) else {
+                continue;
+            };
+            for (pr, pc) in cells {
+                out.push((pr, pc, hb, ha));
+            }
+        }
+        out.sort_unstable();
+        out.dedup();
+        out
+    }
+}
+
+impl std::ops::Deref for PlacedChain {
+    type Target = CanonicalChain;
+    fn deref(&self) -> &Self::Target {
+        &self.chain
+    }
+}
+
+/// A5's chain and the translator that places it, measured from raw scene
+/// cells. `None` where two transitions occupy one site.
+pub fn place_chain(cells: &[(i64, i64, u8, u8)]) -> Option<PlacedChain> {
+    let chain = canonical_chain(cells)?;
+    Some(PlacedChain { chain, at: corner_translator(cells) })
+}
+
+/// The translator from the origin to the chain's min corner. The corner is
+/// read here, at the sensor boundary, and leaves as a versor.
 #[expect(
     clippy::disallowed_methods,
-    reason = "rule 4 — the min corner is the chain's extent, content: A5 translates it to the origin so two nodes address one chain alike"
+    reason = "rule 4 — the min corner is the chain's extent, content; §1.4, this is the sensor boundary where a cell coordinate is read"
 )]
-pub fn canonical_chain(cells: &[(i64, i64, u8, u8)]) -> Option<Vec<(i64, i64, u8, u8)>> {
-    if cells.is_empty() {
-        return Some(Vec::new());
-    }
-    // A non-empty chain has a corner; the empty one returned above. The
-    // corner is read, never defaulted (rule 11).
+fn corner_translator(cells: &[(i64, i64, u8, u8)]) -> Versor {
     let (Some(min_r), Some(min_c)) = (
         cells.iter().map(|(r, _, _, _)| *r).min(),
         cells.iter().map(|(_, c, _, _)| *c).min(),
     ) else {
-        return None;
+        return identity_versor();
+    };
+    translator_versor(min_r, min_c)
+}
+
+/// Translate to the min corner and sort. Total, and conflict-blind: only
+/// [`canonical_chain`] decides whether a chain has one transition per site.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "rule 4 — the min corner is the chain's extent, content: A5 translates it to the origin so two nodes address one chain alike"
+)]
+fn center(cells: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
+    let (Some(min_r), Some(min_c)) = (
+        cells.iter().map(|(r, _, _, _)| *r).min(),
+        cells.iter().map(|(_, c, _, _)| *c).min(),
+    ) else {
+        return Vec::new();
     };
     let mut out: Vec<(i64, i64, u8, u8)> = cells
         .iter()
@@ -51,37 +179,37 @@ pub fn canonical_chain(cells: &[(i64, i64, u8, u8)]) -> Option<Vec<(i64, i64, u8
         .collect();
     out.sort_unstable();
     out.dedup();
+    out
+}
+
+pub fn canonical_chain(cells: &[(i64, i64, u8, u8)]) -> Option<CanonicalChain> {
+    let out = center(cells);
     for w in out.windows(2) {
         if w[0].0 == w[1].0 && w[0].1 == w[1].1 && (w[0].2, w[0].3) != (w[1].2, w[1].3) {
             return None;
         }
     }
-    Some(out)
+    Some(CanonicalChain(out))
 }
 
-// The `min` reads below are rule 4 on the chain's extent. They sit inside
-// the fallback that rebuilds a chain `canonical_chain` REFUSED, with the
-// conflict check and the dedup skipped — a law 2 identity fault carried by
-// a rule 11 default. The next commit deletes that fallback and this
-// allowance with it; it is here only so rule 4's commit is green.
-#[expect(
-    clippy::disallowed_methods,
-    reason = "rule 4 — the min corner is the chain's extent; the fallback this sits in is deleted by the from_residual commit"
-)]
-pub fn from_residual(g: &ResidualGerm) -> Element {
-    let centered: ResidualGerm = canonical_chain(g).unwrap_or_else(|| {
-        let min_r = g.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
-        let min_c = g.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
-        let mut c: ResidualGerm = g.iter().map(|(r, col, b, a)| (r - min_r, col - min_c, *b, *a)).collect();
-        c.sort_unstable();
-        c
-    });
+/// The word of a residual germ, or `None` where the germ has no canonical
+/// chain: two distinct transitions on one site (A5 step 3).
+///
+/// A germ `canonical_chain` refuses has no address, because the address IS
+/// the centered chain (law 2) and there is no centering of a chain that
+/// says two things at one cell. The refusal travels.
+pub fn from_residual(g: &ResidualGerm) -> Option<Element> {
+    Some(from_canonical(&canonical_chain(g)?))
+}
 
+/// The word of a chain A5 has already accepted. Total: the type is the
+/// proof, so there is nothing left to refuse.
+pub fn from_canonical(chain: &CanonicalChain) -> Element {
     let mut e = Element::identity();
-    e.word = residual_word(&centered);
+    e.word = residual_word(chain);
     e.address.take();
-    e.mag = measure_lanes(&centered);
-    e.sub = centered;
+    e.mag = measure_lanes(chain);
+    e.sub = chain.to_vec();
     e
 }
 
@@ -93,16 +221,28 @@ pub fn from_residual(g: &ResidualGerm) -> Element {
 /// The unique listing key of a demand: the address of the framed residual.
 /// Intake, the book, quote, attest, probe, settle, task, and the nerve
 /// route all use this, never an unframed shadow.
-pub fn listing_key(chain: &[(i64, i64, u8, u8)], frame: &crate::arc::Frame) -> crate::transducer::address::Address {
-    from_residual_framed(&chain.to_vec(), frame).address()
+/// `None` where the chain has no canonical form: a listing that cannot be
+/// addressed is a refusal that travels, never listed and never counted
+/// (U14).
+pub fn listing_key(
+    chain: &[(i64, i64, u8, u8)],
+    frame: &crate::arc::Frame,
+) -> Option<crate::transducer::address::Address> {
+    Some(from_residual_framed(&chain.to_vec(), frame)?.address())
 }
 
 /// Identity frame: no scale. Unframed speech uses this so its key matches
 /// a planar intake.
 pub const IDENTITY_FRAME: crate::arc::Frame = crate::arc::Frame::IDENTITY;
 
-pub fn from_residual_framed(g: &ResidualGerm, frame: &crate::arc::Frame) -> Element {
-    let mut e = from_residual(g);
+pub fn from_residual_framed(g: &ResidualGerm, frame: &crate::arc::Frame) -> Option<Element> {
+    Some(from_canonical_framed(&canonical_chain(g)?, frame))
+}
+
+/// The framed word of a chain A5 has already accepted. Total, as
+/// [`from_canonical`] is.
+pub fn from_canonical_framed(chain: &CanonicalChain, frame: &crate::arc::Frame) -> Element {
+    let mut e = from_canonical(chain);
     let crate::arc::Frame { h_in: hi, w_in: wi, h_out: ho, w_out: wo } = *frame;
     if hi > 0 && wi > 0 && (hi, wi) != (ho, wo) {
         let rh = Q::new(BigInt::from(ho as u64), BigInt::from(hi as u64));
@@ -132,7 +272,7 @@ pub fn from_connection(
 ) -> Option<Element> {
     let v = conformal_of(rotor_word, carriage)?;
     let spelling = crate::transducer::alphabet::Spelling { word: rotor_word.clone() };
-    let mut e = from_residual(remainder);
+    let mut e = from_residual(remainder)?;
     e.word = connection_word(&spelling, carriage, sigma, &e.sub);
     e.action.spatial = Some(v);
     e.action.gauge = sigma.to_vec();

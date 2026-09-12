@@ -8,8 +8,16 @@
 /// A's and B's occupied positions. hue 0 means the cell is absent on that side.
 pub type ResidualGerm = Vec<(i64, i64, u8, u8)>;
 
-/// Mint the residual germ from raw cell lists `a → b` — the exact coboundary.
-pub fn germinate(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<ResidualGerm> {
+/// Mint A5's chain from two grids' cells — the exact coboundary.
+///
+/// THE GRID IS THE THEOREM: one position holds one before and one after, so
+/// the chain read from a grid pair cannot put two transitions on one site
+/// and A5 has nothing to refuse here. The `None` answers the GRIDS — the
+/// two are equal and there is no coboundary to mint — and never A5.
+pub fn germinate(
+    a: &[(i64, i64, u8)],
+    b: &[(i64, i64, u8)],
+) -> Option<crate::transducer::element::PlacedChain> {
     // Collect the union of positions with their before/after hues.
     let mut cells: ResidualGerm = Vec::new();
     let upsert = |cells: &mut ResidualGerm, r: i64, c: i64, before: u8, after: u8| {
@@ -37,13 +45,16 @@ pub fn germinate(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<ResidualG
     if cells.is_empty() {
         return None;
     }
-    cells.sort_unstable();
-    Some(cells)
+    // `upsert` holds one entry per position, so A5 accepts this chain; the
+    // `?` collapses into the `None` above rather than adding a refusal.
+    // The corner is measured here, at the sensor, and leaves as a
+    // translator (law 11).
+    crate::transducer::element::place_chain(&cells)
 }
 
 /// Apply a residual germ to a scene: at each germ cell, replace `before` with
 /// `after`. Reproduces the demand it was minted from — the germination closes.
-pub fn apply(germ: &ResidualGerm, a: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
+pub fn apply(germ: &[(i64, i64, u8, u8)], a: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
     let mut out: Vec<(i64, i64, u8)> = a.to_vec();
     for (r, c, _before, after) in germ {
         out.retain(|(rr, cc, _)| !(rr == r && cc == c)); // clear the cell
@@ -56,7 +67,7 @@ pub fn apply(germ: &ResidualGerm, a: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
 }
 
 /// Canonical bytes of a residual germ — its ANASTOME address payload.
-pub fn germ_bytes(germ: &ResidualGerm) -> Vec<u8> {
+pub fn germ_bytes(germ: &[(i64, i64, u8, u8)]) -> Vec<u8> {
     let mut out = Vec::with_capacity(germ.len() * 18);
     for (r, c, before, after) in germ {
         out.extend_from_slice(&r.to_le_bytes());
@@ -77,14 +88,21 @@ mod tests {
     }
 
     /// A non-conformal change (a single cell recoloured, others untouched — not a
-    /// rigid motion of the body) germinates a residual germ that reproduces A→B.
+    /// rigid motion of the body) germinates A5's chain, which reproduces A→B
+    /// when it is placed back at the corner it was centered from.
     #[test]
     fn a_residual_germ_reproduces_its_demand() {
         let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
         let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)]; // only (0,1): 2→9
         let g = germinate(&a, &b).expect("a change germinates");
-        assert_eq!(g, vec![(0, 1, 2, 9)], "the germ IS the exact residual");
-        assert_eq!(norm(apply(&g, &a)), norm(b.to_vec()), "it closes A→B (topological)");
+        assert_eq!(
+            g.as_slice(),
+            &[(0, 0, 2, 9)],
+            "A5 centers the chain: the same change anywhere is one substance"
+        );
+        let placed: Vec<(i64, i64, u8, u8)> =
+            g.iter().map(|&(r, c, hb, ha)| (r, c + 1, hb, ha)).collect();
+        assert_eq!(norm(apply(&placed, &a)), norm(b.to_vec()), "it closes A→B at its corner");
     }
 
     /// Creation/annihilation is carried too (hue 0 on the absent side).
@@ -93,8 +111,10 @@ mod tests {
         let a = [(0, 0, 1u8)];
         let b = [(0, 0, 1u8), (0, 1, 5)]; // a cell appears
         let g = germinate(&a, &b).expect("appearance germinates");
-        assert_eq!(g, vec![(0, 1, 0, 5)]);
-        assert_eq!(norm(apply(&g, &a)), norm(b.to_vec()));
+        assert_eq!(g.as_slice(), &[(0, 0, 0, 5)], "centered, as A5 leaves every chain");
+        let placed: Vec<(i64, i64, u8, u8)> =
+            g.iter().map(|&(r, c, hb, ha)| (r, c + 1, hb, ha)).collect();
+        assert_eq!(norm(apply(&placed, &a)), norm(b.to_vec()));
     }
 
     /// No net change → no germ owed.

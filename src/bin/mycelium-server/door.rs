@@ -427,7 +427,12 @@ pub(crate) fn list_task(
             continue;
         };
         chain.sort_unstable();
-        let residual = mycelium::transducer::element::from_residual_framed(&chain, &frame);
+        // A chain with no A5 form cannot be addressed, so it is not routed
+        // and not taken in (U14).
+        let Some(residual) = mycelium::transducer::element::from_residual_framed(&chain, &frame)
+        else {
+            continue;
+        };
         let inv = mycelium::transducer::stalk::invariant_of(&residual);
         let addr = residual.address();
         let here = homes_here(mesh, kernel, &inv, &residual.magnitude());

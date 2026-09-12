@@ -64,7 +64,7 @@ pub(crate) fn vertex_stratum(word: &Element) -> Option<Vec<u8>> {
         None => {
             let chain = crate::transducer::element::canonical_chain(word.sub())?;
             let mut out = Vec::with_capacity(chain.len() * 18);
-            for (r, c, b, a) in &chain {
+            for (r, c, b, a) in chain.as_slice() {
                 out.extend_from_slice(&r.to_le_bytes());
                 out.extend_from_slice(&c.to_le_bytes());
                 out.push(*b);
@@ -117,7 +117,12 @@ impl Entity {
     pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> Cited {
         // The chain's own key, a listing key (17.2): the one address the
         // held stratum does not answer with.
-        let own = crate::transducer::element::from_residual(&chain.to_vec()).address();
+        // A chain with no A5 form cites nothing and stands whole as the
+        // residual: there is no word here to be a use of.
+        let Some(own) = crate::transducer::element::from_residual(&chain.to_vec()) else {
+            return (Vec::new(), chain.to_vec());
+        };
+        let own = own.address();
         let contemplation = &self.contemplation;
         let held_at = |inv: &crate::transducer::stalk::Invariant, piece: &[(i64, i64, u8, u8)]| {
             contemplation

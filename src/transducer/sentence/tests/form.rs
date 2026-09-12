@@ -5,7 +5,7 @@ use super::common::*;
 use crate::network::nerve::{Keyed, ROOT};
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::blade::Shape;
-use crate::transducer::element::{self, from_residual};
+use crate::transducer::element::{self, from_canonical};
 use crate::transducer::germinate::germinate;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self, Stalks};
@@ -231,9 +231,9 @@ fn depth_is_one_plus_max_glued() {
 /// with itself.
 #[test]
 fn a_chain_deconstructs_into_its_words_and_residual() {
-    let bar = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-    let dot = from_residual(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
-    let bar_other = from_residual(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
+    let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+    let dot = from_canonical(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
+    let bar_other = from_canonical(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
     let words = vec![bar, dot, bar_other];
     let atlas = Stalks::over_elements(words.iter());
     let mut index = crate::network::nerve::Keyed::new();
@@ -279,8 +279,8 @@ fn a_chain_deconstructs_into_its_words_and_residual() {
 
 #[test]
 fn deconstruct_multiplicity_is_per_body() {
-    let bar = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-    let dot = from_residual(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
+    let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+    let dot = from_canonical(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
     let words = vec![bar, dot];
     let atlas = Stalks::over_elements(words.iter());
     let mut index = Keyed::new();
@@ -316,8 +316,8 @@ fn deconstruct_multiplicity_is_per_body() {
 /// not.
 #[test]
 fn seams_and_holonomy_are_located_exactly() {
-    let bar = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-    let bar_other = from_residual(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
+    let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+    let bar_other = from_canonical(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
     let words = vec![bar, bar_other];
     let target = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
     let id = element::identity_versor();

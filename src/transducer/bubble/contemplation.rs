@@ -235,12 +235,17 @@ impl Contemplation {
         }
         let nbs: Vec<Vec<u8>> = neighbors.fiber(ROOT).map(|(k, _)| k).collect();
         let mut rems: Keyed<Vec<RemCell>> = Keyed::new();
+        // Overlap is read in the SCENE: the chain carried through its own
+        // translator (§2.1). Two bubbles holding one chain at two
+        // translators are one substance said at two places, and their
+        // canonical cells coincide at the origin while their placed cells
+        // do not.
         if let Some(b) = self.bubbles.get(&key) {
-            rems.insert(&key, b.remainder.clone());
+            rems.insert(&key, b.remainder.placed());
         }
         for n in &nbs {
             if let Some(b) = self.bubbles.get(n) {
-                rems.insert(n, b.remainder.clone());
+                rems.insert(n, b.remainder.placed());
             }
             let vol = volume_of(&rems, &[key.as_slice(), n.as_slice()]);
             match self.rotor_between(&key, n) {
@@ -348,8 +353,14 @@ impl Contemplation {
         };
         let mut held = f.clone();
         held.reindex();
+        // A form whose remainder says two things at one site has no A5
+        // chain; the seam that moves this refusal onto the form is the
+        // next commit's.
+        let Some(remainder) = element::place_chain(&f.remainder) else {
+            return;
+        };
         let bubble = Bubble {
-            remainder: f.remainder.clone(),
+            remainder,
             nerve: Complex::new(),
             cover,
             horizon,
@@ -385,6 +396,11 @@ impl Contemplation {
         if remainder.is_empty() {
             return;
         }
+        // A remainder saying two things at one cell has no A5 chain and no
+        // address; it is not held (U14).
+        let Some(remainder) = element::place_chain(&remainder) else {
+            return;
+        };
         let key = remainder_addr(&remainder);
         let inv = stalk::invariant(&remainder);
         let cover = cover_of(&inv);

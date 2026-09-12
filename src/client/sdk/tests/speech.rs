@@ -15,14 +15,17 @@ use crate::anastome::dialogue;
 fn a_withheld_remainder_is_never_a_word() {
     use super::common::closed_turn;
     use crate::client::sdk::*;
-    use crate::transducer::element::from_residual;
+    use crate::transducer::element::{canonical_chain, from_canonical};
+    let chain_word = |cells: &[(i64, i64, u8, u8)]| {
+        from_canonical(&canonical_chain(cells).expect("one entry per position is A5's chain"))
+    };
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("bodies"));
     let form = closed_turn(None);
     let remainder = vec![(0i64, 0i64, 1u8, 2u8), (5, 5, 3u8, 4u8)];
     entity.withhold_form(&form, &[], std::slice::from_ref(&remainder), [2, 0, 0, 0]);
-    let first = from_residual(&vec![(0, 0, 1u8, 2u8)]);
-    let second = from_residual(&vec![(5, 5, 3u8, 4u8)]);
-    let whole = from_residual(&remainder);
+    let first = chain_word(&[(0, 0, 1u8, 2u8)]);
+    let second = chain_word(&[(5, 5, 3u8, 4u8)]);
+    let whole = chain_word(&remainder);
     for (name, w) in [("first body", &first), ("second body", &second), ("chain of both", &whole)] {
         assert!(entity.epigenome.working_word(w.address().as_bytes()).is_none(), "the {name} never stands as a word");
         assert!(!entity.already_taught(w), "the {name} is not an utterance");
@@ -96,11 +99,12 @@ fn one_vertex_lies_in_one_stratum_however_it_is_spelled() {
     // spelling can share a stratum with it, and it is filed by address
     // alone. It was keyed by its raw bytes — a key invented where the
     // canonical one is refused (rule 11, checklist i).
-    let conflicting = crate::transducer::element::from_residual(&vec![(0, 0, 1, 2), (0, 0, 3, 4)]);
-    assert_eq!(
-        vertex_stratum(&conflicting),
-        None,
-        "a chain A5 refuses is not a vertex and has no stratum"
+    // The refusal is now at the constructor: a chain saying two things at
+    // one site has no canonical form, so there is no word to ask a stratum
+    // of. This read the word A5 refused and then asked whether it had one.
+    assert!(
+        crate::transducer::element::from_residual(&vec![(0, 0, 1, 2), (0, 0, 3, 4)]).is_none(),
+        "a chain A5 refuses mints no word"
     );
     let _ = identity_versor();
 }

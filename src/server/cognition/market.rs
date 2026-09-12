@@ -453,7 +453,11 @@ impl Kernel {
         }
         let mut listed = false;
         for body in crate::transducer::sentence::pieces(chain) {
-            let residual = element::from_residual_framed(&body, frame);
+            // A piece that cannot be addressed is a refusal that travels:
+            // never listed and never counted (U14).
+            let Some(residual) = element::from_residual_framed(&body, frame) else {
+                continue;
+            };
             let addr = residual.address();
             if self.basis.contains(&addr) || self.pending.contains(&addr) {
                 continue; // already speakable or already listed

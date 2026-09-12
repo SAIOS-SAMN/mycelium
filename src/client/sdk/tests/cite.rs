@@ -5,6 +5,15 @@
 use super::common::*;
 use crate::client::sdk::*;
 
+/// The word of a chain a fixture wrote out: one entry per position, so A5
+/// accepts it and the fixture reads the word it names.
+fn chain_word(cells: &[(i64, i64, u8, u8)]) -> crate::transducer::element::Element {
+    crate::transducer::element::from_canonical(
+        &crate::transducer::element::canonical_chain(cells)
+            .expect("one entry per position is A5's chain"),
+    )
+}
+
 /// Quote incidence is the working atlas: genome ∪ dialect ∪ the held
 /// forms' words, read at the chart (24.1).
 #[test]
@@ -87,7 +96,6 @@ assert!(
 /// anywhere on the working language, because none was minted to ask.
 #[test]
 fn a_held_forms_word_and_not_its_chain_cites_the_next_listing() {
-use crate::transducer::element::from_residual;
 use crate::transducer::sentence::Vertex;
 let scene = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];
 let listing = vec![(4i64, 4i64, 1u8, 2u8), (4, 5, 1, 2), (9, 9, 3u8, 4u8)];
@@ -103,12 +111,12 @@ let (cites, residual) = entity.cite(&listing);
 assert_eq!(cites.len(), 1, "one held word deflates the listing, got {cites:?}");
 assert_eq!(cites[0].standing, Standing::Held.as_u8(), "with standing Held");
 assert_eq!(cites[0].addr, vertex, "and it is the vertex's address: the word");
-assert_ne!(cites[0].addr, from_residual(&listing).address(), "never the listing chain's key");
+assert_ne!(cites[0].addr, chain_word(&listing).address(), "never the listing chain's key");
 assert_eq!(cites[0].body, listing[..2].to_vec(), "it carries the body the vertex's action reconstructed, in the listing's frame");
 assert_eq!(residual, vec![(9, 9, 3, 4)], "the residual is the body no word spoke");
 assert!(
-    entity.epigenome.working_word(from_residual(&listing).address().as_bytes()).is_none()
-        && entity.epigenome.working_word(from_residual(&scene).address().as_bytes()).is_none()
+    entity.epigenome.working_word(chain_word(&listing).address().as_bytes()).is_none()
+        && entity.epigenome.working_word(chain_word(&scene).address().as_bytes()).is_none()
         && entity.epigenome.working_word(vertex.as_bytes()).is_none(),
     "no element for a chain, and none for the vertex, exists on the working language"
 );
@@ -170,7 +178,7 @@ assert!(entity.dialect_len() >= 1, "the withheld form stands, dialect {}", entit
 assert!(entity.ideas_len() >= 1, "and is held as an idea");
 assert_eq!(entity.uttered_n(), 0, "nothing is uttered for a remainder, taught_up {}", entity.uttered_n());
 for r in rems.iter().filter(|r| !r.is_empty()) {
-    let chain = crate::transducer::element::from_residual(r);
+    let chain = chain_word(r);
     assert!(entity.epigenome.working_word(chain.address().as_bytes()).is_none(), "a remainder never stands as a word");
 }
 }

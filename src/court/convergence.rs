@@ -169,7 +169,9 @@ mod tests {
     /// A distinct object per `n`: the residual of one cell recoloured to
     /// hue `n`, which is a different vertex for each n.
     fn obj(n: u8) -> Element {
-        element::from_residual(&vec![(0i64, 0i64, 1u8, n)])
+        element::from_canonical(
+            &element::canonical_chain(&[(0i64, 0i64, 1u8, n)]).expect("one cell is A5's chain"),
+        )
     }
     fn r(n: u8) -> Rederivation {
         Rederivation { object: obj(n), k: 1, height: 1 }

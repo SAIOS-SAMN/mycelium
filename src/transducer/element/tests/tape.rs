@@ -3,7 +3,6 @@
 
 use crate::core::Q;
 use crate::transducer::element::*;
-use crate::transducer::germinate::ResidualGerm;
 use num_bigint::BigInt;
 use crate::transducer::germinate::germinate;
 
@@ -12,8 +11,9 @@ use crate::transducer::germinate::germinate;
 #[test]
 fn anchor_fiber_round_trips_and_top_is_default() {
     use crate::transducer::anchor::Sel;
-    let g: ResidualGerm = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
-    let plain = from_residual(&g);
+    let g = crate::transducer::element::canonical_chain(&[(0, 0, 1, 2), (0, 1, 1, 2)])
+        .expect("one entry per position is A5's chain");
+    let plain = from_canonical(&g);
     assert!(plain.anchor().is_none(), "born ⊤ until germination binds");
     let pi = Sel::Minus(Box::new(Sel::Hue(1)), Box::new(Sel::Delta(Box::new(Sel::Hue(1)))));
     let anchored = plain.clone().with_anchor(pi.clone());
@@ -54,7 +54,7 @@ fn a_connection_is_one_element_with_two_components() {
     assert_eq!(back.letters(), w.letters(), "the letters survive the wire");
     assert!(w.solution().is_some(), "the group component inverts");
     assert_eq!(w.sub(), remainder.as_slice(), "the remainder is the chain");
-    assert_ne!(w.address(), from_residual(&remainder).address(), "the connection is not the bare residual");
+    assert_ne!(w.address(), from_canonical(&canonical_chain(&remainder).expect("one cell is A5's chain")).address(), "the connection is not the bare residual");
     let qid = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
     let long = crate::transducer::alphabet::Word::from_letters(&[(qid, false), (qid, false), (qid, false), (qid, false)]);
     assert_eq!(long.key(), crate::transducer::alphabet::Word::identity().key());
@@ -73,7 +73,7 @@ fn a_connection_is_one_element_with_two_components() {
     assert!(closed.is_connection() && closed.sub().is_empty(), "an empty remainder is a closed connection");
     let merge = from_connection(&id, &identity_versor(), &[(1, 2)], &Vec::new(), [1, 1, 0, 0]).expect("spells");
     assert!(!merge.is_connection(), "a merging gauge with the identity motion carries no group component");
-    assert!(!from_residual(&remainder).is_connection(), "a residual's tally is never a permutation");
+    assert!(!from_canonical(&canonical_chain(&remainder).expect("one cell is A5's chain")).is_connection(), "a residual's tally is never a permutation");
     let unit = from_connection(&id, &identity_versor(), &[], &Vec::new(), [77, 0, 0, 0]).expect("spells");
     assert!(unit.is_identity(), "identity motion and gauge leave no action and no chain");
     assert!(!unit.is_connection(), "the unit is not a connection");
@@ -100,8 +100,8 @@ fn gen3_round_trips_and_gen2_is_refused() {
 /// and action all survive, so a persisted basis reloads identically.
 #[test]
 fn a_germ_round_trips_through_bytes() {
-    let residual = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
-    let swap = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]).unwrap());
+    let residual = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
+    let swap = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]).unwrap());
     for g in [&residual, &swap] {
         let bytes = g.to_bytes();
         let mut pos = 0;
@@ -119,7 +119,7 @@ fn a_germ_round_trips_through_bytes() {
 fn torsion_round_trips_through_bytes() {
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
-    let mut t = from_residual(&germinate(&a, &b).unwrap());
+    let mut t = from_canonical(&germinate(&a, &b).unwrap());
     t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
     t.torse();
     let bytes = t.to_bytes();

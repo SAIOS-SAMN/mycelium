@@ -479,12 +479,12 @@ mod tests {
     /// richer structure; the gauge/spatial lanes fill as those axes germinate.)
     #[test]
     fn a_germinated_pattern_charges_the_residual_lane() {
-        use crate::transducer::element::from_residual;
+        use crate::transducer::element::from_canonical;
         use crate::transducer::germinate::germinate;
         // A two-cell recolour: hue transitions on a standing support are
         // GAUGE content, carried alongside the residual defect — the lane
         // projection is measured from the chain, never funneled to one axis.
-        let g = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+        let g = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
         assert_eq!(g.lanes(), [false, true, false, false], "a recolour is gauge content; temporal is empty until the listing stands");
     }
 

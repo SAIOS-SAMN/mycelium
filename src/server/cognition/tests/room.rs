@@ -93,7 +93,7 @@ let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
 let chain = germinate(&a, &b).unwrap();
 let k_now = k.k_step();
-k.book_list(crate::transducer::element::from_residual(&chain), k_now, [1; 32]);
+k.book_list(crate::transducer::element::from_canonical(&chain), k_now, [1; 32]);
 let target = k.quote().1[0].0.address();
 let listed = k.quote().1[0].0.sub().to_vec();
 // The voice's room is exactly what its one listing drew on S, G and H;

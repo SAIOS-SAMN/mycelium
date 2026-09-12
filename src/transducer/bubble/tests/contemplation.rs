@@ -305,14 +305,14 @@ fn a_closed_idea_crystallizes_with_its_descent_and_leaves_the_contemplation() {
 #[test]
 fn work_of_one_thought_is_independent_of_n() {
     use crate::network::nerve::work;
-    use crate::transducer::element::from_residual;
+    use crate::transducer::element::from_canonical;
     use crate::transducer::germinate::germinate;
     let run = |n: usize| -> (u64, u64, u64) {
         let mut atlas = crate::transducer::stalk::Stalks::default();
         for i in 2..n + 2 {
             let before: Vec<(i64, i64, u8)> = (0..i as i64).map(|c| (0, c, 1u8)).collect();
             let after: Vec<(i64, i64, u8)> = (0..i as i64).map(|c| (0, c, 2u8)).collect();
-            let w = from_residual(&germinate(&before, &after).unwrap());
+            let w = from_canonical(&germinate(&before, &after).unwrap());
             atlas.admit(&stalk::invariant_of(&w), w.address());
         }
         let mut c = Contemplation::new();

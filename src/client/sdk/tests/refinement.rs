@@ -11,10 +11,13 @@ use crate::client::sdk::*;
 /// 2026-09-08 ("index out of bounds: the len is 24 but the index is 76").
 #[test]
 fn a_refinement_bid_cites_only_ruled_words() {
-use crate::transducer::element::from_residual;
+use crate::transducer::element::{canonical_chain, from_canonical};
+let chain_word = |cells: &[(i64, i64, u8, u8)]| {
+    from_canonical(&canonical_chain(cells).expect("one entry per position is A5's chain"))
+};
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("refine"));
-let w1 = from_residual(&vec![(0, 0, 1u8, 2u8)]);
-let w2 = from_residual(&vec![(0, 0, 3u8, 4u8), (0, 1, 3, 4)]);
+let w1 = chain_word(&[(0, 0, 1u8, 2u8)]);
+let w2 = chain_word(&[(0, 0, 3u8, 4u8), (0, 1, 3, 4)]);
 entity.epigenome.learn(&w1.to_bytes());
 entity.epigenome.learn(&w2.to_bytes());
 assert_eq!(entity.epigenome.genome_len(), 2, "two ruled words");

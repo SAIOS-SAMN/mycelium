@@ -343,7 +343,7 @@ assert!(
     "a withheld form leaves at least one remainder chain"
 );
 for r in listings {
-    let e = element::from_residual(r);
+    let e = element::from_residual(r).expect("a listing chain is A5's");
     assert_eq!(
         e.sub().len(),
         r.len(),

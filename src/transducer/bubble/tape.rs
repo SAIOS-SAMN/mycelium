@@ -16,7 +16,7 @@ impl Contemplation {
         crate::snapshot::persist(&self.bubbles, |k, b| {
             crate::transducer::address::put_addr(out, k);
             out.extend_from_slice(&(b.remainder.len() as u32).to_le_bytes());
-            for &(r, c, hb, ha) in &b.remainder {
+            for &(r, c, hb, ha) in b.remainder.as_slice() {
                 out.extend_from_slice(&r.to_le_bytes());
                 out.extend_from_slice(&c.to_le_bytes());
                 out.push(hb);
@@ -224,6 +224,10 @@ impl Contemplation {
             } else {
                 None
             };
+            // A tape whose remainder puts two transitions on one site does
+            // not parse; it is refused, never restored as a bubble that
+            // cannot be named.
+            let remainder = crate::transducer::element::place_chain(&remainder)?;
             let bubble = Bubble {
                 remainder,
                 nerve: Complex::new(),

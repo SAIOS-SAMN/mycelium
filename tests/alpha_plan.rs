@@ -128,7 +128,10 @@ fn speech_act_one_frame() {
 #[test]
 fn perceive_speech_refuses_with_a_reason() {
     let mut k = Kernel::new();
-    let mut bad = mycelium::transducer::element::from_residual(&vec![(0, 0, 1u8, 2)]);
+    let mut bad = mycelium::transducer::element::from_canonical(
+        &mycelium::transducer::element::canonical_chain(&[(0, 0, 1u8, 2)])
+            .expect("one cell is A5's chain"),
+    );
     bad.set_magnitude([99, 99, 99, 99]);
     let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&bad));
     assert_eq!(
@@ -204,7 +207,8 @@ fn hypha_snapshot_is_myc4() {
     let family = vec![(grid(&["11"]), grid(&["22"]))];
     let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
     let spoken = mint_sentence(&rule, &family, &NoCrystal).expect("a sentence");
-    let task = mycelium::registry::task_id(&mycelium::arc::Task { train: family.clone(), test: Vec::new() });
+    let task = mycelium::registry::task_id(&mycelium::arc::Task { train: family.clone(), test: Vec::new() })
+        .expect("a grid pair's chain is A5's, so the task has an identity");
     k.bind_task_family(&task, family);
     let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "the sentence is listed");

@@ -159,7 +159,11 @@ pub(crate) fn blind_replay_on_inner(
             if !chain.windows(2).all(|w| w[0] <= w[1]) {
                 return Some("chain not canonically ordered");
             }
-            let rederived = element::from_residual(&chain.to_vec());
+            // A chain with no A5 form re-derives nothing, and a word whose
+            // chain says two things at one site is slashed on that.
+            let Some(rederived) = element::from_residual(&chain.to_vec()) else {
+                return Some("chain has no canonical form");
+            };
             match connection {
                 // The chain lanes (spatial, gauge, shell) re-derive from the
                 // chain; the fibre lane is the word's own sections and cycles,
@@ -194,7 +198,11 @@ pub(crate) fn blind_replay_on_inner(
                     }
                 }
                 true => {
-                    let spoken_c = element::canonical_chain(chain).unwrap_or_else(|| chain.to_vec());
+                    // The chain is the one already accepted above; A5 gives
+                    // the same answer, so there is nothing to default to.
+                    let Some(spoken_c) = element::canonical_chain(chain) else {
+                        return Some("chain has no canonical form");
+                    };
                     if rederived.sub() != spoken_c.as_slice() {
                         return Some("remainder does not re-derive from the chain");
                     }

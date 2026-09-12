@@ -173,7 +173,7 @@ mod tests {
     use super::*;
     use crate::transducer::alphabet::{LetterId, Rotor, Word};
     use crate::transducer::cga::Mv;
-    use crate::transducer::element::{from_residual, listing_key, IDENTITY_FRAME};
+    use crate::transducer::element::{from_canonical, listing_key, IDENTITY_FRAME};
     use crate::transducer::germinate::germinate;
     use crate::transducer::stalk::Invariant;
 
@@ -205,7 +205,7 @@ mod tests {
         let k = t.key().expect("a translator has a key");
         let back = Mv::from_key(&k).expect("mv key decodes");
         assert!(t.projective_eq(&back));
-        let e = from_residual(&germinate(&[(0, 0, 1), (0, 1, 1)], &[(0, 0, 2), (0, 1, 2)]).unwrap());
+        let e = from_canonical(&germinate(&[(0, 0, 1), (0, 1, 1)], &[(0, 0, 2), (0, 1, 2)]).unwrap());
         let addr = e.address();
         assert_eq!(addr.tag(), Some(TAG_FORM));
         assert_eq!(e.address(), addr, "address is the form's coordinates");
@@ -217,11 +217,11 @@ mod tests {
         for w in sample_words() {
             keys.push(w.rotor().class_key().expect("class"));
         }
-        let a = from_residual(&germinate(&[(0, 0, 1), (0, 1, 1)], &[(0, 0, 2), (0, 1, 2)]).unwrap());
-        let b = from_residual(&germinate(&[(0, 0, 1), (1, 0, 1)], &[(0, 0, 3), (1, 0, 3)]).unwrap());
+        let a = from_canonical(&germinate(&[(0, 0, 1), (0, 1, 1)], &[(0, 0, 2), (0, 1, 2)]).unwrap());
+        let b = from_canonical(&germinate(&[(0, 0, 1), (1, 0, 1)], &[(0, 0, 3), (1, 0, 3)]).unwrap());
         keys.push(a.address());
         keys.push(b.address());
-        keys.push(listing_key(a.sub(), &IDENTITY_FRAME));
+        keys.push(listing_key(a.sub(), &IDENTITY_FRAME).expect("a held word's chain is A5's"));
         keys.push(Invariant(vec![1, 2]).key());
         keys.push(Invariant(vec![1, 3]).key());
         keys.push(Invariant(vec![2]).key());

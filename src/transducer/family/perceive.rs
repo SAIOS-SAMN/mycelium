@@ -257,7 +257,7 @@ pub(crate) fn word_vertex_with(
         car.sigma.clone()
     };
     Some(Vertex::Word {
-        address: element::from_residual(&chain).address(),
+        address: element::from_residual(&chain)?.address(),
         derivation,
         carriage: Box::new(carriage),
         gauge,

@@ -88,7 +88,7 @@ fn the_solution_inverts_the_described_motion() {
 fn reverse_germ_is_the_inverse_chain() {
     let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
     let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
-    let g = from_residual(&germinate(&a, &b).unwrap());
+    let g = from_canonical(&germinate(&a, &b).unwrap());
     assert!(g.solution().is_none(), "a residual has no versor inverse");
     let inv = g.inverse().expect("the reverse chain exists");
     let want: Vec<_> = g.sub().iter().map(|&(r, c, b, a)| (r, c, a, b)).collect();
@@ -105,7 +105,7 @@ fn a5_chain_canonical_idempotent_and_translation_free() {
     let cb = canonical_chain(&b).unwrap();
     assert_eq!(ca, cb);
     assert_eq!(canonical_chain(&ca).unwrap(), ca);
-    assert_eq!(from_residual(&a).address(), from_residual(&b).address());
+    assert_eq!(from_canonical(&ca).address(), from_canonical(&cb).address());
 }
 
 #[test]

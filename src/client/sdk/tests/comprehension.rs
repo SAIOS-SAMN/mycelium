@@ -11,11 +11,11 @@ use crate::client::sdk::*;
 /// mutates the genome: the inherited record cannot drift locally.
 #[test]
 fn the_entity_comprehends_and_the_epigenome_expresses() {
-use crate::transducer::element::from_residual;
+use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut epi = Epigenome::new();
 // The mesh teaches a word down: first hearing is novel, then it is held.
-let word = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 4u8), (0, 1, 2)]).unwrap());
+let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 4u8), (0, 1, 2)]).unwrap());
 assert!(matches!(epi.learn(&word.to_bytes()), Some(Comprehension::Novel { .. })));
 assert_eq!(epi.genome_len(), 1);
 // The same utterance again — COMPREHENDED as the held word; expression rises.
@@ -30,7 +30,7 @@ match epi.comprehend(&word) {
 assert_eq!(epi.peak_expression(), 1, "the dialect's recollection weight moved");
 // An unrelated utterance is heard as novel — a prospective, not a failure —
 // and the genome is untouched by hearing it.
-let other = from_residual(&germinate(&[(0, 0, 5u8)], &[(0, 0, 9u8)]).unwrap());
+let other = from_canonical(&germinate(&[(0, 0, 5u8)], &[(0, 0, 9u8)]).unwrap());
 assert!(matches!(epi.comprehend(&other), Comprehension::Novel { .. }));
 assert_eq!(epi.genome_len(), 1, "comprehension never mutates the genome");
 // 5a: the genome crystallizes and restores EXACTLY; the epigenome does
@@ -384,9 +384,9 @@ assert!(
 /// A taught word that fails replay is refused, not learned.
 #[test]
 fn taught_word_that_fails_replay_is_refused_not_learned() {
-use crate::transducer::element::from_residual;
+use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
-let honest = from_residual(
+let honest = from_canonical(
     &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
 );
 let mut fat = honest.clone();
@@ -407,16 +407,17 @@ assert!(
 /// A stood dialect word closes a remainder without waiting for the court.
 #[test]
 fn a_stood_word_closes_todays_remainder() {
-use crate::transducer::element::from_residual;
+use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut epi = Epigenome::new();
-let word = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
 epi.stand_dialect_at(word.clone(), 1, 1);
 assert_eq!(epi.genome_len(), 0);
-let chain = word.sub().to_vec();
+let chain = crate::transducer::element::canonical_chain(word.sub())
+    .expect("a stood word's chain is A5's");
 let located = {
     // locate is private; comprehend over the same chain is the public read.
-    epi.comprehend(&from_residual(&chain))
+    epi.comprehend(&from_canonical(&chain))
 };
 match located {
     Comprehension::Understood(_) | Comprehension::Held | Comprehension::Admitted => {}

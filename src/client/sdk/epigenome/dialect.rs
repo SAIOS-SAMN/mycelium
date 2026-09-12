@@ -160,7 +160,10 @@ impl Epigenome {
         if let ([], []) = (located.residual.as_slice(), located.punctures.as_slice()) {
             return false; // already spoken: the same body under a transport
         }
-        let word = crate::transducer::element::from_residual(&residual.to_vec());
+        // A residual with no A5 form is no word, so nothing is expressed.
+        let Some(word) = crate::transducer::element::from_residual(&residual.to_vec()) else {
+            return false;
+        };
         self.expressed_atlas.admit(&crate::transducer::stalk::invariant_of(&word), word.address());
         self.expressed_index.insert(word.address(), self.expressed.len());
         self.expressed_shapes.push(std::sync::OnceLock::new());

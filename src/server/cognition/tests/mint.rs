@@ -152,7 +152,8 @@ let mut k = Kernel::new();
 let task = crate::registry::task_id(&crate::arc::Task {
     train: family.clone(),
     test: Vec::new(),
-});
+})
+.expect("a grid pair's chain is A5's, so the task has an identity");
 k.bind_task_family(&task, family);
 let addr = spoken.address();
 let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
@@ -175,7 +176,7 @@ assert_eq!(
 /// an ESSENTIAL word is refused — nothing else derives it.
 #[test]
 fn a_refinement_bid_retires_a_derivable_word_and_pays_the_bidder() {
-use crate::transducer::element::from_residual;
+use crate::transducer::element::from_canonical;
 let mut k = Kernel::new();
 k.enroll([9; 32], crate::economy::UNIT_BOND); // capitalize the pool
 // Two stale duplicates of the same deformation germinated far apart —
@@ -189,8 +190,8 @@ let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 // Two words, one centered chain: the first carries a frame fibre (a
 // distinct address, since a keyed basis holds one word per address)
 // and the second speaks its chain exactly.
-k.basis_insert(element::from_residual_framed(&germinate(&a, &rot).unwrap(), &crate::arc::Frame::new(4, 4, 8, 8)), [1; 32]);
-k.basis_insert(from_residual(&germinate(&a_far, &rot_far).unwrap()), [7; 32]);
+k.basis_insert(element::from_canonical_framed(&germinate(&a, &rot).unwrap(), &crate::arc::Frame::new(4, 4, 8, 8)), [1; 32]);
+k.basis_insert(from_canonical(&germinate(&a_far, &rot_far).unwrap()), [7; 32]);
 let derivable = k.basis()[0].address(); // its duplicate speaks it
 // The bidder's sentence: the duplicate, cited at the identity.
 let body = |w: &Element| crate::transducer::sentence::cited_pattern(w, 0).unwrap();
@@ -219,7 +220,7 @@ assert!(k.try_refine(&[3; 32], [5; 32], &sentence).is_none(), "an unknown addres
 // THE COURT'S BUSINESS STAYS THE COURT'S: a provisional word cannot be
 // bid away, even if derivable.
 k.basis_insert(
-    element::from_residual_framed(&germinate(&a, &rot).unwrap(), &crate::arc::Frame::new(3, 3, 9, 9)),
+    element::from_canonical_framed(&germinate(&a, &rot).unwrap(), &crate::arc::Frame::new(3, 3, 9, 9)),
     [1; 32],
 );
 let addr = k.basis()[k.basis_len() - 1].address();
@@ -243,7 +244,7 @@ assert_eq!(k.basis_len(), 2);
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn the_kernel_conserves_across_genesis_bond_and_a_settlement() {
-use crate::transducer::element::from_residual;
+use crate::transducer::element::from_canonical;
 let mut k = Kernel::new();
 // Kernel::new funds the hypha at genesis and stakes its bond from that.
 let seeded = k.treasury().audit().expect("genesis and its bond conserve");
@@ -252,7 +253,7 @@ assert_eq!(k.treasury().minted().expect("minted"), [0; 4], "seeded is not earned
 
 let a = vec![(0, 0, 1), (0, 1, 2)];
 let b = vec![(0, 0, 5), (0, 1, 2)];
-k.basis_insert(from_residual(&germinate(&a, &b).expect("coboundary")), [1; 32]);
+k.basis_insert(from_canonical(&germinate(&a, &b).expect("coboundary")), [1; 32]);
 k.treasury().audit().expect("an install conserves");
 
 // Two voices docket the same residual, then the court rules on it.

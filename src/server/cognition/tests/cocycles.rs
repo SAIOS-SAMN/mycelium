@@ -8,11 +8,11 @@ use crate::transducer::element::{self, Element};
 /// Residual torsion without a readable class is not filed as identity.
 #[test]
 fn torsion_consilient_or_filed_or_refused() {
-use crate::transducer::element::from_residual;
+use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
 let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
-let mut spoken = from_residual(&germinate(&a, &b).unwrap());
+let mut spoken = from_canonical(&germinate(&a, &b).unwrap());
 spoken.puncture(vec![(2, 3), (3, 1), (1, 2)]);
 assert_eq!(spoken.torse(), 1);
 let inv = crate::transducer::stalk::invariant_of(&spoken);

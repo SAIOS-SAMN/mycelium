@@ -13,7 +13,7 @@ fn a_closed_cycle_speaks_unwitnessed_members() {
     // base: transitions 1→2, 2→3, 3→1 over three cells.
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
-    let mut t = from_residual(&germinate(&a, &b).unwrap());
+    let mut t = from_canonical(&germinate(&a, &b).unwrap());
     // One witnessed sibling: σ·base where σ = {1↦2, 2↦3, 3↦1}.
     assert!(t.puncture(vec![(2, 3), (3, 1), (1, 2)]));
     assert_eq!(t.torse(), 1, "the section condenses into the cycle");
@@ -33,13 +33,13 @@ fn a_closed_cycle_speaks_unwitnessed_members() {
 /// sections extracts NOTHING — no false structure from thin evidence.
 #[test]
 fn a_swap_torses_and_thin_evidence_does_not() {
-    let mut swap = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 9)], &[(0, 0, 2u8), (0, 1, 9)]).unwrap());
+    let mut swap = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 9)], &[(0, 0, 2u8), (0, 1, 9)]).unwrap());
     assert!(swap.puncture(vec![(2, 1)]));
     assert_eq!(swap.torse(), 1, "sigma 1↦2, 2↦1 closes at period 2");
     assert_eq!(swap.torsion()[0].period, 2);
     // Thin evidence: sections whose hues never recur — no orbit spans two,
     // nothing closes — the free part stays free.
-    let mut open = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 9)], &[(0, 0, 2u8), (0, 1, 9)]).unwrap());
+    let mut open = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 9)], &[(0, 0, 2u8), (0, 1, 9)]).unwrap());
     assert!(open.puncture(vec![(3, 4)]));
     assert!(open.puncture(vec![(5, 6)]));
     assert_eq!(open.torse(), 0, "no torsion invented from unrelated sections");

@@ -76,9 +76,14 @@ impl Element {
             return false;
         }
         // A5: the chain is the boundary, and it is canonical before it is
-        // compared -- two spellings of one boundary reduce to one chain.
-        let mine = canonical_chain(&self.sub).unwrap_or_else(|| self.sub.clone());
-        let theirs = canonical_chain(&other.sub).unwrap_or_else(|| other.sub.clone());
+        // compared -- two spellings of one boundary reduce to one chain. A
+        // chain with no canonical form is no boundary, and two of them are
+        // not one vertex.
+        let (Some(mine), Some(theirs)) =
+            (canonical_chain(&self.sub), canonical_chain(&other.sub))
+        else {
+            return false;
+        };
         if mine != theirs {
             return false;
         }
@@ -182,7 +187,9 @@ impl Element {
                 .iter()
                 .map(|&(r, c, b, a)| (r, c, a, b))
                 .collect();
-            return Some(from_residual(&rev));
+            // A chain whose reverse says two things at one site has no
+            // canonical form, so this element has no inverse to name.
+            return from_residual(&rev);
         }
         self.solution()
     }
@@ -293,9 +300,12 @@ impl Element {
         } else if let Some(v) = self.action.spatial.as_ref() {
             v.to_bytes(&mut out);
         }
-        let chain = canonical_chain(&self.sub).unwrap_or_else(|| self.sub.clone());
+        // A chain with no canonical form has no key: the key IS the chain
+        // (law 2), and there is no centering of one that says two things at
+        // a site.
+        let chain = canonical_chain(&self.sub)?;
         out.extend_from_slice(&(chain.len() as u32).to_le_bytes());
-        for (r, c, b, a) in &chain {
+        for (r, c, b, a) in chain.as_slice() {
             out.extend_from_slice(&r.to_le_bytes());
             out.extend_from_slice(&c.to_le_bytes());
             out.push(*b);

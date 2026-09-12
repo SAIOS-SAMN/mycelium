@@ -2,14 +2,15 @@
 // of one chart is its coarser stratum, and refinement splits a stratum by
 // the coordinate that arrived.
 
-use crate::transducer::element::{from_connection, from_residual};
+use crate::transducer::element::{from_canonical, from_connection};
 use crate::transducer::germinate::germinate;
 use crate::transducer::element::{self, identity_versor, Element};
 use crate::transducer::stalk::*;
 
 
-fn chain(cells: &[(i64, i64)]) -> Vec<Cell> {
-    cells.iter().map(|&(r, c)| (r, c, 0u8, 1u8)).collect()
+fn chain(cells: &[(i64, i64)]) -> element::CanonicalChain {
+    let raw: Vec<Cell> = cells.iter().map(|&(r, c)| (r, c, 0u8, 1u8)).collect();
+    element::canonical_chain(&raw).expect("one entry per position is A5's chain")
 }
 
 #[test]
@@ -94,25 +95,25 @@ fn structure_separates_equal_volumes() {
 #[test]
 fn the_chart_finds_the_base_point_and_the_versor() {
     let held: Vec<Element> = vec![
-        from_residual(&chain(&[(0, 0), (0, 1), (0, 2)])),         // a bar
-        from_residual(&chain(&[(0, 0), (0, 1), (1, 0)])),         // an L
-        from_residual(&chain(&[(0, 0), (0, 1), (1, 0), (1, 1)])), // a square
+        from_canonical(&chain(&[(0, 0), (0, 1), (0, 2)])),         // a bar
+        from_canonical(&chain(&[(0, 0), (0, 1), (1, 0)])),         // an L
+        from_canonical(&chain(&[(0, 0), (0, 1), (1, 0), (1, 1)])), // a square
     ];
     let mut stalks = Stalks::over_elements(held.iter());
     assert_eq!(stalks.len(), 3);
     let at = |a: &[u8]| held.iter().find(|w| w.address().as_bytes() == a);
-    let bar_rotated = from_residual(&chain(&[(5, 5), (6, 5), (7, 5)]));
+    let bar_rotated = from_canonical(&chain(&[(5, 5), (6, 5), (7, 5)]));
     let (a, v) = congruent(&stalks, at, &bar_rotated).expect("the bar's orbit");
     assert_eq!(a, held[0].address());
     assert!(!element::same_versor(&v, &identity_versor()), "a rotation carries the vertical bar onto the base");
-    let l_reflected = from_residual(&chain(&[(3, 3), (3, 2), (4, 3)]));
+    let l_reflected = from_canonical(&chain(&[(3, 3), (3, 2), (4, 3)]));
     assert_eq!(congruent(&stalks, at, &l_reflected).map(|(a, _)| a), Some(held[1].address()));
-    let zigzag = from_residual(&chain(&[(0, 0), (0, 1), (1, 1), (1, 2)]));
+    let zigzag = from_canonical(&chain(&[(0, 0), (0, 1), (1, 1), (1, 2)]));
     assert!(stalks.fiber(&invariant_of(&zigzag)).is_empty(), "an empty stratum is novelty");
     assert_eq!(congruent(&stalks, at, &zigzag), None);
     stalks.remove(&held[1].address());
     assert_eq!(stalks.len(), 2);
-    let sq = from_residual(&chain(&[(9, 9), (9, 10), (10, 9), (10, 10)]));
+    let sq = from_canonical(&chain(&[(9, 9), (9, 10), (10, 9), (10, 10)]));
     assert_eq!(congruent(&stalks, at, &sq).map(|(a, _)| a), Some(held[2].address()));
     assert_eq!(congruent(&stalks, at, &l_reflected), None);
 }
@@ -129,7 +130,7 @@ fn a_connection_is_charted_on_its_fibres_not_on_an_empty_chain() {
     assert_eq!(invariant_of(&a), invariant_of(&b), "two identical motions at different origins share the chart");
     assert_ne!(invariant_of(&a), invariant_of(&c), "a different cycle type is a different chart");
     assert_eq!(invariant_of(&a).0[0], 0, "the connection family's leading axis");
-    let word = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+    let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     assert!(invariant_of(&word).0[0] >= 1, "a residual chart leads with its component count");
     // Congruence on connections: the fibre's representative and the transition.
     let stalks = Stalks::over_elements([&a, &c].into_iter());
@@ -144,10 +145,10 @@ fn a_connection_is_charted_on_its_fibres_not_on_an_empty_chain() {
 /// bundle round-trips its bytes.
 #[test]
 fn the_sibling_attaches_as_a_transported_section() {
-    let mut base = from_residual(
+    let mut base = from_canonical(
         &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
     );
-    let sibling = from_residual(
+    let sibling = from_canonical(
         &germinate(&[(0, 0, 3u8), (1, 0, 3)], &[(0, 0, 4u8), (1, 0, 4)]).unwrap(),
     );
     let v = element::transition(sibling.sub(), base.sub()).expect("congruent");
@@ -162,8 +163,11 @@ fn the_sibling_attaches_as_a_transported_section() {
 /// A class refines one axis; members re-home under the new prefix.
 #[test]
 fn refine_splits_the_stratum_by_the_new_coordinate() {
-    let a = from_residual(&chain(&[(0, 0), (0, 1), (0, 2)]));
-    let b = from_residual(&vec![(0, 0, 2, 3), (0, 1, 2, 3), (0, 2, 2, 3)]);
+    let a = from_canonical(&chain(&[(0, 0), (0, 1), (0, 2)]));
+    let b = from_canonical(
+        &element::canonical_chain(&[(0, 0, 2, 3), (0, 1, 2, 3), (0, 2, 2, 3)])
+            .expect("one entry per position is A5's chain"),
+    );
     let mut stalks = Stalks::over_elements([&a, &b].into_iter());
     let inv = invariant_of(&a);
     assert_eq!(stalks.fiber(&inv).len(), 2);

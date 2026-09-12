@@ -171,7 +171,7 @@ impl Entity {
             .contemplation
             .bubbles
             .fiber(crate::network::nerve::ROOT)
-            .map(|(_, b)| (b.remainder.clone(), b.volume))
+            .map(|(_, b)| (b.remainder.to_vec(), b.volume))
             .collect();
         for (remainder, mag) in &bubbles {
             let inv = crate::transducer::stalk::invariant(remainder);

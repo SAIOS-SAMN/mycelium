@@ -97,7 +97,6 @@ fn the_versor_between_symmetric_bodies_is_the_cosets_geodesic() {
 /// three axes in, and it is read by peel, never by the whole chart.
 #[test]
 fn a_chart_prefix_is_the_topological_stratum() {
-    use crate::transducer::element::from_residual;
     use crate::transducer::stalk::{Invariant, Stalks};
     let bar_cells = rect(0, 0, 2, 3);
     let plank_cells = rect(0, 0, 2, 5);
@@ -106,7 +105,11 @@ fn a_chart_prefix_is_the_topological_stratum() {
     assert_eq!(a[..3], b[..3], "one topology: components, holes and turns lead the chart");
     assert_eq!(a[..3], [1u64, 0, 4], "one component, no hole, four turns");
     let word_of = |cells: &[(i64, i64)]| {
-        from_residual(&cells.iter().map(|&(r, c)| (r, c, 1u8, 2u8)).collect::<Vec<_>>()).address()
+        let raw: Vec<(i64, i64, u8, u8)> =
+            cells.iter().map(|&(r, c)| (r, c, 1u8, 2u8)).collect();
+        let chain = crate::transducer::element::canonical_chain(&raw)
+            .expect("one entry per position is A5's chain");
+        crate::transducer::element::from_canonical(&chain).address()
     };
     let (wa, wb) = (word_of(&bar_cells), word_of(&plank_cells));
     let (ia, ib) = (Invariant(a.clone()), Invariant(b.clone()));

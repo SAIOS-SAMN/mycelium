@@ -29,15 +29,15 @@ assert_eq!(speak_pair(&mut k, &a, &rot, [3; 32]), Outcome::Decomposed(vec![0]), 
 /// words' discoverers still earn.
 #[test]
 fn the_condense_stroke_absorbs_a_family_into_one_bundle() {
-use crate::transducer::element::from_residual;
+use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 2)];
 let b = vec![(0, 0, 5), (0, 1, 2)]; // (0,0): 1→5
-k.basis_insert(from_residual(&germinate(&a, &b).unwrap()), [1; 32]);
+k.basis_insert(from_canonical(&germinate(&a, &b).unwrap()), [1; 32]);
 for hue in [6u8, 7] {
     let bx = vec![(0, 0, hue), (0, 1, 2)];
-    k.basis_insert(from_residual(&germinate(&a, &bx).unwrap()), [9; 32]);
+    k.basis_insert(from_canonical(&germinate(&a, &bx).unwrap()), [9; 32]);
 }
 assert_eq!(k.basis_len(), 3, "the un-condensed family");
 // One versor per stroke: the cursor walks the stratum over strokes.

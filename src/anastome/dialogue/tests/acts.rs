@@ -12,7 +12,8 @@ fn the_five_acts_round_trip() {
     let listing = crate::transducer::element::listing_key(
         &chain,
         &crate::transducer::element::IDENTITY_FRAME,
-    );
+    )
+    .expect("one entry per position is A5's chain");
     let cites = vec![CiteWire {
         addr: listing.clone(),
         standing: 0,

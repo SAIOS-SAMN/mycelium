@@ -36,7 +36,7 @@ impl Contemplation {
         if let Some(b) = self.bubbles.remove(&k) {
             self.retract_incidence(&k, &b);
             self.dirty.remove(&k);
-            self.cavity.insert(k, b.remainder);
+            self.cavity.insert(k, b.remainder.to_vec());
         }
     }
 

@@ -226,9 +226,15 @@ impl Epigenome {
                         Some((w.address().into_vec(), Standing::Ruled))
                     })
                     .collect();
-                Comprehension::Novel {
-                    demand: Box::new(crate::transducer::element::from_residual(&open)),
-                    understood,
+                // An open chain with no A5 form is no element to lack, so
+                // there is no demand to speak and what did factor is the
+                // whole of the reading (M6 step 5).
+                match crate::transducer::element::from_residual(&open) {
+                    Some(demand) => Comprehension::Novel {
+                        demand: Box::new(demand),
+                        understood,
+                    },
+                    None => Comprehension::Understood(understood),
                 }
             }
         }

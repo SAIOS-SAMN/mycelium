@@ -187,7 +187,7 @@ impl Contemplation {
             let Some(b) = self.bubbles.get(v.as_slice()).cloned() else {
                 continue;
             };
-            old_rems.insert(v, b.remainder.clone());
+            old_rems.insert(v, b.remainder.to_vec());
             self.retract_incidence(v, &b);
             remainder = union_rem(&remainder, &b.remainder);
             absorb_keyed(&mut cover, &b.cover);
@@ -213,6 +213,10 @@ impl Contemplation {
             Some(f) => form_mag(f),
             None => element::measure_lanes(&remainder),
         };
+        // A union of two remainders can say two things at one cell, and
+        // such a remainder has no A5 chain. The merge yields no bubble
+        // rather than one that cannot be named (U14).
+        let remainder = element::place_chain(&remainder)?;
         let key = match &form {
             Some(f) => idea_key(f),
             None => remainder_addr(&remainder),

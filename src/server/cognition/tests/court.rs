@@ -16,7 +16,7 @@ use crate::transducer::element::{self, Element};
 fn blind_replay_refutes_tampered_words() {
 use crate::transducer::germinate::germinate;
 use crate::verdict::blind_replay;
-let w = element::from_residual(
+let w = element::from_canonical(
     &germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap(),
 );
 assert!(blind_replay(&w).is_none(), "an honest derivation replays clean");

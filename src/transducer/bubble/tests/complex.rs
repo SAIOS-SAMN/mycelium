@@ -37,12 +37,12 @@ fn overlapping_remainders_merge_by_fill() {
 /// Two pivots on the same bubble with no new word leave fills unchanged.
 #[test]
 fn two_pivots_without_a_new_word_leave_fills() {
-    use crate::transducer::element::from_residual;
+    use crate::transducer::element::{canonical_chain, from_canonical};
     let mut c = Contemplation::new();
     let rem = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
     c.hold(rem.clone());
     c.hold(vec![(0, 1, 3, 4), (0, 2, 3, 4)]);
-    let word = from_residual(&rem);
+    let word = from_canonical(&canonical_chain(&rem).expect("one entry per position is A5's chain"));
     let snap = |c: &Contemplation| {
         let mut out = Vec::new();
         for layer in &c.complex.degrees {

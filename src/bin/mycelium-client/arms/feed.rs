@@ -53,7 +53,13 @@ pub(crate) fn feed_arm(
         }
         physics.bump(&mag);
         StrokeOutcome::add(&mut outcome.fed, &mag);
-        let fam = mycelium::registry::task_id(&task);
+        // A task whose members have no A5 form has no identity, so there is
+        // nothing to extract a rule for and nothing to name it by (U14).
+        let Some(fam) = mycelium::registry::task_id(&task) else {
+            retire_feed(&path);
+            feed.finish();
+            continue;
+        };
         let gen = entity.epigenome.atlas_root();
         // Sized by the family, not by the box (L8w): a fixed spend unit is
         // three on this machine, and step 0 alone needs one per pair with

@@ -88,7 +88,7 @@ pub fn total_winding(witnesses: &[HolonomicLoopWitness]) -> Q {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transducer::element::from_residual;
+    use crate::transducer::element::from_canonical;
     use crate::transducer::germinate::germinate;
 
     /// A torse-extracted ℤ/3 cycle carries a CLOSED loop witness of period 3 and
@@ -97,7 +97,7 @@ mod tests {
     fn the_loop_witness_closes_on_the_cycle_and_names_the_open() {
         let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
         let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
-        let mut t = from_residual(&germinate(&a, &b).unwrap());
+        let mut t = from_canonical(&germinate(&a, &b).unwrap());
         t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
         assert_eq!(t.torse(), 1);
         let ws = witness_thought(&t);

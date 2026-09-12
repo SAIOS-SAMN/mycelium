@@ -23,8 +23,12 @@ pub(crate) fn rem_cell_key(r: i64, c: i64) -> crate::transducer::address::Addres
     crate::transducer::address::Address::new(buf)
 }
 
-pub(crate) fn remainder_addr(remainder: &[RemCell]) -> crate::transducer::address::Address {
-    element::from_residual(&remainder.to_vec()).address()
+/// The address of a chain A5 has accepted. Total: the type is the proof,
+/// so there is nothing here to refuse.
+pub(crate) fn remainder_addr(
+    remainder: &element::CanonicalChain,
+) -> crate::transducer::address::Address {
+    element::from_canonical(remainder).address()
 }
 
 /// The idea's key: the form's vertex key. Remainder is cargo, not the name.
@@ -45,7 +49,7 @@ pub(crate) fn form_mag(f: &Form) -> [u64; 4] {
 }
 
 pub(crate) fn rem_cells_of(b: &Bubble) -> Vec<RemCell> {
-    let mut out = b.remainder.clone();
+    let mut out = b.remainder.to_vec();
     for (_, r) in b.remainders.fiber(ROOT) {
         out.extend_from_slice(r);
     }
@@ -99,7 +103,11 @@ pub(crate) fn union_rem(a: &[RemCell], b: &[RemCell]) -> Vec<RemCell> {
 /// never lost on restart.
 #[derive(Clone, Debug, Default)]
 pub struct Bubble {
-    pub remainder: Vec<RemCell>,
+    /// A5's chain and the translator that places it in the scene (§2.1):
+    /// the chain is the identity this bubble is addressed by, the
+    /// translator is where it sits. A bubble holding a chain A5 refuses is
+    /// never built, so the address never refuses.
+    pub remainder: element::PlacedChain,
     pub nerve: Complex,
     pub cover: Keyed<()>,
     /// Classes this idea has met, keyed by [`Rotor::class_key`]. Standing is
@@ -132,6 +140,9 @@ pub struct Bubble {
 }
 
 impl Bubble {
+    /// Read off what the bubble holds on every call, never stored beside
+    /// it (rule 6, law 12): the remainder carries A5's proof in its type,
+    /// so the address never refuses.
     pub fn key(&self) -> crate::transducer::address::Address {
         match &self.form {
             Some(f) => idea_key(f),
@@ -309,11 +320,20 @@ impl Bubble {
         true
     }
 
-    pub(crate) fn take_form(&mut self, f: Form) {
-        self.remainder = f.remainder.clone();
+    /// THE SEAM, and the next commit closes it. `Form.remainder` is a raw
+    /// `Vec<RemCell>` carrying no proof, so A5 is asked here — downstream
+    /// of the decoder that should have asked it. When the remainder is a
+    /// coordinate of the form (19) this refusal moves to the tape, where
+    /// it already has a name, and `take_form` becomes total.
+    pub(crate) fn take_form(&mut self, f: Form) -> bool {
+        let Some(remainder) = element::place_chain(&f.remainder) else {
+            return false;
+        };
+        self.remainder = remainder;
         self.torsion = f.torsion.clone();
         self.certificates = f.certificates.clone();
         self.vortex = f.vortex.clone();
         self.form = Some(f);
+        true
     }
 }

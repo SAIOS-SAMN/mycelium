@@ -57,10 +57,10 @@ use crate::transducer::germinate::germinate;
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
-k.basis_insert(element::from_residual(&germinate(&a, &rot).unwrap()), [1; 32]);
+k.basis_insert(element::from_canonical(&germinate(&a, &rot).unwrap()), [1; 32]);
 let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
-k.basis_insert(element::from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::arc::Frame::new(4, 4, 8, 8)), [7; 32]);
+k.basis_insert(element::from_canonical_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::arc::Frame::new(4, 4, 8, 8)), [7; 32]);
 assert_eq!(k.basis_len(), 2);
 k.optimize();
 assert_eq!(k.basis_len(), 1, "the redundant rule is consolidated away");
@@ -72,20 +72,20 @@ assert_eq!(k.basis_len(), 1, "an essential generator survives the probe");
 /// earlier derivable sibling used to leave that index equal to len.
 #[test]
 fn refine_stratum_does_not_panic_when_the_survivor_is_last() {
-use crate::transducer::element::{from_residual, from_residual_framed};
+use crate::transducer::element::{from_canonical, from_canonical_framed};
 use crate::transducer::germinate::germinate;
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
-k.basis_insert(from_residual(&germinate(&a, &rot).unwrap()), [1; 32]);
+k.basis_insert(from_canonical(&germinate(&a, &rot).unwrap()), [1; 32]);
 let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 k.basis_insert(
-    from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::arc::Frame::new(4, 4, 8, 8)),
+    from_canonical_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::arc::Frame::new(4, 4, 8, 8)),
     [7; 32],
 );
 k.basis_insert(
-    from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::arc::Frame::new(3, 3, 6, 6)),
+    from_canonical_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::arc::Frame::new(3, 3, 6, 6)),
     [8; 32],
 );
 assert!(k.basis_len() >= 2, "two distinct addresses remain");
@@ -109,13 +109,13 @@ let kept = k.basis_len();
 assert!(kept >= 1);
 let leak_a = vec![(9, 0, 2), (9, 1, 2)];
 let leak_b = vec![(9, 0, 3), (9, 1, 3)];
-let leaked = crate::transducer::element::from_residual(&germinate(&leak_a, &leak_b).unwrap());
+let leaked = crate::transducer::element::from_canonical(&germinate(&leak_a, &leak_b).unwrap());
 k.leak_unruled(leaked);
 assert_eq!(k.basis_len(), kept + 1);
 let dropped = k.prune_basis_to_ruled();
 assert_eq!(dropped, 1, "the leaked card leaves");
 assert_eq!(k.basis_len(), kept, "the ruled cover remains");
-k.leak_unruled(crate::transducer::element::from_residual(
+k.leak_unruled(crate::transducer::element::from_canonical(
     &germinate(&[(8, 0, 2), (8, 1, 2)], &[(8, 0, 5), (8, 1, 5)]).unwrap(),
 ));
 let snap = k.snapshot();
@@ -128,10 +128,10 @@ assert_eq!(booted.basis_len(), kept, "restore skips the leaked basis and rebuild
 #[test]
 fn language_append_shares_prior_word_arcs() {
 let mut k = Kernel::new();
-let w0 = crate::transducer::element::from_residual(
+let w0 = crate::transducer::element::from_canonical(
     &germinate(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 1, 1), (1, 0, 1), (1, 1, 1)]).unwrap(),
 );
-let w1 = crate::transducer::element::from_residual(
+let w1 = crate::transducer::element::from_canonical(
     &germinate(&[(4, 0, 2), (4, 1, 2), (5, 0, 2)], &[(4, 0, 3), (4, 1, 3), (5, 0, 3)]).unwrap(),
 );
 k.leak_unruled(w0);
@@ -177,9 +177,14 @@ assert_eq!(k.cochain_bytes(), n, "a heard slash is not re-rowed");
 /// change the quoted addresses; Rank carries no scalar order.
 #[test]
 fn the_book_has_no_order() {
-let e1 = element::from_residual(&vec![(0, 0, 1, 2)]);
-let e2 = element::from_residual(&vec![(1, 0, 1, 3)]);
-let e3 = element::from_residual(&vec![(2, 0, 1, 4)]);
+let one = |cells: &[(i64, i64, u8, u8)]| {
+    element::from_canonical(
+        &element::canonical_chain(cells).expect("one entry per position is A5's chain"),
+    )
+};
+let e1 = one(&[(0, 0, 1, 2)]);
+let e2 = one(&[(1, 0, 1, 3)]);
+let e3 = one(&[(2, 0, 1, 4)]);
 let keyed = |es: &[Element]| {
     let mut k = crate::network::nerve::Keyed::new();
     for e in es {
@@ -289,12 +294,12 @@ assert_eq!(k.listings_on(&crate::transducer::stalk::Invariant(vec![8])).len(), 0
 /// back as language and files it as crystallized intelligence.
 #[test]
 fn the_syllabus_never_teaches_a_provisional_word() {
-use crate::transducer::element::from_residual;
+use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 2)];
 let b = vec![(0, 0, 5), (0, 1, 2)];
-let w = from_residual(&germinate(&a, &b).expect("a coboundary"));
+let w = from_canonical(&germinate(&a, &b).expect("a coboundary"));
 let addr = w.address();
 let inv = crate::transducer::stalk::invariant_of(&w);
 

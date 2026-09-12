@@ -149,7 +149,7 @@ impl CourtState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transducer::element::from_residual;
+    use crate::transducer::element::from_canonical;
     use crate::transducer::germinate::germinate;
 
     /// The full judicial state survives the round trip: K-lineage continues
@@ -157,7 +157,7 @@ mod tests {
     /// a single tampered byte in the receipt chain refuses the whole state.
     #[test]
     fn court_state_survives_restart_and_refuses_tampering() {
-        let word = from_residual(
+        let word = from_canonical(
             &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
         );
         let addr = word.address();

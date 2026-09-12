@@ -126,11 +126,11 @@ pub fn chart(word: &Element) -> Invariant {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transducer::element::from_residual;
+    use crate::transducer::element::from_canonical;
     use crate::transducer::germinate::germinate;
 
     fn word(cells_a: &[(i64, i64, u8)], cells_b: &[(i64, i64, u8)]) -> Element {
-        from_residual(&germinate(cells_a, cells_b).unwrap())
+        from_canonical(&germinate(cells_a, cells_b).unwrap())
     }
 
     /// A ROOT IS NOT ITS POPULATION. This returned the stratum's sorted

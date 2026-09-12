@@ -3,7 +3,7 @@
 // with.
 
 use crate::client::sdk::*;
-use crate::transducer::element::from_residual;
+use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 
 #[test]
@@ -19,7 +19,7 @@ fn the_height_a_mind_reads_only_advances_and_stamps_what_it_stands() {
     e.advance_height(9);
     assert_eq!(e.now_tu(), 9, "and it only advances");
     // What the mind stands is stamped with the height it read.
-    let word = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+    let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let tu = e.now_tu();
     e.epigenome.stand_dialect_at(word.clone(), 1, tu);
     assert_eq!(

@@ -226,7 +226,9 @@ fn body_key(body: &[Cell]) -> Option<crate::transducer::address::Address> {
     if body.is_empty() {
         return None;
     }
-    Some(element::from_residual(&body.to_vec()).address())
+    // A body with no canonical chain has no key, and a reading keyed by
+    // nothing is not taken (U14).
+    Some(element::from_residual(&body.to_vec())?.address())
 }
 
 fn place_located<'a, W, F, I, S, H>(

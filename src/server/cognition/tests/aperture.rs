@@ -129,7 +129,7 @@ assert_eq!(
 #[test]
 fn admitting_a_word_costs_the_same_at_n_and_4n() {
 use crate::network::nerve::work;
-use crate::transducer::element::from_residual;
+use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let admit_after = |n: usize| -> u64 {
     let mut k = Kernel::new();
@@ -140,7 +140,7 @@ let admit_after = |n: usize| -> u64 {
         let a: Vec<(i64, i64, u8)> = (0..=i as i64).map(|c| (0, c, 1u8)).collect();
         let b: Vec<(i64, i64, u8)> = (0..=i as i64).map(|c| (0, c, 2u8)).collect();
         if let Some(g) = germinate(&a, &b) {
-            k.basis_insert(from_residual(&g), [1; 32]);
+            k.basis_insert(from_canonical(&g), [1; 32]);
         }
     };
     for i in 0..n {

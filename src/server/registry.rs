@@ -51,13 +51,16 @@ pub struct TaskRegistry {
 /// unreachable under this M2 form (listing keys of each train pair plus
 /// the test-input chain address). Cut B recuts from genesis — overlay of
 /// a Cut A snapshot is a miss, not a restore.
-pub fn task_id(task: &Task) -> Address {
+/// `None` where a chain of this task has no A5 form. A task whose members
+/// cannot be addressed has no identity, and skipping one would give two
+/// different tasks one id (law 2).
+pub fn task_id(task: &Task) -> Option<Address> {
     let mut buf = vec![crate::transducer::address::TAG_TASK];
     for (a, b) in &task.train {
         if let Some(crate::arc::Refined { delta: chain, frame, .. }) = refine_delta(a, b) {
             crate::transducer::address::put_bytes(
                 &mut buf,
-                &crate::transducer::element::listing_key(&chain, &frame),
+                &crate::transducer::element::listing_key(&chain, &frame)?,
             );
         }
     }
@@ -73,10 +76,10 @@ pub fn task_id(task: &Task) -> Address {
             .collect();
         crate::transducer::address::put_bytes(
             &mut buf,
-            &crate::transducer::element::from_residual(&chain).address(),
+            &crate::transducer::element::from_residual(&chain)?.address(),
         );
     }
-    Address::new(buf)
+    Some(Address::new(buf))
 }
 
 /// The task's boundary tension — the per-lane volume of its train
@@ -180,15 +183,16 @@ impl TaskRegistry {
     }
 
     /// REGISTER a task (idempotent by content — re-feeding under a new file
-    /// name registers nothing). Returns the id.
-    pub fn register(&mut self, task: Task) -> Address {
-        let id = task_id(&task);
+    /// name registers nothing). Returns the id, or `None` where a member of
+    /// the task has no A5 form and the task therefore has no identity.
+    pub fn register(&mut self, task: Task) -> Option<Address> {
+        let id = task_id(&task)?;
         if !self.by_id.contains(id.as_bytes()) {
             let i = self.tasks.len();
             self.tasks.push((id.clone(), task, TaskState::Unsolved));
             self.by_id.insert(&id, i);
         }
-        id
+        Some(id)
     }
 
     /// DISPATCH a work envelope: the next Unsolved task, rotating so pulls
@@ -353,8 +357,12 @@ mod tests {
     #[test]
     fn first_solve_earns_the_bounty_and_replays_collapse_to_the_floor() {
         let mut reg = TaskRegistry::new();
-        let id = reg.register(toy_task());
-        assert_eq!(reg.register(toy_task()), id, "content is identity — no re-feeding");
+        let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
+        assert_eq!(
+            reg.register(toy_task()).expect("a grid pair's chain is A5's"),
+            id,
+            "content is identity — no re-feeding"
+        );
         assert_eq!(reg.len(), 1);
         let wrong = vec![vec![vec![9u8, 9], vec![9, 9]]];
         assert_eq!(reg.settle(&id, &wrong), SolveYield::Nothing, "wrong earns nothing");
@@ -378,7 +386,7 @@ mod tests {
     #[test]
     fn settled_states_survive_the_restart_overlay() {
         let mut reg = TaskRegistry::new();
-        let id = reg.register(toy_task());
+        let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
         let right = vec![vec![vec![0u8, 0], vec![2, 2]]];
         assert!(matches!(reg.settle(&id, &right), SolveYield::Bounty(_)));
         let snap = reg.snapshot();
@@ -398,7 +406,7 @@ mod tests {
     #[test]
     fn dispatch_rotates_and_dries_up() {
         let mut reg = TaskRegistry::new();
-        let id = reg.register(toy_task());
+        let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
         let (d1, _) = reg.dispatch().expect("work exists");
         assert_eq!(d1, id);
         let right = vec![vec![vec![0u8, 0], vec![2, 2]]];
@@ -411,7 +419,7 @@ mod tests {
     #[test]
     fn intake_exhausts_the_manifest_once() {
         let mut reg = TaskRegistry::new();
-        let id = reg.register(toy_task());
+        let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
         let first = reg.next_intake_batch(8);
         assert_eq!(first.len(), 1);
         assert_eq!(first[0].0, id);

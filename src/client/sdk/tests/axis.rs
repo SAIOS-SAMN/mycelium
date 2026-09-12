@@ -5,15 +5,15 @@
 
 use crate::client::sdk::*;
 use crate::transducer::blade::versor_between;
-use crate::transducer::element::{from_residual, measure_lanes, same_versor, shape_of_chain};
+use crate::transducer::element::{from_canonical, measure_lanes, same_versor, shape_of_chain};
 use crate::transducer::germinate::germinate;
 
 #[test]
 fn two_bodies_deflating_one_listing_open_an_axis_on_the_versor_between_them() {
     // A row of two cells and a column of two: the same body turned a
     // quarter, two distinct words on the atlas.
-    let row = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-    let column = from_residual(&germinate(&[(0, 0, 1u8), (1, 0, 1)], &[(0, 0, 2u8), (1, 0, 2)]).unwrap());
+    let row = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+    let column = from_canonical(&germinate(&[(0, 0, 1u8), (1, 0, 1)], &[(0, 0, 2u8), (1, 0, 2)]).unwrap());
     assert_ne!(row.address(), column.address(), "two words");
     let chain = vec![(0, 0, 1u8, 2u8), (0, 1, 1, 2), (0, 2, 1, 2)];
     let germ = Entity::axis_germ(&chain, &[row.sub().to_vec(), column.sub().to_vec()]).expect("two bodies glue");
@@ -35,7 +35,7 @@ fn two_bodies_deflating_one_listing_open_an_axis_on_the_versor_between_them() {
         Some(AXIS_ONE_BODY),
         "one body opens nothing"
     );
-    let three = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)], &[(0, 0, 2u8), (0, 1, 2), (0, 2, 2)]).unwrap());
+    let three = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)], &[(0, 0, 2u8), (0, 1, 2), (0, 2, 2)]).unwrap());
     assert_eq!(
         Entity::axis_germ(&chain, &[row.sub().to_vec(), three.sub().to_vec()]).err(),
         Some(AXIS_NO_VERSOR),

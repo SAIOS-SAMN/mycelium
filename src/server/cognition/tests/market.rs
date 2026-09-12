@@ -239,13 +239,13 @@ let c = vec![(0, 0, 1u8), (0, 1, 1), (0, 2, 1), (0, 3, 3)];
 let d = vec![(0, 0, 2u8), (0, 1, 2), (0, 2, 1), (0, 3, 4)];
 let chain = germinate(&c, &d).unwrap();
 let k_now = k.k_step();
-k.book_list(element::from_residual(&chain), k_now, [1; 32]);
+k.book_list(element::from_canonical(&chain), k_now, [1; 32]);
 let target = k.quote().1[0].0.address();
 let chain = k.quote().1[0].0.sub().to_vec();
 assert_eq!(chain.len(), 3);
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
-k.basis_insert(element::from_residual(&germinate(&a, &b).unwrap()), [2; 32]);
+k.basis_insert(element::from_canonical(&germinate(&a, &b).unwrap()), [2; 32]);
 let _word = k.basis()[0].address();
 // The entity's reduction over the language: the word cited at the
 // origin, the far cell left as the residual.

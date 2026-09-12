@@ -158,9 +158,15 @@ pub fn rule(
                     None => g,
                 }
             });
+            // A difference with no A5 form is no obstruction to name: the
+            // identity stands where there is nothing to spell, and a
+            // conflicting difference is not a chain this can speak.
             let mut obstruction = match diff.as_slice() {
                 [] => Element::identity(),
-                _ => element::from_residual(&diff),
+                _ => match element::from_residual(&diff) {
+                    Some(e) => e,
+                    None => return Ruling::Slashed("obstruction chain has no canonical form"),
+                },
             };
             if let Some(h) = group_view {
                 if let Some(v) = h.versor() {

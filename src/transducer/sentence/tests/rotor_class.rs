@@ -4,7 +4,7 @@
 use super::common::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{self, Order, Word};
-use crate::transducer::element::{self, from_residual};
+use crate::transducer::element::{self};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self, Standing};
 
@@ -83,7 +83,7 @@ fn an_infinite_class_no_word_discharges_opens_an_axis_and_is_never_filed() {
 fn torsion_filed_only_when_witnessed_at_period() {
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
-    let mut t = from_residual(&crate::transducer::germinate::germinate(&a, &b).unwrap());
+    let mut t = element::from_canonical(&crate::transducer::germinate::germinate(&a, &b).unwrap());
     t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
     assert_eq!(t.torse(), 1, "the hue cycle is one torsion generator");
     let ws = crate::transducer::torsion_witness::witness_stored(&t);

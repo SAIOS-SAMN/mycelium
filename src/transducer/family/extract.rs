@@ -84,7 +84,7 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
 
 /// The germ of one pair: what the input carries onto the output, as the
 /// cells of the change. `None` for a pair with no scene.
-fn germ_of_pair(a: &Grid, b: &Grid) -> Option<Vec<crate::transducer::sentence::Cell>> {
+fn germ_of_pair(a: &Grid, b: &Grid) -> Option<crate::transducer::element::PlacedChain> {
     let (ho, wo) = frame_of(b);
     if a.is_empty() || ho == 0 || wo == 0 {
         return None;
@@ -165,7 +165,7 @@ fn finish(
         match by_demand.get_mut(&key) {
             Some((_, _, held)) => held.extend_from_slice(&germ),
             None => {
-                by_demand.insert(key, (kind, chart, germ));
+                by_demand.insert(key, (kind, chart, germ.to_vec()));
             }
         }
     }
