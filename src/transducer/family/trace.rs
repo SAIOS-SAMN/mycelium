@@ -80,7 +80,7 @@ pub(crate) fn carriage_of(
     if !on() {
         return out;
     }
-    for (_, &i) in form.by_address.fiber(crate::network::nerve::ROOT) {
+    for (_, &i) in form.by_address.scoped() {
         let Some(crate::transducer::sentence::Vertex::Word { address, carriage, .. }) =
             form.vertices.get(i as usize)
         else {
@@ -102,7 +102,7 @@ pub(crate) fn trace_carriage(
         return;
     }
     let after = carriage_of(form);
-    for (addr, was) in before.fiber(crate::network::nerve::ROOT) {
+    for (addr, was) in before.scoped() {
         let at: String = addr.iter().take(2).map(|b| format!("{b:02x}")).collect();
         match after.get(&addr) {
             Some(now) if crate::transducer::element::same_versor(was, now) => {}

@@ -156,6 +156,14 @@ pub(crate) type CarriedPiece = (Vertex, Versor, Vec<(i64, i64)>);
 /// a cycle of faces is the form's loop holonomy. The cover hands over the
 /// pieces and the meets; the form makes them vertices and faces, runs
 /// `loops_of`, and classifies each loop once.
+///
+/// X3: A COVER IS ONE DEFORMATION'S, and its carriers are read with
+/// `scoped`. `carried`, `meets` and `refused` hold what THIS pass placed,
+/// met and could not spell; a walk of them is a walk of one pair's
+/// reading, and there is no coordinate above a cover to descend from. The
+/// same holds for the sets each pass builds as it goes — `occ_in`,
+/// `occ_out`, `named`, `versors`, `occ` — which are read back by the pass
+/// that filled them.
 pub(crate) struct Cover {
     /// The word vertex of each carried piece, the versor that carried it,
     /// and the support it landed on — by `carriage_key(domain, codomain)`.
@@ -242,7 +250,6 @@ pub(crate) fn cover_deformation(
     budget: &mut crate::physics::Budget,
 ) -> Result<Cover, Unmeasured> {
     use super::cursor;
-    use crate::network::nerve::ROOT;
     let opened = budget.remaining();
     let ins = pieces_of(&input.cells, scale);
     let outs = pieces_of(&image.cells, scale);
@@ -260,7 +267,7 @@ pub(crate) fn cover_deformation(
     // positional correspondence over the two supports, which is what a
     // deformation-in-place has in place of a whole-body versor.
     let mut occ_in: crate::network::nerve::Keyed<Vec<u8>> = crate::network::nerve::Keyed::new();
-    for (k, p) in ins.fiber(ROOT) {
+    for (k, p) in ins.scoped() {
         for &(r, c, _) in &p.body.cells {
             occ_in.insert(cell_pos_key(r, c), k.clone());
         }
@@ -269,7 +276,7 @@ pub(crate) fn cover_deformation(
     let mut placed = std::mem::replace(&mut st.placed, crate::network::nerve::Keyed::new());
     let mut consumed = std::mem::replace(&mut st.consumed, crate::network::nerve::Keyed::new());
     let mut reached = std::mem::replace(&mut st.reached, crate::network::nerve::Keyed::new());
-    let out_keys: Vec<Vec<u8>> = outs.fiber(ROOT).map(|(k, _)| k).collect();
+    let out_keys: Vec<Vec<u8>> = outs.scoped().map(|(k, _)| k).collect();
     // THE PARK, written once: everything the stroke MEASURED, and nothing
     // about where it was. It is taken by value, so there is one place a
     // half-run cover is stored and no site can forget a carrier.
@@ -309,7 +316,7 @@ pub(crate) fn cover_deformation(
         // is why they need not (50.8).
         let mut cells: Vec<Cell3> = Vec::new();
         let mut parts: Vec<Vec<u8>> = Vec::new();
-        for (ki, ()) in named.fiber(ROOT) {
+        for (ki, ()) in named.scoped() {
             let Some(ip) = ins.get(&ki) else { continue };
             cells.extend_from_slice(&ip.body.cells);
             parts.push(ki);
@@ -378,7 +385,7 @@ pub(crate) fn cover_deformation(
     // `uncarried` below: the deformation has a part the rest of it does not
     // explain, which is a demand (50.8 case 4).
     let mut occ_out: crate::network::nerve::Keyed<Vec<u8>> = crate::network::nerve::Keyed::new();
-    for (k, p) in outs.fiber(ROOT) {
+    for (k, p) in outs.scoped() {
         for &(r, c, _) in &p.body.cells {
             occ_out.insert(cell_pos_key(r, c), k.clone());
         }
@@ -388,13 +395,13 @@ pub(crate) fn cover_deformation(
     // address is not propagated: it could not be told from another, so the
     // cover could not say it had already been applied (W6, rule 15).
     let mut versors: crate::network::nerve::Keyed<Versor> = crate::network::nerve::Keyed::new();
-    for (_, (_, v, _)) in cover.carried.fiber(ROOT) {
+    for (_, (_, v, _)) in cover.carried.scoped() {
         if let Some(vk) = v.key() {
             versors.insert(&vk, v.clone());
         }
     }
-    let propagate: Vec<Versor> = versors.fiber(ROOT).map(|(_, v)| v.clone()).collect();
-    let in_keys: Vec<Vec<u8>> = ins.fiber(ROOT).map(|(k, _)| k).collect();
+    let propagate: Vec<Versor> = versors.scoped().map(|(_, v)| v.clone()).collect();
+    let in_keys: Vec<Vec<u8>> = ins.scoped().map(|(k, _)| k).collect();
     // A consumed input piece is skipped at its own address, as a placed
     // carriage is in (a): the cover's state answers it, not a cursor.
     for ki in &in_keys {
@@ -423,7 +430,7 @@ pub(crate) fn cover_deformation(
             // image boundary.
             let mut cells: Vec<Cell3> = Vec::new();
             let mut parts: Vec<Vec<u8>> = Vec::new();
-            for (ko, ()) in named.fiber(ROOT) {
+            for (ko, ()) in named.scoped() {
                 let Some(op) = outs.get(&ko) else { continue };
                 cells.extend_from_slice(&op.body.cells);
                 parts.push(ko);
@@ -497,7 +504,7 @@ pub(crate) fn cover_deformation(
     // versor relates them, and a shared coordinate is a coincidence of the
     // embedding, not an overlap.
     let mut occ: crate::network::nerve::Keyed<Vec<Vec<u8>>> = crate::network::nerve::Keyed::new();
-    for (k, p) in placed.fiber(ROOT) {
+    for (k, p) in placed.scoped() {
         for (side, support) in [(0u8, &p.domain), (1u8, &p.codomain)] {
             let cells: Vec<Cell3> = support.iter().map(|&(r, c)| (r, c, 0)).collect();
             let ring = crate::transducer::blade::adjacent_ring(&cells);
@@ -523,7 +530,7 @@ pub(crate) fn cover_deformation(
     }
     // A meet already recorded is not recorded again, read at its own
     // address: the cell needs no position of its own.
-    for (_pos, here) in occ.fiber(ROOT) {
+    for (_pos, here) in occ.scoped() {
         // ONE READ PER CELL THAT YIELDS A MEET, charged on the first meet
         // it yields (rule 10): a cell that yields nothing is not work.
         // `paid` is this stroke's payment and not a reading of the cell —
@@ -562,9 +569,9 @@ pub(crate) fn cover_deformation(
     tally(|t| {
         t.measured += 1;
         t.spend += spent;
-        t.carried += cover.carried.fiber(ROOT).count() as u64;
-        t.meets += cover.meets.fiber(ROOT).count() as u64;
-        t.refused += cover.refused.fiber(ROOT).count() as u64;
+        t.carried += cover.carried.scoped().count() as u64;
+        t.meets += cover.meets.scoped().count() as u64;
+        t.refused += cover.refused.scoped().count() as u64;
     });
     Ok(cover)
 }

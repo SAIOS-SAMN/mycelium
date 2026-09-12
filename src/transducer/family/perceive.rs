@@ -209,7 +209,7 @@ pub(crate) fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
         seen.insert(crate::transducer::element::hue_pair_key(b, a), ());
     }
     let mut m: Vec<(u8, u8)> = seen
-        .fiber(crate::network::nerve::ROOT)
+        .scoped()
         .filter_map(|(k, _)| crate::transducer::element::hue_pair_of(&k))
         .collect();
     m.sort_unstable();

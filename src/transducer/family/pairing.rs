@@ -118,7 +118,7 @@ pub(crate) fn star_and_cell_faces(
     // are the ones spanning DISTINCT cells — which are the cycles that carry
     // a class. The occupants are read in the form's own vertex coordinate,
     // which is content order, so two minds holding one scene chain it alike.
-    for (_k, verts) in occ.fiber(crate::network::nerve::ROOT) {
+    for (_k, verts) in occ.scoped() {
         for w in verts.windows(2) {
             let [a, b] = w else { continue };
             note_face_work();
@@ -147,7 +147,7 @@ pub(crate) fn star_and_cell_faces(
         }
     }
     related
-        .fiber(crate::network::nerve::ROOT)
+        .scoped()
         .filter_map(|(k, _)| decode_pair_key(&k))
         .collect()
 }
@@ -268,7 +268,7 @@ pub(crate) fn group_by_chart(
 ) -> Vec<(Invariant, Vec<Vec<u8>>)> {
     let mut by_key: crate::network::nerve::Keyed<(Invariant, Vec<Vec<u8>>)> =
         crate::network::nerve::Keyed::new();
-    for (addr, c) in scene.cands.fiber(crate::network::nerve::ROOT) {
+    for (addr, c) in scene.cands.scoped() {
         if used.is_some_and(|u| u.contains(&addr)) {
             continue;
         }
@@ -282,7 +282,7 @@ pub(crate) fn group_by_chart(
         }
     }
     by_key
-        .fiber(crate::network::nerve::ROOT)
+        .scoped()
         .map(|(_, (inv, ix))| (inv.clone(), ix.clone()))
         .collect()
 }

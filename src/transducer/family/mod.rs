@@ -170,7 +170,7 @@ pub trait Crystal {
             }
         }
         let mut out = Vec::new();
-        for (k, g) in held.fiber(crate::network::nerve::ROOT) {
+        for (k, g) in held.scoped() {
             let Some(flags) = lanes_hit.get(&k) else { continue };
             let on_every = occupied
                 .iter()
@@ -308,7 +308,7 @@ pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
         }
     }
     let mut out: Vec<(u8, u8)> = sigma
-        .fiber(crate::network::nerve::ROOT)
+        .scoped()
         .filter_map(|(k, t)| super::element::hue_pair_of(&k).map(|(h, _)| (h, *t)))
         .collect();
     out.sort_unstable();

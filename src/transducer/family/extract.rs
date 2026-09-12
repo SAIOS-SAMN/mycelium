@@ -68,7 +68,7 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
     }
     trace::trace_at("extract/4 reindex", form.vertices.len());
     form.reindex();
-    for (_, &fi) in form.star.fiber(crate::network::nerve::ROOT) {
+    for (_, &fi) in form.star.scoped() {
         let Some(face) = form.faces.get(fi as usize) else {
             continue;
         };
@@ -169,7 +169,7 @@ fn finish(
             }
         }
     }
-    for (_, (kind, chart, cells)) in by_demand.fiber(crate::network::nerve::ROOT) {
+    for (_, (kind, chart, cells)) in by_demand.scoped() {
         let mut cells = cells.clone();
         cells.sort_unstable();
         cells.dedup();
@@ -281,7 +281,7 @@ pub fn extract_rule_with(
     }
     let mut sections: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
     let mut rule_vertices = vec![frame_vertex()];
-    for (k, pairs) in class_pairs.fiber(crate::network::nerve::ROOT) {
+    for (k, pairs) in class_pairs.scoped() {
         let Some(class) = class_of.get(&k) else {
             continue;
         };
@@ -302,7 +302,7 @@ pub fn extract_rule_with(
             have.insert(pair_idx_key(p), ());
         }
         let section = all_pairs
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .any(|(pk, _)| !have.contains(&pk));
         if section {
             sections.insert(&k, pairs.clone());
@@ -353,7 +353,7 @@ pub fn extract_rule_with(
         }
     }
     let ends = index_ends(&form);
-    for (_, (ea, eb)) in candidates.fiber(crate::network::nerve::ROOT) {
+    for (_, (ea, eb)) in candidates.scoped() {
         if !budget.spend() {
             return finish(form, &pair_forms, scale, sections, &unreached);
         }

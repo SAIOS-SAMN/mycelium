@@ -113,8 +113,8 @@ pub(crate) fn park(key: &[u8], pending: Pending) {
     // position, because there is neither.
     eprintln!(
         "  cover pending placed {} meets {}",
-        pending.placed.fiber(crate::network::nerve::ROOT).count(),
-        pending.cover.meets.fiber(crate::network::nerve::ROOT).count()
+        pending.placed.scoped().count(),
+        pending.cover.meets.scoped().count()
     );
     PENDING.with(|p| p.borrow_mut().insert(key, pending));
 }
@@ -122,7 +122,7 @@ pub(crate) fn park(key: &[u8], pending: Pending) {
 /// How many covers are parked. A reading for the soak line; nothing
 /// branches on it.
 pub(crate) fn parked() -> usize {
-    PENDING.with(|p| p.borrow().fiber(crate::network::nerve::ROOT).count())
+    PENDING.with(|p| p.borrow().scoped().count())
 }
 
 #[cfg(test)]

@@ -9,7 +9,6 @@
 //! twelve tasks reached no form and left only a tally behind them.
 
 use super::common::*;
-use crate::network::nerve::ROOT;
 use crate::transducer::family::*;
 use crate::transducer::sentence::{Demand, Vertex};
 
@@ -130,7 +129,7 @@ fn the_meets_are_faces_and_the_faces_close_into_loops() {
 fn a_filled_cell_is_a_filed_loop_at_its_own_period() {
     let (a, b) = notched();
     let f = measured(&a, &b);
-    for (class, filed) in f.torsion.fiber(ROOT) {
+    for (class, filed) in f.torsion.scoped() {
         assert!(
             filed.period >= 2,
             "a filed period is a real rotation's order, never one: {filed:?}"
@@ -196,7 +195,7 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
         panic!("the notched fixture perceives one body on each side");
     };
     fn keys<T>(k: &crate::network::nerve::Keyed<T>) -> Vec<Vec<u8>> {
-        k.fiber(ROOT).map(|(a, _)| a).collect()
+        k.scoped().map(|(a, _)| a).collect()
     }
 
     // WHOLE, in a stroke that cannot end.
@@ -252,7 +251,7 @@ fn the_reading_is_the_forms_and_is_stable() {
     let one = measured(&a, &b);
     let two = measured(&a, &b);
     let keys = |f: &crate::transducer::sentence::Form| -> Vec<Vec<u8>> {
-        f.torsion.fiber(ROOT).map(|(k, _)| k).collect()
+        f.torsion.scoped().map(|(k, _)| k).collect()
     };
     assert_eq!(keys(&one), keys(&two), "the same filed classes, in the same key order");
     assert_eq!(one.vertices.len(), two.vertices.len(), "the same vertices");
@@ -284,7 +283,7 @@ fn measured_cover(
     )
     .expect("a cover that runs to its end");
     let t = take_cover_tally();
-    let ins = pieces_of(&input.cells, None).fiber(ROOT).count();
+    let ins = pieces_of(&input.cells, None).scoped().count();
     (cover, t, ins)
 }
 
@@ -397,7 +396,7 @@ fn a_pure_coboundary_form_yields_no_evaluated_loop() {
         assert!(f.edge_coheres(lp), "and it owes no filing");
     }
     assert!(
-        f.torsion.fiber(ROOT).next().is_none(),
+        f.torsion.scoped().next().is_none(),
         "the voice files nothing on a form it evaluated no loop of"
     );
 }

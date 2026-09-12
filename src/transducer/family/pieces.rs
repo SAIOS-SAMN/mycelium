@@ -138,7 +138,7 @@ pub(crate) fn pieces_of(
                 }
             }
         }
-        for (hue_key, of_hue) in hues.fiber(crate::network::nerve::ROOT) {
+        for (hue_key, of_hue) in hues.scoped() {
             // The hue is the KEY this group was filed under, not a cell
             // read out of it by position (rule 15): every cell here has
             // that hue by construction.
