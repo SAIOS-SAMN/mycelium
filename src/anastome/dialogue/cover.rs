@@ -151,10 +151,21 @@ pub fn cover_signed_prefix(cover_roots: &[[u8; 32]; 4], ruled_root: &[u8; 32], r
     out
 }
 
-/// Tail of a digest reply: charts this hypha covers, room, roots, vk, bind, sig.
-/// `[n u32]([lane u8][inv])* [room 4·u64][cover_roots 4·32][ruled_root 32][vk 32][alen u8][addr][sig 64]`
+/// Tail of a digest reply: THE ROOTS, room, vk, bind, sig — and no charts.
+/// `[room 4·u64][cover_roots 4·32][ruled_root 32][vk 32][alen u8][addr][sig 64]`
+///
+/// A DIGEST IS ROOTS, AND A COVER IS A PAGE (A4, owed since Stage 8c). The
+/// digest carried the whole chart list, so its size was the cover's size:
+/// on the fleet at 3d2987e a hypha holding 65 charts could not write one —
+/// `charts 65 of which 12 wider than the axis count` — and 438 digests were
+/// refused on hypha a in five minutes while no cover propagated. Widening
+/// the field would be the same fault one order up (I33). The roots are four
+/// hashes and the ruled root a fifth; a peer whose roots MOVED asks for the
+/// cover with `ACT_COVER` and reads it a page at a time.
+///
+/// `None` only where the bind does not fit its length, which is the one
+/// remaining variable field and is a configuration refusal (47.1).
 pub fn encode_cover_digest(
-    charts: &[(u8, crate::transducer::stalk::Invariant)],
     room: &[u64; 4],
     cover_roots: &[[u8; 32]; 4],
     ruled_root: &[u8; 32],
@@ -163,11 +174,6 @@ pub fn encode_cover_digest(
     sig: &[u8; 64],
 ) -> Option<Vec<u8>> {
     let mut out = Vec::new();
-    out.extend_from_slice(&(charts.len() as u32).to_le_bytes());
-    for (lane, inv) in charts {
-        out.push(*lane);
-        push_invariant(&mut out, inv)?;
-    }
     for x in room {
         out.extend_from_slice(&x.to_le_bytes());
     }
@@ -190,18 +196,6 @@ pub fn encode_cover_digest(
 /// length one of them guessed.
 pub(crate) fn cover_digest_at(body: &[u8], at: usize) -> Option<(CoverDigest, usize)> {
     let mut p = at;
-    let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
-    p += 4;
-    if n > 1024 {
-        return None;
-    }
-    let mut charts = Vec::with_capacity(n);
-    for _ in 0..n {
-        let lane = *body.get(p)?;
-        p += 1;
-        let inv = read_invariant(body, &mut p)?;
-        charts.push((lane, inv));
-    }
     let mut room = [0u64; 4];
     for r in &mut room {
         *r = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
@@ -222,7 +216,7 @@ pub(crate) fn cover_digest_at(body: &[u8], at: usize) -> Option<(CoverDigest, us
     p += alen;
     let sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
     p += 64;
-    Some((CoverDigest { charts, room, cover_roots, ruled_root, vk, bind: addr, sig }, p))
+    Some((CoverDigest { room, cover_roots, ruled_root, vk, bind: addr, sig }, p))
 }
 
 /// Offset one past a stratum-digest reply at the head of `body`, if the
@@ -278,24 +272,107 @@ pub fn cover_digest_end(body: &[u8]) -> Option<usize> {
     whole_cover_digest(body).map(|(_, e)| e)
 }
 
-/// Cover: `[ACT_COVER][vk 32][alen u8][addr][n u32]([lane u8][invariant])*`
-pub fn encode_cover(
+/// THE ASK FOR A PEER'S COVER, from a cursor:
+/// `[ACT_COVER][voice 32][flen u32][from]`.
+///
+/// The cursor is the lane byte and the axes of the last chart the asker
+/// received, so a cover wider than one frame is read across asks and the
+/// asker holds no position of its own — the coordinate it sends IS the
+/// last chart it holds (rule 15, S13.3).
+pub fn encode_cover_request(voice: &[u8; 32], from: &[u8]) -> Vec<u8> {
+    let mut out = vec![ACT_COVER];
+    out.extend_from_slice(voice);
+    crate::transducer::address::put_bytes(&mut out, from);
+    out
+}
+
+/// `None` when the body is not an ask — which is what a cover REPLY is,
+/// since both ride `ACT_COVER` and are told apart by shape.
+pub fn decode_cover_request(body: &[u8]) -> Option<([u8; 32], Vec<u8>)> {
+    if !act_is(body, ACT_COVER) {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let mut p = 33usize;
+    let from = crate::transducer::address::take_bytes(body, &mut p)?;
+    // An ask ends at its cursor; anything after it is a reply's chart list.
+    (p == body.len()).then_some((voice, from))
+}
+
+/// Cover, ONE PAGE:
+/// `[ACT_COVER][vk 32][alen u8][addr][n u32]([lane u8][invariant])* [more u8]`
+///
+/// The charts are served in CURSOR ORDER from `from` exclusive, as many as
+/// `budget` affords, and `more` says whether the page stopped short of the
+/// cover. A cover is not a digest: the digest is the four roots, and this
+/// is what a peer reads when they move (A4).
+///
+/// The rows are written out of the sorted cursors themselves, not out of
+/// the caller's list in the caller's order: the cursor a page ends on is
+/// the position the next ask resumes from, so an order the server does not
+/// control would skip whatever it happened to place before that cursor and
+/// serve the rest forever. Canonical key order, rule 15's first entry.
+pub fn encode_cover_page(
     vk: &[u8; 32],
     addr: &str,
     charts: &[(u8, crate::transducer::stalk::Invariant)],
+    from: &[u8],
+    budget: usize,
 ) -> Option<Vec<u8>> {
+    let mut keys: Vec<Vec<u8>> = charts.iter().map(|(lane, inv)| cover_cursor(*lane, inv)).collect();
+    keys.sort_unstable();
+    keys.dedup();
     let mut out = vec![ACT_COVER];
     out.extend_from_slice(vk);
     crate::transducer::address::put_u8_bytes(&mut out, addr.as_bytes())?;
-    out.extend_from_slice(&(charts.len() as u32).to_le_bytes());
-    for (lane, inv) in charts {
+    let count_at = out.len();
+    out.extend_from_slice(&0u32.to_le_bytes());
+    let mut served = 0u32;
+    let mut more = false;
+    for key in &keys {
+        if key.as_slice() <= from {
+            continue;
+        }
+        let (lane, axes) = key.split_first()?;
+        // A chart wider than the axis count is PASSED OVER, not refused
+        // with the page: the asker resumes from the last cursor it read, so
+        // a refusal here would meet the same chart as the head of every
+        // later ask and the tail of the cover would never be served. The
+        // field is not widened either (I33) -- the door names the width
+        // off its own charts.
+        if axes.len() % 8 != 0 || axes.len() / 8 > u8::MAX as usize {
+            continue;
+        }
+        // One chart's width on the wire, exact: the lane byte, the axis
+        // count, and the cursor's axis bytes -- which are the axes.
+        if out.len() + 2 + axes.len() + 1 > budget {
+            more = true;
+            break;
+        }
         out.push(*lane);
-        push_invariant(&mut out, inv)?;
+        out.push((axes.len() / 8) as u8);
+        out.extend_from_slice(axes);
+        served = served.checked_add(1)?;
     }
+    out.get_mut(count_at..count_at + 4)?.copy_from_slice(&served.to_le_bytes());
+    out.push(u8::from(more));
     Some(out)
 }
 
-pub fn decode_cover(body: &[u8]) -> Option<Cover> {
+/// The cursor a chart is read back from: its lane, then its axes. The
+/// asker sends the last one it holds and the server continues past it, so
+/// neither side keeps a position (S13.3).
+pub fn cover_cursor(lane: u8, inv: &crate::transducer::stalk::Invariant) -> Vec<u8> {
+    let mut out = vec![lane];
+    for a in &inv.0 {
+        out.extend_from_slice(&a.to_le_bytes());
+    }
+    out
+}
+
+/// One page of a peer's cover, and whether more of it stands. `None` for
+/// an ask, which rides the same act.
+pub fn decode_cover_page(body: &[u8]) -> Option<(Cover, bool)> {
     if !act_is(body, ACT_COVER) {
         return None;
     }
@@ -305,12 +382,20 @@ pub fn decode_cover(body: &[u8]) -> Option<Cover> {
     let mut p = 34 + alen;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    let mut charts = Vec::with_capacity(n.min(1024));
+    if n > body.len().checked_sub(p)? / 2 {
+        return None; // untrusted count: a lane byte and an axis count at least
+    }
+    let mut charts = Vec::with_capacity(n);
     for _ in 0..n {
         let lane = *body.get(p)?;
         p += 1;
         let inv = read_invariant(body, &mut p)?;
         charts.push((lane, inv));
     }
-    Some(Cover { vk, bind: addr, charts })
+    let more = match *body.get(p)? {
+        0 => false,
+        1 => true,
+        _ => return None,
+    };
+    Some((Cover { vk, bind: addr, charts }, more))
 }

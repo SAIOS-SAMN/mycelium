@@ -281,7 +281,16 @@ pub struct SpeechAct {
     // sending one address are told apart by the tapes themselves and the
     // court pays each one's generators from what it replayed (26).
 }
-/// A COVER announcement: who, where, and what it covers.
+/// THE FOUR STRATUM ROOTS a court signs, with the ruled root over them —
+/// the whole of what a cover digest says about what that court holds (A4).
+/// One carrier for the pair (law 12): the hypha's exchange, the voice's
+/// session and the digest codec all read the same two coordinates, and a
+/// reader that held its own shape would compare roots against a shape the
+/// signer never wrote.
+pub type Roots = ([[u8; 32]; 4], [u8; 32]);
+
+/// A COVER, one page: who, where, and the charts under the roots it just
+/// signed. Read by `ACT_COVER` when those roots move, never on the digest.
 pub struct Cover {
     /// The announcing key.
     pub vk: [u8; 32],
@@ -443,8 +452,6 @@ pub struct ReceiptSection {
 
 /// A COVER DIGEST: what a hypha publishes about itself.
 pub struct CoverDigest {
-    /// The charts it covers, each on its lane.
-    pub charts: Vec<(u8, crate::transducer::stalk::Invariant)>,
     /// Its room, per lane.
     pub room: [u64; 4],
     /// The four stratum roots of its cover.

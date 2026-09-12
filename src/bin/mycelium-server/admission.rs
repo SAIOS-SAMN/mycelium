@@ -115,20 +115,16 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> 
     // A digest whose charts or bind do not fit the lengths it writes is
     // not sent short (47.1): the peer would read a cover this node does
     // not hold and sign its own reading of it.
-    let Some(mut out) = dialogue::encode_cover_digest(
-        &charts, &room, &cover_roots, &ruled_root, &mesh.vk, &mesh.bind, &sig,
-    ) else {
-        // A REFUSAL NAMES WHAT DID NOT FIT. The digest writes a one-byte
-        // axis count per chart and a one-byte length for the bind, so the
-        // reading is of those two fields against the two bounds — measured
-        // here on the digest's own inputs, not re-derived from a second
-        // encoder. Without it the line said only that something did not
-        // fit, and on the fleet it said so 276 times in two minutes with
-        // no way to know of what.
-        let wide = charts.iter().filter(|(_, inv)| inv.0.len() > 255).count();
+    // A4: THE DIGEST IS THE ROOTS. The charts are no longer on it — a peer
+    // whose roots moved asks for them by page (`ACT_COVER`) — so the only
+    // variable field left is the bind, and that is a configuration
+    // refusal, named.
+    let _ = charts;
+    let Some(mut out) =
+        dialogue::encode_cover_digest(&room, &cover_roots, &ruled_root, &mesh.vk, &mesh.bind, &sig)
+    else {
         eprintln!(
-            "  cover digest refused: charts {} of which {wide} wider than the axis count, bind {} bytes",
-            charts.len(),
+            "  cover digest refused: the bind does not fit its length, {} bytes",
             mesh.bind.len()
         );
         return Vec::new();
@@ -309,7 +305,7 @@ pub(crate) fn admit_peer_digest(
     body: &[u8],
     router: &Mutex<Router>,
 ) -> Result<(), NoDigest> {
-    let Some(dialogue::CoverDigest { charts, room, cover_roots, ruled_root, vk, bind: addr, sig }) =
+    let Some(dialogue::CoverDigest { room, cover_roots, ruled_root, vk, bind: addr, sig }) =
         dialogue::decode_cover_digest(body)
     else {
         return Err(NoDigest::Unreadable);
@@ -318,12 +314,9 @@ pub(crate) fn admit_peer_digest(
     if !mycelium::court::identity::verify(&vk, &prefix, &sig) {
         return Err(NoDigest::Signature);
     }
-    if let Ok(mut c) = mesh.cover.lock() {
-        c.retract_hypha(&vk);
-        for (lane, inv) in &charts {
-            c.admit(*lane, inv, vk);
-        }
-    }
+    // The digest names the peer's room, its address and its ROOTS. Its
+    // charts are read by page when those roots move (`admit_peer_cover`),
+    // so nothing here retracts a cover this reading cannot replace.
     if let Ok(mut r) = mesh.rooms.lock() {
         r.insert(vk, room);
     }

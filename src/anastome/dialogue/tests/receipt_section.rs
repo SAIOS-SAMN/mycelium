@@ -9,18 +9,16 @@ use crate::anastome::dialogue::*;
 /// round-tripping on its own proves nothing about that offset, and an
 /// offset that is wrong by one byte is silent.
 ///
-/// It also pins what the reader does with the frame's own ambiguity: a
-/// cover digest with no stratum-digest reply in front of it parses TWO
-/// ways that both consume the buffer exactly -- its chart count and
-/// invariant bytes read as a digests reply -- so the reader refuses it
-/// rather than inventing the charts the old guess produced. Every
-/// sender in the tree prepends the reply, so the refused shape is one
-/// nothing sends; the format's inability to say which shape it is, is
-/// filed with 5.2c, since only a tag on the frame can settle it.
+/// It also pins the frame's ambiguity. While the digest carried the
+/// charts, a bare one parsed TWO ways that both consumed the buffer --
+/// its chart count and invariant bytes read as a digests reply -- and the
+/// reader refused it rather than inventing charts. The digest is now the
+/// ROOTS (A4): every field ahead of the bind is fixed-width, so the bare
+/// shape has one reading and decodes. 5.2c's tag is still owed for the
+/// general case; this is the shape narrowing, not the tag arriving.
 #[test]
 fn the_receipt_section_is_found_after_a_full_digest_frame() {
     use crate::transducer::stalk::Invariant;
-    let charts = vec![(0u8, Invariant(vec![1, 2, 3])), (2u8, Invariant(vec![9]))];
     let room = [11u64, 12, 13, 14];
     let cover_roots = [[1u8; 32], [2; 32], [3; 32], [4; 32]];
     let ruled_root = [5u8; 32];
@@ -50,7 +48,7 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
     // digest, and the receipt section on the end.
     let mut body = encode_digests_reply(&digests);
     body.extend(
-        encode_cover_digest(&charts, &room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig)
+        encode_cover_digest(&room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig)
             .expect("the digest fits its lengths"),
     );
     let bare = body.len();
@@ -58,8 +56,8 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
 
     let d = decode_cover_digest(&body).expect("digest decodes");
     assert_eq!(
-        (d.charts, d.room, d.cover_roots, d.ruled_root, d.vk, d.sig),
-        (charts.clone(), room, cover_roots, ruled_root, vk, sig)
+        (d.room, d.cover_roots, d.ruled_root, d.vk, d.sig),
+        (room, cover_roots, ruled_root, vk, sig)
     );
     assert_eq!(d.bind, "127.0.0.1:7500");
     assert_eq!(
@@ -86,15 +84,73 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
         "a section that does not parse whole is refused"
     );
 
-    // The unframed shape is genuinely ambiguous and refuses.
-    let mut lone =
-        encode_cover_digest(&charts, &room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig)
-            .expect("the digest fits its lengths");
+    // The unframed shape: one reading now, since the fields ahead of the
+    // bind are fixed-width and no chart count stands at the head.
+    let mut lone = encode_cover_digest(&room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig)
+        .expect("the digest fits its lengths");
     lone.extend(encode_receipt_section(&prefix, &rsig, &head).expect("frames"));
-    assert!(
-        decode_cover_digest(&lone).is_none(),
-        "two readings consume the buffer: the reader refuses rather than guessing"
+    let alone = decode_cover_digest(&lone).expect("the roots-only digest has one reading");
+    assert_eq!((alone.room, alone.cover_roots, alone.ruled_root), (room, cover_roots, ruled_root));
+}
+
+/// A4, owed since Stage 8c — THE COVER IS A PAGE. The digest carries the
+/// four roots; a peer whose roots moved asks for the charts under them
+/// from the last cursor it holds, and the server continues past that
+/// cursor. Neither side keeps a position: the coordinate on the wire IS
+/// the last chart the asker read (rule 15, S13.3).
+///
+/// Pinned here: the ask and the page ride the same act and are told apart
+/// by shape; the page is served in cursor order whatever order the charts
+/// arrive in; a budget that admits two rows says `more`, and resuming from
+/// the page's last cursor serves the rest exactly once.
+#[test]
+fn a_cover_is_read_by_page_from_the_last_cursor_held() {
+    use crate::transducer::stalk::Invariant;
+    let vk = [6u8; 32];
+    // Out of cursor order on purpose: lane 2 before lane 0, and the wide
+    // chart before the narrow one inside lane 0.
+    let charts = vec![
+        (2u8, Invariant(vec![9])),
+        (0u8, Invariant(vec![2, 7, 7])),
+        (0u8, Invariant(vec![2, 3])),
+    ];
+    let ask = encode_cover_request(&vk, b"");
+    assert_eq!(decode_cover_request(&ask), Some((vk, Vec::new())), "an ask round-trips");
+    assert!(decode_cover_page(&ask).is_none(), "an ask is not a page");
+
+    // Two rows of the three: the act byte, the vk, the bind's length and
+    // bytes, the count, then per row the lane byte, the axis count and the
+    // axes, then the `more` byte.
+    let two = 1 + 32 + 1 + "127.0.0.1:7500".len() + 4 + (2 + 8 * 2) + (2 + 8 * 3) + 1;
+    let page = encode_cover_page(&vk, "127.0.0.1:7500", &charts, b"", two).expect("a page");
+    assert!(decode_cover_request(&page).is_none(), "a page is not an ask");
+    let (first, more) = decode_cover_page(&page).expect("a page decodes");
+    assert_eq!(first.vk, vk);
+    assert_eq!(first.bind, "127.0.0.1:7500");
+    assert_eq!(
+        first.charts,
+        vec![(0u8, Invariant(vec![2, 3])), (0u8, Invariant(vec![2, 7, 7]))],
+        "cursor order, not the caller's order"
     );
+    assert!(more, "the third chart did not fit and the page says so");
+
+    // Resume from the last cursor read: the rest, once, and no more.
+    let (end, _) = first.charts.split_last().expect("a row");
+    let last = cover_cursor(end.0, &end.1);
+    let rest = encode_cover_page(&vk, "127.0.0.1:7500", &charts, &last, 1 << 16).expect("a page");
+    let (tail, more) = decode_cover_page(&rest).expect("a page decodes");
+    assert_eq!(tail.charts, vec![(2u8, Invariant(vec![9]))], "past the cursor, nothing repeated");
+    assert!(!more, "the cover is served");
+
+    // A chart wider than the axis count is passed over, not refused with
+    // the page: a refusal would meet it at the head of every later ask.
+    let wide = vec![(0u8, Invariant(vec![1])), (1u8, Invariant(vec![4u64; 256]))];
+    let (only, more) = encode_cover_page(&vk, "a", &wide, b"", 1 << 16)
+        .as_deref()
+        .and_then(decode_cover_page)
+        .expect("a page");
+    assert_eq!(only.charts, vec![(0u8, Invariant(vec![1]))]);
+    assert!(!more, "and the page is complete without it");
 }
 
 /// 47.1, I33 — A PREFIX THAT DOES NOT FIT THE WIRE IS NOT FRAMED. The

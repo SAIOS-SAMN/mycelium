@@ -245,6 +245,40 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         }
         return true;
     }
+    // A4 — THE COVER, BY PAGE. The digest carries the four roots; a peer
+    // whose roots moved asks here for the charts under them, from the last
+    // chart it holds, and reads as many as one frame affords. The cover
+    // used to ride the digest whole, which made the digest's size the
+    // cover's and refused it outright past the axis count.
+    if kind == dialogue::ACT_COVER {
+        if let Some((_voice, from)) = dialogue::decode_cover_request(&frame.body) {
+            let charts = match door.kernel.lock() {
+                Ok(k) => k.own_cover_charts(),
+                Err(_) => return true,
+            };
+            // A chart wider than the page's axis count is passed over by
+            // the encoder, so the count of them is said here once, where
+            // the charts are this court's own: on the fleet at 3d2987e
+            // this width took the whole digest down with it and the line
+            // that named it was the only reason the cause was findable.
+            let wide = charts.iter().filter(|(_, inv)| inv.0.len() > 255).count();
+            if wide > 0 {
+                eprintln!("  cover page passed over {wide} of {} charts: wider than the axis count", charts.len());
+            }
+            let Some(body) = dialogue::encode_cover_page(
+                &door.mesh.vk,
+                &door.bind,
+                &charts,
+                &from,
+                mycelium::network::wire::frame_budget(),
+            ) else {
+                eprintln!("  cover page refused: the bind does not fit its length");
+                return true;
+            };
+            answer(s, Frame { lane: frame.lane, body });
+        }
+        return true;
+    }
     if kind == dialogue::ACT_OFFER {
         crate::judge::offer::judge(s, frame, door);
         return true;

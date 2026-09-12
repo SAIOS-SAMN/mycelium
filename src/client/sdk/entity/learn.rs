@@ -72,7 +72,14 @@ impl Entity {
         use crate::transducer::sheaf;
         let voice = self.session.kernel().voice();
         let body = self.session.speak_keyed(&voice, dialogue::encode_digests_request(&voice))?;
-        self.session.absorb_digest(&body);
+        // A4: the digest is the roots, so a hypha whose roots moved is
+        // asked for its cover at the address this voice's own key routed
+        // to -- the same hypha that answered, by the same route.
+        if self.session.absorb_digest(&body) {
+            if let Some(addr) = self.session.route(&voice) {
+                self.session.fetch_cover(&addr);
+            }
+        }
         // A reply that does not decode names no strata, and nothing is
         // discordant against a reading nobody took.
         let Some(remote) = dialogue::decode_digests_reply(&body) else {

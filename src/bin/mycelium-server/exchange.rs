@@ -18,8 +18,11 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 
-/// THE FOUR STRATUM ROOTS a peer last showed, with the cover root over them.
-pub(crate) type Roots = ([[u8; 32]; 4], [u8; 32]);
+/// THE FOUR STRATUM ROOTS a peer last showed, with the cover root over
+/// them — the dialogue's own carrier for the pair, not a second shape of
+/// it (law 12): this binary compares what it recorded against what a
+/// signer wrote, so the two cannot be separate types.
+pub(crate) use mycelium::anastome::dialogue::Roots;
 
 /// A NODE'S ORIGIN: the genesis hash it adopted and the epoch it adopted it
 /// at — the pair 47.2 step 1 tests every signed frame against.
@@ -470,6 +473,48 @@ impl Exchange {
                         };
                         if !unchanged {
                             any_moved = true;
+                            // A4, owed since Stage 8c: THE COVER IS FETCHED
+                            // WHEN THE ROOTS MOVE. The digest carries the
+                            // four roots and no charts, so this ask is the
+                            // only way a peer's cover arrives -- read from
+                            // the last cursor held, page after page, while
+                            // the peer says more stands and this organ's
+                            // budget affords the ask.
+                            let mut from: Vec<u8> = Vec::new();
+                            while organ_budget > 0 {
+                                organ_budget -= 1;
+                                let ask = dialogue::encode_cover_request(&mesh.vk, &from);
+                                let Some((page, dt3)) = tell_peer(&d, ask) else {
+                                    note_rtt_timeout(&mesh, &pid);
+                                    break;
+                                };
+                                note_rtt_ok(&mesh, &pid, dt3);
+                                if crate::transport::is_deferred(&page) {
+                                    eprintln!("  court exchange deferred by {d}");
+                                    break;
+                                }
+                                let Some((cover, more)) = dialogue::decode_cover_page(&page) else {
+                                    break;
+                                };
+                                // The page is the peer's own statement of
+                                // its charts under the roots it just
+                                // signed, so the first page retracts what
+                                // this court held for it and the rest add.
+                                let Ok(mut c) = mesh.cover.lock() else { break };
+                                if from.is_empty() {
+                                    c.retract_hypha(&cover.vk);
+                                }
+                                let read = cover.charts.len();
+                                for (lane, inv) in &cover.charts {
+                                    c.admit(*lane, inv, cover.vk);
+                                    from = dialogue::cover_cursor(*lane, inv);
+                                }
+                                drop(c);
+                                eprintln!("  court cover read {read} charts from {d} more {more}");
+                                if !more || read == 0 {
+                                    break;
+                                }
+                            }
                         }
                         if charts.is_empty() {
                             continue;

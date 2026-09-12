@@ -28,8 +28,11 @@ pub struct Session {
     pub(crate) strokes: std::cell::Cell<u64>,
     /// Keep-alive streams keyed by destination address.
     pub(crate) streams: RefCell<crate::network::nerve::Keyed<TcpStream>>,
-    /// Cover trie learned from digest replies. Same read as the hypha.
+    /// Cover trie learned by page from `ACT_COVER`. Same read as the hypha.
     pub(crate) cover: RefCell<crate::network::nerve::Cover>,
+    /// The four cover roots and the ruled root last read from each hypha:
+    /// the cover is fetched when they MOVE, and not on every digest.
+    pub(crate) last_roots: RefCell<crate::network::nerve::Keyed<crate::anastome::dialogue::Roots>>,
     pub(crate) rooms: RefCell<crate::network::nerve::Keyed<[u64; 4]>>,
     pub(crate) addrs: RefCell<crate::network::nerve::Keyed<String>>,
     /// Last measured round-trip per hypha address; a timeout raises it by
@@ -59,6 +62,7 @@ impl Session {
             strokes: std::cell::Cell::new(0),
             streams: RefCell::new(crate::network::nerve::Keyed::new()),
             cover: RefCell::new(crate::network::nerve::Cover::new()),
+            last_roots: RefCell::new(crate::network::nerve::Keyed::new()),
             rooms: RefCell::new(crate::network::nerve::Keyed::new()),
             addrs: RefCell::new(crate::network::nerve::Keyed::new()),
             rtt: RefCell::new(crate::network::nerve::Keyed::new()),
@@ -96,7 +100,9 @@ impl Session {
         if budget.spend() {
             let voice = self.kernel.voice;
             if let Ok(body) = self.exchange_at(&known[i], dialogue::encode_digests_request(&voice)) {
-                self.absorb_digest(&body);
+                if self.absorb_digest(&body) {
+                    self.fetch_cover(&known[i]);
+                }
             }
         }
     }
@@ -125,7 +131,9 @@ impl Session {
             let Ok(body) = self.exchange_at(&addr, dialogue::encode_digests_request(&voice)) else {
                 continue;
             };
-            self.absorb_digest(&body);
+            if self.absorb_digest(&body) {
+                self.fetch_cover(&addr);
+            }
         }
     }
 
@@ -178,9 +186,12 @@ impl Session {
         self.strokes.set(n.wrapping_add(1));
     }
 
-    pub(crate) fn absorb_digest(&self, body: &[u8]) {
+    /// Absorb a digest reply and say whether that hypha's ROOTS MOVED. A
+    /// caller holding the address it dialled fetches the cover with
+    /// [`Session::fetch_cover`] when they did; a caller that does not
+    /// learns the room and the route, which is what the digest carries.
+    pub(crate) fn absorb_digest(&self, body: &[u8]) -> bool {
         let Some(crate::anastome::dialogue::CoverDigest {
-            charts,
             room,
             cover_roots,
             ruled_root,
@@ -189,19 +200,57 @@ impl Session {
             sig,
         }) = crate::anastome::dialogue::decode_cover_digest(body)
         else {
-            return;
+            return false;
         };
         let prefix = crate::anastome::dialogue::cover_signed_prefix(&cover_roots, &ruled_root, &room);
         if !crate::court::identity::verify(&vk, &prefix, &sig) {
-            return;
+            return false;
         }
-        self.cover.borrow_mut().retract_hypha(&vk);
-        for (lane, inv) in &charts {
-            self.cover.borrow_mut().admit(*lane, inv, vk);
-        }
+        // A4: the digest is the ROOTS. A voice whose record of this hypha's
+        // roots moved asks for its cover by page (`fetch_cover`), and
+        // nothing here retracts a cover this reading cannot replace.
+        let now = (cover_roots, ruled_root);
+        let moved = self.last_roots.borrow().get(&vk) != Some(&now);
+        self.last_roots.borrow_mut().insert(vk, now);
         self.rooms.borrow_mut().insert(vk, room);
         self.addrs.borrow_mut().insert(vk, addr.clone());
         self.router.borrow_mut().insert(vk, addr);
+        moved
+    }
+
+    /// A hypha's COVER, by page, from the last cursor read: the digest
+    /// carries the four roots and no charts (A4), so this is the only way a
+    /// voice's trie is filled. The first page retracts what was held for
+    /// that hypha, since the page is its own statement of what it holds.
+    pub(crate) fn fetch_cover(&self, addr: &str) {
+        let mut from: Vec<u8> = Vec::new();
+        // Rule 10: the bound is the transport aperture in strokes, the
+        // measure this session paces its other acts by -- never "until the
+        // peer stops saying more", which is the peer's loop and not this
+        // one's. A cover wider than the aperture converges over contacts,
+        // since the cursor is the last chart held and nothing is re-read.
+        let mut pages = crate::physics::aperture_cycle().max(1) as usize;
+        while pages > 0 {
+            pages -= 1;
+            let ask = crate::anastome::dialogue::encode_cover_request(&self.kernel.voice, &from);
+            let Ok(page) = self.exchange_at(addr, ask) else {
+                return;
+            };
+            let Some((cover, more)) = crate::anastome::dialogue::decode_cover_page(&page) else {
+                return;
+            };
+            if from.is_empty() {
+                self.cover.borrow_mut().retract_hypha(&cover.vk);
+            }
+            let read = cover.charts.len();
+            for (lane, inv) in &cover.charts {
+                self.cover.borrow_mut().admit(*lane, inv, cover.vk);
+                from = crate::anastome::dialogue::cover_cursor(*lane, inv);
+            }
+            if !more || read == 0 {
+                return;
+            }
+        }
     }
 
     /// The hyphas this entity knows.
