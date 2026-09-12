@@ -10,10 +10,9 @@ use crate::transducer::family::*;
 fn unspellable_vertex_is_unspoken() {
 let x = grid(&["1100", "0000"]);
 let bodies = perceive(&x);
-let class = bodies
-    .first()
-    .map(|b| b.moduli.clone())
-    .expect("a body");
+// The fixture is one body.
+let [body] = bodies.as_slice() else { panic!("a body") };
+let class = body.moduli.clone();
 let mut f = Form::default();
 f.vertices.push(Vertex::Word {
     address: crate::transducer::address::Address::from(vec![1]),
@@ -201,7 +200,7 @@ let bodies = rule
     .count();
 assert_eq!(bodies, 1, "one body is one vertex, got {}", rule.form.vertices.len());
 assert!(
-    matches!(rule.form.vertices.first(), Some(Vertex::Frame)),
+    matches!(rule.form.vertices.as_slice(), [Vertex::Frame, ..]),
     "a frame vertex is on the form"
 );
 let frame_face = rule.form.faces.iter().any(|f| f.i == 0 || f.j == 0);

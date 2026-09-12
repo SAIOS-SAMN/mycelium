@@ -333,7 +333,7 @@ pub fn from_translation(
     let word = rotor.spelled_word()?;
     let mut e = from_connection(&word, &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])?;
     let mut d = e.description().to_vec();
-    if d.first() == Some(&CONNECTION_TAG) {
+    if crate::transducer::address::tag_of(&d) == Some(CONNECTION_TAG) {
         d[0] = TRANSLATION_TAG;
     }
     crate::transducer::address::put_addr(&mut d, a)?;

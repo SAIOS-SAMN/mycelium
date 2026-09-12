@@ -285,9 +285,12 @@ pub fn extract_rule_with(
         let Some(class) = class_of.get(&k) else {
             continue;
         };
-        let Some(&pi) = pairs.first() else {
+        // The pairs are filed under the class in the family's own pair
+        // order, so the least index represents the class on every node.
+        let [pi, ..] = pairs.as_slice() else {
             continue;
         };
+        let pi = *pi;
         let Some(v) = pair_forms
             .get(pi as usize)
             .and_then(|f| one_vertex_of_class(f, class).cloned())

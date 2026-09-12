@@ -126,6 +126,21 @@ impl<'a> WorkingAtlas<'a> {
         out
     }
 
+    /// THE STRONGEST STANDING this mind has on a chart. `fiber` writes the
+    /// ruled words first, then the stood, then the held, so its head is
+    /// the strongest standing on the chart and not the entry that arrived
+    /// first (rule 15). A chart this mind stands on at all is `Held`:
+    /// met and not ruled, which is what standing on nothing is.
+    ///
+    /// One carrier for it: the ask built it inline at two sites.
+    pub fn standing_on(&self, inv: &crate::transducer::stalk::Invariant) -> Standing {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — canonical key order: `fiber` writes ruled, then stood, then held, so the head is the strongest standing"
+        )]
+        self.fiber(inv).first().map_or(Standing::Held, |(_, s)| *s)
+    }
+
     /// THE GENERATORS OF ONE STRATUM (42.6, 16.12, A21 §2): every address
     /// under a prefix of `inv`, coarsened one axis at a time until the read
     /// is not empty, with the stratum it was found at.

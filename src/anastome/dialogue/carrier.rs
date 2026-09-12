@@ -6,6 +6,29 @@
 
 use super::*;
 
+/// THE ACT TAG: the byte an act body opens with. Rule 15's question at a
+/// wire read is whether the position is the tape's own coordinate or the
+/// order things happened to arrive in, and here it is the first: 26 puts
+/// the act tag at offset zero, so reading byte zero is reading the field
+/// the sender wrote, not taking whichever byte came first.
+///
+/// It is ONE carrier for that fact. Every decoder asked `b.first()` for
+/// itself, so the offset was written out forty times and forty readers
+/// each had to be right about it.
+pub fn act_tag(body: &[u8]) -> Option<u8> {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 15 — wire tag offset: 26 writes the act tag at offset zero, and this is the one reader of it"
+    )]
+    body.first().copied()
+}
+
+/// Whether an act body opens with `tag`. The refusal every decoder makes
+/// before it reads a field.
+pub fn act_is(body: &[u8], tag: u8) -> bool {
+    act_tag(body) == Some(tag)
+}
+
 pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) {
     out.extend_from_slice(&(cites.len() as u32).to_le_bytes());
     for c in cites {
@@ -57,7 +80,7 @@ pub(crate) fn read_invariant(b: &[u8], p: &mut usize) -> Option<crate::transduce
 
 pub(crate) fn push_grid(out: &mut Vec<u8>, g: &[Vec<u8>]) {
     out.extend_from_slice(&(g.len() as u16).to_le_bytes());
-    out.extend_from_slice(&(g.first().map_or(0, |r| r.len()) as u16).to_le_bytes());
+    out.extend_from_slice(&(crate::arc::grid_width(g) as u16).to_le_bytes());
     for row in g {
         out.extend_from_slice(row);
     }

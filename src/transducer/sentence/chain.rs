@@ -251,6 +251,13 @@ pub fn same_profile(a: &[((u8, u8), u32)], b: &[((u8, u8), u32)]) -> bool {
 /// assignment along its axis over its support.
 pub fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<Cell>> {
     let pos = element::positions(word.sub());
+    // The citation NAMES the assignment by its index along the word's axis
+    // — a coordinate the cite carries on the wire, not a member taken
+    // because it came first (rule 15).
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 15 — wire tag offset: the gauge index is the cite's own coordinate along the word's axis"
+    )]
     let assignment = word.assignments().into_iter().nth(asg)?;
     let mut pat: Vec<Cell> = pos.iter().zip(&assignment).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
     pat.sort_unstable();

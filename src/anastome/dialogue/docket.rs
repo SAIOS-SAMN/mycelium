@@ -19,7 +19,7 @@ pub fn encode_docket_request(voice: &[u8; 32], since_k: u64, ticks: u64) -> Vec<
 }
 
 pub fn decode_docket_request(body: &[u8]) -> Option<([u8; 32], u64, u64)> {
-    if body.first() != Some(&ACT_DOCKET) {
+    if !act_is(body, ACT_DOCKET) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -223,7 +223,7 @@ pub fn encode_evidence_request(voice: &[u8; 32]) -> Vec<u8> {
 }
 
 pub fn decode_evidence_request(body: &[u8]) -> Option<[u8; 32]> {
-    if body.first() != Some(&ACT_EVIDENCE) || body.len() != 33 {
+    if !act_is(body, ACT_EVIDENCE) || body.len() != 33 {
         return None; // exactly [act][voice] — longer bodies are DEPOSITS
     }
     body.get(1..33)?.try_into().ok()
@@ -243,7 +243,7 @@ pub fn encode_evidence_deposit<A: AsRef<[u8]>>(
 }
 
 pub fn decode_evidence_deposit(body: &[u8]) -> Option<EvidenceDeposit> {
-    if body.first() != Some(&ACT_EVIDENCE) || body.len() <= 33 {
+    if !act_is(body, ACT_EVIDENCE) || body.len() <= 33 {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -394,7 +394,7 @@ pub fn encode_verdict_attach(
 
 
 pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
-    if body.first() != Some(&ACT_VERDICT) {
+    if !act_is(body, ACT_VERDICT) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -458,7 +458,7 @@ pub fn encode_ruled(r: &Ruled) -> Vec<u8> {
 }
 
 pub fn decode_ruled(body: &[u8]) -> Option<Ruled> {
-    match *body.first()? {
+    match act_tag(body)? {
         0 => Some(Ruled::Applied),
         1 => Some(Ruled::Inert),
         2 => {
@@ -482,7 +482,7 @@ pub fn encode_teach(element_bytes: &[u8]) -> Vec<u8> {
 }
 
 pub fn decode_teach(body: &[u8]) -> Option<Vec<u8>> {
-    if body.first() != Some(&ACT_TEACH) {
+    if !act_is(body, ACT_TEACH) {
         return None;
     }
     let len = u32::from_le_bytes(body.get(1..5)?.try_into().ok()?) as usize;
@@ -504,7 +504,7 @@ pub fn encode_settle(germ: impl AsRef<[u8]>, voices: &[[u8; 32]], mu: &[u64; 4])
 }
 
 pub fn decode_settle(body: &[u8]) -> Option<(Address, Vec<[u8; 32]>, [u64; 4])> {
-    if body.first() != Some(&ACT_SETTLE) {
+    if !act_is(body, ACT_SETTLE) {
         return None;
     }
     let mut p = 1usize;

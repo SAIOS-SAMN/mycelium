@@ -48,8 +48,7 @@ impl Kernel {
         let head_k = self.final_prefix_head().ok_or(REFUSE_FOLD_OPEN)?;
         self.treasury.fold_reading(head_k)?;
         let epochs = nets_of(&self.treasury.rows_below(head_k))?.rows;
-        let receipts = self.chain.receipts();
-        let k0 = receipts.first().ok_or(REFUSE_FOLD_OPEN)?.step_index;
+        let k0 = self.chain.opening().ok_or(REFUSE_FOLD_OPEN)?.step_index;
         // `at_k` is arithmetic on a contiguous chain; this scanned it for a
         // K the index already names (law 3). The scan `at_k` was written
         // to replace was in `receipts_range`; this site was missed.
@@ -98,6 +97,10 @@ impl Kernel {
             return Err(REFUSE_FOLD_OPEN);
         }
         let (cold, root) = self.chain.fold_before(p.root.k).ok_or(REFUSE_FOLD_OPEN)?;
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — FIFO drain head: the drained prefix is in chain order, so its head is the oldest receipt folded"
+        )]
         let k0 = cold.first().map_or(root.k, |r| r.step_index);
         self.append_step(ActKind::Fold, root.hash, me);
         let anchor = self.anchor();

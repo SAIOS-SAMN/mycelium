@@ -52,7 +52,8 @@ let b = vec![(0, 0, 2u8), (0, 1, 2)];
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let mut budget = k.stroke();
 let offers = k.offers_pending(&mut budget);
-let (addr, _) = offers.first().expect("the germ is offered at first vantage");
+// One germ was spoken, so one offer stands.
+let [(addr, _)] = offers.as_slice() else { panic!("the germ is offered at first vantage") };
 let witness = [7u8; 32];
 assert_eq!(k.offer_standing(addr.as_bytes(), &witness), None, "not yet offered to this witness");
 let now = k.k_step();

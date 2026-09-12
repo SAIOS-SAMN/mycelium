@@ -17,7 +17,7 @@ impl Kernel {
     /// at or below every hot receipt, or no hot receipt is there to fold.
     pub fn final_prefix_head(&self) -> Option<u64> {
         let head = self.chain.head_k();
-        let first = self.chain.receipts().first()?.step_index;
+        let first = self.chain.opening()?.step_index;
         let mut floor = head;
         // index: the open carriers, each a keyed fiber
         for (_, (_, k)) in self.pending.fiber(ROOT) {

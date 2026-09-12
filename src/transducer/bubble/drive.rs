@@ -165,12 +165,20 @@ impl Contemplation {
                     break;
                 }
                 let Some((d, fill_open, coeff_id, v0, v1, vertices)) = self.complex.cell(&key).map(|c| {
+                    // A cell's vertices are `sorted_verts`, so the two ends
+                    // are its least and next-least keys — the cell's own
+                    // order, read as a slice pattern.
+                    let (v0, v1) = match c.vertices.as_slice() {
+                        [a, b, ..] => (Some(a.clone()), Some(b.clone())),
+                        [a] => (Some(a.clone()), None),
+                        [] => (None, None),
+                    };
                     (
                         c.degree(),
                         matches!(c.fill, Fill::Open),
                         c.coefficient.is_identity(),
-                        c.vertices.first().cloned(),
-                        c.vertices.get(1).cloned(),
+                        v0,
+                        v1,
                         c.vertices.clone(),
                     )
                 }) else {
@@ -232,13 +240,13 @@ impl Contemplation {
                             if let Some(merged) = self.merge(&vertices) {
                                 if let Some(b) = self.bubbles.get_mut(merged.as_bytes()) {
                                     // A cell of one vertex is a loop at
-                                    // that vertex: both ends are it.
-                                    let Some(a) = vertices.first().cloned() else {
-                                        continue;
-                                    };
-                                    let c = match vertices.get(1) {
-                                        Some(second) => second.clone(),
-                                        None => a.clone(),
+                                    // that vertex: both ends are it, which
+                                    // the slice pattern says on the cell's
+                                    // own sorted vertices.
+                                    let (a, c) = match vertices.as_slice() {
+                                        [a, b, ..] => (a.clone(), b.clone()),
+                                        [a] => (a.clone(), a.clone()),
+                                        [] => continue,
                                     };
                                     b.nerve.file_congruent(&a, &c, g, ell);
                                 }

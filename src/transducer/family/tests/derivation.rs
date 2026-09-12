@@ -125,10 +125,10 @@ fn a_voice_that_holds_a_generator_derives_through_it() {
         .expect("a linear block")
         .expect("the peel closes");
     assert!(!d.is_spelled(), "the mind factored through what it holds");
-    assert_eq!(d.generators.len(), 1, "one generator, applied twice");
+    let [(form, _, _)] = d.generators.as_slice() else { panic!("one generator, applied twice") };
     assert_eq!(
-        d.generators.first().map(|(f, _, _)| f.clone()),
-        Some(Address::from_bytes([TAG_FORM, 1])),
+        *form,
+        Address::from_bytes([TAG_FORM, 1]),
         "cited by the address of the form the mind was taught"
     );
     assert!(d.residue.is_identity(), "the generator reached the whole word");
@@ -244,12 +244,8 @@ fn a_mind_taught_an_adjoined_generator_derives_through_it() {
         .expect("a linear block")
         .expect("the ring reaches it where the peel could not");
     assert!(!d.is_spelled(), "it cites the letter it was taught");
-    assert_eq!(d.generators.len(), 1, "one generator");
-    assert_eq!(
-        d.generators.first().map(|(_, _, e)| *e),
-        Some(1),
-        "applied once: the target IS the generator"
-    );
+    let [(_, _, exponent)] = d.generators.as_slice() else { panic!("one generator") };
+    assert_eq!(*exponent, 1, "applied once: the target IS the generator");
     assert!(d.residue.is_identity(), "and nothing is left for the alphabet");
 }
 
@@ -263,11 +259,8 @@ fn the_ring_cites_a_generator_at_its_full_multiplicity() {
     let d = factor_versor(&held, &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the ring reaches it");
-    assert_eq!(
-        d.generators.first().map(|(_, _, e)| *e),
-        Some(2),
-        "full multiplicity, divided out to exhaustion"
-    );
+    let [(_, _, exponent), ..] = d.generators.as_slice() else { panic!("a generator") };
+    assert_eq!(*exponent, 2, "full multiplicity, divided out to exhaustion");
     assert!(d.residue.is_identity(), "and nothing is left over");
 }
 

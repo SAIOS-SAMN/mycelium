@@ -443,7 +443,7 @@ let bodies = rule
     .count();
 assert!(bodies >= 1, "a body vertex of the recolour class survives, got {}", rule.form.vertices.len());
 assert!(
-    matches!(rule.form.vertices.first(), Some(Vertex::Frame)),
+    matches!(rule.form.vertices.as_slice(), [Vertex::Frame, ..]),
     "frames match by kind, not [MAX,h,w]"
 );
 assert!(

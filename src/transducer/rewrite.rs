@@ -142,7 +142,7 @@ impl Rewrite {
     }
 
     pub fn from_tape(b: &[u8]) -> Option<Self> {
-        if b.first() != Some(&REWRITE_TAG) {
+        if crate::transducer::address::tag_of(b) != Some(REWRITE_TAG) {
             return None;
         }
         let kind = RewriteKind::from_u8(*b.get(1)?)?;

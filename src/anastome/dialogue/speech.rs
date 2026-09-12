@@ -19,7 +19,7 @@ pub fn encode_refine(voice: &[u8; 32], word: impl AsRef<[u8]>, cites: &[CiteWire
 }
 
 pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], Address, Vec<CiteWire>)> {
-    if body.first() != Some(&ACT_REFINE) {
+    if !act_is(body, ACT_REFINE) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -100,7 +100,7 @@ pub fn encode_speech_spoken(voice: &[u8; 32], task: impl AsRef<[u8]>, tu: u64, s
 }
 
 pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
-    if body.first() != Some(&ACT_SPEECH) || body.len() < 47 {
+    if !act_is(body, ACT_SPEECH) || body.len() < 47 {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -165,7 +165,7 @@ pub fn encode_speech_reply(adjudications: &[Adjudication]) -> Vec<u8> {
 }
 
 pub fn decode_speech_reply(body: &[u8]) -> Option<Vec<Adjudication>> {
-    if body.first() != Some(&ACT_SPEECH) {
+    if !act_is(body, ACT_SPEECH) {
         return None;
     }
     let n = *body.get(1)? as usize;
@@ -206,7 +206,7 @@ pub fn encode_adopt(voice: &[u8; 32], element_bytes: &[u8]) -> Vec<u8> {
 }
 
 pub fn decode_adopt(body: &[u8]) -> Option<([u8; 32], Vec<u8>)> {
-    if body.first() != Some(&ACT_ADOPT) || body.len() <= 33 {
+    if !act_is(body, ACT_ADOPT) || body.len() <= 33 {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;

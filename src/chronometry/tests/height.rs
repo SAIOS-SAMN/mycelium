@@ -20,7 +20,7 @@ fn height_is_one_plus_max_of_prev_and_parents() {
         k: b.head_k(),
         hash: b.head_hash(),
     };
-    a.admit(b.receipts().last().unwrap().clone());
+    a.admit(b.head().expect("b has sealed a receipt").clone());
     a.append(ActKind::List, [0; 4], [3u8], [9; 32], vec![parent]).expect("cite b");
     assert_eq!(
         a.head_height(),

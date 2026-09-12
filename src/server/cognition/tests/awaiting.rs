@@ -113,10 +113,12 @@ fn one_frame_adjudicates_a_stood_sentence_and_a_waiting_one_apart() {
     let spoken = vec![(plain.clone(), None), (citer.clone(), None)];
     let heard = k.hear_speech([1; 32], &[0; 32], &spoken).expect("the frame is heard");
 
+    // The adjudications come back in the order the sentences were spoken,
+    // so index zero is the first sentence's verdict — the frame's own
+    // coordinate, read as a slice pattern.
     assert!(
-        matches!(heard.first(), Some(Adjudication::Stood { .. })),
-        "the sentence with nothing to wait on keeps its verdict: {:?}",
-        heard.first()
+        matches!(heard.as_slice(), [Adjudication::Stood { .. }, ..]),
+        "the sentence with nothing to wait on keeps its verdict: {heard:?}"
     );
     match heard.get(1) {
         Some(Adjudication::Awaiting { form }) => assert_eq!(

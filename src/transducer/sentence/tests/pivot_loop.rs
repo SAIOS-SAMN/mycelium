@@ -99,7 +99,7 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
     );
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("the discharged form crystallizes");
     assert!(
-        matches!(f.vertices.first(), Some(Vertex::Frame)),
+        matches!(f.vertices.as_slice(), [Vertex::Frame, ..]),
         "Frame is vertex 0 of the crystallized form"
     );
     assert_eq!(

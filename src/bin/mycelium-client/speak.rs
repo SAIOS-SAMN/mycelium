@@ -78,8 +78,9 @@ pub(crate) fn speak_form(
         return true;
     }
     match entity.speak_with(std::slice::from_ref(&word), train, family) {
-        Ok(codes) => match codes.first().copied() {
-            Some(mycelium::anastome::dialogue::SPEECH_REFUSED) => {
+        // One sentence was sent, so the reply is one code.
+        Ok(codes) => match codes.as_slice() {
+            [mycelium::anastome::dialogue::SPEECH_REFUSED] => {
                 eprintln!("[{tag}] form withheld: family {fam} refused on the wire");
                 false
             }
@@ -137,8 +138,9 @@ fn speak_with_demands(
         return true;
     }
     match entity.speak_with(std::slice::from_ref(&word), train, family) {
-        Ok(codes) => match codes.first().copied() {
-            Some(mycelium::anastome::dialogue::SPEECH_REFUSED) => {
+        // One sentence was sent, so the reply is one code.
+        Ok(codes) => match codes.as_slice() {
+            [mycelium::anastome::dialogue::SPEECH_REFUSED] => {
                 eprintln!("[{tag}] sentence withheld: family {fam} refused on the wire");
                 false
             }

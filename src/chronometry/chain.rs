@@ -120,11 +120,36 @@ impl ReceiptChain {
         (r.step_index == k).then_some(r)
     }
 
+    /// THE HEAD RECEIPT: the last one admitted. A chain is an ORDER — each
+    /// receipt names its parent's hash and the whole chain re-derives from
+    /// that — so its last member is the head by the chain's own structure,
+    /// not the one that happened to arrive most recently (rule 15).
+    ///
+    /// One carrier for it: the three head readers below and `admit` each
+    /// reached for the position themselves.
+    pub fn head(&self) -> Option<&KStepReceipt> {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — FIFO drain head: a chain's head is its last receipt by the chain's own order, which every link re-derives"
+        )]
+        self.receipts.last()
+    }
+
+    /// THE RECEIPT THIS HOT CHAIN OPENS AT — its genesis, or the first one
+    /// admitted after a fold. The chain's own order again: its first member
+    /// is where it begins.
+    pub fn opening(&self) -> Option<&KStepReceipt> {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — canonical key order: a chain opens at its first receipt, which is the chain's own structure"
+        )]
+        self.receipts.first()
+    }
+
     /// The head's chain hash (the fold root's before the first hot receipt;
     /// all zeros before genesis).
     pub fn head_hash(&self) -> [u8; 32] {
-        self.receipts
-            .last()
+        self.head()
             .map(|r| r.chain_hash)
             .or_else(|| self.root.map(|r| r.hash))
             // A chain before genesis has no head, and the empty hash is
@@ -134,8 +159,7 @@ impl ReceiptChain {
 
     /// The head receipt's step index. Zero before genesis.
     pub fn head_k(&self) -> u64 {
-        self.receipts
-            .last()
+        self.head()
             .map(|r| r.step_index)
             .or_else(|| self.root.map(|r| r.k))
             // A chain before genesis stands at step zero.
@@ -144,8 +168,7 @@ impl ReceiptChain {
 
     /// TUniversal: height of the head receipt. Zero before genesis.
     pub fn head_height(&self) -> u64 {
-        self.receipts
-            .last()
+        self.head()
             .map(|r| r.height)
             .or_else(|| self.root.map(|r| r.height))
             // A chain before genesis stands at height zero.
@@ -442,7 +465,7 @@ impl ReceiptChain {
             prev_receipt_hash: prev,
             chain_hash,
         });
-        self.receipts.last()
+        self.head()
     }
 
     /// Verify the whole hot chain: indices monotone from 0 (or from one past
@@ -570,6 +593,10 @@ impl ReceiptChain {
     pub fn from_receipts_at(root: Option<Root>, receipts: Vec<KStepReceipt>) -> Option<ReceiptChain> {
         // An empty chain names no signer; the empty key is that reading,
         // and every receipt admitted later must agree with it.
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — canonical key order: a chain opens at its genesis receipt, so position zero is the chain's own origin and the signer is read there"
+        )]
         let vk = receipts.first().map_or([0u8; 32], |r| r.vk);
         // The index is built before integrity is verified, because
         // verification re-derives every height through it.

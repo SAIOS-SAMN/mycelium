@@ -158,7 +158,7 @@ fn a_ruling_seals_a_receipt_at_the_word_it_ruled() {
     assert!(k.apply_verdict(&addr, RULING_UPHELD), "the ruling lands");
     assert_eq!(k.k_step(), before + 1, "a ruling is one step of the court's clock");
     assert_eq!(
-        k.chain().receipts().last().map(|r| r.delta.clone()),
+        k.chain().head().map(|r| r.delta.clone()),
         Some(addr.clone().into_vec()),
         "and the receipt names the word it ruled on"
     );
@@ -210,7 +210,7 @@ fn an_install_seals_a_receipt_at_the_installed_address() {
     k.home_install(&addr, [0xbb; 32]);
     assert_eq!(k.k_step(), before + 1, "an install is one step");
     assert!(
-        k.chain().receipts().last().is_some_and(|r| r.delta == addr.as_bytes()),
+        k.chain().head().is_some_and(|r| r.delta == addr.as_bytes()),
         "sealed at the installed address"
     );
 }
@@ -233,7 +233,7 @@ fn a_lapsed_citation_seals_a_receipt() {
     k.lapse_docket(super::common::one_stroke_transport);
     assert_eq!(k.k_step(), before + 1, "a lapsed citation is one step");
     assert!(
-        k.chain().receipts().last().is_some_and(|r| r.delta == laddr),
+        k.chain().head().is_some_and(|r| r.delta == laddr),
         "sealed at the address whose draw was released"
     );
 }

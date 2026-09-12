@@ -191,7 +191,16 @@ impl Kernel {
         }
     }
 
+    /// Torsion is filed on the cell's LEAST ADDRESS BY KEY. Both callers
+    /// hand these over in key order — one from `sorted_verts`, one from a
+    /// keyed fiber — so the head is the least key and every node files the
+    /// cycle on the same word rather than on whichever section it met
+    /// first.
     pub(crate) fn file_torsion<A: AsRef<[u8]>>(&mut self, addrs: &[A], ell: u32) {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — canonical key order: the addresses arrive in key order, so the head is the least key"
+        )]
         let Some(rep) = addrs.first() else {
             return;
         };

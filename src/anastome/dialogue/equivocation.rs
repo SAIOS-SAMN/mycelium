@@ -27,7 +27,7 @@ pub fn encode_equivocation(a: &ReceiptSection, b: &ReceiptSection) -> Option<Vec
 /// version, a section that does not parse whole and fill its length, or a
 /// frame with bytes after the second section.
 pub fn decode_equivocation(body: &[u8]) -> Option<(ReceiptSection, ReceiptSection)> {
-    if body.first() != Some(&ACT_EQUIVOCATION) || body.get(1) != Some(&EQUIVOCATION_VERSION) {
+    if !act_is(body, ACT_EQUIVOCATION) || body.get(1) != Some(&EQUIVOCATION_VERSION) {
         return None;
     }
     let mut p = 2usize;

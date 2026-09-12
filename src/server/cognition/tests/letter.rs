@@ -277,12 +277,12 @@ fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it(
     .expect("a linear block")
     .expect("the taught mind reaches what the alphabet cannot");
     assert!(!derived.is_spelled(), "it cites the letter it was taught");
-    assert_eq!(
-        derived.generators.first().map(|(_, _, e)| *e),
-        Some(2),
-        "at the multiplicity the arc carries"
-    );
-    let (cited_form, _, _) = derived.generators.first().cloned().expect("one citation");
+    // ONE CITATION, so the derivation carries one generator.
+    let [(cited_form, _, exponent)] = derived.generators.as_slice() else {
+        panic!("one citation")
+    };
+    assert_eq!(*exponent, 2, "at the multiplicity the arc carries");
+    let cited_form = cited_form.clone();
     assert!(
         ruled.iter().any(|a| a.as_slice() == cited_form.as_bytes()),
         "and the form it cites is the one THIS court ruled — the address survived the page"

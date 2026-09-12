@@ -491,9 +491,11 @@ impl Entity {
         let codes = self.speak(std::slice::from_ref(word))?;
         self.file_taught(word);
         let _ = (voice, bytes, addr);
-        match codes.first().copied() {
-            Some(dialogue::SPEECH_STOOD) | None => Ok(Utterance::Spoken),
-            Some(dialogue::SPEECH_REFUSED) => Ok(Utterance::Silent),
+        // ONE SENTENCE WAS SENT, so the reply is one code — the slice says
+        // that rather than a reader taking whichever code came first.
+        match codes.as_slice() {
+            [dialogue::SPEECH_STOOD] | [] => Ok(Utterance::Spoken),
+            [dialogue::SPEECH_REFUSED] => Ok(Utterance::Silent),
             _ => Ok(Utterance::Spoken),
         }
     }

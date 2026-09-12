@@ -191,7 +191,8 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
     use crate::transducer::family::cursor;
     let (ga, gb) = notched();
     let (ia, ib) = (perceive(&ga), perceive(&gb));
-    let (Some(input), Some(image)) = (ia.first(), ib.first()) else {
+    // The fixture perceives ONE body on each side, which the slice says.
+    let ([input], [image]) = (ia.as_slice(), ib.as_slice()) else {
         panic!("the notched fixture perceives one body on each side");
     };
     fn keys<T>(k: &crate::network::nerve::Keyed<T>) -> Vec<Vec<u8>> {

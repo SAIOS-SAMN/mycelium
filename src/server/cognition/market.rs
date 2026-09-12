@@ -356,6 +356,10 @@ impl Kernel {
         let Some(floor) = self.k_step().checked_sub(crate::physics::reserve_max()) else {
             return;
         };
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — FIFO drain head: the settlements are pushed in K order and drained from the oldest"
+        )]
         while self
             .settlements
             .first()

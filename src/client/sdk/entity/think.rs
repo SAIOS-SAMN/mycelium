@@ -261,7 +261,8 @@ impl Entity {
                 None => (0, 0, 0, 0, 0),
             };
         match self.speak(std::slice::from_ref(e)) {
-            Ok(codes) if codes.first().copied() == Some(dialogue::SPEECH_REFUSED) => {
+            // One sentence was sent, so the reply is one code.
+            Ok(codes) if matches!(codes.as_slice(), [dialogue::SPEECH_REFUSED]) => {
                 eprintln!(
                     "  form withheld: {:02x}{:02x}… refused on the wire",
                     addr[0], addr[1]

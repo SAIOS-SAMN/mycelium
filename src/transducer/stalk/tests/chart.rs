@@ -184,5 +184,11 @@ fn refine_splits_the_stratum_by_the_new_coordinate() {
     assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[class_coord])), vec![b.address().into_vec()]);
     let peeled = Stalks::peel(&Stalks::refine_axes(&inv, &[class_coord]));
     assert_eq!(peeled, inv, "peel drops the class axis");
-    assert_eq!(inv.prefixes().last().map(|p| p.0.is_empty()), Some(true));
+    // The prefixes run coarse-last, so the tail is the root stratum.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 15 — canonical key order: `prefixes` writes the strata from finest to coarsest, so its tail is the root"
+    )]
+    let coarsest = inv.prefixes().last().map(|p| p.0.is_empty());
+    assert_eq!(coarsest, Some(true), "the coarsest prefix is the root stratum");
 }

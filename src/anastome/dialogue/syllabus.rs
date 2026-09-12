@@ -10,7 +10,7 @@ pub fn encode_syllabus_request(voice: &[u8; 32]) -> Vec<u8> {
 }
 
 pub fn decode_syllabus_request(body: &[u8]) -> Option<[u8; 32]> {
-    if body.first() != Some(&ACT_SYLLABUS) || body.len() != 33 {
+    if !act_is(body, ACT_SYLLABUS) || body.len() != 33 {
         return None;
     }
     body.get(1..33)?.try_into().ok()
@@ -26,7 +26,7 @@ pub fn encode_syllabus_reply(words: &[Vec<u8>]) -> Vec<u8> {
 }
 
 pub fn decode_syllabus_reply(body: &[u8]) -> Option<Vec<Vec<u8>>> {
-    let n = *body.first()? as usize;
+    let n = act_tag(body)? as usize;
     let mut p = 1usize;
     let mut words = Vec::with_capacity(n.min(64));
     for _ in 0..n {

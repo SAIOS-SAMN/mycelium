@@ -217,7 +217,7 @@ impl ClassVector {
     }
 
     pub fn from_key(k: &[u8]) -> Option<ClassVector> {
-        if k.first() != Some(&crate::transducer::address::TAG_CLASS) {
+        if crate::transducer::address::tag_of(k) != Some(crate::transducer::address::TAG_CLASS) {
             return None;
         }
         let mut p = 1usize;

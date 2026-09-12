@@ -208,10 +208,12 @@ fn the_meet_admits_a_generator_every_occupied_lane_holds() {
     let with_hue = occupied_lanes(&quarter(2).rotor(), &CycleType::of(&swap()));
     assert_eq!(lanes_of(&with_hue), vec![1, 3], "the target occupies two lanes");
     let at_meet = held.generators_at_meet(&with_hue, &mut budget());
-    assert_eq!(at_meet.len(), 1, "one generator, reached through both covers, counted once");
+    let [(form, _, _)] = at_meet.as_slice() else {
+        panic!("one generator, reached through both covers, counted once")
+    };
     assert_eq!(
-        at_meet.first().map(|(form, _, _)| form.clone()),
-        Some(Address::from_bytes([TAG_FORM, 2])),
+        *form,
+        Address::from_bytes([TAG_FORM, 2]),
         "and it is the one the mind was taught"
     );
 }
@@ -253,9 +255,10 @@ fn a_target_that_translates_still_derives_through_a_turning_generator() {
         .expect("a linear block")
         .expect("the peel closes");
     assert!(!d.is_spelled(), "the mind factored through what it holds");
+    let [(form, _, _)] = d.generators.as_slice() else { panic!("one generator") };
     assert_eq!(
-        d.generators.first().map(|(form, _, _)| form.clone()),
-        Some(Address::from_bytes([TAG_FORM, 1])),
+        *form,
+        Address::from_bytes([TAG_FORM, 1]),
         "cited by the address of the form the mind was taught, placement and all"
     );
 }

@@ -52,6 +52,16 @@ disallowed-methods = [
     { path = "u32::saturating_sub", reason = "rule 11: a floor at zero is an invented value" },
     { path = "u64::saturating_sub", reason = "rule 11: a floor at zero is an invented value" },
     { path = "usize::saturating_sub", reason = "rule 11: a floor at zero is an invented value" },
+    # Rule 15. A MEMBER BY POSITION IS A CHOICE. The question at each site
+    # is whether the order is CONTENT or ARRIVAL: a canonical key order, a
+    # wire tag's own offset, a slice pattern on the value just pushed, the
+    # head of a FIFO drain, and a content extremum such as a bounding box
+    # are the first four cases the order is content; anything else takes a
+    # member because it arrived there, and that is a choice.
+    { path = "slice::first", reason = "rule 15: a member by position is a choice; is the order content or arrival?" },
+    { path = "slice::last", reason = "rule 15: a member by position is a choice" },
+    { path = "core::iter::Iterator::nth", reason = "rule 15: a member by position is a choice" },
+
     { path = "u8::saturating_mul", reason = "rule 11: a ceiling is an invented value" },
     { path = "u16::saturating_mul", reason = "rule 11: a ceiling is an invented value" },
     { path = "u32::saturating_mul", reason = "rule 11: a ceiling is an invented value" },

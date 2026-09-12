@@ -15,9 +15,9 @@ pub fn family_ratio(train: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, u
     for (a, b) in train {
         let f = crate::arc::Frame::new(
             a.len(),
-            a.first().map_or(0, |r| r.len()),
+            crate::arc::grid_width(a),
             b.len(),
-            b.first().map_or(0, |r| r.len()),
+            crate::arc::grid_width(b),
         );
         if f.h_in == 0 || f.w_in == 0 || f.h_out == 0 || f.w_out == 0 {
             return None;
@@ -88,11 +88,14 @@ pub fn probe(
                 }
             }
         }
+        // The cited bodies are measured WHOLE. "first body" reported the
+        // length of whichever cite came first (rule 15) — a number that
+        // named no cite in particular and said nothing about the others.
         eprintln!(
-            "  nothing: listing {} cells, {} cites, carried cells on {on} off {off}, first body {:?}",
+            "  nothing: listing {} cells, {} cites, carried cells on {on} off {off}, cited cells {}",
             listed.len(),
             cites.len(),
-            cites.first().map(|c| c.body.len()),
+            cites.iter().map(|c| c.body.len()).sum::<usize>(),
         );
     }
     let section = cites.iter().any(|c| c.gauge == u32::MAX);

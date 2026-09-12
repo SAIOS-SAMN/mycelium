@@ -493,6 +493,13 @@ impl Contemplation {
             }
             forms.push(b.form.as_ref()?);
         }
+        // The component arrives in KEY ORDER (`component_of` reads it off a
+        // keyed fiber), so the head is its least vertex and every node
+        // forms the thought on the same one.
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — canonical key order: the component is a keyed fiber, so its head is the least address in it"
+        )]
         let &f = forms.first()?;
         if !f.is_cauterized() {
             return None;

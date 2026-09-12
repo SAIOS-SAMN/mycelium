@@ -124,6 +124,12 @@ fn fetch_receipts(dest: &str, me: &[u8; 32], home: &[u8; 32], from: u64, to: u64
             return None;
         }
         let page = dialogue::decode_receipts_reply(&reply)?;
+        // The page arrives in K order, so its tail names the K the next
+        // page opens after — the chain's order, not the order of arrival.
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — FIFO drain head: a receipts page is served in K order, so its tail is the K already served"
+        )]
         let last = page.last()?.step_index;
         out.extend(page);
         next = last.checked_add(1)?;

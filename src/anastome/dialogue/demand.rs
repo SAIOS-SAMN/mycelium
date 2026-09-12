@@ -15,7 +15,7 @@ pub fn encode_probe(voice: &[u8; 32], target: impl AsRef<[u8]>, cites: &[CiteWir
 }
 
 pub fn decode_probe(body: &[u8]) -> Option<([u8; 32], Address, Vec<CiteWire>)> {
-    if body.first() != Some(&ACT_PROBE) {
+    if !act_is(body, ACT_PROBE) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -33,7 +33,7 @@ pub fn encode_probe_reply(code: u8, paid: &[u64; 4], remaining: &[u64; 4]) -> Ve
 }
 
 pub fn decode_probe_reply(body: &[u8]) -> Option<(u8, [u64; 4], [u64; 4])> {
-    let code = *body.first()?;
+    let code = act_tag(body)?;
     let mut p = 1usize;
     let paid = read_mu(body, &mut p)?;
     let remaining = read_mu(body, &mut p)?;

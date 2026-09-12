@@ -291,7 +291,7 @@ impl Rotor {
     }
 
     pub fn from_key(k: &[u8]) -> Option<Rotor> {
-        if k.first() != Some(&crate::transducer::address::TAG_ROTOR) {
+        if crate::transducer::address::tag_of(k) != Some(crate::transducer::address::TAG_ROTOR) {
             return None;
         }
         let mut p = 1usize;

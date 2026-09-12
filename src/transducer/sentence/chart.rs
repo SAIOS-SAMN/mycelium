@@ -17,10 +17,12 @@ impl Form {
         if !s.is_closed() {
             return None;
         }
-        if !matches!(s.vertices.first(), Some(Vertex::Frame)) {
+        // 18: A FORM OPENS AT ITS FRAME, so vertex zero is the frame by the
+        // form's own shape and the slice pattern reads that coordinate.
+        let [frame @ Vertex::Frame, ..] = s.vertices.as_slice() else {
             return None;
-        }
-        if !s.vertices[0].word_in(s).is_some_and(|w| w.is_identity()) {
+        };
+        if !frame.word_in(s).is_some_and(|w| w.is_identity()) {
             return None;
         }
         let d = s.depth_of();
@@ -470,7 +472,11 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
     let mut gamma = Vec::with_capacity(a.vertices.len());
     for va in &a.vertices {
         let vb = match va {
-            Vertex::Frame => b.vertices.first().filter(|v| matches!(v, Vertex::Frame))?,
+            // 18 again: the frame is vertex zero of both forms.
+            Vertex::Frame => match b.vertices.as_slice() {
+                [fr @ Vertex::Frame, ..] => fr,
+                _ => return None,
+            },
             Vertex::Word { address, .. } => {
                 let j = *b.by_address.get(address)?;
                 b.vertices.get(j as usize)?

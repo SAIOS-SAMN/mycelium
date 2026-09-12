@@ -64,7 +64,7 @@ impl Address {
     }
 
     pub fn tag(&self) -> Option<u8> {
-        self.0.first().copied()
+        tag_of(&self.0)
     }
 
     pub fn starts_with(&self, prefix: &[u8]) -> bool {
@@ -165,6 +165,19 @@ impl From<Address> for Vec<u8> {
     fn from(a: Address) -> Vec<u8> {
         a.0
     }
+}
+
+/// THE TAG a key or a tape opens with. A21 puts the stratum tag at offset
+/// zero, so byte zero is the tape's own coordinate and not the byte that
+/// happened to arrive first (rule 15). One carrier for that offset:
+/// [`Address::tag`] reads through it, and so does every reader that holds
+/// the bytes before they are an [`Address`].
+pub fn tag_of(b: &[u8]) -> Option<u8> {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 15 — wire tag offset: A21 writes the stratum tag at offset zero, and this is the one reader of it"
+    )]
+    b.first().copied()
 }
 
 pub fn put_bytes(out: &mut Vec<u8>, b: &[u8]) {

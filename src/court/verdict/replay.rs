@@ -145,8 +145,11 @@ pub fn replay_form_at(
         if cited.depth_of() != *depth {
             return Some(tape(REFUSE_GLUED_DEPTH));
         }
-        let frame_is_identity = match cited.vertices.first() {
-            Some(fr @ Vertex::Frame) => fr.word_in(&cited).is_some_and(|w| w.is_identity()),
+        // 18: A FORM OPENS AT ITS FRAME. Vertex zero is the frame by the
+        // form's own shape, so the slice pattern reads the coordinate and
+        // not the vertex that happened to be written first.
+        let frame_is_identity = match cited.vertices.as_slice() {
+            [fr @ Vertex::Frame, ..] => fr.word_in(&cited).is_some_and(|w| w.is_identity()),
             _ => false,
         };
         if !frame_is_identity {
@@ -312,7 +315,7 @@ pub(crate) fn vertex_tape_and_moves(
                         for (x, _) in fam {
                             let cells: Vec<_> = family::perceive(x).into_iter().flat_map(|b| b.cells).collect();
                             // A grid with no rows has no width.
-                            let frame = (x.len(), x.first().map_or(0, Vec::len));
+                            let frame = (x.len(), crate::arc::grid_width(x));
                             let anchor: Vec<(i64, i64)> = cells.iter().map(|&(r, c, _)| (r, c)).collect();
                             if matches!(family::orbit(v, &cells, &anchor, frame), OrbitEnd::NoOrbit) {
                                 return Some(REFUSE_ORBIT_STILL);

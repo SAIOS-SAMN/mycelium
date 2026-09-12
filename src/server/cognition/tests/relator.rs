@@ -241,11 +241,9 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
         vec![class.as_bytes().to_vec()],
         "the form files the triangle's relator and no other class"
     );
-    assert_eq!(
-        filed.first().map(|(_, p)| *p),
-        Some(2),
-        "at the order the relator closes at"
-    );
+    // One class filed, asserted above; so one period.
+    let [(_, period)] = filed.as_slice() else { panic!("one filed relator") };
+    assert_eq!(*period, 2, "at the order the relator closes at");
 
     // TWO COURTS, NEVER INTRODUCED. Each files on its first hearing and is
     // consilient on its second: closure paid once, per court.

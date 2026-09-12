@@ -78,7 +78,7 @@ impl Feed {
 pub(crate) fn family_magnitude(train: &mycelium::transducer::family::Family) -> [u64; 4] {
     let mut mag = [0u64; 4];
     for (x, y) in train {
-        let (ho, wo) = (y.len(), y.first().map_or(0, |r| r.len()));
+        let (ho, wo) = (y.len(), mycelium::arc::grid_width(y));
         if x.is_empty() || ho == 0 || wo == 0 {
             continue;
         }
@@ -96,6 +96,13 @@ pub(crate) fn family_magnitude(train: &mycelium::transducer::family::Family) -> 
 /// The conductor's cursor — a world model's board schedules the corpus order.
 pub(crate) fn conductor_cursor(path: &str) -> usize {
     let Ok(text) = std::fs::read_to_string(path) else { return 0 };
+    // The cursor is the text that FOLLOWS the key, which is what splitting
+    // on the key means: piece one is the tail, the field's own place in the
+    // line, not a member picked by position (rule 15).
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 15 — wire tag offset: the value follows its key, so the split's second piece is the field"
+    )]
     text.split("\"arc_next\":")
         .nth(1)
         .and_then(|t| t.chars().take_while(|c| c.is_ascii_digit()).collect::<String>().parse().ok())

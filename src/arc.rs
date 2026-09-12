@@ -9,6 +9,21 @@ use serde::Deserialize;
 /// A dense ARC grid of hues (0 = background).
 pub type Grid = Vec<Vec<u8>>;
 
+/// THE WIDTH OF A GRID. A grid is rectangular — every reader that takes
+/// one refuses a ragged one — so row zero is a COORDINATE of the grid and
+/// its length is the grid's width, not the length of whichever row arrived
+/// first (rule 15). A grid with no row has no cells and measures zero.
+///
+/// One carrier for it: the same `first().map_or(0, …)` was written out at
+/// seven sites, three of them with a different floor.
+pub fn grid_width(g: &[Vec<u8>]) -> usize {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 15 — canonical key order: row zero is the grid's own coordinate, and a rectangular grid's width is its length"
+    )]
+    g.first().map_or(0, Vec::len)
+}
+
 #[derive(Deserialize)]
 struct RawPair {
     input: Grid,
@@ -125,7 +140,13 @@ fn gcd(a: usize, b: usize) -> usize {
 /// each output cell taking the input cell that contains its min corner.
 /// Exact integer arithmetic; the identity when the frames agree.
 pub fn embed(g: &Grid, h: usize, w: usize) -> Grid {
-    let (gh, gw) = (g.len().max(1), g.first().map_or(1, |r| r.len().max(1)));
+    let (gh, gw) = (g.len(), grid_width(g));
+    // A grid with no cell embeds as no grid. The floors of one here were
+    // standing in for that: `h × w` cells read off an empty grid is not a
+    // pullback, and the index would have taken a row that is not there.
+    if gh == 0 || gw == 0 {
+        return Grid::new();
+    }
     (0..h).map(|r| (0..w).map(|c| g[r * gh / h][c * gw / w]).collect()).collect()
 }
 
@@ -178,8 +199,8 @@ pub struct Refined {
 /// delta. Support ≤ |K_out|.
 pub fn refine_delta(a: &Grid, b: &Grid) -> Option<Refined> {
     // A grid with no rows has no width, which the refusal below reads.
-    let (hi, wi) = (a.len(), a.first().map_or(0, Vec::len));
-    let (ho, wo) = (b.len(), b.first().map_or(0, Vec::len));
+    let (hi, wi) = (a.len(), grid_width(a));
+    let (ho, wo) = (b.len(), grid_width(b));
     if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
         return None;
     }

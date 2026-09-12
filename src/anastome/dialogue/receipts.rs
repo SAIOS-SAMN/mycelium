@@ -116,7 +116,7 @@ pub fn encode_fetch<A: AsRef<[u8]>>(
 }
 
 pub fn decode_fetch(body: &[u8]) -> Option<([u8; 32], Vec<Chart>)> {
-    if body.first() != Some(&ACT_FETCH) {
+    if !act_is(body, ACT_FETCH) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -162,7 +162,7 @@ pub fn encode_receipts_request(voice: &[u8; 32], signer: &[u8; 32], from: u64, t
 }
 
 pub fn decode_receipts_request(body: &[u8]) -> Option<ReceiptsRequest> {
-    if body.first() != Some(&ACT_RECEIPTS) || body.len() != 81 {
+    if !act_is(body, ACT_RECEIPTS) || body.len() != 81 {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -251,7 +251,7 @@ pub fn encode_genesis_request(voice: &[u8; 32], cursor: u32) -> Vec<u8> {
 }
 
 pub fn decode_genesis_request(body: &[u8]) -> Option<([u8; 32], u32)> {
-    if body.first() != Some(&ACT_GENESIS) || body.len() != 37 {
+    if !act_is(body, ACT_GENESIS) || body.len() != 37 {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;

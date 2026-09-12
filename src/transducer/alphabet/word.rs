@@ -298,8 +298,22 @@ pub(crate) fn reduce_unit_exponents(f: &mut PlaneForm) {
 /// (50.4). A run read through the sensor's form alone was erased when its
 /// plane was not the sensor's — its sensor block is the identity — which
 /// turned a word on `(2,3)` into the empty word (found by L2's A22 test).
+/// THE PLANE A RUN ACTS ON. A run is a maximal block of letters on ONE
+/// plane, so every letter in it names the same one and the opening letter
+/// names the run — the order is the word's own spelling, not the order the
+/// letters were appended in (rule 15).
+///
+/// One carrier for it: four readers took the letter themselves.
+pub(crate) fn plane_of_run(w: &Word) -> Option<(u8, u8)> {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 15 — canonical key order: a run is one plane's letters, so its opening letter names the plane"
+    )]
+    w.letters().first().and_then(|(id, _)| plane_of(*id))
+}
+
 pub(crate) fn plane_nf(w: &Word) -> Word {
-    let Some(plane) = w.letters().first().and_then(|(id, _)| plane_of(*id)) else {
+    let Some(plane) = plane_of_run(w) else {
         return w.clone();
     };
     if plane == (PLANE_ROW, PLANE_COL) {
@@ -356,7 +370,7 @@ pub(crate) fn run_reduce(tape: &[(LetterId, bool)]) -> Word {
         let mut merged = false;
         let mut i = 1usize;
         while i < runs.len() {
-            let pi = runs[i].letters().first().and_then(|(id, _)| plane_of(*id));
+            let pi = plane_of_run(&runs[i]);
             let Some(pi) = pi else {
                 i += 1;
                 continue;
@@ -365,7 +379,7 @@ pub(crate) fn run_reduce(tape: &[(LetterId, bool)]) -> Word {
             let mut gap_ok = true;
             while j > 0 {
                 j -= 1;
-                let pj = runs[j].letters().first().and_then(|(id, _)| plane_of(*id));
+                let pj = plane_of_run(&runs[j]);
                 let Some(pj) = pj else {
                     gap_ok = false;
                     break;
@@ -381,7 +395,7 @@ pub(crate) fn run_reduce(tape: &[(LetterId, bool)]) -> Word {
                     gap_ok = false;
                 }
             }
-            if gap_ok && j < i && runs[j].letters().first().and_then(|(id, _)| plane_of(*id)) == Some(pi) {
+            if gap_ok && j < i && plane_of_run(&runs[j]) == Some(pi) {
                 let piece = runs.remove(i);
                 let joined = runs[j].compose(&piece);
                 runs[j] = plane_nf(&joined);

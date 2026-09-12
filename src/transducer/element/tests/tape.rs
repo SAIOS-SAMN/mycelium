@@ -84,7 +84,11 @@ fn a_connection_is_one_element_with_two_components() {
 fn gen3_round_trips_and_gen2_is_refused() {
     let w = from_connection(&crate::transducer::alphabet::Word::identity(), &identity_versor(), &[(1, 2), (2, 1)], &vec![(0, 0, 3u8, 4)], [5, 2, 0, 0]).expect("spells");
     let bytes = w.to_bytes();
-    assert_eq!(bytes.first().copied(), Some(Element::GEN3_MAGIC));
+    assert_eq!(
+        crate::transducer::address::tag_of(&bytes),
+        Some(Element::GEN3_MAGIC),
+        "the tape opens at its magic"
+    );
     let mut pos = 0;
     let back = Element::from_bytes(&bytes, &mut pos).expect("GEN3");
     assert_eq!(back.address(), w.address());

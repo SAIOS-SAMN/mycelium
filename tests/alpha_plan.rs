@@ -256,5 +256,6 @@ fn mint_once_on_home_install() {
     let mut k = Kernel::new();
     let w = conn(&[(1, 2), (2, 1)], Vec::new(), [2, 1, 0, 0]);
     let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&w));
-    assert_eq!(codes.first().copied(), Some(dialogue::SPEECH_STOOD));
+    // One sentence was spoken, so one code comes back.
+    assert!(matches!(codes.as_slice(), [dialogue::SPEECH_STOOD]));
 }

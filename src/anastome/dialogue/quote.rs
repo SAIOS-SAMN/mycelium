@@ -43,7 +43,7 @@ pub fn encode_quote_request_standing(
 }
 
 pub fn decode_quote_request(body: &[u8]) -> Option<([u8; 32], Vec<crate::transducer::stalk::Invariant>)> {
-    if body.first() != Some(&ACT_QUOTE) {
+    if !act_is(body, ACT_QUOTE) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -98,7 +98,7 @@ pub struct OutcomeReply<'a> {
 }
 
 pub fn decode_outcome_reply(body: &[u8]) -> Option<OutcomeReply<'_>> {
-    let code = *body.first()?;
+    let code = act_tag(body)?;
     let mut p = 1usize;
     let height = read_u64(body, &mut p)?;
     let pressure = read_mu(body, &mut p)?;
@@ -154,7 +154,7 @@ pub fn encode_quote_reply_within(height: u64, surface: &[u64; 4], k: u64, items:
 }
 
 pub fn decode_quote_reply(body: &[u8]) -> Option<(u64, [u64; 4], u64, Vec<WorkItem>)> {
-    if body.first() != Some(&ACT_QUOTE) {
+    if !act_is(body, ACT_QUOTE) {
         return None;
     }
     let mut p = 1usize;

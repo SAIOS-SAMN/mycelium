@@ -33,7 +33,7 @@ pub fn encode_fold(p: &FoldProposal) -> Option<Vec<u8>> {
 }
 
 pub fn decode_fold(body: &[u8]) -> Option<FoldProposal> {
-    if body.first() != Some(&ACT_FOLD) {
+    if !act_is(body, ACT_FOLD) {
         return None;
     }
     let mut p = 1usize;
@@ -87,7 +87,7 @@ pub fn encode_fold_reply(w: &FoldWitness) -> Option<Vec<u8>> {
 }
 
 pub fn decode_fold_reply(body: &[u8]) -> Option<FoldWitness> {
-    let arm = *body.first()?;
+    let arm = act_tag(body)?;
     match arm {
         0 => {
             let vk: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -124,7 +124,7 @@ pub fn encode_rows_request(voice: &[u8; 32], signer: &[u8; 32], from: u64, to: u
 }
 
 pub fn decode_rows_request(body: &[u8]) -> Option<RowsRequest> {
-    if body.first() != Some(&ACT_ROWS) || body.len() != 85 {
+    if !act_is(body, ACT_ROWS) || body.len() != 85 {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;

@@ -29,6 +29,10 @@ static CALIBRATED_RESERVE_MAX: std::sync::OnceLock<u64> = std::sync::OnceLock::n
 fn mem_available_gib() -> Option<u64> {
     let s = std::fs::read_to_string("/proc/meminfo").ok()?;
     let line = s.lines().find(|l| l.starts_with("MemAvailable:"))?;
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 15 — wire tag offset: the value is the second word of the `MemAvailable:` line, which is that line's format"
+    )]
     let kb: u64 = line.split_whitespace().nth(1)?.parse().ok()?;
     Some(kb >> 20)
 }

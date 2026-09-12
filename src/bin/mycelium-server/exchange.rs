@@ -556,7 +556,7 @@ impl Exchange {
                     kernel
                         .lock()
                         .ok()
-                        .and_then(|k| k.chain().receipts().first().map(|r| r.chain_hash))
+                        .and_then(|k| k.chain().opening().map(|r| r.chain_hash))
                         .map(|h| (h, epoch))
                 } else {
                     None

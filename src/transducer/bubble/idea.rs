@@ -227,6 +227,13 @@ impl Bubble {
             spent += 1;
             // index: keyed fiber at this sibling chart
             let members = atlas.members(&child);
+            // The members arrive in key order off the sibling's fiber, so
+            // the head is its least address and every node reads the same
+            // rotor for the chart.
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "rule 15 — canonical key order: the members are a keyed fiber, so the head is the least address on the chart"
+            )]
             let Some(head) = members.first() else {
                 return;
             };

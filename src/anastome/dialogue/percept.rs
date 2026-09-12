@@ -11,7 +11,7 @@ pub fn encode_task_request(voice: &[u8; 32]) -> Vec<u8> {
 }
 
 pub fn decode_task_request(body: &[u8]) -> Option<[u8; 32]> {
-    if body.first() != Some(&ACT_TASK) || body.len() != 33 {
+    if !act_is(body, ACT_TASK) || body.len() != 33 {
         return None;
     }
     body.get(1..33)?.try_into().ok()
@@ -99,7 +99,7 @@ pub fn encode_solve_with_rule(
 }
 
 pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
-    if body.first() != Some(&ACT_SOLVE) {
+    if !act_is(body, ACT_SOLVE) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -130,7 +130,7 @@ pub fn encode_solve_receipt(code: u8, mu: &[u64; 4]) -> Vec<u8> {
 }
 
 pub fn decode_solve_receipt(body: &[u8]) -> Option<(u8, [u64; 4])> {
-    let code = *body.first()?;
+    let code = act_tag(body)?;
     let mut p = 1usize;
     let mu = read_mu(body, &mut p)?;
     Some((code, mu))

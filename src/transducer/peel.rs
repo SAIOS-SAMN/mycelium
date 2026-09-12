@@ -275,7 +275,8 @@ mod tests {
         type Residual = Vec<u8>;
         type Core = u8;
         fn shell(&self, r: &Vec<u8>) -> Option<(u8, Vec<u8>)> {
-            let head = *r.first()?;
+            let [head, ..] = r.as_slice() else { return None };
+            let head = *head;
             Some((head, r[1..].to_vec()))
         }
     }
@@ -302,7 +303,8 @@ mod tests {
         type Residual = Vec<u8>;
         type Core = u8;
         fn shell(&self, r: &Vec<u8>) -> Option<(u8, Vec<u8>)> {
-            let head = *r.first()?;
+            let [head, ..] = r.as_slice() else { return None };
+            let head = *head;
             if head == 0xff {
                 return None;
             }

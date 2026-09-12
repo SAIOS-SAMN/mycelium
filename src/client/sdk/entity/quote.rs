@@ -99,15 +99,7 @@ impl Entity {
         let asked_st: Vec<(crate::transducer::stalk::Invariant, u8)> = asked
             .iter()
             .map(|inv| {
-                let st = self
-                    .working_atlas()
-                    .fiber(inv)
-                    .first()
-                    // A chart the working atlas does not stand on is Held:
-                    // met and not ruled, which is what standing on nothing
-                    // means here.
-                    .map_or(Standing::Held.as_u8(), |(_, s)| s.as_u8());
-                (inv.clone(), st)
+                (inv.clone(), self.working_atlas().standing_on(inv).as_u8())
             })
             .collect();
         let req = dialogue::encode_quote_request_standing(&self.session.kernel().voice(), &asked_st);
@@ -231,12 +223,7 @@ impl Entity {
             let asked_st: Vec<(crate::transducer::stalk::Invariant, u8)> = asked
                 .iter()
                 .map(|inv| {
-                    let st = self
-                        .working_atlas()
-                        .fiber(inv)
-                        .first()
-                        .map_or(Standing::Held.as_u8(), |(_, s)| s.as_u8());
-                    (inv.clone(), st)
+                    (inv.clone(), self.working_atlas().standing_on(inv).as_u8())
                 })
                 .collect();
             let req = dialogue::encode_quote_request_standing(&self.session.kernel().voice(), &asked_st);

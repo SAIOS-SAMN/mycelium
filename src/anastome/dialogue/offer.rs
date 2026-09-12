@@ -32,7 +32,7 @@ pub fn encode_offer(o: &Offer) -> Option<Vec<u8>> {
 }
 
 pub fn decode_offer(body: &[u8]) -> Option<Offer> {
-    if body.first() != Some(&ACT_OFFER) {
+    if !act_is(body, ACT_OFFER) {
         return None;
     }
     let mut p = 1usize;
@@ -83,7 +83,7 @@ pub fn encode_offer_reply(w: &Witnessed) -> Vec<u8> {
 }
 
 pub fn decode_offer_reply(body: &[u8]) -> Option<Witnessed> {
-    let arm = *body.first()?;
+    let arm = act_tag(body)?;
     let vk: [u8; 32] = body.get(1..33)?.try_into().ok()?;
     let p = 33usize;
     match arm {
@@ -115,7 +115,7 @@ pub fn encode_installed(addr: impl AsRef<[u8]>, elem: &[u8], sig_home: &[u8; 64]
 }
 
 pub fn decode_installed(body: &[u8]) -> Option<Installed> {
-    if body.first() != Some(&ACT_INSTALLED) {
+    if !act_is(body, ACT_INSTALLED) {
         return None;
     }
     let mut p = 1usize;

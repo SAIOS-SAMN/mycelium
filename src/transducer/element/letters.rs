@@ -265,7 +265,7 @@ impl Element {
     pub fn letters(&self) -> Option<Letters> {
         use crate::transducer::alphabet::Spelling;
         let b = &self.word;
-        let tag = b.first().copied()?;
+        let tag = crate::transducer::address::tag_of(b)?;
         if tag != CONNECTION_TAG && tag != TRANSLATION_TAG {
             return None;
         }
@@ -310,7 +310,7 @@ impl Element {
         let Some(letters) = self.letters() else {
             return false;
         };
-        if self.word.first() != Some(&CONNECTION_TAG) {
+        if self.word_tag() != Some(CONNECTION_TAG) {
             return false;
         }
         conformal_of(&letters.spelling.word, &letters.carriage)
@@ -323,19 +323,25 @@ impl Element {
                 && self.sub.is_empty())
     }
 
+    /// THE TAPE TAG this word opens with — 17.2's own offset, read through
+    /// the one carrier for it.
+    pub(crate) fn word_tag(&self) -> Option<u8> {
+        crate::transducer::address::tag_of(&self.word)
+    }
+
     /// A sentence: its own tape tag, never merely an opened-axis connection.
     pub fn is_sentence(&self) -> bool {
-        self.word.first().copied() == Some(SENTENCE_TAG)
+        self.word_tag() == Some(SENTENCE_TAG)
     }
 
     /// A translation: the gauge between two sections.
     pub fn is_translation(&self) -> bool {
-        self.word.first().copied() == Some(TRANSLATION_TAG)
+        self.word_tag() == Some(TRANSLATION_TAG)
     }
 
     /// An optimisation spoken as a word.
     pub fn is_rewrite(&self) -> bool {
-        self.word.first().copied() == Some(REWRITE_TAG)
+        self.word_tag() == Some(REWRITE_TAG)
     }
 
     /// Mint a Rewrite: the address measures the tape.

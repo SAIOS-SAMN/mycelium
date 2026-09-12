@@ -50,6 +50,10 @@ impl Epigenome {
         if self.stroke_k.len() < n {
             return None;
         }
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — FIFO drain head: the window is filled in stroke order, so its head is the oldest stroke in it"
+        )]
         let first = *self.stroke_k.first()?;
         // The window's first stroke is a K this mind has passed, so the
         // aperture is exact; a first stroke ahead of now is a broken clock

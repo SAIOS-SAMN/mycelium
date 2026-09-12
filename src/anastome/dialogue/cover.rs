@@ -14,7 +14,7 @@ pub fn encode_peers_request(voice: &[u8; 32]) -> Vec<u8> {
 }
 
 pub fn decode_peers_request(body: &[u8]) -> Option<[u8; 32]> {
-    if body.first() != Some(&ACT_PEERS) || body.len() != 33 {
+    if !act_is(body, ACT_PEERS) || body.len() != 33 {
         return None;
     }
     body[1..33].try_into().ok()
@@ -55,7 +55,7 @@ pub fn encode_root(voice: &[u8; 32], task: impl AsRef<[u8]>, solver: &[u8; 32], 
 }
 
 pub fn decode_root(body: &[u8]) -> Option<([u8; 32], Address, [u8; 32], u64)> {
-    if body.first() != Some(&ACT_ROOT) {
+    if !act_is(body, ACT_ROOT) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -81,7 +81,7 @@ pub fn encode_root_reply(solver: Option<[u8; 32]>, ticks: u64) -> Vec<u8> {
 }
 
 pub fn decode_root_reply(body: &[u8]) -> Option<(Option<[u8; 32]>, u64)> {
-    let tag = *body.first()?;
+    let tag = act_tag(body)?;
     let mut p = 1usize;
     let solver = match tag {
         0 => None,
@@ -103,7 +103,7 @@ pub fn encode_digests_request(voice: &[u8; 32]) -> Vec<u8> {
 }
 
 pub fn decode_digests_request(body: &[u8]) -> Option<[u8; 32]> {
-    if body.first() != Some(&ACT_DIGESTS) || body.len() != 33 {
+    if !act_is(body, ACT_DIGESTS) || body.len() != 33 {
         return None;
     }
     body.get(1..33)?.try_into().ok()
@@ -293,7 +293,7 @@ pub fn encode_cover(vk: &[u8; 32], addr: &str, charts: &[(u8, crate::transducer:
 }
 
 pub fn decode_cover(body: &[u8]) -> Option<Cover> {
-    if body.first() != Some(&ACT_COVER) {
+    if !act_is(body, ACT_COVER) {
         return None;
     }
     let vk: [u8; 32] = body.get(1..33)?.try_into().ok()?;

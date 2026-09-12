@@ -134,6 +134,10 @@ impl Era {
         let identities = u32::from_le_bytes(take(pos, 4)?.try_into().ok()?);
         let first = u64::from_le_bytes(take(pos, 8)?.try_into().ok()?);
         let count = u32::from_le_bytes(take(pos, 4)?.try_into().ok()?);
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — wire tag offset: the one byte the cursor just took, read at the field the tape writes it in"
+        )]
         let filed = *take(pos, 1)?.first()?;
         let (at, receipts) = match filed {
             1 => (Some(u64::from_le_bytes(take(pos, 8)?.try_into().ok()?)), Vec::new()),

@@ -104,12 +104,11 @@ fn a_lane_chart_is_that_lanes_axes_and_the_four_are_disjoint() {
     assert!(lane_chart(&placed, 2).is_none(), "nothing occupies 𝒯");
     assert!(lane_chart(&hued, 2).is_none(), "nothing occupies 𝒯");
     assert_ne!(s.key(), g.key(), "the two covers' keys are disjoint");
-    assert_eq!(
-        s.0.first().copied(),
-        Some(LANE_TAG),
+    assert!(
+        matches!(s.0.as_slice(), [LANE_TAG, ..]),
         "the lane tag leads, so 𝒮's key cannot be read as a versor chart"
     );
-    assert_eq!(g.0.first().copied(), Some(LANE_TAG + 1), "and 𝒢's is its own");
+    assert!(matches!(g.0.as_slice(), [t, ..] if *t == LANE_TAG + 1), "and 𝒢's is its own");
 
     // The holonomic chart is the rotor's, unchanged: what `versor_chart`
     // always answered IS this lane's chart, so nothing filed under it moves.
@@ -119,9 +118,8 @@ fn a_lane_chart_is_that_lanes_axes_and_the_four_are_disjoint() {
         crate::transducer::sentence::versor_chart_of(&turn.rotor()).map(|c| c.key()),
         "𝒽's chart is the rotor chart and did not move"
     );
-    assert_eq!(
-        versor_chart(&turn).and_then(|c| c.0.first().copied()),
-        Some(0),
+    assert!(
+        versor_chart(&turn).is_some_and(|c| matches!(c.0.as_slice(), [0, ..])),
         "and it keeps its leading 0, disjoint from every lane tag"
     );
 }

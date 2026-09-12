@@ -12,9 +12,12 @@ pub(crate) type Cell3 = (i64, i64, u8);
 /// A cell scene as a grid, origin at the scene's min-corner. The sensor
 /// embedding of one scene; not a ranking over candidates.
 pub fn cells_to_grid(cells: &[(i64, i64, u8)]) -> Grid {
-    let Some(&(r0, c0, _)) = cells.first() else {
+    // The head only SEEDS the bounding box; the box is folded over every
+    // cell below, so no member is chosen here.
+    let [(r0, c0, _), ..] = cells else {
         return vec![vec![0]];
     };
+    let (r0, c0) = (*r0, *c0);
     let (mut min_r, mut min_c, mut max_r, mut max_c) = (r0, c0, r0, c0);
     for &(r, c, _) in cells {
         if r < min_r {
@@ -54,7 +57,9 @@ pub fn scene_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<(Grid, Grid)> {
 /// the second carrier for one fact (law 12) — one of them would be the
 /// one that drifts.
 pub fn scene_at_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<((i64, i64), Grid, Grid)> {
-    let &(r0, c0, _, _) = chain.first()?;
+    // As above: the head seeds the box the fold below measures.
+    let [(r0, c0, _, _), ..] = chain else { return None };
+    let (r0, c0) = (*r0, *c0);
     let (mut min_r, mut min_c, mut max_r, mut max_c) = (r0, c0, r0, c0);
     for &(r, c, _, _) in chain {
         if r < min_r {
@@ -318,7 +323,7 @@ pub(crate) fn support_of(body: &Body) -> Vec<(i64, i64)> {
 }
 
 pub(crate) fn frame_of(g: &Grid) -> (usize, usize) {
-    (g.len(), g.first().map_or(0, |r| r.len()))
+    (g.len(), crate::arc::grid_width(g))
 }
 
 /// Does everything a form spoke lie inside the grid it was spoken against?

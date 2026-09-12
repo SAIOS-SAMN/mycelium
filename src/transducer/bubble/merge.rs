@@ -121,17 +121,13 @@ impl Contemplation {
                     self.torsion_merges += 1;
                     // A cell of one vertex is a loop at that vertex: both
                     // ends are it, which is what the cell says and not a
-                    // second end invented for it.
-                    let (Some(a), b) = (vertices.first(), vertices.get(1)) else {
-                        continue;
+                    // second end invented for it. The vertices are the
+                    // cell's own sorted keys, read as a slice pattern.
+                    let ends = match vertices.as_slice() {
+                        [a, b, ..] => [a.clone(), b.clone()],
+                        [a] => [a.clone(), a.clone()],
+                        [] => continue,
                     };
-                    let ends = [
-                        a.clone(),
-                        match b {
-                            Some(second) => second.clone(),
-                            None => a.clone(),
-                        },
-                    ];
                     if let Some(nk) = self.merge(&vertices) {
                         if let Some(b) = self.bubbles.get_mut(nk.as_bytes()) {
                             b.nerve.file_congruent(&ends[0], &ends[1], g, ell);
@@ -179,9 +175,17 @@ impl Contemplation {
         }
     }
 
+    /// A merge of fewer than two bubbles is the bubble itself, and a merge
+    /// the forms refuse leaves the LEAST key of the cell standing — the
+    /// vertices arrive sorted, so it is the cell's own coordinate and not
+    /// the bubble that was reached first.
     pub(crate) fn merge(&mut self, verts: &[Vec<u8>]) -> Option<crate::transducer::address::Address> {
-        if verts.len() < 2 {
-            return verts.first().cloned().map(crate::transducer::address::Address::from);
+        // One vertex is that vertex; none is nothing to merge.
+        if let [only] = verts {
+            return Some(crate::transducer::address::Address::from(only.clone()));
+        }
+        if verts.is_empty() {
+            return None;
         }
         let forms: Vec<Form> = verts
             .iter()
@@ -194,6 +198,10 @@ impl Contemplation {
                         "  thought merge refused {:02x}{:02x}… not one section",
                         verts[0][0], verts[0][1]
                     );
+                    #[expect(
+                        clippy::disallowed_methods,
+                        reason = "rule 15 — canonical key order: the cell's vertices are sorted, so the least key stands where the merge is refused"
+                    )]
                     return verts.first().cloned().map(crate::transducer::address::Address::from);
                 }
             }

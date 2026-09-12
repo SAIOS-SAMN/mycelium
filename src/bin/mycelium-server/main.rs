@@ -451,7 +451,7 @@ fn main() {
                         // An act with no kind byte is judged (and refused
                         // there) but counted under no kind: 0xff was a
                         // sentinel standing for a byte that was not read.
-                        let kind = frame.body.first().copied();
+                        let kind = mycelium::anastome::dialogue::act_tag(&frame.body);
                         judge::judge(&mut stream, frame, &door);
                         if let Some(kind) = kind {
                             let n = served[kind as usize]

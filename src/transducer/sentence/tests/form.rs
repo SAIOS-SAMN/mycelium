@@ -46,7 +46,7 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     f.faces[e12].edge = Some(Transport::from_word(qw.clone()));
     f.faces[e23].edge = Some(Transport::from_word(qw.clone()));
     f.faces[e13].edge = Some(Transport::from_word(Word::identity()));
-    let triangle = f.loops.first().expect("the loop 1-2-3 among the bodies");
+    let [triangle, ..] = f.loops.as_slice() else { panic!("the loop 1-2-3 among the bodies") };
     let h = f.edge_holonomy(triangle).expect("every edge of the loop is carried");
     let half = qw.compose(&qw);
     assert!(h.word.rotor().projective_eq(&half.rotor()), "quarter, quarter, identity compose to the half turn: {:?}", h.word);
@@ -101,11 +101,13 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
         .glue(&inner, inner_e.address(), w.clone(), [1, 0, 0, 0])
         .expect("glue");
     assert_eq!(host.glued.get(&inner_e.address()).copied(), Some(gi));
-    assert_eq!(
-        host.faces.last().map(|f| (f.i, f.j)),
-        Some((0, gi)),
-        "glue writes the Frame→Glued placement face"
-    );
+    // The placement face is the one glue just pushed, so the tail is it.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 15 — slice pattern on the value just pushed: `glue` appends the placement face, so the tail is that face"
+    )]
+    let wrote = host.faces.last().map(|f| (f.i, f.j));
+    assert_eq!(wrote, Some((0, gi)), "glue writes the Frame→Glued placement face");
     let mut drop = Keyed::new();
     drop.insert(vertex_ix_key(1), ());
     host.retract_vertices(&drop);
@@ -369,7 +371,7 @@ fn a_sentence_chart_leads_with_axis_two() {
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("form element");
     assert!(e.is_sentence());
     let inv = stalk::invariant_of(&e);
-    assert_eq!(inv.0.first().copied(), Some(2), "leading axis 2");
+    assert!(matches!(inv.0.as_slice(), [2, ..]), "leading axis 2");
     assert!(inv.0.get(1).is_some_and(|&n| n >= 2), "vertex count");
 }
 

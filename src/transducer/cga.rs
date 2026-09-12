@@ -121,7 +121,7 @@ impl Mv {
     }
 
     pub fn from_key(k: &[u8]) -> Option<Mv> {
-        if k.first() != Some(&crate::transducer::address::TAG_VERSOR) {
+        if crate::transducer::address::tag_of(k) != Some(crate::transducer::address::TAG_VERSOR) {
             return None;
         }
         let mut p = 1usize;
