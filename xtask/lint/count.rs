@@ -49,7 +49,6 @@ pub(crate) const GATE: Gate = Gate {
         ("network/wire.rs", 3),
         ("server/cognition/book/language.rs", 2),
         ("server/cognition/court/era.rs", 2),
-        ("server/cognition/court/glue.rs", 1),
         ("server/cognition/court/phase.rs", 1),
         ("server/cognition/court/syllabus.rs", 1),
         ("server/cognition/market.rs", 1),

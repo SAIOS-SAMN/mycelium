@@ -8,7 +8,7 @@ use super::element::Element;
 use super::stalk::{invariant_of, Invariant, Stalks};
 
 /// One stratum's section digest: the chart it sits over, how many words
-/// stand there, and the root over their (address, fibre volume).
+/// stand there, and the root over their addresses.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StratumDigest {
     pub inv: Invariant,
@@ -16,15 +16,30 @@ pub struct StratumDigest {
     pub root: Vec<u8>,
 }
 
-/// The root over a stratum's members: sorted addresses concatenated.
-fn root_of(members: &[Vec<u8>]) -> Vec<u8> {
+/// THE ROOT OVER A STRATUM'S MEMBERS. Thirty-two bytes, whatever the
+/// stratum holds.
+///
+/// This returned the sorted addresses CONCATENATED — the whole population
+/// of the stratum, not a root over it — and `digests` returns one per
+/// stratum, so a digest exchange carried the entire ruled set. Every court
+/// ships this to every peer on every exchange cycle, which is O(P² · C) on
+/// the wire before a single word is asked for. A root is what a peer needs
+/// to decide whether it disagrees; the members are what it asks for only
+/// once it does.
+///
+/// The bytes ARE the object here, as they are for a receipt chain: what is
+/// being identified is a SET, and a set has no canonical coordinate of its
+/// own to be written out (law 2 is about a word's identity, and no word's
+/// identity passes through this). `payload_hash` is the same construction
+/// `measure_ruled_root` already folds these roots with.
+pub fn stratum_root(members: &[Vec<u8>]) -> Vec<u8> {
     let mut rows = members.to_vec();
     rows.sort();
     let mut buf = Vec::new();
     for a in &rows {
         crate::transducer::address::put_bytes(&mut buf, a);
     }
-    buf
+    crate::chronometry::payload_hash(&buf).to_vec()
 }
 
 /// Measure the section digests of a language over its atlas. The atlas
@@ -34,7 +49,11 @@ pub fn digests(stalks: &Stalks) -> Vec<StratumDigest> {
     stalks
         .strata()
         .into_iter()
-        .map(|(inv, members)| StratumDigest { count: members.len() as u32, root: root_of(&members), inv })
+        .map(|(inv, members)| StratumDigest {
+            count: members.len() as u32,
+            root: stratum_root(&members),
+            inv,
+        })
         .collect()
 }
 
@@ -112,6 +131,40 @@ mod tests {
 
     fn word(cells_a: &[(i64, i64, u8)], cells_b: &[(i64, i64, u8)]) -> Element {
         from_residual(&germinate(cells_a, cells_b).unwrap())
+    }
+
+    /// A ROOT IS NOT ITS POPULATION. This returned the stratum's sorted
+    /// addresses concatenated, and `digests` returns one per stratum, so
+    /// every exchange cycle shipped the whole ruled set to every peer —
+    /// O(P²·C) on the wire before a word was asked for. Thirty-two bytes
+    /// whatever the stratum holds, over the SET and not the order, and it
+    /// separates: one member added moves it, which is what discordance
+    /// reads.
+    #[test]
+    fn a_stratum_root_is_a_root_and_not_its_population() {
+        let small: Vec<Vec<u8>> = (0..2u16).map(|i| i.to_le_bytes().to_vec()).collect();
+        let large: Vec<Vec<u8>> = (0..2000u16).map(|i| i.to_le_bytes().to_vec()).collect();
+        assert_eq!(stratum_root(&small).len(), 32, "a root is thirty-two bytes");
+        assert_eq!(
+            stratum_root(&large).len(),
+            32,
+            "and a stratum a thousand times wider is the same thirty-two"
+        );
+        let mut reversed = large.clone();
+        reversed.reverse();
+        assert_eq!(
+            stratum_root(&large),
+            stratum_root(&reversed),
+            "the root is over the set; arrival order is not part of it"
+        );
+        assert_ne!(stratum_root(&small), stratum_root(&large), "and it separates strata");
+        let mut plus = small.clone();
+        plus.push(vec![9u8; 4]);
+        assert_ne!(
+            stratum_root(&small),
+            stratum_root(&plus),
+            "one member added moves the root — this is what discordance reads"
+        );
     }
 
     /// Two holders differing by one word in one stratum disagree on exactly

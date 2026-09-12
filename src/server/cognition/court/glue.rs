@@ -332,13 +332,18 @@ impl Kernel {
         // index: the peer's digest charts; members from ruled fiber
         for d in remote {
             let members = self.ruled.fiber(&d.inv);
-            let mut rows = members.clone();
-            rows.sort();
-            let mut buf = Vec::new();
-            for a in &rows {
-                crate::transducer::address::put_bytes(&mut buf, a);
-            }
-            if buf == d.root && members.len() as u32 == d.count {
+            // ONE CONSTRUCTION OF A STRATUM'S ROOT (law 12). This rebuilt
+            // the sorted concatenation by hand beside `sheaf::stratum_root`,
+            // so the two had to be kept equal by discipline; when the root
+            // became a root the copy here would have compared a hash
+            // against a concatenation and confirmed nothing, silently.
+            //
+            // AND THE COUNT NO LONGER DECIDES (rule 2). This read
+            // `&& members.len() as u32 == d.count`: the root is taken over
+            // exactly these members, so equal roots are equal sets and the
+            // count agreed whenever it was consulted. It was a second gate
+            // on a reading the first one already made.
+            if crate::transducer::sheaf::stratum_root(&members) == d.root {
                 for addr in members {
                     if self.provisional.contains(&addr) {
                         eprintln!(
