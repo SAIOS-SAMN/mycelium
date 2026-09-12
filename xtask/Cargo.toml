@@ -6,7 +6,11 @@ edition = "2021"
 publish = false
 
 [[bin]]
-name = "lint-enumeration"
+# The binary NAMES WHAT IT DOES: it runs the gate — the reading bound, then
+# clippy with warnings denied. `lint-enumeration` named one rule it has not
+# enforced since §4.2 made the pattern rules clippy configuration, and the
+# line it printed at every commit said so.
+name = "gate"
 path = "main.rs"
 
 [dev-dependencies]
