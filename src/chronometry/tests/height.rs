@@ -29,6 +29,67 @@ fn height_is_one_plus_max_of_prev_and_parents() {
     );
 }
 
+/// X8, 45.2 — A CHAIN THAT CITES A PEER DOES NOT REHYDRATE WITHOUT IT.
+/// Height is `1 + max` over the parents, so re-deriving it needs every
+/// parent in hand; the peer receipts were dropped at persist and this
+/// reader started with none. On the fleet at fc75a59 that refused hypha
+/// b's 16 MB ledger — `ledger refused in section KCH1 at byte 14324354` —
+/// and overwrote a whole court's memory with an empty one, on a ledger
+/// that was exact.
+///
+/// Pinned here on the chain itself: the line alone refuses, the line with
+/// its admitted set rehydrates with every height and every order
+/// coordinate back, and a peer receipt whose content was changed refuses
+/// the rehydration rather than standing as a parent nobody can check.
+#[test]
+fn a_chain_rehydrates_with_the_peer_receipts_its_line_cites() {
+    let mut peer = ReceiptChain::with_vk([2; 32]);
+    peer.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).expect("peer genesis");
+    peer.append(ActKind::List, [0; 4], [2u8], [9; 32], Vec::new()).expect("peer second");
+    let head = peer.head().expect("a sealed receipt").clone();
+
+    let mut c = ReceiptChain::with_vk([1; 32]);
+    c.append(ActKind::List, [0; 4], [1u8], [9; 32], Vec::new()).expect("genesis");
+    c.admit(head.clone());
+    let cite = Parent { vk: [2; 32], k: head.step_index, hash: head.chain_hash };
+    c.append(ActKind::List, [0; 4], [2u8], [9; 32], vec![cite]).expect("cite the peer");
+    assert_eq!(c.head_height(), 1 + 1, "h = 1 + max(h(prev)=0, h(parent)=1)");
+    let line: Vec<KStepReceipt> = c.receipts().to_vec();
+    let admitted: Vec<KStepReceipt> = c.admitted().into_iter().cloned().collect();
+    assert_eq!(admitted.len(), 1, "one peer receipt is held, and the ledger writes it");
+
+    assert!(
+        ReceiptChain::from_receipts_at(None, line.clone()).is_none(),
+        "the line alone cannot re-derive a height over a parent it does not hold"
+    );
+    let back = ReceiptChain::from_parts(None, line.clone(), admitted.clone())
+        .expect("the line and its admitted set rehydrate");
+    assert_eq!(back.head_height(), 2, "the height is re-derived, not restored");
+    assert_eq!(back.height_of(&head.chain_hash), Some(1), "and the parent's with it");
+    // The order coordinates are re-derived too: the peer receipt is first
+    // reached by our second receipt, and reaches none of ours.
+    let mut budget = crate::physics::Physics::default().stroke_n(8);
+    assert_eq!(
+        back.precedes_hashes(&head.chain_hash, &back.head_hash(), &mut budget),
+        Some(true),
+        "the peer precedes the receipt that cited it"
+    );
+    assert_eq!(
+        back.precedes_hashes(&back.head_hash(), &head.chain_hash, &mut budget),
+        Some(false),
+        "and not the other way"
+    );
+
+    let mut tampered = admitted;
+    if let Some(r) = tampered.get_mut(0) {
+        r.height = 7;
+    }
+    assert!(
+        ReceiptChain::from_parts(None, line, tampered).is_none(),
+        "a peer receipt whose content changed is not a parent this court can check"
+    );
+}
+
 /// EVERY RECEIPT THE CHAIN HOLDS IS FOUND BY ITS HASH — its own and the
 /// ones it admitted alike — and one it does not hold is unmeasured. The
 /// admitted set was a keyed read and this chain's own receipts were the

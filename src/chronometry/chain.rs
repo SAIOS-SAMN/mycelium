@@ -416,6 +416,14 @@ impl ReceiptChain {
         self.known.get(hash)
     }
 
+    /// EVERY PEER RECEIPT THIS CHAIN HOLDS, for the ledger to write. They
+    /// are not this court's own history but they are part of what its
+    /// history MEANS: our own receipts cite them as parents, and a height
+    /// that cites an unheld parent cannot be re-derived at all.
+    pub fn admitted(&self) -> Vec<&KStepReceipt> {
+        self.known.fiber(crate::network::nerve::ROOT).map(|(_, r)| r).collect()
+    }
+
     /// Append the next receipt, naming the act it admits (45.1). Height is
     /// 0 at genesis, else `1 + max(h(prev), max parent heights)`.
     /// `mu` is WHAT THE ACT MEASURED, per lane (45.1, 45.9), and it is in
@@ -589,8 +597,45 @@ impl ReceiptChain {
         Self::from_receipts_at(None, receipts)
     }
 
-    /// Rehydrate a hot chain standing on a fold root (45.8), or on none.
+    /// Rehydrate a hot chain standing on a fold root (45.8), or on none,
+    /// with NO peer receipts — which is a chain whose own receipts cite no
+    /// parent outside itself. A restore reads the admitted set from the
+    /// ledger and calls [`ReceiptChain::from_parts`].
     pub fn from_receipts_at(root: Option<Root>, receipts: Vec<KStepReceipt>) -> Option<ReceiptChain> {
+        Self::from_parts(root, receipts, Vec::new())
+    }
+
+    /// REHYDRATE A CHAIN WHOLE: its own line, and the peer receipts its
+    /// line cites as parents.
+    ///
+    /// A HEIGHT THAT CITES AN UNHELD PARENT IS UNMEASURABLE, and
+    /// `verify_chain_integrity` re-derives every height, so a chain whose
+    /// receipts cite peers cannot verify without them. The admitted set
+    /// used to be dropped at persist and started empty here: on the fleet
+    /// at fc75a59 hypha b's 16 MB ledger refused with `ledger refused in
+    /// section KCH1 at byte 14324354 of 16736157`
+    /// — forty of its receipts named peer parents, `parent_height`
+    /// answered `None` for every one of them, and a whole court's memory
+    /// was dropped and overwritten with an empty one on the next persist.
+    /// No corruption was involved. The ledger was exact and this reader
+    /// could not read what it had itself written.
+    ///
+    /// The peers arrive verified BY CONTENT: a peer receipt's chain hash
+    /// covers its own height, parents and prev link, so re-deriving the
+    /// hash is the whole check this court can make on its own (law 2). A
+    /// peer receipt whose hash does not recompute refuses the tape, the
+    /// same as one of ours.
+    ///
+    /// Then the two coordinates of [`Placed`] are re-derived rather than
+    /// persisted, because both are functions of what is held: `ours_in` by
+    /// the same descent `admit` runs, in the DAG's own order so every
+    /// ancestor is placed before its descendant; `reach` by replaying the
+    /// mark each of our own appends made.
+    pub fn from_parts(
+        root: Option<Root>,
+        receipts: Vec<KStepReceipt>,
+        peers: Vec<KStepReceipt>,
+    ) -> Option<ReceiptChain> {
         // An empty chain names no signer; the empty key is that reading,
         // and every receipt admitted later must agree with it.
         #[expect(
@@ -604,11 +649,7 @@ impl ReceiptChain {
         for (i, r) in receipts.iter().enumerate() {
             mine.insert(r.chain_hash, i);
         }
-        // NOTHING IS REBUILT FOR THE ORDER. Our own receipts carry their
-        // order in the prev link, and a rehydrated chain has readmitted no
-        // peer receipt yet, so there is nothing standing beside the line —
-        // which is what an unheld ancestor contributed while it ran.
-        let c = ReceiptChain {
+        let mut c = ReceiptChain {
             receipts,
             root,
             vk,
@@ -616,10 +657,49 @@ impl ReceiptChain {
             mine,
             placed: Keyed::new(),
         };
-        if c.verify_chain_integrity() {
-            Some(c)
-        } else {
-            None
+        // The admitted set goes in BEFORE integrity is verified, since
+        // verification re-derives a height through every parent.
+        let mut order = peers;
+        for r in &order {
+            if r.chain_hash
+                != KStepReceipt::hash(
+                    r.step_index,
+                    r.height,
+                    &r.parents,
+                    r.kind,
+                    &r.mu,
+                    &r.delta,
+                    &r.operator_hash,
+                    &r.prev_receipt_hash,
+                )
+            {
+                return None;
+            }
+            c.known.insert(r.chain_hash, r.clone());
         }
+        if !c.verify_chain_integrity() {
+            return None;
+        }
+        // THE DAG'S OWN ORDER, and no other: a receipt's height is
+        // `1 + max` over its parents', so a parent's height is strictly
+        // below its child's and this pass places every ancestor first --
+        // which is what makes each descent stop at its parents instead of
+        // walking the held set.
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 4 — a sort by a canonical key is the key's own order: height is the receipt's own content coordinate and the partial order of the ancestry, made total"
+        )]
+        order.sort_unstable_by_key(|r| r.height);
+        for r in &order {
+            let ours_in = c.ours_in_of(r);
+            c.placed.insert(r.chain_hash, Placed { ours_in, reach: None });
+        }
+        // `reach` as our own line wrote it: each append marked everything
+        // its parents reach as first reached at that step.
+        for i in 0..c.receipts.len() {
+            let parents = c.receipts.get(i).map(|r| r.parents.clone())?;
+            c.mark_reached(i, &parents);
+        }
+        Some(c)
     }
 }

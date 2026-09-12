@@ -10,9 +10,11 @@ use crate::cognition::*;
 impl Kernel {
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = Vec::new();
-        // MYC4: receipts carry their act kind (45.1, S13.6); a MYC3
-        // snapshot does not re-read — a layout change is a recut.
-        out.extend_from_slice(b"MYC4");
+        // MYC5: the chain section carries the PEER RECEIPTS this court
+        // admitted as parents (`PRC1`), without which its own heights do
+        // not re-derive. A MYC4 snapshot does not re-read — a layout
+        // change is a recut (§10), and this one is the recut's reason.
+        out.extend_from_slice(b"MYC5");
         let items: Vec<_> = self
             .basis
             .fiber(crate::network::nerve::ROOT)
@@ -44,6 +46,19 @@ impl Kernel {
         let receipts = self.chain.receipts();
         out.extend_from_slice(&(receipts.len() as u32).to_le_bytes());
         for r in receipts {
+            r.write(&mut out);
+        }
+        // PRC1: THE PEER RECEIPTS THIS COURT ADMITTED AS PARENTS. Our own
+        // receipts cite them, and a height over an unheld parent is
+        // unmeasurable, so a ledger without them is a ledger this reader
+        // refuses — which is what it did to hypha b's 16 MB of history.
+        // They are written whole and read back verified by content; the
+        // two coordinates of where each stands against our line are
+        // re-derived at restore and never persisted.
+        out.extend_from_slice(b"PRC1");
+        let admitted = self.chain.admitted();
+        out.extend_from_slice(&(admitted.len() as u32).to_le_bytes());
+        for r in admitted {
             r.write(&mut out);
         }
         // ARC1: the eras this court folded, in K order, cold.

@@ -23,8 +23,8 @@ impl Kernel {
     /// nothing either, because the only line here was the one printed when
     /// it SUCCEEDED.
     pub fn restore(&mut self, b: &[u8]) -> bool {
-        if b.get(0..4) != Some(b"MYC4") {
-            eprintln!("  ledger refused: the magic is not MYC4");
+        if b.get(0..4) != Some(b"MYC5") {
+            eprintln!("  ledger refused: the magic is not MYC5");
             return false;
         }
         // WHERE THE READ IS. Set as each section opens, so a refusal names
@@ -103,8 +103,21 @@ impl Kernel {
             for _ in 0..n {
                 receipts.push(crate::chronometry::KStepReceipt::read(b, pos)?);
             }
+            // PRC1: the peer receipts this court admitted as parents. The
+            // chain is built from BOTH lists at once, because verifying
+            // the line re-derives a height through every parent and forty
+            // of hypha b's named a peer.
+            tag(b, pos, b"PRC1")?;
+            let np = read_u32(b, pos)? as usize;
+            if np > b.len().checked_sub(*pos)? / 106 {
+                return None;
+            }
+            let mut peers = Vec::with_capacity(np);
+            for _ in 0..np {
+                peers.push(crate::chronometry::KStepReceipt::read(b, pos)?);
+            }
             kernel.court_head = head;
-            kernel.chain = crate::chronometry::ReceiptChain::from_receipts_at(root, receipts)?;
+            kernel.chain = crate::chronometry::ReceiptChain::from_parts(root, receipts, peers)?;
             // ARC1: the eras, in K order. Each era's receipts re-verify as
             // a chain of their own below their root.
             tag(b, pos, b"ARC1")?;
