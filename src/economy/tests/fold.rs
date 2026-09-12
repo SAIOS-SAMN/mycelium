@@ -17,7 +17,7 @@ fn a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves() {
     t.genesis([1; 32], [10, 10, 10, 10], a(1));
     t.enroll([1; 32], [2, 2, 2, 2], a(1));
     t.settle_subsidy([2; 32], [4, 0, 2, 0], a(2));
-    assert_eq!(t.settle_use([1; 32], [2; 32], [3, 0, 0, 0], a(3)), [3, 0, 0, 0]);
+    assert_eq!(t.settle_use([1; 32], &[[2; 32]], [3, 0, 0, 0], a(3)), [3, 0, 0, 0]);
     assert_eq!(t.burn([2; 32], [1, 0, 0, 0], a(4)), [1, 0, 0, 0]);
     t.settle_subsidy([3; 32], [0, 0, 0, 5], a(6));
     let before = t.audit().expect("conserves before the fold");

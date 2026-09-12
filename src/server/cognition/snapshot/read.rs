@@ -25,9 +25,9 @@ impl Kernel {
     /// when it SUCCEEDED and the only branch taken was the one that
     /// ignored the failure.
     pub fn restore(&mut self, b: &[u8]) -> bool {
-        if b.get(0..4) != Some(b"MYC5") {
+        if b.get(0..4) != Some(b"MYC6") {
             // A REFUSAL NAMES WHAT IT READ, not only what it wanted. "The
-            // magic is not MYC5" leaves the operator to go and look at the
+            // magic is not MYC6" leaves the operator to go and look at the
             // bytes this reader already had in its hand, and a tape that
             // is not a ledger at all reads the same as one written by an
             // older build -- which is the difference that decides whether
@@ -39,7 +39,7 @@ impl Kernel {
                 },
                 None => format!("{} bytes, too short to carry one", b.len()),
             };
-            eprintln!("  ledger refused: the magic is {found}, not MYC5");
+            eprintln!("  ledger refused: the magic is {found}, not MYC6");
             return false;
         }
         // WHERE THE READ IS. Set as each section opens, so a refusal names
@@ -59,9 +59,35 @@ impl Kernel {
                 let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
                 let spoken = Element::from_bytes(&b[..end], &mut ep)?;
                 *pos += elen;
-                let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                *pos += 32;
-                kernel.basis_insert(spoken, who);
+                // EVERY PARTY OF THE WORD (X10). `basis_insert` records
+                // one, and `note_discovered` unions, so the rest are
+                // recorded beside it and the set that was written is the
+                // set that comes back.
+                let np = read_u32(b, pos)? as usize;
+                if np > b.len().checked_sub(*pos)? / 32 {
+                    return None; // untrusted count: 32 bytes per party
+                }
+                let mut parties = Vec::with_capacity(np);
+                for _ in 0..np {
+                    let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                    *pos += 32;
+                    parties.push(who);
+                }
+                let addr = spoken.address();
+                // A WORD WITH NO PARTY IS STILL THE COURT'S LANGUAGE: it
+                // is restored unattributed rather than dropped, which is
+                // what `basis_push(w, [0; 32])` already says at the other
+                // door — the null identity is "no speaker here", a fact
+                // and not a default (rule 11).
+                match parties.split_first() {
+                    Some((first, rest)) => {
+                        kernel.basis_insert(spoken, *first);
+                        for who in rest {
+                            kernel.note_discovered(addr.as_bytes(), *who);
+                        }
+                    }
+                    None => kernel.basis_push(spoken, [0; 32]),
+                }
             }
             at.set("treasury");
             kernel.treasury = crate::economy::Treasury::restore(b, pos)?;
@@ -598,12 +624,21 @@ impl Kernel {
             .filter(|(_, w)| w.is_connection())
             .map(|(_, w)| w.element().clone())
             .collect();
-        let Some((_, &ratifier)) = self.discoverers.scoped().next() else {
-            return true;
-        };
+        // EACH WORD'S OWN PARTIES, and this court as the operator of the
+        // re-docketing. This took the discoverer of WHATEVER ADDRESS THE
+        // WALK REACHED FIRST and used that one key as the ratifier of
+        // every connection re-docketed — a payee chosen by trie position
+        // (rule 15) and, for every word but one, a party of some other
+        // word entirely. The restore is this court's act, so the receipt
+        // is operated by this court.
+        let operator = self.identity;
         for w in held {
             if !self.ruled_contains(&w.address()) {
-                self.docket_connection(&w, ratifier);
+                let parties = self.parties_of(w.address().as_bytes());
+                if parties.is_empty() {
+                    continue;
+                }
+                self.docket_connection(&w, operator, &parties);
             }
         }
         true

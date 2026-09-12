@@ -320,9 +320,11 @@ impl Kernel {
         let Some(card) = self.basis.get(&absorbed).map(|w| w.element().clone()) else {
             return new;
         };
-        let Some(disc) = self.discoverer_of(&absorbed) else {
+        // The absorbed card's parties: the condense pays them, all of them.
+        let parties = self.parties_of(&absorbed);
+        if parties.is_empty() {
             return new;
-        };
+        }
         self.basis_remove(&absorbed);
         // A base the basis does not hold gains nothing.
         let gained = match self.word_mut(&base) {
@@ -345,7 +347,7 @@ impl Kernel {
                 std::slice::from_ref(&card),
                 &after,
                 payload,
-                disc,
+                &parties,
             );
             self.physics.syntropy(&[0, 1, 0, 0]);
             self.torse_at(&base);
@@ -388,13 +390,14 @@ impl Kernel {
             return;
         };
         let payload = crate::transducer::rewrite::RewritePayload::Torse { sigma, period };
-        if let Some(disc) = self.discoverer_of(addr) {
+        let parties = self.parties_of(addr);
+        if !parties.is_empty() {
             let _ = self.mint_rewrite(
                 crate::transducer::rewrite::RewriteKind::Torse,
                 std::slice::from_ref(&after),
                 &after,
                 payload,
-                disc,
+                &parties,
             );
         }
         self.touch_at(addr);
@@ -420,9 +423,13 @@ impl Kernel {
         let Some(after) = self.word_at(new).cloned() else {
             return;
         };
-        let Some(bidder) = self.discoverer_of(new) else {
+        // The refining word's parties: the bid is theirs jointly, and the
+        // Ruling receipt is sealed by THIS COURT, which is what ruled.
+        let bidders = self.parties_of(new);
+        if bidders.is_empty() {
             return;
-        };
+        }
+        let operator = self.identity;
         let Some(mine) = crate::transducer::sentence::from_element_form(&after) else {
             return;
         };
@@ -473,7 +480,7 @@ impl Kernel {
                 std::slice::from_ref(&candidate),
                 &candidate,
                 payload,
-                bidder,
+                &bidders,
             );
             // A RETIREMENT KEEPS THE ADDRESS (27): the word leaves the
             // language and stays resolvable for replay, so a citation of it
@@ -481,7 +488,7 @@ impl Kernel {
             // reading — it is forgetting.
             self.relocate_cavity(&addr);
             self.physics.syntropy(&candidate.magnitude());
-            self.append_step(crate::chronometry::ActKind::Ruling, &addr, bidder);
+            self.append_step(crate::chronometry::ActKind::Ruling, &addr, operator);
         }
     }
 

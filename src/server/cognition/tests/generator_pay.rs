@@ -149,7 +149,7 @@ fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
     k.bind_task_family(c_task, cite_fam.clone());
     install_on(&mut k, teacher, &g_e, &g_task);
     assert!(k.ruled_contains(g_addr.as_bytes()), "the generator is language");
-    assert_eq!(k.discoverer_of(g_addr.as_bytes()), Some(teacher), "and it is the teacher's");
+    assert_eq!(k.parties_of(g_addr.as_bytes()), vec![teacher], "and the teacher is its party");
 
     let mut epi = Epigenome::new();
     epi.learn(&g_e.to_bytes()).expect("the syllabus teaches it back");
@@ -333,6 +333,89 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
                 .iter()
                 .any(|&r| r > 0),
             "so the teacher's room rises where its generator was used"
+        );
+    }
+}
+
+/// X10 — L9's CRITERION ON **ONE** COURT, which is where the carrier could
+/// be read. The test above proves the same claim across TWO courts, each
+/// hearing one mind: no court there ever holds an address that two minds
+/// derived, so `discoverers` never had a second party to lose and the
+/// criterion passed over the fault it was written to measure.
+///
+/// Here one court hears both minds. The address is ONE (identity is the
+/// rotor, 1.5, law 2); the derivations are TWO; and the parties must be
+/// two, in either order of hearing — `note_discovered` rebound, so the
+/// party was whoever spoke last, and `docket_connection` returned early on
+/// an address already docketed, so the second speaker was not recorded at
+/// all. Both halves are the same fault: a party is a set.
+#[test]
+fn one_court_hearing_two_minds_on_one_address_holds_both_as_parties() {
+    use crate::anastome::dialogue;
+    use crate::client::sdk::Epigenome;
+    use crate::transducer::family::{
+        extract_rule_with, mint_sentence, pair_form_uncrystallized, sentence_measure, NoCrystal,
+    };
+    use crate::transducer::sentence::as_element_form;
+
+    let (teacher_a, teacher_b) = ([1u8; 32], [2u8; 32]);
+    let (voice_a, voice_b) = ([3u8; 32], [4u8; 32]);
+    let cite_fam = l_half();
+    let c_task = [7u8; 32];
+
+    let mut school = Kernel::new();
+    let taught = |k: &mut Kernel, fam: &[crate::transducer::family::TrainPair], who: [u8; 32], task: [u8; 32]| {
+        let f = pair_form_uncrystallized(&fam[0].0, &fam[0].1, None);
+        let mag = sentence_measure(&f, fam, &NoCrystal).expect("the bar is spoken");
+        let e = as_element_form(&f, mag).expect("a tape");
+        k.bind_task_family(task, fam.to_vec());
+        install_on(k, who, &e, &task);
+        e
+    };
+    let g_a = taught(&mut school, &bar_quarter(), teacher_a, [11u8; 32]);
+    let g_b = taught(&mut school, &bar_three_quarter(), teacher_b, [12u8; 32]);
+
+    let mind = |g: &crate::transducer::element::Element| {
+        let mut epi = Epigenome::new();
+        epi.learn(&g.to_bytes()).expect("the syllabus teaches it back");
+        let rule = extract_rule_with(&cite_fam, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+            .expect("the family extracts");
+        mint_sentence(&rule, &cite_fam, &epi).expect("minted over the mind's own crystal")
+    };
+    let said_a = mind(&g_a);
+    let said_b = mind(&g_b);
+    assert!(said_a.same_vertex(&said_b), "two presentations, one vertex");
+    let addr = said_a.address();
+
+    // Heard in both orders: the parties are a SET, so which mind spoke
+    // first cannot decide who is one (rule 15).
+    for (first, second, first_voice, second_voice) in [
+        (&said_a, &said_b, voice_a, voice_b),
+        (&said_b, &said_a, voice_b, voice_a),
+    ] {
+        let mut k = Kernel::new();
+        k.set_court_voice([21u8; 32]);
+        k.bind_task_family(c_task, cite_fam.clone());
+        // ONE COURT HOLDING BOTH GENERATORS, so both sentences stand on it.
+        k.bind_task_family([13u8; 32], bar_quarter());
+        install_on(&mut k, teacher_a, &g_a, &[13u8; 32]);
+        k.bind_task_family([14u8; 32], bar_three_quarter());
+        install_on(&mut k, teacher_b, &g_b, &[14u8; 32]);
+
+        for (voice, said) in [(first_voice, first), (second_voice, second)] {
+            let frame = dialogue::encode_speech(&voice, c_task, 1, &[said.to_bytes()]);
+            let act = dialogue::decode_speech(&frame).expect("the frame decodes");
+            let heard = k.hear_frame(&act).expect("the court hears it");
+            let [only] = heard.as_slice() else { panic!("one sentence, one adjudication") };
+            assert_eq!(only.code(), dialogue::SPEECH_STOOD, "each mind's sentence stands");
+        }
+
+        let mut parties = k.parties_of(addr.as_bytes());
+        parties.sort();
+        assert_eq!(
+            parties,
+            vec![voice_a, voice_b],
+            "both minds are parties to the one address they reached, whoever spoke first"
         );
     }
 }

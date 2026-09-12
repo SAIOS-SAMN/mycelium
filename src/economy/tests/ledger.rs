@@ -271,7 +271,7 @@ fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
     t.genesis(a, [10, 10, 10, 10], (0, [0; 32]));
     t.enroll(a, [4, 4, 4, 4], (1, [0; 32])); // stake: moves no supply
     t.settle_subsidy(b, [0, 3, 0, 0], (2, [0; 32])); // mint
-    t.settle_use(a, b, [1, 0, 0, 0], (3, [0; 32])); // two transfers
+    t.settle_use(a, &[b], [1, 0, 0, 0], (3, [0; 32])); // two transfers
     t.settle_recall(a, &[2, 0, 0, 0], &[0; 4], (4, [0; 32])); // burn
     t.escrow_award([7u8; 32], vec![a], [9, 0, 0, 0], (5, [0; 32]));
     t.revoke_award(&[7u8; 32], true); // slash

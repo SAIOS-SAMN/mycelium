@@ -197,15 +197,27 @@ impl Kernel {
         if self.provisional.contains(&addr) {
             // A second voice on the address is a party to the settlement
             // (24.1): the escrow names every party, so the release pays it.
+            //
+            // AND SO DOES `discoverers`, now. This line's own comment had
+            // the doctrine right and told only the escrow: the second
+            // voice became a party of the ESCROW, which pays on release,
+            // while the carrier that every other payment reads —
+            // `settle_use` for a use, `cited_shares` at an install — was
+            // left holding the first voice alone (X10). One fact, two
+            // carriers, and only one of them written here (law 12).
             self.convergence.used_by(addr.as_bytes(), voice);
             self.record_spoken(addr.clone(), voice);
             let mu = crate::economy::price(&mag, &self.physics.pressure);
             let anchor = self.anchor();
-            self.treasury.escrow_award(&addr, self.convergence.parties(&addr), mu, anchor);
+            let parties = self.convergence.parties(&addr);
+            self.treasury.escrow_award(&addr, parties.clone(), mu, anchor);
+            for who in &parties {
+                self.note_discovered(addr.as_bytes(), *who);
+            }
             return Outcome::GermPending;
         }
         if !word.is_sentence() {
-            self.docket_connection(word, voice);
+            self.docket_connection(word, voice, &[voice]);
             return Outcome::GermPending;
         }
         // ADMISSION IS ROOM (23.8, S9.6): T-room is swept before the draw
@@ -247,9 +259,8 @@ impl Kernel {
         }
         if let Some(w) = self.language.words.get(slot) {
             let held = w.magnitude();
-            if let Some(disc) = self.discoverer_of(&w.address()) {
-                self.treasury.settle_use(voice, disc, held, anchor);
-            }
+            let parties = self.parties_of(&w.address());
+            self.treasury.settle_use(voice, &parties, held, anchor);
         }
         self.physics.syntropy(mag);
         Outcome::Decomposed(vec![slot])
@@ -272,7 +283,19 @@ impl Kernel {
         let _ = self.treasury.settle_install(word, voice); // POW++ gate only
         let mu = crate::economy::price(&mag, &self.physics.pressure);
         let anchor = self.anchor();
-        self.treasury.escrow_award(&addr, self.convergence.parties(&addr), mu, anchor);
+        // THE PARTIES OF THIS LISTING: every voice whose derivation reached
+        // this address, which `converge_here` above has just added this one
+        // to. The escrow was already taking the whole set here while
+        // `discoverers` — the carrier every PAYMENT reads — was never
+        // written on this path at all, so a sentence's parties existed in
+        // one carrier and not in the other and the two could not agree
+        // (law 12, X10). A second mind reaching this address is recorded
+        // as a party on the listing that hears it, not only at an install.
+        let parties = self.convergence.parties(&addr);
+        self.treasury.escrow_award(&addr, parties.clone(), mu, anchor);
+        for who in &parties {
+            self.note_discovered(addr.as_bytes(), *who);
+        }
         self.record_deflation(addr.clone(), addr.clone(), mag);
         let k_now = self.k_step();
         self.provisional_k.insert(&addr, k_now);
@@ -310,7 +333,7 @@ impl Kernel {
             let k_now = self.k_step();
             self.book_list(word.clone(), k_now, voice);
             self.list_demands(word, &voice);
-            self.docket_connection(word, voice);
+            self.docket_connection(word, voice, &[voice]);
             self.offered.insert(&addr, ());
         }
         Outcome::GermPending

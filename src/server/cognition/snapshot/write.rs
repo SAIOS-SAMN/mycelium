@@ -10,22 +10,31 @@ use crate::cognition::*;
 impl Kernel {
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = Vec::new();
-        // MYC5: the chain section carries the PEER RECEIPTS this court
-        // admitted as parents (`PRC1`), without which its own heights do
-        // not re-derive. A MYC4 snapshot does not re-read — a layout
-        // change is a recut (§10), and this one is the recut's reason.
-        out.extend_from_slice(b"MYC5");
+        // MYC6: THE BASIS SECTION CARRIES EVERY PARTY OF EACH WORD, behind
+        // a count, where it carried one identity (X10). A word two minds
+        // derived has two teachers and a ledger that keeps one of them
+        // unpays the other at every install after the boot — the carrier
+        // is a set in memory and was flattened on the way to disk.
+        //
+        // MYC5 carried the peer receipts (`PRC1`) and MYC4 did not. Neither
+        // re-reads: §10 makes a layout change a recut and deletes the
+        // reader for the retired layout, and `--check` says so per home
+        // before anything is stopped.
+        out.extend_from_slice(b"MYC6");
         let items: Vec<_> = self
             .basis
             .scoped()
-            .filter_map(|(_, g)| self.discoverer_of(&g.address()).map(|who| (std::sync::Arc::clone(g), who)))
+            .map(|(_, g)| (std::sync::Arc::clone(g), self.parties_of(g.address().as_bytes())))
             .collect();
         out.extend_from_slice(&(items.len() as u32).to_le_bytes());
-        for (g, who) in items {
+        for (g, parties) in items {
             let eb = g.to_bytes();
             out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
             out.extend_from_slice(&eb);
-            out.extend_from_slice(&who);
+            out.extend_from_slice(&(parties.len() as u32).to_le_bytes());
+            for who in parties {
+                out.extend_from_slice(&who);
+            }
         }
         out.extend_from_slice(&self.treasury.snapshot());
         // PROVISIONAL section (Step 5).

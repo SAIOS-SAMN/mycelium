@@ -376,7 +376,7 @@ fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
                 std::slice::from_ref(&relator),
                 &relator,
                 payload,
-                voice,
+                &[voice],
             ),
             "the rewrite mints and is docketed"
         );

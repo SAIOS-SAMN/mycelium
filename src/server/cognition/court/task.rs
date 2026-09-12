@@ -59,7 +59,9 @@ impl Kernel {
             if !self.rule_matches_tests(rule, tests) {
                 return [0; 4];
             }
-            self.docket_connection(rule, voice);
+            // A voice docketing its own utterance is both the operator of
+            // the act and its only party — so far.
+            self.docket_connection(rule, voice, &[voice]);
             self.offered.insert(rule.address(), ());
         }
         // A task with no listings bound to it has none: the reading of

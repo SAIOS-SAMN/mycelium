@@ -27,8 +27,22 @@ impl Treasury {
     /// paying itself transfers nothing (no wash trades). Returns the paid μ⃗.
     /// Two `transfer` entries share the anchor: first debits the demander,
     /// second credits the discoverer. Neither is a mint.
-    pub fn settle_use(&mut self, demander: [u8; 32], discoverer: [u8; 32], mag: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        if demander == discoverer {
+    /// X10 — THE WORD'S PARTIES, NOT ITS DISCOVERER. A word two minds
+    /// derived has two teachers, and the demander pays both: the debit is
+    /// taken ONCE for what the use exercised and the credit is SPLIT
+    /// across the parties, as 37.7 splits a consilience award and as
+    /// `release_rewrite` splits an escrow's voices. Crediting each party
+    /// the whole of `paid` against one debit would mint from nothing.
+    ///
+    /// A DEMANDER AMONG THE PARTIES DOES NOT PAY ITSELF — the wash trade
+    /// this refused when a word had one teacher — but it does still pay
+    /// the others, which the old equality check could not express: it
+    /// returned zero for the whole use the moment the demander was the
+    /// (single) discoverer, so a voice that co-derived a word used by it
+    /// unpaid every other teacher of that word.
+    pub fn settle_use(&mut self, demander: [u8; 32], parties: &[[u8; 32]], mag: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        let payees: Vec<[u8; 32]> = parties.iter().filter(|p| **p != demander).copied().collect();
+        if payees.is_empty() {
             return [0; 4];
         }
         let held = self.balance_mu(&demander);
@@ -42,8 +56,12 @@ impl Treasury {
             return [0; 4];
         }
         self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid, k_step: anchor.0, receipt: anchor.1 });
-        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
-        self.credit(discoverer, paid);
+        let n = payees.len() as u64;
+        let share: [u64; 4] = std::array::from_fn(|l| if paid[l] == 0 { 0 } else { (paid[l] / n).max(1) });
+        for who in &payees {
+            self.write(Entry { kind: Kind::Transfer, who: *who, mu: share, k_step: anchor.0, receipt: anchor.1 });
+            self.credit(*who, share);
+        }
         paid
     }
 

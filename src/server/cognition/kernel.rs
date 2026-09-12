@@ -24,9 +24,26 @@ pub struct Kernel {
     /// Chart+footprint → addresses on that base, written on admit.
     /// same_base reads the canonical member; condense reads the fiber.
     pub(crate) by_footprint: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
-    /// The discoverer of each basis germ, keyed by the word's address —
-    /// retire must not shift a parallel Vec.
-    pub(crate) discoverers: crate::network::nerve::Keyed<[u8; 32]>,
+    /// THE PARTIES OF EACH ADDRESS: every key whose derivation reached it,
+    /// keyed by the word's address — retire must not shift a parallel Vec.
+    ///
+    /// X10 — A PARTY IS A SET (the operator's ruling, 2026-09-12). This was
+    /// `Keyed<[u8; 32]>`, one identity per address, and `note_discovered`
+    /// rebound it with an `insert`, so the party was whoever wrote last.
+    /// Two minds reaching one address by two derivations is not an
+    /// ambiguity to be resolved by write order: on the content side they
+    /// ARE one address (law 2, 1.5, 50.2 step 2 — a producer's key inside
+    /// an address would fork the language by producer exactly as 1.5 says
+    /// it forks by spelling), and in the receipt poset they are two
+    /// parties. 37.7 splits a consilience award across the voices whose
+    /// demands carried the witness; 23.9 stands many proofs as sections
+    /// over one conclusion; L9's pass criterion is both installs paying
+    /// each teacher under its own key. A single-valued carrier unpays the
+    /// second teacher on exactly the event the trajectory is measured by.
+    ///
+    /// Unioned and never rebound. `parties_of` answers it, and there is no
+    /// reader left that takes one identity from it.
+    pub(crate) discoverers: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// The stalk space over `basis` (index-aligned): congruence lookup on
     /// the orbit quotient selects the fiber over a support's invariant and
     /// runs the exact orbit test there. Measured from the basis, never

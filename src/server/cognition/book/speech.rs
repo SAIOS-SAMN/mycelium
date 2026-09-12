@@ -314,14 +314,26 @@ impl Kernel {
     }
 
     /// List a word on the docket if it is not already provisional.
-    pub(crate) fn docket_connection(&mut self, word: &Element, ratifier: [u8; 32]) {
+    ///
+    /// TWO FACTS, AND THEY WERE ONE ARGUMENT. `operator` is who ACTED —
+    /// one key, because a K-step is one act and its receipt carries one
+    /// operator hash. `parties` is every key whose derivation reached the
+    /// word — a set, because payment is split across them (X10). A voice
+    /// docketing its own utterance is both; a court stroke that mints a
+    /// Rewrite is the operator of that act while the parties are the
+    /// voices who derived the word it optimised, and passing one key for
+    /// both made the payee the operator of a receipt it never acted.
+    ///
+    /// All the parties are escrowed as payees (`escrow_award` unions),
+    /// recorded as parties, and recorded as USES — which `converge_here`
+    /// keeps separate from a vantage: the re-derivation it records is THIS
+    /// COURT'S, under this court's own identity, so no number of voices is
+    /// ever a second organ (47.3, and the convergence test that pins it).
+    pub(crate) fn docket_connection(&mut self, word: &Element, operator: [u8; 32], parties: &[[u8; 32]]) {
         if word.is_identity() && !word.is_rewrite() {
             return;
         }
         let addr = word.address();
-        if self.provisional.contains(&addr) {
-            return;
-        }
         let mag = word.magnitude();
         let mu = if word.is_rewrite() {
             mag
@@ -333,17 +345,39 @@ impl Kernel {
         // recorded so a witness's re-derivation can converge with it (47.3).
         // Every path that dockets records one, or the object waits for a
         // second organ it can never reach because the first was never there.
-        self.converge_here(word, ratifier);
-        self.treasury.escrow_award(&addr, vec![ratifier], mu, anchor);
+        for who in parties {
+            self.converge_here(word, *who);
+        }
+        self.treasury.escrow_award(&addr, parties.to_vec(), mu, anchor);
+        // A SECOND MIND REACHING A DOCKETED ADDRESS IS NEW INFORMATION,
+        // and it used to be thrown away here. The docket entry is already
+        // there and must not be written twice — that is what the guard is
+        // for — but the PARTY is not the docket: two derivations of one
+        // vertex are one address (1.5, law 2) and two parties (X10), and
+        // returning above skipped `note_discovered` for every speaker
+        // after the first. The carrier could then only ever hold one
+        // party per address however wide it was made, and L9's pass
+        // criterion could not be met by any court that heard both minds.
+        //
+        // `converge_here` and `escrow_award` above it already unioned: the
+        // second speaker's USE and its place in the escrow were recorded
+        // while its party was dropped, which is how the two readings of
+        // one fact came apart.
+        for who in parties {
+            self.note_discovered(&addr, *who);
+        }
+        if self.provisional.contains(&addr) {
+            return;
+        }
         self.deflations.insert(&addr, mag);
         let k_now = self.k_step();
         self.provisional_k.insert(&addr, k_now);
         self.provisional.insert(&addr, word.clone());
-        // L8y: the voice that spoke it, recorded where the court knows it.
+        // L8y's note stands above the guard now, with the parties: the
+        // voices that spoke it, recorded where the court knows them.
         // `drawers` is cleared by `pending_take` before the install, so the
         // install had no name to credit and wrote the null identity; a use
         // of the word was then paid to nobody (26).
-        self.note_discovered(&addr, ratifier);
         self.stamp_standing(&addr);
         self.provisional_h.insert(&addr, self.height());
         self.mark_persist();
@@ -359,7 +393,7 @@ impl Kernel {
             );
         }
         self.book_gen += 1;
-        self.append_step(crate::chronometry::ActKind::Attest, &addr, ratifier);
+        self.append_step(crate::chronometry::ActKind::Attest, &addr, operator);
     }
 
 
@@ -393,9 +427,11 @@ impl Kernel {
         if element::pullback(&base_pos, sib.sub(), g).is_none() {
             return 0;
         };
-        let Some(disc) = self.discoverer_of(sibling) else {
+        // The absorbed sibling's parties: the condense pays all of them.
+        let parties = self.parties_of(sibling);
+        if parties.is_empty() {
             return 0;
-        };
+        }
         // A base the basis does not hold gains nothing: nothing was
         // attached to it.
         let gained = match self.word_mut(base) {
@@ -415,7 +451,7 @@ impl Kernel {
                     std::slice::from_ref(&sib),
                     &after,
                     payload,
-                    disc,
+                    &parties,
                 );
                 self.torse_at(base);
             }
@@ -495,9 +531,8 @@ impl Kernel {
                 let addr = &cite.addr;
                 if let Some(w) = self.basis.get(addr) {
                     let mag = w.magnitude();
-                    if let Some(disc) = self.discoverer_of(addr) {
-                        self.treasury.settle_use(voice, disc, mag, anchor);
-                    }
+                    let parties = self.parties_of(addr);
+                    self.treasury.settle_use(voice, &parties, mag, anchor);
                 }
             }
             for chart in charts {

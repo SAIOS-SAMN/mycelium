@@ -208,11 +208,12 @@ fn dialect_enters_on_stood_and_sheds() {
     assert_eq!(epi.dialect_len(), 0);
 }
 
-/// 28: the snapshot names its layout; MYC5 carries the peer receipts this
-/// court admitted as parents (`PRC1`), without which its own heights do
-/// not re-derive, and a MYC4 file does not re-read.
+/// 28: the snapshot names its layout; MYC6 carries EVERY PARTY of each
+/// basis word where MYC5 carried one identity (X10), and MYC5 carried the
+/// peer receipts this court admitted as parents (`PRC1`), without which
+/// its own heights do not re-derive. Neither older layout re-reads.
 #[test]
-fn hypha_snapshot_is_myc5() {
+fn hypha_snapshot_is_myc6() {
     let mut k = Kernel::new();
     // A voice's sentence for a recolour, spoken through the one door an
     // utterance has (law 8): a listing on the book to snapshot.
@@ -225,12 +226,12 @@ fn hypha_snapshot_is_myc5() {
     let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "the sentence is listed");
     let snap = k.snapshot();
-    assert_eq!(&snap[..4], b"MYC5");
+    assert_eq!(&snap[..4], b"MYC6");
     let mut k2 = Kernel::new();
     assert!(k2.restore(&snap));
     assert_eq!(k2.occupancy(), [0, 0, 0, 0], "cold listings exert zero occupancy");
     let mut old = snap.clone();
-    old[..4].copy_from_slice(b"MYC4");
+    old[..4].copy_from_slice(b"MYC5");
     assert!(!Kernel::new().restore(&old), "an old file is refused");
 }
 

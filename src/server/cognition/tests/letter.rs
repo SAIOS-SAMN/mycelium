@@ -131,9 +131,9 @@ fn two_courts_open_one_letter_from_two_witnesses_and_the_count_leaves_zero() {
             "and the count of generators the engine opened leaves zero"
         );
         assert_eq!(
-            k.discoverer_of(&letter),
-            Some(voice),
-            "the demanding voice is its discoverer; a court is never one"
+            k.parties_of(&letter),
+            vec![voice],
+            "the demanding voice is its party; a court is never one"
         );
         opened.push(letter);
     }

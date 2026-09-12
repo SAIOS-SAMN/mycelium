@@ -138,9 +138,11 @@ impl Kernel {
             let anchor = self.anchor();
             if let Some(word) = self.basis.get(cited.as_bytes()) {
                 let mag = word.magnitude();
-                if let Some(disc) = self.discoverer_of(cited.as_bytes()) {
-                    self.treasury.settle_use(voice, disc, mag, anchor);
-                }
+                // EVERY TEACHER OF THE CITED WORD IS PAID, split (X10,
+                // 37.7): a word two minds derived has two teachers, and
+                // the use pays both out of one debit.
+                let parties = self.parties_of(cited.as_bytes());
+                self.treasury.settle_use(voice, &parties, mag, anchor);
             }
             let by = short(cited.as_bytes());
             self.answered.nested_insert(at, demand, (cited, transport));
