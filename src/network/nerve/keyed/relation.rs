@@ -124,6 +124,24 @@ impl<V> Keyed<V> {
         Fiber { stack, prefix: prefix.to_vec() }
     }
 
+    /// THE WHOLE OF A CARRIER THAT IS ITSELF A FIBER — one bubble's charts,
+    /// one vertex's star, one chart's incidence, one form's cited
+    /// addresses. Calling this ASSERTS that scoping: the carrier was
+    /// reached by a key already, so its whole content is one cell's
+    /// reading and walking it is not rule 1's whole-carrier walk.
+    ///
+    /// It is the other half of [`Prefix`]: a site either has a coordinate
+    /// to descend on or is already at one, and which of the two it is
+    /// should be legible without reading the carrier's provenance. The
+    /// empty prefix said neither.
+    pub fn scoped(&self) -> Fiber<'_, V> {
+        let mut stack = Vec::new();
+        if let Some(root) = self.root.as_deref() {
+            stack.push(root);
+        }
+        Fiber { stack, prefix: Vec::new() }
+    }
+
     /// The node every key carrying `prefix` hangs under, by descent on the
     /// prefix's own bits. `None` where no key carries it — an empty fiber,
     /// which is the reading of absence and not an empty walk of the trie.
@@ -235,7 +253,38 @@ impl<V> Keyed<Keyed<V>> {
 }
 
 /// The empty prefix: the root fiber of a keyed that is already a fiber.
+///
+/// X3 RETIRES THIS. It is the spelling of "walk everything", and it is
+/// written in 280 places because a prefix used to buy nothing (c483bab).
+/// Each of those sites is one of two readings, and the reader says which:
+/// [`Prefix`] where a coordinate is in hand, [`Keyed::scoped`] where the
+/// carrier is ALREADY one cell's fiber. When no site names it, the
+/// constant goes and `fiber` takes a `Prefix` that cannot be empty.
 pub const ROOT: &[u8] = &[];
+
+/// A NON-EMPTY KEY PREFIX — the coordinate a fiber read descends on.
+///
+/// The empty slice is not a coordinate: it names the whole carrier, and
+/// the whole carrier is not a fiber unless the carrier is one already.
+/// Keeping the two apart in the TYPE is what makes rule 1 readable at a
+/// site: `fiber(Prefix)` descends to somewhere, `scoped()` says this
+/// carrier is somewhere.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Prefix<'a>(&'a [u8]);
+
+impl<'a> Prefix<'a> {
+    /// `None` for the empty prefix. A caller holding a key it built from
+    /// coordinates gets a `Prefix`; a caller whose "prefix" turned out
+    /// empty has no coordinate and must say which reading it wanted, which
+    /// is the refusal doing its work (rule 11).
+    pub fn new(bytes: &'a [u8]) -> Option<Self> {
+        (!bytes.is_empty()).then_some(Prefix(bytes))
+    }
+
+    pub fn as_bytes(&self) -> &'a [u8] {
+        self.0
+    }
+}
 
 /// Sealed persist walk: only [`crate::snapshot`] names this.
 pub(crate) fn keyed_persist_walk<V>(k: &Keyed<V>, f: &mut impl FnMut(&[u8], &V)) {
