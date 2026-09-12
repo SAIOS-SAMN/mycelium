@@ -1,5 +1,11 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //! Alpha-plan proofs: vertices, GEN3, faces by constancy, speech, dialect, mint.
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    reason = "§2.4 binds cognition; this crate is a test"
+)]
 
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Kernel;
@@ -160,16 +166,17 @@ fn a_single_recolour_is_a_one_morphism_sentence() {
         .iter()
         .filter(|v| matches!(v, mycelium::transducer::sentence::Vertex::Word { .. }))
         .collect();
-    assert_eq!(words.len(), 1, "one recolour is one Word vertex");
-    match words[0] {
-        mycelium::transducer::sentence::Vertex::Word { gauge, .. } => {
-            assert!(
-                gauge.iter().any(|&(from, to)| from == 1 && to == 2),
-                "the morphism carries the 1→2 gauge, got {gauge:?}"
-            );
-        }
-        _ => unreachable!(),
-    }
+    // ONE RECOLOUR IS ONE WORD VERTEX, which the slice pattern says: the
+    // count and the kind are one claim, so there is no second arm left to
+    // call unreachable (§2.4 — a test crate is allowed its aborts, and
+    // `unreachable!` is not among them, because it asserts nothing).
+    let [mycelium::transducer::sentence::Vertex::Word { gauge, .. }] = words.as_slice() else {
+        panic!("one recolour is one Word vertex, got {:?}", words.len())
+    };
+    assert!(
+        gauge.iter().any(|&(from, to)| from == 1 && to == 2),
+        "the morphism carries the 1→2 gauge, got {gauge:?}"
+    );
     assert!(rule.form.is_closed(), "a single non-trivial morphism is a closed sentence");
 }
 

@@ -45,3 +45,15 @@ cast_precision_loss = "deny"
 # MU-STANDARDS 4.2: the tables of clippy.toml are read through these two.
 disallowed_types    = "deny"
 disallowed_methods  = "deny"
+# §2.4: COGNITION REFUSES, IT DOES NOT ABORT. A reader that cannot answer
+# returns the refusal to the caller that can act on it; a process that dies
+# answers nobody and loses the chain position it was holding.
+# `allow-unwrap-in-tests` and its two siblings in clippy.toml scope these
+# off `#[cfg(test)]`; an integration crate under `tests/` is a crate of its
+# own that those cannot reach, so each opens with a root `#![allow]`.
+unwrap_used         = "deny"
+expect_used         = "deny"
+panic               = "deny"
+unreachable         = "deny"
+todo                = "deny"
+unimplemented       = "deny"

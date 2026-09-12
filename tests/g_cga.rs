@@ -1,3 +1,9 @@
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    reason = "§2.4 binds cognition; this crate is a test"
+)]
 //! Gate — the exact conformal geometric algebra (Cl(3,1)), the volumetric body
 //! (operator ruling 2026-08-30). The cure for dimensional volumetric collapse:
 //! objects become spheres with volume, rigid motions become one versor sandwich,
