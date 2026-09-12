@@ -131,8 +131,11 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
         word_to_form_bytes(&lp.holonomy, None, out);
         lp.carriage.to_bytes(out);
     }
-    out.extend_from_slice(&(f.remainder.len() as u32).to_le_bytes());
-    for &(r, c, before, after) in &f.remainder {
+    // The remainder rides the tape AS IT SITS IN THE SCENE, so the decoder
+    // re-derives both A5's chain and the translator from one reading.
+    let placed = f.remainder.placed();
+    out.extend_from_slice(&(placed.len() as u32).to_le_bytes());
+    for &(r, c, before, after) in &placed {
         out.extend_from_slice(&r.to_le_bytes());
         out.extend_from_slice(&c.to_le_bytes());
         out.push(before);
@@ -345,10 +348,14 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         });
     }
     let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
-    let mut remainder = Vec::with_capacity(nr);
+    let mut cells = Vec::with_capacity(nr);
     for _ in 0..nr {
-        remainder.push(take_cell(b, pos)?);
+        cells.push(take_cell(b, pos)?);
     }
+    // A tape whose remainder puts two transitions on one site does not
+    // parse (A5 step 3). The refusal is the decoder's, and the court reads
+    // it as `REFUSE_FORM_TAPE`.
+    let remainder = crate::transducer::element::place_chain(&cells)?;
     let depth = take_u16(b, pos)?;
     let ncert = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
     let mut certificates = Keyed::new();

@@ -353,14 +353,8 @@ impl Contemplation {
         };
         let mut held = f.clone();
         held.reindex();
-        // A form whose remainder says two things at one site has no A5
-        // chain; the seam that moves this refusal onto the form is the
-        // next commit's.
-        let Some(remainder) = element::place_chain(&f.remainder) else {
-            return;
-        };
         let bubble = Bubble {
-            remainder,
+            remainder: f.remainder.clone(),
             nerve: Complex::new(),
             cover,
             horizon,

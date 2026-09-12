@@ -320,20 +320,13 @@ impl Bubble {
         true
     }
 
-    /// THE SEAM, and the next commit closes it. `Form.remainder` is a raw
-    /// `Vec<RemCell>` carrying no proof, so A5 is asked here — downstream
-    /// of the decoder that should have asked it. When the remainder is a
-    /// coordinate of the form (19) this refusal moves to the tape, where
-    /// it already has a name, and `take_form` becomes total.
-    pub(crate) fn take_form(&mut self, f: Form) -> bool {
-        let Some(remainder) = element::place_chain(&f.remainder) else {
-            return false;
-        };
-        self.remainder = remainder;
+    /// Total: the form's remainder carries A5's proof in its own type, so
+    /// there is nothing to ask here (§4.4).
+    pub(crate) fn take_form(&mut self, f: Form) {
+        self.remainder = f.remainder.clone();
         self.torsion = f.torsion.clone();
         self.certificates = f.certificates.clone();
         self.vortex = f.vortex.clone();
         self.form = Some(f);
-        true
     }
 }

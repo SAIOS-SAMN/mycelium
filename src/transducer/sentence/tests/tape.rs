@@ -46,7 +46,8 @@ fn form_tape_v6_round_trips() {
     edged.edge = Some(Transport::from_word(w.clone()));
     f.faces.push(edged);
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
-    f.remainder = vec![(9, 9, 1, 0)];
+    f.remainder = crate::transducer::element::place_chain(&[(9, 9, 1, 0)])
+        .expect("one cell is A5's chain");
     f.reindex();
     assert!(matches!(f.vertices[glued as usize], Vertex::Glued { .. }));
     assert!(matches!(
@@ -67,7 +68,10 @@ fn form_tape_v6_round_trips() {
     assert_eq!(back.vertices.len(), f.vertices.len());
     assert_eq!(back.faces.len(), f.faces.len());
     assert_eq!(back.loops.len(), f.loops.len());
-    assert_eq!(back.remainder, f.remainder);
+    // The remainder rides the tape as it sits in the scene, so the chain
+    // and the placement both survive the round trip.
+    assert_eq!(back.remainder.placed(), f.remainder.placed());
+    assert_eq!(back.remainder.chain(), f.remainder.chain());
     assert_eq!(back.depth, f.depth);
     match (&f.vertices[1], &back.vertices[1]) {
         (

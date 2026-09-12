@@ -30,7 +30,16 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
             edge: face.edge.clone(),
         });
     }
-    f.remainder = union_rem(&a.remainder, &b.remainder);
+    // The join is taken in the SCENE, where the two chains actually sit,
+    // and A5 decides it: two chains naming one site with different
+    // transitions are not one section (rule 11 — keeping either would
+    // invent an agreement they do not have).
+    let mut both = a.remainder.placed();
+    both.extend_from_slice(&b.remainder.placed());
+    let Some(joined) = element::place_chain(&both) else {
+        return false;
+    };
+    f.remainder = joined;
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     match f.solve_coboundary() {
         Some(gamma) => {

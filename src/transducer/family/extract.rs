@@ -310,7 +310,7 @@ pub fn extract_rule_with(
         vertices: rule_vertices,
         faces: Vec::new(),
         loops: Vec::new(),
-        remainder: Vec::new(),
+        remainder: crate::transducer::element::PlacedChain::default(),
         depth: 0,
         hue_maps,
         ratio: ((1, 1), (1, 1)),

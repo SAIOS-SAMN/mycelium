@@ -362,7 +362,7 @@ pub(crate) fn pair_form_uncached(
         vertices: scenery.vertices.clone(),
         faces: Vec::new(),
         loops: Vec::new(),
-        remainder: Vec::new(),
+        remainder: crate::transducer::element::PlacedChain::default(),
         depth: 0,
         hue_maps: crate::network::nerve::Keyed::new(),
         ratio: ((1, 1), (1, 1)),

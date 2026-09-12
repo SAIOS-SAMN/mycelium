@@ -146,7 +146,15 @@ pub struct Form {
     pub vertices: Vec<Vertex>,
     pub faces: Vec<FormFace>,
     pub loops: Vec<Loop>,
-    pub remainder: Vec<Cell>,
+    /// A5's chain and the translator that places it (§2.1, 19). The proof
+    /// rides the coordinate: a tape whose remainder puts two transitions on
+    /// one site does not parse, and that refusal is the decoder's under
+    /// `REFUSE_FORM_TAPE`, never a reader's downstream.
+    ///
+    /// `CanonicalChain` alone would centre it and lose the placement the
+    /// Čech complex reads for overlap, which is the reading
+    /// `two_bubbles_on_one_chart_share_an_edge_not_a_triangle` asserts.
+    pub remainder: crate::transducer::element::PlacedChain,
     pub depth: u16,
     pub hue_maps: Keyed<Vec<(u8, u8)>>,
     pub ratio: ((usize, usize), (usize, usize)),
@@ -195,7 +203,7 @@ impl Default for Form {
             vertices: vec![Vertex::Frame],
             faces: Vec::new(),
             loops: Vec::new(),
-            remainder: Vec::new(),
+            remainder: crate::transducer::element::PlacedChain::default(),
             depth: 0,
             hue_maps: Keyed::new(),
             ratio: ((1, 1), (1, 1)),
