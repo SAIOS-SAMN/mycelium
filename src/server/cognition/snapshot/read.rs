@@ -26,7 +26,20 @@ impl Kernel {
     /// ignored the failure.
     pub fn restore(&mut self, b: &[u8]) -> bool {
         if b.get(0..4) != Some(b"MYC5") {
-            eprintln!("  ledger refused: the magic is not MYC5");
+            // A REFUSAL NAMES WHAT IT READ, not only what it wanted. "The
+            // magic is not MYC5" leaves the operator to go and look at the
+            // bytes this reader already had in its hand, and a tape that
+            // is not a ledger at all reads the same as one written by an
+            // older build -- which is the difference that decides whether
+            // a recut is the road or the file is corrupt.
+            let found = match b.get(0..4) {
+                Some(m) => match std::str::from_utf8(m) {
+                    Ok(s) => format!("`{s}`"),
+                    Err(_) => format!("{m:02x?}, which is not text"),
+                },
+                None => format!("{} bytes, too short to carry one", b.len()),
+            };
+            eprintln!("  ledger refused: the magic is {found}, not MYC5");
             return false;
         }
         // WHERE THE READ IS. Set as each section opens, so a refusal names

@@ -28,6 +28,18 @@ impl HyphaKey {
         HyphaKey { sk, vk }
     }
 
+    /// THE KEY AT `path`, OR NONE — and nothing minted. `load_or_mint`
+    /// writes a fresh seed where it finds none, which is right at a boot
+    /// and wrong for a READING: a preflight that mints a key has changed
+    /// the home it was asked to report on. A home with no key is a home
+    /// that has never booted, and that is what `None` says here.
+    pub fn load_only(path: &str) -> Option<Self> {
+        let seed = std::fs::read(path).ok().and_then(|b| <[u8; 32]>::try_from(b.as_slice()).ok())?;
+        let sk = SigningKey::from_bytes(&seed);
+        let vk = sk.verifying_key();
+        Some(HyphaKey { sk, vk })
+    }
+
     pub fn vk_bytes(&self) -> [u8; 32] {
         self.vk.to_bytes()
     }

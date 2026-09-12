@@ -32,7 +32,7 @@ use mycelium::network::mesh::{self};
 use mycelium::network::nerve::{Cover, Keyed, Router};
 use mycelium::network::wire::Frame;
 use std::net::{TcpListener, TcpStream};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
@@ -48,7 +48,7 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
         }
         // Valueless flags, checked here so an unknown one is still refused
         // rather than silently ignored (rule 11).
-        if args[i] == "--mint-genesis" || args[i] == "--recut" {
+        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" {
             i += 1;
             continue;
         }
@@ -77,6 +77,112 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
 fn refuse_boot(tag: &str, what: &str) -> ! {
     eprintln!("[{tag}] boot refused: {what}");
     std::process::exit(2)
+}
+
+/// WHAT THIS HOME WILL DO AT THE NEXT BOOT, read and not started.
+///
+/// A layout change is a recut (§10) and the reader for the retired layout
+/// is deleted with it, so a build can arrive at a fleet whose carriers it
+/// refuses — which is exactly where this one stands: `MYC5` was written
+/// in X8 and every ledger on disk is `MYC4`. Before this, the only way to
+/// learn that was to stop a unit and start the new binary on it, and the
+/// answer came back as a court that would not come up. A procedure that
+/// cannot be surveyed before it is run is a leap.
+///
+/// IT CHANGES NOTHING. `load_or_mint` would write a seed into a home that
+/// has none and `load_or_migrate_hypha` re-saves a record it read under
+/// the old magic (X7) -- both are right at a boot and both would make
+/// this reading alter what it reports, so neither is used. The record is
+/// opened directly and the ledger is restored into a scratch kernel that
+/// is dropped.
+///
+/// Exit 0 where this home will boot, 3 where it will refuse -- distinct
+/// from `refuse_boot`'s 2, so a caller can tell "this home needs the
+/// recut" from "the check itself could not run".
+fn check_home(home: &Path) -> ! {
+    let name = home.display();
+    let Some(key) = mycelium::court::identity::HyphaKey::load_only(&home.join("hypha.key").to_string_lossy())
+    else {
+        println!("{name}: no key — a home that has never booted; it will mint one and start fresh");
+        std::process::exit(0)
+    };
+    let vk = key.vk_bytes();
+    let tag = key.prefix();
+    println!("{name}: key {tag}… vk {}", mycelium::court::identity::hex32(&vk));
+
+    let mut refuses = false;
+    let mesh_path = home.join("mesh");
+    match std::fs::read(&mesh_path) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            println!("  mesh: none — it will be written from the old text files, or fresh");
+        }
+        Err(e) => {
+            println!("  mesh: UNREADABLE ({e}) — the boot refuses");
+            refuses = true;
+        }
+        Ok(b) => match mesh::MeshRecord::open_layout(&b, &vk) {
+            None => {
+                println!("  mesh: does not open under this home's key — the boot refuses");
+                refuses = true;
+            }
+            Some((rec, layout)) => {
+                let (magic, next) = match layout {
+                    mesh::Layout::Current => ("MSH2", "already current"),
+                    mesh::Layout::Legacy => ("MSH1", "the next boot writes it back as MSH2 (X7)"),
+                };
+                println!(
+                    "  mesh: {magic}, {next}; bind {:?}, peers {}, genesis {}, epoch {}",
+                    rec.bind,
+                    rec.peers.len(),
+                    match rec.genesis {
+                        Some(g) => format!("{:02x}{:02x}…", g[0], g[1]),
+                        None => "none".into(),
+                    },
+                    rec.epoch
+                );
+            }
+        },
+    }
+
+    let ledger_path = home.join("ledger");
+    match std::fs::read(&ledger_path) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            println!("  ledger: none — a fresh court, which boots");
+        }
+        Err(e) => {
+            println!("  ledger: UNREADABLE ({e}) — the boot refuses");
+            refuses = true;
+        }
+        Ok(b) => {
+            let mut scratch = Kernel::new();
+            if scratch.restore(&b) {
+                println!(
+                    "  ledger: {} bytes, restores — {} ruled sentences, K {}",
+                    b.len(),
+                    scratch.basis_len(),
+                    scratch.chain().head_k()
+                );
+            } else {
+                println!(
+                    "  ledger: {} bytes, DOES NOT RESTORE — the refusal above names the magic and \
+                     the byte. A ledger written by an older build is expected to refuse; §10's \
+                     road is `scripts/recut`, which deletes it.",
+                    b.len()
+                );
+                refuses = true;
+            }
+        }
+    }
+    match refuses {
+        true => {
+            println!("{name}: THIS HOME WILL NOT BOOT on this build");
+            std::process::exit(3)
+        }
+        false => {
+            println!("{name}: this home will boot");
+            std::process::exit(0)
+        }
+    }
 }
 
 fn resolved_bind(local: std::net::SocketAddr) -> String {
@@ -121,6 +227,12 @@ fn main() {
             std::process::exit(2);
         }
     };
+    // THE PREFLIGHT READS AND EXITS, before anything is created: a check
+    // that makes the directories it was asked to report on has changed the
+    // answer it gives.
+    if args.iter().any(|a| a == "--check") {
+        check_home(&home);
+    }
     let _ = std::fs::create_dir_all(&home);
     let _ = std::fs::create_dir_all(home.join("corpora"));
     let state_path = home.join("ledger").to_string_lossy().into_owned();
@@ -179,12 +291,22 @@ fn main() {
         Ok(bytes) => {
             let Ok(mut k) = kernel.lock() else { refuse_boot(&tag, "kernel lock poisoned at restore") };
             if !k.restore(&bytes) {
+                // A REFUSAL THAT NAMES THE ROAD. This named the fault and
+                // stopped, leaving the operator to work out whether a
+                // ledger written by an older build is expected to refuse
+                // (it is -- §10 deletes the reader for a retired layout)
+                // or whether the file is damaged. The reading above says
+                // which, and the remedy for the first is a procedure this
+                // repository owns.
                 refuse_boot(
                     &tag,
                     &format!(
-                        "the ledger at {state_path} did not restore -- the section and byte are \
-                         named above; this court's memory is NOT dropped and nothing is written \
-                         over it"
+                        "the ledger at {state_path} did not restore -- the magic, section and \
+                         byte are named above. This court's memory is NOT dropped and nothing is \
+                         written over it. This build reads MYC5; a ledger written by an older \
+                         build is EXPECTED to refuse, and §10's road for that is `scripts/recut`, \
+                         which the operator runs. `--check` on this home reports the same reading \
+                         without starting anything."
                     ),
                 );
             }
