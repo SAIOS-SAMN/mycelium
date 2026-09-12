@@ -1,14 +1,8 @@
-// AI-GENERATED CONTENT — see DISCLAIMER.md.
-//
-//! MU-STANDARDS 4 — THE GATE BINARY: the boot order of the gates. The file
-//! gates first, then the warning gate; `xtask gates` asks for the file
-//! gates alone.
+// MU-STANDARDS 4.1, 6.1 — THE GATE BINARY: the reading bound, then
+// clippy with warnings denied. Non-zero on either.
 
 mod lint;
 
-// The warning gate is declared HERE and not in `lint/mod.rs`, because
-// `build.rs` includes that module and would carry an item it never calls.
-// Only this binary runs clippy; see `lint/warnings.rs`.
 #[path = "lint/warnings.rs"]
 mod warnings;
 
@@ -17,16 +11,8 @@ fn main() {
         eprintln!("{e}");
         std::process::exit(1)
     };
-    // The file gates: what `build.rs` also runs, on every build.
     if let Err(e) = lint::run() {
         refuse(e);
-    }
-    // The warning gate: clippy over every target with warnings denied.
-    // `build.rs` cannot run this one — see `lint/warnings.rs` — so the
-    // xtask binary is where it lives. `xtask gates` asks for the file gates
-    // alone, for a caller that wants the fast half.
-    if std::env::args().any(|a| a == "gates") {
-        return;
     }
     let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let crate_dir = if manifest.join("src/server").is_dir() {

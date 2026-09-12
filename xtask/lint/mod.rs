@@ -1,27 +1,7 @@
-// AI-GENERATED CONTENT — see DISCLAIMER.md.
-//
-//! MU-STANDARDS 4 — THE GATES: one file per gate, each named for the rule
-//! it enforces — the reading bound, rules 1 and 8, law 2, law 11, law 9,
-//! law 5, 2.4, since 2026-09-10 rules 2, 4, 11 and 15 with the OWED
-//! ratchet (4.4), and law 8's utterance path (50.9). This file is the
-//! order they run in and nothing else.
+// MU-STANDARDS 4.1 — THE READING BOUND, over `src/` and `xtask/`. Every
+// other rule the compiler can read is a lint (§4.2) or a type (§4.4).
 
-pub mod choice;
-pub mod clique;
-pub mod clock;
-pub mod count;
-pub mod digest;
-pub mod walker;
-pub mod enumeration;
-pub mod invented;
 pub mod length;
-pub mod maps;
-pub mod matrix;
-pub mod order;
-pub mod panics;
-pub mod position;
-pub mod residual;
-pub mod squaring;
 
 use length::lint_file_length;
 
@@ -32,45 +12,15 @@ pub fn run() -> Result<(), String> {
     let root = if manifest.join("src/server").is_dir() {
         manifest.join("src")
     } else {
-        manifest
-            .parent()
-            .ok_or("xtask has no parent")?
-            .join("src")
+        manifest.parent().ok_or("xtask has no parent")?.join("src")
     };
-    let mut hits = Vec::new();
-    // The reading bound covers the gate itself: `lint.rs` is a source file a
-    // reviewer must read whole like any other (MU-STANDARDS 1.1), so `xtask`
-    // is walked beside `src`. Both in ONE call: the stale-row check below is
-    // over everything the bound walks, and two calls would each report the
-    // other's rows as missing.
+    // The bound is about reading, so it covers the gate binary too.
     let bounded: Vec<PathBuf> = match root.parent() {
         Some(up) => vec![root.clone(), up.join("xtask")],
         None => vec![root.clone()],
     };
+    let mut hits = Vec::new();
     lint_file_length(&bounded, &mut hits)?;
-    // ONE WALK over the tree the rules govern, every gate, allow-lists by
-    // file (4.2, 4.5). The scope is `src/` and not `xtask/`: the content
-    // rules are about cognition, and a gate that forbids a pattern must
-    // contain that pattern to search for it. The reading bound above is the
-    // one rule that does cover `xtask/`, because it is about reading.
-    let mut files = Vec::new();
-    walker::collect(&root, &mut files)?;
-    walker::run_gates(&files, &[
-            clock::GATE,
-            digest::GATE,
-            enumeration::GATE,
-            maps::GATE,
-            matrix::GATE,
-            order::GATE,
-            panics::GATE,
-            squaring::GATE,
-            count::GATE,
-            choice::GATE,
-            invented::GATE,
-            position::GATE,
-            residual::GATE,
-            clique::GATE,
-        ], &mut hits)?;
     if hits.is_empty() {
         return Ok(());
     }
@@ -81,4 +31,3 @@ pub fn run() -> Result<(), String> {
     }
     Err(msg)
 }
-

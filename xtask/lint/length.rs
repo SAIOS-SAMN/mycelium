@@ -1,30 +1,12 @@
-// THE READING BOUND (MU-STANDARDS 1.1): no source file over 1200 lines,
-// and the list of what is still over it.
-//
-// RAISED FROM 600 TO 1200 by the operator, 2026-09-11. At 600 the bound
-// was being paid in prose: a file at the edge refused a correct change
-// until a comment was shaved, which trades the reasoning a reader needs
-// for a line count. The bound exists so a file can be read whole, and
-// 1200 lines still can be.
+// MU-STANDARDS 1.1 — THE READING BOUND: no source file over 1200 lines,
+// so a reviewer can read one whole.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub(crate) const AWAITING_SPLIT: &[(&str, &str)] = &[
-];
-
-
-
 pub(crate) fn lint_file_length(roots: &[PathBuf], hits: &mut Vec<String>) -> Result<(), String> {
     const BOUND: usize = 1200;
-    fn owed(path: &Path) -> Option<&'static str> {
-        let p = path.to_string_lossy().replace('\\', "/");
-        AWAITING_SPLIT
-            .iter()
-            .find(|(f, _)| p.ends_with(f))
-            .map(|(_, row)| *row)
-    }
-    fn walk_len(dir: &Path, hits: &mut Vec<String>, seen: &mut Vec<String>) -> Result<(), String> {
+    fn walk_len(dir: &Path, hits: &mut Vec<String>) -> Result<(), String> {
         let rd = match fs::read_dir(dir) {
             Ok(rd) => rd,
             Err(_) => return Ok(()),
@@ -33,7 +15,7 @@ pub(crate) fn lint_file_length(roots: &[PathBuf], hits: &mut Vec<String>) -> Res
             let ent = ent.map_err(|e| e.to_string())?;
             let path = ent.path();
             if path.is_dir() {
-                walk_len(&path, hits, seen)?;
+                walk_len(&path, hits)?;
                 continue;
             }
             if path.extension().and_then(|s| s.to_str()) != Some("rs") {
@@ -43,84 +25,38 @@ pub(crate) fn lint_file_length(roots: &[PathBuf], hits: &mut Vec<String>) -> Res
                 .map_err(|e| format!("{}: {e}", path.display()))?
                 .lines()
                 .count();
-            match owed(&path) {
-                Some(row) => {
-                    seen.push(row.to_string());
-                    if n <= BOUND {
-                        hits.push(format!(
-                            "{}: {n} lines, already under the {BOUND}-line bound — delete its {row} row from AWAITING_SPLIT",
-                            path.display()
-                        ));
-                    }
-                }
-                None if n > BOUND => hits.push(format!(
+            if n > BOUND {
+                hits.push(format!(
                     "{}: {n} lines, over the {BOUND}-line reading bound — split it",
                     path.display()
-                )),
-                None => {}
+                ));
             }
         }
         Ok(())
     }
-    let mut seen: Vec<String> = Vec::new();
     for root in roots {
-        walk_len(root, hits, &mut seen)?;
-    }
-    for (file, row) in AWAITING_SPLIT {
-        if !seen.iter().any(|r| r == row) {
-            hits.push(format!(
-                "{file}: named by {row} in AWAITING_SPLIT and not found — delete the row"
-            ));
-        }
+        walk_len(root, hits)?;
     }
     Ok(())
 }
 
-/// Is this file test code the compiler only builds under `#[cfg(test)]`?
-/// Two shapes count, and both are CHECKED rather than trusted to a name:
-/// `<module>/tests.rs`, whose owner is `<module>/mod.rs`; and
-/// `<module>/tests/<function>.rs` (MU-STANDARDS 3.3), whose owner is the
-/// same `<module>/mod.rs` one directory further up. A binary is a module
-/// too (1.5) and its root is `main.rs`, so that is the owner read when the
-/// directory has no `mod.rs`; a library root is `lib.rs`. In every case the
-/// owner must carry `#[cfg(test)] mod tests;`, so a file merely NAMED
-/// `tests.rs`, or one dropped into a directory called `tests` that nothing
-/// declares, is still linted in full.
-pub(crate) fn is_declared_test_file(path: &Path) -> bool {
-    let Some(dir) = path.parent() else {
-        return false;
-    };
-    let named_tests_rs = path.file_name().and_then(|s| s.to_str()) == Some("tests.rs");
-    let in_tests_dir = dir.file_name().and_then(|s| s.to_str()) == Some("tests");
-    let module = if named_tests_rs {
-        dir.to_path_buf()
-    } else if in_tests_dir {
-        match dir.parent() {
-            Some(up) => up.to_path_buf(),
-            None => return false,
-        }
-    } else {
-        return false;
-    };
-    let Some(src) = ["mod.rs", "main.rs", "lib.rs"]
-        .iter()
-        .find_map(|root| fs::read_to_string(module.join(root)).ok())
-    else {
-        return false;
-    };
-    let mut saw_cfg_test = false;
-    for line in src.lines() {
-        let t = line.trim();
-        if t.contains("#[cfg(test)]") {
-            saw_cfg_test = true;
-            continue;
-        }
-        if t == "mod tests;" || t == "pub mod tests;" {
-            return saw_cfg_test;
-        }
-        if !t.is_empty() && !t.starts_with("//") {
-            saw_cfg_test = false;
-        }
+#[cfg(test)]
+mod tests {
+    use super::lint_file_length;
+    use std::path::PathBuf;
+
+    /// MU-STANDARDS 3.5: the bound has a test of its own. A tree of files
+    /// under the bound passes; one over it is named with its line count.
+    #[test]
+    fn a_file_over_the_bound_is_named_and_one_under_it_is_not() {
+        let dir = tempfile::tempdir().expect("a directory to write into");
+        std::fs::write(dir.path().join("short.rs"), "fn a() {}\n").expect("written");
+        let long: String = std::iter::repeat_n("fn a() {}\n", 1201).collect();
+        std::fs::write(dir.path().join("long.rs"), long).expect("written");
+        let mut hits = Vec::new();
+        lint_file_length(&[PathBuf::from(dir.path())], &mut hits).expect("the walk reads");
+        assert_eq!(hits.len(), 1, "one file is over the bound: {hits:?}");
+        assert!(hits[0].contains("long.rs"), "and it is named: {hits:?}");
+        assert!(hits[0].contains("1201 lines"), "with its length: {hits:?}");
     }
-    false
 }
