@@ -156,11 +156,12 @@ pub(crate) struct Cover {
     /// The support rides along because the form needs it for the vertex's
     /// place and the cover has already computed it.
     pub(crate) carried: crate::network::nerve::Keyed<CarriedPiece>,
-    /// THE 1-SIMPLICES OF THE NERVE: the unordered pair of carriage keys
-    /// that meet, by the meet's own address. No transition and no class —
-    /// the face between two vertices is the form's to compute and the
-    /// cycle's holonomy is the form's to read.
-    pub(crate) meets: crate::network::nerve::Keyed<(Vec<u8>, Vec<u8>)>,
+    /// THE 1-SIMPLICES OF THE NERVE, by the meet's own address. The address
+    /// IS the unordered pair of carriage keys, so the ends are read back
+    /// with `meet_ends` and not stored a second time beside it (law 12).
+    /// No transition and no class — the face between two vertices is the
+    /// form's to compute and the cycle's holonomy is the form's to read.
+    pub(crate) meets: crate::network::nerve::Keyed<()>,
     /// A PIECE THE COVER CARRIED GEOMETRICALLY AND COULD NOT SPELL, by
     /// cover-piece address: `carriage` found the versor and `word_or_demand`
     /// refused its rotor. Kept as the demand the peel typed, so the piece
@@ -465,9 +466,10 @@ pub(crate) fn cover_deformation(
     cover.uncarried = element::measure_lanes(&left);
 
     // (d) THE MEETS, from a keyed occupancy of the placed supports and
-    // their rings (rule 1: never a pair loop over the pieces). A cell
-    // holding two or more placed pieces IS a meet, and the meet is
-    // addressed by its two ends.
+    // their rings (rule 1: never a pair loop over the pieces — and see the
+    // clique that was written below anyway, under that same sentence). A
+    // cell holding two or more placed pieces IS a meet, and the meet is
+    // addressed by its two ends; a cell holding k of them is k−1 meets.
     // The two sides are filed under DISTINCT keys — a side byte ahead of
     // the position — so a domain cell and a codomain cell that happen to
     // sit at one grid position are not read as a meet. They are cells of
@@ -483,11 +485,18 @@ pub(crate) fn cover_deformation(
                 let mut pos = vec![side];
                 pos.extend_from_slice(&cell_pos_key(r, c));
                 match occ.get_mut(&pos) {
-                    Some(v) => {
-                        if !v.contains(&k) {
-                            v.push(k.clone());
-                        }
-                    }
+                    // One piece's cells are offered contiguously — the walk
+                    // above is per piece — and a piece reaches one position
+                    // more than once only through its own ring, so a repeat
+                    // can only be the key just pushed. This was
+                    // `!v.contains(&k)`, a walk of the cell's occupants on
+                    // every offer, comparing whole addresses: k² address
+                    // comparisons on the same cell whose pairing below was
+                    // already k².
+                    Some(v) => match v.as_slice() {
+                        [.., last] if *last == k => {}
+                        _ => v.push(k.clone()),
+                    },
                     None => {
                         occ.insert(pos, vec![k.clone()]);
                     }
@@ -508,13 +517,18 @@ pub(crate) fn cover_deformation(
         // `paid` is bookkeeping about this stroke's payment, not a reading
         // of the cell: nothing in the cover branches on it.
         let mut paid = false;
-        // A cell's OWN occupants: rule 1 allows this walk, because the
-        // cell is the boundary the pair is read out of.
-        for a in 0..here.len() {
-            for b in (a + 1)..here.len() {
-                let key = meet_key(&here[a], &here[b]);
+        // A cell's occupants are a simplex, not a clique: they all contain
+        // this cell, so every cycle among them bounds, and k occupants are
+        // k−1 meets. Written as k(k−1)/2, each meet became a face and a loop
+        // of the pair form — 1 806 of one form's 1 989 faces, 1 901 loops.
+        // The cycles that carry a cover's holonomy span DISTINCT cells and
+        // are untouched.
+        for w in here.windows(2) {
+            let [ka, kb] = w else { continue };
+            'meet: {
+                let key = meet_key(ka, kb);
                 if cover.meets.contains(&key) {
-                    continue;
+                    break 'meet;
                 }
                 if !paid {
                     if !budget.spend() {
@@ -528,7 +542,7 @@ pub(crate) fn cover_deformation(
                 // they become, and the class of a cycle of faces is the
                 // form's loop holonomy — both the form's to compute, once,
                 // over the whole cycle rather than edge by edge here.
-                cover.meets.insert(&key, (here[a].clone(), here[b].clone()));
+                cover.meets.insert(&key, ());
             }
         }
     }

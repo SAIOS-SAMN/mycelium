@@ -51,6 +51,37 @@ fn the_carried_pieces_are_word_vertices_of_the_form() {
     );
 }
 
+/// A MEET'S ADDRESS IS ITS TWO ENDS, so the nerve stores nothing beside it
+/// (law 12): `meets` was a `Keyed<(Vec<u8>, Vec<u8>)>` holding a second
+/// copy of what its own key already spells, cloned twice per meet. The
+/// form reads the ends back out of the address, so the address must give
+/// them back exactly — including for a piece key that is empty or that
+/// contains the length bytes of another.
+#[test]
+fn a_meets_address_gives_back_its_two_ends() {
+    use crate::transducer::family::pieces::{meet_ends, meet_key};
+    let cases: [(&[u8], &[u8]); 5] = [
+        (b"a", b"b"),
+        (b"", b"b"),
+        (b"a", b""),
+        (b"", b""),
+        // A key whose bytes look like a length prefix, against a longer one.
+        (&[4, 0, 0, 0, 9, 9], &[1, 0, 0, 0]),
+    ];
+    for (a, b) in cases {
+        let k = meet_key(a, b);
+        let (lo, hi) = meet_ends(&k).expect("a meet address decodes");
+        let want = if a <= b { (a, b) } else { (b, a) };
+        assert_eq!((lo, hi), want, "the ends come back in the order the key sorts them");
+        assert_eq!(meet_key(lo, hi), k, "and re-address to the same meet");
+    }
+    // A truncated address is a refusal, never a half-read pair (rule 11).
+    let k = meet_key(b"ab", b"cd");
+    for n in 0..k.len() {
+        assert!(meet_ends(&k[..n]).is_none(), "a short address decodes to nothing at {n}");
+    }
+}
+
 /// THE MEETS ARE FACES, AND THE FACES MAKE LOOPS. A meet is a 1-simplex of
 /// the nerve; the transport across it is `face_of`'s to compute from the
 /// two vertices, and a cycle of those faces is what carries a holonomy.

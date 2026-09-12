@@ -394,7 +394,12 @@ pub(crate) fn pair_form_uncached(
     // `edge_holonomy` answered `None` for every loop in the tree and the
     // reader has never been fed.
     for c in &covers {
-        for (_k, (ka, kb)) in c.cover.meets.fiber(crate::network::nerve::ROOT) {
+        for (mk, ()) in c.cover.meets.fiber(crate::network::nerve::ROOT) {
+            // The meet's address is its two ends; nothing is stored beside
+            // it to be read here instead (law 12).
+            let Some((ka, kb)) = crate::transducer::family::pieces::meet_ends(&mk) else {
+                continue;
+            };
             let (Some(&i), Some(&j)) = (cover_vertex.get(ka), cover_vertex.get(kb)) else {
                 continue;
             };
@@ -409,6 +414,7 @@ pub(crate) fn pair_form_uncached(
             form.faces.push(FormFace { i, j, transport: t, edge });
         }
     }
+    let meet_faces = form.faces.len();
     form.loops = Form::loops_of(&form.faces, form.vertices.len());
     // EACH LOOP OVER CARRIED PIECES, CLASSIFIED ONCE (50.8 case 3). The
     // holonomy is the loop's own, composed around the whole cycle, and it
@@ -532,6 +538,29 @@ pub(crate) fn pair_form_uncached(
     }
     form.loops = Form::loops_of(&form.faces, n);
     form.reindex();
+    // WHAT A PAIR FORM COST, WHEN IT IS BIG ENOUGH TO MATTER. A held form
+    // is pivoted every stroke and `trial` clones the whole of it once per
+    // candidate, so a form's loop count is its price in both cores and
+    // bytes — 24 920 loops on one form held two voices at 3 GB and 85% of
+    // a core. The count alone does not say WHO named that many faces, and
+    // three namers meet here: the cover's own meets, the intra-cell chain,
+    // and the ring adjacency. The reading separates them, so the next
+    // explosion is attributed instead of hunted.
+    //
+    // The line is unconditional: a threshold on the loop count would be a
+    // count deciding a branch (rule 2), and the gate refuses it — rightly,
+    // because the size at which a form becomes news is exactly the judgment
+    // that was wrong last time. One line per pair form, which is one per
+    // scene the mind perceives.
+    //
+    // `meet_faces` is a prefix of `faces`, which only grows here, so the
+    // difference is exact and not a floor.
+    eprintln!(
+        "  pair form {n} vertices, {} faces ({meet_faces} cover meets, {} cell+ring), {} loops",
+        form.faces.len(),
+        form.faces.len() - meet_faces,
+        form.loops.len()
+    );
     trace::trace_n("pair/4 done", n, budget);
     form
 }

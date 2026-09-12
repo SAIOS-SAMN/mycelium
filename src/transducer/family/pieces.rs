@@ -96,6 +96,18 @@ pub(crate) fn meet_key(a: &[u8], b: &[u8]) -> Vec<u8> {
     k
 }
 
+/// The two ends of a meet, read back out of its own address. The key is
+/// the pair, so the nerve stores nothing beside it (law 12).
+pub(crate) fn meet_ends(k: &[u8]) -> Option<(&[u8], &[u8])> {
+    let (n, rest) = k.split_at_checked(4)?;
+    let lo_len = u32::from_le_bytes(n.try_into().ok()?) as usize;
+    let (lo, rest) = rest.split_at_checked(lo_len)?;
+    let (m, rest) = rest.split_at_checked(4)?;
+    let hi_len = u32::from_le_bytes(m.try_into().ok()?) as usize;
+    let (hi, tail) = rest.split_at_checked(hi_len)?;
+    tail.is_empty().then_some((lo, hi))
+}
+
 /// The pieces of a body: its peel shells, and within each shell the
 /// one-hue connected components (13.9's split, `sentence::pieces` over
 /// 4-adjacency), filed by their own address.
