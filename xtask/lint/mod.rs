@@ -7,6 +7,7 @@
 //! order they run in and nothing else.
 
 pub mod choice;
+pub mod clique;
 pub mod clock;
 pub mod count;
 pub mod digest;
@@ -68,6 +69,7 @@ pub fn run() -> Result<(), String> {
             invented::GATE,
             position::GATE,
             residual::GATE,
+            clique::GATE,
         ], &mut hits)?;
     if hits.is_empty() {
         return Ok(());
