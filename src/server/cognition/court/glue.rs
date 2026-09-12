@@ -354,20 +354,24 @@ impl Kernel {
                     }
                 }
             }
+            // THIS CHART'S HEARD ADDRESSES, not every heard address filtered
+            // down to this chart. The walk was the whole of `heard` once per
+            // remote digest — strata × |heard|, per peer, per cycle — to
+            // reach the few standing under one chart. `heard_at` is the
+            // fiber; the chart test the filter made is what the fiber IS.
             let ck = d.inv.key();
-            let drop: Vec<Vec<u8>> = self
-                .heard
-                .fiber(crate::network::nerve::ROOT)
-                .filter_map(|(addr, (chart, stored))| {
-                    if chart.as_slice() == ck.as_bytes() && stored != &d.root {
-                        Some(addr.clone())
-                    } else {
-                        None
-                    }
-                })
-                .collect();
+            let drop: Vec<Vec<u8>> = match self.heard_at.get(ck.as_bytes()) {
+                None => Vec::new(),
+                Some(here) => here
+                    .fiber(crate::network::nerve::ROOT)
+                    .filter(|(addr, _)| {
+                        self.heard.get(addr).is_some_and(|(_, stored)| stored != &d.root)
+                    })
+                    .map(|(addr, _)| addr)
+                    .collect(),
+            };
             for addr in drop {
-                self.heard.remove(&addr);
+                self.heard_forget(&addr);
             }
         }
     }

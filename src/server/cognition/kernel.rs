@@ -193,6 +193,15 @@ pub struct Kernel {
     /// Addresses fetched as Dialect or Slashed — (chart key, stratum root at
     /// fetch). Dropped when confirm_peer_holds sees that root move.
     pub(crate) heard: crate::network::nerve::Keyed<(Vec<u8>, Vec<u8>)>,
+    /// Heard addresses keyed by the chart they were heard under, so the
+    /// two readers that want one chart's heard addresses read a fiber
+    /// instead of the whole set — as `chart_listings` is to listings.
+    ///
+    /// `fetch_have` unioned ALL of `heard` into every chart's have-list,
+    /// and it is called once per stratum per peer per exchange cycle;
+    /// `confirm_peer_holds` walked all of `heard` once per remote digest.
+    /// Both are O(strata · |heard|), and `heard` grows with peers × corpus.
+    pub(crate) heard_at: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Current dialect transition per (chart, hypha pair): one versor, the
     /// TUniversal stamp it stood at, the two hyphae, and the transport
     /// class key. A newer stamp supersedes; the chain keeps the old.

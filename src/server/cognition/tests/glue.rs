@@ -224,3 +224,40 @@ assert!(
     "a root that moved drops the address heard under the old one"
 );
 }
+
+/// A HAVE-LIST IS ONE CHART'S, NOT THE WHOLE OF `heard`. `fetch_have`
+/// unioned every heard address into every chart's have-list, and it is
+/// called once per stratum, per peer, per exchange cycle. A peer serving
+/// the fetch skips an address only when it stands in the fiber over that
+/// `inv` (`sheaf::serve`), so an address heard under another chart could
+/// never match — it filtered nothing and cost wire, allocation and a walk
+/// of a set that grows with peers × corpus.
+#[test]
+fn a_have_list_carries_this_charts_heard_addresses_and_not_every_chart() {
+use crate::transducer::stalk::Invariant;
+let mut k = Kernel::new();
+let here = Invariant(vec![1]);
+let elsewhere = Invariant(vec![2]);
+let mine = vec![0xA1u8; 32];
+let other = vec![0xB2u8; 32];
+k.heard_mark(&mine, &here);
+k.heard_mark(&other, &elsewhere);
+
+let have = k.fetch_have(&here);
+assert!(have.contains(&mine), "the address heard under this chart is held: {have:?}");
+assert!(
+    !have.contains(&other),
+    "the address heard under another chart could never match a fetch here: {have:?}"
+);
+
+// Re-marked under another chart, an address leaves the old fiber: an
+// index that only grows answers a stratum with addresses no longer heard
+// under it.
+k.heard_mark(&mine, &elsewhere);
+let have = k.fetch_have(&here);
+assert!(
+    !have.contains(&mine),
+    "it moved charts and left this one's fiber: {have:?}"
+);
+assert!(k.fetch_have(&elsewhere).contains(&mine), "and joined the other's");
+}

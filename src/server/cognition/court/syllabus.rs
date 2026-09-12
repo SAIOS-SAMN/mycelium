@@ -178,13 +178,29 @@ impl Kernel {
         self.append_step(crate::chronometry::ActKind::Syllabus, addr, to);
     }
 
+    /// What this court already holds in the stratum over `inv`, sent with a
+    /// fetch so only the lacking words travel.
+    ///
+    /// THE HEARD ADDRESSES ARE THIS CHART'S, NOT ALL OF THEM. This unioned
+    /// the WHOLE of `heard` into every chart's have-list. A peer serving
+    /// the fetch skips an address only when it stands in the fiber over
+    /// `inv` (`sheaf::serve`), so an address heard under any other chart
+    /// could never match: it filtered nothing and was pure wire, pure
+    /// allocation, and pure walk.
+    ///
+    /// It is called once per stratum, per peer, per exchange cycle, and
+    /// `heard` grows with peers × corpus — so the mesh paid O(P² · S · C)
+    /// for addresses that could not be used. Read from the chart's own
+    /// fiber, the cost is the stratum.
     pub fn fetch_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
         let mut h: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for a in self.ruled.fiber(inv) {
             h.insert(a, ());
         }
-        for (a, _) in self.heard.fiber(crate::network::nerve::ROOT) {
-            h.insert(a, ());
+        if let Some(here) = self.heard_at.get(inv.key().as_bytes()) {
+            for (a, _) in here.fiber(crate::network::nerve::ROOT) {
+                h.insert(a, ());
+            }
         }
         h.fiber(crate::network::nerve::ROOT).map(|(k, _)| k).collect()
     }

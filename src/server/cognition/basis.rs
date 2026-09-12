@@ -48,8 +48,32 @@ impl Kernel {
     }
 
     pub(crate) fn heard_mark(&mut self, addr: impl AsRef<[u8]>, inv: &crate::transducer::stalk::Invariant) {
+        let addr = addr.as_ref();
         let root = self.stratum_root_of(inv);
-        self.heard.insert(addr, (inv.key().into_vec(), root));
+        let chart = inv.key().into_vec();
+        // Re-marked under another chart, the address leaves the old chart's
+        // fiber: an index that only ever grows would answer a stratum with
+        // addresses that are no longer heard under it.
+        if let Some((was, _)) = self.heard.get(addr) {
+            if was != &chart {
+                let was = was.clone();
+                if let Some(inner) = self.heard_at.get_mut(&was) {
+                    inner.remove(addr);
+                }
+            }
+        }
+        self.heard_at.nested_insert(chart.clone(), addr, ());
+        self.heard.insert(addr, (chart, root));
+    }
+
+    /// An address is no longer heard: it leaves both the set and the chart
+    /// fiber that indexes it.
+    pub(crate) fn heard_forget(&mut self, addr: &[u8]) {
+        if let Some((chart, _)) = self.heard.remove(addr) {
+            if let Some(inner) = self.heard_at.get_mut(&chart) {
+                inner.remove(addr);
+            }
+        }
     }
 
     pub(crate) fn chill_field(&mut self, addr: &[u8]) {
