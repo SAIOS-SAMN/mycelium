@@ -215,8 +215,20 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
                 }
                 let open_len: usize = 1 + open.iter().map(|c| 1 + 8 * c.0.len().min(255)).sum::<usize>();
                 let wire = 68 + p.sub().len() * cell + open_len;
+                // THE PAGE IS FULL, SO THE WALK IS OVER. This was
+                // `continue`: a listing that did not fit was skipped and
+                // the walk carried on through the WHOLE BOOK looking for a
+                // smaller one, on every quote. The book grows with demand
+                // arriving from every peer, and the root run below is
+                // unconditional, so this was a per-request walk of an
+                // append-only carrier (law 3) that the frame budget was
+                // supposed to bound.
+                //
+                // A page serves what fits in rank order and stops. What
+                // did not fit is not lost: it is on the book, and the next
+                // quote resumes from the cursor that paces the page.
                 if used + wire > budget {
-                    continue;
+                    return;
                 }
                 used += wire;
                 seen.insert(&addr, ());

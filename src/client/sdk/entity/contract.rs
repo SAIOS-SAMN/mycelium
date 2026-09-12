@@ -152,10 +152,23 @@ impl Entity {
     /// form must precede its citer, so one frame carries both and the
     /// court rules the generator before it hears the sentence that
     /// derives through it.
+    ///
+    /// ONE STROKE'S WORTH PER PASS. `mem::take` drained the whole queue,
+    /// and each entry is a frame to a court carrying two elements and a
+    /// family — on a backlog that is one stroke spending the thread on
+    /// network round trips and nothing else. The queue is durable across
+    /// strokes, so what is not taught this pass is taught next (rule 10).
     pub fn speak_owed(&mut self) -> Vec<(crate::transducer::address::Address, u8)> {
-        let owed = std::mem::take(&mut self.owed);
+        let mut budget = self.physics.stroke();
+        let mut owed = std::mem::take(&mut self.owed);
+        let keep = owed.split_off(owed.len().min(budget.remaining()));
+        self.owed = keep;
         let mut out = Vec::with_capacity(owed.len());
         for o in owed {
+            if !budget.spend() {
+                self.owed.push(o);
+                continue;
+            }
             let citer = o.citer.address();
             let both = [o.form.clone(), o.citer.clone()];
             match self.speak_with(&both, &o.train, &o.task) {

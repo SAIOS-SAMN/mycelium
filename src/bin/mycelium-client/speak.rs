@@ -183,6 +183,38 @@ pub(crate) fn speak_contracted(entity: &mut Entity, tag: &str) {
     }
 }
 
+/// 21 STEP 3: WHAT THIS MIND OWES A COURT. For every form a court answered
+/// `Awaiting` on, the cited form and the citer in one frame, cited first,
+/// so the court rules the generator before it hears the sentence that
+/// derives through it.
+///
+/// THE QUEUE WAS FILLED AND NEVER DRAINED. `utter.rs` pushes an `Owed` on
+/// every `Awaiting` adjudication, and `Entity::speak_owed` — its only
+/// drain — had no caller anywhere in either binary. Each entry carries the
+/// form, the citer, the TASK and the whole `train`, which is the family's
+/// grids, so the queue grew by a family every time a court said it was
+/// waiting on a citation this voice held. Measured 2026-09-12: a voice at
+/// 8.8 GiB was killed by the kernel OOM at 05:10, the fleet's voices
+/// cycling between 600 MiB and 3.9 GiB while the three courts sat at
+/// 165–209 MiB over five hours.
+///
+/// So it cost memory AND it cost the thing it exists for: no awaited
+/// citation was ever taught, which is the step that lets a court rule a
+/// generator it has not seen. It is drained beside `speak_contracted`, the
+/// twin it was written next to.
+pub(crate) fn speak_owed(entity: &mut Entity, tag: &str) {
+    let spoken = entity.speak_owed();
+    if let [(addr, code), ..] = spoken.as_slice() {
+        eprintln!(
+            "[{tag}] owed citations taught: {} from {:02x}{:02x}… code {code}, {} still owed",
+            spoken.len(),
+            addr[0],
+            addr[1],
+            entity.owed_pending(),
+        );
+    }
+}
+
 /// A family the form engine does not extract is a withheld form. Each
 /// pair is its own form; U1 stands it. W13 does not utter beyond that.
 pub(crate) fn withhold_unextracted(
