@@ -10,10 +10,13 @@ use std::path::Path;
 /// MSH2: the bind and the genesis each carry a PRESENCE BYTE. MSH1 wrote
 /// both as values — an empty string and 32 zeros — so a node that had
 /// adopted no origin and one whose origin hashed to zeros were the same
-/// record, and so were a node bound nowhere and one bound at "". A record
-/// written under the old magic does not open, and the migration path
-/// writes the node's own again.
+/// record, and so were a node bound nowhere and one bound at "".
 pub const MAGIC: &[u8; 4] = b"MSH2";
+
+/// The magic a node's record was provisioned under before the presence
+/// bytes. `decode` reads it under its own rules and `save` writes MSH2, so
+/// a fleet keeps the wiring §10 says a recut keeps.
+pub const MAGIC_V1: &[u8; 4] = b"MSH1";
 pub const HYPHA: u8 = 0;
 pub const VOICE: u8 = 1;
 
@@ -140,14 +143,28 @@ impl MeshRecord {
         Some(out)
     }
 
+    /// MSH2, or the MSH1 record a node provisioned before the presence
+    /// bytes existed. THE PROVISIONING IS CONFIGURATION AND A RECUT KEEPS
+    /// IT (§10): the bind, the peers and the bootstrap are how a node is
+    /// wired into the fleet, and a magic it cannot read would throw them
+    /// away. MSH1 is read under its own rules — an empty bind IS "bound
+    /// nowhere" there, and 32 zeros ARE "no genesis", which is exactly the
+    /// conflation MSH2 exists to end — and the next `save` writes MSH2.
     pub fn decode(b: &[u8]) -> Option<(Self, usize)> {
-        if b.get(0..4) != Some(&MAGIC[..]) {
-            return None;
-        }
+        let legacy = match b.get(0..4) {
+            Some(m) if m == MAGIC => false,
+            Some(m) if m == MAGIC_V1 => true,
+            _ => return None,
+        };
         let mut p = 4usize;
         let kind = *b.get(p)?;
         p += 1;
-        let bind = take_opt_str(b, &mut p)?;
+        let bind = if legacy {
+            let s = take_str(b, &mut p)?;
+            (!s.is_empty()).then_some(s)
+        } else {
+            take_opt_str(b, &mut p)?
+        };
         let np = *b.get(p)? as usize;
         p += 1;
         let mut peers = Vec::with_capacity(np);
@@ -167,18 +184,24 @@ impl MeshRecord {
         for _ in 0..nv {
             voice.push(take_bond(b, &mut p)?);
         }
-        let genesis = match *b.get(p)? {
-            0 => {
-                p += 1;
-                None
+        let genesis = if legacy {
+            let g: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
+            p += 32;
+            (g != [0u8; 32]).then_some(g)
+        } else {
+            match *b.get(p)? {
+                0 => {
+                    p += 1;
+                    None
+                }
+                1 => {
+                    p += 1;
+                    let g: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
+                    p += 32;
+                    Some(g)
+                }
+                _ => return None,
             }
-            1 => {
-                p += 1;
-                let g: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
-                p += 32;
-                Some(g)
-            }
-            _ => return None,
         };
         let epoch = u32::from_le_bytes(b.get(p..p + 4)?.try_into().ok()?);
         p += 4;
@@ -500,5 +523,66 @@ mod tests {
         let empty = MeshRecord { bind: Some(String::new()), ..rec };
         let back = MeshRecord::open(&empty.signed_bytes(&key).expect("fits"), &key.vk_bytes()).expect("verify");
         assert_eq!(back.bind, Some(String::new()), "an empty address is an address");
+    }
+
+    /// §10 — A RECUT KEEPS THE PROVISIONING. The bind, the peers and the
+    /// bootstrap are how a node is wired into the fleet, and they live in
+    /// the record a magic bump would make unreadable. MSH1 opens under its
+    /// own rules and the next save writes MSH2.
+    ///
+    /// Measured before this stood: all eight homes of the fleet held MSH1,
+    /// `open_at` refused every one of them, and the nodes — including the
+    /// one-shot `--recut` runs — exited 2 at boot.
+    #[test]
+    fn a_record_provisioned_under_the_old_magic_still_opens() {
+        let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-v1.key");
+        // The MSH1 layout, written out: magic, kind, bind as a plain
+        // length-prefixed string, peers, bootstrap, bonds, 32 genesis
+        // bytes, epoch.
+        let mut v1 = Vec::from(*MAGIC_V1);
+        v1.push(HYPHA);
+        put_str(&mut v1, "127.0.0.1:7500").expect("fits");
+        crate::transducer::address::put_u8_count(&mut v1,1).expect("fits");
+        put_str(&mut v1, "127.0.0.1:7501").expect("fits");
+        put_str(&mut v1, "").expect("fits");
+        crate::transducer::address::put_u8_count(&mut v1,1).expect("fits");
+        put_bond(&mut v1, &[5; 32], &[1, 2, 3, 4]);
+        crate::transducer::address::put_u8_count(&mut v1,0).expect("fits");
+        v1.extend_from_slice(&[9u8; 32]);
+        v1.extend_from_slice(&7u32.to_le_bytes());
+        let sig = key.sign(&v1);
+        let mut signed = v1.clone();
+        signed.extend_from_slice(&sig);
+
+        let back = MeshRecord::open(&signed, &key.vk_bytes()).expect("the old record opens");
+        assert_eq!(back.bind, Some("127.0.0.1:7500".into()), "the bind survives");
+        assert_eq!(back.peers, vec!["127.0.0.1:7501".to_string()], "and the peers");
+        assert_eq!(back.hypha, vec![([5; 32], [1, 2, 3, 4])], "and the genesis bonds");
+        assert_eq!(back.genesis, Some([9; 32]), "and the origin it stood under");
+        assert_eq!(back.epoch, 7);
+        // MSH1's own conflations, read as MSH1 wrote them: an empty bind is
+        // "bound nowhere" and 32 zeros are "no genesis". That is what MSH2
+        // exists to end, and it ends for records written from here on.
+        let mut bare = Vec::from(*MAGIC_V1);
+        bare.push(VOICE);
+        put_str(&mut bare, "").expect("fits");
+        crate::transducer::address::put_u8_count(&mut bare,0).expect("fits");
+        put_str(&mut bare, "").expect("fits");
+        crate::transducer::address::put_u8_count(&mut bare,0).expect("fits");
+        crate::transducer::address::put_u8_count(&mut bare,0).expect("fits");
+        bare.extend_from_slice(&[0u8; 32]);
+        bare.extend_from_slice(&0u32.to_le_bytes());
+        let (rec, _) = MeshRecord::decode(&bare).expect("the bare old record decodes");
+        assert_eq!(rec.bind, None, "an empty MSH1 bind is absence");
+        assert_eq!(rec.genesis, None, "and 32 zeros are no genesis");
+
+        // AND THE NEXT WRITE IS MSH2: the record re-signs under the new
+        // magic and reads back with the presence bytes.
+        let re = back.signed_bytes(&key).expect("fits");
+        assert_eq!(re.get(0..4), Some(&MAGIC[..]), "saved under the current magic");
+        let again = MeshRecord::open(&re, &key.vk_bytes()).expect("and opens");
+        assert_eq!(again.bind, back.bind);
+        assert_eq!(again.genesis, back.genesis);
+        assert_eq!(again.peers, back.peers);
     }
 }
