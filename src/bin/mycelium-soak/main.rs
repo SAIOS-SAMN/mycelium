@@ -11,6 +11,8 @@
 //! holds — which was structurally zero while the glue's read was
 //! performed against the form index (26, 27, 50.6).
 
+mod delta;
+
 use mycelium::client::sdk::Epigenome;
 use mycelium::transducer::family::{extract_rule_with, mint_sentence};
 use mycelium::transducer::sentence::Vertex;
@@ -62,7 +64,38 @@ struct Reading {
 }
 
 fn main() {
-    let mut args = std::env::args().skip(1);
+    let argv: Vec<String> = std::env::args().skip(1).collect();
+    // Y1 — THE WARM–COLD DELTA, which is the stage's number and is read by
+    // `--delta <dir> <limit>`. It walks the slice twice in process and
+    // sets its own stroke; the walk below is the level reading and is
+    // untouched by it.
+    // The flag is at the head of the argument vector because that is where
+    // a flag IS on a command line — a wire tag's own offset, rule 15's
+    // second case — and the slice pattern reads it there without taking a
+    // member by position.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--delta") {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  delta refused: name the corpus directory");
+            std::process::exit(1);
+        };
+        let limit: usize = match argv.get(2).map(|n| n.parse::<usize>()) {
+            Some(Ok(n)) => n,
+            Some(Err(e)) => {
+                eprintln!("  delta refused: the task count does not read: {e}");
+                std::process::exit(1);
+            }
+            None => usize::MAX,
+        };
+        match slice_names(dir, limit) {
+            Ok(names) => delta::report(&delta::walk_twice(dir, &names)),
+            Err(e) => {
+                eprintln!("  delta refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
+    let mut args = argv.into_iter();
     // The corpus path and how much of it to walk are the operator's, and
     // an absent argument is an absent argument, never a value this binary
     // invented (rule 11): each arm is written out.
@@ -145,10 +178,11 @@ fn main() {
     }
 }
 
-/// The corpus is the boundary this loop walks (rule 10): one file, one
-/// task, in name order so two runs read the same corpus in the same
-/// order.
-fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, String> {
+/// THE SLICE: the corpus directory's files in name order, truncated to
+/// the operator's limit. One carrier for it (law 12), so the level walk
+/// and Y1's delta read the same slice in the same order and a reading of
+/// one can be set beside a reading of the other.
+fn slice_names(dir: &str, limit: usize) -> Result<Vec<String>, String> {
     let mut names: Vec<String> = Vec::new();
     let entries = std::fs::read_dir(dir).map_err(|e| format!("{dir}: {e}"))?;
     for e in entries {
@@ -159,7 +193,14 @@ fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, Strin
     }
     names.sort();
     names.truncate(limit);
+    Ok(names)
+}
 
+/// The corpus is the boundary this loop walks (rule 10): one file, one
+/// task, in name order so two runs read the same corpus in the same
+/// order.
+fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, String> {
+    let names = slice_names(dir, limit)?;
     let mut epi = Epigenome::new();
     let mut physics = mycelium::physics::Physics::default();
     let mut r = Reading::default();
