@@ -377,7 +377,7 @@ impl Kernel {
             if !f.torsion.is_empty() {
                 return f
                     .torsion
-                    .fiber(crate::network::nerve::ROOT)
+                    .scoped()
                     .map(|(k, filed)| {
                         let ell = filed.period;
                         let rotor = torsion_loop_rotor(&f, &k);
@@ -459,7 +459,7 @@ impl Kernel {
         let cx = self.complexes.get(&inv.key()).cloned();
         let coord_of = |addr: &[u8]| -> Vec<u64> {
             if let Some(c) = &cx {
-                for (_, sec) in c.sections.fiber(crate::network::nerve::ROOT) {
+                for (_, sec) in c.sections.scoped() {
                     if sec.addr.as_bytes() == addr && !sec.gamma.is_identity() {
                         return axes.clone();
                     }

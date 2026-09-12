@@ -274,7 +274,7 @@ impl Kernel {
     ) -> Vec<crate::chronometry::Parent> {
         let mut heads: crate::network::nerve::Keyed<crate::chronometry::Parent> =
             crate::network::nerve::Keyed::new();
-        for (_, p) in queued.fiber(crate::network::nerve::ROOT) {
+        for (_, p) in queued.scoped() {
             match heads.get(&p.vk) {
                 Some(h) if h.k >= p.k => {}
                 _ => {
@@ -286,14 +286,14 @@ impl Kernel {
         // one's own receipt: a head some other head cites is reached
         // through it and is not a head.
         let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for (_, p) in heads.fiber(crate::network::nerve::ROOT) {
+        for (_, p) in heads.scoped() {
             let Some(r) = self.chain.known(&p.hash) else { continue };
             for q in &r.parents {
                 cited.insert(q.hash, ());
             }
         }
         heads
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(_, p)| p.clone())
             .filter(|p| !cited.contains(&p.hash))
             .collect()
@@ -398,7 +398,7 @@ impl Kernel {
         let now = self.height();
         let mut p = self.pressure_sum;
         p[2] = 0;
-        for (addr, _) in self.pending.fiber(crate::network::nerve::ROOT) {
+        for (addr, _) in self.pending.scoped() {
             // A pressure that omits a listing is not the book's pressure. A
             // listing whose extent cannot be read leaves the whole lane
             // unmeasured, so the standing reading holds and the generation

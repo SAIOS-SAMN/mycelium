@@ -95,7 +95,7 @@ impl Kernel {
     pub(crate) fn relocate_t_exhausted(&mut self) {
         if self.lane_cap.is_none()
             && self.occupancy[2] == 0
-            && self.t_leases.fiber(crate::network::nerve::ROOT).next().is_none()
+            && self.t_leases.scoped().next().is_none()
         {
             return;
         }
@@ -114,10 +114,16 @@ impl Kernel {
                 _ => best = Some((addr, t)),
             }
         };
-        for (addr, _) in self.lane_listings[2].fiber(crate::network::nerve::ROOT) {
+        // THE T LANE'S OWN LISTINGS, and the provisionals standing beside
+        // them: `lane_listings` is indexed BY LANE, so the first is a
+        // coordinate read one level up, and the second is the provisional
+        // book, whose whole content stands on the temporal lane by
+        // definition. A carrier omitted here is a carrier the saturated
+        // lane is never relieved of.
+        for (addr, _) in self.lane_listings[2].scoped() {
             consider(addr);
         }
-        for (addr, _) in self.provisional.fiber(crate::network::nerve::ROOT) {
+        for (addr, _) in self.provisional.scoped() {
             consider(addr);
         }
         // A lane holding a listing whose extent cannot be measured is not a
@@ -224,7 +230,7 @@ impl Kernel {
 
     pub(crate) fn forget_spoken(&mut self, listing: &[u8]) {
         if let Some(voices) = self.spoken.remove(listing) {
-            for (v, _) in voices.fiber(crate::network::nerve::ROOT) {
+            for (v, _) in voices.scoped() {
                 if let Some(inner) = self.spoken_by.get_mut(&v) {
                     inner.remove(listing);
                 }
@@ -406,7 +412,7 @@ impl Kernel {
         }
         let mut germinate: Option<element::Versor> = None;
         let mut torse = false;
-        for (_, vs) in asgs.fiber(crate::network::nerve::ROOT) {
+        for (_, vs) in asgs.scoped() {
             match fiber_holonomy(vs) {
                 // Closed: the loop is torsion the language already carries.
                 Some(h) if h.projective_eq(&element::identity_versor()) => torse = true,
@@ -492,7 +498,7 @@ impl Kernel {
         // still dropping.
         let dropped = self
             .basis
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .filter(|(addr, _)| nb.get(addr).is_none())
             .count();
         self.basis = nb;
@@ -502,9 +508,13 @@ impl Kernel {
         let mut stalks = crate::transducer::stalk::Stalks::default();
         let mut ruled = crate::transducer::stalk::Stalks::default();
         self.ruled_addrs = crate::network::nerve::Keyed::new();
+        // REINDEXING IS OVER THE BASIS, all of it: the stalks, the ruled
+        // cover and the axis index are being rebuilt from the words that
+        // survived the prune, and a word not visited here is a word the
+        // new index does not know. The carrier is the object of the pass.
         let held: Vec<(Vec<u8>, std::sync::Arc<crate::transducer::element::Held>)> = self
             .basis
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(a, w)| (a, std::sync::Arc::clone(w)))
             .collect();
         for (addr, w) in &held {
@@ -556,7 +566,7 @@ impl Kernel {
     /// and claims nothing about 47.3's witness (Stage 11 I24).
     #[cfg(test)]
     pub fn glue_local(&mut self) {
-        let words: Vec<Element> = self.provisional.fiber(crate::network::nerve::ROOT).map(|(_, e)| e.clone()).collect();
+        let words: Vec<Element> = self.provisional.scoped().map(|(_, e)| e.clone()).collect();
         let mut cover = crate::network::nerve::Cover::new();
         for w in words {
             let _ = self.glue_fetched(w, [2; 32], [1; 32], &mut cover);
@@ -570,7 +580,7 @@ impl Kernel {
 
     #[cfg(test)]
     pub(crate) fn rule_all_provisionals(&mut self) {
-        let addrs: Vec<Vec<u8>> = self.provisional.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
+        let addrs: Vec<Vec<u8>> = self.provisional.scoped().map(|(a, _)| a).collect();
         for a in addrs {
             self.ruled_admit(&a);
         }
@@ -617,7 +627,7 @@ impl Kernel {
     pub fn unlist_foreign(&mut self, home: impl Fn(&Element) -> bool) {
         let keys: Vec<Address> = self
             .pending
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .filter(|(_, (p, _))| !home(p))
             .map(|(_, (p, _))| p.address())
             .collect();
@@ -657,7 +667,7 @@ impl Kernel {
         budget: &mut crate::physics::Budget,
     ) -> Vec<(crate::transducer::address::Address, Vec<u8>)> {
         let mut out = Vec::new();
-        for (addr, _) in self.offered.fiber(crate::network::nerve::ROOT) {
+        for (addr, _) in self.offered.scoped() {
             if !budget.spend() {
                 break;
             }

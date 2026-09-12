@@ -46,7 +46,7 @@ let chain_before = k.dialect_chain_len();
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v2.clone(), ck2.clone(), r1);
 let standing = k
     .cocycle_at
-    .fiber(crate::network::nerve::ROOT)
+    .scoped()
     .next()
     .map(|(_, row)| row.gauge.clone())
     .expect("a row stands");
@@ -84,7 +84,7 @@ let chain_before = k.dialect_chain_len();
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v2.clone(), ck2, pr.chain_hash);
 let standing = k
     .cocycle_at
-    .fiber(crate::network::nerve::ROOT)
+    .scoped()
     .next()
     .map(|(_, row)| row.gauge.clone())
     .expect("a row stands");
@@ -108,7 +108,7 @@ k.set_height(4);
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
 speak_pair(&mut k, &a, &b, [1; 32]);
-let addr = k.pending.fiber(crate::network::nerve::ROOT).next().expect("listed").1.0.address();
+let addr = k.pending.scoped().next().expect("listed").1.0.address();
 assert_eq!(k.t_extent(addr.as_bytes(), 4), Some(0), "extent is zero at first vantage");
 k.set_height(11);
 assert_eq!(
@@ -142,7 +142,7 @@ fn docketed(me: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(speak_pair(&mut k, &a, &b, [2; 32]), Outcome::GermPending);
     k.court_stroke(super::common::one_stroke_transport);
-    let addr = k.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0;
+    let addr = k.provisional.scoped().next().unwrap().0;
     (k, crate::transducer::address::Address::from(addr))
 }
 
@@ -226,7 +226,7 @@ fn a_lapsed_citation_seals_a_receipt() {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
-    let laddr = k.pending.fiber(crate::network::nerve::ROOT).next().unwrap().0;
+    let laddr = k.pending.scoped().next().unwrap().0;
     k.standing_h.insert(&laddr, 0);
     k.set_height(crate::physics::aperture_cycle() as u64 + 1);
     let before = k.k_step();
@@ -265,7 +265,7 @@ fn an_unmeasured_transport_lapses_against_this_courts_own_horizon() {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
-    let laddr = k.pending.fiber(crate::network::nerve::ROOT).next().unwrap().0;
+    let laddr = k.pending.scoped().next().unwrap().0;
     k.standing_h.insert(&laddr, 0);
     // WITHIN the court's own aperture, an unmeasured transport holds it:
     // the horizon is a horizon, not an eviction on sight.

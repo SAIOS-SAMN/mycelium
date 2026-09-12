@@ -129,7 +129,7 @@ let b = vec![(0, 0, 2u8)];
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let listed = k
     .pending
-    .fiber(crate::network::nerve::ROOT)
+    .scoped()
     .next()
     .map(|(_, (e, _))| e.clone())
     .expect("listed");
@@ -420,7 +420,7 @@ let list = |k: &mut Kernel, hue: u8| -> Address {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, hue), (0, 1, hue), (1, 0, hue)];
     let _ = speak_pair(k, &a, &b, [1; 32]);
-    k.pending.fiber(crate::network::nerve::ROOT).next().expect("listed").1.0.address()
+    k.pending.scoped().next().expect("listed").1.0.address()
 };
 let mut ha = Kernel::new();
 let mut hb = Kernel::new();

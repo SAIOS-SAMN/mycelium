@@ -93,7 +93,7 @@ fn two_courts_open_one_letter_from_two_witnesses_and_the_count_leaves_zero() {
         // The letter is on the docket, derived from the witness.
         let provisional: Vec<Vec<u8>> = k
             .provisional
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(a, _)| a)
             .collect();
         let letter = provisional
@@ -240,7 +240,7 @@ fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it(
     let cover = k.genesis_cover().expect("measured");
     k.enroll([9; 32], cover);
     let ruled: Vec<Vec<u8>> =
-        k.ruled_addrs.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
+        k.ruled_addrs.scoped().map(|(a, _)| a).collect();
     for a in &ruled {
         k.confirm_peer_holds_addrs(&[Address::from(a.clone())], [9; 32]);
     }
@@ -362,7 +362,7 @@ fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
     k.rule_all_provisionals();
     let cover = k.genesis_cover().expect("measured");
     k.enroll([9; 32], cover);
-    let ruled: Vec<Vec<u8>> = k.ruled_addrs.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
+    let ruled: Vec<Vec<u8>> = k.ruled_addrs.scoped().map(|(a, _)| a).collect();
     for a in &ruled {
         k.confirm_peer_holds_addrs(&[Address::from(a.clone())], [9; 32]);
     }

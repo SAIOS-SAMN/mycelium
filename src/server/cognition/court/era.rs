@@ -8,7 +8,6 @@
 
 use crate::chronometry::{Era, KStepReceipt};
 use crate::cognition::Kernel;
-use crate::network::nerve::ROOT;
 
 impl Kernel {
     /// THE FINALITY READING (45.8): the greatest K below which nothing is
@@ -20,13 +19,13 @@ impl Kernel {
         let first = self.chain.opening()?.step_index;
         let mut floor = head;
         // index: the open carriers, each a keyed fiber
-        for (_, (_, k)) in self.pending.fiber(ROOT) {
+        for (_, (_, k)) in self.pending.scoped() {
             if *k <= first {
                 return None;
             }
             floor = floor.min(k - 1);
         }
-        for (_, k) in self.provisional_k.fiber(ROOT) {
+        for (_, k) in self.provisional_k.scoped() {
             if *k <= first {
                 return None;
             }

@@ -17,7 +17,7 @@ impl Kernel {
         out.extend_from_slice(b"MYC5");
         let items: Vec<_> = self
             .basis
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .filter_map(|(_, g)| self.discoverer_of(&g.address()).map(|who| (std::sync::Arc::clone(g), who)))
             .collect();
         out.extend_from_slice(&(items.len() as u32).to_le_bytes());

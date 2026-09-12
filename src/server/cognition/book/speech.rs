@@ -470,7 +470,7 @@ impl Kernel {
             charts_at.insert(inv.key(), inv);
         }
         let mut charts: Vec<crate::transducer::stalk::Invariant> = charts_at
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(_, inv)| inv.clone())
             .collect();
         if charts.is_empty() {

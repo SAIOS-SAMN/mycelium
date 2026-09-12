@@ -12,7 +12,7 @@ impl Kernel {
     /// word as it was before the puncture (rule 12, one fact one carrier).
     pub fn basis(&self) -> Vec<std::sync::Arc<crate::transducer::element::Held>> {
         self.basis
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(_, w)| std::sync::Arc::clone(w))
             .collect()
     }
@@ -22,7 +22,7 @@ impl Kernel {
     /// metric: cardinality falls while this rises, and cycles carry span in O(1)).
     pub fn sections_total(&self) -> usize {
         self.basis
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             // A word's span COUNTS ITS BASE — `fiber_span` opens at one —
             // so the sections are what lies beyond it and the subtraction
             // is total.
@@ -34,7 +34,7 @@ impl Kernel {
     /// condensed from enumeration into group presentation.
     pub fn torsion_total(&self) -> usize {
         self.basis
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(_, t)| {
                 let n = crate::transducer::sentence::form_torsion(t).len();
                 if n > 0 {

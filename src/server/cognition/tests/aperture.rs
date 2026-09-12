@@ -34,13 +34,13 @@ for n in 0..8u8 {
 // their gauge carries the bar to.
 let ga = vec![(0, 0, 4), (0, 1, 4)]; // 1→4
 let gb = vec![(0, 0, 5), (0, 1, 5)]; // 1→5
-let held: Vec<Vec<u8>> = k.provisional.fiber(crate::network::nerve::ROOT).map(|(key, _)| key).collect();
+let held: Vec<Vec<u8>> = k.provisional.scoped().map(|(key, _)| key).collect();
 assert_eq!(speak_pair(&mut k, &a, &ga, [1; 32]), Outcome::GermPending);
 // The sentence A spoke, read off the docket by the address the court
 // gave it: the one listing that was not there before.
 let ga_spoken = k
     .provisional
-    .fiber(crate::network::nerve::ROOT)
+    .scoped()
     .find(|(key, _)| !held.contains(key))
     .map(|(_, e)| e.clone())
     .expect("ga's sentence is on the docket");

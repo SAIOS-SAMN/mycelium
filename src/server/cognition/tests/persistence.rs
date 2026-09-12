@@ -65,7 +65,7 @@ let mut booted = Kernel::new();
 assert!(booted.restore(&snap), "clean restore");
 let got = booted
     .cocycle_at
-    .fiber(crate::network::nerve::ROOT)
+    .scoped()
     .next()
     .map(|(_, row)| row.class_key.clone());
 assert_eq!(got, Some(ck), "class key survives the ledger");

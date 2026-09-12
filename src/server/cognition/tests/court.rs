@@ -140,7 +140,7 @@ assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(speak_pair(&mut home, &a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
 home.court_stroke(one_stroke_transport);
-let spoken = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
+let spoken = home.provisional.scoped().next().unwrap().1.clone();
 let mut cover = crate::network::nerve::Cover::new();
 assert!(matches!(
     peer.glue_fetched(spoken.clone(), [1; 32], [2; 32], &mut cover),
@@ -283,7 +283,7 @@ assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(speak_pair(&mut home, &a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
 home.rule_all_provisionals();
-let spoken = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
+let spoken = home.provisional.scoped().next().unwrap().1.clone();
 let mut cover = crate::network::nerve::Cover::new();
 assert!(matches!(peer.glue_fetched(spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
 assert!(peer.basis_len() >= 1);
@@ -302,7 +302,7 @@ let mut home = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
-let addr = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0.clone();
+let addr = home.provisional.scoped().next().unwrap().0.clone();
 home.court_stroke(one_stroke_transport);
 assert!(home.provisional.contains(&addr), "still provisional until the second organ");
 // 47.3: a witness is a second VANTAGE with room, not merely a second
@@ -372,7 +372,7 @@ fn a_witness_glues_an_offer_at_the_homes_vantage() {
     assert_eq!(speak_pair(&mut home, &a, &b, [3; 32]), Outcome::GermPending);
     home.court_stroke(one_stroke_transport);
     let spoken =
-        home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
+        home.provisional.scoped().next().unwrap().1.clone();
     let inv = crate::transducer::stalk::invariant_of(&spoken);
     let offered = spoken.address();
 
@@ -427,7 +427,7 @@ fn a_witness_that_rederived_nothing_answers_with_nothing() {
     assert_eq!(speak_pair(&mut home, &a, &b, home_vk), Outcome::GermPending);
     assert_eq!(speak_pair(&mut home, &a, &b, [3; 32]), Outcome::GermPending);
     home.court_stroke(one_stroke_transport);
-    let spoken = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
+    let spoken = home.provisional.scoped().next().unwrap().1.clone();
     let inv = crate::transducer::stalk::invariant_of(&spoken);
     let offered = spoken.address();
 
@@ -486,7 +486,7 @@ fn a_court_sections_what_it_ruled_itself_and_not_what_a_peer_sent() {
     own.bind_identity(me);
     assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(speak_pair(&mut own, &a, &b, [2; 32]), Outcome::GermPending);
-    let spoken = own.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
+    let spoken = own.provisional.scoped().next().unwrap().1.clone();
     let inv = crate::transducer::stalk::invariant_of(&spoken);
     assert!(
         own.own_section(&inv).is_none(),

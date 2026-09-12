@@ -99,7 +99,7 @@ assert!(f.is_cauterized(), "filed finite torsion cauterizes");
 let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
 let inv = crate::transducer::stalk::invariant_of(&e);
 let class = form_torsion(&e)
-    .fiber(crate::network::nerve::ROOT)
+    .scoped()
     .next()
     .map(|(k, _)| Address::from(k))
     .expect("the form files a class");

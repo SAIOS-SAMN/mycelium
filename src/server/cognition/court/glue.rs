@@ -105,7 +105,7 @@ impl Kernel {
                 }
             }
         }
-        let others: Vec<Vec<u8>> = verts.fiber(crate::network::nerve::ROOT).map(|(k, _)| k).collect();
+        let others: Vec<Vec<u8>> = verts.scoped().map(|(k, _)| k).collect();
         for v in &others {
             if v.as_slice() == peer.as_slice() {
                 continue;
@@ -367,7 +367,7 @@ impl Kernel {
             let drop: Vec<Vec<u8>> = match self.heard_at.get(ck.as_bytes()) {
                 None => Vec::new(),
                 Some(here) => here
-                    .fiber(crate::network::nerve::ROOT)
+                    .scoped()
                     .filter(|(addr, _)| {
                         self.heard.get(addr).is_some_and(|(_, stored)| stored != &d.root)
                     })

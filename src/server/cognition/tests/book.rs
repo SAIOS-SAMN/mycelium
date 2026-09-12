@@ -163,7 +163,7 @@ let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2), (0, 2, 3)]; // the bar recoloured, a cell created beside it (50.5)
 speak_pair(&mut k, &a, &b, [1; 32]);
 speak_pair(&mut k, &a, &b, [2; 32]);
-let spoken = k.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
+let spoken = k.provisional.scoped().next().unwrap().1.clone();
 let forged = strip_words(&spoken);
 let mut cover = crate::network::nerve::Cover::new();
 assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));
@@ -235,7 +235,7 @@ let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2), (0, 2, 3)]; // the bar recoloured, a cell created beside it (50.5)
 speak_pair(&mut k, &a, &b, [1; 32]);
 speak_pair(&mut k, &a, &b, [2; 32]);
-let spoken = k.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
+let spoken = k.provisional.scoped().next().unwrap().1.clone();
 let forged = strip_words(&spoken);
 let mut cover = crate::network::nerve::Cover::new();
 assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));

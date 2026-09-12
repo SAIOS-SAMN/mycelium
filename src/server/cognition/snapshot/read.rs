@@ -467,7 +467,7 @@ impl Kernel {
                 }
             }
             // index: keyed field at restore (persistence snapshot, once)
-            let field_keys: Vec<Vec<u8>> = kernel.field.fiber(crate::network::nerve::ROOT).map(|(k, _)| k).collect();
+            let field_keys: Vec<Vec<u8>> = kernel.field.scoped().map(|(k, _)| k).collect();
             for addr in field_keys {
                 let Some(listing) = kernel.field.get(&addr).cloned() else { continue };
                 let mag = element::measure_lanes(&union_remainders(&listing.entries));
@@ -518,7 +518,7 @@ impl Kernel {
         self.lane_listings = Default::default();
         let pending_addrs: Vec<Address> = self
             .pending
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(_, (e, _))| e.address())
             .collect();
         for addr in pending_addrs {
@@ -526,7 +526,7 @@ impl Kernel {
                 self.standing_h.insert(addr, self.height());
             }
         }
-        let prov: Vec<Vec<u8>> = self.provisional.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
+        let prov: Vec<Vec<u8>> = self.provisional.scoped().map(|(a, _)| a).collect();
         for addr in prov {
             if self.provisional_h.get(&addr).is_none() {
                 self.provisional_h.insert(&addr, self.height());
@@ -552,7 +552,7 @@ impl Kernel {
         // spoken word: presence on the docket is not Δ⃗ = 0.
         let need: Vec<(Address, [u64; 4])> = self
             .provisional
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .filter_map(|(addr, spoken)| {
                 if self.deflations.get(&addr).is_some_and(|d| d.iter().any(|&x| x > 0)) {
                     return None;
@@ -581,11 +581,11 @@ impl Kernel {
         // Unruled connections that survived the prune re-enter the docket.
         let held: Vec<Element> = self
             .basis
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .filter(|(_, w)| w.is_connection())
             .map(|(_, w)| w.element().clone())
             .collect();
-        let Some((_, &ratifier)) = self.discoverers.fiber(crate::network::nerve::ROOT).next() else {
+        let Some((_, &ratifier)) = self.discoverers.scoped().next() else {
             return true;
         };
         for w in held {

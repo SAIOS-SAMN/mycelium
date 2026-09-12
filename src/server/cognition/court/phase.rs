@@ -12,7 +12,7 @@
 
 use crate::chronometry::{ActKind, KStepReceipt};
 use crate::cognition::Kernel;
-use crate::network::nerve::{Keyed, ROOT};
+use crate::network::nerve::Keyed;
 
 /// The four coordinates of 45.9 over one height window, as counts read off
 /// the ledger and the cover. Nothing here is a state of the mesh.
@@ -81,9 +81,9 @@ pub fn phase_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverRe
         }
     }
     p.strata = at_h1.strata.len() as u64;
-    p.sections = at_h1.sections.fiber(ROOT).filter(|(_, &n)| n > 1).count() as u64;
+    p.sections = at_h1.sections.scoped().filter(|(_, &n)| n > 1).count() as u64;
     let mut rehomed: Keyed<()> = Keyed::new();
-    for (k0, &n0) in at_h0.strata.fiber(ROOT) {
+    for (k0, &n0) in at_h0.strata.scoped() {
         let n0 = n0 as u64;
         match at_h1.strata.get(&k0) {
             Some(&n1) => {
@@ -127,7 +127,7 @@ pub fn phase_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverRe
             }
         }
     }
-    for (k1, &n1) in at_h1.strata.fiber(ROOT) {
+    for (k1, &n1) in at_h1.strata.scoped() {
         if at_h0.strata.contains(&k1) || rehomed.contains(&k1) {
             continue;
         }
@@ -146,7 +146,7 @@ impl Kernel {
             strata.insert(inv.key(), members.len());
         }
         let mut sections = Keyed::new();
-        for (key, cx) in self.complexes.fiber(ROOT) {
+        for (key, cx) in self.complexes.scoped() {
             sections.insert(&key, cx.sections.len());
         }
         CoverReading { strata, sections }

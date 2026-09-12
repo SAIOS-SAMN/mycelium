@@ -434,13 +434,13 @@ impl Kernel {
             let Some(bucket) = self.cited_by.get(cited.as_bytes()) else {
                 continue;
             };
-            for (citer, ()) in bucket.fiber(crate::network::nerve::ROOT) {
+            for (citer, ()) in bucket.scoped() {
                 if citer.as_slice() != new {
                     candidates.insert(&citer, ());
                 }
             }
         }
-        let addrs: Vec<Vec<u8>> = candidates.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
+        let addrs: Vec<Vec<u8>> = candidates.scoped().map(|(a, _)| a).collect();
         for addr in addrs {
             let Some(held) = self.basis.get(&addr) else {
                 continue;
@@ -658,7 +658,7 @@ impl Kernel {
     /// The provisional words installed past a court's "since" k-step.
     pub fn dockets_since(&self, since_k: u64) -> Vec<Docketed> {
         self.provisional
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .filter_map(|(addr, spoken)| {
                 let k = self.provisional_k.get(&addr).copied()?;
                 if k <= since_k && since_k > 0 {

@@ -69,7 +69,7 @@ impl Kernel {
     /// nowhere (law 12), summed per lane and never across lanes (law 5).
     ///
     /// THE CITERS ARE COUNTED, NOT WALKED. This nested
-    /// `mine.fiber(ROOT)` × `citers.fiber(ROOT)` — a product of two
+    /// `mine.scoped()` × `citers.scoped()` — a product of two
     /// carriers that only ever grow, one with the corpus and one with the
     /// mesh — and the inner loop added the SAME `mu` once per citer, which
     /// is `mu × citers`, arithmetic. The comment above it read "neither
@@ -86,7 +86,7 @@ impl Kernel {
             return [0; 4];
         };
         let mut credit = [0u64; 4];
-        for (addr, ()) in mine.fiber(crate::network::nerve::ROOT) {
+        for (addr, ()) in mine.scoped() {
             let Some(citers) = self.cited_by.get(&addr) else {
                 continue;
             };
@@ -114,9 +114,16 @@ impl Kernel {
     ///
     /// This is the one number that bears on the architecture. It is zero
     /// until a court opens a letter (37.7 P2–P3).
+    ///
+    /// X3: THE RULED COVER IS THE OBJECT OF THIS READING. "Adjoined" is a
+    /// property of the court's ruled words taken together, so every one of
+    /// them is asked and no prefix would be honest — a subset would answer
+    /// a different question. `no counter is kept` above is the same
+    /// decision from the other side: the number is derived at the read, as
+    /// law 12 asks, and that is what makes the walk the reading.
     pub fn adjoined(&self) -> u64 {
         let mut n = 0u64;
-        for (addr, ()) in self.ruled_addrs.fiber(crate::network::nerve::ROOT) {
+        for (addr, ()) in self.ruled_addrs.scoped() {
             // The court's own ruled word, read off the word it HOLDS (L16):
             // the form is a field of the basis entry, decoded once when the
             // court installed it, and this read parses nothing. `word_at`
@@ -152,13 +159,13 @@ impl Kernel {
     /// rotation with no placement or dilation left over.
     pub fn cells_filled(&self) -> u64 {
         let mut n = 0u64;
-        for (addr, ()) in self.ruled_addrs.fiber(crate::network::nerve::ROOT) {
+        for (addr, ()) in self.ruled_addrs.scoped() {
             let Some(f) = self.held_word(&addr).and_then(|e| e.form()) else {
                 continue;
             };
             // The form's torsion carrier holds one entry per filled cell,
             // keyed by the holonomy's class. A form with none filled none.
-            n += f.torsion.fiber(crate::network::nerve::ROOT).count() as u64;
+            n += f.torsion.scoped().count() as u64;
         }
         n
     }

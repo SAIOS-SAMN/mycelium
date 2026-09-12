@@ -38,7 +38,7 @@ impl Kernel {
                 };
                 let addrs: Vec<Address> = cx
                     .sections
-                    .fiber(crate::network::nerve::ROOT)
+                    .scoped()
                     .map(|(_, s)| s.addr.clone())
                     .collect();
                 (cx.fill(&sim_key), addrs)
@@ -137,7 +137,7 @@ impl Kernel {
     pub(crate) fn volume_of_cell(&self, inv: &crate::transducer::stalk::Invariant) -> [u64; 4] {
         let held = self.listings_on(inv);
         let mut chain = Vec::new();
-        for (a, _) in held.fiber(crate::network::nerve::ROOT) {
+        for (a, _) in held.scoped() {
             if let Some(f) = self.field.get(&a) {
                 chain.extend(union_remainders(&f.entries));
             }
@@ -164,7 +164,7 @@ impl Kernel {
             std::array::from_fn(|l| if vol[l] == 0 { 0 } else { (vol[l] / n).max(1) });
         let vol = share;
         let anchor = self.anchor();
-        for (a, _) in held.fiber(crate::network::nerve::ROOT) {
+        for (a, _) in held.scoped() {
             for v in &parties {
                 let _ = self.treasury.draw_escrow(&a, *v, vol, anchor);
             }

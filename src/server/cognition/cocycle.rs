@@ -133,7 +133,7 @@ impl Kernel {
             return;
         };
         let mut saved: Vec<CocycleRow> = Vec::new();
-        for (key, _) in rows.fiber(crate::network::nerve::ROOT) {
+        for (key, _) in rows.scoped() {
             if let Some(row) = self.cocycle_at.remove(&key) {
                 self.dialect_chain.push((key, row.gauge.clone(), row.t_universal));
                 saved.push(row);

@@ -57,7 +57,7 @@ impl Kernel {
             }
         }
         // index: ruled cover fiber
-        let ruled: Vec<Vec<u8>> = self.ruled_addrs.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
+        let ruled: Vec<Vec<u8>> = self.ruled_addrs.scoped().map(|(a, _)| a).collect();
         for addr in &ruled {
             if !budget.spend() {
                 break;

@@ -76,7 +76,7 @@ impl Kernel {
             return 0;
         };
         let mut signers: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for (k, _step) in bucket.fiber(crate::network::nerve::ROOT) {
+        for (k, _step) in bucket.scoped() {
             // The key is the signer's 32 bytes followed by the kind byte:
             // read both out, never a prefix guess.
             let [vk @ .., kind] = k.as_slice() else {
@@ -90,7 +90,7 @@ impl Kernel {
             }
             signers.insert(vk, ());
         }
-        signers.fiber(crate::network::nerve::ROOT).count()
+        signers.scoped().count()
     }
 
     /// Rebuild the depth index from the chain this court holds. Derived,
@@ -111,7 +111,7 @@ impl Kernel {
     /// Never a total and never an average (law 5).
     pub fn generators_by_depth(&self) -> Vec<(usize, u64)> {
         let mut rows: crate::network::nerve::Keyed<u64> = crate::network::nerve::Keyed::new();
-        for (addr, ()) in self.ruled_addrs.fiber(crate::network::nerve::ROOT) {
+        for (addr, ()) in self.ruled_addrs.scoped() {
             let d = self.depth_of(&addr);
             let key = (d as u64).to_be_bytes().to_vec();
             match rows.get_mut(&key) {
@@ -121,7 +121,7 @@ impl Kernel {
                 }
             }
         }
-        rows.fiber(crate::network::nerve::ROOT)
+        rows.scoped()
             .filter_map(|(k, n)| {
                 let raw: [u8; 8] = k.as_slice().try_into().ok()?;
                 Some((u64::from_be_bytes(raw) as usize, *n))

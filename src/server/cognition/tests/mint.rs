@@ -25,7 +25,7 @@ let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
 assert!(!home.pending.is_empty(), "the listing stays on the book");
 assert_eq!(home.provisional.len(), 1, "the sentence is on the docket");
-let addr = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0.clone();
+let addr = home.provisional.scoped().next().unwrap().0.clone();
 // The voice bound its task's family and the court bound the sentence to
 // it at speech (23.8), so the install measures the descent the sentence
 // closes (E2).
@@ -94,7 +94,7 @@ let family = vec![(
 let crate::arc::Refined { delta: chain, frame, .. } =
     crate::arc::refine_delta(&family[0].0, &family[0].1).expect("coboundary");
 assert!(k.intake(&chain, &frame), "the listing stands");
-let listing = k.pending.fiber(crate::network::nerve::ROOT).next().expect("listed").1.0.address();
+let listing = k.pending.scoped().next().expect("listed").1.0.address();
 let task = [7u8; 32];
 k.bind_listing_task(&listing, task);
 k.bind_task_family(task, family);

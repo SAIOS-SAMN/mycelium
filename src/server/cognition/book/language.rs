@@ -80,7 +80,7 @@ impl Kernel {
     pub(crate) fn language_rebuild(&mut self) {
         let mut words = Vec::new();
         let mut index = crate::network::nerve::Keyed::new();
-        for (addr, w) in self.basis.fiber(crate::network::nerve::ROOT) {
+        for (addr, w) in self.basis.scoped() {
             index.insert(&addr, words.len());
             words.push(std::sync::Arc::clone(w));
         }
@@ -165,7 +165,7 @@ impl Kernel {
         }
         let now = self.height();
         let mut standing_t = crate::network::nerve::Keyed::new();
-        for (addr, _) in self.pending.fiber(crate::network::nerve::ROOT) {
+        for (addr, _) in self.pending.scoped() {
             // A listing whose T cannot be measured carries no T on the
             // view: the key is absent, which is what unmeasured is here,
             // and not a zero every reader would take for a fresh listing.

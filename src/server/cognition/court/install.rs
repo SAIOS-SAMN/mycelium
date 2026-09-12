@@ -224,7 +224,7 @@ impl Kernel {
                 }
             }
         }
-        for (_, cert) in f.certificates.fiber(crate::network::nerve::ROOT) {
+        for (_, cert) in f.certificates.scoped() {
             let k = cert.key();
             match self.replay_memo.get_mut(addr) {
                 Some(bucket) => {
@@ -255,7 +255,7 @@ impl Kernel {
             return;
         };
         let citers: Vec<Vec<u8>> = bucket
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(k, _)| k)
             .collect();
         for c in citers {

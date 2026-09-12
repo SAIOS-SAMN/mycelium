@@ -35,7 +35,7 @@ impl Kernel {
 
     pub fn cochain_bytes(&self) -> usize {
         let mut n = 0usize;
-        for (_, c) in self.complexes.fiber(crate::network::nerve::ROOT) {
+        for (_, c) in self.complexes.scoped() {
             n += c.byte_len();
         }
         n
@@ -67,10 +67,16 @@ impl Kernel {
                 rotor,
             });
         };
+        // THE ROOT STRATUM IS THE WHOLE COVER, and this is the one place in
+        // the tree where an empty coordinate legitimately means everything:
+        // a voice that names no axes is asking what this court holds at the
+        // coarsest stratum, which is every complex. The arm below descends
+        // the invariant's prefixes instead, one keyed read per prefix, and
+        // reaches a scoped layer the same way.
         if inv.0.is_empty() {
-            for (_, cx) in self.complexes.fiber(crate::network::nerve::ROOT) {
+            for (_, cx) in self.complexes.scoped() {
                 for layer in &cx.degrees {
-                    for (_, cell) in layer.fiber(crate::network::nerve::ROOT) {
+                    for (_, cell) in layer.scoped() {
                         match &cell.fill {
                             crate::transducer::cech::Fill::Congruent(r, ell) => {
                                 push(&mut out, &mut seen, r, *ell)
@@ -87,7 +93,7 @@ impl Kernel {
             for p in inv.prefixes() {
                 if let Some(cx) = self.complexes.get(&p.key()) {
                     for layer in &cx.degrees {
-                        for (_, cell) in layer.fiber(crate::network::nerve::ROOT) {
+                        for (_, cell) in layer.scoped() {
                             match &cell.fill {
                                 crate::transducer::cech::Fill::Congruent(r, ell) => {
                                     push(&mut out, &mut seen, r, *ell)
@@ -198,11 +204,11 @@ impl Kernel {
             h.insert(a, ());
         }
         if let Some(here) = self.heard_at.get(inv.key().as_bytes()) {
-            for (a, _) in here.fiber(crate::network::nerve::ROOT) {
+            for (a, _) in here.scoped() {
                 h.insert(a, ());
             }
         }
-        h.fiber(crate::network::nerve::ROOT).map(|(k, _)| k).collect()
+        h.scoped().map(|(k, _)| k).collect()
     }
 
 }

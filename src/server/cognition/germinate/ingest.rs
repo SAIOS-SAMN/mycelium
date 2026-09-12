@@ -138,7 +138,7 @@ impl Kernel {
         };
         let mut slots = Vec::new();
         let mut forms = Vec::new();
-        for (addr, gen) in self.basis.fiber(crate::network::nerve::ROOT) {
+        for (addr, gen) in self.basis.scoped() {
             if exclude.map(|e| e == addr.as_slice()) == Some(true) {
                 continue;
             }

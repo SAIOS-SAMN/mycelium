@@ -233,7 +233,7 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
 
     // FILED UNDER THE RELATOR'S OWN CLASS, AT ITS OWN PERIOD.
     let filed: Vec<(Vec<u8>, u32)> = form_torsion(&e)
-        .fiber(crate::network::nerve::ROOT)
+        .scoped()
         .map(|(k, v)| (k, v.period))
         .collect();
     assert_eq!(
@@ -308,7 +308,7 @@ fn install(k: &mut Kernel, voice: [u8; 32], w: &Element) {
     let cover = k.genesis_cover().expect("measured");
     k.enroll([9; 32], cover);
     let ruled: Vec<Vec<u8>> =
-        k.ruled_addrs.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
+        k.ruled_addrs.scoped().map(|(a, _)| a).collect();
     for a in &ruled {
         k.confirm_peer_holds_addrs(&[Address::from(a.clone())], [9; 32]);
     }
@@ -385,7 +385,7 @@ fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
         // word this court holds, awaiting a second organ.
         let rw: Vec<Vec<u8>> = k
             .provisional
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .filter(|(_, e)| e.is_rewrite())
             .map(|(a, _)| a)
             .collect();
