@@ -4,7 +4,7 @@
 //! object and reach the SAME M2 address because the algebra is confluent.
 //! Nothing is outvoted; the only other outcome is `REFUSE_MV_INEXACT`.
 
-use crate::network::nerve::{Keyed, ROOT};
+use crate::network::nerve::Keyed;
 use crate::transducer::address::Address;
 
 /// One organ's re-derivation of one object: the address it reached, and
@@ -101,8 +101,10 @@ impl Convergence {
         // An object no voice has uttered has no parties on it: the reading
         // of absence on a keyed carrier (0.11c).
         match self.uses.get(object) {
+            // `get(object)` is the descent: what it returns is the voices
+            // on THAT object, and all of them are its parties.
             Some(v) => v
-                .fiber(ROOT)
+                .scoped()
                 .filter_map(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
                 .collect(),
             None => Vec::new(),
@@ -113,8 +115,9 @@ impl Convergence {
     pub fn organs(&self, object: &[u8]) -> Vec<([u8; 32], Rederivation)> {
         // As above: no re-derivation, no organs.
         match self.rederived.get(object) {
+            // As above: `get` scoped it to this object's re-derivations.
             Some(by) => by
-                .fiber(ROOT)
+                .scoped()
                 .filter_map(|(k, r)| <[u8; 32]>::try_from(k.as_slice()).ok().map(|o| (o, r.clone())))
                 .collect(),
             None => Vec::new(),

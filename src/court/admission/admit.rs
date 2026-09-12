@@ -8,7 +8,7 @@ use super::{
     REFUSE_RECEIPT_STALE, REFUSE_SIGNATURE,
 };
 use crate::chronometry::{KStepReceipt, Parent};
-use crate::network::nerve::{Keyed, ROOT};
+use crate::network::nerve::Keyed;
 
 /// What 47.2 answers for one signed frame. Every arm is an instruction to
 /// the caller, and only `Parent` permits a carrier to be touched.
@@ -263,8 +263,11 @@ impl Admissions {
 
     /// Signers this node has admitted a receipt from.
     pub fn signers(&self) -> Vec<[u8; 32]> {
+        // The carrier is one entry per SIGNER, keyed by the signer: its
+        // whole content is the answer to this question, and the bound is
+        // the mesh's size rather than anything that grows with use.
         self.heads
-            .fiber(ROOT)
+            .scoped()
             .filter_map(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
             .collect()
     }

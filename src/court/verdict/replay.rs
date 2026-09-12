@@ -478,7 +478,10 @@ pub(crate) fn face_idx_key(i: u16) -> Vec<u8> {
 /// A20: each certificate is the un-pivot of one chord face, re-walked.
 /// The loop's class key and rank before and after must match the tape.
 pub(crate) fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'static str> {
-    for (_, cert) in f.certificates.fiber(crate::network::nerve::ROOT) {
+    // ONE FORM'S certificates: the carrier hangs off the form being
+    // replayed, and every certificate on it is re-walked or the tape is
+    // refused -- there is no subset of them that would do.
+    for (_, cert) in f.certificates.scoped() {
         let face = cert.by.face();
         let Some(&li) = by_chord.get(&face_idx_key(face)) else {
             return Some(REFUSE_PIVOT_INEXACT);

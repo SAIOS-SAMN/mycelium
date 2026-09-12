@@ -207,8 +207,11 @@ impl ReceiptChain {
     /// this chain reached before the fold is reached by every receipt that
     /// survives it, so the first of them is the answer.
     fn reindex_placed(&mut self, n: usize) {
-        let keys: Vec<Vec<u8>> =
-            self.placed.fiber(crate::network::nerve::ROOT).map(|(k, _)| k).collect();
+        // A FOLD RENUMBERS OUR LINE, so every coordinate that cuts it moves
+        // — every one, by definition of renumbering. `placed` holds one
+        // entry per peer receipt this chain has admitted and its whole
+        // content is what the fold moved.
+        let keys: Vec<Vec<u8>> = self.placed.scoped().map(|(k, _)| k).collect();
         for k in keys {
             let Some(p) = self.placed.get_mut(&k) else { continue };
             p.ours_in = p.ours_in.and_then(|i| i.checked_sub(n));
@@ -421,7 +424,10 @@ impl ReceiptChain {
     /// history MEANS: our own receipts cite them as parents, and a height
     /// that cites an unheld parent cannot be re-derived at all.
     pub fn admitted(&self) -> Vec<&KStepReceipt> {
-        self.known.fiber(crate::network::nerve::ROOT).map(|(_, r)| r).collect()
+        // The ledger writes the admitted set WHOLE, as it writes our own
+        // line whole: a peer receipt left out is a height that cannot be
+        // re-derived at the next boot.
+        self.known.scoped().map(|(_, r)| r).collect()
     }
 
     /// Append the next receipt, naming the act it admits (45.1). Height is

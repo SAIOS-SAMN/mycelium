@@ -7,7 +7,7 @@
 //! before and after or nothing is written (`REFUSE_FOLD_INEXACT`).
 
 use super::*;
-use crate::network::nerve::{Keyed, ROOT};
+use crate::network::nerve::Keyed;
 
 /// What a fold did: the rows it replaced, the epoch rows it wrote, and
 /// the net those rows carry, per lane.
@@ -75,7 +75,9 @@ pub fn nets_of(rows: &[Entry]) -> Result<Nets, &'static str> {
     }
     let mut out = Vec::new();
     let mut total = [0u64; 4];
-    for (who, n) in net.fiber(ROOT) {
+    // The net this function just accumulated, one entry per party to the
+    // fold: every party is paid or the fold is inexact and refuses whole.
+    for (who, n) in net.scoped() {
         let who = <[u8; 32]>::try_from(who.as_slice()).map_err(|_| inexact)?;
         let mut mu = [0u64; 4];
         for (m, &v) in mu.iter_mut().zip(n) {

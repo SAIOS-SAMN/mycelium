@@ -106,8 +106,10 @@ impl Treasury {
     }
 
     pub fn escrowed_awards(&self) -> Vec<EscrowedAward> {
+        // WHAT IS HELD IN ESCROW, all of it: this is the carrier's own
+        // reading, the one a persist and a treasury line are taken from.
         self.escrowed
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .map(|(addr, held)| EscrowedAward { addr, held: held.clone() })
             .collect()
     }
@@ -241,8 +243,10 @@ impl Treasury {
     }
 
     pub fn stakes(&self) -> Vec<([u8; 32], [u64; 4])> {
+        // One entry per staking key: the whole of it is what "the stakes"
+        // means, and the bond is refreshed from all of them.
         self.stakes
-            .fiber(crate::network::nerve::ROOT)
+            .scoped()
             .filter_map(|(w, mu)| <[u8; 32]>::try_from(w.as_slice()).ok().map(|who| (who, *mu)))
             .collect()
     }
