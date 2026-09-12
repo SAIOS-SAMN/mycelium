@@ -163,15 +163,41 @@ fn main() {
             std::process::exit(0);
         });
     }
-    if let Ok(bytes) = std::fs::read(&state_path) {
-        let Ok(mut k) = kernel.lock() else { refuse_boot(&tag, "kernel lock poisoned at restore") };
-        if k.restore(&bytes) {
+    // X8 — A COURT THAT CANNOT READ ITS LEDGER DOES NOT BOOT. Starting
+    // clean on a ledger that refused is not a recovery: it is a whole
+    // court's basis, chain and treasury dropped, and the next persist
+    // writes the empty one over it. Hypha b ran for two epochs that way
+    // and reported `basis=0 K=0` as if it were a fresh node. A ledger
+    // that will not read is the operator's to look at -- the refusal
+    // already names the section and the byte -- and the process exits
+    // non-zero rather than continuing as an amnesiac.
+    //
+    // A ledger that is NOT THERE is a fresh court, which is a reading and
+    // not a refusal; every other read error is a refusal, because a state
+    // file this process cannot read is one it must not overwrite.
+    match std::fs::read(&state_path) {
+        Ok(bytes) => {
+            let Ok(mut k) = kernel.lock() else { refuse_boot(&tag, "kernel lock poisoned at restore") };
+            if !k.restore(&bytes) {
+                refuse_boot(
+                    &tag,
+                    &format!(
+                        "the ledger at {state_path} did not restore -- the section and byte are \
+                         named above; this court's memory is NOT dropped and nothing is written \
+                         over it"
+                    ),
+                );
+            }
             eprintln!(
-                "[{tag}] ledger MYC3: {} ruled sentences, treasury entries {}, book derived at intake",
+                "[{tag}] ledger MYC5: {} ruled sentences, treasury entries {}, book derived at intake",
                 k.basis_len(),
                 k.treasury_entry_count()
             );
         }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            eprintln!("[{tag}] no ledger at {state_path}: a fresh court");
+        }
+        Err(e) => refuse_boot(&tag, &format!("the ledger at {state_path} is unreadable: {e}")),
     }
     eprintln!("[{tag}] hypha identity vk {}…", mycelium::court::identity::hex32(&vk));
     let genesis = Genesis {
