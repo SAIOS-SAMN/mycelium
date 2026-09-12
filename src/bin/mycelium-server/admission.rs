@@ -118,7 +118,19 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> 
     let Some(mut out) = dialogue::encode_cover_digest(
         &charts, &room, &cover_roots, &ruled_root, &mesh.vk, &mesh.bind, &sig,
     ) else {
-        eprintln!("  cover digest refused: it does not fit the lengths it writes");
+        // A REFUSAL NAMES WHAT DID NOT FIT. The digest writes a one-byte
+        // axis count per chart and a one-byte length for the bind, so the
+        // reading is of those two fields against the two bounds — measured
+        // here on the digest's own inputs, not re-derived from a second
+        // encoder. Without it the line said only that something did not
+        // fit, and on the fleet it said so 276 times in two minutes with
+        // no way to know of what.
+        let wide = charts.iter().filter(|(_, inv)| inv.0.len() > 255).count();
+        eprintln!(
+            "  cover digest refused: charts {} of which {wide} wider than the axis count, bind {} bytes",
+            charts.len(),
+            mesh.bind.len()
+        );
         return Vec::new();
     };
     // 47.1: the signer's causal position travels with its signature. The
