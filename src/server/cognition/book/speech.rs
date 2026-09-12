@@ -341,6 +341,31 @@ impl Kernel {
             crate::economy::price(&mag, &self.physics.pressure)
         };
         let anchor = self.anchor();
+        // A SECOND MIND REACHING A DOCKETED ADDRESS IS NEW INFORMATION,
+        // and it used to be thrown away at the guard below. The docket
+        // entry is already there and must not be written twice — that is
+        // what the guard is for — but the PARTY is not the docket: two
+        // derivations of one vertex are one address (1.5, law 2) and two
+        // parties (X10), and returning below skipped `note_discovered` for
+        // every speaker after the first, so the carrier could hold only
+        // one party per address however wide it was made.
+        //
+        // ONLY THE PARTY IS HOISTED. af15d92 lifted this court's VANTAGE
+        // and the escrow over the guard with it, and that was a change the
+        // row never asked for: `converge_here` re-recorded the home's own
+        // re-derivation on every re-docketing of an address it already
+        // held, against a `word` that need not be the tape it recorded the
+        // first time, so the home's vantage MOVED under a witness that had
+        // already replayed it. On the fleet at af15d92 the Mayer–Vietoris
+        // refusal — two organs reaching different addresses for one object
+        // (13.9 step 8) — went from 117 in 36 minutes to 1283 in 12. A
+        // vantage is recorded once, where it is established.
+        for who in parties {
+            self.note_discovered(&addr, *who);
+        }
+        if self.provisional.contains(&addr) {
+            return;
+        }
         // THIS COURT re-derived the word to docket it: its own vantage,
         // recorded so a witness's re-derivation can converge with it (47.3).
         // Every path that dockets records one, or the object waits for a
@@ -349,26 +374,6 @@ impl Kernel {
             self.converge_here(word, *who);
         }
         self.treasury.escrow_award(&addr, parties.to_vec(), mu, anchor);
-        // A SECOND MIND REACHING A DOCKETED ADDRESS IS NEW INFORMATION,
-        // and it used to be thrown away here. The docket entry is already
-        // there and must not be written twice — that is what the guard is
-        // for — but the PARTY is not the docket: two derivations of one
-        // vertex are one address (1.5, law 2) and two parties (X10), and
-        // returning above skipped `note_discovered` for every speaker
-        // after the first. The carrier could then only ever hold one
-        // party per address however wide it was made, and L9's pass
-        // criterion could not be met by any court that heard both minds.
-        //
-        // `converge_here` and `escrow_award` above it already unioned: the
-        // second speaker's USE and its place in the escrow were recorded
-        // while its party was dropped, which is how the two readings of
-        // one fact came apart.
-        for who in parties {
-            self.note_discovered(&addr, *who);
-        }
-        if self.provisional.contains(&addr) {
-            return;
-        }
         self.deflations.insert(&addr, mag);
         let k_now = self.k_step();
         self.provisional_k.insert(&addr, k_now);

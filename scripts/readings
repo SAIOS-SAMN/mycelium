@@ -77,7 +77,7 @@ for h in "${HYPHAE[@]}" "${VOICES[@]}"; do
   g="$(head -c 4 "$ROOT/$h/genome" 2>/dev/null || echo '(none)')"
   printf '  %-3s mesh %-6s ledger %-6s genome %s\n' "$h" "$m" "$l" "$g"
 done
-say "  X7 closes when every mesh reads MSH2; X8's ledgers read MYC5 once a court has persisted."
+say "  X7 closes when every mesh reads MSH2; X8/X10's ledgers read MYC6 once a court has persisted."
 say ""
 
 hr "the courts"
@@ -96,6 +96,16 @@ for h in "${HYPHAE[@]}"; do
   printf '    exchange admitted '; lines "$u" 'court exchange admitted'
   printf '    court basis       '; lines "$u" 'court basis='
   printf '    orbit docket      '; lines "$u" 'court orbit docket'
+  # WHAT THE COURT REFUSED, BY REASON. The fleet's dominant fact after the
+  # recut of 649a4ac was that every speech is refused and nothing at all is
+  # admitted, and this file had no line for it: the readings counted what
+  # the rows were about and were blind to what the fleet was doing.
+  printf '    refused speech    '; lines "$u" 'court refuse speech'
+  journalctl --user -u "$u" --since "$SINCE" --no-pager 2>/dev/null \
+    | grep -oE 'court (refuse speech|form refused) [0-9a-f]+…: .*' \
+    | sed 's/.*…: //; s/ at .*//; s/ ([0-9a-f]*… vs.*//' \
+    | sort | uniq -c | sort -rn | head -5 \
+    | while read -r n reason; do printf '      %6s  %s\n' "$n" "$reason"; done
 done
 say ""
 
@@ -108,7 +118,14 @@ for v in "${VOICES[@]}"; do
   printf '    stroke idle       '; lines "$u" 'stroke idle'
   printf '    quote asked       '; lines "$u" 'quote asked'
   printf '    clusters          '; lines "$u" 'clusters'
-  printf '    fed / derived     '; lines "$u" 'fed [0-9]'
+  # THE FAMILIES THIS VOICE ACTUALLY EXTRACTED. This read `fed [0-9]`,
+  # which matches nothing: the stroke line spells it `fed [0, 0, 0, 0]`
+  # and the `[` is a literal. The instrument reported `fed 0` for voices
+  # that were extracting a thousand families in half an hour — my own
+  # reading lying in the same shape as the doc comment that started this,
+  # and it is the line X6's diagnosis was wrong about.
+  printf '    families extracted'; lines "$u" 'family .* pairs'
+  printf '    withheld on wire  '; lines "$u" 'sentence withheld'
   printf '    learned           '; lines "$u" 'learned'
 done
 say ""
