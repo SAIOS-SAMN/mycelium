@@ -10,12 +10,14 @@ thread_local! {
     static INSERTS: Cell<u64> = const { Cell::new(0) };
     static GEOS: Cell<u64> = const { Cell::new(0) };
     static EXTENDS: Cell<u64> = const { Cell::new(0) };
+    static VISITS: Cell<u64> = const { Cell::new(0) };
 }
 pub fn reset() {
     GETS.with(|c| c.set(0));
     INSERTS.with(|c| c.set(0));
     GEOS.with(|c| c.set(0));
     EXTENDS.with(|c| c.set(0));
+    VISITS.with(|c| c.set(0));
 }
 pub fn snapshot() -> (u64, u64, u64, u64) {
     (
@@ -40,4 +42,17 @@ pub fn count_geo() {
 }
 pub fn count_extend() {
     EXTENDS.with(|c| c.set(c.get().saturating_add(1)));
+}
+
+/// TRIE NODES A WALK HAS VISITED. Its own reading and not part of
+/// [`total`]: that is the count of keyed READS AND WRITES, one per `get`
+/// or `insert`, and a walk that steps through a node takes neither. What
+/// this measures is the EXTENT of a fiber — how much of the carrier the
+/// walk touched to yield what it yielded — which is the quantity rule 1
+/// is about and the one nothing counted.
+pub fn visits() -> u64 {
+    VISITS.with(|c| c.get())
+}
+pub fn count_visit() {
+    VISITS.with(|c| c.set(c.get().saturating_add(1)));
 }

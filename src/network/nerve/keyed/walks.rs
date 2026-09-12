@@ -21,6 +21,8 @@ impl<'a, V> Iterator for Fiber<'a, V> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(node) = self.stack.pop() {
+            #[cfg(test)]
+            work::count_visit();
             match node {
                 Node::Leaf(k, v) => {
                     if key_in_fiber(k, &self.prefix) {

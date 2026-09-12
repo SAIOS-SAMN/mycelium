@@ -50,6 +50,60 @@ fn a_prefix_of_a_key_is_its_stratum() {
     assert_eq!(k.get(&[2, 0, 0]), Some(&4));
 }
 
+/// X3, rule 1 — A FIBER READ COSTS ITS FIBER, NOT THE CARRIER. `fiber`
+/// pushed the root node whatever the prefix was and filtered the leaves on
+/// the way out, so reading one stratum walked every node of the trie: the
+/// whole-carrier walk arriving through the reader that is supposed to
+/// replace it, and the reason `fiber(ROOT)` was the only honest spelling
+/// in 280 places.
+///
+/// Measured here as the EXTENT of the walk — trie nodes visited, which is
+/// its own counter because `work::total` counts keyed reads and writes and
+/// a walk takes neither. One key's fiber out of a thousand keys visits a
+/// handful of nodes; before the descent it visited every one of them, and
+/// the reading stays true whatever the trie's shape, since the assertion
+/// is against the carrier's own size and not a constant.
+#[test]
+fn a_fiber_read_visits_its_own_subtree_and_not_the_carrier() {
+    use crate::network::nerve::keyed::work;
+    let mut k: Keyed<u32> = Keyed::new();
+    for i in 0u32..1000 {
+        k.insert(i.to_be_bytes(), i);
+    }
+    assert_eq!(k.len(), 1000);
+
+    // One key, by its whole coordinate: the fiber is that one entry.
+    work::reset();
+    let one: Vec<_> = k.fiber(&500u32.to_be_bytes()).map(|(_, v)| *v).collect();
+    let narrow = work::visits();
+    assert_eq!(one, vec![500], "the fiber of a whole key is that key");
+    assert!(
+        narrow < 64,
+        "a one-entry fiber visits its own subtree: {narrow} nodes of a thousand-key trie"
+    );
+
+    // A coarse stratum: the first two bytes of a u32 are zero for every
+    // key here, so this fiber IS the carrier and visits it -- which is the
+    // honest cost of the reading, and the reading the rest of X3 names.
+    work::reset();
+    let coarse = k.fiber(&[0u8, 0]).count();
+    let wide = work::visits();
+    assert_eq!(coarse, 1000, "every key carries this prefix");
+    assert!(wide > narrow, "the wider stratum costs more: {wide} against {narrow}");
+
+    // And the empty prefix is that same whole: ROOT is the carrier's own
+    // fiber, valid where the carrier is already scoped.
+    work::reset();
+    assert_eq!(k.fiber(ROOT).count(), 1000);
+    assert_eq!(work::visits(), wide, "ROOT and the prefix every key carries are one walk");
+
+    // A prefix no key carries is an EMPTY fiber, not an empty walk: the
+    // descent fails at a missing child and nothing is visited at all.
+    work::reset();
+    assert_eq!(k.fiber(&[0xff, 0xff]).count(), 0);
+    assert_eq!(work::visits(), 0, "absence costs the descent and no walk");
+}
+
 #[test]
 fn a_key_and_its_proper_prefix_coexist() {
     let mut k: Keyed<u8> = Keyed::new();

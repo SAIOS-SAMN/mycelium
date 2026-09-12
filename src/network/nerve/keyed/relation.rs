@@ -99,12 +99,70 @@ impl<V> Keyed<V> {
     /// Subtree under `prefix`. The empty prefix [`ROOT`] is this carrier's
     /// own fiber — valid when the Keyed is already scoped (one bubble's
     /// charts, one vertex's star, one chart's incidence).
+    ///
+    /// THE WALK IS THE SUBTREE, NOT THE CARRIER. This pushed the ROOT for
+    /// every prefix and filtered the leaves as they came out — `stack` held
+    /// `self.root` whatever the prefix was, and `Fiber` carried the prefix
+    /// only to test each leaf against it —
+    /// so a fiber read of one stratum cost the whole trie — every node of
+    /// it, to yield the handful of keys under the prefix. That is rule 1's
+    /// whole-carrier walk arriving through the very reader the doctrine
+    /// says replaces it, and it is why the rest of X3 exists: `fiber(ROOT)`
+    /// was the only honest spelling, because a prefix bought nothing.
+    ///
+    /// A key is its own path (A13), so the keys carrying a prefix hang
+    /// under one node, and `subtree` descends to it in O(bits). The leaf
+    /// filter stays: path compression leaves bits between branch points
+    /// untested, so the subtree can hold keys that diverge from the prefix
+    /// at one of them, and `key_in_fiber` is what decides. What changes is
+    /// the extent — the walk visits that subtree and nothing above it.
     pub fn fiber(&self, prefix: &[u8]) -> Fiber<'_, V> {
         let mut stack = Vec::new();
-        if let Some(root) = self.root.as_deref() {
-            stack.push(root);
+        if let Some(node) = self.subtree(prefix) {
+            stack.push(node);
         }
         Fiber { stack, prefix: prefix.to_vec() }
+    }
+
+    /// The node every key carrying `prefix` hangs under, by descent on the
+    /// prefix's own bits. `None` where no key carries it — an empty fiber,
+    /// which is the reading of absence and not an empty walk of the trie.
+    ///
+    /// The empty prefix is the root node: a carrier that is itself a fiber
+    /// has its whole content under one node, and that is the one case where
+    /// walking everything is the reading (the rest of X3 names those sites).
+    fn subtree(&self, prefix: &[u8]) -> Option<&Node<V>> {
+        let mut node = self.root.as_deref()?;
+        let want = Node::<V>::bits(prefix)?;
+        loop {
+            match node {
+                Node::Leaf(..) => return Some(node),
+                Node::Branch { bit, children, .. } => {
+                    // At or past the prefix's last bit, this node's whole
+                    // subtree is the candidate set; above it, the prefix's
+                    // own bit says which child can hold it.
+                    if *bit >= want {
+                        return self.carries(node, prefix).then_some(node);
+                    }
+                    node = children[key_bit(prefix, *bit)].as_deref()?;
+                }
+            }
+        }
+    }
+
+    /// CAN ANY KEY UNDER THIS NODE CARRY `prefix`? Below a branch at bit
+    /// `b` every key agrees on bits `[0, b)` — a key that differed earlier
+    /// would have split above it — so where `b` is at or past the prefix's
+    /// last bit, one key of the subtree answers for all of them, and the
+    /// representative is that key.
+    ///
+    /// A representative SHORTER than the prefix answers for nothing: it
+    /// cannot carry a longer prefix itself, while a longer key beside it
+    /// still might, so the subtree stands and the leaf filter decides. The
+    /// walk is wider in that case and never wrong.
+    fn carries(&self, node: &Node<V>, prefix: &[u8]) -> bool {
+        let rep = node.representative();
+        rep.len() < prefix.len() || rep.starts_with(prefix)
     }
 
     /// Parent shell of `key`: the branch that split this leaf. None when
