@@ -238,8 +238,7 @@ impl Form {
 
     /// The chord of the loop this loop's class was opened on, if any (I6).
     pub fn opened_axis_of(&self, lp: &Loop) -> Option<u16> {
-        let class = lp.holonomy.rotor().class_key()?;
-        self.axes.get(&class).copied()
+        opened_axis_on(&self.axes, lp)
     }
 
     /// Law 12: the opened axis is a theorem the loop proves — the loop is
@@ -280,11 +279,7 @@ impl Form {
     /// The row one loop contributes to the rank audit (A18): an opened
     /// axis, or what its holonomy is; `None` when the holonomy has no class.
     pub fn loop_row_at(&self, idx: usize) -> Option<crate::transducer::sentence::LoopRow> {
-        let lp = self.loops.get(idx)?;
-        if self.opened_axis_of(lp).is_some() {
-            return Some(crate::transducer::sentence::LoopRow::Opened);
-        }
-        crate::transducer::sentence::loop_row(&lp.holonomy)
+        loop_row_on(&self.axes, self.loops.get(idx)?)
     }
 
     pub fn loop_rows(&self) -> Option<Vec<crate::transducer::sentence::LoopRow>> {
@@ -497,6 +492,26 @@ impl Form {
         }
         true
     }
+}
+
+/// THE AXIS CARRIER AND THE LOOP, without the form between them. A loop's
+/// opened axis is a keyed read of the form's axis carrier at the loop's own
+/// class, so a trial holding that carrier reads it directly (I6).
+pub(crate) fn opened_axis_on(axes: &Keyed<u16>, lp: &Loop) -> Option<u16> {
+    let class = lp.holonomy.rotor().class_key()?;
+    axes.get(&class).copied()
+}
+
+/// The row one loop contributes to the rank audit (A18), read off the axis
+/// carrier and the loop alone.
+pub(crate) fn loop_row_on(
+    axes: &Keyed<u16>,
+    lp: &Loop,
+) -> Option<crate::transducer::sentence::LoopRow> {
+    if opened_axis_on(axes, lp).is_some() {
+        return Some(crate::transducer::sentence::LoopRow::Opened);
+    }
+    crate::transducer::sentence::loop_row(&lp.holonomy)
 }
 
 pub(crate) fn form_face_step(faces: &[FormFace], fi: usize, from: usize, to: usize) -> Option<Word> {

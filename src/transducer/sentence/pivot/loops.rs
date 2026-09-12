@@ -152,11 +152,18 @@ impl Form {
 }
 
 pub(crate) fn loop_transport(form: &Form, lp: &Loop) -> Option<Transport> {
+    loop_transport_on(&form.faces, lp)
+}
+
+/// The same composite over FACES ALONE. A loop's transport is a product of
+/// the faces it runs over and of nothing else on the form, so a trial that
+/// has written one face can read it without a form to read it from.
+pub(crate) fn loop_transport_on(faces: &[FormFace], lp: &Loop) -> Option<Transport> {
     let mut acc_word = Word::identity();
     let mut acc_carriage = element::identity_versor();
     let mut acc_gauge = Vec::new();
     for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
-        let f = form.faces.get(fi as usize)?;
+        let f = faces.get(fi as usize)?;
         let step = if f.i == win[0] && f.j == win[1] {
             f.transport.clone()
         } else {

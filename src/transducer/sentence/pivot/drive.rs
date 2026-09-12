@@ -21,6 +21,22 @@ pub(crate) struct Prior<'a> {
     pub(crate) mu_before: Option<(Vec<[u64; 4]>, [u64; 4])>,
 }
 
+/// THE CLASS VECTOR OF ONE LOOP, read off the faces it runs over and the
+/// form's axis carrier — the two things a loop's class is a function of.
+/// A trial that has written one face reads its own answer here without a
+/// form to read it from.
+pub(crate) fn class_vector_on(
+    faces: &[FormFace],
+    axes: &crate::network::nerve::Keyed<u16>,
+    lp: &Loop,
+) -> Option<ClassVector> {
+    if crate::transducer::sentence::opened_axis_on(axes, lp).is_some() {
+        return Some(ClassVector::zero());
+    }
+    let t = loop_transport_on(faces, lp)?;
+    ClassVector::read(&lp.holonomy, t.carriage, CycleType::of(&t.gauge))
+}
+
 impl Form {
     /// The class vector of loop `idx` (12.6): plane coordinates from the
     /// oriented holonomy; placement and hue from the carriage and gauge
@@ -36,16 +52,7 @@ impl Form {
     /// edge whose composite is the identity while their transports carry
     /// the half turn. They are two objects and neither replaces the other.
     pub fn class_vector(&self, idx: usize) -> Option<ClassVector> {
-        let lp = self.loops.get(idx)?;
-        if self.opened_axis_of(lp).is_some() {
-            return Some(ClassVector::zero());
-        }
-        let t = loop_transport(self, lp)?;
-        ClassVector::read(
-            &lp.holonomy,
-            t.carriage,
-            CycleType::of(&t.gauge),
-        )
+        class_vector_on(&self.faces, &self.axes, self.loops.get(idx)?)
     }
 
     /// Write a certified move onto the form — the chord face's transport,
@@ -481,10 +488,30 @@ impl Form {
         before: &Prior<'_>,
     ) -> Option<PivotCertificate> {
         let &Prior { rows, rank_before, crystal, bundle, t_extent, ref mu_before } = before;
-        let mut trial_form = self.clone();
-        trial_form.apply_move(&cand.by);
-        trial_form.loops = Form::loops_of(&trial_form.faces, trial_form.vertices.len());
-        let kappa_after = trial_form.class_vector(idx)?;
+        // THE TRIAL OWNS WHAT THE MOVE WRITES AND BORROWS THE REST. A
+        // `Word`, `Placement` or `Hue` move writes ONE FACE's transport and
+        // nothing else, so the trial owns the faces and reads the loops
+        // they close into; the form's vertices, its indices and its
+        // carriers are unchanged and are not copied for a candidate that is
+        // about to be refused.
+        //
+        // Opening an axis writes the form's axis carrier as well, and that
+        // carrier is small: the trial owns a copy of it for that arm.
+        let mut faces = self.faces.clone();
+        let mut axes = self.axes.clone();
+        apply_by(&mut faces, &cand.by);
+        let loops = Form::loops_of(&faces, self.vertices.len());
+        // OPENING AN AXIS files the loop's class against the chord it closes
+        // on (I6). A move that does not apply — no loop on that chord, no
+        // class, no seed to re-derive it from — is not a candidate that
+        // failed to discharge; there is no trial to read (rule 11).
+        if let PivotBy::OpenAxis { face, .. } = &cand.by {
+            let lp = loops.iter().find(|lp| lp.chord == *face)?;
+            let class = lp.holonomy.rotor().class_key()?;
+            self.axis_seed_of(lp)?;
+            axes.insert(class, *face);
+        }
+        let kappa_after = class_vector_on(&faces, &axes, loops.get(idx)?)?;
         // 12.6: a pivot on axis x discharges when x reads zero after and no
         // other coordinate moved; opening an axis discharges the LOOP — it
         // is no longer a loop on the refined cover (15.5, T14) — so its
@@ -498,7 +525,8 @@ impl Form {
             return None;
         }
         let mut after_rows = rows.to_vec();
-        *after_rows.get_mut(idx)? = trial_form.loop_row_at(idx)?;
+        *after_rows.get_mut(idx)? =
+            crate::transducer::sentence::loop_row_on(&axes, loops.get(idx)?)?;
         let rank_after = rank_of_rows(&after_rows)?;
         // T21 (iii): the rank holds, or one unit moves out of torsion, free
         // or off-plane and into axes. Anything else is not this pivot's move
@@ -515,6 +543,17 @@ impl Form {
             None => Mu::Unmeasured,
             Some((pairs_before, before)) => {
                 let (pairs_before, before) = (pairs_before, *before);
+                // THE BUNDLE IS SPOKEN THROUGH A WHOLE FORM, so this is
+                // where one is built — for a candidate that has already
+                // discharged its axis and held the rank, which is the few.
+                // Every candidate paid for it before, including the ones
+                // refused two readings above.
+                let trial_form = Form {
+                    faces: faces.clone(),
+                    loops: loops.clone(),
+                    axes: axes.clone(),
+                    ..self.clone()
+                };
                 let (pairs_after, after) = crate::transducer::family::bundle_pressure(
                     &trial_form,
                     bundle?,

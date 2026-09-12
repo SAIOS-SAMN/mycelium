@@ -310,3 +310,49 @@ fn a_rank_move_is_one_unit_or_none() {
         assert_eq!(Rank::moved(a, b), RankMove::Inadmissible { delta });
     }
 }
+
+/// A16 — A LOOP'S READINGS ARE A FUNCTION OF ITS FACES AND THE FORM'S AXIS
+/// CARRIER, and of nothing else the form holds. That is why a trial reads
+/// its own answer without copying a form for every candidate: it writes the
+/// one face the move names, walks the loops those faces close into, and
+/// reads the class and the row off them.
+///
+/// The two entry points must therefore answer alike on a live form — the
+/// methods, which read the form's own faces and axes, and the free readers
+/// the trial uses. A trial that answered differently from the form it
+/// trials would certify a move the form does not make.
+#[test]
+fn a_loops_class_and_row_read_off_its_faces_and_the_axis_carrier() {
+    use crate::transducer::sentence::pivot::drive::class_vector_on;
+    use crate::transducer::sentence::{loop_row_on, opened_axis_on};
+    let f = chord_form(&[order4(), order2(), Word::identity()]);
+    assert!(f.loops.len() >= 3, "three chords close three loops: {}", f.loops.len());
+    for (i, lp) in f.loops.iter().enumerate() {
+        assert_eq!(
+            class_vector_on(&f.faces, &f.axes, lp),
+            f.class_vector(i),
+            "the class the trial reads is the class the form reads, loop {i}"
+        );
+        assert_eq!(
+            loop_row_on(&f.axes, lp),
+            f.loop_row_at(i),
+            "and so is the rank row, loop {i}"
+        );
+        assert_eq!(
+            opened_axis_on(&f.axes, lp),
+            f.opened_axis_of(lp),
+            "and the axis it reads as opened, loop {i}"
+        );
+    }
+    // AND WITH AN AXIS OPEN. The carrier is what the readings consult, so
+    // a trial holding its own copy of it reads the opened loop as opened.
+    let mut opened = f.clone();
+    let [lp, ..] = f.loops.as_slice() else { panic!("three chords close three loops") };
+    let chord = lp.chord;
+    if opened.open_axis_on(chord).is_some() {
+        for (i, lp) in opened.loops.iter().enumerate() {
+            assert_eq!(class_vector_on(&opened.faces, &opened.axes, lp), opened.class_vector(i));
+            assert_eq!(loop_row_on(&opened.axes, lp), opened.loop_row_at(i));
+        }
+    }
+}
