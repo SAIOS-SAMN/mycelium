@@ -12,6 +12,7 @@
 //! performed against the form index (26, 27, 50.6).
 
 mod delta;
+mod mint;
 
 use mycelium::client::sdk::Epigenome;
 use mycelium::transducer::family::{extract_rule_with, mint_sentence};
@@ -73,6 +74,32 @@ fn main() {
     // a flag IS on a command line — a wire tag's own offset, rule 15's
     // second case — and the slice pattern reads it there without taking a
     // member by position.
+    // Y3's instrumentation (§8.1), `--mint <dir> <limit>`: trace lines for
+    // every task of the slice whose rule form closes, reading what the
+    // mint is handed and which of its two calls refuses. It changes
+    // nothing; it only prints.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--mint") {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  mint refused: name the corpus directory");
+            std::process::exit(1);
+        };
+        let limit: usize = match argv.get(2).map(|n| n.parse::<usize>()) {
+            Some(Ok(n)) => n,
+            Some(Err(e)) => {
+                eprintln!("  mint refused: the task count does not read: {e}");
+                std::process::exit(1);
+            }
+            None => usize::MAX,
+        };
+        match slice_names(dir, limit) {
+            Ok(names) => mint::trace(dir, &names),
+            Err(e) => {
+                eprintln!("  mint refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--delta") {
         let Some(dir) = argv.get(1) else {
             eprintln!("  delta refused: name the corpus directory");
