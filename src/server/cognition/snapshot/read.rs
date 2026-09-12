@@ -10,18 +10,20 @@ use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
 impl Kernel {
-    /// P7 — RESTORE a snapshot into a fresh kernel. Returns `false` (leaving the
-    /// kernel empty) on a bad magic or corruption — a corrupt ledger never crashes
-    /// a boot, it just starts clean.
+    /// P7 — RESTORE a snapshot into a fresh kernel. Returns `false` on a
+    /// bad magic or a section that does not parse, leaving the kernel
+    /// empty: nothing is partly restored.
     ///
     /// AND IT SAYS SO, naming the section it stopped in and the byte it
-    /// stopped at. Starting clean is a whole court's memory dropped — its
-    /// basis, its chain, its treasury — and the next persist writes the
-    /// empty one over the ledger that would not read. Measured on the fleet
-    /// at fc75a59: hypha b's 16 MB ledger, written by the build that could
-    /// not read it back, restored as nothing and the boot line said
-    /// nothing either, because the only line here was the one printed when
-    /// it SUCCEEDED.
+    /// stopped at. The refusal is the caller's to act on and the server's
+    /// boot REFUSES on it (X8): a `false` here is a whole court's memory —
+    /// its basis, its chain, its treasury — and continuing without it
+    /// means the next persist writes an empty court over the ledger that
+    /// would not read. Measured on the fleet at fc75a59: hypha b's 16 MB
+    /// ledger restored as nothing, ran two epochs reporting `basis=0 K=0`,
+    /// and was overwritten, because the only line here was the one printed
+    /// when it SUCCEEDED and the only branch taken was the one that
+    /// ignored the failure.
     pub fn restore(&mut self, b: &[u8]) -> bool {
         if b.get(0..4) != Some(b"MYC5") {
             eprintln!("  ledger refused: the magic is not MYC5");
