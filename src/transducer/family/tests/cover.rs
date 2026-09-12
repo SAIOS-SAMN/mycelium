@@ -259,3 +259,69 @@ fn the_reading_is_the_forms_and_is_stable() {
     assert_eq!(one.faces.len(), two.faces.len(), "the same faces");
     assert_eq!(one.loops.len(), two.loops.len(), "the same loops");
 }
+
+/// 50.8, rule 1 — PASS (b) PROPAGATES, IT DOES NOT SEARCH. The second pass
+/// tried every output piece of the unplaced piece's own shell kind and hue
+/// and asked `carriage` to decide each try: `ins × outs` versor solves over
+/// a correspondence the cover had already measured. It applies the versors
+/// pass (a) placed and reads the image by position, so the attempt count is
+/// `placed × unplaced` — and where the pullback placed nothing, there is no
+/// versor to propagate and the pass attempts nothing at all.
+///
+/// The second half is the one the search could not pass: with no placed
+/// carriage it still ran `ins × outs` attempts, and whatever those found
+/// was a piece the correspondence did not put there.
+#[test]
+fn cover_attempts_are_placed_times_unplaced() {
+    use crate::transducer::family::cover::{cover_deformation, take_cover_tally};
+    use crate::transducer::family::cursor;
+    use crate::transducer::family::pieces::pieces_of;
+
+    let measured_cover = |a: &Grid, b: &Grid| {
+        let (ia, ib) = (perceive(a), perceive(b));
+        let ([input], [image]) = (ia.as_slice(), ib.as_slice()) else {
+            panic!("each fixture perceives one body on each side")
+        };
+        cursor::clear();
+        let _ = take_cover_tally();
+        let cover = cover_deformation(
+            input,
+            image,
+            None,
+            &mut crate::physics::Physics::default().stroke_n(1 << 20),
+        )
+        .expect("a cover that runs to its end");
+        let t = take_cover_tally();
+        let ins = pieces_of(&input.cells, None).fiber(ROOT).count();
+        (cover, t, ins)
+    };
+
+    // TWO BODIES THAT DO NOT MEET. No cell of the input stands under any
+    // cell of the image, so the pullback names no preimage and places
+    // nothing; with nothing placed there is nothing to propagate.
+    let apart = (
+        grid(&["111", "111", "000", "000", "000", "000"]),
+        grid(&["000", "000", "000", "000", "111", "111"]),
+    );
+    let (cover, t, _) = measured_cover(&apart.0, &apart.1);
+    assert_eq!(t.carried, 0, "the pullback places nothing across a gap");
+    assert_eq!(t.propagated, 0, "and with no placed versor, (b) attempts nothing");
+    assert!(
+        cover.uncarried.iter().any(|&x| x > 0),
+        "what no versor carries is a demand, and it reports: {:?}",
+        cover.uncarried
+    );
+
+    // A DEFORMATION THE PULLBACK REACHES. The attempts (b) makes are
+    // bounded by the versors (a) placed times the input's own pieces —
+    // never by the output's count, which is what the search read.
+    let (a, b) = notched();
+    let (_, t, ins) = measured_cover(&a, &b);
+    assert!(t.carried > 0, "the pullback places the pieces that stand in place");
+    assert!(
+        t.propagated as usize <= (t.carried as usize) * ins,
+        "attempts are placed × unplaced: {} against {} × {ins}",
+        t.propagated,
+        t.carried
+    );
+}

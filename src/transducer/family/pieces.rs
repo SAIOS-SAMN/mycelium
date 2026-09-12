@@ -19,9 +19,13 @@ use super::*;
 use crate::transducer::peel::ShellKind;
 
 /// A piece of a body: one shell, one hue, one connected component.
+///
+/// The kind and the hue are ON ITS ADDRESS and are not carried beside it
+/// (law 12). They were fields because the cover's second pass indexed the
+/// output pieces by them to search for a carriage; the pass propagates the
+/// placed versors now and reads the image by position, so nothing asks a
+/// piece what kind it is.
 pub(crate) struct Piece {
-    pub(crate) kind: ShellKind,
-    pub(crate) hue: u8,
     pub(crate) body: Body,
 }
 
@@ -143,7 +147,7 @@ pub(crate) fn pieces_of(
                 }
                 let body = body_of(cells);
                 let k = piece_key(shell.kind, hue, &support_of(&body));
-                out.insert(k, Piece { kind: shell.kind, hue, body });
+                out.insert(k, Piece { body });
             }
         }
     }

@@ -18,12 +18,16 @@
 //! construction and the lookup cannot miss. That preimage is ONE set and
 //! is carried once: the two peels are under no obligation to agree on
 //! granularity, and requiring them to (one input piece against one output
-//! piece) refuses every carriage where they differ. A purely positional pullback
-//! would find ONLY pieces carried in place, and every transition would be
-//! the identity; the second pass by shell kind and hue is what lets a
-//! piece that MOVED be found, and the moduli are never the key there,
-//! because a deformed piece's moduli differ and that difference is the
-//! deformation itself.
+//! piece) refuses every carriage where they differ.
+//!
+//! A purely positional pullback would find ONLY pieces carried in place,
+//! and every transition would be the identity. The second pass is what
+//! reaches a piece that MOVED, and it does not look for one: a deformation
+//! carries its pieces by the SAME versors, so the versors the pullback
+//! placed are applied to the unplaced piece and the image says where it
+//! landed. Searching for it by shell kind and hue — which is what stood
+//! here — asked `carriage` to decide `ins × outs` tries against a
+//! correspondence the cover had already measured.
 //!
 //! Nothing is added to the tape. `Form.torsion` already carries a filled
 //! cell as `FiledLoop { sigma, period, chord }` and the court already
@@ -60,6 +64,12 @@ pub struct CoverTally {
     pub pending: usize,
     /// Reads spent inside covers, apart from the peel's own.
     pub spend: u64,
+    /// CARRIAGE ATTEMPTS MADE BY PROPAGATION — pass (b). One per (distinct
+    /// placed versor, unplaced piece) whose image names one output piece,
+    /// so it is bounded by `placed × unplaced` and is zero where the
+    /// pullback placed nothing. The pass it replaces tried `ins × outs`
+    /// and this counter is how that cannot come back unseen.
+    pub propagated: u64,
     /// Carriages placed and 1-simplices of the nerve recorded.
     pub carried: u64,
     pub meets: u64,
@@ -210,10 +220,10 @@ impl Cover {
 ///
 /// Pass (a), THE PULLBACK: an output piece's preimage is the input pieces
 /// standing under its own cells, read per cell from the occupancy. Pass
-/// (b), BY STRUCTURE: an input piece the pullback placed nowhere is tried
-/// against EVERY output piece of its own shell kind and hue — never its
-/// moduli, which a deformed piece changes by definition. In both,
-/// `carriage` decides and nothing is ranked (rule 4).
+/// (b), BY PROPAGATION: an input piece the pullback placed nowhere is
+/// CARRIED by each versor pass (a) already placed, and the output piece
+/// its image lands in is read by position. In both, `carriage` decides and
+/// nothing is ranked (rule 4), and neither pass looks for a piece.
 ///
 /// Neither pass is injective in either direction, because Φ is not. A
 /// cover piece is a carriage — a domain, a codomain, a versor — keyed by
@@ -375,21 +385,45 @@ pub(crate) fn cover_deformation(
         }
     }
 
-    // (b) BY STRUCTURE, for what the pullback left. The correspondence is
-    // the shell kind and the hue — what the piece IS — and never the
-    // moduli, which the deformation changed.
-    let mut by_kind_hue: crate::network::nerve::Keyed<Vec<Vec<u8>>> =
-        crate::network::nerve::Keyed::new();
-    for ko in &out_keys {
-        let Some(op) = outs.get(ko) else { continue };
-        let k = vec![op.kind.as_u8(), op.hue];
-        match by_kind_hue.get_mut(&k) {
-            Some(v) => v.push(ko.clone()),
-            None => {
-                by_kind_hue.insert(k, vec![ko.clone()]);
-            }
+    // (b) BY PROPAGATION, for what the pullback left.
+    //
+    // THIS WAS A SEARCH. Every input piece the pullback placed nowhere was
+    // tried against EVERY output piece of its own shell kind and hue, and
+    // `carriage` was asked to decide each try: `ins × outs` attempts, each
+    // one a versor solve, over a correspondence the cover had already
+    // measured. A deformation carries its pieces by the SAME versors, and
+    // pass (a) has them — so the unplaced piece is not looked for, it is
+    // CARRIED by what is already placed, and the image says where it
+    // landed.
+    //
+    // Each distinct placed versor is applied to the piece's own cells, the
+    // image positions are read from the output occupancy (a keyed read per
+    // cell, never a walk of the output pieces), and `carriage` confirms the
+    // ONE candidate that read names. The attempt count is
+    // `placed × unplaced`; a family with no placed carriage attempts
+    // nothing here, where the search attempted `ins × outs` regardless.
+    //
+    // A piece no placed versor lands on a piece is UNCARRIED and reports in
+    // `uncarried` below. It is a demand — the deformation has a part the
+    // rest of it does not explain — and not a hole in a search that a wider
+    // search would have filled.
+    let mut occ_out: crate::network::nerve::Keyed<Vec<u8>> = crate::network::nerve::Keyed::new();
+    for (k, p) in outs.fiber(ROOT) {
+        for &(r, c, _) in &p.body.cells {
+            occ_out.insert(cell_pos_key(r, c), k.clone());
         }
     }
+    // THE DISTINCT PLACED VERSORS, by their own address. Two carriages that
+    // carry by one versor propagate once, and a versor this reader cannot
+    // address is not propagated: it could not be told from another, so the
+    // cover could not say it had already been applied (W6, rule 15).
+    let mut versors: crate::network::nerve::Keyed<Versor> = crate::network::nerve::Keyed::new();
+    for (_, (_, v, _)) in cover.carried.fiber(ROOT) {
+        if let Some(vk) = v.key() {
+            versors.insert(&vk, v.clone());
+        }
+    }
+    let propagate: Vec<Versor> = versors.fiber(ROOT).map(|(_, v)| v.clone()).collect();
     let in_keys: Vec<Vec<u8>> = ins.fiber(ROOT).map(|(k, _)| k).collect();
     // A CONSUMED INPUT PIECE IS SKIPPED BECAUSE IT IS CONSUMED. This
     // reader was already intrinsic before any cursor was written, and the
@@ -400,31 +434,39 @@ pub(crate) fn cover_deformation(
             break 'piece;
         }
         let Some(ip) = ins.get(ki) else { break 'piece };
-        let Some(fiber) = by_kind_hue.get(&[ip.kind.as_u8(), ip.hue]).cloned() else {
-            break 'piece;
-        };
-        // EVERY output of this kind and hue is tried, and one that carries
-        // is placed — not the first one only. A shape occurring once in
-        // the input and several times in the image is ONE piece carried by
-        // SEVERAL versors, and the transitions between those copies are
-        // the holonomy this cover exists to read. Stopping at the first
-        // success places one copy and refuses the rest by bookkeeping
-        // rather than by geometry, and then no transition can be anything
-        // but the identity.
-        for ko in fiber {
-            let Some(op) = outs.get(&ko) else { continue };
+        for pv in &propagate {
+            // WHERE THIS VERSOR PUTS THE PIECE. Each cell's center is
+            // carried and the output piece holding it is read by position;
+            // a cell whose image the lattice does not hold is a cell this
+            // reader did not carry (W6) and names nothing.
+            let mut named: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+            for &(r, c, _) in &ip.body.cells {
+                let Some(p) = element::carry_center(pv, r, c) else { continue };
+                let Some((tr, tc)) = element::cell_of(&p) else { continue };
+                if let Some(ko) = occ_out.get(&cell_pos_key(tr, tc)) {
+                    named.insert(ko, ());
+                }
+            }
+            // ONE CANDIDATE OR NONE. The image lies in one output piece, or
+            // this versor does not carry this piece onto a piece of the
+            // image — across two pieces is not a carriage onto either, and
+            // trying both would be the search again.
+            let candidate: Vec<Vec<u8>> = named.fiber(ROOT).map(|(k, _)| k).collect();
+            let [ko] = candidate.as_slice() else { continue };
             // A carriage already placed between these two is not attempted
             // again: the cover's own `carried` answers it, keyed by exactly
             // this ordered pair.
-            if cover.carried.contains(&carriage_key(ki, &ko)) {
+            let key = carriage_key(ki, ko);
+            if cover.carried.contains(&key) || cover.refused.contains(&key) {
                 continue;
             }
+            let Some(op) = outs.get(ko) else { continue };
             // One read per carriage ATTEMPT, charged where the attempt is.
             if !budget.spend() {
                 park!();
             }
+            tally(|t| t.propagated += 1);
             let Some(car) = carriage(&ip.body, &op.body) else { continue };
-            let key = carriage_key(ki, &ko);
             // As in the pullback: a confirmed carriage whose rotor does not
             // spell is 37.7, and it is carried out rather than dropped.
             let v = match word_or_demand(&ip.body, &op.body) {
