@@ -305,27 +305,22 @@ impl Element {
         }
     }
 
-    /// Take a form's (or nerve's) torsion carrier whole. The element's
-    /// torsion is that carrier, not a second list re-recorded cycle by cycle.
-    pub fn adopt_torsion(
-        &mut self,
-        torsion: &crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop>,
-    ) {
-        self.torsion.clear();
-        // ONE FORM'S torsion carrier, taken WHOLE — that is what adopting
-        // it means, and a subset would be a second list (law 12).
-        for (_, filed) in torsion.scoped() {
-            let (sigma, ell) = (&filed.sigma, &filed.period);
-            if *ell > 0 {
-                self.torsion.push(TorsionCycle {
-                    sigma: sigma.clone(),
-                    period: *ell,
-                    fibre: FIBER_SPATIAL,
-                });
-            }
-        }
-        self.profiles.take();
-    }
+    // `adopt_torsion` was here: it took a form's `Keyed<FiledLoop>` and wrote
+    // each cycle into `self.torsion` as a `TorsionCycle`. It is deleted, and
+    // not because it was unused — because calling it was the defect.
+    //
+    // A form's filed cycles are ALREADY on the element that carries that form:
+    // inside the tape at `word`, written as `n_torsion` and its cycles. This
+    // wrote them a second time into a struct field, which is law 12 on one
+    // fact, and the copy it wrote held strictly less than the original — the
+    // chord was dropped for `FIBER_SPATIAL`, a coordinate it invented. It also
+    // moved `Element::magnitude`, which adds `sections.len() + torsion.len()`
+    // onto lane 3 and is read by `lanes()` and the descent gate, so a caller
+    // would have shifted a payment lane with no refusal firing anywhere.
+    //
+    // A sentence's cycles are read from its form: `sentence::form_torsion`, or
+    // the form the organ already holds (`Held::form`, L16). There is no
+    // conversion to make, so there is no converter.
 
     /// The fibre's span ABOVE ITS BASE — free sections plus every torsion
     /// orbit's members past the one it opens on. The volume metric proper, and

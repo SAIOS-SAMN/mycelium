@@ -41,8 +41,14 @@ pub enum Measure {
 /// with one difference that matters — the third is the CHORD the loop closes
 /// on, an index into `faces`, not a fibre index. As one tuple the two were
 /// interchangeable by type and only ever kept apart by which file was being
-/// read; `Element::adopt_torsion` silently dropped the chord and wrote
-/// `FIBER_SPATIAL` in its place.
+/// read.
+///
+/// THERE IS NO CONVERSION BETWEEN THEM, and the third coordinate is why: a
+/// chord is a face of this form and a fibre index is a stratum of an element's
+/// axis, so carrying one across as the other means inventing a coordinate the
+/// source never held. `Element::adopt_torsion` did exactly that, writing
+/// `FIBER_SPATIAL` in the chord's place, and is deleted. A form's cycles are
+/// read where they are filed.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FiledLoop {
     /// The hue-map generator: the permutation one step around the loop.
