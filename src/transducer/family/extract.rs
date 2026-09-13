@@ -829,7 +829,13 @@ pub fn extract_rule_with(
         let Some((_, first_pairs)) = sections_of_face.next() else {
             continue;
         };
-        let Some(face) = form.face_of(i, j) else {
+        // The face carries its word whether or not its member pairs can be
+        // named here — `face_carrying` says why — so a self-face at a
+        // multi-chart vertex is kept and the loop it closes survives.
+        let Some(word) = form.face_word(i, j) else {
+            continue;
+        };
+        let Some(face) = form.face_carrying(i, j, word) else {
             continue;
         };
         form.faces.push(face);
