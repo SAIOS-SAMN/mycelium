@@ -245,19 +245,24 @@ pub fn extract_rule_with(
     // of groups and never a count-as-branch.
     let mut class_pairs: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
     let mut hue_maps: crate::network::nerve::Keyed<Vec<(u8, u8)>> = crate::network::nerve::Keyed::new();
-    // EVERY CORRESPONDING BODY'S MEMBER, filed under the class by its chart.
-    // The rule's vertex for a class used to be `one_vertex_of_class` —
-    // `vertices.iter().find(...)` on the least pair — so where a pair form
-    // carried TWO bodies of one transport class on two charts, the second
-    // was dropped and nothing recorded that it had been. On `05f2a901` that
-    // is exactly the fault: two charts, and a rule vertex reaching one of
-    // them. A keyed read can only fail to find what was asked for; that
-    // `find` failed on a body nobody asked about.
+    // EVERY CORRESPONDING BODY'S MEMBER, filed under the class by its chart,
+    // READ THROUGH EACH PAIR FORM'S TRANSPORT FIBRE and not by walking its
+    // vertices. `reindex` is the indexer (D9 step 1); this is a reader.
     //
-    // This walk is the one walk (rule 1): the pair forms' vertices are
-    // walked once, here, and every later step reads what it indexes —
-    // `class_acts` for the members, `class_rep` for the vertex's identity,
-    // `class_place_varies` for step 6.
+    // Two faults have stood here in turn. `one_vertex_of_class` —
+    // `vertices.iter().find(...)` on the least pair — dropped the second body
+    // of a class that spans two charts, which is `05f2a901`. D7b replaced it
+    // with a walk of every pair form's vertices accumulating the
+    // correspondence, which is a SECOND PRODUCER of a fact the indexer's job
+    // it is: "once" is not the criterion, "by the indexer" is (law 12, 13.1).
+    //
+    // Now every vertex reached here was ASKED FOR by its class key. A vertex
+    // of no transport class is not passed over silently — it is not in the
+    // relation at all — and the classes arrive grouped, which is the shape
+    // correspondence wants.
+    //
+    // What each later step reads: `class_acts` for the members, `class_rep`
+    // for the vertex's identity, `class_place_varies` for step 6.
     let mut class_acts: crate::network::nerve::Keyed<
         crate::network::nerve::Keyed<crate::transducer::sentence::Acting>,
     > = crate::network::nerve::Keyed::new();
@@ -295,13 +300,24 @@ pub fn extract_rule_with(
     let mut chart_multiple: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let mut chart_at_pair: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     for (pi, f) in pair_forms.iter().enumerate() {
-        let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for v in &f.vertices {
-            let Some(c) = transport_class(v) else {
-                continue;
-            };
-            let k = c.key();
-            if let Vertex::Word { derivation, acts, .. } = v {
+        // THE UNION, class by class: each pair form's fibre contributes the
+        // pairs it is present on. One entry per class per pair form, so the
+        // `seen` guard D7b needed against repeated vertices is gone with the
+        // walk that needed it.
+        for (k, on) in f.by_transport.scoped() {
+            match class_pairs.get_mut(&k) {
+                Some(ps) => ps.push(pi as u16),
+                None => {
+                    class_pairs.insert(&k, vec![pi as u16]);
+                }
+            }
+            for &i in on {
+                let Some(v) = f.vertices.get(i as usize) else {
+                    continue;
+                };
+                let Vertex::Word { derivation, acts, .. } = v else {
+                    continue;
+                };
                 if !class_rep.contains(&k) {
                     class_rep.insert(&k, v.clone());
                 }
@@ -351,18 +367,27 @@ pub fn extract_rule_with(
                     }
                 }
             }
-            if seen.contains(&k) {
-                continue;
-            }
-            seen.insert(&k, ());
-            match class_pairs.get_mut(&k) {
-                Some(ps) => ps.push(pi as u16),
-                None => {
-                    class_pairs.insert(&k, vec![pi as u16]);
-                }
-            }
         }
     }
+    // THE MEET: the classes EVERY pair form carries (13.1, A13). `Keyed::meet`
+    // is simultaneous PATRICIA descent — subtrees sharing no prefix are pruned
+    // and the cost is the shared structure, never a product of the two fibres
+    // — so this is COMPUTED and not enumerated.
+    //
+    // It replaces `all_pairs.scoped().any(|pk| !have.contains(&pk))`, which
+    // built a keyed set of every pair index and asked, per class, whether some
+    // index was missing from a second keyed set. That is the overlap
+    // enumerated, and its `all_pairs`/`have` pair existed for nothing else.
+    let every_pair: crate::network::nerve::Keyed<()> = match pair_forms.split_first() {
+        None => crate::network::nerve::Keyed::new(),
+        // The first fibre's own keys as a `Keyed<()>`: the meet of a carrier
+        // with itself is its key set, which is the seed the fold needs and is
+        // the same descent as every other step of it.
+        Some((first, rest)) => rest.iter().fold(
+            first.by_transport.meet(&first.by_transport),
+            |acc, f| acc.meet(&f.by_transport),
+        ),
+    };
     // THE DECISION, after the walk: a class's placement varies where some
     // chart of it was placed two ways and that chart carries one body per
     // pair. A chart with several bodies on one pair says nothing here.
@@ -374,10 +399,6 @@ pub fn extract_rule_with(
                 class_place_varies.insert(&k, ());
             }
         }
-    }
-    let mut all_pairs: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    for i in 0..n_pairs {
-        all_pairs.insert(pair_idx_key(i as u16), ());
     }
     let mut sections: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
     let mut rule_vertices = vec![frame_vertex()];
@@ -399,16 +420,20 @@ pub fn extract_rule_with(
             acts: members.clone(),
             contact: *contact,
         };
-        let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for &p in pairs {
-            have.insert(pair_idx_key(p), ());
-        }
-        // A class absent from some pair is a section over the pairs it is on;
-        // so is a class one of whose charts was placed two ways over the
-        // bundle. The rule states the pairs it was measured on either way,
-        // and the court asks it for exactly those (`vertices_carry_family`).
-        let section = class_place_varies.contains(&k)
-            || all_pairs.scoped().any(|(pk, _)| !have.contains(&pk));
+        // THE DIFFERENCE IS THE SECTION: a class in the union and not in the
+        // meet is a class some pair form does not carry, and the rule states
+        // the pairs it was measured on rather than claiming the rest. So is a
+        // class one of whose charts was placed two ways over the bundle. The
+        // court asks a sectioned vertex for exactly those pairs
+        // (`vertices_carry_family`).
+        //
+        // A class IN the meet makes the unrestricted claim, which is what
+        // every class on every pair has always made here. Every class still
+        // gets a vertex — the meet decides whether its claim is restricted,
+        // not whether the rule says anything about it at all: 18.2 keeps a
+        // section AS a section, and a class with no vertex would leave the
+        // pairs it was measured on unspoken with nothing recording it.
+        let section = class_place_varies.contains(&k) || !every_pair.contains(&k);
         if section {
             sections.insert(&k, pairs.clone());
         }
