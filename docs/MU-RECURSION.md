@@ -1252,6 +1252,29 @@ and reading torsion and free parts of a class.
 Carried from chapter 9: the coefficient group. This chapter names the cells
 of a form and the three coboundaries as products.
 
+**A gauge is a map, and its listing can fail to be one (ruled 2026-09-13).**
+A gauge travels as a `Vec<(from, to)>` gathered from a chain's cells and
+deduplicated BY THE PAIR, so a chain in which one input hue lands on two
+different output hues yields both entries. Two readers scanned that list and
+returned the first match — `court/verdict/body.rs` on the court and
+`sentence/reading.rs` on the speaker, the same eight lines written twice
+(law 12) — which after the sort is the smaller image. A hue decided by a
+Vec's order is a member by position (rule 15). `sentence::hue_of` is the one
+reader and refuses a listing that names two images for one hue: exact or
+refused (rule 11), at that hue alone. A hue the listing omits is fixed by it
+(18.2).
+
+It was the largest single fault the fleet reported. At e98e8a2, of 488
+`vertex does not carry its body onto its image` refusals: **255 wrong hue,
+186 outside the image frame, 55 reached in part, 0 `the rotor and carriage
+lift to no versor`, 0 `a cell of its body carries nowhere`**. The versor
+lifts and every cell carries in every case; colour and frame are what stand
+between this engine and a sentence. `FAIL_OFF_FRAME` likewise named three
+different faults — a centre the sensor cannot convert, a cell before the
+origin, a cell past the extent — and is now three constants, because a court
+that reports one string for three faults hands a voice a coordinate it
+cannot contract on (50.9).
+
 ### 10.1 Cells and cochains of a form
 
 A form (chapter 18) is a finite cell complex:
@@ -4320,6 +4343,45 @@ empty on every restore, which is the tree saying it carried nothing.
 needs no cursor and no budget, because it is a keyed read of one fibre and
 not a traversal of anything.
 
+**25.6 A loop is filed under the class it is judged by (ruled 2026-09-13).**
+A face's word is the coboundary `w_j ∘ w_i⁻¹` and a product of coboundaries
+around a cycle telescopes to the identity for every input, so a loop over
+coboundary faces is flat on the word whatever its bodies do. Its EDGE
+composites (50.3) do not telescope. `class_vector` has read the edge
+composite since Y5; `pivot_loop` read `lp.holonomy` for the horizon key and
+for the order that selects the discharge branch, and `file_loop` filed
+torsion under the word's class — so a loop was judged by one object and
+filed under another. Measured at e98e8a2: 6535 pair forms, 70 311 loops,
+word holonomy flat 70 311, edge composites finite non-identity on 284 paths,
+torsion filed 0. `holonomy_words_on` is the choice, made once (law 12): the
+edge composite where a path has one, the loop's word where it does not.
+`file_loop` files one class per member path, since a loop whose faces relate
+several pairs of bodies has one composite per path and each is its own
+obstruction.
+
+The word holonomy is NOT removable and is not a constant by construction: a
+section face (21 step 2, S12.2) carries a word that is deliberately not that
+coboundary, and a loop over one is curved on the word while its edges
+compose to the identity. Both carriers are real. `Loop.carriages` is the
+transport composite's carriage, filled from that one walk — `path_carriages`
+was the same walk with the word and the gauge discarded (law 12).
+
+**25.7 The speaker holds the court's clauses, read by the court's own
+readers (ruled 2026-09-13).** `mint_sentence` already withheld a form
+nothing in which acts — the speaker's side of `REFUSE_NOT_A_SENTENCE`, whose
+reason is that uttering it spends a round trip to have the refusal SEAL the
+address (50.9) against a shape that was never spoken. The same argument
+holds for the two clauses that account for 992 of the 1018 refusals the
+fleet made at e98e8a2: `vertices_carry_family` (488 of them) and
+`undeclared_remainder` (504). Both are now asked before minting, and both
+are THE COURT'S readers — a speaker checking by different arithmetic would
+agree with the court by luck, which is the failure 23.1 step 3 exists to
+catch. The court still re-derives and takes none of it for an answer.
+
+A demand vertex declares CELLS and exempts nothing else: the voice asked
+only whether any demand vertex existed, so a form declaring one cell and
+leaving twenty was minted and refused.
+
 ## 26. Wire and economics
 
 Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/dialogue/speech.rs`:
@@ -4527,6 +4589,18 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   u32`. A record whose field refuses (`put_addr` never truncates; it writes
   nothing) is rewound and dropped whole rather than written half, so the
   count stays a reading of the content. `MYC5` does not re-read.
+- **A key on a local tape carries a `u64` length (`MYC7`, `THT3`, ruled
+  2026-09-13).** `snapshot::put_key` / `take_key` are total: there is no
+  length a key can have that they cannot write. `put_addr`'s `u16` is the
+  WIRE's citation prefix of 47.1 and `Cited` is the type that proves an
+  address fits it; the ledger and the genome are not the wire. A form's
+  address is `form_vertex_key`, which writes every vertex, every member and
+  every gauge, so it grows with the form — the largest pair form at e98e8a2
+  held 677 vertices and 4030 faces and its address does not fit a `u16`.
+  Measured: 24 577 readings of `snapshot: 1 records could not be framed`,
+  exactly one per persist, and before that refusal was honoured the record
+  went out with its address field absent, which is the `DEF1` desync above.
+  `MYC6` and `THT2` do not re-read.
 
 ## 29. Binding summary by file
 
