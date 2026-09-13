@@ -89,7 +89,24 @@ impl Treasury {
         let (voices, mu, anchor) = (row.voices.clone(), row.mu, row.anchor);
         self.escrowed.remove(addr);
         let n = voices.len() as u64;
-        let share: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { (mu[l] / n).max(1) });
+        // THE SPLIT CANNOT EXCEED WHAT IT RELEASES. This read
+        // `(mu[l] / n).max(1)`, so a lane holding less than one unit per
+        // voice minted ONE to each of them: an escrow of 1 released to four
+        // voices minted 4, and the treasury created three units it was not
+        // holding. `.max(1)` is also a monetary constant, which MU-ECONOMY §8
+        // says there are none of — a floor on a share is a price.
+        //
+        // The share is the exact quotient. The remainder `mu[l] % n` is NOT
+        // minted: handing it to some of the voices and not others ranks them,
+        // and there is no coordinate on a voice that orders it (rule 4). So
+        // `n · share ≤ mu` on every lane, exactly, and a lane too small to
+        // divide pays nothing rather than inventing something to pay.
+        let share: [u64; 4] = std::array::from_fn(|l| mu[l] / n);
+        if share.iter().all(|&m| m == 0) {
+            // Nothing divides. The escrow is already removed and the row is
+            // spent; minting zero is not a payment and is not written.
+            return Some(share);
+        }
         for v in &voices {
             self.mint_to(*v, share, anchor);
         }
