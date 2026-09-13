@@ -38,7 +38,17 @@ pub(crate) enum Carried {
 /// What a vertex failed at, for the journal. Coordinates, not a verdict.
 pub(crate) const FAIL_NO_VERSOR: &str = "the rotor and carriage lift to no versor";
 pub(crate) const FAIL_NO_CARRY: &str = "a cell of its body carries nowhere";
-pub(crate) const FAIL_OFF_FRAME: &str = "a cell lands outside the image frame";
+/// THREE FAULTS, NOT ONE. `FAIL_OFF_FRAME` stood here for all of: a carried
+/// centre the sensor cannot convert to a cell at all, a cell at a negative
+/// coordinate, and a cell past the image's extent. They say different things
+/// about a rule — the first that the transport left the sensor's own
+/// geometry, the second that the placement is wrong, the third that the
+/// scale or the extent is — and a court that reports one string for all three
+/// tells a voice nothing it can contract on (50.9, rule 11). 186 of the 488
+/// body refusals on the fleet at e98e8a2 were this one string.
+pub(crate) const FAIL_NO_CELL: &str = "a carried centre is not a cell of the sensor";
+pub(crate) const FAIL_BEFORE_FRAME: &str = "a cell lands before the image frame's origin";
+pub(crate) const FAIL_PAST_FRAME: &str = "a cell lands past the image frame's extent";
 pub(crate) const FAIL_HUE: &str = "a cell lands on the wrong hue";
 pub(crate) const FAIL_PART: &str = "an image body is reached in part";
 /// The vertex's gauge names two images for one hue, so it is not a hue map
@@ -100,15 +110,19 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
                 let Some(p) = element::carry_center(&versor, r, c) else {
                     return Carried::Fails(FAIL_NO_CARRY, at());
                 };
-                // A centre the sensor cannot convert is off the frame (W6).
+                // A centre the sensor cannot convert is not a cell at all
+                // (W6) — the transport left the sensor's own geometry.
                 let Some((tr, tc)) = element::cell_of(&p) else {
-                    return Carried::Fails(FAIL_OFF_FRAME, at());
+                    return Carried::Fails(FAIL_NO_CELL, at());
                 };
+                // Before the origin, and past the extent, are two different
+                // statements about the rule: the first about its placement,
+                // the second about its scale.
                 let (Ok(ur), Ok(uc)) = (usize::try_from(tr), usize::try_from(tc)) else {
-                    return Carried::Fails(FAIL_OFF_FRAME, at());
+                    return Carried::Fails(FAIL_BEFORE_FRAME, at());
                 };
                 let Some(&observed) = y.get(ur).and_then(|row| row.get(uc)) else {
-                    return Carried::Fails(FAIL_OFF_FRAME, at());
+                    return Carried::Fails(FAIL_PAST_FRAME, at());
                 };
                 // The gauge is asked for ONE image and refuses where it
                 // names two: a vertex whose listing sends one hue to two is

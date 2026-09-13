@@ -106,6 +106,26 @@ pub fn mint_sentence(
     if !rule.form.acts() {
         return None;
     }
+    // AND A FORM WHOSE VERTICES DO NOT CARRY THEIR BODIES IS NOT UTTERED
+    // EITHER. The clause above is the speaker's side of the court's
+    // `REFUSE_NOT_A_SENTENCE`; this is the speaker's side of
+    // `REFUSE_VERTEX_BODY`, and it is the same argument — the court replays
+    // against the family the voice already holds, so a rule that fails there
+    // fails here, and uttering it spends a round trip to have the refusal
+    // SEAL the address (50.9) against a rule the voice could have withheld.
+    //
+    // It is the court's own reader, not a second one (law 12): a speaker
+    // checking by different arithmetic would agree by luck. The court still
+    // re-derives — it does not take this for an answer — which is 23.1 step 3
+    // and is untouched.
+    //
+    // Measured on the fleet at e98e8a2: of 954 sentences spoken, 611 were
+    // refused, and 488 of those were exactly this. Withholding costs the
+    // family nothing; its demands go to the market and a rule that can act is
+    // minted when they are answered.
+    if crate::court::verdict::body::vertices_carry_family(&rule.form, family).is_some() {
+        return None;
+    }
     let mag = sentence_measure(&rule.form, family, crystal)?;
     crate::transducer::sentence::as_element_form(&rule.form, mag)
 }

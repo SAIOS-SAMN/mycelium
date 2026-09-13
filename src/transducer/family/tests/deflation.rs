@@ -51,6 +51,46 @@ assert!(
 );
 }
 
+/// A RULE THAT FAILS ON ITS OWN FAMILY IS NOT UTTERED. `mint_sentence`
+/// already holds the speaker's side of `REFUSE_NOT_A_SENTENCE` — a form
+/// nothing in which acts is withheld rather than spoken and refused — and
+/// this is the speaker's side of `REFUSE_VERTEX_BODY` by the same argument:
+/// the court replays against the family the voice already holds, so a rule
+/// that fails there fails here, and uttering it spends a round trip to have
+/// the refusal SEAL the address (50.9) against a rule the voice could have
+/// withheld.
+///
+/// Measured on the fleet at e98e8a2: 954 sentences spoken, 611 refused, and
+/// 488 of those `vertex does not carry its body onto its image`.
+///
+/// The fixture extracts a rule from one pair and mints it against a
+/// DIFFERENT family — the same shape carried somewhere the rule does not
+/// send it — so the form acts, its remainders are whatever they are, and the
+/// vertex demonstrably does not carry its body. The court's own reader is
+/// the one consulted, so the two cannot disagree.
+#[test]
+fn a_rule_that_does_not_carry_its_own_family_is_withheld() {
+let learned = vec![(grid(&["11"]), grid(&["22"]))];
+let rule = extract_rule(&learned, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+    .expect("a recolour extracts");
+assert!(rule.form.acts(), "the rule acts, so the first clause does not decide");
+assert!(
+    mint_sentence(&rule, &learned, &NoCrystal).is_some(),
+    "on the family it was learned from it mints"
+);
+
+// The same rule against a family whose images it does not produce.
+let other = vec![(grid(&["11"]), grid(&["33"]))];
+assert!(
+    crate::court::verdict::body::vertices_carry_family(&rule.form, &other).is_some(),
+    "the court would refuse this rule on this family"
+);
+assert!(
+    mint_sentence(&rule, &other, &NoCrystal).is_none(),
+    "so the voice withholds it instead of spending a refusal on it"
+);
+}
+
 #[test]
 fn bundle_pressure_is_additive_and_refuses_a_raise_on_one_pair() {
 let x = grid(&["1"]);
