@@ -27,7 +27,7 @@ impl Contemplation {
     pub fn expand_all(
         &mut self,
         atlas: &dyn AtlasRead,
-        rotor_at: &dyn Fn(&[u8]) -> Option<Rotor>,
+        section_at: crate::transducer::bubble::idea::SectionAt,
         crystal: &dyn Crystal,
         budget: &mut Budget,
     ) -> Expanded {
@@ -68,7 +68,7 @@ impl Contemplation {
             from = Some(k.clone());
             self.expand_cursor = Some(k.clone());
             if let Some(b) = self.bubbles.get_mut(&k) {
-                let (s, p) = b.expand_with(atlas, rotor_at, self.now_k, crystal, budget);
+                let (s, p) = b.expand_with(atlas, section_at, self.now_k, crystal, budget);
                 spent += s;
                 for i in 0..4 {
                     pivoted[i] = pivoted[i].saturating_add(p[i]);

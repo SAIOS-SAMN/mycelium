@@ -137,3 +137,61 @@ fn a_rotor_the_alphabet_cannot_spell_is_its_own_arm() {
     };
     assert!(r.projective_eq(&pi17), "and it names the rotor that could not be spelled");
 }
+
+/// THE COVER'S OWN PATH, which is where every reading above was being
+/// thrown away. `classify` has been able to tell a placed transition from a
+/// flat one since the carriage field existed; the cover reached it through
+/// `extend`, and `extend` is only ever as informative as the two sections
+/// it is handed.
+///
+/// `Section::at` sets the carriage to the identity by construction. With
+/// both sections built that way — which is what `Bubble::expand_with` did —
+/// `extend`'s composed carriage is the identity for every pair of charts in
+/// the corpus, so `classify`'s `flat` is true by construction and
+/// `Fill::Class` is unreachable on this path. Not "nothing curved was
+/// found": nothing curved could be REPRESENTED. Measured across two corpus
+/// slices at that state: 2778 classified cover loops, flat 2778, filed 0,
+/// standing 0, unspellable 0.
+///
+/// The two halves of this test are the same two charts. One pair of
+/// sections carries the placements the charts actually hold and stands; the
+/// other is the same pair through `Section::at` and fills.
+#[test]
+fn sections_at_different_placements_stand_where_the_identity_carriage_fills() {
+    use crate::transducer::address::Address;
+    use crate::transducer::cech::{extend, Cell, Section};
+    let addr_a = Address::from_bytes([1u8, 1]);
+    let addr_b = Address::from_bytes([1u8, 2]);
+    let cell = Cell {
+        vertices: vec![addr_a.as_bytes().to_vec(), addr_b.as_bytes().to_vec()],
+        coefficient: Rotor::identity(),
+        carriage: ident(),
+        volume: [0; 4],
+        fill: Fill::Open,
+    };
+    assert_eq!(cell.degree(), 1, "an edge, so `extend` takes the cell's own arm");
+
+    // The charts as they are: one at the origin, one placed at (3, −2).
+    let placed = Section {
+        addr: addr_b.clone(),
+        gamma: Rotor::identity(),
+        carriage: cga::translator(&q(3), &q(-2)),
+    };
+    let origin = Section { addr: addr_a.clone(), gamma: Rotor::identity(), carriage: ident() };
+    let Fill::Class(kappa, _) = extend(&origin, &placed, &cell) else {
+        panic!("two charts at different placements do not glue: that is the obstruction");
+    };
+    assert!(
+        !same_versor(&kappa.carriage, &ident()),
+        "and the standing class carries the placement between them"
+    );
+
+    // The same two charts through the constructor the cover used. The
+    // placement is not lost in `extend` — it never arrives.
+    let flattened_b = Section::at(addr_b, Rotor::identity());
+    let flattened_a = Section::at(addr_a, Rotor::identity());
+    assert!(
+        matches!(extend(&flattened_a, &flattened_b, &cell), Fill::Filled(..)),
+        "with the carriage dropped at construction the same two charts read as glued"
+    );
+}

@@ -39,6 +39,22 @@ pub fn rotor_of(g: &Element) -> Option<Rotor> {
     None
 }
 
+/// THE SECTION AN ELEMENT CARRIES: its rotation AND its placement, read
+/// from one [`Element::letters`] so the two halves are the same element's.
+///
+/// [`rotor_of`] answers the rotation alone, which is the whole of what a
+/// caller can use to build a [`Section`] from an element — and a section
+/// built that way has the identity carriage whatever the element's
+/// placement was. [`Section::carriage`]'s own field doc says what that
+/// costs: "a Γ that was a translation, a dilation, or a rotation about any
+/// point but the origin read as the rotor and every STANDING class at the
+/// court was invisible". The reader has to exist for the caller to have the
+/// choice, so it does.
+pub fn section_of(g: &Element) -> Option<(Rotor, Versor)> {
+    let letters = g.letters()?;
+    Some((letters.spelling.word.rotor(), letters.carriage))
+}
+
 pub(crate) fn nonzero(v: &[u64; 4]) -> bool {
     v.iter().any(|&x| x > 0)
 }

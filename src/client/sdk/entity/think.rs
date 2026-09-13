@@ -223,13 +223,17 @@ impl Entity {
         let crate::transducer::bubble::drive::Expanded { pivoted, crystallized, orbit, .. } = {
             let epigenome = &self.epigenome;
             let atlas = epigenome.working_atlas();
-            let rotor_at = |a: &[u8]| {
+            // The held word's SECTION, both halves off the one element:
+            // `rotor_of` stood here and the carriage never reached the
+            // cover, so every transition classified as if the word sat at
+            // the origin.
+            let section_at = |a: &[u8]| {
                 epigenome
                     .working_word(a)
-                    .and_then(|h| crate::transducer::cech::rotor_of(h.element()))
+                    .and_then(|h| crate::transducer::cech::section_of(h.element()))
             };
             self.contemplation
-                .expand_all(&atlas, &rotor_at, epigenome, &mut budget)
+                .expand_all(&atlas, &section_at, epigenome, &mut budget)
         };
         self.contemplation.retire_on_t(self.physics.reserve[2] as usize);
         for e in &crystallized {
