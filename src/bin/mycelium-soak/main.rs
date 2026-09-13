@@ -12,6 +12,7 @@
 //! performed against the form index (26, 27, 50.6).
 
 mod delta;
+mod ledger;
 mod mint;
 
 use mycelium::client::sdk::Epigenome;
@@ -84,6 +85,17 @@ fn main() {
     // in front of it and searching the output — a survey standing in for a
     // keyed read. A third argument that does not parse as a count IS the
     // task's own name, which is the coordinate the corpus files it under.
+    // §8.1 — `--ledger PATH COC1_OFFSET` walks a persisted ledger's COC1
+    // section complex by complex and names the one that does not parse. The
+    // restore says only which SECTION it stopped in; this says which object.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--ledger") {
+        let (Some(path), Some(at)) = (argv.get(1), argv.get(2).and_then(|s| s.parse().ok())) else {
+            eprintln!("  ledger refused: name the ledger path and the COC1 offset");
+            std::process::exit(1);
+        };
+        ledger::scan(path, at);
+        return;
+    }
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--mint") {
         let Some(dir) = argv.get(1) else {
             eprintln!("  mint refused: name the corpus directory");
