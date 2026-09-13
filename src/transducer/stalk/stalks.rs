@@ -78,31 +78,15 @@ impl Stalks {
             .collect()
     }
 
-    /// Budgeted one-level children of `inv`, resumed from `after` (a child
-    /// invariant key). The last visited child key is returned as the cursor.
-    pub fn each_child(
-        &self,
-        inv: &Invariant,
-        after: Option<&[u8]>,
-        budget: &mut Budget,
-        mut f: impl FnMut(Invariant),
-    ) -> Option<Vec<u8>> {
-        let branches = self.root.branches_at(&inv.0);
-        let Some(branches) = branches else {
-            return after.map(|a| a.to_vec());
-        };
-        // A walk with no cursor yet starts at the first key, and `after`
-        // already says which: the absence travels as the option it is.
-        let mut last = after.map(|a| a.to_vec());
-        for (k, _) in branches.cursor(after, budget) {
-            last = Some(k.clone());
-            let a = axis_of(&k);
-            let mut axes = inv.0.clone();
-            axes.push(a);
-            f(Invariant(axes));
-        }
-        last
-    }
+    // `each_child(inv, after, budget, f)` stood here: a budgeted page of one
+    // stratum's child branches, resumed from a cursor, returning the last key
+    // visited. It existed for `AtlasRead::children`, whose only caller was
+    // `Bubble::expand_with`, which walked outward from an idea's chart to meet
+    // whatever the trie held nearby. An idea's overlaps are the charts its own
+    // vertices stand on, which are coordinates it already holds, so the
+    // expansion reads `fiber` at those charts and this walk has no caller.
+    // `fiber_under` below is the remaining trie collect, and it answers a
+    // question about one chart rather than paging a stratum.
 
     /// Every address under `inv`, including finer charts. A trie collect.
     pub fn fiber_under(&self, inv: &Invariant) -> Vec<Vec<u8>> {

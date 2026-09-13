@@ -126,12 +126,11 @@ impl Stratum {
         }
     }
 
-    pub(crate) fn branches_at(&self, axes: &[u64]) -> Option<&Keyed<Stratum>> {
-        match axes.split_first() {
-            None => Some(&self.branches),
-            Some((&a, rest)) => self.branches.get(&axis_key(a)).and_then(|s| s.branches_at(rest)),
-        }
-    }
+    // `branches_at(axes)` stood here and handed out a stratum's whole branch
+    // carrier so `each_child` could page it. Both are gone with the outward
+    // walk they existed for: an idea meets the charts its own vertices stand
+    // on, and a chart's members are `fiber`, not a page of its siblings.
+    // Nothing else in the tree ever asked a stratum for its branches.
 
     pub(crate) fn collect_members(&self, out: &mut Vec<Vec<u8>>) {
         for (k, _) in self.members.scoped() {

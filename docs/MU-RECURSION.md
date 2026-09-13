@@ -4293,6 +4293,33 @@ fills it from syllabus pages; A16 consults it before filing or demanding.
   relative words are constant form one depth-1 `Form` of `Glued` vertices,
   held as an idea, spoken by `Entity::speak` (sdk.rs 1836).
 
+**25.5 The cover is read at its coordinates, never walked to (ruled
+2026-09-13).** A Čech cell is the OVERLAP of two sections, and two sections
+overlap when they are sections over one chart. An idea's charts are already
+named by its own vertices: every `Vertex::Word` carries the charts it acts
+on and the carriage it acts by at each (`Bubble::sections`), so the far side
+of every meet is `AtlasRead::members(chart)` — that chart's fibre, a keyed
+read at an address the idea holds. Both bounds are content: this idea's
+sections, and one chart's own fibre (rule 10).
+
+`expand_with` took the idea's chart, peeled UP one stratum, and paged that
+stratum's siblings under a budget, resuming from a stored cursor
+(`AtlasRead::children`, `Stalks::each_child`, `Stratum::branches_at`,
+`Bubble.cursor` — all deleted with it). Three faults, one shape. It was a
+whole-carrier walk (rule 1) with a budget pacing it rather than bounding it,
+and the quantity walked was a stratum's population, which is not the idea's
+content. It met charts the idea stands no section over, which are not
+overlaps at all — the cover was being built out of adjacency in a trie
+instead of incidence in the sheaf, and `extend` was asked to classify
+transitions between bodies that share nothing. And it needed a cursor to
+resume, so an idea's expansion depended on where the last stroke stopped, a
+position rather than a coordinate; `Bubble::from_bytes` set that cursor to
+empty on every restore, which is the tree saying it carried nothing.
+
+`AtlasRead` is one method now. A reader that answers "what is held here"
+needs no cursor and no budget, because it is a keyed read of one fibre and
+not a traversal of anything.
+
 ## 26. Wire and economics
 
 Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/dialogue/speech.rs`:
@@ -4479,6 +4506,27 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   from its root; `ARC1` follows it: one era per fold, in K order, each the
   root, the identities its epoch rows named and the receipts it archived.
   Both are in `MYC4`, before the recut.
+- **A section is self-delimiting (`MYC6`, ruled 2026-09-13).** Every counted
+  section writes `count u64 ‖ byte_len u64 ‖ body` (`snapshot::framed`,
+  `snapshot::take_frame` — one carrier, both sides), and a reader that does
+  not arrive at the declared byte refuses AT that section, naming it and
+  both numbers. A count alone delimits nothing: it says how many records to
+  read and not where they end, so a reader recovered the boundary by parsing
+  every record and trusting the result, and one record it framed differently
+  from the writer moved the position for good. Measured at 83e3e30 on
+  ledgers the same build had just written: hypha a announced 91 `DEF1`
+  records, framed 84 over 298223 bytes, then read an address length of zero
+  and a tag byte of 13; the section's true body was 345929 bytes, which the
+  reader had no way to know. It refused 8.6 MB of a court's history and
+  named a byte that was a consequence. Hypha b lost 13.7 MB the same way.
+  With the length written, that fault is localised and reportable instead of
+  silent. No count is guarded by a divisor standing in for a record's size —
+  seven were (`/ 6`, `/ 106` twice, `/ 56`, `/ 14`, `/ 8`, `/ 50`, plus caps
+  at `.min(64)` and `.min(1 << 16)`), `/ 50` was wrong by construction, and
+  all of them are gone — and no length on this tape narrows through `as
+  u32`. A record whose field refuses (`put_addr` never truncates; it writes
+  nothing) is rewound and dropped whole rather than written half, so the
+  count stays a reading of the content. `MYC5` does not re-read.
 
 ## 29. Binding summary by file
 

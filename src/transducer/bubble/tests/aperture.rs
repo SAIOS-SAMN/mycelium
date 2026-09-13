@@ -99,11 +99,65 @@ fn a_form_speaking_two_rotors_carries_two_sections_and_no_single_rotor() {
     let sections = b.sections();
     assert_eq!(sections.len(), 2, "and the cover reads both of them, not neither");
     let mut seen = Vec::new();
-    for (_, (r, _)) in sections.scoped() {
+    for (_, (_, r, _)) in sections.scoped() {
         assert!(
             !seen.iter().any(|h: &crate::transducer::alphabet::Rotor| h.projective_eq(r)),
             "the two sections are the two rotors, not one twice"
         );
         seen.push(r.clone());
     }
+}
+
+/// AN IDEA MEETS THE CHARTS IT STANDS ON, AND NO OTHERS. A Čech cell is the
+/// overlap of two sections, and two sections overlap when they are sections
+/// over one chart; a chart no vertex of this form acts on is not an overlap
+/// with it.
+///
+/// `expand_with` reached the atlas through `children`: it took the idea's
+/// chart, peeled up one stratum, and paged that stratum's SIBLINGS under a
+/// budget, meeting whatever the trie held nearby. This fixture is the
+/// difference. The idea's vertex stands on `[3, 5]`; `[3, 7]` is its sibling
+/// under the same parent `[3]`, and holds a member. The sibling must not
+/// enter the cover, because nothing of this idea is a section over it.
+#[test]
+fn an_idea_meets_its_own_charts_and_not_their_siblings() {
+    use crate::transducer::alphabet::{Derivation, LetterId, Word};
+    use crate::transducer::family::NoCrystal;
+    use crate::transducer::sentence::{Form, Vertex};
+    use crate::transducer::stalk::{Invariant, Stalks};
+    let mine = Invariant(vec![3, 5]);
+    let sibling = Invariant(vec![3, 7]);
+    let q = LetterId::quarter((0, 1)).expect("the sensor plane");
+    let mut f = Form::default();
+    f.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from_bytes([4u8, 1]),
+        Derivation::spelled(Word::from_letters(&[(q, false)])),
+        mine.clone(),
+        Box::new(element::identity_versor()),
+        Vec::new(),
+        None,
+    ));
+    let mut b = Bubble { form: Some(f), ..Default::default() };
+
+    // Both charts hold a member, and both members read as sections.
+    let mut atlas = Stalks::default();
+    atlas.admit(&mine, b"on-my-chart");
+    atlas.admit(&sibling, b"on-the-sibling");
+    let section_at = |_: &[u8]| {
+        Some((
+            Word::from_letters(&[(q, false)]).rotor(),
+            element::identity_versor(),
+        ))
+    };
+
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
+    let _ = b.expand_with(&atlas, &section_at, 0, &NoCrystal, &mut budget);
+    assert!(
+        b.cover.contains(mine.key().as_bytes()),
+        "the chart this idea's vertex stands on IS met, so the reading is not empty"
+    );
+    assert!(
+        !b.cover.contains(sibling.key().as_bytes()),
+        "a sibling chart this idea holds no section over is not an overlap"
+    );
 }

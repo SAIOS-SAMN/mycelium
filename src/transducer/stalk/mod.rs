@@ -16,31 +16,26 @@ pub(crate) use stratum::*;
 /// language a mind holds — the genome alone, or the working atlas of
 /// three strata. Both are keyed reads: the budgeted children of one chart
 /// and the members of one chart. Nothing is enumerated.
+/// WHAT AN ATLAS IS ASKED, and it is one question: the addresses held on a
+/// chart.
+///
+/// `children(inv, after, budget, f)` stood beside it — a budgeted page of
+/// one stratum's siblings, resumed from a cursor — and its only caller was
+/// `Bubble::expand_with`, which used it to walk outward from an idea's own
+/// chart and meet whatever it found. That is adjacency in a trie, not
+/// incidence in a sheaf: a Čech cell is the overlap of two sections over
+/// ONE chart, and an idea's charts are already named by its own vertices.
+/// The expansion reads `members` at those coordinates now, so the walk, its
+/// budget pacing, its resume cursor and this method are all gone together.
+///
+/// A reader that answers "what is held here" needs no cursor and no budget,
+/// because it is a keyed read of one fibre and not a traversal of anything.
 pub trait AtlasRead {
-    /// Budgeted one-level children of `inv`, resumed from `after`; the last
-    /// child key visited is the cursor returned.
-    fn children(
-        &self,
-        inv: &Invariant,
-        after: Option<&[u8]>,
-        budget: &mut Budget,
-        f: &mut dyn FnMut(Invariant),
-    ) -> Option<Vec<u8>>;
     /// The addresses held on `inv`.
     fn members(&self, inv: &Invariant) -> Vec<Vec<u8>>;
 }
 
 impl AtlasRead for Stalks {
-    fn children(
-        &self,
-        inv: &Invariant,
-        after: Option<&[u8]>,
-        budget: &mut Budget,
-        f: &mut dyn FnMut(Invariant),
-    ) -> Option<Vec<u8>> {
-        self.each_child(inv, after, budget, f)
-    }
-
     fn members(&self, inv: &Invariant) -> Vec<Vec<u8>> {
         self.fiber(inv)
     }
@@ -49,7 +44,6 @@ impl AtlasRead for Stalks {
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::element::{self, Versor};
 use crate::network::nerve::Keyed;
-use crate::physics::Budget;
 
 #[cfg(test)]
 mod tests;

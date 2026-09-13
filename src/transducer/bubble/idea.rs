@@ -13,6 +13,12 @@ use super::*;
 /// the charts but about the reader's type.
 pub type SectionAt<'a> = &'a dyn Fn(&[u8]) -> Option<(Rotor, crate::transducer::element::Versor)>;
 
+/// ONE SECTION THIS IDEA HOLDS: the chart it stands on, the rotation it
+/// speaks there, and the carriage it speaks it by. The chart is a
+/// coordinate, which is what lets the cover be READ rather than searched
+/// for.
+pub type Held = (Invariant, Rotor, crate::transducer::element::Versor);
+
 /// One class the mesh or a mind holds on a chart: key, order, representative.
 #[derive(Clone, Debug)]
 pub struct ClassRecord {
@@ -134,8 +140,10 @@ pub struct Bubble {
     pub potential: [u64; 4],
     pub volume: [u64; 4],
     pub dirty: bool,
-    /// Last chart key visited by expand; the next stroke resumes here.
-    pub cursor: Vec<u8>,
+    // `cursor: Vec<u8>` stood here — "last chart key visited by expand; the
+    // next stroke resumes here". A resume point for a walk that no longer
+    // happens. `Bubble::from_bytes` set it to empty on every restore, so the
+    // tree already said it carried nothing across a boot.
     /// TUniversal when this bubble's charts last moved.
     pub moved_k: u64,
     /// Addresses this idea glued (crystallized forms it rests on).
@@ -213,7 +221,7 @@ impl Bubble {
     /// absence dropped exactly the multi-section forms D7–D10 exist to
     /// carry. A reader whose non-matching arm leaves no reading is the same
     /// fault in a different place.
-    pub(crate) fn sections(&self) -> Keyed<(Rotor, crate::transducer::element::Versor)> {
+    pub(crate) fn sections(&self) -> Keyed<Held> {
         let mut out = Keyed::new();
         let Some(f) = self.form.as_ref() else {
             return out;
@@ -226,20 +234,29 @@ impl Bubble {
             // index: keyed fibre of this vertex's members — its own charts,
             // never a walk over the form (rule 1).
             for (_, a) in acts.scoped() {
-                let mut k = r.key().into_vec();
+                let mut k = a.chart.key().into_vec();
+                k.extend_from_slice(r.key().as_bytes());
                 a.carriage.to_bytes(&mut k);
                 if !out.contains(&k) {
-                    out.insert(k, (r.clone(), (*a.carriage).clone()));
+                    out.insert(
+                        k,
+                        (a.chart.clone(), r.clone(), (*a.carriage).clone()),
+                    );
                 }
             }
         }
         out
     }
 
-    /// Walk outward on the cover trie from this bubble's cover, one chart
-    /// per stroke, only over overlaps with nonzero volume. Extended grows
-    /// the cover; Congruent grows it with a torsion axis; Class writes the
-    /// horizon and stops that branch.
+    /// MEET THIS IDEA'S OWN CHARTS. Each of its sections stands on a chart;
+    /// the other sections there are that chart's fibre, read at its key. A
+    /// meet that fills grows the cover, one that is congruent grows it with
+    /// a torsion axis, and one that stands a class writes the horizon and
+    /// leaves the chart out of the cover.
+    ///
+    /// This said "walk outward on the cover trie, one chart per stroke". It
+    /// walked a stratum's siblings under a budget and met charts this idea
+    /// does not stand on, which are not overlaps.
     pub fn expand(&mut self, atlas: &dyn AtlasRead, crystal: &dyn Crystal, budget: &mut Budget) -> usize {
         self.expand_with(atlas, &|_| None, 0, crystal, budget).0
     }
@@ -281,115 +298,116 @@ impl Bubble {
         if budget.remaining() == 0 {
             return (0, [0; 4]);
         }
-        let inv = stalk::invariant(&self.remainder);
-        let peel = inv.peel();
-        let cursor = self.cursor.clone();
-        let after = if cursor.is_empty() {
-            None
-        } else {
-            Some(cursor.as_slice())
-        };
         let mut spent = 0usize;
-        // index: budgeted sibling keys of one trie node (peel)
-        let last = atlas.children(&peel, after, budget, &mut |child| {
-            let ck = child.key();
+        // THE CHARTS THIS IDEA MEETS ARE ITS OWN SECTIONS' CHARTS, and their
+        // members are a keyed read at those coordinates. Nothing is walked
+        // and nothing is discovered.
+        //
+        // WHAT STOOD HERE. `stalk::invariant(&self.remainder).peel()` took
+        // the idea's chart, went UP one stratum, and asked the atlas for
+        // that stratum's children — every sibling of the idea's own chart —
+        // one budgeted page per stroke, resuming from a stored cursor. Three
+        // things are wrong with it and they are the same thing said three
+        // ways.
+        //
+        // It is a whole-carrier walk (rule 1) wearing a budget. The budget
+        // paces it; it does not bound it, and the quantity it walks is the
+        // population of a stratum, which is not this idea's content.
+        //
+        // It meets charts this idea does not stand on. A Čech cell is the
+        // OVERLAP of two sections, and two sections overlap when they are
+        // sections over the same chart. A sibling of my chart that none of
+        // my vertices acts on is not an overlap; it is a stranger, and
+        // `extend` was being asked to classify a transition between bodies
+        // that share nothing. The cover was being built out of adjacency in
+        // a trie rather than out of incidence in the sheaf.
+        //
+        // And it needed a cursor to resume, so an idea's expansion depended
+        // on where the last stroke stopped — a position, not a coordinate.
+        // The cursor was never even persisted: `Bubble::from_bytes` set it
+        // to empty, which is the tree saying it carries nothing.
+        //
+        // The charts are already in hand. Every `Vertex::Word` names the
+        // charts it acts on and the carriage it acts by at each, so the
+        // sections are a reading of the form and the far side of each meet
+        // is `members(chart)` — the fibre, keyed, at an address this idea
+        // already holds. Both bounds are content: this idea's sections, and
+        // one chart's own fibre (rule 10).
+        //
+        // EVERY MEMBER AGAINST EVERY SECTION, and both sections carry their
+        // real carriage — without which `extend`'s `flat` is true by
+        // construction and `Fill::Class` is unreachable, which is why two
+        // corpus slices read 2778 classified cover loops with standing 0.
+        let mine = self.sections();
+        let me = self.key();
+        let vol = self.potential;
+        for (_, (chart, gamma_a, car_a)) in mine.scoped() {
+            let ck = chart.key();
             if self.cover.contains(&ck) {
-                return;
+                continue;
             }
             spent += 1;
-            // index: keyed fiber at this sibling chart
-            let members = atlas.members(&child);
-            let mine = self.sections();
-            let vol = self.potential;
-            // EVERY MEMBER AGAINST EVERY SECTION. Three readers collapsed
-            // here and the classifier downstream could not see past any of
-            // them.
-            //
-            // `members.first()` took the head of the fibre and made it THE
-            // chart, under an `#[expect]` arguing the head is the least
-            // address so every node reads the same rotor. That is canonical
-            // and it is still a member chosen by its position (rule 15): a
-            // chart with several members has several sections, and one of
-            // them was standing for all of them.
-            //
-            // `self.rotor()` asked the form for ONE rotor and returned on
-            // absence, so every form speaking several was dropped from the
-            // cover leaving no reading at all.
-            //
-            // And both sections were built by `Section::at`, whose carriage
-            // is the identity by construction — so `extend`'s `flat` was
-            // true on this path whatever the placements were, and a curved
-            // holonomy on a non-identity carriage could not be REPRESENTED,
-            // let alone filed. Measured across two corpus slices: 2778
-            // classified cover loops, flat 2778, filed 0, standing 0. The
-            // carriage field's own doc says it "hid in exactly the readings
-            // that were already zero".
-            //
-            // The bound is content on both sides — this bubble's own
-            // sections and this chart's own fibre — which is the boundary
-            // rule 10 allows, not a search.
+            // index: keyed fibre at a chart this idea itself stands on
+            let members = atlas.members(chart);
             let mut closed = true;
             let mut met = false;
             for head in &members {
+                // A section does not overlap itself.
+                if head.as_slice() == me.as_bytes() {
+                    continue;
+                }
                 let Some((gamma_b, car_b)) = section_at(head.as_slice()) else {
                     continue;
                 };
-                for (_, (gamma_a, car_a)) in mine.scoped() {
-                    met = true;
-                    let cell = CechCell {
-                        vertices: {
-                            let mut v = vec![self.key().into_vec(), head.clone()];
-                            v.sort_unstable();
-                            v
-                        },
-                        coefficient: gamma_b.clone(),
-                        // What the cell expects of the far side, both
-                        // halves, exactly as the coefficient above is the
-                        // far side's rotation.
-                        carriage: car_b.clone(),
-                        volume: vol,
-                        fill: Fill::Open,
-                    };
-                    let a = Section {
-                        addr: self.key(),
-                        gamma: gamma_a.clone(),
-                        carriage: car_a.clone(),
-                    };
-                    let b = Section {
-                        addr: crate::transducer::address::Address::from(head.clone()),
-                        gamma: gamma_b.clone(),
-                        carriage: car_b.clone(),
-                    };
-                    match cech::extend(&a, &b, &cell) {
-                        Fill::Filled(..) => {}
-                        Fill::Congruent(g, ell) => {
-                            self.nerve.file_congruent(self.key(), head, g, ell);
-                        }
-                        Fill::Class(_, r) => {
-                            closed = false;
-                            if r.class_key().is_none_or(|k| !self.horizon.contains(k.as_bytes())) {
-                                horizon_put(&mut self.horizon, *r, Standing::Held);
-                            }
-                        }
-                        // 37.7 at a cell: a rotation the seventeen do not
-                        // spell, which seeds no horizon and closes nothing.
-                        Fill::Unspellable(_) => closed = false,
-                        Fill::Open | Fill::Already => closed = false,
+                met = true;
+                let cell = CechCell {
+                    vertices: {
+                        let mut v = vec![me.clone().into_vec(), head.clone()];
+                        v.sort_unstable();
+                        v
+                    },
+                    coefficient: gamma_b.clone(),
+                    // What the cell expects of the far side, both halves,
+                    // exactly as the coefficient above is its rotation.
+                    carriage: car_b.clone(),
+                    volume: vol,
+                    fill: Fill::Open,
+                };
+                let a = Section {
+                    addr: me.clone(),
+                    gamma: gamma_a.clone(),
+                    carriage: car_a.clone(),
+                };
+                let b = Section {
+                    addr: crate::transducer::address::Address::from(head.clone()),
+                    gamma: gamma_b,
+                    carriage: car_b,
+                };
+                match cech::extend(&a, &b, &cell) {
+                    Fill::Filled(..) => {}
+                    Fill::Congruent(g, ell) => {
+                        self.nerve.file_congruent(me.clone(), head, g, ell);
                     }
+                    Fill::Class(_, r) => {
+                        closed = false;
+                        if r.class_key().is_none_or(|k| !self.horizon.contains(k.as_bytes())) {
+                            horizon_put(&mut self.horizon, *r, Standing::Held);
+                        }
+                    }
+                    // 37.7 at a cell: a rotation the seventeen do not spell,
+                    // which seeds no horizon and closes nothing.
+                    Fill::Unspellable(_) => closed = false,
+                    Fill::Open | Fill::Already => closed = false,
                 }
             }
             // THE CHART ENTERS THE COVER WHEN EVERY SECTION CLOSES ON IT,
             // not when one of them does. A chart one section fills and
-            // another stands a class on is not covered — it is the chart
-            // the standing class is about. The old reader could not state
-            // this because it had one section and one member.
+            // another stands a class on is not covered — it is the chart the
+            // standing class is about.
             if met && closed {
                 self.cover.insert(ck, ());
                 self.moved_k = now;
             }
-        });
-        if let Some(k) = last {
-            self.cursor = k;
         }
         let mut pivoted = [0u64; 4];
         if budget.remaining() > 0 {

@@ -242,7 +242,6 @@ impl Contemplation {
                 potential,
                 volume,
                 dirty,
-                cursor: Vec::new(),
                 moved_k: 0,
                 glues: Keyed::new(),
                 glued_by: Keyed::new(),
