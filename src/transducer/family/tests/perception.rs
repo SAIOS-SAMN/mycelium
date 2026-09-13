@@ -173,12 +173,23 @@ assert!(!back.is_closed());
 /// with no support simply has no entry.
 fn supports_at(rows: &[Vec<(i64, i64)>]) -> crate::network::nerve::Keyed<Vec<(i64, i64)>> {
     let mut k = crate::network::nerve::Keyed::new();
+    // KEYED BY MEMBER — vertex and chart (D10). These fixtures put every body
+    // on the root stratum, which is one chart per vertex, so the member key is
+    // the vertex's with that chart's.
     for (i, s) in rows.iter().enumerate() {
         if !s.is_empty() {
-            k.insert(crate::transducer::sentence::vertex_ix_key(i as u16), s.clone());
+            k.insert(root_member(i as u16), s.clone());
         }
     }
     k
+}
+
+/// The member key of vertex `i` standing at the root stratum.
+fn root_member(i: u16) -> Vec<u8> {
+    crate::transducer::family::member_key(
+        i,
+        crate::transducer::stalk::Invariant::default().key().as_bytes(),
+    )
 }
 
 /// Three touching after-supports: two adjacency faces besides the
@@ -191,14 +202,20 @@ let supports = supports_at(&[
     vec![(0, 2), (0, 3)],
     vec![(0, 4), (0, 5)],
 ]);
-let pairs = star_and_cell_faces(4, Some(0), &supports);
-let adj: Vec<_> = pairs
+let pairs = star_and_cell_faces(Some(&root_member(0)), &supports);
+// The pairs are MEMBER pairs now, so the vertex each names is read back out of
+// its key rather than being the whole of it.
+let ends: Vec<(u16, u16)> = pairs
     .iter()
-    .copied()
-    .filter(|&(i, j)| i != 0 && j != 0)
+    .filter_map(|(a, b)| {
+        let (i, _) = crate::transducer::family::read_member_key(a)?;
+        let (j, _) = crate::transducer::family::read_member_key(b)?;
+        Some((i, j))
+    })
     .collect();
-assert_eq!(adj.len(), 2, "two adjacency faces, got {adj:?} from {pairs:?}");
-let faces: Vec<FormFace> = pairs
+let adj: Vec<_> = ends.iter().copied().filter(|&(i, j)| i != 0 && j != 0).collect();
+assert_eq!(adj.len(), 2, "two adjacency faces, got {adj:?} from {ends:?}");
+let faces: Vec<FormFace> = ends
     .iter()
     .map(|&(i, j)| FormFace::new(i, j, crate::transducer::alphabet::Word::identity()))
     .collect();
@@ -219,7 +236,7 @@ let run = |n: usize| -> u64 {
     for i in 0..n {
         supports.push(vec![(0i64, (i as i64) * 3)]);
     }
-    let _ = star_and_cell_faces(n + 1, Some(0), &supports_at(&supports));
+    let _ = star_and_cell_faces(Some(&root_member(0)), &supports_at(&supports));
     face_work()
 };
 let w = run(8);
@@ -250,9 +267,19 @@ let run = |k: usize| -> (usize, usize, u64) {
     for _ in 0..k {
         supports.push(vec![(0i64, 0i64)]);
     }
-    let pairs = star_and_cell_faces(k + 1, Some(0), &supports_at(&supports));
+    let pairs = star_and_cell_faces(Some(&root_member(0)), &supports_at(&supports));
     let work = face_work();
-    let adj = pairs.iter().filter(|&&(i, j)| i != 0 && j != 0).count();
+    // The vertex each member key names, read back out of it.
+    let adj = pairs
+        .iter()
+        .filter(|(a, b)| {
+            let ends = (
+                crate::transducer::family::read_member_key(a),
+                crate::transducer::family::read_member_key(b),
+            );
+            matches!(ends, (Some((i, _)), Some((j, _))) if i != 0 && j != 0)
+        })
+        .count();
     (pairs.len(), adj, work)
 };
 let (all, adj, _) = run(8);
@@ -286,9 +313,13 @@ let mut supports = vec![Vec::new()];
 for _ in 0..k {
     supports.push(vec![(0i64, 0i64)]);
 }
-star_and_cell_faces(k + 1, Some(0), &supports_at(&supports))
+star_and_cell_faces(Some(&root_member(0)), &supports_at(&supports))
     .iter()
-    .map(|&(i, j)| FormFace::new(i, j, crate::transducer::alphabet::Word::identity()))
+    .filter_map(|(a, b)| {
+        let (i, _) = crate::transducer::family::read_member_key(a)?;
+        let (j, _) = crate::transducer::family::read_member_key(b)?;
+        Some(FormFace::new(i, j, crate::transducer::alphabet::Word::identity()))
+    })
     .collect()
 }
 

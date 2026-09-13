@@ -56,9 +56,19 @@ impl Scenery {
         carried: Option<Carried>,
     ) -> u16 {
         let ix = self.vertices.len() as u16;
+        // THE SUPPORT IS KEYED BY MEMBER — vertex AND chart (D10) — because a
+        // face relates two BODIES and the support is a body's cells. A vertex
+        // standing at several charts has a support at each; the vertices this
+        // builds stand at one, so each contributes one member, and the pairing
+        // now names which body met which instead of leaving it to be guessed.
+        // A VERTEX STANDING AT NO CHART GETS NO SUPPORT ENTRY. The support is a
+        // BODY's cells and the member key is where it is filed, so a vertex with
+        // no member is not an occupant of any cell — absence, not a chart
+        // defaulted in for it (rule 11).
+        let member = vertex.face_chart().map(|c| member_key(ix, c.key().as_bytes()));
         self.vertices.push(vertex);
-        if !support.is_empty() {
-            self.supports.insert(vertex_ix_key(ix), support);
+        if let (Some(m), false) = (member, support.is_empty()) {
+            self.supports.insert(&m, support);
         }
         if let Some(c) = carried {
             self.carried.insert(vertex_ix_key(ix), c);
@@ -553,7 +563,26 @@ pub(crate) fn pair_form_uncached(
     // `star_and_cell_faces`.
     form.vertices = scenery.vertices.clone();
     let n = form.vertices.len();
-    for (i, j) in star_and_cell_faces(n, Some(frame as usize), &scenery.supports) {
+    // THE INCIDENCE IS THE OCCUPANCY, AND IT NAMES THE MEMBER PAIR (D10 item
+    // 5). `star_and_cell_faces` keys supports by member — vertex AND chart — and
+    // a cell names its occupants, so each pair it yields says which BODY of `i`
+    // met which body of `j`. Nothing here enumerates and nothing takes the
+    // product of two fibres: the two charts are read straight off the two member
+    // keys the pairing returned.
+    // The Frame's own member: it stands at the root stratum, which is what
+    // `face_chart` answers for it. A slot that is not a vertex, or one standing
+    // at no chart, is not a frame to star from — `None` there means this
+    // pairing writes no star faces, which is the reading and not a frame
+    // invented for it (rule 11).
+    let frame_member = scenery
+        .vertices
+        .get(frame as usize)
+        .and_then(|v| v.face_chart())
+        .map(|c| member_key(frame, c.key().as_bytes()));
+    for (ak, bk) in star_and_cell_faces(frame_member.as_deref(), &scenery.supports) {
+        let (Some((i, cik)), Some((j, cjk))) = (read_member_key(&ak), read_member_key(&bk)) else {
+            continue;
+        };
         // The edge transport between two carried bodies (50.3); a face to
         // the Frame or to an uncarried body carries none.
         let edge = match (scenery.carried_at(i), scenery.carried_at(j)) {
@@ -568,16 +597,11 @@ pub(crate) fn pair_form_uncached(
             },
             _ => None,
         };
-        // THE INCIDENCE IS THE OCCUPANCY (D10 item 5). `star_and_cell_faces`
-        // reads supports keyed by vertex and a cell names its occupants, so the
-        // pair it yields is a pair of BODIES and each vertex of a pair form
-        // stands at exactly one chart. The member pair is therefore the two
-        // vertices' own charts and nothing is enumerated.
         let (Some(vi), Some(vj)) = (form.vertices.get(i as usize), form.vertices.get(j as usize))
         else {
             continue;
         };
-        let (Some(ci), Some(cj)) = (vi.face_chart(), vj.face_chart()) else {
+        let (Some(ci), Some(cj)) = (vi.chart_keyed(&cik), vj.chart_keyed(&cjk)) else {
             continue;
         };
         let Some(word) = form.face_word(i, j) else { continue };

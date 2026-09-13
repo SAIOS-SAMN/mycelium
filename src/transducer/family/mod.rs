@@ -248,18 +248,49 @@ pub(crate) fn cell_pos_key(r: i64, c: i64) -> [u8; 32] {
     k
 }
 
-pub(crate) fn pair_key(a: u16, b: u16) -> [u8; 32] {
-    let (lo, hi) = if a <= b { (a, b) } else { (b, a) };
-    let mut k = [0u8; 32];
-    k[..2].copy_from_slice(&lo.to_le_bytes());
-    k[2..4].copy_from_slice(&hi.to_le_bytes());
+// `pair_key(a: u16, b: u16)` and `decode_pair_key` stood here: the unordered
+// pair of two VERTICES, which is what `star_and_cell_faces` related before a
+// face's endpoints became coarser than its meaning. They are gone with their
+// last caller — the pairing relates MEMBERS now (`member_pair_key` below), so
+// the pair it returns says which body met which and there is no vertex pair left
+// for anything to reconstruct a member pair from.
+
+/// A MEMBER OF THE SCENE'S COMPLEX: a vertex and the chart it stands at
+/// there (D10). The supports a pairing reads are keyed by this, not by the
+/// vertex alone — a face exists because two BODIES' supports meet (21 step 2),
+/// and a vertex covering several bodies on several charts is several occupants
+/// of the cells they sit on.
+///
+/// Both halves are length-delimited so they read apart, and the vertex leads so
+/// the key order is the vertex order, which is content.
+pub(crate) fn member_key(vertex: u16, chart: &[u8]) -> Vec<u8> {
+    let mut k = Vec::new();
+    crate::transducer::address::put_bytes(&mut k, &vertex.to_le_bytes());
+    crate::transducer::address::put_bytes(&mut k, chart);
     k
 }
 
-pub(crate) fn decode_pair_key(k: &[u8]) -> Option<(u16, u16)> {
-    let lo = u16::from_le_bytes(k.get(..2)?.try_into().ok()?);
-    let hi = u16::from_le_bytes(k.get(2..4)?.try_into().ok()?);
-    Some((lo, hi))
+pub(crate) fn read_member_key(k: &[u8]) -> Option<(u16, Vec<u8>)> {
+    let mut p = 0usize;
+    let v = crate::transducer::address::take_bytes(k, &mut p)?;
+    let chart = crate::transducer::address::take_bytes(k, &mut p)?;
+    Some((u16::from_le_bytes(v.get(..2)?.try_into().ok()?), chart))
+}
+
+/// The unordered pair of two members, and the two read back out.
+pub(crate) fn member_pair_key(a: &[u8], b: &[u8]) -> Vec<u8> {
+    let (lo, hi) = if a <= b { (a, b) } else { (b, a) };
+    let mut k = Vec::new();
+    crate::transducer::address::put_bytes(&mut k, lo);
+    crate::transducer::address::put_bytes(&mut k, hi);
+    k
+}
+
+pub(crate) fn read_member_pair_key(k: &[u8]) -> Option<(Vec<u8>, Vec<u8>)> {
+    let mut p = 0usize;
+    let a = crate::transducer::address::take_bytes(k, &mut p)?;
+    let b = crate::transducer::address::take_bytes(k, &mut p)?;
+    Some((a, b))
 }
 
 /// The family's frame ratio ((h_num, h_den), (w_num, w_den)), identical

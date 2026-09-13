@@ -54,48 +54,56 @@ pub(crate) fn face_work() -> u64 {
 /// `face_work_is_linear_in_occupied_cells` reads the whole cost and not the
 /// part that was already linear.
 ///
-/// The supports arrive KEYED BY VERTEX INDEX, which is the form's own
-/// coordinate and rides the tape as `FormFace.i` and `.j` — not as a slice
-/// whose position a caller had to keep aligned by hand.
+/// The supports arrive KEYED BY MEMBER — a vertex AND the chart it stands at
+/// there (D10) — which is the coordinate a face is actually between: 21 step 2
+/// relates two BODIES, and a vertex covering several bodies on several charts is
+/// several occupants of the cells they sit on. Keyed by the vertex alone, the
+/// pairs this returns named a relation between two vertices and left which of
+/// their bodies met to be guessed by whatever built the face.
+///
+/// The pairs are member pairs, so the face is created already carrying which
+/// member of `i` relates to which member of `j`. NO PRODUCT OF TWO FIBRES is
+/// taken anywhere: the occupancy is keyed by CELL and a cell names its
+/// occupants, so the chain over `windows(2)` yields incidences the scene has.
+///
+/// THE MEMBERS ARE READ FROM THE INDEX. This counted `for vi in 0..n` and asked
+/// `supports` for each — a walk of the integers with a keyed read inside it,
+/// which finds nothing for a vertex that has no support and says nothing about
+/// one the index holds and the count does not reach. `supports` IS the member
+/// index; walking it is reading it (rule 1).
 pub(crate) fn star_and_cell_faces(
-    n: usize,
-    frame: Option<usize>,
+    frame: Option<&[u8]>,
     supports: &crate::network::nerve::Keyed<Vec<(i64, i64)>>,
-) -> Vec<(u16, u16)> {
-    use crate::transducer::sentence::vertex_ix_key;
+) -> Vec<(Vec<u8>, Vec<u8>)> {
     let mut related: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     if let Some(frame) = frame {
-        for j in 0..n {
-            if j == frame {
+        for (mk, _) in supports.scoped() {
+            if mk == frame {
                 continue;
             }
-            related.insert(pair_key(frame as u16, j as u16), ());
+            related.insert(member_pair_key(frame, &mk), ());
         }
     }
-    let mut occ: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
-    for vi in 0..n {
-        if Some(vi) == frame {
+    let mut occ: crate::network::nerve::Keyed<Vec<Vec<u8>>> = crate::network::nerve::Keyed::new();
+    for (mk, supp) in supports.scoped() {
+        if Some(mk.as_slice()) == frame {
             continue;
         }
-        let Some(supp) = supports.get(&vertex_ix_key(vi as u16)) else {
-            continue;
-        };
-        let id = vi as u16;
         for &(r, c) in supp {
             note_face_work();
             let k = cell_pos_key(r, c);
             match occ.get_mut(&k) {
-                // `vi` ascends and a vertex is offered its own support once,
-                // so a repeat can only be the one just pushed. This was
-                // `!v.contains(&id)`, a walk of the cell's occupants on every
-                // offer — k² comparisons on the same cell that the chain
-                // below was already paying k² for.
+                // The members ascend in key order and a member is offered its
+                // own support once, so a repeat can only be the one just
+                // pushed. This was `!v.contains(&id)`, a walk of the cell's
+                // occupants on every offer — k² comparisons on the same cell
+                // that the chain below was already paying k² for.
                 Some(v) => match v.as_slice() {
-                    [.., last] if *last == id => {}
-                    _ => v.push(id),
+                    [.., last] if *last == mk => {}
+                    _ => v.push(mk.clone()),
                 },
                 None => {
-                    occ.insert(k, vec![id]);
+                    occ.insert(k, vec![mk.clone()]);
                 }
             }
         }
@@ -118,37 +126,33 @@ pub(crate) fn star_and_cell_faces(
     // are the ones spanning DISTINCT cells — which are the cycles that carry
     // a class. The occupants are read in the form's own vertex coordinate,
     // which is content order, so two minds holding one scene chain it alike.
-    for (_k, verts) in occ.scoped() {
-        for w in verts.windows(2) {
+    for (_k, members) in occ.scoped() {
+        for w in members.windows(2) {
             let [a, b] = w else { continue };
             note_face_work();
-            related.insert(pair_key(*a, *b), ());
+            related.insert(member_pair_key(a, b), ());
         }
     }
-    for vi in 0..n {
-        if Some(vi) == frame {
+    for (mk, supp) in supports.scoped() {
+        if Some(mk.as_slice()) == frame {
             continue;
         }
-        let Some(supp) = supports.get(&vertex_ix_key(vi as u16)) else {
-            continue;
-        };
-        let v = vi as u16;
         let cells: Vec<(i64, i64, u8)> = supp.iter().map(|&(r, c)| (r, c, 0)).collect();
         for (r, c, _) in crate::transducer::blade::adjacent_ring(&cells) {
             note_face_work();
             let Some(others) = occ.get(&cell_pos_key(r, c)) else {
                 continue;
             };
-            for &u in others {
-                if u != v {
-                    related.insert(pair_key(v, u), ());
+            for u in others {
+                if *u != mk {
+                    related.insert(member_pair_key(&mk, u), ());
                 }
             }
         }
     }
     related
         .scoped()
-        .filter_map(|(k, _)| decode_pair_key(&k))
+        .filter_map(|(k, _)| read_member_pair_key(&k))
         .collect()
 }
 
