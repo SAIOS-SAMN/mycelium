@@ -366,3 +366,99 @@ fn a_loops_class_and_row_read_off_its_faces_and_the_axis_carrier() {
         }
     }
 }
+
+/// THE LOOP IS FILED UNDER THE CLASS IT IS JUDGED BY. A face's word is the
+/// coboundary `w_j ∘ w_i⁻¹`, and a product of coboundaries around a cycle
+/// telescopes to the identity for every input, so a loop over coboundary
+/// faces is flat on the word whatever its bodies do. Its EDGE composites
+/// (50.3) do not telescope — `edge_holonomies_on` says so in its own doc —
+/// and they are where a cover's curvature lives.
+///
+/// `class_vector` has read the edge composite since Y5. The filing decision
+/// did not: `pivot_loop` took `lp.holonomy` for the horizon key and for the
+/// order that selects the `Discharge` branch, and `file_loop` filed under
+/// `lp.holonomy.rotor().class_key()`. A loop was judged by one object and
+/// filed under another, and on the fleet at e98e8a2 that meant 70311 loops
+/// flat on the word, 284 finite edge composites over the same loops, and
+/// zero torsion filed.
+///
+/// This fixture is exactly that disagreement: three coboundary faces, so
+/// the word holonomy is the identity, and a quarter turn on the one face
+/// that does not touch the Frame.
+#[test]
+fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
+    use crate::transducer::alphabet::Derivation;
+    use crate::transducer::stalk::Invariant;
+    let chart = Invariant(vec![3, 5]);
+    let pair = face_pair_key(&chart, &chart);
+    let q = order4();
+    let word_vertex = |b: u8| {
+        Vertex::word_on(
+            crate::transducer::address::Address::from_bytes([4u8, b]),
+            Derivation::spelled(Word::identity()),
+            chart.clone(),
+            Box::new(element::identity_versor()),
+            Vec::new(),
+            None,
+        )
+    };
+    let place = |edge: Option<Word>| FacePlace {
+        carriage: element::identity_versor(),
+        gauge: Vec::new(),
+        edge: edge.map(|w| Transport {
+            word: w,
+            carriage: element::identity_versor(),
+            gauge: Vec::new(),
+        }),
+    };
+    // `Form::default` already seeds the Frame at 0; the words are 1 and 2.
+    let mut f = Form::default();
+    f.vertices.push(word_vertex(1));
+    f.vertices.push(word_vertex(2));
+    // Every face word is the identity, so the word holonomy telescopes to
+    // the identity — which is what it does for every coboundary anyway.
+    for (i, j, edge) in [(0u16, 1u16, None), (0, 2, None), (1, 2, Some(q.clone()))] {
+        let mut face = FormFace::new(i, j, Word::identity());
+        face.at.insert(pair.clone(), place(edge));
+        f.faces.push(face);
+    }
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    assert_eq!(f.loops.len(), 1, "three faces on three vertices close one loop");
+    assert!(
+        f.loops[0].holonomy.rotor().is_identity(),
+        "the word holonomy is flat, as a product of coboundaries always is"
+    );
+
+    let hw = f.holonomy_word(0).expect("the paths agree on one holonomy");
+    // The loop runs the chord backward, so the composite is `q⁻¹`. It is the
+    // same CLASS as `q` — conjugate, and one class key since a class is read
+    // off the ray and not off a lift — and the class is what torsion is filed
+    // under, so that is what is asserted.
+    assert_eq!(
+        hw.rotor().order(),
+        Some(crate::transducer::alphabet::Order::Finite(4)),
+        "the holonomy the paths carry is the edge composite's quarter turn"
+    );
+    assert_eq!(
+        hw.rotor().class_key(),
+        q.rotor().class_key(),
+        "and it is the quarter turn's class"
+    );
+
+    // And the filing follows the judging: the class written is the edge's,
+    // and the identity's class — which is what the word would have filed —
+    // is not.
+    assert!(f.file_loop(0, 4), "a path with a class files");
+    let edge_class = q.rotor().class_key().expect("the quarter turn has a class");
+    let flat_class = crate::transducer::alphabet::Rotor::identity()
+        .class_key()
+        .expect("the identity has a class");
+    assert!(
+        f.torsion.contains(edge_class.as_bytes()),
+        "filed under the class the loop is judged by"
+    );
+    assert!(
+        !f.torsion.contains(flat_class.as_bytes()),
+        "and not under the identity the word holonomy reports"
+    );
+}

@@ -65,8 +65,50 @@ pub(crate) fn class_vectors_on(
     //
     // The carriage and the gauge were already the member path's own. Only the
     // rotor was taken from the loop.
-    let edges = edge_holonomies_on(faces, vertices, lp);
+    let words = holonomy_words_on(faces, vertices, lp);
     for (k, t) in loop_transport_on(faces, lp).scoped() {
+        let Some(w) = words.get(&k) else {
+            continue;
+        };
+        if let Some(cv) = ClassVector::read(w, t.carriage.clone(), CycleType::of(&t.gauge)) {
+            out.insert(&k, cv);
+        }
+    }
+    out
+}
+
+/// THE HOLONOMY WORD EACH MEMBER PATH OF A LOOP CARRIES: the edge
+/// composite's word where the path has one, the loop's own word where it
+/// does not.
+///
+/// ONE CARRIER FOR THE CHOICE (law 12). `class_vectors_on` made it and the
+/// filing decision did not: `pivot_loop` read `lp.holonomy` directly for the
+/// horizon key and for the order that selects the `Discharge` branch, and
+/// `file_loop` filed torsion under `lp.holonomy.rotor().class_key()`. So the
+/// class a loop was JUDGED by came off the edges and the class it was FILED
+/// under came off the word, and those are different objects.
+///
+/// A face's word is the coboundary `w_j ∘ w_i⁻¹` of its two vertices' words,
+/// and a product of coboundaries around a cycle telescopes to the identity,
+/// so a loop over coboundary faces alone is flat on the word for every
+/// input. Measured on the fleet at e98e8a2: 6535 pair forms, 70311 loops,
+/// word holonomy flat 70311 — all of them — against 284 finite non-identity
+/// edge composites over the same loops. The filer was keyed to the one
+/// place the curvature cannot appear, so nothing was ever filed.
+///
+/// The word is NOT a constant by construction and is not removable: a
+/// section face (21 step 2, S12.2) carries a word that is deliberately not
+/// that coboundary, and a loop over one is curved on the word while its
+/// edges compose to the identity. Both carriers are real; the path decides
+/// which it has.
+pub(crate) fn holonomy_words_on(
+    faces: &[FormFace],
+    vertices: &[Vertex],
+    lp: &Loop,
+) -> crate::network::nerve::Keyed<Word> {
+    let edges = edge_holonomies_on(faces, vertices, lp);
+    let mut out = crate::network::nerve::Keyed::new();
+    for (k, _) in loop_transport_on(faces, lp).scoped() {
         // A path with no edge composite carries no measured transport, so the
         // only holonomy it has is the word's — which is the reading of a loop
         // whose faces are all coboundaries, not a default standing in for one.
@@ -74,9 +116,7 @@ pub(crate) fn class_vectors_on(
             Some(e) => e.word.clone(),
             None => lp.holonomy.clone(),
         };
-        if let Some(cv) = ClassVector::read(&w, t.carriage.clone(), CycleType::of(&t.gauge)) {
-            out.insert(&k, cv);
-        }
+        out.insert(&k, w);
     }
     out
 }
@@ -118,6 +158,27 @@ impl Form {
             match &held {
                 None => held = Some(cv.clone()),
                 Some(h) if h != cv => return None,
+                Some(_) => {}
+            }
+        }
+        held
+    }
+
+    /// THE HOLONOMY WORD EVERY MEMBER PATH OF LOOP `idx` AGREES ON, by the
+    /// same rule [`Form::class_vector`] collapses the class vectors: the
+    /// paths' own readings, and absence where they differ.
+    ///
+    /// Agreement is projective equality of the rotors (1.5) and not equality
+    /// of the tapes, because `q` and `q·q·q` are one vertex spelled twice and
+    /// a loop is not two obstructions for having been reached two ways.
+    pub fn holonomy_word(&self, idx: usize) -> Option<Word> {
+        let lp = self.loops.get(idx)?;
+        let ws = holonomy_words_on(&self.faces, &self.vertices, lp);
+        let mut held: Option<Word> = None;
+        for (_, w) in ws.scoped() {
+            match &held {
+                None => held = Some(w.clone()),
+                Some(h) if !h.rotor().projective_eq(&w.rotor()) => return None,
                 Some(_) => {}
             }
         }
@@ -302,14 +363,27 @@ impl Form {
                 if handled.contains(&loop_k) {
                     continue;
                 }
-                // `open` holds only loops with a class vector, so the class
-                // key exists here; a holonomy with no class is never keyed
-                // by its rotor's bytes in its place.
-                let Some(rotor_key) = self.loops[idx].holonomy.rotor().class_key() else {
+                // THE HOLONOMY THE PATHS ACTUALLY CARRY, which is the edge
+                // composite wherever a path has one. This read
+                // `self.loops[idx].holonomy` — the word — for both the
+                // horizon key and the order that picks the `Discharge`
+                // branch, while `class_vector` two lines above already read
+                // the edge composite. A loop was judged by one object and
+                // filed under another.
+                //
+                // `open` holds only loops whose paths AGREE on a class
+                // vector, and the class is a coordinate of that vector, so a
+                // loop reaching here has one holonomy class across its paths
+                // and `holonomy_word` answers it rather than a path taken by
+                // position.
+                let Some(hw) = self.holonomy_word(idx) else {
+                    continue;
+                };
+                let Some(rotor_key) = hw.rotor().class_key() else {
                     continue;
                 };
                 let held = horizon.get(&rotor_key).is_some();
-                let order = self.loops[idx].holonomy.order();
+                let order = hw.order();
                 let cands = self.candidates_for(idx, &kappa, crystal, held);
                 let mut discharging: Vec<PivotCertificate> = Vec::new();
                 for cand in &cands {
@@ -743,6 +817,20 @@ impl Form {
         })
     }
 
+    /// FILE THE LOOP'S TORSION UNDER EVERY CLASS ITS MEMBER PATHS CARRY.
+    ///
+    /// Torsion is filed under the holonomy's CLASS (16.17, 15.4), and the
+    /// holonomy of a path is its edge composite where it has one. This read
+    /// `lp.holonomy.rotor().class_key()` — the word — so on a corpus where
+    /// every loop is flat on the word (70311 of 70311 at e98e8a2) it filed
+    /// the identity's class or nothing at all, while the 284 curved edge
+    /// composites over those same loops were filed nowhere.
+    ///
+    /// One class per member path, not one for the loop: a loop whose faces
+    /// relate several pairs of bodies has one composite per path through
+    /// them, and each is its own obstruction. A path that carries no versor
+    /// has no class and is skipped; a loop where no path files returns
+    /// `false` and stays open, which is what `torsion open` reports.
     pub(crate) fn file_loop(&mut self, idx: usize, ell: u32) -> bool {
         if ell == 0 {
             return false;
@@ -755,13 +843,20 @@ impl Form {
             .windows(2)
             .map(|p| (p[0] as u8, p[1] as u8))
             .collect();
-        // Torsion is filed under the holonomy's CLASS (16.17, 15.4); a
-        // holonomy that has none is not a versor and stays open.
-        let Some(class) = lp.holonomy.rotor().class_key() else {
-            return false;
-        };
-        self.torsion.insert(class, FiledLoop { sigma, period: ell, chord: lp.chord });
-        true
+        let chord = lp.chord;
+        let words = holonomy_words_on(&self.faces, &self.vertices, lp);
+        let mut filed = false;
+        for (_, w) in words.scoped() {
+            let Some(class) = w.rotor().class_key() else {
+                continue;
+            };
+            self.torsion.insert(
+                class,
+                FiledLoop { sigma: sigma.clone(), period: ell, chord },
+            );
+            filed = true;
+        }
+        filed
     }
 
 }
