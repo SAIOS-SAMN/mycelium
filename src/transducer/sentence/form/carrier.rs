@@ -227,6 +227,25 @@ pub struct Form {
     /// there (24.1 as ruled 2026-09-09). Derived by `reindex`, never on
     /// the tape.
     pub by_class: Keyed<Vec<u16>>,
+    /// TRANSPORT CLASS KEY → the Word vertices of that class (21 step 1).
+    /// Derived by `reindex`, never on the tape.
+    ///
+    /// The fiber correspondence needs, and it did not exist. Correspondence
+    /// matches by TRANSPORT CLASS — kind and the conjugacy of the word, never
+    /// the hue map and never the body's moduli, which are section coordinates
+    /// — and none of this form's carriers was keyed by it: `by_class` is
+    /// keyed by the CHART, and one class spans several charts (`05f2a901`:
+    /// one class, two charts), so it cannot say which vertices correspond;
+    /// `carriages` holds versors rather than indices and its key carries the
+    /// gauge, which 21 step 1 excludes from matching. Lacking the fiber,
+    /// extraction walked every pair form's vertices and accumulated the
+    /// correspondence itself — a second producer of one fact, beside the
+    /// indexer whose job it is (law 12, 13.1).
+    ///
+    /// The key is `TransportClass::key()`'s own, taken from
+    /// `family::transport_class(v)`, so a reader asks with the key it already
+    /// builds and there is one definition of it.
+    pub by_transport: Keyed<Vec<u16>>,
     /// Vertex index key → Frame face index. Star incidence, one face per vertex.
     pub star: Keyed<u16>,
     /// Word vertex address → carriage, filled at construction.
@@ -258,6 +277,7 @@ impl Default for Form {
             vortex: Keyed::new(),
             by_address: Keyed::new(),
             by_class: Keyed::new(),
+            by_transport: Keyed::new(),
             star: Keyed::new(),
             carriages: Keyed::new(),
             by_rebased: Keyed::new(),
@@ -346,6 +366,7 @@ impl Form {
     pub fn reindex(&mut self) {
         let mut by_address = Keyed::new();
         let mut by_class: Keyed<Vec<u16>> = Keyed::new();
+        let mut by_transport: Keyed<Vec<u16>> = Keyed::new();
         let mut by_rebased = Keyed::new();
         let mut by_unfolded = Keyed::new();
         let mut demands = Keyed::new();
@@ -357,6 +378,19 @@ impl Form {
                 Vertex::Word { address, derivation, acts, .. } => {
                     let rotor = derivation.rotor();
                     by_address.insert(address, i as u16);
+                    // THE TRANSPORT CLASS IS THE VERTEX'S, not a member's, so
+                    // this files the vertex once however many charts it acts
+                    // on. A rotor with no class has no transport class (15.3)
+                    // and is filed under none: no key of its bytes stands in.
+                    if let Some(tk) = crate::transducer::family::transport_class(v).map(|c| c.key())
+                    {
+                        match by_transport.get_mut(&tk) {
+                            Some(on) => on.push(i as u16),
+                            None => {
+                                by_transport.insert(&tk, vec![i as u16]);
+                            }
+                        }
+                    }
                     // EVERY CHART THIS VERTEX ACTS ON is a chart it stands
                     // at, so `by_class` files it under each of them. One
                     // member is the single-chart case and reads as before.
@@ -436,6 +470,7 @@ impl Form {
         }
         self.by_address = by_address;
         self.by_class = by_class;
+        self.by_transport = by_transport;
         self.by_rebased = by_rebased;
         self.by_unfolded = by_unfolded;
         self.demands = demands;

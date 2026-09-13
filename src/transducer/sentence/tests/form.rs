@@ -509,6 +509,68 @@ fn a_chart_names_the_word_vertices_on_it() {
     }
 }
 
+/// 21 step 1 — A TRANSPORT CLASS NAMES THE WORD VERTICES OF THAT CLASS, and
+/// it names them ACROSS CHARTS, which is the whole reason the chart fiber
+/// above cannot serve correspondence: the two vertices here carry the same
+/// word on two different charts, so `by_class` splits them into two entries
+/// and `by_transport` holds them as the one class they are.
+///
+/// Asked with the reader's own key — `transport_class(v).key()` — because an
+/// index a reader cannot address with the key it builds is not an index.
+#[test]
+fn a_transport_class_names_the_word_vertices_of_that_class() {
+    let (near, far) = (stalk::Invariant(vec![3, 5]), stalk::Invariant(vec![7]));
+    let mut f = Form::default();
+    // Two words of one class on two charts, and a third of a DIFFERENT class
+    // (the quarter turn) on a chart one of them is already on.
+    f.vertices.push(word_vertex_on(1, Word::identity(), near.clone()));
+    f.vertices.push(word_vertex_on(2, Word::identity(), far.clone()));
+    f.vertices.push(word_vertex_on(3, order4(), near.clone()));
+    f.reindex();
+    let key_of = |i: usize| {
+        crate::transducer::family::transport_class(&f.vertices[i])
+            .expect("a word vertex has a transport class")
+            .key()
+    };
+    let (identity_class, quarter_class) = (key_of(1), key_of(3));
+    assert_ne!(identity_class, quarter_class, "two words, two transport classes");
+    assert_eq!(
+        f.by_transport.get(&identity_class),
+        Some(&vec![1u16, 2]),
+        "the identity class names both its vertices, across the two charts"
+    );
+    assert_eq!(
+        f.by_transport.get(&quarter_class),
+        Some(&vec![3u16]),
+        "the quarter turn is its own class on a chart another vertex is also on"
+    );
+    // The chart fiber cannot answer the same question: it splits the one
+    // class over two charts and merges two classes on one chart.
+    assert_eq!(f.by_class.get(&near.key()), Some(&vec![1u16, 3]), "chart near: two classes");
+    assert_eq!(f.by_class.get(&far.key()), Some(&vec![2u16]), "chart far: one of the identity class");
+    // Every index the fiber names is a Word of that class, and every Word is
+    // named by its own: the relation is total in both directions.
+    for (k, on) in f.by_transport.scoped() {
+        for &i in on {
+            let v = f.vertices.get(i as usize).expect("an index the fiber names is a vertex");
+            assert_eq!(
+                crate::transducer::family::transport_class(v).map(|c| c.key()).as_deref(),
+                Some(k.as_slice()),
+                "vertex {i} is of the class that names it"
+            );
+        }
+    }
+    for (i, v) in f.vertices.iter().enumerate() {
+        let Some(k) = crate::transducer::family::transport_class(v).map(|c| c.key()) else {
+            continue;
+        };
+        assert!(
+            f.by_transport.get(&k).is_some_and(|on| on.contains(&(i as u16))),
+            "vertex {i} carries a transport class and the fiber names it"
+        );
+    }
+}
+
 /// A6: the address→vertex meet a stroke reads is DERIVED at the stroke, not
 /// carried in from the caller. A form assembled vertex by vertex has an
 /// empty meet until something fills it; a pivot on such a form used to go
