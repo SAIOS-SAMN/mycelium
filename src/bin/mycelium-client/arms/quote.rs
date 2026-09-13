@@ -57,9 +57,27 @@ match entity.quote() {
         // advances (23.8).
         entity.advance_height(q.height);
         m.last_pressure = q.surface;
-        // C4, again at the quote: T is a cost, never a pace.
+        // THE DWELL IS THE SURFACE, WHOLE. `m.dwell_remaining[2] = 0` stood
+        // here under "C4, again at the quote: T is a cost, never a pace",
+        // and it is C4's own fault inverted.
+        //
+        // C4 found the T lane FLOORED AT ONE, which "paced every such idea
+        // by a clock that admitted nothing" (`bubble/idea.rs`). The fault
+        // was a constant standing in for a measurement. Forcing the lane to
+        // zero is the same substitution with the sign flipped: a ceiling
+        // destroying the reading where the floor invented one. A measurement
+        // that returns a constant by construction asserts nothing.
+        //
+        // `𝒯` is EXTENT IN RECEIPTS (51.9) — the court's own K, which is
+        // content. Law 9 forbids the WALL clock; every other T reading in
+        // the tree is receipts (`held_since`, `retire_on_t`) and is
+        // permitted for exactly that reason.
+        //
+        // And the zero did not make the voice patient, it made it eager:
+        // every arm fires on `last_pressure[l] > 0 && dwell_remaining[l] == 0`,
+        // so a T lane pinned at zero is a lane that is ALWAYS due. The
+        // court's T-lane pacing reached the voice and was discarded.
         m.dwell_remaining = q.surface;
-        m.dwell_remaining[2] = 0;
         let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
         let (mut n_closing, mut n_ruled_hit, mut n_stood, mut n_held) = (0u32, 0u32, 0u32, 0u32);
         // ANSWERING A DEMAND SPEAKS A FORM, and speaking one perceives a

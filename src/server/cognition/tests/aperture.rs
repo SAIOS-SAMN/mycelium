@@ -271,3 +271,70 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
          {before:?} then {after:?}"
     );
 }
+
+/// THE HOLONOMY THE METABOLISM CHARGES ON IS THE ONE THE LOOP CARRIES.
+///
+/// `germinate/listing.rs` charges the physics off `Form::loop_words`: a loop
+/// of FINITE order raises pressure by its period, a loop of INFINITE order
+/// charges TORSION — "what will not close". That reader returned
+/// `lp.holonomy`, the loop's WORD, and a face's word is the coboundary
+/// `w_j ∘ w_i⁻¹` whose product around a cycle telescopes to the identity. So
+/// every loop read `Finite(1)`, every sentence raised one unit of pressure
+/// per loop, and the torsion branch was unreachable by construction —
+/// `Physics.torsion` stayed zero, `order_flux` was `syntropic − 0`, and the
+/// `yield_surface` a reply carries never saw a cycle. Measured at 7582ada:
+/// 196 cycles filed by the voices, 0 charged on any court.
+///
+/// This fixture is the same triangle as the test above with a quarter turn
+/// on the one face that does not touch the Frame — flat on the word, curved
+/// on the edge — and it asserts the reader reports the turn's period and not
+/// the identity's.
+#[test]
+fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
+    use crate::transducer::alphabet::{Derivation, LetterId, Order, Word};
+    use crate::transducer::sentence::{face_pair_key, FacePlace, Form, FormFace, Transport, Vertex};
+    let chart = crate::transducer::stalk::Invariant(vec![3, 5]);
+    let pair = face_pair_key(&chart, &chart);
+    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("plane"), false)]);
+    let mut f = Form::default();
+    for tag in [2u8, 3u8] {
+        f.vertices.push(Vertex::word_on(
+            Address::from_bytes([tag; 32]),
+            Derivation::spelled(Word::identity()),
+            chart.clone(),
+            Box::new(element::identity_versor()),
+            Vec::new(),
+            None,
+        ));
+    }
+    for (i, j, edge) in [(0u16, 1u16, None), (0, 2, None), (1, 2, Some(q.clone()))] {
+        let mut face = FormFace::new(i, j, Word::identity());
+        face.at.insert(
+            pair.clone(),
+            FacePlace {
+                carriage: element::identity_versor(),
+                gauge: Vec::new(),
+                edge: edge.map(|w| Transport {
+                    word: w,
+                    carriage: element::identity_versor(),
+                    gauge: Vec::new(),
+                }),
+            },
+        );
+        f.faces.push(face);
+    }
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    assert_eq!(f.loops.len(), 1, "the triangle closes one loop");
+    assert_eq!(
+        f.loops[0].holonomy.order(),
+        Order::Finite(1),
+        "the WORD holonomy is the identity, as a product of coboundaries always is"
+    );
+    let words = f.loop_words();
+    assert!(!words.is_empty(), "the loop reports a holonomy per member path");
+    assert!(
+        words.iter().any(|(w, _)| matches!(w.order(), Order::Finite(4))),
+        "and what it reports is the edge composite's quarter turn, not the identity: {:?}",
+        words.iter().map(|(w, _)| w.order()).collect::<Vec<_>>()
+    );
+}

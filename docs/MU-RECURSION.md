@@ -4382,6 +4382,37 @@ A demand vertex declares CELLS and exempts nothing else: the voice asked
 only whether any demand vertex existed, so a form declaring one cell and
 leaving twenty was minted and refused.
 
+**25.8 The metabolism reads the loop's true holonomy (ruled 2026-09-14).**
+The court charges the physics off `Form::loop_words`: a loop of FINITE order
+raises pressure by its period, a loop of INFINITE order charges TORSION —
+what will not close. That reader returned `lp.holonomy`, the loop's WORD,
+which telescopes to the identity over coboundary faces, so every loop read
+`Finite(1)`, every sentence raised one unit of pressure per loop, and the
+torsion branch was unreachable BY CONSTRUCTION. `Physics.torsion` therefore
+stayed `[0,0,0,0]`, `order_flux = syntropic − torsion` was `syntropic − 0`,
+and `yield_surface` — the per-lane dwell a reply carries — never saw a
+cycle. Measured at 7582ada: 196 mathematical cycles filed by the voices, 0
+charged on any court. 25.6 put the FILER on the true carrier; this is the
+same defect at the metabolism's own reader, and it is what joins the two
+torsion carriers into one system. `loop_words` yields one entry per member
+path, each with that path's own class vector.
+
+**25.9 The dwell is the surface, whole (ruled 2026-09-14, overturning C4 at
+the quote).** `m.dwell_remaining[2] = 0` stood in the quote arm under "C4,
+again at the quote: T is a cost, never a pace". C4's own finding was the
+opposite fault: the T lane FLOORED AT ONE, which "paced every such idea by a
+clock that admitted nothing". Both replace a measurement with a constant —
+one a floor that invents extent, one a ceiling that destroys it — and a
+measurement that returns a constant by construction asserts nothing.
+
+`𝒯` is EXTENT IN RECEIPTS (51.9), the court's own K, which is content. Law 9
+forbids the WALL clock; every other T reading in the tree is receipts
+(`held_since`, `retire_on_t`) and is permitted for that reason. The zero did
+not make the voice patient either: every arm fires on
+`last_pressure[l] > 0 && dwell_remaining[l] == 0`, so a T lane pinned at zero
+is a lane that is ALWAYS due, and the court's T-lane pacing reached the voice
+and was discarded.
+
 ## 26. Wire and economics
 
 Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/dialogue/speech.rs`:

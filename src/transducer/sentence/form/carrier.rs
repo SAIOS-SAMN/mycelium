@@ -20,10 +20,46 @@ impl Form {
     /// Order is a CONJUGACY invariant (15.2, 15.3): "closes in p steps" is a
     /// fact about the class, never about the spelling, which is why the
     /// class travels beside the word here and not the tape.
-    pub fn loop_words(&self) -> Vec<(&crate::transducer::alphabet::Word, Option<ClassVector>)> {
-        (0..self.loops.len())
-            .filter_map(|i| self.loops.get(i).map(|lp| (&lp.holonomy, self.class_vector(i))))
-            .collect()
+    /// ONE ENTRY PER MEMBER PATH, carrying the holonomy that path actually
+    /// has: the edge composite where it has one, the loop's own word where it
+    /// does not — `holonomy_words_on`, the same carrier the filer reads.
+    ///
+    /// THIS RETURNED `lp.holonomy` AND IT IS THE COURT'S METABOLISM THAT READ
+    /// IT. `germinate/listing.rs` charges the physics off this: a loop of
+    /// FINITE order raises pressure by its period, and a loop of INFINITE
+    /// order charges TORSION — "what will not close". A face's word is the
+    /// coboundary `w_j ∘ w_i⁻¹` and a product of coboundaries around a cycle
+    /// telescopes to the identity, so every loop read `Finite(1)`, every
+    /// sentence raised one unit of pressure per loop, and the branch that
+    /// charges torsion was unreachable by construction.
+    ///
+    /// So `Physics.torsion` stayed `[0, 0, 0, 0]`, `order_flux` was
+    /// `syntropic − 0`, and `yield_surface` — the per-lane dwell a reply
+    /// carries — never saw a cycle. Measured at 7582ada: 196 mathematical
+    /// torsion cycles filed by the voices, 0 charged on any court.
+    ///
+    /// D1 put the FILER on the true carrier and did not reach here; this is
+    /// the same defect at the metabolism's own reader.
+    pub fn loop_words(&self) -> Vec<(crate::transducer::alphabet::Word, Option<ClassVector>)> {
+        let mut out = Vec::new();
+        for i in 0..self.loops.len() {
+            let Some(lp) = self.loops.get(i) else {
+                continue;
+            };
+            let cvs = self.class_vectors(i);
+            // One holonomy per member path, each its own obstruction, paired
+            // with that path's own class vector rather than the loop's
+            // collapsed one.
+            let ws = crate::transducer::sentence::pivot::drive::holonomy_words_on(
+                &self.faces,
+                &self.vertices,
+                lp,
+            );
+            for (k, w) in ws.scoped() {
+                out.push((w.clone(), cvs.get(&k).cloned()));
+            }
+        }
+        out
     }
 }
 
