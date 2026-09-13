@@ -129,6 +129,52 @@ fn the_meets_are_faces_and_the_faces_close_into_loops() {
 fn a_filled_cell_is_a_filed_loop_at_its_own_period() {
     let (a, b) = notched();
     let f = measured(&a, &b);
+    // WHAT THIS FIXTURE ACTUALLY CONTAINS, asserted, because every check below
+    // is inside a walk of `f.torsion` and that carrier is EMPTY here — so for
+    // as long as this test has existed it has passed by iterating nothing while
+    // its name claimed a filed loop. Measured over the 60-task slice: torsion
+    // is empty on all 42 minting families too, so an empty carrier is the
+    // expected state and not a surprise — which is exactly why the content has
+    // to be asserted instead of walked.
+    //
+    // Measured: 12 loops, 8 carrying one evaluated member path each whose edge
+    // holonomy has order Finite(1) — the identity, flat, and 50.8 case 3 files
+    // nothing there because there is nothing to fill — and 4 carrying no
+    // evaluated path at all, which is a remainder edge on them (13.9 step 7).
+    // The engine is right and the fixture is not curved.
+    //
+    // 50.8 CASE 3'S FILING PATH THEREFORE HAS NO TEST. Exercising it needs a
+    // cover whose meet loop composes to a finite NON-identity rotor — three
+    // pieces whose pairwise frame transitions do not telescope — which is a
+    // fixture to build and not a line to write, so it is named here rather
+    // than implied by a green test.
+    let (mut flat, mut unevaluated) = (0usize, 0usize);
+    for lp in &f.loops {
+        // A loop with no member path and a loop whose paths evaluate to
+        // nothing are one reading here — no edge holonomy was measured on it —
+        // and neither is a default standing in for an absent one.
+        let hs = match f.edge_holonomies(lp) {
+            Some(hs) if !hs.is_empty() => hs,
+            _ => {
+                unevaluated += 1;
+                continue;
+            }
+        };
+        if hs.scoped().all(|(_, h)| {
+            h.word.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity())
+        }) {
+            flat += 1;
+        }
+    }
+    assert_eq!(
+        (f.loops.len(), flat, unevaluated),
+        (12, 8, 4),
+        "the notched cover's loops are flat or unevaluated, so nothing is filed"
+    );
+    assert!(
+        f.torsion.is_empty(),
+        "and the form files nothing, which is why the walk below is empty"
+    );
     for (class, filed) in f.torsion.scoped() {
         assert!(
             filed.period >= 2,
