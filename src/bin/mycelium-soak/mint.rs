@@ -38,6 +38,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
     let empty = Epigenome::new();
     let mut closed_seen = 0u64;
     let (mut open_seen, mut open_demanded, mut open_minted, mut open_stood) = (0u64, 0u64, 0u64, 0u64);
+    let mut open_acts = 0u64;
     let (mut open_rem_empty, mut open_rem_cells) = (0u64, 0u64);
     for name in names {
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else {
@@ -58,7 +59,17 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         // form goes to `speak_with_demands`, which calls `mint_sentence`
         // directly. So the mint is read on these too, and the counts say
         // whether the branch that Y1 cannot reach actually works.
-        if !rule.form.is_closed() {
+        //
+        // THE GATE NO LONGER SKIPS THE DETAILED READING. D8 makes a demanded
+        // form the normal outcome for an unresolved multiplicity, and "a
+        // sentence with demands is valid, never closed" (2.2, 50.1), so the
+        // task D8 is about is exactly the task this gate hid. The counters
+        // stay; the `continue` that followed them is gone, and every task that
+        // extracts a rule now gets the same lines.
+        let closed = rule.form.is_closed();
+        if closed {
+            closed_seen += 1;
+        } else {
             let has_demands = rule.form.demand_vertices().next().is_some();
             let minted = mycelium::transducer::family::mint_sentence(&rule, &task.train, &empty);
             open_seen += 1;
@@ -76,8 +87,15 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             if has_demands {
                 open_demanded += 1;
             }
+            // A FORM NOTHING IN WHICH ACTS IS A CHAIN, NOT A SENTENCE (23.1
+            // step 3, 50.6/L7), and the court says so. A word the mint
+            // produces is not a word the court takes, so the two are counted
+            // apart or the tally reads as comprehension it is not.
             if minted.is_some() {
                 open_minted += 1;
+                if rule.form.acts() {
+                    open_acts += 1;
+                }
                 let mut mind = Epigenome::new();
                 if let Some(w) = minted {
                     if mind.stand_dialect_withheld(w, 1, 1).is_some() {
@@ -85,9 +103,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                     }
                 }
             }
-            continue;
         }
-        closed_seen += 1;
 
         // WHAT THE MINT IS HANDED. The form, by what its vertices are, and
         // the family, by what its pairs are.
@@ -382,7 +398,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
     // `speak_with_demands` to production, which has no closure gate.
     println!(
         "  mint rule_open tasks {open_seen} of which demanded {open_demanded} minted {open_minted} \
-         stood_withheld {open_stood}"
+         of those acting {open_acts} stood_withheld {open_stood}"
     );
     println!(
         "  mint rule_open Form.remainder: empty on {open_rem_empty} of {open_seen}, \

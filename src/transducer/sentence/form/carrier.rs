@@ -370,6 +370,11 @@ impl Form {
         let mut by_rebased = Keyed::new();
         let mut by_unfolded = Keyed::new();
         let mut demands = Keyed::new();
+        // `glued` IS BUILT HERE TOO. `Form::glue` wrote it as it appended each
+        // vertex and the tape decoder rebuilt it in a walk of its own; now that
+        // `depth_of` reads it, whoever builds it is the indexer and that is
+        // this pass (law 12).
+        let mut glued = Keyed::new();
         let mut hue_maps = std::mem::take(&mut self.hue_maps);
         let mut places: Keyed<Versor> = Keyed::new();
         let mut star = Keyed::new();
@@ -436,6 +441,9 @@ impl Form {
                 Vertex::Demand { kind, chart, .. } => {
                     demands.insert(crate::transducer::sentence::demand_key(kind, chart), i as u16);
                 }
+                Vertex::Glued { address, .. } => {
+                    glued.insert(address, i as u16);
+                }
                 _ => {}
             }
         }
@@ -474,6 +482,7 @@ impl Form {
         self.by_rebased = by_rebased;
         self.by_unfolded = by_unfolded;
         self.demands = demands;
+        self.glued = glued;
         self.star = star;
         self.carriages = carriages;
         self.hue_maps = hue_maps;
@@ -531,17 +540,34 @@ impl Form {
     }
 
     /// The demand vertices of this sentence, with their indices (50.5).
+    ///
+    /// READS `demands`, WHICH `reindex` BUILT. This was
+    /// `vertices.iter().enumerate().filter_map(...)` — a walk with a filter
+    /// over the whole carrier, run by `is_closed`, `sentence_measure`,
+    /// `undeclared_remainder` and the court — while `Form.demands` already
+    /// held one entry per (kind, chart) pointing at the vertex. A walk with a
+    /// filter fails silently on what nobody asked about; a keyed read can only
+    /// fail to find what was asked for.
     pub fn demand_vertices(&self) -> impl Iterator<Item = (u16, &crate::transducer::sentence::Demand, &stalk::Invariant, &[Cell])> {
-        self.vertices.iter().enumerate().filter_map(|(i, v)| match v {
-            Vertex::Demand { kind, chart, bodies } => Some((i as u16, kind, chart, bodies.as_slice())),
-            _ => None,
+        self.demands.scoped().filter_map(move |(_, &i)| {
+            match self.vertices.get(i as usize) {
+                Some(Vertex::Demand { kind, chart, bodies }) => {
+                    Some((i, kind, chart, bodies.as_slice()))
+                }
+                _ => None,
+            }
         })
     }
 
+    /// One more than the deepest glued vertex; zero where none is glued.
+    ///
+    /// READS `glued`, WHICH `reindex` BUILT: the same walk with a filter, and
+    /// the index is keyed by the cited address, so a glued vertex reachable by
+    /// the address it cites is reachable here.
     pub fn depth_of(&self) -> u16 {
         let mut d = 0u16;
-        for v in &self.vertices {
-            if let Vertex::Glued { depth, .. } = v {
+        for (_, &i) in self.glued.scoped() {
+            if let Some(Vertex::Glued { depth, .. }) = self.vertices.get(i as usize) {
                 d = d.max(depth.saturating_add(1));
             }
         }

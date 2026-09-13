@@ -82,6 +82,77 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
 }
 
 
+/// AN ASSIGNMENT'S OWN KEY: the carriage's bytes and the sorted gauge, which
+/// is what the member acts BY. Content, so two encodings of one assignment
+/// are one key (law 2), and sorted for the same reason `form_vertex_key`
+/// sorts it — a gauge is a map and not a list.
+fn assignment_key(a: &crate::transducer::sentence::Acting) -> Vec<u8> {
+    let mut buf = Vec::new();
+    a.carriage.to_bytes(&mut buf);
+    let mut g = a.gauge.clone();
+    g.sort_unstable();
+    buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+    for (x, y) in g {
+        buf.push(x);
+        buf.push(y);
+    }
+    buf
+}
+
+/// 50.5 — THE DEMAND A MULTIPLICITY NAMES: `Source { multiplicity }` on the
+/// chart the bodies stand on, carrying every one of their cells with the hue
+/// the pair asks of it. "Every one standing as a section, none first-found."
+///
+/// `None` when the demand would carry nothing — no body of that chart on any
+/// pair, or no cell whose hue the pair changes. A demand with no cells stands
+/// for nothing and `Demand::typed` would be the only thing holding it up.
+///
+/// The bodies of one grid are walked because `perceive` is their producer and
+/// there is no index over them; this is that carrier's own boundary, and it is
+/// the same read the court makes in `fiber_on`.
+fn multiplicity_demand(
+    family: &[(Grid, Grid)],
+    chart: &Invariant,
+    multiplicity: u32,
+) -> Option<(
+    crate::transducer::sentence::Demand,
+    Invariant,
+    Vec<crate::transducer::sentence::Cell>,
+)> {
+    let key = chart.key();
+    let mut cells: Vec<crate::transducer::sentence::Cell> = Vec::new();
+    for (x, y) in family {
+        for body in perceive(x) {
+            if body.moduli.key() != key {
+                continue;
+            }
+            for &(r, c, h) in &body.cells {
+                // The hue the pair asks of this cell. A cell outside the
+                // output frame is asked for nothing, and hue 0 IS absence in
+                // this encoding — `residual_of`'s own reading.
+                let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) else {
+                    continue;
+                };
+                let observed = match y.get(ur).and_then(|row| row.get(uc)) {
+                    Some(h) => *h,
+                    None => 0,
+                };
+                if observed != h {
+                    cells.push((r, c, h, observed));
+                }
+            }
+        }
+    }
+    cells.sort_unstable();
+    cells.dedup();
+    if cells.is_empty() {
+        return None;
+    }
+    let kind = crate::transducer::sentence::Demand::Source { multiplicity };
+    kind.typed().ok()?;
+    Some((kind, chart.clone(), cells))
+}
+
 /// The germ of one pair: what the input carries onto the output, as the
 /// cells of the change. `None` for a pair with no scene.
 fn germ_of_pair(a: &Grid, b: &Grid) -> Option<crate::transducer::element::PlacedChain> {
@@ -132,12 +203,22 @@ pub fn extraction_spend(family: &[(Grid, Grid)]) -> usize {
 /// An unreached pair is cells of the family this form does not account
 /// for, which is exactly the charge `contract` emits for an undeclared
 /// remainder, and it rides the rule as one.
+/// `multiplicities` are the demands correspondence itself raised (D8, 50.5):
+/// a transport class carrying several incompatible assignments under one
+/// chart, which no coordinate available to the matching selects among. They
+/// union into `by_demand` beside the pair forms' own, under the same key, so
+/// the rule still carries one vertex per (kind, chart) over the bundle.
 fn finish(
     mut form: Form,
     pair_forms: &[Form],
     scale: ((usize, usize), (usize, usize)),
     sections: crate::network::nerve::Keyed<Vec<u16>>,
     unreached: &[(Grid, Grid)],
+    multiplicities: &[(
+        crate::transducer::sentence::Demand,
+        Invariant,
+        Vec<crate::transducer::sentence::Cell>,
+    )],
 ) -> Option<crate::transducer::sentence::SentenceRule> {
     // 50.5 (F step 5): the demands of every pair ride the rule, one vertex
     // per (kind, chart) over the bundle, carrying every pair's cells.
@@ -150,6 +231,15 @@ fn finish(
                 None => {
                     by_demand.insert(key, (kind.clone(), chart.clone(), cells.to_vec()));
                 }
+            }
+        }
+    }
+    for (kind, chart, cells) in multiplicities {
+        let key = crate::transducer::sentence::demand_key(kind, chart);
+        match by_demand.get_mut(&key) {
+            Some((_, _, held)) => held.extend_from_slice(cells),
+            None => {
+                by_demand.insert(key, (kind.clone(), chart.clone(), cells.clone()));
             }
         }
     }
@@ -291,14 +381,36 @@ pub fn extract_rule_with(
     //
     // Both facts are recorded per member and the DECISION IS TAKEN AFTER THE
     // WALK, so it does not depend on which pair the walk met first: a chart
-    // some pair carries two bodies on is a multiplicity and makes no claim
-    // about variation, because "the first body of this chart on pair p" is
-    // identified with "the first on pair q" by nothing but position (rule
-    // 15). Naming the multiplicity is D8's move.
+    // some pair carries several incompatible assignments on is a MULTIPLICITY
+    // and makes no claim about variation, because "the first body of this
+    // chart on pair p" is identified with "the first on pair q" by nothing but
+    // position (rule 15).
     let mut class_place_varies: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let mut chart_varies: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    let mut chart_multiple: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    let mut chart_at_pair: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    // 50.5 — HOW MANY ASSIGNMENTS STAND AT ONE CHART WITHIN ONE PAIR, as the
+    // running maximum over the bundle. Keyed by class ++ chart.
+    //
+    // Two bodies of one chart carrying the SAME assignment are not a
+    // multiplicity: one member speaks a whole fibre, which is what
+    // `atlas.fiber(chart)` is for. Two carrying DIFFERENT assignments are
+    // several incompatible assignments and no coordinate the correspondence
+    // has selects among them — the chart is what it matches by and the chart
+    // is the same. That is the demand of D8.
+    //
+    // The assignment's own key is its content (law 2): the carriage's bytes
+    // and the sorted gauge, so two encodings of one assignment are one key.
+    let mut chart_mult: crate::network::nerve::Keyed<u32> = crate::network::nerve::Keyed::new();
+    let mut assign_seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let mut assign_n: crate::network::nerve::Keyed<u32> = crate::network::nerve::Keyed::new();
+    // The (class, chart) coordinates whose assignments cannot be reconciled,
+    // and the pair that first wrote each member, so "within one pair" and
+    // "across pairs" stay two different readings.
+    let mut chart_incompatible: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    // The assignment one pair reconciles at one chart, keyed by (class, chart,
+    // pair): the carrier that keeps "within one pair" apart from "across the
+    // bundle" without either reading being positional.
+    let mut pair_member: crate::network::nerve::Keyed<crate::transducer::sentence::Acting> =
+        crate::network::nerve::Keyed::new();
     for (pi, f) in pair_forms.iter().enumerate() {
         // THE UNION, class by class: each pair form's fibre contributes the
         // pairs it is present on. One entry per class per pair form, so the
@@ -340,30 +452,89 @@ pub fn extract_rule_with(
                     crate::transducer::address::put_bytes(&mut mk, &ck);
                     let mut pk = mk.clone();
                     pk.extend_from_slice(&(pi as u16).to_le_bytes());
-                    if chart_at_pair.contains(&pk) {
-                        chart_multiple.insert(&mk, ());
-                    } else {
-                        chart_at_pair.insert(&pk, ());
+                    // THE DISTINCT ASSIGNMENTS AT THIS CHART IN THIS PAIR,
+                    // counted by their own content and carried as the running
+                    // maximum over the bundle.
+                    let mut ak = pk.clone();
+                    crate::transducer::address::put_bytes(&mut ak, &assignment_key(a));
+                    if !assign_seen.contains(&ak) {
+                        assign_seen.insert(&ak, ());
+                        let n = match assign_n.get_mut(&pk) {
+                            Some(n) => {
+                                *n = n.saturating_add(1);
+                                *n
+                            }
+                            None => {
+                                assign_n.insert(&pk, 1);
+                                1
+                            }
+                        };
+                        match chart_mult.get_mut(&mk) {
+                            Some(m) => *m = (*m).max(n),
+                            None => {
+                                chart_mult.insert(&mk, n);
+                            }
+                        }
+                    }
+                    // WITHIN THIS PAIR FIRST. A second body of this chart on
+                    // THIS pair either reconciles with the first or it is the
+                    // multiplicity; that is the boundary D7b drew and it is
+                    // the pair index that draws it, so the reconciliation is
+                    // keyed by (class, chart, pair) and not by (class, chart).
+                    match pair_member.get_mut(&pk) {
+                        None => {
+                            pair_member.insert(&pk, a.clone());
+                        }
+                        Some(held) => {
+                            if !element::same_versor(&held.carriage, &a.carriage) {
+                                chart_incompatible.insert(&mk, ());
+                            }
+                            for &(from, to) in &a.gauge {
+                                match held.gauge.iter().find(|&&(f, _)| f == from) {
+                                    Some(&(_, t)) if t != to => {
+                                        chart_incompatible.insert(&mk, ());
+                                    }
+                                    Some(_) => {}
+                                    None => held.gauge.push((from, to)),
+                                }
+                            }
+                        }
                     }
                     let Some(members) = class_acts.get_mut(&k) else {
                         continue;
                     };
-                    // THE CARRIAGE ALONE. Step 6 asks whether the PLACEMENT
-                    // varies, and the placement is the carriage; the gauge is
-                    // the hue section (18.2 — absence is the identity), and a
-                    // chart carrying two gauges over the bundle is the gauge
-                    // version of this same fault. Including it here turned the
-                    // dilation family — one dilator, two hues — into a contact
-                    // vertex and lost the dilation. That is D8's coordinate:
-                    // `0d3d703e` is one chart and three gauges.
-                    match members.get(&ck) {
+                    // ACROSS THE BUNDLE. A differing carriage here is step 6's
+                    // question — the placement is not family-constant and a
+                    // stop ring may be what places it — and NOT a
+                    // multiplicity; a differing gauge is a hue SECTION, kept
+                    // on `Form.hue_maps` where both already go, and not a
+                    // multiplicity either. That is the boundary: variation
+                    // across pairs is a section, multiplicity within a pair
+                    // under one chart is a demand.
+                    //
+                    // THE HUE MAPS UNION hue by hue, because a gauge is a
+                    // PARTIAL map and absence is the identity (18.2) — which
+                    // is how `emit_carried` applies it: "a hue the map does not
+                    // move keeps its own colour". `[(1,4)]` on one body and
+                    // `[(9,9)]` on another are not two irreconcilable claims;
+                    // one member carrying `[(1,4),(9,9)]` speaks both. The
+                    // held entry stands where the two send one hue two ways,
+                    // exactly as it did before, and `hue_maps` carries both
+                    // sections.
+                    match members.get_mut(&ck) {
                         None => {
                             members.insert(&ck, a.clone());
                         }
-                        Some(held) if !element::same_versor(&held.carriage, &a.carriage) => {
-                            chart_varies.insert(&mk, ());
+                        Some(held) => {
+                            if !element::same_versor(&held.carriage, &a.carriage) {
+                                chart_varies.insert(&mk, ());
+                            }
+                            for &(from, to) in &a.gauge {
+                                if !held.gauge.iter().any(|&(f, _)| f == from) {
+                                    held.gauge.push((from, to));
+                                }
+                            }
                         }
-                        Some(_) => {}
                     }
                 }
             }
@@ -388,14 +559,55 @@ pub fn extract_rule_with(
             |acc, f| acc.meet(&f.by_transport),
         ),
     };
-    // THE DECISION, after the walk: a class's placement varies where some
-    // chart of it was placed two ways and that chart carries one body per
-    // pair. A chart with several bodies on one pair says nothing here.
+    // THE DECISIONS, after the walk, so neither depends on which pair the walk
+    // met first.
+    //
+    // A class's PLACEMENT VARIES where some chart of it was placed two ways
+    // over the bundle and that chart carries ONE assignment per pair. A chart
+    // with several is a multiplicity and says nothing about variation.
+    //
+    // A chart with several incompatible assignments in one pair is a
+    // MULTIPLICITY THE CORRESPONDENCE CANNOT RESOLVE (50.5, D8): every one of
+    // them stands as a section and none is first-found, so the form says so
+    // with a demand and DOES NOT KEEP ONE AND SPEAK IT. `mult_charts` is the
+    // (class, chart) coordinates that fall out of the fibre for that reason.
+    let mut mult_charts: crate::network::nerve::Keyed<u32> = crate::network::nerve::Keyed::new();
+    let mut mult_demands: Vec<(
+        crate::transducer::sentence::Demand,
+        Invariant,
+        Vec<crate::transducer::sentence::Cell>,
+    )> = Vec::new();
     for (k, members) in class_acts.scoped() {
-        for (ck, _) in members.scoped() {
+        for (ck, a) in members.scoped() {
             let mut mk = k.clone();
             crate::transducer::address::put_bytes(&mut mk, &ck);
-            if chart_varies.contains(&mk) && !chart_multiple.contains(&mk) {
+            // Rule 11: the count is what the walk recorded, and a chart the
+            // walk recorded nothing for carried no assignment at all — which
+            // is not a multiplicity of zero, it is a chart this loop cannot
+            // have reached, since `class_acts` and `chart_mult` are written
+            // from the same member.
+            let Some(&multiplicity) = chart_mult.get(&mk) else {
+                continue;
+            };
+            // THE COUNT DOES NOT DECIDE (rule 2). Several assignments at one
+            // chart are a multiplicity only where they cannot be reconciled;
+            // where they can, the member above already carries their union and
+            // speaks every body. The count is what the demand NAMES once the
+            // incompatibility has decided that there is one.
+            if chart_incompatible.contains(&mk) {
+                mult_charts.insert(&mk, multiplicity);
+                // The demand names the CLASS by the chart it stands on — which
+                // is the coordinate 50.5 files a demand under — and the
+                // multiplicity it could not resolve. Its bodies are the cells
+                // of the bodies on that chart, with the hue each pair asks of
+                // them, so the demand carries what it stands for and is not a
+                // claim with nothing in it.
+                if let Some(d) = multiplicity_demand(family, &a.chart, multiplicity) {
+                    mult_demands.push(d);
+                }
+                continue;
+            }
+            if chart_varies.contains(&mk) {
                 class_place_varies.insert(&k, ());
             }
         }
@@ -414,10 +626,32 @@ pub fn extract_rule_with(
         else {
             continue;
         };
+        // A CHART WHOSE MULTIPLICITY THE CORRESPONDENCE COULD NOT RESOLVE IS
+        // NOT IN THE FIBRE. The demand above stands for it; keeping a member
+        // here would speak one of several assignments and assert it for the
+        // rest, which is the first-found 50.5 forbids.
+        let mut acts: crate::network::nerve::Keyed<crate::transducer::sentence::Acting> =
+            crate::network::nerve::Keyed::new();
+        for (ck, a) in members.scoped() {
+            let mut mk = k.clone();
+            crate::transducer::address::put_bytes(&mut mk, &ck);
+            if mult_charts.contains(&mk) {
+                continue;
+            }
+            acts.insert(&ck, a.clone());
+        }
+        // A CLASS LEFT WITH NO CHART SPEAKS NO WORD. Its whole content was
+        // multiplicities, the demands carry them, and a word vertex acting on
+        // nothing would be a vertex that reconstructs nothing while claiming
+        // to be a word (2.2, 50.1: a sentence with demands is valid, never
+        // closed).
+        if acts.is_empty() {
+            continue;
+        }
         let v = Vertex::Word {
             address: address.clone(),
             derivation: derivation.clone(),
-            acts: members.clone(),
+            acts,
             contact: *contact,
         };
         // THE DIFFERENCE IS THE SECTION: a class in the union and not in the
@@ -486,7 +720,7 @@ pub fn extract_rule_with(
     let ends = index_ends(&form);
     for (_, (ea, eb)) in candidates.scoped() {
         if !budget.spend() {
-            return finish(form, &pair_forms, scale, sections, &unreached);
+            return finish(form, &pair_forms, scale, sections, &unreached, &mult_demands);
         }
         // 21 step 2, 25 (Stage 12 S12.2): the face word between two ends,
         // read on every pair of the bundle. Constant, it is the rule's face.
@@ -581,7 +815,7 @@ pub fn extract_rule_with(
         // leaves the form it has, ungLued, rather than unsaying the pairs
         // it measured to get here.
         if !budget.spend() {
-            return finish(form, &pair_forms, scale, sections, &unreached);
+            return finish(form, &pair_forms, scale, sections, &unreached, &mult_demands);
         }
         let Some(placement) = placement_of_class(&pair_forms, &tc) else {
             continue;
@@ -626,7 +860,7 @@ pub fn extract_rule_with(
         // A contact ring not read is a vertex that keeps its carriage,
         // which is what it had; it is not a reason to unsay the form.
         if !budget.spend() {
-            return finish(form, &pair_forms, scale, sections, &unreached);
+            return finish(form, &pair_forms, scale, sections, &unreached, &mult_demands);
         }
         let Some(tc) = transport_class(&form.vertices[vi]) else {
             continue;
@@ -718,7 +952,7 @@ pub fn extract_rule_with(
         }
     }
     trace::trace("extract/8 finish", budget);
-    finish(form, &pair_forms, scale, sections, &unreached)
+    finish(form, &pair_forms, scale, sections, &unreached, &mult_demands)
 }
 
 

@@ -509,6 +509,18 @@ assert!(
     contact[0].edge.is_none(),
     "one bar moved and the other stood: no single versor carries the pair, a remainder edge (50.3)"
 );
+// AND THE RULE DEMANDS THE MULTIPLICITY RATHER THAN SPEAKING ONE OF IT (D8,
+// 50.5). Both bars are single-hue two-cell bars, so they are ONE chart, and
+// within one pair one is translated and the other is still: two carriages
+// under one chart, which no member can carry and no coordinate the
+// correspondence has selects between — the chart is what it matches by and
+// the chart is the same.
+//
+// This asserted one word vertex and no demand, and called the two carriages
+// "two sections" — which is what 18.2 says of variation ACROSS PAIRS. Within
+// one pair it is a multiplicity: keeping one carriage spoke one bar and
+// asserted its placement for the other, and the form claimed a bar it does
+// not carry. Every one stands as a section and none is first-found.
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the family extracts");
 let words = rule
     .form
@@ -517,21 +529,44 @@ let words = rule
     .filter(|v| matches!(v, Vertex::Word { .. }))
     .count();
 assert_eq!(
-    words, 1,
-    "correspondence is transport class (21 step 1): both bodies carry the identity word, one rule vertex, their two carriages two sections; got {words}"
+    words, 0,
+    "the class's one chart is a multiplicity, so it carries no word; got {words}"
 );
-assert_eq!(rule.form.demand_vertices().count(), 0, "and no demand");
+let demands: Vec<_> = rule.form.demand_vertices().collect();
+let [(_, kind, chart, cells)] = demands.as_slice() else {
+    panic!("one demand, on the one chart the multiplicity is at; got {}", demands.len())
+};
 assert!(
-    rule.form.loops.iter().all(|c| c.holonomy.is_identity()),
-    "the placements' coboundary telescopes around the contact loop"
+    matches!(kind, crate::transducer::sentence::Demand::Source { multiplicity } if *multiplicity == 2),
+    "the demand names the multiplicity it could not resolve: {kind:?}"
 );
+assert_eq!(
+    chart.key(),
+    pf.vertices
+        .iter()
+        .find_map(|v| v.acting().map(|a| a.chart.key()))
+        .expect("the pair form's bars stand on a chart"),
+    "and it names the chart the bars stand on"
+);
+assert!(
+    !cells.is_empty() && cells.iter().all(|&(_, _, before, after)| before != after),
+    "carrying the cells it stands for, each one the pair asks a different hue of"
+);
+assert!(
+    !rule.form.is_closed(),
+    "a sentence with demands is valid, never closed (2.2, 50.1)"
+);
+// AND A RULE WHOSE WHOLE CONTENT IS THE DEMAND IS A CHAIN, NOT A SENTENCE
+// (23.1 step 3, 50.6/L7): "nothing in it acts". The tape parses — the court
+// reads it and reaches that clause, which is the reading — and the family is
+// WITHHELD rather than spoken by a rule that would carry one bar and claim
+// the other. The refusal is named, because a court that says no has a reason
+// with a coordinate on it (50.9, rule 11).
 let e = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("element");
-// The refusal is NAMED when there is one: "a form tape parses" said only
-// that the court said no, and a court that says no has a reason with a
-// coordinate on it (50.9, rule 11).
-let refusal = crate::verdict::blind_replay(&e);
-assert!(
-    refusal.is_none() || e.magnitude().iter().all(|&x| x == 0),
-    "a form tape parses; refused with {refusal:?}"
+assert!(!rule.form.acts(), "no vertex of this form acts");
+assert_eq!(
+    crate::verdict::blind_replay(&e),
+    Some(crate::verdict::REFUSE_NOT_A_SENTENCE),
+    "the demand is the whole of it, so the utterance is a chain"
 );
 }

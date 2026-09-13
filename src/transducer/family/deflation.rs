@@ -87,6 +87,25 @@ pub fn mint_sentence(
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
 ) -> Option<element::Element> {
+    // A FORM NOTHING IN WHICH ACTS IS NOT UTTERED. The court's clause is
+    // already exactly this — "a tape whose only vertices are the Frame and
+    // demands is a chain wearing a form's tape" (23.1 step 3, 50.6/L7,
+    // `REFUSE_NOT_A_SENTENCE`) — and this is the speaker's side of it, reading
+    // the same `Form::acts()`.
+    //
+    // Without it the voice utters the chain, the court refuses it, and the
+    // refusal SEALS the address (50.9) — against a shape that was never
+    // spoken, which is the fault the extraction path's own comments warn
+    // about. Withholding costs the family nothing: its demands go to the
+    // market to be answered, and a rule that can act again is minted then.
+    //
+    // D8 made this reachable: a class whose whole content is an unresolved
+    // multiplicity carries no word, so a family with nothing else in it has a
+    // form of Frame and demands. Measured on the 60-task slice, that is 11
+    // families, up from 3.
+    if !rule.form.acts() {
+        return None;
+    }
     let mag = sentence_measure(&rule.form, family, crystal)?;
     crate::transducer::sentence::as_element_form(&rule.form, mag)
 }
@@ -105,18 +124,23 @@ pub fn sentence_measure(form: &Form, family: &[(Grid, Grid)], crystal: &dyn Crys
         return remainders.iter().all(|r| r.is_empty()).then_some(pay);
     }
     let mut mag = [0u64; 4];
-    for (x, y) in family {
-        // The refined delta where the pair refines; the raw residual of
-        // the two grids where it does not. Both are measured on the pair.
+    // D2 — `after_chain` HAS A CARRIER AND BOTH BRANCHES READ IT. This branch
+    // called `apply_form` a second time on every pair and re-derived the
+    // residual the call above had already produced and returned in
+    // `remainders`: one fact, two producers, and the expensive one of the two
+    // (law 12). The pairs and the remainders are in the family's own order, so
+    // the zip is the pairing and not a lookup.
+    //
+    // `before_chain` stays computed here: it is a fact about the PAIR and not
+    // about the form, which is what `form_deflation` returns, so it is not the
+    // same fact arriving twice.
+    for ((x, y), after_chain) in family.iter().zip(&remainders) {
         let before_chain = match crate::arc::refine_delta(x, y) {
             Some(r) => r.delta,
             None => residual_of(Some(x), y),
         };
-        let spoken = apply_form(form, x, &crate::transducer::alphabet::Word::identity(), crystal);
-        let grid = spoken.as_ref().map(|s| s.grid());
-        let after_chain = residual_of(grid.as_ref(), y);
         let closed = crate::economy::deflation_of(&crate::economy::lane_moves(
-            &element::measure_lanes(&after_chain),
+            &element::measure_lanes(after_chain),
             &element::measure_lanes(&before_chain),
         ));
         for (m, d) in mag.iter_mut().zip(&closed) {

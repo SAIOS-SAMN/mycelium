@@ -249,10 +249,10 @@ pub fn replay_form_at(
         return Some(tape(REFUSE_RANK_LOST));
     }
     if let Some(fam) = family {
-        let glued = walked
-            .vertices
-            .iter()
-            .any(|v| matches!(v, Vertex::Glued { .. }));
+        // `Form.glued` is keyed by the cited address and `reindex` builds it,
+        // so "does this form cite anything" is a read of that index and not a
+        // walk of every vertex asking each whether it is a citation.
+        let glued = !walked.glued.is_empty();
         let deflation_crystal: &dyn crate::transducer::family::Crystal = if glued {
             crystal
         } else {

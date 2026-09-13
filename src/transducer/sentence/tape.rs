@@ -421,12 +421,9 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         let chord = take_u16(b, pos)?;
         axes.insert(k, chord);
     }
-    let mut glued = Keyed::new();
-    for (i, v) in vertices.iter().enumerate() {
-        if let Vertex::Glued { address, .. } = v {
-            glued.insert(address, i as u16);
-        }
-    }
+    // `glued` is `reindex`'s to build and `reindex` runs below: the decoder
+    // walked the vertices a second time to fill it, which is a second builder
+    // of one index (law 12).
     let mut form = Form {
         vertices,
         faces,
@@ -439,7 +436,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         certificates,
         torsion,
         axes,
-        glued,
+        glued: Keyed::new(),
         vortex: Keyed::new(),
         by_address: Keyed::new(),
         by_class: Keyed::new(),
