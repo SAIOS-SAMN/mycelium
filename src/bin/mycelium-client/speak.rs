@@ -57,7 +57,9 @@ pub(crate) fn speak_form(
     // its closed sub-complex and its demands together — never withheld
     // and never expressed as a residual.
     if form.demand_vertices().next().is_some() {
-        return speak_with_demands(entity, tag, rule, train, family);
+        // The remainders are measured above and ride with it: that arm holds
+        // what it does not speak, and it holds it against these.
+        return speak_with_demands(entity, tag, rule, train, family, &remainders);
     }
     let n_rem: usize = remainders.iter().map(|r| r.len()).sum();
     if remainders.iter().any(|r| !r.is_empty()) {
@@ -111,17 +113,38 @@ pub(crate) fn speak_form(
 /// they ask for (`sentence_measure`); one `sentence spoken` line, one
 /// `demand` line per (kind, chart) and one `edge remainder` line per pair
 /// of bodies no single versor carried (34.3).
+/// A FORM THIS ARM DOES NOT SPEAK IS HELD, as `speak_form` holds the ones
+/// it does not speak. Both of this arm's non-speaking branches returned
+/// `false` and let the form go: the mint's refusal and the court's. So a
+/// form carrying demand vertices — which is exactly a form with unfinished
+/// work on it — was the one shape the engine threw away, while a form with
+/// no demands became an idea the pivot loop would see next stroke (30.2).
+///
+/// Measured on the fleet at fbfebd4 over twenty minutes: 2690 forms down
+/// this arm's dropping branch against 67 down `speak_form`'s holding one —
+/// **97.6% of every withheld form**. That is why the contemplation carries
+/// tens of ideas where it carried scores, and why `pivot_loop` fires on
+/// nothing: the ideas that would carry a curved loop are in the 97.6%.
+///
+/// The asymmetry predates D5 and D6 — they raised the traffic through it
+/// from 43/min to 134.5/min, they did not create it. `remainders` rides in
+/// from `speak_form`, which has already measured them, rather than being
+/// re-derived here (law 12).
 fn speak_with_demands(
     entity: &mut Entity,
     tag: &str,
     rule: &mycelium::transducer::sentence::SentenceRule,
     train: &mycelium::transducer::family::Family,
     family: &[u8],
+    remainders: &[Vec<(i64, i64, u8, u8)>],
 ) -> bool {
     use mycelium::transducer::sentence::Vertex;
     let fam = format!("{:02x}{:02x}…", family[0], family[1]);
     let form = &rule.form;
     let Some(word) = mycelium::transducer::family::mint_sentence(rule, train, &entity.epigenome) else {
+        // The mint refused it, so it is not a word — it is not stood in the
+        // dialect, and it is held as the open work it is.
+        entity.hold_form(form, train, remainders);
         eprintln!("[{tag}] form withheld: family {fam} no measured descent and no demand");
         return false;
     };
@@ -141,6 +164,10 @@ fn speak_with_demands(
         // One sentence was sent, so the reply is one code.
         Ok(codes) => match codes.as_slice() {
             [mycelium::anastome::dialogue::SPEECH_REFUSED] => {
+                // The court refused it. The work it names is still open, so
+                // it is held: the refusal names a coordinate (50.9) and the
+                // pivot loop is what acts on it.
+                entity.hold_form(form, train, remainders);
                 eprintln!("[{tag}] sentence withheld: family {fam} refused on the wire");
                 false
             }
@@ -173,6 +200,9 @@ fn speak_with_demands(
             }
         },
         Err(e) => {
+            // The wire failed, which says nothing about the form: it is held
+            // exactly as it would be had it never been offered.
+            entity.hold_form(form, train, remainders);
             eprintln!("[{tag}] sentence withheld: family {fam} {e}");
             false
         }
