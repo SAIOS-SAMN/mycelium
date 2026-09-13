@@ -37,6 +37,7 @@ const MINT_STROKE: usize = 1 << 20;
 pub(crate) fn trace(dir: &str, names: &[String]) {
     let empty = Epigenome::new();
     let mut closed_seen = 0u64;
+    let (mut open_seen, mut open_demanded, mut open_minted, mut open_stood) = (0u64, 0u64, 0u64, 0u64);
     for name in names {
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else {
             continue;
@@ -49,10 +50,29 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         let Some(rule) = extract_rule_with(&task.train, &empty, &mut budget) else {
             continue;
         };
-        // Only the tasks Y1 named: a rule whose form closes and whose
-        // sentence does not mint. A rule that does not close never reaches
-        // `mint_sentence` at all and is `rule_open`, not this row's.
+        // THE OTHER POPULATION, and the instrument's `is_closed()` gate is
+        // what hides it: a rule form that does not close is `rule_open` to
+        // Y1 and never reaches `mint_sentence` there. Production has no such
+        // gate — `speak_form` branches on DEMAND VERTICES and a demanded
+        // form goes to `speak_with_demands`, which calls `mint_sentence`
+        // directly. So the mint is read on these too, and the counts say
+        // whether the branch that Y1 cannot reach actually works.
         if !rule.form.is_closed() {
+            let has_demands = rule.form.demand_vertices().next().is_some();
+            let minted = mycelium::transducer::family::mint_sentence(&rule, &task.train, &empty);
+            open_seen += 1;
+            if has_demands {
+                open_demanded += 1;
+            }
+            if minted.is_some() {
+                open_minted += 1;
+                let mut mind = Epigenome::new();
+                if let Some(w) = minted {
+                    if mind.stand_dialect_withheld(w, 1, 1).is_some() {
+                        open_stood += 1;
+                    }
+                }
+            }
             continue;
         }
         closed_seen += 1;
@@ -143,6 +163,50 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 None => println!("  mint {name} refused at: as_element_form, on mag {mag:?}"),
             },
         }
+
+        // WHAT PRODUCTION DOES WITH THE SAME FORM. `speak_form` takes the
+        // descent, branches on demand vertices, and where a demandless
+        // form leaves a remainder on any pair it calls `withhold_form` —
+        // which is `as_element_form(f, mag)` and `stand_dialect_withheld`,
+        // with `mag` being `form_descent`'s pay and `sentence_measure`
+        // never called at all. Those two calls are made here, in that
+        // order, with those arguments, on a scratch mind: the same
+        // sequence, read rather than asserted.
+        let demandless_with_remainder =
+            !has_demands && remainders.iter().any(|r| !r.is_empty());
+        println!(
+            "  mint {name} production branch: {}",
+            match (has_demands, demandless_with_remainder) {
+                (true, _) => "speak_with_demands — mint_sentence, then the wire; nothing stood locally",
+                (false, true) => "withhold_form — as_element_form(pay) then stand_dialect_withheld",
+                (false, false) => "speak_with — as_element_form(pay) then the wire",
+            }
+        );
+        if demandless_with_remainder {
+            match as_element_form(&rule.form, pay) {
+                None => println!(
+                    "  mint {name} withheld path: as_element_form(pay {pay:?}) NONE — production stands nothing either"
+                ),
+                Some(word) => {
+                    let mut mind = Epigenome::new();
+                    let stood = mind.stand_dialect_withheld(word, 1, 1);
+                    println!(
+                        "  mint {name} withheld path: as_element_form(pay {pay:?}) some, stand_dialect_withheld {} — dialect now {}",
+                        match &stood {
+                            Some(_) => "SOME",
+                            None => "none",
+                        },
+                        mind.dialect_len(),
+                    );
+                }
+            }
+        }
     }
     println!("  mint tasks with a closed rule form: {closed_seen}");
+    // THE POPULATION Y1's GATE HIDES. `rule_open` to the instrument;
+    // `speak_with_demands` to production, which has no closure gate.
+    println!(
+        "  mint rule_open tasks {open_seen} of which demanded {open_demanded} minted {open_minted} \
+         stood_withheld {open_stood}"
+    );
 }
