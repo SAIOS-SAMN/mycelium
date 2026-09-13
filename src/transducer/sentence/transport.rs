@@ -97,7 +97,22 @@ impl Form {
     pub(crate) fn regauge_listing(&mut self, g: &[(u8, u8)]) {
         for v in &mut self.vertices {
             match v {
-                Vertex::Word { gauge, .. } | Vertex::Rebased { gauge, .. } => {
+                // EVERY MEMBER IS REGAUGED. A word vertex acting on several
+                // charts composes the map into each of their gauges: one
+                // member is the single-chart case and reads as before.
+                Vertex::Word { acts, .. } => {
+                    // The chart keys are unchanged by a regauge, so they are
+                    // read once and each member reached by its own key —
+                    // `Keyed` has no mutable walk, and this is the pattern
+                    // `ReceiptChain::reindex_placed` already uses.
+                    let charts: Vec<Vec<u8>> = acts.scoped().map(|(k, _)| k).collect();
+                    for k in charts {
+                        if let Some(a) = acts.get_mut(&k) {
+                            a.gauge = compose_gauge(g, &a.gauge);
+                        }
+                    }
+                }
+                Vertex::Rebased { gauge, .. } => {
                     *gauge = compose_gauge(g, gauge);
                 }
                 _ => {}
@@ -111,7 +126,17 @@ impl Form {
     pub(crate) fn compose_carriages(&mut self, c: &Versor) {
         for v in &mut self.vertices {
             match v {
-                Vertex::Word { carriage, .. } | Vertex::Rebased { carriage, .. } => {
+                // EVERY MEMBER'S CARRIAGE composes: the placement moves the
+                // vertex wherever it acts, on every chart it acts on.
+                Vertex::Word { acts, .. } => {
+                    let charts: Vec<Vec<u8>> = acts.scoped().map(|(k, _)| k).collect();
+                    for k in charts {
+                        if let Some(a) = acts.get_mut(&k) {
+                            *a.carriage = c.geo(&a.carriage);
+                        }
+                    }
+                }
+                Vertex::Rebased { carriage, .. } => {
                     **carriage = c.geo(carriage);
                 }
                 _ => {}
@@ -217,9 +242,14 @@ pub(crate) fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)
 
 pub(crate) fn vertex_carriage(v: &Vertex, form: &Form) -> Option<Versor> {
     match v {
-        Vertex::Word { carriage, .. } => Some((**carriage).clone()),
+        // THE VERTEX'S CARRIAGE is its representative member's: a face reads
+        // one placement between two vertices, and a vertex acting on
+        // several charts places them all by the member at each. D7b is
+        // where a face between two multi-member vertices is decided; today
+        // every vertex has one member and this is that member.
+        Vertex::Word { .. } => v.carriage_of().cloned(),
         Vertex::Rebased { by, carriage, .. } => match form.vertices.get(*by as usize) {
-            Some(Vertex::Word { carriage: c, .. }) => Some(carriage.geo(c)),
+            Some(w @ Vertex::Word { .. }) => w.carriage_of().map(|c| carriage.geo(c)),
             Some(Vertex::Frame) => Some((**carriage).clone()),
             _ => None,
         },
@@ -232,7 +262,8 @@ pub(crate) fn vertex_carriage(v: &Vertex, form: &Form) -> Option<Versor> {
 
 pub(crate) fn vertex_gauge(v: &Vertex) -> Vec<(u8, u8)> {
     match v {
-        Vertex::Word { gauge, .. } | Vertex::Rebased { gauge, .. } => gauge.clone(),
+        Vertex::Word { .. } => v.gauge_of().to_vec(),
+        Vertex::Rebased { gauge, .. } => gauge.clone(),
         _ => Vec::new(),
     }
 }

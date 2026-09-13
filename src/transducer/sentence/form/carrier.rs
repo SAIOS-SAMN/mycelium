@@ -53,6 +53,33 @@ pub struct FiledLoop {
     pub chord: u16,
 }
 
+/// ONE CHART A WORD VERTEX ACTS ON, and what it acts by there: the A4
+/// carriage that places it and the gauge that recolours it (D7).
+///
+/// The chart rides the member as well as keying it, which is how every
+/// keyed carrier in this tree holds a coordinate that a reader needs back
+/// — `finish`'s `by_demand` holds `(kind, chart, cells)` under
+/// `demand_key(kind, chart)` for the same reason. `Stalks::fiber` takes an
+/// `Invariant` and not a key, so the member must carry the chart it is
+/// filed under or the reader cannot ask the atlas anything.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Acting {
+    /// The section coordinate naming the bodies this member speaks to.
+    pub chart: stalk::Invariant,
+    /// A4 carriage. Boxed: a versor is 1024 bytes and a member that holds
+    /// one should not make every other vertex of a form carry that
+    /// footprint.
+    pub carriage: Box<Versor>,
+    pub gauge: Vec<(u8, u8)>,
+}
+
+impl Acting {
+    /// The key this member is filed under: its chart's own.
+    pub fn key(&self) -> Vec<u8> {
+        self.chart.key().into_vec()
+    }
+}
+
 /// A vertex of a sentence form (chapter 18).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Vertex {
@@ -63,12 +90,28 @@ pub enum Vertex {
         /// factored through and the residue A22 peeled, the word read
         /// back with `derivation.word()`.
         derivation: crate::transducer::alphabet::Derivation,
-        /// A4 carriage. Boxed: a versor is 1024 bytes and every vertex of a
-        /// form — Glued, Rebased, Frame — would carry that footprint
-        /// whether or not it holds one.
-        carriage: Box<Versor>,
-        gauge: Vec<(u8, u8)>,
-        class: stalk::Invariant,
+        /// EVERY CHART THIS ONE GENERATOR ACTS ON, and what it acts by at
+        /// each: `acts` is keyed by the chart and holds that chart's own
+        /// carriage and gauge (D7, 18.2, 21 step 1).
+        ///
+        /// This was three single-valued fields — `class`, `carriage`,
+        /// `gauge` — and 21 step 1 asks them to carry a section it cannot.
+        /// Its two sentences are "two bodies of different shapes carried by
+        /// one transport correspond", so they are ONE vertex, and "the
+        /// vertex's class is the section coordinate", which is one
+        /// `Invariant` and holds one of their charts. Measured on
+        /// `05f2a901`: two bodies, two charts, one transport class, and
+        /// `speak_rule`'s `atlas.fiber(class)` reaching one of the two. A
+        /// section coordinate that is single-valued cannot carry a section.
+        ///
+        /// 18.2 already names the carrier and its intent in one line — two
+        /// carriages on one class are two sections — and what it held was
+        /// one versor. Keyed by chart all the way down, that sentence
+        /// becomes true of its own type, and `speak_rule` reads the member
+        /// at the body's own chart: a keyed read, never a search, and a
+        /// body on a chart this rule has never seen finds no member and is
+        /// honestly unspoken.
+        acts: Keyed<Acting>,
         /// Stop ring. A form coordinate with the carriage and gauge; not M1.
         contact: Option<alphabet::Contact>,
     },
@@ -308,40 +351,44 @@ impl Form {
         let mut demands = Keyed::new();
         let mut hue_maps = std::mem::take(&mut self.hue_maps);
         let mut places: Keyed<Versor> = Keyed::new();
-        let mut place_conflict: Keyed<()> = Keyed::new();
         let mut star = Keyed::new();
         for (i, v) in self.vertices.iter().enumerate() {
             match v {
-                Vertex::Word {
-                    address,
-                    derivation,
-                    carriage,
-                    gauge,
-                    class,
-                    ..
-                } => {
+                Vertex::Word { address, derivation, acts, .. } => {
                     let rotor = derivation.rotor();
                     by_address.insert(address, i as u16);
-                    let chart = class.key();
-                    match by_class.get_mut(&chart) {
-                        Some(on) => on.push(i as u16),
-                        None => {
-                            by_class.insert(chart, vec![i as u16]);
+                    // EVERY CHART THIS VERTEX ACTS ON is a chart it stands
+                    // at, so `by_class` files it under each of them. One
+                    // member is the single-chart case and reads as before.
+                    for (ck, a) in acts.scoped() {
+                        match by_class.get_mut(&ck) {
+                            Some(on) => on.push(i as u16),
+                            None => {
+                                by_class.insert(&ck, vec![i as u16]);
+                            }
                         }
-                    }
-                    if let Some(hk) = hue_section_key_of(&rotor, gauge) {
-                        hue_maps.insert(hk, gauge.clone());
-                    }
-                    if let Some(tk) = vertex_transport_key_of(&rotor, gauge) {
-                    match places.get(&tk) {
-                        None => {
-                            places.insert(tk, (**carriage).clone());
+                        // `hue_maps` and `carriages` are DERIVATIONS OF THE
+                        // FIBRE and are rebuilt from it here, or they are a
+                        // second carrier for the fact the fibre now holds
+                        // (law 12, D7) — the same fault as keeping the three
+                        // fields beside it, one level up.
+                        if let Some(hk) = hue_section_key_of(&rotor, &a.gauge) {
+                            hue_maps.insert(hk, a.gauge.clone());
                         }
-                        Some(held) if !element::same_versor(held, carriage) => {
-                            place_conflict.insert(tk, ());
+                        // 18.2 FINALLY TRUE OF ITS OWN TYPE. The key is the
+                        // transport class AND the chart, so two carriages on
+                        // one class are two entries — two sections — where
+                        // before they were one entry refused by
+                        // `place_conflict` and replaced by nothing. The
+                        // comment here claimed the class "stays two
+                        // sections" and no section was ever written; it is
+                        // written now, and `place_conflict` is gone with the
+                        // claim it could not keep.
+                        if let Some(tk) = vertex_transport_key_of(&rotor, &a.gauge) {
+                            let mut key = tk.into_vec();
+                            crate::transducer::address::put_bytes(&mut key, &ck);
+                            places.insert(key, (*a.carriage).clone());
                         }
-                        _ => {}
-                    }
                     }
                 }
                 Vertex::Rebased { of, .. } => {
@@ -358,12 +405,17 @@ impl Form {
                 _ => {}
             }
         }
+        // EVERY PLACE IS A SECTION AND NONE IS REFUSED. The key is the
+        // transport class AND the chart, so two carriages on one class are
+        // two entries rather than one entry conflicting with itself, and
+        // 18.2's sentence is finally the type's. `place_conflict` marked
+        // the conflict, dropped the class from `carriages` entirely, and
+        // wrote no section anywhere — a local that died exactly as
+        // `after_chain` does — so the one index keyed by transport class
+        // went empty on precisely the classes the defect was about.
         let mut carriages = Keyed::new();
-        // The places this pass just gathered, one per carriage key.
         for (k, p) in places.scoped() {
-            if !place_conflict.contains(&k) {
-                carriages.insert(&k, p.clone());
-            }
+            carriages.insert(&k, p.clone());
         }
         // ONE STAR FACE PER VERTEX: the rule's face, the first between the
         // Frame and that vertex. A later face between the same two is a

@@ -159,22 +159,16 @@ fn coboundary_gauge_matches_by_address() {
 #[test]
 fn solve_coboundary_is_a_spanning_forest() {
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
-        address: form_addr(1),
-        derivation: alphabet::Derivation::spelled(Word::identity()),
-        carriage: Box::new(element::carriage(&q1(), &(q0(), q0()))),
-        gauge: Vec::new(),
-        class: stalk::Invariant::default(),
-        contact: None,
-    });
-    f.vertices.push(Vertex::Word {
-        address: form_addr(2),
-        derivation: alphabet::Derivation::spelled(Word::identity()),
-        carriage: Box::new(element::carriage(&q1(), &(q0(), q0()))),
-        gauge: Vec::new(),
-        class: stalk::Invariant::default(),
-        contact: None,
-    });
+    for k in 1..=2u8 {
+        f.vertices.push(Vertex::word_on(
+            form_addr(k),
+            alphabet::Derivation::spelled(Word::identity()),
+            stalk::Invariant::default(),
+            Box::new(element::carriage(&q1(), &(q0(), q0()))),
+            Vec::new(),
+            None,
+        ));
+    }
     f.faces.push(FormFace::new(0, 1, Word::identity(),));
     let gamma = f.solve_coboundary().expect("an isolated vertex roots its own tree");
     assert_eq!(gamma.len(), 3);

@@ -10,14 +10,14 @@ let w = Word::from_letters(&[(q, false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
-f.vertices.push(Vertex::Word {
-    address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
-    derivation: crate::transducer::alphabet::Derivation::spelled(w),
-    carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
-    gauge: vec![(1, 2)],
-    class: crate::transducer::stalk::Invariant::default(),
+f.vertices.push(Vertex::word_on(
+    crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
+    crate::transducer::alphabet::Derivation::spelled(w),
+    crate::transducer::stalk::Invariant::default(),
+    Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
+    vec![(1, 2)],
     contact,
-});
+));
 f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
 f.loops = crate::transducer::sentence::Form::loops_of(&f.faces, f.vertices.len());
 f
@@ -30,14 +30,14 @@ let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
 for (i, g) in gauges.iter().enumerate() {
-    f.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, i as u8 + 1]),
-        derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-        carriage: Box::new(crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
-        gauge: g.to_vec(),
-        class: crate::transducer::stalk::Invariant::default(),
-        contact: None,
-    });
+    f.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, i as u8 + 1]),
+        crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+        crate::transducer::stalk::Invariant::default(),
+        Box::new(crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
+        g.to_vec(),
+        None,
+    ));
     let j = (i as u16) + 1;
     f.faces.push(FormFace {
         i: 0,

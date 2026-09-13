@@ -20,10 +20,7 @@ fn closed_form_and_body_chart() -> (Element, crate::transducer::stalk::Invariant
         .expect("the tape reads back")
         .vertices
         .iter()
-        .find_map(|v| match v {
-            Vertex::Word { class, .. } => Some(class.clone()),
-            _ => None,
-        })
+        .find_map(|v| v.acting().map(|a| a.chart.clone()))
         .expect("a word vertex carries the chart of the body it acts on");
     (e, chart)
 }

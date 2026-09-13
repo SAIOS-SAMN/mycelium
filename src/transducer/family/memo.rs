@@ -97,8 +97,15 @@ fn derive_against(
             // Read from the derivation alone, every target looked purely
             // holonomic and reduced against `𝒽`'s basis whatever hue it
             // carried.
-            Vertex::Word { derivation, gauge, .. } => {
-                *derivation = derivation_of_spelled(crystal, budget, derivation, gauge)?;
+            // THE DERIVATION IS THE VERTEX'S, and the gauge it is read
+            // against is the representative member's: one member today, and
+            // D7b decides what a multi-member vertex spells against.
+            Vertex::Word { derivation, acts, .. } => {
+                let gauge = match acts.scoped().next() {
+                    Some((_, a)) => a.gauge.clone(),
+                    None => Vec::new(),
+                };
+                *derivation = derivation_of_spelled(crystal, budget, derivation, &gauge)?;
             }
             // 37.7 AT THE SECOND STEP. A demand the peel typed is not
             // final: the peel spells with the seventeen alone, and this

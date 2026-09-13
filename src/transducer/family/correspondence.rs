@@ -10,7 +10,7 @@ use super::*;
 
 pub(crate) fn class_of_vertex(v: &Vertex) -> Option<Invariant> {
     match v {
-        Vertex::Word { class, .. } => Some(class.clone()),
+        Vertex::Word { .. } => v.acting().map(|a| a.chart.clone()),
         Vertex::Glued { chart, .. } => Some(chart.clone()),
         _ => None,
     }
@@ -102,8 +102,8 @@ pub(crate) fn word_place_of_class(
     tc: &TransportClass,
 ) -> Option<(crate::transducer::alphabet::Word, Versor)> {
     match match_vertex(pf, tc) {
-        Some(Vertex::Word { derivation, carriage, .. }) => {
-            Some((derivation.word_local()?.clone(), (**carriage).clone()))
+        Some(v @ Vertex::Word { derivation, .. }) => {
+            Some((derivation.word_local()?.clone(), v.carriage_of()?.clone()))
         }
         _ => None,
     }
@@ -159,10 +159,17 @@ pub(crate) fn index_ends(form: &Form) -> crate::network::nerve::Keyed<u16> {
 pub(crate) fn hue_maps_of_form(form: &Form) -> crate::network::nerve::Keyed<Vec<(u8, u8)>> {
     let mut m = form.hue_maps.clone();
     for v in &form.vertices {
-        if let Vertex::Word { derivation, gauge, .. } = v {
-            if let Some(k) = crate::transducer::sentence::hue_section_key_of(&derivation.rotor(), gauge) {
-                if !m.contains(&k) {
-                    m.insert(k, gauge.clone());
+        // ONE HUE MAP PER MEMBER: a vertex acting on several charts carries
+        // a gauge at each, and `hue_maps` is keyed by rotor and gauge, so
+        // each is its own section (21 step 1).
+        if let Vertex::Word { derivation, acts, .. } = v {
+            for (_, a) in acts.scoped() {
+                if let Some(k) =
+                    crate::transducer::sentence::hue_section_key_of(&derivation.rotor(), &a.gauge)
+                {
+                    if !m.contains(&k) {
+                        m.insert(k, a.gauge.clone());
+                    }
                 }
             }
         }

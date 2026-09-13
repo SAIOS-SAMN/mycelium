@@ -20,14 +20,14 @@ pub fn form_addr(n: u8) -> crate::transducer::address::Address {
 
 pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form {
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::new(Vec::new()),
-        derivation: alphabet::Derivation::spelled(word.clone()),
-        carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
-        gauge: vec![(1, 2)],
-        class: stalk::Invariant(vec![3, 5]),
+    f.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::new(Vec::new()),
+        alphabet::Derivation::spelled(word.clone()),
+        stalk::Invariant(vec![3, 5]),
+        Box::new(element::carriage(&q1(), &(q0(), q1()))),
+        vec![(1, 2)],
         contact,
-    });
+    ));
     f.faces.push(FormFace {
         i: 0,
         j: 1,
@@ -45,16 +45,24 @@ pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form 
 }
 
 pub fn word_vertex(addr: u8, word: Word) -> Vertex {
+    word_vertex_on(addr, word, stalk::Invariant::default())
+}
+
+/// The same fixture on a NAMED chart. The chart is the key the member is
+/// filed under, so a test that wants a vertex on a particular chart says
+/// so when it builds the vertex; it cannot reach in and rewrite the key
+/// afterwards, which is the whole of what keying by content means (law 2).
+pub fn word_vertex_on(addr: u8, word: Word, chart: stalk::Invariant) -> Vertex {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    Vertex::Word {
-        address: form_addr(addr),
-        derivation: alphabet::Derivation::spelled(word),
-        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
-        gauge: vec![(1, 2)],
-        class: stalk::Invariant::default(),
-        contact: None,
-    }
+    Vertex::word_on(
+        form_addr(addr),
+        alphabet::Derivation::spelled(word),
+        chart,
+        Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        vec![(1, 2)],
+        None,
+    )
 }
 
 pub fn star_form(n_words: usize, extra: Vec<(u16, u16, Word)>) -> Form {

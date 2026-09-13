@@ -122,22 +122,22 @@ let b = bodies
 assert_ne!(a.moduli, b.moduli, "two shapes, two charts");
 // Form::default() carries the Frame at index 0.
 let mut pf = Form::default();
-pf.vertices.push(Vertex::Word {
-    address: crate::transducer::address::Address::from(vec![1]),
-    derivation: crate::transducer::alphabet::Derivation::spelled(rot.clone()),
-    carriage: Box::new(element::carriage(&q(1), &(q(3), q(3)))),
-    gauge: vec![(1, 1)],
-    class: a.moduli.clone(),
-    contact: None,
-});
-pf.vertices.push(Vertex::Word {
-    address: crate::transducer::address::Address::from(vec![2]),
-    derivation: crate::transducer::alphabet::Derivation::spelled(rot.clone()),
-    carriage: Box::new(element::carriage(&q(1), &(q(3), q(3)))),
-    gauge: vec![(3, 5)],
-    class: b.moduli.clone(),
-    contact: None,
-});
+pf.vertices.push(Vertex::word_on(
+    crate::transducer::address::Address::from(vec![1]),
+    crate::transducer::alphabet::Derivation::spelled(rot.clone()),
+    a.moduli.clone(),
+    Box::new(element::carriage(&q(1), &(q(3), q(3)))),
+    vec![(1, 1)],
+    None,
+));
+pf.vertices.push(Vertex::word_on(
+    crate::transducer::address::Address::from(vec![2]),
+    crate::transducer::alphabet::Derivation::spelled(rot.clone()),
+    b.moduli.clone(),
+    Box::new(element::carriage(&q(1), &(q(3), q(3)))),
+    vec![(3, 5)],
+    None,
+));
 pf.faces.push(FormFace { i: 1, j: 2, transport: pf.face_of(1, 2).expect("pair vertices"), edge: None });
 let mut form = pf.clone();
 let tc_a = transport_class(&pf.vertices[1]).expect("A has a transport class");
@@ -475,10 +475,7 @@ assert_eq!(
     "one rule vertex for one word class, got {} vertices {} faces {:?}",
     rule.form.vertices.len(),
     rule.form.faces.len(),
-    words.iter().map(|v| match v {
-        Vertex::Word { gauge, .. } => gauge.clone(),
-        _ => Vec::new(),
-    }).collect::<Vec<_>>()
+    words.iter().map(|v| v.gauge_of().to_vec()).collect::<Vec<_>>()
 );
 let hues = rule.form.hue_maps.len();
 assert_eq!(

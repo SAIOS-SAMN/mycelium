@@ -25,14 +25,14 @@ fn demanding_sentence(w: crate::transducer::alphabet::Word, tag: u8, kind: Deman
     let one = q(1);
     let zero = q(0);
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
-        address: Address::from_bytes([TAG_FORM, tag]),
-        derivation: Derivation::spelled(w),
-        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
-        gauge: Vec::new(),
-        class: crate::transducer::stalk::Invariant::default(),
-        contact: None,
-    });
+    f.vertices.push(Vertex::word_on(
+        Address::from_bytes([TAG_FORM, tag]),
+        Derivation::spelled(w),
+        crate::transducer::stalk::Invariant::default(),
+        Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        Vec::new(),
+        None,
+    ));
     f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star"), edge: None });
     f.vertices.push(Vertex::Demand {
         kind,
@@ -178,14 +178,14 @@ fn a_witness_that_does_not_carry_its_prime_is_refused_at_the_vertex() {
 fn derived_sentence(d: Derivation, tag: u8) -> Element {
     let (one, zero) = (q(1), q(0));
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
-        address: Address::from_bytes([TAG_FORM, tag]),
-        derivation: d,
-        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
-        gauge: Vec::new(),
-        class: crate::transducer::stalk::Invariant::default(),
-        contact: None,
-    });
+    f.vertices.push(Vertex::word_on(
+        Address::from_bytes([TAG_FORM, tag]),
+        d,
+        crate::transducer::stalk::Invariant::default(),
+        Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        Vec::new(),
+        None,
+    ));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
     as_element_form(&f, [1, 0, 0, 0]).expect("a tape")

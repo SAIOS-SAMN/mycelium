@@ -206,10 +206,10 @@ pub fn admit_generators_by_lane(
     f: &Form,
 ) {
     for v in &f.vertices {
-        let Vertex::Word { address, derivation, gauge, .. } = v else {
+        let Vertex::Word { address, derivation, .. } = v else {
             continue;
         };
-        let Some(cv) = class_of_vertex(derivation, gauge) else {
+        let Some(cv) = class_of_vertex(derivation, v.gauge_of()) else {
             continue;
         };
         for (lane, chart) in lane_charts_of(&cv, &derivation.rotor()) {
@@ -226,10 +226,10 @@ pub fn retract_generators_by_lane(
     f: &Form,
 ) {
     for v in &f.vertices {
-        let Vertex::Word { address, derivation, gauge, .. } = v else {
+        let Vertex::Word { address, derivation, .. } = v else {
             continue;
         };
-        let Some(cv) = class_of_vertex(derivation, gauge) else {
+        let Some(cv) = class_of_vertex(derivation, v.gauge_of()) else {
             continue;
         };
         for (lane, chart) in lane_charts_of(&cv, &derivation.rotor()) {

@@ -18,14 +18,14 @@ fn sentence_with(w: Word, tag: u8) -> Element {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
-        address: Address::from_bytes([TAG_FORM, tag]),
-        derivation: Derivation::spelled(w),
-        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
-        gauge: Vec::new(),
-        class: crate::transducer::stalk::Invariant::default(),
-        contact: None,
-    });
+    f.vertices.push(Vertex::word_on(
+        Address::from_bytes([TAG_FORM, tag]),
+        Derivation::spelled(w),
+        crate::transducer::stalk::Invariant::default(),
+        Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        Vec::new(),
+        None,
+    ));
     f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star"), edge: None });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();

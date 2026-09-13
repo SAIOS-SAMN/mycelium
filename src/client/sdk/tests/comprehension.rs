@@ -67,14 +67,14 @@ let inner = {
     let w = Word::from_letters(&[(q, false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    f.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
-        derivation: crate::transducer::alphabet::Derivation::spelled(w.clone()),
-        carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
-        gauge: vec![(1, 2)],
-        class: crate::transducer::stalk::Invariant::default(),
-        contact: None,
-    });
+    f.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
+        crate::transducer::alphabet::Derivation::spelled(w.clone()),
+        crate::transducer::stalk::Invariant::default(),
+        Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
+        vec![(1, 2)],
+        None,
+    ));
     f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f
@@ -112,14 +112,14 @@ let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter")
 let w = Word::from_letters(&[(q, false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-let word_vertex = |addr: crate::transducer::address::Address| Vertex::Word {
-    address: addr,
-    derivation: crate::transducer::alphabet::Derivation::spelled(w.clone()),
-    carriage: Box::new(crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
-    gauge: vec![(1, 2)],
-    class: crate::transducer::stalk::Invariant::default(),
-    contact: None,
-};
+let word_vertex = |addr: crate::transducer::address::Address| Vertex::word_on(
+    addr,
+    crate::transducer::alphabet::Derivation::spelled(w.clone()),
+    crate::transducer::stalk::Invariant::default(),
+    Box::new(crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
+    vec![(1, 2)],
+    None,
+);
 let inner = {
     let mut f = Form::default();
     f.vertices.push(word_vertex(crate::transducer::address::Address::from_bytes([1u8; 32])));
@@ -234,17 +234,17 @@ let other = {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
     for tag in [9u8, 10u8] {
-        f.vertices.push(Vertex::Word {
-            address: crate::transducer::address::Address::from_bytes([
+        f.vertices.push(Vertex::word_on(
+            crate::transducer::address::Address::from_bytes([
                 crate::transducer::address::TAG_FORM,
                 tag,
             ]),
-            derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero.clone()))),
-            gauge: Vec::new(),
-            class: crate::transducer::stalk::Invariant::default(),
-            contact: None,
-        });
+            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            crate::transducer::stalk::Invariant::default(),
+            Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero.clone()))),
+            Vec::new(),
+            None,
+        ));
     }
     f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star 1"), edge: None });
     f.faces.push(FormFace { i: 0, j: 2, transport: f.face_of(0, 2).expect("star 2"), edge: None });
@@ -292,14 +292,14 @@ let w = Word::from_letters(&[(q, false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
-f.vertices.push(Vertex::Word {
-    address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
-    derivation: crate::transducer::alphabet::Derivation::spelled(w),
-    carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
-    gauge: vec![(1, 2)],
-    class: crate::transducer::stalk::Invariant::default(),
-    contact: None,
-});
+f.vertices.push(Vertex::word_on(
+    crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
+    crate::transducer::alphabet::Derivation::spelled(w),
+    crate::transducer::stalk::Invariant::default(),
+    Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
+    vec![(1, 2)],
+    None,
+));
 f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
 f.loops = Form::loops_of(&f.faces, f.vertices.len());
 assert!(f.is_closed(), "a tree of two vertices coheres");
@@ -323,14 +323,14 @@ let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let inner = {
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
-        derivation: crate::transducer::alphabet::Derivation::spelled(w),
-        carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
-        gauge: vec![(1, 2)],
-        class: crate::transducer::stalk::Invariant::default(),
-        contact: None,
-    });
+    f.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
+        crate::transducer::alphabet::Derivation::spelled(w),
+        crate::transducer::stalk::Invariant::default(),
+        Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
+        vec![(1, 2)],
+        None,
+    ));
     f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f
@@ -405,10 +405,7 @@ let body = crate::transducer::sentence::from_element_form(&e1)
     .expect("the tape reads back")
     .vertices
     .iter()
-    .find_map(|v| match v {
-        crate::transducer::sentence::Vertex::Word { class, .. } => Some(class.clone()),
-        _ => None,
-    })
+    .find_map(|v| v.acting().map(|a| a.chart.clone()))
     .expect("a word vertex carries its body's chart");
 assert!(
     epi.on_body(&body).iter().any(|(_, _, st)| *st == Standing::Ruled),

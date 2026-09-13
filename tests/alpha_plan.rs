@@ -78,12 +78,13 @@ fn faces_by_constancy_three_squares() {
         rule.form.vertices.len()
     );
     let (vi, v) = non_frame[0];
-    let Vertex::Word { class, gauge, .. } = v else {
+    let Vertex::Word { acts, .. } = v else {
         panic!("the class vertex is a Word, got {v:?}");
     };
     assert!(
-        gauge.iter().any(|&(from, to)| from == 1 && to == 2),
-        "the Frame-to-class face carries the recolour gauge, got {gauge:?}"
+        acts.scoped().any(|(_, a)| a.gauge.iter().any(|&(from, to)| from == 1 && to == 2)),
+        "the Frame-to-class face carries the recolour gauge, got {:?}",
+        acts.scoped().map(|(_, a)| a.gauge.clone()).collect::<Vec<_>>()
     );
     assert!(
         rule.form.faces.iter().any(|FormFace { i, j, .. }| {
@@ -99,9 +100,9 @@ fn faces_by_constancy_three_squares() {
         atlas.admit(&body.moduli, addr);
     }
     assert_eq!(
-        atlas.fiber(class).len(),
+        acts.scoped().map(|(_, a)| atlas.fiber(&a.chart).len()).sum::<usize>(),
         3,
-        "on the test grid the class fiber holds three bodies"
+        "on the test grid the charts this vertex acts on hold three bodies between them"
     );
     let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
     assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
@@ -170,12 +171,13 @@ fn a_single_recolour_is_a_one_morphism_sentence() {
     // count and the kind are one claim, so there is no second arm left to
     // call unreachable (§2.4 — a test crate is allowed its aborts, and
     // `unreachable!` is not among them, because it asserts nothing).
-    let [mycelium::transducer::sentence::Vertex::Word { gauge, .. }] = words.as_slice() else {
+    let [mycelium::transducer::sentence::Vertex::Word { acts, .. }] = words.as_slice() else {
         panic!("one recolour is one Word vertex, got {:?}", words.len())
     };
     assert!(
-        gauge.iter().any(|&(from, to)| from == 1 && to == 2),
-        "the morphism carries the 1→2 gauge, got {gauge:?}"
+        acts.scoped().any(|(_, a)| a.gauge.iter().any(|&(from, to)| from == 1 && to == 2)),
+        "the morphism carries the 1→2 gauge, got {:?}",
+        acts.scoped().map(|(_, a)| a.gauge.clone()).collect::<Vec<_>>()
     );
     assert!(rule.form.is_closed(), "a single non-trivial morphism is a closed sentence");
 }

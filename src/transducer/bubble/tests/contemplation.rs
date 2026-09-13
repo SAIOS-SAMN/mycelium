@@ -49,14 +49,14 @@ fn hold_form_keeps_a_glued_open_loop() {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let inner = {
         let mut f = Form::default();
-        f.vertices.push(Vertex::Word {
-            address: crate::transducer::address::Address::from(vec![1]),
-            derivation: crate::transducer::alphabet::Derivation::spelled(w.clone()),
-            carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
-            gauge: vec![(1, 2)],
-            class: crate::transducer::stalk::Invariant::default(),
-            contact: None,
-        });
+        f.vertices.push(Vertex::word_on(
+            crate::transducer::address::Address::from(vec![1]),
+            crate::transducer::alphabet::Derivation::spelled(w.clone()),
+            crate::transducer::stalk::Invariant::default(),
+            Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
+            vec![(1, 2)],
+            None,
+        ));
         f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         f
@@ -85,22 +85,16 @@ fn hold_form_keeps_a_glued_open_loop() {
     assert_eq!(back.bubbles.len(), 1, "the glued form survives the tape");
 
     let mut open = Form::default();
-    open.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from(vec![2]),
-        derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-        carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
-        gauge: vec![(1, 2)],
-        class: crate::transducer::stalk::Invariant::default(),
-        contact: None,
-    });
-    open.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from(vec![3]),
-        derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
-        gauge: vec![(1, 2)],
-        class: crate::transducer::stalk::Invariant::default(),
-        contact: None,
-    });
+    for tag in [2u8, 3u8] {
+        open.vertices.push(Vertex::word_on(
+            crate::transducer::address::Address::from(vec![tag]),
+            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            crate::transducer::stalk::Invariant::default(),
+            Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
+            vec![(1, 2)],
+            None,
+        ));
+    }
     open.faces.push(FormFace {
         i: 0,
         j: 1,
@@ -215,14 +209,14 @@ fn hold_form_carries_bundle_and_remainder() {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from(vec![9]),
-        derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
-        gauge: vec![(1, 2)],
-        class: crate::transducer::stalk::Invariant::default(),
-        contact: None,
-    });
+    f.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from(vec![9]),
+        crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+        crate::transducer::stalk::Invariant::default(),
+        Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        vec![(1, 2)],
+        None,
+    ));
     f.faces.push(FormFace {
         i: 0,
         j: 1,

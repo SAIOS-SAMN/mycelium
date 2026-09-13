@@ -369,14 +369,14 @@ fn a_pure_coboundary_form_yields_no_evaluated_loop() {
     use crate::transducer::sentence::{Form, FormFace};
     let mut f = Form::default();
     for tag in [1u8, 2u8, 3u8] {
-        f.vertices.push(crate::transducer::sentence::Vertex::Word {
-            address: crate::transducer::address::Address::from_bytes([tag; 32]),
-            derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            carriage: Box::new(crate::transducer::element::identity_versor()),
-            gauge: Vec::new(),
-            class: crate::transducer::stalk::Invariant::default(),
-            contact: None,
-        });
+        f.vertices.push(crate::transducer::sentence::Vertex::word_on(
+            crate::transducer::address::Address::from_bytes([tag; 32]),
+            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            crate::transducer::stalk::Invariant::default(),
+            Box::new(crate::transducer::element::identity_versor()),
+            Vec::new(),
+            None,
+        ));
     }
     // Every face the coboundary of its two vertices, and no edge on any of
     // them: the pieces were not carried, so there is no frame transition.

@@ -35,16 +35,16 @@ fn letter_form(
     let rotor = Rotor::scalar(q(&pi.a)).add(&Rotor::blade(mask, q(&pi.b)));
     rotor.weight()?;
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::new(Vec::new()),
+    f.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::new(Vec::new()),
         // Cites nothing and spells nothing: the whole of this vertex is
         // the rotor it carries, which is what an ADJOINED generator is.
-        derivation: Derivation::adjoined(rotor),
-        carriage: crate::transducer::element::identity_versor().into(),
-        gauge: Vec::new(),
-        class: chart.clone(),
-        contact: None,
-    });
+        Derivation::adjoined(rotor),
+        chart.clone(),
+        crate::transducer::element::identity_versor().into(),
+        Vec::new(),
+        None,
+    ));
     // NO STAR FACE, and the reason is structural rather than an omission.
     // A face carries a `Transport` whose word is a `Word` — letters — and
     // it is the coboundary of two placements (3.1). The face from the

@@ -75,14 +75,17 @@ fn form_tape_v6_round_trips() {
     assert_eq!(back.depth, f.depth);
     match (&f.vertices[1], &back.vertices[1]) {
         (
-            Vertex::Word { derivation: a, gauge: ga, class: ca, contact: ca_c, .. },
-            Vertex::Word { derivation: b, gauge: gb, class: cb, contact: cb_c, .. },
+            Vertex::Word { derivation: a, acts: aa, contact: ca_c, .. },
+            Vertex::Word { derivation: b, acts: ab, contact: cb_c, .. },
         ) => {
             assert_eq!(ca_c.map(|c| (c.anchor, c.ring)), Some((1, 2)));
             assert_eq!(cb_c.map(|c| (c.anchor, c.ring)), Some((1, 2)));
             assert_eq!(a, b, "M1 is the rotor, contact is beside it");
-            assert_eq!(ga, gb);
-            assert_eq!(ca, cb);
+            // THE WHOLE FIBRE ROUND-TRIPS, not a representative of it: every
+            // chart the vertex acts on comes back with the carriage and the
+            // gauge it acts by, and `Keyed`'s equality is the fibre's own —
+            // the same members under the same keys, in no order (18.2).
+            assert_eq!(aa, ab, "every member comes back filed at its own chart");
         }
         _ => panic!("word vertex"),
     }

@@ -292,30 +292,45 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
             // citations are content the court replays (50.2 step 2) and
             // are deliberately not keyed: keying them would fork one
             // vertex into one address per presentation.
-            Vertex::Word {
-                derivation,
-                carriage,
-                gauge,
-                contact,
-                ..
-            } => {
+            Vertex::Word { derivation, acts, contact, .. } => {
                 buf.push(1);
                 crate::transducer::address::put_bytes(&mut buf, &derivation.rotor().key());
-                carriage.to_bytes(&mut buf);
-                match contact {
-                    None => buf.push(0),
-                    Some(c) => {
-                        buf.push(1);
-                        buf.extend_from_slice(&c.anchor.to_le_bytes());
-                        buf.push(c.ring);
-                    }
+                // THE MEMBERS, IN CANONICAL ORDER, which is the trie's —
+                // their chart keys sorted, and a chart key is content. A
+                // vertex acting on one chart writes exactly what it wrote
+                // before the fibre existed: the carriage, the contact and
+                // the sorted gauge, in that order and with no count ahead
+                // of them, so D7a leaves every address in the tree
+                // untouched. D7b makes several members normal, and the
+                // form then SAYS something it did not say before, so its
+                // address must change — which is why the count below is
+                // written only where there is more than one member. A
+                // single-member fibre is the old shape exactly.
+                let single = acts.len() == 1;
+                if !single {
+                    buf.push(2);
+                    buf.extend_from_slice(&(acts.len() as u32).to_le_bytes());
                 }
-                let mut g = gauge.clone();
-                g.sort_unstable();
-                buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
-                for (a, b) in g {
-                    buf.push(a);
-                    buf.push(b);
+                for (ck, a) in acts.scoped() {
+                    if !single {
+                        crate::transducer::address::put_bytes(&mut buf, &ck);
+                    }
+                    a.carriage.to_bytes(&mut buf);
+                    match contact {
+                        None => buf.push(0),
+                        Some(c) => {
+                            buf.push(1);
+                            buf.extend_from_slice(&c.anchor.to_le_bytes());
+                            buf.push(c.ring);
+                        }
+                    }
+                    let mut g = a.gauge.clone();
+                    g.sort_unstable();
+                    buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+                    for (x, y) in g {
+                        buf.push(x);
+                        buf.push(y);
+                    }
                 }
             }
             Vertex::Glued {

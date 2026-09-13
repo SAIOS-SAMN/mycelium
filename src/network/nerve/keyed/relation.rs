@@ -25,6 +25,27 @@ impl<V> Default for Keyed<V> {
     }
 }
 
+/// TWO KEYED RELATIONS ARE EQUAL WHEN THEY BIND THE SAME KEYS TO THE SAME
+/// VALUES, which is what a keyed relation IS — not when their tries have
+/// the same shape. A derived equality would compare `root`, and a reader
+/// would then be asserting something about branch bits rather than about
+/// content (law 2: identity is content). The two happen to agree for a
+/// PATRICIA trie, whose shape is determined by its key set, and agreeing
+/// by accident is not a reason to assert the wrong one.
+///
+/// The walk is the left carrier's own, and every key it yields is read
+/// from the right by a keyed read — no product of the two.
+impl<V: PartialEq> PartialEq for Keyed<V> {
+    fn eq(&self, other: &Self) -> bool {
+        if self.n != other.n {
+            return false;
+        }
+        self.scoped().all(|(k, v)| other.get(&k) == Some(v))
+    }
+}
+
+impl<V: Eq> Eq for Keyed<V> {}
+
 impl<V> Keyed<V> {
     pub fn new() -> Self {
         Keyed::default()

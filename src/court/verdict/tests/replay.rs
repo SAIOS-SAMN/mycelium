@@ -48,14 +48,14 @@ fn closed_turn_form() -> Form {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
-        derivation: crate::transducer::alphabet::Derivation::spelled(w),
-        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
-        gauge: vec![(1, 2)],
-        class: stalk::Invariant(vec![7]),
-        contact: None,
-    });
+    f.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
+        crate::transducer::alphabet::Derivation::spelled(w),
+        stalk::Invariant(vec![7]),
+        Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        vec![(1, 2)],
+        None,
+    ));
     f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     // A form off the tape is indexed by the decoder; one built by hand
@@ -205,22 +205,16 @@ fn rank_lost_refused() {
     let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
     let sheet = Word::from_letters(&[(q, false)]);
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
-        derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-        carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
-        gauge: vec![(1, 2)],
-        class: stalk::Invariant::default(),
-        contact: None,
-    });
-    f.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 2]),
-        derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
-        gauge: vec![(1, 2)],
-        class: stalk::Invariant::default(),
-        contact: None,
-    });
+    for tag in 1..=2u8 {
+        f.vertices.push(Vertex::word_on(
+            crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, tag]),
+            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            stalk::Invariant::default(),
+            Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
+            vec![(1, 2)],
+            None,
+        ));
+    }
     f.faces.push(FormFace {
         i: 0,
         j: 1,
@@ -303,14 +297,14 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     );
 
     let mut re = Form::default();
-    re.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 2]),
-        derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-        carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
-        gauge: Vec::new(),
-        class: stalk::Invariant::default(),
-        contact: None,
-    });
+    re.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 2]),
+        crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+        stalk::Invariant::default(),
+        Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
+        Vec::new(),
+        None,
+    ));
     re.vertices.push(Vertex::Rebased {
         by: 1,
         of: 2,
@@ -339,14 +333,14 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     );
 
     let mut orb = Form::default();
-    orb.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 3]),
-        derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
-        gauge: Vec::new(),
-        class: stalk::Invariant::default(),
-        contact: Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 1 }),
-    });
+    orb.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 3]),
+        crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+        stalk::Invariant::default(),
+        Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        Vec::new(),
+        Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 1 }),
+    ));
     orb.faces.push(FormFace { i: 0, j: 1, transport: orb.face_of(0, 1).expect("vertices"), edge: None });
     orb.loops = Form::loops_of(&orb.faces, orb.vertices.len());
     let orb_e = as_element_form(&orb, [1, 0, 0, 0]).expect("orbit tape");
@@ -452,17 +446,17 @@ fn citing_form(
         residue,
     );
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
-        address: crate::transducer::address::Address::from_bytes([
+    f.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from_bytes([
             crate::transducer::address::TAG_FORM,
             9,
         ]),
         derivation,
-        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
-        gauge: vec![(1, 2)],
-        class: stalk::Invariant(vec![7]),
-        contact: None,
-    });
+        stalk::Invariant(vec![7]),
+        Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        vec![(1, 2)],
+        None,
+    ));
     f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
@@ -588,14 +582,14 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     };
     let mut f = Form::default();
     for tag in [1u8, 2u8] {
-        f.vertices.push(Vertex::Word {
-            address: crate::transducer::address::Address::from_bytes([tag; 32]),
-            derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            carriage: Box::new(element::identity_versor()),
-            gauge: Vec::new(),
-            class: stalk::Invariant::default(),
-            contact: None,
-        });
+        f.vertices.push(Vertex::word_on(
+            crate::transducer::address::Address::from_bytes([tag; 32]),
+            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            stalk::Invariant::default(),
+            Box::new(element::identity_versor()),
+            Vec::new(),
+            None,
+        ));
     }
     // The two star faces and the body-to-body face, every transport the
     // coboundary of its vertices; the body face carries the half turn as

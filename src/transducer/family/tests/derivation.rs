@@ -21,14 +21,14 @@ fn sentence_of(w: Word, tag: u8) -> (Address, Form) {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let address = Address::from_bytes([TAG_FORM, tag]);
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
+    f.vertices.push(Vertex::word_on(
         address,
-        derivation: crate::transducer::alphabet::Derivation::spelled(w),
-        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
-        gauge: Vec::new(),
-        class: Invariant::default(),
-        contact: None,
-    });
+        crate::transducer::alphabet::Derivation::spelled(w),
+        Invariant::default(),
+        Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        Vec::new(),
+        None,
+    ));
     f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star"), edge: None });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
@@ -191,14 +191,14 @@ fn letter_of(a: i64, b: i64, tag: u8) -> (Address, Form) {
     let rotor = Rotor::scalar(q(a)).add(&Rotor::blade(0b0011, q(b)));
     let address = Address::from_bytes([TAG_FORM, tag]);
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
+    f.vertices.push(Vertex::word_on(
         address,
-        derivation: Derivation::adjoined(rotor),
-        carriage: Box::new(element::identity_versor()),
-        gauge: Vec::new(),
-        class: Invariant::default(),
-        contact: None,
-    });
+        Derivation::adjoined(rotor),
+        Invariant::default(),
+        Box::new(element::identity_versor()),
+        Vec::new(),
+        None,
+    ));
     // No star face: the face would be the letter's own action, which the
     // seventeen cannot spell (L11 (2/2)).
     f.loops = Form::loops_of(&f.faces, f.vertices.len());

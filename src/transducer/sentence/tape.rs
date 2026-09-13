@@ -26,24 +26,24 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
     for v in &f.vertices {
         match v {
             Vertex::Frame => out.push(0),
-            Vertex::Word {
-                address,
-                derivation,
-                carriage,
-                gauge,
-                class,
-                contact,
-            } => {
+            Vertex::Word { address, derivation, acts, contact } => {
                 out.push(1);
                 crate::transducer::address::put_addr(out, address);
                 derivation_to_form_bytes(derivation, *contact, out)?;
-                carriage.to_bytes(out);
-                out.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
-                for &(a, b) in gauge {
-                    out.push(a);
-                    out.push(b);
+                // THE FIBRE (v8, D7): the member count, then each member's
+                // carriage, gauge and chart, in the trie's order — which is
+                // the chart keys sorted, and a chart key is content, so two
+                // encodings of one fibre are one tape.
+                out.extend_from_slice(&(acts.len() as u16).to_le_bytes());
+                for (_, a) in acts.scoped() {
+                    a.carriage.to_bytes(out);
+                    out.extend_from_slice(&(a.gauge.len() as u16).to_le_bytes());
+                    for &(x, y) in &a.gauge {
+                        out.push(x);
+                        out.push(y);
+                    }
+                    put_inv(&a.chart, out)?;
                 }
-                put_inv(class, out)?;
             }
             Vertex::Glued {
                 address,
@@ -222,22 +222,32 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             1 => {
                 let address = crate::transducer::address::take_addr(b, pos)?;
                 let (derivation, contact) = derivation_from_form_bytes(b, pos)?;
-                let carriage = element::Versor::from_bytes(b, pos)?;
-                let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
-                let mut gauge = Vec::with_capacity(ng);
-                for _ in 0..ng {
-                    gauge.push((*b.get(*pos)?, *b.get(*pos + 1)?));
-                    *pos += 2;
+                // THE FIBRE, one member per chart (v8, D7): a count, then
+                // each member's carriage, gauge and chart. v7 wrote one
+                // carriage, one gauge and one class with no count, which is
+                // this shape at exactly one member — and §10 deletes the
+                // reader for a retired layout rather than keeping both, so
+                // there is no v7 arm here.
+                let nm = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+                let mut acts: crate::network::nerve::Keyed<crate::transducer::sentence::Acting> =
+                    crate::network::nerve::Keyed::new();
+                for _ in 0..nm {
+                    let carriage = element::Versor::from_bytes(b, pos)?;
+                    let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+                    let mut gauge = Vec::with_capacity(ng);
+                    for _ in 0..ng {
+                        gauge.push((*b.get(*pos)?, *b.get(*pos + 1)?));
+                        *pos += 2;
+                    }
+                    let chart = take_inv(b, pos)?;
+                    let member = crate::transducer::sentence::Acting {
+                        chart,
+                        carriage: Box::new(carriage),
+                        gauge,
+                    };
+                    acts.insert(member.key(), member);
                 }
-                let class = take_inv(b, pos)?;
-                Vertex::Word {
-                    address,
-                    derivation,
-                    carriage: Box::new(carriage),
-                    gauge,
-                    class,
-                    contact,
-                }
+                Vertex::Word { address, derivation, acts, contact }
             }
             2 => {
                 let address = crate::transducer::address::take_addr(b, pos)?;
@@ -446,7 +456,19 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
 /// The tape layout this tree writes and reads (chapter 19). A layout change
 /// is a recut: no reader for an older version exists (MU-STANDARDS §10).
 /// Version 6 (chapter 50, L1) adds the demand vertex and the edge transport.
-pub const FORM_TAPE_VERSION: u8 = 7;
+///
+/// Version 8 (D7) writes a word vertex's FIBRE — a member count, then per
+/// member the carriage, the gauge and the chart — where v7 wrote one
+/// carriage, one gauge and one class with no count. A vertex acting on one
+/// chart is that shape at exactly one member.
+///
+/// THIS BUMP OWES A RECUT AND DOES NOT SCHEDULE ONE. The fleet is down and
+/// Stage 16's instrument runs in process with no ledger, no wire and no
+/// home, so nothing here needs the fleet up. The owed list already carries
+/// S13.6's `ActKind`, S13.9's fold root, L15's lane vector on the receipt
+/// and L11c's cell coordinate; one recut pays all of them together
+/// whenever the operator next brings the fleet up.
+pub const FORM_TAPE_VERSION: u8 = 8;
 
 /// SENTENCE_TAG v6: the Form tape. Hue maps are derived from vertices.
 /// Addresses are len16 + bytes. `mag` is the descent the form measures over

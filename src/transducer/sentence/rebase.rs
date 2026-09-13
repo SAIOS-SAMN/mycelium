@@ -58,9 +58,15 @@ impl Form {
             self.close_stabilizer_orbit(of, &carriage, chord);
             return Some(of);
         }
-        let Vertex::Word { gauge, class, .. } = self.vertices.get(of as usize).cloned()? else {
+        // A REBASED VERTEX KEEPS `of`'s CHART AND GAUGE, and `Rebased` holds
+        // one of each: the vertex being rebased is single-chart today, so
+        // its representative member IS its chart and gauge. D7b decides
+        // what rebasing a multi-member vertex means; it is not this commit.
+        let held = self.vertices.get(of as usize)?;
+        let (Some(a), true) = (held.acting(), matches!(held, Vertex::Word { .. })) else {
             return None;
         };
+        let (gauge, class) = (a.gauge.clone(), a.chart.clone());
         self.vertices[of as usize] = Vertex::Rebased {
             by,
             of,

@@ -263,14 +263,14 @@ pub(crate) fn word_vertex_with(
     } else {
         car.sigma.clone()
     };
-    Some(Vertex::Word {
-        address: element::from_residual(&chain)?.address(),
+    Some(Vertex::word_on(
+        element::from_residual(&chain)?.address(),
         derivation,
-        carriage: Box::new(carriage),
+        b.moduli.clone(),
+        Box::new(carriage),
         gauge,
-        class: b.moduli.clone(),
-        contact: None,
-    })
+        None,
+    ))
 }
 
 // `word_form` was here: `word_or_demand(a, b)?.ok()`, with no caller in

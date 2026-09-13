@@ -327,8 +327,12 @@ impl Contemplation {
         let mut glues = Keyed::new();
         for v in &f.vertices {
             match v {
-                Vertex::Word { class, .. } => {
-                    cover.insert(class.key(), ());
+                // EVERY CHART THE VERTEX ACTS ON is a chart the bubble's
+                // cover holds: a vertex acting on several is on several.
+                Vertex::Word { acts, .. } => {
+                    for (ck, _) in acts.scoped() {
+                        cover.insert(&ck, ());
+                    }
                 }
                 Vertex::Glued { address, chart, .. } => {
                     cover.insert(chart.key(), ());

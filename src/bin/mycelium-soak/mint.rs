@@ -210,14 +210,18 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             let mut rotors: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
             let mut carriages = 0u64;
             for v in &pf.vertices {
-                if let Vertex::Word { class, gauge, derivation, .. } = v {
-                    classes.insert(class.key(), ());
-                    let mut gk = Vec::new();
-                    for (a, b) in gauge {
-                        gk.push(*a);
-                        gk.push(*b);
+                if let Vertex::Word { derivation, .. } = v {
+                    // EVERY MEMBER's chart and gauge, so the count reads the
+                    // fibre and not a representative of it (D7).
+                    for (ck, a) in v.acts().into_iter().flat_map(|k| k.scoped()) {
+                        classes.insert(&ck, ());
+                        let mut gk = Vec::new();
+                        for (x, y) in &a.gauge {
+                            gk.push(*x);
+                            gk.push(*y);
+                        }
+                        gauges.insert(&gk, ());
                     }
-                    gauges.insert(&gk, ());
                     if let Some(ck) = derivation.rotor().class_key() {
                         rotors.insert(ck.as_bytes(), ());
                     }
@@ -251,7 +255,16 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 .vertices
                 .iter()
                 .filter_map(|v| match v {
-                    Vertex::Word { class, .. } => Some(atlas.fiber(class).len()),
+                    // The fibre hits the vertex's members reach, summed:
+                    // one member today, so this is the same number D7a
+                    // must preserve, and D7b is where it rises.
+                    Vertex::Word { .. } => Some(
+                        v.acts()
+                            .into_iter()
+                            .flat_map(|k| k.scoped())
+                            .map(|(_, a)| atlas.fiber(&a.chart).len())
+                            .sum::<usize>(),
+                    ),
                     _ => None,
                 })
                 .collect();

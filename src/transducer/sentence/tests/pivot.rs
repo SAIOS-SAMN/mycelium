@@ -110,14 +110,14 @@ fn mu_neither_certifies_nor_selects() {
     let class = bodies[0].moduli.clone();
     assert!(!class.0.is_empty(), "the body has a chart");
     let mut spoken = Form::default();
-    spoken.vertices.push(Vertex::Word {
-        address: form_addr(1),
-        derivation: crate::transducer::alphabet::Derivation::spelled(q.clone()),
-        carriage: Box::new(element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()))),
-        gauge: vec![(1, 1)],
-        class: class.clone(),
-        contact: None,
-    });
+    spoken.vertices.push(Vertex::word_on(
+        form_addr(1),
+        crate::transducer::alphabet::Derivation::spelled(q.clone()),
+        class.clone(),
+        Box::new(element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()))),
+        vec![(1, 1)],
+        None,
+    ));
     let y = crate::transducer::family::apply_form(
         &spoken,
         &x,
@@ -131,17 +131,21 @@ fn mu_neither_certifies_nor_selects() {
         "the spoken image is not the empty frame"
     );
     let mut f = chord_form(std::slice::from_ref(&q));
-    if let Vertex::Word {
-        class: c,
-        gauge,
-        carriage,
-        ..
-    } = &mut f.vertices[1]
-    {
-        *c = class;
-        *gauge = vec![(1, 1)];
-        **carriage = element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()));
-    }
+    // THE VERTEX KEEPS ITS IDENTITY AND CHANGES ITS MEMBER. The chart is the
+    // key the member is filed under, so putting the vertex on `class` is
+    // building the member on that chart — the address and the derivation are
+    // read off the vertex that is there rather than restated here.
+    let Vertex::Word { address, derivation, .. } = &f.vertices[1] else {
+        panic!("the chord form's first body is a word vertex");
+    };
+    f.vertices[1] = Vertex::word_on(
+        address.clone(),
+        derivation.clone(),
+        class,
+        Box::new(element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()))),
+        vec![(1, 1)],
+        None,
+    );
     let bundle = vec![(x, y)];
     let snaps = f.pivot_loop(
         [0xde; 32],

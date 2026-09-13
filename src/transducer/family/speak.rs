@@ -127,13 +127,18 @@ pub fn apply_form(
     for (vi, v) in f.vertices.iter().enumerate() {
         match v {
             Vertex::Frame => {}
-            Vertex::Word {
-                derivation,
-                carriage,
-                gauge,
-                class,
-                ..
-            } => {
+            // D7a READS THE REPRESENTATIVE MEMBER, which is the only member
+            // any vertex in this tree has, so this speaks exactly what it
+            // spoke before the fibre existed. D7b is where the loop over
+            // every member goes and where `05f2a901` reaches two of two;
+            // putting it here would make D7a carry the capability and leave
+            // nothing for D7b's observable to measure.
+            Vertex::Word { derivation, .. } => {
+                let Some(member) = v.acting() else {
+                    unspoken.push(vi as u16);
+                    continue;
+                };
+                let (carriage, gauge, class) = (&member.carriage, &member.gauge, &member.chart);
                 // The action composes: the placement's rotor times the
                 // vertex's own (L14), so a cited vertex speaks its body
                 // without resolving a citation.
@@ -177,9 +182,12 @@ pub fn apply_form(
             } => {
                 // `by`'s word, carriage composed with the relative carriage;
                 // the bodies and hue map are the rebased vertex's own.
-                let Some(Vertex::Word { derivation, carriage: c, .. }) =
-                    f.vertices.get(*by as usize)
+                let Some(w @ Vertex::Word { derivation, .. }) = f.vertices.get(*by as usize)
                 else {
+                    unspoken.push(vi as u16);
+                    continue;
+                };
+                let Some(c) = w.carriage_of() else {
                     unspoken.push(vi as u16);
                     continue;
                 };

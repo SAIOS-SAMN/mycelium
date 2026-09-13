@@ -243,14 +243,14 @@ fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
     let w = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
     assert!(w.is_identity(), "Φ⁴ is projectively 1");
     let mut f = Form::default();
-    let empty = |addr: u8| Vertex::Word {
-        address: form_addr(addr),
-        derivation: alphabet::Derivation::spelled(Word::identity()),
-        carriage: Box::new(element::carriage(&q1(), &(q0(), q0()))),
-        gauge: Vec::new(),
-        class: stalk::Invariant::default(),
-        contact: None,
-    };
+    let empty = |addr: u8| Vertex::word_on(
+        form_addr(addr),
+        alphabet::Derivation::spelled(Word::identity()),
+        stalk::Invariant::default(),
+        Box::new(element::carriage(&q1(), &(q0(), q0()))),
+        Vec::new(),
+        None,
+    );
     f.vertices.push(empty(1));
     f.vertices.push(empty(2));
     f.faces.push(FormFace {

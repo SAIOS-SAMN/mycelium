@@ -32,14 +32,14 @@ fn swap() -> Vec<(u8, u8)> {
 fn generator_form(w: Word, gauge: Vec<(u8, u8)>, tag: u8) -> (Address, Form) {
     let address = Address::from_bytes([TAG_FORM, tag]);
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word {
+    f.vertices.push(Vertex::word_on(
         address,
-        derivation: Derivation::spelled(w),
-        carriage: Box::new(element::identity_versor()),
+        Derivation::spelled(w),
+        Invariant::default(),
+        Box::new(element::identity_versor()),
         gauge,
-        class: Invariant::default(),
-        contact: None,
-    });
+        None,
+    ));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
     (Address::from_bytes([TAG_FORM, tag]), f)

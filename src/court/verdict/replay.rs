@@ -46,7 +46,10 @@ pub fn replay_form_with(
 fn derivations_compose(f: &Form, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Option<Refusal> {
     use crate::transducer::alphabet::Verified;
     for v in &f.vertices {
-        let Vertex::Word { address, derivation, class, .. } = v else {
+        let Vertex::Word { address, derivation, .. } = v else {
+            continue;
+        };
+        let Some(class) = v.acting().map(|a| &a.chart) else {
             continue;
         };
         // The ACTION at the cited vertex (L14). A citation of an adjoined
@@ -301,14 +304,17 @@ pub(crate) fn vertex_tape_and_moves(
     use crate::transducer::sentence::Measure;
     for v in &f.vertices {
         match v {
-            Vertex::Word {
-                derivation,
-                carriage,
-                contact,
-                ..
-            } => {
-                if element::conformal_of_rotor(&derivation.rotor(), carriage).is_none() {
+            Vertex::Word { derivation, contact, .. } => {
+                // EVERY MEMBER'S CARRIAGE must give a conformal versor, or
+                // the tape carries a placement nothing can be spoken at.
+                // One member today; the walk is the vertex's own fibre.
+                let Some(acts) = v.acts() else {
                     return Some(REFUSE_VERTEX_TAPE);
+                };
+                for (_, a) in acts.scoped() {
+                    if element::conformal_of_rotor(&derivation.rotor(), &a.carriage).is_none() {
+                        return Some(REFUSE_VERTEX_TAPE);
+                    }
                 }
                 if contact.is_some() {
                     if derivation.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {

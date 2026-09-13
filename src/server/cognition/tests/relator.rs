@@ -204,14 +204,14 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     let q0 = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
     for tag in [2u8, 3u8] {
-        f.vertices.push(Vertex::Word {
-            address: Address::from_bytes([tag; 32]),
-            derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            carriage: Box::new(element::carriage(&q1, &(q0.clone(), q0.clone()))),
-            gauge: Vec::new(),
-            class: crate::transducer::stalk::Invariant::default(),
-            contact: None,
-        });
+        f.vertices.push(Vertex::word_on(
+            Address::from_bytes([tag; 32]),
+            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            crate::transducer::stalk::Invariant::default(),
+            Box::new(element::carriage(&q1, &(q0.clone(), q0.clone()))),
+            Vec::new(),
+            None,
+        ));
     }
     f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star 1"), edge: None });
     f.faces.push(FormFace { i: 0, j: 2, transport: f.face_of(0, 2).expect("star 2"), edge: None });

@@ -21,17 +21,17 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     let qw = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
     let mut f = Form::default();
     for k in 1..=3u8 {
-        f.vertices.push(Vertex::Word {
-            address: form_addr(k),
-            derivation: alphabet::Derivation::spelled(Word::identity()),
-            carriage: Box::new(element::carriage(
+        f.vertices.push(Vertex::word_on(
+            form_addr(k),
+            alphabet::Derivation::spelled(Word::identity()),
+            stalk::Invariant::default(),
+            Box::new(element::carriage(
                 &q1(),
                 &(q0(), num_rational::BigRational::from_integer(num_bigint::BigInt::from(k as i64))),
             )),
-            gauge: Vec::new(),
-            class: stalk::Invariant::default(),
-            contact: None,
-        });
+            Vec::new(),
+            None,
+        ));
     }
     // The faces among the bodies only: the loop 1-2-3 closes on the chord
     // 1-3 without passing the Frame.
@@ -76,22 +76,22 @@ fn face_of_a_missing_vertex_is_none() {
 fn glue_retract_remaps_faces_and_placement_refuses() {
     let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
     let mut host = Form::default();
-    host.vertices.push(Vertex::Word {
-        address: form_addr(1),
-        derivation: alphabet::Derivation::spelled(w.clone()),
-        carriage: Box::new(element::carriage(&q1(), &(q0(), q0()))),
-        gauge: Vec::new(),
-        class: stalk::Invariant::default(),
-        contact: None,
-    });
-    host.vertices.push(Vertex::Word {
-        address: form_addr(2),
-        derivation: alphabet::Derivation::spelled(w.clone()),
-        carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
-        gauge: Vec::new(),
-        class: stalk::Invariant::default(),
-        contact: None,
-    });
+    host.vertices.push(Vertex::word_on(
+        form_addr(1),
+        alphabet::Derivation::spelled(w.clone()),
+        stalk::Invariant::default(),
+        Box::new(element::carriage(&q1(), &(q0(), q0()))),
+        Vec::new(),
+        None,
+    ));
+    host.vertices.push(Vertex::word_on(
+        form_addr(2),
+        alphabet::Derivation::spelled(w.clone()),
+        stalk::Invariant::default(),
+        Box::new(element::carriage(&q1(), &(q0(), q1()))),
+        Vec::new(),
+        None,
+    ));
     host.faces.push(FormFace { i: 0, j: 1, transport: host.face_of(0, 1).expect("0-1"), edge: None });
     host.faces.push(FormFace { i: 1, j: 2, transport: host.face_of(1, 2).expect("1-2"), edge: None });
     host.faces.push(FormFace { i: 0, j: 2, transport: host.face_of(0, 2).expect("0-2"), edge: None });
@@ -145,18 +145,14 @@ fn two_shifts_are_two_addresses() {
     let w = Word::from_letters(&[(letter, false)]);
     let mut a = closed_word_form(w.clone(), None);
     let mut b = closed_word_form(w, None);
-    if let Vertex::Word { carriage, .. } = &mut a.vertices[1] {
-        **carriage = element::carriage(&q1(), &(q0(), q1()));
-    }
-    if let Vertex::Word { carriage, .. } = &mut b.vertices[1] {
-        **carriage = element::carriage(
-            &q1(),
-            &(
-                q0(),
-                num_rational::BigRational::from_integer(num_bigint::BigInt::from(3)),
-            ),
-        );
-    }
+    a.vertices[1].set_carriage(element::carriage(&q1(), &(q0(), q1())));
+    b.vertices[1].set_carriage(element::carriage(
+        &q1(),
+        &(
+            q0(),
+            num_rational::BigRational::from_integer(num_bigint::BigInt::from(3)),
+        ),
+    ));
     let ea = as_element_form(&a, [1, 0, 0, 0]).expect("a");
     let eb = as_element_form(&b, [1, 0, 0, 0]).expect("b");
     assert_ne!(ea.address(), eb.address(), "shift is not quotiented off the vertex");
@@ -486,11 +482,7 @@ fn a_chart_names_the_word_vertices_on_it() {
     let (near, far) = (stalk::Invariant(vec![3, 5]), stalk::Invariant(vec![7]));
     let mut f = Form::default();
     for (k, class) in [(1u8, &near), (2, &far), (3, &near)] {
-        let mut v = word_vertex(k, Word::identity());
-        if let Vertex::Word { class: c, .. } = &mut v {
-            *c = class.clone();
-        }
-        f.vertices.push(v);
+        f.vertices.push(word_vertex_on(k, Word::identity(), class.clone()));
     }
     f.vertices.push(Vertex::Demand {
         kind: Demand::Creation,
@@ -504,7 +496,15 @@ fn a_chart_names_the_word_vertices_on_it() {
     for (chart, on) in f.by_class.scoped() {
         for &i in on {
             let v = f.vertices.get(i as usize).expect("an index the fiber names is a vertex");
-            assert!(matches!(v, Vertex::Word { class, .. } if class.key().as_bytes() == chart.as_slice()), "vertex {i} is a Word on the chart that names it");
+            // THE FIBRE IS ASKED, not a representative read off the vertex:
+            // `acts` holds every chart the vertex acts on, and the claim is
+            // that this chart is among them (D7's whole point — one of two
+            // is the defect, and a test that reads `acting()` would report
+            // the representative agreeing with itself).
+            assert!(
+                matches!(v, Vertex::Word { acts, .. } if acts.get(chart.as_slice()).is_some()),
+                "vertex {i} is a Word acting on the chart that names it"
+            );
         }
     }
 }

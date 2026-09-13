@@ -29,9 +29,18 @@ fn words_of(e: &Element) -> Vec<(crate::transducer::address::Address, crate::tra
     f.vertices
         .iter()
         .filter_map(|v| match v {
-            Vertex::Word { address, class, .. } => Some((address.clone(), class.clone())),
+            // EVERY CHART THE VERTEX ACTS ON, one entry each: the reading is
+            // "the word vertices with the charts they act on", and a vertex
+            // acting on two charts is two entries here rather than one
+            // entry naming a representative.
+            Vertex::Word { address, acts, .. } => Some(
+                acts.scoped()
+                    .map(|(_, a)| (address.clone(), a.chart.clone()))
+                    .collect::<Vec<_>>(),
+            ),
             _ => None,
         })
+        .flatten()
         .collect()
 }
 

@@ -57,22 +57,16 @@ let order4 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), 
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
-f.vertices.push(Vertex::Word {
-    address: Address::from_bytes([2u8; 32]),
-    derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-    carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
-    gauge: vec![(1, 2)],
-    class: crate::transducer::stalk::Invariant::default(),
-    contact: None,
-});
-f.vertices.push(Vertex::Word {
-    address: Address::from_bytes([3u8; 32]),
-    derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-    carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
-    gauge: vec![(1, 2)],
-    class: crate::transducer::stalk::Invariant::default(),
-    contact: None,
-});
+for tag in [2u8, 3u8] {
+    f.vertices.push(Vertex::word_on(
+        Address::from_bytes([tag; 32]),
+        crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+        crate::transducer::stalk::Invariant::default(),
+        Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
+        vec![(1, 2)],
+        None,
+    ));
+}
 f.faces.push(FormFace {
     i: 0,
     j: 1,

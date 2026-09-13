@@ -25,16 +25,16 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
         if matches!(form.vertices.get(j), Some(Vertex::Rebased { .. })) {
             continue;
         }
-        let (Some(Vertex::Word {
-            derivation: di,
-            carriage: ci,
-            ..
-        }), Some(Vertex::Word { carriage: cj, .. })) = (
-            form.vertices.get(i).cloned(),
-            form.vertices.get(j).cloned(),
-        ) else {
+        let (Some(vi), Some(vj)) = (form.vertices.get(i), form.vertices.get(j)) else {
             continue;
         };
+        let (Vertex::Word { derivation: di, .. }, Vertex::Word { .. }) = (vi, vj) else {
+            continue;
+        };
+        let (Some(ci), Some(cj)) = (vi.carriage_of().cloned(), vj.carriage_of().cloned()) else {
+            continue;
+        };
+        let di = di.clone();
         if di.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
             continue;
         }
@@ -253,12 +253,15 @@ pub fn extract_rule_with(
                 continue;
             };
             let k = c.key();
-            if let Vertex::Word { derivation, gauge, .. } = v {
-                if let Some(hk) =
-                    crate::transducer::sentence::hue_section_key_of(&derivation.rotor(), gauge)
-                {
-                    if !hue_maps.contains(&hk) {
-                        hue_maps.insert(hk, gauge.clone());
+            if let Vertex::Word { derivation, acts, .. } = v {
+                for (_, a) in acts.scoped() {
+                    if let Some(hk) = crate::transducer::sentence::hue_section_key_of(
+                        &derivation.rotor(),
+                        &a.gauge,
+                    ) {
+                        if !hue_maps.contains(&hk) {
+                            hue_maps.insert(hk, a.gauge.clone());
+                        }
                     }
                 }
             }
@@ -486,16 +489,18 @@ pub fn extract_rule_with(
         let Some(tc) = transport_class(&form.vertices[vi]) else {
             continue;
         };
-        let Some(Vertex::Word { contact: None, carriage, .. }) = form.vertices.get(vi) else {
+        let Some(at @ Vertex::Word { contact: None, .. }) = form.vertices.get(vi) else {
             continue;
         };
-        let home = carriage.clone();
+        let Some(home) = at.carriage_of().cloned() else {
+            continue;
+        };
         let mut rings: Option<u8> = None;
         let mut place_varies = false;
         let mut ring_one = true;
         for (pf, (_x, y)) in pair_forms.iter().zip(family.iter()) {
-            if let Some(Vertex::Word { carriage: p, .. }) = match_vertex(pf, &tc) {
-                if !element::same_versor(p, &home) {
+            if let Some(w @ Vertex::Word { .. }) = match_vertex(pf, &tc) {
+                if w.carriage_of().is_some_and(|p| !element::same_versor(p, &home)) {
                     place_varies = true;
                 }
             }
@@ -548,9 +553,18 @@ pub fn extract_rule_with(
         }
         if place_varies && ring_one {
             if let Some(r) = rings {
-                if let Vertex::Word { contact, carriage, .. } = &mut form.vertices[vi] {
+                // THE CONTACT REPLACES THE PLACEMENT at every chart this
+                // vertex acts on: a stop ring is the vertex's, not one
+                // member's, so each member's carriage becomes the identity
+                // and the ring carries the placement instead.
+                if let Vertex::Word { contact, acts, .. } = &mut form.vertices[vi] {
                     *contact = Some(crate::transducer::alphabet::Contact { anchor: 0, ring: r });
-                    **carriage = element::identity_versor();
+                    let charts: Vec<Vec<u8>> = acts.scoped().map(|(k, _)| k).collect();
+                    for k in charts {
+                        if let Some(a) = acts.get_mut(&k) {
+                            *a.carriage = element::identity_versor();
+                        }
+                    }
                 }
             }
         }

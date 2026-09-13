@@ -63,9 +63,16 @@ fn cell_key(r: i64, c: i64) -> Vec<u8> {
 /// 50.1 step 1 on one pair: `(V · W · γ) · B_in = B_out` under exact
 /// cellular equality, for every body of the vertex's chart on `x`.
 pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carried {
-    let Vertex::Word { derivation, carriage, gauge, class, contact, .. } = vertex else {
+    let Vertex::Word { derivation, contact, .. } = vertex else {
         return Carried::Silent;
     };
+    // THE COURT REPLAYS THE MEMBER the speaker spoke by. One member today;
+    // D7b is where a vertex carries several and the court checks each
+    // against the bodies on that member's own chart.
+    let Some(member) = vertex.acting() else {
+        return Carried::Silent;
+    };
+    let (carriage, gauge, class) = (&member.carriage, &member.gauge, &member.chart);
     let rotor = derivation.rotor();
     // A contact vertex is placed by its orbit, not its carriage; the
     // orbit's own replay (`REFUSE_ORBIT_STILL`) is its reconstruction.
@@ -119,7 +126,10 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
 /// reads it.
 pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
     for v in &f.vertices {
-        let Vertex::Word { address, class, .. } = v else {
+        let Vertex::Word { address, .. } = v else {
+            continue;
+        };
+        let Some(class) = v.acting().map(|a| &a.chart) else {
             continue;
         };
         // A VERTEX IS ASKED FOR THE PAIRS ITS RULE CLAIMS. A class whose
@@ -196,12 +206,17 @@ pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option
             continue;
         };
         let (
-            Vertex::Word { address: ai, derivation: di, carriage: ci, class: class_i, contact: None, .. },
-            Vertex::Word { address: aj, derivation: dj, carriage: cj, class: class_j, contact: None, .. },
+            Vertex::Word { address: ai, derivation: di, contact: None, .. },
+            Vertex::Word { address: aj, derivation: dj, contact: None, .. },
         ) = (vi, vj)
         else {
             continue;
         };
+        let (Some(mi), Some(mj)) = (vi.acting(), vj.acting()) else {
+            continue;
+        };
+        let (ci, cj) = (&mi.carriage, &mj.carriage);
+        let (class_i, class_j) = (&mi.chart, &mj.chart);
         let (ri, rj) = (di.rotor(), dj.rotor());
         let refused = || Refusal { reason: REFUSE_EDGE, at: sentence::At::Face(ai.clone(), aj.clone()) };
         let Some(expected) = element::conformal_of(&edge.word, &edge.carriage) else {

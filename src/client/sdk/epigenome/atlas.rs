@@ -146,7 +146,10 @@ pub(crate) fn body_charts_of(e: &Held) -> Vec<crate::transducer::stalk::Invarian
     let mut charts = Vec::new();
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     for v in &f.vertices {
-        let crate::transducer::sentence::Vertex::Word { class, .. } = v else {
+        let crate::transducer::sentence::Vertex::Word { .. } = v else {
+            continue;
+        };
+        let Some(class) = v.acting().map(|a| &a.chart) else {
             continue;
         };
         let k = class.key();

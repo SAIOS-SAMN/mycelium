@@ -14,19 +14,19 @@ let bodies = perceive(&x);
 let [body] = bodies.as_slice() else { panic!("a body") };
 let class = body.moduli.clone();
 let mut f = Form::default();
-f.vertices.push(Vertex::Word {
-    address: crate::transducer::address::Address::from(vec![1]),
-    derivation: crate::transducer::alphabet::Derivation::spelled(
+f.vertices.push(Vertex::word_on(
+    crate::transducer::address::Address::from(vec![1]),
+    crate::transducer::alphabet::Derivation::spelled(
         crate::transducer::alphabet::Word::from_letters(&[(
             crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane"),
             false,
         )]),
     ),
-    carriage: Box::new(element::identity_versor()),
-    gauge: Vec::new(),
     class,
-    contact: None,
-});
+    Box::new(element::identity_versor()),
+    Vec::new(),
+    None,
+));
 let spoken = apply_form(
     &f,
     &x,
@@ -52,11 +52,32 @@ fn empty_fiber_is_unspoken_not_every_body() {
 let x = grid(&["1100", "0000"]);
 let y = grid(&["0011", "0000"]);
 let mut f = pair_form_uncrystallized(&x, &y, None);
+// MOVING A VERTEX TO ANOTHER CHART IS REBUILDING ITS MEMBER, because the
+// chart is the key the member is filed under: the vertex keeps its address,
+// its derivation, its carriage and its gauge, and acts on a chart no body
+// in the scene carries.
+let far = Invariant(vec![0xEEEE_EEEE_EEEE_EEEE]);
 for v in &mut f.vertices {
-    if let Vertex::Word { class, .. } = v {
-        *class = Invariant(vec![0xEEEE_EEEE_EEEE_EEEE]);
+    let moved = match &*v {
+        Vertex::Word { address, derivation, acts, contact } => {
+            acts.scoped().next().map(|(_, a)| {
+                Vertex::word_on(
+                    address.clone(),
+                    derivation.clone(),
+                    far.clone(),
+                    a.carriage.clone(),
+                    a.gauge.clone(),
+                    *contact,
+                )
+            })
+        }
+        _ => None,
+    };
+    if let Some(moved) = moved {
+        *v = moved;
     }
 }
+f.reindex();
 let spoken = apply_form(
     &f,
     &x,
@@ -205,9 +226,10 @@ assert!(
 );
 let frame_face = rule.form.faces.iter().any(|f| f.i == 0 || f.j == 0);
 let shifted = rule.form.vertices.iter().any(|v| match v {
-    Vertex::Word { carriage, .. } => {
-        !element::same_versor(carriage, &element::identity_versor())
-    }
+    Vertex::Word { .. } => match v.carriage_of() {
+        Some(carriage) => !element::same_versor(carriage, &element::identity_versor()),
+        None => false,
+    },
     _ => false,
 });
 assert!(frame_face || shifted, "placement is a frame face or a family-constant shift");

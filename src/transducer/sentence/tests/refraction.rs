@@ -23,16 +23,19 @@ fn refraction_is_rebase_regauge_and_carriage() {
         gauge: vec![(1, 3)],
     };
     let out = gamma.refract(&f).expect("on the plane");
-    let Vertex::Word { derivation: old_d, carriage: old_c, gauge: old_g, .. } = &f.vertices[1]
+    let (Vertex::Word { derivation: old_d, .. }, Some(old_a)) =
+        (&f.vertices[1], f.vertices[1].acting())
     else {
         panic!("word vertex");
     };
-    let Vertex::Word { derivation, carriage, gauge, .. } = &out.vertices[1] else {
+    let (Vertex::Word { derivation, .. }, Some(a)) =
+        (&out.vertices[1], out.vertices[1].acting())
+    else {
         panic!("word vertex");
     };
     assert!(derivation.rotor().projective_eq(&old_d.word_local().expect("spelled").rebase(&gamma.word).rotor()));
-    assert!(element::same_versor(carriage, &gamma.carriage.geo(old_c)));
-    assert_eq!(gauge, &compose_gauge(&gamma.gauge, old_g));
+    assert!(element::same_versor(&a.carriage, &gamma.carriage.geo(&old_a.carriage)));
+    assert_eq!(a.gauge, compose_gauge(&gamma.gauge, &old_a.gauge));
     let off = Transport {
         word: Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]),
         carriage: element::identity_versor(),
@@ -68,12 +71,21 @@ fn refraction_replays_as_its_three_moves() {
     for (a, b) in via.vertices.iter().zip(&by_hand.vertices) {
         match (a, b) {
             (
-                Vertex::Word { derivation: da, carriage: ca, gauge: ga, .. },
-                Vertex::Word { derivation: db, carriage: cb, gauge: gb, .. },
+                Vertex::Word { derivation: da, acts: aa, .. },
+                Vertex::Word { derivation: db, acts: ab, .. },
             ) => {
                 assert!(da.rotor().projective_eq(&db.rotor()));
-                assert!(element::same_versor(ca, cb));
-                assert_eq!(ga, gb);
+                // THE FIBRE, MEMBER BY MEMBER AT ITS OWN CHART. Γ and the
+                // three moves by hand must act on the same charts and carry
+                // the same body on each; a versor is compared by
+                // `same_versor` — projectively, which is what a versor's
+                // equality is — and never by the struct's own derive.
+                assert_eq!(aa.len(), ab.len(), "the two paths act on the same number of charts");
+                for (k, ma) in aa.scoped() {
+                    let mb = ab.get(&k).expect("the other path acts on the same chart");
+                    assert!(element::same_versor(&ma.carriage, &mb.carriage));
+                    assert_eq!(ma.gauge, mb.gauge);
+                }
             }
             (Vertex::Frame, Vertex::Frame) => {}
             _ => panic!("replayed vertices differ"),
@@ -85,9 +97,7 @@ fn refraction_replays_as_its_three_moves() {
 fn rebase_conjugates_by_a_versor_never_subtracts() {
     let mut f = Form::default();
     f.vertices.push(word_vertex(1, order4()));
-    if let Vertex::Word { carriage, .. } = &mut f.vertices[1] {
-        **carriage = element::carriage(&q1(), &(q1(), q0()));
-    }
+    f.vertices[1].set_carriage(element::carriage(&q1(), &(q1(), q0())));
     f.faces.push(FormFace {
         i: 0,
         j: 1,

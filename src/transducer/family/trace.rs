@@ -81,12 +81,15 @@ pub(crate) fn carriage_of(
         return out;
     }
     for (_, &i) in form.by_address.scoped() {
-        let Some(crate::transducer::sentence::Vertex::Word { address, carriage, .. }) =
+        let Some(w @ crate::transducer::sentence::Vertex::Word { address, .. }) =
             form.vertices.get(i as usize)
         else {
             continue;
         };
-        out.insert(address, (**carriage).clone());
+        let Some(carriage) = w.carriage_of() else {
+            continue;
+        };
+        out.insert(address, carriage.clone());
     }
     out
 }
