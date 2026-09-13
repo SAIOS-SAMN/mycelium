@@ -139,7 +139,13 @@ pub fn reduce_against<const N: usize>(
         if res[p] == 0 {
             continue;
         }
-        let q = res[p].checked_div(row[p])?;
+        // EUCLIDEAN, NOT TRUNCATING. `checked_div` rounds toward zero, so it
+        // leaves a residue in `(−|d|, |d|)`: two points of ONE coset reduce
+        // to two representatives, and the uniqueness the doc above claims —
+        // A12 step 5's "the exact boundary demand, with no choice in it" —
+        // is false below the axis. `div_euclid` leaves `rem_euclid`, which
+        // is in `[0, |d|)` by construction and is the coset representative.
+        let q = res[p].checked_div_euclid(row[p])?;
         if q == 0 {
             continue;
         }

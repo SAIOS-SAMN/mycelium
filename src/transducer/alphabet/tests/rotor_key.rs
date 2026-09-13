@@ -51,6 +51,32 @@ fn rotor_class_key_invariant() {
     assert_eq!(f.conjugacy_key(), f.conjugacy_rep().conjugacy_key());
 }
 
+/// THE CLASS IS THE RAY'S, NOT THE LIFT'S. `projective_eq` says `−R` and
+/// `R` are one vertex because the action divides the scale out, so the
+/// class key of one must be the class key of the other.
+///
+/// The test above scales by `3/2` and stops, so the property was asked of
+/// every positive multiple and of no negative one — and the sign bytes
+/// flip under exactly those.
+///
+/// `q⁴ = −1` in Spin(4), so `q·q·q` is `−q⁻¹`: the other lift of the same
+/// rotation, which a composition reaches without anyone choosing it.
+#[test]
+fn a_rotor_and_its_negative_are_one_class() {
+    let q = LetterId::quarter((0, 1)).unwrap();
+    let r = Word::from_letters(&[(q, false)]).rotor();
+    let neg = r.scale(&-qn(1, 1));
+    assert!(r.projective_eq(&neg), "the action divides the scale out");
+    assert_eq!(r.class_key(), neg.class_key(), "one ray, one class");
+    assert!(r.class_eq(&neg));
+    // And the composition that produces the other lift on its own: three
+    // quarter turns are `−q⁻¹`, whose class is `q⁻¹`'s.
+    let cubed = Word::from_letters(&[(q, false), (q, false), (q, false)]).rotor();
+    let inv = r.inverse().expect("a quarter turn inverts");
+    assert!(cubed.projective_eq(&inv), "q³ is the other lift of q⁻¹");
+    assert_eq!(cubed.class_key(), inv.class_key(), "and carries its class");
+}
+
 /// Two tapes of one vertex have one key; a tape and its geodesic
 /// replay to the same affine.
 #[test]

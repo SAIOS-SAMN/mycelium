@@ -186,22 +186,49 @@ impl Rotor {
         }
     }
 
-    /// Conjugation-and-scale invariants `(a²/w, p²/w, sign a, sign p)` —
-    /// exact rationals, never a digest. `a` the scalar, `p` the
-    /// pseudoscalar, `w = ΦΦ̃`.
-    pub fn class_invariants(&self) -> Option<(Q, Q, u8, u8)> {
+    /// Conjugation-and-scale invariants `(a²/w, p²/w, sign p)` — exact
+    /// rationals, never a digest. `a` the scalar, `p` the pseudoscalar,
+    /// `w = ΦΦ̃`.
+    ///
+    /// READ OFF THE RAY, NOT OFF A LIFT. Conjugation `Φ ↦ V Φ V⁻¹` fixes
+    /// both the scalar and the pseudoscalar, since both are central; scale
+    /// by `λ ∈ ℚ×` multiplies each by `λ` and `w` by `λ²`. So `a²/w` and
+    /// `p²/w` are invariant under conjugation and under any scale, and the
+    /// SIGNS are invariant under conjugation and positive scale only — they
+    /// flip under `λ < 0`. [`Rotor::projective_eq`] is this engine's
+    /// identity and `−Φ` and `Φ` are one vertex there, because the sandwich
+    /// divides the scale out. A sign must therefore be read off a canonical
+    /// representative of the ray: negating so the first non-zero coefficient
+    /// is positive names exactly one per ray, which is what [`normalised`]
+    /// does for [`key`] and [`class_axes`].
+    ///
+    /// ONE SIGN, NOT TWO. Under that canonicalisation `sign a` is zero for
+    /// every rotor — the scalar IS the first non-zero coefficient when it is
+    /// non-zero, and is zero otherwise — so the byte is a constant and is
+    /// not written. `sign p` is the pseudoscalar's sign relative to that
+    /// representative, which does vary and is the chirality of the two
+    /// quaternion factors `Φ (1 ± e₀e₁e₂e₃)/2`.
+    ///
+    /// AN ODD ELEMENT IS REFUSED. [`is_even`]'s rule is that an odd blade
+    /// means the element is not a rotor, a rotation class is a class of
+    /// rotations, and [`normalised`] returns an odd element untouched — so
+    /// reading invariants off one would read its lift's sign. Exact or
+    /// refused (rule 11), never a sign that depends on the caller.
+    pub fn class_invariants(&self) -> Option<(Q, Q, u8)> {
+        if !self.is_even() {
+            return None;
+        }
         let w = self.weight()?;
         if w.is_zero() {
             return None;
         }
-        let a = self.c[0].clone();
-        let p = self.c[15].clone();
-        Some((
-            &(&a * &a) / &w,
-            &(&p * &p) / &w,
-            u8::from(a.is_negative()),
-            u8::from(p.is_negative()),
-        ))
+        let flip = (0..16)
+            .find(|&i| !self.c[i].is_zero())
+            .is_some_and(|i| self.c[i].is_negative());
+        let ray = |x: &Q| if flip { -x.clone() } else { x.clone() };
+        let a = ray(&self.c[0]);
+        let p = ray(&self.c[15]);
+        Some((&(&a * &a) / &w, &(&p * &p) / &w, u8::from(p.is_negative())))
     }
 
     /// Same conjugacy-and-scale class: the invariants agree as rationals.
@@ -216,11 +243,10 @@ impl Rotor {
     /// Conjugacy invariants written out (A21). Identity of class is
     /// [`class_eq`]. None when the element is not a versor.
     pub fn class_key(&self) -> Option<crate::transducer::address::Address> {
-        let (x, y, sa, sp) = self.class_invariants()?;
+        let (x, y, sp) = self.class_invariants()?;
         let mut buf = vec![crate::transducer::address::TAG_CLASS];
         put_q(&mut buf, &x);
         put_q(&mut buf, &y);
-        buf.push(sa);
         buf.push(sp);
         Some(crate::transducer::address::Address::new(buf))
     }

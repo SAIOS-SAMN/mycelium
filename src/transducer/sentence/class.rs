@@ -25,14 +25,11 @@ pub struct ClassVector {
     pub(crate) carriage: Versor,
     /// Composed gauge around the loop (A4).
     pub(crate) hue: CycleType,
-    /// Rotor conjugacy invariants `(a²/w, p²/w, sign a, sign p)` (15.3).
-    /// Always read; identity is the zero vector.
-    offplane: (
-        num_rational::BigRational,
-        num_rational::BigRational,
-        u8,
-        u8,
-    ),
+    /// Rotor conjugacy invariants `(a²/w, p²/w, sign p)` (15.3). Always
+    /// read; identity is the zero vector. The signs are the RAY's, not a
+    /// lift's — see [`crate::transducer::alphabet::Rotor::class_invariants`],
+    /// which is why there is one sign byte here and not two.
+    offplane: (num_rational::BigRational, num_rational::BigRational, u8),
 }
 
 /// The hue cycle type of a loop: sorted cycle lengths of the composed
@@ -119,7 +116,7 @@ impl ClassVector {
 
     pub(crate) fn read(h: &Word, carriage: Versor, hue: CycleType) -> Option<ClassVector> {
         let offplane = if h.is_identity() {
-            (Self::zero_q(), Self::zero_q(), 0, 0)
+            Self::offplane_zero()
         } else {
             h.rotor().class_invariants()?
         };
@@ -161,7 +158,7 @@ impl ClassVector {
                 plane: Some([(false, 0, 0, 0); 6]),
                 carriage,
                 hue,
-                offplane: (Self::zero_q(), Self::zero_q(), 0, 0),
+                offplane: Self::offplane_zero(),
             });
         }
         Some(ClassVector {
@@ -186,7 +183,7 @@ impl ClassVector {
             plane: Some([(false, 0, 0, 0); 6]),
             carriage: element::identity_versor(),
             hue: CycleType::Identity,
-            offplane: (Self::zero_q(), Self::zero_q(), 0, 0),
+            offplane: Self::offplane_zero(),
         }
     }
 
@@ -198,7 +195,6 @@ impl ClassVector {
         alphabet::put_q(&mut buf, &self.offplane.0);
         alphabet::put_q(&mut buf, &self.offplane.1);
         buf.push(self.offplane.2);
-        buf.push(self.offplane.3);
         match self.plane {
             None => buf.push(0),
             Some(pl) => {
@@ -223,8 +219,6 @@ impl ClassVector {
         let mut p = 1usize;
         let x = alphabet::take_q(k, &mut p)?;
         let y = alphabet::take_q(k, &mut p)?;
-        let sa = *k.get(p)?;
-        p += 1;
         let sp = *k.get(p)?;
         p += 1;
         let plane = match *k.get(p)? {
@@ -256,7 +250,7 @@ impl ClassVector {
             plane,
             carriage,
             hue,
-            offplane: (x, y, sa, sp),
+            offplane: (x, y, sp),
         })
     }
 
@@ -347,13 +341,8 @@ impl ClassVector {
             && off_ok
     }
 
-    fn offplane_zero() -> (
-        num_rational::BigRational,
-        num_rational::BigRational,
-        u8,
-        u8,
-    ) {
-        (Self::zero_q(), Self::zero_q(), 0, 0)
+    fn offplane_zero() -> (num_rational::BigRational, num_rational::BigRational, u8) {
+        (Self::zero_q(), Self::zero_q(), 0)
     }
 
     fn clear(&mut self, axis: Axis) {

@@ -57,6 +57,28 @@ let words = rule
     .filter(|v| matches!(v, Vertex::Word { .. }))
     .count();
 assert_eq!(words, 2, "the turned L and the recoloured bar: two vertices, one class each");
+// 21 step 1 IS the assertion: vertices are matched by "kind and the
+// conjugacy class of the word, its invariants compared coordinatewise".
+// So the count above is not a number the arithmetic happened to produce —
+// it is one vertex per distinct conjugacy class, and the document is
+// checked by asking the classes directly. A lift of an already-present
+// class is not a second class (`q·q·q` is `−q⁻¹`), and that is what the
+// count would silently absorb.
+let classes: Vec<_> = rule
+    .form
+    .vertices
+    .iter()
+    .filter_map(|v| match v {
+        Vertex::Word { derivation, .. } => derivation.rotor().class_key(),
+        _ => None,
+    })
+    .collect();
+assert_eq!(classes.len(), words, "every word vertex has a class (15.4)");
+for (i, a) in classes.iter().enumerate() {
+    for b in classes.iter().skip(i + 1) {
+        assert_ne!(a, b, "two vertices of one conjugacy class are one vertex (21 step 1)");
+    }
+}
 assert!(
     rule.form.faces.len() > words,
     "the varying face is kept, not dropped: {} faces over {words} words",

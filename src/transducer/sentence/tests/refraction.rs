@@ -109,115 +109,26 @@ fn rebase_conjugates_by_a_versor_never_subtracts() {
     let _ = face_place(&t).carriage;
 }
 
-#[test]
-fn no_coordinate_pair_outside_the_sensor() {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    let mut hits = Vec::new();
-    for d in ["transducer", "server", "client", "court"] {
-        walk_named_pairs(&root.join(d), &mut hits);
-    }
-    assert!(
-        hits.is_empty(),
-        "(Q, Q) outside pair_form/speak_rule/orbit/cell_of/carry_center/carriage:\n{}",
-        hits.join("\n")
-    );
-}
-
-fn walk_named_pairs(path: &std::path::Path, hits: &mut Vec<String>) {
-    if path.is_file() {
-        if path.extension().and_then(|s| s.to_str()) != Some("rs") {
-            return;
-        }
-        // Test code is skipped: the scan below finds it by the `#[cfg(test)]`
-        // marker and brace depth, and a test module moved to its own file
-        // (MU-STANDARDS 3.3) carries no marker — this very file would be its
-        // own first hit. The production check is `xtask lint`'s squaring
-        // gate, which reads the OWNING module's declaration; here the shape
-        // is enough, and the two are named together in chapter 35.
-        let is_test_file = path.file_name().and_then(|s| s.to_str()) == Some("tests.rs")
-            || path
-                .parent()
-                .and_then(|d| d.file_name())
-                .and_then(|s| s.to_str())
-                == Some("tests");
-        if is_test_file {
-            return;
-        }
-        let Ok(src) = std::fs::read_to_string(path) else {
-            return;
-        };
-        let mut in_test = false;
-        let mut pending_test = false;
-        let mut depth = 0i32;
-        let mut fn_depth = 0i32;
-        let mut allowed_fn = false;
-        for (i, line) in src.lines().enumerate() {
-            let t = line.trim();
-            if !in_test && t.contains("#[cfg(test)]") {
-                pending_test = true;
-            }
-            let opens = line.chars().filter(|&c| c == '{').count() as i32;
-            let closes = line.chars().filter(|&c| c == '}').count() as i32;
-            if t.contains("fn pair_form")
-                || t.contains("fn pair_form_uncached")
-                || t.contains("fn speak_rule")
-                || t.contains("fn orbit(")
-                || t.contains("fn cell_of")
-                || t.contains("fn carry_center")
-                || t.contains("fn carry_cell")
-                || t.contains("fn carriage(")
-                || t.contains("fn base(")
-                || t.contains("fn centroid(")
-                || t.contains("fn carry(")
-                || t.contains("fn rotor_between")
-                || t.contains("fn half_rotor")
-                || t.contains("fn rotor_pair")
-            {
-                allowed_fn = true;
-                fn_depth = 0;
-            }
-            if pending_test {
-                if opens > 0 {
-                    in_test = true;
-                    pending_test = false;
-                    depth = opens - closes;
-                    if depth <= 0 {
-                        in_test = false;
-                    }
-                }
-                continue;
-            }
-            if in_test {
-                depth += opens - closes;
-                if depth <= 0 {
-                    in_test = false;
-                }
-                continue;
-            }
-            if allowed_fn {
-                fn_depth += opens - closes;
-                if fn_depth <= 0 {
-                    allowed_fn = false;
-                }
-                continue;
-            }
-            if t.starts_with("//") {
-                continue;
-            }
-            let pair = t.contains("(Q, Q)")
-                || t.contains("(Q,Q)")
-                || t.contains("&(Q, Q)")
-                || t.contains("BigRational, BigRational")
-                || t.contains("num_rational::BigRational, num_rational::BigRational");
-            if pair {
-                hits.push(format!("{}:{}", path.display(), i + 1));
-            }
-        }
-        return;
-    }
-    if let Ok(rd) = std::fs::read_dir(path) {
-        for ent in rd.flatten() {
-            walk_named_pairs(&ent.path(), hits);
-        }
-    }
-}
+// `no_coordinate_pair_outside_the_sensor` and its `walk_named_pairs` stood
+// here: a hand-rolled scan of every production `.rs` file under four
+// directories, tracking `#[cfg(test)]` by brace depth and allowing a list of
+// FUNCTION NAMES, asserting that the spellings `(Q, Q)` and
+// `BigRational, BigRational` do not occur. That is a source-text gate in a
+// test (§4.6), the same shape deleted from `stalk/tests/chart.rs` at
+// 66d3eae, and the ruling applies to every site of the shape.
+//
+// It is not a close call on three counts. Its allow-list is by name, so
+// renaming a function silently changes what the gate permits. Its own
+// comment defers the real check — "the production check is `xtask lint`'s
+// squaring gate" — and `xtask/lint` holds `length.rs`, `warnings.rs` and
+// `mod.rs`: that gate does not exist. And it fires on a line that has no
+// coordinate pair in it: `ClassVector.offplane` is the three conjugacy
+// invariants `(a²/w, p²/w, sign p)`, which the scan reads as a pair because
+// two type names sit next to each other on one line.
+//
+// WHAT IS OWED, stated rather than absorbed. The property it was reaching
+// for — a coordinate pair standing where a chart coordinate belongs, outside
+// the readers that legitimately hold one — is real and is now asserted by
+// NOTHING. A spelling check was never asserting it either; a rename defeated
+// it and a macro or a string would have passed it. The behavioural test is
+// owed and is named here so it is not mistaken for covered.
