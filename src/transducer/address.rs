@@ -278,8 +278,28 @@ mod tests {
         ]
     }
 
+    /// A21 §4 at the kinds that HAVE a decoder: the rotor and the versor.
+    ///
+    /// THIS TEST WAS `every_key_decodes_to_its_object` AND IT CHECKED NO SUCH
+    /// THING FOR A FORM. Its last two lines were
+    ///
+    /// ```text
+    /// let addr = e.address();
+    /// assert_eq!(addr.tag(), Some(TAG_FORM));
+    /// assert_eq!(e.address(), addr, "address is the form's coordinates");
+    /// ```
+    ///
+    /// — a tag check and `addr == addr`. So A21 §4's decode property had never
+    /// been checked at the one kind the engine is made of, under a name that
+    /// said it had.
+    ///
+    /// `Rotor::from_key`, `Mv::from_key` and `ClassVector::from_key` exist.
+    /// THERE IS NO DECODER FOR `TAG_FORM`, so the property is not checkable
+    /// here and is not claimed: what a form's address DOES hold is checked in
+    /// `a_form_address_is_a_function_of_its_content` below, and the tape is the
+    /// only thing that reconstructs a form.
     #[test]
-    fn every_key_decodes_to_its_object() {
+    fn the_rotor_and_versor_keys_decode_to_their_objects() {
         for w in sample_words() {
             let r = w.rotor();
             let k = r.key();
@@ -296,10 +316,59 @@ mod tests {
         let k = t.key().expect("a translator has a key");
         let back = Mv::from_key(&k).expect("mv key decodes");
         assert!(t.projective_eq(&back));
-        let e = from_canonical(&germinate(&[(0, 0, 1), (0, 1, 1)], &[(0, 0, 2), (0, 1, 2)]).unwrap());
-        let addr = e.address();
-        assert_eq!(addr.tag(), Some(TAG_FORM));
-        assert_eq!(e.address(), addr, "address is the form's coordinates");
+    }
+
+    /// WHAT A FORM'S ADDRESS ACTUALLY HOLDS, asserted on the object the engine
+    /// is made of and not on a tautology: it is a FUNCTION of the form's
+    /// coordinates — the same coordinates give the same address — and it
+    /// SEPARATES forms that differ in one of them.
+    ///
+    /// That is the half of A21 an undecodable key keeps. Chapter 1.7's argument
+    /// against digests is that they keep equality and destroy every other
+    /// operation; an address that cannot be decoded keeps equality AND keeps
+    /// the prefix stratum (`no_key_is_a_proper_prefix_of_a_sibling`) and loses
+    /// the object. Better than a digest, and not what A21 §4 specifies.
+    #[test]
+    fn a_form_address_is_a_function_of_its_content() {
+        use crate::transducer::alphabet::Derivation;
+        use crate::transducer::sentence::{form_vertex_key, Form, Vertex};
+        use crate::transducer::stalk::Invariant;
+        let build = |gauge: Vec<(u8, u8)>, chart: Invariant| -> Form {
+            let mut f = Form::default();
+            f.vertices.push(Vertex::word_on(
+                Address::from_bytes([TAG_FORM, 1]),
+                Derivation::spelled(sample_words()[0].clone()),
+                chart,
+                Box::new(crate::transducer::element::identity_versor()),
+                gauge,
+                None,
+            ));
+            f.faces.push(f.face_of(0, 1).expect("the star face"));
+            f.reindex();
+            f
+        };
+        let a = build(vec![(1, 2)], Invariant(vec![3, 5]));
+        let again = build(vec![(1, 2)], Invariant(vec![3, 5]));
+        assert_eq!(
+            form_vertex_key(&a),
+            form_vertex_key(&again),
+            "one form's coordinates give one address, on every node (law 2)"
+        );
+        assert_eq!(form_vertex_key(&a).tag(), Some(TAG_FORM));
+        // One coordinate moved at a time, each of which 17.2 says the address
+        // writes: the member's gauge, then the member's chart.
+        let other_gauge = build(vec![(1, 3)], Invariant(vec![3, 5]));
+        assert_ne!(
+            form_vertex_key(&a),
+            form_vertex_key(&other_gauge),
+            "two forms whose vertex recolours differently are two addresses"
+        );
+        let other_chart = build(vec![(1, 2)], Invariant(vec![7]));
+        assert_ne!(
+            form_vertex_key(&a),
+            form_vertex_key(&other_chart),
+            "two forms whose vertex acts on a different chart are two addresses"
+        );
     }
 
     #[test]
