@@ -337,4 +337,36 @@ fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
         "and what it reports is the edge composite's quarter turn, not the identity: {:?}",
         words.iter().map(|(w, _)| w.order()).collect::<Vec<_>>()
     );
+
+    // A CYCLE THE SENTENCE FILED CHARGES TORSION, whatever its order says.
+    // "What will not close" has two readings and the charge asked only the
+    // weaker one — whether the ALGEBRA closes the cycle — so it fired only
+    // on `Order::Infinite`. This corpus has never produced one: measured at
+    // e9399c4, 12187 flat and 256 finite edge holonomies, INFINITE ZERO,
+    // against 200 cycles the voices filed. A filed cycle is one no candidate
+    // discharged, which is `Physics::pivot`'s own "demand for a new fiber".
+    let mut filed = f.clone();
+    assert!(filed.file_loop(0, 4), "the loop files under its holonomy's class");
+    let spoken = crate::transducer::sentence::as_element_form(&filed, [1, 1, 0, 0])
+        .expect("a sentence tape");
+    let decoded = crate::transducer::sentence::from_element_form(&spoken)
+        .expect("its tape decodes");
+    assert!(!decoded.torsion.is_empty(), "and the filed cycle rides the tape");
+
+    let mut k = Kernel::new();
+    // The charge is read on a DEPLETED lane (23.8): a court with reserve to
+    // spare dockets the listing and charges nothing, so the reserve is spent
+    // first exactly as `a_depleted_lane_charges_a_sentence_by_its_loop_words`
+    // spends it.
+    for _ in 0..8 {
+        k.physics_mut().spend([true; 4]);
+    }
+    let before = k.physics().torsion;
+    assert_eq!(before, [0; 4], "a fresh court carries no torsion");
+    let _ = k.list_sentence(&spoken, [1; 32]);
+    let after = k.physics().torsion;
+    assert!(
+        after.iter().zip(&before).any(|(a, b)| a > b),
+        "a sentence carrying a filed cycle charges the metabolism: {before:?} then {after:?}"
+    );
 }

@@ -324,6 +324,13 @@ impl Kernel {
     /// holonomies, each closing in the order of its class: a finite order
     /// bumps that many times, per loop and never summed; a loop that never
     /// closes is an open walk and is charged as one.
+    ///
+    /// AND A LOOP THE SENTENCE FILED IS CHARGED AS ONE TOO (ruled
+    /// 2026-09-14). "What will not close" has two readings and this asked
+    /// only the weaker: whether the ALGEBRA closes the cycle, never whether
+    /// the speaker did. A filed cycle is one no candidate discharged — the
+    /// mind has no word for it — which is `Physics::pivot`'s own definition
+    /// of the charge, "the demand for a new fiber".
     fn charge_loops(&mut self, word: &Element, mag: &[u64; 4]) {
         let witnesses = crate::transducer::torsion_witness::witness_thought(word);
         if witnesses.is_empty() {
@@ -331,28 +338,72 @@ impl Kernel {
                 return;
             };
             for (w, _) in f.loop_words() {
-                match w.order() {
-                    crate::transducer::alphabet::Order::Finite(p) => {
-                        for _ in 0..p {
-                            self.physics.bump(mag);
-                        }
-                    }
-                    crate::transducer::alphabet::Order::Infinite => {
-                        self.physics.pivot(crate::physics::Physics::lanes_of(mag));
-                        for _ in 0..w.len() as u64 {
-                            self.physics.bump(mag);
-                        }
-                    }
+                // A CYCLE THIS SENTENCE FILED is one the speaker could not
+                // discharge: `file_loop` writes `Form.torsion` only where no
+                // candidate discharged the loop, so it stands as a class
+                // awaiting a word — which is exactly what `Physics::pivot`
+                // calls "the demand for a new fiber". It is keyed by the
+                // holonomy's class, the same key this reader has in hand.
+                //
+                // ITS ORDER SAYS WHETHER THE ALGEBRA CLOSES IT; THE FILING
+                // SAYS WHETHER THIS MIND DID, and the metabolism is about
+                // the second. Charging torsion on `Order::Infinite` alone
+                // asked only the first, and this corpus has never produced
+                // one: measured at e9399c4, 12187 flat and 256 finite edge
+                // holonomies, INFINITE ZERO, against 200 cycles the voices
+                // filed. So `Physics.torsion` could not be charged by any
+                // sentence this engine has ever spoken, `order_flux` stayed
+                // `syntropic − 0`, and the `𝒯` lane of every yield surface
+                // was zero — which is what 406 of 406 dwell readings showed
+                // after 25.9 stopped the voice from zeroing it itself.
+                //
+                // A cycle the tree gauge closed or a pivot discharged is not
+                // filed and charges nothing here; it closed.
+                let filed = w
+                    .rotor()
+                    .class_key()
+                    .is_some_and(|k| f.torsion.contains(k.as_bytes()));
+                let closes = matches!(w.order(), crate::transducer::alphabet::Order::Finite(_));
+                if filed || !closes {
+                    self.physics.pivot(crate::physics::Physics::lanes_of(mag));
+                }
+                let steps = match w.order() {
+                    crate::transducer::alphabet::Order::Finite(p) => u64::from(p),
+                    crate::transducer::alphabet::Order::Infinite => w.len() as u64,
+                };
+                for _ in 0..steps {
+                    self.physics.bump(mag);
                 }
             }
             return;
         }
+        // A STORED CYCLE CHARGES BECAUSE IT WAS FILED. The witness refines
+        // how MUCH — an Open walk bumps for the span it walked, a Closed one
+        // for the period it closed at — but the charge itself is owed either
+        // way, and "a Closed loop is proven monodromy and charges nothing"
+        // is the third reading of "what will not close" that asks about the
+        // OBJECT instead of the MIND.
+        //
+        // A Closed witness says the cycle's σ closes at period p: the label
+        // is honest and the cycle is well-formed. It says nothing about
+        // whether this mind could discharge the loop — and `file_loop` runs
+        // ONLY under `Discharge::NoneDischarged`, so every stored cycle is by
+        // construction one that no candidate discharged. That is precisely
+        // `Physics::pivot`'s "demand for a new fiber". Treating a
+        // correctly-labelled cycle as settled is the opposite of what filing
+        // means.
         for w in &witnesses {
-            if let crate::transducer::torsion_witness::HolonomicLoopWitness::Open { walked } = w {
-                self.physics.pivot(crate::physics::Physics::lanes_of(mag));
-                for _ in 0..*walked as u64 {
-                    self.physics.bump(mag);
+            self.physics.pivot(crate::physics::Physics::lanes_of(mag));
+            let steps = match w {
+                crate::transducer::torsion_witness::HolonomicLoopWitness::Open { walked } => {
+                    u64::from(*walked)
                 }
+                crate::transducer::torsion_witness::HolonomicLoopWitness::Closed {
+                    period, ..
+                } => u64::from(*period),
+            };
+            for _ in 0..steps {
+                self.physics.bump(mag);
             }
         }
     }

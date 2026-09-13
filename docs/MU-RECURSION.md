@@ -4413,6 +4413,26 @@ not make the voice patient either: every arm fires on
 is a lane that is ALWAYS due, and the court's T-lane pacing reached the voice
 and was discarded.
 
+**25.10 A cycle charges the metabolism because it was FILED (ruled
+2026-09-14).** "What will not close" has two readings and `charge_loops`
+asked only the weaker one at all three of its decisions: whether the ALGEBRA
+closes the cycle, never whether the SPEAKER did.
+
+`file_loop` writes `Form.torsion` only under `Discharge::NoneDischarged`, so
+every stored cycle is by construction one that no candidate discharged — the
+mind has no word for it. That is precisely `Physics::pivot`'s own definition
+of the charge, "the demand for a new fiber". The three readings that asked
+the wrong question: torsion charged only on `Order::Infinite`, of which this
+corpus produces NONE (measured at e9399c4: 12 187 flat and 256 finite edge
+holonomies, infinite zero, against 200 filed cycles); a stored cycle charged
+only when its witness was `Open`; and "a Closed loop is proven monodromy and
+charges nothing", which reads a correctly-LABELLED cycle as a settled one.
+
+A stored cycle now charges torsion whatever its witness, and the witness
+refines only how much pressure rides with it — the span walked when Open,
+the period closed at when Closed. A cycle the tree gauge closed or a pivot
+discharged is not filed and charges nothing, because it closed.
+
 ## 26. Wire and economics
 
 Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/dialogue/speech.rs`:
