@@ -461,4 +461,24 @@ fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
         !f.torsion.contains(flat_class.as_bytes()),
         "and not under the identity the word holonomy reports"
     );
+
+    // D2: `Loop.carriages` IS the transport composite's carriage, path for
+    // path. `path_carriages` computed it in a second walk — the same
+    // frontier, the same steps, the same closing rule, with the word and the
+    // gauge discarded — so the walk ran once at `loops_of` and again at every
+    // class reading. One carrier now; this asserts they were the same thing.
+    let lp = &f.loops[0];
+    let transport = loop_transport(&f, lp);
+    assert_eq!(
+        lp.carriages.len(),
+        transport.len(),
+        "one carriage per closed member path, and the same paths"
+    );
+    for (k, t) in transport.scoped() {
+        let held = lp.carriages.get(&k).expect("the loop carries this path");
+        assert!(
+            element::same_versor(held, &t.carriage),
+            "the stored carriage is the transport composite's"
+        );
+    }
 }

@@ -19,6 +19,6 @@ use super::transport::*;
 use crate::network::nerve::Keyed;
 use crate::physics::Budget;
 use crate::transducer::alphabet::{Order, Rotor, Word};
-use crate::transducer::element::{self, Element, Versor};
+use crate::transducer::element::{self, Element};
 use crate::transducer::family::Crystal;
 use crate::transducer::stalk::{self, Standing};

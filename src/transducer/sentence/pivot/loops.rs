@@ -47,71 +47,48 @@ impl Form {
             path.push(a);
             walked.push(fi);
             let holonomy = form_named_holonomy(faces, &path, &walked);
-            let carriages = path_carriages(faces, &path, &walked);
-            loops.push(Loop {
+            // THE CARRIAGES ARE THE TRANSPORT COMPOSITE'S, read from the one
+            // walk that computes them. `path_carriages` stood here and walked
+            // the loop's member paths accumulating `place.carriage` —
+            // step for step the same walk `loop_transport_on` makes, with the
+            // word and the gauge thrown away. Two carriers for one quantity
+            // (law 12), and the expensive half: the walk is combinatorial over
+            // each face's member pairs, and it ran once per loop at
+            // construction and again per loop at every class reading. On the
+            // fleet at e98e8a2 that is 70311 loops walked twice, and one pair
+            // form carried 3361 of them.
+            let mut lp = Loop {
                 vertices: path.into_iter().map(|x| x as u16).collect(),
                 faces: walked.into_iter().map(|x| x as u16).collect(),
                 chord: fi as u16,
                 holonomy,
-                carriages,
-            });
+                carriages: Keyed::new(),
+            };
+            for (k, t) in loop_transport_on(faces, &lp).scoped() {
+                lp.carriages.insert(&k, t.carriage.clone());
+            }
+            loops.push(lp);
         }
         loops
     }
 }
 
-/// THE CARRIAGE ACCUMULATED ALONG EACH MEMBER PATH of a loop.
-///
-/// A loop's holonomy is a product of WORDS and is one word, because a word is
-/// a vertex coordinate. Its carriage is a product of the faces' carriages,
-/// which are MEMBER coordinates, so there is one carriage per path through the
-/// members — the chart at each vertex, consecutive charts related by a pair
-/// the face actually records.
-///
-/// THE PATHS ARE WALKED FROM THE FACES, not taken as a product of the
-/// vertices' fibres. Each face's `at` keys ARE its member pairs, so a step
-/// extends a partial path only where the face relates the chart the path is
-/// standing at to the chart it steps to. A path that reaches a vertex the next
-/// face does not relate simply ends, and the loop carries no carriage for it —
-/// which is the honest reading: that walk is not a cycle of this complex.
-///
-/// A loop closes, so `path` begins and ends at the same vertex and a member
-/// path is kept only when it begins and ends at the same CHART there too. The
-/// repeated last entry is dropped from the key.
-fn path_carriages(faces: &[FormFace], path: &[usize], walked: &[usize]) -> Keyed<Versor> {
-    let mut live = vec![PartialPath::seed(element::identity_versor())];
-    for (win, &wfi) in path.windows(2).zip(walked) {
-        let Some(ff) = faces.get(wfi) else {
-            return Keyed::new();
-        };
-        let forward = ff.i as usize == win[0] && ff.j as usize == win[1];
-        let mut next = Vec::new();
-        for p in &live {
-            for (k, place) in ff.at.scoped() {
-                let Some((here, there)) = p.step_charts(&k, forward) else {
-                    continue;
-                };
-                let step = if forward {
-                    place.carriage.clone()
-                } else {
-                    match place.carriage.versor_inverse() {
-                        Some(inv) => inv,
-                        None => continue,
-                    }
-                };
-                next.push(p.extend(here, there, step.geo(&p.acc)));
-            }
-        }
-        live = next;
-    }
-    let mut out = Keyed::new();
-    for p in live {
-        if let Some(k) = p.closed_key() {
-            out.insert(k, p.acc);
-        }
-    }
-    out
-}
+// `path_carriages(faces, path, walked)` stood here: a walk of the loop's
+// member paths accumulating each face's `place.carriage`, keyed by the path.
+// It is `loop_transport_on` with the word and the gauge discarded — the same
+// frontier, the same `step_charts`, the same `closed_key`, the same
+// `carriage.geo(&acc)` — so one quantity had two carriers (law 12) and the
+// walk that produces it ran twice per loop: once at `loops_of` to fill
+// `Loop.carriages`, and again at every class reading through
+// `loop_transport_on`. `loops_of` fills the field from that one walk now.
+//
+// The doc it carried is true of `loop_transport_on` and belongs to it: the
+// paths are walked FROM THE FACES and not taken as a product of the vertices'
+// fibres, because each face's `at` keys are its member pairs; a step extends a
+// partial path only where the face relates the chart the path stands at to the
+// chart it steps to; a path the next face does not relate simply ends and is
+// not a cycle of this complex; and a path is kept only where it ends at the
+// chart it began at.
 
 /// A MEMBER PATH BEING WALKED: the charts it has passed, the chart it stands
 /// AT, the chart it started at, and what it has accumulated.
