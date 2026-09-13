@@ -21,19 +21,29 @@ fn chart_axes_read_from_the_rotor_not_a_matrix() {
         .expect("connection");
     let inv = invariant_of(&w);
     assert!(!inv.0.is_empty(), "a connection has a chart");
-    // The gate reads every production file of `stalk/`; the test module is
-    // a sibling directory now, so each file is production in whole.
-    for (name, src) in [
-        ("chart.rs", include_str!("../chart.rs")),
-        ("mod.rs", include_str!("../mod.rs")),
-        ("stalks.rs", include_str!("../stalks.rs")),
-        ("stratum.rs", include_str!("../stratum.rs")),
-    ] {
-        assert!(
-            !src.contains("word.fiber(") && !src.contains("GERM_DIM"),
-            "chart axes are read from the rotor, not a matrix — {name}"
-        );
-    }
+    // A SOURCE-TEXT GATE STOOD HERE and it is deleted. It `include_str!`d
+    // four production files and asserted their BYTES did not contain
+    // "word.fiber(" or "GERM_DIM" — two spellings that exist nowhere in the
+    // tree, so the assertion could only ever pass, and what it checked was
+    // the text of the engine rather than the behaviour of it. That is §4.6,
+    // and it is the gate disease reappearing inside the test suite after
+    // eighteen gate files were deleted for being exactly this.
+    //
+    // The property it claimed is checked below on the object: the chart is
+    // read off the rotor, so it is invariant under the motions a rotor
+    // spells and it refines by the coordinate that arrived. A test that
+    // greps for a forbidden identifier proves nothing about either, and it
+    // goes green on a file that has been rewritten to do the wrong thing
+    // under a different name.
+    let q2 = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let twice = crate::transducer::alphabet::Word::from_letters(&[(q2, false), (q2, false)]);
+    let half = from_connection(&twice, &identity_versor(), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0])
+        .expect("connection");
+    assert_ne!(
+        inv.0,
+        invariant_of(&half).0,
+        "a quarter turn and a half turn are different charts, read from the rotor itself"
+    );
 }
 
 #[test]
