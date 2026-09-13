@@ -461,4 +461,17 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         "  mint rule_open Form.remainder: empty on {open_rem_empty} of {open_seen}, \
          {open_rem_cells} cells across the rest"
     );
+    // WHAT THE COVERS' LOOPS CLASSIFIED AS. `tally_loop` has recorded this
+    // all along and only the soak read it, so the mint sweep could say how
+    // many loops a scene has and not what any of them turned out to be.
+    // `classify` files a cycle only where the carriage is the IDENTITY
+    // (`cell.rs:125`), so a loop with a finite non-identity rotor carried by
+    // a non-identity versor stands as a class rather than filing as torsion.
+    // This line is what says which of those two the corpus produces.
+    let t = mycelium::transducer::family::cover::take_cover_tally();
+    println!(
+        "  mint cover loops: edges {} flat {} filed {} standing {} unspellable {} \
+         | covers measured {} unmeasured {} carried {}",
+        t.edges, t.flat, t.filed, t.standing, t.unspellable, t.measured, t.unmeasured, t.carried
+    );
 }

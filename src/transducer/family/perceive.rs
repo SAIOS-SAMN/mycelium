@@ -278,15 +278,15 @@ pub(crate) fn word_vertex_with(
 // the demand and now would also have to be handed a presentation and a
 // budget to discard them too.
 
-/// Whether two bodies' supports share a cell: the overlap the eyes admit
-/// as a correspondence when no versor carries one onto the other.
-pub(crate) fn supports_overlap(a: &Body, b: &Body) -> bool {
-    let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    for &(r, c, _) in &a.cells {
-        have.insert(cell_pos_key(r, c), ());
-    }
-    b.cells.iter().any(|&(r, c, _)| have.contains(&cell_pos_key(r, c)))
-}
+// `supports_overlap(a, b)` was here. It built a fresh cell index of `a` and
+// asked whether any cell of `b` was in it — a correct answer to "do these
+// two bodies meet", asked inside two Cartesian products in `pair.rs`, so the
+// index was rebuilt once per PAIR and the walk ran over the whole of the
+// other scene. Its callers now read the cell fibre directly: one index of a
+// scene's bodies by cell, built once, and a body's overlaps are the union of
+// the fibres at its own cells — which costs that body's own support instead
+// of the other scene's cardinality (rule 1). There is no third caller and no
+// reason to keep a second way to ask.
 
 /// The axes on which two charts differ, by position; an axis one chart
 /// lacks differs.
