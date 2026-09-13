@@ -631,8 +631,52 @@ pub(crate) fn pair_form_uncached(
     //
     // `meet_faces` is a prefix of `faces`, which only grows here, so the
     // difference is exact and not a floor.
+    // AND WHAT THE LOOPS CARRY, because the count alone cannot say whether
+    // any of them is curved. Torsion is filed by `file_loop` under
+    // `lp.holonomy.rotor().class_key()`, and `lp.holonomy` is
+    // `form_named_holonomy`, which composes each face's OWN WORD. A face made
+    // by `face_of` carries the coboundary `w_j ∘ w_i⁻¹`, and a product of
+    // coboundaries around a cycle telescopes to the identity ALGEBRAICALLY —
+    // no data makes it curve. Only a section face (`face_carrying`, 21 step 2,
+    // S12.2), whose word is deliberately not that coboundary, can leave a
+    // loop with holonomy to file.
+    //
+    // So the three counts separate the only three states a loop can be in,
+    // and the corpus-wide zero on `finite` is what says whether the engine
+    // has ever had a cycle to file at all.
+    let (mut flat, mut finite, mut infinite) = (0usize, 0usize, 0usize);
+    // AND THE SAME READING ON THE EDGE TRANSPORTS, which is the other
+    // holonomy this form carries: `edge_holonomies` composes `place.edge`,
+    // the 50.3 transport `meet_edge` measures on a cover meet, and its own
+    // doc says "stabilizer cosets do not telescope, which is what makes it a
+    // reading". If the words are flat by algebra and the edges are not, the
+    // curvature is present and the filing instrument is looking at the wrong
+    // carrier.
+    let (mut e_flat, mut e_fin, mut e_inf) = (0usize, 0usize, 0usize);
+    for lp in &form.loops {
+        match lp.holonomy.is_identity() {
+            true => flat += 1,
+            false => match lp.holonomy.order() {
+                crate::transducer::alphabet::Order::Finite(_) => finite += 1,
+                crate::transducer::alphabet::Order::Infinite => infinite += 1,
+            },
+        }
+        if let Some(hs) = form.edge_holonomies(lp) {
+            for (_, h) in hs.scoped() {
+                match h.word.is_identity() {
+                    true => e_flat += 1,
+                    false => match h.word.order() {
+                        crate::transducer::alphabet::Order::Finite(_) => e_fin += 1,
+                        crate::transducer::alphabet::Order::Infinite => e_inf += 1,
+                    },
+                }
+            }
+        }
+    }
     eprintln!(
-        "  pair form {n} vertices, {} faces ({meet_faces} cover meets, {} cell+ring), {} loops",
+        "  pair form {n} vertices, {} faces ({meet_faces} cover meets, {} cell+ring), {} loops \
+         (word holonomy: flat {flat}, finite {finite}, infinite {infinite} \
+         | edge holonomy paths: flat {e_flat}, finite {e_fin}, infinite {e_inf})",
         form.faces.len(),
         form.faces.len() - meet_faces,
         form.loops.len()
