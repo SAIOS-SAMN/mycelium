@@ -264,7 +264,7 @@ impl Element {
     /// holonomies: `Form::loop_words`.
     pub fn letters(&self) -> Option<Letters> {
         use crate::transducer::alphabet::Spelling;
-        let b = &self.word;
+        let b = &self.description;
         let tag = crate::transducer::address::tag_of(b)?;
         if tag != CONNECTION_TAG && tag != TRANSLATION_TAG {
             return None;
@@ -310,7 +310,7 @@ impl Element {
         let Some(letters) = self.letters() else {
             return false;
         };
-        if self.word_tag() != Some(CONNECTION_TAG) {
+        if self.description_tag() != Some(CONNECTION_TAG) {
             return false;
         }
         conformal_of(&letters.spelling.word, &letters.carriage)
@@ -323,31 +323,33 @@ impl Element {
                 && self.sub.is_empty())
     }
 
-    /// THE TAPE TAG this word opens with — 17.2's own offset, read through
-    /// the one carrier for it.
-    pub(crate) fn word_tag(&self) -> Option<u8> {
-        crate::transducer::address::tag_of(&self.word)
+    /// THE DESCRIPTION TAG this word opens with — 17.2's own offset, read
+    /// through the one carrier for it. The tag is a coordinate of the
+    /// description, so the reader is named for the description and not for the
+    /// word, whose tag it is not.
+    pub(crate) fn description_tag(&self) -> Option<u8> {
+        crate::transducer::address::tag_of(&self.description)
     }
 
     /// A sentence: its own tape tag, never merely an opened-axis connection.
     pub fn is_sentence(&self) -> bool {
-        self.word_tag() == Some(SENTENCE_TAG)
+        self.description_tag() == Some(SENTENCE_TAG)
     }
 
     /// A translation: the gauge between two sections.
     pub fn is_translation(&self) -> bool {
-        self.word_tag() == Some(TRANSLATION_TAG)
+        self.description_tag() == Some(TRANSLATION_TAG)
     }
 
     /// An optimisation spoken as a word.
     pub fn is_rewrite(&self) -> bool {
-        self.word_tag() == Some(REWRITE_TAG)
+        self.description_tag() == Some(REWRITE_TAG)
     }
 
     /// Mint a Rewrite: the address measures the tape.
-    pub fn from_rewrite_tape(word: Vec<u8>, mag: [u64; 4]) -> Element {
+    pub fn from_rewrite_tape(description: Vec<u8>, mag: [u64; 4]) -> Element {
         let mut e = Element::identity();
-        e.word = word;
+        e.description = description;
         e.mag = mag;
         e.address.take();
         e

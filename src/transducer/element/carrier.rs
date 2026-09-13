@@ -62,7 +62,16 @@ pub struct Action {
 #[derive(Debug, Clone)]
 pub struct Element {
     /// Coordinate-exact ANASTOME description (empty for a pure residual chain).
-    pub(crate) word: Vec<u8>,
+    ///
+    /// IT IS NOT CALLED `word`, and that is a ruling applied rather than a
+    /// preference. `word` is the document's noun for a path in the Cayley
+    /// graph whose meaning is a VERTEX — `alphabet::Word`, the object
+    /// `Spelling` and every rotor reader carry. This field holds serialised
+    /// bytes. Giving the encoding the vocabulary's most load-bearing noun is
+    /// §2.1 at the worst place for it, and the accessor beside it has always
+    /// been `description`, so one field carried two names and one of them was
+    /// wrong.
+    pub(crate) description: Vec<u8>,
     pub(crate) action: Action,
     /// Per-lane support, exact from the description.
     pub(crate) mag: [u64; 4],
@@ -135,7 +144,7 @@ impl Element {
     /// The identity element — empty tape, identity action, no chain.
     pub fn identity() -> Self {
         Element {
-            word: Vec::new(),
+            description: Vec::new(),
             action: Action::default(),
             mag: [0; 4],
             sub: CanonicalChain::default(),
@@ -256,12 +265,12 @@ impl Element {
 
     /// The ANASTOME description tape (connection or sentence).
     pub fn description(&self) -> &[u8] {
-        &self.word
+        &self.description
     }
 
     /// Replace the description tape and drop the memoized address.
-    pub fn set_description(&mut self, word: Vec<u8>) {
-        self.word = word;
+    pub fn set_description(&mut self, description: Vec<u8>) {
+        self.description = description;
         self.address.take();
     }
 
@@ -558,7 +567,7 @@ impl Element {
     /// relabel is a further quotient, still to land.)
     pub fn substance(&self) -> Element {
         let mut out = self.clone();
-        out.word = Vec::new();
+        out.description = Vec::new();
         out.address.take();
         if let Some(v) = out.versor() {
             if let Some(t) = translator_of(&v) {

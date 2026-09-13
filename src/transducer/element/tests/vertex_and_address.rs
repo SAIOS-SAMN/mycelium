@@ -77,7 +77,8 @@ fn same_vertex_is_address_rho_sigma_and_shift() {
         let two = Q::from(BigInt::from(2));
         let car = crate::transducer::cga::dilator(&two).geo(&letters.carriage);
         let rem = dilated.sub().to_vec();
-        dilated.word = connection_word(&letters.spelling, &car, &letters.sigma, &rem);
+        dilated.description =
+            connection_description(&letters.spelling, &car, &letters.sigma, &rem);
         dilated.sync_action_from_tape();
         dilated.address.take();
     }
@@ -98,7 +99,8 @@ fn m2_two_spellings_one_address() {
     if let Some(letters) = alt.letters() {
         let spelling = crate::transducer::alphabet::Spelling { word: long };
         let rem = alt.sub().to_vec();
-        alt.word = connection_word(&spelling, &letters.carriage, &letters.sigma, &rem);
+        alt.description =
+            connection_description(&spelling, &letters.carriage, &letters.sigma, &rem);
         alt.sync_action_from_tape();
         alt.address.take();
         assert_eq!(alt.address(), w.address());

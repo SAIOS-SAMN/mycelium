@@ -240,8 +240,8 @@ impl Element {
     /// or composed from it; germinated axes are listed by index.
     fn base_canonical(&self) -> Vec<u8> {
         let mut out = Vec::new();
-        out.extend_from_slice(&(self.word.len() as u32).to_le_bytes());
-        out.extend_from_slice(&self.word);
+        out.extend_from_slice(&(self.description.len() as u32).to_le_bytes());
+        out.extend_from_slice(&self.description);
         out.extend_from_slice(&(self.sub.len() as u32).to_le_bytes());
         for (r, c, before, after) in self.sub.as_slice() {
             out.extend_from_slice(&r.to_le_bytes());

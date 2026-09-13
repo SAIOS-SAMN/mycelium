@@ -5,7 +5,11 @@
 //! deformation at any position is one substance: that canonicalisation, the
 //! constructors that read a chain, and the listing key naming it in a frame.
 
-use crate::transducer::germinate::{germ_bytes as residual_word, ResidualGerm};
+// `germ_bytes as residual_word` was the alias here. It renamed a correctly
+// named function — bytes are bytes — to the document's noun for a Cayley-graph
+// path, at the import. The alias is dropped rather than renamed: the right
+// name already existed upstream.
+use crate::transducer::germinate::{germ_bytes, ResidualGerm};
 use crate::core::Q;
 use num_bigint::BigInt;
 use num_traits::One;
@@ -206,7 +210,7 @@ pub fn from_residual(g: &ResidualGerm) -> Option<Element> {
 /// proof, so there is nothing left to refuse.
 pub fn from_canonical(chain: &CanonicalChain) -> Element {
     let mut e = Element::identity();
-    e.word = residual_word(chain);
+    e.description = germ_bytes(chain);
     e.address.take();
     e.mag = measure_lanes(chain);
     e.sub = chain.clone();
@@ -273,7 +277,7 @@ pub fn from_connection(
     let v = conformal_of(rotor_word, carriage)?;
     let spelling = crate::transducer::alphabet::Spelling { word: rotor_word.clone() };
     let mut e = from_residual(remainder)?;
-    e.word = connection_word(&spelling, carriage, sigma, &e.sub.to_vec());
+    e.description = connection_description(&spelling, carriage, sigma, &e.sub.to_vec());
     e.action.spatial = Some(v);
     e.action.gauge = sigma.to_vec();
     e.address.take();
@@ -284,8 +288,9 @@ pub fn from_connection(
 }
 
 /// The description of a connection: its spelling in the alphabet at its
-/// dilation, the placement, the gauge map, and the centered remainder.
-pub(crate) fn connection_word(
+/// dilation, the placement, the gauge map, and the centered remainder. The
+/// doc said "description" and the name said `word`; the doc was right.
+pub(crate) fn connection_description(
     spelling: &crate::transducer::alphabet::Spelling,
     carriage: &Versor,
     sigma: &[(u8, u8)],
@@ -299,7 +304,7 @@ pub(crate) fn connection_word(
         out.push(f);
         out.push(t);
     }
-    let germ = residual_word(remainder);
+    let germ = germ_bytes(remainder);
     out.extend_from_slice(&(germ.len() as u32).to_le_bytes());
     out.extend_from_slice(&germ);
     out

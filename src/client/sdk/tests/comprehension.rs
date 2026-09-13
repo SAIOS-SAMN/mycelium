@@ -489,7 +489,7 @@ let mut alt = swap.clone();
 let letters = alt.letters().expect("connection");
 let spelling = crate::transducer::alphabet::Spelling { word: long };
 let rem = alt.sub().to_vec();
-alt.set_description(crate::transducer::element::connection_word(
+alt.set_description(crate::transducer::element::connection_description(
     &spelling,
     &letters.carriage,
     &letters.sigma,

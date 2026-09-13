@@ -31,7 +31,7 @@ pub const TRANSLATION_TAG: u8 = 0x13;
 pub const REWRITE_TAG: u8 = 0x14;
 
 impl Element {
-    /// GEN3: tapes only. Magic `0xA3`, then word, mag, chain, sections,
+    /// GEN3: tapes only. Magic `0xA3`, then description, mag, chain, sections,
     /// torsion, anchor, transitions as letter tapes. Addresses on the tape
     /// are `len16 + bytes`. An older file is refused.
     pub const GEN3_MAGIC: u8 = 0xA3;
@@ -39,8 +39,8 @@ impl Element {
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut out = vec![Self::GEN3_MAGIC];
-        out.extend_from_slice(&(self.word.len() as u32).to_le_bytes());
-        out.extend_from_slice(&self.word);
+        out.extend_from_slice(&(self.description.len() as u32).to_le_bytes());
+        out.extend_from_slice(&self.description);
         for m in &self.mag {
             out.extend_from_slice(&m.to_le_bytes());
         }
@@ -127,9 +127,9 @@ impl Element {
             *p += 4;
             Some(v)
         };
-        let wlen = u32_at(b, pos)? as usize;
-        let word = b.get(*pos..*pos + wlen)?.to_vec();
-        *pos += wlen;
+        let dlen = u32_at(b, pos)? as usize;
+        let description = b.get(*pos..*pos + dlen)?.to_vec();
+        *pos += dlen;
         let mut mag = [0u64; 4];
         for m in &mut mag {
             *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -269,7 +269,7 @@ impl Element {
             _ => None,
         };
         let mut e = Element {
-            word,
+            description,
             action: Action {
                 spatial,
                 gauge: Vec::new(),

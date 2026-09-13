@@ -62,7 +62,8 @@ fn a_connection_is_one_element_with_two_components() {
     if let Some(letters) = alt.letters() {
         let spelling = crate::transducer::alphabet::Spelling { word: long };
         let rem = alt.sub().to_vec();
-        alt.word = connection_word(&spelling, &letters.carriage, &letters.sigma, &rem);
+        alt.description =
+            connection_description(&spelling, &letters.carriage, &letters.sigma, &rem);
         alt.sync_action_from_tape();
         alt.address.take();
         assert_eq!(alt.address(), w.address(), "q^4 and 1 are one vertex; the tape is not the address");
