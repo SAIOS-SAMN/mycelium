@@ -150,8 +150,15 @@ impl Form {
                         }
                     }
                 }
-                Vertex::Rebased { gauge, .. } => {
-                    *gauge = compose_gauge(g, gauge);
+                // A Rebased vertex's fibre regauges the same way its base's
+                // does — every member, at its own chart.
+                Vertex::Rebased { acts, .. } => {
+                    let charts: Vec<Vec<u8>> = acts.scoped().map(|(k, _)| k).collect();
+                    for k in charts {
+                        if let Some(a) = acts.get_mut(&k) {
+                            a.gauge = compose_gauge(g, &a.gauge);
+                        }
+                    }
                 }
                 _ => {}
             }
@@ -181,8 +188,13 @@ impl Form {
                         }
                     }
                 }
-                Vertex::Rebased { carriage, .. } => {
-                    **carriage = c.geo(carriage);
+                Vertex::Rebased { acts, .. } => {
+                    let charts: Vec<Vec<u8>> = acts.scoped().map(|(k, _)| k).collect();
+                    for k in charts {
+                        if let Some(a) = acts.get_mut(&k) {
+                            *a.carriage = c.geo(&a.carriage);
+                        }
+                    }
                 }
                 _ => {}
             }
@@ -310,15 +322,23 @@ pub(crate) fn vertex_carriage_at(
 ) -> Option<Versor> {
     match v {
         Vertex::Word { .. } => v.acting_on(chart).map(|a| (*a.carriage).clone()),
-        Vertex::Rebased { by, carriage, class, .. } => {
-            if class.key() != chart.key() {
-                return None;
-            }
+        // `t · C_by`: the relative this vertex holds AT THIS CHART, composed
+        // with the base's placement at the base's own chart. `of`'s slot was
+        // overwritten by the rebase, so this is where `C_of` comes back.
+        Vertex::Rebased { by, .. } => {
+            let relative = &v.acting_on(chart)?.carriage;
             match form.vertices.get(*by as usize) {
                 Some(w @ Vertex::Word { .. }) => {
-                    w.acting_on(&w.face_chart()?).map(|a| carriage.geo(&a.carriage))
+                    let charts = w.charts();
+                    // The base stands at ONE chart — `Form::rebase` refuses
+                    // otherwise — so the slice pattern reads it and a tape
+                    // carrying a multi-member base has no placement here.
+                    let [base] = charts.as_slice() else {
+                        return None;
+                    };
+                    w.acting_on(base).map(|a| relative.geo(&a.carriage))
                 }
-                Some(Vertex::Frame) => Some((**carriage).clone()),
+                Some(Vertex::Frame) => Some((**relative).clone()),
                 _ => None,
             }
         }
@@ -333,11 +353,12 @@ pub(crate) fn vertex_carriage_at(
 /// a map that moves no hue, not an absence standing in for one.
 pub(crate) fn vertex_gauge_at(v: &Vertex, chart: &crate::transducer::stalk::Invariant) -> Vec<(u8, u8)> {
     match v {
-        Vertex::Word { .. } => match v.acting_on(chart) {
+        // A Rebased vertex keeps `of`'s hue map at each chart, so both kinds
+        // answer from their own fibre.
+        Vertex::Word { .. } | Vertex::Rebased { .. } => match v.acting_on(chart) {
             Some(a) => a.gauge.clone(),
             None => Vec::new(),
         },
-        Vertex::Rebased { gauge, class, .. } if class.key() == chart.key() => gauge.clone(),
         _ => Vec::new(),
     }
 }

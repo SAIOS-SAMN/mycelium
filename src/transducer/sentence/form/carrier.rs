@@ -129,12 +129,25 @@ pub enum Vertex {
     Rebased {
         by: u16,
         of: u16,
-        /// Relative carriage t = C_of · C_by⁻¹.
-        carriage: Box<Versor>,
-        /// `of`'s hue map, spoken on `of`'s bodies.
-        gauge: Vec<(u8, u8)>,
-        /// `of`'s chart: the section coordinate naming the bodies it speaks to.
-        class: stalk::Invariant,
+        /// EVERY CHART `of` ACTED ON, and what the rebase carries it by there:
+        /// the member's `carriage` is the RELATIVE `t = C_of,chart · C_by⁻¹` at
+        /// that chart and its `gauge` is `of`'s there (D10).
+        ///
+        /// These were three single-valued fields, and `Form::rebase` read `of`'s
+        /// representative member to fill them — so rebasing a vertex that acted
+        /// on two charts kept one and dropped the other's body, at the one move
+        /// whose whole job is to REPLACE a vertex, leaving nothing to read the
+        /// dropped member back from.
+        ///
+        /// THE RELATIVE DOES NOT RE-DERIVE, so law 12 does not retire it: the
+        /// rebase overwrites `of`'s slot, `C_of` is gone, and `C_of = t · C_by`
+        /// comes back FROM the stored `t`. What re-derives is the placement, and
+        /// `vertex_carriage_at` is where it does.
+        ///
+        /// `by` stands at ONE chart — `Form::rebase` refuses otherwise — because
+        /// `t` is measured against one member of the base and a fibre keyed by
+        /// `of`'s chart has no room to say which.
+        acts: Keyed<Acting>,
     },
     Unfolded { measure: Measure },
     /// 50.5: what the speaker could not spell or the eyes could not pair,

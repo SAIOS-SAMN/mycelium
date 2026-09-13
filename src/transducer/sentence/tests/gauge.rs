@@ -105,13 +105,13 @@ fn coboundary_gauge_matches_by_address() {
     a.vertices.push(word_vertex(2, Word::identity()));
     a.faces.push(a.face_of(0, 1).expect("a star 1"));
     a.faces.push(a.face_of(0, 2).expect("a star 2"));
-    a.vertices.push(Vertex::Rebased {
-        by: 0,
-        of: 1,
-        carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
-        gauge: Vec::new(),
-        class: stalk::Invariant::default(),
-    });
+    a.vertices.push(Vertex::rebased_on(
+        0,
+        1,
+        stalk::Invariant::default(),
+        Box::new(element::carriage(&q1(), &(q0(), q1()))),
+        Vec::new(),
+    ));
     a.vertices.push(Vertex::Unfolded {
         measure: Measure::Occupied,
     });
@@ -124,13 +124,13 @@ fn coboundary_gauge_matches_by_address() {
     b.vertices.push(Vertex::Unfolded {
         measure: Measure::Occupied,
     });
-    b.vertices.push(Vertex::Rebased {
-        by: 0,
-        of: 2,
-        carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
-        gauge: Vec::new(),
-        class: stalk::Invariant::default(),
-    });
+    b.vertices.push(Vertex::rebased_on(
+        0,
+        2,
+        stalk::Invariant::default(),
+        Box::new(element::carriage(&q1(), &(q0(), q1()))),
+        Vec::new(),
+    ));
     b.reindex();
     assert!(
         coboundary_gauge(&a, &b).is_some(),

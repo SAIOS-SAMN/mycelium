@@ -61,23 +61,23 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                 out.extend_from_slice(&depth.to_le_bytes());
                 word_to_form_bytes(placement, None, out);
             }
-            Vertex::Rebased {
-                by,
-                of,
-                carriage,
-                gauge,
-                class,
-            } => {
+            Vertex::Rebased { by, of, acts } => {
                 out.push(3);
                 out.extend_from_slice(&by.to_le_bytes());
                 out.extend_from_slice(&of.to_le_bytes());
-                carriage.to_bytes(out);
-                out.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
-                for &(a, b) in gauge {
-                    out.push(a);
-                    out.push(b);
+                // THE FIBRE, one member per chart `of` acted on, in trie order
+                // — the same shape a Word vertex writes, with the relative in
+                // place of the placement (v8, D10).
+                out.extend_from_slice(&(acts.len() as u16).to_le_bytes());
+                for (_, a) in acts.scoped() {
+                    a.carriage.to_bytes(out);
+                    out.extend_from_slice(&(a.gauge.len() as u16).to_le_bytes());
+                    for &(x, y) in &a.gauge {
+                        out.push(x);
+                        out.push(y);
+                    }
+                    put_inv(&a.chart, out)?;
                 }
-                put_inv(class, out)?;
             }
             Vertex::Unfolded { measure } => {
                 out.push(4);
@@ -290,21 +290,26 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             3 => {
                 let by = take_u16(b, pos)?;
                 let of = take_u16(b, pos)?;
-                let carriage = element::Versor::from_bytes(b, pos)?;
-                let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
-                let mut gauge = Vec::with_capacity(ng);
-                for _ in 0..ng {
-                    gauge.push((*b.get(*pos)?, *b.get(*pos + 1)?));
-                    *pos += 2;
+                // The fibre, as a Word vertex's (v8, D10).
+                let nm = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+                let mut acts: Keyed<crate::transducer::sentence::Acting> = Keyed::new();
+                for _ in 0..nm {
+                    let carriage = element::Versor::from_bytes(b, pos)?;
+                    let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+                    let mut gauge = Vec::with_capacity(ng);
+                    for _ in 0..ng {
+                        gauge.push((*b.get(*pos)?, *b.get(*pos + 1)?));
+                        *pos += 2;
+                    }
+                    let chart = take_inv(b, pos)?;
+                    let member = crate::transducer::sentence::Acting {
+                        chart,
+                        carriage: Box::new(carriage),
+                        gauge,
+                    };
+                    acts.insert(member.key(), member);
                 }
-                let class = take_inv(b, pos)?;
-                Vertex::Rebased {
-                    by,
-                    of,
-                    carriage: Box::new(carriage),
-                    gauge,
-                    class,
-                }
+                Vertex::Rebased { by, of, acts }
             }
             4 => {
                 let m = *b.get(*pos)?;

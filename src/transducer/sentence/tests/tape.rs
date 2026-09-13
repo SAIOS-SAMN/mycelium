@@ -28,13 +28,13 @@ fn form_tape_v6_round_trips() {
         .glue(&inner, inner_addr, Word::identity(), [0, 0, 0, 1])
         .expect("glue depth 0 into depth 0");
     let rebased = f.vertices.len() as u16;
-    f.vertices.push(Vertex::Rebased {
-        by: 0,
-        of: 1,
-        carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
-        gauge: vec![(1, 2)],
-        class: stalk::Invariant(vec![3, 5]),
-    });
+    f.vertices.push(Vertex::rebased_on(
+        0,
+        1,
+        stalk::Invariant(vec![3, 5]),
+        Box::new(element::carriage(&q1(), &(q0(), q1()))),
+        vec![(1, 2)],
+    ));
     let unfolded = f.unfold(Measure::Occupied);
     let demand = f.vertices.len() as u16;
     f.vertices.push(Vertex::Demand {
@@ -108,22 +108,21 @@ fn form_tape_v6_round_trips() {
         }
         _ => panic!("glued vertex"),
     }
-    match &back.vertices[rebased as usize] {
-        Vertex::Rebased {
-            by,
-            of,
-            carriage,
-            gauge,
-            class,
-        } => {
+    match (&back.vertices[rebased as usize], &f.vertices[rebased as usize]) {
+        (Vertex::Rebased { by, of, acts }, Vertex::Rebased { acts: was, .. }) => {
             assert_eq!(*by, 0);
             assert_eq!(*of, 1);
+            // THE WHOLE FIBRE ROUND-TRIPS, keyed by chart: the relative and the
+            // hue map at each chart `of` acted on, and one member here.
+            assert_eq!(acts, was, "every member comes back filed at its own chart");
+            let m = acts
+                .get(stalk::Invariant(vec![3, 5]).key().as_bytes())
+                .expect("the member at the chart it was written on");
             assert!(element::same_versor(
-                carriage,
+                &m.carriage,
                 &element::carriage(&q1(), &(q0(), q1()))
             ));
-            assert_eq!(gauge, &vec![(1, 2)]);
-            assert_eq!(class, &stalk::Invariant(vec![3, 5]));
+            assert_eq!(m.gauge, vec![(1, 2)]);
         }
         _ => panic!("rebased vertex"),
     }

@@ -305,13 +305,13 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         Vec::new(),
         None,
     ));
-    re.vertices.push(Vertex::Rebased {
-        by: 1,
-        of: 2,
-        carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
-        gauge: Vec::new(),
-        class: stalk::Invariant::default(),
-    });
+    re.vertices.push(Vertex::rebased_on(
+        1,
+        2,
+        stalk::Invariant::default(),
+        Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
+        Vec::new(),
+    ));
     re.faces.push(re.face_of(0, 1).expect("vertices"));
     re.loops = Form::loops_of(&re.faces, re.vertices.len());
     let re_e = as_element_form(&re, [1, 0, 0, 0]).expect("rebased tape");

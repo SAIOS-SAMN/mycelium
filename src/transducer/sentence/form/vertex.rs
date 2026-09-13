@@ -34,6 +34,23 @@ impl Vertex {
         Vertex::Word { address, derivation, acts, contact }
     }
 
+    /// A REBASED VERTEX ON ONE CHART — `of` read in `by`'s frame, carrying one
+    /// body. The counterpart of `word_on`, for the same reason: a site that
+    /// knows one chart says one chart, and `Form::rebase` builds the several-
+    /// chart case by inserting a member per chart `of` acted on.
+    pub fn rebased_on(
+        by: u16,
+        of: u16,
+        chart: stalk::Invariant,
+        carriage: Box<crate::transducer::element::Versor>,
+        gauge: Vec<(u8, u8)>,
+    ) -> Vertex {
+        let member = super::Acting { chart, carriage, gauge };
+        let mut acts = Keyed::new();
+        acts.insert(member.key(), member);
+        Vertex::Rebased { by, of, acts }
+    }
+
     /// The word a vertex speaks; a demand vertex speaks none (50.5), so no
     /// face reaches it and it enters no loop.
     pub fn word_in(&self, form: &Form) -> Option<Word> {
@@ -86,12 +103,15 @@ impl Vertex {
     /// which is the Frame's answer and not a chart invented for it.
     pub fn charts(&self) -> Vec<stalk::Invariant> {
         match self {
-            Vertex::Word { acts, .. } if !acts.is_empty() => {
+            // A REBASED VERTEX STANDS WHERE `of` STOOD, on every chart of it.
+            Vertex::Word { acts, .. } | Vertex::Rebased { acts, .. } if !acts.is_empty() => {
                 acts.scoped().map(|(_, a)| a.chart.clone()).collect()
             }
-            Vertex::Rebased { class, .. } => vec![class.clone()],
             Vertex::Glued { chart, .. } | Vertex::Demand { chart, .. } => vec![chart.clone()],
-            Vertex::Word { .. } | Vertex::Frame | Vertex::Unfolded { .. } => {
+            Vertex::Word { .. }
+            | Vertex::Rebased { .. }
+            | Vertex::Frame
+            | Vertex::Unfolded { .. } => {
                 vec![stalk::Invariant::default()]
             }
         }
@@ -111,7 +131,12 @@ impl Vertex {
     /// The type does the enumeration.
     pub fn acts(&self) -> Option<&Keyed<super::Acting>> {
         match self {
-            Vertex::Word { acts, .. } => Some(acts),
+            // A REBASED VERTEX HAS THE SAME FIBRE SHAPE, with the relative in
+            // place of the placement at each chart (D10). A reader that wants
+            // "what does this vertex act on and by" gets the same answer for
+            // both kinds; one that means the PLACEMENT reads
+            // `vertex_carriage_at`, which composes the base's in for a Rebased.
+            Vertex::Word { acts, .. } | Vertex::Rebased { acts, .. } => Some(acts),
             _ => None,
         }
     }
@@ -143,8 +168,9 @@ impl Vertex {
     /// chart of its own.
     pub fn face_chart(&self) -> Option<stalk::Invariant> {
         match self {
-            Vertex::Word { acts, .. } => acts.scoped().next().map(|(_, a)| a.chart.clone()),
-            Vertex::Rebased { class, .. } => Some(class.clone()),
+            Vertex::Word { acts, .. } | Vertex::Rebased { acts, .. } => {
+                acts.scoped().next().map(|(_, a)| a.chart.clone())
+            }
             Vertex::Glued { chart, .. } | Vertex::Demand { chart, .. } => Some(chart.clone()),
             Vertex::Frame | Vertex::Unfolded { .. } => Some(stalk::Invariant::default()),
         }

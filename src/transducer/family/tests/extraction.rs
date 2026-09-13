@@ -161,21 +161,21 @@ let n_re = form
     .count();
 assert_eq!(n_re, 1, "one Rebased; the w_i w_j w_i⁻¹ test is gone");
 match &form.vertices[2] {
-    Vertex::Rebased {
-        by,
-        of,
-        carriage,
-        gauge,
-        class,
-    } => {
+    Vertex::Rebased { by, of, acts } => {
         assert_eq!((*by, *of), (1, 2));
+        // B'S OWN CHART IS A MEMBER OF THE REBASED VERTEX'S FIBRE, asked for by
+        // key: B kept its chart, and the rebase carries it by the relative at
+        // that chart (D10). One member here, because B acted on one.
+        let m = acts
+            .get(b.moduli.key().as_bytes())
+            .expect("B keeps its own chart, and the rebase keeps the member there");
+        assert_eq!(acts.len(), 1, "B acted on one chart, so the rebase carries one member");
         assert!(
-            element::same_versor(carriage, &element::identity_versor())
-                || element::same_versor(carriage, &element::carriage(&q(1), &(q(0), q(0)))),
+            element::same_versor(&m.carriage, &element::identity_versor())
+                || element::same_versor(&m.carriage, &element::carriage(&q(1), &(q(0), q(0)))),
             "relative carriage is the identity translator"
         );
-        assert_eq!(gauge, &vec![(3, 5)], "B keeps its own hue map");
-        assert_eq!(class, &b.moduli, "B keeps its own chart");
+        assert_eq!(m.gauge, vec![(3, 5)], "B keeps its own hue map");
         assert_eq!(form.vertices[2].word_in(&form), Some(rot), "the word is A's");
     }
     other => panic!("expected Rebased, got {other:?}"),

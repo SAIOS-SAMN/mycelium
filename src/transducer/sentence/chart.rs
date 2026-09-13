@@ -355,23 +355,26 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
                 crate::transducer::address::put_bytes(&mut buf, &placement.key());
                 buf.extend_from_slice(&depth.to_le_bytes());
             }
-            Vertex::Rebased {
-                by,
-                of,
-                carriage,
-                gauge,
-                ..
-            } => {
+            Vertex::Rebased { by, of, acts } => {
                 buf.push(3);
                 buf.extend_from_slice(&by.to_le_bytes());
                 buf.extend_from_slice(&of.to_le_bytes());
-                carriage.to_bytes(&mut buf);
-                let mut g = gauge.clone();
-                g.sort_unstable();
-                buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
-                for (a, b) in g {
-                    buf.push(a);
-                    buf.push(b);
+                // THE MEMBERS IN CHART-KEY ORDER, each with the relative it
+                // carries there and its sorted gauge. A rebased vertex acting on
+                // two charts SAYS more than one acting on one, so the count is
+                // on the key (D10); the chart key goes with each member for the
+                // same reason a face's pair key does.
+                buf.extend_from_slice(&(acts.len() as u16).to_le_bytes());
+                for (ck, a) in acts.scoped() {
+                    crate::transducer::address::put_bytes(&mut buf, &ck);
+                    a.carriage.to_bytes(&mut buf);
+                    let mut g = a.gauge.clone();
+                    g.sort_unstable();
+                    buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+                    for (x, y) in g {
+                        buf.push(x);
+                        buf.push(y);
+                    }
                 }
             }
             Vertex::Unfolded { measure } => {

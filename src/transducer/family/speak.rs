@@ -183,60 +183,55 @@ pub fn apply_form(
                 cells.extend(sp.cells);
                 remainder.extend(sp.remainder);
             }
-            Vertex::Rebased {
-                by,
-                carriage,
-                gauge,
-                class,
-                ..
-            } => {
-                // `by`'s word, carriage composed with the relative carriage;
-                // the bodies and hue map are the rebased vertex's own.
+            // A REBASED VERTEX SPEAKS EVERY CHART `of` ACTED ON, as a Word
+            // vertex does: `by`'s word, the relative at that chart composed with
+            // the base's placement, and that chart's own bodies and hue map.
+            Vertex::Rebased { by, acts, .. } => {
                 let Some(w @ Vertex::Word { derivation, .. }) = f.vertices.get(*by as usize)
                 else {
                     unspoken.push(vi as u16);
                     continue;
                 };
-                // THE BASE'S CARRIAGE AT THE BASE'S OWN CHART. The rebased
-                // vertex's placement is `t · C_by` and `t` was measured as
-                // `C_of · C_by⁻¹` between one member of each, so the member read
-                // here is the base's — NOT the one at the rebased vertex's
-                // chart, which is a different body.
-                //
-                // A base acting on SEVERAL charts does not say which of them
-                // `t` was measured against, because `Rebased` holds one
-                // carriage: the vertex speaks nothing rather than composing
-                // against a body it may not have been measured on (rule 11).
-                // `Form::rebase` refuses to make such a vertex for the same
-                // reason, so this is the tape's case.
+                // THE BASE'S CARRIAGE AT THE BASE'S OWN CHART. The placement is
+                // `t · C_by` and `t` was measured as `C_of,c · C_by⁻¹`, so the
+                // member read here is the base's — not the one at this vertex's
+                // chart, which is a different body. The base stands at ONE chart
+                // (`Form::rebase` refuses otherwise), so the slice pattern reads
+                // it and a tape carrying a multi-member base speaks nothing
+                // rather than composing against a body it was not measured on.
                 let base_charts = w.charts();
                 let [base_chart] = base_charts.as_slice() else {
                     unspoken.push(vi as u16);
                     continue;
                 };
-                let Some(a) = w.acting_on(base_chart) else {
+                let Some(base) = w.acting_on(base_chart) else {
                     unspoken.push(vi as u16);
                     continue;
                 };
-                let composed = carriage.geo(&a.carriage);
                 let r = placement.rotor().geo(&derivation.rotor());
-                let Some(versor) = element::conformal_of_rotor(&r, &composed) else {
-                    unspoken.push(vi as u16);
-                    continue;
-                };
-                let hits = atlas.fiber(class);
-                if hits.is_empty() {
-                    unspoken.push(vi as u16);
-                    continue;
-                }
-                for addr in hits {
-                    let Ok(raw) = <[u8; 8]>::try_from(addr.as_slice()) else {
+                let mut spoke = false;
+                for (_, member) in acts.scoped() {
+                    let composed = member.carriage.geo(&base.carriage);
+                    let Some(versor) = element::conformal_of_rotor(&r, &composed) else {
                         continue;
                     };
-                    let i = u64::from_le_bytes(raw) as usize;
-                    if let Some(body) = bodies.get(i) {
-                        emit_carried(body, &versor, gauge, fy, &mut cells, &mut remainder);
+                    let hits = atlas.fiber(&member.chart);
+                    if hits.is_empty() {
+                        continue;
                     }
+                    spoke = true;
+                    for addr in hits {
+                        let Ok(raw) = <[u8; 8]>::try_from(addr.as_slice()) else {
+                            continue;
+                        };
+                        let i = u64::from_le_bytes(raw) as usize;
+                        if let Some(body) = bodies.get(i) {
+                            emit_carried(body, &versor, &member.gauge, fy, &mut cells, &mut remainder);
+                        }
+                    }
+                }
+                if !spoke {
+                    unspoken.push(vi as u16);
                 }
             }
             Vertex::Unfolded {

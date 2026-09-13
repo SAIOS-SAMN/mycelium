@@ -58,47 +58,63 @@ impl Form {
             self.close_stabilizer_orbit(of, &carriage, chord);
             return Some(of);
         }
-        // A REBASED VERTEX KEEPS `of`'s CHART AND GAUGE, and `Rebased` holds
-        // ONE of each, so a vertex acting on several charts cannot be rebased
-        // without losing all but one of them.
+        // A REBASED VERTEX KEEPS EVERY CHART `of` ACTED ON, with the relative at
+        // each. It kept one — `of`'s representative member — so rebasing a
+        // vertex acting on two charts dropped the second body at the one move
+        // whose whole job is to REPLACE a vertex, leaving nothing to read the
+        // dropped member back from (D10).
         //
-        // REFUSED RATHER THAN COLLAPSED (rule 11: exact or refused). Taking
-        // the least member would rebase the vertex onto one of its charts and
-        // silently drop the bodies it acts on at the others — the scalar
-        // collapse, at the one move whose whole job is to REPLACE a vertex, so
-        // there is nothing left to read the dropped members back from. A
-        // refusal leaves the vertex as it was, which is what `rebase`'s
-        // contract already says it does when `of` is not a Word, and the
-        // caller (`rebase_named_faces`) treats `None` as "this face does not
-        // rebase" — it is not a failure of the form.
+        // `carriage` is the relative the CALLER measured, `C_of · C_by⁻¹`
+        // between one member of each. Where `of` acts on several charts the
+        // relative differs at each, so it is re-derived here per chart from the
+        // two vertices this vertex names: `t_c = C_of,c · C_by⁻¹`. The caller's
+        // value is what the single-chart case gives and is used there, so a
+        // caller that measured a relative gets the one it measured.
         //
-        // The fibre `Rebased` needs to carry several is a tape layout and an
-        // address: v8 is unrecut, so it can be spent, but it is the 2-skeleton
-        // row's to spend together with the transport fibre a face needs.
-        // AND THE BASE MUST STAND AT ONE CHART TOO. `carriage` is `C_of ·
-        // C_by⁻¹` measured between ONE member of each; a base acting on several
-        // does not say which, and a reader composing `t · C_by` would pick a
-        // body the relative was never measured against (see `apply_form`'s
-        // Rebased arm).
+        // THE BASE MUST STAND AT ONE CHART. A fibre keyed by `of`'s chart has no
+        // room to say which member of the base each relative was taken against,
+        // so a multi-member base refuses (rule 11) and the vertex stays as it
+        // was — which is what `rebase`'s contract already does for a non-Word,
+        // and `rebase_named_faces` reads `None` as "this face does not rebase".
         let base_charts = self.vertices.get(by as usize)?.charts();
-        let [_] = base_charts.as_slice() else {
+        let [base_chart] = base_charts.as_slice() else {
             return None;
         };
+        let base_inv = crate::transducer::sentence::transport::vertex_carriage_at(
+            self.vertices.get(by as usize)?,
+            self,
+            base_chart,
+        )
+        .and_then(|c| c.versor_inverse());
         let held = self.vertices.get(of as usize)?;
-        let Vertex::Word { acts, .. } = held else {
+        let Vertex::Word { acts: held_acts, .. } = held else {
             return None;
         };
-        let [(_, a)] = acts.scoped().collect::<Vec<_>>()[..] else {
+        let single = held_acts.len() == 1;
+        let mut acts: Keyed<Acting> = Keyed::new();
+        for (ck, a) in held_acts.scoped() {
+            let relative = match (single, &base_inv) {
+                // One chart: the caller's own measurement, unchanged.
+                (true, _) => carriage.clone(),
+                // Several: the relative at THIS chart, `C_of,c · C_by⁻¹`.
+                (false, Some(inv)) => a.carriage.geo(inv),
+                // No base placement to measure against is not a relative of
+                // zero; the member carries none and is not written (rule 11).
+                (false, None) => continue,
+            };
+            acts.insert(
+                &ck,
+                Acting {
+                    chart: a.chart.clone(),
+                    carriage: Box::new(relative),
+                    gauge: a.gauge.clone(),
+                },
+            );
+        }
+        if acts.is_empty() {
             return None;
-        };
-        let (gauge, class) = (a.gauge.clone(), a.chart.clone());
-        self.vertices[of as usize] = Vertex::Rebased {
-            by,
-            of,
-            carriage: Box::new(carriage),
-            gauge,
-            class,
-        };
+        }
+        self.vertices[of as usize] = Vertex::Rebased { by, of, acts };
         Some(of)
     }
 
