@@ -63,54 +63,65 @@ fn cell_key(r: i64, c: i64) -> Vec<u8> {
 /// 50.1 step 1 on one pair: `(V · W · γ) · B_in = B_out` under exact
 /// cellular equality, for every body of the vertex's chart on `x`.
 pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carried {
-    let Vertex::Word { derivation, contact, .. } = vertex else {
+    let Vertex::Word { derivation, contact, acts, .. } = vertex else {
         return Carried::Silent;
     };
-    // THE COURT REPLAYS THE MEMBER the speaker spoke by. One member today;
-    // D7b is where a vertex carries several and the court checks each
-    // against the bodies on that member's own chart.
-    let Some(member) = vertex.acting() else {
-        return Carried::Silent;
-    };
-    let (carriage, gauge, class) = (&member.carriage, &member.gauge, &member.chart);
     let rotor = derivation.rotor();
     // A contact vertex is placed by its orbit, not its carriage; the
     // orbit's own replay (`REFUSE_ORBIT_STILL`) is its reconstruction.
     if contact.is_some() {
         return Carried::Silent;
     }
-    let Some(versor) = element::conformal_of_rotor(&rotor, carriage) else {
-        return Carried::Fails(FAIL_NO_VERSOR);
-    };
     let bodies = perceive(x);
-    let fiber = fiber_on(&bodies, class);
-    if fiber.is_empty() {
-        return Carried::Silent;
-    }
     let mut landed: Keyed<()> = Keyed::new();
-    for body in fiber {
-        for &(r, c, h) in &body.cells {
-            let Some(p) = element::carry_center(&versor, r, c) else {
-                return Carried::Fails(FAIL_NO_CARRY);
-            };
-            // A centre the sensor cannot convert is off the frame (W6).
-            let Some((tr, tc)) = element::cell_of(&p) else {
-                return Carried::Fails(FAIL_OFF_FRAME);
-            };
-            let (Ok(ur), Ok(uc)) = (usize::try_from(tr), usize::try_from(tc)) else {
-                return Carried::Fails(FAIL_OFF_FRAME);
-            };
-            let Some(&observed) = y.get(ur).and_then(|row| row.get(uc)) else {
-                return Carried::Fails(FAIL_OFF_FRAME);
-            };
-            if observed != hue_under(gauge, h) {
-                return Carried::Fails(FAIL_HUE);
+    // THE COURT REPLAYS EVERY MEMBER, each against the bodies on its OWN
+    // chart, by the carriage and the gauge it acts by there. Replaying one
+    // member for a vertex that carries several would pass a sentence on the
+    // strength of the part of it the court happened to read first.
+    //
+    // A member whose chart this pair carries nothing on is silent, not a
+    // fault; a vertex silent on every member is `Silent` exactly as one with
+    // an empty fiber was.
+    let mut spoke = false;
+    for (_, member) in acts.scoped() {
+        let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else {
+            return Carried::Fails(FAIL_NO_VERSOR);
+        };
+        let fiber = fiber_on(&bodies, &member.chart);
+        if fiber.is_empty() {
+            continue;
+        }
+        spoke = true;
+        for body in fiber {
+            for &(r, c, h) in &body.cells {
+                let Some(p) = element::carry_center(&versor, r, c) else {
+                    return Carried::Fails(FAIL_NO_CARRY);
+                };
+                // A centre the sensor cannot convert is off the frame (W6).
+                let Some((tr, tc)) = element::cell_of(&p) else {
+                    return Carried::Fails(FAIL_OFF_FRAME);
+                };
+                let (Ok(ur), Ok(uc)) = (usize::try_from(tr), usize::try_from(tc)) else {
+                    return Carried::Fails(FAIL_OFF_FRAME);
+                };
+                let Some(&observed) = y.get(ur).and_then(|row| row.get(uc)) else {
+                    return Carried::Fails(FAIL_OFF_FRAME);
+                };
+                if observed != hue_under(&member.gauge, h) {
+                    return Carried::Fails(FAIL_HUE);
+                }
+                landed.insert(cell_key(tr, tc), ());
             }
-            landed.insert(cell_key(tr, tc), ());
         }
     }
+    if !spoke {
+        return Carried::Silent;
+    }
     // Every cell of every image body it touched is reached: the image is
-    // a body, not a part of one.
+    // a body, not a part of one. THE UNION OF WHAT EVERY MEMBER LANDED is
+    // what this asks about — two members whose images meet in one image body
+    // cover it between them, and asking per member would call that coverage
+    // a part.
     for image in perceive(y) {
         let touched = image.cells.iter().any(|&(r, c, _)| landed.contains(&cell_key(r, c)));
         if touched && !image.cells.iter().all(|&(r, c, _)| landed.contains(&cell_key(r, c))) {

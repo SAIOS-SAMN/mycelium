@@ -74,29 +74,41 @@ fn main() {
     // a flag IS on a command line — a wire tag's own offset, rule 15's
     // second case — and the slice pattern reads it there without taking a
     // member by position.
-    // Y3's instrumentation (§8.1), `--mint <dir> <limit>`: trace lines for
-    // every task of the slice whose rule form closes, reading what the
-    // mint is handed and which of its two calls refuses. It changes
+    // Y3's instrumentation (§8.1), `--mint <dir> <limit|name.json>`: trace
+    // lines for every task of the slice whose rule form closes, reading what
+    // the mint is handed and which of its two calls refuses. It changes
     // nothing; it only prints.
+    //
+    // A NAME IS READ BY NAME. A row whose observable is one task is proved by
+    // reading that task, and asking for it by number means running the sixty
+    // in front of it and searching the output — a survey standing in for a
+    // keyed read. A third argument that does not parse as a count IS the
+    // task's own name, which is the coordinate the corpus files it under.
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--mint") {
         let Some(dir) = argv.get(1) else {
             eprintln!("  mint refused: name the corpus directory");
             std::process::exit(1);
         };
+        let named: Option<Vec<String>> = match argv.get(2) {
+            Some(a) if a.parse::<usize>().is_err() => Some(vec![a.clone()]),
+            _ => None,
+        };
         let limit: usize = match argv.get(2).map(|n| n.parse::<usize>()) {
             Some(Ok(n)) => n,
-            Some(Err(e)) => {
-                eprintln!("  mint refused: the task count does not read: {e}");
-                std::process::exit(1);
-            }
+            // A name was given: the slice is that one task and no limit
+            // applies to it.
+            Some(Err(_)) => 0,
             None => usize::MAX,
         };
-        match slice_names(dir, limit) {
-            Ok(names) => mint::trace(dir, &names),
-            Err(e) => {
-                eprintln!("  mint refused: {e}");
-                std::process::exit(1);
-            }
+        match named {
+            Some(names) => mint::trace(dir, &names),
+            None => match slice_names(dir, limit) {
+                Ok(names) => mint::trace(dir, &names),
+                Err(e) => {
+                    eprintln!("  mint refused: {e}");
+                    std::process::exit(1);
+                }
+            },
         }
         return;
     }

@@ -8,14 +8,6 @@
 
 use super::*;
 
-pub(crate) fn class_of_vertex(v: &Vertex) -> Option<Invariant> {
-    match v {
-        Vertex::Word { .. } => v.acting().map(|a| a.chart.clone()),
-        Vertex::Glued { chart, .. } => Some(chart.clone()),
-        _ => None,
-    }
-}
-
 /// Correspondence class of a vertex: kind and conjugacy of the word.
 /// The hue map is a section coordinate on `Form.hue_maps`, never a matching
 /// key. The body's moduli stay on the vertex as a section coordinate.
@@ -61,10 +53,15 @@ pub(crate) fn end_of(v: &Vertex) -> Option<End> {
     }
 }
 
-pub(crate) fn one_vertex_of_class<'a>(f: &'a Form, class: &TransportClass) -> Option<&'a Vertex> {
-    match_vertex(f, class)
-}
-
+/// THE ONE VERTEX OF A CLASS ON A PAIR FORM. A pair form's vertices each
+/// act on one chart, so on a pair form this is exact — the class and the
+/// chart are in bijection there and there is nothing for it to pass over.
+///
+/// `one_vertex_of_class` was the alias extraction used to build the RULE's
+/// vertex, and on a rule the bijection is what fails: a class spanning two
+/// charts has two vertices per pair form and this answered the first. It is
+/// gone; correspondence reads every member (D7b) and nothing asks a form for
+/// "the" vertex of a class any more.
 pub(crate) fn match_vertex<'a>(f: &'a Form, class: &TransportClass) -> Option<&'a Vertex> {
     f.vertices
         .iter()

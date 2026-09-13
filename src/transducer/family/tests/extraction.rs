@@ -526,8 +526,12 @@ assert!(
     "the placements' coboundary telescopes around the contact loop"
 );
 let e = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("element");
+// The refusal is NAMED when there is one: "a form tape parses" said only
+// that the court said no, and a court that says no has a reason with a
+// coordinate on it (50.9, rule 11).
+let refusal = crate::verdict::blind_replay(&e);
 assert!(
-    crate::verdict::blind_replay(&e).is_none() || e.magnitude().iter().all(|&x| x == 0),
-    "a form tape parses"
+    refusal.is_none() || e.magnitude().iter().all(|&x| x == 0),
+    "a form tape parses; refused with {refusal:?}"
 );
 }

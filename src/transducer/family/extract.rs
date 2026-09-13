@@ -244,8 +244,56 @@ pub fn extract_rule_with(
     // coordinate. Presence is a keyed set of pair indices, never a scan
     // of groups and never a count-as-branch.
     let mut class_pairs: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
-    let mut class_of: crate::network::nerve::Keyed<TransportClass> = crate::network::nerve::Keyed::new();
     let mut hue_maps: crate::network::nerve::Keyed<Vec<(u8, u8)>> = crate::network::nerve::Keyed::new();
+    // EVERY CORRESPONDING BODY'S MEMBER, filed under the class by its chart.
+    // The rule's vertex for a class used to be `one_vertex_of_class` —
+    // `vertices.iter().find(...)` on the least pair — so where a pair form
+    // carried TWO bodies of one transport class on two charts, the second
+    // was dropped and nothing recorded that it had been. On `05f2a901` that
+    // is exactly the fault: two charts, and a rule vertex reaching one of
+    // them. A keyed read can only fail to find what was asked for; that
+    // `find` failed on a body nobody asked about.
+    //
+    // This walk is the one walk (rule 1): the pair forms' vertices are
+    // walked once, here, and every later step reads what it indexes —
+    // `class_acts` for the members, `class_rep` for the vertex's identity,
+    // `class_place_varies` for step 6.
+    let mut class_acts: crate::network::nerve::Keyed<
+        crate::network::nerve::Keyed<crate::transducer::sentence::Acting>,
+    > = crate::network::nerve::Keyed::new();
+    let mut class_rep: crate::network::nerve::Keyed<Vertex> = crate::network::nerve::Keyed::new();
+    // THE PLACEMENT VARIES WHEN ONE CHART'S BODY IS PLACED TWO WAYS ON TWO
+    // PAIRS — which is the question step 6 asks, and the only variation a
+    // contact ring can answer. Two distinctions have to be kept apart here
+    // and collapsing them is a fault either way:
+    //
+    //   across PAIRS at one chart — the rule cannot state one carriage for
+    //     the bundle, and a stop ring may be what places it instead;
+    //   across BODIES at one chart within one pair — two bodies of one shape
+    //     placed differently, which is a MULTIPLICITY and not variation at
+    //     all. It is consistent on every pair and no ring explains it.
+    //
+    // Step 6 used to read the first by comparing the rule vertex's carriage
+    // against each pair's FIRST vertex of the class, which answers the wrong
+    // question once a class spans several charts: it compares one body's
+    // placement against a different body's. Reading it per chart is the fix —
+    // but per chart WITHOUT the multiplicity kept apart turns every
+    // multiplicity into variation, and
+    // `two_hues_that_meet_are_two_bodies_with_a_contact_face` is exactly
+    // that: two bars of one shape, one moving and one still, the same way on
+    // both pairs. It refused with `orbit does not move`, because a vertex
+    // whose rotor is the identity has no orbit for a ring to carry.
+    //
+    // Both facts are recorded per member and the DECISION IS TAKEN AFTER THE
+    // WALK, so it does not depend on which pair the walk met first: a chart
+    // some pair carries two bodies on is a multiplicity and makes no claim
+    // about variation, because "the first body of this chart on pair p" is
+    // identified with "the first on pair q" by nothing but position (rule
+    // 15). Naming the multiplicity is D8's move.
+    let mut class_place_varies: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let mut chart_varies: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let mut chart_multiple: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let mut chart_at_pair: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     for (pi, f) in pair_forms.iter().enumerate() {
         let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for v in &f.vertices {
@@ -254,7 +302,13 @@ pub fn extract_rule_with(
             };
             let k = c.key();
             if let Vertex::Word { derivation, acts, .. } = v {
-                for (_, a) in acts.scoped() {
+                if !class_rep.contains(&k) {
+                    class_rep.insert(&k, v.clone());
+                }
+                if !class_acts.contains(&k) {
+                    class_acts.insert(&k, crate::network::nerve::Keyed::new());
+                }
+                for (ck, a) in acts.scoped() {
                     if let Some(hk) = crate::transducer::sentence::hue_section_key_of(
                         &derivation.rotor(),
                         &a.gauge,
@@ -262,6 +316,38 @@ pub fn extract_rule_with(
                         if !hue_maps.contains(&hk) {
                             hue_maps.insert(hk, a.gauge.clone());
                         }
+                    }
+                    // The member's own coordinate: the class it corresponds
+                    // by, and the chart it acts on; and that coordinate at
+                    // one pair, which is where multiplicity shows.
+                    let mut mk = k.clone();
+                    crate::transducer::address::put_bytes(&mut mk, &ck);
+                    let mut pk = mk.clone();
+                    pk.extend_from_slice(&(pi as u16).to_le_bytes());
+                    if chart_at_pair.contains(&pk) {
+                        chart_multiple.insert(&mk, ());
+                    } else {
+                        chart_at_pair.insert(&pk, ());
+                    }
+                    let Some(members) = class_acts.get_mut(&k) else {
+                        continue;
+                    };
+                    // THE CARRIAGE ALONE. Step 6 asks whether the PLACEMENT
+                    // varies, and the placement is the carriage; the gauge is
+                    // the hue section (18.2 — absence is the identity), and a
+                    // chart carrying two gauges over the bundle is the gauge
+                    // version of this same fault. Including it here turned the
+                    // dilation family — one dilator, two hues — into a contact
+                    // vertex and lost the dilation. That is D8's coordinate:
+                    // `0d3d703e` is one chart and three gauges.
+                    match members.get(&ck) {
+                        None => {
+                            members.insert(&ck, a.clone());
+                        }
+                        Some(held) if !element::same_versor(&held.carriage, &a.carriage) => {
+                            chart_varies.insert(&mk, ());
+                        }
+                        Some(_) => {}
                     }
                 }
             }
@@ -273,8 +359,19 @@ pub fn extract_rule_with(
                 Some(ps) => ps.push(pi as u16),
                 None => {
                     class_pairs.insert(&k, vec![pi as u16]);
-                    class_of.insert(&k, c);
                 }
+            }
+        }
+    }
+    // THE DECISION, after the walk: a class's placement varies where some
+    // chart of it was placed two ways and that chart carries one body per
+    // pair. A chart with several bodies on one pair says nothing here.
+    for (k, members) in class_acts.scoped() {
+        for (ck, _) in members.scoped() {
+            let mut mk = k.clone();
+            crate::transducer::address::put_bytes(&mut mk, &ck);
+            if chart_varies.contains(&mk) && !chart_multiple.contains(&mk) {
+                class_place_varies.insert(&k, ());
             }
         }
     }
@@ -285,28 +382,33 @@ pub fn extract_rule_with(
     let mut sections: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
     let mut rule_vertices = vec![frame_vertex()];
     for (k, pairs) in class_pairs.scoped() {
-        let Some(class) = class_of.get(&k) else {
-            continue;
-        };
-        // The pairs are filed under the class in the family's own pair
-        // order, so the least index represents the class on every node.
-        let [pi, ..] = pairs.as_slice() else {
-            continue;
-        };
-        let pi = *pi;
-        let Some(v) = pair_forms
-            .get(pi as usize)
-            .and_then(|f| one_vertex_of_class(f, class).cloned())
+        // ONE VERTEX PER CLASS, ACTING ON EVERY CHART THE CLASS REACHES.
+        // The identity — address, derivation, contact — is the class's
+        // representative, which is the least pair's first vertex of the
+        // class and therefore the same on every node; the FIBRE is the union
+        // over the bundle, filed by chart, so nothing the correspondence saw
+        // is dropped for arriving second.
+        let (Some(Vertex::Word { address, derivation, contact, .. }), Some(members)) =
+            (class_rep.get(&k), class_acts.get(&k))
         else {
             continue;
+        };
+        let v = Vertex::Word {
+            address: address.clone(),
+            derivation: derivation.clone(),
+            acts: members.clone(),
+            contact: *contact,
         };
         let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for &p in pairs {
             have.insert(pair_idx_key(p), ());
         }
-        let section = all_pairs
-            .scoped()
-            .any(|(pk, _)| !have.contains(&pk));
+        // A class absent from some pair is a section over the pairs it is on;
+        // so is a class one of whose charts was placed two ways over the
+        // bundle. The rule states the pairs it was measured on either way,
+        // and the court asks it for exactly those (`vertices_carry_family`).
+        let section = class_place_varies.contains(&k)
+            || all_pairs.scoped().any(|(pk, _)| !have.contains(&pk));
         if section {
             sections.insert(&k, pairs.clone());
         }
@@ -429,10 +531,24 @@ pub fn extract_rule_with(
     let measured = trace::carriage_of(&form);
     // 3. Glue: placement is the relative word Frame → class, constant across the bundle.
     // Crystal is indexed by the section coordinate (moduli); correspondence is transport class.
+    // EVERY CHART THE CLASS ACTS ON IS OFFERED TO THE CRYSTAL, because the
+    // crystal is indexed by the section coordinate and a vertex acting on two
+    // charts has two bodies for the mind to recognise. `class_of_vertex`
+    // answers one chart — the least member's — so a held sentence for the
+    // second body was never asked for.
     let glued_classes: Vec<(TransportClass, Invariant)> = form
         .vertices
         .iter()
-        .filter_map(|v| Some((transport_class(v)?, class_of_vertex(v)?)))
+        .filter_map(|v| {
+            let tc = transport_class(v)?;
+            let acts = v.acts()?;
+            Some(
+                acts.scoped()
+                    .map(|(_, a)| (tc.clone(), a.chart.clone()))
+                    .collect::<Vec<_>>(),
+            )
+        })
+        .flatten()
         .collect();
     for (tc, moduli) in glued_classes {
         // The glue is what the mind already holds; a budget that ends here
@@ -489,21 +605,19 @@ pub fn extract_rule_with(
         let Some(tc) = transport_class(&form.vertices[vi]) else {
             continue;
         };
-        let Some(at @ Vertex::Word { contact: None, .. }) = form.vertices.get(vi) else {
+        let Some(Vertex::Word { contact: None, .. }) = form.vertices.get(vi) else {
             continue;
         };
-        let Some(home) = at.carriage_of().cloned() else {
-            continue;
-        };
+        // THE PLACEMENT VARIES WHERE ONE CHART CARRIES TWO CARRIAGES, which
+        // step 1's walk already read and filed; this reads the index rather
+        // than walking every pair form again for a fact already held (rule
+        // 1). It is also the corrected reading: comparing the rule vertex's
+        // carriage against each pair's FIRST vertex of the class compared two
+        // different bodies' placements once a class spanned two charts.
+        let place_varies = class_place_varies.contains(&tc.key());
         let mut rings: Option<u8> = None;
-        let mut place_varies = false;
         let mut ring_one = true;
-        for (pf, (_x, y)) in pair_forms.iter().zip(family.iter()) {
-            if let Some(w @ Vertex::Word { .. }) = match_vertex(pf, &tc) {
-                if w.carriage_of().is_some_and(|p| !element::same_versor(p, &home)) {
-                    place_varies = true;
-                }
-            }
+        for (_x, y) in family.iter() {
             let fy = frame_of(y);
             let outs: Vec<Cell3> = perceive(y).into_iter().flat_map(|b| b.cells).collect();
             // The frame's own border. A frame with no rows or no columns

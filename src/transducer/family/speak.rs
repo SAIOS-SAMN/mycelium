@@ -127,39 +127,49 @@ pub fn apply_form(
     for (vi, v) in f.vertices.iter().enumerate() {
         match v {
             Vertex::Frame => {}
-            // D7a READS THE REPRESENTATIVE MEMBER, which is the only member
-            // any vertex in this tree has, so this speaks exactly what it
-            // spoke before the fibre existed. D7b is where the loop over
-            // every member goes and where `05f2a901` reaches two of two;
-            // putting it here would make D7a carry the capability and leave
-            // nothing for D7b's observable to measure.
-            Vertex::Word { derivation, .. } => {
-                let Some(member) = v.acting() else {
-                    unspoken.push(vi as u16);
-                    continue;
-                };
-                let (carriage, gauge, class) = (&member.carriage, &member.gauge, &member.chart);
+            // ONE VERTEX SPEAKS EVERY BODY IT ACTS ON. 21 step 1: two bodies
+            // of different shapes carried by one transport correspond, and
+            // each stands on its own chart. A vertex acting on two charts
+            // spoke ONE of them while the other body went unreached and
+            // unmentioned — on `05f2a901`, one of two, four cells emitted
+            // where the pair needs both bodies carried.
+            //
+            // THE MEMBER IS THE UNIT, so the carriage and the gauge are read
+            // at the chart whose bodies they are being applied to. Reading
+            // one member's carriage and applying it to another chart's bodies
+            // would carry a body by a versor measured on a different one.
+            Vertex::Word { derivation, acts, .. } => {
                 // The action composes: the placement's rotor times the
                 // vertex's own (L14), so a cited vertex speaks its body
-                // without resolving a citation.
+                // without resolving a citation. The rotor is the VERTEX's and
+                // is one for all its members; only the placement differs.
                 let r = placement.rotor().geo(&derivation.rotor());
-                let Some(versor) = element::conformal_of_rotor(&r, carriage) else {
-                    unspoken.push(vi as u16);
-                    continue;
-                };
-                let hits = atlas.fiber(class);
-                if hits.is_empty() {
-                    unspoken.push(vi as u16);
-                    continue;
-                }
-                for addr in hits {
-                    let Ok(raw) = <[u8; 8]>::try_from(addr.as_slice()) else {
+                // A vertex is unspoken when NO member of it reached a body:
+                // a member whose chart this scene carries nothing on is not a
+                // fault, it is a chart this scene does not show. Naming that
+                // absence as a demand is D8's move, not this one.
+                let mut spoke = false;
+                for (_, member) in acts.scoped() {
+                    let Some(versor) = element::conformal_of_rotor(&r, &member.carriage) else {
                         continue;
                     };
-                    let i = u64::from_le_bytes(raw) as usize;
-                    if let Some(body) = bodies.get(i) {
-                        emit_carried(body, &versor, gauge, fy, &mut cells, &mut remainder);
+                    let hits = atlas.fiber(&member.chart);
+                    if hits.is_empty() {
+                        continue;
                     }
+                    spoke = true;
+                    for addr in hits {
+                        let Ok(raw) = <[u8; 8]>::try_from(addr.as_slice()) else {
+                            continue;
+                        };
+                        let i = u64::from_le_bytes(raw) as usize;
+                        if let Some(body) = bodies.get(i) {
+                            emit_carried(body, &versor, &member.gauge, fy, &mut cells, &mut remainder);
+                        }
+                    }
+                }
+                if !spoke {
+                    unspoken.push(vi as u16);
                 }
             }
             Vertex::Glued {
