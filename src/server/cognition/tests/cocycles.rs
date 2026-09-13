@@ -164,10 +164,14 @@ fn a_filed_form_cycle_is_volume_the_basis_counts() {
         .expect("the form files the cycle");
     let mut k = Kernel::new();
     k.basis.insert(held.address(), std::sync::Arc::clone(&held));
+    // Three readings of one cycle: the form's own reach, the period it was
+    // filed at, and the basis's volume over a basis holding just this word.
+    // The form is the carrier, so the first is the reading E2 prices and the
+    // third must agree with it rather than compute its own.
     assert_eq!(
-        (k.fibre_volume_total(), ell),
-        (3, 4),
-        "the filed cycle's period spans ℓ−1 above the base and the basis counts it"
+        (f.fibre_volume(), ell, k.fibre_volume_total()),
+        (3, 4, 3),
+        "the filed cycle's period reaches ℓ−1 above the base, on the form and in the basis"
     );
 }
 

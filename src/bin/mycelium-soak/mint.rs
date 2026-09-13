@@ -41,18 +41,25 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
     let mut open_acts = 0u64;
     let (mut open_rem_empty, mut open_rem_cells) = (0u64, 0u64);
     // S9.13's REACH, as a distribution over the families that mint. E2 prices a
-    // closure's yield from it, and it has never been read, so this prints it
-    // before any carrier is proposed for it.
+    // closure's yield from it.
+    //
+    // IT IS READ OFF THE FORM, which is the carrier. The first cut of this
+    // instrument read `Element::fiber_span` on the minted word and reported 1
+    // on every family — not a measurement of the corpus but a constant by
+    // construction, because a minted sentence's element leaves its own two
+    // fibre fields empty and carries the cycles on its form. A measurement that
+    // returns a constant by construction is the vacuous assertion at the
+    // instrument, so the reading moved to `Form::fibre_volume`.
     //
     // THE TWO `sections` ARE NOT ONE OBJECT and this prints both rather than a
     // span derived from either. `Element.sections` is the punctured axis —
     // "alternative per-cell transition ASSIGNMENTS over the SAME base
-    // positions", the free part of the fibre, and what `Element::fiber_span`
-    // counts. `Form.sections` is `Keyed<Vec<u16>>` holding PAIR INDICES of the
-    // bundle — which pairs a class was measured on, a restriction record.
-    // Mirroring `fiber_span`'s formula onto the form would count the second as
-    // if it were the first, which is L8r's fault exactly (`on_class` and
-    // `on_body`, one reader over two coordinate systems).
+    // positions", the free part of the fibre. `Form.sections` is
+    // `Keyed<Vec<u16>>` holding PAIR INDICES of the bundle — which pairs a
+    // class was measured on, a restriction record. Mirroring one formula onto
+    // both would count the second as if it were the first, which is L8r's fault
+    // exactly (`on_class` and `on_body`, one reader over two coordinate
+    // systems).
     let (mut reach_one, mut reach_more) = (0u64, 0u64);
     let (mut form_sections, mut form_torsion) = (0u64, 0u64);
     for name in names {
@@ -81,13 +88,14 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         // task D8 is about is exactly the task this gate hid. The counters
         // stay; the `continue` that followed them is gone, and every task that
         // extracts a rule now gets the same lines.
-        // THE REACH READING (§8.1, prints only). Per family that mints: what
-        // the FORM carries on its own two carriers, and what the MINTED
-        // ELEMENT's `fiber_span` answers — which is the carrier 12.6 and S9.13
-        // name. A span of 1 is base-only: no free section, no torsion orbit.
+        // THE REACH READING (§8.1, prints only). Per family that mints: the
+        // FORM's reach, which is the reading E2 prices, beside what the minted
+        // ELEMENT's own fibre fields hold — printed together so that the two
+        // carriers are visibly two and a later reader cannot take one for the
+        // other. A reach of 0 is base-only: no filed cycle to reach past it.
         if let Some(w) = mycelium::transducer::family::mint_sentence(&rule, &task.train, &empty) {
-            let span = w.fiber_span();
-            if span > 1 {
+            let reach = rule.form.fibre_volume();
+            if reach > 0 {
                 reach_more += 1;
             } else {
                 reach_one += 1;
@@ -97,12 +105,13 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             let periods: Vec<u32> =
                 rule.form.torsion.scoped().map(|(_, f)| f.period).collect();
             println!(
-                "  mint {name} reach: element fiber_span {span} (sections {} torsion {}) \
-                 | form sections {} torsion {} periods {periods:?}",
-                w.sections().len(),
-                w.torsion().len(),
+                "  mint {name} reach: form fibre_volume {reach} \
+                 (form sections {} torsion {} periods {periods:?}) \
+                 | element's own fibre: sections {} torsion {}",
                 rule.form.sections.len(),
                 rule.form.torsion.len(),
+                w.sections().len(),
+                w.torsion().len(),
             );
         }
         let closed = rule.form.is_closed();
@@ -433,9 +442,12 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         }
     }
     println!("  mint tasks with a closed rule form: {closed_seen}");
-    // S9.13's reach over the minting families, as a distribution.
+    // S9.13's reach over the minting families, as a distribution, read off
+    // the form. Zero reach on all of them says no family on this slice filed a
+    // cycle — which is a reading of the corpus, where the same line over
+    // `Element::fiber_span` was a reading of the mint path's construction.
     println!(
-        "  mint reach: {} minting families, fiber_span 1 on {reach_one}, above 1 on {reach_more} \
+        "  mint reach: {} minting families, form reach 0 on {reach_one}, above 0 on {reach_more} \
          | form carriers over them: sections {form_sections} torsion {form_torsion}",
         reach_one + reach_more
     );

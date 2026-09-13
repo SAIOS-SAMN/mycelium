@@ -287,7 +287,11 @@ pub struct Form {
     /// Evidence, replayed by the court; never part of the address.
     pub certificates: Keyed<PivotCertificate>,
     /// Filed torsion cycles, keyed by class key: `(σ, ℓ, chord face)`.
-    /// The form owns this carrier; the element reads it whole.
+    /// THE FORM OWNS THIS CARRIER and there is no second copy of it: a reader
+    /// holding an element reaches it through `sentence::form_torsion`, and an
+    /// organ holding a word reads the form it decoded at admission
+    /// (`Held::form`, L16). `Element::adopt_torsion` copied it into the
+    /// element's own `torsion` field and is deleted.
     pub torsion: Keyed<FiledLoop>,
     /// CHART AXES OPENED OVER HELD LOOPS (3.7, 15.5, 16.16 step 3; I6):
     /// the holonomy class opened on → the chord of the loop that is its
@@ -783,6 +787,32 @@ impl Form {
             }
         }
         d
+    }
+
+    /// S9.13'S REACH — the span this form's fibre spans ABOVE ITS BASE, which
+    /// is what E2 prices as a closure's yield. One filed cycle of period ℓ
+    /// reaches ℓ−1 members past the one it opens on, and speaks every one of
+    /// them in O(1) storage: that is the capacity a condensation earns.
+    ///
+    /// THE FORM IS THE CARRIER, so this is where the reading lives. A minted
+    /// sentence's element leaves its own two fibre fields empty because the
+    /// cycles are on the form, so `Element::fibre_volume` answers 0 for it and
+    /// is not this reading — asking the element was how the instrument came to
+    /// report 1 everywhere by construction.
+    ///
+    /// A FORM HAS NO FREE-SECTION CARRIER and none is substituted. `sections`
+    /// here is `Keyed<Vec<u16>>` holding PAIR INDICES of the bundle — which
+    /// pairs a class was measured on — where `Element.sections` holds
+    /// transition ASSIGNMENTS over a base. Two objects, and summing the first
+    /// as the second is the fault a rename row is owed on. A form's free part
+    /// is absent, not zero.
+    ///
+    /// The period is exact: the form tape refuses a filed zero (A17 — a loop
+    /// is filed at the period it CLOSES at), so ℓ ≥ 1 and the subtraction is
+    /// total. No rounding, nothing saturating: this is a sum over an exact
+    /// carrier, and an empty carrier sums to 0 because it is empty.
+    pub fn fibre_volume(&self) -> usize {
+        self.torsion.scoped().map(|(_, l)| l.period as usize - 1).sum()
     }
 
     pub fn is_cauterized(&self) -> bool {

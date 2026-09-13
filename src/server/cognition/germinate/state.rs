@@ -48,14 +48,10 @@ impl Kernel {
             // the organ took it in (L16), not through `form_torsion`, which
             // re-parses the tape on every call for every word.
             .map(|(_, t)| match t.form() {
-                Some(f) if !f.torsion.is_empty() => f
-                    .torsion
-                    .scoped()
-                    // The form tape refuses a filed zero (A17: a loop is filed
-                    // at the period it CLOSES at), so ℓ ≥ 1 here and the
-                    // subtraction is total.
-                    .map(|(_, l)| l.period as usize - 1)
-                    .sum(),
+                // `Form::fibre_volume` is the form's own reading, not this
+                // reader's arithmetic over the form's carrier: the sum belongs
+                // to the object that holds the cycles.
+                Some(f) if !f.torsion.is_empty() => f.fibre_volume(),
                 // A v1 sentence that adopted its cycles element-side still
                 // reads as a bundle here, which is why the form arm is guarded
                 // on having filed anything rather than on being a sentence.
