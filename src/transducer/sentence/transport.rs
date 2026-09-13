@@ -260,6 +260,44 @@ pub(crate) fn gauge_image(g: &Keyed<u8>, h: u8) -> u8 {
     }
 }
 
+/// THE HUE A GAUGE CARRIES `h` TO, read off the LISTING, or a refusal where
+/// the listing names two.
+///
+/// A gauge is a map. Its listing is a `Vec<(from, to)>` gathered from a
+/// chain's cells and deduplicated BY THE PAIR, so a chain in which one input
+/// hue lands on two different output hues yields both entries. Two readers
+/// scanned that list and returned the first match — `body.rs` on the court
+/// and `reading.rs` on the speaker, the same eight lines written twice (law
+/// 12) — which is the smaller image after the sort. A hue decided by a Vec's
+/// order is a member by position (rule 15), and the decision was invisible:
+/// the court read one image, the cell carried the other, and the refusal
+/// said only "a cell lands on the wrong hue". That fault is 255 of the 488
+/// body refusals on the fleet at e98e8a2, against 0 for `FAIL_NO_VERSOR` and
+/// 0 for `FAIL_NO_CARRY` — the algebra was never the problem.
+///
+/// A listing that names two images for one hue is not a hue map and no
+/// vertex can claim it: exact or refused (rule 11). A hue the listing does
+/// not name is fixed by it (18.2), which is a fact about the gauge and not a
+/// default written here.
+pub fn hue_of(gauge: &[(u8, u8)], h: u8) -> Option<u8> {
+    // index: the gauge's own listing, its boundary (rule 1)
+    let mut held: Option<u8> = None;
+    for &(from, to) in gauge {
+        if from != h {
+            continue;
+        }
+        match held {
+            None => held = Some(to),
+            Some(t) if t == to => {}
+            Some(_) => return None,
+        }
+    }
+    Some(match held {
+        Some(t) => t,
+        None => h,
+    })
+}
+
 /// `second ∘ first` on the union of listed hues; a hue absent from a map
 /// is fixed by that map. The listing holds non-fixed points only.
 pub(crate) fn compose_gauge(second: &[(u8, u8)], first: &[(u8, u8)]) -> Vec<(u8, u8)> {

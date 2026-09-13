@@ -106,7 +106,7 @@ fn vertex_cites_by(
         let p = element::carry_center(&v, r, c)?;
         let (tr, tc) = element::cell_of(&p)?;
         let landed = *after.get(&cell_at_key(tr, tc))?;
-        if landed != hue_under(gauge, h) {
+        if Some(landed) != super::hue_of(gauge, h) {
             return None;
         }
     }
@@ -116,16 +116,11 @@ fn vertex_cites_by(
     Some(HeldCite { address: address.clone(), body })
 }
 
-/// The hue a gauge carries `h` to; absence is the identity (18.2).
-fn hue_under(gauge: &[(u8, u8)], h: u8) -> u8 {
-    // index: the vertex's own gauge, its boundary (rule 1)
-    for &(from, to) in gauge {
-        if from == h {
-            return to;
-        }
-    }
-    h
-}
+// `hue_under` stood here and in `court/verdict/body.rs`, the same eight
+// lines written twice (law 12), each returning the FIRST entry of the gauge's
+// listing that matched. `sentence::hue_of` is the one reader now, and it
+// refuses a listing that names two images for one hue instead of picking the
+// one the sort happened to put first.
 
 /// LOCATE one body: read its moduli, take the stratum, and for the word
 /// there whose gauge charge is the body's, solve the transport from the

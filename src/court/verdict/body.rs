@@ -41,22 +41,16 @@ pub(crate) const FAIL_NO_CARRY: &str = "a cell of its body carries nowhere";
 pub(crate) const FAIL_OFF_FRAME: &str = "a cell lands outside the image frame";
 pub(crate) const FAIL_HUE: &str = "a cell lands on the wrong hue";
 pub(crate) const FAIL_PART: &str = "an image body is reached in part";
+/// The vertex's gauge names two images for one hue, so it is not a hue map
+/// and the cell has no predicted hue to be right or wrong about. This was
+/// indistinguishable from `FAIL_HUE` because the reader took the first
+/// matching entry of the listing (rule 15).
+pub(crate) const FAIL_GAUGE_AMBIGUOUS: &str = "the gauge names two images for one hue";
 
 /// The bodies of `x` on the vertex's chart, read by the chart's key.
 fn fiber_on<'a>(bodies: &'a [Body], class: &stalk::Invariant) -> Vec<&'a Body> {
     let key = class.key();
     bodies.iter().filter(|b| b.moduli.key() == key).collect()
-}
-
-/// The hue a gauge carries `h` to; absence is the identity (18.2).
-fn hue_under(gauge: &[(u8, u8)], h: u8) -> u8 {
-    // index: the vertex's own gauge, its boundary (rule 1)
-    for &(from, to) in gauge {
-        if from == h {
-            return to;
-        }
-    }
-    h
 }
 
 fn cell_key(r: i64, c: i64) -> Vec<u8> {
@@ -116,7 +110,14 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
                 let Some(&observed) = y.get(ur).and_then(|row| row.get(uc)) else {
                     return Carried::Fails(FAIL_OFF_FRAME, at());
                 };
-                if observed != hue_under(&member.gauge, h) {
+                // The gauge is asked for ONE image and refuses where it
+                // names two: a vertex whose listing sends one hue to two is
+                // not carrying its body by a hue map at all, and reading the
+                // first entry of the list made that a silent choice.
+                let Some(want) = crate::transducer::sentence::hue_of(&member.gauge, h) else {
+                    return Carried::Fails(FAIL_GAUGE_AMBIGUOUS, at());
+                };
+                if observed != want {
                     return Carried::Fails(FAIL_HUE, at());
                 }
                 landed.insert(cell_key(tr, tc), ());

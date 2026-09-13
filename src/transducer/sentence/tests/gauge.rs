@@ -210,3 +210,37 @@ fn relative_gauge_composite_fixes_what_neither_fixes() {
         "1→2 then 2→1 fixes 1, which neither map lists as fixed"
     );
 }
+
+/// A GAUGE IS A MAP, AND A LISTING THAT NAMES TWO IMAGES FOR ONE HUE IS NOT
+/// ONE. The listing is a `Vec<(from, to)>` deduplicated by the PAIR, so a
+/// chain whose cells send one input hue to two different output hues yields
+/// both entries and neither is the answer.
+///
+/// Two readers scanned that list and returned the first match — the court's
+/// in `verdict/body.rs` and the speaker's in `sentence/reading.rs`, the same
+/// eight lines written twice — which after the sort is the smaller image. A
+/// hue decided by a Vec's order is a member by position (rule 15), and the
+/// choice was invisible downstream: the court read one image, the cell
+/// carried the other, and the refusal said only "a cell lands on the wrong
+/// hue". That is 255 of the 488 body refusals on the fleet at e98e8a2,
+/// against 0 for `FAIL_NO_VERSOR` and 0 for `FAIL_NO_CARRY` — the algebra
+/// was never at fault.
+#[test]
+fn a_gauge_naming_two_images_for_one_hue_is_refused_not_resolved_by_order() {
+    // The unambiguous cases first: a listed hue, and one the listing fixes.
+    assert_eq!(hue_of(&[(1, 2), (3, 4)], 1), Some(2));
+    assert_eq!(hue_of(&[(1, 2), (3, 4)], 3), Some(4));
+    assert_eq!(hue_of(&[(1, 2)], 7), Some(7), "a hue the listing omits is fixed (18.2)");
+    assert_eq!(hue_of(&[], 5), Some(5), "and an empty gauge fixes everything");
+    // A repeated pair is one statement made twice, not two images.
+    assert_eq!(hue_of(&[(1, 2), (1, 2)], 1), Some(2));
+    // Two images for one hue: refused, and refused whichever order the
+    // listing happens to be in — which is the whole point.
+    assert_eq!(hue_of(&[(1, 2), (1, 3)], 1), None);
+    assert_eq!(hue_of(&[(1, 3), (1, 2)], 1), None);
+    assert_eq!(
+        hue_of(&[(1, 3), (1, 2)], 9),
+        Some(9),
+        "and the refusal is at that hue alone, not over the whole gauge"
+    );
+}
