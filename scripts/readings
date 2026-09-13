@@ -88,7 +88,8 @@ for h in "${HYPHAE[@]}"; do
     "$(systemctl --user show "$u" -p NRestarts --value 2>/dev/null)"
   printf '    boot refused      '; lines "$u" 'boot refused'
   printf '    ledger refused    '; lines "$u" 'ledger refused'
-  printf '    ledger MYC5       '; lines "$u" 'ledger MYC5'
+  printf '    ledger MYC6       '; lines "$u" 'ledger MYC6'
+  printf '    section unclosed  '; lines "$u" 'the frame was lost inside this section'
   printf '    read as MSH1      '; lines "$u" 'read as MSH1'
   printf '    digest refused    '; lines "$u" 'cover digest refused'
   printf '    cover page over   '; lines "$u" 'cover page passed over'

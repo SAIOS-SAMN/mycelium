@@ -27,17 +27,21 @@ impl Complex {
         // next section as content. `counted` writes the body first and
         // measures it as it goes, so the number is that act's own measure.
         counted(out, &self.sections, |body, k, s: &Section| {
-            crate::transducer::address::put_addr(body, k);
-            crate::transducer::address::put_addr(body, &s.addr);
+            crate::transducer::address::put_addr(body, k)?;
+            crate::transducer::address::put_addr(body, &s.addr)?;
             s.gamma.to_bytes(body);
             s.carriage.to_bytes(body);
+            Some(())
         });
-        out.extend_from_slice(&(self.degrees.len() as u32).to_le_bytes());
+        out.extend_from_slice(&(self.degrees.len() as u64).to_le_bytes());
         for layer in &self.degrees {
             counted(out, layer, |body, _, c: &Cell| {
-                body.push(c.vertices.len() as u8);
+                // The vertex count rides in ONE BYTE, so a cell on more than
+                // 255 vertices cannot be framed here and is refused rather
+                // than written with a count that wrapped.
+                crate::transducer::address::put_u8_count(body, c.vertices.len())?;
                 for v in &c.vertices {
-                    crate::transducer::address::put_addr(body, v);
+                    crate::transducer::address::put_addr(body, v)?;
                 }
                 c.coefficient.to_bytes(body);
                 c.carriage.to_bytes(body);
@@ -58,7 +62,7 @@ impl Complex {
                     }
                     Fill::Class(k, r) => {
                         body.push(2);
-                        crate::transducer::address::put_addr(body, k.class_key());
+                        crate::transducer::address::put_addr(body, k.class_key())?;
                         r.to_bytes(body);
                     }
                     Fill::Congruent(g, ell) => {
@@ -71,38 +75,25 @@ impl Complex {
                         r.to_bytes(body);
                     }
                 }
+                Some(())
             });
         }
         counted(out, &self.remainder, |body, k, _: &()| {
-            crate::transducer::address::put_addr(body, k);
+            crate::transducer::address::put_addr(body, k)
         });
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Complex> {
-        let take_u32 = |b: &[u8], pos: &mut usize| -> Option<u32> {
-            let v = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
-            *pos += 4;
-            Some(v)
-        };
         let take_id = |b: &[u8], pos: &mut usize| crate::transducer::address::take_addr(b, pos);
-        // EVERY COUNT IS BOUNDED BY WHAT REMAINS, NEVER BY A CAP. Each of
-        // these loops was `0..n.min(CAP)`, which reads a prefix of what the
-        // writer wrote and leaves the rest in the stream: the cells past the
-        // cap vanish, and the bytes that held them are parsed as the next
-        // item's fields. That is how var/a and var/c came to hold ledgers
-        // their own court could not restore — a decoder that cannot represent
-        // the tape kept part of it instead of saying so (rule 11).
-        //
-        // An item is at least one byte, so a count exceeding the bytes left is
-        // a tape this reader cannot be holding, and it refuses. It is the
-        // guard `snapshot/read.rs` already uses at its own counts, and it
-        // invents no constant.
-        let left = |b: &[u8], pos: &usize| b.len().checked_sub(*pos);
+        // EVERY SECTION HERE IS FRAMED, and the frame is the one in
+        // `snapshot::framed` because `to_bytes` writes through `counted`.
+        // A count alone was bounded by the bytes remaining, which refuses a
+        // count that cannot possibly fit and says nothing about the frame
+        // being lost mid-section — the failure that cost two courts their
+        // ledgers in DEF1. Each loop below arrives at the byte its section
+        // declared or the complex is refused, naming the section.
         let mut c = Complex::new();
-        let ns = take_u32(b, pos)? as usize;
-        if ns > left(b, pos)? {
-            return None;
-        }
+        let (ns, end) = crate::snapshot::take_frame(b, pos)?;
         for _ in 0..ns {
             let v = take_id(b, pos)?;
             let addr = take_id(b, pos)?;
@@ -110,25 +101,21 @@ impl Complex {
             let carriage = Versor::from_bytes(b, pos)?;
             c.sections.insert(v, Section { addr, gamma, carriage });
         }
-        let nd = take_u32(b, pos)? as usize;
-        if nd > left(b, pos)? {
+        if *pos != end {
+            return None;
+        }
+        let nd = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+        *pos += 8;
+        let nd = usize::try_from(nd).ok()?;
+        if nd > b.len().checked_sub(*pos)? {
             return None;
         }
         for _ in 0..nd {
-            let n = take_u32(b, pos)? as usize;
-            if n > left(b, pos)? {
-                return None;
-            }
+            let (n, end) = crate::snapshot::take_frame(b, pos)?;
             for _ in 0..n {
                 let nv = *b.get(*pos)? as usize;
                 *pos += 1;
-                if nv > left(b, pos)? {
-                    return None;
-                }
-                // `with_capacity` takes the count the tape states, because
-                // the bound above has already established the tape can hold
-                // that many.
-                let mut verts = Vec::with_capacity(nv);
+                let mut verts = Vec::new();
                 for _ in 0..nv {
                     verts.push(take_id(b, pos)?);
                 }
@@ -174,18 +161,21 @@ impl Complex {
                     fill,
                 });
             }
+            if *pos != end {
+                return None;
+            }
         }
         // A tape that ends here carries no remainder cells.
-        let nr = match take_u32(b, pos) {
-            Some(n) => n as usize,
-            None => 0,
+        let (nr, end) = match crate::snapshot::take_frame(b, pos) {
+            Some(f) => f,
+            None => return Some(c),
         };
-        if nr > left(b, pos)? {
-            return None;
-        }
         for _ in 0..nr {
             let k = take_id(b, pos)?;
             c.remainder.insert(k, ());
+        }
+        if *pos != end {
+            return None;
         }
         Some(c)
     }

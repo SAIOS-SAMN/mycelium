@@ -7,35 +7,39 @@
 
 use crate::cognition::*;
 
-use crate::snapshot::counted;
+use crate::snapshot::{counted, framed};
 
 impl Kernel {
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = Vec::new();
-        // MYC5: the chain section carries the PEER RECEIPTS this court
-        // admitted as parents (`PRC1`), without which its own heights do
-        // not re-derive. A MYC4 snapshot does not re-read — a layout
-        // change is a recut (§10), and this one is the recut's reason.
-        out.extend_from_slice(b"MYC5");
+        // MYC6: every section states its own BYTE LENGTH beside its count,
+        // so a reader knows where a section ends before it reads a record
+        // and a lost frame refuses at the section that lost it. MYC5 wrote
+        // the count alone; see `snapshot::framed` for what that cost on the
+        // fleet. A layout change is a recut (§10), and this one is the
+        // recut's reason.
+        out.extend_from_slice(b"MYC6");
         let items: Vec<_> = self
             .basis
             .scoped()
             .filter_map(|(_, g)| self.discoverer_of(&g.address()).map(|who| (std::sync::Arc::clone(g), who)))
             .collect();
-        out.extend_from_slice(&(items.len() as u32).to_le_bytes());
-        for (g, who) in items {
+        let mut body = Vec::new();
+        for (g, who) in &items {
             let eb = g.to_bytes();
-            out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
-            out.extend_from_slice(&eb);
-            out.extend_from_slice(&who);
+            body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
+            body.extend_from_slice(&eb);
+            body.extend_from_slice(who);
         }
+        framed(&mut out, items.len() as u64, &mut body);
         out.extend_from_slice(&self.treasury.snapshot());
         // PROVISIONAL section (Step 5).
         counted(&mut out, &self.provisional, |body, addr, spoken| {
-            put_addr(body, addr);
+            put_addr(body, addr)?;
             let eb = spoken.to_bytes();
-            body.extend_from_slice(&(eb.len() as u32).to_le_bytes());
+            body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
+            Some(())
         });
         // THE CHAIN section: the court head and every k-step receipt, so
         // the hypha's clock continues across boots instead of restarting.
@@ -45,10 +49,11 @@ impl Kernel {
         // that begins at a fold re-verifies from it.
         crate::chronometry::Root::write_opt(self.chain.root().as_ref(), &mut out);
         let receipts = self.chain.receipts();
-        out.extend_from_slice(&(receipts.len() as u32).to_le_bytes());
+        let mut body = Vec::new();
         for r in receipts {
-            r.write(&mut out);
+            r.write(&mut body);
         }
+        framed(&mut out, receipts.len() as u64, &mut body);
         // PRC1: THE PEER RECEIPTS THIS COURT ADMITTED AS PARENTS. Our own
         // receipts cite them, and a height over an unheld parent is
         // unmeasurable, so a ledger without them is a ledger this reader
@@ -58,16 +63,18 @@ impl Kernel {
         // re-derived at restore and never persisted.
         out.extend_from_slice(b"PRC1");
         let admitted = self.chain.admitted();
-        out.extend_from_slice(&(admitted.len() as u32).to_le_bytes());
-        for r in admitted {
-            r.write(&mut out);
+        let mut body = Vec::new();
+        for r in &admitted {
+            r.write(&mut body);
         }
+        framed(&mut out, admitted.len() as u64, &mut body);
         // ARC1: the eras this court folded, in K order, cold.
         out.extend_from_slice(b"ARC1");
-        out.extend_from_slice(&(self.archive.len() as u32).to_le_bytes());
+        let mut body = Vec::new();
         for era in &self.archive {
-            era.write(&mut out);
+            era.write(&mut body);
         }
+        framed(&mut out, self.archive.len() as u64, &mut body);
         // THE RANK section: each listing's closure and moduli as last
         // measured, so a boot continues the measurement instead of walking
         // the book from nothing.
@@ -75,7 +82,7 @@ impl Kernel {
         out.extend_from_slice(b"RNK1");
         out.extend_from_slice(&(rank.basis_len as u64).to_le_bytes());
         counted(&mut out, rank.closure_carrier(), |body, addr, closed| {
-            put_addr(body, addr);
+            put_addr(body, addr)?;
             let c = closed.map_or(u64::MAX, |i| i as u64);
             body.extend_from_slice(&c.to_le_bytes());
             // A listing the reading holds no invariant for sits at the
@@ -84,10 +91,11 @@ impl Kernel {
                 Some(i) => i.0.as_slice(),
                 None => &[],
             };
-            body.extend_from_slice(&(inv.len() as u32).to_le_bytes());
+            body.extend_from_slice(&(inv.len() as u64).to_le_bytes());
             for axis in inv {
                 body.extend_from_slice(&axis.to_le_bytes());
             }
+            Some(())
         });
         // DEFLATION section: each provisional's measured descent, so a
         // restart does not docket Δ⃗ = 0 and feed the court a slash list.
@@ -97,7 +105,7 @@ impl Kernel {
         //   tag 1 = K u64 ‖ tu u64
         // Restore refuses any other tag (a missing K is not clock-zero).
         counted(&mut out, &self.deflations, |body, addr, mag| {
-            put_addr(body, addr);
+            put_addr(body, addr)?;
             for m in mag {
                 body.extend_from_slice(&m.to_le_bytes());
             }
@@ -112,15 +120,16 @@ impl Kernel {
                 }
                 _ => body.push(0),
             }
+            Some(())
         });
         // Coherence field beside DEF1: which angles each thought has been
         // probed through. A restart must not forget the field.
         out.extend_from_slice(b"FLD1");
         counted(&mut out, &self.field, |body, addr, listing| {
-            put_addr(body, addr);
-            body.extend_from_slice(&(listing.entries.len() as u32).to_le_bytes());
+            put_addr(body, addr)?;
+            body.extend_from_slice(&(listing.entries.len() as u64).to_le_bytes());
             for e in &listing.entries {
-                body.extend_from_slice(&(e.chart.0.len() as u32).to_le_bytes());
+                body.extend_from_slice(&(e.chart.0.len() as u64).to_le_bytes());
                 for axis in &e.chart.0 {
                     body.extend_from_slice(&axis.to_le_bytes());
                 }
@@ -137,7 +146,7 @@ impl Kernel {
                         r.to_bytes(body);
                     }
                 }
-                body.extend_from_slice(&(e.remainder.len() as u32).to_le_bytes());
+                body.extend_from_slice(&(e.remainder.len() as u64).to_le_bytes());
                 for &(r, c, hb, ha) in &e.remainder {
                     body.extend_from_slice(&r.to_le_bytes());
                     body.extend_from_slice(&c.to_le_bytes());
@@ -148,44 +157,49 @@ impl Kernel {
                     body.extend_from_slice(&s.to_le_bytes());
                 }
             }
+            Some(())
         });
         out.extend_from_slice(b"BOK1");
         counted(&mut out, &self.pending, |body, _addr, (elem, k)| {
             let eb = elem.to_bytes();
-            body.extend_from_slice(&(eb.len() as u32).to_le_bytes());
+            body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
             body.extend_from_slice(&k.to_le_bytes());
+            Some(())
         });
         out.extend_from_slice(b"CAV1");
         counted(&mut out, &self.cavity_book, |body, addr, elem| {
-            put_addr(body, addr);
+            put_addr(body, addr)?;
             let eb = elem.to_bytes();
-            body.extend_from_slice(&(eb.len() as u32).to_le_bytes());
+            body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
+            Some(())
         });
         out.extend_from_slice(b"CRT1");
         out.push(self.crt_imported as u8);
-        out.extend_from_slice(&(self.court_federation.len() as u32).to_le_bytes());
+        let mut body = Vec::new();
         for (addr, elem) in &self.court_federation {
-            put_addr(&mut out, addr);
+            put_addr(&mut body, addr);
             let eb = elem.to_bytes();
-            out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
-            out.extend_from_slice(&eb);
+            body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
+            body.extend_from_slice(&eb);
         }
+        framed(&mut out, self.court_federation.len() as u64, &mut body);
         // A constant zero stood here: the count of a sub-section this
         // writer stopped emitting, which the reader skipped by peeking at
         // whether the next four bytes were COC1's tag. Both are gone (§10).
         out.extend_from_slice(b"COC1");
         counted(&mut out, &self.complexes, |body, k, c| {
-            put_addr(body, k);
+            put_addr(body, k)?;
             c.to_bytes(body);
+            Some(())
         });
         out.extend_from_slice(b"FLC1");
         counted(&mut out, &self.field_cold, |body, addr, listing| {
-            put_addr(body, addr);
-            body.extend_from_slice(&(listing.entries.len() as u32).to_le_bytes());
+            put_addr(body, addr)?;
+            body.extend_from_slice(&(listing.entries.len() as u64).to_le_bytes());
             for e in &listing.entries {
-                body.extend_from_slice(&(e.chart.0.len() as u32).to_le_bytes());
+                body.extend_from_slice(&(e.chart.0.len() as u64).to_le_bytes());
                 for axis in &e.chart.0 {
                     body.extend_from_slice(&axis.to_le_bytes());
                 }
@@ -202,7 +216,7 @@ impl Kernel {
                         r.to_bytes(body);
                     }
                 }
-                body.extend_from_slice(&(e.remainder.len() as u32).to_le_bytes());
+                body.extend_from_slice(&(e.remainder.len() as u64).to_le_bytes());
                 for &(r, c, hb, ha) in &e.remainder {
                     body.extend_from_slice(&r.to_le_bytes());
                     body.extend_from_slice(&c.to_le_bytes());
@@ -213,40 +227,44 @@ impl Kernel {
                     body.extend_from_slice(&s.to_le_bytes());
                 }
             }
+            Some(())
         });
         out.extend_from_slice(b"CYC2");
         counted(&mut out, &self.cocycle_at, |body, key, row| {
-            put_addr(body, key);
+            put_addr(body, key)?;
             body.extend_from_slice(&row.a);
             body.extend_from_slice(&row.b);
             body.extend_from_slice(&row.t_universal.to_le_bytes());
-            put_addr(body, &row.class_key);
+            put_addr(body, &row.class_key)?;
             row.gauge.to_bytes(body);
+            Some(())
         });
-        out.extend_from_slice(&(self.dialect_chain.len() as u32).to_le_bytes());
+        let mut body = Vec::new();
         for (key, v, tu) in &self.dialect_chain {
-            put_addr(&mut out, key);
-            out.extend_from_slice(&tu.to_le_bytes());
-            v.to_bytes(&mut out);
+            put_addr(&mut body, key);
+            body.extend_from_slice(&tu.to_le_bytes());
+            v.to_bytes(&mut body);
         }
+        framed(&mut out, self.dialect_chain.len() as u64, &mut body);
         out.extend_from_slice(b"SET1");
         let mut all = self.settlements_cold.clone();
         all.extend(self.settlements.iter().cloned());
-        out.extend_from_slice(&(all.len() as u32).to_le_bytes());
+        let mut body = Vec::new();
         for s in &all {
-            put_addr(&mut out, &s.listing);
-            crate::anastome::dialogue::push_chain(&mut out, &s.chain);
-            out.extend_from_slice(&s.voice);
-            crate::anastome::dialogue::push_cites(&mut out, &s.cites);
+            put_addr(&mut body, &s.listing);
+            crate::anastome::dialogue::push_chain(&mut body, &s.chain);
+            body.extend_from_slice(&s.voice);
+            crate::anastome::dialogue::push_cites(&mut body, &s.cites);
             for m in &s.before {
-                out.extend_from_slice(&m.to_le_bytes());
+                body.extend_from_slice(&m.to_le_bytes());
             }
             for m in &s.after {
-                out.extend_from_slice(&m.to_le_bytes());
+                body.extend_from_slice(&m.to_le_bytes());
             }
-            out.extend_from_slice(&s.k.to_le_bytes());
-            out.extend_from_slice(&s.t_universal.to_le_bytes());
+            body.extend_from_slice(&s.k.to_le_bytes());
+            body.extend_from_slice(&s.t_universal.to_le_bytes());
         }
+        framed(&mut out, all.len() as u64, &mut body);
         out
     }
 

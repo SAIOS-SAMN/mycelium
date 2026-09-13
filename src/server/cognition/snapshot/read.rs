@@ -25,9 +25,9 @@ impl Kernel {
     /// when it SUCCEEDED and the only branch taken was the one that
     /// ignored the failure.
     pub fn restore(&mut self, b: &[u8]) -> bool {
-        if b.get(0..4) != Some(b"MYC5") {
+        if b.get(0..4) != Some(b"MYC6") {
             // A REFUSAL NAMES WHAT IT READ, not only what it wanted. "The
-            // magic is not MYC5" leaves the operator to go and look at the
+            // magic is not MYC6" leaves the operator to go and look at the
             // bytes this reader already had in its hand, and a tape that
             // is not a ledger at all reads the same as one written by an
             // older build -- which is the difference that decides whether
@@ -39,22 +39,72 @@ impl Kernel {
                 },
                 None => format!("{} bytes, too short to carry one", b.len()),
             };
-            eprintln!("  ledger refused: the magic is {found}, not MYC5");
+            eprintln!("  ledger refused: the magic is {found}, not MYC6");
             return false;
         }
         // WHERE THE READ IS. Set as each section opens, so a refusal names
         // one of the tape's own sections and not a byte offset alone.
         let at = std::cell::Cell::new("basis");
         let mut pos = 4usize;
-        let read_u32 = |b: &[u8], p: &mut usize| -> Option<u32> {
-            let v = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
-            *p += 4;
-            Some(v)
+        let read_u64 = |b: &[u8], p: &mut usize| -> Option<usize> {
+            let v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            *p += 8;
+            usize::try_from(v).ok()
+        };
+        // A SECTION'S FRAME: its record count, and the byte its body ends
+        // at. The end is read, not inferred from parsing the records, which
+        // is what makes a lost frame detectable at all — see
+        // `snapshot::framed` for the ledgers that were refused because it
+        // was not.
+        let section = crate::snapshot::take_frame;
+        // A SECTION CLOSES WHERE IT SAID IT WOULD, or it is refused here
+        // and says by how much it was out. The old reader could only refuse
+        // at whatever field first failed to parse after the frame drifted,
+        // which attributed the fault to a section that was intact.
+        let closes = |name: &'static str, pos: &usize, start: usize, end: usize, n: usize| -> Option<()> {
+            if *pos == end {
+                return Some(());
+            }
+            eprintln!(
+                "  section {name}: its {n} records declare the body {start}..{end} and the \
+                 reader stopped at {pos} — the frame was lost inside this section"
+            );
+            None
+        };
+        // A COUNT THAT CANNOT BE SATISFIED, refused against the tape's own
+        // remaining bytes and nothing else. Every record in every section
+        // below writes at least one byte, so a count larger than what is
+        // left cannot be honoured — which is EXACT and derived from the
+        // tape, not estimated from a record's size.
+        //
+        // Seven sections divided by a typed constant instead: `/ 6`,
+        // `/ 106` twice, `/ 56`, `/ 14`, `/ 8`, `/ 50` — each one a guess
+        // at a minimum record, each one able to be wrong in the direction
+        // that refuses valid content. `/ 50` WAS wrong. A DEF1 record is
+        // `addr ‖ μ⃗[4] ‖ tag u8`, which is 35 bytes plus the address, so
+        // any record whose address is under 15 bytes — a chart key, a cell
+        // key — is smaller than the divisor assumed. Measured on the fleet
+        // at 83e3e30: hypha a wrote 8618992 bytes and refused its own
+        // ledger in DEF1 at 6809848, hypha b 13691419 and refused at
+        // 11503269. Both ledgers were written by the build that then would
+        // not read them, and both courts lost everything they had learned.
+        //
+        // The bound is the tape's bytes (rule 10) and the count decides
+        // nothing else (rule 2). This is not a weaker guard than the
+        // divisors: the loops below reserve nothing from `n`, and each
+        // refuses at the first field the tape cannot supply, so a count
+        // past the end costs one iteration and then refuses.
+        let fits = |b: &[u8], pos: &usize, n: usize| -> Option<()> {
+            match n > b.len().checked_sub(*pos)? {
+                true => None,
+                false => Some(()),
+            }
         };
         let load = |kernel: &mut Kernel, b: &[u8], pos: &mut usize| -> Option<()> {
-            let n = read_u32(b, pos)? as usize;
+            let (n, sec_end) = section(b, pos)?;
+            let start = *pos;
             for _ in 0..n {
-                let elen = read_u32(b, pos)? as usize;
+                let elen = read_u64(b, pos)?;
                 let mut ep = *pos;
                 let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
                 let spoken = Element::from_bytes(&b[..end], &mut ep)?;
@@ -63,6 +113,7 @@ impl Kernel {
                 *pos += 32;
                 kernel.basis_insert(spoken, who);
             }
+            closes("basis", pos, start, sec_end, n)?;
             at.set("treasury");
             kernel.treasury = crate::economy::Treasury::restore(b, pos)?;
             at.set("provisional");
@@ -75,19 +126,18 @@ impl Kernel {
             // said nothing. §10 rules a persisted-layout change a recut
             // and deletes the reader for the old layout; a tag that is not
             // the tag refuses the tape whole, as the header already does.
-            let np = read_u32(b, pos)? as usize;
-            if np > b.len().checked_sub(*pos)? / 6 {
-                return None; // untrusted count: len16 + elem len at least
-            }
+            let (np, sec_end) = section(b, pos)?;
+            let start = *pos;
             for _ in 0..np {
                 let addr = crate::transducer::address::take_addr(b, pos)?;
-                let elen = read_u32(b, pos)? as usize;
+                let elen = read_u64(b, pos)?;
                 let mut ep = *pos;
                 let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
                 let spoken = Element::from_bytes(&b[..end], &mut ep)?;
                 *pos += elen;
                 kernel.provisional.insert(addr, spoken);
             }
+            closes("provisional", pos, start, sec_end, np)?;
             // The chain: the court head and every k-step receipt, so the
             // hypha's clock continues across a boot.
             let tag = |b: &[u8], p: &mut usize, want: &'static [u8; 4]| -> Option<()> {
@@ -110,40 +160,37 @@ impl Kernel {
             let head: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
             *pos += 32;
             let root = crate::chronometry::Root::read_opt(b, pos)?;
-            let n = read_u32(b, pos)? as usize;
-            if n > b.len().checked_sub(*pos)? / 106 {
-                return None;
-            }
-            let mut receipts = Vec::with_capacity(n);
+            let (n, sec_end) = section(b, pos)?;
+            let start = *pos;
+            let mut receipts = Vec::new();
             for _ in 0..n {
                 receipts.push(crate::chronometry::KStepReceipt::read(b, pos)?);
             }
+            closes("KCH1", pos, start, sec_end, n)?;
             // PRC1: the peer receipts this court admitted as parents. The
             // chain is built from BOTH lists at once, because verifying
             // the line re-derives a height through every parent and forty
             // of hypha b's named a peer.
             tag(b, pos, b"PRC1")?;
-            let np = read_u32(b, pos)? as usize;
-            if np > b.len().checked_sub(*pos)? / 106 {
-                return None;
-            }
-            let mut peers = Vec::with_capacity(np);
+            let (np, sec_end) = section(b, pos)?;
+            let start = *pos;
+            let mut peers = Vec::new();
             for _ in 0..np {
                 peers.push(crate::chronometry::KStepReceipt::read(b, pos)?);
             }
+            closes("PRC1", pos, start, sec_end, np)?;
             kernel.court_head = head;
             kernel.chain = crate::chronometry::ReceiptChain::from_parts(root, receipts, peers)?;
             // ARC1: the eras, in K order. Each era's receipts re-verify as
             // a chain of their own below their root.
             tag(b, pos, b"ARC1")?;
-            let ne = read_u32(b, pos)? as usize;
-            if ne > b.len().checked_sub(*pos)? / 56 {
-                return None;
-            }
-            let mut archive = Vec::with_capacity(ne);
+            let (ne, sec_end) = section(b, pos)?;
+            let start = *pos;
+            let mut archive = Vec::new();
             for _ in 0..ne {
                 archive.push(crate::chronometry::Era::read(b, pos)?);
             }
+            closes("ARC1", pos, start, sec_end, ne)?;
             kernel.archive = archive;
             // The prior measurement, continued incrementally (never read as
             // current: its generations are unknowable here).
@@ -151,10 +198,8 @@ impl Kernel {
             {
                 let basis_len = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?) as usize;
                 *pos += 8;
-                let n = read_u32(b, pos)? as usize;
-                if n > b.len().checked_sub(*pos)? / 14 {
-                    return None;
-                }
+                let (n, sec_end) = section(b, pos)?;
+                let start = *pos;
                 let mut rank = Rank::default();
                 rank.basis_gen = u64::MAX;
                 rank.basis_len = basis_len;
@@ -163,11 +208,9 @@ impl Kernel {
                     let addr = crate::transducer::address::take_addr(b, pos)?;
                     let closed = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
-                    let m = read_u32(b, pos)? as usize;
-                    if m > b.len().checked_sub(*pos)? / 8 {
-                        return None;
-                    }
-                    let mut axes = Vec::with_capacity(m);
+                    let m = read_u64(b, pos)?;
+                    fits(b, pos, m)?;
+                    let mut axes = Vec::new();
                     for _ in 0..m {
                         axes.push(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?));
                         *pos += 8;
@@ -175,17 +218,23 @@ impl Kernel {
                     rank.put_closure(&addr, (closed != u64::MAX).then_some(closed as usize));
                     rank.invariants.insert(&addr, crate::transducer::stalk::Invariant(axes));
                 }
+                closes("RNK1", pos, start, sec_end, n)?;
                 kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
             }
             tag(b, pos, b"DEF1")?;
             {
-                let n = read_u32(b, pos)? as usize;
-                // addr ‖ μ⃗[4] ‖ tag u8 [‖ K u64 ‖ tu u64]; refuse a count that cannot fit.
-                if n > b.len().checked_sub(*pos)? / 50 {
-                    return None;
-                }
-                for _ in 0..n {
-                    let addr = crate::transducer::address::take_addr(b, pos)?;
+                // addr ‖ μ⃗[4] ‖ tag u8 [‖ K u64 ‖ tu u64].
+                let (n, sec_end) = section(b, pos)?;
+                let start = *pos;
+                for i in 0..n {
+                    let Some(addr) = crate::transducer::address::take_addr(b, pos) else {
+                        eprintln!(
+                            "  DEF1 record {i} of {n}: the address does not read at byte {} \
+                             (body {start}..{sec_end})",
+                            *pos
+                        );
+                        return None;
+                    };
                     let mut mag = [0u64; 4];
                     for m in &mut mag {
                         *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -207,20 +256,32 @@ impl Kernel {
                             kernel.provisional_h.insert(&addr, tu);
                             kernel.standing_h.insert(&addr, tu);
                         }
-                        _ => return None,
+                        _ => {
+                            eprintln!(
+                                "  DEF1 record {i} of {n}: tag byte is {row}, neither 0 nor 1, at \
+                                 byte {} — address {} bytes, μ⃗ {mag:?} (body {start}..{sec_end})",
+                                *pos - 1,
+                                addr.len()
+                            );
+                            return None;
+                        }
                     }
                 }
+                closes("DEF1", pos, start, sec_end, n)?;
             }
             tag(b, pos, b"FLD1")?;
             {
-                let n = read_u32(b, pos)? as usize;
+                let (n, sec_end) = section(b, pos)?;
+                let start = *pos;
                 for _ in 0..n {
                     let addr = crate::transducer::address::take_addr(b, pos)?;
-                    let ne = read_u32(b, pos)? as usize;
-                    let mut entries = Vec::with_capacity(ne.min(64));
+                    let ne = read_u64(b, pos)?;
+                    fits(b, pos, ne)?;
+                    let mut entries = Vec::new();
                     for _ in 0..ne {
-                        let m = read_u32(b, pos)? as usize;
-                        let mut axes = Vec::with_capacity(m);
+                        let m = read_u64(b, pos)?;
+                        fits(b, pos, m)?;
+                        let mut axes = Vec::new();
                         for _ in 0..m {
                             axes.push(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?));
                             *pos += 8;
@@ -242,8 +303,9 @@ impl Kernel {
                             }
                             _ => crate::transducer::stalk::Closure::Cavity,
                         };
-                        let nc = read_u32(b, pos)? as usize;
-                        let mut remainder = Vec::with_capacity(nc.min(1 << 16));
+                        let nc = read_u64(b, pos)?;
+                        fits(b, pos, nc)?;
+                        let mut remainder = Vec::new();
                         for _ in 0..nc {
                             let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                             *pos += 8;
@@ -270,12 +332,14 @@ impl Kernel {
                     let nonflat = entries.iter().filter(|e| !e.state.is_flat()).count() as u32;
                     kernel.field.insert(addr, ListingField { entries, nonflat });
                 }
+                closes("FLD1", pos, start, sec_end, n)?;
             }
             tag(b, pos, b"BOK1")?;
             {
-                let n = read_u32(b, pos)? as usize;
+                let (n, sec_end) = section(b, pos)?;
+                let start = *pos;
                 for _ in 0..n {
-                    let elen = read_u32(b, pos)? as usize;
+                    let elen = read_u64(b, pos)?;
                     let mut ep = *pos;
                     let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
                     let elem = Element::from_bytes(&b[..end], &mut ep)?;
@@ -287,13 +351,15 @@ impl Kernel {
                     kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
                     kernel.pending.insert(&addr, (elem, k));
                 }
+                closes("BOK1", pos, start, sec_end, n)?;
             }
             tag(b, pos, b"CAV1")?;
             {
-                let n = read_u32(b, pos)? as usize;
+                let (n, sec_end) = section(b, pos)?;
+                let start = *pos;
                 for _ in 0..n {
                     let addr = crate::transducer::address::take_addr(b, pos)?;
-                    let elen = read_u32(b, pos)? as usize;
+                    let elen = read_u64(b, pos)?;
                     let mut ep = *pos;
                     let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
                     let elem = Element::from_bytes(&b[..end], &mut ep)?;
@@ -301,15 +367,17 @@ impl Kernel {
                     kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
                     kernel.cavity_book.insert(&addr, elem);
                 }
+                closes("CAV1", pos, start, sec_end, n)?;
             }
             tag(b, pos, b"CRT1")?;
             {
                 kernel.crt_imported = *b.get(*pos)? != 0;
                 *pos += 1;
-                let n = read_u32(b, pos)? as usize;
+                let (n, sec_end) = section(b, pos)?;
+                let start = *pos;
                 for _ in 0..n {
                     let addr = crate::transducer::address::take_addr(b, pos)?;
-                    let elen = read_u32(b, pos)? as usize;
+                    let elen = read_u64(b, pos)?;
                     let mut ep = *pos;
                     let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
                     let elem = Element::from_bytes(&b[..end], &mut ep)?;
@@ -317,6 +385,7 @@ impl Kernel {
                     kernel.court_fed_index.insert(&addr, kernel.court_federation.len());
                     kernel.court_federation.push((addr, elem));
                 }
+                closes("CRT1", pos, start, sec_end, n)?;
                 // A trailing count of a sub-section no longer written, read
                 // by peeking at whether the next four bytes were the NEXT
                 // section's tag. `snapshot` emitted a constant zero there
@@ -324,29 +393,28 @@ impl Kernel {
             }
             tag(b, pos, b"COC1")?;
             {
-                let n = read_u32(b, pos)? as usize;
-                if n > b.len().checked_sub(*pos)? {
-                    return None;
-                }
+                let (n, sec_end) = section(b, pos)?;
+                let start = *pos;
                 for _ in 0..n {
                     let key = take_addr(b, pos)?;
                     let c = crate::transducer::cech::Complex::from_bytes(b, pos)?;
                     kernel.complexes.insert(key, c);
                 }
+                closes("COC1", pos, start, sec_end, n)?;
             }
             tag(b, pos, b"FLC1")?;
             {
-                let n = read_u32(b, pos)? as usize;
-                if n > b.len().checked_sub(*pos)? {
-                    return None;
-                }
+                let (n, sec_end) = section(b, pos)?;
+                let start = *pos;
                 for _ in 0..n {
                     let addr = crate::transducer::address::take_addr(b, pos)?;
-                    let ne = read_u32(b, pos)? as usize;
-                    let mut entries = Vec::with_capacity(ne.min(64));
+                    let ne = read_u64(b, pos)?;
+                    fits(b, pos, ne)?;
+                    let mut entries = Vec::new();
                     for _ in 0..ne {
-                        let m = read_u32(b, pos)? as usize;
-                        let mut axes = Vec::with_capacity(m);
+                        let m = read_u64(b, pos)?;
+                        fits(b, pos, m)?;
+                        let mut axes = Vec::new();
                         for _ in 0..m {
                             axes.push(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?));
                             *pos += 8;
@@ -368,8 +436,9 @@ impl Kernel {
                             }
                             _ => crate::transducer::stalk::Closure::Cavity,
                         };
-                        let nc = read_u32(b, pos)? as usize;
-                        let mut remainder = Vec::with_capacity(nc.min(1 << 16));
+                        let nc = read_u64(b, pos)?;
+                        fits(b, pos, nc)?;
+                        let mut remainder = Vec::new();
                         for _ in 0..nc {
                             let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                             *pos += 8;
@@ -396,6 +465,7 @@ impl Kernel {
                     let nonflat = entries.iter().filter(|e| !e.state.is_flat()).count() as u32;
                     kernel.field_cold.insert(addr, ListingField { entries, nonflat });
                 }
+                closes("FLC1", pos, start, sec_end, n)?;
             }
             // CYC1 was the same section without a stored class key, and its
             // reader re-derived one with `class_key_of_versor`, dropping the
@@ -403,10 +473,8 @@ impl Kernel {
             // emitted CYC1 since the key was stored; the key is read (§10).
             tag(b, pos, b"CYC2")?;
             {
-                let n = read_u32(b, pos)? as usize;
-                if n > b.len().checked_sub(*pos)? {
-                    return None;
-                }
+                let (n, sec_end) = section(b, pos)?;
+                let start = *pos;
                 for _ in 0..n {
                     let key = take_addr(b, pos)?;
                     let a: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
@@ -429,10 +497,9 @@ impl Kernel {
                     );
                     // Chart index is rebuilt on next glue; hot row is enough.
                 }
-                let nc = read_u32(b, pos)? as usize;
-                if nc > b.len().checked_sub(*pos)? {
-                    return None;
-                }
+                closes("CYC2", pos, start, sec_end, n)?;
+                let (nc, chain_end) = section(b, pos)?;
+                let chain_start = *pos;
                 for _ in 0..nc {
                     let key = take_addr(b, pos)?;
                     let tu = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -440,13 +507,12 @@ impl Kernel {
                     let v = element::Versor::from_bytes(b, pos)?;
                     kernel.dialect_chain.push((key.into_vec(), v, tu));
                 }
+                closes("CYC2/dialect", pos, chain_start, chain_end, nc)?;
             }
             tag(b, pos, b"SET1")?;
             {
-                let n = read_u32(b, pos)? as usize;
-                if n > b.len().checked_sub(*pos)? {
-                    return None;
-                }
+                let (n, sec_end) = section(b, pos)?;
+                let start = *pos;
                 for _ in 0..n {
                     let listing = crate::transducer::address::take_addr(b, pos)?;
                     let chain = crate::anastome::dialogue::read_chain(b, pos)?;
@@ -478,6 +544,7 @@ impl Kernel {
                         t_universal: tu,
                     });
                 }
+                closes("SET1", pos, start, sec_end, n)?;
             }
             // index: keyed field at restore (persistence snapshot, once)
             let field_keys: Vec<Vec<u8>> = kernel.field.scoped().map(|(k, _)| k).collect();

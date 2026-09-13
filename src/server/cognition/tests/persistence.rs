@@ -123,3 +123,45 @@ for tag in [b"KCH1", b"RNK1", b"DEF1", b"FLD1", b"BOK1", b"CAV1", b"CRT1", b"COC
     assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
 }
 }
+
+/// A SECTION CLOSES WHERE IT SAID IT WOULD. Each section writes its record
+/// count AND the byte length of its body; a reader that does not arrive at
+/// that byte has lost the frame inside that section and refuses there.
+///
+/// The count alone could not support this. A reader recovered a section's
+/// end by parsing every record and trusting the result, so a record whose
+/// framing it reconstructed differently from the writer moved the position
+/// for good and every later refusal named an innocent section. Measured on
+/// the fleet at 83e3e30: hypha a announced 91 DEF1 records, framed 84 over
+/// 298223 bytes, then read an address length of zero and a tag byte of 13;
+/// its true body was 345929 bytes, which the reader had no way to know. It
+/// refused 8.6 MB of a court's history and named a byte that was a
+/// consequence, not a cause. Hypha b lost 13.7 MB the same way.
+///
+/// Both halves are asserted here: a body one byte shorter than declared is
+/// refused, and so is one byte longer. The first is what a lost frame looks
+/// like from inside; the second is what a section that overruns its
+/// neighbour looks like — the failure that used to be silent.
+#[test]
+fn a_section_that_does_not_close_where_it_declared_is_refused() {
+let mut k = Kernel::new();
+let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
+speak_pair(&mut k, &a, &b, [1; 32]);
+let snap = k.snapshot();
+assert!(Kernel::new().restore(&snap), "the tape as written restores");
+
+// The first section's frame: `MYC6` then its count, then the byte length
+// of its body. Byte 12 opens that length.
+let declared = u64::from_le_bytes(snap[12..20].try_into().expect("the frame is there"));
+for wrong in [declared.wrapping_sub(1), declared.wrapping_add(1)] {
+    let mut bent = snap.clone();
+    bent[12..20].copy_from_slice(&wrong.to_le_bytes());
+    let mut booted = Kernel::new();
+    assert!(
+        !booted.restore(&bent),
+        "a body declaring {wrong} where it holds {declared} is refused"
+    );
+    assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
+}
+}
