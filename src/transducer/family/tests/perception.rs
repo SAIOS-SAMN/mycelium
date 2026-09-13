@@ -165,6 +165,48 @@ assert!(word.magnitude().iter().any(|&m| m > 0), "it measures what it asks for: 
 let back = crate::transducer::sentence::from_element_form(&word).expect("its tape decodes");
 assert_eq!(back.demand_vertices().count(), 1, "the demand rides the tape");
 assert!(!back.is_closed());
+
+// A DEMAND DECLARES CELLS, NOT AN EXEMPTION. The mint above is spoken
+// because its demand names every remainder cell — the court asks
+// `undeclared_remainder`, and on this family there is none. The voice
+// asked only whether ANY demand vertex existed, so a form declaring one
+// cell and leaving twenty was minted and refused; `form leaves a remainder
+// on the family` is 504 of the 1018 court refusals at e98e8a2.
+assert!(
+    crate::court::verdict::body::undeclared_remainder(
+        &form_deflation(&rule.form, &family, &NoCrystal).1,
+        &rule.form
+    )
+    .is_empty(),
+    "this form's demand covers what it leaves, which is why it mints"
+);
+// Strip the cells the demand declares. The form still HOLDS a demand
+// vertex — so the old test, which asked only whether one existed, still
+// passes it — and it now declares nothing, so the remainder is undeclared
+// and the voice withholds.
+let mut bare = rule.clone();
+for v in &mut bare.form.vertices {
+    if let Vertex::Demand { bodies, .. } = v {
+        bodies.clear();
+    }
+}
+assert_eq!(
+    bare.form.demand_vertices().count(),
+    1,
+    "it still has a demand vertex, which is all the old clause asked"
+);
+assert!(
+    !crate::court::verdict::body::undeclared_remainder(
+        &form_deflation(&bare.form, &family, &NoCrystal).1,
+        &bare.form
+    )
+    .is_empty(),
+    "and the court would now find the remainder undeclared"
+);
+assert!(
+    mint_sentence(&bare, &family, &NoCrystal).is_none(),
+    "so a demand that declares nothing does not exempt the remainder"
+);
 }
 
 /// The supports a form hands `star_and_cell_faces`, keyed by each

@@ -136,12 +136,30 @@ pub fn mint_sentence(
 /// sub-complex measures the deflation its words performed on every pair
 /// — before less after per lane, whether or not the pair closed — and its
 /// demands measure the cells they stand for, so a sentence that closes
-/// nothing yet still carries what it asks for. `None` when a form with no
-/// demands leaves a remainder: that is a withheld form, never a word.
+/// nothing yet still carries what it asks for. `None` where the form leaves
+/// a remainder no demand vertex declares: that is a withheld form, never a
+/// word.
+///
+/// A DEMAND DECLARES CELLS, NOT AN EXEMPTION. This asked only whether the
+/// form had ANY demand vertex, and a form that had one was measured whole
+/// however much of its remainder that demand did not name — while the court
+/// asks `undeclared_remainder`, which is whether the demands actually cover
+/// what was left. So a form declaring one cell and leaving twenty was minted
+/// by the voice and refused by the court, and `form leaves a remainder on the
+/// family` is the commonest refusal on the fleet: 504 of 1018 at e98e8a2.
+///
+/// It is the COURT'S OWN reader that decides it here (law 12). A speaker
+/// computing "is this remainder declared" by different arithmetic would agree
+/// with the court by luck, which is the failure mode 23.1 step 3 exists to
+/// catch — and the court still re-derives and does not take this for an
+/// answer.
 pub fn sentence_measure(form: &Form, family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Option<[u64; 4]> {
     let (pay, remainders) = form_deflation(form, family, crystal);
     if form.demand_vertices().next().is_none() {
         return remainders.iter().all(|r| r.is_empty()).then_some(pay);
+    }
+    if !crate::court::verdict::body::undeclared_remainder(&remainders, form).is_empty() {
+        return None;
     }
     let mut mag = [0u64; 4];
     // D2 — `after_chain` HAS A CARRIER AND BOTH BRANCHES READ IT. This branch
