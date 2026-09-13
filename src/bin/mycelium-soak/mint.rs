@@ -24,7 +24,7 @@
 
 use mycelium::client::sdk::Epigenome;
 use mycelium::transducer::element::measure_lanes;
-use mycelium::transducer::family::{extract_rule_with, form_descent, sentence_measure};
+use mycelium::transducer::family::{extract_rule_with, form_deflation, sentence_measure};
 use mycelium::transducer::sentence::{as_element_form, Vertex};
 
 /// The stroke Y1 set for itself, so the same slice reads the same way
@@ -64,7 +64,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             open_seen += 1;
             // COUNT TWO: `Form.remainder` on this population. It is what
             // extraction could not ACCOUNT FOR when it built the form, and
-            // it is a different carrier from `form_descent`'s per-pair
+            // it is a different carrier from `form_deflation`'s per-pair
             // remainders, which are what the form fails to REPRODUCE when
             // spoken. If it is empty here as well as on the five, it is
             // empty for everyone and was never the carrier for this fact.
@@ -138,11 +138,11 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             );
         }
 
-        // WHAT `form_descent` RETURNS — the pay it accumulated and the
+        // WHAT `form_deflation` RETURNS — the pay it accumulated and the
         // remainder it left on every pair, which is what `sentence_measure`
         // tests when the form carries no demand vertex.
-        let (pay, remainders) = form_descent(&rule.form, &task.train, &empty);
-        println!("  mint {name} form_descent: pay {pay:?} remainders {}", remainders.len());
+        let (pay, remainders) = form_deflation(&rule.form, &task.train, &empty);
+        println!("  mint {name} form_deflation: pay {pay:?} remainders {}", remainders.len());
         for (i, r) in remainders.iter().enumerate() {
             println!(
                 "  mint {name} remainder {i}: cells {} empty {} mu {:?}",
@@ -327,7 +327,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 Vertex::Demand { .. } => (w, d + 1),
                 _ => (w, d),
             });
-            let (pf_pay, pf_rem) = form_descent(&pf, &one, &empty);
+            let (pf_pay, pf_rem) = form_deflation(&pf, &one, &empty);
             println!(
                 "  mint {name} pairform {i}: words {pf_words} demands {pf_demands} \
                  | speaking it leaves {} cells, mu {:?} | pay {pf_pay:?}",
@@ -343,7 +343,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         // descent, branches on demand vertices, and where a demandless
         // form leaves a remainder on any pair it calls `withhold_form` —
         // which is `as_element_form(f, mag)` and `stand_dialect_withheld`,
-        // with `mag` being `form_descent`'s pay and `sentence_measure`
+        // with `mag` being `form_deflation`'s pay and `sentence_measure`
         // never called at all. Those two calls are made here, in that
         // order, with those arguments, on a scratch mind: the same
         // sequence, read rather than asserted.

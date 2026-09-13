@@ -8,26 +8,32 @@
 
 use super::*;
 
-/// Descent a form measures by speaking every train pair through the
-/// crystal that resolves its cited forms. Per pair: deflation is
-/// `measure_lanes(delta(x, y)) − measure_lanes(delta(spoken, y))`, accepted
-/// only if the spoken residual descends on that pair, else the pair
-/// contributes zero. Summed over pairs. The per-pair `residual_of(spoken, y)`
-/// chains sit beside the sum. A form is spoken only when every remainder
-/// is empty; `REFUSE_NOT_CLOSED` means a remainder was left.
-pub fn form_descent(
+/// THE DEFLATION a form measures by speaking every train pair through the
+/// crystal that resolves its cited forms. Per pair it is
+/// `deflation_of(lane_moves(after, before))` on the lane vectors of the two
+/// residuals, taken where the form CLOSES the pair and zero otherwise.
+/// Summed over pairs. The per-pair `residual_of(spoken, y)` chains sit
+/// beside the sum. `REFUSE_NOT_CLOSED` means a remainder was left.
+///
+/// IT WAS `form_descent`, AND 12.6 FORBIDS THE MOTION THAT NAME ASSERTS.
+/// A lane does not descend: `lane_moves` reads what each lane did and
+/// `deflation_of` prices it, which is the word the arithmetic inside this
+/// function already used. The file's header was corrected at I13 and the
+/// identifiers were not; this is the correction, owed since 2026-09-12.
+/// §2.2 — the name is the claim.
+pub fn form_deflation(
     form: &Form,
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
 ) -> ([u64; 4], Vec<crate::transducer::germinate::ResidualGerm>) {
-    form_descent_at(form, family, crystal, &crate::transducer::alphabet::Word::identity())
+    form_deflation_at(form, family, crystal, &crate::transducer::alphabet::Word::identity())
 }
 
-/// The same descent spoken AT A PLACEMENT (26 as ruled 2026-09-10): what
+/// The same deflation spoken AT A PLACEMENT (26 as ruled 2026-09-10): what
 /// a cited form closes where the citer put it, which is the share it
 /// takes of the citer's mint. `Word::identity()` is the form speaking in
-/// its own frame, which is what `form_descent` asks for.
-pub fn form_descent_at(
+/// its own frame, which is what `form_deflation` asks for.
+pub fn form_deflation_at(
     form: &Form,
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
@@ -73,9 +79,9 @@ pub fn form_descent_at(
 
 /// Mint the family's sentence: μ⃗ = [S, G, T, H] of the closed cochain.
 /// The rule as the word a voice speaks and submits: the form's v3 tape
-/// carrying the descent it measures over the bundle through the crystal
+/// carrying the deflation it measures over the bundle through the crystal
 /// that resolves its citations. Lane 𝒯 is the scene-state span the bundle
-/// stood over. A form with no measured descent is not a word.
+/// stood over. A form with no measured deflation is not a word.
 pub fn mint_sentence(
     rule: &crate::transducer::sentence::SentenceRule,
     family: &[(Grid, Grid)],
@@ -86,7 +92,7 @@ pub fn mint_sentence(
 }
 
 /// What a sentence measures over its bundle (50.5). A sentence with no
-/// demand vertex measures its descent and is spoken only when every pair
+/// demand vertex measures its deflation and is spoken only when every pair
 /// closes; a sentence with demand vertices is spoken whole: its closed
 /// sub-complex measures the deflation its words performed on every pair
 /// — before less after per lane, whether or not the pair closed — and its
@@ -94,7 +100,7 @@ pub fn mint_sentence(
 /// nothing yet still carries what it asks for. `None` when a form with no
 /// demands leaves a remainder: that is a withheld form, never a word.
 pub fn sentence_measure(form: &Form, family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Option<[u64; 4]> {
-    let (pay, remainders) = form_descent(form, family, crystal);
+    let (pay, remainders) = form_deflation(form, family, crystal);
     if form.demand_vertices().next().is_none() {
         return remainders.iter().all(|r| r.is_empty()).then_some(pay);
     }
@@ -158,8 +164,10 @@ pub fn bundle_pressure(
 }
 
 /// THE PAIRS ON WHICH A LANE ROSE, by index — the reading a trial refuses
-/// on. Summing first would hide it: a bundle can descend in total while one
+/// on. Summing first would hide it: a bundle's total can deflate while one
 /// pair pays for another, and 12.6 refuses that trade whatever the sum says.
+/// The name is already the lane's own move (`lanes_risen`, `lane_moves`) and
+/// keeps it; it moves here because the file does.
 ///
 /// `None` when the two readings do not describe the same bundle (different
 /// lengths). That is not "every pair rose"; it is not a comparison at all,

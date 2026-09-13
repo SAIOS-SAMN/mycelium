@@ -7,8 +7,8 @@
 pub mod correspondence;
 pub mod cover;
 pub mod cursor;
+pub mod deflation;
 pub mod derivation;
-pub mod descent;
 pub mod extract;
 pub mod memo;
 pub mod orbit;
@@ -20,8 +20,8 @@ pub mod speak;
 pub mod trace;
 
 pub(crate) use correspondence::*;
+pub use deflation::*;
 pub use derivation::*;
-pub use descent::*;
 
 /// ONE TRAIN PAIR — the scene a rule is shown and the scene it must speak
 /// (38). The grids are the corpus's own carrier; the pair is what a rule is

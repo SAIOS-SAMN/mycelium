@@ -253,12 +253,13 @@ pub fn replay_form_at(
             .vertices
             .iter()
             .any(|v| matches!(v, Vertex::Glued { .. }));
-        let descent_crystal: &dyn crate::transducer::family::Crystal = if glued {
+        let deflation_crystal: &dyn crate::transducer::family::Crystal = if glued {
             crystal
         } else {
             &crate::transducer::family::NoCrystal
         };
-        let (pay, rems) = crate::transducer::family::form_descent(&walked, fam, descent_crystal);
+        let (pay, rems) =
+            crate::transducer::family::form_deflation(&walked, fam, deflation_crystal);
         // S9.4 — CLOSURE IS THE CERTIFICATE. A remainder on any pair means
         // the form does not close the family it claims, and that is the
         // refusal. The μ⃗ it measured is NOT: a form that closes every pair

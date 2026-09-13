@@ -315,12 +315,12 @@ assert_eq!(
     "spoken cells equal the target"
 );
 assert_ne!(
-    form_descent(&rule.form, &family, &crystal).0,
+    form_deflation(&rule.form, &family, &crystal).0,
     [0; 4],
-    "the glued form measures its descent through the crystal that holds its citation"
+    "the glued form measures its deflation through the crystal that holds its citation"
 );
 assert_eq!(
-    form_descent(&rule.form, &family, &NoCrystal).0,
+    form_deflation(&rule.form, &family, &NoCrystal).0,
     [0; 4],
     "without the cited form nothing is measured, so nothing is minted"
 );
@@ -335,7 +335,7 @@ let family = vec![
     (grid(&["10"]), grid(&["23"])),
 ];
 let rule = extract_rule(&[(grid(&["1"]), grid(&["2"]))], &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("recolour");
-let (_pay, rems) = form_descent(&rule.form, &family, &NoCrystal);
+let (_pay, rems) = form_deflation(&rule.form, &family, &NoCrystal);
 let listings: Vec<&Vec<(i64, i64, u8, u8)>> =
     rems.iter().filter(|r| !r.is_empty()).collect();
 assert!(

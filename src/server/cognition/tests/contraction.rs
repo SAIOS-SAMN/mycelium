@@ -83,7 +83,7 @@ fn the_court_verifies_a_contraction_before_it_replays_the_sentence() {
     let mut probe = f.clone();
     assert_eq!(probe.contract(*kind, at, &[]), Some(Contracted::Moved));
     let remainder: Vec<(i64, i64, u8, u8)> =
-        crate::transducer::family::form_descent(&probe, &f_v, &NoCrystal).1.into_iter().flatten().collect();
+        crate::transducer::family::form_deflation(&probe, &f_v, &NoCrystal).1.into_iter().flatten().collect();
     assert!(!remainder.is_empty(), "the refused word's body is what the contraction leaves");
     assert_eq!(f.contract(*kind, at, &remainder), Some(Contracted::Moved));
     let contracted = mint_sentence(&rule_of_form(f.clone()), &f_v, &NoCrystal).expect("the contraction is a sentence");

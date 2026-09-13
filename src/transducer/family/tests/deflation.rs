@@ -1,20 +1,19 @@
-// 12.6, 26 — DESCENT over a family: the deflation each pair measures, and
-// the pressure a bundle is under.
+// 12.6, 26 — DEFLATION over a family: what each pair measures, and the
+// pressure a bundle is under.
 
 use super::common::*;
 use crate::transducer::family::*;
 
-/// Deflation is per-pair measure_lanes(delta(x,y)) − measure_lanes(delta(spoken,y)),
-/// accepted only if that pair descends. A raise or a miss on one pair
-/// does not zero the others; a form is spoken only when every remainder
-/// is empty.
+/// Deflation is `deflation_of(lane_moves(after, before))` per pair, taken
+/// where the form closes the pair. A raise or a miss on one pair does not
+/// zero the others; a form is spoken only when every remainder is empty.
 #[test]
-fn form_descent_measures_deflation_per_pair() {
+fn form_deflation_measures_deflation_per_pair() {
 let x = grid(&["1"]);
 let y = grid(&["2"]);
 let family_exact = vec![(x.clone(), y.clone())];
 let rule = extract_rule(&family_exact, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("recolour");
-let (pay, rems) = form_descent(&rule.form, &family_exact, &NoCrystal);
+let (pay, rems) = form_deflation(&rule.form, &family_exact, &NoCrystal);
 assert!(
     rems.iter().all(|r| r.is_empty()),
     "an exact speak leaves empty remainders, got {rems:?}"
@@ -27,7 +26,7 @@ assert_eq!(pay, before, "deflation of an empty remainder is the closed delta");
 let x2 = grid(&["10"]);
 let y2 = grid(&["23"]);
 let family = vec![(x, y), (x2, y2)];
-let (pay2, rems2) = form_descent(&rule.form, &family, &NoCrystal);
+let (pay2, rems2) = form_deflation(&rule.form, &family, &NoCrystal);
 assert!(rems2[0].is_empty(), "pair one closes");
 assert!(
     !rems2[1].is_empty(),

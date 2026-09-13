@@ -548,7 +548,7 @@ impl Contemplation {
         }
         let mag = match b.bundle.as_deref() {
             Some(bundle) => {
-                let (pay, rems) = crate::transducer::family::form_descent(f, bundle, crystal);
+                let (pay, rems) = crate::transducer::family::form_deflation(f, bundle, crystal);
                 if rems.iter().any(|r| !r.is_empty()) {
                     return None;
                 }

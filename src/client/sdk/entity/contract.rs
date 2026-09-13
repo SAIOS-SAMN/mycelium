@@ -34,7 +34,7 @@ impl Entity {
         train: &crate::transducer::family::Family,
         task: &[u8],
     ) -> Contracted {
-        use crate::transducer::family::{form_descent, mint_sentence};
+        use crate::transducer::family::{form_deflation, mint_sentence};
         use crate::transducer::sentence::{form_vertex_key, rule_of_form};
         let addr = spoken.address();
         eprintln!(
@@ -68,7 +68,7 @@ impl Entity {
             return self.quiescent(spoken, train);
         }
         let mut remainder: Vec<(i64, i64, u8, u8)> =
-            form_descent(&probe, train, &self.epigenome).1.into_iter().flatten().collect();
+            form_deflation(&probe, train, &self.epigenome).1.into_iter().flatten().collect();
         remainder.sort_unstable();
         remainder.dedup();
         if form.contract(kind, &at, &remainder) != Some(Contracted::Moved) {
@@ -83,7 +83,7 @@ impl Entity {
             kind.label(),
             at.label()
         );
-        let rems = form_descent(&form, train, &self.epigenome).1;
+        let rems = form_deflation(&form, train, &self.epigenome).1;
         self.hold_form(&form, train, &rems);
         self.contractions.insert(&after, certificate.clone());
         if !form.acts() {

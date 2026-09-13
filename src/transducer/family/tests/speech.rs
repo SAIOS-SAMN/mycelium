@@ -136,7 +136,7 @@ let family: Vec<(Grid, Grid)> = family
     .map(|(a, b)| (a, b.into_iter().map(|row| row.into_iter().map(|h| if h == 1 { 2 } else { h }).collect()).collect()))
     .collect();
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the shift family extracts");
-let (_, rems) = form_descent(&rule.form, &family, &NoCrystal);
+let (_, rems) = form_deflation(&rule.form, &family, &NoCrystal);
 assert!(rems.iter().all(|r| r.is_empty()), "the family closes: {:?}", rems);
 let spoken = speak_rule(&rule, &grid(&["0000", "0000", "1100"]), &NoCrystal).expect("spoken");
 assert!(spoken.remainder.is_empty(), "the test is reached: {:?}", spoken.remainder);
@@ -148,7 +148,7 @@ let family = vec![
 match extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)) {
     None => {}
     Some(rule) => {
-        let (_, rems) = form_descent(&rule.form, &family, &NoCrystal);
+        let (_, rems) = form_deflation(&rule.form, &family, &NoCrystal);
         assert!(
             rems.iter().any(|r| !r.is_empty()),
             "a reflection the form engine does not close is withheld remainder"
@@ -161,7 +161,7 @@ let family = vec![
 ];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the dilation family extracts");
 assert_eq!(rule.form.ratio, ((2, 1), (2, 1)));
-let (_, rems) = form_descent(&rule.form, &family, &NoCrystal);
+let (_, rems) = form_deflation(&rule.form, &family, &NoCrystal);
 assert!(rems.iter().all(|r| r.is_empty()), "the dilation family closes: {:?}", rems);
 let spoken = speak_rule(&rule, &family[0].0, &NoCrystal).expect("dilation spoken");
 assert_eq!(spoken.grid(), family[0].1);
@@ -179,7 +179,7 @@ let family = vec![
 match extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)) {
     None => {}
     Some(rule) => {
-        let (_, rems) = form_descent(&rule.form, &family, &NoCrystal);
+        let (_, rems) = form_deflation(&rule.form, &family, &NoCrystal);
         assert!(
             rems.iter().any(|r| !r.is_empty()),
             "a family the form does not close leaves remainder"
@@ -271,7 +271,7 @@ assert!(
 let minted = mint_sentence(&rule, &family, &NoCrystal).expect("the family mints");
 let mu = minted.magnitude();
 assert!(mu[1] >= 1, "recolour is gauge content, got {mu:?}");
-assert!(mu.iter().any(|&x| x > 0), "T is form_descent, never a floor on the lane");
+assert!(mu.iter().any(|&x| x > 0), "T is form_deflation, never a floor on the lane");
 assert_eq!(
     minted.description().get(1),
     Some(&crate::transducer::sentence::FORM_TAPE_VERSION),
@@ -288,14 +288,14 @@ assert_eq!(
     "the court replays the minted form from its tape"
 );
 // The hypha reads the form back from the tape and measures the same
-// descent the voice measured.
+// deflation the voice measured.
 let back = crate::transducer::sentence::from_element_form(&minted).expect("v2 form");
 assert_eq!(back.vertices, rule.form.vertices, "vertices survive the tape");
 assert_eq!(back.faces, rule.form.faces, "faces survive the tape");
 assert_eq!(back.ratio, rule.form.ratio);
 assert_eq!(
-    form_descent(&back, &family, &NoCrystal),
-    form_descent(&rule.form, &family, &NoCrystal),
-    "the descent re-measures from the tape"
+    form_deflation(&back, &family, &NoCrystal),
+    form_deflation(&rule.form, &family, &NoCrystal),
+    "the deflation re-measures from the tape"
 );
 }

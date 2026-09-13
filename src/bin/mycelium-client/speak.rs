@@ -52,7 +52,7 @@ pub(crate) fn speak_form(
             "no measured descent".to_string()
         }
     };
-    let (mag, remainders) = mycelium::transducer::family::form_descent(form, train, &entity.epigenome);
+    let (mag, remainders) = mycelium::transducer::family::form_deflation(form, train, &entity.epigenome);
     // 50.5 (F step 5): a sentence with demand vertices is uttered WHOLE —
     // its closed sub-complex and its demands together — never withheld
     // and never expressed as a residual.
@@ -254,7 +254,7 @@ pub(crate) fn withhold_unextracted(
             continue;
         };
         let pair = vec![(a.clone(), b.clone())];
-        let (mag, rem) = mycelium::transducer::family::form_descent(&f, &pair, &entity.epigenome);
+        let (mag, rem) = mycelium::transducer::family::form_deflation(&f, &pair, &entity.epigenome);
         entity.withhold_form(&f, &pair, &rem, mag);
     }
     eprintln!("[{tag}] form withheld: family {fam} extract refused");

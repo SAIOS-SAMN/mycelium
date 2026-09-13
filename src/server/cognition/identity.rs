@@ -113,7 +113,7 @@ impl Kernel {
         placement: &crate::transducer::alphabet::Word,
     ) -> [u64; 4] {
         if let Some(f) = crate::transducer::sentence::from_element_form(form) {
-            return crate::transducer::family::form_descent_at(&f, family, self, placement).0;
+            return crate::transducer::family::form_deflation_at(&f, family, self, placement).0;
         }
         [0; 4]
     }
