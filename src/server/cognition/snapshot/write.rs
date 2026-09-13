@@ -7,6 +7,8 @@
 
 use crate::cognition::*;
 
+use crate::snapshot::counted;
+
 impl Kernel {
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = Vec::new();
@@ -29,12 +31,11 @@ impl Kernel {
         }
         out.extend_from_slice(&self.treasury.snapshot());
         // PROVISIONAL section (Step 5).
-        out.extend_from_slice(&(self.provisional.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.provisional, |addr, spoken| {
-            put_addr(&mut out, addr);
+        counted(&mut out, &self.provisional, |body, addr, spoken| {
+            put_addr(body, addr);
             let eb = spoken.to_bytes();
-            out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
-            out.extend_from_slice(&eb);
+            body.extend_from_slice(&(eb.len() as u32).to_le_bytes());
+            body.extend_from_slice(&eb);
         });
         // THE CHAIN section: the court head and every k-step receipt, so
         // the hypha's clock continues across boots instead of restarting.
@@ -73,99 +74,94 @@ impl Kernel {
         let rank = &self.closure.2;
         out.extend_from_slice(b"RNK1");
         out.extend_from_slice(&(rank.basis_len as u64).to_le_bytes());
-        out.extend_from_slice(&(rank.closure_len() as u32).to_le_bytes());
-        crate::snapshot::persist(rank.closure_carrier(), |addr, closed| {
-            put_addr(&mut out, addr);
+        counted(&mut out, rank.closure_carrier(), |body, addr, closed| {
+            put_addr(body, addr);
             let c = closed.map_or(u64::MAX, |i| i as u64);
-            out.extend_from_slice(&c.to_le_bytes());
+            body.extend_from_slice(&c.to_le_bytes());
             // A listing the reading holds no invariant for sits at the
             // root stratum, which the empty axis list is.
             let inv = match rank.invariants.get(addr) {
                 Some(i) => i.0.as_slice(),
                 None => &[],
             };
-            out.extend_from_slice(&(inv.len() as u32).to_le_bytes());
+            body.extend_from_slice(&(inv.len() as u32).to_le_bytes());
             for axis in inv {
-                out.extend_from_slice(&axis.to_le_bytes());
+                body.extend_from_slice(&axis.to_le_bytes());
             }
         });
         // DEFLATION section: each provisional's measured descent, so a
         // restart does not docket Δ⃗ = 0 and feed the court a slash list.
         out.extend_from_slice(b"DEF1");
-        out.extend_from_slice(&(self.deflations.len() as u32).to_le_bytes());
         // DEF1 record: addr ‖ μ⃗[4] ‖ tag u8
         //   tag 0 = K and height absent (never written as 0)
         //   tag 1 = K u64 ‖ tu u64
         // Restore refuses any other tag (a missing K is not clock-zero).
-        crate::snapshot::persist(&self.deflations, |addr, mag| {
-            put_addr(&mut out, addr);
+        counted(&mut out, &self.deflations, |body, addr, mag| {
+            put_addr(body, addr);
             for m in mag {
-                out.extend_from_slice(&m.to_le_bytes());
+                body.extend_from_slice(&m.to_le_bytes());
             }
             match (
                 self.provisional_k.get(addr).copied(),
                 self.provisional_h.get(addr).copied(),
             ) {
                 (Some(k), Some(tu)) => {
-                    out.push(1);
-                    out.extend_from_slice(&k.to_le_bytes());
-                    out.extend_from_slice(&tu.to_le_bytes());
+                    body.push(1);
+                    body.extend_from_slice(&k.to_le_bytes());
+                    body.extend_from_slice(&tu.to_le_bytes());
                 }
-                _ => out.push(0),
+                _ => body.push(0),
             }
         });
         // Coherence field beside DEF1: which angles each thought has been
         // probed through. A restart must not forget the field.
         out.extend_from_slice(b"FLD1");
-        out.extend_from_slice(&(self.field.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.field, |addr, listing| {
-            put_addr(&mut out, addr);
-            out.extend_from_slice(&(listing.entries.len() as u32).to_le_bytes());
+        counted(&mut out, &self.field, |body, addr, listing| {
+            put_addr(body, addr);
+            body.extend_from_slice(&(listing.entries.len() as u32).to_le_bytes());
             for e in &listing.entries {
-                out.extend_from_slice(&(e.chart.0.len() as u32).to_le_bytes());
+                body.extend_from_slice(&(e.chart.0.len() as u32).to_le_bytes());
                 for axis in &e.chart.0 {
-                    out.extend_from_slice(&axis.to_le_bytes());
+                    body.extend_from_slice(&axis.to_le_bytes());
                 }
                 match &e.state {
-                    crate::transducer::stalk::Closure::Flat => out.push(0),
+                    crate::transducer::stalk::Closure::Flat => body.push(0),
                     crate::transducer::stalk::Closure::Twisted(v) => {
-                        out.push(1);
-                        v.to_bytes(&mut out);
+                        body.push(1);
+                        v.to_bytes(body);
                     }
-                    crate::transducer::stalk::Closure::Cavity => out.push(2),
+                    crate::transducer::stalk::Closure::Cavity => body.push(2),
                     crate::transducer::stalk::Closure::Class(r, d) => {
-                        out.push(3);
-                        out.push(*d);
-                        r.to_bytes(&mut out);
+                        body.push(3);
+                        body.push(*d);
+                        r.to_bytes(body);
                     }
                 }
-                out.extend_from_slice(&(e.remainder.len() as u32).to_le_bytes());
+                body.extend_from_slice(&(e.remainder.len() as u32).to_le_bytes());
                 for &(r, c, hb, ha) in &e.remainder {
-                    out.extend_from_slice(&r.to_le_bytes());
-                    out.extend_from_slice(&c.to_le_bytes());
-                    out.push(hb);
-                    out.push(ha);
+                    body.extend_from_slice(&r.to_le_bytes());
+                    body.extend_from_slice(&c.to_le_bytes());
+                    body.push(hb);
+                    body.push(ha);
                 }
                 for s in e.stagnant {
-                    out.extend_from_slice(&s.to_le_bytes());
+                    body.extend_from_slice(&s.to_le_bytes());
                 }
             }
         });
         out.extend_from_slice(b"BOK1");
-        out.extend_from_slice(&(self.pending.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.pending, |_addr, (elem, k)| {
+        counted(&mut out, &self.pending, |body, _addr, (elem, k)| {
             let eb = elem.to_bytes();
-            out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
-            out.extend_from_slice(&eb);
-            out.extend_from_slice(&k.to_le_bytes());
+            body.extend_from_slice(&(eb.len() as u32).to_le_bytes());
+            body.extend_from_slice(&eb);
+            body.extend_from_slice(&k.to_le_bytes());
         });
         out.extend_from_slice(b"CAV1");
-        out.extend_from_slice(&(self.cavity_book.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.cavity_book, |addr, elem| {
-            put_addr(&mut out, addr);
+        counted(&mut out, &self.cavity_book, |body, addr, elem| {
+            put_addr(body, addr);
             let eb = elem.to_bytes();
-            out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
-            out.extend_from_slice(&eb);
+            body.extend_from_slice(&(eb.len() as u32).to_le_bytes());
+            body.extend_from_slice(&eb);
         });
         out.extend_from_slice(b"CRT1");
         out.push(self.crt_imported as u8);
@@ -180,55 +176,52 @@ impl Kernel {
         // writer stopped emitting, which the reader skipped by peeking at
         // whether the next four bytes were COC1's tag. Both are gone (§10).
         out.extend_from_slice(b"COC1");
-        out.extend_from_slice(&(self.complexes.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.complexes, |k, c| {
-            put_addr(&mut out, k);
-            c.to_bytes(&mut out);
+        counted(&mut out, &self.complexes, |body, k, c| {
+            put_addr(body, k);
+            c.to_bytes(body);
         });
         out.extend_from_slice(b"FLC1");
-        out.extend_from_slice(&(self.field_cold.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.field_cold, |addr, listing| {
-            put_addr(&mut out, addr);
-            out.extend_from_slice(&(listing.entries.len() as u32).to_le_bytes());
+        counted(&mut out, &self.field_cold, |body, addr, listing| {
+            put_addr(body, addr);
+            body.extend_from_slice(&(listing.entries.len() as u32).to_le_bytes());
             for e in &listing.entries {
-                out.extend_from_slice(&(e.chart.0.len() as u32).to_le_bytes());
+                body.extend_from_slice(&(e.chart.0.len() as u32).to_le_bytes());
                 for axis in &e.chart.0 {
-                    out.extend_from_slice(&axis.to_le_bytes());
+                    body.extend_from_slice(&axis.to_le_bytes());
                 }
                 match &e.state {
-                    crate::transducer::stalk::Closure::Flat => out.push(0),
+                    crate::transducer::stalk::Closure::Flat => body.push(0),
                     crate::transducer::stalk::Closure::Twisted(v) => {
-                        out.push(1);
-                        v.to_bytes(&mut out);
+                        body.push(1);
+                        v.to_bytes(body);
                     }
-                    crate::transducer::stalk::Closure::Cavity => out.push(2),
+                    crate::transducer::stalk::Closure::Cavity => body.push(2),
                     crate::transducer::stalk::Closure::Class(r, d) => {
-                        out.push(3);
-                        out.push(*d);
-                        r.to_bytes(&mut out);
+                        body.push(3);
+                        body.push(*d);
+                        r.to_bytes(body);
                     }
                 }
-                out.extend_from_slice(&(e.remainder.len() as u32).to_le_bytes());
+                body.extend_from_slice(&(e.remainder.len() as u32).to_le_bytes());
                 for &(r, c, hb, ha) in &e.remainder {
-                    out.extend_from_slice(&r.to_le_bytes());
-                    out.extend_from_slice(&c.to_le_bytes());
-                    out.push(hb);
-                    out.push(ha);
+                    body.extend_from_slice(&r.to_le_bytes());
+                    body.extend_from_slice(&c.to_le_bytes());
+                    body.push(hb);
+                    body.push(ha);
                 }
                 for s in e.stagnant {
-                    out.extend_from_slice(&s.to_le_bytes());
+                    body.extend_from_slice(&s.to_le_bytes());
                 }
             }
         });
         out.extend_from_slice(b"CYC2");
-        out.extend_from_slice(&(self.cocycle_at.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.cocycle_at, |key, row| {
-            put_addr(&mut out, key);
-            out.extend_from_slice(&row.a);
-            out.extend_from_slice(&row.b);
-            out.extend_from_slice(&row.t_universal.to_le_bytes());
-            put_addr(&mut out, &row.class_key);
-            row.gauge.to_bytes(&mut out);
+        counted(&mut out, &self.cocycle_at, |body, key, row| {
+            put_addr(body, key);
+            body.extend_from_slice(&row.a);
+            body.extend_from_slice(&row.b);
+            body.extend_from_slice(&row.t_universal.to_le_bytes());
+            put_addr(body, &row.class_key);
+            row.gauge.to_bytes(body);
         });
         out.extend_from_slice(&(self.dialect_chain.len() as u32).to_le_bytes());
         for (key, v, tu) in &self.dialect_chain {

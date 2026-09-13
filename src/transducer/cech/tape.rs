@@ -2,6 +2,7 @@
 // not parse refused rather than partly restored.
 
 use super::*;
+use crate::snapshot::counted;
 
 impl Complex {
     pub fn byte_len(&self) -> usize {
@@ -17,25 +18,31 @@ impl Complex {
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&(self.sections.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.sections, |k, s| {
-            crate::transducer::address::put_addr(out, k);
-            crate::transducer::address::put_addr(out, &s.addr);
-            s.gamma.to_bytes(out);
-            s.carriage.to_bytes(out);
+        // EVERY COUNT HERE IS A READING OF WHAT WAS WRITTEN. Each of these
+        // wrote `carrier.len()` — a stored counter — and then wrote the
+        // content by walking the carrier, so one number had two independent
+        // sources and nothing held them together (law 12). In the field they
+        // parted: a court's COC1 section announced five complexes and held
+        // four, and its own reader believed the announcement and read the
+        // next section as content. `counted` writes the body first and
+        // measures it as it goes, so the number is that act's own measure.
+        counted(out, &self.sections, |body, k, s: &Section| {
+            crate::transducer::address::put_addr(body, k);
+            crate::transducer::address::put_addr(body, &s.addr);
+            s.gamma.to_bytes(body);
+            s.carriage.to_bytes(body);
         });
         out.extend_from_slice(&(self.degrees.len() as u32).to_le_bytes());
         for layer in &self.degrees {
-            out.extend_from_slice(&(layer.len() as u32).to_le_bytes());
-            crate::snapshot::persist(layer, |_, c| {
-                out.push(c.vertices.len() as u8);
+            counted(out, layer, |body, _, c: &Cell| {
+                body.push(c.vertices.len() as u8);
                 for v in &c.vertices {
-                    crate::transducer::address::put_addr(out, v);
+                    crate::transducer::address::put_addr(body, v);
                 }
-                c.coefficient.to_bytes(out);
-                c.carriage.to_bytes(out);
+                c.coefficient.to_bytes(body);
+                c.carriage.to_bytes(body);
                 for x in &c.volume {
-                    out.extend_from_slice(&x.to_le_bytes());
+                    body.extend_from_slice(&x.to_le_bytes());
                 }
                 // A CLASS IS WRITTEN AS ITS COORDINATES. `class_key` already
                 // writes 12.6's axes out in order — conjugacy invariants,
@@ -43,32 +50,31 @@ impl Complex {
                 // back, so the wire carries the coordinates and no second
                 // codec exists to drift from them (law 12).
                 match &c.fill {
-                    Fill::Open | Fill::Already => out.push(0),
+                    Fill::Open | Fill::Already => body.push(0),
                     Fill::Filled(g, carriage) => {
-                        out.push(1);
-                        g.to_bytes(out);
-                        carriage.to_bytes(out);
+                        body.push(1);
+                        g.to_bytes(body);
+                        carriage.to_bytes(body);
                     }
                     Fill::Class(k, r) => {
-                        out.push(2);
-                        crate::transducer::address::put_addr(out, k.class_key());
-                        r.to_bytes(out);
+                        body.push(2);
+                        crate::transducer::address::put_addr(body, k.class_key());
+                        r.to_bytes(body);
                     }
                     Fill::Congruent(g, ell) => {
-                        out.push(3);
-                        g.to_bytes(out);
-                        out.extend_from_slice(&ell.to_le_bytes());
+                        body.push(3);
+                        g.to_bytes(body);
+                        body.extend_from_slice(&ell.to_le_bytes());
                     }
                     Fill::Unspellable(r) => {
-                        out.push(4);
-                        r.to_bytes(out);
+                        body.push(4);
+                        r.to_bytes(body);
                     }
                 }
             });
         }
-        out.extend_from_slice(&(self.remainder.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.remainder, |k, _| {
-            crate::transducer::address::put_addr(out, k);
+        counted(out, &self.remainder, |body, k, _: &()| {
+            crate::transducer::address::put_addr(body, k);
         });
     }
 
