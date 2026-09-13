@@ -311,6 +311,45 @@ assert!(
 );
 }
 
+/// THE OBSTRUCTIONS ON A FIBRE ARE A COCHAIN (chapter 13), so a dialect that
+/// stands against two held words is not the dialect that stands against one
+/// of them.
+///
+/// `comprehend` measured a transition against every word on the fibre and
+/// kept the one whose held word had the lowest ADDRESS — a comparison on a
+/// coordinate that carries no order (1.5) — and dropped the rest. The
+/// discard was invisible because `Comprehension::Dialect` held one element,
+/// so the fuller reading and the truncated one compared EQUAL. They do not
+/// now, which is what makes the loss observable at all.
+#[test]
+fn a_dialect_cochain_is_not_equal_to_one_of_its_obstructions() {
+use crate::transducer::element::from_canonical;
+use crate::transducer::germinate::germinate;
+let a = [(0, 0, 1u8), (0, 1, 2)];
+let b = [(0, 0, 2u8), (0, 1, 1)];
+let c = [(0, 0, 3u8), (0, 1, 4)];
+let one = from_canonical(&germinate(&a, &b).expect("a germ"));
+let two = from_canonical(&germinate(&a, &c).expect("a second germ"));
+assert!(!one.same_vertex(&two), "the fixture's two obstructions are two vertices");
+let mut both: crate::network::nerve::Keyed<crate::transducer::element::Element> =
+    crate::network::nerve::Keyed::new();
+both.insert(one.address(), one.clone());
+both.insert(two.address(), two.clone());
+let mut only_one: crate::network::nerve::Keyed<crate::transducer::element::Element> =
+    crate::network::nerve::Keyed::new();
+only_one.insert(one.address(), one);
+assert_ne!(
+    Comprehension::Dialect(both.clone()),
+    Comprehension::Dialect(only_one),
+    "dropping an obstruction changes the comprehension, and the old carrier could not say so"
+);
+assert_eq!(
+    Comprehension::Dialect(both.clone()),
+    Comprehension::Dialect(both),
+    "and the same cochain is the same comprehension"
+);
+}
+
 /// learn_at stamps the voice's K and TUniversal, not an idle (1, 1).
 #[test]
 fn learn_at_stamps_voice_k_and_tuniversal() {

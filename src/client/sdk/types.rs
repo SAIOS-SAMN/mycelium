@@ -28,9 +28,19 @@ pub enum Comprehension {
     /// A CONNECTION heard by holding it: the transition to the held word on
     /// its fibre vanished — the same word, glued.
     Held,
-    /// A connection heard whose transition to the fibre's representative
-    /// did not vanish: the obstruction element is the dialect, carried.
-    Dialect(Box<Element>),
+    /// A connection heard whose transitions to the words on its fibre did not
+    /// vanish: THE OBSTRUCTIONS, keyed by the held word each was measured
+    /// against.
+    ///
+    /// This was one `Box<Element>`. `comprehend` measured a transition against
+    /// every word on the fibre and kept the one whose held word had the
+    /// LOWEST ADDRESS, discarding the rest — so a mind that could say exactly
+    /// how it differed from four held words said how it differed from one of
+    /// them, chosen by a byte comparison on an address that carries no
+    /// ordering (1.5: an address is an identity, not a rank). Chapter 13 says
+    /// the obstructions on a fibre are a COCHAIN: they are all of them, and
+    /// which words they stand against is half of what they say.
+    Dialect(crate::network::nerve::Keyed<Element>),
     /// A connection on a fibre this genome holds no representative on:
     /// admitted as new geometry.
     Admitted,
@@ -49,7 +59,16 @@ impl PartialEq for Comprehension {
                 Comprehension::Novel { demand: b, understood: ub },
             ) => a.same_vertex(b) && ua == ub,
             (Comprehension::Held, Comprehension::Held) | (Comprehension::Admitted, Comprehension::Admitted) => true,
-            (Comprehension::Dialect(a), Comprehension::Dialect(b)) => a.same_vertex(b),
+            // Two cochains are one cochain when they stand against the same
+            // words and name the same vertex at each — never when two counts
+            // match (rule 2).
+            (Comprehension::Dialect(a), Comprehension::Dialect(b)) => {
+                a.len() == b.len()
+                    && a.scoped().all(|(k, ga)| match b.get(&k) {
+                        Some(gb) => ga.same_vertex(gb),
+                        None => false,
+                    })
+            }
             (Comprehension::Withheld { missing: a }, Comprehension::Withheld { missing: b }) => a == b,
             _ => false,
         }

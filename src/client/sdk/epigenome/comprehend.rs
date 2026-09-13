@@ -143,7 +143,19 @@ impl Epigenome {
                     }
                 }
             }
-            let mut dialect: Option<(crate::transducer::address::Address, Element)> = None;
+            // THE OBSTRUCTIONS ARE A COCHAIN (chapter 13), keyed by the held
+            // word each stands against.
+            //
+            // This kept ONE — `held.address() < *addr`, the lowest address —
+            // and dropped every other transition it had already measured. An
+            // address is an identity and not a rank (1.5), so that comparison
+            // ordered the fibre by a coordinate that carries no order, and a
+            // mind that could say exactly how it differed from four held
+            // words said how it differed from whichever one sorted first.
+            // Which word an obstruction stands against is half of what the
+            // obstruction says, and that half was thrown away with the rest.
+            let mut dialect: crate::network::nerve::Keyed<Element> =
+                crate::network::nerve::Keyed::new();
             for (a, _) in fibre {
                 let Some(held) = self.working_word(&a).cloned() else {
                     continue;
@@ -154,29 +166,27 @@ impl Epigenome {
                 match crate::transducer::cech::transition(&held, utterance) {
                     None => {}
                     Some(g) => match (g.axes().as_slice(), g.sub()) {
+                        // A transition that vanishes is the word itself,
+                        // held, and no cochain stands over it.
                         ([], []) => return Comprehension::Held,
-                        _ => match &dialect {
-                            None => dialect = Some((held.address(), g)),
-                            Some((addr, _)) if held.address() < *addr => {
-                                dialect = Some((held.address(), g));
-                            }
-                            _ => {}
-                        },
+                        _ => {
+                            dialect.insert(held.address(), g);
+                        }
                     },
                 }
             }
-            return match (dialect, demand) {
-                // A transition to a held word that does not vanish is the
-                // class, and it is what the mind carries (M6 step 3).
-                (Some((_, g)), _) => Comprehension::Dialect(Box::new(g)),
+            return match (dialect.is_empty(), demand) {
+                // The transitions to the fibre's words that do not vanish are
+                // the class, and the mind carries all of them (M6 step 3).
+                (false, _) => Comprehension::Dialect(dialect),
                 // No closing transition, and A12 measured exactly what of
                 // the word this mind's fibre does not span: the demand. It
                 // said `Admitted` here — "new geometry" — for a word it
                 // could name the missing part of.
-                (None, Some(novel)) => novel,
+                (true, Some(novel)) => novel,
                 // A fibre this mind holds no word on at all: there is
                 // nothing to factor through and nothing to be short of.
-                (None, None) => Comprehension::Admitted,
+                (true, None) => Comprehension::Admitted,
             };
         }
         // Located through the atlas and the versor, never searched. A taught
