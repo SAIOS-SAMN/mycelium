@@ -38,6 +38,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
     let empty = Epigenome::new();
     let mut closed_seen = 0u64;
     let (mut open_seen, mut open_demanded, mut open_minted, mut open_stood) = (0u64, 0u64, 0u64, 0u64);
+    let (mut open_rem_empty, mut open_rem_cells) = (0u64, 0u64);
     for name in names {
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else {
             continue;
@@ -61,6 +62,17 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             let has_demands = rule.form.demand_vertices().next().is_some();
             let minted = mycelium::transducer::family::mint_sentence(&rule, &task.train, &empty);
             open_seen += 1;
+            // COUNT TWO: `Form.remainder` on this population. It is what
+            // extraction could not ACCOUNT FOR when it built the form, and
+            // it is a different carrier from `form_descent`'s per-pair
+            // remainders, which are what the form fails to REPRODUCE when
+            // spoken. If it is empty here as well as on the five, it is
+            // empty for everyone and was never the carrier for this fact.
+            if rule.form.remainder.is_empty() {
+                open_rem_empty += 1;
+            } else {
+                open_rem_cells += rule.form.remainder.placed().len() as u64;
+            }
             if has_demands {
                 open_demanded += 1;
             }
@@ -90,11 +102,13 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         }
         println!(
             "  mint {name} handed: pairs {} | vertices words {words} glued {glued} demands {demands} \
-             | faces {} loops {} | closed {} | ratio {:?}",
+             | faces {} loops {} | closed {} | Form.remainder empty {} cells {} | ratio {:?}",
             task.train.len(),
             rule.form.faces.len(),
             rule.form.loops.len(),
             u8::from(rule.form.is_closed()),
+            u8::from(rule.form.remainder.is_empty()),
+            rule.form.remainder.placed().len(),
             rule.ratio,
         );
         for (i, (x, y)) in task.train.iter().enumerate() {
@@ -164,6 +178,139 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             },
         }
 
+        // COUNT ONE OF THREE: THE CLASS AND GAUGE OF EVERY WORD VERTEX in
+        // each pair form, and whether they agree. `Vertex::Word.class` is a
+        // single `Invariant` — the body's own moduli — and 21 step 1 calls
+        // it a section coordinate carried on the vertex. If the several
+        // words of one transport class disagree on it, a single-valued
+        // coordinate is being asked to carry a section.
+        for (i, (x, y)) in task.train.iter().enumerate() {
+            let mut pb = physics.stroke_n(MINT_STROKE);
+            let Some(pf) = mycelium::transducer::family::pair_form(&empty, &mut pb, x, y, None)
+            else {
+                continue;
+            };
+            let mut classes: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
+            let mut gauges: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
+            let mut rotors: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
+            let mut carriages = 0u64;
+            for v in &pf.vertices {
+                if let Vertex::Word { class, gauge, derivation, .. } = v {
+                    classes.insert(class.key(), ());
+                    let mut gk = Vec::new();
+                    for (a, b) in gauge {
+                        gk.push(*a);
+                        gk.push(*b);
+                    }
+                    gauges.insert(&gk, ());
+                    if let Some(ck) = derivation.rotor().class_key() {
+                        rotors.insert(ck.as_bytes(), ());
+                    }
+                    carriages += 1;
+                }
+            }
+            println!(
+                "  mint {name} pairform {i} coords: words {carriages} | distinct class {} gauge {} rotor_class {}",
+                classes.len(),
+                gauges.len(),
+                rotors.len(),
+            );
+            let _ = y;
+        }
+
+        // COUNT TWO: WHAT `speak_rule` MATCHES THE RULE'S VERTEX AGAINST.
+        // `apply_form` perceives the input, admits every body into a
+        // scratch atlas by its moduli, and for each Word vertex takes
+        // `atlas.fiber(class)` — so one vertex CAN speak several bodies
+        // (21's design). This counts the bodies present and the bodies the
+        // fiber reaches, and reads `unspoken` for a vertex whose fiber was
+        // empty.
+        for (i, (x, y)) in task.train.iter().enumerate() {
+            let bodies = mycelium::transducer::family::perceive(x);
+            let mut atlas = mycelium::transducer::stalk::Stalks::default();
+            for (bi, b) in bodies.iter().enumerate() {
+                atlas.admit(&b.moduli, (bi as u64).to_le_bytes());
+            }
+            let hits: Vec<usize> = rule
+                .form
+                .vertices
+                .iter()
+                .filter_map(|v| match v {
+                    Vertex::Word { class, .. } => Some(atlas.fiber(class).len()),
+                    _ => None,
+                })
+                .collect();
+            let spoken = mycelium::transducer::family::speak_rule(&rule, x, &empty);
+            println!(
+                "  mint {name} speak {i}: bodies perceived {} | fiber hits per word vertex {hits:?} \
+                 | unspoken {:?} | cells emitted {} | residual vs observed {}",
+                bodies.len(),
+                spoken.as_ref().map(|s| s.unspoken.len()),
+                spoken.as_ref().map_or(0, |s| s.cells.len()),
+                spoken.as_ref().map_or(0, |s| {
+                    let g = s.grid();
+                    let mut n = 0usize;
+                    for (r, row) in y.iter().enumerate() {
+                        for (c, &h) in row.iter().enumerate() {
+                            // A cell the speech does not reach is the
+                            // ground, and hue 0 IS absence in this
+                            // encoding — `residual_of`'s own reading, not
+                            // a default put here for a missing value.
+                            let got = match g.get(r).and_then(|gr| gr.get(c)) {
+                                Some(h) => *h,
+                                None => 0,
+                            };
+                            if got != h {
+                                n += 1;
+                            }
+                        }
+                    }
+                    n
+                }),
+            );
+        }
+
+        // COUNT THREE: DOES `carriages` HOLD AN ENTRY FOR THE CLASS, or did
+        // `place_conflict` empty it? `reindex` accumulates one carriage per
+        // transport key, marks a conflict when a second differs, and writes
+        // only the unconflicted keys — its comment says the class "stays two
+        // sections" and nothing writes a section.
+        println!(
+            "  mint {name} carriages: {} entries for {words} word vertices",
+            rule.form.carriages.len()
+        );
+
+        // PER PAIR, WHAT THE PAIR FORM TYPED AND WHAT SPEAKING IT LEAVES.
+        // `finish` already groups every pair form's demand vertices by
+        // (kind, chart) and pushes one rule vertex per group, so a rule
+        // with no demands is a rule whose PAIR FORMS emitted none. This
+        // reads both sides of that: the demands the pair form carries, and
+        // the cells speaking that same pair form fails to reproduce.
+        for (i, (x, y)) in task.train.iter().enumerate() {
+            let mut pb = physics.stroke_n(MINT_STROKE);
+            let one = vec![(x.clone(), y.clone())];
+            let Some(pf) = mycelium::transducer::family::pair_form(&empty, &mut pb, x, y, None)
+            else {
+                println!("  mint {name} pairform {i}: none");
+                continue;
+            };
+            let (pf_words, pf_demands) = pf.vertices.iter().fold((0u64, 0u64), |(w, d), v| match v {
+                Vertex::Word { .. } => (w + 1, d),
+                Vertex::Demand { .. } => (w, d + 1),
+                _ => (w, d),
+            });
+            let (pf_pay, pf_rem) = form_descent(&pf, &one, &empty);
+            println!(
+                "  mint {name} pairform {i}: words {pf_words} demands {pf_demands} \
+                 | speaking it leaves {} cells, mu {:?} | pay {pf_pay:?}",
+                pf_rem.iter().map(Vec::len).sum::<usize>(),
+                // One pair in, so one remainder out: the slice pattern
+                // reads the pair's own entry rather than a member by
+                // position (rule 15).
+                pf_rem.split_first().map(|(r, _)| measure_lanes(r)),
+            );
+        }
+
         // WHAT PRODUCTION DOES WITH THE SAME FORM. `speak_form` takes the
         // descent, branches on demand vertices, and where a demandless
         // form leaves a remainder on any pair it calls `withhold_form` —
@@ -208,5 +355,9 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
     println!(
         "  mint rule_open tasks {open_seen} of which demanded {open_demanded} minted {open_minted} \
          stood_withheld {open_stood}"
+    );
+    println!(
+        "  mint rule_open Form.remainder: empty on {open_rem_empty} of {open_seen}, \
+         {open_rem_cells} cells across the rest"
     );
 }
