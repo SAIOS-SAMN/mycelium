@@ -336,7 +336,7 @@ fn a_loops_class_and_row_read_off_its_faces_and_the_axis_carrier() {
         // read the same paths and the same vector on each, so a trial that
         // agreed on one path and differed on another is caught.
         assert_eq!(
-            class_vectors_on(&f.faces, &f.axes, lp),
+            class_vectors_on(&f.faces, &f.vertices, &f.axes, lp),
             f.class_vectors(i),
             "the classes the trial reads are the classes the form reads, loop {i}"
         );
@@ -358,7 +358,10 @@ fn a_loops_class_and_row_read_off_its_faces_and_the_axis_carrier() {
     let chord = lp.chord;
     if opened.open_axis_on(chord).is_some() {
         for (i, lp) in opened.loops.iter().enumerate() {
-            assert_eq!(class_vectors_on(&opened.faces, &opened.axes, lp), opened.class_vectors(i));
+            assert_eq!(
+                class_vectors_on(&opened.faces, &opened.vertices, &opened.axes, lp),
+                opened.class_vectors(i)
+            );
             assert_eq!(loop_row_on(&opened.axes, lp), opened.loop_row_at(i));
         }
     }

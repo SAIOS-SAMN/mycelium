@@ -175,22 +175,62 @@ impl Form {
     /// is evaluated", which is what `None` used to say for the whole loop.
     /// `None` itself is now only a loop naming a face this form does not have.
     pub fn edge_holonomies(&self, lp: &Loop) -> Option<Keyed<Transport>> {
-        // ONE HOLONOMY PER MEMBER PATH. The edge is a member coordinate — it
-        // is measured on the union of TWO BODIES — so a loop whose faces relate
-        // several pairs of bodies has one edge composite per path through them,
-        // and composing "the" edge of each face asserted one path's reading for
-        // every other. The paths are walked from the faces' own pairs, exactly
-        // as `path_carriages` walks them, and a path whose faces do not join up
-        // is not a cycle of this complex and yields nothing.
+        edge_holonomies_on(&self.faces, &self.vertices, lp)
+    }
+}
+
+/// A FACE THAT TOUCHES THE FRAME, asked of the vertex rather than of its
+/// slot. The Frame is a `Vertex` variant — it is what a vertex IS — and
+/// `f.i == 0` names it by the integer it happens to sit at, which is the
+/// vertex's identity collapsed onto a position (rule 15). Nine other sites
+/// still spell it that way and are owed the same correction.
+fn touches_frame(vertices: &[Vertex], f: &FormFace) -> bool {
+    [f.i, f.j]
+        .iter()
+        .any(|&v| matches!(vertices.get(v as usize), Some(Vertex::Frame)))
+}
+
+/// The same walk, off the faces alone, so a reader that has the faces and
+/// not a whole `Form` can take it — `class_vectors_on` is that reader, and
+/// the class it reads is what every pivot decision downstream turns on.
+pub(crate) fn edge_holonomies_on(
+    faces: &[FormFace],
+    vertices: &[Vertex],
+    lp: &Loop,
+) -> Option<Keyed<Transport>> {
+    // ONE HOLONOMY PER MEMBER PATH. The edge is a member coordinate — it
+    // is measured on the union of TWO BODIES — so a loop whose faces relate
+    // several pairs of bodies has one edge composite per path through them,
+    // and composing "the" edge of each face asserted one path's reading for
+    // every other. The paths are walked from the faces' own pairs, exactly
+    // as `path_carriages` walks them, and a path whose faces do not join up
+    // is not a cycle of this complex and yields nothing.
+    {
+        // A LOOP OF NOTHING BUT STAR FACES MEASURED NO EDGE. The Frame is the
+        // trivialization, so a star face contributes the identity to a path
+        // that also crosses real faces — but a path whose every leg is a star
+        // face crossed no edge at all, and answering "identity" there reports
+        // a measurement that was never taken. The distinction decides: such a
+        // loop's holonomy is whatever its faces' WORDS name (a section face
+        // carries a word that is not the coboundary, 21 step 2), and a reader
+        // that took the star-path identity for a reading would overrule it
+        // with a transport nobody measured.
+        if !lp
+            .faces
+            .iter()
+            .any(|&fi| faces.get(fi as usize).is_some_and(|f| !touches_frame(vertices, f)))
+        {
+            return Some(Keyed::new());
+        }
         let mut live = vec![PartialPath::seed(Transport {
             word: Word::identity(),
             carriage: element::identity_versor(),
             gauge: Vec::new(),
         })];
         for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
-            let f = self.faces.get(fi as usize)?;
+            let f = faces.get(fi as usize)?;
             let forward = f.i == win[0] && f.j == win[1];
-            let star = f.i == 0 || f.j == 0;
+            let star = touches_frame(vertices, f);
             let mut next = Vec::new();
             for p in &live {
                 for (k, place) in f.at.scoped() {
@@ -239,7 +279,9 @@ impl Form {
         }
         Some(out)
     }
+}
 
+impl Form {
     /// The classes the edge holonomies belong to (15.4), read up to conjugacy,
     /// one per member path that is evaluated. Keyed by the path, so a caller
     /// asking "what class did this loop file" gets an answer per path and not

@@ -34,6 +34,7 @@ pub(crate) struct Prior<'a> {
 /// axis and no longer a defect (I6, 15.5, T14).
 pub(crate) fn class_vectors_on(
     faces: &[FormFace],
+    vertices: &[Vertex],
     axes: &crate::network::nerve::Keyed<u16>,
     lp: &Loop,
 ) -> crate::network::nerve::Keyed<ClassVector> {
@@ -49,10 +50,31 @@ pub(crate) fn class_vectors_on(
         }
         return out;
     }
+    // THE HOLONOMIC COORDINATE IS THE EDGE COMPOSITE'S, NOT THE WORD'S, and
+    // reading it off the word made 12.6's `𝒽` identically zero on every loop
+    // this engine has ever perceived. A face's word is the coboundary
+    // `w_j ∘ w_i⁻¹` of its two vertices' own words, and a product of
+    // coboundaries around a cycle telescopes to the identity for EVERY input
+    // — `loop_transport_on` says so in its own comment ("the words are vertex
+    // coordinates and telescope identically whichever bodies the path runs
+    // through"). Measured over 837 pair forms: 22 140 loops, 22 140 of them
+    // flat on the word and not one of finite non-identity order, while the
+    // edge composites over the same loops close at finite non-identity order
+    // on 93 paths. The curvature was there; the coordinate that decides was
+    // reading the one place it cannot appear.
+    //
+    // The carriage and the gauge were already the member path's own. Only the
+    // rotor was taken from the loop.
+    let edges = edge_holonomies_on(faces, vertices, lp);
     for (k, t) in loop_transport_on(faces, lp).scoped() {
-        if let Some(cv) =
-            ClassVector::read(&lp.holonomy, t.carriage.clone(), CycleType::of(&t.gauge))
-        {
+        // A path with no edge composite carries no measured transport, so the
+        // only holonomy it has is the word's — which is the reading of a loop
+        // whose faces are all coboundaries, not a default standing in for one.
+        let w = match edges.as_ref().and_then(|e| e.get(&k)) {
+            Some(e) => e.word.clone(),
+            None => lp.holonomy.clone(),
+        };
+        if let Some(cv) = ClassVector::read(&w, t.carriage.clone(), CycleType::of(&t.gauge)) {
             out.insert(&k, cv);
         }
     }
@@ -76,7 +98,7 @@ impl Form {
     /// ONE PER MEMBER PATH (D10 item 7), keyed by the path.
     pub fn class_vectors(&self, idx: usize) -> crate::network::nerve::Keyed<ClassVector> {
         match self.loops.get(idx) {
-            Some(lp) => class_vectors_on(&self.faces, &self.axes, lp),
+            Some(lp) => class_vectors_on(&self.faces, &self.vertices, &self.axes, lp),
             None => crate::network::nerve::Keyed::new(),
         }
     }
@@ -580,7 +602,9 @@ impl Form {
         // another has not discharged the loop — it has discharged one reading
         // of it, and the pivot certificate would assert the rest. A loop with
         // no closed member path has nothing to read and refuses (rule 11).
-        let after = class_vectors_on(&faces, &axes, loops.get(idx)?);
+        // The trial rewrites the faces and reopens the axes; the VERTICES are
+        // untouched by it, so the Frame is read off the form's own.
+        let after = class_vectors_on(&faces, &self.vertices, &axes, loops.get(idx)?);
         if after.is_empty() {
             return None;
         }
