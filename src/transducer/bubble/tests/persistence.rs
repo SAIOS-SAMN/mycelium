@@ -10,7 +10,7 @@ fn tht1_round_trips_bubbles() {
     let mut bytes = Vec::new();
     c.to_bytes(&mut bytes);
     let mut pos = 0usize;
-    let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT2");
+    let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT3");
     assert_eq!(back.len(), 1);
     assert_eq!(back.potential(), c.potential());
 }

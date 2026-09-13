@@ -25,9 +25,9 @@ impl Kernel {
     /// when it SUCCEEDED and the only branch taken was the one that
     /// ignored the failure.
     pub fn restore(&mut self, b: &[u8]) -> bool {
-        if b.get(0..4) != Some(b"MYC6") {
+        if b.get(0..4) != Some(b"MYC7") {
             // A REFUSAL NAMES WHAT IT READ, not only what it wanted. "The
-            // magic is not MYC6" leaves the operator to go and look at the
+            // magic is not MYC7" leaves the operator to go and look at the
             // bytes this reader already had in its hand, and a tape that
             // is not a ledger at all reads the same as one written by an
             // older build -- which is the difference that decides whether
@@ -39,7 +39,7 @@ impl Kernel {
                 },
                 None => format!("{} bytes, too short to carry one", b.len()),
             };
-            eprintln!("  ledger refused: the magic is {found}, not MYC6");
+            eprintln!("  ledger refused: the magic is {found}, not MYC7");
             return false;
         }
         // WHERE THE READ IS. Set as each section opens, so a refusal names
@@ -129,7 +129,7 @@ impl Kernel {
             let (np, sec_end) = section(b, pos)?;
             let start = *pos;
             for _ in 0..np {
-                let addr = crate::transducer::address::take_addr(b, pos)?;
+                let addr = Address::from(crate::snapshot::take_key(b, pos)?);
                 let elen = read_u64(b, pos)?;
                 let mut ep = *pos;
                 let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
@@ -205,7 +205,7 @@ impl Kernel {
                 rank.basis_len = basis_len;
                 rank.retire_gen = kernel.retire_gen;
                 for _ in 0..n {
-                    let addr = crate::transducer::address::take_addr(b, pos)?;
+                    let addr = Address::from(crate::snapshot::take_key(b, pos)?);
                     let closed = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
                     let m = read_u64(b, pos)?;
@@ -227,7 +227,7 @@ impl Kernel {
                 let (n, sec_end) = section(b, pos)?;
                 let start = *pos;
                 for i in 0..n {
-                    let Some(addr) = crate::transducer::address::take_addr(b, pos) else {
+                    let Some(addr) = crate::snapshot::take_key(b, pos).map(Address::from) else {
                         eprintln!(
                             "  DEF1 record {i} of {n}: the address does not read at byte {} \
                              (body {start}..{sec_end})",
@@ -274,7 +274,7 @@ impl Kernel {
                 let (n, sec_end) = section(b, pos)?;
                 let start = *pos;
                 for _ in 0..n {
-                    let addr = crate::transducer::address::take_addr(b, pos)?;
+                    let addr = Address::from(crate::snapshot::take_key(b, pos)?);
                     let ne = read_u64(b, pos)?;
                     fits(b, pos, ne)?;
                     let mut entries = Vec::new();
@@ -358,7 +358,7 @@ impl Kernel {
                 let (n, sec_end) = section(b, pos)?;
                 let start = *pos;
                 for _ in 0..n {
-                    let addr = crate::transducer::address::take_addr(b, pos)?;
+                    let addr = Address::from(crate::snapshot::take_key(b, pos)?);
                     let elen = read_u64(b, pos)?;
                     let mut ep = *pos;
                     let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
@@ -376,7 +376,7 @@ impl Kernel {
                 let (n, sec_end) = section(b, pos)?;
                 let start = *pos;
                 for _ in 0..n {
-                    let addr = crate::transducer::address::take_addr(b, pos)?;
+                    let addr = Address::from(crate::snapshot::take_key(b, pos)?);
                     let elen = read_u64(b, pos)?;
                     let mut ep = *pos;
                     let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
@@ -396,7 +396,7 @@ impl Kernel {
                 let (n, sec_end) = section(b, pos)?;
                 let start = *pos;
                 for _ in 0..n {
-                    let key = take_addr(b, pos)?;
+                    let key = Address::from(crate::snapshot::take_key(b, pos)?);
                     let c = crate::transducer::cech::Complex::from_bytes(b, pos)?;
                     kernel.complexes.insert(key, c);
                 }
@@ -407,7 +407,7 @@ impl Kernel {
                 let (n, sec_end) = section(b, pos)?;
                 let start = *pos;
                 for _ in 0..n {
-                    let addr = crate::transducer::address::take_addr(b, pos)?;
+                    let addr = Address::from(crate::snapshot::take_key(b, pos)?);
                     let ne = read_u64(b, pos)?;
                     fits(b, pos, ne)?;
                     let mut entries = Vec::new();
@@ -476,14 +476,14 @@ impl Kernel {
                 let (n, sec_end) = section(b, pos)?;
                 let start = *pos;
                 for _ in 0..n {
-                    let key = take_addr(b, pos)?;
+                    let key = Address::from(crate::snapshot::take_key(b, pos)?);
                     let a: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                     *pos += 32;
                     let bp: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                     *pos += 32;
                     let tu = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
-                    let class_key = take_addr(b, pos)?;
+                    let class_key = Address::from(crate::snapshot::take_key(b, pos)?);
                     let v = element::Versor::from_bytes(b, pos)?;
                     kernel.cocycle_at.insert(
                         key,
@@ -501,7 +501,7 @@ impl Kernel {
                 let (nc, chain_end) = section(b, pos)?;
                 let chain_start = *pos;
                 for _ in 0..nc {
-                    let key = take_addr(b, pos)?;
+                    let key = Address::from(crate::snapshot::take_key(b, pos)?);
                     let tu = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
                     let v = element::Versor::from_bytes(b, pos)?;
@@ -514,7 +514,7 @@ impl Kernel {
                 let (n, sec_end) = section(b, pos)?;
                 let start = *pos;
                 for _ in 0..n {
-                    let listing = crate::transducer::address::take_addr(b, pos)?;
+                    let listing = Address::from(crate::snapshot::take_key(b, pos)?);
                     let chain = crate::anastome::dialogue::read_chain(b, pos)?;
                     let voice: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                     *pos += 32;

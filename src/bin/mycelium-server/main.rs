@@ -83,9 +83,10 @@ fn refuse_boot(tag: &str, what: &str) -> ! {
 ///
 /// A layout change is a recut (§10) and the reader for the retired layout
 /// is deleted with it, so a build can arrive at a fleet whose carriers it
-/// refuses — which is exactly where this one stands: `MYC6` frames every
-/// section with its byte length and every ledger on disk is `MYC5`, which
-/// carried a count and no boundary. Before this, the only way to
+/// refuses — which is exactly where this one stands: `MYC7` writes every key
+/// with a `u64` length and every ledger on disk is `MYC6`, which used the
+/// wire's `u16` citation prefix and could not write a large form's address at
+/// all. Before this, the only way to
 /// learn that was to stop a unit and start the new binary on it, and the
 /// answer came back as a court that would not come up. A procedure that
 /// cannot be surveyed before it is run is a leap.
@@ -304,7 +305,7 @@ fn main() {
                     &format!(
                         "the ledger at {state_path} did not restore -- the magic, section and \
                          byte are named above. This court's memory is NOT dropped and nothing is \
-                         written over it. This build reads MYC6; a ledger written by an older \
+                         written over it. This build reads MYC7; a ledger written by an older \
                          build is EXPECTED to refuse, and §10's road for that is `scripts/recut`, \
                          which the operator runs. `--check` on this home reports the same reading \
                          without starting anything."
@@ -312,7 +313,7 @@ fn main() {
                 );
             }
             eprintln!(
-                "[{tag}] ledger MYC6: {} ruled sentences, treasury entries {}, book derived at intake",
+                "[{tag}] ledger MYC7: {} ruled sentences, treasury entries {}, book derived at intake",
                 k.basis_len(),
                 k.treasury_entry_count()
             );

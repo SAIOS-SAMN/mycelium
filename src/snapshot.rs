@@ -137,6 +137,49 @@ pub fn framed(out: &mut Vec<u8>, n: u64, body: &mut Vec<u8>) {
 /// `None` when the frame itself does not fit, or when the body it declares
 /// runs past the tape. Neither is a record's problem and neither is
 /// reported as one.
+/// A KEY ON A LOCAL TAPE: `len u64 ‖ bytes`, and TOTAL — there is no length
+/// a key can have that this cannot write.
+///
+/// [`crate::transducer::address::put_addr`] writes a `u16` length and refuses
+/// an address longer than 65 535 bytes by writing NOTHING, which is a wire
+/// constraint: the citation prefix of 47.1 is part of the protocol and
+/// [`crate::transducer::address::Cited`] is the type that proves an address
+/// fits it. The ledger and the genome are neither — they are this node's own
+/// tape, every other length on them is a `u64` since MYC6, and the 65 535
+/// limit buys nothing there.
+///
+/// It cost something. A form's address is `form_vertex_key`, which writes
+/// every vertex, every member and every gauge, so it grows with the form: the
+/// largest pair form on the fleet at e98e8a2 held 677 vertices and 4030
+/// faces, and its address does not fit a `u16`. The snapshot dropped exactly
+/// one record per persist — 24 577 readings of
+/// `snapshot: 1 records could not be framed and were not written` across
+/// sections of 47, 71, 96, 158, 162 and 171 — and before the refusal was
+/// honoured at all, that record went onto the tape with its address field
+/// absent, which is the DEF1 desync that cost hypha a 8.6 MB and hypha b
+/// 13.7 MB of history.
+///
+/// A court holding a form too large to cite is not a fault to be silently
+/// dropped, and the size at which an address stops fitting is not a
+/// mathematical boundary of anything. The tape carries the key.
+pub fn put_key(out: &mut Vec<u8>, key: impl AsRef<[u8]>) {
+    let key = key.as_ref();
+    out.extend_from_slice(&(key.len() as u64).to_le_bytes());
+    out.extend_from_slice(key);
+}
+
+/// Read a key written by [`put_key`]. `None` where the length or the bytes
+/// run past the tape.
+pub fn take_key(b: &[u8], pos: &mut usize) -> Option<Vec<u8>> {
+    let n = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+    *pos += 8;
+    let n = usize::try_from(n).ok()?;
+    let end = pos.checked_add(n).filter(|e| *e <= b.len())?;
+    let out = b.get(*pos..end)?.to_vec();
+    *pos = end;
+    Some(out)
+}
+
 pub fn take_frame(b: &[u8], pos: &mut usize) -> Option<(usize, usize)> {
     let take = |b: &[u8], p: &mut usize| -> Option<usize> {
         let v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);

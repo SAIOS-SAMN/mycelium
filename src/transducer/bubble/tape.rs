@@ -1,6 +1,6 @@
 // 28 — THE TAPE: a contemplation as bytes.
 //
-//! `THT2` is the tape this codec reads. One that does not parse whole is
+//! `THT3` is the tape this codec reads. One that does not parse whole is
 //! refused rather than partly restored; a restored contemplation holds the
 //! same bubbles, the same incidence and the same horizon as the one written.
 
@@ -8,13 +8,13 @@ use super::*;
 
 impl Contemplation {
 
-    pub const THT2: &'static [u8; 4] = b"THT2";
+    pub const THT3: &'static [u8; 4] = b"THT3";
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(Self::THT2);
+        out.extend_from_slice(Self::THT3);
         out.extend_from_slice(&(self.bubbles.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.bubbles, |k, b| {
-            crate::transducer::address::put_addr(out, k);
+            crate::snapshot::put_key(out, k);
             out.extend_from_slice(&(b.remainder.len() as u32).to_le_bytes());
             for &(r, c, hb, ha) in b.remainder.as_slice() {
                 out.extend_from_slice(&r.to_le_bytes());
@@ -24,7 +24,7 @@ impl Contemplation {
             }
             out.extend_from_slice(&(b.cover.len() as u32).to_le_bytes());
             crate::snapshot::persist(&b.cover, |ck, _| {
-                let _ = crate::transducer::address::put_addr(out, ck);
+                crate::snapshot::put_key(out, ck);
             });
             for x in &b.volume {
                 out.extend_from_slice(&x.to_le_bytes());
@@ -33,7 +33,7 @@ impl Contemplation {
             out.extend_from_slice(&0u32.to_le_bytes());
             out.extend_from_slice(&(b.horizon.len() as u32).to_le_bytes());
             crate::snapshot::persist(&b.horizon, |hk, (r, order, standing)| {
-                crate::transducer::address::put_addr(out, hk);
+                crate::snapshot::put_key(out, hk);
                 r.to_bytes(out);
                 out.extend_from_slice(&order.to_u32().to_le_bytes());
                 out.push(standing.as_u8());
@@ -45,7 +45,7 @@ impl Contemplation {
             out.extend_from_slice(&(b.torsion.len() as u32).to_le_bytes());
             crate::snapshot::persist(&b.torsion, |tk, filed| {
                 let (sigma, ell, chord) = (&filed.sigma, &filed.period, &filed.chord);
-                crate::transducer::address::put_addr(out, tk);
+                crate::snapshot::put_key(out, tk);
                 out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
                 for &(a, c) in sigma {
                     out.push(a);
@@ -60,7 +60,7 @@ impl Contemplation {
             });
             out.extend_from_slice(&(b.vortex.len() as u32).to_le_bytes());
             crate::snapshot::persist(&b.vortex, |after, inner| {
-                crate::transducer::address::put_addr(out, after);
+                crate::snapshot::put_key(out, after);
                 out.extend_from_slice(&(inner.len() as u32).to_le_bytes());
                 crate::snapshot::persist(inner, |_, c| {
                     c.to_bytes(out);
@@ -82,7 +82,7 @@ impl Contemplation {
         out.extend_from_slice(&self.formed.to_le_bytes());
         out.extend_from_slice(&(self.cavity.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.cavity, |k, rem| {
-            crate::transducer::address::put_addr(out, k);
+            crate::snapshot::put_key(out, k);
             out.extend_from_slice(&(rem.len() as u32).to_le_bytes());
             for &(r, c, hb, ha) in rem {
                 out.extend_from_slice(&r.to_le_bytes());
@@ -94,7 +94,7 @@ impl Contemplation {
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Contemplation> {
-        if b.get(*pos..*pos + 4) != Some(&Self::THT2[..]) {
+        if b.get(*pos..*pos + 4) != Some(&Self::THT3[..]) {
             return None;
         }
         *pos += 4;
@@ -115,7 +115,7 @@ impl Contemplation {
         let n = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
         let mut c = Contemplation::new();
         for _ in 0..n {
-            let key = crate::transducer::address::take_addr(b, pos)?;
+            let key = crate::transducer::address::Address::from(crate::snapshot::take_key(b, pos)?);
             let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
             let mut remainder = Vec::with_capacity(nr);
             for _ in 0..nr {
@@ -132,7 +132,7 @@ impl Contemplation {
             let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
             let mut cover = Keyed::new();
             for _ in 0..nc {
-                let ck = crate::transducer::address::take_addr(b, pos)?;
+                let ck = crate::transducer::address::Address::from(crate::snapshot::take_key(b, pos)?);
                 cover.insert(ck, ());
             }
             let mut volume = [0u64; 4];
@@ -149,7 +149,7 @@ impl Contemplation {
             if *pos + 4 <= b.len() {
                 let nh = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
                 for _ in 0..nh {
-                    let hk = crate::transducer::address::take_addr(b, pos)?;
+                    let hk = crate::transducer::address::Address::from(crate::snapshot::take_key(b, pos)?);
                     let r = Rotor::from_bytes(b, pos)?;
                     let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
                     *pos += 4;
@@ -174,7 +174,7 @@ impl Contemplation {
                 // truncated: a σ longer than the stream would desync the tape.
                 let nt = take_count(b, *pos, take_u32(b, pos)? as usize, 40)?;
                 for _ in 0..nt {
-                    let tk = crate::transducer::address::take_addr(b, pos)?;
+                    let tk = crate::transducer::address::Address::from(crate::snapshot::take_key(b, pos)?);
                     let ns = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?) as usize;
                     *pos += 2;
                     let ns = take_count(b, *pos, ns, 2)?;
@@ -208,7 +208,7 @@ impl Contemplation {
                 }
                 let nv = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
                 for _ in 0..nv {
-                    let after = crate::transducer::address::take_addr(b, pos)?;
+                    let after = crate::transducer::address::Address::from(crate::snapshot::take_key(b, pos)?);
                     let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
                     let mut inner = Keyed::new();
                     for _ in 0..nc {
@@ -271,7 +271,7 @@ impl Contemplation {
         if *pos + 4 <= b.len() {
             let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
             for _ in 0..nc {
-                let k = crate::transducer::address::take_addr(b, pos)?;
+                let k = crate::transducer::address::Address::from(crate::snapshot::take_key(b, pos)?);
                 let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
                 let mut rem = Vec::with_capacity(nr);
                 for _ in 0..nr {

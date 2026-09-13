@@ -151,7 +151,7 @@ speak_pair(&mut k, &a, &b, [1; 32]);
 let snap = k.snapshot();
 assert!(Kernel::new().restore(&snap), "the tape as written restores");
 
-// The first section's frame: `MYC6` then its count, then the byte length
+// The first section's frame: `MYC7` then its count, then the byte length
 // of its body. Byte 12 opens that length.
 let declared = u64::from_le_bytes(snap[12..20].try_into().expect("the frame is there"));
 for wrong in [declared.wrapping_sub(1), declared.wrapping_add(1)] {
@@ -164,4 +164,47 @@ for wrong in [declared.wrapping_sub(1), declared.wrapping_add(1)] {
     );
     assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
 }
+}
+
+/// AN ADDRESS THE WIRE'S PREFIX CANNOT HOLD STILL GOES ON THE LOCAL TAPE.
+///
+/// `put_addr` writes a `u16` length and refuses an address over 65 535 bytes
+/// by writing NOTHING — never truncating. That is a wire constraint: the
+/// citation prefix of 47.1 is part of the protocol and `Cited` is the type
+/// that proves an address fits it. The ledger and the genome are not the
+/// wire.
+///
+/// A form's address is `form_vertex_key`, which writes every vertex, every
+/// member and every gauge, so it grows with the form. The largest pair form
+/// on the fleet at e98e8a2 held 677 vertices and 4030 faces, and its address
+/// does not fit a `u16`. Measured over that soak: 24 577 readings of
+/// `snapshot: 1 records could not be framed and were not written`, exactly
+/// one per persist, across sections of 47, 71, 96, 158, 162 and 171 records
+/// — and before that refusal was honoured at all, the record reached the
+/// tape with its address field absent, which is the DEF1 desync that cost
+/// hypha a 8.6 MB and hypha b 13.7 MB of a court's history.
+///
+/// `snapshot::put_key` writes a `u64` length, as every other length on this
+/// tape has since MYC6, and is total.
+#[test]
+fn a_key_too_long_for_the_wire_prefix_still_round_trips_on_the_tape() {
+let long = vec![0xABu8; (u16::MAX as usize) + 64];
+assert!(
+    crate::transducer::address::Address::from(long.clone()).cited().is_none(),
+    "the wire's citation prefix cannot hold it"
+);
+let mut out = Vec::new();
+crate::snapshot::put_key(&mut out, &long);
+let mut p = 0usize;
+let back = crate::snapshot::take_key(&out, &mut p).expect("the tape holds it");
+assert_eq!(back, long, "and it reads back whole");
+assert_eq!(p, out.len(), "consuming exactly what was written");
+// A declared length the tape cannot satisfy is refused, never read short.
+let mut clipped = out.clone();
+clipped.truncate(out.len() - 1);
+let mut p = 0usize;
+assert!(
+    crate::snapshot::take_key(&clipped, &mut p).is_none(),
+    "a key whose bytes are not there is a refusal, not a short key"
+);
 }

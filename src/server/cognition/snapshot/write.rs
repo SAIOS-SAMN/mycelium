@@ -7,18 +7,21 @@
 
 use crate::cognition::*;
 
-use crate::snapshot::{counted, framed};
+use crate::snapshot::{counted, framed, put_key};
 
 impl Kernel {
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = Vec::new();
-        // MYC6: every section states its own BYTE LENGTH beside its count,
+        // MYC7: every key carries a `u64` length, so no address on this tape
+        // can be too long to write; MYC6 wrote the `u16` citation prefix of
+        // the wire and a form's address outgrows it.
+        // Every section states its own BYTE LENGTH beside its count,
         // so a reader knows where a section ends before it reads a record
         // and a lost frame refuses at the section that lost it. MYC5 wrote
         // the count alone; see `snapshot::framed` for what that cost on the
         // fleet. A layout change is a recut (§10), and this one is the
         // recut's reason.
-        out.extend_from_slice(b"MYC6");
+        out.extend_from_slice(b"MYC7");
         let items: Vec<_> = self
             .basis
             .scoped()
@@ -35,7 +38,7 @@ impl Kernel {
         out.extend_from_slice(&self.treasury.snapshot());
         // PROVISIONAL section (Step 5).
         counted(&mut out, &self.provisional, |body, addr, spoken| {
-            put_addr(body, addr)?;
+            put_key(body, addr);
             let eb = spoken.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
@@ -82,7 +85,7 @@ impl Kernel {
         out.extend_from_slice(b"RNK1");
         out.extend_from_slice(&(rank.basis_len as u64).to_le_bytes());
         counted(&mut out, rank.closure_carrier(), |body, addr, closed| {
-            put_addr(body, addr)?;
+            put_key(body, addr);
             let c = closed.map_or(u64::MAX, |i| i as u64);
             body.extend_from_slice(&c.to_le_bytes());
             // A listing the reading holds no invariant for sits at the
@@ -105,7 +108,7 @@ impl Kernel {
         //   tag 1 = K u64 ‖ tu u64
         // Restore refuses any other tag (a missing K is not clock-zero).
         counted(&mut out, &self.deflations, |body, addr, mag| {
-            put_addr(body, addr)?;
+            put_key(body, addr);
             for m in mag {
                 body.extend_from_slice(&m.to_le_bytes());
             }
@@ -126,7 +129,7 @@ impl Kernel {
         // probed through. A restart must not forget the field.
         out.extend_from_slice(b"FLD1");
         counted(&mut out, &self.field, |body, addr, listing| {
-            put_addr(body, addr)?;
+            put_key(body, addr);
             body.extend_from_slice(&(listing.entries.len() as u64).to_le_bytes());
             for e in &listing.entries {
                 body.extend_from_slice(&(e.chart.0.len() as u64).to_le_bytes());
@@ -169,7 +172,7 @@ impl Kernel {
         });
         out.extend_from_slice(b"CAV1");
         counted(&mut out, &self.cavity_book, |body, addr, elem| {
-            put_addr(body, addr)?;
+            put_key(body, addr);
             let eb = elem.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
@@ -179,7 +182,7 @@ impl Kernel {
         out.push(self.crt_imported as u8);
         let mut body = Vec::new();
         for (addr, elem) in &self.court_federation {
-            put_addr(&mut body, addr);
+            put_key(&mut body, addr);
             let eb = elem.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
@@ -190,13 +193,13 @@ impl Kernel {
         // whether the next four bytes were COC1's tag. Both are gone (§10).
         out.extend_from_slice(b"COC1");
         counted(&mut out, &self.complexes, |body, k, c| {
-            put_addr(body, k)?;
+            put_key(body, k);
             c.to_bytes(body);
             Some(())
         });
         out.extend_from_slice(b"FLC1");
         counted(&mut out, &self.field_cold, |body, addr, listing| {
-            put_addr(body, addr)?;
+            put_key(body, addr);
             body.extend_from_slice(&(listing.entries.len() as u64).to_le_bytes());
             for e in &listing.entries {
                 body.extend_from_slice(&(e.chart.0.len() as u64).to_le_bytes());
@@ -231,17 +234,17 @@ impl Kernel {
         });
         out.extend_from_slice(b"CYC2");
         counted(&mut out, &self.cocycle_at, |body, key, row| {
-            put_addr(body, key)?;
+            put_key(body, key);
             body.extend_from_slice(&row.a);
             body.extend_from_slice(&row.b);
             body.extend_from_slice(&row.t_universal.to_le_bytes());
-            put_addr(body, &row.class_key)?;
+            put_key(body, &row.class_key);
             row.gauge.to_bytes(body);
             Some(())
         });
         let mut body = Vec::new();
         for (key, v, tu) in &self.dialect_chain {
-            put_addr(&mut body, key);
+            put_key(&mut body, key);
             body.extend_from_slice(&tu.to_le_bytes());
             v.to_bytes(&mut body);
         }
@@ -251,7 +254,7 @@ impl Kernel {
         all.extend(self.settlements.iter().cloned());
         let mut body = Vec::new();
         for s in &all {
-            put_addr(&mut body, &s.listing);
+            put_key(&mut body, &s.listing);
             crate::anastome::dialogue::push_chain(&mut body, &s.chain);
             body.extend_from_slice(&s.voice);
             crate::anastome::dialogue::push_cites(&mut body, &s.cites);

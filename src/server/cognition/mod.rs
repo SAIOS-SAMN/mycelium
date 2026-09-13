@@ -35,7 +35,7 @@ pub use language::{
 pub use reduce::{cohesion_over, normal_form, quote_incidence, rank_over, Ask, BookView};
 pub use wire::{frame_of, germ_address, germ_bytes, outcome_code};
 
-use crate::transducer::address::{put_addr, take_addr, Address};
+use crate::transducer::address::Address;
 use crate::transducer::element::{self, Element};
 
 #[cfg(test)]

@@ -214,7 +214,7 @@ fn dialect_enters_on_stood_and_sheds() {
 /// court admitted as parents (`PRC1`), without which its own heights do
 /// not re-derive, and a MYC4 file does not re-read.
 #[test]
-fn hypha_snapshot_is_myc6() {
+fn hypha_snapshot_is_myc7() {
     let mut k = Kernel::new();
     // A voice's sentence for a recolour, spoken through the one door an
     // utterance has (law 8): a listing on the book to snapshot.
@@ -227,12 +227,12 @@ fn hypha_snapshot_is_myc6() {
     let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "the sentence is listed");
     let snap = k.snapshot();
-    assert_eq!(&snap[..4], b"MYC6");
+    assert_eq!(&snap[..4], b"MYC7");
     let mut k2 = Kernel::new();
     assert!(k2.restore(&snap));
     assert_eq!(k2.occupancy(), [0, 0, 0, 0], "cold listings exert zero occupancy");
     let mut old = snap.clone();
-    old[..4].copy_from_slice(b"MYC5");
+    old[..4].copy_from_slice(b"MYC6");
     assert!(!Kernel::new().restore(&old), "an old file is refused");
 }
 

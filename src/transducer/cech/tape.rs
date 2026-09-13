@@ -27,8 +27,8 @@ impl Complex {
         // next section as content. `counted` writes the body first and
         // measures it as it goes, so the number is that act's own measure.
         counted(out, &self.sections, |body, k, s: &Section| {
-            crate::transducer::address::put_addr(body, k)?;
-            crate::transducer::address::put_addr(body, &s.addr)?;
+            crate::snapshot::put_key(body, k);
+            crate::snapshot::put_key(body, &s.addr);
             s.gamma.to_bytes(body);
             s.carriage.to_bytes(body);
             Some(())
@@ -41,7 +41,7 @@ impl Complex {
                 // than written with a count that wrapped.
                 crate::transducer::address::put_u8_count(body, c.vertices.len())?;
                 for v in &c.vertices {
-                    crate::transducer::address::put_addr(body, v)?;
+                    crate::snapshot::put_key(body, v);
                 }
                 c.coefficient.to_bytes(body);
                 c.carriage.to_bytes(body);
@@ -62,7 +62,7 @@ impl Complex {
                     }
                     Fill::Class(k, r) => {
                         body.push(2);
-                        crate::transducer::address::put_addr(body, k.class_key())?;
+                        crate::snapshot::put_key(body, k.class_key());
                         r.to_bytes(body);
                     }
                     Fill::Congruent(g, ell) => {
@@ -79,12 +79,15 @@ impl Complex {
             });
         }
         counted(out, &self.remainder, |body, k, _: &()| {
-            crate::transducer::address::put_addr(body, k)
+            crate::snapshot::put_key(body, k);
+            Some(())
         });
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Complex> {
-        let take_id = |b: &[u8], pos: &mut usize| crate::transducer::address::take_addr(b, pos);
+        let take_id = |b: &[u8], pos: &mut usize| {
+            crate::snapshot::take_key(b, pos).map(crate::transducer::address::Address::from)
+        };
         // EVERY SECTION HERE IS FRAMED, and the frame is the one in
         // `snapshot::framed` because `to_bytes` writes through `counted`.
         // A count alone was bounded by the bytes remaining, which refuses a

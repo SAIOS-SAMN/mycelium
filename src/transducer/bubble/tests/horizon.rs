@@ -39,9 +39,9 @@ fn horizon_is_keyed_by_class_key_and_round_trips() {
     assert!(c.bubbles.get(&key).unwrap().horizon.contains(ck.as_bytes()));
     let mut bytes = Vec::new();
     c.to_bytes(&mut bytes);
-    assert_eq!(&bytes[..4], Contemplation::THT2);
+    assert_eq!(&bytes[..4], Contemplation::THT3);
     let mut pos = 0usize;
-    let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT2");
+    let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT3");
     let hb = back.bubbles.get(&key).expect("restored");
     let (got, order, st) = hb.horizon.get(ck.as_bytes()).expect("class key");
     assert_eq!(got.class_key(), Some(ck.clone()));
