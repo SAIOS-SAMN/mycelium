@@ -136,20 +136,37 @@ impl Convergence {
         let organs = self.organs(object);
         // A cell's own members, walked: the organs that re-derived this one
         // object, never a product over the mesh.
-        for (i, (a, ra)) in organs.iter().enumerate() {
-            for (b, rb) in organs.iter().skip(i + 1) {
-                // A1: the test is RE-DERIVATION, never bytes. `same_vertex`
-                // compares decoded coordinates with each algebra's own
-                // predicate -- M1 on the letters, projective equality on the
-                // carriage versors, A5 on the chain -- and takes address
-                // equality only as a fast path inside itself. Only a
-                // genuinely differing re-derivation is Inexact (13.9 step 8).
+        //
+        // AGREEMENT IS ASKED OF EVERY PAIR BEFORE ANY PAIR IS WITNESSED.
+        // These two questions shared one walk, and `Witnessed` returned from
+        // inside it — so the first independent pair ended the walk and every
+        // pair after it went unexamined. A court could witness an object two
+        // organs agreed on while a third stood there disagreeing, which is
+        // exactly the re-derivation 13.9 step 8 says it refuses. Whether the
+        // disagreement was seen depended on where the disagreeing organ sat
+        // in the walk.
+        //
+        // A1: the test is RE-DERIVATION, never bytes. `same_vertex` compares
+        // decoded coordinates with each algebra's own predicate — M1 on the
+        // letters, projective equality on the carriage versors, A5 on the
+        // chain — and takes address equality only as a fast path inside
+        // itself. Only a genuinely differing re-derivation is Inexact.
+        for (i, (_, ra)) in organs.iter().enumerate() {
+            for (_, rb) in organs.iter().skip(i + 1) {
                 if !ra.object.same_vertex(&rb.object) {
                     return Converged::Inexact {
                         a: ra.address(),
                         b: rb.address(),
                     };
                 }
+            }
+        }
+        // Every organ re-derived one object. Now a witness is an independent
+        // pair among them, and any such pair is one — nothing here prefers
+        // the pair that happens to come first, because they all say the same
+        // thing about the same object.
+        for (i, (a, _)) in organs.iter().enumerate() {
+            for (b, _) in organs.iter().skip(i + 1) {
                 if independent(a, b) {
                     return Converged::Witnessed {
                         home: *a,
@@ -183,6 +200,30 @@ mod tests {
     }
     fn never(_: &[u8; 32], _: &[u8; 32]) -> bool {
         false
+    }
+
+    /// A DISAGREEING THIRD ORGAN REFUSES, however late in the walk it sits.
+    ///
+    /// `state` asked agreement and independence in ONE walk and returned
+    /// `Witnessed` from inside it, so the first independent pair ended the
+    /// walk and no pair after it was examined. Two organs that agree and are
+    /// independent witnessed the object while a third stood there
+    /// disagreeing — the re-derivation 13.9 step 8 says the court refuses —
+    /// and whether that was caught depended on where the disagreeing organ
+    /// happened to sit.
+    #[test]
+    fn a_disagreeing_organ_refuses_even_after_an_independent_pair() {
+        let mut c = Convergence::new();
+        // The first two agree and are independent: under the old walk this
+        // returned `Witnessed` before the third was ever compared.
+        assert!(c.rederived(&[9u8], [1; 32], r(9)));
+        assert!(c.rederived(&[9u8], [2; 32], r(9)));
+        assert!(c.rederived(&[9u8], [3; 32], r(7)));
+        assert_eq!(c.organs(&[9u8]).len(), 3);
+        assert!(
+            matches!(c.state(&[9u8], &always), Converged::Inexact { .. }),
+            "the third organ derived another vertex, and the court refuses the object"
+        );
     }
 
     /// One vantage dockets. The object waits for a witness, and waiting is
