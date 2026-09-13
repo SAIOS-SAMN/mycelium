@@ -327,10 +327,18 @@ impl Element {
         self.profiles.take();
     }
 
-    /// The fiber's total spoken span — base + free sections + every torsion-orbit
-    /// member (the volume metric; cycles count their full period).
-    pub fn fiber_span(&self) -> usize {
-        1 + self.sections.len()
+    /// The fibre's span ABOVE ITS BASE — free sections plus every torsion
+    /// orbit's members past the one it opens on. The volume metric proper, and
+    /// a reader that wants it asks for it here: a caller subtracting the base
+    /// off `fiber_span` to recover this is decomposing a composite by
+    /// arithmetic, which says the composite was the wrong granularity for that
+    /// reader, not that the reader owed a subtraction.
+    ///
+    /// It sums THIS element's own two fibre fields. A sentence carries its
+    /// cycles on its form, leaves both of these empty, and is read through
+    /// `sentence::form_torsion` (`Kernel::fibre_volume_total`).
+    pub fn fibre_volume(&self) -> usize {
+        self.sections.len()
             + self
                 .torsion
                 .iter()
@@ -339,6 +347,12 @@ impl Element {
                 // refuses a zero, so ℓ ≥ 1 here and the subtraction is total.
                 .map(|t| t.period as usize - 1)
                 .sum::<usize>()
+    }
+
+    /// The fiber's total spoken span — base + the volume above it (cycles
+    /// count their full period).
+    pub fn fiber_span(&self) -> usize {
+        1 + self.fibre_volume()
     }
 
     /// THE TORSE MOVE — extract the torsion of the punctured axis. Candidate

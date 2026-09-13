@@ -138,6 +138,39 @@ assert_eq!(
 );
 }
 
+/// THE CONDENSATION METRIC READS THE CARRIER THAT HOLDS THE FIBRE. A sentence
+/// whose form filed a cycle of period ℓ carries ℓ−1 of volume above its base,
+/// and none of it is on the element: `Element::fibre_volume` sums the element's
+/// own two fibre fields and a v2 sentence leaves both empty, so the basis's
+/// volume read 0 for it. The assertion pair is the point — the element reads
+/// none and the basis reads three from the same word — and neither number is a
+/// property of any corpus, so this separates the two readers on a fixture
+/// whether or not anything in the field has ever filed a cycle.
+#[test]
+fn a_filed_form_cycle_is_volume_the_basis_counts() {
+    let (spoken, _, _) = filed_v2_form();
+    assert_eq!(
+        spoken.fibre_volume(),
+        0,
+        "a v2 sentence's own fibre fields are empty; the cycle is on its form"
+    );
+    let held = std::sync::Arc::new(crate::transducer::element::Held::of(spoken));
+    let f = held.form().expect("the v2 tape decodes to a form");
+    let ell = f
+        .torsion
+        .scoped()
+        .map(|(_, l)| l.period)
+        .next()
+        .expect("the form files the cycle");
+    let mut k = Kernel::new();
+    k.basis.insert(held.address(), std::sync::Arc::clone(&held));
+    assert_eq!(
+        (k.fibre_volume_total(), ell),
+        (3, 4),
+        "the filed cycle's period spans ℓ−1 above the base and the basis counts it"
+    );
+}
+
 /// THE TORSE STROKE tightens mathematics to physics: a swap family (1→4 and
 /// 4→1 at one cell) installs as base + section; the syntropic stroke extracts
 /// the ℤ/2 cycle — sections condense to (σ, 2) — and the extracted

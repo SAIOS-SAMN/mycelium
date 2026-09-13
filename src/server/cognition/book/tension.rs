@@ -189,7 +189,7 @@ impl Kernel {
     /// Topological volume: cards, fibre span, open listings. K is algebraic
     /// time and is not a persist event — ticking it must not flush the ledger.
     pub fn volume(&self) -> (usize, usize, usize) {
-        (self.basis.len(), self.sections_total(), self.pending.len())
+        (self.basis.len(), self.fibre_volume_total(), self.pending.len())
     }
 
     /// The polytonic kinematic pressure + torsion spectrum (per lane).

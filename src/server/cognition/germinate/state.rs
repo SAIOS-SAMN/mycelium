@@ -17,16 +17,50 @@ impl Kernel {
             .collect()
     }
 
-    /// The basis's interior VOLUME — the full fiber span across all punctured
-    /// axes (free sections + every torsion orbit to its period; the condensation
-    /// metric: cardinality falls while this rises, and cycles carry span in O(1)).
-    pub fn sections_total(&self) -> usize {
+    /// The basis's interior VOLUME — the fibre span above the base across all
+    /// punctured axes (free sections + every torsion orbit to its period; the
+    /// condensation metric: cardinality falls while this rises, and cycles
+    /// carry span in O(1)).
+    ///
+    /// IT READS THE CARRIER THAT HOLDS THE FIBRE, which is what `torsion_total`
+    /// below already did and this did not. A sentence's cycles are on its FORM;
+    /// `Element::fibre_volume` sums the element's own two fields, which a
+    /// minted sentence leaves empty. So every sentence in the basis contributed
+    /// 0 to the volume however many loops its form had filed — the ruling at
+    /// `court_torsion_on_v2_form_is_consilient_or_filed_or_refused` ("the court
+    /// reads Form.torsion by the filed loop's class key, never the element's
+    /// empty section") held at one site of its shape and not at its neighbour
+    /// three lines down.
+    ///
+    /// A FORM HAS NO FREE-SECTION CARRIER, so nothing stands in for the free
+    /// part on that arm: `Form.sections` is PAIR INDICES of the bundle — which
+    /// pairs a class was measured on — not transition assignments over a base,
+    /// and summing it here would be the two-objects-one-name fault a row is
+    /// already owed on. A sentence's free part is absent, not zero.
+    ///
+    /// It was `sections_total`, which named one component and returned the
+    /// composite of two (§2.2), and the caller (`Kernel::volume`) always wanted
+    /// the volume its own doc says it takes.
+    pub fn fibre_volume_total(&self) -> usize {
         self.basis
             .scoped()
-            // A word's span COUNTS ITS BASE — `fiber_span` opens at one —
-            // so the sections are what lies beyond it and the subtraction
-            // is total.
-            .map(|(_, t)| t.fiber_span() - 1)
+            // The form is read off the HELD word, which decoded it once when
+            // the organ took it in (L16), not through `form_torsion`, which
+            // re-parses the tape on every call for every word.
+            .map(|(_, t)| match t.form() {
+                Some(f) if !f.torsion.is_empty() => f
+                    .torsion
+                    .scoped()
+                    // The form tape refuses a filed zero (A17: a loop is filed
+                    // at the period it CLOSES at), so ℓ ≥ 1 here and the
+                    // subtraction is total.
+                    .map(|(_, l)| l.period as usize - 1)
+                    .sum(),
+                // A v1 sentence that adopted its cycles element-side still
+                // reads as a bundle here, which is why the form arm is guarded
+                // on having filed anything rather than on being a sentence.
+                _ => t.fibre_volume(),
+            })
             .sum()
     }
 
