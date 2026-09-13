@@ -18,6 +18,44 @@ pub struct Transport {
     pub gauge: Vec<(u8, u8)>,
 }
 
+/// WHAT A FACE CARRIES AT ONE MEMBER PAIR (21 step 2, 18.2): the relative
+/// carriage between the two bodies, the relative hue map, and 50.3's edge
+/// transport — the stabilizer element the pair's rigid motion picks out, or
+/// `None` for a remainder edge, a pair no single versor carries.
+///
+/// These are MEMBER coordinates. A face's WORD is not: it is `w_j ∘ w_i⁻¹`
+/// read from the two derivations, which are vertex coordinates, so one word
+/// serves the face however many charts its endpoints act on. That asymmetry is
+/// why the face splits the way it does and why the rotor half of the skeleton
+/// — holonomy, torsion, class, the pivot's word moves — is untouched.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FacePlace {
+    pub carriage: Versor,
+    pub gauge: Vec<(u8, u8)>,
+    pub edge: Option<Transport>,
+}
+
+/// The key a member pair is filed under on a face: the two charts' own keys,
+/// each length-delimited so they read apart, `i` then `j`. Content (law 2), so
+/// the order is the trie's and the same on every node.
+pub fn face_pair_key(
+    ci: &crate::transducer::stalk::Invariant,
+    cj: &crate::transducer::stalk::Invariant,
+) -> Vec<u8> {
+    let mut buf = Vec::new();
+    crate::transducer::address::put_bytes(&mut buf, ci.key().as_bytes());
+    crate::transducer::address::put_bytes(&mut buf, cj.key().as_bytes());
+    buf
+}
+
+/// Read a member-pair key back as its two chart keys.
+pub fn read_face_pair_key(k: &[u8]) -> Option<(Vec<u8>, Vec<u8>)> {
+    let mut p = 0usize;
+    let ci = crate::transducer::address::take_bytes(k, &mut p)?;
+    let cj = crate::transducer::address::take_bytes(k, &mut p)?;
+    Some((ci, cj))
+}
+
 impl Transport {
     pub fn from_word(word: Word) -> Transport {
         Transport {
@@ -90,7 +128,7 @@ impl Form {
             }
         }
         for face in &mut self.faces {
-            face.transport.word = face.transport.word.rebase(by);
+            face.word = face.word.rebase(by);
         }
     }
 
@@ -118,8 +156,15 @@ impl Form {
                 _ => {}
             }
         }
+        // EVERY MEMBER PAIR'S HUE MAP. The regauge is a change of listing and
+        // it moves the map at every pair of bodies the face relates, not one.
         for face in &mut self.faces {
-            face.transport.gauge = compose_gauge(g, &face.transport.gauge);
+            let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
+            for k in pairs {
+                if let Some(p) = face.at.get_mut(&k) {
+                    p.gauge = compose_gauge(g, &p.gauge);
+                }
+            }
         }
     }
 
@@ -142,11 +187,23 @@ impl Form {
                 _ => {}
             }
         }
+        // EVERY MEMBER PAIR'S CARRIAGE, and every MEMBER PATH's around each
+        // loop: a change of frame moves the placement wherever there is one.
         for face in &mut self.faces {
-            face.transport.carriage = c.geo(&face.transport.carriage);
+            let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
+            for k in pairs {
+                if let Some(p) = face.at.get_mut(&k) {
+                    p.carriage = c.geo(&p.carriage);
+                }
+            }
         }
         for lp in &mut self.loops {
-            lp.carriage = c.geo(&lp.carriage);
+            let paths: Vec<Vec<u8>> = lp.carriages.scoped().map(|(k, _)| k).collect();
+            for k in paths {
+                if let Some(v) = lp.carriages.get_mut(&k) {
+                    *v = c.geo(v);
+                }
+            }
         }
     }
 }
@@ -240,19 +297,31 @@ pub(crate) fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)
     out
 }
 
-pub(crate) fn vertex_carriage(v: &Vertex, form: &Form) -> Option<Versor> {
+/// THE PLACEMENT A VERTEX HAS AT ONE NAMED CHART. A keyed read: `None` is
+/// "this vertex does not act there", and a Rebased vertex's placement is
+/// `t · C_by` — the stored relative composed with its base's, which is where
+/// `C_of` comes back from (the rebase overwrote the slot it was measured in,
+/// so `t` is the only surviving record and law 12 cannot ask it to
+/// re-derive).
+pub(crate) fn vertex_carriage_at(
+    v: &Vertex,
+    form: &Form,
+    chart: &crate::transducer::stalk::Invariant,
+) -> Option<Versor> {
     match v {
-        // THE VERTEX'S CARRIAGE is its representative member's: a face reads
-        // one placement between two vertices, and a vertex acting on
-        // several charts places them all by the member at each. D7b is
-        // where a face between two multi-member vertices is decided; today
-        // every vertex has one member and this is that member.
-        Vertex::Word { .. } => v.carriage_of().cloned(),
-        Vertex::Rebased { by, carriage, .. } => match form.vertices.get(*by as usize) {
-            Some(w @ Vertex::Word { .. }) => w.carriage_of().map(|c| carriage.geo(c)),
-            Some(Vertex::Frame) => Some((**carriage).clone()),
-            _ => None,
-        },
+        Vertex::Word { .. } => v.acting_on(chart).map(|a| (*a.carriage).clone()),
+        Vertex::Rebased { by, carriage, class, .. } => {
+            if class.key() != chart.key() {
+                return None;
+            }
+            match form.vertices.get(*by as usize) {
+                Some(w @ Vertex::Word { .. }) => {
+                    w.acting_on(&w.face_chart()?).map(|a| carriage.geo(&a.carriage))
+                }
+                Some(Vertex::Frame) => Some((**carriage).clone()),
+                _ => None,
+            }
+        }
         Vertex::Frame | Vertex::Glued { .. } | Vertex::Unfolded { .. } => {
             Some(element::identity_versor())
         }
@@ -260,10 +329,21 @@ pub(crate) fn vertex_carriage(v: &Vertex, form: &Form) -> Option<Versor> {
     }
 }
 
-pub(crate) fn vertex_gauge(v: &Vertex) -> Vec<(u8, u8)> {
+/// THE HUE MAP A VERTEX HAS AT ONE NAMED CHART, empty where it acts on none:
+/// a map that moves no hue, not an absence standing in for one.
+pub(crate) fn vertex_gauge_at(v: &Vertex, chart: &crate::transducer::stalk::Invariant) -> Vec<(u8, u8)> {
     match v {
-        Vertex::Word { .. } => v.gauge_of().to_vec(),
-        Vertex::Rebased { gauge, .. } => gauge.clone(),
+        Vertex::Word { .. } => match v.acting_on(chart) {
+            Some(a) => a.gauge.clone(),
+            None => Vec::new(),
+        },
+        Vertex::Rebased { gauge, class, .. } if class.key() == chart.key() => gauge.clone(),
         _ => Vec::new(),
     }
 }
+
+// `vertex_carriage(v, form)` and `vertex_gauge(v)` stood here and read the
+// vertex's representative member. They are gone with the last caller: the face
+// that needed them now carries a placement PER MEMBER PAIR, so every reader in
+// this tree takes the member at the coordinate it is asking about, and there is
+// no accessor left through which the collapse can arrive.

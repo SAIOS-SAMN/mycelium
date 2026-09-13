@@ -73,8 +73,13 @@ impl Form {
                 let j = self.word_index(b)?;
                 let mut moved = false;
                 for f in &mut self.faces {
-                    if ((f.i == i && f.j == j) || (f.i == j && f.j == i)) && f.edge.is_some() {
-                        f.edge = None;
+                    // EVERY MEMBER PAIR of the face becomes a remainder edge.
+                    // The refusal is of the face's edge holonomy, and a face
+                    // relating several pairs of bodies carries an edge at each
+                    // — clearing one and leaving the rest would contract the
+                    // refusal at one pair and assert the others (D10).
+                    if ((f.i == i && f.j == j) || (f.i == j && f.j == i)) && f.has_edge() {
+                        f.clear_edges();
                         moved = true;
                     }
                 }
@@ -146,7 +151,7 @@ impl Form {
                 self.faces
                     .iter()
                     .filter(|f| (f.i == i && f.j == j) || (f.i == j && f.j == i))
-                    .all(|f| f.edge.is_none())
+                    .all(|f| !f.has_edge())
             }
             (RefusalKind::RemainderUndeclared, At::Chart(_, cells)) => {
                 let mut declared: Keyed<Vec<u8>> = Keyed::new();

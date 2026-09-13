@@ -6,7 +6,7 @@ use crate::transducer::address::{Address, TAG_FORM};
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::element;
 use crate::transducer::family::{factor_versor, Crystal, NoCrystal};
-use crate::transducer::sentence::{Form, FormFace, Vertex};
+use crate::transducer::sentence::{Form, Vertex};
 use crate::transducer::stalk::Invariant;
 
 fn quarter(n: usize) -> Word {
@@ -29,7 +29,7 @@ fn sentence_of(w: Word, tag: u8) -> (Address, Form) {
         Vec::new(),
         None,
     ));
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star"), edge: None });
+    f.faces.push(f.face_of(0, 1).expect("star"));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
     (Address::from_bytes([TAG_FORM, tag]), f)

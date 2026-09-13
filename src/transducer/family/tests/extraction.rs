@@ -138,7 +138,7 @@ pf.vertices.push(Vertex::word_on(
     vec![(3, 5)],
     None,
 ));
-pf.faces.push(FormFace { i: 1, j: 2, transport: pf.face_of(1, 2).expect("pair vertices"), edge: None });
+pf.faces.push(pf.face_of(1, 2).expect("pair vertices"));
 let mut form = pf.clone();
 let tc_a = transport_class(&pf.vertices[1]).expect("A has a transport class");
 let tc_b = transport_class(&pf.vertices[2]).expect("B has a transport class");
@@ -475,7 +475,18 @@ assert_eq!(
     "one rule vertex for one word class, got {} vertices {} faces {:?}",
     rule.form.vertices.len(),
     rule.form.faces.len(),
-    words.iter().map(|v| v.gauge_of().to_vec()).collect::<Vec<_>>()
+    // Every member's gauge, per vertex: the reading is what the vertices carry,
+    // and a vertex acting on two charts carries two.
+    words
+        .iter()
+        .map(|v| {
+            v.acts()
+                .into_iter()
+                .flat_map(|a| a.scoped())
+                .map(|(_, m)| m.gauge.clone())
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>()
 );
 let hues = rule.form.hue_maps.len();
 assert_eq!(
@@ -506,7 +517,7 @@ assert_eq!(pf.demand_vertices().count(), 0, "nothing the eyes could not pair");
 let contact: Vec<&FormFace> = pf.faces.iter().filter(|f| f.i != 0 && f.j != 0).collect();
 assert_eq!(contact.len(), 1, "one face between the two touching bodies, got {}", contact.len());
 assert!(
-    contact[0].edge.is_none(),
+    !contact[0].has_edge(),
     "one bar moved and the other stood: no single versor carries the pair, a remainder edge (50.3)"
 );
 // AND THE RULE DEMANDS THE MULTIPLICITY RATHER THAN SPEAKING ONE OF IT (D8,
@@ -541,10 +552,10 @@ assert!(
     "the demand names the multiplicity it could not resolve: {kind:?}"
 );
 assert_eq!(
-    chart.key(),
+    chart.key().into_vec(),
     pf.vertices
         .iter()
-        .find_map(|v| v.acting().map(|a| a.chart.key()))
+        .find_map(|v| v.acts().and_then(|a| a.scoped().next().map(|(k, _)| k)))
         .expect("the pair form's bars stand on a chart"),
     "and it names the chart the bars stand on"
 );

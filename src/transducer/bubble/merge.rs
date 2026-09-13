@@ -32,8 +32,8 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
         f.faces.push(sentence::FormFace {
             i,
             j,
-            transport: face.transport.clone(),
-            edge: face.edge.clone(),
+            word: face.word.clone(),
+            at: face.at.clone(),
         });
     }
     // The join is taken in the SCENE, where the two chains actually sit,

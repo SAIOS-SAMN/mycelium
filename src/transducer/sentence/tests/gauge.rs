@@ -12,10 +12,12 @@ use crate::transducer::stalk::{self};
 fn placement_residue_is_the_affine_translation() {
     let mut f = chord_form(&[Word::identity()]);
     for fa in &mut f.faces {
-        fa.transport.gauge.clear();
+        set_face_place(fa, |p| p.gauge.clear());
     }
     let chord = f.loops[0].chord as usize;
-    f.faces[chord].transport.carriage = element::carriage(&q1(), &(q1(), q0()));
+    set_face_place(&mut f.faces[chord], |p| {
+        p.carriage = element::carriage(&q1(), &(q1(), q0()));
+    });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     let kappa = f.class_vector(0).expect("loop");
     assert!(
@@ -50,10 +52,10 @@ fn placement_residue_is_the_affine_translation() {
 fn hue_cycle_type_composes_around_the_loop() {
     let mut f = chord_form(&[Word::identity()]);
     for fa in &mut f.faces {
-        fa.transport.gauge.clear();
+        set_face_place(fa, |p| p.gauge.clear());
     }
     let chord = f.loops[0].chord as usize;
-    f.faces[chord].transport.gauge = vec![(3, 4), (4, 3)];
+    set_face_place(&mut f.faces[chord], |p| p.gauge = vec![(3, 4), (4, 3)]);
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     let kappa = f.class_vector(0).expect("loop");
     assert!(
@@ -101,18 +103,8 @@ fn coboundary_gauge_matches_by_address() {
     let mut a = Form::default();
     a.vertices.push(word_vertex(1, q.clone()));
     a.vertices.push(word_vertex(2, Word::identity()));
-    a.faces.push(FormFace {
-        i: 0,
-        j: 1,
-        transport: a.face_of(0, 1).expect("a star 1"),
-        edge: None,
-    });
-    a.faces.push(FormFace {
-        i: 0,
-        j: 2,
-        transport: a.face_of(0, 2).expect("a star 2"),
-        edge: None,
-    });
+    a.faces.push(a.face_of(0, 1).expect("a star 1"));
+    a.faces.push(a.face_of(0, 2).expect("a star 2"));
     a.vertices.push(Vertex::Rebased {
         by: 0,
         of: 1,
@@ -127,18 +119,8 @@ fn coboundary_gauge_matches_by_address() {
     let mut b = Form::default();
     b.vertices.push(word_vertex(2, Word::identity()));
     b.vertices.push(word_vertex(1, q.clone()));
-    b.faces.push(FormFace {
-        i: 0,
-        j: 1,
-        transport: b.face_of(0, 1).expect("b star 1"),
-        edge: None,
-    });
-    b.faces.push(FormFace {
-        i: 0,
-        j: 2,
-        transport: b.face_of(0, 2).expect("b star 2"),
-        edge: None,
-    });
+    b.faces.push(b.face_of(0, 1).expect("b star 1"));
+    b.faces.push(b.face_of(0, 2).expect("b star 2"));
     b.vertices.push(Vertex::Unfolded {
         measure: Measure::Occupied,
     });
@@ -188,36 +170,16 @@ fn holonomy_is_oriented() {
     let mut fwd = Form::default();
     fwd.vertices.push(word_vertex(1, Word::identity()));
     fwd.vertices.push(word_vertex(2, Word::identity()));
-    fwd.faces.push(FormFace {
-        i: 0,
-        j: 1,
-        transport: fwd.face_of(0, 1).expect("star"),
-        edge: None,
-    });
-    fwd.faces.push(FormFace {
-        i: 0,
-        j: 2,
-        transport: fwd.face_of(0, 2).expect("star"),
-        edge: None,
-    });
-    fwd.faces.push(FormFace::new(1, 2, w.clone()));
+    fwd.faces.push(fwd.face_of(0, 1).expect("star"));
+    fwd.faces.push(fwd.face_of(0, 2).expect("star"));
+    fwd.faces.push(fwd.face_carrying(1, 2, w.clone()).expect("a chord between two bodies"));
     fwd.loops = Form::loops_of(&fwd.faces, fwd.vertices.len());
     let mut rev = Form::default();
     rev.vertices.push(word_vertex(1, Word::identity()));
     rev.vertices.push(word_vertex(2, Word::identity()));
-    rev.faces.push(FormFace {
-        i: 0,
-        j: 1,
-        transport: rev.face_of(0, 1).expect("star"),
-        edge: None,
-    });
-    rev.faces.push(FormFace {
-        i: 0,
-        j: 2,
-        transport: rev.face_of(0, 2).expect("star"),
-        edge: None,
-    });
-    rev.faces.push(FormFace::new(2, 1, w.inverse()));
+    rev.faces.push(rev.face_of(0, 1).expect("star"));
+    rev.faces.push(rev.face_of(0, 2).expect("star"));
+    rev.faces.push(rev.face_carrying(2, 1, w.inverse()).expect("a chord between two bodies"));
     rev.loops = Form::loops_of(&rev.faces, rev.vertices.len());
     assert_eq!(fwd.loops.len(), 1);
     assert_eq!(rev.loops.len(), 1);

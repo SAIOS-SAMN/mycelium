@@ -169,11 +169,11 @@ fn filed_torsion_chord_replays_or_refuses() {
     let Some(ci) = f
         .faces
         .iter()
-        .position(|face| f.face_of(face.i, face.j).as_ref() != Some(&face.transport))
+        .position(|face| f.face_of(face.i, face.j).as_ref() != Some(face))
     else {
         panic!("the filed form has a torsion chord");
     };
-    f.faces[ci].transport.word = order2();
+    f.faces[ci].word = order2();
     let bad = as_element_form(&f, mag).expect("tampered chord");
     assert_eq!(
         crate::court::verdict::blind_replay(&bad),
@@ -253,19 +253,9 @@ fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
     );
     f.vertices.push(empty(1));
     f.vertices.push(empty(2));
-    f.faces.push(FormFace {
-        i: 0,
-        j: 1,
-        transport: f.face_of(0, 1).expect("star 1"),
-        edge: None,
-    });
-    f.faces.push(FormFace {
-        i: 0,
-        j: 2,
-        transport: f.face_of(0, 2).expect("star 2"),
-        edge: None,
-    });
-    f.faces.push(FormFace::new(1, 2, w));
+    f.faces.push(f.face_of(0, 1).expect("star 1"));
+    f.faces.push(f.face_of(0, 2).expect("star 2"));
+    f.faces.push(f.face_carrying(1, 2, w).expect("a chord between two bodies"));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
     assert!(f.coheres(), "coheres reads projective identity");
@@ -370,10 +360,12 @@ fn orientation_is_the_third_axis_half_turn() {
 fn a_loop_residue_is_the_translator_of_its_holonomy_versor() {
     let mut f = chord_form(&[Word::identity()]);
     for fa in &mut f.faces {
-        fa.transport.gauge.clear();
+        set_face_place(fa, |p| p.gauge.clear());
     }
     let chord = f.loops[0].chord as usize;
-    f.faces[chord].transport.carriage = element::carriage(&q1(), &(q1(), q0()));
+    set_face_place(&mut f.faces[chord], |p| {
+        p.carriage = element::carriage(&q1(), &(q1(), q0()));
+    });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     let kappa = f.class_vector(0).expect("loop");
     assert!(kappa.occupies(Axis::Placement));

@@ -28,12 +28,7 @@ pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form 
         vec![(1, 2)],
         contact,
     ));
-    f.faces.push(FormFace {
-        i: 0,
-        j: 1,
-        transport: f.face_of(0, 1).expect("star"),
-        edge: None,
-    });
+    f.faces.push(f.face_of(0, 1).expect("star"));
     f.remainder = crate::transducer::element::PlacedChain::default();
     f.depth = f.depth_of();
     let k = form_vertex_key(&f);
@@ -42,6 +37,33 @@ pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form 
     }
     f.reindex();
     f
+}
+
+/// THE ONE MEMBER PAIR OF A FIXTURE'S FACE. Every vertex these fixtures build
+/// stands at exactly one chart, so each of their faces relates exactly one pair
+/// of bodies — this asserts that and hands back its key, so a test writing a
+/// face's placement writes the pair the face HAS rather than a representative
+/// of several (D10).
+pub fn only_pair(face: &FormFace) -> Vec<u8> {
+    let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
+    let [pk] = pairs.as_slice() else {
+        panic!("a fixture face relates one member pair, got {}", pairs.len())
+    };
+    pk.clone()
+}
+
+/// That pair's placement, read.
+pub fn face_place(face: &FormFace) -> FacePlace {
+    let pk = only_pair(face);
+    face.at.get(&pk).expect("the pair just read").clone()
+}
+
+/// That pair's placement, written.
+pub fn set_face_place(face: &mut FormFace, write: impl FnOnce(&mut FacePlace)) {
+    let pk = only_pair(face);
+    if let Some(p) = face.at.get_mut(&pk) {
+        write(p);
+    }
 }
 
 pub fn word_vertex(addr: u8, word: Word) -> Vertex {
@@ -70,15 +92,12 @@ pub fn star_form(n_words: usize, extra: Vec<(u16, u16, Word)>) -> Form {
     for i in 0..n_words {
         f.vertices.push(word_vertex(i as u8 + 1, Word::identity()));
         let j = (i as u16) + 1;
-        f.faces.push(FormFace {
-            i: 0,
-            j,
-            transport: f.face_of(0, j).expect("star"),
-            edge: None,
-        });
+        f.faces.push(f.face_of(0, j).expect("star"));
     }
+    // A CHORD CARRIES ITS PLACEMENTS as well as its word, or the loop it
+    // closes has no member path and no carriage (D10).
     for (i, j, w) in extra {
-        f.faces.push(FormFace::new(i, j, w));
+        f.faces.push(f.face_carrying(i, j, w).expect("a chord between two placed vertices"));
     }
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
@@ -108,19 +127,9 @@ pub fn chord_form(chords: &[Word]) -> Form {
         let b = (ci * 2 + 2) as u16;
         f.vertices.push(word_vertex(a as u8, Word::identity()));
         f.vertices.push(word_vertex(b as u8, Word::identity()));
-        f.faces.push(FormFace {
-            i: 0,
-            j: a,
-            transport: f.face_of(0, a).expect("star a"),
-            edge: None,
-        });
-        f.faces.push(FormFace {
-            i: 0,
-            j: b,
-            transport: f.face_of(0, b).expect("star b"),
-            edge: None,
-        });
-        f.faces.push(FormFace::new(a, b, w.clone()));
+        f.faces.push(f.face_of(0, a).expect("star a"));
+        f.faces.push(f.face_of(0, b).expect("star b"));
+        f.faces.push(f.face_carrying(a, b, w.clone()).expect("a chord between two bodies"));
     }
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
@@ -132,9 +141,9 @@ pub fn coboundary_chord_form() -> Form {
     let mut f = Form::default();
     f.vertices.push(word_vertex(1, Word::identity()));
     f.vertices.push(word_vertex(2, Word::identity()));
-    f.faces.push(FormFace::new(0, 1, r.clone()));
-    f.faces.push(FormFace::new(0, 2, Word::identity()));
-    f.faces.push(FormFace::new(1, 2, r.inverse()));
+    for (i, j, w) in [(0u16, 1u16, r.clone()), (0, 2, Word::identity()), (1, 2, r.inverse())] {
+        f.faces.push(f.face_carrying(i, j, w).expect("two placed vertices and the Frame"));
+    }
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
     f

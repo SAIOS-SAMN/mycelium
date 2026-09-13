@@ -59,7 +59,7 @@ assert!(!Epigenome::new().uncrystallize(b"GEN1\xff\xff\xff\xff"), "hostile count
 #[test]
 fn withheld_then_depth_order() {
 use crate::transducer::alphabet::Word;
-use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+use crate::transducer::sentence::{as_element_form, Form, Vertex};
 let missing_addr = crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 0xab]);
 let inner = {
     let mut f = Form::default();
@@ -75,7 +75,7 @@ let inner = {
         vec![(1, 2)],
         None,
     ));
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
+    f.faces.push(f.face_of(0, 1).expect("vertices"));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f
 };
@@ -107,7 +107,7 @@ assert!(
 #[test]
 fn withheld_waiting_on_resolves_at_the_overlap_face() {
 use crate::transducer::alphabet::Word;
-use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+use crate::transducer::sentence::{as_element_form, Form, Vertex};
 let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
 let w = Word::from_letters(&[(q, false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -123,7 +123,7 @@ let word_vertex = |addr: crate::transducer::address::Address| Vertex::word_on(
 let inner = {
     let mut f = Form::default();
     f.vertices.push(word_vertex(crate::transducer::address::Address::from_bytes([1u8; 32])));
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
+    f.faces.push(f.face_of(0, 1).expect("vertices"));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f
 };
@@ -131,7 +131,7 @@ let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
 let inner_addr = inner_e.address();
 let mut outer = Form::default();
 outer.vertices.push(word_vertex(crate::transducer::address::Address::from_bytes([2u8; 32])));
-outer.faces.push(FormFace { i: 0, j: 1, transport: outer.face_of(0, 1).expect("vertices"), edge: None });
+outer.faces.push(outer.face_of(0, 1).expect("vertices"));
 let _gi = outer
     .glue(&inner, inner_addr.clone(), Word::identity(), [1, 0, 0, 0])
     .expect("glue");
@@ -213,7 +213,7 @@ match epi.comprehend(&e) {
 #[test]
 fn foreign_class_is_withheld() {
 use crate::transducer::alphabet::Word;
-use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+use crate::transducer::sentence::{as_element_form, Form, Vertex};
 let inner_a = closed_turn(None);
 let ea = as_element_form(&inner_a, [1, 0, 0, 0]).expect("A");
 // A FORM THAT HOLDS SOMETHING ELSE UP TO GAUGE, which is what a
@@ -246,9 +246,9 @@ let other = {
             None,
         ));
     }
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star 1"), edge: None });
-    f.faces.push(FormFace { i: 0, j: 2, transport: f.face_of(0, 2).expect("star 2"), edge: None });
-    f.faces.push(FormFace::new(1, 2, half.clone()));
+    f.faces.push(f.face_of(0, 1).expect("star 1"));
+    f.faces.push(f.face_of(0, 2).expect("star 2"));
+    f.faces.push(f.face_carrying(1, 2, half.clone()).expect("a chord between two bodies"));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     // A17: the loop is believed at the period it closes at, and a court
     // replays it only where the form files it under its own class.
@@ -286,7 +286,7 @@ match epi.comprehend(&e) {
 #[test]
 fn citation_free_closed_form_is_admitted() {
 use crate::transducer::alphabet::Word;
-use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+use crate::transducer::sentence::{as_element_form, Form, Vertex};
 let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
 let w = Word::from_letters(&[(q, false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -300,7 +300,7 @@ f.vertices.push(Vertex::word_on(
     vec![(1, 2)],
     None,
 ));
-f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
+f.faces.push(f.face_of(0, 1).expect("vertices"));
 f.loops = Form::loops_of(&f.faces, f.vertices.len());
 assert!(f.is_closed(), "a tree of two vertices coheres");
 let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
@@ -315,7 +315,7 @@ assert!(
 #[test]
 fn learn_at_stamps_voice_k_and_tuniversal() {
 use crate::transducer::alphabet::Word;
-use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+use crate::transducer::sentence::{as_element_form, Form, Vertex};
 let missing_addr = crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 0xab]);
 let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
 let w = Word::from_letters(&[(q, false)]);
@@ -331,7 +331,7 @@ let inner = {
         vec![(1, 2)],
         None,
     ));
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
+    f.faces.push(f.face_of(0, 1).expect("vertices"));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f
 };
@@ -405,7 +405,7 @@ let body = crate::transducer::sentence::from_element_form(&e1)
     .expect("the tape reads back")
     .vertices
     .iter()
-    .find_map(|v| v.acting().map(|a| a.chart.clone()))
+    .find_map(|v| v.acts().and_then(|a| a.scoped().next().map(|(_, m)| m.chart.clone())))
     .expect("a word vertex carries its body's chart");
 assert!(
     epi.on_body(&body).iter().any(|(_, _, st)| *st == Standing::Ruled),

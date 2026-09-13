@@ -89,14 +89,23 @@ impl Contemplation {
         horizon: &mut Keyed<(Rotor, Order, Standing)>,
     ) {
         for (i, lp) in f.loops.iter().enumerate() {
-            if f.class_vector(i).is_some_and(|cv| !cv.coordinates().is_empty()) {
+            // The loop's own class, on ANY member path that occupies a
+            // coordinate: the holonomy is one word, so the horizon takes it
+            // once, but whether it stands is a reading per path.
+            if f.class_vectors(i).scoped().any(|(_, cv)| !cv.coordinates().is_empty()) {
                 horizon_put(horizon, lp.holonomy.rotor(), Standing::Held);
             }
-            let stands = f
-                .edge_class_vector(lp)
-                .is_some_and(|cv| !cv.coordinates().is_empty());
-            if let (true, Some(e)) = (stands, f.edge_holonomy(lp)) {
-                horizon_put(horizon, e.word.rotor(), Standing::Held);
+            // EVERY MEMBER PATH whose edge holonomy occupies a coordinate puts
+            // its rotor on the horizon. A loop running through two pairs of
+            // bodies can stand on one and be flat on the other, and reading one
+            // put the other's obstruction nowhere.
+            let stands = f.edge_class_vectors(lp);
+            if let Some(hs) = f.edge_holonomies(lp) {
+                for (k, e) in hs.scoped() {
+                    if stands.get(&k).is_some_and(|cv| !cv.coordinates().is_empty()) {
+                        horizon_put(horizon, e.word.rotor(), Standing::Held);
+                    }
+                }
             }
         }
     }

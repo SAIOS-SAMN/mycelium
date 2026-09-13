@@ -197,11 +197,28 @@ pub fn apply_form(
                     unspoken.push(vi as u16);
                     continue;
                 };
-                let Some(c) = w.carriage_of() else {
+                // THE BASE'S CARRIAGE AT THE BASE'S OWN CHART. The rebased
+                // vertex's placement is `t · C_by` and `t` was measured as
+                // `C_of · C_by⁻¹` between one member of each, so the member read
+                // here is the base's — NOT the one at the rebased vertex's
+                // chart, which is a different body.
+                //
+                // A base acting on SEVERAL charts does not say which of them
+                // `t` was measured against, because `Rebased` holds one
+                // carriage: the vertex speaks nothing rather than composing
+                // against a body it may not have been measured on (rule 11).
+                // `Form::rebase` refuses to make such a vertex for the same
+                // reason, so this is the tape's case.
+                let base_charts = w.charts();
+                let [base_chart] = base_charts.as_slice() else {
                     unspoken.push(vi as u16);
                     continue;
                 };
-                let composed = carriage.geo(c);
+                let Some(a) = w.acting_on(base_chart) else {
+                    unspoken.push(vi as u16);
+                    continue;
+                };
+                let composed = carriage.geo(&a.carriage);
                 let r = placement.rotor().geo(&derivation.rotor());
                 let Some(versor) = element::conformal_of_rotor(&r, &composed) else {
                     unspoken.push(vi as u16);

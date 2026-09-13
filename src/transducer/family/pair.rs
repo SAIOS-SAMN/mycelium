@@ -95,10 +95,18 @@ fn meet_edge(
     let word = peel_versor(&gamma)?.ok()?;
     let t = element::translator_of(&gamma)?;
     let d = element::dilator_of(&gamma)?;
-    let gauge = crate::transducer::sentence::relative_gauge(
-        &crate::transducer::sentence::vertex_gauge(va),
-        &crate::transducer::sentence::vertex_gauge(vb),
-    );
+    // The two bodies' own hue maps, each read at the chart its vertex stands
+    // at: a cover vertex stands at one, so these are keyed reads and not
+    // representatives.
+    // Each body's own hue map at the chart its vertex stands at. A cover vertex
+    // stands at exactly one, and a vertex standing at none carries no map —
+    // which is the empty map, a map that moves no hue, and not a default
+    // standing in for an absent reading (rule 11).
+    let hue_at = |v: &Vertex| match v.face_chart() {
+        Some(c) => crate::transducer::sentence::vertex_gauge_at(v, &c),
+        None => Vec::new(),
+    };
+    let gauge = crate::transducer::sentence::relative_gauge(&hue_at(va), &hue_at(vb));
     Some(crate::transducer::sentence::Transport { word, carriage: d.geo(&t), gauge })
 }
 
@@ -410,7 +418,17 @@ pub(crate) fn pair_form_uncached(
             let (Some(&i), Some(&j)) = (cover_vertex.get(ka), cover_vertex.get(kb)) else {
                 continue;
             };
-            let Some(t) = form.face_of(i, j) else { continue };
+            // THE MEET NAMES THE TWO PIECES, so it names the member pair: a
+            // cover vertex stands at one chart, and the meet's two ends are
+            // those two bodies and no others. The incidence is read, not a
+            // product of the two vertices' fibres (D10 item 5).
+            let (Some(vi), Some(vj)) = (form.vertices.get(i as usize), form.vertices.get(j as usize))
+            else {
+                continue;
+            };
+            let (Some(ci), Some(cj)) = (vi.face_chart(), vj.face_chart()) else {
+                continue;
+            };
             let edge = match (c.cover.carried.get(ka), c.cover.carried.get(kb)) {
                 (Some((va, sa, _)), Some((vb, sb, _))) => meet_edge(va, sa, vb, sb),
                 _ => None,
@@ -418,7 +436,13 @@ pub(crate) fn pair_form_uncached(
             if edge.is_some() {
                 crate::transducer::family::cover::tally(|t| t.edges += 1);
             }
-            form.faces.push(FormFace { i, j, transport: t, edge });
+            let Some(word) = form.face_word(i, j) else { continue };
+            let Some(place) = form.face_place(i, &ci, j, &cj, edge) else {
+                continue;
+            };
+            let mut at = crate::network::nerve::Keyed::new();
+            at.insert(crate::transducer::sentence::face_pair_key(&ci, &cj), place);
+            form.faces.push(FormFace { i, j, word, at });
         }
     }
     let meet_faces = form.faces.len();
@@ -452,9 +476,14 @@ pub(crate) fn pair_form_uncached(
         // transport composite. A loop the cover did not evaluate — a
         // remainder edge anywhere on it — answers `None` and is not
         // classified at all, which is 13.9 step 7 and not a flat reading.
-        let Some(e) = form.edge_holonomy(&lp) else {
+        // ONE PER MEMBER PATH, and each classified on its own. A cover's
+        // vertices stand at one chart each, so today this is one path per loop;
+        // where a loop runs through a vertex acting on several, each path is a
+        // cycle of its own and each carries its own obstruction.
+        let Some(es) = form.edge_holonomies(&lp) else {
             continue;
         };
+        for (_, e) in es.scoped() {
         // AND THE HUE IS THE COMPOSED GAUGE. This read
         // `lp.vertices.windows(2).map(|p| (p[0] as u8, p[1] as u8))` — the
         // loop's VERTEX INDICES cast to bytes — and handed them to
@@ -487,6 +516,7 @@ pub(crate) fn pair_form_uncached(
                 }
             }
             _ => {}
+        }
         }
     }
     // THE DEMAND VERTICES, AFTER THE LOOPS. A deformation dissolves when
@@ -524,9 +554,6 @@ pub(crate) fn pair_form_uncached(
     form.vertices = scenery.vertices.clone();
     let n = form.vertices.len();
     for (i, j) in star_and_cell_faces(n, Some(frame as usize), &scenery.supports) {
-        let Some(g) = form.face_of(i, j) else {
-            continue;
-        };
         // The edge transport between two carried bodies (50.3); a face to
         // the Frame or to an uncarried body carries none.
         let edge = match (scenery.carried_at(i), scenery.carried_at(j)) {
@@ -541,7 +568,25 @@ pub(crate) fn pair_form_uncached(
             },
             _ => None,
         };
-        form.faces.push(FormFace { i, j, transport: g, edge });
+        // THE INCIDENCE IS THE OCCUPANCY (D10 item 5). `star_and_cell_faces`
+        // reads supports keyed by vertex and a cell names its occupants, so the
+        // pair it yields is a pair of BODIES and each vertex of a pair form
+        // stands at exactly one chart. The member pair is therefore the two
+        // vertices' own charts and nothing is enumerated.
+        let (Some(vi), Some(vj)) = (form.vertices.get(i as usize), form.vertices.get(j as usize))
+        else {
+            continue;
+        };
+        let (Some(ci), Some(cj)) = (vi.face_chart(), vj.face_chart()) else {
+            continue;
+        };
+        let Some(word) = form.face_word(i, j) else { continue };
+        let Some(place) = form.face_place(i, &ci, j, &cj, edge) else {
+            continue;
+        };
+        let mut at = crate::network::nerve::Keyed::new();
+        at.insert(crate::transducer::sentence::face_pair_key(&ci, &cj), place);
+        form.faces.push(FormFace { i, j, word, at });
     }
     form.loops = Form::loops_of(&form.faces, n);
     form.reindex();

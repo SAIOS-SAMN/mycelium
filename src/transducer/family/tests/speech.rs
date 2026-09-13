@@ -226,10 +226,12 @@ assert!(
 );
 let frame_face = rule.form.faces.iter().any(|f| f.i == 0 || f.j == 0);
 let shifted = rule.form.vertices.iter().any(|v| match v {
-    Vertex::Word { .. } => match v.carriage_of() {
-        Some(carriage) => !element::same_versor(carriage, &element::identity_versor()),
-        None => false,
-    },
+    // ANY MEMBER placed away from the identity is a family-constant shift:
+    // the claim is that the rule places something, and a vertex acting on
+    // several charts places each of them.
+    Vertex::Word { .. } => v.acts().into_iter().flat_map(|a| a.scoped()).any(|(_, m)| {
+        !element::same_versor(&m.carriage, &element::identity_versor())
+    }),
     _ => false,
 });
 assert!(frame_face || shifted, "placement is a frame face or a family-constant shift");

@@ -49,11 +49,34 @@ pub fn no_held(_inv: &stalk::Invariant, _piece: &[Cell]) -> Vec<HeldCite> {
 /// frame — the frame the action was evaluated in — and the vertex's
 /// address, which names the word and never the chain.
 pub fn vertex_cites(vertex: &Vertex, piece: &[Cell]) -> Option<HeldCite> {
+    let Vertex::Word { acts, .. } = vertex else {
+        return None;
+    };
+    // THE MEMBER THAT CARRIES THIS BODY, found by carrying it. The caller holds
+    // a body and asks whether this vertex is a word for it; a vertex acting on
+    // several charts answers with the member whose action RECONSTRUCTS the
+    // body, and that is a verified match rather than a member taken by
+    // position. Reading one member asked the question of one chart and
+    // answered `None` for every body on the others.
+    for (_, a) in acts.scoped() {
+        if let Some(cite) = vertex_cites_by(vertex, &a.carriage, &a.gauge, piece) {
+            return Some(cite);
+        }
+    }
+    None
+}
+
+/// The reconstruction test at ONE member: the rotor under that member's
+/// dilator carried onto the body's frame, verified cell by cell.
+fn vertex_cites_by(
+    vertex: &Vertex,
+    carriage: &crate::transducer::element::Versor,
+    gauge: &[(u8, u8)],
+    piece: &[Cell],
+) -> Option<HeldCite> {
     let Vertex::Word { address, derivation, .. } = vertex else {
         return None;
     };
-    let carriage = vertex.carriage_of()?;
-    let gauge = vertex.gauge_of();
     let rotor = derivation.rotor();
     let mut before: Vec<(i64, i64, u8)> = Vec::new();
     let mut after: Keyed<u8> = Keyed::new();

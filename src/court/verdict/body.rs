@@ -26,7 +26,13 @@ pub(crate) enum Carried {
     /// court's commonest by a factor of five and the journal could not
     /// distinguish a voice whose rotor is wrong from a voice reading a
     /// different frame than the court replays against (rule 11).
-    Fails(&'static str),
+    ///
+    /// AND WHICH MEMBER FAILED. `At::Vertex` carries a chart under 50.9's
+    /// grammar and its producer filled that chart from the vertex's
+    /// representative member, so a vertex acting on two charts was refused at
+    /// the chart the trie happened to order first whichever member actually
+    /// failed. The carrier did not change; the producer did (D10 item 13).
+    Fails(&'static str, stalk::Invariant),
 }
 
 /// What a vertex failed at, for the journal. Coordinates, not a verdict.
@@ -83,9 +89,12 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
     // fault; a vertex silent on every member is `Silent` exactly as one with
     // an empty fiber was.
     let mut spoke = false;
+    // The chart every refusal below names is THE MEMBER'S OWN, so the court
+    // refuses at the coordinate that actually failed.
     for (_, member) in acts.scoped() {
+        let at = || member.chart.clone();
         let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else {
-            return Carried::Fails(FAIL_NO_VERSOR);
+            return Carried::Fails(FAIL_NO_VERSOR, at());
         };
         let fiber = fiber_on(&bodies, &member.chart);
         if fiber.is_empty() {
@@ -95,20 +104,20 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
         for body in fiber {
             for &(r, c, h) in &body.cells {
                 let Some(p) = element::carry_center(&versor, r, c) else {
-                    return Carried::Fails(FAIL_NO_CARRY);
+                    return Carried::Fails(FAIL_NO_CARRY, at());
                 };
                 // A centre the sensor cannot convert is off the frame (W6).
                 let Some((tr, tc)) = element::cell_of(&p) else {
-                    return Carried::Fails(FAIL_OFF_FRAME);
+                    return Carried::Fails(FAIL_OFF_FRAME, at());
                 };
                 let (Ok(ur), Ok(uc)) = (usize::try_from(tr), usize::try_from(tc)) else {
-                    return Carried::Fails(FAIL_OFF_FRAME);
+                    return Carried::Fails(FAIL_OFF_FRAME, at());
                 };
                 let Some(&observed) = y.get(ur).and_then(|row| row.get(uc)) else {
-                    return Carried::Fails(FAIL_OFF_FRAME);
+                    return Carried::Fails(FAIL_OFF_FRAME, at());
                 };
                 if observed != hue_under(&member.gauge, h) {
-                    return Carried::Fails(FAIL_HUE);
+                    return Carried::Fails(FAIL_HUE, at());
                 }
                 landed.insert(cell_key(tr, tc), ());
             }
@@ -125,7 +134,10 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
     for image in perceive(y) {
         let touched = image.cells.iter().any(|&(r, c, _)| landed.contains(&cell_key(r, c)));
         if touched && !image.cells.iter().all(|&(r, c, _)| landed.contains(&cell_key(r, c))) {
-            return Carried::Fails(FAIL_PART);
+            // The image body is reached in part BY THE FIBRE AS A WHOLE, so the
+            // chart named is the image's own: no one member is at fault and the
+            // court says which image it is, which is the coordinate 50.9 wants.
+            return Carried::Fails(FAIL_PART, image.moduli.clone());
         }
     }
     Carried::Carries
@@ -138,9 +150,6 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
 pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
     for v in &f.vertices {
         let Vertex::Word { address, .. } = v else {
-            continue;
-        };
-        let Some(class) = v.acting().map(|a| &a.chart) else {
             continue;
         };
         // A VERTEX IS ASKED FOR THE PAIRS ITS RULE CLAIMS. A class whose
@@ -158,7 +167,7 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
             if only.as_ref().is_some_and(|ps| !ps.contains(&(pair as u16))) {
                 continue;
             }
-            if let Carried::Fails(why) = vertex_carries_pair(v, x, y) {
+            if let Carried::Fails(why, chart) = vertex_carries_pair(v, x, y) {
                 // WHICH PAIR AND WHICH FAULT. The refusal's coordinate is
                 // the vertex (50.9 contracts there), so the pair and the
                 // fault ride the journal instead: a voice whose rotor is
@@ -174,7 +183,7 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
                 );
                 return Some(Refusal {
                     reason: REFUSE_VERTEX_BODY,
-                    at: sentence::At::Vertex { address: address.clone(), chart: class.clone() },
+                    at: sentence::At::Vertex { address: address.clone(), chart },
                 });
             }
         }
@@ -210,9 +219,6 @@ fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
 /// where the pair is not rigid) or the transport is not the one measured.
 pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
     for face in &f.faces {
-        let Some(edge) = &face.edge else {
-            continue;
-        };
         let (Some(vi), Some(vj)) = (f.vertices.get(face.i as usize), f.vertices.get(face.j as usize)) else {
             continue;
         };
@@ -223,13 +229,29 @@ pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option
         else {
             continue;
         };
-        let (Some(mi), Some(mj)) = (vi.acting(), vj.acting()) else {
-            continue;
-        };
-        let (ci, cj) = (&mi.carriage, &mj.carriage);
-        let (class_i, class_j) = (&mi.chart, &mj.chart);
         let (ri, rj) = (di.rotor(), dj.rotor());
         let refused = || Refusal { reason: REFUSE_EDGE, at: sentence::At::Face(ai.clone(), aj.clone()) };
+        // EVERY MEMBER PAIR OF THE FACE, each re-measured on ITS OWN two
+        // bodies (D10 item 8). The edge is measured on the union of two bodies,
+        // so a face relating several pairs carries an edge at each, and this
+        // read one member of each end and re-derived that pair's edge for all
+        // of them. A pair with no edge is a remainder edge there and there is
+        // nothing to re-derive.
+        for (pk, place) in face.at.scoped() {
+        let Some(edge) = &place.edge else {
+            continue;
+        };
+        let Some((ik, jk)) = crate::transducer::sentence::read_face_pair_key(&pk) else {
+            continue;
+        };
+        let (Some(class_i), Some(class_j)) = (vi.chart_keyed(&ik), vj.chart_keyed(&jk)) else {
+            continue;
+        };
+        let (Some(mi), Some(mj)) = (vi.acting_on(&class_i), vj.acting_on(&class_j)) else {
+            continue;
+        };
+        let (class_i, class_j) = (&class_i, &class_j);
+        let (ci, cj) = (&mi.carriage, &mj.carriage);
         let Some(expected) = element::conformal_of(&edge.word, &edge.carriage) else {
             return Some(refused());
         };
@@ -261,6 +283,7 @@ pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option
             if !element::same_versor(&inv.geo(&v_ij), &expected) {
                 return Some(refused());
             }
+        }
         }
     }
     None

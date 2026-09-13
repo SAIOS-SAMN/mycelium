@@ -80,16 +80,24 @@ pub(crate) fn carriage_of(
     if !on() {
         return out;
     }
+    // EVERY MEMBER'S CARRIAGE, keyed by the vertex's address and the chart it
+    // acts on there: a step that alters one member's placement and leaves
+    // another's is exactly what this trace exists to name, and one carriage per
+    // address could not say it.
     for (_, &i) in form.by_address.scoped() {
         let Some(w @ crate::transducer::sentence::Vertex::Word { address, .. }) =
             form.vertices.get(i as usize)
         else {
             continue;
         };
-        let Some(carriage) = w.carriage_of() else {
+        let Some(acts) = w.acts() else {
             continue;
         };
-        out.insert(address, carriage.clone());
+        for (ck, a) in acts.scoped() {
+            let mut k = address.as_bytes().to_vec();
+            crate::transducer::address::put_bytes(&mut k, &ck);
+            out.insert(&k, (*a.carriage).clone());
+        }
     }
     out
 }

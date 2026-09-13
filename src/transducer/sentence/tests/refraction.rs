@@ -10,12 +10,7 @@ use crate::transducer::sentence::*;
 fn refraction_is_rebase_regauge_and_carriage() {
     let mut f = Form::default();
     f.vertices.push(word_vertex(1, order4()));
-    f.faces.push(FormFace {
-        i: 0,
-        j: 1,
-        transport: f.face_of(0, 1).expect("star"),
-        edge: None,
-    });
+    f.faces.push(f.face_of(0, 1).expect("star"));
     f.reindex();
     let gamma = Transport {
         word: order4(),
@@ -23,13 +18,16 @@ fn refraction_is_rebase_regauge_and_carriage() {
         gauge: vec![(1, 3)],
     };
     let out = gamma.refract(&f).expect("on the plane");
+    // The member at the chart the fixture put the vertex on: a keyed read, and
+    // this fixture puts it on the root stratum.
+    let root = crate::transducer::stalk::Invariant::default();
     let (Vertex::Word { derivation: old_d, .. }, Some(old_a)) =
-        (&f.vertices[1], f.vertices[1].acting())
+        (&f.vertices[1], f.vertices[1].acting_on(&root))
     else {
         panic!("word vertex");
     };
     let (Vertex::Word { derivation, .. }, Some(a)) =
-        (&out.vertices[1], out.vertices[1].acting())
+        (&out.vertices[1], out.vertices[1].acting_on(&root))
     else {
         panic!("word vertex");
     };
@@ -48,12 +46,7 @@ fn refraction_is_rebase_regauge_and_carriage() {
 fn refraction_replays_as_its_three_moves() {
     let mut f = Form::default();
     f.vertices.push(word_vertex(1, order4()));
-    f.faces.push(FormFace {
-        i: 0,
-        j: 1,
-        transport: f.face_of(0, 1).expect("star"),
-        edge: None,
-    });
+    f.faces.push(f.face_of(0, 1).expect("star"));
     f.reindex();
     let gamma = Transport {
         word: order2(),
@@ -98,15 +91,10 @@ fn rebase_conjugates_by_a_versor_never_subtracts() {
     let mut f = Form::default();
     f.vertices.push(word_vertex(1, order4()));
     f.vertices[1].set_carriage(element::carriage(&q1(), &(q1(), q0())));
-    f.faces.push(FormFace {
-        i: 0,
-        j: 1,
-        transport: f.face_of(0, 1).expect("star"),
-        edge: None,
-    });
+    f.faces.push(f.face_of(0, 1).expect("star"));
     let by = f.face_of(0, 1).expect("relative");
     assert!(
-        !element::same_versor(&by.carriage, &element::identity_versor())
+        !element::same_versor(&face_place(&by).carriage, &element::identity_versor())
             || f.vertices.get(1).is_some(),
         "face_of composes carriages by the geometric product"
     );
@@ -118,7 +106,7 @@ fn rebase_conjugates_by_a_versor_never_subtracts() {
         .expect("rebase");
     assert!(matches!(f.vertices[of as usize], Vertex::Rebased { .. }));
     let t = f.face_of(0, of).expect("rebased face");
-    let _ = t.carriage;
+    let _ = face_place(&t).carriage;
 }
 
 #[test]

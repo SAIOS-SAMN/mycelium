@@ -43,7 +43,14 @@ impl Form {
             depth: d,
             placement: placement.clone(),
         });
-        self.faces.push(FormFace::new(0, idx, placement));
+        // THE PLACEMENT FACE CARRIES ITS PLACEMENT. A Glued vertex stands at
+        // the cited form's chart and the Frame at the root, so there is one
+        // member pair and `face_carrying` names it; `FormFace::new` left it
+        // empty and the loop through this face had no member path.
+        match self.face_carrying(0, idx, placement.clone()) {
+            Some(face) => self.faces.push(face),
+            None => self.faces.push(FormFace::new(0, idx, placement)),
+        }
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
         self.depth = self.depth_of();
         self.reindex();
@@ -76,12 +83,7 @@ impl Form {
                 continue;
             };
             face_old_to_new[fi] = Some(new_faces.len() as u16);
-            new_faces.push(FormFace {
-                i,
-                j,
-                transport: f.transport.clone(),
-                edge: f.edge.clone(),
-            });
+            new_faces.push(FormFace { i, j, word: f.word.clone(), at: f.at.clone() });
         }
         // RENUMBERING A FORM TOUCHES EVERY CARRIER IT HAS. Each of the four
         // below is this form's own — glued vertices, sections, torsion,
@@ -148,24 +150,33 @@ impl Form {
         if gamma.len() != self.vertices.len() {
             return None;
         }
-        let mut next = Vec::with_capacity(self.faces.len());
+        // THE REGAUGE CONJUGATES EVERY MEMBER PAIR. The word is the face's and
+        // conjugates once; the carriage is each member pair's and conjugates
+        // at each, or the regauge moves one pair of bodies into the new frame
+        // and leaves the rest in the old one.
+        let mut next: Vec<(Word, Keyed<FacePlace>)> = Vec::with_capacity(self.faces.len());
         for f in &self.faces {
             let gi = gamma.get(f.i as usize)?;
             let gj = gamma.get(f.j as usize)?;
-            let word = gj
-                .compose(&f.transport.word.compose(&gi.inverse()))
-                .normal_form();
+            let word = gj.compose(&f.word.compose(&gi.inverse())).normal_form();
             let gv = element::versor_of_word(gj)?;
             let inv = gv.versor_inverse()?;
-            let carriage = gv.geo(&f.transport.carriage).geo(&inv);
-            next.push(Transport {
-                word,
-                carriage,
-                gauge: f.transport.gauge.clone(),
-            });
+            let mut at = Keyed::new();
+            for (k, p) in f.at.scoped() {
+                at.insert(
+                    &k,
+                    FacePlace {
+                        carriage: gv.geo(&p.carriage).geo(&inv),
+                        gauge: p.gauge.clone(),
+                        edge: p.edge.clone(),
+                    },
+                );
+            }
+            next.push((word, at));
         }
-        for (f, t) in self.faces.iter_mut().zip(next) {
-            f.transport = t;
+        for (f, (word, at)) in self.faces.iter_mut().zip(next) {
+            f.word = word;
+            f.at = at;
         }
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
         Some(())
@@ -203,9 +214,9 @@ impl Form {
                 for &(v, fi, u_is_i) in &adj[u] {
                     let f = &self.faces[fi];
                     let gv = if u_is_i {
-                        gu.compose(&f.transport.word.inverse()).normal_form()
+                        gu.compose(&f.word.inverse()).normal_form()
                     } else {
-                        gu.compose(&f.transport.word).normal_form()
+                        gu.compose(&f.word).normal_form()
                     };
                     match &gamma[v] {
                         None => {
@@ -387,16 +398,29 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     for face in &f.faces {
         buf.extend_from_slice(&face.i.to_le_bytes());
         buf.extend_from_slice(&face.j.to_le_bytes());
-        crate::transducer::address::put_bytes(&mut buf, &face.transport.word.key());
-        if let Some(k) = face.transport.carriage.key() {
-            let _ = crate::transducer::address::put_addr(&mut buf, k);
-        }
-        let mut g = face.transport.gauge.clone();
-        g.sort_unstable();
-        buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
-        for (a, b) in g {
-            buf.push(a);
-            buf.push(b);
+        // THE WORD ONCE, then THE MEMBERS IN CHART-PAIR KEY ORDER — the
+        // trie's, which is content (law 2), so two nodes holding one face
+        // reach one address. The count is written because a face with two
+        // member pairs SAYS something a face with one does not, and the
+        // address is what says it (D10).
+        crate::transducer::address::put_bytes(&mut buf, &face.word.key());
+        buf.extend_from_slice(&(face.at.len() as u16).to_le_bytes());
+        for (pk, place) in face.at.scoped() {
+            crate::transducer::address::put_bytes(&mut buf, &pk);
+            if let Some(k) = place.carriage.key() {
+                let _ = crate::transducer::address::put_addr(&mut buf, k);
+            }
+            let mut g = place.gauge.clone();
+            g.sort_unstable();
+            buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+            for (a, b) in g {
+                buf.push(a);
+                buf.push(b);
+            }
+            // 50.3's edge is evidence the court re-measures, not identity:
+            // its PRESENCE is on the key, because a remainder edge and a
+            // carried edge are two different faces, and its value is not.
+            buf.push(u8::from(place.edge.is_some()));
         }
     }
     // The bundle's frame ratio and its sections are meaning (rule 7): two
@@ -557,9 +581,9 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
         let j = vertex_match_key(a, fa.j)?;
         let fb = b_by_ends.get(&ends_key(&i, &j))?;
         let expect = gamma[fa.j as usize]
-            .compose(&fa.transport.word)
+            .compose(&fa.word)
             .compose(&gamma[fa.i as usize].inverse());
-        if !expect.same_form(&fb.transport.word) {
+        if !expect.same_form(&fb.word) {
             return None;
         }
     }

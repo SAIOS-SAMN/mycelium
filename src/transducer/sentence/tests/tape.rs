@@ -42,8 +42,20 @@ fn form_tape_v6_round_trips() {
         chart: stalk::Invariant(vec![1, 4, 4]),
         bodies: vec![(9, 9, 0, 1), (9, 10, 0, 1)],
     });
+    // A FACE CARRYING AN EDGE AT ONE MEMBER PAIR. `FormFace::new` records the
+    // word alone, so the pair is written here with its edge on it.
     let mut edged = FormFace::new(1, glued, w.clone());
-    edged.edge = Some(Transport::from_word(w.clone()));
+    edged.at.insert(
+        crate::transducer::sentence::face_pair_key(
+            &stalk::Invariant::default(),
+            &stalk::Invariant(vec![1, 4, 4]),
+        ),
+        crate::transducer::sentence::FacePlace {
+            carriage: element::identity_versor(),
+            gauge: Vec::new(),
+            edge: Some(Transport::from_word(w.clone())),
+        },
+    );
     f.faces.push(edged);
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.remainder = crate::transducer::element::place_chain(&[(9, 9, 1, 0)])
@@ -123,10 +135,17 @@ fn form_tape_v6_round_trips() {
     );
     assert_eq!(back.faces[0].i, 0);
     assert_eq!(back.faces[0].j, 1);
-    assert_eq!(back.faces[0].transport.word, f.faces[0].transport.word);
-    assert_eq!(back.faces[0].edge, None, "a face with no measured edge transport is a remainder edge");
+    assert_eq!(back.faces[0].word, f.faces[0].word);
+    // THE WHOLE MEMBER FIBRE RIDES THE TAPE, keyed by chart pair: the placement
+    // at each pair and the edge where the pair has one.
+    assert_eq!(back.faces[0].at, f.faces[0].at, "every member pair comes back at its own key");
+    assert!(!back.faces[0].has_edge(), "a face with no measured edge transport is a remainder edge");
     let last = back.faces.len() - 1;
-    assert_eq!(back.faces[last].edge.as_ref().map(|t| t.word.clone()), Some(w.clone()), "the edge transport rides the face");
+    assert_eq!(
+        back.faces[last].at.scoped().filter_map(|(_, p)| p.edge.as_ref().map(|t| t.word.clone())).collect::<Vec<_>>(),
+        vec![w.clone()],
+        "the edge transport rides the face at its member pair"
+    );
     match (&f.vertices[demand as usize], &back.vertices[demand as usize]) {
         (
             Vertex::Demand { kind: ka, chart: ca, bodies: ba },

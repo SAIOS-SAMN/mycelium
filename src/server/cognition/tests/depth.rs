@@ -7,7 +7,7 @@ use crate::chronometry::ActKind;
 use crate::transducer::address::{Address, TAG_FORM};
 use crate::transducer::alphabet::{Derivation, LetterId, Word};
 use crate::transducer::element::{self, Element};
-use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+use crate::transducer::sentence::{as_element_form, Form, Vertex};
 
 fn quarter(n: usize) -> Word {
     let q = LetterId::quarter((0, 1)).expect("the quarter turn");
@@ -26,7 +26,7 @@ fn sentence_with(w: Word, tag: u8) -> Element {
         Vec::new(),
         None,
     ));
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star"), edge: None });
+    f.faces.push(f.face_of(0, 1).expect("star"));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
     as_element_form(&f, [1, 0, 0, 0]).expect("a tape")

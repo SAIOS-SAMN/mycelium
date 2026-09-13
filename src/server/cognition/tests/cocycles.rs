@@ -52,7 +52,7 @@ assert_eq!(
 
 fn filed_v2_form() -> (Element, crate::transducer::stalk::Invariant, Address) {
 use crate::transducer::alphabet::{LetterId, Word};
-use crate::transducer::sentence::{as_element_form, form_torsion, Form, FormFace, Vertex};
+use crate::transducer::sentence::{as_element_form, form_torsion, Form, Vertex};
 let order4 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
@@ -67,19 +67,9 @@ for tag in [2u8, 3u8] {
         None,
     ));
 }
-f.faces.push(FormFace {
-    i: 0,
-    j: 1,
-    transport: f.face_of(0, 1).expect("star 1"),
-    edge: None,
-});
-f.faces.push(FormFace {
-    i: 0,
-    j: 2,
-    transport: f.face_of(0, 2).expect("star 2"),
-    edge: None,
-});
-f.faces.push(FormFace::new(1, 2, order4));
+f.faces.push(f.face_of(0, 1).expect("star 1"));
+f.faces.push(f.face_of(0, 2).expect("star 2"));
+f.faces.push(f.face_carrying(1, 2, order4).expect("a chord between two bodies"));
 f.loops = Form::loops_of(&f.faces, f.vertices.len());
 let _ = f.pivot_loop(
     [0xca; 32],

@@ -98,7 +98,7 @@ fn a_tape_with_no_acting_vertex_is_a_chain() {
 fn a_carried_edge_rederives_on_the_union_or_is_refused() {
     let family = vec![(digits(&["11200"]), digits(&["00112"]))];
     let f = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
-    assert!(f.faces.iter().any(|face| face.edge.is_some()), "the rigid pair carries an edge");
+    assert!(f.faces.iter().any(|face| face.has_edge()), "the rigid pair carries an edge");
     let mag = sentence_measure(&f, &family, &NoCrystal).expect("both bodies are spoken");
     let e = as_element_form(&f, mag).expect("a tape");
     assert_eq!(
@@ -108,9 +108,14 @@ fn a_carried_edge_rederives_on_the_union_or_is_refused() {
     );
     let quarter = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]);
     let mut g = f.clone();
+    // EVERY MEMBER PAIR'S EDGE is tampered, so the court's refusal is not a
+    // function of which pair it happened to read.
     for face in &mut g.faces {
-        if let Some(edge) = &mut face.edge {
-            edge.word = quarter.clone();
+        let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
+        for k in pairs {
+            if let Some(edge) = face.at.get_mut(&k).and_then(|p| p.edge.as_mut()) {
+                edge.word = quarter.clone();
+            }
         }
     }
     let tampered = as_element_form(&g, mag).expect("a tape");

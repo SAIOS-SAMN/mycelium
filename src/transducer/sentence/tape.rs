@@ -108,12 +108,27 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
     for face in &f.faces {
         out.extend_from_slice(&face.i.to_le_bytes());
         out.extend_from_slice(&face.j.to_le_bytes());
-        put_transport(&face.transport, out);
-        match &face.edge {
-            None => out.push(0),
-            Some(t) => {
-                out.push(1);
-                put_transport(t, out);
+        // THE FACE'S WORD ONCE (v8, D10): it is `w_j ∘ w_i⁻¹` off the two
+        // derivations, a vertex coordinate, so one word serves the face.
+        word_to_form_bytes(&face.word, None, out);
+        // THEN THE MEMBERS, IN CHART-PAIR KEY ORDER — the trie's, which is
+        // content — each with the carriage and hue map it carries there and
+        // 50.3's edge where the pair has one.
+        out.extend_from_slice(&(face.at.len() as u16).to_le_bytes());
+        for (pk, place) in face.at.scoped() {
+            crate::transducer::address::put_addr(out, &pk);
+            place.carriage.to_bytes(out);
+            out.extend_from_slice(&(place.gauge.len() as u16).to_le_bytes());
+            for &(x, y) in &place.gauge {
+                out.push(x);
+                out.push(y);
+            }
+            match &place.edge {
+                None => out.push(0),
+                Some(t) => {
+                    out.push(1);
+                    put_transport(t, out);
+                }
             }
         }
     }
@@ -129,7 +144,12 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
         }
         out.extend_from_slice(&lp.chord.to_le_bytes());
         word_to_form_bytes(&lp.holonomy, None, out);
-        lp.carriage.to_bytes(out);
+        // ONE CARRIAGE PER MEMBER PATH, in path key order.
+        out.extend_from_slice(&(lp.carriages.len() as u16).to_le_bytes());
+        for (path, c) in lp.carriages.scoped() {
+            crate::transducer::address::put_addr(out, &path);
+            c.to_bytes(out);
+        }
     }
     // The remainder rides the tape AS IT SITS IN THE SCENE, so the decoder
     // re-derives both A5's chain and the translator from one reading.
@@ -319,19 +339,33 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     for _ in 0..nf {
         let i = take_u16(b, pos)?;
         let j = take_u16(b, pos)?;
-        let transport = take_transport(b, pos)?;
-        let edge = match *b.get(*pos)? {
-            0 => {
-                *pos += 1;
-                None
+        // The face's word, then its members in chart-pair key order (v8, D10).
+        let (word, _) = word_from_form_bytes(b, pos)?;
+        let np = take_count(b, *pos, take_u16(b, pos)? as usize, 3)?;
+        let mut at = Keyed::new();
+        for _ in 0..np {
+            let pk = crate::transducer::address::take_addr(b, pos)?;
+            let carriage = element::Versor::from_bytes(b, pos)?;
+            let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+            let mut gauge = Vec::with_capacity(ng);
+            for _ in 0..ng {
+                gauge.push((*b.get(*pos)?, *b.get(*pos + 1)?));
+                *pos += 2;
             }
-            1 => {
-                *pos += 1;
-                Some(take_transport(b, pos)?)
-            }
-            _ => return None,
-        };
-        faces.push(FormFace { i, j, transport, edge });
+            let edge = match *b.get(*pos)? {
+                0 => {
+                    *pos += 1;
+                    None
+                }
+                1 => {
+                    *pos += 1;
+                    Some(take_transport(b, pos)?)
+                }
+                _ => return None,
+            };
+            at.insert(pk.as_bytes(), FacePlace { carriage, gauge, edge });
+        }
+        faces.push(FormFace { i, j, word, at });
     }
     let nl = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
     let mut loops = Vec::with_capacity(nl);
@@ -351,13 +385,18 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         }
         let chord = take_u16(b, pos)?;
         let (holonomy, _) = word_from_form_bytes(b, pos)?;
-        let carriage = element::Versor::from_bytes(b, pos)?;
+        let nc = take_count(b, *pos, take_u16(b, pos)? as usize, 3)?;
+        let mut carriages = Keyed::new();
+        for _ in 0..nc {
+            let path = crate::transducer::address::take_addr(b, pos)?;
+            carriages.insert(path.as_bytes(), element::Versor::from_bytes(b, pos)?);
+        }
         loops.push(Loop {
             vertices: vs,
             faces: fs,
             chord,
             holonomy,
-            carriage,
+            carriages,
         });
     }
     let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
@@ -534,7 +573,7 @@ pub fn carries_torsion(e: &Element) -> bool {
 /// class key. None when that face is missing — never an identity rotor.
 pub fn torsion_loop_rotor(f: &Form, class: &[u8]) -> Option<Rotor> {
     let chord = f.torsion.get(class)?.chord;
-    f.faces.get(chord as usize).map(|face| face.transport.word.rotor())
+    f.faces.get(chord as usize).map(|face| face.word.rotor())
 }
 
 /// A sentence Element: tagged tape, not an opened-axis connection.

@@ -42,7 +42,7 @@ fn wrap_glues_crystallized_form() {
 #[test]
 fn hold_form_keeps_a_glued_open_loop() {
     use crate::transducer::alphabet::Word;
-    use crate::transducer::sentence::{Form, FormFace, Vertex};
+    use crate::transducer::sentence::{Form, Vertex};
     let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
     let w = Word::from_letters(&[(q, false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -57,7 +57,7 @@ fn hold_form_keeps_a_glued_open_loop() {
             vec![(1, 2)],
             None,
         ));
-        f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
+        f.faces.push(f.face_of(0, 1).expect("vertices"));
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         f
     };
@@ -95,19 +95,9 @@ fn hold_form_keeps_a_glued_open_loop() {
             None,
         ));
     }
-    open.faces.push(FormFace {
-        i: 0,
-        j: 1,
-        transport: open.face_of(0, 1).expect("star 1"),
-        edge: None,
-    });
-    open.faces.push(FormFace {
-        i: 0,
-        j: 2,
-        transport: open.face_of(0, 2).expect("star 2"),
-        edge: None,
-    });
-    open.faces.push(FormFace::new(1, 2, w.clone()));
+    open.faces.push(open.face_of(0, 1).expect("star 1"));
+    open.faces.push(open.face_of(0, 2).expect("star 2"));
+    open.faces.push(open.face_carrying(1, 2, w.clone()).expect("a chord between two bodies"));
     open.loops = Form::loops_of(&open.faces, open.vertices.len());
     assert!(
         open.loops.iter().any(|lp| !lp.holonomy.is_identity()),
@@ -205,7 +195,7 @@ fn hold_form_keeps_a_glued_open_loop() {
 fn hold_form_carries_bundle_and_remainder() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::family::pair_idx_key;
-    use crate::transducer::sentence::{Form, FormFace, Vertex};
+    use crate::transducer::sentence::{Form, Vertex};
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
@@ -217,12 +207,7 @@ fn hold_form_carries_bundle_and_remainder() {
         vec![(1, 2)],
         None,
     ));
-    f.faces.push(FormFace {
-        i: 0,
-        j: 1,
-        transport: f.face_of(0, 1).expect("star"),
-        edge: None,
-    });
+    f.faces.push(f.face_of(0, 1).expect("star"));
     let train = vec![(vec![vec![1u8]], vec![vec![2u8]])];
     let rem = vec![vec![(0i64, 0i64, 1u8, 2u8)]];
     let mut c = Contemplation::new();

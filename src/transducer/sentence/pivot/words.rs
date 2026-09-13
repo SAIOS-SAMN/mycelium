@@ -206,15 +206,22 @@ pub fn admit_generators_by_lane(
     f: &Form,
 ) {
     for v in &f.vertices {
-        let Vertex::Word { address, derivation, .. } = v else {
+        let Vertex::Word { address, derivation, acts, .. } = v else {
             continue;
         };
-        let Some(cv) = class_of_vertex(derivation, v.gauge_of()) else {
-            continue;
-        };
-        for (lane, chart) in lane_charts_of(&cv, &derivation.rotor()) {
-            let Some(cover) = index.get_mut(lane) else { continue };
-            cover.nested_insert(chart.key(), address, form.clone());
+        // EVERY MEMBER'S GAUGE. The lanes a generator occupies are read from
+        // its class vector, which the gauge enters, so a vertex acting on
+        // several charts occupies the lanes of EACH and is admitted to all of
+        // them. Reading one member admitted it to one chart's lanes and the
+        // cover never named it at the others.
+        for (_, a) in acts.scoped() {
+            let Some(cv) = class_of_vertex(derivation, &a.gauge) else {
+                continue;
+            };
+            for (lane, chart) in lane_charts_of(&cv, &derivation.rotor()) {
+                let Some(cover) = index.get_mut(lane) else { continue };
+                cover.nested_insert(chart.key(), address, form.clone());
+            }
         }
     }
 }
@@ -226,16 +233,20 @@ pub fn retract_generators_by_lane(
     f: &Form,
 ) {
     for v in &f.vertices {
-        let Vertex::Word { address, derivation, .. } = v else {
+        let Vertex::Word { address, derivation, acts, .. } = v else {
             continue;
         };
-        let Some(cv) = class_of_vertex(derivation, v.gauge_of()) else {
-            continue;
-        };
-        for (lane, chart) in lane_charts_of(&cv, &derivation.rotor()) {
-            let Some(cover) = index.get_mut(lane) else { continue };
-            if let Some(bucket) = cover.get_mut(chart.key().as_bytes()) {
-                bucket.remove(address);
+        // The retract mirrors the admit member for member, or it empties one
+        // chart's lanes and leaves the generator named at the others.
+        for (_, a) in acts.scoped() {
+            let Some(cv) = class_of_vertex(derivation, &a.gauge) else {
+                continue;
+            };
+            for (lane, chart) in lane_charts_of(&cv, &derivation.rotor()) {
+                let Some(cover) = index.get_mut(lane) else { continue };
+                if let Some(bucket) = cover.get_mut(chart.key().as_bytes()) {
+                    bucket.remove(address);
+                }
             }
         }
     }

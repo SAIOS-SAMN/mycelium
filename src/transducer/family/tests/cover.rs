@@ -366,7 +366,7 @@ fn cover_attempts_are_placed_times_unplaced() {
 #[test]
 fn a_pure_coboundary_form_yields_no_evaluated_loop() {
     use crate::transducer::alphabet::Word;
-    use crate::transducer::sentence::{Form, FormFace};
+    use crate::transducer::sentence::Form;
     let mut f = Form::default();
     for tag in [1u8, 2u8, 3u8] {
         f.vertices.push(crate::transducer::sentence::Vertex::word_on(
@@ -381,18 +381,21 @@ fn a_pure_coboundary_form_yields_no_evaluated_loop() {
     // Every face the coboundary of its two vertices, and no edge on any of
     // them: the pieces were not carried, so there is no frame transition.
     for (i, j) in [(0u16, 1u16), (0, 2), (0, 3), (1, 2), (2, 3), (1, 3)] {
-        let transport = f.face_of(i, j).expect("a coboundary of two vertices");
-        f.faces.push(FormFace { i, j, transport, edge: None });
+        f.faces.push(f.face_of(i, j).expect("a coboundary of two vertices"));
     }
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
     assert!(!f.loops.is_empty(), "the triangle among the bodies closes");
     for lp in &f.loops {
+        // NO MEMBER PATH IS EVALUATED, which is what "not evaluated" means once
+        // a loop has one reading per path: a path carrying a remainder edge
+        // anywhere on it is absent from the result, so an empty result is the
+        // whole loop unevaluated.
         assert!(
-            f.edge_holonomy(lp).is_none(),
-            "a cycle through a face with no edge is not evaluated: {lp:?}"
+            f.edge_holonomies(lp).is_some_and(|hs| hs.is_empty()),
+            "a cycle through a face with no edge is not evaluated on any path: {lp:?}"
         );
-        assert!(f.edge_class(lp).is_none(), "so it has no class to file under");
+        assert!(f.edge_classes(lp).is_empty(), "so it has no class to file under");
         assert!(f.edge_coheres(lp), "and it owes no filing");
     }
     assert!(

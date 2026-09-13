@@ -5,7 +5,7 @@ use crate::cognition::*;
 use crate::transducer::address::{Address, TAG_FORM};
 use crate::transducer::alphabet::{Derivation, LetterId, Word};
 use crate::transducer::element::{self, Element};
-use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+use crate::transducer::sentence::{as_element_form, Form, Vertex};
 
 fn quarter(n: usize) -> Word {
     let q = LetterId::quarter((0, 1)).expect("the quarter turn on the sensor plane");
@@ -25,7 +25,7 @@ fn sentence_at(d: Derivation, tag: u8, mag: [u64; 4]) -> Element {
         Vec::new(),
         None,
     ));
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star"), edge: None });
+    f.faces.push(f.face_of(0, 1).expect("star"));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
     as_element_form(&f, mag).expect("a tape")

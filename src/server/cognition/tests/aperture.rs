@@ -215,7 +215,7 @@ fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {
 #[test]
 fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
     use crate::transducer::alphabet::Word;
-    use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+    use crate::transducer::sentence::{as_element_form, Form, Vertex};
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
@@ -230,7 +230,7 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
         ));
     }
     for (i, j) in [(0u16, 1u16), (1, 2), (0, 2)] {
-        f.faces.push(FormFace { i, j, transport: f.face_of(i, j).expect("face"), edge: None });
+        f.faces.push(f.face_of(i, j).expect("face"));
     }
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     assert!(!f.loops.is_empty(), "a triangle closes a loop");

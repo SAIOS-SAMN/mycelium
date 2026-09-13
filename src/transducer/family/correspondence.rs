@@ -53,20 +53,11 @@ pub(crate) fn end_of(v: &Vertex) -> Option<End> {
     }
 }
 
-/// THE ONE VERTEX OF A CLASS ON A PAIR FORM. A pair form's vertices each
-/// act on one chart, so on a pair form this is exact — the class and the
-/// chart are in bijection there and there is nothing for it to pass over.
-///
-/// `one_vertex_of_class` was the alias extraction used to build the RULE's
-/// vertex, and on a rule the bijection is what fails: a class spanning two
-/// charts has two vertices per pair form and this answered the first. It is
-/// gone; correspondence reads every member (D7b) and nothing asks a form for
-/// "the" vertex of a class any more.
-pub(crate) fn match_vertex<'a>(f: &'a Form, class: &TransportClass) -> Option<&'a Vertex> {
-    f.vertices
-        .iter()
-        .find(|v| transport_class(v).as_ref() == Some(class))
-}
+// `match_vertex(f, class)` stood here — `vertices.iter().find(...)`, the last
+// finder of "the" vertex of a class. It is gone with its last caller:
+// `rebase_named_faces` asked it for a class's placement and now reads the pair
+// form's own face between the two classes, which is the incidence that says
+// which bodies are related. Nothing asks a form for one vertex of a class.
 
 /// The unique relative word between two ends on a pair form, read from
 /// that form's named faces. Several instances of a class are a section:
@@ -77,9 +68,9 @@ pub(crate) fn face_word_between(pf: &Form, a: &End, b: &End) -> Option<crate::tr
         let ea = end_of(pf.vertices.get(f.i as usize)?)?;
         let eb = end_of(pf.vertices.get(f.j as usize)?)?;
         let (w, ok) = if &ea == a && &eb == b {
-            (f.transport.word.clone(), true)
+            (f.word.clone(), true)
         } else if &ea == b && &eb == a {
-            (f.transport.word.inverse(), true)
+            (f.word.inverse(), true)
         } else {
             (crate::transducer::alphabet::Word::identity(), false)
         };
@@ -94,16 +85,88 @@ pub(crate) fn face_word_between(pf: &Form, a: &End, b: &End) -> Option<crate::tr
     }
     held
 }
-pub(crate) fn word_place_of_class(
+// `word_place_of_class(pf, tc)` stood here and answered the representative
+// member's placement to a caller asking about a CLASS. Its one caller —
+// `rebase_named_faces`, comparing two classes across pair forms — reads
+// `relatives_between` instead, which takes the relative off the pair form's own
+// face and so names which body is compared to which. A "placement of a class"
+// is not a thing a class has once it spans two charts, so the reader is gone
+// rather than given a chart parameter nobody passes (D10 item 11).
+
+/// THE RELATIVE PLACEMENTS BETWEEN TWO CLASSES ON ONE PAIR FORM, keyed by the
+/// member pair, read off THE PAIR FORM'S OWN FACES between them.
+///
+/// The incidence is the face: a face exists because two bodies' supports meet
+/// or sit at ring distance one (21 step 2), so the face says which body of
+/// class `a` relates to which body of class `b`. Taking the product of the two
+/// classes' placements would relate bodies nothing in the scene relates.
+///
+/// The value is `(w_b, C_b · C_a⁻¹)` — the word the far end speaks and the
+/// relative carriage `rebase_named_faces` asks about. A pair whose words differ
+/// contributes nothing: the two ends do not speak one word there and there is
+/// no rebase to make.
+pub(crate) fn relatives_between(
     pf: &Form,
-    tc: &TransportClass,
-) -> Option<(crate::transducer::alphabet::Word, Versor)> {
-    match match_vertex(pf, tc) {
-        Some(v @ Vertex::Word { derivation, .. }) => {
-            Some((derivation.word_local()?.clone(), v.carriage_of()?.clone()))
+    a: &TransportClass,
+    b: &TransportClass,
+) -> crate::network::nerve::Keyed<(crate::transducer::alphabet::Word, Versor)> {
+    let mut out = crate::network::nerve::Keyed::new();
+    let (ka, kb) = (a.key(), b.key());
+    for face in &pf.faces {
+        let (Some(vi), Some(vj)) = (
+            pf.vertices.get(face.i as usize),
+            pf.vertices.get(face.j as usize),
+        ) else {
+            continue;
+        };
+        let (Some(ci), Some(cj)) = (
+            transport_class(vi).map(|c| c.key()),
+            transport_class(vj).map(|c| c.key()),
+        ) else {
+            continue;
+        };
+        // The face runs a→b or b→a; either way the relative asked for is the
+        // one from `a`'s body to `b`'s.
+        let forward = ci == ka && cj == kb;
+        if !(forward || (ci == kb && cj == ka)) {
+            continue;
         }
-        _ => None,
+        let (Vertex::Word { derivation: di, .. }, Vertex::Word { derivation: dj, .. }) = (vi, vj)
+        else {
+            continue;
+        };
+        let (Some(wi), Some(wj)) = (di.word_local(), dj.word_local()) else {
+            continue;
+        };
+        if wi != wj {
+            continue;
+        }
+        for (pk, _) in face.at.scoped() {
+            let Some((ik, jk)) = crate::transducer::sentence::read_face_pair_key(&pk) else {
+                continue;
+            };
+            let (Some(cca), Some(ccb)) = (
+                if forward { vi.chart_keyed(&ik) } else { vj.chart_keyed(&jk) },
+                if forward { vj.chart_keyed(&jk) } else { vi.chart_keyed(&ik) },
+            ) else {
+                continue;
+            };
+            let (Some(ma), Some(mb)) = (
+                if forward { vi.acting_on(&cca) } else { vj.acting_on(&cca) },
+                if forward { vj.acting_on(&ccb) } else { vi.acting_on(&ccb) },
+            ) else {
+                continue;
+            };
+            let Some(inv) = ma.carriage.versor_inverse() else {
+                continue;
+            };
+            out.insert(
+                crate::transducer::sentence::face_pair_key(&cca, &ccb),
+                (wj.clone(), mb.carriage.geo(&inv)),
+            );
+        }
     }
+    out
 }
 
 pub(crate) fn placement_of_class(pair_forms: &[Form], class: &TransportClass) -> Option<crate::transducer::alphabet::Word> {

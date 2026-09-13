@@ -117,7 +117,7 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
         .1
         .by
         .face() as usize;
-    tampered.faces[fi].transport.word = q.clone();
+    tampered.faces[fi].word = q.clone();
     let bad = as_element_form(&tampered, e.magnitude()).expect("tampered tape");
     assert_eq!(
         crate::court::verdict::blind_replay(&bad),
@@ -187,8 +187,8 @@ fn pivot_writes_the_chord_transport_only() {
         }
         assert_eq!(
             f.face_of(face.i, face.j).as_ref(),
-            Some(&face.transport),
-            "tree face {fi} re-derives"
+            Some(face),
+            "tree face {fi} re-derives, word and every member pair"
         );
     }
 }
@@ -198,10 +198,12 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     // T14: Placement.
     let mut f = chord_form(&[Word::identity()]);
     for fa in &mut f.faces {
-        fa.transport.gauge.clear();
+        set_face_place(fa, |p| p.gauge.clear());
     }
     let chord = f.loops[0].chord as usize;
-    f.faces[chord].transport.carriage = element::carriage(&q1(), &(q1(), q0()));
+    set_face_place(&mut f.faces[chord], |p| {
+        p.carriage = element::carriage(&q1(), &(q1(), q0()));
+    });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     let before = f.class_vector(0).expect("loop");
     assert!(before.occupies(Axis::Placement));
@@ -223,7 +225,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     // T14: Orientation.
     let mut f = chord_form(&[order2()]);
     for fa in &mut f.faces {
-        fa.transport.gauge.clear();
+        set_face_place(fa, |p| p.gauge.clear());
     }
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     let before = f.class_vector(0).expect("ori");
@@ -247,11 +249,13 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     // T14: Dilation.
     let mut f = chord_form(&[Word::identity()]);
     for fa in &mut f.faces {
-        fa.transport.gauge.clear();
+        set_face_place(fa, |p| p.gauge.clear());
     }
     let chord = f.loops[0].chord as usize;
     let two = num_rational::BigRational::from_integer(num_bigint::BigInt::from(2));
-    f.faces[chord].transport.carriage = element::carriage(&two, &(q0(), q0()));
+    set_face_place(&mut f.faces[chord], |p| {
+        p.carriage = element::carriage(&two, &(q0(), q0()));
+    });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     let before = f.class_vector(0).expect("dil");
     assert!(
@@ -323,15 +327,18 @@ fn a_rank_move_is_one_unit_or_none() {
 /// trials would certify a move the form does not make.
 #[test]
 fn a_loops_class_and_row_read_off_its_faces_and_the_axis_carrier() {
-    use crate::transducer::sentence::pivot::drive::class_vector_on;
+    use crate::transducer::sentence::pivot::drive::class_vectors_on;
     use crate::transducer::sentence::{loop_row_on, opened_axis_on};
     let f = chord_form(&[order4(), order2(), Word::identity()]);
     assert!(f.loops.len() >= 3, "three chords close three loops: {}", f.loops.len());
     for (i, lp) in f.loops.iter().enumerate() {
+        // EVERY MEMBER PATH, compared path for path: the trial and the form
+        // read the same paths and the same vector on each, so a trial that
+        // agreed on one path and differed on another is caught.
         assert_eq!(
-            class_vector_on(&f.faces, &f.axes, lp),
-            f.class_vector(i),
-            "the class the trial reads is the class the form reads, loop {i}"
+            class_vectors_on(&f.faces, &f.axes, lp),
+            f.class_vectors(i),
+            "the classes the trial reads are the classes the form reads, loop {i}"
         );
         assert_eq!(
             loop_row_on(&f.axes, lp),
@@ -351,7 +358,7 @@ fn a_loops_class_and_row_read_off_its_faces_and_the_axis_carrier() {
     let chord = lp.chord;
     if opened.open_axis_on(chord).is_some() {
         for (i, lp) in opened.loops.iter().enumerate() {
-            assert_eq!(class_vector_on(&opened.faces, &opened.axes, lp), opened.class_vector(i));
+            assert_eq!(class_vectors_on(&opened.faces, &opened.axes, lp), opened.class_vectors(i));
             assert_eq!(loop_row_on(&opened.axes, lp), opened.loop_row_at(i));
         }
     }

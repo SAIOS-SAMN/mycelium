@@ -43,13 +43,61 @@ pub fn replay_form_with(
 /// the tape — the same deferral a `Glued` citation takes, so the sentence
 /// is docketed and the syllabus serves the generator rather than the
 /// voice being refused for speaking ahead of this court's cover.
+/// DOES THIS FACE RE-DERIVE FROM ITS TWO VERTICES — the word once, and the
+/// placement and hue map at every member pair the face records (D10).
+///
+/// The pairs are the face's own: re-deriving them from the vertices would take
+/// the product of the two fibres, and which bodies a face relates is the
+/// scene's fact, not something the court recomputes. A pair the two vertices no
+/// longer relate does not re-derive, and the face refuses.
+fn face_rederives(f: &Form, face: &crate::transducer::sentence::FormFace) -> bool {
+    let (Some(vi), Some(vj)) = (
+        f.vertices.get(face.i as usize),
+        f.vertices.get(face.j as usize),
+    ) else {
+        return false;
+    };
+    if f.face_word(face.i, face.j).as_ref() != Some(&face.word) {
+        return false;
+    }
+    for (pk, place) in face.at.scoped() {
+        let Some((ik, jk)) = crate::transducer::sentence::read_face_pair_key(&pk) else {
+            return false;
+        };
+        let (Some(ci), Some(cj)) = (vi.chart_keyed(&ik), vj.chart_keyed(&jk)) else {
+            return false;
+        };
+        // The edge is evidence the court re-measures against the FAMILY
+        // (`edges_rederive_family`), not something the vertices re-derive, so it
+        // is carried in and compared by its presence alone here.
+        match f.face_place(face.i, &ci, face.j, &cj, place.edge.clone()) {
+            Some(p) if p == *place => {}
+            _ => return false,
+        }
+    }
+    true
+}
+
 fn derivations_compose(f: &Form, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Option<Refusal> {
     use crate::transducer::alphabet::Verified;
     for v in &f.vertices {
         let Vertex::Word { address, derivation, .. } = v else {
             continue;
         };
-        let Some(class) = v.acting().map(|a| &a.chart) else {
+        // THE CHART IN THE QUESTION (D10 item 10). A derivation is a vertex
+        // coordinate, so the composition is asked once; what the refusal NAMES
+        // is a chart, and the chart a vertex acting on several is refused at is
+        // the one its derivation was read for — which is the vertex's whole
+        // fibre, because the derivation is the same at each. A refusal at the
+        // representative named one chart of several arbitrarily, so this names
+        // every chart it acts on, one refusal each, and the first is the one
+        // returned.
+        // The refusal's chart is the LEAST the vertex stands at, and the slice
+        // pattern says so: `charts()` yields them in the fibre's trie order,
+        // which is the chart keys sorted, so the least is CONTENT and the same
+        // on every node — not the one that happened to arrive first (rule 15).
+        let charts = v.charts();
+        let [class, ..] = charts.as_slice() else {
             continue;
         };
         // The ACTION at the cited vertex (L14). A citation of an adjoined
@@ -208,12 +256,20 @@ pub fn replay_form_at(
         // of lattice bodies, both of finite order on the word; a word of
         // infinite order is neither (the membership on the bodies is read
         // with the family, L7).
-        if let Some(edge) = &face.edge {
-            if matches!(edge.word.order(), crate::transducer::alphabet::Order::Infinite) {
-                return Some(face_refusal(f, face));
-            }
+        // EVERY MEMBER PAIR'S EDGE. One pair carrying a word of infinite order
+        // refuses the face, whichever other pairs are finite.
+        if face.at.scoped().any(|(_, p)| {
+            p.edge.as_ref().is_some_and(|e| {
+                matches!(e.word.order(), crate::transducer::alphabet::Order::Infinite)
+            })
+        }) {
+            return Some(face_refusal(f, face));
         }
-        if f.face_of(face.i, face.j).as_ref() == Some(&face.transport) {
+        // THE FACE RE-DERIVES AT EVERY MEMBER PAIR IT CARRIES. The word is the
+        // face's and re-derives once; the placement and hue map at each pair
+        // re-derive from the two members that pair names, and a face whose
+        // pairs the vertices no longer relate does not re-derive at all.
+        if face_rederives(f, face) {
             continue;
         }
         if !torsion_chord_carries(&walked, &by_chord, i) {
@@ -397,7 +453,7 @@ pub(crate) fn torsion_chord_carries(f: &Form, by_chord: &Keyed<u16>, face_idx: u
         let Some(tf) = f.faces.get(fi as usize) else {
             return false;
         };
-        if f.face_of(tf.i, tf.j).as_ref() != Some(&tf.transport) {
+        if !face_rederives(f, tf) {
             return false;
         }
     }
@@ -430,11 +486,16 @@ pub(crate) fn form_loops_replay(f: &Form) -> bool {
         // evaluate, a remainder edge anywhere on it, answers `None` and
         // carries no obligation: that is a refusal to read (13.9 step 7),
         // not a flat reading, and `pair.rs` classifies nothing there either.
-        let Some(e) = f.edge_holonomy(lp) else {
+        // EVERY EVALUATED MEMBER PATH must replay its own reading. A loop
+        // running through two pairs of bodies carries an obligation at each,
+        // and one path replaying said nothing about the others.
+        let Some(es) = f.edge_holonomies(lp) else {
             continue;
         };
-        if !loop_reading_replays(f, lp, &e.word) {
-            return false;
+        for (_, e) in es.scoped() {
+            if !loop_reading_replays(f, lp, &e.word) {
+                return false;
+            }
         }
     }
     true

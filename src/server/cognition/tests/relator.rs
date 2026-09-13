@@ -189,7 +189,7 @@ fn three_charts_that_do_not_close_leave_a_relator_of_order_two() {
 #[test]
 fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     use crate::transducer::cech::holonomy;
-    use crate::transducer::sentence::{form_torsion, Form, FormFace, Vertex};
+    use crate::transducer::sentence::{form_torsion, Form, Vertex};
     let (t_ab, t_bc, t_ca) = (
         transport(&quarter(1)),
         transport(&quarter(1)),
@@ -213,12 +213,12 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
             None,
         ));
     }
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star 1"), edge: None });
-    f.faces.push(FormFace { i: 0, j: 2, transport: f.face_of(0, 2).expect("star 2"), edge: None });
+    f.faces.push(f.face_of(0, 1).expect("star 1"));
+    f.faces.push(f.face_of(0, 2).expect("star 2"));
     // The chord carries the RELATOR the triangle left, not a word this
     // fixture chose: it is `quarter(2)` because that is what the holonomy
     // above read, asserted there.
-    f.faces.push(FormFace::new(1, 2, quarter(2)));
+    f.faces.push(f.face_carrying(1, 2, quarter(2)).expect("a chord between two bodies"));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     let _ = f.pivot_loop(
         [31; 32],

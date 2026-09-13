@@ -59,11 +59,36 @@ impl Form {
             return Some(of);
         }
         // A REBASED VERTEX KEEPS `of`'s CHART AND GAUGE, and `Rebased` holds
-        // one of each: the vertex being rebased is single-chart today, so
-        // its representative member IS its chart and gauge. D7b decides
-        // what rebasing a multi-member vertex means; it is not this commit.
+        // ONE of each, so a vertex acting on several charts cannot be rebased
+        // without losing all but one of them.
+        //
+        // REFUSED RATHER THAN COLLAPSED (rule 11: exact or refused). Taking
+        // the least member would rebase the vertex onto one of its charts and
+        // silently drop the bodies it acts on at the others — the scalar
+        // collapse, at the one move whose whole job is to REPLACE a vertex, so
+        // there is nothing left to read the dropped members back from. A
+        // refusal leaves the vertex as it was, which is what `rebase`'s
+        // contract already says it does when `of` is not a Word, and the
+        // caller (`rebase_named_faces`) treats `None` as "this face does not
+        // rebase" — it is not a failure of the form.
+        //
+        // The fibre `Rebased` needs to carry several is a tape layout and an
+        // address: v8 is unrecut, so it can be spent, but it is the 2-skeleton
+        // row's to spend together with the transport fibre a face needs.
+        // AND THE BASE MUST STAND AT ONE CHART TOO. `carriage` is `C_of ·
+        // C_by⁻¹` measured between ONE member of each; a base acting on several
+        // does not say which, and a reader composing `t · C_by` would pick a
+        // body the relative was never measured against (see `apply_form`'s
+        // Rebased arm).
+        let base_charts = self.vertices.get(by as usize)?.charts();
+        let [_] = base_charts.as_slice() else {
+            return None;
+        };
         let held = self.vertices.get(of as usize)?;
-        let (Some(a), true) = (held.acting(), matches!(held, Vertex::Word { .. })) else {
+        let Vertex::Word { acts, .. } = held else {
+            return None;
+        };
+        let [(_, a)] = acts.scoped().collect::<Vec<_>>()[..] else {
             return None;
         };
         let (gauge, class) = (a.gauge.clone(), a.chart.clone());
@@ -122,20 +147,29 @@ impl Form {
         let Some(v) = self.vertices.get(of as usize) else {
             return;
         };
-        let hue = CycleType::of(&vertex_gauge(v));
-        let Fill::Congruent(g, ell) = crate::transducer::cech::classify(&word.rotor(), delta, hue)
-        else {
-            return;
-        };
-        let Some(class) = g.class_key() else { return };
-        // `sigma` is EMPTY and that is the reading, not a placeholder: a
-        // stabilizer orbit at one vertex permutes no hues between vertices,
-        // so there is no generator of a hue cycle to record. The period is
-        // the rotor's own order and the chord is the face that closed it.
-        self.torsion.insert(
-            class,
-            crate::transducer::sentence::FiledLoop { sigma: Vec::new(), period: ell, chord },
-        );
+        // THE ORBIT IS CLASSIFIED AT EVERY CHART THE VERTEX STANDS AT. The hue
+        // cycle is a member coordinate, so a vertex acting on several charts
+        // closes a cycle whose `𝒢` reading is each of theirs, and each
+        // congruent one is filed under its own class. Reading one member's
+        // gauge filed one class and dropped the rest.
+        for chart in v.charts() {
+            let hue = CycleType::of(&vertex_gauge_at(v, &chart));
+            let Fill::Congruent(g, ell) =
+                crate::transducer::cech::classify(&word.rotor(), delta, hue)
+            else {
+                continue;
+            };
+            let Some(class) = g.class_key() else { continue };
+            // `sigma` is EMPTY and that is the reading, not a placeholder: a
+            // stabilizer orbit at one vertex permutes no hues between
+            // vertices, so there is no generator of a hue cycle to record. The
+            // period is the rotor's own order and the chord is the face that
+            // closed it.
+            self.torsion.insert(
+                class,
+                crate::transducer::sentence::FiledLoop { sigma: Vec::new(), period: ell, chord },
+            );
+        }
     }
 
     pub fn unfold(&mut self, measure: Measure) -> u16 {

@@ -145,19 +145,22 @@ pub(crate) fn body_charts_of(e: &Held) -> Vec<crate::transducer::stalk::Invarian
     }
     let mut charts = Vec::new();
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    // EVERY CHART EVERY WORD VERTEX ACTS ON. A form's charts are what its
+    // words speak to, and a vertex acting on two charts speaks to bodies on
+    // both — listing one left the other unnamed by the atlas, so a cite at that
+    // chart found nothing the form holds.
     for v in &f.vertices {
         let crate::transducer::sentence::Vertex::Word { .. } = v else {
             continue;
         };
-        let Some(class) = v.acting().map(|a| &a.chart) else {
-            continue;
-        };
-        let k = class.key();
-        if seen.contains(k.as_bytes()) {
-            continue;
+        for class in v.charts() {
+            let k = class.key();
+            if seen.contains(k.as_bytes()) {
+                continue;
+            }
+            seen.insert(k.as_bytes(), ());
+            charts.push(class);
         }
-        seen.insert(k.as_bytes(), ());
-        charts.push(class.clone());
     }
     charts
 }

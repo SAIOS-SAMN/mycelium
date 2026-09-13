@@ -65,20 +65,50 @@ pub(crate) fn apply_versor_cells(v: &Versor, cells: &[Cell3]) -> Vec<Cell3> {
     out
 }
 
-pub(crate) fn vertex_versor(v: &Vertex) -> Option<Versor> {
+/// THE VERSOR A VERTEX ACTS BY AT ONE NAMED CHART: its rotor under that
+/// member's carriage. A keyed read — an orbit is a walk of ONE body, so the
+/// chart the body stands on is the coordinate, and reading a representative
+/// orbited one body's placement whatever body was handed in.
+pub(crate) fn vertex_versor_at(
+    v: &Vertex,
+    chart: &crate::transducer::stalk::Invariant,
+) -> Option<Versor> {
     match v {
         Vertex::Word { derivation, .. } => {
-            element::conformal_of_rotor(&derivation.rotor(), v.carriage_of()?)
+            element::conformal_of_rotor(&derivation.rotor(), &v.acting_on(chart)?.carriage)
         }
         _ => None,
     }
 }
 
+/// DOES THIS VERTEX ORBIT — asked of every member it acts by, because the
+/// orbit is a property of the vertex and a vertex acting on several charts
+/// orbits if any of its members moves the ring distance. A contact vertex
+/// carries the identity at every member (extraction's step 6 puts it there),
+/// so today every member gives one answer; a vertex whose members differ is
+/// answered by the first that moves, and `NoOrbit` only when none does.
+pub fn orbit(v: &Vertex, x_cells: &[Cell3], anchor: &[(i64, i64)], frame: (usize, usize)) -> OrbitEnd {
+    let mut end = OrbitEnd::NoOrbit;
+    for chart in v.charts() {
+        end = orbit_at(v, &chart, x_cells, anchor, frame);
+        if !matches!(end, OrbitEnd::NoOrbit) {
+            return end;
+        }
+    }
+    end
+}
+
 /// Apply a word until the image's ring distance to `anchor` equals the
 /// contact ring (or 0). Bound by the frame. `NoOrbit` when the first step
 /// does not move the distance.
-pub fn orbit(v: &Vertex, x_cells: &[Cell3], anchor: &[(i64, i64)], frame: (usize, usize)) -> OrbitEnd {
-    let Some(versor) = vertex_versor(v) else {
+pub fn orbit_at(
+    v: &Vertex,
+    chart: &crate::transducer::stalk::Invariant,
+    x_cells: &[Cell3],
+    anchor: &[(i64, i64)],
+    frame: (usize, usize),
+) -> OrbitEnd {
+    let Some(versor) = vertex_versor_at(v, chart) else {
         return OrbitEnd::NoOrbit;
     };
     let want = match v {

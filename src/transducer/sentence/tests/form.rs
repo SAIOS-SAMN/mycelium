@@ -36,29 +36,59 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     // The faces among the bodies only: the loop 1-2-3 closes on the chord
     // 1-3 without passing the Frame.
     for (i, j) in [(1u16, 2u16), (2, 3), (1, 3)] {
-        f.faces.push(FormFace { i, j, transport: f.face_of(i, j).expect("vertices"), edge: None });
+        f.faces.push(f.face_of(i, j).expect("vertices"));
     }
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     assert_eq!(f.loops.len(), 1, "one loop among three bodies");
     assert!(f.coheres(), "the coboundary of the placements telescopes: every loop is the identity");
     let at = |f: &Form, i: u16, j: u16| f.faces.iter().position(|fc| (fc.i, fc.j) == (i, j)).expect("face");
     let (e12, e23, e13) = (at(&f, 1, 2), at(&f, 2, 3), at(&f, 1, 3));
-    f.faces[e12].edge = Some(Transport::from_word(qw.clone()));
-    f.faces[e23].edge = Some(Transport::from_word(qw.clone()));
-    f.faces[e13].edge = Some(Transport::from_word(Word::identity()));
+    // THE EDGE IS SET AT EVERY MEMBER PAIR of the face. Each of these vertices
+    // stands at one chart, so each face has one pair and the loop has one
+    // member path — which is what lets this read a single holonomy below.
+    let set_edge = |f: &mut Form, fi: usize, edge: Option<Transport>| {
+        let pairs: Vec<Vec<u8>> = f.faces[fi].at.scoped().map(|(k, _)| k).collect();
+        assert_eq!(pairs.len(), 1, "one chart per vertex here, so one member pair per face");
+        for k in pairs {
+            if let Some(p) = f.faces[fi].at.get_mut(&k) {
+                p.edge = edge.clone();
+            }
+        }
+    };
+    set_edge(&mut f, e12, Some(Transport::from_word(qw.clone())));
+    set_edge(&mut f, e23, Some(Transport::from_word(qw.clone())));
+    set_edge(&mut f, e13, Some(Transport::from_word(Word::identity())));
     let [triangle, ..] = f.loops.as_slice() else { panic!("the loop 1-2-3 among the bodies") };
-    let h = f.edge_holonomy(triangle).expect("every edge of the loop is carried");
+    // ONE MEMBER PATH, so one holonomy — and the slice pattern says so rather
+    // than taking the first of several.
+    let one_holonomy = |f: &Form, lp: &Loop| -> Option<Transport> {
+        let hs = f.edge_holonomies(lp)?;
+        let [(_, h)] = hs.scoped().collect::<Vec<_>>()[..] else {
+            return None;
+        };
+        Some(h.clone())
+    };
+    let h = one_holonomy(&f, triangle).expect("every edge of the loop is carried");
     let half = qw.compose(&qw);
     assert!(h.word.rotor().projective_eq(&half.rotor()), "quarter, quarter, identity compose to the half turn: {:?}", h.word);
-    assert_eq!(f.edge_class(triangle), half.rotor().class_key(), "read up to conjugacy: the half turn's class");
+    assert_eq!(
+        f.edge_classes(triangle).scoped().map(|(_, c)| c.clone()).collect::<Vec<_>>(),
+        vec![half.rotor().class_key().expect("the half turn has a class")],
+        "read up to conjugacy: the half turn's class, on the one path"
+    );
     assert!(!f.coheres(), "a held stabilizer holonomy is not coherence");
     f.torsion.insert(half.rotor().class_key().expect("class"), FiledLoop { sigma: Vec::new(), period: 2, chord: triangle.chord });
     assert!(f.coheres(), "filed at its period, the loop coheres (A17)");
-    f.faces[e23].edge = Some(Transport::from_word(qw.inverse()));
-    let h = f.edge_holonomy(triangle).expect("carried");
+    set_edge(&mut f, e23, Some(Transport::from_word(qw.inverse())));
+    let [triangle, ..] = f.loops.as_slice() else { panic!("the loop") };
+    let h = one_holonomy(&f, triangle).expect("carried");
     assert!(h.word.rotor().projective_eq(&alphabet::Rotor::identity()), "quarter, quarter inverse, identity is the identity");
-    f.faces[e13].edge = None;
-    assert!(f.edge_holonomy(triangle).is_none(), "a loop through a remainder edge is not evaluated");
+    set_edge(&mut f, e13, None);
+    let [triangle, ..] = f.loops.as_slice() else { panic!("the loop") };
+    assert!(
+        f.edge_holonomies(triangle).is_some_and(|hs| hs.is_empty()),
+        "a loop through a remainder edge is not evaluated on any path"
+    );
     assert!(f.coheres(), "and holds nothing against the form");
 }
 
@@ -92,9 +122,9 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
         Vec::new(),
         None,
     ));
-    host.faces.push(FormFace { i: 0, j: 1, transport: host.face_of(0, 1).expect("0-1"), edge: None });
-    host.faces.push(FormFace { i: 1, j: 2, transport: host.face_of(1, 2).expect("1-2"), edge: None });
-    host.faces.push(FormFace { i: 0, j: 2, transport: host.face_of(0, 2).expect("0-2"), edge: None });
+    host.faces.push(host.face_of(0, 1).expect("0-1"));
+    host.faces.push(host.face_of(1, 2).expect("1-2"));
+    host.faces.push(host.face_of(0, 2).expect("0-2"));
     let inner = closed_word_form(w.clone(), None);
     let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner");
     let gi = host
@@ -115,8 +145,8 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
     for face in &host.faces {
         assert_eq!(
             host.face_of(face.i, face.j).as_ref(),
-            Some(&face.transport),
-            "every surviving face re-derives"
+            Some(face),
+            "every surviving face re-derives, word and every member pair"
         );
     }
     let mut taped = host.clone();
@@ -128,7 +158,7 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
     let Some(fi) = taped.faces.iter().position(|f| f.i == 0 && matches!(taped.vertices.get(f.j as usize), Some(Vertex::Glued { .. }))) else {
         panic!("placement face");
     };
-    taped.faces[fi].transport.word = Word::identity();
+    taped.faces[fi].word = Word::identity();
     let bad = as_element_form(&taped, mag).expect("tampered placement");
     assert_eq!(
         crate::court::verdict::blind_replay_with(&bad, &resolve),
@@ -406,8 +436,8 @@ fn a_sentence_chart_leads_with_axis_two_then_its_rank() {
 fn face_constancy_is_the_word_not_the_versor() {
     let a = star_form(2, vec![(1, 2, Word::identity())]);
     let b = star_form(2, vec![(1, 2, Word::identity())]);
-    let words1: Vec<_> = a.faces.iter().map(|fa| fa.transport.word.clone()).collect();
-    let words2: Vec<_> = b.faces.iter().map(|fa| fa.transport.word.clone()).collect();
+    let words1: Vec<_> = a.faces.iter().map(|fa| fa.word.clone()).collect();
+    let words2: Vec<_> = b.faces.iter().map(|fa| fa.word.clone()).collect();
     assert_eq!(words1, words2, "constancy is the word");
     let _ = as_element_form(&a, [1, 0, 0, 0]).expect("rule element");
 }

@@ -42,7 +42,6 @@ fn deepened_word_replays_on_a_peer() {
 /// A closed depth-0 form: Frame, one quarter-turn word, the star face.
 fn closed_turn_form() -> Form {
     use crate::transducer::alphabet::{LetterId, Word};
-    use crate::transducer::sentence::FormFace;
     let q = LetterId::quarter((0, 1)).expect("quarter");
     let w = Word::from_letters(&[(q, false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -56,7 +55,7 @@ fn closed_turn_form() -> Form {
         vec![(1, 2)],
         None,
     ));
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
+    f.faces.push(f.face_of(0, 1).expect("vertices"));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     // A form off the tape is indexed by the decoder; one built by hand
     // must be indexed too, or its `by_address` answers nothing and a
@@ -89,7 +88,18 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     let resolve = |a: &[u8]| (a == inner_addr.as_bytes()).then(|| inner.clone());
     assert_eq!(blind_replay_with(&outer_e, &resolve), None, "a resolved citation replays");
     let mut bad = outer.clone();
-    bad.faces[0].transport = inner.face_of(0, 1).expect("vertices");
+    bad.faces[0] = {
+        // The tamper keeps the face's ENDS and takes the inner form's word and
+        // placements, which is what made this face fail to re-derive before the
+        // face was a fibre.
+        let taken = inner.face_of(0, 1).expect("vertices");
+        crate::transducer::sentence::FormFace {
+            i: bad.faces[0].i,
+            j: bad.faces[0].j,
+            word: taken.word,
+            at: taken.at,
+        }
+    };
     let bad_e = as_element_form(&bad, [1, 0, 0, 0]).expect("tampered tape");
     assert_eq!(blind_replay_with(&bad_e, &resolve), Some(REFUSE_FACE));
     // S9.4 — A ZERO MAGNITUDE IS NOT A REFUSAL. This tape replays: its
@@ -146,7 +156,7 @@ fn a_loop_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
         faces: vec![0, 0],
         chord: 0,
         holonomy: Word::formed(Rotor::zero()),
-        carriage: element::identity_versor(),
+        carriages: crate::network::nerve::Keyed::new(),
     });
     assert!(f.loops[0].holonomy.rotor().class_key().is_none(), "a zero rotor is not a class");
     assert!(f.rank().is_none(), "the audit is unmeasured, not counted under a rotor key");
@@ -199,7 +209,7 @@ fn pivot_certificate_replays_or_refuses() {
 #[test]
 fn rank_lost_refused() {
     use crate::transducer::alphabet::Word;
-    use crate::transducer::sentence::{as_element_form, FormFace};
+    use crate::transducer::sentence::as_element_form;
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
@@ -215,19 +225,9 @@ fn rank_lost_refused() {
             None,
         ));
     }
-    f.faces.push(FormFace {
-        i: 0,
-        j: 1,
-        transport: f.face_of(0, 1).expect("star 1"),
-        edge: None,
-    });
-    f.faces.push(FormFace {
-        i: 0,
-        j: 2,
-        transport: f.face_of(0, 2).expect("star 2"),
-        edge: None,
-    });
-    f.faces.push(FormFace::new(1, 2, sheet));
+    f.faces.push(f.face_of(0, 1).expect("star 1"));
+    f.faces.push(f.face_of(0, 2).expect("star 2"));
+    f.faces.push(f.face_carrying(1, 2, sheet).expect("a chord between two placed bodies"));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     let _ = f.pivot_loop(
         [0x18; 32],
@@ -312,7 +312,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
     });
-    re.faces.push(FormFace { i: 0, j: 1, transport: re.face_of(0, 1).expect("vertices"), edge: None });
+    re.faces.push(re.face_of(0, 1).expect("vertices"));
     re.loops = Form::loops_of(&re.faces, re.vertices.len());
     let re_e = as_element_form(&re, [1, 0, 0, 0]).expect("rebased tape");
     assert_eq!(
@@ -341,7 +341,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         Vec::new(),
         Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 1 }),
     ));
-    orb.faces.push(FormFace { i: 0, j: 1, transport: orb.face_of(0, 1).expect("vertices"), edge: None });
+    orb.faces.push(orb.face_of(0, 1).expect("vertices"));
     orb.loops = Form::loops_of(&orb.faces, orb.vertices.len());
     let orb_e = as_element_form(&orb, [1, 0, 0, 0]).expect("orbit tape");
     assert_eq!(
@@ -379,11 +379,20 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     let mut edged = closed_turn_form();
     let p5 = crate::transducer::alphabet::LetterId::pythagorean_5((0, 1)).expect("(3,4,5)");
     let fi = edged.faces.iter().position(|f| f.i == 0 && f.j == 1).expect("the star face");
-    edged.faces[fi].edge = Some(crate::transducer::sentence::Transport::from_word(Word::from_letters(&[(p5, false)])));
+    // The edge goes on every member pair of the face — one here.
+    let set_edge = |f: &mut crate::transducer::sentence::Form, fi: usize, w: Word| {
+        let pairs: Vec<Vec<u8>> = f.faces[fi].at.scoped().map(|(k, _)| k).collect();
+        for k in pairs {
+            if let Some(p) = f.faces[fi].at.get_mut(&k) {
+                p.edge = Some(crate::transducer::sentence::Transport::from_word(w.clone()));
+            }
+        }
+    };
+    set_edge(&mut edged, fi, Word::from_letters(&[(p5, false)]));
     let edged_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
     assert_eq!(replay_form(&edged_e, &|_| None), Some(REFUSE_EDGE), "an edge of infinite order is refused by name");
     let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
-    edged.faces[fi].edge = Some(crate::transducer::sentence::Transport::from_word(Word::from_letters(&[(q, false)])));
+    set_edge(&mut edged, fi, Word::from_letters(&[(q, false)]));
     let fine_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
     assert_eq!(replay_form(&fine_e, &|_| None), None, "a quarter turn on an edge is a stabilizer element and replays");
 }
@@ -432,7 +441,6 @@ fn citing_form(
     exponent: i64,
     residue: crate::transducer::alphabet::Word,
 ) -> Form {
-    use crate::transducer::sentence::FormFace;
     let vertex = match inner.vertices.get(1) {
         Some(Vertex::Word { address, derivation, .. }) => {
             (address.clone(), derivation.word_local().expect("the inner vertex spells").clone())
@@ -457,7 +465,7 @@ fn citing_form(
         vec![(1, 2)],
         None,
     ));
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
+    f.faces.push(f.face_of(0, 1).expect("vertices"));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
     f
@@ -594,12 +602,23 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     // The two star faces and the body-to-body face, every transport the
     // coboundary of its vertices; the body face carries the half turn as
     // the transition between the two pieces' own frames.
+    // THE EDGE IS SET AT EVERY MEMBER PAIR the face carries — one here, since
+    // each of these vertices stands at one chart.
+    let with_edge = |mut face: FormFace, edge: Transport| -> FormFace {
+        let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
+        for k in pairs {
+            if let Some(p) = face.at.get_mut(&k) {
+                p.edge = Some(edge.clone());
+            }
+        }
+        face
+    };
     for (i, j) in [(0u16, 1u16), (0, 2)] {
-        let transport = f.face_of(i, j).expect("a coboundary");
-        f.faces.push(FormFace { i, j, transport, edge: Some(edge_of(&Word::identity())) });
+        let face = f.face_of(i, j).expect("a coboundary");
+        f.faces.push(with_edge(face, edge_of(&Word::identity())));
     }
-    let transport = f.face_of(1, 2).expect("a coboundary");
-    f.faces.push(FormFace { i: 1, j: 2, transport, edge: Some(edge_of(&half)) });
+    let face = f.face_of(1, 2).expect("a coboundary");
+    f.faces.push(with_edge(face, edge_of(&half)));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.reindex();
     let [lp, ..] = f.loops.as_slice() else { panic!("the triangle closes") };
@@ -607,7 +626,10 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
         lp.holonomy.is_identity(),
         "the transport composite is flat: every face is a coboundary"
     );
-    let e = f.edge_holonomy(lp).expect("the loop is evaluated: every face carries an edge");
+    let es = f.edge_holonomies(lp).expect("the loop names live faces");
+    let [(_, e)] = es.scoped().collect::<Vec<_>>()[..] else {
+        panic!("one member path, since each vertex stands at one chart")
+    };
     assert!(!e.word.is_identity(), "and its edge holonomy is the half turn");
 
     // UNFILED, the loop does not replay — which the transport reading could
@@ -617,10 +639,15 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
         "an evaluated loop with an unfiled class does not replay"
     );
     // FILED under the edge holonomy's own class at its own period, it does.
-    let class = f.edge_class(lp).expect("the half turn has a class");
+    // One member path here, so one class — said by the slice pattern.
+    let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
+    let [class] = classes.as_slice() else {
+        panic!("one member path, so one class; got {}", classes.len())
+    };
+    let class = class.clone();
     let mut filed = f.clone();
     filed.torsion.insert(
-        class,
+        class.clone(),
         FiledLoop { sigma: Vec::new(), period: 2, chord: lp.chord },
     );
     assert!(form_loops_replay(&filed), "filed at its period, the loop replays");
@@ -628,7 +655,7 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     // not the filer's opinion of it (A17).
     let mut wrong = f.clone();
     wrong.torsion.insert(
-        f.edge_class(lp).expect("class"),
+        class,
         FiledLoop { sigma: Vec::new(), period: 3, chord: lp.chord },
     );
     assert!(!form_loops_replay(&wrong), "a period the loop does not close at is not a filing");

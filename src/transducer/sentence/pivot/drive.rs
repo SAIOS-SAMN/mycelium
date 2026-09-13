@@ -21,20 +21,42 @@ pub(crate) struct Prior<'a> {
     pub(crate) mu_before: Option<(Vec<[u64; 4]>, [u64; 4])>,
 }
 
-/// THE CLASS VECTOR OF ONE LOOP, read off the faces it runs over and the
-/// form's axis carrier — the two things a loop's class is a function of.
-/// A trial that has written one face reads its own answer here without a
-/// form to read it from.
-pub(crate) fn class_vector_on(
+/// THE CLASS VECTORS OF ONE LOOP, ONE PER MEMBER PATH, read off the faces it
+/// runs over and the form's axis carrier — the two things a loop's class is a
+/// function of. A trial that has written one face reads its own answer here
+/// without a form to read it from.
+///
+/// The PLANE and OFF-PLANE coordinates come from the holonomy word and are the
+/// same on every path, because a word is a vertex coordinate. The PLACEMENT and
+/// DILATION residues come from the carriage and the hue cycle from the gauge,
+/// both member coordinates, so they are read per path (D10, item 7). An opened
+/// axis zeroes the loop on every path: the holonomy IS the transition on that
+/// axis and no longer a defect (I6, 15.5, T14).
+pub(crate) fn class_vectors_on(
     faces: &[FormFace],
     axes: &crate::network::nerve::Keyed<u16>,
     lp: &Loop,
-) -> Option<ClassVector> {
+) -> crate::network::nerve::Keyed<ClassVector> {
+    let mut out = crate::network::nerve::Keyed::new();
     if crate::transducer::sentence::opened_axis_on(axes, lp).is_some() {
-        return Some(ClassVector::zero());
+        for (k, _) in lp.carriages.scoped() {
+            out.insert(&k, ClassVector::zero());
+        }
+        // A loop with no closed member path and an opened axis still reads as
+        // zero on the path the axis was opened over, which is the loop itself.
+        if out.is_empty() {
+            out.insert(Vec::new(), ClassVector::zero());
+        }
+        return out;
     }
-    let t = loop_transport_on(faces, lp)?;
-    ClassVector::read(&lp.holonomy, t.carriage, CycleType::of(&t.gauge))
+    for (k, t) in loop_transport_on(faces, lp).scoped() {
+        if let Some(cv) =
+            ClassVector::read(&lp.holonomy, t.carriage.clone(), CycleType::of(&t.gauge))
+        {
+            out.insert(&k, cv);
+        }
+    }
+    out
 }
 
 impl Form {
@@ -51,8 +73,33 @@ impl Form {
     /// pairs, occupying `Unit(0)`), because an extraction's faces carry an
     /// edge whose composite is the identity while their transports carry
     /// the half turn. They are two objects and neither replaces the other.
+    /// ONE PER MEMBER PATH (D10 item 7), keyed by the path.
+    pub fn class_vectors(&self, idx: usize) -> crate::network::nerve::Keyed<ClassVector> {
+        match self.loops.get(idx) {
+            Some(lp) => class_vectors_on(&self.faces, &self.axes, lp),
+            None => crate::network::nerve::Keyed::new(),
+        }
+    }
+
+    /// THE LOOP'S CLASS WHERE EVERY MEMBER PATH AGREES ON IT, which is what a
+    /// caller asking "is this loop a defect" is asking: a loop is a defect if
+    /// ANY path of it carries an unfiled class, and the readings differ only in
+    /// the placement and dilation residues.
+    ///
+    /// `None` when the paths disagree — the loop then has no single class and
+    /// a caller that treated one path's answer as the loop's would be making
+    /// exactly the assertion D10 removes — or when no path closes.
     pub fn class_vector(&self, idx: usize) -> Option<ClassVector> {
-        class_vector_on(&self.faces, &self.axes, self.loops.get(idx)?)
+        let vs = self.class_vectors(idx);
+        let mut held: Option<ClassVector> = None;
+        for (_, cv) in vs.scoped() {
+            match &held {
+                None => held = Some(cv.clone()),
+                Some(h) if h != cv => return None,
+                Some(_) => {}
+            }
+        }
+        held
     }
 
     /// Write a certified move onto the form — the chord face's transport,
@@ -98,7 +145,7 @@ impl Form {
                 if self
                     .faces
                     .get(lp.chord as usize)
-                    .is_some_and(|f| !f.transport.word.is_identity())
+                    .is_some_and(|f| !f.word.is_identity())
                 {
                     pending.insert(vertex_ix_key(lp.chord), lp.holonomy.order());
                 }
@@ -142,7 +189,7 @@ impl Form {
                 if self
                     .faces
                     .get(lp.chord as usize)
-                    .is_some_and(|f| f.transport.word.is_identity())
+                    .is_some_and(|f| f.word.is_identity())
                 {
                     snaps.push(Snap::Closed {
                         chord: idx,
@@ -371,8 +418,12 @@ impl Form {
             };
             for vi in [f.i, f.j] {
                 if let Some(v) = self.vertices.get(vi as usize) {
-                    let chart = v.class();
-                    charts.insert(chart.key(), chart);
+                    // EVERY CHART THE VERTEX STANDS AT, so a vertex acting on
+                    // two contributes both and the loop's chart set is the
+                    // whole of what the loop passes through.
+                    for chart in v.charts() {
+                        charts.insert(chart.key(), chart);
+                    }
                 }
             }
         }
@@ -422,17 +473,21 @@ impl Form {
                         },
                     });
                 }
+                // ONE HUE CANDIDATE PER MEMBER PATH. The gauge the move
+                // carries is the loop's composite hue map, which is a member
+                // coordinate, so a loop running through two pairs of bodies
+                // offers the move each of them names. Offering one and
+                // skipping the rest is a move never offered on the others.
                 Axis::Hue => {
-                    let Some(t) = loop_transport(self, lp) else {
-                        continue;
-                    };
-                    out.push(Candidate {
-                        axis,
-                        by: PivotBy::Hue {
-                            face: chord as u16,
-                            gauge: t.gauge,
-                        },
-                    });
+                    for (_, t) in loop_transport(self, lp).scoped() {
+                        out.push(Candidate {
+                            axis,
+                            by: PivotBy::Hue {
+                                face: chord as u16,
+                                gauge: t.gauge.clone(),
+                            },
+                        });
+                    }
                 }
                 _ => {
                     // The charts THIS loop stands on, gathered above from
@@ -514,19 +569,44 @@ impl Form {
             self.axis_seed_of(lp)?;
             axes.insert(class, *face);
         }
-        let kappa_after = class_vector_on(&faces, &axes, loops.get(idx)?)?;
         // 12.6: a pivot on axis x discharges when x reads zero after and no
         // other coordinate moved; opening an axis discharges the LOOP — it
         // is no longer a loop on the refined cover (15.5, T14) — so its
         // whole vector reads zero.
-        let discharged = if cand.axis == Axis::Open {
-            kappa_after.is_zero()
-        } else {
-            !kappa_after.occupies(cand.axis) && kappa.agrees_except(&kappa_after, cand.axis)
-        };
+        //
+        // EVERY MEMBER PATH MUST DISCHARGE. The trial is a write on a FACE,
+        // which relates every pair of bodies the face relates, so a move that
+        // zeroes the coordinate along one path and leaves it standing on
+        // another has not discharged the loop — it has discharged one reading
+        // of it, and the pivot certificate would assert the rest. A loop with
+        // no closed member path has nothing to read and refuses (rule 11).
+        let after = class_vectors_on(&faces, &axes, loops.get(idx)?);
+        if after.is_empty() {
+            return None;
+        }
+        let discharged = after.scoped().all(|(_, kappa_after)| {
+            if cand.axis == Axis::Open {
+                kappa_after.is_zero()
+            } else {
+                !kappa_after.occupies(cand.axis) && kappa.agrees_except(kappa_after, cand.axis)
+            }
+        });
         if !discharged {
             return None;
         }
+        // THE CERTIFICATE NAMES ONE CLASS AFTER, so it is only writable where
+        // every member path agrees on it. The plane and off-plane coordinates
+        // are path-independent; a residue that differs between paths means the
+        // loop has no single class and there is nothing to certify (rule 11).
+        let mut agreed: Option<ClassVector> = None;
+        for (_, cv) in after.scoped() {
+            match &agreed {
+                None => agreed = Some(cv.clone()),
+                Some(h) if h != cv => return None,
+                Some(_) => {}
+            }
+        }
+        let kappa_after = agreed?;
         let mut after_rows = rows.to_vec();
         *after_rows.get_mut(idx)? =
             crate::transducer::sentence::loop_row_on(&axes, loops.get(idx)?)?;

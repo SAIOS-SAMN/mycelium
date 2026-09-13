@@ -147,39 +147,101 @@ pub enum Vertex {
     },
 }
 
-/// Face of a `Form`: two vertices, the transport between them (the
-/// coboundary of their placements, 3.1), and the edge transport of 50.3 —
-/// the stabilizer element or exchange the pair's rigid motion picks out
-/// relative to the body's own; `None` is a remainder edge, a pair no
-/// single versor carries.
+/// Face of a `Form` (21 step 2, 3.1): two vertices, the word between them,
+/// and what it carries AT EACH PAIR OF MEMBERS.
+///
+/// It held one `Transport` and one edge. 21 step 2 defines a face between
+/// BODIES — "vertices whose after-supports overlap or sit at ring distance
+/// one" — and D7 made one vertex cover several bodies on several charts, so
+/// the face's endpoints became coarser than the face's meaning and one
+/// transport was asserted across every member pair. Measured over the
+/// families that mint: 87 faces, 19 of them between two multi-member
+/// vertices and 52 with at least one.
+///
+/// The WORD stays single because it is not a member coordinate: `face_of`
+/// reads it as `w_j ∘ w_i⁻¹` from the two derivations, and a derivation is a
+/// vertex's. So the rotor half of the skeleton — holonomy, torsion, class
+/// vectors' plane and off-plane coordinates, every word move the pivot makes
+/// — is untouched by this, and only the carriage and the hue map fibre.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FormFace {
     pub i: u16,
     pub j: u16,
-    pub transport: Transport,
-    pub edge: Option<Transport>,
+    /// `w_j ∘ w_i⁻¹`, one word for the face.
+    pub word: Word,
+    /// Carriage, hue map and 50.3 edge per member pair, keyed by
+    /// `face_pair_key(chart_i, chart_j)`. Empty where the face records only
+    /// its word — a section face pushed by `FormFace::new`.
+    pub at: Keyed<FacePlace>,
 }
 
 impl FormFace {
+    /// A face carrying only its word. The member pairs are filled by
+    /// `Form::face_of` from the vertices, or by the incidence that created
+    /// the face; they are never invented as the product of the two fibres.
     pub fn new(i: u16, j: u16, word: Word) -> FormFace {
-        FormFace {
-            i,
-            j,
-            transport: Transport::from_word(word),
-            edge: None,
+        FormFace { i, j, word, at: Keyed::new() }
+    }
+
+    /// What this face carries at one member pair. A keyed read: `None` is
+    /// "this face does not relate those two bodies".
+    pub fn place_at(&self, ci: &stalk::Invariant, cj: &stalk::Invariant) -> Option<&FacePlace> {
+        self.at.get(&crate::transducer::sentence::face_pair_key(ci, cj))
+    }
+
+    /// 50.3's edge at one member pair; `None` is a remainder edge there, or a
+    /// pair this face does not relate at all.
+    pub fn edge_at(&self, ci: &stalk::Invariant, cj: &stalk::Invariant) -> Option<&Transport> {
+        self.place_at(ci, cj)?.edge.as_ref()
+    }
+
+    /// Does any member pair of this face carry an edge? The reading a
+    /// contraction makes when it asks whether a face is carried at all.
+    pub fn has_edge(&self) -> bool {
+        self.at.scoped().any(|(_, p)| p.edge.is_some())
+    }
+
+    /// Every member pair of this face becomes a remainder edge. A contraction
+    /// that retracts a body cannot leave the edges that were measured on it.
+    pub fn clear_edges(&mut self) {
+        let pairs: Vec<Vec<u8>> = self.at.scoped().map(|(k, _)| k).collect();
+        for k in pairs {
+            if let Some(p) = self.at.get_mut(&k) {
+                p.edge = None;
+            }
         }
     }
 }
 
 /// Independent loop of a form: the closed vertex walk, the faces along it,
 /// the chord (never a star face), and the oriented holonomy.
+///
+/// The HOLONOMY is a word and is the product of the faces' words around the
+/// loop, which are vertex coordinates, so it is one word per loop and does
+/// not fibre. The CARRIAGE is the product of the faces' carriages, which are
+/// member coordinates, so it is one versor PER MEMBER PATH — the sequence of
+/// charts the loop passes through, keyed by those charts in walk order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Loop {
     pub vertices: Vec<u16>,
     pub faces: Vec<u16>,
     pub chord: u16,
     pub holonomy: Word,
-    pub carriage: Versor,
+    /// Member path key → the carriage accumulated along it.
+    pub carriages: Keyed<Versor>,
+}
+
+impl Loop {
+    /// The key a member path is filed under: the chart key at each vertex of
+    /// the loop, in walk order, each length-delimited. Content, so the same
+    /// path reads the same on every node.
+    pub fn path_key(charts: &[Vec<u8>]) -> Vec<u8> {
+        let mut buf = Vec::new();
+        for c in charts {
+            crate::transducer::address::put_bytes(&mut buf, c);
+        }
+        buf
+    }
 }
 
 
@@ -497,21 +559,135 @@ impl Form {
 
 impl Form {
 
-    pub fn face_of(&self, i: u16, j: u16) -> Option<Transport> {
+    /// THE WORD BETWEEN TWO VERTICES: `w_j ∘ w_i⁻¹`, read from their
+    /// derivations. A vertex coordinate, so it is the same at every member
+    /// pair of the face.
+    pub fn face_word(&self, i: u16, j: u16) -> Option<Word> {
+        let wa = self.vertices.get(i as usize)?.word_in(self)?;
+        let wb = self.vertices.get(j as usize)?.word_in(self)?;
+        Some(wb.compose(&wa.inverse()).normal_form())
+    }
+
+    /// WHAT THE FACE CARRIES AT ONE NAMED MEMBER PAIR: the relative carriage
+    /// of the body on `cj` against the body on `ci` under the face's word, and
+    /// the relative hue map between their two gauges. The edge is not derived
+    /// here — 50.3's edge is measured on the union of the two bodies by
+    /// whatever created the face, and re-deriving a placement must not erase
+    /// it, so it is carried in by the caller.
+    pub fn face_place(
+        &self,
+        i: u16,
+        ci: &stalk::Invariant,
+        j: u16,
+        cj: &stalk::Invariant,
+        edge: Option<Transport>,
+    ) -> Option<FacePlace> {
+        self.face_place_by(i, ci, j, cj, &self.face_word(i, j)?, edge)
+    }
+
+    /// The same placement UNDER A NAMED WORD. A section face (21 step 2, S12.2)
+    /// carries a word the bundle spoke between these two ends that is NOT the
+    /// coboundary of their placements, and its carriage is the relative under
+    /// THAT word — computing it under the coboundary word would place the
+    /// section by the face it is a section of.
+    pub fn face_place_by(
+        &self,
+        i: u16,
+        ci: &stalk::Invariant,
+        j: u16,
+        cj: &stalk::Invariant,
+        word: &Word,
+        edge: Option<Transport>,
+    ) -> Option<FacePlace> {
+        use crate::transducer::sentence::transport::{vertex_carriage_at, vertex_gauge_at};
         let va = self.vertices.get(i as usize)?;
         let vb = self.vertices.get(j as usize)?;
-        crate::transducer::family::trace::trace_at("face_of", j as usize);
-        let wa = va.word_in(self)?;
-        let wb = vb.word_in(self)?;
-        let word = wb.compose(&wa.inverse()).normal_form();
-        let ca = crate::transducer::sentence::transport::vertex_carriage(va, self)?;
-        let cb = crate::transducer::sentence::transport::vertex_carriage(vb, self)?;
-        let wv = element::versor_of_word(&word)?;
+        let ca = vertex_carriage_at(va, self, ci)?;
+        let cb = vertex_carriage_at(vb, self, cj)?;
+        let wv = element::versor_of_word(word)?;
         let inv = wv.versor_inverse()?;
         let conjugated = wv.geo(&ca).geo(&inv);
         let carriage = cb.geo(&conjugated.versor_inverse()?);
-        let gauge = relative_gauge(&vertex_gauge(va), &vertex_gauge(vb));
-        Some(Transport { word, carriage, gauge })
+        let gauge = relative_gauge(&vertex_gauge_at(va, ci), &vertex_gauge_at(vb, cj));
+        Some(FacePlace { carriage, gauge, edge })
+    }
+
+    /// THE FACE BETWEEN TWO VERTICES, AT THE MEMBER PAIRS THE INCIDENCE NAMES.
+    ///
+    /// `pairs` is the incidence: which member of `i` relates to which member
+    /// of `j`. It comes from the cell occupancy that created the face
+    /// (`star_and_cell_faces`) or from the pairs a face already carries when
+    /// its placements are re-derived. IT IS NEVER THE PRODUCT OF THE TWO
+    /// FIBRES — a face exists because two BODIES' supports meet, and that
+    /// incidence is between bodies, so it says which member relates to which.
+    ///
+    /// `None` when the word does not read; a member pair whose placement does
+    /// not derive is left out of the fibre rather than given a versor it does
+    /// not have (rule 11).
+    pub fn face_at(
+        &self,
+        i: u16,
+        j: u16,
+        pairs: &[(stalk::Invariant, stalk::Invariant)],
+    ) -> Option<FormFace> {
+        self.face_at_by(i, j, pairs, &self.face_word(i, j)?)
+    }
+
+    /// The same face UNDER A NAMED WORD, for a section face: the word is the
+    /// one the bundle spoke between these ends, and the placements are the
+    /// relatives under it.
+    pub fn face_at_by(
+        &self,
+        i: u16,
+        j: u16,
+        pairs: &[(stalk::Invariant, stalk::Invariant)],
+        word: &Word,
+    ) -> Option<FormFace> {
+        crate::transducer::family::trace::trace_at("face_at", j as usize);
+        let mut at = Keyed::new();
+        for (ci, cj) in pairs {
+            if let Some(p) = self.face_place_by(i, ci, j, cj, word, None) {
+                at.insert(crate::transducer::sentence::face_pair_key(ci, cj), p);
+            }
+        }
+        Some(FormFace { i, j, word: word.clone(), at })
+    }
+
+    /// THE MEMBER PAIRS A FACE BETWEEN TWO VERTICES HAS where one endpoint
+    /// stands at a single chart — the star case, and every face this tree makes
+    /// outside a cover's meets. `None` where both carry several: the pairing is
+    /// the scene's fact and this does not have it.
+    pub fn face_pairs(&self, i: u16, j: u16) -> Option<Vec<(stalk::Invariant, stalk::Invariant)>> {
+        let ci = self.vertices.get(i as usize)?.charts();
+        let cj = self.vertices.get(j as usize)?.charts();
+        match (ci.as_slice(), cj.as_slice()) {
+            ([one], many) => Some(many.iter().map(|c| (one.clone(), c.clone())).collect()),
+            (many, [one]) => Some(many.iter().map(|c| (c.clone(), one.clone())).collect()),
+            _ => None,
+        }
+    }
+
+    /// A FACE CARRYING A NAMED WORD, placed at the member pairs its two
+    /// vertices name. This is what `FormFace::new` was for — a section face, or
+    /// a chord — except that `new` recorded the word and left the placement
+    /// empty, and a face with no placement contributes no member path to any
+    /// loop, so every loop through it lost its carriage.
+    pub fn face_carrying(&self, i: u16, j: u16, word: Word) -> Option<FormFace> {
+        let pairs = self.face_pairs(i, j)?;
+        self.face_at_by(i, j, &pairs, &word)
+    }
+
+    /// THE STAR FACE OF A VERTEX, or any face one of whose endpoints stands at
+    /// a single chart. There the incidence needs no reading: one side has one
+    /// member, so each member of the other side relates to it and to nothing
+    /// else. The Frame is the case that matters — every star face is
+    /// Frame→vertex and the Frame stands at the root stratum alone.
+    ///
+    /// `None` where BOTH endpoints carry several members: the pairing is then
+    /// a fact about the scene and this function does not have it. Callers with
+    /// an incidence use `face_at`.
+    pub fn face_of(&self, i: u16, j: u16) -> Option<FormFace> {
+        self.face_at(i, j, &self.face_pairs(i, j)?)
     }
 
     pub fn delta1(&self) -> Vec<(u16, Word)> {
@@ -656,9 +832,9 @@ pub(crate) fn loop_row_on(
 pub(crate) fn form_face_step(faces: &[FormFace], fi: usize, from: usize, to: usize) -> Option<Word> {
     let f = faces.get(fi)?;
     if f.i as usize == from && f.j as usize == to {
-        Some(f.transport.word.clone())
+        Some(f.word.clone())
     } else {
-        Some(f.transport.word.inverse())
+        Some(f.word.inverse())
     }
 }
 

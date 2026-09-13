@@ -149,7 +149,7 @@ fn speak_with_demands(
                 let remainder_edges = form
                     .faces
                     .iter()
-                    .filter(|f| f.i != 0 && f.j != 0 && f.edge.is_none())
+                    .filter(|f| f.i != 0 && f.j != 0 && !f.has_edge())
                     .filter(|f| {
                         matches!(form.vertices.get(f.i as usize), Some(Vertex::Word { .. }))
                             && matches!(form.vertices.get(f.j as usize), Some(Vertex::Word { .. }))
@@ -165,7 +165,7 @@ fn speak_with_demands(
                     eprintln!("[{tag}] demand {} chart {} on {}", kind.label(), hx(chart.key().as_bytes()), hx(addr.as_bytes()));
                 }
                 for f in &form.faces {
-                    if f.i != 0 && f.j != 0 && f.edge.is_none() {
+                    if f.i != 0 && f.j != 0 && !f.has_edge() {
                         eprintln!("[{tag}] edge remainder {}-{} on {}", f.i, f.j, hx(addr.as_bytes()));
                     }
                 }

@@ -7,7 +7,7 @@ use crate::cognition::*;
 use crate::transducer::address::{Address, TAG_FORM};
 use crate::transducer::alphabet::Derivation;
 use crate::transducer::element::{self, Element};
-use crate::transducer::sentence::{as_element_form, Demand, Form, FormFace, Vertex};
+use crate::transducer::sentence::{as_element_form, Demand, Form, Vertex};
 use num_rational::BigRational;
 
 fn q(n: i64) -> BigRational {
@@ -33,7 +33,7 @@ fn demanding_sentence(w: crate::transducer::alphabet::Word, tag: u8, kind: Deman
         Vec::new(),
         None,
     ));
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star"), edge: None });
+    f.faces.push(f.face_of(0, 1).expect("star"));
     f.vertices.push(Vertex::Demand {
         kind,
         chart: crate::transducer::stalk::Invariant(vec![17]),

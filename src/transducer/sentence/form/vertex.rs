@@ -77,42 +77,38 @@ impl Vertex {
         }
     }
 
-    pub fn class(&self) -> stalk::Invariant {
-        match self {
-            Vertex::Word { .. } => match self.acting() {
-                Some(a) => a.chart.clone(),
-                // A word vertex acting on no chart speaks to no body, and
-                // the root stratum is what that reads as — the same answer
-                // the Frame gives, and not a chart invented for it.
-                None => stalk::Invariant::default(),
-            },
-            Vertex::Rebased { class, .. } => class.clone(),
-            Vertex::Glued { chart, .. } | Vertex::Demand { chart, .. } => chart.clone(),
-            Vertex::Frame | Vertex::Unfolded { .. } => stalk::Invariant::default(),
-        }
-    }
-
-    /// THE MEMBER A SINGLE-CHART WORD VERTEX ACTS BY, in canonical key
-    /// order where it acts on several (rule 15's first case: the order is
-    /// the trie's, which is the chart's own content).
+    /// EVERY CHART THIS VERTEX STANDS AT.
     ///
-    /// Every vertex this tree builds today acts on exactly one chart, so
-    /// this is total and unambiguous on every form now in existence — which
-    /// is what makes D7a a representation change and nothing more. D7b
-    /// makes several members the normal condition, and a reader that wants
-    /// a PARTICULAR chart asks `acts().get(chart.key())` rather than this:
-    /// a representative is a representative, and the sites that need one
-    /// are the ones writing a single-chart vertex back out.
-    pub fn acting(&self) -> Option<&super::Acting> {
+    /// It was `class() -> Invariant`, one chart, and its one caller builds a
+    /// keyed set of the charts around a loop — so a vertex acting on two
+    /// charts contributed one of them and the loop's chart set was short by
+    /// the rest. A word vertex acting on no chart stands at the root stratum,
+    /// which is the Frame's answer and not a chart invented for it.
+    pub fn charts(&self) -> Vec<stalk::Invariant> {
         match self {
-            Vertex::Word { acts, .. } => acts.scoped().next().map(|(_, a)| a),
-            _ => None,
+            Vertex::Word { acts, .. } if !acts.is_empty() => {
+                acts.scoped().map(|(_, a)| a.chart.clone()).collect()
+            }
+            Vertex::Rebased { class, .. } => vec![class.clone()],
+            Vertex::Glued { chart, .. } | Vertex::Demand { chart, .. } => vec![chart.clone()],
+            Vertex::Word { .. } | Vertex::Frame | Vertex::Unfolded { .. } => {
+                vec![stalk::Invariant::default()]
+            }
         }
     }
 
     /// EVERY MEMBER, for a reader that wants a particular chart or all of
     /// them. The empty carrier for any other vertex kind: a Glued or a
     /// Demand acts on nothing by a carriage of its own.
+    ///
+    /// THERE IS NO REPRESENTATIVE READER, and there was: `acting()` returned
+    /// the member in least-chart-key order, and `carriage_of`/`gauge_of`
+    /// returned that member's. While such a reader exists a caller that wants
+    /// ONE member takes it — the scalar collapse arrives back through the
+    /// accessor, silently, at every site — and no audit finds those sites
+    /// reliably. Deleted, the compiler names all of them, exactly as
+    /// `Keyed::fiber` taking a non-empty `Prefix` named the walk sites in X3.
+    /// The type does the enumeration.
     pub fn acts(&self) -> Option<&Keyed<super::Acting>> {
         match self {
             Vertex::Word { acts, .. } => Some(acts),
@@ -120,18 +116,37 @@ impl Vertex {
         }
     }
 
-    /// The carriage of the member above, where there is one.
-    pub fn carriage_of(&self) -> Option<&crate::transducer::element::Versor> {
-        self.acting().map(|a| a.carriage.as_ref())
+    /// THE MEMBER AT A NAMED CHART: a keyed read, which is the only honest
+    /// way to ask a fibre for one of its members. `None` is "this vertex does
+    /// not act there", which is what a rule says about a body on a chart it
+    /// has never seen.
+    pub fn acting_on(&self, chart: &stalk::Invariant) -> Option<&super::Acting> {
+        self.acts()?.get(chart.key().as_bytes())
     }
 
-    /// The gauge of the member above; the empty map where the vertex acts
-    /// on nothing, which is a hue map that moves no hue rather than an
-    /// absence standing in for one.
-    pub fn gauge_of(&self) -> &[(u8, u8)] {
-        match self.acting() {
-            Some(a) => &a.gauge,
-            None => &[],
+    /// THE CHART OF THIS VERTEX WHOSE KEY IS `key`. A keyed read back: a face
+    /// records its member pairs as chart KEYS, and a reader re-deriving a
+    /// placement needs the `Invariant` those keys name, which the vertex holds.
+    /// `None` is "this vertex does not stand there".
+    pub fn chart_keyed(&self, key: &[u8]) -> Option<stalk::Invariant> {
+        self.charts().into_iter().find(|c| c.key().as_bytes() == key)
+    }
+
+    /// THE CHART A FACE READS THIS VERTEX AT, and the only representative
+    /// reading left in the tree. `FormFace` holds one `Transport`, so a face
+    /// between multi-chart vertices cannot be described without a transport
+    /// fibre on the 2-skeleton — a row of its own, on the tape and in the
+    /// address. See `transport::vertex_carriage` for the whole reason.
+    ///
+    /// It is the least chart key: CONTENT, so every node reads the same one
+    /// (law 2), never an insertion order. `None` where the vertex stands at no
+    /// chart of its own.
+    pub fn face_chart(&self) -> Option<stalk::Invariant> {
+        match self {
+            Vertex::Word { acts, .. } => acts.scoped().next().map(|(_, a)| a.chart.clone()),
+            Vertex::Rebased { class, .. } => Some(class.clone()),
+            Vertex::Glued { chart, .. } | Vertex::Demand { chart, .. } => Some(chart.clone()),
+            Vertex::Frame | Vertex::Unfolded { .. } => Some(stalk::Invariant::default()),
         }
     }
 
