@@ -398,7 +398,16 @@ pub fn mint(
 
 /// Blind replay of a Rewrite: both directions, then the yield re-read.
 pub fn replay(e: &Element) -> Option<&'static str> {
-    let rw = Rewrite::from_element(e)?;
+    // A TAPE THAT DOES NOT DECODE IS A REFUSAL, not an absence of one. This
+    // read `Rewrite::from_element(e)?`, and `?` on a function whose `None`
+    // MEANS "no refusal" turned an undecodable tape into a clean bill: the
+    // court replayed a rewrite it could not read and reported nothing
+    // against it. Every other arm below refuses on a property of the decoded
+    // rewrite, so the one input none of them could examine was the one input
+    // that passed.
+    let Some(rw) = Rewrite::from_element(e) else {
+        return Some("rewrite tape does not decode");
+    };
     let y = rw.yield_from_payload();
     if y.iter().all(|&x| x == 0) {
         return Some("rewrite is not work");

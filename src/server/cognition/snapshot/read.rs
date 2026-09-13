@@ -598,13 +598,25 @@ impl Kernel {
             .filter(|(_, w)| w.is_connection())
             .map(|(_, w)| w.element().clone())
             .collect();
-        let Some((_, &ratifier)) = self.discoverers.scoped().next() else {
-            return true;
-        };
+        // EACH CONNECTION RE-ENTERS UNDER ITS OWN DISCOVERER, read by its
+        // address. This took `discoverers.scoped().next()` — the first entry
+        // of the trie — and docketed EVERY unruled connection under that one
+        // voice, so a boot reattributed the whole docket to whoever happened
+        // to sort first, and `settle_use` pays a discoverer. Which voice that
+        // was is an insertion order in a trie (rule 15), and provenance is
+        // not a thing a carrier's shape may decide.
+        //
+        // A connection whose discoverer this court does not hold is not
+        // docketed under someone else's name: it is left, which is absence
+        // and not a default.
         for w in held {
-            if !self.ruled_contains(&w.address()) {
-                self.docket_connection(&w, ratifier);
+            if self.ruled_contains(&w.address()) {
+                continue;
             }
+            let Some(ratifier) = self.discoverer_of(&w.address()) else {
+                continue;
+            };
+            self.docket_connection(&w, ratifier);
         }
         true
     }
