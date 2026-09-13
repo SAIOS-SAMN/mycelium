@@ -107,28 +107,30 @@ pub fn mismatch(a: &Signature, b: &Signature) -> [u64; 4] {
     ]
 }
 
-/// COLLAPSE THE BEAM SPECTRALLY: among candidate terms (all already carrying
-/// the footprint on every witnessing pair), each candidate's future state —
-/// its selection on each witness scene — is measured against that witness's
-/// footprint signature; the WORST pair governs (per-axis max — the joint
-/// criterion), and candidates rank lexicographically on the governed
-/// mismatch. The minimum is the collapse; ties keep the incoming
-/// (tightest-first) order, so the prior discipline is the tiebreak, not the
-/// judge. Empty input → None (no candidate, no invention).
-pub fn collapse_beam(
-    candidates: &[Sel],
-    witnesses: &[crate::transducer::anchor::Evidence],
-) -> Option<Sel> {
-    rank_beam(candidates, witnesses).into_iter().next()
-}
-
-/// The full spectral ordering of the beam: every candidate measured by its
-/// governed per-axis mismatch (worst witnessing pair, lexicographic in
-/// structural order), best first, stable on ties (the incoming
-/// tightest-first order is the tiebreak). The head is the collapse; the
-/// tail is the retained optionality a coherent multi-reading projection
-/// draws from.
-pub fn rank_beam(
+/// THE BEAM'S MINIMA, HELD: every candidate no other candidate beats on all
+/// four lanes at once.
+///
+/// Each candidate's future state — its selection on each witness scene — is
+/// measured against that witness's footprint signature, and the WORST
+/// witnessing pair governs (per-axis max, the joint criterion). What is done
+/// with those four lanes afterwards is the whole question.
+///
+/// `collapse_beam` and `rank_beam` stood here. They sorted the governed
+/// mismatch LEXICOGRAPHICALLY and returned the head, discarding the rest —
+/// which orders a polytonic vector (law 5: the lanes are never ordered) and
+/// destroys a vortex at the moment it forms. Two candidates that each beat
+/// the other on a different lane are not better and worse; they are two
+/// readings, and 12.6 holds both until a perception, a glue or a ruling
+/// collapses the superposition. A lexicographic sort silently makes 𝒮 senior
+/// to 𝒢 senior to 𝒽 and calls the result a winner.
+///
+/// So the reading is the ANTICHAIN: a candidate is out only when another
+/// beats or equals it on every lane and strictly beats it somewhere — a
+/// comparison each lane makes for itself, with no lane ranked against
+/// another and nothing summed. One survivor is a discharge; several are a
+/// vortex and are all returned. Empty input → empty (no candidate, no
+/// invention).
+pub fn beam_minima(
     candidates: &[Sel],
     witnesses: &[crate::transducer::anchor::Evidence],
 ) -> Vec<Sel> {
@@ -137,33 +139,32 @@ pub fn rank_beam(
     }
     let fp_sigs: Vec<Signature> =
         witnesses.iter().map(|(fp, scene)| signature(fp, scene)).collect();
-    let mut measured: Vec<([u64; 4], usize)> = candidates
+    let governed: Vec<[u64; 4]> = candidates
         .iter()
-        .enumerate()
-        .map(|(i, t)| {
-            let mut governed = [0u64; 4];
+        .map(|t| {
+            let mut g = [0u64; 4];
             for ((_, scene), fp_sig) in witnesses.iter().zip(&fp_sigs) {
                 let sel_sig = signature(&t.eval(scene), scene);
                 let m = mismatch(&sel_sig, fp_sig);
+                // index: the four lanes
                 for l in 0..4 {
-                    governed[l] = governed[l].max(m[l]);
+                    g[l] = g[l].max(m[l]);
                 }
             }
-            (governed, i)
+            g
         })
         .collect();
-    // THE PER-AXIS MISMATCH IS CONTENT, never a score: four exact lanes in
-    // structural order, compared lexicographically and never summed
-    // (law 5). The incoming order is the tiebreak because this sort is
-    // stable — `.then(a.1.cmp(&b.1))` on the enumeration index said the
-    // same thing by ranking candidates on their arrival position (rule 15)
-    // and is gone.
-    #[expect(
-        clippy::disallowed_methods,
-        reason = "rule 4 — canonical key order: the governed per-axis mismatch in structural order is the candidate's own reading, compared lane by lane and never flattened"
-    )]
-    measured.sort_by_key(|m| m.0);
-    measured.into_iter().map(|(_, i)| candidates[i].clone()).collect()
+    // `a` beats `b` when no lane of `a` is worse and some lane is better.
+    // Read lane by lane; neither vector is reduced to anything.
+    let beats = |a: &[u64; 4], b: &[u64; 4]| {
+        a.iter().zip(b).all(|(x, y)| x <= y) && a.iter().zip(b).any(|(x, y)| x < y)
+    };
+    candidates
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| !governed.iter().enumerate().any(|(j, g)| j != *i && beats(g, &governed[*i])))
+        .map(|(_, t)| t.clone())
+        .collect()
 }
 
 #[cfg(test)]
@@ -186,26 +187,55 @@ mod tests {
         assert!(mismatch(&coherent, &scattered)[0] > 0, "β₀ axis names the difference");
     }
 
-    /// The spectral collapse picks the candidate whose future state RESONATES
-    /// with the footprint — not the one that merely arrived first.
+    /// A candidate beaten on every lane is out; arrival order decides
+    /// nothing. One survivor is a discharge.
     #[test]
-    fn the_beam_collapses_to_the_resonant_future_state() {
+    fn a_candidate_beaten_on_every_lane_leaves_the_beam() {
         // Scene: a hue-1 domino and a lone hue-2 cell.
         let scene = vec![(0, 0, 1), (0, 1, 1), (4, 4, 2)];
         let footprint = vec![(0i64, 0i64), (0, 1)];
         // Candidate A selects EVERYTHING occupied (carries fp, but drags the
-        // alien cell); candidate B selects exactly the hue-1 support.
+        // alien cell); candidate B selects exactly the hue-1 support, so B
+        // is no worse on any lane and better on some.
         let a = Sel::Hue(255);
         let b = Sel::Hue(1);
         assert_eq!(a.eval(&scene).len(), 3);
         assert_eq!(b.eval(&scene).len(), 2);
         let witnesses = vec![(footprint, scene)];
-        // A listed FIRST: cardinality order would keep it; the spectrum
-        // overrules — B's future state is the exact resonance.
-        let chosen = collapse_beam(&[a, b.clone()], &witnesses).expect("a candidate survives");
-        assert_eq!(chosen, b, "resonance beats arrival order");
-        // A single candidate collapses trivially; an empty beam is honest None.
-        assert_eq!(collapse_beam(std::slice::from_ref(&b), &[]), Some(b));
-        assert_eq!(collapse_beam(&[], &[]), None);
+        // A is listed FIRST: arrival order would keep it.
+        assert_eq!(
+            beam_minima(&[a, b.clone()], &witnesses),
+            vec![b.clone()],
+            "the dominated candidate leaves and arrival order decides nothing"
+        );
+        assert_eq!(beam_minima(std::slice::from_ref(&b), &[]), vec![b]);
+        assert_eq!(beam_minima(&[], &[]), Vec::new());
+    }
+
+    /// TWO INCOMPARABLE READINGS ARE HELD, not ranked. Each beats the other
+    /// on a different lane, so neither is out — and the lexicographic sort
+    /// this replaced would have returned one of them and dropped the other,
+    /// which is the vortex destroyed at the moment it forms.
+    #[test]
+    fn incomparable_candidates_are_both_held() {
+        // Two scenes. On the first, hue 1 is the exact footprint and hue 2
+        // misses; on the second the footprint is hue 2 and hue 1 misses. The
+        // worst pair governs each candidate, so each carries a mismatch the
+        // other does not, on different content.
+        let s1 = vec![(0, 0, 1), (0, 1, 1), (4, 4, 2)];
+        let s2 = vec![(0, 0, 2), (0, 1, 2), (7, 7, 1)];
+        let witnesses = vec![
+            (vec![(0i64, 0i64), (0, 1)], s1),
+            (vec![(0i64, 0i64), (0, 1)], s2),
+        ];
+        let one = Sel::Hue(1);
+        let two = Sel::Hue(2);
+        let held = beam_minima(&[one.clone(), two.clone()], &witnesses);
+        assert_eq!(
+            held.len(),
+            2,
+            "neither reading beats the other on every lane, so both stand: {held:?}"
+        );
+        assert!(held.contains(&one) && held.contains(&two));
     }
 }

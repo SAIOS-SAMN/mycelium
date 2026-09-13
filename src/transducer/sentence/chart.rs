@@ -10,7 +10,6 @@ use super::transport::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Word;
 use crate::transducer::element::{self, Element, Versor};
-use crate::transducer::stalk;
 
 impl Form {
     pub fn glue(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
@@ -256,13 +255,32 @@ impl SentenceRule {
             .sum()
     }
 
-    /// Hue map of a target chart. One Keyed from the form's Word vertices,
-    /// then a read; never a scan.
-    pub fn hue_for(&self, inv: &stalk::Invariant) -> Vec<(u8, u8)> {
-        match self.form.hue_maps.get(&inv.key()) {
-            Some(g) => g.clone(),
-            None => Vec::new(),
-        }
+    /// EVERY RECOLOURING SECTION THIS TRANSPORT CLASS HAS BEEN SPOKEN WITH.
+    ///
+    /// It read `hue_maps` by a CHART key — `inv.key()` — and every writer
+    /// files under `hue_section_key_of(rotor, gauge)`, which opens `TAG_HUE`
+    /// and carries the rotor's class. Two key spaces, so the read could not
+    /// match a write for any input: the recolouring section was written on
+    /// every reindex and reachable by nothing. It had no callers, which is
+    /// how it survived — a reader that always answers "no hue" and is never
+    /// asked.
+    ///
+    /// It reads the STRATUM now, because the gauge is part of the full key
+    /// and a read keyed by the whole of it can only answer a question whose
+    /// answer the asker already holds. Several gauges on one class are
+    /// several sections (18.2), so the answer is all of them and the caller
+    /// is not handed one of several as though it were the only one.
+    pub fn hue_sections_of(
+        &self,
+        rotor: &crate::transducer::alphabet::Rotor,
+    ) -> Vec<Vec<(u8, u8)>> {
+        let Some(prefix) = crate::transducer::sentence::hue_class_prefix_of(rotor) else {
+            return Vec::new();
+        };
+        let Some(at) = crate::network::nerve::Prefix::new(&prefix) else {
+            return Vec::new();
+        };
+        self.form.hue_maps.fiber(at).map(|(_, g)| g.clone()).collect()
     }
 
     /// Carriage of a transport class, read from the form's carriages.

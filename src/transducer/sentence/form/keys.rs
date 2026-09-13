@@ -40,12 +40,28 @@ pub(crate) fn unfolded_key(measure: &Measure) -> Vec<u8> {
 /// matching key for correspondence (chapter 21 step 1). Read from the
 /// ACTION alone (L14): a word vertex carries its canonical rotor, so
 /// being classed resolves no citation.
+/// THE STRATUM EVERY HUE SECTION OF ONE TRANSPORT CLASS HANGS UNDER: the
+/// hue key's own prefix, up to but not including the gauge. A21 §2 —
+/// coordinates are ordered so a prefix reads a stratum, and the stratum here
+/// is "every recolouring this class has been spoken with", which is what a
+/// caller can actually ask for. The gauge is INSIDE the full key, so a read
+/// keyed by the whole thing can only answer a question whose answer the
+/// asker already holds.
+pub(crate) fn hue_class_prefix_of(
+    rotor: &crate::transducer::alphabet::Rotor,
+) -> Option<Vec<u8>> {
+    let mut buf = vec![crate::transducer::address::TAG_HUE];
+    crate::transducer::address::put_bytes(&mut buf, rotor.class_key()?.as_bytes());
+    Some(buf)
+}
+
 pub(crate) fn hue_section_key_of(
     rotor: &crate::transducer::alphabet::Rotor,
     gauge: &[(u8, u8)],
 ) -> Option<crate::transducer::address::Address> {
-    let mut buf = vec![crate::transducer::address::TAG_HUE];
-    crate::transducer::address::put_bytes(&mut buf, rotor.class_key()?.as_bytes());
+    // Built ON the prefix, so the stratum a reader walks and the key a writer
+    // files under cannot drift apart (law 12: one fact, one construction).
+    let mut buf = hue_class_prefix_of(rotor)?;
     buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
     for &(a, b) in gauge {
         buf.push(a);

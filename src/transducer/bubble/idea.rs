@@ -161,13 +161,37 @@ impl Bubble {
         }
     }
 
+    /// THE ROTOR THIS BUBBLE'S FORM SPEAKS, when it speaks ONE.
+    ///
+    /// `find_map` stood here and returned the FIRST Word vertex's rotor. A
+    /// form with several word vertices has several rotors, and which one
+    /// arrives first is an insertion order — so this answered a different
+    /// motion on a node that took the same bodies in differently (rule 15,
+    /// and the D10 representative-reader fault at a new site).
+    ///
+    /// It costs more than a wrong answer downstream: `rotor_between`
+    /// composes two of these into `rb ∘ ra⁻¹` and calls that the transport
+    /// between two bubbles, so two nodes could breed different transports
+    /// from identical mathematics.
+    ///
+    /// A form whose word vertices all speak one rotor up to projective
+    /// equality has that rotor. One that speaks several has no single one,
+    /// and says so — absence, not a representative. Nothing here is chosen.
     pub(crate) fn rotor(&self) -> Option<Rotor> {
-        self.form.as_ref().and_then(|f| {
-            f.vertices.iter().find_map(|v| match v {
-                Vertex::Word { derivation, .. } => Some(derivation.rotor()),
-                _ => None,
-            })
-        })
+        let f = self.form.as_ref()?;
+        let mut held: Option<Rotor> = None;
+        for v in &f.vertices {
+            let Vertex::Word { derivation, .. } = v else {
+                continue;
+            };
+            let r = derivation.rotor();
+            match &held {
+                None => held = Some(r),
+                Some(h) if h.projective_eq(&r) => {}
+                Some(_) => return None,
+            }
+        }
+        held
     }
 
     /// Walk outward on the cover trie from this bubble's cover, one chart

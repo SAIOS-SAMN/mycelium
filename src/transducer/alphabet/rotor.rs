@@ -336,12 +336,36 @@ impl Rotor {
     }
 
     /// The plane word this rotor spells. None when it does not — never identity.
+    ///
+    /// THE IMAGES MUST STAY IN THE SENSOR PLANE, and this did not check. It
+    /// carried e₀ and e₁, took each image's FIRST TWO components into a 2×2
+    /// block, and spelled that — so a rotor whose images leave the plane had
+    /// its shadow on the plane spelled as though it were the whole motion.
+    /// Two readings of the engine, not of the text: a quarter turn on plane
+    /// (2,3) carries e₀ and e₁ unmoved, projects to the identity block, and
+    /// returned the IDENTITY WORD against this doc line; and a legal
+    /// two-letter word whose holonomy lives in (0,2)∧(1,3) returned a half
+    /// turn on the sensor plane.
+    ///
+    /// The consequence is not local. `ClassVector::of_rotor` writes an
+    /// occupied plane section from this, so a holonomy with no sensor-plane
+    /// content reads as having one and `occupies(Axis::OffPlane)` reads
+    /// false — and law 10's pivot takes its candidate moves off exactly
+    /// those axes. A rotor that moves the plane out of itself has no plane
+    /// word, which is what `None` here has always meant.
     pub fn spelled_word(&self) -> Option<Word> {
         let one = Q::from_integer(BigInt::from(1));
         let zero = Q::from_integer(BigInt::from(0));
         let e0 = self.carry(&[one.clone(), zero.clone(), zero.clone(), zero.clone()]);
         let e1 = self.carry(&[zero.clone(), one, zero.clone(), zero]);
         let (a, b) = (e0?, e1?);
+        // The two directions the sensor plane is NOT. A component there is
+        // the image leaving the plane, and no 2×2 block over the plane can
+        // carry it — the block would be a projection, and a projection of a
+        // motion is not that motion.
+        if !a[2].is_zero() || !a[3].is_zero() || !b[2].is_zero() || !b[3].is_zero() {
+            return None;
+        }
         let block = [[a[0].clone(), b[0].clone()], [a[1].clone(), b[1].clone()]];
         Some(spell(&block)?.word)
     }

@@ -197,12 +197,40 @@ impl Form {
             // asserted only in a debug build is not certified (law 10:
             // direction is a pivot, closure certifies). It HOLDS, in the
             // vocabulary the arms above it already use.
-            if self.rank() != Some(rank_before_gauge) {
-                eprintln!(
-                    "  pivot {:02x}{:02x}… held, the tree gauge moved the rank",
-                    idea[0], idea[1]
-                );
-                break;
+            //
+            // IT IS READ AS A MOVE, NOT AS AN INEQUALITY. `self.rank() !=
+            // Some(rank_before_gauge)` collapsed the four-coordinate audit
+            // onto one bool and broke the whole drive on it, so a gauge that
+            // DISCHARGED a coordinate — the move A18 names, and the one the
+            // certificate is issued for — stopped the pivot exactly as a
+            // corrupt one would, and the line said only "moved the rank".
+            // §2.3 has the reading: `Rank::moved` names which coordinate a
+            // unit left and carries the delta whole when nothing admissible
+            // happened. R1's theorem is that re-gauging holds the rank, so
+            // `Equal` continues; a discharge is admissible and continues,
+            // with the coordinate named; only `Inadmissible` breaks, and it
+            // breaks saying what the four coordinates actually did.
+            let after_gauge = self.rank();
+            match after_gauge.map(|a| Rank::moved(rank_before_gauge, a)) {
+                None => {
+                    eprintln!("  pivot {:02x}{:02x}… held, rank overflow", idea[0], idea[1]);
+                    break;
+                }
+                Some(RankMove::Equal) => {}
+                Some(RankMove::Discharged { from }) => {
+                    eprintln!(
+                        "  pivot {:02x}{:02x}… the tree gauge discharged {from:?}",
+                        idea[0], idea[1]
+                    );
+                }
+                Some(RankMove::Inadmissible { delta }) => {
+                    eprintln!(
+                        "  pivot {:02x}{:02x}… held, the tree gauge moved the rank by {delta:?} \
+                         (torsion, free, off-plane, axes)",
+                        idea[0], idea[1]
+                    );
+                    break;
+                }
             }
             for (idx, lp) in self.loops.iter().enumerate() {
                 let Some(&order) = pending.get(&vertex_ix_key(lp.chord)) else {
@@ -546,7 +574,19 @@ impl Form {
         // trial's failure; a finite-order loop with no word files as
         // torsion instead (step 6, A17). The class becomes a coordinate of
         // the form, and the court re-derives the seed from the loop.
-        if out.is_empty() && !held && kappa.free_part() && !lp.holonomy.is_identity() {
+        //
+        // `out.is_empty() &&` STOOD HERE and is deleted. It made the opening
+        // axis a last resort: the move that widens a cover was offered only
+        // where no other candidate had been offered at all, so a loop whose
+        // class has a free part — which is exactly the reading that says the
+        // cover is too narrow — kept that reading to itself whenever any
+        // word happened to be spellable on its chord. The condition is the
+        // FIBRE's, and the fibre is `kappa.free_part()`; whether some other
+        // candidate exists is a fact about the alphabet, not about the
+        // narrowness this move answers. 12.6 is explicit that the candidates
+        // are offered and nothing orders them, so a gate that suppresses one
+        // candidate because another exists is an ordering by construction.
+        if !held && kappa.free_part() && !lp.holonomy.is_identity() {
             if let Some(seed) = element::versor_of_word(&lp.holonomy) {
                 out.push(Candidate {
                     axis: Axis::Open,
