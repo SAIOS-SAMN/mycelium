@@ -40,6 +40,21 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
     let (mut open_seen, mut open_demanded, mut open_minted, mut open_stood) = (0u64, 0u64, 0u64, 0u64);
     let mut open_acts = 0u64;
     let (mut open_rem_empty, mut open_rem_cells) = (0u64, 0u64);
+    // S9.13's REACH, as a distribution over the families that mint. E2 prices a
+    // closure's yield from it, and it has never been read, so this prints it
+    // before any carrier is proposed for it.
+    //
+    // THE TWO `sections` ARE NOT ONE OBJECT and this prints both rather than a
+    // span derived from either. `Element.sections` is the punctured axis —
+    // "alternative per-cell transition ASSIGNMENTS over the SAME base
+    // positions", the free part of the fibre, and what `Element::fiber_span`
+    // counts. `Form.sections` is `Keyed<Vec<u16>>` holding PAIR INDICES of the
+    // bundle — which pairs a class was measured on, a restriction record.
+    // Mirroring `fiber_span`'s formula onto the form would count the second as
+    // if it were the first, which is L8r's fault exactly (`on_class` and
+    // `on_body`, one reader over two coordinate systems).
+    let (mut reach_one, mut reach_more) = (0u64, 0u64);
+    let (mut form_sections, mut form_torsion) = (0u64, 0u64);
     for name in names {
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else {
             continue;
@@ -66,6 +81,30 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         // task D8 is about is exactly the task this gate hid. The counters
         // stay; the `continue` that followed them is gone, and every task that
         // extracts a rule now gets the same lines.
+        // THE REACH READING (§8.1, prints only). Per family that mints: what
+        // the FORM carries on its own two carriers, and what the MINTED
+        // ELEMENT's `fiber_span` answers — which is the carrier 12.6 and S9.13
+        // name. A span of 1 is base-only: no free section, no torsion orbit.
+        if let Some(w) = mycelium::transducer::family::mint_sentence(&rule, &task.train, &empty) {
+            let span = w.fiber_span();
+            if span > 1 {
+                reach_more += 1;
+            } else {
+                reach_one += 1;
+            }
+            form_sections += rule.form.sections.len() as u64;
+            form_torsion += rule.form.torsion.len() as u64;
+            let periods: Vec<u32> =
+                rule.form.torsion.scoped().map(|(_, f)| f.period).collect();
+            println!(
+                "  mint {name} reach: element fiber_span {span} (sections {} torsion {}) \
+                 | form sections {} torsion {} periods {periods:?}",
+                w.sections().len(),
+                w.torsion().len(),
+                rule.form.sections.len(),
+                rule.form.torsion.len(),
+            );
+        }
         let closed = rule.form.is_closed();
         if closed {
             closed_seen += 1;
@@ -394,6 +433,12 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         }
     }
     println!("  mint tasks with a closed rule form: {closed_seen}");
+    // S9.13's reach over the minting families, as a distribution.
+    println!(
+        "  mint reach: {} minting families, fiber_span 1 on {reach_one}, above 1 on {reach_more} \
+         | form carriers over them: sections {form_sections} torsion {form_torsion}",
+        reach_one + reach_more
+    );
     // THE POPULATION Y1's GATE HIDES. `rule_open` to the instrument;
     // `speak_with_demands` to production, which has no closure gate.
     println!(
