@@ -178,6 +178,21 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             },
         }
 
+        // THE FORM'S OWN IDENTITY (17.2, law 2): `form_vertex_key` is M2 —
+        // the vertex count, and per word vertex the composed rotor's key,
+        // the carriage, the contact and the SORTED gauge. It does not write
+        // the class. A representation change that keeps one member per
+        // vertex must leave it untouched, and this is the reading that says
+        // so; the five never mint an element, so the element's address is
+        // unavailable and this is the identity the engine has for them.
+        //
+        // A TRACE LINE IS NOT THE OBJECT (§3.2). This prints the address so
+        // two runs can be compared on it, and the comparison is address
+        // equality — 17.2's own predicate — never text of anything else.
+        let m2 = mycelium::transducer::sentence::form_vertex_key(&rule.form);
+        let m2_hex: String = m2.as_bytes().iter().map(|b| format!("{b:02x}")).collect();
+        println!("  mint {name} M2: {} bytes {m2_hex}", m2.as_bytes().len());
+
         // COUNT ONE OF THREE: THE CLASS AND GAUGE OF EVERY WORD VERTEX in
         // each pair form, and whether they agree. `Vertex::Word.class` is a
         // single `Invariant` — the body's own moduli — and 21 step 1 calls
