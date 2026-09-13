@@ -162,17 +162,39 @@ impl Kernel {
     /// once per window — the court stroke takes it when the docket orbit
     /// count crosses a multiple of `aperture_cycle()` (R7); the reading
     /// the next window starts from is kept, the phase is not.
-    pub(crate) fn read_phase(&mut self) {
+    /// A READING OVER AN EMPTY WINDOW IS NOT A READING, and returning
+    /// whether one was taken is what lets its caller pace on the same fact.
+    ///
+    /// The window is the receipts admitted since the last reading. When none
+    /// were, `k0 == k1`, the slice is empty, and `phase_over` reports
+    /// `comprehension 0/0 ... expansion 0/0` over `h N..N` — zero out of
+    /// zero, which is the vacuous assertion at the instrument and not a
+    /// measurement of anything. Hypha a wrote 25 598 of those in nine
+    /// minutes on the fleet at e98e8a2, 62 a second, because its caller
+    /// paces on ORBITS and a docket small enough to fit one budget completes
+    /// an orbit every stroke — so the pacing quantity was counting strokes,
+    /// not work. The caller's own comment records that exact failure being
+    /// fixed once by adding the aperture; the aperture is keyed to the same
+    /// quantity, so it moved rather than closed.
+    ///
+    /// The mark still advances on an empty window: the next reading covers
+    /// from here, not from the last one that happened to be non-empty.
+    pub(crate) fn read_phase(&mut self) -> bool {
         let now = self.cover_reading();
         let receipts = self.chain.receipts();
         let k1 = receipts.len();
+        let mut read = false;
         if let Some((k0, at_h0)) = self.phase_mark.take() {
             let k0 = k0.min(k1);
-            let h0 = k0.checked_sub(1).and_then(|i| receipts.get(i)).map_or(0, |r| r.height);
-            let h1 = self.chain.head_height();
-            let phase = phase_over(&receipts[k0..k1], &at_h0, &now, h0, h1);
-            eprintln!("{}", phase.line());
+            if k0 != k1 {
+                let h0 = k0.checked_sub(1).and_then(|i| receipts.get(i)).map_or(0, |r| r.height);
+                let h1 = self.chain.head_height();
+                let phase = phase_over(&receipts[k0..k1], &at_h0, &now, h0, h1);
+                eprintln!("{}", phase.line());
+                read = true;
+            }
         }
         self.phase_mark = Some((k1, now));
+        read
     }
 }

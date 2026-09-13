@@ -100,6 +100,21 @@ fn the_court_reads_the_phase_once_per_orbit_and_stores_no_phase() {
     let (k1, _) = k.phase_mark.clone().expect("kept again");
     assert!(k1 > k0, "the window moved with the chain");
     let _: Keyed<usize> = at_h0.strata;
+
+    // A READING OVER AN EMPTY WINDOW IS NOT A READING, and `read_phase` says
+    // so. Nothing has been admitted since the call above, so the window is
+    // `k1..k1` and `phase_over` would report zero out of zero over `h N..N` —
+    // the vacuous assertion at the instrument. Hypha a wrote 25 598 of those
+    // in nine minutes at e98e8a2 because its caller paces on docket orbits
+    // and a docket that fits one budget completes one every stroke.
+    assert!(!k.read_phase(), "no receipt admitted, so nothing is measured");
+    let (k2, _) = k.phase_mark.clone().expect("and the mark still advances");
+    assert_eq!(k2, k1, "an empty window leaves the start where the chain is");
+    // And a reading IS taken as soon as the chain moves again.
+    let e = vec![(0, 0, 5u8), (0, 1, 5)];
+    let f = vec![(0, 0, 6u8), (0, 1, 6)];
+    assert_eq!(speak_pair(&mut k, &e, &f, [3; 32]), Outcome::GermPending);
+    assert!(k.read_phase(), "a receipt in the window is a measurement");
 }
 
 /// R7 (45.9): the window is an aperture of docket orbits. A docket that

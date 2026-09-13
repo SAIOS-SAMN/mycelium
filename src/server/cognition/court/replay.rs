@@ -193,9 +193,16 @@ impl Kernel {
                 return;
             };
             let window = n / aperture != before / aperture;
-            if window {
+            // AND THE ORBIT LINE RIDES THE PHASE'S OWN WINDOW. The aperture
+            // above paces on CIRCUITS, and a docket that fits one budget
+            // completes a circuit every stroke, so circuits count strokes and
+            // the aperture only divides that by a constant. `read_phase`
+            // answers whether it measured anything — whether any receipt was
+            // admitted in the window — and that is the fact both lines are
+            // about, so both are written when it is true and neither when it
+            // is not.
+            if window && self.read_phase() {
                 eprintln!("  court orbit docket {n} period {period}");
-                self.read_phase();
             }
             // 45.8, S13.9, S13.10: an orbit that completes while a lane is
             // short is the syntropic phase, and the fold is the ledger's

@@ -746,14 +746,29 @@ pub(crate) fn pair_form_uncached(
             }
         }
     }
-    eprintln!(
-        "  pair form {n} vertices, {} faces ({meet_faces} cover meets, {} cell+ring), {} loops \
-         (word holonomy: flat {flat}, finite {finite}, infinite {infinite} \
-         | edge holonomy paths: flat {e_flat}, finite {e_fin}, infinite {e_inf})",
-        form.faces.len(),
-        form.faces.len() - meet_faces,
-        form.loops.len()
-    );
+    // A FORM WITH NOTHING TO REPORT ABOUT ITS HOLONOMY REPORTS NOTHING. The
+    // line's own argument for being unconditional is that a threshold on the
+    // loop COUNT would be a count deciding a branch (rule 2), and that is
+    // right about a threshold on magnitude. This is not one: it is the
+    // presence of the object the line is about. A form with no loop and no
+    // cover meet has no holonomy, and `flat 0, finite 0, infinite 0` over
+    // nothing is the vacuous assertion at the instrument.
+    //
+    // Measured on the fleet at e98e8a2: 6535 pair forms in twelve minutes
+    // across five voices, of which 90% had ZERO cover meets and the median
+    // had zero loops. The tail is where every reading came from — one form
+    // carried 677 vertices, 4030 faces, 1305 cover meets and 3361 loops —
+    // and the tail is what this now prints.
+    if !form.loops.is_empty() || meet_faces > 0 {
+        eprintln!(
+            "  pair form {n} vertices, {} faces ({meet_faces} cover meets, {} cell+ring), {} loops \
+             (word holonomy: flat {flat}, finite {finite}, infinite {infinite} \
+             | edge holonomy paths: flat {e_flat}, finite {e_fin}, infinite {e_inf})",
+            form.faces.len(),
+            form.faces.len() - meet_faces,
+            form.loops.len()
+        );
+    }
     trace::trace_n("pair/4 done", n, budget);
     form
 }
