@@ -79,9 +79,25 @@ impl Complex {
             Some(v)
         };
         let take_id = |b: &[u8], pos: &mut usize| crate::transducer::address::take_addr(b, pos);
+        // EVERY COUNT IS BOUNDED BY WHAT REMAINS, NEVER BY A CAP. Each of
+        // these loops was `0..n.min(CAP)`, which reads a prefix of what the
+        // writer wrote and leaves the rest in the stream: the cells past the
+        // cap vanish, and the bytes that held them are parsed as the next
+        // item's fields. That is how var/a and var/c came to hold ledgers
+        // their own court could not restore — a decoder that cannot represent
+        // the tape kept part of it instead of saying so (rule 11).
+        //
+        // An item is at least one byte, so a count exceeding the bytes left is
+        // a tape this reader cannot be holding, and it refuses. It is the
+        // guard `snapshot/read.rs` already uses at its own counts, and it
+        // invents no constant.
+        let left = |b: &[u8], pos: &usize| b.len().checked_sub(*pos);
         let mut c = Complex::new();
         let ns = take_u32(b, pos)? as usize;
-        for _ in 0..ns.min(1 << 16) {
+        if ns > left(b, pos)? {
+            return None;
+        }
+        for _ in 0..ns {
             let v = take_id(b, pos)?;
             let addr = take_id(b, pos)?;
             let gamma = Rotor::from_bytes(b, pos)?;
@@ -89,13 +105,25 @@ impl Complex {
             c.sections.insert(v, Section { addr, gamma, carriage });
         }
         let nd = take_u32(b, pos)? as usize;
-        for _ in 0..nd.min(64) {
+        if nd > left(b, pos)? {
+            return None;
+        }
+        for _ in 0..nd {
             let n = take_u32(b, pos)? as usize;
-            for _ in 0..n.min(1 << 16) {
+            if n > left(b, pos)? {
+                return None;
+            }
+            for _ in 0..n {
                 let nv = *b.get(*pos)? as usize;
                 *pos += 1;
-                let mut verts = Vec::with_capacity(nv.min(32));
-                for _ in 0..nv.min(32) {
+                if nv > left(b, pos)? {
+                    return None;
+                }
+                // `with_capacity` takes the count the tape states, because
+                // the bound above has already established the tape can hold
+                // that many.
+                let mut verts = Vec::with_capacity(nv);
+                for _ in 0..nv {
                     verts.push(take_id(b, pos)?);
                 }
                 let coefficient = Rotor::from_bytes(b, pos)?;
@@ -146,7 +174,10 @@ impl Complex {
             Some(n) => n as usize,
             None => 0,
         };
-        for _ in 0..nr.min(1 << 16) {
+        if nr > left(b, pos)? {
+            return None;
+        }
+        for _ in 0..nr {
             let k = take_id(b, pos)?;
             c.remainder.insert(k, ());
         }
