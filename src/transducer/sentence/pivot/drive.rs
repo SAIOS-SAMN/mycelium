@@ -385,11 +385,68 @@ impl Form {
                 let held = horizon.get(&rotor_key).is_some();
                 let order = hw.order();
                 let cands = self.candidates_for(idx, &kappa, crystal, held);
+                // THE SPAN READING (§8.1, measurement only — nothing below
+                // branches on it).
+                //
+                // WHAT IS NOT MEASURABLE HERE, stated because measuring it is
+                // the obvious move and it returns a constant. "Candidates on
+                // an axis `kappa` does not occupy" is not a reading of this
+                // corpus or any other: `candidates_for` builds every non-Open
+                // candidate by walking `kappa.coordinates()`, which yields
+                // only occupied axes, and it tags the puncture `Axis::Open`,
+                // which `ClassVector::occupies` answers `false` for
+                // unconditionally. So that count is exactly the OpenAxis
+                // count on every input, and a count that is a constant by
+                // construction asserts nothing.
+                //
+                // WHAT THE CANDIDATES DO SEPARATE is where each one came
+                // from, and that is the span question `factor_on_plane`
+                // answers. `factor_on_plane` itself takes a budgeted crystal
+                // read and would change the thing this line measures, but
+                // `candidates_for` has ALREADY made the read:
+                //
+                //   - `Unit`, `Prime5`, `Prime13` and `OffPlane` candidates
+                //     are the words `crystal.on_axis` returned. They are HELD
+                //     GENERATORS, and one existing means the obstruction
+                //     factors through the basis — `Understood`.
+                //   - `Orientation`, `Placement`, `Dilation` and `Hue`
+                //     candidates are built from `kappa`'s own carriage, gauge
+                //     and the sheet word. They are the residue re-presented
+                //     as its own inverse and hold no information about what
+                //     the mind knows.
+                //   - `Open` is the puncture, offered only on a free part.
+                //
+                // So `held` counts the basis's reach. Where it is zero the
+                // residue lies strictly outside the span, every contraction
+                // in the existing basis is provably terminal, and the one
+                // algebraic move left is the puncture — which is exactly what
+                // `Rank::moved` refuses as `[0, 0, 0, +1]`.
+                //
+                // THE STARVATION READING rides the same line. The loop below
+                // spends a unit per candidate and BREAKS on exhaustion, so
+                // candidates early in 12.6's fixed axis order can drink the
+                // budget before one later in that order is ever reached.
+                // `unreached` is how many were never tried; with `starved` it
+                // says whether a form's closing pivot is unreachable every
+                // stroke, which is a candidate mechanism for the 2495 forms
+                // that never discharge.
+                let kind = |c: &&Candidate| match c.axis {
+                    Axis::Unit(_) | Axis::Prime5(_) | Axis::Prime13(_) | Axis::OffPlane => 0,
+                    Axis::Open => 1,
+                    _ => 2,
+                };
+                let held_gens = cands.iter().filter(|c| kind(c) == 0).count();
+                let opens = cands.iter().filter(|c| kind(c) == 1).count();
+                let self_moves = cands.iter().filter(|c| kind(c) == 2).count();
+                let mut tried = 0usize;
+                let mut starved = false;
                 let mut discharging: Vec<PivotCertificate> = Vec::new();
                 for cand in &cands {
                     if !budget.spend() {
+                        starved = true;
                         break;
                     }
+                    tried += 1;
                     if let Some(cert) = self.trial(idx, cand, &kappa, &prior) {
                         discharging.push(cert);
                     } else {
@@ -399,6 +456,31 @@ impl Form {
                         );
                     }
                 }
+                // `tried` counts one per element of `cands` and nothing else,
+                // so this is a difference of two counts of the same set and
+                // not a floor at zero (rule 11).
+                let unreached = cands.len() - tried;
+                eprintln!(
+                    "  pivot candidates {:02x}{:02x}… loop {idx} total {} held {held_gens} \
+                     self {self_moves} opens {opens} tried {tried} unreached {unreached} \
+                     discharged {} starved {starved} span {}",
+                    idea[0],
+                    idea[1],
+                    cands.len(),
+                    discharging.len(),
+                    // The span reading in one word. `understood`: a held
+                    // generator reaches an occupied axis, so the obstruction
+                    // factors through the basis. `novel`: none does and the
+                    // puncture is offered, so the residue is outside the span
+                    // and opening a dimension is the only algebraic move
+                    // left. `closed`: neither — the loop's coordinates are
+                    // all self-derived and no pivot reaches it by any route.
+                    match (held_gens, opens) {
+                        (0, 0) => "closed",
+                        (0, _) => "novel",
+                        _ => "understood",
+                    }
+                );
                 match select_discharge(&discharging) {
                     Discharge::One(cert) => {
                         self.apply_pivot(&cert);
