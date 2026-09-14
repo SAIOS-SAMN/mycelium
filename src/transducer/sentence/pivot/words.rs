@@ -62,10 +62,27 @@ pub fn words_of_element(e: &Element) -> Vec<Word> {
 /// is admitted at both, because it speaks to bodies on both and one left out
 /// is a word the pivot can never be offered.
 pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
+    // WHAT THE ADMISSION ACTUALLY CARRIES (§8.1, measurement only — nothing
+    // below branches on these). Filing where a word acts did not move
+    // `crystal.on_axis` off zero: measured at a3b78c8, `answered 0` on 113
+    // of 113 and `held 0` on 50 of 50. So the chart was not the binding
+    // constraint and the question moves upstream of the index — whether the
+    // words admitted occupy any coordinate at all. `admit_words` files a
+    // word under `ClassVector::of_word(w).coordinates()`, which is empty for
+    // an identity rotor, so a genome of identity-carrying vertices files
+    // nowhere however it is keyed. These four counts separate "the mind
+    // holds no turning word" from "the words are there and something drops
+    // them": the vertices seen, the ones carrying a word at all, the ones
+    // whose rotor is not the identity, and the coordinates filed.
+    let mut seen = 0usize;
+    let mut carried = 0usize;
+    let mut turning = 0usize;
+    let mut filed: Vec<Axis> = Vec::new();
     for v in &f.vertices {
         let Vertex::Word { derivation, acts, .. } = v else {
             continue;
         };
+        seen += 1;
         // What the vertex CARRIES: its letters when it spells, its action
         // when it is an adjoined generator (37.7) — the same reader
         // `word_at_vertex` uses, so a generator offered by one is offered by
@@ -73,10 +90,20 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
         let Some(w) = derivation.word_carried() else {
             continue;
         };
+        carried += 1;
+        if !w.rotor().is_identity() {
+            turning += 1;
+        }
+        if let Some(cv) = ClassVector::of_word(&w) {
+            filed.extend(cv.coordinates());
+        }
         for (_, a) in acts.scoped() {
             admit_words(index, &a.chart, std::slice::from_ref(&w));
         }
     }
+    eprintln!(
+        "  axis admit vertices {seen} carried {carried} turning {turning} axes {filed:?}"
+    );
 }
 
 /// The mirror of [`admit_words_acting`], member for member — or one chart's
