@@ -78,8 +78,13 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
             .collect();
         if let Some(outs) = outs {
             // An unmeasurable span mints nothing; the solve still goes up.
-            let spoken = entity.span_of(&rule.form).and_then(|span| {
-                mycelium::transducer::family::mint_sentence(rule, &train, &entity.epigenome, span)
+            let spoken = entity.span_of(&rule.form).and_then(|d| {
+                mycelium::transducer::family::mint_sentence(
+                    rule,
+                    &train,
+                    &entity.epigenome,
+                    d.span(),
+                )
             });
             if let Ok((code, _mu)) = entity.submit_solve_rule(&tid, &outs, spoken.as_ref()) {
                 c.projected += 1;

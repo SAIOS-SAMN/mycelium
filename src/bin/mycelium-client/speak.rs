@@ -64,11 +64,11 @@ pub(crate) fn speak_form(
     //
     // An unmeasurable span withholds rather than minting against an invented
     // extent, exactly as the demands arm does.
-    let Some(span) = entity.span_of(form) else {
+    let Some(deliberation) = entity.span_of(form) else {
         eprintln!("[{tag}] form withheld: family {fam} the span is unmeasurable");
         return false;
     };
-    mag[2] = span;
+    mag[2] = deliberation.span();
     // 50.5 (F step 5): a sentence with demand vertices is uttered WHOLE —
     // its closed sub-complex and its demands together — never withheld
     // and never expressed as a residual.
@@ -105,14 +105,17 @@ pub(crate) fn speak_form(
             _ => {
                 let glued = form.vertices.iter().filter(|v| matches!(v, Vertex::Glued { .. })).count();
                 eprintln!(
-                    "[{tag}] form spoken: {:02x}{:02x}… depth {} vertices {} glued {} faces {} carried {:?}",
+                    "[{tag}] form spoken: {:02x}{:02x}… depth {} vertices {} glued {} faces {} \
+                     carried {:?} deliberation {} span {}",
                     word.address()[0],
                     word.address()[1],
                     form.depth,
                     form.vertices.len(),
                     glued,
                     form.faces.len(),
-                    word.magnitude()
+                    word.magnitude(),
+                    deliberation.label(),
+                    deliberation.span()
                 );
                 true
             }
@@ -162,11 +165,12 @@ fn speak_with_demands(
     // extracted in and stood over none.
     // A span this mind cannot measure is not a zero: the form is withheld
     // rather than minted against an invented extent.
-    let Some(span) = entity.span_of(form) else {
+    let Some(deliberation) = entity.span_of(form) else {
         eprintln!("[{tag}] form withheld: family {fam} the span is unmeasurable");
         return false;
     };
-    let Some(word) = mycelium::transducer::family::mint_sentence(rule, train, &entity.epigenome, span)
+    let Some(word) =
+        mycelium::transducer::family::mint_sentence(rule, train, &entity.epigenome, deliberation.span())
     else {
         // The mint refused it, so it is not a word — it is not stood in the
         // dialect, and it is held as the open work it is.
@@ -209,10 +213,13 @@ fn speak_with_demands(
                     })
                     .count();
                 eprintln!(
-                    "[{tag}] sentence spoken: {} vertices {} demands {demands} loops {} remainder edges {remainder_edges}",
+                    "[{tag}] sentence spoken: {} vertices {} demands {demands} loops {} \
+                     remainder edges {remainder_edges} deliberation {} span {}",
                     hx(addr.as_bytes()),
                     form.vertices.len(),
-                    form.loops.len()
+                    form.loops.len(),
+                    deliberation.label(),
+                    deliberation.span()
                 );
                 for (_, kind, chart, _) in form.demand_vertices() {
                     eprintln!("[{tag}] demand {} chart {} on {}", kind.label(), hx(chart.key().as_bytes()), hx(addr.as_bytes()));

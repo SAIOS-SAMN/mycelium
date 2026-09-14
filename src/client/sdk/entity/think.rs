@@ -62,7 +62,10 @@ impl Entity {
     /// its idea has stood over. The contemplation is the one carrier of held
     /// forms and the one reader of the span (law 12); a speaker asks it here
     /// rather than reaching into it.
-    pub fn span_of(&self, f: &crate::transducer::sentence::Form) -> Option<u64> {
+    pub fn span_of(
+        &self,
+        f: &crate::transducer::sentence::Form,
+    ) -> Option<crate::transducer::bubble::contemplation::Deliberation> {
         self.contemplation.span_of(f)
     }
 

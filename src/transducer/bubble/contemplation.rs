@@ -19,6 +19,41 @@ use super::*;
 /// bubble the same way, and `by_chart` is the one carrier here that is
 /// read by a real coordinate: `link(chart)`, the incidence read this type
 /// exists for.
+/// HOW LONG A SPEAKING FORM DELIBERATED, and which path it came by.
+///
+/// Lane 𝒯 is the scene-state span the bundle stood over, and a span of zero
+/// has two entirely different causes: a form that was HELD and has not yet
+/// aged, and a form that was never held at all because it closed in the
+/// stroke it was extracted in. Reporting both as `0` is what made 𝒯
+/// unreadable on the wire — 46 spoken magnitudes at c62940b, all `T = 0`,
+/// with no way to tell which path produced any of them.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Deliberation {
+    /// Held in contemplation for this many receipts of TUniversal.
+    Held(u64),
+    /// Never held: minted in the stroke it was extracted in.
+    Fresh,
+}
+
+impl Deliberation {
+    /// The span as lane 𝒯 carries it. A form that was never held stood over
+    /// no receipts, which is a reading of zero and not a placeholder.
+    pub fn span(self) -> u64 {
+        match self {
+            Deliberation::Held(t) => t,
+            Deliberation::Fresh => 0,
+        }
+    }
+
+    /// The word a journal line names the path by.
+    pub fn label(self) -> &'static str {
+        match self {
+            Deliberation::Held(_) => "held",
+            Deliberation::Fresh => "fresh",
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct Contemplation {
     pub bubbles: Keyed<Bubble>,
@@ -66,20 +101,27 @@ impl Contemplation {
     /// zero, not a placeholder for one. `moved_k` is stamped from `now_k`
     /// and this clock only advances, so the subtraction cannot go backwards
     /// while the contemplation is the one holding both.
+    /// WHERE A SPEAKING FORM CAME FROM, and how long it deliberated. The two
+    /// are one reading: a span of zero from a held bubble and a span of zero
+    /// from a form that was never held are different facts, and reporting
+    /// both as `0` is what made 𝒯 unreadable on the wire — 46 magnitudes
+    /// with `T = 0` and no way to tell which path produced them.
+    ///
     /// `None` where the clock went backwards — a K below the mark is a broken
     /// counter, and a span read off one is a measurement this contemplation
     /// cannot make, never a zero (rule 11).
-    pub fn span_of(&self, form: &crate::transducer::sentence::Form) -> Option<u64> {
+    pub fn span_of(&self, form: &crate::transducer::sentence::Form) -> Option<Deliberation> {
         let key = super::idea::idea_key(form);
         match self.bubbles.get(key.as_bytes()) {
             // Held nowhere: minted in the stroke it was extracted in, so it
             // stood over no receipts. That is a reading of zero.
-            None => Some(0),
-            Some(b) => super::idea::held_since(self.now_k, b.moved_k),
+            None => Some(Deliberation::Fresh),
+            Some(b) => super::idea::held_since(self.now_k, b.moved_k).map(Deliberation::Held),
         }
     }
 
-    /// The TUniversal this contemplation was last stamped with.
+    /// The TUniversal this contemplation was last stamped with. See
+    /// [`Deliberation`] for what a span read against it means.
     pub fn now_k(&self) -> u64 {
         self.now_k
     }
@@ -173,6 +215,56 @@ impl Contemplation {
             }
         }
         self.complex.drop_vertex(key);
+    }
+
+    /// LINEAGE THROUGH MUTATION: the entry follows the form it holds.
+    ///
+    /// A bubble's key is its form's address, and a pivot REWRITES THE FORM IN
+    /// PLACE — `expand_all` takes the slot by the key it entered with and
+    /// `expand_with` calls `take_form` inside it. So the bubble keeps its
+    /// `moved_k` and everything it has built, while its key stops matching
+    /// the form it now holds, and every reader that looks it up by the
+    /// current form misses it: `span_of` answers "not held" for a bubble that
+    /// has been deliberating for thousands of receipts, and `hold_form`
+    /// inserts a SECOND bubble for the same lineage while the first is
+    /// orphaned under a key nothing computes any more.
+    ///
+    /// That is why 𝒯 read zero on every spoken word even after the clock
+    /// (R5) and the phase-change stamp (R6) were both correct: a form with an
+    /// open remainder speaks only once it closes, closing mutates it, and
+    /// mutation lost the lookup. Measured at c62940b: 1694 holds against 20
+    /// spoken forms, and `span_of` never once finding a bubble.
+    ///
+    /// The entry moves with its inception stamp and its accumulated state, so
+    /// a resolved sentence carries the true extent of its deliberation —
+    /// the bubble that deliberated is the bubble that speaks.
+    ///
+    /// Where the destination is already held, two lineages have converged on
+    /// one form. The survivor is the one already under that key, and it takes
+    /// the EARLIER inception of the two: the deliberation began when the
+    /// first of them began, and a later stamp would shorten a span that was
+    /// actually stood.
+    pub(crate) fn rekey(&mut self, from: &[u8], to: &[u8]) {
+        if from == to {
+            return;
+        }
+        let Some(moving) = self.bubbles.remove(from) else {
+            return;
+        };
+        self.retract_incidence(from, &moving);
+        let was_dirty = self.dirty.remove(from).is_some();
+        match self.bubbles.get_mut(to) {
+            Some(standing) => {
+                standing.moved_k = standing.moved_k.min(moving.moved_k);
+            }
+            None => {
+                self.admit_incidence(to, &moving);
+                self.bubbles.insert(to, moving);
+            }
+        }
+        if was_dirty {
+            self.dirty.insert(to, ());
+        }
     }
 
     pub(crate) fn admit_incidence(&mut self, key: impl AsRef<[u8]>, b: &Bubble) {

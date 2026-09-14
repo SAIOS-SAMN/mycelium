@@ -101,7 +101,7 @@ impl Entity {
         let minted = self
             .contemplation
             .span_of(&form)
-            .and_then(|span| mint_sentence(&rule_of_form(form), train, &self.epigenome, span));
+            .and_then(|d| mint_sentence(&rule_of_form(form), train, &self.epigenome, d.span()));
         match minted {
             Some(sentence) => {
                 self.contracted.push(Pending { sentence, train: train.to_vec(), task: task.to_vec(), certificate });

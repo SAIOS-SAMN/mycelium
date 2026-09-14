@@ -212,4 +212,99 @@ fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
 
     // And re-holding does not throw away what the bubble accumulated.
     assert_eq!(c.bubbles.len(), 1, "one form, one bubble, however often it is held");
+
+    // A SPAN OF ZERO HAS TWO CAUSES AND THEY ARE DIFFERENT FACTS: a form held
+    // and not yet aged, and a form never held at all. Reporting both as `0`
+    // is what made 𝒯 unreadable on the wire — 46 spoken magnitudes at
+    // c62940b, every one `T = 0`, with no way to tell which path produced it.
+    use crate::transducer::bubble::contemplation::Deliberation;
+    assert_eq!(
+        c.span_of(&form),
+        Some(Deliberation::Held(54)),
+        "a held form reports the extent it deliberated"
+    );
+    let mut other = Form::default();
+    other.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from_bytes([4u8, 77]),
+        Derivation::spelled(Word::from_letters(&[(q, false)])),
+        crate::transducer::stalk::Invariant(vec![9, 9]),
+        Box::new(element::identity_versor()),
+        Vec::new(),
+        None,
+    ));
+    assert_eq!(
+        c.span_of(&other),
+        Some(Deliberation::Fresh),
+        "a form this contemplation never held is fresh, not a held form aged zero"
+    );
+    assert_eq!(Deliberation::Fresh.span(), 0, "and it stood over no receipts");
+}
+
+/// LINEAGE SURVIVES MUTATION: the entry follows the form it holds.
+///
+/// A bubble's key is its form's address, and a pivot REWRITES THE FORM IN
+/// PLACE — `expand_all` takes the slot by the key it entered with and
+/// `expand_with` calls `take_form` inside it. So the bubble kept its
+/// inception stamp and everything it had built while its key stopped
+/// matching the form it now held, and every reader looking it up by the
+/// current form missed it: `span_of` answered "never held" for a bubble that
+/// had been deliberating for thousands of receipts, and `hold_form` would
+/// insert a SECOND bubble for the same lineage while the first was orphaned
+/// under a key nothing computes any more.
+///
+/// That is why 𝒯 read zero on every spoken word even after the clock and
+/// the phase-change stamp were both correct: a form with an open remainder
+/// speaks only once it closes, closing mutates it, and mutation lost the
+/// lookup. Measured at c62940b: 1694 holds against 20 spoken forms, and
+/// `span_of` never once finding a bubble.
+#[test]
+fn a_bubble_rekeyed_by_a_mutation_keeps_its_inception() {
+    use crate::transducer::alphabet::{Derivation, LetterId, Word};
+    use crate::transducer::bubble::contemplation::Deliberation;
+    use crate::transducer::sentence::{Form, Vertex};
+    let q = LetterId::quarter((0, 1)).expect("the sensor plane");
+    // The forms must differ on a coordinate the KEY carries. A vertex's own
+    // address is deliberately not one of them (1.5: two minds whose
+    // derivations differ reach one address), so they differ by the chart the
+    // vertex acts on — which is what a rebase or a refinement moves.
+    let build = |chart: Vec<u64>| {
+        let mut f = Form::default();
+        f.vertices.push(Vertex::word_on(
+            crate::transducer::address::Address::from_bytes([4u8, 1]),
+            Derivation::spelled(Word::from_letters(&[(q, false)])),
+            crate::transducer::stalk::Invariant(chart),
+            Box::new(element::identity_versor()),
+            Vec::new(),
+            None,
+        ));
+        f.faces.push(f.face_of(0, 1).expect("the star face"));
+        f
+    };
+    let before = build(vec![3, 5]);
+    let after = build(vec![7, 11]);
+    let rem = vec![(0i64, 0i64, 1u8, 2u8)];
+
+    let mut c = Contemplation::new();
+    c.set_now(10);
+    c.hold_form(&before, &[], std::slice::from_ref(&rem));
+    let old_key = crate::transducer::bubble::idea::idea_key(&before);
+    let new_key = crate::transducer::bubble::idea::idea_key(&after);
+    assert_ne!(old_key, new_key, "the mutation is a different form, so a different key");
+
+    // The form mutates in place, as a pivot rewrites it, and the entry
+    // follows.
+    c.set_now(90);
+    c.rekey(old_key.as_bytes(), new_key.as_bytes());
+    assert!(c.bubbles.get(old_key.as_bytes()).is_none(), "no orphan is left behind");
+    assert_eq!(c.bubbles.len(), 1, "one lineage, one bubble");
+    assert_eq!(
+        c.bubbles.get(new_key.as_bytes()).expect("moved").moved_k,
+        10,
+        "and it carries the inception it deliberated from, not the mutation's stamp"
+    );
+    assert_eq!(
+        c.span_of(&after),
+        Some(Deliberation::Held(80)),
+        "so the resolved form reports the true extent of its deliberation"
+    );
 }
