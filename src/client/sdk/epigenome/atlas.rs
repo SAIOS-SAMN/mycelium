@@ -54,11 +54,24 @@ impl Epigenome {
 
     pub(crate) fn axis_admit(&mut self, e: &Element) {
         let inv = crate::transducer::stalk::invariant_of(e);
-        crate::transducer::sentence::admit_words(
-            &mut self.axis_index,
-            &inv,
-            &crate::transducer::sentence::words_of_element(e),
+        let words = crate::transducer::sentence::words_of_element(e);
+        // THE CHART THE FILING IS MADE UNDER (§8.1, measurement only). The
+        // pivot's read is an exact keyed one, so this key and the key
+        // `candidates_for` asks at must be the same bytes or the answer is
+        // empty however much the mind holds. The axes are the coordinates
+        // `admit_words` will file each word on, which is the other half: a
+        // word that occupies none is filed nowhere at all.
+        let axes: Vec<crate::transducer::sentence::Axis> = words
+            .iter()
+            .filter_map(crate::transducer::sentence::ClassVector::of_word)
+            .flat_map(|cv| cv.coordinates())
+            .collect();
+        eprintln!(
+            "  axis admit chart {:?} words {} axes {axes:?}",
+            inv.0,
+            words.len()
         );
+        crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words);
     }
 
     pub(crate) fn axis_retract(&mut self, e: &Element) {

@@ -706,10 +706,22 @@ impl Form {
                     }
                 }
                 _ => {
-                    // The charts THIS loop stands on, gathered above from
-                    // its own classes: the candidate moves are read on each
-                    // of them, and one skipped is a move never offered.
+                    // THE CHART THE ASK IS MADE AT (§8.1, measurement only).
+                    // `on_axis_of` is an EXACT keyed read — it does not peel
+                    // the way `generators_under` does — so a word filed under
+                    // one chart and looked up under another is invisible, and
+                    // an empty answer cannot tell the two apart. `axis_admit`
+                    // files under `stalk::invariant_of(element)`, the
+                    // SENTENCE's own chart; this asks under the vertices'
+                    // `acts` charts. Whether those coincide is not something
+                    // to reason about — it is a pair of keys, and both are
+                    // now on the wire.
                     for (_, chart) in charts.scoped() {
+                        eprintln!(
+                            "  axis ask chart {:?} axis {axis:?} answered {}",
+                            chart.0,
+                            crystal.on_axis(chart, axis).len()
+                        );
                         for w in crystal.on_axis(chart, axis) {
                             for side in [Side::Right, Side::Left] {
                                 let wk = w.key();
