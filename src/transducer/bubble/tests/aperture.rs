@@ -161,3 +161,55 @@ fn an_idea_meets_its_own_charts_and_not_their_siblings() {
         "a sibling chart this idea holds no section over is not an overlap"
     );
 }
+
+/// RE-HOLDING AN UNMUTATED FORM IS NOT MOVEMENT, so a bubble ages.
+///
+/// `moved_k` is the PHASE CHANGE stamp — "TUniversal when this bubble's
+/// charts last moved". `hold_form` rebuilt the whole bubble on every hold
+/// and stamped `moved_k = now_k` each time; D8 re-holds a withheld form on
+/// every stroke, so the birth coordinate was re-stamped every stroke and no
+/// bubble could ever age. `held_since(now_k, moved_k)` was zero BY
+/// CONSTRUCTION, `t_extent` perpetually zero, and lane 𝒯 could never
+/// accumulate: 58 of 58 spoken magnitudes at 9a08fba carried 𝒯 = 0 while
+/// `span_of` never once refused — it was answering `Some(0)` every time.
+///
+/// A form retained across an evaluation stroke has moved zero in
+/// configuration space. The key IS the topology and the carriages (law 2),
+/// so a bubble found under it is that same form unchanged.
+#[test]
+fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
+    use crate::transducer::alphabet::{Derivation, LetterId, Word};
+    use crate::transducer::sentence::{Form, Vertex};
+    let q = LetterId::quarter((0, 1)).expect("the sensor plane");
+    let mut form = Form::default();
+    form.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from_bytes([4u8, 9]),
+        Derivation::spelled(Word::from_letters(&[(q, false)])),
+        crate::transducer::stalk::Invariant(vec![3, 5]),
+        Box::new(element::identity_versor()),
+        Vec::new(),
+        None,
+    ));
+    form.remainder = crate::transducer::element::PlacedChain::default();
+    form.faces.push(form.face_of(0, 1).expect("the star face"));
+
+    let mut c = Contemplation::new();
+    c.set_now(10);
+    c.hold_form(&form, &[], std::slice::from_ref(&vec![(0i64, 0i64, 1u8, 2u8)]));
+    let key = c.bubbles.scoped().next().map(|(k, _)| k).expect("held");
+    assert_eq!(c.bubbles.get(&key).expect("held").moved_k, 10, "born at the stamp it entered on");
+    // The same form re-held unchanged at a later TUniversal, as D8 re-holds
+    // a withheld form every stroke.
+    c.set_now(64);
+    c.hold_form(&form, &[], std::slice::from_ref(&vec![(0i64, 0i64, 1u8, 2u8)]));
+    let again = c.bubbles.get(&key).expect("still held");
+    assert_eq!(again.moved_k, 10, "retention is not motion: the stamp is preserved");
+    assert_eq!(
+        crate::transducer::bubble::idea::held_since(c.now_k(), again.moved_k),
+        Some(54),
+        "so the bubble has aged 54 in TUniversal"
+    );
+
+    // And re-holding does not throw away what the bubble accumulated.
+    assert_eq!(c.bubbles.len(), 1, "one form, one bubble, however often it is held");
+}

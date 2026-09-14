@@ -414,6 +414,48 @@ impl Contemplation {
             bundle,
             remainders: rem_keyed,
         };
+        // RE-HOLDING AN UNMUTATED FORM IS NOT MOVEMENT (ruled 2026-09-14).
+        //
+        // `moved_k` is the PHASE CHANGE stamp — "TUniversal when this
+        // bubble's charts last moved" — and this rebuilt the whole bubble on
+        // every hold, stamping `moved_k = now_k` each time. D8 re-holds a
+        // withheld form on every stroke, so the birth coordinate was
+        // re-stamped every stroke and no bubble could ever age:
+        // `held_since(now_k, moved_k)` was zero by construction, `t_extent`
+        // perpetually zero, lane 𝒯 unable to accumulate. Measured at
+        // 9a08fba: 58 of 58 spoken magnitudes with 𝒯 = 0, and `span_of`
+        // never once refusing — it was answering `Some(0)` every time.
+        //
+        // A form retained across an evaluation stroke has moved ZERO in
+        // configuration space. The key IS the topology and the carriages:
+        // `form_vertex_key` writes every vertex, every member and every gauge
+        // (law 2), so a bubble found under this key is that same form and
+        // nothing about it has changed.
+        //
+        // What it has ACCUMULATED is kept with it — the complex it built, the
+        // cover it expanded, the classes its horizon met, who glued it.
+        // Rebuilding those was not only a clock fault: it threw the expansion
+        // away every stroke, which is what kept re-entering the cover and
+        // re-stamping the clock in the first place.
+        //
+        // `moved_k` still advances where a transformation actually mutates
+        // the charts: `expand_with` stamps it when a chart enters the cover,
+        // and a pivot rewrites the form, which changes the key and starts a
+        // new bubble at its own phase change.
+        let mut bubble = bubble;
+        if let Some(prior) = self.bubbles.get(key.as_bytes()) {
+            bubble.moved_k = prior.moved_k;
+            bubble.nerve = prior.nerve.clone();
+            bubble.cover = prior.cover.clone();
+            bubble.glued_by = prior.glued_by.clone();
+            // The horizon is a union: this stroke's painting of the form's
+            // standing classes, over the classes expansion has already met.
+            for (hk, hv) in prior.horizon.scoped() {
+                if !bubble.horizon.contains(&hk) {
+                    bubble.horizon.insert(&hk, hv.clone());
+                }
+            }
+        }
         if let Some(old) = self.bubbles.get(key.as_bytes()).cloned() {
             self.retract_incidence(key.as_bytes(), &old);
         }
