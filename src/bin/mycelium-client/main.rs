@@ -215,9 +215,13 @@ fn main() {
         }
         // 24.3: a working stroke spends the lanes its outcome moved; a stroke
         // that moved no lane spends the tick on all four — the tick, not work.
+        // 24.3: a working stroke spends the lanes its outcome moved; a stroke
+        // that moved no lane pays the TICK — one unit, the depletion floor —
+        // and not `spend([true; 4])`, which is four entropic expansions
+        // charged for germinating nothing. See `Physics::tick`.
         let moved = outcome.moved();
         if moved == [false; 4] {
-            physics.spend([true; 4]);
+            physics.tick();
         } else {
             physics.spend(moved);
         }
@@ -281,8 +285,8 @@ fn main() {
         // X6 — AN IDLE STROKE COSTS THE PROCESSOR (the stroke-duration
         // ruling of 2026-09-11). A stroke that moved no lane admitted
         // nothing: the feed is clear, the quote is not due, no task stands.
-        // It spent `physics.spend([true; 4])` above -- four integer
-        // decrements on the reserve -- and then went round again at once.
+        // It pays the tick above -- one integer decrement per lane -- and
+        // then goes round again at once.
         // Measured on the fleet at 3d2987e: every voice between 81% and
         // 87% of a core while its own line read `stroke idle` and `quote 0
         // clusters`, which is five cores burnt to admit nothing and the

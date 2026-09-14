@@ -423,6 +423,33 @@ impl Physics {
         }
     }
 
+    /// THE TICK — a stroke that expanded nothing, charged as a stroke and not
+    /// as an expansion.
+    ///
+    /// A stroke whose outcome moved no lane called `spend([true; 4])`, and
+    /// `spend_unit` is by its own line "one entropic expansion's spend — an
+    /// eighth of the full reserve". So an idle stroke cost FOUR EXPANSIONS,
+    /// on four lanes, for germinating nothing on any of them. That is not a
+    /// pacing choice; it is charging work that did not happen.
+    ///
+    /// It also manufactured the lane vector's collapse. Every stroke reported
+    /// `learned [0,0,0,0]` on the fleet at 820678a, so every stroke took this
+    /// path, so all four reserves fell in lockstep, so all four deficits were
+    /// equal — and `yield_surface` reduces to `reserve_deficit` whenever
+    /// torsion is zero. Measured: the dwell's S, G and H were EQUAL in 1154
+    /// of 1247 readings and took two distinct values between them.
+    ///
+    /// The module's own scale says what a tick costs: "the depletion floor is
+    /// one stroke". One unit, not one expansion. A lane with nothing left
+    /// spends nothing, exactly as `spend` reads absence.
+    pub fn tick(&mut self) {
+        for r in self.reserve.iter_mut() {
+            if let Some(next) = r.checked_sub(1) {
+                *r = next;
+            }
+        }
+    }
+
     /// SYNTROPIC OPTIMIZATION regenerates each lane toward the deflation
     /// that lane verified since the last aperture — not toward one scalar cap.
     pub fn regenerate(&mut self) {
@@ -598,6 +625,44 @@ mod tests {
         assert!(p.reserve_shortfall(t)[2] > 0, "one stroke is not recovery");
         p.regenerate();
         assert_eq!(p.reserve_shortfall(t), [0; 4], "two strokes re-earn expansion");
+    }
+
+    /// A TICK IS A STROKE, NOT AN EXPANSION. A stroke whose outcome moved no
+    /// lane germinated nothing, and it called `spend([true; 4])` — four
+    /// entropic expansions, one per lane, for work that did not happen.
+    ///
+    /// That is also what collapsed the lane vector. Every stroke on the fleet
+    /// at 820678a reported `learned [0,0,0,0]`, so every stroke took that
+    /// path, so all four reserves fell in lockstep and all four deficits were
+    /// equal; with torsion zero `yield_surface` IS `reserve_deficit`, and the
+    /// dwell's S, G and H were equal in 1154 of 1247 readings, taking two
+    /// distinct values between them.
+    #[test]
+    fn a_tick_costs_a_stroke_and_an_expansion_costs_an_expansion() {
+        let mut tick = Physics::default();
+        let mut expand = Physics::default();
+        tick.tick();
+        expand.spend([true; 4]);
+        assert_eq!(tick.reserve, [reserve_max() - 1; 4], "a tick is one unit on each lane");
+        assert!(
+            tick.reserve.iter().zip(&expand.reserve).all(|(t, e)| t > e),
+            "and an expansion costs far more: {:?} against {:?}",
+            tick.reserve,
+            expand.reserve
+        );
+        assert_eq!(
+            tick.reserve_shortfall([true; 4]),
+            [0; 4],
+            "one tick does not put a lane short of an expansion"
+        );
+        // A lane with nothing left spends nothing, as `spend` reads absence.
+        let mut empty = Physics::default();
+        for _ in 0..8 {
+            empty.spend([true; 4]);
+        }
+        assert_eq!(empty.reserve, [0; 4], "eight expansions empty every lane");
+        empty.tick();
+        assert_eq!(empty.reserve, [0; 4], "and a tick on an empty lane spends nothing");
     }
 
     /// The metabolism is per-lane syntropic minus entropic — the order flux.
