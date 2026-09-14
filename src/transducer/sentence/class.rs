@@ -429,13 +429,17 @@ fn free_row(h: &Word) -> Option<[i64; 12]> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LoopRow {
     Closed,
-    Torsion,
+    /// The loop's finite-order class. CARRIED, because the audit counts
+    /// torsion by class and not by loop — see [`rank_of_rows`].
+    Torsion(crate::transducer::address::Address),
     Free([i64; 12]),
     OffPlane(crate::transducer::address::Address),
     /// The loop's class is a chart axis the form opened (I6, 15.5): its
     /// holonomy is the transition on that axis, so it counts on `axes`
-    /// and on no other coordinate.
-    Opened,
+    /// and on no other coordinate. The class is carried for the same
+    /// reason `Torsion` carries it: the axis carrier is keyed by class, so
+    /// one opening opens every loop of that class and they are one axis.
+    Opened(crate::transducer::address::Address),
 }
 
 /// `None` when the holonomy is not a versor: it has no class (15.3), so
@@ -447,33 +451,60 @@ pub fn loop_row(h: &Word) -> Option<LoopRow> {
         return Some(LoopRow::Closed);
     }
     Some(match free_row(h) {
-        Some(row) if row == [0i64; 12] => LoopRow::Torsion,
+        Some(row) if row == [0i64; 12] => LoopRow::Torsion(h.rotor().class_key()?),
         Some(row) => LoopRow::Free(row),
         None => LoopRow::OffPlane(h.rotor().class_key()?),
     })
 }
 
 /// A18 over the rows of a nerve's cycles or a form's loops.
+///
+/// EVERY COORDINATE COUNTS BY CLASS. A rank is the dimension of a module —
+/// the number of INDEPENDENT generators — never a tally of the loops that
+/// exhibit them, and two of these four already read it that way: `free` is
+/// `z_rank`, a matrix rank over the free rows, and `offplane` is a keyed set
+/// taking each class once. `torsion` and `axes` counted per loop.
+///
+/// Mixing the two breaks the rank delta itself. Two loops of one finite
+/// class are ONE obstruction seen twice; the axis carrier is keyed by class,
+/// so opening it opens both, and attaching that single cell moved
+/// `torsion −2, axes +2` while the same object contributes 1 to `offplane`.
+/// T21 (iii) then refuses an elementary attachment as non-elementary.
+/// Measured at 551c609: 11 `axis Open discharged` against 6 `held, the
+/// applied pivot did not make the move its certificate claims`, all
+/// openings.
+///
+/// Counted by class the same attachment reads `torsion −1, axes +1`, which
+/// is `Rank::moved`'s `Discharged { from: Torsion }` and A18's one step.
+///
+/// A CLASS CANNOT BE BOTH. A key present in `axes` is an opened chart axis
+/// and no longer a defect (I6, 15.5), so it is not also counted in torsion;
+/// the rows already say which, because `loop_row_on` answers `Opened` for a
+/// loop whose class the carrier holds and never `Torsion`.
 pub fn rank_of_rows(rows: &[LoopRow]) -> Option<Rank> {
-    let mut torsion = 0u32;
-    let mut axes = 0u32;
+    let mut torsion: Keyed<()> = Keyed::new();
+    let mut axes: Keyed<()> = Keyed::new();
     let mut offplane: Keyed<()> = Keyed::new();
     let mut free: Vec<[i64; 12]> = Vec::new();
     for r in rows {
         match r {
             LoopRow::Closed => {}
-            LoopRow::Torsion => torsion += 1,
+            LoopRow::Torsion(k) => {
+                torsion.insert(k, ());
+            }
             LoopRow::Free(row) => free.push(*row),
             LoopRow::OffPlane(k) => {
                 offplane.insert(k, ());
             }
-            LoopRow::Opened => axes += 1,
+            LoopRow::Opened(k) => {
+                axes.insert(k, ());
+            }
         }
     }
     Some(Rank {
-        torsion,
+        torsion: torsion.len() as u32,
         free: z_rank(&free)?,
         offplane: offplane.len() as u32,
-        axes,
+        axes: axes.len() as u32,
     })
 }

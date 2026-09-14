@@ -962,8 +962,14 @@ pub(crate) fn loop_row_on(
     axes: &Keyed<u16>,
     lp: &Loop,
 ) -> Option<crate::transducer::sentence::LoopRow> {
+    // The class the axis was opened under IS the row's coordinate, so it is
+    // carried: `rank_of_rows` counts axes by class, and one opening over a
+    // class shared by two loops is one axis, not two.
     if opened_axis_on(faces, vertices, axes, lp).is_some() {
-        return Some(crate::transducer::sentence::LoopRow::Opened);
+        let class = crate::transducer::sentence::pivot::drive::loop_holonomy_on(faces, vertices, lp)?
+            .rotor()
+            .class_key()?;
+        return Some(crate::transducer::sentence::LoopRow::Opened(class));
     }
     // The row is the obstruction's, so it is read off the obstruction the
     // rest of this pipeline names. A loop whose paths disagree has no single

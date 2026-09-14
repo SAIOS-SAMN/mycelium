@@ -612,8 +612,11 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
     );
     assert_eq!(
         loop_row_on(&opened.faces, &opened.vertices, &opened.axes, olp),
-        Some(LoopRow::Opened),
-        "and the audit counts the loop as opened, not as the defect it was"
+        Some(LoopRow::Opened(
+            composite.rotor().class_key().expect("the composite has a class")
+        )),
+        "and the audit counts the loop as opened under the composite's class, \
+         not as the defect it was"
     );
 
     // AND THE INVERSE REMOVES WHAT THE OPENING WROTE. Keyed to the word,
@@ -678,30 +681,38 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
         t_extent: 0,
         mu_before: None,
     };
-    // THE TRIAL REFUSES RATHER THAN CERTIFYING A MOVE THE FORM WILL NOT
-    // MAKE. Reading the rank-after over every row, this opening is seen for
-    // what it is: `axes` is keyed by class, both loops carry that class, so
-    // both read `Opened` and the audit moves `[-2, 0, 0, +2]` — two units,
-    // which T21 (iii) is not. Substituting only the trialled loop's row hid
-    // the second unit and certified `[-1, 0, 0, +1]`, and the drive then
-    // refused the applied move against its own certificate.
-    //
-    // THE REFUSAL IS THE CORRECT OUTCOME AND NOT THE END OF IT. Two loops of
-    // one class are ONE obstruction seen twice — attaching one cell kills
-    // both representatives, which is what `opened_axis_on` answering by
-    // class means. `rank_of_rows` counts `LoopRow::Torsion` PER LOOP while
-    // it counts `offplane` per CLASS through a `Keyed` set, so the same
-    // object is double-counted on one coordinate and not on the other. That
-    // is the reason a topologically single move reads as two units, and it
-    // is a defect in the audit, not in this trial. Until it is settled the
-    // trial refuses, which is rule 11 and costs nothing but the opening.
-    assert!(
-        f.trial(0, &cand, &f.class_vector(0).expect("class"), &prior).is_none(),
-        "an opening that would move two units is refused, not certified"
+    // ONE CELL OVER A CLASS TWO LOOPS SHARE IS ONE STEP. The axis carrier is
+    // keyed by class, so this write opens both loops; counted by class, as
+    // every coordinate of A18 now is, that is `torsion −1, axes +1` and the
+    // certificate states it. Counted by LOOP it read `[-2, 0, 0, +2]` and
+    // T21 (iii) refused an elementary attachment as non-elementary — 6 of 17
+    // openings on the wire at 551c609.
+    let mut f = f;
+    let before = f.rank().expect("rank");
+    let cert = f
+        .trial(0, &cand, &f.class_vector(0).expect("class"), &prior)
+        .expect("one cell over one class is one step");
+    assert_eq!(
+        cert.rank_move,
+        RankMove::Discharged { from: RankAxis::Torsion },
+        "the shared class leaves torsion once and lands on axes once"
     );
+    f.apply_pivot(&cert);
+    assert_eq!(
+        f.rank().map(|r| Rank::moved(before, r)),
+        Some(cert.rank_move),
+        "the applied opening makes the move its certificate claims"
+    );
+    // AND IT KILLED BOTH REPRESENTATIVES, which is what opening by class
+    // means: neither loop is a defect any more.
+    for i in 0..f.loops.len() {
+        assert!(
+            f.class_vector(i).is_some_and(|k| k.is_zero()),
+            "loop {i} of the opened class reads as a coordinate, not a defect"
+        );
+    }
 
-    // AND A ONE-LOOP FORM STILL CERTIFIES AND STILL MAKES ITS MOVE, so the
-    // reading above is about the shared class and not about openings.
+    // AND A ONE-LOOP FORM CERTIFIES THE SAME ONE STEP.
     let mut one = chord_form(std::slice::from_ref(&q));
     let rows = one.loop_rows().expect("rows");
     let rank_before = rank_of_rows(&rows).expect("rank");

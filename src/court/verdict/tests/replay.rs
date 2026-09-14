@@ -256,16 +256,56 @@ fn rank_lost_refused() {
     // clause used to test `taped < derived` alone, so a form whose stored
     // loops carry rank the re-walk does not produce passed: structure the
     // court could not derive, admitted because it pointed the convenient
-    // way. Duplicating a stored loop raises the tape's audit above the
-    // forest's without touching a face.
+    // way.
+    //
+    // THE CLAIM IS A CLASS, NOT A ROW. This duplicated a stored loop, which
+    // raised the tape's audit while A18 counted torsion per loop. Every
+    // coordinate now counts by CLASS — a rank is a count of independent
+    // generators — so a duplicated loop is the same obstruction listed twice
+    // and claims no rank at all. That is the correct reading and it leaves
+    // this clause nothing to refuse, so the fixture claims what a claim is:
+    // a loop of a class the walk does not derive.
+    //
+    // The added loop carries no faces, so `loop_holonomy_on` has no member
+    // path to read and answers the loop's own word — which is how a loop
+    // with no edge composite anywhere is read, not a default. Its word is a
+    // half turn against the chord's quarter, so it is a second torsion
+    // class and the tape's audit stands one above the forest's.
     let mut extra = crate::transducer::sentence::from_element_form(&e).expect("v2");
-    let held = extra.loops[0].clone();
-    extra.loops.push(held);
-    let over = as_element_form(&extra, [1, 0, 0, 0]).expect("loops duplicated");
+    let [held, ..] = extra.loops.as_slice() else { panic!("one filed loop") };
+    let mut claimed = held.clone();
+    claimed.faces.clear();
+    claimed.carriages = crate::network::nerve::Keyed::new();
+    claimed.holonomy = crate::transducer::alphabet::PlaneForm {
+        orientation: true,
+        rot: [0; crate::transducer::alphabet::CAYLEY_ALPHABET_LEN],
+    }
+    .to_word();
+    assert_ne!(
+        claimed.holonomy.rotor().class_key(),
+        held.holonomy.rotor().class_key(),
+        "the claimed loop is a SECOND class, or it claims nothing"
+    );
+    extra.loops.push(claimed);
+    let over = as_element_form(&extra, [1, 0, 0, 0]).expect("a class added");
     assert_eq!(
         replay_form(&over, &|_| None),
         Some(REFUSE_RANK_LOST),
         "a rank the walk does not re-derive refuses in either direction"
+    );
+
+    // AND A DUPLICATE CLAIMS NOTHING, which is the other half of the same
+    // ruling: the court refuses invented structure, not a second mention of
+    // structure it already derived.
+    let mut twice = crate::transducer::sentence::from_element_form(&e).expect("v2");
+    let [held, ..] = twice.loops.as_slice() else { panic!("one filed loop") };
+    let dup = held.clone();
+    twice.loops.push(dup);
+    let doubled = as_element_form(&twice, [1, 0, 0, 0]).expect("loops duplicated");
+    assert_eq!(
+        replay_form(&doubled, &|_| None),
+        None,
+        "one obstruction listed twice is one obstruction"
     );
 }
 
