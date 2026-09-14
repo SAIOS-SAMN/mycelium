@@ -41,6 +41,60 @@ pub fn words_of_element(e: &Element) -> Vec<Word> {
     }
 }
 
+/// ADMIT A FORM'S WORDS UNDER THE CHARTS ITS VERTICES ACT ON (18.2).
+///
+/// `admit_words` files under ONE chart for the whole element, and
+/// `axis_admit` supplied `invariant_of(element)` — for a sentence that is
+/// `chart_of_form`, `[2, rank, loop classes]`, a projection of what the FORM
+/// HOLDS. `candidates_for` asks under the charts a loop's face vertices act
+/// on, which `Vertex::charts` answers and `body_charts_of` already uses for
+/// `by_moduli`: `[1, moduli]`, a statement about the BODY A WORD ACTS ON.
+/// Both charts are well formed and they answer different questions, so the
+/// index was filed under the answer to one and read under the answer to the
+/// other. Measured across the fleet: `crystal.on_axis` answered 0 on 123 of
+/// 123 reads, and 75 of 76 admits filed on no axis at all because the forms
+/// admitted are closed — `[2, 0, 0, 0, 0]`, rank zero, no loops — so their
+/// words occupy no coordinate.
+///
+/// A word is filed where it ACTS. That is the question the pivot asks: not
+/// "what does the sentence carrying this word hold" but "what do I hold that
+/// acts on this body and turns on this axis". A vertex acting on two charts
+/// is admitted at both, because it speaks to bodies on both and one left out
+/// is a word the pivot can never be offered.
+pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
+    for v in &f.vertices {
+        let Vertex::Word { derivation, acts, .. } = v else {
+            continue;
+        };
+        // What the vertex CARRIES: its letters when it spells, its action
+        // when it is an adjoined generator (37.7) — the same reader
+        // `word_at_vertex` uses, so a generator offered by one is offered by
+        // the other.
+        let Some(w) = derivation.word_carried() else {
+            continue;
+        };
+        for (_, a) in acts.scoped() {
+            admit_words(index, &a.chart, std::slice::from_ref(&w));
+        }
+    }
+}
+
+/// The mirror of [`admit_words_acting`], member for member — or one chart's
+/// axes are emptied and the word is left named at the others.
+pub fn retract_words_acting(index: &mut AxisIndex, f: &Form) {
+    for v in &f.vertices {
+        let Vertex::Word { derivation, acts, .. } = v else {
+            continue;
+        };
+        let Some(w) = derivation.word_carried() else {
+            continue;
+        };
+        for (_, a) in acts.scoped() {
+            retract_words(index, &a.chart, std::slice::from_ref(&w));
+        }
+    }
+}
+
 /// Admit words to the axis index under every coordinate their class vector
 /// occupies on `chart`.
 pub fn admit_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Word]) {
@@ -79,19 +133,39 @@ pub fn retract_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[W
     }
 }
 
-/// The fiber of the axis index at (chart, axis).
+/// The fiber of the axis index at (chart, axis), coarsening the CHART until
+/// the read is not empty — exactly as `generators_under` coarsens, and for
+/// the same reason.
+///
+/// THE CHART IS A PREFILTER; THE AXIS IS THE COORDINATE. An exact keyed read
+/// on the chart made a stratum mismatch indistinguishable from an empty
+/// index: one byte apart and the answer is `None`, with nothing to say which
+/// it was. A21 §2 has the reading — a demand is reduced against the
+/// generators of one STRATUM, never the language, and no further than it
+/// must — so the chart names where to look first and coarsens when that
+/// level holds nothing, and the root stratum is the same subtree read as
+/// every other.
+///
+/// What the prefilter does NOT do is decide. A word this returns is a
+/// CANDIDATE: the trial applies it, re-reads the class vectors off the
+/// written faces and refuses unless every member path discharges the axis
+/// exactly, so a word offered from a coarser stratum than the loop stands on
+/// is confirmed by the plane arithmetic or it is refused there. The index
+/// narrows the search; it never certifies a match.
 pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Vec<Word> {
-    match index
-        .get(&chart.key())
-        .and_then(|mid| mid.get(&axis_slot(axis)))
-    {
-        // Two keyed reads reached this bucket -- the chart, then the axis
-        // slot -- so what it holds is the words on that axis, all of them.
-        Some(bucket) => bucket
-            .scoped()
-            .map(|(_, w)| w.clone())
-            .collect(),
-        None => Vec::new(),
+    let slot = axis_slot(axis);
+    let mut at = chart.clone();
+    loop {
+        let held: Vec<Word> = match index.get(&at.key()).and_then(|mid| mid.get(&slot)) {
+            // Two keyed reads reached this bucket -- the chart, then the axis
+            // slot -- so what it holds is the words on that axis, all of them.
+            Some(bucket) => bucket.scoped().map(|(_, w)| w.clone()).collect(),
+            None => Vec::new(),
+        };
+        if !held.is_empty() || at.0.is_empty() {
+            return held;
+        }
+        at = at.peel();
     }
 }
 

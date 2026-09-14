@@ -515,6 +515,98 @@ fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
     }
 }
 
+/// 18.2, A21 §2 — A WORD IS FILED WHERE IT ACTS, AND THE CHART IS A
+/// PREFILTER.
+///
+/// `axis_admit` filed a sentence's words under `invariant_of(element)`,
+/// which for a sentence is `chart_of_form` — `[2, rank, loop classes]`, a
+/// projection of what the FORM HOLDS. `candidates_for` asks under the charts
+/// a loop's face vertices act on — `[1, moduli]`, a statement about the BODY
+/// A WORD ACTS ON. Both charts are well formed and answer different
+/// questions, so the index was filed under one answer and read under the
+/// other: measured across the fleet, `crystal.on_axis` returned 0 on 123 of
+/// 123 reads, and 75 of 76 admits filed on no axis at all because the forms
+/// admitted are closed and their words occupy nothing.
+///
+/// Two things are asserted, because either alone leaves the read empty. The
+/// word is filed where its vertex ACTS, which is the question the pivot
+/// asks. And the read COARSENS the chart until it is not empty, as
+/// `generators_under` does — a stratum mismatch is a coarser question, not
+/// an absent answer, and an exact keyed read could not tell those apart.
+///
+/// The chart never certifies. A word this returns is a candidate the trial
+/// applies and re-reads off the written faces, refusing unless every member
+/// path discharges the axis exactly.
+#[test]
+fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
+    use crate::transducer::alphabet::Derivation;
+    use crate::transducer::sentence::{admit_words_acting, on_axis_of, retract_words_acting, AxisIndex};
+    use crate::transducer::stalk::Invariant;
+    let q = order4();
+    let acting = Invariant(vec![1, 7, 4]);
+    let mut f = Form::default();
+    f.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from_bytes([4u8, 1]),
+        Derivation::spelled(q.clone()),
+        acting.clone(),
+        Box::new(element::identity_versor()),
+        Vec::new(),
+        None,
+    ));
+
+    let occupied = ClassVector::of_word(&q).expect("q has a class").coordinates();
+    assert!(
+        !occupied.is_empty(),
+        "a quarter turn occupies a coordinate, or there is nothing to file"
+    );
+
+    let mut ix: AxisIndex = AxisIndex::new();
+    admit_words_acting(&mut ix, &f);
+
+    // FILED WHERE IT ACTS: the chart the pivot asks under answers.
+    for axis in &occupied {
+        let got = on_axis_of(&ix, &acting, *axis);
+        assert!(
+            got.iter().any(|w| w.rotor().projective_eq(&q.rotor())),
+            "the word is offered on {axis:?} at the chart its vertex acts on, got {} words",
+            got.len()
+        );
+    }
+
+    // AND THE CHART COARSENS. A loop standing on a finer stratum than the
+    // word was filed at asks a narrower question; the read widens it one
+    // axis at a time rather than answering nothing.
+    let finer = Invariant(vec![1, 7, 4, 9, 2]);
+    for axis in &occupied {
+        let got = on_axis_of(&ix, &finer, *axis);
+        assert!(
+            got.iter().any(|w| w.rotor().projective_eq(&q.rotor())),
+            "a finer chart coarsens to the stratum that holds the word, {axis:?}"
+        );
+    }
+
+    // AN AXIS THE WORD DOES NOT OCCUPY IS STILL EMPTY. The coarsening widens
+    // the chart and never the axis, which is the coordinate itself.
+    let unoccupied = (0..6u8)
+        .map(Axis::Prime13)
+        .find(|a| !occupied.contains(a))
+        .expect("a quarter carries no prime-13 exponent on some plane");
+    assert!(
+        on_axis_of(&ix, &acting, unoccupied).is_empty(),
+        "coarsening widens the chart, never the axis"
+    );
+
+    // AND THE RETRACT MIRRORS THE ADMIT, member for member.
+    retract_words_acting(&mut ix, &f);
+    for axis in &occupied {
+        assert!(
+            on_axis_of(&ix, &acting, *axis).is_empty(),
+            "what the admit filed at {axis:?} the retract empties"
+        );
+    }
+    f.vertices.clear();
+}
+
 /// 16.20, A20, I6, R8 — THE WHOLE `OpenAxis` PIPELINE READS ONE HOLONOMY,
 /// and it is the edge composite.
 ///

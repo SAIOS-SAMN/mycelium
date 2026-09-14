@@ -52,29 +52,30 @@ impl Epigenome {
         Epigenome::default()
     }
 
-    pub(crate) fn axis_admit(&mut self, e: &Element) {
+    /// A WORD IS FILED WHERE IT ACTS, and the form is read off the `Held`
+    /// rather than decoded again (L16). A sentence files each Word vertex's
+    /// word under every chart that vertex acts on — the same charts
+    /// `candidates_for` asks under and `body_charts_of` uses for
+    /// `by_moduli`. A connection carries no form and files under its own
+    /// invariant, which for it is `connection_chart`, the rotor's own axes.
+    pub(crate) fn axis_admit(&mut self, e: &Held) {
+        if let Some(f) = e.form() {
+            crate::transducer::sentence::admit_words_acting(&mut self.axis_index, f);
+            return;
+        }
         let inv = crate::transducer::stalk::invariant_of(e);
-        let words = crate::transducer::sentence::words_of_element(e);
-        // THE CHART THE FILING IS MADE UNDER (§8.1, measurement only). The
-        // pivot's read is an exact keyed one, so this key and the key
-        // `candidates_for` asks at must be the same bytes or the answer is
-        // empty however much the mind holds. The axes are the coordinates
-        // `admit_words` will file each word on, which is the other half: a
-        // word that occupies none is filed nowhere at all.
-        let axes: Vec<crate::transducer::sentence::Axis> = words
-            .iter()
-            .filter_map(crate::transducer::sentence::ClassVector::of_word)
-            .flat_map(|cv| cv.coordinates())
-            .collect();
-        eprintln!(
-            "  axis admit chart {:?} words {} axes {axes:?}",
-            inv.0,
-            words.len()
+        crate::transducer::sentence::admit_words(
+            &mut self.axis_index,
+            &inv,
+            &crate::transducer::sentence::words_of_element(e),
         );
-        crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words);
     }
 
-    pub(crate) fn axis_retract(&mut self, e: &Element) {
+    pub(crate) fn axis_retract(&mut self, e: &Held) {
+        if let Some(f) = e.form() {
+            crate::transducer::sentence::retract_words_acting(&mut self.axis_index, f);
+            return;
+        }
         let inv = crate::transducer::stalk::invariant_of(e);
         crate::transducer::sentence::retract_words(
             &mut self.axis_index,
