@@ -140,10 +140,14 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
     assert_eq!(held.len(), 2, "two certificates, got {held:?}");
     assert!(!f.vortex.is_empty(), "the form holds the vortex cells");
 
+    // A19 ON A CLASS THE COURT HAS RULED: another mind can supply the word,
+    // so this one neither demands it nor announces the filing. It still
+    // files — the class is the form's own carrier — and it does so in
+    // silence, which is what `Standing::Ruled` buys.
     let mut f = chord_form(std::slice::from_ref(&q));
     let mut horizon = Keyed::new();
     let r = q.rotor();
-    horizon.insert(r.class_key().expect("q class"), (r, q.order(), Standing::Held));
+    horizon.insert(r.class_key().expect("q class"), (r, q.order(), Standing::Ruled));
     let snaps = f.pivot_loop(
         [0x33; 32],
         &horizon,
@@ -152,10 +156,35 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
         None,
         0,
     );
-    assert!(snaps.is_empty(), "a horizon holding q files silently: {snaps:?}");
+    assert!(snaps.is_empty(), "a court-ruled class files silently: {snaps:?}");
     assert!(
         q.rotor().class_key().is_some_and(|k| f.torsion.contains(k.as_bytes())),
         "filed torsion is keyed by the class"
+    );
+
+    // AND THE SAME CLASS AT `Held` DOES NOT SUPPRESS IT. `Standing::Held` is
+    // "an idea this mind is holding, not yet a word" — the mind's OWN
+    // obstruction — and `hold_form` paints every standing loop's own class
+    // onto the horizon at that standing through `paint_standing`. Read as
+    // presence alone this made every loop defer to itself: no demand, no
+    // announced filing, and no widening, all three closed by an entry the
+    // mind wrote about its own defect. Measured at 7e73a1d — `held true` on
+    // 108 of 108 loops against zero `horizon … seeded` lines in two hours.
+    let mut f = chord_form(std::slice::from_ref(&q));
+    let mut mine = Keyed::new();
+    let r = q.rotor();
+    mine.insert(r.class_key().expect("q class"), (r, q.order(), Standing::Held));
+    let snaps = f.pivot_loop(
+        [0x34; 32],
+        &mine,
+        &crate::transducer::family::NoCrystal,
+        &mut crate::physics::Physics::default().stroke_n(16),
+        None,
+        0,
+    );
+    assert!(
+        snaps.iter().any(|s| matches!(s, Snap::TorsionFiled { .. })),
+        "a class this mind merely holds is announced, not deferred to: {snaps:?}"
     );
 }
 

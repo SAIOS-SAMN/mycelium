@@ -18,7 +18,21 @@ pub(crate) fn horizon_put(h: &mut Keyed<(Rotor, Order, Standing)>, r: Rotor, sta
 }
 
 impl Contemplation {
-    /// Admit syllabus class records as Held. Copies into every live bubble.
+    /// Admit syllabus class records as RULED. Copies into every live bubble.
+    ///
+    /// `Standing::Held` stood here, and it is the same standing the mind's
+    /// own obstructions go under — `paint_standing` for the classes a form
+    /// arrives with, `Fill::Class` for a cell it cannot close. So the one
+    /// reader that acts on this, `pivot_loop`'s A19 suppression, could not
+    /// tell a class the COURT has ruled from a class this mind merely has,
+    /// and since `paint_standing` puts every standing loop's own class on
+    /// the horizon, every loop deferred to itself.
+    ///
+    /// These records are the syllabus: another mind ruled them and can
+    /// supply the word. That is `Ruled` — "court-ratified" — and it is the
+    /// only standing on which waiting is the right move. The mind's own
+    /// stay `Held`, "an idea this mind is holding, not yet a word", which is
+    /// exactly what they are.
     pub fn seed_horizon(&mut self, records: &[ClassRecord]) -> usize {
         let mut n = 0usize;
         for rec in records {
@@ -27,7 +41,7 @@ impl Contemplation {
             }
             self.seeded.insert(
                 rec.key.clone(),
-                (rec.representative.clone(), rec.order, Standing::Held),
+                (rec.representative.clone(), rec.order, Standing::Ruled),
             );
             n += 1;
         }
@@ -38,7 +52,7 @@ impl Contemplation {
                     if !b.horizon.contains(&rec.key) {
                         b.horizon.insert(
                             rec.key.clone(),
-                            (rec.representative.clone(), rec.order, Standing::Held),
+                            (rec.representative.clone(), rec.order, Standing::Ruled),
                         );
                     }
                     b.collapse_vortex(

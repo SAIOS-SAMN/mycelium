@@ -388,7 +388,41 @@ impl Form {
                 let Some(rotor_key) = hw.rotor().class_key() else {
                     continue;
                 };
-                let held = horizon.get(&rotor_key).is_some();
+                // A19 IS ABOUT WHAT THE MESH HAS RULED, and the horizon says
+                // so on every member — it carries a `Standing` beside the
+                // rotor and the order. This read discarded it and took
+                // PRESENCE for the answer, and presence is not the question.
+                //
+                // `hold_form` paints the horizon from `paint_seeded` and then
+                // `paint_standing`, and `paint_standing` puts the form's OWN
+                // standing loop classes on it — both `lp.holonomy.rotor()`
+                // and each edge composite's — under exactly the condition
+                // `open` filters these loops by. So every loop reaching here
+                // found its own class on the horizon and read it as the
+                // mesh's. `held` was `true` for every open loop by
+                // construction, on any corpus, and the mind deferred to
+                // itself: A19 suppresses the demand, the filing announcement
+                // AND the widening, so all three routes out closed at once.
+                //
+                // MEASURED at 7e73a1d: `held true` on 108 of 108, `opens 0`
+                // on 163 of 163, and not one `demand spoken`, `torsion
+                // filed` or `torsion open` line. Against that, zero
+                // `horizon … seeded` lines in two hours — the syllabus has
+                // never delivered a class to this fleet, so every entry the
+                // pivot deferred to was one the mind wrote about itself.
+                //
+                // L24's admission is right and stays: a perceived
+                // obstruction and a contemplated one ARE one kind of object,
+                // and the pivot must see the classes the form arrived with.
+                // What was wrong is the standing they went under. `Held` is
+                // "an idea this mind is holding, not yet a word" — which is
+                // precisely the mind's own obstruction, and precisely what
+                // must NOT suppress the demand. `Ruled` is court-ratified,
+                // and that is the only standing on which another mind can
+                // supply the word this one is waiting for.
+                let held = horizon
+                    .get(&rotor_key)
+                    .is_some_and(|(_, _, st)| matches!(st, Standing::Ruled));
                 let order = hw.order();
                 let cands = self.candidates_for(idx, &kappa, crystal, held, &published);
                 // THE SPAN READING (§8.1, measurement only — nothing below
@@ -493,7 +527,7 @@ impl Form {
                 eprintln!(
                     "  pivot candidates {:02x}{:02x}… loop {idx} total {} held {held_gens} \
                      self {self_moves} opens {opens} tried {tried} unreached {unreached} \
-                     discharged {} starved {starved} span {} held {held} order {order:?} \
+                     discharged {} starved {starved} span {} ruled {held} order {order:?} \
                      occupies {occupied:?}",
                     idea[0],
                     idea[1],

@@ -18,7 +18,13 @@ fn horizon_seeded_class_is_not_rederived() {
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     let b = c.bubbles.scoped().next().map(|(_, b)| b).expect("bubble");
     let (_, _, st) = b.horizon.get(&rec.key).expect("seeded");
-    assert_eq!(*st, Standing::Held);
+    // RULED, not Held. The syllabus is another mind's court-ratified class
+    // and it is the one standing on which waiting for the word is right.
+    // `Standing::Held` is what this mind's OWN obstructions go under —
+    // `paint_standing` and `Fill::Class` both write it — and the pivot's A19
+    // suppression could not tell the two apart while the syllabus used it
+    // too, so every loop deferred to a horizon entry it had written itself.
+    assert_eq!(*st, Standing::Ruled);
 }
 
 #[test]
