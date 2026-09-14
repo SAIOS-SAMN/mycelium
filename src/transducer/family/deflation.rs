@@ -88,6 +88,7 @@ pub fn mint_sentence(
     rule: &crate::transducer::sentence::SentenceRule,
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
+    t_extent: u64,
 ) -> Option<element::Element> {
     // A FORM NOTHING IN WHICH ACTS IS NOT UTTERED. The court's clause is
     // already exactly this — "a tape whose only vertices are the Frame and
@@ -128,7 +129,7 @@ pub fn mint_sentence(
     if crate::court::verdict::body::vertices_carry_family(&rule.form, family).is_some() {
         return None;
     }
-    let mag = sentence_measure(&rule.form, family, crystal)?;
+    let mag = sentence_measure(&rule.form, family, crystal, t_extent)?;
     crate::transducer::sentence::as_element_form(&rule.form, mag)
 }
 
@@ -155,10 +156,39 @@ pub fn mint_sentence(
 /// with the court by luck, which is the failure mode 23.1 step 3 exists to
 /// catch — and the court still re-derives and does not take this for an
 /// answer.
-pub fn sentence_measure(form: &Form, family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Option<[u64; 4]> {
+/// LANE 𝒯 IS THE SPAN, AND IT IS MEASURED HERE OR NOWHERE. `mint_sentence`'s
+/// own line has always read "Lane 𝒯 is the scene-state span the bundle stood
+/// over", and this computed μ⃗ through `measure_lanes` alone — which returns
+/// a LITERAL ZERO on lane 2 under a comment deferring the measurement to the
+/// mint. The mint did not take it either, so every word this engine has ever
+/// spoken carried `[S, G, 0, H]`: 197 of 197 spoken magnitudes at 820678a,
+/// none with a 𝒯 component.
+///
+/// The consequence is the whole lane vector. `word.lanes()[2]` is false, so
+/// the court's `physics.spend(word.lanes())` never spends 𝒯, so `reserve[2]`
+/// never depletes, so `reserve_deficit[2]` is zero, so `yield_surface[2]` is
+/// zero, so the dwell's 𝒯 lane read 0 in 1247 of 1247 readings. Law 5 has
+/// four lanes so they can carry independent content; three carried the same
+/// reserve deficit and the fourth carried nothing.
+///
+/// `t_extent` is the span in RECEIPTS the bundle stood over — the same
+/// quantity `pivot_loop` already takes and `bundle_pressure` already writes
+/// to `sum[2]`. A form minted in the stroke it was extracted in stood over
+/// no receipts and measures zero, which is a reading and not a placeholder.
+pub fn sentence_measure(
+    form: &Form,
+    family: &[(Grid, Grid)],
+    crystal: &dyn Crystal,
+    t_extent: u64,
+) -> Option<[u64; 4]> {
     let (pay, remainders) = form_deflation(form, family, crystal);
     if form.demand_vertices().next().is_none() {
-        return remainders.iter().all(|r| r.is_empty()).then_some(pay);
+        if !remainders.iter().all(|r| r.is_empty()) {
+            return None;
+        }
+        let mut mag = pay;
+        mag[2] = t_extent;
+        return Some(mag);
     }
     if !crate::court::verdict::body::undeclared_remainder(&remainders, form).is_empty() {
         return None;
@@ -195,6 +225,9 @@ pub fn sentence_measure(form: &Form, family: &[(Grid, Grid)], crystal: &dyn Crys
     for (m, a) in mag.iter_mut().zip(&asked) {
         *m = m.saturating_add(*a);
     }
+    // The span is the bundle's, not a sum over its pairs: a family standing
+    // three frames does not age three times (51.9). It is written, not added.
+    mag[2] = t_extent;
     Some(mag)
 }
 

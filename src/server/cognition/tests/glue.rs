@@ -80,7 +80,7 @@ assert!(
         .any(|v| matches!(v, Vertex::Glued { .. })),
     "the rule cites the held form"
 );
-let spoken = mint_sentence(&rule, &family, &cover).expect("mint through crystal");
+let spoken = mint_sentence(&rule, &family, &cover, 0).expect("mint through crystal");
 let mut k = Kernel::new();
 let inner_addr = held_e.address();
 assert_eq!(
@@ -125,7 +125,7 @@ let family = vec![
 ];
 // The sibling the voice solved and stood: one pair of the bundle.
 let held = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
-let mag = sentence_measure(&held, &family[..1], &NoCrystal).expect("the body is spoken");
+let mag = sentence_measure(&held, &family[..1], &NoCrystal, 0).expect("the body is spoken");
 let held_e = as_element_form(&held, mag).expect("a tape");
 let mut epi = Epigenome::new();
 epi.stand_dialect_at(held_e.clone(), 1, 1).expect("stood");
@@ -136,7 +136,7 @@ assert!(
     rule.form.vertices.iter().any(|v| matches!(v, Vertex::Glued { .. })),
     "the voice cites what it stood"
 );
-let spoken = mint_sentence(&rule, &family, &epi).expect("minted over the voice's own crystal");
+let spoken = mint_sentence(&rule, &family, &epi, 0).expect("minted over the voice's own crystal");
 
 // The court installs the cited form, then the citer.
 let mut k = Kernel::new();

@@ -22,7 +22,7 @@ fn a_recolour_with_a_creation() -> (Vec<(Grid, Grid)>, Element) {
     let words = rule.form.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
     let demands = rule.form.demand_vertices().count();
     assert_eq!((words, demands), (1, 1), "one word and one demand ride the sentence");
-    let e = mint_sentence(&rule, &family, &NoCrystal).expect("a sentence with a demand is spoken whole");
+    let e = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence with a demand is spoken whole");
     (family, e)
 }
 
@@ -81,7 +81,7 @@ fn a_tape_with_no_acting_vertex_is_a_chain() {
         "no body pair the eyes admit"
     );
     assert!(f.demand_vertices().next().is_some(), "the deformation rides as a demand");
-    let mag = sentence_measure(&f, &family, &NoCrystal).expect("the demands measure what they ask");
+    let mag = sentence_measure(&f, &family, &NoCrystal, 0).expect("the demands measure what they ask");
     let e = as_element_form(&f, mag).expect("a tape");
     assert_eq!(
         replay_form_with(&e, &|_| None, Some(&family), &NoCrystal),
@@ -99,7 +99,7 @@ fn a_carried_edge_rederives_on_the_union_or_is_refused() {
     let family = vec![(digits(&["11200"]), digits(&["00112"]))];
     let f = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
     assert!(f.faces.iter().any(|face| face.has_edge()), "the rigid pair carries an edge");
-    let mag = sentence_measure(&f, &family, &NoCrystal).expect("both bodies are spoken");
+    let mag = sentence_measure(&f, &family, &NoCrystal, 0).expect("both bodies are spoken");
     let e = as_element_form(&f, mag).expect("a tape");
     assert_eq!(
         replay_form_with(&e, &|_| None, Some(&family), &NoCrystal),

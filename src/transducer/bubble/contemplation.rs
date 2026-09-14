@@ -57,6 +57,28 @@ impl Contemplation {
     /// froze at 0 on a mesh that admitted nothing: every bubble's extent
     /// read as the same value, `retire_on_t` could not tell them apart, and
     /// ideas accumulated for the life of the process.
+    /// THE SPAN A FORM'S IDEA HAS STOOD OVER, in receipts — lane 𝒯, the
+    /// same `held_since(now, moved_k)` that `expand_with` hands `pivot_loop`
+    /// as its `t_extent`. One quantity, one reader (law 12).
+    ///
+    /// A form this contemplation does not hold stood over NO receipts: it
+    /// was minted in the stroke it was extracted in. That is a reading of
+    /// zero, not a placeholder for one. `moved_k` is stamped from `now_k`
+    /// and this clock only advances, so the subtraction cannot go backwards
+    /// while the contemplation is the one holding both.
+    /// `None` where the clock went backwards — a K below the mark is a broken
+    /// counter, and a span read off one is a measurement this contemplation
+    /// cannot make, never a zero (rule 11).
+    pub fn span_of(&self, form: &crate::transducer::sentence::Form) -> Option<u64> {
+        let key = super::idea::idea_key(form);
+        match self.bubbles.get(key.as_bytes()) {
+            // Held nowhere: minted in the stroke it was extracted in, so it
+            // stood over no receipts. That is a reading of zero.
+            None => Some(0),
+            Some(b) => super::idea::held_since(self.now_k, b.moved_k),
+        }
+    }
+
     pub fn set_now(&mut self, k: u64) {
         self.now_k = k;
     }

@@ -141,7 +141,17 @@ fn speak_with_demands(
     use mycelium::transducer::sentence::Vertex;
     let fam = format!("{:02x}{:02x}…", family[0], family[1]);
     let form = &rule.form;
-    let Some(word) = mycelium::transducer::family::mint_sentence(rule, train, &entity.epigenome) else {
+    // Lane 𝒯 is the span in receipts this form's idea has stood over. A form
+    // the contemplation does not hold was minted in the stroke it was
+    // extracted in and stood over none.
+    // A span this mind cannot measure is not a zero: the form is withheld
+    // rather than minted against an invented extent.
+    let Some(span) = entity.span_of(form) else {
+        eprintln!("[{tag}] form withheld: family {fam} the span is unmeasurable");
+        return false;
+    };
+    let Some(word) = mycelium::transducer::family::mint_sentence(rule, train, &entity.epigenome, span)
+    else {
         // The mint refused it, so it is not a word — it is not stood in the
         // dialect, and it is held as the open work it is.
         entity.hold_form(form, train, remainders);

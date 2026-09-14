@@ -100,7 +100,7 @@ assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let listed = &k.quote().1;
 assert_eq!(listed.len(), 1, "one pair, one listing");
 match extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
-    .and_then(|rule| mint_sentence(&rule, &family, &NoCrystal))
+    .and_then(|rule| mint_sentence(&rule, &family, &NoCrystal, 0))
 {
     Some(e) => assert!(
         listed[0].0.same_vertex(&e),

@@ -252,7 +252,7 @@ fn a_closed_idea_crystallizes_with_its_descent_and_leaves_the_contemplation() {
         .collect();
     let family = vec![(train_in, train_out)];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the recolour family extracts");
-    let minted = mint_sentence(&rule, &family, &NoCrystal).expect("the family mints");
+    let minted = mint_sentence(&rule, &family, &NoCrystal, 0).expect("the family mints");
     let mut c = Contemplation::new();
     c.hold_form(&rule.form, &family, &[Vec::new()]);
     assert_eq!(c.bubbles.len(), 1, "the closed form is held as an idea");

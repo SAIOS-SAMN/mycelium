@@ -58,6 +58,14 @@ impl Entity {
         self.contemplation.hold_form(f, train, remainders);
     }
 
+    /// LANE 𝒯 FOR A FORM THIS MIND IS ABOUT TO SPEAK: the span in receipts
+    /// its idea has stood over. The contemplation is the one carrier of held
+    /// forms and the one reader of the span (law 12); a speaker asks it here
+    /// rather than reaching into it.
+    pub fn span_of(&self, f: &crate::transducer::sentence::Form) -> Option<u64> {
+        self.contemplation.span_of(f)
+    }
+
     /// Stand a withheld form and hold it as an idea (24.3 as amended,
     /// 50.6 seam 1). Nothing is expressed as a residual word and no chain
     /// is uttered: what the form could not close is its demand vertices,

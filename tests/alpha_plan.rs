@@ -107,7 +107,7 @@ fn faces_by_constancy_three_squares() {
     let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
     assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
     assert_eq!(spoken.grid(), Some(train_out));
-    let _ = mint_sentence(&rule, &family, &NoCrystal);
+    let _ = mint_sentence(&rule, &family, &NoCrystal, 0);
 }
 
 #[test]
@@ -220,7 +220,7 @@ fn hypha_snapshot_is_myc7() {
     // utterance has (law 8): a listing on the book to snapshot.
     let family = vec![(grid(&["11"]), grid(&["22"]))];
     let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
-    let spoken = mint_sentence(&rule, &family, &NoCrystal).expect("a sentence");
+    let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence");
     let task = mycelium::registry::task_id(&mycelium::arc::Task { train: family.clone(), test: Vec::new() })
         .expect("a grid pair's chain is A5's, so the task has an identity");
     k.bind_task_family(&task, family);

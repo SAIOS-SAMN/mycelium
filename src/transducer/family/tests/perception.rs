@@ -159,7 +159,7 @@ assert_eq!(demands.len(), 1, "one (kind, chart) over the bundle: {:?}", rule.for
 let (_, kind, _, cells) = demands[0];
 assert_eq!(*kind, Demand::Source { multiplicity: 1 });
 assert_eq!(cells.len(), 4, "both pairs' created cells ride it: {cells:?}");
-let word = mint_sentence(&rule, &family, &NoCrystal).expect("a sentence with demands mints whole");
+let word = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence with demands mints whole");
 assert!(word.is_sentence());
 assert!(word.magnitude().iter().any(|&m| m > 0), "it measures what it asks for: {:?}", word.magnitude());
 let back = crate::transducer::sentence::from_element_form(&word).expect("its tape decodes");
@@ -204,7 +204,7 @@ assert!(
     "and the court would now find the remainder undeclared"
 );
 assert!(
-    mint_sentence(&bare, &family, &NoCrystal).is_none(),
+    mint_sentence(&bare, &family, &NoCrystal, 0).is_none(),
     "so a demand that declares nothing does not exempt the remainder"
 );
 }

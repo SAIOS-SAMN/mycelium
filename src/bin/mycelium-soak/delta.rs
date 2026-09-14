@@ -167,7 +167,9 @@ fn standable(train: &mycelium::transducer::family::Family, epi: &Epigenome) -> (
     if !rule.form.is_closed() {
         return (None, Stand::RuleOpen);
     }
-    let Some(spoken) = mint_sentence(&rule, train, epi) else {
+    // The sweep mints in the stroke it extracts, so the bundle stood over no
+    // receipts: 𝒯 is zero here as a reading, not as an omission.
+    let Some(spoken) = mint_sentence(&rule, train, epi, 0) else {
         return (None, Stand::NoSentence);
     };
     let held = Held::of(spoken);

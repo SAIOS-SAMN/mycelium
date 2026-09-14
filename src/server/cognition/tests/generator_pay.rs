@@ -138,7 +138,7 @@ fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
     let (gen_fam, cite_fam) = (bar_quarter(), l_half());
 
     let g = pair_form_uncrystallized(&gen_fam[0].0, &gen_fam[0].1, None);
-    let g_mag = sentence_measure(&g, &gen_fam, &NoCrystal).expect("the bar is spoken");
+    let g_mag = sentence_measure(&g, &gen_fam, &NoCrystal, 0).expect("the bar is spoken");
     let g_e = as_element_form(&g, g_mag).expect("a tape");
     let g_addr = g_e.address();
 
@@ -169,7 +169,7 @@ fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
         cited.iter().any(|(form, _, _)| form.as_bytes() == g_addr.as_bytes()),
         "the half turn DERIVES through the quarter the mind was taught, and is not glued to it"
     );
-    let spoken = mint_sentence(&rule, &cite_fam, &epi).expect("minted over the mind's own crystal");
+    let spoken = mint_sentence(&rule, &cite_fam, &epi, 0).expect("minted over the mind's own crystal");
 
     // 26 as ruled 2026-09-10 — WHAT A DERIVATION CITATION EARNS IS ROOM,
     // NOT A MINT. The generator contributes an ACTION and closes nothing
@@ -241,7 +241,7 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
     let mut school = Kernel::new();
     let taught = |k: &mut Kernel, fam: &[crate::transducer::family::TrainPair], who: [u8; 32], task: [u8; 32]| {
         let f = pair_form_uncrystallized(&fam[0].0, &fam[0].1, None);
-        let mag = sentence_measure(&f, fam, &NoCrystal).expect("the bar is spoken");
+        let mag = sentence_measure(&f, fam, &NoCrystal, 0).expect("the bar is spoken");
         let e = as_element_form(&f, mag).expect("a tape");
         k.bind_task_family(task, fam.to_vec());
         install_on(k, who, &e, &task);
@@ -256,7 +256,7 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
         epi.learn(&g.to_bytes()).expect("the syllabus teaches it back");
         let rule = extract_rule_with(&cite_fam, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20))
             .expect("the family extracts");
-        mint_sentence(&rule, &cite_fam, &epi).expect("minted over the mind's own crystal")
+        mint_sentence(&rule, &cite_fam, &epi, 0).expect("minted over the mind's own crystal")
     };
     let said_a = mind(&g_a);
     let said_b = mind(&g_b);

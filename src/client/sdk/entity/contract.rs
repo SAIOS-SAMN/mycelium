@@ -96,7 +96,13 @@ impl Entity {
             self.contemplation.dirty.remove(&after);
             return Contracted::Quiescent;
         }
-        match mint_sentence(&rule_of_form(form), train, &self.epigenome) {
+        // An unmeasurable span is not a zero: the contraction is not minted
+        // against an extent this mind cannot read (rule 11).
+        let minted = self
+            .contemplation
+            .span_of(&form)
+            .and_then(|span| mint_sentence(&rule_of_form(form), train, &self.epigenome, span));
+        match minted {
             Some(sentence) => {
                 self.contracted.push(Pending { sentence, train: train.to_vec(), task: task.to_vec(), certificate });
             }

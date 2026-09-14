@@ -29,7 +29,7 @@ pub fn sentence_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<Element
     if !acts {
         return None;
     }
-    mint_sentence(&rule, &family, &NoCrystal)
+    mint_sentence(&rule, &family, &NoCrystal, 0)
 }
 
 /// A VOICE SPEAKS A PAIR TO THE COURT through the one door an utterance has

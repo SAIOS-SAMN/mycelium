@@ -307,7 +307,7 @@ fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, Strin
             }
         }
         // Stand what closed, so the next family can cite it (24.3).
-        let Some(spoken) = mint_sentence(&rule, &task.train, &epi) else {
+        let Some(spoken) = mint_sentence(&rule, &task.train, &epi, 0) else {
             continue;
         };
         // Only a closed form is citable (13.6, `Form::glue`), so only a

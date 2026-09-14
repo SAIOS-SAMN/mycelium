@@ -30,7 +30,7 @@ fn sentence_over(family: &[TrainPair]) -> Element {
         panic!("one pair");
     };
     let f = pair_form_uncrystallized(x, y, None);
-    let mag = sentence_measure(&f, family, &NoCrystal).expect("every body is spoken");
+    let mag = sentence_measure(&f, family, &NoCrystal, 0).expect("every body is spoken");
     as_element_form(&f, mag).expect("a tape")
 }
 
@@ -86,7 +86,7 @@ fn the_court_verifies_a_contraction_before_it_replays_the_sentence() {
         crate::transducer::family::form_deflation(&probe, &f_v, &NoCrystal).1.into_iter().flatten().collect();
     assert!(!remainder.is_empty(), "the refused word's body is what the contraction leaves");
     assert_eq!(f.contract(*kind, at, &remainder), Some(Contracted::Moved));
-    let contracted = mint_sentence(&rule_of_form(f.clone()), &f_v, &NoCrystal).expect("the contraction is a sentence");
+    let contracted = mint_sentence(&rule_of_form(f.clone()), &f_v, &NoCrystal, 0).expect("the contraction is a sentence");
     let certificate = Contraction { kind: *kind, at: at.clone(), before: s.address(), after: form_vertex_key(&f), receipt: *receipt };
     // A FORGED CITATION: another sentence citing the receipt is not the
     // contraction at the coordinate.

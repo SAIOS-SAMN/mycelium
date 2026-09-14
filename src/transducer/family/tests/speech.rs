@@ -315,7 +315,7 @@ assert!(
     rule.form.vertices.iter().any(|v| matches!(v, Vertex::Word { .. })),
     "the recolour class is one vertex; the chart fiber names the three squares"
 );
-let minted = mint_sentence(&rule, &family, &NoCrystal).expect("the family mints");
+let minted = mint_sentence(&rule, &family, &NoCrystal, 0).expect("the family mints");
 let mu = minted.magnitude();
 assert!(mu[1] >= 1, "recolour is gauge content, got {mu:?}");
 assert!(mu.iter().any(|&x| x > 0), "T is form_deflation, never a floor on the lane");

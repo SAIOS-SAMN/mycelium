@@ -46,7 +46,7 @@ assert_eq!(
     "an unclosed pair contributes nothing, so the pay is pair one's alone"
 );
 assert!(
-    mint_sentence(&rule, &family, &NoCrystal).is_none(),
+    mint_sentence(&rule, &family, &NoCrystal, 0).is_none(),
     "a form is spoken only when every remainder is empty"
 );
 }
@@ -75,7 +75,7 @@ let rule = extract_rule(&learned, &mut crate::physics::Physics::default().stroke
     .expect("a recolour extracts");
 assert!(rule.form.acts(), "the rule acts, so the first clause does not decide");
 assert!(
-    mint_sentence(&rule, &learned, &NoCrystal).is_some(),
+    mint_sentence(&rule, &learned, &NoCrystal, 0).is_some(),
     "on the family it was learned from it mints"
 );
 
@@ -86,9 +86,54 @@ assert!(
     "the court would refuse this rule on this family"
 );
 assert!(
-    mint_sentence(&rule, &other, &NoCrystal).is_none(),
+    mint_sentence(&rule, &other, &NoCrystal, 0).is_none(),
     "so the voice withholds it instead of spending a refusal on it"
 );
+}
+
+/// LANE 𝒯 CARRIES THE SPAN THE BUNDLE STOOD OVER.
+///
+/// `mint_sentence`'s own line has always read "Lane 𝒯 is the scene-state
+/// span the bundle stood over", and `sentence_measure` computed μ⃗ through
+/// `measure_lanes` alone — which returns a LITERAL ZERO on lane 2 under a
+/// comment deferring the measurement to the mint. The mint did not take it
+/// either. Measured at 820678a: **197 spoken magnitudes, 0 with a 𝒯
+/// component**; every word this engine has ever uttered was `[S, G, 0, H]`.
+///
+/// The consequence is the whole lane vector, not one slot.
+/// `word.lanes()[2]` false → the court's `spend(word.lanes())` never spends
+/// 𝒯 → `reserve[2]` never depletes → `reserve_deficit[2]` zero →
+/// `yield_surface[2]` zero → the dwell's 𝒯 lane read 0 in **1247 of 1247**
+/// readings, while S, G and H — all reduced to the same reserve deficit —
+/// were equal in 92.5% of them and took two distinct values between them.
+/// Law 5 gives four lanes so they can carry independent content.
+///
+/// A span of zero is a reading: a form minted in the stroke it was extracted
+/// in stood over no receipts. What it is not is the only value available.
+#[test]
+fn a_minted_sentence_carries_the_span_on_the_temporal_lane() {
+    let family = vec![(grid(&["11"]), grid(&["22"]))];
+    let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("a recolour extracts");
+
+    let at_once = mint_sentence(&rule, &family, &NoCrystal, 0).expect("it mints");
+    assert_eq!(
+        at_once.magnitude()[2],
+        0,
+        "a bundle that stood over no receipts measures zero on 𝒯"
+    );
+
+    let stood = mint_sentence(&rule, &family, &NoCrystal, 37).expect("it mints");
+    assert_eq!(stood.magnitude()[2], 37, "and one that stood over 37 carries 37");
+
+    // The other three lanes are the deflation's own and do not move with it.
+    let (a, b) = (at_once.magnitude(), stood.magnitude());
+    assert_eq!([a[0], a[1], a[3]], [b[0], b[1], b[3]], "𝒯 is its own lane");
+    assert!(
+        stood.lanes()[2],
+        "and the word now OCCUPIES 𝒯, which is what the court spends against"
+    );
+    assert!(!at_once.lanes()[2], "while a zero span occupies nothing");
 }
 
 #[test]

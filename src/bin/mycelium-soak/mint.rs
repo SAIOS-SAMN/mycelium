@@ -93,7 +93,9 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         // ELEMENT's own fibre fields hold — printed together so that the two
         // carriers are visibly two and a later reader cannot take one for the
         // other. A reach of 0 is base-only: no filed cycle to reach past it.
-        if let Some(w) = mycelium::transducer::family::mint_sentence(&rule, &task.train, &empty) {
+        // The sweep mints in the stroke it extracts: the bundle stood over no
+        // receipts, so 𝒯 is zero as a reading.
+        if let Some(w) = mycelium::transducer::family::mint_sentence(&rule, &task.train, &empty, 0) {
             let reach = rule.form.fibre_volume();
             if reach > 0 {
                 reach_more += 1;
@@ -119,7 +121,8 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             closed_seen += 1;
         } else {
             let has_demands = rule.form.demand_vertices().next().is_some();
-            let minted = mycelium::transducer::family::mint_sentence(&rule, &task.train, &empty);
+            let minted =
+                mycelium::transducer::family::mint_sentence(&rule, &task.train, &empty, 0);
             open_seen += 1;
             // COUNT TWO: `Form.remainder` on this population. It is what
             // extraction could not ACCOUNT FOR when it built the form, and
@@ -221,7 +224,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         // vertex that left a remainder — and `as_element_form` is the
         // other half.
         let has_demands = rule.form.demand_vertices().next().is_some();
-        let measured = sentence_measure(&rule.form, &task.train, &empty);
+        let measured = sentence_measure(&rule.form, &task.train, &empty, 0);
         println!(
             "  mint {name} sentence_measure: {} | has_demands {} | all_remainders_empty {}",
             match measured {

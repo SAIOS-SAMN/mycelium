@@ -14,7 +14,7 @@ fn digits(rows: &[&str]) -> Grid {
 fn closed_form_and_body_chart() -> (Element, crate::transducer::stalk::Invariant) {
     let family = vec![(digits(&["11200"]), digits(&["00112"]))];
     let f = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
-    let mag = sentence_measure(&f, &family, &NoCrystal).expect("both bodies are spoken");
+    let mag = sentence_measure(&f, &family, &NoCrystal, 0).expect("both bodies are spoken");
     let e = as_element_form(&f, mag).expect("a tape");
     let chart = crate::transducer::sentence::from_element_form(&e)
         .expect("the tape reads back")
@@ -64,7 +64,7 @@ fn a_mind_that_stood_a_form_cites_it_when_it_extracts_a_rule() {
         (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
     ];
     let held = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
-    let mag = sentence_measure(&held, &family[..1], &NoCrystal).expect("the body is spoken");
+    let mag = sentence_measure(&held, &family[..1], &NoCrystal, 0).expect("the body is spoken");
     let e = as_element_form(&held, mag).expect("a tape");
     let mut epi = Epigenome::new();
     epi.stand_dialect_at(e.clone(), 1, 1).expect("stood");
