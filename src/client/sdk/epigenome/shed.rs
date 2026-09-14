@@ -41,7 +41,14 @@ impl Epigenome {
         }
     }
 
-    /// TUniversal span of the last aperture of strokes. One unit, measured.
+    /// The span of the last aperture of strokes IN THIS MIND'S OWN K, one
+    /// unit, measured. This line read "TUniversal span", which is the clock
+    /// `shed` above rules OUT in its own words — 45.4: the mind sheds by its
+    /// own receipt index, never by the mesh's height — and every caller
+    /// passes `Entity::shed`'s `session.voice().k()`. A doc naming the other
+    /// clock is how the two get crossed, and they were: the contemplation's
+    /// `now_k` says TUniversal and was being stamped with the voice's K.
+    ///
     /// `None` until a whole aperture of strokes has been noted: an
     /// unmeasured aperture is held, never guessed (rule 15), so nothing
     /// sheds in the first aperture after boot.

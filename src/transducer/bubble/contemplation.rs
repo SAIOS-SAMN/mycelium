@@ -79,6 +79,11 @@ impl Contemplation {
         }
     }
 
+    /// The TUniversal this contemplation was last stamped with.
+    pub fn now_k(&self) -> u64 {
+        self.now_k
+    }
+
     pub fn set_now(&mut self, k: u64) {
         self.now_k = k;
     }

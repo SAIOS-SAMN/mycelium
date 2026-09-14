@@ -227,7 +227,23 @@ impl Entity {
     /// completed a circuit (45.7, S13.3).
     pub fn expand_ideas(&mut self) -> ([u64; 4], Option<(u64, u64)>) {
         let mut budget = self.physics.stroke();
-        self.contemplation.set_now(self.session.voice().k());
+        // THE CONTEMPLATION'S CLOCK IS TUNIVERSAL, WHICH IS WHAT IT SAYS IT
+        // IS. `Contemplation.now_k` reads "TUniversal the entity last
+        // stamped" and `Bubble.moved_k` reads "TUniversal when this bubble's
+        // charts last moved"; this stamped both with
+        // `session.voice().k()` — `Seat::k` is `chain.next_step_index()`,
+        // this voice's own receipt index, which advances only when THIS
+        // voice seals a receipt. `absorb_taught` states the rule in one
+        // line: "k is the voice's K (law 9), tu is TUniversal; they are not
+        // one clock."
+        //
+        // Everything downstream of `now_k` is a span in TUniversal:
+        // `held_since(now_k, moved_k)` is `pivot_loop`'s `t_extent`,
+        // `span_of` is lane 𝒯 of a minted word (R2), and `retire_on_t` is
+        // the T-room. All three were reading a span between two stamps of
+        // the wrong clock.
+        let tu = self.now_tu();
+        self.contemplation.set_now(tu);
         let crate::transducer::bubble::drive::Expanded { pivoted, crystallized, orbit, .. } = {
             let epigenome = &self.epigenome;
             let atlas = epigenome.working_atlas();
@@ -300,7 +316,9 @@ impl Entity {
     /// those ideas under one stroke Budget. The atlas is borrowed, never cloned.
     pub fn pivot_on(&mut self, word: &Element) -> usize {
         let mut budget = self.physics.stroke();
-        self.contemplation.set_now(self.session.voice().k());
+        // TUniversal, not the voice's K — see `expand_ideas`.
+        let tu = self.now_tu();
+        self.contemplation.set_now(tu);
         let (_fills, _formed, _classes, spoken) =
             self.contemplation.pivot_on(word, &self.epigenome, &mut budget);
         let mut n = 0usize;
