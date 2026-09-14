@@ -325,13 +325,37 @@ impl Kernel {
     /// bumps that many times, per loop and never summed; a loop that never
     /// closes is an open walk and is charged as one.
     ///
-    /// AND A LOOP THE SENTENCE FILED IS CHARGED AS ONE TOO (ruled
-    /// 2026-09-14). "What will not close" has two readings and this asked
-    /// only the weaker: whether the ALGEBRA closes the cycle, never whether
-    /// the speaker did. A filed cycle is one no candidate discharged — the
-    /// mind has no word for it — which is `Physics::pivot`'s own definition
-    /// of the charge, "the demand for a new fiber".
+    /// AND A LOOP THE SENTENCE FILED IS CHARGED AS ONE TOO, BUT ONLY WHERE
+    /// THE SPEAKER DEMANDED ADJUDICATION OVER IT (ruled 2026-09-14,
+    /// inverting D10 of the same day).
+    ///
+    /// "What will not close" has two readings and D10 fixed the weaker one:
+    /// this asked whether the ALGEBRA closes the cycle, never whether the
+    /// speaker did, so `Order::Infinite` was the only thing that charged and
+    /// this corpus produces none. A filed cycle is one no candidate
+    /// discharged, which is `Physics::pivot`'s own "demand for a new fiber".
+    /// That much stands.
+    ///
+    /// What D10 got wrong is that it then charged UNCONDITIONALLY. A bare
+    /// unclosed cycle is algebraically a NON-GENERATOR — `∂c ≠ 0` — and a
+    /// voice submitting one is exploring the topology, not claiming a
+    /// resource. Charging metabolism for that taxes the search itself: the
+    /// voices file cycles precisely when they are looking for a word they do
+    /// not have, and the engine would have billed every attempt.
+    ///
+    /// So an unclosed cycle is a cheap algebraic refusal at the gate — it is
+    /// not admitted to the basis and it is not a taxable metabolic event.
+    /// The charge is assessed only where the speaker requested a full
+    /// adjudication stroke over that boundary, which on this tape is a
+    /// DEMAND VERTEX (50.5): the sentence saying out loud what it could not
+    /// close and asking the market to answer it. Claiming the stroke is what
+    /// costs; failing to close is not.
     fn charge_loops(&mut self, word: &Element, mag: &[u64; 4]) {
+        // THE GATE: did this sentence ask for adjudication over what it
+        // could not close? A form with no demand vertex claims nothing and
+        // its cycles fall through free.
+        let demanded = crate::transducer::sentence::from_element_form(word)
+            .is_some_and(|f| f.demand_vertices().next().is_some());
         let witnesses = crate::transducer::torsion_witness::witness_thought(word);
         if witnesses.is_empty() {
             let Some(f) = crate::transducer::sentence::from_element_form(word) else {
@@ -364,7 +388,11 @@ impl Kernel {
                     .class_key()
                     .is_some_and(|k| f.torsion.contains(k.as_bytes()));
                 let closes = matches!(w.order(), crate::transducer::alphabet::Order::Finite(_));
-                if filed || !closes {
+                // The charge is owed for a cycle that did not close AND that
+                // the sentence demanded adjudication over. Without the
+                // demand it is a free algebraic refusal: `∂c ≠ 0` is not a
+                // generator and exploring for one is not a taxable event.
+                if demanded && (filed || !closes) {
                     self.physics.pivot(crate::physics::Physics::lanes_of(mag));
                 }
                 let steps = match w.order() {
@@ -377,23 +405,27 @@ impl Kernel {
             }
             return;
         }
-        // A STORED CYCLE CHARGES BECAUSE IT WAS FILED. The witness refines
-        // how MUCH — an Open walk bumps for the span it walked, a Closed one
-        // for the period it closed at — but the charge itself is owed either
-        // way, and "a Closed loop is proven monodromy and charges nothing"
-        // is the third reading of "what will not close" that asks about the
-        // OBJECT instead of the MIND.
+        // A STORED CYCLE IS ONE NO CANDIDATE DISCHARGED — `file_loop` runs
+        // only under `Discharge::NoneDischarged` — so by construction every
+        // one of them is a cycle this mind has no word for. D10 read that as
+        // grounds to charge whatever the witness said, on the argument that
+        // "a Closed loop is proven monodromy and charges nothing" asks about
+        // the OBJECT instead of the MIND. The reading is right and the
+        // conclusion was not: having no word for a cycle is the ordinary
+        // condition of a voice searching, and billing it taxes the search.
         //
-        // A Closed witness says the cycle's σ closes at period p: the label
-        // is honest and the cycle is well-formed. It says nothing about
-        // whether this mind could discharge the loop — and `file_loop` runs
-        // ONLY under `Discharge::NoneDischarged`, so every stored cycle is by
-        // construction one that no candidate discharged. That is precisely
-        // `Physics::pivot`'s "demand for a new fiber". Treating a
-        // correctly-labelled cycle as settled is the opposite of what filing
-        // means.
+        // The charge follows the DEMAND, not the failure. A sentence that
+        // asked the market to adjudicate the boundary claimed an adjudication
+        // stroke and pays for it; one that merely carries a cycle it could
+        // not close is refused at the gate for free.
+        //
+        // The witness still refines how much PRESSURE rides with it — the
+        // span walked when Open, the period closed at when Closed — and
+        // pressure is the backlog, not the tax.
         for w in &witnesses {
-            self.physics.pivot(crate::physics::Physics::lanes_of(mag));
+            if demanded {
+                self.physics.pivot(crate::physics::Physics::lanes_of(mag));
+            }
             let steps = match w {
                 crate::transducer::torsion_witness::HolonomicLoopWitness::Open { walked } => {
                     u64::from(*walked)

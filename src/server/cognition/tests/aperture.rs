@@ -338,35 +338,79 @@ fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
         words.iter().map(|(w, _)| w.order()).collect::<Vec<_>>()
     );
 
-    // A CYCLE THE SENTENCE FILED CHARGES TORSION, whatever its order says.
-    // "What will not close" has two readings and the charge asked only the
-    // weaker one — whether the ALGEBRA closes the cycle — so it fired only
-    // on `Order::Infinite`. This corpus has never produced one: measured at
-    // e9399c4, 12187 flat and 256 finite edge holonomies, INFINITE ZERO,
-    // against 200 cycles the voices filed. A filed cycle is one no candidate
-    // discharged, which is `Physics::pivot`'s own "demand for a new fiber".
+    // A BARE UNCLOSED CYCLE IS A FREE ALGEBRAIC REFUSAL; THE CHARGE FOLLOWS
+    // THE DEMAND.
+    //
+    // "What will not close" has two readings, and the charge asked only the
+    // weaker — whether the ALGEBRA closes the cycle — so it fired on
+    // `Order::Infinite` alone and this corpus produces none: 12187 flat and
+    // 256 finite edge holonomies at e9399c4, INFINITE ZERO, against 200
+    // cycles the voices filed. A filed cycle IS one no candidate discharged.
+    //
+    // But that is the ordinary condition of a voice searching for a word it
+    // does not have, and `∂c ≠ 0` is algebraically a non-generator. Billing
+    // it taxes the search itself. The charge is assessed where the speaker
+    // claimed an adjudication stroke over the boundary — a DEMAND VERTEX
+    // (50.5) — and a sentence that merely carries a cycle it could not close
+    // is refused at the gate for free.
     let mut filed = f.clone();
     assert!(filed.file_loop(0, 4), "the loop files under its holonomy's class");
-    let spoken = crate::transducer::sentence::as_element_form(&filed, [1, 1, 0, 0])
+    let bare = crate::transducer::sentence::as_element_form(&filed, [1, 1, 0, 0])
         .expect("a sentence tape");
-    let decoded = crate::transducer::sentence::from_element_form(&spoken)
-        .expect("its tape decodes");
-    assert!(!decoded.torsion.is_empty(), "and the filed cycle rides the tape");
+    assert!(
+        !crate::transducer::sentence::from_element_form(&bare)
+            .expect("its tape decodes")
+            .torsion
+            .is_empty(),
+        "the filed cycle rides the tape"
+    );
 
-    let mut k = Kernel::new();
     // The charge is read on a DEPLETED lane (23.8): a court with reserve to
     // spare dockets the listing and charges nothing, so the reserve is spent
     // first exactly as `a_depleted_lane_charges_a_sentence_by_its_loop_words`
     // spends it.
-    for _ in 0..8 {
-        k.physics_mut().spend([true; 4]);
-    }
-    let before = k.physics().torsion;
-    assert_eq!(before, [0; 4], "a fresh court carries no torsion");
-    let _ = k.list_sentence(&spoken, [1; 32]);
-    let after = k.physics().torsion;
+    let depleted = || {
+        let mut k = Kernel::new();
+        for _ in 0..8 {
+            k.physics_mut().spend([true; 4]);
+        }
+        k
+    };
+
+    let mut k = depleted();
+    assert_eq!(k.physics().torsion, [0; 4], "a fresh court carries no torsion");
+    let _ = k.list_sentence(&bare, [1; 32]);
+    assert_eq!(
+        k.physics().torsion,
+        [0; 4],
+        "an unclosed cycle with no demand on it is a free refusal, not a taxable event"
+    );
+
+    // The same cycle, with the sentence asking the market to adjudicate the
+    // boundary: the stroke is claimed, so the stroke is charged.
+    let mut demanding = filed;
+    demanding.vertices.push(crate::transducer::family::demand_vertex(
+        crate::transducer::sentence::Demand::Source { multiplicity: 1 },
+        &crate::transducer::stalk::Invariant(vec![3, 5]),
+        vec![(0, 0, 0, 1)],
+    ));
+    demanding.reindex();
+    let asked = crate::transducer::sentence::as_element_form(&demanding, [1, 1, 0, 0])
+        .expect("a sentence tape");
     assert!(
-        after.iter().zip(&before).any(|(a, b)| a > b),
-        "a sentence carrying a filed cycle charges the metabolism: {before:?} then {after:?}"
+        crate::transducer::sentence::from_element_form(&asked)
+            .expect("its tape decodes")
+            .demand_vertices()
+            .next()
+            .is_some(),
+        "and the demand rides the tape"
+    );
+
+    let mut k = depleted();
+    let _ = k.list_sentence(&asked, [1; 32]);
+    assert!(
+        k.physics().torsion.iter().any(|&t| t > 0),
+        "a sentence demanding adjudication over what it could not close pays for the stroke: {:?}",
+        k.physics().torsion
     );
 }

@@ -4433,6 +4433,24 @@ refines only how much pressure rides with it — the span walked when Open,
 the period closed at when Closed. A cycle the tree gauge closed or a pivot
 discharged is not filed and charges nothing, because it closed.
 
+**25.11 The charge follows the demand, not the failure (ruled 2026-09-14,
+inverting 25.10's unconditional charge).** 25.10's reading stands — the
+metabolism is about whether the SPEAKER closed the cycle, not whether the
+algebra does — and its conclusion does not. A bare unclosed cycle is
+algebraically a NON-GENERATOR, `∂c ≠ 0`, and a voice submitting one is
+exploring the topology rather than claiming a resource. Charging it taxes
+the search itself: voices file cycles precisely when looking for a word they
+do not have, so the engine would bill every attempt.
+
+An unclosed cycle is therefore a cheap algebraic refusal at the gate — not
+admitted to the basis, and not a taxable metabolic event. The torsion charge
+is assessed only where the speaker requested a full adjudication stroke over
+that boundary, which on this tape is a DEMAND VERTEX (50.5): the sentence
+saying out loud what it could not close and asking the market to answer it.
+Claiming the stroke costs; failing to close does not. Pressure is unchanged
+— it is the backlog, not the tax — and the witness still refines how much of
+it rides with a stored cycle.
+
 ## 26. Wire and economics
 
 Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/dialogue/speech.rs`:
