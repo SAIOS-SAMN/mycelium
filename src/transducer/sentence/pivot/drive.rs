@@ -444,6 +444,20 @@ impl Form {
                 let held_gens = cands.iter().filter(|c| kind(c) == 0).count();
                 let opens = cands.iter().filter(|c| kind(c) == 1).count();
                 let self_moves = cands.iter().filter(|c| kind(c) == 2).count();
+                // WHETHER THE MESH ALREADY HOLDS THE CLASS, and at what
+                // order. Every silent path out of this loop runs through
+                // these two. `Discharge::NoneDischarged` prints nothing at
+                // all when `held` — the demand is not spoken and the filing
+                // is not announced, both correctly under A19, since a class
+                // the mesh holds is not this mind's to demand — and `held`
+                // is also the FIRST term of the widening gate below, so a
+                // loop on the horizon can neither ask nor widen. It waits
+                // for the held form. Measured at 208ed2e: 172 loops, every
+                // one `total 0`, and not one `torsion filed`, `torsion
+                // open` or `demand spoken` line among them. That is the
+                // signature of `held`, and this line is what confirms it
+                // rather than inferring it from an absence.
+                //
                 // WHAT THE LOOP OCCUPIES, because the counts above cannot say
                 // why a list is empty and the first reading came back empty on
                 // 342 of 373 loops. A loop reaching here is non-zero — `open`
@@ -479,7 +493,8 @@ impl Form {
                 eprintln!(
                     "  pivot candidates {:02x}{:02x}… loop {idx} total {} held {held_gens} \
                      self {self_moves} opens {opens} tried {tried} unreached {unreached} \
-                     discharged {} starved {starved} span {} occupies {occupied:?}",
+                     discharged {} starved {starved} span {} held {held} order {order:?} \
+                     occupies {occupied:?}",
                     idea[0],
                     idea[1],
                     cands.len(),
