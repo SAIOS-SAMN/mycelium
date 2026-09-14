@@ -105,7 +105,7 @@ assert_eq!(
     "S is the sum of the pair residuals, got {sum:?} from {pairs:?}"
 );
 let spoken = apply_form(&f, &x, &crate::transducer::alphabet::Word::identity(), &NoCrystal);
-let g = spoken.as_ref().map(|s| s.grid());
+let g = spoken.as_ref().and_then(|s| s.grid());
 let r1 = residual_of(g.as_ref(), &y);
 let mut cat = r1.clone();
 cat.extend(r1);

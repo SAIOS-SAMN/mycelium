@@ -333,8 +333,8 @@ let spoken = apply_form(
 .expect("glued form speaks");
 assert_eq!(
     spoken.grid(),
-    family[0].1,
-    "spoken cells equal the target"
+    Some(family[0].1.clone()),
+    "spoken cells equal the target, and they fit the frame"
 );
 assert_ne!(
     form_deflation(&rule.form, &family, &crystal).0,

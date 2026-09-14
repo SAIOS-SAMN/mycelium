@@ -108,7 +108,7 @@ impl Kernel {
             let Some(word) = self.basis.get(&cite.addr) else { continue };
             let Some(f) = word.form().cloned() else { continue };
             let Some(sp) = apply_form(&f, &scene, &placement, self) else { continue };
-            let spoken = sp.grid();
+            let Some(spoken) = sp.grid() else { continue };
             // `scene_at_of_chain` gives the corner the framing subtracted,
             // so the spoken cell goes back where the chain had it and
             // nothing re-derives that corner here (law 12).

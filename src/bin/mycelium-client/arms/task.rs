@@ -73,7 +73,7 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
                         );
                     }
                 }
-                spoken.filter(|s| s.remainder.is_empty()).map(|s| s.grid())
+                spoken.filter(|s| s.remainder.is_empty()).and_then(|s| s.grid())
             })
             .collect();
         if let Some(outs) = outs {

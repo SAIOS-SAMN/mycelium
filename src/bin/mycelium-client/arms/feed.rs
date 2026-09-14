@@ -104,7 +104,7 @@ pub(crate) fn feed_arm(
                 if let Some(speech) = mycelium::transducer::family::speak_rule(rule, x, &entity.epigenome) {
                     if speech.remainder.is_empty() {
                         c.projected += 1;
-                        if speech.grid() == *y {
+                        if speech.grid().is_some_and(|g| g == *y) {
                             c.proj_solved += 1;
                         }
                     }

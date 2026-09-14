@@ -39,7 +39,9 @@ impl Kernel {
             return false;
         };
         tests.iter().all(|(x, y)| {
-            crate::transducer::family::speak_rule(&sr, x, self).is_some_and(|s| s.grid() == *y)
+            crate::transducer::family::speak_rule(&sr, x, self)
+                .and_then(|s| s.grid())
+                .is_some_and(|g| g == *y)
         })
     }
 

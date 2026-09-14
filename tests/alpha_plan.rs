@@ -106,7 +106,7 @@ fn faces_by_constancy_three_squares() {
     );
     let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
     assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
-    assert_eq!(spoken.grid(), train_out);
+    assert_eq!(spoken.grid(), Some(train_out));
     let _ = mint_sentence(&rule, &family, &NoCrystal);
 }
 
@@ -118,7 +118,7 @@ fn speak_rule_recolours_or_conflicts() {
     let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("one square extracts");
     let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
     assert!(spoken.remainder.is_empty(), "the square is reached: {:?}", spoken.remainder);
-    assert_eq!(spoken.grid(), train_out);
+    assert_eq!(spoken.grid(), Some(train_out));
 }
 
 #[test]

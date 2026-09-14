@@ -348,7 +348,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                             // ground, and hue 0 IS absence in this
                             // encoding — `residual_of`'s own reading, not
                             // a default put here for a missing value.
-                            let got = match g.get(r).and_then(|gr| gr.get(c)) {
+                            let got = match g.as_ref().and_then(|g| g.get(r)).and_then(|gr| gr.get(c)) {
                                 Some(h) => *h,
                                 None => 0,
                             };

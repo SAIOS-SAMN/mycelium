@@ -304,12 +304,33 @@ pub struct Speech {
 impl Speech {
     /// The wire form: the spoken set laid on the frame's rectangle. Only
     /// here does a rectangle exist; an unspoken cell reads as the ground.
-    pub fn grid(&self) -> Grid {
+    ///
+    /// `None` WHERE A CELL DOES NOT FIT THE FRAME. This wrote
+    /// `out[r as usize][c as usize] = h` straight from `self.cells` with no
+    /// bound on either coordinate, so a transported cell outside the output
+    /// rectangle panicked the process: `index out of bounds: the len is 3
+    /// but the index is 9`, four times in 47 minutes on the fleet at
+    /// 820678a, and every voice death in that window.
+    ///
+    /// It is not an unexpected state. It is exactly the condition the court
+    /// names `FAIL_PAST_FRAME` — a cell landing past the image frame's
+    /// extent — which the court refuses and which a rule gets wrong often
+    /// enough to be 186 of 488 body refusals. The court refused it and the
+    /// voice indexed on it.
+    ///
+    /// A speech that cannot be laid on its own frame is not a speech, so it
+    /// is refused here and every caller decides (rule 11). Dropping the cell
+    /// instead would lay down a grid that silently is not what the form
+    /// said, which is the fault this engine has spent the day removing.
+    pub fn grid(&self) -> Option<Grid> {
         let mut out: Grid = vec![vec![0u8; self.frame.1]; self.frame.0];
         for &(r, c, h) in &self.cells {
-            out[r as usize][c as usize] = h;
+            let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) else {
+                return None;
+            };
+            *out.get_mut(ur).and_then(|row| row.get_mut(uc))? = h;
         }
-        out
+        Some(out)
     }
 }
 

@@ -124,8 +124,8 @@ fn mu_neither_certifies_nor_selects() {
         &Word::identity(),
         &crate::transducer::family::NoCrystal,
     )
-    .map(|s| s.grid())
-    .expect("q speaks the bar");
+    .and_then(|s| s.grid())
+    .expect("q speaks the bar and it fits the frame");
     assert!(
         y.iter().flatten().any(|&h| h != 0),
         "the spoken image is not the empty frame"

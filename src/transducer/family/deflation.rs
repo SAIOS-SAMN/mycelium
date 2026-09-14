@@ -52,7 +52,9 @@ pub fn form_deflation_at(
             None => residual_of(Some(x), y),
         };
         let spoken = apply_form(form, x, placement, crystal);
-        let grid = spoken.as_ref().map(|s| s.grid());
+        // A speech that does not fit its own frame lays down no grid, so the
+        // residual is measured against what the form actually said: nothing.
+        let grid = spoken.as_ref().and_then(|s| s.grid());
         let after_chain = residual_of(grid.as_ref(), y);
         let before_mu = element::measure_lanes(&before_chain);
         let after_mu = element::measure_lanes(&after_chain);
@@ -213,7 +215,9 @@ pub fn bundle_pressure(
     let mut sum = [0u64; 4];
     for (x, y) in bundle {
         let spoken = apply_form(form, x, &crate::transducer::alphabet::Word::identity(), crystal);
-        let grid = spoken.as_ref().map(|s| s.grid());
+        // A speech that does not fit its own frame lays down no grid, so the
+        // residual is measured against what the form actually said: nothing.
+        let grid = spoken.as_ref().and_then(|s| s.grid());
         let residual = residual_of(grid.as_ref(), y);
         let m = element::measure_lanes(&residual);
         for l in 0..4 {
