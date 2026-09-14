@@ -71,3 +71,34 @@ fn axes_are_independent_and_extensible() {
     spatial.open_axis(translator_versor(2, 0));
     assert_eq!(spatial.opened_axes(), vec![FIBER_GERMINATED]);
 }
+
+/// A CHAIN MEASURES THREE LANES AND NEVER CLAIMS THE FOURTH.
+///
+/// 𝒯 is temporal extent — the scene-state span in receipts (51.9) — and a
+/// chain is a set of cells with no clock in it. `measure_lanes` reporting
+/// zero there is a reading of what a chain knows, and the three lanes beside
+/// it are its own.
+///
+/// The deferral in that line — "measured at the mint" — was honoured by
+/// nothing until R2: `sentence_measure` computed a word's μ⃗ through this
+/// function alone, so every word the engine spoke carried `[S, G, 0, H]`,
+/// 197 of 197 spoken magnitudes at 820678a. This binds the two halves: the
+/// chain does not invent a span, and whatever the chain holds, 𝒯 stays the
+/// mint's to supply.
+#[test]
+fn a_chain_measures_three_lanes_and_never_the_span() {
+    // Cells appearing and vanishing are spatial; a hue change is gauge.
+    let appears = measure_lanes(&[(0, 0, 0, 1), (1, 1, 0, 1)]);
+    assert!(appears[0] > 0, "cells that appear are spatial");
+    assert_eq!(appears[2], 0, "and none of them is a span");
+
+    let recoloured = measure_lanes(&[(0, 0, 1, 2), (0, 1, 1, 2)]);
+    assert!(recoloured[1] > 0, "a hue change is gauge");
+    assert_eq!(recoloured[2], 0, "and none of it is a span");
+
+    // However large or long the chain, 𝒯 does not move: there is no clock in
+    // a set of cells to read one from.
+    let long: Vec<(i64, i64, u8, u8)> = (0..64).map(|i| (i, 0, 0, 1)).collect();
+    assert_eq!(measure_lanes(&long)[2], 0, "a longer chain is not an older one");
+    assert_eq!(measure_lanes(&[])[2], 0, "and an empty one is not either");
+}

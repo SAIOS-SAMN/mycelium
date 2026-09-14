@@ -513,8 +513,21 @@ pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
     let sb = crate::transducer::beam::signature(&before_pos, &[]);
     let sa = crate::transducer::beam::signature(&after_pos, &[]);
     let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
-    // Lane 2 is temporal extent — TUniversal ticks or scene-state span —
-    // and is measured on the standing carrier or at mint, never on the chain.
+    // LANE 2 IS NOT THE CHAIN'S TO REPORT. 𝒯 is temporal extent — the
+    // scene-state span in receipts (51.9) — and a chain is a set of cells
+    // with no clock in it: nothing here can measure how long anything stood.
+    // Reporting zero is therefore a reading of this carrier and not a
+    // placeholder, and the three lanes beside it ARE the chain's own.
+    //
+    // The deferral this line has always stated — "measured at the mint" —
+    // was not honoured by anything until R2. `sentence_measure` computed a
+    // word's μ⃗ through this function alone, so every word the engine spoke
+    // carried `[S, G, 0, H]`: 197 of 197 spoken magnitudes at 820678a. It
+    // takes `t_extent` now, `Contemplation::span_of` is the one reader of
+    // it, and `bundle_pressure` writes the same quantity to `sum[2]`.
+    //
+    // So a caller that needs 𝒯 asks the mint or the bundle. One that reads
+    // a chain gets what a chain knows, which on this lane is nothing.
     [spatial, gauge, 0, shell]
 }
 
