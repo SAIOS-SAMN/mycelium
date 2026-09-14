@@ -438,6 +438,16 @@ impl Form {
                 let held_gens = cands.iter().filter(|c| kind(c) == 0).count();
                 let opens = cands.iter().filter(|c| kind(c) == 1).count();
                 let self_moves = cands.iter().filter(|c| kind(c) == 2).count();
+                // WHAT THE LOOP OCCUPIES, because the counts above cannot say
+                // why a list is empty and the first reading came back empty on
+                // 342 of 373 loops. A loop reaching here is non-zero — `open`
+                // filtered on `!k.is_zero()` — so it occupies at least one
+                // coordinate, and exactly three things turn an occupied
+                // coordinate into no candidate: `Hue` where `loop_transport`
+                // carries no member path, and `Unit`/`Prime5`/`Prime13`/
+                // `OffPlane` where `crystal.on_axis` holds no word. The axes
+                // separate those, and nothing else in this line does.
+                let occupied = kappa.coordinates();
                 let mut tried = 0usize;
                 let mut starved = false;
                 let mut discharging: Vec<PivotCertificate> = Vec::new();
@@ -463,7 +473,7 @@ impl Form {
                 eprintln!(
                     "  pivot candidates {:02x}{:02x}… loop {idx} total {} held {held_gens} \
                      self {self_moves} opens {opens} tried {tried} unreached {unreached} \
-                     discharged {} starved {starved} span {}",
+                     discharged {} starved {starved} span {} occupies {occupied:?}",
                     idea[0],
                     idea[1],
                     cands.len(),
