@@ -39,7 +39,7 @@ pub(crate) fn class_vectors_on(
     lp: &Loop,
 ) -> crate::network::nerve::Keyed<ClassVector> {
     let mut out = crate::network::nerve::Keyed::new();
-    if crate::transducer::sentence::opened_axis_on(axes, lp).is_some() {
+    if crate::transducer::sentence::opened_axis_on(faces, vertices, axes, lp).is_some() {
         for (k, _) in lp.carriages.scoped() {
             out.insert(&k, ClassVector::zero());
         }
@@ -121,6 +121,63 @@ pub(crate) fn holonomy_words_on(
     out
 }
 
+/// THE ONE HOLONOMY A LOOP HAS, where every member path agrees on it: the
+/// edge composite wherever a path carries one, the loop's own word where it
+/// does not (R8's reading, applied to the whole `OpenAxis` pipeline).
+///
+/// `lp.holonomy` is the WORD, and a face's word is the coboundary
+/// `w_j ∘ w_i⁻¹` of its two vertices' words. A product of coboundaries
+/// around a cycle telescopes to the identity for EVERY input — `∏ (w_j ∘
+/// w_i⁻¹) ≡ 1`, an exact Čech coboundary, `δw = 0` — so a loop over
+/// coboundary faces alone is flat on the word whatever it actually turns by.
+/// Measured at e98e8a2: 70311 of 70311 loops flat on the word against 284
+/// finite non-identity edge composites over those same loops.
+///
+/// `file_loop` was keyed to the word and filed nothing until R8 moved it
+/// here. The `OpenAxis` pipeline was keyed to the word too and refused every
+/// widening for the same reason: its gate is `!lp.holonomy.is_identity()`,
+/// which is false by algebra on a coboundary cycle. Measured at f3a76ec:
+/// `opens 1` on 133 loops — the single one whose word did not cancel —
+/// against 92 torsion classes filed off the edge composite in the same five
+/// minutes. The curvature and the gate were reading different carriers.
+///
+/// Agreement is PROJECTIVE equality of the rotors (1.5), not equality of the
+/// tapes: `q` and `q·q·q` are one vertex spelled twice, and a loop is not
+/// two obstructions for having been reached two ways. `None` where the paths
+/// disagree — the loop then has no single holonomy and a caller that keyed a
+/// carrier by one path's answer would be asserting the rest (rule 11).
+/// A LOOP CARRYING NO MEMBER PATH ANSWERS THE WORD. `holonomy_words_on`
+/// already rules that a path with no edge composite carries the word — "the
+/// only holonomy it has is the word's, which is the reading of a loop whose
+/// faces are all coboundaries, not a default standing in for one" — and a
+/// loop with no path at all has no edge composite anywhere, so the same
+/// reading applies with nothing to read it over. Returning `None` there made
+/// the RANK unmeasured on every such form: `rank_offplane_is_its_own_lane`
+/// went from a measured `(offplane 1, free 0)` to no rank at all.
+pub(crate) fn loop_holonomy_on(
+    faces: &[FormFace],
+    vertices: &[Vertex],
+    lp: &Loop,
+) -> Option<Word> {
+    let ws = holonomy_words_on(faces, vertices, lp);
+    let mut held: Option<Word> = None;
+    for (_, w) in ws.scoped() {
+        match &held {
+            None => held = Some(w.clone()),
+            Some(h) if !h.rotor().projective_eq(&w.rotor()) => return None,
+            Some(_) => {}
+        }
+    }
+    // Written as the two readings they are, not as a fallback: a loop with
+    // member paths answers what those paths agree on, and a loop with none
+    // answers its word, because a loop with no path has no edge composite to
+    // answer instead (rule 11 — this is not a default for a missing value).
+    match held {
+        Some(w) => Some(w),
+        None => Some(lp.holonomy.clone()),
+    }
+}
+
 impl Form {
     /// The class vector of loop `idx` (12.6): plane coordinates from the
     /// oriented holonomy; placement and hue from the carriage and gauge
@@ -172,17 +229,7 @@ impl Form {
     /// of the tapes, because `q` and `q·q·q` are one vertex spelled twice and
     /// a loop is not two obstructions for having been reached two ways.
     pub fn holonomy_word(&self, idx: usize) -> Option<Word> {
-        let lp = self.loops.get(idx)?;
-        let ws = holonomy_words_on(&self.faces, &self.vertices, lp);
-        let mut held: Option<Word> = None;
-        for (_, w) in ws.scoped() {
-            match &held {
-                None => held = Some(w.clone()),
-                Some(h) if !h.rotor().projective_eq(&w.rotor()) => return None,
-                Some(_) => {}
-            }
-        }
-        held
+        loop_holonomy_on(&self.faces, &self.vertices, self.loops.get(idx)?)
     }
 
     /// Write a certified move onto the form — the chord face's transport,
@@ -888,22 +935,38 @@ impl Form {
         // `Discharged { from: Torsion }`. This needs no widening of that
         // gate: `[0, 0, 0, +1]` is a DIFFERENT move — an axis opened by a
         // loop that contributed no coordinate — and nothing here makes one.
-        let asked = || {
-            holonomy_words_on(&self.faces, &self.vertices, lp).scoped().any(|(_, w)| {
-                w.rotor()
-                    .class_key()
-                    .is_some_and(|k| published.get(&k).is_some())
-            })
+        //
+        // THE GATE AND THE SEED ARE THE EDGE COMPOSITE'S, NOT THE WORD'S.
+        // `!lp.holonomy.is_identity()` stood here, and `lp.holonomy` is the
+        // word: a face's word is the coboundary `w_j ∘ w_i⁻¹` of its two
+        // vertices' words, and `∏ (w_j ∘ w_i⁻¹) ≡ 1` around any cycle by
+        // algebra. So the gate asked whether an exact Čech coboundary was
+        // non-trivial, which it never is, and the widening was shut off on
+        // every loop over coboundary faces — every loop this engine sees.
+        // Measured at f3a76ec: `opens 1` on 133 loops, the single one whose
+        // word happened not to cancel, against 92 torsion classes filed off
+        // the edge composite in the same five minutes. The curvature and the
+        // gate were reading different carriers.
+        //
+        // `loop_holonomy_on` is the composite, and the seed comes from the
+        // same object: seeded from the word, the axis was seeded with the
+        // identity versor and stood for nothing the loop turns by.
+        let asked = |h: &Word| {
+            h.rotor()
+                .class_key()
+                .is_some_and(|k| published.get(&k).is_some())
         };
-        if !held && !lp.holonomy.is_identity() && (kappa.free_part() || (!reached && asked())) {
-            if let Some(seed) = element::versor_of_word(&lp.holonomy) {
-                out.push(Candidate {
-                    axis: Axis::Open,
-                    by: PivotBy::OpenAxis {
-                        face: chord as u16,
-                        seed,
-                    },
-                });
+        if let Some(h) = loop_holonomy_on(&self.faces, &self.vertices, lp) {
+            if !held && !h.is_identity() && (kappa.free_part() || (!reached && asked(&h))) {
+                if let Some(seed) = element::versor_of_word(&h) {
+                    out.push(Candidate {
+                        axis: Axis::Open,
+                        by: PivotBy::OpenAxis {
+                            face: chord as u16,
+                            seed,
+                        },
+                    });
+                }
             }
         }
         out
@@ -936,8 +999,14 @@ impl Form {
         // failed to discharge; there is no trial to read (rule 11).
         if let PivotBy::OpenAxis { face, .. } = &cand.by {
             let lp = loops.iter().find(|lp| lp.chord == *face)?;
-            let class = lp.holonomy.rotor().class_key()?;
-            self.axis_seed_of(lp)?;
+            // THE TRIAL'S OWN FACES, not the form's. The move has already
+            // been applied to `faces` above, so the composite this keys by is
+            // the one the loop carries AFTER the write — which is what
+            // `class_vectors_on` reads two lines below to decide whether the
+            // loop discharged. Keyed off `self` the axis would be filed under
+            // the holonomy the loop had before its own opening.
+            let class = loop_holonomy_on(&faces, &self.vertices, lp)?.rotor().class_key()?;
+            element::versor_of_word(&loop_holonomy_on(&faces, &self.vertices, lp)?)?;
             axes.insert(class, *face);
         }
         // 12.6: a pivot on axis x discharges when x reads zero after and no
@@ -982,7 +1051,7 @@ impl Form {
         let kappa_after = agreed?;
         let mut after_rows = rows.to_vec();
         *after_rows.get_mut(idx)? =
-            crate::transducer::sentence::loop_row_on(&axes, loops.get(idx)?)?;
+            crate::transducer::sentence::loop_row_on(&faces, &self.vertices, &axes, loops.get(idx)?)?;
         let rank_after = rank_of_rows(&after_rows)?;
         // T21 (iii): the rank holds, or one unit moves out of torsion, free
         // or off-plane and into axes. Anything else is not this pivot's move

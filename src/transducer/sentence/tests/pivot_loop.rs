@@ -370,12 +370,12 @@ fn a_loops_class_and_row_read_off_its_faces_and_the_axis_carrier() {
             "the classes the trial reads are the classes the form reads, loop {i}"
         );
         assert_eq!(
-            loop_row_on(&f.axes, lp),
+            loop_row_on(&f.faces, &f.vertices, &f.axes, lp),
             f.loop_row_at(i),
             "and so is the rank row, loop {i}"
         );
         assert_eq!(
-            opened_axis_on(&f.axes, lp),
+            opened_axis_on(&f.faces, &f.vertices, &f.axes, lp),
             f.opened_axis_of(lp),
             "and the axis it reads as opened, loop {i}"
         );
@@ -391,7 +391,10 @@ fn a_loops_class_and_row_read_off_its_faces_and_the_axis_carrier() {
                 class_vectors_on(&opened.faces, &opened.vertices, &opened.axes, lp),
                 opened.class_vectors(i)
             );
-            assert_eq!(loop_row_on(&opened.axes, lp), opened.loop_row_at(i));
+            assert_eq!(
+                loop_row_on(&opened.faces, &opened.vertices, &opened.axes, lp),
+                opened.loop_row_at(i)
+            );
         }
     }
 }
@@ -510,6 +513,118 @@ fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
             "the stored carriage is the transport composite's"
         );
     }
+}
+
+/// 16.20, A20, I6, R8 — THE WHOLE `OpenAxis` PIPELINE READS ONE HOLONOMY,
+/// and it is the edge composite.
+///
+/// `lp.holonomy` is the WORD. A face's word is the coboundary `w_j ∘ w_i⁻¹`
+/// of its two vertices' words, and `∏ (w_j ∘ w_i⁻¹) ≡ 1` around any cycle
+/// by algebra — an exact Čech coboundary, `δw = 0`. So every reader keyed to
+/// it asked whether a boundary was non-trivial, which it never is.
+///
+/// The consequences were not one bug but four, each in a different organ:
+/// `candidates_for`'s gate refused the widening on every coboundary loop;
+/// the seed was `versor_of_word(identity)`, an axis standing for nothing the
+/// loop turns by; `open_axis_on` filed under the identity's class; and
+/// `opened_axis_on` looked the axis up under the identity's class, so the
+/// audit could not see an opening that HAD been made. Measured at f3a76ec:
+/// `opens 1` on 133 loops, the single one whose word did not cancel, against
+/// 92 torsion classes filed off the edge composite in the same five minutes.
+///
+/// This fixture is the disagreement itself: three coboundary faces, so the
+/// word holonomy is the identity, and a quarter turn on the one face that
+/// does not touch the Frame. Every site is asserted on that one loop — the
+/// keying invariant is total or it is not an invariant.
+#[test]
+fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
+    use crate::transducer::alphabet::Derivation;
+    use crate::transducer::sentence::{loop_row_on, opened_axis_on};
+    use crate::transducer::stalk::Invariant;
+    let chart = Invariant(vec![3, 5]);
+    let pair = face_pair_key(&chart, &chart);
+    let q = order4();
+    let word_vertex = |b: u8| {
+        Vertex::word_on(
+            crate::transducer::address::Address::from_bytes([4u8, b]),
+            Derivation::spelled(Word::identity()),
+            chart.clone(),
+            Box::new(element::identity_versor()),
+            Vec::new(),
+            None,
+        )
+    };
+    let place = |edge: Option<Word>| FacePlace {
+        carriage: element::identity_versor(),
+        gauge: Vec::new(),
+        edge: edge.map(|w| Transport {
+            word: w,
+            carriage: element::identity_versor(),
+            gauge: Vec::new(),
+        }),
+    };
+    let mut f = Form::default();
+    f.vertices.push(word_vertex(1));
+    f.vertices.push(word_vertex(2));
+    for (i, j, edge) in [(0u16, 1u16, None), (0, 2, None), (1, 2, Some(q.clone()))] {
+        let mut face = FormFace::new(i, j, Word::identity());
+        face.at.insert(pair.clone(), place(edge));
+        f.faces.push(face);
+    }
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    let [lp, ..] = f.loops.as_slice() else { panic!("three faces close one loop") };
+    let chord = lp.chord;
+
+    // THE TWO CARRIERS DISAGREE, which is the precondition for the rest.
+    assert!(
+        lp.holonomy.rotor().is_identity(),
+        "the word holonomy telescopes flat, as a product of coboundaries always does"
+    );
+    let composite = f.loop_holonomy(lp).expect("the paths agree on one holonomy");
+    assert!(
+        !composite.rotor().is_identity(),
+        "the edge composite carries the quarter the word cancelled"
+    );
+
+    // THE SEED comes from the composite, so it is a versor that turns.
+    let seed = f.axis_seed_of(lp).expect("the composite seeds the axis");
+    assert!(
+        !element::same_versor(&seed, &element::identity_versor()),
+        "seeded from the word this was the identity versor, standing for nothing"
+    );
+
+    // THE WRITER AND THE READER AGREE. An axis opened over this loop is
+    // found again by the reader that has to count it — keyed to the word,
+    // `open_axis_on` filed under the identity's class and `opened_axis_on`
+    // looked under it too, so the opening was invisible to the audit the one
+    // time the classes differed.
+    assert!(
+        opened_axis_on(&f.faces, &f.vertices, &f.axes, lp).is_none(),
+        "no axis is open yet"
+    );
+    let mut opened = f.clone();
+    opened.open_axis_on(chord).expect("the axis opens over the composite's class");
+    let [olp, ..] = opened.loops.as_slice() else { panic!("one loop") };
+    assert_eq!(
+        opened_axis_on(&opened.faces, &opened.vertices, &opened.axes, olp),
+        Some(chord),
+        "the reader finds the axis the writer filed"
+    );
+    assert_eq!(
+        loop_row_on(&opened.faces, &opened.vertices, &opened.axes, olp),
+        Some(LoopRow::Opened),
+        "and the audit counts the loop as opened, not as the defect it was"
+    );
+
+    // AND THE INVERSE REMOVES WHAT THE OPENING WROTE. Keyed to the word,
+    // `close_axis_on` removed nothing and the axis stood with no loop
+    // claiming it.
+    opened.close_axis_on(chord).expect("the axis closes under the same class");
+    let [clp, ..] = opened.loops.as_slice() else { panic!("one loop") };
+    assert!(
+        opened_axis_on(&opened.faces, &opened.vertices, &opened.axes, clp).is_none(),
+        "the un-pivot removes the axis the pivot opened"
+    );
 }
 
 /// 12.6, 16.16 step 3, A17, I6 — REDUCE, PUBLISH, THEN WIDEN.
