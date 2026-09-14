@@ -101,8 +101,30 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
             admit_words(index, &a.chart, std::slice::from_ref(&w));
         }
     }
+    // WHERE THE TURNING ACTUALLY IS (§8.1, measurement only). Measured at
+    // d2ace83 over 44 admits: `turning 0` on 43 of them — every Word vertex
+    // this mind admits carries the IDENTITY rotor, so the index has nothing
+    // to file whatever it is keyed by. Yet the loops of these same forms
+    // turn: order 2 and order 4 composites, filed as torsion, 39 in one
+    // window. R8 located that curvature in `FormFace.at[pair].edge`, the
+    // edge transports, which `admit_words_acting` does not read.
+    //
+    // So these two counts ask whether the mind's turning content sits on the
+    // FACES while the generator index reads only the VERTICES: the face
+    // members seen, and the ones whose edge transport is not the identity.
+    let mut members = 0usize;
+    let mut turning_edges = 0usize;
+    for face in &f.faces {
+        for (_, p) in face.at.scoped() {
+            members += 1;
+            if p.edge.as_ref().is_some_and(|e| !e.word.rotor().is_identity()) {
+                turning_edges += 1;
+            }
+        }
+    }
     eprintln!(
-        "  axis admit vertices {seen} carried {carried} turning {turning} axes {filed:?}"
+        "  axis admit vertices {seen} carried {carried} turning {turning} \
+         members {members} turning_edges {turning_edges} axes {filed:?}"
     );
 }
 
