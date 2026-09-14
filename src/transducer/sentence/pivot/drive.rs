@@ -1049,9 +1049,43 @@ impl Form {
             }
         }
         let kappa_after = agreed?;
-        let mut after_rows = rows.to_vec();
-        *after_rows.get_mut(idx)? =
-            crate::transducer::sentence::loop_row_on(&faces, &self.vertices, &axes, loops.get(idx)?)?;
+        // THE AXIS CARRIER IS KEYED BY CLASS, SO OPENING ONE MOVES EVERY
+        // LOOP OF THAT CLASS. `axes.insert(class, face)` and
+        // `opened_axis_on` matches any loop whose composite class equals it,
+        // so a second loop of the same class reads `Opened` too — and
+        // substituting only row `idx` certified a rank the form does not
+        // move by. The drive catches that at `apply_pivot` and holds the
+        // loop, which is right and is also a certificate that should never
+        // have been written: measured at 551c609, 11 openings discharged
+        // against 6 refused with "the applied pivot did not make the move
+        // its certificate claims", all of them openings.
+        //
+        // A `Word`, `Placement` or `Hue` move writes ONE face's transport,
+        // so exactly one loop's holonomy moves and the substitution is the
+        // whole truth for those. An opening writes the form's axis carrier,
+        // which is not a per-loop object, so its rank-after is read over
+        // every row under the trial's own carrier.
+        let after_rows: Vec<LoopRow> = if cand.axis == Axis::Open {
+            let mut out = Vec::with_capacity(loops.len());
+            for lp in &loops {
+                out.push(crate::transducer::sentence::loop_row_on(
+                    &faces,
+                    &self.vertices,
+                    &axes,
+                    lp,
+                )?);
+            }
+            out
+        } else {
+            let mut out = rows.to_vec();
+            *out.get_mut(idx)? = crate::transducer::sentence::loop_row_on(
+                &faces,
+                &self.vertices,
+                &axes,
+                loops.get(idx)?,
+            )?;
+            out
+        };
         let rank_after = rank_of_rows(&after_rows)?;
         // T21 (iii): the rank holds, or one unit moves out of torsion, free
         // or off-plane and into axes. Anything else is not this pivot's move

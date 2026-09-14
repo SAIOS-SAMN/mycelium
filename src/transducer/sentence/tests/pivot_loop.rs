@@ -627,6 +627,111 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
     );
 }
 
+/// A18, T21 (iii) — AN OPENING'S RANK IS READ OVER EVERY ROW, because the
+/// axis carrier is keyed by CLASS and not by loop.
+///
+/// `axes.insert(class, face)` files the opening under the loop's holonomy
+/// class, and `opened_axis_on` answers `Opened` for ANY loop whose composite
+/// class equals it. So a second loop of the same class is opened by the same
+/// write, and a rank-after that substituted only the trialled loop's row
+/// certified a move the form does not make. The drive catches the mismatch
+/// at `apply_pivot` and holds the loop — which is right, and is also a
+/// certificate that should never have been written.
+///
+/// Measured at 551c609, fifteen minutes: 11 `axis Open discharged` against 6
+/// `held, the applied pivot did not make the move its certificate claims`.
+/// The 6 appeared in the same window the widening started firing at rate —
+/// the defect was always there and nothing reached it while the gate was
+/// keyed to the flat word.
+///
+/// A `Word`, `Placement` or `Hue` move writes one face's transport, so
+/// exactly one loop's holonomy moves and the substitution is the whole truth
+/// for those. This asserts the certificate against the form for both kinds.
+#[test]
+fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
+    let q = order4();
+    let f = chord_form(&[q.clone(), q.clone()]);
+    assert_eq!(f.loops.len(), 2, "two chords of one class close two loops");
+    let [a, b] = f.loops.as_slice() else { panic!("two loops") };
+    assert_eq!(
+        f.loop_holonomy(a).and_then(|h| h.rotor().class_key()),
+        f.loop_holonomy(b).and_then(|h| h.rotor().class_key()),
+        "the two loops carry ONE class, which is what the axis is keyed by"
+    );
+
+    let rows = f.loop_rows().expect("rows");
+    let rank_before = rank_of_rows(&rows).expect("rank");
+    // Loop 0 by the slice pattern, not by `first()`: the index IS content
+    // here, because `trial` is asked about that loop and no other (rule 15).
+    let [lp, ..] = f.loops.as_slice() else { panic!("two loops") };
+    let chord = lp.chord;
+    let seed = f.axis_seed_of(lp).expect("the composite seeds the axis");
+    let cand = Candidate {
+        axis: Axis::Open,
+        by: PivotBy::OpenAxis { face: chord, seed },
+    };
+    let prior = crate::transducer::sentence::pivot::drive::Prior {
+        rows: &rows,
+        rank_before,
+        crystal: &crate::transducer::family::NoCrystal,
+        bundle: None,
+        t_extent: 0,
+        mu_before: None,
+    };
+    // THE TRIAL REFUSES RATHER THAN CERTIFYING A MOVE THE FORM WILL NOT
+    // MAKE. Reading the rank-after over every row, this opening is seen for
+    // what it is: `axes` is keyed by class, both loops carry that class, so
+    // both read `Opened` and the audit moves `[-2, 0, 0, +2]` — two units,
+    // which T21 (iii) is not. Substituting only the trialled loop's row hid
+    // the second unit and certified `[-1, 0, 0, +1]`, and the drive then
+    // refused the applied move against its own certificate.
+    //
+    // THE REFUSAL IS THE CORRECT OUTCOME AND NOT THE END OF IT. Two loops of
+    // one class are ONE obstruction seen twice — attaching one cell kills
+    // both representatives, which is what `opened_axis_on` answering by
+    // class means. `rank_of_rows` counts `LoopRow::Torsion` PER LOOP while
+    // it counts `offplane` per CLASS through a `Keyed` set, so the same
+    // object is double-counted on one coordinate and not on the other. That
+    // is the reason a topologically single move reads as two units, and it
+    // is a defect in the audit, not in this trial. Until it is settled the
+    // trial refuses, which is rule 11 and costs nothing but the opening.
+    assert!(
+        f.trial(0, &cand, &f.class_vector(0).expect("class"), &prior).is_none(),
+        "an opening that would move two units is refused, not certified"
+    );
+
+    // AND A ONE-LOOP FORM STILL CERTIFIES AND STILL MAKES ITS MOVE, so the
+    // reading above is about the shared class and not about openings.
+    let mut one = chord_form(std::slice::from_ref(&q));
+    let rows = one.loop_rows().expect("rows");
+    let rank_before = rank_of_rows(&rows).expect("rank");
+    let [lp, ..] = one.loops.as_slice() else { panic!("one loop") };
+    let cand = Candidate {
+        axis: Axis::Open,
+        by: PivotBy::OpenAxis {
+            face: lp.chord,
+            seed: one.axis_seed_of(lp).expect("seed"),
+        },
+    };
+    let prior = crate::transducer::sentence::pivot::drive::Prior {
+        rows: &rows,
+        rank_before,
+        crystal: &crate::transducer::family::NoCrystal,
+        bundle: None,
+        t_extent: 0,
+        mu_before: None,
+    };
+    let cert = one
+        .trial(0, &cand, &one.class_vector(0).expect("class"), &prior)
+        .expect("one loop of one class opens in one unit");
+    one.apply_pivot(&cert);
+    assert_eq!(
+        one.rank().map(|r| Rank::moved(rank_before, r)),
+        Some(cert.rank_move),
+        "the applied opening makes the move its certificate claims"
+    );
+}
+
 /// 12.6, 16.16 step 3, A17, I6 — REDUCE, PUBLISH, THEN WIDEN.
 ///
 /// A pivot is a REDUCTION: it divides the residual by a generator the mind
