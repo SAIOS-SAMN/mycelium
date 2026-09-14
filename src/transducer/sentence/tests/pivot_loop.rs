@@ -482,3 +482,94 @@ fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
         );
     }
 }
+
+/// 12.6, 16.16 step 3, A17, I6 — REDUCE, PUBLISH, THEN WIDEN.
+///
+/// A pivot is a REDUCTION: it divides the residual by a generator the mind
+/// holds. Where the basis holds no word on the coordinate there is nothing
+/// to divide by, every contraction candidate is terminal by algebra, and
+/// asking again next stroke asks the same question of the same basis. The
+/// move out of that is the reduction's inverse — widen the cover so the
+/// class is re-read as a coordinate of the form rather than a defect in it
+/// — but it is the THIRD move, not the second.
+///
+/// The second is 12.6 step 6: file the class, which puts it to the mesh for
+/// a mind that CAN divide it. Widening first buries the defect under a
+/// wider cover and asks nobody, and it also pre-empts the filing outright —
+/// a discharging expansion wins `select_discharge` and the loop never
+/// reaches the filing arm. Measured: offered on irreducibility alone, six
+/// fixtures that file a finite holonomy against an empty crystal stopped
+/// filing and the whole filed-torsion path went dead.
+///
+/// `kappa.free_part()` alone gated the widening, and a free part is ONE way
+/// a cover can be too narrow, not the only one. A quarter turn is finite
+/// order — torsion, no prime exponent, not off-plane — so it has no free
+/// part and never saw the move at all. On the fleet at 769a17c every loop
+/// with no candidate occupied `[Unit(0)]`, 60 of 60, every crystal read
+/// answered 0, 123 of 123, and not one had a free part.
+///
+/// Every arm of the sequence is asserted, because the gate is the CRYSTAL'S
+/// OWN ANSWER and the FORM'S OWN FILING, never a trial's failure.
+#[test]
+fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_is_not() {
+    let q = order4();
+    let mut f = chord_form(std::slice::from_ref(&q));
+    let kappa = f.class_vector(0).expect("the chord closes one loop");
+    assert!(
+        !kappa.free_part(),
+        "a quarter turn is torsion: no prime exponent and not off-plane, so \
+         the free-part gate alone never offers it the widening — {:?}",
+        kappa.coordinates()
+    );
+
+    // FIRST: the basis divides it. There is something to reduce by, so the
+    // contraction is offered and the widening is not.
+    let unpublished: Keyed<FiledLoop> = Keyed::new();
+    let reducible = f.candidates_for(0, &kappa, &Hold(vec![q.clone()]), false, &unpublished);
+    assert!(
+        reducible.iter().any(|c| c.axis != Axis::Open),
+        "a held word on the coordinate is offered as a contraction: {:?}",
+        reducible.iter().map(|c| c.axis).collect::<Vec<_>>()
+    );
+    assert!(
+        !reducible.iter().any(|c| c.axis == Axis::Open),
+        "a residual the basis can divide is not widened: {:?}",
+        reducible.iter().map(|c| c.axis).collect::<Vec<_>>()
+    );
+
+    // SECOND: nothing divides it and it has not been put to the mesh. The
+    // move is to file, not to widen, so no candidate is offered at all and
+    // the drive falls through to 12.6 step 6.
+    let unasked =
+        f.candidates_for(0, &kappa, &crate::transducer::family::NoCrystal, false, &unpublished);
+    assert!(
+        !unasked.iter().any(|c| c.axis == Axis::Open),
+        "an unpublished residual is filed, not widened: {:?}",
+        unasked.iter().map(|c| c.axis).collect::<Vec<_>>()
+    );
+
+    // THIRD: the class has been filed — put to the mesh — and a stroke has
+    // passed with nothing coming back. Now there is no move left but the
+    // reduction's inverse. The filing is read as the PREVIOUS stroke's,
+    // which is what the drive hands down: a class filed by this stroke is
+    // not a demand anyone has had a stroke to answer.
+    assert!(f.file_loop(0, 4), "the finite holonomy files under its class");
+    let published = f.torsion.clone();
+    let asked =
+        f.candidates_for(0, &kappa, &crate::transducer::family::NoCrystal, false, &published);
+    assert!(
+        asked.iter().any(|c| c.axis == Axis::Open),
+        "a published, unanswered, irreducible residual is widened: {:?}",
+        asked.iter().map(|c| c.axis).collect::<Vec<_>>()
+    );
+
+    // AND THE HORIZON STILL WITHHOLDS IT. A class the mesh already holds is
+    // not this mind's to open an axis over (A19): it waits for the form.
+    let on_the_horizon =
+        f.candidates_for(0, &kappa, &crate::transducer::family::NoCrystal, true, &published);
+    assert!(
+        !on_the_horizon.iter().any(|c| c.axis == Axis::Open),
+        "a class the mesh holds is not widened: {:?}",
+        on_the_horizon.iter().map(|c| c.axis).collect::<Vec<_>>()
+    );
+}

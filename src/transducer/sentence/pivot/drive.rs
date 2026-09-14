@@ -216,6 +216,12 @@ impl Form {
         // costs one pass over the vertices and faces, which `apply_pivot`
         // already pays on every applied move.
         self.reindex();
+        // WHAT THIS FORM HAD ALREADY PUT TO THE MESH when the stroke began.
+        // Read once, here, and not from `self.torsion` at each candidate
+        // read: this stroke's own filings must not count as demands that
+        // have gone unanswered, because nothing has had a stroke in which to
+        // answer them. See `candidates_for`.
+        let published = self.torsion.clone();
         let mut snaps = Vec::new();
         let mut handled: Keyed<()> = Keyed::new();
         loop {
@@ -384,7 +390,7 @@ impl Form {
                 };
                 let held = horizon.get(&rotor_key).is_some();
                 let order = hw.order();
-                let cands = self.candidates_for(idx, &kappa, crystal, held);
+                let cands = self.candidates_for(idx, &kappa, crystal, held, &published);
                 // THE SPAN READING (§8.1, measurement only — nothing below
                 // branches on it).
                 //
@@ -613,12 +619,22 @@ impl Form {
     /// crystal holds. `held` is the horizon's word: the mesh holds this
     /// class already (A19), so the mind neither demands it nor opens an
     /// axis on it; it is still discharged by a held form when one arrives.
+    /// `published` is what this form had FILED BEFORE THIS STROKE BEGAN, and
+    /// it is a parameter rather than a read of `self.torsion` because those
+    /// are two different facts. `file_loop` files by CLASS, so two loops of
+    /// one class are published by whichever of them the drive reaches first
+    /// — and the second would then read its own stroke's filing as an
+    /// unanswered demand and widen on it, microseconds after it was made.
+    /// Measured: `two_loops_of_one_class_are_both_filed_or_discharged` filed
+    /// one and widened the other. A demand that nobody has had a stroke to
+    /// answer is not an unanswered demand.
     pub(crate) fn candidates_for(
         &self,
         idx: usize,
         kappa: &ClassVector,
         crystal: &dyn Crystal,
         held: bool,
+        published: &Keyed<FiledLoop>,
     ) -> Vec<Candidate> {
         let Some(lp) = self.loops.get(idx) else {
             return Vec::new();
@@ -653,6 +669,7 @@ impl Form {
         }
         let mut seen: Keyed<Keyed<()>> = Keyed::new();
         let mut out = Vec::new();
+        let mut reached = false;
         for axis in kappa.coordinates() {
             match axis {
                 Axis::Placement => {
@@ -706,6 +723,10 @@ impl Form {
                     }
                 }
                 _ => {
+                    // THE BASIS REACHED THIS COORDINATE, recorded because the
+                    // expansion below is offered on exactly its negation.
+                    // Set where the crystal ANSWERS, not where it is asked: a
+                    // chart with no word on this axis has not reached it.
                     // THE CHART THE ASK IS MADE AT (§8.1, measurement only).
                     // `on_axis_of` is an EXACT keyed read — it does not peel
                     // the way `generators_under` does — so a word filed under
@@ -723,6 +744,7 @@ impl Form {
                             crystal.on_axis(chart, axis).len()
                         );
                         for w in crystal.on_axis(chart, axis) {
+                            reached = true;
                             for side in [Side::Right, Side::Left] {
                                 let wk = w.key();
                                 let sk = side_slot(side);
@@ -764,7 +786,67 @@ impl Form {
         // narrowness this move answers. 12.6 is explicit that the candidates
         // are offered and nothing orders them, so a gate that suppresses one
         // candidate because another exists is an ordering by construction.
-        if !held && kappa.free_part() && !lp.holonomy.is_identity() {
+        //
+        // AND IT IS OFFERED ON AN IRREDUCIBLE RESIDUAL THAT HAS ALREADY
+        // BEEN PUBLISHED AND NOT ANSWERED, which is the second half of the
+        // same reading. `free_part()` is ONE way a cover can be too narrow
+        // — the class runs off the plane or carries a prime exponent — and
+        // it is not the only one. A class occupying a plane coordinate the
+        // basis holds no word on is just as far outside the span, and a
+        // pivot is a REDUCTION: it divides the residual by a generator.
+        // Where no generator reaches the coordinate there is nothing to
+        // divide by, every contraction candidate is terminal by algebra,
+        // and asking again next stroke asks the same question of the same
+        // basis and gets the same answer forever. That is the trap, and the
+        // move out of it is the reduction's inverse: stop dividing and
+        // widen the cover, so the class is re-read as a coordinate of the
+        // form rather than a defect in it.
+        //
+        // MEASURED, 373 loops at 769a17c: every loop with no candidate at
+        // all occupies `[Unit(0)]`, 60 of 60, every crystal read answered 0,
+        // 123 of 123, and not one had a free part — so this move was
+        // offered zero times and every one of them filed as torsion, every
+        // stroke, and was asked again.
+        //
+        // THE ORDER IS REDUCE, PUBLISH, THEN WIDEN, and the third step
+        // waits on the second. Offered on irreducibility ALONE this
+        // pre-empts 12.6 step 6 entirely: the discharging expansion wins
+        // `select_discharge` and the loop never reaches the filing arm, so
+        // a class the mind cannot divide is buried under a wider cover
+        // instead of being published for a mind that CAN divide it to
+        // answer. Measured directly — six fixtures that file a finite
+        // holonomy against an empty crystal stopped filing, and the whole
+        // filed-torsion path (cauterize, the relator, the court's cocycles)
+        // went dead. Filing is not a failure to pivot; it is the demand,
+        // and widening before making it is answering a question nobody was
+        // asked.
+        //
+        // So `asked` is read off `published` — the state of the carrier
+        // `file_loop` writes, as it stood BEFORE this stroke, keyed by the
+        // member paths' own classes through `holonomy_words_on`, which is
+        // the one reader the filing uses (law 12). A class filed by an
+        // earlier stroke has been put to the mesh and nothing has come back;
+        // THAT is the residual with no move left, and it is the one this
+        // widens.
+        //
+        // An infinite-order residual needs none of this: it carries a prime
+        // exponent or runs off the plane, so `free_part()` already holds and
+        // the expansion is offered on the first stroke, beside the demand.
+        //
+        // THE RANK AUDIT ALREADY ADMITS THE MOVE. `loop_row_on` reads an
+        // opened axis as `LoopRow::Opened`, so a torsion loop that opens
+        // moves `torsion −1, axes +1` and `Rank::moved` names it
+        // `Discharged { from: Torsion }`. This needs no widening of that
+        // gate: `[0, 0, 0, +1]` is a DIFFERENT move — an axis opened by a
+        // loop that contributed no coordinate — and nothing here makes one.
+        let asked = || {
+            holonomy_words_on(&self.faces, &self.vertices, lp).scoped().any(|(_, w)| {
+                w.rotor()
+                    .class_key()
+                    .is_some_and(|k| published.get(&k).is_some())
+            })
+        };
+        if !held && !lp.holonomy.is_identity() && (kappa.free_part() || (!reached && asked())) {
             if let Some(seed) = element::versor_of_word(&lp.holonomy) {
                 out.push(Candidate {
                     axis: Axis::Open,
