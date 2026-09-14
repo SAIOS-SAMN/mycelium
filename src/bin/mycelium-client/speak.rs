@@ -52,7 +52,23 @@ pub(crate) fn speak_form(
             "no measured descent".to_string()
         }
     };
-    let (mag, remainders) = mycelium::transducer::family::form_deflation(form, train, &entity.epigenome);
+    let (mut mag, remainders) =
+        mycelium::transducer::family::form_deflation(form, train, &entity.epigenome);
+    // LANE 𝒯 IS THE BUNDLE'S SPAN ON THIS ARM TOO. `form_deflation` sums
+    // `measure_lanes` over the pairs, and a chain has no clock in it, so this
+    // magnitude arrives as `[S, G, 0, H]`. The mint takes the span (R2) and
+    // this arm does not go through the mint — it lays the form down with
+    // `as_element_form` directly — so R2 reached one half of the fork and
+    // left the other. Measured at 5eb95b4: 23 spoken magnitudes on this path,
+    // 0 with a 𝒯 component.
+    //
+    // An unmeasurable span withholds rather than minting against an invented
+    // extent, exactly as the demands arm does.
+    let Some(span) = entity.span_of(form) else {
+        eprintln!("[{tag}] form withheld: family {fam} the span is unmeasurable");
+        return false;
+    };
+    mag[2] = span;
     // 50.5 (F step 5): a sentence with demand vertices is uttered WHOLE —
     // its closed sub-complex and its demands together — never withheld
     // and never expressed as a residual.
