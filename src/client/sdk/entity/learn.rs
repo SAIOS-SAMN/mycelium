@@ -219,12 +219,24 @@ impl Entity {
                 representative: r,
             });
         }
-        let n = self.contemplation.seed_horizon(&recs);
+        // A RULING COLLAPSES A SUPERPOSITION AND THE OTHER HYPOTHESIS IS A
+        // SYMMETRY (Expansion 4). Two candidates that both discharged one
+        // loop proved it admits their difference; the ruling says which
+        // discharge the mesh holds, and the difference remains a rotor this
+        // mind measured. It is adjoined rather than cleared — the language
+        // keeps what the collapse resolved.
+        let (n, symmetries) = self.contemplation.seed_horizon_with(&recs);
         if n > 0 {
             eprintln!(
                 "  horizon {n} seeded from {:02x}{:02x}",
                 from[0], from[1]
             );
+        }
+        if !symmetries.is_empty() {
+            let chart = crate::transducer::stalk::Invariant::default();
+            let adjoined: crate::transducer::bubble::drive::Adjoined =
+                symmetries.into_iter().map(|r| (r, chart.clone())).collect();
+            self.adjoin_letters(&adjoined);
         }
     }
 

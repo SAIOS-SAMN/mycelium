@@ -466,16 +466,32 @@ impl Bubble {
     /// A glue or a syllabus class whose key equals one held certificate's
     /// `after` applies the certificate keyed by that rotor's A1 key; the
     /// others of the class are not applied (dialect cells).
-    pub(crate) fn collapse_vortex(&mut self, class: &[u8], word: &[u8], by: &'static str) -> bool {
-        let Some(mut inner) = self.vortex.remove(class) else {
-            return false;
-        };
+    pub(crate) fn collapse_vortex(
+        &mut self,
+        class: &[u8],
+        word: &[u8],
+        by: &'static str,
+    ) -> Option<Vec<crate::transducer::alphabet::Rotor>> {
+        let mut inner = self.vortex.remove(class)?;
         let Some(win) = inner.remove(word) else {
             if !inner.is_empty() {
                 self.vortex.insert(class, inner);
             }
-            return false;
+            return None;
         };
+        // EXPANSION 4 — THE LOSERS ARE A SYMMETRY, NOT A TIE BROKEN. Two
+        // candidates that both discharge one loop to one class prove the
+        // loop admits `w_a⁻¹·w_b`, an element that stabilises that class
+        // because each leaves it where the other does. That is a rotation
+        // the mind MEASURED, which is 37.7's object exactly, and clearing
+        // the vortex threw it away — the mind resolved its own superposition
+        // by forgetting one half of it.
+        //
+        // The symmetries are carried out, not minted here, for the reason
+        // every other adjunction is: minting writes a word into the language
+        // and a bubble does not hold the language.
+        let losers: Vec<PivotCertificate> = inner.scoped().map(|(_, c)| c.clone()).collect();
+        let symmetries = crate::transducer::sentence::symmetries(&win, &losers);
         if let Some(mut f) = self.form.clone() {
             f.apply_pivot(&win);
             f.certificates.insert(win.key(), win.clone());
@@ -487,11 +503,12 @@ impl Bubble {
         }
         let axis = win.axis;
         eprintln!(
-            "  vortex {:02x}{:02x}… collapsed by {by} to axis {axis:?}",
+            "  vortex {:02x}{:02x}… collapsed by {by} to axis {axis:?}, {} symmetries kept",
             self.key()[0],
-            self.key()[1]
+            self.key()[1],
+            symmetries.len()
         );
-        true
+        Some(symmetries)
     }
 
     /// Total: the form's remainder carries A5's proof in its own type, so

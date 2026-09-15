@@ -33,7 +33,30 @@ impl Contemplation {
     /// only standing on which waiting is the right move. The mind's own
     /// stay `Held`, "an idea this mind is holding, not yet a word", which is
     /// exactly what they are.
+    /// The symmetries every collapse kept ride out beside the count. A
+    /// ruling that collapses a vortex resolves the mind's superposition, and
+    /// the hypothesis it did not take is the loop's symmetry — a measured
+    /// rotor, and 37.7's object (Expansion 4). It is carried rather than
+    /// minted here for the reason every adjunction is: the language is the
+    /// entity's.
+    pub fn seed_horizon_with(
+        &mut self,
+        records: &[ClassRecord],
+    ) -> (usize, Vec<crate::transducer::alphabet::Rotor>) {
+        let mut kept: Vec<crate::transducer::alphabet::Rotor> = Vec::new();
+        let n = self.seed_horizon_inner(records, &mut kept);
+        (n, kept)
+    }
+
     pub fn seed_horizon(&mut self, records: &[ClassRecord]) -> usize {
+        self.seed_horizon_with(records).0
+    }
+
+    fn seed_horizon_inner(
+        &mut self,
+        records: &[ClassRecord],
+        kept: &mut Vec<crate::transducer::alphabet::Rotor>,
+    ) -> usize {
         let mut n = 0usize;
         for rec in records {
             if self.seeded.contains(&rec.key) {
@@ -55,11 +78,11 @@ impl Contemplation {
                             (rec.representative.clone(), rec.order, Standing::Ruled),
                         );
                     }
-                    b.collapse_vortex(
-                        &rec.key,
-                        &rec.representative.key(),
-                        "ruling",
-                    );
+                    if let Some(syms) =
+                        b.collapse_vortex(&rec.key, &rec.representative.key(), "ruling")
+                    {
+                        kept.extend(syms);
+                    }
                 }
             }
         }

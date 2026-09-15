@@ -215,7 +215,17 @@ impl Contemplation {
                     b.take_form(form);
                     if let Some(r) = &word_rotor {
                         if let Some(ck) = r.class_key() {
-                            b.collapse_vortex(ck.as_bytes(), r.key().as_bytes(), "glue");
+                            // The symmetries the collapse kept join this
+                            // path's adjunction candidates: a loop that
+                            // admitted two discharges admits their
+                            // difference, and that difference is a rotor the
+                            // mind measured (Expansion 4, 37.7).
+                            if let Some(syms) = b.collapse_vortex(ck.as_bytes(), r.key().as_bytes(), "glue") {
+                                let chart = stalk::invariant_of(word);
+                                for s in syms {
+                                    adjoined.push((s, chart.clone()));
+                                }
+                            }
                         }
                     }
                 }

@@ -95,6 +95,45 @@ pub struct Obstruction {
     pub lanes: Option<[crate::economy::LaneMove; 4]>,
 }
 
+/// EXPANSION 4 — THE SYMMETRY TWO DISCHARGES PROVE.
+///
+/// When `a` and `b` both discharge one loop to one class, the loop admits a
+/// symmetry and the vortex is the mind holding two hypotheses at once. The
+/// symmetry is not a tie to be broken: it is `w_a⁻¹ · w_b`, the element that
+/// carries one discharge to the other, and it STABILISES the loop's class
+/// because both sides leave that class where the other does.
+///
+/// That element is exactly 37.7's object — a rotation the mind measured,
+/// which the presentation may or may not spell — so discarding the losing
+/// candidate throws away a candidate GENERATOR. `collapse_vortex` cleared
+/// the whole vortex on collapse; this is what it was clearing.
+///
+/// `None` where the two are not both word moves, or where the symmetry is
+/// the identity. An identity symmetry is two spellings of one move rather
+/// than two moves, and the loop admits nothing extra — which is a reading
+/// and not a failure.
+///
+/// The precondition is checked and not assumed: the two must discharge to
+/// the SAME class after, or `w_a⁻¹·w_b` fixes nothing and is not a symmetry
+/// of anything (rule 11).
+pub fn symmetry(a: &PivotCertificate, b: &PivotCertificate) -> Option<crate::transducer::alphabet::Rotor> {
+    if a.after != b.after {
+        return None;
+    }
+    let (PivotBy::Word { word: wa, .. }, PivotBy::Word { word: wb, .. }) = (&a.by, &b.by) else {
+        return None;
+    };
+    let s = wa.inverse().compose(wb).normal_form();
+    (!s.is_identity()).then(|| s.rotor())
+}
+
+/// Every symmetry a vortex holds, against the certificate that won it. One
+/// per losing candidate: each is a separate degree of freedom the loop
+/// admits, and summing them would be a count deciding (rule 2).
+pub fn symmetries(win: &PivotCertificate, held: &[PivotCertificate]) -> Vec<crate::transducer::alphabet::Rotor> {
+    held.iter().filter_map(|c| symmetry(win, c)).collect()
+}
+
 /// The obstruction between two certified discharges: what says they are two
 /// proofs of one loop (23.9) rather than one proof twice.
 pub(crate) fn obstruction(a: &PivotCertificate, b: &PivotCertificate) -> Obstruction {

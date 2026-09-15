@@ -304,7 +304,7 @@ impl Entity {
     /// The letter stands in the DIALECT: it is this mind's own, memory only,
     /// until a court rules it (24.1), which is also why it does not suppress
     /// the demand — `pivot_loop` defers on `Standing::Ruled` alone since R11.
-    fn adjoin_letters(&mut self, adjoined: &crate::transducer::bubble::drive::Adjoined) {
+    pub(crate) fn adjoin_letters(&mut self, adjoined: &crate::transducer::bubble::drive::Adjoined) {
         for (rotor, chart) in adjoined {
             // WHY A CANDIDATE MINTS NOTHING (§8.1, measurement only). Measured
             // over one recut: `adjoin from residue` 68, `letter adjoined` 0.
