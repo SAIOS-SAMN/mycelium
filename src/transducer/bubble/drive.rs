@@ -14,6 +14,12 @@ use super::*;
 /// of the A16 snaps, the forms that crystallized (25.2) in bubble key
 /// order, and the ring's orbit reading — circuits and period in strokes —
 /// when the stroke completed a circuit (45.7).
+/// 37.7's ADJUNCTION CANDIDATES: a rotor the seventeen cannot spell and the
+/// chart it was met on. Named because BOTH of the drive's paths produce them
+/// — the expand ring and `pivot_on` — and a type they share is how the two
+/// stay one reading (law 12).
+pub type Adjoined = Vec<(crate::transducer::alphabet::Rotor, crate::transducer::stalk::Invariant)>;
+
 pub struct Expanded {
     pub spent: usize,
     pub pivoted: [u64; 4],
@@ -117,7 +123,12 @@ impl Contemplation {
         word: &Element,
         crystal: &dyn Crystal,
         budget: &mut Budget,
-    ) -> (u64, u64, u64, Vec<Element>) {
+    ) -> (u64, u64, u64, Vec<Element>, Adjoined) {
+        // 37.7's candidates from this path, carried out as `expand_all`
+        // carries its own. Both paths run `pivot_loop` and both must report
+        // what it adjoined, or the mint is wired to whichever one the stroke
+        // happened to take.
+        let mut adjoined: Adjoined = Vec::new();
         let inv = stalk::invariant_of(word);
         // THE CAVITY IS READ AT THE CHART, not copied and filtered. This
         // cloned EVERY entry — key and the whole `Vec<RemCell>` — on every
@@ -181,7 +192,25 @@ impl Contemplation {
                 continue;
             };
             if let Some(mut form) = b.form.clone() {
-                let _ = form.pivot_loop(bk, &horizon, crystal, budget, bundle.as_deref(), t);
+                // EVERY SNAP THIS PIVOT MAKES, not none of them. `let _ =`
+                // stood here and threw away the whole return — the demand,
+                // the torsion filing, the vortex and the adjunction — so a
+                // pivot on this path made its moves and reported nothing.
+                //
+                // Measured at 1d98080, one recut: `adjoin from residue` 8
+                // and every drain outcome 0 — not `letter adjoined`, not
+                // `letter held`, not `letter refused`. The drain never ran,
+                // because `Expanded.adjoined` was empty while the pivot had
+                // emitted eight adjunctions. R21 carried `Snap::Adjoin` out
+                // through `expand_with`, which keeps its snaps, and not
+                // through this, which discards them. The mint was wired to
+                // one of the two paths a pivot runs on.
+                let snaps = form.pivot_loop(bk, &horizon, crystal, budget, bundle.as_deref(), t);
+                for s in &snaps {
+                    if let crate::transducer::sentence::Snap::Adjoin { rotor, chart, .. } = s {
+                        adjoined.push((rotor.as_ref().clone(), chart.clone()));
+                    }
+                }
                 if let Some(b) = self.bubbles.get_mut(bk) {
                     b.take_form(form);
                     if let Some(r) = &word_rotor {
@@ -312,7 +341,7 @@ impl Contemplation {
                     }
             }
         }
-        (fills, self.formed, new_classes, spoken)
+        (fills, self.formed, new_classes, spoken, adjoined)
     }
 
 }

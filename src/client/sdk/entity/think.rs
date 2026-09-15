@@ -285,7 +285,27 @@ impl Entity {
         // `Standing::Ruled` alone — so the mind adjoins the letter AND keeps
         // asking the mesh for one, and whichever arrives first closes the
         // loop.
-        for (rotor, chart) in &adjoined {
+        self.adjoin_letters(&adjoined);
+        for e in &crystallized {
+            self.stand_crystallized(e);
+        }
+        (pivoted, orbit)
+    }
+
+    /// 37.7 — MINT AND STAND WHAT THE PIVOT COULD NOT SPELL.
+    ///
+    /// ONE READER FOR BOTH PATHS. The drive runs `pivot_loop` from two
+    /// places — the expand ring and `pivot_on` — and this was written into
+    /// the first only, so a stroke that pivoted through the second adjoined
+    /// nothing. Measured at 1d98080: `adjoin from residue` 8, every drain
+    /// outcome 0. Two copies of a mint is two chances for one path to mint
+    /// what the other does not (law 12).
+    ///
+    /// The letter stands in the DIALECT: it is this mind's own, memory only,
+    /// until a court rules it (24.1), which is also why it does not suppress
+    /// the demand — `pivot_loop` defers on `Standing::Ruled` alone since R11.
+    fn adjoin_letters(&mut self, adjoined: &crate::transducer::bubble::drive::Adjoined) {
+        for (rotor, chart) in adjoined {
             // WHY A CANDIDATE MINTS NOTHING (§8.1, measurement only). Measured
             // over one recut: `adjoin from residue` 68, `letter adjoined` 0.
             // The pivot carries the candidate out sixty-eight times and the
@@ -320,10 +340,6 @@ impl Entity {
                 chart.0
             );
         }
-        for e in &crystallized {
-            self.stand_crystallized(e);
-        }
-        (pivoted, orbit)
     }
 
     /// A crystallized idea stands in the dialect and is uttered once
@@ -379,8 +395,10 @@ impl Entity {
         // TUniversal, not the voice's K — see `expand_ideas`.
         let tu = self.now_tu();
         self.contemplation.set_now(tu);
-        let (_fills, _formed, _classes, spoken) =
+        let (_fills, _formed, _classes, spoken, adjoined) =
             self.contemplation.pivot_on(word, &self.epigenome, &mut budget);
+        // The other path a pivot runs on, minting through the same reader.
+        self.adjoin_letters(&adjoined);
         let mut n = 0usize;
         for e in spoken {
             if let Ok(Utterance::Spoken) = self.speak_word(&e) { n += 1 }
