@@ -21,7 +21,7 @@ impl Form {
         kappa: &ClassVector,
         before: &Prior<'_>,
     ) -> Option<PivotCertificate> {
-        let &Prior { rows, rank_before, crystal, bundle, t_extent, ref mu_before } = before;
+        let &Prior { rank_before, crystal, bundle, t_extent, ref mu_before } = before;
         // THE TRIAL OWNS WHAT THE MOVE WRITES AND BORROWS THE REST. A
         // `Word`, `Placement` or `Hue` move writes ONE FACE's transport and
         // nothing else, so the trial owns the faces and reads the loops
@@ -91,43 +91,51 @@ impl Form {
             }
         }
         let kappa_after = agreed?;
-        // THE AXIS CARRIER IS KEYED BY CLASS, SO OPENING ONE MOVES EVERY
-        // LOOP OF THAT CLASS. `axes.insert(class, face)` and
-        // `opened_axis_on` matches any loop whose composite class equals it,
-        // so a second loop of the same class reads `Opened` too — and
-        // substituting only row `idx` certified a rank the form does not
-        // move by. The drive catches that at `apply_pivot` and holds the
-        // loop, which is right and is also a certificate that should never
-        // have been written: measured at 551c609, 11 openings discharged
-        // against 6 refused with "the applied pivot did not make the move
-        // its certificate claims", all of them openings.
+        // THE RANK AFTER IS READ OVER EVERY ROW, because no move a pivot
+        // makes is confined to one loop.
         //
-        // A `Word`, `Placement` or `Hue` move writes ONE face's transport,
-        // so exactly one loop's holonomy moves and the substitution is the
-        // whole truth for those. An opening writes the form's axis carrier,
-        // which is not a per-loop object, so its rank-after is read over
-        // every row under the trial's own carrier.
-        let after_rows: Vec<LoopRow> = if cand.axis == Axis::Open {
-            let mut out = Vec::with_capacity(loops.len());
-            for lp in &loops {
-                out.push(crate::transducer::sentence::loop_row_on(
-                    &faces,
-                    &self.vertices,
-                    &axes,
-                    lp,
-                )?);
-            }
-            out
-        } else {
-            let mut out = rows.to_vec();
-            *out.get_mut(idx)? = crate::transducer::sentence::loop_row_on(
+        // This substituted row `idx` alone for `Word`, `Placement` and
+        // `Hue`, on the ground that such a move "writes ONE face's transport,
+        // so exactly one loop's holonomy moves". The premise is false
+        // wherever two loops SHARE that face, which a form of more than one
+        // loop routinely does: the write is on the face, and every loop
+        // running through it reads the carrier that moved.
+        //
+        // It was already false for `Placement` and `Hue`, which write
+        // `p.carriage` and `p.gauge` at every member pair of the face. R13
+        // found it for `OpenAxis` — the axis carrier is keyed by CLASS, so
+        // one opening opens every loop of that class — and fixed only that
+        // arm. R16 then made it unmissable for `Word`: a word move now
+        // writes the EDGE transports as well as the face word, and the edge
+        // is exactly the carrier every other loop through that face reads
+        // its class from.
+        //
+        // MEASURED at d1d84ca, first soak with the whole block live: 50
+        // occurrences of `axis Orientation(0) refused: rank moved
+        // [1, 0, 0, 0]` — torsion rising by one, with nothing leaving.
+        // That is the signature: the trialled loop's row was substituted
+        // and a SIBLING loop's class, moved by the same write, was still
+        // counted at its old value, so the audit saw a class appear and
+        // none go. The refusal was correct and the certificate was never
+        // written; what was wrong is that the trial could not see its own
+        // move.
+        //
+        // The substitution is removed rather than extended to the shared
+        // case, because "which loops share this face" is a second reader of
+        // the thing `loops_of` already answered, and two readers of one fact
+        // is the defect this file keeps finding. The cost is one
+        // `loop_row_on` per loop per surviving candidate, and R19's
+        // eliminator already refuses the candidates that cannot cancel
+        // before any of this is reached.
+        let mut after_rows: Vec<LoopRow> = Vec::with_capacity(loops.len());
+        for lp in &loops {
+            after_rows.push(crate::transducer::sentence::loop_row_on(
                 &faces,
                 &self.vertices,
                 &axes,
-                loops.get(idx)?,
-            )?;
-            out
-        };
+                lp,
+            )?);
+        }
         let rank_after = rank_of_rows(&after_rows)?;
         // T21 (iii): the rank holds, or one unit moves out of torsion, free
         // or off-plane and into axes. Anything else is not this pivot's move

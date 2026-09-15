@@ -518,6 +518,10 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
 /// A `Word`, `Placement` or `Hue` move writes one face's transport, so
 /// exactly one loop's holonomy moves and the substitution is the whole truth
 /// for those. This asserts the certificate against the form for both kinds.
+///
+/// AND THE SAME HOLDS FOR EVERY MOVE, not only an opening — see
+/// `a_word_moves_certified_rank_counts_the_siblings_it_moved` below, which is
+/// the `Word` arm of the identical reading.
 #[test]
 fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
     let q = order4();
@@ -542,7 +546,6 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
         by: PivotBy::OpenAxis { face: chord, seed },
     };
     let prior = crate::transducer::sentence::pivot::drive::Prior {
-        rows: &rows,
         rank_before,
         crystal: &crate::transducer::family::NoCrystal,
         bundle: None,
@@ -593,7 +596,6 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
         },
     };
     let prior = crate::transducer::sentence::pivot::drive::Prior {
-        rows: &rows,
         rank_before,
         crystal: &crate::transducer::family::NoCrystal,
         bundle: None,
@@ -699,5 +701,75 @@ fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_
         !on_the_horizon.iter().any(|c| c.axis == Axis::Open),
         "a class the mesh holds is not widened: {:?}",
         on_the_horizon.iter().map(|c| c.axis).collect::<Vec<_>>()
+    );
+}
+
+/// A18, T21 (iii) — A WORD MOVE'S CERTIFIED RANK COUNTS THE SIBLINGS IT
+/// MOVED, because no move a pivot makes is confined to one loop.
+///
+/// `trial` substituted row `idx` alone for `Word`, `Placement` and `Hue`,
+/// on the ground that such a move writes one face's transport so exactly one
+/// loop's holonomy moves. The premise fails wherever two loops SHARE that
+/// face: the write is on the face, and every loop through it reads the
+/// carrier that moved. R13 found this for `OpenAxis` and fixed only that
+/// arm; R16 made it unmissable for `Word`, because a word move now writes
+/// the EDGE transports, which is exactly where a sibling loop reads its
+/// class from.
+///
+/// MEASURED at d1d84ca, the first soak with the whole block live: 50
+/// occurrences of `axis Orientation(0) refused: rank moved [1, 0, 0, 0]` —
+/// a torsion class appearing with none leaving, which is the signature of a
+/// sibling row counted at its old value.
+///
+/// The fixture is two chords sharing the Frame's star faces, so a write on
+/// one chord's face is read by both loops. The assertion is the one the
+/// drive makes at `apply_pivot`: whatever the trial certifies, the form
+/// makes.
+#[test]
+fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
+    let q = order4();
+    let f = chord_form(&[q.clone(), q.clone()]);
+    assert_eq!(f.loops.len(), 2, "two chords close two loops");
+    let rows = f.loop_rows().expect("rows");
+    let rank_before = rank_of_rows(&rows).expect("rank");
+    let [lp, ..] = f.loops.as_slice() else { panic!("two loops") };
+    let chord = lp.chord;
+    let kappa = f.class_vector(0).expect("class");
+
+    // Every candidate the drive would offer on this loop, trialled exactly as
+    // the drive trials it — and every certificate any of them writes must
+    // state the move the form actually makes.
+    let prior = crate::transducer::sentence::pivot::drive::Prior {
+        rank_before,
+        crystal: &Hold(vec![q.clone()]),
+        bundle: None,
+        t_extent: 0,
+        mu_before: None,
+    };
+    let unpublished: Keyed<FiledLoop> = Keyed::new();
+    let cands = f.candidates_for(0, &kappa, &Hold(vec![q.clone()]), false, &unpublished);
+    assert!(
+        cands.iter().any(|c| matches!(c.by, PivotBy::Word { .. })),
+        "the held quarter is offered as a word move on a shared face"
+    );
+    let mut certified = 0usize;
+    for cand in &cands {
+        let Some(cert) = f.trial(0, cand, &kappa, &prior) else {
+            continue;
+        };
+        certified += 1;
+        let mut applied = f.clone();
+        applied.apply_pivot(&cert);
+        assert_eq!(
+            applied.rank().map(|r| Rank::moved(rank_before, r)),
+            Some(cert.rank_move),
+            "axis {:?}: the applied move is the move the certificate claims, \
+             siblings on the shared face included",
+            cand.axis
+        );
+    }
+    assert!(
+        certified > 0,
+        "at least one candidate certifies, or this asserts nothing: chord {chord}"
     );
 }

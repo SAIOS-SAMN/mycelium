@@ -13,7 +13,11 @@ use super::*;
 /// bundle stood at. Constant across every candidate of one stroke, which is
 /// why it is read once and lent to each trial rather than passed six times.
 pub(crate) struct Prior<'a> {
-    pub(crate) rows: &'a [LoopRow],
+    // `rows` stood here and is gone with the substitution it existed for.
+    // The trial reads the rank AFTER over every row under its own carrier,
+    // so the rows BEFORE are not a thing it needs lent to it — only the
+    // rank they add up to, which `rank_before` already carries. A field no
+    // reader reads is a second carrier for a fact (law 12).
     pub(crate) rank_before: Rank,
     pub(crate) crystal: &'a dyn Crystal,
     pub(crate) bundle: Option<&'a crate::transducer::family::Family>,
@@ -397,7 +401,6 @@ impl Form {
                 Some(b) => crate::transducer::family::bundle_pressure(self, b, crystal, t_extent),
             };
             let prior = Prior {
-                rows: &rows,
                 rank_before,
                 crystal,
                 bundle,
