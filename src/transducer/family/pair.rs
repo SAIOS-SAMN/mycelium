@@ -130,9 +130,14 @@ pub(crate) struct Covered {
     pub(crate) cover: crate::transducer::family::cover::Cover,
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "law 8 — unpaired demand generation requires scenes, pair maps, scale, and covers buffer"
+)]
 fn unpaired_demands(
     ins: &Scene,
     outs: &Scene,
+    pairs: &crate::network::nerve::Keyed<Paired>,
     used_in: &crate::network::nerve::Keyed<()>,
     used_out: &crate::network::nerve::Keyed<()>,
     scale: Option<((usize, usize), (usize, usize))>,
@@ -142,6 +147,40 @@ fn unpaired_demands(
     use crate::transducer::peel::ShellKind::Whole;
     use crate::transducer::sentence::Demand;
     let mut out = Vec::new();
+    let in_bodies: Vec<crate::transducer::family::perceive::Body> = ins
+        .cands
+        .scoped()
+        .filter_map(|(_, c)| if c.kind == Whole { Some(c.body.clone()) } else { None })
+        .collect();
+    let selected_chart = crate::transducer::family::perceive::chart_holding_one(&in_bodies);
+    let is_selection_scene = match &selected_chart {
+        Some(u) => {
+            let mut any_pair = false;
+            let mut all_from_u = true;
+            for (_k, p) in pairs.scoped() {
+                any_pair = true;
+                if let Some(ic) = ins.get(&p.input) {
+                    if ic.body.moduli != *u {
+                        all_from_u = false;
+                        break;
+                    }
+                } else {
+                    all_from_u = false;
+                    break;
+                }
+            }
+            if any_pair && all_from_u {
+                for (ja, oc) in outs.cands.scoped() {
+                    if oc.kind == Whole && !used_out.contains(&ja) {
+                        all_from_u = false;
+                        break;
+                    }
+                }
+            }
+            any_pair && all_from_u
+        }
+        None => false,
+    };
     // The unpaired input bodies first: what each overlaps decides its
     // reading. An output body of the SAME chart it overlaps is its image
     // in place — carried on the shape, its hues not a map (a section over
@@ -210,6 +249,9 @@ fn unpaired_demands(
         }
         match images.scoped().next() {
             None => {
+                if is_selection_scene && selected_chart.as_ref().is_some_and(|u| ic.body.moduli != *u) {
+                    continue;
+                }
                 let axes: Vec<u16> = (0..ic.body.moduli.0.len() as u16).collect();
                 let cells: Vec<_> = ic.body.cells.iter().map(|&(r, c, h)| (r, c, h, 0u8)).collect();
                 out.push((Demand::TopologicalDeformation { image: Invariant(Vec::new()), axes }, ic.body.moduli.clone(), cells));
@@ -417,7 +459,7 @@ pub(crate) fn pair_form_uncached(
     }
     trace::trace_n("pair/2 versors", scenery.vertices.len(), budget);
     let mut covers: Vec<Covered> = Vec::new();
-    demanded.extend(unpaired_demands(&ins, &outs, &used_in, &used_out, scale, budget, &mut covers));
+    demanded.extend(unpaired_demands(&ins, &outs, &pairs, &used_in, &used_out, scale, budget, &mut covers));
     trace::trace_n("pair/3 covers", covers.len(), budget);
     // 50.8, L23(c) — THE COVER'S PIECES ARE VERTICES OF THIS FORM. Each
     // carried piece is a word vertex like any other, at the support it

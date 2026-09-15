@@ -60,16 +60,12 @@ pub fn form_deflation_at(
         let after_mu = element::measure_lanes(&after_chain);
         // S9.5 — THE PAY GATE IS CLOSURE. A pair pays when the form CLOSES
         // it: the remainder is empty and what the pair demanded is what the
-        // form spoke. A pair that merely descended — less remainder than
-        // before, but still a remainder — pays nothing, because a partial
-        // speaking is not a closed pair and the court refuses the form on
-        // that remainder anyway (S9.4).
-        //
-        // The deflation of a closed pair is the whole delta it named:
-        // `after` is empty, so `before − after` is `before`.
-        if after_chain.is_empty() {
-            let closed =
-                crate::economy::deflation_of(&crate::economy::lane_moves(&after_mu, &before_mu));
+        // form spoke. Under 50.5 (Y3), a sentence with demand vertices is
+        // valid, never closed: its closed sub-complex pays for the deflation
+        // its closed words achieved: `deflation_of(lane_moves(after, before))`.
+        let closed =
+            crate::economy::deflation_of(&crate::economy::lane_moves(&after_mu, &before_mu));
+        if after_chain.is_empty() || form.demand_vertices().next().is_some() {
             for (p, d) in pay.iter_mut().zip(&closed) {
                 *p = p.saturating_add(*d);
             }
@@ -84,6 +80,10 @@ pub fn form_deflation_at(
 /// carrying the deflation it measures over the bundle through the crystal
 /// that resolves its citations. Lane 𝒯 is the scene-state span the bundle
 /// stood over. A form with no measured deflation is not a word.
+///
+/// Under 50.5 (Y3): A sentence with word vertices and demand vertices mints
+/// on its closed sub-complex: the amount is the deflation its closed words
+/// achieved and nothing else. A sentence of zero word vertices mints nothing.
 pub fn mint_sentence(
     rule: &crate::transducer::sentence::SentenceRule,
     family: &[(Grid, Grid)],
@@ -95,37 +95,9 @@ pub fn mint_sentence(
     // demands is a chain wearing a form's tape" (23.1 step 3, 50.6/L7,
     // `REFUSE_NOT_A_SENTENCE`) — and this is the speaker's side of it, reading
     // the same `Form::acts()`.
-    //
-    // Without it the voice utters the chain, the court refuses it, and the
-    // refusal SEALS the address (50.9) — against a shape that was never
-    // spoken, which is the fault the extraction path's own comments warn
-    // about. Withholding costs the family nothing: its demands go to the
-    // market to be answered, and a rule that can act again is minted then.
-    //
-    // D8 made this reachable: a class whose whole content is an unresolved
-    // multiplicity carries no word, so a family with nothing else in it has a
-    // form of Frame and demands. Measured on the 60-task slice, that is 11
-    // families, up from 3.
     if !rule.form.acts() {
         return None;
     }
-    // AND A FORM WHOSE VERTICES DO NOT CARRY THEIR BODIES IS NOT UTTERED
-    // EITHER. The clause above is the speaker's side of the court's
-    // `REFUSE_NOT_A_SENTENCE`; this is the speaker's side of
-    // `REFUSE_VERTEX_BODY`, and it is the same argument — the court replays
-    // against the family the voice already holds, so a rule that fails there
-    // fails here, and uttering it spends a round trip to have the refusal
-    // SEAL the address (50.9) against a rule the voice could have withheld.
-    //
-    // It is the court's own reader, not a second one (law 12): a speaker
-    // checking by different arithmetic would agree by luck. The court still
-    // re-derives — it does not take this for an answer — which is 23.1 step 3
-    // and is untouched.
-    //
-    // Measured on the fleet at e98e8a2: of 954 sentences spoken, 611 were
-    // refused, and 488 of those were exactly this. Withholding costs the
-    // family nothing; its demands go to the market and a rule that can act is
-    // minted when they are answered.
     if crate::court::verdict::body::vertices_carry_family(&rule.form, family).is_some() {
         return None;
     }

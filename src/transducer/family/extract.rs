@@ -673,6 +673,22 @@ pub fn extract_rule_with(
             }
         }
     }
+    let matching_pairs_for = |k: &[u8], pairs: &[u16], acts: &crate::network::nerve::Keyed<crate::transducer::sentence::Acting>| -> Vec<u16> {
+        pairs
+            .iter()
+            .copied()
+            .filter(|&pi| {
+                acts.scoped().any(|(ck, a)| {
+                    let mut pk = k.to_vec();
+                    crate::transducer::address::put_bytes(&mut pk, &ck);
+                    pk.extend_from_slice(&pi.to_le_bytes());
+                    pair_member
+                        .get(&pk)
+                        .is_some_and(|pm| element::same_versor(&a.carriage, &pm.carriage))
+                })
+            })
+            .collect()
+    };
     let mut sections: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
     let mut rule_vertices = vec![frame_vertex()];
     for (k, pairs) in class_pairs.scoped() {
@@ -709,12 +725,6 @@ pub fn extract_rule_with(
         if acts.is_empty() {
             continue;
         }
-        let v = Vertex::Word {
-            address: address.clone(),
-            derivation: derivation.clone(),
-            acts,
-            contact: *contact,
-        };
         // THE DIFFERENCE IS THE SECTION: a class in the union and not in the
         // meet is a class some pair form does not carry, and the rule states
         // the pairs it was measured on rather than claiming the rest. So is a
@@ -730,8 +740,19 @@ pub fn extract_rule_with(
         // pairs it was measured on unspoken with nothing recording it.
         let section = class_place_varies.contains(&k) || !every_pair.contains(&k);
         if section {
-            sections.insert(&k, pairs.clone());
+            let ps = if class_place_varies.contains(&k) {
+                matching_pairs_for(&k, pairs, &acts)
+            } else {
+                pairs.clone()
+            };
+            sections.insert(&k, ps);
         }
+        let v = Vertex::Word {
+            address: address.clone(),
+            derivation: derivation.clone(),
+            acts,
+            contact: *contact,
+        };
         rule_vertices.push(v);
     }
     let mut form = Form {
@@ -994,8 +1015,9 @@ pub fn extract_rule_with(
         // claimed about the rest.
         if place_varies && !ring_one {
             if let Some(tc) = transport_class(&form.vertices[vi]) {
-                if let Some(pairs) = class_pairs.get(&tc.key()) {
-                    sections.insert(tc.key(), pairs.clone());
+                let tk = tc.key();
+                if let (Some(pairs), Vertex::Word { acts, .. }) = (class_pairs.get(&tk), &form.vertices[vi]) {
+                    sections.insert(tk.clone(), matching_pairs_for(&tk, pairs, acts));
                 }
             }
         }

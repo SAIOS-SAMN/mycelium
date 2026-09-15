@@ -69,7 +69,7 @@ impl Kernel {
                     // already occupied the lane (L8t).
                     let shares = self.cited_shares(addr, &w, pay);
                     let anchor = self.anchor_pub();
-                    self.treasury.settle_recursive(addr, &shares, anchor);
+                    self.treasury.settle_recursive(addr, &shares, pay, anchor);
                     for (who, share) in &shares {
                         eprintln!(
                             "  court generator paid {:02x}{:02x}… to {:02x}{:02x}… {share:?}",

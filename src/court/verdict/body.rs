@@ -10,7 +10,7 @@
 //! chart, the face's two addresses, the chart with the cells read.
 
 use super::*;
-use crate::transducer::family::{perceive, Body, Grid};
+use crate::transducer::family::{perceive, Body, Cell3, Grid};
 
 /// What one vertex does on one pair of the family.
 pub(crate) enum Carried {
@@ -158,6 +158,43 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
     Carried::Carries
 }
 
+fn form_covers_cells(
+    f: &Form,
+    pair: usize,
+    x: &Grid,
+    cells: &[Cell3],
+) -> bool {
+    let mut covered: Keyed<u8> = Keyed::new();
+    for (_, _, _, demand_cells) in f.demand_vertices() {
+        for &(r, c, _, after) in demand_cells {
+            covered.insert(cell_key(r, c), after);
+        }
+    }
+    let bodies = perceive(x);
+    for v in &f.vertices {
+        let Vertex::Word { acts, derivation, contact, .. } = v else { continue; };
+        if contact.is_some() { continue; }
+        let only = crate::transducer::family::transport_class(v)
+            .and_then(|tc| f.sections.get(&tc.key()).cloned());
+        if only.as_ref().is_some_and(|ps| !ps.contains(&(pair as u16))) {
+            continue;
+        }
+        let rotor = derivation.rotor();
+        for (_, member) in acts.scoped() {
+            let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else { continue; };
+            for b in fiber_on(&bodies, &member.chart) {
+                for &(r, c, h) in &b.cells {
+                    let Some(p) = element::carry_center(&versor, r, c) else { continue; };
+                    let Some((tr, tc)) = element::cell_of(&p) else { continue; };
+                    let Some(want) = crate::transducer::sentence::hue_of(&member.gauge, h) else { continue; };
+                    covered.insert(cell_key(tr, tc), want);
+                }
+            }
+        }
+    }
+    cells.iter().all(|&(r, c, h)| covered.get(&cell_key(r, c)).is_some_and(|&w| w == h))
+}
+
 /// 23.1 step 3 over the family: `REFUSE_VERTEX_BODY` at the vertex, with
 /// its chart, for a word vertex that fails on any pair; a vertex silent on
 /// every pair is a section nothing here contradicts, and the closure check
@@ -183,6 +220,18 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
                 continue;
             }
             if let Carried::Fails(why, chart) = vertex_carries_pair(v, x, y) {
+                if why == FAIL_PART {
+                    let uncovered = perceive(y).into_iter().any(|image| {
+                        if image.moduli == chart {
+                            !form_covers_cells(f, pair, x, &image.cells)
+                        } else {
+                            false
+                        }
+                    });
+                    if !uncovered {
+                        continue;
+                    }
+                }
                 // WHICH PAIR AND WHICH FAULT. The refusal's coordinate is
                 // the vertex (50.9 contracts there), so the pair and the
                 // fault ride the journal instead: a voice whose rotor is

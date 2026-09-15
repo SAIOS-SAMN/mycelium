@@ -337,3 +337,43 @@ pub fn cells_subset_of_grid(cells: &[Cell3], g: &Grid) -> bool {
             == Some(h)
     })
 }
+
+/// The scene's bodies indexed by their own chart (Y4, 24.4, 20).
+/// A chart whose fiber holds exactly one body is "the unique one", read as
+/// `fiber.iter().nth(1).is_none()` (W10), without a count compared to a literal.
+pub fn bodies_by_chart(bodies: &[Body]) -> crate::network::nerve::Keyed<Vec<&Body>> {
+    let mut fibers: crate::network::nerve::Keyed<Vec<&Body>> = crate::network::nerve::Keyed::new();
+    for b in bodies {
+        let k = b.moduli.key();
+        match fibers.get_mut(&k) {
+            Some(v) => v.push(b),
+            None => {
+                fibers.insert(k, vec![b]);
+            }
+        }
+    }
+    fibers
+}
+
+/// The chart whose fiber in the scene holds exactly one body (Y4, 24.4, 21 step 1, W10).
+/// Answers "the chart whose fiber holds one" without a count compared to a literal.
+pub fn chart_holding_one(bodies: &[Body]) -> Option<crate::transducer::stalk::Invariant> {
+    let fibers = bodies_by_chart(bodies);
+    let mut singletons = fibers
+        .scoped()
+        .filter_map(|(_, fiber)| {
+            let mut it = fiber.iter();
+            let first = it.next()?;
+            if it.next().is_none() {
+                Some(first.moduli.clone())
+            } else {
+                None
+            }
+        });
+    let unique = singletons.next()?;
+    if singletons.next().is_none() {
+        Some(unique)
+    } else {
+        None
+    }
+}

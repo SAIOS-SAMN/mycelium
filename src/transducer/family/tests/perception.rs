@@ -408,3 +408,77 @@ let b = perceive(&family[0].1);
 assert_eq!(a[0].moduli, b[0].moduli, "the chart is exact axes, not a hash");
 assert!(carriage(&a[0], &b[0]).is_some(), "a versor carries the bar");
 }
+
+/// Y4 (24.4, 20, 21 step 1, W10, Rule 2):
+/// A scene of five bodies on three charts answers "the chart whose fiber holds one"
+/// without a count compared to a literal.
+#[test]
+fn a_scene_of_five_bodies_on_three_charts_answers_the_chart_whose_fiber_holds_one() {
+    let g = grid(&[
+        "110333",
+        "000000",
+        "220444",
+        "000000",
+        "005000",
+    ]);
+    let bodies = perceive(&g);
+    assert_eq!(bodies.len(), 5, "five bodies perceived: {bodies:?}");
+    let fibers = crate::transducer::family::perceive::bodies_by_chart(&bodies);
+    assert_eq!(fibers.len(), 3, "three charts represented: {fibers:?}");
+
+    let dot = bodies.iter().find(|b| b.cells == vec![(4, 2, 5)]).expect("the dot");
+    let chart = crate::transducer::family::perceive::chart_holding_one(&bodies)
+        .expect("unique chart holding one body");
+    assert_eq!(chart, dot.moduli, "answers the chart whose fiber holds one");
+}
+
+/// Y4: A family whose rule selects that body extracts a rule vertex where it extracted a demand before.
+#[test]
+fn a_family_whose_rule_selects_that_body_extracts_a_rule_vertex_where_it_extracted_a_demand_before() {
+    let family = vec![
+        (
+            grid(&[
+                "110304",
+                "000304",
+                "220000",
+                "000005",
+            ]),
+            grid(&[
+                "000000",
+                "000000",
+                "000000",
+                "000005",
+            ]),
+        ),
+        (
+            grid(&[
+                "110304",
+                "000304",
+                "220000",
+                "000006",
+            ]),
+            grid(&[
+                "000000",
+                "000000",
+                "000000",
+                "000006",
+            ]),
+        ),
+    ];
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+    let rule = extract_rule(&family, &mut budget).expect("the family extracts");
+    let words = rule
+        .form
+        .vertices
+        .iter()
+        .filter(|v| matches!(v, Vertex::Word { .. }))
+        .count();
+    assert_eq!(words, 1, "extracts a rule vertex, got {words}");
+    assert!(
+        rule.form.demand_vertices().next().is_none(),
+        "zero demands where it extracted demands before: {:?}",
+        rule.form.vertices
+    );
+    assert!(rule.form.is_closed(), "the extracted rule form is closed");
+}
+

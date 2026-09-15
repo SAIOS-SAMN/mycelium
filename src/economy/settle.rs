@@ -151,13 +151,17 @@ impl Treasury {
         &mut self,
         escrow: &[u8],
         shares: &[([u8; 32], [u64; 4])],
+        pay: [u64; 4],
         anchor: Anchor,
     ) -> [u64; 4] {
         let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.release_award(escrow)
         else {
             return [0; 4];
         };
-        let mut left = mu;
+        // 50.5 (Y3): A sentence with word vertices and demand vertices mints
+        // on its closed sub-complex: the amount is the deflation its closed
+        // words achieved (`pay`) and nothing else, bounded by what was escrowed.
+        let mut left = std::array::from_fn(|l| pay[l].min(mu[l]));
         for (discoverer, share) in shares {
             let paid: [u64; 4] = std::array::from_fn(|l| match share[l] < left[l] {
                 true => share[l],
