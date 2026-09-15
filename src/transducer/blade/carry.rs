@@ -96,39 +96,39 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
     };
     let spread = |s: &Shape| (&s.blade.inertia[0] + &s.blade.inertia[1]) / &s.blade.shell;
     let (sa, sb) = (spread(a), spread(b));
-    // WHERE SIMILARITY IS REFUSED (§8.1, measurement only — the refusals are
-    // unchanged). `Axis::Dilation` is occupied ZERO times on this corpus,
-    // against `Placement` 67, over one recut — so no loop the engine reads
-    // carries a dilation residue. Two readings give that, and they are not
-    // the same fact: the corpus contains no homothety, or it contains one
-    // and ρ is refused before it can register.
+    // THE INSTRUMENT THAT STOOD HERE IS REMOVED, and what it measured is
+    // recorded instead. R33 printed which arm of the similarity refusal was
+    // taken, to separate "this corpus contains no homothety" from "it does
+    // and ρ is refused before it can register". It answered: `similar: ρ is
+    // not one` 6117 times in eight minutes — dilations ARE measured, exactly
+    // and in ℚ — against `the spread ratio is no rational square` 42674
+    // times.
     //
-    // The refusal is exact and correct either way — ρ is a rational square
-    // or the bodies are not similar in ℚ, never a rounding — so these lines
-    // name which of the three arms was taken and nothing branches on them.
+    // Both lines were in a hot loop. `versor_coset` runs per body pair per
+    // extraction, so the instrument that answered the question in one soak
+    // was writing forty thousand lines in eight minutes and costing the
+    // stroke the formatting. A reading that changes what it measures is no
+    // reading (§8.1); it is removed now that it has answered.
+    //
+    // WHAT IT LEFT OPEN, stated because the number is large and the cause is
+    // not a defect here: ρ is ONE rational from the per-cell spread, so a
+    // homothety with different horizontal and vertical factors — a stretch,
+    // `ρ_w ≠ ρ_h` — is not a similarity and is correctly refused. Those
+    // 42674 are that shape, and the refusal is exact. Carrying an
+    // anisotropic scale would need a carrier that holds two factors, which
+    // is a ruling and not a repair.
     let rho = match sa.is_zero() {
         true => match sb.is_zero() {
             true => q(1),
-            false => {
-                eprintln!("  similar refused: a spreads to nothing and b does not");
-                return coset;
-            }
+            false => return coset,
         },
         false => match rational_sqrt(&(&sb / &sa)) {
             Some(r) => r,
-            None => {
-                eprintln!("  similar refused: the spread ratio is no rational square");
-                return coset;
-            }
+            None => return coset,
         },
     };
     if b.blade.shell != &a.blade.shell * &rho * &rho {
-        // the cell counts do not scale as ρ²: not similar
-        eprintln!("  similar refused: the cell counts do not scale as ρ²");
-        return coset;
-    }
-    if rho != q(1) {
-        eprintln!("  similar: ρ is not one, the carriage takes a dilation");
+        return coset; // the cell counts do not scale as ρ²: not similar
     }
     let to_origin = cga::translator(&(-&ca1), &(-&ca2));
     let to_target = cga::translator(&cb1, &cb2);
