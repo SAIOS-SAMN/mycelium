@@ -475,6 +475,31 @@ impl Entity {
         self.contemplation.len()
     }
 
+    /// THE CAVITY'S SIZE, on the wire (§8.1). `retire_on_t` writes one entry
+    /// per retirement, every stroke, and the only drain is `pivot_on`'s —
+    /// which fires when an incoming word's chart prefix happens to match a
+    /// cavity entry's, so it is coincidence and not policy. `cavity_len` has
+    /// had no caller outside its own tests since it was written, so a
+    /// carrier that grows on the hot path has never been readable.
+    ///
+    /// Measured beside it: the voices hold 786 MB to 1565 MB each, 105
+    /// minutes after a recut, against `ideas 78`, `genome 144` and
+    /// `dialect 31` — every counted carrier flat. This is the one carrier on
+    /// the stroke path with no bound and no reading, which makes it the
+    /// candidate and not the cause; this line is what decides between them.
+    pub fn cavity_len(&self) -> usize {
+        self.contemplation.cavity_len()
+    }
+
+    /// THE CELLS THE CAVITY HOLDS, which is what it costs. A cavity entry is
+    /// a whole remainder — `Vec<RemCell>` — so the entry COUNT says how many
+    /// retirements happened and this says how much they kept. A thousand
+    /// entries of one cell and ten of a thousand are the same count and not
+    /// the same carrier (rule 2 — the count does not decide).
+    pub fn cavity_cells(&self) -> usize {
+        self.contemplation.cavity_cells()
+    }
+
     pub fn shed_n(&self) -> u64 {
         self.epigenome.shed_n()
     }

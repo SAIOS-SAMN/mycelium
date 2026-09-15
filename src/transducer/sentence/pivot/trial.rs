@@ -142,6 +142,50 @@ impl Form {
         // and the trial refuses it here, naming what the audit did.
         let rank_move = Rank::moved(rank_before, rank_after);
         if let RankMove::Inadmissible { delta } = rank_move {
+            // WHICH ROWS MOVED, and to what (§8.1, measurement only). The
+            // delta says a coordinate changed and never which loop did it,
+            // so `[1, 0, 0, 0]` — a torsion class appearing with none
+            // leaving — reads the same whether the trialled loop acquired a
+            // class the form did not carry or a SIBLING on the shared face
+            // was carried to one.
+            //
+            // R26 removed the single-row substitution on exactly this
+            // suspicion and the refusal survived it: 50 occurrences before,
+            // 5 in the first window after, against a genome a third the
+            // size. So the audit is now reading every row and still sees a
+            // class appear, which makes it a real move and not bookkeeping.
+            // These two lines name the rows so the next reading does not
+            // have to guess again.
+            //
+            // The count of DISTINCT torsion classes is what `rank_of_rows`
+            // counts since R14, so the rows are printed as their classes and
+            // not as their indices — an index says which loop, and the
+            // question is which class.
+            let cls = |rs: &[LoopRow]| -> Vec<String> {
+                rs.iter()
+                    .map(|r| match r {
+                        LoopRow::Closed => "closed".to_string(),
+                        LoopRow::Torsion(k) => format!("t{:02x}{:02x}", k.as_bytes()[0], k.as_bytes()[1]),
+                        LoopRow::Free(_) => "free".to_string(),
+                        LoopRow::OffPlane(k) => format!("o{:02x}{:02x}", k.as_bytes()[0], k.as_bytes()[1]),
+                        LoopRow::Opened(k) => format!("x{:02x}{:02x}", k.as_bytes()[0], k.as_bytes()[1]),
+                    })
+                    .collect()
+            };
+            // A form whose rows do not read has no "before" to print, and an
+            // empty list is not that reading — it is the reading of a form
+            // with no loops (rule 11).
+            match self.loop_rows() {
+                Some(before) => eprintln!(
+                    "  pivot loop {idx} rows before {:?} after {:?}",
+                    cls(&before),
+                    cls(&after_rows)
+                ),
+                None => eprintln!(
+                    "  pivot loop {idx} rows before unmeasured after {:?}",
+                    cls(&after_rows)
+                ),
+            }
             eprintln!(
                 "  pivot loop {idx} axis {:?} refused: rank moved {delta:?}",
                 cand.axis
