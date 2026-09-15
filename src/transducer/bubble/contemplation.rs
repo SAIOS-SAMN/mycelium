@@ -181,6 +181,30 @@ impl Contemplation {
         self.cavity.len()
     }
 
+    /// The cells every cavity entry holds together. One entry is a whole
+    /// remainder, so the entry count says how many retirements happened and
+    /// this says what they kept — and a thousand entries of one cell and ten
+    /// of a thousand are the same count and not the same carrier.
+    pub fn cavity_cells(&self) -> usize {
+        self.cavity.scoped().map(|(_, r)| r.len()).sum()
+    }
+
+    /// THE CAVITY ENTRIES A CHART CAN RE-HOLD, read at that chart. The same
+    /// descent `pivot_on` makes, exposed so the keying can be asserted
+    /// without the drive: a cavity keyed by the bubble alone answers nothing
+    /// here, which is why the drain had to copy the whole carrier instead.
+    ///
+    /// `None` for a chart with no key — an empty prefix names no coordinate,
+    /// and a caller whose chart turned out empty must say which reading it
+    /// wanted (rule 11, `Prefix::new`).
+    pub fn cavity_keys_under(
+        &self,
+        inv: &crate::transducer::stalk::Invariant,
+    ) -> Option<Vec<Vec<u8>>> {
+        let k = inv.key();
+        Some(self.cavity.fiber_at(k.as_bytes())?.map(|(k, _)| k).collect())
+    }
+
     pub fn remainders(&self) -> Vec<&[RemCell]> {
         self.bubbles.scoped().map(|(_, b)| b.remainder.as_slice()).collect()
     }

@@ -16,6 +16,87 @@ fn t_room_moves_the_oldest_bubble_to_cavity() {
     assert_eq!(c.cavity_len(), 1, "the older remainder is a cavity chart");
 }
 
+/// 24.1, law 7, rule 1 — A RETIRED REMAINDER IS FILED UNDER ITS CHART, and
+/// the drain reads at that chart instead of copying the carrier.
+///
+/// `retire_on_t` writes one cavity entry per retirement, every stroke, and
+/// the only drain is `pivot_on`'s. Keyed by the bubble alone that drain
+/// could not ASK — so it cloned every entry, key and whole `Vec<RemCell>`,
+/// re-derived each one's chart, and kept the few that matched. The cavity
+/// grows on the hot path and drains on a coincidence, so the clone grew
+/// without bound while what it searched for stayed rare.
+///
+/// Measured beside it: voices at 786 MB–1565 MB, 105 minutes after a recut,
+/// against `ideas 78`, `genome 144`, `dialect 31` — every counted carrier
+/// flat.
+///
+/// The chart leads the key and the bubble follows, so two remainders retired
+/// at one chart stay two (law 7) and the entries a chart can re-hold are the
+/// subtree under it.
+#[test]
+fn a_cavity_entry_is_read_back_at_its_own_chart_and_two_at_one_chart_are_two() {
+    let mut c = Contemplation::new();
+    c.set_now(10);
+    c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
+    c.set_now(20);
+    c.hold(vec![(9, 9, 5, 6), (9, 10, 5, 6)]);
+    assert_eq!(c.len(), 2, "two bubbles held");
+
+    // Both retire, and both are kept: law 7 loses no remainder, and two
+    // remainders are two entries however their charts compare.
+    c.retire_on_t(1);
+    c.retire_on_t(0);
+    assert_eq!(c.len(), 0, "no room, no bubble");
+    assert_eq!(c.cavity_len(), 2, "both remainders are kept, neither collapsed");
+    assert_eq!(
+        c.cavity_cells(),
+        4,
+        "and the cells they hold are the cells they had, not a count of entries"
+    );
+
+    // THE KEY IS THE CHART, so the entries a chart can re-hold are a keyed
+    // descent under it — which is what the drain reads, and what it could
+    // not read while the key was the bubble's.
+    //
+    // Both remainders are two adjacent cells, so they are the SAME SHAPE and
+    // share a chart: the fibre answers both, and the bubble suffix is what
+    // keeps them two entries rather than one overwriting the other.
+    let two_cell = crate::transducer::stalk::invariant(&[(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)]);
+    let under = c
+        .cavity_keys_under(&two_cell)
+        .expect("a chart names a fibre of the cavity");
+    assert_eq!(
+        under.len(),
+        2,
+        "one chart, two remainders, two entries — the suffix keeps them apart"
+    );
+
+    // A REMAINDER OF ANOTHER SHAPE STANDS AT ANOTHER CHART, and the descent
+    // separates them. Without this the read above would pass on a cavity
+    // that answered everything to everything.
+    c.set_now(30);
+    c.hold(vec![(2, 2, 7, 8), (2, 3, 7, 8), (3, 2, 7, 8)]);
+    c.retire_on_t(0);
+    assert_eq!(c.cavity_len(), 3, "three remainders kept");
+    let three_cell =
+        crate::transducer::stalk::invariant(&[(2i64, 2i64, 7u8, 8u8), (2, 3, 7, 8), (3, 2, 7, 8)]);
+    assert_ne!(
+        three_cell.key(),
+        two_cell.key(),
+        "three cells in an L is not two in a row, or this proves nothing"
+    );
+    assert_eq!(
+        c.cavity_keys_under(&three_cell).expect("a fibre").len(),
+        1,
+        "the L's chart answers the L alone"
+    );
+    assert_eq!(
+        c.cavity_keys_under(&two_cell).expect("a fibre").len(),
+        2,
+        "and the pair's chart still answers the pair"
+    );
+}
+
 /// L7b, rule 5: a room of zero is no room. The aperture was floored at one
 /// bubble, so a reserve with no T room still held a thought it could not
 /// afford; the reserve decides, and zero means the last bubble goes too.

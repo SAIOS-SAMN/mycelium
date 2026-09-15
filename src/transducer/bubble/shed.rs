@@ -6,6 +6,23 @@
 
 use super::*;
 
+/// THE KEY A RETIRED REMAINDER IS FILED UNDER: its chart, then the bubble it
+/// was. The chart leads because it is what `pivot_on` asks at — a word
+/// arrives on a chart and the cavity entries that chart could re-hold are the
+/// subtree under it, one keyed descent. The bubble key follows so two
+/// remainders retired at one chart stay two remainders (law 7).
+///
+/// `stalk::invariant` of the remainder cells is the same reading `pivot_on`
+/// made per entry when it walked; making it the key moves that derivation to
+/// the write, where it happens once, from the read, where it happened for
+/// every entry on every call.
+pub(crate) fn cavity_key(rem: &[RemCell], bubble: &[u8]) -> Vec<u8> {
+    let inv = stalk::invariant(rem);
+    let mut k = inv.key().into_vec();
+    crate::transducer::address::put_bytes(&mut k, bubble);
+    k
+}
+
 impl Contemplation {
     /// When T-room on the entity's reserve is exhausted, the bubble with
     /// the largest T magnitude (ticks since its charts last moved) goes to
@@ -40,7 +57,17 @@ impl Contemplation {
         if let Some(b) = self.bubbles.remove(&k) {
             self.retract_incidence(&k, &b);
             self.dirty.remove(&k);
-            self.cavity.insert(k, b.remainder.to_vec());
+            // THE CAVITY IS KEYED BY THE CHART ITS REMAINDER STANDS ON, then
+            // by the bubble's own key. `pivot_on` reads it back when a word
+            // arrives on a matching chart, so the CHART is the coordinate
+            // that read asks at — and keyed by the bubble alone it could not
+            // ask, so the drain cloned every entry in the carrier and
+            // re-derived each one's chart to find the few that matched.
+            //
+            // The bubble key stays as the suffix. Two remainders retired at
+            // one chart are two remainders and law 7 does not lose either;
+            // collapsing them onto the chart alone would.
+            self.cavity.insert(cavity_key(&b.remainder, &k), b.remainder.to_vec());
         }
     }
 

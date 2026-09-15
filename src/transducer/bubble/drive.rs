@@ -119,14 +119,31 @@ impl Contemplation {
         budget: &mut Budget,
     ) -> (u64, u64, u64, Vec<Element>) {
         let inv = stalk::invariant_of(word);
-        let prefixes: Vec<Vec<u8>> = inv.prefixes().iter().map(|p| p.key().into_vec()).collect();
-        let cav: Vec<(Vec<u8>, Vec<RemCell>)> = self.cavity.scoped().map(|(k, r)| (k, r.clone())).collect();
-        for (k, rem) in cav {
-            let cinv = stalk::invariant(&rem);
-            if cinv.prefixes().iter().any(|p| prefixes.iter().any(|q| p.key().as_bytes() == q.as_slice())) {
-                self.cavity.remove(&k);
-                self.hold(rem);
+        // THE CAVITY IS READ AT THE CHART, not copied and filtered. This
+        // cloned EVERY entry — key and the whole `Vec<RemCell>` — on every
+        // call, re-derived each one's chart, and kept the few whose prefix
+        // matched the arriving word's. The cavity grows by one on every
+        // retirement, every stroke, and drains only on that coincidence, so
+        // the clone grew without bound on the pivot path while the thing it
+        // was searching for stayed rare.
+        //
+        // `cavity_key` files a retired remainder under its chart first, so
+        // the entries a chart can re-hold are the SUBTREE under that chart's
+        // key — `Keyed::fiber`, one descent per prefix of the word's chart,
+        // which is the same set the filter selected and none of the copying.
+        let mut back: Vec<(Vec<u8>, Vec<RemCell>)> = Vec::new();
+        for p in inv.prefixes() {
+            let pk = p.key();
+            let Some(f) = self.cavity.fiber_at(pk.as_bytes()) else {
+                continue;
+            };
+            for (k, rem) in f {
+                back.push((k, rem.clone()));
             }
+        }
+        for (k, rem) in back {
+            self.cavity.remove(&k);
+            self.hold(rem);
         }
         let mut keys = Keyed::new();
         for p in inv.prefixes() {
