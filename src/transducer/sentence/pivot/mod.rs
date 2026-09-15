@@ -7,6 +7,7 @@
 pub mod drive;
 pub mod loops;
 pub mod snap;
+pub mod trial;
 pub mod words;
 
 pub use loops::*;

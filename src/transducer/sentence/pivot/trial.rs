@@ -1,0 +1,241 @@
+// AI-GENERATED CONTENT — see DISCLAIMER.md.
+//
+//! A16 step 4, A18, T21 — THE TRIAL: one candidate applied to a copy of the
+//! faces, the class vectors re-read off what it wrote, the rank audited and
+//! the bundle measured — and the certificate that states the move, or the
+//! refusal that states why there is none.
+//!
+//! Split from `drive.rs` at the §1.1 1200-line reading bound; the items are
+//! moved, not rewritten (§1.6). `pivot_loop` and `candidates_for` stay with
+//! the drive that calls them; the trial and the filing a refused loop falls
+//! through to are one reading and travel together.
+
+use super::drive::{class_vectors_on, holonomy_words_on, loop_holonomy_on, Prior};
+use super::*;
+
+impl Form {
+    pub(crate) fn trial(
+        &self,
+        idx: usize,
+        cand: &Candidate,
+        kappa: &ClassVector,
+        before: &Prior<'_>,
+    ) -> Option<PivotCertificate> {
+        let &Prior { rows, rank_before, crystal, bundle, t_extent, ref mu_before } = before;
+        // THE TRIAL OWNS WHAT THE MOVE WRITES AND BORROWS THE REST. A
+        // `Word`, `Placement` or `Hue` move writes ONE FACE's transport and
+        // nothing else, so the trial owns the faces and reads the loops
+        // they close into; the form's vertices, its indices and its
+        // carriers are unchanged and are not copied for a candidate that is
+        // about to be refused.
+        //
+        // Opening an axis writes the form's axis carrier as well, and that
+        // carrier is small: the trial owns a copy of it for that arm.
+        let mut faces = self.faces.clone();
+        let mut axes = self.axes.clone();
+        apply_by(&mut faces, &cand.by);
+        let loops = Form::loops_of(&faces, self.vertices.len());
+        // OPENING AN AXIS files the loop's class against the chord it closes
+        // on (I6). A move that does not apply — no loop on that chord, no
+        // class, no seed to re-derive it from — is not a candidate that
+        // failed to discharge; there is no trial to read (rule 11).
+        if let PivotBy::OpenAxis { face, .. } = &cand.by {
+            let lp = loops.iter().find(|lp| lp.chord == *face)?;
+            // THE TRIAL'S OWN FACES, not the form's. The move has already
+            // been applied to `faces` above, so the composite this keys by is
+            // the one the loop carries AFTER the write — which is what
+            // `class_vectors_on` reads two lines below to decide whether the
+            // loop discharged. Keyed off `self` the axis would be filed under
+            // the holonomy the loop had before its own opening.
+            let class = loop_holonomy_on(&faces, &self.vertices, lp)?.rotor().class_key()?;
+            element::versor_of_word(&loop_holonomy_on(&faces, &self.vertices, lp)?)?;
+            axes.insert(class, *face);
+        }
+        // 12.6: a pivot on axis x discharges when x reads zero after and no
+        // other coordinate moved; opening an axis discharges the LOOP — it
+        // is no longer a loop on the refined cover (15.5, T14) — so its
+        // whole vector reads zero.
+        //
+        // EVERY MEMBER PATH MUST DISCHARGE. The trial is a write on a FACE,
+        // which relates every pair of bodies the face relates, so a move that
+        // zeroes the coordinate along one path and leaves it standing on
+        // another has not discharged the loop — it has discharged one reading
+        // of it, and the pivot certificate would assert the rest. A loop with
+        // no closed member path has nothing to read and refuses (rule 11).
+        // The trial rewrites the faces and reopens the axes; the VERTICES are
+        // untouched by it, so the Frame is read off the form's own.
+        let after = class_vectors_on(&faces, &self.vertices, &axes, loops.get(idx)?);
+        if after.is_empty() {
+            return None;
+        }
+        let discharged = after.scoped().all(|(_, kappa_after)| {
+            if cand.axis == Axis::Open {
+                kappa_after.is_zero()
+            } else {
+                !kappa_after.occupies(cand.axis) && kappa.agrees_except(kappa_after, cand.axis)
+            }
+        });
+        if !discharged {
+            return None;
+        }
+        // THE CERTIFICATE NAMES ONE CLASS AFTER, so it is only writable where
+        // every member path agrees on it. The plane and off-plane coordinates
+        // are path-independent; a residue that differs between paths means the
+        // loop has no single class and there is nothing to certify (rule 11).
+        let mut agreed: Option<ClassVector> = None;
+        for (_, cv) in after.scoped() {
+            match &agreed {
+                None => agreed = Some(cv.clone()),
+                Some(h) if h.class_key() != cv.class_key() => return None,
+                Some(_) => {}
+            }
+        }
+        let kappa_after = agreed?;
+        // THE AXIS CARRIER IS KEYED BY CLASS, SO OPENING ONE MOVES EVERY
+        // LOOP OF THAT CLASS. `axes.insert(class, face)` and
+        // `opened_axis_on` matches any loop whose composite class equals it,
+        // so a second loop of the same class reads `Opened` too — and
+        // substituting only row `idx` certified a rank the form does not
+        // move by. The drive catches that at `apply_pivot` and holds the
+        // loop, which is right and is also a certificate that should never
+        // have been written: measured at 551c609, 11 openings discharged
+        // against 6 refused with "the applied pivot did not make the move
+        // its certificate claims", all of them openings.
+        //
+        // A `Word`, `Placement` or `Hue` move writes ONE face's transport,
+        // so exactly one loop's holonomy moves and the substitution is the
+        // whole truth for those. An opening writes the form's axis carrier,
+        // which is not a per-loop object, so its rank-after is read over
+        // every row under the trial's own carrier.
+        let after_rows: Vec<LoopRow> = if cand.axis == Axis::Open {
+            let mut out = Vec::with_capacity(loops.len());
+            for lp in &loops {
+                out.push(crate::transducer::sentence::loop_row_on(
+                    &faces,
+                    &self.vertices,
+                    &axes,
+                    lp,
+                )?);
+            }
+            out
+        } else {
+            let mut out = rows.to_vec();
+            *out.get_mut(idx)? = crate::transducer::sentence::loop_row_on(
+                &faces,
+                &self.vertices,
+                &axes,
+                loops.get(idx)?,
+            )?;
+            out
+        };
+        let rank_after = rank_of_rows(&after_rows)?;
+        // T21 (iii): the rank holds, or one unit moves out of torsion, free
+        // or off-plane and into axes. Anything else is not this pivot's move
+        // and the trial refuses it here, naming what the audit did.
+        let rank_move = Rank::moved(rank_before, rank_after);
+        if let RankMove::Inadmissible { delta } = rank_move {
+            eprintln!(
+                "  pivot loop {idx} axis {:?} refused: rank moved {delta:?}",
+                cand.axis
+            );
+            return None;
+        }
+        let mu = match mu_before {
+            None => Mu::Unmeasured,
+            Some((pairs_before, before)) => {
+                let (pairs_before, before) = (pairs_before, *before);
+                // THE BUNDLE IS SPOKEN THROUGH A WHOLE FORM, so this is
+                // where one is built — for a candidate that has already
+                // discharged its axis and held the rank, which is the few.
+                // Every candidate paid for it before, including the ones
+                // refused two readings above.
+                let trial_form = Form {
+                    faces: faces.clone(),
+                    loops: loops.clone(),
+                    axes: axes.clone(),
+                    ..self.clone()
+                };
+                let (pairs_after, after) = crate::transducer::family::bundle_pressure(
+                    &trial_form,
+                    bundle?,
+                    crystal,
+                    t_extent,
+                )?;
+                // 12.6: a trial refuses a candidate that raises any lane on
+                // ANY pair, and the reading names the pairs. Two readings of
+                // different lengths are not the same bundle and are not
+                // comparable, which is also a refusal — of the comparison.
+                let raised =
+                    crate::transducer::family::pairs_raised(pairs_before, &pairs_after)?;
+                if !raised.is_empty() {
+                    return None;
+                }
+                // 12.6, T21 (iv): a candidate that RAISES any lane is
+                // refused, read per lane and named. Strictness is not
+                // asked: a pivot that moves no lane is certified by its
+                // closure, not by a fall.
+                let reading = crate::economy::lane_moves(&after, &before);
+                let risen = crate::economy::lanes_risen(&reading);
+                if !risen.is_empty() {
+                    eprintln!(
+                        "  pivot loop {idx} axis {:?} refused: lanes {risen:?} rose",
+                        cand.axis
+                    );
+                    return None;
+                }
+                Mu::Measured { before, after }
+            }
+        };
+        Some(PivotCertificate {
+            chord: idx as u16,
+            axis: cand.axis,
+            before: kappa.class_key(),
+            after: kappa_after.class_key(),
+            rank_move,
+            mu,
+            by: cand.by.clone(),
+        })
+    }
+
+    /// FILE THE LOOP'S TORSION UNDER EVERY CLASS ITS MEMBER PATHS CARRY.
+    ///
+    /// Torsion is filed under the holonomy's CLASS (16.17, 15.4), and the
+    /// holonomy of a path is its edge composite where it has one. This read
+    /// `lp.holonomy.rotor().class_key()` — the word — so on a corpus where
+    /// every loop is flat on the word (70311 of 70311 at e98e8a2) it filed
+    /// the identity's class or nothing at all, while the 284 curved edge
+    /// composites over those same loops were filed nowhere.
+    ///
+    /// One class per member path, not one for the loop: a loop whose faces
+    /// relate several pairs of bodies has one composite per path through
+    /// them, and each is its own obstruction. A path that carries no versor
+    /// has no class and is skipped; a loop where no path files returns
+    /// `false` and stays open, which is what `torsion open` reports.
+    pub(crate) fn file_loop(&mut self, idx: usize, ell: u32) -> bool {
+        if ell == 0 {
+            return false;
+        }
+        let Some(lp) = self.loops.get(idx) else {
+            return false;
+        };
+        let sigma: Vec<(u8, u8)> = lp
+            .vertices
+            .windows(2)
+            .map(|p| (p[0] as u8, p[1] as u8))
+            .collect();
+        let chord = lp.chord;
+        let words = holonomy_words_on(&self.faces, &self.vertices, lp);
+        let mut filed = false;
+        for (_, w) in words.scoped() {
+            let Some(class) = w.rotor().class_key() else {
+                continue;
+            };
+            self.torsion.insert(
+                class,
+                FiledLoop { sigma: sigma.clone(), period: ell, chord },
+            );
+            filed = true;
+        }
+        filed
+    }
+}
