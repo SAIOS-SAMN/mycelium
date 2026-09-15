@@ -20,6 +20,19 @@ impl Entity {
         let i = self.refine_cursor;
         let sub = g.get(i)?.substance();
         if sub.sub().is_empty() {
+            // A SENTENCE HAS NO CHAIN AND IS NOT THEREFORE IRREDUCIBLE.
+            // `as_element_form` writes a description and a magnitude and
+            // never a chain, so `sub()` is empty for EVERY sentence and this
+            // arm has always refused all of them: the spatial deconstruction
+            // below can only ever examine chain-carrying residual words.
+            //
+            // A word is an OPERATOR, not a tile. Two words can induce one
+            // element of `Spin(4,0)` with disjoint supports, and one word can
+            // be a change of basepoint away from another. Neither is visible
+            // to a test that asks whether cells pave cells. `algebraic_redundancy`
+            // asks the two algebraic questions instead — is this operator
+            // already held, and is it a section of a bundle already held —
+            // and both are decided exactly rather than searched.
             return None;
         }
         // `locate` deconstructs over the WORKING atlas (U2): a cite's index
@@ -292,4 +305,96 @@ impl Entity {
         }
     }
 
+    /// EXPANSIONS 1 AND 2 — WHY A WORD IS REDUNDANT, ALGEBRAICALLY.
+    ///
+    /// `seek_refinement` asks one question: do the rest of the vocabulary's
+    /// CELLS pave this word's cells. That is extensional — it treats a word
+    /// as a tile — and it misses two ways a word can carry nothing new:
+    ///
+    /// 1. SAME OPERATOR (Expansion 1). Two tapes can induce one element of
+    ///    `Spin(4,0)` with entirely disjoint supports, because a word is an
+    ///    operator and its support is only where it was last observed
+    ///    acting. The word problem here is DECIDED — the rotor
+    ///    representation is faithful over ℚ — so this is one geometric
+    ///    product and one projective comparison, not a search.
+    ///
+    /// 2. SAME BUNDLE (Expansion 2). A word conjugate to a held word is a
+    ///    SECTION of it: one base, two basepoints. `γ` is solved from the
+    ///    linear relation `γa = λbγ`, exactly, and the language keeps the
+    ///    base and the transition instead of two monoliths.
+    ///
+    /// Both answers carry their WITNESS — the held word, and for a section
+    /// the `γ` that relates them — because "redundant" on its own is an
+    /// assertion and with the witness it is a re-derivation anyone replays
+    /// (16.12 step 4).
+    ///
+    /// The vocabulary read is the RULED words: a compression bid the court
+    /// must replay cannot lean on a word the mesh does not hold (rule 11),
+    /// which is the same condition the spatial bid already enforces.
+    pub fn algebraic_redundancy(&self) -> Option<Redundancy> {
+        let g = self.epigenome.genome();
+        if g.len() < 2 {
+            return None;
+        }
+        let i = self.refine_cursor % g.len();
+        let held = g.get(i)?;
+        let w = crate::transducer::sentence::words_of_element(held.element());
+        let mine = w.into_iter().next()?;
+        if mine.is_identity() {
+            return None;
+        }
+        // Every other ruled word's carried letters, as candidates. The
+        // genome is the carrier being compressed, so walking it is the
+        // object's own boundary and not a lookup that had a coordinate.
+        let mut others: Vec<(crate::transducer::address::Address, crate::transducer::alphabet::Word)> =
+            Vec::new();
+        for (j, h) in g.iter().enumerate() {
+            if j == i {
+                continue;
+            }
+            for word in crate::transducer::sentence::words_of_element(h.element()) {
+                if !word.is_identity() {
+                    others.push((h.address(), word));
+                }
+            }
+        }
+        for (addr, other) in &others {
+            if mine.operator_eq(other) {
+                return Some(Redundancy::SameOperator { held: addr.clone() });
+            }
+        }
+        let words: Vec<crate::transducer::alphabet::Word> =
+            others.iter().map(|(_, w)| w.clone()).collect();
+        if let Some((base, gamma)) = crate::transducer::alphabet::bundle::section_of(&words, &mine) {
+            let held = others
+                .iter()
+                .find(|(_, w)| {
+                    crate::transducer::alphabet::rewrite::tape_key(w)
+                        == crate::transducer::alphabet::rewrite::tape_key(&base)
+                })
+                .map(|(a, _)| a.clone())?;
+            return Some(Redundancy::Section { held, gamma: Box::new(gamma) });
+        }
+        None
+    }
+}
+
+/// WHY A WORD CARRIES NOTHING NEW, with the witness that shows it.
+#[derive(Clone, Debug)]
+pub enum Redundancy {
+    /// The language already holds a word inducing this operator. The tapes
+    /// may differ entirely; the element does not.
+    SameOperator {
+        held: crate::transducer::address::Address,
+    },
+    /// This word is a section of a held word's bundle: one base, and `gamma`
+    /// is the change of basepoint between them.
+    ///
+    /// Boxed because a `Word` carries its memoised rotor — sixteen
+    /// rationals — and a variant that does not hold one should not pay that
+    /// footprint for the variant that does.
+    Section {
+        held: crate::transducer::address::Address,
+        gamma: Box<crate::transducer::alphabet::Word>,
+    },
 }
