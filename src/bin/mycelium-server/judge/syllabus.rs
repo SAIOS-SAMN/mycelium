@@ -48,10 +48,18 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let mut words: Vec<Vec<u8>> = Vec::new();
     let mut classes: Vec<dialogue::ClassPage> = Vec::new();
     let mut overran = false;
-    if let Ok(mut k) = kernel.lock() {
-        let mut have_all: Vec<mycelium::transducer::address::Address> = Vec::new();
+    if let Ok(k) = kernel.lock() {
+        // A VOICE'S HAVE-LIST IS NEVER A VANTAGE (47.3, 1.7). `have` says
+        // which words the voice already holds so the page carries only what
+        // it lacks; it stood here ALSO as evidence for
+        // `confirm_peer_holds_addrs(&have_all, fvoice)`, which recorded the
+        // voice as an organ that re-derived every provisional it named and
+        // installed on it. A voice holds the sentences it spoke, so the
+        // speaker witnessed its own speech — "free identities witnessing
+        // themselves" — and 8 of 8 installs on a5da8d5 came through this
+        // door. A second vantage is a hypha's replay (`judge::offer`) or a
+        // hypha's served page (`exchange`); a mouth is not one.
         for dialogue::ChartOf { inv, have } in &charts {
-            have_all.extend(have.iter().cloned());
             let page = k.serve_ruled(inv, have, budget);
             // `serve_ruled` fills to the budget and no further, so what is
             // left is exact. A page WIDER than the budget is a broken page,
@@ -69,7 +77,6 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                 break;
             }
         }
-        k.confirm_peer_holds_addrs(&have_all, fvoice);
     }
     if overran {
         eprintln!("  fetch refused: a served page ran past the frame budget");
