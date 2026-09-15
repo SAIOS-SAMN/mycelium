@@ -247,7 +247,13 @@ impl Entity {
         // the wrong clock.
         let tu = self.now_tu();
         self.contemplation.set_now(tu);
-        let crate::transducer::bubble::drive::Expanded { pivoted, crystallized, orbit, .. } = {
+        let crate::transducer::bubble::drive::Expanded {
+            pivoted,
+            crystallized,
+            orbit,
+            adjoined,
+            ..
+        } = {
             let epigenome = &self.epigenome;
             let atlas = epigenome.working_atlas();
             // The held word's SECTION, both halves off the one element:
@@ -263,6 +269,38 @@ impl Entity {
                 .expand_all(&atlas, &section_at, epigenome, &mut budget)
         };
         self.contemplation.retire_on_t(self.physics.reserve[2] as usize);
+        // 37.7 — ADJOIN WHAT THE ALPHABET CANNOT SPELL. A cover meet that
+        // produced a rotor the seventeen have no letter for is the one place
+        // a mind can CONSTRUCT a generator rather than receive one, and it
+        // was dropped at three sites. Measured across the fleet: every Word
+        // vertex and every edge transport of every admitted form carries the
+        // identity — `turning 0` and `turning_edges 0`, totals, over 38 and
+        // 44 admits — so `crystal.on_axis` answered 0 on every read and the
+        // pivot was never offered anything. It could not be: nothing in the
+        // tree minted one.
+        //
+        // The generator stands in the DIALECT, not the genome: it is this
+        // mind's own, memory only, until a court rules it (24.1). That is
+        // also why it does not suppress a demand — `pivot_loop` defers on
+        // `Standing::Ruled` alone — so the mind adjoins the letter AND keeps
+        // asking the mesh for one, and whichever arrives first closes the
+        // loop.
+        for (rotor, chart) in &adjoined {
+            let Some(e) = crate::transducer::sentence::generator_form(rotor, chart, &[]) else {
+                continue;
+            };
+            let addr = e.address();
+            if self.epigenome.standing_of(addr.as_bytes()).is_some() {
+                continue;
+            }
+            self.stand_crystallized(&e);
+            eprintln!(
+                "  letter adjoined {:02x}{:02x}… on chart {:?}",
+                addr.as_bytes()[0],
+                addr.as_bytes()[1],
+                chart.0
+            );
+        }
         for e in &crystallized {
             self.stand_crystallized(e);
         }

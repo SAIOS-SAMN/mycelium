@@ -278,7 +278,12 @@ impl Bubble {
         now: u64,
         crystal: &dyn Crystal,
         budget: &mut Budget,
-    ) -> (usize, [u64; 4]) {
+    ) -> (usize, [u64; 4], Vec<(Rotor, crate::transducer::stalk::Invariant)>) {
+        // 37.7's candidates, carried out rather than dropped: the rotors this
+        // stroke met that the seventeen cannot spell, each with the chart it
+        // was met on. The bubble cannot mint — minting writes a word into the
+        // language and the language is the entity's — so it carries them.
+        let mut adjoined: Vec<(Rotor, crate::transducer::stalk::Invariant)> = Vec::new();
         // THE POTENTIAL IS A READING, NEVER A GATE (L7b, law 9): the lane
         // measure of everything this idea holds open — its form's remainder
         // and its per-pair remainders, the same cells `admit_incidence`
@@ -292,11 +297,11 @@ impl Bubble {
         // A clock that went backwards measures no extent, and an idea whose
         // T cannot be read is not expanded against one.
         let Some(t) = held_since(now, self.moved_k) else {
-            return (0, [0; 4]);
+            return (0, [0; 4], Vec::new());
         };
         self.potential[2] = t;
         if budget.remaining() == 0 {
-            return (0, [0; 4]);
+            return (0, [0; 4], Vec::new());
         }
         let mut spent = 0usize;
         // THE CHARTS THIS IDEA MEETS ARE ITS OWN SECTIONS' CHARTS, and their
@@ -394,9 +399,25 @@ impl Bubble {
                             horizon_put(&mut self.horizon, *r, Standing::Held);
                         }
                     }
-                    // 37.7 at a cell: a rotation the seventeen do not spell,
-                    // which seeds no horizon and closes nothing.
-                    Fill::Unspellable(_) => closed = false,
+                    // 37.7 AT A CELL: a rotation the seventeen do not spell.
+                    // It seeds no horizon — a horizon class is one the
+                    // alphabet names — and it closes nothing, and it is an
+                    // ADJUNCTION CANDIDATE: the rotor the mind measured and
+                    // has no letter for, which is exactly what an adjoined
+                    // generator is made of (37.7, `Derivation::adjoined`).
+                    //
+                    // It was dropped here. Measured across the fleet, every
+                    // Word vertex and every edge transport in every admitted
+                    // form carries the IDENTITY rotor — `turning 0` and
+                    // `turning_edges 0`, totals, over 38 and 44 admits — so
+                    // the mind holds no generator at all and `crystal.on_axis`
+                    // answers 0 on every read. It cannot: nothing in the tree
+                    // constructs one. This carries the rotor and its chart out
+                    // to the entity, which mints and stands it.
+                    Fill::Unspellable(r) => {
+                        closed = false;
+                        adjoined.push((r.as_ref().clone(), chart.clone()));
+                    }
                     Fill::Open | Fill::Already => closed = false,
                 }
             }
@@ -426,12 +447,20 @@ impl Bubble {
                     for i in 0..4 {
                         pivoted[i] = pivoted[i].saturating_add(m[i]);
                     }
+                    // 37.7 from the loop's own residue, joining the cover's
+                    // own candidates on the way out. The pivot measured a
+                    // rotor no held generator reaches and the mesh has not
+                    // answered; the entity mints it beside the ones the
+                    // cover meets produced, through the one construction.
+                    if let crate::transducer::sentence::Snap::Adjoin { rotor, chart, .. } = s {
+                        adjoined.push((rotor.as_ref().clone(), chart.clone()));
+                    }
                 }
                 self.take_form(form);
             }
         }
         self.dirty = spent > 0 && budget.remaining() == 0;
-        (spent, pivoted)
+        (spent, pivoted, adjoined)
     }
 
     /// A glue or a syllabus class whose key equals one held certificate's

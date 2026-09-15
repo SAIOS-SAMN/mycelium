@@ -24,6 +24,19 @@ pub enum Snap {
     TorsionFiled { chord: usize, ell: u32 },
     TorsionOpen { chord: usize },
     Demand { chord: usize, key: crate::transducer::address::Address },
+    /// 37.7 FROM A LOOP'S OWN RESIDUE: the basis reached no coordinate this
+    /// loop occupies, the class was published and nothing answered, so the
+    /// rotor the loop measured is carried out to be ADJOINED as a generator.
+    /// The one move by which a mind constructs the letter it could not be
+    /// given, rather than asking again for it.
+    ///
+    /// It carries no lane measure. Adjoining widens the language; it
+    /// discharges nothing on this form and its μ⃗ is not a deflation.
+    Adjoin {
+        chord: usize,
+        rotor: Box<crate::transducer::alphabet::Rotor>,
+        chart: crate::transducer::stalk::Invariant,
+    },
 }
 
 impl Snap {
@@ -42,9 +55,15 @@ impl Snap {
                 }
                 s
             }
-            Snap::TorsionFiled { .. } | Snap::Unmeasured { .. } | Snap::Closed { .. } | Snap::TorsionOpen { .. } | Snap::Demand { .. } => {
-                [0; 4]
-            }
+            // `Adjoin` is here for the reason `Demand` is: it widens the
+            // language and discharges nothing on this form, so it deflates
+            // no lane and its μ⃗ is not a reading to be summed.
+            Snap::TorsionFiled { .. }
+            | Snap::Unmeasured { .. }
+            | Snap::Closed { .. }
+            | Snap::TorsionOpen { .. }
+            | Snap::Demand { .. }
+            | Snap::Adjoin { .. } => [0; 4],
         }
     }
 }

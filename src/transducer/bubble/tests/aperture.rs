@@ -44,7 +44,7 @@ fn a_held_idea_expands_at_zero_extent_and_its_potential_reads_zero_on_t() {
     let k = c.bubbles.scoped().next().map(|(k, _)| k).expect("held");
     let atlas = crate::transducer::stalk::Stalks::default();
     let mut budget = crate::physics::Physics::default().stroke_n(4);
-    let (spent, _) = c
+    let (spent, _, _) = c
         .bubbles
         .get_mut(&k)
         .expect("held")

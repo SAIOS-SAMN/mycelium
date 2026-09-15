@@ -19,6 +19,11 @@ pub struct Expanded {
     pub pivoted: [u64; 4],
     pub crystallized: Vec<Element>,
     pub orbit: Option<(u64, u64)>,
+    /// 37.7's ADJUNCTION CANDIDATES: the rotors this stroke's cover meets
+    /// produced that the seventeen cannot spell, each with the chart it was
+    /// met on. They are carried rather than minted here because minting
+    /// writes a word into the language and the language is the entity's.
+    pub adjoined: Vec<(crate::transducer::alphabet::Rotor, crate::transducer::stalk::Invariant)>,
 }
 
 impl Contemplation {
@@ -34,6 +39,10 @@ impl Contemplation {
         let mut spent = 0usize;
         let mut pivoted = [0u64; 4];
         let mut crystallized = Vec::new();
+        let mut adjoined: Vec<(
+            crate::transducer::alphabet::Rotor,
+            crate::transducer::stalk::Invariant,
+        )> = Vec::new();
         let began = self.expand_cursor.clone();
         let mut from = began.clone();
         let mut wraps = 0u64;
@@ -68,11 +77,12 @@ impl Contemplation {
             from = Some(k.clone());
             self.expand_cursor = Some(k.clone());
             if let Some(b) = self.bubbles.get_mut(&k) {
-                let (s, p) = b.expand_with(atlas, section_at, self.now_k, crystal, budget);
+                let (s, p, mut a) = b.expand_with(atlas, section_at, self.now_k, crystal, budget);
                 spent += s;
                 for i in 0..4 {
                     pivoted[i] = pivoted[i].saturating_add(p[i]);
                 }
+                adjoined.append(&mut a);
                 if !b.dirty {
                     self.dirty.remove(&k);
                 }
@@ -96,7 +106,7 @@ impl Contemplation {
             }
         }
         let orbit = self.ring.stroke(u64::from(wraps > 0));
-        Expanded { spent, pivoted, crystallized, orbit }
+        Expanded { spent, pivoted, crystallized, orbit, adjoined }
     }
 
     /// Attempt fill on the link of bubbles at `word`'s chart and prefixes.
