@@ -8,6 +8,7 @@ mod form;
 mod gauge;
 mod lanes;
 mod pivot;
+mod pivot_generator;
 mod pivot_loop;
 mod refraction;
 mod rotor_class;

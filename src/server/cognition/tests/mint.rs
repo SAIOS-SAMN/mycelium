@@ -290,3 +290,140 @@ assert!(
     "a ruling mints and never unmakes: {held:?} then {after:?}"
 );
 }
+
+/// Y3 (50.5, E2, §8.1): A sentence of three word vertices and seven demands
+/// mints on its closed sub-complex, and the amount is the deflation those
+/// three closed and nothing else; a sentence of zero word vertices mints nothing.
+#[test]
+fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subcomplex() {
+    use crate::transducer::sentence::{Demand, Vertex};
+    use crate::transducer::stalk;
+    let mut x = vec![vec![0u8; 12]; 18];
+    // Body 1: length 1 at (0, 0)
+    x[0][0] = 1;
+    // Body 2: length 2 at (0, 2), (0, 3)
+    x[0][2] = 2;
+    x[0][3] = 2;
+    // Body 3: length 3 at (0, 5), (0, 6), (0, 7)
+    x[0][5] = 3;
+    x[0][6] = 3;
+    x[0][7] = 3;
+
+    let mut y_recoloured = vec![vec![0u8; 12]; 18];
+    y_recoloured[0][0] = 4;
+    y_recoloured[0][2] = 5;
+    y_recoloured[0][3] = 5;
+    y_recoloured[0][5] = 6;
+    y_recoloured[0][6] = 6;
+    y_recoloured[0][7] = 6;
+    let pure_family = vec![(x.clone(), y_recoloured.clone())];
+    let mut pf = crate::transducer::family::pair_form_uncrystallized(&x, &y_recoloured, None);
+    let pure_words = pf
+        .vertices
+        .iter()
+        .filter(|v| matches!(v, Vertex::Word { .. }))
+        .count();
+    assert_eq!(pure_words, 3, "three word vertices extracted");
+    let (three_closed_deflation, _) = crate::transducer::family::form_deflation(
+        &pf,
+        &pure_family,
+        &crate::transducer::family::NoCrystal,
+    );
+    assert!(
+        three_closed_deflation.iter().any(|&d| d > 0),
+        "three recolours achieve positive deflation"
+    );
+
+    let demand_shapes: Vec<Vec<(i64, i64)>> = vec![
+        vec![(3, 0), (3, 1), (3, 2), (3, 3)],
+        vec![(5, 0), (5, 1), (5, 2), (5, 3), (5, 4)],
+        vec![(7, 0), (7, 1), (7, 2), (7, 3), (7, 4), (7, 5)],
+        vec![(9, 0), (9, 1), (9, 2), (9, 3), (9, 4), (9, 5), (9, 6)],
+        vec![(11, 0), (11, 1), (11, 2), (11, 3), (11, 4), (11, 5), (11, 6), (11, 7)],
+        vec![(13, 0), (13, 1), (13, 2), (13, 3), (13, 4), (13, 5), (13, 6), (13, 7), (13, 8)],
+        vec![(15, 0), (15, 1), (15, 2), (15, 3), (15, 4), (15, 5), (15, 6), (15, 7), (15, 8), (15, 9)],
+    ];
+    let mut y_with_7_creations = y_recoloured.clone();
+    for s in &demand_shapes {
+        for &(r, c) in s {
+            y_with_7_creations[r as usize][c as usize] = 7;
+        }
+    }
+    let family = vec![(x.clone(), y_with_7_creations.clone())];
+
+    for s in &demand_shapes {
+        let cells: Vec<(i64, i64, u8, u8)> = s.iter().map(|&(r, c)| (r, c, 0u8, 7u8)).collect();
+        let chart = stalk::invariant(&cells);
+        pf.vertices.push(Vertex::Demand {
+            kind: Demand::Creation,
+            chart,
+            bodies: cells,
+        });
+    }
+    pf.reindex();
+    let rule = crate::transducer::sentence::rule_of_form(pf);
+
+    let words_count = rule
+        .form
+        .vertices
+        .iter()
+        .filter(|v| matches!(v, Vertex::Word { .. }))
+        .count();
+    let demands_count = rule.form.demand_vertices().count();
+    assert_eq!((words_count, demands_count), (3, 7));
+
+    let spoken = crate::transducer::family::mint_sentence(
+        &rule,
+        &family,
+        &crate::transducer::family::NoCrystal,
+        0,
+    )
+    .expect("a sentence of three word vertices and seven demands mints on its closed sub-complex");
+    assert!(spoken.is_sentence());
+
+    let mut zero_word_rule = rule.clone();
+    zero_word_rule
+        .form
+        .vertices
+        .retain(|v| !matches!(v, Vertex::Word { .. }));
+    zero_word_rule.form.reindex();
+    assert_eq!(
+        zero_word_rule
+            .form
+            .vertices
+            .iter()
+            .filter(|v| matches!(v, Vertex::Word { .. }))
+            .count(),
+        0
+    );
+    assert!(
+        crate::transducer::family::mint_sentence(
+            &zero_word_rule,
+            &family,
+            &crate::transducer::family::NoCrystal,
+            0,
+        )
+        .is_none(),
+        "a sentence of zero word vertices mints nothing"
+    );
+
+    let mut k = Kernel::new();
+    let task = crate::registry::task_id(&crate::arc::Task {
+        train: family.clone(),
+        test: Vec::new(),
+    })
+    .expect("task identity");
+    k.bind_task_family(&task, family);
+    let addr = spoken.address();
+    let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
+    assert_eq!(codes, vec![crate::anastome::dialogue::SPEECH_STOOD]);
+    k.rule_all_provisionals();
+    let cover = k.genesis_cover().expect("measured");
+    k.enroll([2; 32], cover);
+    k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+    assert_eq!(
+        k.treasury().minted().expect("minted adds up"),
+        three_closed_deflation,
+        "the amount is the deflation those three closed and nothing else"
+    );
+}
