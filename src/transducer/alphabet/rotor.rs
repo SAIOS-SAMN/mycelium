@@ -142,7 +142,12 @@ impl Rotor {
 
     /// Even-grade: only scalar, bivectors and pseudoscalar. An odd blade
     /// means the element is not a rotor.
-    fn is_even(&self) -> bool {
+    ///
+    /// Public since the graded decomposition (`grade`, `grades`) is a
+    /// reading callers take: "is this an element of `Cl⁺(4,0)`" is the same
+    /// question as "are its occupied grades even", and two readers of one
+    /// fact is what law 12 refuses.
+    pub fn is_even(&self) -> bool {
         (0..16).all(|i| (i as u32).count_ones() % 2 == 0 || self.c[i].is_zero())
     }
 
@@ -275,6 +280,59 @@ impl Rotor {
 
     pub fn is_identity(&self) -> bool {
         self.c[0].is_one() && (1..16).all(|i| self.c[i].is_zero())
+    }
+
+    /// EXPANSION 3 — THE GRADED DECOMPOSITION `W = ⟨W⟩₀ + ⟨W⟩₂ + ⟨W⟩₄`.
+    ///
+    /// A blade's grade is the population count of its mask: `Cl(4,0)` has
+    /// one scalar (mask 0), four vectors, six bivectors, four trivectors and
+    /// one pseudoscalar (mask 15). The EVEN subalgebra `Cl⁺(4,0)` is grades
+    /// 0, 2 and 4 — eight coefficients — and that is what a rotor is.
+    ///
+    /// The grades are not four separate carriers to be summed. They are the
+    /// projection of ONE multivector, and the whole point of holding it as a
+    /// multivector is that a single geometric product composes all of them at
+    /// once: a turn, a gauge transition and a dilation compose in one `geo`
+    /// rather than in three lanes that must be re-mixed afterwards.
+    ///
+    /// What each grade carries, on this algebra:
+    /// - `⟨W⟩₀` — the scalar weight. Identity is a pure grade 0.
+    /// - `⟨W⟩₂` — the six bivectors. Every rotation lives here, one
+    ///   coefficient per plane, and `Spin(4) = SU(2) × SU(2)` is exactly the
+    ///   statement that `e₀∧e₁` and `e₂∧e₃` turn independently.
+    /// - `⟨W⟩₄` — the pseudoscalar `e₀e₁e₂e₃`, the 4-volume, which a
+    ///   double rotation carries and a single-plane turn does not.
+    ///
+    /// A reading, never a gate: it says which grades carry content, and the
+    /// caller decides what that means.
+    pub fn grade(&self, k: u32) -> Rotor {
+        let mut out = Rotor::zero();
+        for m in 0..16usize {
+            if (m as u32).count_ones() == k {
+                out.c[m] = self.c[m].clone();
+            }
+        }
+        out
+    }
+
+    /// The grades this rotor actually occupies, ascending. Empty is the
+    /// zero multivector, which is not a versor and carries nothing.
+    pub fn grades(&self) -> Vec<u32> {
+        let mut out = Vec::new();
+        for k in 0..=4u32 {
+            if (0..16usize).any(|m| (m as u32).count_ones() == k && !self.c[m].is_zero()) {
+                out.push(k);
+            }
+        }
+        out
+    }
+
+    /// THE PSEUDOSCALAR COEFFICIENT, `⟨W⟩₄` as a rational. A double rotation
+    /// of `Spin(4)` carries it and a single-plane turn does not, so it is the
+    /// exact reading that separates the two — and it is the coefficient
+    /// `class_invariants` calls `p`.
+    pub fn pseudoscalar(&self) -> &Q {
+        &self.c[15]
     }
 
     /// THE BLADES THIS ROTOR CARRIES OUTSIDE ONE PLANE — the masks with a
