@@ -249,12 +249,12 @@ mod tests {
 
     /// A1. TWO ORGANS THAT SPELL ONE VERTEX DIFFERENTLY CONVERGE. The test
     /// is re-derivation, not bytes: a versor and its negation are ONE
-    /// projective element and two byte strings, and `form_key_bytes` writes
-    /// the bytes, so the two reach different M2 addresses. An organ that
-    /// derived the negated sign holds the same vertex and must not be
-    /// called inexact. Comparing addresses made the codec the arbiter of
-    /// meaning; 17.1 says equality is M1, and `projective_eq` with either
-    /// sign is that test without going through bytes at all.
+    /// projective element and two coefficient lists. `form_key_bytes` once
+    /// wrote the list, so the two reached different M2 addresses and the
+    /// court had to read M1 behind the bytes; it writes the A4 output now
+    /// (17.2), so the two presentations reach ONE address and the court's
+    /// M1 test and the address agree. An organ that derived the negated
+    /// sign holds the same vertex and is not called inexact.
     #[test]
     fn differently_spelled_rederivations_converge() {
         use num_rational::BigRational;
@@ -263,11 +263,12 @@ mod tests {
         let neg = v.scale(&-BigRational::one());
         let mine = element::of_versor(v);
         let theirs = element::of_versor(neg);
-        assert_ne!(
+        assert_eq!(
             mine.address(),
             theirs.address(),
-            "two addresses -- otherwise this test proves nothing"
+            "one address (17.2): the codec writes A4, not the sign"
         );
+        assert!(mine.same_vertex(&theirs), "and M1 agrees with it");
 
         let mut c = Convergence::new();
         let key = mine.address();

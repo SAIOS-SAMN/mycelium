@@ -4,6 +4,7 @@
 pub mod common;
 
 mod budget;
+mod canonical;
 mod cover;
 mod deflation;
 mod derivation;

@@ -147,9 +147,10 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
 /// is what the member acts BY. Content, so two encodings of one assignment
 /// are one key (law 2), and sorted for the same reason `form_vertex_key`
 /// sorts it — a gauge is a map and not a list.
-fn assignment_key(a: &crate::transducer::sentence::Acting) -> Vec<u8> {
+pub(super) fn assignment_key(a: &crate::transducer::sentence::Acting) -> Vec<u8> {
     let mut buf = Vec::new();
-    a.carriage.to_bytes(&mut buf);
+    // A4 output (17.2): raw coefficients made a carriage and its negation two assignments.
+    a.carriage.put_canonical(&mut buf);
     let mut g = a.gauge.clone();
     g.sort_unstable();
     buf.extend_from_slice(&(g.len() as u16).to_le_bytes());

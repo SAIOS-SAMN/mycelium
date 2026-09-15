@@ -66,12 +66,11 @@ impl Element {
         // SENTENCE FORMS are addressed by `sentence::vertex_address`, which
         // 17.2 step 3 defines as M1 keys and A4 canonical versors per germ
         // and per face -- canonical coordinates, so equality of those bytes
-        // IS the vertex comparison. Today it writes raw versor bytes rather
-        // than A4 outputs (17.2 names the line), so a carriage and its
-        // negation still read as two addresses here. That is the remaining
-        // place where the codec can call one vertex two, it is 17.2's own
-        // open item, and it is left visible rather than papered over with a
-        // comparison that would be right for a different encoder.
+        // IS the vertex comparison. It writes the A4 output of every
+        // carriage (`Mv::put_canonical`), as does `form_key_bytes` below, so
+        // a carriage and its negation are one address everywhere and a
+        // differing address here is a differing vertex. 17.2's open item is
+        // closed; this arm is the whole test for sentence forms.
         if self.is_sentence() || other.is_sentence() {
             return false;
         }
@@ -298,7 +297,10 @@ impl Element {
         }
         if let Some(letters) = self.letters() {
             crate::transducer::address::put_bytes(&mut out, letters.spelling.word.key().as_bytes());
-            letters.carriage.to_bytes(&mut out);
+            // A4 output (17.2): one projective carriage, one writing. Raw
+            // coefficients here made a carriage and its negation two
+            // addresses, and `blind_replay` slashed on the difference.
+            letters.carriage.put_canonical(&mut out);
             let mut sigma = letters.sigma.clone();
             sigma.sort_unstable();
             out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
@@ -307,7 +309,8 @@ impl Element {
                 out.push(t);
             }
         } else if let Some(v) = self.action.spatial.as_ref() {
-            v.to_bytes(&mut out);
+            // The spatial action is a versor too; the same A4 writing.
+            v.put_canonical(&mut out);
         }
         // The key IS the chain (law 2), and the chain is A5's by type: one
         // that says two things at a site has no centering and is refused

@@ -189,6 +189,32 @@ fn a_form_speaking_two_rotors_carries_two_sections_and_no_single_rotor() {
     }
 }
 
+/// 17.2, A4 — A SECTION IS KEYED BY THE CARRIAGE RAY. Two vertices holding
+/// one rotor on one chart with carriages `c` and `−c` hold one section; raw
+/// coefficients keyed them as two.
+#[test]
+fn two_vertices_whose_carriages_differ_by_sign_hold_one_section() {
+    use crate::transducer::alphabet::{Derivation, LetterId, Word};
+    use crate::transducer::sentence::{Form, Vertex};
+    use crate::transducer::stalk::Invariant;
+    let q01 = LetterId::quarter((0, 1)).expect("the sensor plane");
+    let c = element::translator_versor(1, 2);
+    let neg = c.scale(&num_rational::BigRational::from_integer(num_bigint::BigInt::from(-1)));
+    let mut f = Form::default();
+    for (i, car) in [c, neg].into_iter().enumerate() {
+        f.vertices.push(Vertex::word_on(
+            crate::transducer::address::Address::from_bytes([4u8, i as u8]),
+            Derivation::spelled(Word::from_letters(&[(q01, false)])),
+            Invariant(vec![3, 5]),
+            Box::new(car),
+            Vec::new(),
+            None,
+        ));
+    }
+    let b = Bubble { form: Some(f), ..Default::default() };
+    assert_eq!(b.sections().len(), 1, "one carriage ray on one chart is one section, not one per sign");
+}
+
 /// AN IDEA MEETS THE CHARTS IT STANDS ON, AND NO OTHERS. A Čech cell is the
 /// overlap of two sections, and two sections overlap when they are sections
 /// over one chart; a chart no vertex of this form acts on is not an overlap

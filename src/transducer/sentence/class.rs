@@ -208,7 +208,14 @@ impl ClassVector {
             }
         }
         self.hue.to_bytes(&mut buf);
-        self.carriage.to_bytes(&mut buf);
+        // THE CARRIAGE IS WRITTEN CANONICALLY (A4). Raw coefficients stood
+        // here, so a carriage and its negation — one projective element —
+        // gave two class keys, and every reader keyed or compared by class
+        // inherited it: the certificate's `before`/`after` at the court, the
+        // "do the paths agree" test, `rank_of_rows`, the axis carrier,
+        // `file_loop`, the horizon. The field's own doc says "after the tree
+        // gauge (A4)" and the key did not enforce it.
+        self.carriage.put_canonical(&mut buf);
         crate::transducer::address::Address::new(buf)
     }
 

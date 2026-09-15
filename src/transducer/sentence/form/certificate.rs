@@ -125,7 +125,8 @@ impl PivotCertificate {
             PivotBy::Placement { face, translator } => {
                 buf.push(1);
                 buf.extend_from_slice(&face.to_le_bytes());
-                translator.to_bytes(&mut buf);
+                // A4 output (17.2): a pivot by T and by −T is one pivot.
+                translator.put_canonical(&mut buf);
             }
             PivotBy::Hue { face, gauge } => {
                 buf.push(2);
@@ -139,7 +140,8 @@ impl PivotCertificate {
             PivotBy::OpenAxis { face, seed } => {
                 buf.push(3);
                 buf.extend_from_slice(&face.to_le_bytes());
-                seed.to_bytes(&mut buf);
+                // A4 output (17.2): the seed is a ray, not a coefficient list.
+                seed.put_canonical(&mut buf);
             }
         }
         buf

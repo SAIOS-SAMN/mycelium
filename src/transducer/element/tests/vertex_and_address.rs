@@ -7,15 +7,15 @@ use num_bigint::BigInt;
 use crate::transducer::germinate::germinate;
 use super::common::*;
 
-/// M1 (17.1): equality is the projective class, and `same_vertex` says
-/// so. A versor and its negation are ONE element of the conformal group
-/// and TWO byte strings, and `form_key_bytes` writes the bytes, so the
-/// two have different M2 addresses. `same_vertex` was
-/// `address() == address()`, which called them two vertices; two organs
-/// that derived opposite signs would then have been REFUSE_MV_INEXACT
-/// for agreeing.
+/// M1 (17.1) and M2 (17.2): equality is the projective class, and the
+/// address is derived from it. A versor and its negation are ONE element
+/// of the conformal group and TWO coefficient lists; `form_key_bytes`
+/// wrote the list, so one element had two addresses and `same_vertex`
+/// had to read the class behind the bytes. It now writes the A4 output,
+/// so the two are one address — the codec no longer writes the sign, and
+/// a differing address is a differing element.
 #[test]
-fn a_versor_and_its_negation_are_one_vertex_and_two_addresses() {
+fn a_versor_and_its_negation_are_one_vertex_and_one_address() {
     let q = |n: i64| num_rational::BigRational::from_integer(BigInt::from(n));
     let v = translator_versor(2, 3);
     let neg = v.scale(&q(-1));
@@ -23,8 +23,10 @@ fn a_versor_and_its_negation_are_one_vertex_and_two_addresses() {
 
     let a = of_versor(v);
     let b = of_versor(neg);
-    assert_ne!(a.address(), b.address(), "and two addresses: the codec writes the sign");
-    assert!(a.same_vertex(&b), "M1 reads the class, not the bytes");
+    assert_eq!(a.address(), b.address(), "and one address: the codec writes A4, not the sign");
+    assert!(a.same_vertex(&b), "M1 reads the class");
+    let scaled = of_versor(translator_versor(2, 3).scale(&q(7)));
+    assert_eq!(a.address(), scaled.address(), "any λ·V is the same address");
 
     // A genuinely different action is still a different vertex.
     let c = of_versor(translator_versor(2, 4));
@@ -114,7 +116,7 @@ fn connection_address_keys_the_carriage_not_a_pair() {
     let w = from_connection(&crate::transducer::alphabet::Word::identity(), &car, &[], &Vec::new(), [1, 0, 0, 0]).expect("spells");
     let letters = w.letters().expect("letters");
     let mut bytes = Vec::new();
-    letters.carriage.to_bytes(&mut bytes);
+    letters.carriage.put_canonical(&mut bytes);
     assert!(
         w.address().as_bytes().windows(bytes.len()).any(|s| s == bytes.as_slice()),
         "M2 keys the A4 carriage, not a coordinate pair"

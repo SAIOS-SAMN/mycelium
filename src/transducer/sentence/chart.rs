@@ -344,7 +344,14 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
                     if !single {
                         crate::transducer::address::put_bytes(&mut buf, &ck);
                     }
-                    a.carriage.to_bytes(&mut buf);
+                    // A4 OUTPUT, NOT RAW VERSOR BYTES — 17.2's open item,
+                    // named at `same_vertex`: "a carriage and its negation
+                    // still read as two addresses here". Closed. An address
+                    // is now the same bytes for one projective carriage
+                    // however an organ derived it, so a differing address
+                    // means a differing vertex and the fast path is the
+                    // whole test.
+                    a.carriage.put_canonical(&mut buf);
                     match contact {
                         None => buf.push(0),
                         Some(c) => {
@@ -385,7 +392,8 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
                 buf.extend_from_slice(&(acts.len() as u16).to_le_bytes());
                 for (ck, a) in acts.scoped() {
                     crate::transducer::address::put_bytes(&mut buf, &ck);
-                    a.carriage.to_bytes(&mut buf);
+                    // A4 output here as in the Word arm (17.2).
+                    a.carriage.put_canonical(&mut buf);
                     let mut g = a.gauge.clone();
                     g.sort_unstable();
                     buf.extend_from_slice(&(g.len() as u16).to_le_bytes());

@@ -106,6 +106,27 @@ impl Mv {
         Some(r)
     }
 
+    /// THE CANONICAL WRITING (A4, 17.2): the coefficients after `canonical`,
+    /// so a versor and every `λ·versor` write the same bytes and a key built
+    /// from them is content rather than one chosen spelling of it.
+    ///
+    /// Every key and address in the tree that carried a versor wrote its
+    /// raw coefficients — `class_key`, `vertex_address`, `form_key_bytes` —
+    /// so a carriage and its negation, one projective element, were two
+    /// keys. `same_vertex` named this as 17.2's open item and every
+    /// comparison downstream of those keys inherited it. This is the one
+    /// writer that closes it.
+    ///
+    /// The zero element has no `canonical` and is not a versor; its sixteen
+    /// zeros are already its only writing, so it is written as it is — a
+    /// fact about zero, not a default standing in for a canonical form.
+    pub fn put_canonical(&self, out: &mut Vec<u8>) {
+        match self.canonical() {
+            Some(c) => c.to_bytes(out),
+            None => self.to_bytes(out),
+        }
+    }
+
     /// `a = λ b` for `λ ∈ ℚ×` of either sign.
     pub fn projective_eq(&self, other: &Mv) -> bool {
         projective_ratio(self, other).is_some_and(|l| !l.is_zero())
