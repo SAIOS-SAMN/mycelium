@@ -537,6 +537,13 @@ impl Entity {
         self.contemplation.cavity_cells()
     }
 
+    /// The carriers a bubble holds that no count reports — sections, nerve
+    /// cells, horizon classes, bundle pairs, certificates. See
+    /// [`crate::transducer::bubble::Contemplation::weight`].
+    pub fn idea_weight(&self) -> [usize; 5] {
+        self.contemplation.weight()
+    }
+
     pub fn shed_n(&self) -> u64 {
         self.epigenome.shed_n()
     }

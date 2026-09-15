@@ -189,6 +189,43 @@ impl Contemplation {
         self.cavity.scoped().map(|(_, r)| r.len()).sum()
     }
 
+    /// WHAT THE CONTEMPLATION ACTUALLY HOLDS (§8.1, measurement only).
+    ///
+    /// `ideas` counts BUBBLES, and a bubble is not a unit of memory. Measured
+    /// on the fleet: voices at 328–873 MB with `ideas` 66–86, `genome` 67–73,
+    /// `dialect` 6–13 and `cavity` 0 — every counted carrier flat and small
+    /// while the process grows by roughly a gigabyte an hour. The cavity was
+    /// the candidate and this cleared it; nothing else was readable.
+    ///
+    /// These are the carriers a bubble holds that no line reports, and they
+    /// are the ones with weight in them:
+    /// - `nerve.sections` — a `Section` carries a γ and a carriage, and the
+    ///   tree's own note at `Acting::carriage` is that a versor is 1024
+    ///   bytes.
+    /// - `nerve` cells across every degree, each carrying a `Rotor`.
+    /// - `horizon` — one `(Rotor, Order, Standing)` per class the idea met,
+    ///   and `paint_standing` writes one per standing loop of every form
+    ///   held. A rotor is sixteen `BigRational`, each of them heap.
+    /// - `bundle` — the training pairs, COPIED per bubble.
+    /// - `certificates` and `vortex`, which hold certificates carrying class
+    ///   keys and moves.
+    ///
+    /// Counts and never bytes: a size in bytes would be a number this code
+    /// cannot derive exactly, and rule 11 refuses an invented one. What the
+    /// counts do is say WHICH carrier grows, which is the question.
+    pub fn weight(&self) -> [usize; 5] {
+        let mut out = [0usize; 5];
+        for (_, b) in self.bubbles.scoped() {
+            out[0] += b.nerve.sections.len();
+            out[1] += b.nerve.degrees.iter().map(|d| d.len()).sum::<usize>();
+            out[2] += b.horizon.len();
+            out[3] += b.bundle.as_ref().map_or(0, |p| p.len());
+            out[4] += b.certificates.len()
+                + b.vortex.scoped().map(|(_, v)| v.len()).sum::<usize>();
+        }
+        out
+    }
+
     /// THE CAVITY ENTRIES A CHART CAN RE-HOLD, read at that chart. The same
     /// descent `pivot_on` makes, exposed so the keying can be asserted
     /// without the drive: a cavity keyed by the bubble alone answers nothing

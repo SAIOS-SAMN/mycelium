@@ -250,24 +250,26 @@ fn main() {
             let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
             if moved == [false; 4] {
                 eprintln!(
-                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | cavity {} cells {} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | feed {}",
+                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | cavity {} cells {} | holds {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | feed {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
                     entity.ideas_len(),
                     entity.cavity_len(),
                     entity.cavity_cells(),
+                    entity.idea_weight(),
                     if feed.exhausted() { "clear" } else { "held" },
                 );
             } else {
                 eprintln!(
-                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | cavity {} cells {} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
+                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | cavity {} cells {} | holds {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
                     entity.ideas_len(),
                     entity.cavity_len(),
                     entity.cavity_cells(),
+                    entity.idea_weight(),
                     entity.shed_n(),
                     entity.impedance(),
                     match entity.discordance() {

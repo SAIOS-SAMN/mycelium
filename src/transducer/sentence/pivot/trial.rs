@@ -161,14 +161,40 @@ impl Form {
             // counts since R14, so the rows are printed as their classes and
             // not as their indices — an index says which loop, and the
             // question is which class.
+            // THE LABEL MUST SEPARATE WHAT THE AUDIT SEPARATES. Two bytes of
+            // a class key stood here and two DIFFERENT torsion classes
+            // printed identically: `rows before ["t0601","t0601"] after
+            // ["t0601","t0601"]` against a delta of `[1, 0, 0, 0]`, 87 times
+            // — rows that looked unchanged beside an audit that said a class
+            // had appeared. The audit was right and the label was blind.
+            //
+            // `rank_of_rows` counts DISTINCT classes, so a label that cannot
+            // tell two apart cannot say what the audit did. The key's own
+            // tail is taken as well as its head: a class key leads with the
+            // conjugacy invariants, which two finite classes of one order
+            // share, and differs further along.
+            let tag = |k: &crate::transducer::address::Address| -> String {
+                let b = k.as_bytes();
+                let n = b.len();
+                match n >= 4 {
+                    true => format!(
+                        "{:02x}{:02x}..{:02x}{:02x}",
+                        b[0],
+                        b[1],
+                        b[n - 2],
+                        b[n - 1]
+                    ),
+                    false => format!("{:02x?}", b),
+                }
+            };
             let cls = |rs: &[LoopRow]| -> Vec<String> {
                 rs.iter()
                     .map(|r| match r {
                         LoopRow::Closed => "closed".to_string(),
-                        LoopRow::Torsion(k) => format!("t{:02x}{:02x}", k.as_bytes()[0], k.as_bytes()[1]),
+                        LoopRow::Torsion(k) => format!("t{}", tag(k)),
                         LoopRow::Free(_) => "free".to_string(),
-                        LoopRow::OffPlane(k) => format!("o{:02x}{:02x}", k.as_bytes()[0], k.as_bytes()[1]),
-                        LoopRow::Opened(k) => format!("x{:02x}{:02x}", k.as_bytes()[0], k.as_bytes()[1]),
+                        LoopRow::OffPlane(k) => format!("o{}", tag(k)),
+                        LoopRow::Opened(k) => format!("x{}", tag(k)),
                     })
                     .collect()
             };
