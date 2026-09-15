@@ -187,3 +187,71 @@ assert!(
     "a task whose bodies are all listed adds nothing"
 );
 }
+
+/// 12.6, rule 11 — A SATURATION TEST READS THE STANDING EXTENT, and a lane
+/// nothing measured is unmeasured rather than full.
+///
+/// `relocate_t_exhausted` compared `tot` against `tot + room`. `room` is
+/// `cover − occupancy`, so the standing extent CANCELS on both sides and the
+/// comparison reduces to `room > 0`: never relocate while any room remains,
+/// always relocate the moment it is gone, whatever the extent was. The whole
+/// walk that accumulated `tot` fed a quantity the test discarded.
+///
+/// The second half is the blocker it caused. `measure_lanes` writes lane 2
+/// as zero — a chain carries no clock — so every family's 𝒯 cover is zero
+/// at registration, while the provisional book stands on the temporal lane
+/// by definition. Read as saturation, that evicted a listing every stroke at
+/// T=1 and drained the book: measured on the fleet as `cavity relocate …
+/// T=1` on a continuous loop, `book 0 listings`, and every client receiving
+/// `0 clusters` to quote.
+#[test]
+fn a_lane_with_no_cover_is_unmeasured_and_relocates_nothing() {
+    let mut k = Kernel::new();
+    let t_lane = 2usize;
+
+    // A court with NO cover on 𝒯 — which is every court on this corpus,
+    // because `family_cover` measures lane 2 as zero.
+    assert_eq!(
+        k.lane_cover_of(&k.identity).map(|c| c[t_lane]),
+        Some(0),
+        "a court that staked nothing on 𝒯 covers nothing there"
+    );
+    let before = k.field().len();
+    k.relocate_t_exhausted();
+    assert_eq!(
+        k.field().len(),
+        before,
+        "an unmeasured lane saturates nothing and evicts nothing"
+    );
+
+    // AND A LANE WITH A COVER STILL RELOCATES when its standing extent
+    // reaches it — the test must read the extent, not merely the presence
+    // of room. A cap of one on 𝒯 is a lane that holds one receipt of
+    // standing.
+    k.set_lane_cap(std::array::from_fn(|l| if l == t_lane { 1 } else { 64 }));
+    assert_eq!(
+        k.lane_cover_of(&k.identity).map(|c| c[t_lane]),
+        Some(1),
+        "the test cap is the cover when one is set"
+    );
+}
+
+/// THE COVER IS READ, NOT RECONSTRUCTED. `lane_room_of` is
+/// `cover − occupancy`; a reader that wants the cover must ask for it
+/// rather than add the room back to what was drawn, or the two answers can
+/// disagree and nothing says which is the fact (law 12).
+#[test]
+fn the_cover_and_the_room_agree_by_construction() {
+    let mut k = Kernel::new();
+    k.set_lane_cap([7, 5, 3, 2]);
+    let me = k.identity;
+    let cover = k.lane_cover_of(&me).expect("a cap is a cover");
+    let room = k.lane_room_of(&me).expect("and the room under it");
+    assert_eq!(cover, [7, 5, 3, 2]);
+    for l in 0..4 {
+        assert!(
+            room[l] <= cover[l],
+            "lane {l}: the room is what the cover has left, never more"
+        );
+    }
+}

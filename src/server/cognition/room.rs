@@ -16,6 +16,29 @@ impl Kernel {
         self.lane_room_of(&self.identity)
     }
 
+    /// THE LANE'S COVER: what a voice staked plus what its language earned,
+    /// before anything it drew is taken off. `lane_room_of` is this minus
+    /// the occupancy, and a reader asking "how much does this lane HOLD"
+    /// must not reconstruct it by adding the two back together — that is
+    /// two readers of one fact (law 12), and it is how a saturation test
+    /// came to compare a quantity with itself.
+    pub fn lane_cover_of(&self, voice: &[u8; 32]) -> Option<[usize; 4]> {
+        if let Some(cap) = self.lane_cap {
+            return Some(cap);
+        }
+        let credit = self.use_credit(voice);
+        let bond = match self.treasury.bond_of(voice) {
+            Some(b) => b,
+            None if credit.iter().all(|&c| c == 0) => return Some([0; 4]),
+            None => [0; 4],
+        };
+        let mut out = [0usize; 4];
+        for (l, o) in out.iter_mut().enumerate() {
+            *o = bond[l].checked_add(credit[l])? as usize;
+        }
+        Some(out)
+    }
+
     /// `None` on a lane occupied beyond its cover: that is a broken count,
     /// as a lane releasing more than it holds is, and zero room would be
     /// the invariant's failure read as a measurement (rule 11).

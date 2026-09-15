@@ -132,16 +132,41 @@ impl Kernel {
         if unmeasured {
             return;
         }
-        // A test cap where one is set; otherwise what this lane already
-        // holds plus the room it still has, which is the same quantity
-        // measured rather than a cap standing in for one.
-        let cap = match (self.lane_cap, self.lane_room()) {
-            (Some(c), _) => c[2] as u64,
-            (None, Some(room)) => tot.saturating_add(room[2] as u64),
-            // A room that cannot be read is a broken count, and nothing is
+        // THE CAP IS THE LANE'S COVER, and it was `tot + room`.
+        //
+        // `room` is `cover − occupancy`, so `tot < tot + room` reduces to
+        // `room > 0`: the accumulated extent CANCELS on both sides and the
+        // test never reads it. What looked like a saturation measure was a
+        // binary switch on whether the lane had any room at all — never
+        // relocate while room remains, always relocate the moment it is
+        // gone, whatever the standing extent was. The whole `consider` walk
+        // above fed a quantity the comparison discarded.
+        //
+        // The cover is what a saturation test compares against, and
+        // `lane_cover_of` reads it directly rather than adding the room back
+        // to the occupancy (law 12).
+        let Some(cover) = self.lane_cover_of(&self.identity) else {
+            // A cover that cannot be read is a broken count, and nothing is
             // relocated against one.
-            (None, None) => return,
+            return;
         };
+        let cap = cover[2] as u64;
+        // A LANE WITH NO COVER IS UNMEASURED, NOT FULL. `measure_lanes`
+        // writes lane 2 as zero — a chain carries no clock — so every
+        // family's 𝒯 cover is zero at registration, and the provisional
+        // book "stands on the temporal lane by definition". Read as
+        // saturation that evicted a listing on every stroke at T=1, and the
+        // book drained to nothing: measured, `cavity relocate … T=1` on a
+        // continuous loop and `book 0 listings` against clients receiving
+        // `0 clusters` to quote.
+        //
+        // It is the same reading this function already makes twice — an
+        // extent that cannot be measured does not saturate a lane, and
+        // neither does a room that cannot be read. A cover of zero on a lane
+        // nothing ever measured is that case and not a full one (rule 11).
+        if cap == 0 {
+            return;
+        }
         if tot < cap {
             return;
         }
