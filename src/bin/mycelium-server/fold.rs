@@ -8,7 +8,7 @@
 //! orbit.
 
 use crate::exchange::Mesh;
-use crate::transport::tell_peer;
+use crate::transport::{note_rtt_ok, note_rtt_timeout, rtt_floor, tell_peer_within};
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Kernel;
 use std::sync::Mutex;
@@ -37,11 +37,15 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
         if !budget.spend() {
             break;
         }
-        let Some((reply, dt)) = tell_peer(&dest, body.clone()) else {
-            crate::transport::note_rtt_timeout(mesh, vk);
+        let hint = match rtt_floor(mesh, &vk) {
+            Some(r) => (r * 8).max(32),
+            None => (mycelium::physics::aperture_cycle() as u64 * 4).max(32),
+        };
+        let Some((reply, dt)) = tell_peer_within(&dest, body.clone(), hint) else {
+            note_rtt_timeout(mesh, vk);
             continue;
         };
-        crate::transport::note_rtt_ok(mesh, vk, dt);
+        note_rtt_ok(mesh, vk, dt);
         if crate::transport::is_deferred(&reply) {
             continue;
         }
@@ -64,7 +68,12 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
                     String::from_utf8_lossy(&why)
                 );
             }
-            Some(dialogue::FoldWitness::Unmeasured { .. }) | None => {}
+            Some(dialogue::FoldWitness::Unmeasured { .. }) => {
+                eprintln!("  court fold unmeasured by witness {:02x}{:02x}…", vk[0], vk[1]);
+            }
+            None => {
+                eprintln!("  court fold unmeasured: reply undecodable from {:02x}{:02x}…", vk[0], vk[1]);
+            }
         }
     }
 }

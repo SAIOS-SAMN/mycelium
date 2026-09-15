@@ -110,7 +110,9 @@ pub(crate) fn feed_arm(
                     }
                 }
             }
-            let _ = speak_form(entity, tag, rule, &task.train, &fam);
+            if let Some(mag) = speak_form(entity, tag, rule, &task.train, &fam) {
+                StrokeOutcome::add(&mut outcome.uttered, &mag);
+            }
         } else {
             withhold_unextracted(entity, tag, &task.train, &fam);
         }

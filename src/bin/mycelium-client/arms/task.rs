@@ -4,7 +4,7 @@
 //! The registry rules bounty against floor, so a replayed solve collapses
 //! its own yield; unique solves count only on a bounty.
 
-use crate::speak::{speak_form, withhold_unextracted};
+use crate::speak::{speak_contracted, speak_form, speak_owed, withhold_unextracted};
 use crate::feed::{family_magnitude};
 use crate::Stroke;
 use mycelium::physics::{Physics, StrokeOutcome};
@@ -15,8 +15,13 @@ pub(crate) fn task_arm(
         mycelium::transducer::address::Address,
         Option<mycelium::transducer::sentence::SentenceRule>,
     )>,
+    occluded: bool,
 ) {
 let Stroke { entity, physics, c, outcome, tag, .. } = stroke;
+if !occluded {
+    speak_contracted(entity, tag);
+    speak_owed(entity, tag);
+}
 // ── PULL REGISTERED WORK (PoUW): one signed envelope per stroke from
 // the hypha's authoritative registry — study the family, think the
 // tests through, submit. The REGISTRY rules bounty vs floor
@@ -61,7 +66,9 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
         },
     );
     if let Some(rule) = extracted.as_ref() {
-        let _ = speak_form(entity, tag, rule, &train, &tid);
+        if let Some(mag) = speak_form(entity, tag, rule, &train, &tid) {
+            StrokeOutcome::add(&mut outcome.uttered, &mag);
+        }
         let outs: Option<Vec<mycelium::arc::Grid>> = tests
             .iter()
             .map(|x| {

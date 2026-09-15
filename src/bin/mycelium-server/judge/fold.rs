@@ -8,7 +8,7 @@
 //! era filed under the home's key.
 
 use crate::door::Door;
-use crate::transport::{answer, tell_peer};
+use crate::transport::{answer, tell_peer_within};
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
@@ -62,14 +62,17 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // The prefix, fetched from the home by K range and by rows cursor;
     // a home that cannot be reached leaves the fold unmeasured.
     let Some(dest) = door.mesh.addrs.lock().ok().and_then(|a| a.get(&home).cloned()) else {
+        eprintln!("  court fold unmeasured {:02x}{:02x}…: home address unknown", home[0], home[1]);
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
         return;
     };
     let Some(receipts) = fetch_receipts(&dest, &me, &home, p.k0, p.root.k) else {
+        eprintln!("  court fold unmeasured {:02x}{:02x}…: fetch receipts failed", home[0], home[1]);
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
         return;
     };
     let Some(rows) = fetch_rows(&dest, &me, &home, p.k0, p.root.k) else {
+        eprintln!("  court fold unmeasured {:02x}{:02x}…: fetch rows failed", home[0], home[1]);
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
         return;
     };
@@ -119,7 +122,7 @@ fn fetch_receipts(dest: &str, me: &[u8; 32], home: &[u8; 32], from: u64, to: u64
     let mut out = Vec::new();
     let mut next = from;
     while next <= to {
-        let (reply, _) = tell_peer(dest, dialogue::encode_receipts_request(me, home, next, to))?;
+        let (reply, _) = tell_peer_within(dest, dialogue::encode_receipts_request(me, home, next, to), 16)?;
         if crate::transport::is_deferred(&reply) {
             return None;
         }
@@ -142,7 +145,7 @@ fn fetch_rows(dest: &str, me: &[u8; 32], home: &[u8; 32], from: u64, to: u64) ->
     let mut out = Vec::new();
     let mut cursor = 0u32;
     loop {
-        let (reply, _) = tell_peer(dest, dialogue::encode_rows_request(me, home, from, to, cursor))?;
+        let (reply, _) = tell_peer_within(dest, dialogue::encode_rows_request(me, home, from, to, cursor), 16)?;
         if crate::transport::is_deferred(&reply) {
             return None;
         }

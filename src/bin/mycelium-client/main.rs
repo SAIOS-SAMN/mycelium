@@ -69,6 +69,8 @@ pub(crate) struct Counts {
     pub(crate) proj_solved: u64,
     pub(crate) uniq_solved: u64,
     pub(crate) refined: u64,
+    pub(crate) reanchored: u64,
+    pub(crate) condensed: u64,
     pub(crate) learned: u64,
     pub(crate) solves_paid: u64,
 }
@@ -205,7 +207,7 @@ fn main() {
             };
             feed_arm(&mut stroke, &mut feed, &mut extract_memo, occluded);
             quote_arm(&mut stroke, occluded);
-            task_arm(&mut stroke, &mut extract_memo);
+            task_arm(&mut stroke, &mut extract_memo, occluded);
             // The syntropic phase on any lane short of one expansion
             // (S10's reading, S13.2).
             if !mycelium::economy::lanes_short(&stroke.physics.reserve_shortfall([true; 4])).is_empty() {
@@ -235,6 +237,8 @@ fn main() {
             proj_solved,
             uniq_solved,
             refined,
+            reanchored,
+            condensed,
             learned,
             solves_paid,
         } = c;
@@ -255,7 +259,7 @@ fn main() {
                 );
             } else {
                 eprintln!(
-                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} discordance {} boundary {:?} axes {}",
+                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),

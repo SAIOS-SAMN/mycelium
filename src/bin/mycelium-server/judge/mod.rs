@@ -23,6 +23,9 @@ use mycelium::anastome::dialogue;
 use mycelium::cognition::{outcome_code, Outcome};
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
+use std::sync::atomic::{AtomicU64, Ordering};
+
+static REFUSE_COUNT: AtomicU64 = AtomicU64::new(0);
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     if serve_control(stream, &frame, door) {
@@ -43,8 +46,14 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
             // 26, 50.6 seam 3: raw percept cells and coboundary chains do
             // not reach a court. Refused with the reason, no height (this
             // court read no book to answer with), nothing taught.
+            if frame.body.len() < 5 {
+                return;
+            }
             let why = mycelium::verdict::REFUSE_NOT_A_SENTENCE;
-            eprintln!("  court refuse act {kind:#04x}: {why}");
+            let c = REFUSE_COUNT.fetch_add(1, Ordering::Relaxed);
+            if c == 0 || c.is_power_of_two() {
+                eprintln!("  court refuse act {kind:#04x}: {why} (count={c})");
+            }
             let body = dialogue::encode_outcome_reply(outcome_code(&Outcome::Refused(why)), 0, &[0; 4], &[]);
             answer(stream, Frame { lane: frame.lane, body });
         }

@@ -33,7 +33,7 @@ pub(crate) fn speak_form(
     rule: &mycelium::transducer::sentence::SentenceRule,
     train: &mycelium::transducer::family::Family,
     family: &[u8],
-) -> bool {
+) -> Option<[u64; 4]> {
     use mycelium::transducer::alphabet::Rotor;
     use mycelium::transducer::sentence::{as_element_form, Vertex};
     let fam = format!("{:02x}{:02x}…", family[0], family[1]);
@@ -66,7 +66,7 @@ pub(crate) fn speak_form(
     // extent, exactly as the demands arm does.
     let Some(deliberation) = entity.span_of(form) else {
         eprintln!("[{tag}] form withheld: family {fam} the span is unmeasurable");
-        return false;
+        return None;
     };
     mag[2] = deliberation.span();
     // 50.5 (F step 5): a sentence with demand vertices is uttered WHOLE —
@@ -84,23 +84,23 @@ pub(crate) fn speak_form(
         eprintln!(
             "[{tag}] form withheld: family {fam} remainder {n_rem} cells over {n_pairs} pairs"
         );
-        return false;
+        return None;
     }
     let Some(word) = as_element_form(form, mag) else {
         entity.hold_form(form, train, &remainders);
         eprintln!("[{tag}] form withheld: family {fam} {}", why_open());
-        return false;
+        return None;
     };
     if entity.already_taught(&word) {
         entity.remember_spoken(&word);
-        return true;
+        return Some(word.magnitude());
     }
     match entity.speak_with(std::slice::from_ref(&word), train, family) {
         // One sentence was sent, so the reply is one code.
         Ok(codes) => match codes.as_slice() {
             [mycelium::anastome::dialogue::SPEECH_REFUSED] => {
                 eprintln!("[{tag}] form withheld: family {fam} refused on the wire");
-                false
+                None
             }
             _ => {
                 let glued = form.vertices.iter().filter(|v| matches!(v, Vertex::Glued { .. })).count();
@@ -117,12 +117,12 @@ pub(crate) fn speak_form(
                     deliberation.label(),
                     deliberation.span()
                 );
-                true
+                Some(word.magnitude())
             }
         }
         Err(e) => {
             eprintln!("[{tag}] form withheld: family {fam} {e}");
-            false
+            None
         }
     }
 }
@@ -156,7 +156,7 @@ fn speak_with_demands(
     train: &mycelium::transducer::family::Family,
     family: &[u8],
     remainders: &[Vec<(i64, i64, u8, u8)>],
-) -> bool {
+) -> Option<[u64; 4]> {
     use mycelium::transducer::sentence::Vertex;
     let fam = format!("{:02x}{:02x}…", family[0], family[1]);
     let form = &rule.form;
@@ -167,7 +167,7 @@ fn speak_with_demands(
     // rather than minted against an invented extent.
     let Some(deliberation) = entity.span_of(form) else {
         eprintln!("[{tag}] form withheld: family {fam} the span is unmeasurable");
-        return false;
+        return None;
     };
     let Some(word) =
         mycelium::transducer::family::mint_sentence(rule, train, &entity.epigenome, deliberation.span())
@@ -175,8 +175,8 @@ fn speak_with_demands(
         // The mint refused it, so it is not a word — it is not stood in the
         // dialect, and it is held as the open work it is.
         entity.hold_form(form, train, remainders);
-        eprintln!("[{tag}] form withheld: family {fam} no measured descent and no demand");
-        return false;
+        eprintln!("[{tag}] form withheld: family {fam} mint refused (descent, carry or demands)");
+        return None;
     };
     let addr = word.address();
     // An address shorter than two bytes shows what it has; the journal
@@ -188,7 +188,7 @@ fn speak_with_demands(
     };
     if entity.already_taught(&word) {
         entity.remember_spoken(&word);
-        return true;
+        return Some(word.magnitude());
     }
     match entity.speak_with(std::slice::from_ref(&word), train, family) {
         // One sentence was sent, so the reply is one code.
@@ -199,7 +199,7 @@ fn speak_with_demands(
                 // pivot loop is what acts on it.
                 entity.hold_form(form, train, remainders);
                 eprintln!("[{tag}] sentence withheld: family {fam} refused on the wire");
-                false
+                None
             }
             _ => {
                 let demands = form.demand_vertices().count();
@@ -229,7 +229,7 @@ fn speak_with_demands(
                         eprintln!("[{tag}] edge remainder {}-{} on {}", f.i, f.j, hx(addr.as_bytes()));
                     }
                 }
-                true
+                Some(word.magnitude())
             }
         },
         Err(e) => {
@@ -237,7 +237,7 @@ fn speak_with_demands(
             // exactly as it would be had it never been offered.
             entity.hold_form(form, train, remainders);
             eprintln!("[{tag}] sentence withheld: family {fam} {e}");
-            false
+            None
         }
     }
 }
