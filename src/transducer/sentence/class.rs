@@ -277,17 +277,47 @@ impl ClassVector {
     }
 
     /// The occupied coordinates in the fixed order of 12.6.
+    ///
+    /// THE PLANE SECTION IS READ, NOT INTERROGATED. This built twenty-four
+    /// `Axis` values and asked `occupies` about each, and `occupies` answers
+    /// by going back to `plane_slot(p)` for the very block it is standing
+    /// in — twenty-four bounds-checked re-reads of a fixed-width array to
+    /// recover what one pass over it already holds. The exponents ARE the
+    /// coordinates: a non-zero entry is an occupied axis and there is
+    /// nothing to test.
+    ///
+    /// Reading the block also keeps the plane's `None` honest. `plane` is
+    /// the SENSOR SECTION and is absent exactly when the holonomy moves the
+    /// plane, which is `Axis::OffPlane` — so no plane coordinate is
+    /// produced there and `OffPlane` is, without either being a fallback
+    /// for the other.
+    ///
+    /// The four that are not plane exponents keep `occupies`: `Hue` reads
+    /// the cycle type, `Placement` and `Dilation` the carriage's translator
+    /// and dilator, `OffPlane` the section's absence. They are four
+    /// different readings of four different carriers and there is no block
+    /// to walk.
+    ///
+    /// The index is the PLANE, which is content and not a position: `p` is
+    /// which of the six bivector planes the exponent stands on, and 12.6
+    /// fixes the order the coordinates are written in (rule 15 — the order
+    /// here is content, and the walk selects nothing).
     pub fn coordinates(&self) -> Vec<Axis> {
         let mut out = Vec::new();
-        for p in 0..6u8 {
-            for axis in [
-                Axis::Orientation(p),
-                Axis::Unit(p),
-                Axis::Prime5(p),
-                Axis::Prime13(p),
-            ] {
-                if self.occupies(axis) {
-                    out.push(axis);
+        if let Some(plane) = self.plane {
+            for (p, &(orientation, unit, m5, m13)) in plane.iter().enumerate() {
+                let p = p as u8;
+                if orientation {
+                    out.push(Axis::Orientation(p));
+                }
+                if unit != 0 {
+                    out.push(Axis::Unit(p));
+                }
+                if m5 != 0 {
+                    out.push(Axis::Prime5(p));
+                }
+                if m13 != 0 {
+                    out.push(Axis::Prime13(p));
                 }
             }
         }

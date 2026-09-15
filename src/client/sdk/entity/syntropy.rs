@@ -84,10 +84,32 @@ impl Entity {
             let w2 = letters2.spelling.word.clone();
             let Some(ck2) = w2.class_key() else { continue };
 
-            for (j, h1) in g.iter().enumerate() {
-                if i == j {
-                    continue;
-                }
+            // THE SIBLINGS ARE READ AT A COORDINATE, not filtered out of the
+            // genome. This walked every word the mind holds and kept the ones
+            // whose `class_key` matched — the whole carrier per candidate,
+            // which is rule 1 and law 3, and unbounded by any Budget.
+            //
+            // The conjugacy class IS the coordinate. `versor_chart` is
+            // `[0, class_axes…]` (M4 step 2, 15.3) and the atlas is keyed by
+            // `invariant_of`, which for a connection is `connection_chart` —
+            // `[0, class_axes…, cycle lengths…]`, of which the versor chart
+            // is a PREFIX.
+            //
+            // `fiber_under`, NOT `fiber`. `Stratum::fiber` descends to the
+            // node at that exact path and answers the members standing
+            // THERE; `fiber_under` collects the subtree below it. Two words
+            // of one conjugacy class at different hues sit at different
+            // depths under the same versor chart, so the exact read answers
+            // the empty fibre for both — measured: the word-pair fixture
+            // found no conjugate at all.
+            //
+            // The chart PREFILTERS and the class key still decides: the
+            // subtree is the stratum, and `ck1 != ck2` below is the exact
+            // re-derivation that confirms a member of it (R15's ruling —
+            // a key narrows the search and never certifies a match).
+            let Some(vc) = crate::transducer::sentence::versor_chart(&w2) else { continue };
+            for addr in self.epigenome.atlas().fiber_under(&vc) {
+                let Some(h1) = self.epigenome.word_at(&addr) else { continue };
                 let Some(letters1) = h1.letters() else { continue };
                 let w1 = letters1.spelling.word.clone();
                 let Some(ck1) = w1.class_key() else { continue };
@@ -139,12 +161,15 @@ impl Entity {
             }
             let inv1 = crate::transducer::stalk::invariant_of(h1);
 
-            for (j, h2) in g.iter().enumerate() {
-                if i == j || h2.sub().is_empty() || h1.address() == h2.address() {
-                    continue;
-                }
-                let inv2 = crate::transducer::stalk::invariant_of(h2);
-                if inv1 != inv2 {
+            // THE SIBLINGS OF A CHART ARE READ AT THAT CHART. This walked the
+            // whole genome and kept the words whose `invariant_of` matched
+            // the one already in hand — the chart was computed, then used as
+            // a filter over everything instead of as the coordinate it is.
+            // `Stalks::fiber` answers exactly that stratum in one keyed
+            // descent (rule 1, law 3).
+            for addr in self.epigenome.atlas().fiber(&inv1) {
+                let Some(h2) = self.epigenome.word_at(&addr) else { continue };
+                if h2.sub().is_empty() || h1.address() == h2.address() {
                     continue;
                 }
 

@@ -168,3 +168,112 @@ fn bid_bundle_rewrite_retires_inputs_and_credits_syntropy() {
     assert_eq!(entity.epigenome.genome_len(), 1, "only base word remains in genome");
     assert!(after.is_none(), "word reanchor has no new element");
 }
+
+/// Rule 1, law 3, A21 §2 — THE SIBLINGS OF A COORDINATE ARE READ AT IT, and
+/// the read must answer everything the walk it replaced would have found.
+///
+/// Both probes computed a chart and then used it to FILTER a walk over the
+/// whole genome — `for (j, h) in g.iter().enumerate()` inside
+/// `for offset in 0..g.len()`, the whole carrier per candidate, unbounded by
+/// any Budget. The chart is the coordinate and the atlas is keyed by it.
+///
+/// A narrower read passes the probes' own fixtures silently, which is why
+/// this asserts the read against the WALK rather than against a probe
+/// succeeding. `Stratum::fiber` descends to the node at an exact path and
+/// answers the members standing THERE; `fiber_under` collects the subtree.
+/// Two words of one conjugacy class at different hues sit at different
+/// depths under the same versor chart — `connection_chart` is
+/// `[0, class_axes…, cycle lengths…]` and `versor_chart` is its prefix — so
+/// the exact read answers the empty fibre for both, and measured, it did:
+/// the conjugate-pair fixture found no pair at all.
+#[test]
+fn the_conjugacy_fibre_answers_every_sibling_the_genome_walk_would_have_found() {
+    use crate::transducer::stalk::invariant_of;
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("test_fibre_covers_walk"));
+
+    // Two words of one conjugacy class, and a third of another, so a read
+    // that answered everything would pass this as readily as one that
+    // answered nothing.
+    let q = LetterId::quarter((0, 1)).expect("sensor quarter turn");
+    let w1 = Word::from_letters(&[(q, false)]);
+    let w2 = w1.rebase(&PlaneForm::sheet_word());
+    let other = PlaneForm::sheet_word();
+    let id_v = identity_versor();
+    for w in [&w1, &w2, &other] {
+        let e = from_connection(w, &id_v, &[], &Vec::new(), [1, 0, 0, 0])
+            .expect("connection");
+        entity.epigenome.learn(&e.to_bytes());
+    }
+
+    let ck1 = w1.class_key().expect("class");
+    assert_ne!(ck1, other.class_key().expect("class"), "the third is another class");
+
+    // THE WALK: every genome word whose class key matches, which is what the
+    // inner loop did.
+    let by_walk: Vec<Vec<u8>> = entity
+        .epigenome
+        .genome()
+        .iter()
+        .filter(|h| {
+            h.letters()
+                .and_then(|l| l.spelling.word.class_key())
+                .is_some_and(|ck| ck == ck1)
+        })
+        .map(|h| h.address().into_vec())
+        .collect();
+    assert!(by_walk.len() >= 2, "the walk finds both conjugates: {}", by_walk.len());
+
+    // THE COORDINATE: the subtree under the versor chart, confirmed by the
+    // exact class key exactly as the probe confirms it.
+    let vc = crate::transducer::sentence::versor_chart(&w1).expect("versor chart");
+    let by_coordinate: Vec<Vec<u8>> = entity
+        .epigenome
+        .atlas()
+        .fiber_under(&vc)
+        .into_iter()
+        .filter(|a| {
+            entity
+                .epigenome
+                .word_at(a)
+                .and_then(|h| h.letters())
+                .and_then(|l| l.spelling.word.class_key())
+                .is_some_and(|ck| ck == ck1)
+        })
+        .collect();
+
+    for a in &by_walk {
+        assert!(
+            by_coordinate.contains(a),
+            "the fibre answers {:02x}{:02x}… which the walk found",
+            a[0],
+            a[1]
+        );
+    }
+    assert_eq!(
+        by_coordinate.len(),
+        by_walk.len(),
+        "and answers nothing the walk did not"
+    );
+
+    // AND THE EXACT READ DOES NOT, which is the defect this replaced: the
+    // third word sits at its own chart, so the versor chart's own node holds
+    // only what happens to stand at that depth.
+    let exact = entity.epigenome.atlas().fiber(&vc);
+    assert!(
+        exact.len() < by_coordinate.len(),
+        "`fiber` reads one node and `fiber_under` the subtree: {} vs {}",
+        exact.len(),
+        by_coordinate.len()
+    );
+
+    // The condensation probe's coordinate is the WHOLE chart, so its fibre is
+    // the exact node and needs no subtree. Named by the word itself and not
+    // by where it landed in the genome — the genome's order is arrival, and a
+    // member taken by position is a choice (rule 15).
+    let e1 = from_connection(&w1, &id_v, &[], &Vec::new(), [1, 0, 0, 0]).expect("connection");
+    let inv = invariant_of(&e1);
+    assert!(
+        entity.epigenome.atlas().fiber(&inv).contains(&e1.address().into_vec()),
+        "a word stands in the fibre of its own chart"
+    );
+}
