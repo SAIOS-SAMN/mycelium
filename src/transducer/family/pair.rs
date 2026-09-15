@@ -252,6 +252,48 @@ fn unpaired_demands(
                 if is_selection_scene && selected_chart.as_ref().is_some_and(|u| ic.body.moduli != *u) {
                     continue;
                 }
+                // THIS IS THE MEASURED ASYMMETRY, NOT A GAP IN PERCEPTION,
+                // and it is written here because the obvious repair destroys
+                // the one thing the engine grows on.
+                //
+                // A body with no image reaches this line because
+                // `versor_coset` found no versor carrying it onto anything in
+                // the output: the dilation is read from the per-cell spread
+                // as a rational square, the rotation from the moment
+                // harmonics, and every candidate is verified by carrying
+                // every cell of one into the other and back. When that
+                // refuses, it refuses exactly — "a rational square, or the
+                // bodies are not similar in ℚ — a refusal, never a rounding".
+                // So a scene whose bodies ARE related by a scale already
+                // carries that scale as a dilator on the carriage, and
+                // `Axis::Dilation` is occupied; nothing here is blind to it.
+                // What reaches this arm is a body no conformal map relates,
+                // and `B \ id(A)` is an exact coboundary deficit, ∂c ≠ 0.
+                //
+                // THE REPAIR THAT LOOKS OBVIOUS IS THE ONE TO REFUSE. Reading
+                // both frames on a common refinement `K_lcm = lcm(h) × lcm(w)`
+                // makes any two rectangles comparable and turns the deficit
+                // into a recolour: measured on the bar fixture, an input
+                // `{(0,0,1),(0,1,1)}` and an output with one cell created at
+                // `(0,2,7)` have hulls 1×2 and 1×3, lift to `[1,1,1,1,1,1]`
+                // and `[1,1,1,1,7,7]` on `K_6`, and read as a six-cell bar
+                // whose tail changed hue. The bifurcation — one body carried
+                // by the identity, one body with no preimage — is gone, and
+                // with it the creation. Seven fixtures said so.
+                //
+                // It is also the wrong question twice over. The hull is the
+                // bounding box of the union of bodies, not the frame: two
+                // scenes on one chart have different hulls whenever their
+                // content differs in extent. And it is SYMMETRIC — it asks
+                // whether the two sides are alike and then builds a complex
+                // in which they are — while the asymmetry is the content.
+                //
+                // 37.7: the generator the presentation lacks IS that
+                // remainder. Symmetrising the frames before measuring
+                // consumes the residue that would have become a letter, which
+                // is the one operation that guarantees the vocabulary cannot
+                // grow. `family::refine` holds the arithmetic and is wired to
+                // nothing for this reason.
                 let axes: Vec<u16> = (0..ic.body.moduli.0.len() as u16).collect();
                 let cells: Vec<_> = ic.body.cells.iter().map(|&(r, c, h)| (r, c, h, 0u8)).collect();
                 out.push((Demand::TopologicalDeformation { image: Invariant(Vec::new()), axes }, ic.body.moduli.clone(), cells));

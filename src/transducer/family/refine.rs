@@ -152,6 +152,53 @@ impl CommonRefinement {
     }
 }
 
+/// THE EXTENT A GRID CLAIMS, refusing a ragged one. Rows are counted and
+/// every row's width is read: a grid whose rows disagree is not a rectangle
+/// and has no extent, which is a refusal and not a widest row (rule 11).
+///
+/// The width is read from the rows themselves rather than from one of them —
+/// a row taken by position is a choice about arrival order (rule 15), and
+/// here the question is whether they AGREE.
+pub fn extent(g: &Grid) -> Option<(usize, usize)> {
+    let mut w: Option<usize> = None;
+    for row in g {
+        match w {
+            None => w = Some(row.len()),
+            Some(n) if n == row.len() => {}
+            Some(_) => return None,
+        }
+    }
+    let w = w?;
+    (!g.is_empty() && w > 0).then_some((g.len(), w))
+}
+
+impl CommonRefinement {
+    /// BOTH GRIDS ON `K_lcm`, by exact block replication: an input cell
+    /// covers `s_in` rows and columns of the refinement and an output cell
+    /// covers `s_out`, so every coordinate of `K_lcm` takes the hue of the
+    /// cell whose block contains it. Nothing is sampled, averaged or
+    /// rounded — the division is exact by construction.
+    ///
+    /// This is what lets the refinement change nothing downstream: the pair
+    /// that comes back is cell-for-cell, so `pair_scene` and everything
+    /// after it read an ordinary equal-extent pair.
+    pub fn refined(&self, grid_in: &Grid, grid_out: &Grid) -> Option<(Grid, Grid)> {
+        let lift = |g: &Grid, (sr, sc): (usize, usize)| -> Option<Grid> {
+            let mut out: Grid = Vec::with_capacity(self.lcm_h);
+            for r in 0..self.lcm_h {
+                let src = g.get(r / sr)?;
+                let mut row = Vec::with_capacity(self.lcm_w);
+                for c in 0..self.lcm_w {
+                    row.push(*src.get(c / sc)?);
+                }
+                out.push(row);
+            }
+            Some(out)
+        };
+        Some((lift(grid_in, self.scale_in)?, lift(grid_out, self.scale_out)?))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
