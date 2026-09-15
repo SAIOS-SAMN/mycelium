@@ -298,6 +298,93 @@ pub fn hue_of(gauge: &[(u8, u8)], h: u8) -> Option<u8> {
     })
 }
 
+/// 18.2 — THE GAUGE AS THE MAP IT IS: the ten hues, each carried somewhere
+/// or left where it stands.
+///
+/// A gauge is a partial map on the hues and absence is the identity. Held as
+/// a LISTING of `(from, to)` it is the graph of that map written out as
+/// points, and every question about it becomes a scan: `hue_of` walks the
+/// listing to answer about ONE hue, and two listings are compared by walking
+/// one against the other. The hue is the coordinate and the listing has no
+/// index at it.
+///
+/// This is the carrier `connection_chart` and `element::gauge` already use —
+/// `let mut image: [u8; 10]` indexed by the hue — so the tree holds one fact
+/// two ways (law 12). `None` is the hue nothing moves, kept apart from a hue
+/// carried to itself so a map that SAYS `3 → 3` and one that is silent about
+/// 3 read alike where it matters and differently where it does not.
+pub type HueTable = [Option<u8>; 10];
+
+/// The listing read as the map. `None` where it sends one hue two ways —
+/// that is not a hue map and no vertex can claim it (rule 11) — or where a
+/// hue stands outside the ten the sensor has.
+pub fn hue_table(gauge: &[(u8, u8)]) -> Option<HueTable> {
+    let mut t: HueTable = [None; 10];
+    for &(from, to) in gauge {
+        let slot = t.get_mut(from as usize)?;
+        match slot {
+            None => *slot = Some(to),
+            Some(held) if *held == to => {}
+            Some(_) => return None,
+        }
+    }
+    Some(t)
+}
+
+/// The map written back as a listing, in hue order. Only the hues it MOVES:
+/// a gauge lists its non-fixed points and absence is the identity, so a hue
+/// carried to itself is written and one nothing says of is not.
+pub fn hue_listing(t: &HueTable) -> Vec<(u8, u8)> {
+    (0..10u8)
+        .filter_map(|h| t.get(h as usize).and_then(|s| s.map(|to| (h, to))))
+        .collect()
+}
+
+/// WHAT TWO MEMBERS' GAUGES AGREE ON, or the hue they send two ways.
+///
+/// Two gauges COMPOSE where their hues do not meet, or where they meet and
+/// agree: one member carrying both listings speaks for both, which is what
+/// 18.2's partial map means and what the union was written for. Where they
+/// meet and DISAGREE they are not one assignment at all — they are two, and
+/// the class varies across the bundle exactly as it does when the carriage
+/// differs. That is the boundary the extractor already states for the
+/// placement: variation across pairs is a SECTION.
+#[derive(Clone, Debug)]
+pub enum HueAgreement {
+    /// One map speaks for both.
+    Agreed(Box<HueTable>),
+    /// One hue, carried two ways. The coordinate and both answers, so the
+    /// caller states what it found rather than that something went wrong.
+    Apart { hue: u8, here: u8, there: u8 },
+}
+
+/// Read at each hue in turn — the map's own coordinate — so a disagreement
+/// is found where it is rather than by comparing two listings against each
+/// other.
+pub fn hue_agreement(a: &HueTable, b: &HueTable) -> HueAgreement {
+    let mut out: HueTable = [None; 10];
+    for h in 0..10usize {
+        out[h] = match (a[h], b[h]) {
+            (None, x) | (x, None) => x,
+            (Some(x), Some(y)) if x == y => Some(x),
+            (Some(x), Some(y)) => {
+                return HueAgreement::Apart { hue: h as u8, here: x, there: y }
+            }
+        };
+    }
+    HueAgreement::Agreed(Box::new(out))
+}
+
+/// Do two listings name one map? Read through the tables, so two orderings
+/// of one map are one answer and a listing that sends a hue two ways is no
+/// map on either side (rule 11).
+pub fn gauge_eq(a: &[(u8, u8)], b: &[(u8, u8)]) -> bool {
+    match (hue_table(a), hue_table(b)) {
+        (Some(x), Some(y)) => x == y,
+        _ => false,
+    }
+}
+
 /// `second ∘ first` on the union of listed hues; a hue absent from a map
 /// is fixed by that map. The listing holds non-fixed points only.
 pub(crate) fn compose_gauge(second: &[(u8, u8)], first: &[(u8, u8)]) -> Vec<(u8, u8)> {

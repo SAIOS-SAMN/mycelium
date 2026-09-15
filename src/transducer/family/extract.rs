@@ -587,12 +587,72 @@ pub fn extract_rule_with(
                             members.insert(&ck, a.clone());
                         }
                         Some(held) => {
-                            if !element::same_versor(&held.carriage, &a.carriage) {
-                                chart_varies.insert(&mk, ());
-                            }
-                            for &(from, to) in &a.gauge {
-                                if !held.gauge.iter().any(|&(f, _)| f == from) {
-                                    held.gauge.push((from, to));
+                            // AN ASSIGNMENT IS THE CARRIAGE AND THE GAUGE, and
+                            // this asked only the carriage — one coordinate of
+                            // a two-coordinate object, against the definition
+                            // stated at `assign_seen` above: "the assignment's
+                            // own key is its content (law 2): the carriage's
+                            // bytes AND the sorted gauge".
+                            //
+                            // The gauge was merged by walking `a.gauge` and
+                            // pushing every hue `held` did not already name.
+                            // Where both name one hue and send it two ways,
+                            // the second was DROPPED and no variance was
+                            // recorded — so the vertex went on to claim one
+                            // map across every pair and the court found the
+                            // other colour. Measured over 36 minutes: 880 `a
+                            // cell lands on the wrong hue`, the largest single
+                            // vertex-body fault.
+                            //
+                            // Worse, the drop is what hid it. `hue_of` refuses
+                            // a listing that sends one hue two ways — the
+                            // court's `FAIL_GAUGE_AMBIGUOUS` — and the merge
+                            // deduped on `from`, so that listing was never
+                            // built. The court saw an unambiguous WRONG map
+                            // instead of an ambiguous one, and the guard read
+                            // 0 on the wire: not because gauges agree but
+                            // because the disagreement could not reach it.
+                            //
+                            // Two gauges COMPOSE where their hues do not meet
+                            // or where they meet and agree — one member speaks
+                            // both listings, which is what the union was
+                            // written for and remains right. Where they meet
+                            // and DISAGREE they are two assignments, and the
+                            // class varies across the bundle exactly as it
+                            // does when the carriage differs. That is the
+                            // boundary this block already states for the
+                            // placement.
+                            let carriage_varies =
+                                !element::same_versor(&held.carriage, &a.carriage);
+                            let joined = match (
+                                crate::transducer::sentence::hue_table(&held.gauge),
+                                crate::transducer::sentence::hue_table(&a.gauge),
+                            ) {
+                                (Some(h), Some(x)) => {
+                                    crate::transducer::sentence::hue_agreement(&h, &x)
+                                }
+                                // A listing that is no map on either side is
+                                // not something to reconcile (rule 11).
+                                _ => crate::transducer::sentence::HueAgreement::Apart {
+                                    hue: 0,
+                                    here: 0,
+                                    there: 0,
+                                },
+                            };
+                            match joined {
+                                crate::transducer::sentence::HueAgreement::Agreed(t) => {
+                                    held.gauge = crate::transducer::sentence::hue_listing(&t);
+                                    if carriage_varies {
+                                        chart_varies.insert(&mk, ());
+                                    }
+                                }
+                                crate::transducer::sentence::HueAgreement::Apart { .. } => {
+                                    // The held listing stands unchanged — the
+                                    // arriving one is not merged into it,
+                                    // because the two are not one map — and
+                                    // the class is marked varying so the pair
+                                    // filter sections them apart.
+                                    chart_varies.insert(&mk, ());
                                 }
                             }
                         }
@@ -678,13 +738,40 @@ pub fn extract_rule_with(
             .iter()
             .copied()
             .filter(|&pi| {
-                acts.scoped().any(|(ck, a)| {
+                // EVERY CHART THE VERTEX ACTS ON, not any of them. This was
+                // `any`, so a pair was kept whenever ONE of the vertex's
+                // charts matched there — and the vertex then acts on ALL its
+                // charts over that pair, including the ones whose carriage
+                // does not match. Forcing an unmatched carriage onto a cell
+                // is what carries it out of the image: measured over 36
+                // minutes, 443 `past the image frame's extent` and 347
+                // `before the image frame's origin`, together the second
+                // fault after the hue.
+                //
+                // A section says the pairs it was MEASURED on. A pair where
+                // one chart agrees and another does not is not a pair this
+                // vertex was measured on; it is a pair it would have to
+                // guess at.
+                //
+                // AND THE WHOLE ASSIGNMENT, not the carriage alone. `Acting`
+                // carries a carriage AND a gauge and `pair_member` holds
+                // both; comparing one of them admits pairs that agree on the
+                // placement and demand a different hue map, which is a hue
+                // clash guaranteed at replay.
+                acts.scoped().all(|(ck, a)| {
                     let mut pk = k.to_vec();
                     crate::transducer::address::put_bytes(&mut pk, &ck);
                     pk.extend_from_slice(&pi.to_le_bytes());
-                    pair_member
-                        .get(&pk)
-                        .is_some_and(|pm| element::same_versor(&a.carriage, &pm.carriage))
+                    match pair_member.get(&pk) {
+                        // A chart this pair has no member for is a chart the
+                        // vertex does not act on there, and it contradicts
+                        // nothing (the `Silent` reading the court makes).
+                        None => true,
+                        Some(pm) => {
+                            element::same_versor(&a.carriage, &pm.carriage)
+                                && crate::transducer::sentence::gauge_eq(&a.gauge, &pm.gauge)
+                        }
+                    }
                 })
             })
             .collect()

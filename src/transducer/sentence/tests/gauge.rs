@@ -244,3 +244,81 @@ fn a_gauge_naming_two_images_for_one_hue_is_refused_not_resolved_by_order() {
         "and the refusal is at that hue alone, not over the whole gauge"
     );
 }
+
+/// 18.2 — THE GAUGE READ AT ITS OWN COORDINATE. A gauge is a partial map on
+/// the ten hues and absence is the identity; held as a listing of
+/// `(from, to)` it is that map's graph written out as points, and every
+/// question about it becomes a scan. The hue is the coordinate.
+#[test]
+fn a_gauge_is_a_map_on_the_hues_and_absence_is_the_identity() {
+    let t = hue_table(&[(1, 4), (9, 9)]).expect("a listing that names each hue once is a map");
+    assert_eq!(t[1], Some(4), "a hue the listing moves");
+    assert_eq!(t[9], Some(9), "a hue it carries to itself is still named");
+    assert_eq!(t[3], None, "and a hue it is silent about is not");
+
+    // The listing comes back in hue order and holds exactly what was named,
+    // so two orderings of one map are one map.
+    assert_eq!(hue_listing(&t), vec![(1, 4), (9, 9)]);
+    assert!(gauge_eq(&[(9, 9), (1, 4)], &[(1, 4), (9, 9)]), "order is not content");
+
+    // A listing that sends one hue two ways is no map, on either side of a
+    // comparison (rule 11).
+    assert!(hue_table(&[(1, 4), (1, 5)]).is_none());
+    assert!(!gauge_eq(&[(1, 4), (1, 5)], &[(1, 4), (1, 5)]));
+    // And a hue outside the ten the sensor has is no coordinate of one.
+    assert!(hue_table(&[(10, 1)]).is_none());
+}
+
+/// TWO GAUGES COMPOSE OR THEY ARE TWO SECTIONS — and which one it is has to
+/// be readable, because dropping the difference is what made the largest
+/// vertex-body fault on the fleet.
+///
+/// They compose where their hues do not meet, or meet and agree: one member
+/// speaks both listings, which is what 18.2's partial map means. Where they
+/// meet and DISAGREE they are two assignments and the class varies across
+/// the bundle, exactly as it does when the carriage differs.
+#[test]
+fn two_gauges_compose_or_name_the_hue_they_send_two_ways() {
+    let disjoint_a = hue_table(&[(1, 4)]).expect("map");
+    let disjoint_b = hue_table(&[(9, 9)]).expect("map");
+    match hue_agreement(&disjoint_a, &disjoint_b) {
+        HueAgreement::Agreed(t) => {
+            assert_eq!(
+                hue_listing(&t),
+                vec![(1, 4), (9, 9)],
+                "hues that do not meet compose into one map that speaks both"
+            );
+        }
+        HueAgreement::Apart { .. } => panic!("disjoint hues do not disagree"),
+    }
+
+    // Meeting and agreeing is still one map.
+    let same = hue_table(&[(1, 4), (2, 2)]).expect("map");
+    let overlap = hue_table(&[(1, 4), (7, 3)]).expect("map");
+    assert!(matches!(
+        hue_agreement(&same, &overlap),
+        HueAgreement::Agreed(_)
+    ));
+
+    // MEETING AND DISAGREEING NAMES THE HUE AND BOTH ANSWERS. This is the
+    // reading the union destroyed: it deduped on `from`, kept whichever
+    // arrived first, and recorded nothing — so the vertex claimed one map
+    // across every pair and the court found the other colour, 880 times,
+    // while `FAIL_GAUGE_AMBIGUOUS` sat at 0 because the ambiguous listing
+    // was never built for `hue_of` to refuse.
+    let here = hue_table(&[(3, 5)]).expect("map");
+    let there = hue_table(&[(3, 7)]).expect("map");
+    match hue_agreement(&here, &there) {
+        HueAgreement::Apart { hue, here, there } => {
+            assert_eq!((hue, here, there), (3, 5, 7), "the coordinate and both answers");
+        }
+        HueAgreement::Agreed(_) => panic!("one hue sent two ways is not one map"),
+    }
+
+    // Order does not decide: the disagreement is the same fact read from
+    // either side, which is what the arrival-ordered union could not say.
+    assert!(matches!(
+        hue_agreement(&there, &here),
+        HueAgreement::Apart { hue: 3, here: 7, there: 5 }
+    ));
+}
