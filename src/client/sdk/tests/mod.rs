@@ -13,3 +13,4 @@ mod glue;
 mod height;
 mod refinement;
 mod speech;
+mod syntropy;

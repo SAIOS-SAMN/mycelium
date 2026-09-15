@@ -37,6 +37,7 @@ impl Entity {
             session,
             epigenome: Epigenome::new(),
             refine_cursor: 0,
+            bundle_cursor: 0,
             taught_up: crate::network::nerve::Keyed::new(),
             taught_at: crate::network::nerve::Keyed::new(),
             discordance: 0,

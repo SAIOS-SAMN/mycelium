@@ -1,0 +1,265 @@
+// AI-GENERATED CONTENT — see DISCLAIMER.md.
+//
+//! 3.8, 3.9 — THE BUNDLE SYNTHESIS ENGINE: an optimization search over the fiber bundle
+//! E -> B over the chart complex.
+//!
+//! Rather than treating vocabulary as an unorganized heap of monolithic tokens and
+//! issuing crude deletions, the bundle synthesis engine extracts the connection geometry:
+//! 1. Change of Basepoint / Conjugate Overlay (Reanchor): groups sections sharing the same
+//!    conjugacy class or loop holonomies, solves for connecting gauge transitions γ ∈ Spin(4,0),
+//!    and emits RewritePayload::Reanchor to earn metabolic yield on LANE_SPATIAL.
+//! 2. Fiber Section Condensation (Condense): folds sibling forms projecting to the same
+//!    base cycle into sections of a single punctured bundle, emitting RewritePayload::Condense
+//!    to earn metabolic yield on LANE_GAUGE.
+//! 3. Axiomatic Floor (Peel/Refine): factors adjoined words into the 17 Cl(4,0) generators
+//!    via spell_peel / Gaussian factoring, dissolving factorable words into zero basis slots.
+
+use std::io;
+use crate::anastome::dialogue;
+use crate::client::sdk::*;
+use crate::transducer::address::Address;
+use crate::transducer::alphabet::{PlaneForm, Rotor, Word};
+use crate::transducer::element::Element;
+use crate::transducer::rewrite::{RewriteKind, RewritePayload};
+
+impl Entity {
+    /// CHANGE OF BASEPOINT / CONJUGATE OVERLAY (RewriteKind::Reanchor)
+    ///
+    /// Probes the genome for gauge frame transitions γ ∈ Spin(4,0):
+    /// 1. Sentence coboundary gauge transitions aligning local sections to basepoint.
+    /// 2. Word conjugacy classes sharing `class_key()`, solving for connecting gauge rotor γ.
+    ///
+    /// Returns:
+    /// - The minted `Rewrite` element.
+    /// - Vector of addresses to retire from the genome on acceptance.
+    /// - Optional new element to learn into the genome on acceptance (e.g. regauged sentence).
+    pub fn probe_conjugate_reanchor(&mut self) -> Option<(Element, Vec<Address>, Option<Element>)> {
+        let g = self.epigenome.genome();
+        if g.is_empty() {
+            return None;
+        }
+        self.bundle_cursor = (self.bundle_cursor + 1) % g.len();
+        let start = self.bundle_cursor;
+
+        // 1. Coboundary gauge transitions on sentence forms:
+        // A sentence whose 1-cochain is exact has gauge frame transitions γ in Spin(4,0)
+        // connecting its loop frames to a single basepoint.
+        // Regauging extracts the connection and aligns the local sections.
+        for offset in 0..g.len() {
+            let idx = (start + offset) % g.len();
+            let Some(held) = g.get(idx) else { continue };
+            if let Some(mut form) = held.form().cloned() {
+                if let Some(gamma) = form.solve_coboundary() {
+                    let non_id = gamma.iter().filter(|w| !w.is_identity()).count();
+                    if non_id > 0 && form.regauge(&gamma).is_some() {
+                        if let Some(after) =
+                            crate::transducer::sentence::as_element_form(&form, held.magnitude())
+                        {
+                            if after.address() != held.address() {
+                                let payload = RewritePayload::Reanchor { gamma };
+                                let claimed = [non_id as u64, 0, 0, 0];
+                                if let Some(rw) = crate::transducer::rewrite::mint(
+                                    RewriteKind::Reanchor,
+                                    std::slice::from_ref(&held.address()),
+                                    after.address(),
+                                    payload,
+                                    claimed,
+                                ) {
+                                    return Some((rw, vec![held.address()], Some(after)));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Word pairs sharing the same conjugacy class (class_key):
+        // For words w1, w2 with w1.class_key() == w2.class_key(),
+        // solve for connecting gauge rotor γ such that w2 = γ * w1 * γ^-1.
+        for offset in 0..g.len() {
+            let i = (start + offset) % g.len();
+            let Some(h2) = g.get(i) else { continue };
+            let Some(letters2) = h2.letters() else { continue };
+            let w2 = letters2.spelling.word.clone();
+            let Some(ck2) = w2.class_key() else { continue };
+
+            for (j, h1) in g.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                let Some(letters1) = h1.letters() else { continue };
+                let w1 = letters1.spelling.word.clone();
+                let Some(ck1) = w1.class_key() else { continue };
+                if ck1 != ck2 || h1.address() == h2.address() {
+                    continue;
+                }
+
+                if let Some(gamma) = solve_gauge_between(&w1, &w2) {
+                    let payload = RewritePayload::Reanchor { gamma: vec![gamma] };
+                    let claimed = [1, 0, 0, 0];
+                    if let Some(rw) = crate::transducer::rewrite::mint(
+                        RewriteKind::Reanchor,
+                        std::slice::from_ref(&h2.address()),
+                        h1.address(),
+                        payload,
+                        claimed,
+                    ) {
+                        return Some((rw, vec![h2.address()], None));
+                    }
+                }
+            }
+        }
+
+        None
+    }
+
+    /// FIBER SECTION CONDENSATION (RewriteKind::Condense)
+    ///
+    /// Folds sibling forms projecting to the same base cycle into sections of
+    /// a single punctured bundle over the chart complex.
+    ///
+    /// Returns:
+    /// - The minted `Rewrite` element with non-zero yield on LANE_GAUGE.
+    /// - Vector of addresses to retire from the genome on acceptance (absorbed sibling).
+    /// - Optional updated base bundle element to learn on acceptance.
+    pub fn probe_bundle_condensation(&mut self) -> Option<(Element, Vec<Address>, Option<Element>)> {
+        let g = self.epigenome.genome();
+        if g.len() < 2 {
+            return None;
+        }
+        self.bundle_cursor = (self.bundle_cursor + 1) % g.len();
+        let start = self.bundle_cursor;
+
+        for offset in 0..g.len() {
+            let i = (start + offset) % g.len();
+            let Some(h1) = g.get(i) else { continue };
+            if h1.sub().is_empty() {
+                continue;
+            }
+            let inv1 = crate::transducer::stalk::invariant_of(h1);
+
+            for (j, h2) in g.iter().enumerate() {
+                if i == j || h2.sub().is_empty() || h1.address() == h2.address() {
+                    continue;
+                }
+                let inv2 = crate::transducer::stalk::invariant_of(h2);
+                if inv1 != inv2 {
+                    continue;
+                }
+
+                // Solve transition versor between sibling forms projecting to same chart
+                let Some(trans) = crate::transducer::element::transition(h2.sub(), h1.sub()) else {
+                    continue;
+                };
+
+                let mut base = (**h1).clone();
+                let card = (**h2).clone();
+                let gained = base.attach(&card, &trans);
+                if gained > 0 {
+                    let payload = RewritePayload::Condense {
+                        sections: base.sections().to_vec(),
+                        gauge: trans,
+                    };
+                    let joins = 1u64;
+                    let gained_sec = base.sections().len() as u64;
+                    let claimed = [0, gained_sec.max(joins), 0, 0];
+                    if let Some(rw) = crate::transducer::rewrite::mint(
+                        RewriteKind::Condense,
+                        std::slice::from_ref(&card.address()),
+                        base.address(),
+                        payload,
+                        claimed,
+                    ) {
+                        return Some((rw, vec![card.address()], Some(base)));
+                    }
+                }
+            }
+        }
+
+        None
+    }
+
+    /// SUBMIT BUNDLE REWRITE TO THE COURT
+    ///
+    /// Speaks the rewrite element to the court. When stood or ratified,
+    /// retires the absorbed/reanchored addresses locally, learns any updated
+    /// target section, and credits the syntropic yield on the entity's physics.
+    pub fn bid_bundle_rewrite(
+        &mut self,
+        rw: &Element,
+        retires: &[Address],
+        after: Option<&Element>,
+    ) -> io::Result<[u64; 4]> {
+        let codes = self.speak(std::slice::from_ref(rw))?;
+        if let [code, ..] = codes.as_slice() {
+            if *code == dialogue::SPEECH_STOOD || *code == dialogue::SPEECH_RATIFIED {
+                for b in retires {
+                    let _ = self.epigenome.retire(b.as_bytes());
+                }
+                if let Some(after_elem) = after {
+                    let _ = self.epigenome.learn(&after_elem.to_bytes());
+                }
+                let mu = rw.magnitude();
+                self.physics.syntropy(&mu);
+                return Ok(mu);
+            }
+        }
+        Err(io::Error::other("bundle rewrite not accepted by court"))
+    }
+}
+
+/// Solves for connecting gauge rotor γ in Spin(4,0) (as a Word) connecting two
+/// conjugate words w1 and w2 such that w2 = γ · w1 · γ⁻¹.
+/// Solves for connecting gauge rotor γ in Spin(4,0) (as a Word) connecting two
+/// conjugate words w1 and w2 such that w2 = γ · w1 · γ⁻¹.
+///
+/// Exact closed-form in Cl(4,0) coordinates — zero Cartesian enumeration or search loops:
+/// 1. Sheet plane half-turn conjugates a rotation to its inverse (w2 = w1⁻¹ in-plane).
+/// 2. For bivectors B₁ and B₂ in Cl(4,0), the exact connecting rotor is:
+///    γ = 1 + B₂ · B₁⁻¹  (where B₁⁻¹ = -B₁ / ||B₁||²).
+///    Then γ · B₁ = B₁ + B₂ = B₂ · γ, guaranteeing γ · B₁ · γ⁻¹ = B₂ in closed form.
+/// 3. The rotor γ is factored into exact generator letters via ordered Tait–Bryan/Gaussian peel.
+pub(crate) fn solve_gauge_between(w1: &Word, w2: &Word) -> Option<Word> {
+    let r1 = w1.rotor();
+    let r2 = w2.rotor();
+    if r1.projective_eq(&r2) {
+        return None;
+    }
+
+    // 1. Sheet plane half-turn (inverts orientation on the sensor plane)
+    let sheet = PlaneForm::sheet_word();
+    if w1.rebase(&sheet).rotor().projective_eq(&r2) {
+        return Some(sheet);
+    }
+
+    // 2. Extract exact bivector coordinates B₁ and B₂ from the rotors
+    let mut b1 = Rotor::zero();
+    let mut b2 = Rotor::zero();
+    for mask in 0..16 {
+        if (mask as u32).count_ones() == 2 {
+            b1 = b1.add(&Rotor::blade(mask, r1.coeff(mask).clone()));
+            b2 = b2.add(&Rotor::blade(mask, r2.coeff(mask).clone()));
+        }
+    }
+
+    // 3. Closed-form Geometric Algebra rotor: γ = 1 + B₂ · B₁⁻¹
+    if let Some(b1_inv) = b1.inverse() {
+        let gamma_rotor = Rotor::identity().add(&b2.geo(&b1_inv));
+        if gamma_rotor.weight().is_some() {
+            if let Some(gamma_inv) = gamma_rotor.inverse() {
+                let conj = gamma_rotor.geo(&r1).geo(&gamma_inv);
+                if conj.projective_eq(&r2) {
+                    if let Some(Ok(w)) = crate::transducer::alphabet::factor_rotor(&gamma_rotor) {
+                        return Some(w);
+                    }
+                    if let Some(w) = gamma_rotor.spelled_word() {
+                        return Some(w);
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}

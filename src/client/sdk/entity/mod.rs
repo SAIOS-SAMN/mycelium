@@ -7,6 +7,7 @@ pub mod boot;
 pub mod contract;
 pub mod learn;
 pub mod quote;
+pub mod syntropy;
 pub mod think;
 pub mod transport;
 pub mod utter;

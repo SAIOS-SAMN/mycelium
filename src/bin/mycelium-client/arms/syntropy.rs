@@ -81,11 +81,41 @@ if sync_due {
     m.last_synced_lang = lang;
     m.last_synced_height = m.last_height;
 }
-// REFINEMENT PROBE (0x09): one genome word per syntropic stroke —
-// if the rest of the vocabulary already speaks it, bid the
-// compression. The hypha's replay rules; on acceptance the word
-// retires fleet-wide and the entity earns the compression yield.
-if let Some((word, cites)) = entity.seek_refinement() {
+// BUNDLE SYNTHESIS ENGINE:
+// 1. Change of Basepoint / Conjugate Overlay (Reanchor):
+// Extract gauge frame transitions γ ∈ Spin(4,0) between conjugate sections,
+// earning structured metabolic yield on LANE_SPATIAL.
+if let Some((rw, retires, after)) = entity.probe_conjugate_reanchor() {
+    if let Ok(earned) = entity.bid_bundle_rewrite(&rw, &retires, after.as_ref()) {
+        c.refined += 1;
+        c.reanchored += 1;
+        eprintln!(
+            "[{tag}] REANCHOR {:02x}{:02x}… (gauge transition, genome {}) μ⃗ {earned:?}",
+            rw.address()[0],
+            rw.address()[1],
+            entity.epigenome.genome_len(),
+        );
+    }
+}
+// 2. Fiber Section Condensation (Condense):
+// Fold sibling forms projecting to the same base cycle into sections of a single bundle,
+// earning structured metabolic yield on LANE_GAUGE.
+else if let Some((rw, retires, after)) = entity.probe_bundle_condensation() {
+    if let Ok(earned) = entity.bid_bundle_rewrite(&rw, &retires, after.as_ref()) {
+        c.refined += 1;
+        c.condensed += 1;
+        eprintln!(
+            "[{tag}] CONDENSE {:02x}{:02x}… (bundle condensation, genome {}) μ⃗ {earned:?}",
+            rw.address()[0],
+            rw.address()[1],
+            entity.epigenome.genome_len(),
+        );
+    }
+}
+// 3. Axiomatic Floor / Citation Refinement (Refine):
+// One genome word per syntropic stroke — if the rest of the vocabulary
+// already speaks it, bid the compression.
+else if let Some((word, cites)) = entity.seek_refinement() {
     if let Ok((code, mu)) = entity.bid_refinement(&word, &cites) {
         if code == mycelium::anastome::dialogue::REFINE_ACCEPTED {
             c.refined += 1;

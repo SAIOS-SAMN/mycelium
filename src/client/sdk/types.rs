@@ -397,6 +397,8 @@ pub struct Entity {
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.
     pub(crate) refine_cursor: usize,
+    /// Rotating cursor for the bundle synthesis engine (reanchor / condense).
+    pub(crate) bundle_cursor: usize,
     /// Words this voice has spoken up for adoption: said once, the judge
     /// decided (installed, derivable, or refused). Keyed by transport
     /// address; membership is vertex equality, never the digest alone.
