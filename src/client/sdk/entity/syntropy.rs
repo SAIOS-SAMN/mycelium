@@ -34,6 +34,16 @@ impl Entity {
     /// - Vector of addresses to retire from the genome on acceptance.
     /// - Optional new element to learn into the genome on acceptance (e.g. regauged sentence).
     pub fn probe_conjugate_reanchor(&mut self) -> Option<(Element, Vec<Address>, Option<Element>)> {
+        // ONE STROKE'S WORTH OF CANDIDATES, and the cursor carries the rest
+        // to the next stroke (rule 10 — a loop's bound is a Budget or one
+        // cell's boundary, and a genome is neither). The orbit already had
+        // the cursor; it had no bound, so one stroke could sweep every word
+        // the mind holds, and the sweep grew with the vocabulary.
+        //
+        // `physics.stroke()` is the engine's own unit of work — the same
+        // budget `pivot_on` spends — so the probe is paced by the same
+        // arithmetic as every other stroke and not by a number chosen here.
+        let mut budget = self.physics.stroke();
         let g = self.epigenome.genome();
         if g.is_empty() {
             return None;
@@ -46,6 +56,9 @@ impl Entity {
         // connecting its loop frames to a single basepoint.
         // Regauging extracts the connection and aligns the local sections.
         for offset in 0..g.len() {
+            if !budget.spend() {
+                break;
+            }
             let idx = (start + offset) % g.len();
             let Some(held) = g.get(idx) else { continue };
             if let Some(mut form) = held.form().cloned() {
@@ -78,6 +91,9 @@ impl Entity {
         // For words w1, w2 with w1.class_key() == w2.class_key(),
         // solve for connecting gauge rotor γ such that w2 = γ * w1 * γ^-1.
         for offset in 0..g.len() {
+            if !budget.spend() {
+                break;
+            }
             let i = (start + offset) % g.len();
             let Some(h2) = g.get(i) else { continue };
             let Some(letters2) = h2.letters() else { continue };
@@ -146,6 +162,10 @@ impl Entity {
     /// - Vector of addresses to retire from the genome on acceptance (absorbed sibling).
     /// - Optional updated base bundle element to learn on acceptance.
     pub fn probe_bundle_condensation(&mut self) -> Option<(Element, Vec<Address>, Option<Element>)> {
+        // One stroke's worth of candidates, as `probe_conjugate_reanchor`
+        // takes: the cursor carries the rest, and a genome is neither a
+        // Budget nor one cell's boundary (rule 10).
+        let mut budget = self.physics.stroke();
         let g = self.epigenome.genome();
         if g.len() < 2 {
             return None;
@@ -154,6 +174,9 @@ impl Entity {
         let start = self.bundle_cursor;
 
         for offset in 0..g.len() {
+            if !budget.spend() {
+                break;
+            }
             let i = (start + offset) % g.len();
             let Some(h1) = g.get(i) else { continue };
             if h1.sub().is_empty() {
