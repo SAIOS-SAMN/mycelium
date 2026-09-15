@@ -323,3 +323,48 @@ fn pivot_never_reopens_a_closed_chord() {
         );
     }
 }
+
+/// 12.6, T21 (iii), S9.1 — A PIVOT MOVES ONE UNIT OR NONE. `Rank::moved`
+/// names the move: the rank held, or exactly one unit left torsion, free or
+/// off-plane for `axes`. Everything else is `Inadmissible` and carries its
+/// four deltas so the refusal can say what happened.
+///
+/// The predicate this replaces was a four-coordinate monotone, and it
+/// admitted `(−3, −2, −1, +7)` — three coordinates emptied and seven axes
+/// opened — as readily as A18's one step. That is not a pivot that went
+/// well; it is a different thing the audit could not name.
+///
+/// Moved here from `pivot_loop.rs` at the §1.1 1200-line reading bound; the
+/// item is moved, not rewritten (§1.6). It sits with the descent and the
+/// pivot's own readings rather than the loop drive, which is where it
+/// belongs whatever the bound says — it exercises the AUDIT and never runs
+/// a loop.
+#[test]
+fn a_rank_move_is_one_unit_or_none() {
+    let before = Rank { torsion: 3, free: 2, offplane: 1, axes: 0 };
+
+    // A18's step, from each coordinate it can leave: one unit, whether or
+    // not the discharge opened a chart axis for it to land in. Both shapes
+    // are asserted; since R14 counted `axes` by class, the first is what an
+    // opening over a class two loops share now makes.
+    for (after, from) in [
+        (Rank { torsion: 2, free: 2, offplane: 1, axes: 1 }, RankAxis::Torsion),
+        (Rank { torsion: 2, free: 2, offplane: 1, axes: 0 }, RankAxis::Torsion),
+        (Rank { torsion: 3, free: 1, offplane: 1, axes: 1 }, RankAxis::Free),
+        (Rank { torsion: 3, free: 2, offplane: 0, axes: 0 }, RankAxis::OffPlane),
+    ] {
+        assert_eq!(Rank::moved(before, after), RankMove::Discharged { from });
+    }
+    // A pivot that leaves the audit alone is certified by its closure.
+    assert_eq!(Rank::moved(before, before), RankMove::Equal);
+    // Everything else is named, with its deltas: two units out of torsion,
+    // however welcome the fall looks; the sprawl the old monotone admitted;
+    // an axis closing, which is a coordinate lost and not a saving.
+    for (a, b, delta) in [
+        (before, Rank { torsion: 1, free: 2, offplane: 1, axes: 1 }, [-2, 0, 0, 1]),
+        (before, Rank { torsion: 0, free: 0, offplane: 0, axes: 7 }, [-3, -2, -1, 7]),
+        (Rank { axes: 2, ..before }, Rank { axes: 0, ..before }, [0, 0, 0, -2]),
+    ] {
+        assert_eq!(Rank::moved(a, b), RankMove::Inadmissible { delta });
+    }
+}
