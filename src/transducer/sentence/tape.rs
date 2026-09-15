@@ -512,6 +512,62 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
 /// whenever the operator next brings the fleet up.
 pub const FORM_TAPE_VERSION: u8 = 8;
 
+/// 37.7 — MINT A GENERATOR FROM A ROTOR, the one construction that turns a
+/// measured action the alphabet cannot spell into a word the language holds.
+///
+/// `Derivation::adjoined` is the constructor — it cites nothing, spells
+/// nothing, and IS the rotor it carries — and the rotor must go in the rotor
+/// field rather than the residue, because a `Word` travels as its LETTER
+/// TAPE and a letterless word carrying only a cached rotor reaches the wire
+/// as the identity.
+///
+/// NO STAR FACE, and the reason is structural rather than an omission. A
+/// face carries a `Transport` whose word is a `Word` — letters — and it is
+/// the coboundary of two placements (3.1). The face from the Frame to THIS
+/// vertex would be the letter's own action, which is exactly the action the
+/// seventeen cannot spell; `face_of` refuses it and is right to. A letter is
+/// not a placed body: it is the carrier of an action, with no placement to
+/// take a coboundary of. Its form is a Frame and the vertex, no faces, no
+/// loops — which coheres vacuously and is closed, as a generator should be.
+///
+/// `None` where the rotor has no weight: a rotor that is not a versor is not
+/// a generator (15.3), and that is a refusal rather than a generator of
+/// zeros (rule 11).
+///
+/// It lives here beside `as_element_form` rather than at the court's listing
+/// because both organs mint: the court from a Gaussian prime the seventeen
+/// do not carry, and a voice from a `Fill::Unspellable` its own cover meet
+/// produced. One construction, or the two mint different objects.
+pub fn generator_form(
+    rotor: &crate::transducer::alphabet::Rotor,
+    chart: &crate::transducer::stalk::Invariant,
+    bodies: &[crate::transducer::sentence::Cell],
+) -> Option<Element> {
+    use crate::transducer::alphabet::Derivation;
+    rotor.weight()?;
+    let mut f = Form::default();
+    f.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::new(Vec::new()),
+        Derivation::adjoined(rotor.clone()),
+        chart.clone(),
+        crate::transducer::element::identity_versor().into(),
+        Vec::new(),
+        None,
+    ));
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    // What the language could not say without it: the demand's own bodies,
+    // measured lane-wise, the same measure a remainder takes. A mint with no
+    // bodies measures the lanes of nothing, which `as_element_form` refuses
+    // as the zero magnitude — so a caller with no cells to name gives the
+    // letter the one lane it does occupy, the holonomic.
+    let mu = match crate::transducer::element::measure_lanes(bodies) {
+        m if m.iter().all(|&x| x == 0) => [0, 0, 0, 1],
+        m => m,
+    };
+    as_element_form(&f, mu)
+}
+
 /// SENTENCE_TAG v6: the Form tape. Hue maps are derived from vertices.
 /// Addresses are len16 + bytes. `mag` is the descent the form measures over
 /// its bundle. Zero is not a word.

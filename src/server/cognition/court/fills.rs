@@ -96,6 +96,14 @@ impl Kernel {
                 // class, and it is the court's own adjunction candidate —
                 // named on its own line so the day one appears is a
                 // measurement and not an anecdote.
+                //
+                // IT IS NOT MINTED HERE, and that is not an omission. This is
+                // a sweep over `self.unfilled` with no speaking voice in it,
+                // and a minted letter is docketed to a DISCOVERER — 47.3, a
+                // court is never one. The cells this sweep reads were put in
+                // `unfilled` by `glue_fetched`, which has the peer whose
+                // speech produced them and adjoins there. Minting here would
+                // have to name a party that does not exist.
                 (crate::transducer::cech::Fill::Unspellable(_), _) => {
                     eprintln!(
                         "  court cell unspellable {:02x}{:02x}… 37.7",

@@ -239,13 +239,21 @@ impl Kernel {
                 // 37.7 at the court's glue: a rotation the seventeen do
                 // not spell. It fills nothing and files no class; the cell
                 // stays unfilled and is named for what it is.
-                crate::transducer::cech::Fill::Unspellable(_) => {
+                // 37.7 at the court's glue: a rotation the seventeen do
+                // not spell. It fills nothing and files no class — the cell
+                // stays unfilled and is named for what it is — AND it is
+                // adjoined, which is the whole of what 37.7 is for. The cell
+                // staying unfilled and the letter being minted are not
+                // alternatives: the transition is still an obstruction on
+                // this cover, and the language now has a word for it.
+                crate::transducer::cech::Fill::Unspellable(r) => {
                     let dkey = chart_simplex_key(&inv, &key);
                     self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
                     eprintln!(
                         "  court cell unspellable degree {d} {:02x}{:02x}… 37.7",
                         key[0], key[1]
                     );
+                    self.open_unspellable(r.as_ref(), &inv, &[], &peer);
                 }
                 crate::transducer::cech::Fill::Open => {
                     let dkey = chart_simplex_key(&inv, &key);

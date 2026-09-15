@@ -26,40 +26,13 @@ fn letter_form(
     chart: &crate::transducer::stalk::Invariant,
     bodies: &[crate::transducer::sentence::Cell],
 ) -> Option<Element> {
-    use crate::transducer::alphabet::{Derivation, Rotor};
-    use crate::transducer::sentence::{as_element_form, Form, Vertex};
+    use crate::transducer::alphabet::Rotor;
     let mask = (1usize << plane.0) | (1usize << plane.1);
     let q = |n: &num_bigint::BigInt| {
         num_rational::BigRational::from_integer(n.clone())
     };
     let rotor = Rotor::scalar(q(&pi.a)).add(&Rotor::blade(mask, q(&pi.b)));
-    rotor.weight()?;
-    let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::new(Vec::new()),
-        // Cites nothing and spells nothing: the whole of this vertex is
-        // the rotor it carries, which is what an ADJOINED generator is.
-        Derivation::adjoined(rotor),
-        chart.clone(),
-        crate::transducer::element::identity_versor().into(),
-        Vec::new(),
-        None,
-    ));
-    // NO STAR FACE, and the reason is structural rather than an omission.
-    // A face carries a `Transport` whose word is a `Word` — letters — and
-    // it is the coboundary of two placements (3.1). The face from the
-    // Frame to THIS vertex would be the letter's own action, which is
-    // exactly the action the seventeen cannot spell; `face_of` refuses it
-    // and is right to. A letter is not a placed body: it is the carrier
-    // of an action, with no placement to take a coboundary of. Its form
-    // is a Frame and the vertex, no faces, no loops — which coheres
-    // vacuously and is closed, as a generator should be.
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
-    f.reindex();
-    // What the language could not say without it: the demand's own
-    // bodies, measured lane-wise, the same measure a remainder takes.
-    let mu = crate::transducer::element::measure_lanes(bodies);
-    as_element_form(&f, mu)
+    crate::transducer::sentence::generator_form(&rotor, chart, bodies)
 }
 
 impl Kernel {
@@ -119,6 +92,35 @@ impl Kernel {
     /// takes. It closes nothing on any family by itself, so its install
     /// mints none and says so; what its speakers earn is room when it is
     /// used (26 as ruled).
+    /// 37.7 AT THE COURT'S OWN CELL: a transition whose rotor the seventeen
+    /// cannot spell, met while gluing a voice's speech. It is the same
+    /// adjunction `open_letter` performs for a demanded prime, from the other
+    /// direction — there the voice asked and named the prime, here the
+    /// court's own fill produced the rotor — so it takes the same docket:
+    /// re-derived, escrowed, provisional, discovered.
+    ///
+    /// The DISCOVERER is the speaking voice whose glue produced the cell. A
+    /// court is never a discoverer (47.3), and this rotor exists because that
+    /// voice's speech met the court's section; nothing else is a party to it.
+    ///
+    /// It was dropped: both `Fill::Unspellable` arms printed a line and filed
+    /// nothing, so the one place a court can adjoin a letter it measured
+    /// produced no letter. Measured across the fleet, every Word vertex and
+    /// every edge transport of every admitted form carries the identity, so
+    /// no generator exists anywhere to be offered.
+    pub(crate) fn open_unspellable(
+        &mut self,
+        rotor: &crate::transducer::alphabet::Rotor,
+        chart: &crate::transducer::stalk::Invariant,
+        bodies: &[crate::transducer::sentence::Cell],
+        voice: &[u8; 32],
+    ) {
+        let Some(e) = crate::transducer::sentence::generator_form(rotor, chart, bodies) else {
+            return;
+        };
+        self.docket_letter(e, voice);
+    }
+
     fn open_letter(
         &mut self,
         kind: &crate::transducer::sentence::Demand,
@@ -143,6 +145,21 @@ impl Kernel {
         let Some(e) = letter_form(&pi, *plane, chart, bodies) else {
             return;
         };
+        let addr = e.address();
+        self.docket_letter(e, voice);
+        eprintln!(
+            "  court letter opened {:02x}{:02x}… prime {prime} plane ({}, {}) from {:02x}{:02x}…",
+            addr[0], addr[1], plane.0, plane.1, voice[0], voice[1]
+        );
+    }
+
+    /// THE DOCKET A MINTED LETTER TAKES, written once because both mints take
+    /// it: the demanded prime of `open_letter` and the court's own
+    /// `Fill::Unspellable`. Two copies is two chances for one of them to
+    /// escrow, stamp or discover differently from the other, and a letter
+    /// admitted by one route and not the other is a generator half the mesh
+    /// holds.
+    fn docket_letter(&mut self, e: Element, voice: &[u8; 32]) {
         let addr = e.address();
         // The DEMANDING VOICE is the discoverer, through the same docket
         // path a sentence takes; a second voice whose demand yields this
@@ -171,10 +188,6 @@ impl Kernel {
         self.stamp_standing(&addr_owned);
         self.provisional_h.insert(&addr_owned, self.height());
         self.mark_persist();
-        eprintln!(
-            "  court letter opened {:02x}{:02x}… prime {prime} plane ({}, {}) from {:02x}{:02x}…",
-            addr[0], addr[1], plane.0, plane.1, voice[0], voice[1]
-        );
     }
 
     /// LIST A SENTENCE THE REPLAY STOOD (23.8, 26). A sentence the language
