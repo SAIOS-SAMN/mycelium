@@ -172,6 +172,66 @@ fn a_conjugate_of_a_held_word_is_a_section_and_names_its_transition() {
     );
 }
 
+/// 37.7 — A GAUGE THAT EXISTS AND CANNOT BE SPELLED IS NOT A SILENCE.
+///
+/// `solve_conjugator` answers `None` for two different facts: no γ relates
+/// the two words, and a γ relates them that the seventeen cannot say. The
+/// first is a refusal about the words; the second is the measured
+/// obstruction a generator is made of. `conjugation` separates them, and
+/// separating them is what lets an unspellable transition reach the mint
+/// instead of being dropped.
+#[test]
+fn a_conjugation_says_whether_the_alphabet_can_spell_it() {
+    use crate::transducer::alphabet::bundle::{conjugation, Conjugation};
+    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let sheet = PlaneForm::sheet_word();
+    let conj = q.rebase(&sheet);
+
+    // A relation the alphabet states outright is spelled.
+    assert!(
+        matches!(conjugation(&q, &conj), Some(Conjugation::Spelled(_))),
+        "the sheet conjugation is one the seventeen can say"
+    );
+    // A word conjugate to itself is spelled by the identity.
+    assert!(matches!(
+        conjugation(&q, &q),
+        Some(Conjugation::Spelled(w)) if w.is_identity()
+    ));
+    // Two classes are related by nothing, and that is the OTHER `None` —
+    // a refusal about the words and not a candidate generator.
+    let half = Word::from_letters(&[
+        (LetterId::quarter((0, 1)).expect("quarter"), false),
+        (LetterId::quarter((0, 1)).expect("quarter"), false),
+    ]);
+    assert!(
+        conjugation(&q, &half).is_none(),
+        "no γ relates a quarter to a half, spellable or otherwise"
+    );
+}
+
+/// THE COSET IS REACHED FROM ANY MEMBER. `K = g·C(a)` and `a` commutes with
+/// itself, so every `g·aᵏ` conjugates exactly as `g` does. They are offered
+/// because the alphabet spells some members of a coset and not others, and
+/// a solve returning one arbitrary element answers "unspellable" for a
+/// relation the seventeen can say from a different basepoint.
+#[test]
+fn every_offered_conjugator_actually_conjugates() {
+    use crate::transducer::alphabet::bundle::conjugators;
+    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let sheet = PlaneForm::sheet_word();
+    let conj = q.rebase(&sheet);
+    let (a, b) = (q.rotor().normalised(), conj.rotor().normalised());
+    let found = conjugators(&a, &b);
+    assert!(!found.is_empty(), "the linear solve finds the coset");
+    for g in &found {
+        assert!(g.weight().is_some(), "every offered element is a versor");
+        assert!(
+            g.conjugate_holds(&a, &b),
+            "and every one is verified by the exact sandwich, not presumed"
+        );
+    }
+}
+
 /// The trivial fibre is the coordinate a base stands at over itself: the
 /// identity conjugator, an identity carriage, no recolour.
 #[test]

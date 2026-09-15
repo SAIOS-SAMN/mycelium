@@ -112,9 +112,21 @@ else if let Some((rw, retires, after)) = entity.probe_bundle_condensation() {
         );
     }
 }
-// 3. Axiomatic Floor / Citation Refinement (Refine):
-// One genome word per syntropic stroke — if the rest of the vocabulary
-// already speaks it, bid the compression.
+// 3. Axiomatic Floor / Adjunction (37.7): one genome word per syntropic
+// stroke, read at its own conjugacy coordinate. Where the language measured
+// a gauge transition it cannot spell, that rotor IS the generator the
+// presentation lacks — it is adjoined to the dialect here rather than bid to
+// the court, because a compression bid asks for a retirement and the court's
+// replay expects a spatial reconstruction an algebraic witness has none of.
+else if entity.adjoin_unspellable_gauge() {
+    c.refined += 1;
+    eprintln!(
+        "[{tag}] ADJOINED a gauge the seventeen cannot spell (genome {})",
+        entity.epigenome.genome_len(),
+    );
+}
+// 4. Citation Refinement (Refine): if the rest of the vocabulary already
+// speaks this word spatially, bid the compression.
 else if let Some((word, cites)) = entity.seek_refinement() {
     if let Ok((code, mu)) = entity.bid_refinement(&word, &cites) {
         if code == mycelium::anastome::dialogue::REFINE_ACCEPTED {

@@ -140,15 +140,48 @@ pub fn solve_conjugator(a: &Word, b: &Word) -> Option<Word> {
     // it cannot write down (37.7, from this side). `factor_rotor` answers
     // with the spelling or with the demand that stopped it; a demand is a
     // refusal here, not a conjugator.
-    for g in conjugators(&ra, &rb) {
-        let Some(Ok(w)) = super::factor_rotor(&g) else {
-            continue;
-        };
-        if w.rotor().conjugate_holds(&ra, &rb) {
-            return Some(w);
+    match conjugation(a, b)? {
+        Conjugation::Spelled(w) => Some(w),
+        Conjugation::Unspellable(_) => None,
+    }
+}
+
+/// WHAT A CHANGE OF BASEPOINT IS, once it has been solved: a transition the
+/// alphabet can SAY, or one it cannot.
+#[derive(Clone, Debug)]
+pub enum Conjugation {
+    /// The seventeen spell it, so the language can write the relation down.
+    Spelled(Word),
+    /// 37.7 EXACTLY. The engine proved `a` and `b` are related by a gauge
+    /// `γ ∈ Spin(4,0)`, and proved the existing generators cannot spell it.
+    /// That is not a failure and not a silence — it is the measured
+    /// obstruction a generator is made of, and it is carried out to be
+    /// adjoined.
+    Unspellable(Rotor),
+}
+
+/// Solve the change of basepoint and say which kind it is.
+///
+/// `solve_conjugator` answers `None` for both "no γ exists" and "γ exists
+/// and cannot be spelled", and those are different facts: the first is a
+/// refusal about the two words, the second is a candidate generator. This
+/// separates them.
+pub fn conjugation(a: &Word, b: &Word) -> Option<Conjugation> {
+    let (ra, rb) = (a.rotor(), b.rotor());
+    if ra.projective_eq(&rb) {
+        return Some(Conjugation::Spelled(Word::identity()));
+    }
+    let found = conjugators(&ra, &rb);
+    for g in &found {
+        if let Some(Ok(w)) = super::factor_rotor(g) {
+            if w.rotor().conjugate_holds(&ra, &rb) {
+                return Some(Conjugation::Spelled(w));
+            }
         }
     }
-    None
+    // A γ exists and no member of its coset is spellable: the transition is
+    // real and the language has no letter for it.
+    found.into_iter().next().map(Conjugation::Unspellable)
 }
 
 /// The first conjugator the solve finds, for a caller that wants the rotor
@@ -210,7 +243,26 @@ pub fn conjugators(a: &Rotor, b: &Rotor) -> Vec<Rotor> {
             // the linearised relation, and the verification is the exact
             // sandwich (rule 11 — a solution is proved, not presumed).
             if r.weight().is_some() && r.conjugate_holds(&a, &b) {
+                // THE COSET IS REACHED FROM ANY MEMBER OF IT. `K = g·C(a)`,
+                // and `a` commutes with itself, so `a^k ∈ C(a)` and every
+                // `g·a^k` conjugates exactly as `g` does:
+                // `(ga)a(ga)⁻¹ = g·a·a·a⁻¹·g⁻¹ = gag⁻¹ = b`.
+                //
+                // They are offered because the alphabet spells SOME members
+                // of a coset and not others, and a solve that returns one
+                // arbitrary element answers "unspellable" for a relation the
+                // seventeen can say in a different basepoint. Four powers,
+                // because a quarter turn has order four and `a⁴` is the
+                // identity — past that the multiples repeat and nothing new
+                // is offered.
+                let mut acc = r.clone();
                 out.push(r);
+                for _ in 0..3 {
+                    acc = acc.geo(&a);
+                    if acc.weight().is_some() && acc.conjugate_holds(&a, &b) {
+                        out.push(acc.clone());
+                    }
+                }
             }
         }
     }
@@ -266,16 +318,41 @@ fn nullspace(m: &[Vec<num_rational::BigRational>]) -> Vec<Vec<num_rational::BigR
         }
         basis.push(v);
     }
-    // Basis vectors first, then pairwise sums: a kernel whose every basis
-    // vector is singular can still contain an invertible element, and it
-    // has one in the span of two.
+    // THE SINGULAR ELEMENTS ARE A HYPERSURFACE, and coordinate axes land on
+    // it easily. Gaussian elimination returns a basis aligned to the
+    // coordinate axes, and a non-versor — `γγ̃` not a non-zero scalar — is a
+    // proper algebraic subvariety of the kernel, so individual basis vectors
+    // frequently have no weight. Pairwise SUMS alone are the 2-dimensional
+    // diagonals, and where `dim K > 2` those can lie on the singular cone
+    // too (a commuting complementary plane gives `dim K` of 4 or 8).
+    //
+    // ONE CANONICAL COMBINATION, NOT A SEARCH OVER PAIRS. The first cut
+    // pushed every `v_i + v_j` and `v_i − v_j`, which is a Cartesian sweep
+    // of the basis against itself dressed as linear algebra — and it is not
+    // even complete, because for `dim K > 2` the 2-dimensional diagonals can
+    // lie on the singular cone as readily as the axes do.
+    //
+    // The basis vectors themselves are the object's own coordinates and
+    // walking them is bounded by it (rule 10). What follows them is a SINGLE
+    // determined element: `Σ 2ⁱ·v_i`, one point of the kernel fixed by the
+    // basis and nothing else. The singular elements — where `γγ̃` is not a
+    // non-zero scalar — are a proper algebraic subvariety of `K`, so a point
+    // whose coordinates are distinct powers is off it except by coincidence,
+    // and coincidence here costs a refusal and never a wrong answer: an
+    // element that fails `weight` is dropped, and one that passes is still
+    // verified by the exact sandwich before it is returned.
     let mut out = basis.clone();
-    for i in 0..basis.len() {
-        for j in i + 1..basis.len() {
-            let s: Vec<num_rational::BigRational> =
-                (0..n).map(|k| &basis[i][k] + &basis[j][k]).collect();
-            out.push(s);
+    if basis.len() > 1 {
+        let mut scale = num_rational::BigRational::one();
+        let two = num_rational::BigRational::from_integer(num_bigint::BigInt::from(2));
+        let mut combined = vec![num_rational::BigRational::zero(); n];
+        for v in &basis {
+            for (c, x) in combined.iter_mut().zip(v.iter()) {
+                *c = &*c + &(&scale * x);
+            }
+            scale = &scale * &two;
         }
+        out.push(combined);
     }
     out
 }
@@ -335,6 +412,28 @@ pub fn section_of(held: &[Word], w: &Word) -> Option<(Word, Word)> {
         }
     }
     None
+}
+
+/// THE UNSPELLABLE GAUGE TRANSITIONS between a word and what the language
+/// holds — 37.7's candidates, from the bundle's side.
+///
+/// A word conjugate to a held word is a section of its bundle. Where the
+/// seventeen can spell the transition the language writes it down and the
+/// second monolith retires; where they CANNOT, the engine has proved a gauge
+/// exists that it has no letter for, and that rotor is exactly what an
+/// adjoined generator is made of.
+///
+/// Returning nothing there — which `solve_conjugator` does, because `None`
+/// covers both "no γ" and "γ nobody can say" — drops the one measurement
+/// that grows the alphabet.
+pub fn unspellable_gauges(held: &[Word], w: &Word) -> Vec<(Word, Rotor)> {
+    let mut out = Vec::new();
+    for h in held {
+        if let Some(Conjugation::Unspellable(g)) = conjugation(h, w) {
+            out.push((h.clone(), g));
+        }
+    }
+    out
 }
 
 /// The identity fibre: no conjugator, identity carriage, no recolour. The

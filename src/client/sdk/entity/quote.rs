@@ -331,51 +331,114 @@ impl Entity {
     /// The vocabulary read is the RULED words: a compression bid the court
     /// must replay cannot lean on a word the mesh does not hold (rule 11),
     /// which is the same condition the spatial bid already enforces.
-    pub fn algebraic_redundancy(&self) -> Option<Redundancy> {
+    /// THE CANDIDATES ARE READ AT THE CONJUGACY COORDINATE, never walked.
+    ///
+    /// The first cut of this swept the whole genome and compared the
+    /// cursor's word against every other — a Cartesian pass over the carrier
+    /// being compressed, which is rule 1 and law 3, and the same shape R27
+    /// removed from both syntropy probes. It was written here anyway.
+    ///
+    /// The coordinate was already in hand and is the same one the question
+    /// is about. A section of a bundle is a CONJUGATE, and `versor_chart` is
+    /// `[0, class_axes…]` — the rotor's conjugacy axes — which is exactly
+    /// what `GeneratorIndex` is keyed by (1.8, 50.2 step 2). So the words
+    /// that could possibly answer either question are the fibre under that
+    /// chart, reached by one keyed descent, and `generators_under` coarsens
+    /// as A21 §2 requires rather than answering empty at a finer stratum.
+    ///
+    /// Both questions are then asked of that fibre and of nothing else:
+    /// operator equality (Expansion 1, decided by the rotor), then a
+    /// solvable change of basepoint (Expansion 2). A word outside the fibre
+    /// is in another conjugacy class and can answer neither.
+    pub fn algebraic_redundancy(&mut self) -> Option<Redundancy> {
         let g = self.epigenome.genome();
         if g.len() < 2 {
             return None;
         }
         let i = self.refine_cursor % g.len();
         let held = g.get(i)?;
-        let w = crate::transducer::sentence::words_of_element(held.element());
-        let mine = w.into_iter().next()?;
-        if mine.is_identity() {
-            return None;
-        }
-        // Every other ruled word's carried letters, as candidates. The
-        // genome is the carrier being compressed, so walking it is the
-        // object's own boundary and not a lookup that had a coordinate.
-        let mut others: Vec<(crate::transducer::address::Address, crate::transducer::alphabet::Word)> =
+        let me = held.address();
+        let mine = crate::transducer::sentence::words_of_element(held.element())
+            .into_iter()
+            .find(|w| !w.is_identity())?;
+        let chart = crate::transducer::sentence::versor_chart(&mine)?;
+        let mut budget = self.physics.stroke();
+        let fibre = crate::transducer::family::Crystal::generators_under(
+            &self.epigenome,
+            &chart,
+            &mut budget,
+        );
+        let mut siblings: Vec<(crate::transducer::address::Address, crate::transducer::alphabet::Word)> =
             Vec::new();
-        for (j, h) in g.iter().enumerate() {
-            if j == i {
+        for (form, _vertex, word) in fibre {
+            if form.as_bytes() == me.as_bytes() || word.is_identity() {
                 continue;
             }
-            for word in crate::transducer::sentence::words_of_element(h.element()) {
-                if !word.is_identity() {
-                    others.push((h.address(), word));
-                }
-            }
+            siblings.push((form, word));
         }
-        for (addr, other) in &others {
+        for (addr, other) in &siblings {
             if mine.operator_eq(other) {
                 return Some(Redundancy::SameOperator { held: addr.clone() });
             }
         }
-        let words: Vec<crate::transducer::alphabet::Word> =
-            others.iter().map(|(_, w)| w.clone()).collect();
-        if let Some((base, gamma)) = crate::transducer::alphabet::bundle::section_of(&words, &mine) {
-            let held = others
-                .iter()
-                .find(|(_, w)| {
-                    crate::transducer::alphabet::rewrite::tape_key(w)
-                        == crate::transducer::alphabet::rewrite::tape_key(&base)
-                })
-                .map(|(a, _)| a.clone())?;
-            return Some(Redundancy::Section { held, gamma: Box::new(gamma) });
+        for (addr, other) in &siblings {
+            match crate::transducer::alphabet::bundle::conjugation(other, &mine) {
+                Some(crate::transducer::alphabet::bundle::Conjugation::Spelled(gamma)) => {
+                    return Some(Redundancy::Section {
+                        held: addr.clone(),
+                        gamma: Box::new(gamma),
+                    });
+                }
+                // 37.7 — the gauge exists and the seventeen cannot say it.
+                // That is a candidate generator and not a silence.
+                Some(crate::transducer::alphabet::bundle::Conjugation::Unspellable(g)) => {
+                    return Some(Redundancy::UnspellableGauge {
+                        held: addr.clone(),
+                        gamma: Box::new(g),
+                        chart,
+                    });
+                }
+                None => {}
+            }
         }
         None
+    }
+}
+
+impl Entity {
+    /// 37.7 — ADJOIN A GAUGE THE LANGUAGE MEASURED AND CANNOT SPELL.
+    ///
+    /// This is NOT the compression bid and is deliberately separate from it.
+    /// A bid asks the court to retire a word, and the court's replay expects
+    /// a spatial reconstruction — `verify_utterance` over a cell chain —
+    /// which an algebraic witness does not carry, so routing
+    /// `algebraic_redundancy` into `bid_refinement` would produce bids the
+    /// court can only refuse. That stays gated until the court has an
+    /// algebraic receipt.
+    ///
+    /// Adjoining is the other half and needs no court to begin: a letter
+    /// this mind minted stands in its own dialect, `Stood` and not `Ruled`,
+    /// exactly as every other adjunction does. So the unspellable gauge
+    /// reaches the language by the path it belongs on while the redundancy
+    /// claim waits for the one it belongs on.
+    ///
+    /// One word per stroke, at the cursor `algebraic_redundancy` already
+    /// advances — no second walk and no second cursor.
+    pub fn adjoin_unspellable_gauge(&mut self) -> bool {
+        let Some(Redundancy::UnspellableGauge { held, gamma, chart }) = self.algebraic_redundancy()
+        else {
+            return false;
+        };
+        eprintln!(
+            "  gauge unspellable {:02x}{:02x}… against {:02x}{:02x}… — adjoining (37.7)",
+            gamma.key().as_bytes()[0],
+            gamma.key().as_bytes()[1],
+            held.as_bytes()[0],
+            held.as_bytes()[1]
+        );
+        let adjoined: crate::transducer::bubble::drive::Adjoined = vec![(*gamma, chart)];
+        self.adjoin_letters(&adjoined);
+        true
     }
 }
 
@@ -396,5 +459,19 @@ pub enum Redundancy {
     Section {
         held: crate::transducer::address::Address,
         gamma: Box<crate::transducer::alphabet::Word>,
+    },
+    /// 37.7 — A GAUGE THE LANGUAGE CANNOT SAY. The engine proved this word
+    /// and a held one are related by a `γ ∈ Spin(4,0)`, and proved the
+    /// seventeen cannot spell it. That is not a redundancy to bid and not a
+    /// silence: it is the measured obstruction a generator is made of, and
+    /// it is carried out to be adjoined with the chart it was met on.
+    ///
+    /// Boxed for the reason the `Section`'s word is: a `Rotor` is sixteen
+    /// rationals and a variant that holds none should not carry the
+    /// footprint of one that does.
+    UnspellableGauge {
+        held: crate::transducer::address::Address,
+        gamma: Box<crate::transducer::alphabet::Rotor>,
+        chart: crate::transducer::stalk::Invariant,
     },
 }
