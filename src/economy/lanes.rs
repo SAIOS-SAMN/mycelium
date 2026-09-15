@@ -17,6 +17,41 @@ pub fn magnitude(g: &Element) -> [u64; 4] {
     g.magnitude()
 }
 
+/// A lane vector (Law 5, §2.3, §4.4, X5).
+/// μ⃗ is a type implementing neither `PartialEq` nor `PartialOrd`.
+/// The one comparison is `lane_moves(after, before) -> [LaneMove; 4]`,
+/// and arithmetic is lane-wise `add` and `shortfall`.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Mu(pub [u64; 4]);
+
+impl Mu {
+    pub const ZERO: Self = Mu([0, 0, 0, 0]);
+
+    pub fn new(lanes: [u64; 4]) -> Self {
+        Mu(lanes)
+    }
+
+    pub fn lanes(&self) -> [u64; 4] {
+        self.0
+    }
+
+    pub fn get(&self, lane: usize) -> u64 {
+        self.0[lane]
+    }
+
+    pub fn add(&self, other: &Mu) -> Mu {
+        Mu(std::array::from_fn(|l| self.0[l].saturating_add(other.0[l])))
+    }
+
+    pub fn shortfall(&self, room: &Mu) -> Mu {
+        Mu(shortfall(&self.0, &room.0))
+    }
+
+    pub fn lane_moves(&self, before: &Mu) -> [LaneMove; 4] {
+        lane_moves(&self.0, &before.0)
+    }
+}
+
 /// WHAT ONE LANE DID between two measurements. Three states, and the
 /// amount travels inside the two that have one: a lane that fell by three
 /// and a lane that fell by one are not the same reading, and neither is a

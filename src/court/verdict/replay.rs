@@ -301,7 +301,9 @@ pub fn replay_form_at(
     // could not derive, admitted because it pointed the convenient way.
     // Rule 11 is exact or refused, and a rank that does not re-derive is
     // not exact in either direction.
-    if taped_rank != derived {
+    if crate::transducer::sentence::Rank::moved(taped_rank, derived)
+        != crate::transducer::sentence::RankMove::Equal
+    {
         return Some(tape(REFUSE_RANK_LOST));
     }
     if let Some(fam) = family {

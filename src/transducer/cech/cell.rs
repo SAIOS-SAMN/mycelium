@@ -77,7 +77,7 @@ pub(crate) fn sorted_verts(verts: impl IntoIterator<Item = impl AsRef<[u8]>>) ->
 
 /// State of a cell: open work, a coboundary gauge, a finite-order congruence,
 /// a class at this degree, or a rotation the alphabet does not spell.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub enum Fill {
     Open,
     /// The gauge that closed the cell: its rotor and its carriage, because
@@ -206,7 +206,7 @@ pub fn extend(section_a: &Section, section_b: &Section, cell: &Cell) -> Fill {
 }
 
 /// One cell of the Čech complex. Keyed by the hash of its sorted vertices.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct Cell {
     pub vertices: Vec<Vec<u8>>,
     /// The rotation the cell expects, over all six planes of `Cl(4,0)`.

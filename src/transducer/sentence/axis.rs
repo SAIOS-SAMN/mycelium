@@ -109,7 +109,7 @@ impl Axis {
 /// `torsion` counts the open finite-order loops; `free` is the ℤ-rank of
 /// the plane free parts alone; `offplane` is the number of distinct open
 /// off-plane rotor classes; `axes` the chart axes opened by discharge.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Rank {
     pub torsion: u32,
     pub free: u32,

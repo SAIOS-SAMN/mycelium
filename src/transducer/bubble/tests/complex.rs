@@ -62,7 +62,7 @@ fn two_pivots_without_a_new_word_leave_fills() {
     let before = snap(&c);
     let mut budget = crate::physics::Physics::default().stroke_n(64);
     let _ = c.pivot_on(&word, &crate::transducer::family::NoCrystal, &mut budget);
-    let fills = |s: &[(Vec<u8>, Fill)]| s.iter().map(|(_, f)| f.clone()).collect::<Vec<_>>();
+    let fills = |s: &[(Vec<u8>, Fill)]| s.iter().map(|(_, f)| format!("{f:?}")).collect::<Vec<_>>();
     assert_eq!(fills(&snap(&c)), fills(&before), "a second pivot with no new word leaves fills");
 }
 
