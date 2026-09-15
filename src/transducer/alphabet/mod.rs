@@ -5,10 +5,12 @@
 //! `Φ⁻¹`, exact over ℚ. The alphabet never grows; the language grows by words.
 
 pub mod block;
+pub mod bundle;
 pub mod derivation;
 pub mod factor;
 pub mod letters;
 pub mod plane;
+pub mod rewrite;
 pub mod rotor;
 pub mod spelling;
 pub mod word;

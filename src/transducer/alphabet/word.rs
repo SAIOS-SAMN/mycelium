@@ -124,8 +124,18 @@ impl Word {
         self.rotor().class_key()
     }
 
-    /// Shortest tape for this vertex: unit exponents mod 4, primes as
-    /// spelled, planes in slot order.
+    /// The PLANE-LOCAL normal form: unit exponents mod 4, primes as
+    /// spelled, planes in slot order, adjacent runs merged where they
+    /// commute.
+    ///
+    /// It said "shortest tape for this vertex" and it is not that (§2.8).
+    /// `normal_form` reduces each plane's run and merges neighbours; it
+    /// applies NO relator across non-adjacent runs and knows nothing of the
+    /// commutators or the sheet conjugation. A tape it leaves alone may
+    /// still shorten under the presentation. `Word::geodesic_under` is the
+    /// reading that does that, against a rule set completed from the stated
+    /// relators, and it is strictly stronger — so this keeps the name it
+    /// earns and the other keeps the claim.
     pub fn geodesic(&self) -> Word {
         self.normal_form()
     }
