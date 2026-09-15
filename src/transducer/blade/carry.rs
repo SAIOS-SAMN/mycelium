@@ -96,18 +96,39 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
     };
     let spread = |s: &Shape| (&s.blade.inertia[0] + &s.blade.inertia[1]) / &s.blade.shell;
     let (sa, sb) = (spread(a), spread(b));
+    // WHERE SIMILARITY IS REFUSED (§8.1, measurement only — the refusals are
+    // unchanged). `Axis::Dilation` is occupied ZERO times on this corpus,
+    // against `Placement` 67, over one recut — so no loop the engine reads
+    // carries a dilation residue. Two readings give that, and they are not
+    // the same fact: the corpus contains no homothety, or it contains one
+    // and ρ is refused before it can register.
+    //
+    // The refusal is exact and correct either way — ρ is a rational square
+    // or the bodies are not similar in ℚ, never a rounding — so these lines
+    // name which of the three arms was taken and nothing branches on them.
     let rho = match sa.is_zero() {
         true => match sb.is_zero() {
             true => q(1),
-            false => return coset,
+            false => {
+                eprintln!("  similar refused: a spreads to nothing and b does not");
+                return coset;
+            }
         },
         false => match rational_sqrt(&(&sb / &sa)) {
             Some(r) => r,
-            None => return coset,
+            None => {
+                eprintln!("  similar refused: the spread ratio is no rational square");
+                return coset;
+            }
         },
     };
     if b.blade.shell != &a.blade.shell * &rho * &rho {
-        return coset; // the cell counts do not scale as ρ²: not similar
+        // the cell counts do not scale as ρ²: not similar
+        eprintln!("  similar refused: the cell counts do not scale as ρ²");
+        return coset;
+    }
+    if rho != q(1) {
+        eprintln!("  similar: ρ is not one, the carriage takes a dilation");
     }
     let to_origin = cga::translator(&(-&ca1), &(-&ca2));
     let to_target = cga::translator(&cb1, &cb2);

@@ -286,11 +286,30 @@ impl Entity {
         // asking the mesh for one, and whichever arrives first closes the
         // loop.
         for (rotor, chart) in &adjoined {
+            // WHY A CANDIDATE MINTS NOTHING (§8.1, measurement only). Measured
+            // over one recut: `adjoin from residue` 68, `letter adjoined` 0.
+            // The pivot carries the candidate out sixty-eight times and the
+            // language gains nothing, and the two silent `continue`s below
+            // are the only places it can go. They are different facts — a
+            // rotor that cannot be minted at all, and one the mind already
+            // stands — and neither said so.
             let Some(e) = crate::transducer::sentence::generator_form(rotor, chart, &[]) else {
+                eprintln!("  letter refused: the rotor mints no generator");
                 continue;
             };
             let addr = e.address();
-            if self.epigenome.standing_of(addr.as_bytes()).is_some() {
+            if let Some(st) = self.epigenome.standing_of(addr.as_bytes()) {
+                // Not a defect on its own: the same class is adjoined every
+                // stroke it is measured, so after the first the letter is
+                // held and there is nothing to add. It IS the reading that
+                // says whether the one letter ever became a word — a class
+                // stood once and re-offered forever is a vocabulary of one
+                // that never ruled.
+                eprintln!(
+                    "  letter held {:02x}{:02x}… already {st:?}",
+                    addr.as_bytes()[0],
+                    addr.as_bytes()[1]
+                );
                 continue;
             }
             self.stand_crystallized(&e);

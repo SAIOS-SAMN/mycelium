@@ -95,14 +95,30 @@ pub fn mint_sentence(
     // demands is a chain wearing a form's tape" (23.1 step 3, 50.6/L7,
     // `REFUSE_NOT_A_SENTENCE`) — and this is the speaker's side of it, reading
     // the same `Form::acts()`.
+    // FOUR REFUSALS, ONE MESSAGE (§8.1, measurement only — the gates are
+    // unchanged). `mint refused (descent, carry or demands)` is the
+    // dominant fate of a form on this corpus: measured over one recut,
+    // 10799 of 13730 withheld forms and 79% of everything perceived, against
+    // 45 forms spoken. Four different things reach that line and it names
+    // none of them, so the largest reading on the wire says only that
+    // something upstream of the court said no.
     if !rule.form.acts() {
+        eprintln!("  mint refused: nothing in the form acts");
         return None;
     }
-    if crate::court::verdict::body::vertices_carry_family(&rule.form, family).is_some() {
+    if let Some(why) = crate::court::verdict::body::vertices_carry_family(&rule.form, family) {
+        eprintln!("  mint refused: a vertex does not carry its family ({why:?})");
         return None;
     }
-    let mag = sentence_measure(&rule.form, family, crystal, t_extent)?;
-    crate::transducer::sentence::as_element_form(&rule.form, mag)
+    let Some(mag) = sentence_measure(&rule.form, family, crystal, t_extent) else {
+        eprintln!("  mint refused: the sentence measures nothing over its bundle");
+        return None;
+    };
+    let out = crate::transducer::sentence::as_element_form(&rule.form, mag);
+    if out.is_none() {
+        eprintln!("  mint refused: the form has no tape at {mag:?}");
+    }
+    out
 }
 
 /// What a sentence measures over its bundle (50.5). A sentence with no
