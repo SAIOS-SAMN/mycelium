@@ -15,6 +15,7 @@ pub mod orbit;
 pub mod pair;
 pub mod perceive;
 pub mod pairing;
+pub mod refine;
 pub mod pieces;
 pub mod speak;
 pub mod trace;
