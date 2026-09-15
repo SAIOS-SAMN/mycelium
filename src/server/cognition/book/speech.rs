@@ -305,7 +305,14 @@ impl Kernel {
             return Err(refusal);
         }
         let out = self.list_sentence(s, voice);
-        if !matches!(out, Outcome::Refused(_) | Outcome::Pivot) && task != [0u8; 32] {
+        // A SENTENCE SPOKEN FOR ITSELF NAMES NO TASK. `Entity::speak` sends
+        // an empty task for a word spoken on its own — an axis germ, a
+        // crystallized idea, an adjoined letter — and `[]` is not `[0; 32]`,
+        // so the gate let it through: the listing was bound to the empty
+        // task, filed under it in `task_listings`, and every reader of the
+        // binding asked `task_family` for a family the empty task has none
+        // of. An absent task is absence (rule 11), not a task of no bytes.
+        if !matches!(out, Outcome::Refused(_) | Outcome::Pivot) && !task.is_empty() && task != [0u8; 32] {
             let addr = s.address();
             self.speech_task.insert(&addr, Address::from(task));
             self.bind_listing_task(&addr, task);

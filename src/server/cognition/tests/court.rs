@@ -356,6 +356,27 @@ assert_eq!(ruling.court_slashed, 0, "the form closes every pair of the family it
 assert!(ruling.ruled_contains(&addr), "and the stroke rules it");
 }
 
+/// A SENTENCE SPOKEN FOR ITSELF IS BOUND TO NO TASK. `Entity::speak` names
+/// an empty task for a word spoken on its own; the gate compared it with
+/// `[0; 32]` alone, so the listing was bound to the empty task and every
+/// reader of the binding asked for the family the empty task has none of.
+#[test]
+fn a_sentence_spoken_with_no_task_binds_no_task() {
+    let e = sentence_of(&[(0, 0, 1)], &[(0, 0, 2)]).expect("a recolour is a sentence");
+    let addr = e.address();
+    let mut k = Kernel::new();
+    let out = k.perceive_sentence([1; 32], &[], &e);
+    assert!(!matches!(out, Outcome::Refused(_) | Outcome::Pivot), "heard, not refused: {out:?}");
+    assert!(k.speech_task.get(&addr).is_none(), "no task was named, so none is bound");
+    assert!(k.listing_task.get(&addr).is_none());
+
+    let mut bound = Kernel::new();
+    let task = [7u8; 32];
+    let out = bound.perceive_sentence([1; 32], &task, &e);
+    assert!(!matches!(out, Outcome::Refused(_) | Outcome::Pivot), "heard, not refused: {out:?}");
+    assert_eq!(bound.speech_task.get(&addr).map(|t| t.as_bytes().to_vec()), Some(task.to_vec()));
+}
+
 /// 47.3, 13.9: A WITNESS GLUES AN OFFER AS THE HOME, NOT AS ITSELF. The
 /// Čech cell of a converging pair has two vertices, one per vantage. Gluing
 /// with `peer == self_id` writes the offered word into the section this
