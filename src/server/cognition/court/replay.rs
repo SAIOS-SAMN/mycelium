@@ -129,7 +129,11 @@ impl Kernel {
     /// not only when the word was first spoken. A word bound to no family
     /// replays without that clause: it can still be ruled, and it mints
     /// only what it measures on a family, which is then nothing.
-    pub(crate) fn court_replay(&self, spoken: &Element) -> Option<&'static str> {
+    ///
+    /// `pub`: the witness door (`judge::offer`) replays an offered form it
+    /// has already heard through this same reader, so the answer it gives a
+    /// home is the replay's and never the heard mark's.
+    pub fn court_replay(&self, spoken: &Element) -> Option<&'static str> {
         let family = self.family_of(&spoken.address());
         crate::verdict::blind_replay_on(spoken, &|a| self.resolve_form(a), family, self)
     }

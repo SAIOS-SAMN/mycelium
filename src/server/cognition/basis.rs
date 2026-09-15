@@ -54,6 +54,13 @@ impl Kernel {
         crate::transducer::sheaf::stratum_root(&self.ruled.fiber(inv))
     }
 
+    /// Whether this court has marked `addr` heard. A heard mark says the
+    /// glue ran once for this address on this court; it is not a verdict,
+    /// and a reader that needs one replays (`court_replay`).
+    pub fn heard_contains(&self, addr: &[u8]) -> bool {
+        self.heard.contains(addr)
+    }
+
     pub(crate) fn heard_mark(&mut self, addr: impl AsRef<[u8]>, inv: &crate::transducer::stalk::Invariant) {
         let addr = addr.as_ref();
         let root = self.stratum_root_of(inv);

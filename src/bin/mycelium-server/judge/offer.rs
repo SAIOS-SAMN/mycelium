@@ -149,7 +149,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                         // A glue this court could not place — a citation it
                         // does not hold, a word it heard before — has
                         // re-derived nothing and is unmeasured.
-                        witness_answer(k.glue_fetched(word.clone(), home, me, &mut cover), &word, me)
+                        witness_vantage(&mut k, &mut cover, word, home, me)
                     }
                     // A court that cannot be read has judged nothing and
                     // says so: unmeasured is not a refusal of the offer.
@@ -183,46 +183,82 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     }
 }
 
-/// 47.3 — WHAT THE WITNESS ANSWERS, read off its own glue of the offered
-/// form. Placed on this court's cover after replay (`Admitted`, `Attached`),
-/// the form it reached IS the replayed form, and that is the second
-/// vantage; slashed, the refusal travels by name; a glue this court could
-/// not place — a citation it does not hold, a word it had heard — has
-/// re-derived nothing, and unmeasured is not agreement and not refusal.
-pub(crate) fn witness_answer(
-    glue: mycelium::cognition::Glue,
-    reached: &mycelium::transducer::element::Element,
+/// 47.3 — THE WITNESS'S VANTAGE: the offered form REPLAYED on this court's
+/// own tapes, and nothing else decides the answer.
+///
+/// THE REPLAY DECIDES, NOT THE GLUE. `glue_fetched` replays the form
+/// (`court_replay`) and then files it on this court's cover — a section at
+/// the home's vantage, edges to the words this court holds, cells filled —
+/// and its `Glue` says how the form RELATES TO THIS COURT'S OWN SECTION on
+/// the chart: `Dialect` is "a different section of the same chart", which
+/// is true of almost every offered form and says nothing against the
+/// replay that just stood. Read as "unmeasured", it made 285 of 285 offer
+/// replies in the first minute of 2cf578a unmeasured, for 8 objects, one
+/// of them 192 times: the home re-sent every unmeasured offer after Λ and
+/// the witness answered `Dialect` again, because
+///
+/// A HEARD ADDRESS IS NOT REPLAYED AGAIN by `glue_fetched` — it returns
+/// `Dialect` before the replay for any address this court marked heard,
+/// slashed or not. So the second offer of a form this court had SLASHED
+/// would have read as placed. Heard, the form is replayed here by name
+/// (`court_replay`, the same reader the glue runs) and the answer is that
+/// replay's; unheard, the glue runs once and its slash is the replay's
+/// refusal. Either way the vantage is: this court re-derived the form, or
+/// it refused it by name. Unmeasured is left for a court that could not
+/// be read at all.
+pub(crate) fn witness_vantage(
+    k: &mut mycelium::cognition::Kernel,
+    cover: &mut mycelium::network::nerve::Cover,
+    word: mycelium::transducer::element::Element,
+    home: [u8; 32],
     me: [u8; 32],
 ) -> dialogue::Witnessed {
     use mycelium::cognition::Glue;
-    match glue {
-        Glue::Slashed(r) => dialogue::Witnessed::Refused { vk: me, why: r.as_bytes().to_vec() },
-        Glue::Admitted | Glue::Attached => {
-            dialogue::Witnessed::Reached { vk: me, form: reached.to_bytes() }
+    let refused = |why: &str| dialogue::Witnessed::Refused { vk: me, why: why.as_bytes().to_vec() };
+    if k.heard_contains(word.address().as_bytes()) {
+        return match k.court_replay(&word) {
+            Some(why) => refused(why),
+            None => dialogue::Witnessed::Reached { vk: me, form: word.to_bytes() },
+        };
+    }
+    match k.glue_fetched(word.clone(), home, me, cover) {
+        Glue::Slashed(why) => refused(why),
+        Glue::Admitted | Glue::Attached | Glue::Dialect => {
+            dialogue::Witnessed::Reached { vk: me, form: word.to_bytes() }
         }
-        Glue::Dialect => dialogue::Witnessed::Unmeasured { vk: me },
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mycelium::cognition::Glue;
 
     fn word() -> mycelium::transducer::element::Element {
         mycelium::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)])
             .expect("one cell is A5's chain")
     }
 
+    /// A word whose magnitude does not re-derive from its chain: the replay
+    /// refuses it by name, every time it is asked.
+    fn false_word() -> mycelium::transducer::element::Element {
+        let mut w = word();
+        w.set_magnitude([9, 9, 9, 9]);
+        w
+    }
+
     /// The vantage is the form the witness replayed, reaching the offered
-    /// address — never a word it held before the offer arrived.
+    /// address — asked once and asked again.
     #[test]
-    fn a_placed_offer_is_answered_with_the_replayed_form() {
+    fn a_replayed_offer_is_answered_with_the_form_reached_each_time_it_is_asked() {
+        let mut k = mycelium::cognition::Kernel::new();
+        let mut cover = mycelium::network::nerve::Cover::new();
+        let (home, me) = ([2u8; 32], [3u8; 32]);
         let w = word();
-        let me = [3u8; 32];
-        for glue in [Glue::Admitted, Glue::Attached] {
-            let dialogue::Witnessed::Reached { vk, form } = witness_answer(glue, &w, me) else {
-                panic!("a placed glue is a vantage");
+        for _ in 0..2 {
+            let dialogue::Witnessed::Reached { vk, form } =
+                witness_vantage(&mut k, &mut cover, w.clone(), home, me)
+            else {
+                panic!("a replay that stood is a vantage");
             };
             assert_eq!(vk, me);
             let mut p = 0usize;
@@ -233,19 +269,26 @@ mod tests {
         }
     }
 
-    /// A slash travels by name; a glue this court could not place is
-    /// unmeasured, not a vantage.
+    /// A form the replay refuses is refused by name — and refused AGAIN when
+    /// it is offered again, though this court has marked it heard: the
+    /// heard mark is not a verdict, the replay is.
     #[test]
-    fn a_slash_is_refused_by_name_and_an_unplaced_glue_is_unmeasured() {
-        let w = word();
-        let me = [3u8; 32];
-        let dialogue::Witnessed::Refused { vk, why } = witness_answer(Glue::Slashed("why"), &w, me) else {
-            panic!("a slash is a refusal");
+    fn a_false_offer_is_refused_by_name_each_time_it_is_asked() {
+        let mut k = mycelium::cognition::Kernel::new();
+        let mut cover = mycelium::network::nerve::Cover::new();
+        let (home, me) = ([2u8; 32], [3u8; 32]);
+        let w = false_word();
+        let first = witness_vantage(&mut k, &mut cover, w.clone(), home, me);
+        let dialogue::Witnessed::Refused { vk, why } = first else {
+            panic!("a replay that refused is a refusal");
         };
-        assert_eq!((vk, why.as_slice()), (me, b"why".as_slice()));
-        assert!(matches!(
-            witness_answer(Glue::Dialect, &w, me),
-            dialogue::Witnessed::Unmeasured { vk } if vk == me
-        ));
+        assert_eq!(vk, me);
+        assert!(!why.is_empty(), "the refusal is named");
+        assert!(k.heard_contains(w.address().as_bytes()), "and the address is marked heard");
+        let again = witness_vantage(&mut k, &mut cover, w, home, me);
+        assert!(
+            matches!(again, dialogue::Witnessed::Refused { .. }),
+            "heard is not a verdict: the second offer is replayed and refused again"
+        );
     }
 }
