@@ -41,6 +41,11 @@ fn a_composite_carries_its_rotor_and_a_transition_answers_one() {
         same_versor(&b.versor().expect("a versor"), &identity_versor()),
         "a (2,3) rotation is invisible in the conformal algebra of the base"
     );
+    // AND THE ELEMENT IS STILL NOT THE IDENTITY. `axes` read that versor
+    // alone, so a word spelling a quarter turn on `e₂∧e₃` reported no
+    // occupied stratum and `is_identity` answered true for it.
+    assert_eq!(b.axes(), vec![FIBER_SPATIAL], "the turn occupies S");
+    assert!(!b.is_identity(), "a quarter turn is not the identity word");
 
     let c = a.compose(&b);
     let r = c.carried_rotor().expect("the composite carries its rotor");

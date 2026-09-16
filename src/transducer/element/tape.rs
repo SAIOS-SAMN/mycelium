@@ -106,6 +106,18 @@ impl Element {
             }
             _ => out.push(0),
         }
+        // THE ROTOR RIDES WITH THE ACTION. It is written only where the
+        // tape spells no letters — where it is written at all — and a
+        // composite that crossed the wire without it would arrive with its
+        // rotation flattened onto the sensor plane, which is the fault the
+        // field exists to end.
+        match &self.action.rotor {
+            Some(r) if self.letters().is_none() => {
+                out.push(1);
+                r.to_bytes(&mut out);
+            }
+            _ => out.push(0),
+        }
         out
     }
 
@@ -268,6 +280,17 @@ impl Element {
             }
             _ => None,
         };
+        let rotor = match b.get(*pos) {
+            Some(1) => {
+                *pos += 1;
+                Some(crate::transducer::alphabet::Rotor::from_bytes(b, pos)?)
+            }
+            Some(0) => {
+                *pos += 1;
+                None
+            }
+            _ => None,
+        };
         let mut e = Element {
             description,
             action: Action {
@@ -276,6 +299,7 @@ impl Element {
                 temporal: mag[2],
                 shell: mag[3],
                 germinated,
+                rotor,
             },
             mag,
             sub,

@@ -33,10 +33,12 @@ pub fn glues(g_ab: &Element, g_bc: &Element, g_ca: &Element) -> bool {
 /// Realise a group transition as an alphabet rotor. None is a remainder:
 /// the edge is honest and no cell is formed over it.
 pub fn rotor_of(g: &Element) -> Option<Rotor> {
-    if let Some(letters) = g.letters() {
-        return Some(letters.spelling.word.rotor());
-    }
-    None
+    // THE ROTOR THE ELEMENT CARRIES, wherever it carries it. This read the
+    // tape and nothing else, and a transition is `g_y ∘ g_x⁻¹` — a
+    // COMPOSITE, which had no tape — so it answered `None` for every input
+    // in the tree and the court wrote an identity edge on every cell it
+    // could write at all.
+    g.carried_rotor()
 }
 
 /// THE SECTION AN ELEMENT CARRIES: its rotation AND its placement, read

@@ -6,6 +6,103 @@ use crate::transducer::alphabet::{Order, Rotor};
 use crate::transducer::cech::*;
 use crate::transducer::element::{identity_versor as ident, same_versor};
 
+/// A TRANSITION BETWEEN TWO SPOKEN SENTENCES ANSWERS A ROTOR.
+///
+/// The court's glue composes SENTENCES: `glue_fetched` reads
+/// `transition(w, &spoken).and_then(rotor_of)` where both operands are
+/// forms a peer spoke. A sentence carries no tape — `letters()` refuses
+/// its tag, because a sentence is one level above a word — so `rotor_of`
+/// answered `None` on that path even after a composite of two WORDS
+/// carried its own. The glue then took its `None` arm on every edge it
+/// wrote, `set_edge` never saw a six-plane rotor, `Complex::fill`
+/// short-circuited on the identity coefficient before `classify`, and
+/// `Fill::Class` and `Fill::Unspellable` were unreachable in the tree.
+///
+/// A form whose word vertices agree on one rotor up to projective
+/// equality HAS that rotor. The discriminating case is the same one the
+/// composite used: the two forms here carry quarters on `(0, 1)` and on
+/// `(2, 3)`, which have the SAME conformal action on the base — the
+/// second is the identity there — so neither sentence has a versor at all
+/// and `Cl(3, 1)` cannot separate them. The rotors can.
+#[test]
+fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() {
+    use crate::transducer::alphabet::{self, LetterId, Word};
+    use crate::transducer::element::Element;
+    use crate::transducer::sentence::{as_element_form, Form, Vertex};
+    use crate::transducer::stalk;
+    let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
+    let spoken = |w: &Word| -> Element {
+        let mut f = Form::default();
+        f.vertices.push(Vertex::word_on(
+            crate::transducer::address::Address::new(Vec::new()),
+            alphabet::Derivation::spelled(w.clone()),
+            stalk::Invariant(vec![3, 5]),
+            Box::new(crate::transducer::element::carriage(&q(1), &(q(0), q(1)))),
+            Vec::new(),
+            None,
+        ));
+        f.faces.push(f.face_of(0, 1).expect("the frame star"));
+        f.reindex();
+        as_element_form(&f, vol()).expect("a form with a vertex and a magnitude")
+    };
+    let q01 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]);
+    let q23 = Word::from_letters(&[(LetterId::quarter((2, 3)).expect("the far plane"), false)]);
+    let (a, b) = (spoken(&q01), spoken(&q23));
+
+    assert!(a.is_sentence() && b.is_sentence(), "both are forms, not words");
+    assert!(a.letters().is_none(), "and a sentence carries no tape to read a rotor off");
+    assert!(
+        a.versor().is_none() && b.versor().is_none(),
+        "nor a conformal action: Cl(3,1) holds nothing that separates these two"
+    );
+
+    let (ra, rb) = (
+        a.carried_rotor().expect("the form's one word vertex agrees with itself"),
+        b.carried_rotor().expect("likewise"),
+    );
+    assert!(ra.projective_eq(&q01.rotor()), "the rotor its vertices agree on");
+    assert!(!ra.projective_eq(&rb), "and the two forms turn in different planes");
+
+    let g = transition(&a, &b).expect("a transition between two spoken sentences");
+    let got = rotor_of(&g).expect("and it has a rotor");
+    let want = rb.geo(&ra.inverse().expect("a quarter inverts"));
+    assert!(got.projective_eq(&want), "which is g_y ∘ g_x⁻¹ in Cl(4,0)");
+    assert!(
+        !got.is_identity(),
+        "and not the identity the court wrote on every edge it could write"
+    );
+    // AND THE ELEMENT CARRYING IT IS NOT THE IDENTITY ELEMENT. `is_identity`
+    // is `axes().is_empty()`, `axes` read the versor alone, and this
+    // transition has none — so a rotor the court can finally see would have
+    // arrived at `glue_fetched`'s `Some(g) if g.is_identity()` arm and been
+    // discarded one line after it was won.
+    assert_eq!(g.axes(), vec![crate::transducer::element::FIBER_SPATIAL]);
+    assert!(!g.is_identity(), "a turn the sensor cannot see is still a turn");
+
+    // A FORM WHOSE VERTICES DISAGREE HAS NO ONE ROTOR, and says so rather
+    // than picking a representative (rule 15).
+    let mut mixed = Form::default();
+    for w in [&q01, &q23] {
+        mixed.vertices.push(Vertex::word_on(
+            crate::transducer::address::Address::new(Vec::new()),
+            alphabet::Derivation::spelled(w.clone()),
+            stalk::Invariant(vec![3, 5]),
+            Box::new(crate::transducer::element::carriage(&q(1), &(q(0), q(1)))),
+            Vec::new(),
+            None,
+        ));
+    }
+    for j in 1..=2u16 {
+        mixed.faces.push(mixed.face_of(0, j).expect("the frame star"));
+    }
+    mixed.reindex();
+    let m = as_element_form(&mixed, vol()).expect("a form of two disagreeing vertices");
+    assert!(
+        m.carried_rotor().is_none(),
+        "two rotors are not one rotor, and a representative would be a position pick"
+    );
+}
+
 /// A TRANSITION is antisymmetric: `g_XY ∘ g_YX = 1` (`g_YX = g_XY⁻¹`).
 #[test]
 fn a_transition_and_its_reverse_cancel() {

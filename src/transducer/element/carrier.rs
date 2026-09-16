@@ -56,6 +56,20 @@ pub struct Action {
     pub(crate) shell: u64,
     /// Axes opened above the four strata, each a versor, tagged ≥ 4.
     pub(crate) germinated: Vec<(u16, Versor)>,
+    /// THE ROTOR WHERE NO TAPE SPELLS ONE, in `Cl(4,0)` over all six
+    /// bivector planes.
+    ///
+    /// `spatial` is a `Versor` in `Cl(3,1)`, whose rotation group has ONE
+    /// plane, and `sensor_action_of` states that the map from a rotor
+    /// cannot be onto. So a composite that kept only `spatial` kept one
+    /// plane of six, and `cech::rotor_of` — which reads the tape — answered
+    /// nothing at all for it.
+    ///
+    /// ONE CARRIER PER FACT (law 12): this is written only where the
+    /// element has no letters to spell the rotor from, and
+    /// `Element::carried_rotor` reads the tape first. An element with a
+    /// tape never carries one here.
+    pub(crate) rotor: Option<crate::transducer::alphabet::Rotor>,
 }
 
 /// A germ as tape, action, chain, and magnitude.
@@ -221,11 +235,23 @@ impl Element {
         &self.action.gauge
     }
 
-    /// Occupied strata: S when the versor is not identity, G when the
-    /// permutation is not empty, germinated axes by index.
+    /// Occupied strata: S when the element MOVES, G when the permutation is
+    /// not empty, germinated axes by index.
+    ///
+    /// S IS OCCUPIED BY THE MOTION, WHEREVER THE MOTION IS WRITTEN. This
+    /// read `versor()` alone, which is `Cl(3,1)` and holds ONE rotation
+    /// plane: a quarter turn on `e₂∧e₃` has the IDENTITY versor, so the
+    /// element that turns it reported no occupied stratum at all. That is
+    /// not a cosmetic reading — `is_identity` is `axes().is_empty()`, and
+    /// `cech::glues`, `ruling`, `learn`, `stalk::chart` and `comprehend`
+    /// all decide on this slice or on that predicate. A transition in a
+    /// plane the sensor cannot see would have read as no transition, which
+    /// is the flattening arriving one organ later.
     pub fn axes(&self) -> Vec<u16> {
         let mut a = Vec::new();
-        if self.versor().is_some_and(|v| !same_versor(&v, &identity_versor())) {
+        let moves = self.versor().is_some_and(|v| !same_versor(&v, &identity_versor()))
+            || self.carried_rotor().is_some_and(|r| !r.is_identity());
+        if moves {
             a.push(FIBER_SPATIAL);
         }
         let g = if let Some(letters) = self.letters() {
@@ -266,11 +292,16 @@ impl Element {
         // A residual with a canceling hue tally has identity action but a
         // real chain — the chain decides. A word with a description tape
         // is never the identity.
-        self.axes().is_empty()
-            && self.sub.is_empty()
-            && !self.is_sentence()
+        //
+        // The tag reads come FIRST because they are one byte each and
+        // `axes` now asks `carried_rotor`, whose sentence arm decodes the
+        // form. Same predicate, and a sentence no longer pays for a parse
+        // to be told it is not the identity.
+        !self.is_sentence()
             && !self.is_rewrite()
             && !self.is_translation()
+            && self.sub.is_empty()
+            && self.axes().is_empty()
     }
 
     /// The centered coboundary chain (empty for pure-algebra elements).

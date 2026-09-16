@@ -138,10 +138,46 @@ impl Element {
     /// `Versor` in `Cl(3,1)`, which has ONE rotation plane, and
     /// `sensor_action_of` states that the map between them cannot be onto.
     ///
-    /// `None` for a sentence, which is one level above a word and whose
-    /// rotations are its loop holonomies, plural (`Form::loop_words`).
+    /// A SENTENCE ANSWERS THE ROTOR ITS WORD VERTICES AGREE ON, or nothing.
+    ///
+    /// It is one level above a word and `letters()` refuses its tag for
+    /// that reason, so this read `None` for every sentence — and the
+    /// court's glue composes SPOKEN SENTENCES, which is why carrying the
+    /// tape through composition did not on its own give the court an edge
+    /// rotor to write.
+    ///
+    /// A form whose word vertices all speak one rotor up to projective
+    /// equality HAS that rotor; one that speaks several has none, and says
+    /// so. That is `Bubble::rotor`'s rule exactly, and it is the rule
+    /// because a representative picked from several would be a different
+    /// motion on a node that took the bodies in another order (rule 15).
+    /// A form's loop holonomies are a different object and stay where they
+    /// are: they are the curvature AROUND a cycle, not the transport this
+    /// sentence IS.
     pub fn carried_rotor(&self) -> Option<crate::transducer::alphabet::Rotor> {
-        self.letters().map(|l| l.spelling.word.rotor())
+        if let Some(l) = self.letters() {
+            return Some(l.spelling.word.rotor());
+        }
+        if let Some(r) = self.action.rotor.as_ref() {
+            return Some(r.clone());
+        }
+        if !self.is_sentence() {
+            return None;
+        }
+        let f = crate::transducer::sentence::from_element_form(self)?;
+        let mut held: Option<crate::transducer::alphabet::Rotor> = None;
+        for v in &f.vertices {
+            let crate::transducer::sentence::Vertex::Word { derivation, .. } = v else {
+                continue;
+            };
+            let r = derivation.rotor();
+            match &held {
+                None => held = Some(r),
+                Some(h) if h.projective_eq(&r) => {}
+                Some(_) => return None,
+            }
+        }
+        held
     }
 
     /// The tape a composite carries so its rotor survives: the composed
@@ -219,9 +255,23 @@ impl Element {
         )]
         germ.sort_by_key(|(i, _)| *i);
         out.action.germinated = germ;
-        if let (Some(a), Some(b)) = (self.letters(), other.letters()) {
-            let word = a.spelling.word.compose(&b.spelling.word).normal_form();
-            out.carry_tape(word);
+        // THE ROTOR SURVIVES, BY A TAPE WHERE ONE SPELLS IT AND BY THE
+        // ACTION WHERE NONE DOES. Two words compose to a word, and the
+        // composite carries that spelling. Two SENTENCES do not — a
+        // sentence is one level above a word — so the composite carries
+        // the product on the action instead, which is the only place a
+        // six-plane rotor can sit when the alphabet is not spelling it.
+        match (self.letters(), other.letters()) {
+            (Some(a), Some(b)) => {
+                let word = a.spelling.word.compose(&b.spelling.word).normal_form();
+                out.carry_tape(word);
+            }
+            _ => {
+                if let (Some(a), Some(b)) = (self.carried_rotor(), other.carried_rotor()) {
+                    out.action.rotor = Some(a.geo(&b));
+                    out.address.take();
+                }
+            }
         }
         out
     }
@@ -245,9 +295,14 @@ impl Element {
         // composition carries the composed one: a transition is
         // `g_y ∘ g_x⁻¹`, so a solution that drops its tape starves the
         // transition exactly as a composition that drops its own does.
-        if let Some(l) = self.letters() {
-            let word = l.spelling.word.inverse().normal_form();
-            out.carry_tape(word);
+        match self.letters() {
+            Some(l) => out.carry_tape(l.spelling.word.inverse().normal_form()),
+            None => {
+                if let Some(r) = self.carried_rotor().as_ref().and_then(|r| r.inverse()) {
+                    out.action.rotor = Some(r);
+                    out.address.take();
+                }
+            }
         }
         Some(out)
     }
@@ -383,6 +438,14 @@ impl Element {
         } else if let Some(v) = self.action.spatial.as_ref() {
             // The spatial action is a versor too; the same A4 writing.
             v.put_canonical(&mut out);
+            // AND THE ROTOR BESIDE IT, where one is carried. The versor is
+            // the sensor's projection of it, so two composites turning in
+            // different planes can share a spatial action and would have
+            // shared an address (law 2). Canonical coordinates, as A1
+            // writes them.
+            if let Some(r) = self.action.rotor.as_ref() {
+                crate::transducer::address::put_bytes(&mut out, r.key().as_bytes());
+            }
         }
         // The key IS the chain (law 2), and the chain is A5's by type: one
         // that says two things at a site has no centering and is refused
