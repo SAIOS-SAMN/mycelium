@@ -123,4 +123,61 @@ fn a_carried_edge_rederives_on_the_union_or_is_refused() {
         replay_form_with(&tampered, &|_| None, Some(&family), &NoCrystal),
         Some(REFUSE_EDGE)
     );
+
+    // A FACE IS ASKED FOR THE PAIRS ITS WORD WAS MEASURED ON, and the
+    // section travels on the face across the tape.
+    //
+    // 21 step 2 keeps every word the bundle spoke between two ends as a
+    // face of its own, each holding on the pairs it was spoken on. The
+    // extractor measured those lists and filed them in `Form.sections`
+    // under a key built from the two ends and the word — a second key
+    // family in a carrier whose only reader asks at `TransportClass::key()`
+    // — and nothing read them. Nothing COULD: `Form::regauge` rewrites
+    // every face's word at extraction step 7 and `rebase_named_faces`
+    // rewrites the star faces' and turns a `Vertex::Word` into a
+    // `Vertex::Rebased`, after which neither half of that key can be
+    // rebuilt. So each section face was re-derived against every pair of
+    // the family, including the ones it never claimed.
+    //
+    // The tampered edge above is the case in one line, and the READING IS
+    // TAKEN AT THE MOVE, not at the verdict: a tampered edge is a real
+    // defect and the form is refused for it by the loop-holonomy check too,
+    // so asserting a whole replay here would pass with the section ignored.
+    // `edges_rederive_family` is the organ that changed, and it is what is
+    // asked (§3.2).
+    let section = |f: &crate::transducer::sentence::Form, ps: Option<Vec<u16>>| {
+        let mut s = f.clone();
+        for face in &mut s.faces {
+            face.pairs = ps.clone();
+        }
+        // Through the tape, because the court replays what arrives on the
+        // wire and a section that does not travel is not a section.
+        let e = as_element_form(&s, mag).expect("a tape");
+        crate::transducer::sentence::from_element_form(&e).expect("the tape reads back")
+    };
+    let rederives = |f: &crate::transducer::sentence::Form| {
+        crate::verdict::body::edges_rederive_family(f, &family).map(|r| r.reason)
+    };
+    assert_eq!(
+        rederives(&section(&g, None)),
+        Some(REFUSE_EDGE),
+        "a face claiming every pair is re-derived on every pair"
+    );
+    assert_eq!(
+        rederives(&section(&g, Some(vec![1]))),
+        None,
+        "a face measured on pair 1 is asked nothing in a one-pair family"
+    );
+    assert_eq!(
+        rederives(&section(&g, Some(vec![0]))),
+        Some(REFUSE_EDGE),
+        "and naming the pair it does stand on brings the re-derivation back"
+    );
+    // The honest form is unaffected either way: a section restricts which
+    // pairs are asked, never what the answer is.
+    assert_eq!(
+        rederives(&section(&f, Some(vec![0]))),
+        None,
+        "the identity edge re-derives on the pair it is measured on"
+    );
 }

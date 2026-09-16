@@ -131,6 +131,21 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                 }
             }
         }
+        // THE SECTION THIS FACE CARRIES (v9): the pairs of the bundle its
+        // word was measured on, present or absent by its own tag. A face
+        // that crossed the wire without it would arrive claiming every pair
+        // of the family, and the court re-derives an edge against every
+        // pair it claims.
+        match &face.pairs {
+            None => out.push(0),
+            Some(ps) => {
+                out.push(1);
+                out.extend_from_slice(&(ps.len() as u16).to_le_bytes());
+                for &p in ps {
+                    out.extend_from_slice(&p.to_le_bytes());
+                }
+            }
+        }
     }
     out.extend_from_slice(&(f.loops.len() as u16).to_le_bytes());
     for lp in &f.loops {
@@ -370,7 +385,23 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             };
             at.insert(pk.as_bytes(), FacePlace { carriage, gauge, edge });
         }
-        faces.push(FormFace { i, j, word, at });
+        let pairs = match *b.get(*pos)? {
+            0 => {
+                *pos += 1;
+                None
+            }
+            1 => {
+                *pos += 1;
+                let np = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+                let mut ps = Vec::with_capacity(np);
+                for _ in 0..np {
+                    ps.push(take_u16(b, pos)?);
+                }
+                Some(ps)
+            }
+            _ => return None,
+        };
+        faces.push(FormFace { i, j, word, at, pairs });
     }
     let nl = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
     let mut loops = Vec::with_capacity(nl);
@@ -510,7 +541,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
 /// S13.6's `ActKind`, S13.9's fold root, L15's lane vector on the receipt
 /// and L11c's cell coordinate; one recut pays all of them together
 /// whenever the operator next brings the fleet up.
-pub const FORM_TAPE_VERSION: u8 = 8;
+pub const FORM_TAPE_VERSION: u8 = 9;
 
 /// 37.7 — MINT A GENERATOR FROM A ROTOR, the one construction that turns a
 /// measured action the alphabet cannot spell into a word the language holds.

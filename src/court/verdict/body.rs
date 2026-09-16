@@ -324,7 +324,22 @@ pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option
         else {
             return Some(refused());
         };
-        for (x, y) in family {
+        for (pair, (x, y)) in family.iter().enumerate() {
+            // A FACE IS ASKED FOR THE PAIRS ITS WORD WAS MEASURED ON. 21
+            // step 2 keeps every word the bundle spoke between two ends as
+            // a face of its own, each a section over the pairs it holds on
+            // (18.2: two carriages on one class are two sections) — and
+            // this re-derived every face against every pair, so each
+            // section was refused on the pairs it never claimed. It is the
+            // same fault the class path carried until the rule began
+            // stating the pairs its vertices were measured on, where it was
+            // 80 of 87 vertex-body refusals at epoch 13.
+            //
+            // A face nothing sectioned claims them all and is checked
+            // whole, which is what it says of itself.
+            if !face.measured_on(pair) {
+                continue;
+            }
             let bodies = perceive(x);
             let images = perceive(y);
             let fiber_i = fiber_on(&bodies, class_i);

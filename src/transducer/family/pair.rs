@@ -609,7 +609,10 @@ pub(crate) fn pair_form_uncached(
             };
             let mut at = crate::network::nerve::Keyed::new();
             at.insert(crate::transducer::sentence::face_pair_key(&ci, &cj), place);
-            form.faces.push(FormFace { i, j, word, at });
+            // A PAIR FORM IS ONE PAIR. There is no bundle here to section over,
+        // so its faces make the unrestricted claim; the sections are the
+        // extractor's, measured across the several pair forms it reads.
+        form.faces.push(FormFace { i, j, word, at, pairs: None });
         }
     }
     let meet_faces = form.faces.len();
@@ -767,7 +770,10 @@ pub(crate) fn pair_form_uncached(
         };
         let mut at = crate::network::nerve::Keyed::new();
         at.insert(crate::transducer::sentence::face_pair_key(&ci, &cj), place);
-        form.faces.push(FormFace { i, j, word, at });
+        // A PAIR FORM IS ONE PAIR. There is no bundle here to section over,
+        // so its faces make the unrestricted claim; the sections are the
+        // extractor's, measured across the several pair forms it reads.
+        form.faces.push(FormFace { i, j, word, at, pairs: None });
     }
     form.loops = Form::loops_of(&form.faces, n);
     form.reindex();

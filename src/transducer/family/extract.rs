@@ -8,140 +8,9 @@
 use super::*;
 
 
-/// Step 4 of chapter 21: along each named face (i, j) with `w_i` not the
-/// identity, `j` is `i` read in `j`'s frame when, on every pair of the
-/// bundle, the two bodies carry one linear word and differ only by their
-/// relative placement `t = p_j − p_i`. Conjugation by a translation keeps
-/// the linear block and moves the centre, so `t · w_i · t⁻¹` is realised
-/// by `apply_form` as `w_i` at `p_i + t`; nothing is spelled for `t`.
-pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
-    let named: Vec<FormFace> = form.faces.clone();
-    // The face's own index IS the chord it closes on where it closes: this
-    // is a clone of `form.faces` and the rebase adds no face, so the two
-    // agree throughout. A caller that walked a face knows which one; it is
-    // passed and never searched for (15.5).
-    for (fi, face) in named.iter().enumerate() {
-        let (i, j) = (face.i as usize, face.j as usize);
-        if matches!(form.vertices.get(j), Some(Vertex::Rebased { .. })) {
-            continue;
-        }
-        let (Some(vi), Some(vj)) = (form.vertices.get(i), form.vertices.get(j)) else {
-            continue;
-        };
-        let (Vertex::Word { derivation: di, .. }, Vertex::Word { .. }) = (vi, vj) else {
-            continue;
-        };
-        let di = di.clone();
-        if di.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
-            continue;
-        }
-        trace::trace_at("extract/4 face-i", i);
-        trace::trace_at("extract/4 face-j", j);
-        let Some(tc_i) = transport_class(&form.vertices[i]) else {
-            continue;
-        };
-        let Some(tc_j) = transport_class(&form.vertices[j]) else {
-            continue;
-        };
-        // THE RELATIVE IS READ PER CHART PAIR, at the pairs THIS FACE relates
-        // (D10 item 9). It was `vi.carriage_of()` against `vj.carriage_of()` —
-        // two representatives, which on a face between multi-chart vertices
-        // compares one body's placement against a body on a different chart and
-        // calls the difference the relative.
-        //
-        // A rebase asserts ONE relative for the whole vertex, so it fires only
-        // where every pair this face relates agrees on it AND every pair form
-        // measures that same relative between the two classes. Where the pairs
-        // disagree there is no one relative to rebase by (rule 11).
-        let mut relative: Option<Versor> = None;
-        let mut agree = true;
-        for (pk, _) in face.at.scoped() {
-            let Some((ik, jk)) = crate::transducer::sentence::read_face_pair_key(&pk) else {
-                continue;
-            };
-            let (Some(cci), Some(ccj)) = (vi.chart_keyed(&ik), vj.chart_keyed(&jk)) else {
-                agree = false;
-                break;
-            };
-            let (Some(a), Some(b)) = (vi.acting_on(&cci), vj.acting_on(&ccj)) else {
-                agree = false;
-                break;
-            };
-            let Some(inv) = a.carriage.versor_inverse() else {
-                agree = false;
-                break;
-            };
-            let here = b.carriage.geo(&inv);
-            match &relative {
-                None => relative = Some(here),
-                Some(held) if !element::same_versor(held, &here) => {
-                    agree = false;
-                    break;
-                }
-                Some(_) => {}
-            }
-        }
-        let (true, Some(relative)) = (agree, relative) else {
-            continue;
-        };
-        // EVERY PAIR FORM MEASURES THE SAME RELATIVE, at every member pair its
-        // own face between the two classes records. The incidence is the pair
-        // form's face, so the bodies compared are the bodies the scene relates
-        // and never a product of the two classes' placements.
-        let constant = pair_forms.iter().all(|pf| {
-            let rs = relatives_between(pf, &tc_i, &tc_j);
-            !rs.is_empty()
-                && rs
-                    .scoped()
-                    .all(|(_, (_, r))| element::same_versor(r, &relative))
-        });
-        if constant {
-            let _ = form.rebase(face.i, face.j, relative, fi as u16);
-            trace::trace_at("extract/4 rebased", j);
-        }
-    }
-    trace::trace_at("extract/4 reindex", form.vertices.len());
-    form.reindex();
-    for (_, &fi) in form.star.scoped() {
-        let Some(face) = form.faces.get(fi as usize) else {
-            continue;
-        };
-        let (i, j) = (face.i, face.j);
-        trace::trace_at("extract/4 star-face", fi as usize);
-        // THE RE-DERIVATION KEEPS THE MEMBER PAIRS THE FACE ALREADY CARRIES
-        // and keeps their edges: the rebase moved the vertices' placements, so
-        // the carriage at each pair is stale, but WHICH pairs this face relates
-        // is the scene's fact and re-deriving it from the vertices would take
-        // the product of their fibres. The pairs are read off the face and the
-        // placement at each is re-derived at its own coordinate.
-        let pairs: Vec<(Vec<u8>, Option<crate::transducer::sentence::Transport>)> = face
-            .at
-            .scoped()
-            .map(|(k, p)| (k, p.edge.clone()))
-            .collect();
-        let mut at = crate::network::nerve::Keyed::new();
-        for (pk, edge) in pairs {
-            let Some((ik, jk)) = crate::transducer::sentence::read_face_pair_key(&pk) else {
-                continue;
-            };
-            let (Some(ci), Some(cj)) = (
-                form.vertices.get(i as usize).and_then(|v| v.chart_keyed(&ik)),
-                form.vertices.get(j as usize).and_then(|v| v.chart_keyed(&jk)),
-            ) else {
-                continue;
-            };
-            if let Some(p) = form.face_place(i, &ci, j, &cj, edge) {
-                at.insert(&pk, p);
-            }
-        }
-        if let Some(word) = form.face_word(i, j) {
-            form.faces[fi as usize].word = word;
-            form.faces[fi as usize].at = at;
-        }
-        trace::trace_at("extract/4 star-face-done", fi as usize);
-    }
-}
-
+// `rebase_named_faces` — step 4 of chapter 21 — was here and is now
+// `family/rebase.rs`. Moved, not rewritten (§1.6): this file went over the
+// §1.1 1200-line reading bound when the face sections landed on the face.
 
 /// AN ASSIGNMENT'S OWN KEY: the carriage's bytes and the sorted gauge, which
 /// is what the member acts BY. Content, so two encodings of one assignment
@@ -934,31 +803,52 @@ pub fn extract_rule_with(
         // vertex. It is NOT dropped. It is a closed orbit at that vertex —
         // an element of its stabilizer — and `Form::rebase` evaluates its
         // boundary holonomy when move 4 reaches it (L20).
-        let mut sections_of_face = words.into_iter();
-        let Some((_, first_pairs)) = sections_of_face.next() else {
+        if words.is_empty() {
             continue;
-        };
+        }
         // The face carries its word and edge transport from the pair forms.
         let edge = pair_forms.iter().find_map(|pf| face_edge_between(pf, ea, eb));
         let Some(word) = form.face_word(i, j) else {
             continue;
         };
-        let Some(face) = form.face_carrying_with_edge(i, j, word, edge.clone()) else {
+        // THE PAIRS THIS FACE'S WORD WAS MEASURED ON, ASKED BY THAT WORD'S
+        // OWN KEY. The rule's face carries `w_j ∘ w_i⁻¹` off its two
+        // vertices, and `words` holds each word the BUNDLE spoke between
+        // these ends with the pairs it spoke it on. Which list belongs to
+        // this face is therefore a keyed question, and the answer used to
+        // be `words[0]` — the first entry of a list, taken for a face built
+        // from a different word source (rule 15). A word the bundle did not
+        // speak here is measured on no pair and the face says so, rather
+        // than inheriting a claim it cannot support (rule 11).
+        let measured = |w: &crate::transducer::alphabet::Word| -> Vec<u16> {
+            match at.get(w.key().as_bytes()).and_then(|&n| words.get(n)) {
+                Some((_, ps)) => ps.clone(),
+                None => Vec::new(),
+            }
+        };
+        let claimed = measured(&word);
+        let Some(mut face) = form.face_carrying_with_edge(i, j, word.clone(), edge.clone())
+        else {
             continue;
         };
+        face.pairs = Some(claimed);
         form.faces.push(face);
-        let mut rest = sections_of_face.peekable();
-        if rest.peek().is_some() {
-            sections.insert(ends_pair_key(ea, eb), first_pairs);
-        }
-        for (w, pairs) in rest {
-            let mut key = ends_pair_key(ea, eb);
-            crate::transducer::address::put_bytes(&mut key, w.key().as_bytes());
-            let Some(section) = form.face_carrying_with_edge(i, j, w, edge.clone()) else {
+        // EVERY OTHER WORD THE BUNDLE SPOKE between these two ends is a
+        // second face between the same vertices — two carriages on one
+        // class are two sections (18.2) — each carrying the pairs it was
+        // spoken on. This walked `words[1..]`, so a bundle whose first
+        // spoken word is the rule's own coboundary lost nothing, and one
+        // whose first spoken word is NOT lost that word's face entirely.
+        for (w, ps) in &words {
+            if w.key() == word.key() {
+                continue;
+            }
+            let Some(mut section) = form.face_carrying_with_edge(i, j, w.clone(), edge.clone())
+            else {
                 continue;
             };
+            section.pairs = Some(ps.clone());
             form.faces.push(section);
-            sections.insert(key, pairs);
         }
     }
     form.loops = Form::loops_of(&form.faces, form.vertices.len());

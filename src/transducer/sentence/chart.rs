@@ -82,7 +82,16 @@ impl Form {
                 continue;
             };
             face_old_to_new[fi] = Some(new_faces.len() as u16);
-            new_faces.push(FormFace { i, j, word: f.word.clone(), at: f.at.clone() });
+            // THE SECTION RIDES WITH THE FACE. The pairs are the BUNDLE's,
+            // not this form's vertices', so they are carried across and
+            // never remapped.
+            new_faces.push(FormFace {
+                i,
+                j,
+                word: f.word.clone(),
+                at: f.at.clone(),
+                pairs: f.pairs.clone(),
+            });
         }
         // RENUMBERING A FORM TOUCHES EVERY CARRIER IT HAS. Each of the four
         // below is this form's own — glued vertices, sections, torsion,
@@ -95,16 +104,22 @@ impl Form {
                 glued.insert(&k, ni);
             }
         }
-        let mut sections = Keyed::new();
-        for (k, ix) in self.sections.scoped() {
-            let mapped: Vec<u16> = ix
-                .iter()
-                .filter_map(|&i| old_to_new.get(i as usize).copied().flatten())
-                .collect();
-            if !mapped.is_empty() {
-                sections.insert(&k, mapped);
-            }
-        }
+        // SECTIONS ARE NOT RENUMBERED, AND THE REMAP HERE WAS A TYPE ERROR.
+        // `Form.sections` is class key → PAIR INDICES OF THE BUNDLE, which
+        // its own field doc says; this ran those pair indices through
+        // `old_to_new`, a VERTEX table, and dropped every entry whose
+        // mapping came out empty. A class measured on pairs 0, 1 and 2 of a
+        // form retracted to two vertices kept pairs 0 and 1 and silently
+        // lost the third — which is the court then refusing that vertex on
+        // the one pair it was actually measured on, the exact fault the
+        // section exists to prevent.
+        //
+        // A class whose vertex was dropped keeps its entry: nothing reads a
+        // section without first finding the Word vertex that carries the
+        // class (`vertices_carry_family`), so a stale entry is unreachable
+        // rather than wrong, and dropping it by an index arithmetic that
+        // does not apply is the only way to be wrong here.
+        let sections = self.sections.clone();
         let mut torsion = Keyed::new();
         for (k, FiledLoop { sigma, period: ell, chord }) in self.torsion.scoped() {
             let Some(&Some(nc)) = face_old_to_new.get(*chord as usize) else {
@@ -450,6 +465,23 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
             // its PRESENCE is on the key, because a remainder edge and a
             // carried edge are two different faces, and its value is not.
             buf.push(u8::from(place.edge.is_some()));
+        }
+        // THE SECTION IS MEANING (rule 7). A face measured on pairs 0 and 2
+        // and a face claiming every pair of the bundle SAY different things
+        // — the court asks the second for pair 1 and not the first — so
+        // they are two faces and the address is what says so. The lists
+        // used to sit in `Form.sections`, which this key already writes out
+        // whole, so the coordinate does not leave the address; it moves to
+        // the face it describes.
+        match &face.pairs {
+            None => buf.push(0),
+            Some(ps) => {
+                buf.push(1);
+                buf.extend_from_slice(&(ps.len() as u16).to_le_bytes());
+                for &p in ps {
+                    buf.extend_from_slice(&p.to_le_bytes());
+                }
+            }
         }
     }
     // The bundle's frame ratio and its sections are meaning (rule 7): two

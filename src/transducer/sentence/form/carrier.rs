@@ -228,14 +228,50 @@ pub struct FormFace {
     /// `face_pair_key(chart_i, chart_j)`. Empty where the face records only
     /// its word — a section face pushed by `FormFace::new`.
     pub at: Keyed<FacePlace>,
+    /// THE PAIRS OF THE BUNDLE THIS FACE'S WORD WAS MEASURED ON (21 step 2,
+    /// S12.2). `None` is the unrestricted claim: nothing sectioned this
+    /// face and it answers for every pair its two ends exist on. `Some(ps)`
+    /// is a SECTION — the bundle spoke several words between these two ends
+    /// and this face carries one of them, on the pairs it was spoken on.
+    ///
+    /// IT LIVES ON THE FACE BECAUSE NO KEY CAN REACH IT. The extractor kept
+    /// these lists in `Form.sections` under `ends_pair_key(ea, eb)` and, for
+    /// the alternates, that key with the word's key appended — a SECOND key
+    /// family in a carrier whose only reader asks at `TransportClass::key()`
+    /// (rule 6: one coordinate system, where a prefix is a stratum). Nothing
+    /// read the face family, and nothing could have: `Form::regauge` rewrites
+    /// EVERY face's word to `γ_j · w · γ_i⁻¹` at extraction step 7, and
+    /// `rebase_named_faces` rewrites the star faces' words and turns a
+    /// `Vertex::Word` into a `Vertex::Rebased` — after which `end_of`
+    /// answers `None` and neither half of the key can be rebuilt. The key
+    /// was stale by construction before the form ever left the extractor.
+    ///
+    /// Carried on the face, the section rides through both rewrites and
+    /// through `retract_vertices` with the face it describes, and the court
+    /// reads it where it stands.
+    pub pairs: Option<Vec<u16>>,
 }
 
 impl FormFace {
     /// A face carrying only its word. The member pairs are filled by
     /// `Form::face_of` from the vertices, or by the incidence that created
     /// the face; they are never invented as the product of the two fibres.
+    ///
+    /// It claims every pair until something measures otherwise: a face with
+    /// no section is the unrestricted claim, which is what every face made
+    /// before sections existed.
     pub fn new(i: u16, j: u16, word: Word) -> FormFace {
-        FormFace { i, j, word, at: Keyed::new() }
+        FormFace { i, j, word, at: Keyed::new(), pairs: None }
+    }
+
+    /// Is this face's word measured on `pair` of the bundle? A face that
+    /// was never sectioned claims them all, so it is; a sectioned face
+    /// answers for the pairs it names and for no others.
+    pub fn measured_on(&self, pair: usize) -> bool {
+        match &self.pairs {
+            None => true,
+            Some(ps) => ps.contains(&(pair as u16)),
+        }
     }
 
     /// What this face carries at one member pair. A keyed read: `None` is
@@ -730,7 +766,7 @@ impl Form {
                 at.insert(crate::transducer::sentence::face_pair_key(ci, cj), p);
             }
         }
-        Some(FormFace { i, j, word: word.clone(), at })
+        Some(FormFace { i, j, word: word.clone(), at, pairs: None })
     }
 
     /// THE MEMBER PAIRS A FACE BETWEEN TWO VERTICES HAS where one endpoint
@@ -773,7 +809,7 @@ impl Form {
                         at.insert(crate::transducer::sentence::face_pair_key(ci, cj), p);
                     }
                 }
-                Some(FormFace { i, j, word, at })
+                Some(FormFace { i, j, word, at, pairs: None })
             }
             None => {
                 let mut f = FormFace::new(i, j, word);

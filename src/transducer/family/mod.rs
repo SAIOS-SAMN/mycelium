@@ -15,6 +15,7 @@ pub mod orbit;
 pub mod pair;
 pub mod perceive;
 pub mod pairing;
+pub mod rebase;
 pub mod refine;
 pub mod pieces;
 pub mod speak;
@@ -37,6 +38,7 @@ pub use memo::*;
 pub use orbit::*;
 pub(crate) use pair::*;
 pub use pairing::*;
+pub(crate) use rebase::*;
 pub use perceive::*;
 pub use speak::*;
 
