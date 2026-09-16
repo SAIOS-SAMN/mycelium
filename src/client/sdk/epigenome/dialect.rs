@@ -44,14 +44,9 @@ impl Epigenome {
     }
 
     pub(crate) fn drop_dialect(&mut self, da: &[u8]) {
-        if let Some(d) = self.dialect.get(da) {
-            let shed = d.sentence.clone();
-            self.moduli_retract(&shed);
-        }
-        let (inv, words, missing) = match self.dialect.get(da) {
+        let (shed, missing) = match self.dialect.get(da) {
             Some(d) => (
-                crate::transducer::stalk::invariant_of(&d.sentence),
-                crate::transducer::sentence::words_of_element(&d.sentence),
+                d.sentence.clone(),
                 if d.withheld {
                     d.missing.clone()
                 } else {
@@ -64,7 +59,20 @@ impl Epigenome {
                 return;
             }
         };
-        crate::transducer::sentence::retract_words(&mut self.axis_index, &inv, &words);
+        self.moduli_retract(&shed);
+        // THE MIRROR OF THE ADMISSION, CHART FOR CHART. `stand_dialect_at`
+        // admits through `axis_admit`, which for a sentence files each Word
+        // vertex's word under every chart that vertex ACTS on. This retracted
+        // through `retract_words` at `invariant_of(&d.sentence)` — the
+        // SENTENCE's own chart, `chart_of_form`, leading `2`, where the
+        // admission filed at body charts leading `1`.
+        //
+        // `retract_words` returns at its first keyed read on the missing outer
+        // key, so nothing was ever removed: every word of every shed dialect
+        // sentence stayed in the axis index for the life of the process, and
+        // the index is on the stroke path with no other drain. The correct
+        // mirror already existed and was reached only from genome removal.
+        self.axis_retract(&shed);
         for m in &missing {
             self.retract_waiter(m, da);
         }

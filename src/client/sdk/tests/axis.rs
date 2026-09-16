@@ -8,6 +8,72 @@ use crate::transducer::blade::versor_between;
 use crate::transducer::element::{from_canonical, measure_lanes, same_versor, shape_of_chain};
 use crate::transducer::germinate::germinate;
 
+/// A WORD LEAVES THE AXIS INDEX WHERE IT ENTERED IT.
+///
+/// `stand_dialect_at` admits through `axis_admit`, which files a
+/// sentence's word under every chart its vertex ACTS on — a body chart.
+/// `drop_dialect` retracted through `retract_words` at
+/// `invariant_of(&d.sentence)`, the SENTENCE's own chart, which leads with
+/// a different axis entirely. `retract_words` returns at its first keyed
+/// read on that missing outer key, so nothing was ever removed: the words
+/// of every shed dialect sentence stayed in the index for the life of the
+/// process, and the index is on the stroke path with no other drain.
+///
+/// The claim is the mirror, coordinate for coordinate: whatever the
+/// admission filed, the shed removes.
+#[test]
+fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
+    use crate::transducer::address::{Address, TAG_FORM};
+    use crate::transducer::alphabet::{Derivation, LetterId, Word};
+    use crate::transducer::element;
+    use crate::transducer::sentence::{as_element_form, on_axis_of, ClassVector, Form, Vertex};
+    use crate::transducer::stalk::Invariant;
+
+    let chart = Invariant(vec![1, 7, 11]);
+    let w = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]);
+    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    let mut f = Form::default();
+    f.vertices.push(Vertex::word_on(
+        Address::from_bytes([TAG_FORM, 3]),
+        Derivation::spelled(w.clone()),
+        chart.clone(),
+        Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        Vec::new(),
+        None,
+    ));
+    f.faces.push(f.face_of(0, 1).expect("the star face"));
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    let sentence = as_element_form(&f, [1, 0, 0, 0]).expect("a tape");
+
+    // The coordinates a quarter turn occupies are the slots it is filed
+    // under; a word occupying none files nowhere and would prove nothing.
+    let axes = ClassVector::of_word(&w)
+        .expect("a quarter turn has a class vector")
+        .coordinates();
+    assert!(!axes.is_empty(), "a quarter turn occupies a coordinate");
+
+    let mut epi = Epigenome::new();
+    let addr = epi
+        .stand_dialect_at(sentence, 1, 1)
+        .expect("the sentence stands in the dialect");
+    for ax in &axes {
+        assert!(
+            !on_axis_of(&epi.axis_index, &chart, *ax).is_empty(),
+            "the word is filed at the chart its vertex acts on, on {ax:?}"
+        );
+    }
+
+    epi.drop_dialect(&addr);
+    for ax in &axes {
+        assert!(
+            on_axis_of(&epi.axis_index, &chart, *ax).is_empty(),
+            "and it leaves with the sentence, on {ax:?}"
+        );
+    }
+}
+
 #[test]
 fn two_bodies_deflating_one_listing_open_an_axis_on_the_versor_between_them() {
     // A row of two cells and a column of two: the same body turned a
