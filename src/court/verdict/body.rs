@@ -269,8 +269,14 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
                 // the court made.
                 let at: String =
                     address.iter().take(2).map(|b| format!("{b:02x}")).collect();
+                let class_sec = only.is_some();
+                let member_sec = crate::transducer::family::transport_class(v).is_some_and(|tc| {
+                    let mut mk = tc.key();
+                    crate::transducer::address::put_bytes(&mut mk, &chart.key());
+                    f.sections.get(&mk).is_some()
+                });
                 eprintln!(
-                    "  court vertex body {at}… pair {pair} of {}: {why}",
+                    "  court vertex body {at}… pair {pair} of {}: {why} [class_sec: {class_sec}, member_sec: {member_sec}]",
                     family.len()
                 );
                 return Some(Refusal {

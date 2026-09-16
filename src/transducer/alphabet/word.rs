@@ -564,5 +564,6 @@ pub(crate) fn gcd_u32(mut a: u32, mut b: u32) -> u32 {
         b = a % b;
         a = t;
     }
-    a.max(1)
+    a
 }
+

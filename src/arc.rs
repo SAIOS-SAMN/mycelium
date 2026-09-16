@@ -133,7 +133,7 @@ pub fn family_cover(train: &[(Grid, Grid)]) -> Option<[u64; 4]> {
 // VALUES — the map is total.
 
 fn gcd(a: usize, b: usize) -> usize {
-    if b == 0 { a.max(1) } else { gcd(b, a % b) }
+    if b == 0 { a } else { gcd(b, a % b) }
 }
 
 /// THE PULLBACK along ρ⁻¹: the grid read on a complex of `h × w` cells,
@@ -176,7 +176,15 @@ impl Frame {
 pub fn frame_ratio(f: &Frame) -> ((usize, usize), (usize, usize)) {
     let Frame { h_in: hi, w_in: wi, h_out: ho, w_out: wo } = *f;
     let (gh, gw) = (gcd(ho, hi), gcd(wo, wi));
-    ((ho / gh, hi / gh), (wo / gw, wi / gw))
+    let hr = match (ho.checked_div(gh), hi.checked_div(gh)) {
+        (Some(o), Some(i)) => (o, i),
+        _ => (0, 0),
+    };
+    let wr = match (wo.checked_div(gw), wi.checked_div(gw)) {
+        (Some(o), Some(i)) => (o, i),
+        _ => (0, 0),
+    };
+    (hr, wr)
 }
 
 
@@ -272,4 +280,15 @@ mod tests {
         );
         assert!(family_cover(&[]).is_none(), "an empty family is unmeasured, not a zero bond");
     }
+
+    #[test]
+    fn exact_euclidean_gcd_and_frame_ratio_total() {
+        assert_eq!(gcd(0, 0), 0);
+        assert_eq!(gcd(12, 8), 4);
+        assert_eq!(gcd(7, 0), 7);
+        assert_eq!(gcd(0, 5), 5);
+        assert_eq!(frame_ratio(&Frame::new(0, 0, 0, 0)), ((0, 0), (0, 0)));
+        assert_eq!(frame_ratio(&Frame::new(4, 6, 2, 3)), ((1, 2), (1, 2)));
+    }
 }
+
