@@ -535,6 +535,7 @@ impl Kernel {
             .count();
         self.basis = nb;
         self.discoverers = nd;
+        self.rebuild_discovered_by();
         self.by_action = crate::network::nerve::Keyed::new();
         self.by_footprint = crate::network::nerve::Keyed::new();
         let mut stalks = crate::transducer::stalk::Stalks::default();

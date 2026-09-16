@@ -209,6 +209,41 @@ impl Kernel {
         }
     }
 
+    /// Remove a discovery from both readings, pruning the voice entry if
+    /// it holds no remaining addresses.
+    pub(crate) fn forget_discoverer(&mut self, addr: &[u8]) {
+        if let Some(who) = self.discoverers.remove(addr) {
+            let empty = if let Some(mine) = self.discovered_by.get_mut(who.as_slice()) {
+                mine.remove(addr);
+                mine.is_empty()
+            } else {
+                false
+            };
+            if empty {
+                self.discovered_by.remove(who.as_slice());
+            }
+        }
+    }
+
+    /// Rebuild `discovered_by` from `discoverers` so the two stay synchronized.
+    pub(crate) fn rebuild_discovered_by(&mut self) {
+        let mut ndb: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>> =
+            crate::network::nerve::Keyed::new();
+        for (addr, who) in self.discoverers.scoped() {
+            match ndb.get_mut(who.as_slice()) {
+                Some(mine) => {
+                    mine.insert(&addr, ());
+                }
+                None => {
+                    let mut mine = crate::network::nerve::Keyed::new();
+                    mine.insert(&addr, ());
+                    ndb.insert(*who, mine);
+                }
+            }
+        }
+        self.discovered_by = ndb;
+    }
+
     pub fn occupancy(&self) -> [u64; 4] {
         self.occupancy
     }

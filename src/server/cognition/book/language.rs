@@ -21,7 +21,7 @@ impl Kernel {
         let inv = crate::transducer::stalk::invariant_of(&held);
         let words = crate::transducer::sentence::words_of_element(&held);
         crate::transducer::sentence::retract_words(&mut self.axis_index, &inv, &words);
-        self.discoverers.remove(addr);
+        self.forget_discoverer(addr);
         std::sync::Arc::make_mut(&mut self.stalks).remove(addr);
         self.ruled.remove(addr);
         if self.ruled_addrs.remove(addr).is_some() {
@@ -39,6 +39,7 @@ impl Kernel {
         self.by_action = crate::network::nerve::Keyed::new();
         self.by_footprint = crate::network::nerve::Keyed::new();
         self.discoverers = crate::network::nerve::Keyed::new();
+        self.discovered_by = crate::network::nerve::Keyed::new();
         self.stalks = std::sync::Arc::new(crate::transducer::stalk::Stalks::default());
         self.basis_gen += 1;
         self.language_rebuild();

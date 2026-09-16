@@ -255,3 +255,98 @@ fn the_cover_and_the_room_agree_by_construction() {
         );
     }
 }
+
+/// The inverse index `discovered_by` is kept strictly synchronized with
+/// `discoverers`: admissions insert, removals and clears evict, and
+/// empty voice tries are pruned rather than leaked.
+#[test]
+fn discovered_by_is_strictly_synchronized_with_discoverers() {
+    let mut k = Kernel::new();
+    let v1 = [1u8; 32];
+    let v2 = [2u8; 32];
+    let leak_a = vec![(0, 0, 1u8)];
+    let leak_b = vec![(0, 0, 2u8)];
+    let elem1 = crate::transducer::element::from_canonical(
+        &germinate(&leak_a, &leak_b).unwrap(),
+    );
+    let addr1 = elem1.address();
+
+    let leak_c = vec![(0, 0, 1u8), (0, 1, 1u8)];
+    let leak_d = vec![(0, 0, 2u8), (0, 1, 2u8)];
+    let elem2 = crate::transducer::element::from_canonical(
+        &germinate(&leak_c, &leak_d).unwrap(),
+    );
+    let addr2 = elem2.address();
+
+    let leak_e = vec![(0, 0, 1u8), (1, 0, 1u8), (0, 1, 1u8)];
+    let leak_f = vec![(0, 0, 2u8), (1, 0, 2u8), (0, 1, 2u8)];
+    let elem3 = crate::transducer::element::from_canonical(
+        &germinate(&leak_e, &leak_f).unwrap(),
+    );
+    let addr3 = elem3.address();
+
+    k.basis_insert(elem1, v1);
+    k.basis_insert(elem2, v1);
+    k.basis_insert(elem3, v2);
+
+    assert!(k.discoverers.get(&addr3).is_some());
+    assert_eq!(k.discoverers.len(), 3);
+    assert_eq!(k.discovered_by.len(), 2);
+    assert_eq!(k.discovered_by.get(&v1).map(|m| m.len()), Some(2));
+    assert_eq!(k.discovered_by.get(&v2).map(|m| m.len()), Some(1));
+
+    // Removing addr1 leaves v1 holding only addr2.
+    k.basis_remove(&addr1);
+    assert_eq!(k.discoverers.len(), 2);
+    assert_eq!(k.discovered_by.get(&v1).map(|m| m.len()), Some(1));
+    assert!(k.discovered_by.get(&v1).unwrap().get(&addr1).is_none());
+    assert!(k.discovered_by.get(&v1).unwrap().get(&addr2).is_some());
+
+    // Removing addr2 leaves v1 empty, which prunes v1 entirely from discovered_by.
+    k.basis_remove(&addr2);
+    assert_eq!(k.discoverers.len(), 1);
+    assert!(k.discovered_by.get(&v1).is_none(), "empty voice trie is pruned");
+    assert_eq!(k.discovered_by.len(), 1);
+
+    // Rebuild keeps discovered_by identical to discoverers.
+    k.rebuild_discovered_by();
+    assert_eq!(k.discovered_by.len(), 1);
+    assert_eq!(k.discovered_by.get(&v2).map(|m| m.len()), Some(1));
+
+    // Clearing the basis clears discovered_by as well.
+    k.basis_clear();
+    assert!(k.discoverers.is_empty());
+    assert!(k.discovered_by.is_empty());
+}
+
+/// When `prune_basis_to_ruled` drops unruled words, `discovered_by`
+/// is rebuilt from the surviving basis discoverers and does not leak
+/// dropped addresses.
+#[test]
+fn prune_basis_to_ruled_synchronizes_discovered_by() {
+    let mut k = Kernel::new();
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
+    super::common::glue_pair(&mut k, &a, &b);
+    let kept = k.basis_len();
+    assert!(kept >= 1);
+
+    let leak_a = vec![(9, 0, 2), (9, 1, 2)];
+    let leak_b = vec![(9, 0, 3), (9, 1, 3)];
+    let leaked = crate::transducer::element::from_canonical(
+        &germinate(&leak_a, &leak_b).unwrap(),
+    );
+    let leak_addr = leaked.address();
+    let leak_who = [0x55; 32];
+    k.basis_insert(leaked, leak_who);
+    assert!(k.discoverers.get(&leak_addr).is_some());
+    assert!(k.discovered_by.get(&leak_who).is_some());
+
+    let dropped = k.prune_basis_to_ruled();
+    assert_eq!(dropped, 1);
+    assert!(k.discoverers.get(&leak_addr).is_none());
+    assert!(
+        k.discovered_by.get(&leak_who).is_none(),
+        "the leaked word's discoverer is pruned from discovered_by"
+    );
+}
