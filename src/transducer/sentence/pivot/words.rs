@@ -17,10 +17,17 @@ pub fn words_of_form(f: &Form) -> Vec<Word> {
     f.vertices
         .iter()
         .filter_map(|v| match v {
-            // The residue: the letters this vertex spells on its own.
-            // A cited vertex spells none until its citations resolve, so
-            // it contributes nothing here (L14).
-            Vertex::Word { derivation, .. } => derivation.word_local().cloned(),
+            // WHAT THE VERTEX CARRIES: its letters when it spells, its
+            // action when it is an adjoined generator (37.7). This read
+            // `word_local`, which answers `None` for a letter, so every
+            // reader of this list — the axis index at the voice and at the
+            // court (`admit_words`), the language index, the algebraic
+            // probe — held a letter and offered it to nobody: no pivot was
+            // ever offered an adjoined generator as a candidate, and the
+            // probe at a letter had no operator to ask about. A cited
+            // vertex still spells none until its citations resolve and
+            // contributes nothing here (L14).
+            Vertex::Word { derivation, .. } => derivation.word_carried(),
             _ => None,
         })
         .collect()
