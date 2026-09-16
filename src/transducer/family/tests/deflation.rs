@@ -21,7 +21,7 @@ assert!(
 );
 assert_ne!(pay, [0; 4], "exact speak measures the closed delta");
 let before = element::measure_lanes(
-    &crate::arc::refine_delta(&x, &y).expect("delta").delta,
+    &crate::transducer::family::refine::refine_delta(&x, &y).expect("delta"),
 );
 assert_eq!(pay, before, "deflation of an empty remainder is the closed delta");
 let x2 = grid(&["10"]);

@@ -199,6 +199,57 @@ impl CommonRefinement {
     }
 }
 
+/// THE EXACT COBOUNDARY OF A PAIR: both grids embedded in their common
+/// refinement K_lcm without sampling, rounding or interpolation.
+pub fn refine_delta(grid_in: &Grid, grid_out: &Grid) -> Option<Vec<(i64, i64, u8, u8)>> {
+    let (hi, wi) = extent(grid_in)?;
+    let (ho, wo) = extent(grid_out)?;
+    let refn = CommonRefinement::of(hi, wi, ho, wo)?;
+    refn.bipartite_cochain(grid_in, grid_out)
+}
+
+/// THE FAMILY FRAME RATIO: the pair of exact rational scales (rh, rw) that
+/// every pair of the family agrees on, measured on the common refinement.
+pub fn family_ratio(family: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, usize))> {
+    let mut ratio = None;
+    for (a, b) in family {
+        let (hi, wi) = extent(a)?;
+        let (ho, wo) = extent(b)?;
+        let (rh, rw) = CommonRefinement::ratio(hi, wi, ho, wo)?;
+        let r = (
+            (usize::try_from(rh.numer()).ok()?, usize::try_from(rh.denom()).ok()?),
+            (usize::try_from(rw.numer()).ok()?, usize::try_from(rw.denom()).ok()?),
+        );
+        match &ratio {
+            None => ratio = Some(r),
+            Some(held) if *held != r => return None,
+            _ => {}
+        }
+    }
+    ratio
+}
+
+/// The isotropic conformal dilator D(ρ) for a family when rh == rw,
+/// riding as an exact versor in Cl(3,1). None when anisotropic or unity.
+pub fn family_dilator(family: &[(Grid, Grid)]) -> Option<crate::transducer::cga::Mv> {
+    use num_traits::One;
+    let mut ratio: Option<num_rational::BigRational> = None;
+    for (a, b) in family {
+        let (hi, wi) = extent(a)?;
+        let (ho, wo) = extent(b)?;
+        let (rh, rw) = CommonRefinement::ratio(hi, wi, ho, wo)?;
+        if rh != rw || rh.is_one() {
+            return None;
+        }
+        match &ratio {
+            None => ratio = Some(rh),
+            Some(held) if *held != rh => return None,
+            _ => {}
+        }
+    }
+    ratio.map(|r| crate::transducer::cga::dilator(&r))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

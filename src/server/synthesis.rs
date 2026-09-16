@@ -6,30 +6,12 @@
 //! that were judged here carried a voice's cells to the court (law 8,
 //! ruled 2026-09-10); a voice speaks sentences, heard by `perceive_speech`.
 
-use crate::arc::{frame_ratio, Grid};
+use crate::arc::Grid;
 
 /// The family's measured frame ratio — perception, identical across pairs
-/// or refused (never rounded).
+/// or refused (never rounded), measured on the common refinement.
 pub fn family_ratio(train: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, usize))> {
-    let mut ratio = None;
-    for (a, b) in train {
-        let f = crate::arc::Frame::new(
-            a.len(),
-            crate::arc::grid_width(a),
-            b.len(),
-            crate::arc::grid_width(b),
-        );
-        if f.h_in == 0 || f.w_in == 0 || f.h_out == 0 || f.w_out == 0 {
-            return None;
-        }
-        let r = frame_ratio(&f);
-        match &ratio {
-            None => ratio = Some(r),
-            Some(held) if *held != r => return None,
-            _ => {}
-        }
-    }
-    ratio
+    crate::transducer::family::refine::family_ratio(train)
 }
 
 /// Work items for the server's deliberation worker — everything that would

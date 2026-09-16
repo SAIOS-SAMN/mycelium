@@ -297,23 +297,9 @@ pub(crate) fn read_member_pair_key(k: &[u8]) -> Option<(Vec<u8>, Vec<u8>)> {
 }
 
 /// The family's frame ratio ((h_num, h_den), (w_num, w_den)), identical
-/// across pairs or refused.
+/// across pairs or refused, measured on the common refinement.
 pub fn family_ratio(family: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, usize))> {
-    let mut ratio = None;
-    for (a, b) in family {
-        let (fa, fb) = (frame_of(a), frame_of(b));
-        if fa.0 == 0 || fa.1 == 0 || fb.0 == 0 || fb.1 == 0 {
-            return None;
-        }
-        let (gh, gw) = (gcd(fb.0, fa.0), gcd(fb.1, fa.1));
-        let r = ((fb.0 / gh, fa.0 / gh), (fb.1 / gw, fa.1 / gw));
-        match &ratio {
-            None => ratio = Some(r),
-            Some(held) if *held != r => return None,
-            _ => {}
-        }
-    }
-    ratio
+    refine::family_ratio(family)
 }
 
 /// One body carried onto another: the transport and the gauge map.

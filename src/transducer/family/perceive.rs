@@ -90,13 +90,6 @@ pub fn scene_at_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<((i64, i64), Gr
 pub(crate) fn q(v: i64) -> num_rational::BigRational {
     num_rational::BigRational::from_integer(num_bigint::BigInt::from(v))
 }
-pub(crate) fn gcd(a: usize, b: usize) -> usize {
-    if b == 0 {
-        a
-    } else {
-        gcd(b, a % b)
-    }
-}
 
 /// A perceived body: its cells with hue, its shape, and its moduli.
 #[derive(Clone, Debug)]

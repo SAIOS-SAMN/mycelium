@@ -4,9 +4,8 @@
 //! A feed file is retired when it is spent, so a restart does not present
 //! the same pair twice.
 
-use mycelium::arc::{embed, grid_to_cells};
 use mycelium::transducer::element::measure_lanes;
-use mycelium::transducer::germinate::germinate;
+use mycelium::transducer::family::refine::refine_delta;
 use std::path::{Path, PathBuf};
 
 pub(crate) fn pending_feed(home: &Path) -> Vec<PathBuf> {
@@ -78,13 +77,8 @@ impl Feed {
 pub(crate) fn family_magnitude(train: &mycelium::transducer::family::Family) -> [u64; 4] {
     let mut mag = [0u64; 4];
     for (x, y) in train {
-        let (ho, wo) = (y.len(), mycelium::arc::grid_width(y));
-        if x.is_empty() || ho == 0 || wo == 0 {
-            continue;
-        }
-        let (a, b) = (grid_to_cells(&embed(x, ho, wo)), grid_to_cells(y));
-        if let Some(g) = germinate(&a, &b) {
-            let m = measure_lanes(&g);
+        if let Some(chain) = refine_delta(x, y) {
+            let m = measure_lanes(&chain);
             for l in 0..4 {
                 mag[l] = mag[l].saturating_add(m[l]);
             }

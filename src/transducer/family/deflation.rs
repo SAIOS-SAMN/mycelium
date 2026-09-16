@@ -45,10 +45,10 @@ pub fn form_deflation_at(
     let mut pay = [0u64; 4];
     let mut remainders = Vec::with_capacity(family.len());
     for (pi, (x, y)) in family.iter().enumerate() {
-        // The refined delta where the pair refines; the raw residual of
-        // the two grids where it does not. Both are measured on the pair.
-        let before_chain = match crate::arc::refine_delta(x, y) {
-            Some(r) => r.delta,
+        // The exact cochain where the pair refines on K_lcm; the raw residual
+        // of the two grids where it does not. Both are measured on the pair.
+        let before_chain = match crate::transducer::family::refine::refine_delta(x, y) {
+            Some(chain) => chain,
             None => residual_of(Some(x), y),
         };
         let spoken = apply_form_on(form, x, placement, crystal, Some(pi));
@@ -308,8 +308,8 @@ pub fn sentence_measure_from(
     // about the form, which is what `form_deflation` returns, so it is not the
     // same fact arriving twice.
     for ((x, y), after_chain) in family.iter().zip(remainders) {
-        let before_chain = match crate::arc::refine_delta(x, y) {
-            Some(r) => r.delta,
+        let before_chain = match crate::transducer::family::refine::refine_delta(x, y) {
+            Some(chain) => chain,
             None => residual_of(Some(x), y),
         };
         let closed = crate::economy::deflation_of(&crate::economy::lane_moves(

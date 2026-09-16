@@ -87,13 +87,11 @@ fn multiplicity_demand(
 /// The germ of one pair: what the input carries onto the output, as the
 /// cells of the change. `None` for a pair with no scene.
 fn germ_of_pair(a: &Grid, b: &Grid) -> Option<crate::transducer::element::PlacedChain> {
-    let (ho, wo) = frame_of(b);
-    if a.is_empty() || ho == 0 || wo == 0 {
+    let cochain = crate::transducer::family::refine::refine_delta(a, b)?;
+    if cochain.is_empty() {
         return None;
     }
-    let x = crate::arc::grid_to_cells(&crate::arc::embed(a, ho, wo));
-    let y = crate::arc::grid_to_cells(b);
-    crate::transducer::germinate::germinate(&x, &y)
+    crate::transducer::element::place_chain(&cochain)
 }
 
 /// THE SPEND ONE EXTRACTION OF THIS FAMILY IS SIZED BY (rule 10, L8w).

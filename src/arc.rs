@@ -206,7 +206,6 @@ pub struct Refined {
 /// frame). Total for all dims ≥ 1; equal frames yield exactly the planar
 /// delta. Support ≤ |K_out|.
 pub fn refine_delta(a: &Grid, b: &Grid) -> Option<Refined> {
-    // A grid with no rows has no width, which the refusal below reads.
     let (hi, wi) = (a.len(), grid_width(a));
     let (ho, wo) = (b.len(), grid_width(b));
     if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
@@ -215,16 +214,10 @@ pub fn refine_delta(a: &Grid, b: &Grid) -> Option<Refined> {
     if a.iter().any(|r| r.len() != wi) || b.iter().any(|r| r.len() != wo) {
         return None; // ragged grids carry no complex
     }
-    let scene = embed(a, ho, wo);
-    let mut chain = Vec::new();
-    for r in 0..ho {
-        for c in 0..wo {
-            if scene[r][c] != b[r][c] {
-                chain.push((r as i64, c as i64, scene[r][c], b[r][c]));
-            }
-        }
-    }
-    Some(Refined { delta: chain, pulled_back: scene, frame: Frame::new(hi, wi, ho, wo) })
+    let refn = crate::transducer::family::refine::CommonRefinement::of(hi, wi, ho, wo)?;
+    let (pulled_back, _) = refn.refined(a, b)?;
+    let chain = refn.bipartite_cochain(a, b)?;
+    Some(Refined { delta: chain, pulled_back, frame: Frame::new(hi, wi, ho, wo) })
 }
 
 
