@@ -7,6 +7,67 @@ use num_bigint::BigInt;
 use crate::transducer::germinate::germinate;
 use super::common::*;
 
+/// A COMPOSITE CARRIES ITS ROTOR, AND A TRANSITION ANSWERS ONE.
+///
+/// `compose` wrote only the action — a `Versor` in `Cl(3,1)`, which has one
+/// rotation plane — and left `description` empty. `letters()` gates on the
+/// description's tag, so every composite answered `None`, and
+/// `cech::rotor_of`, which reads the tape and nothing else, answered `None`
+/// for EVERY transition in the tree. The court then had no rotor to put on
+/// a cell, wrote the identity on the one edge it could, and `Complex::fill`
+/// short-circuited on an identity coefficient before reaching `classify` —
+/// the only producer of `Fill::Class` and `Fill::Unspellable`. That is
+/// `court cell` 0, `horizon seeded` 0 and the `ruled` term of the span
+/// reading, on every fleet ever run.
+///
+/// The rotor composes in `Cl(4,0)`, six planes. This is the case that says
+/// so: a quarter on the sensor and a quarter on `(2, 3)` have the SAME
+/// sensor action — the second is the identity there — so the `Cl(3,1)`
+/// product cannot tell them apart, and the composed spelling can.
+#[test]
+fn a_composite_carries_its_rotor_and_a_transition_answers_one() {
+    use crate::transducer::alphabet::{LetterId, Word};
+    let q01 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]);
+    let q23 = Word::from_letters(&[(LetterId::quarter((2, 3)).expect("the far plane"), false)]);
+    let conn = |w: &Word| {
+        residual::from_connection(w, &identity_versor(), &[], &Vec::new(), [0; 4])
+            .expect("a connection")
+    };
+    let (a, b) = (conn(&q01), conn(&q23));
+
+    // The far quarter's SENSOR action is the identity: the flattening this
+    // is about, visible in one line.
+    assert!(
+        same_versor(&b.versor().expect("a versor"), &identity_versor()),
+        "a (2,3) rotation is invisible in the conformal algebra of the base"
+    );
+
+    let c = a.compose(&b);
+    let r = c.carried_rotor().expect("the composite carries its rotor");
+    assert!(
+        r.projective_eq(&q01.rotor().geo(&q23.rotor())),
+        "and it is the Cl(4,0) product, both planes"
+    );
+    assert!(
+        !r.projective_eq(&q01.rotor()),
+        "which the sensor action alone could not have told from the first factor"
+    );
+    // The transport is untouched: the carriage is solved so the composite's
+    // versor is exactly the spatial action the composition computed.
+    assert!(
+        same_versor(&c.versor().expect("a versor"), &a.versor().expect("a versor")),
+        "carrying the tape does not move the transport"
+    );
+
+    // THE READING THE COURT TAKES. `transition(x, y)` is `y ∘ x⁻¹`, and it
+    // answered `None` for every input before this.
+    let g = crate::transducer::cech::transition(&a, &b).expect("a transition");
+    let got = crate::transducer::cech::rotor_of(&g).expect("a transition has a rotor");
+    let want = q23.rotor().geo(&q01.rotor().inverse().expect("a quarter inverts"));
+    assert!(got.projective_eq(&want), "the transition's rotor is g_y ∘ g_x⁻¹");
+    assert!(!got.is_identity(), "and it is not the identity the court was writing");
+}
+
 /// M1 (17.1) and M2 (17.2): equality is the projective class, and the
 /// address is derived from it. A versor and its negation are ONE element
 /// of the conformal group and TWO coefficient lists; `form_key_bytes`

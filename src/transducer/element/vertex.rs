@@ -133,8 +133,68 @@ impl Element {
         }
     }
 
+    /// THE ROTOR THIS ELEMENT CARRIES, in `Cl(4,0)` over all six bivector
+    /// planes. It lives on the tape and nowhere else: `action.spatial` is a
+    /// `Versor` in `Cl(3,1)`, which has ONE rotation plane, and
+    /// `sensor_action_of` states that the map between them cannot be onto.
+    ///
+    /// `None` for a sentence, which is one level above a word and whose
+    /// rotations are its loop holonomies, plural (`Form::loop_words`).
+    pub fn carried_rotor(&self) -> Option<crate::transducer::alphabet::Rotor> {
+        self.letters().map(|l| l.spelling.word.rotor())
+    }
+
+    /// The tape a composite carries so its rotor survives: the composed
+    /// spelling, with the carriage chosen so the element's versor is
+    /// exactly the spatial action this composition computed.
+    fn carry_tape(&mut self, word: crate::transducer::alphabet::Word) {
+        let Some(v) = self.action.spatial.clone() else {
+            return;
+        };
+        // `versor()` reads `conformal_of(word, carriage)` once letters
+        // exist, and that is `carriage · S(rotor)`. Solving it for the
+        // carriage keeps the composite's transport exactly what it was.
+        let Some(sensor) = conformal_of(&word, &identity_versor()) else {
+            return;
+        };
+        let Some(inv) = sensor.versor_inverse() else {
+            return;
+        };
+        let carriage = v.geo(&inv);
+        let spelling = crate::transducer::alphabet::Spelling { word };
+        let gauge = self.action.gauge.clone();
+        self.description = crate::transducer::element::residual::connection_description(
+            &spelling,
+            &carriage,
+            &gauge,
+            &Vec::new(),
+        );
+        self.address.take();
+    }
+
     /// COMPOSE — geometric product on S, permutation composition on G,
     /// geometric product on matching germinated axes. Associative.
+    ///
+    /// AND THE ROTOR SURVIVES IT. This wrote only `action.*` and left
+    /// `description` empty, so `letters()` answered `None` for every
+    /// composite and `cech::rotor_of(transition(..))` — which reads the
+    /// tape and nothing else — answered `None` for every transition in the
+    /// tree. The court's glue then had no rotor to put on a cell, wrote
+    /// `Rotor::identity()` on the one edge it could, and `Complex::fill`
+    /// short-circuited on an identity coefficient before reaching
+    /// `classify`, which is the only producer of `Fill::Class` and
+    /// `Fill::Unspellable`. That is `court cell` 0, `horizon seeded` 0 and
+    /// the `ruled` term of the span reading, on every fleet ever run.
+    ///
+    /// The composition is in `Cl(3,1)` on the spatial action, which has one
+    /// rotation plane; the rotor is in `Cl(4,0)` and has six. Composing the
+    /// SPELLINGS keeps all six, and the carriage is solved so the transport
+    /// is unchanged.
+    ///
+    /// Only where BOTH operands carry a tape. A sentence carries none by
+    /// construction — its rotations are its loop holonomies, plural — so a
+    /// transition between two sentences still answers no single rotor, and
+    /// that is the court's path-holonomy question, not this one.
     pub fn compose(&self, other: &Element) -> Element {
         let mut out = Element::identity();
         out.action.spatial = match (self.versor(), other.versor()) {
@@ -159,6 +219,10 @@ impl Element {
         )]
         germ.sort_by_key(|(i, _)| *i);
         out.action.germinated = germ;
+        if let (Some(a), Some(b)) = (self.letters(), other.letters()) {
+            let word = a.spelling.word.compose(&b.spelling.word).normal_form();
+            out.carry_tape(word);
+        }
         out
     }
 
@@ -176,6 +240,14 @@ impl Element {
         out.action.gauge = invert_perm(&self.action.gauge)?;
         for (i, w) in &self.action.germinated {
             out.action.germinated.push((*i, w.versor_inverse()?));
+        }
+        // The inverse carries the inverse spelling, for the reason the
+        // composition carries the composed one: a transition is
+        // `g_y ∘ g_x⁻¹`, so a solution that drops its tape starves the
+        // transition exactly as a composition that drops its own does.
+        if let Some(l) = self.letters() {
+            let word = l.spelling.word.inverse().normal_form();
+            out.carry_tape(word);
         }
         Some(out)
     }
