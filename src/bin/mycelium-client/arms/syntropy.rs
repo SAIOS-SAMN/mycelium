@@ -112,18 +112,43 @@ else if let Some((rw, retires, after)) = entity.probe_bundle_condensation() {
         );
     }
 }
-// 3. Axiomatic Floor / Adjunction (37.7): one genome word per syntropic
-// stroke, read at its own conjugacy coordinate. Where the language measured
-// a gauge transition it cannot spell, that rotor IS the generator the
-// presentation lacks — it is adjoined to the dialect here rather than bid to
-// the court, because a compression bid asks for a retirement and the court's
-// replay expects a spatial reconstruction an algebraic witness has none of.
-else if entity.adjoin_unspellable_gauge() {
-    c.refined += 1;
-    eprintln!(
-        "[{tag}] ADJOINED a gauge the seventeen cannot spell (genome {})",
-        entity.epigenome.genome_len(),
-    );
+// 3. The algebraic step (Expansions 1, 2 and 37.7): one genome word per
+// syntropic stroke, read at its own conjugacy coordinate. A gauge the
+// language measured and cannot spell IS the generator the presentation
+// lacks and is adjoined to the dialect; a word that induces a held word's
+// operator, or is a section of its bundle by a gauge the seventeen spell,
+// is bid to the court with that witness, and the court rules it on its own
+// algebra (`ACT_REFINE_ALGEBRAIC`).
+else if let Some(step) = entity.algebraic_step() {
+    match step {
+        mycelium::sdk::AlgebraicStep::Adjoined => {
+            c.refined += 1;
+            eprintln!(
+                "[{tag}] ADJOINED a gauge the seventeen cannot spell (genome {})",
+                entity.epigenome.genome_len(),
+            );
+        }
+        mycelium::sdk::AlgebraicStep::Bid(bid) => {
+            let mycelium::sdk::AlgebraicBid { word, held, witness } = *bid;
+            if let Ok((code, mu)) = entity.bid_algebraic_refinement(word.as_bytes(), held.as_bytes(), &witness) {
+                if code == mycelium::anastome::dialogue::REFINE_ACCEPTED {
+                    c.refined += 1;
+                    eprintln!(
+                        "[{tag}] REFINED {:02x}{:02x}… algebraically against {:02x}{:02x}… ({}, genome {}) μ⃗ {mu:?}",
+                        word[0],
+                        word[1],
+                        held[0],
+                        held[1],
+                        match witness {
+                            mycelium::anastome::dialogue::AlgebraicWitness::SameOperator => "same operator",
+                            mycelium::anastome::dialogue::AlgebraicWitness::Section(_) => "section",
+                        },
+                        entity.epigenome.genome_len(),
+                    );
+                }
+            }
+        }
+    }
 }
 // 4. Citation Refinement (Refine): if the rest of the vocabulary already
 // speaks this word spatially, bid the compression.

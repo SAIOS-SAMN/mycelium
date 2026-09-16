@@ -42,6 +42,16 @@ pub const ACT_SOLVE: u8 = 0x0C;
 pub const ACT_REFINE: u8 = 0x09;
 pub const REFINE_ACCEPTED: u8 = 1;
 pub const REFINE_NOTHING: u8 = 0;
+/// EXPANSION 2 — THE ALGEBRAIC REFINEMENT BID: a client claims ruled word
+/// W carries nothing the ruled word H does not, because W's operator IS
+/// H's (Expansion 1's decided word problem) or W is a SECTION of H's
+/// bundle — conjugate by a gauge `γ` the seventeen spell. The court
+/// verifies by the exact algebra, one product and one projective
+/// comparison, never by a spatial replay: `γ·h·γ⁻¹ = w`. On success W
+/// retires citing H. `[ACT_REFINE_ALGEBRAIC][voice 32][word address]
+/// [held address][witness u8][γ Word if 1]`. Receipt: the solve-receipt
+/// shape, as `ACT_REFINE`'s.
+pub const ACT_REFINE_ALGEBRAIC: u8 = 0x17;
 
 /// ADOPTION (genome synchronization): the court propagates an upheld word
 /// to every server with ITS OWN VOICE as provenance — the ratifier is the

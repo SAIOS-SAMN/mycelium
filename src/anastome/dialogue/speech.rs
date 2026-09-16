@@ -32,6 +32,60 @@ pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], Address, Vec<CiteWire>)> 
     Some((voice, word, cites))
 }
 
+/// EXPANSION 2 — WHY A RULED WORD CARRIES NOTHING NEW, as the court can
+/// re-derive it: the same operator as a held word, or a section of the
+/// held word's bundle by the gauge `γ` that carries the held onto it.
+///
+/// Boxed: a `Word` carries its memoised rotor, sixteen rationals, and the
+/// variant that carries none should not pay that footprint.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum AlgebraicWitness {
+    SameOperator,
+    Section(Box<crate::transducer::alphabet::Word>),
+}
+
+/// `[ACT_REFINE_ALGEBRAIC][voice 32][word address][held address][kind u8]
+/// [γ Word if kind is 1]`.
+pub fn encode_refine_algebraic(
+    voice: &[u8; 32],
+    word: impl AsRef<[u8]>,
+    held: impl AsRef<[u8]>,
+    witness: &AlgebraicWitness,
+) -> Vec<u8> {
+    let mut out = vec![ACT_REFINE_ALGEBRAIC];
+    out.extend_from_slice(voice);
+    let _ = put_addr(&mut out, word);
+    let _ = put_addr(&mut out, held);
+    match witness {
+        AlgebraicWitness::SameOperator => out.push(0),
+        AlgebraicWitness::Section(gamma) => {
+            out.push(1);
+            gamma.to_bytes(&mut out);
+        }
+    }
+    out
+}
+
+/// A frame whose witness does not parse is MALFORMED, not a bid with no
+/// witness: the two are different claims and only the sender knows which.
+pub fn decode_refine_algebraic(body: &[u8]) -> Option<([u8; 32], Address, Address, AlgebraicWitness)> {
+    if !act_is(body, ACT_REFINE_ALGEBRAIC) {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let mut p = 33usize;
+    let word = take_addr(body, &mut p)?;
+    let held = take_addr(body, &mut p)?;
+    let kind = *body.get(p)?;
+    p += 1;
+    let witness = match kind {
+        0 => AlgebraicWitness::SameOperator,
+        1 => AlgebraicWitness::Section(Box::new(crate::transducer::alphabet::Word::from_bytes(body, &mut p)?)),
+        _ => return None,
+    };
+    Some((voice, word, held, witness))
+}
+
 /// ONE SENTENCE AS SPOKEN: its tape, the standing the speaker claims, and
 /// the contraction certificate it cites, if any.
 pub struct Spoken {

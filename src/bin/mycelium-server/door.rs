@@ -441,6 +441,38 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         answer(s, reply);
         return true;
     }
+    // EXPANSION 2 — the algebraic bid is ruled on the court's own algebra,
+    // never on a spatial replay it has no cells for.
+    if kind == dialogue::ACT_REFINE_ALGEBRAIC {
+        let Some((rvoice, word, held, witness)) = dialogue::decode_refine_algebraic(&frame.body) else {
+            return true;
+        };
+        let (code, mu) = {
+            let Ok(mut k) = door.kernel.lock() else { return true };
+            match k.try_refine_algebraic(&word, rvoice, &held, &witness) {
+                Some(paid) => (dialogue::REFINE_ACCEPTED, paid),
+                None => (dialogue::REFINE_NOTHING, [0; 4]),
+            }
+        };
+        if code == dialogue::REFINE_ACCEPTED {
+            eprintln!(
+                "  court refined algebraically {:02x}{:02x}… against {:02x}{:02x}… ({}) for {:02x}{:02x}…",
+                word[0],
+                word[1],
+                held[0],
+                held[1],
+                match witness {
+                    dialogue::AlgebraicWitness::SameOperator => "same operator",
+                    dialogue::AlgebraicWitness::Section(_) => "section",
+                },
+                rvoice[0],
+                rvoice[1]
+            );
+        }
+        let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(code, &mu) };
+        answer(s, reply);
+        return true;
+    }
     if kind == dialogue::ACT_VERDICT {
         crate::judge::verdict::judge(s, frame, door);
         return true;

@@ -406,39 +406,83 @@ impl Entity {
 }
 
 impl Entity {
-    /// 37.7 — ADJOIN A GAUGE THE LANGUAGE MEASURED AND CANNOT SPELL.
+    /// EXPANSIONS 1 AND 2 AT THE CURSOR — ONE READING, TWO MOVES. The
+    /// algebraic redundancy of the cursor's word is read once; what it
+    /// says decides the move:
     ///
-    /// This is NOT the compression bid and is deliberately separate from it.
-    /// A bid asks the court to retire a word, and the court's replay expects
-    /// a spatial reconstruction — `verify_utterance` over a cell chain —
-    /// which an algebraic witness does not carry, so routing
-    /// `algebraic_redundancy` into `bid_refinement` would produce bids the
-    /// court can only refuse. That stays gated until the court has an
-    /// algebraic receipt.
-    ///
-    /// Adjoining is the other half and needs no court to begin: a letter
-    /// this mind minted stands in its own dialect, `Stood` and not `Ruled`,
-    /// exactly as every other adjunction does. So the unspellable gauge
-    /// reaches the language by the path it belongs on while the redundancy
-    /// claim waits for the one it belongs on.
+    /// - 37.7 — a gauge the language measured and cannot spell is ADJOINED.
+    ///   A letter this mind minted stands in its own dialect, `Stood` and
+    ///   not `Ruled`, as every other adjunction does, and needs no court to
+    ///   begin.
+    /// - a word that induces a held word's operator, or is a section of its
+    ///   bundle by a gauge the seventeen spell, is a BID. It was gated —
+    ///   "until the court has an algebraic receipt" — because the spatial
+    ///   bid's replay expects a cell chain an operator has none of. The
+    ///   court rules it on its own algebra now (`try_refine_algebraic`), so
+    ///   the bid goes to the court with its witness and the word retires
+    ///   where the court re-derives it.
     ///
     /// One word per stroke, at the cursor `algebraic_redundancy` already
-    /// advances — no second walk and no second cursor.
-    pub fn adjoin_unspellable_gauge(&mut self) -> bool {
-        let Some(Redundancy::UnspellableGauge { held, gamma, chart }) = self.algebraic_redundancy()
-        else {
-            return false;
+    /// advances — no second walk, no second cursor, and no second solve.
+    pub fn algebraic_step(&mut self) -> Option<AlgebraicStep> {
+        use crate::anastome::dialogue::AlgebraicWitness;
+        let word = {
+            let g = self.epigenome.genome();
+            if g.len() < 2 {
+                return None;
+            }
+            g.get(self.refine_cursor % g.len())?.address()
         };
-        eprintln!(
-            "  gauge unspellable {:02x}{:02x}… against {:02x}{:02x}… — adjoining (37.7)",
-            gamma.key().as_bytes()[0],
-            gamma.key().as_bytes()[1],
-            held.as_bytes()[0],
-            held.as_bytes()[1]
-        );
-        let adjoined: crate::transducer::bubble::drive::Adjoined = vec![(*gamma, chart)];
-        self.adjoin_letters(&adjoined);
-        true
+        match self.algebraic_redundancy()? {
+            Redundancy::UnspellableGauge { held, gamma, chart } => {
+                eprintln!(
+                    "  gauge unspellable {:02x}{:02x}… against {:02x}{:02x}… — adjoining (37.7)",
+                    gamma.key().as_bytes()[0],
+                    gamma.key().as_bytes()[1],
+                    held.as_bytes()[0],
+                    held.as_bytes()[1]
+                );
+                let adjoined: crate::transducer::bubble::drive::Adjoined = vec![(*gamma, chart)];
+                self.adjoin_letters(&adjoined);
+                Some(AlgebraicStep::Adjoined)
+            }
+            Redundancy::SameOperator { held } => Some(AlgebraicStep::Bid(Box::new(AlgebraicBid {
+                word,
+                held,
+                witness: AlgebraicWitness::SameOperator,
+            }))),
+            Redundancy::Section { held, gamma } => Some(AlgebraicStep::Bid(Box::new(AlgebraicBid {
+                word,
+                held,
+                witness: AlgebraicWitness::Section(gamma),
+            }))),
+        }
+    }
+
+    /// BID THE ALGEBRAIC REFINEMENT on the wire: `(REFINE_ACCEPTED, μ⃗)` if
+    /// the court's algebra confirms the witness and the word retires;
+    /// `(REFINE_NOTHING, 0⃗)` otherwise. On acceptance this mind drops its
+    /// own copy too, as the spatial bid does.
+    pub fn bid_algebraic_refinement(
+        &mut self,
+        word: &[u8],
+        held: &[u8],
+        witness: &crate::anastome::dialogue::AlgebraicWitness,
+    ) -> io::Result<(u8, [u64; 4])> {
+        let voice = self.session.kernel().voice();
+        let body = self
+            .session
+            .speak_keyed(word, dialogue::encode_refine_algebraic(&voice, word, held, witness))?;
+        let Some((code, mu)) = dialogue::decode_solve_receipt(&body) else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "refine receipt does not decode",
+            ));
+        };
+        if code == dialogue::REFINE_ACCEPTED {
+            self.epigenome.retire(word);
+        }
+        Ok((code, mu))
     }
 }
 

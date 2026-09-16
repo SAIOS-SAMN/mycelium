@@ -110,25 +110,75 @@ impl Kernel {
                 // shell lane and `yield_vector` carried `.max(1)` so the two
                 // would agree. There is no axis here because no chart is
                 // being refined.
-                let saved = candidate.magnitude();
-                let payload = crate::transducer::rewrite::RewritePayload::Retire {
-                    cites: cites.iter().map(|c| c.addr.clone()).collect(),
-                    freed: saved,
-                };
-                let _ = self.mint_rewrite(
-                    crate::transducer::rewrite::RewriteKind::Retire,
-                    std::slice::from_ref(&candidate),
-                    &candidate,
-                    payload,
-                    bidder,
-                );
-                self.basis_remove(addr);
-                self.physics.syntropy(&candidate.magnitude());
-                self.append_step(crate::chronometry::ActKind::Ruling, addr, bidder);
-                Some(saved)
+                Some(self.retire_by_bid(addr, &candidate, bidder, cites.iter().map(|c| c.addr.clone()).collect()))
             }
             _ => None,
         }
+    }
+
+    /// EXPANSION 2 — THE ALGEBRAIC REFINEMENT BID, RULED ON THE COURT'S
+    /// OWN ALGEBRA. A client claims ruled word W carries nothing the ruled
+    /// word H does not: W's operator is H's, or W is a section of H's
+    /// bundle by a gauge `γ` the seventeen spell. The spatial bid
+    /// (`try_refine`) replays a cell chain; this one cannot be answered
+    /// that way — an operator has no cells to pave — and it was gated on
+    /// exactly that: "until the court has an algebraic receipt". This is
+    /// the receipt: one product and one projective comparison in the exact
+    /// algebra, `γ·h·γ⁻¹ = w` or `w = h`, never a search and never trust.
+    ///
+    /// Both words are this court's ruled language, and W is not a bundle
+    /// (its sections and cycles carry volume no other word speaks); each
+    /// speaks ONE operator, or the claim is about a word this receipt
+    /// cannot read and is refused. On success W retires citing H, exactly
+    /// as the spatial bid retires citing its cites (law 12: one retirement).
+    pub fn try_refine_algebraic(
+        &mut self,
+        addr: &[u8],
+        bidder: [u8; 32],
+        held: &[u8],
+        witness: &crate::anastome::dialogue::AlgebraicWitness,
+    ) -> Option<[u64; 4]> {
+        use crate::anastome::dialogue::AlgebraicWitness;
+        if addr == held {
+            return None;
+        }
+        let candidate = self.basis.get(addr).map(|w| (**w).clone())?;
+        if self.provisional.contains(addr) || !self.ruled_contains(addr) || !self.ruled_contains(held) {
+            return None;
+        }
+        if !candidate.sections().is_empty() || crate::transducer::sentence::carries_torsion(&candidate) {
+            return None;
+        }
+        let against = self.basis.get(held).map(|w| (**w).clone())?;
+        let (w, h) = (single_rotor(&candidate)?, single_rotor(&against)?);
+        let proved = match witness {
+            AlgebraicWitness::SameOperator => w.projective_eq(&h),
+            AlgebraicWitness::Section(gamma) => gamma.rotor().conjugate_holds(&h, &w),
+        };
+        if !proved {
+            return None;
+        }
+        Some(self.retire_by_bid(addr, &candidate, bidder, vec![Address::from(held)]))
+    }
+
+    /// THE RETIREMENT A BID EARNS, one construction for both bids: the
+    /// word leaves the language citing what speaks for it, the freed
+    /// measure is the compression yield, and the ruling is a step of this
+    /// court's clock authored by the bidder.
+    fn retire_by_bid(&mut self, addr: &[u8], candidate: &Element, bidder: [u8; 32], cites: Vec<Address>) -> [u64; 4] {
+        let saved = candidate.magnitude();
+        let payload = crate::transducer::rewrite::RewritePayload::Retire { cites, freed: saved };
+        let _ = self.mint_rewrite(
+            crate::transducer::rewrite::RewriteKind::Retire,
+            std::slice::from_ref(candidate),
+            candidate,
+            payload,
+            bidder,
+        );
+        self.basis_remove(addr);
+        self.physics.syntropy(&saved);
+        self.append_step(crate::chronometry::ActKind::Ruling, addr, bidder);
+        saved
     }
 
     /// GENOME SYNCHRONIZATION, commit step (operator-ruled: servers hold no
@@ -573,5 +623,31 @@ impl Kernel {
             return [0; 4];
         }
         self.treasury.settle_subsidy(who, mu, self.anchor())
+    }
+}
+
+/// THE ONE OPERATOR A WORD SPEAKS, read off its tape: a sentence's single
+/// non-identity word vertex, by the rotor its derivation composes to (a
+/// letter's, an adjoined generator's, a spelled residue's alike — L14), or
+/// a connection's letters. `None` for a word that speaks none or several:
+/// an algebraic receipt is about one operator against one, and a sentence
+/// of several vertices is not redundant because one of them is.
+fn single_rotor(e: &Element) -> Option<crate::transducer::alphabet::Rotor> {
+    use crate::transducer::sentence::Vertex;
+    let rotors: Vec<crate::transducer::alphabet::Rotor> = match crate::transducer::sentence::from_element_form(e) {
+        Some(f) => f
+            .vertices
+            .iter()
+            .filter_map(|v| match v {
+                Vertex::Word { derivation, .. } => Some(derivation.rotor()),
+                _ => None,
+            })
+            .filter(|r| !r.is_identity())
+            .collect(),
+        None => crate::transducer::cech::rotor_of(e).into_iter().filter(|r| !r.is_identity()).collect(),
+    };
+    match rotors.as_slice() {
+        [r] => Some(r.clone()),
+        _ => None,
     }
 }

@@ -7,4 +7,5 @@ mod fold_wire;
 mod offer;
 mod receipt_section;
 mod receipts_range;
+mod refine;
 mod verdict;

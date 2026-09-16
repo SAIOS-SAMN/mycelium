@@ -431,6 +431,96 @@ fn a_bonded_hypha_is_a_second_vantage_and_an_unbonded_one_is_not() {
     );
 }
 
+/// EXPANSION 2 — THE ALGEBRAIC BID HAS A COURT RECEIPT. Two ruled
+/// generators, `h` and `w = γ·h·γ⁻¹` with `γ` a letter: a bid naming a
+/// gauge that does not conjugate them is refused and nothing moves; the
+/// bid naming `γ` is proved by the exact conjugation and `w` retires
+/// citing `h`, the bidder paid what it freed; a third ruled word inducing
+/// `h`'s own operator on another chart retires as the same operator. A
+/// bid against a word the court has not ruled is refused.
+#[test]
+fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
+    use crate::anastome::dialogue::AlgebraicWitness;
+    use crate::transducer::alphabet::{LetterId, Word};
+    use crate::transducer::sentence::generator_form;
+    use crate::transducer::stalk::Invariant;
+    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let gamma = Word::from_letters(&[(LetterId::quarter((0, 2)).expect("quarter"), false)]);
+    let h = q.rotor();
+    let w = h.conjugate(&gamma.rotor());
+    assert!(!w.projective_eq(&h), "the gauge moves the operator");
+    let held = generator_form(&h, &Invariant(vec![3, 5]), &[]).expect("a rotor mints a generator");
+    let word = generator_form(&w, &Invariant(vec![3, 5]), &[]).expect("a rotor mints a generator");
+    // The tape carries each letter's own action (L14, 37.7): the decoded
+    // vertex is the rotor that was minted, and two letters are two
+    // addresses (law 6 — a letter is named by its content).
+    let carried = |e: &crate::transducer::element::Element| {
+        let f = crate::transducer::sentence::from_element_form(e).expect("a generator's tape decodes");
+        f.vertices
+            .iter()
+            .find_map(|v| match v {
+                crate::transducer::sentence::Vertex::Word { derivation, .. } => Some(derivation.rotor()),
+                _ => None,
+            })
+            .expect("one word vertex")
+    };
+    assert!(carried(&held).projective_eq(&h), "the tape carries h");
+    assert!(carried(&word).projective_eq(&w), "the tape carries w");
+    let (ha, wa) = (held.address(), word.address());
+    assert_ne!(ha, wa, "two letters, two addresses");
+    let mut k = Kernel::new();
+    k.basis_insert(held, [1; 32]);
+    k.ruled_admit(&ha);
+    k.basis_insert(word, [1; 32]);
+    // Against a word this court has not ruled: refused.
+    assert!(k
+        .try_refine_algebraic(&wa, [2; 32], &ha, &AlgebraicWitness::Section(Box::new(gamma.clone())))
+        .is_none());
+    k.ruled_admit(&wa);
+    // A gauge that does not conjugate them: refused by the algebra, and
+    // the language is unmoved.
+    let wrong = Word::from_letters(&[(LetterId::quarter((0, 3)).expect("quarter"), false)]);
+    assert!(k.try_refine_algebraic(&wa, [2; 32], &ha, &AlgebraicWitness::Section(Box::new(wrong))).is_none());
+    assert!(k.try_refine_algebraic(&wa, [2; 32], &ha, &AlgebraicWitness::SameOperator).is_none());
+    assert_eq!(k.basis_len(), 2);
+    // The gauge that does: proved, retired, paid.
+    let paid = k
+        .try_refine_algebraic(&wa, [2; 32], &ha, &AlgebraicWitness::Section(Box::new(gamma)))
+        .expect("the exact conjugation is the receipt");
+    assert_ne!(paid, [0; 4], "the bidder is paid what the word freed");
+    assert_eq!(k.basis_len(), 1);
+    assert!(k.basis.get(&wa).is_none(), "the section retired");
+    assert!(k.basis.get(&ha).is_some(), "and the base stands");
+    // THE SAME OPERATOR AT ANOTHER GAUGE IS ONE BASE AND TWO SECTIONS
+    // (Expansion 2): a word inducing `h` while recolouring is another
+    // element — the gauge is in its address — and the vocabulary keeps
+    // the base once. (One rotor on two charts is not two elements: a
+    // letter is named by its rotor, and its single-member key omits the
+    // chart it was met on.)
+    let twin = {
+        use crate::transducer::alphabet::Derivation;
+        use crate::transducer::sentence::{as_element_form, Form, Vertex};
+        let mut f = Form::default();
+        f.vertices.push(Vertex::word_on(
+            crate::transducer::address::Address::new(Vec::new()),
+            Derivation::adjoined(h.clone()),
+            Invariant(vec![3, 5]),
+            Box::new(crate::transducer::element::identity_versor()),
+            vec![(1, 2)],
+            None,
+        ));
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        f.reindex();
+        as_element_form(&f, [0, 0, 0, 1]).expect("a recolouring section has a tape")
+    };
+    let ta = twin.address();
+    assert_ne!(ta, ha, "the gauge is content: another element");
+    k.basis_insert(twin, [1; 32]);
+    k.ruled_admit(&ta);
+    assert!(k.try_refine_algebraic(&ta, [2; 32], &ha, &AlgebraicWitness::SameOperator).is_some());
+    assert_eq!(k.basis_len(), 1, "the section retired, the base stands");
+}
+
 /// 47.3, 13.9: A WITNESS GLUES AN OFFER AS THE HOME, NOT AS ITSELF. The
 /// Čech cell of a converging pair has two vertices, one per vantage. Gluing
 /// with `peer == self_id` writes the offered word into the section this

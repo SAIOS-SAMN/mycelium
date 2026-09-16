@@ -538,6 +538,28 @@ pub enum Utterance {
     Silent,
 }
 
+/// EXPANSION 2 — WHAT THE ALGEBRAIC PROBE DID with the word at its cursor:
+/// adjoined a gauge the seventeen cannot spell (37.7), or found the word
+/// redundant against a held one with a witness the court can re-derive,
+/// which is a bid.
+///
+/// The bid is boxed: it carries two addresses and a witness that may hold a
+/// word, and the variant that carries nothing should not pay for it.
+#[derive(Clone, Debug)]
+pub enum AlgebraicStep {
+    Adjoined,
+    Bid(Box<AlgebraicBid>),
+}
+
+/// The claim an algebraic bid makes: this word, redundant against that held
+/// one, by this witness.
+#[derive(Clone, Debug)]
+pub struct AlgebraicBid {
+    pub word: crate::transducer::address::Address,
+    pub held: crate::transducer::address::Address,
+    pub witness: crate::anastome::dialogue::AlgebraicWitness,
+}
+
 /// The quoted yield: the per-lane surface and the open-demand market's top
 /// clusters (address, priced μ⃗, and the chain itself — real, attemptable work).
 #[derive(Clone, Debug)]
