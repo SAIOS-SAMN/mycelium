@@ -281,13 +281,24 @@ pub(crate) fn solve_gauge_between(w1: &Word, w2: &Word) -> Option<Word> {
         return Some(sheet);
     }
 
-    // 2. Extract exact bivector coordinates B₁ and B₂ from the rotors
+    // 2. Extract exact bivector coordinates B₁ and B₂ from the rotors.
+    //
+    // FROM THE CANONICAL RAYS, NOT FROM WHATEVER SCALE THE TAPE CARRIED.
+    // `γ = 1 + B₂·B₁⁻¹` is not projective in `B₂`: scaling that bivector
+    // by λ gives `1 + λ·B₂B₁⁻¹`, a different rotor, and the conjugation
+    // check below then refuses it. So the answer depended on how the word
+    // handed in happened to be spelled — two tapes of one vertex (1.5),
+    // one of which composed to a multiple of the other — and a change of
+    // normal form anywhere upstream silently turned a solvable gauge into
+    // an unsolvable one. `normalised` is A1's ray, which is what a rotor
+    // IS.
+    let (n1, n2) = (r1.normalised(), r2.normalised());
     let mut b1 = Rotor::zero();
     let mut b2 = Rotor::zero();
     for mask in 0..16 {
         if (mask as u32).count_ones() == 2 {
-            b1 = b1.add(&Rotor::blade(mask, r1.coeff(mask).clone()));
-            b2 = b2.add(&Rotor::blade(mask, r2.coeff(mask).clone()));
+            b1 = b1.add(&Rotor::blade(mask, n1.coeff(mask).clone()));
+            b2 = b2.add(&Rotor::blade(mask, n2.coeff(mask).clone()));
         }
     }
 

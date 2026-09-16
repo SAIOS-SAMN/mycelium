@@ -40,6 +40,17 @@ fn solve_gauge_between_finds_generator_rotor() {
 
     let found = crate::client::sdk::entity::syntropy::solve_gauge_between(&w1, &w2);
     assert!(found.is_some(), "solve_gauge_between found connecting rotor");
+    // THE GAUGE IS A FUNCTION OF THE VERTICES, NOT OF THEIR TAPES. `γ = 1
+    // + B₂·B₁⁻¹` is not projective in `B₂`, so it is built from the
+    // canonical rays; handing in a tape that composes to a multiple of the
+    // same rotor — which two spellings of one vertex routinely do (1.5) —
+    // must reach the same gauge.
+    let scaled = Word::from_letters(&[(q_rot, false), (q, false), (q_rot, true)]);
+    assert!(scaled.rotor().projective_eq(&w2.rotor()), "one vertex, another tape");
+    assert!(
+        crate::client::sdk::entity::syntropy::solve_gauge_between(&w1, &scaled).is_some(),
+        "and the gauge is found from either spelling"
+    );
     let gamma = found.expect("connecting gauge rotor");
     assert!(
         w1.rebase(&gamma).rotor().projective_eq(&w2.rotor()),
