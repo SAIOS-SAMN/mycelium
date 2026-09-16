@@ -214,6 +214,23 @@ fn main() {
                 syntropy_arm(&mut stroke, &genome_path);
                 stroke.physics.relax();
             }
+            // EXPANSION 4 — A LEARNED WORD MEETS THE VORTICES THIS MIND
+            // HOLDS, on the stroke it was learned. `pivot_thoughts` pivots
+            // every genome word added since the last stroke on its own
+            // charts, and `Contemplation::pivot_on` is where a held vortex
+            // collapses on a ruled candidate ("glue") and the symmetries
+            // between its candidates are carried out to be adjoined. It ran
+            // in the syntropic arm alone, and there BEFORE the syllabus pull
+            // and the sheaf sync of the same stroke, so a word learned on a
+            // working stroke — the quote arm learns — or by the sync met no
+            // vortex until a later depleted stroke: 481 vortices formed and
+            // 0 collapsed in 5½ hours of 2cf578a, 35 and 0 in ten minutes of
+            // 00bb4bd. A keyed read of what the genome gained; it spends
+            // nothing when it gained nothing.
+            let met = stroke.entity.pivot_thoughts();
+            if met > 0 {
+                eprintln!("[{tag}] pivot: {met} held thoughts spoken on charts the language now holds");
+            }
         }
         // 24.3: a working stroke spends the lanes its outcome moved; a stroke
         // that moved no lane spends the tick on all four — the tick, not work.

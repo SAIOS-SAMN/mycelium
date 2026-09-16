@@ -215,6 +215,86 @@ fn two_vertices_whose_carriages_differ_by_sign_hold_one_section() {
     assert_eq!(b.sections().len(), 1, "one carriage ray on one chart is one section, not one per sign");
 }
 
+/// EXPANSION 4 — A RULED WORD THAT IS ONE CANDIDATE OF A HELD VORTEX
+/// COLLAPSES IT ON PIVOT, AND THE SYMMETRY IS CARRIED OUT. A vortex holds
+/// two certified discharges of one loop; when a word of the vortex's class
+/// whose rotor is one candidate arrives (a ruled word, learned), `pivot_on`
+/// collapses the vortex by that candidate and the difference `w_a⁻¹·w_b` —
+/// a rotation the mind measured (37.7) — rides out as an adjunction
+/// candidate rather than being forgotten with the loser.
+#[test]
+fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
+    use crate::transducer::alphabet::{Derivation, LetterId, Word};
+    use crate::transducer::sentence::{
+        Axis, Form, Mu, PivotBy, PivotCertificate, RankMove, Side, Vertex,
+    };
+    use crate::transducer::stalk::Invariant;
+    let q = LetterId::quarter((0, 1)).expect("the sensor plane");
+    let a = Word::from_letters(&[(q, false)]);
+    let b = Word::from_letters(&[(q, true)]);
+    let symmetry = a.inverse().compose(&b).normal_form().rotor();
+    assert!(!symmetry.is_identity(), "q⁻¹·q⁻¹ is a half turn, not the identity");
+
+    // A form with one face for the certificate to name.
+    let mut f = Form::default();
+    for (i, w) in [a.clone(), b.clone()].into_iter().enumerate() {
+        f.vertices.push(Vertex::word_on(
+            crate::transducer::address::Address::from_bytes([4u8, i as u8]),
+            Derivation::spelled(w),
+            Invariant(vec![3, 5]),
+            Box::new(element::identity_versor()),
+            Vec::new(),
+            None,
+        ));
+    }
+    f.faces.push(f.face_carrying(1, 2, a.clone()).expect("a chord between two placed vertices"));
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+
+    // The vortex: two candidates that discharge one loop to one class.
+    let after = a.rotor().class_key().expect("a quarter turn has a class");
+    let cert = |w: &Word| PivotCertificate {
+        chord: 0,
+        axis: Axis::Open,
+        before: after.clone(),
+        after: after.clone(),
+        rank_move: RankMove::Equal,
+        mu: Mu::Unmeasured,
+        by: PivotBy::Word { face: 0, word: w.clone(), side: Side::Right },
+    };
+    let mut vortex = crate::network::nerve::Keyed::new();
+    for c in [cert(&a), cert(&b)] {
+        crate::transducer::sentence::vortex_put(&mut vortex, c);
+    }
+    // The vortex is the FORM's carrier; a bubble mirrors it from the form
+    // it takes (`take_form`), so it is written where the pivot reads it.
+    f.vortex = vortex.clone();
+
+    // The arriving word: the candidate `a`, learned, on its own chart; the
+    // bubble covers that chart so the pivot reaches it.
+    let word = element::from_connection(&a, &element::identity_versor(), &[], &Vec::new(), [0, 0, 0, 1])
+        .expect("a quarter turn is a connection");
+    let chart = crate::transducer::stalk::invariant_of(&word);
+    let mut cover = crate::network::nerve::Keyed::new();
+    cover.insert(chart.key(), ());
+    let key = crate::transducer::bubble::idea::idea_key(&f);
+    let bubble = Bubble { form: Some(f), vortex, cover, ..Default::default() };
+    let mut c = Contemplation::new();
+    c.admit_incidence(&key, &bubble);
+    c.bubbles.insert(&key, bubble);
+
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
+    let (_, _, _, _, adjoined) = c.pivot_on(&word, &crate::transducer::family::NoCrystal, &mut budget);
+    let [(rotor, _)] = adjoined.as_slice() else {
+        panic!("one symmetry rides out of the collapse, got {}", adjoined.len())
+    };
+    assert!(rotor.projective_eq(&symmetry), "the symmetry is w_a⁻¹·w_b");
+    assert!(
+        c.bubbles.get(&key).is_some_and(|b| b.vortex.is_empty()),
+        "and the vortex collapsed"
+    );
+}
+
 /// AN IDEA MEETS THE CHARTS IT STANDS ON, AND NO OTHERS. A Čech cell is the
 /// overlap of two sections, and two sections overlap when they are sections
 /// over one chart; a chart no vertex of this form acts on is not an overlap
