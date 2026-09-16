@@ -105,6 +105,31 @@ fn one_product_composes_every_grade_at_once() {
     );
 }
 
+/// THE FACTORISATION CONSUMES THE GRADES. A double rotation — every even
+/// grade occupied, the 4-volume made by the product — is spelled as its
+/// two commuting plane turns, one letter each, and not as one plane's
+/// block with the other turn dropped; an odd element (a reflection, which
+/// has weight too) is refused at the gate rather than factored by the even
+/// grades it happens to carry.
+#[test]
+fn the_factorisation_spells_a_double_turn_whole_and_refuses_an_odd_element() {
+    use crate::transducer::alphabet::factor_rotor;
+    let q01 = LetterId::quarter((0, 1)).expect("quarter");
+    let q23 = LetterId::quarter((2, 3)).expect("quarter");
+    let double = Word::from_letters(&[(q01, false), (q23, false)]).rotor();
+    assert_eq!(double.grades(), vec![0, 2, 4]);
+    let Some(Ok(spelled)) = factor_rotor(&double) else {
+        panic!("a double rotation of two quarter turns is spelled by the seventeen");
+    };
+    assert!(spelled.rotor().projective_eq(&double), "the spelling IS the rotor, 4-volume included");
+    assert_eq!(spelled.len(), 2, "one letter per commuting plane, got {:?}", spelled.letters());
+
+    let reflection = Rotor::blade(1, q(1));
+    assert!(reflection.weight().is_some(), "a reflection has weight");
+    assert!(!reflection.is_even());
+    assert!(factor_rotor(&reflection).is_none(), "and is no rotor of Spin(4,0): refused at the gate");
+}
+
 /// THE ZERO MULTIVECTOR OCCUPIES NO GRADE and is not a versor: it has no
 /// weight, so it carries nothing and is not an element of the group.
 #[test]

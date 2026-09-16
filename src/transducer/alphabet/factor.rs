@@ -27,6 +27,15 @@ pub const BLOCK_ORDER: [((u8, u8), (u8, u8)); 3] = [((0, 1), (2, 3)), ((0, 2), (
 /// whose rotor is projectively `r`.
 pub fn factor_rotor(r: &Rotor) -> Option<Result<Word, Demand>> {
     r.weight()?;
+    // EVEN, OR NOT A ROTOR (Expansion 3, 16.1). The quaternion factors
+    // below read the even grades and nothing else; an element with an odd
+    // grade — a reflection has weight too — would be factored by what it
+    // carries on grades 0, 2 and 4 and spelled as the rotation it is not.
+    // It is no element of `Spin(4,0)` and never a vertex: refused, not
+    // truncated.
+    if !r.is_even() {
+        return None;
+    }
     let (qp, qm) = factors(r);
     let (Some(tp), Some(tm)) = (tait_bryan(&qp), tait_bryan(&qm)) else {
         return Some(Err(standing(r, BLOCK_ORDER[0].0)?));
@@ -64,8 +73,15 @@ struct HalfAngle {
 /// `(E±, E± e01, E± e02, E± e03)`, the minus factor's third axis negated so
 /// both are right-handed (`i j = k`).
 fn factors(r: &Rotor) -> (Quat, Quat) {
-    let c = |m: usize| r.coeff(m).clone();
-    let (a, p) = (c(0), c(15));
+    // THE GRADES, EACH THROUGH ITS OWN PROJECTOR (Expansion 3): `⟨r⟩₀` is
+    // the scalar, `⟨r⟩₂` the six plane bivectors, `⟨r⟩₄` the 4-volume the
+    // central idempotents split on. The coefficients are the same numbers
+    // read off `coeff` directly; reading them through the graded
+    // decomposition makes this the one consumer of that decomposition
+    // rather than a second reader of the same blades (law 12).
+    let (g0, g2) = (r.grade(0), r.grade(2));
+    let c = |m: usize| g2.coeff(m).clone();
+    let (a, p) = (g0.coeff(0).clone(), r.pseudoscalar().clone());
     let (b01, b02, b03, b12, b13, b23) = (c(3), c(5), c(9), c(6), c(10), c(12));
     let qp = [&a + &p, &b01 - &b23, &b02 + &b13, &b03 - &b12];
     let qm = [&a - &p, &b01 + &b23, &b02 - &b13, -(&b03 + &b12)];

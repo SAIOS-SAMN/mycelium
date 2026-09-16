@@ -242,7 +242,16 @@ pub fn conjugators(a: &Rotor, b: &Rotor) -> Vec<Rotor> {
             // Invertible, and it must actually conjugate: the kernel is of
             // the linearised relation, and the verification is the exact
             // sandwich (rule 11 — a solution is proved, not presumed).
-            if r.weight().is_some() && r.conjugate_holds(&a, &b) {
+            //
+            // AND EVEN (Expansion 3). The linear relation `γa = ±bγ` is
+            // solved over the whole algebra, and its kernel holds ODD
+            // elements too: a reflection `e₀` carries `c + s·e₀₁` to
+            // `c − s·e₀₁` as surely as the sheet does. A reflection is Pin,
+            // not Spin — this module's own claim is "γ ∈ Spin(4,0)" — and
+            // adjoined as a letter it would be a generator `factor_rotor`
+            // reads through the even factors and misreads. The grade is
+            // the reading that separates the two, and it is taken here.
+            if r.is_even() && r.weight().is_some() && r.conjugate_holds(&a, &b) {
                 // THE COSET IS REACHED FROM ANY MEMBER OF IT. `K = g·C(a)`,
                 // and `a` commutes with itself, so `a^k ∈ C(a)` and every
                 // `g·a^k` conjugates exactly as `g` does:

@@ -232,6 +232,33 @@ fn every_offered_conjugator_actually_conjugates() {
     }
 }
 
+/// EXPANSION 3 — A GAUGE IS EVEN. `γa = ±bγ` has odd solutions: a
+/// reflection carries a rotation to its inverse as surely as an even
+/// element does, and the linear solve finds both. A reflection is Pin and
+/// not Spin — the module's own claim is `γ ∈ Spin(4,0)` — so the solve
+/// offers only the even members, read off the grade, and still offers
+/// some: `e₀₂` conjugates `c + s·e₀₁` to `c − s·e₀₁`.
+#[test]
+fn every_offered_conjugator_is_even() {
+    use crate::transducer::alphabet::bundle::conjugators;
+    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let (a, b) = (q.rotor().normalised(), q.inverse().rotor().normalised());
+    // The reflection in `e₀` conjugates `a` to `b` — an odd solution the
+    // solve must not offer.
+    let reflection = crate::transducer::alphabet::Rotor::blade(
+        1,
+        num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)),
+    );
+    assert!(!reflection.is_even());
+    assert!(reflection.conjugate_holds(&a, &b), "the reflection does conjugate them");
+    let found = conjugators(&a, &b);
+    assert!(!found.is_empty(), "an even conjugator exists (e₀₂) and is offered");
+    for g in &found {
+        assert!(g.is_even(), "every offered gauge is an element of Spin(4,0)");
+        assert!(g.conjugate_holds(&a, &b));
+    }
+}
+
 /// The trivial fibre is the coordinate a base stands at over itself: the
 /// identity conjugator, an identity carriage, no recolour.
 #[test]
