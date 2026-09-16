@@ -305,7 +305,7 @@ pub fn family_ratio(family: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, 
         if fa.0 == 0 || fa.1 == 0 || fb.0 == 0 || fb.1 == 0 {
             return None;
         }
-        let (gh, gw) = (gcd(fb.0, fa.0).max(1), gcd(fb.1, fa.1).max(1));
+        let (gh, gw) = (gcd(fb.0, fa.0), gcd(fb.1, fa.1));
         let r = ((fb.0 / gh, fa.0 / gh), (fb.1 / gw, fa.1 / gw));
         match &ratio {
             None => ratio = Some(r),

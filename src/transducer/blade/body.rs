@@ -319,7 +319,9 @@ pub fn topology(cells: &[(i64, i64)]) -> (u64, u64) {
         adjacent += held(r + 1, c) as i64 + held(r, c + 1) as i64;
         for (x, y) in [(r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1)] {
             let k = held(x - 1, y - 1) as i64 + held(x - 1, y) as i64 + held(x, y - 1) as i64 + held(x, y) as i64;
-            vertices += qn(1, k.max(1));
+            if k > 0 {
+                vertices += qn(1, k);
+            }
         }
     }
     let edges = 4 * n - adjacent;
@@ -332,7 +334,7 @@ pub fn topology(cells: &[(i64, i64)]) -> (u64, u64) {
     };
     let comps: Vec<(i64, i64, u8)> = cells.iter().map(|&(r, c)| (r, c, 0u8)).collect();
     let b0 = components(&comps).len() as i64;
-    (b0 as u64, (b0 - chi).max(0) as u64)
+    (b0 as u64, if b0 >= chi { (b0 - chi) as u64 } else { 0 })
 }
 
 /// A6: two's-complement numerator and positive denominator. Refuses when

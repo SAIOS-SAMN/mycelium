@@ -168,8 +168,10 @@ impl Kernel {
             return;
         }
         let n = parties.len() as u64;
-        let share: [u64; 4] =
-            std::array::from_fn(|l| if vol[l] == 0 { 0 } else { (vol[l] / n).max(1) });
+        let share: [u64; 4] = std::array::from_fn(|l| vol[l] / n);
+        if share.iter().all(|&m| m == 0) {
+            return;
+        }
         let vol = share;
         let anchor = self.anchor();
         for (a, _) in held.scoped() {

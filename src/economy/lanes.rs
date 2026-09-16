@@ -155,7 +155,7 @@ pub fn yield_surface(p: &crate::physics::Physics) -> [u64; 4] {
     let flux = p.order_flux();
     let deficit = p.reserve_deficit();
     std::array::from_fn(|l| {
-        let entropic = (-flux[l]).max(0) as u64;
+        let entropic = if flux[l] < 0 { (-flux[l]) as u64 } else { 0 };
         deficit[l].saturating_add(entropic)
     })
 }

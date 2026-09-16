@@ -1096,7 +1096,8 @@ pub fn rule_replays_family(
     let Some(again) = extract_rule(family, budget) else {
         return false;
     };
-    again.form.vertices == rule.form.vertices && again.form.faces == rule.form.faces
+    crate::transducer::sentence::form_vertex_key(&again.form)
+        == crate::transducer::sentence::form_vertex_key(&rule.form)
 }
 
 /// Extract, memoized by family id and working-atlas generation. A hit

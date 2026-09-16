@@ -122,8 +122,7 @@ impl Treasury {
     }
 
     pub fn settle_solve(&mut self, voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let asked: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { mu[l].max(1) });
-        self.mint_to(voice, asked, anchor)
+        self.mint_to(voice, mu, anchor)
     }
 
     /// 26 AS RULED 2026-09-10 — THE USE OF A CITED GENERATOR IS A SHARE
@@ -189,7 +188,10 @@ impl Treasury {
             return;
         }
         let n = voices.len() as u64;
-        let share: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { (mu[l] / n).max(1) });
+        let share: [u64; 4] = std::array::from_fn(|l| mu[l] / n);
+        if share.iter().all(|&m| m == 0) {
+            return;
+        }
         for v in voices {
             let Ok(who) = <[u8; 32]>::try_from(v.as_ref()) else {
                 continue;
@@ -199,14 +201,17 @@ impl Treasury {
     }
 
     /// PoWc — split the consilience award (the germ's μ⃗ PRICED at the moment's
-    /// surface) across the attesting voices, per lane (each nonzero lane pays at
-    /// least 1 to each voice — consilience is never free).
+    /// surface) across the attesting voices, per lane. The share is the exact
+    /// quotient `mu[l] / n` with no invented floor (rule 11).
     pub fn settle_consilience(&mut self, voices: &[[u8; 32]], mu: [u64; 4], anchor: Anchor) {
         if voices.len() < 2 {
             return;
         }
         let n = voices.len() as u64;
-        let share: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { (mu[l] / n).max(1) });
+        let share: [u64; 4] = std::array::from_fn(|l| mu[l] / n);
+        if share.iter().all(|&m| m == 0) {
+            return;
+        }
         for v in voices {
             self.mint_to(*v, share, anchor);
         }

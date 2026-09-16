@@ -263,7 +263,7 @@ impl Treasury {
             return [0; 4];
         };
         let held = row.mu;
-        let asked: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { mu[l].max(1) });
+        let asked = mu;
         let take: [u64; 4] = std::array::from_fn(|l| asked[l].min(held[l]));
         if take.iter().all(|&m| m == 0) {
             return take;

@@ -124,3 +124,22 @@ fn an_escrow_with_no_voice_is_not_released() {
     assert!(t.release_rewrite(&addr).is_none(), "no party, no release");
     assert_eq!(t.escrowed_remaining(&addr), [8, 0, 0, 0], "the escrow stands");
 }
+
+/// Rule 11: a lane split cannot invent units. An award smaller than the number
+/// of voices does not floor to 1 per voice.
+#[test]
+fn settlement_split_never_invents_units_below_voice_count() {
+    let mut t = Treasury::new();
+    let anchor: Anchor = (1, [1; 32]);
+    // 1 unit on lane 2 split across 4 voices: integer quotient is 0, no floor to 1.
+    t.settle_consilience(&[[1; 32], [2; 32], [3; 32], [4; 32]], [0, 0, 1, 0], anchor);
+    assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
+    assert_eq!(t.balance_mu(&[2; 32]), [0; 4]);
+    assert_eq!(t.balance_mu(&[3; 32]), [0; 4]);
+    assert_eq!(t.balance_mu(&[4; 32]), [0; 4]);
+
+    // Same exact law for settle_assembly
+    t.settle_assembly(&[[1; 32], [2; 32], [3; 32], [4; 32]], [0, 0, 1, 0], anchor);
+    assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
+}
+

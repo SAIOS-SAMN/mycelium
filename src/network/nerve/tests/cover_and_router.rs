@@ -200,3 +200,16 @@ fn a_form_is_offered_to_the_hyphae_covering_its_chart_and_not_to_every_peer() {
     let got: Vec<Vec<u8>> = none.scoped().map(|(k, _)| k).collect();
     assert_eq!(got, vec![near.to_vec()], "lane 0's cover, by that fallback");
 }
+
+#[test]
+fn lane_cover_room_exact_arithmetic_without_invented_floor() {
+    // spend == 0 returns None (cannot divide by zero)
+    assert_eq!(lane_cover_room(10, 100, 0, 0), None);
+    // reserve < spend gives quotient 0: bond * 0 - 0 = 0 (no invented .max(1) floor)
+    assert_eq!(lane_cover_room(2, 5, 0, 10), Some(0));
+    // occupancy exceeding bought cover returns None
+    assert_eq!(lane_cover_room(2, 20, 5, 10), None);
+    // exact positive room
+    assert_eq!(lane_cover_room(2, 20, 3, 10), Some(1));
+}
+

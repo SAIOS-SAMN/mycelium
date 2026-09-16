@@ -346,7 +346,7 @@ impl Cover {
 /// occupancy stands above it — a lane occupied beyond its cover is a
 /// broken count, not a lane with no room (rule 11).
 pub fn lane_cover_room(bond: u64, reserve: u64, occupancy: u64, spend: u64) -> Option<u64> {
-    let per = (reserve / spend.max(1)).max(1);
+    let per = reserve.checked_div(spend)?;
     bond.checked_mul(per)?.checked_sub(occupancy)
 }
 

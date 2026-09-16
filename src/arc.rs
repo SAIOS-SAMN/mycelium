@@ -176,7 +176,7 @@ impl Frame {
 pub fn frame_ratio(f: &Frame) -> ((usize, usize), (usize, usize)) {
     let Frame { h_in: hi, w_in: wi, h_out: ho, w_out: wo } = *f;
     let (gh, gw) = (gcd(ho, hi), gcd(wo, wi));
-    ((ho / gh.max(1), hi / gh.max(1)), (wo / gw.max(1), wi / gw.max(1)))
+    ((ho / gh, hi / gh), (wo / gw, wi / gw))
 }
 
 

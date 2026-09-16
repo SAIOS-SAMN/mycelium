@@ -35,8 +35,8 @@ pub fn frame_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> crate::arc::Frame
     // and its extent is zero by measurement, not by default.
     let extent = |s: &[(i64, i64, u8)]| {
         let axis = |m: Option<i64>| match m {
-            Some(x) => x.max(0) as usize,
-            None => 0,
+            Some(x) if x > 0 => x as usize,
+            _ => 0,
         };
         (
             axis(s.iter().map(|(r, _, _)| *r + 1).max()),
