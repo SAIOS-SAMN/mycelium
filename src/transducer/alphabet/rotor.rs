@@ -245,14 +245,20 @@ impl Rotor {
         }
     }
 
+    /// Conjugacy invariants written sequentially as canonical coordinates (Rule 6).
+    pub fn put_class_coordinates(&self, out: &mut Vec<u8>) -> Option<()> {
+        let (x, y, sp) = self.class_invariants()?;
+        put_q(out, &x);
+        put_q(out, &y);
+        out.push(sp);
+        Some(())
+    }
+
     /// Conjugacy invariants written out (A21). Identity of class is
     /// [`class_eq`]. None when the element is not a versor.
     pub fn class_key(&self) -> Option<crate::transducer::address::Address> {
-        let (x, y, sp) = self.class_invariants()?;
         let mut buf = vec![crate::transducer::address::TAG_CLASS];
-        put_q(&mut buf, &x);
-        put_q(&mut buf, &y);
-        buf.push(sp);
+        self.put_class_coordinates(&mut buf)?;
         Some(crate::transducer::address::Address::new(buf))
     }
 
@@ -368,10 +374,14 @@ impl Rotor {
     /// A1 key: the canonical coefficients written out (A21). Identity is
     /// [`projective_eq`].
     pub fn key(&self) -> crate::transducer::address::Address {
-        let n = self.normalised();
         let mut buf = vec![crate::transducer::address::TAG_ROTOR];
-        n.to_bytes(&mut buf);
+        self.put_canonical(&mut buf);
         crate::transducer::address::Address::new(buf)
+    }
+
+    /// Canonical coefficients written out sequentially as coordinates (Rule 6).
+    pub fn put_canonical(&self, out: &mut Vec<u8>) {
+        self.normalised().to_bytes(out);
     }
 
     pub fn from_key(k: &[u8]) -> Option<Rotor> {

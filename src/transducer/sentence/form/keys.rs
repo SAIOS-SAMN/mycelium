@@ -51,7 +51,7 @@ pub(crate) fn hue_class_prefix_of(
     rotor: &crate::transducer::alphabet::Rotor,
 ) -> Option<Vec<u8>> {
     let mut buf = vec![crate::transducer::address::TAG_HUE];
-    crate::transducer::address::put_bytes(&mut buf, rotor.class_key()?.as_bytes());
+    rotor.put_class_coordinates(&mut buf)?;
     Some(buf)
 }
 
@@ -75,7 +75,7 @@ pub(crate) fn vertex_transport_key_of(
     gauge: &[(u8, u8)],
 ) -> Option<crate::transducer::address::Address> {
     let mut buf = vec![crate::transducer::address::TAG_WORD, ShellKind::Whole.as_u8()];
-    crate::transducer::address::put_bytes(&mut buf, rotor.class_key()?.as_bytes());
+    rotor.put_class_coordinates(&mut buf)?;
     buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
     for &(b, a) in gauge {
         buf.push(b);

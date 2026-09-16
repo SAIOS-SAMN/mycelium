@@ -423,7 +423,7 @@ impl Element {
             return out;
         }
         if let Some(letters) = self.letters() {
-            crate::transducer::address::put_bytes(&mut out, letters.spelling.word.key().as_bytes());
+            letters.spelling.word.put_canonical(&mut out);
             // A4 output (17.2): one projective carriage, one writing. Raw
             // coefficients here made a carriage and its negation two
             // addresses, and `blind_replay` slashed on the difference.
@@ -444,7 +444,7 @@ impl Element {
             // shared an address (law 2). Canonical coordinates, as A1
             // writes them.
             if let Some(r) = self.action.rotor.as_ref() {
-                crate::transducer::address::put_bytes(&mut out, r.key().as_bytes());
+                r.put_canonical(&mut out);
             }
         }
         // The key IS the chain (law 2), and the chain is A5's by type: one

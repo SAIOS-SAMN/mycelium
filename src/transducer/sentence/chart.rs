@@ -392,7 +392,7 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
             } => {
                 buf.push(2);
                 crate::transducer::address::put_bytes(&mut buf, address);
-                crate::transducer::address::put_bytes(&mut buf, &placement.key());
+                placement.put_canonical(&mut buf);
                 buf.extend_from_slice(&depth.to_le_bytes());
             }
             Vertex::Rebased { by, of, acts } => {
@@ -447,13 +447,11 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
         // reach one address. The count is written because a face with two
         // member pairs SAYS something a face with one does not, and the
         // address is what says it (D10).
-        crate::transducer::address::put_bytes(&mut buf, &face.word.key());
+        face.word.put_canonical(&mut buf);
         buf.extend_from_slice(&(face.at.len() as u16).to_le_bytes());
         for (pk, place) in face.at.scoped() {
             crate::transducer::address::put_bytes(&mut buf, &pk);
-            if let Some(k) = place.carriage.key() {
-                let _ = crate::transducer::address::put_addr(&mut buf, k);
-            }
+            place.carriage.put_canonical(&mut buf);
             let mut g = place.gauge.clone();
             g.sort_unstable();
             buf.extend_from_slice(&(g.len() as u16).to_le_bytes());

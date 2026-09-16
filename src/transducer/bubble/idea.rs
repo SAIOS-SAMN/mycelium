@@ -235,7 +235,7 @@ impl Bubble {
             // never a walk over the form (rule 1).
             for (_, a) in acts.scoped() {
                 let mut k = a.chart.key().into_vec();
-                k.extend_from_slice(r.key().as_bytes());
+                r.put_canonical(&mut k);
                 // A4 output (17.2): one projective carriage is one section.
                 // Raw bytes made a carriage and its negation two.
                 a.carriage.put_canonical(&mut k);

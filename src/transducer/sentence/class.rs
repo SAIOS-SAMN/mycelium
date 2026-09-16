@@ -197,12 +197,10 @@ impl ClassVector {
     }
 
     /// Coordinates written out in 12.6 axis order. Rotor conjugacy first so
-    /// a prefix of the key is the rotor's conjugacy stratum. Closed is the
-    /// zero key.
-    pub fn class_key(&self) -> crate::transducer::address::Address {
-        let mut buf = vec![crate::transducer::address::TAG_CLASS];
-        alphabet::put_q(&mut buf, &self.offplane.0);
-        alphabet::put_q(&mut buf, &self.offplane.1);
+    /// Canonical coordinates written sequentially (Rule 6).
+    pub fn put_canonical(&self, buf: &mut Vec<u8>) {
+        alphabet::put_q(buf, &self.offplane.0);
+        alphabet::put_q(buf, &self.offplane.1);
         buf.push(self.offplane.2);
         match self.plane {
             None => buf.push(0),
@@ -216,15 +214,17 @@ impl ClassVector {
                 }
             }
         }
-        self.hue.to_bytes(&mut buf);
-        // THE CARRIAGE IS WRITTEN CANONICALLY (A4). Raw coefficients stood
-        // here, so a carriage and its negation — one projective element —
-        // gave two class keys, and every reader keyed or compared by class
-        // inherited it: the certificate's `before`/`after` at the court, the
-        // "do the paths agree" test, `rank_of_rows`, the axis carrier,
-        // `file_loop`, the horizon. The field's own doc says "after the tree
-        // gauge (A4)" and the key did not enforce it.
-        self.carriage.put_canonical(&mut buf);
+        self.hue.to_bytes(buf);
+        // THE CARRIAGE IS WRITTEN CANONICALLY (A4).
+        self.carriage.put_canonical(buf);
+    }
+
+    /// The conjugacy invariants and the sensor coordinates together (A21):
+    /// a prefix of the key is the rotor's conjugacy stratum. Closed is the
+    /// zero key.
+    pub fn class_key(&self) -> crate::transducer::address::Address {
+        let mut buf = vec![crate::transducer::address::TAG_CLASS];
+        self.put_canonical(&mut buf);
         crate::transducer::address::Address::new(buf)
     }
 

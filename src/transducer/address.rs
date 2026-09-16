@@ -519,4 +519,24 @@ mod tests {
         PrefixOf::<CoordinatePath<Address, CoordinatePath<Address, Nil>>>::write_prefix(&prefix, &mut pbytes);
         assert!(bytes.starts_with(&pbytes));
     }
+
+    #[test]
+    fn canonical_coordinate_writers_unnest_keys_under_rule_6() {
+        let w = sample_words()[0].clone();
+        let mut rotor_coords = Vec::new();
+        w.rotor().put_canonical(&mut rotor_coords);
+        let key = w.rotor().key();
+        assert_eq!(key.as_bytes()[0], TAG_ROTOR);
+        assert_eq!(&key.as_bytes()[1..], &rotor_coords[..]);
+
+        let mut class_coords = Vec::new();
+        w.rotor().put_class_coordinates(&mut class_coords).expect("class coords");
+        let ckey = w.rotor().class_key().expect("class key");
+        assert_eq!(ckey.as_bytes()[0], TAG_CLASS);
+        assert_eq!(&ckey.as_bytes()[1..], &class_coords[..]);
+
+        let mut word_coords = Vec::new();
+        w.put_canonical(&mut word_coords);
+        assert_eq!(word_coords, rotor_coords);
+    }
 }

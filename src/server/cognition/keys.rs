@@ -48,8 +48,8 @@ pub(crate) fn action_index_key(e: &Element) -> Option<Vec<u8>> {
     let mut buf = Vec::new();
     match e.versor() {
         Some(v) => {
-            let k = v.key()?;
-            crate::transducer::address::put_bytes(&mut buf, k.as_bytes());
+            v.canonical()?;
+            v.put_canonical(&mut buf);
         }
         None => buf.push(0),
     }

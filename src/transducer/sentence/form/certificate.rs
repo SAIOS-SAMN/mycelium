@@ -120,7 +120,7 @@ impl PivotCertificate {
                     Side::Left => 0,
                     Side::Right => 1,
                 });
-                crate::transducer::address::put_bytes(&mut buf, &word.key());
+                word.put_canonical(&mut buf);
             }
             PivotBy::Placement { face, translator } => {
                 buf.push(1);

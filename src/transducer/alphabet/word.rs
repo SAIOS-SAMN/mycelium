@@ -98,6 +98,11 @@ impl Word {
         self.rotor().key()
     }
 
+    /// Canonical coordinates of the word's rotor (Rule 6).
+    pub fn put_canonical(&self, out: &mut Vec<u8>) {
+        self.rotor().put_canonical(out);
+    }
+
     /// Group identity: the rotor is projectively 1.
     pub fn is_identity(&self) -> bool {
         self.rotor().projective_eq(&Rotor::identity())
