@@ -122,6 +122,38 @@ fn a_word_discharging_on_both_sides_is_one_discharge_and_two_words_are_a_vortex(
     );
 }
 
+/// A SEARCH THE BUDGET CUT SHORT IS NOT A READING OF THE ALGEBRA.
+///
+/// `NoneDischarged` was returned whether every candidate had been tried
+/// and refused or none had been tried at all, and the arm beneath it
+/// speaks a demand, files torsion, or widens the cover. A demand raised on
+/// an evaluation that never happened asks the mesh for a word this mind
+/// may already hold and simply did not reach.
+///
+/// A discharge that HAPPENED is real however the stroke ended, so only the
+/// empty set is ambiguous and only it consults the budget.
+#[test]
+fn a_starved_search_is_not_a_refusal_and_a_discharge_survives_one() {
+    let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
+    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let one = cert(Axis::Unit(0), q, closed);
+
+    assert_eq!(
+        outcome_of(&[], false),
+        Discharge::NoneDischarged,
+        "every candidate tried and refused is the algebra's answer"
+    );
+    assert_eq!(
+        outcome_of(&[], true),
+        Discharge::Starved,
+        "and none tried is not an answer at all"
+    );
+    assert!(
+        matches!(outcome_of(std::slice::from_ref(&one), true), Discharge::One(_)),
+        "a discharge that happened is real however the stroke ended"
+    );
+}
+
 /// EVERY LOSER IS ITS OWN DEGREE OF FREEDOM. A vortex of three candidates
 /// holds two symmetries against the winner, and they are two — summing them
 /// would be a count deciding (rule 2).

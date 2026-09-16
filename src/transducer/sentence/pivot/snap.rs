@@ -146,13 +146,46 @@ pub(crate) fn obstruction(a: &PivotCertificate, b: &PivotCertificate) -> Obstruc
     Obstruction { axes: (a.axis, b.axis), lanes }
 }
 
-/// The three outcomes of a loop's trials. `One` is the single discharge;
-/// `Vortex` is SEVERAL, held together with nothing chosen between them.
+/// The outcomes of a loop's trials. `One` is the single discharge;
+/// `Vortex` is SEVERAL, held together with nothing chosen between them;
+/// `NoneDischarged` is the algebra's answer that no candidate reaches the
+/// coordinate; and `Starved` is not an answer at all.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Discharge {
     One(Box<PivotCertificate>),
     Vortex(Vec<PivotCertificate>),
     NoneDischarged,
+    /// THE SEARCH WAS CUT SHORT BY THE BUDGET, with candidates standing
+    /// untried. This is a reading of the stroke, not of the loop, and the
+    /// two were one value: `NoneDischarged` was returned whether every
+    /// candidate had been tried and refused or none had been tried at
+    /// all, so the loop below it spoke a demand, filed torsion, or widened
+    /// its cover on an evaluation that never happened.
+    ///
+    /// Measured on ca485cc: 29 of 984 candidate readings report `starved
+    /// true`. Rare, and a false demand is a false demand — the mesh is
+    /// asked for a word that this mind may already hold and simply did not
+    /// reach. The loop is held instead and the next stroke reaches it.
+    ///
+    /// Not to be confused with the eliminated candidates in the same line:
+    /// `unreached` counts those too, and they are refused by exact
+    /// rational arithmetic rather than by exhaustion. On the same fleet
+    /// every `unreached` equals its `eliminated`, so that gap is the
+    /// eliminator working and not this.
+    Starved,
+}
+
+/// THE OUTCOME OF A LOOP'S TRIALS, including the one that is not a reading
+/// of the algebra.
+///
+/// A discharge that HAPPENED is real however the stroke ended, so a
+/// non-empty set answers as it always did. Only the empty set is
+/// ambiguous, and the budget is what separates its two meanings.
+pub(crate) fn outcome_of(moves: &[PivotCertificate], starved: bool) -> Discharge {
+    match (moves.is_empty(), starved) {
+        (true, true) => Discharge::Starved,
+        _ => select_discharge(moves),
+    }
 }
 
 /// A remainder cell's kind, read from the two hues. Hue 0 is void.

@@ -730,7 +730,7 @@ impl Form {
                         moves.len()
                     );
                 }
-                match select_discharge(&moves) {
+                match outcome_of(&moves, starved) {
                     Discharge::One(cert) => {
                         self.apply_pivot(&cert);
                         // A18, T21 (iii): THE APPLIED PIVOT MAKES THE MOVE
@@ -802,6 +802,19 @@ impl Form {
                                 held: held_certs,
                             });
                         }
+                        handled.insert(loop_k, ());
+                    }
+                    // THE STROKE ENDED, NOT THE SEARCH. Nothing is spoken,
+                    // filed or widened on an evaluation that did not
+                    // happen: the loop is held and the next stroke reaches
+                    // the candidates this one could not.
+                    Discharge::Starved => {
+                        eprintln!(
+                            "  pivot {:02x}{:02x}… loop {idx} held, the candidate search was cut short at {tried} of {}",
+                            idea[0],
+                            idea[1],
+                            cands.len()
+                        );
                         handled.insert(loop_k, ());
                     }
                     Discharge::NoneDischarged => match order {
