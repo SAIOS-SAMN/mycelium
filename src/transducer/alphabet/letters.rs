@@ -8,9 +8,6 @@ use crate::transducer::alphabet::{Rotor, Word, Q};
 
 use super::*;
 
-/// LAW VIII cardinality — the single declaration site.
-pub const CAYLEY_ALPHABET_LEN: usize = 17;
-
 /// Rank of the Euclidean chart the letters occupy (`e0..e3`).
 pub const LETTER_RANK: usize = 4;
 
@@ -18,16 +15,85 @@ pub const LETTER_RANK: usize = 4;
 pub const PLANE_ROW: u8 = 0;
 pub const PLANE_COL: u8 = 1;
 
+/// THE PAIR PLANES OF THE CHART: every two-subset of `e0..e3`. It is
+/// `rank choose 2`, read off the rank rather than written beside it — a
+/// count stated twice is a count that can disagree with itself, and the
+/// six here were spelled into a table, into its type, into the name
+/// `SLOT_PLANES_SIX`, and into every `p < 6` and `1..=6` that read it.
+pub const PAIR_PLANES: usize = LETTER_RANK * (LETTER_RANK - 1) / 2;
+
+/// The two-subsets in lexicographic order, which is slot order. Derived,
+/// so a chart of another rank moves the alphabet with it instead of
+/// leaving a table behind.
+const fn pair_planes_of_rank() -> [(u8, u8); PAIR_PLANES] {
+    let mut out = [(0u8, 0u8); PAIR_PLANES];
+    let mut k = 0usize;
+    let mut i = 0u8;
+    while (i as usize) < LETTER_RANK {
+        let mut j = i + 1;
+        while (j as usize) < LETTER_RANK {
+            out[k] = (i, j);
+            k += 1;
+            j += 1;
+        }
+        i += 1;
+    }
+    out
+}
+
+/// LAW VIII cardinality, DERIVED from what the alphabet holds: the
+/// identity, a quarter turn and a (3,4,5) rotor on every pair plane, and a
+/// (5,12,13) rotor on the planes that carry one. It was `17` written out,
+/// which is the same fact as the three tables below stated a fourth time.
+pub const CAYLEY_ALPHABET_LEN: usize = 1 + 2 * PAIR_PLANES + SLOT_PLANES_13.len();
+
 /// Opaque letter identifier. Range `0..17` at the constructor; a wire
 /// identifier only — the letter's content is its rotor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct LetterId(u8);
 
-/// Six Euclidean pair planes on `e0..e3` (slots 1–6 and 7–12).
-pub(crate) const SLOT_PLANES_SIX: [(u8, u8); 6] = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)];
-/// The four (5,12,13) planes (slots 13–16).
+/// The pair planes in slot order, carrying the quarter turns and the
+/// (3,4,5) rotors.
+pub(crate) const SLOT_PLANES_SIX: [(u8, u8); PAIR_PLANES] = pair_planes_of_rank();
+
+/// THE PLANES THAT CARRY A (5,12,13) ROTOR. This is content about the
+/// alphabet, not a count: four of the pair planes have such a letter and
+/// two do not, and nothing in the rank says which. Its LENGTH is read
+/// wherever that number was written out — `CAYLEY_ALPHABET_LEN` above, and
+/// `LetterId::pythagorean_13` answers the membership question for every
+/// reader that used to test `p < 4`.
 pub(crate) const SLOT_PLANES_13: [(u8, u8); 4] = [(0, 1), (0, 2), (0, 3), (1, 2)];
+
+/// THE SENSOR PLANE as a pair, so a reader asking "is this the sensor's"
+/// compares planes instead of testing a slot index against zero.
+pub const fn sensor_plane() -> (u8, u8) {
+    (PLANE_ROW, PLANE_COL)
+}
+
+/// THE PLANE WHOSE HALF-TURN IS THE ORIENTATION CHARACTER of `plane`: the
+/// pair of `plane.1` with the least axis outside `plane`. `SpellStep`
+/// derives its flip letter exactly this way; this is that derivation named
+/// once so `LetterId::SHEET` can be checked against it rather than written
+/// out beside it.
+pub const fn flip_plane(plane: (u8, u8)) -> Option<(u8, u8)> {
+    let mut k = 0u8;
+    while (k as usize) < LETTER_RANK {
+        if k != plane.0 && k != plane.1 {
+            return Some(if plane.1 < k { (plane.1, k) } else { (k, plane.1) });
+        }
+        k += 1;
+    }
+    None
+}
+
+/// Slot bases, each read off what precedes it: the identity, then a
+/// quarter turn per pair plane, then a (3,4,5) rotor per pair plane, then
+/// the (5,12,13) rotors. They were `1`, `7` and `13` written out at every
+/// reader, which is `PAIR_PLANES` restated in three places.
+const QUARTER_BASE: u8 = 1;
+const PRIME_5_BASE: u8 = QUARTER_BASE + PAIR_PLANES as u8;
+const PRIME_13_BASE: u8 = PRIME_5_BASE + PAIR_PLANES as u8;
 
 impl LetterId {
     pub const IDENTITY: LetterId = LetterId(0);
@@ -54,19 +120,31 @@ impl LetterId {
         self.0
     }
 
-    /// The quarter turn on a pair plane (slots 1–6).
+    /// The quarter turn on a pair plane.
     pub fn quarter(plane: (u8, u8)) -> Option<LetterId> {
-        SLOT_PLANES_SIX.iter().position(|p| *p == plane).map(|i| LetterId(1 + i as u8))
+        Self::slot_of(plane).map(|i| LetterId(QUARTER_BASE + i as u8))
     }
 
-    /// The (3,4,5) rotor on a pair plane (slots 7–12).
+    /// The (3,4,5) rotor on a pair plane.
     pub fn pythagorean_5(plane: (u8, u8)) -> Option<LetterId> {
-        SLOT_PLANES_SIX.iter().position(|p| *p == plane).map(|i| LetterId(7 + i as u8))
+        Self::slot_of(plane).map(|i| LetterId(PRIME_5_BASE + i as u8))
     }
 
-    /// The (5,12,13) rotor on a pair plane (slots 13–16).
+    /// The (5,12,13) rotor on a pair plane. `None` is the reading for a
+    /// plane the alphabet carries no such letter on, and it is the question
+    /// every `p < 4` was asking without being able to name it.
     pub fn pythagorean_13(plane: (u8, u8)) -> Option<LetterId> {
-        SLOT_PLANES_13.iter().position(|p| *p == plane).map(|i| LetterId(13 + i as u8))
+        SLOT_PLANES_13
+            .iter()
+            .position(|p| *p == plane)
+            .map(|i| LetterId(PRIME_13_BASE + i as u8))
+    }
+
+    /// The slot a pair plane occupies, which is its position in the
+    /// chart's own lexicographic order of two-subsets — content, and the
+    /// one construction the three letter readers above share.
+    pub fn slot_of(plane: (u8, u8)) -> Option<usize> {
+        SLOT_PLANES_SIX.iter().position(|p| *p == plane)
     }
 
     /// Every letter, in slot order.
@@ -75,23 +153,60 @@ impl LetterId {
     }
 }
 
-/// The pair plane of a letter; the identity has none.
+/// The pair plane of a letter; the identity has none. The block a slot
+/// falls in is read against the bases rather than against `1..=6` and
+/// `7..=12`, which are `PAIR_PLANES` written out twice more.
 pub fn plane_of(id: LetterId) -> Option<(u8, u8)> {
-    match id.0 {
-        0 => None,
-        1..=6 => Some(SLOT_PLANES_SIX[(id.0 - 1) as usize]),
-        7..=12 => Some(SLOT_PLANES_SIX[(id.0 - 7) as usize]),
-        _ => Some(SLOT_PLANES_13[(id.0 - 13) as usize]),
+    let i = id.0;
+    if i == LetterId::IDENTITY.0 {
+        return None;
     }
+    if i < PRIME_5_BASE {
+        return SLOT_PLANES_SIX.get((i - QUARTER_BASE) as usize).copied();
+    }
+    if i < PRIME_13_BASE {
+        return SLOT_PLANES_SIX.get((i - PRIME_5_BASE) as usize).copied();
+    }
+    SLOT_PLANES_13.get((i - PRIME_13_BASE) as usize).copied()
 }
 
 /// The rotor pair `(s, b)` of a letter: `Φ = s + b·e_ij`.
 pub fn rotor_pair(id: LetterId) -> (Q, Q) {
-    match id.0 {
-        0 => (q(1), q(0)),
-        1..=6 => (q(1), q(1)),
-        7..=12 => (qn(3, 5), qn(4, 5)),
-        _ => (qn(5, 13), qn(12, 13)),
+    let i = id.0;
+    if i == LetterId::IDENTITY.0 {
+        (q(1), q(0))
+    } else if i < PRIME_5_BASE {
+        (q(1), q(1))
+    } else if i < PRIME_13_BASE {
+        (qn(3, 5), qn(4, 5))
+    } else {
+        (qn(5, 13), qn(12, 13))
+    }
+}
+
+/// THE PLANE ON THE AXES `plane` DOES NOT USE: its complement in the
+/// chart. Two complementary planes share no axis and therefore commute
+/// (1.2), so this is the relation `complementary` tests, computed rather
+/// than tabulated — the six-case match below was the rank-4 answer written
+/// out, and a chart of another rank had no entry in it.
+pub const fn complement_plane(plane: (u8, u8)) -> Option<(u8, u8)> {
+    let none = LETTER_RANK as u8;
+    let (mut lo, mut hi) = (none, none);
+    let mut k = 0u8;
+    while (k as usize) < LETTER_RANK {
+        if k != plane.0 && k != plane.1 {
+            if lo == none {
+                lo = k;
+            } else if hi == none {
+                hi = k;
+            }
+        }
+        k += 1;
+    }
+    if hi == none {
+        None
+    } else {
+        Some((lo, hi))
     }
 }
 
@@ -121,15 +236,7 @@ pub fn letter_inverse(id: LetterId) -> Rotor {
 }
 
 pub(crate) fn complementary(a: (u8, u8), b: (u8, u8)) -> bool {
-    matches!(
-        (a, b),
-        ((0, 1), (2, 3))
-            | ((2, 3), (0, 1))
-            | ((0, 2), (1, 3))
-            | ((1, 3), (0, 2))
-            | ((0, 3), (1, 2))
-            | ((1, 2), (0, 3))
-    )
+    complement_plane(a) == Some(b)
 }
 
 /// A relation of the Cayley group: a tape that multiplies to the identity,
@@ -149,7 +256,11 @@ pub enum RelatorKind {
     PrimeInfinite,
 }
 
-pub(crate) const RELATOR_N: usize = 12;
+/// The relators, counted from what the grammar states: a quarter turn of
+/// order four on every pair plane, one commuting relation per
+/// complementary pair, the sheet's square, and the two prime letters of
+/// infinite order. It was `12`, which is those four facts added up by hand.
+pub(crate) const RELATOR_N: usize = PAIR_PLANES + PAIR_PLANES / 2 + 1 + 2;
 
 /// Grammar of the seventeen: quarter turns order four, complementary
 /// planes commute, a sheet conjugates a rotation to its inverse, prime
@@ -158,7 +269,7 @@ pub fn relators() -> [Relator; RELATOR_N] {
     // The letters are named by slot (law VIII), never searched for by
     // plane: a quarter turn in slot `i` of the six planes is letter `1 + i`.
     // It looked each one up and panicked on a plane it declared itself (§2.4).
-    let quarter_in = |slot: usize| LetterId(1 + slot as u8);
+    let quarter_in = |slot: usize| LetterId(QUARTER_BASE + slot as u8);
     let mut out: [Relator; RELATOR_N] = std::array::from_fn(|_| Relator {
         kind: RelatorKind::PrimeInfinite,
         plane: None,
@@ -173,15 +284,27 @@ pub fn relators() -> [Relator; RELATOR_N] {
         out[i] = Relator { kind: RelatorKind::QuarterOrderFour, plane: Some(plane), word: w };
         i += 1;
     }
-    // Complementary planes commute: (0,1) with (2,3), (0,2) with (1,3),
-    // (0,3) with (1,2) — as slots of `SLOT_PLANES_SIX`.
-    let complements: [(usize, usize); 3] = [(0, 5), (1, 4), (2, 3)];
-    for &(a, b) in &complements {
+    // COMPLEMENTARY PLANES COMMUTE, and each pair is stated once. The
+    // slot pairs were written out as `[(0, 5), (1, 4), (2, 3)]`, which is
+    // the rank-4 answer tabulated; the complement is a reading of the
+    // plane's own axes (`complement_plane`), and the walk is over the
+    // planes themselves rather than over their product (rule 1). A pair is
+    // emitted at its lesser slot, so each relation appears once.
+    for (a, &plane) in SLOT_PLANES_SIX.iter().enumerate() {
+        let Some(other) = complement_plane(plane) else {
+            continue;
+        };
+        let Some(b) = LetterId::slot_of(other) else {
+            continue;
+        };
+        if b <= a {
+            continue;
+        }
         let qa = quarter_in(a);
         let qb = quarter_in(b);
         // aba^{-1}b^{-1} = 1
         let w = Word::from_letters(&[(qa, false), (qb, false), (qa, true), (qb, true)]);
-        out[i] = Relator { kind: RelatorKind::PlaneCommute, plane: Some(SLOT_PLANES_SIX[a]), word: w };
+        out[i] = Relator { kind: RelatorKind::PlaneCommute, plane: Some(plane), word: w };
         i += 1;
     }
     let sheet = LetterId::SHEET;

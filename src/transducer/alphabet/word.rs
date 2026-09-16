@@ -306,13 +306,26 @@ impl Word {
 }
 
 /// Reduce quarter-turn exponents mod 4; three quarters is one inverse.
+///
+/// The slots are the QUARTER LETTERS of the pair planes, asked for by
+/// name. `1..=6` was the alphabet's layout written out beside the table
+/// that defines it, and it would silently stop covering the quarters on a
+/// chart of another rank. The four and the three are letter exponents —
+/// the quarter's order and its inverse — which is what a number in this
+/// tree is allowed to be.
 pub(crate) fn reduce_unit_exponents(f: &mut PlaneForm) {
-    for i in 1..=6 {
-        let mut n = f.rot[i as usize].rem_euclid(4);
+    for &plane in &SLOT_PLANES_SIX {
+        let Some(id) = LetterId::quarter(plane) else {
+            continue;
+        };
+        let Some(slot) = f.rot.get_mut(id.raw() as usize) else {
+            continue;
+        };
+        let mut n = slot.rem_euclid(4);
         if n == 3 {
             n = -1;
         }
-        f.rot[i as usize] = n;
+        *slot = n;
     }
 }
 

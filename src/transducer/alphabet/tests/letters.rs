@@ -4,6 +4,66 @@
 use crate::transducer::alphabet::*;
 use crate::transducer::peel::PeelNest;
 
+/// THE DERIVED LAYOUT IS THE TABULATED ONE, coordinate for coordinate.
+///
+/// The alphabet's shape was written out in five places at once: the length
+/// `17`, the plane table and its type `[_; 6]`, the `[_; 4]` beside it, the
+/// slot bases `1`, `7` and `13` at every reader, the `p < 4` that guarded
+/// the second prime, the `p == 0` that meant the sensor plane, the
+/// `[i64; 12]` free row, the `1..=6` quarter sweep, the three complementary
+/// slot pairs, and the relator count. Each of those is the same fact as the
+/// rank and the two tables, said again where it could drift.
+///
+/// They are derived now, and this is what says the derivation reproduces
+/// what was there: a chart of rank four has six pair planes in lexicographic
+/// order, seventeen letters over them, and twelve relators.
+#[test]
+fn the_alphabet_layout_derives_to_what_was_written_out() {
+    assert_eq!(LETTER_RANK, 4, "the chart the letters occupy");
+    assert_eq!(PAIR_PLANES, 6, "rank choose two");
+    assert_eq!(
+        SLOT_PLANES_SIX,
+        [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)],
+        "the two-subsets in lexicographic order, which is slot order"
+    );
+    assert_eq!(CAYLEY_ALPHABET_LEN, 17, "identity, six quarters, six (3,4,5), four (5,12,13)");
+    assert_eq!(crate::transducer::sentence::FREE_ROW, 12, "two prime exponents per plane");
+
+    // The slot bases, read back off the letters they name.
+    assert_eq!(LetterId::quarter((0, 1)).map(|l| l.raw()), Some(1));
+    assert_eq!(LetterId::pythagorean_5((0, 1)).map(|l| l.raw()), Some(7));
+    assert_eq!(LetterId::pythagorean_13((0, 1)).map(|l| l.raw()), Some(13));
+
+    // The three named letters are readings of the sensor plane and its
+    // flip, not positions someone counted to.
+    assert_eq!(
+        LetterId::SHEET,
+        flip_plane(sensor_plane()).and_then(LetterId::quarter).expect("the sensor plane flips"),
+        "the sheet is the quarter on the sensor plane's flip"
+    );
+    assert_eq!(LetterId::PRIME_5, LetterId::pythagorean_5(sensor_plane()).expect("on the sensor"));
+    assert_eq!(LetterId::PRIME_13, LetterId::pythagorean_13(sensor_plane()).expect("on the sensor"));
+
+    // Two planes are complementary exactly when they share no axis, which
+    // the complement reads off the plane rather than off a table of pairs.
+    for &plane in &SLOT_PLANES_SIX {
+        let other = complement_plane(plane).expect("every pair plane of rank four has a complement");
+        assert!(plane.0 != other.0 && plane.0 != other.1 && plane.1 != other.0 && plane.1 != other.1);
+        assert_eq!(complement_plane(other), Some(plane), "and the relation is symmetric");
+    }
+    assert_eq!(complement_plane((0, 1)), Some((2, 3)));
+    assert_eq!(complement_plane((0, 2)), Some((1, 3)));
+    assert_eq!(complement_plane((0, 3)), Some((1, 2)));
+
+    // Six quarter orders, three commuting pairs, one sheet, two primes.
+    assert_eq!(relators().len(), 12);
+    let commuting = relators()
+        .iter()
+        .filter(|r| r.kind == RelatorKind::PlaneCommute)
+        .count();
+    assert_eq!(commuting, 3, "each complementary pair stated once, not twice");
+}
+
 /// LAW VIII: seventeen letters, each a versor with its carried inverse
 /// exact — `Φ Φ⁻¹ = 1` for all of them, and no eighteenth slot.
 #[test]

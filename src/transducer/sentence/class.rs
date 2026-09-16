@@ -20,7 +20,7 @@ pub use super::axis::{Axis, Rank, RankAxis, RankMove};
 #[derive(Clone, Debug)]
 pub struct ClassVector {
     /// Sensor-chart section: `None` when the holonomy moves the plane.
-    plane: Option<[(bool, u32, i64, i64); 6]>,
+    plane: Option<[(bool, u32, i64, i64); alphabet::PAIR_PLANES]>,
     /// Holonomy carriage after the tree gauge (A4).
     pub(crate) carriage: Versor,
     /// Composed gauge around the loop (A4).
@@ -121,7 +121,7 @@ impl ClassVector {
             h.rotor().class_invariants()?
         };
         let plane = if h.is_identity() {
-            Some([(false, 0, 0, 0); 6])
+            Some([(false, 0, 0, 0); alphabet::PAIR_PLANES])
         } else {
             h.form().map(|pf| pf.coordinates())
         };
@@ -155,7 +155,7 @@ impl ClassVector {
     ) -> Option<ClassVector> {
         if r.is_identity() {
             return Some(ClassVector {
-                plane: Some([(false, 0, 0, 0); 6]),
+                plane: Some([(false, 0, 0, 0); alphabet::PAIR_PLANES]),
                 carriage,
                 hue,
                 offplane: Self::offplane_zero(),
@@ -180,7 +180,7 @@ impl ClassVector {
     /// The closed class: every coordinate is zero.
     pub fn zero() -> ClassVector {
         ClassVector {
-            plane: Some([(false, 0, 0, 0); 6]),
+            plane: Some([(false, 0, 0, 0); alphabet::PAIR_PLANES]),
             carriage: element::identity_versor(),
             hue: CycleType::Identity,
             offplane: Self::offplane_zero(),
@@ -250,7 +250,7 @@ impl ClassVector {
             }
             1 => {
                 p += 1;
-                let mut pl = [(false, 0u32, 0i64, 0i64); 6];
+                let mut pl = [(false, 0u32, 0i64, 0i64); alphabet::PAIR_PLANES];
                 for slot in &mut pl {
                     let orientation = *k.get(p)? != 0;
                     p += 1;
@@ -439,7 +439,7 @@ impl ClassVector {
             }
             Axis::OffPlane => {
                 self.offplane = Self::offplane_zero();
-                self.plane = Some([(false, 0, 0, 0); 6]);
+                self.plane = Some([(false, 0, 0, 0); alphabet::PAIR_PLANES]);
             }
             Axis::Hue => self.hue = CycleType::Identity,
             Axis::Open => {}
@@ -553,16 +553,34 @@ static CLASS_SCHEMA: Schema = Schema {
     segments: &CLASS_SEGMENTS,
 };
 
+/// THE WIDTH OF THE FREE ROW: two prime exponents on every pair plane. It
+/// was `12`, which is `PAIR_PLANES` doubled and written out.
+pub const FREE_ROW: usize = alphabet::PAIR_PLANES * 2;
+
 /// The free part of a holonomy as one row over ℤ: (m5, m13) per plane.
-fn free_row(h: &Word) -> Option<[i64; 12]> {
+///
+/// The columns are named by the LETTERS that carry them rather than by
+/// `7 + p` and `13 + p`, which is the alphabet's layout restated beside
+/// the table that defines it, and the `p < 4` that guarded the second is
+/// the question `pythagorean_13` answers.
+fn free_row(h: &Word) -> Option<[i64; FREE_ROW]> {
     let rep = h.form()?.conjugacy_rep();
-    let mut row = [0i64; 12];
-    for p in 0..6 {
-        row[2 * p] = rep.rot[7 + p];
-        row[2 * p + 1] = match (p < 4, rep.rot.get(13 + p)) {
-            (true, Some(&n)) => n,
-            _ => 0,
-        };
+    let mut row = [0i64; FREE_ROW];
+    let exp = |id: Option<alphabet::LetterId>| {
+        match id.and_then(|l| rep.rot.get(l.raw() as usize)) {
+            Some(&n) => n,
+            // A plane the alphabet carries no such letter on contributes
+            // no exponent, which is zero by the form's own shape.
+            None => 0,
+        }
+    };
+    for (p, plane) in alphabet::SLOT_PLANES_SIX.iter().enumerate() {
+        if let Some(c) = row.get_mut(2 * p) {
+            *c = exp(alphabet::LetterId::pythagorean_5(*plane));
+        }
+        if let Some(c) = row.get_mut(2 * p + 1) {
+            *c = exp(alphabet::LetterId::pythagorean_13(*plane));
+        }
     }
     Some(row)
 }
@@ -576,7 +594,7 @@ pub enum LoopRow {
     /// The loop's finite-order class. CARRIED, because the audit counts
     /// torsion by class and not by loop — see [`rank_of_rows`].
     Torsion(crate::transducer::address::Address),
-    Free([i64; 12]),
+    Free([i64; FREE_ROW]),
     OffPlane(crate::transducer::address::Address),
     /// The loop's class is a chart axis the form opened (I6, 15.5): its
     /// holonomy is the transition on that axis, so it counts on `axes`
@@ -629,7 +647,7 @@ pub fn rank_of_rows(rows: &[LoopRow]) -> Option<Rank> {
     let mut torsion: Keyed<()> = Keyed::new();
     let mut axes: Keyed<()> = Keyed::new();
     let mut offplane: Keyed<()> = Keyed::new();
-    let mut free: Vec<[i64; 12]> = Vec::new();
+    let mut free: Vec<[i64; FREE_ROW]> = Vec::new();
     for r in rows {
         match r {
             LoopRow::Closed => {}

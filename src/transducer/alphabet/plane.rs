@@ -36,25 +36,36 @@ impl PlaneForm {
     /// Occupied plane coordinates in 12.6 slot order: per slot plane,
     /// (orientation on the sensor plane, unit in Z/4, prime-5, prime-13).
     /// Read from the conjugacy representative; orientation lives on slot 0.
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — the reading of absence: 12.6 gives the second moment to four of the six slot planes, so on the other two the form carries no such coordinate and it is zero by the form's own shape"
-    )]
-    pub fn coordinates(&self) -> [(bool, u32, i64, i64); 6] {
+    pub fn coordinates(&self) -> [(bool, u32, i64, i64); PAIR_PLANES] {
         let rep = self.conjugacy_rep();
-        let mut plane = [(false, 0u32, 0i64, 0i64); 6];
+        let mut plane = [(false, 0u32, 0i64, 0i64); PAIR_PLANES];
+        // THE SLOT A COORDINATE LIVES IN IS THE LETTER'S OWN. This read
+        // `rot[1 + p]`, `rot[7 + p]` and `rot[13 + p]`, which is the
+        // alphabet's layout written out a second time beside the table
+        // that defines it; and it tested `p < 4` for the (5,12,13) rotor,
+        // which is the question `pythagorean_13` answers. The writer and
+        // the reader now name the same letter.
+        let exp = |id: Option<LetterId>| match id.and_then(|l| rep.rot.get(l.raw() as usize)) {
+            Some(&n) => n,
+            // 12.6 gives the second moment to some of the slot planes and
+            // not others; a coordinate the alphabet carries no letter for
+            // on this plane is zero by the form's own shape — the reading
+            // of absence, not a value put there for it.
+            None => 0,
+        };
         for (p, slot) in plane.iter_mut().enumerate() {
-            let unit = rep.rot[1 + p].rem_euclid(4) as u32;
-            let m5 = rep.rot[7 + p];
-            // 12.6 gives the second moment to four of the six slot planes;
-            // the other two have no such coordinate, and a coordinate the
-            // form does not carry is zero by the form's own shape — the
-            // reading of absence, not a value put there for them.
-            let m13 = match rep.rot.get(13 + p).copied().filter(|_| p < 4) {
-                Some(m) => m,
-                None => 0,
+            let Some(&pl) = SLOT_PLANES_SIX.get(p) else {
+                continue;
             };
-            *slot = (rep.orientation && p == 0, unit, m5, m13);
+            let unit = exp(LetterId::quarter(pl)).rem_euclid(4) as u32;
+            *slot = (
+                // Orientation is the SENSOR plane's, which is a comparison
+                // of planes and not a test of a slot index against zero.
+                rep.orientation && pl == sensor_plane(),
+                unit,
+                exp(LetterId::pythagorean_5(pl)),
+                exp(LetterId::pythagorean_13(pl)),
+            );
         }
         plane
     }
