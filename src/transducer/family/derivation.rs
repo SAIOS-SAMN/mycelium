@@ -85,8 +85,11 @@ pub fn factor_versor(
         Ok((cited, residue)) => {
             let composed = compose_citations(&adjoined, &cited, &residue)?;
             match rotor_of_versor(v).is_some_and(|t| composed.projective_eq(&t)) {
+                // The residue travels on the tape as its geodesic
+                // (Expansion 1): the operator is unchanged and re-derived,
+                // the spelling is the presentation's shortest.
                 true => Ok(crate::transducer::alphabet::Derivation::factored(
-                    cited, residue, composed,
+                    cited, residue.geodesic(), composed,
                 )),
                 false => {
                     eprintln!("  derivation refused: the citations do not compose to the target");
@@ -308,7 +311,15 @@ fn derivation_of(
 ) -> Option<crate::transducer::alphabet::Derivation> {
     use crate::transducer::alphabet::{Derivation, Word};
     use crate::transducer::factor::Factored;
-    let spelled = || Some(Derivation::spelled(w.clone()));
+    // EVERY RESIDUE LEAVES HERE AS ITS GEODESIC (Expansion 1). The word a
+    // vertex carries on the tape is the one the court replays by rotor
+    // and the one every other mind reads; two minds deriving one rotor
+    // write one tape when both reduce under the same completed
+    // presentation. A12's plane remainder is already canonical on its
+    // plane; the reduction reaches what A12 does not — the commutators
+    // and the sheet across planes — and leaves a single-plane word as it
+    // is.
+    let spelled = || Some(Derivation::spelled(w.geodesic()));
     let held = crystal.generators_at_meet(occupied, budget);
     let Some(target) = w.form() else {
         return spelled();
@@ -326,11 +337,11 @@ fn derivation_of(
         let mut with_words = Vec::new();
         for (i, e) in tape {
             let Some((form, vertex, g, _)) = cited.get(*i) else {
-                return Derivation::spelled(w.clone());
+                return Derivation::spelled(w.geodesic());
             };
             with_words.push(((*form).clone(), (*vertex).clone(), *e, (*g).clone()));
         }
-        Derivation::compose(&with_words, residue)
+        Derivation::compose(&with_words, residue.geodesic())
     };
     match crate::transducer::factor::factor_on_plane(&target, &basis) {
         Factored::Understood(tape) => Some(one(&tape, Word::identity())),

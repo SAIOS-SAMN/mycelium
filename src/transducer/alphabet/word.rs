@@ -124,20 +124,33 @@ impl Word {
         self.rotor().class_key()
     }
 
-    /// The PLANE-LOCAL normal form: unit exponents mod 4, primes as
-    /// spelled, planes in slot order, adjacent runs merged where they
-    /// commute.
+    /// THE GEODESIC SPELLING (Expansion 1): the shortlex-least tape of this
+    /// operator under the alphabet's completed presentation, the operator
+    /// unchanged and re-derived.
     ///
-    /// It said "shortest tape for this vertex" and it is not that (§2.8).
-    /// `normal_form` reduces each plane's run and merges neighbours; it
-    /// applies NO relator across non-adjacent runs and knows nothing of the
-    /// commutators or the sheet conjugation. A tape it leaves alone may
-    /// still shorten under the presentation. `Word::geodesic_under` is the
-    /// reading that does that, against a rule set completed from the stated
-    /// relators, and it is strictly stronger — so this keeps the name it
-    /// earns and the other keeps the claim.
+    /// This was `normal_form()` under this name — the plane-local form,
+    /// which reduces each plane's run and merges neighbours and applies no
+    /// relator across non-adjacent runs, knowing nothing of the sheet
+    /// conjugation — and nothing in the runtime called the reading that
+    /// did more (§2.8, the auditor's row on Expansion 1). The reduction
+    /// runs here, on every spelling that leaves `factor_rotor` and every
+    /// residue a derivation writes, so two minds spelling one rotor write
+    /// one tape.
+    ///
+    /// THE BUDGET IS THE WORD'S OWN EXTENT against the rule set (rule 10).
+    /// A reduction it cuts short, or one `geodesic_under` refuses for
+    /// moving the operator, leaves the normal form as it stands: an exact
+    /// spelling of the same element, not the shortest — a reading, not a
+    /// default stood in for one.
     pub fn geodesic(&self) -> Word {
-        self.normal_form()
+        let nf = self.normal_form();
+        let (rules, _) = crate::transducer::alphabet::rewrite::presentation();
+        let extent = (nf.len() + 1) * (rules.len() + 1) * (nf.len() + 1);
+        let mut budget = crate::physics::Physics::default().stroke_n(extent);
+        match nf.geodesic_under(rules, &mut budget) {
+            Some(g) => g,
+            None => nf,
+        }
     }
 
     /// The formed product `γ` of the tape, built once and memoised.

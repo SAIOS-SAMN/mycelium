@@ -210,6 +210,54 @@ fn a_rule_names_its_plane_only_when_it_has_one() {
     );
 }
 
+/// THE PRESENTATION IS COMPLETED ONCE AND EVERY WORD REDUCES UNDER IT IN
+/// FLIGHT. `Word::geodesic` — the name the plane-local form carried — now
+/// reduces under the alphabet's completed presentation, and
+/// `factor_rotor`'s spelling and a derivation's residue leave as that
+/// geodesic. What the plane-local form cannot do is ORDER: two commuting
+/// runs are one element and two tapes, `q₀₁·q₂₃` and `q₂₃·q₀₁`, and
+/// `normal_form` keeps whichever it was given. Under the completed
+/// presentation the commutator relator orients them to one shortlex-least
+/// tape, so two minds spelling one rotor write one tape — and the
+/// factorisation writes that same tape.
+#[test]
+fn the_presentation_reduces_words_in_flight() {
+    use crate::transducer::alphabet::factor_rotor;
+    use crate::transducer::alphabet::rewrite::{presentation, tape_key};
+    let (rules, finished) = presentation();
+    assert!(*finished, "the alphabet's finite presentation completes under its own extent");
+    assert!(!rules.is_empty());
+
+    let q01 = LetterId::quarter((0, 1)).expect("quarter");
+    let q23 = LetterId::quarter((2, 3)).expect("quarter on the complementary plane");
+    let a = Word::from_letters(&[(q01, false), (q23, false)]);
+    let b = Word::from_letters(&[(q23, false), (q01, false)]);
+    assert!(a.operator_eq(&b), "complementary planes commute: one element");
+    assert_ne!(
+        tape_key(&a.normal_form()),
+        tape_key(&b.normal_form()),
+        "and the plane-local form leaves them two tapes"
+    );
+    let (ga, gb) = (a.geodesic(), b.geodesic());
+    assert!(a.operator_eq(&ga) && b.operator_eq(&gb), "the operator is unchanged");
+    assert_eq!(tape_key(&ga), tape_key(&gb), "one element, one geodesic in flight");
+    assert_eq!(ga.len(), 2, "no shorter spelling exists: {:?}", ga.letters());
+
+    // The seam: the factorisation returns that geodesic, whichever
+    // spelling it was asked from — one tape for one rotor from either
+    // construction.
+    for w in [&a, &b] {
+        let Some(Ok(spelled)) = factor_rotor(&w.rotor()) else {
+            panic!("a double quarter turn is spelled by the seventeen");
+        };
+        assert_eq!(
+            tape_key(&spelled),
+            tape_key(&ga),
+            "the spelling the alphabet constructs is the geodesic the presentation reduces to"
+        );
+    }
+}
+
 /// An orientation of two identical tapes is no rule: there is nothing to
 /// rewrite, and a rule from it would rewrite a word to itself forever.
 #[test]

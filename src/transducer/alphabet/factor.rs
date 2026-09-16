@@ -57,7 +57,12 @@ pub fn factor_rotor(r: &Rotor) -> Option<Result<Word, Demand>> {
     if !word.rotor().projective_eq(r) {
         return Some(Err(standing(r, BLOCK_ORDER[0].0)?));
     }
-    Some(Ok(word.normal_form()))
+    // THE SPELLING IS THE GEODESIC (Expansion 1). The peel writes the
+    // plane rotors in block order, which is a spelling and not the
+    // shortest one: the presentation's relators — the commutators of
+    // complementary planes, the sheet — shorten it, and this is the one
+    // construction every spelling the alphabet produces passes through.
+    Some(Ok(word.geodesic()))
 }
 
 type Quat = [Q; 4];

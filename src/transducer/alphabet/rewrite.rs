@@ -401,6 +401,32 @@ pub fn rule_plane(r: &Rule) -> Option<(u8, u8)> {
     held
 }
 
+/// THE ALPHABET'S OWN PRESENTATION, COMPLETED ONCE (Expansion 1). The
+/// finite relators the alphabet states — the quarter turns' order, the
+/// commutators of complementary planes, the sheet — oriented into rules
+/// and completed by Knuth–Bendix, so every word the language writes reduces
+/// to one geodesic tape under one system. Held once per process: the
+/// relators are the alphabet's and do not move.
+///
+/// THE BUDGET IS THE SEED'S OWN EXTENT (rule 10): every round of the
+/// completion touches every pair of rules once, and a pair's critical
+/// pairs are bounded by the tapes' lengths, so the spend is sized by the
+/// rules and their letters and not by a number a caller chose. The finite
+/// part of this presentation is a finite group, so the completion
+/// terminates and the bound is a cost cap; a completion that spent it
+/// keeps the rules found — each a theorem re-derived by `holds` — and
+/// says it is not known confluent, which `presentation().1` carries.
+pub fn presentation() -> &'static (Vec<Rule>, bool) {
+    static PRESENTATION: std::sync::OnceLock<(Vec<Rule>, bool)> = std::sync::OnceLock::new();
+    PRESENTATION.get_or_init(|| {
+        let seed = rules_from_relators();
+        let n = seed.len().max(1);
+        let extent: usize = seed.iter().map(|r| r.lhs.len() + r.rhs.len() + 1).sum::<usize>().max(1);
+        let mut budget = crate::physics::Physics::default().stroke_n(n * n * n * extent);
+        complete(&seed, &mut budget)
+    })
+}
+
 /// A rotor's canonical spelling where the seventeen can spell it: the
 /// alphabet's own factorisation, which is a CONSTRUCTION from the algebra
 /// and not a search over tapes. Where they cannot, the rotor is an adjoined
