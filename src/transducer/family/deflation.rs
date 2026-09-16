@@ -44,14 +44,15 @@ pub fn form_deflation_at(
     }
     let mut pay = [0u64; 4];
     let mut remainders = Vec::with_capacity(family.len());
-    for (x, y) in family {
+    for (pi, (x, y)) in family.iter().enumerate() {
         // The refined delta where the pair refines; the raw residual of
         // the two grids where it does not. Both are measured on the pair.
         let before_chain = match crate::arc::refine_delta(x, y) {
             Some(r) => r.delta,
             None => residual_of(Some(x), y),
         };
-        let spoken = apply_form(form, x, placement, crystal);
+        let spoken = apply_form_on(form, x, placement, crystal, Some(pi));
+
         // A speech that does not fit its own frame lays down no grid, so the
         // residual is measured against what the form actually said: nothing.
         let grid = spoken.as_ref().and_then(|s| s.grid());
@@ -348,8 +349,9 @@ pub fn bundle_pressure(
     }
     let mut pairs = Vec::with_capacity(bundle.len());
     let mut sum = [0u64; 4];
-    for (x, y) in bundle {
-        let spoken = apply_form(form, x, &crate::transducer::alphabet::Word::identity(), crystal);
+    for (pi, (x, y)) in bundle.iter().enumerate() {
+        let spoken = apply_form_on(form, x, &crate::transducer::alphabet::Word::identity(), crystal, Some(pi));
+
         // A speech that does not fit its own frame lays down no grid, so the
         // residual is measured against what the form actually said: nothing.
         let grid = spoken.as_ref().and_then(|s| s.grid());

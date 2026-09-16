@@ -392,6 +392,16 @@ pub fn gauge_eq(a: &[(u8, u8)], b: &[(u8, u8)]) -> bool {
     }
 }
 
+/// Do two listings agree where they meet? True if neither sends any hue to
+/// two different images.
+pub fn gauge_agrees(a: &[(u8, u8)], b: &[(u8, u8)]) -> bool {
+    match (hue_table(a), hue_table(b)) {
+        (Some(x), Some(y)) => matches!(hue_agreement(&x, &y), HueAgreement::Agreed(_)),
+        _ => false,
+    }
+}
+
+
 /// `second ∘ first` on the union of listed hues; a hue absent from a map
 /// is fixed by that map. The listing holds non-fixed points only.
 pub(crate) fn compose_gauge(second: &[(u8, u8)], first: &[(u8, u8)]) -> Vec<(u8, u8)> {

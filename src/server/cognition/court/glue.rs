@@ -128,7 +128,7 @@ impl Kernel {
                 crate::transducer::element::shape_of_chain(spoken.sub()),
             );
             let tr = crate::transducer::cech::transition(w, &spoken);
-            match tr.as_ref().and_then(|g| crate::transducer::cech::rotor_of(g)) {
+            match tr.as_ref().and_then(crate::transducer::cech::rotor_of) {
                 Some(g) => {
                     let carriage = match tr.as_ref().and_then(|el| el.versor()) {
                         Some(c) => c,

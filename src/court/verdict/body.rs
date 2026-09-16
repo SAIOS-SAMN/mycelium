@@ -72,10 +72,17 @@ fn cell_key(r: i64, c: i64) -> Vec<u8> {
 
 /// 50.1 step 1 on one pair: `(V · W · γ) · B_in = B_out` under exact
 /// cellular equality, for every body of the vertex's chart on `x`.
-pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carried {
+pub(crate) fn vertex_carries_pair(
+    vertex: &Vertex,
+    x: &Grid,
+    y: &Grid,
+    pair: usize,
+    sections: &Keyed<Vec<u16>>,
+) -> Carried {
     let Vertex::Word { derivation, contact, acts, .. } = vertex else {
         return Carried::Silent;
     };
+
     let rotor = derivation.rotor();
     // A contact vertex is placed by its orbit, not its carriage; the
     // orbit's own replay (`REFUSE_ORBIT_STILL`) is its reconstruction.
@@ -93,9 +100,19 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
     // fault; a vertex silent on every member is `Silent` exactly as one with
     // an empty fiber was.
     let mut spoke = false;
+    let tc_key = crate::transducer::family::transport_class(vertex).map(|tc| tc.key());
     // The chart every refusal below names is THE MEMBER'S OWN, so the court
     // refuses at the coordinate that actually failed.
     for (_, member) in acts.scoped() {
+        if let Some(k) = &tc_key {
+            let mut mk = k.clone();
+            crate::transducer::address::put_bytes(&mut mk, &member.chart.key());
+            if let Some(mps) = sections.get(&mk) {
+                if !mps.contains(&(pair as u16)) {
+                    continue;
+                }
+            }
+        }
         let at = || member.chart.clone();
         let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else {
             return Carried::Fails(FAIL_NO_VERSOR, at());
@@ -110,6 +127,7 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
                 let Some(p) = element::carry_center(&versor, r, c) else {
                     return Carried::Fails(FAIL_NO_CARRY, at());
                 };
+
                 // A centre the sensor cannot convert is not a cell at all
                 // (W6) — the transport left the sensor's own geometry.
                 let Some((tr, tc)) = element::cell_of(&p) else {
@@ -179,8 +197,18 @@ fn form_covers_cells(
         if only.as_ref().is_some_and(|ps| !ps.contains(&(pair as u16))) {
             continue;
         }
+        let tc_key = crate::transducer::family::transport_class(v).map(|tc| tc.key());
         let rotor = derivation.rotor();
         for (_, member) in acts.scoped() {
+            if let Some(k) = &tc_key {
+                let mut mk = k.clone();
+                crate::transducer::address::put_bytes(&mut mk, &member.chart.key());
+                if let Some(mps) = f.sections.get(&mk) {
+                    if !mps.contains(&(pair as u16)) {
+                        continue;
+                    }
+                }
+            }
             let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else { continue; };
             for b in fiber_on(&bodies, &member.chart) {
                 for &(r, c, h) in &b.cells {
@@ -219,7 +247,7 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
             if only.as_ref().is_some_and(|ps| !ps.contains(&(pair as u16))) {
                 continue;
             }
-            if let Carried::Fails(why, chart) = vertex_carries_pair(v, x, y) {
+            if let Carried::Fails(why, chart) = vertex_carries_pair(v, x, y, pair, &f.sections) {
                 if why == FAIL_PART {
                     let uncovered = perceive(y).into_iter().any(|image| {
                         if image.moduli == chart {

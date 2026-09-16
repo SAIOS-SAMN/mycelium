@@ -280,14 +280,16 @@ fn glue_records_true_geometric_section_and_edge_carriage() {
     own.court_stroke(one_stroke_transport);
     let cx = own.complexes().get(&inv.key()).expect("complex exists");
     let own_sec = cx.sections.get(me.as_slice()).expect("own section exists");
-    assert_eq!(
-        own_sec.gamma,
-        spoken.carried_rotor().unwrap_or_else(crate::transducer::alphabet::Rotor::identity)
-    );
-    assert_eq!(
-        own_sec.carriage,
-        spoken.versor().unwrap_or_else(crate::transducer::element::identity_versor)
-    );
+    let exp_gamma = match spoken.carried_rotor() {
+        Some(r) => r,
+        None => crate::transducer::alphabet::Rotor::identity(),
+    };
+    let exp_carriage = match spoken.versor() {
+        Some(c) => c,
+        None => crate::transducer::element::identity_versor(),
+    };
+    assert_eq!(own_sec.gamma, exp_gamma);
+    assert_eq!(own_sec.carriage, exp_carriage);
 
     // A peer arrives with spoken
     let mut heard = Kernel::new();
@@ -298,13 +300,7 @@ fn glue_records_true_geometric_section_and_edge_carriage() {
 
     let cx_h = heard.complexes().get(&inv.key()).expect("complex exists");
     let peer_sec = cx_h.sections.get(peer_id.as_slice()).expect("peer section exists");
-    assert_eq!(
-        peer_sec.gamma,
-        spoken.carried_rotor().unwrap_or_else(crate::transducer::alphabet::Rotor::identity)
-    );
-    assert_eq!(
-        peer_sec.carriage,
-        spoken.versor().unwrap_or_else(crate::transducer::element::identity_versor)
-    );
+    assert_eq!(peer_sec.gamma, exp_gamma);
+    assert_eq!(peer_sec.carriage, exp_carriage);
 }
 

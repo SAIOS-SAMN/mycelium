@@ -113,6 +113,18 @@ pub fn apply_form(
     placement: &crate::transducer::alphabet::Word,
     crystal: &dyn Crystal,
 ) -> Option<Speech> {
+    apply_form_on(f, x, placement, crystal, None)
+}
+
+/// Speak a form onto a grid of a specific pair of a family: only members
+/// active on that pair are spoken.
+pub fn apply_form_on(
+    f: &Form,
+    x: &Grid,
+    placement: &crate::transducer::alphabet::Word,
+    crystal: &dyn Crystal,
+    pair: Option<usize>,
+) -> Option<Speech> {
     let fx = frame_of(x);
     let fy = output_frame(fx, f.ratio);
     let bodies = perceive(x);
@@ -139,6 +151,15 @@ pub fn apply_form(
             // one member's carriage and applying it to another chart's bodies
             // would carry a body by a versor measured on a different one.
             Vertex::Word { derivation, acts, .. } => {
+                let tc_key = crate::transducer::family::transport_class(v).map(|tc| tc.key());
+                if let (Some(k), Some(pi)) = (&tc_key, pair) {
+                    if let Some(only) = f.sections.get(k) {
+                        if !only.contains(&(pi as u16)) {
+                            unspoken.push(vi as u16);
+                            continue;
+                        }
+                    }
+                }
                 // The action composes: the placement's rotor times the
                 // vertex's own (L14), so a cited vertex speaks its body
                 // without resolving a citation. The rotor is the VERTEX's and
@@ -150,9 +171,19 @@ pub fn apply_form(
                 // absence as a demand is D8's move, not this one.
                 let mut spoke = false;
                 for (_, member) in acts.scoped() {
+                    if let (Some(k), Some(pi)) = (&tc_key, pair) {
+                        let mut mk = k.clone();
+                        crate::transducer::address::put_bytes(&mut mk, &member.chart.key());
+                        if let Some(mps) = f.sections.get(&mk) {
+                            if !mps.contains(&(pi as u16)) {
+                                continue;
+                            }
+                        }
+                    }
                     let Some(versor) = element::conformal_of_rotor(&r, &member.carriage) else {
                         continue;
                     };
+
                     let hits = atlas.fiber(&member.chart);
                     if hits.is_empty() {
                         continue;

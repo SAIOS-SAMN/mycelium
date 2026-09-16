@@ -181,3 +181,30 @@ fn a_carried_edge_rederives_on_the_union_or_is_refused() {
         "the identity edge re-derives on the pair it is measured on"
     );
 }
+
+/// R77: MEMBER REPLAY IS SCOPED TO ACTIVE CHART SECTIONS.
+///
+/// When a rule vertex carries multiple member charts in `acts` (e.g. Chart A
+/// from pair 0, Chart B from pair 1), `matching_pairs_for` previously returned
+/// `[0, 1]` because an unmeasured chart defaulted to `None => true`.
+/// During court replay, the court attempted to replay Member B on pair 0
+/// against an unrelated body of Chart B present in the input grid, causing
+/// `REFUSE_VERTEX_BODY` (517 occurrences on fleet).
+/// With scoped chart sections, Member B is active only on pair 1, so pair 0
+/// replays only Member A and the sentence is accepted.
+#[test]
+fn member_replay_is_scoped_to_active_chart_sections() {
+    let family = vec![
+        (digits(&["1100", "1100", "3000"]), digits(&["2200", "2200", "3000"])),
+        (digits(&["3000", "0000", "0000"]), digits(&["0000", "0000", "0040"])),
+    ];
+    let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("multi-member rule extracts");
+    let e = mint_sentence(&rule, &family, &NoCrystal, 0).expect("sentence mints");
+    assert_eq!(
+        replay_form_with(&e, &|_| None, Some(&family), &NoCrystal),
+        None,
+        "court replays multi-member rule when input scene has bodies of the other chart"
+    );
+}
+

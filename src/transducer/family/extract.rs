@@ -603,6 +603,16 @@ pub fn extract_rule_with(
             }
         }
     }
+    let pair_charts: Vec<crate::network::nerve::Keyed<()>> = family
+        .iter()
+        .map(|(x, _)| {
+            let mut charts = crate::network::nerve::Keyed::new();
+            for b in perceive(x) {
+                charts.insert(b.moduli.key(), ());
+            }
+            charts
+        })
+        .collect();
     let matching_pairs_for = |k: &[u8], pairs: &[u16], acts: &crate::network::nerve::Keyed<crate::transducer::sentence::Acting>| -> Vec<u16> {
         pairs
             .iter()
@@ -633,19 +643,25 @@ pub fn extract_rule_with(
                     crate::transducer::address::put_bytes(&mut pk, &ck);
                     pk.extend_from_slice(&pi.to_le_bytes());
                     match pair_member.get(&pk) {
-                        // A chart this pair has no member for is a chart the
-                        // vertex does not act on there, and it contradicts
-                        // nothing (the `Silent` reading the court makes).
-                        None => true,
+                        // A chart this pair has no member for: a pair cannot
+                        // be claimed if pair_member has None for a chart while
+                        // the scene carries bodies of that chart.
+                        None => {
+                            let has_chart = pair_charts
+                                .get(pi as usize)
+                                .is_some_and(|pc| pc.contains(&ck));
+                            !has_chart
+                        }
                         Some(pm) => {
                             element::same_versor(&a.carriage, &pm.carriage)
-                                && crate::transducer::sentence::gauge_eq(&a.gauge, &pm.gauge)
+                                && crate::transducer::sentence::gauge_agrees(&a.gauge, &pm.gauge)
                         }
                     }
                 })
             })
             .collect()
     };
+
     let mut sections: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
     let mut rule_vertices = vec![frame_vertex()];
     for (k, pairs) in class_pairs.scoped() {
@@ -704,6 +720,29 @@ pub fn extract_rule_with(
             };
             sections.insert(&k, ps);
         }
+        for (ck, a) in acts.scoped() {
+            let mut mk = k.clone();
+            crate::transducer::address::put_bytes(&mut mk, &ck);
+            let mps: Vec<u16> = pairs
+                .iter()
+                .copied()
+                .filter(|&pi| {
+                    let mut pk = mk.clone();
+                    pk.extend_from_slice(&pi.to_le_bytes());
+                    match pair_member.get(&pk) {
+                        None => false,
+                        Some(pm) => {
+                            element::same_versor(&a.carriage, &pm.carriage)
+                                && crate::transducer::sentence::gauge_agrees(&a.gauge, &pm.gauge)
+                        }
+                    }
+                })
+                .collect();
+            if mps.len() < n_pairs {
+                sections.insert(&mk, mps);
+            }
+        }
+
         let v = Vertex::Word {
             address: address.clone(),
             derivation: derivation.clone(),
@@ -991,6 +1030,28 @@ pub fn extract_rule_with(
                 let tk = tc.key();
                 if let (Some(pairs), Vertex::Word { acts, .. }) = (class_pairs.get(&tk), &form.vertices[vi]) {
                     sections.insert(tk.clone(), matching_pairs_for(&tk, pairs, acts));
+                    for (ck, a) in acts.scoped() {
+                        let mut mk = tk.clone();
+                        crate::transducer::address::put_bytes(&mut mk, &ck);
+                        let mps: Vec<u16> = pairs
+                            .iter()
+                            .copied()
+                            .filter(|&pi| {
+                                let mut pk = mk.clone();
+                                pk.extend_from_slice(&pi.to_le_bytes());
+                                match pair_member.get(&pk) {
+                                    None => false,
+                                    Some(pm) => {
+                                        element::same_versor(&a.carriage, &pm.carriage)
+                                            && crate::transducer::sentence::gauge_agrees(&a.gauge, &pm.gauge)
+                                    }
+                                }
+                            })
+                            .collect();
+                        if mps.len() < n_pairs {
+                            sections.insert(mk, mps);
+                        }
+                    }
                 }
             }
         }
