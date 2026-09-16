@@ -245,19 +245,66 @@ k.heard_mark(&other, &elsewhere);
 
 let have = k.fetch_have(&here);
 assert!(have.contains(&mine), "the address heard under this chart is held: {have:?}");
-assert!(
-    !have.contains(&other),
-    "the address heard under another chart could never match a fetch here: {have:?}"
-);
+    assert!(!have.contains(&other), "the address heard under another chart could never match a fetch here: {have:?}");
 
-// Re-marked under another chart, an address leaves the old fiber: an
-// index that only grows answers a stratum with addresses no longer heard
-// under it.
-k.heard_mark(&mine, &elsewhere);
-let have = k.fetch_have(&here);
-assert!(
-    !have.contains(&mine),
-    "it moved charts and left this one's fiber: {have:?}"
-);
-assert!(k.fetch_have(&elsewhere).contains(&mine), "and joined the other's");
+    // Re-marked under another chart, an address leaves the old fiber: an
+    // index that only grows answers a stratum with addresses no longer heard
+    // under it.
+    k.heard_mark(&mine, &elsewhere);
+    let have = k.fetch_have(&here);
+    assert!(
+        !have.contains(&mine),
+        "it moved charts and left this one's fiber: {have:?}"
+    );
+    assert!(k.fetch_have(&elsewhere).contains(&mine), "and joined the other's");
 }
+
+/// R76: A GLUED SPOKEN WORD SECTIONS AND EDGES WITH TRUE GEOMETRY.
+/// `cx.set_section` and `cx.set_edge` receive the carried rotor and versor
+/// from the spoken element and transition.
+#[test]
+fn glue_records_true_geometric_section_and_edge_carriage() {
+    let me = [0x0au8; 32];
+    let peer_id = [0x0bu8; 32];
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
+
+    let mut own = Kernel::new();
+    own.bind_identity(me);
+    assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut own, &a, &b, [2; 32]), Outcome::GermPending);
+    let spoken = own.provisional.scoped().next().unwrap().1.clone();
+    let inv = crate::transducer::stalk::invariant_of(&spoken);
+
+    // Ruling own provisional creates own_section with spoken's geometry
+    own.court_stroke(one_stroke_transport);
+    let cx = own.complexes().get(&inv.key()).expect("complex exists");
+    let own_sec = cx.sections.get(me.as_slice()).expect("own section exists");
+    assert_eq!(
+        own_sec.gamma,
+        spoken.carried_rotor().unwrap_or_else(crate::transducer::alphabet::Rotor::identity)
+    );
+    assert_eq!(
+        own_sec.carriage,
+        spoken.versor().unwrap_or_else(crate::transducer::element::identity_versor)
+    );
+
+    // A peer arrives with spoken
+    let mut heard = Kernel::new();
+    heard.bind_identity(me);
+    let mut cover = crate::network::nerve::Cover::new();
+    let outcome = heard.glue_fetched(spoken.clone(), peer_id, me, &mut cover);
+    assert!(matches!(outcome, Glue::Admitted));
+
+    let cx_h = heard.complexes().get(&inv.key()).expect("complex exists");
+    let peer_sec = cx_h.sections.get(peer_id.as_slice()).expect("peer section exists");
+    assert_eq!(
+        peer_sec.gamma,
+        spoken.carried_rotor().unwrap_or_else(crate::transducer::alphabet::Rotor::identity)
+    );
+    assert_eq!(
+        peer_sec.carriage,
+        spoken.versor().unwrap_or_else(crate::transducer::element::identity_versor)
+    );
+}
+

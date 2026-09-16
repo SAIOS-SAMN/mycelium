@@ -65,22 +65,23 @@ impl Kernel {
             None => crate::transducer::cech::Complex::new(),
         };
         let vol0 = self.volume_of_cell(&inv);
-        let peer_gamma = if spoken.is_translation() {
-            // A translation that spells no letters carries the identity
-            // rotor, which is what "no rotation" is.
-            match spoken.letters() {
-                Some(l) => l.spelling.word.rotor(),
+        let (peer_gamma, peer_carriage) = (
+            match spoken.carried_rotor() {
+                Some(r) => r,
                 None => crate::transducer::alphabet::Rotor::identity(),
-            }
-        } else {
-            crate::transducer::alphabet::Rotor::identity()
-        };
+            },
+            match spoken.versor() {
+                Some(v) => v,
+                None => crate::transducer::element::identity_versor(),
+            },
+        );
         cx.set_section(
             peer,
-            // The peer's section carries a rotation and no placement (its
-            // translation's letters have none), so the carriage is the
-            // identity — true of it, not stood in for.
-            crate::transducer::cech::Section::at(addr.clone(), peer_gamma),
+            crate::transducer::cech::Section {
+                addr: addr.clone(),
+                gamma: peer_gamma,
+                carriage: peer_carriage,
+            },
             vol0,
         );
         let self_rep = cx.sections.get(self_id.as_slice()).map(|s| s.addr.clone());
@@ -126,14 +127,21 @@ impl Kernel {
                 crate::transducer::element::shape_of_chain(w.sub()),
                 crate::transducer::element::shape_of_chain(spoken.sub()),
             );
-            match crate::transducer::cech::transition(w, &spoken).and_then(|g| crate::transducer::cech::rotor_of(&g)) {
-                Some(g) => cx.set_edge(
-                    v,
-                    peer.as_slice(),
-                    g,
-                    crate::transducer::element::identity_versor(),
-                    vol0,
-                ),
+            let tr = crate::transducer::cech::transition(w, &spoken);
+            match tr.as_ref().and_then(|g| crate::transducer::cech::rotor_of(g)) {
+                Some(g) => {
+                    let carriage = match tr.as_ref().and_then(|el| el.versor()) {
+                        Some(c) => c,
+                        None => crate::transducer::element::identity_versor(),
+                    };
+                    cx.set_edge(
+                        v,
+                        peer.as_slice(),
+                        g,
+                        carriage,
+                        vol0,
+                    );
+                }
                 None => match bodies {
                     (Some(a), Some(b)) => match crate::transducer::blade::versor_between(&a, &b) {
                         Some(between)
@@ -154,7 +162,7 @@ impl Kernel {
                         None => {}
                     },
                     _ => {
-                        if crate::transducer::cech::transition(w, &spoken).is_some() {
+                        if tr.is_some() {
                             cx.set_remainder_edge(v, peer.as_slice());
                         }
                     }
@@ -459,12 +467,28 @@ impl Kernel {
             Some(c) => c,
             None => crate::transducer::cech::Complex::new(),
         };
+        let (self_gamma, self_carriage) = match self.word_at(addr) {
+            Some(w) => (
+                match w.carried_rotor() {
+                    Some(r) => r,
+                    None => crate::transducer::alphabet::Rotor::identity(),
+                },
+                match w.versor() {
+                    Some(v) => v,
+                    None => crate::transducer::element::identity_versor(),
+                },
+            ),
+            None => (
+                crate::transducer::alphabet::Rotor::identity(),
+                crate::transducer::element::identity_versor(),
+            ),
+        };
         cx.set_section(
             me,
             crate::transducer::cech::Section {
                 addr: addr.clone(),
-                gamma: crate::transducer::alphabet::Rotor::identity(),
-                carriage: crate::transducer::element::identity_versor(),
+                gamma: self_gamma,
+                carriage: self_carriage,
             },
             vol,
         );
