@@ -137,3 +137,22 @@ fn a_chain_measures_three_lanes_and_never_the_span() {
     assert_eq!(measure_lanes(&long)[2], 0, "a longer chain is not an older one");
     assert_eq!(measure_lanes(&[])[2], 0, "and an empty one is not either");
 }
+
+#[test]
+fn reduction_magnitude_has_law_12_parity_with_axes_for_offplane_and_letters() {
+    use crate::transducer::alphabet::{LetterId, Word};
+    // An off-plane rotor on plane (2, 3)
+    let w = Word::from_letters(&[(LetterId::quarter((2, 3)).expect("offplane quarter"), false)]);
+    let mut e = Element::identity();
+    e.action.rotor = Some(w.rotor());
+    assert_eq!(e.axes(), vec![FIBER_SPATIAL], "axes reports occupied spatial stratum");
+    assert_eq!(e.reduction_magnitude()[0], 1, "reduction_magnitude reports spatial=1 in exact parity with axes");
+
+    // Letters with sigma permutation from a connection
+    let id = Word::identity();
+    let remainder = vec![(0, 0, 1u8, 2u8)];
+    let conn = from_connection(&id, &identity_versor(), &[(1, 2), (2, 1)], &remainder, [0, 1, 0, 0])
+        .expect("connection spells");
+    assert_eq!(conn.axes(), vec![FIBER_GAUGE], "axes reports occupied gauge stratum");
+    assert_eq!(conn.reduction_magnitude()[1], 1, "reduction_magnitude reports gauge=1 in exact parity with axes");
+}

@@ -662,11 +662,19 @@ impl Element {
         out
     }
 
-    /// Descent order: a non-identity versor occupies 𝒮, a nonempty
-    /// permutation occupies 𝒢.
+    /// Descent order: a non-identity versor or off-plane rotor occupies 𝒮,
+    /// a nonempty permutation occupies 𝒢 (Law 12 parity with `axes`).
     pub fn reduction_magnitude(&self) -> [u64; 4] {
-        let spatial = u64::from(self.versor().is_some_and(|v| !same_versor(&v, &identity_versor())));
-        let gauge = u64::from(!self.action.gauge.is_empty());
+        let spatial = u64::from(
+            self.versor().is_some_and(|v| !same_versor(&v, &identity_versor()))
+                || self.carried_rotor().is_some_and(|r| !r.is_identity()),
+        );
+        let g_empty = if let Some(letters) = self.letters() {
+            letters.sigma.is_empty()
+        } else {
+            self.action.gauge.is_empty()
+        };
+        let gauge = u64::from(!g_empty);
         [spatial, gauge, 0, 0]
     }
 
