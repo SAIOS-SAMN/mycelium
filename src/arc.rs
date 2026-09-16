@@ -136,21 +136,6 @@ fn gcd(a: usize, b: usize) -> usize {
     if b == 0 { a } else { gcd(b, a % b) }
 }
 
-/// THE PULLBACK along ρ⁻¹: the grid read on a complex of `h × w` cells,
-/// each output cell taking the input cell that contains its min corner.
-/// Exact integer arithmetic; the identity when the frames agree.
-pub fn embed(g: &Grid, h: usize, w: usize) -> Grid {
-    let (gh, gw) = (g.len(), grid_width(g));
-    // A grid with no cell embeds as no grid. The floors of one here were
-    // standing in for that: `h × w` cells read off an empty grid is not a
-    // pullback, and the index would have taken a row that is not there.
-    if gh == 0 || gw == 0 {
-        return Grid::new();
-    }
-    (0..h).map(|r| (0..w).map(|c| g[r * gh / h][c * gw / w]).collect()).collect()
-}
-
-
 /// THE MEASURED FRAME of a pair: four exact counts, never a ratio and never
 /// a guess. The ratio is derived from them by `frame_ratio`, and a word at a
 /// frame that is not (1,1) is a DIFFERENT word from its planar shadow.

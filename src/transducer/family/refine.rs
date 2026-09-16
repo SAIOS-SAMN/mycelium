@@ -31,16 +31,32 @@ pub struct CommonRefinement {
     pub scale_out: (usize, usize),
 }
 
+/// THE MAXIMUM CELLS IN A COMMON REFINEMENT COMPLEX (rule 10).
+/// Grids in the ARC sensor plane are at most 30×30. Real geometric
+/// homotheties (e.g. 2:3, 3:4, 1:2) have lcm ≤ 60 and |K_lcm| ≤ 3600.
+/// Incommensurate frame transitions (e.g. 29×30 with lcm = 870 and
+/// 756,900 coordinates) are not cellular refinements and refuse (rule 11)
+/// rather than exploding memory and economic pay.
+pub const MAX_LCM_AXIS: usize = 60;
+pub const MAX_LCM_CELLS: usize = 3600;
+
 impl CommonRefinement {
     /// `None` on an empty extent: a grid with no rows or no columns embeds in
     /// nothing, and a refinement of it would be a complex invented for a
     /// scene that is not there (rule 11).
+    ///
+    /// Also `None` when the least common multiple exceeds `MAX_LCM_AXIS` or
+    /// `MAX_LCM_CELLS`: incommensurate grids have no finite common refinement
+    /// on this base and refuse under rule 10.
     pub fn of(h_in: usize, w_in: usize, h_out: usize, w_out: usize) -> Option<CommonRefinement> {
         if h_in == 0 || w_in == 0 || h_out == 0 || w_out == 0 {
             return None;
         }
         let lcm_h = num_integer::lcm(h_in, h_out);
         let lcm_w = num_integer::lcm(w_in, w_out);
+        if lcm_h > MAX_LCM_AXIS || lcm_w > MAX_LCM_AXIS || lcm_h * lcm_w > MAX_LCM_CELLS {
+            return None;
+        }
         Some(CommonRefinement {
             lcm_h,
             lcm_w,
@@ -58,9 +74,7 @@ impl CommonRefinement {
         h_out: usize,
         w_out: usize,
     ) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
-        if h_in == 0 || w_in == 0 {
-            return None;
-        }
+        Self::of(h_in, w_in, h_out, w_out)?;
         let q = |n: usize, d: usize| {
             num_rational::BigRational::new(
                 num_bigint::BigInt::from(n),
@@ -229,27 +243,6 @@ pub fn family_ratio(family: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, 
     ratio
 }
 
-/// The isotropic conformal dilator D(ρ) for a family when rh == rw,
-/// riding as an exact versor in Cl(3,1). None when anisotropic or unity.
-pub fn family_dilator(family: &[(Grid, Grid)]) -> Option<crate::transducer::cga::Mv> {
-    use num_traits::One;
-    let mut ratio: Option<num_rational::BigRational> = None;
-    for (a, b) in family {
-        let (hi, wi) = extent(a)?;
-        let (ho, wo) = extent(b)?;
-        let (rh, rw) = CommonRefinement::ratio(hi, wi, ho, wo)?;
-        if rh != rw || rh.is_one() {
-            return None;
-        }
-        match &ratio {
-            None => ratio = Some(rh),
-            Some(held) if *held != rh => return None,
-            _ => {}
-        }
-    }
-    ratio.map(|r| crate::transducer::cga::dilator(&r))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -332,5 +325,14 @@ mod tests {
         let a: Grid = vec![vec![1, 1], vec![1]];
         let b: Grid = vec![vec![2, 2], vec![2, 2]];
         assert!(r.bipartite_cochain(&a, &b).is_none());
+    }
+
+    /// Incommensurate frames whose least common multiple exceeds the complex
+    /// bound refuse (rules 10 and 11) rather than expanding hundreds of
+    /// thousands of cells.
+    #[test]
+    fn incommensurate_frames_refuse_refinement() {
+        assert!(CommonRefinement::of(29, 29, 30, 30).is_none());
+        assert!(CommonRefinement::ratio(29, 29, 30, 30).is_none());
     }
 }
