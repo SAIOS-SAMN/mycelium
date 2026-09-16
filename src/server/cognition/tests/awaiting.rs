@@ -203,6 +203,63 @@ fn a_ruling_that_did_not_happen_rehears_nothing() {
     );
 }
 
+/// A RULED WORD IS FILED WHERE IT ACTS, so the one reader of the axis
+/// index can find it.
+///
+/// `ruled_admit` filed at `invariant_of(w)` — the sentence's own chart,
+/// `chart_of_form`, which leads with `2` and is a projection of what the
+/// form holds. `candidates_for` asks the crystal under the charts a
+/// loop's face vertices act on, which are body charts leading `1`, and
+/// `on_axis_of` peels rather than descending a fiber, so no peel from a
+/// body chart can ever reach a form chart. Everything this court filed
+/// was unreachable by the only reader of the carrier.
+///
+/// The claim is the coordinate: the word answers at the chart its vertex
+/// acts on.
+#[test]
+fn a_ruled_word_is_filed_at_the_chart_its_vertex_acts_on() {
+    use crate::transducer::sentence::{on_axis_of, ClassVector};
+    use crate::transducer::stalk::Invariant;
+    let chart = Invariant(vec![1, 7, 11]);
+    let w = quarter(1);
+    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    let mut f = Form::default();
+    f.vertices.push(Vertex::word_on(
+        Address::from_bytes([TAG_FORM, 4]),
+        Derivation::spelled(w.clone()),
+        chart.clone(),
+        Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        Vec::new(),
+        None,
+    ));
+    f.faces.push(f.face_of(0, 1).expect("star"));
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    let sentence = as_element_form(&f, [1, 0, 0, 0]).expect("a tape");
+
+    let axes = ClassVector::of_word(&w)
+        .expect("a quarter turn has a class vector")
+        .coordinates();
+    assert!(!axes.is_empty(), "a quarter turn occupies a coordinate");
+
+    let mut k = Kernel::new();
+    assert_eq!(
+        k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&sentence)),
+        vec![crate::anastome::dialogue::SPEECH_STOOD],
+        "the court hears it"
+    );
+    k.rule_all_provisionals();
+    assert!(k.ruled_contains(sentence.address().as_bytes()), "and rules it");
+
+    for ax in &axes {
+        assert!(
+            !on_axis_of(&k.axis_index, &chart, *ax).is_empty(),
+            "the ruled word answers at the chart its vertex acts on, on {ax:?}"
+        );
+    }
+}
+
 /// The docket is keyed by the address waited on and by the sentence
 /// inside it: a voice that speaks one sentence twice waits once, and the
 /// bucket does not grow with repetition (rule 10).

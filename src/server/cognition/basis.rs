@@ -577,12 +577,23 @@ impl Kernel {
                     held.push((
                         inv.clone(),
                         crate::transducer::sentence::words_of_element(w),
+                        crate::transducer::sentence::from_element_form(w),
                     ));
                 }
             }
         }
-        for (inv, words) in held {
-            crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words);
+        // The same admission `ruled_admit` makes, or a refill files at a
+        // coordinate the reader cannot reach and the rebuild undoes the
+        // ruling's own filing.
+        for (inv, words, form) in held {
+            match &form {
+                Some(f) => {
+                    crate::transducer::sentence::admit_words_acting(&mut self.axis_index, f)
+                }
+                None => {
+                    crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words)
+                }
+            }
         }
     }
 

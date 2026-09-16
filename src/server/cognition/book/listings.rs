@@ -613,7 +613,25 @@ impl Kernel {
             // (L16).
             let form = crate::transducer::sentence::from_element_form(w);
             self.ruled.admit(&inv, addr);
-            crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words);
+            // A WORD IS FILED WHERE IT ACTS. This filed at `inv`, the
+            // SENTENCE's own chart — `chart_of_form`, leading `2`, a
+            // projection of what the form holds — while `candidates_for`
+            // asks under the charts a loop's face vertices act on, which
+            // are body charts leading `1`. No prefix bridges the two, and
+            // `on_axis_of` peels rather than descending a fiber, so
+            // everything this court filed was unreachable by the one
+            // reader of the index. `admit_words_acting` is the same
+            // admission the voice makes (L8r); a connection carries no
+            // form and files under its own invariant, which for it is the
+            // rotor's own axes.
+            match &form {
+                Some(f) => {
+                    crate::transducer::sentence::admit_words_acting(&mut self.axis_index, f)
+                }
+                None => {
+                    crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words)
+                }
+            }
             if let Some(f) = form {
                 let a = crate::transducer::address::Address::from(addr.to_vec());
                 let mut ix = std::mem::take(&mut self.generators);

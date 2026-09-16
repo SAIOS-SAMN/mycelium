@@ -90,15 +90,16 @@ impl Epigenome {
         self.shapes.clear();
         for w in &self.genome {
             self.atlas.admit(&crate::transducer::stalk::invariant_of(w), w.address());
-            crate::transducer::sentence::admit_words(
-                &mut self.axis_index,
-                &crate::transducer::stalk::invariant_of(w),
-                &crate::transducer::sentence::words_of_element(w),
-            );
             self.shapes.push(std::sync::OnceLock::new());
         }
         let restored: Vec<crate::transducer::element::Held> = self.genome.clone();
         for w in &restored {
+            // THE SAME ADMISSION THE LIVE PATH MAKES. This filed at the
+            // sentence's own chart while `axis_admit` files where each
+            // vertex ACTS, so every word restored from disk was invisible
+            // to the pivot until it happened to be re-admitted live — and
+            // a fleet client boots from its genome.
+            self.axis_admit(w);
             self.moduli_admit(w);
         }
         self.atlas_len = self.genome.len();
