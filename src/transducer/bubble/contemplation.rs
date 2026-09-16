@@ -80,11 +80,17 @@ pub struct Contemplation {
     pub(crate) now_k: u64,
     /// Mesh-seeded classes, keyed by class key, Standing::Held. Not persisted.
     pub(crate) seeded: Keyed<(Rotor, Order, Standing)>,
-    /// EXPANSION 4 — THE VORTICES BY THEIR OWN COORDINATE: the after-class
-    /// a vortex is held under → the bubbles holding one there. A collapse
-    /// is asked at a class key (`collapse_vortex`), and the bubbles that
-    /// can answer are the ones filed under it — a keyed read, never a walk
-    /// of every bubble asking each whether it holds that class (rule 1).
+    /// EXPANSION 4 — THE VORTICES BY THEIR CANDIDATES: a candidate's key
+    /// (the inner key `vortex_put` writes, a word move's rotor key) → the
+    /// bubbles holding a vortex it is a candidate of. A vortex is held
+    /// under the loop's AFTER-class and decided by a ruled word that is one
+    /// of its candidates; the ruled word knows its own rotor and nothing
+    /// about the class a loop it discharged was left in, so the read is at
+    /// the candidate's key — keyed, never a walk of every bubble asking
+    /// each (rule 1). It was keyed by class and asked at the carried
+    /// rotor's own class, which is never a loop's after-class: on ca485cc
+    /// 28 vortex lines in ten minutes and no collapse.
+    ///
     /// Written where a bubble's incidence is admitted and wherever a pivot
     /// rewrote a form (`refile_vortex`); not persisted, rebuilt as the
     /// other indices are.
@@ -284,45 +290,51 @@ impl Contemplation {
                 m.remove(key);
             }
         }
-        let classes: Vec<Vec<u8>> = b.vortex.scoped().map(|(k, _)| k).collect();
-        for ck in classes {
-            if let Some(m) = self.by_vortex.get_mut(&ck) {
-                m.remove(key);
-            }
-        }
+        self.unfile_vortex(key, &b.candidate_keys());
         self.complex.drop_vertex(key);
     }
 
-    /// THE VORTICES A BUBBLE HOLDS, FILED AT THEIR CLASSES. A pivot rewrites
-    /// the form in place (`take_form`) and may leave a vortex on it that
-    /// was not there when the bubble's incidence was admitted; the index
-    /// is re-read off the bubble at every such site. An entry a collapse
-    /// consumed leaves with it (`collapse_on`); one for a class the bubble
-    /// no longer holds answers `None` at the collapse and is dropped there.
+    /// The bubble leaves the vortex index under each of `cands`.
+    pub(crate) fn unfile_vortex(&mut self, key: &[u8], cands: &[Vec<u8>]) {
+        for ck in cands {
+            if let Some(m) = self.by_vortex.get_mut(ck) {
+                m.remove(key);
+            }
+        }
+    }
+
+    /// THE VORTICES A BUBBLE HOLDS, FILED AT THEIR CANDIDATES. A pivot
+    /// rewrites the form in place (`take_form`) and may leave a vortex on
+    /// it that was not there when the bubble's incidence was admitted; the
+    /// index is re-read off the bubble at every such site. An entry a
+    /// collapse consumed leaves with it (`collapse_on`, the ruling path);
+    /// one for a candidate the bubble no longer holds answers `None` at the
+    /// collapse and is dropped there.
     pub(crate) fn refile_vortex(&mut self, key: &[u8]) {
-        let classes: Vec<Vec<u8>> = match self.bubbles.get(key) {
-            Some(b) => b.vortex.scoped().map(|(k, _)| k).collect(),
+        let cands: Vec<Vec<u8>> = match self.bubbles.get(key) {
+            Some(b) => b.candidate_keys(),
             None => return,
         };
-        for ck in classes {
+        for ck in cands {
             self.by_vortex.nested_insert(&ck, key, ());
         }
     }
 
-    /// EXPANSION 4 — COLLAPSE EVERY VORTEX A ROTOR ANSWERS. A vortex holds
-    /// several certified discharges of one loop; a ruled word whose rotor
-    /// is one of its candidates decides it, and the differences between
-    /// that candidate and the others — rotations the mind measured (37.7)
-    /// — ride out to be adjoined, each with the chart the deciding word
-    /// was met on.
+    /// EXPANSION 4 — COLLAPSE EVERY VORTEX A ROTOR IS A CANDIDATE OF. A
+    /// vortex holds several certified discharges of one loop; a ruled word
+    /// whose rotor is one of its candidates decides it, and the differences
+    /// between that candidate and the others — rotations the mind measured
+    /// (37.7) — ride out to be adjoined, each with the chart the deciding
+    /// word was met on.
     ///
-    /// Read at the vortex's own coordinate: the rotor's class key names
-    /// the bubbles holding a vortex of that class (`by_vortex`), and the
-    /// rotor's own key names the candidate. It was read under the arriving
-    /// word's CHART, which for a learned form is the form's chart and
-    /// shares no prefix with a bubble's body charts, and through
-    /// `cech::rotor_of`, which answers `None` for a form: on 48bfdbd 24
-    /// vortices formed in ten minutes and none was ever asked.
+    /// Read at the candidate's own key: `by_vortex` names the bubbles
+    /// holding a vortex the rotor is a candidate of, and each bubble reads
+    /// the after-class off its own vortices (`collapse_candidate`). Two
+    /// earlier readers never met a vortex: one asked under the arriving
+    /// word's chart through `cech::rotor_of` (48bfdbd, 24 formed, none
+    /// asked); the next asked at the carried rotor's class, which is the
+    /// rotor's conjugacy class and never the after-class a loop was left
+    /// in (ca485cc, 28 lines, none asked).
     pub(crate) fn collapse_on(
         &mut self,
         rotors: &[Rotor],
@@ -331,34 +343,37 @@ impl Contemplation {
     ) -> Vec<(Rotor, Invariant)> {
         let mut out = Vec::new();
         for r in rotors {
-            let Some(ck) = r.class_key() else {
-                continue;
-            };
             let rk = r.key();
-            let holders: Vec<Vec<u8>> = self.by_vortex.link(ck.as_bytes()).map(|(k, _)| k).collect();
+            let holders: Vec<Vec<u8>> = self.by_vortex.link(rk.as_bytes()).map(|(k, _)| k).collect();
             for bk in holders {
+                let before: Vec<Vec<u8>> = match self.bubbles.get(&bk) {
+                    Some(b) => b.candidate_keys(),
+                    // The bubble is gone; its entry leaves.
+                    None => {
+                        self.unfile_vortex(&bk, std::slice::from_ref(&rk.clone().into_vec()));
+                        continue;
+                    }
+                };
                 let collapsed = self
                     .bubbles
                     .get_mut(&bk)
-                    .and_then(|b| b.collapse_vortex(ck.as_bytes(), rk.as_bytes(), by));
+                    .and_then(|b| b.collapse_candidate(rk.as_bytes(), by));
                 match collapsed {
+                    // A collapse cleared the form's vortices: the bubble
+                    // leaves the index under every candidate it held and
+                    // is refiled under what remains.
                     Some(syms) => {
-                        if let Some(m) = self.by_vortex.get_mut(ck.as_bytes()) {
-                            m.remove(&bk);
-                        }
+                        self.unfile_vortex(&bk, &before);
+                        self.refile_vortex(&bk);
                         for s in syms {
                             out.push((s, chart.clone()));
                         }
                     }
-                    // The candidate was not this rotor, or the class is no
-                    // longer held there: nothing collapsed, and an index
-                    // entry for a class the bubble no longer holds leaves.
+                    // No vortex here holds this candidate any more: the
+                    // entry is stale and leaves.
                     None => {
-                        let held = self.bubbles.get(&bk).is_some_and(|b| b.vortex.contains(ck.as_bytes()));
-                        if !held {
-                            if let Some(m) = self.by_vortex.get_mut(ck.as_bytes()) {
-                                m.remove(&bk);
-                            }
+                        if !before.iter().any(|c| c.as_slice() == rk.as_bytes()) {
+                            self.unfile_vortex(&bk, std::slice::from_ref(&rk.clone().into_vec()));
                         }
                     }
                 }
@@ -444,7 +459,7 @@ impl Contemplation {
                 }
             }
         }
-        for (ck, _) in b.vortex.scoped() {
+        for ck in b.candidate_keys() {
             self.by_vortex.nested_insert(&ck, key, ());
         }
     }

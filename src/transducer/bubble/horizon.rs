@@ -70,6 +70,10 @@ impl Contemplation {
         }
         let keys: Vec<Vec<u8>> = self.bubbles.scoped().map(|(k, _)| k).collect();
         for k in keys {
+            let Some(before) = self.bubbles.get(&k).map(|b| b.candidate_keys()) else {
+                continue;
+            };
+            let mut collapsed = false;
             if let Some(b) = self.bubbles.get_mut(&k) {
                 for rec in records {
                     if !b.horizon.contains(&rec.key) {
@@ -82,8 +86,15 @@ impl Contemplation {
                         b.collapse_vortex(&rec.key, &rec.representative.key(), "ruling")
                     {
                         kept.extend(syms);
+                        collapsed = true;
                     }
                 }
+            }
+            // A collapse cleared the form's vortices; the candidate index
+            // follows the bubble (`by_vortex`).
+            if collapsed {
+                self.unfile_vortex(&k, &before);
+                self.refile_vortex(&k);
             }
         }
         n

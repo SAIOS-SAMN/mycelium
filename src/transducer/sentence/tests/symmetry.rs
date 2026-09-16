@@ -80,6 +80,48 @@ fn one_move_spelled_twice_admits_no_freedom() {
     );
 }
 
+/// ONE MOVE SPELLED TWICE IS ONE DISCHARGE, NOT A VORTEX. `candidates_for`
+/// offers a held word on both sides of the chord; where both sides
+/// discharge, the two certificates name one move — the vortex would hold
+/// them as one cell (`vortex_put` keys by the move) and `symmetry` reads
+/// their difference as the identity — so the loop discharges on it rather
+/// than being held under a superposition of one hypothesis, which nothing
+/// could collapse (ca485cc: the same vortex re-formed every stroke for
+/// twenty minutes). Two different words on the same axis are still two.
+#[test]
+fn a_word_discharging_on_both_sides_is_one_discharge_and_two_words_are_a_vortex() {
+    let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
+    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let s = PlaneForm::sheet_word();
+    let sided = |word: &Word, side: Side| PivotCertificate {
+        by: PivotBy::Word { face: 0, word: word.clone(), side },
+        ..cert(Axis::Unit(0), word.clone(), closed.clone())
+    };
+
+    let both_sides = [sided(&q, Side::Right), sided(&q, Side::Left)];
+    let moves = one_per_move(&both_sides);
+    let [only] = moves.as_slice() else {
+        panic!("two sides of one word are one move, got {}", moves.len())
+    };
+    assert_eq!(
+        only.by.move_key(),
+        q.rotor().key().into_vec(),
+        "and the move is that word's"
+    );
+    assert!(
+        matches!(select_discharge(&moves), Discharge::One(_)),
+        "so the loop discharges on it"
+    );
+
+    let two_words = [sided(&q, Side::Right), sided(&s, Side::Right)];
+    let moves = one_per_move(&two_words);
+    assert_eq!(moves.len(), 2, "two words on one axis are two moves");
+    assert!(
+        matches!(select_discharge(&moves), Discharge::Vortex(ref held) if held.len() == 2),
+        "and a vortex of two"
+    );
+}
+
 /// EVERY LOSER IS ITS OWN DEGREE OF FREEDOM. A vortex of three candidates
 /// holds two symmetries against the winner, and they are two — summing them
 /// would be a count deciding (rule 2).

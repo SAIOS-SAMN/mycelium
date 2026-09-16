@@ -513,6 +513,53 @@ impl Bubble {
         Some(symmetries)
     }
 
+    /// THE CANDIDATE KEYS THIS BUBBLE'S VORTICES HOLD: the inner keys of
+    /// `vortex`, which `vortex_put` writes as the discharging move's key
+    /// (a word move's rotor key). The one reader of that coordinate — the
+    /// contemplation files the bubble under each (`by_vortex`) and a
+    /// collapse is asked at one (law 12).
+    pub(crate) fn candidate_keys(&self) -> Vec<Vec<u8>> {
+        let mut out = Vec::new();
+        for (_, cells) in self.vortex.scoped() {
+            for (k, _) in cells.scoped() {
+                out.push(k);
+            }
+        }
+        out
+    }
+
+    /// COLLAPSE EVERY VORTEX HERE THAT HOLDS `word` AS A CANDIDATE. A
+    /// vortex is held under the loop's AFTER-class and a collapse is asked
+    /// at `(class, candidate)`; a ruled word knows its own key and nothing
+    /// about the class a loop it once discharged was left in, so the
+    /// classes are read off this bubble's own vortices — one bubble's
+    /// carrier, never a walk of the contemplation (rule 10). `None` where
+    /// no vortex here holds it.
+    ///
+    /// A collapse clears the form's vortices (`collapse_vortex`), so at
+    /// most one of several classes holding the candidate collapses on one
+    /// call; the loops re-walk under the applied move and re-form what
+    /// still stands.
+    pub(crate) fn collapse_candidate(
+        &mut self,
+        word: &[u8],
+        by: &'static str,
+    ) -> Option<Vec<crate::transducer::alphabet::Rotor>> {
+        let classes: Vec<Vec<u8>> = self
+            .vortex
+            .scoped()
+            .filter(|(_, cells)| cells.contains(word))
+            .map(|(class, _)| class)
+            .collect();
+        let mut out: Option<Vec<crate::transducer::alphabet::Rotor>> = None;
+        for class in classes {
+            if let Some(syms) = self.collapse_vortex(&class, word, by) {
+                out.get_or_insert_with(Vec::new).extend(syms);
+            }
+        }
+        out
+    }
+
     /// Total: the form's remainder carries A5's proof in its own type, so
     /// there is nothing to ask here (§4.4).
     pub(crate) fn take_form(&mut self, f: Form) {

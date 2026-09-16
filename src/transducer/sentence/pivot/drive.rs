@@ -715,7 +715,22 @@ impl Form {
                         );
                     }
                 }
-                match select_discharge(&discharging) {
+                // ONE CERTIFICATE PER MOVE before anything is counted: a
+                // word offered on both sides of the chord and discharging
+                // on both is one move spelled twice (`one_per_move`), and
+                // counting its two certificates as a vortex held the loop
+                // under a superposition nothing could collapse.
+                let moves = one_per_move(&discharging);
+                if moves.len() != discharging.len() {
+                    eprintln!(
+                        "  pivot {:02x}{:02x}… loop {idx} {} certificates spell {} moves",
+                        idea[0],
+                        idea[1],
+                        discharging.len(),
+                        moves.len()
+                    );
+                }
+                match select_discharge(&moves) {
                     Discharge::One(cert) => {
                         self.apply_pivot(&cert);
                         // A18, T21 (iii): THE APPLIED PIVOT MAKES THE MOVE

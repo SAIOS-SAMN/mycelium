@@ -191,6 +191,43 @@ pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
     v.nested_insert(after, k, c);
 }
 
+/// ONE CERTIFICATE PER MOVE. `candidates_for` offers a held word on both
+/// sides of the chord, and where both sides discharge the loop the trial
+/// issues two certificates that name ONE move: a word move is keyed by its
+/// rotor (`PivotBy::move_key`), `vortex_put` holds one cell per such key,
+/// and `symmetry` already rules that an identity difference "is two
+/// spellings of one move rather than two moves". Both sides closing the
+/// loop is the algebra saying the same: `A·g·w⁻¹·B = 1` and `A·w·g·B = 1`
+/// give `g·w⁻¹ = w·g`, one face word reached by two spellings.
+///
+/// `select_discharge` counted certificates, so a word that discharged on
+/// both sides was a two-cell "vortex" of one cell: held on every stroke,
+/// collapsible by nothing — `vortex_put` had folded the two under one key,
+/// `symmetries` had nothing to keep, and the loop it was about was never
+/// pivoted. Measured on ca485cc: `vortex … 2 candidates held, axes
+/// [(Unit(0), Unit(0))]` on the same two bubbles every stroke for twenty
+/// minutes, `collapsed by` 0.
+///
+/// The representative of a move is the certificate of least key —
+/// canonical key order, the order every keyed carrier reads in — and not
+/// the one the trial happened to issue first.
+pub(crate) fn one_per_move(certs: &[PivotCertificate]) -> Vec<PivotCertificate> {
+    let mut by_move: Keyed<Keyed<PivotCertificate>> = Keyed::new();
+    for c in certs {
+        by_move.nested_insert(c.by.move_key(), c.key(), c.clone());
+    }
+    let mut out = Vec::new();
+    for (_, cells) in by_move.scoped() {
+        // index: the certificates of one move, in key order; the least is
+        // the representative.
+        let mut it = cells.scoped();
+        if let Some((_, c)) = Iterator::next(&mut it) {
+            out.push(c.clone());
+        }
+    }
+    out
+}
+
 /// NOTHING IS COMPARED HERE. One certified discharge is the discharge;
 /// several are a vortex, all of them held with their certificates. The μ⃗
 /// of a candidate is not read in this function at all — it was read once,
