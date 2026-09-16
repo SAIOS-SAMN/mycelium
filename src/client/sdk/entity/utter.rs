@@ -368,6 +368,7 @@ impl Entity {
                 e.address().as_bytes(),
             );
             self.file_taught(&e);
+            self.contractions.remove(&e.address());
             if let Some(k) = crate::transducer::sentence::from_element_form(&e)
                 .map(|f| crate::transducer::sentence::form_vertex_key(&f))
             {

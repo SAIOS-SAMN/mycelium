@@ -104,6 +104,8 @@ impl Entity {
             .and_then(|d| mint_sentence(&rule_of_form(form), train, &self.epigenome, d.span()));
         match minted {
             Some(sentence) => {
+                let minted_addr = sentence.address();
+                self.contractions.insert(&minted_addr, certificate.clone());
                 self.contracted.push(Pending { sentence, train: train.to_vec(), task: task.to_vec(), certificate });
             }
             None => eprintln!(
@@ -140,6 +142,7 @@ impl Entity {
         let mut out = Vec::with_capacity(pending.len());
         for p in pending {
             let addr = p.sentence.address();
+            self.contractions.insert(&addr, p.certificate.clone());
             match self.speak_with(std::slice::from_ref(&p.sentence), &p.train, &p.task) {
                 Ok(codes) => {
                     if let [code] = codes.as_slice() {
@@ -196,8 +199,13 @@ impl Entity {
     }
 
     /// The certificate a sentence cites: the contraction that produced the
-    /// form it was minted from, read by the form's vertex key.
+    /// form it was minted from, read by the minted sentence's address or its
+    /// form's vertex key.
     pub(crate) fn certificate_for(&self, e: &Element) -> Option<Contraction> {
+        let addr = e.address();
+        if let Some(c) = self.contractions.get(&addr).cloned() {
+            return Some(c);
+        }
         let k = crate::transducer::sentence::form_vertex_key(
             &crate::transducer::sentence::from_element_form(e)?,
         );

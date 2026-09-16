@@ -120,3 +120,32 @@ fn a_sealed_tape_is_refused_by_the_mind_before_the_wire() {
     assert!(!entity.uttered(e.address().as_bytes()), "never filed as uttered");
     assert_eq!(entity.dialect_len(), 0, "a sealed sentence does not stand");
 }
+
+/// The contraction certificate is indexed by the minted sentence's address,
+/// so `certificate_for` reads it directly when the contracted sentence is
+/// uttered.
+#[test]
+fn contraction_certificate_is_readable_by_minted_address() {
+    let (family, e) = two_bars();
+    let words = words_of(&e);
+    let (refused_addr, refused_chart) = words[0].clone();
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("contracting-cert"));
+    let moved = entity.receive_adjudication(
+        &e,
+        RefusalKind::VertexBody,
+        At::Vertex { address: refused_addr.clone(), chart: refused_chart.clone() },
+        [7; 32],
+        &family,
+        &[3; 32],
+    );
+    assert_eq!(moved, Contracted::Moved);
+    let pending = entity.take_contracted();
+    assert!(!pending.is_empty(), "one contracted sentence pending");
+    for p in &pending {
+        assert_eq!(
+            entity.certificate_for(&p.sentence),
+            Some(p.certificate.clone()),
+            "the minted sentence's certificate is found by its address"
+        );
+    }
+}
