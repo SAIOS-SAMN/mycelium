@@ -172,11 +172,38 @@ impl Element {
     /// word already carries, which the set determines; a word carrying none
     /// opens at the first germinated seat, which is that set's successor
     /// too and not a value invented for it.
+    /// AN AXIS ALREADY HOLDING THIS VERSOR IS THIS AXIS, and opening it
+    /// again is the same axis answered, never a second seat.
+    ///
+    /// This pushed unconditionally. `germinated` has no remover anywhere in
+    /// the tree, its writer `Basis::germinate_fibre` is ungated and fires
+    /// once per stroke per address for as long as a held loop stands
+    /// unclosed on a Twisted chart, and every push re-mints the address and
+    /// is copied by `compose`, by `solution`, and by the court on every
+    /// ruling. A versor is sixteen exact rationals. So one word could carry
+    /// an unbounded list of the SAME opened axis, and nothing would ever
+    /// take one out.
+    ///
+    /// Dormant on the corpus this was found on — `germinated fibre axis`
+    /// fires zero times in twenty-four minutes — so this is the carrier
+    /// bounded at its writer, not a reading that moved.
+    ///
+    /// Projective equality, because a versor and its negation are one
+    /// transport (1.5) and two seats for them would be the same axis twice.
     #[expect(
         clippy::disallowed_methods,
         reason = "rule 4 — the largest index a word carries is a reading of its own axis set, content"
     )]
     pub fn open_axis(&mut self, v: Versor) -> u16 {
+        if let Some((held, _)) = self
+            .action
+            .germinated
+            .iter()
+            .find(|(_, w)| same_versor(w, &v))
+            .map(|(i, w)| (*i, w))
+        {
+            return held;
+        }
         let i = match self.action.germinated.iter().map(|(i, _)| *i).max() {
             Some(m) => m.saturating_add(1).max(FIBER_GERMINATED),
             None => FIBER_GERMINATED,

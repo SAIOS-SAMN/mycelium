@@ -5,6 +5,41 @@ use crate::transducer::element::*;
 use crate::transducer::germinate::germinate;
 use super::common::*;
 
+/// ONE SEAT PER OPENED AXIS, HOWEVER OFTEN IT IS OPENED.
+///
+/// `germinated` has no remover anywhere in the tree and its live writer is
+/// ungated: it fires once per stroke per address while a held loop stands
+/// unclosed on a Twisted chart. So the same versor could take a new seat
+/// on every stroke, each push re-minting the address, and the list is
+/// copied by `compose`, by `solution` and by the court on every ruling.
+/// A versor is sixteen exact rationals.
+///
+/// An axis already holding this transport IS this axis, and a versor and
+/// its negation are one transport (1.5), so the comparison is projective.
+#[test]
+fn opening_one_axis_twice_is_one_axis() {
+    let mut e = Element::identity();
+    let v = translator_versor(3, 4);
+    let first = e.open_axis(v.clone());
+    assert_eq!(e.germinated().len(), 1, "the axis is opened");
+    let again = e.open_axis(v.clone());
+    assert_eq!(again, first, "and opening it again answers the seat it has");
+    assert_eq!(e.germinated().len(), 1, "with no second seat for one transport");
+
+    // The negation is the same transport, so it takes no seat of its own.
+    let neg = v.scale(&num_rational::BigRational::from_integer(num_bigint::BigInt::from(-1)));
+    assert_eq!(e.open_axis(neg), first, "a versor and its negation are one axis");
+    assert_eq!(e.germinated().len(), 1);
+
+    // A DIFFERENT transport is a different axis, or the dedup would be
+    // erasing coordinates rather than bounding a carrier.
+    let other = translator_versor(1, 0);
+    let second = e.open_axis(other);
+    assert_ne!(second, first, "another transport opens another axis");
+    assert_eq!(e.germinated().len(), 2);
+    assert_eq!(e.opened_axes(), vec![first, second]);
+}
+
 // ─── THE GERM CARRIER: centered coboundary chains (post-excision) ───────
 
 /// THE RESIDUAL GERMINATES: a pivot that no motor closes becomes a first-class
