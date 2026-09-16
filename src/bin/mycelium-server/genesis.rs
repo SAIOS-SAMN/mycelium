@@ -174,15 +174,7 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
     };
     if cover_measured {
         k.set_genesis_cover(cover);
-        if k.treasury().bond_of(&vk).is_none() {
-            let staked = k.enroll(vk, cover);
-            eprintln!("[{tag}] genesis bond {cover:?}; staked {staked:?}");
-        }
-        for (who, _) in &genesis.voice {
-            if k.treasury().bond_of(who).is_none() {
-                k.enroll(*who, cover);
-            }
-        }
+        bond_genesis(&mut k, vk, cover, genesis, tag);
     } else if k.treasury().bond_of(&vk).is_none() {
         eprintln!("[{tag}] unbonded; the corpus did not measure a cover");
     }
@@ -193,4 +185,55 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
         k.occupancy()
     );
 }
+}
+
+/// MU-PRODUCT §4 — "A GENESIS ALLOCATION FUNDS OUR CUSTOMER VOICE AND BONDS
+/// OUR HYPHAE." This court, every voice of the genesis, and EVERY HYPHA of
+/// the genesis are bonded here at the cover the corpus measured.
+///
+/// The hyphae were not. Each court enrolled itself and the voices and no
+/// other court, so on every court `bond_of(peer hypha)` was `None`, and
+/// `converge_witness`'s `independent` — a second vantage is "another organ,
+/// bonded … with room on every lane" (47.3) — refused every hypha that
+/// ever answered an offer: on 0fd41ca, 41 offers answered in five minutes,
+/// `Inexact` 0, `Witnessed` 0, every one `AwaitingWitness`. The only
+/// witnesses the fleet ever had were the voices, which are bonded, which
+/// is the self-witnessing R46 removed. A hypha is bonded by the genesis,
+/// on every court that holds the genesis, and the same cover is the same
+/// bond on each — two courts reading one corpus stake one measurement.
+///
+/// An identity already bonded is not re-bonded: what is held is never
+/// re-allocated (§6).
+pub(crate) fn bond_genesis(k: &mut Kernel, vk: [u8; 32], cover: [u64; 4], genesis: &Genesis, tag: &str) {
+    if k.treasury().bond_of(&vk).is_none() {
+        let staked = k.enroll(vk, cover);
+        eprintln!("[{tag}] genesis bond {cover:?}; staked {staked:?}");
+    }
+    for (who, _) in genesis.hypha.iter().chain(genesis.voice.iter()) {
+        if k.treasury().bond_of(who).is_none() {
+            k.enroll(*who, cover);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every hypha of the genesis is bonded on this court at the cover,
+    /// beside the voices and the court itself; a bond already held stands.
+    #[test]
+    fn the_genesis_bonds_every_hypha_and_every_voice_at_the_cover() {
+        let mut k = Kernel::new();
+        let (me, peer, other, voice) = ([1u8; 32], [2u8; 32], [3u8; 32], [9u8; 32]);
+        let cover = [12u64, 3, 0, 20];
+        let genesis = Genesis { hypha: vec![(me, cover), (peer, cover), (other, cover)], voice: vec![(voice, [8, 8, 1, 8])] };
+        bond_genesis(&mut k, me, cover, &genesis, "t");
+        for who in [me, peer, other, voice] {
+            assert_eq!(k.treasury().bond_of(&who), Some(cover), "{who:?} is bonded at the cover");
+        }
+        // Bonded again with another cover: what is held stands (§6).
+        bond_genesis(&mut k, me, [1, 1, 1, 1], &genesis, "t");
+        assert_eq!(k.treasury().bond_of(&peer), Some(cover));
+    }
 }

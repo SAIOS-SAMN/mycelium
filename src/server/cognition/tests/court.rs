@@ -404,6 +404,33 @@ fn a_sentence_declaring_its_unspoken_remainder_is_heard_and_its_demand_listed() 
     assert!(k.court_demands_listed >= 1, "the demand it declared is listed for the market");
 }
 
+/// 47.3 — A BONDED HYPHA IS A SECOND VANTAGE, AND AN UNBONDED ONE IS NOT.
+/// The home dockets a word at its own vantage; a peer's replay of it is
+/// `AwaitingWitness` while the peer holds no bond here, and `Witnessed`
+/// once the genesis bonds it at the cover (MU-PRODUCT §4). On 0fd41ca no
+/// court bonded any other hypha, so every answered offer waited forever.
+#[test]
+fn a_bonded_hypha_is_a_second_vantage_and_an_unbonded_one_is_not() {
+    use crate::court::convergence::Converged;
+    let mut k = Kernel::new();
+    let peer = [2u8; 32];
+    let word = crate::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)])
+        .expect("one cell is A5's chain");
+    let addr = word.address();
+    k.docket_connection(&word, [9; 32]);
+    let (kk, h) = (k.k_step(), k.height());
+    assert_eq!(
+        k.converge_witness(&addr, peer, word.clone(), kk, h),
+        Converged::AwaitingWitness,
+        "an unbonded hypha is no vantage"
+    );
+    k.enroll(peer, [12, 3, 0, 20]);
+    assert!(
+        matches!(k.converge_witness(&addr, peer, word, kk, h), Converged::Witnessed { .. }),
+        "bonded at the cover, the same replay is the second vantage"
+    );
+}
+
 /// 47.3, 13.9: A WITNESS GLUES AN OFFER AS THE HOME, NOT AS ITSELF. The
 /// Čech cell of a converging pair has two vertices, one per vantage. Gluing
 /// with `peer == self_id` writes the offered word into the section this
