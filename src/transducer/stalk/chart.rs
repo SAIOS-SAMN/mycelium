@@ -73,6 +73,21 @@ impl Invariant {
         }
         crate::transducer::address::Address::new(buf)
     }
+
+    /// Decode canonical axes from a chart key.
+    pub fn from_key(k: &[u8]) -> Option<Invariant> {
+        if crate::transducer::address::tag_of(k)? != crate::transducer::address::TAG_CHART {
+            return None;
+        }
+        let mut axes = Vec::new();
+        let mut p = 1usize;
+        while p + 8 <= k.len() {
+            let a = u64::from_le_bytes(k.get(p..p + 8)?.try_into().ok()?);
+            axes.push(a);
+            p += 8;
+        }
+        Some(Invariant(axes))
+    }
 }
 
 /// Closure of one chart a thought has been probed through. Never a number:

@@ -108,24 +108,36 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
             admit_words(index, &a.chart, std::slice::from_ref(&w));
         }
     }
-    // WHERE THE TURNING ACTUALLY IS (§8.1, measurement only). Measured at
-    // d2ace83 over 44 admits: `turning 0` on 43 of them — every Word vertex
-    // this mind admits carries the IDENTITY rotor, so the index has nothing
-    // to file whatever it is keyed by. Yet the loops of these same forms
-    // turn: order 2 and order 4 composites, filed as torsion, 39 in one
-    // window. R8 located that curvature in `FormFace.at[pair].edge`, the
-    // edge transports, which `admit_words_acting` does not read.
-    //
-    // So these two counts ask whether the mind's turning content sits on the
-    // FACES while the generator index reads only the VERTICES: the face
-    // members seen, and the ones whose edge transport is not the identity.
+    // WHERE THE TURNING ACTUALLY IS: Curvature resides on FormFace.at[pair].edge,
+    // the edge transports, and on turning face words. We thread them into the
+    // axis index under the member chart so the crystal ingests the curvature.
     let mut members = 0usize;
     let mut turning_edges = 0usize;
     for face in &f.faces {
-        for (_, p) in face.at.scoped() {
+        for (k, p) in face.at.scoped() {
             members += 1;
-            if p.edge.as_ref().is_some_and(|e| !e.word.rotor().is_identity()) {
-                turning_edges += 1;
+            if let Some(ref e) = p.edge {
+                if !e.word.rotor().is_identity() {
+                    turning_edges += 1;
+                    if let Some(cv) = ClassVector::of_word(&e.word) {
+                        filed.extend(cv.coordinates());
+                    }
+                    if let Some((ci_bytes, _)) = crate::transducer::sentence::read_face_pair_key(&k) {
+                        if let Some(ci) = stalk::Invariant::from_key(&ci_bytes) {
+                            admit_words(index, &ci, std::slice::from_ref(&e.word));
+                        }
+                    }
+                }
+            }
+        }
+        if !face.word.rotor().is_identity() {
+            if let Some(cv) = ClassVector::of_word(&face.word) {
+                filed.extend(cv.coordinates());
+            }
+            if let Some(vi) = f.vertices.get(face.i as usize) {
+                for chart in vi.charts() {
+                    admit_words(index, &chart, std::slice::from_ref(&face.word));
+                }
             }
         }
     }
@@ -147,6 +159,26 @@ pub fn retract_words_acting(index: &mut AxisIndex, f: &Form) {
         };
         for (_, a) in acts.scoped() {
             retract_words(index, &a.chart, std::slice::from_ref(&w));
+        }
+    }
+    for face in &f.faces {
+        for (k, p) in face.at.scoped() {
+            if let Some(ref e) = p.edge {
+                if !e.word.rotor().is_identity() {
+                    if let Some((ci_bytes, _)) = crate::transducer::sentence::read_face_pair_key(&k) {
+                        if let Some(ci) = stalk::Invariant::from_key(&ci_bytes) {
+                            retract_words(index, &ci, std::slice::from_ref(&e.word));
+                        }
+                    }
+                }
+            }
+        }
+        if !face.word.rotor().is_identity() {
+            if let Some(vi) = f.vertices.get(face.i as usize) {
+                for chart in vi.charts() {
+                    retract_words(index, &chart, std::slice::from_ref(&face.word));
+                }
+            }
         }
     }
 }

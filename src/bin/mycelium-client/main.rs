@@ -4,6 +4,9 @@
 //! with, the order it comes up in, and the skeleton of the stroke loop that
 //! runs its four arms.
 
+#[global_allocator]
+static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
 mod arms;
 mod feed;
 mod speak;

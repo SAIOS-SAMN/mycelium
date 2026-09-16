@@ -4,6 +4,9 @@
 //! with, the order its organs come up in, and the accept loop that hands
 //! each act to the judge.
 
+#[global_allocator]
+static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
 mod admission;
 mod backfill;
 mod door;

@@ -167,6 +167,91 @@ impl From<Address> for Vec<u8> {
     }
 }
 
+/// A mathematical coordinate with a canonical, self-delimiting boundary (Rule 6).
+pub trait Stratum: Eq {
+    fn write_canonical(&self, out: &mut Vec<u8>);
+    fn read_canonical(bytes: &[u8]) -> Option<(Self, &[u8])>
+    where
+        Self: Sized;
+}
+
+/// The end of a coordinate path.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Nil;
+
+impl Stratum for Nil {
+    fn write_canonical(&self, _out: &mut Vec<u8>) {}
+    fn read_canonical(bytes: &[u8]) -> Option<(Self, &[u8])> {
+        Some((Nil, bytes))
+    }
+}
+
+/// A stratified coordinate path down a filtration (Rule 6 / A21).
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CoordinatePath<Head, Tail> {
+    pub head: Head,
+    pub tail: Tail,
+}
+
+impl<Head: Stratum, Tail: Stratum> CoordinatePath<Head, Tail> {
+    pub fn new(head: Head, tail: Tail) -> Self {
+        CoordinatePath { head, tail }
+    }
+
+    pub fn to_address(&self) -> Address {
+        let mut out = Vec::new();
+        self.write_canonical(&mut out);
+        Address::new(out)
+    }
+}
+
+impl<Head: Stratum, Tail: Stratum> Stratum for CoordinatePath<Head, Tail> {
+    fn write_canonical(&self, out: &mut Vec<u8>) {
+        self.head.write_canonical(out);
+        self.tail.write_canonical(out);
+    }
+
+    fn read_canonical(bytes: &[u8]) -> Option<(Self, &[u8])> {
+        let (head, rest) = Head::read_canonical(bytes)?;
+        let (tail, rest2) = Tail::read_canonical(rest)?;
+        Some((CoordinatePath { head, tail }, rest2))
+    }
+}
+
+/// Proof that `Self` is a valid coordinate prefix of target schema `Target`.
+pub trait PrefixOf<Target> {
+    fn write_prefix(&self, out: &mut Vec<u8>);
+}
+
+impl<Target> PrefixOf<Target> for Nil {
+    fn write_prefix(&self, _out: &mut Vec<u8>) {}
+}
+
+impl<Head: Stratum, Tail: PrefixOf<TailTarget>, TailTarget>
+    PrefixOf<CoordinatePath<Head, TailTarget>> for CoordinatePath<Head, Tail>
+{
+    fn write_prefix(&self, out: &mut Vec<u8>) {
+        self.head.write_canonical(out);
+        self.tail.write_prefix(out);
+    }
+}
+
+impl Stratum for Address {
+    fn write_canonical(&self, out: &mut Vec<u8>) {
+        let b = self.as_bytes();
+        out.extend_from_slice(&(b.len() as u32).to_le_bytes());
+        out.extend_from_slice(b);
+    }
+
+    fn read_canonical(bytes: &[u8]) -> Option<(Self, &[u8])> {
+        let len_bytes = bytes.get(0..4)?;
+        let len = u32::from_le_bytes(len_bytes.try_into().ok()?) as usize;
+        let b = bytes.get(4..4 + len)?;
+        let rest = bytes.get(4 + len..)?;
+        Some((Address::new(b.to_vec()), rest))
+    }
+}
+
 /// THE TAG a key or a tape opens with. A21 puts the stratum tag at offset
 /// zero, so byte zero is the tape's own coordinate and not the byte that
 /// happened to arrive first (rule 15). One carrier for that offset:
@@ -414,5 +499,24 @@ mod tests {
         assert_eq!(order, 4);
         assert_eq!(p, buf.len());
         assert_eq!(key.as_bytes()[0], TAG_CLASS);
+    }
+
+    #[test]
+    fn coordinate_path_preserves_strata_and_exact_boundaries() {
+        let a = Address::from_bytes([TAG_ROTOR, 1, 2, 3]);
+        let b = Address::from_bytes([TAG_PLANE, 4, 5]);
+        let path = CoordinatePath::new(a.clone(), CoordinatePath::new(b.clone(), Nil));
+        let mut bytes = Vec::new();
+        path.write_canonical(&mut bytes);
+        let (back, rest) = CoordinatePath::<Address, CoordinatePath<Address, Nil>>::read_canonical(&bytes)
+            .expect("canonical read");
+        assert_eq!(back.head, a);
+        assert_eq!(back.tail.head, b);
+        assert!(rest.is_empty());
+
+        let prefix = CoordinatePath::new(a.clone(), Nil);
+        let mut pbytes = Vec::new();
+        PrefixOf::<CoordinatePath<Address, CoordinatePath<Address, Nil>>>::write_prefix(&prefix, &mut pbytes);
+        assert!(bytes.starts_with(&pbytes));
     }
 }

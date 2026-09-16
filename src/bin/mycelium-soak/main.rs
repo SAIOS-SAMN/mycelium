@@ -11,6 +11,9 @@
 //! holds — which was structurally zero while the glue's read was
 //! performed against the form index (26, 27, 50.6).
 
+#[global_allocator]
+static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
 mod delta;
 mod ledger;
 mod mint;
