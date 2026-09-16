@@ -203,10 +203,25 @@ assert!(
     .is_empty(),
     "and the court would now find the remainder undeclared"
 );
+// 50.5 — THE MINT DECLARES WHAT WAS LEFT UNSPOKEN. The empty demand exempts
+// nothing, as before; what changed is that the voice no longer withholds
+// the form for it — the unspoken cells are declared as the demand they
+// are, on the chart they stand on, extending the demand already there, and
+// the court's own reader then finds nothing undeclared. A demand that
+// declares nothing still exempts nothing: it is filled, not honoured.
+let spoken = mint_sentence(&bare, &family, &NoCrystal, 0).expect("spoken with the remainder declared");
+let back = crate::transducer::sentence::from_element_form(&spoken).expect("its tape decodes");
+assert_eq!(back.demand_vertices().count(), 1, "the existing demand is extended, not doubled");
 assert!(
-    mint_sentence(&bare, &family, &NoCrystal, 0).is_none(),
-    "so a demand that declares nothing does not exempt the remainder"
+    crate::court::verdict::body::undeclared_remainder(
+        &form_deflation(&back, &family, &NoCrystal).1,
+        &back
+    )
+    .is_empty(),
+    "the court finds nothing undeclared on the spoken form"
 );
+let declared: Vec<_> = back.demand_vertices().flat_map(|(_, _, _, c)| c.to_vec()).collect();
+assert_eq!(declared.len(), 4, "the four created cells are the declared remainder: {declared:?}");
 }
 
 /// The supports a form hands `star_and_cell_faces`, keyed by each

@@ -6,7 +6,8 @@ use crate::transducer::family::*;
 
 /// Deflation is `deflation_of(lane_moves(after, before))` per pair, taken
 /// where the form closes the pair. A raise or a miss on one pair does not
-/// zero the others; a form is spoken only when every remainder is empty.
+/// zero the others; what a form leaves unspoken on a pair it declares as
+/// the demand it is (50.5), and it is spoken with that demand.
 #[test]
 fn form_deflation_measures_deflation_per_pair() {
 let x = grid(&["1"]);
@@ -45,10 +46,30 @@ assert_eq!(
     pay2, pay,
     "an unclosed pair contributes nothing, so the pay is pair one's alone"
 );
+// 50.5 — THE UNSPOKEN REMAINDER IS THE DEMAND. Pair two's remainder is a
+// cell the form spoke nothing at, so the mint declares it as a `Source`
+// demand on that cell's chart and the sentence is spoken with it; the
+// court's own reader finds nothing undeclared. It was `is_none()` here —
+// "a form is spoken only when every remainder is empty" — which withheld
+// 16,535 forms in 5½ hours of 2cf578a for saying less than the whole.
+let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("spoken with its demand");
+let f = crate::transducer::sentence::from_element_form(&spoken).expect("a sentence tape");
+let demanded: Vec<(u16, crate::transducer::sentence::Demand, Vec<crate::transducer::sentence::Cell>)> = f
+    .demand_vertices()
+    .map(|(i, k, _, cells)| (i, k.clone(), cells.to_vec()))
+    .collect();
+let [(_, kind, cells)] = demanded.as_slice() else {
+    panic!("one demand declares the one unspoken remainder, got {}", demanded.len())
+};
+assert!(matches!(kind, crate::transducer::sentence::Demand::Source { .. }), "unspoken cells are a Source demand");
+let unspoken: Vec<(i64, i64)> = rems2[1].iter().filter(|c| c.2 == 0).map(|c| (c.0, c.1)).collect();
+let declared: Vec<(i64, i64)> = cells.iter().map(|c| (c.0, c.1)).collect();
+assert_eq!(declared, unspoken, "the demand names exactly the cells the form spoke nothing at");
 assert!(
-    mint_sentence(&rule, &family, &NoCrystal, 0).is_none(),
-    "a form is spoken only when every remainder is empty"
+    crate::court::verdict::body::undeclared_remainder(&rems2, &f).is_empty(),
+    "and the court's reader finds nothing undeclared"
 );
+assert_ne!(spoken.magnitude(), [0; 4], "the sentence measures what it closed and what it asks");
 }
 
 /// A RULE THAT FAILS ON ITS OWN FAMILY IS NOT UTTERED. `mint_sentence`

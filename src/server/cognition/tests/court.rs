@@ -377,6 +377,33 @@ fn a_sentence_spoken_with_no_task_binds_no_task() {
     assert_eq!(bound.speech_task.get(&addr).map(|t| t.as_bytes().to_vec()), Some(task.to_vec()));
 }
 
+/// 50.5 — A SENTENCE THAT DECLARES WHAT IT LEFT UNSPOKEN IS HEARD, and its
+/// demand is listed for the market. The rule is read off one pair and
+/// spoken over a family whose second pair asks for a cell the rule's word
+/// never reaches: the mint declares that cell as a `Source` demand, the
+/// court replays the sentence on the bound family with its own
+/// `undeclared_remainder` and finds nothing undeclared, and the demand is
+/// listed under the sentence rather than the sentence refused for saying
+/// less than the whole.
+#[test]
+fn a_sentence_declaring_its_unspoken_remainder_is_heard_and_its_demand_listed() {
+    use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
+    let grid = |rows: &[&str]| -> crate::arc::Grid {
+        rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
+    };
+    let learned = vec![(grid(&["1"]), grid(&["2"]))];
+    let rule = extract_rule(&learned, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("a recolour extracts");
+    let family = vec![(grid(&["1"]), grid(&["2"])), (grid(&["10"]), grid(&["23"]))];
+    let s = mint_sentence(&rule, &family, &NoCrystal, 0).expect("spoken with its demand");
+    let mut k = Kernel::new();
+    let task = [7u8; 32];
+    k.bind_task_family(task, family);
+    let out = k.perceive_sentence([1; 32], &task, &s);
+    assert!(!matches!(out, Outcome::Refused(_) | Outcome::Pivot), "heard, not refused: {out:?}");
+    assert!(k.court_demands_listed >= 1, "the demand it declared is listed for the market");
+}
+
 /// 47.3, 13.9: A WITNESS GLUES AN OFFER AS THE HOME, NOT AS ITSELF. The
 /// Čech cell of a converging pair has two vertices, one per vantage. Gluing
 /// with `peer == self_id` writes the offered word into the section this

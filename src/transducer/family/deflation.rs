@@ -110,15 +110,115 @@ pub fn mint_sentence(
         eprintln!("  mint refused: a vertex does not carry its family ({why:?})");
         return None;
     }
-    let Some(mag) = sentence_measure(&rule.form, family, crystal, t_extent) else {
-        eprintln!("  mint refused: the sentence measures nothing over its bundle");
+    // 50.5 — WHAT THE FORM LEAVES UNSPOKEN ON THIS FAMILY IS ITS DEMAND.
+    // The remainders are measured once here and read by the measure below
+    // (law 12): a demand vertex acts on nothing, so the declared form
+    // speaks exactly what the undeclared one spoke and leaves the same
+    // remainder — which is what `undeclared_remainder` reads at the court.
+    let (pay, remainders) = form_deflation(&rule.form, family, crystal);
+    let declared = declare_unspoken(&rule.form, family, &remainders);
+    let form = match declared.as_ref() {
+        Some(f) => f,
+        None => &rule.form,
+    };
+    let Some(mag) = sentence_measure_from(form, family, t_extent, pay, &remainders) else {
+        eprintln!("  mint refused: the form speaks a cell its family refuses");
         return None;
     };
-    let out = crate::transducer::sentence::as_element_form(&rule.form, mag);
+    let out = crate::transducer::sentence::as_element_form(form, mag);
     if out.is_none() {
         eprintln!("  mint refused: the form has no tape at {mag:?}");
     }
     out
+}
+
+/// 50.5 — THE UNSPOKEN REMAINDER, DECLARED. A sentence is "the form saying
+/// out loud what it could not close and asking the market to answer it",
+/// and until now a form said it only for the pairs its budget never
+/// reached (`finish`) and the multiplicities its correspondence could not
+/// resolve. What the form's own words left unspoken on the family it was
+/// minted over — the cells its vertices reach on no pair — was declared by
+/// nothing, so `sentence_measure` refused the form and the voice withheld
+/// it: 16,535 `the sentence measures nothing over its bundle` in 5½ hours
+/// of 2cf578a, against 102 forms spoken, and a book that held one to three
+/// listings because nothing reached it.
+///
+/// A remainder cell is a demand only where the form SPOKE NOTHING there
+/// (`spoken == 0`, `residual_of`'s reading of absence): the court's own
+/// `undeclared_remainder` admits exactly that cell against a demand naming
+/// its observed hue, and refuses a cell the form spoke wrongly whatever a
+/// demand says of it. So the declared cells are the unspoken ones, each
+/// with the hue the input held there (absence is hue 0 in this encoding)
+/// and the hue the pair asks; a cell the form spoke wrongly stays
+/// undeclared and the form is refused by name.
+///
+/// Per pair, on the chart the unspoken cells stand on, as `Source` with
+/// the multiplicity of its pieces — the same construction the unreached
+/// arm of `finish` makes for a whole pair, so one kind of demand stands
+/// for one kind of fact. A form already carrying that demand on that chart
+/// extends it; a second vertex under one key would be a form that says one
+/// thing twice.
+///
+/// `None` where nothing was unspoken: the form as it stands is the form.
+pub fn declare_unspoken(
+    form: &Form,
+    family: &[(Grid, Grid)],
+    remainders: &[crate::transducer::germinate::ResidualGerm],
+) -> Option<Form> {
+    use crate::transducer::sentence::{demand_key, pieces, Cell, Demand};
+    // THE COURT'S OWN READER SAYS WHAT IS UNDECLARED (law 12): a cell a
+    // demand the extraction already emitted names is declared, and naming
+    // it again under `Source` would be one fact said twice. Sorted and
+    // deduplicated by that reader, so membership is a search and not a
+    // walk of the form.
+    let undeclared = crate::court::verdict::body::undeclared_remainder(remainders, form);
+    if undeclared.is_empty() {
+        return None;
+    }
+    let mut declared = form.clone();
+    let mut any = false;
+    for ((x, _), rem) in family.iter().zip(remainders) {
+        let cells: Vec<Cell> = rem
+            .iter()
+            .filter(|&&(r, c, spoken, observed)| {
+                spoken == 0 && undeclared.binary_search(&(r, c, spoken, observed)).is_ok()
+            })
+            .map(|&(r, c, _, observed)| {
+                // The hue the input holds at the cell. Outside the input
+                // frame there is none, and absence is hue 0 in this
+                // encoding — `residual_of`'s own reading, not a floor.
+                let before = match (usize::try_from(r), usize::try_from(c)) {
+                    (Ok(ur), Ok(uc)) => match x.get(ur).and_then(|row| row.get(uc)) {
+                        Some(h) => *h,
+                        None => 0,
+                    },
+                    _ => 0,
+                };
+                (r, c, before, observed)
+            })
+            .collect();
+        if cells.is_empty() {
+            continue;
+        }
+        let chart = crate::transducer::stalk::invariant(&cells);
+        let kind = Demand::Source { multiplicity: pieces(&cells).len() as u32 };
+        if kind.typed().is_err() {
+            continue;
+        }
+        let key = demand_key(&kind, &chart);
+        let held = declared.demands.get(&key).copied();
+        match held.and_then(|i| declared.vertices.get_mut(i as usize)) {
+            Some(Vertex::Demand { bodies, .. }) => {
+                bodies.extend(cells);
+                bodies.sort_unstable();
+                bodies.dedup();
+            }
+            _ => declared.vertices.push(demand_vertex(kind, &chart, cells)),
+        }
+        declared.reindex();
+        any = true;
+    }
+    any.then_some(declared)
 }
 
 /// What a sentence measures over its bundle (50.5). A sentence with no
@@ -170,6 +270,20 @@ pub fn sentence_measure(
     t_extent: u64,
 ) -> Option<[u64; 4]> {
     let (pay, remainders) = form_deflation(form, family, crystal);
+    sentence_measure_from(form, family, t_extent, pay, &remainders)
+}
+
+/// The measure, from a deflation already taken: the mint measures the
+/// remainders once, declares what was unspoken, and measures the declared
+/// form against the same remainders (law 12) — a demand vertex acts on
+/// nothing, so the deflation is the same form's.
+pub fn sentence_measure_from(
+    form: &Form,
+    family: &[(Grid, Grid)],
+    t_extent: u64,
+    pay: [u64; 4],
+    remainders: &[crate::transducer::germinate::ResidualGerm],
+) -> Option<[u64; 4]> {
     if form.demand_vertices().next().is_none() {
         if !remainders.iter().all(|r| r.is_empty()) {
             return None;
@@ -178,7 +292,7 @@ pub fn sentence_measure(
         mag[2] = t_extent;
         return Some(mag);
     }
-    if !crate::court::verdict::body::undeclared_remainder(&remainders, form).is_empty() {
+    if !crate::court::verdict::body::undeclared_remainder(remainders, form).is_empty() {
         return None;
     }
     let mut mag = [0u64; 4];
@@ -192,7 +306,7 @@ pub fn sentence_measure(
     // `before_chain` stays computed here: it is a fact about the PAIR and not
     // about the form, which is what `form_deflation` returns, so it is not the
     // same fact arriving twice.
-    for ((x, y), after_chain) in family.iter().zip(&remainders) {
+    for ((x, y), after_chain) in family.iter().zip(remainders) {
         let before_chain = match crate::arc::refine_delta(x, y) {
             Some(r) => r.delta,
             None => residual_of(Some(x), y),
