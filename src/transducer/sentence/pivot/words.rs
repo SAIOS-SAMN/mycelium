@@ -206,19 +206,19 @@ pub fn admit_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Wor
 /// Retract words from the axis index (shed, retire).
 pub fn retract_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Word]) {
     let ck = chart.key();
-    let Some(mid) = index.get_mut(&ck) else {
-        return;
-    };
+    let Some(mid) = index.get_mut(&ck) else { return; };
     for w in words {
-        let Some(cv) = ClassVector::of_word(w) else {
-            continue;
-        };
+        let Some(cv) = ClassVector::of_word(w) else { continue; };
         for axis in cv.coordinates() {
-            if let Some(bucket) = mid.get_mut(&axis_slot(axis)) {
-                bucket.remove(&w.key());
-            }
+            let slot = axis_slot(axis);
+            let empty = match mid.get_mut(&slot) {
+                Some(b) => { b.remove(&w.key()); b.is_empty() }
+                None => false,
+            };
+            if empty { mid.remove(&slot); }
         }
     }
+    if mid.is_empty() { index.remove(&ck); }
 }
 
 /// The fiber of the axis index at (chart, axis), coarsening the CHART until

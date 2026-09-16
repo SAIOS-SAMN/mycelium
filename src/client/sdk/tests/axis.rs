@@ -74,6 +74,9 @@ fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
             "and it leaves with the sentence, on {ax:?}"
         );
     }
+    let (charts_after, words_after) = epi.axis_index_counts();
+    assert_eq!(charts_after, 0, "empty chart is pruned from axis index, got {charts_after}");
+    assert_eq!(words_after, 0, "empty word bucket is pruned from axis index, got {words_after}");
 }
 
 #[test]
