@@ -170,9 +170,9 @@ impl Contemplation {
         // word vertices — letters among them since R55 — or a connection's
         // letters. `rotor_of` reads a connection alone and answered `None`
         // for every learned form, so no vortex was ever asked.
-        let carried: Vec<crate::transducer::alphabet::Rotor> = crate::transducer::sentence::words_of_element(word)
+        let carried: Vec<crate::transducer::alphabet::Rotor> = crate::transducer::sentence::acting_of_element(word)
             .iter()
-            .map(|w| w.rotor())
+            .map(|t| t.word.rotor())
             .filter(|r| !r.is_identity())
             .collect();
         let mut fills = 0u64;

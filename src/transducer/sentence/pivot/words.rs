@@ -12,38 +12,64 @@ pub(crate) fn axis_slot(axis: Axis) -> Vec<u8> {
     vec![axis.to_byte()]
 }
 
-/// The words a form speaks: its Word vertices'.
-pub fn words_of_form(f: &Form) -> Vec<Word> {
-    f.vertices
-        .iter()
-        .filter_map(|v| match v {
-            // WHAT THE VERTEX CARRIES: its letters when it spells, its
-            // action when it is an adjoined generator (37.7). This read
-            // `word_local`, which answers `None` for a letter, so every
-            // reader of this list — the axis index at the voice and at the
-            // court (`admit_words`), the language index, the algebraic
-            // probe — held a letter and offered it to nobody: no pivot was
-            // ever offered an adjoined generator as a candidate, and the
-            // probe at a letter had no operator to ask about. A cited
-            // vertex still spells none until its citations resolve and
-            // contributes nothing here (L14).
-            Vertex::Word { derivation, .. } => derivation.word_carried(),
-            _ => None,
-        })
-        .collect()
+/// WHAT A FORM SPEAKS, AND WHAT EACH WORD ACTS BY: one [`Transport`] per
+/// Word vertex per member — the word, the carriage it carries its body
+/// with at that chart, and the gauge it recolours by there.
+///
+/// This answered bare `Word`s, and the assignment beside each was dropped
+/// at every call site. A class vector read at the identity carriage and
+/// the identity hue occupies no `Placement`, no `Dilation` and no `Hue` —
+/// three of the nine coordinates of 12.6 — so the axis index could not
+/// hold a word on any of them, and the pivot asks the index for exactly
+/// the axis a loop stands on. A loop standing on a placement was answered
+/// `0` not because the mind held no word that places but because the
+/// filing could not say so.
+///
+/// One per MEMBER, because a vertex acting on two charts carries its body
+/// two ways and `admit_words_acting` files it at both.
+///
+/// WHAT THE VERTEX CARRIES: its letters when it spells, its action when it
+/// is an adjoined generator (37.7). This read `word_local`, which answers
+/// `None` for a letter, so every reader of this list — the axis index at
+/// the voice and at the court, the language index, the algebraic probe —
+/// held a letter and offered it to nobody. A cited vertex still spells
+/// none until its citations resolve and contributes nothing here (L14).
+pub fn acting_of_form(f: &Form) -> Vec<Transport> {
+    let mut out = Vec::new();
+    for v in &f.vertices {
+        let Vertex::Word { derivation, acts, .. } = v else {
+            continue;
+        };
+        let Some(word) = derivation.word_carried() else {
+            continue;
+        };
+        for (_, a) in acts.scoped() {
+            out.push(Transport {
+                word: word.clone(),
+                carriage: a.carriage.as_ref().clone(),
+                gauge: a.gauge.clone(),
+            });
+        }
+    }
+    out
 }
 
-/// The words a held element speaks: a form's Word vertices, or a
-/// connection's letters.
-pub fn words_of_element(e: &Element) -> Vec<Word> {
+/// The same reading of a held element: a form's Word vertices with their
+/// members, or a connection's letters with the carriage and sigma that
+/// connection was spelled at.
+pub fn acting_of_element(e: &Element) -> Vec<Transport> {
     if e.is_sentence() {
         return match from_element_form(e) {
-            Some(f) => words_of_form(&f),
+            Some(f) => acting_of_form(&f),
             None => Vec::new(),
         };
     }
     match e.letters() {
-        Some(l) => vec![l.spelling.word],
+        Some(l) => vec![Transport {
+            word: l.spelling.word,
+            carriage: l.carriage,
+            gauge: l.sigma,
+        }],
         None => Vec::new(),
     }
 }
@@ -101,11 +127,19 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
         if !w.rotor().is_identity() {
             turning += 1;
         }
-        if let Some(cv) = ClassVector::of_word(&w) {
-            filed.extend(cv.coordinates());
-        }
         for (_, a) in acts.scoped() {
-            admit_words(index, &a.chart, std::slice::from_ref(&w));
+            // THE WORD AS IT ACTS HERE: this chart's carriage and this
+            // chart's gauge, which are the two coordinates the class vector
+            // reads `Placement`, `Dilation` and `Hue` off.
+            let t = Transport {
+                word: w.clone(),
+                carriage: a.carriage.as_ref().clone(),
+                gauge: a.gauge.clone(),
+            };
+            if let Some(cv) = acted_class(&t) {
+                filed.extend(cv.coordinates());
+            }
+            admit_words(index, &a.chart, std::slice::from_ref(&t));
         }
     }
     // WHERE THE TURNING ACTUALLY IS: Curvature resides on FormFace.at[pair].edge,
@@ -119,25 +153,46 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
             if let Some(ref e) = p.edge {
                 if !e.word.rotor().is_identity() {
                     turning_edges += 1;
-                    if let Some(cv) = ClassVector::of_word(&e.word) {
+                    // An edge transport IS a `Transport` — word, carriage
+                    // and gauge together — and it was admitted as its word
+                    // alone, so the stabilizer element the pair picks out
+                    // was filed without the placement it carries.
+                    if let Some(cv) = acted_class(e) {
                         filed.extend(cv.coordinates());
                     }
                     if let Some((ci_bytes, _)) = crate::transducer::sentence::read_face_pair_key(&k) {
                         if let Some(ci) = stalk::Invariant::from_key(&ci_bytes) {
-                            admit_words(index, &ci, std::slice::from_ref(&e.word));
+                            admit_words(index, &ci, std::slice::from_ref(e));
                         }
                     }
                 }
             }
         }
+        // THE FACE'S OWN WORD, AT EACH MEMBER PAIR IT RELATES. The word is a
+        // vertex coordinate — `w_j ∘ w_i⁻¹` off the two derivations — but
+        // the PLACEMENT it carries a body by is the pair's, and it was
+        // admitted with no placement at all under `vi.charts()`, a
+        // vertex-level read for a member-level fact (D10). Each pair's own
+        // `FacePlace` carries the relative carriage and the relative hue
+        // map; this is the same reading the edge arm above makes.
         if !face.word.rotor().is_identity() {
-            if let Some(cv) = ClassVector::of_word(&face.word) {
-                filed.extend(cv.coordinates());
-            }
-            if let Some(vi) = f.vertices.get(face.i as usize) {
-                for chart in vi.charts() {
-                    admit_words(index, &chart, std::slice::from_ref(&face.word));
+            for (k, p) in face.at.scoped() {
+                let t = Transport {
+                    word: face.word.clone(),
+                    carriage: p.carriage.clone(),
+                    gauge: p.gauge.clone(),
+                };
+                if let Some(cv) = acted_class(&t) {
+                    filed.extend(cv.coordinates());
                 }
+                let Some((ci_bytes, _)) = crate::transducer::sentence::read_face_pair_key(&k)
+                else {
+                    continue;
+                };
+                let Some(ci) = stalk::Invariant::from_key(&ci_bytes) else {
+                    continue;
+                };
+                admit_words(index, &ci, std::slice::from_ref(&t));
             }
         }
     }
@@ -158,37 +213,60 @@ pub fn retract_words_acting(index: &mut AxisIndex, f: &Form) {
             continue;
         };
         for (_, a) in acts.scoped() {
-            retract_words(index, &a.chart, std::slice::from_ref(&w));
+            let t = Transport {
+                word: w.clone(),
+                carriage: a.carriage.as_ref().clone(),
+                gauge: a.gauge.clone(),
+            };
+            retract_words(index, &a.chart, std::slice::from_ref(&t));
         }
     }
     for face in &f.faces {
         for (k, p) in face.at.scoped() {
+            let Some((ci_bytes, _)) = crate::transducer::sentence::read_face_pair_key(&k) else {
+                continue;
+            };
+            let Some(ci) = stalk::Invariant::from_key(&ci_bytes) else {
+                continue;
+            };
             if let Some(ref e) = p.edge {
                 if !e.word.rotor().is_identity() {
-                    if let Some((ci_bytes, _)) = crate::transducer::sentence::read_face_pair_key(&k) {
-                        if let Some(ci) = stalk::Invariant::from_key(&ci_bytes) {
-                            retract_words(index, &ci, std::slice::from_ref(&e.word));
-                        }
-                    }
+                    retract_words(index, &ci, std::slice::from_ref(e));
                 }
             }
-        }
-        if !face.word.rotor().is_identity() {
-            if let Some(vi) = f.vertices.get(face.i as usize) {
-                for chart in vi.charts() {
-                    retract_words(index, &chart, std::slice::from_ref(&face.word));
-                }
+            if !face.word.rotor().is_identity() {
+                let t = Transport {
+                    word: face.word.clone(),
+                    carriage: p.carriage.clone(),
+                    gauge: p.gauge.clone(),
+                };
+                retract_words(index, &ci, std::slice::from_ref(&t));
             }
         }
     }
 }
 
+/// THE CLASS A WORD OCCUPIES WHERE IT ACTS (12.6): its rotor's coordinates,
+/// its carriage's placement and dilation residues, and its gauge's cycle
+/// type. One reader, so the admit and the retract cannot drift apart and a
+/// word cannot be filed under one key and taken out from under another.
+fn acted_class(t: &Transport) -> Option<ClassVector> {
+    ClassVector::read(&t.word, t.carriage.clone(), CycleType::of(&t.gauge))
+}
+
 /// Admit words to the axis index under every coordinate their class vector
 /// occupies on `chart`.
-pub fn admit_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Word]) {
+///
+/// The class is read from the whole assignment. This read
+/// `ClassVector::of_word`, which is the word at the IDENTITY carriage and
+/// the IDENTITY hue, so `Axis::Placement`, `Axis::Dilation` and `Axis::Hue`
+/// were three coordinates nothing admitted could ever occupy — while the
+/// pivot asks `on_axis_of` for whichever axis the loop it is trying to
+/// discharge stands on, those three included.
+pub fn admit_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Transport]) {
     let ck = chart.key();
-    for w in words {
-        let Some(cv) = ClassVector::of_word(w) else {
+    for t in words {
+        let Some(cv) = acted_class(t) else {
             continue;
         };
         for axis in cv.coordinates() {
@@ -197,22 +275,23 @@ pub fn admit_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Wor
                 index.insert(ck.clone(), Keyed::new());
             }
             if let Some(mid) = index.get_mut(ck.as_bytes()) {
-                mid.nested_insert(ak, w.key(), w.clone());
+                mid.nested_insert(ak, t.word.key(), t.word.clone());
             }
         }
     }
 }
 
-/// Retract words from the axis index (shed, retire).
-pub fn retract_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Word]) {
+/// Retract words from the axis index (shed, retire). The mirror of the
+/// admit, through the same one class reader.
+pub fn retract_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Transport]) {
     let ck = chart.key();
     let Some(mid) = index.get_mut(&ck) else { return; };
-    for w in words {
-        let Some(cv) = ClassVector::of_word(w) else { continue; };
+    for t in words {
+        let Some(cv) = acted_class(t) else { continue; };
         for axis in cv.coordinates() {
             let slot = axis_slot(axis);
             let empty = match mid.get_mut(&slot) {
-                Some(b) => { b.remove(&w.key()); b.is_empty() }
+                Some(b) => { b.remove(&t.word.key()); b.is_empty() }
                 None => false,
             };
             if empty { mid.remove(&slot); }

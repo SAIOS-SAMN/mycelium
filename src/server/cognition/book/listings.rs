@@ -602,7 +602,7 @@ impl Kernel {
         let mut ruled = false;
         if let Some(w) = self.word_at(addr) {
             let inv = crate::transducer::stalk::invariant_of(w);
-            let words = crate::transducer::sentence::words_of_element(w);
+            let words = crate::transducer::sentence::acting_of_element(w);
             // 1.8: a ruled form's word vertices are the generators this
             // court can compose a spoken path through (50.2 step 2). Read
             // before the carriers are touched, so the word's borrow ends

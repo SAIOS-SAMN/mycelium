@@ -358,8 +358,9 @@ impl Entity {
         let i = self.refine_cursor % g.len();
         let held = g.get(i)?;
         let me = held.address();
-        let mine = crate::transducer::sentence::words_of_element(held.element())
+        let mine = crate::transducer::sentence::acting_of_element(held.element())
             .into_iter()
+            .map(|t| t.word)
             .find(|w| !w.is_identity())?;
         let chart = crate::transducer::sentence::versor_chart(&mine)?;
         let mut budget = self.physics.stroke();

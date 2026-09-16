@@ -155,9 +155,9 @@ fn a_restored_genome_factors_through_the_generators_it_was_taught() {
     // generator turns anything, it is that the mind offers the SAME
     // generators after a restart as before one.
     let held = crate::transducer::sentence::from_element_form(&e).expect("the tape reads back");
-    let charts: Vec<_> = crate::transducer::sentence::words_of_form(&held)
+    let charts: Vec<_> = crate::transducer::sentence::acting_of_form(&held)
         .iter()
-        .filter_map(crate::transducer::sentence::versor_chart)
+        .filter_map(|t| crate::transducer::sentence::versor_chart(&t.word))
         .collect();
     assert!(!charts.is_empty(), "the form carries a word with a versor chart");
 

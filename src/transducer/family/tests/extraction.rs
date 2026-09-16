@@ -284,7 +284,7 @@ impl Crystal for Held {
         axis: crate::transducer::sentence::Axis,
     ) -> Vec<crate::transducer::alphabet::Word> {
         let mut index = crate::transducer::sentence::AxisIndex::new();
-        crate::transducer::sentence::admit_words(&mut index, &Invariant::default(), &crate::transducer::sentence::words_of_form(&self.f));
+        crate::transducer::sentence::admit_words(&mut index, &Invariant::default(), &crate::transducer::sentence::acting_of_form(&self.f));
         crate::transducer::sentence::on_axis_of(&index, &Invariant::default(), axis)
     }
     /// This fixture's claim is the glue, not the language: it holds one

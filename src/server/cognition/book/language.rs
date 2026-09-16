@@ -19,7 +19,7 @@ impl Kernel {
         };
         self.unindex_word(&held);
         let inv = crate::transducer::stalk::invariant_of(&held);
-        let words = crate::transducer::sentence::words_of_element(&held);
+        let words = crate::transducer::sentence::acting_of_element(&held);
         crate::transducer::sentence::retract_words(&mut self.axis_index, &inv, &words);
         self.forget_discoverer(addr);
         std::sync::Arc::make_mut(&mut self.stalks).remove(addr);

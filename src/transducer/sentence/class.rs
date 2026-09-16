@@ -109,7 +109,16 @@ fn cycle_lengths(listing: &[(u8, u8)]) -> Vec<u8> {
 }
 
 impl ClassVector {
-    /// The vector of a holonomy word alone (identity carriage).
+    /// THE VECTOR OF A HOLONOMY WORD AT THE IDENTITY ASSIGNMENT: its rotor's
+    /// coordinates and nothing else.
+    ///
+    /// `Placement`, `Dilation` and `Hue` are read off the carriage and the
+    /// gauge, so a vector built here occupies NONE of the three whatever
+    /// the word is. That is the truth about a word with no assignment
+    /// beside it, and it was the wrong reader for a word that has one: the
+    /// axis index filed every admitted word through this, so three of the
+    /// nine coordinates of 12.6 held nothing the pivot could be offered.
+    /// A caller with a carriage and a gauge calls [`ClassVector::read`].
     pub fn of_word(h: &Word) -> Option<ClassVector> {
         Self::read(h, element::identity_versor(), CycleType::Identity)
     }
@@ -613,7 +622,11 @@ pub fn loop_row(h: &Word) -> Option<LoopRow> {
         return Some(LoopRow::Closed);
     }
     Some(match free_row(h) {
-        Some(row) if row == [0i64; 12] => LoopRow::Torsion(h.rotor().class_key()?),
+        // The zero row is FREE_ROW wide, which is the width `free_row`
+        // returns. It was written out as `12`, a second statement of
+        // `PAIR_PLANES * 2` that a change of rank would have left behind
+        // (rule 5).
+        Some(row) if row == [0i64; FREE_ROW] => LoopRow::Torsion(h.rotor().class_key()?),
         Some(row) => LoopRow::Free(row),
         None => LoopRow::OffPlane(h.rotor().class_key()?),
     })

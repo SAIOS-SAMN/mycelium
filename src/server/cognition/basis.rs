@@ -577,7 +577,7 @@ impl Kernel {
                 if let Some(w) = self.word_at(&addr) {
                     held.push((
                         inv.clone(),
-                        crate::transducer::sentence::words_of_element(w),
+                        crate::transducer::sentence::acting_of_element(w),
                         crate::transducer::sentence::from_element_form(w),
                     ));
                 }

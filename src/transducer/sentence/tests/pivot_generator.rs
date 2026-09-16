@@ -291,6 +291,82 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
     );
 }
 
+/// 18.2, 12.6 — A WORD IS FILED UNDER WHAT IT ACTS BY, NOT UNDER ITS ROTOR
+/// ALONE.
+///
+/// `admit_words` read `ClassVector::of_word`, which is the word at the
+/// IDENTITY carriage and the IDENTITY hue. `Placement`, `Dilation` and
+/// `Hue` are read off exactly those two coordinates, so three of the nine
+/// axes of 12.6 held nothing however many words were admitted — while
+/// `Pivot::candidates_for` asks `on_axis_of` for whichever axis the loop
+/// it is discharging stands on, those three among them. A loop standing on
+/// a placement was answered `0` not because the mind held no word that
+/// places but because the filing could not say one did.
+///
+/// The vertex here carries the IDENTITY word and a translating carriage,
+/// so its rotor occupies nothing at all: every coordinate it is filed
+/// under comes from the assignment, and under the old reader it was filed
+/// under none. That is the discrimination — a turning word would have been
+/// filed on its plane axes either way and the fixture would have passed
+/// without the change.
+#[test]
+fn a_word_is_filed_under_the_carriage_and_the_gauge_it_acts_by() {
+    use crate::transducer::alphabet::Derivation;
+    use crate::transducer::sentence::{admit_words_acting, on_axis_of, retract_words_acting, AxisIndex};
+    use crate::transducer::stalk::Invariant;
+    let acting = Invariant(vec![1, 7, 4]);
+    let gauge = vec![(1u8, 2u8), (2, 1)];
+    let mut f = Form::default();
+    f.vertices.push(Vertex::word_on(
+        crate::transducer::address::Address::from_bytes([4u8, 2]),
+        Derivation::spelled(Word::identity()),
+        acting.clone(),
+        Box::new(element::translator_versor(3, 5)),
+        gauge.clone(),
+        None,
+    ));
+
+    // THE ROTOR ALONE OCCUPIES NOTHING. This is the reader the admit used
+    // and it is why the three assignment axes were unreachable.
+    assert!(
+        ClassVector::of_word(&Word::identity())
+            .expect("the identity is a versor")
+            .coordinates()
+            .is_empty(),
+        "an identity word at the identity assignment occupies no coordinate"
+    );
+
+    let mut ix: AxisIndex = AxisIndex::new();
+    admit_words_acting(&mut ix, &f);
+
+    for axis in [Axis::Placement, Axis::Hue] {
+        let got = on_axis_of(&ix, &acting, axis);
+        assert!(
+            got.iter().any(|w| w.is_identity()),
+            "the word is offered on {axis:?}, which its carriage and its gauge \
+             put it on and its rotor never could; got {} words",
+            got.len()
+        );
+    }
+    // A dilation it does not carry is still empty: the assignment is read,
+    // not assumed to occupy everything it could.
+    assert!(
+        on_axis_of(&ix, &acting, Axis::Dilation).is_empty(),
+        "a pure translation carries no dilation residue"
+    );
+
+    // AND THE RETRACT MIRRORS IT. A retract that read the rotor alone would
+    // compute a different coordinate set and empty nothing.
+    retract_words_acting(&mut ix, &f);
+    for axis in [Axis::Placement, Axis::Hue] {
+        assert!(
+            on_axis_of(&ix, &acting, axis).is_empty(),
+            "what the admit filed at {axis:?} the retract empties"
+        );
+    }
+    f.vertices.clear();
+}
+
 /// 18.2, A21 §2 — A WORD IS FILED WHERE IT ACTS, AND THE CHART IS A
 /// PREFILTER.
 ///

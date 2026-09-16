@@ -50,7 +50,7 @@ impl Crystal for Held {
         crate::transducer::sentence::admit_words(
             &mut index,
             &Invariant::default(),
-            &crate::transducer::sentence::words_of_form(&self.f),
+            &crate::transducer::sentence::acting_of_form(&self.f),
         );
         crate::transducer::sentence::on_axis_of(&index, &Invariant::default(), axis)
     }

@@ -464,7 +464,11 @@ fn placement_is_not_the_sentence_vertex() {
 fn axis_index_admit_is_linear_on_axis_is_constant() {
     use crate::network::nerve::work;
     let inv = stalk::Invariant::default();
-    let w = order2();
+    let w = Transport {
+        word: order2(),
+        carriage: crate::transducer::element::identity_versor(),
+        gauge: Vec::new(),
+    };
     let run = |n: usize| {
         work::reset();
         let mut index = AxisIndex::new();

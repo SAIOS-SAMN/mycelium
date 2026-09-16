@@ -14,10 +14,11 @@ use crate::transducer::stalk;
 fn an_adjoined_generator_is_among_its_forms_words() {
     let r = order4().rotor();
     let letter = generator_form(&r, &stalk::Invariant(vec![3, 5]), &[]).expect("a rotor mints a generator");
-    let words = words_of_element(&letter);
-    let [w] = words.as_slice() else {
+    let words = acting_of_element(&letter);
+    let [t] = words.as_slice() else {
         panic!("one letter, one word, got {}", words.len())
     };
+    let w = &t.word;
     assert!(w.rotor().projective_eq(&r), "the word carried is the action");
     assert!(w.letters().is_empty(), "and it spells no letter of the seventeen");
     // The axis index files it by that rotor, so the pivot can be offered it.
@@ -26,7 +27,7 @@ fn an_adjoined_generator_is_among_its_forms_words() {
     // A spelled vertex still yields its residue.
     let spelled = closed_word_form(order4(), None);
     let e = as_element_form(&spelled, [0, 0, 0, 1]).expect("a tape");
-    let ws = words_of_element(&e);
-    assert!(ws.iter().any(|w| w.rotor().projective_eq(&order4().rotor())));
+    let ws = acting_of_element(&e);
+    assert!(ws.iter().any(|t| t.word.rotor().projective_eq(&order4().rotor())));
     let _ = Word::identity();
 }

@@ -67,7 +67,7 @@ impl Epigenome {
         crate::transducer::sentence::admit_words(
             &mut self.axis_index,
             &inv,
-            &crate::transducer::sentence::words_of_element(e),
+            &crate::transducer::sentence::acting_of_element(e),
         );
     }
 
@@ -80,7 +80,7 @@ impl Epigenome {
         crate::transducer::sentence::retract_words(
             &mut self.axis_index,
             &inv,
-            &crate::transducer::sentence::words_of_element(e),
+            &crate::transducer::sentence::acting_of_element(e),
         );
     }
 
