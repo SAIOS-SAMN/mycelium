@@ -447,15 +447,28 @@ impl ShrinkGovernor for SpellGovernor<'_> {
 /// not rational, or its rotation has a Gaussian factor outside the
 /// alphabet's primes — a remainder, never a rounding.
 pub fn spell(block: &[[Q; 2]; 2]) -> Option<Spelling> {
-    match spell_peel(block)? {
+    spell_on((PLANE_ROW, PLANE_COL), block)
+}
+
+/// THE SAME SPELLING ON ANY PAIR PLANE (50.4, A22). `spell_peel_on`
+/// already took a plane and `SpellStep::on_with` already derives that
+/// plane's own quarter, primes and flip; only this closing step was
+/// pinned to the sensor, and with it every reader that spells a block.
+///
+/// The verification reads the spelled word's block ON THE SAME PLANE.
+/// `Spelling::block` reads the sensor's, so a word spelled on `(2, 3)`
+/// would have been checked against its sensor block — the identity — and
+/// refused for not matching a rotation it never claimed.
+pub fn spell_on(plane: (u8, u8), block: &[[Q; 2]; 2]) -> Option<Spelling> {
+    match spell_peel_on(plane, block)? {
         (PeelNest::Closed { cores }, rho) => {
             // Cores come out outer to inner (the sheet first); the tape's
             // last letter acts first, so the tape is the cores reversed.
             let sp = Spelling { word: word_of_cores(&cores)? };
-            let b = sp.block()?;
+            let b = sp.word.block_on(plane)?;
             // The word is the rotation; ρ is peeled for the caller to put
             // on the carriage. The spelled linear block times ρ is the
-            // sensor block.
+            // block on this plane.
             for r in 0..2 {
                 for c in 0..2 {
                     if &b[r][c] * &rho != block[r][c] {

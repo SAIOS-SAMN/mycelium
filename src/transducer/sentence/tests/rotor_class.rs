@@ -103,8 +103,17 @@ fn torsion_filed_only_when_witnessed_at_period() {
 
 #[test]
 fn rank_offplane_is_its_own_lane() {
-    let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]);
-    assert!(w.plane_block().is_none(), "a (0,2) quarter is off the sensor plane");
+    // A ROTOR WITH NO INVARIANT PAIR PLANE. It was a `(0, 2)` quarter,
+    // which was off-plane only because the speller could not see its
+    // plane; it turns plane one and reads as torsion now. Two quarters on
+    // planes sharing an axis leave no two-subset invariant, and that is
+    // what the off-plane lane counts.
+    let w = Word::from_letters(&[
+        (alphabet::LetterId::quarter((0, 1)).unwrap(), false),
+        (alphabet::LetterId::quarter((0, 2)).unwrap(), false),
+    ]);
+    assert!(w.plane_block().is_none(), "it moves the sensor plane");
+    assert!(w.form().is_none(), "and turns no pair plane at all");
     let two = chord_form(&[w.clone(), w.clone()]);
     let r = two.rank().expect("rank");
     assert_eq!(r.offplane, 1, "two chords of one off-plane class count once, got {r:?}");
@@ -314,25 +323,54 @@ fn rotor_class_is_read_before_the_plane_form() {
     );
 }
 
+/// A WORD OFF THE SENSOR PLANE OCCUPIES ITS OWN PLANE, and `OffPlane` is
+/// what is left when no pair plane is turned at all.
+///
+/// `Word::form` spelled the sensor block alone, so a quarter on `(0, 2)`
+/// had no form and fell to `OffPlane` — the one coordinate that survives a
+/// missing plane block. It turns `(0, 2)`, that is a coordinate the
+/// carrier has always had a seat for, and it is occupied now.
+///
+/// `OffPlane` narrows with it: it was "the sensor plane is not preserved"
+/// and is now "no pair plane is turned", which is a rotor with no
+/// invariant plane at all rather than one whose plane is simply not the
+/// sensor's.
 #[test]
-fn a_word_that_moves_the_sensor_plane_is_not_an_exception() {
+fn a_word_off_the_sensor_plane_occupies_its_own_plane() {
     let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]);
-    assert!(w.form().is_none());
-    assert!(w.plane_block().is_none());
-    let cv = ClassVector::of_word(&w).expect("off-plane quarter is a versor");
+    assert!(w.plane_block().is_none(), "it moves the sensor plane, as it always did");
+    let f = w.form().expect("and it turns (0, 2), which the carrier has a seat for");
+    assert!(!f.is_identity(), "a quarter turn is not the identity of the plane group");
+    let cv = ClassVector::of_word(&w).expect("a quarter is a versor");
     assert!(
-        cv.occupies(Axis::OffPlane),
-        "an off-plane holonomy occupies OffPlane as a rotor, got {:?}",
+        cv.occupies(Axis::Unit(1)),
+        "the (0, 2) quarter occupies the unit axis of plane one, got {:?}",
         cv.coordinates()
     );
     assert!(
-        !cv.occupies(Axis::Orientation(0))
-            && !cv.occupies(Axis::Unit(0))
-            && !cv.occupies(Axis::Prime5(0)),
-        "plane blocks are zero, not a fallback identity"
+        !cv.occupies(Axis::OffPlane),
+        "and it is not off-plane: it has a plane, and it is not the sensor's"
+    );
+    assert!(
+        !cv.occupies(Axis::Orientation(0)) && !cv.occupies(Axis::Unit(0)),
+        "the sensor's own slots stay empty, not a fallback identity"
     );
     assert_eq!(w.class_key(), w.rotor().class_key());
-    assert!(w.same_form(&w), "missing plane form is not an exception when rotors agree");
+    assert!(w.same_form(&w));
+
+    // A ROTOR THAT TURNS NO PAIR PLANE is what `OffPlane` now reads. Two
+    // quarters on planes sharing an axis leave no two-subset invariant.
+    let mixed = Word::from_letters(&[
+        (alphabet::LetterId::quarter((0, 1)).unwrap(), false),
+        (alphabet::LetterId::quarter((0, 2)).unwrap(), false),
+    ]);
+    assert!(mixed.form().is_none(), "no pair plane is turned by it");
+    let cv = ClassVector::of_word(&mixed).expect("still a versor, so still a class");
+    assert!(
+        cv.occupies(Axis::OffPlane),
+        "and THAT is off-plane, got {:?}",
+        cv.coordinates()
+    );
 }
 
 #[test]

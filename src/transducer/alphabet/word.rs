@@ -195,31 +195,89 @@ impl Word {
     }
 
     /// The plane group is rotations ⋊ orientation, not a commuting tape.
-    /// `None` when the word does not preserve the sensor plane.
+    ///
+    /// EVERY PAIR PLANE THE RESIDUAL ROTOR TURNS IN, not the sensor's
+    /// alone. `PlaneForm.rot` has a seat per letter and `coordinates()`
+    /// reads three per pair plane, so the carrier and the reader were
+    /// six-plane from the first line; this was the writer, and it spelled
+    /// the block on `(PLANE_ROW, PLANE_COL)` and nothing else. A rotor
+    /// turning in `(2, 3)` keeps the sensor closed with the IDENTITY block
+    /// and occupied no coordinate at all; one turning in `(0, 2)` does not
+    /// keep the sensor closed and had no form. Measured at 3c76c15: 5853
+    /// of ~6100 admissions reported an empty coordinate list, and not one
+    /// occupied a plane other than zero. `free_row` could fill two of its
+    /// twelve columns.
+    ///
+    /// TWO THINGS MAKE THIS MORE THAN WIDENING THE LOOP.
+    ///
+    /// A CLOSED PLANE IS NOT A TURNING PLANE. A half turn on the sensor
+    /// keeps all six planes invariant, and on the four that share exactly
+    /// one axis with it the restriction is `diag(−1, 1)` — a reflection of
+    /// that plane, determinant −1, induced by a rotation elsewhere.
+    /// Un-flipping such a block and spelling it writes a half turn the
+    /// rotor does not have: one half turn became five. Only `det = +1` is
+    /// a rotation of the plane, and only a rotation is spelled.
+    ///
+    /// THE SHEET IS FACTORED OUT FIRST, not carried twice. `orientation`
+    /// is the ℤ/2 acting on the exponent lattice by inversion —
+    /// `PlaneForm::inverse` and `conjugate_by` both negate `rot`, which is
+    /// that action written down — and the letter realising it is the half
+    /// turn on the sensor's flip plane, two quarters on `(1, 2)`. Spelling
+    /// that plane while also setting the flag records one group element
+    /// twice, and `to_word` then emits four quarters, which is the
+    /// identity: the sheet annihilates itself on round trip. So the sheet
+    /// leaves the ROTOR before any plane is read, `R' = R · S`, exactly the
+    /// column negation this used to do on the sensor block alone, and
+    /// `to_word` puts it back.
+    ///
+    /// `None` is now "no pair plane is turned", where it was "the sensor
+    /// plane is not preserved", and a plane that is closed but unspellable
+    /// refuses the whole form rather than being dropped from it (rule 11).
     pub fn form(&self) -> Option<PlaneForm> {
-        let b = self.plane_block()?;
-        let det = &b[0][0] * &b[1][1] - &b[0][1] * &b[1][0];
-        let rho2 = &b[0][0] * &b[0][0] + &b[1][0] * &b[1][0];
-        if rho2.is_zero() {
-            return None;
+        let mut rotor = self.rotor();
+        let mut orientation = false;
+        if let Some(b) = crate::transducer::alphabet::rotor_block_on(&rotor, sensor_plane()) {
+            let det = &b[0][0] * &b[1][1] - &b[0][1] * &b[1][0];
+            let rho2 = &b[0][0] * &b[0][0] + &b[1][0] * &b[1][0];
+            if rho2.is_zero() {
+                return None;
+            }
+            let ori = det / &rho2;
+            if (-&ori).is_one() {
+                orientation = true;
+                rotor = rotor.geo(&PlaneForm::sheet_word().rotor());
+            } else if !ori.is_one() {
+                return None;
+            }
         }
-        let ori = det / &rho2;
-        let orientation = if ori.is_one() {
-            false
-        } else if (-&ori).is_one() {
-            true
-        } else {
-            return None;
-        };
-        let mut r = b;
-        if orientation {
-            r[0][1] = -&r[0][1];
-            r[1][1] = -&r[1][1];
-        }
-        let sp = spell(&r)?;
         let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
-        for &(id, inv) in sp.word.letters() {
-            rot[id.raw() as usize] += if inv { -1 } else { 1 };
+        let mut turned = false;
+        for &plane in &SLOT_PLANES_SIX {
+            // NOT APPLICABLE: the rotor carries this plane's axes off it.
+            let Some(b) = crate::transducer::alphabet::rotor_block_on(&rotor, plane) else {
+                continue;
+            };
+            let det = &b[0][0] * &b[1][1] - &b[0][1] * &b[1][0];
+            let rho2 = &b[0][0] * &b[0][0] + &b[1][0] * &b[1][0];
+            if rho2.is_zero() {
+                return None;
+            }
+            // NOT A ROTATION HERE: the restriction reflects this plane,
+            // which a rotation of another plane induces. It carries no
+            // exponent of its own.
+            if !(det / &rho2).is_one() {
+                continue;
+            }
+            // UNMEASURED: the plane turns and the alphabet does not spell
+            // what stands on it.
+            let sp = spell_on(plane, &b)?;
+            for &(id, inv) in sp.word.letters() {
+                rot[id.raw() as usize] += if inv { -1 } else { 1 };
+            }
+            turned = true;
+        }
+        if !turned {
+            return None;
         }
         let mut f = PlaneForm { orientation, rot };
         reduce_unit_exponents(&mut f);

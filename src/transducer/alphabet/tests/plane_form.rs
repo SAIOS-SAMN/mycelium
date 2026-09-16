@@ -3,6 +3,50 @@
 
 use crate::transducer::alphabet::*;
 
+/// THE FORM RE-DERIVES THE ROTOR IT WAS READ FROM. `to_word` is the
+/// inverse of `form`, so `form().to_word()` is the same group element,
+/// which is what lets `normal_form` return it. A plane spelled with the
+/// wrong handedness, or an orientation counted twice, breaks exactly here
+/// and nowhere visible until a conjugation comes out inverted.
+#[test]
+fn a_plane_form_rebuilds_the_rotor_it_was_read_from() {
+    let q = |p| Word::from_letters(&[(LetterId::quarter(p).expect("a pair plane"), false)]);
+    let cases: Vec<(&str, Word)> = vec![
+        ("sensor quarter", q((0, 1))),
+        ("off-sensor quarter", q((0, 2))),
+        ("far quarter", q((2, 3))),
+        ("sheet", PlaneForm::sheet_word()),
+        ("sensor half", q((0, 1)).compose(&q((0, 1)))),
+        ("double rotation", q((0, 1)).compose(&q((2, 3)))),
+        // The RAW conjugate tape, before any normalisation: `rebase` runs
+        // `normal_form` itself, so asserting on its output would only say
+        // the normal form is idempotent.
+        (
+            "raw conjugate tape",
+            Word::from_letters(&[
+                (LetterId::quarter((1, 2)).expect("sheet plane"), false),
+                (LetterId::quarter((0, 1)).expect("sensor plane"), false),
+                (LetterId::quarter((1, 2)).expect("sheet plane"), true),
+            ]),
+        ),
+        ("conjugate", q((0, 1)).rebase(&q((1, 2)))),
+        ("prime on the sensor", Word::from_letters(&[(LetterId::PRIME_5, false)])),
+    ];
+    for (name, w) in cases {
+        let Some(f) = w.form() else {
+            continue;
+        };
+        assert!(
+            f.to_word().rotor().projective_eq(&w.rotor()),
+            "{name}: the form rebuilds its own rotor"
+        );
+        assert!(
+            w.normal_form().rotor().projective_eq(&w.rotor()),
+            "{name}: and the normal form is the same element"
+        );
+    }
+}
+
 /// PlaneForm is the coefficient group: products and inverses are exact
 /// and O(1); a sheet conjugates exponents.
 #[test]

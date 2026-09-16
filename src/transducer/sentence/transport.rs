@@ -85,7 +85,14 @@ impl Transport {
 impl Form {
     /// The one function that moves a form between frames (3.10).
     pub fn refract(&self, gamma: &Transport) -> Option<Form> {
-        gamma.word.form()?;
+        // OFF THE SENSOR PLANE, WHICH IS WHAT THIS ASKS. It read
+        // `gamma.word.form()`, and while a form existed only for words
+        // keeping the sensor plane the two questions had one answer. A form
+        // is now every plane the word turns, so `Some` no longer implies
+        // the sensor is kept, and the precondition this refraction actually
+        // has — it rebases and regauges ON the sensor — is the sensor block
+        // itself.
+        gamma.word.plane_block()?;
         let mut f = self.clone();
         f.rebase_by_word(&gamma.word);
         f.regauge_listing(&gamma.gauge);
