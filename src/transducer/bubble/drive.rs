@@ -92,6 +92,9 @@ impl Contemplation {
                 if !b.dirty {
                     self.dirty.remove(&k);
                 }
+                // The pivot may have left a vortex on the form: file it at
+                // its class so a ruled candidate can collapse it.
+                self.refile_vortex(&k);
             } else {
                 self.dirty.remove(&k);
             }
@@ -163,6 +166,15 @@ impl Contemplation {
             }
         }
         let word_rotor = cech::rotor_of(word);
+        // EVERY OPERATOR THE ARRIVING WORD CARRIES (Expansion 4): a form's
+        // word vertices — letters among them since R55 — or a connection's
+        // letters. `rotor_of` reads a connection alone and answered `None`
+        // for every learned form, so no vortex was ever asked.
+        let carried: Vec<crate::transducer::alphabet::Rotor> = crate::transducer::sentence::words_of_element(word)
+            .iter()
+            .map(|w| w.rotor())
+            .filter(|r| !r.is_identity())
+            .collect();
         let mut fills = 0u64;
         let mut new_classes = 0u64;
         let mut spoken: Vec<Element> = Vec::new();
@@ -213,23 +225,19 @@ impl Contemplation {
                 }
                 if let Some(b) = self.bubbles.get_mut(bk) {
                     b.take_form(form);
-                    if let Some(r) = &word_rotor {
-                        if let Some(ck) = r.class_key() {
-                            // The symmetries the collapse kept join this
-                            // path's adjunction candidates: a loop that
-                            // admitted two discharges admits their
-                            // difference, and that difference is a rotor the
-                            // mind measured (Expansion 4, 37.7).
-                            if let Some(syms) = b.collapse_vortex(ck.as_bytes(), r.key().as_bytes(), "glue") {
-                                let chart = stalk::invariant_of(word);
-                                for s in syms {
-                                    adjoined.push((s, chart.clone()));
-                                }
-                            }
-                        }
-                    }
                 }
+                self.refile_vortex(bk);
             }
+        }
+        // THE COLLAPSE, READ AT THE VORTEX'S OWN CLASS and not under the
+        // word's chart: every bubble holding a vortex of a carried rotor's
+        // class is asked, whatever chart it covers. The symmetries the
+        // collapse kept join this path's adjunction candidates — a loop that
+        // admitted two discharges admits their difference, a rotor the mind
+        // measured (Expansion 4, 37.7).
+        {
+            let chart = stalk::invariant_of(word);
+            adjoined.extend(self.collapse_on(&carried, &chart, "glue"));
         }
         // index: by_chart fiber at the word's chart and peels
         for bk in &bubble_keys {

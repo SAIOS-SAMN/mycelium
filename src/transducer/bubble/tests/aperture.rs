@@ -270,18 +270,24 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     // it takes (`take_form`), so it is written where the pivot reads it.
     f.vortex = vortex.clone();
 
-    // The arriving word: the candidate `a`, learned, on its own chart; the
-    // bubble covers that chart so the pivot reaches it.
-    let word = element::from_connection(&a, &element::identity_versor(), &[], &Vec::new(), [0, 0, 0, 1])
-        .expect("a quarter turn is a connection");
-    let chart = crate::transducer::stalk::invariant_of(&word);
+    // The arriving word: the candidate `a`, LEARNED AS A FORM — a generator
+    // form, as a ruled letter arrives from the syllabus — whose chart is a
+    // form chart and shares no prefix with the bubble's cover of body
+    // charts. The collapse is read at the vortex's own class, so the
+    // bubble is found whatever it covers.
+    let word = crate::transducer::sentence::generator_form(&a.rotor(), &Invariant(vec![3, 5]), &[])
+        .expect("a rotor mints a generator");
     let mut cover = crate::network::nerve::Keyed::new();
-    cover.insert(chart.key(), ());
+    cover.insert(Invariant(vec![1, 3, 5]).key(), ());
     let key = crate::transducer::bubble::idea::idea_key(&f);
     let bubble = Bubble { form: Some(f), vortex, cover, ..Default::default() };
     let mut c = Contemplation::new();
     c.admit_incidence(&key, &bubble);
     c.bubbles.insert(&key, bubble);
+    assert!(
+        c.by_vortex.get(after.as_bytes()).is_some_and(|m| m.contains(&key)),
+        "the vortex is filed at its class"
+    );
 
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
     let (_, _, _, _, adjoined) = c.pivot_on(&word, &crate::transducer::family::NoCrystal, &mut budget);
@@ -292,6 +298,10 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     assert!(
         c.bubbles.get(&key).is_some_and(|b| b.vortex.is_empty()),
         "and the vortex collapsed"
+    );
+    assert!(
+        c.by_vortex.get(after.as_bytes()).is_none_or(|m| !m.contains(&key)),
+        "and its index entry left with it"
     );
 }
 
