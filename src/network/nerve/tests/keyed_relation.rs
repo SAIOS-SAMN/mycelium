@@ -324,3 +324,32 @@ fn meet_is_intersection_and_costs_shared_prefixes() {
     assert!(w > 0, "the meet is measured, not skipped");
     assert_eq!(w, w4, "4N of disjoint bulk costs the meet nothing: {w} then {w4}");
 }
+
+#[test]
+fn declared_coordinate_system_refuses_foreign_key_and_truncates_canonical_depth() {
+    use crate::network::nerve::keyed::relation::{CoordinateSystem, SchemaRefusal};
+    let mut k: Keyed<u64> = Keyed::for_system(CoordinateSystem::Class);
+    assert_eq!(k.system(), CoordinateSystem::Class);
+
+    let class_key = [crate::transducer::address::TAG_CLASS, 1, 2, 3];
+    let rotor_key = [crate::transducer::address::TAG_ROTOR, 4, 5, 6];
+
+    k.insert(class_key, 42);
+    assert_eq!(k.read_exact(&class_key), Ok(Some(&42)));
+    assert_eq!(
+        k.read_exact(&rotor_key),
+        Err(SchemaRefusal::IncompatibleSystem {
+            expected: CoordinateSystem::Class,
+            actual_tag: crate::transducer::address::TAG_ROTOR,
+        })
+    );
+
+    let chart_key = [crate::transducer::address::TAG_CHART, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0];
+    let trunc1 = Keyed::<()>::truncate_key(&chart_key, 1).expect("depth 1");
+    assert_eq!(trunc1.len(), 9);
+    assert_eq!(trunc1[0], crate::transducer::address::TAG_CHART);
+
+    let trunc2 = Keyed::<()>::truncate_key(&chart_key, 2).expect("depth 2");
+    assert_eq!(trunc2.len(), 17);
+    assert_eq!(Keyed::<()>::truncate_key(&chart_key, 3), None);
+}

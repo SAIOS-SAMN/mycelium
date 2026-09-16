@@ -938,13 +938,12 @@ pub fn extract_rule_with(
         let Some((_, first_pairs)) = sections_of_face.next() else {
             continue;
         };
-        // The face carries its word whether or not its member pairs can be
-        // named here — `face_carrying` says why — so a self-face at a
-        // multi-chart vertex is kept and the loop it closes survives.
+        // The face carries its word and edge transport from the pair forms.
+        let edge = pair_forms.iter().find_map(|pf| face_edge_between(pf, ea, eb));
         let Some(word) = form.face_word(i, j) else {
             continue;
         };
-        let Some(face) = form.face_carrying(i, j, word) else {
+        let Some(face) = form.face_carrying_with_edge(i, j, word, edge.clone()) else {
             continue;
         };
         form.faces.push(face);
@@ -955,11 +954,7 @@ pub fn extract_rule_with(
         for (w, pairs) in rest {
             let mut key = ends_pair_key(ea, eb);
             crate::transducer::address::put_bytes(&mut key, w.key().as_bytes());
-            // A SECTION FACE CARRIES ITS PLACEMENTS TOO. `FormFace::new` records
-            // the word and leaves the member pairs empty, and a face with no
-            // pair contributes no member path, so every loop closing on a
-            // section chord lost its carriage (D10).
-            let Some(section) = form.face_carrying(i, j, w) else {
+            let Some(section) = form.face_carrying_with_edge(i, j, w, edge.clone()) else {
                 continue;
             };
             form.faces.push(section);

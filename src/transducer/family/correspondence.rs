@@ -85,6 +85,32 @@ pub(crate) fn face_word_between(pf: &Form, a: &End, b: &End) -> Option<crate::tr
     }
     held
 }
+
+/// Read the edge transport between two ends off a pair form's faces.
+pub(crate) fn face_edge_between(
+    pf: &Form,
+    a: &End,
+    b: &End,
+) -> Option<crate::transducer::sentence::Transport> {
+    for f in &pf.faces {
+        let ea = end_of(pf.vertices.get(f.i as usize)?)?;
+        let eb = end_of(pf.vertices.get(f.j as usize)?)?;
+        if &ea == a && &eb == b {
+            for (_, p) in f.at.scoped() {
+                if let Some(ref edge) = p.edge {
+                    return Some(edge.clone());
+                }
+            }
+        } else if &ea == b && &eb == a {
+            for (_, p) in f.at.scoped() {
+                if let Some(ref edge) = p.edge {
+                    return edge.inverse();
+                }
+            }
+        }
+    }
+    None
+}
 // `word_place_of_class(pf, tc)` stood here and answered the representative
 // member's placement to a caller asking about a CLASS. Its one caller —
 // `rebase_named_faces`, comparing two classes across pair forms — reads

@@ -12,16 +12,78 @@ use super::*;
 /// follow-up — correctness first.)
 /// A KEYED RELATION over A21 coordinate bytes: a value reached by its
 /// key's bits, O(bits) per read and write, never a scan. A prefix of a
+/// A declared coordinate system naming the carrier's mathematical schema (Rule 6).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum CoordinateSystem {
+    #[default]
+    Any,
+    Class,
+    Rotor,
+    Chart,
+    Form,
+    Task,
+    Cell,
+}
+
+impl CoordinateSystem {
+    pub const fn tag(self) -> Option<u8> {
+        match self {
+            CoordinateSystem::Any => None,
+            CoordinateSystem::Rotor => Some(crate::transducer::address::TAG_ROTOR),
+            CoordinateSystem::Chart => Some(crate::transducer::address::TAG_CHART),
+            CoordinateSystem::Class => Some(crate::transducer::address::TAG_CLASS),
+            CoordinateSystem::Form => Some(crate::transducer::address::TAG_FORM),
+            CoordinateSystem::Cell => Some(crate::transducer::address::TAG_CELL),
+            CoordinateSystem::Task => Some(crate::transducer::address::TAG_TASK),
+        }
+    }
+}
+
+/// A refusal returned when an operation breaches the carrier's declared coordinate system (Rule 11).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SchemaRefusal {
+    IncompatibleSystem {
+        expected: CoordinateSystem,
+        actual_tag: u8,
+    },
+    InvalidDepth {
+        max_depth: usize,
+        requested: usize,
+    },
+}
+
+impl std::fmt::Display for SchemaRefusal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SchemaRefusal::IncompatibleSystem { expected, actual_tag } => {
+                write!(f, "incompatible coordinate system: expected {expected:?}, got tag {actual_tag}")
+            }
+            SchemaRefusal::InvalidDepth { max_depth, requested } => {
+                write!(f, "invalid depth {requested} over max depth {max_depth}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for SchemaRefusal {}
+
+/// A KEYED RELATION over A21 coordinate bytes: a value reached by its
+/// key's bits, O(bits) per read and write, never a scan. A prefix of a
 /// key is a coarser stratum (`fiber`). Digests are not keys.
 #[derive(Clone, Debug)]
 pub struct Keyed<V> {
     root: Option<Box<Node<V>>>,
     n: usize,
+    system: CoordinateSystem,
 }
 
 impl<V> Default for Keyed<V> {
     fn default() -> Self {
-        Keyed { root: None, n: 0 }
+        Keyed {
+            root: None,
+            n: 0,
+            system: CoordinateSystem::Any,
+        }
     }
 }
 
@@ -37,7 +99,11 @@ impl<V> Default for Keyed<V> {
 /// from the right by a keyed read — no product of the two.
 impl<V: PartialEq> PartialEq for Keyed<V> {
     fn eq(&self, other: &Self) -> bool {
-        if self.n != other.n {
+        if self.n != other.n
+            || (self.system != other.system
+                && self.system != CoordinateSystem::Any
+                && other.system != CoordinateSystem::Any)
+        {
             return false;
         }
         self.scoped().all(|(k, v)| other.get(&k) == Some(v))
@@ -49,6 +115,76 @@ impl<V: Eq> Eq for Keyed<V> {}
 impl<V> Keyed<V> {
     pub fn new() -> Self {
         Keyed::default()
+    }
+
+    pub fn for_system(system: CoordinateSystem) -> Self {
+        Keyed {
+            root: None,
+            n: 0,
+            system,
+        }
+    }
+
+    pub fn system(&self) -> CoordinateSystem {
+        self.system
+    }
+
+    /// Read an exact key under the declared coordinate system, refusing on a foreign system (Rule 11).
+    pub fn read_exact(&self, key: &[u8]) -> Result<Option<&V>, SchemaRefusal> {
+        if self.system != CoordinateSystem::Any {
+            if let Some(tag) = crate::transducer::address::tag_of(key) {
+                if let Some(expected) = self.system.tag() {
+                    if tag != expected {
+                        return Err(SchemaRefusal::IncompatibleSystem {
+                            expected: self.system,
+                            actual_tag: tag,
+                        });
+                    }
+                }
+            }
+        }
+        Ok(self.get(key))
+    }
+
+    /// Read a fiber under the declared coordinate system, refusing on a foreign system (Rule 11).
+    pub fn read_fiber<'a>(&'a self, prefix: Prefix<'a>) -> Result<Fiber<'a, V>, SchemaRefusal> {
+        if self.system != CoordinateSystem::Any {
+            if let Some(tag) = crate::transducer::address::tag_of(prefix.as_bytes()) {
+                if let Some(expected) = self.system.tag() {
+                    if tag != expected {
+                        return Err(SchemaRefusal::IncompatibleSystem {
+                            expected: self.system,
+                            actual_tag: tag,
+                        });
+                    }
+                }
+            }
+        }
+        Ok(self.fiber(prefix))
+    }
+
+    /// Truncate a canonical coordinate key by depth (Rule 6).
+    pub fn truncate_key(key: &[u8], depth: usize) -> Option<&[u8]> {
+        if depth == 0 {
+            return Some(&key[..0]);
+        }
+        let tag = crate::transducer::address::tag_of(key)?;
+        match tag {
+            crate::transducer::address::TAG_CHART => {
+                let max_depth = (key.len() - 1) / 8;
+                if depth > max_depth {
+                    return None;
+                }
+                Some(&key[..1 + depth * 8])
+            }
+            _ => {
+                if depth > 1 {
+                    None
+                } else {
+                    Some(key)
+                }
+            }
+        }
     }
 
     /// Bind `key` to `value`; a held key is rebound. Returns the value

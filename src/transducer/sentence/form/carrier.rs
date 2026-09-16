@@ -753,23 +753,40 @@ impl Form {
     /// empty, and a face with no placement contributes no member path to any
     /// loop, so every loop through it lost its carriage.
     pub fn face_carrying(&self, i: u16, j: u16, word: Word) -> Option<FormFace> {
-        // A FACE EXISTS WHETHER OR NOT ITS MEMBER PAIRS CAN BE NAMED HERE.
-        // Where both endpoints carry several members — a SELF-FACE at a
-        // multi-chart vertex is the case that matters: two bodies of one
-        // transport class related on a pair form, which map to one rule vertex
-        // — the pairing is a fact about the scene this function does not have,
-        // and the face records its WORD alone.
-        //
-        // Refusing instead dropped the face and the loop it closes. Measured
-        // over the minting families: 18 of them lost a face and a loop, and
-        // I34 is what that costs — "every rule was a star with no loop and the
-        // pivot had nothing to act on". The loop's holonomy is a product of
-        // WORDS and survives; what the face cannot contribute is a member path,
-        // so the loop carries no carriage along it, which is the honest reading
-        // of a relation whose bodies are unnamed.
+        self.face_carrying_with_edge(i, j, word, None)
+    }
+
+    /// A FACE CARRYING A NAMED WORD AND AN EDGE TRANSPORT.
+    pub fn face_carrying_with_edge(
+        &self,
+        i: u16,
+        j: u16,
+        word: Word,
+        edge: Option<Transport>,
+    ) -> Option<FormFace> {
         match self.face_pairs(i, j) {
-            Some(pairs) => self.face_at_by(i, j, &pairs, &word),
-            None => Some(FormFace::new(i, j, word)),
+            Some(pairs) => {
+                crate::transducer::family::trace::trace_at("face_at", j as usize);
+                let mut at = Keyed::new();
+                for (ci, cj) in &pairs {
+                    if let Some(p) = self.face_place_by(i, ci, j, cj, &word, edge.clone()) {
+                        at.insert(crate::transducer::sentence::face_pair_key(ci, cj), p);
+                    }
+                }
+                Some(FormFace { i, j, word, at })
+            }
+            None => {
+                let mut f = FormFace::new(i, j, word);
+                if let (Some(ci), Some(cj)) = (
+                    self.vertices.get(i as usize).and_then(|v| v.face_chart()),
+                    self.vertices.get(j as usize).and_then(|v| v.face_chart()),
+                ) {
+                    if let Some(p) = self.face_place_by(i, &ci, j, &cj, &f.word, edge) {
+                        f.at.insert(crate::transducer::sentence::face_pair_key(&ci, &cj), p);
+                    }
+                }
+                Some(f)
+            }
         }
     }
 
