@@ -322,3 +322,23 @@ fn a_versor_carrying_the_prime_finds_the_letter_at_its_chart() {
         "the mind offers the letter to a versor whose norm the prime divides"
     );
 }
+
+#[test]
+fn derivation_factors_offplane_generator_and_verifies_rotor() {
+    // A generator on an off-sensor plane (2, 3)
+    let offplane_q = LetterId::quarter((2, 3)).expect("offplane quarter");
+    let gen_word = Word::from_letters(&[(offplane_q, false)]);
+    let held = Holds::of(gen_word.clone(), 99);
+
+    // Deriving the spelled offplane generator cites it directly without requiring a 2D plane form
+    let d = crate::transducer::family::derivation_of_spelled(
+        &held,
+        &mut budget(),
+        &crate::transducer::alphabet::Derivation::spelled(gen_word.clone()),
+        &[],
+    ).expect("derivation succeeds");
+
+    assert!(!d.is_spelled(), "offplane generator is factored rather than left as spelled");
+    assert_eq!(d.generators.len(), 1, "cites the held offplane generator");
+    assert!(d.rotor().projective_eq(&gen_word.rotor()), "the derivation projectively reproduces the Clifford rotor");
+}

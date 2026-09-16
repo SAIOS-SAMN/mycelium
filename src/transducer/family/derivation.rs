@@ -320,7 +320,31 @@ fn derivation_of(
     // and the sheet across planes — and leaves a single-plane word as it
     // is.
     let spelled = || Some(Derivation::spelled(w.geodesic()));
+    if w.is_identity() {
+        return spelled();
+    }
     let held = crystal.generators_at_meet(occupied, budget);
+    let target_rotor = w.rotor();
+
+    // 1. DIRECT GENERATOR FACTORIZATION: check whether the word projectively
+    // matches a held generator across ANY plane (including off-plane), without
+    // flattening to the sensor plane.
+    for (form, vertex, g) in &held {
+        let gr = g.rotor();
+        if gr.projective_eq(&target_rotor) {
+            return Some(Derivation::compose(
+                &[((*form).clone(), (*vertex).clone(), 1, (*g).clone())],
+                Word::identity(),
+            ));
+        }
+        if gr.inverse().is_some_and(|inv| inv.projective_eq(&target_rotor)) {
+            return Some(Derivation::compose(
+                &[((*form).clone(), (*vertex).clone(), -1, (*g).clone())],
+                Word::identity(),
+            ));
+        }
+    }
+
     let Some(target) = w.form() else {
         return spelled();
     };
@@ -343,9 +367,17 @@ fn derivation_of(
         }
         Derivation::compose(&with_words, residue.geodesic())
     };
-    match crate::transducer::factor::factor_on_plane(&target, &basis) {
-        Factored::Understood(tape) => Some(one(&tape, Word::identity())),
-        Factored::Novel { remainder, understood } => Some(one(&understood, remainder.to_word())),
-        Factored::Unmeasured => None,
+    let derived = match crate::transducer::factor::factor_on_plane(&target, &basis) {
+        Factored::Understood(tape) => one(&tape, Word::identity()),
+        Factored::Novel { remainder, understood } => one(&understood, remainder.to_word()),
+        Factored::Unmeasured => return None,
+    };
+    // ROTOR REPLAY VERIFICATION: ensure the plane factorisation projectively
+    // reproduces the target word's 4D Clifford rotor action. A non-abelian
+    // product or twist that diverges from the true rotor is refused and
+    // falls back to the geodesic spelling.
+    if !derived.rotor().projective_eq(&target_rotor) {
+        return spelled();
     }
+    Some(derived)
 }
