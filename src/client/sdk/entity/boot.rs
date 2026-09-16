@@ -121,4 +121,7 @@ impl Entity {
         self.session.kernel()
     }
 
+    pub fn axis_index_counts(&self) -> (usize, usize) {
+        self.epigenome.axis_index_counts()
+    }
 }

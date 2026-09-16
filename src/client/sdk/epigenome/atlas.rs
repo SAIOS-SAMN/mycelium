@@ -256,6 +256,17 @@ impl Epigenome {
         std::mem::take(&mut self.promoted)
     }
 
+    /// Size of the axis index: charts filed, and total word entries filed across all charts and axes.
+    pub fn axis_index_counts(&self) -> (usize, usize) {
+        let charts = self.axis_index.len();
+        let words: usize = self
+            .axis_index
+            .scoped()
+            .map(|(_, axes)| axes.scoped().map(|(_, w)| w.len()).sum::<usize>())
+            .sum();
+        (charts, words)
+    }
+
     /// The dialect entry at this form's address, WHEN IT IS THIS VERTEX.
     ///
     /// The name says `same_vertex` and the re-derivation that proves it

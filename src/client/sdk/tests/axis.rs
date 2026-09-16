@@ -58,6 +58,8 @@ fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
     let addr = epi
         .stand_dialect_at(sentence, 1, 1)
         .expect("the sentence stands in the dialect");
+    let (charts, words) = epi.axis_index_counts();
+    assert!(charts > 0 && words > 0, "axis_index_counts reports admitted words: charts {charts} words {words}");
     for ax in &axes {
         assert!(
             !on_axis_of(&epi.axis_index, &chart, *ax).is_empty(),
