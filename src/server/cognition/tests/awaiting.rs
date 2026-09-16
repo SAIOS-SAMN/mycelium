@@ -142,6 +142,67 @@ fn one_frame_adjudicates_a_stood_sentence_and_a_waiting_one_apart() {
     assert_eq!(back, heard, "the wait and the verdict beside it both round trip");
 }
 
+/// A RULING THAT DID NOT HAPPEN REHEARS NOTHING.
+///
+/// `ruled_admit` inserts into the ruled cover only where this court holds
+/// the word — `word_at` answers, or the whole body is skipped — while the
+/// re-hearing beneath it ran unconditionally. So an address "ruled" for a
+/// word this court does not hold woke every sentence waiting on that
+/// citation, and each found it still unruled and docketed again. That is
+/// the backlog: `court speech awaiting` 98 → 160 → 206 over twenty
+/// minutes on ca485cc, every line reading that a cited form is not ruled
+/// here.
+/// THE MOVE IS THAT THE DOCKET IS NOT SPENT, and it is read on a sentence
+/// that would NOT re-docket. A sentence citing the address it waits on
+/// simply waits again, so the carrier looks the same either way and says
+/// nothing about whether an adjudication ran. One with nothing left to
+/// wait on is heard, kept, and gone from the docket — so its presence
+/// after the call is the reading (§3.2: the move, never the outcome).
+#[test]
+fn a_ruling_that_did_not_happen_rehears_nothing() {
+    let mut k = Kernel::new();
+    // An address this court holds no word at, and a sentence with nothing
+    // to wait on, docketed under it.
+    let absent = sentence_with(Derivation::spelled(quarter(1)), 1).address();
+    let plain = sentence_with(Derivation::spelled(quarter(3)), 5);
+    k.await_citation([1; 32], &[0; 32], &plain, &absent);
+    assert_eq!(k.awaiting_len(absent.as_bytes()), 1, "the sentence is docketed");
+    assert!(
+        k.word_at(absent.as_bytes()).is_none(),
+        "this court holds no such word, so there is nothing to rule"
+    );
+
+    k.ruled_admit(absent.as_bytes());
+
+    assert!(
+        !k.ruled_contains(absent.as_bytes()),
+        "nothing was ruled — the cover does not carry it"
+    );
+    assert_eq!(
+        k.awaiting_len(absent.as_bytes()),
+        1,
+        "and the docket was not spent on a ruling that did not happen"
+    );
+
+    // And the ruling that DOES happen still spends it, or the gate would
+    // have closed the path instead of correcting it.
+    assert_eq!(
+        k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&plain)),
+        vec![crate::anastome::dialogue::SPEECH_STOOD],
+        "the court hears the sentence itself"
+    );
+    k.rule_all_provisionals();
+    let held = plain.address();
+    k.await_citation([1; 32], &[0; 32], &plain, &held);
+    assert_eq!(k.awaiting_len(held.as_bytes()), 1, "docketed under an address it holds");
+    k.ruled_admit(held.as_bytes());
+    assert_eq!(
+        k.awaiting_len(held.as_bytes()),
+        0,
+        "a real ruling rehears, and the docket is spent"
+    );
+}
+
 /// The docket is keyed by the address waited on and by the sentence
 /// inside it: a voice that speaks one sentence twice waits once, and the
 /// bucket does not grow with repetition (rule 10).

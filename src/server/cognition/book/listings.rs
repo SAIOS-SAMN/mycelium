@@ -588,6 +588,18 @@ impl Kernel {
     /// the same byte exactness one level down (1.7). The three sites where
     /// the word is this court's own call `section_own` by name.
     pub(crate) fn ruled_admit(&mut self, addr: &[u8]) {
+        // WHETHER THIS ADDRESS ACTUALLY ENTERED THE RULED COVER. The
+        // re-hearing below was unconditional, and the insert is not: a
+        // court asked to rule an address whose word it does not hold does
+        // nothing here and then woke every sentence waiting on that
+        // citation, which found it still unruled and waited again. The
+        // backlog is that loop — `court speech awaiting` 98 → 160 → 206
+        // over twenty minutes on ca485cc, every line reading "cited … is
+        // not ruled here".
+        //
+        // A ruling that did not happen is not a ruling, and nothing is
+        // reheard on it.
+        let mut ruled = false;
         if let Some(w) = self.word_at(addr) {
             let inv = crate::transducer::stalk::invariant_of(w);
             let words = crate::transducer::sentence::words_of_element(w);
@@ -610,12 +622,16 @@ impl Kernel {
             }
             self.ruled_addrs.insert(addr, ());
             self.refresh_ruled_root();
+            ruled = true;
         }
         // 21 step 3: this address is ruled now, so every sentence that
         // waited on it as a citation is heard again. Outside the
         // `word_at` borrow, and after the cover carries it — a re-hearing
-        // that ran first would find it still unruled and wait again.
-        self.rehear_awaiting(addr);
+        // that ran first would find it still unruled and wait again — and
+        // only where the cover actually carries it.
+        if ruled {
+            self.rehear_awaiting(addr);
+        }
     }
 
     /// A word this court reached on its OWN tapes and ruled: it joins the
