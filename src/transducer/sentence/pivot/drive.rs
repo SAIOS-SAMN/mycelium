@@ -601,11 +601,22 @@ impl Form {
                         // conjugate to `hw⁻¹`. Conjugacy is exactly what
                         // `class_key` reads (15.3), so this is an exact
                         // necessary condition and costs one keyed compare.
-                        let want = match side {
-                            Side::Right => hw.rotor().class_key(),
-                            Side::Left => hw.inverse().rotor().class_key(),
-                        };
-                        if let (Some(want), Some(got)) = (want, word.rotor().class_key()) {
+                        //
+                        // AND THE TWO SIDES NAME ONE COORDINATE. This read
+                        // `hw.rotor()` on the right and `hw.inverse()
+                        // .rotor()` on the left, which is the same value:
+                        // `class_invariants` is the ray-corrected scalar
+                        // and pseudoscalar squared over the weight,
+                        // reversion preserves both grades, and the weight
+                        // divides out — so a rotor and its inverse stand at
+                        // one conjugacy stratum, which
+                        // `a_rotor_and_its_inverse_stand_at_one_stratum`
+                        // asserts. Two constructions of one fact (law 12),
+                        // and a branch that could drift from itself.
+                        let _ = side;
+                        if let (Some(want), Some(got)) =
+                            (hw.rotor().class_key(), word.rotor().class_key())
+                        {
                             if want != got {
                                 eliminated += 1;
                                 continue;
