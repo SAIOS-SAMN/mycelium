@@ -70,7 +70,7 @@ impl Contemplation {
         }
         let keys: Vec<Vec<u8>> = self.bubbles.scoped().map(|(k, _)| k).collect();
         for k in keys {
-            let Some(before) = self.bubbles.get(&k).map(|b| b.candidate_keys()) else {
+            let Some(before) = self.bubbles.get(&k).map(|b| b.vortex_strata()) else {
                 continue;
             };
             let mut collapsed = false;

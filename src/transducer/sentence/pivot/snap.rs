@@ -183,12 +183,27 @@ pub(crate) struct Candidate {
     pub(crate) by: PivotBy,
 }
 
-/// Hold a vortex cell by its after class, then by the discharging word's
-/// rotor A1 key. Collapse reads `(class, r.key())`.
+/// HOLD A VORTEX CELL BY THE CLASS THE LOOP STANDS IN, then by the
+/// discharging word's move key.
+///
+/// It was held by the class the loop would be left in (`after`), and that
+/// coordinate is unreachable by anything that could decide it. A closing
+/// candidate leaves the loop at the zero class, so every closed vortex in
+/// every bubble filed under one key; and a word arriving to decide one
+/// knows its own rotor, not the class some loop it never met would land
+/// in. Measured across three commits: 47 vortices formed and none ever
+/// asked.
+///
+/// `before` is `kappa.class_key()`, the loop's state vector as it stands,
+/// and `ClassVector::class_key` writes the rotor's conjugacy invariants
+/// first — so the class of the holonomy is this key's depth-one stratum.
+/// The eliminator in the drive proves a candidate's rotor is conjugate to
+/// that holonomy, so a deciding word's own class key IS the stratum this
+/// cell hangs under, and the read is a projection rather than a guess.
 pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
-    let after = c.after.clone();
+    let before = c.before.clone();
     let k = c.by.move_key();
-    v.nested_insert(after, k, c);
+    v.nested_insert(before, k, c);
 }
 
 /// ONE CERTIFICATE PER MOVE. `candidates_for` offers a held word on both

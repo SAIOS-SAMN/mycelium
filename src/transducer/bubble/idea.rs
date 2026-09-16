@@ -465,19 +465,49 @@ impl Bubble {
         (spent, pivoted, adjoined)
     }
 
-    /// A glue or a syllabus class whose key equals one held certificate's
-    /// `after` applies the certificate keyed by that rotor's A1 key; the
-    /// others of the class are not applied (dialect cells).
+    /// THE VORTEX HERE STANDING AT A CONJUGACY STRATUM AND HOLDING `word`.
+    ///
+    /// A vortex is filed under the loop's own class vector (`vortex_put`),
+    /// whose depth-one coordinate is the holonomy rotor's conjugacy class.
+    /// A deciding word knows that stratum and nothing finer: not the
+    /// carriage the loop stood at, not its hue. So the boundary is parsed
+    /// out of each key through the class schema and compared at depth one
+    /// — never a byte count, and never the whole key.
+    ///
+    /// The walk is this bubble's own carrier, which is one cell's boundary
+    /// (rule 1). A key that does not parse as a class vector is not a
+    /// vortex of this system and is passed over rather than matched.
+    fn vortex_at_stratum(&self, stratum: &[u8], word: &[u8]) -> Option<Vec<u8>> {
+        let schema = crate::transducer::sentence::ClassVector::class_schema();
+        // index: this bubble's own vortices, its boundary
+        for (class, cells) in self.vortex.scoped() {
+            if !cells.contains(word) {
+                continue;
+            }
+            let Ok(end) = schema.boundary(&class, 1) else {
+                continue;
+            };
+            if class.get(..end) == Some(stratum) {
+                return Some(class);
+            }
+        }
+        None
+    }
+
+    /// A glue or a syllabus class standing at the stratum a held vortex's
+    /// loop stands in applies the certificate keyed by the deciding move;
+    /// the others of that vortex are not applied (dialect cells).
     pub(crate) fn collapse_vortex(
         &mut self,
-        class: &[u8],
+        stratum: &[u8],
         word: &[u8],
         by: &'static str,
     ) -> Option<Vec<crate::transducer::alphabet::Rotor>> {
-        let mut inner = self.vortex.remove(class)?;
+        let class = self.vortex_at_stratum(stratum, word)?;
+        let mut inner = self.vortex.remove(&class)?;
         let Some(win) = inner.remove(word) else {
             if !inner.is_empty() {
-                self.vortex.insert(class, inner);
+                self.vortex.insert(&class, inner);
             }
             return None;
         };
@@ -513,48 +543,24 @@ impl Bubble {
         Some(symmetries)
     }
 
-    /// THE CANDIDATE KEYS THIS BUBBLE'S VORTICES HOLD: the inner keys of
-    /// `vortex`, which `vortex_put` writes as the discharging move's key
-    /// (a word move's rotor key). The one reader of that coordinate — the
-    /// contemplation files the bubble under each (`by_vortex`) and a
-    /// collapse is asked at one (law 12).
-    pub(crate) fn candidate_keys(&self) -> Vec<Vec<u8>> {
-        let mut out = Vec::new();
-        for (_, cells) in self.vortex.scoped() {
-            for (k, _) in cells.scoped() {
-                out.push(k);
-            }
-        }
-        out
-    }
-
-    /// COLLAPSE EVERY VORTEX HERE THAT HOLDS `word` AS A CANDIDATE. A
-    /// vortex is held under the loop's AFTER-class and a collapse is asked
-    /// at `(class, candidate)`; a ruled word knows its own key and nothing
-    /// about the class a loop it once discharged was left in, so the
-    /// classes are read off this bubble's own vortices — one bubble's
-    /// carrier, never a walk of the contemplation (rule 10). `None` where
-    /// no vortex here holds it.
+    /// THE CONJUGACY STRATA THIS BUBBLE'S VORTICES STAND AT: the depth-one
+    /// coordinate of each outer key of `vortex`. The contemplation files
+    /// the bubble under each (`by_vortex`), so a deciding word's own class
+    /// key reaches it by a keyed read, and there is one construction of
+    /// that coordinate for the writer and the reader (law 12).
     ///
-    /// A collapse clears the form's vortices (`collapse_vortex`), so at
-    /// most one of several classes holding the candidate collapses on one
-    /// call; the loops re-walk under the applied move and re-form what
-    /// still stands.
-    pub(crate) fn collapse_candidate(
-        &mut self,
-        word: &[u8],
-        by: &'static str,
-    ) -> Option<Vec<crate::transducer::alphabet::Rotor>> {
-        let classes: Vec<Vec<u8>> = self
-            .vortex
-            .scoped()
-            .filter(|(_, cells)| cells.contains(word))
-            .map(|(class, _)| class)
-            .collect();
-        let mut out: Option<Vec<crate::transducer::alphabet::Rotor>> = None;
-        for class in classes {
-            if let Some(syms) = self.collapse_vortex(&class, word, by) {
-                out.get_or_insert_with(Vec::new).extend(syms);
+    /// A key that does not parse as a class vector contributes no stratum
+    /// rather than contributing its own bytes as one (rule 11).
+    pub(crate) fn vortex_strata(&self) -> Vec<Vec<u8>> {
+        let schema = crate::transducer::sentence::ClassVector::class_schema();
+        let mut out = Vec::new();
+        // index: this bubble's own vortices, its boundary
+        for (class, _) in self.vortex.scoped() {
+            let Ok(end) = schema.boundary(&class, 1) else {
+                continue;
+            };
+            if let Some(s) = class.get(..end) {
+                out.push(s.to_vec());
             }
         }
         out
