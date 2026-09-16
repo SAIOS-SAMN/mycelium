@@ -849,3 +849,87 @@ fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
         "at least one candidate certifies, or this asserts nothing: chord {chord}"
     );
 }
+
+/// R79: FACE WORDS AND EDGE TRANSPORTS ADMIT BIDIRECTIONALLY ON MEMBER CHARTS.
+///
+/// An edge or face between member charts A and B was previously filed only under
+/// A, leaving B without access to the transport, and was skipped entirely if its
+/// rotor was the identity — dropping all placement, dilation and hue transports.
+/// With bidirectional admission, both A and B are indexed with the direct and
+/// inverse transports, and non-rotor carriages are filed on their proper axes.
+#[test]
+fn face_words_and_edge_transports_admit_bidirectionally_on_member_charts() {
+    use crate::transducer::sentence::{
+        admit_words_acting, on_axis_of, retract_words_acting, AxisIndex, FacePlace, FormFace,
+    };
+    use crate::transducer::stalk::Invariant;
+
+    let chart_a = Invariant(vec![1, 7, 4]);
+    let chart_b = Invariant(vec![1, 7, 5]);
+    let q = order4();
+
+    let mut f = Form::default();
+    let mut face = FormFace::new(0, 1, q.clone());
+    let edge_transport = Transport {
+        word: Word::identity(),
+        carriage: element::translator_versor(2, 4),
+        gauge: Vec::new(),
+    };
+    let place = FacePlace {
+        carriage: element::translator_versor(1, 1),
+        gauge: Vec::new(),
+        edge: Some(edge_transport),
+    };
+    face.at.insert(
+        crate::transducer::sentence::face_pair_key(&chart_a, &chart_b),
+        place,
+    );
+    f.faces.push(face);
+
+    let mut ix = AxisIndex::new();
+    admit_words_acting(&mut ix, &f);
+
+    // Both charts receive the edge placement (direct and inverse carriage)
+    assert!(
+        !on_axis_of(&ix, &chart_a, Axis::Placement).is_empty(),
+        "chart A holds the edge placement transport"
+    );
+    assert!(
+        !on_axis_of(&ix, &chart_b, Axis::Placement).is_empty(),
+        "chart B holds the inverse edge placement transport"
+    );
+
+    // Both charts receive the face word turning coordinates
+    let occupied = ClassVector::of_word(&q).expect("class").coordinates();
+    for axis in &occupied {
+        assert!(
+            !on_axis_of(&ix, &chart_a, *axis).is_empty(),
+            "chart A holds the turning face word on {axis:?}"
+        );
+        assert!(
+            !on_axis_of(&ix, &chart_b, *axis).is_empty(),
+            "chart B holds the inverse turning face word on {axis:?}"
+        );
+    }
+
+    // Retract clears both charts
+    retract_words_acting(&mut ix, &f);
+    assert!(
+        on_axis_of(&ix, &chart_a, Axis::Placement).is_empty(),
+        "retract clears chart A placement"
+    );
+    assert!(
+        on_axis_of(&ix, &chart_b, Axis::Placement).is_empty(),
+        "retract clears chart B placement"
+    );
+    for axis in &occupied {
+        assert!(
+            on_axis_of(&ix, &chart_a, *axis).is_empty(),
+            "retract clears chart A on {axis:?}"
+        );
+        assert!(
+            on_axis_of(&ix, &chart_b, *axis).is_empty(),
+            "retract clears chart B on {axis:?}"
+        );
+    }
+}

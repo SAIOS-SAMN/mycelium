@@ -150,49 +150,42 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
     for face in &f.faces {
         for (k, p) in face.at.scoped() {
             members += 1;
+            let Some((ci_bytes, cj_bytes)) = crate::transducer::sentence::read_face_pair_key(&k) else {
+                continue;
+            };
+            let ci = stalk::Invariant::from_key(&ci_bytes);
+            let cj = stalk::Invariant::from_key(&cj_bytes);
             if let Some(ref e) = p.edge {
                 if !e.word.rotor().is_identity() {
                     turning_edges += 1;
-                    // An edge transport IS a `Transport` — word, carriage
-                    // and gauge together — and it was admitted as its word
-                    // alone, so the stabilizer element the pair picks out
-                    // was filed without the placement it carries.
-                    if let Some(cv) = acted_class(e) {
-                        filed.extend(cv.coordinates());
-                    }
-                    if let Some((ci_bytes, _)) = crate::transducer::sentence::read_face_pair_key(&k) {
-                        if let Some(ci) = stalk::Invariant::from_key(&ci_bytes) {
-                            admit_words(index, &ci, std::slice::from_ref(e));
-                        }
+                }
+                if let Some(cv) = acted_class(e) {
+                    filed.extend(cv.coordinates());
+                }
+                if let Some(ref ci) = ci {
+                    admit_words(index, ci, std::slice::from_ref(e));
+                }
+                if let Some(ref cj) = cj {
+                    if let Some(inv_e) = e.inverse() {
+                        admit_words(index, cj, std::slice::from_ref(&inv_e));
                     }
                 }
             }
-        }
-        // THE FACE'S OWN WORD, AT EACH MEMBER PAIR IT RELATES. The word is a
-        // vertex coordinate — `w_j ∘ w_i⁻¹` off the two derivations — but
-        // the PLACEMENT it carries a body by is the pair's, and it was
-        // admitted with no placement at all under `vi.charts()`, a
-        // vertex-level read for a member-level fact (D10). Each pair's own
-        // `FacePlace` carries the relative carriage and the relative hue
-        // map; this is the same reading the edge arm above makes.
-        if !face.word.rotor().is_identity() {
-            for (k, p) in face.at.scoped() {
-                let t = Transport {
-                    word: face.word.clone(),
-                    carriage: p.carriage.clone(),
-                    gauge: p.gauge.clone(),
-                };
-                if let Some(cv) = acted_class(&t) {
-                    filed.extend(cv.coordinates());
+            let t = Transport {
+                word: face.word.clone(),
+                carriage: p.carriage.clone(),
+                gauge: p.gauge.clone(),
+            };
+            if let Some(cv) = acted_class(&t) {
+                filed.extend(cv.coordinates());
+            }
+            if let Some(ref ci) = ci {
+                admit_words(index, ci, std::slice::from_ref(&t));
+            }
+            if let Some(ref cj) = cj {
+                if let Some(inv_t) = t.inverse() {
+                    admit_words(index, cj, std::slice::from_ref(&inv_t));
                 }
-                let Some((ci_bytes, _)) = crate::transducer::sentence::read_face_pair_key(&k)
-                else {
-                    continue;
-                };
-                let Some(ci) = stalk::Invariant::from_key(&ci_bytes) else {
-                    continue;
-                };
-                admit_words(index, &ci, std::slice::from_ref(&t));
             }
         }
     }
@@ -223,24 +216,33 @@ pub fn retract_words_acting(index: &mut AxisIndex, f: &Form) {
     }
     for face in &f.faces {
         for (k, p) in face.at.scoped() {
-            let Some((ci_bytes, _)) = crate::transducer::sentence::read_face_pair_key(&k) else {
+            let Some((ci_bytes, cj_bytes)) = crate::transducer::sentence::read_face_pair_key(&k) else {
                 continue;
             };
-            let Some(ci) = stalk::Invariant::from_key(&ci_bytes) else {
-                continue;
-            };
+            let ci = stalk::Invariant::from_key(&ci_bytes);
+            let cj = stalk::Invariant::from_key(&cj_bytes);
             if let Some(ref e) = p.edge {
-                if !e.word.rotor().is_identity() {
-                    retract_words(index, &ci, std::slice::from_ref(e));
+                if let Some(ref ci) = ci {
+                    retract_words(index, ci, std::slice::from_ref(e));
+                }
+                if let Some(ref cj) = cj {
+                    if let Some(inv_e) = e.inverse() {
+                        retract_words(index, cj, std::slice::from_ref(&inv_e));
+                    }
                 }
             }
-            if !face.word.rotor().is_identity() {
-                let t = Transport {
-                    word: face.word.clone(),
-                    carriage: p.carriage.clone(),
-                    gauge: p.gauge.clone(),
-                };
-                retract_words(index, &ci, std::slice::from_ref(&t));
+            let t = Transport {
+                word: face.word.clone(),
+                carriage: p.carriage.clone(),
+                gauge: p.gauge.clone(),
+            };
+            if let Some(ref ci) = ci {
+                retract_words(index, ci, std::slice::from_ref(&t));
+            }
+            if let Some(ref cj) = cj {
+                if let Some(inv_t) = t.inverse() {
+                    retract_words(index, cj, std::slice::from_ref(&inv_t));
+                }
             }
         }
     }
