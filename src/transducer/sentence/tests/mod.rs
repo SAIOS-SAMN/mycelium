@@ -14,5 +14,6 @@ mod pivot_generator;
 mod pivot_loop;
 mod refraction;
 mod rotor_class;
+mod stratum;
 mod symmetry;
 mod tape;

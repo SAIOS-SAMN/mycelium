@@ -6,11 +6,13 @@
 //! list. `meet_nodes` intersects two relations by descending both at once.
 
 pub mod relation;
+pub mod schema;
 pub mod trie;
 pub mod walks;
 #[cfg(test)]
 pub mod work;
 
 pub use relation::*;
+pub use schema::*;
 pub(crate) use trie::*;
 pub use walks::*;

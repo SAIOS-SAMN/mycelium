@@ -219,6 +219,21 @@ impl ClassVector {
         crate::transducer::address::Address::new(buf)
     }
 
+    /// THE COORDINATE SYSTEM THIS KEY IS WRITTEN IN (rule 6), declared so a
+    /// reader asks for a stratum by DEPTH and never by a byte count.
+    ///
+    /// The four coordinates are the four `class_key` writes, in that order,
+    /// and the first of them is exactly what [`Rotor::class_key`] writes —
+    /// tag, the two invariants, the ray's sign byte. That is why a rotor's
+    /// conjugacy class is the depth-one projection of a loop's state vector
+    /// and not a second key that happens to agree: `class_schema` parses
+    /// the boundary out of the bytes the writer wrote, and
+    /// `the_rotor_class_is_the_first_stratum_of_the_class_vector` asserts
+    /// the two coincide rather than trusting it.
+    pub fn class_schema() -> &'static crate::network::nerve::Schema {
+        &CLASS_SCHEMA
+    }
+
     pub fn from_key(k: &[u8]) -> Option<ClassVector> {
         if crate::transducer::address::tag_of(k) != Some(crate::transducer::address::TAG_CLASS) {
             return None;
@@ -445,6 +460,98 @@ impl ClassVector {
                 .is_some_and(|pl| pl.iter().any(|s| s.2 != 0 || s.3 != 0))
     }
 }
+
+// THE FOUR COORDINATES OF A CLASS KEY, each reading the framing
+// `class_key` wrote for it. Nothing below is a remembered width: a
+// rational's two integers carry their own lengths, the plane block is
+// present or absent by its own tag, the hue cycle carries its count, and a
+// versor's sixteen coefficients carry theirs. So a key of another system
+// fails at the coordinate it fails at, and the depth-one boundary is the
+// rotor's conjugacy stratum by parsing rather than by agreement.
+
+use crate::network::nerve::{skip_len_u32, skip_n, skip_q, take_u8, Schema, Segment};
+
+/// Tag, the two conjugacy invariants, the ray's sign byte — exactly what
+/// [`crate::transducer::alphabet::Rotor::class_key`] writes.
+struct Conjugacy;
+
+impl Segment for Conjugacy {
+    fn name(&self) -> &'static str {
+        "conjugacy invariants"
+    }
+
+    fn skip(&self, key: &[u8], pos: &mut usize) -> Option<()> {
+        if take_u8(key, pos)? != crate::transducer::address::TAG_CLASS {
+            return None;
+        }
+        skip_q(key, pos)?;
+        skip_q(key, pos)?;
+        take_u8(key, pos).map(|_| ())
+    }
+}
+
+/// The sensor section: a presence byte, and where present six plane slots
+/// of `(orientation u8, unit u32, m5 i64, m13 i64)`.
+struct PlaneSection;
+
+impl Segment for PlaneSection {
+    fn name(&self) -> &'static str {
+        "plane section"
+    }
+
+    fn skip(&self, key: &[u8], pos: &mut usize) -> Option<()> {
+        match take_u8(key, pos)? {
+            0 => Some(()),
+            1 => skip_n(key, pos, 6 * (1 + 4 + 8 + 8)),
+            _ => None,
+        }
+    }
+}
+
+/// The hue cycle type: a count, and that many sorted cycle lengths.
+struct HueCycle;
+
+impl Segment for HueCycle {
+    fn name(&self) -> &'static str {
+        "hue cycle type"
+    }
+
+    fn skip(&self, key: &[u8], pos: &mut usize) -> Option<()> {
+        let n = take_u8(key, pos)? as usize;
+        skip_n(key, pos, n)
+    }
+}
+
+/// The A4 carriage as `Mv::put_canonical` writes it: sixteen coefficients,
+/// each a sign byte and two length-framed integers.
+struct Carriage;
+
+impl Segment for Carriage {
+    fn name(&self) -> &'static str {
+        "carriage"
+    }
+
+    fn skip(&self, key: &[u8], pos: &mut usize) -> Option<()> {
+        for _ in 0..16 {
+            take_u8(key, pos)?;
+            skip_len_u32(key, pos)?;
+            skip_len_u32(key, pos)?;
+        }
+        Some(())
+    }
+}
+
+static CONJUGACY: Conjugacy = Conjugacy;
+static PLANE_SECTION: PlaneSection = PlaneSection;
+static HUE_CYCLE: HueCycle = HueCycle;
+static CARRIAGE: Carriage = Carriage;
+
+static CLASS_SEGMENTS: [&dyn Segment; 4] = [&CONJUGACY, &PLANE_SECTION, &HUE_CYCLE, &CARRIAGE];
+
+static CLASS_SCHEMA: Schema = Schema {
+    system: "class vector",
+    segments: &CLASS_SEGMENTS,
+};
 
 /// The free part of a holonomy as one row over ℤ: (m5, m13) per plane.
 fn free_row(h: &Word) -> Option<[i64; 12]> {
