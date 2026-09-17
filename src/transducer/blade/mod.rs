@@ -9,11 +9,13 @@ pub mod harmonics;
 pub mod carry;
 pub mod shells;
 pub mod surgery;
+pub mod continuous;
 
 pub use body::*;
 pub use carry::*;
 pub use shells::*;
 pub use surgery::*;
+pub use continuous::*;
 
 use crate::transducer::cga::{self, Mv};
 use num_bigint::BigInt;
