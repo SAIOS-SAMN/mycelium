@@ -544,6 +544,29 @@ impl Entity {
         self.contemplation.weight()
     }
 
+    /// WHAT THE ENTITY HOLDS THAT NO LINE REPORTS (§8.1, measurement only):
+    /// the utterance receipts (`taught_up`), the obstructions fetched from
+    /// the court, the citations owed and the contractions pending — each
+    /// carrying a sentence and its train — the sealed and the contracted
+    /// addresses, the words expressed with their index, the recollections,
+    /// the charts waited on, and the stroke marks. Counts and never bytes;
+    /// what they say is WHICH carrier grows while every counted one is
+    /// flat, beside [`Entity::idea_weight`], which says it for the ideas.
+    pub fn carriers(&self) -> [usize; 10] {
+        [
+            self.taught_up.len(),
+            self.obstructions.len(),
+            self.owed.len(),
+            self.contracted.len(),
+            self.sealed.len(),
+            self.contractions.len(),
+            self.epigenome.expressed.len(),
+            self.epigenome.recollections.len(),
+            self.epigenome.waiting_on.len(),
+            self.epigenome.stroke_k.len(),
+        ]
+    }
+
     pub fn shed_n(&self) -> u64 {
         self.epigenome.shed_n()
     }
