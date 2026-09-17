@@ -8055,12 +8055,15 @@ reply; `book/speech.rs` `perceive_speech`: the court's one entry point for
 an utterance, answering an adjudication per sentence and verifying a cited
 contraction; `client/sdk/entity/utter.rs`: `receive_adjudication`, the
 sealed set on the utterance index, the contraction certificate on the
-next utterance; `bubble/contemplation.rs`: the four moves on a held
-idea's form (`contract`); `sentence/form/certificate.rs`: `Contraction`
+next utterance; `sentence/form/contract.rs`: the six moves on a held
+idea's form (`contract`) and the court's reader of each
+(`is_contraction_at`); `sentence/form/certificate.rs`: `Contraction`
 beside `PivotCertificate`; tests: `a_refusal_contracts_the_held_form_and_seals_the_address`,
 `a_sealed_tape_is_refused_by_the_mind_before_the_wire`,
 `the_court_verifies_a_contraction_before_it_replays_the_sentence`,
-`two_courts_of_distinct_identity_reach_one_standing_through_the_codec`.
+`two_courts_of_distinct_identity_reach_one_standing_through_the_codec`,
+`a_still_orbit_contracts_its_contact_word_to_a_demand`,
+`a_face_that_does_not_rederive_is_dropped_by_its_contraction`.
 
 # Part XI — The frame axis
 
@@ -8682,7 +8685,7 @@ family/memo.rs                  the derivation per mind (the ring answering the 
 family/contact.rs               move 6: the ring, the orbit (22), the star faces re-derived
 family/finish.rs                the unreached frames as demands; the form closed
 family/speak.rs, court/verdict/body.rs   the member section read by its key
-sentence/form/contract.rs       a refused word contracted at the member the court named (D10 item 13)
+sentence/form/contract.rs       a refused word contracted at the member the court named (D10 item 13); 50.9's moves 5 and 6, the still orbit and the face that does not re-derive
 ```
 
 Tests (39): `cayley::tests::a_versor_is_its_bivector_read_back_in_either_direction`,

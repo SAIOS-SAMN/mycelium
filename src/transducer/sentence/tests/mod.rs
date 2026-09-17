@@ -5,6 +5,7 @@
 pub mod common;
 
 mod canonical;
+mod contract;
 mod form;
 mod gauge;
 mod lanes;

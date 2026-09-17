@@ -1,12 +1,14 @@
-// 50.9 — THE FOUR CONTRACTION MOVES: what a refusal does to the form that
+// 50.9 — THE SIX CONTRACTION MOVES: what a refusal does to the form that
 // was refused, each move a strict shrinking of the closed sub-complex.
 //
 //! A refused vertex becomes a demand and takes its faces with it; a refused
 //! edge becomes a remainder edge; undeclared links are declared as a Source
-//! demand; a malformed complex is not moved at all — the mind is quiescent
-//! on it. Every move re-walks the loops and reindexes; nothing here trusts
-//! the tape's own loop list, and every read is a walk of this form's own
-//! vertices and faces (rule 1).
+//! demand; a contact word that does not orbit becomes a demand as a refused
+//! vertex does; a face that does not re-derive leaves the form; a malformed
+//! complex is not moved at all — the mind is quiescent on it. Every move
+//! re-walks the loops and reindexes; nothing here trusts the tape's own loop
+//! list, and every read is a walk of this form's own vertices and faces
+//! (rule 1).
 
 use super::*;
 
@@ -160,6 +162,26 @@ impl Form {
                 self.rewalk();
                 Some(Contracted::Moved)
             }
+            // 50.9 move 5: the contact word the court's family does not
+            // orbit becomes a demand over its chart exactly as move 1 makes
+            // it; the coordinate is the same shape and so is the move.
+            (RefusalKind::OrbitStill, at @ At::Vertex { .. }) => {
+                self.contract(RefusalKind::VertexBody, at, remainder)
+            }
+            // 50.9 move 6: the face that does not re-derive from its
+            // vertices leaves the form, and the two vertices stand without
+            // it; a loop through it dissolves with the re-walk.
+            (RefusalKind::FaceDerivation, At::Face(a, b)) => {
+                let i = self.word_index(a)?;
+                let j = self.word_index(b)?;
+                let before = self.faces.len();
+                self.faces.retain(|f| !((f.i == i && f.j == j) || (f.i == j && f.j == i)));
+                if self.faces.len() == before {
+                    return None;
+                }
+                self.rewalk();
+                Some(Contracted::Moved)
+            }
             (RefusalKind::MalformedComplex, _) => Some(Contracted::Quiescent),
             _ => None,
         }
@@ -221,6 +243,17 @@ impl Form {
                 links.iter().all(|&(r, c, _, observed)| {
                     declared.get(&site_key(r, c)).is_some_and(|hues| hues.contains(&observed))
                 })
+            }
+            (RefusalKind::OrbitStill, at @ At::Vertex { .. }) => {
+                self.is_contraction_at(RefusalKind::VertexBody, at)
+            }
+            (RefusalKind::FaceDerivation, At::Face(a, b)) => {
+                let (Some(i), Some(j)) = (self.word_index(a), self.word_index(b)) else {
+                    // A vertex the face reached has since become a demand:
+                    // the face is gone with it.
+                    return true;
+                };
+                !self.faces.iter().any(|f| (f.i == i && f.j == j) || (f.i == j && f.j == i))
             }
             _ => false,
         }
