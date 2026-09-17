@@ -21,7 +21,7 @@ pub struct ReceiptChain {
     /// THIS CHAIN'S OWN RECEIPTS, keyed by chain hash — the step each hash
     /// sits at. `by_hash` and `parent_height` fell back to
     /// `receipts.iter().find(…)`, a walk of the whole chain for one lookup
-    /// (rule 10: a loop whose bound is neither a `Budget` nor one cell's
+    /// (rule 10: a loop whose bound is neither a `Budget` nor one simplex's
     /// boundary). Every admitted receipt re-derives a height through it
     /// (47.2 step 4) and `frontier_from` pays it once per VISIT, so
     /// ordering two receipts cost the walk's depth times the chain — on a

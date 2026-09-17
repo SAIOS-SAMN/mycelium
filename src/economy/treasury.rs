@@ -89,7 +89,7 @@ pub struct Treasury {
     /// audit before every snapshot — so the cost of proving the ledger
     /// conserves grew with the ledger, on a carrier that grows for as long
     /// as the mesh runs (rule 10: a loop whose bound is neither a `Budget`
-    /// nor one cell's boundary is unbounded work in disguise).
+    /// nor one simplex's boundary is unbounded work in disguise).
     ///
     /// `None` once a fold overflowed, exactly as the walk returned `None`
     /// from `checked_add`: a supply that does not add up is not a smaller

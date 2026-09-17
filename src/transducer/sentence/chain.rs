@@ -18,9 +18,6 @@ fn index_key(i: usize) -> [u8; 32] {
 /// section (16.5).
 pub type Link = (i64, i64, u8, u8);
 
-/// The retired spelling, bridging the modules not yet swept (V3).
-pub type Cell = Link;
-
 /// A CITATION: the coordinates a sentence speaks for one word — its index
 /// in the language, the transport carrying the word's chain into the
 /// utterance's frame, and the gauge coordinate (which assignment along the
@@ -364,7 +361,7 @@ pub fn replay_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Lin
     let mut over: Vec<Link> = Vec::new();
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
-            let Some(image) = element::carry_cell(v, wr, wc, 0) else { continue };
+            let Some(image) = element::carry_lamina(v, wr, wc, 0) else { continue };
             for (tr, tc, tk) in image {
                 if tk != 0 {
                     continue;
@@ -409,7 +406,7 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<usize> {
         .iter()
         .filter_map(|&(wr, wc)| {
             let p = element::carry_center(v, wr, wc, 0)?;
-            let (tr, tc, tk) = element::cell_of(&p)?;
+            let (tr, tc, tk) = element::site_of(&p)?;
             if tk != 0 {
                 return None;
             }
@@ -428,7 +425,7 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<usize> {
             let Some(p) = element::carry_center(v, wr, wc, 0) else { return true };
             // A centre off the base, or off the section's frame, lands on
             // no site to disagree with.
-            let Some((tr, tc, tk)) = element::cell_of(&p) else { return true };
+            let Some((tr, tc, tk)) = element::site_of(&p) else { return true };
             if tk != 0 {
                 return true;
             }
@@ -466,7 +463,7 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Ve
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
             let Some(p) = element::carry_center(v, wr, wc, 0) else { continue };
-            let Some((tr, tc, tk)) = element::cell_of(&p) else { continue };
+            let Some((tr, tc, tk)) = element::site_of(&p) else { continue };
             if tk != 0 {
                 continue;
             }

@@ -51,9 +51,6 @@ pub fn grid_of_painted(painted: &[(i64, i64, u8)]) -> Grid {
     g
 }
 
-/// The modules not yet swept name the grid of a scene by the retired word.
-pub use grid_of_painted as cells_to_grid;
-
 /// THE SCENE A CHAIN DESCRIBES, as the two grids of one frame (50.6 seam
 /// 1): the sites before and the sites after, both at the chain's own
 /// min-corner, so the motion between them is the chain's and never an
@@ -428,9 +425,6 @@ pub fn painted_within_grid(painted: &[Painted], g: &Grid) -> bool {
             == Some(h)
     })
 }
-
-/// The modules not yet swept name the reading above by the retired word.
-pub use painted_within_grid as cells_subset_of_grid;
 
 /// The scene's bodies indexed by their own chart (Y4, 24.4, 20).
 /// A chart whose fiber holds exactly one body is "the unique one", read as

@@ -24,8 +24,6 @@ pub const TAG_PLANE: u8 = 13;
 /// A simplex of a Čech complex, keyed by its vertices; the court's simplex
 /// key on a chart and a remainder's site key open with the same byte.
 pub const TAG_SIMPLEX: u8 = 14;
-/// The modules not yet swept name the simplex tag by the retired word.
-pub const TAG_CELL: u8 = TAG_SIMPLEX;
 pub const TAG_COCYCLE: u8 = 15;
 pub const TAG_TASK: u8 = 16;
 pub const TAG_DEMAND: u8 = 17;

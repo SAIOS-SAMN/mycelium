@@ -13,9 +13,6 @@ use super::*;
 /// a body is a list of these.
 pub type Lamina = (i64, i64, i64, u8);
 
-/// The retired spelling, bridging the modules not yet swept (V3).
-pub type Painted4 = Lamina;
-
 /// A polytonic volumetric body. The four strata are ORTHOGONAL lanes (never
 /// summed, law 5); only the SPATIAL lane is a Cl(4,1) multivector
 /// (versor-acted). Gauge and topology pass through rigid motion unchanged —

@@ -25,9 +25,6 @@ pub fn site_of(p: &Point) -> Option<(i64, i64, i64)> {
     Some((f(&p.0)?, f(&p.1)?, f(&p.2)?))
 }
 
-/// The retired spelling, bridging the modules not yet swept (V3).
-pub use site_of as cell_of;
-
 /// Carry a lamina's center by V and read the base point back (None at
 /// infinity). The center stands at `(r + ½, c + ½, k)`: the frame axis's
 /// origin lies at the laminae's centers (16.4), so a dilator about a point
@@ -83,9 +80,6 @@ pub fn carry_lamina(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64, i64,
     }
     Some(out)
 }
-
-/// The retired spelling, bridging the modules not yet swept (V3).
-pub use carry_lamina as carry_cell;
 
 /// THE PULLBACK of a sibling's assignment onto a base support through the
 /// versor V carrying the sibling onto the base: each base site's center is

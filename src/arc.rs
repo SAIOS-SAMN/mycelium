@@ -73,9 +73,6 @@ pub fn painted_of_grid(g: &Grid) -> Vec<(i64, i64, u8)> {
     out
 }
 
-/// The retired spelling, bridging the modules not yet swept (V3).
-pub use painted_of_grid as grid_to_cells;
-
 /// The μ⃗ of one train pair: the coboundary's lane measure. T is not on the chain.
 /// None when the coboundary is unmeasured.
 pub fn pair_magnitude(a: &Grid, b: &Grid) -> Option<[u64; 4]> {

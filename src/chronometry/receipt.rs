@@ -147,7 +147,7 @@ pub struct KStepReceipt {
     /// the chain hash, never summed and never compared across lanes (law
     /// 5). It is on the receipt because a phase reads the ledger by kind
     /// AND by what each act carried: `generators held`, `derived through`,
-    /// `cells filled` are readings over receipts, and a reader that has
+    /// `simplices filled` are readings over receipts, and a reader that has
     /// only the kind must go back to the carriers the act may since have
     /// changed.
     ///

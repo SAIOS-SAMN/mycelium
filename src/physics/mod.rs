@@ -186,7 +186,7 @@ pub fn aperture_strokes() -> usize {
 /// THE BOOK'S CEILING: how many open listings this node's memory can
 /// carry, measured from the same live headroom the reserve is (rule 5 —
 /// measured, never declared). A listing on the fleet weighs about 26 KiB
-/// with its element and cells, and the book is held twice while a market
+/// with its element and links, and the book is held twice while a market
 /// view stands, so a GiB of headroom carries roughly twenty thousand.
 ///
 /// A NODE'S MEMORY IS A FINITE MANIFOLD. `pending` carried the comment
@@ -591,7 +591,7 @@ mod tests {
     fn a_germinated_pattern_charges_the_residual_lane() {
         use crate::transducer::element::from_canonical;
         use crate::transducer::germinate::germinate;
-        // A two-cell recolour: hue transitions on a standing support are
+        // A two-site recolour: hue transitions on a standing support are
         // GAUGE content, carried alongside the residual defect — the lane
         // projection is measured from the chain, never funneled to one axis.
         let g = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());

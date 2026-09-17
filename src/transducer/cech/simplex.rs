@@ -226,9 +226,6 @@ pub struct Simplex {
     pub fill: Fill,
 }
 
-/// The modules not yet swept name a simplex by the retired word.
-pub type Cell = Simplex;
-
 impl Simplex {
     /// A simplex on n vertices is an (n−1)-simplex. One on NONE is no
     /// simplex and is never remembered by the complex, so n ≥ 1 wherever

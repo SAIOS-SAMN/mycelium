@@ -104,7 +104,7 @@ fn vertex_cites_by(
     let v = blade::versor_carrying(&shape_in, &shape_out, &linear)?;
     for &(r, c, h) in &before {
         let p = element::carry_center(&v, r, c, 0)?;
-        let (tr, tc, tk) = element::cell_of(&p)?;
+        let (tr, tc, tk) = element::site_of(&p)?;
         if tk != 0 {
             return None;
         }

@@ -87,8 +87,8 @@ impl Voice {
     }
 
     // ── the forms and the acts that carry them ───────────────────────────
-    // The percept and the demand that stood here carried this voice's cells
-    // and chains to a court (law 8, ruled 2026-09-10); a voice speaks
+    // The percept and the demand that stood here carried this voice's
+    // painted sites and chains to a court (law 8, ruled 2026-09-10); a voice speaks
     // sentences (`Entity::speak`), probes, quotes, learns and solves.
 
     /// A QUOTE request: "what is the highest-yield work?" `None` where the
