@@ -1,5 +1,5 @@
-// 28 — THE COMPLEX ON DISK: every cell written whole, and a tape that does
-// not parse refused rather than partly restored.
+// 28 — THE COMPLEX ON DISK: every simplex written whole, and a tape that
+// does not parse refused rather than partly restored.
 
 use super::*;
 use crate::snapshot::counted;
@@ -7,8 +7,8 @@ use crate::snapshot::counted;
 impl Complex {
     pub fn byte_len(&self) -> usize {
         let mut n = 0usize;
-        // The cells of THIS complex — one chart's nerve — and the size on
-        // the tape is the size of all of them.
+        // The simplices of THIS complex — one chart's nerve — and the size
+        // on the tape is the size of all of them.
         for (k, d) in self.by_key.scoped() {
             if let Some(c) = self.degrees.get(*d as usize).and_then(|l| l.get(&k)) {
                 n += 32 * c.vertices.len() + 32 + 32;
@@ -18,14 +18,10 @@ impl Complex {
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        // EVERY COUNT HERE IS A READING OF WHAT WAS WRITTEN. Each of these
-        // wrote `carrier.len()` — a stored counter — and then wrote the
-        // content by walking the carrier, so one number had two independent
-        // sources and nothing held them together (law 12). In the field they
-        // parted: a court's COC1 section announced five complexes and held
-        // four, and its own reader believed the announcement and read the
-        // next section as content. `counted` writes the body first and
-        // measures it as it goes, so the number is that act's own measure.
+        // EVERY COUNT HERE IS A READING OF WHAT WAS WRITTEN: `counted`
+        // writes the body first and measures it as it goes, so the number
+        // is that act's own measure and not a stored counter written beside
+        // a walk that could part from it (law 12).
         counted(out, &self.sections, |body, k, s: &Section| {
             crate::snapshot::put_key(body, k);
             crate::snapshot::put_key(body, &s.addr);
@@ -35,10 +31,10 @@ impl Complex {
         });
         out.extend_from_slice(&(self.degrees.len() as u64).to_le_bytes());
         for layer in &self.degrees {
-            counted(out, layer, |body, _, c: &Cell| {
-                // The vertex count rides in ONE BYTE, so a cell on more than
-                // 255 vertices cannot be framed here and is refused rather
-                // than written with a count that wrapped.
+            counted(out, layer, |body, _, c: &Simplex| {
+                // The vertex count rides in ONE BYTE, so a simplex on more
+                // than 255 vertices cannot be framed here and is refused
+                // rather than written with a count that wrapped.
                 crate::transducer::address::put_u8_count(body, c.vertices.len())?;
                 for v in &c.vertices {
                     crate::snapshot::put_key(body, v);
@@ -90,11 +86,10 @@ impl Complex {
         };
         // EVERY SECTION HERE IS FRAMED, and the frame is the one in
         // `snapshot::framed` because `to_bytes` writes through `counted`.
-        // A count alone was bounded by the bytes remaining, which refuses a
+        // A count alone is bounded by the bytes remaining, which refuses a
         // count that cannot possibly fit and says nothing about the frame
-        // being lost mid-section — the failure that cost two courts their
-        // ledgers in DEF1. Each loop below arrives at the byte its section
-        // declared or the complex is refused, naming the section.
+        // being lost mid-section. Each loop below arrives at the byte its
+        // section declared or the complex is refused, naming the section.
         let mut c = Complex::new();
         let (ns, end) = crate::snapshot::take_frame(b, pos)?;
         for _ in 0..ns {
@@ -156,7 +151,7 @@ impl Complex {
                     4 => Fill::Unspellable(Box::new(Rotor::from_bytes(b, pos)?)),
                     _ => Fill::Open,
                 };
-                c.remember(Cell {
+                c.remember(Simplex {
                     vertices: sorted_verts(verts),
                     coefficient,
                     carriage,
@@ -168,7 +163,7 @@ impl Complex {
                 return None;
             }
         }
-        // A tape that ends here carries no remainder cells.
+        // A tape that ends here carries no remainder edges.
         let (nr, end) = match crate::snapshot::take_frame(b, pos) {
             Some(f) => f,
             None => return Some(c),

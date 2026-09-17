@@ -97,7 +97,7 @@ impl Contemplation {
     pub(crate) fn decide_neighbors(&mut self, key: &[u8]) {
         let keys = self.complex.link(key, 1);
         for ck in keys {
-            let Some((fill, volume, vertices)) = self.complex.cell(&ck).map(|c| (c.fill.clone(), c.volume, c.vertices.clone())) else {
+            let Some((fill, volume, vertices)) = self.complex.simplex(&ck).map(|c| (c.fill.clone(), c.volume, c.vertices.clone())) else {
                 continue;
             };
             if !matches!(fill, Fill::Open) {

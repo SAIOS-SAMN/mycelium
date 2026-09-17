@@ -1,9 +1,9 @@
-// 13, 14 — THE COBOUNDARY: which cells are ready to close, what closes
+// 13, 14 — THE COBOUNDARY: which simplices are ready to close, what closes
 // them, and the class that remains when nothing does.
 //
 //! `coboundary_on_link` walks the link of a vertex and closes what its
-//! faces already determine; a cell whose faces are not ready is left open
-//! rather than guessed at. `solve_gauge` is the tree walk of 12.2.
+//! faces already determine; a simplex whose faces are not ready is left
+//! open rather than guessed at. `solve_gauge` is the tree walk of 12.2.
 
 use super::*;
 
@@ -89,29 +89,29 @@ pub fn solve_gauge(
 }
 
 impl Complex {
-    /// Mark a cell Extended by a known gauge (a translation, a taught
+    /// Mark a simplex Extended by a known gauge (a translation, a taught
     /// coboundary). Degree-1 never tree-solves — that would always succeed.
     pub fn fill_by_gauge(&mut self, key: &[u8], gamma: &Rotor, carriage: &Versor) -> Fill {
         use crate::transducer::element::same_versor;
         let Some(degree) = self.degree_of(key) else {
             return Fill::Open;
         };
-        let Some(cell) = self.degrees[degree].get(key).cloned() else {
+        let Some(simplex) = self.degrees[degree].get(key).cloned() else {
             return Fill::Open;
         };
-        if !matches!(cell.fill, Fill::Open) {
+        if !matches!(simplex.fill, Fill::Open) {
             return Fill::Already;
         }
-        // The gauge must match on BOTH halves, forward or reversed. A
-        // rotor-only match called a cell closed by a gauge whose placement
-        // differed from the one the cell expected.
-        let rotor_hit =
-            cell.coefficient == *gamma || cell.coefficient.inverse().as_ref() == Some(gamma);
-        let carriage_hit = same_versor(&cell.carriage, carriage)
-            || cell.carriage.versor_inverse().is_some_and(|i| same_versor(&i, carriage));
+        // The gauge must match on BOTH halves, forward or reversed: a
+        // rotor-only match would call a simplex closed by a gauge whose
+        // placement differs from the one it expects.
+        let rotor_hit = simplex.coefficient == *gamma
+            || simplex.coefficient.inverse().as_ref() == Some(gamma);
+        let carriage_hit = same_versor(&simplex.carriage, carriage)
+            || simplex.carriage.versor_inverse().is_some_and(|i| same_versor(&i, carriage));
         if rotor_hit && carriage_hit {
-            if cell.vertices.len() >= 2 {
-                if let Some(sec) = self.sections.get_mut(&cell.vertices[1]) {
+            if simplex.vertices.len() >= 2 {
+                if let Some(sec) = self.sections.get_mut(&simplex.vertices[1]) {
                     sec.gamma = gamma.clone();
                     sec.carriage = carriage.clone();
                 }
@@ -125,9 +125,10 @@ impl Complex {
         self.fill(key)
     }
 
-    /// Face coefficient from stored lower cells: edges (and, when already
-    /// climbed, higher faces). A triangle is the holonomy of its three
-    /// stored edges — never the triangle's own (possibly stale) cell.
+    /// Face coefficient from stored lower simplices: edges (and, when
+    /// already climbed, higher faces). A triangle is the holonomy of its
+    /// three stored edges — never the triangle's own (possibly stale)
+    /// simplex.
     pub(crate) fn stored_face_coeff(&self, verts: &[Vec<u8>]) -> Option<(Rotor, Versor)> {
         match verts.len() {
             0 | 1 => Some((Rotor::identity(), crate::transducer::element::identity_versor())),
@@ -137,8 +138,9 @@ impl Complex {
         }
     }
 
-    /// Coboundary of the (k−1)-faces of a k-cell. Face coefficients are
-    /// read from stored lower cells that `faces_ready` already proved exist.
+    /// Coboundary of the (k−1)-faces of a k-simplex. Face coefficients are
+    /// read from stored lower simplices that `faces_ready` already proved
+    /// exist.
     pub(crate) fn coboundary_coeff(&self, verts: &[Vec<u8>]) -> Option<(Rotor, Versor)> {
         use crate::transducer::element::{identity_versor, versor_conjugate};
         let n = verts.len();
@@ -184,9 +186,10 @@ impl Complex {
     }
 
     /// Climb the link of one vertex: the candidate at degree k+1 is the
-    /// intersection of the links of existing k-cells with the link of one
-    /// more neighbour, never a subset of the fiber. Stops when the next
-    /// degree produces no volume. Cells are read by key; rotors are not cloned.
+    /// intersection of the links of existing k-simplices with the link of
+    /// one more neighbour, never a subset of the fiber. Stops when the next
+    /// degree produces no volume. Simplices are read by key; rotors are
+    /// not cloned.
     pub fn coboundary_on_link(&mut self, vertex: &[u8], mut volume_of: impl FnMut(&[Vec<u8>]) -> [u64; 4]) {
         let mut degree = 1usize;
         loop {
@@ -194,37 +197,37 @@ impl Complex {
             if layer.is_empty() {
                 break;
             }
-            let mut pending: Vec<Cell> = Vec::new();
+            let mut pending: Vec<Simplex> = Vec::new();
             let mut seen: Keyed<()> = Keyed::new();
             // index: link of `vertex` at this degree
             for key in &layer {
-                let Some(cell_verts) = self.cell(key).map(|c| c.vertices.clone()) else {
+                let Some(simplex_verts) = self.simplex(key).map(|c| c.vertices.clone()) else {
                     continue;
                 };
-                let nverts = cell_verts.len();
-                // index: vertices of this cell
-                for u in &cell_verts {
+                let nverts = simplex_verts.len();
+                // index: vertices of this simplex
+                for u in &simplex_verts {
                     if u == vertex {
                         continue;
                     }
                     let edges = self.link(u, 1);
                     // index: link of neighbour u (degree 1)
                     for ek in &edges {
-                        let Some(edge_verts) = self.cell(ek).map(|c| c.vertices.clone()) else {
+                        let Some(edge_verts) = self.simplex(ek).map(|c| c.vertices.clone()) else {
                             continue;
                         };
                         // index: vertices of that edge
                         for w in &edge_verts {
-                            if w == u || cell_verts.binary_search(w).is_ok() {
+                            if w == u || simplex_verts.binary_search(w).is_ok() {
                                 continue;
                             }
-                            let mut verts = cell_verts.clone();
+                            let mut verts = simplex_verts.clone();
                             verts.push(w.clone());
                             let verts = sorted_verts(verts);
                             if verts.len() != nverts + 1 {
                                 continue;
                             }
-                            let nkey = cell_key(&verts);
+                            let nkey = simplex_key(&verts);
                             if seen.contains(&nkey) {
                                 continue;
                             }
@@ -253,7 +256,7 @@ impl Complex {
                             else {
                                 continue;
                             };
-                            pending.push(Cell {
+                            pending.push(Simplex {
                                 vertices: verts,
                                 coefficient,
                                 carriage,
@@ -267,30 +270,30 @@ impl Complex {
             if pending.is_empty() {
                 break;
             }
-            for cell in pending {
-                self.remember(cell);
+            for simplex in pending {
+                self.remember(simplex);
             }
             degree += 1;
         }
     }
 
-    /// Fill a cell by extend: coboundary is Extended, finite order is
+    /// Fill a simplex by extend: coboundary is Extended, finite order is
     /// Congruent, otherwise Class.
     pub fn fill(&mut self, key: &[u8]) -> Fill {
         let Some(degree) = self.degree_of(key) else {
             return Fill::Open;
         };
-        let Some(cell) = self.degrees[degree].get(key).cloned() else {
+        let Some(simplex) = self.degrees[degree].get(key).cloned() else {
             return Fill::Open;
         };
-        if !matches!(cell.fill, Fill::Open) {
+        if !matches!(simplex.fill, Fill::Open) {
             return Fill::Already;
         }
         let flat = crate::transducer::element::same_versor(
-            &cell.carriage,
+            &simplex.carriage,
             &crate::transducer::element::identity_versor(),
         );
-        if cell.degree() == 0 || (cell.coefficient.is_identity() && flat) {
+        if simplex.degree() == 0 || (simplex.coefficient.is_identity() && flat) {
             let filled = Fill::Filled(
                 Rotor::identity(),
                 Box::new(crate::transducer::element::identity_versor()),
@@ -300,8 +303,8 @@ impl Complex {
             }
             return filled;
         }
-        let verts = &cell.vertices;
-        if cell.degree() >= 2 {
+        let verts = &simplex.vertices;
+        if simplex.degree() >= 2 {
             let mut edges: Vec<(usize, usize, Rotor, Versor)> = Vec::new();
             for i in 0..verts.len() {
                 for j in i + 1..verts.len() {
@@ -333,7 +336,7 @@ impl Complex {
         let Some(b) = verts.get(1).and_then(|v| self.sections.get(v).cloned()) else {
             return Fill::Open;
         };
-        let outcome = extend(&a, &b, &cell);
+        let outcome = extend(&a, &b, &simplex);
         self.index_congruent(&outcome);
         if let Some(c) = self.degrees[degree].get_mut(key) {
             c.fill = outcome.clone();
@@ -341,11 +344,11 @@ impl Complex {
         outcome
     }
 
-    /// The class a cell carries and the degree it carries it at: the class
-    /// VECTOR of 12.6 and the rotor it was read from. An open cell of
-    /// degree 2 or more whose coefficient is not the identity carries its
-    /// coefficient's class, read the same way, so a cell that never filled
-    /// still names what stands on it.
+    /// The class a simplex carries and the degree it carries it at: the
+    /// class VECTOR of 12.6 and the rotor it was read from. An open simplex
+    /// of degree 2 or more whose coefficient is not the identity carries
+    /// its coefficient's class, read the same way, so a simplex that never
+    /// filled still names what stands on it.
     pub fn class(
         &self,
         key: &[u8],
@@ -374,7 +377,7 @@ impl Complex {
     /// compare classes need the first.
     pub fn classes(&self) -> Vec<(crate::transducer::sentence::ClassVector, Rotor, usize)> {
         let mut out = Vec::new();
-        // EVERY standing class, as the name says: the cells of this
+        // EVERY standing class, as the name says: the simplices of this
         // complex, which is one chart's nerve and a fiber already.
         for (k, d) in self.by_key.scoped() {
             let d = *d as usize;
@@ -389,8 +392,8 @@ impl Complex {
 
     pub fn unfilled(&self) -> Vec<(usize, Vec<u8>)> {
         let mut out = Vec::new();
-        // As above: this complex's own cells, all of them, since an
-        // unfilled cell anywhere in the nerve is a demand.
+        // As above: this complex's own simplices, all of them, since an
+        // unfilled simplex anywhere in the nerve is a demand.
         for (k, d) in self.by_key.scoped() {
             let d = *d as usize;
             if d >= 1 {

@@ -9,17 +9,15 @@ use crate::transducer::cech::*;
 /// coboundary coefficient is the identity and it fills by the identity
 /// gauge, with no class anywhere on the link.
 ///
-/// The claim was written as `fill == Filled(identity) || class().is_none()`
-/// — a disjunction whose second arm holds whenever the first fails, since
-/// `class` reads `None` for every fill that is not `Class`. It could not
-/// fail and so said nothing. Each half is asserted on its own here.
+/// Each half is asserted on its own: `class` reads `None` for every fill
+/// that is not `Class`, so a disjunction of the two could not fail.
 #[test]
 fn an_exact_cochain_on_k4_fills_at_every_degree() {
     let mut c = exact_k4();
     let tets = c.link(&vs()[0], 3);
     assert_eq!(tets.len(), 1, "the link of one vertex of K4 is one tetra");
     let key = tets[0].clone();
-    let coeff = c.cell(&key).expect("the tetra is held").coefficient.clone();
+    let coeff = c.simplex(&key).expect("the tetra is held").coefficient.clone();
     assert!(coeff.is_identity(), "an exact cochain's coboundary is the identity: {coeff:?}");
     match c.fill(&key) {
         Fill::Filled(g, carriage) => {
@@ -34,9 +32,9 @@ fn an_exact_cochain_on_k4_fills_at_every_degree() {
         }
         other => panic!("an exact cochain fills by a gauge, not {other:?}"),
     }
-    assert!(c.class(&key).is_none(), "a filled cell carries no class");
+    assert!(c.class(&key).is_none(), "a filled simplex carries no class");
     for k in c.link_of(&vs()[0]) {
-        assert!(c.class(&k).is_none(), "no cell of an exact link carries a class");
+        assert!(c.class(&k).is_none(), "no simplex of an exact link carries a class");
     }
     assert!(c.byte_len() < 4096, "four covering vertices stay in kilobytes");
 }
@@ -44,11 +42,8 @@ fn an_exact_cochain_on_k4_fills_at_every_degree() {
 /// An INFINITE-order edge is a class at degree 2, and the class names the
 /// rotor that caused it. `pythag5` is the (3,4,5) rotor on the sensor
 /// plane: it has no finite order, so the triangle carrying it cannot be
-/// congruent and cannot be filled.
-///
-/// The claim was `found` — set if ANY cell of degree ≥ 2 carried a class
-/// OR a congruence OR `class()` was some. It named no cell, no class and
-/// no order, and one congruent cell anywhere satisfied it.
+/// congruent and cannot be filled. The claim names the simplex, the class
+/// and the order; a congruence anywhere on the link is not it.
 #[test]
 fn an_infinite_order_edge_is_a_class_naming_its_rotor() {
     let mut c = exact_k4();
@@ -158,7 +153,7 @@ fn triangle(
 ) -> Vec<u8> {
     let want = sorted_verts(want.iter().map(|a| a.as_bytes().to_vec()));
     for k in c.link_of(at.as_bytes()) {
-        if c.cell(&k).is_some_and(|cell| cell.vertices == want) {
+        if c.simplex(&k).is_some_and(|s| s.vertices == want) {
             return k;
         }
     }
@@ -205,7 +200,7 @@ fn work_of_one_fetched_vertex_is_independent_of_n() {
     }
     assert!(
         thirty.degrees.get(3).is_none_or(|l| l.is_empty()),
-        "thirty disjoint bodies form no 3-cell"
+        "thirty disjoint bodies form no 3-simplex"
     );
     let run_scene = |n: u64| -> u64 {
         let mut c = thirty.clone();

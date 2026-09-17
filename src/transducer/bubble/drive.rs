@@ -249,7 +249,7 @@ impl Contemplation {
                 if !budget.spend() {
                     break;
                 }
-                let Some((d, fill_open, coeff_id, v0, v1, vertices)) = self.complex.cell(&key).map(|c| {
+                let Some((d, fill_open, coeff_id, v0, v1, vertices)) = self.complex.simplex(&key).map(|c| {
                     // A cell's vertices are `sorted_verts`, so the two ends
                     // are its least and next-least keys — the cell's own
                     // order, read as a slice pattern.
@@ -275,7 +275,7 @@ impl Contemplation {
                 let outcome = if d == 1 && !coeff_id {
                     match &word_rotor {
                         Some(g) => {
-                            let coeff_hit = self.complex.cell(&key).is_some_and(|c| {
+                            let coeff_hit = self.complex.simplex(&key).is_some_and(|c| {
                                 *g == c.coefficient || g.inverse().as_ref() == Some(&c.coefficient)
                             });
                             if coeff_hit {

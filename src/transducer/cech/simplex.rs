@@ -1,9 +1,9 @@
-// 13 — THE CELL: a simplex of the Čech complex, the transition on it, and
-// the fill that closes it.
+// 13 — THE SIMPLEX: a simplex of the Čech complex, the transition on it,
+// and the fill that closes it.
 //
 //! A transition is the element that carries one chart's section onto
 //! another's; a holonomy is the composite around a triangle; a `Fill` is
-//! what closes a cell — a gauge, a class, or nothing.
+//! what closes a simplex — a gauge, a class, or nothing.
 
 use super::*;
 
@@ -31,27 +31,23 @@ pub fn glues(g_ab: &Element, g_bc: &Element, g_ca: &Element) -> bool {
 }
 
 /// Realise a group transition as an alphabet rotor. None is a remainder:
-/// the edge is honest and no cell is formed over it.
+/// the edge is honest and no simplex is formed over it.
 pub fn rotor_of(g: &Element) -> Option<Rotor> {
-    // THE ROTOR THE ELEMENT CARRIES, wherever it carries it. This read the
-    // tape and nothing else, and a transition is `g_y ∘ g_x⁻¹` — a
-    // COMPOSITE, which had no tape — so it answered `None` for every input
-    // in the tree and the court wrote an identity edge on every cell it
-    // could write at all.
+    // THE ROTOR THE ELEMENT CARRIES, wherever it carries it. A transition
+    // is `g_y ∘ g_x⁻¹` — a composite, which has no tape — so the reading
+    // is of the element and never of a tape.
     g.carried_rotor()
 }
 
 /// THE SECTION AN ELEMENT CARRIES: its rotation AND its placement, read
 /// from one [`Element::letters`] so the two halves are the same element's.
 ///
-/// [`rotor_of`] answers the rotation alone, which is the whole of what a
-/// caller can use to build a [`Section`] from an element — and a section
-/// built that way has the identity carriage whatever the element's
-/// placement was. [`Section::carriage`]'s own field doc says what that
-/// costs: "a Γ that was a translation, a dilation, or a rotation about any
-/// point but the origin read as the rotor and every STANDING class at the
-/// court was invisible". The reader has to exist for the caller to have the
-/// choice, so it does.
+/// [`rotor_of`] answers the rotation alone, and a [`Section`] built from
+/// that alone has the identity carriage whatever the element's placement
+/// is: a Γ that is a translation, a dilation, or a rotation about any
+/// point but the origin then reads as its rotor, and every STANDING class
+/// at the court is invisible. The reader exists so the caller has the
+/// choice.
 pub fn section_of(g: &Element) -> Option<(Rotor, Versor)> {
     let letters = g.letters()?;
     Some((letters.spelling.word.rotor(), letters.carriage))
@@ -61,8 +57,9 @@ pub(crate) fn nonzero(v: &[u64; 4]) -> bool {
     v.iter().any(|&x| x > 0)
 }
 
-pub(crate) fn cell_key(verts: &[Vec<u8>]) -> crate::transducer::address::Address {
-    let mut buf = vec![crate::transducer::address::TAG_CELL];
+/// The key of a simplex: its sorted vertices, written out (A21).
+pub(crate) fn simplex_key(verts: &[Vec<u8>]) -> crate::transducer::address::Address {
+    let mut buf = vec![crate::transducer::address::TAG_SIMPLEX];
     buf.extend_from_slice(&(verts.len() as u32).to_le_bytes());
     for v in verts {
         crate::transducer::address::put_bytes(&mut buf, v);
@@ -77,14 +74,15 @@ pub(crate) fn sorted_verts(verts: impl IntoIterator<Item = impl AsRef<[u8]>>) ->
     verts
 }
 
-/// State of a cell: open work, a coboundary gauge, a finite-order congruence,
-/// a class at this degree, or a rotation the alphabet does not spell.
+/// State of a simplex: open work, a coboundary gauge, a finite-order
+/// congruence, a class at this degree, or a rotation the alphabet does not
+/// spell.
 #[derive(Clone, Debug)]
 pub enum Fill {
     Open,
-    /// The gauge that closed the cell: its rotor and its carriage, because
-    /// a transition is `D(ρ)·T(t)·R` and a gauge that is a pure placement
-    /// has the identity rotor and is not the identity.
+    /// The gauge that closed the simplex: its rotor and its carriage,
+    /// because a transition is `D(ρ)·T(t)·R` and a gauge that is a pure
+    /// placement has the identity rotor and is not the identity.
     Filled(Rotor, Box<Versor>),
     Congruent(Rotor, u32),
     /// A standing class: the class vector of 12.6 AND the rotor it was read
@@ -95,17 +93,18 @@ pub enum Fill {
     /// class and cannot be served by the vector alone; law 12 is untouched,
     /// since neither is derivable from the other.
     Class(Box<crate::transducer::sentence::ClassVector>, Box<Rotor>),
-    /// 37.7 AT A CELL: the transition acts on the sensor plane and the peel
-    /// stands on a prime outside the seventeen. Not a class — a class is
-    /// one the alphabet names and no held generator closes; this is one the
-    /// alphabet cannot name, and it is where an adjoined generator comes
-    /// from at the court.
+    /// 37.7 AT A SIMPLEX: the transition acts on the sensor plane and the
+    /// peel stands on a prime outside the seventeen. Not a class — a class
+    /// is one the alphabet names and no held generator closes; this is one
+    /// the alphabet cannot name, and it is where an adjoined generator
+    /// comes from at the court.
     ///
     /// A rotor that acts on ANOTHER plane is not this: it is spelled by a
     /// letter of the seventeen and carries a class with no sensor section.
     Unspellable(Box<Rotor>),
-    /// A fill attempted on a cell that has already transitioned. Not stored
-    /// on the cell; the return of `fill` when there is no new state.
+    /// A fill attempted on a simplex that has already transitioned. Not
+    /// stored on the simplex; the return of `fill` when there is no new
+    /// state.
     Already,
 }
 
@@ -119,10 +118,10 @@ pub enum Fill {
 /// `Congruent` requires BOTH residues gone. A quarter turn carried along a
 /// translation has the same rotor order as one about a fixed point and is
 /// not the same class: filing it at period four would put a theorem on the
-/// cell that the seam does not satisfy, because the seam does not return
-/// after four turns — it walks. A rotation about a point away from the
-/// origin is `T_p R T_p⁻¹ = T(p − Rp)·R`, so it stands until the tree gauge
-/// of [`solve_gauge`] conjugates the base-point translation away.
+/// simplex that the seam does not satisfy, because the seam does not
+/// return after four turns — it walks. A rotation about a point away from
+/// the origin is `T_p R T_p⁻¹ = T(p − Rp)·R`, so it stands until the tree
+/// gauge of [`solve_gauge`] conjugates the base-point translation away.
 ///
 /// The 12.6 order of the standing class: the rotor's conjugacy invariants
 /// first, then the placement and dilation residues, then the plane blocks.
@@ -165,20 +164,21 @@ pub fn classify(
     }
 }
 
-/// Transition between two sections on a cell, classified by [`classify`].
+/// Transition between two sections on a simplex, classified by
+/// [`classify`].
 ///
 /// Both halves of the transition are composed: the rotors in `Cl(4,0)` and
-/// the carriages in `Cl(3,1)`. The carriage half is what was missing while
-/// a section was a rotor alone — a Γ that is a translation or a dilation
-/// read as the identity, so finite rotor orders still filed correctly and
-/// every standing class was invisible.
+/// the carriages in `Cl(3,1)`. A Γ that is a translation or a dilation is
+/// the carriage half, so a reading of the rotor alone takes it for the
+/// identity, files finite rotor orders correctly and sees no standing
+/// class at all.
 ///
 /// THE HUE IS THE SECTION'S, AND A SECTION CARRIES NONE. `CycleType::of`
 /// an empty listing is `Identity`, and a section holds a representative
 /// word and its gauge with no hue map beside it, so the empty listing is
-/// what this cell actually has rather than a claim about it. A section
+/// what this simplex actually has rather than a claim about it. A section
 /// that should carry a gauge is a row, not a default written here.
-pub fn extend(section_a: &Section, section_b: &Section, cell: &Cell) -> Fill {
+pub fn extend(section_a: &Section, section_b: &Section, simplex: &Simplex) -> Fill {
     #[cfg(test)]
     crate::network::nerve::work::count_extend();
     use crate::transducer::element::{identity_versor, same_versor};
@@ -190,43 +190,47 @@ pub fn extend(section_a: &Section, section_b: &Section, cell: &Cell) -> Fill {
     };
     let trans_r = section_b.gamma.geo(&inv_r);
     let trans_c = section_b.carriage.geo(&inv_c);
-    if cell.degree() <= 1 {
+    if simplex.degree() <= 1 {
         let (Some(cr), Some(cc)) =
-            (cell.coefficient.inverse(), cell.carriage.versor_inverse())
+            (simplex.coefficient.inverse(), simplex.carriage.versor_inverse())
         else {
             return Fill::Open;
         };
         let (g_r, g_c) = (trans_r.geo(&cr), trans_c.geo(&cc));
-        // The sections agree with what the cell expected: the cell is
-        // extended BY THE TRANSITION, which is the gauge it was waiting for.
+        // The sections agree with what the simplex expected: the simplex
+        // is extended BY THE TRANSITION, which is the gauge it was waiting
+        // for.
         if g_r.is_identity() && same_versor(&g_c, &identity_versor()) {
             return Fill::Filled(trans_r, Box::new(trans_c));
         }
         return classify(&g_r, &g_c, hue);
     }
-    classify(&cell.coefficient, &cell.carriage, hue)
+    classify(&simplex.coefficient, &simplex.carriage, hue)
 }
 
-/// One cell of the Čech complex. Keyed by the hash of its sorted vertices.
+/// One simplex of the Čech complex. Keyed by its sorted vertices, written
+/// out (A21).
 #[derive(Clone, Debug)]
-pub struct Cell {
+pub struct Simplex {
     pub vertices: Vec<Vec<u8>>,
-    /// The rotation the cell expects, over all six planes of `Cl(4,0)`.
+    /// The rotation the simplex expects, over all six planes of `Cl(4,0)`.
     pub coefficient: Rotor,
-    /// The placement and dilation the cell expects, `D(ρ)·T(t)` in
+    /// The placement and dilation the simplex expects, `D(ρ)·T(t)` in
     /// `Cl(3,1)`. It is a SECOND field and not a wider coefficient: the
     /// conformal algebra of a two-dimensional base holds one rotation
     /// plane, so a versor coefficient would carry the residues and lose
-    /// five of the rotor's planes — measured, in that `cech/tests/bianchi`
-    /// builds its degree-3 class from a rotor on `e₁∧e₂` that has no versor
-    /// at all.
+    /// five of the rotor's planes — `cech/tests/bianchi` builds its
+    /// degree-3 class from a rotor on `e₁∧e₂` that has no versor at all.
     pub carriage: Versor,
     pub volume: [u64; 4],
     pub fill: Fill,
 }
 
-impl Cell {
-    /// A cell on n vertices is an (n−1)-simplex. A cell on NONE is no
+/// The modules not yet swept name a simplex by the retired word.
+pub type Cell = Simplex;
+
+impl Simplex {
+    /// A simplex on n vertices is an (n−1)-simplex. One on NONE is no
     /// simplex and is never remembered by the complex, so n ≥ 1 wherever
     /// this is asked and the subtraction is total.
     pub fn degree(&self) -> usize {
@@ -234,7 +238,7 @@ impl Cell {
     }
 
     pub fn key(&self) -> crate::transducer::address::Address {
-        cell_key(&self.vertices)
+        simplex_key(&self.vertices)
     }
 
     pub fn contains(&self, v: &[u8]) -> bool {
@@ -248,13 +252,12 @@ pub struct Section {
     pub addr: crate::transducer::address::Address,
     /// The chart's rotation, over all six planes.
     pub gamma: Rotor,
-    /// The chart's placement and dilation (L11e). Without it `extend` saw
-    /// a transition's rotor part alone, so a Γ that was a translation, a
-    /// dilation, or a rotation about any point but the origin read as the
-    /// rotor and every STANDING class at the court was invisible. Finite
-    /// rotor orders were unaffected — conjugation by a translation
-    /// preserves the rotor class — which is why the collapse survived: it
-    /// hid in exactly the readings that were already zero.
+    /// The chart's placement and dilation (L11e). `extend` composes both
+    /// halves, and a Γ that is a translation, a dilation, or a rotation
+    /// about any point but the origin is this one: without it the
+    /// transition reads as its rotor and every STANDING class at the court
+    /// is invisible, while finite rotor orders still file, since
+    /// conjugation by a translation preserves the rotor class.
     pub carriage: Versor,
 }
 

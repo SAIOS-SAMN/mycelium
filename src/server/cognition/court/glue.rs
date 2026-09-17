@@ -180,7 +180,7 @@ impl Kernel {
         let spoken_rotor = spoken.letters().map(|l| l.spelling.word.rotor());
         // index: link of the fetched peer
         for key in cx.link_of(&peer) {
-            let Some((d, volume, vertices)) = cx.cell(&key).map(|c| (c.degree(), c.volume, c.vertices.clone())) else {
+            let Some((d, volume, vertices)) = cx.simplex(&key).map(|c| (c.degree(), c.volume, c.vertices.clone())) else {
                 continue;
             };
             if d == 0 {

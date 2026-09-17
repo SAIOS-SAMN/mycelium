@@ -1,8 +1,8 @@
-// 13 — THE COMPLEX: every cell a mind holds, and the walks that read it.
+// 13 — THE COMPLEX: every simplex a mind holds, and the walks that read it.
 //
 //! The star, the link and the degree are reads of structure. Setting an
-//! edge or a section reopens exactly the cells whose coefficients changed,
-//! so nothing is recomputed that did not move.
+//! edge or a section reopens exactly the simplices whose coefficients
+//! changed, so nothing is recomputed that did not move.
 
 use super::*;
 
@@ -10,8 +10,8 @@ use super::*;
 /// overlaps demand. No fixed arity.
 #[derive(Clone, Debug, Default)]
 pub struct Complex {
-    pub degrees: Vec<Keyed<Cell>>,
-    /// cell key → degree, written in remember. Fill and class are keyed
+    pub degrees: Vec<Keyed<Simplex>>,
+    /// simplex key → degree, written in remember. Fill and class are keyed
     /// reads, never a walk of degrees.
     pub(crate) by_key: Keyed<u8>,
     pub sections: Keyed<Section>,
@@ -33,20 +33,20 @@ impl Complex {
         }
     }
 
-    pub(crate) fn remember(&mut self, mut cell: Cell) {
-        // A CELL ON NO VERTICES IS NO SIMPLEX. It is not a cell of degree
+    pub(crate) fn remember(&mut self, mut simplex: Simplex) {
+        // A SIMPLEX ON NO VERTICES IS NO SIMPLEX. It is not one of degree
         // zero — that is a point — so it is not remembered as one, and
         // every reader of `degree` may then take `n − 1` whole.
-        if cell.vertices.is_empty() {
+        if simplex.vertices.is_empty() {
             return;
         }
-        cell.coefficient = cell.coefficient.normalised();
-        let degree = cell.degree();
-        let key = cell.key();
+        simplex.coefficient = simplex.coefficient.normalised();
+        let degree = simplex.degree();
+        let key = simplex.key();
         self.ensure(degree);
         self.by_key.insert(&key, degree as u8);
-        // index: vertices of this cell (the simplex, bounded by degree)
-        for v in &cell.vertices {
+        // index: vertices of this simplex (bounded by degree)
+        for v in &simplex.vertices {
             match self.star.get_mut(v) {
                 Some(keys) => {
                     keys.insert(&key, ());
@@ -58,8 +58,8 @@ impl Complex {
                 }
             }
         }
-        self.index_congruent(&cell.fill);
-        self.degrees[degree].insert(&key, cell);
+        self.index_congruent(&simplex.fill);
+        self.degrees[degree].insert(&key, simplex);
     }
 
     pub(crate) fn index_congruent(&mut self, fill: &Fill) {
@@ -70,7 +70,8 @@ impl Complex {
         }
     }
 
-    /// The Congruent cell whose rotor has this class key, if the chart holds one.
+    /// The Congruent simplex whose rotor has this class key, if the chart
+    /// holds one.
     pub fn congruent(&self, class: &[u8]) -> Option<&(Rotor, u32)> {
         self.congruent.get(class)
     }
@@ -83,7 +84,7 @@ impl Complex {
         let vertex = vertex.as_ref().to_vec();
         self.sections.insert(&vertex, section);
         if nonzero(&volume) {
-            self.remember(Cell {
+            self.remember(Simplex {
                 vertices: vec![vertex],
                 coefficient: Rotor::identity(),
                 carriage: crate::transducer::element::identity_versor(),
@@ -96,8 +97,8 @@ impl Complex {
         }
     }
 
-    /// Degree-1 cell: the transition rotor, or a remainder if it does not
-    /// realise. Remainder edges form no higher cells.
+    /// Degree-1 simplex: the transition rotor, or a remainder if it does
+    /// not realise. Remainder edges form no higher simplices.
     pub fn set_edge(
         &mut self,
         a: impl AsRef<[u8]>,
@@ -112,7 +113,7 @@ impl Complex {
         if vertices.len() != 2 {
             return;
         }
-        let key = cell_key(&vertices);
+        let key = simplex_key(&vertices);
         self.remainder.remove(&key);
         // Both halves are oriented together: an edge stored against its
         // given direction inverts the rotor AND the carriage, or it is not
@@ -125,7 +126,7 @@ impl Complex {
             };
             (gi, ci)
         };
-        self.remember(Cell {
+        self.remember(Simplex {
             vertices,
             coefficient: Self::store_coeff(stored_r),
             carriage: stored_c,
@@ -140,7 +141,7 @@ impl Complex {
         if vertices.len() != 2 {
             return;
         }
-        self.remember(Cell {
+        self.remember(Simplex {
             vertices,
             coefficient: g.clone(),
             // A filed congruence is residue-free by construction: it is a
@@ -157,7 +158,7 @@ impl Complex {
         if vertices.len() != 2 {
             return;
         }
-        let key = cell_key(&vertices);
+        let key = simplex_key(&vertices);
         if self.degrees.get(1).is_some() {
             self.degrees[1].remove(&key);
         }
@@ -166,41 +167,41 @@ impl Complex {
 
     pub(crate) fn is_remainder(&self, verts: &[Vec<u8>]) -> bool {
         let v = sorted_verts(verts.to_vec());
-        self.remainder.contains(&cell_key(&v))
+        self.remainder.contains(&simplex_key(&v))
     }
 
-    pub fn get(&self, verts: &[Vec<u8>]) -> Option<&Cell> {
-        // No vertices name no cell.
+    pub fn get(&self, verts: &[Vec<u8>]) -> Option<&Simplex> {
+        // No vertices name no simplex.
         let d = verts.len().checked_sub(1)?;
-        self.degrees.get(d)?.get(&cell_key(verts))
+        self.degrees.get(d)?.get(&simplex_key(verts))
     }
 
     /// Oriented edge rotor from a to b.
     pub fn edge(&self, a: &[u8], b: &[u8]) -> Option<(Rotor, Versor)> {
         let vertices = sorted_verts([a, b]);
-        let cell = self.get(&vertices)?;
+        let s = self.get(&vertices)?;
         if vertices[0] == *a {
-            Some((cell.coefficient.clone(), cell.carriage.clone()))
+            Some((s.coefficient.clone(), s.carriage.clone()))
         } else {
-            Some((cell.coefficient.inverse()?, cell.carriage.versor_inverse()?))
+            Some((s.coefficient.inverse()?, s.carriage.versor_inverse()?))
         }
     }
 
-    /// Cell at `key`, read in place. Never a clone of the rotor.
-    pub fn cell(&self, key: &[u8]) -> Option<&Cell> {
+    /// Simplex at `key`, read in place. Never a clone of the rotor.
+    pub fn simplex(&self, key: &[u8]) -> Option<&Simplex> {
         let d = *self.by_key.get(key)?;
         self.degrees.get(d as usize)?.get(key)
     }
 
-    /// A key in `by_key` names a stored cell in the layer of its degree.
-    /// `None` when it names none: a key with no cell is not reopened, and
-    /// was two panics and an assertion (§2.4).
-    pub(crate) fn stored_mut(&mut self, key: &[u8]) -> Option<&mut Cell> {
+    /// A key in `by_key` names a stored simplex in the layer of its
+    /// degree. `None` when it names none: a key with no simplex is not
+    /// reopened (§2.4).
+    pub(crate) fn stored_mut(&mut self, key: &[u8]) -> Option<&mut Simplex> {
         let d = *self.by_key.get(key)? as usize;
         self.degrees.get_mut(d)?.get_mut(key)
     }
 
-    /// Reopen a stored cell only when its coboundary coefficient moved.
+    /// Reopen a stored simplex only when its coboundary coefficient moved.
     /// Absence of a rotor is remainder: the fill stands.
     pub(crate) fn reopen_on_coeff_change(&mut self, key: &[u8], verts: &[Vec<u8>]) {
         let Some((coefficient, carriage)) = self.coboundary_coeff(verts) else {
@@ -210,7 +211,7 @@ impl Complex {
         let Some(c) = self.stored_mut(key) else {
             return;
         };
-        // EITHER half moving reopens the cell. A cell whose rotor is
+        // EITHER half moving reopens the simplex. One whose rotor is
         // unchanged and whose placement moved is a different transition,
         // and leaving it filled would keep a gauge that no longer closes it.
         let same = c.coefficient.projective_eq(&coefficient)
@@ -222,14 +223,14 @@ impl Complex {
         }
     }
 
-    /// The link of `vertex`: every incident cell, all degrees. A peel of
-    /// the star; work per glue never leaves this set.
+    /// The link of `vertex`: every incident simplex, all degrees. A peel
+    /// of the star; work per glue never leaves this set.
     pub fn star(&self, vertex: &[u8]) -> Vec<Vec<u8>> {
         self.link_of(vertex)
     }
 
-    /// Keys of every cell incident on `vertex`. The climb reads cells by
-    /// these keys and never clones a rotor.
+    /// Keys of every simplex incident on `vertex`. The climb reads
+    /// simplices by these keys and never clones a rotor.
     pub fn link_of(&self, vertex: &[u8]) -> Vec<Vec<u8>> {
         let mut out = Vec::new();
         // index: keyed fiber of star(vertex)
@@ -269,7 +270,7 @@ impl Complex {
         Some((r_ij.geo(&r_jk).geo(&r_ki), c_ij.geo(&c_jk).geo(&c_ki)))
     }
 
-    /// Drop every cell that contains `vertex`. Used when bubbles merge.
+    /// Drop every simplex that contains `vertex`. Used when bubbles merge.
     pub fn drop_vertex(&mut self, vertex: &[u8]) {
         let Some(keys) = self.star.remove(vertex) else {
             self.sections.remove(vertex);
@@ -277,7 +278,8 @@ impl Complex {
         };
         let mut drop: Vec<Vec<u8>> = Vec::new();
         // THE STAR OF ONE VERTEX: `star.remove(vertex)` is the descent, so
-        // these are the cells containing it and every one of them drops.
+        // these are the simplices containing it and every one of them
+        // drops.
         for (k, _) in keys.scoped() {
             drop.push(k);
         }
@@ -291,7 +293,7 @@ impl Complex {
         self.sections.remove(vertex);
     }
 
-    pub fn cell_count(&self) -> usize {
+    pub fn simplex_count(&self) -> usize {
         self.by_key.len()
     }
 

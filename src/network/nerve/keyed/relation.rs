@@ -22,7 +22,7 @@ pub enum CoordinateSystem {
     Chart,
     Form,
     Task,
-    Cell,
+    Simplex,
 }
 
 impl CoordinateSystem {
@@ -33,7 +33,7 @@ impl CoordinateSystem {
             CoordinateSystem::Chart => Some(crate::transducer::address::TAG_CHART),
             CoordinateSystem::Class => Some(crate::transducer::address::TAG_CLASS),
             CoordinateSystem::Form => Some(crate::transducer::address::TAG_FORM),
-            CoordinateSystem::Cell => Some(crate::transducer::address::TAG_CELL),
+            CoordinateSystem::Simplex => Some(crate::transducer::address::TAG_SIMPLEX),
             CoordinateSystem::Task => Some(crate::transducer::address::TAG_TASK),
         }
     }

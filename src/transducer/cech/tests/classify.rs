@@ -3,10 +3,6 @@
 //! 12.6, 15.5 — WHAT A TRANSITION IS, read from its rotor and its
 //! carriage by the ONE classifier both organs use (L23b).
 //!
-//! These five claims were asserted on a second classifier in
-//! `element::letters`, which took a versor and re-derived `D(ρ)·T(t)·R`
-//! from it. It is deleted; the claims are the same, on `Fill`.
-//!
 //! Every one is a claim the sensor-plane block alone could not make: the
 //! block of a translation is the identity and the block of a dilation is a
 //! scalar multiple of it, so a reader that classified by block answered
@@ -48,10 +44,9 @@ fn the_identity_is_flat_and_so_is_a_scaled_carriage() {
 }
 
 /// THE CLAIM THE BLOCK COULD NOT MAKE. A translation's sensor-plane block
-/// is the identity, so a reader that classified by block read it as the
-/// identity rotor and called the seam flat — measured on the corpus, where
-/// a family carrying one shape to two separated copies produced exactly
-/// this transition and filed nothing while reporting no obstruction.
+/// is the identity, so a reader that classifies by block reads it as the
+/// identity rotor and calls the seam flat; a family carrying one shape to
+/// two separated copies produces exactly this transition.
 #[test]
 fn a_translation_stands_with_its_placement_and_is_not_flat() {
     let t = cga::translator(&q(3), &q(-2), &q(0));
@@ -99,7 +94,7 @@ fn a_residue_free_quarter_turn_files_at_its_period() {
 /// about a point away from the origin is `T_p R T_p⁻¹ = T(p − Rp)·R`: its
 /// rotor part is `R` and its order is four, but the seam does not return
 /// after four turns — it walks — so filing it at period four would put a
-/// theorem on the cell that the seam does not satisfy.
+/// theorem on the simplex that the seam does not satisfy.
 ///
 /// The tree gauge of `solve_gauge` is what conjugates the base-point
 /// translation away; ungauged it stands, which is the honest reading of a
@@ -137,20 +132,15 @@ fn a_rotor_the_alphabet_cannot_spell_is_its_own_arm() {
     assert!(r.projective_eq(&pi17), "and it names the rotor that could not be spelled");
 }
 
-/// THE COVER'S OWN PATH, which is where every reading above was being
-/// thrown away. `classify` has been able to tell a placed transition from a
-/// flat one since the carriage field existed; the cover reached it through
-/// `extend`, and `extend` is only ever as informative as the two sections
-/// it is handed.
+/// THE COVER'S OWN PATH. `classify` tells a placed transition from a flat
+/// one; the cover reaches it through `extend`, and `extend` is only ever
+/// as informative as the two sections it is handed.
 ///
 /// `Section::at` sets the carriage to the identity by construction. With
-/// both sections built that way — which is what `Bubble::expand_with` did —
-/// `extend`'s composed carriage is the identity for every pair of charts in
-/// the corpus, so `classify`'s `flat` is true by construction and
-/// `Fill::Class` is unreachable on this path. Not "nothing curved was
-/// found": nothing curved could be REPRESENTED. Measured across two corpus
-/// slices at that state: 2778 classified cover loops, flat 2778, filed 0,
-/// standing 0, unspellable 0.
+/// both sections built that way, `extend`'s composed carriage is the
+/// identity for every pair of charts, so `classify`'s `flat` is true by
+/// construction and `Fill::Class` is unreachable on that path — not
+/// nothing curved found, but nothing curved REPRESENTABLE.
 ///
 /// The two halves of this test are the same two charts. One pair of
 /// sections carries the placements the charts actually hold and stands; the
@@ -158,17 +148,17 @@ fn a_rotor_the_alphabet_cannot_spell_is_its_own_arm() {
 #[test]
 fn sections_at_different_placements_stand_where_the_identity_carriage_fills() {
     use crate::transducer::address::Address;
-    use crate::transducer::cech::{extend, Cell, Section};
+    use crate::transducer::cech::{extend, Section, Simplex};
     let addr_a = Address::from_bytes([1u8, 1]);
     let addr_b = Address::from_bytes([1u8, 2]);
-    let cell = Cell {
+    let edge = Simplex {
         vertices: vec![addr_a.as_bytes().to_vec(), addr_b.as_bytes().to_vec()],
         coefficient: Rotor::identity(),
         carriage: ident(),
         volume: [0; 4],
         fill: Fill::Open,
     };
-    assert_eq!(cell.degree(), 1, "an edge, so `extend` takes the cell's own arm");
+    assert_eq!(edge.degree(), 1, "an edge, so `extend` takes the simplex's own arm");
 
     // The charts as they are: one at the origin, one placed at (3, −2).
     let placed = Section {
@@ -177,7 +167,7 @@ fn sections_at_different_placements_stand_where_the_identity_carriage_fills() {
         carriage: cga::translator(&q(3), &q(-2), &q(0)),
     };
     let origin = Section { addr: addr_a.clone(), gamma: Rotor::identity(), carriage: ident() };
-    let Fill::Class(kappa, _) = extend(&origin, &placed, &cell) else {
+    let Fill::Class(kappa, _) = extend(&origin, &placed, &edge) else {
         panic!("two charts at different placements do not glue: that is the obstruction");
     };
     assert!(
@@ -190,7 +180,7 @@ fn sections_at_different_placements_stand_where_the_identity_carriage_fills() {
     let flattened_b = Section::at(addr_b, Rotor::identity());
     let flattened_a = Section::at(addr_a, Rotor::identity());
     assert!(
-        matches!(extend(&flattened_a, &flattened_b, &cell), Fill::Filled(..)),
+        matches!(extend(&flattened_a, &flattened_b, &edge), Fill::Filled(..)),
         "with the carriage dropped at construction the same two charts read as glued"
     );
 }

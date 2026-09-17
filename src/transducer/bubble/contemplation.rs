@@ -794,7 +794,7 @@ impl Contemplation {
         seen.insert(start, ());
         while let Some(v) = stack.pop() {
             for ck in self.complex.link(&v, 1) {
-                let Some((fill, vertices)) = self.complex.cell(&ck).map(|c| {
+                let Some((fill, vertices)) = self.complex.simplex(&ck).map(|c| {
                     (matches!(c.fill, Fill::Filled(..)), c.vertices.clone())
                 }) else {
                     continue;
@@ -824,7 +824,7 @@ impl Contemplation {
         // index: vertices of this component; each cell from that vertex's link
         for v in verts {
             for ck in self.complex.link_of(v) {
-                let Some(cell) = self.complex.cell(&ck) else {
+                let Some(cell) = self.complex.simplex(&ck) else {
                     continue;
                 };
                 if cell.degree() == 0 {

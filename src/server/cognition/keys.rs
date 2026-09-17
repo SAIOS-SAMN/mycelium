@@ -5,7 +5,7 @@
 use super::*;
 
 pub(crate) fn chart_simplex_key(inv: &crate::transducer::stalk::Invariant, sim: &[u8]) -> Vec<u8> {
-    let mut buf = vec![crate::transducer::address::TAG_CELL];
+    let mut buf = vec![crate::transducer::address::TAG_SIMPLEX];
     crate::transducer::address::put_bytes(&mut buf, &inv.key());
     crate::transducer::address::put_bytes(&mut buf, sim);
     buf

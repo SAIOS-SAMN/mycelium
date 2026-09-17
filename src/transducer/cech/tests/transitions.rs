@@ -11,19 +11,18 @@ use crate::transducer::element::{identity_versor as ident, same_versor};
 /// The court's glue composes SENTENCES: `glue_fetched` reads
 /// `transition(w, &spoken).and_then(rotor_of)` where both operands are
 /// forms a peer spoke. A sentence carries no tape — `letters()` refuses
-/// its tag, because a sentence is one level above a word — so `rotor_of`
-/// answered `None` on that path even after a composite of two WORDS
-/// carried its own. The glue then took its `None` arm on every edge it
-/// wrote, `set_edge` never saw a six-plane rotor, `Complex::fill`
-/// short-circuited on the identity coefficient before `classify`, and
-/// `Fill::Class` and `Fill::Unspellable` were unreachable in the tree.
+/// its tag, because a sentence is one level above a word — so the rotor
+/// is read from what the form's vertices agree on, or the glue writes no
+/// six-plane rotor on any edge, `Complex::fill` short-circuits on the
+/// identity coefficient before `classify`, and `Fill::Class` and
+/// `Fill::Unspellable` are unreachable.
 ///
 /// A form whose word vertices agree on one rotor up to projective
-/// equality HAS that rotor. The discriminating case is the same one the
-/// composite used: the two forms here carry quarters on `(0, 1)` and on
-/// `(2, 3)`, which have the SAME conformal action on the base — the
-/// second is the identity there — so neither sentence has a versor at all
-/// and `Cl(3, 1)` cannot separate them. The rotors can.
+/// equality HAS that rotor. The discriminating case: the two forms here
+/// carry quarters on `(0, 1)` and on `(2, 3)`, which have the SAME
+/// conformal action on the base — the second is the identity there — so
+/// neither sentence has a versor at all and `Cl(3, 1)` cannot separate
+/// them. The rotors can.
 #[test]
 fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() {
     use crate::transducer::alphabet::{self, LetterId, Word};
@@ -67,15 +66,10 @@ fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() 
     let got = rotor_of(&g).expect("and it has a rotor");
     let want = rb.geo(&ra.inverse().expect("a quarter inverts"));
     assert!(got.projective_eq(&want), "which is g_y ∘ g_x⁻¹ in Cl(4,0)");
-    assert!(
-        !got.is_identity(),
-        "and not the identity the court wrote on every edge it could write"
-    );
-    // AND THE ELEMENT CARRYING IT IS NOT THE IDENTITY ELEMENT. `is_identity`
-    // is `axes().is_empty()`, `axes` read the versor alone, and this
-    // transition has none — so a rotor the court can finally see would have
-    // arrived at `glue_fetched`'s `Some(g) if g.is_identity()` arm and been
-    // discarded one line after it was won.
+    assert!(!got.is_identity(), "and not the identity");
+    // AND THE ELEMENT CARRYING IT IS NOT THE IDENTITY ELEMENT: `is_identity`
+    // reads the axes, and this transition has a spatial axis though it has
+    // no versor, so `glue_fetched`'s identity arm does not discard it.
     assert_eq!(g.axes(), vec![crate::transducer::element::FIBER_SPATIAL]);
     assert!(!g.is_identity(), "a turn the sensor cannot see is still a turn");
 
@@ -139,10 +133,10 @@ fn an_equivocation_shows_up_as_curvature() {
     assert!(!holonomy(&id, &id, &disagree).is_identity(), "the holonomy is the exact obstruction");
 }
 
-/// The link of one vertex is only the incident cells; a tetra not on
+/// The link of one vertex is only the incident simplices; a tetra not on
 /// the link is not formed. Volume-zero overlaps form nothing.
 #[test]
-fn the_link_is_the_star_and_volume_gates_cells() {
+fn the_link_is_the_star_and_volume_gates_simplices() {
     let mut c = Complex::new();
     let (a, b, cc, d) = (v(1), v(2), v(3), v(4));
     for x in [&a, &b, &cc, &d] {
@@ -155,8 +149,8 @@ fn the_link_is_the_star_and_volume_gates_cells() {
     c.set_edge(&cc, &d, id, ident(), vol());
     c.coboundary_on_link(&a, |_| vol());
     for k in c.link(&a, 2) {
-        let cell = c.cell(&k).expect("link key is held");
-        assert!(cell.contains(&a), "link(a) contains only a");
+        let s = c.simplex(&k).expect("link key is held");
+        assert!(s.contains(&a), "link(a) contains only a");
     }
     assert!(c.degrees.get(3).is_none_or(|l| l.is_empty()), "no tetra on a's link");
     let mut empty = Complex::new();
@@ -164,7 +158,7 @@ fn the_link_is_the_star_and_volume_gates_cells() {
     empty.set_edge(&a, &b, Rotor::identity(), ident(), [0; 4]);
     assert!(
         empty.degrees.get(2).is_none_or(|l| l.is_empty()),
-        "zero remainder volume forms no higher cell"
+        "zero remainder volume forms no higher simplex"
     );
 }
 
@@ -185,9 +179,9 @@ fn fill_is_gauge_or_class() {
     let tri = c.link(&a, 2);
     assert_eq!(tri.len(), 1);
     let key = tri[0].clone();
-    // EXACT: a coboundary fills by the identity gauge with no placement.
-    // `matches!(_, Fill::Filled(_))` said only that some gauge came back,
-    // which is true of every gauge including a wrong one.
+    // EXACT: a coboundary fills by the identity gauge with no placement,
+    // and some gauge coming back is true of every gauge including a wrong
+    // one.
     match c.fill(&key) {
         Fill::Filled(g, carriage) => {
             assert!(g.is_identity(), "a coboundary's leftover is the identity: {g:?}");
@@ -197,8 +191,8 @@ fn fill_is_gauge_or_class() {
     }
     // The holonomy left over is q·q — a HALF turn, since the two legs are
     // quarters and the chord is now the identity — so it is congruent at
-    // TWO. The period was unasserted before, so a congruence at any period
-    // passed, including this one under a comment claiming four.
+    // TWO, and the period is asserted: a congruence at any period is not
+    // this claim.
     c.set_edge(&a, &cc, Rotor::identity(), ident(), vol());
     c.coboundary_on_link(&a, |_| vol());
     let key = c.link(&a, 2)[0].clone();
@@ -258,7 +252,7 @@ fn a_placement_that_does_not_close_is_a_class_carrying_it() {
     c.set_edge(&a, &cc, id, t(0, 1), vol());
     c.coboundary_on_link(&a, |_| vol());
     let key = c.link(&a, 2)[0].clone();
-    let coeff = c.cell(&key).expect("the triangle is held");
+    let coeff = c.simplex(&key).expect("the triangle is held");
     assert!(
         coeff.coefficient.is_identity(),
         "every rotor is the identity, so the rotor half closes exactly"
@@ -286,14 +280,13 @@ fn congruent_is_read_by_class_key() {
     let q = quarter();
     let ck = q.class_key().expect("quarter class");
     c.file_congruent(v(1), v(2), q.clone(), 4);
-    let got = c.congruent(ck.as_bytes()).expect("Congruent cell by class key");
+    let got = c.congruent(ck.as_bytes()).expect("Congruent simplex by class key");
     assert_eq!(got.1, 4);
     assert!(got.0.projective_eq(&q), "the index holds the rotor that was filed");
-    // A class key that was NEVER filed is absent. The claim was
-    // `Rotor::identity().class_key().is_none_or(..)`, which passes on the
-    // `None` arm without reading the index at all — and the identity may
-    // have no class key, so it usually did. `pythag5` has one and was
-    // never filed, so the index must answer for it.
+    // A class key that was NEVER filed is absent, asked at a rotor that
+    // HAS a class key: the identity may have none, and a claim that passes
+    // on its `None` arm reads the index not at all. `pythag5` has one and
+    // was never filed, so the index must answer for it.
     let other = pythag5().class_key().expect("the (3,4,5) rotor has a class key");
     assert!(
         c.congruent(other.as_bytes()).is_none(),
@@ -301,21 +294,20 @@ fn congruent_is_read_by_class_key() {
     );
 }
 
-/// A CELL ON NO VERTICES IS NO SIMPLEX. It was remembered at degree zero,
-/// where a point lives, so the complex held a cell with no support beside
-/// its vertices and `degree` answered for it by flooring a subtraction.
-/// It is not remembered, and every reader of `degree` takes `n − 1` whole.
+/// A SIMPLEX ON NO VERTICES IS NO SIMPLEX. Degree zero is a point, and a
+/// value with no vertices is not one: it is not remembered, and every
+/// reader of `degree` takes `n − 1` whole rather than flooring it.
 #[test]
-fn a_cell_on_no_vertices_is_not_a_cell() {
+fn a_simplex_on_no_vertices_is_not_a_simplex() {
     let mut c = Complex::new();
-    c.remember(Cell {
+    c.remember(Simplex {
         vertices: Vec::new(),
         coefficient: Rotor::identity(),
         carriage: ident(),
         volume: vol(),
         fill: Fill::Open,
     });
-    assert_eq!(c.cell_count(), 0, "no simplex was remembered");
+    assert_eq!(c.simplex_count(), 0, "no simplex was remembered");
     assert!(c.get(&[]).is_none(), "and none is there to read");
 }
 
@@ -331,5 +323,5 @@ fn fill_is_attempted_once() {
     assert!(matches!(first, Fill::Filled(..)));
     let second = c.fill(&key);
     assert!(matches!(second, Fill::Already), "a second fill is not a transition");
-    assert!(matches!(c.cell(&key).map(|c| &c.fill), Some(Fill::Filled(..))));
+    assert!(matches!(c.simplex(&key).map(|c| &c.fill), Some(Fill::Filled(..))));
 }
