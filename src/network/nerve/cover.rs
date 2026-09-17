@@ -83,7 +83,7 @@ impl CoverNode {
     }
 
     fn collect_into(&self, out: &mut Keyed<()>) {
-        // Each carrier here is ALREADY one cell's fiber: `here` is the set
+        // Each carrier here is ALREADY one stratum's fiber: `here` is the set
         // of hyphae standing at this plane, `next` is this node's own
         // children. The descent that scoped them is the axis path above.
         for (id, _) in self.here.scoped() {
@@ -482,7 +482,7 @@ pub fn home(
     // novel means, and it is why this reading is the nerve's room table
     // whole. The carrier is the mesh's peers -- bounded by how many hyphae
     // this node knows, not by the corpus or the book -- so its whole
-    // content is the candidate set and walking it is one cell's reading.
+    // content is the candidate set and walking it is one stratum's reading.
     // The choice among them is still the room reading, never a scalar.
     for (id, room) in rooms.scoped() {
         if fits(room) {

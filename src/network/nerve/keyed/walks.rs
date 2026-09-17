@@ -61,12 +61,12 @@ impl<'a, V> Iterator for Link<'a, V> {
 }
 
 impl<T> Keyed<Keyed<T>> {
-    /// The inner trie at `key` — cells on a vertex, bubbles on a chart.
+    /// The inner trie at `key` — simplices on a vertex, bubbles on a chart.
     pub fn link(&self, key: &[u8]) -> Link<'_, T> {
         Link {
             fiber: match self.get(key) {
                 // The inner trie AT a key: `get` is the descent, so what it
-                // returns is already one cell's fiber.
+                // returns is already one stratum's fiber.
                 Some(inner) => inner.scoped(),
                 None => Fiber::empty(),
             },

@@ -231,7 +231,7 @@ impl<V> Stratified<V> {
         }
     }
 
-    /// THE WHOLE CARRIER, asserted as one cell's reading exactly as
+    /// THE WHOLE CARRIER, asserted as one stratum's reading exactly as
     /// [`Keyed::scoped`] is.
     pub fn scoped(&self) -> Fiber<'_, V> {
         self.trie.scoped()

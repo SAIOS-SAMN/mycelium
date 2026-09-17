@@ -293,7 +293,7 @@ impl<V> Keyed<V> {
     /// THE WHOLE OF A CARRIER THAT IS ITSELF A FIBER — one bubble's charts,
     /// one vertex's star, one chart's incidence, one form's cited
     /// addresses. Calling this ASSERTS that scoping: the carrier was
-    /// reached by a key already, so its whole content is one cell's
+    /// reached by a key already, so its whole content is one stratum's
     /// reading and walking it is not rule 1's whole-carrier walk.
     ///
     /// It is the other half of [`Prefix`]: a site either has a coordinate
