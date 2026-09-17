@@ -184,18 +184,28 @@ fn form_tape_v6_round_trips() {
 /// every kind decodes to itself; a kind carrying nothing is not a demand.
 #[test]
 fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
+    use crate::transducer::alphabet::{standing, Rotor};
+    let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let chart = stalk::Invariant(vec![1, 4, 4]);
     let other = stalk::Invariant(vec![1, 6, 2]);
+    // `3 + e₀₁ + e₀₂`: weight 11, held by no coordinate plane (37.7).
+    let eleven = Rotor::scalar(q(3)).add(&Rotor::blade(0b0011, q(1))).add(&Rotor::blade(0b0101, q(1)));
+    // `(1 + e₀₂)(1 + e₁₃)` carries the sensor plane wholly off itself: its
+    // reading there is the zero block, and it is a demand for all of it.
+    let off = Rotor::scalar(q(1)).add(&Rotor::blade(0b0101, q(1))).geo(&Rotor::scalar(q(1)).add(&Rotor::blade(0b1010, q(1))));
+    let shadowless = standing(&off, (0, 1)).expect("a versor");
+    assert!(
+        matches!(&shadowless, Demand::Standing { block, .. } if block.iter().flatten().all(|x| x == &q0())),
+        "the plane reads nothing of it"
+    );
     let kinds = [
         Demand::RotorPrime {
             plane: (0, 1),
             prime: 17,
             witness: Box::new([[q1(), q0()], [q0(), q1()]]),
         },
-        Demand::Standing {
-            block: Box::new([[q1(), q0()], [q0(), q1()]]),
-            rotor: Box::new(crate::transducer::alphabet::Rotor::identity()),
-        },
+        standing(&eleven, (0, 1)).expect("a versor"),
+        shadowless,
         Demand::Source { multiplicity: 3 },
         Demand::Creation,
         Demand::TopologicalDeformation { image: other.clone(), axes: vec![1, 2] },
@@ -209,8 +219,14 @@ fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
         assert_eq!(k.typed(), Ok(()), "{}", k.label());
         assert_eq!(k.key().tag(), Some(crate::transducer::address::TAG_DEMAND));
     }
-    assert_ne!(demand_key(&kinds[2], &chart), demand_key(&kinds[3], &chart), "two kinds on one chart are two demands");
-    assert_ne!(demand_key(&kinds[2], &chart), demand_key(&kinds[2], &other), "one kind on two charts is two demands");
+    assert_ne!(demand_key(&kinds[3], &chart), demand_key(&kinds[4], &chart), "two kinds on one chart are two demands");
+    assert_ne!(demand_key(&kinds[3], &chart), demand_key(&kinds[3], &other), "one kind on two charts is two demands");
+    // THE WITNESS IS A RAY (1.5, A1): `λΦ` and `Φ` stand one demand.
+    assert_eq!(
+        demand_key(&standing(&eleven, (0, 1)).expect("a versor"), &chart),
+        demand_key(&standing(&eleven.scale(&q(-2)), (0, 1)).expect("a versor"), &chart),
+        "one witness under two scales is one key"
+    );
     for untyped in [
         Demand::Source { multiplicity: 0 },
         Demand::RotorPrime {
@@ -230,15 +246,22 @@ fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
             prime: 17,
             witness: Box::new([[q0(), q0()], [q0(), q0()]]),
         },
+        // The witness is the identity: a demand for nothing, whatever
+        // block is written beside it (checklist (m) — the block cannot
+        // witness on its own).
         Demand::Standing {
             block: Box::new([[q0(), q0()], [q0(), q0()]]),
-            rotor: Box::new(crate::transducer::alphabet::Rotor::identity()),
+            rotor: Box::new(Rotor::identity()),
+        },
+        Demand::Standing {
+            block: Box::new([[q1(), q0()], [q0(), q1()]]),
+            rotor: Box::new(Rotor::identity()),
         },
         // A standing block on a rotor with no weight names a witness that
         // is no versor, and a court has nothing to docket (15.3).
         Demand::Standing {
             block: Box::new([[q1(), q0()], [q0(), q1()]]),
-            rotor: Box::new(crate::transducer::alphabet::Rotor::zero()),
+            rotor: Box::new(Rotor::zero()),
         },
         Demand::TopologicalDeformation { image: other.clone(), axes: Vec::new() },
     ] {

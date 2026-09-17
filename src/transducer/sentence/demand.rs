@@ -25,8 +25,8 @@ pub enum Demand {
     /// which is the candidate generator of 37.7 and carries itself as its
     /// witness (16.16 step 6). The block is that rotor's reading on the
     /// plane the peel stopped at and cannot witness it alone (checklist
-    /// (m)). Boxed: four rationals and sixteen beside variants of a few
-    /// bytes.
+    /// (m)). Written and keyed as the ray's canonical coordinates (A1).
+    /// Boxed: four rationals and sixteen beside variants of a few bytes.
     Standing { block: Box<[[Q; 2]; 2]>, rotor: Box<Rotor> },
     /// An output body some input charts carry onto: every one of them stands.
     Source { multiplicity: u32 },
@@ -60,8 +60,8 @@ impl Demand {
 
     /// A demand carries the coordinates its kind names, or it is not a
     /// demand: a prime below the alphabet's own or a degenerate plane, a
-    /// zero block, a source no chart carries onto (that is a creation), a
-    /// deformation on no axis.
+    /// standing witness with no weight or the identity, a source no chart
+    /// carries onto (that is a creation), a deformation on no axis.
     pub fn typed(&self) -> Result<(), &'static str> {
         let ok = match self {
             // A witness of all zeros names a prime it does not carry:
@@ -79,9 +79,11 @@ impl Demand {
                     .is_some()
                     && witness.iter().flatten().any(|q| !q.is_zero())
             }
-            Demand::Standing { block, rotor } => {
-                block.iter().flatten().any(|q| !q.is_zero()) && rotor.weight().is_some()
-            }
+            // THE WITNESS IS THE CONTENT (checklist (m)): a versor that is
+            // not the identity. The block is that rotor's reading on one
+            // plane and may be zero — a rotor carrying the plane wholly off
+            // itself has a zero shadow there and is a demand for all of it.
+            Demand::Standing { rotor, .. } => rotor.weight().is_some() && !rotor.is_identity(),
             Demand::Source { multiplicity } => *multiplicity > 0,
             Demand::Creation => true,
             Demand::TopologicalDeformation { axes, .. } => !axes.is_empty(),
@@ -112,7 +114,11 @@ impl Demand {
                         put_q(out, q);
                     }
                 }
-                rotor.to_bytes(out);
+                // THE WITNESS IS THE RAY'S CANONICAL COORDINATES (A1, rule
+                // 6): `λΦ` and `Φ` are one element (1.5), and this is the
+                // key `demand_key` files the vertex under, so one ray is
+                // one vertex and never one per scale.
+                rotor.put_canonical(out);
             }
             Demand::Source { multiplicity } => out.extend_from_slice(&multiplicity.to_le_bytes()),
             Demand::Creation => {}
