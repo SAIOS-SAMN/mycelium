@@ -92,6 +92,8 @@ pub(crate) fn q(v: i64) -> num_rational::BigRational {
 }
 
 /// A perceived body: its cells with hue, its shape, and its moduli.
+pub type Cell4 = (i64, i64, i64, u8);
+
 #[derive(Clone, Debug)]
 pub struct Body {
     pub cells: Vec<Cell3>,
@@ -100,11 +102,25 @@ pub struct Body {
 }
 
 pub(crate) fn body_of(comp: Vec<Cell3>) -> Body {
+    body_of_at(comp, 0)
+}
+
+pub(crate) fn body_of_at(comp: Vec<Cell3>, frame: i64) -> Body {
     let mut pos: Vec<(i64, i64)> = comp.iter().map(|&(r, c, _)| (r, c)).collect();
     pos.sort_unstable();
-    let shape = blade::shape_of(&pos);
+    let shape = blade::shape_of_at(&pos, frame);
     let moduli = Invariant(blade::moduli(&shape.blade));
     let mut cells = comp;
+    cells.sort_unstable();
+    Body { cells, shape, moduli }
+}
+
+pub fn body_of_3d(comp: Vec<Cell4>) -> Body {
+    let mut pos: Vec<(i64, i64, i64)> = comp.iter().map(|&(r, c, k, _)| (r, c, k)).collect();
+    pos.sort_unstable();
+    let shape = blade::shape_of_3d(&pos);
+    let moduli = Invariant(blade::moduli(&shape.blade));
+    let mut cells: Vec<Cell3> = comp.into_iter().map(|(r, c, _, h)| (r, c, h)).collect();
     cells.sort_unstable();
     Body { cells, shape, moduli }
 }
@@ -137,6 +153,11 @@ pub(crate) fn note_cell_read() {
 /// edge. The court reads a two-hue percept as one sentence with two body
 /// vertices and their edge, never as two detached listings (50.1).
 pub fn perceive(grid: &Grid) -> Vec<Body> {
+    perceive_frame(grid, 0)
+}
+
+/// Perceive a scene at a specific temporal/frame coordinate.
+pub fn perceive_frame(grid: &Grid, frame: i64) -> Vec<Body> {
     let mut cells: Vec<Cell3> = Vec::new();
     for (r, row) in grid.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
@@ -146,7 +167,10 @@ pub fn perceive(grid: &Grid) -> Vec<Body> {
             }
         }
     }
-    blade::components(&cells).into_iter().map(body_of).collect()
+    blade::components(&cells)
+        .into_iter()
+        .map(|comp| body_of_at(comp, frame))
+        .collect()
 }
 
 // `linear_block_of_versor` was here, renamed to `sensor_plane_block` and

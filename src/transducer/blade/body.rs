@@ -17,8 +17,8 @@ pub struct Blade {
     /// invertible: the geometric quotient can form.
     pub spatial: Mv,
     /// 𝒮 refinement — the EXACT second-moment (inertia) tensor about the
-    /// centroid `(Ixx, Iyy, Ixy) ∈ ℚ³`, rotation-covariant, no eigen/roots.
-    pub inertia: [BigRational; 3],
+    /// centroid `(Ixx, Iyy, Ixy, Izz, Ixz, Iyz) ∈ ℚ⁶`, rotation-covariant, no eigen/roots.
+    pub inertia: [BigRational; 6],
     /// 𝒮 refinement — the exact fourth body moments about the centroid: the
     /// isotropic part `∫(u²+v²)²` and the fourth harmonic
     /// `(∫(u⁴−6u²v²+v⁴), ∫(4u³v−4uv³))`, which turns at four times the
@@ -39,6 +39,12 @@ impl Blade {
     /// The centroid read back from the homogeneous sphere — the exact ℚ² base.
     pub fn centroid(&self) -> Option<(BigRational, BigRational)> {
         cga::base(&self.spatial)
+    }
+
+    /// The 3D centroid read back from the homogeneous sphere and frame coordinate — exact ℚ³.
+    pub fn centroid3(&self) -> Option<(BigRational, BigRational, BigRational)> {
+        let (r, c) = self.centroid()?;
+        Some((r, c, self.temporal.clone()))
     }
 
     /// The squared extent `r² = S·S` — always `> 0`, so the body is invertible.
@@ -94,6 +100,31 @@ impl Blade {
         }
     }
 
+    /// The deviatoric harmonic tensor on a given rotation plane in `SLOT_PLANES_SIX`.
+    /// On plane (0,1) reads `(Ixx - Iyy, 2Ixy)`; on (0,3) reads `(Ixx - Izz, 2Ixz)`;
+    /// on (1,3) reads `(Iyy - Izz, 2Iyz)`.
+    pub(crate) fn harmonic_on_plane(&self, plane: (u8, u8), mirrored: bool) -> Option<[BigRational; 2]> {
+        use crate::transducer::alphabet::{PLANE_COL, PLANE_ROW};
+        match plane {
+            (PLANE_ROW, PLANE_COL) => {
+                let (ixx, iyy, ixy) = (&self.inertia[0], &self.inertia[1], &self.inertia[2]);
+                let cross = ixy * q(2);
+                Some([ixx - iyy, if mirrored { -cross } else { cross }])
+            }
+            (PLANE_ROW, 3) => {
+                let (ixx, izz, ixz) = (&self.inertia[0], &self.inertia[3], &self.inertia[4]);
+                let cross = ixz * q(2);
+                Some([ixx - izz, if mirrored { -cross } else { cross }])
+            }
+            (PLANE_COL, 3) => {
+                let (iyy, izz, iyz) = (&self.inertia[1], &self.inertia[3], &self.inertia[5]);
+                let cross = iyz * q(2);
+                Some([iyy - izz, if mirrored { -cross } else { cross }])
+            }
+            _ => None,
+        }
+    }
+
     /// The second harmonic of the body: the anisotropy `(Ixx − Iyy, 2 Ixy)`,
     /// a vector that turns at twice the body's angle and vanishes for an
     /// isotropic body. `mirrored` reads it for the body reflected across
@@ -120,33 +151,48 @@ pub struct InvariantSignature {
     pub hue_profile: Vec<BigRational>,
 }
 
-/// Lift one connected component `(row, col, hue)` into a volumetric blade —
+/// Lift one connected component `(row, col, hue)` at `time_index` into a volumetric blade —
 /// exact ℚ throughout. The component's cells need not be sorted.
 pub fn lift(comp: &[(i64, i64, u8)], time_index: i64) -> Blade {
+    let comp3: Vec<(i64, i64, i64, u8)> = comp
+        .iter()
+        .map(|&(r, c, h)| (r, c, time_index, h))
+        .collect();
+    lift3(&comp3)
+}
+
+/// Lift one 3D connected component `(row, col, frame, hue)` into a volumetric blade —
+/// exact ℚ throughout. Centroid is in ℚ³, moments are full 6-component inertia on {e₀, e₁, e₃}.
+pub fn lift3(comp: &[(i64, i64, i64, u8)]) -> Blade {
     let n = comp.len().max(1) as i64;
     let n_q = q(n);
 
-    // Centroid c = (Σrow, Σcol) / n ∈ ℚ².
-    let sr: i64 = comp.iter().map(|(r, _, _)| *r).sum();
-    let sc: i64 = comp.iter().map(|(_, c, _)| *c).sum();
+    // Centroid c = (Σrow, Σcol, Σframe) / n ∈ ℚ³.
+    let sr: i64 = comp.iter().map(|(r, _, _, _)| *r).sum();
+    let sc: i64 = comp.iter().map(|(_, c, _, _)| *c).sum();
+    let sk: i64 = comp.iter().map(|(_, _, k, _)| *k).sum();
     let c1 = BigRational::new(BigInt::from(sr), BigInt::from(n));
     let c2 = BigRational::new(BigInt::from(sc), BigInt::from(n));
+    let c3 = BigRational::new(BigInt::from(sk), BigInt::from(n));
 
     // Moments about the centroid (exact ℚ) — of the BODY: the union of unit
-    // squares, so each cell contributes the integral of the monomial over
-    // its own square (the parallel-axis law at every order), never the
-    // moments of cell centers as points. This is what makes the moments
-    // scale as a body does under dilation (ρ² per cell, ρ⁴ in the second
-    // moment, ρ⁶ in the fourth).
+    // cubes, so each cell contributes the integral of the monomial over
+    // its own cube (the parallel-axis law at every order).
     let (mut ixx, mut iyy, mut ixy) = (q(0), q(0), q(0));
+    let (mut izz, mut ixz, mut iyz) = (q(0), q(0), q(0));
     let (mut q_iso, mut h4x, mut h4y) = (q(0), q(0), q(0));
-    for (r, c, _) in comp {
+    for (r, c, k, _) in comp {
         let dr = q(*r) - &c1;
         let dc = q(*c) - &c2;
-        let (dr2, dc2) = (&dr * &dr, &dc * &dc);
+        let dk = q(*k) - &c3;
+        let (dr2, dc2, dk2) = (&dr * &dr, &dc * &dc, &dk * &dk);
         ixx += &dr2 + qn(1, 12);
         iyy += &dc2 + qn(1, 12);
+        izz += &dk2 + qn(1, 12);
         ixy += &dr * &dc;
+        ixz += &dr * &dk;
+        iyz += &dc * &dk;
+
         // ∫u⁴ = d⁴ + d²/2 + 1/80; ∫u² = d² + 1/12; ∫u³ = d³ + d/4; ∫u = d,
         // each over the unit interval centered at the offset d.
         let u4 = &dr2 * &dr2 + &dr2 * qn(1, 2) + qn(1, 80);
@@ -162,12 +208,12 @@ pub fn lift(comp: &[(i64, i64, u8)], time_index: i64) -> Blade {
     // Extent r² = per-unit-mass polar 2nd moment + the unit cell's own polar
     // moment (1/6), so r² > 0 even for a single cell — off the null cone,
     // invertible.
-    let r2 = (&ixx + &iyy) / &n_q; // the body's own moment is already inside
+    let r2 = (&ixx + &iyy) / &n_q;
     let spatial = cga::sphere(&c1, &c2, &r2);
 
     // Gauge: the hue multiset as sorted (hue, count) relations — Vec, not a map.
     let mut gauge: Vec<(u8, BigRational)> = Vec::new();
-    for (_, _, h) in comp {
+    for (_, _, _, h) in comp {
         match gauge.iter_mut().find(|(hue, _)| hue == h) {
             Some((_, count)) => *count += q(1),
             None => gauge.push((*h, q(1))),
@@ -179,16 +225,16 @@ pub fn lift(comp: &[(i64, i64, u8)], time_index: i64) -> Blade {
     )]
     gauge.sort_by_key(|(h, _)| *h);
 
-    let mut cells: Vec<(i64, i64)> = comp.iter().map(|(r, c, _)| (*r, *c)).collect();
+    let mut cells: Vec<(i64, i64)> = comp.iter().map(|(r, c, _, _)| (*r, *c)).collect();
     cells.sort_unstable();
     cells.dedup();
 
     Blade {
         spatial,
-        inertia: [ixx, iyy, ixy],
+        inertia: [ixx, iyy, ixy, izz, ixz, iyz],
         quartic: [q_iso, h4x, h4y],
         gauge,
-        temporal: q(time_index),
+        temporal: c3,
         shell: n_q,
         cells,
     }
@@ -379,8 +425,19 @@ pub struct Shape {
     pub blade: Blade,
 }
 
-/// Lift a support (cells without hue) to a shape.
+/// Lift a support (cells without hue) to a shape at default frame 0.
 pub fn shape_of(cells: &[(i64, i64)]) -> Shape {
+    shape_of_at(cells, 0)
+}
+
+/// Lift a support with an explicit frame coordinate to a shape.
+pub fn shape_of_at(cells: &[(i64, i64)], time_index: i64) -> Shape {
     let comp: Vec<(i64, i64, u8)> = cells.iter().map(|&(r, c)| (r, c, 0u8)).collect();
-    Shape { blade: lift(&comp, 0) }
+    Shape { blade: lift(&comp, time_index) }
+}
+
+/// Lift a 3D support (cells with frame coordinate) to a shape.
+pub fn shape_of_3d(cells: &[(i64, i64, i64)]) -> Shape {
+    let comp: Vec<(i64, i64, i64, u8)> = cells.iter().map(|&(r, c, k)| (r, c, k, 0u8)).collect();
+    Shape { blade: lift3(&comp) }
 }

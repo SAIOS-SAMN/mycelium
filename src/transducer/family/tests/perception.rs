@@ -497,3 +497,19 @@ fn a_family_whose_rule_selects_that_body_extracts_a_rule_vertex_where_it_extract
     assert!(rule.form.is_closed(), "the extracted rule form is closed");
 }
 
+#[test]
+fn perception_3d_coordinates_preserve_frame_and_moments() {
+    let cells4: Vec<Cell4> = vec![
+        (0, 0, 1, 1),
+        (0, 1, 1, 1),
+        (1, 0, 1, 1),
+        (1, 1, 1, 1),
+    ];
+    let b3d = body_of_3d(cells4);
+    assert_eq!(b3d.shape.blade.temporal, num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)));
+    assert_eq!(b3d.cells.len(), 4);
+    assert_eq!(b3d.shape.blade.inertia.len(), 6);
+    let c3 = b3d.shape.blade.centroid3().expect("3d centroid");
+    assert_eq!(c3.2, num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)));
+}
+

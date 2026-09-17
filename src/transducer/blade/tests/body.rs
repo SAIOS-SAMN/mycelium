@@ -69,3 +69,43 @@ fn a_translate_shares_the_invariant() {
     let b = lift(&cells(&[(4, 7, 1), (4, 8, 1), (5, 7, 1), (5, 8, 1)]), 1);
     assert_eq!(a.invariant(), b.invariant(), "a translate is the same orbit");
 }
+
+#[test]
+fn volumetric_blade_3d_lift_computes_six_moments_and_3d_centroid() {
+    // Lift 3D cells spanning two frames (k=0 and k=2)
+    let comp3 = vec![
+        (0, 0, 0, 1u8),
+        (0, 2, 0, 1u8),
+        (0, 0, 2, 1u8),
+        (0, 2, 2, 1u8),
+    ];
+    let b = lift3(&comp3);
+    assert_eq!(b.shell, q(4));
+    let c3 = b.centroid3().expect("3D centroid");
+    // Row centroid = 0, Col centroid = 1, Frame centroid = 1
+    assert_eq!(c3.0, q(0));
+    assert_eq!(c3.1, q(1));
+    assert_eq!(c3.2, q(1));
+
+    // Inertia tensor has 6 components: [Ixx, Iyy, Ixy, Izz, Ixz, Iyz]
+    assert_eq!(b.inertia.len(), 6);
+    // Across frames, Izz carries variance along e3
+    assert!(b.inertia[3] > q(0), "Izz is positive");
+
+    // Deviatoric harmonic on plane (0, 1) and off-plane (0, 3)
+    let h01 = b.harmonic_on_plane((0, 1), false).expect("plane 0,1");
+    let h03 = b.harmonic_on_plane((0, 3), false).expect("plane 0,3");
+    assert_ne!(h01, [q(0), q(0)]);
+    assert_ne!(h03, [q(0), q(0)]);
+}
+
+#[test]
+fn rotor_and_placement_between_measures_rotation_and_translation() {
+    let s1 = shape_of(&[(0, 0), (0, 1), (0, 2)]);
+    let s2 = shape_of(&[(3, 5), (4, 5), (5, 5)]); // rotated by 90 degrees and translated
+    let (rotor, trans) = rotor_and_placement_between(&s1, &s2).expect("carried");
+    assert!(!trans.is_zero());
+    assert!(!rotor.is_identity());
+    let r = rotor_between_shapes(&s1, &s2).expect("rotor exists");
+    assert_eq!(r, rotor);
+}

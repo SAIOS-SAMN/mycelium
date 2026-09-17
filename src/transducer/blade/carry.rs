@@ -66,6 +66,45 @@ pub fn versor_between(a: &Shape, b: &Shape) -> Option<Mv> {
     coset_representative(&versor_coset(a, b))
 }
 
+/// The rotation measured as a Cl(4,0) Rotor across turned planes from the
+/// deviatoric tensors, and the translation placement as a CGA translator.
+pub fn rotor_and_placement_between(
+    a: &Shape,
+    b: &Shape,
+) -> Option<(crate::transducer::alphabet::Rotor, Mv)> {
+    use crate::transducer::alphabet::{Rotor, SLOT_PLANES_SIX};
+    let _ = versor_between(a, b)?;
+    let ca = a.blade.centroid()?;
+    let cb = b.blade.centroid()?;
+    let t = cga::translator(&(cb.0 - ca.0), &(cb.1 - ca.1));
+
+    let mut total_rotor = Rotor::identity();
+    for &plane in &SLOT_PLANES_SIX {
+        let Some(ha) = a.blade.harmonic_on_plane(plane, false) else { continue };
+        let Some(hb) = b.blade.harmonic_on_plane(plane, false) else { continue };
+        if (ha[0].is_zero() && ha[1].is_zero()) || (hb[0].is_zero() && hb[1].is_zero()) {
+            continue;
+        }
+        if let Some((s, bv)) = rotor_between(&ha, &hb) {
+            let (s, bv) = match (s.is_zero(), bv.is_zero()) {
+                (true, true) => (q(0), q(1)),
+                _ => (s, bv),
+            };
+            if let Some((hs, hb)) = half_rotor(&s, &bv) {
+                let mask = (1usize << plane.0) | (1usize << plane.1);
+                let r_plane = Rotor::scalar(hs).add(&Rotor::blade(mask, hb));
+                total_rotor = total_rotor.geo(&r_plane);
+            }
+        }
+    }
+    Some((total_rotor, t))
+}
+
+/// The Cl(4,0) Rotor carrying body a's orientation onto body b's orientation.
+pub fn rotor_between_shapes(a: &Shape, b: &Shape) -> Option<crate::transducer::alphabet::Rotor> {
+    rotor_and_placement_between(a, b).map(|(r, _)| r)
+}
+
 /// THE COSET OF VERSORS carrying `a` onto `b`, each with the rotation it
 /// was built from. Translation from the body centroids; the dilation ρ
 /// from the per-cell spread (a rational square, or the bodies are not
