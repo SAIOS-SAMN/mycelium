@@ -102,7 +102,16 @@ pub fn rotor_and_placement_between(
 
 /// The Cl(4,0) Rotor carrying body a's orientation onto body b's orientation.
 pub fn rotor_between_shapes(a: &Shape, b: &Shape) -> Option<crate::transducer::alphabet::Rotor> {
-    rotor_and_placement_between(a, b).map(|(r, _)| r)
+    let (r, _) = rotor_and_placement_between(a, b)?;
+    if let (Some(sa), Some(sb)) = (
+        crate::transducer::blade::continuous::ContinuousSupport::of(a),
+        crate::transducer::blade::continuous::ContinuousSupport::of(b),
+    ) {
+        if !sa.matches_rotor(&sb, &r) {
+            return None;
+        }
+    }
+    Some(r)
 }
 
 /// THE COSET OF VERSORS carrying `a` onto `b`, each with the rotation it
@@ -166,7 +175,15 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
             None => return coset,
         },
     };
-    if b.blade.shell != &a.blade.shell * &rho * &rho {
+    let (supp_a, supp_b) = (
+        crate::transducer::blade::continuous::ContinuousSupport::of(a),
+        crate::transducer::blade::continuous::ContinuousSupport::of(b),
+    );
+    if let (Some(sa), Some(sb)) = (&supp_a, &supp_b) {
+        if !sa.is_similar_to(sb, &rho) {
+            return coset;
+        }
+    } else if b.blade.shell != &a.blade.shell * &rho * &rho {
         return coset; // the cell counts do not scale as ρ²: not similar
     }
     let to_origin = cga::translator(&(-&ca1), &(-&ca2));

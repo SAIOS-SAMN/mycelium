@@ -57,38 +57,32 @@ pub fn factor_versor(
     v: &Versor,
     gauge: &[(u8, u8)],
 ) -> Option<Result<crate::transducer::alphabet::Derivation, crate::transducer::sentence::Demand>> {
+    factor_versor_target(crystal, budget, v, None, gauge)
+}
+
+/// Factor a versor with an explicit multi-plane Cl(4,0) target rotor, opening
+/// kinematics to all six rotation planes.
+pub fn factor_versor_target(
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    v: &Versor,
+    target_rotor: Option<&crate::transducer::alphabet::Rotor>,
+    gauge: &[(u8, u8)],
+) -> Option<Result<crate::transducer::alphabet::Derivation, crate::transducer::sentence::Demand>> {
     let hue = crate::transducer::sentence::CycleType::of(gauge);
-    // THE BASIS THIS MIND PEELS WITH (L23a): the seventeen, and whatever
-    // it has adjoined at the meet of the lanes this target occupies. There
-    // is no second branch after the peel any more — the ring WAS that
-    // branch, running a second division loop over a second basis on a
-    // target this peel had already refused, and it is the same loop.
-    let adjoined = adjoined_basis(crystal, budget, v, &hue)?;
-    Some(match peel_versor_with(v, adjoined.clone())? {
-        // `None` from the factorisation is the budget ending, which is
-        // UNMEASURED and not a spelling: answering `spelled(w)` there
-        // would assert "no held generator reached this" without having
-        // looked, which is exactly the invented value rule 11 refuses.
-        // It propagates as `None` — the same refusal a versor with no
-        // sensor block gives — and the caller withholds (L8w).
-        //
-        // A peel that cited nothing is the letter branch exactly as it
-        // was: A12 over the letter exponents of the word it produced.
+    let adjoined = adjoined_basis_target(crystal, budget, v, target_rotor, &hue)?;
+    Some(match peel_versor_with_target(v, target_rotor, adjoined.clone())? {
         Ok((cited, residue)) if cited.is_empty() => {
             let occupied = occupied_lanes(&residue.rotor(), &hue);
             Ok(derivation_of(crystal, budget, residue, &occupied)?)
         }
-        // A peel that CITED is a derivation through an adjoined generator.
-        // The composition is replayed against the target before it is
-        // returned: the arithmetic is exact, but the map from a block to a
-        // rotor is a half-angle, and a mismatch is not a guess to ship
-        // (rule 11).
         Ok((cited, residue)) => {
             let composed = compose_citations(&adjoined, &cited, &residue)?;
-            match rotor_of_versor(v).is_some_and(|t| composed.projective_eq(&t)) {
-                // The residue travels on the tape as its geodesic
-                // (Expansion 1): the operator is unchanged and re-derived,
-                // the spelling is the presentation's shortest.
+            let target = match target_rotor {
+                Some(r) => Some(r.clone()),
+                None => rotor_of_versor(v),
+            };
+            match target.is_some_and(|t| composed.projective_eq(&t)) {
                 true => Ok(crate::transducer::alphabet::Derivation::factored(
                     cited, residue.geodesic(), composed,
                 )),
@@ -150,15 +144,29 @@ fn rotor_of_versor(v: &Versor) -> Option<crate::transducer::alphabet::Rotor> {
 /// of the target's lanes, as primes the peel may divide by. A generator
 /// that spells in letters is A12's and not the basis's; one whose rotor
 /// has no arc on the sensor plane divides nothing here.
-pub(crate) fn adjoined_basis(
+pub fn adjoined_basis(
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     v: &Versor,
     hue: &crate::transducer::sentence::CycleType,
 ) -> Option<Vec<crate::transducer::alphabet::AdjoinedPrime>> {
+    adjoined_basis_target(crystal, budget, v, None, hue)
+}
+
+pub(crate) fn adjoined_basis_target(
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    v: &Versor,
+    target_rotor: Option<&crate::transducer::alphabet::Rotor>,
+    hue: &crate::transducer::sentence::CycleType,
+) -> Option<Vec<crate::transducer::alphabet::AdjoinedPrime>> {
     use crate::transducer::alphabet::{gauss_of_block, rotor_block_on, AdjoinedPrime, SLOT_PLANES_SIX};
-    let Some(target) = rotor_of_versor(v) else {
-        return Some(Vec::new());
+    let target = match target_rotor {
+        Some(r) => r.clone(),
+        None => match rotor_of_versor(v) {
+            Some(r) => r,
+            None => return Some(Vec::new()),
+        },
     };
     // THE LANES THE TARGET OCCUPIES (42.6 as amended, L12), and the basis
     // at their MEET. `3` was written here as a literal, which asserted
@@ -260,13 +268,24 @@ pub(crate) fn peel_versor_with(
     v: &Versor,
     adjoined: Vec<crate::transducer::alphabet::AdjoinedPrime>,
 ) -> Option<Result<Peeled, crate::transducer::sentence::Demand>> {
+    peel_versor_with_target(v, None, adjoined)
+}
+
+pub(crate) fn peel_versor_with_target(
+    v: &Versor,
+    target_rotor: Option<&crate::transducer::alphabet::Rotor>,
+    adjoined: Vec<crate::transducer::alphabet::AdjoinedPrime>,
+) -> Option<Result<Peeled, crate::transducer::sentence::Demand>> {
     use crate::transducer::alphabet::{
         rotor_block_on, spell_peel_with, PLANE_COL, PLANE_ROW, SLOT_PLANES_SIX,
     };
     use crate::transducer::peel::PeelNest;
     use crate::transducer::sentence::Demand;
 
-    let target = rotor_of_versor(v)?;
+    let target = match target_rotor {
+        Some(r) => r.clone(),
+        None => rotor_of_versor(v)?,
+    };
     let mut all_cores = Vec::new();
     let mut turned = false;
 

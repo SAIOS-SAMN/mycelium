@@ -335,5 +335,41 @@ pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
     Some(Carriage { v, sigma: out })
 }
 
+/// Carry `a` onto `b`: directly via `carriage`, or by factoring a
+/// planar projection artifact with `Surgery::factor` to align the homeomorphic core.
+/// The continuous versor is preserved; the tape remains an invertible group action.
+pub fn carriage_with_core(a: &Body, b: &Body) -> Option<Carriage> {
+    if let Some(car) = carriage(a, b) {
+        return Some(car);
+    }
+    let (surg, v) = crate::transducer::blade::surgery::Surgery::factor(&a.shape, &b.shape)?;
+    match surg.kind {
+        crate::transducer::blade::surgery::SurgeryKind::FillHole
+        | crate::transducer::blade::surgery::SurgeryKind::Puncture
+        | crate::transducer::blade::surgery::SurgeryKind::BridgeMerge
+        | crate::transducer::blade::surgery::SurgeryKind::SplitCut => {}
+    }
+    let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
+    for &(r, c, h) in &a.cells {
+        let Some(p) = element::carry_center(&v, r, c) else { continue };
+        let Some((tr, tc)) = element::cell_of(&p) else { continue };
+        let Some(h2) = b.cells.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))).ok().map(|i| b.cells[i].2) else { continue };
+        let k = super::element::hue_pair_key(h, 0);
+        match sigma.get(&k) {
+            Some(t) if *t != h2 => return None,
+            Some(_) => {}
+            None => {
+                sigma.insert(k, h2);
+            }
+        }
+    }
+    let mut out: Vec<(u8, u8)> = sigma
+        .scoped()
+        .filter_map(|(k, t)| super::element::hue_pair_of(&k).map(|(h, _)| (h, *t)))
+        .collect();
+    out.sort_unstable();
+    Some(Carriage { v, sigma: out })
+}
+
 #[cfg(test)]
 mod tests;

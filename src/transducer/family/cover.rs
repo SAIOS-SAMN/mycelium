@@ -340,7 +340,7 @@ pub(crate) fn cover_deformation(
         if !budget.spend() {
             park!();
         }
-        let Some(car) = carriage(&pre, &op.body) else { break 'piece };
+        let Some(car) = carriage_with_core(&pre, &op.body) else { break 'piece };
         let key = carriage_key(&assembly_key(&parts), ko);
         // The carriage is CONFIRMED here — a versor exists and carries the
         // preimage onto this piece. If its rotor does not spell, that is

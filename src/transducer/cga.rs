@@ -288,7 +288,13 @@ pub fn translator(d1: &BigRational, d2: &BigRational) -> Mv {
 /// the scale `s²+b²`, absorbed by homogeneity on the cone). The quarter turn is
 /// `s=0, b=1` — the hole a rational chart cannot reach, an ordinary citizen here.
 pub fn rotator(s: &BigRational, b: &BigRational) -> Mv {
-    Mv::scalar(s.clone()).add(&Mv::blade(E1 | E2, b.clone()))
+    rotator_on_blade(s, b, E1 | E2)
+}
+
+/// A rotation versor on an arbitrary bivector blade of the algebra, opening the vent
+/// from the single E1 ∧ E2 plane to any bivector blade.
+pub fn rotator_on_blade(s: &BigRational, b: &BigRational, blade: usize) -> Mv {
+    Mv::scalar(s.clone()).add(&Mv::blade(blade, b.clone()))
 }
 
 /// Read the base point `(x1, x2)` back out of a homogeneous conformal point or
