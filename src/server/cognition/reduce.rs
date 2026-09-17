@@ -188,7 +188,7 @@ pub struct Ask<'a> {
 pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Priced>) {
     let BookView { pending, listing_atlas, field, on_page, spoken, standing_t } = book;
     let &Ask { charts: voice_charts, surface, pressure, budget, voice } = ask;
-    let cell = crate::anastome::dialogue::cell_wire_width();
+    let link = crate::anastome::dialogue::link_wire_width();
     let mut priced: Vec<Priced> = Vec::new();
     let mut used = 0usize;
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
@@ -223,7 +223,7 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
                 // the wire; the encoder refuses it now and this measures
                 // what it would write.
                 let open_len: usize = 1 + open.iter().map(|c| 1 + 8 * c.0.len()).sum::<usize>();
-                let wire = 68 + p.sub().len() * cell + open_len;
+                let wire = 68 + p.sub().len() * link + open_len;
                 // THE PAGE IS FULL, SO THE WALK IS OVER. This was
                 // `continue`: a listing that did not fit was skipped and
                 // the walk carried on through the WHOLE BOOK looking for a

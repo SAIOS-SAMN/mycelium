@@ -233,9 +233,9 @@ pub struct CiteWire {
     /// The gauge coordinate. `u32::MAX` is the SECTION marker: this cite is
     /// a puncture, not an assignment index.
     pub gauge: u32,
-    /// The word's cells as the speaker says them, under the body's own
+    /// The word's links as the speaker says them, under the body's own
     /// transitions.
-    pub body: Vec<Cell>,
+    pub body: Vec<Link>,
 }
 
 /// A fetch names every discordant chart with the asker's have-list in each;
@@ -316,7 +316,7 @@ pub struct Offer {
     pub addr: Address,
     /// THE HOME'S KEY, named by the act. The witness glues the offer as
     /// this vantage and holds its own separately, which is what makes the
-    /// Čech cell have two vertices; a witness that does not know who
+    /// Čech simplex have two vertices; a witness that does not know who
     /// offered can only glue the form as itself, and then it compares the
     /// form with itself and agrees every time.
     pub home: [u8; 32],
@@ -484,15 +484,15 @@ pub const SOLVE_BOUNTY: u8 = 2;
 pub const SOLVE_FLOOR: u8 = 1;
 pub const SOLVE_NOTHING: u8 = 0;
 
-/// One centered coboundary cell `(row, col, before, after)`.
-pub type Cell = (i64, i64, u8, u8);
+/// One link of a centered coboundary chain: `(row, col, before, after)`.
+pub type Link = (i64, i64, u8, u8);
 
 /// One quoted work item: the listing's address, its priced μ⃗, the listing
 /// WHOLE, and the open (non-flat) charts of its coherence field.
 ///
-/// THE WHOLE ELEMENT, NOT ITS CELLS (L8q). This carried `chain: Vec<Cell>`
-/// — a flat projection of a coboundary — so the only move a voice had was
-/// to subtract cells it held, which is deflation and not comprehension. A
+/// THE WHOLE ELEMENT, NOT ITS LINKS (L8q). A `chain: Vec<Link>` here — a
+/// flat projection of a coboundary — would leave a voice one move, to
+/// subtract links it held, which is deflation and not comprehension. A
 /// listing is an `Element`, and served whole it may be a SENTENCE carrying
 /// demand vertices (50.5) naming what it could not spell; answering one
 /// with a word another mind holds is the market.
@@ -553,7 +553,7 @@ pub struct Settlement {
     /// The listing settled.
     pub listing: crate::transducer::address::Address,
     /// Its chain.
-    pub chain: Vec<Cell>,
+    pub chain: Vec<Link>,
     /// The voice that settled it.
     pub voice: [u8; 32],
     /// The utterance: the citations the voice spoke. The court replays

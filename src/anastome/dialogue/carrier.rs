@@ -109,7 +109,7 @@ pub(crate) fn read_grid(b: &[u8], p: &mut usize) -> Option<Vec<Vec<u8>>> {
     Some(g)
 }
 
-pub fn push_chain(out: &mut Vec<u8>, chain: &[Cell]) {
+pub fn push_chain(out: &mut Vec<u8>, chain: &[Link]) {
     out.extend_from_slice(&(chain.len() as u32).to_le_bytes());
     for (r, c, before, after) in chain {
         out.extend_from_slice(&r.to_le_bytes());
@@ -119,19 +119,19 @@ pub fn push_chain(out: &mut Vec<u8>, chain: &[Cell]) {
     }
 }
 
-/// The wire width of one chain cell, measured from the encoder itself (the
+/// The wire width of one chain link, measured from the encoder itself (the
 /// carrier's own coordinate, never a number chosen elsewhere).
-pub fn cell_wire_width() -> usize {
+pub fn link_wire_width() -> usize {
     let mut probe = Vec::new();
     push_chain(&mut probe, &[(0, 0, 0, 0)]);
     probe.len() - 4
 }
 
-pub fn read_chain(b: &[u8], p: &mut usize) -> Option<Vec<Cell>> {
+pub fn read_chain(b: &[u8], p: &mut usize) -> Option<Vec<Link>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
     if n > b.len().checked_sub(*p)? / 18 {
-        return None; // untrusted count: 18 bytes per cell, or refuse before allocating
+        return None; // untrusted count: 18 bytes per link, or refuse before allocating
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {

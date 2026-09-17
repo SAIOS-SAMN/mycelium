@@ -27,7 +27,7 @@ fn a_count_past_its_field_refuses_the_frame() {
         &[(0i64, 0i64, 1u8, 4u8)],
         &crate::transducer::element::IDENTITY_FRAME,
     )
-    .expect("a one-cell chain is A5's");
+    .expect("a one-link chain is A5's");
     assert!(encode_settle(&listing, &voices[..255], &[0; 4]).is_some());
     assert!(encode_settle(&listing, &voices, &[0; 4]).is_none());
 
@@ -58,7 +58,7 @@ fn the_five_acts_round_trip() {
     assert_eq!(decode_quote_request(&ask).unwrap(), (voice, Vec::new()));
     // L8q: the listing rides WHOLE. The field carries an element's own
     // bytes, so the round trip is over what the court actually serves and
-    // what the voice actually decodes — not over a chain of cells the
+    // what the voice actually decodes — not over a chain of links the
     // voice could only subtract from.
     let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
     let word = crate::transducer::alphabet::Word::from_letters(&[(q, false)]);

@@ -150,7 +150,7 @@ pub fn encode_quote_reply_within(height: u64, surface: &[u64; 4], k: u64, items:
         }
         put_addr(&mut out, addr)?;
         push_mu(&mut out, mu);
-        // The listing whole, length-prefixed as the cells were.
+        // The listing whole, length-prefixed as a chain's links are.
         out.extend_from_slice(&(element.len() as u32).to_le_bytes());
         out.extend_from_slice(element);
         crate::transducer::address::put_u8_count(&mut out, open.len())?;
