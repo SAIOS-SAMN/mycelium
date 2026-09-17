@@ -335,11 +335,19 @@ pub(crate) fn peel_versor_with_target(
                                 prime,
                                 witness: Box::new(crate::transducer::alphabet::arc_block(&arc.p, &arc.q)),
                             },
-                            None => Demand::Standing { block: Box::new(block) },
+                            None => Demand::Standing {
+                                block: Box::new(block),
+                                rotor: Box::new(target.clone()),
+                            },
                         },
                     ));
                 }
-                None => return Some(Err(Demand::Standing { block: Box::new(block) })),
+                None => {
+                    return Some(Err(Demand::Standing {
+                        block: Box::new(block),
+                        rotor: Box::new(target.clone()),
+                    }))
+                }
             }
         }
     }
@@ -360,10 +368,10 @@ pub(crate) fn peel_versor_with_target(
                         prime,
                         witness: Box::new(crate::transducer::alphabet::arc_block(&arc.p, &arc.q)),
                     }),
-                    None => Err(Demand::Standing { block: Box::new(block) }),
+                    None => Err(Demand::Standing { block: Box::new(block), rotor: Box::new(target.clone()) }),
                 }
             }
-            None => Err(Demand::Standing { block: Box::new(block) }),
+            None => Err(Demand::Standing { block: Box::new(block), rotor: Box::new(target.clone()) }),
         });
     }
 

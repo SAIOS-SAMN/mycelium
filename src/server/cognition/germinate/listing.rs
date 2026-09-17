@@ -57,14 +57,28 @@ impl Kernel {
         //
         // The kind byte routes this line and nothing else: the docket
         // path is the sentence's, and there is no per-kind closer.
+        // A `Standing` demand carries the rotor the peel could not spell as
+        // its own witness (16.16 step 6): the court dockets that rotor as
+        // the candidate generator, by the same docket the court's own
+        // unspellable cell takes (37.7, the rotor level).
         let mut opened: Vec<(crate::transducer::sentence::Demand, crate::transducer::stalk::Invariant, Vec<crate::transducer::sentence::Cell>)> = Vec::new();
+        let mut stood: Vec<(crate::transducer::alphabet::Rotor, crate::transducer::stalk::Invariant, Vec<crate::transducer::sentence::Cell>)> = Vec::new();
         for (_, kind, chart, bodies) in f.demand_vertices() {
-            if matches!(kind, crate::transducer::sentence::Demand::RotorPrime { .. }) {
-                opened.push((kind.clone(), chart.clone(), bodies.to_vec()));
+            match kind {
+                crate::transducer::sentence::Demand::RotorPrime { .. } => {
+                    opened.push((kind.clone(), chart.clone(), bodies.to_vec()));
+                }
+                crate::transducer::sentence::Demand::Standing { rotor, .. } => {
+                    stood.push(((**rotor).clone(), chart.clone(), bodies.to_vec()));
+                }
+                _ => {}
             }
         }
         for (kind, chart, bodies) in opened {
             self.open_letter(&kind, &chart, &bodies, voice);
+        }
+        for (rotor, chart, bodies) in stood {
+            self.open_unspellable(&rotor, &chart, &bodies, voice);
         }
         for (_, kind, chart, _) in f.demand_vertices() {
             let chart_key = chart.key();
@@ -92,22 +106,14 @@ impl Kernel {
     /// takes. It closes nothing on any family by itself, so its install
     /// mints none and says so; what its speakers earn is room when it is
     /// used (26 as ruled).
-    /// 37.7 AT THE COURT'S OWN CELL: a transition whose rotor the seventeen
-    /// cannot spell, met while gluing a voice's speech. It is the same
-    /// adjunction `open_letter` performs for a demanded prime, from the other
-    /// direction — there the voice asked and named the prime, here the
-    /// court's own fill produced the rotor — so it takes the same docket:
-    /// re-derived, escrowed, provisional, discovered.
+    /// 37.7 AT THE ROTOR LEVEL: a rotor the seventeen cannot spell, met as
+    /// the court's own unspellable cell or carried by a voice's `Standing`
+    /// demand as its witness (16.16 step 6). It is the same adjunction
+    /// `open_letter` performs for a demanded prime, so it takes the same
+    /// docket: re-derived, escrowed, provisional, discovered.
     ///
-    /// The DISCOVERER is the speaking voice whose glue produced the cell. A
-    /// court is never a discoverer (47.3), and this rotor exists because that
-    /// voice's speech met the court's section; nothing else is a party to it.
-    ///
-    /// It was dropped: both `Fill::Unspellable` arms printed a line and filed
-    /// nothing, so the one place a court can adjoin a letter it measured
-    /// produced no letter. Measured across the fleet, every Word vertex and
-    /// every edge transport of every admitted form carries the identity, so
-    /// no generator exists anywhere to be offered.
+    /// The DISCOVERER is the voice whose speech carried or produced the
+    /// rotor. A court is never a discoverer (47.3).
     pub(crate) fn open_unspellable(
         &mut self,
         rotor: &crate::transducer::alphabet::Rotor,
@@ -118,7 +124,12 @@ impl Kernel {
         let Some(e) = crate::transducer::sentence::generator_form(rotor, chart, bodies) else {
             return;
         };
+        let addr = e.address();
         self.docket_letter(e, voice);
+        eprintln!(
+            "  court letter opened {:02x}{:02x}… rotor from {:02x}{:02x}…",
+            addr[0], addr[1], voice[0], voice[1]
+        );
     }
 
     fn open_letter(

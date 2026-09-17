@@ -144,6 +144,63 @@ fn two_courts_open_one_letter_from_two_witnesses_and_the_count_leaves_zero() {
     assert_eq!(opened[0], opened[1], "two witnesses, two courts, one letter");
 }
 
+/// `3 + e₀₁ + e₀₂`: a rotor of weight 11 in `Spin(4,0)(ℚ)` that no
+/// coordinate plane holds, so the alphabet's peel stands it.
+fn eleven() -> crate::transducer::alphabet::Rotor {
+    use crate::transducer::alphabet::Rotor;
+    Rotor::scalar(q(3)).add(&Rotor::blade(0b0011, q(1))).add(&Rotor::blade(0b0101, q(1)))
+}
+
+/// The `Standing` demand the peel types for it, carrying the rotor as its
+/// own witness.
+fn standing_eleven() -> Demand {
+    match crate::transducer::alphabet::factor_rotor(&eleven()) {
+        Some(Err(d @ Demand::Standing { .. })) => d,
+        other => panic!("the weight-11 rotor stands: {other:?}"),
+    }
+}
+
+/// 37.7 AT THE ROTOR LEVEL (16.16 step 6 as amended 2026-09-17): a rotor no
+/// coordinate plane holds arrives on two voices' `Standing` demands, each
+/// carrying it as witness; two courts of distinct identity docket it as a
+/// provisional generator whose vertex is that rotor, and reach ONE address.
+#[test]
+fn two_courts_docket_one_rotor_no_plane_holds_from_two_standing_demands() {
+    let r = eleven();
+    let said_a = demanding_sentence(quarter(1), 1, standing_eleven());
+    let said_b = demanding_sentence(quarter(3), 3, standing_eleven());
+    let mut opened = Vec::new();
+    for (court, voice, said) in [([31u8; 32], [1u8; 32], &said_a), ([32u8; 32], [2u8; 32], &said_b)] {
+        let mut k = Kernel::new();
+        k.set_court_voice(court);
+        assert_eq!(
+            k.perceive_speech(voice, &[0; 32], std::slice::from_ref(said)),
+            vec![crate::anastome::dialogue::SPEECH_STOOD],
+            "the sentence stands and its standing demand is listed"
+        );
+        let provisional: Vec<Vec<u8>> = k.provisional.scoped().map(|(a, _)| a).collect();
+        let letter = provisional
+            .iter()
+            .find(|a| {
+                k.provisional.get(a).is_some_and(|e| {
+                    crate::transducer::sentence::from_element_form(e).is_some_and(|f| {
+                        f.vertices.iter().any(|v| match v {
+                            Vertex::Word { derivation, .. } => {
+                                derivation.generators.is_empty() && derivation.rotor().projective_eq(&r)
+                            }
+                            _ => false,
+                        })
+                    })
+                })
+            })
+            .cloned()
+            .expect("the court docketed the rotor the demand carried as a candidate generator");
+        assert_eq!(k.discoverer_of(&letter), Some(voice), "the demanding voice is its discoverer");
+        opened.push(letter);
+    }
+    assert_eq!(opened[0], opened[1], "two witnesses, two courts, one address");
+}
+
 /// 37.7 P2's refusal. A witness whose gcd with the prime is not of norm
 /// `p` names a prime it does not carry: refused AT THE DEMAND VERTEX,
 /// before anything is docketed, so no letter is opened on it.

@@ -107,9 +107,10 @@ fn a_block_the_order_does_not_decompose_is_a_standing_demand() {
     let r = Rotor::scalar(q(1, 1)).add(&Rotor::blade(0b0011, q(1, 1))).add(&Rotor::blade(0b0101, q(1, 1)));
     assert!(r.weight().is_some(), "a versor");
     match factor_rotor(&r).expect("a versor") {
-        Err(Demand::Standing { block }) => {
+        Err(Demand::Standing { block, rotor }) => {
             use num_traits::Zero;
             assert!(block.iter().flatten().any(|x| !x.is_zero()), "the standing block is the plane's own reading");
+            assert!(rotor.projective_eq(&r), "and the demand carries the rotor it stood on as its witness");
         }
         other => panic!("expected a standing demand, got {other:?}"),
     }

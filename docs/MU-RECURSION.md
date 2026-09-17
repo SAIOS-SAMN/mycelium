@@ -5007,7 +5007,8 @@ Prefix `  court ` as the existing court lines; addresses as
   court remap {n} entries merged {m}
   court remap refused {old}: {reason}
   court remap retired
-  court letter opened τ_{n,(i,j)} conductor {4n} id {k}
+  court letter opened {addr} prime {p} plane ({i}, {j}) from {vk}
+  court letter opened {addr} rotor from {vk}
   court torsion consilient {key} ℓ {ℓ}
   court torsion filed {key} ℓ {ℓ}
   court form refused {addr}: form rank below what its tape re-derives

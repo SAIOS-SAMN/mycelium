@@ -7,7 +7,7 @@
 
 use crate::core::Q;
 use crate::transducer::address::{Address, TAG_DEMAND};
-use crate::transducer::alphabet::{put_q, take_q};
+use crate::transducer::alphabet::{put_q, take_q, Rotor};
 use crate::transducer::stalk::Invariant;
 use num_traits::Zero;
 
@@ -20,9 +20,14 @@ pub enum Demand {
     /// it, and two courts agreeing on that factor is what opens the
     /// letter (P3). Boxed for the same reason `Standing`'s block is.
     RotorPrime { plane: (u8, u8), prime: u64, witness: Box<[[Q; 2]; 2]> },
-    /// A rotor block the ordered peel (50.4) does not decompose. Boxed:
-    /// four rationals beside variants of a few bytes.
-    Standing { block: Box<[[Q; 2]; 2]> },
+    /// A rotor block the ordered peel (50.4) does not decompose, and the
+    /// rotor it stood on: the canonical holonomy the peel could not spell,
+    /// which is the candidate generator of 37.7 and carries itself as its
+    /// witness (16.16 step 6). The block is that rotor's reading on the
+    /// plane the peel stopped at and cannot witness it alone (checklist
+    /// (m)). Boxed: four rationals and sixteen beside variants of a few
+    /// bytes.
+    Standing { block: Box<[[Q; 2]; 2]>, rotor: Box<Rotor> },
     /// An output body some input charts carry onto: every one of them stands.
     Source { multiplicity: u32 },
     /// An output body no input body carries onto.
@@ -74,7 +79,9 @@ impl Demand {
                     .is_some()
                     && witness.iter().flatten().any(|q| !q.is_zero())
             }
-            Demand::Standing { block } => block.iter().flatten().any(|q| !q.is_zero()),
+            Demand::Standing { block, rotor } => {
+                block.iter().flatten().any(|q| !q.is_zero()) && rotor.weight().is_some()
+            }
             Demand::Source { multiplicity } => *multiplicity > 0,
             Demand::Creation => true,
             Demand::TopologicalDeformation { axes, .. } => !axes.is_empty(),
@@ -99,12 +106,13 @@ impl Demand {
                     }
                 }
             }
-            Demand::Standing { block } => {
+            Demand::Standing { block, rotor } => {
                 for row in block.iter() {
                     for q in row {
                         put_q(out, q);
                     }
                 }
+                rotor.to_bytes(out);
             }
             Demand::Source { multiplicity } => out.extend_from_slice(&multiplicity.to_le_bytes()),
             Demand::Creation => {}
@@ -143,7 +151,8 @@ impl Demand {
                 let bq = take_q(b, pos)?;
                 let c = take_q(b, pos)?;
                 let d = take_q(b, pos)?;
-                Demand::Standing { block: Box::new([[a, bq], [c, d]]) }
+                let rotor = Rotor::from_bytes(b, pos)?;
+                Demand::Standing { block: Box::new([[a, bq], [c, d]]), rotor: Box::new(rotor) }
             }
             2 => {
                 let m = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);

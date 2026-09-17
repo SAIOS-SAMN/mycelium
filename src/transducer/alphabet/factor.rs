@@ -46,7 +46,7 @@ pub fn factor_rotor(r: &Rotor) -> Option<Result<Word, Demand>> {
             return Some(Err(standing(r, *pa)?));
         };
         for (plane, rotor) in [(*pa, ra), (*pb, rb)] {
-            match spell_plane(plane, &rotor)? {
+            match spell_plane(plane, &rotor, r)? {
                 Err(demand) => return Some(Err(demand)),
                 Ok(None) => {}
                 Ok(Some(w)) => word = word.compose(&w),
@@ -174,9 +174,11 @@ pub(crate) fn pair_rotors(k: usize, plus: &HalfAngle, minus: &HalfAngle) -> Opti
 }
 
 /// One plane rotor spelled by its plane's peel. `Ok(None)` for the
-/// identity; `Err` the demand the plane leaves; `None` when the rotor is
-/// not a versor of that plane.
-fn spell_plane(plane: (u8, u8), rotor: &Rotor) -> Option<Result<Option<Word>, Demand>> {
+/// identity; `Err` the demand the plane leaves, carrying `target` — the
+/// rotor being factored — as the witness a standing block cannot be on
+/// its own (16.16 step 6); `None` when the rotor is not a versor of that
+/// plane.
+fn spell_plane(plane: (u8, u8), rotor: &Rotor, target: &Rotor) -> Option<Result<Option<Word>, Demand>> {
     let block = rotor_block_on(rotor, plane)?;
     if is_identity_block(&block) {
         return Some(Ok(None));
@@ -185,12 +187,14 @@ fn spell_plane(plane: (u8, u8), rotor: &Rotor) -> Option<Result<Option<Word>, De
         Some((PeelNest::Closed { cores }, rho)) if rho.is_one() => {
             let w = crate::transducer::alphabet::word_of_cores(&cores)?;
             if w.block_on(plane).as_ref() != Some(&block) {
-                Err(Demand::Standing { block: Box::new(block) })
+                Err(Demand::Standing { block: Box::new(block), rotor: Box::new(target.clone()) })
             } else {
                 Ok(Some(w))
             }
         }
-        Some((PeelNest::Closed { .. }, _)) => Err(Demand::Standing { block: Box::new(block) }),
+        Some((PeelNest::Closed { .. }, _)) => {
+            Err(Demand::Standing { block: Box::new(block), rotor: Box::new(target.clone()) })
+        }
         Some((PeelNest::Standing { arc, .. }, _)) => {
             let norm: BigInt = &arc.p * &arc.p + &arc.q * &arc.q;
             match prime_outside_the_alphabet(&norm, plane) {
@@ -204,10 +208,10 @@ fn spell_plane(plane: (u8, u8), rotor: &Rotor) -> Option<Result<Option<Word>, De
                     prime,
                     witness: Box::new(arc_block(&arc.p, &arc.q)),
                 }),
-                None => Err(Demand::Standing { block: Box::new(block) }),
+                None => Err(Demand::Standing { block: Box::new(block), rotor: Box::new(target.clone()) }),
             }
         }
-        None => Err(Demand::Standing { block: Box::new(block) }),
+        None => Err(Demand::Standing { block: Box::new(block), rotor: Box::new(target.clone()) }),
     })
 }
 
@@ -226,7 +230,10 @@ pub(crate) fn standing(r: &Rotor, plane: (u8, u8)) -> Option<Demand> {
     let unit = |k: usize| -> [Q; 4] { std::array::from_fn(|t| if t == k { Q::one() } else { Q::zero() }) };
     let a = r.carry(&unit(i))?;
     let b = r.carry(&unit(j))?;
-    Some(Demand::Standing { block: Box::new([[a[i].clone(), b[i].clone()], [a[j].clone(), b[j].clone()]]) })
+    Some(Demand::Standing {
+        block: Box::new([[a[i].clone(), b[i].clone()], [a[j].clone(), b[j].clone()]]),
+        rotor: Box::new(r.clone()),
+    })
 }
 
 pub(crate) fn is_identity_block(b: &[[Q; 2]; 2]) -> bool {

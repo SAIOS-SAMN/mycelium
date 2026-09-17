@@ -192,7 +192,10 @@ fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
             prime: 17,
             witness: Box::new([[q1(), q0()], [q0(), q1()]]),
         },
-        Demand::Standing { block: Box::new([[q1(), q0()], [q0(), q1()]]) },
+        Demand::Standing {
+            block: Box::new([[q1(), q0()], [q0(), q1()]]),
+            rotor: Box::new(crate::transducer::alphabet::Rotor::identity()),
+        },
         Demand::Source { multiplicity: 3 },
         Demand::Creation,
         Demand::TopologicalDeformation { image: other.clone(), axes: vec![1, 2] },
@@ -227,7 +230,16 @@ fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
             prime: 17,
             witness: Box::new([[q0(), q0()], [q0(), q0()]]),
         },
-        Demand::Standing { block: Box::new([[q0(), q0()], [q0(), q0()]]) },
+        Demand::Standing {
+            block: Box::new([[q0(), q0()], [q0(), q0()]]),
+            rotor: Box::new(crate::transducer::alphabet::Rotor::identity()),
+        },
+        // A standing block on a rotor with no weight names a witness that
+        // is no versor, and a court has nothing to docket (15.3).
+        Demand::Standing {
+            block: Box::new([[q1(), q0()], [q0(), q1()]]),
+            rotor: Box::new(crate::transducer::alphabet::Rotor::zero()),
+        },
         Demand::TopologicalDeformation { image: other.clone(), axes: Vec::new() },
     ] {
         assert_eq!(untyped.typed(), Err(crate::court::verdict::REFUSE_DEMAND_UNTYPED), "{}", untyped.label());
