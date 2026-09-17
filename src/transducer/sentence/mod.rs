@@ -28,4 +28,4 @@ pub use chart::*;
 pub use reading::*;
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;

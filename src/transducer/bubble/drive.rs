@@ -215,10 +215,7 @@ impl Contemplation {
                             adjoined.push((rotor.as_ref().clone(), chart.clone()));
                         }
                         crate::transducer::sentence::Snap::Demand { rotor, chart, .. } => {
-                            if let Some(kind) = crate::transducer::alphabet::standing(
-                                rotor,
-                                crate::transducer::alphabet::BLOCK_ORDER[0].0,
-                            ) {
+                            if let Some(Err(kind)) = crate::transducer::alphabet::factor_rotor(rotor) {
                                 form.stand_demand(kind, chart, Vec::new());
                             }
                         }

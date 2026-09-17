@@ -447,15 +447,15 @@ impl Bubble {
                             adjoined.push((rotor.as_ref().clone(), chart.clone()));
                         }
                         // A held loop of infinite order the basis did not
-                        // discharge stands on the form as the demand it is,
-                        // carrying its holonomy rotor as witness (16.16 step
-                        // 6); the form's vertices carry no cells, so the
-                        // demand declares none.
+                        // discharge stands on the form as the demand the
+                        // peel types its holonomy as — the prime it lacks,
+                        // or the rotor it cannot spell, carried as witness
+                        // (16.16 step 6, 50.4). A rotor the seventeen spell
+                        // is no demand on the language (37.7 adjoins what
+                        // the presentation lacks); the form's vertices
+                        // carry no cells, so the demand declares none.
                         crate::transducer::sentence::Snap::Demand { rotor, chart, .. } => {
-                            if let Some(kind) = crate::transducer::alphabet::standing(
-                                rotor,
-                                crate::transducer::alphabet::BLOCK_ORDER[0].0,
-                            ) {
+                            if let Some(Err(kind)) = crate::transducer::alphabet::factor_rotor(rotor) {
                                 form.stand_demand(kind, chart, Vec::new());
                             }
                         }
