@@ -87,9 +87,28 @@ impl Word {
         self.0.is_empty()
     }
 
+    /// Append a letter. A rotor already carried composes with the letter,
+    /// so a word whose action no tape spells keeps that action (1.5).
     pub fn push(&mut self, id: LetterId, inverse: bool) {
+        let carried = self
+            .1
+            .get()
+            .map(|r| r.geo(&if inverse { letter_inverse(id) } else { letter(id) }));
         self.0.push((id, inverse));
-        self.1.take();
+        self.1 = std::sync::OnceLock::new();
+        if let Some(r) = carried {
+            let _ = self.1.set(r);
+        }
+    }
+
+    /// The same element on another tape: the rotor this word carries, set
+    /// on `tape`, because a spelling changes and the element does not
+    /// (1.5). A word that carries no rotor lets `tape` read its own.
+    fn carrying(&self, tape: Word) -> Word {
+        if let Some(r) = self.1.get() {
+            let _ = tape.1.set(r.clone());
+        }
+        tape
     }
 
     /// M1 key: A1 of the rotor. Mixed-plane spellings of one rotor share
@@ -103,9 +122,9 @@ impl Word {
         self.rotor().put_canonical(out);
     }
 
-    /// Group identity: the rotor is projectively 1.
+    /// Group identity: the rotor is the identity of the ray (1.5).
     pub fn is_identity(&self) -> bool {
-        self.rotor().projective_eq(&Rotor::identity())
+        self.rotor().is_identity()
     }
 
     /// `by · self · by⁻¹`, then the normal form.
@@ -131,31 +150,25 @@ impl Word {
 
     /// THE GEODESIC SPELLING (Expansion 1): the shortlex-least tape of this
     /// operator under the alphabet's completed presentation, the operator
-    /// unchanged and re-derived.
+    /// unchanged and re-derived. It runs on every spelling that leaves
+    /// `factor_rotor` and every residue a derivation writes, so two minds
+    /// spelling one rotor write one tape.
     ///
-    /// This was `normal_form()` under this name — the plane-local form,
-    /// which reduces each plane's run and merges neighbours and applies no
-    /// relator across non-adjacent runs, knowing nothing of the sheet
-    /// conjugation — and nothing in the runtime called the reading that
-    /// did more (§2.8, the auditor's row on Expansion 1). The reduction
-    /// runs here, on every spelling that leaves `factor_rotor` and every
-    /// residue a derivation writes, so two minds spelling one rotor write
-    /// one tape.
-    ///
-    /// THE BUDGET IS THE WORD'S OWN EXTENT against the rule set (rule 10).
+    /// The budget is the word's own extent against the rule set (rule 10).
     /// A reduction it cuts short, or one `geodesic_under` refuses for
     /// moving the operator, leaves the normal form as it stands: an exact
-    /// spelling of the same element, not the shortest — a reading, not a
-    /// default stood in for one.
+    /// spelling of the same element, not the shortest. A word that carries
+    /// an action no tape spells keeps it.
     pub fn geodesic(&self) -> Word {
         let nf = self.normal_form();
         let (rules, _) = crate::transducer::alphabet::rewrite::presentation();
         let extent = (nf.len() + 1) * (rules.len() + 1) * (nf.len() + 1);
         let mut budget = crate::physics::Physics::default().stroke_n(extent);
-        match nf.geodesic_under(rules, &mut budget) {
+        let g = match nf.geodesic_under(rules, &mut budget) {
             Some(g) => g,
             None => nf,
-        }
+        };
+        self.carrying(g)
     }
 
     /// The formed product `γ` of the tape, built once and memoised.
@@ -169,34 +182,46 @@ impl Word {
             .clone()
     }
 
-    /// The word read backwards: the inverse transport.
+    /// The word read backwards: the inverse transport. A rotor carried is
+    /// reversed, which is its inverse up to the weight (1.5), so a word
+    /// whose action no tape spells inverts as that action.
     pub fn inverse(&self) -> Word {
-        Word::raw(self.0.iter().rev().map(|&(id, inv)| (id, !inv)).collect())
+        let w = Word::raw(self.0.iter().rev().map(|&(id, inv)| (id, !inv)).collect());
+        if let Some(r) = self.1.get() {
+            let _ = w.1.set(r.reverse());
+        }
+        w
     }
 
-    /// Concatenate tapes: `self` then `other` (last letter of `other` acts first).
+    /// Concatenate tapes: `self` then `other` (last letter of `other` acts
+    /// first). Where either side carries a rotor, the composite carries the
+    /// product, so a word whose action no tape spells composes as that
+    /// action and not as the empty tape (1.5, 37.7).
     pub fn compose(&self, other: &Word) -> Word {
         let mut t = self.0.clone();
         t.extend_from_slice(&other.0);
-        Word::raw(t)
+        let w = Word::raw(t);
+        if self.1.get().is_some() || other.1.get().is_some() {
+            let _ = w.1.set(self.rotor().geo(&other.rotor()));
+        }
+        w
     }
 
     /// On the sensor plane (its letters and the sheet's, 1.2): the A3 tape.
     /// Anywhere else: A2 run reduction. The key is A1 of the rotor either
-    /// way; a mixed-plane word is never keyed as 1. A word on another plane
-    /// keeps the sensor plane closed and its sensor form is the identity,
-    /// so the A3 path would write it as the empty tape; the letters decide
-    /// the path, never the sensor's shadow (found by L2, 50.4).
+    /// way; a mixed-plane word is never keyed as 1, and the letters decide
+    /// the path, never the sensor's shadow (50.4). The element is unchanged:
+    /// a rotor carried is carried onto the reduced tape.
     pub fn normal_form(&self) -> Word {
         let sensor = (PLANE_ROW, PLANE_COL);
         let sheet = (PLANE_COL, 2);
         let on_sensor = self.0.iter().all(|(id, _)| plane_of(*id).is_none_or(|p| p == sensor || p == sheet));
         if on_sensor {
             if let Some(f) = self.form() {
-                return f.to_word();
+                return self.carrying(f.to_word());
             }
         }
-        run_reduce(self.letters())
+        self.carrying(run_reduce(self.letters()))
     }
 
     /// The plane group is rotations ⋊ orientation, not a commuting tape.

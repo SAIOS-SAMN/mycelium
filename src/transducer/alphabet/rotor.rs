@@ -284,8 +284,13 @@ impl Rotor {
         Some(std::array::from_fn(|k| &out.c[1 << k] / &w))
     }
 
+    /// The identity of the RAY (1.5): a non-zero scalar, `λ · 1` for any
+    /// `λ ∈ ℚ×`, which is `projective_eq(&Rotor::identity())` read
+    /// without the inverse. `Φ Φ̃` is the weight and not the identity's
+    /// coefficients, and a reader of the coefficients disagreed with `==`
+    /// on it — two readers of one fact (law 12).
     pub fn is_identity(&self) -> bool {
-        self.c[0].is_one() && (1..16).all(|i| self.c[i].is_zero())
+        !self.c[0].is_zero() && (1..16).all(|i| self.c[i].is_zero())
     }
 
     /// EXPANSION 3 — THE GRADED DECOMPOSITION `W = ⟨W⟩₀ + ⟨W⟩₂ + ⟨W⟩₄`.
