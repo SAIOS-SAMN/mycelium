@@ -92,6 +92,41 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     assert!(f.coheres(), "and holds nothing against the form");
 }
 
+/// 52.3 — A LOOP OF ANY ORDER FILES. A (3,4,5) rotor on a chord's edge is a
+/// holonomy with no period: unfiled, the loop holds against the form; filed
+/// under its class at period 0, A19's spelling of infinite order, it
+/// coheres; at a period the loop does not have it does not. The same rotor
+/// on the chord's word is the transport composite, and the form is
+/// cauterized by the same filing under the holonomy's class.
+#[test]
+fn a_loop_of_infinite_order_is_filed_at_period_zero_and_coheres() {
+    let w = infinite();
+    assert_eq!(w.order(), alphabet::Order::Infinite, "the (3,4,5) rotor has no period");
+    let mut f = edge_chord_form(std::slice::from_ref(&w));
+    let loops = f.loops.clone();
+    let [lp] = loops.as_slice() else { panic!("one chord closes one loop") };
+    assert!(!f.edge_coheres(lp), "unfiled, the edge of infinite order holds against the form");
+    assert!(!f.coheres());
+    let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
+    let [class] = classes.as_slice() else { panic!("one member path, so one class") };
+    f.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 0, chord: lp.chord });
+    assert!(f.edge_coheres(lp), "filed at period 0, it coheres");
+    assert!(f.coheres());
+    f.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 4, chord: lp.chord });
+    assert!(!f.coheres(), "a period the loop does not have is not a filing");
+
+    let mut g = chord_form(std::slice::from_ref(&w));
+    let loops = g.loops.clone();
+    let [gl] = loops.as_slice() else { panic!("one chord closes one loop") };
+    assert!(!gl.holonomy.is_identity(), "the transport composite carries the rotor");
+    assert!(!g.is_cauterized(), "unfiled on the word, the form is not cauterized");
+    g.torsion.insert(
+        gl.holonomy.rotor().class_key().expect("a class"),
+        FiledLoop { sigma: Vec::new(), period: 0, chord: gl.chord },
+    );
+    assert!(g.is_cauterized(), "filed at period 0 under the holonomy's class, it is");
+}
+
 #[test]
 fn face_of_a_missing_vertex_is_none() {
     let f = Form::default();

@@ -306,12 +306,11 @@ impl Form {
     }
 
     /// A loop's edge holonomy coheres when EVERY EVALUATED MEMBER PATH is the
-    /// identity or is filed as torsion under its class at its period (50.1
-    /// step 2, A17). A path that is not evaluated — a remainder edge on it —
-    /// holds nothing against the form and is absent.
-    ///
-    /// It read one composite and passed the whole loop on it, so a form whose
-    /// edges cohered along one path cohered however curved the others were.
+    /// identity or is filed under its class at the period its order reads —
+    /// `0` for infinite order, A19's spelling of it (50.1 step 2, A17, 52.3).
+    /// A path that is not evaluated — a remainder edge on it — holds nothing
+    /// against the form and is absent; a holonomy with no class files
+    /// nowhere and does not cohere.
     pub(crate) fn edge_coheres(&self, lp: &Loop) -> bool {
         let Some(hs) = self.edge_holonomies(lp) else {
             return true;
@@ -320,11 +319,10 @@ impl Form {
             if h.word.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
                 return true;
             }
-            let (Some(class), crate::transducer::alphabet::Order::Finite(ell)) =
-                (h.word.rotor().class_key(), h.word.order())
-            else {
+            let Some(class) = h.word.rotor().class_key() else {
                 return false;
             };
+            let ell = h.word.order().to_u32();
             matches!(self.torsion.get(&class), Some(filed) if filed.period == ell)
         })
     }

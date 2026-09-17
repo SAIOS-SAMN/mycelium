@@ -89,7 +89,8 @@ pub enum Measure {
 pub struct FiledLoop {
     /// The hue-map generator: the permutation one step around the loop.
     pub sigma: Vec<(u8, u8)>,
-    /// The period it closes at — the order of the loop's holonomy.
+    /// The period it closes at — the order of the loop's holonomy; `0` is
+    /// infinite order, as A19 spells it on the class ledger (52.3).
     pub period: u32,
     /// The chord it closes on: an index into the form's faces.
     pub chord: u16,
@@ -915,12 +916,19 @@ impl Form {
     /// as the second is the fault a rename row is owed on. A form's free part
     /// is absent, not zero.
     ///
-    /// The period is exact: the form tape refuses a filed zero (A17 — a loop
-    /// is filed at the period it CLOSES at), so ℓ ≥ 1 and the subtraction is
-    /// total. No rounding, nothing saturating: this is a sum over an exact
-    /// carrier, and an empty carrier sums to 0 because it is empty.
+    /// A finite period is exact and at least one (A17 — a loop is filed at
+    /// the period it CLOSES at), so the subtraction is total; a class of
+    /// infinite order, filed at `0` (52.3), condenses no members and reaches
+    /// nothing here. No rounding, nothing saturating: this is a sum over an
+    /// exact carrier, and an empty carrier sums to 0 because it is empty.
     pub fn fibre_volume(&self) -> usize {
-        self.torsion.scoped().map(|(_, l)| l.period as usize - 1).sum()
+        self.torsion
+            .scoped()
+            .map(|(_, l)| match Order::from_u32(l.period) {
+                Order::Finite(ell) => ell as usize - 1,
+                Order::Infinite => 0,
+            })
+            .sum()
     }
 
     pub fn is_cauterized(&self) -> bool {
@@ -937,20 +945,18 @@ impl Form {
                 }
                 return false;
             }
-            match lp.holonomy.order() {
-                Order::Infinite => return false,
-                Order::Finite(ell) => {
-                    // A holonomy that is not a versor has no class (15.3) and
-                    // nothing files it: the form is not cauterized. No key of
-                    // the rotor's bytes stands in for the class it lacks.
-                    let Some(k) = lp.holonomy.rotor().class_key() else {
-                        return false;
-                    };
-                    match self.torsion.get(&k) {
-                        Some(filed) if filed.period == ell => {}
-                        _ => return false,
-                    }
-                }
+            // Filed under its class at the period its order reads, `0` for
+            // infinite order (52.3, A19). A holonomy that is not a versor
+            // has no class (15.3) and nothing files it: the form is not
+            // cauterized. No key of the rotor's bytes stands in for the
+            // class it lacks.
+            let Some(k) = lp.holonomy.rotor().class_key() else {
+                return false;
+            };
+            let ell = lp.holonomy.order().to_u32();
+            match self.torsion.get(&k) {
+                Some(filed) if filed.period == ell => {}
+                _ => return false,
             }
         }
         true

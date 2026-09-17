@@ -278,11 +278,10 @@ impl Form {
     /// FILE THE LOOP'S TORSION UNDER EVERY CLASS ITS MEMBER PATHS CARRY.
     ///
     /// Torsion is filed under the holonomy's CLASS (16.17, 15.4), and the
-    /// holonomy of a path is its edge composite where it has one. This read
-    /// `lp.holonomy.rotor().class_key()` — the word — so on a corpus where
-    /// every loop is flat on the word (70311 of 70311 at e98e8a2) it filed
-    /// the identity's class or nothing at all, while the 284 curved edge
-    /// composites over those same loops were filed nowhere.
+    /// holonomy of a path is its edge composite where it has one, so a loop
+    /// flat on its words and curved on its edges files the edges' classes.
+    /// The period is the order the caller read: finite at `ℓ`, `0` for
+    /// infinite order, A19's spelling of it (52.3).
     ///
     /// One class per member path, not one for the loop: a loop whose faces
     /// relate several pairs of bodies has one composite per path through
@@ -290,9 +289,6 @@ impl Form {
     /// has no class and is skipped; a loop where no path files returns
     /// `false` and stays open, which is what `torsion open` reports.
     pub(crate) fn file_loop(&mut self, idx: usize, ell: u32) -> bool {
-        if ell == 0 {
-            return false;
-        }
         let Some(lp) = self.loops.get(idx) else {
             return false;
         };

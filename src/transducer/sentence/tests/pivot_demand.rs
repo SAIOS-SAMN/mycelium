@@ -124,3 +124,35 @@ fn a_free_part_loop_is_spoken_as_a_standing_demand_carrying_its_holonomy() {
         "and no coordinate plane holds it"
     );
 }
+
+/// 52.3 — THE FILING RIDES BESIDE THE DEMAND. The same held loop of
+/// infinite order files under its holonomy's class at period 0, A19's
+/// spelling of infinite order, in the stroke that speaks its standing
+/// demand: the pivot's `TorsionFiled` snap carries the zero, the form's
+/// torsion holds the class, and the loop coheres on the form.
+#[test]
+fn a_free_part_loop_files_at_period_zero_beside_its_demand() {
+    let r = eleven();
+    let w = Word::formed(r.clone());
+    let mut f = edge_chord_form(std::slice::from_ref(&w));
+    let snaps = f.pivot_loop(
+        [0x34; 32],
+        &Keyed::new(),
+        &Hold(Vec::new()),
+        &mut crate::physics::Physics::default().stroke_n(16),
+        None,
+        0,
+    );
+    assert!(snaps.iter().any(|s| matches!(s, Snap::Demand { .. })), "the demand is spoken: {snaps:?}");
+    assert!(
+        snaps.iter().any(|s| matches!(s, Snap::TorsionFiled { ell: 0, .. })),
+        "and the loop is filed at period 0 beside it: {snaps:?}"
+    );
+    let filed: Vec<u32> = f.torsion.scoped().map(|(_, l)| l.period).collect();
+    assert_eq!(filed, vec![0], "one class, at period 0");
+    assert!(
+        f.torsion.contains(r.class_key().expect("a class").as_bytes()),
+        "under the holonomy's own class"
+    );
+    assert!(f.coheres(), "filed, the loop coheres on the form");
+}

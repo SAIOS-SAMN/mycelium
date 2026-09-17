@@ -414,9 +414,17 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     });
     let typed_e = as_element_form(&typed, [1, 0, 0, 0]).expect("typed demand tape");
     assert_eq!(replay_form(&typed_e, &|_| None), None, "a typed demand vertex replays beside its words");
+}
 
-    // 50.3: an edge transport is a stabilizer element or an exchange, both
-    // of finite order on the word; a (3,4,5) rotor on an edge is neither.
+/// 50.3, 52.3 — AN EDGE TRANSPORT OF ANY ORDER IS A FACE. A (3,4,5) rotor
+/// on an edge has no period and is not refused for that: with no family to
+/// re-derive its transport against, the tape replays exactly as it does
+/// with a quarter turn there. What an edge carries is judged on the family
+/// (`edges_rederive_family`), never by its order.
+#[test]
+fn a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order() {
+    use crate::transducer::alphabet::{Order, Word};
+    use crate::transducer::sentence::as_element_form;
     let mut edged = closed_turn_form();
     let p5 = crate::transducer::alphabet::LetterId::pythagorean_5((0, 1)).expect("(3,4,5)");
     let fi = edged.faces.iter().position(|f| f.i == 0 && f.j == 1).expect("the star face");
@@ -429,13 +437,80 @@ fn vertex_tape_and_moves_replay_or_refuse() {
             }
         }
     };
-    set_edge(&mut edged, fi, Word::from_letters(&[(p5, false)]));
+    let tilt = Word::from_letters(&[(p5, false)]);
+    assert_eq!(tilt.order(), Order::Infinite, "the (3,4,5) rotor has no period");
+    set_edge(&mut edged, fi, tilt);
     let edged_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
-    assert_eq!(replay_form(&edged_e, &|_| None), Some(REFUSE_EDGE), "an edge of infinite order is refused by name");
+    assert_eq!(replay_form(&edged_e, &|_| None), None, "an edge of infinite order is not refused for its order");
     let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
     set_edge(&mut edged, fi, Word::from_letters(&[(q, false)]));
     let fine_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
     assert_eq!(replay_form(&fine_e, &|_| None), None, "a quarter turn on an edge is a stabilizer element and replays");
+}
+
+/// 52.3 — A LOOP OF INFINITE ORDER REPLAYS ON ITS FILING. The transports
+/// are coboundaries and compose to the identity while the body face carries
+/// a (3,4,5) rotor as its edge: unfiled, the loop does not replay; filed
+/// under the edge holonomy's class at period 0, A19's spelling of infinite
+/// order, it replays — through the tape, where the court reads the zero —
+/// and at a period the loop does not have it is refused by name.
+#[test]
+fn a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not() {
+    use crate::transducer::alphabet::{LetterId, Order, Word};
+    use crate::transducer::sentence::{as_element_form, FiledLoop, Form, FormFace, Transport};
+    let p5 = LetterId::pythagorean_5((0, 1)).expect("(3,4,5)");
+    let tilt = Word::from_letters(&[(p5, false)]);
+    let edge_of = |w: &Word| Transport {
+        word: w.clone(),
+        carriage: element::identity_versor(),
+        gauge: Vec::new(),
+    };
+    let mut f = Form::default();
+    for tag in [1u8, 2u8] {
+        f.vertices.push(Vertex::word_on(
+            crate::transducer::address::Address::from_bytes([tag; 32]),
+            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            stalk::Invariant::default(),
+            Box::new(element::identity_versor()),
+            Vec::new(),
+            None,
+        ));
+    }
+    let with_edge = |mut face: FormFace, edge: Transport| -> FormFace {
+        let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
+        for k in pairs {
+            if let Some(p) = face.at.get_mut(&k) {
+                p.edge = Some(edge.clone());
+            }
+        }
+        face
+    };
+    for (i, j) in [(0u16, 1u16), (0, 2)] {
+        let face = f.face_of(i, j).expect("a coboundary");
+        f.faces.push(with_edge(face, edge_of(&Word::identity())));
+    }
+    let face = f.face_of(1, 2).expect("a coboundary");
+    f.faces.push(with_edge(face, edge_of(&tilt)));
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    let [lp, ..] = f.loops.as_slice() else { panic!("the triangle closes") };
+    assert!(lp.holonomy.is_identity(), "the transport composite is flat");
+    let es = f.edge_holonomies(lp).expect("the loop names live faces");
+    let [(_, e)] = es.scoped().collect::<Vec<_>>()[..] else { panic!("one member path") };
+    assert_eq!(e.word.order(), Order::Infinite, "and its edge holonomy has no period");
+    assert!(!form_loops_replay(&f), "unfiled, the loop does not replay");
+    let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
+    let [class] = classes.as_slice() else { panic!("one member path, so one class") };
+    let mut filed = f.clone();
+    filed.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 0, chord: lp.chord });
+    assert!(form_loops_replay(&filed), "filed at period 0, the loop replays");
+    let filed_e = as_element_form(&filed, [1, 0, 0, 0]).expect("the tape carries the filed zero");
+    assert_eq!(replay_form(&filed_e, &|_| None), None, "and the court reads the zero off the tape");
+    let mut wrong = f.clone();
+    wrong.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 4, chord: lp.chord });
+    assert!(!form_loops_replay(&wrong), "a period the loop does not have is not a filing");
+    let wrong_e = as_element_form(&wrong, [1, 0, 0, 0]).expect("tape");
+    assert_eq!(replay_form(&wrong_e, &|_| None), Some(REFUSE_LOOP), "and is refused by name");
 }
 
 /// S9.4 — CLOSURE IS WHAT THE COURT CHECKS. A form minted over one train

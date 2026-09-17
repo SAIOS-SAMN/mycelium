@@ -7,6 +7,27 @@ use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self};
 
+/// 52.3 — THE TAPE CARRIES A FILED ZERO AS INFINITE ORDER (A19): a loop
+/// whose edge is a (3,4,5) rotor, filed at period 0, round-trips its
+/// filing, the read form coheres on it, and the class reaches no members.
+#[test]
+fn the_tape_carries_a_filed_zero_as_infinite_order() {
+    let w = infinite();
+    let mut f = edge_chord_form(std::slice::from_ref(&w));
+    let loops = f.loops.clone();
+    let [lp] = loops.as_slice() else { panic!("one chord closes one loop") };
+    let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
+    let [class] = classes.as_slice() else { panic!("one member path, so one class") };
+    f.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 0, chord: lp.chord });
+    assert!(f.coheres(), "filed, the loop coheres");
+    let e = as_element_form(&f, [1, 0, 0, 0]).expect("a filed form has a tape");
+    let read = from_element_form(&e).expect("the tape admits the filed zero");
+    let filed: Vec<u32> = read.torsion.scoped().map(|(_, l)| l.period).collect();
+    assert_eq!(filed, vec![0], "the period reads 0, infinite order");
+    assert!(read.coheres(), "and the read form coheres on it");
+    assert_eq!(read.fibre_volume(), 0, "an infinite class reaches no members");
+}
+
 /// SENTENCE_TAG v6 round-trips Frame, Word (with contact), Glued,
 /// Rebased, Unfolded, Demand (50.5), faces with their edge transport
 /// (50.3), and loops.

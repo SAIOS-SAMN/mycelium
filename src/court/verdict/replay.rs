@@ -252,19 +252,9 @@ pub fn replay_form_at(
     // the loop check; a missing torsion entry is REFUSE_LOOP, a chord
     // that does not carry the holonomy is REFUSE_FACE.
     for (i, face) in f.faces.iter().enumerate() {
-        // 50.3: an edge transport is a stabilizer element or an exchange
-        // of lattice bodies, both of finite order on the word; a word of
-        // infinite order is neither (the membership on the bodies is read
-        // with the family, L7).
-        // EVERY MEMBER PAIR'S EDGE. One pair carrying a word of infinite order
-        // refuses the face, whichever other pairs are finite.
-        if face.at.scoped().any(|(_, p)| {
-            p.edge.as_ref().is_some_and(|e| {
-                matches!(e.word.order(), crate::transducer::alphabet::Order::Infinite)
-            })
-        }) {
-            return Some(face_refusal(f, face));
-        }
+        // 50.3, 52.3: an edge transport of any order is a face. What it
+        // carries is re-derived on the family below (`edges_rederive_family`),
+        // and a period is never a gate.
         // THE FACE RE-DERIVES AT EVERY MEMBER PAIR IT CARRIES. The word is the
         // face's and re-derives once; the placement and hue map at each pair
         // re-derive from the two members that pair names, and a face whose
@@ -335,19 +325,6 @@ pub fn replay_form_at(
         }
     }
     replay_certificates(&walked, &by_chord).map(tape)
-}
-
-/// `REFUSE_EDGE` at a face's two vertex addresses; a face reaching a vertex
-/// with no address is refused at the tape.
-fn face_refusal(f: &Form, face: &crate::transducer::sentence::FormFace) -> Refusal {
-    let addr_of = |i: u16| match f.vertices.get(i as usize) {
-        Some(Vertex::Word { address, .. }) | Some(Vertex::Glued { address, .. }) => Some(address.clone()),
-        _ => None,
-    };
-    match (addr_of(face.i), addr_of(face.j)) {
-        (Some(a), Some(b)) => Refusal { reason: REFUSE_EDGE, at: sentence::At::Face(a, b) },
-        _ => Refusal { reason: REFUSE_EDGE, at: sentence::At::Tape(sentence::form_vertex_key(f)) },
-    }
 }
 
 /// Chapter 23.1 steps 3 and 6: each Word vertex re-derives its rotor (M1)
@@ -518,7 +495,6 @@ fn loop_reading_replays(
     lp: &crate::transducer::sentence::Loop,
     word: &crate::transducer::alphabet::Word,
 ) -> bool {
-    use crate::transducer::alphabet::Order;
     if word.is_identity() {
         return true;
     }
@@ -528,17 +504,15 @@ fn loop_reading_replays(
     if let Some(chord) = f.opened_axis_of(lp) {
         return f.axis_rederives(lp, chord);
     }
-    match word.order() {
-        Order::Infinite => false,
-        Order::Finite(ell) => {
-            // No class, no filing: a holonomy that is not a versor is a
-            // loop that does not replay, never one keyed by its bytes.
-            let Some(k) = word.rotor().class_key() else {
-                return false;
-            };
-            matches!(f.torsion.get(k.as_bytes()), Some(filed) if filed.period == ell)
-        }
-    }
+    // Filed under its class at the period the court re-derives — `0` for
+    // infinite order, A19's spelling of it (52.3). No class, no filing: a
+    // holonomy that is not a versor is a loop that does not replay, never
+    // one keyed by its bytes.
+    let Some(k) = word.rotor().class_key() else {
+        return false;
+    };
+    let ell = word.order().to_u32();
+    matches!(f.torsion.get(k.as_bytes()), Some(filed) if filed.period == ell)
 }
 
 pub(crate) fn face_idx_key(i: u16) -> Vec<u8> {

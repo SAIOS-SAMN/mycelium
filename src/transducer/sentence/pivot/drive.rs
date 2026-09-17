@@ -7,6 +7,15 @@
 
 use super::*;
 
+/// The period as the filing line writes it: `ℓ`, or `∞` for the `0` that
+/// spells infinite order (A19, 52.3).
+fn period_written(ell: u32) -> String {
+    match Order::from_u32(ell) {
+        Order::Finite(p) => p.to_string(),
+        Order::Infinite => "∞".to_string(),
+    }
+}
+
 /// WHAT A TRIAL IS MEASURED AGAINST: the form's standing before any
 /// candidate is applied — the loop rows and the rank they carry, the
 /// crystal the axes are read in, the bundle and its T extent, and the μ⃗ the
@@ -643,49 +652,52 @@ impl Form {
                         );
                         handled.insert(loop_k, ());
                     }
-                    Discharge::NoneDischarged => match order {
-                        Order::Infinite => {
+                    Discharge::NoneDischarged => {
+                        let infinite = matches!(order, Order::Infinite);
+                        if infinite && !held {
+                            // One standing demand per chart the loop
+                            // stands on, carrying the holonomy rotor as
+                            // its witness (16.16 step 6): the language's
+                            // want of a generator, spoken beside the
+                            // filing below and never instead of it (52.3).
+                            let charts = self.charts_of_loop(idx);
+                            for chart in &charts {
+                                snaps.push(Snap::Demand {
+                                    chord: idx,
+                                    key: rotor_key.clone(),
+                                    rotor: Box::new(hw.rotor()),
+                                    chart: chart.clone(),
+                                });
+                            }
+                            eprintln!(
+                                "  demand spoken {:02x}{:02x}… order ∞ charts {}",
+                                idea[0],
+                                idea[1],
+                                charts.len()
+                            );
+                        }
+                        // A loop of any order files under its class at its
+                        // period, `0` for infinite order (52.3, A19).
+                        let ell = order.to_u32();
+                        if self.file_loop(idx, ell) {
                             if !held {
-                                // One standing demand per chart the loop
-                                // stands on, carrying the holonomy rotor as
-                                // its witness (16.16 step 6).
-                                let charts = self.charts_of_loop(idx);
-                                for chart in &charts {
-                                    snaps.push(Snap::Demand {
-                                        chord: idx,
-                                        key: rotor_key.clone(),
-                                        rotor: Box::new(hw.rotor()),
-                                        chart: chart.clone(),
-                                    });
-                                }
+                                snaps.push(Snap::TorsionFiled { chord: idx, ell });
                                 eprintln!(
-                                    "  demand spoken {:02x}{:02x}… order ∞ charts {}",
+                                    "  torsion filed {:02x}{:02x}… (σ,{})",
                                     idea[0],
                                     idea[1],
-                                    charts.len()
+                                    period_written(ell)
                                 );
                             }
-                            handled.insert(loop_k, ());
+                        } else {
+                            snaps.push(Snap::TorsionOpen { chord: idx });
+                            eprintln!(
+                                "  torsion open {:02x}{:02x}… chord {idx}",
+                                idea[0], idea[1]
+                            );
                         }
-                        Order::Finite(ell) => {
-                            if self.file_loop(idx, ell) {
-                                if !held {
-                                    snaps.push(Snap::TorsionFiled { chord: idx, ell });
-                                    eprintln!(
-                                        "  torsion filed {:02x}{:02x}… (σ,{ell})",
-                                        idea[0], idea[1]
-                                    );
-                                }
-                            } else {
-                                snaps.push(Snap::TorsionOpen { chord: idx });
-                                eprintln!(
-                                    "  torsion open {:02x}{:02x}… chord {idx}",
-                                    idea[0], idea[1]
-                                );
-                            }
-                            handled.insert(loop_k, ());
-                        }
-                    },
+                        handled.insert(loop_k, ());
+                    }
                 }
             }
             if !applied {

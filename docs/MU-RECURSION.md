@@ -8616,6 +8616,7 @@ transducer/cayley/chart.rs      bivector_of(&Versor) -> Option<Versor>, versor_o
 transducer/cayley/tests/chart.rs  the claims of 39 under Part XII
 sentence/form/carrier.rs        FiledLoop.period: 0 is infinite order (A19); fibre_volume counts finite periods; is_cauterized files any order
 sentence/pivot/loops.rs         edge_coheres reads any order; the filing keyed by class at the re-derived period
+sentence/pivot/trial.rs         file_loop files at any period, 0 included
 sentence/pivot/drive.rs         NoneDischarged files a loop of any order; the Standing demand rides beside the filing
 sentence/tape.rs                the filed zero admitted
 court/verdict/replay.rs         no face refused for an edge word's order; loop_reading_replays reads any order
@@ -8630,7 +8631,8 @@ Tests (39): `cayley::tests::a_versor_is_its_bivector_read_back_in_either_directi
 `bivectors_on_two_planes_do_not_add_and_the_product_is_the_reading`,
 `the_versor_between_two_shapes_has_a_bivector`;
 `sentence::tests::a_loop_of_infinite_order_is_filed_at_period_zero_and_coheres`,
-`the_tape_carries_a_filed_zero_as_infinite_order`;
+`the_tape_carries_a_filed_zero_as_infinite_order`,
+`a_free_part_loop_files_at_period_zero_beside_its_demand`;
 `verdict::tests::a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order`,
 `a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not`;
 51.10's proofs 1 and 2 as `family::tests::a_family_translated_along_e3_is_one_loop_and_no_correspondence_runs`
