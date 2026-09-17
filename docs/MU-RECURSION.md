@@ -226,7 +226,9 @@ operation it names, without a typed arm naming the absence; (m) any
 projection or shadow carried as the primary object with the object itself
 as a fallback: a plane form consulted before the rotor, a coordinate pair
 before the versor, a digest before the coordinates, a count before the
-fiber; (n) any `QMatrix`, affine block, or matrix product used to carry,
+fiber, a sensor-plane block rebuilt into a rotor before the rotor the
+vertex carries, a frame coordinate fixed to zero before the base's own
+(51.1, ruled 2026-09-17); (n) any `QMatrix`, affine block, or matrix product used to carry,
 compose, or compare an action, outside `core::zlinalg` and A3's
 sensor-plane block. A diff that fails (a) through (j), (l), (m) or (n) is
 returned with the rule number; a diff without (k) is not reviewed.
@@ -1403,7 +1405,7 @@ For a form:
 | `H¹` between two sections on a cover | `g_XY ≠ 1` on an overlap | dialect between two hyphae or two minds | recorded; a translation word is the coboundary that would close it |
 | `H²` on a cover | `δ²ω ≠ 1` on a 3-cell | four views cannot be made consistent at once | the chart refines by the class's invariant axis, once the cover is good |
 | torsion part `(s, u)` | finite order | a discrete twist: orientation or quarter turns | files as a torsion cycle `(σ, ℓ)`, `ℓ | 4` or `2` |
-| free part `(m5, m13)` | infinite order | a scale-rotation the language has not spelled | remains a class; a new word on that chart is needed, never a longer orbit |
+| free part `(m5, m13)`, or an off-plane class | infinite order | a rotation the language has not spelled — the loop's content, never its debt (ruled 2026-09-16, recorded 2026-09-17) | remains a class, and its canonical holonomy rotor is the candidate generator of 37.7: docketed on two courts' re-derivation of that rotor, adjoined by closure; never a longer orbit, never gauged away |
 
 ## 12. Computing with cochains
 
@@ -2661,7 +2663,10 @@ vector names.
 6. **File or demand.** A held loop with no discharging candidate: if
    `κ(ℓ)` has zero free part and finite order, hand it to A17 (torsion); if
    it has a nonzero free part, speak the canonical remainder as a demand
-   (17.6 step 5) unless its key is `Held`.
+   (17.6 step 5) unless its key is `Held` — and the demand carries the
+   loop's canonical holonomy rotor as its witness, because that rotor IS
+   the generator 37.7 names (ruled 2026-09-17): a 2×2 block is the sensor
+   shadow of an off-plane holonomy and cannot witness it (checklist (m)).
 7. **Iterate.** A discharge changes `F`; go to 1. Stop when every loop is
    closed, discharged, filed, or a vortex, or when the `Budget` is spent;
    the next stroke recomputes from the current `F`.
@@ -5470,6 +5475,13 @@ was not. What is adjoined at the higher rungs of 1.9 — a relator, a
 2-cell, a procedure — enters by the same condition: a closure two courts
 replayed composes through it. The refusals of chapter 44 stand.
 
+**The rotor level is a level (ruled 2026-09-17).** A loop whose class has
+a free part — a prime exponent, or an off-plane class of infinite order —
+is a remainder at the rotor's own level: its canonical holonomy rotor is
+the candidate, carrying itself as witness, and `3 + e₀₁ + e₀₂` (weight 11,
+held by no coordinate plane) is the shape of one. It is docketed and
+adjoined exactly as the others: by closure, never by agreement.
+
 **The kind is a level, never a dispatch.** A remainder lives at the level
 its factorisation stopped at, and the level is a coordinate read off the
 remainder — for the log line and for the route — never a key into a table
@@ -5724,8 +5736,9 @@ rule is the same rule at every frame. Nothing in `Form`, `coheres`,
 The same exact multivector algebra over a larger mask: `Mv` becomes
 dimension-generic, the blade masks widen, `projective_ratio`, `conj`,
 `norm2`, `to_bytes`, `canonical` unchanged in form; A4 unchanged. Brick 2
-(`Cl(4,1)`) lands first, because occlusion and stacking in plane corpora
-already need `z`.
+(`Cl(4,1)`) lands first. Chapter 51 (ruled 2026-09-17) places the frame
+`k` on `e₃` and derives `Cl(4,1)` for it; `z` waits for a corpus that
+carries one (51.11), and `Cl(5,1)` is not derived.
 
 ### 38.6 B6 Binding
 
@@ -7916,10 +7929,11 @@ beside `PivotCertificate`; tests: `a_refusal_contracts_the_held_form_and_seals_t
 
 # Part XI — The frame axis
 
-Written 2026-09-11 against c27ea76. A DRAFT, doctrine only: no code in the
-tree changes for it, and nothing here is landed until the operator rules
-it. It settles the ten points row L22 names, so that the ruling has
-something exact to accept or refuse.
+Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
+by the operator, with 51.2 amended as stated there and 51.7 read against
+tape v9. The code that lands it is Stage 18 of `MU-RECURSION-TASKS.md`:
+one recut after the landing's final commit (§10), localized testing only
+until then, and the fleet is not swapped before the operator's word.
 
 ## 51. `k` is a coordinate of the base (L22 draft, 2026-09-11)
 
@@ -7966,8 +7980,9 @@ is one move: `k` stops being a position and becomes a coordinate.
 
 ### 51.2 The algebra, derived
 
-18.1's rule is that the algebra is derived from what the base carries and
-is never asserted. Today:
+The rule — stated here, once, and cited elsewhere as 18.1's — is that the
+algebra is derived from what the base carries and is never asserted, with
+the one exception ruled at the end of this section. Today:
 
 - `Rotor` is `Cl(4,0)` over `e₀..e₃`: sixteen blades, six planes. This is
   the LETTERS' chart and it does not move — the seventeen already act on
@@ -7993,6 +8008,21 @@ at. So the base's point coordinates are `e₀` (row), `e₁` (column) and `e₃`
 
 `Cl(4,1)` it is, and the sheet plane's role is unchanged — which is 51.3's
 first requirement and is why the two points agree.
+
+**The one stated exception to "derived, never asserted" (ruled
+2026-09-17).** `Spin(4,1)` is two groups in one algebra: the conformal
+group of the three-coordinate base, whose translators `e_i ∧ e_∞`
+commute, and the isometry group of hyperbolic 4-space whose boundary at
+infinity is that base, whose transvections `e_i ∧ e₋` do not commute —
+their commutator is a rotation scaled by the sectional curvature. A
+lattice base carries the first reading, and it is derived. The second is
+ASSERTED here, ahead of any datum, so that a remainder shaped as
+curvature has an algebra to land in rather than a demand it can only
+stand in. This is rule 11's one stated exception, and it is the algebra
+that is asserted, never a value of the curvature: `K` is read off a
+remainder or it is not read. The rotor chart `Cl(4,0)` does not move
+(51.6); the letters act on a Euclidean chart, and a boost is never a
+letter.
 
 ### 51.3 The cell, the body, the shape, the moduli
 
@@ -8108,15 +8138,17 @@ is five fields where it was four, a support is a list of triples where it
 was pairs, and a versor serialises thirty-two components where it
 serialised sixteen.
 
-**No version is spent, and here is why.** `FORM_TAPE_VERSION` is 7 today.
-v7's layout is fixed at a recut, and the recut is a procedure the OPERATOR
-runs (§10) — it has not happened. So this draft does not choose a version
-byte, does not add v8, and does not write a migration. It records that the
-codec change is a recut's business and that the recut takes it whole:
-every tape in the tree is rewritten at once, or none is. A tape carrying
-two coordinates and a tape carrying three are not two versions of one
-format; they are two bases, and 33's "one migration, then never again"
-is the rule that applies.
+**No version is spent before the recut, and here is why.**
+`FORM_TAPE_VERSION` is 9 today. v9's layout is fixed at a recut, and the
+recut is a procedure the OPERATOR runs (§10). So this chapter does not
+choose a version byte ahead of it and does not write a migration. It
+records that the codec change is a recut's business and that the recut
+takes it whole: every tape in the tree is rewritten at once, or none is.
+A tape carrying two coordinates and a tape carrying three are not two
+versions of one format; they are two bases, and 33's "one migration, then
+never again" is the rule that applies. The landing's final commit spends
+the byte, and the one recut that follows it rewrites every tape (ruled
+2026-09-17).
 
 ### 51.8 The court
 
