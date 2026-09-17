@@ -12,8 +12,8 @@ use crate::client::sdk::*;
 #[test]
 fn a_refinement_bid_cites_only_ruled_words() {
 use crate::transducer::element::{canonical_chain, from_canonical};
-let chain_word = |cells: &[(i64, i64, u8, u8)]| {
-    from_canonical(&canonical_chain(cells).expect("one entry per position is A5's chain"))
+let chain_word = |links: &[(i64, i64, u8, u8)]| {
+    from_canonical(&canonical_chain(links).expect("one entry per position is A5's chain"))
 };
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("refine"));
 let w1 = chain_word(&[(0, 0, 1u8, 2u8)]);

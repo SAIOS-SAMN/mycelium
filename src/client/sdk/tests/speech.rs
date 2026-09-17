@@ -16,8 +16,8 @@ fn a_withheld_remainder_is_never_a_word() {
     use super::common::closed_turn;
     use crate::client::sdk::*;
     use crate::transducer::element::{canonical_chain, from_canonical};
-    let chain_word = |cells: &[(i64, i64, u8, u8)]| {
-        from_canonical(&canonical_chain(cells).expect("one entry per position is A5's chain"))
+    let chain_word = |links: &[(i64, i64, u8, u8)]| {
+        from_canonical(&canonical_chain(links).expect("one entry per position is A5's chain"))
     };
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("bodies"));
     let form = closed_turn(None);

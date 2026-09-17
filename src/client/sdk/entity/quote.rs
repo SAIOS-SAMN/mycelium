@@ -29,7 +29,7 @@ impl Entity {
             // A word is an OPERATOR, not a tile. Two words can induce one
             // element of `Spin(4,0)` with disjoint supports, and one word can
             // be a change of basepoint away from another. Neither is visible
-            // to a test that asks whether cells pave cells. `algebraic_redundancy`
+            // to a test that asks whether links pave links. `algebraic_redundancy`
             // asks the two algebraic questions instead — is this operator
             // already held, and is it a section of a bundle already held —
             // and both are decided exactly rather than searched.
@@ -308,7 +308,7 @@ impl Entity {
     /// EXPANSIONS 1 AND 2 — WHY A WORD IS REDUNDANT, ALGEBRAICALLY.
     ///
     /// `seek_refinement` asks one question: do the rest of the vocabulary's
-    /// CELLS pave this word's cells. That is extensional — it treats a word
+    /// LINKS pave this word's links. That is extensional — it treats a word
     /// as a tile — and it misses two ways a word can carry nothing new:
     ///
     /// 1. SAME OPERATOR (Expansion 1). Two tapes can induce one element of
@@ -416,10 +416,9 @@ impl Entity {
     ///   not `Ruled`, as every other adjunction does, and needs no court to
     ///   begin.
     /// - a word that induces a held word's operator, or is a section of its
-    ///   bundle by a gauge the seventeen spell, is a BID. It was gated —
-    ///   "until the court has an algebraic receipt" — because the spatial
-    ///   bid's replay expects a cell chain an operator has none of. The
-    ///   court rules it on its own algebra now (`try_refine_algebraic`), so
+    ///   bundle by a gauge the seventeen spell, is a BID. The spatial bid's
+    ///   replay expects a chain of links, which an operator has none of, so
+    ///   the court rules this one on its own algebra (`try_refine_algebraic`):
     ///   the bid goes to the court with its witness and the word retires
     ///   where the court re-derives it.
     ///

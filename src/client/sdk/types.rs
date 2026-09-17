@@ -19,11 +19,11 @@ pub enum Comprehension {
     /// left. `understood` is the part that did factor, kept rather than
     /// thrown away with the rest.
     ///
-    /// It carried `residual_cells: usize`. A count is not what M6 step 5
-    /// asks for: "No mind emits `unknown`; it emits the element it lacks."
-    /// A count cannot be docketed by a hypha, cannot be reduced by another
-    /// mind, and cannot be replayed — and the remainder A12 had already
-    /// computed exactly was discarded to produce it.
+    /// A count of residual links is not what M6 step 5 asks for: "No mind
+    /// emits `unknown`; it emits the element it lacks." A count cannot be
+    /// docketed by a hypha, cannot be reduced by another mind, and cannot
+    /// be replayed — and the remainder A12 computes exactly would be
+    /// discarded to produce it.
     Novel { demand: Box<Element>, understood: Vec<(Vec<u8>, Standing)> },
     /// A CONNECTION heard by holding it: the transition to the held word on
     /// its fibre vanished — the same word, glued.
@@ -577,10 +577,10 @@ pub struct YieldQuote {
 pub struct Cluster {
     pub address: crate::transducer::address::Address,
     pub mu: [u64; 4],
-    /// The listing WHOLE, as the judge served it (L8q). It was the
-    /// coboundary cells alone, so a served sentence reached the voice with
-    /// its demand vertices stripped and the only move left was to subtract
-    /// cells; `Held::of` rebuilds the form and `demand_vertices` names what
+    /// The listing WHOLE, as the judge served it (L8q). Served as the
+    /// coboundary links alone, a sentence would reach the voice with its
+    /// demand vertices stripped and the only move left would be to subtract
+    /// links; `Held::of` rebuilds the form and `demand_vertices` names what
     /// it could not spell.
     pub element: Vec<u8>,
     /// Open (non-flat) charts of the listing's coherence field. The entity

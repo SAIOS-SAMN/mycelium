@@ -2,7 +2,7 @@
 //
 //! 24 — THE KERNEL SDK: how a kernel takes a stable mesh identity, perceives
 //! a scene of its own, speaks a sentence to a hypha, and learns the word the
-//! court teaches back. Cells in, sentences out (law 8).
+//! court teaches back. Painted sites in, sentences out (law 8).
 
 mod entity;
 mod epigenome;

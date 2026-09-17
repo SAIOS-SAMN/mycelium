@@ -11,9 +11,9 @@ fn digits(rows: &[&str]) -> Grid {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
-/// A bar and a cell of two hues carried together (50.3's rigid pair): two
-/// word vertices and their edge — the voice's pair form, measured over its
-/// family and spoken as a sentence.
+/// A bar and a lone painted site of another hue carried together (50.3's
+/// rigid pair): two word vertices and their edge — the voice's pair form,
+/// measured over its family and spoken as a sentence.
 fn two_bars() -> (Vec<TrainPair>, Element) {
     let family = vec![(digits(&["11200"]), digits(&["00112"]))];
     let f = pair_form_uncrystallized(&family[0].0, &family[0].1, None);

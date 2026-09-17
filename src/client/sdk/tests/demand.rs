@@ -6,10 +6,10 @@ use crate::client::sdk::*;
 /// M6 STEP 5, A12 STEP 5: A MIND EMITS THE ELEMENT IT LACKS. When what it
 /// holds does not span an incoming connection, it says the canonical
 /// remainder — the exact boundary demand, unique for that lattice, with no
-/// choice in it — and keeps the part that did factor. It said `Admitted`
-/// there, "new geometry", for a word it could name the missing part of; and
-/// on the chain arm it said `Novel { residual_cells: n }`, a count, which no
-/// hypha can docket and no mind can reduce.
+/// choice in it — and keeps the part that did factor. `Admitted` there,
+/// "new geometry", would be said of a word the mind can name the missing
+/// part of; and on the chain arm a count of residual links is what no hypha
+/// can docket and no mind can reduce.
 #[test]
 fn a_mind_speaks_the_element_it_lacks_and_never_a_count() {
     use crate::transducer::alphabet::{LetterId, Word};

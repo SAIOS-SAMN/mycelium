@@ -7,9 +7,9 @@ use crate::client::sdk::*;
 
 /// The word of a chain a fixture wrote out: one entry per position, so A5
 /// accepts it and the fixture reads the word it names.
-fn chain_word(cells: &[(i64, i64, u8, u8)]) -> crate::transducer::element::Element {
+fn chain_word(links: &[(i64, i64, u8, u8)]) -> crate::transducer::element::Element {
     crate::transducer::element::from_canonical(
-        &crate::transducer::element::canonical_chain(cells)
+        &crate::transducer::element::canonical_chain(links)
             .expect("one entry per position is A5's chain"),
     )
 }

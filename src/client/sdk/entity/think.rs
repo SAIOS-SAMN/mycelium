@@ -16,7 +16,7 @@ impl Entity {
 
     /// HOLD A CHAIN AS THE FORM IT IS (50.6 seam 1): a demand this mind has
     /// not closed is held as an idea — the pair form of the scene the chain
-    /// describes, its cells before against its cells after in one frame —
+    /// describes, its painted sites before against its painted sites after in one frame —
     /// never as a bare chain minted into a word. An idea is a form; its
     /// words are the vertices the eyes could pair and the alphabet could
     /// spell, and what they could not is its demand vertices (50.5).
@@ -124,7 +124,7 @@ impl Entity {
         self.contemplation.formed
     }
 
-    pub fn horizon_cells(&self) -> usize {
+    pub fn horizon_len(&self) -> usize {
         self.contemplation.horizon_len()
     }
 
@@ -528,17 +528,17 @@ impl Entity {
         self.contemplation.cavity_len()
     }
 
-    /// THE CELLS THE CAVITY HOLDS, which is what it costs. A cavity entry is
-    /// a whole remainder — `Vec<RemCell>` — so the entry COUNT says how many
+    /// THE LINKS THE CAVITY HOLDS, which is what it costs. A cavity entry is
+    /// a whole remainder — `Vec<Link>` — so the entry COUNT says how many
     /// retirements happened and this says how much they kept. A thousand
-    /// entries of one cell and ten of a thousand are the same count and not
+    /// entries of one link and ten of a thousand are the same count and not
     /// the same carrier (rule 2 — the count does not decide).
-    pub fn cavity_cells(&self) -> usize {
+    pub fn cavity_links(&self) -> usize {
         self.contemplation.cavity_links()
     }
 
     /// The carriers a bubble holds that no count reports — sections, nerve
-    /// cells, horizon classes, bundle pairs, certificates. See
+    /// simplices, horizon classes, bundle pairs, certificates. See
     /// [`crate::transducer::bubble::Contemplation::weight`].
     pub fn idea_weight(&self) -> [usize; 5] {
         self.contemplation.weight()

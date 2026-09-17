@@ -36,7 +36,7 @@ impl Entity {
     pub fn probe_conjugate_reanchor(&mut self) -> Option<(Element, Vec<Address>, Option<Element>)> {
         // ONE STROKE'S WORTH OF CANDIDATES, and the cursor carries the rest
         // to the next stroke (rule 10 — a loop's bound is a Budget or one
-        // cell's boundary, and a genome is neither). `physics.stroke()` is
+        // simplex's boundary, and a genome is neither). `physics.stroke()` is
         // the engine's own unit of work — the same budget `pivot_on` spends
         // — so the probe is paced by the same arithmetic as every other
         // stroke and not by a number chosen here.
@@ -172,7 +172,7 @@ impl Entity {
     pub fn probe_bundle_condensation(&mut self) -> Option<(Element, Vec<Address>, Option<Element>)> {
         // One stroke's worth of candidates, as `probe_conjugate_reanchor`
         // takes: the cursor carries the rest, and a genome is neither a
-        // Budget nor one cell's boundary (rule 10).
+        // Budget nor one simplex's boundary (rule 10).
         let budget = self.physics.stroke();
         self.probe_bundle_condensation_under(budget)
     }

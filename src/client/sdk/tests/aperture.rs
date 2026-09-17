@@ -53,7 +53,7 @@ let run = |strokes: u64| -> (usize, usize) {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("leak"));
     let form = closed_turn(None);
     for k in 1..=strokes {
-        // A body no earlier stroke spoke: a bar one cell longer each stroke.
+        // A body no earlier stroke spoke: a bar one site longer each stroke.
         let bar: Vec<(i64, i64, u8, u8)> = (0..=k as i64).map(|c| (0, c, 1u8, 2u8)).collect();
         entity.withhold_form(&form, &[], std::slice::from_ref(&bar), [1, 0, 0, 0]);
         entity.shed_at(k);
@@ -81,7 +81,7 @@ use crate::transducer::element::{canonical_chain, from_canonical};
 let mut epi = Epigenome::new();
 let residual = [(0i64, 0i64, 1u8, 2u8)];
 assert!(epi.express(&residual, 7, 10), "the residual is claimed");
-let addr = from_canonical(&canonical_chain(&residual).expect("one cell is A5's chain")).address();
+let addr = from_canonical(&canonical_chain(&residual).expect("one link is A5's chain")).address();
 let d = epi.dialect.get(&addr).expect("stood");
 assert_eq!(d.last_used_k, 7, "k is the voice's K");
 assert_eq!(d.last_used_tu, 10, "tu is the standing extent in heights");
@@ -112,7 +112,7 @@ let residual = [(0i64, 0i64, 1u8, 2u8)];
 // Stood at the mind's K 1, with TUniversal frozen at 0 throughout:
 // no receipt was ever admitted.
 assert!(epi.express(&residual, 1, 0), "the residual is claimed");
-let addr = from_canonical(&canonical_chain(&residual).expect("one cell is A5's chain")).address();
+let addr = from_canonical(&canonical_chain(&residual).expect("one link is A5's chain")).address();
 assert_eq!(epi.dialect_len(), 1);
 let aperture = crate::physics::aperture_cycle() as u64;
 let now = 1 + aperture + 1;

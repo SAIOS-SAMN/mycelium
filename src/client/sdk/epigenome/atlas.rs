@@ -149,7 +149,7 @@ impl Epigenome {
 
 /// The charts of the bodies a closed sentence's word vertices carry. A
 /// `Vertex::Word` states the chart it acts on (18.2); nothing is measured
-/// here and no cell is read.
+/// here and no painted site is read.
 pub(crate) fn body_charts_of(e: &Held) -> Vec<crate::transducer::stalk::Invariant> {
     let Some(f) = e.form() else {
         return Vec::new();

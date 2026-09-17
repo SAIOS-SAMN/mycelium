@@ -119,8 +119,8 @@ fn probe_conjugate_reanchor_on_word_pair() {
 
 #[test]
 fn probe_bundle_condensation_folds_sibling_sections() {
-    let chain_word = |cells: &[(i64, i64, u8, u8)]| {
-        from_canonical(&canonical_chain(cells).expect("valid canonical chain"))
+    let chain_word = |links: &[(i64, i64, u8, u8)]| {
+        from_canonical(&canonical_chain(links).expect("valid canonical chain"))
     };
 
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("test_condense"));

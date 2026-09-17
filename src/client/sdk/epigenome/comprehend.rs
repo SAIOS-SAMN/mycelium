@@ -221,9 +221,9 @@ impl Epigenome {
                 }
                 Comprehension::Understood(sentence)
             }
-            // THE RESIDUAL IS THE DEMAND. This counted the open cells and
-            // spoke the number; the chain those cells form is the element
-            // the mind lacks, and a hypha can docket that.
+            // THE RESIDUAL IS THE DEMAND. A count of the open links speaks
+            // a number; the chain those links form is the element the mind
+            // lacks, and a hypha can docket that.
             _ => {
                 let genome = &self.genome;
                 let open = located

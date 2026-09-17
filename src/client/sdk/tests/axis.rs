@@ -81,7 +81,7 @@ fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
 
 #[test]
 fn two_bodies_deflating_one_listing_open_an_axis_on_the_versor_between_them() {
-    // A row of two cells and a column of two: the same body turned a
+    // A row of two sites and a column of two: the same body turned a
     // quarter, two distinct words on the atlas.
     let row = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let column = from_canonical(&germinate(&[(0, 0, 1u8), (1, 0, 1)], &[(0, 0, 2u8), (1, 0, 2)]).unwrap());
@@ -110,6 +110,6 @@ fn two_bodies_deflating_one_listing_open_an_axis_on_the_versor_between_them() {
     assert_eq!(
         Entity::axis_germ(&chain, &[row.sub().to_vec(), three.sub().to_vec()]).err(),
         Some(AXIS_NO_VERSOR),
-        "two cells and three: no rational versor carries one onto the other"
+        "two sites and three: no rational versor carries one onto the other"
     );
 }

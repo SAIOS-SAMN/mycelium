@@ -164,7 +164,7 @@ impl Entity {
                         // one object whose transition does not vanish. It
                         // rode up as a percept pair (held view → fetched
                         // view), a demand on the book for the word that
-                        // carries one onto the other — a voice's cells at a
+                        // carries one onto the other — a voice's painted sites at a
                         // court, which law 8 refuses (ruled 2026-09-10). It
                         // is held here as the dialect measured; the
                         // contraction protocol (50.9, L8) carries it as a
