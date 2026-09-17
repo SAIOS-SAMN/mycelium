@@ -4,6 +4,7 @@
 use crate::core::Q;
 use crate::transducer::element::*;
 use num_bigint::BigInt;
+use num_traits::Zero;
 use crate::transducer::germinate::germinate;
 use super::common::*;
 
@@ -74,7 +75,7 @@ fn the_solution_inverts_the_described_motion() {
     let v = g.versor().expect("V");
     let inv = g.solution().expect("inverse").versor().expect("V⁻¹");
     let qn = |n: i64| Q::from(BigInt::from(n));
-    let p = crate::transducer::cga::point(&qn(1), &qn(2));
+    let p = crate::transducer::cga::point(&qn(1), &qn(2), &qn(0));
     let moved = v.sandwich(&p);
     let back = inv.sandwich(&moved);
     assert_eq!(
@@ -138,7 +139,7 @@ fn a_carriage_decomposes_into_its_dilator_and_translator_at_every_rho() {
         assert_eq!(rho_of(&car), Some(rho.clone()), "ρ is read off the action on e_∞");
         let t = translator_of(&car).expect("translator");
         assert!(
-            same_versor(&t, &cga::translator(&t1, &t2)),
+            same_versor(&t, &cga::translator(&t1, &t2, &q(0, 1))),
             "the translator is t, not ρ·t, at ρ = {rho}"
         );
         let d = dilator_of(&car).expect("dilator");
@@ -150,11 +151,62 @@ fn a_carriage_decomposes_into_its_dilator_and_translator_at_every_rho() {
     let rot = cga::rotator(&q(3, 1), &q(4, 1));
     let v = carriage(&q(2, 1), &(q(1, 1), q(0, 1))).geo(&rot);
     assert_eq!(rho_of(&v), Some(q(2, 1)), "ρ through a rotor");
-    assert!(same_versor(&translator_of(&v).expect("t"), &cga::translator(&q(1, 1), &q(0, 1))));
+    assert!(same_versor(&translator_of(&v).expect("t"), &cga::translator(&q(1, 1), &q(0, 1), &q(0, 1))));
     // A reflection is the orientation character, never a scale.
     let flipped = v.geo(&cga::reflector());
     assert_eq!(rho_of(&flipped), Some(q(2, 1)), "ρ through a reflection is ρ");
     // The identity carriage reads as no translation and no dilation.
     assert!(same_versor(&translator_of(&identity_versor()).expect("t"), &identity_versor()));
     assert!(same_versor(&dilator_of(&identity_versor()).expect("d"), &identity_versor()));
+}
+
+/// 51.2, A4 — THE BRIDGE IS EXACT ON THE BASE, BOTH WAYS. Every letter on a
+/// base plane — `(0,1)`, `(0,3)`, `(1,3)` — acts on the base points as its
+/// rotor acts on the base vectors, and the rotor is read back whole off the
+/// versor, through a carriage as well as bare; the sheet, the orientation
+/// character, acts as the reflection it is and reads back; a letter that
+/// turns `e₂` into a base axis has no base action and is refused, never
+/// projected.
+#[test]
+fn the_base_action_of_a_rotor_is_exact_and_its_inverse_reads_it_back() {
+    use crate::transducer::alphabet::{LetterId, Rotor, Word, SLOT_PLANES_SIX};
+    use crate::transducer::cga;
+    let q = |n: i64| Q::from(BigInt::from(n));
+    let unit = |k: usize| -> [Q; 4] { std::array::from_fn(|i| if i == k { q(1) } else { q(0) }) };
+    let point_of = |x: &[Q; 4]| cga::point(&x[0], &x[1], &x[3]);
+    let agrees = |rotor: &Rotor, v: &Versor| -> bool {
+        [0usize, 1, 3].iter().all(|&k| {
+            let Some(img) = rotor.carry(&unit(k)) else { return false };
+            let Some((x1, x2, x3)) = cga::base(&v.sandwich(&point_of(&unit(k)))) else { return false };
+            img[2].is_zero() && img[0] == x1 && img[1] == x2 && img[3] == x3
+        })
+    };
+    let car = carriage(&q(2), &(q(3), q(5)));
+    let mut on_base = 0usize;
+    for &plane in &SLOT_PLANES_SIX {
+        let letters = [LetterId::quarter(plane), LetterId::pythagorean_5(plane), LetterId::pythagorean_13(plane)];
+        for id in letters.into_iter().flatten() {
+            let rotor = Word::from_letters(&[(id, false)]).rotor();
+            let touches_e2 = plane.0 == 2 || plane.1 == 2;
+            match versor_of_word(&Word::from_letters(&[(id, false)])) {
+                None => assert!(touches_e2, "a letter on a base plane has a base action: {plane:?}"),
+                Some(v) => {
+                    assert!(!touches_e2, "a letter turning e₂ into the base has no base action: {plane:?}");
+                    on_base += 1;
+                    assert!(agrees(&rotor, &v), "the versor acts as the rotor on the base: {plane:?}");
+                    let back = base_rotor_of(&v).expect("the rotor reads back");
+                    assert!(back.projective_eq(&rotor), "and is the rotor, whole: {plane:?}");
+                    let placed = base_rotor_of(&car.geo(&v)).expect("through a carriage too");
+                    assert!(placed.projective_eq(&rotor), "the carriage does not change the rotor read: {plane:?}");
+                }
+            }
+        }
+    }
+    assert_eq!(on_base, 8, "three base planes: three quarters, three (3,4,5) rotors, two (5,12,13) rotors (51.6)");
+    // The sheet: two quarters on (1,2), the half turn that flips e₁ and e₂,
+    // which the base reads as the reflection of its column axis.
+    let sheet = crate::transducer::alphabet::PlaneForm::sheet_word();
+    let v = versor_of_word(&sheet).expect("the orientation character acts on the base");
+    assert!(agrees(&sheet.rotor(), &v), "as the reflection it is on the base");
+    assert!(base_rotor_of(&v).is_some_and(|r| r.projective_eq(&sheet.rotor())), "and reads back");
 }

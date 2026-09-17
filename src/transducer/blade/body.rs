@@ -36,15 +36,16 @@ pub struct Blade {
 }
 
 impl Blade {
-    /// The centroid read back from the homogeneous sphere — the exact ℚ² base.
+    /// The centroid's row and column, read back from the homogeneous sphere.
     pub fn centroid(&self) -> Option<(BigRational, BigRational)> {
-        cga::base(&self.spatial)
+        let (r, c, _) = self.centroid3()?;
+        Some((r, c))
     }
 
-    /// The 3D centroid read back from the homogeneous sphere and frame coordinate — exact ℚ³.
+    /// The centroid on the base, read back from the homogeneous sphere —
+    /// exact ℚ³; its frame coordinate is `temporal`.
     pub fn centroid3(&self) -> Option<(BigRational, BigRational, BigRational)> {
-        let (r, c) = self.centroid()?;
-        Some((r, c, self.temporal.clone()))
+        cga::base(&self.spatial)
     }
 
     /// The squared extent `r² = S·S` — always `> 0`, so the body is invertible.
@@ -209,7 +210,7 @@ pub fn lift3(comp: &[(i64, i64, i64, u8)]) -> Blade {
     // moment (1/6), so r² > 0 even for a single cell — off the null cone,
     // invertible.
     let r2 = (&ixx + &iyy) / &n_q;
-    let spatial = cga::sphere(&c1, &c2, &r2);
+    let spatial = cga::sphere(&c1, &c2, &c3, &r2);
 
     // Gauge: the hue multiset as sorted (hue, count) relations — Vec, not a map.
     let mut gauge: Vec<(u8, BigRational)> = Vec::new();

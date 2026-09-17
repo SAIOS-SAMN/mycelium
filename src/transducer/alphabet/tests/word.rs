@@ -67,7 +67,14 @@ fn arithmetic_on_a_word_carries_no_scale_and_a_formed_word_stays_bounded() {
     let mut f = Word::formed(eleven());
     let bits = |w: &Word| {
         let r = w.rotor();
-        (0..16).map(|m| r.coeff(m).numer().bits() + r.coeff(m).denom().bits()).max().unwrap_or(0)
+        let mut peak = 0;
+        for m in 0..16 {
+            let b = r.coeff(m).numer().bits() + r.coeff(m).denom().bits();
+            if b > peak {
+                peak = b;
+            }
+        }
+        peak
     };
     let first = bits(&f);
     for _ in 0..64 {

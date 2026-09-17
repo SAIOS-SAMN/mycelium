@@ -25,8 +25,8 @@ fn moduli_and_transport_are_exact_and_similarity_invariant() {
     let bar2 = shape_of(&rect(0, 0, 4, 6));
     assert_eq!(moduli(&bar.blade), moduli(&bar2.blade));
     let v2 = versor_between(&bar, &bar2).expect("a dilation");
-    assert_eq!(carry(&v2, 0, 0), Some((q(0), q(0))));
-    assert_eq!(carry(&v2, 2, 3), Some((q(4), q(6))));
+    assert_eq!(carry(&v2, 0, 0), Some((q(0), q(0), q(0))));
+    assert_eq!(carry(&v2, 2, 3), Some((q(4), q(6), q(0))));
     // The mirrored L needs the reflection; a rotated L is a rotation; a
     // bar and an L are not similar.
     let l_mirror: Vec<(i64, i64)> = vec![(0, 1), (1, 1), (2, 1), (2, 0)];
@@ -74,8 +74,8 @@ fn the_versor_between_symmetric_bodies_is_the_cosets_geodesic() {
         Some(v.key()),
         "the representative does not depend on the order the coset was measured in"
     );
-    assert_eq!(carry(&v, 0, 0), Some((q(4), q(4))), "the dilation alone: (0,0) → (4,4)");
-    assert_eq!(carry(&v, 2, 2), Some((q(10), q(10))), "and (2,2) → (10,10)");
+    assert_eq!(carry(&v, 0, 0), Some((q(4), q(4), q(0))), "the dilation alone: (0,0) → (4,4)");
+    assert_eq!(carry(&v, 2, 2), Some((q(10), q(10), q(0))), "and (2,2) → (10,10)");
     for (_, member) in &coset {
         assert!(carries(member, &sq, &sq3), "every member of the coset carries the body");
     }
@@ -84,8 +84,8 @@ fn the_versor_between_symmetric_bodies_is_the_cosets_geodesic() {
     let coset = versor_coset(&bar, &bar2);
     assert!(coset.len() > 1, "a bar's stabilizer holds its half turn: {} members", coset.len());
     let v2 = versor_between(&bar, &bar2).expect("a dilation");
-    assert_eq!(carry(&v2, 0, 0), Some((q(0), q(0))), "the dilation, not the dilation and a half turn");
-    assert_eq!(carry(&v2, 2, 3), Some((q(4), q(6))));
+    assert_eq!(carry(&v2, 0, 0), Some((q(0), q(0), q(0))), "the dilation, not the dilation and a half turn");
+    assert_eq!(carry(&v2, 2, 3), Some((q(4), q(6), q(0))));
 }
 
 /// 24.4, A21 §2, Stage 12 S12.1a — A CHART'S PREFIX IS THE TOPOLOGICAL

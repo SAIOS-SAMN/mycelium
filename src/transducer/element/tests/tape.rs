@@ -202,7 +202,7 @@ fn rotated_connection_survives_the_tape() {
     let v1 = back.versor().expect("V'");
     assert!(same_versor(&v0, &v1), "tape → Element → tape is projective_eq of V");
     let qn = |n: i64| Q::from(BigInt::from(n));
-    let p = crate::transducer::cga::point(&qn(1), &qn(0));
+    let p = crate::transducer::cga::point(&qn(1), &qn(0), &qn(0));
     assert_eq!(
         crate::transducer::cga::base(&v0.sandwich(&p)),
         crate::transducer::cga::base(&v1.sandwich(&p)),

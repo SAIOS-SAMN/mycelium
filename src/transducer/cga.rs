@@ -1,24 +1,30 @@
-//! A4 — CONFORMAL GEOMETRIC ALGEBRA: the exact multivector algebra `Cl(3,1)`
-//! over ℚ, where a body is an invertible dual sphere and a rigid motion is one
+//! A4 — CONFORMAL GEOMETRIC ALGEBRA: the exact multivector algebra `Cl(4,1)`
+//! over ℚ, the conformal model of the three-coordinate base `(r, c, k)`
+//! (51.2), where a body is an invertible dual sphere and a rigid motion is one
 //! versor sandwich, so the quotient between two scene states exists.
 
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{One, Signed, Zero};
 
-/// Basis-vector masks over `{e1, e2, e+, e-}`.
-pub const E1: usize = 0b0001;
-pub const E2: usize = 0b0010;
-pub const EP: usize = 0b0100; // e+  (square +1)
-pub const EM: usize = 0b1000; // e-  (square −1)
-/// The unit pseudoscalar `e1 e2 e+ e-`.
-pub const PSEUDO: usize = 0b1111;
+/// Basis-vector masks over `{e1, e2, e3, e+, e-}`: the three base axes —
+/// row, column, frame — and the two null-cone generators.
+pub const E1: usize = 0b00001;
+pub const E2: usize = 0b00010;
+pub const E3: usize = 0b00100;
+pub const EP: usize = 0b01000; // e+  (square +1)
+pub const EM: usize = 0b10000; // e-  (square −1)
+/// The unit pseudoscalar `e1 e2 e3 e+ e-`.
+pub const PSEUDO: usize = 0b11111;
+/// The blades of the algebra: `2⁵`.
+pub const BLADES: usize = 32;
+const MASK: usize = BLADES - 1;
 
-/// An exact multivector of `Cl(3,1)`: 16 blade coefficients over ℚ.
+/// An exact multivector of `Cl(4,1)`: 32 blade coefficients over ℚ.
 /// Equality is projective (`λ ∈ ℚ×`); coefficient identity is [`Mv::canonical`].
 #[derive(Debug, Clone)]
 pub struct Mv {
-    c: [BigRational; 16],
+    c: [BigRational; BLADES],
 }
 
 impl PartialEq for Mv {
@@ -55,7 +61,7 @@ fn reorder_sign(a: usize, b: usize) -> i64 {
 }
 
 /// The metric sign of squaring the shared generators of two blades: only `e-`
-/// squares to −1; `e1,e2,e+` square to +1. (No null generators in the
+/// squares to −1; `e1, e2, e3, e+` square to +1. (No null generators in the
 /// orthonormal basis — the null cone is DERIVED — so a blade product never
 /// vanishes by metric, only by sign.)
 fn metric_sign(shared: usize) -> i64 {
@@ -80,12 +86,12 @@ impl Mv {
     /// A single basis blade with coefficient `v`.
     pub fn blade(mask: usize, v: BigRational) -> Self {
         let mut m = Self::zero();
-        m.c[mask & 0xF] = v;
+        m.c[mask & MASK] = v;
         m
     }
 
     pub fn coeff(&self, mask: usize) -> &BigRational {
-        &self.c[mask & 0xF]
+        &self.c[mask & MASK]
     }
 
     pub fn scalar_part(&self) -> BigRational {
@@ -98,7 +104,7 @@ impl Mv {
 
     /// A4: divide by |first nonzero|, negate so that coefficient is +1.
     pub fn canonical(&self) -> Option<Mv> {
-        let i = (0..16).find(|&i| !self.c[i].is_zero())?;
+        let i = (0..BLADES).find(|&i| !self.c[i].is_zero())?;
         let mut r = self.scale(&(one() / self.c[i].abs()));
         if r.c[i].is_negative() {
             r = r.scale(&-one());
@@ -108,18 +114,9 @@ impl Mv {
 
     /// THE CANONICAL WRITING (A4, 17.2): the coefficients after `canonical`,
     /// so a versor and every `λ·versor` write the same bytes and a key built
-    /// from them is content rather than one chosen spelling of it.
-    ///
-    /// Every key and address in the tree that carried a versor wrote its
-    /// raw coefficients — `class_key`, `vertex_address`, `form_key_bytes` —
-    /// so a carriage and its negation, one projective element, were two
-    /// keys. `same_vertex` named this as 17.2's open item and every
-    /// comparison downstream of those keys inherited it. This is the one
-    /// writer that closes it.
-    ///
-    /// The zero element has no `canonical` and is not a versor; its sixteen
-    /// zeros are already its only writing, so it is written as it is — a
-    /// fact about zero, not a default standing in for a canonical form.
+    /// from them is content rather than one chosen spelling of it. The zero
+    /// element has no `canonical` and is not a versor; its zeros are already
+    /// its only writing, so it is written as it is.
     pub fn put_canonical(&self, out: &mut Vec<u8>) {
         match self.canonical() {
             Some(c) => c.to_bytes(out),
@@ -165,11 +162,11 @@ impl Mv {
     /// a_i · b_j` over every pair of populated blades.
     pub fn geo(&self, o: &Self) -> Self {
         let mut r = Self::zero();
-        for i in 0..16 {
+        for i in 0..BLADES {
             if self.c[i].is_zero() {
                 continue;
             }
-            for j in 0..16 {
+            for j in 0..BLADES {
                 if o.c[j].is_zero() {
                     continue;
                 }
@@ -261,51 +258,54 @@ pub fn e_inf() -> Mv {
     Mv::blade(EM, one()).add(&Mv::blade(EP, one()))
 }
 
-/// Embed a base point on the null cone: `X(x) = x + ½‖x‖² e_∞ + e_o`.
-pub fn point(x1: &BigRational, x2: &BigRational) -> Mv {
-    let x2n = x1 * x1 + x2 * x2;
-    let mut m = Mv::blade(E1, x1.clone()).add(&Mv::blade(E2, x2.clone()));
+/// Embed a base point on the null cone: `X(x) = x + ½‖x‖² e_∞ + e_o`, with
+/// `x = x1 e1 + x2 e2 + x3 e3` — row, column, frame.
+pub fn point(x1: &BigRational, x2: &BigRational, x3: &BigRational) -> Mv {
+    let x2n = x1 * x1 + x2 * x2 + x3 * x3;
+    let mut m = Mv::blade(E1, x1.clone()).add(&Mv::blade(E2, x2.clone())).add(&Mv::blade(E3, x3.clone()));
     m = m.add(&e_inf().scale(&(half() * x2n)));
     m.add(&e_o())
 }
 
 /// The dual sphere `S = X(c) − ½ r² e_∞`: a point at squared-distance `r2` from
 /// `c`. `r2 = 0` recovers the point (a volumeless sphere). Off-cone iff r²≠0.
-pub fn sphere(c1: &BigRational, c2: &BigRational, r2: &BigRational) -> Mv {
-    point(c1, c2).sub(&e_inf().scale(&(half() * r2)))
+pub fn sphere(c1: &BigRational, c2: &BigRational, c3: &BigRational, r2: &BigRational) -> Mv {
+    point(c1, c2, c3).sub(&e_inf().scale(&(half() * r2)))
 }
 
-/// The translation versor `T(d) = 1 − ½ d e_∞`, `d = d1 e1 + d2 e2`. Acts by
-/// sandwich: `T X(x) T̃ = X(x + d)`, up to the homogeneous scale.
-pub fn translator(d1: &BigRational, d2: &BigRational) -> Mv {
-    let d = Mv::blade(E1, d1.clone()).add(&Mv::blade(E2, d2.clone()));
+/// The translation versor `T(d) = 1 − ½ d e_∞`, `d = d1 e1 + d2 e2 + d3 e3`.
+/// Acts by sandwich: `T X(x) T̃ = X(x + d)`, up to the homogeneous scale.
+/// Translators commute (51.2): the base is a lattice.
+pub fn translator(d1: &BigRational, d2: &BigRational, d3: &BigRational) -> Mv {
+    let d = Mv::blade(E1, d1.clone()).add(&Mv::blade(E2, d2.clone())).add(&Mv::blade(E3, d3.clone()));
     let d_einf = d.geo(&e_inf());
     Mv::scalar(one()).sub(&d_einf.scale(&half()))
 }
 
 /// The Euclidean rotation versor in the `e1e2` plane as an EXACT even
-/// multivector `s + b·e1e2` (unnormalized, as `iae::rotor`: the sandwich carries
-/// the scale `s²+b²`, absorbed by homogeneity on the cone). The quarter turn is
+/// multivector `s + b·e1e2` (unnormalized: the sandwich carries the scale
+/// `s²+b²`, absorbed by homogeneity on the cone). The quarter turn is
 /// `s=0, b=1` — the hole a rational chart cannot reach, an ordinary citizen here.
 pub fn rotator(s: &BigRational, b: &BigRational) -> Mv {
     rotator_on_blade(s, b, E1 | E2)
 }
 
-/// A rotation versor on an arbitrary bivector blade of the algebra, opening the vent
-/// from the single E1 ∧ E2 plane to any bivector blade.
+/// A rotation versor on any bivector blade of the algebra: the three base
+/// planes `e1e2`, `e1e3`, `e2e3` are the rotor chart's `(0,1)`, `(0,3)`,
+/// `(1,3)` (51.2).
 pub fn rotator_on_blade(s: &BigRational, b: &BigRational, blade: usize) -> Mv {
     Mv::scalar(s.clone()).add(&Mv::blade(blade, b.clone()))
 }
 
-/// Read the base point `(x1, x2)` back out of a homogeneous conformal point or
-/// sphere: the scale is `α = −(P·e_∞)`, then `x = (P_e1, P_e2)/α`. `None` at
-/// infinity (`α = 0`).
-pub fn base(p: &Mv) -> Option<(BigRational, BigRational)> {
+/// Read the base point `(x1, x2, x3)` back out of a homogeneous conformal
+/// point or sphere: the scale is `α = −(P·e_∞)`, then `x = (P_e1, P_e2,
+/// P_e3)/α`. `None` at infinity (`α = 0`).
+pub fn base(p: &Mv) -> Option<(BigRational, BigRational, BigRational)> {
     let alpha = -p.geo(&e_inf()).scalar_part();
     if alpha.is_zero() {
         return None;
     }
-    Some((p.coeff(E1) / &alpha, p.coeff(E2) / &alpha))
+    Some((p.coeff(E1) / &alpha, p.coeff(E2) / &alpha, p.coeff(E3) / &alpha))
 }
 
 /// Does base point `p` lie on dual sphere `S`? `X(p)·S = 0`, exact.
@@ -335,20 +335,22 @@ fn e_plane() -> Mv {
 /// `(ρ+1) ± (ρ−1) E`: a positive scalar multiple of exp(±½ ln ρ E), so the
 /// sandwich carries points on the cone to their ρ-scaled images up to the
 /// homogeneous scale, with no logarithm and no root. The orientation of E is
-/// settled against the embedding itself (the form that carries X(1,0) to
-/// X(ρ,0)), never by a chosen sign.
+/// settled against the embedding itself (the form that carries X(1,0,0) to
+/// X(ρ,0,0)), never by a chosen sign.
 pub fn dilator(rho: &BigRational) -> Mv {
     let e = e_plane();
     let plus = Mv::scalar(rho + one()).add(&e.scale(&(rho - one())));
-    let target = point(rho, &zero());
-    let probe = plus.sandwich(&point(&one(), &zero()));
+    let target = point(rho, &zero(), &zero());
+    let probe = plus.sandwich(&point(&one(), &zero(), &zero()));
     match projective_ratio(&probe, &target) {
         Some(_) => plus,
         None => Mv::scalar(rho + one()).sub(&e.scale(&(rho - one()))),
     }
 }
 
-/// THE REFLECTOR across the e2 axis (rows negated): the odd versor `e1`.
+/// THE REFLECTOR across the plane `e1 = 0` (rows negated): the odd versor
+/// `e1`, whose sandwich sends `X(x1, x2, x3)` to `X(−x1, x2, x3)` up to the
+/// homogeneous scale.
 pub fn reflector() -> Mv {
     Mv::blade(E1, one())
 }
@@ -387,7 +389,7 @@ pub fn projective_ratio(a: &Mv, b: &Mv) -> Option<BigRational> {
 /// where the reverse product carries no scalar.
 fn proportional(a: &Mv, b: &Mv) -> Option<BigRational> {
     let mut lambda: Option<BigRational> = None;
-    for mask in 0..16 {
+    for mask in 0..BLADES {
         let (x, y) = (a.coeff(mask), b.coeff(mask));
         match (x.is_zero(), y.is_zero()) {
             (true, true) => continue,
@@ -406,10 +408,10 @@ fn proportional(a: &Mv, b: &Mv) -> Option<BigRational> {
 }
 
 impl Mv {
-    /// Serialize the 16 exact coefficients: per coefficient `[sign u8][nlen
+    /// Serialize the 32 exact coefficients: per coefficient `[sign u8][nlen
     /// u32][numerator][dlen u32][denominator]`, little-endian magnitudes.
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        for mask in 0..16 {
+        for mask in 0..BLADES {
             let v = &self.c[mask];
             let (ns, nb) = v.numer().to_bytes_le();
             let db = v.denom().to_bytes_le().1;
@@ -427,7 +429,7 @@ impl Mv {
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Mv> {
         let mut m = Mv::zero();
-        for mask in 0..16 {
+        for mask in 0..BLADES {
             let sign = *b.get(*pos)?;
             *pos += 1;
             let nl = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
@@ -469,15 +471,15 @@ mod tests {
     fn rational_versors_act_exactly_and_are_verified_in_closed_form() {
         let d = dilator(&q(3, 2));
         assert!(is_versor(&d).is_some(), "the dilator is a versor");
-        let moved = d.sandwich(&point(&q(2, 1), &q(-4, 1)));
-        assert_eq!(base(&moved), Some((q(3, 1), q(-6, 1))), "X(2,−4) → X(3,−6) at ρ = 3/2");
+        let moved = d.sandwich(&point(&q(2, 1), &q(-4, 1), &q(6, 1)));
+        assert_eq!(base(&moved), Some((q(3, 1), q(-6, 1), q(9, 1))), "X(2,−4,6) → X(3,−6,9) at ρ = 3/2");
         let r = reflector();
-        let flipped = r.sandwich(&point(&q(2, 1), &q(5, 1)));
-        assert_eq!(base(&flipped), Some((q(-2, 1), q(5, 1))));
-        let s = sphere(&q(1, 1), &q(1, 1), &q(5, 1));
+        let flipped = r.sandwich(&point(&q(2, 1), &q(5, 1), &q(7, 1)));
+        assert_eq!(base(&flipped), Some((q(-2, 1), q(5, 1), q(7, 1))));
+        let s = sphere(&q(1, 1), &q(1, 1), &q(0, 1), &q(5, 1));
         assert_eq!(projective_ratio(&s.scale(&q(7, 3)), &s), Some(q(7, 3)));
-        assert!(projective_ratio(&s, &sphere(&q(1, 1), &q(1, 1), &q(6, 1))).is_none());
-        let composed = translator(&q(1, 1), &q(0, 1)).geo(&d);
+        assert!(projective_ratio(&s, &sphere(&q(1, 1), &q(1, 1), &q(0, 1), &q(6, 1))).is_none());
+        let composed = translator(&q(1, 1), &q(0, 1), &q(2, 1)).geo(&d);
         let mut bytes = Vec::new();
         composed.to_bytes(&mut bytes);
         let mut pos = 0usize;
@@ -486,11 +488,34 @@ mod tests {
 
     #[test]
     fn a4_projective_eq_either_sign_and_key() {
-        let t = translator(&q(2, 1), &q(0, 1));
+        let t = translator(&q(2, 1), &q(0, 1), &q(0, 1));
         assert!(t.projective_eq(&t.scale(&q(-3, 2))));
         assert_eq!(t.canonical().unwrap().key(), t.scale(&q(-3, 2)).canonical().unwrap().key());
         assert_eq!(t, t.scale(&q(5, 1)), "PartialEq is projective");
-        let u = translator(&q(3, 1), &q(0, 1));
+        let u = translator(&q(3, 1), &q(0, 1), &q(0, 1));
         assert_ne!(t.key(), u.key());
+    }
+
+    /// 51.2 — THE THIRD COORDINATE IS A BASE COORDINATE: translators along
+    /// the three axes commute, a rotation in the `e1e3` plane carries the
+    /// row axis onto the frame axis exactly, and a body in one frame at
+    /// `k = 0` is carried there and nowhere else by a plane motion.
+    #[test]
+    fn the_frame_axis_is_a_base_coordinate() {
+        let (z, o) = (q(0, 1), q(1, 1));
+        let t1 = translator(&q(2, 1), &z, &z);
+        let t3 = translator(&z, &z, &q(5, 1));
+        assert!(t1.geo(&t3).projective_eq(&t3.geo(&t1)), "translators commute (51.2)");
+        assert_eq!(
+            base(&t1.geo(&t3).sandwich(&point(&z, &z, &z))),
+            Some((q(2, 1), z.clone(), q(5, 1))),
+            "and compose by adding the displacements"
+        );
+        let quarter_13 = rotator_on_blade(&o, &o, E1 | E3);
+        let moved = base(&quarter_13.sandwich(&point(&o, &z, &z))).expect("a rotation keeps the point finite");
+        assert!(moved.0.is_zero() && moved.1.is_zero() && !moved.2.is_zero(), "the row axis turns onto the frame axis: {moved:?}");
+        let plane = rotator(&o, &o).geo(&translator(&q(3, 1), &q(-1, 1), &z));
+        let carried = base(&plane.sandwich(&point(&q(4, 1), &q(4, 1), &z))).expect("finite");
+        assert!(carried.2.is_zero(), "a plane motion keeps k = 0: {carried:?}");
     }
 }

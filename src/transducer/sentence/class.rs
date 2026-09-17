@@ -531,8 +531,8 @@ impl Segment for HueCycle {
     }
 }
 
-/// The A4 carriage as `Mv::put_canonical` writes it: sixteen coefficients,
-/// each a sign byte and two length-framed integers.
+/// The A4 carriage as `Mv::put_canonical` writes it: one coefficient per
+/// blade of the algebra, each a sign byte and two length-framed integers.
 struct Carriage;
 
 impl Segment for Carriage {
@@ -541,7 +541,7 @@ impl Segment for Carriage {
     }
 
     fn skip(&self, key: &[u8], pos: &mut usize) -> Option<()> {
-        for _ in 0..16 {
+        for _ in 0..crate::transducer::cga::BLADES {
             take_u8(key, pos)?;
             skip_len_u32(key, pos)?;
             skip_len_u32(key, pos)?;

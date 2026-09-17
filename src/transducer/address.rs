@@ -397,7 +397,7 @@ mod tests {
         assert!(m.key().is_none(), "the zero versor has no key");
         let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
         let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-        let t = crate::transducer::cga::translator(&one, &zero);
+        let t = crate::transducer::cga::translator(&one, &zero, &zero);
         let k = t.key().expect("a translator has a key");
         let back = Mv::from_key(&k).expect("mv key decodes");
         assert!(t.projective_eq(&back));

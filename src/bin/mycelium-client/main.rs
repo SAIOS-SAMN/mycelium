@@ -235,6 +235,9 @@ fn main() {
                 eprintln!("[{tag}] pivot: {met} held thoughts spoken on charts the language now holds");
             }
         }
+        if extract_memo.len() > 64 {
+            extract_memo = mycelium::network::nerve::Keyed::new();
+        }
         // 24.3: a working stroke spends the lanes its outcome moved; a stroke
         // that moved no lane spends the tick on all four — the tick, not work.
         // 24.3: a working stroke spends the lanes its outcome moved; a stroke

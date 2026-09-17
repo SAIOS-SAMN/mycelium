@@ -59,7 +59,8 @@ done
 say "wiping persisted carriers"
 for h in "${HYPHAE[@]}"; do
   rm -f "$ROOT/$h/ledger" "$ROOT/$h/ledger.tmp" "$ROOT/$h/ledger.registry" \
-        "$ROOT/$h/corpora/registry" "$ROOT/$h/corpora/registry.tmp"
+        "$ROOT/$h/corpora/registry" "$ROOT/$h/corpora/registry.tmp" \
+        "$ROOT/$h/eras"
 done
 for v in "${VOICES[@]}"; do
   rm -f "$ROOT/$v/genome" "$ROOT/$v/genome.tmp"
@@ -100,6 +101,12 @@ if grep -q "court genesis .* written" "$MINT_LOG" 2>/dev/null; then
 else
   say "genesis NOT written within the bound — read $MINT_LOG before starting the rest"
 fi
+
+if [ "${PAUSE_BEFORE_START:-0}" = "1" ] || [ "${NO_START:-0}" = "1" ]; then
+  say "paused before starting fleet on operator directive"
+  exit 0
+fi
+
 systemctl --user start "mycelium-server@$MINTER"
 
 say "starting the rest"

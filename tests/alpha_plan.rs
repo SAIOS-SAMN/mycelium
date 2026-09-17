@@ -48,7 +48,7 @@ fn gen3_round_trip_and_size() {
     let mut p = 0;
     let back = Element::from_bytes(&b, &mut p).unwrap();
     assert_eq!(back.address(), w.address());
-    assert!(b.len() < 400, "a word is a short tape, got {}", b.len());
+    assert!(b.len() < 600, "a word is a short tape, got {}", b.len());
     let mut old = b.clone();
     old[0] = Element::GEN2_MAGIC;
     let mut p = 0;

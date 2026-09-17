@@ -18,7 +18,6 @@
 //! here for what a mind makes of the carriage it measured.
 
 use super::*;
-use crate::transducer::element::sensor_plane_block;
 
 /// 50.2 F STEP 2 — FACTOR THROUGH THE PRESENTATION, AND PEEL ONLY THE
 /// RESIDUE. The sensor plane is the first block of 50.4 and the other
@@ -133,10 +132,10 @@ pub(crate) fn occupied_lanes(
     }
 }
 
-/// The rotor a versor's sensor block is the action of.
+/// The rotor a versor's base action is (51.2): exact on the three base
+/// planes, read whole and never off one plane's block.
 fn rotor_of_versor(v: &Versor) -> Option<crate::transducer::alphabet::Rotor> {
-    use crate::transducer::alphabet::{rotor_of_block, PLANE_COL, PLANE_ROW};
-    rotor_of_block(&sensor_plane_block(v)?, (PLANE_ROW, PLANE_COL))
+    crate::transducer::element::base_rotor_of(v)
 }
 
 /// 37.7, L23a, L12 — THE ADJOINED GENERATORS THIS MIND HOLDS at the meet
@@ -277,9 +276,8 @@ pub(crate) fn peel_versor_with(
 /// over the alphabet's primes and the generators this mind adjoined. A
 /// block the factors do not decompose, or a plane whose arc the basis does
 /// not spell, is the demand it leaves (50.5); a target that is not even is
-/// no rotor and answers nothing (16.1). A target that turns no plane spells
-/// the sensor block of `v`, the reading of a carriage that only places and
-/// dilates.
+/// no rotor and answers nothing (16.1). A target that turns no plane is the
+/// identity word: a carriage that only places and dilates spells nothing.
 pub(crate) fn peel_versor_with_target(
     v: &Versor,
     target_rotor: Option<&crate::transducer::alphabet::Rotor>,
@@ -287,7 +285,7 @@ pub(crate) fn peel_versor_with_target(
 ) -> Option<Result<Peeled, crate::transducer::sentence::Demand>> {
     use crate::transducer::alphabet::{
         factors, is_identity_block, pair_rotors, rotor_block_on, spell_peel_with, standing,
-        tait_bryan, BLOCK_ORDER, PLANE_COL, PLANE_ROW,
+        tait_bryan, BLOCK_ORDER,
     };
     use crate::transducer::peel::PeelNest;
     use crate::transducer::sentence::Demand;
@@ -306,7 +304,6 @@ pub(crate) fn peel_versor_with_target(
     };
     let mut cited_all: Vec<crate::transducer::alphabet::Cited> = Vec::new();
     let mut word = crate::transducer::alphabet::Word::identity();
-    let mut turned = false;
 
     for (k, (pa, pb)) in BLOCK_ORDER.iter().enumerate() {
         let Some((ra, rb)) = pair_rotors(k, &tp[k], &tm[k]) else {
@@ -317,7 +314,6 @@ pub(crate) fn peel_versor_with_target(
             if is_identity_block(&block) {
                 continue;
             }
-            turned = true;
             match spell_peel_with(plane, &block, adjoined.clone()) {
                 Some((PeelNest::Closed { cores }, _rho)) => {
                     let (cited, w) = crate::transducer::alphabet::cited_of_cores(&cores)?;
@@ -350,29 +346,6 @@ pub(crate) fn peel_versor_with_target(
                 }
             }
         }
-    }
-
-    if !turned {
-        let block = sensor_plane_block(v)?;
-        let plane = (PLANE_ROW, PLANE_COL);
-        return Some(match spell_peel_with(plane, &block, adjoined) {
-            Some((PeelNest::Closed { cores }, _rho)) => {
-                let (cited, w) = crate::transducer::alphabet::cited_of_cores(&cores)?;
-                Ok((cited, w))
-            }
-            Some((PeelNest::Standing { arc, .. }, _)) => {
-                let norm = &arc.p * &arc.p + &arc.q * &arc.q;
-                match crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane) {
-                    Some(prime) => Err(Demand::RotorPrime {
-                        plane,
-                        prime,
-                        witness: Box::new(crate::transducer::alphabet::arc_block(&arc.p, &arc.q)),
-                    }),
-                    None => Err(Demand::Standing { block: Box::new(block), rotor: Box::new(target.clone()) }),
-                }
-            }
-            None => Err(Demand::Standing { block: Box::new(block), rotor: Box::new(target.clone()) }),
-        });
     }
 
     Some(Ok((cited_all, word)))

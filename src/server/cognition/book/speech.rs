@@ -556,7 +556,7 @@ impl Kernel {
             }
         };
         let state = match v_disloc.clone() {
-            Some(v) => Closure::Twisted(v),
+            Some(v) => Closure::Twisted(Box::new(v)),
             None => Closure::Cavity,
         };
         self.write_field(target, rem_inv.clone(), state, residual.clone(), &before, &after);

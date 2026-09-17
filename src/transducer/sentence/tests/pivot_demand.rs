@@ -42,34 +42,39 @@ fn a_face_whose_word_has_no_sensor_action_places_no_member_pair() {
     );
 }
 
-/// 16.20, 51.2 — THE OPEN SEED IS THE HOLONOMY'S SENSOR ACTION AND THE AXIS
-/// IS KEYED BY THE WHOLE ROTOR. A double rotation `q₀₁ · q₂₃` keeps the
-/// sensor plane and turns another; its seed is the `(0,1)` quarter alone,
-/// its class key is the double rotation's, and the two differ. This is the
-/// `Cl(3,1)` bridge read exactly, so the widening to `Cl(4,1)` (N6) has the
-/// claim to rewrite.
+/// 16.20, 51.2 — THE OPEN SEED IS THE HOLONOMY'S BASE ACTION, WHOLE, AND THE
+/// AXIS IS KEYED BY THE ROTOR'S CLASS. A rotation `q₀₁ · q₁₃` turns two
+/// base planes that share an axis: its seed carries both turns exactly and
+/// reads back as the rotor, and the axis opens under the rotor's class. A
+/// rotation turning `e₂` into a base axis has no base action and seeds
+/// nothing — refused, never projected (checklist (m)).
 #[test]
-fn the_open_seed_carries_the_sensor_action_while_the_axis_is_keyed_by_the_rotor() {
+fn the_open_seed_is_the_holonomys_base_action_and_the_axis_is_keyed_by_the_rotor() {
     let q01 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter (0,1)"), false)]);
-    let q23 = Word::from_letters(&[(LetterId::quarter((2, 3)).expect("quarter (2,3)"), false)]);
-    let double = q01.compose(&q23);
+    let q13 = Word::from_letters(&[(LetterId::quarter((1, 3)).expect("quarter (1,3)"), false)]);
+    let double = q01.compose(&q13);
     assert_eq!(
         double.rotor().off_plane_blades((alphabet::PLANE_ROW, alphabet::PLANE_COL)).len(),
         2,
-        "e₂₃ and the pseudoscalar turn beyond the sensor plane"
+        "e₀₃ and e₁₃ turn beyond the sensor plane"
     );
     let mut f = edge_chord_form(std::slice::from_ref(&double));
     let loops = f.loops.clone();
     let [lp] = loops.as_slice() else { panic!("one chord closes one loop") };
-    let seed = f.axis_seed_of(lp).expect("the holonomy keeps the sensor plane, so it has a sensor action");
+    let seed = f.axis_seed_of(lp).expect("a base rotation has a base action");
+    let holonomy = f.loop_holonomy(lp).expect("one holonomy").rotor();
     assert!(
-        element::same_versor(&seed, &element::versor_of_word(&q01.inverse()).expect("a quarter's sensor action")),
-        "the seed is the (0,1) quarter the loop runs, and nothing of (2,3)"
+        element::base_rotor_of(&seed).is_some_and(|r| r.projective_eq(&holonomy)),
+        "the seed carries the whole base rotation and reads back as it"
     );
-    let whole = f.loop_holonomy(lp).expect("one holonomy").rotor().class_key().expect("a class");
+    let whole = holonomy.class_key().expect("a class");
     assert_ne!(whole, q01.rotor().class_key().expect("a class"), "the loop's class is the double rotation's");
     f.open_axis_on(lp.chord).expect("the axis opens on the loop");
-    assert_eq!(f.axes.get(&whole), Some(&lp.chord), "and the axis is keyed by that class, not the seed's");
+    assert_eq!(f.axes.get(&whole), Some(&lp.chord), "and the axis is keyed by that class");
+    let q23 = Word::from_letters(&[(LetterId::quarter((2, 3)).expect("quarter (2,3)"), false)]);
+    let off = edge_chord_form(std::slice::from_ref(&q23));
+    let [lp] = off.loops.as_slice() else { panic!("one chord closes one loop") };
+    assert!(off.axis_seed_of(lp).is_none(), "a rotation turning e₂ into the base seeds no axis");
 }
 
 /// A held loop of infinite order the basis does not discharge is spoken as

@@ -446,7 +446,7 @@ impl Kernel {
             self.write_field(
                 &addr,
                 inv.clone(),
-                crate::transducer::stalk::Closure::Class(class.clone(), degree),
+                crate::transducer::stalk::Closure::Class(Box::new(class.clone()), degree),
                 Vec::new(),
                 &mag,
                 &mag,

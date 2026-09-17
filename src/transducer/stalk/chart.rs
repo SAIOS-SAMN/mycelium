@@ -97,9 +97,9 @@ impl Invariant {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Closure {
     Flat,
-    Twisted(Versor),
+    Twisted(Box<Versor>),
     /// A Čech class at a degree, a Rotor of the alphabet.
-    Class(Rotor, u8),
+    Class(Box<Rotor>, u8),
     Cavity,
 }
 

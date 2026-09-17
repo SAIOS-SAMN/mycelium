@@ -54,11 +54,10 @@ fn the_identity_is_flat_and_so_is_a_scaled_carriage() {
 /// this transition and filed nothing while reporting no obstruction.
 #[test]
 fn a_translation_stands_with_its_placement_and_is_not_flat() {
-    let t = cga::translator(&q(3), &q(-2));
-    assert_eq!(
-        crate::transducer::element::sensor_plane_block(&t),
-        Some([[q(1), q(0)], [q(0), q(1)]]),
-        "the block cannot see a translation at all"
+    let t = cga::translator(&q(3), &q(-2), &q(0));
+    assert!(
+        crate::transducer::element::base_rotor_of(&t).is_some_and(|r| r.is_identity()),
+        "the rotor part of a translation is the identity: the placement is the carriage's, not the rotor's"
     );
     let Fill::Class(kappa, r) = classify(&Rotor::identity(), &t, CycleType::Identity) else {
         panic!("a translation is a standing class, never flat");
@@ -107,7 +106,7 @@ fn a_residue_free_quarter_turn_files_at_its_period() {
 /// transition with no frame and not a missed fill.
 #[test]
 fn a_turn_carried_along_a_placement_stands_rather_than_filing() {
-    let placed = cga::translator(&q(5), &q(0));
+    let placed = cga::translator(&q(5), &q(0), &q(0));
     let Fill::Class(kappa, r) = classify(&quarter(), &placed, CycleType::Identity) else {
         panic!("a turn with a placement residue stands; it does not file at four");
     };
@@ -175,7 +174,7 @@ fn sections_at_different_placements_stand_where_the_identity_carriage_fills() {
     let placed = Section {
         addr: addr_b.clone(),
         gamma: Rotor::identity(),
-        carriage: cga::translator(&q(3), &q(-2)),
+        carriage: cga::translator(&q(3), &q(-2), &q(0)),
     };
     let origin = Section { addr: addr_a.clone(), gamma: Rotor::identity(), carriage: ident() };
     let Fill::Class(kappa, _) = extend(&origin, &placed, &cell) else {

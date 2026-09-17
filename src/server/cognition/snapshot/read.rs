@@ -291,13 +291,13 @@ impl Kernel {
                         let state = match tag {
                             0 => crate::transducer::stalk::Closure::Flat,
                             1 => crate::transducer::stalk::Closure::Twisted(
-                                element::Versor::from_bytes(b, pos)?,
+                                Box::new(element::Versor::from_bytes(b, pos)?),
                             ),
                             3 => {
                                 let d = *b.get(*pos)?;
                                 *pos += 1;
                                 crate::transducer::stalk::Closure::Class(
-                                    crate::transducer::alphabet::Rotor::from_bytes(b, pos)?,
+                                    Box::new(crate::transducer::alphabet::Rotor::from_bytes(b, pos)?),
                                     d,
                                 )
                             }
@@ -424,13 +424,13 @@ impl Kernel {
                         let state = match tag {
                             0 => crate::transducer::stalk::Closure::Flat,
                             1 => crate::transducer::stalk::Closure::Twisted(
-                                element::Versor::from_bytes(b, pos)?,
+                                Box::new(element::Versor::from_bytes(b, pos)?),
                             ),
                             3 => {
                                 let d = *b.get(*pos)?;
                                 *pos += 1;
                                 crate::transducer::stalk::Closure::Class(
-                                    crate::transducer::alphabet::Rotor::from_bytes(b, pos)?,
+                                    Box::new(crate::transducer::alphabet::Rotor::from_bytes(b, pos)?),
                                     d,
                                 )
                             }

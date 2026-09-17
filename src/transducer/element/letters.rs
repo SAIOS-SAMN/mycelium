@@ -22,14 +22,14 @@ pub fn identity_versor() -> Versor {
 
 /// The word's ORIGIN-FIXING action as a CGA versor, no translation. The
 /// identity translator is formed here, not at the call site. `None` when
-/// the word does not keep the sensor plane.
+/// the word carries the base off itself.
 pub fn versor_of_word(word: &crate::transducer::alphabet::Word) -> Option<Versor> {
-    sensor_action_of_word(word)
+    base_action_of(&word.rotor())
 }
 
-/// THE CONFORMAL REALISATION OF A WORD: the word's sensor action composed
-/// with the carriage by the geometric product. `None` when the word does
-/// not preserve the plane.
+/// THE CONFORMAL REALISATION OF A WORD: the word's base action composed
+/// with the carriage by the geometric product. `None` when the word
+/// carries the base off itself.
 pub fn conformal_of(word: &crate::transducer::alphabet::Word, carriage: &Versor) -> Option<Versor> {
     conformal_of_rotor(&word.rotor(), carriage)
 }
@@ -41,73 +41,83 @@ pub fn conformal_of_rotor(
     rotor: &crate::transducer::alphabet::Rotor,
     carriage: &Versor,
 ) -> Option<Versor> {
-    Some(carriage.geo(&sensor_action_of(rotor)?))
+    Some(carriage.geo(&base_action_of(rotor)?))
 }
 
-fn sensor_action_of_word(word: &crate::transducer::alphabet::Word) -> Option<Versor> {
-    sensor_action_of(&word.rotor())
+/// The rotor chart's blades that are the BASE's own even subalgebra
+/// `⟨1, e₀₁, e₀₃, e₁₃⟩` — `e₀, e₁, e₃` are `r, c, k` (51.2) — and the
+/// versor blades they are read as: `1, e1e2, e1e3, e2e3`.
+const BASE_EVEN: [(usize, usize); 4] = [
+    (0, 0),
+    (0b0011, crate::transducer::cga::E1 | crate::transducer::cga::E2),
+    (0b1001, crate::transducer::cga::E1 | crate::transducer::cga::E3),
+    (0b1010, crate::transducer::cga::E2 | crate::transducer::cga::E3),
+];
+
+/// The half turn `e₀₂`: the orientation character (51.2), which flips `e₀`
+/// on the base and nothing else there, and is realised on the base as the
+/// reflector `e1`.
+const ORIENTATION: usize = 0b0101;
+
+/// THE BASE ACTION OF A ROTOR (51.2, A4): the rotor's action on the three
+/// base axes of the chart — `e₀, e₁, e₃`, which are `r, c, k` — as the
+/// versor of `Cl(4,1)` on `e1, e2, e3`. Exact, and complete on those axes:
+/// an even element of `Cl(4,0)` that carries the base onto itself is, up
+/// to scale, a rotor of the base's own even subalgebra `⟨1, e₀₁, e₀₃,
+/// e₁₃⟩`, read off blade for blade; or that times the half turn `e₀₂` —
+/// the orientation character — realised as the reflector `e1`. A rotor
+/// that carries the base off itself (one turning `e₂` into a base axis)
+/// has no base action, and says so: nothing of it is projected.
+fn base_action_of(rotor: &crate::transducer::alphabet::Rotor) -> Option<Versor> {
+    use crate::transducer::alphabet::Rotor;
+    let even_on_base = |r: &Rotor| (0..16).all(|m| BASE_EVEN.iter().any(|&(rm, _)| rm == m) || r.coeff(m).is_zero());
+    let read = |r: &Rotor| -> Versor {
+        BASE_EVEN.iter().fold(Versor::zero(), |v, &(rm, vm)| v.add(&Versor::blade(vm, r.coeff(rm).clone())))
+    };
+    if rotor.is_identity() {
+        return Some(identity_versor());
+    }
+    if even_on_base(rotor) {
+        let v = read(rotor);
+        return (!v.is_zero()).then_some(v);
+    }
+    // `R = R₃ · e₀₂` ⇒ `R₃ = R · e₀₂⁻¹ = −R · e₀₂`, and the base then reads
+    // `R₃` with the reflector after it: the sandwich reflects first.
+    let r3 = rotor.geo(&Rotor::blade(ORIENTATION, -Q::one()));
+    if even_on_base(&r3) {
+        let v = read(&r3);
+        return (!v.is_zero()).then_some(v.geo(&crate::transducer::cga::reflector()));
+    }
+    None
 }
 
-/// THE BRIDGE BETWEEN THE TWO ALGEBRAS, and the one place a rotation can
-/// lose an angle. A `Rotor` lives in Cl(4,0) over `e₀..e₃`, whose rotation
-/// group Spin(4) ≅ SU(2) × SU(2) turns in TWO independent commuting planes
-/// at once — `e₀∧e₁` and `e₂∧e₃`, with free and unrelated angles, and an
-/// order that is the `lcm` of the two when both are finite. A `Versor`
-/// lives in Cl(3,1) over `e1, e2, e+, e−`, the conformal algebra of a
-/// two-dimensional base, which has exactly ONE rotation plane.
-///
-/// So this map cannot be onto, and what it returns is THE SENSOR ACTION of
-/// the rotor — not the rotor. That is its correct meaning and not a
-/// truncation, because nothing is lost: `Word::rotor()` keeps every blade,
-/// and `ClassVector` carries the rotor's conjugacy invariants (15.3) plus
-/// all SIX plane slots of `PlaneForm::coordinates`. The dual plane is
-/// preserved everywhere it is representable and is invisible only here,
-/// where the target algebra has no room for it by construction.
-///
-/// MEASURED, because the opposite was assumed for one build: refusing a
-/// rotor with blades outside `⟨1, e₀e₁⟩` failed 116 of 498 tests. Off-plane
-/// rotors flow through this map constantly and are meant to — a word whose
-/// letters act above the sensor still has a sensor action, and it is this.
-/// A reader that treats the returned versor as the whole transition is
-/// where a collapse would be; this map is not that reader.
-fn sensor_action_of(rotor: &crate::transducer::alphabet::Rotor) -> Option<Versor> {
-    use crate::transducer::cga;
-    let block = crate::transducer::alphabet::rotor_block_on(
-        rotor,
-        (crate::transducer::alphabet::PLANE_ROW, crate::transducer::alphabet::PLANE_COL),
-    )?;
-    let rho2 = &block[0][0] * &block[0][0] + &block[1][0] * &block[1][0];
-    if rho2.is_zero() {
-        return None;
-    }
-    let r: [[Q; 2]; 2] = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            // The linear word is the rotation/orientation; dilation lives
-            // on the carriage.
-            &block[i][j] / Q::from_integer(BigInt::from(1))
-        })
-    });
-    let det = &r[0][0] * &r[1][1] - &r[0][1] * &r[1][0];
-    let flipped = if det.is_one() {
-        false
-    } else if (-&det).is_one() {
-        true
-    } else {
-        return None;
+/// THE ROTOR A VERSOR'S BASE ACTION IS (51.2; N2): `V = D(ρ)·T(t)·R` on
+/// the base, so `R = (D·T)⁻¹ V`, read exactly off the carriage `dilator_of`
+/// and `translator_of` measure, and mapped back blade for blade onto
+/// `⟨1, e₀₁, e₀₃, e₁₃⟩`; a reflector `e1` in it is the orientation
+/// character `e₀₂`. `None` when `V` is no versor of the base or `R` is not
+/// a rotation or a reflection of it — nothing is projected. The inverse of
+/// [`versor_of_word`] on every rotor that has a base action.
+pub fn base_rotor_of(v: &Versor) -> Option<crate::transducer::alphabet::Rotor> {
+    use crate::transducer::alphabet::Rotor;
+    use crate::transducer::cga::{E1, BLADES};
+    let carriage = dilator_of(v)?.geo(&translator_of(v)?);
+    let r = carriage.versor_inverse()?.geo(v);
+    let on_base = |m: &Versor| (0..BLADES).all(|b| BASE_EVEN.iter().any(|&(_, vm)| vm == b) || m.coeff(b).is_zero());
+    let read = |m: &Versor| -> Rotor {
+        BASE_EVEN.iter().fold(Rotor::zero(), |acc, &(rm, vm)| acc.add(&Rotor::blade(rm, m.coeff(vm).clone())))
     };
-    let (c, s) = (&r[0][0], &r[1][0]);
-    let rot = if (-c).is_one() {
-        cga::rotator(&Q::zero(), &Q::one())
-    } else {
-        cga::rotator(&(Q::one() + c), &(-s))
-    };
-    let mut v = rot;
-    if flipped {
-        // The half-turn on a third axis is the orientation character;
-        // there is no reflection letter.
-        v = v.geo(&cga::rotator(&Q::zero(), &Q::one())).geo(&cga::reflector());
+    if on_base(&r) {
+        let rotor = read(&r);
+        return rotor.weight().map(|_| rotor);
     }
-    Some(v)
+    // `r = r₃ · e1` ⇒ `r₃ = r · e1`, and the chart reads `r₃ · e₀₂`.
+    let r3 = r.geo(&Versor::blade(E1, Q::one()));
+    if on_base(&r3) {
+        let rotor = read(&r3).geo(&Rotor::blade(ORIENTATION, Q::one()));
+        return rotor.weight().map(|_| rotor);
+    }
+    None
 }
 
 /// Projective equality of two versors: the same transport up to a nonzero
@@ -116,10 +126,16 @@ pub fn same_versor(a: &Versor, b: &Versor) -> bool {
     crate::transducer::cga::projective_ratio(a, b).is_some()
 }
 
-/// A4 carriage: dilator(ρ) · translator. Sensor pairs stay in `pair_form`,
+/// A4 carriage: dilator(ρ) · translator, of a body in frame `0` — its
+/// `k` coordinate, not a default (16.4). Sensor pairs stay in `pair_form`,
 /// `speak_rule`, and `orbit`.
 pub fn carriage(rho: &Q, t: &(Q, Q)) -> Versor {
-    crate::transducer::cga::dilator(rho).geo(&crate::transducer::cga::translator(&t.0, &t.1))
+    carriage_at(rho, &(t.0.clone(), t.1.clone(), Q::zero()))
+}
+
+/// A4 carriage on the three-coordinate base: dilator(ρ) · translator(d).
+pub fn carriage_at(rho: &Q, t: &(Q, Q, Q)) -> Versor {
+    crate::transducer::cga::dilator(rho).geo(&crate::transducer::cga::translator(&t.0, &t.1, &t.2))
 }
 
 /// THE DILATION A VERSOR CARRIES (A4, I12), read exactly off its action:
@@ -150,12 +166,12 @@ pub fn rho_of(v: &Versor) -> Option<Q> {
 pub fn translator_of(v: &Versor) -> Option<Versor> {
     let rho = rho_of(v)?;
     let z = Q::zero();
-    let img = crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&z, &z)))?;
-    let (t1, t2) = (img.0 / &rho, img.1 / &rho);
-    if t1.is_zero() && t2.is_zero() {
+    let img = crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&z, &z, &z)))?;
+    let (t1, t2, t3) = (img.0 / &rho, img.1 / &rho, img.2 / &rho);
+    if t1.is_zero() && t2.is_zero() && t3.is_zero() {
         Some(identity_versor())
     } else {
-        Some(crate::transducer::cga::translator(&t1, &t2))
+        Some(crate::transducer::cga::translator(&t1, &t2, &t3))
     }
 }
 
@@ -171,45 +187,10 @@ pub fn dilator_of(v: &Versor) -> Option<Versor> {
     }
 }
 
-/// A3 — THE SENSOR-PLANE BLOCK A VERSOR PROJECTS TO: the images of the
-/// row and column steps with the origin's image subtracted. It is the one
-/// matrix rule 11 allows, and it is a PROJECTION, not the versor: the
-/// placement residue is subtracted away by construction and a dilation
-/// survives only as the scalar a peel divides out.
-///
-/// It lives here, beside `rho_of`, `translator_of` and `dilator_of`,
-/// because it is the fourth reader of a versor and the three of them are
-/// only correct together — `V = D(ρ)·T(t)·R` and this returns the block of
-/// the `R`. It was in `family::perceive`, which put a versor reader inside
-/// one of its callers and left the court unable to reach it.
-///
-/// Ask it about a ROTATION and it answers exactly. Ask it to classify a
-/// versor — its order, whether it is the identity, what class it carries —
-/// and it answers wrongly, because a translation and a dilation both have
-/// the identity for a block. `cech::classify` is that question's reader,
-/// and it takes the rotor and the carriage rather than a versor.
-pub fn sensor_plane_block(v: &Versor) -> Option<[[Q; 2]; 2]> {
-    let qn = |n: i64| num_rational::BigRational::from_integer(BigInt::from(n));
-    let at = |r, c| crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&qn(r), &qn(c))));
-    let o = at(0, 0)?;
-    let er = at(1, 0)?;
-    let ec = at(0, 1)?;
-    Some([[&er.0 - &o.0, &ec.0 - &o.0], [&er.1 - &o.1, &ec.1 - &o.1]])
-}
-
-// A SECOND CLASSIFIER WAS HERE, on a versor, beside `cech::classify`
-// (L23b). It is deleted, name and all.
-//
-// One object in two carriers is law 12's own shape, and these two were
-// not even the same reading: this one took a versor and re-derived
-// `D(ρ)·T(t)·R` from it, so it could hold only the sensor plane's rotor
-// and lost the other five; `classify` is handed the two halves already
-// separated — the rotor in Cl(4,0) over all six planes, the carriage in
-// Cl(3,1) — by the caller that built them. The cover was still on this
-// one while L11e's commit claimed it was gone, so the voice read a
-// collapsed transition the court did not.
-//
-// Its five claims are asserted on `Fill` in `cech/tests/classify.rs`.
+// `sensor_plane_block` — the 2×2 projection of a versor's rotation onto
+// the sensor plane — stood here. `base_rotor_of` reads the rotation whole
+// on the base's three planes (51.2), and a projection of it is what
+// checklist (m) refuses.
 
 /// `by V by⁻¹` on versors — the same conjugation `Rotor::conjugate` does,
 /// one algebra up. A conjugator that does not invert leaves `v` unmoved,
@@ -222,12 +203,13 @@ pub fn versor_conjugate(v: &Versor, by: &Versor) -> Versor {
     }
 }
 
-/// The translator by an integer lattice offset — the lattice peel's transport
-/// as a rational versor.
+/// The translator by an integer lattice offset within a frame — the lattice
+/// peel's transport as a rational versor.
 pub fn translator_versor(r: i64, c: i64) -> Versor {
     crate::transducer::cga::translator(
         &num_rational::BigRational::from_integer(BigInt::from(r)),
         &num_rational::BigRational::from_integer(BigInt::from(c)),
+        &Q::zero(),
     )
 }
 

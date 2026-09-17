@@ -23,10 +23,10 @@ pub(crate) fn rational_sqrt(x: &BigRational) -> Option<BigRational> {
     }
 }
 
-/// Apply a versor to a point of the sensor's vertex coordinates and read
-/// the base back; `None` at infinity.
-pub fn carry(v: &Mv, r: i64, c: i64) -> Option<(BigRational, BigRational)> {
-    cga::base(&v.sandwich(&cga::point(&q(r), &q(c))))
+/// Apply a versor to a point of the sensor's vertex coordinates in frame
+/// `0` and read the base back; `None` at infinity.
+pub fn carry(v: &Mv, r: i64, c: i64) -> Option<(BigRational, BigRational, BigRational)> {
+    cga::base(&v.sandwich(&cga::point(&q(r), &q(c), &q(0))))
 }
 
 /// The unnormalized rotor carrying direction `a` onto direction `b` in the
@@ -74,9 +74,9 @@ pub fn rotor_and_placement_between(
 ) -> Option<(crate::transducer::alphabet::Rotor, Mv)> {
     use crate::transducer::alphabet::{Rotor, SLOT_PLANES_SIX};
     let _ = versor_between(a, b)?;
-    let ca = a.blade.centroid()?;
-    let cb = b.blade.centroid()?;
-    let t = cga::translator(&(cb.0 - ca.0), &(cb.1 - ca.1));
+    let ca = a.blade.centroid3()?;
+    let cb = b.blade.centroid3()?;
+    let t = cga::translator(&(cb.0 - ca.0), &(cb.1 - ca.1), &(cb.2 - ca.2));
 
     let mut total_rotor = Rotor::identity();
     for &plane in &SLOT_PLANES_SIX {
@@ -186,8 +186,11 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
     } else if b.blade.shell != &a.blade.shell * &rho * &rho {
         return coset; // the cell counts do not scale as ρ²: not similar
     }
-    let to_origin = cga::translator(&(-&ca1), &(-&ca2));
-    let to_target = cga::translator(&cb1, &cb2);
+    // The bodies stand in their frames: the transport returns the frame
+    // coordinate as it does the two of the plane.
+    let (ka, kb) = (a.blade.temporal.clone(), b.blade.temporal.clone());
+    let to_origin = cga::translator(&(-&ca1), &(-&ca2), &(-&ka));
+    let to_target = cga::translator(&cb1, &cb2, &kb);
     let dil = cga::dilator(&rho);
     // The stabilizer turns and the orientation sheet are WORDS of the
     // alphabet realised as conformal versors — the quarter letter on the
@@ -329,7 +332,8 @@ pub fn versor_carrying(a: &Shape, b: &Shape, linear: &Mv) -> Option<Mv> {
     }
     let (ca1, ca2) = a.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2)))?;
     let (cb1, cb2) = b.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2)))?;
-    let (ia, ib) = cga::base(&linear.sandwich(&cga::point(&ca1, &ca2)))?;
-    let v = cga::translator(&(cb1 - ia), &(cb2 - ib)).geo(linear);
+    let (ka, kb) = (a.blade.temporal.clone(), b.blade.temporal.clone());
+    let (ia, ib, ik) = cga::base(&linear.sandwich(&cga::point(&ca1, &ca2, &ka)))?;
+    let v = cga::translator(&(cb1 - ia), &(cb2 - ib), &(kb - ik)).geo(linear);
     carries(&v, a, b).then_some(v)
 }

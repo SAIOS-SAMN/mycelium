@@ -28,47 +28,46 @@ use super::common::*;
 fn a_composite_carries_its_rotor_and_a_transition_answers_one() {
     use crate::transducer::alphabet::{LetterId, Word};
     let q01 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]);
+    let q13 = Word::from_letters(&[(LetterId::quarter((1, 3)).expect("the (1,3) base plane"), false)]);
     let q23 = Word::from_letters(&[(LetterId::quarter((2, 3)).expect("the far plane"), false)]);
+
+    // A word turning the base off itself has no base action and cannot be a
+    // connection on the base manifold (51.2, A4).
+    assert!(
+        residual::from_connection(&q23, &identity_versor(), &[], &Vec::new(), [0; 4]).is_none(),
+        "a (2,3) rotation turns e₂ into the base and has no base connection"
+    );
+
     let conn = |w: &Word| {
         residual::from_connection(w, &identity_versor(), &[], &Vec::new(), [0; 4])
             .expect("a connection")
     };
-    let (a, b) = (conn(&q01), conn(&q23));
+    let (a, b) = (conn(&q01), conn(&q13));
 
-    // The far quarter's SENSOR action is the identity: the flattening this
-    // is about, visible in one line.
+    // The (1,3) quarter's action on the base rotates e₂ ∧ e₃: non-identity in Cl(4,1).
     assert!(
-        same_versor(&b.versor().expect("a versor"), &identity_versor()),
-        "a (2,3) rotation is invisible in the conformal algebra of the base"
+        !same_versor(&b.versor().expect("a versor"), &identity_versor()),
+        "a (1,3) rotation is active in the conformal algebra of the base"
     );
-    // AND THE ELEMENT IS STILL NOT THE IDENTITY. `axes` read that versor
-    // alone, so a word spelling a quarter turn on `e₂∧e₃` reported no
-    // occupied stratum and `is_identity` answered true for it.
     assert_eq!(b.axes(), vec![FIBER_SPATIAL], "the turn occupies S");
     assert!(!b.is_identity(), "a quarter turn is not the identity word");
 
     let c = a.compose(&b);
     let r = c.carried_rotor().expect("the composite carries its rotor");
     assert!(
-        r.projective_eq(&q01.rotor().geo(&q23.rotor())),
+        r.projective_eq(&q01.rotor().geo(&q13.rotor())),
         "and it is the Cl(4,0) product, both planes"
     );
     assert!(
         !r.projective_eq(&q01.rotor()),
-        "which the sensor action alone could not have told from the first factor"
-    );
-    // The transport is untouched: the carriage is solved so the composite's
-    // versor is exactly the spatial action the composition computed.
-    assert!(
-        same_versor(&c.versor().expect("a versor"), &a.versor().expect("a versor")),
-        "carrying the tape does not move the transport"
+        "which the first factor alone does not equal"
     );
 
     // THE READING THE COURT TAKES. `transition(x, y)` is `y ∘ x⁻¹`, and it
     // answered `None` for every input before this.
     let g = crate::transducer::cech::transition(&a, &b).expect("a transition");
     let got = crate::transducer::cech::rotor_of(&g).expect("a transition has a rotor");
-    let want = q23.rotor().geo(&q01.rotor().inverse().expect("a quarter inverts"));
+    let want = q13.rotor().geo(&q01.rotor().inverse().expect("a quarter inverts"));
     assert!(got.projective_eq(&want), "the transition's rotor is g_y ∘ g_x⁻¹");
     assert!(!got.is_identity(), "and it is not the identity the court was writing");
 }
