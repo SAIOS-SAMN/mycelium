@@ -4,7 +4,7 @@
 
 use crate::arc::Grid;
 use crate::client::sdk::*;
-use crate::transducer::family::{pair_form_uncrystallized, sentence_measure, NoCrystal, TrainPair};
+use crate::transducer::family::{one_pair_form, sentence_measure, NoCrystal, TrainPair};
 use crate::transducer::sentence::{as_element_form, At, Contracted, RefusalKind, Vertex};
 
 fn digits(rows: &[&str]) -> Grid {
@@ -16,7 +16,7 @@ fn digits(rows: &[&str]) -> Grid {
 /// measured over its family and spoken as a sentence.
 fn two_bars() -> (Vec<TrainPair>, Element) {
     let family = vec![(digits(&["11200"]), digits(&["00112"]))];
-    let f = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
+    let f = one_pair_form(&family[0].0, &family[0].1);
     let mag = sentence_measure(&f, &family, &NoCrystal, 0).expect("both bodies are spoken");
     let e = as_element_form(&f, mag).expect("a tape");
     (family, e)
@@ -78,8 +78,8 @@ fn a_refusal_contracts_the_held_form_and_seals_the_address() {
             let f = crate::transducer::sentence::from_element_form(&p.sentence)
                 .expect("the contracted tape reads back");
             assert!(
-                !f.vertices.iter().any(|v| matches!(v, Vertex::Word { address, .. } if address.as_bytes() == refused_addr.as_bytes())),
-                "the refused word is gone"
+                !f.vertices.iter().any(|v| matches!(v, Vertex::Word { address, .. } if address.as_bytes() == refused_addr.as_bytes() && v.acting_on(&refused_chart).is_some())),
+                "the refused word no longer acts on the refused chart"
             );
             assert!(
                 f.demand_vertices().any(|(_, _, chart, _)| *chart == refused_chart),

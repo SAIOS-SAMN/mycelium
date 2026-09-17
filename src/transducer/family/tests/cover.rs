@@ -27,7 +27,7 @@ fn notched() -> (Grid, Grid) {
 /// stroke would assert the starvation and not the reading.
 fn measured(a: &Grid, b: &Grid) -> crate::transducer::sentence::Form {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
-    pair_form(&NoCrystal, &mut budget, a, b, None).expect("a cover that runs to its end")
+    scene_form(&NoCrystal, &mut budget, a, b).expect("a cover that runs to its end")
 }
 
 /// THE CARRIED PIECES ARE VERTICES OF THE FORM (L23c). Before this, a
@@ -39,12 +39,15 @@ fn the_carried_pieces_are_word_vertices_of_the_form() {
     let f = measured(&a, &b);
     let words = f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
     assert_eq!(words, 5, "the five pieces the cover carried are five word vertices");
-    // The pairing consumed nothing here — no versor carries the whole body
-    // — so every one of them came from the cover.
-    assert_eq!(
-        pair_scene(&a, &b, None).pairs.len(),
-        0,
-        "the whole body does not pair; these vertices are the cover's"
+    // No versor carries the whole body onto the whole image, so every one
+    // of them came from the cover.
+    let (ia, ib) = (perceive(&a), perceive(&b));
+    let ([input], [image]) = (ia.as_slice(), ib.as_slice()) else {
+        panic!("the notched fixture perceives one body on each side");
+    };
+    assert!(
+        carriage(input, image).is_none(),
+        "the whole body does not carry; these vertices are the cover's"
     );
 }
 

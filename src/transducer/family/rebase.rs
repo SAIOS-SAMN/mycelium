@@ -101,6 +101,16 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
     }
     trace::trace_at("extract/4 reindex", form.vertices.len());
     form.reindex();
+    rederive_star_faces(form);
+}
+
+/// THE STAR FACES RE-DERIVED FROM THEIR VERTICES after a move that moved a
+/// vertex's placement — the rebase, the contact. The member pairs each face
+/// already carries are kept with their edges: WHICH pairs a face relates is
+/// the scene's fact, and the placement at each is re-derived at its own
+/// coordinate; a face left as it was would carry a placement the vertex no
+/// longer has, which the court refuses as a face that does not re-derive.
+pub(crate) fn rederive_star_faces(form: &mut Form) {
     for (_, &fi) in form.star.scoped() {
         let Some(face) = form.faces.get(fi as usize) else {
             continue;

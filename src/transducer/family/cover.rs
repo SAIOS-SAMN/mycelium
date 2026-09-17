@@ -194,6 +194,11 @@ pub(crate) struct Cover {
     /// laminae carry different lane weight — so the dissolution reads the
     /// zero vector and never a cardinality.
     pub(crate) uncarried: [u64; 4],
+    /// THE SITES A CARRIAGE REACHED, on either body, by their base key: the
+    /// reading the demand for what was NOT reached is typed from (50.5),
+    /// so the links a demand stands for are the laminae no piece carried
+    /// and never a count of them.
+    pub(crate) reached: crate::network::nerve::Keyed<()>,
 }
 
 /// THE COVER DID NOT RUN TO THE END OF ITS OWN PIECES, because its share
@@ -215,6 +220,7 @@ impl Cover {
             meets: crate::network::nerve::Keyed::new(),
             refused: crate::network::nerve::Keyed::new(),
             uncarried: [0; 4],
+            reached: crate::network::nerve::Keyed::new(),
         }
     }
 }
@@ -491,6 +497,7 @@ pub(crate) fn cover_deformation(
         }
     }
     cover.uncarried = element::measure_lanes(&left);
+    cover.reached = reached.clone();
 
     // (d) THE MEETS, from a keyed occupancy of the placed supports and
     // their rings (rule 1: never a pair loop over the pieces). A site

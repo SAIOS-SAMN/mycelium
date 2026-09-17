@@ -98,17 +98,14 @@ pub(crate) fn vertex_carries_pair(
     // fault; a vertex silent on every member is `Silent` exactly as one with
     // an empty fiber was.
     let mut spoke = false;
-    let tc_key = crate::transducer::family::transport_class(vertex).map(|tc| tc.key());
     // The chart every refusal below names is THE MEMBER'S OWN, so the court
     // refuses at the coordinate that actually failed.
     for (_, member) in acts.scoped() {
-        if let Some(k) = &tc_key {
-            let mut mk = k.clone();
-            crate::transducer::address::put_bytes(&mut mk, &member.chart.key());
-            if let Some(mps) = sections.get(&mk) {
-                if !mps.contains(&(pair as u16)) {
-                    continue;
-                }
+        if let Some(mps) =
+            crate::transducer::family::member_section_key(vertex, &member.chart).and_then(|mk| sections.get(&mk))
+        {
+            if !mps.contains(&(pair as u16)) {
+                continue;
             }
         }
         let at = || member.chart.clone();
@@ -202,16 +199,13 @@ fn form_covers_laminae(
         if only.as_ref().is_some_and(|ps| !ps.contains(&(pair as u16))) {
             continue;
         }
-        let tc_key = crate::transducer::family::transport_class(v).map(|tc| tc.key());
         let rotor = derivation.rotor();
         for (_, member) in acts.scoped() {
-            if let Some(k) = &tc_key {
-                let mut mk = k.clone();
-                crate::transducer::address::put_bytes(&mut mk, &member.chart.key());
-                if let Some(mps) = f.sections.get(&mk) {
-                    if !mps.contains(&(pair as u16)) {
-                        continue;
-                    }
+            if let Some(mps) =
+                crate::transducer::family::member_section_key(v, &member.chart).and_then(|mk| f.sections.get(&mk))
+            {
+                if !mps.contains(&(pair as u16)) {
+                    continue;
                 }
             }
             let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else { continue; };
@@ -276,11 +270,8 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
                 let at: String =
                     address.iter().take(2).map(|b| format!("{b:02x}")).collect();
                 let class_sec = only.is_some();
-                let member_sec = crate::transducer::family::transport_class(v).is_some_and(|tc| {
-                    let mut mk = tc.key();
-                    crate::transducer::address::put_bytes(&mut mk, &chart.key());
-                    f.sections.get(&mk).is_some()
-                });
+                let member_sec = crate::transducer::family::member_section_key(v, &chart)
+                    .is_some_and(|mk| f.sections.get(&mk).is_some());
                 eprintln!(
                     "  court vertex body {at}… pair {pair} of {}: {why} [class_sec: {class_sec}, member_sec: {member_sec}]",
                     family.len()

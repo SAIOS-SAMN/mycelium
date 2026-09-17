@@ -21,23 +21,20 @@ impl Entity {
     /// words are the vertices the eyes could pair and the alphabet could
     /// spell, and what they could not is its demand vertices (50.5).
     pub fn hold_chain(&mut self, chain: Vec<(i64, i64, u8, u8)>) {
-        use crate::transducer::family::{family_ratio, pair_form, scene_of_chain};
+        use crate::transducer::family::{scene_form, scene_of_chain};
         let Some(scene) = scene_of_chain(&chain) else {
             return;
         };
-        let scale = family_ratio(std::slice::from_ref(&scene));
         // 50.2 step 2: this mind's own presentation is what its word
         // vertices derive against, under a stroke sized by the scene it is
-        // handed (L8w) — a fixed spend unit is three on an eight-core box
-        // and does not reach one `pair_form`, so every chain held here was
-        // held as nothing.
+        // handed (L8w); a fixed spend unit does not reach one scene.
         let mut budget = self
             .physics
             .stroke_n(crate::transducer::family::extraction_spend(std::slice::from_ref(&scene)));
         // `None` is a vertex the stroke could not factor through this
         // mind's presentation: unmeasured, so nothing is held rather than
         // a form held with the presentation's reach asserted unread.
-        let Some(f) = pair_form(&self.epigenome, &mut budget, &scene.0, &scene.1, scale) else {
+        let Some(f) = scene_form(&self.epigenome, &mut budget, &scene.0, &scene.1) else {
             return;
         };
         self.hold_form(&f, &[], &[]);

@@ -156,6 +156,26 @@ pub fn perceive(grid: &Grid) -> Vec<Body> {
     perceive_frames(std::slice::from_ref(grid))
 }
 
+/// Perceive one frame of a family as the sections of its bodies (51.4,
+/// 52.5): the 4-connected components of one hue in that frame, every
+/// lamina standing at `k`. The section is the unit the pairing's fiber is
+/// keyed by, because its chart is the chart speech and the court perceive
+/// when they read a frame alone; a body stacked along `e₃` has a chart
+/// that depends on its extent there, and a vertex keyed by it would find
+/// nothing on a frame perceived by itself.
+pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
+    let mut laminae: Vec<Lamina> = Vec::new();
+    for (r, row) in grid.iter().enumerate() {
+        for (c, &h) in row.iter().enumerate() {
+            note_sensor_read();
+            if h != 0 {
+                laminae.push((r as i64, c as i64, k, h));
+            }
+        }
+    }
+    blade::components(&laminae).into_iter().map(body_of).collect()
+}
+
 /// Perceive a family's frames as bodies on `(r, c, k)`: 6-connected
 /// components of one hue across the frames (51.3, 51.4), the frame of each
 /// grid its place in the family.
@@ -241,15 +261,26 @@ pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invarian
 /// demand its rotor leaves: the versor measured, its rotor spelled by A22.
 /// Class is the target's chart. `None` when no versor carries `a` onto `b`.
 pub(crate) fn word_or_demand(a: &Body, b: &Body) -> Option<Result<Vertex, Demanded>> {
+    word_or_demand_on_chart(a, b, &b.moduli)
+}
+
+/// The same reading on a NAMED CHART (52.5): the two bodies are the union
+/// of a chart's fiber at one frame, whose own moduli are the union's and
+/// not the chart the vertex acts on, so the chart is the caller's.
+pub(crate) fn word_or_demand_on_chart(
+    a: &Body,
+    b: &Body,
+    chart: &Invariant,
+) -> Option<Result<Vertex, Demanded>> {
     let car = carriage(a, b)?;
     let chain = chain_of(Some(a), Some(b), &car.v);
     // A22 alone: this is the PERCEPT, which is what the memo holds. The
     // presentation enters afterwards, per mind (50.2 step 2).
     let derivation = match peel_versor(&car.v)? {
         Ok(w) => crate::transducer::alphabet::Derivation::spelled(w),
-        Err(demand) => return Some(Err((demand, b.moduli.clone(), chain))),
+        Err(demand) => return Some(Err((demand, chart.clone(), chain))),
     };
-    Some(Ok(word_vertex_with(a, b, &car, derivation)?))
+    Some(Ok(word_vertex_on_chart(a, b, &car, derivation, chart)?))
 }
 
 /// THE WORD VERTEX OF A MEASURED CARRIAGE, given the derivation that
@@ -266,6 +297,17 @@ pub(crate) fn word_vertex_with(
     car: &Carriage,
     derivation: crate::transducer::alphabet::Derivation,
 ) -> Option<Vertex> {
+    word_vertex_on_chart(a, b, car, derivation, &b.moduli)
+}
+
+/// The same vertex acting on a NAMED CHART (52.5).
+pub(crate) fn word_vertex_on_chart(
+    a: &Body,
+    b: &Body,
+    car: &Carriage,
+    derivation: crate::transducer::alphabet::Derivation,
+    chart: &Invariant,
+) -> Option<Vertex> {
     let chain = chain_of(Some(a), Some(b), &car.v);
     let t = element::translator_of(&car.v)?;
     let d = element::dilator_of(&car.v)?;
@@ -278,11 +320,40 @@ pub(crate) fn word_vertex_with(
     Some(Vertex::word_on(
         element::from_residual(&chain)?.address(),
         derivation,
-        b.moduli.clone(),
+        chart.clone(),
         Box::new(carriage),
         gauge,
         None,
     ))
+}
+
+/// A body's laminae standing at frame `k`, or `None` where its laminae
+/// stand in several frames: the sections `perceive_at` yields stand in one.
+pub(crate) fn frame_of_body(b: &Body) -> Option<i64> {
+    let mut at: Option<i64> = None;
+    for &(_, _, k, _) in &b.laminae {
+        match at {
+            None => at = Some(k),
+            Some(f) if f == k => {}
+            Some(_) => return None,
+        }
+    }
+    at
+}
+
+/// The same laminae read in their frame's own coordinates, at `k = 0`:
+/// the frame rides on the pose (16.5, 52.5), so a quotient measured here
+/// is the one the vertex carries and the one a frame perceived alone reads.
+pub(crate) fn at_frame_zero(laminae: &[Lamina]) -> Vec<Lamina> {
+    laminae.iter().map(|&(r, c, _, h)| (r, c, 0, h)).collect()
+}
+
+/// A support read back at frame `k`, from laminae at frame zero.
+pub(crate) fn support_at(laminae: &[Lamina], k: i64) -> Vec<(i64, i64, i64)> {
+    let mut s: Vec<(i64, i64, i64)> = laminae.iter().map(|&(r, c, _, _)| (r, c, k)).collect();
+    s.sort_unstable();
+    s.dedup();
+    s
 }
 
 /// The axes on which two charts differ, by position; an axis one chart

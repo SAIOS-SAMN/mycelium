@@ -38,7 +38,7 @@ for what it holds in the document's vocabulary (`refract.rs`, `carriage.rs`,
 parsing, the boot order, and the loop skeleton, and nothing else.
 
 1.4 **Sensor boundary.** The only files that may read or write a site's
-coordinates are named `sensor.rs` (or are `family::{pair_form,
+coordinates are named `sensor.rs` (or are `family::{extract_rule_with,
 speak_rule, orbit}` until S9 lands), and the functions are
 `element::sensor::{site_of, carry_center, carry_lamina}`,
 `element::letters::carriage`, `blade::carry::{carry, rotor_between,

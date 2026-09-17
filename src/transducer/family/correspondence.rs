@@ -1,10 +1,10 @@
-// 21 step 1 — CORRESPONDENCE: what names a vertex across the pairs of a
-// bundle, and the relative word two ends agree on.
+// 21 step 1 as ruled in 52.5 — THE TRANSPORT CLASS: what names a vertex of
+// the family's form, and the relatives two classes carry on its faces.
 //
 //! A transport class is kind and the conjugacy of the word (15.4), never
 //! the hue map and never the body's moduli, which are section coordinates
-//! (rule 7). The readers here name candidates; every decision is made by
-//! the moves in `extract.rs` that call them.
+//! (rule 7). The readers here name; every decision is made by the moves
+//! in `extract.rs` that call them.
 
 use super::*;
 
@@ -39,88 +39,36 @@ pub(crate) fn transport_class(v: &Vertex) -> Option<TransportClass> {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
-pub(crate) enum End {
-    Frame,
-    Class(TransportClass),
+/// The key of one frame of the family by its index, for a carrier keyed
+/// per frame: the frame is the corpus's coordinate (51.1).
+pub(crate) fn pair_idx_key(i: u16) -> Vec<u8> {
+    let mut k = vec![0u8];
+    k.extend_from_slice(&i.to_le_bytes());
+    k
 }
 
-pub(crate) fn end_of(v: &Vertex) -> Option<End> {
-    match v {
-        Vertex::Frame => Some(End::Frame),
-        Vertex::Word { .. } => Some(End::Class(transport_class(v)?)),
-        _ => None,
-    }
+/// THE KEY A MEMBER'S SECTION IS FILED UNDER: the transport class, the
+/// chart, the vertex's address and the carriage the member acts by, so
+/// `Form.sections` answers which frames of the family that member was
+/// measured on (18.2, 21 step 1, 52.5 item 3). The address and the
+/// carriage are in the key because two vertices of one class can stand on
+/// one chart — a cover's pieces at two frames, a chart whose frames read
+/// two versors — and each is claimed on its own frames; two members whose
+/// every coordinate agrees act alike and are claimed alike.
+pub(crate) fn member_section_key(v: &Vertex, chart: &Invariant) -> Option<Vec<u8>> {
+    let Vertex::Word { address, .. } = v else { return None };
+    let member = v.acting_on(chart)?;
+    let mut k = transport_class(v)?.key();
+    crate::transducer::address::put_bytes(&mut k, chart.key().as_bytes());
+    crate::transducer::address::put_bytes(&mut k, address.as_bytes());
+    let mut carriage = Vec::new();
+    member.carriage.put_canonical(&mut carriage);
+    crate::transducer::address::put_bytes(&mut k, &carriage);
+    Some(k)
 }
 
-// `match_vertex(f, class)` stood here — `vertices.iter().find(...)`, the last
-// finder of "the" vertex of a class. It is gone with its last caller:
-// `rebase_named_faces` asked it for a class's placement and now reads the pair
-// form's own face between the two classes, which is the incidence that says
-// which bodies are related. Nothing asks a form for one vertex of a class.
-
-/// The unique relative word between two ends on a pair form, read from
-/// that form's named faces. Several instances of a class are a section:
-/// every such face must be one M1 vertex.
-pub(crate) fn face_word_between(pf: &Form, a: &End, b: &End) -> Option<crate::transducer::alphabet::Word> {
-    let mut held: Option<crate::transducer::alphabet::Word> = None;
-    for f in &pf.faces {
-        let ea = end_of(pf.vertices.get(f.i as usize)?)?;
-        let eb = end_of(pf.vertices.get(f.j as usize)?)?;
-        let (w, ok) = if &ea == a && &eb == b {
-            (f.word.clone(), true)
-        } else if &ea == b && &eb == a {
-            (f.word.inverse(), true)
-        } else {
-            (crate::transducer::alphabet::Word::identity(), false)
-        };
-        if !ok {
-            continue;
-        }
-        match &held {
-            None => held = Some(w),
-            Some(h) if h != &w => return None,
-            _ => {}
-        }
-    }
-    held
-}
-
-/// Read the edge transport between two ends off a pair form's faces.
-pub(crate) fn face_edge_between(
-    pf: &Form,
-    a: &End,
-    b: &End,
-) -> Option<crate::transducer::sentence::Transport> {
-    for f in &pf.faces {
-        let ea = end_of(pf.vertices.get(f.i as usize)?)?;
-        let eb = end_of(pf.vertices.get(f.j as usize)?)?;
-        if &ea == a && &eb == b {
-            for (_, p) in f.at.scoped() {
-                if let Some(ref edge) = p.edge {
-                    return Some(edge.clone());
-                }
-            }
-        } else if &ea == b && &eb == a {
-            for (_, p) in f.at.scoped() {
-                if let Some(ref edge) = p.edge {
-                    return edge.inverse();
-                }
-            }
-        }
-    }
-    None
-}
-// `word_place_of_class(pf, tc)` stood here and answered the representative
-// member's placement to a caller asking about a CLASS. Its one caller —
-// `rebase_named_faces`, comparing two classes across pair forms — reads
-// `relatives_between` instead, which takes the relative off the pair form's own
-// face and so names which body is compared to which. A "placement of a class"
-// is not a thing a class has once it spans two charts, so the reader is gone
-// rather than given a chart parameter nobody passes (D10 item 11).
-
-/// THE RELATIVE PLACEMENTS BETWEEN TWO CLASSES ON ONE PAIR FORM, keyed by the
-/// member pair, read off THE PAIR FORM'S OWN FACES between them.
+/// THE RELATIVE PLACEMENTS BETWEEN TWO CLASSES ON ONE FORM, keyed by the
+/// member pair, read off THE FORM'S OWN FACES between them.
 ///
 /// The incidence is the face: a face exists because two bodies' supports meet
 /// or sit at ring distance one (21 step 2), so the face says which body of
@@ -193,53 +141,6 @@ pub(crate) fn relatives_between(
         }
     }
     out
-}
-
-pub(crate) fn placement_of_class(pair_forms: &[Form], class: &TransportClass) -> Option<crate::transducer::alphabet::Word> {
-    let mut held: Option<crate::transducer::alphabet::Word> = None;
-    for pf in pair_forms {
-        let w = face_word_between(pf, &End::Frame, &End::Class(class.clone()))?;
-        match &held {
-            None => held = Some(w),
-            Some(h) if h != &w => return None,
-            _ => {}
-        }
-    }
-    held
-}
-pub(crate) fn pair_idx_key(i: u16) -> Vec<u8> {
-    let mut k = vec![0u8];
-    k.extend_from_slice(&i.to_le_bytes());
-    k
-}
-
-pub(crate) fn end_key(e: &End) -> Vec<u8> {
-    match e {
-        End::Frame => vec![0xff],
-        End::Class(c) => c.key(),
-    }
-}
-
-pub(crate) fn ends_pair_key(a: &End, b: &End) -> Vec<u8> {
-    let (ka, kb) = (end_key(a), end_key(b));
-    let (lo, hi) = if ka <= kb { (ka, kb) } else { (kb, ka) };
-    let mut buf = Vec::new();
-    crate::transducer::address::put_bytes(&mut buf, &lo);
-    crate::transducer::address::put_bytes(&mut buf, &hi);
-    buf
-}
-
-pub(crate) fn index_ends(form: &Form) -> crate::network::nerve::Keyed<u16> {
-    let mut idx = crate::network::nerve::Keyed::new();
-    for (i, v) in form.vertices.iter().enumerate() {
-        if let Some(e) = end_of(v) {
-            let k = end_key(&e);
-            if !idx.contains(&k) {
-                idx.insert(k, i as u16);
-            }
-        }
-    }
-    idx
 }
 
 pub(crate) fn hue_maps_of_form(form: &Form) -> crate::network::nerve::Keyed<Vec<(u8, u8)>> {

@@ -55,16 +55,64 @@ impl Form {
         match (kind, at) {
             (RefusalKind::VertexBody, At::Vertex { address, chart }) => {
                 let i = self.word_index(address)?;
-                // The word becomes a demand over its chart, carrying as its
-                // bodies the links it was to reach. A demand vertex enters
-                // no face (50.5): the faces that reached the word leave
-                // with it.
-                self.vertices[i as usize] = Vertex::Demand {
-                    kind: crate::transducer::sentence::Demand::Creation,
-                    chart: chart.clone(),
-                    bodies: remainder.to_vec(),
+                let ck = chart.key();
+                let Some(Vertex::Word { acts, .. }) = self.vertices.get_mut(i as usize) else {
+                    return None;
                 };
-                self.faces.retain(|f| f.i != i && f.j != i);
+                // THE MEMBER AT THE REFUSED CHART leaves the vertex (D10 item
+                // 13: the coordinate is the member's own), and a demand over
+                // that chart carries as its bodies the links the word was to
+                // reach. A vertex whose last member left becomes the demand
+                // itself, and a demand vertex enters no face (50.5): the
+                // faces that reached it leave with it. A vertex that keeps
+                // other members keeps its faces at those members' pairs and
+                // loses the pairs at the refused one.
+                acts.remove(ck.as_bytes())?;
+                let last = acts.is_empty();
+                if last {
+                    self.vertices[i as usize] = Vertex::Demand {
+                        kind: crate::transducer::sentence::Demand::Creation,
+                        chart: chart.clone(),
+                        bodies: remainder.to_vec(),
+                    };
+                    self.faces.retain(|f| f.i != i && f.j != i);
+                } else {
+                    for f in &mut self.faces {
+                        let side_i = f.i == i;
+                        if !side_i && f.j != i {
+                            continue;
+                        }
+                        let stale: Vec<Vec<u8>> = f
+                            .at
+                            .scoped()
+                            .filter(|(pk, _)| {
+                                crate::transducer::sentence::read_face_pair_key(pk).is_some_and(|(ik, jk)| {
+                                    if side_i { ik == ck.as_bytes() } else { jk == ck.as_bytes() }
+                                })
+                            })
+                            .map(|(pk, _)| pk)
+                            .collect();
+                        for pk in stale {
+                            f.at.remove(&pk);
+                        }
+                    }
+                    self.faces.retain(|f| !(f.i == i || f.j == i) || !f.at.is_empty());
+                    let kind = crate::transducer::sentence::Demand::Creation;
+                    match self.demand_index(&kind, chart) {
+                        Some(d) => {
+                            if let Some(Vertex::Demand { bodies, .. }) = self.vertices.get_mut(d) {
+                                for c in remainder {
+                                    if !bodies.contains(c) {
+                                        bodies.push(*c);
+                                    }
+                                }
+                            }
+                        }
+                        None => {
+                            self.vertices.push(Vertex::Demand { kind, chart: chart.clone(), bodies: remainder.to_vec() });
+                        }
+                    }
+                }
                 self.rewalk();
                 Some(Contracted::Moved)
             }
@@ -139,7 +187,11 @@ impl Form {
     pub fn is_contraction_at(&self, kind: RefusalKind, at: &At) -> bool {
         match (kind, at) {
             (RefusalKind::VertexBody, At::Vertex { address, chart }) => {
-                self.word_index(address).is_none() && self.demand_vertices().any(|(_, _, c, _)| c == chart)
+                let acts_there = self
+                    .word_index(address)
+                    .and_then(|i| self.vertices.get(i as usize))
+                    .is_some_and(|v| v.acting_on(chart).is_some());
+                !acts_there && self.demand_vertices().any(|(_, _, c, _)| c == chart)
             }
             (RefusalKind::EdgeHolonomy, At::Face(a, b)) => {
                 let (Some(i), Some(j)) = (self.word_index(a), self.word_index(b)) else {

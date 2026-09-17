@@ -268,7 +268,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         // coordinate is being asked to carry a section.
         for (i, (x, y)) in task.train.iter().enumerate() {
             let mut pb = physics.stroke_n(MINT_STROKE);
-            let Some(pf) = mycelium::transducer::family::pair_form(&empty, &mut pb, x, y, None)
+            let Some(pf) = mycelium::transducer::family::scene_form(&empty, &mut pb, x, y)
             else {
                 continue;
             };
@@ -384,7 +384,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         for (i, (x, y)) in task.train.iter().enumerate() {
             let mut pb = physics.stroke_n(MINT_STROKE);
             let one = vec![(x.clone(), y.clone())];
-            let Some(pf) = mycelium::transducer::family::pair_form(&empty, &mut pb, x, y, None)
+            let Some(pf) = mycelium::transducer::family::scene_form(&empty, &mut pb, x, y)
             else {
                 println!("  mint {name} pairform {i}: none");
                 continue;

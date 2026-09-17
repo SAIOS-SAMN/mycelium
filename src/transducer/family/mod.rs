@@ -1,8 +1,9 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 20, 21 — THE MOVES ON A BUNDLE OF TRAIN PAIRS: scenes perceived as pair
-//! forms, the rule those forms already agree on, and that rule spoken back
-//! onto a scene. A bundle it does not close is a withheld form.
+//! 20, 21, 52.5 — THE MOVES ON A FAMILY OF TRAIN PAIRS: the family's frames
+//! perceived once, its one form read as a quotient per chart, and that
+//! form spoken back onto a scene. A family it does not close is a withheld
+//! form.
 
 pub mod contact;
 pub mod correspondence;
@@ -39,7 +40,6 @@ pub type Family = [TrainPair];
 pub use extract::*;
 pub use memo::*;
 pub use orbit::*;
-pub(crate) use pair::*;
 pub use pairing::*;
 pub(crate) use rebase::*;
 pub use perceive::*;
@@ -221,25 +221,22 @@ impl Crystal for NoCrystal {
     }
 }
 
-/// A pair form derived against NO presentation, under one stroke: the
-/// reading a mind that holds nothing gets, which is the cipher's (50.2
-/// step 2). Named so a reviewer sees at the call site that no speaker's
-/// language is in the form — every test whose claim is about perception
-/// rather than about what a mind holds builds its fixture here, and a
-/// test about the language passes its own crystal to `pair_form`.
+/// THE FORM OF ONE SCENE derived against NO presentation, under a stroke
+/// that reads the whole scene: the reading a mind that holds nothing gets,
+/// which is the cipher's (50.2 step 2). Named so a reviewer sees at the
+/// call site that no speaker's language is in the form — every test whose
+/// claim is about perception rather than about what a mind holds builds
+/// its fixture here, and a test about the language passes its own crystal
+/// to `scene_form`.
 #[cfg(test)]
-pub fn pair_form_uncrystallized(
-    a: &Grid,
-    b: &Grid,
-    scale: Option<((usize, usize), (usize, usize))>,
-) -> Form {
-    let mut budget = crate::physics::Physics::default().stroke();
+pub fn one_pair_form(a: &Grid, b: &Grid) -> Form {
+    let pair = [(a.clone(), b.clone())];
+    let mut budget = crate::physics::Physics::default().stroke_n(extraction_spend(&pair) << 4);
     // A crystal that holds nothing has nothing to factor through, so the
     // factorisation is measured the moment it starts and cannot end on
     // the budget: this expect is the absence of a presentation, not an
     // unwrap of one that might be there.
-    pair_form(&NoCrystal, &mut budget, a, b, scale)
-        .expect("a presentation of no generators measures at once")
+    scene_form(&NoCrystal, &mut budget, a, b).expect("a presentation of no generators measures at once")
 }
 
 /// The scene frame as a form vertex.

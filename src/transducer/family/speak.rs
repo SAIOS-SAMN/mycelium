@@ -174,10 +174,8 @@ pub fn apply_form_on(
                 // absence as a demand is D8's move, not this one.
                 let mut spoke = false;
                 for (_, member) in acts.scoped() {
-                    if let (Some(k), Some(pi)) = (&tc_key, pair) {
-                        let mut mk = k.clone();
-                        crate::transducer::address::put_bytes(&mut mk, &member.chart.key());
-                        if let Some(mps) = f.sections.get(&mk) {
+                    if let Some(pi) = pair {
+                        if let Some(mps) = member_section_key(v, &member.chart).and_then(|mk| f.sections.get(&mk)) {
                             if !mps.contains(&(pi as u16)) {
                                 continue;
                             }

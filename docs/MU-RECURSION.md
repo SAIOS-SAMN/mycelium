@@ -147,7 +147,7 @@ These are not restated in each chapter; every chapter assumes them.
     rotor words by the geometric product; the class vector of a loop is
     the blade decomposition of its canonical holonomy versor, and its
     placement axis is the translator component of that versor. A pair of
-    coordinates appears only at the sensor boundary, in `pair_form`,
+    coordinates appears only at the sensor boundary, in `extract_rule_with`,
     `speak_rule`, and `orbit`, where a lamina is read or written. **The
     lamina is the sensor's token, never the mind's carrier** (ruled
     2026-09-17, evening): a chain's links `(r, c, before, after)` and a
@@ -231,7 +231,7 @@ mask, a fixed carrier size, or a wire tag; (f) any `blake3`, hash, or
 digest outside `network/`, `court/identity`, and `chronometry`, or over
 anything but wire bytes, file bytes, and receipts; (f′) any `(ℚ, ℚ)`,
 `(BigRational, BigRational)`, or `(i64, i64)` carried as a placement, shift,
-or residue outside `pair_form`, `speak_rule`, and `orbit`; (g) any
+or residue outside `extract_rule_with`, `speak_rule`, and `orbit`; (g) any
 `HashMap`/`BTreeMap`/`HashSet`; (h) any loop without `budget.spend()` or a
 boundary bound; (i) any `unwrap_or` that invents a value; (j) any `clone()`
 of a carrier into two places; (k) the `test result` line of the full suite;
@@ -2394,7 +2394,7 @@ lamina of the sensor, and the sensor refuses to carry it (law 11).
    `to_bytes` on the wire may carry any scaling; the receiver
    canonicalises. The **carriage** of a word form (1.4) is one such versor,
    `dilator(ρ) · translator(d)`, and the translator of a face or of a loop
-   residue is its `e_i ∧ e_∞` part; no function outside `pair_form`,
+   residue is its `e_i ∧ e_∞` part; no function outside `extract_rule_with`,
    `speak_rule`, and `orbit` reads `d` as a pair (law 11).
 
 `Mv`'s derived structural `PartialEq` is removed; `Germ`, `Face`, `Nerve`
@@ -3554,8 +3554,9 @@ performs F, the court executes G to verify boundary congruence and edge
 holonomies, and the wire never carries raw percept laminae to a court (law
 8, 50.9).
 
-`pair_nerve` (about 590) becomes `pair_form(a: &Grid, b: &Grid, scale) ->
-Form`: vertices = `Frame` plus one `Word` per carried body — its versor
+`pair_nerve` (about 590) becomes the family's percept in `extract_rule_with`
+(52.5; `scene_form(crystal, budget, a, b) -> Option<Form>` reads one
+scene as a family of one pair): vertices = `Frame` plus one `Word` per carried body — its versor
 measured by `versor_between`, its word by `factor_rotor`, its gauge by
 `derive_hue_map` — plus one demand vertex per (kind, chart) for the bodies
 no versor carries or no rotor spells (50.5); no vertex ever carries the
@@ -4785,7 +4786,7 @@ element/       canonical_chain(&[Link]) -> Vec<Link> NEW (A5), Element::same_ver
 sentence.rs   Vertex/Face/Loop/Form NEW (18.2), Form::{face_of, delta1, coheres, is_closed, depth_of, regauge, glue, retract_vertices, rebase, unfold, loops_of},
               as_element/from_element v2 (19), vertex_address writes Mv::canonical, from_element recomputes germ addresses,
               chart_of on reduced forms, SentenceRule { form, sections, ratio } (31), Nerve/Germ/Cycle REMOVED (30)
-family/       word_form, frame_vertex, pair_form, Crystal, extract_rule (seven moves), speak_rule on Form, rule_replays_family shares, orbit/OrbitEnd
+family/       word_form, frame_vertex, scene_form, Crystal, extract_rule (the family's percept and moves 3–7, 52.5), speak_rule on Form, rule_replays_family shares, orbit/OrbitEnd
 cech.rs       ChartGraph, Goodness, goodness, simplex_key with component, set_edge_in, Overlap, MayerVietoris, Complex::{overlap, mayer_vietoris, delta2, restrict, straddling},
               solve_gauge_between (A14); solve_gauge unchanged
 nerve/        Keyed::meet (A13), Cover::charts_of, Router::insert(vk, addr), home(depth), no hash(addr) keys outside pending_addrs
@@ -4867,7 +4868,7 @@ residual and are **not** this `Germ`; they are not renamed.
    and reads v1 and v2. `sdk.rs:831`, `sdk.rs:1624`, `cognition.rs:1600`,
    `1603`, `2667`, `3199` take the `Form`; `bubble.rs::hold_nerve` becomes
    `hold_form(&mut self, f: Form)`; `Bubble.nerve: Complex` is unchanged.
-3. `family/pair.rs`: `pair_nerve` → `pair_form`; `extract_rule` on `Form`s;
+3. `family/pair.rs`: `pair_nerve` → the percept of `extract_rule_with` (52.5); `extract_rule` on `Form`s;
    `SentenceRule` per chapter 31; `speak_rule`, `rule_replays_family`,
    `mint_sentence` (981) on `Form`. **Landed** (`abacf53`): `extract_rule`
    is `extract_rule_with`; `speak_rule` speaks the form; `agree_up_to_gauge`
@@ -5224,7 +5225,7 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] [{h}] stroke idle: dwell {[s, g, t, h]} K {k} | genome {n} | dialect {n} | ideas {n} | cavity {n} links {n} | holds {[sections, simplices, horizon, bundle, certificates]} | entity {[taught, obstructions, owed, contracted, sealed, contractions, expressed, recollections, waiting, marks]} memo {n} | atlas words ruled {n} stood {n} held {n} | axis index charts {n} words {n} | feed {clear|held}
 [{tag}] [{h}] K {k} | genome {n} | dialect {n} | ideas {n} | cavity {n} links {n} | holds {…} | entity {…} memo {n} | atlas words … | axis index … | shed {n} | fed {n} derived {n} witnessed {n} settles {n} err {n} Z {z} | learned {n} projected {n} solved {n} uniq {n} paid {n} refined {n} (reanchor {n} condense {n}) discordance {strata|unmeasured} boundary {mu:?} axes {n}
 [{tag}] stroke outcome fed {mu:?} pivoted {mu:?} stood {mu:?} uttered {mu:?} closed {mu:?} learned {mu:?}
-  pair form {n} vertices, {f} faces ({m} cover meets, {c} site+ring), {l} loops (word holonomy: flat {a}, finite {b}, infinite {c} | edge holonomy paths: flat {a}, finite {b}, infinite {c} | edges asked: measured {m}, unspelled {u}, unread {r}, not rigid {n})
+  family form {n} vertices, {f} faces ({m} cover meets, {c} site+ring), {l} loops | edges asked: measured {m}, unspelled {u}, unread {r}, not rigid {n}
   edge unspelled: {rotor prime|standing}
 [{tag}] refracted {addr} into {frame} by Γ
 [{tag}] pivot {idea} loop {i} axis orientation({p}) discharged by half-turn
@@ -5274,7 +5275,7 @@ Checked by tests, greppable by the auditor:
   `mint` line for its address.
 - The number of `form spoken` lines across the five minds equals the number
   of `ACT_SPEECH` frames across the three servers.
-- No function outside `family::pair_form`, `family::speak_rule`, and
+- No function outside `family::extract_rule_with`, `family::speak_rule`, and
   `family::orbit` reads a site coordinate of a grid.
 - No digest, hash, or fingerprint of any mathematical structure exists in
   cognition: every key is the canonical coordinates of an exact object
@@ -5283,7 +5284,7 @@ Checked by tests, greppable by the auditor:
   loaders, over wire bytes, file bytes, and receipts; no `Keyed` is keyed
   by a 32-byte digest, and no two keys are compared as digests.
 - No `(ℚ, ℚ)`, `(BigRational, BigRational)`, or `(i64, i64)` pair is carried
-  as a placement, shift, or residue outside `pair_form`, `speak_rule`, and
+  as a placement, shift, or residue outside `extract_rule_with`, `speak_rule`, and
   `orbit`; every placement is a carriage versor and every residue a
   component of a holonomy versor (law 11).
 - Every coordinate a form stores re-derives from the form's own words and
@@ -6055,7 +6056,7 @@ servers and five minds.
 
 **Forms.**
 - A restored genome logs `forms N (v2 K, v1 M)`.
-- `pair_form` work counter equal at N and 4N bodies.
+- `star_and_site_faces` work counter linear in the occupied sites at N and 4N bodies.
 - Over 100 pulled bundles, `rule` lines exceed `uncollapsed`; at least one
   `Glued`, one `Unfolded`, one contact word logged.
 - A witness lacking a glued form logs fetch, replay, then install.
@@ -6224,7 +6225,7 @@ seam keeps digest equality alive. 0.12 Carriage versors: every
 `placement`, `shift`, and residue pair replaced by an A4 versor on
 `Vertex`, `Transport`, `Loop`, `PivotBy`, `Form.carriages`, and the class
 vector's placement and dilation axes, with coordinate pairs confined to
-`pair_form`, `speak_rule`, and `orbit`. 0.13, folded into 0.12 because it
+`extract_rule_with`, `speak_rule`, and `orbit`. 0.13, folded into 0.12 because it
 rewrites the same function: the class vector reads the rotor's conjugacy
 invariants first and the plane blocks as the sensor section (12.6, 15.3,
 16.3); `Axis::Sheet` becomes `Axis::Orientation` read from the rotor's
@@ -7807,7 +7808,7 @@ sentence/demand.rs         Demand NEW: the five kinds of 50.5 and their A21 key 
 alphabet/factor.rs         factor_rotor(&Rotor) -> Result<Word, Demand> NEW (A22, 50.4), over spell_peel per commuting block
 blade/carry.rs             versor_between on the union shape for V_ij (50.3)
 family/perceive.rs         word_form → factor_rotor; demand_vertex NEW; body_only_vertex DELETED
-family/pair.rs             pair_form: F steps 1–5; the edge transport on every face
+family/extract.rs          the family's percept: F steps 1–5 on the one form (52.5); the edge transport on every face
 sentence/form/carrier.rs   Form::loops_of composes FormFace.edge around a cycle; holonomy read in the stabilizer up to conjugacy
 client/sdk/entity/think.rs withhold_form stands the sentence withheld and holds it; hold_thought DELETED (hold_chain holds a chain as the pair form of its scene); attest(chain) unreachable from a withheld form (L6); from a served listing until L8
 court/verdict/replay.rs    replay_form_with: G steps 1–4; REFUSE_NOT_A_SENTENCE, REFUSE_VERTEX_BODY, REFUSE_EDGE, REFUSE_DEMAND_UNTYPED (L7)
@@ -8609,6 +8610,39 @@ The observable is 51.10's three proofs and no correspondence pass in any
 trace. A draft of a one-form carrier standing untracked in the tree
 (`family/family_form.rs`) is not this ruling's and is not read by it.
 
+**As landed (2026-09-17, night), five readings the landing fixed and the
+operator reads with the rest:**
+
+1. **The fiber's unit is the section**: a component of one hue within a
+   frame, standing at its frame (`perceive_at`). A body stacked along `e₃`
+   by 51.3's 6-adjacency has a chart that depends on its extent there, so a
+   vertex keyed by it finds nothing on a frame perceived alone — which is
+   what speech and the court do. The family is still perceived once, frame
+   by frame, and 51.3's stacked body stays the reading of periodicity
+   (move 5), not of the pairing.
+2. **The quotient is read in the frame's own coordinates**: a frame's
+   sections shifted to `k = 0` before the versor is measured, so "the same
+   versor on every frame" is the exact statement that the rule holds on
+   every pair, and the vertex's carriage is what any frame perceived alone
+   reads. Frames reading another versor, or another hue map, are the
+   frames the vertex is not claimed on (18.2).
+3. **The member's section is keyed by class, chart, address and
+   carriage**, because two vertices of one class can stand on one chart —
+   a cover's pieces at two frames, a chart whose frames read two versors —
+   and each is claimed on its own frames; two members whose every
+   coordinate agrees are one action and are claimed alike.
+4. **The ring answers the peel's demands only** (37.7): a `Source`,
+   `Creation` or deformation measured as one versor between its links is a
+   word that pairs two instances of one chart behind the chart's back,
+   which the court refuses for not carrying every body of the chart.
+5. **A contact word is minted only where it orbits** (22): a class whose
+   placement varies with a constant ring but whose word has the identity
+   rotor, or returns `NoOrbit` on a frame, stays the sections the percept
+   filed; a contact minted re-derives its star faces, since a face left
+   with the placement the vertex no longer has is refused as a face that
+   does not re-derive (23.1 step 4). An edge face claims the frames its
+   edge re-derives on and no other.
+
 ### 52.6 Binding
 
 ```
@@ -8620,8 +8654,15 @@ sentence/pivot/trial.rs         file_loop files at any period, 0 included
 sentence/pivot/drive.rs         NoneDischarged files a loop of any order; the Standing demand rides beside the filing
 sentence/tape.rs                the filed zero admitted
 court/verdict/replay.rs         no face refused for an edge word's order; loop_reading_replays reads any order
-family/extract.rs, family/mod.rs, family/speak.rs   52.5: the stack, the fiber quotient, the sections along e₃, the open section spoken; pairing.rs and correspondence.rs deleted
-court/verdict/body.rs           vertices_carry_frames, edges_rederive_frames (51.8)
+family/extract.rs               52.5: the frames perceived once, the fiber quotient per frame, the sections along e₃, the covers and demands, the faces; the percept memo
+family/pair.rs                  the scenery: vertices with a support per member, the meet's edge, the cover's demand
+family/pairing.rs               the incidence (star_and_site_faces) and the hue carrier; the scene's greedy pairing deleted
+family/correspondence.rs        the transport class, the member section key, the relatives on a form; the pair-form readers deleted
+family/memo.rs                  the derivation per mind (the ring answering the peel's demands only) and the task memo
+family/contact.rs               move 6: the ring, the orbit (22), the star faces re-derived
+family/finish.rs                the unreached frames as demands; the form closed
+family/speak.rs, court/verdict/body.rs   the member section read by its key
+sentence/form/contract.rs       a refused word contracted at the member the court named (D10 item 13)
 ```
 
 Tests (39): `cayley::tests::a_versor_is_its_bivector_read_back_in_either_direction`,
@@ -8635,8 +8676,9 @@ Tests (39): `cayley::tests::a_versor_is_its_bivector_read_back_in_either_directi
 `a_free_part_loop_files_at_period_zero_beside_its_demand`;
 `verdict::tests::a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order`,
 `a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not`;
-51.10's proofs 1 and 2 as `family::tests::a_family_translated_along_e3_is_one_loop_and_no_correspondence_runs`
-and `two_courts_reach_one_address_for_one_family`.
+51.10's proofs 1 and 2 as `family::tests::a_family_translated_along_e3_is_one_vertex_on_every_frame_and_no_correspondence_runs`
+and `two_courts_reach_one_address_for_one_family`; the multiplicity of
+50.5 as `two_hues_that_meet_are_one_charts_multiplicity`.
 
 Rows: Q1 (this part), Q2, Q3, P5 with P4 folded in, P7, in
 `MU-RECURSION-TASKS.md`.

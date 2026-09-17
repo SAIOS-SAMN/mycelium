@@ -317,13 +317,17 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
     y_recoloured[0][6] = 6;
     y_recoloured[0][7] = 6;
     let pure_family = vec![(x.clone(), y_recoloured.clone())];
-    let mut pf = crate::transducer::family::pair_form_uncrystallized(&x, &y_recoloured, None);
-    let pure_words = pf
+    let mut pf = crate::transducer::family::one_pair_form(&x, &y_recoloured);
+    // THREE BODIES OF ONE TRANSPORT CLASS — each recoloured in place — are
+    // one word vertex acting on three charts (D7, 21 step 1), each member
+    // carrying its own hue map.
+    let pure_words: usize = pf
         .vertices
         .iter()
         .filter(|v| matches!(v, Vertex::Word { .. }))
-        .count();
-    assert_eq!(pure_words, 3, "three word vertices extracted");
+        .map(|v| v.acts().map_or(0, |a| a.len()))
+        .sum();
+    assert_eq!(pure_words, 3, "three bodies recoloured: three members of the closed sub-complex");
     let (three_closed_deflation, _) = crate::transducer::family::form_deflation(
         &pf,
         &pure_family,
@@ -363,14 +367,15 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
     pf.reindex();
     let rule = crate::transducer::sentence::rule_of_form(pf);
 
-    let words_count = rule
+    let words_count: usize = rule
         .form
         .vertices
         .iter()
         .filter(|v| matches!(v, Vertex::Word { .. }))
-        .count();
+        .map(|v| v.acts().map_or(0, |a| a.len()))
+        .sum();
     let demands_count = rule.form.demand_vertices().count();
-    assert_eq!((words_count, demands_count), (3, 7));
+    assert_eq!((words_count, demands_count), (3, 7), "three members act, seven demands stand");
 
     let spoken = crate::transducer::family::mint_sentence(
         &rule,

@@ -102,6 +102,69 @@ let snaps = form.pivot_loop(b"idea", &crate::network::nerve::Keyed::new(), &NoCr
 assert!(!snaps.is_empty(), "the pivot loop reads the held loop and answers");
 }
 
+/// 51.10 PROOF 1, 52.5 — A FAMILY WHOSE RULE IS ONE TRANSLATION. Three
+/// pairs, each output the input translated by one vector: every frame's
+/// quotient of the bar's chart is that translator in the frame's own
+/// coordinates, so the rule is ONE word vertex holding on every frame, with
+/// no section, no demand, and no correspondence pass anywhere in it; it
+/// closes the family and speaks a fourth frame.
+#[test]
+fn a_family_translated_along_e3_is_one_vertex_on_every_frame_and_no_correspondence_runs() {
+    let family = vec![
+        (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
+        (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
+        (grid(&["0000", "0000", "1100"]), grid(&["0000", "0000", "0011"])),
+    ];
+    let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("the family extracts");
+    let words: Vec<&Vertex> =
+        rule.form.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).collect();
+    let [word] = words.as_slice() else {
+        panic!("one word vertex for one translation on every frame: {:?}", rule.form.vertices)
+    };
+    let carried_by_the_translator = word
+        .acts()
+        .into_iter()
+        .flat_map(|a| a.scoped())
+        .all(|(_, m)| element::same_versor(&m.carriage, &element::translator_versor(0, 2)));
+    assert!(carried_by_the_translator, "the vertex carries its body by the translation");
+    assert_eq!(rule.section_count(), 0, "a rule that holds on every frame is no section: {:?}", rule.sections);
+    assert_eq!(rule.form.demand_vertices().count(), 0, "and asks for nothing");
+    let (_, rems) = form_deflation(&rule.form, &family, &NoCrystal);
+    assert!(rems.iter().all(|r| r.is_empty()), "it closes every frame: {rems:?}");
+    let spoken = speak_rule(&rule, &grid(&["0000", "0000", "0000", "1100"]), &NoCrystal).expect("spoken");
+    assert_eq!(spoken.grid(), Some(grid(&["0000", "0000", "0000", "0011"])), "and speaks a fourth frame");
+}
+
+/// 51.10 PROOF 2, 50.9 — THE SAME ADDRESS ON TWO COURTS. Two extractions
+/// of one family with no shared runtime memory — the percept memo cleared
+/// between them — reach one form address, and a court replays each minted
+/// sentence on its own copy of the family.
+#[test]
+fn two_courts_reach_one_address_for_one_family() {
+    let family = vec![
+        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
+        (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+    ];
+    crate::transducer::family::extract::clear_percept_memo();
+    let first = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extracts");
+    crate::transducer::family::extract::clear_percept_memo();
+    let second = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extracts again");
+    assert_eq!(
+        crate::transducer::sentence::form_vertex_key(&first.form),
+        crate::transducer::sentence::form_vertex_key(&second.form),
+        "one family, one address, on two readings that share nothing"
+    );
+    for rule in [&first, &second] {
+        let word = mint_sentence(rule, &family, &NoCrystal, 0).expect("the family mints");
+        assert_eq!(
+            crate::verdict::blind_replay_on(&word, &|_| None, Some(&family), &NoCrystal),
+            None,
+            "and a court replays it on its own copy of the family"
+        );
+    }
+}
+
 /// An unmeasured scale is not the identity ratio.
 #[test]
 fn extract_rule_refuses_unmeasured_scale() {
@@ -249,7 +312,7 @@ let flat_words = flat
     .iter()
     .filter(|v| matches!(v, Vertex::Word { .. }))
     .count();
-let held_form = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
+let held_form = one_pair_form(&family[0].0, &family[0].1);
 assert!(held_form.is_closed(), "a pair form of a shift coheres");
 let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
 struct Held {
@@ -518,54 +581,39 @@ assert_eq!(
 );
 }
 
-/// TWO HUES THAT MEET ARE TWO BODIES WITH A CONTACT FACE (chapter 20 as
-/// ruled 2026-09-09, 50.1, 50.3). Two bars of different hues that touch
-/// in the output are two bodies each carried by its own versor — one
-/// translated, one still — so the pair form holds two word vertices, no
-/// demand, and a face between the touching bodies; the pair did not move
-/// rigidly, so that face's edge transport is a remainder edge. Read
-/// hue-blind, the joined output was one blob no versor carried and every
-/// such scene became a deformation demand with no contact face at all.
+/// TWO HUES THAT MEET ARE ONE CHART'S MULTIPLICITY (chapter 20 as ruled
+/// 2026-09-09, 50.5, 52.5, rule 15). Two bars of different hues that touch
+/// in the output are one chart — a single-hue two-lamina bar — with two
+/// instances at the frame, one translated and one still: no quotient
+/// carries the chart's fiber there, and no instance is paired with another
+/// by a search. The cover's pullback carries the bar that stood, in place,
+/// as a word vertex; the bar that moved is the multiplicity the chart cannot
+/// resolve — a `Source` demand of two, every one standing and none
+/// first-found — and the form is valid, never closed. The family's rule
+/// reads the same at both frames.
 #[test]
-fn two_hues_that_meet_are_two_bodies_with_a_contact_face() {
+fn two_hues_that_meet_are_one_charts_multiplicity() {
 let family = vec![
     (grid(&["110022", "000000"]), grid(&["001122", "000000"])),
     (grid(&["000000", "110022"]), grid(&["000000", "001122"])),
 ];
-let pf = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
-let words = pf.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
-assert_eq!(words, 2, "two bodies of one hue each, both carried: two word vertices, got {words}");
-assert_eq!(pf.demand_vertices().count(), 0, "nothing the eyes could not pair");
-let contact: Vec<&FormFace> = pf.faces.iter().filter(|f| f.i != 0 && f.j != 0).collect();
-assert_eq!(contact.len(), 1, "one face between the two touching bodies, got {}", contact.len());
-assert!(
-    !contact[0].has_edge(),
-    "one bar moved and the other stood: no single versor carries the pair, a remainder edge (50.3)"
-);
-// AND THE RULE DEMANDS THE MULTIPLICITY RATHER THAN SPEAKING ONE OF IT (D8,
-// 50.5). Both bars are single-hue two-lamina bars, so they are ONE chart, and
-// within one pair one is translated and the other is still: two carriages
-// under one chart, which no member can carry and no coordinate the
-// correspondence has selects between — the chart is what it matches by and
-// the chart is the same.
-//
-// This asserted one word vertex and no demand, and called the two carriages
-// "two sections" — which is what 18.2 says of variation ACROSS PAIRS. Within
-// one pair it is a multiplicity: keeping one carriage spoke one bar and
-// asserted its placement for the other, and the form claimed a bar it does
-// not carry. Every one stands as a section and none is first-found.
-let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the family extracts");
-let words = rule
-    .form
-    .vertices
-    .iter()
-    .filter(|v| matches!(v, Vertex::Word { .. }))
-    .count();
-assert_eq!(
-    words, 0,
-    "the class's one chart is a multiplicity, so it carries no word; got {words}"
-);
-let demands: Vec<_> = rule.form.demand_vertices().collect();
+let pf = one_pair_form(&family[0].0, &family[0].1);
+let words: Vec<&Vertex> = pf.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).collect();
+assert!(!words.is_empty(), "the bar that stood is carried in place by the cover: {:?}", pf.vertices);
+let bar_chart = perceive(&family[0].0)
+    .into_iter()
+    .map(|b| b.moduli)
+    .next()
+    .expect("the scene's bars stand on a chart");
+for still in &words {
+    assert!(
+        still.acts().into_iter().flat_map(|a| a.scoped()).all(|(_, m)| {
+            element::same_versor(&m.carriage, &element::identity_versor())
+        }),
+        "every word carries a piece of the bar that stood, by the identity: {still:?}"
+    );
+}
+let demands: Vec<_> = pf.demand_vertices().collect();
 let [(_, kind, chart, links)] = demands.as_slice() else {
     panic!("one demand, on the one chart the multiplicity is at; got {}", demands.len())
 };
@@ -573,33 +621,21 @@ assert!(
     matches!(kind, crate::transducer::sentence::Demand::Source { multiplicity } if *multiplicity == 2),
     "the demand names the multiplicity it could not resolve: {kind:?}"
 );
-assert_eq!(
-    chart.key().into_vec(),
-    pf.vertices
-        .iter()
-        .find_map(|v| v.acts().and_then(|a| a.scoped().next().map(|(k, _)| k)))
-        .expect("the pair form's bars stand on a chart"),
-    "and it names the chart the bars stand on"
-);
+assert_eq!(**chart, bar_chart, "and it names the chart both bars stand on");
 assert!(
     !links.is_empty() && links.iter().all(|&(_, _, before, after)| before != after),
-    "carrying the links it stands for, each one the pair asks a different hue of"
+    "carrying the links it stands for, each one the frame asks a different hue of"
 );
+assert!(!pf.is_closed(), "a sentence with demands is valid, never closed (2.2, 50.1)");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the family extracts");
+let demands: Vec<_> = rule.form.demand_vertices().collect();
+let [(_, kind, _, links)] = demands.as_slice() else {
+    panic!("one demand over the family, on the one chart; got {}", demands.len())
+};
 assert!(
-    !rule.form.is_closed(),
-    "a sentence with demands is valid, never closed (2.2, 50.1)"
+    matches!(kind, crate::transducer::sentence::Demand::Source { multiplicity } if *multiplicity == 2),
+    "the same multiplicity at both frames: {kind:?}"
 );
-// AND A RULE WHOSE WHOLE CONTENT IS THE DEMAND IS A CHAIN, NOT A SENTENCE
-// (23.1 step 3, 50.6/L7): "nothing in it acts". The tape parses — the court
-// reads it and reaches that clause, which is the reading — and the family is
-// WITHHELD rather than spoken by a rule that would carry one bar and claim
-// the other. The refusal is named, because a court that says no has a reason
-// with a coordinate on it (50.9, rule 11).
-let e = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("element");
-assert!(!rule.form.acts(), "no vertex of this form acts");
-assert_eq!(
-    crate::verdict::blind_replay(&e),
-    Some(crate::verdict::REFUSE_NOT_A_SENTENCE),
-    "the demand is the whole of it, so the utterance is a chain"
-);
+assert_eq!(links.len(), 8, "both frames' moved bars, before and after, ride the demand: {links:?}");
+assert!(!rule.form.is_closed(), "and the rule is valid, never closed");
 }

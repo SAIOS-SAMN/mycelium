@@ -11,7 +11,7 @@ fn pair_form_reads_laminae_once() {
 let a = grid(&["1100", "0000"]);
 let b = grid(&["0011", "0000"]);
 reset_sensor_reads();
-let f1 = pair_form_uncrystallized(&a, &b, None);
+let f1 = one_pair_form(&a, &b);
 let n = sensor_reads();
 assert!(n > 0, "first call reads the grids, got {n}");
 assert!(
@@ -27,7 +27,7 @@ assert!(
     f1.vertices.iter().any(|v| matches!(v, Vertex::Word { .. })),
     "a carried body is a word vertex"
 );
-let f2 = pair_form_uncrystallized(&a, &b, None);
+let f2 = one_pair_form(&a, &b);
 assert_eq!(sensor_reads(), n, "second call touches no lamina");
 assert_eq!(f1.vertices.len(), f2.vertices.len());
 assert_eq!(f1.faces.len(), f2.faces.len());
@@ -83,7 +83,7 @@ assert!(matches!(edge.word.order(), crate::transducer::alphabet::Order::Finite(_
 #[test]
 fn a_created_body_is_a_source_or_creation_demand() {
 use crate::transducer::sentence::Demand;
-let f = pair_form_uncrystallized(&grid(&["1100", "0000", "0000"]), &grid(&["1100", "0000", "0220"]), None);
+let f = one_pair_form(&grid(&["1100", "0000", "0000"]), &grid(&["1100", "0000", "0220"]));
 let demands: Vec<_> = f.demand_vertices().collect();
 assert_eq!(demands.len(), 1, "one demand: {:?}", f.vertices);
 let (_, kind, _, links) = demands[0];
@@ -97,7 +97,7 @@ assert_eq!(
     f.vertices
 );
 
-let f = pair_form_uncrystallized(&grid(&["1100", "0000", "0000"]), &grid(&["1100", "0000", "0222"]), None);
+let f = one_pair_form(&grid(&["1100", "0000", "0000"]), &grid(&["1100", "0000", "0222"]));
 let demands: Vec<_> = f.demand_vertices().collect();
 assert_eq!(demands.len(), 1);
 assert_eq!(*demands[0].1, Demand::Creation, "no input chart carries onto a bar of three");
@@ -111,14 +111,14 @@ assert_eq!(*demands[0].1, Demand::Creation, "no input chart carries onto a bar o
 #[test]
 fn a_deformed_body_is_a_deformation_demand() {
 use crate::transducer::sentence::Demand;
-let f = pair_form_uncrystallized(&grid(&["1100"]), &grid(&["1000"]), None);
+let f = one_pair_form(&grid(&["1100"]), &grid(&["1000"]));
 let kinds: Vec<&Demand> = f.demand_vertices().map(|(_, k, _, _)| k).collect();
 assert_eq!(kinds.len(), 1, "one demand: the deformation, its image consumed: {kinds:?}");
 assert!(matches!(kinds[0], Demand::TopologicalDeformation { image, axes } if !image.0.is_empty() && !axes.is_empty()), "{kinds:?}");
 let (_, _, _, links) = f.demand_vertices().next().expect("the demand");
 assert_eq!(links, &[(0, 0, 1, 1), (0, 1, 1, 0)], "the deformation stands for the union of both bodies, hue before and after");
 
-let f = pair_form_uncrystallized(&grid(&["1100", "0000", "0220"]), &grid(&["1100", "0000", "0000"]), None);
+let f = one_pair_form(&grid(&["1100", "0000", "0220"]), &grid(&["1100", "0000", "0000"]));
 let kinds: Vec<&Demand> = f.demand_vertices().map(|(_, k, _, _)| k).collect();
 assert_eq!(kinds.len(), 1, "{kinds:?}");
 assert!(matches!(kinds[0], Demand::TopologicalDeformation { image, axes } if image.0.is_empty() && !axes.is_empty()), "a vanished body deforms to the empty chart on every axis: {kinds:?}");
@@ -132,7 +132,7 @@ for (_, kind, _, _) in f.demand_vertices() {
 #[test]
 fn demands_ride_the_sentence_one_per_chart() {
 use crate::transducer::sentence::Demand;
-let f = pair_form_uncrystallized(&grid(&["1100000", "0000000", "0000000"]), &grid(&["1100000", "0000000", "0220022"]), None);
+let f = one_pair_form(&grid(&["1100000", "0000000", "0000000"]), &grid(&["1100000", "0000000", "0220022"]));
 let demands: Vec<_> = f.demand_vertices().collect();
 assert_eq!(demands.len(), 1, "one vertex for one (kind, chart): {:?}", f.vertices);
 let (idx, kind, chart, links) = demands[0];
@@ -171,13 +171,18 @@ assert!(!back.is_closed());
 // `undeclared_remainder`, and on this family there is none. A voice that
 // asked only whether ANY demand vertex existed would mint a form declaring
 // one link and leaving twenty, and the court would refuse it.
+let undeclared = crate::court::verdict::body::undeclared_remainder(
+    &form_deflation(&rule.form, &family, &NoCrystal).1,
+    &rule.form,
+);
 assert!(
-    crate::court::verdict::body::undeclared_remainder(
-        &form_deflation(&rule.form, &family, &NoCrystal).1,
-        &rule.form
-    )
-    .is_empty(),
-    "this form's demand covers what it leaves, which is why it mints"
+    undeclared.is_empty(),
+    "this form's demand covers what it leaves, which is why it mints; undeclared {undeclared:?} on {:?} with sections {:?}",
+    rule.form.vertices.iter().map(|v| match v {
+        Vertex::Word { address, acts, .. } => format!("word {:02x}{:02x} acts {:?}", address.as_bytes()[0], address.as_bytes()[1], acts.scoped().map(|(_, a)| (a.chart.clone(), a.gauge.clone(), element::same_versor(&a.carriage, &element::identity_versor()))).collect::<Vec<_>>()),
+        other => format!("{other:?}"),
+    }).collect::<Vec<_>>(),
+    rule.form.sections.scoped().map(|(k, v)| (k.len(), v.clone())).collect::<Vec<_>>()
 );
 // Strip the links the demand declares. The form still HOLDS a demand
 // vertex — so the old test, which asked only whether one existed, still

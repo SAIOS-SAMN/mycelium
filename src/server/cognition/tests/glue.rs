@@ -9,7 +9,7 @@ use crate::transducer::element::Element;
 #[test]
 fn glued_form_replays_descent_through_the_court_genome() {
 use crate::transducer::family::{
-    apply_form, extract_rule_with, mint_sentence, pair_form_uncrystallized, Crystal, Grid, Speech,
+    apply_form, extract_rule_with, mint_sentence, one_pair_form, Crystal, Grid, Speech,
 };
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
 use crate::transducer::stalk::{Invariant, Standing};
@@ -17,7 +17,7 @@ let family = vec![
     (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
     (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
 ];
-let held_form = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
+let held_form = one_pair_form(&family[0].0, &family[0].1);
 let held_e = as_element_form(&held_form, [1, 0, 0, 0]).expect("inner tape");
 struct Held {
     e: Element,
@@ -114,7 +114,7 @@ assert_eq!(
 #[test]
 fn a_cited_form_is_a_use_at_the_court() {
 use crate::client::sdk::Epigenome;
-use crate::transducer::family::{extract_rule_with, mint_sentence, pair_form_uncrystallized, sentence_measure, NoCrystal};
+use crate::transducer::family::{extract_rule_with, mint_sentence, one_pair_form, sentence_measure, NoCrystal};
 use crate::transducer::sentence::{as_element_form, Vertex};
 fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
@@ -124,7 +124,7 @@ let family = vec![
     (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
 ];
 // The sibling the voice solved and stood: one pair of the bundle.
-let held = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
+let held = one_pair_form(&family[0].0, &family[0].1);
 let mag = sentence_measure(&held, &family[..1], &NoCrystal, 0).expect("the body is spoken");
 let held_e = as_element_form(&held, mag).expect("a tape");
 let mut epi = Epigenome::new();
