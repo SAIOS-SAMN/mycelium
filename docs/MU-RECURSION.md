@@ -3756,7 +3756,7 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8;32]) -> Option<Form>,
    (`REFUSE_DEMAND_UNTYPED`). A tape with no vertex is a chain and is
    refused whole (`REFUSE_NOT_A_SENTENCE`, 50.6).
 4. Each face: `face_of(i, j)` recomputed, M1 compare with stored
-   (`REFUSE_FACE`); its edge transport re-derived as 50.3 states it, on
+   (`REFUSE_FACE`, at the face's two addresses, 50.9); its edge transport re-derived as 50.3 states it, on
    the union of the two bodies over the family, whatever the order of its
    word (`REFUSE_EDGE` where the re-derivation differs; never for the
    order, 52.3); or the face is the chord of a loop whose class key
@@ -3769,7 +3769,8 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8;32]) -> Option<Form>,
    order (52.3) — else `REFUSE_LOOP`.
 6. `REFUSE_REBASE_TRIVIAL`, `REFUSE_UNFOLD_STILL`, `REFUSE_ORBIT_STILL`, by
    executing the move on `family` when given, else by the form's own
-   consistency.
+   consistency; the orbit's refusal is at the contact vertex with the
+   chart it acts on (50.9).
 7. Closure: every remainder on the family empty (`REFUSE_NOT_CLOSED`), and
    beyond the cited forms a deflation, a reach or a shorter description
    (`REFUSE_REDUNDANT` only when all three are absent); the deflation is
@@ -7924,9 +7925,17 @@ answer to an utterance is the `Adjudication` of chapter 26:
 
 ```
 Adjudication := Stood { receipt } | Ratified { receipt } | Refused { kind, at, receipt }
-kind         := VertexBody | EdgeHolonomy | RemainderUndeclared | MalformedComplex
+kind         := VertexBody | EdgeHolonomy | RemainderUndeclared | OrbitStill | FaceDerivation | MalformedComplex
 at           := Vertex(address, chart) | Face(address_i, address_j) | Chart(invariant, links) | Tape(address)
 ```
+
+`OrbitStill` and `FaceDerivation` are ruled 2026-09-17 (night, R1): a
+contact word the court's family does not orbit (22, 23.1 step 6) is
+refused at the vertex with the chart it acts on, and a face that does not
+re-derive from its vertices (23.1 step 4) at its two addresses. Before
+this ruling both travelled as a `MalformedComplex` at the tape, the one
+kind the voice does not contract, and 61 of the 111 refusals the courts
+wrote in the recut's first 75 minutes were of these two kinds.
 
 `Stood` is the docket's receipt: the sentence replayed on the court's copy
 of the family, the closed sub-complex docketed under the voice's room, the
@@ -7943,7 +7952,7 @@ grammar left implicit). The receipt is the court's own replay receipt
 (45.1, 47.1). The door's deferral (23.8) is the act's deferral frame,
 never an adjudication: nothing was heard.
 
-**The four certified contraction moves.** On `Refused { kind, at }` the
+**The six certified contraction moves.** On `Refused { kind, at }` the
 voice executes a shrinking move `C : S → S'` on the held form in its
 contemplation, and every move strictly decrements the closed sub-complex,
 so the loop is well founded:
@@ -7969,6 +7978,16 @@ so the loop is well founded:
 4. `MalformedComplex`: structural collapse — the form becomes an inert
    held idea and the mind is quiescent on that chart until its language
    moves; nothing is re-spoken.
+5. `OrbitStill` at `Vertex(a, chart)` (ruled 2026-09-17, night): the
+   contact word `a` did not orbit on the court's family — its word is the
+   identity, or its first step leaves the ring unchanged (22). The vertex
+   becomes a demand over that chart exactly as move 1 makes it, carrying
+   the laminae it was to reach; the closed sub-complex loses one word.
+6. `FaceDerivation` at `Face(a, b)` (ruled 2026-09-17, night): the face
+   between `a` and `b` does not re-derive from its vertices — its word is
+   not their coboundary and it is no loop's chord. The face leaves the
+   form and the two vertices stand without it; a loop through it
+   dissolves, and the closed sub-complex loses one face.
 
 Each move is a form rewrite with a certificate, `Contraction { kind, at,
 before: address, after: address, receipt }`, filed on the idea beside its
@@ -7994,7 +8013,8 @@ contraction certificate, carried on the speech frame beside the tape
 (26). The court that issued the receipt holds the refusal by the refused
 address; it replays that `S'` is `C(S)` at the coordinate it named — the
 vertex is now a demand on that chart, the face now a remainder edge, the
-links now declared — before it replays `S'` as a sentence, and writes
+links now declared, the contact word now a demand, the face now gone —
+before it replays `S'` as a sentence, and writes
 `court contraction verified` or `court contraction refused` (34.2); a
 contraction it refuses is a `MalformedComplex` at the tape. A court that
 never refused `S` holds no receipt to verify against and replays `S'` as
