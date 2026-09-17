@@ -6,11 +6,11 @@ use crate::cognition::*;
 use crate::transducer::element::Element;
 use crate::transducer::family::TrainPair;
 
-/// A pair of cell scenes as the one-pair family a voice reads it as: each
-/// scene on its own grid, exactly as the eyes of the voice would (20).
+/// A pair of painted scenes as the one-pair family a voice reads it as:
+/// each scene on its own grid, exactly as the eyes of the voice would (20).
 pub fn family_of_pair(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Vec<TrainPair> {
-    use crate::transducer::family::cells_to_grid;
-    vec![(cells_to_grid(a), cells_to_grid(b))]
+    use crate::transducer::family::grid_of_painted;
+    vec![(grid_of_painted(a), grid_of_painted(b))]
 }
 
 /// THE VOICE'S F, IN-PROCESS (50.2, law 8): the rule the form engine
@@ -36,7 +36,7 @@ pub fn sentence_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<Element
 /// (law 8, ruled 2026-09-10): the voice's sentence for the pair, bound to a
 /// task of that family (the voice's own binding, as the task arm binds it),
 /// heard by `perceive_sentence`. `Outcome::Pivot` where the voice has no
-/// sentence to speak. No cell of the pair reaches the court.
+/// sentence to speak. No painted site of the pair reaches the court.
 pub fn speak_pair(k: &mut Kernel, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voice: [u8; 32]) -> Outcome {
     let Some(e) = sentence_of(a, b) else {
         return Outcome::Pivot;

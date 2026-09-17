@@ -77,23 +77,18 @@ impl Kernel {
         // left cannot be honoured — which is EXACT and derived from the
         // tape, not estimated from a record's size.
         //
-        // Seven sections divided by a typed constant instead: `/ 6`,
-        // `/ 106` twice, `/ 56`, `/ 14`, `/ 8`, `/ 50` — each one a guess
-        // at a minimum record, each one able to be wrong in the direction
-        // that refuses valid content. `/ 50` WAS wrong. A DEF1 record is
-        // `addr ‖ μ⃗[4] ‖ tag u8`, which is 35 bytes plus the address, so
-        // any record whose address is under 15 bytes — a chart key, a cell
-        // key — is smaller than the divisor assumed. Measured on the fleet
-        // at 83e3e30: hypha a wrote 8618992 bytes and refused its own
-        // ledger in DEF1 at 6809848, hypha b 13691419 and refused at
-        // 11503269. Both ledgers were written by the build that then would
-        // not read them, and both courts lost everything they had learned.
+        // A divisor typed per section — a guess at a minimum record — can
+        // be wrong in the direction that refuses valid content: a DEF1
+        // record is `addr ‖ μ⃗[4] ‖ tag u8`, 35 bytes plus the address, so a
+        // record whose address is short — a chart key, a simplex key — is
+        // smaller than any divisor assumed for it, and a ledger this build
+        // wrote would refuse to read on this build.
         //
         // The bound is the tape's bytes (rule 10) and the count decides
-        // nothing else (rule 2). This is not a weaker guard than the
-        // divisors: the loops below reserve nothing from `n`, and each
-        // refuses at the first field the tape cannot supply, so a count
-        // past the end costs one iteration and then refuses.
+        // nothing else (rule 2). This is not a weaker guard than a divisor:
+        // the loops below reserve nothing from `n`, and each refuses at the
+        // first field the tape cannot supply, so a count past the end costs
+        // one iteration and then refuses.
         let fits = |b: &[u8], pos: &usize, n: usize| -> Option<()> {
             match n > b.len().checked_sub(*pos)? {
                 true => None,

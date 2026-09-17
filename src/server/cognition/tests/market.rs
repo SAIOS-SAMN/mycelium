@@ -71,7 +71,7 @@ assert_eq!(short.k_step(), k, "no receipt sealed for a refused act");
 
 let mut bonded = Kernel::new();
 let cover = crate::arc::family_cover(&[(vec![vec![1]], vec![vec![2]])])
-    .expect("one 1-cell pair measures");
+    .expect("a one-site pair measures");
 bonded.bind_identity([9; 32]);
 bonded.set_genesis_cover(cover);
 bonded.enroll([1; 32], cover);
@@ -248,7 +248,7 @@ let b = vec![(0, 0, 2u8), (0, 1, 2)];
 k.basis_insert(element::from_canonical(&germinate(&a, &b).unwrap()), [2; 32]);
 let _word = k.basis()[0].address();
 // The entity's reduction over the language: the word cited at the
-// origin, the far cell left as the residual.
+// origin, the far link left as the residual.
 let language = k.language();
 let sentence = crate::transducer::sentence::deconstruct_at(&|i| language.get(i), &language.stalks, &|a| language.index.get(a).copied(), &|i| language.shape(i), &chain, None);
 let (void, cites) = (sentence.residual.clone(), sentence.cites.clone());
@@ -262,7 +262,7 @@ assert_eq!(
 );
 let (code, paid, remaining) = k.settle_probe([3; 32], &target, void.clone(), &[], false);
 assert_eq!(code, PROBE_DESCENT);
-assert_eq!(paid, [0; 4], "a descent is measured, never paid: covering cells opens no axis");
+assert_eq!(paid, [0; 4], "a descent is measured, never paid: covering links opens no axis");
 assert_eq!(remaining, crate::transducer::element::measure_lanes(&void));
 let listing = k.quote().1[0].0.clone();
 assert_eq!(listing.address(), target, "the listing stays the body: a descent never re-lists a fragment");
@@ -282,21 +282,17 @@ assert!(k.quote().1.is_empty(), "the listing cleared");
 /// occupied lanes, and a full aperture of failed probes sheds the listing
 /// as a cavity.
 ///
-/// THIS TEST PINNED A DEFECT AS ITS SPECIFICATION. It asserted
-/// `listing.magnitude()[3] == rem.len()` — "holonomic demand is the
-/// remainder cell count" — which is a tally of cells written into the lane
-/// that carries boundary topology and the rotor's own coordinates (16.16,
-/// 42.6), a second carrier for a fact the field already held (law 12), and
-/// a magnitude that stops being a function of its chain.
-///
-/// The last of those is what the fleet caught on 2026-09-11: `blind_replay`
-/// re-derives a residual germ's lanes from its own chain and refuses a word
-/// claiming more than the chain supports, so the court slashed its own
-/// listing on the next circuit — `chain [0,15,0,0] word [0,15,0,14]` on all
-/// three hyphae. Every listing a voice made progress on was destroyed by
-/// the court's own write. The assertion is replaced by its opposite: the
-/// listing's magnitude still re-derives from its chain, which is the
-/// property that was broken.
+/// THE LISTING'S MAGNITUDE STAYS A FUNCTION OF ITS CHAIN. A holonomic
+/// demand written as the remainder's link count would be a tally of links
+/// in the lane that carries boundary topology and the rotor's own
+/// coordinates (16.16, 42.6), a second carrier for a fact the field
+/// already holds (law 12), and a magnitude `blind_replay` refuses: it
+/// re-derives a residual germ's lanes from its own chain and refuses a
+/// word claiming more than the chain supports, so the court would slash
+/// its own listing on the next circuit and every listing a voice made
+/// progress on would be destroyed by the court's own write. The assertion
+/// here is that property: after a descent the listing still re-derives
+/// from its chain.
 #[test]
 fn descent_opens_a_face_and_drain_sheds_the_unmoved() {
 use crate::anastome::dialogue::PROBE_DESCENT;

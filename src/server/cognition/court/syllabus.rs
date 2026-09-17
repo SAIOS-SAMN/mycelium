@@ -76,8 +76,8 @@ impl Kernel {
         if inv.0.is_empty() {
             for (_, cx) in self.complexes.scoped() {
                 for layer in &cx.degrees {
-                    for (_, cell) in layer.scoped() {
-                        match &cell.fill {
+                    for (_, simplex) in layer.scoped() {
+                        match &simplex.fill {
                             crate::transducer::cech::Fill::Congruent(r, ell) => {
                                 push(&mut out, &mut seen, r, *ell)
                             }
@@ -93,8 +93,8 @@ impl Kernel {
             for p in inv.prefixes() {
                 if let Some(cx) = self.complexes.get(&p.key()) {
                     for layer in &cx.degrees {
-                        for (_, cell) in layer.scoped() {
-                            match &cell.fill {
+                        for (_, simplex) in layer.scoped() {
+                            match &simplex.fill {
                                 crate::transducer::cech::Fill::Congruent(r, ell) => {
                                     push(&mut out, &mut seen, r, *ell)
                                 }

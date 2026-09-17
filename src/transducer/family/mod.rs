@@ -257,9 +257,6 @@ pub(crate) fn site_key(r: i64, c: i64) -> [u8; 32] {
     k
 }
 
-/// The modules not yet swept name a site's key by the retired word.
-pub(crate) use self::site_key as cell_pos_key;
-
 /// A MEMBER OF THE SCENE'S COMPLEX: a vertex and the chart it stands at
 /// there (D10). The supports a pairing reads are keyed by this, not by the
 /// vertex alone — a face exists because two BODIES' supports meet (21 step 2),

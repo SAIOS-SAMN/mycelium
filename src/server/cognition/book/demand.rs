@@ -1,7 +1,7 @@
 // L8q, 50.5 — A PROBE THAT ANSWERS ONE DEMAND VERTEX of a listed
-// sentence, settled on that vertex's own cells.
+// sentence, settled on that vertex's own links.
 //
-//! The older probe deflated a listing: subtract the cells the voice's
+//! The older probe deflated a listing: subtract the links the voice's
 //! words already cover and record what is left. It cannot produce a held
 //! generator, because nothing it does names a word — it names a smaller
 //! chain. A sentence carries demand vertices (50.5), each a (kind, chart)
@@ -24,7 +24,7 @@ impl Kernel {
     /// the demand's own bodies as a scene (`scene_at_of_chain`, 50.6 seam
     /// 1 — both sides at one corner), and SPEAKS THE CITED FORM onto the
     /// before side with `apply_form`. What the form says is measured
-    /// against the after side, cell by cell, in the demand's own
+    /// against the after side, link by link, in the demand's own
     /// coordinates.
     ///
     /// THE COURT REPLAYS; IT DOES NOT TAKE THE VOICE'S WORD. The cited
@@ -41,9 +41,9 @@ impl Kernel {
     ///
     /// A non-empty residual is `PROBE_DESCENT`: the demand's chart carries
     /// what the form did not reproduce, on the field, and NOTHING is
-    /// written to any magnitude — c50ef5f stands. A descent that writes a
-    /// cell count into a word's lanes makes the court slash its own
-    /// listing on the next circuit.
+    /// written to any magnitude. A descent that writes a link count into a
+    /// word's lanes makes the court slash its own listing on the next
+    /// circuit.
     pub(crate) fn settle_demand(
         &mut self,
         voice: [u8; 32],
@@ -80,10 +80,10 @@ impl Kernel {
         let before = element::measure_lanes(&bodies);
         let placement = crate::transducer::alphabet::Word::identity();
         // WHAT THE DEMAND STILL ASKS FOR, over all the cites the court can
-        // speak: a cell is still demanded only where NOTHING said its
-        // after colour. That is a fiber — the cells no citation reached —
+        // speak: a link is still demanded only where NOTHING said its
+        // after colour. That is a fiber — the links no citation reached —
         // and never the shortest of several leftovers: choosing the cite
-        // with the fewest cells left would be a count deciding a branch
+        // with the fewest links left would be a count deciding a branch
         // (rule 2), and it would throw away what the other cites did say.
         //
         // A cite naming an address this court does not hold is not a
@@ -91,7 +91,7 @@ impl Kernel {
         // and the probe stands on the ones it can.
         let mut open: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for &(r, c, _, _) in &bodies {
-            open.insert(crate::transducer::family::cell_pos_key(r, c), ());
+            open.insert(crate::transducer::family::site_key(r, c), ());
         }
         let mut spoke: Option<(Address, element::Versor)> = None;
         // ONE SPEND PER FORM THE COURT SPEAKS. `apply_form` perceives a
@@ -110,7 +110,7 @@ impl Kernel {
             let Some(sp) = apply_form(&f, &scene, &placement, self) else { continue };
             let Some(spoken) = sp.grid() else { continue };
             // `scene_at_of_chain` gives the corner the framing subtracted,
-            // so the spoken cell goes back where the chain had it and
+            // so the spoken link goes back where the chain had it and
             // nothing re-derives that corner here (law 12).
             for &(r, c, _, a) in &bodies {
                 let said = spoken
@@ -118,7 +118,7 @@ impl Kernel {
                     .and_then(|row| row.get((c - c0) as usize))
                     .copied();
                 if said == Some(a) {
-                    open.remove(&crate::transducer::family::cell_pos_key(r, c));
+                    open.remove(&crate::transducer::family::site_key(r, c));
                 }
             }
             if spoke.is_none() {
@@ -131,7 +131,7 @@ impl Kernel {
         let residual: Vec<(i64, i64, u8, u8)> = bodies
             .iter()
             .copied()
-            .filter(|&(r, c, _, _)| open.contains(&crate::transducer::family::cell_pos_key(r, c)))
+            .filter(|&(r, c, _, _)| open.contains(&crate::transducer::family::site_key(r, c)))
             .collect();
         let after = element::measure_lanes(&residual);
         if residual.is_empty() {
@@ -151,7 +151,7 @@ impl Kernel {
             eprintln!("  court demand answered on {}… by {by}…", short(at));
             return (PROBE_CLOSED, [0; 4], [0; 4]);
         }
-        // WHAT WAS RELEASED IS WHAT WAS SAID, measured on the cells the
+        // WHAT WAS RELEASED IS WHAT WAS SAID, measured on the links the
         // citations actually reached — not the difference of two measures.
         // Subtracting `after` from `before` assumes the residual's measure
         // is below the demand's on every lane, which is a claim about
@@ -159,7 +159,7 @@ impl Kernel {
         let reached: Vec<(i64, i64, u8, u8)> = bodies
             .iter()
             .copied()
-            .filter(|&(r, c, _, _)| !open.contains(&crate::transducer::family::cell_pos_key(r, c)))
+            .filter(|&(r, c, _, _)| !open.contains(&crate::transducer::family::site_key(r, c)))
             .collect();
         self.write_field(at, chart, Closure::Cavity, residual, &before, &after);
         self.physics.relieve(&element::measure_lanes(&reached));

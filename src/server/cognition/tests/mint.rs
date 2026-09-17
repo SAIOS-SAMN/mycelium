@@ -352,12 +352,12 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
     let family = vec![(x.clone(), y_with_7_creations.clone())];
 
     for s in &demand_shapes {
-        let cells: Vec<(i64, i64, u8, u8)> = s.iter().map(|&(r, c)| (r, c, 0u8, 7u8)).collect();
-        let chart = stalk::invariant(&cells);
+        let links: Vec<(i64, i64, u8, u8)> = s.iter().map(|&(r, c)| (r, c, 0u8, 7u8)).collect();
+        let chart = stalk::invariant(&links);
         pf.vertices.push(Vertex::Demand {
             kind: Demand::Creation,
             chart,
-            bodies: cells,
+            bodies: links,
         });
     }
     pf.reindex();

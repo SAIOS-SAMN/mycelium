@@ -2,7 +2,7 @@
 // reaches it by replaying the word rather than by trusting a signature.
 //
 // The pair fixture is an L recoloured WHOLE (one body, one word): under 20
-// as ruled a body is one hue, and an L with one cell recoloured is three
+// as ruled a body is one hue, and an L with one site recoloured is three
 // bodies no versor pairs — a pair the voice has no sentence for (50.5), so
 // nothing reaches a court.
 
@@ -135,7 +135,7 @@ let mut home = Kernel::new();
 let mut peer = Kernel::new();
 let mut third = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
-let b = vec![(0, 0, 4), (0, 1, 4), (0, 2, 3)]; // the bar recoloured, a cell created beside it (50.5)
+let b = vec![(0, 0, 4), (0, 1, 4), (0, 2, 3)]; // the bar recoloured, a site painted beside it (50.5)
 assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(speak_pair(&mut home, &a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
@@ -197,14 +197,14 @@ k.court_stroke(one_stroke_transport);
 assert_eq!(ruled_n(&k, &addrs), cap + 1, "later listings are not starved by already-ruled ones");
 }
 
-/// R6, 47.3 — A CELL'S VOLUME IS THE OPEN LISTINGS ON ITS CHART: the
+/// R6, 47.3 — A SIMPLEX'S VOLUME IS THE OPEN LISTINGS ON ITS CHART: the
 /// measure of the remainders the chart's open, non-flat fields hold. It
-/// is one quantity for the chart, whatever vantages the cell has; a flat
-/// field and a field on another chart contribute nothing. Measured
-/// through the speakers' index it was zero for every hypha vertex, so no
-/// section stood a 0-cell and nothing filled.
+/// is one quantity for the chart, whatever vantages the simplex has; a
+/// flat field and a field on another chart contribute nothing. Read
+/// through a speaker's index it is zero for every hypha vertex, so no
+/// section stands a vertex and nothing fills.
 #[test]
-fn a_cells_volume_is_the_open_listings_on_its_chart() {
+fn a_simplex_volume_is_the_open_listings_on_its_chart() {
 use crate::transducer::address::Address;
 use crate::transducer::stalk::{Closure, Invariant};
 let mut k = Kernel::new();
@@ -218,9 +218,9 @@ assert!(mag.iter().any(|&x| x > 0));
 k.write_field(listed.as_bytes(), inv.clone(), Closure::Cavity, rem.clone(), &[0; 4], &mag);
 k.write_field(flat.as_bytes(), inv.clone(), Closure::Flat, Vec::new(), &[0; 4], &[0; 4]);
 k.write_field(elsewhere.as_bytes(), Invariant(vec![8]), Closure::Cavity, rem.clone(), &[0; 4], &mag);
-assert_eq!(k.volume_of_cell(&inv), mag, "the open listing on the chart is the cell's volume");
+assert_eq!(k.volume_of_simplex(&inv), mag, "the open listing on the chart is the simplex's volume");
 assert_eq!(k.listings_on(&inv).len(), 1, "the flat field and the other chart's field are not on it");
-assert_eq!(k.volume_of_cell(&Invariant(vec![9])), [0; 4], "a chart with no open listing has no volume");
+assert_eq!(k.volume_of_simplex(&Invariant(vec![9])), [0; 4], "a chart with no open listing has no volume");
 }
 
 /// 45.7, S9.14, S13.3 — THE DOCKET IS AN ORBIT: a docket of more listings
@@ -379,8 +379,8 @@ fn a_sentence_spoken_with_no_task_binds_no_task() {
 
 /// 50.5 — A SENTENCE THAT DECLARES WHAT IT LEFT UNSPOKEN IS HEARD, and its
 /// demand is listed for the market. The rule is read off one pair and
-/// spoken over a family whose second pair asks for a cell the rule's word
-/// never reaches: the mint declares that cell as a `Source` demand, the
+/// spoken over a family whose second pair asks for a site the rule's word
+/// never reaches: the mint declares that site as a `Source` demand, the
 /// court replays the sentence on the bound family with its own
 /// `undeclared_remainder` and finds nothing undeclared, and the demand is
 /// listed under the sentence rather than the sentence refused for saying
@@ -415,7 +415,7 @@ fn a_bonded_hypha_is_a_second_vantage_and_an_unbonded_one_is_not() {
     let mut k = Kernel::new();
     let peer = [2u8; 32];
     let word = crate::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)])
-        .expect("one cell is A5's chain");
+        .expect("one link is A5's chain");
     let addr = word.address();
     k.docket_connection(&word, [9; 32]);
     let (kk, h) = (k.k_step(), k.height());
@@ -522,7 +522,7 @@ fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
 }
 
 /// 47.3, 13.9: A WITNESS GLUES AN OFFER AS THE HOME, NOT AS ITSELF. The
-/// Čech cell of a converging pair has two vertices, one per vantage. Gluing
+/// Čech simplex of a converging pair has two vertices, one per vantage. Gluing
 /// with `peer == self_id` writes the offered word into the section this
 /// court's own reading is read back from, so the court compares the form
 /// with itself and agrees every time — an agreement manufactured by writing
@@ -561,7 +561,7 @@ fn a_witness_glues_an_offer_at_the_homes_vantage() {
 
     // The old read, kept here so the difference is a measurement and not a
     // claim: gluing as oneself files the home's word under this court's own
-    // vantage, and the cell has one vertex where 13.9 needs two.
+    // vantage, and the simplex has one vertex where 13.9 needs two.
     let mut confused = Kernel::new();
     let mut cover = crate::network::nerve::Cover::new();
     let _ = confused.glue_fetched(spoken, witness_vk, witness_vk, &mut cover);
@@ -634,7 +634,7 @@ fn a_witness_that_rederived_nothing_answers_with_nothing() {
 /// VANTAGE — and that is the first vantage every later comparison needs.
 /// `Complex::set_section` had one production caller, always at the incoming
 /// peer's key, so `self_rep` in `glue_fetched` was always None: 13.9's
-/// difference on 0-cells, its automorphism check, its connecting image and
+/// difference on vertices, its automorphism check, its connecting image and
 /// 13.10's whole ruling table were unreachable, and every glue returned
 /// `Admitted` for want of anything to compare against.
 ///

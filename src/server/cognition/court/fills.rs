@@ -1,6 +1,6 @@
 // 23.7, 42 — WHAT ONE STROKE OF THE COURT FILLS, PAYS AND FILES: the
-// unfilled cells and the pending refinements, the volume a fill is paid
-// by, the torsion a congruent cell files.
+// unfilled simplices and the pending refinements, the volume a fill is
+// paid by, the torsion a congruent simplex files.
 //
 //! Split from `replay.rs` (MU-STANDARDS 1.1, one organ per file): the
 //! court's stroke rules the docket there and fills here, on the same
@@ -19,7 +19,7 @@ impl Kernel {
         {
             // Resumed, never restarted at the first key (rule 10, S13.3):
             // a head that refills faster than one budget no longer starves
-            // the tail, and the orbit reaches every cell.
+            // the tail, and the orbit reaches every simplex.
             let from = self.fill_cursor.clone();
             let mut cur = self.unfilled.cursor(from.as_deref(), budget);
             for (_, v) in &mut cur {
@@ -46,11 +46,11 @@ impl Kernel {
             match filled {
                 (crate::transducer::cech::Fill::Filled(gamma, carriage), addrs) => {
                     eprintln!(
-                        "  court cell filled {:02x}{:02x}… γ recorded",
+                        "  court simplex filled {:02x}{:02x}… γ recorded",
                         sim_key[0], sim_key[1]
                     );
                     self.record_gamma(&addrs, &gamma, &carriage);
-                    self.pay_cell_volume(&inv, &addrs);
+                    self.pay_simplex_volume(&inv, &addrs);
                     if !gamma.is_identity() {
                         if let Some((a, b)) = edge_pair(&addrs) {
                             self.mint_or_admit_translation(&gamma, a.clone(), b.clone(), [0; 32]);
@@ -66,17 +66,17 @@ impl Kernel {
                 }
                 (crate::transducer::cech::Fill::Congruent(_g, _ell), addrs) => {
                     eprintln!(
-                        "  court cell congruent {:02x}{:02x}… torsion filed",
+                        "  court simplex congruent {:02x}{:02x}… torsion filed",
                         sim_key[0], sim_key[1]
                     );
                     self.file_torsion(&addrs, _ell);
-                    self.pay_cell_volume(&inv, &addrs);
+                    self.pay_simplex_volume(&inv, &addrs);
                     self.pay_torse(&addrs);
                 }
                 (crate::transducer::cech::Fill::Class(_, class), _) => {
                     let class = *class;
                     eprintln!(
-                        "  court cell class {:02x}{:02x}…",
+                        "  court simplex class {:02x}{:02x}…",
                         sim_key[0], sim_key[1]
                     );
                     let degree = self
@@ -91,22 +91,22 @@ impl Kernel {
                         self.pending_refine.insert(inv.key(), (inv.clone(), class, degree));
                     }
                 }
-                // 37.7 AT THE COURT: a cell whose transition is a rotation
-                // the seventeen do not spell. It fills nothing and files no
-                // class, and it is the court's own adjunction candidate —
-                // named on its own line so the day one appears is a
-                // measurement and not an anecdote.
+                // 37.7 AT THE COURT: a simplex whose transition is a
+                // rotation the seventeen do not spell. It fills nothing and
+                // files no class, and it is the court's own adjunction
+                // candidate — named on its own line so the day one appears
+                // is a measurement and not an anecdote.
                 //
                 // IT IS NOT MINTED HERE, and that is not an omission. This is
                 // a sweep over `self.unfilled` with no speaking voice in it,
                 // and a minted letter is docketed to a DISCOVERER — 47.3, a
-                // court is never one. The cells this sweep reads were put in
-                // `unfilled` by `glue_fetched`, which has the peer whose
-                // speech produced them and adjoins there. Minting here would
-                // have to name a party that does not exist.
+                // court is never one. The simplices this sweep reads were
+                // put in `unfilled` by `glue_fetched`, which has the peer
+                // whose speech produced them and adjoins there. Minting here
+                // would have to name a party that does not exist.
                 (crate::transducer::cech::Fill::Unspellable(_), _) => {
                     eprintln!(
-                        "  court cell unspellable {:02x}{:02x}… 37.7",
+                        "  court simplex unspellable {:02x}{:02x}… 37.7",
                         sim_key[0], sim_key[1]
                     );
                 }
@@ -139,10 +139,11 @@ impl Kernel {
         }
     }
 
-    /// R6 (47.3): the volume of a cell is the measure of the open listings
-    /// on its chart. Its vertices are vantages — hyphas — and no speaker's
-    /// index gates it, so the cell's vertex list is not an argument here.
-    pub(crate) fn volume_of_cell(&self, inv: &crate::transducer::stalk::Invariant) -> [u64; 4] {
+    /// R6 (47.3): the volume of a simplex is the measure of the open
+    /// listings on its chart. Its vertices are vantages — hyphas — and no
+    /// speaker's index gates it, so the simplex's vertex list is not an
+    /// argument here.
+    pub(crate) fn volume_of_simplex(&self, inv: &crate::transducer::stalk::Invariant) -> [u64; 4] {
         let held = self.listings_on(inv);
         let mut chain = Vec::new();
         for (a, _) in held.scoped() {
@@ -153,13 +154,14 @@ impl Kernel {
         element::measure_lanes(&chain)
     }
 
-    pub(crate) fn pay_cell_volume<A: AsRef<[u8]>>(&mut self, inv: &crate::transducer::stalk::Invariant, addrs: &[A]) {
+    pub(crate) fn pay_simplex_volume<A: AsRef<[u8]>>(&mut self, inv: &crate::transducer::stalk::Invariant, addrs: &[A]) {
         let held = self.listings_on(inv);
-        let vol = self.volume_of_cell(inv);
-        // Every vertex of the cell is a party to what the cell closed. The
-        // volume is one quantity for all of them, so it splits per lane as
-        // a consilience award does; paying `addrs.first()` paid whichever
-        // member the cell happened to list first (rule 15).
+        let vol = self.volume_of_simplex(inv);
+        // Every vertex of the simplex is a party to what the simplex
+        // closed. The volume is one quantity for all of them, so it splits
+        // per lane as a consilience award does; paying the first address
+        // would pay whichever member the simplex happens to list first
+        // (rule 15).
         let parties: Vec<[u8; 32]> = addrs
             .iter()
             .filter_map(|a| <[u8; 32]>::try_from(a.as_ref()).ok())
@@ -181,11 +183,12 @@ impl Kernel {
         }
     }
 
-    /// Each member of the cell is paid the torsion IT measured. Reading the
-    /// magnitude off `addrs.first()` made the value of a torsion depend on
-    /// which member the cell happened to list first, and paid it to that
-    /// member alone; a member with no measured tension is unmeasured and is
-    /// paid nothing, never paid another member's reading (rule 11, 15).
+    /// Each member of the simplex is paid the torsion IT measured. Reading
+    /// the magnitude off the first address would make the value of a
+    /// torsion depend on which member the simplex happens to list first,
+    /// and pay it to that member alone; a member with no measured tension
+    /// is unmeasured and is paid nothing, never paid another member's
+    /// reading (rule 11, 15).
     pub(crate) fn pay_torse<A: AsRef<[u8]>>(&mut self, addrs: &[A]) {
         let anchor = self.anchor();
         let parties: Vec<([u8; 32], [u64; 4])> = addrs
@@ -201,7 +204,7 @@ impl Kernel {
         }
     }
 
-    /// Torsion is filed on the cell's LEAST ADDRESS BY KEY. Both callers
+    /// Torsion is filed on the simplex's LEAST ADDRESS BY KEY. Both callers
     /// hand these over in key order — one from `sorted_verts`, one from a
     /// keyed fiber — so the head is the least key and every node files the
     /// cycle on the same word rather than on whichever section it met

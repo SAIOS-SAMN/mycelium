@@ -3,7 +3,7 @@
 //
 //! Convergence is on a witness's RE-DERIVATION by `same_vertex` (M1) and
 //! never on the bytes it happens to be spelled with. The attested chain
-//! that stood here was the court composing by F over a voice's cells (law
+//! that stood here was the court composing by F over a voice's painted sites (law
 //! 8, ruled 2026-09-10); it is deleted, and a voice's one act is the
 //! sentence `perceive_speech` hears.
 

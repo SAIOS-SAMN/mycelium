@@ -3,7 +3,7 @@
 //! 23.8, 26 — THE JUDGE OFF THE LOCK: probe, quote, consolidate and adopt.
 //! Each replays the voice's own proof over the language snapshot with no
 //! lock held and settles under a brief one. The percept and the demand
-//! that were judged here carried a voice's cells to the court (law 8,
+//! that were judged here carried a voice's painted sites to the court (law 8,
 //! ruled 2026-09-10); a voice speaks sentences, heard by `perceive_speech`.
 
 use crate::arc::Grid;
@@ -50,7 +50,7 @@ pub fn probe(
     // listing — never against this hypha's copies of the words.
     let residual = crate::transducer::sentence::verify_utterance(cites, listing.sub());
     // The reading of a sentence that covered nothing: how many carried
-    // cells landed on the listing at all, and how many landed outside it.
+    // links landed on the listing at all, and how many landed outside it.
     let mut listed = listing.sub().to_vec();
     listed.sort_unstable();
     if residual == listed {
@@ -58,7 +58,7 @@ pub fn probe(
         for crate::anastome::dialogue::CiteWire { transport: v, body, .. } in cites {
             for &(r, c, _, _) in body {
                 match crate::transducer::element::carry_center(v, r, c, 0) {
-                    Some(p) => match crate::transducer::element::cell_of(&p) {
+                    Some(p) => match crate::transducer::element::site_of(&p) {
                         // A centre off the lattice, or off the listing's own
                         // frame, is off the listing.
                         None => off += 1,
@@ -78,7 +78,7 @@ pub fn probe(
         // length of whichever cite came first (rule 15) — a number that
         // named no cite in particular and said nothing about the others.
         eprintln!(
-            "  nothing: listing {} cells, {} cites, carried cells on {on} off {off}, cited cells {}",
+            "  nothing: listing {} links, {} cites, carried links on {on} off {off}, cited links {}",
             listed.len(),
             cites.len(),
             cites.iter().map(|c| c.body.len()).sum::<usize>(),

@@ -204,13 +204,13 @@ impl Kernel {
         }
     }
 
-    /// THE LISTINGS A CELL IS OVER (13.9, 47.3; R6): the open listings on
-    /// the chart. A cell's vertices are vantages — hyphas — and no speaker's
-    /// index gates the reading: read through `spoken_by`, which is keyed
-    /// by voice, every hypha vertex measured zero, so no section stood a
-    /// 0-cell, no edge had volume, and nothing filled though charts held
-    /// two sections (2026-09-09). The vantages are the cell's, not the
-    /// measure's, so the cell's vertex list is not an argument here.
+    /// THE LISTINGS A SIMPLEX IS OVER (13.9, 47.3; R6): the open listings
+    /// on the chart. A simplex's vertices are vantages — hyphas — and no
+    /// speaker's index gates the reading: read through an index keyed by
+    /// voice, a hypha vertex measures zero, so no section stands a vertex,
+    /// no edge has volume, and nothing fills though the chart holds two
+    /// sections. The vantages are the simplex's, not the measure's, so the
+    /// simplex's vertex list is not an argument here.
     pub(crate) fn listings_on(
         &self,
         inv: &crate::transducer::stalk::Invariant,

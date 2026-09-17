@@ -3,7 +3,7 @@
 //! 23.2, 47.3 — COGNITION, the kernel loop: a voice's sentence enters by
 //! `perceive_speech`, is replayed by G on the court's copy of its family,
 //! is listed with its demands, and installs only on two-organ CONVERGENCE.
-//! No cell of a voice's scene reaches the court (law 8, ruled 2026-09-10).
+//! No painted site of a voice's scene reaches the court (law 8, ruled 2026-09-10).
 
 mod basis;
 mod book;

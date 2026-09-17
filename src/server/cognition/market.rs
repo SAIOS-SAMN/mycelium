@@ -120,11 +120,10 @@ impl Kernel {
     /// OWN ALGEBRA. A client claims ruled word W carries nothing the ruled
     /// word H does not: W's operator is H's, or W is a section of H's
     /// bundle by a gauge `γ` the seventeen spell. The spatial bid
-    /// (`try_refine`) replays a cell chain; this one cannot be answered
-    /// that way — an operator has no cells to pave — and it was gated on
-    /// exactly that: "until the court has an algebraic receipt". This is
-    /// the receipt: one product and one projective comparison in the exact
-    /// algebra, `γ·h·γ⁻¹ = w` or `w = h`, never a search and never trust.
+    /// (`try_refine`) replays a chain of links; this one cannot be answered
+    /// that way, since an operator has no links to pave, so its receipt is
+    /// one product and one projective comparison in the exact algebra,
+    /// `γ·h·γ⁻¹ = w` or `w = h`, never a search and never trust.
     ///
     /// Both words are this court's ruled language, and W is not a bundle
     /// (its sections and cycles carry volume no other word speaks); each
@@ -314,7 +313,7 @@ impl Kernel {
     /// read off the citing receipt's own parents, which the carrier
     /// already names (law 3). Full transitive domination across signers is
     /// deliberately NOT computed: it is a product over peers with an
-    /// ancestry descent in every cell, which at a thousand peers is a
+    /// ancestry descent in every entry, which at a thousand peers is a
     /// million walks to save a few bytes. What the one-level prune leaves
     /// is a superset of the antichain, never a subset, so no citation this
     /// court can re-derive a height through is dropped (rule 11).

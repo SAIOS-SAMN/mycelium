@@ -166,7 +166,7 @@ pub struct Kernel {
     /// a wire read of the `court demand listed` lines, never branched on.
     pub(crate) court_demands_listed: u64,
     /// L8q — WHAT ANSWERED EACH DEMAND: per listing, per demand key, the
-    /// address of the form the court replayed onto that demand's own cells
+    /// address of the form the court replayed onto that demand's own links
     /// and the transport it was carried by. This is the ONLY demand
     /// carrier at the court: the demand vertices themselves live on the
     /// sentence, which the book already holds, and a second copy of them
@@ -174,17 +174,17 @@ pub struct Kernel {
     ///
     /// It is what item 5's expansion reads to know which vertex to expand
     /// and by what, and what makes a probe's closure a fact about ONE
-    /// vertex rather than about a count of cells.
+    /// vertex rather than about a count of links.
     pub(crate) answered: crate::network::nerve::Keyed<
         crate::network::nerve::Keyed<(crate::transducer::address::Address, element::Versor)>,
     >,
     pub(crate) crt_imported: bool,
     /// Čech complex per chart: vertices are covering hyphas, coefficients
-    /// are Rotor. One Keyed entry per cell; never Elements.
+    /// are Rotor. One Keyed entry per simplex; never Elements.
     pub(crate) complexes: crate::network::nerve::Keyed<crate::transducer::cech::Complex>,
-    /// Unfilled cells, keyed by (chart, cell). Filled within spend_unit.
+    /// Unfilled simplices, keyed by (chart, simplex). Filled within spend_unit.
     pub(crate) unfilled: crate::network::nerve::Keyed<(crate::transducer::stalk::Invariant, crate::transducer::address::Address)>,
-    /// Class cells awaiting a prefix split.
+    /// Class simplices awaiting a prefix split.
     pub(crate) pending_refine: crate::network::nerve::Keyed<(
         crate::transducer::stalk::Invariant,
         crate::transducer::alphabet::Rotor,

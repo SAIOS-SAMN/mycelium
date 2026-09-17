@@ -325,7 +325,7 @@ impl Kernel {
     /// Vertices are covering hyphas. Degree 0 is the peer's section; degree 1
     /// edges to held sections; then coboundary_on_link climbs while volume
     /// persists.
-    /// Match spoken torsion cycles against the chart's Congruent cells.
+    /// Match spoken torsion cycles against the chart's Congruent simplices.
     /// Same class key and ℓ is consilience; same key different ℓ is
     /// [`crate::verdict::REFUSE_NOT_NATURAL`]; a new finite key files.
     /// A v2 form reads `Form.torsion` (keyed by the filed loop's class);
@@ -407,7 +407,7 @@ impl Kernel {
             .collect()
     }
 
-    /// Record a filled cell's gauge as a dislocation on each section's
+    /// Record a filled simplex's gauge as a dislocation on each section's
     /// word. The gauge arrives as a ROTOR and a CARRIAGE (L11e); the
     /// dislocation is the whole transport, so the two are composed here
     /// rather than the placement being dropped.

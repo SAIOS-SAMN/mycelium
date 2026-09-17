@@ -64,7 +64,7 @@ impl Kernel {
             Some(c) => c,
             None => crate::transducer::cech::Complex::new(),
         };
-        let vol0 = self.volume_of_cell(&inv);
+        let vol0 = self.volume_of_simplex(&inv);
         let (peer_gamma, peer_carriage) = (
             match spoken.carried_rotor() {
                 Some(r) => r,
@@ -169,9 +169,9 @@ impl Kernel {
                 },
             }
         }
-        cx.coboundary_on_link(&peer, |_| self.volume_of_cell(&inv));
+        cx.coboundary_on_link(&peer, |_| self.volume_of_simplex(&inv));
         let mut filled = false;
-        let mut class_cell: Option<(crate::transducer::alphabet::Rotor, u8)> = None;
+        let mut class_simplex: Option<(crate::transducer::alphabet::Rotor, u8)> = None;
         let mut congruent: Option<(crate::transducer::alphabet::Rotor, u32, Vec<Address>)> = None;
         let mut fill_gamma = crate::transducer::alphabet::Rotor::identity();
         let mut fill_carriage = crate::transducer::element::identity_versor();
@@ -215,7 +215,7 @@ impl Kernel {
                             .filter_map(|v| cx.sections.get(v).map(|s| s.addr.clone()))
                             .collect();
                         eprintln!(
-                            "  court cell filled degree {d} {:02x}{:02x}… volume {:?}",
+                            "  court simplex filled degree {d} {:02x}{:02x}… volume {:?}",
                             key[0], key[1], volume
                         );
                     }
@@ -227,38 +227,36 @@ impl Kernel {
                         .collect();
                     congruent = Some((g, ell, addrs));
                     eprintln!(
-                        "  court cell congruent degree {d} {:02x}{:02x}…",
+                        "  court simplex congruent degree {d} {:02x}{:02x}…",
                         key[0], key[1]
                     );
                 }
                 crate::transducer::cech::Fill::Class(_, class) => {
                     let class = class.as_ref().clone();
-                    class_cell = Some((class.clone(), d as u8));
+                    class_simplex = Some((class.clone(), d as u8));
                     let dkey = chart_simplex_key(&inv, &key);
                     self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
                     if d >= 3 {
                         self.pending_refine.insert(inv.key(), (inv.clone(), class, d as u8));
                     }
                     eprintln!(
-                        "  court cell class degree {d} {:02x}{:02x}…",
+                        "  court simplex class degree {d} {:02x}{:02x}…",
                         key[0], key[1]
                     );
                 }
                 // 37.7 at the court's glue: a rotation the seventeen do
-                // not spell. It fills nothing and files no class; the cell
-                // stays unfilled and is named for what it is.
-                // 37.7 at the court's glue: a rotation the seventeen do
-                // not spell. It fills nothing and files no class — the cell
-                // stays unfilled and is named for what it is — AND it is
-                // adjoined, which is the whole of what 37.7 is for. The cell
-                // staying unfilled and the letter being minted are not
-                // alternatives: the transition is still an obstruction on
-                // this cover, and the language now has a word for it.
+                // not spell. It fills nothing and files no class — the
+                // simplex stays unfilled and is named for what it is — AND
+                // it is adjoined, which is the whole of what 37.7 is for.
+                // The simplex staying unfilled and the letter being minted
+                // are not alternatives: the transition is still an
+                // obstruction on this cover, and the language now has a
+                // word for it.
                 crate::transducer::cech::Fill::Unspellable(r) => {
                     let dkey = chart_simplex_key(&inv, &key);
                     self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
                     eprintln!(
-                        "  court cell unspellable degree {d} {:02x}{:02x}… 37.7",
+                        "  court simplex unspellable degree {d} {:02x}{:02x}… 37.7",
                         key[0], key[1]
                     );
                     self.open_unspellable(r.as_ref(), &inv, &[], &peer);
@@ -277,7 +275,7 @@ impl Kernel {
         }
         if filled {
             self.record_gamma(&fill_addrs, &fill_gamma, &fill_carriage);
-            self.pay_cell_volume(&inv, &fill_addrs);
+            self.pay_simplex_volume(&inv, &fill_addrs);
             if !fill_gamma.is_identity() {
                 if let Some((a, b)) = edge_pair(&fill_addrs) {
                     self.mint_or_admit_translation(&fill_gamma, a, b, peer);
@@ -287,11 +285,11 @@ impl Kernel {
         }
         if let Some((_g, ell, addrs)) = congruent {
             self.file_torsion(&addrs, ell);
-            self.pay_cell_volume(&inv, &addrs);
+            self.pay_simplex_volume(&inv, &addrs);
             self.pay_torse(&addrs);
             outcome = Glue::Attached;
         }
-        if let Some((class, degree)) = class_cell {
+        if let Some((class, degree)) = class_simplex {
             self.mark_class(&inv, class.clone(), degree);
             outcome = Glue::Dialect;
         }
@@ -447,22 +445,21 @@ impl Kernel {
     /// this court has ruled on a chart is its section there, at its own
     /// vantage, with the identity transition to itself.
     ///
-    /// Nothing wrote one. `Complex::set_section` had exactly one production
-    /// caller in the tree, `glue_fetched`'s `set_section(peer, …)`, always
-    /// at the INCOMING peer's key. `self_rep = cx.sections.get(self_id)` was
-    /// therefore always `None`, `held_rep` always `None`, and everything
-    /// behind it dead: 13.9 step 3's difference on 0-cells, step 4's
-    /// automorphism check, step 5's connecting image, 13.10's
-    /// Consilient/Attached/Dialect table, and `push_cocycle` (M5). Every
-    /// glue returned `Admitted` because there was no first vantage to
-    /// compare a second against.
+    /// It is the first vantage every later comparison needs. `glue_fetched`
+    /// writes the incoming peer's section at the PEER's key, and without a
+    /// section at this court's own key `self_rep` reads nothing, `held_rep`
+    /// is empty, and everything behind them is unreachable: 13.9 step 3's
+    /// difference on vertices, step 4's automorphism check, step 5's
+    /// connecting image, 13.10's Consilient/Attached/Dialect table, and
+    /// `push_cocycle` (M5). Every glue would be `Admitted` for want of a
+    /// first vantage to compare a second against.
     pub(crate) fn section_own(
         &mut self,
         inv: &crate::transducer::stalk::Invariant,
         addr: &crate::transducer::address::Address,
     ) {
         let me = self.identity;
-        let vol = self.volume_of_cell(inv);
+        let vol = self.volume_of_simplex(inv);
         let mut cx = match self.complexes.remove(&inv.key()) {
             Some(c) => c,
             None => crate::transducer::cech::Complex::new(),

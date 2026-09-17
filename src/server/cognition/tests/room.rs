@@ -142,7 +142,7 @@ assert_eq!(k.pending.len(), 1, "the new listing is on the page");
 fn the_corpus_intake_draws_no_room_from_the_hypha() {
 let mut k = Kernel::new();
 let cover = crate::arc::family_cover(&[(vec![vec![1]], vec![vec![2]])])
-    .expect("one 1-cell pair measures");
+    .expect("a one-site pair measures");
 k.bind_identity([9; 32]);
 k.set_genesis_cover(cover);
 k.enroll([9; 32], cover);

@@ -34,9 +34,9 @@ fn a_spoken_sentence_is_bound_to_its_tasks_family_and_mints() {
     );
 }
 
-/// A bar recoloured with a cell created beside it lists one sentence and
+/// A bar recoloured with a site painted beside it lists one sentence and
 /// one `creation` demand under it, and the stroke rules the sentence: the
-/// created cell is the remainder its demand names, valid and not closed.
+/// painted site is the remainder its demand names, valid and not closed.
 #[test]
 fn the_court_lists_each_demand_vertex_and_rules_the_closed_sub_complex() {
     let mut k = Kernel::new();

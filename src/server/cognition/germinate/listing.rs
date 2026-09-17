@@ -3,9 +3,9 @@
 //
 //! The one path from a heard sentence to the book (law 8, ruled
 //! 2026-09-10). `perceive_sentence` replays the tape by G and hands what
-//! stood to `list_sentence`; nothing here reads a cell of the voice's
-//! scene, and the commit of a reduced germ that did is deleted with the
-//! percept act.
+//! stood to `list_sentence`; nothing here reads a painted site of the
+//! voice's scene, and the commit of a reduced germ that did is deleted with
+//! the percept act.
 
 use crate::cognition::*;
 use crate::transducer::element::Element;
@@ -24,7 +24,7 @@ fn letter_form(
     pi: &crate::core::gaussian::Gauss,
     plane: (u8, u8),
     chart: &crate::transducer::stalk::Invariant,
-    bodies: &[crate::transducer::sentence::Cell],
+    bodies: &[crate::transducer::sentence::Link],
 ) -> Option<Element> {
     use crate::transducer::alphabet::Rotor;
     let mask = (1usize << plane.0) | (1usize << plane.1);
@@ -60,9 +60,9 @@ impl Kernel {
         // A `Standing` demand carries the rotor the peel could not spell as
         // its own witness (16.16 step 6): the court dockets that rotor as
         // the candidate generator, by the same docket the court's own
-        // unspellable cell takes (37.7, the rotor level).
-        let mut opened: Vec<(crate::transducer::sentence::Demand, crate::transducer::stalk::Invariant, Vec<crate::transducer::sentence::Cell>)> = Vec::new();
-        let mut stood: Vec<(crate::transducer::alphabet::Rotor, crate::transducer::stalk::Invariant, Vec<crate::transducer::sentence::Cell>)> = Vec::new();
+        // unspellable simplex takes (37.7, the rotor level).
+        let mut opened: Vec<(crate::transducer::sentence::Demand, crate::transducer::stalk::Invariant, Vec<crate::transducer::sentence::Link>)> = Vec::new();
+        let mut stood: Vec<(crate::transducer::alphabet::Rotor, crate::transducer::stalk::Invariant, Vec<crate::transducer::sentence::Link>)> = Vec::new();
         for (_, kind, chart, bodies) in f.demand_vertices() {
             match kind {
                 crate::transducer::sentence::Demand::RotorPrime { .. } => {
@@ -107,7 +107,7 @@ impl Kernel {
     /// mints none and says so; what its speakers earn is room when it is
     /// used (26 as ruled).
     /// 37.7 AT THE ROTOR LEVEL: a rotor the seventeen cannot spell, met as
-    /// the court's own unspellable cell or carried by a voice's `Standing`
+    /// the court's own unspellable simplex or carried by a voice's `Standing`
     /// demand as its witness (16.16 step 6). It is the same adjunction
     /// `open_letter` performs for a demanded prime, so it takes the same
     /// docket: re-derived, escrowed, provisional, discovered.
@@ -118,7 +118,7 @@ impl Kernel {
         &mut self,
         rotor: &crate::transducer::alphabet::Rotor,
         chart: &crate::transducer::stalk::Invariant,
-        bodies: &[crate::transducer::sentence::Cell],
+        bodies: &[crate::transducer::sentence::Link],
         voice: &[u8; 32],
     ) {
         let Some(e) = crate::transducer::sentence::generator_form(rotor, chart, bodies) else {
@@ -136,7 +136,7 @@ impl Kernel {
         &mut self,
         kind: &crate::transducer::sentence::Demand,
         chart: &crate::transducer::stalk::Invariant,
-        bodies: &[crate::transducer::sentence::Cell],
+        bodies: &[crate::transducer::sentence::Link],
         voice: &[u8; 32],
     ) {
         use crate::transducer::sentence::Demand;

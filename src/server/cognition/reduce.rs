@@ -5,7 +5,7 @@
 //! `rank_over` and `quote_incidence` read the book as a market view;
 //! `normal_form` says whether the held words span a chain. Nothing here
 //! builds an element from a residual: the four sites that did were the
-//! court's F on a voice's cells (50.6, seam 3; law 8, ruled 2026-09-10),
+//! court's F on a voice's painted sites (50.6, seam 3; law 8, ruled 2026-09-10),
 //! deleted with the percept and demand acts.
 
 use super::*;

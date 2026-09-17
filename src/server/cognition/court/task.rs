@@ -29,7 +29,7 @@ impl Kernel {
         }
     }
 
-    /// Speak a submitted rule onto withheld tests and compare cells exactly.
+    /// Speak a submitted rule onto withheld tests and compare the grids exactly.
     /// The rule's cited forms resolve through this kernel's ruled cover.
     pub fn rule_matches_tests(&self, rule: &Element, tests: &crate::transducer::family::Family) -> bool {
         if tests.is_empty() {

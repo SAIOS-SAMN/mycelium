@@ -14,10 +14,10 @@ use crate::cognition::*;
 fn a_depleted_lane_defers_germination_until_the_reserve_recovers() {
 let mut k = Kernel::new();
 // A bar: a body the eyes pair with its image (20 as ruled, L7). An L that
-// lost a cell is a body no versor carries — no sentence, no listing.
+// lost a site is a body no versor carries — no sentence, no listing.
 let a = vec![(0, 0, 1), (0, 1, 1)];
 // ENTROPIC EXPANSION: eight distinct germs drain the residual lane — each
-// a new cell of its own hue beside the bar, a creation the voice's
+// a new site painted its own hue beside the bar, a creation the voice's
 // sentence carries as a demand beside the bar's own word (20 as ruled, 50.5).
 for n in 0..8u8 {
     let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, n + 2)];
@@ -181,7 +181,7 @@ assert_eq!(
 #[test]
 fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {
     let mut k = Kernel::new();
-    // A bar kept and a cell created beside it (20 as ruled, L7): the
+    // A bar kept and a site painted beside it (20 as ruled, L7): the
     // sentence is the bar's word with a creation demand riding it.
     let a = vec![(0, 0, 1), (0, 1, 1)];
     let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 7)];

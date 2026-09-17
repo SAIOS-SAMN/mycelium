@@ -160,7 +160,7 @@ assert_eq!(
 fn heard_and_cocycles_do_not_re_row() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
-let b = vec![(0, 0, 2), (0, 1, 2), (0, 2, 3)]; // the bar recoloured, a cell created beside it (50.5)
+let b = vec![(0, 0, 2), (0, 1, 2), (0, 2, 3)]; // the bar recoloured, a site painted beside it (50.5)
 speak_pair(&mut k, &a, &b, [1; 32]);
 speak_pair(&mut k, &a, &b, [2; 32]);
 let spoken = k.provisional.scoped().next().unwrap().1.clone();
@@ -177,9 +177,9 @@ assert_eq!(k.cochain_bytes(), n, "a heard slash is not re-rowed");
 /// change the quoted addresses; Rank carries no scalar order.
 #[test]
 fn the_book_has_no_order() {
-let one = |cells: &[(i64, i64, u8, u8)]| {
+let one = |links: &[(i64, i64, u8, u8)]| {
     element::from_canonical(
-        &element::canonical_chain(cells).expect("one entry per position is A5's chain"),
+        &element::canonical_chain(links).expect("one entry per position is A5's chain"),
     )
 };
 let e1 = one(&[(0, 0, 1, 2)]);
@@ -232,7 +232,7 @@ assert!(!pa.is_empty(), "the book is served");
 fn heard_drops_when_stratum_root_moves() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
-let b = vec![(0, 0, 2), (0, 1, 2), (0, 2, 3)]; // the bar recoloured, a cell created beside it (50.5)
+let b = vec![(0, 0, 2), (0, 1, 2), (0, 2, 3)]; // the bar recoloured, a site painted beside it (50.5)
 speak_pair(&mut k, &a, &b, [1; 32]);
 speak_pair(&mut k, &a, &b, [2; 32]);
 let spoken = k.provisional.scoped().next().unwrap().1.clone();
@@ -251,11 +251,11 @@ k.confirm_peer_holds(&[crate::transducer::sheaf::StratumDigest {
 assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
 }
 
-/// G3 (R6, 47.3). `listings_on` is the open listings on the cell's chart.
-/// A cell's vertices are vantages — hyphas — and no speaker's index gates
-/// what its chart holds: read as the meet of `spoken_by` over the cell's
-/// vertices, keyed by voice, every hypha vertex measured zero and nothing
-/// ever filled although charts held two sections.
+/// G3 (R6, 47.3). `listings_on` is the open listings on the simplex's
+/// chart. A simplex's vertices are vantages — hyphas — and no speaker's
+/// index gates what its chart holds: read as the meet of a voice-keyed
+/// index over the simplex's vertices, every hypha vertex measures zero and
+/// nothing fills although the chart holds two sections.
 #[test]
 fn listings_on_is_the_open_listings_on_the_chart() {
 use crate::transducer::address::Address;

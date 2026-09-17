@@ -37,7 +37,7 @@ fn demanding_sentence(w: crate::transducer::alphabet::Word, tag: u8, kind: Deman
     f.vertices.push(Vertex::Demand {
         kind,
         chart: crate::transducer::stalk::Invariant(vec![17]),
-        // The cells the demand stands for, and they MOVE: a demand
+        // The links the demand stands for, and they MOVE: a demand
         // whose bodies measure nothing cost the language nothing.
         bodies: vec![(0, 0, 0, 1), (0, 1, 0, 1)],
     });

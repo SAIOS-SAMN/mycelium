@@ -104,8 +104,8 @@ impl Language {
 
     /// The shape of word `i`, lifted on first use.
     pub fn shape(&self, i: usize) -> Option<&crate::transducer::blade::Shape> {
-        let cell = self.shapes.get(i)?;
-        cell.get_or_init(|| element::shape_of_chain(self.words[i].sub())).as_ref()
+        let slot = self.shapes.get(i)?;
+        slot.get_or_init(|| element::shape_of_chain(self.words[i].sub())).as_ref()
     }
 
     /// The index of the word at an address.

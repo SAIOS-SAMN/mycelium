@@ -4,7 +4,7 @@
 //! Nothing here composes a sentence (law 8, ruled 2026-09-10): a voice's
 //! utterance enters by `perceive_speech` and is listed by `list_sentence`.
 //! What stood here — a percept reduced against the language and the commit
-//! of a germ — was the court running F on a voice's cells, and it is
+//! of a germ — was the court running F on a voice's painted sites, and it is
 //! deleted, not refused (50.6, seam 3).
 
 use crate::cognition::*;

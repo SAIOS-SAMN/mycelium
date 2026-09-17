@@ -22,8 +22,8 @@ pub(crate) fn loop_key(chart: &crate::transducer::stalk::Invariant, voice: &[u8;
 pub(crate) fn footprint_key(addr: &[u8], fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<u8> {
     let mut points = fp.to_vec();
     points.sort_unstable();
-    let mut cells = scene.to_vec();
-    cells.sort_unstable();
+    let mut painted = scene.to_vec();
+    painted.sort_unstable();
     let mut buf = Vec::new();
     crate::transducer::address::put_bytes(&mut buf, addr);
     buf.extend_from_slice(&(points.len() as u32).to_le_bytes());
@@ -31,8 +31,8 @@ pub(crate) fn footprint_key(addr: &[u8], fp: &[(i64, i64)], scene: &[(i64, i64, 
         buf.extend_from_slice(&r.to_le_bytes());
         buf.extend_from_slice(&c.to_le_bytes());
     }
-    buf.extend_from_slice(&(cells.len() as u32).to_le_bytes());
-    for &(r, c, h) in &cells {
+    buf.extend_from_slice(&(painted.len() as u32).to_le_bytes());
+    for &(r, c, h) in &painted {
         buf.extend_from_slice(&r.to_le_bytes());
         buf.extend_from_slice(&c.to_le_bytes());
         buf.push(h);

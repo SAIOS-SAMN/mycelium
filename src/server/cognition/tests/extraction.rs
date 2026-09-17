@@ -61,7 +61,7 @@ assert!(
 /// voice has no sentence and nothing is listed (50.5, L7) — never a
 /// residual chain germinated as a word, which was this test's claim in the
 /// chain era. The deformation is answered by the cover of 50.8 (L11), not
-/// by a listing of its cells.
+/// by a listing of its links.
 #[test]
 fn a_shape_deformation_no_versor_carries_lists_nothing() {
 let mut k = Kernel::new();
@@ -91,10 +91,10 @@ assert_eq!(k.basis_len(), 1, "the pair form is one word");
 /// voice. The court lists the minted sentence as spoken.
 #[test]
 fn the_spoken_pair_is_the_extracted_pair_form() {
-use crate::transducer::family::{cells_to_grid, extract_rule_with, mint_sentence, NoCrystal};
+use crate::transducer::family::{extract_rule_with, grid_of_painted, mint_sentence, NoCrystal};
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
-let family = vec![(cells_to_grid(&a), cells_to_grid(&b))];
+let family = vec![(grid_of_painted(&a), grid_of_painted(&b))];
 let mut k = Kernel::new();
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let listed = &k.quote().1;

@@ -176,7 +176,7 @@ fn a_filed_form_cycle_is_volume_the_basis_counts() {
 }
 
 /// THE TORSE STROKE tightens mathematics to physics: a swap family (1→4 and
-/// 4→1 at one cell) installs as base + section; the syntropic stroke extracts
+/// 4→1 at one site) installs as base + section; the syntropic stroke extracts
 /// the ℤ/2 cycle — sections condense to (σ, 2) — and the extracted
 /// mathematical torsion RELIEVES the physical torsion charge (booked as
 /// syntropic order, per lane, never a scalar).

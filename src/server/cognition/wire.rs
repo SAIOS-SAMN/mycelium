@@ -2,7 +2,7 @@
 // scenes measure, and the byte an outcome rides the wire as.
 //
 //! The percept and the demand that were spelled here carried a voice's
-//! cells to the court (law 8, ruled 2026-09-10); both are deleted with
+//! painted sites to the court (law 8, ruled 2026-09-10); both are deleted with
 //! their acts. A body that does not parse whole is refused; nothing here
 //! guesses at a shape.
 
@@ -23,15 +23,15 @@ pub fn germ_address(g: &Element) -> crate::transducer::address::Address {
     g.address()
 }
 
-/// The frame measured from two cell scenes (their 0-cell extents) — the
+/// The frame measured from two painted scenes (their site extents) — the
 /// identity frame when both share dims; used where no grid is at hand.
 #[expect(
     clippy::disallowed_methods,
-    reason = "rule 4 — a scene's extent is the largest coordinate its cells occupy, content"
+    reason = "rule 4 — a scene's extent is the largest coordinate its painted sites occupy, content"
 )]
 pub fn frame_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> crate::arc::Frame {
     // A scene's extent is its largest occupied coordinate plus one, which
-    // the cell set determines (rule 4). An empty scene occupies no cells
+    // the painted set determines (rule 4). An empty scene occupies no sites
     // and its extent is zero by measurement, not by default.
     let extent = |s: &[(i64, i64, u8)]| {
         let axis = |m: Option<i64>| match m {

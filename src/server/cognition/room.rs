@@ -171,22 +171,22 @@ impl Kernel {
         n
     }
 
-    /// 50.8, 45.9 — THE CELLS FILLED, READ FROM CONTENT. A filled cell is
-    /// a loop whose holonomy has finite order and no residue, filed on the
-    /// form's own torsion carrier as a `FiledLoop` (15.5, A17); a ruled
-    /// form carrying one has closed a cell of its cover.
+    /// 50.8, 45.9 — THE SIMPLICES FILLED, READ FROM CONTENT. A filled
+    /// simplex is a loop whose holonomy has finite order and no residue,
+    /// filed on the form's own torsion carrier as a `FiledLoop` (15.5,
+    /// A17); a ruled form carrying one has closed a simplex of its cover.
     ///
     /// Read off the ruled cover at the read and never counted into a
     /// carrier beside it (law 12), exactly as `adjoined` is. It is zero
     /// until a cover carries two pieces whose transition is a finite-order
     /// rotation with no placement or dilation left over.
-    pub fn cells_filled(&self) -> u64 {
+    pub fn simplices_filled(&self) -> u64 {
         let mut n = 0u64;
         for (addr, ()) in self.ruled_addrs.scoped() {
             let Some(f) = self.held_word(&addr).and_then(|e| e.form()) else {
                 continue;
             };
-            // The form's torsion carrier holds one entry per filled cell,
+            // The form's torsion carrier holds one entry per filled simplex,
             // keyed by the holonomy's class. A form with none filled none.
             n += f.torsion.scoped().count() as u64;
         }

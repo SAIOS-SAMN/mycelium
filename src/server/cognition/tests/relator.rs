@@ -43,7 +43,7 @@ fn transport(w: &Word) -> Element {
 /// `Element::compose` carries the composite on the action's VERSOR and not
 /// on a tape — a composed element has no letters, and `cech::rotor_of`
 /// says so at its own line ("None is a remainder: the edge is honest and
-/// no cell is formed over it"). So the relator is read the way every other
+/// no simplex is formed over it"). So the relator is read the way every other
 /// measured carriage is read: A22's ordered peel of the versor. Reading it
 /// off a tape the composite does not have would be reading a spelling
 /// nobody wrote.
@@ -318,7 +318,7 @@ fn install(k: &mut Kernel, voice: [u8; 32], w: &Element) {
 /// GENERATOR IS. The triangle above left `q²` as its relator; a court that
 /// holds the transport `q` as language already speaks `q²`, so the
 /// standing word for `q²` is REDUNDANT and the rewrite that retires it is
-/// the 2-cell relating the two derivations of it (3.8, chapter 27, T10).
+/// the rewrite relating the two derivations of it (3.8, chapter 27, T10).
 ///
 /// WHAT MAKES IT DEPTH 5 AND NOT A HOST ARM. The rewrite is an ELEMENT
 /// with an address measured from its own content, docketed by the same
@@ -364,7 +364,7 @@ fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
             "and it decomposes through a word that is not itself"
         );
 
-        // THE 2-CELL. `freed` is the lane vector the language stops
+        // THE REWRITE. `freed` is the lane vector the language stops
         // carrying, read off the retired word's own magnitude.
         let payload = RewritePayload::Retire {
             cites: vec![t.address()],
@@ -389,7 +389,7 @@ fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
             .filter(|(_, e)| e.is_rewrite())
             .map(|(a, _)| a)
             .collect();
-        assert_eq!(rw.len(), 1, "one 2-cell on the docket, addressed by its content");
+        assert_eq!(rw.len(), 1, "one rewrite on the docket, addressed by its content");
         minted.push(Address::from(rw[0].clone()));
 
         // AND IT RETIRES WHAT IT NAMES. The inputs go to the cavity, not
@@ -420,6 +420,6 @@ fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
     assert_eq!(
         minted[0].as_bytes(),
         minted[1].as_bytes(),
-        "two courts, one 2-cell"
+        "two courts, one rewrite"
     );
 }

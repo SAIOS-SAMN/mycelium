@@ -10,15 +10,15 @@ use crate::transducer::sentence::{
     as_element_form, form_vertex_key, rule_of_form, Contracted, Contraction, RefusalKind,
 };
 
-/// A bar and a cell of two hues carried together (50.3's rigid pair): two
-/// word vertices and their edge — the voice's family, and the sentence it
-/// mints over an empty genome.
+/// A bar and a lone painted site of another hue carried together (50.3's
+/// rigid pair): two word vertices and their edge — the voice's family, and
+/// the sentence it mints over an empty genome.
 fn voice_family() -> Vec<TrainPair> {
     vec![(digits(&["11200"]), digits(&["00112"]))]
 }
 
-/// The court's copy of the task: the cell lands as another hue, so the
-/// voice's word for it does not carry its body there.
+/// The court's copy of the task: the lone site lands painted another hue,
+/// so the voice's word for it does not carry its body there.
 fn court_family() -> Vec<TrainPair> {
     vec![(digits(&["11200"]), digits(&["00113"]))]
 }
