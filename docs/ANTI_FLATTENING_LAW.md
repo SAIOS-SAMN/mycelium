@@ -24,6 +24,31 @@ excluded from the reasoning path.
    k = 0, or dropping Hodge-dual commuting planes) restrict dimensional capacity
    and are refused. Kinematics must preserve full 4D degrees of freedom via
    isoclinic dual-plane pairs (Π_i × ⋆Π_i) and exact continuous support invariants.
+   Bound in `MU-RECURSION.md` checklist (m) and chapter 51 (ruled 2026-09-17).
+6. **Curvature is content.** Flatness `δ¹g = 1` is 10.3's predicate and
+   `Form::coheres` reads it; a loop that is not flat is HELD with its class
+   vector (12.6), and consistency across cells is the Bianchi identity of
+   10.4, `δ²ω = 1`. A loop with a free part — a prime exponent or an
+   off-plane class of infinite order — is not a debt, a cut, or a remainder
+   to be gauged away: its canonical holonomy rotor is the candidate
+   generator of 37.7, docketed on two courts' re-derivation and adjoined by
+   closure (`MU-RECURSION.md` 11.3, 16.16 step 6, 37.7 as amended
+   2026-09-17).
+7. **Non-commuting translations live in `Cl(4,1)`.** The versor algebra of
+   the three-coordinate base is `Cl(4,1)` (51.2), and `Spin(4,1)` is both
+   the conformal group of that base, whose translators `e_i ∧ e_∞` commute,
+   and the isometry group of hyperbolic 4-space, whose transvections
+   `e_i ∧ e₋` do not — their commutator is a rotation scaled by the
+   sectional curvature. The second reading is asserted ahead of a datum as
+   rule 11's one stated exception (51.2); the curvature itself is read off
+   a remainder, never a constant. `Spin(4,0) ⋉ ℚ⁴` is the Euclidean group,
+   in which translations commute, and carries no non-commuting displacement.
+8. **The similarity group is derived from the base.** The base has three
+   point coordinates `(r, c, k)` (51.2); a fourth is an invented value until
+   a corpus writes one (51.11, rule 11). Every scalar is a rational or a
+   cyclotomic element (law 4); no finite field enters cognition, and a prime
+   that splits in the Hurwitz order — `3 + e₀₁ + e₀₂` of weight 11 — enters
+   as a rotor over ℚ through 37.7, on no coordinate plane and by no modulus.
 
 ## Rationale
 
