@@ -97,6 +97,7 @@ pub type Cell4 = (i64, i64, i64, u8);
 #[derive(Clone, Debug)]
 pub struct Body {
     pub cells: Vec<Cell3>,
+    pub cells_3d: Vec<Cell4>,
     pub shape: Shape,
     pub moduli: Invariant,
 }
@@ -110,9 +111,11 @@ pub(crate) fn body_of_at(comp: Vec<Cell3>, frame: i64) -> Body {
     pos.sort_unstable();
     let shape = blade::shape_of_at(&pos, frame);
     let moduli = Invariant(blade::moduli(&shape.blade));
+    let mut cells_3d: Vec<Cell4> = comp.iter().map(|&(r, c, h)| (r, c, frame, h)).collect();
+    cells_3d.sort_unstable();
     let mut cells = comp;
     cells.sort_unstable();
-    Body { cells, shape, moduli }
+    Body { cells, cells_3d, shape, moduli }
 }
 
 pub fn body_of_3d(comp: Vec<Cell4>) -> Body {
@@ -120,9 +123,12 @@ pub fn body_of_3d(comp: Vec<Cell4>) -> Body {
     pos.sort_unstable();
     let shape = blade::shape_of_3d(&pos);
     let moduli = Invariant(blade::moduli(&shape.blade));
-    let mut cells: Vec<Cell3> = comp.into_iter().map(|(r, c, _, h)| (r, c, h)).collect();
+    let mut cells: Vec<Cell3> = comp.iter().map(|&(r, c, _, h)| (r, c, h)).collect();
     cells.sort_unstable();
-    Body { cells, shape, moduli }
+    cells.dedup();
+    let mut cells_3d = comp;
+    cells_3d.sort_unstable();
+    Body { cells, cells_3d, shape, moduli }
 }
 
 thread_local! {

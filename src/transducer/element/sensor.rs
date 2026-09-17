@@ -29,6 +29,14 @@ pub fn cell_of(p: &Point) -> Option<(i64, i64)> {
     Some((f(&p.0)?, f(&p.1)?))
 }
 
+/// The cell whose unit cube contains a rational point in (r, c, k).
+pub fn cell_of_3d(p: &Point) -> Option<(i64, i64, i64)> {
+    let f = |x: &num_rational::BigRational| -> Option<i64> {
+        i64::try_from(x.floor().to_integer()).ok()
+    };
+    Some((f(&p.0)?, f(&p.1)?, f(&p.2)?))
+}
+
 /// Carry a cell's center by V and read the base point back (None at
 /// infinity). The cell stands in frame `0`, and a cell of frame `k` stands
 /// AT `k` — the frame axis's origin lies at the cells' centers (16.4), so
@@ -38,6 +46,15 @@ pub fn carry_center(v: &Versor, r: i64, c: i64) -> Option<Point> {
     let x = num_rational::BigRational::from_integer(BigInt::from(r)) + &half;
     let y = num_rational::BigRational::from_integer(BigInt::from(c)) + &half;
     crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&x, &y, &num_rational::BigRational::zero())))
+}
+
+/// Carry a cell's center at (r, c, k) by V in 3D and read the base point back.
+pub fn carry_center_3d(v: &Versor, r: i64, c: i64, k: i64) -> Option<Point> {
+    let half = num_rational::BigRational::new(BigInt::from(1), BigInt::from(2));
+    let x = num_rational::BigRational::from_integer(BigInt::from(r)) + &half;
+    let y = num_rational::BigRational::from_integer(BigInt::from(c)) + &half;
+    let z = num_rational::BigRational::from_integer(BigInt::from(k));
+    crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&x, &y, &z)))
 }
 
 /// Carry a whole cell by V as a blade — its unit square in its frame — and

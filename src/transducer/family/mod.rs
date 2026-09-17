@@ -4,12 +4,14 @@
 //! forms, the rule those forms already agree on, and that rule spoken back
 //! onto a scene. A bundle it does not close is a withheld form.
 
+pub mod contact;
 pub mod correspondence;
 pub mod cover;
 pub mod cursor;
 pub mod deflation;
 pub mod derivation;
 pub mod extract;
+pub mod finish;
 pub mod memo;
 pub mod orbit;
 pub mod pair;
@@ -24,6 +26,7 @@ pub mod trace;
 pub(crate) use correspondence::*;
 pub use deflation::*;
 pub use derivation::*;
+pub use finish::extraction_spend;
 
 /// ONE TRAIN PAIR — the scene a rule is shown and the scene it must speak
 /// (38). The grids are the corpus's own carrier; the pair is what a rule is
@@ -310,20 +313,27 @@ pub struct Carriage {
 }
 
 /// Carry `a` onto `b`: the versor from the moments, and the hue map read
-/// cell by cell — functional, or refused.
+/// cell by cell on the base `(r, c, k)` — functional, or refused. One
+/// reading for a body in one frame and a body across frames: a frame-0
+/// body's cells stand at `k = 0` (51.3), which is their coordinate and not
+/// a second path.
 pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
     let v = blade::versor_between(&a.shape, &b.shape)?;
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, h) in &a.cells {
-        let p = element::carry_center(&v, r, c)?;
-        let (tr, tc) = element::cell_of(&p)?;
-        let h2 = b.cells.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))).ok().map(|i| b.cells[i].2)?;
-        let k = super::element::hue_pair_key(h, 0);
-        match sigma.get(&k) {
+    for &(r, c, k, h) in &a.cells_3d {
+        let p = element::carry_center_3d(&v, r, c, k)?;
+        let (tr, tc, tk) = element::cell_of_3d(&p)?;
+        let h2 = b
+            .cells_3d
+            .binary_search_by(|x| (x.0, x.1, x.2).cmp(&(tr, tc, tk)))
+            .ok()
+            .map(|i| b.cells_3d[i].3)?;
+        let key = super::element::hue_pair_key(h, 0);
+        match sigma.get(&key) {
             Some(t) if *t != h2 => return None,
             Some(_) => {}
             None => {
-                sigma.insert(k, h2);
+                sigma.insert(key, h2);
             }
         }
     }

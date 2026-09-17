@@ -84,7 +84,7 @@ pub fn pair_form(
 /// with that vertex spelled — that would assert the presentation reached
 /// nothing when nothing was looked at (rule 11) — so the whole form is
 /// unmeasured and the caller withholds and resumes next stroke (L8w).
-fn derive_against(
+pub(crate) fn derive_against(
     mut peeled: Form,
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
@@ -164,4 +164,39 @@ fn ring_answer(
     // is occupied or not by what was measured (L12).
     let derivation = factor_versor(crystal, budget, &car.v, &car.sigma)?.ok()?;
     word_vertex_with(&a, &b, &car, derivation)
+}
+
+/// Re-derive the family's rule and check it agrees with `rule`.
+pub fn rule_replays_family(
+    rule: &crate::transducer::sentence::SentenceRule,
+    family: &[(Grid, Grid)],
+    budget: &mut crate::physics::Budget,
+) -> bool {
+    let Some(again) = extract_rule(family, budget) else {
+        return false;
+    };
+    crate::transducer::sentence::form_vertex_key(&again.form)
+        == crate::transducer::sentence::form_vertex_key(&rule.form)
+}
+
+/// Extract, memoized by family id and working-atlas generation.
+pub fn extract_rule_cached(
+    cache: &mut crate::network::nerve::Keyed<(crate::transducer::address::Address, Option<crate::transducer::sentence::SentenceRule>)>,
+    fam: &[u8],
+    family: &[(Grid, Grid)],
+    atlas_root: crate::transducer::address::Address,
+    budget: &mut crate::physics::Budget,
+    crystal: &dyn Crystal,
+) -> Option<crate::transducer::sentence::SentenceRule> {
+    if let Some((g, rule)) = cache.get(fam) {
+        if *g == atlas_root {
+            return rule.clone();
+        }
+    }
+    if !budget.spend() {
+        return cache.get(fam).and_then(|(_, r)| r.clone());
+    }
+    let rule = extract_rule_with(family, crystal, budget);
+    cache.insert(fam, (atlas_root, rule.clone()));
+    rule
 }
