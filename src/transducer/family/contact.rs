@@ -2,7 +2,7 @@
 //
 //! 21 step 6 — CONTACT: placement differs across pairs, peel ring to Frame is one value.
 
-use super::perceive::{frame_of, perceive, Cell3, Grid};
+use super::perceive::{frame_of, Cell3, Grid};
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::physics::Budget;
@@ -44,7 +44,7 @@ pub(crate) fn contact_named_vertices(
         let mut ring_one = true;
         for (_x, y) in family.iter() {
             let fy = frame_of(y);
-            let outs: Vec<Cell3> = perceive(y).into_iter().flat_map(|b| b.cells).collect();
+            let outs: Vec<Cell3> = crate::arc::grid_to_cells(y);
             let (Some(last_row), Some(last_col)) =
                 (fy.0.checked_sub(1), fy.1.checked_sub(1))
             else {

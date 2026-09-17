@@ -135,15 +135,15 @@ pub(crate) fn tally(f: impl Fn(&mut CoverTally)) {
 /// Reading only the codomain — measured with `carried 2` on a family of
 /// one input piece and ten output pieces — leaves the nerve discrete.
 pub(crate) struct Supports {
-    pub(crate) domain: Vec<(i64, i64)>,
-    pub(crate) codomain: Vec<(i64, i64)>,
+    pub(crate) domain: Vec<(i64, i64, i64)>,
+    pub(crate) codomain: Vec<(i64, i64, i64)>,
 }
 
 /// ONE PIECE THE COVER CARRIED: the word vertex it became, the versor
 /// that carried it, and the support it landed on. The support rides along
 /// because the form needs it for the vertex's place and the cover has
 /// already computed it.
-pub(crate) type CarriedPiece = (Vertex, Versor, Vec<(i64, i64)>);
+pub(crate) type CarriedPiece = (Vertex, Versor, Vec<(i64, i64, i64)>);
 
 /// WHAT THE COVER OF ONE DEFORMATION REACHED. Every field is content, and
 /// every carrier is keyed by a piece's own address.
@@ -268,8 +268,8 @@ pub(crate) fn cover_deformation(
     // deformation-in-place has in place of a whole-body versor.
     let mut occ_in: crate::network::nerve::Keyed<Vec<u8>> = crate::network::nerve::Keyed::new();
     for (k, p) in ins.scoped() {
-        for &(r, c, _) in &p.body.cells {
-            occ_in.insert(cell_pos_key(r, c), k.clone());
+        for &(r, c, f, _) in &p.body.cells {
+            occ_in.insert(support_key(r, c, f), k.clone());
         }
     }
 
@@ -305,8 +305,8 @@ pub(crate) fn cover_deformation(
         // The preimage: the input pieces named under this piece's own
         // cells, deduped by their address and read in key order.
         let mut named: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for &(r, c, _) in &op.body.cells {
-            if let Some(ki) = occ_in.get(&cell_pos_key(r, c)) {
+        for &(r, c, f, _) in &op.body.cells {
+            if let Some(ki) = occ_in.get(&support_key(r, c, f)) {
                 named.insert(ki, ());
             }
         }
@@ -314,7 +314,7 @@ pub(crate) fn cover_deformation(
         // whole pieces so none is cut across the preimage boundary. The two
         // peels are under no obligation to agree on granularity, and this
         // is why they need not (50.8).
-        let mut cells: Vec<Cell3> = Vec::new();
+        let mut cells: Vec<Cell4> = Vec::new();
         let mut parts: Vec<Vec<u8>> = Vec::new();
         for (ki, ()) in named.scoped() {
             let Some(ip) = ins.get(&ki) else { continue };
@@ -357,8 +357,8 @@ pub(crate) fn cover_deformation(
             // reader can factor, which is unmeasured and not a demand.
             None => break 'piece,
         };
-        for &(r, c, _) in pre.cells.iter().chain(op.body.cells.iter()) {
-            reached.insert(cell_pos_key(r, c), ());
+        for &(r, c, f, _) in pre.cells.iter().chain(op.body.cells.iter()) {
+            reached.insert(support_key(r, c, f), ());
         }
         for ki in &parts {
             consumed.insert(ki, ());
@@ -386,8 +386,8 @@ pub(crate) fn cover_deformation(
     // explain, which is a demand (50.8 case 4).
     let mut occ_out: crate::network::nerve::Keyed<Vec<u8>> = crate::network::nerve::Keyed::new();
     for (k, p) in outs.scoped() {
-        for &(r, c, _) in &p.body.cells {
-            occ_out.insert(cell_pos_key(r, c), k.clone());
+        for &(r, c, f, _) in &p.body.cells {
+            occ_out.insert(support_key(r, c, f), k.clone());
         }
     }
     // THE DISTINCT PLACED VERSORS, by their own address. Two carriages that
@@ -416,10 +416,10 @@ pub(crate) fn cover_deformation(
             // a cell whose image the lattice does not hold is a cell this
             // reader did not carry (W6) and names nothing.
             let mut named: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-            for &(r, c, _) in &ip.body.cells {
-                let Some(p) = element::carry_center(pv, r, c) else { continue };
-                let Some((tr, tc)) = element::cell_of(&p) else { continue };
-                if let Some(ko) = occ_out.get(&cell_pos_key(tr, tc)) {
+            for &(r, c, f, _) in &ip.body.cells {
+                let Some(p) = element::carry_center(pv, r, c, f) else { continue };
+                let Some((tr, tc, tf)) = element::cell_of(&p) else { continue };
+                if let Some(ko) = occ_out.get(&support_key(tr, tc, tf)) {
                     named.insert(ko, ());
                 }
             }
@@ -428,7 +428,7 @@ pub(crate) fn cover_deformation(
             // across several output pieces is assembled whole and carried
             // once; one candidate, not several, and no piece cut across the
             // image boundary.
-            let mut cells: Vec<Cell3> = Vec::new();
+            let mut cells: Vec<Cell4> = Vec::new();
             let mut parts: Vec<Vec<u8>> = Vec::new();
             for (ko, ()) in named.scoped() {
                 let Some(op) = outs.get(&ko) else { continue };
@@ -463,8 +463,8 @@ pub(crate) fn cover_deformation(
                 }
                 None => continue,
             };
-            for &(r, c, _) in ip.body.cells.iter().chain(img.cells.iter()) {
-                reached.insert(cell_pos_key(r, c), ());
+            for &(r, c, f, _) in ip.body.cells.iter().chain(img.cells.iter()) {
+                reached.insert(support_key(r, c, f), ());
             }
             consumed.insert(ki, ());
             let codomain = support_of(&img);
@@ -481,13 +481,13 @@ pub(crate) fn cover_deformation(
     // input's cells no piece carried, and the image's cells no piece
     // reached.
     let mut left: Vec<crate::transducer::sentence::Cell> = Vec::new();
-    for &(r, c, h) in &input.cells {
-        if !reached.contains(&cell_pos_key(r, c)) {
+    for &(r, c, f, h) in &input.cells {
+        if !reached.contains(&support_key(r, c, f)) {
             left.push((r, c, h, 0));
         }
     }
-    for &(r, c, h) in &image.cells {
-        if !reached.contains(&cell_pos_key(r, c)) {
+    for &(r, c, f, h) in &image.cells {
+        if !reached.contains(&support_key(r, c, f)) {
             left.push((r, c, 0, h));
         }
     }
@@ -506,11 +506,10 @@ pub(crate) fn cover_deformation(
     let mut occ: crate::network::nerve::Keyed<Vec<Vec<u8>>> = crate::network::nerve::Keyed::new();
     for (k, p) in placed.scoped() {
         for (side, support) in [(0u8, &p.domain), (1u8, &p.codomain)] {
-            let cells: Vec<Cell3> = support.iter().map(|&(r, c)| (r, c, 0)).collect();
-            let ring = crate::transducer::blade::adjacent_ring(&cells);
-            for (r, c) in support.iter().copied().chain(ring.into_iter().map(|(r, c, _)| (r, c))) {
+            let ring = ring_of_support(support);
+            for (r, c, f) in support.iter().copied().chain(ring) {
                 let mut pos = vec![side];
-                pos.extend_from_slice(&cell_pos_key(r, c));
+                pos.extend_from_slice(&support_key(r, c, f));
                 match occ.get_mut(&pos) {
                     // One piece's cells are offered contiguously — the walk
                     // above is per piece — and a piece reaches one position

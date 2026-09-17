@@ -135,7 +135,7 @@ pub fn shape_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<crate::transducer:
     if a.is_empty() {
         return None;
     }
-    Some(crate::transducer::blade::shape_of(&a))
+    Some(crate::transducer::blade::shape_of_section(&a))
 }
 
 /// The versor carrying an already-lifted shape onto `to`'s support.

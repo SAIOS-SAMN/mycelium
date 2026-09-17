@@ -1,23 +1,30 @@
-// 16, 20 — THE BLADE: a body lifted into the conformal algebra, and the
-// invariants read off it.
+// 16, 20, 51.3 — THE BLADE: a body lifted into the conformal algebra, and
+// the invariants read off it.
 //
 //! A component of one hue becomes a blade; its moduli, its turns and its
-//! topology are read from the algebra rather than from a bounding box. The
-//! invariant signature is what two congruent bodies share.
+//! topology are read from the algebra and from the support's own cube
+//! complex on the three coordinates of the base, never from a bounding box.
+//! The invariant signature is what two congruent bodies share.
 
 use super::*;
 
+/// A cell as the sensor hands it over: its three base coordinates and the
+/// hue it carries (51.3). The support of a body is a list of these.
+pub type Painted4 = (i64, i64, i64, u8);
+
 /// A polytonic volumetric body. The four strata are ORTHOGONAL lanes (never
-/// summed, law 5); only the SPATIAL lane is a Cl(3,1)
-/// multivector (versor-acted). Gauge/time/topology pass through rigid motion
-/// unchanged — that orthogonality IS the polytonic separation.
+/// summed, law 5); only the SPATIAL lane is a Cl(4,1) multivector
+/// (versor-acted). Gauge and topology pass through rigid motion unchanged —
+/// that orthogonality IS the polytonic separation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Blade {
     /// 𝒮 — the dual sphere `X(c) − ½r²e_∞`, non-null (`S·S = r² ≠ 0`) hence
     /// invertible: the geometric quotient can form.
     pub spatial: Mv,
     /// 𝒮 refinement — the EXACT second-moment (inertia) tensor about the
-    /// centroid `(Ixx, Iyy, Ixy, Izz, Ixz, Iyz) ∈ ℚ⁶`, rotation-covariant, no eigen/roots.
+    /// centroid `(Ixx, Iyy, Ixy, Izz, Ixz, Iyz) ∈ ℚ⁶`, rotation-covariant,
+    /// no eigen/roots. A cell is a lamina (16.4): it has the unit square's
+    /// own moment on the two plane axes and none along `e₃`.
     pub inertia: [BigRational; 6],
     /// 𝒮 refinement — the exact fourth body moments about the centroid: the
     /// isotropic part `∫(u²+v²)²` and the fourth harmonic
@@ -27,24 +34,17 @@ pub struct Blade {
     /// 𝒢 — the gauge/hue content as sorted `(hue, count)` relations (Vec, not a
     /// map: cognition obeys the Anti-Flattening Law). Versor-invariant.
     pub gauge: Vec<(u8, BigRational)>,
-    /// 𝒯 — the temporal sequence index (which scene state raised this body).
-    pub temporal: BigRational,
     /// 𝒽 — the shell topology: the component's cell count.
     pub shell: BigRational,
-    /// The body's support — occupied `(row, col)` cells, sorted (Vec, not a set).
-    pub cells: Vec<(i64, i64)>,
+    /// The body's support — its occupied `(row, col, frame)` cells, sorted
+    /// (Vec, not a set). The stack, never its shadow (51.3).
+    pub cells: Vec<(i64, i64, i64)>,
 }
 
 impl Blade {
-    /// The centroid's row and column, read back from the homogeneous sphere.
-    pub fn centroid(&self) -> Option<(BigRational, BigRational)> {
-        let (r, c, _) = self.centroid3()?;
-        Some((r, c))
-    }
-
     /// The centroid on the base, read back from the homogeneous sphere —
-    /// exact ℚ³; its frame coordinate is `temporal`.
-    pub fn centroid3(&self) -> Option<(BigRational, BigRational, BigRational)> {
+    /// exact ℚ³, the frame coordinate with the two of the plane.
+    pub fn centroid(&self) -> Option<(BigRational, BigRational, BigRational)> {
         cga::base(&self.spatial)
     }
 
@@ -58,27 +58,14 @@ impl Blade {
         self.spatial.versor_inverse().is_some()
     }
 
-    /// The polytonic four-lane grade `(𝒮, 𝒢, 𝒯, 𝒽) ∈ ℚ⁴` — orthogonal
-    /// magnitudes, NEVER summed: spatial extent, gauge complexity (distinct
-    /// hues), temporal index, shell size.
-    pub fn mu4(&self) -> [BigRational; 4] {
-        [
-            self.radius2(),
-            q(self.gauge.len() as i64),
-            self.temporal.clone(),
-            self.shell.clone(),
-        ]
-    }
-
     /// Apply a spatial versor to the SPATIAL lane only — a rigid motion moves the
-    /// body coherently (`V σ Ṽ`) while gauge/time/topology pass through.
+    /// body coherently (`V σ Ṽ`) while gauge and topology pass through.
     pub fn sandwiched(&self, v: &Mv) -> Blade {
         Blade {
             spatial: v.sandwich(&self.spatial),
             inertia: self.inertia.clone(),
             quartic: self.quartic.clone(),
             gauge: self.gauge.clone(),
-            temporal: self.temporal.clone(),
             shell: self.shell.clone(),
             cells: self.cells.clone(),
         }
@@ -152,19 +139,13 @@ pub struct InvariantSignature {
     pub hue_profile: Vec<BigRational>,
 }
 
-/// Lift one connected component `(row, col, hue)` at `time_index` into a volumetric blade —
-/// exact ℚ throughout. The component's cells need not be sorted.
-pub fn lift(comp: &[(i64, i64, u8)], time_index: i64) -> Blade {
-    let comp3: Vec<(i64, i64, i64, u8)> = comp
-        .iter()
-        .map(|&(r, c, h)| (r, c, time_index, h))
-        .collect();
-    lift3(&comp3)
-}
-
-/// Lift one 3D connected component `(row, col, frame, hue)` into a volumetric blade —
-/// exact ℚ throughout. Centroid is in ℚ³, moments are full 6-component inertia on {e₀, e₁, e₃}.
-pub fn lift3(comp: &[(i64, i64, i64, u8)]) -> Blade {
+/// Lift one connected component `(row, col, frame, hue)` into a volumetric
+/// blade — exact ℚ throughout. The centroid is in ℚ³ and the moments are the
+/// full six-component inertia on `{e₀, e₁, e₃}`. Each cell is a LAMINA
+/// (16.4): the unit square standing in its frame, so it contributes the
+/// square's own moment on the two plane axes and only its offset along
+/// `e₃`. The component's cells need not be sorted.
+pub fn lift(comp: &[Painted4]) -> Blade {
     let n = comp.len().max(1) as i64;
     let n_q = q(n);
 
@@ -177,8 +158,9 @@ pub fn lift3(comp: &[(i64, i64, i64, u8)]) -> Blade {
     let c3 = BigRational::new(BigInt::from(sk), BigInt::from(n));
 
     // Moments about the centroid (exact ℚ) — of the BODY: the union of unit
-    // cubes, so each cell contributes the integral of the monomial over
-    // its own cube (the parallel-axis law at every order).
+    // squares, so each cell contributes the integral of the monomial over
+    // its own square (the parallel-axis law at every order) on the plane,
+    // and its offset alone along `e₃`.
     let (mut ixx, mut iyy, mut ixy) = (q(0), q(0), q(0));
     let (mut izz, mut ixz, mut iyz) = (q(0), q(0), q(0));
     let (mut q_iso, mut h4x, mut h4y) = (q(0), q(0), q(0));
@@ -189,7 +171,7 @@ pub fn lift3(comp: &[(i64, i64, i64, u8)]) -> Blade {
         let (dr2, dc2, dk2) = (&dr * &dr, &dc * &dc, &dk * &dk);
         ixx += &dr2 + qn(1, 12);
         iyy += &dc2 + qn(1, 12);
-        izz += &dk2 + qn(1, 12);
+        izz += &dk2;
         ixy += &dr * &dc;
         ixz += &dr * &dk;
         iyz += &dc * &dk;
@@ -226,7 +208,7 @@ pub fn lift3(comp: &[(i64, i64, i64, u8)]) -> Blade {
     )]
     gauge.sort_by_key(|(h, _)| *h);
 
-    let mut cells: Vec<(i64, i64)> = comp.iter().map(|(r, c, _, _)| (*r, *c)).collect();
+    let mut cells: Vec<(i64, i64, i64)> = comp.iter().map(|(r, c, k, _)| (*r, *c, *k)).collect();
     cells.sort_unstable();
     cells.dedup();
 
@@ -235,49 +217,22 @@ pub fn lift3(comp: &[(i64, i64, i64, u8)]) -> Blade {
         inertia: [ixx, iyy, ixy, izz, ixz, iyz],
         quartic: [q_iso, h4x, h4y],
         gauge,
-        temporal: c3,
         shell: n_q,
         cells,
     }
 }
 
-/// 4-connected components of a scene, as `Vec`-of-`Vec` (no maps/sets — Law II).
-/// A BODY IS ONE HUE (chapter 20, ruled 2026-09-09): two cells join iff
-/// they are orthogonally adjacent and carry the same hue. Two touching
-/// bodies of different hues are two bodies sharing a boundary, which the
-/// pair form carries as a contact face with its edge transport (50.3); a
-/// component of every non-zero cell merged them into one blob no single
-/// versor carries, so every such scene became a deformation demand and no
-/// pair form ever had a contact face.
-pub fn components(cells: &[(i64, i64, u8)]) -> Vec<Vec<(i64, i64, u8)>> {
-    // The support in row order; its 1-skeleton read off the ordering
-    // (sentence::incidence_of), never a distance test against every cell;
-    // an edge between two hues is a boundary, not an adjacency.
-    let mut sorted: Vec<(i64, i64, u8)> = cells.to_vec();
-    sorted.sort_unstable();
-    sorted.dedup_by_key(|c| (c.0, c.1));
-    let positions: Vec<(i64, i64)> = sorted.iter().map(|c| (c.0, c.1)).collect();
-    let edges: Vec<(usize, usize)> = crate::transducer::sentence::incidence_of(&positions)
-        .into_iter()
-        .filter(|&(i, j)| sorted[i].2 == sorted[j].2)
-        .collect();
-    let roots = crate::transducer::sentence::components(sorted.len(), &edges);
-    let mut out: Vec<(usize, Vec<Painted>)> = Vec::new();
-    for (i, cell) in sorted.into_iter().enumerate() {
-        match out.iter_mut().find(|(r, _)| *r == roots[i]) {
-            Some((_, comp)) => comp.push(cell),
-            None => out.push((roots[i], vec![cell])),
-        }
-    }
-    out.into_iter().map(|(_, comp)| comp).collect()
-}
-
-/// A 3D cell as the sensor hands it over: (r, c, k, hue).
-pub(crate) type Painted4 = (i64, i64, i64, u8);
-
-/// 6-connected components of a 3D scene across frames, as `Vec`-of-`Vec`.
-/// A body is one hue across the whole family (Chapter 51.3, 51.4).
-pub fn components_3d(cells: &[Painted4]) -> Vec<Vec<Painted4>> {
+/// The connected components of a scene on the three coordinates of the
+/// base, as `Vec`-of-`Vec` (no maps/sets — Law II). A BODY IS ONE HUE
+/// (chapter 20, ruled 2026-09-09): two cells join iff they are adjacent —
+/// 4-adjacent within a frame or one frame apart at one position (51.3) —
+/// and carry the same hue. Two touching bodies of different hues are two
+/// bodies sharing a boundary, which the pair form carries as a contact
+/// face with its edge transport (50.3).
+pub fn components(cells: &[Painted4]) -> Vec<Vec<Painted4>> {
+    // The support in canonical order; its 1-skeleton read off the ordering
+    // (sentence::incidence_of_3d), never a distance test against every
+    // cell; an edge between two hues is a boundary, not an adjacency.
     let mut sorted: Vec<Painted4> = cells.to_vec();
     sorted.sort_unstable();
     sorted.dedup_by_key(|c| (c.0, c.1, c.2));
@@ -297,23 +252,33 @@ pub fn components_3d(cells: &[Painted4]) -> Vec<Vec<Painted4>> {
     out.into_iter().map(|(_, comp)| comp).collect()
 }
 
-/// Transduce a whole scene: segment into components, lift each to a blade at
-/// `time_index`. The transducer output for one scene state.
-pub fn transduce(cells: &[(i64, i64, u8)], time_index: i64) -> Vec<Blade> {
-    components(cells).iter().map(|comp| lift(comp, time_index)).collect()
+/// THE LAMINAE OF A SUPPORT: its cells grouped by frame, each frame's
+/// cells in row order — the sections of the stack along `e₃` (16.5). The
+/// in-plane readings (a lamina's turns and perimeter) are taken here and
+/// summed over the stack; the topology is not, because adjacency along
+/// `e₃` joins the laminae (51.3).
+pub fn laminae(cells: &[(i64, i64, i64)]) -> Vec<(i64, Vec<(i64, i64)>)> {
+    let mut by_frame: Vec<(i64, i64, i64)> = cells.to_vec();
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: frame first, then the cell's own row and column"
+    )]
+    by_frame.sort_unstable_by_key(|&(r, c, k)| (k, r, c));
+    by_frame.dedup();
+    let mut out: Vec<(i64, Vec<(i64, i64)>)> = Vec::new();
+    for (r, c, k) in by_frame {
+        match out.last_mut() {
+            Some((frame, lamina)) if *frame == k => lamina.push((r, c)),
+            _ => out.push((k, vec![(r, c)])),
+        }
+    }
+    out
 }
 
-/// The boundary of a support: every unit edge with the support on exactly
-/// one side. Returns (horizontal edges from (r,c) to (r,c+1), vertical
-/// edges from (r,c) to (r+1,c)), each as its start vertex. The boundary is
-/// the coboundary of the support's 2-chain; its length is a measurement of
-/// the body, not a coordinate of it.
-/// A CELL AS THE SENSOR HANDS IT OVER: its position and the hue it carries.
-pub(crate) type Painted = (i64, i64, u8);
-
-/// THE OPEN FACES OF A BODY, each named by the cell it opens on: the
+/// THE OPEN FACES OF A LAMINA, each named by the cell it opens on: the
 /// horizontal edges from (r,c) to (r,c+1), then the vertical ones from
-/// (r,c) to (r+1,c). This is the coboundary of the support's 2-chain.
+/// (r,c) to (r+1,c). This is the coboundary of the support's 2-chain
+/// within one frame.
 pub(crate) type OpenFaces = (Vec<(i64, i64)>, Vec<(i64, i64)>);
 
 pub(crate) fn boundary_edges(cells: &[(i64, i64)]) -> OpenFaces {
@@ -351,10 +316,9 @@ pub(crate) fn boundary_edges(cells: &[(i64, i64)]) -> OpenFaces {
     (h, v)
 }
 
-/// The turning count of the boundary: the vertices where a horizontal and
-/// a vertical boundary edge meet. A similarity invariant of the body (a
-/// dilated body turns the same number of times).
-pub fn turns(cells: &[(i64, i64)]) -> usize {
+/// The turning count of one lamina's boundary: the vertices where a
+/// horizontal and a vertical boundary edge meet.
+fn turns_of_lamina(cells: &[(i64, i64)]) -> usize {
     let (h, v) = boundary_edges(cells);
     let mut vertices: Vec<(i64, i64)> = Vec::new();
     for &(r, c) in &h {
@@ -373,40 +337,206 @@ pub fn turns(cells: &[(i64, i64)]) -> usize {
         .count()
 }
 
-/// The topology of a support as the union of its closed unit cells:
-/// `(β₀, β₁)` — components and holes. Euler characteristic
-/// `χ = V − E + F` on the cell complex, with `β₁ = β₀ − χ` (a planar
-/// complex has no β₂). Vertices are counted through their incidence: each
-/// cell corner contributes `1/k` for the `k` cells meeting there, so the
-/// count is exact without a vertex set.
-pub fn topology(cells: &[(i64, i64)]) -> (u64, u64) {
-    if cells.is_empty() {
-        return (0, 0);
+/// The turning count of a body: the sum over its laminae of the vertices
+/// where the lamina's boundary turns. A similarity invariant of the body
+/// (a dilated body turns the same number of times) and a translation
+/// along `e₃` moves no lamina's boundary.
+pub fn turns(cells: &[(i64, i64, i64)]) -> usize {
+    laminae(cells).iter().map(|(_, lamina)| turns_of_lamina(lamina)).sum()
+}
+
+/// The in-plane boundary's length: the count of unit edges with a lamina
+/// on exactly one side, summed over the laminae.
+pub fn boundary_length(cells: &[(i64, i64, i64)]) -> usize {
+    laminae(cells)
+        .iter()
+        .map(|(_, lamina)| {
+            let (h, v) = boundary_edges(lamina);
+            h.len() + v.len()
+        })
+        .sum()
+}
+
+/// THE FRAME BOUNDARY of a body: its sides open along `e₃` — a cell's
+/// face toward the frame before it and toward the frame after it, each
+/// counted where no cell of the body stands there (51.3). Two for every
+/// cell of a body of one frame; fewer for a stack.
+pub fn frame_faces(cells: &[(i64, i64, i64)]) -> usize {
+    let mut sorted: Vec<(i64, i64, i64)> = cells.to_vec();
+    sorted.sort_unstable();
+    sorted.dedup();
+    let held = |p: (i64, i64, i64)| sorted.binary_search(&p).is_ok();
+    sorted
+        .iter()
+        .map(|&(r, c, k)| usize::from(!held((r, c, k - 1))) + usize::from(!held((r, c, k + 1))))
+        .sum()
+}
+
+/// The topology of a support as the union of its closed unit cubes on the
+/// 6-adjacency complex (51.3): `(β₀, β₁, β₂)` — components, tunnels and
+/// cavities. The Euler characteristic `χ = V − E + F − C` is counted
+/// through incidence, each corner contributing `1/k` for the `k` cubes
+/// meeting there and each unit segment `1/m` for the `m` cubes sharing it,
+/// so the count is exact without a vertex set; `β₂` is the number of
+/// enclosed components of the complement, and `β₁ = β₀ + β₂ − χ`. A body
+/// of one frame reads its planar components and holes, and no cavity.
+pub fn topology(cells: &[(i64, i64, i64)]) -> (u64, u64, u64) {
+    let mut sorted: Vec<(i64, i64, i64)> = cells.to_vec();
+    sorted.sort_unstable();
+    sorted.dedup();
+    if sorted.is_empty() {
+        return (0, 0, 0);
     }
-    let held = |r: i64, c: i64| cells.binary_search(&(r, c)).is_ok();
-    let n = cells.len() as i64;
-    let mut adjacent = 0i64;
+    let held = |r: i64, c: i64, k: i64| sorted.binary_search(&(r, c, k)).is_ok();
+    let edges = crate::transducer::sentence::incidence_of_3d(&sorted);
+    let mut roots = crate::transducer::sentence::components(sorted.len(), &edges);
+    roots.sort_unstable();
+    roots.dedup();
+    let b0 = roots.len() as i64;
+    let n = sorted.len() as i64;
+    let faces = 6 * n - edges.len() as i64;
     let mut vertices = q(0);
-    for &(r, c) in cells {
-        adjacent += held(r + 1, c) as i64 + held(r, c + 1) as i64;
-        for (x, y) in [(r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1)] {
-            let k = held(x - 1, y - 1) as i64 + held(x - 1, y) as i64 + held(x, y - 1) as i64 + held(x, y) as i64;
-            if k > 0 {
-                vertices += qn(1, k);
+    let mut segments = q(0);
+    for &(r, c, k) in &sorted {
+        // The eight corners `(x, y, z)`, each shared by the cubes whose
+        // origin is one step below it on any axis.
+        for dx in 0..2 {
+            for dy in 0..2 {
+                for dz in 0..2 {
+                    let (x, y, z) = (r + dx, c + dy, k + dz);
+                    let mut m = 0i64;
+                    for ax in [x - 1, x] {
+                        for ay in [y - 1, y] {
+                            for az in [z - 1, z] {
+                                m += i64::from(held(ax, ay, az));
+                            }
+                        }
+                    }
+                    vertices += qn(1, m);
+                }
+            }
+        }
+        // The twelve unit segments: four along each axis, each shared by
+        // the cubes around it in the two other axes.
+        for dy in 0..2 {
+            for dz in 0..2 {
+                let (y, z) = (c + dy, k + dz);
+                let mut m = 0i64;
+                for ay in [y - 1, y] {
+                    for az in [z - 1, z] {
+                        m += i64::from(held(r, ay, az));
+                    }
+                }
+                segments += qn(1, m);
+            }
+        }
+        for dx in 0..2 {
+            for dz in 0..2 {
+                let (x, z) = (r + dx, k + dz);
+                let mut m = 0i64;
+                for ax in [x - 1, x] {
+                    for az in [z - 1, z] {
+                        m += i64::from(held(ax, c, az));
+                    }
+                }
+                segments += qn(1, m);
+            }
+        }
+        for dx in 0..2 {
+            for dy in 0..2 {
+                let (x, y) = (r + dx, c + dy);
+                let mut m = 0i64;
+                for ax in [x - 1, x] {
+                    for ay in [y - 1, y] {
+                        m += i64::from(held(ax, ay, k));
+                    }
+                }
+                segments += qn(1, m);
             }
         }
     }
-    let edges = 4 * n - adjacent;
-    // χ is exact on the cell complex. A χ that does not fit an i64 is a
+    // χ is exact on the cube complex. A χ that does not fit an i64 is a
     // support wider than this reader measures, and zero would be a
     // topological claim about it (rule 11): the body reads as one
-    // component with no hole only when χ says so.
-    let Ok(chi) = i64::try_from((vertices - q(edges) + q(n)).to_integer()) else {
-        return (0, 0);
+    // component with no tunnel and no cavity only when χ says so.
+    let Ok(chi) = i64::try_from((vertices - segments + q(faces) - q(n)).to_integer()) else {
+        return (0, 0, 0);
     };
-    let comps: Vec<(i64, i64, u8)> = cells.iter().map(|&(r, c)| (r, c, 0u8)).collect();
-    let b0 = components(&comps).len() as i64;
-    (b0 as u64, if b0 >= chi { (b0 - chi) as u64 } else { 0 })
+    let b2 = cavities(&sorted);
+    let b1 = b0 + b2 - chi;
+    (b0 as u64, if b1 >= 0 { b1 as u64 } else { 0 }, b2 as u64)
+}
+
+/// THE CAVITIES OF A SUPPORT: the components of its complement, within the
+/// box one cell wider than the support on every side, that do not reach
+/// that box's border. A cavity needs a cell of the body before it and
+/// after it along `e₃`, so a body of fewer than three frames has none and
+/// nothing is walked for it.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "rule 4 — the bounding box is the extent of the support, content: the complement is walked inside it and its border is where a component reaches outside"
+)]
+fn cavities(sorted: &[(i64, i64, i64)]) -> i64 {
+    let (Some(r0), Some(r1), Some(c0), Some(c1), Some(k0), Some(k1)) = (
+        sorted.iter().map(|p| p.0).min(),
+        sorted.iter().map(|p| p.0).max(),
+        sorted.iter().map(|p| p.1).min(),
+        sorted.iter().map(|p| p.1).max(),
+        sorted.iter().map(|p| p.2).min(),
+        sorted.iter().map(|p| p.2).max(),
+    ) else {
+        return 0;
+    };
+    if k1 - k0 < 2 {
+        return 0;
+    }
+    let held = |p: (i64, i64, i64)| sorted.binary_search(&p).is_ok();
+    let inside = |(r, c, k): (i64, i64, i64)| {
+        (r0 - 1..=r1 + 1).contains(&r) && (c0 - 1..=c1 + 1).contains(&c) && (k0 - 1..=k1 + 1).contains(&k)
+    };
+    let on_border = |(r, c, k): (i64, i64, i64)| {
+        r == r0 - 1 || r == r1 + 1 || c == c0 - 1 || c == c1 + 1 || k == k0 - 1 || k == k1 + 1
+    };
+    let six = |(r, c, k): (i64, i64, i64)| {
+        [(r - 1, c, k), (r + 1, c, k), (r, c - 1, k), (r, c + 1, k), (r, c, k - 1), (r, c, k + 1)]
+    };
+    let key = |(r, c, k): (i64, i64, i64)| {
+        let mut b = [0u8; 24];
+        b[..8].copy_from_slice(&r.to_le_bytes());
+        b[8..16].copy_from_slice(&c.to_le_bytes());
+        b[16..].copy_from_slice(&k.to_le_bytes());
+        b
+    };
+    let mut visited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let mut enclosed = 0i64;
+    // Every complement component that touches the body is entered from a
+    // cell of the body; a component touching no cell of it is outside.
+    for &p in sorted {
+        for start in six(p) {
+            if held(start) || visited.contains(&key(start)) {
+                continue;
+            }
+            visited.insert(key(start), ());
+            let mut stack = vec![start];
+            let mut reaches_border = false;
+            while let Some(at) = stack.pop() {
+                if on_border(at) {
+                    reaches_border = true;
+                }
+                for next in six(at) {
+                    if !inside(next) || held(next) || visited.contains(&key(next)) {
+                        continue;
+                    }
+                    visited.insert(key(next), ());
+                    stack.push(next);
+                }
+            }
+            if !reaches_border {
+                enclosed += 1;
+            }
+        }
+    }
+    enclosed
 }
 
 /// A6: two's-complement numerator and positive denominator. Refuses when
@@ -415,13 +545,6 @@ pub(crate) fn ratio_axes(x: &BigRational) -> Option<[u64; 2]> {
     let n: i64 = x.numer().try_into().ok()?;
     let d: u64 = x.denom().try_into().ok()?;
     Some([n as u64, d])
-}
-
-/// The boundary's length: the count of unit edges with the support on
-/// exactly one side.
-pub fn boundary_length(cells: &[(i64, i64)]) -> usize {
-    let (h, v) = boundary_edges(cells);
-    h.len() + v.len()
 }
 
 /// A rational as two exact axis limbs, or none when the ratio exceeds ℤ₆₄.
@@ -451,19 +574,17 @@ pub struct Shape {
     pub blade: Blade,
 }
 
-/// Lift a support (cells without hue) to a shape at default frame 0.
-pub fn shape_of(cells: &[(i64, i64)]) -> Shape {
-    shape_of_at(cells, 0)
+/// Lift a support (cells without hue, on the three coordinates of the
+/// base) to a shape.
+pub fn shape_of(cells: &[(i64, i64, i64)]) -> Shape {
+    let comp: Vec<Painted4> = cells.iter().map(|&(r, c, k)| (r, c, k, 0u8)).collect();
+    Shape { blade: lift(&comp) }
 }
 
-/// Lift a support with an explicit frame coordinate to a shape.
-pub fn shape_of_at(cells: &[(i64, i64)], time_index: i64) -> Shape {
-    let comp: Vec<(i64, i64, u8)> = cells.iter().map(|&(r, c)| (r, c, 0u8)).collect();
-    Shape { blade: lift(&comp, time_index) }
-}
-
-/// Lift a 3D support (cells with frame coordinate) to a shape.
-pub fn shape_of_3d(cells: &[(i64, i64, i64)]) -> Shape {
-    let comp: Vec<(i64, i64, i64, u8)> = cells.iter().map(|&(r, c, k)| (r, c, k, 0u8)).collect();
-    Shape { blade: lift3(&comp) }
+/// Lift the support of ONE SECTION — a chain's positions, which A5 reads
+/// at the sensor as `(r, c)` with the frame on the pose (16.5) — to its
+/// shape in the section's own frame.
+pub fn shape_of_section(cells: &[(i64, i64)]) -> Shape {
+    let comp: Vec<Painted4> = cells.iter().map(|&(r, c)| (r, c, 0, 0u8)).collect();
+    Shape { blade: lift(&comp) }
 }

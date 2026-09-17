@@ -10,7 +10,7 @@
 //! chart, the face's two addresses, the chart with the cells read.
 
 use super::*;
-use crate::transducer::family::{perceive, Body, Cell3, Grid};
+use crate::transducer::family::{perceive, Body, Cell4, Grid};
 
 /// What one vertex does on one pair of the family.
 pub(crate) enum Carried {
@@ -123,16 +123,21 @@ pub(crate) fn vertex_carries_pair(
         }
         spoke = true;
         for body in fiber {
-            for &(r, c, h) in &body.cells {
-                let Some(p) = element::carry_center(&versor, r, c) else {
+            for &(r, c, k, h) in &body.cells {
+                let Some(p) = element::carry_center(&versor, r, c, k) else {
                     return Carried::Fails(FAIL_NO_CARRY, at());
                 };
 
                 // A centre the sensor cannot convert is not a cell at all
-                // (W6) — the transport left the sensor's own geometry.
-                let Some((tr, tc)) = element::cell_of(&p) else {
+                // (W6) — the transport left the sensor's own geometry — and
+                // a centre carried into another frame is no cell of the
+                // grid this pair is replayed against.
+                let Some((tr, tc, tk)) = element::cell_of(&p) else {
                     return Carried::Fails(FAIL_NO_CELL, at());
                 };
+                if tk != k {
+                    return Carried::Fails(FAIL_NO_CELL, at());
+                }
                 // Before the origin, and past the extent, are two different
                 // statements about the rule: the first about its placement,
                 // the second about its scale.
@@ -165,8 +170,8 @@ pub(crate) fn vertex_carries_pair(
     // cover it between them, and asking per member would call that coverage
     // a part.
     for image in perceive(y) {
-        let touched = image.cells.iter().any(|&(r, c, _)| landed.contains(&cell_key(r, c)));
-        if touched && !image.cells.iter().all(|&(r, c, _)| landed.contains(&cell_key(r, c))) {
+        let touched = image.cells.iter().any(|&(r, c, _, _)| landed.contains(&cell_key(r, c)));
+        if touched && !image.cells.iter().all(|&(r, c, _, _)| landed.contains(&cell_key(r, c))) {
             // The image body is reached in part BY THE FIBRE AS A WHOLE, so the
             // chart named is the image's own: no one member is at fault and the
             // court says which image it is, which is the coordinate 50.9 wants.
@@ -180,7 +185,7 @@ fn form_covers_cells(
     f: &Form,
     pair: usize,
     x: &Grid,
-    cells: &[Cell3],
+    cells: &[Cell4],
 ) -> bool {
     let mut covered: Keyed<u8> = Keyed::new();
     for (_, _, _, demand_cells) in f.demand_vertices() {
@@ -211,16 +216,19 @@ fn form_covers_cells(
             }
             let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else { continue; };
             for b in fiber_on(&bodies, &member.chart) {
-                for &(r, c, h) in &b.cells {
-                    let Some(p) = element::carry_center(&versor, r, c) else { continue; };
-                    let Some((tr, tc)) = element::cell_of(&p) else { continue; };
+                for &(r, c, k, h) in &b.cells {
+                    let Some(p) = element::carry_center(&versor, r, c, k) else { continue; };
+                    let Some((tr, tc, tk)) = element::cell_of(&p) else { continue; };
+                    if tk != k {
+                        continue;
+                    }
                     let Some(want) = crate::transducer::sentence::hue_of(&member.gauge, h) else { continue; };
                     covered.insert(cell_key(tr, tc), want);
                 }
             }
         }
     }
-    cells.iter().all(|&(r, c, h)| covered.get(&cell_key(r, c)).is_some_and(|&w| w == h))
+    cells.iter().all(|&(r, c, _, h)| covered.get(&cell_key(r, c)).is_some_and(|&w| w == h))
 }
 
 /// 23.1 step 3 over the family: `REFUSE_VERTEX_BODY` at the vertex, with
@@ -293,16 +301,17 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
 /// `versor`. The anchor is the least cell in the body's own order — a
 /// coordinate of the body, never a choice among its cells.
 fn image_body(body: &Body, versor: &Versor, images: &[Body]) -> Option<usize> {
-    let [(r, c, _), ..] = body.cells.as_slice() else {
+    let [(r, c, k, _), ..] = body.cells.as_slice() else {
         return None;
     };
-    let (r, c) = (*r, *c);
-    let (tr, tc) = element::cell_of(&element::carry_center(versor, r, c)?)?;
-    images.iter().position(|b| b.cells.iter().any(|&(br, bc, _)| (br, bc) == (tr, tc)))
+    let (r, c, k) = (*r, *c, *k);
+    let (tr, tc, tk) = element::cell_of(&element::carry_center(versor, r, c, k)?)?;
+    images.iter().position(|b| b.cells.iter().any(|&(br, bc, bk, _)| (br, bc, bk) == (tr, tc, tk)))
 }
 
 fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
-    let mut pos: Vec<(i64, i64)> = a.cells.iter().chain(b.cells.iter()).map(|&(r, c, _)| (r, c)).collect();
+    let mut pos: Vec<(i64, i64, i64)> =
+        a.cells.iter().chain(b.cells.iter()).map(|&(r, c, k, _)| (r, c, k)).collect();
     pos.sort_unstable();
     pos.dedup();
     crate::transducer::blade::shape_of(&pos)

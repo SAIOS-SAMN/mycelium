@@ -41,7 +41,7 @@ pub(crate) fn multiplicity_demand(
             if body.moduli.key() != key {
                 continue;
             }
-            for &(r, c, h) in &body.cells {
+            for &(r, c, _, h) in &body.cells {
                 let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) else {
                     continue;
                 };

@@ -247,11 +247,24 @@ pub fn frame_vertex() -> Vertex {
     Vertex::Frame
 }
 
+/// The key of a cell of one section — a grid's or a chain's, the sensor's
+/// planar token (16.5): its position written out.
 pub(crate) fn cell_pos_key(r: i64, c: i64) -> [u8; 32] {
     let mut k = [0u8; 32];
     k[..8].copy_from_slice(&r.to_le_bytes());
     k[8..16].copy_from_slice(&c.to_le_bytes());
     k
+}
+
+/// The key of a cell of a body's support on the three coordinates of the
+/// base (51.3): its position written out, so an occupancy over a stack
+/// keeps its frames apart.
+pub(crate) fn support_key(r: i64, c: i64, k: i64) -> [u8; 32] {
+    let mut key = [0u8; 32];
+    key[..8].copy_from_slice(&r.to_le_bytes());
+    key[8..16].copy_from_slice(&c.to_le_bytes());
+    key[16..24].copy_from_slice(&k.to_le_bytes());
+    key
 }
 
 // `pair_key(a: u16, b: u16)` and `decode_pair_key` stood here: the unordered
@@ -320,14 +333,14 @@ pub struct Carriage {
 pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
     let v = blade::versor_between(&a.shape, &b.shape)?;
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, k, h) in &a.cells_3d {
-        let p = element::carry_center_3d(&v, r, c, k)?;
-        let (tr, tc, tk) = element::cell_of_3d(&p)?;
+    for &(r, c, k, h) in &a.cells {
+        let p = element::carry_center(&v, r, c, k)?;
+        let (tr, tc, tk) = element::cell_of(&p)?;
         let h2 = b
-            .cells_3d
+            .cells
             .binary_search_by(|x| (x.0, x.1, x.2).cmp(&(tr, tc, tk)))
             .ok()
-            .map(|i| b.cells_3d[i].3)?;
+            .map(|i| b.cells[i].3)?;
         let key = super::element::hue_pair_key(h, 0);
         match sigma.get(&key) {
             Some(t) if *t != h2 => return None,
@@ -360,10 +373,10 @@ pub fn carriage_with_core(a: &Body, b: &Body) -> Option<Carriage> {
         | crate::transducer::blade::surgery::SurgeryKind::SplitCut => {}
     }
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, h) in &a.cells {
-        let Some(p) = element::carry_center(&v, r, c) else { continue };
-        let Some((tr, tc)) = element::cell_of(&p) else { continue };
-        let Some(h2) = b.cells.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))).ok().map(|i| b.cells[i].2) else { continue };
+    for &(r, c, k, h) in &a.cells {
+        let Some(p) = element::carry_center(&v, r, c, k) else { continue };
+        let Some((tr, tc, tk)) = element::cell_of(&p) else { continue };
+        let Some(h2) = b.cells.binary_search_by(|x| (x.0, x.1, x.2).cmp(&(tr, tc, tk))).ok().map(|i| b.cells[i].3) else { continue };
         let k = super::element::hue_pair_key(h, 0);
         match sigma.get(&k) {
             Some(t) if *t != h2 => return None,

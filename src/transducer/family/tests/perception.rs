@@ -228,14 +228,14 @@ assert_eq!(declared.len(), 4, "the four created cells are the declared remainder
 /// vertex's own coordinate. A test writes them in vertex order because
 /// that is what it is asserting about; the reader is keyed, so a vertex
 /// with no support simply has no entry.
-fn supports_at(rows: &[Vec<(i64, i64)>]) -> crate::network::nerve::Keyed<Vec<(i64, i64)>> {
+fn supports_at(rows: &[Vec<(i64, i64)>]) -> crate::network::nerve::Keyed<Vec<(i64, i64, i64)>> {
     let mut k = crate::network::nerve::Keyed::new();
     // KEYED BY MEMBER — vertex and chart (D10). These fixtures put every body
     // on the root stratum, which is one chart per vertex, so the member key is
-    // the vertex's with that chart's.
+    // the vertex's with that chart's; every support stands in frame 0.
     for (i, s) in rows.iter().enumerate() {
         if !s.is_empty() {
-            k.insert(root_member(i as u16), s.clone());
+            k.insert(root_member(i as u16), s.iter().map(|&(r, c)| (r, c, 0)).collect());
         }
     }
     k
@@ -441,7 +441,7 @@ fn a_scene_of_five_bodies_on_three_charts_answers_the_chart_whose_fiber_holds_on
     let fibers = crate::transducer::family::perceive::bodies_by_chart(&bodies);
     assert_eq!(fibers.len(), 3, "three charts represented: {fibers:?}");
 
-    let dot = bodies.iter().find(|b| b.cells == vec![(4, 2, 5)]).expect("the dot");
+    let dot = bodies.iter().find(|b| b.cells == vec![(4, 2, 0, 5)]).expect("the dot");
     let chart = crate::transducer::family::perceive::chart_holding_one(&bodies)
         .expect("unique chart holding one body");
     assert_eq!(chart, dot.moduli, "answers the chart whose fiber holds one");
@@ -497,6 +497,9 @@ fn a_family_whose_rule_selects_that_body_extracts_a_rule_vertex_where_it_extract
     assert!(rule.form.is_closed(), "the extracted rule form is closed");
 }
 
+/// 51.3 — A BODY CARRIES ITS FRAME ON ITS SUPPORT, one carrier: a square
+/// perceived in frame 1 has its cells at `k = 1`, its centroid there, and
+/// the same chart as the square in frame 0.
 #[test]
 fn perception_3d_coordinates_preserve_frame_and_moments() {
     let cells4: Vec<Cell4> = vec![
@@ -505,12 +508,15 @@ fn perception_3d_coordinates_preserve_frame_and_moments() {
         (1, 0, 1, 1),
         (1, 1, 1, 1),
     ];
-    let b3d = body_of_3d(cells4);
-    assert_eq!(b3d.shape.blade.temporal, num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)));
+    let b3d = body_of(cells4);
     assert_eq!(b3d.cells.len(), 4);
+    assert!(b3d.cells.iter().all(|c| c.2 == 1), "the support stands in its frame");
     assert_eq!(b3d.shape.blade.inertia.len(), 6);
-    let c3 = b3d.shape.blade.centroid3().expect("3d centroid");
+    let c3 = b3d.shape.blade.centroid().expect("3d centroid");
     assert_eq!(c3.2, num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)));
+    let at_zero = body_of(vec![(0, 0, 0, 1), (0, 1, 0, 1), (1, 0, 0, 1), (1, 1, 0, 1)]);
+    assert_eq!(at_zero.moduli, b3d.moduli, "a frame carries no meaning on the chart (51.1)");
+    assert!(carriage(&at_zero, &b3d).is_some(), "and the translation along e₃ carries one onto the other");
 }
 
 #[test]

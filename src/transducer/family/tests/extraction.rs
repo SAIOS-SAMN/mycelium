@@ -135,11 +135,11 @@ let x = grid(&["330000", "000000", "001000", "000000", "000000", "000000"]);
 let bodies = perceive(&x);
 let a = bodies
     .iter()
-    .find(|b| b.cells.iter().any(|c| c.2 == 1))
+    .find(|b| b.cells.iter().any(|c| c.3 == 1))
     .expect("body A");
 let b = bodies
     .iter()
-    .find(|b| b.cells.iter().any(|c| c.2 == 3))
+    .find(|b| b.cells.iter().any(|c| c.3 == 3))
     .expect("body B");
 assert_ne!(a.moduli, b.moduli, "two shapes, two charts");
 // Form::default() carries the Frame at index 0.

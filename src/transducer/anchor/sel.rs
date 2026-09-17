@@ -84,10 +84,11 @@ impl Sel {
             ),
             Sel::Comp(e, k) => {
                 let sup = e.eval(scene);
-                let cells: Vec<(i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0)).collect();
+                // The scene is one grid's: its cells stand in frame 0.
+                let cells: Vec<(i64, i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0, 0)).collect();
                 let mut comps: Vec<Vec<(i64, i64)>> = components(&cells)
                     .into_iter()
-                    .map(|c| sorted(c.into_iter().map(|(r, c, _)| (r, c)).collect()))
+                    .map(|c| sorted(c.into_iter().map(|(r, c, _, _)| (r, c)).collect()))
                     .collect();
                 // A component IS its least cell, in the coordinate order the
                 // support is already written in; a component with no cell
@@ -155,10 +156,10 @@ impl Sel {
             }
             Sel::ArgExt(e, code) => {
                 let sup = e.eval(scene);
-                let cells: Vec<(i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0)).collect();
+                let cells: Vec<(i64, i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0, 0)).collect();
                 let comps: Vec<Vec<(i64, i64)>> = components(&cells)
                     .into_iter()
-                    .map(|c| sorted(c.into_iter().map(|(r, c, _)| (r, c)).collect()))
+                    .map(|c| sorted(c.into_iter().map(|(r, c, _, _)| (r, c)).collect()))
                     .collect();
                 if comps.is_empty() {
                     return Vec::new();

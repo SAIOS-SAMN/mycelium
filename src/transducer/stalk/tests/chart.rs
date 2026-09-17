@@ -96,8 +96,8 @@ fn structure_separates_equal_volumes() {
     let ring = chain(&[(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]);
     assert_ne!(invariant(&square), invariant(&bar));
     assert_ne!(invariant(&square), invariant(&ring));
-    assert_eq!(&invariant(&square).0[..3], &[1, 0, 4], "one body, no hole, four turns");
-    assert_eq!(&invariant(&ring).0[..3], &[1, 1, 8], "one body, one hole, eight turns");
+    assert_eq!(&invariant(&square).0[..4], &[1, 0, 0, 4], "one body, no hole, no cavity, four turns");
+    assert_eq!(&invariant(&ring).0[..4], &[1, 1, 0, 8], "one body, one hole, no cavity, eight turns");
 }
 
 /// The lookup finds a rotated sibling's base point through its chart and

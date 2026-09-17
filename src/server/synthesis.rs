@@ -57,14 +57,18 @@ pub fn probe(
         let (mut on, mut off) = (0usize, 0usize);
         for crate::anastome::dialogue::CiteWire { transport: v, body, .. } in cites {
             for &(r, c, _, _) in body {
-                match crate::transducer::element::carry_center(v, r, c) {
+                match crate::transducer::element::carry_center(v, r, c, 0) {
                     Some(p) => match crate::transducer::element::cell_of(&p) {
-                        // A centre off the lattice is off the listing.
+                        // A centre off the lattice, or off the listing's own
+                        // frame, is off the listing.
                         None => off += 1,
-                        Some(cell) => match listed.binary_search_by(|x| (x.0, x.1).cmp(&cell)) {
-                            Ok(_) => on += 1,
-                            Err(_) => off += 1,
-                        },
+                        Some((tr, tc, 0)) => {
+                            match listed.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))) {
+                                Ok(_) => on += 1,
+                                Err(_) => off += 1,
+                            }
+                        }
+                        Some(_) => off += 1,
                     },
                     None => off += 1,
                 }

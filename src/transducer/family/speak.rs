@@ -11,8 +11,8 @@ pub(crate) fn grows_to_frame(a: &Grid, b: &Grid) -> bool {
     if fa != fb || fa.0 == 0 || fa.1 == 0 {
         return false;
     }
-    let ins: Vec<Cell3> = perceive(a).into_iter().flat_map(|b| b.cells).collect();
-    let outs: Vec<Cell3> = perceive(b).into_iter().flat_map(|b| b.cells).collect();
+    let ins: Vec<Cell3> = crate::arc::grid_to_cells(a);
+    let outs: Vec<Cell3> = crate::arc::grid_to_cells(b);
     if ins.is_empty() || outs.len() <= ins.len() {
         return false;
     }
@@ -71,21 +71,24 @@ pub(crate) fn emit_carried(
     remainder: &mut Vec<Cell3>,
 ) {
     let hue = hue_map_from_pairs(map);
-    for &(r, c, h) in &body.cells {
+    for &(r, c, k, h) in &body.cells {
         // A hue the map does not move keeps its own colour: that is what
         // the map says about it (rule 11).
         let spoken = match hue[h as usize] {
             Some(t) => t,
             None => h,
         };
-        if let Some(image) = element::carry_cell(v, r, c) {
-            for (i, j) in image {
-                if i >= 0 && j >= 0 && (i as usize) < fy.0 && (j as usize) < fy.1 {
-                    cells.push((i, j, spoken));
+        match element::carry_cell(v, r, c, k) {
+            // The grid spoken onto is the body's own frame: a cell carried
+            // into another frame is not spoken on it, and is remainder.
+            Some(image) if image.iter().all(|&(_, _, f)| f == k) => {
+                for (i, j, _) in image {
+                    if i >= 0 && j >= 0 && (i as usize) < fy.0 && (j as usize) < fy.1 {
+                        cells.push((i, j, spoken));
+                    }
                 }
             }
-        } else {
-            remainder.push((r, c, h));
+            _ => remainder.push((r, c, h)),
         }
     }
 }
@@ -277,7 +280,7 @@ pub fn apply_form_on(
     }
     if unfolded {
         if cells.is_empty() {
-            cells = bodies.iter().flat_map(|b| b.cells.iter().copied()).collect();
+            cells = bodies.iter().flat_map(|b| b.cells.iter().map(|&(r, c, _, h)| (r, c, h))).collect();
         }
         // A frame whose cell count does not fit the carrier is wider than
         // this speech fills; nothing is unfolded into it.

@@ -42,7 +42,7 @@ impl ContinuousSupport {
     /// Lift a Shape into its continuous support representation.
     pub fn of(shape: &Shape) -> Option<Self> {
         let shell = shape.blade.shell.clone();
-        let centroid = shape.blade.centroid3()?;
+        let centroid = shape.blade.centroid()?;
         let inertia = shape.blade.inertia.clone();
 
         // Casimir invariant of H2: invariant under SO(2) rotation, scales as ρ⁸ under dilation.

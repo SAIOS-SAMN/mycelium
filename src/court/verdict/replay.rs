@@ -381,7 +381,7 @@ pub(crate) fn vertex_tape_and_moves(
                     }
                     if let Some(fam) = family {
                         for (x, _) in fam {
-                            let cells: Vec<_> = family::perceive(x).into_iter().flat_map(|b| b.cells).collect();
+                            let cells = crate::arc::grid_to_cells(x);
                             // A grid with no rows has no width.
                             let frame = (x.len(), crate::arc::grid_width(x));
                             let anchor: Vec<(i64, i64)> = cells.iter().map(|&(r, c, _)| (r, c)).collect();

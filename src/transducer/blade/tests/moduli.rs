@@ -12,7 +12,7 @@ use crate::transducer::blade::*;
 fn moduli_and_transport_are_exact_and_similarity_invariant() {
     let bar = shape_of(&rect(0, 0, 2, 3));
     assert_eq!(turns(&bar.blade.cells), 4);
-    let l: Vec<(i64, i64)> = vec![(0, 0), (1, 0), (2, 0), (2, 1)];
+    let l = at_frame_0(&[(0, 0), (1, 0), (2, 0), (2, 1)]);
     let l_shape = shape_of(&l);
     assert_eq!(turns(&l_shape.blade.cells), 6);
     // Rotated (rows↔cols) and translated bar: same moduli, a rigid versor.
@@ -25,13 +25,13 @@ fn moduli_and_transport_are_exact_and_similarity_invariant() {
     let bar2 = shape_of(&rect(0, 0, 4, 6));
     assert_eq!(moduli(&bar.blade), moduli(&bar2.blade));
     let v2 = versor_between(&bar, &bar2).expect("a dilation");
-    assert_eq!(carry(&v2, 0, 0), Some((q(0), q(0), q(0))));
-    assert_eq!(carry(&v2, 2, 3), Some((q(4), q(6), q(0))));
+    assert_eq!(carry(&v2, 0, 0, 0), Some((q(0), q(0), q(0))));
+    assert_eq!(carry(&v2, 2, 3, 0), Some((q(4), q(6), q(0))));
     // The mirrored L needs the reflection; a rotated L is a rotation; a
     // bar and an L are not similar.
-    let l_mirror: Vec<(i64, i64)> = vec![(0, 1), (1, 1), (2, 1), (2, 0)];
+    let l_mirror = at_frame_0(&[(0, 1), (1, 1), (2, 1), (2, 0)]);
     assert!(versor_between(&l_shape, &shape_of(&l_mirror)).is_some(), "reflection found");
-    let l_rot: Vec<(i64, i64)> = vec![(7, -3), (7, -2), (7, -1), (6, -1)];
+    let l_rot = at_frame_0(&[(7, -3), (7, -2), (7, -1), (6, -1)]);
     assert!(versor_between(&l_shape, &shape_of(&l_rot)).is_some(), "rotation found");
     assert_eq!(moduli(&l_shape.blade), moduli(&shape_of(&l_rot).blade));
     assert!(versor_between(&bar, &l_shape).is_none(), "dissimilar bodies refuse");
@@ -46,9 +46,9 @@ fn moduli_and_transport_are_exact_and_similarity_invariant() {
     assert!(versor_between(&sq, &sq3).is_some(), "ρ = 3 on an isotropic body");
     // An isotropic body with an orientation (a pinwheel of four arms)
     // is oriented by the fourth harmonic: its quarter-turn image carries.
-    let pin: Vec<(i64, i64)> = vec![(1, 1), (1, 2), (2, 2), (0, 1), (1, 0), (2, 1), (1, 3), (3, 2), (0, 3)];
+    let pin = at_frame_0(&[(1, 1), (1, 2), (2, 2), (0, 1), (1, 0), (2, 1), (1, 3), (3, 2), (0, 3)]);
     let pin_shape = shape_of(&pin);
-    let pin_rot: Vec<(i64, i64)> = pin.iter().map(|&(r, c)| (c, -r)).collect();
+    let pin_rot: Vec<(i64, i64, i64)> = pin.iter().map(|&(r, c, k)| (c, -r, k)).collect();
     assert_eq!(moduli(&pin_shape.blade), moduli(&shape_of(&pin_rot).blade));
     assert!(versor_between(&pin_shape, &shape_of(&pin_rot)).is_some(), "a quarter turn found");
 }
@@ -74,8 +74,8 @@ fn the_versor_between_symmetric_bodies_is_the_cosets_geodesic() {
         Some(v.key()),
         "the representative does not depend on the order the coset was measured in"
     );
-    assert_eq!(carry(&v, 0, 0), Some((q(4), q(4), q(0))), "the dilation alone: (0,0) → (4,4)");
-    assert_eq!(carry(&v, 2, 2), Some((q(10), q(10), q(0))), "and (2,2) → (10,10)");
+    assert_eq!(carry(&v, 0, 0, 0), Some((q(4), q(4), q(0))), "the dilation alone: (0,0) → (4,4)");
+    assert_eq!(carry(&v, 2, 2, 0), Some((q(10), q(10), q(0))), "and (2,2) → (10,10)");
     for (_, member) in &coset {
         assert!(carries(member, &sq, &sq3), "every member of the coset carries the body");
     }
@@ -84,17 +84,17 @@ fn the_versor_between_symmetric_bodies_is_the_cosets_geodesic() {
     let coset = versor_coset(&bar, &bar2);
     assert!(coset.len() > 1, "a bar's stabilizer holds its half turn: {} members", coset.len());
     let v2 = versor_between(&bar, &bar2).expect("a dilation");
-    assert_eq!(carry(&v2, 0, 0), Some((q(0), q(0), q(0))), "the dilation, not the dilation and a half turn");
-    assert_eq!(carry(&v2, 2, 3), Some((q(4), q(6), q(0))));
+    assert_eq!(carry(&v2, 0, 0, 0), Some((q(0), q(0), q(0))), "the dilation, not the dilation and a half turn");
+    assert_eq!(carry(&v2, 2, 3, 0), Some((q(4), q(6), q(0))));
 }
 
 /// 24.4, A21 §2, Stage 12 S12.1a — A CHART'S PREFIX IS THE TOPOLOGICAL
 /// STRATUM. Two rectangles of different proportions have the same
-/// components, holes and turns and different moment ratios: their charts
-/// differ, share the three coarsest axes, and the atlas read at that depth
-/// holds both — the stratum a peel walks out to. On the fleet 952 of 954
-/// charts had thirteen axes and no two shared one; the shared stratum is
-/// three axes in, and it is read by peel, never by the whole chart.
+/// components, holes, cavities and turns and different moment ratios:
+/// their charts differ, share the four coarsest axes, and the atlas read
+/// at that depth holds both — the stratum a peel walks out to. The shared
+/// stratum is four axes in, and it is read by peel, never by the whole
+/// chart.
 #[test]
 fn a_chart_prefix_is_the_topological_stratum() {
     use crate::transducer::stalk::{Invariant, Stalks};
@@ -102,11 +102,11 @@ fn a_chart_prefix_is_the_topological_stratum() {
     let plank_cells = rect(0, 0, 2, 5);
     let (a, b) = (moduli(&shape_of(&bar_cells).blade), moduli(&shape_of(&plank_cells).blade));
     assert_ne!(a, b, "different proportions, different charts");
-    assert_eq!(a[..3], b[..3], "one topology: components, holes and turns lead the chart");
-    assert_eq!(a[..3], [1u64, 0, 4], "one component, no hole, four turns");
-    let word_of = |cells: &[(i64, i64)]| {
+    assert_eq!(a[..4], b[..4], "one topology: components, holes, cavities and turns lead the chart");
+    assert_eq!(a[..4], [1u64, 0, 0, 4], "one component, no hole, no cavity, four turns");
+    let word_of = |cells: &[(i64, i64, i64)]| {
         let raw: Vec<(i64, i64, u8, u8)> =
-            cells.iter().map(|&(r, c)| (r, c, 1u8, 2u8)).collect();
+            cells.iter().map(|&(r, c, _)| (r, c, 1u8, 2u8)).collect();
         let chain = crate::transducer::element::canonical_chain(&raw)
             .expect("one entry per position is A5's chain");
         crate::transducer::element::from_canonical(&chain).address()
@@ -119,17 +119,17 @@ fn a_chart_prefix_is_the_topological_stratum() {
     assert_eq!(atlas.fiber(&ia).len(), 1, "the exact chart holds one word");
     // The stratum is the fibre UNDER the prefix (A21 §2): `fiber` reads one
     // node's own members and holds nothing at a prefix no word sits on.
-    let stratum = atlas.fiber_under(&Invariant(a[..3].to_vec()));
+    let stratum = atlas.fiber_under(&Invariant(a[..4].to_vec()));
     assert!(
         stratum.contains(&wa.clone().into_vec()) && stratum.contains(&wb.clone().into_vec()),
         "the topological stratum holds both: {} members",
         stratum.len()
     );
     let mut at = ia.clone();
-    while at.0.len() > 3 {
+    while at.0.len() > 4 {
         at = at.peel();
     }
-    assert_eq!(at.0, a[..3], "peel walks out to the topological stratum");
+    assert_eq!(at.0, a[..4], "peel walks out to the topological stratum");
     assert_eq!(atlas.fiber_under(&at).len(), 2, "and the stratum's fibre is read under that prefix");
 }
 

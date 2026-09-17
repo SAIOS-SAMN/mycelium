@@ -30,13 +30,15 @@ pub(crate) struct Piece {
 }
 
 /// The address of a piece, as content (A21): the shell kind, the hue, and
-/// the support written out, length-prefixed.
-pub(crate) fn piece_key(kind: ShellKind, hue: u8, support: &[(i64, i64)]) -> Vec<u8> {
+/// the support on the three coordinates of the base written out,
+/// length-prefixed.
+pub(crate) fn piece_key(kind: ShellKind, hue: u8, support: &[(i64, i64, i64)]) -> Vec<u8> {
     let mut k = vec![kind.as_u8(), hue];
     k.extend_from_slice(&(support.len() as u32).to_le_bytes());
-    for &(r, c) in support {
+    for &(r, c, f) in support {
         k.extend_from_slice(&r.to_le_bytes());
         k.extend_from_slice(&c.to_le_bytes());
+        k.extend_from_slice(&f.to_le_bytes());
     }
     k
 }
@@ -119,22 +121,22 @@ pub(crate) fn meet_ends(k: &[u8]) -> Option<(&[u8], &[u8])> {
 }
 
 /// The pieces of a body: its peel shells, and within each shell the
-/// one-hue connected components (13.9's split, `sentence::pieces` over
-/// 4-adjacency), filed by their own address.
+/// one-hue connected components (13.9's split, `blade::components` on the
+/// three coordinates of the base), filed by their own address.
 pub(crate) fn pieces_of(
-    cells: &[Cell3],
+    cells: &[Cell4],
     scale: Option<((usize, usize), (usize, usize))>,
 ) -> crate::network::nerve::Keyed<Piece> {
     let mut out: crate::network::nerve::Keyed<Piece> = crate::network::nerve::Keyed::new();
     for shell in crate::transducer::peel::peel_body_scaled(cells, scale) {
         // One hue at a time, so a component is a piece of ONE colour: a
         // seam between two hues is a meet, not a body (13.9).
-        let mut hues: crate::network::nerve::Keyed<Vec<Cell3>> = crate::network::nerve::Keyed::new();
-        for &(r, c, h) in &shell.cells {
+        let mut hues: crate::network::nerve::Keyed<Vec<Cell4>> = crate::network::nerve::Keyed::new();
+        for &(r, c, k, h) in &shell.cells {
             match hues.get_mut(&[h]) {
-                Some(v) => v.push((r, c, h)),
+                Some(v) => v.push((r, c, k, h)),
                 None => {
-                    hues.insert([h], vec![(r, c, h)]);
+                    hues.insert([h], vec![(r, c, k, h)]);
                 }
             }
         }
@@ -144,14 +146,11 @@ pub(crate) fn pieces_of(
             // that hue by construction.
             let [hue] = hue_key.as_slice() else { continue };
             let hue = *hue;
-            let chain: Vec<crate::transducer::sentence::Cell> =
-                of_hue.iter().map(|&(r, c, h)| (r, c, h, h)).collect();
-            for comp in crate::transducer::sentence::pieces(&chain) {
-                let cells: Vec<Cell3> = comp.iter().map(|&(r, c, h, _)| (r, c, h)).collect();
-                if cells.is_empty() {
+            for comp in crate::transducer::blade::components(of_hue) {
+                if comp.is_empty() {
                     continue;
                 }
-                let body = body_of(cells);
+                let body = body_of(comp);
                 let k = piece_key(shell.kind, hue, &support_of(&body));
                 out.insert(k, Piece { body });
             }

@@ -10,12 +10,13 @@
 //!
 //! Any non-homeomorphic transformation factors as Φ = V ∘ S, where S is the
 //! topological surgery matching Betti numbers, and V is the conformal versor
-//! aligning the resulting homeomorphic core.
+//! aligning the resulting homeomorphic core. The support is the stack, on
+//! the three coordinates of the base (51.3).
 
 use super::body::{shape_of, topology, Shape};
 use crate::transducer::cga::Mv;
 
-/// The elementary topological surgery operations on 2D and 3D cell complexes.
+/// The elementary topological surgery operations on cell complexes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SurgeryKind {
     /// Capping 1-cycles by attaching 2-cells (Δβ₁ = -k, cavity fill).
@@ -33,12 +34,12 @@ pub enum SurgeryKind {
 pub struct Surgery {
     pub kind: SurgeryKind,
     pub delta_betti: (i64, i64),
-    pub support_delta: Vec<(i64, i64)>,
+    pub support_delta: Vec<(i64, i64, i64)>,
 }
 
 impl Surgery {
     /// Construct a hole-filling surgery with the given cavity cells.
-    pub fn fill_hole(cavity_cells: Vec<(i64, i64)>) -> Self {
+    pub fn fill_hole(cavity_cells: Vec<(i64, i64, i64)>) -> Self {
         let mut delta = cavity_cells;
         delta.sort_unstable();
         delta.dedup();
@@ -50,7 +51,7 @@ impl Surgery {
     }
 
     /// Construct a puncture surgery with the given removed cells.
-    pub fn puncture(hole_cells: Vec<(i64, i64)>) -> Self {
+    pub fn puncture(hole_cells: Vec<(i64, i64, i64)>) -> Self {
         let mut delta = hole_cells;
         delta.sort_unstable();
         delta.dedup();
@@ -62,7 +63,7 @@ impl Surgery {
     }
 
     /// Construct a bridge-merge surgery identifying disjoint components.
-    pub fn bridge_merge(bridge_cells: Vec<(i64, i64)>) -> Self {
+    pub fn bridge_merge(bridge_cells: Vec<(i64, i64, i64)>) -> Self {
         let mut delta = bridge_cells;
         delta.sort_unstable();
         delta.dedup();
@@ -74,7 +75,7 @@ impl Surgery {
     }
 
     /// Construct a split-cut surgery dividing connected components.
-    pub fn split_cut(cut_cells: Vec<(i64, i64)>) -> Self {
+    pub fn split_cut(cut_cells: Vec<(i64, i64, i64)>) -> Self {
         let mut delta = cut_cells;
         delta.sort_unstable();
         delta.dedup();
@@ -86,7 +87,7 @@ impl Surgery {
     }
 
     /// Apply the surgery to a support, producing the modified cell set.
-    pub fn apply(&self, cells: &[(i64, i64)]) -> Vec<(i64, i64)> {
+    pub fn apply(&self, cells: &[(i64, i64, i64)]) -> Vec<(i64, i64, i64)> {
         match self.kind {
             SurgeryKind::FillHole | SurgeryKind::BridgeMerge => {
                 let mut out = cells.to_vec();
@@ -124,7 +125,7 @@ impl Surgery {
     }
 
     /// Detect surgery between two supports by exact Betti number analysis.
-    pub fn detect(src: &[(i64, i64)], dst: &[(i64, i64)]) -> Option<Self> {
+    pub fn detect(src: &[(i64, i64, i64)], dst: &[(i64, i64, i64)]) -> Option<Self> {
         let t_src = topology(src);
         let t_dst = topology(dst);
         let d_b0 = t_dst.0 as i64 - t_src.0 as i64;

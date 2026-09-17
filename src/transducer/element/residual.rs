@@ -116,15 +116,16 @@ impl PlacedChain {
     }
 
     /// The chain as it sits in the scene: each canonical cell carried
-    /// through the translator, its transition unchanged. `carry_cell` is
-    /// the sensor's, and this is the one place the pair reappears.
+    /// through the translator, its transition unchanged, in the frame the
+    /// pose names (16.5). `carry_cell` is the sensor's, and this is the one
+    /// place the pair reappears.
     pub fn placed(&self) -> Vec<(i64, i64, u8, u8)> {
         let mut out = Vec::new();
         for &(r, c, hb, ha) in self.chain.as_slice() {
-            let Some(cells) = crate::transducer::element::sensor::carry_cell(&self.at, r, c) else {
+            let Some(cells) = crate::transducer::element::sensor::carry_cell(&self.at, r, c, 0) else {
                 continue;
             };
-            for (pr, pc) in cells {
+            for (pr, pc, _) in cells {
                 out.push((pr, pc, hb, ha));
             }
         }

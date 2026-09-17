@@ -24,9 +24,9 @@ pub(crate) fn rational_sqrt(x: &BigRational) -> Option<BigRational> {
 }
 
 /// Apply a versor to a point of the sensor's vertex coordinates in frame
-/// `0` and read the base back; `None` at infinity.
-pub fn carry(v: &Mv, r: i64, c: i64) -> Option<(BigRational, BigRational, BigRational)> {
-    cga::base(&v.sandwich(&cga::point(&q(r), &q(c), &q(0))))
+/// `k` and read the base back; `None` at infinity.
+pub fn carry(v: &Mv, r: i64, c: i64, k: i64) -> Option<(BigRational, BigRational, BigRational)> {
+    cga::base(&v.sandwich(&cga::point(&q(r), &q(c), &q(k))))
 }
 
 /// The unnormalized rotor carrying direction `a` onto direction `b` in the
@@ -74,8 +74,8 @@ pub fn rotor_and_placement_between(
 ) -> Option<(crate::transducer::alphabet::Rotor, Mv)> {
     use crate::transducer::alphabet::{Rotor, SLOT_PLANES_SIX};
     let _ = versor_between(a, b)?;
-    let ca = a.blade.centroid3()?;
-    let cb = b.blade.centroid3()?;
+    let ca = a.blade.centroid()?;
+    let cb = b.blade.centroid()?;
     let t = cga::translator(&(cb.0 - ca.0), &(cb.1 - ca.1), &(cb.2 - ca.2));
 
     let mut total_rotor = Rotor::identity();
@@ -135,36 +135,23 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
         return coset;
     }
     // Body centroids in the sensor's vertex coordinates: the cell-center
-    // centroid plus one half on each axis.
-    let Some((ca1, ca2)) = a.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2))) else {
+    // centroid plus one half on each plane axis; a cell stands AT its
+    // frame (16.4).
+    let Some((ca1, ca2, ka)) = a.blade.centroid().map(|(x, y, z)| (x + qn(1, 2), y + qn(1, 2), z)) else {
         return coset;
     };
-    let Some((cb1, cb2)) = b.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2))) else {
+    let Some((cb1, cb2, kb)) = b.blade.centroid().map(|(x, y, z)| (x + qn(1, 2), y + qn(1, 2), z)) else {
         return coset;
     };
-    let spread = |s: &Shape| (&s.blade.inertia[0] + &s.blade.inertia[1]) / &s.blade.shell;
+    let spread = |s: &Shape| {
+        (&s.blade.inertia[0] + &s.blade.inertia[1] + &s.blade.inertia[3]) / &s.blade.shell
+    };
     let (sa, sb) = (spread(a), spread(b));
-    // THE INSTRUMENT THAT STOOD HERE IS REMOVED, and what it measured is
-    // recorded instead. R33 printed which arm of the similarity refusal was
-    // taken, to separate "this corpus contains no homothety" from "it does
-    // and ρ is refused before it can register". It answered: `similar: ρ is
-    // not one` 6117 times in eight minutes — dilations ARE measured, exactly
-    // and in ℚ — against `the spread ratio is no rational square` 42674
-    // times.
-    //
-    // Both lines were in a hot loop. `versor_coset` runs per body pair per
-    // extraction, so the instrument that answered the question in one soak
-    // was writing forty thousand lines in eight minutes and costing the
-    // stroke the formatting. A reading that changes what it measures is no
-    // reading (§8.1); it is removed now that it has answered.
-    //
-    // WHAT IT LEFT OPEN, stated because the number is large and the cause is
-    // not a defect here: ρ is ONE rational from the per-cell spread, so a
-    // homothety with different horizontal and vertical factors — a stretch,
-    // `ρ_w ≠ ρ_h` — is not a similarity and is correctly refused. Those
-    // 42674 are that shape, and the refusal is exact. Carrying an
-    // anisotropic scale would need a carrier that holds two factors, which
-    // is a ruling and not a repair.
+    // ρ is ONE rational from the per-cell spread, so a homothety with
+    // different horizontal and vertical factors — a stretch — is not a
+    // similarity and is refused exactly. Carrying an anisotropic scale would
+    // need a carrier that holds two factors, which is a ruling and not a
+    // repair.
     let rho = match sa.is_zero() {
         true => match sb.is_zero() {
             true => q(1),
@@ -188,7 +175,6 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
     }
     // The bodies stand in their frames: the transport returns the frame
     // coordinate as it does the two of the plane.
-    let (ka, kb) = (a.blade.temporal.clone(), b.blade.temporal.clone());
     let to_origin = cga::translator(&(-&ca1), &(-&ca2), &(-&ka));
     let to_target = cga::translator(&cb1, &cb2, &kb);
     let dil = cga::dilator(&rho);
@@ -302,8 +288,8 @@ pub fn coset_representative(coset: &[(Mv, Mv)]) -> Option<Mv> {
 /// passes, and the one a held word's action passes on a listing body
 /// (24.1, 50.1 step 1). A versor with no inverse carries nothing.
 pub fn carries(v: &Mv, a: &Shape, b: &Shape) -> bool {
-    let lands = |v: &Mv, r: i64, c: i64, held: &[(i64, i64)]| -> bool {
-        match crate::transducer::element::carry_center(v, r, c) {
+    let lands = |v: &Mv, (r, c, k): (i64, i64, i64), held: &[(i64, i64, i64)]| -> bool {
+        match crate::transducer::element::carry_center(v, r, c, k) {
             // A centre that lands off the lattice lands on no held cell.
             Some(p) => match crate::transducer::element::cell_of(&p) {
                 Some(cell) => held.binary_search(&cell).is_ok(),
@@ -313,8 +299,8 @@ pub fn carries(v: &Mv, a: &Shape, b: &Shape) -> bool {
         }
     };
     let Some(inv) = v.versor_inverse() else { return false };
-    a.blade.cells.iter().all(|&(r, c)| lands(v, r, c, &b.blade.cells))
-        && b.blade.cells.iter().all(|&(r, c)| lands(&inv, r, c, &a.blade.cells))
+    a.blade.cells.iter().all(|&cell| lands(v, cell, &b.blade.cells))
+        && b.blade.cells.iter().all(|&cell| lands(&inv, cell, &a.blade.cells))
 }
 
 /// THE CARRIAGE OF A GIVEN LINEAR ACTION between two bodies (24.1 as ruled
@@ -330,9 +316,8 @@ pub fn versor_carrying(a: &Shape, b: &Shape, linear: &Mv) -> Option<Mv> {
     if a.blade.cells.is_empty() || b.blade.cells.is_empty() {
         return None;
     }
-    let (ca1, ca2) = a.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2)))?;
-    let (cb1, cb2) = b.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2)))?;
-    let (ka, kb) = (a.blade.temporal.clone(), b.blade.temporal.clone());
+    let (ca1, ca2, ka) = a.blade.centroid().map(|(x, y, z)| (x + qn(1, 2), y + qn(1, 2), z))?;
+    let (cb1, cb2, kb) = b.blade.centroid().map(|(x, y, z)| (x + qn(1, 2), y + qn(1, 2), z))?;
     let (ia, ib, ik) = cga::base(&linear.sandwich(&cga::point(&ca1, &ca2, &ka)))?;
     let v = cga::translator(&(cb1 - ia), &(cb2 - ib), &(kb - ik)).geo(linear);
     carries(&v, a, b).then_some(v)

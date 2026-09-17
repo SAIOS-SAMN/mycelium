@@ -95,11 +95,19 @@ pub enum ShellKind {
     Frame,
 }
 
-/// One shell of a body: its kind and its cells (row, col, hue).
+/// One shell of a body: its kind and its cells on the three coordinates of
+/// the base, `(row, col, frame, hue)` (51.3).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Shell {
     pub kind: ShellKind,
-    pub cells: Vec<(i64, i64, u8)>,
+    pub cells: Vec<(i64, i64, i64, u8)>,
+}
+
+/// One shell of one LAMINA: the planar reading a stack's shells are
+/// assembled from (16.5), each lamina peeled in its own frame.
+struct LaminaShell {
+    kind: ShellKind,
+    cells: Vec<(i64, i64, u8)>,
 }
 
 impl ShellKind {
@@ -143,8 +151,8 @@ impl ShellKind {
 struct OutlineStep;
 impl ShellStep for OutlineStep {
     type Residual = Vec<(i64, i64, u8)>;
-    type Core = Shell;
-    fn shell(&self, residual: &Vec<(i64, i64, u8)>) -> Option<(Shell, Vec<(i64, i64, u8)>)> {
+    type Core = LaminaShell;
+    fn shell(&self, residual: &Vec<(i64, i64, u8)>) -> Option<(LaminaShell, Vec<(i64, i64, u8)>)> {
         if residual.is_empty() {
             return None;
         }
@@ -153,7 +161,7 @@ impl ShellStep for OutlineStep {
         if outline.is_empty() {
             return None;
         }
-        Some((Shell { kind: ShellKind::Outline, cells: outline }, core))
+        Some((LaminaShell { kind: ShellKind::Outline, cells: outline }, core))
     }
 }
 
@@ -193,19 +201,60 @@ fn scale_factor(num: usize, den: usize) -> Option<(ShellKind, i64)> {
 /// taken from the residual the last shell left; the governor reads shrink.
 /// Scale shells only when a frame ratio is supplied and is not one.
 /// Cut is not produced here: it is taken only with sites a face names.
-pub fn peel_body(cells: &[(i64, i64, u8)]) -> Vec<Shell> {
+pub fn peel_body(cells: &[(i64, i64, i64, u8)]) -> Vec<Shell> {
     peel_body_scaled(cells, None)
 }
 
-/// `scale` is ((h_out, h_in), (w_out, w_in)).
+/// THE SHELLS OF A STACK are the shells of its laminae (16.5): each frame
+/// of the body is peeled in its own plane, and the shells of one kind are
+/// one shell of the body, lifted back to their frames. `scale` is
+/// ((h_out, h_in), (w_out, w_in)).
 pub fn peel_body_scaled(
-    cells: &[(i64, i64, u8)],
+    cells: &[(i64, i64, i64, u8)],
     scale: Option<((usize, usize), (usize, usize))>,
 ) -> Vec<Shell> {
     if cells.is_empty() {
         return Vec::new();
     }
-    let mut out = vec![Shell { kind: ShellKind::Whole, cells: cells.to_vec() }];
+    let mut by_frame: Vec<(i64, i64, i64, u8)> = cells.to_vec();
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: frame first, then the cell's own row and column"
+    )]
+    by_frame.sort_unstable_by_key(|&(r, c, k, _)| (k, r, c));
+    let mut out: Vec<Shell> = Vec::new();
+    // The walk is the body's own cells, one frame at a time.
+    let mut at = 0usize;
+    while at < by_frame.len() {
+        let k = by_frame[at].2;
+        let end = by_frame[at..]
+            .iter()
+            .position(|cell| cell.2 != k)
+            .map_or(by_frame.len(), |n| at + n);
+        let lamina: Vec<(i64, i64, u8)> = by_frame[at..end].iter().map(|&(r, c, _, h)| (r, c, h)).collect();
+        for shell in peel_lamina_scaled(&lamina, scale) {
+            let lifted = shell.cells.iter().map(|&(r, c, h)| (r, c, k, h));
+            match out.iter_mut().find(|s| s.kind == shell.kind) {
+                Some(s) => s.cells.extend(lifted),
+                None => out.push(Shell { kind: shell.kind, cells: lifted.collect() }),
+            }
+        }
+        at = end;
+    }
+    for s in &mut out {
+        s.cells.sort_unstable();
+    }
+    out
+}
+
+fn peel_lamina_scaled(
+    cells: &[(i64, i64, u8)],
+    scale: Option<((usize, usize), (usize, usize))>,
+) -> Vec<LaminaShell> {
+    if cells.is_empty() {
+        return Vec::new();
+    }
+    let mut out = vec![LaminaShell { kind: ShellKind::Whole, cells: cells.to_vec() }];
     let mut residual = cells.to_vec();
     let mut gov = CountGov(Some(residual.len()));
     if let Some((outline, core)) = OutlineStep.shell(&residual) {
@@ -222,7 +271,7 @@ pub fn peel_body_scaled(
                 }
                 residual = core;
                 if !residual.is_empty() {
-                    out.push(Shell { kind: ShellKind::Core, cells: residual.clone() });
+                    out.push(LaminaShell { kind: ShellKind::Core, cells: residual.clone() });
                 }
             }
             ShellMotion::Stalled => {}
@@ -232,7 +281,7 @@ pub fn peel_body_scaled(
     if !interior.is_empty() {
         match gov.read(&interior) {
             ShellMotion::Shrinking | ShellMotion::Closed => {
-                out.push(Shell { kind: ShellKind::Interior, cells: interior });
+                out.push(LaminaShell { kind: ShellKind::Interior, cells: interior });
             }
             ShellMotion::Stalled => {}
         }
@@ -241,7 +290,7 @@ pub fn peel_body_scaled(
     if !ring.is_empty() {
         match gov.read(&ring) {
             ShellMotion::Shrinking | ShellMotion::Closed | ShellMotion::Stalled => {
-                out.push(Shell { kind: ShellKind::Adjacent, cells: ring });
+                out.push(LaminaShell { kind: ShellKind::Adjacent, cells: ring });
             }
         }
     }
@@ -257,7 +306,7 @@ pub fn peel_body_scaled(
                 _ => None,
             };
             if let Some(cells) = scaled.filter(|s| !s.is_empty()) {
-                out.push(Shell { kind, cells });
+                out.push(LaminaShell { kind, cells });
             }
         }
     }
@@ -327,12 +376,33 @@ mod tests {
         let mut cells = Vec::new();
         for r in 0..3 {
             for c in 0..3 {
-                cells.push((r, c, 1u8));
+                cells.push((r, c, 0, 1u8));
             }
         }
         let shells = peel_body(&cells);
         assert!(shells.iter().any(|s| s.kind == ShellKind::Whole && s.cells.len() == 9));
         assert!(shells.iter().any(|s| s.kind == ShellKind::Outline && s.cells.len() == 8));
         assert!(shells.iter().any(|s| s.kind == ShellKind::Core && s.cells.len() == 1));
+    }
+
+    /// 16.5 — A STACK PEELS LAMINA BY LAMINA: two frames of one square are
+    /// one outline shell of sixteen cells and one core of two, each cell
+    /// in the frame it came from.
+    #[test]
+    fn a_stack_peels_each_lamina_in_its_own_frame() {
+        let mut cells = Vec::new();
+        for k in 0..2 {
+            for r in 0..3 {
+                for c in 0..3 {
+                    cells.push((r, c, k, 1u8));
+                }
+            }
+        }
+        let shells = peel_body(&cells);
+        let outline = shells.iter().find(|s| s.kind == ShellKind::Outline).expect("an outline");
+        assert_eq!(outline.cells.len(), 16);
+        assert!(outline.cells.iter().any(|c| c.2 == 1), "the second frame's outline is in its frame");
+        let core = shells.iter().find(|s| s.kind == ShellKind::Core).expect("a core");
+        assert_eq!(core.cells, vec![(1, 1, 0, 1), (1, 1, 1, 1)]);
     }
 }

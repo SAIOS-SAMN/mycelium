@@ -335,28 +335,36 @@ pub fn replay_at<'a>(word_at: &impl Fn(usize) -> Option<&'a Element>, cites: &[C
     replay_operators(&ops, target)
 }
 
-/// THE REPLAY OF OPERATORS: each operator is a body (the word's cells in
-/// its own frame) with the versor that carries it; nothing is fetched. The
-/// utterance is verified as it was spoken.
-pub(crate) fn cell_at_key(r: i64, c: i64) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[..8].copy_from_slice(&r.to_le_bytes());
-    k[8..16].copy_from_slice(&c.to_le_bytes());
-    k
+/// The key of a cell on the three coordinates of the base: its position
+/// written out. A section's cells stand in frame `0`, their own (16.5).
+pub(crate) fn cell_at_key(r: i64, c: i64, k: i64) -> [u8; 32] {
+    let mut key = [0u8; 32];
+    key[..8].copy_from_slice(&r.to_le_bytes());
+    key[8..16].copy_from_slice(&c.to_le_bytes());
+    key[16..24].copy_from_slice(&k.to_le_bytes());
+    key
 }
 
+/// THE REPLAY OF OPERATORS: each operator is a body (the word's cells in
+/// its own frame) with the versor that carries it; nothing is fetched. The
+/// utterance is verified as it was spoken. The target is one section, in
+/// its own frame: a word's cell carried into another frame speaks nothing
+/// of it, and the section's cell it was to cover stays unspoken.
 pub fn replay_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cell> {
     let mut at: Keyed<Cell> = Keyed::new();
     for &cell in target {
-        at.insert(cell_at_key(cell.0, cell.1), cell);
+        at.insert(cell_at_key(cell.0, cell.1, 0), cell);
     }
     let mut spoken: Keyed<()> = Keyed::new();
     let mut over: Vec<Cell> = Vec::new();
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
-            let Some(image) = element::carry_cell(v, wr, wc) else { continue };
-            for (tr, tc) in image {
-                let k = cell_at_key(tr, tc);
+            let Some(image) = element::carry_cell(v, wr, wc, 0) else { continue };
+            for (tr, tc, tk) in image {
+                if tk != 0 {
+                    continue;
+                }
+                let k = cell_at_key(tr, tc, 0);
                 match at.get(&k) {
                     Some(t) if (t.2, t.3) == (wb, wa) => {
                         spoken.insert(k, ());
@@ -389,15 +397,18 @@ pub fn replay_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cel
 pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Keyed<usize> {
     let mut at: Keyed<Cell> = Keyed::new();
     for &cell in target {
-        at.insert(cell_at_key(cell.0, cell.1), cell);
+        at.insert(cell_at_key(cell.0, cell.1, 0), cell);
     }
     let pos = element::positions(word.sub());
     let landed: Vec<(u8, u8)> = pos
         .iter()
         .filter_map(|&(wr, wc)| {
-            let p = element::carry_center(v, wr, wc)?;
-            let (tr, tc) = element::cell_of(&p)?;
-            let t = at.get(&cell_at_key(tr, tc))?;
+            let p = element::carry_center(v, wr, wc, 0)?;
+            let (tr, tc, tk) = element::cell_of(&p)?;
+            if tk != 0 {
+                return None;
+            }
+            let t = at.get(&cell_at_key(tr, tc, 0))?;
             Some((t.2, t.3))
         })
         .collect();
@@ -409,10 +420,14 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Keyed<usize> {
     for k in word.assignments_by_profile(&element::gauge_key(&landed)) {
         let Some(assignment) = held.get(k) else { continue };
         let ok = pos.iter().zip(assignment).all(|(&(wr, wc), &(wb, wa))| {
-            let Some(p) = element::carry_center(v, wr, wc) else { return true };
-            // A centre off the lattice lands on no cell to disagree with.
-            let Some((tr, tc)) = element::cell_of(&p) else { return true };
-            match at.get(&cell_at_key(tr, tc)) {
+            let Some(p) = element::carry_center(v, wr, wc, 0) else { return true };
+            // A centre off the lattice, or off the section's frame, lands
+            // on no cell to disagree with.
+            let Some((tr, tc, tk)) = element::cell_of(&p) else { return true };
+            if tk != 0 {
+                return true;
+            }
+            match at.get(&cell_at_key(tr, tc, 0)) {
                 Some(t) => (t.2, t.3) == (wb, wa),
                 None => true,
             }
@@ -441,13 +456,16 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Ve
     let mut conflict: Keyed<()> = Keyed::new();
     let mut at: Keyed<Cell> = Keyed::new();
     for &cell in target {
-        at.insert(cell_at_key(cell.0, cell.1), cell);
+        at.insert(cell_at_key(cell.0, cell.1, 0), cell);
     }
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
-            let Some(p) = element::carry_center(v, wr, wc) else { continue };
-            let Some((tr, tc)) = element::cell_of(&p) else { continue };
-            let k = cell_at_key(tr, tc);
+            let Some(p) = element::carry_center(v, wr, wc, 0) else { continue };
+            let Some((tr, tc, tk)) = element::cell_of(&p) else { continue };
+            if tk != 0 {
+                continue;
+            }
+            let k = cell_at_key(tr, tc, 0);
             if at.get(&k).is_none() {
                 continue;
             }

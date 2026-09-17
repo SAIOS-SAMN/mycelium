@@ -118,7 +118,7 @@ pub fn invariant(chain: &[Cell]) -> Invariant {
     if cells.is_empty() {
         return Invariant(Vec::new());
     }
-    let shape = crate::transducer::blade::shape_of(&cells);
+    let shape = crate::transducer::blade::shape_of_section(&cells);
     Invariant(crate::transducer::blade::moduli(&shape.blade))
 }
 

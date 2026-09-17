@@ -88,7 +88,7 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
     for t in &terms {
         let sup = t.eval(scene);
         if fp.iter().any(|p| has(&sup, *p)) {
-            let cells: Vec<(i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0)).collect();
+            let cells: Vec<(i64, i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0, 0)).collect();
             // `Sel::Comp` names a component in ONE BYTE, so a support with
             // more components than that has terms this algebra cannot
             // spell: they are not derived rather than folded onto index

@@ -152,8 +152,10 @@ fn ring_answer(
     let Vertex::Demand { bodies, .. } = v else {
         return None;
     };
-    let before: Vec<Cell3> = bodies.iter().filter(|c| c.2 != 0).map(|c| (c.0, c.1, c.2)).collect();
-    let after: Vec<Cell3> = bodies.iter().filter(|c| c.3 != 0).map(|c| (c.0, c.1, c.3)).collect();
+    // The demand's bodies are one section's cells (16.5), read in the
+    // section's own frame.
+    let before: Vec<Cell4> = bodies.iter().filter(|c| c.2 != 0).map(|c| (c.0, c.1, 0, c.2)).collect();
+    let after: Vec<Cell4> = bodies.iter().filter(|c| c.3 != 0).map(|c| (c.0, c.1, 0, c.3)).collect();
     if before.is_empty() || after.is_empty() {
         return None;
     }

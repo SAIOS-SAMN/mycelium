@@ -73,7 +73,7 @@ pub(crate) fn face_work() -> u64 {
 /// index; walking it is reading it (rule 1).
 pub(crate) fn star_and_cell_faces(
     frame: Option<&[u8]>,
-    supports: &crate::network::nerve::Keyed<Vec<(i64, i64)>>,
+    supports: &crate::network::nerve::Keyed<Vec<(i64, i64, i64)>>,
 ) -> Vec<(Vec<u8>, Vec<u8>)> {
     let mut related: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     if let Some(frame) = frame {
@@ -89,9 +89,9 @@ pub(crate) fn star_and_cell_faces(
         if Some(mk.as_slice()) == frame {
             continue;
         }
-        for &(r, c) in supp {
+        for &(r, c, f) in supp {
             note_face_work();
-            let k = cell_pos_key(r, c);
+            let k = support_key(r, c, f);
             match occ.get_mut(&k) {
                 // The members ascend in key order and a member is offered its
                 // own support once, so a repeat can only be the one just
@@ -137,10 +137,9 @@ pub(crate) fn star_and_cell_faces(
         if Some(mk.as_slice()) == frame {
             continue;
         }
-        let cells: Vec<(i64, i64, u8)> = supp.iter().map(|&(r, c)| (r, c, 0)).collect();
-        for (r, c, _) in crate::transducer::blade::adjacent_ring(&cells) {
+        for (r, c, f) in ring_of_support(supp) {
             note_face_work();
-            let Some(others) = occ.get(&cell_pos_key(r, c)) else {
+            let Some(others) = occ.get(&support_key(r, c, f)) else {
                 continue;
             };
             for u in others {
@@ -185,9 +184,10 @@ pub(crate) struct Cand {
 pub(crate) fn cand_key(kind: crate::transducer::peel::ShellKind, body: &Body) -> Vec<u8> {
     let mut k = vec![kind.as_u8()];
     k.extend_from_slice(&(body.cells.len() as u32).to_le_bytes());
-    for &(r, c, h) in &body.cells {
+    for &(r, c, f, h) in &body.cells {
         k.extend_from_slice(&r.to_le_bytes());
         k.extend_from_slice(&c.to_le_bytes());
+        k.extend_from_slice(&f.to_le_bytes());
         k.push(h);
     }
     k

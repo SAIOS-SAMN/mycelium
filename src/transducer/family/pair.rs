@@ -32,7 +32,7 @@ pub(crate) struct Carried {
 /// and no `usize::MAX` reachable as "no member here".
 struct Scenery {
     vertices: Vec<Vertex>,
-    supports: crate::network::nerve::Keyed<Vec<(i64, i64)>>,
+    supports: crate::network::nerve::Keyed<Vec<(i64, i64, i64)>>,
     carried: crate::network::nerve::Keyed<Carried>,
 }
 
@@ -52,7 +52,7 @@ impl Scenery {
     fn place(
         &mut self,
         vertex: Vertex,
-        support: Vec<(i64, i64)>,
+        support: Vec<(i64, i64, i64)>,
         carried: Option<Carried>,
     ) -> u16 {
         let ix = self.vertices.len() as u16;
@@ -210,8 +210,8 @@ fn unpaired_demands(
         if used_out.contains(&ja) || oc.kind != Whole {
             continue;
         }
-        for &(r, c, _) in &oc.body.cells {
-            at_cell.nested_insert(crate::transducer::family::cell_pos_key(r, c), ja.clone(), ());
+        for &(r, c, f, _) in &oc.body.cells {
+            at_cell.nested_insert(support_key(r, c, f), ja.clone(), ());
         }
     }
     for (ia, ic) in ins.cands.scoped() {
@@ -221,8 +221,8 @@ fn unpaired_demands(
         // The outputs this body meets: the union of the fibres at its own
         // cells. A body meets nothing where it stands on nothing.
         let mut meets: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for &(r, c, _) in &ic.body.cells {
-            if let Some(here) = at_cell.get(&crate::transducer::family::cell_pos_key(r, c)) {
+        for &(r, c, f, _) in &ic.body.cells {
+            if let Some(here) = at_cell.get(&support_key(r, c, f)) {
                 for (ja, ()) in here.scoped() {
                     meets.insert(&ja, ());
                 }
@@ -293,7 +293,7 @@ fn unpaired_demands(
                 // grow. `family::refine` holds the arithmetic and is wired to
                 // nothing for this reason.
                 let axes: Vec<u16> = (0..ic.body.moduli.0.len() as u16).collect();
-                let cells: Vec<_> = ic.body.cells.iter().map(|&(r, c, h)| (r, c, h, 0u8)).collect();
+                let cells: Vec<_> = ic.body.cells.iter().map(|&(r, c, _, h)| (r, c, h, 0u8)).collect();
                 out.push((Demand::TopologicalDeformation { image: Invariant(Vec::new()), axes }, ic.body.moduli.clone(), cells));
             }
             Some(_) => {
@@ -387,8 +387,8 @@ fn unpaired_demands(
         }
         let n = ic.body.shape.blade.cells.len() as u32;
         ins_by_support.nested_insert(n.to_le_bytes(), ia.clone(), ());
-        for &(r, c, _) in &ic.body.cells {
-            in_at_cell.nested_insert(crate::transducer::family::cell_pos_key(r, c), ia.clone(), ());
+        for &(r, c, f, _) in &ic.body.cells {
+            in_at_cell.nested_insert(support_key(r, c, f), ia.clone(), ());
         }
     }
     for (ja, oc) in outs.cands.scoped() {
@@ -397,8 +397,8 @@ fn unpaired_demands(
         }
         // The inputs standing where this body stands, read at its own cells.
         let mut met_by: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for &(r, c, _) in &oc.body.cells {
-            if let Some(here) = in_at_cell.get(&crate::transducer::family::cell_pos_key(r, c)) {
+        for &(r, c, f, _) in &oc.body.cells {
+            if let Some(here) = in_at_cell.get(&support_key(r, c, f)) {
                 for (ia, ()) in here.scoped() {
                     met_by.insert(&ia, ());
                 }
@@ -424,7 +424,7 @@ fn unpaired_demands(
             }
         }
         if cells.is_empty() {
-            cells = oc.body.cells.iter().map(|&(r, c, h)| (r, c, 0u8, h)).collect();
+            cells = oc.body.cells.iter().map(|&(r, c, _, h)| (r, c, 0u8, h)).collect();
         }
         let kind = match charts.scoped().next() {
             None => Demand::Creation,
@@ -439,25 +439,25 @@ fn unpaired_demands(
 /// each with the hue before and after (0 where a body has no cell).
 fn delta_cells(a: &Body, b: &Body) -> Vec<crate::transducer::sentence::Cell> {
     let mut before: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, h) in &a.cells {
-        before.insert(cell_pos_key(r, c), h);
+    for &(r, c, f, h) in &a.cells {
+        before.insert(support_key(r, c, f), h);
     }
     let mut after: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, h) in &b.cells {
-        after.insert(cell_pos_key(r, c), h);
+    for &(r, c, f, h) in &b.cells {
+        after.insert(support_key(r, c, f), h);
     }
     let mut cells: Vec<crate::transducer::sentence::Cell> = Vec::new();
-    for &(r, c, h) in &a.cells {
+    for &(r, c, f, h) in &a.cells {
         // A cell the image does not hold is absent there, and hue 0 IS
         // absence in this encoding.
-        let gone = match after.get(&cell_pos_key(r, c)) {
+        let gone = match after.get(&support_key(r, c, f)) {
             Some(h2) => *h2,
             None => 0,
         };
         cells.push((r, c, h, gone));
     }
-    for &(r, c, h) in &b.cells {
-        if !before.contains(&cell_pos_key(r, c)) {
+    for &(r, c, f, h) in &b.cells {
+        if !before.contains(&support_key(r, c, f)) {
             cells.push((r, c, 0, h));
         }
     }
@@ -711,7 +711,9 @@ pub(crate) fn pair_form_uncached(
         let mut cells = cells.clone();
         cells.sort_unstable();
         cells.dedup();
-        let mut support: Vec<(i64, i64)> = cells.iter().map(|&(r, c, _, _)| (r, c)).collect();
+        // The demand's cells are one section's (16.5); its support stands
+        // in that section's frame.
+        let mut support: Vec<(i64, i64, i64)> = cells.iter().map(|&(r, c, _, _)| (r, c, 0)).collect();
         support.sort_unstable();
         support.dedup();
         scenery.place(demand_vertex(kind.clone(), chart, cells), support, None);

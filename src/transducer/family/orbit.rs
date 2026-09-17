@@ -47,22 +47,28 @@ pub(crate) fn ring_dist_peel(image: &[(i64, i64)], anchor: &[(i64, i64)], bound:
     None
 }
 
-/// Carry every cell of a body by `v`. The image is NOT bounded by any
-/// frame: a cell carried off the frame is still the image of that cell, and
-/// whether the body left the frame is the ORBIT's reading (`OrbitEnd::
-/// LeftFrame`), taken after the step. Clipping here would hide the exit.
-pub(crate) fn apply_versor_cells(v: &Versor, cells: &[Cell3]) -> Vec<Cell3> {
+/// Carry every cell of a grid's scene by `v`. The image is NOT bounded by
+/// the grid's extent: a cell carried off it is still the image of that
+/// cell, and whether the body left the frame is the ORBIT's reading
+/// (`OrbitEnd::LeftFrame`), taken after the step. Clipping here would hide
+/// the exit. `None` where a cell is carried out of the grid's own frame
+/// along `e₃`: the orbit walks one grid, and a body carried off it has
+/// left it.
+pub(crate) fn apply_versor_cells(v: &Versor, cells: &[Cell3]) -> Option<Vec<Cell3>> {
     let mut out = Vec::new();
     for &(r, c, h) in cells {
-        if let Some(image) = element::carry_cell(v, r, c) {
-            for (ir, ic) in image {
+        if let Some(image) = element::carry_cell(v, r, c, 0) {
+            for (ir, ic, ik) in image {
+                if ik != 0 {
+                    return None;
+                }
                 out.push((ir, ic, h));
             }
         }
     }
     out.sort_unstable();
     out.dedup();
-    out
+    Some(out)
 }
 
 /// THE VERSOR A VERTEX ACTS BY AT ONE NAMED CHART: its rotor under that
@@ -117,7 +123,9 @@ pub fn orbit_at(
     };
     let bound = (frame.0.saturating_add(frame.1)).max(1) as u32;
     let start = ring_dist_peel(&positions_of(x_cells), anchor, bound);
-    let next = apply_versor_cells(&versor, x_cells);
+    let Some(next) = apply_versor_cells(&versor, x_cells) else {
+        return OrbitEnd::LeftFrame { steps: 1 };
+    };
     let d1 = ring_dist_peel(&positions_of(&next), anchor, bound);
     if d1 == start {
         return OrbitEnd::NoOrbit;
@@ -160,7 +168,9 @@ pub fn orbit_at(
                 .collect();
             return OrbitEnd::Contact { cells: inside, steps: step };
         }
-        let nxt = apply_versor_cells(&versor, &cells);
+        let Some(nxt) = apply_versor_cells(&versor, &cells) else {
+            return OrbitEnd::LeftFrame { steps: step };
+        };
         let nk = state_key(&nxt);
         if nxt == cells || seen.contains(&nk) {
             return OrbitEnd::Torsion { steps: step };

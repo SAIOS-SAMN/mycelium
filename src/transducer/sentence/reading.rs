@@ -86,7 +86,7 @@ fn vertex_cites_by(
             before.push((r, c, b));
         }
         if a != 0 {
-            after.insert(cell_at_key(r, c), a);
+            after.insert(cell_at_key(r, c, 0), a);
             out_support.push((r, c));
         }
     }
@@ -98,14 +98,17 @@ fn vertex_cites_by(
     out_support.sort_unstable();
     out_support.dedup();
     let in_support: Vec<(i64, i64)> = before.iter().map(|&(r, c, _)| (r, c)).collect();
-    let shape_in = blade::shape_of(&in_support);
-    let shape_out = blade::shape_of(&out_support);
+    let shape_in = blade::shape_of_section(&in_support);
+    let shape_out = blade::shape_of_section(&out_support);
     let linear = element::conformal_of_rotor(&rotor, &element::dilator_of(carriage)?)?;
     let v = blade::versor_carrying(&shape_in, &shape_out, &linear)?;
     for &(r, c, h) in &before {
-        let p = element::carry_center(&v, r, c)?;
-        let (tr, tc) = element::cell_of(&p)?;
-        let landed = *after.get(&cell_at_key(tr, tc))?;
+        let p = element::carry_center(&v, r, c, 0)?;
+        let (tr, tc, tk) = element::cell_of(&p)?;
+        if tk != 0 {
+            return None;
+        }
+        let landed = *after.get(&cell_at_key(tr, tc, 0))?;
         if Some(landed) != super::hue_of(gauge, h) {
             return None;
         }
