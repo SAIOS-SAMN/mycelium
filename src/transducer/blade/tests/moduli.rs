@@ -11,10 +11,10 @@ use crate::transducer::blade::*;
 #[test]
 fn moduli_and_transport_are_exact_and_similarity_invariant() {
     let bar = shape_of(&rect(0, 0, 2, 3));
-    assert_eq!(turns(&bar.blade.cells), 4);
+    assert_eq!(turns(&bar.blade.support), 4);
     let l = at_frame_0(&[(0, 0), (1, 0), (2, 0), (2, 1)]);
     let l_shape = shape_of(&l);
-    assert_eq!(turns(&l_shape.blade.cells), 6);
+    assert_eq!(turns(&l_shape.blade.support), 6);
     // Rotated (rows↔cols) and translated bar: same moduli, a rigid versor.
     let bar_rot = shape_of(&rect(5, 7, 3, 2));
     assert_eq!(moduli(&bar.blade), moduli(&bar_rot.blade));
@@ -98,20 +98,20 @@ fn the_versor_between_symmetric_bodies_is_the_cosets_geodesic() {
 #[test]
 fn a_chart_prefix_is_the_topological_stratum() {
     use crate::transducer::stalk::{Invariant, Stalks};
-    let bar_cells = rect(0, 0, 2, 3);
-    let plank_cells = rect(0, 0, 2, 5);
-    let (a, b) = (moduli(&shape_of(&bar_cells).blade), moduli(&shape_of(&plank_cells).blade));
+    let bar_support = rect(0, 0, 2, 3);
+    let plank_support = rect(0, 0, 2, 5);
+    let (a, b) = (moduli(&shape_of(&bar_support).blade), moduli(&shape_of(&plank_support).blade));
     assert_ne!(a, b, "different proportions, different charts");
     assert_eq!(a[..4], b[..4], "one topology: components, holes, cavities and turns lead the chart");
     assert_eq!(a[..4], [1u64, 0, 0, 4], "one component, no hole, no cavity, four turns");
-    let word_of = |cells: &[(i64, i64, i64)]| {
+    let word_of = |support: &[(i64, i64, i64)]| {
         let raw: Vec<(i64, i64, u8, u8)> =
-            cells.iter().map(|&(r, c, _)| (r, c, 1u8, 2u8)).collect();
+            support.iter().map(|&(r, c, _)| (r, c, 1u8, 2u8)).collect();
         let chain = crate::transducer::element::canonical_chain(&raw)
-            .expect("one entry per position is A5's chain");
+            .expect("one entry per site is A5's chain");
         crate::transducer::element::from_canonical(&chain).address()
     };
-    let (wa, wb) = (word_of(&bar_cells), word_of(&plank_cells));
+    let (wa, wb) = (word_of(&bar_support), word_of(&plank_support));
     let (ia, ib) = (Invariant(a.clone()), Invariant(b.clone()));
     let mut atlas = Stalks::default();
     atlas.admit(&ia, wa.clone());

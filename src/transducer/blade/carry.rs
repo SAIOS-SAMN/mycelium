@@ -116,7 +116,7 @@ pub fn rotor_between_shapes(a: &Shape, b: &Shape) -> Option<crate::transducer::a
 
 /// THE COSET OF VERSORS carrying `a` onto `b`, each with the rotation it
 /// was built from. Translation from the body centroids; the dilation ρ
-/// from the per-cell spread (a rational square, or the bodies are not
+/// from the per-lamina spread (a rational square, or the bodies are not
 /// similar in ℚ — a refusal, never a rounding); the rotation from the
 /// moment harmonics: the inertia's anisotropy turns at twice the body's
 /// angle, so the rotor carrying `a`'s anisotropy onto `b`'s is halved
@@ -124,19 +124,19 @@ pub fn rotor_between_shapes(a: &Shape, b: &Shape) -> Option<crate::transducer::a
 /// twice. Each harmonic leaves a finite ambiguity — the body's own
 /// stabilizer (a half turn for the second harmonic, quarter turns for the
 /// fourth) — and a reflection is tried as the odd versor; every candidate
-/// is verified by carrying every cell center of `a` into a cell of `b` and
-/// every cell center of `b` back into a cell of `a`. The ones that carry
-/// are one coset of the stabilizer acting on one transport, and none is
-/// chosen here: the coset is what is measured (L7c), its representative
-/// is `coset_representative`'s.
+/// is verified by carrying every lamina's center of `a` onto a lamina of
+/// `b` and every lamina's center of `b` back onto a lamina of `a`. The
+/// ones that carry are one coset of the stabilizer acting on one
+/// transport, and none is chosen here: the coset is what is measured
+/// (L7c), its representative is `coset_representative`'s.
 pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
     let mut coset: Vec<(Mv, Mv)> = Vec::new();
-    if a.blade.cells.is_empty() || b.blade.cells.is_empty() {
+    if a.blade.support.is_empty() || b.blade.support.is_empty() {
         return coset;
     }
-    // Body centroids in the sensor's vertex coordinates: the cell-center
-    // centroid plus one half on each plane axis; a cell stands AT its
-    // frame (16.4).
+    // Body centroids in the sensor's vertex coordinates: the centroid of
+    // the laminae's centers plus one half on each plane axis; a lamina
+    // stands AT its frame (16.4).
     let Some((ca1, ca2, ka)) = a.blade.centroid().map(|(x, y, z)| (x + qn(1, 2), y + qn(1, 2), z)) else {
         return coset;
     };
@@ -147,7 +147,7 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
         (&s.blade.inertia[0] + &s.blade.inertia[1] + &s.blade.inertia[3]) / &s.blade.shell
     };
     let (sa, sb) = (spread(a), spread(b));
-    // ρ is ONE rational from the per-cell spread, so a homothety with
+    // ρ is ONE rational from the per-lamina spread, so a homothety with
     // different horizontal and vertical factors — a stretch — is not a
     // similarity and is refused exactly. Carrying an anisotropic scale would
     // need a carrier that holds two factors, which is a ruling and not a
@@ -171,7 +171,7 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
             return coset;
         }
     } else if b.blade.shell != &a.blade.shell * &rho * &rho {
-        return coset; // the cell counts do not scale as ρ²: not similar
+        return coset; // the lamina counts do not scale as ρ²: not similar
     }
     // The bodies stand in their frames: the transport returns the frame
     // coordinate as it does the two of the plane.
@@ -282,25 +282,26 @@ pub fn coset_representative(coset: &[(Mv, Mv)]) -> Option<Mv> {
     geodesic.map(|(_, _, v)| v.clone())
 }
 
-/// EVERY CELL CARRIED, BOTH WAYS: `v` carries each cell center of `a` into
-/// a cell of `b`, and its inverse carries each cell center of `b` back into
-/// a cell of `a`. The verification every candidate of `versor_between`
-/// passes, and the one a held word's action passes on a listing body
-/// (24.1, 50.1 step 1). A versor with no inverse carries nothing.
+/// EVERY LAMINA CARRIED, BOTH WAYS: `v` carries each lamina's center of
+/// `a` onto a lamina of `b`, and its inverse carries each lamina's center
+/// of `b` back onto a lamina of `a`. The verification every candidate of
+/// `versor_between` passes, and the one a held word's action passes on a
+/// listing body (24.1, 50.1 step 1). A versor with no inverse carries
+/// nothing.
 pub fn carries(v: &Mv, a: &Shape, b: &Shape) -> bool {
     let lands = |v: &Mv, (r, c, k): (i64, i64, i64), held: &[(i64, i64, i64)]| -> bool {
         match crate::transducer::element::carry_center(v, r, c, k) {
-            // A centre that lands off the lattice lands on no held cell.
-            Some(p) => match crate::transducer::element::cell_of(&p) {
-                Some(cell) => held.binary_search(&cell).is_ok(),
+            // A centre that lands off the base lands on no held lamina.
+            Some(p) => match crate::transducer::element::site_of(&p) {
+                Some(site) => held.binary_search(&site).is_ok(),
                 None => false,
             },
             None => false,
         }
     };
     let Some(inv) = v.versor_inverse() else { return false };
-    a.blade.cells.iter().all(|&cell| lands(v, cell, &b.blade.cells))
-        && b.blade.cells.iter().all(|&cell| lands(&inv, cell, &a.blade.cells))
+    a.blade.support.iter().all(|&site| lands(v, site, &b.blade.support))
+        && b.blade.support.iter().all(|&site| lands(&inv, site, &a.blade.support))
 }
 
 /// THE CARRIAGE OF A GIVEN LINEAR ACTION between two bodies (24.1 as ruled
@@ -309,11 +310,11 @@ pub fn carries(v: &Mv, a: &Shape, b: &Shape) -> bool {
 /// quotients is the translation, solved from the two centroids exactly as
 /// `versor_between` solves it. Nothing is measured from the harmonics and
 /// no candidate is tried: the word says which rotation, the bodies say
-/// where, and the result is verified cell by cell both ways. `None` when
-/// the action does not carry `a` onto `b`: the word is not a word for
+/// where, and the result is verified lamina by lamina both ways. `None`
+/// when the action does not carry `a` onto `b`: the word is not a word for
 /// this body.
 pub fn versor_carrying(a: &Shape, b: &Shape, linear: &Mv) -> Option<Mv> {
-    if a.blade.cells.is_empty() || b.blade.cells.is_empty() {
+    if a.blade.support.is_empty() || b.blade.support.is_empty() {
         return None;
     }
     let (ca1, ca2, ka) = a.blade.centroid().map(|(x, y, z)| (x + qn(1, 2), y + qn(1, 2), z))?;

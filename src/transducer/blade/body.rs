@@ -8,9 +8,13 @@
 
 use super::*;
 
-/// A cell as the sensor hands it over: its three base coordinates and the
-/// hue it carries (51.3). The support of a body is a list of these.
-pub type Painted4 = (i64, i64, i64, u8);
+/// A lamina as the sensor hands it over: the site it stands at — its three
+/// base coordinates — and the hue it carries (16.4, 51.3). The support of
+/// a body is a list of these.
+pub type Lamina = (i64, i64, i64, u8);
+
+/// The retired spelling, bridging the modules not yet swept (V3).
+pub type Painted4 = Lamina;
 
 /// A polytonic volumetric body. The four strata are ORTHOGONAL lanes (never
 /// summed, law 5); only the SPATIAL lane is a Cl(4,1) multivector
@@ -23,8 +27,8 @@ pub struct Blade {
     pub spatial: Mv,
     /// 𝒮 refinement — the EXACT second-moment (inertia) tensor about the
     /// centroid `(Ixx, Iyy, Ixy, Izz, Ixz, Iyz) ∈ ℚ⁶`, rotation-covariant,
-    /// no eigen/roots. A cell is a lamina (16.4): it has the unit square's
-    /// own moment on the two plane axes and none along `e₃`.
+    /// no eigen/roots. A lamina (16.4) has the unit square's own moment on
+    /// the two plane axes and none along `e₃`.
     pub inertia: [BigRational; 6],
     /// 𝒮 refinement — the exact fourth body moments about the centroid: the
     /// isotropic part `∫(u²+v²)²` and the fourth harmonic
@@ -34,11 +38,11 @@ pub struct Blade {
     /// 𝒢 — the gauge/hue content as sorted `(hue, count)` relations (Vec, not a
     /// map: cognition obeys the Anti-Flattening Law). Versor-invariant.
     pub gauge: Vec<(u8, BigRational)>,
-    /// 𝒽 — the shell topology: the component's cell count.
+    /// 𝒽 — the shell topology: the component's lamina count.
     pub shell: BigRational,
-    /// The body's support — its occupied `(row, col, frame)` cells, sorted
-    /// (Vec, not a set). The stack, never its shadow (51.3).
-    pub cells: Vec<(i64, i64, i64)>,
+    /// The body's support — the `(row, col, frame)` sites its laminae stand
+    /// at, sorted (Vec, not a set). The stack, never its shadow (51.3).
+    pub support: Vec<(i64, i64, i64)>,
 }
 
 impl Blade {
@@ -67,13 +71,13 @@ impl Blade {
             quartic: self.quartic.clone(),
             gauge: self.gauge.clone(),
             shell: self.shell.clone(),
-            cells: self.cells.clone(),
+            support: self.support.clone(),
         }
     }
 
     /// The rigid-motion invariant key — strictly preserved by translations,
     /// rotations AND reflections, so it correspond-pairs bodies with zero spatial
-    /// search: cell count, `Tr(I)`, `det(I)` (both O(2)-invariant, exact ℚ, no
+    /// search: lamina count, `Tr(I)`, `det(I)` (both O(2)-invariant, exact ℚ, no
     /// eigen), and the LABEL-AGNOSTIC hue profile (sorted per-hue counts — a
     /// recolour still matches by shape, the relabel falling out as `Δ𝒢`).
     pub fn invariant(&self) -> InvariantSignature {
@@ -81,7 +85,7 @@ impl Blade {
         let mut hue_profile: Vec<BigRational> = self.gauge.iter().map(|(_, c)| c.clone()).collect();
         hue_profile.sort();
         InvariantSignature {
-            cell_count: self.shell.clone(),
+            lamina_count: self.shell.clone(),
             tr_i: ixx + iyy,
             det_i: ixx * iyy - ixy * ixy,
             hue_profile,
@@ -133,7 +137,7 @@ impl Blade {
 /// The rigid-motion invariant signature of a body (see [`Blade::invariant`]).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InvariantSignature {
-    pub cell_count: BigRational,
+    pub lamina_count: BigRational,
     pub tr_i: BigRational,
     pub det_i: BigRational,
     pub hue_profile: Vec<BigRational>,
@@ -141,11 +145,11 @@ pub struct InvariantSignature {
 
 /// Lift one connected component `(row, col, frame, hue)` into a volumetric
 /// blade — exact ℚ throughout. The centroid is in ℚ³ and the moments are the
-/// full six-component inertia on `{e₀, e₁, e₃}`. Each cell is a LAMINA
+/// full six-component inertia on `{e₀, e₁, e₃}`. Each element is a lamina
 /// (16.4): the unit square standing in its frame, so it contributes the
 /// square's own moment on the two plane axes and only its offset along
-/// `e₃`. The component's cells need not be sorted.
-pub fn lift(comp: &[Painted4]) -> Blade {
+/// `e₃`. The component's laminae need not be sorted.
+pub fn lift(comp: &[Lamina]) -> Blade {
     let n = comp.len().max(1) as i64;
     let n_q = q(n);
 
@@ -158,7 +162,7 @@ pub fn lift(comp: &[Painted4]) -> Blade {
     let c3 = BigRational::new(BigInt::from(sk), BigInt::from(n));
 
     // Moments about the centroid (exact ℚ) — of the BODY: the union of unit
-    // squares, so each cell contributes the integral of the monomial over
+    // squares, so each lamina contributes the integral of the monomial over
     // its own square (the parallel-axis law at every order) on the plane,
     // and its offset alone along `e₃`.
     let (mut ixx, mut iyy, mut ixy) = (q(0), q(0), q(0));
@@ -188,9 +192,9 @@ pub fn lift(comp: &[Painted4]) -> Blade {
         h4y += (&u3v - &uv3) * q(4);
     }
 
-    // Extent r² = per-unit-mass polar 2nd moment + the unit cell's own polar
-    // moment (1/6), so r² > 0 even for a single cell — off the null cone,
-    // invertible.
+    // Extent r² = per-unit-mass polar 2nd moment + the unit square's own
+    // polar moment (1/6), so r² > 0 even for a single lamina — off the null
+    // cone, invertible.
     let r2 = (&ixx + &iyy) / &n_q;
     let spatial = cga::sphere(&c1, &c2, &c3, &r2);
 
@@ -208,9 +212,9 @@ pub fn lift(comp: &[Painted4]) -> Blade {
     )]
     gauge.sort_by_key(|(h, _)| *h);
 
-    let mut cells: Vec<(i64, i64, i64)> = comp.iter().map(|(r, c, k, _)| (*r, *c, *k)).collect();
-    cells.sort_unstable();
-    cells.dedup();
+    let mut support: Vec<(i64, i64, i64)> = comp.iter().map(|(r, c, k, _)| (*r, *c, *k)).collect();
+    support.sort_unstable();
+    support.dedup();
 
     Blade {
         spatial,
@@ -218,22 +222,22 @@ pub fn lift(comp: &[Painted4]) -> Blade {
         quartic: [q_iso, h4x, h4y],
         gauge,
         shell: n_q,
-        cells,
+        support,
     }
 }
 
 /// The connected components of a scene on the three coordinates of the
 /// base, as `Vec`-of-`Vec` (no maps/sets — Law II). A BODY IS ONE HUE
-/// (chapter 20, ruled 2026-09-09): two cells join iff they are adjacent —
-/// 4-adjacent within a frame or one frame apart at one position (51.3) —
+/// (chapter 20, ruled 2026-09-09): two laminae join iff they are adjacent
+/// — 4-adjacent within a frame or one frame apart at one site (51.3) —
 /// and carry the same hue. Two touching bodies of different hues are two
 /// bodies sharing a boundary, which the pair form carries as a contact
 /// face with its edge transport (50.3).
-pub fn components(cells: &[Painted4]) -> Vec<Vec<Painted4>> {
+pub fn components(laminae: &[Lamina]) -> Vec<Vec<Lamina>> {
     // The support in canonical order; its 1-skeleton read off the ordering
     // (sentence::incidence_of_3d), never a distance test against every
-    // cell; an edge between two hues is a boundary, not an adjacency.
-    let mut sorted: Vec<Painted4> = cells.to_vec();
+    // lamina; an edge between two hues is a boundary, not an adjacency.
+    let mut sorted: Vec<Lamina> = laminae.to_vec();
     sorted.sort_unstable();
     sorted.dedup_by_key(|c| (c.0, c.1, c.2));
     let positions: Vec<(i64, i64, i64)> = sorted.iter().map(|c| (c.0, c.1, c.2)).collect();
@@ -242,53 +246,53 @@ pub fn components(cells: &[Painted4]) -> Vec<Vec<Painted4>> {
         .filter(|&(i, j)| sorted[i].3 == sorted[j].3)
         .collect();
     let roots = crate::transducer::sentence::components(sorted.len(), &edges);
-    let mut out: Vec<(usize, Vec<Painted4>)> = Vec::new();
-    for (i, cell) in sorted.into_iter().enumerate() {
+    let mut out: Vec<(usize, Vec<Lamina>)> = Vec::new();
+    for (i, lamina) in sorted.into_iter().enumerate() {
         match out.iter_mut().find(|(r, _)| *r == roots[i]) {
-            Some((_, comp)) => comp.push(cell),
-            None => out.push((roots[i], vec![cell])),
+            Some((_, comp)) => comp.push(lamina),
+            None => out.push((roots[i], vec![lamina])),
         }
     }
     out.into_iter().map(|(_, comp)| comp).collect()
 }
 
-/// THE LAMINAE OF A SUPPORT: its cells grouped by frame, each frame's
-/// cells in row order — the sections of the stack along `e₃` (16.5). The
-/// in-plane readings (a lamina's turns and perimeter) are taken here and
-/// summed over the stack; the topology is not, because adjacency along
-/// `e₃` joins the laminae (51.3).
-pub fn laminae(cells: &[(i64, i64, i64)]) -> Vec<(i64, Vec<(i64, i64)>)> {
-    let mut by_frame: Vec<(i64, i64, i64)> = cells.to_vec();
+/// THE SECTIONS OF A SUPPORT: its sites grouped by frame, each frame's
+/// sites in row order — the laminae of one frame, the sections of the
+/// stack along `e₃` (16.5). The in-plane readings (a section's turns and
+/// perimeter) are taken here and summed over the stack; the topology is
+/// not, because adjacency along `e₃` joins the sections (51.3).
+pub fn sections(support: &[(i64, i64, i64)]) -> Vec<(i64, Vec<(i64, i64)>)> {
+    let mut by_frame: Vec<(i64, i64, i64)> = support.to_vec();
     #[expect(
         clippy::disallowed_methods,
-        reason = "rule 4 — canonical key order: frame first, then the cell's own row and column"
+        reason = "rule 4 — canonical key order: frame first, then the site's own row and column"
     )]
     by_frame.sort_unstable_by_key(|&(r, c, k)| (k, r, c));
     by_frame.dedup();
     let mut out: Vec<(i64, Vec<(i64, i64)>)> = Vec::new();
     for (r, c, k) in by_frame {
         match out.last_mut() {
-            Some((frame, lamina)) if *frame == k => lamina.push((r, c)),
+            Some((frame, section)) if *frame == k => section.push((r, c)),
             _ => out.push((k, vec![(r, c)])),
         }
     }
     out
 }
 
-/// THE OPEN FACES OF A LAMINA, each named by the cell it opens on: the
+/// THE OPEN FACES OF A SECTION, each named by the site it opens on: the
 /// horizontal edges from (r,c) to (r,c+1), then the vertical ones from
 /// (r,c) to (r+1,c). This is the coboundary of the support's 2-chain
 /// within one frame.
 pub(crate) type OpenFaces = (Vec<(i64, i64)>, Vec<(i64, i64)>);
 
-pub(crate) fn boundary_edges(cells: &[(i64, i64)]) -> OpenFaces {
-    // Which of a cell's four faces are shared is read off the support's
+pub(crate) fn boundary_edges(sites: &[(i64, i64)]) -> OpenFaces {
+    // Which of a lamina's four faces are shared is read off the support's
     // 1-skeleton (sentence::incidence_of): a row edge (i, j) closes i's
     // right face and j's left face; a column edge closes i's lower face
     // and j's upper face. Every face left open is boundary.
-    let mut open = vec![[true; 4]; cells.len()]; // up, down, left, right
-    for (i, j) in crate::transducer::sentence::incidence_of(cells) {
-        if cells[i].0 == cells[j].0 {
+    let mut open = vec![[true; 4]; sites.len()]; // up, down, left, right
+    for (i, j) in crate::transducer::sentence::incidence_of(sites) {
+        if sites[i].0 == sites[j].0 {
             open[i][3] = false;
             open[j][2] = false;
         } else {
@@ -297,7 +301,7 @@ pub(crate) fn boundary_edges(cells: &[(i64, i64)]) -> OpenFaces {
         }
     }
     let (mut h, mut v) = (Vec::new(), Vec::new());
-    for (i, &(r, c)) in cells.iter().enumerate() {
+    for (i, &(r, c)) in sites.iter().enumerate() {
         if open[i][0] {
             h.push((r, c));
         }
@@ -316,10 +320,10 @@ pub(crate) fn boundary_edges(cells: &[(i64, i64)]) -> OpenFaces {
     (h, v)
 }
 
-/// The turning count of one lamina's boundary: the vertices where a
+/// The turning count of one section's boundary: the vertices where a
 /// horizontal and a vertical boundary edge meet.
-fn turns_of_lamina(cells: &[(i64, i64)]) -> usize {
-    let (h, v) = boundary_edges(cells);
+fn turns_of_section(sites: &[(i64, i64)]) -> usize {
+    let (h, v) = boundary_edges(sites);
     let mut vertices: Vec<(i64, i64)> = Vec::new();
     for &(r, c) in &h {
         vertices.push((r, c));
@@ -337,32 +341,32 @@ fn turns_of_lamina(cells: &[(i64, i64)]) -> usize {
         .count()
 }
 
-/// The turning count of a body: the sum over its laminae of the vertices
-/// where the lamina's boundary turns. A similarity invariant of the body
+/// The turning count of a body: the sum over its sections of the vertices
+/// where the section's boundary turns. A similarity invariant of the body
 /// (a dilated body turns the same number of times) and a translation
-/// along `e₃` moves no lamina's boundary.
-pub fn turns(cells: &[(i64, i64, i64)]) -> usize {
-    laminae(cells).iter().map(|(_, lamina)| turns_of_lamina(lamina)).sum()
+/// along `e₃` moves no section's boundary.
+pub fn turns(support: &[(i64, i64, i64)]) -> usize {
+    sections(support).iter().map(|(_, section)| turns_of_section(section)).sum()
 }
 
 /// The in-plane boundary's length: the count of unit edges with a lamina
-/// on exactly one side, summed over the laminae.
-pub fn boundary_length(cells: &[(i64, i64, i64)]) -> usize {
-    laminae(cells)
+/// on exactly one side, summed over the sections.
+pub fn boundary_length(support: &[(i64, i64, i64)]) -> usize {
+    sections(support)
         .iter()
-        .map(|(_, lamina)| {
-            let (h, v) = boundary_edges(lamina);
+        .map(|(_, section)| {
+            let (h, v) = boundary_edges(section);
             h.len() + v.len()
         })
         .sum()
 }
 
-/// THE FRAME BOUNDARY of a body: its sides open along `e₃` — a cell's
+/// THE FRAME BOUNDARY of a body: its sides open along `e₃` — a lamina's
 /// face toward the frame before it and toward the frame after it, each
-/// counted where no cell of the body stands there (51.3). Two for every
-/// cell of a body of one frame; fewer for a stack.
-pub fn frame_faces(cells: &[(i64, i64, i64)]) -> usize {
-    let mut sorted: Vec<(i64, i64, i64)> = cells.to_vec();
+/// counted where no lamina of the body stands there (51.3). Two for every
+/// lamina of a body of one frame; fewer for a stack.
+pub fn frame_faces(support: &[(i64, i64, i64)]) -> usize {
+    let mut sorted: Vec<(i64, i64, i64)> = support.to_vec();
     sorted.sort_unstable();
     sorted.dedup();
     let held = |p: (i64, i64, i64)| sorted.binary_search(&p).is_ok();
@@ -380,8 +384,8 @@ pub fn frame_faces(cells: &[(i64, i64, i64)]) -> usize {
 /// so the count is exact without a vertex set; `β₂` is the number of
 /// enclosed components of the complement, and `β₁ = β₀ + β₂ − χ`. A body
 /// of one frame reads its planar components and holes, and no cavity.
-pub fn topology(cells: &[(i64, i64, i64)]) -> (u64, u64, u64) {
-    let mut sorted: Vec<(i64, i64, i64)> = cells.to_vec();
+pub fn topology(support: &[(i64, i64, i64)]) -> (u64, u64, u64) {
+    let mut sorted: Vec<(i64, i64, i64)> = support.to_vec();
     sorted.sort_unstable();
     sorted.dedup();
     if sorted.is_empty() {
@@ -468,8 +472,8 @@ pub fn topology(cells: &[(i64, i64, i64)]) -> (u64, u64, u64) {
 }
 
 /// THE CAVITIES OF A SUPPORT: the components of its complement, within the
-/// box one cell wider than the support on every side, that do not reach
-/// that box's border. A cavity needs a cell of the body before it and
+/// box one site wider than the support on every side, that do not reach
+/// that box's border. A cavity needs a lamina of the body before it and
 /// after it along `e₃`, so a body of fewer than three frames has none and
 /// nothing is walked for it.
 #[expect(
@@ -510,7 +514,7 @@ fn cavities(sorted: &[(i64, i64, i64)]) -> i64 {
     let mut visited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let mut enclosed = 0i64;
     // Every complement component that touches the body is entered from a
-    // cell of the body; a component touching no cell of it is outside.
+    // lamina of the body; a component touching no lamina of it is outside.
     for &p in sorted {
         for start in six(p) {
             if held(start) || visited.contains(&key(start)) {
@@ -574,17 +578,17 @@ pub struct Shape {
     pub blade: Blade,
 }
 
-/// Lift a support (cells without hue, on the three coordinates of the
-/// base) to a shape.
-pub fn shape_of(cells: &[(i64, i64, i64)]) -> Shape {
-    let comp: Vec<Painted4> = cells.iter().map(|&(r, c, k)| (r, c, k, 0u8)).collect();
+/// Lift a support (sites on the three coordinates of the base, no hue) to
+/// a shape.
+pub fn shape_of(support: &[(i64, i64, i64)]) -> Shape {
+    let comp: Vec<Lamina> = support.iter().map(|&(r, c, k)| (r, c, k, 0u8)).collect();
     Shape { blade: lift(&comp) }
 }
 
-/// Lift the support of ONE SECTION — a chain's positions, which A5 reads
-/// at the sensor as `(r, c)` with the frame on the pose (16.5) — to its
-/// shape in the section's own frame.
-pub fn shape_of_section(cells: &[(i64, i64)]) -> Shape {
-    let comp: Vec<Painted4> = cells.iter().map(|&(r, c)| (r, c, 0, 0u8)).collect();
+/// Lift the support of ONE SECTION — a chain's sites, which A5 reads at
+/// the sensor as `(r, c)` with the frame on the pose (16.5) — to its shape
+/// in the section's own frame.
+pub fn shape_of_section(sites: &[(i64, i64)]) -> Shape {
+    let comp: Vec<Lamina> = sites.iter().map(|&(r, c)| (r, c, 0, 0u8)).collect();
     Shape { blade: lift(&comp) }
 }

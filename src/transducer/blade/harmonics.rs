@@ -2,8 +2,8 @@
 // of its stack and the hue spectrum, the axes it is heard on, coarsest
 // first.
 //
-//! Exact in ℚ and invariant under every versor `carry_cell` accepts: what a
-//! body sounds like, whatever its size, place, frame or orientation. The
+//! Exact in ℚ and invariant under every versor `carry_lamina` accepts: what
+//! a body sounds like, whatever its size, place, frame or orientation. The
 //! axes run coarsest first — the topology (components, tunnels, cavities,
 //! turns), then the boundary and moment ratios, then the hue spectrum — so
 //! a prefix of a chart is a stratum bodies share (A21 §2) and the atlas is
@@ -18,21 +18,21 @@ use num_traits::Zero;
 pub struct Harmonics {
     /// h₀ — components (β₀).
     pub components: u64,
-    /// h₁ — tunnels (β₁): the holes of a lamina.
+    /// h₁ — tunnels (β₁): the holes of a section.
     pub holes: u64,
     /// h₂ — cavities (β₂), enclosed by the stack along `e₃`.
     pub cavities: u64,
-    /// h₃ — the laminae's turning count.
+    /// h₃ — the sections' turning count.
     pub turns: u64,
-    /// h₄ — the in-plane boundary's length² over the cells (the
+    /// h₄ — the in-plane boundary's length² over the laminae (the
     /// isoperimetric ratio).
     pub isoperimetric: BigRational,
-    /// h₅ — the sides open along `e₃` over the cells: two for one lamina,
-    /// less for a stack.
+    /// h₅ — the sides open along `e₃` over the laminae: two for one
+    /// section, less for a stack.
     pub frame_boundary: BigRational,
     /// h₆ — det(I)/tr(I)² on the plane (anisotropy of the inertia).
     pub anisotropy: BigRational,
-    /// h₇ — the three-coordinate trace over the cells² (spread per area).
+    /// h₇ — the three-coordinate trace over the laminae² (spread per area).
     pub spread: BigRational,
     /// h₈ — the isotropic fourth moment over n³.
     pub quartic: BigRational,
@@ -43,11 +43,11 @@ pub struct Harmonics {
 impl Harmonics {
     /// Hear a body.
     pub fn of(b: &Blade) -> Harmonics {
-        let (components, holes, cavities) = blade::topology(&b.cells);
+        let (components, holes, cavities) = blade::topology(&b.support);
         let n = b.shell.clone();
         let count = |v: usize| BigRational::from_integer(num_bigint::BigInt::from(v as i64));
-        let edges = count(blade::boundary_length(&b.cells));
-        let open = count(blade::frame_faces(&b.cells));
+        let edges = count(blade::boundary_length(&b.support));
+        let open = count(blade::frame_faces(&b.support));
         let (ixx, iyy, ixy, izz) = (&b.inertia[0], &b.inertia[1], &b.inertia[2], &b.inertia[3]);
         let tr = ixx + iyy;
         let det = ixx * iyy - ixy * ixy;
@@ -57,7 +57,7 @@ impl Harmonics {
             components,
             holes,
             cavities,
-            turns: blade::turns(&b.cells) as u64,
+            turns: blade::turns(&b.support) as u64,
             isoperimetric: &edges * &edges / &n,
             frame_boundary: &open / &n,
             anisotropy: match tr.is_zero() {
@@ -107,11 +107,11 @@ mod tests {
         assert_eq!(a, b);
         assert_eq!(a.components, 1);
         assert_eq!(a.turns, 6);
-        assert_eq!(a.cavities, 0, "a lamina encloses nothing");
+        assert_eq!(a.cavities, 0, "a section encloses nothing");
         assert_eq!(
             a.frame_boundary,
             BigRational::from_integer(2.into()),
-            "a lamina is open on both sides along e₃"
+            "a section is open on both sides along e₃"
         );
         assert_eq!(
             a.axes().expect("a measured harmonic reading has axes"),
@@ -119,30 +119,30 @@ mod tests {
         );
     }
 
-    /// 51.3 — THE STACK IS NOT ITS SHADOW. Three identical laminae read one
-    /// component through their adjacency along `e₃`, a frame boundary
-    /// smaller than a lamina's, and a spread the shadow does not carry;
-    /// the same three laminae one frame apart read three components. A
-    /// bar standing along `e₃` reads no chart a lamina reads.
+    /// 51.3 — THE STACK IS NOT ITS SHADOW. Three identical sections read
+    /// one component through their adjacency along `e₃`, a frame boundary
+    /// smaller than a section's, and a spread the shadow does not carry;
+    /// the same three sections one frame apart read three components. A
+    /// bar standing along `e₃` reads no chart a section reads.
     #[test]
     fn a_stack_reads_its_own_topology_and_not_its_shadows() {
-        let lamina: Vec<(i64, i64, i64)> = vec![(0, 0, 0), (0, 1, 0), (1, 0, 0)];
+        let section: Vec<(i64, i64, i64)> = vec![(0, 0, 0), (0, 1, 0), (1, 0, 0)];
         let stack: Vec<(i64, i64, i64)> =
-            (0..3).flat_map(|k| lamina.iter().map(move |&(r, c, _)| (r, c, k))).collect();
+            (0..3).flat_map(|k| section.iter().map(move |&(r, c, _)| (r, c, k))).collect();
         let spaced: Vec<(i64, i64, i64)> =
-            (0..3).flat_map(|k| lamina.iter().map(move |&(r, c, _)| (r, c, 2 * k))).collect();
-        let one = Harmonics::of(&blade::shape_of(&lamina).blade);
+            (0..3).flat_map(|k| section.iter().map(move |&(r, c, _)| (r, c, 2 * k))).collect();
+        let one = Harmonics::of(&blade::shape_of(&section).blade);
         let three = Harmonics::of(&blade::shape_of(&stack).blade);
         let apart = Harmonics::of(&blade::shape_of(&spaced).blade);
         assert_eq!(three.components, 1, "consecutive frames join along e₃");
         assert_eq!(apart.components, 3, "frames apart do not");
-        assert_eq!(three.turns, 3 * one.turns, "each lamina turns as it turns alone");
+        assert_eq!(three.turns, 3 * one.turns, "each section turns as it turns alone");
         assert!(three.frame_boundary < one.frame_boundary, "a stack is open on fewer sides");
         assert_ne!(three.spread, one.spread, "and its spread carries the offsets along e₃");
         assert_eq!(
             blade::shape_of(&stack).blade.inertia[3],
             BigRational::from_integer(6.into()),
-            "Izz is the offsets alone: three laminae one frame from the middle"
+            "Izz is the offsets alone: three sections one frame from the middle"
         );
         let bar_along_k: Vec<(i64, i64, i64)> = vec![(0, 0, 0), (0, 0, 1), (0, 0, 2)];
         let bar_in_plane: Vec<(i64, i64, i64)> = vec![(0, 0, 0), (0, 1, 0), (0, 2, 0)];

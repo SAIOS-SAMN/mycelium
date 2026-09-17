@@ -1,13 +1,14 @@
 // 20 — THE SHELLS OF A BODY: the outline, the core, the ring, the
 // interior, and the exact magnifications between them.
 //
-//! This file and the sensor read cell coordinates; everything above them is
-//! versors and words (law 11).
+//! This file and the sensor read a site's coordinates; everything above
+//! them is versors and words (law 11). A painted site is the grid's
+//! token, `(row, col, hue)`.
 
 
-pub(crate) fn occupy(cells: &[(i64, i64, u8)]) -> crate::network::nerve::Keyed<u8> {
+pub(crate) fn occupy(painted: &[(i64, i64, u8)]) -> crate::network::nerve::Keyed<u8> {
     let mut k = crate::network::nerve::Keyed::new();
-    for &(r, c, h) in cells {
+    for &(r, c, h) in painted {
         let mut key = [0u8; 32];
         key[..8].copy_from_slice(&r.to_le_bytes());
         key[8..16].copy_from_slice(&c.to_le_bytes());
@@ -23,10 +24,10 @@ pub(crate) fn pos_key(r: i64, c: i64) -> [u8; 32] {
     key
 }
 
-/// Content cells that touch background or the horizon (the outline germ).
-pub fn outline(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
-    let have = occupy(cells);
-    cells
+/// Painted sites that touch background or the horizon (the outline germ).
+pub fn outline(painted: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
+    let have = occupy(painted);
+    painted
         .iter()
         .copied()
         .filter(|&(r, c, _)| {
@@ -37,10 +38,10 @@ pub fn outline(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
         .collect()
 }
 
-/// Content cells whose four neighbours are content (the core germ).
-pub fn core(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
-    let have = occupy(cells);
-    cells
+/// Painted sites whose four neighbours are painted (the core germ).
+pub fn core(painted: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
+    let have = occupy(painted);
+    painted
         .iter()
         .copied()
         .filter(|&(r, c, _)| {
@@ -51,12 +52,12 @@ pub fn core(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
         .collect()
 }
 
-/// Background cells one 4-step from content (the adjacent-ring germ).
-pub fn adjacent_ring(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
-    let have = occupy(cells);
+/// Background sites one 4-step from a painted one (the adjacent-ring germ).
+pub fn adjacent_ring(painted: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
+    let have = occupy(painted);
     let mut out = Vec::new();
     let mut seen = crate::network::nerve::Keyed::new();
-    for &(r, c, _) in cells {
+    for &(r, c, _) in painted {
         for (nr, nc) in [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)] {
             let k = pos_key(nr, nc);
             if have.contains(&k) || seen.contains(&k) {
@@ -70,19 +71,19 @@ pub fn adjacent_ring(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
     out
 }
 
-/// Background cells inside the body's bbox that cannot reach the bbox
+/// Background sites inside the body's bbox that cannot reach the bbox
 /// border through background (enclosed interior / holes).
 #[expect(
     clippy::disallowed_methods,
-    reason = "rule 4 — a bounding box is the extent of the cell set, content: two nodes holding one body read the same corners"
+    reason = "rule 4 — a bounding box is the extent of the painted sites, content: two nodes holding one body read the same corners"
 )]
-pub fn enclosed_interior(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
-    if cells.is_empty() {
+pub fn enclosed_interior(painted: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
+    if painted.is_empty() {
         return Vec::new();
     }
-    let have = occupy(cells);
-    let rows = || cells.iter().map(|c| c.0);
-    let cols = || cells.iter().map(|c| c.1);
+    let have = occupy(painted);
+    let rows = || painted.iter().map(|c| c.0);
+    let cols = || painted.iter().map(|c| c.1);
     let (Some(r0), Some(r1), Some(c0), Some(c1)) = (rows().min(), rows().max(), cols().min(), cols().max()) else {
         return Vec::new();
     };
@@ -133,31 +134,31 @@ pub fn enclosed_interior(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
 
 #[expect(
     clippy::disallowed_methods,
-    reason = "rule 4 — the bounding box IS this function's object, the extent of the cell set and not a candidate chosen from it; an empty set has no box and refuses"
+    reason = "rule 4 — the bounding box IS this function's object, the extent of the painted sites and not a candidate chosen from them; an empty set has no box and refuses"
 )]
-pub(crate) fn bbox(cells: &[(i64, i64, u8)]) -> Option<(i64, i64, i64, i64)> {
-    let r0 = cells.iter().map(|c| c.0).min()?;
-    let r1 = cells.iter().map(|c| c.0).max()?;
-    let c0 = cells.iter().map(|c| c.1).min()?;
-    let c1 = cells.iter().map(|c| c.1).max()?;
+pub(crate) fn bbox(painted: &[(i64, i64, u8)]) -> Option<(i64, i64, i64, i64)> {
+    let r0 = painted.iter().map(|c| c.0).min()?;
+    let r1 = painted.iter().map(|c| c.0).max()?;
+    let c0 = painted.iter().map(|c| c.1).min()?;
+    let c1 = painted.iter().map(|c| c.1).max()?;
     Some((r0, r1, c0, c1))
 }
 
-/// CUT: the body's bounding box as its own whole, origin at the min cell.
-pub fn cut(cells: &[(i64, i64, u8)]) -> Option<Vec<(i64, i64, u8)>> {
-    let (r0, _, c0, _) = bbox(cells)?;
-    let mut out: Vec<_> = cells.iter().map(|&(r, c, h)| (r - r0, c - c0, h)).collect();
+/// CUT: the body's bounding box as its own whole, origin at the min site.
+pub fn cut(painted: &[(i64, i64, u8)]) -> Option<Vec<(i64, i64, u8)>> {
+    let (r0, _, c0, _) = bbox(painted)?;
+    let mut out: Vec<_> = painted.iter().map(|&(r, c, h)| (r - r0, c - c0, h)).collect();
     out.sort_unstable();
     Some(out)
 }
 
-/// MAGNIFIED ×k — each cell becomes a k×k block.
-pub fn magnified(cells: &[(i64, i64, u8)], k: i64) -> Vec<(i64, i64, u8)> {
+/// MAGNIFIED ×k — each lamina becomes a k×k block.
+pub fn magnified(painted: &[(i64, i64, u8)], k: i64) -> Vec<(i64, i64, u8)> {
     if k <= 0 {
         return Vec::new();
     }
     let mut out = Vec::new();
-    for &(r, c, h) in cells {
+    for &(r, c, h) in painted {
         for dr in 0..k {
             for dc in 0..k {
                 out.push((r * k + dr, c * k + dc, h));
@@ -171,17 +172,17 @@ pub fn magnified(cells: &[(i64, i64, u8)], k: i64) -> Vec<(i64, i64, u8)> {
 /// REDUCED ×k — each k×k block condenses to one hue, or None if a block is mixed.
 #[expect(
     clippy::disallowed_methods,
-    reason = "rule 11, content extremum — hue 0 IS absence in this encoding, so a cell the occupancy does not hold reads as unoccupied rather than as a hue put there for it"
+    reason = "rule 11, content extremum — hue 0 IS absence in this encoding, so a site the occupancy does not hold reads as unpainted rather than as a hue put there for it"
 )]
-pub fn reduced(cells: &[(i64, i64, u8)], k: i64) -> Option<Vec<(i64, i64, u8)>> {
+pub fn reduced(painted: &[(i64, i64, u8)], k: i64) -> Option<Vec<(i64, i64, u8)>> {
     if k <= 1 {
-        return Some(cells.to_vec());
+        return Some(painted.to_vec());
     }
-    let (r0, r1, c0, c1) = bbox(cells)?;
+    let (r0, r1, c0, c1) = bbox(painted)?;
     if (r1 - r0 + 1) % k != 0 || (c1 - c0 + 1) % k != 0 {
         return None;
     }
-    let have = occupy(cells);
+    let have = occupy(painted);
     let mut out = Vec::new();
     let mut br = r0;
     while br <= r1 {
@@ -211,8 +212,8 @@ pub fn reduced(cells: &[(i64, i64, u8)], k: i64) -> Option<Vec<(i64, i64, u8)>> 
 }
 
 /// TILED down×across — the cut body repeated as a grid of itself.
-pub fn tiled(cells: &[(i64, i64, u8)], down: i64, across: i64) -> Vec<(i64, i64, u8)> {
-    let Some(cut) = cut(cells) else { return Vec::new() };
+pub fn tiled(painted: &[(i64, i64, u8)], down: i64, across: i64) -> Vec<(i64, i64, u8)> {
+    let Some(cut) = cut(painted) else { return Vec::new() };
     let Some((_, r1, _, c1)) = bbox(&cut) else { return Vec::new() };
     let (h, w) = (r1 + 1, c1 + 1);
     let mut out = Vec::new();
@@ -227,9 +228,9 @@ pub fn tiled(cells: &[(i64, i64, u8)], down: i64, across: i64) -> Vec<(i64, i64,
     out
 }
 
-/// BORDERED — a one-cell ring of `hue` around the cut body.
-pub fn bordered(cells: &[(i64, i64, u8)], hue: u8) -> Vec<(i64, i64, u8)> {
-    let Some(cut) = cut(cells) else { return Vec::new() };
+/// BORDERED — a ring of `hue` one site wide around the cut body.
+pub fn bordered(painted: &[(i64, i64, u8)], hue: u8) -> Vec<(i64, i64, u8)> {
+    let Some(cut) = cut(painted) else { return Vec::new() };
     let Some((_, r1, _, c1)) = bbox(&cut) else { return Vec::new() };
     let (rows, cols) = (r1 + 1, c1 + 1);
     let mut out: Vec<_> = cut.iter().map(|&(r, c, h)| (r + 1, c + 1, h)).collect();

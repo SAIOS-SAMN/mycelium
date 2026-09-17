@@ -1,10 +1,10 @@
-// 50.8, A6 — TOPOLOGICAL SURGERY MONOID: exact cell-complex cobordisms (Fill, Puncture, Merge, Split).
+// 50.8, A6 — TOPOLOGICAL SURGERY MONOID: exact cube-complex cobordisms (Fill, Puncture, Merge, Split).
 //
 //! The conformal group SO(n+1, 1) consists exclusively of homeomorphisms
 //! (preserving Betti numbers: Δβ₀ = 0, Δβ₁ = 0). A transformation that changes
 //! genus or connectivity has no conformal versor.
 //!
-//! A surgery is an exact cell-complex cobordism acting on the Betti numbers
+//! A surgery is an exact cube-complex cobordism acting on the Betti numbers
 //! and the support. Surgeries compose as a graded monoid:
 //! Δβ(S₁ ∘ S₂) = Δβ(S₁) + Δβ(S₂).
 //!
@@ -16,20 +16,21 @@
 use super::body::{shape_of, topology, Shape};
 use crate::transducer::cga::Mv;
 
-/// The elementary topological surgery operations on cell complexes.
+/// The elementary topological surgery operations on the cube complex of a
+/// support.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SurgeryKind {
-    /// Capping 1-cycles by attaching 2-cells (Δβ₁ = -k, cavity fill).
+    /// Capping 1-cycles by adding the laminae of a hole (Δβ₁ = -k, fill).
     FillHole,
-    /// Deleting interior 2-cells opening 1-cycles (Δβ₁ = +k, puncture).
+    /// Deleting interior laminae, opening 1-cycles (Δβ₁ = +k, puncture).
     Puncture,
-    /// Attaching 1-cells identifying 0-cycles (Δβ₀ = -k, bridge merge).
+    /// Adding laminae that join components (Δβ₀ = -k, bridge merge).
     BridgeMerge,
-    /// Cutting 1-cells disconnecting components (Δβ₀ = +k, separation cut).
+    /// Removing laminae that disconnect components (Δβ₀ = +k, separation cut).
     SplitCut,
 }
 
-/// An exact topological surgery on a cell complex.
+/// An exact topological surgery on a cube complex.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Surgery {
     pub kind: SurgeryKind,
@@ -38,9 +39,9 @@ pub struct Surgery {
 }
 
 impl Surgery {
-    /// Construct a hole-filling surgery with the given cavity cells.
-    pub fn fill_hole(cavity_cells: Vec<(i64, i64, i64)>) -> Self {
-        let mut delta = cavity_cells;
+    /// Construct a hole-filling surgery from the sites of the hole.
+    pub fn fill_hole(hole: Vec<(i64, i64, i64)>) -> Self {
+        let mut delta = hole;
         delta.sort_unstable();
         delta.dedup();
         Surgery {
@@ -50,9 +51,9 @@ impl Surgery {
         }
     }
 
-    /// Construct a puncture surgery with the given removed cells.
-    pub fn puncture(hole_cells: Vec<(i64, i64, i64)>) -> Self {
-        let mut delta = hole_cells;
+    /// Construct a puncture surgery from the sites removed.
+    pub fn puncture(removed: Vec<(i64, i64, i64)>) -> Self {
+        let mut delta = removed;
         delta.sort_unstable();
         delta.dedup();
         Surgery {
@@ -62,9 +63,9 @@ impl Surgery {
         }
     }
 
-    /// Construct a bridge-merge surgery identifying disjoint components.
-    pub fn bridge_merge(bridge_cells: Vec<(i64, i64, i64)>) -> Self {
-        let mut delta = bridge_cells;
+    /// Construct a bridge-merge surgery from the sites of the bridge.
+    pub fn bridge_merge(bridge: Vec<(i64, i64, i64)>) -> Self {
+        let mut delta = bridge;
         delta.sort_unstable();
         delta.dedup();
         Surgery {
@@ -74,9 +75,9 @@ impl Surgery {
         }
     }
 
-    /// Construct a split-cut surgery dividing connected components.
-    pub fn split_cut(cut_cells: Vec<(i64, i64, i64)>) -> Self {
-        let mut delta = cut_cells;
+    /// Construct a split-cut surgery from the sites of the cut.
+    pub fn split_cut(cut: Vec<(i64, i64, i64)>) -> Self {
+        let mut delta = cut;
         delta.sort_unstable();
         delta.dedup();
         Surgery {
@@ -86,19 +87,19 @@ impl Surgery {
         }
     }
 
-    /// Apply the surgery to a support, producing the modified cell set.
-    pub fn apply(&self, cells: &[(i64, i64, i64)]) -> Vec<(i64, i64, i64)> {
+    /// Apply the surgery to a support, producing the modified support.
+    pub fn apply(&self, support: &[(i64, i64, i64)]) -> Vec<(i64, i64, i64)> {
         match self.kind {
             SurgeryKind::FillHole | SurgeryKind::BridgeMerge => {
-                let mut out = cells.to_vec();
+                let mut out = support.to_vec();
                 out.extend_from_slice(&self.support_delta);
                 out.sort_unstable();
                 out.dedup();
                 out
             }
             SurgeryKind::Puncture | SurgeryKind::SplitCut => {
-                let mut out = Vec::with_capacity(cells.len());
-                for c in cells {
+                let mut out = Vec::with_capacity(support.len());
+                for c in support {
                     if self.support_delta.binary_search(c).is_err() {
                         out.push(*c);
                     }
@@ -108,7 +109,7 @@ impl Surgery {
         }
     }
 
-    /// Monoid composition: S₁ ∘ S₂ sums Betti deltas and composes cell operations.
+    /// Monoid composition: S₁ ∘ S₂ sums Betti deltas and unites the supports moved.
     pub fn compose(&self, other: &Self) -> Self {
         let mut delta = self.support_delta.clone();
         delta.extend_from_slice(&other.support_delta);
@@ -136,7 +137,7 @@ impl Surgery {
         }
 
         if d_b1 < 0 {
-            // Hole filled: cells in dst not in src
+            // Hole filled: sites in dst not in src
             let mut diff = Vec::new();
             for c in dst {
                 if src.binary_search(c).is_err() {
@@ -151,7 +152,7 @@ impl Surgery {
                 });
             }
         } else if d_b1 > 0 {
-            // Puncture: cells in src not in dst
+            // Puncture: sites in src not in dst
             let mut diff = Vec::new();
             for c in src {
                 if dst.binary_search(c).is_err() {
@@ -166,7 +167,7 @@ impl Surgery {
                 });
             }
         } else if d_b0 < 0 {
-            // Merge: cells in dst not in src connecting components
+            // Merge: sites in dst not in src connecting components
             let mut diff = Vec::new();
             for c in dst {
                 if src.binary_search(c).is_err() {
@@ -179,7 +180,7 @@ impl Surgery {
                 support_delta: diff,
             });
         } else if d_b0 > 0 {
-            // Split: cells removed to disconnect
+            // Split: sites removed to disconnect
             let mut diff = Vec::new();
             for c in src {
                 if dst.binary_search(c).is_err() {
@@ -199,9 +200,9 @@ impl Surgery {
     /// Factor a non-homeomorphic transformation into a composite Φ = V ∘ S.
     /// Returns the surgery S and conformal alignment versor V.
     pub fn factor(src: &Shape, dst: &Shape) -> Option<(Self, Mv)> {
-        let surg = Self::detect(&src.blade.cells, &dst.blade.cells)?;
-        let core_cells = surg.apply(&src.blade.cells);
-        let core_shape = shape_of(&core_cells);
+        let surg = Self::detect(&src.blade.support, &dst.blade.support)?;
+        let core = surg.apply(&src.blade.support);
+        let core_shape = shape_of(&core);
         let v = crate::transducer::blade::carry::versor_between(&core_shape, dst)?;
         Some((surg, v))
     }

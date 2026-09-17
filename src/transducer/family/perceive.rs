@@ -424,8 +424,8 @@ pub(crate) fn support_of(body: &Body) -> Vec<(i64, i64, i64)> {
 /// Adjacency along `e₃` is the corpus's own (51.3) and is not a ring.
 pub(crate) fn ring_of_support(support: &[(i64, i64, i64)]) -> Vec<(i64, i64, i64)> {
     let mut out = Vec::new();
-    for (k, lamina) in blade::laminae(support) {
-        let cells: Vec<Cell3> = lamina.iter().map(|&(r, c)| (r, c, 0)).collect();
+    for (k, section) in blade::sections(support) {
+        let cells: Vec<Cell3> = section.iter().map(|&(r, c)| (r, c, 0)).collect();
         out.extend(blade::adjacent_ring(&cells).into_iter().map(|(r, c, _)| (r, c, k)));
     }
     out.sort_unstable();

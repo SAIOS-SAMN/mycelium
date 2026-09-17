@@ -385,7 +385,7 @@ fn unpaired_demands(
         if ic.kind != Whole {
             continue;
         }
-        let n = ic.body.shape.blade.cells.len() as u32;
+        let n = ic.body.shape.blade.support.len() as u32;
         ins_by_support.nested_insert(n.to_le_bytes(), ia.clone(), ());
         for &(r, c, f, _) in &ic.body.cells {
             in_at_cell.nested_insert(support_key(r, c, f), ia.clone(), ());
@@ -406,7 +406,7 @@ fn unpaired_demands(
         }
         let mut charts: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         let mut cells: Vec<crate::transducer::sentence::Cell> = Vec::new();
-        let n = (oc.body.shape.blade.cells.len() as u32).to_le_bytes();
+        let n = (oc.body.shape.blade.support.len() as u32).to_le_bytes();
         let congruent = match ins_by_support.get(&n) {
             Some(c) => c.scoped().map(|(ia, ())| ia).collect::<Vec<_>>(),
             None => Vec::new(),

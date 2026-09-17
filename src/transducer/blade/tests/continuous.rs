@@ -18,7 +18,7 @@ fn continuous_support_invariants_in_closed_form() {
     assert!(cs.h2_casimir > BigRational::from_integer(0.into()));
 
     // Exact similarity under dilation 2: shell scales by 4, H2 by 256
-    let dilated: Vec<(i64, i64, i64)> = s.blade.cells.iter()
+    let dilated: Vec<(i64, i64, i64)> = s.blade.support.iter()
         .flat_map(|&(r, c, k)| vec![(2*r, 2*c, k), (2*r+1, 2*c, k), (2*r, 2*c+1, k), (2*r+1, 2*c+1, k)])
         .collect();
     let s_dil = shape_of(&dilated);

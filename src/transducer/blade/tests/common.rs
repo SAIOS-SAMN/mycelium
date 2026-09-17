@@ -1,5 +1,5 @@
 // Fixture constructors for the blade's tests (MU-STANDARDS 3.3): a
-// rectangle in frame 0, its exact dilation, and a cell list.
+// rectangle in frame 0, its exact dilation, and a list of laminae.
 
 pub fn rect(r0: i64, c0: i64, h: i64, w: i64) -> Vec<(i64, i64, i64)> {
     let mut v: Vec<(i64, i64, i64)> =
@@ -8,8 +8,8 @@ pub fn rect(r0: i64, c0: i64, h: i64, w: i64) -> Vec<(i64, i64, i64)> {
     v
 }
 
-pub fn dilate(cells: &[(i64, i64, i64)], k: i64) -> Vec<(i64, i64, i64)> {
-    let mut v: Vec<(i64, i64, i64)> = cells
+pub fn dilate(support: &[(i64, i64, i64)], k: i64) -> Vec<(i64, i64, i64)> {
+    let mut v: Vec<(i64, i64, i64)> = support
         .iter()
         .flat_map(|&(r, c, f)| (0..k).flat_map(move |i| (0..k).map(move |j| (k * r + i, k * c + j, f))))
         .collect();
@@ -17,8 +17,8 @@ pub fn dilate(cells: &[(i64, i64, i64)], k: i64) -> Vec<(i64, i64, i64)> {
     v
 }
 
-/// A frame-0 scene: `(row, col, hue)` lifted to the base.
-pub fn cells(v: &[(i64, i64, u8)]) -> Vec<(i64, i64, i64, u8)> {
+/// A frame-0 scene: `(row, col, hue)` lifted to laminae on the base.
+pub fn laminae(v: &[(i64, i64, u8)]) -> Vec<(i64, i64, i64, u8)> {
     v.iter().map(|&(r, c, h)| (r, c, 0, h)).collect()
 }
 
