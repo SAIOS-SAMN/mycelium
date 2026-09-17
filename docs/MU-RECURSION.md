@@ -4222,7 +4222,10 @@ dialect, and a mind that has stood nothing utters nothing but a percept.
 - **Pacing is the outcome, never a constant.** A stroke's outcome has the
   modes (fed, pivoted, stood, uttered, closed, learned), each a μ⃗ on the
   four lanes; `pivoted` is the lane measure of the stroke's A16 snaps
-  over every dirty idea. Lane-wise sums across modes are allowed; nothing
+  over every dirty idea; `learned` is the measure of the pages the mind
+  admitted this stroke, each measured at its admission (`absorb_taught`,
+  the measure its receipt seals) and taken once by the stroke after its
+  arms (R4, 2026-09-17). Lane-wise sums across modes are allowed; nothing
   is summed or compared across lanes. A working stroke spends
   `lanes_of(outcome)`; only the tick spends all four lanes, and the idle
   `physics.spend([true; 4])` is that tick, not work. The dormant test is

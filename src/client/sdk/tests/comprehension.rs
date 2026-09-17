@@ -475,6 +475,28 @@ assert!(
 );
 }
 
+/// 24.3 — WHAT A STROKE LEARNED IS MEASURED PER LANE. A page the mind
+/// learns is measured at its admission by what it brought, the stroke takes
+/// the measure once, and a page refused on replay measures nothing.
+#[test]
+fn a_learned_page_is_measured_per_lane_and_a_refused_one_is_not() {
+use crate::transducer::element::from_canonical;
+use crate::transducer::germinate::germinate;
+let honest = from_canonical(
+    &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
+);
+let mut fat = honest.clone();
+fat.set_magnitude([999, 0, 0, 0]);
+let mut entity = Entity::open("127.0.0.1:1", Kernel::named("learned-measured"));
+assert!(entity.absorb_taught(&fat.to_bytes()).is_none(), "the fat word is refused");
+assert_eq!(entity.take_learned_mu(), [0; 4], "a refused page measures nothing");
+assert!(entity.absorb_taught(&honest.to_bytes()).is_some(), "the honest word is learned");
+let mu = honest.magnitude();
+assert_ne!(mu, [0; 4], "the page carries a measure");
+assert_eq!(entity.take_learned_mu(), mu, "the stroke takes the page's own measure");
+assert_eq!(entity.take_learned_mu(), [0; 4], "and takes it once");
+}
+
 /// A stood dialect word closes a remainder without waiting for the court.
 #[test]
 fn a_stood_word_closes_todays_remainder() {

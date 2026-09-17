@@ -254,6 +254,12 @@ fn main() {
                 eprintln!("[{tag}] pivot: {met} held thoughts spoken on charts the language now holds");
             }
         }
+        // 24.3: WHAT THE MIND LEARNED THIS STROKE is the outcome's sixth
+        // mode. The syllabus pull and the sheaf sync admit their pages
+        // through `absorb_taught`, which measures each at its admission;
+        // the stroke takes the measure once, here, so a stroke that learned
+        // spends the lanes it learned on and does not read idle.
+        StrokeOutcome::add(&mut outcome.learned, &entity.take_learned_mu());
         // 24.3: a working stroke spends the lanes its outcome moved; a stroke
         // that moved no lane spends the tick on all four — the tick, not work.
         // 24.3: a working stroke spends the lanes its outcome moved; a stroke

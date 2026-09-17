@@ -427,6 +427,11 @@ pub struct Entity {
     /// cochain norm, never usize::MAX.
     pub(crate) discordance: usize,
     pub(crate) discordance_measured: bool,
+    /// WHAT THIS MIND LEARNED SINCE THE STROKE LAST TOOK IT (24.3): the
+    /// measure, per lane, of every page `absorb_taught` admitted — the
+    /// outcome's `learned` mode, accumulated at the admission and taken
+    /// once per stroke by `take_learned_mu`.
+    pub(crate) learned_mu: [u64; 4],
     /// ČECH AFTER FETCH: the obstructions measured on the fibre when a
     /// fetched word met the words already held there — (the fetched
     /// word's address, the transition that did not vanish). The digest

@@ -42,6 +42,7 @@ impl Entity {
             taught_at: crate::network::nerve::Keyed::new(),
             discordance: 0,
             discordance_measured: false,
+            learned_mu: [0; 4],
             obstructions: crate::network::nerve::Keyed::new(),
             glued: crate::network::nerve::Keyed::new(),
             contemplation: crate::transducer::bubble::Contemplation::new(),

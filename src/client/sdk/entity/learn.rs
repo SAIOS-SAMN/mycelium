@@ -343,7 +343,20 @@ impl Entity {
         // receipt naming the words is sealed on its own chain and the page
         // is learned at the K it took.
         let k = self.session.seal(crate::chronometry::ActKind::Learned, mu, &page);
-        self.epigenome.learn_at(taught, k, self.now_tu())
+        let heard = self.epigenome.learn_at(taught, k, self.now_tu());
+        // 24.3: a page learned is a mode of the stroke's outcome, measured
+        // by what the page brought; a page refused on replay measures
+        // nothing. The stroke takes the measure once.
+        if heard.is_some() {
+            crate::physics::StrokeOutcome::add(&mut self.learned_mu, &mu);
+        }
+        heard
     }
 
+    /// WHAT THIS MIND LEARNED SINCE THE STROKE LAST ASKED (24.3): the
+    /// measure of the pages admitted, per lane, taken once — the stroke's
+    /// `learned` mode.
+    pub fn take_learned_mu(&mut self) -> [u64; 4] {
+        std::mem::take(&mut self.learned_mu)
+    }
 }
