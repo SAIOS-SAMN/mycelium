@@ -342,3 +342,56 @@ fn derivation_factors_offplane_generator_and_verifies_rotor() {
     assert_eq!(d.generators.len(), 1, "cites the held offplane generator");
     assert!(d.rotor().projective_eq(&gen_word.rotor()), "the derivation projectively reproduces the Clifford rotor");
 }
+
+#[test]
+fn adjoined_basis_discovers_generators_on_offplane_channels() {
+    use crate::transducer::alphabet::{Derivation, Rotor};
+    use crate::transducer::family::derivation::adjoined_basis;
+    use crate::transducer::sentence::CycleType;
+
+    // Construct an adjoined generator on offplane (0, 3) with prime 17 (4 + i e03)
+    let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
+    let mask_03 = (1usize << 0) | (1usize << 3); // plane (0, 3)
+    let rotor = Rotor::scalar(q(4)).add(&Rotor::blade(mask_03, q(1)));
+    let address = Address::from_bytes([TAG_FORM, 55]);
+    let mut f = Form::default();
+    f.vertices.push(Vertex::word_on(
+        address.clone(),
+        Derivation::adjoined(rotor),
+        Invariant::default(),
+        Box::new(element::identity_versor()),
+        Vec::new(),
+        None,
+    ));
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+
+    let mut index = crate::transducer::sentence::GeneratorIndex::new();
+    crate::transducer::sentence::admit_generators(&mut index, &address, &f);
+    let held = Holds { index, form: f };
+
+    // Target versor
+    let v = element::identity_versor();
+    let basis = adjoined_basis(&held, &mut budget(), &v, &CycleType::of(NO_GAUGE))
+        .expect("adjoined basis read succeeds");
+
+    assert_eq!(basis.len(), 1, "unpinned adjoined_basis discovers the (0, 3) prime generator");
+    assert_eq!(basis[0].pi.norm(), num_bigint::BigInt::from(289));
+}
+
+#[test]
+fn peel_versor_with_peels_identity_and_turned_planes() {
+    use crate::transducer::family::derivation::peel_versor_with;
+
+    let v = element::versor_of_word(&quarter(1)).expect("sensor quarter versor");
+    let res = peel_versor_with(&v, Vec::new()).expect("peel succeeds");
+    let (cited, word) = res.expect("closed peel");
+    assert!(cited.is_empty(), "no citations");
+    assert_eq!(word, quarter(1), "exact single plane word produced");
+
+    let id_v = element::identity_versor();
+    let id_res = peel_versor_with(&id_v, Vec::new()).expect("identity peel succeeds");
+    let (id_cited, id_word) = id_res.expect("closed identity peel");
+    assert!(id_cited.is_empty());
+    assert!(id_word.is_identity());
+}

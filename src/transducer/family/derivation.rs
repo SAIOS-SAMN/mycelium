@@ -19,6 +19,7 @@
 
 use super::*;
 use crate::transducer::element::sensor_plane_block;
+use num_traits::{One, Signed, Zero};
 
 /// 50.2 F STEP 2 — FACTOR THROUGH THE PRESENTATION, AND PEEL ONLY THE
 /// RESIDUE. The sensor plane is the first block of 50.4 and the other
@@ -149,14 +150,13 @@ fn rotor_of_versor(v: &Versor) -> Option<crate::transducer::alphabet::Rotor> {
 /// of the target's lanes, as primes the peel may divide by. A generator
 /// that spells in letters is A12's and not the basis's; one whose rotor
 /// has no arc on the sensor plane divides nothing here.
-fn adjoined_basis(
+pub(crate) fn adjoined_basis(
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     v: &Versor,
     hue: &crate::transducer::sentence::CycleType,
 ) -> Option<Vec<crate::transducer::alphabet::AdjoinedPrime>> {
-    use crate::transducer::alphabet::{gauss_of_block, rotor_block_on, AdjoinedPrime, PLANE_COL, PLANE_ROW};
-    let plane = (PLANE_ROW, PLANE_COL);
+    use crate::transducer::alphabet::{gauss_of_block, rotor_block_on, AdjoinedPrime, SLOT_PLANES_SIX};
     let Some(target) = rotor_of_versor(v) else {
         return Some(Vec::new());
     };
@@ -173,12 +173,14 @@ fn adjoined_basis(
         if !g.letters().is_empty() {
             continue;
         }
-        let Some(block) = rotor_block_on(&g.rotor(), plane) else { continue };
-        let Some(pi) = gauss_of_block(&block) else { continue };
-        if pi.is_unit() || pi.is_zero() {
-            continue;
+        for &plane in &SLOT_PLANES_SIX {
+            let Some(block) = rotor_block_on(&g.rotor(), plane) else { continue };
+            let Some(pi) = gauss_of_block(&block) else { continue };
+            if pi.is_unit() || pi.is_zero() {
+                continue;
+            }
+            out.push(AdjoinedPrime { pi, form: form.clone(), vertex: vertex.clone(), rotor: g.rotor() });
         }
-        out.push(AdjoinedPrime { pi, form, vertex, rotor: g.rotor() });
     }
     Some(out)
 }
@@ -258,31 +260,85 @@ pub(crate) fn peel_versor_with(
     v: &Versor,
     adjoined: Vec<crate::transducer::alphabet::AdjoinedPrime>,
 ) -> Option<Result<Peeled, crate::transducer::sentence::Demand>> {
-    use crate::transducer::alphabet::{spell_peel_with, PLANE_COL, PLANE_ROW};
+    use crate::transducer::alphabet::{
+        rotor_block_on, spell_peel_with, PLANE_COL, PLANE_ROW, SLOT_PLANES_SIX,
+    };
     use crate::transducer::peel::PeelNest;
     use crate::transducer::sentence::Demand;
-    let block = sensor_plane_block(v)?;
-    let plane = (PLANE_ROW, PLANE_COL);
-    Some(match spell_peel_with(plane, &block, adjoined) {
-        Some((PeelNest::Closed { cores }, _rho)) => {
-            let (cited, w) = crate::transducer::alphabet::cited_of_cores(&cores)?;
-            Ok((cited, w))
+
+    let target = rotor_of_versor(v)?;
+    let mut all_cores = Vec::new();
+    let mut turned = false;
+
+    for &plane in &SLOT_PLANES_SIX {
+        let Some(block) = rotor_block_on(&target, plane) else {
+            continue;
+        };
+        let det = &block[0][0] * &block[1][1] - &block[0][1] * &block[1][0];
+        let rho2 = &block[0][0] * &block[0][0] + &block[1][0] * &block[1][0];
+        if rho2.is_zero() {
+            return None;
         }
-        Some((PeelNest::Standing { arc, .. }, _)) => {
-            let norm = &arc.p * &arc.p + &arc.q * &arc.q;
-            match crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane) {
-                // 37.7 P2: the residue block the shells left, not the
-                // block the peel started from.
-                Some(prime) => Err(Demand::RotorPrime {
-                    plane,
-                    prime,
-                    witness: Box::new(crate::transducer::alphabet::arc_block(&arc.p, &arc.q)),
-                }),
-                None => Err(Demand::Standing { block: Box::new(block) }),
+        if !(det / &rho2).is_one() {
+            continue;
+        }
+        let is_identity = block[0][0] == block[1][1]
+            && block[0][1].is_zero()
+            && block[1][0].is_zero()
+            && block[0][0].is_positive();
+        if is_identity {
+            continue;
+        }
+
+        turned = true;
+        match spell_peel_with(plane, &block, adjoined.clone()) {
+            Some((PeelNest::Closed { cores }, _rho)) => {
+                all_cores.extend(cores);
             }
+            Some((PeelNest::Standing { arc, .. }, _)) => {
+                let norm = &arc.p * &arc.p + &arc.q * &arc.q;
+                match crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane) {
+                    // 37.7 P2: the residue block the shells left, not the
+                    // block the peel started from.
+                    Some(prime) => {
+                        return Some(Err(Demand::RotorPrime {
+                            plane,
+                            prime,
+                            witness: Box::new(crate::transducer::alphabet::arc_block(&arc.p, &arc.q)),
+                        }))
+                    }
+                    None => return Some(Err(Demand::Standing { block: Box::new(block) })),
+                }
+            }
+            None => return Some(Err(Demand::Standing { block: Box::new(block) })),
         }
-        None => Err(Demand::Standing { block: Box::new(block) }),
-    })
+    }
+
+    if !turned {
+        let block = sensor_plane_block(v)?;
+        let plane = (PLANE_ROW, PLANE_COL);
+        return Some(match spell_peel_with(plane, &block, adjoined) {
+            Some((PeelNest::Closed { cores }, _rho)) => {
+                let (cited, w) = crate::transducer::alphabet::cited_of_cores(&cores)?;
+                Ok((cited, w))
+            }
+            Some((PeelNest::Standing { arc, .. }, _)) => {
+                let norm = &arc.p * &arc.p + &arc.q * &arc.q;
+                match crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane) {
+                    Some(prime) => Err(Demand::RotorPrime {
+                        plane,
+                        prime,
+                        witness: Box::new(crate::transducer::alphabet::arc_block(&arc.p, &arc.q)),
+                    }),
+                    None => Err(Demand::Standing { block: Box::new(block) }),
+                }
+            }
+            None => Err(Demand::Standing { block: Box::new(block) }),
+        });
+    }
+
+    let (cited, w) = crate::transducer::alphabet::cited_of_cores(&all_cores)?;
+    Some(Ok((cited, w)))
 }
 
 /// A12 over the mind's own generators (50.2 step 2, 42.6, L12). The basis
