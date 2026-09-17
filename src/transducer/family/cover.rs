@@ -10,7 +10,7 @@
 //! where they meet.
 //!
 //! THE PIECES ARE PULLED BACK, NEVER COMPARED. An output piece's preimage
-//! is the set of input pieces standing under its own cells, read per cell
+//! is the set of input pieces standing under its own sites, read per site
 //! from a keyed occupancy, so a piece in place is congruent by
 //! construction. That preimage is ONE set and is carried once: the two
 //! peels are under no obligation to agree on granularity, and requiring
@@ -26,7 +26,7 @@
 //! the preimage stands on.
 //!
 //! Nothing is added to the tape. `Form.torsion` already carries a filled
-//! cell as `FiledLoop { sigma, period, chord }` and the court already
+//! simplex as `FiledLoop { sigma, period, chord }` and the court already
 //! replays it (23.1 step 4).
 //!
 //! Nothing is keyed by position. A piece is addressed by its content —
@@ -44,7 +44,7 @@ use super::*;
 /// A filed class becomes torsion, a refused carriage becomes a demand
 /// vertex the soak already counts — but a cover that COMPLETED and found
 /// nothing, and the reads a cover spent, leave no trace in content, and
-/// without them `cells filled 0` cannot be told from `no cover ran`.
+/// without them `simplices filled 0` cannot be told from `no cover ran`.
 #[derive(Default, Clone, Copy)]
 pub struct CoverTally {
     /// Covers that ran to the end of their pieces, and covers whose share
@@ -132,8 +132,7 @@ pub(crate) fn tally(f: impl Fn(&mut CoverTally)) {
 /// however far apart their codomains land. That is the replication case,
 /// and the only case in which the transition between two copies of one
 /// shape is visible at all. Meets on the codomain are the merge case.
-/// Reading only the codomain — measured with `carried 2` on a family of
-/// one input piece and ten output pieces — leaves the nerve discrete.
+/// Reading only the codomain leaves the nerve discrete.
 pub(crate) struct Supports {
     pub(crate) domain: Vec<(i64, i64, i64)>,
     pub(crate) codomain: Vec<(i64, i64, i64)>,
@@ -181,7 +180,7 @@ pub(crate) struct Cover {
     /// refused its rotor. Kept as the demand the peel typed, so the piece
     /// enters the form as a vertex instead of vanishing.
     ///
-    /// It was a `continue`. That discarded, silently, the only place in the
+    /// A `continue` here would discard, silently, the only place in the
     /// engine where a carriage is CONFIRMED and its rotor is outside the
     /// alphabet — which is 37.7's condition exactly, and so the shortest
     /// route the cover has to an adjoined generator. The cover cannot run
@@ -190,9 +189,9 @@ pub(crate) struct Cover {
     /// `derive_against`, which runs per mind.
     pub(crate) refused: crate::network::nerve::Keyed<Demanded>,
     /// What no piece carried, as a VOLUME on four lanes (law 5): the
-    /// input's cells no piece carried and the image's cells no piece
-    /// reached (50.8 case 4). A count of cells is not this quantity —
-    /// cells carry different lane weight — so the dissolution reads the
+    /// input's laminae no piece carried and the image's laminae no piece
+    /// reached (50.8 case 4). A count of laminae is not this quantity —
+    /// laminae carry different lane weight — so the dissolution reads the
     /// zero vector and never a cardinality.
     pub(crate) uncarried: [u64; 4],
 }
@@ -223,7 +222,7 @@ impl Cover {
 /// 50.8 — COVER ONE DEFORMATION.
 ///
 /// Pass (a), THE PULLBACK: an output piece's preimage is the input pieces
-/// standing under its own cells, read per cell from the occupancy. Pass
+/// standing under its own sites, read per site from the occupancy. Pass
 /// (b), BY PROPAGATION: an input piece the pullback placed nowhere is
 /// CARRIED by each versor pass (a) already placed, and the output piece
 /// its image lands in is read by position. In both, `carriage` decides and
@@ -251,25 +250,25 @@ pub(crate) fn cover_deformation(
 ) -> Result<Cover, Unmeasured> {
     use super::cursor;
     let opened = budget.remaining();
-    let ins = pieces_of(&input.cells, scale);
-    let outs = pieces_of(&image.cells, scale);
+    let ins = pieces_of(&input.laminae, scale);
+    let outs = pieces_of(&image.laminae, scale);
     // WHERE THIS COVER STOPPED, if a stroke stopped it (L20, S13.3). A
     // fresh deformation starts at the pullback's first piece; one a stroke
     // parked starts where that stroke left off, with what it had placed.
-    let ckey = cursor::deformation_key(&input.cells, &image.cells, scale);
+    let ckey = cursor::deformation_key(&input.laminae, &image.laminae, scale);
     let mut st = match cursor::take(&ckey) {
         Some(p) => p,
         None => cursor::Pending::new(),
     };
     let mut cover = std::mem::replace(&mut st.cover, Cover::new());
 
-    // Cell position → the input piece holding it. This is Φ: the
-    // positional correspondence over the two supports, which is what a
+    // Site → the input piece holding it. This is Φ: the positional
+    // correspondence over the two supports, which is what a
     // deformation-in-place has in place of a whole-body versor.
     let mut occ_in: crate::network::nerve::Keyed<Vec<u8>> = crate::network::nerve::Keyed::new();
     for (k, p) in ins.scoped() {
-        for &(r, c, f, _) in &p.body.cells {
-            occ_in.insert(support_key(r, c, f), k.clone());
+        for &(r, c, f, _) in &p.body.laminae {
+            occ_in.insert(base_key(r, c, f), k.clone());
         }
     }
 
@@ -292,7 +291,7 @@ pub(crate) fn cover_deformation(
     // skipped at its own address, so a stroke that resumes carries no
     // memory of the order a previous one walked in.
     //
-    // The address is the carriage's, never the image piece's cells: one
+    // The address is the carriage's, never the image piece's sites: one
     // image piece carried from two domains is REPLICATION, and 50.8 exists
     // to read the transition between the two copies.
     //
@@ -303,10 +302,10 @@ pub(crate) fn cover_deformation(
         'piece: {
         let Some(op) = outs.get(ko) else { break 'piece };
         // The preimage: the input pieces named under this piece's own
-        // cells, deduped by their address and read in key order.
+        // sites, deduped by their address and read in key order.
         let mut named: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for &(r, c, f, _) in &op.body.cells {
-            if let Some(ki) = occ_in.get(&support_key(r, c, f)) {
+        for &(r, c, f, _) in &op.body.laminae {
+            if let Some(ki) = occ_in.get(&base_key(r, c, f)) {
                 named.insert(ki, ());
             }
         }
@@ -314,19 +313,19 @@ pub(crate) fn cover_deformation(
         // whole pieces so none is cut across the preimage boundary. The two
         // peels are under no obligation to agree on granularity, and this
         // is why they need not (50.8).
-        let mut cells: Vec<Cell4> = Vec::new();
+        let mut laminae: Vec<Lamina> = Vec::new();
         let mut parts: Vec<Vec<u8>> = Vec::new();
         for (ki, ()) in named.scoped() {
             let Some(ip) = ins.get(&ki) else { continue };
-            cells.extend_from_slice(&ip.body.cells);
+            laminae.extend_from_slice(&ip.body.laminae);
             parts.push(ki);
         }
         // No preimage is no piece to carry, not a piece that failed to
         // carry (rule 11): nothing is reached and nothing is consumed.
-        let Some(pre) = (!cells.is_empty()).then(|| body_of(cells)) else {
+        let Some(pre) = (!laminae.is_empty()).then(|| body_of(laminae)) else {
             break 'piece;
         };
-        // SETTLED? The preimage is a function of this piece's own cells, so
+        // SETTLED? The preimage is a function of this piece's own sites, so
         // the carriage's address is too: placed or refused, this piece is
         // read once however many strokes the cover takes.
         let settled = carriage_key(&assembly_key(&parts), ko);
@@ -357,8 +356,8 @@ pub(crate) fn cover_deformation(
             // reader can factor, which is unmeasured and not a demand.
             None => break 'piece,
         };
-        for &(r, c, f, _) in pre.cells.iter().chain(op.body.cells.iter()) {
-            reached.insert(support_key(r, c, f), ());
+        for &(r, c, f, _) in pre.laminae.iter().chain(op.body.laminae.iter()) {
+            reached.insert(base_key(r, c, f), ());
         }
         for ki in &parts {
             consumed.insert(ki, ());
@@ -374,9 +373,9 @@ pub(crate) fn cover_deformation(
     // piece is not looked for, it is CARRIED by what is already placed and
     // the image says where it landed.
     //
-    // Each distinct placed versor is applied to the piece's own cells, the
+    // Each distinct placed versor is applied to the piece's own laminae, the
     // image positions are read from the output occupancy by a keyed read
-    // per cell (rule 1: never a walk of the output pieces), the pieces they
+    // per site (rule 1: never a walk of the output pieces), the pieces they
     // name are assembled into one image, and `carriage` confirms that one
     // candidate. The attempt count is `placed × unplaced`, and a family
     // whose pullback placed nothing attempts nothing here.
@@ -386,8 +385,8 @@ pub(crate) fn cover_deformation(
     // explain, which is a demand (50.8 case 4).
     let mut occ_out: crate::network::nerve::Keyed<Vec<u8>> = crate::network::nerve::Keyed::new();
     for (k, p) in outs.scoped() {
-        for &(r, c, f, _) in &p.body.cells {
-            occ_out.insert(support_key(r, c, f), k.clone());
+        for &(r, c, f, _) in &p.body.laminae {
+            occ_out.insert(base_key(r, c, f), k.clone());
         }
     }
     // THE DISTINCT PLACED VERSORS, by their own address. Two carriages that
@@ -411,15 +410,15 @@ pub(crate) fn cover_deformation(
         }
         let Some(ip) = ins.get(ki) else { break 'piece };
         for pv in &propagate {
-            // WHERE THIS VERSOR PUTS THE PIECE. Each cell's center is
+            // WHERE THIS VERSOR PUTS THE PIECE. Each lamina's center is
             // carried and the output piece holding it is read by position;
-            // a cell whose image the lattice does not hold is a cell this
+            // a lamina whose image the lattice does not hold is one this
             // reader did not carry (W6) and names nothing.
             let mut named: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-            for &(r, c, f, _) in &ip.body.cells {
+            for &(r, c, f, _) in &ip.body.laminae {
                 let Some(p) = element::carry_center(pv, r, c, f) else { continue };
-                let Some((tr, tc, tf)) = element::cell_of(&p) else { continue };
-                if let Some(ko) = occ_out.get(&support_key(tr, tc, tf)) {
+                let Some((tr, tc, tf)) = element::site_of(&p) else { continue };
+                if let Some(ko) = occ_out.get(&base_key(tr, tc, tf)) {
                     named.insert(ko, ());
                 }
             }
@@ -428,16 +427,16 @@ pub(crate) fn cover_deformation(
             // across several output pieces is assembled whole and carried
             // once; one candidate, not several, and no piece cut across the
             // image boundary.
-            let mut cells: Vec<Cell4> = Vec::new();
+            let mut laminae: Vec<Lamina> = Vec::new();
             let mut parts: Vec<Vec<u8>> = Vec::new();
             for (ko, ()) in named.scoped() {
                 let Some(op) = outs.get(&ko) else { continue };
-                cells.extend_from_slice(&op.body.cells);
+                laminae.extend_from_slice(&op.body.laminae);
                 parts.push(ko);
             }
             // No image is no piece to carry by this versor, not a piece that
             // failed to carry (rule 11).
-            let Some(img) = (!cells.is_empty()).then(|| body_of(cells)) else {
+            let Some(img) = (!laminae.is_empty()).then(|| body_of(laminae)) else {
                 continue;
             };
             // A carriage already placed between this piece and this image is
@@ -463,8 +462,8 @@ pub(crate) fn cover_deformation(
                 }
                 None => continue,
             };
-            for &(r, c, f, _) in ip.body.cells.iter().chain(img.cells.iter()) {
-                reached.insert(support_key(r, c, f), ());
+            for &(r, c, f, _) in ip.body.laminae.iter().chain(img.laminae.iter()) {
+                reached.insert(base_key(r, c, f), ());
             }
             consumed.insert(ki, ());
             let codomain = support_of(&img);
@@ -478,28 +477,28 @@ pub(crate) fn cover_deformation(
     }
 
     // (c) WHAT IS LEFT, AS A VOLUME. Both bodies (50.8 case 4): the
-    // input's cells no piece carried, and the image's cells no piece
+    // input's laminae no piece carried, and the image's laminae no piece
     // reached.
-    let mut left: Vec<crate::transducer::sentence::Cell> = Vec::new();
-    for &(r, c, f, h) in &input.cells {
-        if !reached.contains(&support_key(r, c, f)) {
+    let mut left: Vec<Link> = Vec::new();
+    for &(r, c, f, h) in &input.laminae {
+        if !reached.contains(&base_key(r, c, f)) {
             left.push((r, c, h, 0));
         }
     }
-    for &(r, c, f, h) in &image.cells {
-        if !reached.contains(&support_key(r, c, f)) {
+    for &(r, c, f, h) in &image.laminae {
+        if !reached.contains(&base_key(r, c, f)) {
             left.push((r, c, 0, h));
         }
     }
     cover.uncarried = element::measure_lanes(&left);
 
     // (d) THE MEETS, from a keyed occupancy of the placed supports and
-    // their rings (rule 1: never a pair loop over the pieces). A cell
+    // their rings (rule 1: never a pair loop over the pieces). A site
     // holding two or more placed pieces IS a meet, and the meet is
-    // addressed by its two ends; a cell holding k of them is k−1 meets.
+    // addressed by its two ends; a site holding k of them is k−1 meets.
     // The two sides are filed under DISTINCT keys — a side byte ahead of
-    // the position — so a domain cell and a codomain cell that happen to
-    // sit at one grid position are not read as a meet. They are cells of
+    // the position — so a domain site and a codomain site that happen to
+    // sit at one grid position are not read as a meet. They are sites of
     // two different spaces that the correspondence relates; only the
     // versor relates them, and a shared coordinate is a coincidence of the
     // embedding, not an overlap.
@@ -509,9 +508,9 @@ pub(crate) fn cover_deformation(
             let ring = ring_of_support(support);
             for (r, c, f) in support.iter().copied().chain(ring) {
                 let mut pos = vec![side];
-                pos.extend_from_slice(&support_key(r, c, f));
+                pos.extend_from_slice(&base_key(r, c, f));
                 match occ.get_mut(&pos) {
-                    // One piece's cells are offered contiguously — the walk
+                    // One piece's sites are offered contiguously — the walk
                     // above is per piece — and a piece reaches one position
                     // more than once only through its own ring, so a repeat
                     // can only be the key just pushed (rule 15: the slice
@@ -528,17 +527,17 @@ pub(crate) fn cover_deformation(
         }
     }
     // A meet already recorded is not recorded again, read at its own
-    // address: the cell needs no position of its own.
+    // address: the site needs no position of its own.
     for (_pos, here) in occ.scoped() {
-        // ONE READ PER CELL THAT YIELDS A MEET, charged on the first meet
-        // it yields (rule 10): a cell that yields nothing is not work.
-        // `paid` is this stroke's payment and not a reading of the cell —
+        // ONE READ PER SITE THAT YIELDS A MEET, charged on the first meet
+        // it yields (rule 10): a site that yields nothing is not work.
+        // `paid` is this stroke's payment and not a reading of the site —
         // nothing in the cover branches on it.
         let mut paid = false;
-        // A cell's occupants are a SIMPLEX, not a clique: they all contain
-        // this cell, so every cycle among them bounds and k occupants are
+        // A site's occupants are a SIMPLEX, not a clique: they all contain
+        // this site, so every cycle among them bounds and k occupants are
         // k−1 meets. The cycles that carry a cover's holonomy span DISTINCT
-        // cells and are untouched by this.
+        // sites and are untouched by this.
         for w in here.windows(2) {
             let [ka, kb] = w else { continue };
             'meet: {

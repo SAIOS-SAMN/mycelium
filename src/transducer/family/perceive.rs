@@ -3,31 +3,32 @@
 //
 //! A body is a connected component of one hue on the three coordinates of
 //! the base. `word_or_demand` reads the versor that carries one body onto
-//! another and the chain of hue transitions it leaves; `cell_reads` counts
-//! what the sensor was asked for.
+//! another and the chain of hue transitions it leaves; `sensor_reads`
+//! counts what the sensor was asked for.
 
 use super::*;
 
 pub type Grid = Vec<Vec<u8>>;
 
-/// A cell of one frame's grid, the sensor's planar token: `(row, col, hue)`.
-pub(crate) type Cell3 = (i64, i64, u8);
+/// A painted site of one frame's grid, the sensor's planar token:
+/// `(row, col, hue)`.
+pub(crate) type Painted = (i64, i64, u8);
 
-/// A cell of a body's support, on the three coordinates of the base (51.3):
-/// `(row, col, frame, hue)`.
-pub type Cell4 = crate::transducer::blade::Painted4;
+/// A lamina of a body's support, on the three coordinates of the base
+/// (51.3): `(row, col, frame, hue)`.
+pub type Lamina = crate::transducer::blade::Lamina;
 
-/// A cell scene as a grid, origin at the scene's min-corner. The sensor
-/// embedding of one scene; not a ranking over candidates.
-pub fn cells_to_grid(cells: &[(i64, i64, u8)]) -> Grid {
+/// A scene of painted sites as a grid, origin at the scene's min-corner.
+/// The sensor embedding of one scene; not a ranking over candidates.
+pub fn grid_of_painted(painted: &[(i64, i64, u8)]) -> Grid {
     // The head only SEEDS the bounding box; the box is folded over every
-    // cell below, so no member is chosen here.
-    let [(r0, c0, _), ..] = cells else {
+    // site below, so no member is chosen here.
+    let [(r0, c0, _), ..] = painted else {
         return vec![vec![0]];
     };
     let (r0, c0) = (*r0, *c0);
     let (mut min_r, mut min_c, mut max_r, mut max_c) = (r0, c0, r0, c0);
-    for &(r, c, _) in cells {
+    for &(r, c, _) in painted {
         if r < min_r {
             min_r = r;
         }
@@ -44,14 +45,17 @@ pub fn cells_to_grid(cells: &[(i64, i64, u8)]) -> Grid {
     let h = (max_r - min_r + 1) as usize;
     let w = (max_c - min_c + 1) as usize;
     let mut g = vec![vec![0u8; w]; h];
-    for &(r, c, hue) in cells {
+    for &(r, c, hue) in painted {
         g[(r - min_r) as usize][(c - min_c) as usize] = hue;
     }
     g
 }
 
+/// The modules not yet swept name the grid of a scene by the retired word.
+pub use grid_of_painted as cells_to_grid;
+
 /// THE SCENE A CHAIN DESCRIBES, as the two grids of one frame (50.6 seam
-/// 1): the cells before and the cells after, both at the chain's own
+/// 1): the sites before and the sites after, both at the chain's own
 /// min-corner, so the motion between them is the chain's and never an
 /// artefact of two origins. `None` for an empty chain, which describes
 /// no scene.
@@ -60,7 +64,7 @@ pub fn scene_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<(Grid, Grid)> {
 }
 
 /// The same scene, with THE CORNER IT WAS FRAMED AT. A caller that has to
-/// put a spoken cell back where the chain had it needs the origin the
+/// put a spoken site back where the chain had it needs the origin the
 /// framing subtracted, and re-deriving that corner beside this reader is
 /// the second carrier for one fact (law 12) — one of them would be the
 /// one that drifts.
@@ -99,56 +103,58 @@ pub(crate) fn q(v: i64) -> num_rational::BigRational {
     num_rational::BigRational::from_integer(num_bigint::BigInt::from(v))
 }
 
-/// A perceived body: its support with hue on the three coordinates of the
-/// base — ONE carrier (51.3) — its shape, and its moduli.
+/// A perceived body: its laminae — its support with hue on the three
+/// coordinates of the base, ONE carrier (51.3) — its shape, and its
+/// moduli.
 #[derive(Clone, Debug)]
 pub struct Body {
-    pub cells: Vec<Cell4>,
+    pub laminae: Vec<Lamina>,
     pub shape: Shape,
     pub moduli: Invariant,
 }
 
 /// The body of one connected component of one hue: its shape lifted from
-/// its support, its moduli read off the shape, its cells sorted.
-pub fn body_of(comp: Vec<Cell4>) -> Body {
+/// its support, its moduli read off the shape, its laminae sorted.
+pub fn body_of(comp: Vec<Lamina>) -> Body {
     let mut pos: Vec<(i64, i64, i64)> = comp.iter().map(|&(r, c, k, _)| (r, c, k)).collect();
     pos.sort_unstable();
     pos.dedup();
     let shape = blade::shape_of(&pos);
     let moduli = Invariant(blade::moduli(&shape.blade));
-    let mut cells = comp;
-    cells.sort_unstable();
-    cells.dedup();
-    Body { cells, shape, moduli }
+    let mut laminae = comp;
+    laminae.sort_unstable();
+    laminae.dedup();
+    Body { laminae, shape, moduli }
 }
 
 thread_local! {
-    static CELL_READS: Cell<u64> = const { Cell::new(0) };
+    static SENSOR_READS: Cell<u64> = const { Cell::new(0) };
 }
 
-/// Grid cells visited by [`perceive`] since the last reset.
+/// Grid sites visited by [`perceive`] since the last reset.
 #[cfg(test)]
-pub fn cell_reads() -> u64 {
-    CELL_READS.with(|c| c.get())
+pub fn sensor_reads() -> u64 {
+    SENSOR_READS.with(|c| c.get())
 }
 
 #[cfg(test)]
-pub(crate) fn reset_cell_reads() {
-    CELL_READS.with(|c| c.set(0));
+pub(crate) fn reset_sensor_reads() {
+    SENSOR_READS.with(|c| c.set(0));
 }
 
-pub(crate) fn note_cell_read() {
-    CELL_READS.with(|c| c.set(c.get().saturating_add(1)));
+pub(crate) fn note_sensor_read() {
+    SENSOR_READS.with(|c| c.set(c.get().saturating_add(1)));
 }
 
-/// Perceive one scene: its bodies, each a 4-connected component of cells of
-/// ONE hue (chapter 20, ruled 2026-09-09) standing in frame `0`; hue 0 is
-/// the background the eye does not see. Two touching bodies of different
-/// hues are two bodies sharing a boundary, and the pair form carries that
-/// boundary as a contact face with the edge transport of 50.3, so sliding,
-/// relative rotation and the evolution of a colour boundary are measured
-/// on the edge. The court reads a two-hue percept as one sentence with two
-/// body vertices and their edge, never as two detached listings (50.1).
+/// Perceive one scene: its bodies, each a 4-connected component of laminae
+/// of ONE hue (chapter 20, ruled 2026-09-09) standing in frame `0`; hue 0
+/// is the background the eye does not see. Two touching bodies of
+/// different hues are two bodies sharing a boundary, and the pair form
+/// carries that boundary as a contact face with the edge transport of
+/// 50.3, so sliding, relative rotation and the evolution of a colour
+/// boundary are measured on the edge. The court reads a two-hue percept as
+/// one sentence with two body vertices and their edge, never as two
+/// detached listings (50.1).
 pub fn perceive(grid: &Grid) -> Vec<Body> {
     perceive_frames(std::slice::from_ref(grid))
 }
@@ -157,63 +163,52 @@ pub fn perceive(grid: &Grid) -> Vec<Body> {
 /// components of one hue across the frames (51.3, 51.4), the frame of each
 /// grid its place in the family.
 pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
-    let mut cells: Vec<Cell4> = Vec::new();
+    let mut laminae: Vec<Lamina> = Vec::new();
     for (k, grid) in grids.iter().enumerate() {
         for (r, row) in grid.iter().enumerate() {
             for (c, &h) in row.iter().enumerate() {
-                note_cell_read();
+                note_sensor_read();
                 if h != 0 {
-                    cells.push((r as i64, c as i64, k as i64, h));
+                    laminae.push((r as i64, c as i64, k as i64, h));
                 }
             }
         }
     }
-    blade::components(&cells).into_iter().map(body_of).collect()
+    blade::components(&laminae).into_iter().map(body_of).collect()
 }
 
-// `linear_block_of_versor` was here, renamed to `sensor_plane_block` and
-// then moved to `element::letters` beside the three other readers of a
-// versor, which are only correct together (§1.6: moved, not rewritten).
-
-// THE DERIVATION READERS were here and are now `family/derivation.rs`:
-// `factor_versor`, `occupied_lanes`, `adjoined_basis`, `peel_versor`,
-// `peel_versor_with` and `derivation_of`. They are what a MIND makes of
-// a carriage this file measured, they are only correct together, and L12
-// gave them a fifth reader — `occupied_lanes` — which put this file over
-// the §1.1 reading bound. Moved, not rewritten (§1.6).
-
-/// THE CHAIN OF ONE SECTION between two bodies: each cell of the source
+/// THE CHAIN OF ONE SECTION between two bodies: each lamina of the source
 /// carried by `v` and read on the image, with the hue it left and the hue
 /// it landed on. The chain is the sensor's planar token (16.5); the frame
-/// rides on the carriage. A body across frames puts two cells on one site
+/// rides on the carriage. A body across frames puts two links on one site
 /// of the section, which A5 refuses downstream — its chain is its sections,
 /// one per frame (51.4).
 pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i64, i64, u8, u8)> {
     let mut chain = Vec::new();
     match (a, b) {
         (Some(src), Some(dst)) => {
-            for &(r, c, k, h) in &src.cells {
+            for &(r, c, k, h) in &src.laminae {
                 let h2 = element::carry_center(v, r, c, k)
                     .and_then(|p| {
-                        let (tr, tc, tk) = element::cell_of(&p)?;
-                        dst.cells
+                        let (tr, tc, tk) = element::site_of(&p)?;
+                        dst.laminae
                             .binary_search_by(|x| (x.0, x.1, x.2).cmp(&(tr, tc, tk)))
                             .ok()
-                            .map(|i| dst.cells[i].3)
+                            .map(|i| dst.laminae[i].3)
                     })
-                    // A cell the carriage lands nowhere in the image keeps
+                    // A lamina the carriage lands nowhere in the image keeps
                     // its own hue: nothing moved it.
                     .map_or(h, |found| found);
                 chain.push((r, c, h, h2));
             }
         }
         (None, Some(dst)) => {
-            for &(r, c, _, h) in &dst.cells {
+            for &(r, c, _, h) in &dst.laminae {
                 chain.push((r, c, 0, h));
             }
         }
         (Some(src), None) => {
-            for &(r, c, _, h) in &src.cells {
+            for &(r, c, _, h) in &src.laminae {
                 chain.push((r, c, h, 0));
             }
         }
@@ -237,11 +232,11 @@ pub(crate) fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
 }
 
 /// What a demand vertex stands for: its kind, the chart it is listed under
-/// and the cells of the bodies it carries (50.5).
-pub type Demanded = (crate::transducer::sentence::Demand, Invariant, Vec<crate::transducer::sentence::Cell>);
+/// and the links of the bodies it carries (50.5).
+pub type Demanded = (crate::transducer::sentence::Demand, Invariant, Vec<Link>);
 
 /// 50.5: a demand vertex over the bodies it stands for.
-pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invariant, bodies: Vec<crate::transducer::sentence::Cell>) -> Vertex {
+pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invariant, bodies: Vec<Link>) -> Vertex {
     Vertex::Demand { kind, chart: chart.clone(), bodies }
 }
 
@@ -292,21 +287,6 @@ pub(crate) fn word_vertex_with(
         None,
     ))
 }
-
-// `word_form` was here: `word_or_demand(a, b)?.ok()`, with no caller in
-// the tree. It is deleted rather than threaded — a wrapper that discards
-// the demand and now would also have to be handed a presentation and a
-// budget to discard them too.
-
-// `supports_overlap(a, b)` was here. It built a fresh cell index of `a` and
-// asked whether any cell of `b` was in it — a correct answer to "do these
-// two bodies meet", asked inside two Cartesian products in `pair.rs`, so the
-// index was rebuilt once per PAIR and the walk ran over the whole of the
-// other scene. Its callers now read the cell fibre directly: one index of a
-// scene's bodies by cell, built once, and a body's overlaps are the union of
-// the fibres at its own cells — which costs that body's own support instead
-// of the other scene's cardinality (rule 1). There is no third caller and no
-// reason to keep a second way to ask.
 
 /// The axes on which two charts differ, by position; an axis one chart
 /// lacks differs.
@@ -399,7 +379,7 @@ pub(crate) fn edge_transport(
 ) -> Result<crate::transducer::sentence::Transport, EdgeRefusal> {
     let union = |x: &Body, y: &Body| -> Shape {
         let mut pos: Vec<(i64, i64, i64)> =
-            x.cells.iter().chain(y.cells.iter()).map(|&(r, c, k, _)| (r, c, k)).collect();
+            x.laminae.iter().chain(y.laminae.iter()).map(|&(r, c, k, _)| (r, c, k)).collect();
         pos.sort_unstable();
         pos.dedup();
         blade::shape_of(&pos)
@@ -413,20 +393,20 @@ pub(crate) fn edge_transport(
 
 /// A body's support on the three coordinates of the base, sorted.
 pub(crate) fn support_of(body: &Body) -> Vec<(i64, i64, i64)> {
-    let mut s: Vec<(i64, i64, i64)> = body.cells.iter().map(|&(r, c, k, _)| (r, c, k)).collect();
+    let mut s: Vec<(i64, i64, i64)> = body.laminae.iter().map(|&(r, c, k, _)| (r, c, k)).collect();
     s.sort_unstable();
     s.dedup();
     s
 }
 
-/// THE RING OF A SUPPORT: the cells one 4-step from it within each of its
-/// frames — the adjacent ring of each lamina, lifted back to its frame.
+/// THE RING OF A SUPPORT: the sites one 4-step from it within each of its
+/// frames — the adjacent ring of each section, lifted back to its frame.
 /// Adjacency along `e₃` is the corpus's own (51.3) and is not a ring.
 pub(crate) fn ring_of_support(support: &[(i64, i64, i64)]) -> Vec<(i64, i64, i64)> {
     let mut out = Vec::new();
     for (k, section) in blade::sections(support) {
-        let cells: Vec<Cell3> = section.iter().map(|&(r, c)| (r, c, 0)).collect();
-        out.extend(blade::adjacent_ring(&cells).into_iter().map(|(r, c, _)| (r, c, k)));
+        let painted: Vec<Painted> = section.iter().map(|&(r, c)| (r, c, 0)).collect();
+        out.extend(blade::adjacent_ring(&painted).into_iter().map(|(r, c, _)| (r, c, k)));
     }
     out.sort_unstable();
     out.dedup();
@@ -440,14 +420,17 @@ pub(crate) fn frame_of(g: &Grid) -> (usize, usize) {
 /// Does everything a form spoke lie inside the grid it was spoken against?
 /// The test extraction's step 3 decides a glue by, and the same test a
 /// voice answers a demand by (L8q), so the two organs read one thing.
-pub fn cells_subset_of_grid(cells: &[Cell3], g: &Grid) -> bool {
-    cells.iter().all(|&(r, c, h)| {
+pub fn painted_within_grid(painted: &[Painted], g: &Grid) -> bool {
+    painted.iter().all(|&(r, c, h)| {
         g.get(r as usize)
             .and_then(|row| row.get(c as usize))
             .copied()
             == Some(h)
     })
 }
+
+/// The modules not yet swept name the reading above by the retired word.
+pub use painted_within_grid as cells_subset_of_grid;
 
 /// The scene's bodies indexed by their own chart (Y4, 24.4, 20).
 /// A chart whose fiber holds exactly one body is "the unique one", read as

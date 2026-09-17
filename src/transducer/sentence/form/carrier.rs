@@ -732,7 +732,7 @@ impl Form {
     ///
     /// `pairs` is the incidence: which member of `i` relates to which member
     /// of `j`. It comes from the site occupancy that created the face
-    /// (`star_and_cell_faces`) or from the pairs a face already carries when
+    /// (`star_and_site_faces`) or from the pairs a face already carries when
     /// its placements are re-derived. IT IS NEVER THE PRODUCT OF THE TWO
     /// FIBRES — a face exists because two BODIES' supports meet, and that
     /// incidence is between bodies, so it says which member relates to which.

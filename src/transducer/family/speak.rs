@@ -1,8 +1,8 @@
 // 21 — SPEAKING a rule: the form applied to a scene, and what it emits.
 //
 //! `apply_form` carries the rule's vertices onto the scene's bodies and
-//! emits the cells they name. A hue no neighbour supplies is refused; a
-//! spoken grid that does not grow to the frame is not a speech.
+//! emits the painted sites they name. A hue no neighbour supplies is
+//! refused; a spoken grid that does not grow to the frame is not a speech.
 
 use super::*;
 
@@ -11,8 +11,8 @@ pub(crate) fn grows_to_frame(a: &Grid, b: &Grid) -> bool {
     if fa != fb || fa.0 == 0 || fa.1 == 0 {
         return false;
     }
-    let ins: Vec<Cell3> = crate::arc::grid_to_cells(a);
-    let outs: Vec<Cell3> = crate::arc::grid_to_cells(b);
+    let ins: Vec<Painted> = crate::arc::painted_of_grid(a);
+    let outs: Vec<Painted> = crate::arc::painted_of_grid(b);
     if ins.is_empty() || outs.len() <= ins.len() {
         return false;
     }
@@ -36,7 +36,7 @@ pub(crate) fn grows_to_frame(a: &Grid, b: &Grid) -> bool {
             if r < 0 || c < 0 || (r as usize) >= fa.0 || (c as usize) >= fa.1 {
                 continue;
             }
-            if keyed.contains(&cell_pos_key(r, c)) {
+            if keyed.contains(&site_key(r, c)) {
                 continue;
             }
             occ.push((r, c, 0));
@@ -67,24 +67,25 @@ pub(crate) fn emit_carried(
     v: &Versor,
     map: &[(u8, u8)],
     fy: (usize, usize),
-    cells: &mut Vec<Cell3>,
-    remainder: &mut Vec<Cell3>,
+    painted: &mut Vec<Painted>,
+    remainder: &mut Vec<Painted>,
 ) {
     let hue = hue_map_from_pairs(map);
-    for &(r, c, k, h) in &body.cells {
+    for &(r, c, k, h) in &body.laminae {
         // A hue the map does not move keeps its own colour: that is what
         // the map says about it (rule 11).
         let spoken = match hue[h as usize] {
             Some(t) => t,
             None => h,
         };
-        match element::carry_cell(v, r, c, k) {
-            // The grid spoken onto is the body's own frame: a cell carried
-            // into another frame is not spoken on it, and is remainder.
+        match element::carry_lamina(v, r, c, k) {
+            // The grid spoken onto is the body's own frame: a lamina
+            // carried into another frame is not spoken on it, and is
+            // remainder.
             Some(image) if image.iter().all(|&(_, _, f)| f == k) => {
                 for (i, j, _) in image {
                     if i >= 0 && j >= 0 && (i as usize) < fy.0 && (j as usize) < fy.1 {
-                        cells.push((i, j, spoken));
+                        painted.push((i, j, spoken));
                     }
                 }
             }
@@ -96,7 +97,7 @@ pub(crate) fn emit_carried(
 pub(crate) fn hue_from_neighbors(r: i64, c: i64, occ: &crate::network::nerve::Keyed<u8>) -> Option<u8> {
     let mut held: Option<u8> = None;
     for (nr, nc) in [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)] {
-        let Some(&h) = occ.get(&cell_pos_key(nr, nc)) else {
+        let Some(&h) = occ.get(&site_key(nr, nc)) else {
             continue;
         };
         match held {
@@ -135,8 +136,8 @@ pub fn apply_form_on(
     for (i, body) in bodies.iter().enumerate() {
         atlas.admit(&body.moduli, (i as u64).to_le_bytes());
     }
-    let mut cells: Vec<Cell3> = Vec::new();
-    let mut remainder: Vec<Cell3> = Vec::new();
+    let mut painted: Vec<Painted> = Vec::new();
+    let mut remainder: Vec<Painted> = Vec::new();
     let mut unspoken: Vec<u16> = Vec::new();
     let mut unfolded = false;
     for (vi, v) in f.vertices.iter().enumerate() {
@@ -145,9 +146,8 @@ pub fn apply_form_on(
             // ONE VERTEX SPEAKS EVERY BODY IT ACTS ON. 21 step 1: two bodies
             // of different shapes carried by one transport correspond, and
             // each stands on its own chart. A vertex acting on two charts
-            // spoke ONE of them while the other body went unreached and
-            // unmentioned — on `05f2a901`, one of two, four cells emitted
-            // where the pair needs both bodies carried.
+            // that spoke ONE of them would leave the other body unreached
+            // and unmentioned where the pair needs both bodies carried.
             //
             // THE MEMBER IS THE UNIT, so the carriage and the gauge are read
             // at the chart whose bodies they are being applied to. Reading
@@ -198,7 +198,7 @@ pub fn apply_form_on(
                         };
                         let i = u64::from_le_bytes(raw) as usize;
                         if let Some(body) = bodies.get(i) {
-                            emit_carried(body, &versor, &member.gauge, fy, &mut cells, &mut remainder);
+                            emit_carried(body, &versor, &member.gauge, fy, &mut painted, &mut remainder);
                         }
                     }
                 }
@@ -214,7 +214,7 @@ pub fn apply_form_on(
                 let (_e, s) = crystal.by_address(address)?;
                 let composed = placement.compose(q);
                 let sp = crystal.speak_form(&s, x, &composed)?;
-                cells.extend(sp.cells);
+                painted.extend(sp.painted);
                 remainder.extend(sp.remainder);
             }
             // A REBASED VERTEX SPEAKS EVERY CHART `of` ACTED ON, as a Word
@@ -260,7 +260,7 @@ pub fn apply_form_on(
                         };
                         let i = u64::from_le_bytes(raw) as usize;
                         if let Some(body) = bodies.get(i) {
-                            emit_carried(body, &versor, &member.gauge, fy, &mut cells, &mut remainder);
+                            emit_carried(body, &versor, &member.gauge, fy, &mut painted, &mut remainder);
                         }
                     }
                 }
@@ -279,31 +279,31 @@ pub fn apply_form_on(
         }
     }
     if unfolded {
-        if cells.is_empty() {
-            cells = bodies.iter().flat_map(|b| b.cells.iter().map(|&(r, c, _, h)| (r, c, h))).collect();
+        if painted.is_empty() {
+            painted = bodies.iter().flat_map(|b| b.laminae.iter().map(|&(r, c, _, h)| (r, c, h))).collect();
         }
-        // A frame whose cell count does not fit the carrier is wider than
+        // A frame whose site count does not fit the carrier is wider than
         // this speech fills; nothing is unfolded into it.
         let need = fy.0.checked_mul(fy.1)?;
         let mut guard = 0u32;
-        while cells.len() < need && guard < need as u32 {
+        while painted.len() < need && guard < need as u32 {
             guard += 1;
-            let ring = crate::transducer::blade::adjacent_ring(&cells);
+            let ring = crate::transducer::blade::adjacent_ring(&painted);
             let mut hues: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-            for &(r, c, h) in &cells {
-                hues.insert(cell_pos_key(r, c), h);
+            for &(r, c, h) in &painted {
+                hues.insert(site_key(r, c), h);
             }
             let mut grew = false;
             for (r, c, _) in ring {
                 if r < 0 || c < 0 || (r as usize) >= fy.0 || (c as usize) >= fy.1 {
                     continue;
                 }
-                if hues.contains(&cell_pos_key(r, c)) {
+                if hues.contains(&site_key(r, c)) {
                     continue;
                 }
                 match hue_from_neighbors(r, c, &hues) {
                     Some(h) => {
-                        cells.push((r, c, h));
+                        painted.push((r, c, h));
                         grew = true;
                     }
                     None => remainder.push((r, c, 0)),
@@ -314,51 +314,42 @@ pub fn apply_form_on(
             }
         }
     }
-    cells.sort_unstable();
-    cells.dedup();
+    painted.sort_unstable();
+    painted.dedup();
     Some(Speech {
         frame: fy,
-        cells,
+        painted,
         remainder,
         unspoken,
     })
 }
 
-/// What a form says about a new input: the spoken set of cells on the
-/// output frame, and the remainder — input cells the form does not speak.
+/// What a form says about a new input: the spoken painted sites on the
+/// output frame, and the remainder — input sites the form does not speak.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Speech {
     pub frame: (usize, usize),
-    pub cells: Vec<Cell3>,
-    pub remainder: Vec<Cell3>,
+    pub painted: Vec<Painted>,
+    pub remainder: Vec<Painted>,
     /// Vertex indices whose class fiber was empty on this grid.
     pub unspoken: Vec<u16>,
 }
 
 impl Speech {
     /// The wire form: the spoken set laid on the frame's rectangle. Only
-    /// here does a rectangle exist; an unspoken cell reads as the ground.
+    /// here does a rectangle exist; an unspoken site reads as the ground.
     ///
-    /// `None` WHERE A CELL DOES NOT FIT THE FRAME. This wrote
-    /// `out[r as usize][c as usize] = h` straight from `self.cells` with no
-    /// bound on either coordinate, so a transported cell outside the output
-    /// rectangle panicked the process: `index out of bounds: the len is 3
-    /// but the index is 9`, four times in 47 minutes on the fleet at
-    /// 820678a, and every voice death in that window.
-    ///
-    /// It is not an unexpected state. It is exactly the condition the court
-    /// names `FAIL_PAST_FRAME` — a cell landing past the image frame's
-    /// extent — which the court refuses and which a rule gets wrong often
-    /// enough to be 186 of 488 body refusals. The court refused it and the
-    /// voice indexed on it.
-    ///
-    /// A speech that cannot be laid on its own frame is not a speech, so it
-    /// is refused here and every caller decides (rule 11). Dropping the cell
-    /// instead would lay down a grid that silently is not what the form
-    /// said, which is the fault this engine has spent the day removing.
+    /// `None` WHERE A SITE DOES NOT FIT THE FRAME. A transported site
+    /// outside the output rectangle is exactly the condition the court
+    /// names `FAIL_PAST_FRAME` — a site landing past the image frame's
+    /// extent — and a speech that cannot be laid on its own frame is not a
+    /// speech, so it is refused here and every caller decides (rule 11).
+    /// Dropping the site instead would lay down a grid that silently is
+    /// not what the form said, and indexing on it would kill the process
+    /// where the court refuses.
     pub fn grid(&self) -> Option<Grid> {
         let mut out: Grid = vec![vec![0u8; self.frame.1]; self.frame.0];
-        for &(r, c, h) in &self.cells {
+        for &(r, c, h) in &self.painted {
             let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) else {
                 return None;
             };
@@ -373,18 +364,18 @@ impl Speech {
 /// from a training pair's absolute versor. Several bodies on one germ is
 /// a section; one body on two germs is a section whose face words to
 /// already-placed anchors agree. None only when two anchors conflict on
-/// the same output cells.
+/// the same output sites.
 pub fn speak_rule(rule: &crate::transducer::sentence::SentenceRule, x: &Grid, crystal: &dyn Crystal) -> Option<Speech> {
     apply_form(&rule.form, x, &crate::transducer::alphabet::Word::identity(), crystal)
 }
 
 /// The residual between what was spoken and what was observed, as a chain
-/// (row, col, spoken hue, observed hue) over every cell that differs.
+/// (row, col, spoken hue, observed hue) over every site that differs.
 pub(crate) fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i64, u8, u8)> {
     let mut out = Vec::new();
     for (r, row) in observed.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
-            // A cell the speech does not reach is unoccupied there, and
+            // A site the speech does not reach is unoccupied there, and
             // hue 0 IS absence in this encoding.
             let s = match spoken.and_then(|g| g.get(r)).and_then(|row| row.get(c)) {
                 Some(h) => *h,

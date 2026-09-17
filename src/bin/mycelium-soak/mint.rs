@@ -341,7 +341,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                  | unspoken {:?} | cells emitted {} | residual vs observed {}",
                 bodies.len(),
                 spoken.as_ref().map(|s| s.unspoken.len()),
-                spoken.as_ref().map_or(0, |s| s.cells.len()),
+                spoken.as_ref().map_or(0, |s| s.painted.len()),
                 spoken.as_ref().map_or(0, |s| {
                     let g = s.grid();
                     let mut n = 0usize;

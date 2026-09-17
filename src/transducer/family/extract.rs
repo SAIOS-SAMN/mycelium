@@ -12,13 +12,11 @@ use crate::network::nerve::Keyed;
 
 /// Seven moves on pair forms (chapter 21), under the stroke (L8w, rule 10).
 ///
-/// Extraction from cells SEARCHES for correspondence, so its cost grows
-/// with the scene and not with what the mind holds: on
-/// `0607ce86.json` — three pairs at 21×22 — it did not return in 900s,
-/// where twelve smaller families take six seconds together. A voice on the
-/// fleet was therefore stalled on one listing with no way out. Every step
-/// below spends the caller's `Budget`, and an extraction the budget cuts
-/// off MEASURED NOTHING: it returns `None` and says nothing at all. A
+/// Extraction from painted sites SEARCHES for correspondence, so its cost
+/// grows with the scene and not with what the mind holds, and a voice
+/// would otherwise stall on one listing with no way out. Every step below
+/// spends the caller's `Budget`, and an extraction the budget cuts off
+/// MEASURED NOTHING: it returns `None` and says nothing at all. A
 /// truncated bundle is not a smaller rule — a rule read off two pairs of
 /// four states what those two agree on, which the other two may refuse —
 /// and minting it would utter as complete a shape the mind never
@@ -180,7 +178,7 @@ pub fn extract_rule_with(
     };
 
     let mut mult_charts: Keyed<u32> = Keyed::new();
-    let mut mult_demands: Vec<(crate::transducer::sentence::Demand, Invariant, Vec<crate::transducer::sentence::Cell>)> = Vec::new();
+    let mut mult_demands: Vec<(crate::transducer::sentence::Demand, Invariant, Vec<Link>)> = Vec::new();
     for (k, members) in class_acts.scoped() {
         for (ck, a) in members.scoped() {
             let mut mk = k.clone();
@@ -320,7 +318,7 @@ pub fn extract_rule_with(
         demands: crate::network::nerve::Keyed::new(),
     };
     trace::trace_n("extract/2 faces", form.vertices.len(), budget);
-    // 2. Faces named by the pair forms (star + cell overlap). Constancy is
+    // 2. Faces named by the pair forms (star + site overlap). Constancy is
     // over the pairs where both ends exist; a missing end is not a violation.
     let mut candidates: crate::network::nerve::Keyed<(End, End)> = crate::network::nerve::Keyed::new();
     for pf in &pair_forms {
@@ -479,7 +477,7 @@ pub fn extract_rule_with(
             let reproduces = family.iter().all(|(x, y)| {
                 crystal
                     .speak_form(&s, x, &placement)
-                    .is_some_and(|sp| cells_subset_of_grid(&sp.cells, y))
+                    .is_some_and(|sp| painted_within_grid(&sp.painted, y))
             });
             if reproduces {
                 let _ = form.glue(&s, e.address(), placement.clone(), e.magnitude());

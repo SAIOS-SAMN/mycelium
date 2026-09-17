@@ -57,13 +57,13 @@ impl Scenery {
     ) -> u16 {
         let ix = self.vertices.len() as u16;
         // THE SUPPORT IS KEYED BY MEMBER — vertex AND chart (D10) — because a
-        // face relates two BODIES and the support is a body's cells. A vertex
+        // face relates two BODIES and the support is a body's sites. A vertex
         // standing at several charts has a support at each; the vertices this
         // builds stand at one, so each contributes one member, and the pairing
-        // now names which body met which instead of leaving it to be guessed.
+        // names which body met which instead of leaving it to be guessed.
         // A VERTEX STANDING AT NO CHART GETS NO SUPPORT ENTRY. The support is a
-        // BODY's cells and the member key is where it is filed, so a vertex with
-        // no member is not an occupant of any cell — absence, not a chart
+        // BODY's sites and the member key is where it is filed, so a vertex with
+        // no member is not an occupant of any site — absence, not a chart
         // defaulted in for it (rule 11).
         let member = vertex.face_chart().map(|c| member_key(ix, c.key().as_bytes()));
         self.vertices.push(vertex);
@@ -192,26 +192,23 @@ fn unpaired_demands(
     // happened to return the bodies in.
     let mut sourced_in: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let mut imaged_out: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    // WHICH OUTPUT BODIES STAND AT EACH CELL, read once.
+    // WHICH OUTPUT BODIES STAND AT EACH SITE, read once. The question is
+    // only "what stands where I stand": a body's overlap is a keyed read at
+    // its own sites and costs its own support, not the other scene's
+    // cardinality (rule 1), where a walk of every output candidate for
+    // every input candidate would be a product search across two scenes.
     //
-    // This walked EVERY output candidate for EVERY input candidate and asked
-    // `supports_overlap`, which itself rebuilt the input body's whole cell
-    // index on each of those passes — a product search across two scenes
-    // with a third walk inside it, where the question is only "what stands
-    // where I stand". A body's overlap is a keyed read at its own cells and
-    // costs its own support, not the other scene's cardinality (rule 1).
-    //
-    // Built in the outputs' own key order, so the fibre at a cell is in
+    // Built in the outputs' own key order, so the fibre at a site is in
     // content order and two minds that perceived the same pair read the same
     // demands in the same order.
-    let mut at_cell: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>> =
+    let mut at_site: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>> =
         crate::network::nerve::Keyed::new();
     for (ja, oc) in outs.cands.scoped() {
         if used_out.contains(&ja) || oc.kind != Whole {
             continue;
         }
-        for &(r, c, f, _) in &oc.body.cells {
-            at_cell.nested_insert(support_key(r, c, f), ja.clone(), ());
+        for &(r, c, f, _) in &oc.body.laminae {
+            at_site.nested_insert(base_key(r, c, f), ja.clone(), ());
         }
     }
     for (ia, ic) in ins.cands.scoped() {
@@ -219,10 +216,10 @@ fn unpaired_demands(
             continue;
         }
         // The outputs this body meets: the union of the fibres at its own
-        // cells. A body meets nothing where it stands on nothing.
+        // sites. A body meets nothing where it stands on nothing.
         let mut meets: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for &(r, c, f, _) in &ic.body.cells {
-            if let Some(here) = at_cell.get(&support_key(r, c, f)) {
+        for &(r, c, f, _) in &ic.body.laminae {
+            if let Some(here) = at_site.get(&base_key(r, c, f)) {
                 for (ja, ()) in here.scoped() {
                     meets.insert(&ja, ());
                 }
@@ -256,10 +253,10 @@ fn unpaired_demands(
                 //
                 // A body with no image reaches this line because
                 // `versor_coset` found no versor carrying it onto anything in
-                // the output: the dilation is read from the per-cell spread
-                // as a rational square, the rotation from the moment
+                // the output: the dilation is read from the per-lamina
+                // spread as a rational square, the rotation from the moment
                 // harmonics, and every candidate is verified by carrying
-                // every cell of one into the other and back. When that
+                // every lamina of one into the other and back. When that
                 // refuses, it refuses exactly — "a rational square, or the
                 // bodies are not similar in ℚ — a refusal, never a rounding".
                 // So a scene whose bodies ARE related by a scale already
@@ -272,10 +269,11 @@ fn unpaired_demands(
                 // both frames on a common refinement `K_lcm = lcm(h) × lcm(w)`
                 // makes any two rectangles comparable and turns the deficit
                 // into a recolour: measured on the bar fixture, an input
-                // `{(0,0,1),(0,1,1)}` and an output with one cell created at
-                // `(0,2,7)` have hulls 1×2 and 1×3, lift to `[1,1,1,1,1,1]`
-                // and `[1,1,1,1,7,7]` on `K_6`, and read as a six-cell bar
-                // whose tail changed hue. The bifurcation — one body carried
+                // `{(0,0,1),(0,1,1)}` and an output with one painted site
+                // created at `(0,2,7)` have hulls 1×2 and 1×3, lift to
+                // `[1,1,1,1,1,1]` and `[1,1,1,1,7,7]` on `K_6`, and read as a
+                // six-site bar whose tail changed hue. The bifurcation — one
+                // body carried
                 // by the identity, one body with no preimage — is gone, and
                 // with it the creation. Seven fixtures said so.
                 //
@@ -293,8 +291,8 @@ fn unpaired_demands(
                 // grow. `family::refine` holds the arithmetic and is wired to
                 // nothing for this reason.
                 let axes: Vec<u16> = (0..ic.body.moduli.0.len() as u16).collect();
-                let cells: Vec<_> = ic.body.cells.iter().map(|&(r, c, _, h)| (r, c, h, 0u8)).collect();
-                out.push((Demand::TopologicalDeformation { image: Invariant(Vec::new()), axes }, ic.body.moduli.clone(), cells));
+                let links: Vec<_> = ic.body.laminae.iter().map(|&(r, c, _, h)| (r, c, h, 0u8)).collect();
+                out.push((Demand::TopologicalDeformation { image: Invariant(Vec::new()), axes }, ic.body.moduli.clone(), links));
             }
             Some(_) => {
                 for (_, (image, ja)) in images.scoped() {
@@ -331,11 +329,11 @@ fn unpaired_demands(
                     // class on the form that no measurement stands behind
                     // (rule 11).
                     let axes = differing_axes(&ic.body.moduli, image);
-                    let cells = delta_cells(&ic.body, &oc.body);
+                    let links = delta_links(&ic.body, &oc.body);
                     let demand = (
                         Demand::TopologicalDeformation { image: image.clone(), axes },
                         ic.body.moduli.clone(),
-                        cells,
+                        links,
                     );
                     let Some(cover) = read else {
                         // An UNMEASURED cover leaves the demand exactly as
@@ -351,7 +349,7 @@ fn unpaired_demands(
                         out.push(d.clone());
                     }
                     // The demand's fate is the FORM's to decide: it
-                    // dissolves when every cell of both bodies is carried
+                    // dissolves when every lamina of both bodies is carried
                     // AND no loop over the carried pieces stands (50.8).
                     // The second half is a reading of the form's loops and
                     // cannot be taken here.
@@ -362,24 +360,24 @@ fn unpaired_demands(
     }
     // The unpaired output bodies no deformation imaged: a SOURCE when input
     // charts carry onto it by shape (every one standing, their number the
-    // multiplicity; an in-place source's hues ride the cells), a CREATION
+    // multiplicity; an in-place source's hues ride the links), a CREATION
     // when none does.
-    // THE SECOND PRODUCT, KEYED THE SAME WAY. This walked every input
-    // candidate for every output candidate and asked `versor_between`, which
-    // builds a coset and verifies it cell by cell — the most expensive
-    // question in the file, asked across the whole Cartesian product.
+    // THE SECOND PRODUCT, KEYED THE SAME WAY. `versor_between` builds a
+    // coset and verifies it lamina by lamina — the most expensive question
+    // in the file — so it is not asked across the Cartesian product of the
+    // two scenes.
     //
     // A VERSOR IS A BIJECTION ON THE SUPPORT: `versor_coset` verifies by
-    // carrying every cell of one body into a cell of the other and back, so
-    // two shapes of different cell counts can never be related by one. The
-    // count is a coordinate the blade already carries and it is exactly
-    // versor-invariant, so it strata the inputs and the coset is built only
-    // within a stratum. It is a NECESSARY condition and not a sufficient
-    // one, so `versor_between` still decides — nothing is admitted by the
-    // key that the versor does not carry.
+    // carrying every lamina of one body into a lamina of the other and
+    // back, so two shapes of different lamina counts can never be related
+    // by one. The count is a coordinate the blade already carries and it is
+    // exactly versor-invariant, so it strata the inputs and the coset is
+    // built only within a stratum. It is a NECESSARY condition and not a
+    // sufficient one, so `versor_between` still decides — nothing is
+    // admitted by the key that the versor does not carry.
     let mut ins_by_support: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>> =
         crate::network::nerve::Keyed::new();
-    let mut in_at_cell: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>> =
+    let mut in_at_site: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>> =
         crate::network::nerve::Keyed::new();
     for (ia, ic) in ins.cands.scoped() {
         if ic.kind != Whole {
@@ -387,25 +385,25 @@ fn unpaired_demands(
         }
         let n = ic.body.shape.blade.support.len() as u32;
         ins_by_support.nested_insert(n.to_le_bytes(), ia.clone(), ());
-        for &(r, c, f, _) in &ic.body.cells {
-            in_at_cell.nested_insert(support_key(r, c, f), ia.clone(), ());
+        for &(r, c, f, _) in &ic.body.laminae {
+            in_at_site.nested_insert(base_key(r, c, f), ia.clone(), ());
         }
     }
     for (ja, oc) in outs.cands.scoped() {
         if used_out.contains(&ja) || oc.kind != Whole || imaged_out.contains(&ja) {
             continue;
         }
-        // The inputs standing where this body stands, read at its own cells.
+        // The inputs standing where this body stands, read at its own sites.
         let mut met_by: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for &(r, c, f, _) in &oc.body.cells {
-            if let Some(here) = in_at_cell.get(&support_key(r, c, f)) {
+        for &(r, c, f, _) in &oc.body.laminae {
+            if let Some(here) = in_at_site.get(&base_key(r, c, f)) {
                 for (ia, ()) in here.scoped() {
                     met_by.insert(&ia, ());
                 }
             }
         }
         let mut charts: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        let mut cells: Vec<crate::transducer::sentence::Cell> = Vec::new();
+        let mut links: Vec<Link> = Vec::new();
         let n = (oc.body.shape.blade.support.len() as u32).to_le_bytes();
         let congruent = match ins_by_support.get(&n) {
             Some(c) => c.scoped().map(|(ia, ())| ia).collect::<Vec<_>>(),
@@ -420,50 +418,50 @@ fn unpaired_demands(
             };
             charts.insert(ic.body.moduli.key(), ());
             if sourced_in.contains(&ia) && met_by.contains(&ia) {
-                cells.extend(chain_of(Some(&ic.body), Some(&oc.body), &v));
+                links.extend(chain_of(Some(&ic.body), Some(&oc.body), &v));
             }
         }
-        if cells.is_empty() {
-            cells = oc.body.cells.iter().map(|&(r, c, _, h)| (r, c, 0u8, h)).collect();
+        if links.is_empty() {
+            links = oc.body.laminae.iter().map(|&(r, c, _, h)| (r, c, 0u8, h)).collect();
         }
         let kind = match charts.scoped().next() {
             None => Demand::Creation,
             Some(_) => Demand::Source { multiplicity: charts.len() as u32 },
         };
-        out.push((kind, oc.body.moduli.clone(), cells));
+        out.push((kind, oc.body.moduli.clone(), links));
     }
     out
 }
 
-/// The cells a deformation stands for: the union of both bodies' supports,
-/// each with the hue before and after (0 where a body has no cell).
-fn delta_cells(a: &Body, b: &Body) -> Vec<crate::transducer::sentence::Cell> {
+/// The links a deformation stands for: the union of both bodies' supports,
+/// each with the hue before and after (0 where a body has no lamina).
+fn delta_links(a: &Body, b: &Body) -> Vec<Link> {
     let mut before: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, f, h) in &a.cells {
-        before.insert(support_key(r, c, f), h);
+    for &(r, c, f, h) in &a.laminae {
+        before.insert(base_key(r, c, f), h);
     }
     let mut after: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, f, h) in &b.cells {
-        after.insert(support_key(r, c, f), h);
+    for &(r, c, f, h) in &b.laminae {
+        after.insert(base_key(r, c, f), h);
     }
-    let mut cells: Vec<crate::transducer::sentence::Cell> = Vec::new();
-    for &(r, c, f, h) in &a.cells {
-        // A cell the image does not hold is absent there, and hue 0 IS
+    let mut links: Vec<Link> = Vec::new();
+    for &(r, c, f, h) in &a.laminae {
+        // A site the image does not hold is absent there, and hue 0 IS
         // absence in this encoding.
-        let gone = match after.get(&support_key(r, c, f)) {
+        let gone = match after.get(&base_key(r, c, f)) {
             Some(h2) => *h2,
             None => 0,
         };
-        cells.push((r, c, h, gone));
+        links.push((r, c, h, gone));
     }
-    for &(r, c, f, h) in &b.cells {
-        if !before.contains(&support_key(r, c, f)) {
-            cells.push((r, c, 0, h));
+    for &(r, c, f, h) in &b.laminae {
+        if !before.contains(&base_key(r, c, f)) {
+            links.push((r, c, 0, h));
         }
     }
-    cells.sort_unstable();
-    cells.dedup();
-    cells
+    links.sort_unstable();
+    links.dedup();
+    links
 }
 
 pub(crate) fn pair_form_uncached(
@@ -505,11 +503,8 @@ pub(crate) fn pair_form_uncached(
     // carried piece is a word vertex like any other, at the support it
     // landed on; the cover's meets are the faces between them; and the
     // class of a cycle of those faces is the form's loop holonomy, read
-    // once over the whole cycle rather than edge by edge inside the cover.
-    //
-    // The cover used to classify its own meets into carriers nothing read,
-    // so 161 carriages and 3 964 meets over twelve tasks reached no form
-    // and left only a tally.
+    // once over the whole cycle rather than edge by edge inside the cover,
+    // where a classification would reach no form and leave only a tally.
     let mut cover_vertex: crate::network::nerve::Keyed<u16> = crate::network::nerve::Keyed::new();
     // Vertex coordinate → the cover that placed it, so a loop's class is
     // attributed to the deformation it obstructs and to no other.
@@ -528,12 +523,12 @@ pub(crate) fn pair_form_uncached(
     // One demand vertex per (kind, chart) (50.5), the bodies it stands for
     // gathered under it; key order, never arrival order.
     let mut by_demand: crate::network::nerve::Keyed<Demanded> = crate::network::nerve::Keyed::new();
-    for (kind, chart, cells) in demanded {
+    for (kind, chart, links) in demanded {
         let key = crate::transducer::sentence::demand_key(&kind, &chart);
         match by_demand.get_mut(&key) {
-            Some((_, _, held)) => held.extend(cells),
+            Some((_, _, held)) => held.extend(links),
             None => {
-                by_demand.insert(key, (kind, chart, cells));
+                by_demand.insert(key, (kind, chart, links));
             }
         }
     }
@@ -570,9 +565,8 @@ pub(crate) fn pair_form_uncached(
     // a loop read from transports alone is flat however curved the scene
     // is. The edge is the other object: the transition between the two
     // pieces' OWN frames, `V_b ∘ V_a⁻¹`, which the cover already holds
-    // both halves of in `carried`. `FormFace::new` left it `None`, so
-    // `edge_holonomy` answered `None` for every loop in the tree and the
-    // reader has never been fed.
+    // both halves of in `carried`; a face built without it leaves
+    // `edge_holonomy` nothing to read.
     let mut edges = EdgeTally::default();
     for c in &covers {
         for (mk, ()) in c.cover.meets.scoped() {
@@ -653,15 +647,10 @@ pub(crate) fn pair_form_uncached(
             continue;
         };
         for (_, e) in es.scoped() {
-        // AND THE HUE IS THE COMPOSED GAUGE. This read
-        // `lp.vertices.windows(2).map(|p| (p[0] as u8, p[1] as u8))` — the
-        // loop's VERTEX INDICES cast to bytes — and handed them to
-        // `CycleType::of` as if they were a hue permutation. A member's
-        // position in a vector stood in for the colours it carries (rule
-        // 15), so the `𝒢` coordinate of every cover loop was a function of
-        // where its vertices happened to sit, and `Form::class_vector`
-        // beside it has always read the composed gauge instead: the cover
-        // and the pivot disagreed about what a loop's hue is.
+        // AND THE HUE IS THE COMPOSED GAUGE, which is what `Form::class_vector`
+        // reads beside this: a loop's `𝒢` coordinate is the colours it
+        // carries and never its vertices' positions cast to bytes (rule 15),
+        // so the cover and the pivot agree about what a loop's hue is.
         let hue = crate::transducer::sentence::CycleType::of(&e.gauge);
         let sigma = e.gauge.clone();
         let fill = crate::transducer::cech::classify(&e.word.rotor(), &e.carriage, hue);
@@ -669,7 +658,7 @@ pub(crate) fn pair_form_uncached(
         match fill {
             crate::transducer::cech::Fill::Congruent(g, ell) => {
                 let Some(class) = g.class_key() else { continue };
-                eprintln!("  cell filled {:02x}{:02x}… class {ell}", class.as_bytes()[0], class.as_bytes()[1]);
+                eprintln!("  simplex filled {:02x}{:02x}… class {ell}", class.as_bytes()[0], class.as_bytes()[1]);
                 form.torsion.insert(
                     class,
                     crate::transducer::sentence::FiledLoop { sigma, period: ell, chord: lp.chord },
@@ -689,7 +678,7 @@ pub(crate) fn pair_form_uncached(
         }
     }
     // THE DEMAND VERTICES, AFTER THE LOOPS. A deformation dissolves when
-    // every cell of both bodies is carried AND no loop over its pieces
+    // every lamina of both bodies is carried AND no loop over its pieces
     // stands (50.8): a finite-order holonomy is filed as torsion and the
     // sentence carries the class as its theorem, so a demand kept alive on
     // it would be a demand for what the form already says.
@@ -698,35 +687,35 @@ pub(crate) fn pair_form_uncached(
         if c.cover.uncarried == [0; 4] && !standing {
             continue;
         }
-        let (kind, chart, cells) = c.demand.clone();
+        let (kind, chart, links) = c.demand.clone();
         let key = crate::transducer::sentence::demand_key(&kind, &chart);
         match by_demand.get_mut(&key) {
-            Some((_, _, held)) => held.extend(cells),
+            Some((_, _, held)) => held.extend(links),
             None => {
-                by_demand.insert(key, (kind, chart, cells));
+                by_demand.insert(key, (kind, chart, links));
             }
         }
     }
-    for (_, (kind, chart, cells)) in by_demand.scoped() {
-        let mut cells = cells.clone();
-        cells.sort_unstable();
-        cells.dedup();
-        // The demand's cells are one section's (16.5); its support stands
+    for (_, (kind, chart, links)) in by_demand.scoped() {
+        let mut links = links.clone();
+        links.sort_unstable();
+        links.dedup();
+        // The demand's links are one section's (16.5); its support stands
         // in that section's frame.
-        let mut support: Vec<(i64, i64, i64)> = cells.iter().map(|&(r, c, _, _)| (r, c, 0)).collect();
+        let mut support: Vec<(i64, i64, i64)> = links.iter().map(|&(r, c, _, _)| (r, c, 0)).collect();
         support.sort_unstable();
         support.dedup();
-        scenery.place(demand_vertex(kind.clone(), chart, cells), support, None);
+        scenery.place(demand_vertex(kind.clone(), chart, links), support, None);
     }
     // ONE TRUTH: the form's vertices are the scenery's, and the supports
     // and carriages are keyed by the same coordinate the form's faces use,
     // so a vertex and what it stands on cannot drift apart between here and
-    // `star_and_cell_faces`.
+    // `star_and_site_faces`.
     form.vertices = scenery.vertices.clone();
     let n = form.vertices.len();
     // THE INCIDENCE IS THE OCCUPANCY, AND IT NAMES THE MEMBER PAIR (D10 item
-    // 5). `star_and_cell_faces` keys supports by member — vertex AND chart — and
-    // a cell names its occupants, so each pair it yields says which BODY of `i`
+    // 5). `star_and_site_faces` keys supports by member — vertex AND chart — and
+    // a site names its occupants, so each pair it yields says which BODY of `i`
     // met which body of `j`. Nothing here enumerates and nothing takes the
     // product of two fibres: the two charts are read straight off the two member
     // keys the pairing returned.
@@ -740,7 +729,7 @@ pub(crate) fn pair_form_uncached(
         .get(frame as usize)
         .and_then(|v| v.face_chart())
         .map(|c| member_key(frame, c.key().as_bytes()));
-    for (ak, bk) in star_and_cell_faces(frame_member.as_deref(), &scenery.supports) {
+    for (ak, bk) in star_and_site_faces(frame_member.as_deref(), &scenery.supports) {
         let (Some((i, cik)), Some((j, cjk))) = (read_member_key(&ak), read_member_key(&bk)) else {
             continue;
         };
@@ -781,11 +770,10 @@ pub(crate) fn pair_form_uncached(
     // WHAT A PAIR FORM COST, WHEN IT IS BIG ENOUGH TO MATTER. A held form
     // is pivoted every stroke and `trial` clones the whole of it once per
     // candidate, so a form's loop count is its price in both cores and
-    // bytes — 24 920 loops on one form held two voices at 3 GB and 85% of
-    // a core. The count alone does not say WHO named that many faces, and
-    // three namers meet here: the cover's own meets, the intra-cell chain,
-    // and the ring adjacency. The reading separates them, so the next
-    // explosion is attributed instead of hunted.
+    // bytes. The count alone does not say WHO named that many faces, and
+    // three namers meet here: the cover's own meets, the intra-site chain,
+    // and the ring adjacency. The reading separates them, so an explosion
+    // is attributed instead of hunted.
     //
     // The line is unconditional: a threshold on the loop count would be a
     // count deciding a branch (rule 2), and the gate refuses it — rightly,
@@ -843,16 +831,12 @@ pub(crate) fn pair_form_uncached(
     // right about a threshold on magnitude. This is not one: it is the
     // presence of the object the line is about. A form with no loop and no
     // cover meet has no holonomy, and `flat 0, finite 0, infinite 0` over
-    // nothing is the vacuous assertion at the instrument.
-    //
-    // Measured on the fleet at e98e8a2: 6535 pair forms in twelve minutes
-    // across five voices, of which 90% had ZERO cover meets and the median
-    // had zero loops. The tail is where every reading came from — one form
-    // carried 677 vertices, 4030 faces, 1305 cover meets and 3361 loops —
-    // and the tail is what this now prints.
+    // nothing is the vacuous assertion at the instrument; the tail of the
+    // distribution is where every reading comes from, and the tail is what
+    // this prints.
     if !form.loops.is_empty() || meet_faces > 0 {
         eprintln!(
-            "  pair form {n} vertices, {} faces ({meet_faces} cover meets, {} cell+ring), {} loops \
+            "  pair form {n} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} loops \
              (word holonomy: flat {flat}, finite {finite}, infinite {infinite} \
              | edge holonomy paths: flat {e_flat}, finite {e_fin}, infinite {e_inf} \
              | edges asked: measured {}, unspelled {}, unread {}, not rigid {})",

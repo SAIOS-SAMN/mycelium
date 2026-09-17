@@ -47,7 +47,7 @@ pub use speak::*;
 
 use super::blade::{self, Shape};
 use super::element::{self, Element, Versor};
-use super::sentence::{Form, FormFace, Vertex};
+use super::sentence::{base_key, Form, FormFace, Link, Vertex};
 use super::stalk::{Invariant, Standing};
 use std::cell::Cell;
 
@@ -247,38 +247,24 @@ pub fn frame_vertex() -> Vertex {
     Vertex::Frame
 }
 
-/// The key of a cell of one section — a grid's or a chain's, the sensor's
-/// planar token (16.5): its position written out.
-pub(crate) fn cell_pos_key(r: i64, c: i64) -> [u8; 32] {
+/// The key of a site of one section — a grid's or a chain's, the sensor's
+/// planar token (16.5): its position written out. A site of the base on
+/// its three coordinates is keyed by `sentence::base_key`.
+pub(crate) fn site_key(r: i64, c: i64) -> [u8; 32] {
     let mut k = [0u8; 32];
     k[..8].copy_from_slice(&r.to_le_bytes());
     k[8..16].copy_from_slice(&c.to_le_bytes());
     k
 }
 
-/// The key of a cell of a body's support on the three coordinates of the
-/// base (51.3): its position written out, so an occupancy over a stack
-/// keeps its frames apart.
-pub(crate) fn support_key(r: i64, c: i64, k: i64) -> [u8; 32] {
-    let mut key = [0u8; 32];
-    key[..8].copy_from_slice(&r.to_le_bytes());
-    key[8..16].copy_from_slice(&c.to_le_bytes());
-    key[16..24].copy_from_slice(&k.to_le_bytes());
-    key
-}
-
-// `pair_key(a: u16, b: u16)` and `decode_pair_key` stood here: the unordered
-// pair of two VERTICES, which is what `star_and_cell_faces` related before a
-// face's endpoints became coarser than its meaning. They are gone with their
-// last caller — the pairing relates MEMBERS now (`member_pair_key` below), so
-// the pair it returns says which body met which and there is no vertex pair left
-// for anything to reconstruct a member pair from.
+/// The modules not yet swept name a site's key by the retired word.
+pub(crate) use self::site_key as cell_pos_key;
 
 /// A MEMBER OF THE SCENE'S COMPLEX: a vertex and the chart it stands at
 /// there (D10). The supports a pairing reads are keyed by this, not by the
 /// vertex alone — a face exists because two BODIES' supports meet (21 step 2),
 /// and a vertex covering several bodies on several charts is several occupants
-/// of the cells they sit on.
+/// of the sites they sit on.
 ///
 /// Both halves are length-delimited so they read apart, and the vertex leads so
 /// the key order is the vertex order, which is content.
@@ -326,21 +312,21 @@ pub struct Carriage {
 }
 
 /// Carry `a` onto `b`: the versor from the moments, and the hue map read
-/// cell by cell on the base `(r, c, k)` — functional, or refused. One
+/// lamina by lamina on the base `(r, c, k)` — functional, or refused. One
 /// reading for a body in one frame and a body across frames: a frame-0
-/// body's cells stand at `k = 0` (51.3), which is their coordinate and not
-/// a second path.
+/// body's laminae stand at `k = 0` (51.3), which is their coordinate and
+/// not a second path.
 pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
     let v = blade::versor_between(&a.shape, &b.shape)?;
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, k, h) in &a.cells {
+    for &(r, c, k, h) in &a.laminae {
         let p = element::carry_center(&v, r, c, k)?;
-        let (tr, tc, tk) = element::cell_of(&p)?;
+        let (tr, tc, tk) = element::site_of(&p)?;
         let h2 = b
-            .cells
+            .laminae
             .binary_search_by(|x| (x.0, x.1, x.2).cmp(&(tr, tc, tk)))
             .ok()
-            .map(|i| b.cells[i].3)?;
+            .map(|i| b.laminae[i].3)?;
         let key = super::element::hue_pair_key(h, 0);
         match sigma.get(&key) {
             Some(t) if *t != h2 => return None,
@@ -373,10 +359,10 @@ pub fn carriage_with_core(a: &Body, b: &Body) -> Option<Carriage> {
         | crate::transducer::blade::surgery::SurgeryKind::SplitCut => {}
     }
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, k, h) in &a.cells {
+    for &(r, c, k, h) in &a.laminae {
         let Some(p) = element::carry_center(&v, r, c, k) else { continue };
-        let Some((tr, tc, tk)) = element::cell_of(&p) else { continue };
-        let Some(h2) = b.cells.binary_search_by(|x| (x.0, x.1, x.2).cmp(&(tr, tc, tk))).ok().map(|i| b.cells[i].3) else { continue };
+        let Some((tr, tc, tk)) = element::site_of(&p) else { continue };
+        let Some(h2) = b.laminae.binary_search_by(|x| (x.0, x.1, x.2).cmp(&(tr, tc, tk))).ok().map(|i| b.laminae[i].3) else { continue };
         let k = super::element::hue_pair_key(h, 0);
         match sigma.get(&k) {
             Some(t) if *t != h2 => return None,

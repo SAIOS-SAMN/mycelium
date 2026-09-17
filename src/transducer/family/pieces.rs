@@ -21,10 +21,8 @@ use crate::transducer::peel::ShellKind;
 /// A piece of a body: one shell, one hue, one connected component.
 ///
 /// The kind and the hue are ON ITS ADDRESS and are not carried beside it
-/// (law 12). They were fields because the cover's second pass indexed the
-/// output pieces by them to search for a carriage; the pass propagates the
-/// placed versors now and reads the image by position, so nothing asks a
-/// piece what kind it is.
+/// (law 12): the cover's second pass propagates the placed versors and
+/// reads the image by position, so nothing asks a piece what kind it is.
 pub(crate) struct Piece {
     pub(crate) body: Body,
 }
@@ -49,7 +47,7 @@ pub(crate) fn piece_key(kind: ShellKind, hue: u8, support: &[(i64, i64, i64)]) -
 /// is named the same way whichever pass placed it.
 ///
 /// Both passes assemble, and in opposite directions: the pullback takes
-/// Φ⁻¹(V) over the input pieces under an output piece's cells, and the
+/// Φ⁻¹(V) over the input pieces under an output piece's sites, and the
 /// propagation takes Φ(U) over the output pieces under a carried piece's
 /// image. Neither requires the two peels to agree on granularity, which
 /// is why each is assembled whole and carried once (50.8).
@@ -77,13 +75,11 @@ pub(crate) fn assembly_key(parts: &[Vec<u8>]) -> Vec<u8> {
 /// the image. Neither holds. A shape occurring once in the input and ten
 /// times in the image is one domain carried by ten versors — replication —
 /// and a shape occurring many times in the input and once in the image is
-/// many domains reaching one codomain — merging. Measured at a35bb9d with
-/// both injectivity conditions enforced: sixteen covers over twelve
-/// tasks, `filed 0 standing 0` in every one, and on a family with one
-/// input piece and ten output pieces exactly ONE carriage was placed. The
-/// nine refused were refused by bookkeeping, not by geometry, and with
-/// only one piece placed there is no second node in the nerve, so no
-/// transition exists to have an order at all.
+/// many domains reaching one codomain — merging. Under either injectivity
+/// condition a family with one input piece and ten output pieces places
+/// exactly ONE carriage, the other nine refused by bookkeeping and not by
+/// geometry, and with one piece placed there is no second node in the
+/// nerve and no transition to have an order at all.
 pub(crate) fn carriage_key(domain: &[u8], codomain: &[u8]) -> Vec<u8> {
     let mut k = Vec::with_capacity(domain.len() + codomain.len() + 8);
     k.extend_from_slice(&(domain.len() as u32).to_le_bytes());
@@ -124,14 +120,14 @@ pub(crate) fn meet_ends(k: &[u8]) -> Option<(&[u8], &[u8])> {
 /// one-hue connected components (13.9's split, `blade::components` on the
 /// three coordinates of the base), filed by their own address.
 pub(crate) fn pieces_of(
-    cells: &[Cell4],
+    laminae: &[Lamina],
     scale: Option<((usize, usize), (usize, usize))>,
 ) -> crate::network::nerve::Keyed<Piece> {
     let mut out: crate::network::nerve::Keyed<Piece> = crate::network::nerve::Keyed::new();
-    for shell in crate::transducer::peel::peel_body_scaled(cells, scale) {
+    for shell in crate::transducer::peel::peel_body_scaled(laminae, scale) {
         // One hue at a time, so a component is a piece of ONE colour: a
         // seam between two hues is a meet, not a body (13.9).
-        let mut hues: crate::network::nerve::Keyed<Vec<Cell4>> = crate::network::nerve::Keyed::new();
+        let mut hues: crate::network::nerve::Keyed<Vec<Lamina>> = crate::network::nerve::Keyed::new();
         for &(r, c, k, h) in &shell.laminae {
             match hues.get_mut(&[h]) {
                 Some(v) => v.push((r, c, k, h)),
@@ -141,8 +137,8 @@ pub(crate) fn pieces_of(
             }
         }
         for (hue_key, of_hue) in hues.scoped() {
-            // The hue is the KEY this group was filed under, not a cell
-            // read out of it by position (rule 15): every cell here has
+            // The hue is the KEY this group was filed under, not a lamina
+            // read out of it by position (rule 15): every lamina here has
             // that hue by construction.
             let [hue] = hue_key.as_slice() else { continue };
             let hue = *hue;
@@ -158,8 +154,3 @@ pub(crate) fn pieces_of(
     }
     out
 }
-
-// `hue_transition` was here: σ_b ∘ σ_a⁻¹, the hue map of the transition
-// between two carriages. The cover composed it to classify a meet; the
-// cover classifies nothing now (L23c), and the cycle type of a LOOP is
-// read off the loop's own vertices where the form classifies it.

@@ -40,9 +40,9 @@ assert!(
     spoken.unspoken
 );
 assert!(
-    spoken.cells.is_empty(),
+    spoken.painted.is_empty(),
     "an invented identity versor would have carried the body, got {:?}",
-    spoken.cells
+    spoken.painted
 );
 }
 
@@ -86,9 +86,9 @@ let spoken = apply_form(
 )
 .expect("a miss is unspoken, not a refusal");
 assert!(
-    spoken.cells.is_empty(),
-    "empty fiber speaks no cells, got {:?}",
-    spoken.cells
+    spoken.painted.is_empty(),
+    "empty fiber speaks no site, got {:?}",
+    spoken.painted
 );
 assert!(
     !spoken.unspoken.is_empty(),
@@ -248,47 +248,39 @@ assert_eq!(spoken.grid(), Some(grid(&["0022", "0000"])));
 
 /// A SPEECH THAT DOES NOT FIT ITS OWN FRAME LAYS DOWN NO GRID.
 ///
-/// `Speech::grid` wrote `out[r as usize][c as usize] = h` straight from
-/// `self.cells` with no bound on either coordinate, so a transported cell
-/// outside the output rectangle panicked the process:
-/// `index out of bounds: the len is 3 but the index is 9`. On the fleet at
-/// 820678a that fired four times in 47 minutes and was EVERY voice death in
-/// the window — the courts took 0 restarts over 5h22m while the voices took
-/// 3 to 11 each.
+/// A transported site outside the output rectangle is the condition the
+/// court names `FAIL_PAST_FRAME` — a site landing past the image frame's
+/// extent — and a voice that indexed the rectangle by it would die where
+/// the court refuses.
 ///
-/// It is not an unexpected state. It is the condition the court names
-/// `FAIL_PAST_FRAME` — a cell landing past the image frame's extent — and a
-/// rule gets it wrong often enough to be 186 of 488 body refusals. The court
-/// refused it; the voice indexed on it.
-///
-/// Refused, not dropped: laying the rest of the cells down would produce a
+/// Refused, not dropped: laying the rest of the sites down would produce a
 /// grid that silently is not what the form said.
 #[test]
-fn a_speech_whose_cell_is_outside_its_frame_refuses_the_grid() {
+fn a_speech_whose_site_is_outside_its_frame_refuses_the_grid() {
     use crate::transducer::family::Speech;
     let fits = Speech {
         frame: (3, 3),
-        cells: vec![(2, 2, 5)],
+        painted: vec![(2, 2, 5)],
         remainder: Vec::new(),
         unspoken: Vec::new(),
     };
     assert_eq!(
         fits.grid(),
         Some(grid(&["000", "000", "005"])),
-        "a cell inside the frame is laid down"
+        "a site inside the frame is laid down"
     );
-    // The exact shape that killed the voices: row 9 on a 3-row frame.
-    let past = Speech { cells: vec![(9, 0, 5)], ..fits.clone() };
+    // Row 9 on a 3-row frame.
+    let past = Speech { painted: vec![(9, 0, 5)], ..fits.clone() };
     assert_eq!(past.grid(), None, "a row past the frame's extent refuses");
-    let wide = Speech { cells: vec![(0, 9, 5)], ..fits.clone() };
+    let wide = Speech { painted: vec![(0, 9, 5)], ..fits.clone() };
     assert_eq!(wide.grid(), None, "and so does a column past it");
     // Before the origin is the other half of the same fault.
-    let before = Speech { cells: vec![(-1, 0, 5)], ..fits.clone() };
-    assert_eq!(before.grid(), None, "a negative coordinate is not a cell of the frame");
-    // One bad cell refuses the whole grid; the good ones are not laid down
+    let before = Speech { painted: vec![(-1, 0, 5)], ..fits.clone() };
+    assert_eq!(before.grid(), None, "a negative coordinate is not a site of the frame");
+    // One bad site refuses the whole grid; the good ones are not laid down
     // to stand in for what the form actually said.
-    let mixed = Speech { cells: vec![(0, 0, 5), (9, 0, 5)], ..fits };
-    assert_eq!(mixed.grid(), None, "one cell outside refuses the speech, not just that cell");
+    let mixed = Speech { painted: vec![(0, 0, 5), (9, 0, 5)], ..fits };
+    assert_eq!(mixed.grid(), None, "one site outside refuses the speech, not just that site");
 }
 
 /// Three identical squares in one family are a section: the test

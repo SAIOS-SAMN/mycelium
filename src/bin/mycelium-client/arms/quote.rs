@@ -297,6 +297,6 @@ fn reproduces(
     let placement = mycelium::transducer::alphabet::Word::identity();
     mycelium::transducer::family::Crystal::speak_form(epi, f, &before, &placement)
         .is_some_and(|sp| {
-            mycelium::transducer::family::cells_subset_of_grid(&sp.cells, &after)
+            mycelium::transducer::family::cells_subset_of_grid(&sp.painted, &after)
         })
 }

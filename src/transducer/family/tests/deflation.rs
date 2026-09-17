@@ -47,24 +47,24 @@ assert_eq!(
     "an unclosed pair contributes nothing, so the pay is pair one's alone"
 );
 // 50.5 — THE UNSPOKEN REMAINDER IS THE DEMAND. Pair two's remainder is a
-// cell the form spoke nothing at, so the mint declares it as a `Source`
-// demand on that cell's chart and the sentence is spoken with it; the
-// court's own reader finds nothing undeclared. It was `is_none()` here —
-// "a form is spoken only when every remainder is empty" — which withheld
-// 16,535 forms in 5½ hours of 2cf578a for saying less than the whole.
+// site the form spoke nothing at, so the mint declares it as a `Source`
+// demand on that site's chart and the sentence is spoken with it; the
+// court's own reader finds nothing undeclared. A mint that spoke a form
+// only when every remainder was empty would withhold it for saying less
+// than the whole.
 let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("spoken with its demand");
 let f = crate::transducer::sentence::from_element_form(&spoken).expect("a sentence tape");
-let demanded: Vec<(u16, crate::transducer::sentence::Demand, Vec<crate::transducer::sentence::Cell>)> = f
+let demanded: Vec<(u16, crate::transducer::sentence::Demand, Vec<crate::transducer::sentence::Link>)> = f
     .demand_vertices()
-    .map(|(i, k, _, cells)| (i, k.clone(), cells.to_vec()))
+    .map(|(i, k, _, links)| (i, k.clone(), links.to_vec()))
     .collect();
-let [(_, kind, cells)] = demanded.as_slice() else {
+let [(_, kind, links)] = demanded.as_slice() else {
     panic!("one demand declares the one unspoken remainder, got {}", demanded.len())
 };
-assert!(matches!(kind, crate::transducer::sentence::Demand::Source { .. }), "unspoken cells are a Source demand");
+assert!(matches!(kind, crate::transducer::sentence::Demand::Source { .. }), "unspoken links are a Source demand");
 let unspoken: Vec<(i64, i64)> = rems2[1].iter().filter(|c| c.2 == 0).map(|c| (c.0, c.1)).collect();
-let declared: Vec<(i64, i64)> = cells.iter().map(|c| (c.0, c.1)).collect();
-assert_eq!(declared, unspoken, "the demand names exactly the cells the form spoke nothing at");
+let declared: Vec<(i64, i64)> = links.iter().map(|c| (c.0, c.1)).collect();
+assert_eq!(declared, unspoken, "the demand names exactly the sites the form spoke nothing at");
 assert!(
     crate::court::verdict::body::undeclared_remainder(&rems2, &f).is_empty(),
     "and the court's reader finds nothing undeclared"
@@ -80,9 +80,6 @@ assert_ne!(spoken.magnitude(), [0; 4], "the sentence measures what it closed and
 /// that fails there fails here, and uttering it spends a round trip to have
 /// the refusal SEAL the address (50.9) against a rule the voice could have
 /// withheld.
-///
-/// Measured on the fleet at e98e8a2: 954 sentences spoken, 611 refused, and
-/// 488 of those `vertex does not carry its body onto its image`.
 ///
 /// The fixture extracts a rule from one pair and mints it against a
 /// DIFFERENT family — the same shape carried somewhere the rule does not
@@ -159,7 +156,7 @@ fn a_minted_sentence_carries_the_span_on_the_temporal_lane() {
 
 /// A form that declares no demand and leaves a remainder measures nothing
 /// (50.5): the pair's own residual is the remainder, and the measure's
-/// refusal names its cells.
+/// refusal names its links.
 #[test]
 fn a_remainder_no_demand_declares_is_refused_at_the_measure() {
     let (x, y) = (grid(&["1"]), grid(&["2"]));
@@ -172,13 +169,13 @@ fn a_remainder_no_demand_declares_is_refused_at_the_measure() {
 }
 
 /// A form whose demand does not cover the remainder measures nothing, by
-/// the court's own reader (50.5, 23.1 step 3): a demand declares cells,
+/// the court's own reader (50.5, 23.1 step 3): a demand declares links,
 /// not an exemption.
 #[test]
 fn a_remainder_the_demands_do_not_cover_is_refused_at_the_measure() {
     let (x, y) = (grid(&["12"]), grid(&["34"]));
     let rems = vec![residual_of(Some(&x), &y)];
-    let elsewhere: Vec<crate::transducer::sentence::Cell> = vec![(5, 5, 0, 9)];
+    let elsewhere: Vec<crate::transducer::sentence::Link> = vec![(5, 5, 0, 9)];
     let chart = crate::transducer::stalk::invariant(&elsewhere);
     let mut f = Form::default();
     f.vertices.push(demand_vertex(crate::transducer::sentence::Demand::Creation, &chart, elsewhere));
@@ -186,7 +183,7 @@ fn a_remainder_the_demands_do_not_cover_is_refused_at_the_measure() {
     assert!(f.demand_vertices().next().is_some(), "the form declares a demand");
     assert!(
         sentence_measure_from(&f, &[(x, y)], 0, [0; 4], &rems).is_none(),
-        "but not the cells the pair leaves, so it measures nothing"
+        "but not the links the pair leaves, so it measures nothing"
     );
 }
 

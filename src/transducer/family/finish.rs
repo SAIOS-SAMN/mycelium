@@ -7,7 +7,7 @@
 use super::perceive::{frame_of, perceive, Grid};
 use super::*;
 use crate::network::nerve::Keyed;
-use crate::transducer::sentence::{Form, SentenceRule};
+use crate::transducer::sentence::{Form, Link, SentenceRule};
 use crate::transducer::stalk::Invariant;
 
 /// An assignment's content key: carriage bytes and sorted gauge.
@@ -29,19 +29,15 @@ pub(crate) fn multiplicity_demand(
     family: &[(Grid, Grid)],
     chart: &Invariant,
     multiplicity: u32,
-) -> Option<(
-    crate::transducer::sentence::Demand,
-    Invariant,
-    Vec<crate::transducer::sentence::Cell>,
-)> {
+) -> Option<(crate::transducer::sentence::Demand, Invariant, Vec<Link>)> {
     let key = chart.key();
-    let mut cells: Vec<crate::transducer::sentence::Cell> = Vec::new();
+    let mut links: Vec<Link> = Vec::new();
     for (x, y) in family {
         for body in perceive(x) {
             if body.moduli.key() != key {
                 continue;
             }
-            for &(r, c, _, h) in &body.cells {
+            for &(r, c, _, h) in &body.laminae {
                 let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) else {
                     continue;
                 };
@@ -50,23 +46,23 @@ pub(crate) fn multiplicity_demand(
                     None => 0,
                 };
                 if observed != h {
-                    cells.push((r, c, h, observed));
+                    links.push((r, c, h, observed));
                 }
             }
         }
     }
-    cells.sort_unstable();
-    cells.dedup();
-    if cells.is_empty() {
+    links.sort_unstable();
+    links.dedup();
+    if links.is_empty() {
         return None;
     }
     let kind = crate::transducer::sentence::Demand::Source { multiplicity };
     kind.typed().ok()?;
-    Some((kind, chart.clone(), cells))
+    Some((kind, chart.clone(), links))
 }
 
 /// The germ of one pair: what the input carries onto the output, as the
-/// cells of the change. `None` for a pair with no scene.
+/// links of the change. `None` for a pair with no scene.
 pub(crate) fn germ_of_pair(a: &Grid, b: &Grid) -> Option<crate::transducer::element::PlacedChain> {
     let cochain = crate::transducer::family::refine::refine_delta(a, b)?;
     if cochain.is_empty() {
@@ -95,30 +91,26 @@ pub(crate) fn finish(
     scale: ((usize, usize), (usize, usize)),
     sections: Keyed<Vec<u16>>,
     unreached: &[(Grid, Grid)],
-    multiplicities: &[(
-        crate::transducer::sentence::Demand,
-        Invariant,
-        Vec<crate::transducer::sentence::Cell>,
-    )],
+    multiplicities: &[(crate::transducer::sentence::Demand, Invariant, Vec<Link>)],
 ) -> Option<SentenceRule> {
     let mut by_demand: Keyed<Demanded> = Keyed::new();
     for pf in pair_forms {
-        for (_, kind, chart, cells) in pf.demand_vertices() {
+        for (_, kind, chart, links) in pf.demand_vertices() {
             let key = crate::transducer::sentence::demand_key(kind, chart);
             match by_demand.get_mut(&key) {
-                Some((_, _, held)) => held.extend_from_slice(cells),
+                Some((_, _, held)) => held.extend_from_slice(links),
                 None => {
-                    by_demand.insert(key, (kind.clone(), chart.clone(), cells.to_vec()));
+                    by_demand.insert(key, (kind.clone(), chart.clone(), links.to_vec()));
                 }
             }
         }
     }
-    for (kind, chart, cells) in multiplicities {
+    for (kind, chart, links) in multiplicities {
         let key = crate::transducer::sentence::demand_key(kind, chart);
         match by_demand.get_mut(&key) {
-            Some((_, _, held)) => held.extend_from_slice(cells),
+            Some((_, _, held)) => held.extend_from_slice(links),
             None => {
-                by_demand.insert(key, (kind.clone(), chart.clone(), cells.clone()));
+                by_demand.insert(key, (kind.clone(), chart.clone(), links.clone()));
             }
         }
     }
@@ -138,11 +130,11 @@ pub(crate) fn finish(
             }
         }
     }
-    for (_, (kind, chart, cells)) in by_demand.scoped() {
-        let mut cells = cells.clone();
-        cells.sort_unstable();
-        cells.dedup();
-        form.vertices.push(demand_vertex(kind.clone(), chart, cells));
+    for (_, (kind, chart, links)) in by_demand.scoped() {
+        let mut links = links.clone();
+        links.sort_unstable();
+        links.dedup();
+        form.vertices.push(demand_vertex(kind.clone(), chart, links));
     }
     form.depth = form.depth_of();
     form.loops = Form::loops_of(&form.faces, form.vertices.len());

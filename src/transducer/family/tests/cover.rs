@@ -12,7 +12,7 @@ use super::common::*;
 use crate::transducer::family::*;
 use crate::transducer::sentence::{Demand, Vertex};
 
-/// A solid block against the same block with ONE CELL REMOVED. No versor
+/// A solid block against the same block with ONE LAMINA REMOVED. No versor
 /// carries the whole body onto the whole image — that is what makes it a
 /// deformation — and the peel's shells carry piece by piece.
 fn notched() -> (Grid, Grid) {
@@ -23,10 +23,8 @@ fn notched() -> (Grid, Grid) {
 }
 
 /// A stroke large enough that the cover runs to the end of its pieces.
-/// The machine's own stroke does not reach it — measured on the corpus,
-/// where the cover needs 4 374 reads over twelve tasks and a stroke gives
-/// it 16 — so a fixture on the machine stroke would assert the starvation
-/// and not the reading.
+/// The machine's own stroke does not reach it, so a fixture on the machine
+/// stroke would assert the starvation and not the reading.
 fn measured(a: &Grid, b: &Grid) -> crate::transducer::sentence::Form {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     pair_form(&NoCrystal, &mut budget, a, b, None).expect("a cover that runs to its end")
@@ -121,27 +119,26 @@ fn the_meets_are_faces_and_the_faces_close_into_loops() {
 // sub-alphabet appearing as a consequence. Its observable is a fleet
 // number, not an assertion here (L25).
 
-/// 50.8 CASE 3 — WHERE A CELL IS FILLED it is filed on the form's own
+/// 50.8 CASE 3 — WHERE A SIMPLEX IS FILLED it is filed on the form's own
 /// torsion carrier, keyed by the holonomy's class, with the period the
 /// rotation closes at and the chord it closes on. Nothing else is a filled
-/// cell, and a form that filled none carries none.
+/// simplex, and a form that filled none carries none.
 #[test]
-fn a_filled_cell_is_a_filed_loop_at_its_own_period() {
+fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
     let (a, b) = notched();
     let f = measured(&a, &b);
     // WHAT THIS FIXTURE ACTUALLY CONTAINS, asserted, because every check below
-    // is inside a walk of `f.torsion` and that carrier is EMPTY here — so for
-    // as long as this test has existed it has passed by iterating nothing while
-    // its name claimed a filed loop. Measured over the 60-task slice: torsion
-    // is empty on all 42 minting families too, so an empty carrier is the
-    // expected state and not a surprise — which is exactly why the content has
-    // to be asserted instead of walked.
+    // is inside a walk of `f.torsion` and that carrier is EMPTY here — a test
+    // that only walked it would pass by iterating nothing while its name
+    // claimed a filed loop. An empty carrier is the expected state and not a
+    // surprise, which is exactly why the content has to be asserted instead
+    // of walked.
     //
-    // Measured: 12 loops, 8 carrying one evaluated member path each whose edge
-    // holonomy has order Finite(1) — the identity, flat, and 50.8 case 3 files
-    // nothing there because there is nothing to fill — and 4 carrying no
-    // evaluated path at all, which is a remainder edge on them (13.9 step 7).
-    // The engine is right and the fixture is not curved.
+    // On this fixture: 12 loops, 8 carrying one evaluated member path each
+    // whose edge holonomy has order Finite(1) — the identity, flat, and 50.8
+    // case 3 files nothing there because there is nothing to fill — and 4
+    // carrying no evaluated path at all, which is a remainder edge on them
+    // (13.9 step 7). The engine is right and the fixture is not curved.
     //
     // 50.8 CASE 3'S FILING PATH THEREFORE HAS NO TEST. Exercising it needs a
     // cover whose meet loop composes to a finite NON-identity rotor — three
@@ -195,7 +192,7 @@ fn a_filled_cell_is_a_filed_loop_at_its_own_period() {
 }
 
 /// 50.8 CASE 4 — WHAT NO PIECE CARRIED KEEPS THE DEMAND ALIVE. The notched
-/// block leaves cells no carriage reaches, so the deformation stands; it
+/// block leaves laminae no carriage reaches, so the deformation stands; it
 /// dissolves only when the uncarried volume is the zero vector on every
 /// lane AND no loop over its pieces stands.
 #[test]
@@ -206,7 +203,7 @@ fn an_uncarried_remainder_leaves_the_deformation_standing() {
         .vertices
         .iter()
         .any(|v| matches!(v, Vertex::Demand { kind: Demand::TopologicalDeformation { .. }, .. }));
-    assert!(stands, "cells no piece reached leave the deformation on the form");
+    assert!(stands, "laminae no piece reached leave the deformation on the form");
 }
 
 /// 50.8 — A COVER THAT ENDS KEEPS WHAT IT MEASURED, AND GOES ON FROM THE
@@ -216,7 +213,7 @@ fn an_uncarried_remainder_leaves_the_deformation_standing() {
 ///
 /// AND IT CARRIES NO POSITION. There is no stage and no index: a stroke
 /// that resumes asks the cover's own carriers what is already settled — an
-/// image piece whose cells are all reached, an input piece consumed, a meet
+/// image piece whose sites are all reached, an input piece consumed, a meet
 /// recorded — and every one of those readings is intrinsic to the state.
 /// The test asserts that a small stroke does NOT finish in one pass, so
 /// what it proves is a resume and not a single run.
@@ -329,7 +326,7 @@ fn measured_cover(
     )
     .expect("a cover that runs to its end");
     let t = take_cover_tally();
-    let ins = pieces_of(&input.cells, None).scoped().count();
+    let ins = pieces_of(&input.laminae, None).scoped().count();
     (cover, t, ins)
 }
 
@@ -367,8 +364,8 @@ fn an_image_across_several_output_pieces_is_assembled_and_carried_once() {
 /// was a piece the correspondence did not put there.
 #[test]
 fn cover_attempts_are_placed_times_unplaced() {
-    // TWO BODIES THAT DO NOT MEET. No cell of the input stands under any
-    // cell of the image, so the pullback names no preimage and places
+    // TWO BODIES THAT DO NOT MEET. No lamina of the input stands under any
+    // lamina of the image, so the pullback names no preimage and places
     // nothing; with nothing placed there is nothing to propagate.
     let apart = (
         grid(&["111", "111", "000", "000", "000", "000"]),

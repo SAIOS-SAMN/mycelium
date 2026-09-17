@@ -1,19 +1,19 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! #97, law 5, law 11 — THE COMMON REFINEMENT COMPLEX: two grids of unequal
-//! extent read on one cell complex, exactly, so a reshaped pair is a chain
+//! extent read on one cube complex, exactly, so a reshaped pair is a chain
 //! and not a bucket of points.
 //!
-//! When `h_in × w_in ≠ h_out × w_out` the pairing has no cell-for-cell
+//! When `h_in × w_in ≠ h_out × w_out` the pairing has no site-for-site
 //! correspondence to read a transition on, and perception falls to
-//! `Demand::TopologicalDeformation` — a set of cells with the relation
+//! `Demand::TopologicalDeformation` — a set of links with the relation
 //! between them dropped. The relation is not missing; it is a RATIO, and a
 //! ratio of integers is exact.
 //!
 //! `K_lcm = lcm(h_in, h_out) × lcm(w_in, w_out)` is the coarsest complex both
-//! grids embed in without rounding: each input cell is an `s_in` block of it
-//! and each output cell an `s_out` block, both integer. On `K_lcm` the two
-//! grids are cell-for-cell and the transition is the ordinary chain the rest
+//! grids embed in without rounding: each input site is an `s_in` block of it
+//! and each output site an `s_out` block, both integer. On `K_lcm` the two
+//! grids are site-for-site and the transition is the ordinary chain the rest
 //! of the engine already reads.
 
 use crate::transducer::family::perceive::Grid;
@@ -25,20 +25,20 @@ use crate::transducer::family::perceive::Grid;
 pub struct CommonRefinement {
     pub lcm_h: usize,
     pub lcm_w: usize,
-    /// Rows and columns of `K_lcm` per input cell.
+    /// Rows and columns of `K_lcm` per input site.
     pub scale_in: (usize, usize),
-    /// Rows and columns of `K_lcm` per output cell.
+    /// Rows and columns of `K_lcm` per output site.
     pub scale_out: (usize, usize),
 }
 
-/// THE MAXIMUM CELLS IN A COMMON REFINEMENT COMPLEX (rule 10).
+/// THE MAXIMUM SITES IN A COMMON REFINEMENT COMPLEX (rule 10).
 /// Grids in the ARC sensor plane are at most 30×30. Real geometric
 /// homotheties (e.g. 2:3, 3:4, 1:2) have lcm ≤ 60 and |K_lcm| ≤ 3600.
 /// Incommensurate frame transitions (e.g. 29×30 with lcm = 870 and
-/// 756,900 coordinates) are not cellular refinements and refuse (rule 11)
-/// rather than exploding memory and economic pay.
+/// 756,900 coordinates) are not refinements on this base and refuse
+/// (rule 11) rather than exploding memory and economic pay.
 pub const MAX_LCM_AXIS: usize = 60;
-pub const MAX_LCM_CELLS: usize = 3600;
+pub const MAX_LCM_SITES: usize = 3600;
 
 impl CommonRefinement {
     /// `None` on an empty extent: a grid with no rows or no columns embeds in
@@ -46,7 +46,7 @@ impl CommonRefinement {
     /// scene that is not there (rule 11).
     ///
     /// Also `None` when the least common multiple exceeds `MAX_LCM_AXIS` or
-    /// `MAX_LCM_CELLS`: incommensurate grids have no finite common refinement
+    /// `MAX_LCM_SITES`: incommensurate grids have no finite common refinement
     /// on this base and refuse under rule 10.
     pub fn of(h_in: usize, w_in: usize, h_out: usize, w_out: usize) -> Option<CommonRefinement> {
         if h_in == 0 || w_in == 0 || h_out == 0 || w_out == 0 {
@@ -54,7 +54,7 @@ impl CommonRefinement {
         }
         let lcm_h = num_integer::lcm(h_in, h_out);
         let lcm_w = num_integer::lcm(w_in, w_out);
-        if lcm_h > MAX_LCM_AXIS || lcm_w > MAX_LCM_AXIS || lcm_h * lcm_w > MAX_LCM_CELLS {
+        if lcm_h > MAX_LCM_AXIS || lcm_w > MAX_LCM_AXIS || lcm_h * lcm_w > MAX_LCM_SITES {
             return None;
         }
         Some(CommonRefinement {
@@ -84,16 +84,16 @@ impl CommonRefinement {
         Some((q(h_out, h_in), q(w_out, w_in)))
     }
 
-    /// Is this pair already cell-for-cell? Then the refinement is the grids
+    /// Is this pair already site-for-site? Then the refinement is the grids
     /// themselves and there is nothing for this organ to do.
     pub fn is_trivial(&self) -> bool {
         self.scale_in == (1, 1) && self.scale_out == (1, 1)
     }
 
     /// THE RUNS OF ONE AXIS: the intervals of `K_lcm` on which BOTH source
-    /// cells are constant, as `(start, len, i_in, i_out)`.
+    /// sites are constant, as `(start, len, i_in, i_out)`.
     ///
-    /// READ AS RUNS, NOT AS CELLS, and this is the difference between an
+    /// READ AS RUNS, NOT AS SITES, and this is the difference between an
     /// organ that is bounded by its objects and one that is bounded by their
     /// least common multiple. `lcm(29, 30)` is 870 for two grids of thirty
     /// rows; over both axes that is three quarters of a million coordinates
@@ -121,7 +121,7 @@ impl CommonRefinement {
         out
     }
 
-    /// THE BIPARTITE COCHAIN ∂₁Q over `K_lcm`: one cell per coordinate where
+    /// THE BIPARTITE COCHAIN ∂₁Q over `K_lcm`: one link per coordinate where
     /// the two grids disagree, carrying the hue before and after.
     ///
     /// This is the same object `word_or_demand` reads on an equal-extent
@@ -153,7 +153,7 @@ impl CommonRefinement {
                 }
                 // The run is constant, so every coordinate in it carries the
                 // same transition. They are written out because a chain is
-                // cells: the run is how the answer was COMPUTED, not a
+                // links: the run is how the answer was COMPUTED, not a
                 // compression of what it says.
                 for r in r0..r0 + rn {
                     for c in c0..c0 + cn {
@@ -187,14 +187,14 @@ pub fn extent(g: &Grid) -> Option<(usize, usize)> {
 }
 
 impl CommonRefinement {
-    /// BOTH GRIDS ON `K_lcm`, by exact block replication: an input cell
-    /// covers `s_in` rows and columns of the refinement and an output cell
+    /// BOTH GRIDS ON `K_lcm`, by exact block replication: an input site
+    /// covers `s_in` rows and columns of the refinement and an output site
     /// covers `s_out`, so every coordinate of `K_lcm` takes the hue of the
-    /// cell whose block contains it. Nothing is sampled, averaged or
+    /// site whose block contains it. Nothing is sampled, averaged or
     /// rounded — the division is exact by construction.
     ///
     /// This is what lets the refinement change nothing downstream: the pair
-    /// that comes back is cell-for-cell, so `pair_scene` and everything
+    /// that comes back is site-for-site, so `pair_scene` and everything
     /// after it read an ordinary equal-extent pair.
     pub fn refined(&self, grid_in: &Grid, grid_out: &Grid) -> Option<(Grid, Grid)> {
         let lift = |g: &Grid, (sr, sc): (usize, usize)| -> Option<Grid> {
@@ -250,22 +250,22 @@ mod tests {
     /// #97 — TWO GRIDS OF UNEQUAL EXTENT READ ONE COMPLEX, exactly.
     ///
     /// A 2×2 doubled to 4×4 has `lcm = 4`: the input embeds two-for-one and
-    /// the output one-for-one, so a cell that changed hue contributes its
+    /// the output one-for-one, so a site that changed hue contributes its
     /// whole block and one that did not contributes nothing.
     #[test]
     fn a_doubled_grid_refines_without_rounding() {
         let r = CommonRefinement::of(2, 2, 4, 4).expect("both extents stand");
         assert_eq!((r.lcm_h, r.lcm_w), (4, 4));
-        assert_eq!(r.scale_in, (2, 2), "each input cell is a 2×2 block of K_lcm");
-        assert_eq!(r.scale_out, (1, 1), "each output cell is one cell of K_lcm");
+        assert_eq!(r.scale_in, (2, 2), "each input site is a 2×2 block of K_lcm");
+        assert_eq!(r.scale_out, (1, 1), "each output site is one site of K_lcm");
         assert!(!r.is_trivial());
 
-        // Input all hue 1; output all hue 1 but for its top-left cell.
+        // Input all hue 1; output all hue 1 but for its top-left site.
         let a: Grid = vec![vec![1, 1], vec![1, 1]];
         let mut b: Grid = vec![vec![1; 4]; 4];
         b[0][0] = 7;
         let chain = r.bipartite_cochain(&a, &b).expect("both grids are square");
-        assert_eq!(chain.len(), 1, "one output cell differs, so one cell of K_lcm does");
+        assert_eq!(chain.len(), 1, "one output site differs, so one site of K_lcm does");
         assert_eq!(chain[0], (0, 0, 1, 7));
     }
 
@@ -278,7 +278,7 @@ mod tests {
         assert_eq!(rw, num_rational::BigRational::new(2.into(), 4.into()));
     }
 
-    /// RUNS ARE THE BOUNDARIES OF THE TWO GRIDS, not the cells of their least
+    /// RUNS ARE THE BOUNDARIES OF THE TWO GRIDS, not the sites of their least
     /// common multiple. Coprime extents are where that matters: 3 and 4 have
     /// `lcm` 12, and the pair changes at six places, not twelve.
     #[test]
@@ -296,8 +296,8 @@ mod tests {
         let total: usize = runs.iter().map(|&(_, n, _, _)| n).sum();
         assert_eq!(total, 12, "the runs cover K_lcm exactly once");
         for &(at, n, i_in, i_out) in &runs {
-            assert_eq!(at / r.scale_in.0, i_in, "the run's input cell is constant on it");
-            assert_eq!(at / r.scale_out.0, i_out, "and so is its output cell");
+            assert_eq!(at / r.scale_in.0, i_in, "the run's input site is constant on it");
+            assert_eq!(at / r.scale_out.0, i_out, "and so is its output site");
             assert_eq!(
                 (at + n - 1) / r.scale_in.0,
                 i_in,
@@ -329,7 +329,7 @@ mod tests {
 
     /// Incommensurate frames whose least common multiple exceeds the complex
     /// bound refuse (rules 10 and 11) rather than expanding hundreds of
-    /// thousands of cells.
+    /// thousands of sites.
     #[test]
     fn incommensurate_frames_refuse_refinement() {
         assert!(CommonRefinement::of(29, 29, 30, 30).is_none());

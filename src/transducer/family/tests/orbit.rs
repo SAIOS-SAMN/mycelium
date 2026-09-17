@@ -28,15 +28,15 @@ let still = Vertex::word_on(
     Vec::new(),
     None,
 );
-let cells = vec![(0i64, 0i64, 1u8)];
+let painted = vec![(0i64, 0i64, 1u8)];
 let anchor = vec![(0i64, 3i64)];
 let frame = (5usize, 5usize);
-match orbit(&moving, &cells, &anchor, frame) {
+match orbit(&moving, &painted, &anchor, frame) {
     OrbitEnd::Contact { steps, .. } => assert!(steps >= 1, "contact takes at least one step"),
     other => panic!("expected Contact, got {other:?}"),
 }
 assert_eq!(
-    orbit(&still, &cells, &anchor, frame),
+    orbit(&still, &painted, &anchor, frame),
     OrbitEnd::NoOrbit,
     "a still word has no orbit"
 );
@@ -50,7 +50,7 @@ let with_c = Vertex::word_on(
     Vec::new(),
     Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 0 }),
 );
-match orbit(&with_c, &cells, &anchor, frame) {
+match orbit(&with_c, &painted, &anchor, frame) {
     OrbitEnd::Contact { .. } | OrbitEnd::LeftFrame { .. } | OrbitEnd::Torsion { .. } => {}
     OrbitEnd::NoOrbit => panic!("contact word must orbit"),
 }

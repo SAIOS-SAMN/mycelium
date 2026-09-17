@@ -121,7 +121,7 @@ pub fn mint_sentence(
         None => &rule.form,
     };
     let Some(mag) = sentence_measure_from(form, family, t_extent, pay, &remainders) else {
-        eprintln!("  mint refused: the form speaks a cell its family refuses");
+        eprintln!("  mint refused: the form speaks a lamina its family refuses");
         return None;
     };
     let out = crate::transducer::sentence::as_element_form(form, mag);
@@ -132,26 +132,24 @@ pub fn mint_sentence(
 }
 
 /// 50.5 — THE UNSPOKEN REMAINDER, DECLARED. A sentence is "the form saying
-/// out loud what it could not close and asking the market to answer it",
-/// and until now a form said it only for the pairs its budget never
-/// reached (`finish`) and the multiplicities its correspondence could not
-/// resolve. What the form's own words left unspoken on the family it was
-/// minted over — the cells its vertices reach on no pair — was declared by
-/// nothing, so `sentence_measure` refused the form and the voice withheld
-/// it: 16,535 `the sentence measures nothing over its bundle` in 5½ hours
-/// of 2cf578a, against 102 forms spoken, and a book that held one to three
-/// listings because nothing reached it.
+/// out loud what it could not close and asking the market to answer it".
+/// `finish` says it for the pairs the budget never reached and the
+/// multiplicities the correspondence could not resolve; this says it for
+/// what the form's own words left unspoken on the family it was minted
+/// over — the sites its vertices reach on no pair — which declared by
+/// nothing would have `sentence_measure` refuse the form and the voice
+/// withhold it.
 ///
-/// A remainder cell is a demand only where the form SPOKE NOTHING there
+/// A remainder link is a demand only where the form SPOKE NOTHING there
 /// (`spoken == 0`, `residual_of`'s reading of absence): the court's own
-/// `undeclared_remainder` admits exactly that cell against a demand naming
-/// its observed hue, and refuses a cell the form spoke wrongly whatever a
-/// demand says of it. So the declared cells are the unspoken ones, each
+/// `undeclared_remainder` admits exactly that link against a demand naming
+/// its observed hue, and refuses a link the form spoke wrongly whatever a
+/// demand says of it. So the declared links are the unspoken ones, each
 /// with the hue the input held there (absence is hue 0 in this encoding)
-/// and the hue the pair asks; a cell the form spoke wrongly stays
+/// and the hue the pair asks; a link the form spoke wrongly stays
 /// undeclared and the form is refused by name.
 ///
-/// Per pair, on the chart the unspoken cells stand on, as `Source` with
+/// Per pair, on the chart the unspoken links stand on, as `Source` with
 /// the multiplicity of its pieces — the same construction the unreached
 /// arm of `finish` makes for a whole pair, so one kind of demand stands
 /// for one kind of fact. A form already carrying that demand on that chart
@@ -164,8 +162,8 @@ pub fn declare_unspoken(
     family: &[(Grid, Grid)],
     remainders: &[crate::transducer::germinate::ResidualGerm],
 ) -> Option<Form> {
-    use crate::transducer::sentence::{pieces, Cell, Demand};
-    // THE COURT'S OWN READER SAYS WHAT IS UNDECLARED (law 12): a cell a
+    use crate::transducer::sentence::{pieces, Demand, Link};
+    // THE COURT'S OWN READER SAYS WHAT IS UNDECLARED (law 12): a link a
     // demand the extraction already emitted names is declared, and naming
     // it again under `Source` would be one fact said twice. Sorted and
     // deduplicated by that reader, so membership is a search and not a
@@ -177,13 +175,13 @@ pub fn declare_unspoken(
     let mut declared = form.clone();
     let mut any = false;
     for ((x, _), rem) in family.iter().zip(remainders) {
-        let cells: Vec<Cell> = rem
+        let links: Vec<Link> = rem
             .iter()
             .filter(|&&(r, c, spoken, observed)| {
                 spoken == 0 && undeclared.binary_search(&(r, c, spoken, observed)).is_ok()
             })
             .map(|&(r, c, _, observed)| {
-                // The hue the input holds at the cell. Outside the input
+                // The hue the input holds at the site. Outside the input
                 // frame there is none, and absence is hue 0 in this
                 // encoding — `residual_of`'s own reading, not a floor.
                 let before = match (usize::try_from(r), usize::try_from(c)) {
@@ -196,15 +194,15 @@ pub fn declare_unspoken(
                 (r, c, before, observed)
             })
             .collect();
-        if cells.is_empty() {
+        if links.is_empty() {
             continue;
         }
-        let chart = crate::transducer::stalk::invariant(&cells);
-        let kind = Demand::Source { multiplicity: pieces(&cells).len() as u32 };
+        let chart = crate::transducer::stalk::invariant(&links);
+        let kind = Demand::Source { multiplicity: pieces(&links).len() as u32 };
         if kind.typed().is_err() {
             continue;
         }
-        declared.stand_demand(kind, &chart, cells);
+        declared.stand_demand(kind, &chart, links);
         any = true;
     }
     any.then_some(declared)
@@ -215,12 +213,12 @@ pub fn declare_unspoken(
 /// closes; a sentence with demand vertices is spoken whole: its closed
 /// sub-complex measures the deflation its words performed on every pair
 /// — before less after per lane, whether or not the pair closed — and its
-/// demands measure the cells they stand for, so a sentence that closes
+/// demands measure the links they stand for, so a sentence that closes
 /// nothing yet still carries what it asks for. `None` where the form leaves
 /// a remainder no demand vertex declares: that is a withheld form, never a
 /// word.
 ///
-/// A demand declares cells, not an exemption: whether the demands cover
+/// A demand declares links, not an exemption: whether the demands cover
 /// what was left is the court's own reader, `undeclared_remainder` (law
 /// 12, 23.1 step 3), and the court still re-derives it.
 ///
@@ -252,7 +250,7 @@ pub fn sentence_measure_from(
     if form.demand_vertices().next().is_none() {
         let left: usize = remainders.iter().map(|r| r.len()).sum();
         if left != 0 {
-            eprintln!("  mint refused: {left} cells remain and the form declares no demand");
+            eprintln!("  mint refused: {left} links remain and the form declares no demand");
             return None;
         }
         let mut mag = pay;
@@ -261,7 +259,7 @@ pub fn sentence_measure_from(
     }
     let undeclared = crate::court::verdict::body::undeclared_remainder(remainders, form);
     if !undeclared.is_empty() {
-        eprintln!("  mint refused: {} cells undeclared by the form's demands", undeclared.len());
+        eprintln!("  mint refused: {} links undeclared by the form's demands", undeclared.len());
         return None;
     }
     let mut mag = [0u64; 4];
@@ -281,9 +279,9 @@ pub fn sentence_measure_from(
             *m = m.saturating_add(*d);
         }
     }
-    let mut demanded: Vec<crate::transducer::sentence::Cell> = Vec::new();
-    for (_, _, _, cells) in form.demand_vertices() {
-        demanded.extend(cells.iter().copied().filter(|c| c.2 != c.3));
+    let mut demanded: Vec<Link> = Vec::new();
+    for (_, _, _, links) in form.demand_vertices() {
+        demanded.extend(links.iter().copied().filter(|c| c.2 != c.3));
     }
     let asked = element::measure_lanes(&demanded);
     for (m, a) in mag.iter_mut().zip(&asked) {

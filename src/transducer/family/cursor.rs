@@ -1,27 +1,23 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 50.8 — WHAT A COVER HAS SETTLED. A cover that a stroke did not finish
-//! keeps what it MEASURED — the pieces it placed, the cells it reached,
+//! keeps what it MEASURED — the pieces it placed, the sites it reached,
 //! the input pieces it consumed — and the next stroke goes on from that
 //! state. Nothing it measured is discarded (rule 7).
 //!
-//! THERE IS NO CURSOR HERE, and the first version of this file had one.
-//! It held a `Stage` naming which pass was owed and the last key that pass
-//! finished — an ITINERARY, an extrinsic index into a walk, which is the
-//! shape of a tape machine and not of a complex. Its own commit message
-//! said why it was unnecessary without seeing it: "every write in it is
-//! keyed, so redoing it writes the same entries at the same addresses."
-//! A carrier that can be recomputed exactly carries no information, and
-//! this one carried only the order a previous stroke happened to walk in.
+//! THERE IS NO CURSOR HERE. A `Stage` naming which pass is owed and the
+//! last key that pass finished would be an ITINERARY, an extrinsic index
+//! into a walk, which is the shape of a tape machine and not of a complex;
+//! every write in a cover is keyed, so redoing it writes the same entries
+//! at the same addresses, and a carrier that can be recomputed exactly
+//! carries no information — only the order a previous stroke happened to
+//! walk in.
 //!
 //! WHAT IS OWED IS READ FROM THE STATE, not from a finger pointing at an
-//! index. An image piece whose cells are all in `reached` is carried; an
+//! index. An image piece whose sites are all in `reached` is carried; an
 //! input piece in `consumed` is spoken; a meet already in `cover.meets` is
 //! recorded. Each of the three passes asks its own carrier and skips what
-//! that carrier already answers. Two of the three were already doing it —
-//! `consumed.contains(ki)` and `cover.meets.contains(&key)` were in the
-//! tree before any cursor was — and the cursor was bolted over readers
-//! that did not need it.
+//! that carrier already answers.
 //!
 //! WHAT REMAINS UNCARRIED IS NOT A QUEUE POSITION. A piece the cover
 //! cannot carry is read again on the next stroke and fails again; it is
@@ -30,9 +26,9 @@
 //! reports. The cover is incomplete because of it, and saying so is the
 //! reading.
 //!
-//! IT IS NOT A SHARE AND NOT A RATIO. `cover_share` was struck for hiding
-//! starvation behind a constant and `Budget::halve` after it for putting a
-//! chosen proportion in the same place; `physics/budget` records both.
+//! IT IS NOT A SHARE AND NOT A RATIO: a share hides starvation behind a
+//! constant and a halved budget puts a chosen proportion in the same
+//! place; `physics/budget` records both.
 //!
 //! The caller still reads `Unmeasured` and the demand still stands exactly
 //! as F typed it — nothing a half-run cover placed reaches a form (rule
@@ -69,20 +65,20 @@ thread_local! {
     static PENDING: RefCell<Keyed<Pending>> = RefCell::new(Keyed::new());
 }
 
-/// THE ADDRESS OF A DEFORMATION, as content: the two bodies' cells written
-/// out and the frame ratio that was asked for. Sensor bytes at the sensor
-/// boundary, which is the one place bytes may be a key (rule 6) and is
-/// where the percept memo beside this one is already keyed.
+/// THE ADDRESS OF A DEFORMATION, as content: the two bodies' laminae
+/// written out and the frame ratio that was asked for. Sensor bytes at the
+/// sensor boundary, which is the one place bytes may be a key (rule 6) and
+/// is where the percept memo beside this one is already keyed.
 pub(crate) fn deformation_key(
     input: &[(i64, i64, i64, u8)],
     image: &[(i64, i64, i64, u8)],
     scale: Option<((usize, usize), (usize, usize))>,
 ) -> Vec<u8> {
     let mut k = Vec::with_capacity((input.len() + image.len()) * 25 + 40);
-    for (tag, cells) in [(0u8, input), (1u8, image)] {
+    for (tag, laminae) in [(0u8, input), (1u8, image)] {
         k.push(tag);
-        k.extend_from_slice(&(cells.len() as u32).to_le_bytes());
-        for &(r, c, f, h) in cells {
+        k.extend_from_slice(&(laminae.len() as u32).to_le_bytes());
+        for &(r, c, f, h) in laminae {
             k.extend_from_slice(&r.to_le_bytes());
             k.extend_from_slice(&c.to_le_bytes());
             k.extend_from_slice(&f.to_le_bytes());

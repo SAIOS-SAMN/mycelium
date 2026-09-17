@@ -26,8 +26,8 @@ pub(crate) struct PairFormMemo {
     form: Form,
 }
 
-/// Perception of one pair as a form. Cells are read once; a second call on
-/// the same grids spends none. Shells pair and are never vertices.
+/// Perception of one pair as a form. The sensor is read once; a second
+/// call on the same grids spends none. Shells pair and are never vertices.
 pub fn pair_form(
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
@@ -136,7 +136,7 @@ pub(crate) fn derive_against(
 ///
 /// The demand carries the bodies it stands for (50.5), so the carriage is
 /// RE-DERIVED from them rather than stored beside them (law 12) — the two
-/// bodies are the chain's cells split by which side of the transition they
+/// bodies are the chain's links split by which side of the transition they
 /// occupy. `factor_versor` then runs the peel and, where it stands, the
 /// ring; a derivation that comes back is one this mind reached through a
 /// generator the seventeen cannot spell, and it is a word.
@@ -152,10 +152,10 @@ fn ring_answer(
     let Vertex::Demand { bodies, .. } = v else {
         return None;
     };
-    // The demand's bodies are one section's cells (16.5), read in the
+    // The demand's bodies are one section's links (16.5), read in the
     // section's own frame.
-    let before: Vec<Cell4> = bodies.iter().filter(|c| c.2 != 0).map(|c| (c.0, c.1, 0, c.2)).collect();
-    let after: Vec<Cell4> = bodies.iter().filter(|c| c.3 != 0).map(|c| (c.0, c.1, 0, c.3)).collect();
+    let before: Vec<Lamina> = bodies.iter().filter(|c| c.2 != 0).map(|c| (c.0, c.1, 0, c.2)).collect();
+    let after: Vec<Lamina> = bodies.iter().filter(|c| c.3 != 0).map(|c| (c.0, c.1, 0, c.3)).collect();
     if before.is_empty() || after.is_empty() {
         return None;
     }

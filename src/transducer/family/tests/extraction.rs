@@ -127,19 +127,19 @@ assert!(
 fn b_does_as_rotation_about_its_centre_is_rebased() {
 let letter = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
 let rot = crate::transducer::alphabet::Word::from_letters(&[(letter, false)]);
-// A is the single hue-1 cell; B is the hue-3 bar, another shape.
+// A is the single hue-1 lamina; B is the hue-3 bar, another shape.
 // A placement of (3, 3) keeps both images inside the frame for
-// either orientation of the quarter turn (cells map to
+// either orientation of the quarter turn (laminae map to
 // (c, −r−1) + p or (−c−1, r) + p).
 let x = grid(&["330000", "000000", "001000", "000000", "000000", "000000"]);
 let bodies = perceive(&x);
 let a = bodies
     .iter()
-    .find(|b| b.cells.iter().any(|c| c.3 == 1))
+    .find(|b| b.laminae.iter().any(|c| c.3 == 1))
     .expect("body A");
 let b = bodies
     .iter()
-    .find(|b| b.cells.iter().any(|c| c.3 == 3))
+    .find(|b| b.laminae.iter().any(|c| c.3 == 3))
     .expect("body B");
 assert_ne!(a.moduli, b.moduli, "two shapes, two charts");
 // Form::default() carries the Frame at index 0.
@@ -212,9 +212,9 @@ let reference = apply_form(
 )
 .expect("the pair form speaks");
 assert!(
-    reference.cells.iter().any(|c| c.2 == 5),
+    reference.painted.iter().any(|c| c.2 == 5),
     "B is spoken in frame in its own colour, got {:?}",
-    reference.cells
+    reference.painted
 );
 let spoken = apply_form(
     &form,
@@ -225,13 +225,13 @@ let spoken = apply_form(
 .expect("rebased speaks");
 assert!(spoken.unspoken.is_empty(), "both classes have a body on this grid");
 assert_eq!(
-    spoken.cells, reference.cells,
+    spoken.painted, reference.painted,
     "the rebased form speaks B's body with B's colours at B's placement"
 );
 assert!(
-    spoken.cells.iter().all(|c| c.2 != 3),
+    spoken.painted.iter().all(|c| c.2 != 3),
     "B is never spoken through A's hue map, got {:?}",
-    spoken.cells
+    spoken.painted
 );
 }
 
@@ -334,7 +334,7 @@ let spoken = apply_form(
 assert_eq!(
     spoken.grid(),
     Some(family[0].1.clone()),
-    "spoken cells equal the target, and they fit the frame"
+    "the spoken sites equal the target, and they fit the frame"
 );
 assert_ne!(
     form_deflation(&rule.form, &family, &crystal).0,
@@ -543,7 +543,7 @@ assert!(
     "one bar moved and the other stood: no single versor carries the pair, a remainder edge (50.3)"
 );
 // AND THE RULE DEMANDS THE MULTIPLICITY RATHER THAN SPEAKING ONE OF IT (D8,
-// 50.5). Both bars are single-hue two-cell bars, so they are ONE chart, and
+// 50.5). Both bars are single-hue two-lamina bars, so they are ONE chart, and
 // within one pair one is translated and the other is still: two carriages
 // under one chart, which no member can carry and no coordinate the
 // correspondence has selects between — the chart is what it matches by and
@@ -566,7 +566,7 @@ assert_eq!(
     "the class's one chart is a multiplicity, so it carries no word; got {words}"
 );
 let demands: Vec<_> = rule.form.demand_vertices().collect();
-let [(_, kind, chart, cells)] = demands.as_slice() else {
+let [(_, kind, chart, links)] = demands.as_slice() else {
     panic!("one demand, on the one chart the multiplicity is at; got {}", demands.len())
 };
 assert!(
@@ -582,8 +582,8 @@ assert_eq!(
     "and it names the chart the bars stand on"
 );
 assert!(
-    !cells.is_empty() && cells.iter().all(|&(_, _, before, after)| before != after),
-    "carrying the cells it stands for, each one the pair asks a different hue of"
+    !links.is_empty() && links.iter().all(|&(_, _, before, after)| before != after),
+    "carrying the links it stands for, each one the pair asks a different hue of"
 );
 assert!(
     !rule.form.is_closed(),

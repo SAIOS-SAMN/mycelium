@@ -5,21 +5,14 @@
 //! carriage that pairs one with another, and the faces their supports
 //! name.
 //!
-//! THE SCENE IS NOT FOUR ARRAYS. It was: `ins` and `outs` as `Vec<Cand>`
-//! indexed by the order `perceive` happened to return bodies in, `used_in`
-//! and `used_out` as `Vec<bool>` aligned to them by arithmetic, `pairs` as
-//! index triples into both, and `group_by_chart` answering lists of
-//! indices. Every one of those is a member named by its arrival position
-//! (rule 15) and a presence held as a boolean rather than read from a
-//! keyed set (rule 2) — and the parallel arrays are the shape that made
-//! `usize::MAX` reachable for as "no member here".
-//!
-//! A candidate is addressed by its own CONTENT: the shell kind it came
-//! from and its cells written out, which `body_of` has already sorted. The
-//! scene is a `Keyed` of those; consumption is a keyed set; a pair is
-//! keyed by its two ends the way a carriage is (`carriage_key`); and a
-//! chart group is a list of addresses. Nothing in the scene is indexed by
-//! when it was perceived.
+//! THE SCENE IS NOT FOUR ARRAYS. A candidate is addressed by its own
+//! CONTENT: the shell kind it came from and its laminae written out, which
+//! `body_of` has already sorted. The scene is a `Keyed` of those;
+//! consumption is a keyed set, never a boolean aligned to an arrival slot
+//! (rule 2); a pair is keyed by its two ends the way a carriage is
+//! (`carriage_key`); and a chart group is a list of addresses. Nothing in
+//! the scene is indexed by when it was perceived (rule 15), and no member
+//! is named by a position that `usize::MAX` could stand in for.
 //!
 //! Split from `pair.rs` at the §1.1 600-line reading bound.
 
@@ -45,33 +38,32 @@ pub(crate) fn face_work() -> u64 {
 
 /// Faces the bundle names: star from the Frame (when the form carries one),
 /// plus pairs whose after-supports overlap or sit at ring distance one.
-/// Occupancy is keyed by cell; related pairs are a Keyed set.
+/// Occupancy is keyed by site; related pairs are a Keyed set.
 ///
-/// COST IS THE CELLS, NOT THE BODIES ON THEM. A cell with k occupants
+/// COST IS THE SITES, NOT THE BODIES ON THEM. A site with k occupants
 /// contributes k−1 faces, not k(k−1)/2 — see the chain below for why the
 /// chords are not faces the complex is missing. Every face this writes is
 /// counted through `note_face_work`, so the gauge in
-/// `face_work_is_linear_in_occupied_cells` reads the whole cost and not the
+/// `face_work_is_linear_in_occupied_sites` reads the whole cost and not the
 /// part that was already linear.
 ///
 /// The supports arrive KEYED BY MEMBER — a vertex AND the chart it stands at
 /// there (D10) — which is the coordinate a face is actually between: 21 step 2
 /// relates two BODIES, and a vertex covering several bodies on several charts is
-/// several occupants of the cells they sit on. Keyed by the vertex alone, the
-/// pairs this returns named a relation between two vertices and left which of
-/// their bodies met to be guessed by whatever built the face.
+/// several occupants of the sites they sit on. Keyed by the vertex alone, the
+/// pairs this returns would name a relation between two vertices and leave
+/// which of their bodies met to be guessed by whatever built the face.
 ///
 /// The pairs are member pairs, so the face is created already carrying which
 /// member of `i` relates to which member of `j`. NO PRODUCT OF TWO FIBRES is
-/// taken anywhere: the occupancy is keyed by CELL and a cell names its
+/// taken anywhere: the occupancy is keyed by SITE and a site names its
 /// occupants, so the chain over `windows(2)` yields incidences the scene has.
 ///
-/// THE MEMBERS ARE READ FROM THE INDEX. This counted `for vi in 0..n` and asked
-/// `supports` for each — a walk of the integers with a keyed read inside it,
-/// which finds nothing for a vertex that has no support and says nothing about
-/// one the index holds and the count does not reach. `supports` IS the member
-/// index; walking it is reading it (rule 1).
-pub(crate) fn star_and_cell_faces(
+/// THE MEMBERS ARE READ FROM THE INDEX. `supports` IS the member index, and
+/// walking it is reading it (rule 1); a count of the integers with a keyed
+/// read inside finds nothing for a vertex with no support and says nothing
+/// about one the index holds and the count does not reach.
+pub(crate) fn star_and_site_faces(
     frame: Option<&[u8]>,
     supports: &crate::network::nerve::Keyed<Vec<(i64, i64, i64)>>,
 ) -> Vec<(Vec<u8>, Vec<u8>)> {
@@ -91,13 +83,13 @@ pub(crate) fn star_and_cell_faces(
         }
         for &(r, c, f) in supp {
             note_face_work();
-            let k = support_key(r, c, f);
+            let k = base_key(r, c, f);
             match occ.get_mut(&k) {
                 // The members ascend in key order and a member is offered its
                 // own support once, so a repeat can only be the one just
-                // pushed. This was `!v.contains(&id)`, a walk of the cell's
-                // occupants on every offer — k² comparisons on the same cell
-                // that the chain below was already paying k² for.
+                // pushed; a walk of the site's occupants on every offer would
+                // be k² comparisons on the same site that the chain below is
+                // already paying k² for.
                 Some(v) => match v.as_slice() {
                     [.., last] if *last == mk => {}
                     _ => v.push(mk.clone()),
@@ -108,22 +100,17 @@ pub(crate) fn star_and_cell_faces(
             }
         }
     }
-    // A CELL'S OCCUPANTS ARE A SIMPLEX, NOT A CLIQUE. Every vertex on this
-    // cell meets every other ON IT, so the subcomplex they span is a simplex
-    // — contractible, and every cycle inside it is a boundary. This wrote
-    // all k(k−1)/2 of those pairs as faces, and `loops_of` builds a cycle
-    // basis of the 1-skeleton with no 2-cells to fill them with, so the form
-    // carried k(k−1)/2 − (k−1) loops that bound by construction and the
-    // pivot drive cloned the whole form once per candidate against each one.
-    //
-    // Measured on the fleet: 223 bodies on one cell gave a form of 24 920
-    // loops, every one of them reported "closed by the tree gauge", and two
-    // voices sat on 3 GB at 85% of a core for six minutes proving that
-    // boundaries are boundaries. The doc above this claimed "never n²".
+    // A SITE'S OCCUPANTS ARE A SIMPLEX, NOT A CLIQUE. Every vertex on this
+    // site meets every other ON IT, so the subcomplex they span is a simplex
+    // — contractible, and every cycle inside it is a boundary. Writing all
+    // k(k−1)/2 of those pairs as faces would hand `loops_of` a cycle basis
+    // of the 1-skeleton with nothing to fill k(k−1)/2 − (k−1) loops that
+    // bound by construction, and the pivot drive would clone the whole form
+    // once per candidate against each one.
     //
     // The chain is that simplex's spanning tree: k−1 faces, the same
     // connectivity and the same components, and the only cycles that survive
-    // are the ones spanning DISTINCT cells — which are the cycles that carry
+    // are the ones spanning DISTINCT sites — which are the cycles that carry
     // a class. The occupants are read in the form's own vertex coordinate,
     // which is content order, so two minds holding one scene chain it alike.
     for (_k, members) in occ.scoped() {
@@ -139,7 +126,7 @@ pub(crate) fn star_and_cell_faces(
         }
         for (r, c, f) in ring_of_support(supp) {
             note_face_work();
-            let Some(others) = occ.get(&support_key(r, c, f)) else {
+            let Some(others) = occ.get(&base_key(r, c, f)) else {
                 continue;
             };
             for u in others {
@@ -177,14 +164,14 @@ pub(crate) struct Cand {
 }
 
 /// THE ADDRESS OF A CANDIDATE, as content (A21): the shell kind it came
-/// from and its cells written out, length-prefixed. `body_of` has sorted
+/// from and its laminae written out, length-prefixed. `body_of` has sorted
 /// them, so the address is canonical. No digest and no arrival index — a
 /// hash would key perception by bytes, and a position would make the
 /// scene's order part of its meaning (rule 2, rule 6, rule 15).
 pub(crate) fn cand_key(kind: crate::transducer::peel::ShellKind, body: &Body) -> Vec<u8> {
     let mut k = vec![kind.as_u8()];
-    k.extend_from_slice(&(body.cells.len() as u32).to_le_bytes());
-    for &(r, c, f, h) in &body.cells {
+    k.extend_from_slice(&(body.laminae.len() as u32).to_le_bytes());
+    for &(r, c, f, h) in &body.laminae {
         k.extend_from_slice(&r.to_le_bytes());
         k.extend_from_slice(&c.to_le_bytes());
         k.extend_from_slice(&f.to_le_bytes());
@@ -216,8 +203,8 @@ pub(crate) fn scene_cands(grid: &Grid, scale: Option<((usize, usize), (usize, us
         let parent = cand_key(whole, &b);
         let mut own = vec![parent.clone()];
         cands.insert(&parent, Cand { body: b.clone(), kind: whole, parent: parent.clone() });
-        for shell in crate::transducer::peel::peel_body_scaled(&b.cells, scale) {
-            if shell.kind == whole || shell.laminae.is_empty() || shell.laminae == b.cells {
+        for shell in crate::transducer::peel::peel_body_scaled(&b.laminae, scale) {
+            if shell.kind == whole || shell.laminae.is_empty() || shell.laminae == b.laminae {
                 continue;
             }
             let body = body_of(shell.laminae);

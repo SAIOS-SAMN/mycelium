@@ -10,7 +10,7 @@
 //! chart, the face's two addresses, the chart with the cells read.
 
 use super::*;
-use crate::transducer::family::{perceive, Body, Cell4, Grid};
+use crate::transducer::family::{perceive, Body, Grid, Lamina};
 
 /// What one vertex does on one pair of the family.
 pub(crate) enum Carried {
@@ -123,7 +123,7 @@ pub(crate) fn vertex_carries_pair(
         }
         spoke = true;
         for body in fiber {
-            for &(r, c, k, h) in &body.cells {
+            for &(r, c, k, h) in &body.laminae {
                 let Some(p) = element::carry_center(&versor, r, c, k) else {
                     return Carried::Fails(FAIL_NO_CARRY, at());
                 };
@@ -170,8 +170,8 @@ pub(crate) fn vertex_carries_pair(
     // cover it between them, and asking per member would call that coverage
     // a part.
     for image in perceive(y) {
-        let touched = image.cells.iter().any(|&(r, c, _, _)| landed.contains(&cell_key(r, c)));
-        if touched && !image.cells.iter().all(|&(r, c, _, _)| landed.contains(&cell_key(r, c))) {
+        let touched = image.laminae.iter().any(|&(r, c, _, _)| landed.contains(&cell_key(r, c)));
+        if touched && !image.laminae.iter().all(|&(r, c, _, _)| landed.contains(&cell_key(r, c))) {
             // The image body is reached in part BY THE FIBRE AS A WHOLE, so the
             // chart named is the image's own: no one member is at fault and the
             // court says which image it is, which is the coordinate 50.9 wants.
@@ -185,7 +185,7 @@ fn form_covers_cells(
     f: &Form,
     pair: usize,
     x: &Grid,
-    cells: &[Cell4],
+    cells: &[Lamina],
 ) -> bool {
     let mut covered: Keyed<u8> = Keyed::new();
     for (_, _, _, demand_cells) in f.demand_vertices() {
@@ -216,7 +216,7 @@ fn form_covers_cells(
             }
             let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else { continue; };
             for b in fiber_on(&bodies, &member.chart) {
-                for &(r, c, k, h) in &b.cells {
+                for &(r, c, k, h) in &b.laminae {
                     let Some(p) = element::carry_center(&versor, r, c, k) else { continue; };
                     let Some((tr, tc, tk)) = element::cell_of(&p) else { continue; };
                     if tk != k {
@@ -259,7 +259,7 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
                 if why == FAIL_PART {
                     let uncovered = perceive(y).into_iter().any(|image| {
                         if image.moduli == chart {
-                            !form_covers_cells(f, pair, x, &image.cells)
+                            !form_covers_cells(f, pair, x, &image.laminae)
                         } else {
                             false
                         }
@@ -301,17 +301,17 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
 /// `versor`. The anchor is the least cell in the body's own order — a
 /// coordinate of the body, never a choice among its cells.
 fn image_body(body: &Body, versor: &Versor, images: &[Body]) -> Option<usize> {
-    let [(r, c, k, _), ..] = body.cells.as_slice() else {
+    let [(r, c, k, _), ..] = body.laminae.as_slice() else {
         return None;
     };
     let (r, c, k) = (*r, *c, *k);
     let (tr, tc, tk) = element::cell_of(&element::carry_center(versor, r, c, k)?)?;
-    images.iter().position(|b| b.cells.iter().any(|&(br, bc, bk, _)| (br, bc, bk) == (tr, tc, tk)))
+    images.iter().position(|b| b.laminae.iter().any(|&(br, bc, bk, _)| (br, bc, bk) == (tr, tc, tk)))
 }
 
 fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
     let mut pos: Vec<(i64, i64, i64)> =
-        a.cells.iter().chain(b.cells.iter()).map(|&(r, c, k, _)| (r, c, k)).collect();
+        a.laminae.iter().chain(b.laminae.iter()).map(|&(r, c, k, _)| (r, c, k)).collect();
     pos.sort_unstable();
     pos.dedup();
     crate::transducer::blade::shape_of(&pos)
