@@ -164,7 +164,7 @@ pub fn declare_unspoken(
     family: &[(Grid, Grid)],
     remainders: &[crate::transducer::germinate::ResidualGerm],
 ) -> Option<Form> {
-    use crate::transducer::sentence::{demand_key, pieces, Cell, Demand};
+    use crate::transducer::sentence::{pieces, Cell, Demand};
     // THE COURT'S OWN READER SAYS WHAT IS UNDECLARED (law 12): a cell a
     // demand the extraction already emitted names is declared, and naming
     // it again under `Source` would be one fact said twice. Sorted and
@@ -204,17 +204,7 @@ pub fn declare_unspoken(
         if kind.typed().is_err() {
             continue;
         }
-        let key = demand_key(&kind, &chart);
-        let held = declared.demands.get(&key).copied();
-        match held.and_then(|i| declared.vertices.get_mut(i as usize)) {
-            Some(Vertex::Demand { bodies, .. }) => {
-                bodies.extend(cells);
-                bodies.sort_unstable();
-                bodies.dedup();
-            }
-            _ => declared.vertices.push(demand_vertex(kind, &chart, cells)),
-        }
-        declared.reindex();
+        declared.stand_demand(kind, &chart, cells);
         any = true;
     }
     any.then_some(declared)

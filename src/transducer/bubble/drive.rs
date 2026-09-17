@@ -204,23 +204,25 @@ impl Contemplation {
                 continue;
             };
             if let Some(mut form) = b.form.clone() {
-                // EVERY SNAP THIS PIVOT MAKES, not none of them. `let _ =`
-                // stood here and threw away the whole return — the demand,
-                // the torsion filing, the vortex and the adjunction — so a
-                // pivot on this path made its moves and reported nothing.
-                //
-                // Measured at 1d98080, one recut: `adjoin from residue` 8
-                // and every drain outcome 0 — not `letter adjoined`, not
-                // `letter held`, not `letter refused`. The drain never ran,
-                // because `Expanded.adjoined` was empty while the pivot had
-                // emitted eight adjunctions. R21 carried `Snap::Adjoin` out
-                // through `expand_with`, which keeps its snaps, and not
-                // through this, which discards them. The mint was wired to
-                // one of the two paths a pivot runs on.
+                // Every snap this pivot makes is read: the adjunction is
+                // carried out, and a loop's standing demand is written on
+                // the form (16.16 step 6). Both pivot paths read the same
+                // snaps (law 12).
                 let snaps = form.pivot_loop(bk, &horizon, crystal, budget, bundle.as_deref(), t);
                 for s in &snaps {
-                    if let crate::transducer::sentence::Snap::Adjoin { rotor, chart, .. } = s {
-                        adjoined.push((rotor.as_ref().clone(), chart.clone()));
+                    match s {
+                        crate::transducer::sentence::Snap::Adjoin { rotor, chart, .. } => {
+                            adjoined.push((rotor.as_ref().clone(), chart.clone()));
+                        }
+                        crate::transducer::sentence::Snap::Demand { rotor, chart, .. } => {
+                            if let Some(kind) = crate::transducer::alphabet::standing(
+                                rotor,
+                                crate::transducer::alphabet::BLOCK_ORDER[0].0,
+                            ) {
+                                form.stand_demand(kind, chart, Vec::new());
+                            }
+                        }
+                        _ => {}
                     }
                 }
                 if let Some(b) = self.bubbles.get_mut(bk) {

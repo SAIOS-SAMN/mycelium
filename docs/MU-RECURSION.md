@@ -5105,7 +5105,7 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] vortex {idea} loop {i} collapsed by {perception|glue|ruling} to axis {label}
 [{tag}] torsion filed {idea} (σ,ℓ)
 [{tag}] torsion open {idea} chord {i}
-[{tag}] demand spoken {key} order ∞
+  demand spoken {idea} order ∞ charts {n}
 [{tag}] horizon {n} seeded from {hypha} chart {inv}
 [{tag}] form spoken: {addr} … torsion {n}
 [{tag}] receipt K {k} h {h} parents {n}

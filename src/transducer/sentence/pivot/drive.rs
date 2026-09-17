@@ -258,14 +258,8 @@ impl Form {
         t_extent: u64,
     ) -> Vec<Snap> {
         let idea = idea.as_ref();
-        // THE MEET IS RE-DERIVED, NOT ASSERTED. `by_address` is how A6 and
-        // Mayer–Vietoris find the vertex carrying an address, and a stroke
-        // that reads a stale one reads the wrong word — Law 2, under an
-        // index instead of a digest. This stood as a `debug_assert!` that
-        // the caller had reindexed, which is nothing at all in release: the
-        // form went on to be pivoted with an empty meet. Deriving it here
-        // costs one pass over the vertices and faces, which `apply_pivot`
-        // already pays on every applied move.
+        // The meet is re-derived, never asserted: `by_address` is how A6 and
+        // Mayer–Vietoris find the vertex carrying an address (law 2).
         self.reindex();
         // WHAT THIS FORM HAD ALREADY PUT TO THE MESH when the stroke began.
         // Read once, here, and not from `self.torsion` at each candidate
@@ -306,28 +300,9 @@ impl Form {
                     break;
                 }
             }
-            // R1: RE-GAUGING PRESERVES RANK, certified here. This stood as
-            // a `debug_assert_eq!`, which is nothing in a release build,
-            // and a release build is what the mesh runs -- so a gauge that
-            // moved the rank went on to be pivoted from, and every
-            // certificate the drive then issued measured its move against
-            // a rank the theorem says it should not have had. A theorem
-            // asserted only in a debug build is not certified (law 10:
-            // direction is a pivot, closure certifies). It HOLDS, in the
-            // vocabulary the arms above it already use.
-            //
-            // IT IS READ AS A MOVE, NOT AS AN INEQUALITY. `self.rank() !=
-            // Some(rank_before_gauge)` collapsed the four-coordinate audit
-            // onto one bool and broke the whole drive on it, so a gauge that
-            // DISCHARGED a coordinate — the move A18 names, and the one the
-            // certificate is issued for — stopped the pivot exactly as a
-            // corrupt one would, and the line said only "moved the rank".
-            // §2.3 has the reading: `Rank::moved` names which coordinate a
-            // unit left and carries the delta whole when nothing admissible
-            // happened. R1's theorem is that re-gauging holds the rank, so
-            // `Equal` continues; a discharge is admissible and continues,
-            // with the coordinate named; only `Inadmissible` breaks, and it
-            // breaks saying what the four coordinates actually did.
+            // R1: re-gauging preserves rank, certified here as a move (§2.3,
+            // law 10): `Equal` continues, a discharge continues with its
+            // coordinate named, and only `Inadmissible` holds the form.
             let after_gauge = self.rank();
             match after_gauge.map(|a| Rank::moved(rank_before_gauge, a)) {
                 None => {
@@ -419,107 +394,32 @@ impl Form {
                 if handled.contains(&loop_k) {
                     continue;
                 }
-                // THE HOLONOMY THE PATHS ACTUALLY CARRY, which is the edge
-                // composite wherever a path has one. This read
-                // `self.loops[idx].holonomy` — the word — for both the
-                // horizon key and the order that picks the `Discharge`
-                // branch, while `class_vector` two lines above already read
-                // the edge composite. A loop was judged by one object and
-                // filed under another.
-                //
-                // `open` holds only loops whose paths AGREE on a class
-                // vector, and the class is a coordinate of that vector, so a
-                // loop reaching here has one holonomy class across its paths
-                // and `holonomy_word` answers it rather than a path taken by
-                // position.
+                // The holonomy the member paths carry — the edge composite
+                // wherever a path has one — is the class the loop is judged
+                // and filed by (law 12); `open` holds only loops whose paths
+                // agree on it, so `holonomy_word` answers one class.
                 let Some(hw) = self.holonomy_word(idx) else {
                     continue;
                 };
                 let Some(rotor_key) = hw.rotor().class_key() else {
                     continue;
                 };
-                // A19 IS ABOUT WHAT THE MESH HAS RULED, and the horizon says
-                // so on every member — it carries a `Standing` beside the
-                // rotor and the order. This read discarded it and took
-                // PRESENCE for the answer, and presence is not the question.
-                //
-                // `hold_form` paints the horizon from `paint_seeded` and then
-                // `paint_standing`, and `paint_standing` puts the form's OWN
-                // standing loop classes on it — both `lp.holonomy.rotor()`
-                // and each edge composite's — under exactly the condition
-                // `open` filters these loops by. So every loop reaching here
-                // found its own class on the horizon and read it as the
-                // mesh's. `held` was `true` for every open loop by
-                // construction, on any corpus, and the mind deferred to
-                // itself: A19 suppresses the demand, the filing announcement
-                // AND the widening, so all three routes out closed at once.
-                //
-                // MEASURED at 7e73a1d: `held true` on 108 of 108, `opens 0`
-                // on 163 of 163, and not one `demand spoken`, `torsion
-                // filed` or `torsion open` line. Against that, zero
-                // `horizon … seeded` lines in two hours — the syllabus has
-                // never delivered a class to this fleet, so every entry the
-                // pivot deferred to was one the mind wrote about itself.
-                //
-                // L24's admission is right and stays: a perceived
-                // obstruction and a contemplated one ARE one kind of object,
-                // and the pivot must see the classes the form arrived with.
-                // What was wrong is the standing they went under. `Held` is
-                // "an idea this mind is holding, not yet a word" — which is
-                // precisely the mind's own obstruction, and precisely what
-                // must NOT suppress the demand. `Ruled` is court-ratified,
-                // and that is the only standing on which another mind can
-                // supply the word this one is waiting for.
+                // A19 is about what the MESH has ruled: `Ruled` on the
+                // horizon is the one standing on which another mind supplies
+                // the word; `Held` is this mind's own obstruction (L24) and
+                // suppresses nothing.
                 let held = horizon
                     .get(&rotor_key)
                     .is_some_and(|(_, _, st)| matches!(st, Standing::Ruled));
                 let order = hw.order();
                 let cands = self.candidates_for(idx, &kappa, crystal, held, &published);
-                // THE SPAN READING (§8.1, measurement only — nothing below
-                // branches on it).
-                //
-                // WHAT IS NOT MEASURABLE HERE, stated because measuring it is
-                // the obvious move and it returns a constant. "Candidates on
-                // an axis `kappa` does not occupy" is not a reading of this
-                // corpus or any other: `candidates_for` builds every non-Open
-                // candidate by walking `kappa.coordinates()`, which yields
-                // only occupied axes, and it tags the puncture `Axis::Open`,
-                // which `ClassVector::occupies` answers `false` for
-                // unconditionally. So that count is exactly the OpenAxis
-                // count on every input, and a count that is a constant by
-                // construction asserts nothing.
-                //
-                // WHAT THE CANDIDATES DO SEPARATE is where each one came
-                // from, and that is the span question `factor_on_plane`
-                // answers. `factor_on_plane` itself takes a budgeted crystal
-                // read and would change the thing this line measures, but
-                // `candidates_for` has ALREADY made the read:
-                //
-                //   - `Unit`, `Prime5`, `Prime13` and `OffPlane` candidates
-                //     are the words `crystal.on_axis` returned. They are HELD
-                //     GENERATORS, and one existing means the obstruction
-                //     factors through the basis — `Understood`.
-                //   - `Orientation`, `Placement`, `Dilation` and `Hue`
-                //     candidates are built from `kappa`'s own carriage, gauge
-                //     and the sheet word. They are the residue re-presented
-                //     as its own inverse and hold no information about what
-                //     the mind knows.
-                //   - `Open` is the puncture, offered only on a free part.
-                //
-                // So `held` counts the basis's reach. Where it is zero the
-                // residue lies strictly outside the span, every contraction
-                // in the existing basis is provably terminal, and the one
-                // algebraic move left is the puncture — which is exactly what
-                // `Rank::moved` refuses as `[0, 0, 0, +1]`.
-                //
-                // THE STARVATION READING rides the same line. The loop below
-                // spends a unit per candidate and BREAKS on exhaustion, so
-                // candidates early in 12.6's fixed axis order can drink the
-                // budget before one later in that order is ever reached.
-                // `unreached` is how many were never tried; with `starved` it
-                // says whether a form's closing pivot is unreachable every
-                // stroke, which is a candidate mechanism for the 2495 forms
-                // that never discharge.
+                // The span reading, measured and never branched on: `held`
+                // counts the words `crystal.on_axis` answered — the basis's
+                // reach on the loop's occupied axes; `opens` the puncture,
+                // offered on a free part; `self` the loop's own inverses,
+                // which say nothing about what the mind holds. `unreached`
+                // and `starved` say whether the fixed axis order of 12.6 let
+                // the budget reach every candidate.
                 let kind = |c: &&Candidate| match c.axis {
                     Axis::Unit(_) | Axis::Prime5(_) | Axis::Prime13(_) | Axis::OffPlane => 0,
                     Axis::Open => 1,
@@ -528,91 +428,31 @@ impl Form {
                 let held_gens = cands.iter().filter(|c| kind(c) == 0).count();
                 let opens = cands.iter().filter(|c| kind(c) == 1).count();
                 let self_moves = cands.iter().filter(|c| kind(c) == 2).count();
-                // WHETHER THE MESH ALREADY HOLDS THE CLASS, and at what
-                // order. Every silent path out of this loop runs through
-                // these two. `Discharge::NoneDischarged` prints nothing at
-                // all when `held` — the demand is not spoken and the filing
-                // is not announced, both correctly under A19, since a class
-                // the mesh holds is not this mind's to demand — and `held`
-                // is also the FIRST term of the widening gate below, so a
-                // loop on the horizon can neither ask nor widen. It waits
-                // for the held form. Measured at 208ed2e: 172 loops, every
-                // one `total 0`, and not one `torsion filed`, `torsion
-                // open` or `demand spoken` line among them. That is the
-                // signature of `held`, and this line is what confirms it
-                // rather than inferring it from an absence.
-                //
-                // WHAT THE LOOP OCCUPIES, because the counts above cannot say
-                // why a list is empty and the first reading came back empty on
-                // 342 of 373 loops. A loop reaching here is non-zero — `open`
-                // filtered on `!k.is_zero()` — so it occupies at least one
-                // coordinate, and exactly three things turn an occupied
-                // coordinate into no candidate: `Hue` where `loop_transport`
-                // carries no member path, and `Unit`/`Prime5`/`Prime13`/
-                // `OffPlane` where `crystal.on_axis` holds no word. The axes
-                // separate those, and nothing else in this line does.
+                // `ruled` says whether the mesh holds the class (A19) — a
+                // loop on the horizon neither demands nor widens, it waits
+                // for the held form — and `occupies` names the coordinates
+                // the loop stands on, so an empty candidate list is read by
+                // its cause: `Hue` with no member path, or an axis the
+                // crystal holds no word on.
                 let occupied = kappa.coordinates();
                 let mut tried = 0usize;
                 let mut starved = false;
                 let mut discharging: Vec<PivotCertificate> = Vec::new();
                 let mut eliminated = 0usize;
                 for cand in &cands {
-                    // THE ZERO-SPEND ELIMINATOR. Whether a held word can
-                    // cancel this loop's rotor is EXACT RATIONAL ARITHMETIC
-                    // in the even subalgebra — `κ · g⁻¹ ≟ 1` — and it needs
-                    // no trial, no face write and no budget. Every candidate
-                    // paid a `faces.clone()`, a `loops_of` walk and a full
-                    // `class_vectors_on` read to discover what one product
-                    // answers.
-                    //
-                    // IT ELIMINATES AND DOES NOT DECIDE. The discharge
-                    // condition is not rotor equality: `trial` requires the
-                    // axis to zero AND `agrees_except` on every other
-                    // coordinate, ON EVERY MEMBER PATH, and placement,
-                    // dilation and hue live on the carriage and the gauge,
-                    // which no rotor product sees. So a candidate this
-                    // admits still runs the whole trial and is still refused
-                    // there; only the ones it REFUSES are skipped, and those
-                    // are refused because the algebra says the rotor cannot
-                    // cancel, which no amount of writing would change.
-                    //
-                    // Projective equality, never equality of tapes: identity
-                    // is a ray (1.5), and `q` and `q·q·q` are one vertex
-                    // spelled twice.
-                    //
-                    // Only the `Word` arm is eliminable. `Placement`, `Hue`
-                    // and `OpenAxis` move the carriage, the gauge and the
-                    // cover, none of which this product measures, so they
-                    // pass straight to the trial.
+                    // The zero-spend eliminator: whether a held word can
+                    // cancel this loop's rotor is exact arithmetic in the
+                    // even subalgebra and spends nothing. It eliminates and
+                    // never decides — a candidate it admits still runs the
+                    // whole trial, which reads the carriage and the gauge no
+                    // rotor product sees (12.6, 16.16 step 4). Only the
+                    // `Word` arm is eliminable.
                     if let PivotBy::Word { word, side, .. } = &cand.by {
-                        // THE TEST IS CONJUGACY, NOT COMPOSITION. Composing
-                        // the candidate onto `hw` directly is NOT the move
-                        // the trial makes: the chord sits inside the path
-                        // product, `hw = A·e·B`, so position and traversal
-                        // direction both matter and a composition taken at
-                        // the ends eliminates candidates that do discharge —
-                        // measured, four fixtures went to `discharged 0`.
-                        //
-                        // What survives the conjugation is the CLASS. If
-                        // writing `w` on the right closes the loop then
-                        // `A·e·w⁻¹·B = 1`, so `w = B·A·e`, which is a cyclic
-                        // permutation of `hw = A·e·B` and therefore conjugate
-                        // to it. On the left the same argument gives `w`
-                        // conjugate to `hw⁻¹`. Conjugacy is exactly what
-                        // `class_key` reads (15.3), so this is an exact
-                        // necessary condition and costs one keyed compare.
-                        //
-                        // AND THE TWO SIDES NAME ONE COORDINATE. This read
-                        // `hw.rotor()` on the right and `hw.inverse()
-                        // .rotor()` on the left, which is the same value:
-                        // `class_invariants` is the ray-corrected scalar
-                        // and pseudoscalar squared over the weight,
-                        // reversion preserves both grades, and the weight
-                        // divides out — so a rotor and its inverse stand at
-                        // one conjugacy stratum, which
-                        // `a_rotor_and_its_inverse_stand_at_one_stratum`
-                        // asserts. Two constructions of one fact (law 12),
-                        // and a branch that could drift from itself.
+                        // The test is conjugacy (15.3): writing `w` on either
+                        // side closes `A·e·B` only if `w` is conjugate to `hw`
+                        // or its inverse, and a rotor and its inverse stand at
+                        // one conjugacy stratum, so one keyed compare serves
+                        // both sides.
                         let _ = side;
                         if let (Some(want), Some(got)) =
                             (hw.rotor().class_key(), word.rotor().class_key())
@@ -663,74 +503,40 @@ impl Form {
                         _ => "understood",
                     }
                 );
-                // 37.7 FROM THE LOOP'S OWN RESIDUE. The basis reached no
-                // coordinate this loop occupies (`held_gens == 0`), the class
-                // was published on an earlier stroke and nothing answered
-                // (`published`), and the mesh has not ruled it. Asking again
-                // asks the same question of the same basis; the move left is
-                // to ADJOIN the rotor the loop measured, which is the one
-                // construction by which a mind gets a generator it was not
-                // given.
-                //
-                // IT IS NOT AN ALTERNATIVE TO THE WIDENING and it sits above
-                // the discharge for that reason. Widening attaches a cell and
-                // closes THIS loop on THIS form; adjoining puts a letter in
-                // the LANGUAGE, where every later form can divide by it. Put
-                // in the `NoneDischarged` arm it fired only when the widening
-                // failed — measured, never, because the widening closes the
-                // loop it is offered on — so the mind kept widening its cover
-                // and never learned the word. Both moves, every time the
-                // reading says the basis cannot reach the residue.
-                //
-                // It is carried out, not minted here: minting writes a word
-                // into the language and a form does not hold the language.
-                // The entity drains it beside the cover's own
-                // `Fill::Unspellable` candidates and stands it in the
-                // dialect, `Stood` and not `Ruled`, so it does not suppress
-                // the demand the mesh may still answer.
+                // 37.7 from the loop's own residue: the basis reached no
+                // coordinate this loop occupies, the class was published and
+                // nothing answered, so the rotor the loop measured is carried
+                // out to be adjoined — beside the widening, never instead of
+                // it. Minting is the entity's, since a form does not hold the
+                // language; it stands in the dialect, `Stood` not `Ruled`, so
+                // it suppresses no demand the mesh may still answer.
                 if held_gens == 0
                     && !held
                     && !hw.rotor().is_identity()
                     && hw.rotor().class_key().is_some_and(|k| published.get(&k).is_some())
                 {
-                    // EVERY CHART THE LOOP STANDS ON, not one of them by
-                    // position (rule 15). A loop running through vertices on
-                    // two charts is an obstruction on both, and a letter
-                    // adjoined at one is a word the pivot is never offered at
-                    // the other — the reading `admit_words_acting` files by.
-                    let mut at: Keyed<()> = Keyed::new();
-                    if let Some(lp) = self.loops.get(idx) {
-                        for vi in &lp.vertices {
-                            let Some(v) = self.vertices.get(*vi as usize) else {
-                                continue;
-                            };
-                            for chart in v.charts() {
-                                if at.contains(chart.key().as_bytes()) {
-                                    continue;
-                                }
-                                at.insert(chart.key(), ());
-                                snaps.push(Snap::Adjoin {
-                                    chord: idx,
-                                    rotor: Box::new(hw.rotor()),
-                                    chart,
-                                });
-                            }
-                        }
+                    // Every chart the loop stands on (rule 15): a loop through
+                    // vertices on two charts is an obstruction on both.
+                    let charts = self.charts_of_loop(idx);
+                    for chart in &charts {
+                        snaps.push(Snap::Adjoin {
+                            chord: idx,
+                            rotor: Box::new(hw.rotor()),
+                            chart: chart.clone(),
+                        });
                     }
-                    if !at.is_empty() {
+                    if !charts.is_empty() {
                         eprintln!(
                             "  adjoin from residue {:02x}{:02x}… loop {idx} charts {}",
                             idea[0],
                             idea[1],
-                            at.len()
+                            charts.len()
                         );
                     }
                 }
-                // ONE CERTIFICATE PER MOVE before anything is counted: a
-                // word offered on both sides of the chord and discharging
-                // on both is one move spelled twice (`one_per_move`), and
-                // counting its two certificates as a vortex held the loop
-                // under a superposition nothing could collapse.
+                // One certificate per move (`one_per_move`): a word
+                // discharging on both sides of the chord is one move spelled
+                // twice, never a vortex of itself.
                 let moves = one_per_move(&discharging);
                 if moves.len() != discharging.len() {
                     eprintln!(
@@ -744,24 +550,11 @@ impl Form {
                 match outcome_of(&moves, starved) {
                     Discharge::One(cert) => {
                         self.apply_pivot(&cert);
-                        // A18, T21 (iii): THE APPLIED PIVOT MAKES THE MOVE
-                        // ITS CERTIFICATE CLAIMS, certified here. A
-                        // `debug_assert_eq!` certified it in debug builds
-                        // and in nothing else, so in the build the mesh
-                        // runs a certificate claiming one move while the
-                        // form made another was recorded, spoken, and
-                        // settled on -- law 10 says closure certifies, and
-                        // a closure nobody checks certifies nothing.
-                        //
-                        // On disagreement the loop HOLDS: no snap, no
-                        // certificate filed, and `applied` stays false so
-                        // the drive stops rather than pivoting again from
-                        // a form it cannot account for. What is NOT done
-                        // is undoing the transport already written -- the
-                        // move is a legitimate one on the form, it is the
-                        // CLAIM about it that fails, and nothing
-                        // downstream may rest on an uncertified move
-                        // because nothing downstream is given one.
+                        // A18, T21 (iii): the applied pivot makes the move
+                        // its certificate claims, certified here (law 10).
+                        // On disagreement the loop holds — no snap, no
+                        // certificate — and nothing downstream rests on an
+                        // uncertified move.
                         if self.rank().map(|r| Rank::moved(rank_before, r)) != Some(cert.rank_move) {
                             eprintln!(
                                 "  pivot {:02x}{:02x}… loop {idx} held, the applied pivot did not make the move its certificate claims",
@@ -831,13 +624,23 @@ impl Form {
                     Discharge::NoneDischarged => match order {
                         Order::Infinite => {
                             if !held {
-                                snaps.push(Snap::Demand {
-                                    chord: idx,
-                                    key: rotor_key,
-                                });
+                                // One standing demand per chart the loop
+                                // stands on, carrying the holonomy rotor as
+                                // its witness (16.16 step 6).
+                                let charts = self.charts_of_loop(idx);
+                                for chart in &charts {
+                                    snaps.push(Snap::Demand {
+                                        chord: idx,
+                                        key: rotor_key.clone(),
+                                        rotor: Box::new(hw.rotor()),
+                                        chart: chart.clone(),
+                                    });
+                                }
                                 eprintln!(
-                                    "  demand spoken {:02x}{:02x}… order ∞",
-                                    idea[0], idea[1]
+                                    "  demand spoken {:02x}{:02x}… order ∞ charts {}",
+                                    idea[0],
+                                    idea[1],
+                                    charts.len()
                                 );
                             }
                             handled.insert(loop_k, ());
@@ -869,6 +672,46 @@ impl Form {
             handled = Keyed::new();
         }
         snaps
+    }
+
+    /// The form says out loud what it could not close (50.5): one demand
+    /// vertex per (kind, chart), the bodies it stands for gathered under
+    /// it. A vertex already standing for that kind on that chart takes the
+    /// bodies; a second vertex under one key would say one thing twice.
+    pub fn stand_demand(
+        &mut self,
+        kind: crate::transducer::sentence::Demand,
+        chart: &stalk::Invariant,
+        cells: Vec<crate::transducer::sentence::Cell>,
+    ) {
+        let key = crate::transducer::sentence::demand_key(&kind, chart);
+        let held = self.demands.get(&key).copied();
+        match held.and_then(|i| self.vertices.get_mut(i as usize)) {
+            Some(Vertex::Demand { bodies, .. }) => {
+                bodies.extend(cells);
+                bodies.sort_unstable();
+                bodies.dedup();
+            }
+            _ => self.vertices.push(Vertex::Demand { kind, chart: chart.clone(), bodies: cells }),
+        }
+        self.reindex();
+    }
+
+    /// Every chart a loop stands on, once each, in key order: the charts of
+    /// its vertices, never one of them by position (rule 15).
+    fn charts_of_loop(&self, idx: usize) -> Vec<stalk::Invariant> {
+        let mut at: Keyed<stalk::Invariant> = Keyed::new();
+        if let Some(lp) = self.loops.get(idx) {
+            for vi in &lp.vertices {
+                let Some(v) = self.vertices.get(*vi as usize) else {
+                    continue;
+                };
+                for chart in v.charts() {
+                    at.insert(chart.key(), chart);
+                }
+            }
+        }
+        at.scoped().map(|(_, c)| c.clone()).collect()
     }
 
     /// The candidate pivots of a held loop (16.16 step 3), read off its

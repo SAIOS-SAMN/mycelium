@@ -401,21 +401,11 @@ impl Bubble {
                             horizon_put(&mut self.horizon, *r, Standing::Held);
                         }
                     }
-                    // 37.7 AT A CELL: a rotation the seventeen do not spell.
-                    // It seeds no horizon — a horizon class is one the
-                    // alphabet names — and it closes nothing, and it is an
-                    // ADJUNCTION CANDIDATE: the rotor the mind measured and
-                    // has no letter for, which is exactly what an adjoined
-                    // generator is made of (37.7, `Derivation::adjoined`).
-                    //
-                    // It was dropped here. Measured across the fleet, every
-                    // Word vertex and every edge transport in every admitted
-                    // form carries the IDENTITY rotor — `turning 0` and
-                    // `turning_edges 0`, totals, over 38 and 44 admits — so
-                    // the mind holds no generator at all and `crystal.on_axis`
-                    // answers 0 on every read. It cannot: nothing in the tree
-                    // constructs one. This carries the rotor and its chart out
-                    // to the entity, which mints and stands it.
+                    // 37.7 at a cell: a rotation the seventeen do not spell
+                    // seeds no horizon, closes nothing, and is an adjunction
+                    // candidate — the rotor the mind measured and has no
+                    // letter for — carried out to the entity, which mints
+                    // and stands it (`Derivation::adjoined`).
                     Fill::Unspellable(r) => {
                         closed = false;
                         adjoined.push((r.as_ref().clone(), chart.clone()));
@@ -449,13 +439,27 @@ impl Bubble {
                     for i in 0..4 {
                         pivoted[i] = pivoted[i].saturating_add(m[i]);
                     }
-                    // 37.7 from the loop's own residue, joining the cover's
-                    // own candidates on the way out. The pivot measured a
-                    // rotor no held generator reaches and the mesh has not
-                    // answered; the entity mints it beside the ones the
-                    // cover meets produced, through the one construction.
-                    if let crate::transducer::sentence::Snap::Adjoin { rotor, chart, .. } = s {
-                        adjoined.push((rotor.as_ref().clone(), chart.clone()));
+                    match s {
+                        // 37.7 from the loop's own residue, joining the
+                        // cover's own candidates on the way out; the entity
+                        // mints it through the one construction.
+                        crate::transducer::sentence::Snap::Adjoin { rotor, chart, .. } => {
+                            adjoined.push((rotor.as_ref().clone(), chart.clone()));
+                        }
+                        // A held loop of infinite order the basis did not
+                        // discharge stands on the form as the demand it is,
+                        // carrying its holonomy rotor as witness (16.16 step
+                        // 6); the form's vertices carry no cells, so the
+                        // demand declares none.
+                        crate::transducer::sentence::Snap::Demand { rotor, chart, .. } => {
+                            if let Some(kind) = crate::transducer::alphabet::standing(
+                                rotor,
+                                crate::transducer::alphabet::BLOCK_ORDER[0].0,
+                            ) {
+                                form.stand_demand(kind, chart, Vec::new());
+                            }
+                        }
+                        _ => {}
                     }
                 }
                 self.take_form(form);

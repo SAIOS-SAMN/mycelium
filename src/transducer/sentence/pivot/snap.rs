@@ -23,7 +23,16 @@ pub enum Snap {
     Unmeasured { chord: usize, held: Vec<PivotCertificate> },
     TorsionFiled { chord: usize, ell: u32 },
     TorsionOpen { chord: usize },
-    Demand { chord: usize, key: crate::transducer::address::Address },
+    /// A held loop of infinite order the basis did not discharge: its
+    /// canonical holonomy rotor, carried out as the witness of the standing
+    /// demand the form speaks on each chart the loop stands on (16.16 step
+    /// 6, 37.7 at the rotor level).
+    Demand {
+        chord: usize,
+        key: crate::transducer::address::Address,
+        rotor: Box<crate::transducer::alphabet::Rotor>,
+        chart: crate::transducer::stalk::Invariant,
+    },
     /// 37.7 FROM A LOOP'S OWN RESIDUE: the basis reached no coordinate this
     /// loop occupies, the class was published and nothing answered, so the
     /// rotor the loop measured is carried out to be ADJOINED as a generator.

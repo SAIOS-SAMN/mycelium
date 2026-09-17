@@ -246,6 +246,31 @@ fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
     }
 }
 
+/// 50.5 — a form says what it could not close once per (kind, chart): a
+/// second standing of the same kind on the same chart gathers its bodies
+/// under the one vertex, and a different chart is a second vertex.
+#[test]
+fn a_form_stands_one_demand_per_kind_and_chart_and_gathers_the_bodies() {
+    let chart = stalk::Invariant(vec![1, 4, 4]);
+    let other = stalk::Invariant(vec![1, 6, 2]);
+    let mut f = Form::default();
+    f.stand_demand(Demand::Creation, &chart, vec![(0, 0, 0, 3)]);
+    f.stand_demand(Demand::Creation, &chart, vec![(0, 1, 0, 3), (0, 0, 0, 3)]);
+    f.stand_demand(Demand::Creation, &other, vec![(5, 5, 0, 1)]);
+    let demanded: Vec<(Demand, Vec<Cell>)> =
+        f.demand_vertices().map(|(_, k, _, cells)| (k.clone(), cells.to_vec())).collect();
+    assert_eq!(demanded.len(), 2, "one vertex per (kind, chart), got {demanded:?}");
+    let on_chart = f
+        .demands
+        .get(&demand_key(&Demand::Creation, &chart))
+        .copied()
+        .expect("the demand is indexed under its key");
+    let Some(Vertex::Demand { bodies, .. }) = f.vertices.get(on_chart as usize) else {
+        panic!("the index names the demand vertex")
+    };
+    assert_eq!(bodies, &vec![(0, 0, 0, 3), (0, 1, 0, 3)], "the bodies are gathered, sorted, once each");
+}
+
 #[test]
 fn tape_v4_refuses_short_or_partial() {
     let f = closed_word_form(Word::identity(), None);

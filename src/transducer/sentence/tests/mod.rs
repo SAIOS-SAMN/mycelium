@@ -10,6 +10,7 @@ mod gauge;
 mod lanes;
 mod letters;
 mod pivot;
+mod pivot_demand;
 mod pivot_generator;
 mod pivot_loop;
 mod refraction;

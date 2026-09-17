@@ -136,6 +136,30 @@ pub fn chord_form(chords: &[Word]) -> Form {
     f
 }
 
+/// A chord whose EDGE carries the word (50.3): the face's own word is the
+/// identity and the loop's holonomy is the stabilizer composite. This is
+/// the carrier an off-plane rotor stands on — a face word with no sensor
+/// action places no member pair, and a loop with no member path has no
+/// class to read.
+pub fn edge_chord_form(edges: &[Word]) -> Form {
+    let mut f = Form::default();
+    for (ci, w) in edges.iter().enumerate() {
+        let a = (ci * 2 + 1) as u16;
+        let b = (ci * 2 + 2) as u16;
+        f.vertices.push(word_vertex(a as u8, Word::identity()));
+        f.vertices.push(word_vertex(b as u8, Word::identity()));
+        f.faces.push(f.face_of(0, a).expect("star a"));
+        f.faces.push(f.face_of(0, b).expect("star b"));
+        f.faces.push(
+            f.face_carrying_with_edge(a, b, Word::identity(), Some(Transport::from_word(w.clone())))
+                .expect("a chord between two bodies"),
+        );
+    }
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    f
+}
+
 pub fn coboundary_chord_form() -> Form {
     let r = order4();
     let mut f = Form::default();
