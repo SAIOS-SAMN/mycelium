@@ -222,6 +222,55 @@ pub fn incidence_of(positions: &[(i64, i64)]) -> Vec<(usize, usize)> {
     edges
 }
 
+/// The 6-incidence of a 3D support given as positions in canonical order
+/// (sorted, deduplicated): 4-adjacency on (r, c) within each frame k, and
+/// 1-adjacency along k between frames at the same (r, c) (Chapter 51.3).
+pub fn incidence_of_3d(positions: &[(i64, i64, i64)]) -> Vec<(usize, usize)> {
+    let mut edges = Vec::new();
+    if positions.is_empty() {
+        return edges;
+    }
+    let mut by_k_row_col: Vec<usize> = (0..positions.len()).collect();
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: (k, r, c) order for column adjacency within frame"
+    )]
+    by_k_row_col.sort_unstable_by_key(|&i| (positions[i].2, positions[i].0, positions[i].1));
+    for w in by_k_row_col.windows(2) {
+        let (p, q) = (positions[w[0]], positions[w[1]]);
+        if p.2 == q.2 && p.0 == q.0 && p.1 + 1 == q.1 {
+            edges.push((w[0], w[1]));
+        }
+    }
+
+    let mut by_k_col_row: Vec<usize> = (0..positions.len()).collect();
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: (k, c, r) order for row adjacency within frame"
+    )]
+    by_k_col_row.sort_unstable_by_key(|&i| (positions[i].2, positions[i].1, positions[i].0));
+    for w in by_k_col_row.windows(2) {
+        let (p, q) = (positions[w[0]], positions[w[1]]);
+        if p.2 == q.2 && p.1 == q.1 && p.0 + 1 == q.0 {
+            edges.push((w[0], w[1]));
+        }
+    }
+
+    let mut by_row_col_k: Vec<usize> = (0..positions.len()).collect();
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: (r, c, k) order for frame adjacency"
+    )]
+    by_row_col_k.sort_unstable_by_key(|&i| (positions[i].0, positions[i].1, positions[i].2));
+    for w in by_row_col_k.windows(2) {
+        let (p, q) = (positions[w[0]], positions[w[1]]);
+        if p.0 == q.0 && p.1 == q.1 && p.2 + 1 == q.2 {
+            edges.push((w[0], w[1]));
+        }
+    }
+    edges
+}
+
 /// The connected components of `n` cells under an incidence: each cell's
 /// component root (union-find over the edges).
 pub fn components(n: usize, edges: &[(usize, usize)]) -> Vec<usize> {

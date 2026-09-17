@@ -513,3 +513,15 @@ fn perception_3d_coordinates_preserve_frame_and_moments() {
     assert_eq!(c3.2, num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)));
 }
 
+#[test]
+fn six_adjacency_connects_bodies_across_frames_into_one_streamline() {
+    let frame0 = grid(&["10", "00"]);
+    let frame1 = grid(&["10", "00"]);
+    let bodies = perceive_frames(&[frame0, frame1]);
+    assert_eq!(bodies.len(), 1, "two adjacent cells across k form one 3D body streamline");
+    assert_eq!(
+        bodies[0].shape.blade.shell,
+        num_rational::BigRational::from_integer(num_bigint::BigInt::from(2))
+    );
+}
+

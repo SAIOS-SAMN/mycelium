@@ -173,6 +173,26 @@ pub fn perceive_frame(grid: &Grid, frame: i64) -> Vec<Body> {
         .collect()
 }
 
+/// Perceive a sequence of frames (grids) as 3D bodies in (r, c, k):
+/// 6-connected components of one hue across all frames (Chapter 51.3, 51.4).
+pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
+    let mut cells: Vec<Cell4> = Vec::new();
+    for (k, grid) in grids.iter().enumerate() {
+        for (r, row) in grid.iter().enumerate() {
+            for (c, &h) in row.iter().enumerate() {
+                note_cell_read();
+                if h != 0 {
+                    cells.push((r as i64, c as i64, k as i64, h));
+                }
+            }
+        }
+    }
+    blade::components_3d(&cells)
+        .into_iter()
+        .map(body_of_3d)
+        .collect()
+}
+
 // `linear_block_of_versor` was here, renamed to `sensor_plane_block` and
 // then moved to `element::letters` beside the three other readers of a
 // versor, which are only correct together (§1.6: moved, not rewritten).

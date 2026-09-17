@@ -272,6 +272,31 @@ pub fn components(cells: &[(i64, i64, u8)]) -> Vec<Vec<(i64, i64, u8)>> {
     out.into_iter().map(|(_, comp)| comp).collect()
 }
 
+/// A 3D cell as the sensor hands it over: (r, c, k, hue).
+pub(crate) type Painted4 = (i64, i64, i64, u8);
+
+/// 6-connected components of a 3D scene across frames, as `Vec`-of-`Vec`.
+/// A body is one hue across the whole family (Chapter 51.3, 51.4).
+pub fn components_3d(cells: &[Painted4]) -> Vec<Vec<Painted4>> {
+    let mut sorted: Vec<Painted4> = cells.to_vec();
+    sorted.sort_unstable();
+    sorted.dedup_by_key(|c| (c.0, c.1, c.2));
+    let positions: Vec<(i64, i64, i64)> = sorted.iter().map(|c| (c.0, c.1, c.2)).collect();
+    let edges: Vec<(usize, usize)> = crate::transducer::sentence::incidence_of_3d(&positions)
+        .into_iter()
+        .filter(|&(i, j)| sorted[i].3 == sorted[j].3)
+        .collect();
+    let roots = crate::transducer::sentence::components(sorted.len(), &edges);
+    let mut out: Vec<(usize, Vec<Painted4>)> = Vec::new();
+    for (i, cell) in sorted.into_iter().enumerate() {
+        match out.iter_mut().find(|(r, _)| *r == roots[i]) {
+            Some((_, comp)) => comp.push(cell),
+            None => out.push((roots[i], vec![cell])),
+        }
+    }
+    out.into_iter().map(|(_, comp)| comp).collect()
+}
+
 /// Transduce a whole scene: segment into components, lift each to a blade at
 /// `time_index`. The transducer output for one scene state.
 pub fn transduce(cells: &[(i64, i64, u8)], time_index: i64) -> Vec<Blade> {
