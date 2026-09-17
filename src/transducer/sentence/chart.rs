@@ -245,12 +245,6 @@ impl Form {
         }
         gamma.into_iter().collect()
     }
-
-    // `rebase`, `rebase_reaches`, `close_stabilizer_orbit` and `unfold`
-    // were here and are now `sentence/rebase.rs`: an edge that returns to
-    // its own basepoint is an element of the stabilizer, evaluating it is
-    // a reading of its own (L20), and this file went over the §1.1 bound
-    // with it. Moved, not rewritten (§1.6).
 }
 
 #[derive(Debug, Clone)]
@@ -518,15 +512,9 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
 /// union is the sum of the parts) and never by enumeration, so a form of
 /// three hundred vertices and a form of three sit together when they hold
 /// the same thing. T2 says gauge cannot change a class, so a pivot, a
-/// rebase and a regauge leave this chart where it is.
-///
-/// WHAT STOOD HERE WAS THE OBJECT SERIALISED: the cell counts, then ONE
-/// ROW PER VERTEX carrying that vertex's whole plane form — nineteen
-/// exponents each — sorted. Every form was therefore a stratum of one, the
-/// atlas had no fibres, and the chart's width grew with the object. On the
-/// fleet at 3d2987e that made charts wider than the axis count the cover
-/// digest writes them under, measured as `charts 65 of which 12 wider`,
-/// and no field width or page carries a row per vertex.
+/// rebase and a regauge leave this chart where it is. Nothing per vertex
+/// is written: a chart is what many objects share, and its width does not
+/// grow with the object.
 ///
 /// `None` where the rank or a loop's class is unmeasured — a form whose
 /// holonomy is not a versor has no class to be charted by (15.3), and that

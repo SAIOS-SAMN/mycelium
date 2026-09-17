@@ -83,11 +83,11 @@ fn one_move_spelled_twice_admits_no_freedom() {
 /// ONE MOVE SPELLED TWICE IS ONE DISCHARGE, NOT A VORTEX. `candidates_for`
 /// offers a held word on both sides of the chord; where both sides
 /// discharge, the two certificates name one move — the vortex would hold
-/// them as one cell (`vortex_put` keys by the move) and `symmetry` reads
-/// their difference as the identity — so the loop discharges on it rather
-/// than being held under a superposition of one hypothesis, which nothing
-/// could collapse (ca485cc: the same vortex re-formed every stroke for
-/// twenty minutes). Two different words on the same axis are still two.
+/// them as one candidate (`vortex_put` keys by the move) and `symmetry`
+/// reads their difference as the identity — so the loop discharges on it
+/// rather than being held under a superposition of one hypothesis, which
+/// nothing could collapse. Two different words on the same axis are still
+/// two.
 #[test]
 fn a_word_discharging_on_both_sides_is_one_discharge_and_two_words_are_a_vortex() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();

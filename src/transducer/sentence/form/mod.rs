@@ -16,7 +16,7 @@ pub use certificate::*;
 pub use contract::*;
 pub use keys::*;
 
-use crate::transducer::sentence::chain::Cell;
+use crate::transducer::sentence::chain::Link;
 use crate::transducer::sentence::class::{Axis, ClassVector};
 use crate::transducer::sentence::transport::{relative_gauge, FacePlace, Transport};
 use crate::network::nerve::Keyed;

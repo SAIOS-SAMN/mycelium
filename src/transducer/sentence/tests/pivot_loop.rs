@@ -1,7 +1,5 @@
 // 12.6, A20 — THE PIVOT LOOP: what a pivot discharges, what it holds as
-// a vortex, and what it writes. Split from `pivot.rs` at the §1.1
-// 600-line reading bound when the `Crystal` fixture grew the two reads
-// of 50.2 step 2; the items are moved, not rewritten (§1.6).
+// a vortex, and what it writes.
 
 use super::common::*;
 use crate::network::nerve::Keyed;
@@ -138,7 +136,7 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
         panic!("q and q⁻¹ unmeasured are a vortex: {snaps:?}");
     };
     assert_eq!(held.len(), 2, "two certificates, got {held:?}");
-    assert!(!f.vortex.is_empty(), "the form holds the vortex cells");
+    assert!(!f.vortex.is_empty(), "the form holds the vortex candidates");
 
     // A19 ON A CLASS THE COURT HAS RULED: another mind can supply the word,
     // so this one neither demands it nor announces the filing. It still
@@ -544,7 +542,7 @@ fn two_certified_discharges_are_held_as_a_vortex() {
         panic!("q and q⁻¹ on constructed family are held as a vortex: {snaps:?}");
     };
     assert_eq!(held.len(), 2, "two certificates held, got {held:?}");
-    assert!(!f.vortex.is_empty(), "the form holds the vortex cells");
+    assert!(!f.vortex.is_empty(), "the form holds the vortex candidates");
     for cert in held {
         assert!(
             matches!(cert.mu, Mu::Measured { .. }),

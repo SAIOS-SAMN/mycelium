@@ -207,7 +207,7 @@ pub fn demand_key(kind: &Demand, chart: &Invariant) -> Vec<u8> {
 /// each length-delimited, so the court reads them back apart without
 /// knowing how long either is. A probe at the listing's address alone
 /// cannot say which vertex it closes, and a court that cannot say that
-/// can only subtract cells.
+/// can only subtract links.
 pub fn demand_at(listing: &[u8], kind: &Demand, chart: &Invariant) -> Vec<u8> {
     let mut buf = vec![crate::transducer::address::TAG_DEMAND_AT];
     crate::transducer::address::put_bytes(&mut buf, listing);

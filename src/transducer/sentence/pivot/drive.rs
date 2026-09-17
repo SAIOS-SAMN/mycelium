@@ -704,17 +704,17 @@ impl Form {
         &mut self,
         kind: crate::transducer::sentence::Demand,
         chart: &stalk::Invariant,
-        cells: Vec<crate::transducer::sentence::Cell>,
+        links: Vec<crate::transducer::sentence::Link>,
     ) {
         let key = crate::transducer::sentence::demand_key(&kind, chart);
         let held = self.demands.get(&key).copied();
         match held.and_then(|i| self.vertices.get_mut(i as usize)) {
             Some(Vertex::Demand { bodies, .. }) => {
-                bodies.extend(cells);
+                bodies.extend(links);
                 bodies.sort_unstable();
                 bodies.dedup();
             }
-            _ => self.vertices.push(Vertex::Demand { kind, chart: chart.clone(), bodies: cells }),
+            _ => self.vertices.push(Vertex::Demand { kind, chart: chart.clone(), bodies: links }),
         }
         self.reindex();
     }

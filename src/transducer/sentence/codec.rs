@@ -1,11 +1,9 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 19 — THE FORM TAPE'S PRIMITIVES: the readers and writers `tape.rs`
-//! composes a sentence out of. Split from `tape.rs` at the §1.1 600-line
-//! reading bound when v7 added the derivation codec (50.2 step 2); the
-//! items are moved, not rewritten (§1.6).
+//! composes a sentence out of.
 
-use super::chain::Cell;
+use super::chain::Link;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::stalk;
 
@@ -121,7 +119,7 @@ pub(crate) fn take_u32(b: &[u8], pos: &mut usize) -> Option<u32> {
     Some(v)
 }
 
-pub(crate) fn take_cell(b: &[u8], pos: &mut usize) -> Option<Cell> {
+pub(crate) fn take_link(b: &[u8], pos: &mut usize) -> Option<Link> {
     let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
     *pos += 8;
     let c = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);

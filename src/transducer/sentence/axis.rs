@@ -2,9 +2,6 @@
 //
 //! 12.6, A18 — THE AXES A CLASS OCCUPIES, and the rank audit's reading of
 //! what a pivot did to them.
-//!
-//! Split from `class.rs` at the §1.1 600-line reading bound; the items are
-//! moved, not rewritten (§1.6).
 
 /// declaration order is the walk order and is not a preference.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -52,7 +49,7 @@ impl Axis {
 
     /// THE LANE THIS AXIS CARRIES CONTENT ON — 42.6's table, which is
     /// 16.16's definition of the pressure applied to 12.6's coordinates:
-    /// `𝒮` the cells a word fails to speak, `𝒢` the hue transitions it
+    /// `𝒮` the laminae a word fails to speak, `𝒢` the hue transitions it
     /// fails to carry, `𝒯` the extent held in receipts, `𝒽` the shells it
     /// spans.
     ///
@@ -60,7 +57,7 @@ impl Axis {
     ///   where the support is and how large, which is the atlas: `𝒮`.
     /// - `Hue` is the gauge map, and the fibre over the word is the gauge
     ///   cover, so the fibre's sections and torsion cycles sit here too:
-    ///   `𝒢`. The physics' own test is the proof — a two-cell recolour
+    ///   `𝒢`. The physics' own test is the proof — a two-lamina recolour
     ///   reads `[false, true, false, false]`.
     /// - The plane slots — orientation, unit, and the two prime exponents
     ///   on each of the six planes — and `OffPlane` are the ROTOR's own

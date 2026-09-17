@@ -642,15 +642,12 @@ pub fn loop_row(h: &Word) -> Option<LoopRow> {
 ///
 /// Mixing the two breaks the rank delta itself. Two loops of one finite
 /// class are ONE obstruction seen twice; the axis carrier is keyed by class,
-/// so opening it opens both, and attaching that single cell moved
-/// `torsion −2, axes +2` while the same object contributes 1 to `offplane`.
-/// T21 (iii) then refuses an elementary attachment as non-elementary.
-/// Measured at 551c609: 11 `axis Open discharged` against 6 `held, the
-/// applied pivot did not make the move its certificate claims`, all
-/// openings.
-///
-/// Counted by class the same attachment reads `torsion −1, axes +1`, which
-/// is `Rank::moved`'s `Discharged { from: Torsion }` and A18's one step.
+/// so opening it opens both, and counted by loop that single attachment
+/// would read `torsion −2, axes +2` while the same object contributes 1 to
+/// `offplane`, and T21 (iii) would refuse an elementary attachment as
+/// non-elementary. Counted by class the attachment reads `torsion −1, axes
+/// +1`, which is `Rank::moved`'s `Discharged { from: Torsion }` and A18's
+/// one step.
 ///
 /// A CLASS CANNOT BE BOTH. A key present in `axes` is an opened chart axis
 /// and no longer a defect (I6, 15.5), so it is not also counted in torsion;

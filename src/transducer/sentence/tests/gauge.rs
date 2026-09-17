@@ -213,18 +213,11 @@ fn relative_gauge_composite_fixes_what_neither_fixes() {
 
 /// A GAUGE IS A MAP, AND A LISTING THAT NAMES TWO IMAGES FOR ONE HUE IS NOT
 /// ONE. The listing is a `Vec<(from, to)>` deduplicated by the PAIR, so a
-/// chain whose cells send one input hue to two different output hues yields
-/// both entries and neither is the answer.
-///
-/// Two readers scanned that list and returned the first match — the court's
-/// in `verdict/body.rs` and the speaker's in `sentence/reading.rs`, the same
-/// eight lines written twice — which after the sort is the smaller image. A
-/// hue decided by a Vec's order is a member by position (rule 15), and the
-/// choice was invisible downstream: the court read one image, the cell
-/// carried the other, and the refusal said only "a cell lands on the wrong
-/// hue". That is 255 of the 488 body refusals on the fleet at e98e8a2,
-/// against 0 for `FAIL_NO_VERSOR` and 0 for `FAIL_NO_CARRY` — the algebra
-/// was never at fault.
+/// chain whose links send one input hue to two different output hues yields
+/// both entries and neither is the answer. A hue decided by a Vec's order
+/// would be a member by position (rule 15), and the court and the speaker
+/// would read different images of one lamina; the listing is refused at
+/// that hue instead.
 #[test]
 fn a_gauge_naming_two_images_for_one_hue_is_refused_not_resolved_by_order() {
     // The unambiguous cases first: a listed hue, and one the listing fixes.

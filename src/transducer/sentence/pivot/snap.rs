@@ -1,9 +1,9 @@
 // A16, A20 — WHAT A PIVOT PRODUCES: the snapshot of one pivot, the
-// discharge it certifies, and the cell it opened.
+// discharge it certifies, and the axis it opened.
 //
 //! SEVERAL CERTIFIED DISCHARGES ARE A VORTEX: closure certifies a pivot
 //! after it is made, and no reading of μ⃗ chooses among the candidates that
-//! discharged. A vortex records the OBSTRUCTION between its cells.
+//! discharged. A vortex records the OBSTRUCTION between its candidates.
 
 use super::*;
 
@@ -13,8 +13,9 @@ pub enum Snap {
     Closed { chord: usize, order: Order },
     /// A held loop discharged on one occupied axis by a certified pivot.
     Discharged { chord: usize, certificate: Box<PivotCertificate> },
-    /// SEVERAL pivots discharge: all are held as cells of the thought until
-    /// a perception, a glue or a ruling collapses the superposition (12.6).
+    /// SEVERAL pivots discharge: all are held as candidates of the thought
+    /// until a perception, a glue or a ruling collapses the superposition
+    /// (12.6).
     /// `between` is the obstruction of each consecutive pair — the reading
     /// that says they are two proofs, recorded and never spent on a choice.
     Vortex { chord: usize, held: Vec<PivotCertificate>, between: Vec<Obstruction> },
@@ -92,7 +93,7 @@ pub(crate) fn mu_deflation(mu: &crate::transducer::sentence::form::Mu) -> [u64; 
 
 /// WHAT SEPARATES TWO CERTIFIED DISCHARGES of one loop. A record, spent on
 /// nothing: it is read when a collapse asks what the collapse resolved, and
-/// it is never consulted to prefer a cell.
+/// it is never consulted to prefer a candidate.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Obstruction {
     /// The axes the two pivots acted on. Two axes out of one loop are two
@@ -197,23 +198,23 @@ pub(crate) fn outcome_of(moves: &[PivotCertificate], starved: bool) -> Discharge
     }
 }
 
-/// A remainder cell's kind, read from the two hues. Hue 0 is void.
+/// A remainder link's kind, read from its two hues. Hue 0 is void.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CellKind {
+pub enum LinkKind {
     Created,
     Erased,
     Recoloured,
     Unchanged,
 }
 
-impl CellKind {
-    pub fn of(before: u8, after: u8) -> CellKind {
+impl LinkKind {
+    pub fn of(before: u8, after: u8) -> LinkKind {
         match (before == 0, after == 0) {
-            (true, true) => CellKind::Unchanged,
-            (true, false) => CellKind::Created,
-            (false, true) => CellKind::Erased,
-            (false, false) if before == after => CellKind::Unchanged,
-            (false, false) => CellKind::Recoloured,
+            (true, true) => LinkKind::Unchanged,
+            (true, false) => LinkKind::Created,
+            (false, true) => LinkKind::Erased,
+            (false, false) if before == after => LinkKind::Unchanged,
+            (false, false) => LinkKind::Recoloured,
         }
     }
 }
@@ -225,23 +226,16 @@ pub(crate) struct Candidate {
     pub(crate) by: PivotBy,
 }
 
-/// HOLD A VORTEX CELL BY THE CLASS THE LOOP STANDS IN, then by the
+/// HOLD A VORTEX CANDIDATE BY THE CLASS THE LOOP STANDS IN, then by the
 /// discharging word's move key.
-///
-/// It was held by the class the loop would be left in (`after`), and that
-/// coordinate is unreachable by anything that could decide it. A closing
-/// candidate leaves the loop at the zero class, so every closed vortex in
-/// every bubble filed under one key; and a word arriving to decide one
-/// knows its own rotor, not the class some loop it never met would land
-/// in. Measured across three commits: 47 vortices formed and none ever
-/// asked.
 ///
 /// `before` is `kappa.class_key()`, the loop's state vector as it stands,
 /// and `ClassVector::class_key` writes the rotor's conjugacy invariants
 /// first — so the class of the holonomy is this key's depth-one stratum.
 /// The eliminator in the drive proves a candidate's rotor is conjugate to
 /// that holonomy, so a deciding word's own class key IS the stratum this
-/// cell hangs under, and the read is a projection rather than a guess.
+/// candidate hangs under, and the read is a projection rather than a
+/// guess.
 pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
     let before = c.before.clone();
     let k = c.by.move_key();
@@ -251,19 +245,11 @@ pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
 /// ONE CERTIFICATE PER MOVE. `candidates_for` offers a held word on both
 /// sides of the chord, and where both sides discharge the loop the trial
 /// issues two certificates that name ONE move: a word move is keyed by its
-/// rotor (`PivotBy::move_key`), `vortex_put` holds one cell per such key,
-/// and `symmetry` already rules that an identity difference "is two
+/// rotor (`PivotBy::move_key`), `vortex_put` holds one candidate per such
+/// key, and `symmetry` already rules that an identity difference "is two
 /// spellings of one move rather than two moves". Both sides closing the
 /// loop is the algebra saying the same: `A·g·w⁻¹·B = 1` and `A·w·g·B = 1`
 /// give `g·w⁻¹ = w·g`, one face word reached by two spellings.
-///
-/// `select_discharge` counted certificates, so a word that discharged on
-/// both sides was a two-cell "vortex" of one cell: held on every stroke,
-/// collapsible by nothing — `vortex_put` had folded the two under one key,
-/// `symmetries` had nothing to keep, and the loop it was about was never
-/// pivoted. Measured on ca485cc: `vortex … 2 candidates held, axes
-/// [(Unit(0), Unit(0))]` on the same two bubbles every stroke for twenty
-/// minutes, `collapsed by` 0.
 ///
 /// The representative of a move is the certificate of least key —
 /// canonical key order, the order every keyed carrier reads in — and not
@@ -274,10 +260,10 @@ pub(crate) fn one_per_move(certs: &[PivotCertificate]) -> Vec<PivotCertificate> 
         by_move.nested_insert(c.by.move_key(), c.key(), c.clone());
     }
     let mut out = Vec::new();
-    for (_, cells) in by_move.scoped() {
+    for (_, of_move) in by_move.scoped() {
         // index: the certificates of one move, in key order; the least is
         // the representative.
-        let mut it = cells.scoped();
+        let mut it = of_move.scoped();
         if let Some((_, c)) = Iterator::next(&mut it) {
             out.push(c.clone());
         }
@@ -300,10 +286,10 @@ pub(crate) fn select_discharge(cands: &[PivotCertificate]) -> Discharge {
     }
 }
 
-/// The obstruction between each consecutive pair of a vortex's cells. For
-/// the two-cell vortex this is the pair; for more it is every adjacency in
-/// the order they were tried, which is the fixed axis order of 12.6 and not
-/// a ranking.
-pub(crate) fn obstructions(cells: &[PivotCertificate]) -> Vec<Obstruction> {
-    cells.windows(2).map(|w| obstruction(&w[0], &w[1])).collect()
+/// The obstruction between each consecutive pair of a vortex's candidates.
+/// For the two-candidate vortex this is the pair; for more it is every
+/// adjacency in the order they were tried, which is the fixed axis order
+/// of 12.6 and not a ranking.
+pub(crate) fn obstructions(candidates: &[PivotCertificate]) -> Vec<Obstruction> {
+    candidates.windows(2).map(|w| obstruction(&w[0], &w[1])).collect()
 }

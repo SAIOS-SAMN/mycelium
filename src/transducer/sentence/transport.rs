@@ -271,16 +271,9 @@ pub(crate) fn gauge_image(g: &Keyed<u8>, h: u8) -> u8 {
 /// the listing names two.
 ///
 /// A gauge is a map. Its listing is a `Vec<(from, to)>` gathered from a
-/// chain's cells and deduplicated BY THE PAIR, so a chain in which one input
-/// hue lands on two different output hues yields both entries. Two readers
-/// scanned that list and returned the first match — `body.rs` on the court
-/// and `reading.rs` on the speaker, the same eight lines written twice (law
-/// 12) — which is the smaller image after the sort. A hue decided by a Vec's
-/// order is a member by position (rule 15), and the decision was invisible:
-/// the court read one image, the cell carried the other, and the refusal
-/// said only "a cell lands on the wrong hue". That fault is 255 of the 488
-/// body refusals on the fleet at e98e8a2, against 0 for `FAIL_NO_VERSOR` and
-/// 0 for `FAIL_NO_CARRY` — the algebra was never the problem.
+/// chain's links and deduplicated BY THE PAIR, so a chain in which one
+/// input hue lands on two different output hues yields both entries. A hue
+/// decided by a Vec's order would be a member by position (rule 15).
 ///
 /// A listing that names two images for one hue is not a hue map and no
 /// vertex can claim it: exact or refused (rule 11). A hue the listing does
@@ -504,9 +497,3 @@ pub(crate) fn vertex_gauge_at(v: &Vertex, chart: &crate::transducer::stalk::Inva
         _ => Vec::new(),
     }
 }
-
-// `vertex_carriage(v, form)` and `vertex_gauge(v)` stood here and read the
-// vertex's representative member. They are gone with the last caller: the face
-// that needed them now carries a placement PER MEMBER PAIR, so every reader in
-// this tree takes the member at the coordinate it is asking about, and there is
-// no accessor left through which the collapse can arrive.

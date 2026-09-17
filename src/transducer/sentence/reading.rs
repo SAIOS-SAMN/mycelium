@@ -8,7 +8,7 @@ use crate::network::nerve::Keyed;
 use crate::transducer::blade::{self, Shape};
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::chain::{
-    cell_at_key, gauge_of, pieces, replay_at, replay_operators, Cell, Cite, HeldCite, Located, Puncture, Sentence,
+    base_key, gauge_of, pieces, replay_at, replay_operators, Cite, HeldCite, Link, Located, Puncture, Sentence,
 };
 use crate::transducer::sentence::form::Vertex;
 use crate::transducer::stalk::{self, Stalks};
@@ -32,7 +32,7 @@ pub struct Reading<'r, W, F, I, S, H> {
 
 /// A reading with no Held stratum: the genome, or the genome and the
 /// dialect, alone.
-pub fn no_held(_inv: &stalk::Invariant, _piece: &[Cell]) -> Vec<HeldCite> {
+pub fn no_held(_inv: &stalk::Invariant, _piece: &[Link]) -> Vec<HeldCite> {
     Vec::new()
 }
 
@@ -40,15 +40,15 @@ pub fn no_held(_inv: &stalk::Invariant, _piece: &[Cell]) -> Vec<HeldCite> {
 /// 50.1 step 1). The vertex holds a rotor, a carriage and a gauge; the
 /// caller holds the body. The rotor under the carriage's dilator is
 /// carried onto the body's own frame by the translator its centroids
-/// solve (`versor_carrying`), and the action is verified cell by cell:
-/// every cell of the body's before-support lands on a cell of its
-/// after-support, every after-cell is reached, and each landed hue is the
-/// gauge's image of the hue it left. Nothing is decoded from the address,
+/// solve (`versor_carrying`), and the action is verified lamina by lamina:
+/// every lamina of the body's before-support lands on a lamina of its
+/// after-support, every after-lamina is reached, and each landed hue is
+/// the gauge's image of the hue it left. Nothing is decoded from the address,
 /// no element is minted to ask, and a vertex that reconstructs nothing
 /// here is not a word for this body. The cite carries the body in its own
 /// frame — the frame the action was evaluated in — and the vertex's
 /// address, which names the word and never the chain.
-pub fn vertex_cites(vertex: &Vertex, piece: &[Cell]) -> Option<HeldCite> {
+pub fn vertex_cites(vertex: &Vertex, piece: &[Link]) -> Option<HeldCite> {
     let Vertex::Word { acts, .. } = vertex else {
         return None;
     };
@@ -67,12 +67,12 @@ pub fn vertex_cites(vertex: &Vertex, piece: &[Cell]) -> Option<HeldCite> {
 }
 
 /// The reconstruction test at ONE member: the rotor under that member's
-/// dilator carried onto the body's frame, verified cell by cell.
+/// dilator carried onto the body's frame, verified lamina by lamina.
 fn vertex_cites_by(
     vertex: &Vertex,
     carriage: &crate::transducer::element::Versor,
     gauge: &[(u8, u8)],
-    piece: &[Cell],
+    piece: &[Link],
 ) -> Option<HeldCite> {
     let Vertex::Word { address, derivation, .. } = vertex else {
         return None;
@@ -86,7 +86,7 @@ fn vertex_cites_by(
             before.push((r, c, b));
         }
         if a != 0 {
-            after.insert(cell_at_key(r, c, 0), a);
+            after.insert(base_key(r, c, 0), a);
             out_support.push((r, c));
         }
     }
@@ -108,7 +108,7 @@ fn vertex_cites_by(
         if tk != 0 {
             return None;
         }
-        let landed = *after.get(&cell_at_key(tr, tc, 0))?;
+        let landed = *after.get(&base_key(tr, tc, 0))?;
         if Some(landed) != super::hue_of(gauge, h) {
             return None;
         }
@@ -119,12 +119,6 @@ fn vertex_cites_by(
     Some(HeldCite { address: address.clone(), body })
 }
 
-// `hue_under` stood here and in `court/verdict/body.rs`, the same eight
-// lines written twice (law 12), each returning the FIRST entry of the gauge's
-// listing that matched. `sentence::hue_of` is the one reader now, and it
-// refuses a listing that names two images for one hue instead of picking the
-// one the sort happened to put first.
-
 /// LOCATE one body: read its moduli, take the stratum, and for the word
 /// there whose gauge charge is the body's, solve the transport from the
 /// moments and verify it by replay. Returns the citation and the stratum's
@@ -134,7 +128,7 @@ pub fn locate<'a>(
     atlas: &Stalks,
     index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
-    piece: &[Cell],
+    piece: &[Link],
     exclude: Option<usize>,
 ) -> (Option<Cite>, usize) {
     let found = locate_or_puncture_at(&|i| words.get(i), atlas, index_of, shape_at, piece, exclude);
@@ -142,7 +136,7 @@ pub fn locate<'a>(
 }
 
 /// LOCATE, and when a word carries the body by shape under a gauge it does
-/// not yet hold, the PUNCTURE: the word's cells under the body's own
+/// not yet hold, the PUNCTURE: the word's links under the body's own
 /// transitions pulled back through the transport, verified by replay. A
 /// citation is preferred; a puncture is returned only when no word speaks
 /// the body as held.
@@ -151,7 +145,7 @@ pub fn locate_or_puncture<'a>(
     atlas: &Stalks,
     index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
-    piece: &[Cell],
+    piece: &[Link],
     exclude: Option<usize>,
 ) -> Located {
     locate_or_puncture_at(&|i| words.get(i), atlas, index_of, shape_at, piece, exclude)
@@ -162,7 +156,7 @@ pub fn locate_or_puncture_at<'a>(
     atlas: &Stalks,
     index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
-    piece: &[Cell],
+    piece: &[Link],
     exclude: Option<usize>,
 ) -> Located {
     let fiber_of = |inv: &stalk::Invariant| atlas.fiber(inv);
@@ -186,7 +180,7 @@ fn unlocated(multiplicity: usize) -> Located {
 /// are sections and stand as multiplicity, never a choice.
 pub fn locate_or_puncture_on<'a, W, F, I, S, H>(
     read: &Reading<'_, W, F, I, S, H>,
-    piece: &[Cell],
+    piece: &[Link],
     exclude: Option<usize>,
 ) -> Located
 where
@@ -194,7 +188,7 @@ where
     F: Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
     I: Fn(&[u8]) -> Option<usize>,
     S: Fn(usize) -> Option<&'a Shape>,
-    H: Fn(&stalk::Invariant, &[Cell]) -> Vec<HeldCite>,
+    H: Fn(&stalk::Invariant, &[Link]) -> Vec<HeldCite>,
 {
     let &Reading { word_at, fiber_of, index_of, shape_at, held_at } = read;
     let Some(shape) = element::shape_of_chain(piece) else {
@@ -237,17 +231,17 @@ where
     }
     let pos = element::positions(word.sub());
     if let Some(asg) = element::pullback(&pos, piece, &v) {
-        let mut body: Vec<Cell> = pos.iter().zip(&asg).map(|(&(r, c), &(b, a))| (r, c, b, a)).collect();
+        let mut body: Vec<Link> = pos.iter().zip(&asg).map(|(&(r, c), &(b, a))| (r, c, b, a)).collect();
         body.sort_unstable();
         if replay_operators(&[(v.clone(), body.clone())], piece).is_empty() {
-            let puncture = Puncture { word: i, transport: v, cells: body };
+            let puncture = Puncture { word: i, transport: v, links: body };
             return Located { cite: None, puncture: Some(puncture), held: None, multiplicity: m };
         }
     }
     unlocated(m)
 }
 
-fn body_key(body: &[Cell]) -> Option<crate::transducer::address::Address> {
+fn body_key(body: &[Link]) -> Option<crate::transducer::address::Address> {
     if body.is_empty() {
         return None;
     }
@@ -259,7 +253,7 @@ fn body_key(body: &[Cell]) -> Option<crate::transducer::address::Address> {
 fn place_located<'a, W, F, I, S, H>(
     out: &mut Sentence,
     located: Located,
-    body: &[Cell],
+    body: &[Link],
     read: &Reading<'_, W, F, I, S, H>,
     exclude: Option<usize>,
 ) where
@@ -267,7 +261,7 @@ fn place_located<'a, W, F, I, S, H>(
     F: Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
     I: Fn(&[u8]) -> Option<usize>,
     S: Fn(usize) -> Option<&'a Shape>,
-    H: Fn(&stalk::Invariant, &[Cell]) -> Vec<HeldCite>,
+    H: Fn(&stalk::Invariant, &[Link]) -> Vec<HeldCite>,
 {
     if let Some(k) = body_key(body) {
         out.multiplicity.insert(k, located.multiplicity);
@@ -278,8 +272,8 @@ fn place_located<'a, W, F, I, S, H>(
         (None, None, Some(h)) => out.held.push(h),
         (None, None, None) => match element::gauge_fibers(body) {
             None => {}
-            Some(element::GaugeFibers::One(_, cells)) => {
-                out.residual.extend(cells);
+            Some(element::GaugeFibers::One(_, links)) => {
+                out.residual.extend(links);
             }
             Some(element::GaugeFibers::Many(idx)) => {
                 // One body's gauge fibers, each read in turn: a piece left
@@ -304,7 +298,7 @@ pub fn deconstruct<'a>(
     atlas: &Stalks,
     index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
-    chain: &[Cell],
+    chain: &[Link],
     exclude: Option<usize>,
 ) -> Sentence {
     let word_at = |i: usize| words.get(i);
@@ -323,7 +317,7 @@ pub fn deconstruct_at<'a>(
     atlas: &Stalks,
     index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
-    chain: &[Cell],
+    chain: &[Link],
     exclude: Option<usize>,
 ) -> Sentence {
     let fiber_of = |inv: &stalk::Invariant| atlas.fiber(inv);
@@ -338,7 +332,7 @@ pub fn deconstruct_at<'a>(
 /// and over the held words the caller reads at each body's chart.
 pub fn deconstruct_on<'a, W, F, I, S, H>(
     read: &Reading<'_, W, F, I, S, H>,
-    chain: &[Cell],
+    chain: &[Link],
     exclude: Option<usize>,
 ) -> Sentence
 where
@@ -346,7 +340,7 @@ where
     F: Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
     I: Fn(&[u8]) -> Option<usize>,
     S: Fn(usize) -> Option<&'a Shape>,
-    H: Fn(&stalk::Invariant, &[Cell]) -> Vec<HeldCite>,
+    H: Fn(&stalk::Invariant, &[Link]) -> Vec<HeldCite>,
 {
     let mut out = Sentence::default();
     if chain.is_empty() {

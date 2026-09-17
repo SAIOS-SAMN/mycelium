@@ -3,9 +3,6 @@
 //! 37.7, A18, A20, 18.2 — GENERATOR ADJUNCTION, WORD CANDIDATES, AND ADMISSION:
 //! what a mind adjoins when the basis reaches nothing, how candidates are
 //! eliminated, and how acting words are filed.
-//!
-//! Split from `pivot_loop.rs` at the §1.1 1200-line reading bound; the items
-//! are moved, not rewritten (§1.6).
 
 use super::common::*;
 use super::pivot_loop::Hold;
@@ -628,17 +625,16 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
         t_extent: 0,
         mu_before: None,
     };
-    // ONE CELL OVER A CLASS TWO LOOPS SHARE IS ONE STEP. The axis carrier is
+    // ONE AXIS OVER A CLASS TWO LOOPS SHARE IS ONE STEP. The axis carrier is
     // keyed by class, so this write opens both loops; counted by class, as
-    // every coordinate of A18 now is, that is `torsion −1, axes +1` and the
-    // certificate states it. Counted by LOOP it read `[-2, 0, 0, +2]` and
-    // T21 (iii) refused an elementary attachment as non-elementary — 6 of 17
-    // openings on the wire at 551c609.
+    // every coordinate of A18 is, that is `torsion −1, axes +1` and the
+    // certificate states it. Counted by loop it would read `[-2, 0, 0, +2]`
+    // and T21 (iii) would refuse an elementary attachment as non-elementary.
     let mut f = f;
     let before = f.rank().expect("rank");
     let cert = f
         .trial(0, &cand, &f.class_vector(0).expect("class"), &prior)
-        .expect("one cell over one class is one step");
+        .expect("one axis over one class is one step");
     assert_eq!(
         cert.rank_move,
         RankMove::Discharged { from: RankAxis::Torsion },

@@ -184,7 +184,7 @@ impl Entity {
                 standing: standing_of(p.word).as_u8(),
                 transport: p.transport.clone(),
                 gauge: u32::MAX,
-                body: p.cells.clone(),
+                body: p.links.clone(),
             });
         }
         // A held cite carries the body in the frame the vertex's action

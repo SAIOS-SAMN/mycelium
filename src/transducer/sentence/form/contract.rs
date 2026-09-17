@@ -2,7 +2,7 @@
 // was refused, each move a strict shrinking of the closed sub-complex.
 //
 //! A refused vertex becomes a demand and takes its faces with it; a refused
-//! edge becomes a remainder edge; undeclared cells are declared as a Source
+//! edge becomes a remainder edge; undeclared links are declared as a Source
 //! demand; a malformed complex is not moved at all — the mind is quiescent
 //! on it. Every move re-walks the loops and reindexes; nothing here trusts
 //! the tape's own loop list, and every read is a walk of this form's own
@@ -51,12 +51,12 @@ impl Form {
     /// certificate for it could never re-derive. `remainder` is what the
     /// contracted form leaves on the speaker's family, the bodies a refused
     /// word's demand stands for.
-    pub fn contract(&mut self, kind: RefusalKind, at: &At, remainder: &[Cell]) -> Option<Contracted> {
+    pub fn contract(&mut self, kind: RefusalKind, at: &At, remainder: &[Link]) -> Option<Contracted> {
         match (kind, at) {
             (RefusalKind::VertexBody, At::Vertex { address, chart }) => {
                 let i = self.word_index(address)?;
                 // The word becomes a demand over its chart, carrying as its
-                // bodies the cells it was to reach. A demand vertex enters
+                // bodies the links it was to reach. A demand vertex enters
                 // no face (50.5): the faces that reached the word leave
                 // with it.
                 self.vertices[i as usize] = Vertex::Demand {
@@ -89,16 +89,16 @@ impl Form {
                 self.rewalk();
                 Some(Contracted::Moved)
             }
-            (RefusalKind::RemainderUndeclared, At::Chart(inv, cells)) => {
-                if cells.is_empty() {
+            (RefusalKind::RemainderUndeclared, At::Chart(inv, links)) => {
+                if links.is_empty() {
                     return None;
                 }
-                let multiplicity = crate::transducer::sentence::pieces(cells).len() as u32;
+                let multiplicity = crate::transducer::sentence::pieces(links).len() as u32;
                 let kind = crate::transducer::sentence::Demand::Source { multiplicity };
                 match self.demand_index(&kind, inv) {
                     Some(d) => {
                         if let Some(Vertex::Demand { bodies, .. }) = self.vertices.get_mut(d) {
-                            for c in cells {
+                            for c in links {
                                 if !bodies.contains(c) {
                                     bodies.push(*c);
                                 }
@@ -106,7 +106,7 @@ impl Form {
                         }
                     }
                     None => {
-                        self.vertices.push(Vertex::Demand { kind, chart: inv.clone(), bodies: cells.clone() });
+                        self.vertices.push(Vertex::Demand { kind, chart: inv.clone(), bodies: links.clone() });
                     }
                 }
                 self.rewalk();
@@ -133,7 +133,7 @@ impl Form {
 
     /// 50.9, as the court reads it: is this form the contraction of a
     /// refused sentence at `at` — the vertex now a demand on its chart, the
-    /// face now a remainder edge, the cells now declared. The court that
+    /// face now a remainder edge, the links now declared. The court that
     /// issued the receipt checks this before it replays the form as a
     /// sentence. A malformed complex has no contraction: nothing cites it.
     pub fn is_contraction_at(&self, kind: RefusalKind, at: &At) -> bool {
@@ -153,11 +153,11 @@ impl Form {
                     .filter(|f| (f.i == i && f.j == j) || (f.i == j && f.j == i))
                     .all(|f| !f.has_edge())
             }
-            (RefusalKind::RemainderUndeclared, At::Chart(_, cells)) => {
+            (RefusalKind::RemainderUndeclared, At::Chart(_, links)) => {
                 let mut declared: Keyed<Vec<u8>> = Keyed::new();
                 for (_, _, _, bodies) in self.demand_vertices() {
                     for &(r, c, _, after) in bodies {
-                        let k = cell_pos_key(r, c);
+                        let k = site_key(r, c);
                         match declared.get_mut(&k) {
                             Some(hues) => hues.push(after),
                             None => {
@@ -166,8 +166,8 @@ impl Form {
                         }
                     }
                 }
-                cells.iter().all(|&(r, c, _, observed)| {
-                    declared.get(&cell_pos_key(r, c)).is_some_and(|hues| hues.contains(&observed))
+                links.iter().all(|&(r, c, _, observed)| {
+                    declared.get(&site_key(r, c)).is_some_and(|hues| hues.contains(&observed))
                 })
             }
             _ => false,
@@ -175,7 +175,8 @@ impl Form {
     }
 }
 
-fn cell_pos_key(r: i64, c: i64) -> Vec<u8> {
+/// The key of a site of one section: its two coordinates written out.
+fn site_key(r: i64, c: i64) -> Vec<u8> {
     let mut k = Vec::with_capacity(16);
     k.extend_from_slice(&r.to_le_bytes());
     k.extend_from_slice(&c.to_le_bytes());

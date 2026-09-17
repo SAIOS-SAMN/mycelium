@@ -5,9 +5,6 @@
 //! vertices; an edge that comes back to the vertex it left is not an
 //! outward step at all but an element of that vertex's STABILIZER, and it
 //! is evaluated rather than skipped.
-//!
-//! Split from `chart.rs` at the §1.1 600-line reading bound; `rebase` and
-//! `unfold` are moved, not rewritten (§1.6), and the orbit reader is new.
 
 use super::*;
 use crate::network::nerve::Keyed;
@@ -24,9 +21,7 @@ impl Form {
     /// to `of`, the edge closes a 1-cycle at `of` and `carriage` is the
     /// accumulated gauge `Δ` around that cycle. Writing `Rebased { by: of }`
     /// would define the vertex's word in terms of its own word, and the
-    /// first reader to ask for it does not come back — L20's loop, measured
-    /// on `0607ce86.json`, where `Δ` is the identity because the two ends
-    /// are one vertex and `c·c⁻¹ = 1`.
+    /// first reader to ask for it would not come back (L20).
     ///
     /// The cycle is CLOSED by reading its boundary holonomy through the one
     /// classifier both organs use, and the vertex is returned unchanged:
@@ -36,7 +31,7 @@ impl Form {
     ///   advances along the rest of the star. Nothing is filed: there is
     ///   nothing to fill.
     /// - `Δ` of finite order `ℓ` with no residue — the cycle carries
-    ///   discrete holonomy and is FILLED by a 2-cell: the class is filed on
+    ///   discrete holonomy and is FILLED by a 2-simplex: the class is filed on
     ///   this form's own torsion carrier at period `ℓ`, on the chord that
     ///   closes it. That is the same `FiledLoop` a loop over a cover files
     ///   (50.8 case 3); the cycle becomes content instead of a walk.
@@ -142,7 +137,7 @@ impl Form {
         }
     }
 
-    /// THE 2-CELL THAT CLOSES A STABILIZER ORBIT (50.8 case 3, 12.2). `Δ`
+    /// THE 2-SIMPLEX THAT CLOSES A STABILIZER ORBIT (50.8 case 3, 12.2). `Δ`
     /// is the accumulated gauge around a cycle that returned to `of`. Its
     /// rotor is read by A22's peel — a composed carriage carries no tape,
     /// so there is no spelling to read off one — and the reading is

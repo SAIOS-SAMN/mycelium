@@ -100,7 +100,7 @@ pub struct FiledLoop {
 ///
 /// The chart rides the member as well as keying it, which is how every
 /// keyed carrier in this tree holds a coordinate that a reader needs back
-/// — `finish`'s `by_demand` holds `(kind, chart, cells)` under
+/// — `finish`'s `by_demand` holds `(kind, chart, links)` under
 /// `demand_key(kind, chart)` for the same reason. `Stalks::fiber` takes an
 /// `Invariant` and not a key, so the member must carry the chart it is
 /// filed under or the reader cannot ask the atlas anything.
@@ -198,7 +198,7 @@ pub enum Vertex {
     Demand {
         kind: crate::transducer::sentence::Demand,
         chart: stalk::Invariant,
-        bodies: Vec<Cell>,
+        bodies: Vec<Link>,
     },
 }
 
@@ -374,7 +374,7 @@ pub struct Form {
     /// Cited form address → glued vertex index. Written by [`Form::glue`]
     /// and rebuilt by the decoder from Glued vertices.
     pub glued: Keyed<u16>,
-    /// Incomparable discharges held as cells until a glue or ruling.
+    /// Incomparable discharges held as candidates until a glue or ruling.
     /// Outer key is the after class; inner is the discharging rotor A1 key.
     pub vortex: Keyed<Keyed<PivotCertificate>>,
     /// Word vertex address → index. The meet for A6 and Mayer–Vietoris.
@@ -731,7 +731,7 @@ impl Form {
     /// THE FACE BETWEEN TWO VERTICES, AT THE MEMBER PAIRS THE INCIDENCE NAMES.
     ///
     /// `pairs` is the incidence: which member of `i` relates to which member
-    /// of `j`. It comes from the cell occupancy that created the face
+    /// of `j`. It comes from the site occupancy that created the face
     /// (`star_and_cell_faces`) or from the pairs a face already carries when
     /// its placements are re-derived. IT IS NEVER THE PRODUCT OF THE TWO
     /// FIBRES — a face exists because two BODIES' supports meet, and that
@@ -868,16 +868,10 @@ impl Form {
         self.coheres() && self.remainder.is_empty() && self.demand_vertices().next().is_none()
     }
 
-    /// The demand vertices of this sentence, with their indices (50.5).
-    ///
-    /// READS `demands`, WHICH `reindex` BUILT. This was
-    /// `vertices.iter().enumerate().filter_map(...)` — a walk with a filter
-    /// over the whole carrier, run by `is_closed`, `sentence_measure`,
-    /// `undeclared_remainder` and the court — while `Form.demands` already
-    /// held one entry per (kind, chart) pointing at the vertex. A walk with a
-    /// filter fails silently on what nobody asked about; a keyed read can only
-    /// fail to find what was asked for.
-    pub fn demand_vertices(&self) -> impl Iterator<Item = (u16, &crate::transducer::sentence::Demand, &stalk::Invariant, &[Cell])> {
+    /// The demand vertices of this sentence, with their indices (50.5),
+    /// read off `demands`, which `reindex` built: one entry per (kind,
+    /// chart), a keyed read and never a walk with a filter.
+    pub fn demand_vertices(&self) -> impl Iterator<Item = (u16, &crate::transducer::sentence::Demand, &stalk::Invariant, &[Link])> {
         self.demands.scoped().filter_map(move |(_, &i)| {
             match self.vertices.get(i as usize) {
                 Some(Vertex::Demand { kind, chart, bodies }) => {

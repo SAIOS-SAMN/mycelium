@@ -62,10 +62,10 @@ fn several_discharges_are_held_as_vortex() {
 fn mu_neither_certifies_nor_selects() {
     let loose = cert(Axis::Unit(0), [4, 4, 4, 4]);
     let tight = cert(Axis::Unit(0), [1, 1, 1, 1]);
-    let Discharge::Vortex(cells) = select_discharge(&[loose.clone(), tight.clone()]) else {
+    let Discharge::Vortex(candidates) = select_discharge(&[loose.clone(), tight.clone()]) else {
         panic!("a lower μ⃗ on every lane is not a reason to apply it");
     };
-    assert_eq!(cells.len(), 2, "both are held: {cells:?}");
+    assert_eq!(candidates.len(), 2, "both are held: {candidates:?}");
     fn perm(m: [u64; 4]) -> [u64; 4] {
         [m[2], m[1], m[0], m[3]]
     }
@@ -174,8 +174,8 @@ fn mu_neither_certifies_nor_selects() {
     };
     assert_eq!(mu0, mu1, "a chord write moves no vertex, so μ⃗ is unmoved");
     // S9.16 — THE VORTEX RECORDS THE OBSTRUCTION, and spends it on nothing.
-    // Here the two cells measure the same μ⃗, so every lane HELD; the axes
-    // they acted on are what separates them, and that is what a later
+    // Here the two candidates measure the same μ⃗, so every lane HELD; the
+    // axes they acted on are what separates them, and that is what a later
     // collapse resolves.
     assert_eq!(between.len(), held.len() - 1, "one reading per adjacency");
     let o = &between[0];
@@ -329,16 +329,10 @@ fn pivot_never_reopens_a_closed_chord() {
 /// off-plane for `axes`. Everything else is `Inadmissible` and carries its
 /// four deltas so the refusal can say what happened.
 ///
-/// The predicate this replaces was a four-coordinate monotone, and it
-/// admitted `(−3, −2, −1, +7)` — three coordinates emptied and seven axes
-/// opened — as readily as A18's one step. That is not a pivot that went
-/// well; it is a different thing the audit could not name.
-///
-/// Moved here from `pivot_loop.rs` at the §1.1 1200-line reading bound; the
-/// item is moved, not rewritten (§1.6). It sits with the descent and the
-/// pivot's own readings rather than the loop drive, which is where it
-/// belongs whatever the bound says — it exercises the AUDIT and never runs
-/// a loop.
+/// A four-coordinate monotone would admit `(−3, −2, −1, +7)` — three
+/// coordinates emptied and seven axes opened — as readily as A18's one
+/// step. That is not a pivot that went well; it is a different thing the
+/// audit could not name. This exercises the AUDIT and never runs a loop.
 #[test]
 fn a_rank_move_is_one_unit_or_none() {
     let before = Rank { torsion: 3, free: 2, offplane: 1, axes: 0 };

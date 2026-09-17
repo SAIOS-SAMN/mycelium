@@ -59,7 +59,7 @@ fn form_tape_v6_round_trips() {
     f.faces.push(edged);
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.remainder = crate::transducer::element::place_chain(&[(9, 9, 1, 0)])
-        .expect("one cell is A5's chain");
+        .expect("one link is A5's chain");
     f.reindex();
     assert!(matches!(f.vertices[glued as usize], Vertex::Glued { .. }));
     assert!(matches!(
@@ -280,8 +280,8 @@ fn a_form_stands_one_demand_per_kind_and_chart_and_gathers_the_bodies() {
     f.stand_demand(Demand::Creation, &chart, vec![(0, 0, 0, 3)]);
     f.stand_demand(Demand::Creation, &chart, vec![(0, 1, 0, 3), (0, 0, 0, 3)]);
     f.stand_demand(Demand::Creation, &other, vec![(5, 5, 0, 1)]);
-    let demanded: Vec<(Demand, Vec<Cell>)> =
-        f.demand_vertices().map(|(_, k, _, cells)| (k.clone(), cells.to_vec())).collect();
+    let demanded: Vec<(Demand, Vec<Link>)> =
+        f.demand_vertices().map(|(_, k, _, links)| (k.clone(), links.to_vec())).collect();
     assert_eq!(demanded.len(), 2, "one vertex per (kind, chart), got {demanded:?}");
     let on_chart = f
         .demands

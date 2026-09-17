@@ -339,7 +339,7 @@ fn deconstruct_multiplicity_is_per_body() {
 }
 
 /// The receiving direction: two citations carrying different words
-/// onto the same cells are a seam defect the replay alone would miss;
+/// onto the same sites are a seam defect the replay alone would miss;
 /// a transport and its inverse are a flat loop, two translations are
 /// not.
 #[test]
@@ -354,7 +354,7 @@ fn seams_and_holonomy_are_located_exactly() {
         Cite { word: 1, transport: id.clone(), gauge: 0 },
     ];
     assert!(replay(&words, &cites[..1], &target).is_empty());
-    assert_eq!(seam_defect(&words, &cites, &target), target, "both cells spoken twice, differently");
+    assert_eq!(seam_defect(&words, &cites, &target), target, "both links spoken twice, differently");
     assert_eq!(verify(&words, &cites, &target), target);
     assert!(verify(&words, &cites[..1], &target).is_empty(), "one word, no seam");
     let t = element::translator_versor(3, 0);

@@ -1,6 +1,6 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 18.2, 6 — THE CHAIN: its cells and their incidence, the citations and
+//! 18.2, 6 — THE CHAIN: its links and their incidence, the citations and
 //! punctures a deconstruction produces, the residual no word speaks, and the
 //! replay that measures what a proof leaves.
 
@@ -14,8 +14,12 @@ fn index_key(i: usize) -> [u8; 32] {
     k
 }
 
-/// A chain cell: (row, col, hue before, hue after).
-pub type Cell = (i64, i64, u8, u8);
+/// A chain link: (row, col, hue before, hue after) at a site of one
+/// section (16.5).
+pub type Link = (i64, i64, u8, u8);
+
+/// The retired spelling, bridging the modules not yet swept (V3).
+pub type Cell = Link;
 
 /// A CITATION: the coordinates a sentence speaks for one word — its index
 /// in the language, the transport carrying the word's chain into the
@@ -44,9 +48,9 @@ pub struct Puncture {
     pub word: usize,
     /// The transport taking the word's shape onto the body.
     pub transport: Versor,
-    /// The word's cells under the BODY's own transitions — what the section
+    /// The word's links under the BODY's own transitions — what the section
     /// says, in the body's hues and not the word's.
-    pub cells: Vec<Cell>,
+    pub links: Vec<Link>,
 }
 
 /// A HELD CITE (24.1 as ruled 2026-09-09): the word at a vertex of a held
@@ -60,8 +64,8 @@ pub struct Puncture {
 pub struct HeldCite {
     /// The vertex's address (M2): the word, never the chain.
     pub address: crate::transducer::address::Address,
-    /// The body's cells the vertex's action reconstructed, sorted.
-    pub body: Vec<Cell>,
+    /// The body's links the vertex's action reconstructed, sorted.
+    pub body: Vec<Link>,
 }
 
 /// What deconstruction produced: the citations in body order, the held
@@ -72,7 +76,7 @@ pub struct HeldCite {
 pub struct Sentence {
     pub cites: Vec<Cite>,
     /// PUNCTURES: bodies a held word carries by shape under a gauge the
-    /// word does not yet hold — (word, versor, the word's cells under the
+    /// word does not yet hold — (word, versor, the word's links under the
     /// body's own transitions). Spoken as sections of the word, not as new
     /// words: the fiber deepens instead of the vocabulary widening.
     pub punctures: Vec<Puncture>,
@@ -80,7 +84,7 @@ pub struct Sentence {
     /// body, each derived at the body's chart when the reading asked.
     pub held: Vec<HeldCite>,
     pub connection: Vec<Versor>,
-    pub residual: Vec<Cell>,
+    pub residual: Vec<Link>,
     /// Stratum width per body key, never a maximum over bodies.
     pub multiplicity: Keyed<usize>,
 }
@@ -95,8 +99,8 @@ impl Sentence {
     /// The operators this sentence's citations carry: each cited word's
     /// pattern under its transport, and each held cite's body in the frame
     /// it was derived in, which is the chain's own.
-    fn operators_at<'a>(&self, word_at: &impl Fn(usize) -> Option<&'a Element>) -> Vec<(Versor, Vec<Cell>)> {
-        let mut ops: Vec<(Versor, Vec<Cell>)> = self
+    fn operators_at<'a>(&self, word_at: &impl Fn(usize) -> Option<&'a Element>) -> Vec<(Versor, Vec<Link>)> {
+        let mut ops: Vec<(Versor, Vec<Link>)> = self
             .cites
             .iter()
             .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word)?, c.gauge)?)))
@@ -108,11 +112,11 @@ impl Sentence {
     /// What the language does not yet hold: the residual, together with the
     /// bodies spoken only as punctures — novelty in the fiber is novelty.
     /// Measured as the replay of the citations alone over the chain.
-    pub fn open(&self, words: &[Element], chain: &[Cell]) -> Vec<Cell> {
+    pub fn open(&self, words: &[Element], chain: &[Link]) -> Vec<Link> {
         self.open_at(&|i| words.get(i), chain)
     }
 
-    pub fn open_at<'a>(&self, word_at: &impl Fn(usize) -> Option<&'a Element>, chain: &[Cell]) -> Vec<Cell> {
+    pub fn open_at<'a>(&self, word_at: &impl Fn(usize) -> Option<&'a Element>, chain: &[Link]) -> Vec<Link> {
         match self.punctures.is_empty() {
             true => self.residual.clone(),
             false => replay_operators(&self.operators_at(word_at), chain),
@@ -165,18 +169,18 @@ pub fn puncture_from(
 
 /// The connected components of a chain's support under 4-adjacency, each
 /// as a sorted chain. The sensor's segmentation, not a search.
-pub fn pieces(chain: &[Cell]) -> Vec<Vec<Cell>> {
-    let mut cells: Vec<Cell> = chain.to_vec();
-    cells.sort_unstable();
-    cells.dedup();
-    let owner = components(cells.len(), &incidence(&cells));
-    let mut by: Keyed<Vec<Cell>> = Keyed::new();
-    for (i, cell) in cells.into_iter().enumerate() {
+pub fn pieces(chain: &[Link]) -> Vec<Vec<Link>> {
+    let mut links: Vec<Link> = chain.to_vec();
+    links.sort_unstable();
+    links.dedup();
+    let owner = components(links.len(), &incidence(&links));
+    let mut by: Keyed<Vec<Link>> = Keyed::new();
+    for (i, link) in links.into_iter().enumerate() {
         let k = index_key(owner[i]);
         match by.get_mut(&k) {
-            Some(v) => v.push(cell),
+            Some(v) => v.push(link),
             None => {
-                by.insert(k, vec![cell]);
+                by.insert(k, vec![link]);
             }
         }
     }
@@ -185,20 +189,20 @@ pub fn pieces(chain: &[Cell]) -> Vec<Vec<Cell>> {
     by.scoped().map(|(_, v)| v.clone()).collect()
 }
 
-/// THE INCIDENCE of a support: its 1-skeleton, the pairs of cells sharing
-/// an edge, read off the support itself and never by looking a coordinate
-/// up. In row order two cells are edge-adjacent along a row exactly when
-/// they are consecutive in the list and differ by one column; in column
-/// order, exactly when consecutive and one row apart. Two linear passes
-/// over two orderings of the same support. `cells` must be sorted and
-/// deduplicated; the pairs are indices into it.
-pub fn incidence(cells: &[Cell]) -> Vec<(usize, usize)> {
-    let positions: Vec<(i64, i64)> = cells.iter().map(|c| (c.0, c.1)).collect();
+/// THE INCIDENCE of a support: its 1-skeleton, the pairs of links whose
+/// sites share an edge, read off the support itself and never by looking a
+/// coordinate up. In row order two sites are edge-adjacent along a row
+/// exactly when they are consecutive in the list and differ by one column;
+/// in column order, exactly when consecutive and one row apart. Two linear
+/// passes over two orderings of the same support. `links` must be sorted
+/// and deduplicated; the pairs are indices into it.
+pub fn incidence(links: &[Link]) -> Vec<(usize, usize)> {
+    let positions: Vec<(i64, i64)> = links.iter().map(|c| (c.0, c.1)).collect();
     incidence_of(&positions)
 }
 
-/// The incidence of a support given as positions in row order (sorted,
-/// deduplicated): the same two linear passes, for any carrier of cells.
+/// The incidence of a support given as sites in row order (sorted,
+/// deduplicated): the same two linear passes, for any carrier of sites.
 pub fn incidence_of(positions: &[(i64, i64)]) -> Vec<(usize, usize)> {
     let mut edges = Vec::new();
     for i in 1..positions.len() {
@@ -210,7 +214,7 @@ pub fn incidence_of(positions: &[(i64, i64)]) -> Vec<(usize, usize)> {
     let mut by_column: Vec<usize> = (0..positions.len()).collect();
     #[expect(
         clippy::disallowed_methods,
-        reason = "rule 4 — canonical key order: column-major over the cells' own coordinates, which is where a vertical adjacency is adjacent"
+        reason = "rule 4 — canonical key order: column-major over the sites' own coordinates, which is where a vertical adjacency is adjacent"
     )]
     by_column.sort_unstable_by_key(|&i| (positions[i].1, positions[i].0));
     for w in by_column.windows(2) {
@@ -222,9 +226,10 @@ pub fn incidence_of(positions: &[(i64, i64)]) -> Vec<(usize, usize)> {
     edges
 }
 
-/// The 6-incidence of a 3D support given as positions in canonical order
-/// (sorted, deduplicated): 4-adjacency on (r, c) within each frame k, and
-/// 1-adjacency along k between frames at the same (r, c) (Chapter 51.3).
+/// The 6-incidence of a support of three coordinates given as sites in
+/// canonical order (sorted, deduplicated): 4-adjacency on (r, c) within
+/// each frame k, and adjacency along `e₃` between consecutive frames at
+/// the same (r, c) (51.3).
 pub fn incidence_of_3d(positions: &[(i64, i64, i64)]) -> Vec<(usize, usize)> {
     let mut edges = Vec::new();
     if positions.is_empty() {
@@ -271,7 +276,7 @@ pub fn incidence_of_3d(positions: &[(i64, i64, i64)]) -> Vec<(usize, usize)> {
     edges
 }
 
-/// The connected components of `n` cells under an incidence: each cell's
+/// The connected components of `n` sites under an incidence: each site's
 /// component root (union-find over the edges).
 pub fn components(n: usize, edges: &[(usize, usize)]) -> Vec<usize> {
     let mut parent: Vec<usize> = (0..n).collect();
@@ -300,7 +305,7 @@ pub fn same_profile(a: &[((u8, u8), u32)], b: &[((u8, u8), u32)]) -> bool {
 
 /// The chain a citation names in the word's own frame: the word's
 /// assignment along its axis over its support.
-pub fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<Cell>> {
+pub fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<Link>> {
     let pos = element::positions(word.sub());
     // The citation NAMES the assignment by its index along the word's axis
     // — a coordinate the cite carries on the wire, not a member taken
@@ -310,34 +315,34 @@ pub fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<Cell>> {
         reason = "rule 15 — wire tag offset: the gauge index is the cite's own coordinate along the word's axis"
     )]
     let assignment = word.assignments().into_iter().nth(asg)?;
-    let mut pat: Vec<Cell> = pos.iter().zip(&assignment).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
+    let mut pat: Vec<Link> = pos.iter().zip(&assignment).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
     pat.sort_unstable();
     Some(pat)
 }
 
 /// THE REPLAY — in the algebra and linear in the proof. For every citation
-/// the word's own cells are carried forward by V, each as a blade (exact
-/// under dilation), and every image cell is one keyed read of the target:
-/// a hit with the same transition is spoken, an image cell the target
-/// lacks is over-explanation. The scene is never walked. The residual is
-/// R = Q △ S: the target cells no citation speaks, plus the over-explained
-/// cells. An empty residual is closure; a citation naming nothing held
-/// speaks nothing.
-pub fn replay(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
+/// the word's own laminae are carried forward by V, each as a blade (exact
+/// under dilation), and every image lamina is one keyed read of the
+/// target: a hit with the same transition is spoken, an image lamina the
+/// target lacks is over-explanation. The scene is never walked. The
+/// residual is R = Q △ S: the target links no citation speaks, plus the
+/// over-explained links. An empty residual is closure; a citation naming
+/// nothing held speaks nothing.
+pub fn replay(language: &[Element], cites: &[Cite], target: &[Link]) -> Vec<Link> {
     replay_at(&|i| language.get(i), cites, target)
 }
 
-pub fn replay_at<'a>(word_at: &impl Fn(usize) -> Option<&'a Element>, cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
-    let ops: Vec<(Versor, Vec<Cell>)> = cites
+pub fn replay_at<'a>(word_at: &impl Fn(usize) -> Option<&'a Element>, cites: &[Cite], target: &[Link]) -> Vec<Link> {
+    let ops: Vec<(Versor, Vec<Link>)> = cites
         .iter()
         .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word)?, c.gauge)?)))
         .collect();
     replay_operators(&ops, target)
 }
 
-/// The key of a cell on the three coordinates of the base: its position
-/// written out. A section's cells stand in frame `0`, their own (16.5).
-pub(crate) fn cell_at_key(r: i64, c: i64, k: i64) -> [u8; 32] {
+/// The key of a site on the three coordinates of the base: its position
+/// written out. A section's sites stand in frame `0`, their own (16.5).
+pub(crate) fn base_key(r: i64, c: i64, k: i64) -> [u8; 32] {
     let mut key = [0u8; 32];
     key[..8].copy_from_slice(&r.to_le_bytes());
     key[8..16].copy_from_slice(&c.to_le_bytes());
@@ -345,18 +350,18 @@ pub(crate) fn cell_at_key(r: i64, c: i64, k: i64) -> [u8; 32] {
     key
 }
 
-/// THE REPLAY OF OPERATORS: each operator is a body (the word's cells in
+/// THE REPLAY OF OPERATORS: each operator is a body (the word's links in
 /// its own frame) with the versor that carries it; nothing is fetched. The
 /// utterance is verified as it was spoken. The target is one section, in
-/// its own frame: a word's cell carried into another frame speaks nothing
-/// of it, and the section's cell it was to cover stays unspoken.
-pub fn replay_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cell> {
-    let mut at: Keyed<Cell> = Keyed::new();
-    for &cell in target {
-        at.insert(cell_at_key(cell.0, cell.1, 0), cell);
+/// its own frame: a word's lamina carried into another frame speaks
+/// nothing of it, and the section's site it was to cover stays unspoken.
+pub fn replay_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Link> {
+    let mut at: Keyed<Link> = Keyed::new();
+    for &link in target {
+        at.insert(base_key(link.0, link.1, 0), link);
     }
     let mut spoken: Keyed<()> = Keyed::new();
-    let mut over: Vec<Cell> = Vec::new();
+    let mut over: Vec<Link> = Vec::new();
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
             let Some(image) = element::carry_cell(v, wr, wc, 0) else { continue };
@@ -364,7 +369,7 @@ pub fn replay_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cel
                 if tk != 0 {
                     continue;
                 }
-                let k = cell_at_key(tr, tc, 0);
+                let k = base_key(tr, tc, 0);
                 match at.get(&k) {
                     Some(t) if (t.2, t.3) == (wb, wa) => {
                         spoken.insert(k, ());
@@ -375,9 +380,9 @@ pub fn replay_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cel
             }
         }
     }
-    // ONE CHAIN'S CELLS, keyed by position: the residual is what the word
-    // did not speak, so every cell is asked and none may be skipped.
-    let mut residual: Vec<Cell> = at
+    // ONE CHAIN'S LINKS, keyed by site: the residual is what the word did
+    // not speak, so every link is asked and none may be skipped.
+    let mut residual: Vec<Link> = at
         .scoped()
         .filter(|(k, _)| !spoken.contains(k))
         .map(|(_, t)| *t)
@@ -390,14 +395,14 @@ pub fn replay_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cel
 
 /// THE GAUGE COORDINATE OF A CITATION, read from the target: the word's
 /// assignment whose transitions, carried by `v`, agree with the target on
-/// every cell they land on. An index into a word's assignments is not a
+/// every site they land on. An index into a word's assignments is not a
 /// stable coordinate across copies of the word (a copy that gained a
 /// section orders them differently); the target's own transitions are.
 /// None when no assignment agrees.
-pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Keyed<usize> {
-    let mut at: Keyed<Cell> = Keyed::new();
-    for &cell in target {
-        at.insert(cell_at_key(cell.0, cell.1, 0), cell);
+pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<usize> {
+    let mut at: Keyed<Link> = Keyed::new();
+    for &link in target {
+        at.insert(base_key(link.0, link.1, 0), link);
     }
     let pos = element::positions(word.sub());
     let landed: Vec<(u8, u8)> = pos
@@ -408,7 +413,7 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Keyed<usize> {
             if tk != 0 {
                 return None;
             }
-            let t = at.get(&cell_at_key(tr, tc, 0))?;
+            let t = at.get(&base_key(tr, tc, 0))?;
             Some((t.2, t.3))
         })
         .collect();
@@ -421,13 +426,13 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Keyed<usize> {
         let Some(assignment) = held.get(k) else { continue };
         let ok = pos.iter().zip(assignment).all(|(&(wr, wc), &(wb, wa))| {
             let Some(p) = element::carry_center(v, wr, wc, 0) else { return true };
-            // A centre off the lattice, or off the section's frame, lands
-            // on no cell to disagree with.
+            // A centre off the base, or off the section's frame, lands on
+            // no site to disagree with.
             let Some((tr, tc, tk)) = element::cell_of(&p) else { return true };
             if tk != 0 {
                 return true;
             }
-            match at.get(&cell_at_key(tr, tc, 0)) {
+            match at.get(&base_key(tr, tc, 0)) {
                 Some(t) => (t.2, t.3) == (wb, wa),
                 None => true,
             }
@@ -440,23 +445,23 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Keyed<usize> {
 }
 
 /// THE SEAM CONDITION — the cocycle on overlaps. Where two citations carry
-/// their words onto the same target cell, they must speak the same
-/// transition; the cells where they disagree are the seam defect, located
+/// their words onto the same target site, they must speak the same
+/// transition; the links where they disagree are the seam defect, located
 /// exactly. A sentence with no overlap has no seam.
-pub fn seam_defect(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
-    let ops: Vec<(Versor, Vec<Cell>)> = cites
+pub fn seam_defect(language: &[Element], cites: &[Cite], target: &[Link]) -> Vec<Link> {
+    let ops: Vec<(Versor, Vec<Link>)> = cites
         .iter()
         .filter_map(|c| Some((c.transport.clone(), cited_pattern(language.get(c.word)?, c.gauge)?)))
         .collect();
     seam_defect_operators(&ops, target)
 }
 
-pub fn seam_defect_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cell> {
+pub fn seam_defect_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Link> {
     let mut first: Keyed<(u8, u8)> = Keyed::new();
     let mut conflict: Keyed<()> = Keyed::new();
-    let mut at: Keyed<Cell> = Keyed::new();
-    for &cell in target {
-        at.insert(cell_at_key(cell.0, cell.1, 0), cell);
+    let mut at: Keyed<Link> = Keyed::new();
+    for &link in target {
+        at.insert(base_key(link.0, link.1, 0), link);
     }
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
@@ -465,7 +470,7 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Ve
             if tk != 0 {
                 continue;
             }
-            let k = cell_at_key(tr, tc, 0);
+            let k = base_key(tr, tc, 0);
             if at.get(&k).is_none() {
                 continue;
             }
@@ -480,7 +485,7 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Ve
             }
         }
     }
-    // The same chain, asked for the cells two words disagree on.
+    // The same chain, asked for the links two words disagree on.
     at.scoped()
         .filter(|(k, _)| conflict.contains(k))
         .map(|(_, t)| *t)
@@ -490,7 +495,7 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Ve
 /// VERIFY a received sentence — the receiving direction of the algebra:
 /// the replay's residual together with the seam defect. Empty is closure
 /// with a coherent cover.
-pub fn verify(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
+pub fn verify(language: &[Element], cites: &[Cite], target: &[Link]) -> Vec<Link> {
     let mut out = replay(language, cites, target);
     out.extend(seam_defect(language, cites, target));
     out.sort_unstable();
@@ -502,8 +507,8 @@ pub fn verify(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell
 /// replayed against the target and checked on their seams, with no copy
 /// of any word fetched. The hearer's lexicon is consulted only afterward,
 /// to name what was verified.
-pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[Cell]) -> Vec<Cell> {
-    let ops: Vec<(Versor, Vec<Cell>)> =
+pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[Link]) -> Vec<Link> {
+    let ops: Vec<(Versor, Vec<Link>)> =
         cites.iter().map(|c| (c.transport.clone(), c.body.clone())).collect();
     let mut out = replay_operators(&ops, target);
     out.extend(seam_defect_operators(&ops, target));

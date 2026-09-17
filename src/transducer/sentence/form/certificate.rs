@@ -310,13 +310,13 @@ impl RefusalKind {
 
 /// THE COORDINATE A REFUSAL NAMES (50.9), as content and never as a
 /// position in the sender's tape: the word vertex with the chart it acts
-/// on, a face's two vertex addresses, the chart with the cells the court
+/// on, a face's two vertex addresses, the chart with the links the court
 /// read, or the whole tape.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum At {
     Vertex { address: crate::transducer::address::Address, chart: stalk::Invariant },
     Face(crate::transducer::address::Address, crate::transducer::address::Address),
-    Chart(stalk::Invariant, Vec<Cell>),
+    Chart(stalk::Invariant, Vec<Link>),
     Tape(crate::transducer::address::Address),
 }
 
@@ -331,7 +331,7 @@ impl At {
         match self {
             At::Vertex { address, chart } => format!("vertex {} chart {}", hx(address.as_bytes()), hx(chart.key().as_bytes())),
             At::Face(a, b) => format!("face {}-{}", hx(a.as_bytes()), hx(b.as_bytes())),
-            At::Chart(inv, cells) => format!("chart {} cells {}", hx(inv.key().as_bytes()), cells.len()),
+            At::Chart(inv, links) => format!("chart {} links {}", hx(inv.key().as_bytes()), links.len()),
             At::Tape(a) => format!("tape {}", hx(a.as_bytes())),
         }
     }
@@ -348,11 +348,11 @@ impl At {
                 let _ = crate::transducer::address::put_addr(out, a);
                 let _ = crate::transducer::address::put_addr(out, b);
             }
-            At::Chart(inv, cells) => {
+            At::Chart(inv, links) => {
                 out.push(2);
                 let _ = crate::transducer::sentence::codec::put_inv(inv, out);
-                out.extend_from_slice(&(cells.len() as u32).to_le_bytes());
-                for (r, c, before, after) in cells {
+                out.extend_from_slice(&(links.len() as u32).to_le_bytes());
+                for (r, c, before, after) in links {
                     out.extend_from_slice(&r.to_le_bytes());
                     out.extend_from_slice(&c.to_le_bytes());
                     out.push(*before);
@@ -385,16 +385,16 @@ impl At {
                 let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
                 *pos += 4;
                 let n = take_count(b, *pos, n, 18)?;
-                let mut cells = Vec::with_capacity(n);
+                let mut links = Vec::with_capacity(n);
                 for _ in 0..n {
                     let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     let c = i64::from_le_bytes(b.get(*pos + 8..*pos + 16)?.try_into().ok()?);
                     let before = *b.get(*pos + 16)?;
                     let after = *b.get(*pos + 17)?;
                     *pos += 18;
-                    cells.push((r, c, before, after));
+                    links.push((r, c, before, after));
                 }
-                At::Chart(inv, cells)
+                At::Chart(inv, links)
             }
             3 => At::Tape(crate::transducer::address::take_addr(b, pos)?),
             _ => return None,
@@ -492,13 +492,3 @@ fn take_rank_move(b: &[u8], pos: &mut usize) -> Option<RankMove> {
         _ => None,
     }
 }
-
-// 50.2 step 2 as ruled 2026-09-10: `Path` was here, a proof that rode
-// the speech frame beside the tape. It is deleted, not moved. A word
-// vertex's derivation is what the vertex IS and it is on the tape at v7
-// (`alphabet::Derivation`); a proof about a vertex's meaning travelling
-// outside the tape that carries the vertex was the defect, and the
-// carrier it lived on could not be replayed by a court that had only the
-// sentence. Nothing rides beside the tape now but the contraction
-// certificate above (50.9), which is a claim about which utterance this
-// is and not about what a vertex means.

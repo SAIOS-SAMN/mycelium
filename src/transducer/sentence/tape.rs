@@ -1,18 +1,16 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 19 — THE FORM TAPE: `SENTENCE_TAG` version 7 in both directions, with
-//! addresses as len16 + bytes, the torsion a sentence tape files, the
-//! demand vertices (50.5) and the edge transport on every face (50.3).
-//!
-//! v7 (50.2 step 2, ruled 2026-09-10) carries a word vertex's
-//! DERIVATION where v6 carried a spelling: the generators it factored
-//! through, cited by (form, vertex) with exponents in application order,
-//! the residue in letters, and the composed product. v6 is refused on
-//! read, as v5 is: the version is one equality and there is no reader
-//! for an older tape (MU-STANDARDS §10).
+//! 19 — THE FORM TAPE: `SENTENCE_TAG` at `FORM_TAPE_VERSION` in both
+//! directions, with addresses as len16 + bytes, the torsion a sentence
+//! tape files, the demand vertices (50.5) and the edge transport on every
+//! face (50.3). A word vertex carries its DERIVATION (50.2 step 2): the
+//! generators it factored through, cited by (form, vertex) with exponents
+//! in application order, the residue in letters, and the composed product.
+//! The version is one equality and there is no reader for an older tape
+//! (MU-STANDARDS §10).
 
 use super::codec::{
-    derivation_from_form_bytes, derivation_to_form_bytes, put_inv, take_cell, take_count, take_inv,
+    derivation_from_form_bytes, derivation_to_form_bytes, put_inv, take_count, take_inv, take_link,
     take_u16, take_u32, word_from_form_bytes, word_to_form_bytes,
 };
 use super::form::*;
@@ -257,12 +255,8 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             1 => {
                 let address = crate::transducer::address::take_addr(b, pos)?;
                 let (derivation, contact) = derivation_from_form_bytes(b, pos)?;
-                // THE FIBRE, one member per chart (v8, D7): a count, then
-                // each member's carriage, gauge and chart. v7 wrote one
-                // carriage, one gauge and one class with no count, which is
-                // this shape at exactly one member — and §10 deletes the
-                // reader for a retired layout rather than keeping both, so
-                // there is no v7 arm here.
+                // THE FIBRE, one member per chart (D7): a count, then each
+                // member's carriage, gauge and chart.
                 let nm = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
                 let mut acts: crate::network::nerve::Keyed<crate::transducer::sentence::Acting> =
                     crate::network::nerve::Keyed::new();
@@ -346,7 +340,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 let nb = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
                 let mut bodies = Vec::with_capacity(nb);
                 for _ in 0..nb {
-                    bodies.push(take_cell(b, pos)?);
+                    bodies.push(take_link(b, pos)?);
                 }
                 Vertex::Demand { kind, chart, bodies }
             }
@@ -436,14 +430,14 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         });
     }
     let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
-    let mut cells = Vec::with_capacity(nr);
+    let mut links = Vec::with_capacity(nr);
     for _ in 0..nr {
-        cells.push(take_cell(b, pos)?);
+        links.push(take_link(b, pos)?);
     }
     // A tape whose remainder puts two transitions on one site does not
     // parse (A5 step 3). The refusal is the decoder's, and the court reads
     // it as `REFUSE_FORM_TAPE`.
-    let remainder = crate::transducer::element::place_chain(&cells)?;
+    let remainder = crate::transducer::element::place_chain(&links)?;
     let depth = take_u16(b, pos)?;
     let ncert = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
     let mut certificates = Keyed::new();
@@ -496,9 +490,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         let chord = take_u16(b, pos)?;
         axes.insert(k, chord);
     }
-    // `glued` is `reindex`'s to build and `reindex` runs below: the decoder
-    // walked the vertices a second time to fill it, which is a second builder
-    // of one index (law 12).
+    // `glued` is `reindex`'s to build (law 12), and `reindex` runs below.
     let mut form = Form {
         vertices,
         faces,
@@ -528,19 +520,6 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
 
 /// The tape layout this tree writes and reads (chapter 19). A layout change
 /// is a recut: no reader for an older version exists (MU-STANDARDS §10).
-/// Version 6 (chapter 50, L1) adds the demand vertex and the edge transport.
-///
-/// Version 8 (D7) writes a word vertex's FIBRE — a member count, then per
-/// member the carriage, the gauge and the chart — where v7 wrote one
-/// carriage, one gauge and one class with no count. A vertex acting on one
-/// chart is that shape at exactly one member.
-///
-/// THIS BUMP OWES A RECUT AND DOES NOT SCHEDULE ONE. The fleet is down and
-/// Stage 16's instrument runs in process with no ledger, no wire and no
-/// home, so nothing here needs the fleet up. The owed list already carries
-/// S13.6's `ActKind`, S13.9's fold root, L15's lane vector on the receipt
-/// and L11c's cell coordinate; one recut pays all of them together
-/// whenever the operator next brings the fleet up.
 pub const FORM_TAPE_VERSION: u8 = 9;
 
 /// 37.7 — MINT A GENERATOR FROM A ROTOR, the one construction that turns a
@@ -572,7 +551,7 @@ pub const FORM_TAPE_VERSION: u8 = 9;
 pub fn generator_form(
     rotor: &crate::transducer::alphabet::Rotor,
     chart: &crate::transducer::stalk::Invariant,
-    bodies: &[crate::transducer::sentence::Cell],
+    bodies: &[crate::transducer::sentence::Link],
 ) -> Option<Element> {
     use crate::transducer::alphabet::Derivation;
     rotor.weight()?;
@@ -590,7 +569,7 @@ pub fn generator_form(
     // What the language could not say without it: the demand's own bodies,
     // measured lane-wise, the same measure a remainder takes. A mint with no
     // bodies measures the lanes of nothing, which `as_element_form` refuses
-    // as the zero magnitude — so a caller with no cells to name gives the
+    // as the zero magnitude — so a caller with no links to name gives the
     // letter the one lane it does occupy, the holonomic.
     let mu = match crate::transducer::element::measure_lanes(bodies) {
         m if m.iter().all(|&x| x == 0) => [0, 0, 0, 1],
