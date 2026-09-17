@@ -19,7 +19,6 @@
 
 use super::*;
 use crate::transducer::element::sensor_plane_block;
-use num_traits::{One, Signed, Zero};
 
 /// 50.2 F STEP 2 — FACTOR THROUGH THE PRESENTATION, AND PEEL ONLY THE
 /// RESIDUE. The sensor plane is the first block of 50.4 and the other
@@ -271,13 +270,24 @@ pub(crate) fn peel_versor_with(
     peel_versor_with_target(v, None, adjoined)
 }
 
+/// A22 OVER A BASIS, BY THE COMMUTING PAIRS OF 50.4. The target rotor is
+/// split by the central idempotents into its two quaternion factors, each
+/// peeled in Tait–Bryan order, so every block of `BLOCK_ORDER` yields two
+/// commuting plane rotors; each is spelled on its own plane by the peel
+/// over the alphabet's primes and the generators this mind adjoined. A
+/// block the factors do not decompose, or a plane whose arc the basis does
+/// not spell, is the demand it leaves (50.5); a target that is not even is
+/// no rotor and answers nothing (16.1). A target that turns no plane spells
+/// the sensor block of `v`, the reading of a carriage that only places and
+/// dilates.
 pub(crate) fn peel_versor_with_target(
     v: &Versor,
     target_rotor: Option<&crate::transducer::alphabet::Rotor>,
     adjoined: Vec<crate::transducer::alphabet::AdjoinedPrime>,
 ) -> Option<Result<Peeled, crate::transducer::sentence::Demand>> {
     use crate::transducer::alphabet::{
-        rotor_block_on, spell_peel_with, PLANE_COL, PLANE_ROW, SLOT_PLANES_SIX,
+        factors, is_identity_block, pair_rotors, rotor_block_on, spell_peel_with, standing,
+        tait_bryan, BLOCK_ORDER, PLANE_COL, PLANE_ROW,
     };
     use crate::transducer::peel::PeelNest;
     use crate::transducer::sentence::Demand;
@@ -286,50 +296,51 @@ pub(crate) fn peel_versor_with_target(
         Some(r) => r.clone(),
         None => rotor_of_versor(v)?,
     };
-    let mut all_cores = Vec::new();
+    target.weight()?;
+    if !target.is_even() {
+        return None;
+    }
+    let (qp, qm) = factors(&target);
+    let (Some(tp), Some(tm)) = (tait_bryan(&qp), tait_bryan(&qm)) else {
+        return Some(Err(standing(&target, BLOCK_ORDER[0].0)?));
+    };
+    let mut cited_all: Vec<crate::transducer::alphabet::Cited> = Vec::new();
+    let mut word = crate::transducer::alphabet::Word::identity();
     let mut turned = false;
 
-    for &plane in &SLOT_PLANES_SIX {
-        let Some(block) = rotor_block_on(&target, plane) else {
-            continue;
+    for (k, (pa, pb)) in BLOCK_ORDER.iter().enumerate() {
+        let Some((ra, rb)) = pair_rotors(k, &tp[k], &tm[k]) else {
+            return Some(Err(standing(&target, *pa)?));
         };
-        let det = &block[0][0] * &block[1][1] - &block[0][1] * &block[1][0];
-        let rho2 = &block[0][0] * &block[0][0] + &block[1][0] * &block[1][0];
-        if rho2.is_zero() {
-            return None;
-        }
-        if !(det / &rho2).is_one() {
-            continue;
-        }
-        let is_identity = block[0][0] == block[1][1]
-            && block[0][1].is_zero()
-            && block[1][0].is_zero()
-            && block[0][0].is_positive();
-        if is_identity {
-            continue;
-        }
-
-        turned = true;
-        match spell_peel_with(plane, &block, adjoined.clone()) {
-            Some((PeelNest::Closed { cores }, _rho)) => {
-                all_cores.extend(cores);
+        for (plane, rotor) in [(*pa, ra), (*pb, rb)] {
+            let block = rotor_block_on(&rotor, plane)?;
+            if is_identity_block(&block) {
+                continue;
             }
-            Some((PeelNest::Standing { arc, .. }, _)) => {
-                let norm = &arc.p * &arc.p + &arc.q * &arc.q;
-                match crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane) {
-                    // 37.7 P2: the residue block the shells left, not the
-                    // block the peel started from.
-                    Some(prime) => {
-                        return Some(Err(Demand::RotorPrime {
-                            plane,
-                            prime,
-                            witness: Box::new(crate::transducer::alphabet::arc_block(&arc.p, &arc.q)),
-                        }))
-                    }
-                    None => return Some(Err(Demand::Standing { block: Box::new(block) })),
+            turned = true;
+            match spell_peel_with(plane, &block, adjoined.clone()) {
+                Some((PeelNest::Closed { cores }, _rho)) => {
+                    let (cited, w) = crate::transducer::alphabet::cited_of_cores(&cores)?;
+                    cited_all.extend(cited);
+                    word = word.compose(&w);
                 }
+                Some((PeelNest::Standing { arc, .. }, _)) => {
+                    let norm = &arc.p * &arc.p + &arc.q * &arc.q;
+                    // 37.7 P2: the witness is the residue block the shells
+                    // left, not the block the peel started from.
+                    return Some(Err(
+                        match crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane) {
+                            Some(prime) => Demand::RotorPrime {
+                                plane,
+                                prime,
+                                witness: Box::new(crate::transducer::alphabet::arc_block(&arc.p, &arc.q)),
+                            },
+                            None => Demand::Standing { block: Box::new(block) },
+                        },
+                    ));
+                }
+                None => return Some(Err(Demand::Standing { block: Box::new(block) })),
             }
-            None => return Some(Err(Demand::Standing { block: Box::new(block) })),
         }
     }
 
@@ -356,8 +367,7 @@ pub(crate) fn peel_versor_with_target(
         });
     }
 
-    let (cited, w) = crate::transducer::alphabet::cited_of_cores(&all_cores)?;
-    Some(Ok((cited, w)))
+    Some(Ok((cited_all, word)))
 }
 
 /// A12 over the mind's own generators (50.2 step 2, 42.6, L12). The basis

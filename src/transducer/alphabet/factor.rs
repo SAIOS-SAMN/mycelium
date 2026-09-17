@@ -65,11 +65,11 @@ pub fn factor_rotor(r: &Rotor) -> Option<Result<Word, Demand>> {
     Some(Ok(word.geodesic()))
 }
 
-type Quat = [Q; 4];
+pub(crate) type Quat = [Q; 4];
 
 /// A rotation about one axis of a quaternion factor, read projectively as
 /// the cosine and sine of its half-angle: `c + s·f_k` up to scale.
-struct HalfAngle {
+pub(crate) struct HalfAngle {
     c: Q,
     s: Q,
 }
@@ -77,7 +77,7 @@ struct HalfAngle {
 /// The two quaternion factors of an even element: `R E±` in the bases
 /// `(E±, E± e01, E± e02, E± e03)`, the minus factor's third axis negated so
 /// both are right-handed (`i j = k`).
-fn factors(r: &Rotor) -> (Quat, Quat) {
+pub(crate) fn factors(r: &Rotor) -> (Quat, Quat) {
     // THE GRADES, EACH THROUGH ITS OWN PROJECTOR (Expansion 3): `⟨r⟩₀` is
     // the scalar, `⟨r⟩₂` the six plane bivectors, `⟨r⟩₄` the 4-volume the
     // central idempotents split on. The coefficients are the same numbers
@@ -98,7 +98,7 @@ fn factors(r: &Rotor) -> (Quat, Quat) {
 /// half-angle. The third step needs one rational square root — the
 /// half-angle of a rational rotation is rational or it is not — and the
 /// others none; `None` when the root is irrational or the factor is zero.
-fn tait_bryan(q: &Quat) -> Option<[HalfAngle; 3]> {
+pub(crate) fn tait_bryan(q: &Quat) -> Option<[HalfAngle; 3]> {
     let two = Q::from_integer(BigInt::from(2));
     let [w, x, y, z] = q.clone();
     // Axis 3: after removing q3 the rest is q1·q2, whose coordinates
@@ -135,7 +135,7 @@ fn tait_bryan(q: &Quat) -> Option<[HalfAngle; 3]> {
 /// the two commuting plane rotors it is the product of. The factors' scales
 /// are matched by the square root of their norms' ratio; `None` when that
 /// root is irrational — the block has no rational plane rotors.
-fn pair_rotors(k: usize, plus: &HalfAngle, minus: &HalfAngle) -> Option<(Rotor, Rotor)> {
+pub(crate) fn pair_rotors(k: usize, plus: &HalfAngle, minus: &HalfAngle) -> Option<(Rotor, Rotor)> {
     let (cp, sp) = (&plus.c, &plus.s);
     let (cm, sm) = (&minus.c, &minus.s);
     let np2 = cp * cp + sp * sp;
@@ -221,7 +221,7 @@ pub(crate) fn arc_block(s: &BigInt, t: &BigInt) -> [[Q; 2]; 2] {
 
 /// The standing reading of a rotor that did not decompose: its own action
 /// on `plane`, the in-plane components of the plane's axes' images.
-fn standing(r: &Rotor, plane: (u8, u8)) -> Option<Demand> {
+pub(crate) fn standing(r: &Rotor, plane: (u8, u8)) -> Option<Demand> {
     let (i, j) = (plane.0 as usize, plane.1 as usize);
     let unit = |k: usize| -> [Q; 4] { std::array::from_fn(|t| if t == k { Q::one() } else { Q::zero() }) };
     let a = r.carry(&unit(i))?;
@@ -229,7 +229,7 @@ fn standing(r: &Rotor, plane: (u8, u8)) -> Option<Demand> {
     Some(Demand::Standing { block: Box::new([[a[i].clone(), b[i].clone()], [a[j].clone(), b[j].clone()]]) })
 }
 
-fn is_identity_block(b: &[[Q; 2]; 2]) -> bool {
+pub(crate) fn is_identity_block(b: &[[Q; 2]; 2]) -> bool {
     b[0][0].is_one() && b[1][1].is_one() && b[0][1].is_zero() && b[1][0].is_zero()
 }
 

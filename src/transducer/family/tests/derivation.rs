@@ -379,6 +379,71 @@ fn adjoined_basis_discovers_generators_on_offplane_channels() {
     assert_eq!(basis[0].pi.norm(), num_bigint::BigInt::from(289));
 }
 
+/// Whether the peel over a basis and the alphabet's own factorization
+/// read one rotor alike: both close and reach one vertex, or both stand
+/// with the same kind of demand.
+fn peels_agree(r: &crate::transducer::alphabet::Rotor) -> bool {
+    use crate::transducer::alphabet::factor_rotor;
+    use crate::transducer::family::derivation::peel_versor_with_target;
+    let by_letters = factor_rotor(r).expect("a versor");
+    let by_basis = peel_versor_with_target(&element::identity_versor(), Some(r), Vec::new())
+        .expect("a versor");
+    match (by_letters, by_basis) {
+        (Ok(w), Ok((cited, w2))) => {
+            cited.is_empty() && w.rotor().projective_eq(&w2.rotor()) && w2.rotor().projective_eq(r)
+        }
+        (Err(a), Err(b)) => a.label() == b.label(),
+        _ => false,
+    }
+}
+
+/// 50.4 at the peel over a basis: `peel_versor_with_target` and
+/// `factor_rotor` are one factorization — the quaternion split and the
+/// three commuting pairs — so on every rotor the letters spell they close
+/// together and reach one vertex, across blocks that do not commute.
+#[test]
+fn the_peel_over_a_basis_and_the_alphabets_own_factorization_agree_on_the_letters() {
+    let q01 = LetterId::quarter((0, 1)).expect("quarter (0,1)");
+    let q02 = LetterId::quarter((0, 2)).expect("quarter (0,2)");
+    let p23 = LetterId::pythagorean_5((2, 3)).expect("(3,4,5) on (2,3)");
+    let p13 = LetterId::pythagorean_5((1, 3)).expect("(3,4,5) on (1,3)");
+    let rotors = [
+        crate::transducer::alphabet::Rotor::identity(),
+        Word::from_letters(&[(q01, false)]).rotor(),
+        Word::from_letters(&[(p23, false)]).rotor(),
+        Word::from_letters(&[(q01, false), (p23, false), (p13, true)]).rotor(),
+        Word::from_letters(&[(q02, false), (q01, false)]).rotor(),
+    ];
+    for r in &rotors {
+        assert!(peels_agree(r), "the two peels read {r:?} differently");
+    }
+}
+
+/// 37.7, the rotor level: `3 + e₀₁ + e₀₂` is a rotor of weight 11 that no
+/// coordinate plane holds, so both peels stand it as a demand and neither
+/// spells its sensor shadow for it.
+#[test]
+fn a_rotor_no_coordinate_plane_holds_stands_as_a_demand_on_both_peels() {
+    use crate::transducer::alphabet::{factor_rotor, Rotor, Q};
+    use crate::transducer::family::derivation::peel_versor_with_target;
+    use crate::transducer::sentence::Demand;
+    let q = |n: i64| Q::from_integer(num_bigint::BigInt::from(n));
+    let r = Rotor::scalar(q(3))
+        .add(&Rotor::blade(0b0011, q(1)))
+        .add(&Rotor::blade(0b0101, q(1)));
+    assert!(r.weight().is_some(), "a versor");
+    assert!(
+        matches!(factor_rotor(&r), Some(Err(Demand::Standing { .. }))),
+        "the alphabet's own peel stands"
+    );
+    let by_basis = peel_versor_with_target(&element::identity_versor(), Some(&r), Vec::new())
+        .expect("a versor");
+    assert!(
+        matches!(by_basis, Err(Demand::Standing { .. })),
+        "and the peel over a basis stands with it: {by_basis:?}"
+    );
+}
+
 #[test]
 fn peel_versor_with_peels_identity_and_turned_planes() {
     use crate::transducer::family::derivation::peel_versor_with;
