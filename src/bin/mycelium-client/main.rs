@@ -82,6 +82,25 @@ fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
     args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
 }
 
+/// THE HEAP AS THE ALLOCATOR COUNTS IT (L33, §8.1): the bytes live in
+/// allocations against the bytes resident in the process, read after
+/// advancing the allocator's epoch so both are one reading. The two apart
+/// tell retention from growth, which is what every counted carrier being
+/// flat while RSS climbs leaves open. Unmeasured where the allocator does
+/// not answer; nothing is put in place of a reading (rule 11).
+fn heap() -> String {
+    let read = || -> Option<(usize, usize)> {
+        tikv_jemalloc_ctl::epoch::advance().ok()?;
+        let allocated = tikv_jemalloc_ctl::stats::allocated::read().ok()?;
+        let resident = tikv_jemalloc_ctl::stats::resident::read().ok()?;
+        Some((allocated, resident))
+    };
+    match read() {
+        Some((allocated, resident)) => format!("allocated {allocated} resident {resident}"),
+        None => "unmeasured".to_string(),
+    }
+}
+
 fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     let mut i = 1;
     while i < args.len() {
@@ -274,7 +293,7 @@ fn main() {
             let (axis_charts, axis_words) = entity.axis_index_counts();
             if moved == [false; 4] {
                 eprintln!(
-                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | feed {}",
+                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | feed {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
@@ -284,11 +303,13 @@ fn main() {
                     entity.idea_weight(),
                     entity.carriers(),
                     extract_memo.len(),
+                    heap(),
+                    entity.session_sizes(),
                     if feed.exhausted() { "clear" } else { "held" },
                 );
             } else {
                 eprintln!(
-                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
+                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
@@ -298,6 +319,8 @@ fn main() {
                     entity.idea_weight(),
                     entity.carriers(),
                     extract_memo.len(),
+                    heap(),
+                    entity.session_sizes(),
                     entity.shed_n(),
                     entity.impedance(),
                     match entity.discordance() {

@@ -261,6 +261,27 @@ impl Session {
         self.peers.scoped().map(|(_, a)| a.clone()).collect()
     }
 
+    /// WHAT THIS SESSION HOLDS OF THE MESH, as counts (§8.1, measurement
+    /// only): the peers, the pooled streams, the cover's charts, the roots
+    /// last read per hypha, the rooms, the addresses, the resistance
+    /// entries, the round trips and the round-trip windows. Counts and
+    /// never bytes, one per carrier, so the stroke line says WHICH of them
+    /// grows while every entity carrier is flat (L33); nothing branches on
+    /// it.
+    pub fn sizes(&self) -> [usize; 9] {
+        [
+            self.peers.len(),
+            self.streams.borrow().len(),
+            self.cover.borrow().all_charts().len(),
+            self.last_roots.borrow().len(),
+            self.rooms.borrow().len(),
+            self.addrs.borrow().len(),
+            self.resistance.borrow().len(),
+            self.rtt.borrow().len(),
+            self.rtt_window.borrow().len(),
+        ]
+    }
+
     pub fn add_peer(&mut self, addr: &str) {
         if self.peers.contains(addr.as_bytes()) {
             return;

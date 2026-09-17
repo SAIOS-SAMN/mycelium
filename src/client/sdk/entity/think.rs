@@ -571,4 +571,11 @@ impl Entity {
         self.epigenome.shed_n()
     }
 
+    /// WHAT THE SESSION HOLDS OF THE MESH, as counts (§8.1, L33): the
+    /// carriers below the entity, read on the stroke line beside
+    /// [`Entity::carriers`]. See [`Session::sizes`].
+    pub fn session_sizes(&self) -> [usize; 9] {
+        self.session.sizes()
+    }
+
 }
