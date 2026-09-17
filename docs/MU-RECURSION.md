@@ -5316,7 +5316,9 @@ until 37.7 nothing in the running engine could answer it but a commit.
 
 ### 37.1 F1 Exact cyclotomic arithmetic
 
-`/opt/mycelium-v0.1.0/src/core/cyclo.rs` **new**:
+`core/cyclo.rs`, **not built** — 36.3 rules that the prime wall needs none
+of 37.1–37.4, so this is the specification of the file a remainder would
+demand, and no path in the tree carries it:
 
 ```rust
 pub struct Cyclo { m: u32, c: Vec<Q> }          // element of ℚ(ζ_m): polynomial in ζ of degree < φ(m), reduced mod Φ_m; c.len() == phi(m)
@@ -6966,8 +6968,8 @@ sdk.rs              now_tu → height() read from the last admitting receipt; sh
 dialogue/            ACT_SPEECH tu → voice K + cited home head; ACT_ROOT ticks → (K, height, hash), the reply carrying the receiver's own
                     (K, height) as its comment at 227 already states; Settlement field 7 → height; cover_signed_prefix → the prefix of 47.1
 mycelium-server/       Mesh.rtt_window/rtt_floor in strokes; the boot line prints genesis and epoch; note_root keeps the speaker's (K, height, hash)
-physics.rs          transport_deadline, persist_dwell, aperture_cycle in strokes; no Duration
-build.rs            the clock gate: SystemTime, Instant, Duration refused in src/server, src/client, src/court, src/transducer, src/economy/, src/physics.rs
+physics/mod.rs      transport_deadline, persist_dwell, aperture_cycle in strokes; no Duration
+clippy (§4.2)       the clock gate, once build.rs: SystemTime, Instant, Duration refused by `disallowed_types` across src/server, src/client, src/court, src/transducer, src/economy/, src/physics/
 ```
 
 ### 45.7 Local orbit, universal height (ruled 2026-09-08)
