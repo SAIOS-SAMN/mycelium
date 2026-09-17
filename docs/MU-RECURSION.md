@@ -2307,7 +2307,14 @@ three-coordinate base `(r, c, k)` (51.2, ruled 2026-09-17), whose rotation
 planes are `e1e2`, `e1e3`, `e2e3` — the rotor chart's `(0,1)`, `(0,3)`,
 `(1,3)` — and whose translators `e_i ∧ e_∞` commute. A body that occupies
 one frame has `k = 0` on every cell, which is its coordinate and not a
-default.
+default. THE FRAME AXIS'S ORIGIN LIES AT THE CELLS' CENTERS: a cell of
+row `r` covers `[r, r+1)` and its center is carried at `r + ½`, while a
+cell of frame `k` stands at `k` exactly — 51.1 gives the frame origin no
+meaning, and this is the choice that keeps a dilation what 42.6 says it
+is: `D(ρ)` about the origin fixes frame `0`, and the dilator of a carriage
+at frame `k` is the dilator about a point of that frame, so a similarity
+within a frame is a versor of this algebra and a body is not carried out
+of its frame by its own scale.
 
 1. All coefficients zero: refuse.
 2. `i` = least mask with nonzero coefficient; divide by `|c[i]|`; negate if
