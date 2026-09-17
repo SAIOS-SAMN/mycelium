@@ -8332,16 +8332,20 @@ it was pairs; a versor serialises thirty-two components where it
 serialised sixteen; the frame rides on the pose.
 
 **No version is spent before the recut, and here is why.**
-`FORM_TAPE_VERSION` is 9 today. v9's layout is fixed at a recut, and the
-recut is a procedure the OPERATOR runs (§10). So this chapter does not
-choose a version byte ahead of it and does not write a migration. It
-records that the codec change is a recut's business and that the recut
-takes it whole: every tape in the tree is rewritten at once, or none is.
-A tape carrying two coordinates and a tape carrying three are not two
-versions of one format; they are two bases, and 33's "one migration, then
-never again" is the rule that applies. The landing's final commit spends
-the byte, and the one recut that follows it rewrites every tape (ruled
-2026-09-17).
+`FORM_TAPE_VERSION` was 9 through the landing. v9's layout is fixed at a
+recut, and the recut is a procedure the OPERATOR runs (§10). So this
+chapter did not choose a version byte ahead of it and does not write a
+migration. It records that the codec change is a recut's business and
+that the recut takes it whole: every tape in the tree is rewritten at
+once, or none is. A tape carrying two coordinates and a tape carrying
+three are not two versions of one format; they are two bases, and 33's
+"one migration, then never again" is the rule that applies. The landing's
+final commit spends the byte, and the one recut that follows it rewrites
+every tape (ruled 2026-09-17). **Spent** (P7, 2026-09-17, night):
+`FORM_TAPE_VERSION` is 10 — the three-coordinate supports, the
+thirty-two-component versors, the placed sections and the filed zero
+(52.3) are its layout — and the recut of epoch 65 is the one that
+rewrites every tape.
 
 ### 51.8 The court
 

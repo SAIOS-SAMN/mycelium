@@ -517,7 +517,10 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
 
 /// The tape layout this tree writes and reads (chapter 19). A layout change
 /// is a recut: no reader for an older version exists (MU-STANDARDS §10).
-pub const FORM_TAPE_VERSION: u8 = 9;
+/// Version 10 is the three-coordinate base (51.7): supports as sites of
+/// three coordinates, versors of thirty-two components, the sections
+/// placed, and a loop's period filed as `0` for infinite order (52.3).
+pub const FORM_TAPE_VERSION: u8 = 10;
 
 /// 37.7 — MINT A GENERATOR FROM A ROTOR, the one construction that turns a
 /// measured action the alphabet cannot spell into a word the language holds.
