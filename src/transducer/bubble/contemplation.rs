@@ -57,8 +57,6 @@ impl Deliberation {
 pub struct Contemplation {
     pub bubbles: Keyed<Bubble>,
     pub by_chart: Keyed<Keyed<()>>,
-    /// Remainder site → the bubbles whose remainders hold a link there.
-    pub by_site: Keyed<Keyed<()>>,
     pub complex: Complex,
     /// Bubbles whose cover still has work; written when dirty is set.
     pub(crate) dirty: Keyed<()>,
@@ -271,12 +269,6 @@ impl Contemplation {
                 m.remove(key);
             }
         }
-        for (r, c, _, _) in remainder_links_of(b) {
-            let sk = remainder_site_key(r, c);
-            if let Some(m) = self.by_site.get_mut(&sk) {
-                m.remove(key);
-            }
-        }
         self.unfile_vortex(key, &b.vortex_strata());
         self.complex.drop_vertex(key);
     }
@@ -426,6 +418,12 @@ impl Contemplation {
         }
     }
 
+    /// THE INCIDENCE A BUBBLE IS ADMITTED UNDER: its cover's charts and its
+    /// vortices' strata, each naming the bubble by its address. Every entry
+    /// copies that address, which is the form's vertex key and grows with
+    /// the form, so an index is written here only where a reader takes it
+    /// (`held_at`, `link_new`, the vortex collapse); an index nothing reads
+    /// is that address copied once per entry for no reading (law 12).
     pub(crate) fn admit_incidence(&mut self, key: impl AsRef<[u8]>, b: &Bubble) {
         let key = key.as_ref();
         for (ck, _) in b.cover.scoped() {
@@ -437,19 +435,6 @@ impl Contemplation {
                     let mut m = Keyed::new();
                     m.insert(key, ());
                     self.by_chart.insert(&ck, m);
-                }
-            }
-        }
-        for (r, c, _, _) in remainder_links_of(b) {
-            let sk = remainder_site_key(r, c);
-            match self.by_site.get_mut(&sk) {
-                Some(m) => {
-                    m.insert(key, ());
-                }
-                None => {
-                    let mut m = Keyed::new();
-                    m.insert(key, ());
-                    self.by_site.insert(sk, m);
                 }
             }
         }
