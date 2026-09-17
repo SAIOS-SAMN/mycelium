@@ -101,6 +101,16 @@ fn heap() -> String {
     }
 }
 
+/// THE HEAP'S LIVE BYTES, one reading (R3, §8.1): taken before and after
+/// each arm of the stroke so the signed difference, summed per arm since
+/// the voice came up, says WHICH arm retains what the heap line says grows.
+/// Unmeasured where the allocator does not answer; a difference is taken
+/// only between two readings.
+fn allocated() -> Option<i128> {
+    tikv_jemalloc_ctl::epoch::advance().ok()?;
+    Some(tikv_jemalloc_ctl::stats::allocated::read().ok()? as i128)
+}
+
 fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     let mut i = 1;
     while i < args.len() {
@@ -199,6 +209,9 @@ fn main() {
     let mut stroke_n = 0u64;
     let mut last_logged_n = 0u64;
     let mut last_logged_k = u64::MAX;
+    // What each arm — feed, quote, task, syntropy — has added to the live
+    // heap since the voice came up, in bytes (R3, §8.1).
+    let mut grew = [0i128; 4];
 
     loop {
         if stop.load(Ordering::SeqCst) {
@@ -227,14 +240,24 @@ fn main() {
                 m: &mut m,
                 tag: &tag,
             };
+            let a0 = allocated();
             feed_arm(&mut stroke, &mut feed, &mut extract_memo, occluded);
+            let a1 = allocated();
             quote_arm(&mut stroke, occluded);
+            let a2 = allocated();
             task_arm(&mut stroke, &mut extract_memo, occluded);
+            let a3 = allocated();
             // The syntropic phase on any lane short of one expansion
             // (S10's reading, S13.2).
             if !mycelium::economy::lanes_short(&stroke.physics.reserve_shortfall([true; 4])).is_empty() {
                 syntropy_arm(&mut stroke, &genome_path);
                 stroke.physics.relax();
+            }
+            let a4 = allocated();
+            for (g, (before, after)) in grew.iter_mut().zip([(a0, a1), (a1, a2), (a2, a3), (a3, a4)]) {
+                if let (Some(b), Some(a)) = (before, after) {
+                    *g += a - b;
+                }
             }
             // EXPANSION 4 — A LEARNED WORD MEETS THE VORTICES THIS MIND
             // HOLDS, on the stroke it was learned. `pivot_thoughts` pivots
@@ -296,7 +319,7 @@ fn main() {
             let (axis_charts, axis_words) = entity.axis_index_counts();
             if moved == [false; 4] {
                 eprintln!(
-                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | feed {}",
+                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | feed {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
@@ -312,7 +335,7 @@ fn main() {
                 );
             } else {
                 eprintln!(
-                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
+                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
