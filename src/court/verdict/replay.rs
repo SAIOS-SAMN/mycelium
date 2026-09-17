@@ -161,7 +161,7 @@ fn witnesses_carry_their_primes(f: &Form) -> Option<Refusal> {
 
 /// The same replay, refusing WITH THE COORDINATE (50.9): the vertex that
 /// does not carry its body, the face whose edge does not re-derive, the
-/// chart with the cells no demand declares; every other refusal is of the
+/// chart with the links no demand declares; every other refusal is of the
 /// whole tape.
 pub fn replay_form_at(
     spoken: &Element,
@@ -296,11 +296,11 @@ pub fn replay_form_at(
     // the forest itself and compares the audit it derived against the one
     // the tape claims, coordinate by coordinate, and demands EQUALITY.
     //
-    // The old clause refused only a tape claiming LESS than the walk on
-    // some coordinate, so a tape claiming MORE passed: structure the court
-    // could not derive, admitted because it pointed the convenient way.
-    // Rule 11 is exact or refused, and a rank that does not re-derive is
-    // not exact in either direction.
+    // A clause that refused only a tape claiming LESS than the walk on
+    // some coordinate would pass a tape claiming MORE: structure the court
+    // cannot derive, admitted because it points the convenient way. Rule
+    // 11 is exact or refused, and a rank that does not re-derive is not
+    // exact in either direction.
     if crate::transducer::sentence::Rank::moved(taped_rank, derived)
         != crate::transducer::sentence::RankMove::Equal
     {
@@ -323,10 +323,10 @@ pub fn replay_form_at(
         // refusal. The μ⃗ it measured is NOT: a form that closes every pair
         // while measuring nothing has still closed them, and pricing is the
         // economy's reading, taken after the court's. Under 50.5 (L7) the
-        // clause reads the CLOSED SUB-COMPLEX: a remainder cell a demand
+        // clause reads the CLOSED SUB-COMPLEX: a remainder link a demand
         // vertex names is what the sentence said it could not close — valid,
         // not closed — and only an undeclared remainder refuses, at the
-        // chart of the cells it read (50.9).
+        // chart of the links it read (50.9).
         let _ = pay;
         let undeclared = undeclared_remainder(&rems, &walked);
         if !undeclared.is_empty() {
@@ -381,11 +381,11 @@ pub(crate) fn vertex_tape_and_moves(
                     }
                     if let Some(fam) = family {
                         for (x, _) in fam {
-                            let cells = crate::arc::grid_to_cells(x);
+                            let painted = crate::arc::painted_of_grid(x);
                             // A grid with no rows has no width.
                             let frame = (x.len(), crate::arc::grid_width(x));
-                            let anchor: Vec<(i64, i64)> = cells.iter().map(|&(r, c, _)| (r, c)).collect();
-                            if matches!(family::orbit(v, &cells, &anchor, frame), OrbitEnd::NoOrbit) {
+                            let anchor: Vec<(i64, i64)> = painted.iter().map(|&(r, c, _)| (r, c)).collect();
+                            if matches!(family::orbit(v, &painted, &anchor, frame), OrbitEnd::NoOrbit) {
                                 return Some(REFUSE_ORBIT_STILL);
                             }
                         }
@@ -437,10 +437,10 @@ pub(crate) fn chord_loops(f: &Form) -> Keyed<u16> {
 /// THE CHORD IS A FACE LIKE ANY OTHER and carries its edge like any other.
 /// What the loop then reads — flat, filed at its period, or not evaluated
 /// at all — is [`form_loops_replay`]'s, on the loop's EDGE holonomy (50.3).
-/// This clause asked for the TRANSPORT composite instead, matched against
-/// the chord's own word: a reading that telescopes over words that commute,
-/// so it certified a loop the voice never evaluated and demanded a filing
-/// under a class nothing files.
+/// Asking for the TRANSPORT composite here instead, matched against the
+/// chord's own word, would be a reading that telescopes over words that
+/// commute: it would certify a loop the voice never evaluated and demand a
+/// filing under a class nothing files.
 pub(crate) fn torsion_chord_carries(f: &Form, by_chord: &Keyed<u16>, face_idx: usize) -> bool {
     let Some(&li) = by_chord.get(&face_idx_key(face_idx as u16)) else {
         return false;
@@ -466,12 +466,12 @@ pub(crate) fn torsion_chord_carries(f: &Form, by_chord: &Keyed<u16>, face_idx: u
 ///
 /// The reading is the loop's EDGE HOLONOMY (50.3) — the composite of the
 /// transitions between the bodies' own frames — and it is the same reader
-/// the voice classified with since 01c0155. The TRANSPORT composite stood
-/// here, and it is a different object: it telescopes around a cycle over
-/// words that commute, and every word a pair form composes is a
-/// sensor-plane word, so a cover's loop read flat here however curved the
-/// scene was, while the class the voice actually filed — under the edge
-/// holonomy's key — was never looked for.
+/// the voice classifies with. The TRANSPORT composite is a different
+/// object: it telescopes around a cycle over words that commute, and every
+/// word a pair form composes is a sensor-plane word, so read on it a
+/// cover's loop is flat however curved the scene is, while the class the
+/// voice actually files — under the edge holonomy's key — is never looked
+/// for.
 ///
 /// A LOOP THE FORM DID NOT EVALUATE IS NOT REPLAYED. `edge_holonomy`
 /// answers `None` where a remainder edge lies anywhere on the cycle (13.9
@@ -509,10 +509,10 @@ pub(crate) fn form_loops_replay(f: &Form) -> bool {
 /// It is called twice per loop because a loop HAS two obstructions and
 /// neither replaces the other (`Form::edge_class_vector`): the transport
 /// composite the pivot discharges, and the edge holonomy the cover files.
-/// The court read the first alone, so the class a cover actually filed —
-/// keyed by the edge holonomy — was never looked for, and the transport
+/// A court that read the first alone would never look for the class a
+/// cover actually files — keyed by the edge holonomy — and the transport
 /// composite telescopes over the sensor-plane words a pair form composes,
-/// which read flat however curved the scene was.
+/// which read flat however curved the scene is.
 fn loop_reading_replays(
     f: &Form,
     lp: &crate::transducer::sentence::Loop,

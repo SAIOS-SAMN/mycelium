@@ -14,7 +14,7 @@ fn digits(rows: &[&str]) -> Grid {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
-/// A bar recoloured and a cell created beside it: one word vertex, one
+/// A bar recoloured and a lamina created beside it: one word vertex, one
 /// `Creation` demand, spoken as one sentence (50.5).
 fn a_recolour_with_a_creation() -> (Vec<(Grid, Grid)>, Element) {
     let family = vec![(digits(&["110", "000"]), digits(&["220", "003"]))];
@@ -26,7 +26,7 @@ fn a_recolour_with_a_creation() -> (Vec<(Grid, Grid)>, Element) {
     (family, e)
 }
 
-/// 50.5: valid, not closed. The created cell is the remainder the demand
+/// 50.5: valid, not closed. The created lamina is the remainder the demand
 /// vertex names, and the court replays the sentence on its pair without
 /// refusing it for that remainder.
 #[test]
@@ -40,7 +40,7 @@ fn a_remainder_a_demand_names_is_valid_and_replays_on_the_family() {
 }
 
 /// The same sentence with its demand vertex struck out claims to close a
-/// pair it leaves a cell on: `REFUSE_NOT_CLOSED`.
+/// pair it leaves a lamina on: `REFUSE_NOT_CLOSED`.
 #[test]
 fn an_undeclared_remainder_refuses_the_sentence_as_not_closed() {
     let (family, e) = a_recolour_with_a_creation();
@@ -89,8 +89,8 @@ fn a_tape_with_no_acting_vertex_is_a_chain() {
     );
 }
 
-/// 50.3, 23.1 step 4: a bar and a cell of two hues carried together are a
-/// rigid pair whose edge is the identity of the stabilizer; the honest
+/// 50.3, 23.1 step 4: a bar and a lamina of two hues carried together are
+/// a rigid pair whose edge is the identity of the stabilizer; the honest
 /// edge re-derives on the union of the bodies, and an edge that names a
 /// quarter turn the union did not make is refused. Two shapes, so each
 /// chart holds one body and the edge is read on the pair, not on sections.
@@ -182,16 +182,15 @@ fn a_carried_edge_rederives_on_the_union_or_is_refused() {
     );
 }
 
-/// R77: MEMBER REPLAY IS SCOPED TO ACTIVE CHART SECTIONS.
+/// MEMBER REPLAY IS SCOPED TO ACTIVE CHART SECTIONS.
 ///
-/// When a rule vertex carries multiple member charts in `acts` (e.g. Chart A
-/// from pair 0, Chart B from pair 1), `matching_pairs_for` previously returned
-/// `[0, 1]` because an unmeasured chart defaulted to `None => true`.
-/// During court replay, the court attempted to replay Member B on pair 0
-/// against an unrelated body of Chart B present in the input grid, causing
-/// `REFUSE_VERTEX_BODY` (517 occurrences on fleet).
-/// With scoped chart sections, Member B is active only on pair 1, so pair 0
-/// replays only Member A and the sentence is accepted.
+/// A rule vertex carrying member charts from different pairs (Chart A from
+/// pair 0, Chart B from pair 1) is replayed per member on the pairs that
+/// member's section names: Member B is active only on pair 1, so pair 0
+/// replays Member A alone, and a body of Chart B present in pair 0's input
+/// is not a body this vertex claims. A section that defaulted an unmeasured
+/// chart to every pair would replay Member B on pair 0 against that body
+/// and refuse the sentence at a claim it never made.
 #[test]
 fn member_replay_is_scoped_to_active_chart_sections() {
     let family = vec![

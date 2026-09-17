@@ -224,7 +224,7 @@ pub fn rule(
 }
 
 /// The symmetric difference of two canonically ordered chains — one merge
-/// walk, never a lookup: the cells one view speaks and the other does not.
+/// walk, never a lookup: the links one view speaks and the other does not.
 pub(crate) fn symmetric_difference(a: &[(i64, i64, u8, u8)], b: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
     let (mut i, mut j) = (0usize, 0usize);
     let mut out = Vec::new();

@@ -94,7 +94,7 @@ pub(crate) fn blind_replay_on_inner(
         // S9.4 — WHAT CERTIFIES IS CLOSURE. `replay_form_with` above is the
         // certificate: the loops return, every face re-derives, the
         // certificates re-walk, and with a family the form closes it. A
-        // sentence was ALSO refused here for carrying a zero magnitude,
+        // sentence is not refused here for carrying a zero magnitude,
         // which is not a defect in the word — μ⃗ is a COST, not a score, and
         // a word that costs nothing to say still says it. The economy
         // prices a zero deflation at zero without the court refusing it.
@@ -176,16 +176,16 @@ pub(crate) fn blind_replay_on_inner(
                     // Sections and torsion a held word gained after it was
                     // ruled (`attach`, `merge_fibre`) live on the word and
                     // are counted by `magnitude`, never re-derived from the
-                    // chain; reading them here slashed every deepened word
-                    // a peer served.
+                    // chain; reading them here would slash every deepened
+                    // word a peer served.
                     if rederived.base_magnitude() != spoken.chain_magnitude() {
-                        // 34.2: A REFUSAL NAMES ITS COORDINATE. This said
-                        // only that the two disagreed, so a fleet reading
-                        // of it named no lane and no reader could tell a
-                        // shell that moved from a gauge that did — which is
-                        // a four-lane fact reported as one bit (law 5).
+                        // 34.2: A REFUSAL NAMES ITS COORDINATE. A line that
+                        // said only that the two disagreed would name no
+                        // lane, and no reader could tell a shell that moved
+                        // from a gauge that did — a four-lane fact reported
+                        // as one bit (law 5).
                         eprintln!(
-                            "  court slash {:02x}{:02x}… magnitude: chain {:?} word {:?} cells {} sections {} torsion {}",
+                            "  court slash {:02x}{:02x}… magnitude: chain {:?} word {:?} links {} sections {} torsion {}",
                             spoken.address()[0],
                             spoken.address()[1],
                             rederived.base_magnitude(),

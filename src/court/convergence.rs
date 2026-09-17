@@ -134,8 +134,8 @@ impl Convergence {
         independent: &dyn Fn(&[u8; 32], &[u8; 32]) -> bool,
     ) -> Converged {
         let organs = self.organs(object);
-        // A cell's own members, walked: the organs that re-derived this one
-        // object, never a product over the mesh.
+        // One object's own organs, walked: the organs that re-derived this
+        // one object, never a product over the mesh.
         //
         // AGREEMENT IS ASKED OF EVERY PAIR BEFORE ANY PAIR IS WITNESSED.
         // These two questions shared one walk, and `Witnessed` returned from
@@ -185,11 +185,11 @@ mod tests {
 
     use crate::transducer::element::{self, Element};
 
-    /// A distinct object per `n`: the residual of one cell recoloured to
+    /// A distinct object per `n`: the residual of one lamina recoloured to
     /// hue `n`, which is a different vertex for each n.
     fn obj(n: u8) -> Element {
         element::from_canonical(
-            &element::canonical_chain(&[(0i64, 0i64, 1u8, n)]).expect("one cell is A5's chain"),
+            &element::canonical_chain(&[(0i64, 0i64, 1u8, n)]).expect("one link is A5's chain"),
         )
     }
     fn r(n: u8) -> Rederivation {
