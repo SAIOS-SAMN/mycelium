@@ -113,7 +113,7 @@ These are not restated in each chapter; every chapter assumes them.
    replays, judges, keeps the ledger, and stores the genome. Sentences
    only (ruled 2026-09-10): a voice sends the court sentences and nothing
    else, the court replays them by G and never composes by F, and the
-   wire never carries raw percept cells to a court. A court that
+   wire never carries raw percept laminae to a court. A court that
    extracts boundaries, measures versors or peels letters is thinking,
    and a second engine; the four `from_residual` sites of the court's
    reduction were that engine (50.6, 50.9).
@@ -213,7 +213,7 @@ shape is not reviewed further; it is returned.
 | 8 | **No shims with placeholders.** A wrapper that fills a field with a constant so a call compiles is a defect that will be soaked. | `sentence_rule_of` with `ratio: ((1,1),(1,1))` and empty sections; `set_magnitude([0,0,0,1])` | carry the field on the tape and read it; measure the magnitude by speaking the form over its bundle; if the value cannot be measured, the form is not spoken |
 | 9 | **Carriers are `Keyed` or `Vec` of relations.** `HashMap`, `BTreeMap`, `HashSet` do not appear in cognition; a flat map keyed by a digest collapses a dimension, and a `Keyed` trie keyed by a digest is a `HashMap` in disguise. | `HashMap<Key, Vec<Candidate>>` buckets; `std::collections::*` in a transducer or kernel file; `Keyed<[u8; 32]>` over `blake3(...)` | `Keyed<V>` (PATRICIA over the canonical coordinate bytes of A21, so `fiber(prefix)` reads a stratum), `Keyed<Keyed<()>>` for incidence, `Vec<(a, b, relation)>` for a relational field |
 | 16 | **An action is an algebra element, never a matrix.** A `QMatrix` fibre, an affine block, a matrix product as composition, or matrix equality as identity is a linear representation on squared coordinates: it flattens the blades it represents and adds a frame's rigidity (law 11). | `fibers: Vec<(u16, QMatrix)>`; `realize()`; `same_action = realize() == realize()`; `affine_of(versor)`; `Letters::affine`; `Element::identity(GERM_DIM)` | one versor per element (`carriage · linear_versor(word)`), a hue permutation, an extent, shell coordinates; `geo` for composition, `inverse` that refuses, `projective_eq` for identity; a matrix only in `core::zlinalg` for a rank and in A3's sensor-plane block |
-| 10 | **Every loop spends a `Budget` or walks a boundary.** A loop whose bound is neither a `Budget` nor the size of one cell's boundary is unbounded work in disguise. | `while !done { … }`; `for peer in all_peers { exchange(peer) }` on one stroke | `while budget.spend() { … }`; a `Keyed::cursor(from, &mut budget)`; one peer per spend with a resume cursor |
+| 10 | **Every loop spends a `Budget` or walks a boundary.** A loop whose bound is neither a `Budget` nor the size of one site's or one simplex's boundary is unbounded work in disguise. | `while !done { … }`; `for peer in all_peers { exchange(peer) }` on one stroke | `while budget.spend() { … }`; a `Keyed::cursor(from, &mut budget)`; one peer per spend with a resume cursor |
 | 11 | **Exact or refused.** No float, no rounding, no saturation, no `unwrap_or(default)` that invents a value. | `ratio_axes` saturating to `u64::MAX`; `unwrap_or_else(identity)` on a versor that failed to invert | `Option`/refusal that propagates to a logged refusal string; an inexact square root refuses; an unspellable block is a remainder |
 | 12 | **Naturality over cloning.** When a carrier splits, restrict it; never clone it into both halves and rekey. | `complexes.insert(child_a, c.clone()); complexes.insert(child_b, c)`; `rekey_cocycles` without recomputation | `restrict` per child, `straddling` written as faces between children, each class recomputed and carried or discharged (15.5) |
 | 13 | **Verify the claim, not the outcome.** A test that asserts a count or a boolean proves nothing about how the result was reached; a test named after a theorem must exercise the move. | asserting `faces.len() <= 2·germs` and calling it "the adjacency rule"; testing `Word::rebase` and reporting "rebase works" when the extraction step never fires | N vs 4N work counters for cost claims; a trace of the move on a family that needs it (a `Rebased` vertex that speaks the test); a refusal test for every refusal string |
@@ -306,9 +306,9 @@ lane, which certifies nothing (12.6); a
 **shortening** is A2's budgeted retirement of a tape, which moves nothing;
 a **vortex** is a
 held loop together with the candidate pivots that could discharge it, held
-as cells of the thought until one of them does. A **demand** is a typed
+as candidates of the thought until one of them does. A **demand** is a typed
 vertex of a sentence naming what the alphabet could not spell or the eyes
-could not pair (chapter 50); a bare chain of cells is never a demand and
+could not pair (chapter 50); a bare chain of links is never a demand and
 never a word. A
 **dialect** is spoken and stood (memory, in the epigenome); a **language**
 is replayed by two organs and taught (on disk, in the genome). What was
@@ -359,8 +359,9 @@ on a grid:
   thought" stood (3.9).
 
 Every passage of this document and every type and interface of the tree is
-rewritten in these words (Stage 18, rows V1–V3); until a passage or a name
-is swept, "cell" there reads by this table and by nothing else.
+written in these words (Stage 18, rows V1–V3); the retired word appears in
+this document only here, where it is retired, and a type or a name in the
+tree that still carries it reads by this table until its module is swept.
 
 ---
 
@@ -426,7 +427,7 @@ vertices and different carriages are the same word said at two places;
 the carriage is the coordinate the court quotients, as it always has
 (`stalk.rs`). The carriage is never a pair of rationals (law 11): the
 translator is a versor like the rotor, composed by the same product, and
-its two blade coefficients are read out only when a cell is spoken.
+its two blade coefficients are read out only when a lamina is spoken.
 
 ### 1.5 Ruling: byte-exactness is not identity
 
@@ -527,7 +528,7 @@ Part III:
 | `cga.rs:46` `Mv` (`Versor`) | derived structural equality; `cognition.rs:1006` `push_cocycle` `old == g` | A4 |
 | `element.rs:140` `Element::eq` (now `element/vertex.rs`) | tape bytes plus structural fields; inherited by `Germ`, `Face`, `Nerve` (sentence.rs 583, 600, 633) | M1 `same_vertex` |
 | `sentence.rs:1144` `vertex_address` | writes raw versor bytes beside geodesic keys | A4 canonical versors |
-| `cognition.rs:5635, 5526` `composite_parent_id`, `section_address` | hash cells in given order, uncentred; assignment unsorted | A5, M2 |
+| `cognition.rs:5635, 5526` `composite_parent_id`, `section_address` | hash links in given order, uncentred; assignment unsorted | A5, M2 |
 | `sentence.rs:1792` `from_element` | trusts the germ address stored in the tape | recompute (A8 step 2) |
 | `blade/body.rs` `ratio_axes` | drops the sign, saturates to `u64::MAX`; under `moduli ==`, `moduli.key()`, `Invariant::key`, `connection_chart` | A6 |
 | `verdict/selection.rs` `sel_key` | hash of `format!("{s:?}")` | A9 |
@@ -549,7 +550,7 @@ A21, in one landing (chapter 41, 0.11):
 | `sentence/form.rs` `hue_section_key`, `vertex_transport_key`, `class_key_of_versor` | blake3 over conjugacy ‖ gauge | the conjugacy coordinates ‖ the gauge |
 | `sentence/chart.rs` `form_vertex_key`; `family/extract.rs` `TransportClass::key` | blake3 over kind ‖ class | kind ‖ class coordinates |
 | `sentence/pivot.rs` certificate key; `Form.certificates`, `torsion`, `vortex`, `horizon` indices | keyed by digests | keyed by the class vector and the move (16.20) |
-| `cech/cell.rs` `cell_key`; `cognition/keys.rs` `cocycle_key`; `verdict/selection.rs` `sel_key`, `chart_simplex_key` | digests of sorted vertex keys and terms | the sorted vertex keys concatenated; `Sel::to_bytes` itself |
+| `cech/simplex.rs` `simplex_key`; `cognition/keys.rs` `cocycle_key`; `verdict/selection.rs` `sel_key`, `chart_simplex_key` | digests of sorted vertex keys and terms | the sorted vertex keys concatenated; `Sel::to_bytes` itself |
 | `sentence/*` `placement: (ℚ, ℚ)`, `Transport.shift`, `Rebased.shift`, `PivotBy::Placement.shift`, `Form.placements`, the 12.6 placement residue | ℚ² carried as cognition (law 11) | the carriage versor (A4) and the translator component of the holonomy versor |
 
 Allowed, and why: hypha and voice identity by verifying key; signatures;
@@ -698,12 +699,12 @@ coboundary, the cover's extension, consilience — held at genesis, written
 in the host, and the one interpreter every replay runs; they make a thing
 exact and decidable and none of them is content. **Content** is what is
 composed from them: the path, the relation, and the rewrite between
-paths, and the 2-cells are the `Rewrite` words the tree already carries
-(3.9, M2 step 2, `rewrite.rs`), adjoined by the court on two organs'
-re-derivation exactly as a generator is. A rewrite that replaces a longer
-path by a shorter one is retirement (3.8) and refinement (3.7), which are
-already rewrite kinds and already paid (E2), so no new cell is invented
-for them.
+paths — the face between two derivations — which is the `Rewrite` words
+the tree already carries (3.9, M2 step 2, `rewrite.rs`), adjoined by the
+court on two organs' re-derivation exactly as a generator is. A rewrite
+that replaces a longer path by a shorter one is retirement (3.8) and
+refinement (3.7), which are already rewrite kinds and already paid (E2),
+so no new face is invented for them.
 
 **F's order is 24.1's order, and it is a law.** Factor through what is
 held, and spell only the residue. That is not a strategy and not
@@ -752,7 +753,7 @@ memory with the last:
 | 2 | the same derivation replayed on a second ledger | one independent court | G: cited generators resolved on the court's own cover and composed |
 | 3 | a remainder adjoined by the closure it enables: a sentence composing through it closed on its family and two courts replayed the closure (ruled 2026-09-12) | two independent courts | 37.7, the adjunction |
 | 4 | a relator: two depth-3 proofs of one vertex whose holonomy is non-trivial | two independent courts | 37.7's fourth row, `cech::holonomy`, 23.9 |
-| 5 | a rewrite between two derivations, the 2-cell | two independent courts | the `Rewrite` words of 3.9, adjoined as a generator is |
+| 5 | a rewrite between two derivations, the face between them | two independent courts | the `Rewrite` words of 3.9, adjoined as a generator is |
 | 6 | a procedure composed from the crystals that produces rewrites | two independent courts | the master algorithms as generators, below |
 
 Depth is a lane in the sense of law 5: read per address as the set of
@@ -809,7 +810,7 @@ independent proofs of one boundary and read the loop their difference
 makes. Trivial: the two are one proof in two frames, the equivalence is
 an invariant, and closure is paid once (23.9). Non-trivial: the loop is
 an obstruction, and the obstruction is adjoined, as a generator at depth
-3, a relator at depth 4, a 2-cell at depth 5, a procedure at depth 6.
+3, a relator at depth 4, a rewrite at depth 5, a procedure at depth 6.
 The witness, the two-court consilience, the receipt and the syllabus are
 the same at every depth.
 
@@ -851,8 +852,8 @@ slot where it was a generator address.
 
 **What is still refused.** Chapter 44's refusals stand at every depth:
 no completion of the rewrites into a confluent system, no critical-pair
-procedure that manufactures 2-cells, no unique minimal path chosen by a
-scalar. A 2-cell or a procedure enters the language by consilience on a
+procedure that manufactures rewrites, no unique minimal path chosen by a
+scalar. A rewrite or a procedure enters the language by consilience on a
 witness, and by nothing else.
 
 ## 2. Forms
@@ -866,7 +867,7 @@ words.
 `(tape, carriage, gauge, contact?)`. Stored as the tape and the canonical
 carriage versor; the rotor is derived from the tape on demand. There is no
 affine block and no coordinate pair (law 11): the carriage composes with
-the rotor by the geometric product, and a cell is read out of it only at
+the rotor by the geometric product, and a lamina is read out of it only at
 the sensor boundary. Nothing here is hashed. `contact` (chapter 3.5) is
 part of the form and of its key.
 
@@ -887,11 +888,11 @@ and replayed from its tape alone.
 
 A sentence is **valid** (ruled 2026-09-09, chapter 50) when every word
 vertex reconstructs its body — the carriage, the word and the gauge carry
-the input body onto the output body under exact cellular equality — and
+the input body onto the output body under exact equality of laminae — and
 every edge carries a transport read in the body's stabilizer (50.3), so
 that the holonomy around a cycle is a class and not a coboundary. What a
 voice could not reconstruct rides the sentence as a typed demand vertex
-(50.5); a vertex that is a bare chain of cells, with no word, no carriage
+(50.5); a vertex that is a bare chain of links, with no word, no carriage
 and no gauge, is not a vertex of any sentence. Validity is what the
 receiver checks; closure is validity with no demand vertex and every
 loop filed or identity.
@@ -903,7 +904,7 @@ loop filed or identity.
 - An **idea** is a candidate closed form bred by a perception: the vertices
   it would need and the faces it would need.
 - A **thought** is the superposition of candidate forms for one idea, held
-  as cells of a complex whose vertices are candidate word forms and whose
+  as simplices of a complex whose vertices are candidate word forms and whose
   coefficients are the relative words between them, together with, for each
   loop that will not close, the candidate pivots that could discharge it
   (3.9). A held loop with its candidate pivots is a **vortex**.
@@ -922,7 +923,7 @@ loop filed or identity.
   Vietoris decide; a coordinate no proof reaches is a section coordinate,
   carried beside the form and never a dimension of it.
 
-Nothing in this document rebuilds a form from cells after perception.
+Nothing in this document rebuilds a form from laminae after perception.
 Perception produces word forms once (chapter 20); every later operation is
 a move on forms.
 
@@ -961,7 +962,7 @@ of `T` can. Chapter 13.6 proves this as the citation lemma.
 
 A form applied to its own image: `x, w(x), w(w(x)), …`. It stops at a
 **fixpoint** (image equals input), when a **measure** on the frame can no
-longer move strictly (occupied cells, remainder, or a named face's ring),
+longer move strictly (occupied laminae, remainder, or a named face's ring),
 or when the image leaves the frame. Invariant: the measure is strictly
 monotone per step, so the unfolding terminates on a finite frame. The step
 count is a coordinate of the instance, never of the form.
@@ -1047,7 +1048,7 @@ a trivial-class chord, which was never rank.
 
 The candidate pivots of a held loop are read from its class vector in the
 fixed order of 12.6, tried under the stroke `Budget`, and every one that
-discharges with rank conserved is kept as a cell of the thought with its
+discharges with rank conserved is kept as a candidate of the thought with its
 **certificate** (16.20). When several candidates discharge, the mind
 keeps all of them with their certificates; choosing among certified
 discharges by any reading of μ⃗ would be a score. Closure certifies a pivot
@@ -1238,9 +1239,9 @@ Bound version: chapter 25.
 
 Everything in Part I is a statement about cochains on a form and their
 coboundaries. This part makes that explicit so the implementor computes one
-thing everywhere: products of canonical words around cells. There is no
+thing everywhere: products of canonical words around simplices. There is no
 angle, no limit, no derivative anywhere; every quantity is a letter
-exponent, a rational, or a cell coordinate.
+exponent, a rational, or a site coordinate.
 
 ## 9. The coefficient group, written down
 
@@ -1303,13 +1304,13 @@ below is checked with those four functions. The plane form is used only
 where the text says "abelianized": solving for a gauge on the sensor plane
 and reading torsion and free parts of a class.
 
-## 10. Cells, cochains, coboundaries
+## 10. Simplices, cochains, coboundaries
 
-Carried from chapter 9: the coefficient group. This chapter names the cells
-of a form and the three coboundaries as products.
+Carried from chapter 9: the coefficient group. This chapter names the
+simplices of a form and the three coboundaries as products.
 
 **A gauge is a map, and its listing can fail to be one (ruled 2026-09-13).**
-A gauge travels as a `Vec<(from, to)>` gathered from a chain's cells and
+A gauge travels as a `Vec<(from, to)>` gathered from a chain's links and
 deduplicated BY THE PAIR, so a chain in which one input hue lands on two
 different output hues yields both entries. Two readers scanned that list and
 returned the first match — `court/verdict/body.rs` on the court and
@@ -1323,32 +1324,32 @@ refused (rule 11), at that hue alone. A hue the listing omits is fixed by it
 It was the largest single fault the fleet reported. At e98e8a2, of 488
 `vertex does not carry its body onto its image` refusals: **255 wrong hue,
 186 outside the image frame, 55 reached in part, 0 `the rotor and carriage
-lift to no versor`, 0 `a cell of its body carries nowhere`**. The versor
-lifts and every cell carries in every case; colour and frame are what stand
+lift to no versor`, 0 `a lamina of its body carries nowhere`**. The versor
+lifts and every lamina carries in every case; colour and frame are what stand
 between this engine and a sentence. `FAIL_OFF_FRAME` likewise named three
-different faults — a centre the sensor cannot convert, a cell before the
-origin, a cell past the extent — and is now three constants, because a court
+different faults — a centre the sensor cannot convert, a lamina before the
+origin, a lamina past the extent — and is now three constants, because a court
 that reports one string for three faults hands a voice a coordinate it
 cannot contract on (50.9).
 
-### 10.1 Cells and cochains of a form
+### 10.1 Simplices and cochains of a form
 
-A form (chapter 18) is a finite cell complex:
+A form (chapter 18) is a finite simplicial complex:
 
-| dimension | cell | count |
+| dimension | simplex | count |
 |---|---|---|
 | 0 | a vertex `v` | `vertices.len()` |
 | 1 | a face `(i, j)` | `faces.len()` |
 | 2 | a loop `ℓ` (a chord of the spanning forest with its tree path) | `faces − vertices + components` |
-| 3 | a triple of loops sharing faces: a 3-cell of the Čech complex when the form is glued into a mesh cover | as `Complex` degree 3 |
+| 3 | a triple of loops sharing faces: a 3-simplex of the Čech complex when the form is glued into a mesh cover | as `Complex` degree 3 |
 
-A **k-cochain** assigns a group element to every k-cell:
+A **k-cochain** assigns a group element to every k-simplex:
 
 - `C⁰`: one word per vertex, `γ: v ↦ γ_v`. A gauge.
 - `C¹`: one word per face, `g: (i,j) ↦ g_ij`, `g_ji = g_ij⁻¹`. The
   connection; a form's `faces`.
 - `C²`: one word per loop, `ω: ℓ ↦ ω_ℓ`. A form's `loops` holonomies.
-- `C³`: one word per 3-cell, defined only on the Čech complex of a cover.
+- `C³`: one word per 3-simplex, defined only on the Čech complex of a cover.
 
 Cochains are stored as canonical words and compared by chapter 1.5's
 identity (`same_form` on the plane, `projective_eq` in general).
@@ -1378,7 +1379,7 @@ gauge-invariant, which is why re-gauging never breaks coherence (3.6).
 
 ### 10.4 δ²: consistency of curvatures
 
-On a 3-cell bounded by loops `ℓ₀..ℓ₃`, each transported to the cell's
+On a 3-simplex bounded by loops `ℓ₀..ℓ₃`, each transported to the simplex's
 basepoint by its tree path `t_i`:
 
 ```
@@ -1388,7 +1389,7 @@ basepoint by its tree path `t_i`:
 `δ²ω = 1` is the **Bianchi identity**; it holds automatically for
 `ω = δ¹g` (`δ²δ¹ = 0`). It fails only when the four holonomies were
 assigned independently, which happens across a mesh cover where four
-hyphae hold four sections of one class: the Čech 3-cell of `cech.rs`, and
+hyphae hold four sections of one class: the Čech 3-simplex of `cech.rs`, and
 its failure is a twisted class (12.3).
 
 ### 10.5 The identities the implementor tests
@@ -1409,7 +1410,7 @@ class is and what each class means to the system.
 
 ### 11.1 Definitions
 
-- A k-cochain `c` is a **cocycle** when `δc = 1` on every (k+1)-cell.
+- A k-cochain `c` is a **cocycle** when `δc = 1` on every (k+1)-simplex.
 - It is a **coboundary** when `c = δb` for some (k−1)-cochain `b`.
 - Two cocycles are **cohomologous** when they differ by a coboundary.
 - `H^k` is cocycles modulo coboundaries; the **class** of a cocycle is its
@@ -1440,7 +1441,7 @@ For a form:
 | change of basepoint (3.2) | conjugation of a 1-cochain value by a 0-cochain value at one vertex |
 | gluing (3.3) | pushforward of a flat connection along an inclusion through one new face; flatness preserved because the glued piece's holonomies are identity |
 | unfolding (3.4) | iteration of a 1-cocycle along a path returning to the same vertex class; termination by a monotone integer measure |
-| contact (3.5) | evaluation of a 1-cochain along a path until it meets a boundary 0-cell |
+| contact (3.5) | evaluation of a 1-cochain along a path until it meets a boundary vertex |
 | re-gauging (3.6) | the action of `δ⁰γ` |
 | refinement (3.7) | when `H²` of a good cover is nonzero, subdivide the base so the class becomes a face between children |
 | retirement (3.8) | choose the shortest known representative in a class |
@@ -1457,7 +1458,7 @@ For a form:
 | `H⁰` element | inside a thought: the residual's symmetry | the part of a perception the language already accounts for up to the group | it is the congruence; the remainder that matters is what is not in it |
 | `H¹` on one form | a loop with non-identity holonomy after the tree gauge | the bundle's rule has an obstruction no gauge removes | the loop is held with its class vector (12.6); its occupied axes are its candidate pivots (3.9); refinement is the last of them |
 | `H¹` between two sections on a cover | `g_XY ≠ 1` on an overlap | dialect between two hyphae or two minds | recorded; a translation word is the coboundary that would close it |
-| `H²` on a cover | `δ²ω ≠ 1` on a 3-cell | four views cannot be made consistent at once | the chart refines by the class's invariant axis, once the cover is good |
+| `H²` on a cover | `δ²ω ≠ 1` on a 3-simplex | four views cannot be made consistent at once | the chart refines by the class's invariant axis, once the cover is good |
 | torsion part `(s, u)` | finite order | a discrete twist: orientation or quarter turns | files as a torsion cycle `(σ, ℓ)`, `ℓ | 4` or `2` |
 | free part `(m5, m13)`, or an off-plane class | infinite order | a rotation the language has not spelled — the loop's content, never its debt (ruled 2026-09-16, recorded 2026-09-17) | remains a class, and its canonical holonomy rotor is the candidate generator of 37.7: docketed on two courts' re-derivation of that rotor, adjoined by closure; never a longer orbit, never gauged away |
 
@@ -1471,7 +1472,7 @@ gives the three operations, the mesh, and recursion in these terms.
 Given a `Form`, compute `δ¹g` on every loop by `Form::loops_of` and
 `Word::compose` around the chord and its tree path; one product per face
 in each loop. Given a `Complex` on a mesh cover, compute `δ²ω` on each
-3-cell of a link by `Complex::coboundary_on_link` (cech.rs 466), which
+3-simplex of a link by `Complex::coboundary_on_link` (cech.rs 466), which
 performs this product with `Rotor::geo`.
 
 ### 12.2 Solve `δ⁰γ · g = flat` (the tree walk)
@@ -1506,7 +1507,7 @@ a form it is written to `Form.loops[ℓ].holonomy` and the form is held
 (chapter 6). On a mesh cover it is written to `cocycle_at` (cognition.rs)
 keyed by (chart, ordered hypha pair), carrying its invariant class key
 (15.4), superseded by the causal order of the two receipts (45.3), concurrent
-representatives both kept under one key. A nonzero `δ²ω` on a 3-cell of a **good**
+representatives both kept under one key. A nonzero `δ²ω` on a 3-simplex of a **good**
 cover (chapter 14) is a class of degree 2 and refines the base by the
 class's invariant axis (16.7).
 
@@ -1598,7 +1599,7 @@ preference, and no axis waits on another's failure: every occupied axis is
 tried, and the last is last in the listing only.
 
 **Pressure `μ⃗(ℓ)`.** The four lanes of the remainder the loop leaves open:
-S the cells it fails to speak, G the hue transitions it fails to carry, T
+S the laminae it fails to speak, G the hue transitions it fails to carry, T
 the extent it has been held in receipts of the home (45.4), H the shells it
 spans. Over a bundle the pressure is the lane-wise sum of the per-pair
 pressures, each pair measured by `measure_lanes` on its own residual, the
@@ -1641,7 +1642,7 @@ re-reading the vector. Two minds that discharge a loop produce the same certific
 the hypha installs it once.
 
 **The vortex.** When two candidates both discharge, the mind keeps both
-as cells of the thought with their certificates: two certified discharges
+as candidates of the thought with their certificates: two certified discharges
 are two proofs of one loop (23.9), and no reading of `μ⃗(ℓ)` chooses
 between them. The superposition collapses when a later perception makes one
 of them a face of a spoken form, or a court replay makes one a ruled
@@ -1685,7 +1686,7 @@ it names the lane.
 Carried from chapter 12: the classes of one form or one cover. The system
 never holds one: a hypha holds its own cover and receives a peer's; a form
 under construction glues a crystallized form; a mind holds two thoughts on
-overlapping cells. In every case the object is a **union** of two pieces
+overlapping simplices. In every case the object is a **union** of two pieces
 along an **overlap**, and the question is what the union's classes are,
 given the pieces'. Mayer–Vietoris answers with a finite exact sequence
 whose maps are word products and whose exactness statements are each a
@@ -1693,18 +1694,18 @@ finite check.
 
 ### 13.1 Setting
 
-Let `X` be a finite cell complex (a form, a Čech complex on one chart, or a
-thought's cell set) and `A`, `B` subcomplexes with `X = A ∪ B`. Their
-**overlap** is `A ∩ B`, the cells present in both; a cell of `A ∩ B` has
-all its faces in `A ∩ B`. Cochains restrict (`res_A`, `res_B`,
-`res_{A∩B}`) and restriction commutes with δ because δ on a cell reads only
-that cell's faces.
+Let `X` be a finite simplicial complex (a form, a Čech complex on one
+chart, or a thought's simplex set) and `A`, `B` subcomplexes with `X = A ∪
+B`. Their **overlap** is `A ∩ B`, the simplices present in both; a simplex
+of `A ∩ B` has all its faces in `A ∩ B`. Cochains restrict (`res_A`,
+`res_B`, `res_{A∩B}`) and restriction commutes with δ because δ on a
+simplex reads only that simplex's faces.
 
 The overlap is computed, never enumerated: the vertex set of `A ∩ B` is
-the **meet** of the two vertex tries (16.13), and its cells are the cells
-of `A` whose vertex set lies in the meet, read through `Complex::link_of`
-from each meet vertex. No pair of vertices is visited that is not already
-a cell.
+the **meet** of the two vertex tries (16.13), and its simplices are the
+simplices of `A` whose vertex set lies in the meet, read through
+`Complex::link_of` from each meet vertex. No pair of vertices is visited
+that is not already a simplex.
 
 ### 13.2 The sequence, twisted-abelian coefficients
 
@@ -1717,7 +1718,7 @@ a sheet letter along a face acts on `R` by negation. For such coefficients:
 ```
 
 - `ρ(c) = (res_A c, res_B c)`, **restriction**;
-- `Δ(a, b) = res_{A∩B} a · (res_{A∩B} b)⁻¹`, **difference**, pointwise on cells;
+- `Δ(a, b) = res_{A∩B} a · (res_{A∩B} b)⁻¹`, **difference**, pointwise on simplices;
 - `∂`, the **connecting map**, 13.4.
 
 Exact: at every term the kernel of the outgoing map equals the image of the
@@ -1751,7 +1752,7 @@ lane-wise reading of μ⃗ that `lane_moves` returns, and it is not a motion):
 
 Degree-2 classes on a cover are read on the sensor plane in the
 twisted-abelian coefficient; off the plane a nontrivial δ² is a remainder
-and the cell does not form. This is the existing rule of `cech.rs` ("a
+and the simplex does not form. This is the existing rule of `cech.rs` ("a
 transition that does not realise as a rotor is a remainder").
 
 ### 13.4 The connecting maps, as products
@@ -1823,7 +1824,7 @@ the same classes in whatever order it heard them. It is a test
 hypha never recomputes the cohomology of its whole cover when a peer's
 section arrives. It computes the meet, the difference on the overlap, the
 connecting image, and the descent check; cost linear in the overlap's
-cells; the union is never materialised. This is the bound behind chapter
+simplices; the union is never materialised. This is the bound behind chapter
 8's "work per fetch is the link of one vertex".
 
 ### 13.9 The computation, step by step
@@ -1842,10 +1843,11 @@ are one; the union's new `H¹` classes with translation words when they are
    1–7 run per good component.
 1. **Meet.** `M = meet(vertices(A), vertices(B))`. Empty: no overlap,
    `H^k(X) = H^k(A) ⊕ H^k(B)` for `k ≥ 1`, `H⁰(X) = H⁰(A) × H⁰(B)`, done.
-2. **Overlap cells.** For each `v ∈ M`, `link_of(v)` in `A` filtered to
-   cells whose vertices all lie in `M` (a keyed `contains` per vertex,
-   bounded by the cell's degree). This is `A ∩ B`; each cell touched once.
-3. **Difference on 0-cells.** `θ_v = γ^A_v · (γ^B_v)⁻¹` for `v ∈ M`,
+2. **Overlap simplices.** For each `v ∈ M`, `link_of(v)` in `A` filtered to
+   simplices whose vertices all lie in `M` (a keyed `contains` per vertex,
+   bounded by the simplex's degree). This is `A ∩ B`; each simplex touched
+   once.
+3. **Difference on vertices.** `θ_v = γ^A_v · (γ^B_v)⁻¹` for `v ∈ M`,
    canonical.
 4. **Automorphism check.** `θ_j · h_ij · θ_i⁻¹ = h_ij` on every overlap
    face, `h` the connection on the overlap (equal from both sides by
@@ -1925,7 +1927,7 @@ citer's own held loop is not a comprehension outcome but an idea (chapter
 
 ### 13.12 Instance three: two thoughts in a mind
 
-`Contemplation` (bubble/contemplation.rs). Two bubbles whose cell sets meet are `A` and
+`Contemplation` (bubble/contemplation.rs). Two bubbles whose simplex sets meet are `A` and
 `B`; `pivot_on` (712) merges them when step 5 gives `∂θ = 1` for the
 difference of their sections on the meet. When it fails the thoughts stay
 two and the class is the coordinate on which the mind may pivot
@@ -1944,12 +1946,12 @@ are not.
 
 Fix a chart `inv` and a lane. The **base** is the language over `inv`: the
 ruled forms on `inv` and its neighbouring charts with the faces between
-them, a cell complex with the local system of 13.2 or the rotor coefficient
-of 13.3. `H^k(base)` is a property of the tapes alone.
+them, a simplicial complex with the local system of 13.2 or the rotor
+coefficient of 13.3. `H^k(base)` is a property of the tapes alone.
 
 The **cover** is `𝒰 = {U_X : X a hypha}`, `U_X` the region of the base
 hypha `X` holds ruled sections over. Its **nerve** is the Čech complex:
-vertices `X`, a k-cell for each `k+1` hyphae whose regions meet with volume,
+vertices `X`, a k-simplex for each `k+1` hyphae whose regions meet with volume,
 coefficient the transition between their sections. `H^k(N(𝒰); sections)`
 is what `Complex::class` and `cocycle_at` record.
 
@@ -2031,36 +2033,37 @@ side it checks (A1) on the tapes it has fetched (`fetch_have`,
 
 ### 14.6 k-fold overlaps
 
-Leray's condition is on every finite intersection. For a k-cell with
+Leray's condition is on every finite intersection. For a k-simplex with
 sorted vertices `X₀ … X_k`, the overlap `M_I = charts(X₀) ∩ … ∩ charts(X_k)`
-is the fold of `meet` over the cell's own vertex list (meet is associative
-and commutative; the vertex list is the cell's boundary, not an
-enumeration). Two facts reduce the check:
+is the fold of `meet` over the simplex's own vertex list (meet is
+associative and commutative; the vertex list is the simplex's boundary,
+not an enumeration). Two facts reduce the check:
 
-- **(A1) is inherited.** `M_I ⊆ M_{X_i X_j}` for every pair in the cell, and
-  the restriction of a flat connection to a subcomplex is flat (restriction
-  commutes with δ). If (A1) holds on every edge of the cell it holds on the
-  cell; no tree walk reruns above degree 1.
+- **(A1) is inherited.** `M_I ⊆ M_{X_i X_j}` for every pair in the simplex,
+  and the restriction of a flat connection to a subcomplex is flat
+  (restriction commutes with δ). If (A1) holds on every edge of the simplex
+  it holds on the simplex; no tree walk reruns above degree 1.
 - **(A0) is not inherited.** An intersection of connected sets need not be
   connected; rerun the component count on `M_I` with the induced faces of
-  any one hypha of the cell (on a good pairwise cover all hyphae induce the
-  same chart adjacency up to gauge), and key the k-cell per component as in
-  14.7.
+  any one hypha of the simplex (on a good pairwise cover all hyphae induce
+  the same chart adjacency up to gauge), and key the k-simplex per
+  component as in 14.7.
 
-Where it runs: `Complex::coboundary_on_link` (466) creates a degree-k cell
-when the (k+1)-fold overlap has nonzero volume. Before the cell's
-coefficient is read it computes `M_I` and its components and creates one
-cell per component (`remember` with the component in the key). A component
-whose peer tapes are unfetched is `Pending` and forms no cell; the climb
-resumes there when the fetch lands, as it does today when volume is zero.
+Where it runs: `Complex::coboundary_on_link` (466) creates a degree-k
+simplex when the (k+1)-fold overlap has nonzero volume. Before the
+simplex's coefficient is read it computes `M_I` and its components and
+creates one simplex per component (`remember` with the component in the
+key). A component whose peer tapes are unfetched is `Pending` and forms no
+simplex; the climb resumes there when the fetch lands, as it does today
+when volume is zero.
 
-### 14.7 (A0) fails: cells per component
+### 14.7 (A0) fails: simplices per component
 
 A disconnected overlap is treated as Leray requires, one overlap per
 component. The edge `(X, Y)` becomes one edge per component keyed by
 `(sorted {X, Y}, component_key)`, `component_key` the least chart key in
 the component (the union-find's root, 16.15, no choice). Every operation of
-chapter 13 runs per component; a degree-k cell is likewise keyed by its
+chapter 13 runs per component; a degree-k simplex is likewise keyed by its
 component of the (k+1)-fold overlap. This is the Čech complex of the cover
 **by components**, whose overlaps are connected by construction.
 
@@ -2102,8 +2105,8 @@ classes carry across those changes and how a carried class is checked.
 
 A **map of data** `φ` is one of the following. Each induces `φ*` on
 cochains by reading the cochain through `φ`, and each satisfies
-`φ* δ = δ φ*` because δ is a product over a cell's faces and `φ` sends a
-cell's faces to the image cell's faces. Hence each induces a map on `H^k`
+`φ* δ = δ φ*` because δ is a product over a simplex's faces and `φ` sends a
+simplex's faces to the image simplex's faces. Hence each induces a map on `H^k`
 and makes the Mayer–Vietoris ladder commute, connecting map included.
 
 | map | induced on cochains | commutation to test |
@@ -2111,7 +2114,7 @@ and makes the Mayer–Vietoris ladder commute, connecting map included.
 | **inclusion** `A ⊆ A'` (a form into its citer, a hypha's region into a union) | restriction `res` | `res δ = δ res`; `res ∂ = ∂ res` on the ladder for `(A,B) ⊆ (A',B')` |
 | **re-gauging** by `γ` (10.2) | `g ↦ δ⁰γ · g`, `ω ↦ γ·ω·γ⁻¹` on loops | `δ¹(δ⁰γ·g) = γ·δ¹g·γ⁻¹`; MV outcomes unchanged up to conjugation of `theta` and `holonomy` |
 | **change of basepoint** (3.2) | conjugation of every loop value by the tree path | class keys (15.4) unchanged |
-| **refinement of the cover** (admit / retract / rehome; splitting by components) | `r : N(𝒱) → N(𝒰)` sends each finer cell to the coarser cell containing it; `r*` reads the coarse coefficient on the fine cell | for good covers `r*` is an isomorphism on `H^k` (14.2); class keys unchanged; representatives change |
+| **refinement of the cover** (admit / retract / rehome; splitting by components) | `r : N(𝒱) → N(𝒰)` sends each finer simplex to the coarser simplex containing it; `r*` reads the coarse coefficient on the fine simplex | for good covers `r*` is an isomorphism on `H^k` (14.2); class keys unchanged; representatives change |
 | **refinement of the base** (`refine_chart`) | restriction of sections and faces to each child | each class is **carried** (same key on the child whose forms support the loop) or **discharged** (its loop's vertices fall into different children; it becomes a face between children), 15.5 |
 | **pullback to a mind** (`Epigenome::comprehend`, `learn`) | the mind's copy of a ruled form and its faces | the mind's `coheres` agrees with the court's `replay_form` on the same tapes; the memo relies on it |
 
@@ -2188,10 +2191,10 @@ T3 cite and the one the commutator and relator reductions consult.
 ### 15.4 Key of a class
 
 A degree-1 class is a loop with a holonomy. Its **class key** is the
-loop's canonical cell key (the sorted vertex keys concatenated, as
-`cell_key` does) followed by the holonomy's conjugacy invariants written
+loop's canonical simplex key (the sorted vertex keys concatenated, as
+`simplex_key` does) followed by the holonomy's conjugacy invariants written
 out: the four plane formulas of 15.2 on the plane, `(a²/w, p²/w, sign a,
-sign p)` off it. A degree-2 class is keyed by its 3-cell's key and its
+sign p)` off it. A degree-2 class is keyed by its 3-simplex's key and its
 coefficient's conjugacy invariants. `Word::class_key` is those invariants
 of the word's plane form or rotor, written out; it is never the key of a
 representative tape and never a digest (law 2). The key is a homomorphic
@@ -2209,16 +2212,16 @@ of loops the exact test is `solve_gauge_between` (16.14).
 into both children and rekeys `cocycle_at` entries to the two children
 (`rekey_cocycles`). Both violate naturality: a class is asserted on a child
 whose forms may not support its loop, with a coefficient never recomputed
-on the child's cells. Required:
+on the child's simplices. Required:
 
 1. After `split_stratum` has assigned every ruled address on `inv` to a
    child, **restrict** the complex: per child, the sections whose `addr`
-   fell into it and the cells all of whose vertices' sections did. Cells
-   straddling children become faces between the children's sections (the
-   axis that was opened), written as degree-1 cells over the pair of
-   children. Nothing is cloned.
+   fell into it and the simplices all of whose vertices' sections did.
+   Simplices straddling children become faces between the children's
+   sections (the axis that was opened), written as degree-1 simplices over
+   the pair of children. Nothing is cloned.
 2. For each recorded class on `inv` (each `cocycle_at` entry and each
-   `Fill::Class` cell): recompute its loop on the child holding all its
+   `Fill::Class` simplex): recompute its loop on the child holding all its
    vertices. One child holds them all: recompute the holonomy from the same
    tapes; its class key must equal the parent's; write it under the child
    (`court class carried`). The loop's vertices are split: the loop no
@@ -2676,7 +2679,7 @@ Input: an idea's form `F` (vertices, faces, loops), the mind's working atlas
 (chapter 24.1) as the source of held words and forms, the `horizon`
 (16.19), `budget`. Output: `F` with every loop either closed, discharged by
 a certified pivot, filed as torsion, or spoken as a demand; the certificates
-(16.20) of every discharge; the cells of every vortex still open.
+(16.20) of every discharge; the candidates of every vortex still open.
 
 This procedure replaces any ordering of chords by a scalar. It never sorts
 by order, magnitude, or cost; it reads a vector and tries the moves that
@@ -2733,11 +2736,12 @@ vector names.
    every `y ≠ x` (no coordinate rose), and `rank'` equals `rank` or moves
    exactly one unit into `axes` (12.6). A candidate that fails is dropped
    with `pivot {idea} loop {ℓ} axis {x} no discharge`; nothing is scored.
-5. **Keep.** Every discharging candidate is kept as a cell of the thought
-   with its certificate (16.20) and logged `pivot {idea} loop {ℓ} axis {x}
-   discharged {key}→{key'}`. If exactly one candidate discharges the whole
-   loop, apply it to `F`. If several discharge, apply none: the loop is a
-   **vortex**, its cells stay in the thought (`vortex {idea} loop {ℓ} {n}
+5. **Keep.** Every discharging candidate is kept as a candidate of the
+   thought with its certificate (16.20) and logged `pivot {idea} loop {ℓ}
+   axis {x} discharged {key}→{key'}`. If exactly one candidate discharges
+   the whole loop, apply it to `F`. If several discharge, apply none: the
+   loop is a **vortex**, its candidates stay in the thought (`vortex
+   {idea} loop {ℓ} {n}
    candidates held`), and it collapses when a later perception, a glue, or
    a court replay makes one candidate a face of a spoken form (25.1). No
    reading of `μ⃗(ℓ)` chooses among certified discharges; a candidate that
@@ -2803,8 +2807,8 @@ tree walk:
   the open chords, the size of a keyed set, never added to `free_rank`;
 - `axes(F)` = the number of chart axes opened by discharge (15.5).
 
-For a chart's Čech complex: `Congruent` cells, `Class` cells by degree, and
-axes of the chart's `Invariant` beyond its body harmonics.
+For a chart's Čech complex: `Congruent` simplices, `Class` simplices by
+degree, and axes of the chart's `Invariant` beyond its body harmonics.
 
 `rank(F) = (torsion_rank, free_rank, offplane_rank, axes)`, a vector,
 never summed.
@@ -2824,7 +2828,7 @@ fed with the mind's.
 1. The syllabus page for `c` (`serve_ruled`, chapter 26) carries, beside
    ruled words, one class record per class the hypha holds on `c`:
    `class key (A21, len16 + bytes) ‖ order (0 = infinite, else ℓ u32)`
-   from `cocycle_at` (degree 1) and the `Congruent`/`Class` cells of the
+   from `cocycle_at` (degree 1) and the `Congruent`/`Class` simplices of the
    chart's complex; the key carries the conjugacy coordinates, so no
    representative travels beside it.
 2. The mind admits each record into `Contemplation.horizon` under
@@ -2940,7 +2944,7 @@ class vector, chart invariants, listing keys, certificates and every
 
 **Binding.** `Rotor::key`, `Mv::key`, `Word::class_key`,
 `ClassVector::key`, `Element::address`, `listing_key`, `Invariant::key`,
-`cell_key`, `cocycle_key`, `sel_key`, the certificate key, and
+`simplex_key`, `cocycle_key`, `sel_key`, the certificate key, and
 `Keyed<K>` keyed by `&[u8]` (variable length); `CLOSED_KEY` is deleted and
 closure is `ClassVector::is_zero`. Tests: `every_key_decodes_to_its_object`,
 `a_prefix_of_a_key_is_its_stratum`, `no_blake3_in_cognition` (the gate),
@@ -3193,7 +3197,7 @@ a theorem of chapters 13–15.
    `Dialect("overlap goodness pending")`, docketed. `Cyclic` → 14.8
    retraction by `home`, rerun.
 3. Mayer–Vietoris (13.9 steps 1–8) per good component, with A14 for
-   descent; cells keyed per component (14.7).
+   descent; simplices keyed per component (14.7).
 4. Rulings by the table of 13.10; the ledger by M5; a degree-2 class on a
    good component refines the base by M4 step 5.
 5. Naturality on any cover change (15.6) and on any base refinement (15.5).
@@ -3225,9 +3229,9 @@ class the mesh already holds.
    `Glued` vertex (chapter 25); by T6 the wrap adds no class, so only its new
    faces are pivoted.
 4. Court side (chapter 23.7): the spoken form's torsion cycles are matched
-   by class key against the chart's `Congruent` cells; agreement is
+   by class key against the chart's `Congruent` simplices; agreement is
    consilience of torsion, a mismatch on one key is `REFUSE_NOT_NATURAL`, a
-   new finite key files a `Congruent` cell, an infinite class enters
+   new finite key files a `Congruent` simplex, an infinite class enters
    `cocycle_at`.
 5. A19 both ways on every quote and every syllabus page.
 6. Standing: torsion from the hypha is `Held`; torsion the mind filed is
@@ -3257,9 +3261,9 @@ torsion and certificate arms, `serve_ruled`, `dialogue` class record.
 
 Bound to a29bba5. Functions named without **new** exist at the path and line
 given. The rule of this part: operations act on stored forms and their
-rotors; cells are touched only in `family::perceive` and in `speak_rule`'s
-final emission of output cells. Every identity in this part is a master
-algorithm of chapter 17.
+rotors; laminae are touched only in `family::perceive` and in
+`speak_rule`'s final emission of painted sites. Every identity in this
+part is a master algorithm of chapter 17.
 
 Every file name in Parts IV–VII is under `/opt/mycelium-v0.1.0/src/`. Stage
 8b (S1–S32) made every monolith a directory of organs with its tests under
@@ -3360,7 +3364,7 @@ pub struct Form {                                       // replaces Nerve as the
     pub vertices: Vec<Vertex>,
     pub faces: Vec<FormFace>,
     pub loops: Vec<Loop>,
-    pub remainder: Vec<Cell>,
+    pub remainder: Vec<Link>,
     pub depth: u16,
     pub hue_maps: Keyed<Vec<(u8, u8)>>,                 // by conjugacy coordinates ‖ gauge (A21), derived
     pub ratio: ((usize, usize), (usize, usize)),
@@ -3415,7 +3419,7 @@ impl Transport { pub fn refract(&self, form: &Form) -> Option<Form>; }   // Γ (
 
 `assemble` (939) reduces to: given vertices and the face index pairs the
 bundle relates, compute faces by `face_of`, loops by `loops_of`, holonomies
-by composition. It never reads cells. `solve_coboundary` (1268) is the tree
+by composition. It never reads laminae. `solve_coboundary` (1268) is the tree
 walk of 12.2 with its documented sign convention;
 `sentence::tests::regauge_then_delta1_is_conjugate` pins it.
 
@@ -3431,8 +3435,8 @@ hue permutation, its profile and key, the transition versor, and the
 fibre of assignments a body can be spoken with; `residual.rs` A5's
 `canonical_chain` and every constructor that reads a chain; `tape.rs` the
 generation magic, the four tags, and the codec; `sensor.rs` the four
-functions permitted a coordinate pair (`cell_of`, `carry_center`,
-`carry_cell`, `pullback`), named in the squaring gate's allow-list. Tests
+functions permitted a coordinate pair (`site_of`, `carry_center`,
+`carry_lamina`, `pullback`), named in the squaring gate's allow-list. Tests
 are `element/tests/{16,17,18,19,21}.rs` by the chapter each proves, with
 `tests/common.rs` holding the fixture constructors.
 
@@ -3457,8 +3461,8 @@ stratum an extent in receipts, the H stratum the shell coordinates.
 `compose` is the geometric product on S and permutation composition on
 G; `inverse` is the versor inverse and refuses when it does not exist;
 `same_action` is `projective_eq` on the versor and equality of the
-permutation; a cell is carried by the sandwich `V p Ṽ` and read at the
-sensor boundary only (`cell_of`). Chart invariants (A6, A7) are read from
+permutation; a lamina is carried by the sandwich `V p Ṽ` and read at the
+sensor boundary only (`site_of`). Chart invariants (A6, A7) are read from
 the rotor and the versor, never from matrix entries; Čech transitions,
 obstructions, glue blocks and germinated axes are versors. `QMatrix`,
 `core::engine::{Delta, Operator}` and `core::matrix` leave cognition; the
@@ -3485,7 +3489,7 @@ n_vertices u16, then per vertex:
   Unfolded: measure u8 (0 occupied, 1 remainder, 2 ring) ‖ anchor u16 (ring only)
 n_faces u16, then per face: i u16 ‖ j u16 ‖ word bytes ‖ carriage Versor bytes ‖ gauge len16 + pairs
 n_loops u16, then per loop: n_vertices u16 ‖ vertex indices u16… ‖ n_faces u16 ‖ face indices u16… ‖ chord u16 ‖ holonomy Word bytes ‖ carriage Versor bytes
-remainder len32 + cells (r i64 ‖ c i64 ‖ before u8 ‖ after u8)
+remainder len32 + links (r i64 ‖ c i64 ‖ before u8 ‖ after u8)
 depth u16
 n_certificates u16, then per certificate (A20): chord u16 ‖ axis u8 ‖ before len16 + ClassVector bytes ‖ after len16 + ClassVector bytes ‖ rank_move: 0 (Equal) | 1 ‖ from u8 (Discharged) | 2 ‖ delta 4×i64 (Inadmissible) ‖ mu: 0 | 1 ‖ before 4×u64 ‖ after 4×u64 ‖ by: 0 ‖ face u16 ‖ side u8 ‖ Word bytes | 1 ‖ face u16 ‖ translator Versor bytes | 2 ‖ face u16 ‖ gauge len16 + pairs | 3 ‖ face u16 ‖ seed Versor bytes
 ratio 4×u16 (h_out, h_in, w_out, w_in; a zero denominator refuses)
@@ -3494,15 +3498,15 @@ n_torsion u16, then per cycle: class key len16 + bytes ‖ len16 + σ pairs ‖ 
 n_axes u16, then per opened axis: class key len16 + bytes ‖ chord u16 (the seed and A7's refinement coordinate are not on the tape: they re-derive from the loop, law 12)
 ```
 
-The remainder's cells are the one place a coordinate pair is written: a
+The remainder's links are the one place a coordinate pair is written: a
 remainder is a demand addressed to the sensor, and the sensor speaks in
-cells (law 11).
+laminae (law 11).
 
 Hue maps are not on the tape: they are derived from the `Word` vertices by
 `reindex`, and a class whose vertices carry two gauges has no map. Loops
 are on the tape only to be checked: the court re-walks the forest and
 refuses `REFUSE_RANK_LOST` when the stored loops sit below it.
-`as_element_form` serialises the `Form` and derives nothing from cells;
+`as_element_form` serialises the `Form` and derives nothing from laminae;
 `from_element_form` reconstructs it and `Word` vertices derive the rotor
 lazily through `Word::rotor`; the carriage is on the tape as a versor and
 composes with the rotor by the geometric product (`element::conformal_of`
@@ -3514,7 +3518,7 @@ is no migration, because every cut is from genesis (chapter 33).
 ## 20. Perception produces word forms once
 
 Carried from chapter 19: forms are read from tapes. This is the one place
-cells become forms.
+laminae become forms.
 
 `/opt/mycelium-v0.1.0/src/transducer/family/`: `perceive(grid)`
 (`perceive.rs`). The moves are six files (Stage 8b S9): `perceive.rs` a grid
@@ -3531,11 +3535,11 @@ pub fn demand_vertex(kind: Demand, chart: &Invariant, bodies: &[Body]) -> Vertex
 ```
 
 **A body is one hue (ruled 2026-09-09).** `perceive` reads a body as a
-4-connected component of cells of one hue. Two touching bodies of
+4-connected component of laminae of one hue. Two touching bodies of
 different hues are two bodies sharing a boundary, and that boundary is a
 contact face of the pair form carrying the edge transport of 50.3, so
 sliding, relative rotation and the evolution of a colour boundary are
-measured on the edge. A component of every non-zero cell merged touching
+measured on the edge. A component of every non-zero lamina merged touching
 bodies into one blob that no single versor carries, so `versor_between`
 refused it, every such scene became a `TopologicalDeformation` demand,
 and no pair form ever had a contact face. The court replays the voice's
@@ -3544,7 +3548,7 @@ face, never as two detached listings (50.1). The earlier wording, "the
 court reads a two-hue percept as one sentence", was an artefact of the
 pre-sentence architecture and is struck (ruled 2026-09-10): the voice
 performs F, the court executes G to verify boundary congruence and edge
-holonomies, and the wire never carries raw percept cells to a court (law
+holonomies, and the wire never carries raw percept laminae to a court (law
 8, 50.9).
 
 `pair_nerve` (about 590) becomes `pair_form(a: &Grid, b: &Grid, scale) ->
@@ -3558,7 +3562,7 @@ for every related pair through `face_of`, each carrying the edge transport
 of 50.3 beside its placement; loops through `loops_of`. Shells (`peel::peel_body_scaled`)
 remain pairing candidates and are never vertices. Candidates are bucketed by
 `moduli.key()` over exact axes (A6) as an index only; the decider is that a
-carriage exists, never the bucket. "Cells read once" is a memo keyed by the
+carriage exists, never the bucket. "Laminae read once" is a memo keyed by the
 pair's content, the framed listing key of `(a, b)` (`element::listing_key`,
 M2), never by the grids' pointers or lengths: a pointer is a byte identity in
 disguise and a reallocation makes it name a different pair.
@@ -3691,12 +3695,12 @@ Inside `extract_rule_with`, in order:
    `γ` and `regauge`; still false → the rule is held with the offending
    loop (12.2 step 4).
 
-No pass reads cells; every comparison is M1.
+No pass reads laminae; every comparison is M1.
 
 `speak_rule(rule, x)` (997): `perceive(x)` once; match bodies to rule
 vertices by class through `Stalks::fiber` (stalk.rs 362), several bodies
 on one vertex being a section; `Word` vertices emit through `conformal_of`
-and `carry_cell` (element/sensor.rs) at the placement solved from the face to
+and `carry_lamina` (element/sensor.rs) at the placement solved from the face to
 the anchor; `Glued` through `crystal.speak_form`; `Rebased` through
 `word_in`; `Unfolded` by iterating the form to stop; `Contact` words by
 `orbit` (chapter 22). Remainder as now.
@@ -3708,11 +3712,11 @@ deflation vectors for chapter 26.
 ## 22. Orbit
 
 ```rust
-pub fn orbit(v: &Vertex, x_cells: &[(i64,i64,u8)], anchor: &[(i64,i64)], frame: (usize,usize)) -> OrbitEnd
-pub enum OrbitEnd { Contact{cells, steps: u32}, Torsion{steps: u32}, LeftFrame{steps: u32}, NoOrbit }
+pub fn orbit(v: &Vertex, painted: &[(i64,i64,u8)], anchor: &[(i64,i64)], frame: (usize,usize)) -> OrbitEnd
+pub enum OrbitEnd { Contact{painted, steps: u32}, Torsion{steps: u32}, LeftFrame{steps: u32}, NoOrbit }
 ```
 
-Realise the word once through `conformal_of`; apply by `carry_cell`; ring
+Realise the word once through `conformal_of`; apply by `carry_lamina`; ring
 distance by the ring arithmetic in `sentence.rs` (the one remaining use of
 `adjacent_ring`); bound `frame.0 + frame.1`. `NoOrbit` when the first step
 leaves the distance unchanged; `extract_rule` refuses to mint a contact
@@ -3743,7 +3747,7 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8;32]) -> Option<Form>,
 3. Each `Word` vertex: rotor from tape, affine, M1 compare against the
    vertex's own recomputed vertex (`REFUSE_VERTEX_TAPE`); then the vertex
    reconstructs its body on the receiver's copy of the input, `(V · W ·
-   γ) · B_in = B_out` under exact cellular equality (50.2 G step 3,
+   γ) · B_in = B_out` under exact equality of laminae (50.2 G step 3,
    `REFUSE_VERTEX_BODY`). Each `Demand` vertex names a kind and a chart
    (`REFUSE_DEMAND_UNTYPED`). A tape with no vertex is a chain and is
    refused whole (`REFUSE_NOT_A_SENTENCE`, 50.6).
@@ -3822,7 +3826,7 @@ stays docketed. Then, after `set_section(peer, …)`:
    `cx.mayer_vietoris(&peer_cx, &ov)` per good component (13.9); `push_cocycle`
    receives `theta` for `Class1`; a `Class2` on a good component calls
    `refine_chart` with the overlap loop; `Remainder` marks remainder edges.
-3. The existing `coboundary_on_link(&peer, …)` remains for the cells the
+3. The existing `coboundary_on_link(&peer, …)` remains for the simplices the
    union creates at degree ≥ 2 within the link, now per component (14.6).
 4. Rulings by the table of 13.10.
 
@@ -3831,8 +3835,8 @@ pub struct ChartGraph { pub charts: Keyed<()>, pub faces: Vec<([u8; 32], [u8; 32
 pub enum Goodness { Good { component: [u8;32] }, Disconnected { components: Vec<[u8;32]> },
                     Cyclic { hypha: [u8;32], chord: ([u8;32],[u8;32]), holonomy: Rotor }, Pending { component: [u8;32] } }  // new
 pub fn goodness(x: &ChartGraph, y: &ChartGraph) -> Vec<Goodness>;                               // new
-fn cell_key(verts: &[[u8; 32]], component: Option<&[u8; 32]>) -> [u8; 32];                       // component appended when Some
-pub struct Overlap { pub vertices: Keyed<()>, pub cells: Vec<[u8; 32]> }                         // new
+fn simplex_key(verts: &[[u8; 32]], component: Option<&[u8; 32]>) -> [u8; 32];                    // component appended when Some
+pub struct Overlap { pub vertices: Keyed<()>, pub simplices: Vec<[u8; 32]> }                     // new
 pub enum MayerVietoris { Disjoint, OneSection { gauge: Vec<([u8;32], Rotor)> }, Attached { theta: Rotor },
                          Class1 { theta: Rotor, chord: [u8;32], holonomy: Rotor }, Class2 { overlap_loop: [u8;32], class: Rotor },
                          Remainder { faces: Vec<[u8;32]> } }                                      // new
@@ -3840,9 +3844,9 @@ impl Complex {
     pub fn set_edge_in(&mut self, a: [u8;32], b: [u8;32], component: [u8;32], g: Rotor, volume: [u64;4]);  // new
     pub fn overlap(&self, other_vertices: &Keyed<()>) -> Overlap;                                // new: 13.9 steps 1–2
     pub fn mayer_vietoris(&mut self, other: &Complex, ov: &Overlap) -> MayerVietoris;             // new: 13.9 steps 3–8
-    pub fn delta2(&self, cell: &[u8;32]) -> Option<Rotor>;                                       // new: 10.4 on one 3-cell; coboundary_on_link uses it
+    pub fn delta2(&self, simplex: &[u8;32]) -> Option<Rotor>;                                    // new: 10.4 on one 3-simplex; coboundary_on_link uses it
     pub fn restrict(&self, sections_in: &Keyed<()>) -> Complex;                                  // new: 15.5 step 1
-    pub fn straddling(&self, left: &Keyed<()>, right: &Keyed<()>) -> Vec<[u8;32]>;               // new: cells with vertices on both sides
+    pub fn straddling(&self, left: &Keyed<()>, right: &Keyed<()>) -> Vec<[u8;32]>;               // new: simplices with vertices on both sides
 }
 impl Cover { pub fn charts_of(&self, lane: u8, hypha: &[u8;32]) -> Keyed<()>; }                 // new, nerve.rs, from `held`
 ```
@@ -3850,9 +3854,9 @@ impl Cover { pub fn charts_of(&self, lane: u8, hypha: &[u8;32]) -> Keyed<()>; } 
 `solve_gauge` (806) is unchanged: its chord `!=` is projective through
 `Rotor::PartialEq`; it returns `λ` with `g = δ⁰λ`, and the flattening gauge
 is `λ⁻¹` pointwise. `fill` (556) keeps calling it; its inner pair loop is
-over one cell's own vertices, the cell's boundary, not an enumeration.
-`class` (619) is unchanged; `Class2` writes a degree-2 cell with
-`Fill::Class` through `remember`.
+over one simplex's own vertices, the simplex's boundary, not an
+enumeration. `class` (619) is unchanged; `Class2` writes a degree-2
+simplex with `Fill::Class` through `remember`.
 
 ### 23.4 Ledger: `push_cocycle` (990) as M5
 
@@ -3865,7 +3869,7 @@ receives superseded representatives as today.
 
 `class_key` is `Rotor::class_key`; the axis is A7's output through
 `Stalks::refine(inv, &axes)`; the two `c.clone()` inserts are replaced by
-`restrict` per child and `straddling` written as degree-1 cells between
+`restrict` per child and `straddling` written as degree-1 simplices between
 the children; `rekey_cocycles` is replaced by recompute-and-carry or
 discharge; `REFUSE_NOT_NATURAL` rolls the split back with `basis_gen`
 unchanged. `mark_class` and `pending_refine` carry the class key beside the
@@ -3882,11 +3886,11 @@ rerun.
 
 In `glue_fetched`, after `blind_replay` has witnessed every torsion cycle of
 the spoken form (A17 step 4): for each cycle `(σ, ℓ)` compute its class key
-(15.4) and read the chart's complex: a `Fill::Congruent(g, ℓ')` cell with the
-same key and `ℓ' = ℓ` is torsion consilience (`court torsion consilient
+(15.4) and read the chart's complex: a `Fill::Congruent(g, ℓ')` simplex with
+the same key and `ℓ' = ℓ` is torsion consilience (`court torsion consilient
 {key} ℓ {ℓ}`); the same key with `ℓ' ≠ ℓ` is `REFUSE_NOT_NATURAL` (the
-mind's period does not re-derive against the mesh's); no cell with that key
-files one through `file_congruent` (cech.rs 242) with the spoken
+mind's period does not re-derive against the mesh's); no simplex with that
+key files one through `file_congruent` (cech.rs 242) with the spoken
 representative (`court torsion filed {key} ℓ {ℓ}`). Free classes spoken as
 demands are docketed as any word and, when the court's own tree walk finds
 them as `Fill::Class`, enter `cocycle_at` under their key (M5). The court
@@ -4050,12 +4054,12 @@ transition per pair, a dialect row where the transition is not the
 identity. The question 23.9 asks is not pairwise: given the proofs of one
 conclusion from independent lineages, compose the transitions between
 them around the loop, `g_ab · g_bc · g_ca`, exactly as `holonomy` composes
-the versors around a Čech cell (13, `cech/cell.rs`). The minds are the
+the versors around a Čech simplex (13, `cech/simplex.rs`). The minds are the
 cover, their proofs the sections, the transitions the cocycle. Holonomy
 trivial: the proofs are one proof seen from several frames — the conjugate
 level — and E2 pays the closure once. Holonomy non-trivial: the proofs are
 genuinely several, the conclusion needed more than one perception to be
-spanned, and the residual of the holonomy, localised to the cells where
+spanned, and the residual of the holonomy, localised to the simplices where
 every lineage diverges, is a boundary of the language and not a fault of a
 mind — it is the demand the next letter answers. This is the court's whole
 answer to "does one mind suffice for this conclusion", and it is a
@@ -4097,8 +4101,8 @@ court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk/`:
   `Contemplation::held_at(chart)` is the read, `Reading.held_at` the
   reader, `sentence::vertex_cites` the evaluation — the vertex's rotor
   under its dilator, carried onto the body's own frame by the translator
-  the two centroids solve (`blade::versor_carrying`, verified cell by
-  cell both ways as `versor_between` verifies) with each landed hue the
+  the two centroids solve (`blade::versor_carrying`, verified lamina by
+  lamina both ways as `versor_between` verifies) with each landed hue the
   gauge's image of the hue it left — and a `HeldCite` (the vertex's
   address, the body reconstructed in the listing's frame) is what it
   answers. The strata are read in their order, Ruled, then Stood, then
@@ -4279,7 +4283,7 @@ the cocycle:
   before any word is sought;
 - around every loop of bodies `a → b → c → a`, the transitions compose to
   the identity, `g_ab · g_bc · g_ca = 1`, read by the same `holonomy` the
-  Čech cell uses; a loop that does not close is a residual localised to
+  Čech simplex uses; a loop that does not close is a residual localised to
   that loop, with the class of its holonomy named (12.6).
 
 Congruence is a reading, never a gate: it is the residual of the cocycle,
@@ -4325,7 +4329,7 @@ by name so it is not re-imported.
 | reading | the older engine | exact? | mycelium receiver |
 |---|---|---|---|
 | the body's conformal invariants | vision: `SymmetryGroup` elements and per-body shape | yes | `Harmonics` (seven invariants and the hue spectrum) — present, one caller |
-| **cohesion χ**, per cell: same-hue neighbours over neighbours, a 0-cochain over the body's cells | touch: `AdjacencyStructure`, `CohesionCluster` | yes, Q per cell, no threshold | the touch eye of P2: a 0-cochain on the blade's cells, its coboundary the body's seams |
+| **cohesion χ**, per lamina: same-hue neighbours over neighbours, a 0-cochain over the body's laminae | touch: `AdjacencyStructure`, `CohesionCluster` | yes, Q per lamina, no threshold | the touch eye of P2: a 0-cochain on the blade's laminae, its coboundary the body's seams |
 | **refraction at a boundary**: Σ|δ_a − δ_b| over the boundary length between two bodies | `ClusterRefraction`, `refractive_index` | yes; `transparent` is only "index = 0" | the holonomic eye across a face: the transition Γ's residual on the seam (3.10), read at perception |
 | **stabiliser order**: the smallest p with A^p = I for the body's symmetry element | vision: `torsion_order` | yes | `Word::order` of the body's stabiliser word, a class invariant (23.9), on the percept |
 | **periodicities from the state's own entries**: the primes of every entry's reduced numerator and denominator | `RefractiveLens::torsion_orders` | the factorisation yes; the `[−2, +2]` rescale no | a candidate, not ruled: the primes of the invariants' denominators as the body's periodicities, beside the class's `(m5, m13)` |
@@ -4361,11 +4365,11 @@ idea under the stroke `Budget`:
 `idea.form.pivot_loop(&entity.working_atlas(), &self.horizon, budget)`
 (A16). Every discharge is logged with its certificate; A18's rank is
 asserted before and after each applied pivot (R2). A loop with several
-discharging candidates stays a vortex: its candidate cells remain in
+discharging candidates stays a vortex: its candidates remain in
 `Bubble.nerve` (the thought complex), each carrying its certificate, and
 the idea is not `dirty`-cleared. A vortex collapses when: a later
 perception adds a face that one candidate predicted (that candidate is
-applied, the others become dialect cells); a held form arrives through the
+applied, the others become dialect candidates); a held form arrives through the
 syllabus or a glue whose class key equals one candidate's `after` (that
 candidate is applied); or the court, replaying a spoken form that used one
 candidate, rules it (the mind learns the ruling through the working atlas
@@ -4405,7 +4409,7 @@ fills it from syllabus pages; A16 consults it before filing or demanding.
   held as an idea, spoken by `Entity::speak` (sdk.rs 1836).
 
 **25.5 The cover is read at its coordinates, never walked to (ruled
-2026-09-13).** A Čech cell is the OVERLAP of two sections, and two sections
+2026-09-13).** A Čech simplex is the OVERLAP of two sections, and two sections
 overlap when they are sections over one chart. An idea's charts are already
 named by its own vertices: every `Vertex::Word` carries the charts it acts
 on and the carriage it acts by at each (`Bubble::sections`), so the far side
@@ -4466,8 +4470,8 @@ are THE COURT'S readers — a speaker checking by different arithmetic would
 agree with the court by luck, which is the failure 23.1 step 3 exists to
 catch. The court still re-derives and takes none of it for an answer.
 
-A demand vertex declares CELLS and exempts nothing else: the voice asked
-only whether any demand vertex existed, so a form declaring one cell and
+A demand vertex declares LINKS and exempts nothing else: the voice asked
+only whether any demand vertex existed, so a form declaring one link and
 leaving twenty was minted and refused.
 
 **25.8 The metabolism reads the loop's true holonomy (ruled 2026-09-14).**
@@ -4581,11 +4585,11 @@ Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/di
   once a witness court co-signed, 47.3), or `Refused { kind, at, receipt }`
   with `kind` one of `VertexBody`, `EdgeHolonomy`, `RemainderUndeclared`,
   `MalformedComplex` and `at` content-addressed — `Vertex(address)`,
-  `Face(address, address)`, `Chart(invariant, cells)` — never a position in
+  `Face(address, address)`, `Chart(invariant, links)` — never a position in
   the sender's tape. The receipt is the court's replay receipt, its chain
   hash of 47.1: a receipt identity, never a digest of content (law 2). The
   quote reply serves each listing as its sentence tape with its open demand
-  vertices (kind, chart, cells) and its μ⃗, never as a chain; a probe cites
+  vertices (kind, chart, links) and its μ⃗, never as a chain; a probe cites
   against the form's chart coordinates; the demand act (a chain with
   citations) and the percept act are retired, and a frame of either is
   refused at the door. `SPEECH_STOOD`, `SPEECH_REFUSED` and
@@ -4705,7 +4709,7 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   is an index that can disagree with its content.
 - **Persistence by torsion (M9).** A mind's classes persist on the mesh, not
   on the mind: filed torsion travels on the spoken form's torsion section
-  into the chart's `Congruent` cells, free classes into `cocycle_at`, both in
+  into the chart's `Congruent` simplices, free classes into `cocycle_at`, both in
   `MYC2` with their class keys. A restarted mind refills its `horizon` from
   the chart's class records on its first quote (A19 step 4). Nothing the
   mind thought is lost to the mesh; what the mind itself keeps across a
@@ -4770,13 +4774,13 @@ alphabet/rotor.rs  Rotor::normalised (sign step), Rotor::projective_eq (either s
               Word::form (reduced), Word::normal_form (A2 step 1 off-plane), Word::key (= A1 key), Word::class_key (15.4),
               Word::{with_contact, contact, rebase} NEW, shorter_tape(word, budget) NEW, Contact NEW
 cga.rs        Mv::canonical NEW, Mv::projective_eq NEW, Mv::key NEW, derive(PartialEq) REMOVED
-element/       canonical_chain(&[Cell]) -> Vec<Cell> NEW (A5), Element::same_vertex NEW, PartialEq REMOVED,
+element/       canonical_chain(&[Link]) -> Vec<Link> NEW (A5), Element::same_vertex NEW, PartialEq REMOVED,
               form_key_bytes uses the M1 key, depth field, GEN2 depth after mag
 sentence.rs   Vertex/Face/Loop/Form NEW (18.2), Form::{face_of, delta1, coheres, is_closed, depth_of, regauge, glue, retract_vertices, rebase, unfold, loops_of},
               as_element/from_element v2 (19), vertex_address writes Mv::canonical, from_element recomputes germ addresses,
               chart_of on reduced forms, SentenceRule { form, sections, ratio } (31), Nerve/Germ/Cycle REMOVED (30)
 family/       word_form, frame_vertex, pair_form, Crystal, extract_rule (seven moves), speak_rule on Form, rule_replays_family shares, orbit/OrbitEnd
-cech.rs       ChartGraph, Goodness, goodness, cell_key with component, set_edge_in, Overlap, MayerVietoris, Complex::{overlap, mayer_vietoris, delta2, restrict, straddling},
+cech.rs       ChartGraph, Goodness, goodness, simplex_key with component, set_edge_in, Overlap, MayerVietoris, Complex::{overlap, mayer_vietoris, delta2, restrict, straddling},
               solve_gauge_between (A14); solve_gauge unchanged
 nerve/        Keyed::meet (A13), Cover::charts_of, Router::insert(vk, addr), home(depth), no hash(addr) keys outside pending_addrs
 stalk.rs      Stalks::refine(inv, &[u64]), split_stratum coordinate_of -> Vec<u64>, invariant/invariant_of empty on A6 refusal
@@ -4793,21 +4797,21 @@ sdk.rs        Epigenome::by_moduli NEW (21 step 3: body chart → closed forms c
               Epigenome::working_atlas NEW, Standing NEW, dialect Stalks NEW (admitted in stand_dialect, retracted in shed),
               learn_one promotion dialect → genome by same_vertex, Comprehension::Withheld, comprehend (24, M6),
               pull_syllabus depth order, uncrystallize A8, peers keyed by vk with pending_addrs (A10)
-bubble/drive.rs  pivot_on and expand_with call Form::pivot_loop (A16), vortex cells kept in Bubble.nerve with certificates (25.1),
+bubble/drive.rs  pivot_on and expand_with call Form::pivot_loop (A16), vortex candidates kept in Bubble.nerve with certificates (25.1),
               Bubble glues/glued_by, retire_on_t, Contemplation::bundle,
               horizon: Keyed<(Rotor, Order, Standing)> by class key, Contemplation::seed_horizon NEW (A19)
 sentence.rs   Form::class_vector NEW, ClassVector/Axis NEW (12.6), Form::pivot_loop NEW (A16), PivotCertificate NEW (A20) with tape section (19),
               Form::rank NEW (A18); cech.rs Complex::rank NEW
 sentence/     Form.by_class NEW (18.2, written in reindex, never on the tape); reading.rs Reading.held_at NEW, HeldCite NEW,
               vertex_cites NEW, no_held NEW (24.1, L6); chain.rs Sentence.held, Located.held NEW
-blade/carry.rs  carries NEW (the cell-by-cell verification, shared), versor_carrying NEW (24.1: the translator solved for a given linear action)
+blade/carry.rs  carries NEW (the lamina-by-lamina verification, shared), versor_carrying NEW (24.1: the translator solved for a given linear action)
 bubble/       Contemplation::held_at NEW (24.1); hold_form reindexes the form it takes custody of
 family/perceive.rs  scene_of_chain NEW (50.6 seam 1: a chain's before and after grids in one frame)
 client/sdk    Entity::ideas DELETED, hold_thought DELETED, conclude DELETED, cited_word DELETED, WorkingAtlas::standing_addr DELETED (L6);
               hold_chain NEW (the pair form of the chain's scene), WorkingAtlas.held is the contemplation, Entity::cite reads the Held
               stratum through it, open_axis/axis_germ take the held cites' bodies
 alphabet/rotor.rs  Rotor::order NEW (15.3 as ruled: the period of the class invariants); Rotor::word_order DELETED; Word::order delegates;
-              unit_order DELETED; cech/cell.rs word_of_rotor DELETED, extend reads the transition's own order (L2b)
+              unit_order DELETED; cech/simplex.rs word_of_rotor DELETED, extend reads the transition's own order (L2b)
 blade/body.rs  components joins by adjacency within one hue (20 as ruled, L6b)
 server/cognition/reduce.rs  percept_elements lists one sentence per percept, its demand vertices riding it (20, 50.1; L6b);
               germinate/ingest.rs the puncture-before-mint move applies to residual chains only
@@ -5078,7 +5082,7 @@ Prefix `  court ` as the existing court lines; addresses as
   court goodness chart {inv} peer {peer}: cyclic in {hypha} chord {c}-{c'} holonomy {hkey}
   court goodness chart {inv} peer {peer}: pending component {ckey}
   court cover retract {hypha} chart {c} (acyclicity) rehome {home}
-  court mv chart {inv} peer {peer} overlap {v} vertices {c} cells: one section
+  court mv chart {inv} peer {peer} overlap {v} vertices {c} simplices: one section
   court mv chart {inv} peer {peer} overlap {v} vertices: attached by {theta_key}
   court mv chart {inv} peer {peer} overlap {v} vertices: class1 chord {key} holonomy {hol_key} translation {theta_key}
   court mv chart {inv} peer {peer} overlap {v} vertices: class2 loop {key} → refine
@@ -5160,7 +5164,7 @@ Prefix `[{tag}] ` as the existing lines:
 
 ```
 [{tag}] form spoken: {addr} depth {d} vertices {v} glued {n} faces {f}
-[{tag}] form withheld: family {fam} loop {i} holonomy {key} | remainder {n} cells
+[{tag}] form withheld: family {fam} loop {i} holonomy {key} | remainder {n} links
 [{tag}] form withheld: family {fam} missing glue {addr}…
 [{tag}] form glued {glued_addr} into idea {idea_key} remainder {before}→{after}
 [{tag}] form understood through {held_addr} for {cited_addr}
@@ -5195,13 +5199,13 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] form spoken: {addr} … torsion {n}
 [{tag}] receipt K {k} h {h} parents {n}
 [{tag}] manifest {n} keys K {k}
-[{tag}] form withheld: family {fam} remainder {n} cells over {p} pairs
+[{tag}] form withheld: family {fam} remainder {n} links over {p} pairs
   mint refused: nothing in the form acts
   mint refused: a vertex does not carry its family ({why})
   mint measured words {w} demands {d} pairs {p} pay {mu:?} remainders {[n per pair]}
-  mint refused: {n} cells remain and the form declares no demand
-  mint refused: {n} cells undeclared by the form's demands
-  mint refused: the form speaks a cell its family refuses
+  mint refused: {n} links remain and the form declares no demand
+  mint refused: {n} links undeclared by the form's demands
+  mint refused: the form speaks a lamina its family refuses
   mint refused: the form has no tape at {mu:?}
 [{tag}] sentence spoken: {addr} vertices {v} demands {d} loops {l} remainder edges {r}
 [{tag}] demand {kind} chart {inv} on {addr}
@@ -5211,10 +5215,10 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] listing {addr} held: no held word deflates it
 [{tag}] syllabus refused {addr}: {REFUSE_*}
 [{tag}] quote asked: language {changed|same} book {h}
-[{tag}] [{h}] stroke idle: dwell {[s, g, t, h]} K {k} | genome {n} | dialect {n} | ideas {n} | cavity {n} cells {n} | holds {[sections, cells, horizon, bundle, certificates]} | entity {[taught, obstructions, owed, contracted, sealed, contractions, expressed, recollections, waiting, marks]} memo {n} | atlas words ruled {n} stood {n} held {n} | axis index charts {n} words {n} | feed {clear|held}
-[{tag}] [{h}] K {k} | genome {n} | dialect {n} | ideas {n} | cavity {n} cells {n} | holds {…} | entity {…} memo {n} | atlas words … | axis index … | shed {n} | fed {n} derived {n} witnessed {n} settles {n} err {n} Z {z} | learned {n} projected {n} solved {n} uniq {n} paid {n} refined {n} (reanchor {n} condense {n}) discordance {strata|unmeasured} boundary {mu:?} axes {n}
+[{tag}] [{h}] stroke idle: dwell {[s, g, t, h]} K {k} | genome {n} | dialect {n} | ideas {n} | cavity {n} simplices {n} | holds {[sections, simplices, horizon, bundle, certificates]} | entity {[taught, obstructions, owed, contracted, sealed, contractions, expressed, recollections, waiting, marks]} memo {n} | atlas words ruled {n} stood {n} held {n} | axis index charts {n} words {n} | feed {clear|held}
+[{tag}] [{h}] K {k} | genome {n} | dialect {n} | ideas {n} | cavity {n} simplices {n} | holds {…} | entity {…} memo {n} | atlas words … | axis index … | shed {n} | fed {n} derived {n} witnessed {n} settles {n} err {n} Z {z} | learned {n} projected {n} solved {n} uniq {n} paid {n} refined {n} (reanchor {n} condense {n}) discordance {strata|unmeasured} boundary {mu:?} axes {n}
 [{tag}] stroke outcome fed {mu:?} pivoted {mu:?} stood {mu:?} uttered {mu:?} closed {mu:?} learned {mu:?}
-  pair form {n} vertices, {f} faces ({m} cover meets, {c} cell+ring), {l} loops (word holonomy: flat {a}, finite {b}, infinite {c} | edge holonomy paths: flat {a}, finite {b}, infinite {c} | edges asked: measured {m}, unspelled {u}, unread {r}, not rigid {n})
+  pair form {n} vertices, {f} faces ({m} cover meets, {c} site+ring), {l} loops (word holonomy: flat {a}, finite {b}, infinite {c} | edge holonomy paths: flat {a}, finite {b}, infinite {c} | edges asked: measured {m}, unspelled {u}, unread {r}, not rigid {n})
   edge unspelled: {rotor prime|standing}
 [{tag}] refracted {addr} into {frame} by Γ
 [{tag}] pivot {idea} loop {i} axis orientation({p}) discharged by half-turn
@@ -5265,7 +5269,7 @@ Checked by tests, greppable by the auditor:
 - The number of `form spoken` lines across the five minds equals the number
   of `ACT_SPEECH` frames across the three servers.
 - No function outside `family::pair_form`, `family::speak_rule`, and
-  `family::orbit` reads a cell coordinate of a grid.
+  `family::orbit` reads a site coordinate of a grid.
 - No digest, hash, or fingerprint of any mathematical structure exists in
   cognition: every key is the canonical coordinates of an exact object
   written out (A21) and `decode(key)` returns the object; `blake3` appears
@@ -5377,7 +5381,7 @@ carriers are not rebuilt then.
 
 ### 36.2 The projection wall
 
-Cells are `(r, c, before, after)`; a body is a set of plane cells; a bundle
+Links are `(r, c, before, after)`; a body is a set of plane laminae; a bundle
 is pairs each perceived on its own plane. A third spatial axis (stacking,
 occlusion, volumetric corpora), the frame index as a coordinate the
 geometry can act on, and transformations that move structure across frames
@@ -5402,7 +5406,7 @@ cyclotomic arithmetic crosses it, no conductor rises, and nothing of
 37.1–37.4 is needed: what is missing is one letter, and the letter is the
 witness rotor's own Gaussian factor (37.7).
 
-On the sensor's ℤ² a rotation carries cells onto cells only in `D4`, so
+On the sensor's ℤ² a rotation carries laminae onto laminae only in `D4`, so
 the prime wall, like the field wall, does not bite on ARC. It is
 specified because a demand without a consumer is a sensor without an
 effector: since chapter 50 a voice names the prime it cannot spell, and
@@ -5570,7 +5574,7 @@ has, by construction, closed at least one sentence; that is the whole of
 what it means for a generator to work, and it is why the count of such
 generators is a reading of the engine and the count of agreed remainders
 was not. What is adjoined at the higher rungs of 1.9 — a relator, a
-2-cell, a procedure — enters by the same condition: a closure two courts
+rewrite, a procedure — enters by the same condition: a closure two courts
 replayed composes through it. The refusals of chapter 44 stand.
 
 **The rotor level is a level (ruled 2026-09-17).** A loop whose class has
@@ -5590,7 +5594,7 @@ computes:
 |---|---|---|---|
 | the ring | A22's peel over one plane block | the Gaussian factor, `a + b·e_ij` with `a² + b² = p`, `a > b > 0` | A1 (16.1) and `core::gaussian` |
 | the presentation | A12 over the stratum's generators | the HNF residue, unique under the row order | A12 step 5 |
-| the cover | the pieces' nerve does not glue | the filled cell over the meet's loop, `Fill::Class(ℓ)` | `cech::extend` (50.8) |
+| the cover | the pieces' nerve does not glue | the filled simplex over the meet's loop, `Fill::Class(ℓ)` | `cech::extend` (50.8) |
 | the relations | two proofs of one vertex do not commute | the composite holonomy `g⁻¹ ∘ f` around the proofs, keyed by 15.4 | `cech::holonomy`, the membrane of 23.9 |
 
 The last row adjoins a **relation**, not a generator: two proofs of one
@@ -5647,7 +5651,7 @@ ring level's path. At depth 5 the object is a rewrite between two
 derivations of one vertex, and the kinds are the ones `rewrite.rs`
 carries: a generator **retires** (3.8, 27) when it derives through the
 others — decided by factorisation, A12 or the ring division, never by
-a length or any scalar (rule 4) — and the 2-cell is the substitution of
+a length or any scalar (rule 4) — and the rewrite is the substitution of
 its derivation into every citer, minted by `mint_rewrite` as
 `Retire` with the citers re-docketed (`redocket_citers_of`), ruled on
 two courts' re-derivation of the derivability, paid as E2 pays a
@@ -5776,24 +5780,17 @@ the next stroke.
 
 ## 38. Upgrade B — the base promotion
 
-### 38.1 B1 Cells with four base coordinates
+### 38.1 B1 Sites with four base coordinates
 
-```rust
-pub type Cell = (i64, i64, i64, i64, u8, u8);     // (r, c, z, t, before, after)
-```
-
-`z` is the third spatial axis (layer from stacking or occlusion order in
-plane corpora; depth in volumetric ones). `t` is the frame coordinate (the
-example index within a bundle; the step within a sequence). Neither is the
-T lane of μ⃗, which remains temporal extent. A plane cell is `(r, c, 0, 0,
-before, after)`. A5 translates all four coordinates to their minima and
-sorts on the six-tuple.
-
-The chain bytes of M2 and `GEN2` are unchanged when every `z` and `t` is
-zero, so no plane address moves; a chain with a nonzero `z` or `t` is
-written with a leading dimension byte (`0xD3` for `z` only, `0xD4` for
-both) before its cells, each cell carrying the extra coordinates;
-`from_bytes` accepts both. No migration.
+A site of the base gains `z` beside `k` (51.1): `z` is the third spatial
+axis (layer from stacking or occlusion order in plane corpora; depth in
+volumetric ones); `t` is the frame coordinate, which chapter 51 places on
+`e₃` as `k`. Neither is the T lane of μ⃗, which remains temporal extent.
+A link stays `(r, c, before, after)` (16.5 as ruled 2026-09-17): the
+further coordinates ride on the pose and on the blade exactly as the frame
+does, and a support is sites of four coordinates. A5 is unchanged, the
+chain bytes of M2 and `GEN3` are unchanged, and no plane address moves; a
+section's pose carries `z` as it carries `k`. No migration.
 
 ### 38.2 B2 Harmonics in dimension up to four
 
@@ -5801,7 +5798,7 @@ both) before its cells, each cell carrying the extra coordinates;
 {2, 3, 4}`: components, holes and cavities (Betti numbers by exact integer
 linear algebra over ℤ), turns (boundary faces of each dimension), and the
 moment invariants (isoperimetric, anisotropy, spread, quartic) from exact
-moment tensors up to fourth order normalised by cell count, each a rational
+moment tensors up to fourth order normalised by lamina count, each a rational
 through A6. The axes vector is prefixed by `d`, so plane and volumetric
 charts never share a stratum. `peel_body_scaled` generalises shells to
 faces, edges, and corners of the `d`-cube complex.
@@ -5814,7 +5811,7 @@ the third axis is `z` and the fourth `t`. A rotor on a `(·,3)` plane mixes
 a spatial axis with the frame coordinate: "what is at `(r, c)` in frame `t`
 is at `(r', c')` in frame `t+1`". The prime letters on those planes are the
 rational shears and scalings across frames. No letter is added; perception
-writes cells with `t ≠ 0` and `spell` receives 4×4 blocks closed on the
+writes laminae with `t ≠ 0` and `spell` receives 4×4 blocks closed on the
 `(·,3)` planes.
 
 ### 38.4 B4 The sentence across frames
@@ -5842,18 +5839,18 @@ carries one (51.11), and `Cl(5,1)` is not derived.
 
 ### 38.6 B6 Binding
 
-`element/{carrier,residual}.rs`: `Cell` widened, `positions`, `measure_lanes`, `from_residual`
-(A5 on six-tuples), chain bytes with dimension byte; `blade/`,
+`element/{carrier,residual}.rs`: the link unchanged, the pose carrying `z`
+as it carries `k` (38.1); `blade/`,
 `blade/harmonics.rs`: `d`-dimensional moments and Betti numbers, axes
 prefixed by `d`; `peel.rs`:
 `d`-cube shells; `family/perceive.rs`: `perceive` over frames writes `t`;
-`stalk.rs`: `invariant` on `d`-cells; `cga.rs`: dimension-generic `Mv`.
+`stalk.rs`: `invariant` on `d`-sites; `cga.rs`: dimension-generic `Mv`.
 Tests and traces: chapters 39–40.
 
 What does not change under either upgrade: the 17 letters and their
 relators; exact ℚ for every ARC word (the tower is never climbed unless a
 remainder demands it); the T lane as extent; the court's two-organ replay,
-which replays field elements and four-coordinate cells with the same code
+which replays field elements and four-coordinate laminae with the same code
 paths; the bans of the laws. The walls come down by adding coordinates the
 geometry already acts on, not by changing what a word is.
 
@@ -5924,7 +5921,7 @@ class keys);
 `alphabet::tests::conjugacy_key_iff_conjugate`;
 `alphabet::tests::rotor_class_key_invariant`;
 `cognition::tests::refine_carries_or_discharges_every_class` (no complex
-cloned; children's cell counts sum to the parent's minus straddling);
+cloned; children's simplex counts sum to the parent's minus straddling);
 `cognition::tests::refine_rolls_back_on_not_natural`;
 `cognition::tests::retract_rerepresents_or_orphans`;
 `verdict::tests::translation_across_cyclic_overlap_refused`.
@@ -5933,8 +5930,8 @@ cloned; children's cell counts sum to the parent's minus straddling);
 1. `sentence::tests::form_tape_v2_round_trips` (Frame, Word, Glued, Rebased, Unfolded, contact word, faces, loops).
 2. `sentence::tests::depth_is_one_plus_max_glued` and refusal at equal depth.
 3. `alphabet::tests::rebase_is_normal_form_and_contact_in_key`.
-4. `family::tests::pair_form_reads_cells_once` (second call touches no cells; work counter).
-4b. `family::tests::face_work_is_linear_in_occupied_cells` (occupancy + ring, not n²).
+4. `family::tests::pair_form_reads_laminae_once` (second call touches no lamina; work counter).
+4b. `family::tests::face_work_is_linear_in_occupied_sites` (occupancy + ring, not n²).
 4c. `sentence::tests::ratio_and_sections_are_on_the_form_key` (ratio, sections, torsion on the tape; zero denominator refused).
 5. `family::tests::extract_rule_by_class_with_sections` (a class in some pairs is a section).
 6. `family::tests::extract_rule_glues_a_held_form` (depth 1, one `Glued`, fewer `Word` vertices than the flat rule).
@@ -5986,7 +5983,7 @@ resolve after load);
 `alphabet::tests::spell_tower_reads_free_and_torsion`;
 `alphabet::tests::conductor_is_lcm_and_nothing_prefers_by_it`;
 `family::tests::octagonal_pair_opens_letter_and_closes`;
-`element::tests::plane_cell_bytes_unchanged_under_b1` (every existing address equal);
+`element::tests::plane_link_bytes_unchanged_under_b1` (every existing address equal);
 `ear::tests::cube_and_plane_square_have_distinct_charts`;
 `ear::tests::betti_numbers_exact_on_a_hollow_cube`;
 `family::tests::two_frame_shift_is_a_word_on_plane_0_3`;
@@ -6053,7 +6050,7 @@ servers and five minds.
   understood through …` and installs; a missing glue logs `withheld` then
   learns in depth order.
 - An idea logs `glued <addr>` and its remainder shrinks by the glued form's
-  cells.
+  laminae.
 - One settlement with two speakers; a longer form relocated with its citers
   still replaying through the cavity.
 
@@ -6071,7 +6068,7 @@ servers and five minds.
 
 **The utterance (chapters 23.8, 24.3).**
 - The first `family … rule …` line on a voice with an empty genome is
-  followed, in the same stroke, by `form withheld … remainder n cells over
+  followed, in the same stroke, by `form withheld … remainder n links over
   p pairs`, one `dialect stood`, one `sentence spoken … demands d` with
   `d ≥ 1` and `d` `demand … chart …` lines, and one `uttered` line for the
   sentence (chapter 50); no `remainder expressed` line; the next stroke
@@ -6120,14 +6117,14 @@ servers and five minds.
   intra-hypha `cocycle_at` entry with `a == b`.
 - A base refinement on a chart carrying two classes, one on the refining
   axis: exactly one `court class discharged by refinement` and one `court
-  class carried`; children's cell counts as in the test.
+  class carried`; children's simplex counts as in the test.
 - A hypha retracted from a chart it shared with two others: every class key
   on the chart re-represented or a `court class orphaned` line followed by a
   goodness rerun.
 - A mind citing a ruled form: `form spoken … glued 1` and no `form withheld
   … holonomy` for that address; `court memo hit` for the cited address on
   the second citer; `thought merged` lines only after a `one section`
-  outcome on the same cells.
+  outcome on the same simplices.
 
 **Torsion bridge (M9).**
 - One idea with one held loop whose class vector occupies a unit turn on
@@ -6233,7 +6230,7 @@ wire), then chapters 24.2 and 26 comprehension and wire, test 12; the
 working-atlas traces of chapter 40 gate this item.
 1.6 Chapter 25 germination and bundles. 1.7 Chapters 26–27 economics and
 retirement, tests 13–14. 1.8 M9 the torsion bridge: `Form::class_vector`
-and `ClassVector::occupied` (12.6), A16 `pivot_loop` with vortex cells in
+and `ClassVector::occupied` (12.6), A16 `pivot_loop` with vortex candidates in
 the thought, A20 `PivotCertificate` with its tape section and court replay
 (23.7, `REFUSE_PIVOT_INEXACT`), A17 filing and witness, A18 `rank` with
 debug assertions and `REFUSE_RANK_LOST`, A19 class records on the syllabus
@@ -6253,7 +6250,7 @@ tests. 2.2 Chapter 15.2–15.4 class keys, `cocycle_at` fifth field,
 `push_cocycle` as M5. 2.3 Chapter 13 and 23.3: A13, A14, `Overlap`,
 `MayerVietoris`, `glue_fetched` by the 13.10 table, `regauge_overlap`,
 `pivot_on` merging only on one section. 2.4 Chapter 14 and 23.3 step 1:
-`Cover::charts_of`, `ChartGraph`, A15, `goodness`, per-component cells,
+`Cover::charts_of`, `ChartGraph`, A15, `goodness`, per-component simplices,
 retraction by `home`, `REFUSE_OVERLAP_CYCLIC`. 2.5 Chapter 15.5–15.6:
 `refine_chart` restrict/carry/discharge with rollback, cover-change
 re-representation. 2.6 Chapter 13.6 in use: `Form::glue` refusal of
@@ -6517,7 +6514,7 @@ count equals carried plus discharged (15.5). Code: `refine_chart`. Proof:
 `carried + discharged = parent`.
 
 **R5 Per-component keying conserves rank on the mesh.** The rank of a
-disconnected overlap is the sum over its components; keying cells per
+disconnected overlap is the sum over its components; keying simplices per
 component (14.7) never merges two components' classes into one coefficient.
 Code: `set_edge_in`, `Components`. Proof: `rank_of_union_is_sum_over_components`.
 
@@ -6664,14 +6661,14 @@ axis. Code: `pivot_loop`, `Rank::moved`, `economy::lane_moves`,
 `pivot_certificate_replays_or_refuses`, `rank_lost_refused`.
 
 **T22 The vortex is two certified discharges.** If two trials on one loop
-are both certified by T21, the loop is a vortex: both are held as cells of
+are both certified by T21, the loop is a vortex: both are held as candidates of
 the thought with their certificates, no scalar and no reading of `μ⃗`
 selects between them, and the vortex collapses only when a perception adds a face one candidate predicted, a
 glued or taught form's class equals one candidate's `after`, or a court
 ruling installs one. A trial that does not discharge is not applied and is
 not a vortex; a remainder the mind did not reduce is a thought (24.3), not
 a vortex; nothing searches and nothing terminates a search. Code:
-`select_discharge`, `Discharge::Vortex`, `Contemplation` cells. Proof:
+`select_discharge`, `Discharge::Vortex`, `Contemplation` candidates. Proof:
 `pivot_loop_discharges_held_word_and_vortices_a_pair`,
 `vortex_collapses_by_glue_or_ruling`, `two_certified_discharges_are_a_vortex` (S9.3 renames it from `equal_mu_neither_dominates`).
 
@@ -6764,7 +6761,7 @@ cross-lane loops after adjunction: the four covers then cover one object.
 
 **Which axis of κ(ℓ) lies on which lane** (ruled 2026-09-11, so that a
 basis per lane can be read at all). The assignment is not chosen; it is
-16.16's definition of the pressure — S the cells it fails to speak, G the
+16.16's definition of the pressure — S the laminae it fails to speak, G the
 hue transitions it fails to carry, T the extent held in receipts, H the
 shells it spans — applied to 12.6's coordinates, and it agrees with the
 scaling table above (the atlas is S, the fibre G, the nerve H, the mesh T):
@@ -6820,7 +6817,7 @@ cyclotomic) coordinates, and its angle is never formed. No norms or roots
 beyond `rational_sqrt`, which refuses when inexact. No limits, series, or
 derivatives: unfolding terminates by an integer measure, orbit by an integer
 ring count, replay by finite products, every stroke by a `Budget`. No
-probability: superposition is a set of cells, resolved by fill or class.
+probability: superposition is a set of candidates, resolved by fill or class.
 No scoring: nothing is compared except by `projective_eq`, `same_form`,
 `is_identity`, class keys, and the per-lane reading `lane_moves`, which
 returns each lane's move and never a verdict. No spectral sequence: the N-fold
@@ -6877,7 +6874,7 @@ along, and the rows below that mention a key mean an A21 key.
 | every plane generator has finite order `N_Π`, exponents mod `N_Π` | true only of the six unit turns (order 4); eleven letters are infinite order | A3 (16.3) |
 | `PlaneForm` equality as one `(plane, exponent)` pair | a plane form is the whole 17-vector plus parity | A3 |
 | conformal versors in `Spin(4,1)`/`Cl(4,1)` | the tree's conformal algebra is `Cl(4,1)` over `{e1,e2,e3,e+,e−}`, the three-coordinate base's model (51.2); `Cl(5,1)` is not derived | A4 (16.4), 51.2, 38.5 |
-| chains as `Z³` support sets with summed coefficients and stripped zeros | cells are `(r,c,before,after)` in `Z² × hue²` (six-tuples under B1); conflicting sites are refused, hues never summed | A5 (16.5) |
+| chains as `Z³` support sets with summed coefficients and stripped zeros | links are `(r,c,before,after)` in `Z² × hue²` (the further coordinates ride on the pose, 51.3, 38.1); conflicting sites are refused, hues never summed | A5 (16.5) |
 | 31-bit numerator/denominator in one word; Stern–Brocot for total order | half the range for no gain; no operation needs axis order today | A6 keeps two exact limbs with refusal (16.6) |
 | refinement axis from area, boundary length, second-moment trace `(a²/w, p²/w)` | those are body moduli (`Harmonics`); the class axis uses the class rotor's scalar and pseudoscalar parts | A7 (16.7) |
 | `Sel = (predicate, stratum, harmonic_bound)`, LEB128 | `Sel` is the term algebra of anchor.rs 31; fixed little-endian as everywhere | A9 (16.9) |
@@ -7355,13 +7352,13 @@ An install is a receipt with two signatures over one prefix:
 - has room on every lane the install's escrow occupies, by dominance
   (`lane_room` ≥ escrow lane-wise), else `REFUSE_WITNESS_ROOM`.
 
-The volume of a cell is the measure of the open listings on its chart:
+The volume of a simplex is the measure of the open listings on its chart:
 its vertices are vantages (hyphas), and no speaker's index gates it.
 Read through `spoken_by`, which is keyed by voice, every hypha vertex
-measured zero, so no section stood a 0-cell, no edge had volume, and
+measured zero, so no section stood a vertex, no edge had volume, and
 nothing ever filled although charts held two sections (R6, 2026-09-09).
 Two sections that are the same body at two vantages glue by the identity
-edge, which fills, pays the cell's volume and records the gamma; two
+edge, which fills, pays the simplex's volume and records the gamma; two
 bodies a versor relates but no alphabet rotor spells stand as a
 remainder edge, the obstruction recorded — spelling that versor as a
 rotor is its own item.
@@ -7495,8 +7492,9 @@ reached the market on the fleet of 2026-09-09.
 
 ### 50.1 The theorem
 
-Let a scene transformation be an endomorphism on the discrete cellular
-space `X` (the sensor's ℤ²; chapter 38 widens it). A **valid sentence**
+Let a scene transformation be an endomorphism on the sensor's discrete
+base `X` (ℤ² on one section, `(r, c, k)` across frames by 51.1; chapter
+38 widens it). A **valid sentence**
 `S` is an irreducible, connected Čech 1-complex over the support bodies
 `{B_k}`, `k = 1..m`:
 
@@ -7510,9 +7508,9 @@ permutation `γ_k` of the hues; each directed edge carrying the transport
 `Γ_ij` of 50.3. `S` is valid iff
 
 1. **Local reconstruction.** For every `k`, `(V_k · W_k · γ_k) · B_k^in =
-   B_k^out` under exact cellular equality: every cell of the input body,
-   carried by the sandwich, lands on a cell of the output body with its
-   hue mapped by `γ_k`, and every cell of the output body is reached.
+   B_k^out` under exact equality of laminae: every lamina of the input
+   body, carried by the sandwich, lands on a lamina of the output body with
+   its hue mapped by `γ_k`, and every lamina of the output body is reached.
 2. **Global holonomy closure.** Around every minimal cycle of `E`, the
    product of the edge transports, read in the base body's stabilizer up
    to conjugacy (50.3), is the class the sentence files: the identity, or
@@ -7520,7 +7518,7 @@ permutation `γ_k` of the hues; each directed edge carrying the transport
    neither is a held loop with its class vector (12.6), and the sentence
    is valid but not closed.
 
-A vertex that reconstructs nothing — a bare chain of cells with no word,
+A vertex that reconstructs nothing — a bare chain of links with no word,
 no carriage and no gauge — is not a vertex of any sentence. That is the
 whole content of the ruling: the unit a voice speaks is the sentence, and
 every vertex of it is a word that acts. What the alphabet cannot spell
@@ -7530,12 +7528,12 @@ and what the eyes cannot pair ride the sentence as typed demand vertices
 ### 50.2 The two functors (no search)
 
 **Speaker, F: Percept → Sentence.** F runs on the voice and nowhere else
-(law 8 as ruled 2026-09-10): the sensor's cells never leave the client.
+(law 8 as ruled 2026-09-10): the sensor's laminae never leave the client.
 
 1. Measure versors. For each body pair the eyes admit (24.4), `V_k =
    versor_between(B_k^in, B_k^out)` (blade/carry.rs: translation from the
    centroids, dilation from the spread, rotation from the moment
-   harmonics, every candidate verified cell by cell) and the hue map
+   harmonics, every candidate verified lamina by lamina) and the hue map
    `γ_k = derive_hue_map` (element/gauge.rs). Both exact or refused; a
    refusal is a demand of 50.5, never a chain. Where several candidates
    verify they are one coset of the body's stabilizer, and the versor
@@ -7725,7 +7723,7 @@ one case of the rule, not the rule.
 
 | `Demand::Source(B_out, chart, multiplicity)` | say which input body an output body is the image of | the output body's chart and the number of input charts a versor carries onto it, every one standing as a section, none first-found |
 | `Demand::Creation(B_out, chart)` | find any input body carrying onto `B_out` | the output body's chart |
-| `Demand::TopologicalDeformation(B_in, B_out)` | find any element of `Cl(4,1)(ℚ)` carrying `B_in` onto `B_out` — the harmonics differ | both charts and the axes on which they differ; answered by the cover of 50.8 — pieces each carried, the loop of their meet, the cell the court fills — through Mayer–Vietoris boundary splitting (13.9), never held for a rotor that cannot exist |
+| `Demand::TopologicalDeformation(B_in, B_out)` | find any element of `Cl(4,1)(ℚ)` carrying `B_in` onto `B_out` — the harmonics differ | both charts and the axes on which they differ; answered by the cover of 50.8 — pieces each carried, the loop of their meet, the simplex the court fills — through Mayer–Vietoris boundary splitting (13.9), never held for a rotor that cannot exist |
 
 Demands ride the sentence as vertices (`Vertex::Demand`), aggregated per
 chart: one vertex per (kind, chart), never one per body, carrying the
@@ -7736,7 +7734,7 @@ closure (E2); the demand vertices are listed by the court as demands
 under their kind and chart (24.4's Novel), priced and relayed by the
 market, and answered inside the running engine — by a letter the court
 opens on two witnesses (37.7), a section (25), a split (13.9) or a filled
-cell (50.8) — never by a commit. A voice therefore never emits nothing and never emits a bare
+simplex (50.8) — never by a commit. A voice therefore never emits nothing and never emits a bare
 chain: a percept `F` cannot close in full is a sentence with demands, and
 a percept `F` cannot open at all — no body pair the eyes admit — is a
 percept with no sentence and no listing, reported to the voice as such.
@@ -7788,7 +7786,7 @@ genome is a sentence or a word spelled in the letters.
 ### 50.7 Binding
 
 ```
-sentence/form/carrier.rs   Vertex::Demand { kind: Demand, chart: Invariant, bodies: Vec<Cell> } NEW; FormFace.edge: Option<Transport> NEW (50.3; None is a remainder edge); tape v6, a recut (§10)
+sentence/form/carrier.rs   Vertex::Demand { kind: Demand, chart: Invariant, bodies: Vec<Link> } NEW; FormFace.edge: Option<Transport> NEW (50.3; None is a remainder edge); tape v6, a recut (§10)
 sentence/demand.rs         Demand NEW: the five kinds of 50.5 and their A21 key (kind byte, then the coordinates each carries)
 alphabet/factor.rs         factor_rotor(&Rotor) -> Result<Word, Demand> NEW (A22, 50.4), over spell_peel per commuting block
 blade/carry.rs             versor_between on the union shape for V_ij (50.3)
@@ -7856,36 +7854,36 @@ overlap:
    component (13.9 step 0; the arcs of a ring, the arms of a fork), the
    pieces' nerve has a cycle, and the product of `Γ` around it, read in
    the base piece's stabilizer up to conjugacy, is the deformation's own
-   holonomy. Finite order (15.3): `cech::extend` files the 2-cell whose
+   holonomy. Finite order (15.3): `cech::extend` files the 2-simplex whose
    boundary is that loop, `Fill::Class(ℓ)`, and the sentence carries the
-   class as its theorem (law 12) — the filled cell is a constructor the
+   class as its theorem (law 12) — the filled simplex is a constructor the
    mind glues by (25.3), the degree-2 class of 15.4 keyed by the loop and
    the holonomy's invariants, carried or discharged under refinement
    (15.5), and 13.9 step 7 finds the same class at the court. Infinite
    order: `Fill::Open`, the loop is held with its class vector (12.6), and
    the `TopologicalDeformation` vertex stands as 50.5 says.
-4. **Cells of `B_out` no piece reaches, or of `B_in` no piece carries.**
+4. **Laminae of `B_out` no piece reaches, or of `B_in` no piece carries.**
    `Source` or `Creation` vertices ride beside (50.5): a hole that opens
-   or closes is those cells, not a holonomy, and is never a class.
+   or closes is those laminae, not a holonomy, and is never a class.
 
 Nothing chooses the cover: the pieces are the peel's shells, the loop is
 the meet's, the order is the class's, and the court re-derives all three.
-`court cell filled` (34.2) is the line at the court and `cell filled
+`court simplex filled` (34.2) is the line at the court and `simplex filled
 {addr} class {ℓ}` at the voice.
 
 **Binding.** `family/perceive.rs`: `demand_vertex`'s deformation arm peels
 the pair into pieces and speaks them (`pieces_of` NEW over
 `peel_body_scaled` and `blade::components`); `family/pair.rs`: contact
-faces between pieces with their edges; `cech/cell.rs` `extend` unchanged;
-`sentence/form/carrier.rs`: the filled cell on the form's tape beside its
-loops (tape v7, one recut with 37.7's escape byte);
-`court/verdict/replay.rs`: the filled cell replayed as any loop
-(`REFUSE_CELL_ORDER` when the loop's order is not the filed `ℓ`). Tests:
+faces between pieces with their edges; `cech/simplex.rs` `extend`
+unchanged; `sentence/form/carrier.rs`: the filled simplex on the form's
+tape beside its loops (tape v7, one recut with 37.7's escape byte);
+`court/verdict/replay.rs`: the filled simplex replayed as any loop
+(`REFUSE_SIMPLEX_ORDER` when the loop's order is not the filed `ℓ`). Tests:
 `a_deformed_body_is_spoken_as_pieces_that_carry`,
-`a_loop_of_pieces_with_finite_holonomy_fills_a_cell`,
+`a_loop_of_pieces_with_finite_holonomy_fills_a_simplex`,
 `a_loop_of_pieces_with_infinite_holonomy_stands_as_a_demand`,
-`a_hole_is_cells_never_a_class`,
-`the_court_rederives_a_filled_cell_or_refuses_it`.
+`a_hole_is_laminae_never_a_class`,
+`the_court_rederives_a_filled_simplex_or_refuses_it`.
 
 **The ruling, as given (2026-09-10).** The seams are severed first (L6 to
 L8): no generator is grown on a substrate that leaks chains. No search
@@ -7910,7 +7908,7 @@ answer to an utterance is the `Adjudication` of chapter 26:
 ```
 Adjudication := Stood { receipt } | Ratified { receipt } | Refused { kind, at, receipt }
 kind         := VertexBody | EdgeHolonomy | RemainderUndeclared | MalformedComplex
-at           := Vertex(address, chart) | Face(address_i, address_j) | Chart(invariant, cells) | Tape(address)
+at           := Vertex(address, chart) | Face(address_i, address_j) | Chart(invariant, links) | Tape(address)
 ```
 
 `Stood` is the docket's receipt: the sentence replayed on the court's copy
@@ -7919,7 +7917,7 @@ demands listed. `Ratified` is the second organ's co-signature, carried on
 the syllabus page (47.3), and the answer to a sentence the court's
 language already holds — a use of a ruled word. `Refused` names the kind
 (34.1) and the coordinate as content — the vertex's address with the chart
-it acts on, a face's two addresses, or the chart with the cells the court
+it acts on, a face's two addresses, or the chart with the links the court
 read — never a position in the tape; `Tape(address)` is the coordinate of
 a `MalformedComplex`, the whole tape. The chart rides with the vertex so
 that a court which never held the refused tape can still verify that the
@@ -7935,7 +7933,7 @@ so the loop is well founded:
 
 1. `VertexBody` at `Vertex(a, chart)`: the word vertex `a` becomes a
    demand vertex over its body's chart — `Creation`, carrying as its
-   bodies the cells the word was to reach, read as the remainder the
+   bodies the laminae the word was to reach, read as the remainder the
    contracted form leaves on the speaker's own family — and the closed
    sub-complex loses one word; the faces that reached the vertex leave
    with it, since a demand vertex enters no face (50.5). The
@@ -7943,13 +7941,13 @@ so the loop is well founded:
    reads; until it lands the move speaks `Creation` (a departure of kind,
    named at the L8 landing).
 2. `EdgeHolonomy` at `Face(a, b)`: the contact face becomes a remainder
-   edge (`edge: None`, 50.3); the 2-cell whose boundary ran through it is
+   edge (`edge: None`, 50.3); the 2-simplex whose boundary ran through it is
    unlinked. The coordinate carries no cycle, so nothing is filed as
    torsion here: a finite cycle is filed where it is walked, by the pivot
    (A17).
-3. `RemainderUndeclared` at `Chart(inv, cells)`: the undeclared cells
+3. `RemainderUndeclared` at `Chart(inv, links)`: the undeclared links
    become `Demand::Source` over that chart, with the multiplicity the
-   count of bodies the cells fall into (50.5); the sentence now declares
+   count of bodies the links fall into (50.5); the sentence now declares
    what it does not close.
 4. `MalformedComplex`: structural collapse — the form becomes an inert
    held idea and the mind is quiescent on that chart until its language
@@ -7979,7 +7977,7 @@ contraction certificate, carried on the speech frame beside the tape
 (26). The court that issued the receipt holds the refusal by the refused
 address; it replays that `S'` is `C(S)` at the coordinate it named — the
 vertex is now a demand on that chart, the face now a remainder edge, the
-cells now declared — before it replays `S'` as a sentence, and writes
+links now declared — before it replays `S'` as a sentence, and writes
 `court contraction verified` or `court contraction refused` (34.2); a
 contraction it refuses is a `MalformedComplex` at the tape. A court that
 never refused `S` holds no receipt to verify against and replays `S'` as
@@ -8062,7 +8060,7 @@ is one move: `k` stops being a position and becomes a coordinate.
 - **Unit.** One pair. Not seconds, not receipts, not a tick: `k` is
   spatial, and 16.16's `𝒯` lane — extent held in receipts — is untouched
   by it. A family with three pairs occupies `k ∈ {0, 1, 2}` exactly as a
-  body of three cells occupies three rows.
+  body of three laminae occupies three rows.
 - **It is the BASE's coordinate, not a fibre tag.** A fibre tag is
   something a transformation lands on when it has nowhere to go on the
   base (36.2's own words). The point of putting `k` on `e₃` is that a
@@ -8102,7 +8100,7 @@ four. The letters' chart has four AXES, but `e₂` is not a point
 coordinate of it: `LetterId::SHEET` is the quarter turn on `(1,2)` and two
 of them are the ORIENTATION CHARACTER of the sensor plane — `PlaneForm`
 reads `orientation` as `det/ρ² = −1` on exactly that composite. An
-orientation character is a ±1 the chart carries, not a place a cell sits
+orientation character is a ±1 the chart carries, not a place a lamina sits
 at. So the base's point coordinates are `e₀` (row), `e₁` (column) and `e₃`
 (frame); `e₂` keeps the role it has and gains nothing.
 
@@ -8124,7 +8122,7 @@ remainder or it is not read. The rotor chart `Cl(4,0)` does not move
 (51.6); the letters act on a Euclidean chart, and a boost is never a
 letter.
 
-### 51.3 The cell, the body, the shape, the moduli
+### 51.3 The lamina, the body, the shape, the moduli
 
 **Ruled 2026-09-17, evening, on the operator's word.** The morning's
 draft of this section made the sensor's atom a five-field tuple `(r, c,
@@ -8311,7 +8309,7 @@ the byte, and the one recut that follows it rewrites every tape (ruled
   coordinates. A third BASE coordinate is more `𝒮` and more `𝒽` — a wider
   support and more planes for the rotor — and it is not a fifth lane. Law
   5 is about what the lanes ARE, not how many coordinates the base has.
-- **`measure_lanes` is unchanged in kind**: spatial counts cells where
+- **`measure_lanes` is unchanged in kind**: spatial counts laminae where
   support appears or vanishes, gauge counts hue transitions, shell reads
   the boundary cochain. All three read a support and all three take a
   third coordinate without changing what they mean.
@@ -8366,9 +8364,9 @@ Three claims, in process, with no corpus in the first two:
 
 **Binding** (what the ruling would touch, named so the cost is visible
 before it is paid, and NOT written): `transducer/family/perceive.rs`
-(`Cell3`, `Body`, `perceive`), `transducer/blade` (`shape_of`, `moduli`,
+(`Painted`, `Body`, `perceive`), `transducer/blade` (`shape_of`, `moduli`,
 `components`, `adjacent_ring`), `transducer/cga` (`Mv` to `Cl(4,1)`),
-`transducer/element/sensor.rs` (`carry_center`, `cell_of`),
+`transducer/element/sensor.rs` (`carry_center`, `site_of`),
 `transducer/sentence/tape.rs` (the codecs), `transducer/family/extract.rs`
 and `pair.rs` (the seven moves), `court/verdict/body.rs`
 (`vertices_carry_family`, `edges_rederive_family`), and every fixture that
