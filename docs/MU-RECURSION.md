@@ -139,7 +139,7 @@ These are not restated in each chapter; every chapter assumes them.
     chooses among pivots, and no scalar ever orders the candidates. Several
     candidates that discharge are held together as a superposition, the
     vortex, until a perception or a court replay collapses it.
-11. **No squaring.** The sensor's ℤ² is the substrate a hypha reads cells
+11. **No squaring.** The sensor's ℤ² is the substrate a hypha reads laminae
     from; it is not a space cognition lives in, and ℚ² is ℤ² squared
     again. Cognition never carries a position, a placement, or a shift as
     a pair of numbers. A placement is a conformal translator, a dilation a
@@ -148,24 +148,25 @@ These are not restated in each chapter; every chapter assumes them.
     the blade decomposition of its canonical holonomy versor, and its
     placement axis is the translator component of that versor. A pair of
     coordinates appears only at the sensor boundary, in `pair_form`,
-    `speak_rule`, and `orbit`, where a cell is read or written. **The cell
-    is the sensor's token, never the mind's carrier** (ruled 2026-09-17,
-    evening): `(r, c, before, after)` for a chain and `(r, c, k, hue)` for
-    a body's support are read once at intake (`perceive`, `germinate`,
-    A5's centering), computed on only where a sentence is replayed against
-    what the sensor read (`chain::replay_operators`, the court's
-    `vertices_carry_family`) and where a grid is written (`speak_rule`,
-    `orbit`), and between those sites they are carried as content: the
-    mind acts on the POSE — A5's translator, the carriage, the transport —
-    and compares bodies by the versor between their shapes and the gauge.
-    The sensor's own readers (`element/sensor.rs`: `cell_of`,
-    `carry_center`, `carry_cell`, `pullback`) read the three coordinates
-    of the base (51.1) exactly or refuse: a carried cell whose image is
-    not a lattice cell of one frame, or an exact block of them, is
-    refused, never rounded to the cells whose centres its image spans.
-    Fluid physics carried in squares is squares of fluid: looking for a
-    square inside a circle is a search for two different objects (chapters
-    1.4, 1.7, 16.4). **No matrix carries an action.** A matrix is a linear
+    `speak_rule`, and `orbit`, where a lamina is read or written. **The
+    lamina is the sensor's token, never the mind's carrier** (ruled
+    2026-09-17, evening): a chain's links `(r, c, before, after)` and a
+    support's laminae `(r, c, k, hue)` are read once at intake (`perceive`,
+    `germinate`, A5's centering), computed on only where a sentence is
+    replayed against what the sensor read (`chain::replay_operators`, the
+    court's `vertices_carry_family`) and where a grid is written
+    (`speak_rule`, `orbit`), and between those places they are carried as
+    content: the mind acts on the POSE — A5's translator, the carriage,
+    the transport — and compares bodies by the versor between their shapes
+    and the gauge. The sensor's own readers (`element/sensor.rs`: the site
+    of a point, a lamina's center and a whole lamina carried, the
+    pullback) read the three coordinates of the base (51.1) exactly or
+    refuse: a carried lamina whose image is not a lamina of one frame, or
+    an exact block of them, is refused, never rounded to the laminae whose
+    centres its image spans. Fluid physics carried in squares is squares
+    of fluid: looking for a square inside a circle is a search for two
+    different objects (chapters 1.4, 1.7, 16.4). **No matrix carries an
+    action.** A matrix is a linear
     representation on a fixed set of squared coordinates: it holds only
     what that frame can hold, its product forgets the blade structure of
     what it represents, and a new axis is a larger matrix rather than a
@@ -202,11 +203,11 @@ shape is not reviewed further; it is returned.
 
 | # | rule | looks like (refused) | write instead |
 |---|---|---|---|
-| 1 | **A pair loop is allowed only over one cell's own vertices or one loop's own faces.** Iterating `i < j` over bodies, vertices, charts, hyphae, or peers is a correspondence search over a product the carrier already names. | `for i in 0..n { for j in i+1..n { if related(i, j) … } }`; `bodies_in.iter().find(…)` for every `bodies_out`; `for lane in 0..4 { for h in hyphae … }` where the lane is not a fixed physical size | build one keyed occupancy once, `Keyed<cell key → Vec<vertex>>`, read pairs out of cells holding two or more vertices, probe a ring cell into the same key; a cell's own vertices and a loop's own faces are its boundary and may be walked |
+| 1 | **A pair loop is allowed only over one site's own vertices or one loop's own faces.** Iterating `i < j` over bodies, vertices, charts, hyphae, or peers is a correspondence search over a product the carrier already names. | `for i in 0..n { for j in i+1..n { if related(i, j) … } }`; `bodies_in.iter().find(…)` for every `bodies_out`; `for lane in 0..4 { for h in hyphae … }` where the lane is not a fixed physical size | build one keyed occupancy once, `Keyed<site key → Vec<vertex>>`, read pairs out of sites holding two or more vertices, probe a ring site into the same key; a site's own vertices and a loop's own faces are its boundary and may be walked |
 | 2 | **A count is never a branch.** A decision that reads `len()`, `count()`, or `n <= k` is a boolean gate on a count, and the count is not a measurement of anything. | `if n_words <= 1 { all bodies }`; `if germs.len() >= 2 { true }`; `if counts.len() == n_pairs` as the whole test | the fiber decides: `atlas.fiber(class)` names the bodies a vertex speaks to and an empty fiber is remainder, never "everything"; presence is read from a keyed set, not from a length |
 | 3 | **Equality is `same_vertex`, `projective_eq`, or class-vector equality.** `==` on `Element`, `Versor`, a tape, a `Word` outside M1, or a struct that contains one is byte identity and forks or merges meanings; equality of two digests is the same fault one step removed. | `old == g` on a versor; `self.word == other.word`; `#[derive(PartialEq)]` on a type holding rotors or chains; `address() == address()` as the test of sameness; `x.class_key() == y.class_key()` | `a.same_vertex(&b)`; `r.projective_eq(&s)` (either sign); `x.class_vector() == y.class_vector()` coordinatewise on exact ℚ; an address compare only where the address is the intended identity (a citation) and the address is the M2 composite of A21 |
 | 4 | **Nothing is chosen by a scalar.** No `min_by`, `max_by`, `sort_by` over candidates, no "lowest order first", no "closest", no threshold. | `chords.sort_by_key(order)` then take the first; `candidates.iter().min_by_key(cost)`; `if remainder.len() < best` | read the class vector, list its occupied axes in the fixed order (12.6), try each, keep every certified discharge, hold incomparable ones as a vortex; dominance on μ⃗ certifies after the fact and never selects |
-| 5 | **No literal durations, no counts as generations, no free constants.** A number that is not a letter exponent, a rational read from the data, a cell coordinate, or a physical size of a carrier is a constant someone will have to remove. | `Duration::from_secs(1)`; `SystemTime::now()` or `Instant::now()` read by a kernel; `gen = genome_len + dialect_len`; `depth.min(8)`; `ratio: ((1,1),(1,1))` as a placeholder; `m = 1024` | a ratio of measured transport, the round trip counted in the kernel's own strokes (`from_transport(rtt_floor, aperture_cycle())`, 45.4); a root of content (the stalk digest of the working atlas); the value the tape carries; refuse when the value is not there |
+| 5 | **No literal durations, no counts as generations, no free constants.** A number that is not a letter exponent, a rational read from the data, a site coordinate, or a physical size of a carrier is a constant someone will have to remove. | `Duration::from_secs(1)`; `SystemTime::now()` or `Instant::now()` read by a kernel; `gen = genome_len + dialect_len`; `depth.min(8)`; `ratio: ((1,1),(1,1))` as a placeholder; `m = 1024` | a ratio of measured transport, the round trip counted in the kernel's own strokes (`from_transport(rtt_floor, aperture_cycle())`, 45.4); a root of content (the stalk digest of the working atlas); the value the tape carries; refuse when the value is not there |
 | 6 | **Keys are canonical coordinates written out, never a digest of them, never bytes or pointers.** A memo, an address, a class, or a cache keyed by a hash of anything mathematical, of a tape, a serialisation, a file path, or a pointer is identity by bytes in disguise; hashing the canonical form is the same fault with a better excuse, because the key can no longer be read, composed, restricted, or peeled (1.7, A21). A cached key stored beside the coordinates it was computed from is the same fault again: it goes stale on the first mutation and the object and its name diverge. | `blake3(canonical coefficients)` as `Rotor::key`, `Mv::key`, `Word::class_key`, `ClassVector::class_key`, `Element::address`, `Invariant::key`, `listing_key`; `blake3(path)`; `a_ptr == b_ptr`; `format!("{s:?}")` hashed | the coordinates themselves, length-prefixed, in the fixed order of A21: the eight reduced rationals of the canonical rotor (M1), the M2 composite of a form, the chart's axes, the class vector, the canonical chain of a listing, `Sel::to_bytes`; a `Keyed` trie over those bytes, where a prefix is a stratum |
 | 7 | **Meaning is never demoted to "fibre" to make a key stable.** If two tapes that mean different things get one key, the key is wrong, whatever the comment says. | dropping the bundle's agreed shift or a contact from a sentence key because "placement is a fibre coordinate" | a body's absolute position is quotiented; a relative placement inside a sentence is a face and is identity; contact is on the form and in its key (chapter 1.5) |
 | 8 | **No shims with placeholders.** A wrapper that fills a field with a constant so a call compiles is a defect that will be soaked. | `sentence_rule_of` with `ratio: ((1,1),(1,1))` and empty sections; `set_magnitude([0,0,0,1])` | carry the field on the tape and read it; measure the magnitude by speaking the form over its bundle; if the value cannot be measured, the form is not spoken |
@@ -217,10 +218,10 @@ shape is not reviewed further; it is returned.
 | 12 | **Naturality over cloning.** When a carrier splits, restrict it; never clone it into both halves and rekey. | `complexes.insert(child_a, c.clone()); complexes.insert(child_b, c)`; `rekey_cocycles` without recomputation | `restrict` per child, `straddling` written as faces between children, each class recomputed and carried or discharged (15.5) |
 | 13 | **Verify the claim, not the outcome.** A test that asserts a count or a boolean proves nothing about how the result was reached; a test named after a theorem must exercise the move. | asserting `faces.len() <= 2·germs` and calling it "the adjacency rule"; testing `Word::rebase` and reporting "rebase works" when the extraction step never fires | N vs 4N work counters for cost claims; a trace of the move on a family that needs it (a `Rebased` vertex that speaks the test); a refusal test for every refusal string |
 | 14 | **The whole suite, every commit.** "Module green" is not green. | "family 14, sentence 18, sdk 12 green" while `server::cognition` has four red tests | one foreground `cargo test --release`, the `test result` line in the commit message, one item per commit with its trace value |
-| 15 | **When unsure, hold; never choose.** If two readings of the data are both consistent, the code keeps both as cells and lets a perception, a glue, or a ruling collapse them. | a tie-break by index, by size, by "first found" presented as a decision | a vortex (3.9); a section (chapter 21); a `Pending` (14.5); a `Novel(g_rem)` demand |
+| 15 | **When unsure, hold; never choose.** If two readings of the data are both consistent, the code keeps both as candidates and lets a perception, a glue, or a ruling collapse them. | a tie-break by index, by size, by "first found" presented as a decision | a vortex (3.9); a section (chapter 21); a `Pending` (14.5); a `Novel(g_rem)` demand |
 
 **The review checklist**, applied to every diff before it is committed and
-again by the auditor, in this order: (a) any `i < j` loop not over a cell's
+again by the auditor, in this order: (a) any `i < j` loop not over a site's
 or loop's own boundary; (b) any `len()`, `count()`, `is_empty()` that
 decides a branch rather than an emptiness of a fiber; (c) any `==`,
 `PartialEq`, or `derive(PartialEq)` on a type holding a rotor, versor,
@@ -266,7 +267,7 @@ violates it is returned exactly as a rule-violating diff is; a private
 gate, fixture style, or naming scheme is refused the same way.
 
 **How to write the move, not the search.** Ask what the carrier already
-names. Bodies name their cells: key the cells. Faces name their vertices:
+names. Bodies name their laminae: key their sites. Faces name their vertices:
 walk a face's two ends. A loop names its faces: walk them. A class vector
 names its occupied axes: try those. A chart names its fiber: read it. If
 the code you are about to write needs to look at everything to find the
@@ -321,6 +322,45 @@ the object is recovered; an **address** is the key of a form (M2); a
 **carriage** is the conformal versor, dilator composed with translator,
 that places a word on the sensor plane (A4). Neither a key nor an address
 is ever a digest, and a carriage is never a pair of numbers.
+
+**The word "cell" is retired (ruled 2026-09-17, evening, on the operator's
+word).** It named the corpus's pixel, a body's atom, a chain's element, a
+key's position, a nerve's simplex and a vortex's candidate at once, and
+wherever it stood the plane's quantised bin read as the primary carrier —
+checklist (m) written into the vocabulary. Its senses are named apart, and
+each name says what the object is in the algebra rather than where it sits
+on a grid:
+
+- A **lamina** is the sensor's atom: the unit square standing in a frame at
+  a site of the base, carrying the hue the sensor read there, its center at
+  `(r + ½, c + ½, k)` (16.4). It is read once at intake and written once at
+  speech and at the court's replay (law 11), and it is never a carrier the
+  mind computes on: the mind acts on the pose and on the blade.
+- A **site** is a position of the base, `(r, c, k)`, or `(r, c)` within a
+  section; a key of a site is the site written out (A21), and an occupancy
+  is keyed by sites.
+- A **support** is the laminae of a body; the **stack** is a support across
+  frames; a **section** is a support's laminae in one frame, or a chain's
+  links in one frame (16.5).
+- A **link** is one element of a chain: a site of a section with the
+  transition `(before, after)` it carries. A chain is links, sorted, one
+  transition per site (A5).
+- A **painted site** is a site of one grid with its hue, the corpus's token
+  as a grid gives it; the grid is the corpus's carrier and the word "pixel"
+  is not used either.
+- The **cube complex** of a support is the union of its unit cubes on the
+  three coordinates, on which its topology is counted (51.3); its elements
+  are cubes, faces, segments and corners.
+- A **simplex** is an element of a nerve — a vertex, an edge, a triangle —
+  where "0-cell", "1-cell" and "2-cell" stood; a **filled simplex** is a
+  triangle of the nerve whose loop's class is filed (50.8); a **rewrite** is
+  the face between two derivations (3.9), never "the 2-cell".
+- A **candidate** is a discharge a vortex holds, where "a cell of the
+  thought" stood (3.9).
+
+Every passage of this document and every type and interface of the tree is
+rewritten in these words (Stage 18, rows V1–V3); until a passage or a name
+is swept, "cell" there reads by this table and by nothing else.
 
 ---
 
@@ -2320,23 +2360,23 @@ E3 = 4, EP = 8, EM = 16`, thirty-two blades: the conformal model of the
 three-coordinate base `(r, c, k)` (51.2, ruled 2026-09-17), whose rotation
 planes are `e1e2`, `e1e3`, `e2e3` — the rotor chart's `(0,1)`, `(0,3)`,
 `(1,3)` — and whose translators `e_i ∧ e_∞` commute. A body that occupies
-one frame has `k = 0` on every cell, which is its coordinate and not a
-default. THE FRAME AXIS'S ORIGIN LIES AT THE CELLS' CENTERS: a cell of
-row `r` covers `[r, r+1)` and its center is carried at `r + ½`, while a
-cell of frame `k` stands at `k` exactly — 51.1 gives the frame origin no
-meaning, and this is the choice that keeps a dilation what 42.6 says it
+one frame has `k = 0` on every lamina, which is its coordinate and not a
+default. THE FRAME AXIS'S ORIGIN LIES AT THE LAMINAE'S CENTERS: a lamina
+of row `r` covers `[r, r+1)` and its center is carried at `r + ½`, while
+a lamina of frame `k` stands at `k` exactly — 51.1 gives the frame origin
+no meaning, and this is the choice that keeps a dilation what 42.6 says it
 is: `D(ρ)` about the origin fixes frame `0`, and the dilator of a carriage
 at frame `k` is the dilator about a point of that frame, so a similarity
 within a frame is a versor of this algebra and a body is not carried out
-of its frame by its own scale. A CELL HAS NO EXTENT ALONG `e₃` (ruled
-2026-09-17, evening): it is the unit square `[r, r+1) × [c, c+1)`
-standing in the plane `k`, a lamina, its own moment along `e₃` is zero
+of its frame by its own scale. A LAMINA HAS NO EXTENT ALONG `e₃` (ruled
+2026-09-17, evening): the sensor's atom is the unit square `[r, r+1) ×
+[c, c+1)` standing in the plane `k`, its own moment along `e₃` is zero
 (`blade::lift` adds the square's `1/12` on the two plane axes and nothing
 on the third), and a body is a stack of laminae. That is what makes a
 similarity within a frame a similarity of the body — a lamina zoomed is a
 lamina — and what a versor turning `e₃` into the plane cannot keep: it
-carries a lamina to a square standing across the frames, which is no cell
-of the sensor, and `carry_cell` refuses it (law 11).
+carries a lamina to a square standing across the frames, which is no
+lamina of the sensor, and the sensor refuses to carry it (law 11).
 
 1. All coefficients zero: refuse.
 2. `i` = least mask with nonzero coefficient; divide by `|c[i]|`; negate if
@@ -2359,10 +2399,10 @@ equality use `projective_eq` for versors and A1 for rotors.
 
 ### 16.5 A5 — Chain canonicalisation
 
-Input: the sensor's chain of ONE SECTION, cells `(r, c, before, after) ∈
+Input: the sensor's chain of ONE SECTION, links `(r, c, before, after) ∈
 ℤ² × hue²` read at frame `k` (ruled 2026-09-17, evening, retracting the
-five-field cell of that morning's draft): the hues are fibre coordinates
-and `k` is not a field of the cell but the section's PLACE, carried on
+five-field link of that morning's draft): the hues are fibre coordinates
+and `k` is not a field of the link but the section's PLACE, carried on
 the pose. Step 1's corner leaves as the translator `T(min_r, min_c, k)`
 (`place_chain`, `PlacedChain::at`), so a section at frame `k` is the
 canonical chain at a pose along `e₃`, and two sections of one family at
@@ -2371,16 +2411,16 @@ and the same family shifted by a frame are one body, holds by
 construction. The chain of a body spanning frames is its sections, one
 placed chain per frame; a frame origin carries no meaning (51.1).
 
-1. `min_r`, `min_c` over the cells; translate every cell by `(−min_r, −min_c)`.
+1. `min_r`, `min_c` over the links; translate every link by `(−min_r, −min_c)`.
 2. Sort lexicographically on the tuple; remove exact duplicates.
-3. Two cells on one site `(r, c)` with different `(before, after)`: refuse;
-   the chain assigns two transitions to one cell and describes nothing. A5
-   never sums, merges, or strips hues; whether a cell with `before ==
+3. Two links on one site `(r, c)` with different `(before, after)`: refuse;
+   the chain assigns two transitions to one site and describes nothing. A5
+   never sums, merges, or strips hues; whether a link with `before ==
    after` belongs to a chain is the producer's decision (`germinate`).
 4. Output the chain; empty input, empty chain.
 
 `from_residual` (element/residual.rs) does 1–2 today. A5 is that code named and
-called from every place that hashes or compares cells:
+called from every place that hashes or compares links:
 `composite_parent_id`, `footprint_key`, `section_address`'s assignment
 (sorted), and `blind_replay`'s chain compare (the spoken chain
 canonicalised before `rederived.sub() != spoken.sub()`).
@@ -8087,60 +8127,60 @@ letter.
 ### 51.3 The cell, the body, the shape, the moduli
 
 **Ruled 2026-09-17, evening, on the operator's word.** The morning's
-draft of this section made the cell `(r, c, k, before, after)` on every
-carrier and codec. Read against the tree before it was landed, that
-widens the lattice where the doctrine retires it: every keyed read, sort,
-floor and adjacency of the plane would have stayed and gained a third
-field, which is checklist (m)'s projection carried as the primary object,
-now in three coordinates. The five places the plane is actually carried
-as the primary object are named here so the repair is bounded: (1)
-`blade::lift3` kept a body's support as `(r, c)` and dropped `k`, so a
-body spanning frames had the topology, turns and boundary of its planar
-shadow; (2) `sensor::cell_of` refused every point outside frame `0`, so
-a transport along `e₃` landed on no cell and the replay, the gauge
-reading and the seam reading took that for nothing to disagree with; (3)
-`sensor::carry_cell` read a carried square back as the lattice cells
-whose centres fall between two carried corners — the mind writing to the
-lattice mid-reasoning; (4) extraction's move 1 matched bodies across
-separately perceived pair forms; (5) the family was handled pair by pair.
-The cell stays four fields and is the sensor's token (law 11, 16.5); the
-frame is on the pose and on the blade; what follows is the section as
-ruled.
+draft of this section made the sensor's atom a five-field tuple `(r, c,
+k, before, after)` on every carrier and codec. Read against the tree
+before it was landed, that widens the lattice where the doctrine retires
+it: every keyed read, sort, floor and adjacency of the plane would have
+stayed and gained a third field, which is checklist (m)'s projection
+carried as the primary object, now in three coordinates. The five places
+the plane is actually carried as the primary object are named here so the
+repair is bounded: (1) the blade kept a body's support as `(r, c)` and
+dropped `k`, so a body spanning frames had the topology, turns and
+boundary of its planar shadow; (2) the sensor's site reader refused every
+point outside frame `0`, so a transport along `e₃` landed on no lamina
+and the replay, the gauge reading and the seam reading took that for
+nothing to disagree with; (3) the sensor read a carried square back as
+the laminae whose centres fall between two carried corners — the mind
+writing to the lattice mid-reasoning; (4) extraction's move 1 matched
+bodies across separately perceived pair forms; (5) the family was handled
+pair by pair. A link stays four fields and a lamina is the sensor's token
+(law 11, 16.5); the frame is on the pose and on the blade; what follows
+is the section as ruled.
 
-- **`Body`** — cells, shape, moduli — is unchanged in kind. Its `cells`
-  are the sensor's support, `(r, c, k, hue)`, ONE carrier (the `cells` /
-  `cells_3d` pair of 656918d is two carriers for one fact, law 12, and is
+- **`Body`** — laminae, shape, moduli — is unchanged in kind. Its laminae
+  are the sensor's support, `(r, c, k, hue)`, ONE carrier (the two
+  supports of 656918d were two carriers for one fact, law 12, and are
   retired); its connectivity is 4-adjacency on `(r, c)` WITHIN a frame and
   adjacency along `k` BETWEEN consecutive frames, which is 6-adjacency on
   the three axes. A body is then a connected component of one hue across
   the whole family, not within one pair. Adjacency along `e₃` is the
   corpus's — consecutive pairs — and is read by the chart: a versor that
-  spaces frames apart (a dilation about a point off a frame) carries cells
-  and not the body's adjacency, so its two ends are two charts, a section
-  and never a congruence.
+  spaces frames apart (a dilation about a point off a frame) carries the
+  laminae and not the body's adjacency, so its two ends are two charts, a
+  section and never a congruence.
 - **`Shape`** is the blade of the support and gains the third coordinate
-  with it. `blade::shape_of` takes positions of three coordinates, one
+  with it. `blade::shape_of` takes sites of three coordinates, one
   function; the blade's own support keeps the three, so the topology, the
   turns and the boundary are read on the stack and not on its shadow.
 - **Moduli** are `blade::moduli` of that blade, the axes coarsest first:
-  components, holes and cavities (`β₀, β₁, β₂` of the 6-adjacency cube
-  complex, `χ = V − E + F − C` counted through incidence as the plane's
-  was); turns (the sum over the laminae of their turning counts); the
-  isoperimetric ratio (the laminae's perimeter, squared, over the cells);
-  the frame boundary (the sides open along `e₃` over the cells — `2` for
-  one lamina, less for a stack); the in-plane anisotropy; the spread (the
-  three-coordinate trace over the cells squared); the quartic; the gauge
-  spectrum. Every axis is invariant under every versor `carry_cell`
-  accepts, and a body of one frame reads on its old axes what it read
-  before, with `cavities 0` and `frame boundary 2` beside them. A chart
-  that distinguished two bodies on two axes still distinguishes them on
-  three.
+  components, tunnels and cavities (`β₀, β₁, β₂` of the support's cube
+  complex under 6-adjacency, `χ = V − E + F − C` counted through
+  incidence as the plane's was); turns (the sum over the sections of
+  their turning counts); the isoperimetric ratio (the sections' perimeter,
+  squared, over the laminae); the frame boundary (the sides open along
+  `e₃` over the laminae — `2` for one section, less for a stack); the
+  in-plane anisotropy; the spread (the three-coordinate trace over the
+  laminae squared); the quartic; the gauge spectrum. Every axis is
+  invariant under every versor the sensor carries a lamina by, and a body
+  of one frame reads on its old axes what it read before, with `cavities
+  0` and `frame boundary 2` beside them. A chart that distinguished two
+  bodies on two axes still distinguishes them on three.
 - **The harmonics** are read on the support as they are now. A family of
   three identical pairs has a body that is PERIODIC along `e₃` with
   period one; its periodicity is read by 51.5's loop, not by an axis, and
   its chart says only what its moments and boundary say.
 - **The sheet plane's role is unchanged.** `(1,2)` is still where
-  orientation lives; nothing in 51.3 puts a cell coordinate on `e₂`.
+  orientation lives; nothing in 51.3 puts a site coordinate on `e₂`.
 
 ### 51.4 The family is one body
 
@@ -8227,11 +8267,11 @@ peel on; it does not gain primes.
 
 ### 51.7 The tape
 
-The tape's codecs, as ruled 2026-09-17 (evening): a cell stays four
+The tape's codecs, as ruled 2026-09-17 (evening): a link stays four
 fields (16.5) and the chain of a body spanning frames is written as its
-placed sections; a support is a list of triples where it was pairs; a
-versor serialises thirty-two components where it serialised sixteen; the
-frame rides on the pose.
+placed sections; a support is a list of sites of three coordinates where
+it was pairs; a versor serialises thirty-two components where it
+serialised sixteen; the frame rides on the pose.
 
 **No version is spent before the recut, and here is why.**
 `FORM_TAPE_VERSION` is 9 today. v9's layout is fixed at a recut, and the
