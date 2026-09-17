@@ -37,14 +37,14 @@ for what it holds in the document's vocabulary (`refract.rs`, `carriage.rs`,
 `pub use`, and nothing else. A `main.rs` of a binary contains argument
 parsing, the boot order, and the loop skeleton, and nothing else.
 
-1.4 **Sensor boundary.** The only files that may read or write a cell
-coordinate pair are named `sensor.rs` (or are `family::{pair_form,
+1.4 **Sensor boundary.** The only files that may read or write a site's
+coordinates are named `sensor.rs` (or are `family::{pair_form,
 speak_rule, orbit}` until S9 lands), and the functions are
-`element::sensor::{cell_of, carry_center, carry_cell}`,
+`element::sensor::{site_of, carry_center, carry_lamina}`,
 `element::letters::carriage`, `blade::carry::{carry, rotor_between,
 half_rotor}`, `blade::body::centroid`, `alphabet::letters::rotor_pair`,
-`cga::base` (law 11). Nothing else touches `(i64, i64)`, `(ℚ, ℚ)`, or a
-grid. This list is the review's, not a gate's (§4.4).
+`cga::base` (law 11). Nothing else touches a site's integers, a centre's
+rationals, or a grid. This list is the review's, not a gate's (§4.4).
 
 1.5 **Binaries are modules.** `src/bin/<name>/` with `main.rs` and one file
 per act family or arm; the binaries are inside every gate's scope.
@@ -148,7 +148,7 @@ is named exactly as chapter 39 names it.
 
 3.2 **A test verifies the move, never the outcome** (rule 13). It asserts
 on content: `same_vertex`, `projective_eq`, coordinatewise equality of
-class vectors, decoded keys, spoken cells, refusal strings, work counters
+class vectors, decoded keys, spoken laminae, refusal strings, work counters
 at N versus 4N. It never asserts on tape bytes, letters, `to_bytes()`
 equality, counts standing in for properties, or `description()[i]` beyond
 the version byte.
