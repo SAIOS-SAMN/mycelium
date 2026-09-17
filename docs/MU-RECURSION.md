@@ -5110,6 +5110,13 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] receipt K {k} h {h} parents {n}
 [{tag}] manifest {n} keys K {k}
 [{tag}] form withheld: family {fam} remainder {n} cells over {p} pairs
+  mint refused: nothing in the form acts
+  mint refused: a vertex does not carry its family ({why})
+  mint measured words {w} demands {d} pairs {p} pay {mu:?} remainders {[n per pair]}
+  mint refused: {n} cells remain and the form declares no demand
+  mint refused: {n} cells undeclared by the form's demands
+  mint refused: the form speaks a cell its family refuses
+  mint refused: the form has no tape at {mu:?}
 [{tag}] sentence spoken: {addr} vertices {v} demands {d} loops {l} remainder edges {r}
 [{tag}] demand {kind} chart {inv} on {addr}
 [{tag}] edge remainder {i}-{j} on {addr}

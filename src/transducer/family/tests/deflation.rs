@@ -157,6 +157,39 @@ fn a_minted_sentence_carries_the_span_on_the_temporal_lane() {
     assert!(!at_once.lanes()[2], "while a zero span occupies nothing");
 }
 
+/// A form that declares no demand and leaves a remainder measures nothing
+/// (50.5): the pair's own residual is the remainder, and the measure's
+/// refusal names its cells.
+#[test]
+fn a_remainder_no_demand_declares_is_refused_at_the_measure() {
+    let (x, y) = (grid(&["1"]), grid(&["2"]));
+    let rems = vec![residual_of(Some(&x), &y)];
+    assert!(!rems[0].is_empty(), "the pair leaves a remainder");
+    assert!(
+        sentence_measure_from(&Form::default(), &[(x, y)], 0, [0; 4], &rems).is_none(),
+        "no demand declares it, so the form measures nothing"
+    );
+}
+
+/// A form whose demand does not cover the remainder measures nothing, by
+/// the court's own reader (50.5, 23.1 step 3): a demand declares cells,
+/// not an exemption.
+#[test]
+fn a_remainder_the_demands_do_not_cover_is_refused_at_the_measure() {
+    let (x, y) = (grid(&["12"]), grid(&["34"]));
+    let rems = vec![residual_of(Some(&x), &y)];
+    let elsewhere: Vec<crate::transducer::sentence::Cell> = vec![(5, 5, 0, 9)];
+    let chart = crate::transducer::stalk::invariant(&elsewhere);
+    let mut f = Form::default();
+    f.vertices.push(demand_vertex(crate::transducer::sentence::Demand::Creation, &chart, elsewhere));
+    f.reindex();
+    assert!(f.demand_vertices().next().is_some(), "the form declares a demand");
+    assert!(
+        sentence_measure_from(&f, &[(x, y)], 0, [0; 4], &rems).is_none(),
+        "but not the cells the pair leaves, so it measures nothing"
+    );
+}
+
 #[test]
 fn bundle_pressure_is_additive_and_refuses_a_raise_on_one_pair() {
 let x = grid(&["1"]);

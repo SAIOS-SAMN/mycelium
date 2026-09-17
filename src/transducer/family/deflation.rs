@@ -91,18 +91,9 @@ pub fn mint_sentence(
     crystal: &dyn Crystal,
     t_extent: u64,
 ) -> Option<element::Element> {
-    // A FORM NOTHING IN WHICH ACTS IS NOT UTTERED. The court's clause is
-    // already exactly this — "a tape whose only vertices are the Frame and
-    // demands is a chain wearing a form's tape" (23.1 step 3, 50.6/L7,
-    // `REFUSE_NOT_A_SENTENCE`) — and this is the speaker's side of it, reading
-    // the same `Form::acts()`.
-    // FOUR REFUSALS, ONE MESSAGE (§8.1, measurement only — the gates are
-    // unchanged). `mint refused (descent, carry or demands)` is the
-    // dominant fate of a form on this corpus: measured over one recut,
-    // 10799 of 13730 withheld forms and 79% of everything perceived, against
-    // 45 forms spoken. Four different things reach that line and it names
-    // none of them, so the largest reading on the wire says only that
-    // something upstream of the court said no.
+    // A form nothing in which acts is not uttered: the speaker's side of
+    // `REFUSE_NOT_A_SENTENCE` (23.1 step 3, 50.6), reading the same
+    // `Form::acts()` the court reads.
     if !rule.form.acts() {
         eprintln!("  mint refused: nothing in the form acts");
         return None;
@@ -111,12 +102,19 @@ pub fn mint_sentence(
         eprintln!("  mint refused: a vertex does not carry its family ({why:?})");
         return None;
     }
-    // 50.5 — WHAT THE FORM LEAVES UNSPOKEN ON THIS FAMILY IS ITS DEMAND.
+    // 50.5 — what the form leaves unspoken on this family is its demand.
     // The remainders are measured once here and read by the measure below
     // (law 12): a demand vertex acts on nothing, so the declared form
     // speaks exactly what the undeclared one spoke and leaves the same
-    // remainder — which is what `undeclared_remainder` reads at the court.
+    // remainder, which is what `undeclared_remainder` reads at the court.
     let (pay, remainders) = form_deflation(&rule.form, family, crystal);
+    let words = rule.form.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
+    let demands = rule.form.demand_vertices().count();
+    let unspoken: Vec<usize> = remainders.iter().map(|r| r.len()).collect();
+    eprintln!(
+        "  mint measured words {words} demands {demands} pairs {} pay {pay:?} remainders {unspoken:?}",
+        family.len()
+    );
     let declared = declare_unspoken(&rule.form, family, &remainders);
     let form = match declared.as_ref() {
         Some(f) => f,
@@ -232,38 +230,14 @@ pub fn declare_unspoken(
 /// a remainder no demand vertex declares: that is a withheld form, never a
 /// word.
 ///
-/// A DEMAND DECLARES CELLS, NOT AN EXEMPTION. This asked only whether the
-/// form had ANY demand vertex, and a form that had one was measured whole
-/// however much of its remainder that demand did not name — while the court
-/// asks `undeclared_remainder`, which is whether the demands actually cover
-/// what was left. So a form declaring one cell and leaving twenty was minted
-/// by the voice and refused by the court, and `form leaves a remainder on the
-/// family` is the commonest refusal on the fleet: 504 of 1018 at e98e8a2.
+/// A demand declares cells, not an exemption: whether the demands cover
+/// what was left is the court's own reader, `undeclared_remainder` (law
+/// 12, 23.1 step 3), and the court still re-derives it.
 ///
-/// It is the COURT'S OWN reader that decides it here (law 12). A speaker
-/// computing "is this remainder declared" by different arithmetic would agree
-/// with the court by luck, which is the failure mode 23.1 step 3 exists to
-/// catch — and the court still re-derives and does not take this for an
-/// answer.
-/// LANE 𝒯 IS THE SPAN, AND IT IS MEASURED HERE OR NOWHERE. `mint_sentence`'s
-/// own line has always read "Lane 𝒯 is the scene-state span the bundle stood
-/// over", and this computed μ⃗ through `measure_lanes` alone — which returns
-/// a LITERAL ZERO on lane 2 under a comment deferring the measurement to the
-/// mint. The mint did not take it either, so every word this engine has ever
-/// spoken carried `[S, G, 0, H]`: 197 of 197 spoken magnitudes at 820678a,
-/// none with a 𝒯 component.
-///
-/// The consequence is the whole lane vector. `word.lanes()[2]` is false, so
-/// the court's `physics.spend(word.lanes())` never spends 𝒯, so `reserve[2]`
-/// never depletes, so `reserve_deficit[2]` is zero, so `yield_surface[2]` is
-/// zero, so the dwell's 𝒯 lane read 0 in 1247 of 1247 readings. Law 5 has
-/// four lanes so they can carry independent content; three carried the same
-/// reserve deficit and the fourth carried nothing.
-///
-/// `t_extent` is the span in RECEIPTS the bundle stood over — the same
-/// quantity `pivot_loop` already takes and `bundle_pressure` already writes
-/// to `sum[2]`. A form minted in the stroke it was extracted in stood over
-/// no receipts and measures zero, which is a reading and not a placeholder.
+/// Lane 𝒯 is the span in receipts the bundle stood over — the quantity
+/// `pivot_loop` takes and `bundle_pressure` writes to `sum[2]` — and it is
+/// measured here (law 5). A form minted in the stroke it was extracted in
+/// stood over no receipts and measures zero, which is a reading.
 pub fn sentence_measure(
     form: &Form,
     family: &[(Grid, Grid)],
@@ -286,27 +260,24 @@ pub fn sentence_measure_from(
     remainders: &[crate::transducer::germinate::ResidualGerm],
 ) -> Option<[u64; 4]> {
     if form.demand_vertices().next().is_none() {
-        if !remainders.iter().all(|r| r.is_empty()) {
+        let left: usize = remainders.iter().map(|r| r.len()).sum();
+        if left != 0 {
+            eprintln!("  mint refused: {left} cells remain and the form declares no demand");
             return None;
         }
         let mut mag = pay;
         mag[2] = t_extent;
         return Some(mag);
     }
-    if !crate::court::verdict::body::undeclared_remainder(remainders, form).is_empty() {
+    let undeclared = crate::court::verdict::body::undeclared_remainder(remainders, form);
+    if !undeclared.is_empty() {
+        eprintln!("  mint refused: {} cells undeclared by the form's demands", undeclared.len());
         return None;
     }
     let mut mag = [0u64; 4];
-    // D2 — `after_chain` HAS A CARRIER AND BOTH BRANCHES READ IT. This branch
-    // called `apply_form` a second time on every pair and re-derived the
-    // residual the call above had already produced and returned in
-    // `remainders`: one fact, two producers, and the expensive one of the two
-    // (law 12). The pairs and the remainders are in the family's own order, so
-    // the zip is the pairing and not a lookup.
-    //
-    // `before_chain` stays computed here: it is a fact about the PAIR and not
-    // about the form, which is what `form_deflation` returns, so it is not the
-    // same fact arriving twice.
+    // The remainders are the ones `form_deflation` measured (law 12); the
+    // pairs and the remainders are in the family's own order, so the zip is
+    // the pairing. `before_chain` is a fact about the pair, not the form.
     for ((x, y), after_chain) in family.iter().zip(remainders) {
         let before_chain = match crate::transducer::family::refine::refine_delta(x, y) {
             Some(chain) => chain,
