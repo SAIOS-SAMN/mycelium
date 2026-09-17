@@ -6,6 +6,8 @@
 
 /// 16.4 — the conformal model every transport is written in.
 pub mod cga;
+/// 52 — the Cayley chart: a versor's derivation is its bivector.
+pub mod cayley;
 /// 20, A6 — a body, its exact moduli, and its shells.
 pub mod blade;
 /// Chapter 7 — the residual as the exact spec of a missing operator.
