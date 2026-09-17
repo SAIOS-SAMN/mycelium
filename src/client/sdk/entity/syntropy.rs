@@ -36,14 +36,22 @@ impl Entity {
     pub fn probe_conjugate_reanchor(&mut self) -> Option<(Element, Vec<Address>, Option<Element>)> {
         // ONE STROKE'S WORTH OF CANDIDATES, and the cursor carries the rest
         // to the next stroke (rule 10 — a loop's bound is a Budget or one
-        // cell's boundary, and a genome is neither). The orbit already had
-        // the cursor; it had no bound, so one stroke could sweep every word
-        // the mind holds, and the sweep grew with the vocabulary.
-        //
-        // `physics.stroke()` is the engine's own unit of work — the same
-        // budget `pivot_on` spends — so the probe is paced by the same
-        // arithmetic as every other stroke and not by a number chosen here.
-        let mut budget = self.physics.stroke();
+        // cell's boundary, and a genome is neither). `physics.stroke()` is
+        // the engine's own unit of work — the same budget `pivot_on` spends
+        // — so the probe is paced by the same arithmetic as every other
+        // stroke and not by a number chosen here.
+        let budget = self.physics.stroke();
+        self.probe_conjugate_reanchor_under(budget)
+    }
+
+    /// The same probe under a STATED budget. The stroke is calibrated from
+    /// the machine (`reserve_max`, 51.11), so a claim about what the probe
+    /// finds is a claim under a budget the claim names, never under
+    /// whatever the box had free when the test ran.
+    pub fn probe_conjugate_reanchor_under(
+        &mut self,
+        mut budget: crate::physics::Budget,
+    ) -> Option<(Element, Vec<Address>, Option<Element>)> {
         let g = self.epigenome.genome();
         if g.is_empty() {
             return None;
@@ -165,7 +173,15 @@ impl Entity {
         // One stroke's worth of candidates, as `probe_conjugate_reanchor`
         // takes: the cursor carries the rest, and a genome is neither a
         // Budget nor one cell's boundary (rule 10).
-        let mut budget = self.physics.stroke();
+        let budget = self.physics.stroke();
+        self.probe_bundle_condensation_under(budget)
+    }
+
+    /// The same probe under a stated budget (see `probe_conjugate_reanchor_under`).
+    pub fn probe_bundle_condensation_under(
+        &mut self,
+        mut budget: crate::physics::Budget,
+    ) -> Option<(Element, Vec<Address>, Option<Element>)> {
         let g = self.epigenome.genome();
         if g.len() < 2 {
             return None;

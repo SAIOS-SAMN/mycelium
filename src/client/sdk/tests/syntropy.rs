@@ -99,7 +99,11 @@ fn probe_conjugate_reanchor_on_word_pair() {
     entity.epigenome.learn(&e2.to_bytes());
     assert_eq!(entity.epigenome.genome_len(), 2, "two conjugate words in genome");
 
-    let result = entity.probe_conjugate_reanchor();
+    // Under a STATED stroke: the machine's own stroke is calibrated from
+    // the memory it has free when the test runs (51.11), which is no part
+    // of this claim.
+    let budget = entity.physics.stroke_n(1 << 8);
+    let result = entity.probe_conjugate_reanchor_under(budget);
     assert!(result.is_some(), "probe found conjugate pair");
     let (rw, retires, _) = result.expect("reanchor rewrite");
 
@@ -127,7 +131,8 @@ fn probe_bundle_condensation_folds_sibling_sections() {
     entity.epigenome.learn(&e2.to_bytes());
     assert_eq!(entity.epigenome.genome_len(), 2, "two sibling words learned");
 
-    let result = entity.probe_bundle_condensation();
+    let budget = entity.physics.stroke_n(1 << 8);
+    let result = entity.probe_bundle_condensation_under(budget);
     assert!(result.is_some(), "bundle condensation found sibling pair");
     let (rw, retires, base) = result.expect("condensation candidate");
     assert!(rw.is_rewrite(), "element is rewrite");
@@ -158,8 +163,9 @@ fn bid_bundle_rewrite_retires_inputs_and_credits_syntropy() {
     entity.epigenome.learn(&e2.to_bytes());
     assert_eq!(entity.epigenome.genome_len(), 2, "two words learned");
 
+    let budget = entity.physics.stroke_n(1 << 8);
     let (rw, retires, after) = entity
-        .probe_conjugate_reanchor()
+        .probe_conjugate_reanchor_under(budget)
         .expect("conjugate reanchor candidate");
 
     // Standing the rewrite in dialect and verifying physics yield accumulation
