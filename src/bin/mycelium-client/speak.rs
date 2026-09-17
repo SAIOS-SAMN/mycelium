@@ -277,7 +277,7 @@ pub(crate) fn speak_owed(entity: &mut Entity, tag: &str) {
     let spoken = entity.speak_owed();
     if let [(addr, code), ..] = spoken.as_slice() {
         eprintln!(
-            "[{tag}] owed citations taught: {} from {:02x}{:02x}… code {code}, {} still owed",
+            "[{tag}] owed citers spoken again: {} (first {:02x}{:02x}… code {code}), {} still owed",
             spoken.len(),
             addr[0],
             addr[1],

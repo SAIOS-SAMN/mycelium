@@ -33,7 +33,11 @@ pub(crate) fn read_speech_reply(codes: &mut [u8], got: &[u8]) -> Vec<usize> {
         };
         gi += 1;
         *slot = c;
-        if c != dialogue::SPEECH_REFUSED {
+        // AN ADMISSION IS A VERDICT: stood or ratified. A refusal is not an
+        // act, and a wait (`SPEECH_DIALECT`, "stood there, unanswered here,
+        // spoken again later") admitted nothing either — filed as taught,
+        // the waiting sentence would never be spoken again (50.9).
+        if matches!(c, dialogue::SPEECH_STOOD | dialogue::SPEECH_RATIFIED) {
             admitted.push(i);
         }
     }
@@ -85,6 +89,8 @@ impl Entity {
         if let Some(at) = vertex_stratum(word) {
             self.taught_at.nested_insert(at, &addr, ());
         }
+        // An admitted citer is owed to no court any more.
+        self.owed_tries.remove(addr.as_bytes());
         self.taught_up.insert(addr, word.clone());
     }
 
@@ -387,28 +393,7 @@ impl Entity {
                 // citer (chapter 6's depth order). The mind HOLDS it,
                 // because it derived through it.
                 Some(dialogue::Adjudication::Awaiting { form }) => {
-                    match self.epigenome.working_word(form.as_bytes()).map(|h| h.element().clone()) {
-                        Some(cited) => {
-                            eprintln!(
-                                "  awaiting {:02x}{:02x}…: the court has not ruled {:02x}{:02x}…, teaching it first",
-                                addr[0], addr[1], form[0], form[1]
-                            );
-                            self.owed.push(crate::client::sdk::Owed {
-                                form: cited,
-                                citer: sentences[i].clone(),
-                                train: train.to_vec(),
-                                task: task.to_vec(),
-                            });
-                        }
-                        // A citation this mind cannot resolve on its own
-                        // language: it cited what it does not hold, which
-                        // is a fault in the utterance and not in the
-                        // court. Named, and nothing is queued (rule 11).
-                        None => eprintln!(
-                            "  awaiting {:02x}{:02x}…: cited {:02x}{:02x}… is not held here either",
-                            addr[0], addr[1], form[0], form[1]
-                        ),
-                    }
+                    self.owe_citation(&sentences[i], form, train, task);
                 }
                 Some(a) => {
                     let (r0, r1) = match a.receipt() {

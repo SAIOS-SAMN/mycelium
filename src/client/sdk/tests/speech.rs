@@ -131,18 +131,21 @@ fn a_code_the_hypha_did_not_send_is_not_an_outcome() {
         "the two it said nothing about stand here and are unanswered there"
     );
 
-    // A reply that answers about all of them admits all that were not
-    // refused, and a refusal is not an act.
-    let mut codes = vec![0xff, 0xff, 0xff];
+    // A reply that answers about all of them admits the verdicts: a
+    // refusal is not an act, and a wait ("spoken again later") is not an
+    // admission either — filed as taught, the waiting sentence would never
+    // be spoken again (50.9).
+    let mut codes = vec![0xff, 0xff, 0xff, 0xff];
     let admitted = read_speech_reply(
         &mut codes,
-        &[dialogue::SPEECH_STOOD, dialogue::SPEECH_REFUSED, dialogue::SPEECH_DIALECT],
+        &[dialogue::SPEECH_STOOD, dialogue::SPEECH_REFUSED, dialogue::SPEECH_DIALECT, dialogue::SPEECH_RATIFIED],
     );
-    assert_eq!(admitted, vec![0, 2], "the refused sentence moved nothing");
+    assert_eq!(admitted, vec![0, 3], "the refused sentence moved nothing and the waiting one is not admitted");
     assert_eq!(codes, vec![
         dialogue::SPEECH_STOOD,
         dialogue::SPEECH_REFUSED,
-        dialogue::SPEECH_DIALECT
+        dialogue::SPEECH_DIALECT,
+        dialogue::SPEECH_RATIFIED
     ]);
 
     // Slots already decided before the wire — a sentence this mind had

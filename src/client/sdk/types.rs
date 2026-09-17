@@ -475,6 +475,11 @@ pub struct Entity {
     /// court what it was speaking from, in the order a cited form must
     /// precede its citer.
     pub(crate) owed: Vec<Owed>,
+    /// HOW MANY COURTS A WAITING CITER HAS BEEN OWED TO, by its address:
+    /// an owed frame goes to the courts in turn, so a citer is owed at
+    /// most once per court this mind knows and then waits for the family
+    /// to come round again. Cleared when the citer is admitted or sealed.
+    pub(crate) owed_tries: crate::network::nerve::Keyed<usize>,
 }
 
 /// A cited form owed to a court, with the citer that waits on it and the

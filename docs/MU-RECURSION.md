@@ -7953,7 +7953,17 @@ that a court which never held the refused tape can still verify that the
 demand stands on that chart (the L8 landing; a coordinate the ruling's
 grammar left implicit). The receipt is the court's own replay receipt
 (45.1, 47.1). The door's deferral (23.8) is the act's deferral frame,
-never an adjudication: nothing was heard.
+never an adjudication: nothing was heard. A wait is not an admission
+either (ruled 2026-09-17, night, R5): the citer is not filed as taught
+and is spoken again — owed with its cited form to the courts in turn, at
+most once per court this mind knows, and heard where the citation is
+ruled; a citation this mind sealed is owed to no court; and a refused
+sentence leaves the dialect with its refusal (24.2: the dialect is what
+stood), so no form glues it and no sentence cites it again. Before this
+ruling a wait filed the citer as taught and the owed frame carried
+nothing past the taught gate: the recut's first 2½ hours wrote 1 907
+waits on the voices, none re-heard, 996 of them citing an address the
+voice had sealed.
 
 **The six certified contraction moves.** On `Refused { kind, at }` the
 voice executes a shrinking move `C : S → S'` on the held form in its
@@ -8066,7 +8076,10 @@ beside `PivotCertificate`; tests: `a_refusal_contracts_the_held_form_and_seals_t
 `the_court_verifies_a_contraction_before_it_replays_the_sentence`,
 `two_courts_of_distinct_identity_reach_one_standing_through_the_codec`,
 `a_still_orbit_contracts_its_contact_word_to_a_demand`,
-`a_face_that_does_not_rederive_is_dropped_by_its_contraction`.
+`a_face_that_does_not_rederive_is_dropped_by_its_contraction`,
+`a_refused_sentence_leaves_the_dialect`,
+`a_citation_is_owed_once_per_court_and_a_sealed_one_to_none`,
+`a_code_the_hypha_did_not_send_is_not_an_outcome` (a wait admits nothing).
 
 # Part XI — The frame axis
 

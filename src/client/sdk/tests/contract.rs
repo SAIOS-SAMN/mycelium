@@ -121,6 +121,72 @@ fn a_sealed_tape_is_refused_by_the_mind_before_the_wire() {
     assert_eq!(entity.dialect_len(), 0, "a sealed sentence does not stand");
 }
 
+/// 24.2, 50.9 — A REFUSED SENTENCE LEAVES THE DIALECT with its refusal: it
+/// stood there before it was uttered and did not stand at the court, so
+/// nothing glues it and nothing cites it again.
+#[test]
+fn a_refused_sentence_leaves_the_dialect() {
+    let (family, e) = two_bars();
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("refused-leaves"));
+    entity.epigenome.stand_dialect_at(e.clone(), 1, 1);
+    assert_eq!(entity.dialect_len(), 1, "the sentence stood in the dialect before the utterance");
+    let _ = entity.receive_adjudication(
+        &e,
+        RefusalKind::MalformedComplex,
+        At::Tape(e.address()),
+        [9; 32],
+        &family,
+        &[3; 32],
+    );
+    assert!(entity.sealed_at(e.address().as_bytes()).is_some(), "the refused address is sealed");
+    assert_eq!(entity.dialect_len(), 0, "and the refused sentence no longer stands");
+}
+
+/// 21 step 3, 50.9 — A CITATION IS OWED ONCE PER COURT, AND A SEALED ONE TO
+/// NONE. A court's wait queues the cited form before the citer; the same
+/// citer is owed again for each court this mind knows and then waits for
+/// its family; a citation this mind sealed is owed to no court; and a
+/// citer the court admits is owed afresh next time.
+#[test]
+fn a_citation_is_owed_once_per_court_and_a_sealed_one_to_none() {
+    let (family, cited) = two_bars();
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("owing"));
+    entity.epigenome.stand_dialect_at(cited.clone(), 1, 1);
+    let citer = super::common::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
+    let courts = entity.session.peers().len();
+    assert!(courts >= 1, "the mind knows a court: {courts}");
+    for n in 0..courts {
+        assert!(
+            entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]),
+            "owed to court {n}"
+        );
+    }
+    assert_eq!(entity.owed_pending(), courts, "one owed frame per court");
+    assert!(
+        !entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]),
+        "owed to every court once, the citer waits for its family"
+    );
+    entity.owed.clear();
+    // Admitted at a court, the citer starts afresh.
+    entity.file_taught(&citer);
+    assert!(entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]), "owed again after an admission");
+    entity.owed.clear();
+    // A citation this mind sealed is owed to no court.
+    let _ = entity.receive_adjudication(
+        &cited,
+        RefusalKind::MalformedComplex,
+        At::Tape(cited.address()),
+        [9; 32],
+        &family,
+        &[3; 32],
+    );
+    assert!(
+        !entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]),
+        "a sealed citation is owed to no court"
+    );
+    assert_eq!(entity.owed_pending(), 0);
+}
+
 /// The contraction certificate is indexed by the minted sentence's address,
 /// so `certificate_for` reads it directly when the contracted sentence is
 /// uttered.

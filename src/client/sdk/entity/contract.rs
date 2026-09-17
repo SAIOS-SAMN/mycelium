@@ -54,6 +54,12 @@ impl Entity {
             addr.as_bytes(),
         );
         self.sealed.insert(&addr, k);
+        // 24.2: the dialect is what this mind spoke THAT STOOD. The refused
+        // sentence stood there before it was uttered and did not stand at
+        // the court; it leaves, so no form glues it and no sentence cites
+        // it again — a citer of a sealed address waits at every court.
+        self.epigenome.drop_dialect(addr.as_bytes());
+        self.owed_tries.remove(addr.as_bytes());
         let Some(mut form) = crate::transducer::sentence::from_element_form(spoken) else {
             return self.quiescent(spoken, train);
         };
@@ -179,6 +185,17 @@ impl Entity {
                 continue;
             }
             let citer = o.citer.address();
+            // A cited form this mind sealed cannot be taught to any court:
+            // the frame would refuse it here and carry the citer alone.
+            let cited = o.form.address();
+            if let Some(k) = self.sealed.get(cited.as_bytes()).copied() {
+                eprintln!(
+                    "  owed {}: cited {} was refused at K {k}; owed to no court",
+                    hx(citer.as_bytes()),
+                    hx(cited.as_bytes())
+                );
+                continue;
+            }
             let both = [o.form.clone(), o.citer.clone()];
             match self.speak_with(&both, &o.train, &o.task) {
                 Ok(codes) => {
@@ -196,6 +213,67 @@ impl Entity {
     /// How many cited forms wait to be taught to a court.
     pub fn owed_pending(&self) -> usize {
         self.owed.len()
+    }
+
+    /// A COURT ANSWERED `Awaiting` (21 step 3, 50.9): it has not ruled the
+    /// form the citer cites. The mind owes that court the cited form before
+    /// the citer, and queues both — unless the cited address is one this
+    /// mind sealed, which no court will rule; unless the mind does not hold
+    /// the cited form, which is a fault of the utterance; or unless the
+    /// citer has already been owed to every court this mind knows, since
+    /// the owed frame goes to the courts in turn and a citer no court can
+    /// stand waits for its family to come round again. Whether it queued.
+    pub(crate) fn owe_citation(
+        &mut self,
+        citer: &Element,
+        form: &crate::transducer::address::Address,
+        train: &crate::transducer::family::Family,
+        task: &[u8],
+    ) -> bool {
+        let addr = citer.address();
+        if let Some(k) = self.sealed.get(form.as_bytes()).copied() {
+            eprintln!(
+                "  awaiting {}: cited {} was refused at K {k}; owed to no court",
+                hx(addr.as_bytes()),
+                hx(form.as_bytes())
+            );
+            return false;
+        }
+        let Some(cited) = self.epigenome.working_word(form.as_bytes()).map(|h| h.element().clone()) else {
+            eprintln!(
+                "  awaiting {}: cited {} is not held here either",
+                hx(addr.as_bytes()),
+                hx(form.as_bytes())
+            );
+            return false;
+        };
+        let courts = self.session.peers().len();
+        let tried = match self.owed_tries.get(addr.as_bytes()) {
+            Some(n) => *n,
+            None => 0,
+        };
+        if tried >= courts {
+            eprintln!(
+                "  awaiting {}: owed to {tried} courts and none rules {}; waits for its family",
+                hx(addr.as_bytes()),
+                hx(form.as_bytes())
+            );
+            self.owed_tries.remove(addr.as_bytes());
+            return false;
+        }
+        self.owed_tries.insert(addr.as_bytes(), tried + 1);
+        eprintln!(
+            "  awaiting {}: the court has not ruled {}, teaching it first",
+            hx(addr.as_bytes()),
+            hx(form.as_bytes())
+        );
+        self.owed.push(crate::client::sdk::Owed {
+            form: cited,
+            citer: citer.clone(),
+            train: train.to_vec(),
+            task: task.to_vec(),
+        });
+        true
     }
 
     /// The certificate a sentence cites: the contraction that produced the
