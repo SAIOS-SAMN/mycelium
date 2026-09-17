@@ -338,8 +338,30 @@ impl Form {
                         chord: idx,
                         order,
                     });
+                    // §8.1, measurement only: what the loop's EDGES read
+                    // (50.3) on a loop the gauge closed on the word. The
+                    // gauge conjugates face words and copies the edges, so
+                    // a non-flat edge here is curvature the word never held.
+                    let (mut flat, mut finite, mut infinite) = (0usize, 0usize, 0usize);
+                    let mut classes = String::new();
+                    if let Some(hs) = self.edge_holonomies(lp) {
+                        for (_, h) in hs.scoped() {
+                            if h.word.is_identity() {
+                                flat += 1;
+                                continue;
+                            }
+                            match h.word.order() {
+                                Order::Finite(_) => finite += 1,
+                                Order::Infinite => infinite += 1,
+                            }
+                            if let Some(k) = h.word.rotor().class_key() {
+                                use std::fmt::Write as _;
+                                let _ = write!(classes, " {:02x}{:02x}…", k[0], k[1]);
+                            }
+                        }
+                    }
                     eprintln!(
-                        "  pivot {:02x}{:02x}… loop {idx} closed by the tree gauge",
+                        "  pivot {:02x}{:02x}… loop {idx} closed by the tree gauge, edges flat {flat} finite {finite} infinite {infinite}{classes}",
                         idea[0], idea[1]
                     );
                 }
@@ -719,15 +741,11 @@ impl Form {
     /// crystal holds. `held` is the horizon's word: the mesh holds this
     /// class already (A19), so the mind neither demands it nor opens an
     /// axis on it; it is still discharged by a held form when one arrives.
-    /// `published` is what this form had FILED BEFORE THIS STROKE BEGAN, and
-    /// it is a parameter rather than a read of `self.torsion` because those
-    /// are two different facts. `file_loop` files by CLASS, so two loops of
-    /// one class are published by whichever of them the drive reaches first
-    /// — and the second would then read its own stroke's filing as an
-    /// unanswered demand and widen on it, microseconds after it was made.
-    /// Measured: `two_loops_of_one_class_are_both_filed_or_discharged` filed
-    /// one and widened the other. A demand that nobody has had a stroke to
-    /// answer is not an unanswered demand.
+    /// `published` is what this form had FILED BEFORE THIS STROKE BEGAN — a
+    /// parameter and not a read of `self.torsion`, because `file_loop`
+    /// files by class and a second loop of one class would otherwise read
+    /// its own stroke's filing as an unanswered demand and widen on it. A
+    /// demand nobody has had a stroke to answer is not an unanswered demand.
     pub(crate) fn candidates_for(
         &self,
         idx: usize,
@@ -866,95 +884,21 @@ impl Form {
                 }
             }
         }
-        // THE OPENING AXIS (12.6, 16.16 step 3, 3.7; I6). A residual
-        // measures how narrow the cover was: a loop whose class has a free
-        // part, which the working atlas holds no word or form on and the
-        // mesh does not hold, opens a chart axis seeded by its own holonomy.
-        // This is read off the fibre — it is empty — and never off a
-        // trial's failure; a finite-order loop with no word files as
-        // torsion instead (step 6, A17). The class becomes a coordinate of
-        // the form, and the court re-derives the seed from the loop.
-        //
-        // `out.is_empty() &&` STOOD HERE and is deleted. It made the opening
-        // axis a last resort: the move that widens a cover was offered only
-        // where no other candidate had been offered at all, so a loop whose
-        // class has a free part — which is exactly the reading that says the
-        // cover is too narrow — kept that reading to itself whenever any
-        // word happened to be spellable on its chord. The condition is the
-        // FIBRE's, and the fibre is `kappa.free_part()`; whether some other
-        // candidate exists is a fact about the alphabet, not about the
-        // narrowness this move answers. 12.6 is explicit that the candidates
-        // are offered and nothing orders them, so a gate that suppresses one
-        // candidate because another exists is an ordering by construction.
-        //
-        // AND IT IS OFFERED ON AN IRREDUCIBLE RESIDUAL THAT HAS ALREADY
-        // BEEN PUBLISHED AND NOT ANSWERED, which is the second half of the
-        // same reading. `free_part()` is ONE way a cover can be too narrow
-        // — the class runs off the plane or carries a prime exponent — and
-        // it is not the only one. A class occupying a plane coordinate the
-        // basis holds no word on is just as far outside the span, and a
-        // pivot is a REDUCTION: it divides the residual by a generator.
-        // Where no generator reaches the coordinate there is nothing to
-        // divide by, every contraction candidate is terminal by algebra,
-        // and asking again next stroke asks the same question of the same
-        // basis and gets the same answer forever. That is the trap, and the
-        // move out of it is the reduction's inverse: stop dividing and
-        // widen the cover, so the class is re-read as a coordinate of the
-        // form rather than a defect in it.
-        //
-        // MEASURED, 373 loops at 769a17c: every loop with no candidate at
-        // all occupies `[Unit(0)]`, 60 of 60, every crystal read answered 0,
-        // 123 of 123, and not one had a free part — so this move was
-        // offered zero times and every one of them filed as torsion, every
-        // stroke, and was asked again.
-        //
-        // THE ORDER IS REDUCE, PUBLISH, THEN WIDEN, and the third step
-        // waits on the second. Offered on irreducibility ALONE this
-        // pre-empts 12.6 step 6 entirely: the discharging expansion wins
-        // `select_discharge` and the loop never reaches the filing arm, so
-        // a class the mind cannot divide is buried under a wider cover
-        // instead of being published for a mind that CAN divide it to
-        // answer. Measured directly — six fixtures that file a finite
-        // holonomy against an empty crystal stopped filing, and the whole
-        // filed-torsion path (cauterize, the relator, the court's cocycles)
-        // went dead. Filing is not a failure to pivot; it is the demand,
-        // and widening before making it is answering a question nobody was
-        // asked.
-        //
-        // So `asked` is read off `published` — the state of the carrier
-        // `file_loop` writes, as it stood BEFORE this stroke, keyed by the
-        // member paths' own classes through `holonomy_words_on`, which is
-        // the one reader the filing uses (law 12). A class filed by an
-        // earlier stroke has been put to the mesh and nothing has come back;
-        // THAT is the residual with no move left, and it is the one this
-        // widens.
-        //
-        // An infinite-order residual needs none of this: it carries a prime
-        // exponent or runs off the plane, so `free_part()` already holds and
-        // the expansion is offered on the first stroke, beside the demand.
-        //
-        // THE RANK AUDIT ALREADY ADMITS THE MOVE. `loop_row_on` reads an
-        // opened axis as `LoopRow::Opened`, so a torsion loop that opens
-        // moves `torsion −1, axes +1` and `Rank::moved` names it
-        // `Discharged { from: Torsion }`. This needs no widening of that
-        // gate: `[0, 0, 0, +1]` is a DIFFERENT move — an axis opened by a
-        // loop that contributed no coordinate — and nothing here makes one.
-        //
-        // THE GATE AND THE SEED ARE THE EDGE COMPOSITE'S, NOT THE WORD'S.
-        // `!lp.holonomy.is_identity()` stood here, and `lp.holonomy` is the
-        // word: a face's word is the coboundary `w_j ∘ w_i⁻¹` of its two
-        // vertices' words, and `∏ (w_j ∘ w_i⁻¹) ≡ 1` around any cycle by
-        // algebra. So the gate asked whether an exact Čech coboundary was
-        // non-trivial, which it never is, and the widening was shut off on
-        // every loop over coboundary faces — every loop this engine sees.
-        // Measured at f3a76ec: `opens 1` on 133 loops, the single one whose
-        // word happened not to cancel, against 92 torsion classes filed off
-        // the edge composite in the same five minutes. The curvature and the
-        // gate were reading different carriers.
-        //
-        // `loop_holonomy_on` is the composite, and the seed comes from the
-        // same object: seeded from the word, the axis was seeded with the
-        // identity versor and stood for nothing the loop turns by.
+        // THE OPENING AXIS (12.6, 16.16 step 3, 3.7; I6): a loop whose
+        // class has a free part, or whose class was published and not
+        // answered while the basis reaches none of its coordinates, opens a
+        // chart axis seeded by its own holonomy, and the class becomes a
+        // coordinate of the form the court re-derives from the loop. The
+        // condition is the fibre's, `kappa.free_part()`, never another
+        // candidate's absence — 12.6 offers the candidates and orders
+        // nothing. The order is reduce, publish, then widen: `asked` reads
+        // `published`, the filings as they stood before this stroke, keyed
+        // by the member paths' own classes (law 12); a finite-order loop no
+        // word reaches files first (step 6, A17) and widens once the mesh
+        // has not answered. The gate and the seed are the edge composite's
+        // (`loop_holonomy_on`), never the word's, which telescopes on any
+        // coboundary cycle. The rank audit admits the move as it stands:
+        // `LoopRow::Opened` moves `torsion −1, axes +1`.
         let asked = |h: &Word| {
             h.rotor()
                 .class_key()
@@ -963,6 +907,20 @@ impl Form {
         if let Some(h) = loop_holonomy_on(&self.faces, &self.vertices, lp) {
             if !held && !h.is_identity() && (kappa.free_part() || (!reached && asked(&h))) {
                 if let Some(seed) = element::versor_of_word(&h) {
+                    // §8.1, measurement only: the seed is the holonomy's
+                    // sensor action, one plane by construction (51.2), while
+                    // the axis is keyed by the whole rotor's class. Said
+                    // where the rotor turns beyond that plane.
+                    let off = h
+                        .rotor()
+                        .off_plane_blades((
+                            crate::transducer::alphabet::PLANE_ROW,
+                            crate::transducer::alphabet::PLANE_COL,
+                        ))
+                        .len();
+                    if off > 0 {
+                        eprintln!("  pivot open seed loop {idx} off-plane blades {off}");
+                    }
                     out.push(Candidate {
                         axis: Axis::Open,
                         by: PivotBy::OpenAxis {

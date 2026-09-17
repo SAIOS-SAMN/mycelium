@@ -766,6 +766,7 @@ impl Form {
                 at.insert(crate::transducer::sentence::face_pair_key(ci, cj), p);
             }
         }
+        note_unplaced(i, j, word, pairs.len(), at.len());
         Some(FormFace { i, j, word: word.clone(), at, pairs: None })
     }
 
@@ -809,18 +810,21 @@ impl Form {
                         at.insert(crate::transducer::sentence::face_pair_key(ci, cj), p);
                     }
                 }
+                note_unplaced(i, j, &word, pairs.len(), at.len());
                 Some(FormFace { i, j, word, at, pairs: None })
             }
             None => {
                 let mut f = FormFace::new(i, j, word);
-                if let (Some(ci), Some(cj)) = (
+                let ends = (
                     self.vertices.get(i as usize).and_then(|v| v.face_chart()),
                     self.vertices.get(j as usize).and_then(|v| v.face_chart()),
-                ) {
-                    if let Some(p) = self.face_place_by(i, &ci, j, &cj, &f.word, edge) {
-                        f.at.insert(crate::transducer::sentence::face_pair_key(&ci, &cj), p);
+                );
+                if let (Some(ci), Some(cj)) = &ends {
+                    if let Some(p) = self.face_place_by(i, ci, j, cj, &f.word, edge) {
+                        f.at.insert(crate::transducer::sentence::face_pair_key(ci, cj), p);
                     }
                 }
+                note_unplaced(i, j, &f.word, usize::from(matches!(ends, (Some(_), Some(_)))), f.at.len());
                 Some(f)
             }
         }
@@ -956,6 +960,17 @@ impl Form {
             }
         }
         true
+    }
+}
+
+/// §8.1, measurement only: a face whose word has no sensor action places
+/// no member pair — `face_place_by` derives each pair's carriage through
+/// `versor_of_word`, one plane by construction (51.2) — and every loop
+/// through it has no member path and no class. Said once per face, against
+/// the pairs the incidence named.
+fn note_unplaced(i: u16, j: u16, word: &Word, named: usize, placed: usize) {
+    if named > 0 && placed == 0 && element::versor_of_word(word).is_none() {
+        eprintln!("  face {i}-{j} placed no member pair: the word has no sensor action");
     }
 }
 

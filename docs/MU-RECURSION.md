@@ -5097,7 +5097,9 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] promoted {addr} dialect → genome uses {n}
 [{tag}] pivot {idea} loop {i} axis {label} discharged {before}→{after}
 [{tag}] pivot {idea} loop {i} axis {label} no discharge
-[{tag}] pivot {idea} loop {i} closed by the tree gauge
+[{tag}] pivot {idea} loop {i} closed by the tree gauge, edges flat {a} finite {b} infinite {c} {class}…
+[{tag}] pivot open seed loop {i} off-plane blades {n}
+[{tag}] face {i}-{j} placed no member pair: the word has no sensor action
 [{tag}] pivot {idea} held, tree gauge cannot be applied
 [{tag}] pivot {idea} held, rank overflow
 [{tag}] vortex {idea} loop {i} {n} candidates held
@@ -5105,7 +5107,7 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] vortex {idea} loop {i} collapsed by {perception|glue|ruling} to axis {label}
 [{tag}] torsion filed {idea} (σ,ℓ)
 [{tag}] torsion open {idea} chord {i}
-  demand spoken {idea} order ∞ charts {n}
+[{tag}] demand spoken {idea} order ∞ charts {n}
 [{tag}] horizon {n} seeded from {hypha} chart {inv}
 [{tag}] form spoken: {addr} … torsion {n}
 [{tag}] receipt K {k} h {h} parents {n}
