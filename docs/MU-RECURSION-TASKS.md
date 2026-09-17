@@ -883,6 +883,33 @@ a number nobody measures, and because Y2, Y3 and Y4 are each accepted or
 refused on it. Nothing in the blocking set: the instrument runs in process
 at its own stroke, so neither the fleet, the recut, X8 nor L27 gates it.
 
+## Stage 17 — dimensional capacity renewal & isoclinic optimization (ruled 2026-09-17)
+
+The fleet soak of Epoch 61 to Epoch 62 proved that opening the conformal
+rotator vent and wiring continuous support correspondence without tape
+mutations produced a +71.7% increase in learning throughput (from 1.80 to
+3.01 rules/sec) with zero restarts and zero ledger refusals.
+
+However, full dimensional capacity is throttled by remaining planar
+flattening bottlenecks and serial peeling scans:
+1. Ingestion flattens temporal/depth coordinates to k = 0, suppressing
+   off-diagonal 3D inertia moments (I_xz = 0, I_yz = 0).
+2. Sensor actions drop the dual commuting blade e_23, projecting 4D
+   rotations onto a single 2D plane.
+3. Off-plane transverse bivector content triggers refusals rather than
+   being routed through exact rational conjugation into the Cartan subalgebra.
+4. Peeling over six sequential planes introduces O(6 × K) search
+   depth and false shear remainders instead of factoring over the three
+   Hodge-dual commuting isoclinic pairs.
+
+| id | task | rule / chapter | files | status | DoD |
+|---|---|---|---|---|---|
+| R92a | **Vent A: 3D / temporal inertia lifting.** `perceive.rs::body_of_3d` and multi-frame ingestion: lift cells `(r, c, k, h)` to volumetric blades with full 6-moment inertia `[Ixx, Iyy, Ixy, Izz, Ixz, Iyz] ∈ ℚ⁶` and non-zero `Ixz, Iyz`; no artificial `k=0` flattening. | Law VIII, 20, 24.4 | `transducer/family/perceive.rs`, `blade/body.rs` | **open** | 3D centroids and off-diagonal moments populated in production; tests assert non-zero 3D moments on multi-frame/layered percepts |
+| R92b | **Vent B: Conformal dual-plane bivector generation.** `cga::rotator_on_blade` and `element::letters::sensor_action_of`: extend versor synthesis to carry dual commuting bivectors `(e01, e23)`, un-flattening conformal kinematics. | 50.4, 1.1 | `transducer/cga.rs`, `transducer/element/letters.rs` | **open** | Versor synthesis produces double rotations; both planes preserved without dropping transverse angle |
+| R92c | **Vent C: Transverse energy routing via conjugation.** Connect `off_plane_blades` with `solve_conjugator_rotor`: solve `γ ∈ Spin(4,0)(ℚ)` by exact Gaussian elimination over ℚ (`γ·a = λ·b·γ`) to rotate transverse bivectors into the Cartan subalgebra instead of emitting `REFUSE_OFF_PLANE`. | 15.3, 50.2 | `transducer/alphabet/rotor.rs`, `transducer/alphabet/bundle.rs`, `transducer/family/derivation.rs` | **open** | Off-plane bivector content conjugated and derived; zero unhandled `REFUSE_OFF_PLANE` on valid rotors |
+| R92d | **Isoclinic double-rotation peel optimization.** `derivation.rs::peel_versor_with_target`: factor rotors over the three commuting Hodge pairs of `BLOCK_ORDER` (`Π_01 × Π_23`, `Π_02 × Π_13`, `Π_03 × Π_12`). Exploits `[B_i, ⋆B_i] = 0` for commutator-free double Gaussian peels, reducing peeling depth from 6 stages to ≤ 2 commuting blocks. | 50.4, A22 | `transducer/family/derivation.rs`, `transducer/alphabet/factor.rs` | **open** | Peeling closes on double-rotation rotors; ~66% reduction in peel trial steps; zero tape format change |
+| R92e | **Orphan reconnection & continuous-boundary bridge.** `blade::sandwiched` pushes forward 6-moment inertia tensor under rotor conjugation (`R I Rᵀ`); wire `cga::boundary_dual` (`∂σ = σ ⌟ I⁻¹`) to bridge continuous volumetric blades to cellular coboundary 2-chains. | 1.1, 16.1 | `transducer/blade/body.rs`, `transducer/cga.rs` | **open** | Sandwiched body updates inertia; boundary dual computes coboundary; clean clippy & all tests pass |
+
 ## Owed ledger (opened by the auditor, 2026-09-11)
 
 What a row marked landed or done still lacks against its own claim, in

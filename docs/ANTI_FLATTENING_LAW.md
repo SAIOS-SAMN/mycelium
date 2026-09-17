@@ -18,6 +18,12 @@ excluded from the reasoning path.
 4. An operation that collapses manifold curvature into a flat 0-dimensional
    scalar or hash comparison, bypassing geometric deduction, is a structural
    violation and is refused.
+5. Projections that artificially flatten higher-dimensional kinematics, bivectors,
+   or inertia tensors into flat 2D planes (e.g. collapsing Cl(4,0) bivectors
+   Λ²(ℝ⁴) to a single E₁ ∧ E₂ blade, forcing transverse temporal coordinates
+   k = 0, or dropping Hodge-dual commuting planes) restrict dimensional capacity
+   and are refused. Kinematics must preserve full 4D degrees of freedom via
+   isoclinic dual-plane pairs (Π_i × ⋆Π_i) and exact continuous support invariants.
 
 ## Rationale
 

@@ -72,3 +72,28 @@ is seeded onto a fresh fibre of the first (the convergence engine's
 `expand_m`, seeded from the relation, never zero) and spoken up. The court
 accepts an opened axis only when its fibres are group elements whose
 planar block spells.
+
+## Commuting isoclinic pairs and cycle optimization
+
+In `Cl(4,0)`, the six pair planes partition under the Hodge star operator
+into three canonical commuting dual pairs (`BLOCK_ORDER`):
+
+1. `Π_01 × Π_23 = (e0 ∧ e1, e2 ∧ e3)`
+2. `Π_02 × Π_13 = (e0 ∧ e2, e1 ∧ e3)`
+3. `Π_03 × Π_12 = (e0 ∧ e3, e1 ∧ e2)`
+
+Complementary planes commute mutually (`[B_i, ⋆B_i] = 0`), so double rotations
+factor exactly without Baker–Campbell–Hausdorff cross-terms:
+`exp(½ θ₁ B_i + ½ θ₂ ⋆B_i) = exp(½ θ₁ B_i) · exp(½ θ₂ ⋆B_i)`.
+Peeling over commuting pair blocks reduces the peeling search depth from six
+sequential stages to at most two commuting block evaluations, collapsing derivation
+cycle complexity by ~66% and eliminating pseudo-shear remainder edges.
+
+## Transverse energy routing
+
+A rotor carrying non-zero energy on off-plane bivectors (`off_plane_blades`)
+does not immediately fail to a refusal. Instead, exact Gaussian elimination over
+ℚ (`solve_conjugator_rotor`) computes the conjugator `γ ∈ Spin(4,0)(ℚ)` such that
+`γ · a = λ · b · γ`, rotating the transverse bivector into the principal Cartan
+subalgebra and permitting closed derivation without tape mutations.
+
