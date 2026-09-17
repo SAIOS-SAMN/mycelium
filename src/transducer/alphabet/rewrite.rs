@@ -18,7 +18,7 @@
 //! and cost three letters against one. A presentation that reduces a word
 //! to its geodesic tells the refinement which of the two the language should
 //! hold, and lets a word be recognised as redundant because it REWRITES to
-//! something held — not because its cells happen to tile.
+//! something held — not because its laminae happen to tile.
 //!
 //! THE REDUCTION ORDER IS SHORTLEX and it is what makes this terminate. A
 //! rule rewrites `lhs → rhs` only where `rhs` is strictly smaller in

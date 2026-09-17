@@ -73,7 +73,7 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
         .flat_map(|t| (0..4).map(|code| Sel::ArgExt(Box::new(t.clone()), code)))
         .collect();
     terms.extend(arg_bases);
-    // 1-cell transports between the footprint's hues and the others.
+    // Site transports between the footprint's hues and the others.
     for &h in &hues {
         for &o in &others {
             if o != h {
@@ -88,12 +88,12 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
     for t in &terms {
         let sup = t.eval(scene);
         if fp.iter().any(|p| has(&sup, *p)) {
-            let cells: Vec<(i64, i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0, 0)).collect();
+            let laminae: Vec<(i64, i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0, 0)).collect();
             // `Sel::Comp` names a component in ONE BYTE, so a support with
             // more components than that has terms this algebra cannot
             // spell: they are not derived rather than folded onto index
             // 255, which would name a different component.
-            let Ok(n_comps) = u8::try_from(components(&cells).len()) else {
+            let Ok(n_comps) = u8::try_from(components(&laminae).len()) else {
                 continue;
             };
             for k in 0..n_comps {
@@ -108,7 +108,7 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
             for axis in 0..4 {
                 grown.push(Sel::Ext(Box::new(t.clone()), axis));
             }
-            // The star and the HALO (star ∖ support): "the cells around".
+            // The star and the HALO (star ∖ support): "the sites around".
             grown.push(Sel::Star(Box::new(t.clone())));
             grown.push(Sel::Minus(
                 Box::new(Sel::Star(Box::new(t.clone()))),

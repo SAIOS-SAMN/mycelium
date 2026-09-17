@@ -217,10 +217,10 @@ pub(crate) fn scene_cands(grid: &Grid, scale: Option<((usize, usize), (usize, us
         let mut own = vec![parent.clone()];
         cands.insert(&parent, Cand { body: b.clone(), kind: whole, parent: parent.clone() });
         for shell in crate::transducer::peel::peel_body_scaled(&b.cells, scale) {
-            if shell.kind == whole || shell.cells.is_empty() || shell.cells == b.cells {
+            if shell.kind == whole || shell.laminae.is_empty() || shell.laminae == b.cells {
                 continue;
             }
-            let body = body_of(shell.cells);
+            let body = body_of(shell.laminae);
             let k = cand_key(shell.kind, &body);
             own.push(k.clone());
             cands.insert(k, Cand { body, kind: shell.kind, parent: parent.clone() });

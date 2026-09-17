@@ -8,7 +8,7 @@ use super::*;
 /// scanned among siblings); the members are the addresses whose chart
 /// ends here.
 ///
-/// X3: BOTH CARRIERS ARE ALREADY ONE CELL'S FIBER, and every walk below
+/// X3: BOTH CARRIERS ARE ALREADY ONE NODE'S FIBER, and every walk below
 /// reads them with `scoped`. A `Stratum` is reached by descending the
 /// chart's axes — `branches.get(&axis_key(a))`, one keyed read per axis —
 /// so `members` is the addresses at THIS chart and `branches` is this

@@ -314,8 +314,8 @@ pub fn on_sphere(p: &Mv, s: &Mv) -> bool {
 }
 
 /// THE BOUNDARY PROJECTION `∂σ = σ ⌟ I⁻¹` — the dual contraction against the
-/// pseudoscalar, the bridge from the volumetric body to its cellular
-/// boundary/2-chain (which then enters the Mayer–Vietoris / L2 coboundary
+/// pseudoscalar, the bridge from the volumetric body to its boundary
+/// 2-chain on the cube complex (which then enters the Mayer–Vietoris / L2 coboundary
 /// sequence for settlement). Here realized as the geometric product with the
 /// inverse pseudoscalar; the caller reads the grade it needs.
 pub fn boundary_dual(sigma: &Mv) -> Option<Mv> {

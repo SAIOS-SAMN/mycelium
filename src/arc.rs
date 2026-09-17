@@ -1,8 +1,9 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! Law 11 — THE SENSOR'S GRIDS: a task's grids read as input→output train
-//! pairs of A→B cell demands, and the measured frame of a pair. Hue 0 is
-//! not a cell; this arm presents the scene and does no cognition.
+//! pairs of A→B demands on painted sites, and the measured frame of a
+//! pair. Hue 0 is not a painted site; this arm presents the scene and does
+//! no cognition.
 
 use serde::Deserialize;
 
@@ -12,7 +13,7 @@ pub type Grid = Vec<Vec<u8>>;
 /// THE WIDTH OF A GRID. A grid is rectangular — every reader that takes
 /// one refuses a ragged one — so row zero is a COORDINATE of the grid and
 /// its length is the grid's width, not the length of whichever row arrived
-/// first (rule 15). A grid with no row has no cells and measures zero.
+/// first (rule 15). A grid with no row has no sites and measures zero.
 ///
 /// One carrier for it: the same `first().map_or(0, …)` was written out at
 /// seven sites, three of them with a different floor.
@@ -56,10 +57,11 @@ pub fn parse_task(json: &str) -> Option<Task> {
     })
 }
 
-/// A grid → cells, the PERCEPTUAL convention: background hue 0 is omitted (the eye
-/// sees only novelty), consistent with the coboundary germination's hue 0 = absent.
-/// The walk is the grid's own cells (a scene boundary), not a product of carriers.
-pub fn grid_to_cells(g: &Grid) -> Vec<(i64, i64, u8)> {
+/// A grid → its painted sites, the PERCEPTUAL convention: background hue 0
+/// is omitted (the eye sees only novelty), consistent with the coboundary
+/// germination's hue 0 = absent. The walk is the grid's own sites (a scene
+/// boundary), not a product of carriers.
+pub fn painted_of_grid(g: &Grid) -> Vec<(i64, i64, u8)> {
     let mut out = Vec::new();
     for (r, row) in g.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
@@ -71,11 +73,14 @@ pub fn grid_to_cells(g: &Grid) -> Vec<(i64, i64, u8)> {
     out
 }
 
+/// The retired spelling, bridging the modules not yet swept (V3).
+pub use painted_of_grid as grid_to_cells;
+
 /// The μ⃗ of one train pair: the coboundary's lane measure. T is not on the chain.
 /// None when the coboundary is unmeasured.
 pub fn pair_magnitude(a: &Grid, b: &Grid) -> Option<[u64; 4]> {
-    let ca = grid_to_cells(a);
-    let cb = grid_to_cells(b);
+    let ca = painted_of_grid(a);
+    let cb = painted_of_grid(b);
     crate::transducer::germinate::germinate(&ca, &cb)
         .map(|g| crate::transducer::element::measure_lanes(&g))
 }
@@ -113,7 +118,7 @@ pub fn family_cover(train: &[(Grid, Grid)]) -> Option<[u64; 4]> {
         cover_join(&mut cover, &mag)?;
         // H carries the pair's own coboundary extent, accumulated with the
         // rest: the same disjoint-scene rule as every other lane.
-        let chain = crate::transducer::germinate::germinate(&grid_to_cells(a), &grid_to_cells(b))?;
+        let chain = crate::transducer::germinate::germinate(&painted_of_grid(a), &painted_of_grid(b))?;
         cover[3] = cover[3].checked_add(chain.len() as u64)?;
     }
     any.then_some(cover)
@@ -123,10 +128,10 @@ pub fn family_cover(train: &[(Grid, Grid)]) -> Option<[u64; 4]> {
 //
 // A pair of complexes K_in (h_in × w_in) and K_out (h_out × w_out) is related
 // by the exact frame map ρ = (h_out/h_in, w_out/w_in) ∈ ℚ². The cross-frame
-// coboundary is supported on the codomain complex: every K_out cell reads the
-// input through ρ⁻¹ (the input cell containing the output cell's min corner —
-// the substrate's framing convention, the same min-corner quotient every chain
-// is centered by) and differs, or not, from the output. No common refinement
+// coboundary is supported on the codomain complex: every site of K_out reads
+// the input through ρ⁻¹ (the input site containing the output site's min
+// corner — the substrate's framing convention, the same min-corner quotient
+// every chain is centered by) and differs, or not, from the output. No common refinement
 // is materialized: the support is bounded by |K_out|, and ρ rides as the
 // word's frame fiber. Uniform for every ratio including (1,1), which is the
 // planar delta bit-for-bit. Banned surface: no branch anywhere on ratio
@@ -175,7 +180,7 @@ pub fn frame_ratio(f: &Frame) -> ((usize, usize), (usize, usize)) {
 
 /// WHAT REFINING A PAIR YIELDS.
 pub struct Refined {
-    /// The coboundary: the cells that changed, each with the hue it came
+    /// The coboundary: the sites that changed, each with the hue it came
     /// from and the hue it went to.
     pub delta: Vec<(i64, i64, u8, u8)>,
     /// The input pulled back onto the output complex — the scene π is
@@ -186,7 +191,7 @@ pub struct Refined {
 }
 
 /// THE CROSS-COMPLEX COBOUNDARY on the codomain: the input pulled back along
-/// ρ⁻¹ onto K_out, then the ordinary per-cell difference. Returns (chain on
+/// ρ⁻¹ onto K_out, then the ordinary per-site difference. Returns (chain on
 /// K_out, the pulled-back input — the scene π evaluates over, the measured
 /// frame). Total for all dims ≥ 1; equal frames yield exactly the planar
 /// delta. Support ≤ |K_out|.
@@ -224,11 +229,11 @@ mod tests {
     }
 
     #[test]
-    fn grid_to_cells_omits_background() {
-        // hue 0 cells are dropped; non-zero cells keep (row, col, hue).
-        let cells = grid_to_cells(&vec![vec![0, 1], vec![2, 0]]);
-        assert_eq!(cells, vec![(0, 1, 1), (1, 0, 2)], "only novelty (non-background)");
-        assert!(grid_to_cells(&vec![vec![0, 0], vec![0, 0]]).is_empty(), "all-background → no cells");
+    fn painted_of_grid_omits_background() {
+        // hue-0 sites are dropped; painted sites keep (row, col, hue).
+        let painted = painted_of_grid(&vec![vec![0, 1], vec![2, 0]]);
+        assert_eq!(painted, vec![(0, 1, 1), (1, 0, 2)], "only novelty (non-background)");
+        assert!(painted_of_grid(&vec![vec![0, 0], vec![0, 0]]).is_empty(), "all-background → no painted site");
     }
 
     /// 12.6: a bundle's pressure is the lane-wise SUM over its pairs, which
@@ -247,7 +252,7 @@ mod tests {
             assert!(cover[l] >= a[l].max(b[l]), "and therefore covers each pair");
         }
         let h = |p: &(Grid, Grid)| {
-            crate::transducer::germinate::germinate(&grid_to_cells(&p.0), &grid_to_cells(&p.1))
+            crate::transducer::germinate::germinate(&painted_of_grid(&p.0), &painted_of_grid(&p.1))
                 .map(|c| c.len() as u64)
                 .expect("measured")
         };

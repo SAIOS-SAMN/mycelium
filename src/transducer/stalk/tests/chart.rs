@@ -8,9 +8,9 @@ use crate::transducer::element::{self, identity_versor, Element};
 use crate::transducer::stalk::*;
 
 
-fn chain(cells: &[(i64, i64)]) -> element::CanonicalChain {
-    let raw: Vec<Cell> = cells.iter().map(|&(r, c)| (r, c, 0u8, 1u8)).collect();
-    element::canonical_chain(&raw).expect("one entry per position is A5's chain")
+fn chain(sites: &[(i64, i64)]) -> element::CanonicalChain {
+    let raw: Vec<Link> = sites.iter().map(|&(r, c)| (r, c, 0u8, 1u8)).collect();
+    element::canonical_chain(&raw).expect("one entry per site is A5's chain")
 }
 
 #[test]
@@ -77,7 +77,7 @@ fn the_chart_is_invariant_under_the_conformal_group() {
     assert_eq!(invariant(&moved), base, "an isometry image shares the chart");
     let mirrored = chain(&[(0, 1), (1, 1), (2, 1), (2, 0)]);
     assert_eq!(invariant(&mirrored), base, "a reflection shares the chart");
-    let big: Vec<Cell> = l
+    let big: Vec<Link> = l
         .iter()
         .flat_map(|&(r, c, b, a)| {
             [(2 * r, 2 * c), (2 * r, 2 * c + 1), (2 * r + 1, 2 * c), (2 * r + 1, 2 * c + 1)]
@@ -177,7 +177,7 @@ fn refine_splits_the_stratum_by_the_new_coordinate() {
     let a = from_canonical(&chain(&[(0, 0), (0, 1), (0, 2)]));
     let b = from_canonical(
         &element::canonical_chain(&[(0, 0, 2, 3), (0, 1, 2, 3), (0, 2, 2, 3)])
-            .expect("one entry per position is A5's chain"),
+            .expect("one entry per site is A5's chain"),
     );
     let mut stalks = Stalks::over_elements([&a, &b].into_iter());
     let inv = invariant_of(&a);

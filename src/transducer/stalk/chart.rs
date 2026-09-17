@@ -7,8 +7,8 @@
 
 use super::*;
 
-/// A chain cell: (row, col, hue before, hue after).
-pub(crate) type Cell = (i64, i64, u8, u8);
+/// A chain link: (row, col, hue before, hue after).
+pub(crate) type Link = (i64, i64, u8, u8);
 
 /// Standing of a word on the working atlas: a coordinate, never a gate.
 /// Ruled weights above Stood, Stood above Held.
@@ -111,14 +111,14 @@ impl Closure {
 
 /// Measure the moduli of a chain's support (hues are fibre coordinates over
 /// the base point, not part of the geometry class).
-pub fn invariant(chain: &[Cell]) -> Invariant {
-    let mut cells = element::positions(chain);
-    cells.sort_unstable();
-    cells.dedup();
-    if cells.is_empty() {
+pub fn invariant(chain: &[Link]) -> Invariant {
+    let mut sites = element::positions(chain);
+    sites.sort_unstable();
+    sites.dedup();
+    if sites.is_empty() {
         return Invariant(Vec::new());
     }
-    let shape = crate::transducer::blade::shape_of_section(&cells);
+    let shape = crate::transducer::blade::shape_of_section(&sites);
     Invariant(crate::transducer::blade::moduli(&shape.blade))
 }
 
@@ -257,7 +257,7 @@ pub fn congruent<'a>(
 pub fn congruent_shaped<'a>(
     stalks: &Stalks,
     shape_at: impl Fn(&[u8]) -> Option<&'a crate::transducer::blade::Shape>,
-    chain: &[Cell],
+    chain: &[Link],
 ) -> Option<(crate::transducer::address::Address, Versor)> {
     let shape = element::shape_of_chain(chain)?;
     let fibre = stalks.fiber(&invariant(chain));

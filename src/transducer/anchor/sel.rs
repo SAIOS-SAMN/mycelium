@@ -14,22 +14,22 @@ pub enum Sel {
     /// K_h — the support of hue `h`; 255 is the whole occupied support.
     Hue(u8),
     /// The k-th connected component of the term's support (canonical order:
-    /// by minimal cell) — connectivity read from 1-cells.
+    /// by least site) — connectivity read along edges.
     Comp(Box<Sel>, u8),
-    /// δ — the coboundary: cells of the support with a 1-cell neighbour
+    /// δ — the coboundary: sites of the support with an edge-neighbour
     /// outside it.
     Delta(Box<Sel>),
-    /// The star (1-cell dilation): every cell adjacent to the support,
+    /// The star (the edge dilation): every site adjacent to the support,
     /// support included.
     Star(Box<Sel>),
-    /// Extremal projection onto a substrate axis: cells achieving the
+    /// Extremal projection onto a substrate axis: sites achieving the
     /// extremum. axis 0..4 = min-row, max-row, min-col, max-col.
     Ext(Box<Sel>, u8),
     /// ∩ — algebraic intersection of supports.
     Inter(Box<Sel>, Box<Sel>),
     /// ∖ — set difference of supports.
     Minus(Box<Sel>, Box<Sel>),
-    /// Connected closure: the cells of the second support 1-cell-reachable
+    /// Connected closure: the sites of the second support edge-reachable
     /// from the first (seed ∩ within, grown through within) — pure Level-0
     /// connectivity, the operator that composes enclosure:
     /// enclosed(K) = K ∖ Flood(K ∩ δ(whole), K).
@@ -40,7 +40,7 @@ pub enum Sel {
     /// A tie selects NOTHING — no unique extremum, no selection (exactness,
     /// never a coin flip).
     ArgExt(Box<Sel>, u8),
-    /// 1-cell TRANSPORT intersection: a ∩ Shift_d(b) where d is the exact
+    /// SITE TRANSPORT intersection: a ∩ Shift_d(b) where d is the exact
     /// bbox-min corner difference extrema(a) − extrema(b) — the offset is
     /// DERIVED from the two supports at evaluation time, never a parameter.
     Transport(Box<Sel>, Box<Sel>),
@@ -61,7 +61,7 @@ pub(crate) fn neighbours((r, c): (i64, i64)) -> [(i64, i64); 4] {
 }
 
 impl Sel {
-    /// EVALUATE the term over a scene (the percept's occupied 0-cells) to its
+    /// EVALUATE the term over a scene (the percept's painted sites) to its
     /// support set — exact, deterministic, replayable on any scene.
     ///
     /// `Ext` IS an extremum on a substrate axis and `ArgExt` IS the
@@ -84,18 +84,18 @@ impl Sel {
             ),
             Sel::Comp(e, k) => {
                 let sup = e.eval(scene);
-                // The scene is one grid's: its cells stand in frame 0.
-                let cells: Vec<(i64, i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0, 0)).collect();
-                let mut comps: Vec<Vec<(i64, i64)>> = components(&cells)
+                // The scene is one grid's: its sites stand in frame 0.
+                let laminae: Vec<(i64, i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0, 0)).collect();
+                let mut comps: Vec<Vec<(i64, i64)>> = components(&laminae)
                     .into_iter()
                     .map(|c| sorted(c.into_iter().map(|(r, c, _, _)| (r, c)).collect()))
                     .collect();
-                // A component IS its least cell, in the coordinate order the
-                // support is already written in; a component with no cell
+                // A component IS its least site, in the coordinate order the
+                // support is already written in; a component with no site
                 // has no least one and sorts after those that do.
                 #[expect(
                     clippy::disallowed_methods,
-                    reason = "rule 4 — canonical key order: the component's least cell, the support's own coordinate"
+                    reason = "rule 4 — canonical key order: the component's least site, the support's own coordinate"
                 )]
                 comps.sort_by_key(|c| match c.as_slice() {
                     [least, ..] => Some(*least),
@@ -156,15 +156,15 @@ impl Sel {
             }
             Sel::ArgExt(e, code) => {
                 let sup = e.eval(scene);
-                let cells: Vec<(i64, i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0, 0)).collect();
-                let comps: Vec<Vec<(i64, i64)>> = components(&cells)
+                let laminae: Vec<(i64, i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0, 0)).collect();
+                let comps: Vec<Vec<(i64, i64)>> = components(&laminae)
                     .into_iter()
                     .map(|c| sorted(c.into_iter().map(|(r, c, _, _)| (r, c)).collect()))
                     .collect();
                 if comps.is_empty() {
                     return Vec::new();
                 }
-                // A component with no cells has no diameter to measure, so
+                // A component with no sites has no diameter to measure, so
                 // the measure refuses rather than reading zero for it
                 // (rule 11); `components` returns none such, and a term
                 // whose measure refuses selects nothing below.

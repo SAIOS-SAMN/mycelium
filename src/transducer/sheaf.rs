@@ -129,8 +129,8 @@ mod tests {
     use crate::transducer::element::from_canonical;
     use crate::transducer::germinate::germinate;
 
-    fn word(cells_a: &[(i64, i64, u8)], cells_b: &[(i64, i64, u8)]) -> Element {
-        from_canonical(&germinate(cells_a, cells_b).unwrap())
+    fn word(painted_a: &[(i64, i64, u8)], painted_b: &[(i64, i64, u8)]) -> Element {
+        from_canonical(&germinate(painted_a, painted_b).unwrap())
     }
 
     /// A ROOT IS NOT ITS POPULATION. This returned the stratum's sorted

@@ -45,9 +45,9 @@ fn generators(basis: &[PlaneForm]) -> (Vec<[i64; CAYLEY_ALPHABET_LEN]>, Vec<Gen>
             from.push(Gen::One(i));
         }
     }
-    // Differences of the odd words: the cell's own members, not a product
-    // over the basis — every pair here shares the one property that makes
-    // it a generator, and the walk is over that set alone.
+    // Differences of the odd words: the odd set's own members, not a
+    // product over the basis — every pair here shares the one property
+    // that makes it a generator, and the walk is over that set alone.
     for (a, &i) in odd.iter().enumerate() {
         for &j in odd.iter().skip(a + 1) {
             let r: [i64; CAYLEY_ALPHABET_LEN] =

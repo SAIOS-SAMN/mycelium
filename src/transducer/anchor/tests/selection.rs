@@ -46,7 +46,7 @@ fn coboundary_derives_as_delta() {
 fn hue_interface_term_transfers() {
     let t = Sel::Inter(Box::new(Sel::Hue(1)), Box::new(Sel::Star(Box::new(Sel::Hue(2)))));
     let scene = vec![(0, 0, 1u8), (0, 1, 1), (0, 2, 2), (0, 3, 2)];
-    assert_eq!(t.eval(&scene), vec![(0, 1)], "the hue-1 cell touching hue 2");
+    assert_eq!(t.eval(&scene), vec![(0, 1)], "the hue-1 site touching hue 2");
     let moved = vec![(5, 5, 1u8), (6, 5, 1), (7, 5, 2)];
     assert_eq!(t.eval(&moved), vec![(6, 5)], "the same term finds the new frontier");
     // And derive() does produce SOME exact term from the one pair.
@@ -82,9 +82,9 @@ fn sel_serde_round_trips() {
 fn argmax_component_selects_uniquely_and_transfers() {
     let scene = vec![(0, 0, 3u8), (0, 1, 3), (0, 2, 3), (5, 5, 3)];
     let t = Sel::ArgExt(Box::new(Sel::Hue(3)), 0);
-    assert_eq!(t.eval(&scene), vec![(0, 0), (0, 1), (0, 2)], "the 3-cell body wins");
+    assert_eq!(t.eval(&scene), vec![(0, 0), (0, 1), (0, 2)], "the three-site body wins");
     let small = Sel::ArgExt(Box::new(Sel::Hue(3)), 1);
-    assert_eq!(small.eval(&scene), vec![(5, 5)], "the isolated cell is the argmin");
+    assert_eq!(small.eval(&scene), vec![(5, 5)], "the isolated site is the argmin");
     let moved = vec![(9, 9, 3u8), (2, 0, 3), (2, 1, 3)];
     assert_eq!(t.eval(&moved), vec![(2, 0), (2, 1)], "the same term, the new largest");
     // A TIE selects nothing: two equal bodies have no unique extremum.
@@ -106,7 +106,7 @@ fn enclosure_composes_and_transfers() {
         }
     }
     let t = derive(&[(2, 2)], &scene).expect("the hole is derivable");
-    assert_eq!(t.eval(&scene), vec![(2, 2)], "exactly the enclosed cell");
+    assert_eq!(t.eval(&scene), vec![(2, 2)], "exactly the enclosed site");
     // Transfer: a wider ring elsewhere on a 7×7 grid — same term, new hole.
     let mut big: Vec<(i64, i64, u8)> = Vec::new();
     for r in 0..7 {

@@ -12,13 +12,14 @@ use crate::transducer::anchor::Sel;
 /// Vec-of-relations for the hue tally (Law II — never a keyed map).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Signature {
-    /// β₀ — connected components under 1-cell (4-)adjacency.
+    /// β₀ — connected components under edge (4-)adjacency.
     pub components: u64,
-    /// |S| — the region's cell volume.
-    pub cells: u64,
-    /// The boundary cochain length: exposed 1-cell faces (region↔outside).
+    /// |S| — the region's site count.
+    pub sites: u64,
+    /// The boundary cochain length: exposed edges (region↔outside).
     pub boundary: u64,
-    /// The hue tally over the scene's cells inside the region, sorted.
+    /// The hue tally over the scene's painted sites inside the region,
+    /// sorted.
     pub hues: Vec<(u8, u64)>,
 }
 
@@ -38,30 +39,30 @@ pub(crate) fn find(parent: &mut [usize], i: usize) -> usize {
 
 /// Measure the signature of `region` as it stands in `scene`.
 pub fn signature(region: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Signature {
-    let mut cells: Vec<(i64, i64)> = region.to_vec();
-    cells.sort_unstable();
-    cells.dedup();
+    let mut sites: Vec<(i64, i64)> = region.to_vec();
+    sites.sort_unstable();
+    sites.dedup();
     // The region's 1-skeleton, read off the ordered support: β₀ is its
-    // component count and the boundary cochain is every cell face not
-    // shared along an edge (4 faces per cell, 2 closed per edge).
-    let edges = super::sentence::incidence_of(&cells);
-    let mut roots = super::sentence::components(cells.len(), &edges);
+    // component count and the boundary cochain is every site's side not
+    // shared along an edge (4 sides per site, 2 closed per edge).
+    let edges = super::sentence::incidence_of(&sites);
+    let mut roots = super::sentence::components(sites.len(), &edges);
     roots.sort_unstable();
     roots.dedup();
-    // Every cell has four sides and every interior edge consumes two of
+    // Every site has four sides and every interior edge consumes two of
     // them. `incidence_of` emits at most one row-edge and one column-edge
     // per adjacent pair of an ordered support, so edges ≤ 2n − 2 and the
     // sides always outnumber them: the boundary is exact and total.
-    let boundary = 4 * cells.len() as u64 - 2 * edges.len() as u64;
-    // Hue tally of the scene's cells inside the region: one merge walk over
-    // the two ordered supports, never a lookup per cell.
+    let boundary = 4 * sites.len() as u64 - 2 * edges.len() as u64;
+    // Hue tally of the scene's painted sites inside the region: one merge
+    // walk over the two ordered supports, never a lookup per site.
     let mut ordered: Vec<(i64, i64, u8)> = scene.to_vec();
     ordered.sort_unstable();
     let mut hues: Vec<(u8, u64)> = Vec::new();
     let (mut i, mut j) = (0usize, 0usize);
-    while i < cells.len() && j < ordered.len() {
+    while i < sites.len() && j < ordered.len() {
         let (r, c, h) = ordered[j];
-        match cells[i].cmp(&(r, c)) {
+        match sites[i].cmp(&(r, c)) {
             std::cmp::Ordering::Less => i += 1,
             std::cmp::Ordering::Greater => j += 1,
             std::cmp::Ordering::Equal => {
@@ -76,7 +77,7 @@ pub fn signature(region: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Signature {
     hues.sort_unstable();
     Signature {
         components: roots.len() as u64,
-        cells: cells.len() as u64,
+        sites: sites.len() as u64,
         boundary,
         hues,
     }
@@ -101,7 +102,7 @@ pub fn mismatch(a: &Signature, b: &Signature) -> [u64; 4] {
     };
     [
         a.components.abs_diff(b.components),
-        a.cells.abs_diff(b.cells),
+        a.sites.abs_diff(b.sites),
         a.boundary.abs_diff(b.boundary),
         palette,
     ]
@@ -178,7 +179,7 @@ mod tests {
         let scene = vec![(0, 0, 1), (0, 1, 1), (5, 5, 1), (7, 7, 2)];
         let coherent = signature(&[(0, 0), (0, 1)], &scene);
         let scattered = signature(&[(0, 0), (5, 5)], &scene);
-        assert_eq!(coherent.cells, scattered.cells, "equal volume");
+        assert_eq!(coherent.sites, scattered.sites, "equal volume");
         assert_eq!(coherent.components, 1);
         assert_eq!(scattered.components, 2);
         assert_eq!(coherent.boundary, 6);
@@ -191,11 +192,11 @@ mod tests {
     /// nothing. One survivor is a discharge.
     #[test]
     fn a_candidate_beaten_on_every_lane_leaves_the_beam() {
-        // Scene: a hue-1 domino and a lone hue-2 cell.
+        // Scene: a hue-1 domino and a lone hue-2 site.
         let scene = vec![(0, 0, 1), (0, 1, 1), (4, 4, 2)];
         let footprint = vec![(0i64, 0i64), (0, 1)];
-        // Candidate A selects EVERYTHING occupied (carries fp, but drags the
-        // alien cell); candidate B selects exactly the hue-1 support, so B
+        // Candidate A selects EVERYTHING painted (carries fp, but drags the
+        // alien site); candidate B selects exactly the hue-1 support, so B
         // is no worse on any lane and better on some.
         let a = Sel::Hue(255);
         let b = Sel::Hue(1);

@@ -132,7 +132,7 @@ pub(crate) fn pieces_of(
         // One hue at a time, so a component is a piece of ONE colour: a
         // seam between two hues is a meet, not a body (13.9).
         let mut hues: crate::network::nerve::Keyed<Vec<Cell4>> = crate::network::nerve::Keyed::new();
-        for &(r, c, k, h) in &shell.cells {
+        for &(r, c, k, h) in &shell.laminae {
             match hues.get_mut(&[h]) {
                 Some(v) => v.push((r, c, k, h)),
                 None => {

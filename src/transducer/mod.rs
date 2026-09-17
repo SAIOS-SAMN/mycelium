@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! THE TRANSDUCER (Parts I–IV) — what a scene becomes on the way to being a
-//! word: blades lifted from cells, versors that carry one shape onto
+//! word: blades lifted from laminae, versors that carry one shape onto
 //! another, words, forms, and the charts they are filed under.
 
 /// 16.4 — the conformal model every transport is written in.

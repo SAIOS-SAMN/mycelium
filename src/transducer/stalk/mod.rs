@@ -23,7 +23,7 @@ pub(crate) use stratum::*;
 /// one stratum's siblings, resumed from a cursor — and its only caller was
 /// `Bubble::expand_with`, which used it to walk outward from an idea's own
 /// chart and meet whatever it found. That is adjacency in a trie, not
-/// incidence in a sheaf: a Čech cell is the overlap of two sections over
+/// incidence in a sheaf: a Čech simplex is the overlap of two sections over
 /// ONE chart, and an idea's charts are already named by its own vertices.
 /// The expansion reads `members` at those coordinates now, so the walk, its
 /// budget pacing, its resume cursor and this method are all gone together.

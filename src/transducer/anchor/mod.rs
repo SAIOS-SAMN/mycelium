@@ -1,8 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! A9 — THE RECURSIVE SELECTION ALGEBRA: an anchored word is
-//! γ_substance ∘ π_anchor, where π is a term composed from the 0-cells and
-//! the 1-cell adjacency the sensor measures, evaluated exactly on a scene.
+//! γ_substance ∘ π_anchor, where π is a term composed from the sites and
+//! the edge adjacency the sensor measures, evaluated exactly on a scene.
 
 pub mod derive;
 pub mod sel;

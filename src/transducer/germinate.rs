@@ -1,14 +1,14 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! A5 — THE RESIDUAL GERM: the chain of the exact coboundary A→B, one cell
-//! per changed position over the union of the two supports, minted when no
+//! A5 — THE RESIDUAL GERM: the chain of the exact coboundary A→B, one link
+//! per changed site over the union of the two supports, minted when no
 //! conformal-and-gauge element closes a body. Anonymous, addressed by form.
 
 /// A residual germ: sorted `(row, col, hue_before, hue_after)` over the union of
-/// A's and B's occupied positions. hue 0 means the cell is absent on that side.
+/// A's and B's painted sites. hue 0 means the site is unpainted on that side.
 pub type ResidualGerm = Vec<(i64, i64, u8, u8)>;
 
-/// Mint A5's chain from two grids' cells — the exact coboundary.
+/// Mint A5's chain from two grids' painted sites — the exact coboundary.
 ///
 /// THE GRID IS THE THEOREM: one position holds one before and one after, so
 /// the chain read from a grid pair cannot put two transitions on one site
@@ -18,10 +18,10 @@ pub fn germinate(
     a: &[(i64, i64, u8)],
     b: &[(i64, i64, u8)],
 ) -> Option<crate::transducer::element::PlacedChain> {
-    // Collect the union of positions with their before/after hues.
-    let mut cells: ResidualGerm = Vec::new();
-    let upsert = |cells: &mut ResidualGerm, r: i64, c: i64, before: u8, after: u8| {
-        match cells.iter_mut().find(|(rr, cc, _, _)| *rr == r && *cc == c) {
+    // Collect the union of sites with their before/after hues.
+    let mut links: ResidualGerm = Vec::new();
+    let upsert = |links: &mut ResidualGerm, r: i64, c: i64, before: u8, after: u8| {
+        match links.iter_mut().find(|(rr, cc, _, _)| *rr == r && *cc == c) {
             Some(e) => {
                 if before != 0 {
                     e.2 = before;
@@ -30,34 +30,35 @@ pub fn germinate(
                     e.3 = after;
                 }
             }
-            None => cells.push((r, c, before, after)),
+            None => links.push((r, c, before, after)),
         }
     };
     for (r, c, h) in a {
-        upsert(&mut cells, *r, *c, *h, 0);
+        upsert(&mut links, *r, *c, *h, 0);
     }
     for (r, c, h) in b {
-        upsert(&mut cells, *r, *c, 0, *h);
+        upsert(&mut links, *r, *c, 0, *h);
     }
-    // Keep only cells that actually change (before != after); a net-zero demand
-    // needs no germ.
-    cells.retain(|(_, _, before, after)| before != after);
-    if cells.is_empty() {
+    // Keep only links that actually change (before != after); a net-zero
+    // demand needs no germ.
+    links.retain(|(_, _, before, after)| before != after);
+    if links.is_empty() {
         return None;
     }
-    // `upsert` holds one entry per position, so A5 accepts this chain; the
+    // `upsert` holds one entry per site, so A5 accepts this chain; the
     // `?` collapses into the `None` above rather than adding a refusal.
     // The corner is measured here, at the sensor, and leaves as a
     // translator (law 11).
-    crate::transducer::element::place_chain(&cells)
+    crate::transducer::element::place_chain(&links)
 }
 
-/// Apply a residual germ to a scene: at each germ cell, replace `before` with
-/// `after`. Reproduces the demand it was minted from — the germination closes.
+/// Apply a residual germ to a scene: at each link's site, replace `before`
+/// with `after`. Reproduces the demand it was minted from — the germination
+/// closes.
 pub fn apply(germ: &[(i64, i64, u8, u8)], a: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
     let mut out: Vec<(i64, i64, u8)> = a.to_vec();
     for (r, c, _before, after) in germ {
-        out.retain(|(rr, cc, _)| !(rr == r && cc == c)); // clear the cell
+        out.retain(|(rr, cc, _)| !(rr == r && cc == c)); // clear the site
         if *after != 0 {
             out.push((*r, *c, *after));
         }
@@ -87,7 +88,7 @@ mod tests {
         v
     }
 
-    /// A non-conformal change (a single cell recoloured, others untouched — not a
+    /// A non-conformal change (a single site recoloured, others untouched — not a
     /// rigid motion of the body) germinates A5's chain, which reproduces A→B
     /// when it is placed back at the corner it was centered from.
     #[test]
@@ -109,7 +110,7 @@ mod tests {
     #[test]
     fn creation_is_carried_as_a_residual() {
         let a = [(0, 0, 1u8)];
-        let b = [(0, 0, 1u8), (0, 1, 5)]; // a cell appears
+        let b = [(0, 0, 1u8), (0, 1, 5)]; // a site is painted
         let g = germinate(&a, &b).expect("appearance germinates");
         assert_eq!(g.as_slice(), &[(0, 0, 0, 5)], "centered, as A5 leaves every chain");
         let placed: Vec<(i64, i64, u8, u8)> =
