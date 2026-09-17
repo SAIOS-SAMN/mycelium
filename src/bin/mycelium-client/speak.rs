@@ -11,7 +11,7 @@ use mycelium::sdk::{Entity};
 /// coboundary's lane magnitudes — what thinking it through is priced on.
 /// SPEECH IS A CLOSED CONNECTION (the overlay is apply g). A thought that
 /// still has a remainder is work, not a message: the family's inputs and
-/// the tests are replayed through the transport, and any cell the
+/// the tests are replayed through the transport, and any painted site the
 /// connection cannot speak keeps the whole thought here, as this mind's
 /// open remainder, until it closes. Only when every replay is closed is one
 /// connection per rule minted — the versor's affine block and the gauge as
@@ -47,7 +47,7 @@ pub(crate) fn speak_form(
         if let Some((i, w)) = held {
             format!("loop {i} holonomy {:02x}{:02x}…", w.key()[0], w.key()[1])
         } else if !form.remainder.is_empty() {
-            format!("remainder {} cells", form.remainder.len())
+            format!("remainder {} links", form.remainder.len())
         } else {
             "no measured descent".to_string()
         }
@@ -82,7 +82,7 @@ pub(crate) fn speak_form(
         let n_pairs = remainders.iter().filter(|r| !r.is_empty()).count();
         entity.withhold_form(form, train, &remainders, mag);
         eprintln!(
-            "[{tag}] form withheld: family {fam} remainder {n_rem} cells over {n_pairs} pairs"
+            "[{tag}] form withheld: family {fam} remainder {n_rem} links over {n_pairs} pairs"
         );
         return None;
     }

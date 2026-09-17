@@ -91,12 +91,11 @@ match entity.quote() {
         // beyond one stroke is answered across quotes, never in one.
         let mut spend = physics.stroke();
         for cluster in &q.clusters {
-            // THE LISTING ARRIVES WHOLE (L8q). It was a chain of cells, so
-            // the only move here was `conclude_listing` — subtract the
-            // cells held words already cover and probe with what deflated.
-            // That is deflation, and it never produced a held generator on
-            // any fleet reading: a listing closed by subtraction leaves no
-            // word behind it.
+            // THE LISTING ARRIVES WHOLE (L8q). Served as a chain of links,
+            // the only move here would be to subtract the links held words
+            // already cover and probe with what deflated. That is
+            // deflation, and it produces no held generator: a listing
+            // closed by subtraction leaves no word behind it.
             let mut pos = 0usize;
             let Some(e) = mycelium::transducer::element::Element::from_bytes(&cluster.element, &mut pos)
             else {
@@ -112,7 +111,7 @@ match entity.quote() {
             };
             let demands: Vec<_> = form
                 .demand_vertices()
-                .map(|(_, kind, chart, cells)| (kind.clone(), chart.clone(), cells.to_vec()))
+                .map(|(_, kind, chart, links)| (kind.clone(), chart.clone(), links.to_vec()))
                 .collect();
             if demands.is_empty() {
                 n_silent += 1;
@@ -124,11 +123,11 @@ match entity.quote() {
                 cluster.address[1],
                 demands.len()
             );
-            for (kind, chart, cells) in &demands {
+            for (kind, chart, links) in &demands {
                 // 50.5, L8r: the addresses standing on this demand's own
                 // chart — THE STRATUM AS COORDINATES, not as forms. The
                 // chart routes; what decides is whether the form
-                // reproduces the demand's cells, which is exactly how
+                // reproduces the demand's links, which is exactly how
                 // extraction step 3 decides a glue, and the form for that
                 // is fetched by key at the one member about to speak.
                 let stratum = entity.epigenome.chart_stratum(chart);
@@ -156,7 +155,7 @@ match entity.quote() {
                     if !f.is_closed() {
                         continue;
                     }
-                    if !reproduces(&entity.epigenome, &f, cells) {
+                    if !reproduces(&entity.epigenome, &f, links) {
                         continue;
                     }
                     let cited = word.address();
@@ -184,9 +183,9 @@ match entity.quote() {
                         standing: st.as_u8(),
                         transport: mycelium::transducer::element::identity_versor(),
                         gauge: 0,
-                        body: cells.clone(),
+                        body: links.clone(),
                     };
-                    let mag = measure_lanes(cells);
+                    let mag = measure_lanes(links);
                     StrokeOutcome::add(&mut outcome.uttered, &mag);
                     match entity.probe(&target, std::slice::from_ref(&cite)) {
                         Ok((code, _paid, _remaining)) => match code {
@@ -269,12 +268,12 @@ if !occluded
 }
 }
 
-/// DOES THIS HELD FORM REPRODUCE THE DEMAND'S CELLS (50.5, 21 step 3)?
+/// DOES THIS HELD FORM REPRODUCE THE DEMAND'S LINKS (50.5, 21 step 3)?
 ///
 /// The demand carries the bodies it stands for as `(row, col, before,
 /// after)` (50.5), which is a scene and its image in one carrier. The form
 /// is spoken on the BEFORE side and what it says must lie in the AFTER
-/// side — `cells_subset_of_grid`, exactly the test extraction's step 3
+/// side — `painted_within_grid`, exactly the test extraction's step 3
 /// uses to decide a glue, so a voice answering a demand and a mind gluing
 /// a form apply one reading.
 ///
@@ -282,21 +281,21 @@ if !occluded
 /// 50.6 seam 1's own reader and already says why: "both at the chain's own
 /// min-corner, so the motion between them is the chain's and never an
 /// artefact of two origins". Framing each side separately would let a
-/// before-side with no cell in row 0 slide against its after-side.
+/// before-side with no painted site in row 0 slide against its after-side.
 ///
 /// The placement is the IDENTITY: a cited form speaks in its own frame
 /// (L14), which is what `apply_form` places by.
 fn reproduces(
     epi: &mycelium::sdk::Epigenome,
     f: &mycelium::transducer::sentence::Form,
-    cells: &[(i64, i64, u8, u8)],
+    links: &[(i64, i64, u8, u8)],
 ) -> bool {
-    let Some((before, after)) = mycelium::transducer::family::scene_of_chain(cells) else {
+    let Some((before, after)) = mycelium::transducer::family::scene_of_chain(links) else {
         return false;
     };
     let placement = mycelium::transducer::alphabet::Word::identity();
     mycelium::transducer::family::Crystal::speak_form(epi, f, &before, &placement)
         .is_some_and(|sp| {
-            mycelium::transducer::family::cells_subset_of_grid(&sp.painted, &after)
+            mycelium::transducer::family::painted_within_grid(&sp.painted, &after)
         })
 }

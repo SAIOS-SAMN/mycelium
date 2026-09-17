@@ -87,15 +87,15 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // re-derivations by `same_vertex` (M1) rather than assuming that a
     // peer which did not slash agreed.
     //
-    // The offer is glued AS THE HOME, into this mesh's own cover. It stood
-    // as `glue_fetched(word, me, me, &mut Cover::new())`: one vertex where
-    // there should be two, so the section written at this court's key was
-    // the home's own word, read straight back out and compared with itself.
-    // That is identity every time -- an agreement manufactured by writing
-    // the answer into the place the question is read from -- and no cocycle
-    // can be pushed across a cell with one vertex. The empty cover was the
-    // same fault in the other direction: the cell had no other hypha in it
-    // because the cover the mesh actually holds was left behind.
+    // The offer is glued AS THE HOME, into this mesh's own cover. Glued as
+    // this court itself, with an empty cover, the simplex would have one
+    // vertex where 13.9 needs two: the section written at this court's key
+    // would be the home's own word, read straight back out and compared
+    // with itself — identity every time, an agreement manufactured by
+    // writing the answer into the place the question is read from — and no
+    // cocycle can be pushed across a simplex with one vertex; the empty
+    // cover is the same fault from the other side, a simplex with no other
+    // hypha in it because the cover the mesh holds was left behind.
     let answered =
         match mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos) {
             Some(word) if word.address() != addr => {
@@ -188,7 +188,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
 ///
 /// THE REPLAY DECIDES, NOT THE GLUE. `glue_fetched` replays the form
 /// (`court_replay`) and then files it on this court's cover — a section at
-/// the home's vantage, edges to the words this court holds, cells filled —
+/// the home's vantage, edges to the words this court holds, simplices filled —
 /// and its `Glue` says how the form RELATES TO THIS COURT'S OWN SECTION on
 /// the chart: `Dialect` is "a different section of the same chart", which
 /// is true of almost every offered form and says nothing against the
@@ -235,7 +235,7 @@ mod tests {
 
     fn word() -> mycelium::transducer::element::Element {
         mycelium::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)])
-            .expect("one cell is A5's chain")
+            .expect("one link is A5's chain")
     }
 
     /// A word whose magnitude does not re-derive from its chain: the replay

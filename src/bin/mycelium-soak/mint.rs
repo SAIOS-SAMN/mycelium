@@ -39,7 +39,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
     let mut closed_seen = 0u64;
     let (mut open_seen, mut open_demanded, mut open_minted, mut open_stood) = (0u64, 0u64, 0u64, 0u64);
     let mut open_acts = 0u64;
-    let (mut open_rem_empty, mut open_rem_cells) = (0u64, 0u64);
+    let (mut open_rem_empty, mut open_rem_links) = (0u64, 0u64);
     // S9.13's REACH, as a distribution over the families that mint. E2 prices a
     // closure's yield from it.
     //
@@ -53,7 +53,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
     //
     // THE TWO `sections` ARE NOT ONE OBJECT and this prints both rather than a
     // span derived from either. `Element.sections` is the punctured axis —
-    // "alternative per-cell transition ASSIGNMENTS over the SAME base
+    // "alternative per-site transition ASSIGNMENTS over the SAME base
     // positions", the free part of the fibre. `Form.sections` is
     // `Keyed<Vec<u16>>` holding PAIR INDICES of the bundle — which pairs a
     // class was measured on, a restriction record. Mirroring one formula onto
@@ -133,7 +133,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             if rule.form.remainder.is_empty() {
                 open_rem_empty += 1;
             } else {
-                open_rem_cells += rule.form.remainder.placed().len() as u64;
+                open_rem_links += rule.form.remainder.placed().len() as u64;
             }
             if has_demands {
                 open_demanded += 1;
@@ -169,7 +169,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         }
         println!(
             "  mint {name} handed: pairs {} | vertices words {words} glued {glued} demands {demands} \
-             | faces {} loops {} | closed {} | Form.remainder empty {} cells {} | ratio {:?}",
+             | faces {} loops {} | closed {} | Form.remainder empty {} links {} | ratio {:?}",
             task.train.len(),
             rule.form.faces.len(),
             rule.form.loops.len(),
@@ -212,7 +212,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         println!("  mint {name} form_deflation: pay {pay:?} remainders {}", remainders.len());
         for (i, r) in remainders.iter().enumerate() {
             println!(
-                "  mint {name} remainder {i}: cells {} empty {} mu {:?}",
+                "  mint {name} remainder {i}: links {} empty {} mu {:?}",
                 r.len(),
                 u8::from(r.is_empty()),
                 measure_lanes(r),
@@ -338,7 +338,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             let spoken = mycelium::transducer::family::speak_rule(&rule, x, &empty);
             println!(
                 "  mint {name} speak {i}: bodies perceived {} | fiber hits per word vertex {hits:?} \
-                 | unspoken {:?} | cells emitted {} | residual vs observed {}",
+                 | unspoken {:?} | painted sites emitted {} | residual vs observed {}",
                 bodies.len(),
                 spoken.as_ref().map(|s| s.unspoken.len()),
                 spoken.as_ref().map_or(0, |s| s.painted.len()),
@@ -347,7 +347,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                     let mut n = 0usize;
                     for (r, row) in y.iter().enumerate() {
                         for (c, &h) in row.iter().enumerate() {
-                            // A cell the speech does not reach is the
+                            // A site the speech does not reach is the
                             // ground, and hue 0 IS absence in this
                             // encoding — `residual_of`'s own reading, not
                             // a default put here for a missing value.
@@ -380,7 +380,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         // (kind, chart) and pushes one rule vertex per group, so a rule
         // with no demands is a rule whose PAIR FORMS emitted none. This
         // reads both sides of that: the demands the pair form carries, and
-        // the cells speaking that same pair form fails to reproduce.
+        // the links speaking that same pair form fails to reproduce.
         for (i, (x, y)) in task.train.iter().enumerate() {
             let mut pb = physics.stroke_n(MINT_STROKE);
             let one = vec![(x.clone(), y.clone())];
@@ -397,7 +397,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             let (pf_pay, pf_rem) = form_deflation(&pf, &one, &empty);
             println!(
                 "  mint {name} pairform {i}: words {pf_words} demands {pf_demands} \
-                 | speaking it leaves {} cells, mu {:?} | pay {pf_pay:?}",
+                 | speaking it leaves {} links, mu {:?} | pay {pf_pay:?}",
                 pf_rem.iter().map(Vec::len).sum::<usize>(),
                 // One pair in, so one remainder out: the slice pattern
                 // reads the pair's own entry rather than a member by
@@ -462,13 +462,13 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
     );
     println!(
         "  mint rule_open Form.remainder: empty on {open_rem_empty} of {open_seen}, \
-         {open_rem_cells} cells across the rest"
+         {open_rem_links} links across the rest"
     );
     // WHAT THE COVERS' LOOPS CLASSIFIED AS. `tally_loop` has recorded this
     // all along and only the soak read it, so the mint sweep could say how
     // many loops a scene has and not what any of them turned out to be.
     // `classify` files a cycle only where the carriage is the IDENTITY
-    // (`cell.rs:125`), so a loop with a finite non-identity rotor carried by
+    // (`cech::classify`), so a loop with a finite non-identity rotor carried by
     // a non-identity versor stands as a class rather than filing as torsion.
     // This line is what says which of those two the corpus produces.
     let t = mycelium::transducer::family::cover::take_cover_tally();

@@ -43,7 +43,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         dialogue::ACT_ROWS => rows::judge(stream, &frame, door),
         dialogue::ACT_FOLD => fold::judge(stream, &frame, door),
         dialogue::ACT_PERCEPT | dialogue::ACT_GOSSIP | dialogue::ACT_DEMAND | dialogue::ACT_DEMAND_ROUTED => {
-            // 26, 50.6 seam 3: raw percept cells and coboundary chains do
+            // 26, 50.6 seam 3: raw painted sites and coboundary chains do
             // not reach a court. Refused with the reason, no height (this
             // court read no book to answer with), nothing taught.
             if frame.body.len() < 5 {

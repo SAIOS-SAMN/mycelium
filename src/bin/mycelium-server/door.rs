@@ -442,7 +442,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         return true;
     }
     // EXPANSION 2 — the algebraic bid is ruled on the court's own algebra,
-    // never on a spatial replay it has no cells for.
+    // never on a spatial replay it has no links for.
     if kind == dialogue::ACT_REFINE_ALGEBRAIC {
         let Some((rvoice, word, held, witness)) = dialogue::decode_refine_algebraic(&frame.body) else {
             return true;

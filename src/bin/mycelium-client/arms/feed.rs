@@ -4,7 +4,7 @@
 //! A family is thought through whole (21, 26): the form engine is the only
 //! extractor, the closed form is spoken as its sentence with its demands,
 //! and a family it does not close is a withheld form. No pair leaves this
-//! voice as cells (law 8, ruled 2026-09-10): the percept act is retired,
+//! voice as painted sites (law 8, ruled 2026-09-10): the percept act is retired,
 //! and the per-pair presentation that spoke it with it.
 
 use crate::feed::{family_magnitude, retire_feed, Feed};
@@ -46,7 +46,7 @@ pub(crate) fn feed_arm(
     // until the reserve ran short, and `family_magnitude` is [0,0,0,0] for
     // a family that does not germinate, so `physics.bump` of nothing never
     // ran anything short and the drain was the whole corpus in one stroke
-    // (rule 10 — a loop bounded by neither a Budget nor one cell's
+    // (rule 10 — a loop bounded by neither a Budget nor one simplex's
     // boundary). The quote, the task and the syntropic arms ran after it,
     // once, on a stroke that had already spent itself.
     //
