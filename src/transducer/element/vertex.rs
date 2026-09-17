@@ -211,16 +211,10 @@ impl Element {
     /// COMPOSE — geometric product on S, permutation composition on G,
     /// geometric product on matching germinated axes. Associative.
     ///
-    /// AND THE ROTOR SURVIVES IT. This wrote only `action.*` and left
-    /// `description` empty, so `letters()` answered `None` for every
-    /// composite and `cech::rotor_of(transition(..))` — which reads the
-    /// tape and nothing else — answered `None` for every transition in the
-    /// tree. The court's glue then had no rotor to put on a cell, wrote
-    /// `Rotor::identity()` on the one edge it could, and `Complex::fill`
-    /// short-circuited on an identity coefficient before reaching
-    /// `classify`, which is the only producer of `Fill::Class` and
-    /// `Fill::Unspellable`. That is `court cell` 0, `horizon seeded` 0 and
-    /// the `ruled` term of the span reading, on every fleet ever run.
+    /// AND THE ROTOR SURVIVES IT: `cech::rotor_of(transition(..))` reads
+    /// the tape and nothing else, so a composite carries the composed
+    /// spelling, or the court's glue has no rotor to put on a simplex and
+    /// `Complex::fill` never reaches `classify`.
     ///
     /// The composition is in `Cl(3,1)` on the spatial action, which has one
     /// rotation plane; the rotor is in `Cl(4,0)` and has six. Composing the

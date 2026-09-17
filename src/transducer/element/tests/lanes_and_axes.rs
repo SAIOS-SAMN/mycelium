@@ -52,7 +52,7 @@ fn a_residual_germinates_as_a_coboundary_germ() {
     let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
     let g = germinate(&a, &b).unwrap();
     let germ = from_canonical(&g);
-    // A hue transition on a standing cell measures as GAUGE content
+    // A hue transition on a standing lamina measures as GAUGE content
     // alongside the residual defect (the four-lane projection).
     assert_eq!(germ.lanes(), [false, true, false, false], "a recolour is 𝒢 content; temporal and holonomic are empty until standing or punctured");
     let mag = germ.magnitude();
@@ -74,9 +74,9 @@ fn a_bidirectional_swap_does_not_collapse_to_zero() {
     let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)]; // L
     let b = [(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]; // bar
     let l_to_bar = from_canonical(&germinate(&a, &b).unwrap());
-    // One cell vacates and one appears: SPATIAL content (mass moved)
-    // alongside the two-cell residual defect — measured, not defaulted.
-    assert_eq!(l_to_bar.magnitude(), [2, 0, 0, 0], "two moved cells, exact — not a canceled 0; the fibre lane is empty until punctured");
+    // One lamina vacates and one appears: SPATIAL content (mass moved)
+    // alongside the two-link residual defect — measured, not defaulted.
+    assert_eq!(l_to_bar.magnitude(), [2, 0, 0, 0], "two moved laminae, exact — not a canceled 0; the fibre lane is empty until punctured");
     assert_eq!(l_to_bar.lanes(), [true, false, false, false], "a real spatial germ");
     assert!(!l_to_bar.is_identity(), "the chain decides — a canceled tally is not identity");
     assert!(!l_to_bar.substance().is_identity(), "and its substance is real");
@@ -110,21 +110,15 @@ fn axes_are_independent_and_extensible() {
 /// A CHAIN MEASURES THREE LANES AND NEVER CLAIMS THE FOURTH.
 ///
 /// 𝒯 is temporal extent — the scene-state span in receipts (51.9) — and a
-/// chain is a set of cells with no clock in it. `measure_lanes` reporting
+/// chain is a set of links with no clock in it. `measure_lanes` reporting
 /// zero there is a reading of what a chain knows, and the three lanes beside
-/// it are its own.
-///
-/// The deferral in that line — "measured at the mint" — was honoured by
-/// nothing until R2: `sentence_measure` computed a word's μ⃗ through this
-/// function alone, so every word the engine spoke carried `[S, G, 0, H]`,
-/// 197 of 197 spoken magnitudes at 820678a. This binds the two halves: the
-/// chain does not invent a span, and whatever the chain holds, 𝒯 stays the
-/// mint's to supply.
+/// it are its own. This binds the two halves: the chain does not invent a
+/// span, and whatever the chain holds, 𝒯 stays the mint's to supply.
 #[test]
 fn a_chain_measures_three_lanes_and_never_the_span() {
-    // Cells appearing and vanishing are spatial; a hue change is gauge.
+    // Laminae appearing and vanishing are spatial; a hue change is gauge.
     let appears = measure_lanes(&[(0, 0, 0, 1), (1, 1, 0, 1)]);
-    assert!(appears[0] > 0, "cells that appear are spatial");
+    assert!(appears[0] > 0, "laminae that appear are spatial");
     assert_eq!(appears[2], 0, "and none of them is a span");
 
     let recoloured = measure_lanes(&[(0, 0, 1, 2), (0, 1, 1, 2)]);
@@ -132,7 +126,7 @@ fn a_chain_measures_three_lanes_and_never_the_span() {
     assert_eq!(recoloured[2], 0, "and none of it is a span");
 
     // However large or long the chain, 𝒯 does not move: there is no clock in
-    // a set of cells to read one from.
+    // a set of links to read one from.
     let long: Vec<(i64, i64, u8, u8)> = (0..64).map(|i| (i, 0, 0, 1)).collect();
     assert_eq!(measure_lanes(&long)[2], 0, "a longer chain is not an older one");
     assert_eq!(measure_lanes(&[])[2], 0, "and an empty one is not either");

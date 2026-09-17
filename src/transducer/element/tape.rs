@@ -163,7 +163,7 @@ impl Element {
             *pos += 18;
             sub.push((r, c, before, after));
         }
-        // A5 STEP 3 AT THE TAPE: a chain that says two things at one cell has
+        // A5 STEP 3 AT THE TAPE: a chain that says two things at one site has
         // no canonical form, so the element it would make has no address
         // (law 2). The refusal travels here, where the bytes arrive, and
         // what comes out is the accepted chain itself — the field's type is

@@ -1,11 +1,11 @@
 // Law 11 — THE SENSOR: the readers permitted the base's coordinates, which
 // read the three of them (51.1) exactly or refuse.
 //
-//! The four functions permitted a cell's coordinates: a conformal point
-//! read to the cell whose lamina holds it, a cell's center and a whole cell
-//! carried by a versor, and a sibling's assignment pulled back onto a
-//! base's positions. A cell is a lamina (16.4): the unit square standing
-//! in its frame, with its center carried at `(r + ½, c + ½, k)`.
+//! The four functions permitted a site's coordinates: a conformal point
+//! read to the site whose lamina holds it, a lamina's center and a whole
+//! lamina carried by a versor, and a sibling's assignment pulled back onto
+//! a base's sites. A lamina (16.4) is the unit square standing in its
+//! frame at a site, with its center carried at `(r + ½, c + ½, k)`.
 
 use num_bigint::BigInt;
 use super::*;
@@ -13,22 +13,25 @@ use super::*;
 /// A point of the base, `(r, c, k)` in ℚ³ (51.1).
 pub type Point = (num_rational::BigRational, num_rational::BigRational, num_rational::BigRational);
 
-/// The cell whose lamina holds a rational point of the base — exact
-/// containment on the sensor's own lattice (the floor of a rational is an
+/// The site whose lamina holds a rational point of the base — exact
+/// containment on the sensor's own base (the floor of a rational is an
 /// exact integer, not a rounding) on the two plane axes, and the frame the
 /// point stands in along `e₃`. `None` where a coordinate does not fit the
-/// lattice (W6): a cell it could not convert is a cell it did not read.
-pub fn cell_of(p: &Point) -> Option<(i64, i64, i64)> {
+/// base (W6): a site it could not convert is a site it did not read.
+pub fn site_of(p: &Point) -> Option<(i64, i64, i64)> {
     let f = |x: &num_rational::BigRational| -> Option<i64> {
         i64::try_from(x.floor().to_integer()).ok()
     };
     Some((f(&p.0)?, f(&p.1)?, f(&p.2)?))
 }
 
-/// Carry a cell's center by V and read the base point back (None at
+/// The retired spelling, bridging the modules not yet swept (V3).
+pub use site_of as cell_of;
+
+/// Carry a lamina's center by V and read the base point back (None at
 /// infinity). The center stands at `(r + ½, c + ½, k)`: the frame axis's
-/// origin lies at the cells' centers (16.4), so a dilator about a point of
-/// the frame fixes the frame.
+/// origin lies at the laminae's centers (16.4), so a dilator about a point
+/// of the frame fixes the frame.
 pub fn carry_center(v: &Versor, r: i64, c: i64, k: i64) -> Option<Point> {
     let half = num_rational::BigRational::new(BigInt::from(1), BigInt::from(2));
     let x = num_rational::BigRational::from_integer(BigInt::from(r)) + &half;
@@ -37,15 +40,15 @@ pub fn carry_center(v: &Versor, r: i64, c: i64, k: i64) -> Option<Point> {
     crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&x, &y, &z)))
 }
 
-/// Carry a whole cell by V as a blade — its unit square in its frame — and
-/// read back the cells whose centers the image holds: one cell under an
-/// isometry, an s×s block under a dilation by s, the one shared cell (or
-/// none) under a shrink. The support is carried forward; nothing outside
-/// it is visited. None at infinity, and none where the two carried corners
-/// do not stand in one frame of the lattice: a square carried across the
-/// frames is no cell of the sensor (16.4).
-pub fn carry_cell(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64, i64, i64)>> {
-    cell_of(&carry_center(v, r, c, k)?)?;
+/// Carry a whole lamina by V as a blade — its unit square in its frame —
+/// and read back the sites whose laminae's centers the image holds: one
+/// site under an isometry, an s×s block under a dilation by s, the one
+/// shared site (or none) under a shrink. The support is carried forward;
+/// nothing outside it is visited. None at infinity, and none where the two
+/// carried corners do not stand in one frame of the base: a square carried
+/// across the frames is no lamina of the sensor (16.4).
+pub fn carry_lamina(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64, i64, i64)>> {
+    site_of(&carry_center(v, r, c, k)?)?;
     let z = num_rational::BigRational::from_integer(BigInt::from(k));
     let corner = |dr: i64, dc: i64| -> Option<Point> {
         let x = num_rational::BigRational::from_integer(BigInt::from(r + dr));
@@ -58,10 +61,10 @@ pub fn carry_cell(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64, i64, i
     }
     let frame = i64::try_from(p0.2.to_integer()).ok()?;
     let half = num_rational::BigRational::new(BigInt::from(1), BigInt::from(2));
-    // The cells whose center (i + ½) lies in the half-open image range
+    // The sites whose center (i + ½) lies in the half-open image range
     // [lo, hi): i ≥ ⌈lo − ½⌉ and i + ½ < hi.
-    // A span whose ends do not fit the lattice is a span this reader did
-    // not measure (W6), and no cells are carried for it.
+    // A span whose ends do not fit the base is a span this reader did
+    // not measure (W6), and no sites are carried for it.
     let span = |a: &num_rational::BigRational,
                 b: &num_rational::BigRational|
      -> Option<(i64, i64)> {
@@ -81,13 +84,16 @@ pub fn carry_cell(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64, i64, i
     Some(out)
 }
 
+/// The retired spelling, bridging the modules not yet swept (V3).
+pub use carry_lamina as carry_cell;
+
 /// THE PULLBACK of a sibling's assignment onto a base support through the
-/// versor V carrying the sibling onto the base: each base cell's center is
-/// carried back by V⁻¹ to the sibling's frame, and the sibling cell whose
+/// versor V carrying the sibling onto the base: each base site's center is
+/// carried back by V⁻¹ to the sibling's frame, and the sibling link whose
 /// square contains it speaks the transition. Both are sections in their
 /// own canonical frame (16.5), so a center carried out of that frame lands
-/// on no cell. Exact at every scale (a dilated sibling's block, a shrunken
-/// sibling's shared cell); None when a base cell lands outside the sibling.
+/// on no site. Exact at every scale (a dilated sibling's block, a shrunken
+/// sibling's shared site); None when a base site lands outside the sibling.
 pub fn pullback(
     base: &[(i64, i64)],
     sibling: &[(i64, i64, u8, u8)],
@@ -98,7 +104,7 @@ pub fn pullback(
     sorted.sort_unstable();
     base.iter()
         .map(|&(r, c)| {
-            let (sr, sc, sk) = cell_of(&carry_center(&inv, r, c, 0)?)?;
+            let (sr, sc, sk) = site_of(&carry_center(&inv, r, c, 0)?)?;
             if sk != 0 {
                 return None;
             }

@@ -54,7 +54,7 @@ fn a_connection_is_one_element_with_two_components() {
     assert_eq!(back.letters(), w.letters(), "the letters survive the wire");
     assert!(w.solution().is_some(), "the group component inverts");
     assert_eq!(w.sub(), remainder.as_slice(), "the remainder is the chain");
-    assert_ne!(w.address(), from_canonical(&canonical_chain(&remainder).expect("one cell is A5's chain")).address(), "the connection is not the bare residual");
+    assert_ne!(w.address(), from_canonical(&canonical_chain(&remainder).expect("one link is A5's chain")).address(), "the connection is not the bare residual");
     let qid = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
     let long = crate::transducer::alphabet::Word::from_letters(&[(qid, false), (qid, false), (qid, false), (qid, false)]);
     assert_eq!(long.key(), crate::transducer::alphabet::Word::identity().key());
@@ -74,7 +74,7 @@ fn a_connection_is_one_element_with_two_components() {
     assert!(closed.is_connection() && closed.sub().is_empty(), "an empty remainder is a closed connection");
     let merge = from_connection(&id, &identity_versor(), &[(1, 2)], &Vec::new(), [1, 1, 0, 0]).expect("spells");
     assert!(!merge.is_connection(), "a merging gauge with the identity motion carries no group component");
-    assert!(!from_canonical(&canonical_chain(&remainder).expect("one cell is A5's chain")).is_connection(), "a residual's tally is never a permutation");
+    assert!(!from_canonical(&canonical_chain(&remainder).expect("one link is A5's chain")).is_connection(), "a residual's tally is never a permutation");
     let unit = from_connection(&id, &identity_versor(), &[], &Vec::new(), [77, 0, 0, 0]).expect("spells");
     assert!(unit.is_identity(), "identity motion and gauge leave no action and no chain");
     assert!(!unit.is_connection(), "the unit is not a connection");
@@ -137,7 +137,7 @@ fn torsion_round_trips_through_bytes() {
 }
 
 /// A17 AND A5 AT THE TAPE. A filed period of zero is not a cycle of no
-/// extent and a chain that says two things at one cell has no canonical
+/// extent and a chain that says two things at one site has no canonical
 /// form, so neither is decoded into an element: the readers downstream
 /// take `ℓ − 1` whole, and no element reaches the basis whose address
 /// would be the form tag and nothing else.
@@ -160,14 +160,14 @@ fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
         "a filed period of zero is a malformed tape, not a cycle spanning nothing"
     );
 
-    let one = from_canonical(&canonical_chain(&[(0, 0, 1, 2)]).expect("one cell is a chain"));
+    let one = from_canonical(&canonical_chain(&[(0, 0, 1, 2)]).expect("one link is a chain"));
     let bytes = one.to_bytes();
     let mut pos = 0;
     assert!(Element::from_bytes(&bytes, &mut pos).is_some(), "one transition decodes");
-    // The same cell saying two different things. It cannot be put on an
-    // element at all now — `sub` is A5's chain by type — so the claim is
-    // made where such bytes could still arrive: the tape. The chain is
-    // written as a u32 count then 18 bytes per cell, straight after the
+    // The same site saying two different things. It cannot be put on an
+    // element at all — `sub` is A5's chain by type — so the claim is made
+    // where such bytes could still arrive: the tape. The chain is written
+    // as a u32 count then 18 bytes per link, straight after the
     // magic, the word and the four lane words, so the count is at a known
     // offset and a second row at (0,0) goes in behind the first.
     let at = 1 + 4 + one.description().len() + 32;
@@ -184,7 +184,7 @@ fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
     let mut pos = 0;
     assert!(
         Element::from_bytes(&two, &mut pos).is_none(),
-        "a chain that says two things at one cell has no canonical form and no address"
+        "a chain that says two things at one site has no canonical form and no address"
     );
 }
 
@@ -206,6 +206,6 @@ fn rotated_connection_survives_the_tape() {
     assert_eq!(
         crate::transducer::cga::base(&v0.sandwich(&p)),
         crate::transducer::cga::base(&v1.sandwich(&p)),
-        "equal spoken cells on a rotated, dilated, translated body"
+        "equal spoken laminae on a rotated, dilated, translated body"
     );
 }

@@ -91,17 +91,17 @@ pub struct Element {
     pub(crate) mag: [u64; 4],
     /// The CENTERED COBOUNDARY CHAIN — the residual's substance with geometry
     /// preserved up to translation: `(row, col, before, after)` over the changed
-    /// cells, min-corner framed to the origin, sorted. Empty for a closed word.
+    /// sites, min-corner framed to the origin, sorted. Empty for a closed word.
     ///
     /// A5'S PROOF IS THE TYPE. As a bare `Vec` this field could hold a chain
-    /// that says two things at one cell — a chain with no canonical form and
+    /// that says two things at one site — a chain with no canonical form and
     /// so no address (law 2) — and every such element fell to one key. The
     /// field is the accepted chain itself, so that element cannot be built:
     /// `canonical_chain` is the only constructor, and the tape goes through
     /// it.
     pub(crate) sub: CanonicalChain,
     /// THE PUNCTURED AXIS — sections along the germinated fiber pierced through
-    /// this thought: alternative per-cell transition ASSIGNMENTS over the SAME
+    /// this thought: alternative per-site transition ASSIGNMENTS over the SAME
     /// base positions. A recurring family (same geometry, different transitions)
     /// collapses into sections of this one bundle instead of sibling cards —
     /// growth as +axis (volume), not +card (area). The base `sub`'s own
@@ -112,7 +112,7 @@ pub struct Element {
     /// THE TORSION OF THE AXIS — CE's law reaching the germinated fiber ("colors
     /// are torsion fields, not lookup tables"; the torsion_order is the period of
     /// the generating fold). When sections form the ORBIT of one hue-map
-    /// generator σ (derived from the witnessed family cell-wise, exactly as peel
+    /// generator σ (derived from the witnessed family link by link, exactly as peel
     /// derives offsets — never an enumerated plane), the fiber condenses from a
     /// free list to a TORSION CYCLE: `(σ relations from↦to, period ℓ)`. The
     /// orbit {base, σ·base, σ²·base, …} of length ℓ is spoken in O(1) storage —
@@ -143,16 +143,6 @@ pub struct Element {
     /// mutates. Never serialized.
     pub(crate) profiles: std::sync::OnceLock<Vec<(Vec<u8>, Vec<usize>)>>,
 }
-
-// `form: OnceLock<Option<Form>>` was here, with `Element::form()` decoding
-// the tape behind it on the first read (L16). It is deleted, not moved: a
-// decode cached inside a value that every organ clones is parsed once per
-// COPY and not once per word, and the lock had to be taken by hand at
-// `set_description` and `substance` — at every site that remembered to.
-// The organs hold `element::Held` now, which carries the form as a field
-// decoded where the word was taken in, and re-decodes with every mutation
-// through `Held::update`. A caller with an element and no held word has
-// `sentence::from_element_form`, which is the decode itself and says so.
 
 impl Element {
     /// The identity element — empty tape, identity action, no chain.
@@ -372,23 +362,6 @@ impl Element {
         }
     }
 
-    // `adopt_torsion` was here: it took a form's `Keyed<FiledLoop>` and wrote
-    // each cycle into `self.torsion` as a `TorsionCycle`. It is deleted, and
-    // not because it was unused — because calling it was the defect.
-    //
-    // A form's filed cycles are ALREADY on the element that carries that form:
-    // inside the tape at `word`, written as `n_torsion` and its cycles. This
-    // wrote them a second time into a struct field, which is law 12 on one
-    // fact, and the copy it wrote held strictly less than the original — the
-    // chord was dropped for `FIBER_SPATIAL`, a coordinate it invented. It also
-    // moved `Element::magnitude`, which adds `sections.len() + torsion.len()`
-    // onto lane 3 and is read by `lanes()` and the descent gate, so a caller
-    // would have shifted a payment lane with no refusal firing anywhere.
-    //
-    // A sentence's cycles are read from its form: `sentence::form_torsion`, or
-    // the form the organ already holds (`Held::form`, L16). There is no
-    // conversion to make, so there is no converter.
-
     /// The fibre's span ABOVE ITS BASE — free sections plus every torsion
     /// orbit's members past the one it opens on. The volume metric proper, and
     /// a reader that wants it asks for it here: a caller subtracting the base
@@ -419,7 +392,7 @@ impl Element {
 
     /// THE TORSE MOVE — extract the torsion of the punctured axis. Candidate
     /// generators are DERIVED from the witnessed family (base → each section,
-    /// cell-wise — the same way peel derives offsets; nothing enumerated); the
+    /// link by link — the same way peel derives offsets; nothing enumerated); the
     /// first σ whose orbit spans enough of the family condenses those sections
     /// into ONE cycle `(σ, ℓ)`. A closure found within the walk (σ^t·base = base)
     /// sets ℓ = t — the FULL cycle, including unwitnessed members: capacity by
@@ -534,9 +507,9 @@ impl Element {
 /// The perceptual lane projection of a centered coboundary chain — the
 /// per-lane magnitude MEASURED from the chain's geometry, never funneled
 /// onto one axis:
-///   𝒮 spatial:  occupancy transformation — cells where support appears or
+///   𝒮 spatial:  occupancy transformation — sites where support appears or
 ///               vanishes (mass moved, scaled, or reshaped).
-///   𝒢 gauge:    chromatic content — hue transitions on cells where the
+///   𝒢 gauge:    chromatic content — hue transitions on sites where the
 ///               support stands on both sides (recolour, palette orbit).
 ///   𝒯 temporal: standing extent — TUniversal ticks a listing has stood,
 ///               or the family's scene-state span at mint. The chain has
@@ -572,20 +545,14 @@ pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
     let sa = crate::transducer::beam::signature(&after_pos, &[]);
     let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
     // LANE 2 IS NOT THE CHAIN'S TO REPORT. 𝒯 is temporal extent — the
-    // scene-state span in receipts (51.9) — and a chain is a set of cells
+    // scene-state span in receipts (51.9) — and a chain is a set of links
     // with no clock in it: nothing here can measure how long anything stood.
     // Reporting zero is therefore a reading of this carrier and not a
-    // placeholder, and the three lanes beside it ARE the chain's own.
-    //
-    // The deferral this line has always stated — "measured at the mint" —
-    // was not honoured by anything until R2. `sentence_measure` computed a
-    // word's μ⃗ through this function alone, so every word the engine spoke
-    // carried `[S, G, 0, H]`: 197 of 197 spoken magnitudes at 820678a. It
-    // takes `t_extent` now, `Contemplation::span_of` is the one reader of
-    // it, and `bundle_pressure` writes the same quantity to `sum[2]`.
-    //
-    // So a caller that needs 𝒯 asks the mint or the bundle. One that reads
-    // a chain gets what a chain knows, which on this lane is nothing.
+    // placeholder, and the three lanes beside it ARE the chain's own. A
+    // caller that needs 𝒯 asks the mint (`sentence_measure` takes
+    // `t_extent`, read by `Contemplation::span_of`) or the bundle
+    // (`bundle_pressure`); one that reads a chain gets what a chain knows,
+    // which on this lane is nothing.
     [spatial, gauge, 0, shell]
 }
 

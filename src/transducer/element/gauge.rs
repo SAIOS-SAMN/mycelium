@@ -154,7 +154,7 @@ pub fn apply_hue_map(sigma: &[(u8, u8)], asg: &[(u8, u8)]) -> Option<Vec<(u8, u8
     asg.iter().map(|(b, a)| Some((map(*b)?, map(*a)?))).collect()
 }
 
-/// Derive the hue-map carrying assignment A onto assignment B cell-wise —
+/// Derive the hue-map carrying assignment A onto assignment B link by link —
 /// `None` if the relation is not functional (one hue demanding two images).
 /// This is DERIVATION from the data, never a hypothesized plane.
 pub fn derive_hue_map(a: &[(u8, u8)], b: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
@@ -225,12 +225,12 @@ pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Option<GaugeFibers> {
     }
     let mut idx: crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>> =
         crate::network::nerve::Keyed::new();
-    for &cell in chain {
-        let k = hue_pair_key(cell.2, cell.3);
+    for &link in chain {
+        let k = hue_pair_key(link.2, link.3);
         match idx.get_mut(&k) {
-            Some(fiber) => fiber.push(cell),
+            Some(fiber) => fiber.push(link),
             None => {
-                idx.insert(k, vec![cell]);
+                idx.insert(k, vec![link]);
             }
         }
     }
@@ -249,7 +249,7 @@ pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Option<GaugeFibers> {
         }
     }
     match (many, first) {
-        (false, Some((class, cells))) => Some(GaugeFibers::One(class, cells)),
+        (false, Some((class, links))) => Some(GaugeFibers::One(class, links)),
         _ => Some(GaugeFibers::Many(idx)),
     }
 }
@@ -274,8 +274,8 @@ impl Element {
             let variant: Vec<_> = base
                 .iter()
                 .filter_map(|(r, c, b, a)| {
-                    // `base_pairs` is built from these cells, so every
-                    // pair is in it; a cell whose pair is not is no
+                    // `base_pairs` is built from these links, so every
+                    // pair is in it; a link whose pair is not is no
                     // variant of this base and is not spelled (rule 11).
                     let i = base_pairs.iter().position(|p| *p == (*b, *a))?;
                     let (nb, na) = *asg.get(i)?;
@@ -336,7 +336,7 @@ impl Element {
 
     /// Does a centered chain SIT on this thought — same base positions, and its
     /// assignment is the base's, a free section's, or a member of a torsion
-    /// cycle's orbit (walked to the period, O(ℓ·cells) — the closed-form
+    /// cycle's orbit (walked to the period, O(ℓ·links) — the closed-form
     /// membership that makes the compressed fiber CHEAPER than the list it
     /// replaced)?
     /// Which assignment (in [`assignments`] order: base, sections, torsion

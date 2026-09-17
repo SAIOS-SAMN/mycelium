@@ -10,7 +10,7 @@ use crate::transducer::germinate::germinate;
 /// structure, in O(1) storage where the list held O(n).
 #[test]
 fn a_closed_cycle_speaks_unwitnessed_members() {
-    // base: transitions 1→2, 2→3, 3→1 over three cells.
+    // base: transitions 1→2, 2→3, 3→1 over three sites.
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
     let mut t = from_canonical(&germinate(&a, &b).unwrap());

@@ -5,10 +5,6 @@
 //! deformation at any position is one substance: that canonicalisation, the
 //! constructors that read a chain, and the listing key naming it in a frame.
 
-// `germ_bytes as residual_word` was the alias here. It renamed a correctly
-// named function — bytes are bytes — to the document's noun for a Cayley-graph
-// path, at the import. The alias is dropped rather than renamed: the right
-// name already existed upstream.
 use crate::transducer::germinate::{germ_bytes, ResidualGerm};
 use crate::core::Q;
 use num_bigint::BigInt;
@@ -25,10 +21,10 @@ pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
 /// eye measured, and every "rotation"/"recolour" the mesh will ever speak is a
 /// germinated pattern, never a named solver.
 ///
-/// The chain is CENTERED — the changed-cell set framed with its min-corner at the
+/// The chain is CENTERED — the changed sites framed with their min-corner at the
 /// origin (the substrate's transposition projection, hypha-side per the ruling) —
 /// so the same deformation at any position is ONE word, while geometry (the
-/// relative offsets between changed cells) is preserved exactly: equal-tally,
+/// relative offsets between changed sites) is preserved exactly: equal-tally,
 /// different-geometry residuals stay distinct. The word/identity IS the centered
 /// chain; the antisymmetric hue tally is kept only as the δ-algebra lens.
 /// A5: translate min-corner to origin, sort, dedup. None when two
@@ -41,9 +37,9 @@ pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
 pub struct CanonicalChain(Vec<(i64, i64, u8, u8)>);
 
 impl CanonicalChain {
-    /// The cells this chain dropped, re-centered. Total: a subset of a
-    /// conflict-free set is conflict-free, and centering and sorting are
-    /// total.
+    /// The links left when the named sites are dropped, re-centered. Total:
+    /// a subset of a conflict-free set is conflict-free, and centering and
+    /// sorting are total.
     pub fn without(&self, drop: &[(i64, i64)]) -> CanonicalChain {
         let kept: Vec<(i64, i64, u8, u8)> = self
             .0
@@ -54,9 +50,9 @@ impl CanonicalChain {
         CanonicalChain(center(&kept))
     }
 
-    /// Both chains' cells. `None` where the two name one site with
+    /// Both chains' links. `None` where the two name one site with
     /// different transitions: that is a conflict and A5 refuses it. Equal
-    /// transitions at one site are the same cell and deduplicate.
+    /// transitions at one site are the same link and deduplicate.
     ///
     /// Keeping this one's transition and dropping the other's would be a
     /// member chosen by arrival (rule 15) inventing a consistency the two
@@ -99,7 +95,7 @@ pub struct PlacedChain {
 }
 
 impl Default for PlacedChain {
-    /// The empty chain at the origin: no cells, and the identity placement
+    /// The empty chain at the origin: no links, and the identity placement
     /// that is true of them rather than standing in for one.
     fn default() -> Self {
         PlacedChain { chain: CanonicalChain::default(), at: identity_versor() }
@@ -115,17 +111,17 @@ impl PlacedChain {
         &self.at
     }
 
-    /// The chain as it sits in the scene: each canonical cell carried
-    /// through the translator, its transition unchanged, in the frame the
-    /// pose names (16.5). `carry_cell` is the sensor's, and this is the one
-    /// place the pair reappears.
+    /// The chain as it sits in the scene: each canonical link's site
+    /// carried through the translator, its transition unchanged, in the
+    /// frame the pose names (16.5). `carry_lamina` is the sensor's, and
+    /// this is the one place the pair reappears.
     pub fn placed(&self) -> Vec<(i64, i64, u8, u8)> {
         let mut out = Vec::new();
         for &(r, c, hb, ha) in self.chain.as_slice() {
-            let Some(cells) = crate::transducer::element::sensor::carry_cell(&self.at, r, c, 0) else {
+            let Some(sites) = crate::transducer::element::sensor::carry_lamina(&self.at, r, c, 0) else {
                 continue;
             };
-            for (pr, pc, _) in cells {
+            for (pr, pc, _) in sites {
                 out.push((pr, pc, hb, ha));
             }
         }
@@ -143,22 +139,22 @@ impl std::ops::Deref for PlacedChain {
 }
 
 /// A5's chain and the translator that places it, measured from raw scene
-/// cells. `None` where two transitions occupy one site.
-pub fn place_chain(cells: &[(i64, i64, u8, u8)]) -> Option<PlacedChain> {
-    let chain = canonical_chain(cells)?;
-    Some(PlacedChain { chain, at: corner_translator(cells) })
+/// links. `None` where two transitions occupy one site.
+pub fn place_chain(links: &[(i64, i64, u8, u8)]) -> Option<PlacedChain> {
+    let chain = canonical_chain(links)?;
+    Some(PlacedChain { chain, at: corner_translator(links) })
 }
 
 /// The translator from the origin to the chain's min corner. The corner is
 /// read here, at the sensor boundary, and leaves as a versor.
 #[expect(
     clippy::disallowed_methods,
-    reason = "rule 4 — the min corner is the chain's extent, content; §1.4, this is the sensor boundary where a cell coordinate is read"
+    reason = "rule 4 — the min corner is the chain's extent, content; §1.4, this is the sensor boundary where a site's coordinates are read"
 )]
-fn corner_translator(cells: &[(i64, i64, u8, u8)]) -> Versor {
+fn corner_translator(links: &[(i64, i64, u8, u8)]) -> Versor {
     let (Some(min_r), Some(min_c)) = (
-        cells.iter().map(|(r, _, _, _)| *r).min(),
-        cells.iter().map(|(_, c, _, _)| *c).min(),
+        links.iter().map(|(r, _, _, _)| *r).min(),
+        links.iter().map(|(_, c, _, _)| *c).min(),
     ) else {
         return identity_versor();
     };
@@ -171,14 +167,14 @@ fn corner_translator(cells: &[(i64, i64, u8, u8)]) -> Versor {
     clippy::disallowed_methods,
     reason = "rule 4 — the min corner is the chain's extent, content: A5 translates it to the origin so two nodes address one chain alike"
 )]
-fn center(cells: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
+fn center(links: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
     let (Some(min_r), Some(min_c)) = (
-        cells.iter().map(|(r, _, _, _)| *r).min(),
-        cells.iter().map(|(_, c, _, _)| *c).min(),
+        links.iter().map(|(r, _, _, _)| *r).min(),
+        links.iter().map(|(_, c, _, _)| *c).min(),
     ) else {
         return Vec::new();
     };
-    let mut out: Vec<(i64, i64, u8, u8)> = cells
+    let mut out: Vec<(i64, i64, u8, u8)> = links
         .iter()
         .map(|(r, c, b, a)| (r - min_r, c - min_c, *b, *a))
         .collect();
@@ -187,8 +183,8 @@ fn center(cells: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
     out
 }
 
-pub fn canonical_chain(cells: &[(i64, i64, u8, u8)]) -> Option<CanonicalChain> {
-    let out = center(cells);
+pub fn canonical_chain(links: &[(i64, i64, u8, u8)]) -> Option<CanonicalChain> {
+    let out = center(links);
     for w in out.windows(2) {
         if w[0].0 == w[1].0 && w[0].1 == w[1].1 && (w[0].2, w[0].3) != (w[1].2, w[1].3) {
             return None;
@@ -202,7 +198,7 @@ pub fn canonical_chain(cells: &[(i64, i64, u8, u8)]) -> Option<CanonicalChain> {
 ///
 /// A germ `canonical_chain` refuses has no address, because the address IS
 /// the centered chain (law 2) and there is no centering of a chain that
-/// says two things at one cell. The refusal travels.
+/// says two things at one site. The refusal travels.
 pub fn from_residual(g: &ResidualGerm) -> Option<Element> {
     Some(from_canonical(&canonical_chain(g)?))
 }

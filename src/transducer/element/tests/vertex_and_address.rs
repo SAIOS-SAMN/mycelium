@@ -9,16 +9,11 @@ use super::common::*;
 
 /// A COMPOSITE CARRIES ITS ROTOR, AND A TRANSITION ANSWERS ONE.
 ///
-/// `compose` wrote only the action — a `Versor` in `Cl(3,1)`, which has one
-/// rotation plane — and left `description` empty. `letters()` gates on the
-/// description's tag, so every composite answered `None`, and
-/// `cech::rotor_of`, which reads the tape and nothing else, answered `None`
-/// for EVERY transition in the tree. The court then had no rotor to put on
-/// a cell, wrote the identity on the one edge it could, and `Complex::fill`
-/// short-circuited on an identity coefficient before reaching `classify` —
-/// the only producer of `Fill::Class` and `Fill::Unspellable`. That is
-/// `court cell` 0, `horizon seeded` 0 and the `ruled` term of the span
-/// reading, on every fleet ever run.
+/// `letters()` gates on the description's tag and `cech::rotor_of` reads
+/// the tape and nothing else, so a composite that left its description
+/// empty would answer no rotor, the court would have none to put on a
+/// simplex, and `Complex::fill` would never reach `classify` — the only
+/// producer of `Fill::Class` and `Fill::Unspellable`.
 ///
 /// The rotor composes in `Cl(4,0)`, six planes. This is the case that says
 /// so: a quarter on the sensor and a quarter on `(2, 3)` have the SAME
@@ -121,9 +116,9 @@ fn substance_is_the_centered_chain() {
     assert!(here.carriage(&far).is_some(), "one thought: a versor carries one onto the other");
     // Equal tally, different geometry — the cured conflation: {1→0 here, 0→4
     // there} at two different relative offsets must stay DISTINCT.
-    let chain = |cells: &[(i64, i64, u8, u8)]| {
+    let chain = |links: &[(i64, i64, u8, u8)]| {
         from_canonical(
-            &crate::transducer::element::canonical_chain(cells)
+            &crate::transducer::element::canonical_chain(links)
                 .expect("one entry per position is A5's chain"),
         )
     };

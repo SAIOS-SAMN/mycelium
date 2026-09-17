@@ -23,7 +23,7 @@ fn the_versor_identifies_conformal_images_and_pulls_back_sections() {
     assert!(transition(&l, &rotated).is_some(), "rotation is a versor");
     assert!(transition(&l, &bar).is_none(), "distinct shapes refuse");
     // A 2× dilated L with other hues: the versor exists and the pullback
-    // reads its assignment onto the base's three cells.
+    // reads its assignment onto the base's three sites.
     let big: Vec<(i64, i64, u8, u8)> = l
         .iter()
         .flat_map(|&(r, c, _, _)| {
