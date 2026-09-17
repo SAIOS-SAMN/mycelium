@@ -85,15 +85,18 @@ into three canonical commuting dual pairs (`BLOCK_ORDER`):
 Complementary planes commute mutually (`[B_i, ⋆B_i] = 0`), so double rotations
 factor exactly without Baker–Campbell–Hausdorff cross-terms:
 `exp(½ θ₁ B_i + ½ θ₂ ⋆B_i) = exp(½ θ₁ B_i) · exp(½ θ₂ ⋆B_i)`.
-Peeling over commuting pair blocks reduces the peeling search depth from six
-sequential stages to at most two commuting block evaluations, collapsing derivation
-cycle complexity by ~66% and eliminating pseudo-shear remainder edges.
+`factor_rotor` peels by these blocks (`MU-RECURSION.md` 50.4): the two
+quaternion factors of the rotor, each in Tait–Bryan order, give two
+commuting plane rotors per block, and each plane is spelled by its own
+Gaussian peel.
 
-## Transverse energy routing
+## Off-plane rotors
 
-A rotor carrying non-zero energy on off-plane bivectors (`off_plane_blades`)
-does not immediately fail to a refusal. Instead, exact Gaussian elimination over
-ℚ (`solve_conjugator_rotor`) computes the conjugator `γ ∈ Spin(4,0)(ℚ)` such that
-`γ · a = λ · b · γ`, rotating the transverse bivector into the principal Cartan
-subalgebra and permitting closed derivation without tape mutations.
+A rotor no coordinate plane holds — `rotor_block_on` answers `None` on all
+six, as it does for `3 + e₀₁ + e₀₂` of weight 11 — is not spelled and is
+not refused: `factor_rotor` types it `Demand::Standing` with the rotor as
+witness, and the court dockets that rotor as a candidate generator under
+37.7, adjoined by closure (`MU-RECURSION.md` 16.16 step 6, 37.7 as amended
+2026-09-17). The peel over the commuting pairs above runs with the mind's
+adjoined generators as its basis (`MU-RECURSION-TASKS.md` Stage 18, N3).
 
