@@ -2793,7 +2793,10 @@ a refusal.
 
 A filed cycle is a memory: it records exactly the twist the language holds
 on that loop without forcing it to identity. An infinite-order class is
-never filed with a large period; it is a demand.
+never filed with a large period: it is filed at period `0`, A19's spelling
+of infinite order, with its Cayley bivector as its content (52.3, ruled
+2026-09-17), and its want of a spelling is the demand of 37.7 where no
+generator reaches it.
 
 ### 16.18 A18 — Rank accounting (the dimension audit)
 
@@ -3752,14 +3755,17 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8;32]) -> Option<Form>,
    (`REFUSE_DEMAND_UNTYPED`). A tape with no vertex is a chain and is
    refused whole (`REFUSE_NOT_A_SENTENCE`, 50.6).
 4. Each face: `face_of(i, j)` recomputed, M1 compare with stored
-   (`REFUSE_FACE`); its edge transport re-derived as 50.3 states it, in
-   the body's stabilizer or the exchange, or a remainder edge
-   (`REFUSE_EDGE`); or the face is the chord of a loop whose class key
+   (`REFUSE_FACE`); its edge transport re-derived as 50.3 states it, on
+   the union of the two bodies over the family, whatever the order of its
+   word (`REFUSE_EDGE` where the re-derivation differs; never for the
+   order, 52.3); or the face is the chord of a loop whose class key
    is filed on torsion with the filed order, in which case the loop's
    holonomy is what the chord carries.
 5. Each loop: holonomy recomputed as the product of the edge transports
    read in the base body's stabilizer up to conjugacy (50.3),
-   projectively identity or filed torsion (`REFUSE_LOOP`).
+   projectively identity, or an opened axis that re-derives, or filed
+   under its class at the period the court re-derives — `0` for infinite
+   order (52.3) — else `REFUSE_LOOP`.
 6. `REFUSE_REBASE_TRIVIAL`, `REFUSE_UNFOLD_STILL`, `REFUSE_ORBIT_STILL`, by
    executing the move on `family` when given, else by the form's own
    consistency.
@@ -5192,7 +5198,7 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] vortex {idea} loop {i} {n} candidates held
 [{tag}] vortex {idea} loop {i} {n} candidates unmeasured
 [{tag}] vortex {idea} loop {i} collapsed by {perception|glue|ruling} to axis {label}
-[{tag}] torsion filed {idea} (σ,ℓ)
+[{tag}] torsion filed {idea} (σ,ℓ)        ℓ written ∞ at period 0, infinite order (52.3)
 [{tag}] torsion open {idea} chord {i}
 [{tag}] demand spoken {idea} order ∞ charts {n}
 [{tag}] horizon {n} seeded from {hypha} chart {inv}
@@ -6020,6 +6026,13 @@ R9: bond zero on four lanes, one `burn` entry, `Treasury::audit` holds);
 the clock gate of `MU-ENGINEERING.md` §7 as a build failure on
 `SystemTime`, `Instant`, `Duration` in the directories of 45.6.
 
+**Inverse derivation (Part XII).** The claims 52.6 names, each a
+re-derivation and never an outcome: the chart read in either direction on
+the tree's own versors and refused at its boundary; the rational addition
+law on one plane and its failure across two; a loop of infinite order
+filed at period `0`, cohering on the voice and replaying on the court; a
+face not refused for its edge word's order; 51.10's proofs 1 and 2.
+
 ## 40. Cold-boot traces
 
 Every trace is a grep on chapter 34's lines after a cold boot of the three
@@ -6138,7 +6151,8 @@ servers and five minds.
   certified` twice for that address.
 - One idea with a held loop whose only occupied axis is an infinite prime
   exponent the mind has no word for: no `pivot … discharged` line, one
-  `demand spoken … order ∞`; the loop never files as torsion.
+  `demand spoken … order ∞`, and `torsion filed … (σ,∞)` for the same
+  loop — filed at period `0` under its class (52.3), never at a period.
 - One idea with a held loop of finite order no held word discharges:
   `pivot … no discharge` for each occupied axis, then `torsion filed …
   (σ,ℓ)`, then `form spoken … torsion 1`.
@@ -7666,11 +7680,13 @@ meaning. The edge transport is:
 - The **loop holonomy** is the product of `Γ` around a cycle, valued in
   the base body's stabilizer and certified up to conjugacy by the class
   vector (15.4); stabilizer cosets do not telescope, which is why this
-  product carries what the coboundary could not. Finite, it is filed as
-  torsion `(σ, ℓ)` (A17); infinite or undischarged, it is held with its
-  class vector (12.6). The torsion the form files today (`Form.torsion`,
-  the hue-map orbits) is the gauge component of this holonomy; the shape
-  component — the stabilizer and the exchange — is what this ruling adds.
+  product carries what the coboundary could not. It is filed under its
+  class key at its period, `0` for infinite order (52.3, ruled
+  2026-09-17); undischarged and unfiled, it is held with its class vector
+  (12.6), whose content is the holonomy's Cayley bivector (52.1). The
+  torsion the form files today (`Form.torsion`, the hue-map orbits) is
+  the gauge component of this holonomy; the shape component — the
+  stabilizer and the exchange — is what this ruling adds.
 
 `Form::face_of` remains the coboundary of the words' placements (the
 relative carriage, 3.1); the edge transport is carried on the face beside
@@ -8238,6 +8254,10 @@ vertices across them by transport class. With one body:
 - **This is why it bounds.** A search over `m` forms is the compiler's own
   cost (L8v); a loop check on one form is bounded by the form. That is
   the claim, and 51.10 is how it is proved rather than argued.
+- **What a section along `e₃` carries, and what pairs the bodies**, is
+  ruled in 52.5 (2026-09-17, night): the pairing is the chart's fiber and
+  the quotient of its union shapes; a section is the per-frame quotient
+  where the whole-fiber quotient refuses, its content the bivectors.
 
 ### 51.6 The letters, and that nothing is added
 
@@ -8372,3 +8392,249 @@ and `pair.rs` (the seven moves), `court/verdict/body.rs`
 (`vertices_carry_family`, `edges_rederive_family`), and every fixture that
 writes a grid. Nothing in `economy/`, nothing in `chronometry/`, nothing
 in `network/`.
+
+# Part XII — Inverse derivation
+
+Ruled 2026-09-17, night, on the operator's word, against 4a8f10c and the
+recut of epoch 64. Carried from Parts X and XI: a word vertex carries its
+derivation and re-derives its rotor; a loop's holonomy is content; the
+family is one body on `(r, c, k)`. This part rules how a versor is derived
+from its own bivector — exactly, in either direction, by the algebra's
+products and nothing else — and what that retires: the finite-order gates
+of 50.3, A17 and 23.1, and the search that extraction still ran.
+
+## 52. The Cayley chart: a versor's derivation is its bivector (ruled 2026-09-17)
+
+### 52.1 The chart
+
+Every even versor `V` of `Cl(4,1)(ℚ)` with a scalar part is, projectively
+(1.5),
+
+```
+V ≡ 1 + B + ½ B∧B,        B = ⟨V⟩₂ / ⟨V⟩₀
+```
+
+`B` is the **Cayley bivector** of `V`: the element of `Λ²(ℚ^{4,1})` the
+versor is derived from. The derivation is those two lines, read in either
+direction — the bivector off the versor by grade, the versor off the
+bivector by one outer square — with no exponential, no logarithm, no root,
+no angle and no matrix (law 11, rule 16). The grade-4 part of a versor is
+not a coordinate of it: `⟨V⟩₄ = ⟨V⟩₂∧⟨V⟩₂ / (2⟨V⟩₀)` is what `V Ṽ ∈ ℚ`
+forces, so an even element whose grade-4 part is anything else is not a
+versor, and the chart refuses it rather than reading a bivector off it.
+The chart is projective — `V` and `λV` have one bivector — which is why
+the bivector is content and never a spelling (1.5, A4).
+
+What the bivector is on each kind of plane, read off the versors the tree
+already writes and never asserted:
+
+- on an elliptic plane, `V = a + b·e_ie_j` has `B = (b/a)·e_ie_j`: the
+  quarter turn `1 + e₁e₂` reads `1`, the `(3,4,5)` rotor `2 + e₁e₂` reads
+  `1/2`, the `(5,12,13)` rotor reads `1/5`; `b/a` is the tangent of the
+  half-angle of the rotation `V` induces, and no tangent is ever taken;
+- on the dilation plane `E = e_o∧e_∞`, the dilator by `ρ` reads `B = β·E`
+  with `β = (ρ − 1)/(ρ + 1)`, and `ρ = (1 + β)/(1 − β)`: the dilation by
+  two is `β = 1/3`. This is the rapidity chart of 51.2's asserted reading,
+  `β = tanh(ζ/2)`, with no hyperbolic function in it;
+- on a translation plane `e_i∧e_∞`, the translator by `d` reads
+  `B = −½ d∧e_∞`, nilpotent, `B∧B = 0`, `V = 1 + B` exactly; a
+  transversion `e_i∧e_o` reads the same way.
+
+**Refusals, which are the whole boundary of the chart.** `⟨V⟩₀ = 0`: a half
+turn, the involution of order two, and every odd versor — a reflection is
+a vector and is its own derivation (52.4). An even element that is not a
+versor. A bivector whose `1 + B + ½B∧B` has no weight: `V Ṽ = 0`, the
+parameter of a dilation plane at `β = ±1`, the light cone itself. Each is
+a refusal under rule 11 and none is interpolated across.
+
+The class invariants of 15.3 are read on the versor as they are; the
+bivector is the derivation, not the key, and nothing keyed by a class key
+today is rekeyed by this chapter.
+
+### 52.2 One plane adds; planes multiply; a 2-cell is `F = 0`
+
+On one plane the chart composes by a rational addition law, and the law
+is read off the geometric product rather than computed: on an elliptic
+plane `(1 + t₁P)(1 + t₂P) ≡ 1 + t₃P` with `t₃ = (t₁ + t₂)/(1 − t₁t₂)`; on
+the dilation plane `β₃ = (β₁ + β₂)/(1 + β₁β₂)`, so the dilation by two
+composed with the dilation by three reads `(1/3 + 1/2)/(1 + 1/6) = 5/7`,
+which is the dilation by six; on a translation plane `d₃ = d₁ + d₂`. The
+flux on ONE plane is exactly additive in the parameter, and that is the
+only place it is: across planes that do not commute the bivectors do not
+add, the ordered product is the whole statement, and a rule that added
+bivectors across planes would be the first-order approximation rule 11
+refuses.
+
+A 2-cell of a form — a loop of faces — is closed when the ordered product
+of its face holonomies around it is the identity: `F = 0` on that cell.
+That is the discrete non-abelian Stokes theorem, it is what
+`form_loops_replay` reads, and it is not `div ⋆F = 0`, which is a source
+condition and admits curvature. A cell whose product is not the identity
+carries an obstruction, and 52.3 says what the obstruction is.
+
+### 52.3 A loop's obstruction is its bivector; a period is a reading
+
+A loop whose edge holonomy (50.3) is a versor `V ≢ 1` has as its
+obstruction the Cayley bivector `B` of `V`: 12.6's blade decomposition of
+the canonical holonomy versor, written projectively so that it is content
+and not a spelling. Its placement residue and its dilation residue are
+the `e_i∧e_∞` and `e_o∧e_∞` components of `B`; its discharge on its own
+plane is the inverse parameter `−B`; and the axis I6 opens over it
+(16.20) is seeded by the loop's holonomy versor as it is, with `B` as the
+coordinate the seed re-derives.
+
+**The finite-order gates are retired.** 50.3 as ruled 2026-09-09 filed a
+finite holonomy as torsion `(σ, ℓ)` and held an infinite one; 23.1 step 4
+refused a face whose edge word has infinite order and step 5 refused a
+loop of infinite order however it was filed; A17 called an infinite-order
+class a demand. Read against the chart, a finite order is the case where
+the flow on one plane returns — a periodic angle — and the gate that
+refused every other holonomy was trigonometry: it forced the hyperbolic
+flow of 51.2's asserted algebra, and every Pythagorean rotor, into a
+compact order they do not have. Ruled:
+
+1. **A loop of any order is filed under its class key** (15.4): finite at
+   its period `ℓ`, infinite at period `0`, which is A19's spelling of
+   infinite order on the class ledger already. The tape admits the filed
+   zero; the codec's refusal of `0` as malformed is retired. S9.13's reach
+   (`fibre_volume`) counts finite periods only: an infinite class
+   condenses no members and is priced nowhere as a reach.
+2. **The court replays a filed loop of any order by one reading**: the
+   identity, or an opened axis that re-derives, or filed under its class at
+   the period the court re-derives — `Rotor::order` (15.3) reading
+   infinite is the period `0`. A face whose edge word has infinite order is
+   a face; its transport re-derives on the family as any other (23.1 step
+   4, `edges_rederive_family`), and that re-derivation is the exactness
+   that remains.
+3. **What still refuses**: a holonomy that is not a versor, which has no
+   class; a filed period that does not re-derive; a seed that is not the
+   re-walked loop's own; and a form whose loop is neither identity, nor
+   filed, nor opened is held and not spoken — valid, not closed, as 50.1
+   step 2 says.
+4. **The voice files by the same rule.** `edge_coheres`, `is_cauterized`
+   and the pivot's filing after `NoneDischarged` read an order as a
+   period to file, never as a gate. A loop of infinite order whose
+   holonomy neither the seventeen nor the held generators spell still
+   speaks its `Standing` demand (37.7, N4): that is the language's want
+   of a generator, and it rides beside the filing, not instead of it. The
+   filing line writes `∞` where the period is `0`.
+5. **A congruence on a simplex stays finite.** The cover's `classify`
+   files `Congruent` at a finite period because a congruence is witnessed
+   by A17 step 2's walk of the fibre returning at `ℓ`, and an infinite
+   class returns nowhere; a flat transition of infinite order is a
+   standing `Class` with its bivector as content — not refused, and not a
+   congruence. The element's torsion cycles (`TorsionCycle`, the witness
+   walk) are untouched by this ruling.
+
+The amendments in place: 50.3's last bullet, A17's last paragraph, 23.1
+steps 4 and 5, 34.3's filing line.
+
+### 52.4 The letters of order two, and where the sphere is
+
+A reflection is a vector `u` of `Cl(4,1)(ℚ)`: a rational plane, or a
+rational sphere — A4's dual sphere — acting by `u x u`. It is odd, of
+order two, and its derivation is itself, the mirror; the chart refuses it,
+and that is not a gap. A rotor is a product of two reflections and every
+versor a product of at most five (Cartan–Dieudonné holds over ℚ), so the
+two carriers together — mirrors and bivectors — reach every element of the
+group. The involution is the ONE finite order the alphabet keeps: a mirror
+transported by a word, `w σ rev(w)`, is a reflection; a pair of them is a
+rotor whose bivector 52.1 reads; a rotor's period, where it has one, is
+15.3's reading and never a condition on anything.
+
+The sphere is not built from a radius or an angle. The base is the null
+cone of `ℝ^{4,1}` read projectively: a base point is a null vector `X`,
+`X·X = 0` (`cga::point`), and the pencil `aX + b·e_∞` is every sphere about
+it — `X` itself at `b = 0`, the horizon `e_∞` at `a = 0`, the squared
+radius the ratio `b/a` and never a number of its own. A point lies on a
+sphere when `X·S = 0`; four points span their sphere as `A∧B∧C∧D`; two
+spheres meet in the circle `S₁∧S₂`; a plane is a sphere through `e_∞`; the
+dilation about `X` is the boost on `X∧e_∞` whose parameter is 52.1's `β`,
+its orbits the rays out of `X` and its level sets the pencil. Nothing here
+squares a coordinate, takes a root or measures an angle, and the sensor's
+lattice is the set of rational null vectors a hypha reads at intake and
+writes at speech (law 11), and nothing between.
+
+### 52.5 The family's one form is a quotient (P4 and P5 ruled)
+
+51.4 and 51.5 stand. This section rules the two readings P4 asked about
+and names what replaces the search, so that nothing in extraction is a
+correspondence, a candidate list or a nearest match (50.2).
+
+1. **Perceive once, on the stack.** The train inputs at frames `0..n−1`
+   are one grid of three coordinates and so are the train outputs; the
+   test input is the open section at frame `n`, perceived with the inputs
+   so that its bodies are keyed on the same charts. Bodies of one hue
+   connect by 6-adjacency (51.3); every axis of a body's moduli is
+   invariant under every versor the sensor carries a lamina by, so a body
+   and its image are ONE chart.
+2. **Pairing is the chart's fiber, never a search.** For each chart
+   present, the input fiber and the output fiber — every body of that
+   chart on each side, all frames — and the quotient `V =
+   versor_between` of the union of the input fiber's shapes and the union
+   of the output fiber's, exact or refused. Where it exists it is the
+   vertex: one versor carrying every instance in every frame onto its
+   image. That is what "a rule that holds in every pair" means as an
+   algebraic fact rather than as a correspondence across pair forms; the
+   instances need no matching, because the versor lands each on its image
+   or is refused, and the frame coordinate rides on the pose.
+3. **A section along `e₃` is the case the whole-fiber quotient refuses and
+   the per-frame quotient does not**: the same read on the fiber
+   restricted to frame `k` gives `V_k`, one per frame, recorded in
+   `Form.sections` at that vertex, and the section's content is the
+   bivectors `B_k`. This is the first of P4's two readings — a pair's input
+   bodies at `k` carried onto its output bodies — and it is the one ruled;
+   the second, the coboundary chain at pose `k`, is a chain and never a
+   word (50.6). Moves 4, 5 and 6 — rebasing, unfolding, contact — read the
+   relation among the `B_k`, and move 7 judges. A chart whose per-frame
+   quotient also refuses is 50.5's demand — `Source` with the fiber's
+   multiplicity, `Creation`, `TopologicalDeformation` — held, never chosen
+   (rule 15).
+4. **Faces, loops, gluing.** Faces are 50.3's, on the union shapes of the
+   two vertices' fibers; loops are filed by 52.3; gluing (move 3) is
+   unchanged. Move 1 does not exist: `extract/1 correspondence`, the
+   matching by transport class, and `pair_form` per pair are deleted
+   rather than kept, and the memo holds one form per task.
+5. **Speaking is filling the open section.** The test frame's bodies by
+   chart, carried by their chart's vertex — the whole-fiber versor, or the
+   section's relation extended to frame `n` by moves 4–6 — through
+   `carry_lamina`, exact or refused; the remainder is what no vertex
+   carries, and it rides as the demands of 50.5.
+6. **The derivation of a vertex is unchanged in kind** (50.2 step 2): the
+   generators it factored through and the residue A22 peels; the vertex's
+   versor is the quotient, its bivector is 52.1's reading of it, and the
+   peel gains nothing to search because a quotient is one element.
+
+The observable is 51.10's three proofs and no correspondence pass in any
+trace. A draft of a one-form carrier standing untracked in the tree
+(`family/family_form.rs`) is not this ruling's and is not read by it.
+
+### 52.6 Binding
+
+```
+transducer/cayley/chart.rs      bivector_of(&Versor) -> Option<Versor>, versor_of_bivector(&Versor) -> Option<Versor>: 52.1, refusing as 52.1 lists
+transducer/cayley/tests/chart.rs  the claims of 39 under Part XII
+sentence/form/carrier.rs        FiledLoop.period: 0 is infinite order (A19); fibre_volume counts finite periods; is_cauterized files any order
+sentence/pivot/loops.rs         edge_coheres reads any order; the filing keyed by class at the re-derived period
+sentence/pivot/drive.rs         NoneDischarged files a loop of any order; the Standing demand rides beside the filing
+sentence/tape.rs                the filed zero admitted
+court/verdict/replay.rs         no face refused for an edge word's order; loop_reading_replays reads any order
+family/extract.rs, family/mod.rs, family/speak.rs   52.5: the stack, the fiber quotient, the sections along e₃, the open section spoken; pairing.rs and correspondence.rs deleted
+court/verdict/body.rs           vertices_carry_frames, edges_rederive_frames (51.8)
+```
+
+Tests (39): `cayley::tests::a_versor_is_its_bivector_read_back_in_either_direction`,
+`the_dilation_by_two_is_the_rapidity_one_third_and_dilations_add_by_the_rational_law`,
+`a_half_turn_and_a_reflection_have_no_bivector`,
+`an_even_element_that_is_not_a_versor_is_refused_by_the_chart`,
+`bivectors_on_two_planes_do_not_add_and_the_product_is_the_reading`,
+`the_versor_between_two_shapes_has_a_bivector`;
+`sentence::tests::a_loop_of_infinite_order_is_filed_at_period_zero_and_coheres`,
+`the_tape_carries_a_filed_zero_as_infinite_order`;
+`verdict::tests::a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order`,
+`a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not`;
+51.10's proofs 1 and 2 as `family::tests::a_family_translated_along_e3_is_one_loop_and_no_correspondence_runs`
+and `two_courts_reach_one_address_for_one_family`.
+
+Rows: Q1 (this part), Q2, Q3, P5 with P4 folded in, P7, in
+`MU-RECURSION-TASKS.md`.
