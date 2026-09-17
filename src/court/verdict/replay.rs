@@ -229,8 +229,8 @@ pub fn replay_form_at(
     if !f.acts() {
         return Some(tape(REFUSE_NOT_A_SENTENCE));
     }
-    if let Some(reason) = vertex_tape_and_moves(f, family) {
-        return Some(tape(reason));
+    if let Some(refusal) = vertex_tape_and_moves(f, family, spoken) {
+        return Some(refusal);
     }
     // G steps 2–3 (50.2) on the court's copy of the family: every word
     // vertex carries its body onto its image, exactly (L7).
@@ -263,7 +263,7 @@ pub fn replay_form_at(
             continue;
         }
         if !torsion_chord_carries(&walked, &by_chord, i) {
-            return Some(tape(REFUSE_FACE));
+            return Some(face_at(f, face, spoken));
         }
     }
     // 23.1 step 4, 50.3 (L7): every carried edge re-measured on the union
@@ -327,34 +327,57 @@ pub fn replay_form_at(
     replay_certificates(&walked, &by_chord).map(tape)
 }
 
+/// `REFUSE_FACE` at the face's two vertex addresses (50.9); a face reaching
+/// a vertex with no address is refused at the tape.
+fn face_at(f: &Form, face: &crate::transducer::sentence::FormFace, spoken: &Element) -> Refusal {
+    let addr_of = |i: u16| match f.vertices.get(i as usize) {
+        Some(Vertex::Word { address, .. }) | Some(Vertex::Glued { address, .. }) => Some(address.clone()),
+        _ => None,
+    };
+    match (addr_of(face.i), addr_of(face.j)) {
+        (Some(a), Some(b)) => Refusal { reason: REFUSE_FACE, at: sentence::At::Face(a, b) },
+        _ => Refusal::of_tape(REFUSE_FACE, spoken),
+    }
+}
+
 /// Chapter 23.1 steps 3 and 6: each Word vertex re-derives its rotor (M1)
 /// and its affine; a Rebased whose word is the identity equals its base;
 /// an Unfolded Remainder with nothing left does not move; an orbit whose
 /// word is identity does not move. With a family, unfold and orbit execute
-/// on the trains.
+/// on the trains. The orbit's refusal is at the contact vertex with the
+/// chart it acts on (50.9); every other refusal here is of the tape.
 pub(crate) fn vertex_tape_and_moves(
     f: &Form,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
-) -> Option<&'static str> {
+    spoken: &Element,
+) -> Option<Refusal> {
     use crate::transducer::family::{self, OrbitEnd};
     use crate::transducer::sentence::Measure;
+    let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
     for v in &f.vertices {
         match v {
-            Vertex::Word { derivation, contact, .. } => {
+            Vertex::Word { address, derivation, contact, .. } => {
                 // EVERY MEMBER'S CARRIAGE must give a conformal versor, or
                 // the tape carries a placement nothing can be spoken at.
                 // One member today; the walk is the vertex's own fibre.
                 let Some(acts) = v.acts() else {
-                    return Some(REFUSE_VERTEX_TAPE);
+                    return Some(tape(REFUSE_VERTEX_TAPE));
                 };
                 for (_, a) in acts.scoped() {
                     if element::conformal_of_rotor(&derivation.rotor(), &a.carriage).is_none() {
-                        return Some(REFUSE_VERTEX_TAPE);
+                        return Some(tape(REFUSE_VERTEX_TAPE));
                     }
                 }
                 if contact.is_some() {
+                    let still = || match v.face_chart() {
+                        Some(chart) => Refusal {
+                            reason: REFUSE_ORBIT_STILL,
+                            at: sentence::At::Vertex { address: address.clone(), chart },
+                        },
+                        None => tape(REFUSE_ORBIT_STILL),
+                    };
                     if derivation.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
-                        return Some(REFUSE_ORBIT_STILL);
+                        return Some(still());
                     }
                     if let Some(fam) = family {
                         for (x, _) in fam {
@@ -363,7 +386,7 @@ pub(crate) fn vertex_tape_and_moves(
                             let frame = (x.len(), crate::arc::grid_width(x));
                             let anchor: Vec<(i64, i64)> = painted.iter().map(|&(r, c, _)| (r, c)).collect();
                             if matches!(family::orbit(v, &painted, &anchor, frame), OrbitEnd::NoOrbit) {
-                                return Some(REFUSE_ORBIT_STILL);
+                                return Some(still());
                             }
                         }
                     }
@@ -371,16 +394,16 @@ pub(crate) fn vertex_tape_and_moves(
             }
             Vertex::Rebased { .. }
                 if v.word_in(f).is_some_and(|w| w.is_identity()) => {
-                    return Some(REFUSE_REBASE_TRIVIAL);
+                    return Some(tape(REFUSE_REBASE_TRIVIAL));
                 }
             Vertex::Unfolded { measure: Measure::Remainder } if f.remainder.is_empty() => {
-                return Some(REFUSE_UNFOLD_STILL);
+                return Some(tape(REFUSE_UNFOLD_STILL));
             }
             Vertex::Unfolded { measure: Measure::Occupied } => {
                 if let Some(fam) = family {
                     for (x, y) in fam {
                         if x == y {
-                            return Some(REFUSE_UNFOLD_STILL);
+                            return Some(tape(REFUSE_UNFOLD_STILL));
                         }
                     }
                 }
@@ -389,7 +412,7 @@ pub(crate) fn vertex_tape_and_moves(
             // coordinates, or it is not a demand.
             Vertex::Demand { kind, .. } => {
                 if let Err(why) = kind.typed() {
-                    return Some(why);
+                    return Some(tape(why));
                 }
             }
             _ => {}

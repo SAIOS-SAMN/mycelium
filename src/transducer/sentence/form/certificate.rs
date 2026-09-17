@@ -275,6 +275,12 @@ pub enum RefusalKind {
     EdgeHolonomy,
     RemainderUndeclared,
     MalformedComplex,
+    /// A contact word the court's family does not orbit (22, 23.1 step
+    /// 6), at the vertex with the chart it acts on (50.9 move 5).
+    OrbitStill,
+    /// A face that does not re-derive from its vertices (23.1 step 4),
+    /// at its two addresses (50.9 move 6).
+    FaceDerivation,
 }
 
 impl RefusalKind {
@@ -284,6 +290,8 @@ impl RefusalKind {
             RefusalKind::EdgeHolonomy => 1,
             RefusalKind::RemainderUndeclared => 2,
             RefusalKind::MalformedComplex => 3,
+            RefusalKind::OrbitStill => 4,
+            RefusalKind::FaceDerivation => 5,
         }
     }
 
@@ -293,6 +301,8 @@ impl RefusalKind {
             1 => RefusalKind::EdgeHolonomy,
             2 => RefusalKind::RemainderUndeclared,
             3 => RefusalKind::MalformedComplex,
+            4 => RefusalKind::OrbitStill,
+            5 => RefusalKind::FaceDerivation,
             _ => return None,
         })
     }
@@ -304,6 +314,8 @@ impl RefusalKind {
             RefusalKind::EdgeHolonomy => "edge holonomy",
             RefusalKind::RemainderUndeclared => "remainder undeclared",
             RefusalKind::MalformedComplex => "malformed complex",
+            RefusalKind::OrbitStill => "orbit still",
+            RefusalKind::FaceDerivation => "face derivation",
         }
     }
 }

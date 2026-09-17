@@ -103,6 +103,14 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     };
     let bad_e = as_element_form(&bad, [1, 0, 0, 0]).expect("tampered tape");
     assert_eq!(blind_replay_with(&bad_e, &resolve), Some(REFUSE_FACE));
+    // 50.9 (R1): the face that does not re-derive is refused at its two
+    // addresses and travels as `FaceDerivation`. The tampered face is the
+    // Frame's star face, and the Frame has no address, so this one is at
+    // the tape; a face between two addressed vertices names both.
+    let face_refusal = replay_form_at(&bad_e, &resolve, None, &crate::transducer::family::NoCrystal)
+        .expect("the tampered face refuses");
+    assert_eq!(face_refusal.kind(), crate::transducer::sentence::RefusalKind::FaceDerivation);
+    assert!(matches!(face_refusal.at, crate::transducer::sentence::At::Tape(_)), "a star face has one address to name");
     // S9.4 — A ZERO MAGNITUDE IS NOT A REFUSAL. This tape replays: its
     // loops return, its faces re-derive, its citation resolves. It was
     // refused for measuring nothing, which made the court an economist —
@@ -389,6 +397,17 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         replay_form(&orb_e, &|_| None),
         Some(REFUSE_ORBIT_STILL),
         "an identity word does not orbit"
+    );
+    // 50.9 (R1): the orbit's refusal names the contact vertex with the
+    // chart it acts on, and travels as `OrbitStill`, never as a malformed
+    // complex at the tape.
+    let still = replay_form_at(&orb_e, &|_| None, None, &crate::transducer::family::NoCrystal)
+        .expect("the still orbit refuses");
+    assert_eq!(still.kind(), crate::transducer::sentence::RefusalKind::OrbitStill);
+    assert!(
+        matches!(&still.at, crate::transducer::sentence::At::Vertex { address, .. } if address.as_bytes() == [crate::transducer::address::TAG_FORM, 3]),
+        "at the contact vertex: {:?}",
+        still.at
     );
 
     // 50.5: a demand vertex names a kind that carries its coordinates. A

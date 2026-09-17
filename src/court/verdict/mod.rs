@@ -86,15 +86,18 @@ impl Refusal {
         Refusal { reason, at: sentence::At::Tape(spoken.address()) }
     }
 
-    /// The kind the reason travels as (34.1): `VertexBody` is
+    /// The kind the reason travels as (34.1, 50.9): `VertexBody` is
     /// `REFUSE_VERTEX_BODY`, `EdgeHolonomy` is `REFUSE_EDGE`,
-    /// `RemainderUndeclared` is `REFUSE_NOT_CLOSED`, and every other
-    /// refusal of the tape is a `MalformedComplex`.
+    /// `RemainderUndeclared` is `REFUSE_NOT_CLOSED`, `OrbitStill` is
+    /// `REFUSE_ORBIT_STILL`, `FaceDerivation` is `REFUSE_FACE`, and every
+    /// other refusal of the tape is a `MalformedComplex`.
     pub fn kind(&self) -> sentence::RefusalKind {
         match self.reason {
             REFUSE_VERTEX_BODY => sentence::RefusalKind::VertexBody,
             REFUSE_EDGE => sentence::RefusalKind::EdgeHolonomy,
             REFUSE_NOT_CLOSED => sentence::RefusalKind::RemainderUndeclared,
+            REFUSE_ORBIT_STILL => sentence::RefusalKind::OrbitStill,
+            REFUSE_FACE => sentence::RefusalKind::FaceDerivation,
             _ => sentence::RefusalKind::MalformedComplex,
         }
     }
