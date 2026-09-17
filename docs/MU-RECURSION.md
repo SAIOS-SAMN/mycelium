@@ -2299,10 +2299,15 @@ never a single `(plane, exponent)` pair.
 
 ### 16.4 A4 — Canonical conformal versor
 
-Input: `V: Mv` (cga.rs 46; `Versor = Mv`, element/letters.rs). The conformal
-algebra in this tree is `Cl(3,1)` over `{e1, e2, e+, e−}` with squares
-`(+,+,+,−)`, `e_o = ½(e− − e+)`, `e_∞ = e− + e+`, masks `E1 = 1, E2 = 2,
-EP = 4, EM = 8`: the conformal model of the sensor **plane**.
+Input: `V: Mv` (cga.rs; `Versor = Mv`, element/letters.rs). The conformal
+algebra in this tree is `Cl(4,1)` over `{e1, e2, e3, e+, e−}` with squares
+`(+,+,+,+,−)`, `e_o = ½(e− − e+)`, `e_∞ = e− + e+`, masks `E1 = 1, E2 = 2,
+E3 = 4, EP = 8, EM = 16`, thirty-two blades: the conformal model of the
+three-coordinate base `(r, c, k)` (51.2, ruled 2026-09-17), whose rotation
+planes are `e1e2`, `e1e3`, `e2e3` — the rotor chart's `(0,1)`, `(0,3)`,
+`(1,3)` — and whose translators `e_i ∧ e_∞` commute. A body that occupies
+one frame has `k = 0` on every cell, which is its coordinate and not a
+default.
 
 1. All coefficients zero: refuse.
 2. `i` = least mask with nonzero coefficient; divide by `|c[i]|`; negate if
@@ -2325,8 +2330,9 @@ equality use `projective_eq` for versors and A1 for rotors.
 
 ### 16.5 A5 — Chain canonicalisation
 
-Input: cells `(r, c, before, after) ∈ Z² × hue²`; the base is the sensor
-plane and the hues are fibre coordinates (chapter 38 widens the base).
+Input: cells `(r, c, k, before, after) ∈ Z³ × hue²`; the base is `(r, c, k)`
+(51.3) and the hues are fibre coordinates. `min_r`, `min_c` below are
+read with `min_k` beside them; a frame origin carries no meaning (51.1).
 
 1. `min_r`, `min_c` over the cells; translate every cell by `(−min_r, −min_c)`.
 2. Sort lexicographically on the tuple; remove exact duplicates.
@@ -5746,8 +5752,10 @@ rule is the same rule at every frame. Nothing in `Form`, `coheres`,
 
 ### 38.5 B5 The conformal model climbs with the base
 
-`cga.rs` is `Cl(3,1)`, brick 1 of the volumetric plan. `z` needs `Cl(4,1)`
-(points, spheres, planes as blades); `t` as a base axis needs `Cl(5,1)`.
+`cga.rs` is `Cl(4,1)` (51.2, ruled 2026-09-17): the conformal model of
+the three-coordinate base `(r, c, k)`, the frame `k` on `e₃`. `Cl(5,1)`
+is not derived — `e₂` is the orientation character and not a point
+coordinate — and `z` waits for a corpus that carries one (51.11).
 The same exact multivector algebra over a larger mask: `Mv` becomes
 dimension-generic, the blade masks widen, `projective_ratio`, `conj`,
 `norm2`, `to_bytes`, `canonical` unchanged in form; A4 unchanged. Brick 2
@@ -6791,7 +6799,7 @@ along, and the rows below that mention a key mean an A21 key.
 | a complete rewriting system with relators `(g_i g_j)^{m} = 1`, Knuth–Bendix confluence, a "unique minimal-length" tape | primes have infinite order; letters on planes sharing an axis generate a dense subgroup; no such relators, no termination | A2 is a budgeted retirement; shortlex only when the depth completed (16.2) |
 | every plane generator has finite order `N_Π`, exponents mod `N_Π` | true only of the six unit turns (order 4); eleven letters are infinite order | A3 (16.3) |
 | `PlaneForm` equality as one `(plane, exponent)` pair | a plane form is the whole 17-vector plus parity | A3 |
-| conformal versors in `Spin(4,1)`/`Cl(4,1)` | the tree's conformal algebra is `Cl(3,1)` over `{e1,e2,e+,e−}`, the plane's model; `Cl(4,1)` is Part VI brick 2 | A4 (16.4), 38.5 |
+| conformal versors in `Spin(4,1)`/`Cl(4,1)` | the tree's conformal algebra is `Cl(4,1)` over `{e1,e2,e3,e+,e−}`, the three-coordinate base's model (51.2); `Cl(5,1)` is not derived | A4 (16.4), 51.2, 38.5 |
 | chains as `Z³` support sets with summed coefficients and stripped zeros | cells are `(r,c,before,after)` in `Z² × hue²` (six-tuples under B1); conflicting sites are refused, hues never summed | A5 (16.5) |
 | 31-bit numerator/denominator in one word; Stern–Brocot for total order | half the range for no gain; no operation needs axis order today | A6 keeps two exact limbs with refusal (16.6) |
 | refinement axis from area, boundary length, second-moment trace `(a²/w, p²/w)` | those are body moduli (`Harmonics`); the class axis uses the class rotor's scalar and pseudoscalar parts | A7 (16.7) |
@@ -7420,7 +7428,7 @@ S = ( {W_k, V_k, γ_k}_{k=1..m},  {Γ_ij}_{(i,j) ∈ E} )
 ```
 
 each vertex carrying an exact word `W_k ∈ Spin(4,0)(ℚ)` spelled in the
-seventeen letters (1.1), a carriage `V_k ∈ Cl(3,1)(ℚ)` (A4) and a gauge
+seventeen letters (1.1), a carriage `V_k ∈ Cl(4,1)(ℚ)` (A4) and a gauge
 permutation `γ_k` of the hues; each directed edge carrying the transport
 `Γ_ij` of 50.3. `S` is valid iff
 
@@ -7640,7 +7648,7 @@ one case of the rule, not the rule.
 
 | `Demand::Source(B_out, chart, multiplicity)` | say which input body an output body is the image of | the output body's chart and the number of input charts a versor carries onto it, every one standing as a section, none first-found |
 | `Demand::Creation(B_out, chart)` | find any input body carrying onto `B_out` | the output body's chart |
-| `Demand::TopologicalDeformation(B_in, B_out)` | find any element of `Cl(3,1)(ℚ)` carrying `B_in` onto `B_out` — the harmonics differ | both charts and the axes on which they differ; answered by the cover of 50.8 — pieces each carried, the loop of their meet, the cell the court fills — through Mayer–Vietoris boundary splitting (13.9), never held for a rotor that cannot exist |
+| `Demand::TopologicalDeformation(B_in, B_out)` | find any element of `Cl(4,1)(ℚ)` carrying `B_in` onto `B_out` — the harmonics differ | both charts and the axes on which they differ; answered by the cover of 50.8 — pieces each carried, the loop of their meet, the cell the court fills — through Mayer–Vietoris boundary splitting (13.9), never held for a rotor that cannot exist |
 
 Demands ride the sentence as vertices (`Vertex::Demand`), aggregated per
 chart: one vertex per (kind, chart), never one per body, carrying the
