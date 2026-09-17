@@ -19,23 +19,27 @@ pub struct Contact {
     pub ring: u8,
 }
 
-/// A WORD: an oriented tape of letters. `true` reads the letter backwards
-/// (its carried `Φ⁻¹`). The stored tape is the geodesic normal form.
-/// Equal words compare by rotor projective equality, never by a tape or a digest.
-/// Contact, ρ, placement, and gauge live on the word *form* (`Vertex::Word`),
-/// never in this equality.
+/// A WORD: an oriented tape of letters, and the action it is. `true` reads
+/// the letter backwards (its carried `Φ⁻¹`). The stored tape is the
+/// geodesic normal form. A word the alphabet spells reads its rotor off its
+/// tape, exactly; a FORMED word carries an action no tape spells (37.7),
+/// its rotor is the whole of what it is, and that rotor is kept canonical
+/// (A1) so that no arithmetic on it grows a coefficient. Equal words
+/// compare by rotor projective equality, never by a tape or a digest.
+/// Contact, ρ, placement, and gauge live on the word *form*
+/// (`Vertex::Word`), never in this equality.
 #[derive(Debug)]
-pub struct Word(Vec<(LetterId, bool)>, std::sync::OnceLock<Rotor>);
+pub struct Word(Vec<(LetterId, bool)>, std::sync::OnceLock<Rotor>, bool);
 
 impl Default for Word {
     fn default() -> Self {
-        Word(Vec::new(), std::sync::OnceLock::new())
+        Word(Vec::new(), std::sync::OnceLock::new(), false)
     }
 }
 
 impl Clone for Word {
     fn clone(&self) -> Self {
-        let w = Word(self.0.clone(), std::sync::OnceLock::new());
+        let w = Word(self.0.clone(), std::sync::OnceLock::new(), self.2);
         if let Some(r) = self.1.get() {
             let _ = w.1.set(r.clone());
         }
@@ -53,7 +57,16 @@ impl Eq for Word {}
 
 impl Word {
     pub(crate) fn raw(tape: Vec<(LetterId, bool)>) -> Word {
-        Word(tape, std::sync::OnceLock::new())
+        Word(tape, std::sync::OnceLock::new(), false)
+    }
+
+    /// A formed word on a tape: the action `r`, canonical, on the letters
+    /// that spell part of it — the shape every operation on a formed word
+    /// returns.
+    fn formed_with(tape: Vec<(LetterId, bool)>, r: Rotor) -> Word {
+        let w = Word(tape, std::sync::OnceLock::new(), true);
+        let _ = w.1.set(r.normalised());
+        w
     }
 
     pub fn identity() -> Word {
@@ -70,9 +83,7 @@ impl Word {
     /// content (law 6), with no escape byte and no place in the
     /// seventeen.
     pub fn formed(r: Rotor) -> Word {
-        let w = Word::raw(Vec::new());
-        let _ = w.1.set(r);
-        w
+        Word::formed_with(Vec::new(), r)
     }
 
     pub fn letters(&self) -> &[(LetterId, bool)] {
@@ -87,28 +98,27 @@ impl Word {
         self.0.is_empty()
     }
 
-    /// Append a letter. A rotor already carried composes with the letter,
-    /// so a word whose action no tape spells keeps that action (1.5).
+    /// Append a letter. A formed word composes its action with the letter,
+    /// so what no tape spells is kept (1.5); a spelled word reads its tape.
     pub fn push(&mut self, id: LetterId, inverse: bool) {
         let carried = self
-            .1
-            .get()
-            .map(|r| r.geo(&if inverse { letter_inverse(id) } else { letter(id) }));
+            .2
+            .then(|| self.rotor().geo(&if inverse { letter_inverse(id) } else { letter(id) }));
         self.0.push((id, inverse));
         self.1 = std::sync::OnceLock::new();
         if let Some(r) = carried {
-            let _ = self.1.set(r);
+            let _ = self.1.set(r.normalised());
         }
     }
 
-    /// The same element on another tape: the rotor this word carries, set
-    /// on `tape`, because a spelling changes and the element does not
-    /// (1.5). A word that carries no rotor lets `tape` read its own.
+    /// The same element on another tape (1.5): a formed word's action, set
+    /// canonical on `tape`, because a spelling changes and the element does
+    /// not; a spelled word lets `tape` read its own.
     fn carrying(&self, tape: Word) -> Word {
-        if let Some(r) = self.1.get() {
-            let _ = tape.1.set(r.clone());
+        match self.2 {
+            true => Word::formed_with(tape.0, self.rotor()),
+            false => tape,
         }
-        tape
     }
 
     /// M1 key: A1 of the rotor. Mixed-plane spellings of one rotor share
@@ -182,29 +192,30 @@ impl Word {
             .clone()
     }
 
-    /// The word read backwards: the inverse transport. A rotor carried is
-    /// reversed, which is its inverse up to the weight (1.5), so a word
-    /// whose action no tape spells inverts as that action.
+    /// The word read backwards: the inverse transport. A formed word's
+    /// action is reversed — its inverse up to the weight, which the sandwich
+    /// divides out (1.5) — and kept canonical; a spelled word reads its
+    /// reversed tape.
     pub fn inverse(&self) -> Word {
-        let w = Word::raw(self.0.iter().rev().map(|&(id, inv)| (id, !inv)).collect());
-        if let Some(r) = self.1.get() {
-            let _ = w.1.set(r.reverse());
+        let tape = self.0.iter().rev().map(|&(id, inv)| (id, !inv)).collect();
+        match self.2 {
+            true => Word::formed_with(tape, self.rotor().reverse()),
+            false => Word::raw(tape),
         }
-        w
     }
 
     /// Concatenate tapes: `self` then `other` (last letter of `other` acts
-    /// first). Where either side carries a rotor, the composite carries the
-    /// product, so a word whose action no tape spells composes as that
-    /// action and not as the empty tape (1.5, 37.7).
+    /// first). Where either side is formed the composite is formed and
+    /// carries the product, canonical, so an action no tape spells composes
+    /// as that action and not as the empty tape (1.5, 37.7); two spelled
+    /// words read the tape.
     pub fn compose(&self, other: &Word) -> Word {
         let mut t = self.0.clone();
         t.extend_from_slice(&other.0);
-        let w = Word::raw(t);
-        if self.1.get().is_some() || other.1.get().is_some() {
-            let _ = w.1.set(self.rotor().geo(&other.rotor()));
+        match self.2 || other.2 {
+            true => Word::formed_with(t, self.rotor().geo(&other.rotor())),
+            false => Word::raw(t),
         }
-        w
     }
 
     /// On the sensor plane (its letters and the sheet's, 1.2): the A3 tape.
@@ -224,45 +235,19 @@ impl Word {
         self.carrying(run_reduce(self.letters()))
     }
 
-    /// The plane group is rotations ⋊ orientation, not a commuting tape.
+    /// The plane group is rotations ⋊ orientation, not a commuting tape,
+    /// read on EVERY pair plane the rotor turns in (9.1, 12.6).
     ///
-    /// EVERY PAIR PLANE THE RESIDUAL ROTOR TURNS IN, not the sensor's
-    /// alone. `PlaneForm.rot` has a seat per letter and `coordinates()`
-    /// reads three per pair plane, so the carrier and the reader were
-    /// six-plane from the first line; this was the writer, and it spelled
-    /// the block on `(PLANE_ROW, PLANE_COL)` and nothing else. A rotor
-    /// turning in `(2, 3)` keeps the sensor closed with the IDENTITY block
-    /// and occupied no coordinate at all; one turning in `(0, 2)` does not
-    /// keep the sensor closed and had no form. Measured at 3c76c15: 5853
-    /// of ~6100 admissions reported an empty coordinate list, and not one
-    /// occupied a plane other than zero. `free_row` could fill two of its
-    /// twelve columns.
-    ///
-    /// TWO THINGS MAKE THIS MORE THAN WIDENING THE LOOP.
-    ///
-    /// A CLOSED PLANE IS NOT A TURNING PLANE. A half turn on the sensor
-    /// keeps all six planes invariant, and on the four that share exactly
-    /// one axis with it the restriction is `diag(−1, 1)` — a reflection of
-    /// that plane, determinant −1, induced by a rotation elsewhere.
-    /// Un-flipping such a block and spelling it writes a half turn the
-    /// rotor does not have: one half turn became five. Only `det = +1` is
-    /// a rotation of the plane, and only a rotation is spelled.
-    ///
-    /// THE SHEET IS FACTORED OUT FIRST, not carried twice. `orientation`
-    /// is the ℤ/2 acting on the exponent lattice by inversion —
-    /// `PlaneForm::inverse` and `conjugate_by` both negate `rot`, which is
-    /// that action written down — and the letter realising it is the half
-    /// turn on the sensor's flip plane, two quarters on `(1, 2)`. Spelling
-    /// that plane while also setting the flag records one group element
-    /// twice, and `to_word` then emits four quarters, which is the
-    /// identity: the sheet annihilates itself on round trip. So the sheet
-    /// leaves the ROTOR before any plane is read, `R' = R · S`, exactly the
-    /// column negation this used to do on the sensor block alone, and
-    /// `to_word` puts it back.
-    ///
-    /// `None` is now "no pair plane is turned", where it was "the sensor
-    /// plane is not preserved", and a plane that is closed but unspellable
-    /// refuses the whole form rather than being dropped from it (rule 11).
+    /// A CLOSED PLANE IS NOT A TURNING PLANE: a rotation elsewhere restricts
+    /// to a plane sharing one axis with it as `diag(−1, 1)`, a reflection,
+    /// and only `det = +1` is a rotation of the plane and spelled. THE
+    /// SHEET IS FACTORED OUT FIRST: `orientation` is the ℤ/2 acting on the
+    /// exponent lattice by inversion, realised by the half turn on the
+    /// sensor's flip plane, so it leaves the rotor before any plane is read
+    /// (`R' = R · S`) and `to_word` puts it back — recorded once, never
+    /// twice. `None` is "no pair plane is turned"; a plane that is closed
+    /// but unspellable refuses the whole form rather than being dropped
+    /// from it (rule 11).
     pub fn form(&self) -> Option<PlaneForm> {
         let mut rotor = self.rotor();
         let mut orientation = false;

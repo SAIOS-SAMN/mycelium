@@ -40,6 +40,43 @@ fn a_formed_word_composes_inverts_and_reduces_as_its_rotor() {
     );
 }
 
+/// NOTHING CARRIED SCALES A WORD (1.5, A1). A spelled word's rotor is its
+/// tape's product, exactly, however many times it is conjugated and
+/// reduced — no scale rides along from an inverse read as a reverse — and a
+/// formed word carried through a finite cycle of the same operations stays
+/// canonical: its coefficients do not grow, and sixteen full turns return
+/// the element.
+#[test]
+fn arithmetic_on_a_word_carries_no_scale_and_a_formed_word_stays_bounded() {
+    let bytes = |r: &Rotor| {
+        let mut b = Vec::new();
+        r.to_bytes(&mut b);
+        b
+    };
+    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter (0,1)"), false)]);
+    let mut w = Word::from_letters(&[(LetterId::pythagorean_5((2, 3)).expect("(3,4,5) on (2,3)"), false)]);
+    let _ = w.rotor();
+    for _ in 0..64 {
+        w = q.compose(&w.compose(&q.inverse())).normal_form();
+        assert_eq!(
+            bytes(&w.rotor()),
+            bytes(&Word::from_letters(w.letters()).rotor()),
+            "a spelled word's rotor is its tape's, coefficient for coefficient"
+        );
+    }
+    let mut f = Word::formed(eleven());
+    let bits = |w: &Word| {
+        let r = w.rotor();
+        (0..16).map(|m| r.coeff(m).numer().bits() + r.coeff(m).denom().bits()).max().unwrap_or(0)
+    };
+    let first = bits(&f);
+    for _ in 0..64 {
+        f = q.compose(&f.compose(&q.inverse())).normal_form();
+        assert!(bits(&f) <= first + 8, "a formed word carried through a finite cycle stays bounded: {} bits", bits(&f));
+    }
+    assert!(f.rotor().projective_eq(&eleven()), "sixteen full turns return the element");
+}
+
 /// A letter word is unchanged by the same operations: its rotor is its
 /// tape's product before and after.
 #[test]
