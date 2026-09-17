@@ -1,8 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 13, 25 — THE CONTEMPLATION: the Čech complex over the thought bubbles a
-//! mind holds. Vertices are bubbles; a k-cell is a (k+1)-fold overlap of
-//! their covers with shared remainder volume.
+//! mind holds. Vertices are bubbles; a k-simplex is a (k+1)-fold overlap
+//! of their covers with shared remainder volume.
 
 
 pub mod contemplation;
@@ -22,10 +22,10 @@ pub(crate) use merge::*;
 use crate::network::nerve::Keyed;
 use crate::physics::Budget;
 use crate::transducer::alphabet::{Order, Rotor};
-use crate::transducer::cech::{self, Cell as CechCell, Complex, Fill, Section};
+use crate::transducer::cech::{self, Complex, Fill, Section, Simplex};
 use crate::transducer::element::{self, Element};
 use crate::transducer::family::Crystal;
-use crate::transducer::sentence::{self, Form, PivotCertificate, Vertex};
+use crate::transducer::sentence::{self, Form, Link, PivotCertificate, Vertex};
 use crate::transducer::stalk::{self, AtlasRead, Invariant, Standing};
 
 #[cfg(test)]

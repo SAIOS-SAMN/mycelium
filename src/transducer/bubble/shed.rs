@@ -12,11 +12,11 @@ use super::*;
 /// subtree under it, one keyed descent. The bubble key follows so two
 /// remainders retired at one chart stay two remainders (law 7).
 ///
-/// `stalk::invariant` of the remainder cells is the same reading `pivot_on`
-/// made per entry when it walked; making it the key moves that derivation to
-/// the write, where it happens once, from the read, where it happened for
-/// every entry on every call.
-pub(crate) fn cavity_key(rem: &[RemCell], bubble: &[u8]) -> Vec<u8> {
+/// `stalk::invariant` of the remainder links is the reading `pivot_on` asks
+/// at; making it the key puts that derivation at the write, where it
+/// happens once, and not at the read, where it would happen for every
+/// entry on every call.
+pub(crate) fn cavity_key(rem: &[Link], bubble: &[u8]) -> Vec<u8> {
     let inv = stalk::invariant(rem);
     let mut k = inv.key().into_vec();
     crate::transducer::address::put_bytes(&mut k, bubble);
@@ -60,9 +60,7 @@ impl Contemplation {
             // THE CAVITY IS KEYED BY THE CHART ITS REMAINDER STANDS ON, then
             // by the bubble's own key. `pivot_on` reads it back when a word
             // arrives on a matching chart, so the CHART is the coordinate
-            // that read asks at — and keyed by the bubble alone it could not
-            // ask, so the drain cloned every entry in the carrier and
-            // re-derived each one's chart to find the few that matched.
+            // that read asks at; keyed by the bubble alone it could not ask.
             //
             // The bubble key stays as the suffix. Two remainders retired at
             // one chart are two remainders and law 7 does not lose either;

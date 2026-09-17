@@ -24,9 +24,8 @@ use super::*;
 /// Lane 𝒯 is the scene-state span the bundle stood over, and a span of zero
 /// has two entirely different causes: a form that was HELD and has not yet
 /// aged, and a form that was never held at all because it closed in the
-/// stroke it was extracted in. Reporting both as `0` is what made 𝒯
-/// unreadable on the wire — 46 spoken magnitudes at c62940b, all `T = 0`,
-/// with no way to tell which path produced any of them.
+/// stroke it was extracted in. Reported as one `0` the two are unreadable
+/// on the wire, with no way to tell which path produced it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Deliberation {
     /// Held in contemplation for this many receipts of TUniversal.
@@ -58,7 +57,8 @@ impl Deliberation {
 pub struct Contemplation {
     pub bubbles: Keyed<Bubble>,
     pub by_chart: Keyed<Keyed<()>>,
-    pub by_cell: Keyed<Keyed<()>>,
+    /// Remainder site → the bubbles whose remainders hold a link there.
+    pub by_site: Keyed<Keyed<()>>,
     pub complex: Complex,
     /// Bubbles whose cover still has work; written when dirty is set.
     pub(crate) dirty: Keyed<()>,
@@ -74,7 +74,7 @@ pub struct Contemplation {
     pub classes: u64,
     pub formed: u64,
     /// Bubbles retired to a cavity chart, address kept, remainder in the tape.
-    pub(crate) cavity: Keyed<Vec<RemCell>>,
+    pub(crate) cavity: Keyed<Vec<Link>>,
     pub(crate) pending_rewrites: Vec<Element>,
     /// TUniversal the entity last stamped; T-room and potential[2] read it.
     pub(crate) now_k: u64,
@@ -99,25 +99,17 @@ impl Contemplation {
         Contemplation::default()
     }
 
-    /// The mind's OWN K (45.4), never the mesh's height. A height advances
-    /// only on admitted receipts (45.2), so a contemplation clocked by one
-    /// froze at 0 on a mesh that admitted nothing: every bubble's extent
-    /// read as the same value, `retire_on_t` could not tell them apart, and
-    /// ideas accumulated for the life of the process.
-    /// THE SPAN A FORM'S IDEA HAS STOOD OVER, in receipts — lane 𝒯, the
-    /// same `held_since(now, moved_k)` that `expand_with` hands `pivot_loop`
-    /// as its `t_extent`. One quantity, one reader (law 12).
+    /// WHERE A SPEAKING FORM CAME FROM, and how long it deliberated: the span
+    /// its idea has stood over, in receipts — lane 𝒯, the same
+    /// `held_since(now, moved_k)` that `expand_with` hands `pivot_loop` as
+    /// its `t_extent`. One quantity, one reader (law 12).
     ///
     /// A form this contemplation does not hold stood over NO receipts: it
     /// was minted in the stroke it was extracted in. That is a reading of
-    /// zero, not a placeholder for one. `moved_k` is stamped from `now_k`
-    /// and this clock only advances, so the subtraction cannot go backwards
-    /// while the contemplation is the one holding both.
-    /// WHERE A SPEAKING FORM CAME FROM, and how long it deliberated. The two
-    /// are one reading: a span of zero from a held bubble and a span of zero
-    /// from a form that was never held are different facts, and reporting
-    /// both as `0` is what made 𝒯 unreadable on the wire — 46 magnitudes
-    /// with `T = 0` and no way to tell which path produced them.
+    /// zero, not a placeholder for one, and a different fact from a held
+    /// form aged zero, so the two are two readings. `moved_k` is stamped
+    /// from `now_k` and this clock only advances, so the subtraction cannot
+    /// go backwards while the contemplation is the one holding both.
     ///
     /// `None` where the clock went backwards — a K below the mark is a broken
     /// counter, and a span read off one is a measurement this contemplation
@@ -132,8 +124,12 @@ impl Contemplation {
         }
     }
 
-    /// The TUniversal this contemplation was last stamped with. See
-    /// [`Deliberation`] for what a span read against it means.
+    /// The TUniversal this contemplation was last stamped with — the mind's
+    /// OWN K (45.4), never the mesh's height, which advances only on
+    /// admitted receipts (45.2) and so stands at 0 on a mesh that admits
+    /// nothing, where every bubble's extent would read the same and
+    /// `retire_on_t` could tell none apart. See [`Deliberation`] for what a
+    /// span read against it means.
     pub fn now_k(&self) -> u64 {
         self.now_k
     }
@@ -193,28 +189,22 @@ impl Contemplation {
         self.cavity.len()
     }
 
-    /// The cells every cavity entry holds together. One entry is a whole
+    /// The links every cavity entry holds together. One entry is a whole
     /// remainder, so the entry count says how many retirements happened and
-    /// this says what they kept — and a thousand entries of one cell and ten
+    /// this says what they kept — and a thousand entries of one link and ten
     /// of a thousand are the same count and not the same carrier.
-    pub fn cavity_cells(&self) -> usize {
+    pub fn cavity_links(&self) -> usize {
         self.cavity.scoped().map(|(_, r)| r.len()).sum()
     }
 
     /// WHAT THE CONTEMPLATION ACTUALLY HOLDS (§8.1, measurement only).
     ///
-    /// `ideas` counts BUBBLES, and a bubble is not a unit of memory. Measured
-    /// on the fleet: voices at 328–873 MB with `ideas` 66–86, `genome` 67–73,
-    /// `dialect` 6–13 and `cavity` 0 — every counted carrier flat and small
-    /// while the process grows by roughly a gigabyte an hour. The cavity was
-    /// the candidate and this cleared it; nothing else was readable.
-    ///
-    /// These are the carriers a bubble holds that no line reports, and they
+    /// `ideas` counts BUBBLES, and a bubble is not a unit of memory. These
+    /// are the carriers a bubble holds that no other line reports, and they
     /// are the ones with weight in them:
-    /// - `nerve.sections` — a `Section` carries a γ and a carriage, and the
-    ///   tree's own note at `Acting::carriage` is that a versor is 1024
-    ///   bytes.
-    /// - `nerve` cells across every degree, each carrying a `Rotor`.
+    /// - `nerve.sections` — a `Section` carries a γ and a carriage, and a
+    ///   versor is 1024 bytes (`Acting::carriage`).
+    /// - `nerve` simplices across every degree, each carrying a `Rotor`.
     /// - `horizon` — one `(Rotor, Order, Standing)` per class the idea met,
     ///   and `paint_standing` writes one per standing loop of every form
     ///   held. A rotor is sixteen `BigRational`, each of them heap.
@@ -254,7 +244,7 @@ impl Contemplation {
         Some(self.cavity.fiber_at(k.as_bytes())?.map(|(k, _)| k).collect())
     }
 
-    pub fn remainders(&self) -> Vec<&[RemCell]> {
+    pub fn remainders(&self) -> Vec<&[Link]> {
         self.bubbles.scoped().map(|(_, b)| b.remainder.as_slice()).collect()
     }
 
@@ -265,7 +255,7 @@ impl Contemplation {
     /// unmeasured space is an open thought (∂g ≠ 0), not infinite
     /// discordance; no thought is `[0; 4]`.
     pub fn boundary_measure(&self) -> [u64; 4] {
-        let mut acc: Vec<RemCell> = Vec::new();
+        let mut acc: Vec<Link> = Vec::new();
         for r in self.remainders() {
             acc.extend(r.iter().copied());
         }
@@ -281,9 +271,9 @@ impl Contemplation {
                 m.remove(key);
             }
         }
-        for (r, c, _, _) in rem_cells_of(b) {
-            let ck = rem_cell_key(r, c);
-            if let Some(m) = self.by_cell.get_mut(&ck) {
+        for (r, c, _, _) in remainder_links_of(b) {
+            let sk = remainder_site_key(r, c);
+            if let Some(m) = self.by_site.get_mut(&sk) {
                 m.remove(key);
             }
         }
@@ -324,16 +314,13 @@ impl Contemplation {
     /// word was met on.
     ///
     /// Read at the ROTOR'S OWN CONJUGACY CLASS, which is the depth-one
-    /// coordinate of the class vector a vortex is filed under. Three
-    /// earlier readers never met one: the first asked under the arriving
-    /// word's chart through `cech::rotor_of` (48bfdbd, 24 formed, none
-    /// asked); the second at the carried rotor's class against an index
-    /// keyed by the loop's AFTER-class, which for a closing candidate is
-    /// the zero class (ca485cc, 28 lines, none asked); the third at the
-    /// candidate's own element key, which is an identity and not a
-    /// coordinate (9b5ad61). The cell is filed at the loop's own class now
-    /// (`vortex_put`), and the deciding word's class key is that key's
-    /// stratum, so this is a projection and not a guess.
+    /// coordinate of the class vector a vortex is filed under: the
+    /// candidate is filed at the loop's own class (`vortex_put`), and the
+    /// deciding word's class key is that key's stratum, so this is a
+    /// projection and not a guess. Neither the arriving word's chart, nor
+    /// the loop's AFTER-class — the zero class for a closing candidate —
+    /// nor the candidate's own element key, which is an identity and not a
+    /// coordinate, would meet one.
     pub(crate) fn collapse_on(
         &mut self,
         rotors: &[Rotor],
@@ -398,19 +385,14 @@ impl Contemplation {
     ///
     /// A bubble's key is its form's address, and a pivot REWRITES THE FORM IN
     /// PLACE — `expand_all` takes the slot by the key it entered with and
-    /// `expand_with` calls `take_form` inside it. So the bubble keeps its
-    /// `moved_k` and everything it has built, while its key stops matching
-    /// the form it now holds, and every reader that looks it up by the
-    /// current form misses it: `span_of` answers "not held" for a bubble that
-    /// has been deliberating for thousands of receipts, and `hold_form`
-    /// inserts a SECOND bubble for the same lineage while the first is
-    /// orphaned under a key nothing computes any more.
-    ///
-    /// That is why 𝒯 read zero on every spoken word even after the clock
-    /// (R5) and the phase-change stamp (R6) were both correct: a form with an
-    /// open remainder speaks only once it closes, closing mutates it, and
-    /// mutation lost the lookup. Measured at c62940b: 1694 holds against 20
-    /// spoken forms, and `span_of` never once finding a bubble.
+    /// `expand_with` calls `take_form` inside it. Left where it was, the
+    /// bubble keeps its `moved_k` and everything it has built while its key
+    /// stops matching the form it now holds, and every reader that looks it
+    /// up by the current form misses it: `span_of` answers "not held" for a
+    /// bubble that has been deliberating for thousands of receipts, and
+    /// `hold_form` inserts a SECOND bubble for the same lineage while the
+    /// first is orphaned under a key nothing computes any more. A form with
+    /// an open remainder speaks only once it closes, and closing mutates it.
     ///
     /// The entry moves with its inception stamp and its accumulated state, so
     /// a resolved sentence carries the true extent of its deliberation —
@@ -458,16 +440,16 @@ impl Contemplation {
                 }
             }
         }
-        for (r, c, _, _) in rem_cells_of(b) {
-            let ck = rem_cell_key(r, c);
-            match self.by_cell.get_mut(&ck) {
+        for (r, c, _, _) in remainder_links_of(b) {
+            let sk = remainder_site_key(r, c);
+            match self.by_site.get_mut(&sk) {
                 Some(m) => {
                     m.insert(key, ());
                 }
                 None => {
                     let mut m = Keyed::new();
                     m.insert(key, ());
-                    self.by_cell.insert(ck, m);
+                    self.by_site.insert(sk, m);
                 }
             }
         }
@@ -516,7 +498,7 @@ impl Contemplation {
     }
 
     /// Link of one new bubble: edges to bubbles sharing a chart (by_chart
-    /// peel), higher cells where shared remainder volume is nonzero.
+    /// peel), higher simplices where shared remainder volume is nonzero.
     pub(crate) fn link_new(&mut self, key: impl AsRef<[u8]>) {
         let key = key.as_ref().to_vec();
         let (charts, vol0) = {
@@ -545,11 +527,11 @@ impl Contemplation {
             }
         }
         let nbs: Vec<Vec<u8>> = neighbors.scoped().map(|(k, _)| k).collect();
-        let mut rems: Keyed<Vec<RemCell>> = Keyed::new();
+        let mut rems: Keyed<Vec<Link>> = Keyed::new();
         // Overlap is read in the SCENE: the chain carried through its own
         // translator (§2.1). Two bubbles holding one chain at two
         // translators are one substance said at two places, and their
-        // canonical cells coincide at the origin while their placed cells
+        // canonical links coincide at the origin while their placed links
         // do not.
         if let Some(b) = self.bubbles.get(&key) {
             rems.insert(&key, b.remainder.placed());
@@ -592,7 +574,7 @@ impl Contemplation {
         &mut self,
         f: &Form,
         train: &crate::transducer::family::Family,
-        remainders: &[Vec<RemCell>],
+        remainders: &[Vec<Link>],
     ) {
         if f.vertices.len() <= 1
             && f.faces.is_empty()
@@ -602,7 +584,7 @@ impl Contemplation {
             return;
         }
         let key = idea_key(f);
-        let mut rem_keyed: Keyed<Vec<RemCell>> = Keyed::new();
+        let mut rem_keyed: Keyed<Vec<Link>> = Keyed::new();
         let mut volume = [0u64; 4];
         let mut cover = Keyed::new();
         for (i, r) in remainders.iter().enumerate() {
@@ -642,18 +624,16 @@ impl Contemplation {
         }
         let mut horizon = Keyed::new();
         self.paint_seeded(&mut horizon);
-        // THE FORM'S OWN STANDING LOOPS ENTER THE HORIZON (L24). A bubble
-        // was seeded from the mesh's classes alone, so a loop this form
-        // carries — a cover's meet cycle whose edge holonomy stands —
-        // reached `pivot_loop` as nothing at all: the pivot read the
-        // horizon it was given, and the class the perception had just
-        // measured was not in it.
+        // THE FORM'S OWN STANDING LOOPS ENTER THE HORIZON (L24). The pivot
+        // reads the horizon it is given, so a loop this form carries — a
+        // cover's meet cycle whose edge holonomy stands — has to be on it,
+        // or the class the perception just measured reaches `pivot_loop`
+        // as nothing at all.
         //
-        // `Bubble::expand_with` already does exactly this for a cell it
-        // meets on the atlas (`Fill::Class` → `horizon_put`). This is the
-        // same admission for the classes the form ARRIVED with, so a
-        // perceived obstruction and a contemplated one are one kind of
-        // object.
+        // `Bubble::expand_with` does exactly this for a simplex it meets on
+        // the atlas (`Fill::Class` → `horizon_put`). This is the same
+        // admission for the classes the form ARRIVED with, so a perceived
+        // obstruction and a contemplated one are one kind of object.
         //
         // `Standing::Held`, as the atlas arm writes: the class is met and
         // not ruled. A loop whose class vector occupies nothing is not a
@@ -689,14 +669,11 @@ impl Contemplation {
         // RE-HOLDING AN UNMUTATED FORM IS NOT MOVEMENT (ruled 2026-09-14).
         //
         // `moved_k` is the PHASE CHANGE stamp — "TUniversal when this
-        // bubble's charts last moved" — and this rebuilt the whole bubble on
-        // every hold, stamping `moved_k = now_k` each time. D8 re-holds a
-        // withheld form on every stroke, so the birth coordinate was
-        // re-stamped every stroke and no bubble could ever age:
-        // `held_since(now_k, moved_k)` was zero by construction, `t_extent`
-        // perpetually zero, lane 𝒯 unable to accumulate. Measured at
-        // 9a08fba: 58 of 58 spoken magnitudes with 𝒯 = 0, and `span_of`
-        // never once refusing — it was answering `Some(0)` every time.
+        // bubble's charts last moved" — and D8 re-holds a withheld form on
+        // every stroke, so a hold that rebuilt the bubble and stamped
+        // `moved_k = now_k` each time would let no bubble ever age:
+        // `held_since(now_k, moved_k)` zero by construction, `t_extent`
+        // perpetually zero, lane 𝒯 unable to accumulate.
         //
         // A form retained across an evaluation stroke has moved ZERO in
         // configuration space. The key IS the topology and the carriages:
@@ -706,9 +683,9 @@ impl Contemplation {
         //
         // What it has ACCUMULATED is kept with it — the complex it built, the
         // cover it expanded, the classes its horizon met, who glued it.
-        // Rebuilding those was not only a clock fault: it threw the expansion
-        // away every stroke, which is what kept re-entering the cover and
-        // re-stamping the clock in the first place.
+        // Rebuilding those would throw the expansion away every stroke,
+        // which is what would keep re-entering the cover and re-stamping
+        // the clock.
         //
         // `moved_k` still advances where a transformation actually mutates
         // the charts: `expand_with` stamps it when a chart enters the cover,
@@ -742,11 +719,11 @@ impl Contemplation {
     }
 
     /// Admit a remainder as a bubble with its cover a peel of its invariant.
-    pub fn hold(&mut self, remainder: Vec<RemCell>) {
+    pub fn hold(&mut self, remainder: Vec<Link>) {
         if remainder.is_empty() {
             return;
         }
-        // A remainder saying two things at one cell has no A5 chain and no
+        // A remainder saying two things at one site has no A5 chain and no
         // address; it is not held (U14).
         let Some(remainder) = element::place_chain(&remainder) else {
             return;
@@ -821,17 +798,18 @@ impl Contemplation {
         for v in verts {
             held.insert(v, ());
         }
-        // index: vertices of this component; each cell from that vertex's link
+        // index: vertices of this component; each simplex from that
+        // vertex's link
         for v in verts {
-            for ck in self.complex.link_of(v) {
-                let Some(cell) = self.complex.simplex(&ck) else {
+            for sk in self.complex.link_of(v) {
+                let Some(simplex) = self.complex.simplex(&sk) else {
                     continue;
                 };
-                if cell.degree() == 0 {
+                if simplex.degree() == 0 {
                     continue;
                 }
-                let all_in = cell.vertices.iter().all(|u| held.contains(u));
-                if all_in && !matches!(cell.fill, Fill::Filled(..)) {
+                let all_in = simplex.vertices.iter().all(|u| held.contains(u));
+                if all_in && !matches!(simplex.fill, Fill::Filled(..)) {
                     return false;
                 }
             }
@@ -937,7 +915,7 @@ impl Contemplation {
         n
     }
 
-    pub fn horizon_cells(&self) -> usize {
+    pub fn horizon_len(&self) -> usize {
         let mut n = 0usize;
         for (_, b) in self.bubbles.scoped() {
             n += b.horizon.len();

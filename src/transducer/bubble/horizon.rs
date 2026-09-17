@@ -20,19 +20,15 @@ pub(crate) fn horizon_put(h: &mut Keyed<(Rotor, Order, Standing)>, r: Rotor, sta
 impl Contemplation {
     /// Admit syllabus class records as RULED. Copies into every live bubble.
     ///
-    /// `Standing::Held` stood here, and it is the same standing the mind's
-    /// own obstructions go under — `paint_standing` for the classes a form
-    /// arrives with, `Fill::Class` for a cell it cannot close. So the one
-    /// reader that acts on this, `pivot_loop`'s A19 suppression, could not
-    /// tell a class the COURT has ruled from a class this mind merely has,
-    /// and since `paint_standing` puts every standing loop's own class on
-    /// the horizon, every loop deferred to itself.
+    /// `Ruled` — "court-ratified" — is the only standing on which waiting is
+    /// the right move: these records are the syllabus, another mind ruled
+    /// them and can supply the word. The mind's own obstructions go under
+    /// `Held` — "an idea this mind is holding, not yet a word" —
+    /// `paint_standing` for the classes a form arrives with, `Fill::Class`
+    /// for a simplex it cannot close — and `pivot_loop`'s A19 suppression
+    /// tells the two apart; under one standing every loop would defer to
+    /// itself.
     ///
-    /// These records are the syllabus: another mind ruled them and can
-    /// supply the word. That is `Ruled` — "court-ratified" — and it is the
-    /// only standing on which waiting is the right move. The mind's own
-    /// stay `Held`, "an idea this mind is holding, not yet a word", which is
-    /// exactly what they are.
     /// The symmetries every collapse kept ride out beside the count. A
     /// ruling that collapses a vortex resolves the mind's superposition, and
     /// the hypothesis it did not take is the loop's symmetry — a measured
@@ -108,15 +104,13 @@ impl Contemplation {
         }
     }
 
-    /// THE CLASSES A FORM ARRIVED WITH (L24). A bubble was seeded from the
-    /// mesh's classes alone, so a loop the form already carries — a
-    /// cover's meet cycle whose holonomy stands — reached `pivot_loop` as
-    /// nothing at all: the pivot reads the horizon it is given, and the
-    /// class the perception had just measured was not in it. The cover
-    /// classified it, tallied it, and dropped it.
+    /// THE CLASSES A FORM ARRIVED WITH (L24). `pivot_loop` reads the horizon
+    /// it is given, so a loop the form already carries — a cover's meet
+    /// cycle whose holonomy stands — has to be on it, or the class the
+    /// perception just measured reaches the pivot as nothing at all.
     ///
-    /// `Bubble::expand_with` already does exactly this for a cell it meets
-    /// on the atlas (`Fill::Class` → `horizon_put`); this is the same
+    /// `Bubble::expand_with` does exactly this for a simplex it meets on
+    /// the atlas (`Fill::Class` → `horizon_put`); this is the same
     /// admission for the classes that arrive on the form, so a perceived
     /// obstruction and a contemplated one are one kind of object.
     ///

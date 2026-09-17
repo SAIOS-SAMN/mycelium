@@ -21,14 +21,9 @@ fn t_room_moves_the_oldest_bubble_to_cavity() {
 ///
 /// `retire_on_t` writes one cavity entry per retirement, every stroke, and
 /// the only drain is `pivot_on`'s. Keyed by the bubble alone that drain
-/// could not ASK — so it cloned every entry, key and whole `Vec<RemCell>`,
-/// re-derived each one's chart, and kept the few that matched. The cavity
-/// grows on the hot path and drains on a coincidence, so the clone grew
-/// without bound while what it searched for stayed rare.
-///
-/// Measured beside it: voices at 786 MB–1565 MB, 105 minutes after a recut,
-/// against `ideas 78`, `genome 144`, `dialect 31` — every counted carrier
-/// flat.
+/// could not ASK: it would clone every entry, key and whole remainder,
+/// re-derive each one's chart, and keep the few that matched — a carrier
+/// that grows on the hot path and drains on a coincidence.
 ///
 /// The chart leads the key and the bubble follows, so two remainders retired
 /// at one chart stay two (law 7) and the entries a chart can re-hold are the
@@ -49,21 +44,21 @@ fn a_cavity_entry_is_read_back_at_its_own_chart_and_two_at_one_chart_are_two() {
     assert_eq!(c.len(), 0, "no room, no bubble");
     assert_eq!(c.cavity_len(), 2, "both remainders are kept, neither collapsed");
     assert_eq!(
-        c.cavity_cells(),
+        c.cavity_links(),
         4,
-        "and the cells they hold are the cells they had, not a count of entries"
+        "and the links they hold are the links they had, not a count of entries"
     );
 
     // THE KEY IS THE CHART, so the entries a chart can re-hold are a keyed
-    // descent under it — which is what the drain reads, and what it could
-    // not read while the key was the bubble's.
+    // descent under it — which is what the drain reads, and what a key that
+    // was the bubble's could not answer.
     //
-    // Both remainders are two adjacent cells, so they are the SAME SHAPE and
+    // Both remainders are two adjacent links, so they are the SAME SHAPE and
     // share a chart: the fibre answers both, and the bubble suffix is what
     // keeps them two entries rather than one overwriting the other.
-    let two_cell = crate::transducer::stalk::invariant(&[(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)]);
+    let two_link = crate::transducer::stalk::invariant(&[(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)]);
     let under = c
-        .cavity_keys_under(&two_cell)
+        .cavity_keys_under(&two_link)
         .expect("a chart names a fibre of the cavity");
     assert_eq!(
         under.len(),
@@ -78,20 +73,20 @@ fn a_cavity_entry_is_read_back_at_its_own_chart_and_two_at_one_chart_are_two() {
     c.hold(vec![(2, 2, 7, 8), (2, 3, 7, 8), (3, 2, 7, 8)]);
     c.retire_on_t(0);
     assert_eq!(c.cavity_len(), 3, "three remainders kept");
-    let three_cell =
+    let three_link =
         crate::transducer::stalk::invariant(&[(2i64, 2i64, 7u8, 8u8), (2, 3, 7, 8), (3, 2, 7, 8)]);
     assert_ne!(
-        three_cell.key(),
-        two_cell.key(),
-        "three cells in an L is not two in a row, or this proves nothing"
+        three_link.key(),
+        two_link.key(),
+        "three links in an L is not two in a row, or this proves nothing"
     );
     assert_eq!(
-        c.cavity_keys_under(&three_cell).expect("a fibre").len(),
+        c.cavity_keys_under(&three_link).expect("a fibre").len(),
         1,
         "the L's chart answers the L alone"
     );
     assert_eq!(
-        c.cavity_keys_under(&two_cell).expect("a fibre").len(),
+        c.cavity_keys_under(&two_link).expect("a fibre").len(),
         2,
         "and the pair's chart still answers the pair"
     );
@@ -145,11 +140,9 @@ fn a_held_idea_expands_at_zero_extent_and_its_potential_reads_zero_on_t() {
 ///
 /// `Bubble::rotor` answers one rotor or absence, which is correct for
 /// `rotor_between` — two bubbles have one transport or they have none — and
-/// wrong for the cover, which asked it and RETURNED on the absence. So
-/// every multi-rotor form was dropped from the expansion leaving no reading
-/// at all: a filter whose non-matching arm says nothing, and the forms it
-/// dropped are exactly the multi-section forms D7–D10 brought into
-/// existence.
+/// wrong for the cover: a cover that asked it and returned on the absence
+/// would drop every multi-rotor form from the expansion with no reading at
+/// all, a filter whose non-matching arm says nothing.
 ///
 /// `sections` is keyed by rotor and carriage together, so a vertex acting
 /// on two charts is two sections and two vertices holding one section are
@@ -227,7 +220,7 @@ fn two_vertices_whose_carriages_differ_by_sign_hold_one_section() {
 /// class — both candidates closed the loop — and the arriving word's rotor
 /// has a class of its own. The collapse is read at the CANDIDATE's key, so
 /// the after-class is not a coordinate the word has to know; read at the
-/// rotor's class (ca485cc) it found nothing, on the fleet or here.
+/// rotor's class it would find nothing.
 #[test]
 fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
@@ -300,8 +293,8 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     c.admit_incidence(&key, &bubble);
     c.bubbles.insert(&key, bubble);
     // THE STRATUM IS THE COORDINATE, and it is the depth-one projection of
-    // the class vector the cell hangs under — not a second key written to
-    // agree with it.
+    // the class vector the candidate hangs under — not a second key written
+    // to agree with it.
     let stratum = a.rotor().class_key().expect("a quarter turn has a class");
     let end = ClassVector::class_schema()
         .boundary(before.as_bytes(), 1)
@@ -336,17 +329,16 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     );
 }
 
-/// AN IDEA MEETS THE CHARTS IT STANDS ON, AND NO OTHERS. A Čech cell is the
-/// overlap of two sections, and two sections overlap when they are sections
-/// over one chart; a chart no vertex of this form acts on is not an overlap
-/// with it.
+/// AN IDEA MEETS THE CHARTS IT STANDS ON, AND NO OTHERS. A Čech simplex is
+/// the overlap of two sections, and two sections overlap when they are
+/// sections over one chart; a chart no vertex of this form acts on is not
+/// an overlap with it.
 ///
-/// `expand_with` reached the atlas through `children`: it took the idea's
-/// chart, peeled up one stratum, and paged that stratum's SIBLINGS under a
-/// budget, meeting whatever the trie held nearby. This fixture is the
-/// difference. The idea's vertex stands on `[3, 5]`; `[3, 7]` is its sibling
-/// under the same parent `[3]`, and holds a member. The sibling must not
-/// enter the cover, because nothing of this idea is a section over it.
+/// This fixture is the difference between incidence in the sheaf and
+/// adjacency in the trie. The idea's vertex stands on `[3, 5]`; `[3, 7]` is
+/// its sibling under the same parent `[3]`, and holds a member. The sibling
+/// must not enter the cover, because nothing of this idea is a section over
+/// it.
 #[test]
 fn an_idea_meets_its_own_charts_and_not_their_siblings() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
@@ -393,13 +385,12 @@ fn an_idea_meets_its_own_charts_and_not_their_siblings() {
 /// RE-HOLDING AN UNMUTATED FORM IS NOT MOVEMENT, so a bubble ages.
 ///
 /// `moved_k` is the PHASE CHANGE stamp — "TUniversal when this bubble's
-/// charts last moved". `hold_form` rebuilt the whole bubble on every hold
-/// and stamped `moved_k = now_k` each time; D8 re-holds a withheld form on
-/// every stroke, so the birth coordinate was re-stamped every stroke and no
-/// bubble could ever age. `held_since(now_k, moved_k)` was zero BY
-/// CONSTRUCTION, `t_extent` perpetually zero, and lane 𝒯 could never
-/// accumulate: 58 of 58 spoken magnitudes at 9a08fba carried 𝒯 = 0 while
-/// `span_of` never once refused — it was answering `Some(0)` every time.
+/// charts last moved". D8 re-holds a withheld form on every stroke, so a
+/// `hold_form` that rebuilt the whole bubble and stamped `moved_k = now_k`
+/// each time would re-stamp the birth coordinate every stroke and no bubble
+/// could ever age: `held_since(now_k, moved_k)` zero BY CONSTRUCTION,
+/// `t_extent` perpetually zero, lane 𝒯 never accumulating, and `span_of`
+/// answering `Some(0)` every time.
 ///
 /// A form retained across an evaluation stroke has moved zero in
 /// configuration space. The key IS the topology and the carriages (law 2),
@@ -442,9 +433,9 @@ fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
     assert_eq!(c.bubbles.len(), 1, "one form, one bubble, however often it is held");
 
     // A SPAN OF ZERO HAS TWO CAUSES AND THEY ARE DIFFERENT FACTS: a form held
-    // and not yet aged, and a form never held at all. Reporting both as `0`
-    // is what made 𝒯 unreadable on the wire — 46 spoken magnitudes at
-    // c62940b, every one `T = 0`, with no way to tell which path produced it.
+    // and not yet aged, and a form never held at all. Reported as one `0`
+    // the two are unreadable on the wire, with no way to tell which path
+    // produced it.
     use crate::transducer::bubble::contemplation::Deliberation;
     assert_eq!(
         c.span_of(&form),
@@ -472,19 +463,14 @@ fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
 ///
 /// A bubble's key is its form's address, and a pivot REWRITES THE FORM IN
 /// PLACE — `expand_all` takes the slot by the key it entered with and
-/// `expand_with` calls `take_form` inside it. So the bubble kept its
-/// inception stamp and everything it had built while its key stopped
-/// matching the form it now held, and every reader looking it up by the
-/// current form missed it: `span_of` answered "never held" for a bubble that
-/// had been deliberating for thousands of receipts, and `hold_form` would
-/// insert a SECOND bubble for the same lineage while the first was orphaned
-/// under a key nothing computes any more.
-///
-/// That is why 𝒯 read zero on every spoken word even after the clock and
-/// the phase-change stamp were both correct: a form with an open remainder
-/// speaks only once it closes, closing mutates it, and mutation lost the
-/// lookup. Measured at c62940b: 1694 holds against 20 spoken forms, and
-/// `span_of` never once finding a bubble.
+/// `expand_with` calls `take_form` inside it. Left where it was, the bubble
+/// would keep its inception stamp and everything it had built while its key
+/// stopped matching the form it now held, and every reader looking it up by
+/// the current form would miss it: `span_of` answering "never held" for a
+/// bubble that has been deliberating for thousands of receipts, and
+/// `hold_form` inserting a SECOND bubble for the same lineage while the
+/// first is orphaned under a key nothing computes any more. A form with an
+/// open remainder speaks only once it closes, and closing mutates it.
 #[test]
 fn a_bubble_rekeyed_by_a_mutation_keeps_its_inception() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};

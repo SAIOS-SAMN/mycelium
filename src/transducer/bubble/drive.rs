@@ -119,7 +119,7 @@ impl Contemplation {
     }
 
     /// Attempt fill on the link of bubbles at `word`'s chart and prefixes.
-    /// Merges filled cells; speaks a closed component as one sentence.
+    /// Merges filled simplices; speaks a closed component as one sentence.
     /// Returns (fills, formed, classes, spoken elements).
     pub fn pivot_on(
         &mut self,
@@ -133,19 +133,15 @@ impl Contemplation {
         // happened to take.
         let mut adjoined: Adjoined = Vec::new();
         let inv = stalk::invariant_of(word);
-        // THE CAVITY IS READ AT THE CHART, not copied and filtered. This
-        // cloned EVERY entry — key and the whole `Vec<RemCell>` — on every
-        // call, re-derived each one's chart, and kept the few whose prefix
-        // matched the arriving word's. The cavity grows by one on every
-        // retirement, every stroke, and drains only on that coincidence, so
-        // the clone grew without bound on the pivot path while the thing it
-        // was searching for stayed rare.
-        //
+        // THE CAVITY IS READ AT THE CHART, not copied and filtered:
         // `cavity_key` files a retired remainder under its chart first, so
         // the entries a chart can re-hold are the SUBTREE under that chart's
-        // key — `Keyed::fiber`, one descent per prefix of the word's chart,
-        // which is the same set the filter selected and none of the copying.
-        let mut back: Vec<(Vec<u8>, Vec<RemCell>)> = Vec::new();
+        // key — `Keyed::fiber`, one descent per prefix of the word's chart.
+        // The cavity grows by one on every retirement, every stroke, and
+        // drains only here, so a read that cloned every entry to find the
+        // few whose chart matched would grow without bound while the thing
+        // it searched for stayed rare.
+        let mut back: Vec<(Vec<u8>, Vec<Link>)> = Vec::new();
         for p in inv.prefixes() {
             let pk = p.key();
             let Some(f) = self.cavity.fiber_at(pk.as_bytes()) else {
@@ -167,9 +163,9 @@ impl Contemplation {
         }
         let word_rotor = cech::rotor_of(word);
         // EVERY OPERATOR THE ARRIVING WORD CARRIES (Expansion 4): a form's
-        // word vertices — letters among them since R55 — or a connection's
-        // letters. `rotor_of` reads a connection alone and answered `None`
-        // for every learned form, so no vortex was ever asked.
+        // word vertices — letters among them — or a connection's letters.
+        // `rotor_of` reads a connection alone and answers `None` for a
+        // learned form, so read through it no vortex would be asked.
         let carried: Vec<crate::transducer::alphabet::Rotor> = crate::transducer::sentence::acting_of_element(word)
             .iter()
             .map(|t| t.word.rotor())
@@ -244,15 +240,15 @@ impl Contemplation {
                 break;
             }
             // index: link of this bubble
-            let cells = self.complex.link_of(bk);
-            for key in cells {
+            let simplices = self.complex.link_of(bk);
+            for key in simplices {
                 if !budget.spend() {
                     break;
                 }
                 let Some((d, fill_open, coeff_id, v0, v1, vertices)) = self.complex.simplex(&key).map(|c| {
-                    // A cell's vertices are `sorted_verts`, so the two ends
-                    // are its least and next-least keys — the cell's own
-                    // order, read as a slice pattern.
+                    // A simplex's vertices are `sorted_verts`, so the two
+                    // ends are its least and next-least keys — the simplex's
+                    // own order, read as a slice pattern.
                     let (v0, v1) = match c.vertices.as_slice() {
                         [a, b, ..] => (Some(a.clone()), Some(b.clone())),
                         [a] => (Some(a.clone()), None),
@@ -324,10 +320,10 @@ impl Contemplation {
                             self.torsion_merges += 1;
                             if let Some(merged) = self.merge(&vertices) {
                                 if let Some(b) = self.bubbles.get_mut(merged.as_bytes()) {
-                                    // A cell of one vertex is a loop at
+                                    // A simplex of one vertex is a loop at
                                     // that vertex: both ends are it, which
-                                    // the slice pattern says on the cell's
-                                    // own sorted vertices.
+                                    // the slice pattern says on the
+                                    // simplex's own sorted vertices.
                                     let (a, c) = match vertices.as_slice() {
                                         [a, b, ..] => (a.clone(), b.clone()),
                                         [a] => (a.clone(), a.clone()),
@@ -348,7 +344,7 @@ impl Contemplation {
                                 }
                             }
                         }
-                        // 37.7 at a cell: a rotation the seventeen do not
+                        // 37.7 at a simplex: a rotation the seventeen do not
                         // spell. Not a class the horizon can seed a pivot
                         // from and not a fill — it is an adjunction
                         // candidate, and it is left standing rather than

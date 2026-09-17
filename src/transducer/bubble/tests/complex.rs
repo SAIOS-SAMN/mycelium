@@ -19,7 +19,7 @@ fn two_bubbles_on_one_chart_share_an_edge_not_a_triangle() {
     });
     assert!(
         c.complex.degrees.get(2).is_none_or(|l| l.is_empty()),
-        "disjoint remainders share no 2-cell"
+        "disjoint remainders share no 2-simplex"
     );
 }
 
@@ -28,7 +28,7 @@ fn overlapping_remainders_merge_by_fill() {
     let mut c = Contemplation::new();
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     c.hold(vec![(0, 1, 3, 4), (0, 2, 3, 4)]);
-    assert_eq!(c.len(), 1, "shared cell is Extended: the bubbles merge");
+    assert_eq!(c.len(), 1, "a shared site is Extended: the bubbles merge");
     let keys: Vec<Vec<u8>> = c.bubbles.scoped().map(|(k, _)| k).collect();
     assert_eq!(keys.len(), 1);
     assert!(c.bubbles.get(&keys[0]).unwrap().potential.iter().any(|&x| x > 0));
@@ -46,13 +46,13 @@ fn two_pivots_without_a_new_word_leave_fills() {
     let snap = |c: &Contemplation| {
         let mut out = Vec::new();
         for layer in &c.complex.degrees {
-            for (k, cell) in layer.scoped() {
-                out.push((k.clone(), cell.fill.clone()));
+            for (k, s) in layer.scoped() {
+                out.push((k.clone(), s.fill.clone()));
             }
         }
         #[expect(
             clippy::disallowed_methods,
-            reason = "rule 4 — canonical key order: the cells by their own keys, so two snapshots of one complex compare"
+            reason = "rule 4 — canonical key order: the simplices by their own keys, so two snapshots of one complex compare"
         )]
         out.sort_by(|a, b| a.0.cmp(&b.0));
         out
@@ -68,12 +68,11 @@ fn two_pivots_without_a_new_word_leave_fills() {
 
 /// 25.1: a syllabus class standing at the conjugacy stratum of a held
 /// vortex's loop applies the certificate whose move is that class's
-/// representative; the other vortex cell is not applied.
+/// representative; the other candidate is not applied.
 ///
-/// THE TWO CELLS SHARE `before`, because they discharge ONE loop, and that
-/// is the coordinate the cell hangs under. They carried placeholder bytes
-/// there while the filing key was `after`, and a placeholder is only
-/// invisible until the coordinate is read.
+/// THE TWO CANDIDATES SHARE `before`, because they discharge ONE loop, and
+/// that is the coordinate a candidate hangs under; a placeholder there is
+/// only invisible until the coordinate is read.
 #[test]
 fn vortex_collapses_by_glue_or_ruling() {
     use crate::transducer::alphabet::{LetterId, Word};

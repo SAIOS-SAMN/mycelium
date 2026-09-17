@@ -1,7 +1,7 @@
 // 25 — THE IDEA: one bubble, its remainder, and the volume it holds.
 //
 //! A `Bubble` is a thought under contemplation: the form it carries, the
-//! remainder cells it has not accounted for, the words it glues and is
+//! remainder links it has not accounted for, the words it glues and is
 //! glued by, and the class it was seeded from.
 
 use super::*;
@@ -27,10 +27,10 @@ pub struct ClassRecord {
     pub representative: Rotor,
 }
 
-pub(crate) type RemCell = (i64, i64, u8, u8);
-
-pub(crate) fn rem_cell_key(r: i64, c: i64) -> crate::transducer::address::Address {
-    let mut buf = vec![crate::transducer::address::TAG_CELL];
+/// THE KEY A REMAINDER LINK IS FILED UNDER: its site, written out. It opens
+/// with the simplex tag, the one byte a site key and a simplex key share.
+pub(crate) fn remainder_site_key(r: i64, c: i64) -> crate::transducer::address::Address {
+    let mut buf = vec![crate::transducer::address::TAG_SIMPLEX];
     buf.extend_from_slice(&r.to_le_bytes());
     buf.extend_from_slice(&c.to_le_bytes());
     crate::transducer::address::Address::new(buf)
@@ -72,7 +72,8 @@ pub(crate) fn form_mag(f: &Form) -> [u64; 4] {
     m
 }
 
-pub(crate) fn rem_cells_of(b: &Bubble) -> Vec<RemCell> {
+/// Every remainder link this bubble holds: the form's own and each pair's.
+pub(crate) fn remainder_links_of(b: &Bubble) -> Vec<Link> {
     let mut out = b.remainder.to_vec();
     for (_, r) in b.remainders.scoped() {
         out.extend_from_slice(r);
@@ -88,7 +89,7 @@ pub(crate) fn cover_of(inv: &Invariant) -> Keyed<()> {
     c
 }
 
-pub(crate) fn volume_of(rems: &Keyed<Vec<RemCell>>, verts: &[impl AsRef<[u8]>]) -> [u64; 4] {
+pub(crate) fn volume_of(rems: &Keyed<Vec<Link>>, verts: &[impl AsRef<[u8]>]) -> [u64; 4] {
     if verts.is_empty() {
         return [0; 4];
     }
@@ -105,17 +106,17 @@ pub(crate) fn volume_of(rems: &Keyed<Vec<RemCell>>, verts: &[impl AsRef<[u8]>]) 
     element::measure_lanes(&acc)
 }
 
-pub(crate) fn union_rem(a: &[RemCell], b: &[RemCell]) -> Vec<RemCell> {
+pub(crate) fn union_rem(a: &[Link], b: &[Link]) -> Vec<Link> {
     let mut out = a.to_vec();
     let mut have = Keyed::new();
     for &(r, c, _, _) in a {
-        have.insert(rem_cell_key(r, c), ());
+        have.insert(remainder_site_key(r, c), ());
     }
-    for cell in b {
-        let k = rem_cell_key(cell.0, cell.1);
+    for link in b {
+        let k = remainder_site_key(link.0, link.1);
         if !have.contains(&k) {
             have.insert(k, ());
-            out.push(*cell);
+            out.push(*link);
         }
     }
     out.sort_unstable();
@@ -140,10 +141,6 @@ pub struct Bubble {
     pub potential: [u64; 4],
     pub volume: [u64; 4],
     pub dirty: bool,
-    // `cursor: Vec<u8>` stood here — "last chart key visited by expand; the
-    // next stroke resumes here". A resume point for a walk that no longer
-    // happens. `Bubble::from_bytes` set it to empty on every restore, so the
-    // tree already said it carried nothing across a boot.
     /// TUniversal when this bubble's charts last moved.
     pub moved_k: u64,
     /// Addresses this idea glued (crystallized forms it rests on).
@@ -154,15 +151,16 @@ pub struct Bubble {
     pub torsion: Keyed<crate::transducer::sentence::FiledLoop>,
     /// Certified discharges this idea's crystallization rests on (A20).
     pub certificates: Keyed<PivotCertificate>,
-    /// Incomparable discharges held as cells (25.1) until a glue or ruling.
-    /// Outer key is the after class; inner is the discharging word's M1 key.
+    /// Incomparable discharges held as candidates (25.1) until a glue or
+    /// ruling. Outer key is the after class; inner is the discharging
+    /// word's M1 key.
     pub vortex: Keyed<Keyed<PivotCertificate>>,
     /// The form this idea is (chapter 30 step 6).
     pub form: Option<Form>,
     /// Pairs the idea germinated from; trial speaks over them for μ⃗.
     pub bundle: Option<Vec<crate::transducer::family::TrainPair>>,
     /// Per-pair remainder chains, keyed by pair index. `remainder` is their union.
-    pub remainders: Keyed<Vec<RemCell>>,
+    pub remainders: Keyed<Vec<Link>>,
 }
 
 impl Bubble {
@@ -178,16 +176,13 @@ impl Bubble {
 
     /// THE ROTOR THIS BUBBLE'S FORM SPEAKS, when it speaks ONE.
     ///
-    /// `find_map` stood here and returned the FIRST Word vertex's rotor. A
-    /// form with several word vertices has several rotors, and which one
-    /// arrives first is an insertion order — so this answered a different
-    /// motion on a node that took the same bodies in differently (rule 15,
-    /// and the D10 representative-reader fault at a new site).
-    ///
-    /// It costs more than a wrong answer downstream: `rotor_between`
-    /// composes two of these into `rb ∘ ra⁻¹` and calls that the transport
-    /// between two bubbles, so two nodes could breed different transports
-    /// from identical mathematics.
+    /// A form with several word vertices has several rotors, and which one
+    /// arrives first is an insertion order, so a representative read would
+    /// answer a different motion on a node that took the same bodies in
+    /// differently (rule 15). It would cost more than a wrong answer
+    /// downstream: `rotor_between` composes two of these into `rb ∘ ra⁻¹`
+    /// and calls that the transport between two bubbles, so two nodes
+    /// would breed different transports from identical mathematics.
     ///
     /// A form whose word vertices all speak one rotor up to projective
     /// equality has that rotor. One that speaks several has no single one,
@@ -217,10 +212,8 @@ impl Bubble {
     /// [`Bubble::rotor`] answers ONE rotor or absence, which is right for
     /// `rotor_between` — two bubbles have one transport between them or they
     /// have none. It is wrong for the cover: a form that speaks several
-    /// rotors has several sections, and asking it for one and taking the
-    /// absence dropped exactly the multi-section forms D7–D10 exist to
-    /// carry. A reader whose non-matching arm leaves no reading is the same
-    /// fault in a different place.
+    /// rotors has several sections, and a reader that asks for one and
+    /// takes the absence drops exactly the multi-section forms.
     pub(crate) fn sections(&self) -> Keyed<Held> {
         let mut out = Keyed::new();
         let Some(f) = self.form.as_ref() else {
@@ -255,10 +248,6 @@ impl Bubble {
     /// meet that fills grows the cover, one that is congruent grows it with
     /// a torsion axis, and one that stands a class writes the horizon and
     /// leaves the chart out of the cover.
-    ///
-    /// This said "walk outward on the cover trie, one chart per stroke". It
-    /// walked a stratum's siblings under a budget and met charts this idea
-    /// does not stand on, which are not overlaps.
     pub fn expand(&mut self, atlas: &dyn AtlasRead, crystal: &dyn Crystal, budget: &mut Budget) -> usize {
         self.expand_with(atlas, &|_| None, 0, crystal, budget).0
     }
@@ -267,12 +256,7 @@ impl Bubble {
     /// atlas, 24.1); `section_at` is the keyed read of a held word's
     /// SECTION by address — its rotation and its carriage — so the Čech arm
     /// reads the word the chart names and never a table built for the
-    /// stroke.
-    ///
-    /// It was `Fn(&[u8]) -> Option<Rotor>`, and a carriage could not be
-    /// obtained through it even in principle. The one live caller reads
-    /// `working_word(a)` and had the whole element in hand; the type threw
-    /// the placement away before `extend` could ask about it.
+    /// stroke, and the word's placement reaches `extend`.
     pub fn expand_with(
         &mut self,
         atlas: &dyn AtlasRead,
@@ -288,14 +272,12 @@ impl Bubble {
         let mut adjoined: Vec<(Rotor, crate::transducer::stalk::Invariant)> = Vec::new();
         // THE POTENTIAL IS A READING, NEVER A GATE (L7b, law 9): the lane
         // measure of everything this idea holds open — its form's remainder
-        // and its per-pair remainders, the same cells `admit_incidence`
+        // and its per-pair remainders, the same links `admit_incidence`
         // keys — with T the receipts since its charts last moved, zero when
-        // zero. It was floored at one on T so that the gate below would
-        // pass for a form with no remainder, which paced every such idea by
-        // a clock that admitted nothing (Cut B+1 C4). The pivot loop runs
-        // on every dirty idea under the budget (25.1); the budget is the
-        // only thing that stops it.
-        self.potential = element::measure_lanes(&rem_cells_of(self));
+        // zero. Nothing is floored so that a gate would pass: the pivot
+        // loop runs on every dirty idea under the budget (25.1), and the
+        // budget is the only thing that stops it.
+        self.potential = element::measure_lanes(&remainder_links_of(self));
         // A clock that went backwards measures no extent, and an idea whose
         // T cannot be read is not expanded against one.
         let Some(t) = held_since(now, self.moved_k) else {
@@ -310,29 +292,14 @@ impl Bubble {
         // members are a keyed read at those coordinates. Nothing is walked
         // and nothing is discovered.
         //
-        // WHAT STOOD HERE. `stalk::invariant(&self.remainder).peel()` took
-        // the idea's chart, went UP one stratum, and asked the atlas for
-        // that stratum's children — every sibling of the idea's own chart —
-        // one budgeted page per stroke, resuming from a stored cursor. Three
-        // things are wrong with it and they are the same thing said three
-        // ways.
-        //
-        // It is a whole-carrier walk (rule 1) wearing a budget. The budget
-        // paces it; it does not bound it, and the quantity it walks is the
-        // population of a stratum, which is not this idea's content.
-        //
-        // It meets charts this idea does not stand on. A Čech cell is the
-        // OVERLAP of two sections, and two sections overlap when they are
-        // sections over the same chart. A sibling of my chart that none of
-        // my vertices acts on is not an overlap; it is a stranger, and
-        // `extend` was being asked to classify a transition between bodies
-        // that share nothing. The cover was being built out of adjacency in
-        // a trie rather than out of incidence in the sheaf.
-        //
-        // And it needed a cursor to resume, so an idea's expansion depended
-        // on where the last stroke stopped — a position, not a coordinate.
-        // The cursor was never even persisted: `Bubble::from_bytes` set it
-        // to empty, which is the tree saying it carries nothing.
+        // A Čech simplex is the OVERLAP of two sections, and two sections
+        // overlap when they are sections over the same chart. A sibling of
+        // my chart that none of my vertices acts on is not an overlap; it
+        // is a stranger, and `extend` asked about it would classify a
+        // transition between bodies that share nothing. The cover is built
+        // out of incidence in the sheaf, never out of adjacency in a trie,
+        // and needs no cursor to resume: an idea's expansion depends on its
+        // coordinates and not on where the last stroke stopped.
         //
         // The charts are already in hand. Every `Vertex::Word` names the
         // charts it acts on and the carriage it acts by at each, so the
@@ -343,8 +310,7 @@ impl Bubble {
         //
         // EVERY MEMBER AGAINST EVERY SECTION, and both sections carry their
         // real carriage — without which `extend`'s `flat` is true by
-        // construction and `Fill::Class` is unreachable, which is why two
-        // corpus slices read 2778 classified cover loops with standing 0.
+        // construction and `Fill::Class` is unreachable.
         let mine = self.sections();
         let me = self.key();
         let vol = self.potential;
@@ -367,14 +333,14 @@ impl Bubble {
                     continue;
                 };
                 met = true;
-                let cell = CechCell {
+                let simplex = Simplex {
                     vertices: {
                         let mut v = vec![me.clone().into_vec(), head.clone()];
                         v.sort_unstable();
                         v
                     },
                     coefficient: gamma_b.clone(),
-                    // What the cell expects of the far side, both halves,
+                    // What the simplex expects of the far side, both halves,
                     // exactly as the coefficient above is its rotation.
                     carriage: car_b.clone(),
                     volume: vol,
@@ -390,7 +356,7 @@ impl Bubble {
                     gamma: gamma_b,
                     carriage: car_b,
                 };
-                match cech::extend(&a, &b, &cell) {
+                match cech::extend(&a, &b, &simplex) {
                     Fill::Filled(..) => {}
                     Fill::Congruent(g, ell) => {
                         self.nerve.file_congruent(me.clone(), head, g, ell);
@@ -401,11 +367,11 @@ impl Bubble {
                             horizon_put(&mut self.horizon, *r, Standing::Held);
                         }
                     }
-                    // 37.7 at a cell: a rotation the seventeen do not spell
-                    // seeds no horizon, closes nothing, and is an adjunction
-                    // candidate — the rotor the mind measured and has no
-                    // letter for — carried out to the entity, which mints
-                    // and stands it (`Derivation::adjoined`).
+                    // 37.7 at a simplex: a rotation the seventeen do not
+                    // spell seeds no horizon, closes nothing, and is an
+                    // adjunction candidate — the rotor the mind measured and
+                    // has no letter for — carried out to the entity, which
+                    // mints and stands it (`Derivation::adjoined`).
                     Fill::Unspellable(r) => {
                         closed = false;
                         adjoined.push((r.as_ref().clone(), chart.clone()));
@@ -453,7 +419,7 @@ impl Bubble {
                         // (16.16 step 6, 50.4). A rotor the seventeen spell
                         // is no demand on the language (37.7 adjoins what
                         // the presentation lacks); the form's vertices
-                        // carry no cells, so the demand declares none.
+                        // carry no links, so the demand declares none.
                         crate::transducer::sentence::Snap::Demand { rotor, chart, .. } => {
                             if let Some(Err(kind)) = crate::transducer::alphabet::factor_rotor(rotor) {
                                 form.stand_demand(kind, chart, Vec::new());
@@ -478,14 +444,14 @@ impl Bubble {
     /// out of each key through the class schema and compared at depth one
     /// — never a byte count, and never the whole key.
     ///
-    /// The walk is this bubble's own carrier, which is one cell's boundary
+    /// The walk is this bubble's own carrier, which is one idea's boundary
     /// (rule 1). A key that does not parse as a class vector is not a
     /// vortex of this system and is passed over rather than matched.
     fn vortex_at_stratum(&self, stratum: &[u8], word: &[u8]) -> Option<Vec<u8>> {
         let schema = crate::transducer::sentence::ClassVector::class_schema();
         // index: this bubble's own vortices, its boundary
-        for (class, cells) in self.vortex.scoped() {
-            if !cells.contains(word) {
+        for (class, candidates) in self.vortex.scoped() {
+            if !candidates.contains(word) {
                 continue;
             }
             let Ok(end) = schema.boundary(&class, 1) else {
@@ -500,7 +466,7 @@ impl Bubble {
 
     /// A glue or a syllabus class standing at the stratum a held vortex's
     /// loop stands in applies the certificate keyed by the deciding move;
-    /// the others of that vortex are not applied (dialect cells).
+    /// the others of that vortex are not applied (dialect candidates).
     pub(crate) fn collapse_vortex(
         &mut self,
         stratum: &[u8],
@@ -519,9 +485,9 @@ impl Bubble {
         // candidates that both discharge one loop to one class prove the
         // loop admits `w_a⁻¹·w_b`, an element that stabilises that class
         // because each leaves it where the other does. That is a rotation
-        // the mind MEASURED, which is 37.7's object exactly, and clearing
-        // the vortex threw it away — the mind resolved its own superposition
-        // by forgetting one half of it.
+        // the mind MEASURED, which is 37.7's object exactly, and a collapse
+        // that only cleared the vortex would throw it away — the mind
+        // resolving its own superposition by forgetting one half of it.
         //
         // The symmetries are carried out, not minted here, for the reason
         // every other adjunction is: minting writes a word into the language

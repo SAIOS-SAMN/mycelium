@@ -125,7 +125,7 @@ impl Entity {
     }
 
     pub fn horizon_cells(&self) -> usize {
-        self.contemplation.horizon_cells()
+        self.contemplation.horizon_len()
     }
 
     pub fn thought_potential(&self) -> [u64; 4] {
@@ -534,7 +534,7 @@ impl Entity {
     /// entries of one cell and ten of a thousand are the same count and not
     /// the same carrier (rule 2 — the count does not decide).
     pub fn cavity_cells(&self) -> usize {
-        self.contemplation.cavity_cells()
+        self.contemplation.cavity_links()
     }
 
     /// The carriers a bubble holds that no count reports — sections, nerve

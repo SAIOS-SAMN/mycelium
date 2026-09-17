@@ -82,16 +82,16 @@ pub(crate) fn absorb_vortex(
     }
 }
 
-pub(crate) fn intersect(a: &[RemCell], b: &[RemCell]) -> Vec<RemCell> {
+pub(crate) fn intersect(a: &[Link], b: &[Link]) -> Vec<Link> {
     let mut kb = Keyed::new();
     for &(r, c, _, _) in b {
-        kb.insert(rem_cell_key(r, c), ());
+        kb.insert(remainder_site_key(r, c), ());
     }
-    a.iter().copied().filter(|&(r, c, _, _)| kb.contains(&rem_cell_key(r, c))).collect()
+    a.iter().copied().filter(|&(r, c, _, _)| kb.contains(&remainder_site_key(r, c))).collect()
 }
 
 impl Contemplation {
-    /// Two bubbles on one cell: extend decides. Extended merges and
+    /// Two bubbles on one simplex: extend decides. Extended merges and
     /// re-gauges; Congruent merges with a torsion axis; Class keeps both
     /// and writes each into the other's horizon. Zero volume never merges.
     pub(crate) fn decide_neighbors(&mut self, key: &[u8]) {
@@ -125,10 +125,10 @@ impl Contemplation {
                 }
                 Fill::Congruent(g, ell) if vol_nz => {
                     self.torsion_merges += 1;
-                    // A cell of one vertex is a loop at that vertex: both
-                    // ends are it, which is what the cell says and not a
+                    // A simplex of one vertex is a loop at that vertex: both
+                    // ends are it, which is what the simplex says and not a
                     // second end invented for it. The vertices are the
-                    // cell's own sorted keys, read as a slice pattern.
+                    // simplex's own sorted keys, read as a slice pattern.
                     let ends = match vertices.as_slice() {
                         [a, b, ..] => [a.clone(), b.clone()],
                         [a] => [a.clone(), a.clone()],
@@ -163,7 +163,7 @@ impl Contemplation {
                     return;
                 }
                 Fill::Already | Fill::Open => {}
-                // 37.7 at a cell: a rotation the seventeen do not spell,
+                // 37.7 at a simplex: a rotation the seventeen do not spell,
                 // which merges nothing and seeds no horizon.
                 Fill::Unspellable(_) => {}
                 Fill::Filled(..) | Fill::Congruent(_, _) => {}
@@ -182,9 +182,9 @@ impl Contemplation {
     }
 
     /// A merge of fewer than two bubbles is the bubble itself, and a merge
-    /// the forms refuse leaves the LEAST key of the cell standing — the
-    /// vertices arrive sorted, so it is the cell's own coordinate and not
-    /// the bubble that was reached first.
+    /// the forms refuse leaves the LEAST key of the simplex standing — the
+    /// vertices arrive sorted, so it is the simplex's own coordinate and
+    /// not the bubble that was reached first.
     pub(crate) fn merge(&mut self, verts: &[Vec<u8>]) -> Option<crate::transducer::address::Address> {
         // One vertex is that vertex; none is nothing to merge.
         if let [only] = verts {
@@ -206,7 +206,7 @@ impl Contemplation {
                     );
                     #[expect(
                         clippy::disallowed_methods,
-                        reason = "rule 15 — canonical key order: the cell's vertices are sorted, so the least key stands where the merge is refused"
+                        reason = "rule 15 — canonical key order: the simplex's vertices are sorted, so the least key stands where the merge is refused"
                     )]
                     return verts.first().cloned().map(crate::transducer::address::Address::from);
                 }
@@ -221,8 +221,8 @@ impl Contemplation {
         let mut vortex = Keyed::new();
         let mut form = None;
         let mut bundle = None;
-        let mut remainders: Keyed<Vec<RemCell>> = Keyed::new();
-        let mut old_rems: Keyed<Vec<RemCell>> = Keyed::new();
+        let mut remainders: Keyed<Vec<Link>> = Keyed::new();
+        let mut old_rems: Keyed<Vec<Link>> = Keyed::new();
         for v in verts {
             let Some(b) = self.bubbles.get(v.as_slice()).cloned() else {
                 continue;
@@ -253,7 +253,7 @@ impl Contemplation {
             Some(f) => form_mag(f),
             None => element::measure_lanes(&remainder),
         };
-        // A union of two remainders can say two things at one cell, and
+        // A union of two remainders can say two things at one site, and
         // such a remainder has no A5 chain. The merge yields no bubble
         // rather than one that cannot be named (U14).
         let remainder = element::place_chain(&remainder)?;

@@ -5,18 +5,18 @@ use crate::transducer::bubble::*;
 
 /// Law 5, L7a: the boundary of the open thoughts is read on four lanes
 /// and is the measure of the held remainders themselves — never their sum,
-/// never a norm. No thought is `[0; 4]`; one held cell measures as that
-/// cell's chain does, lane by lane.
+/// never a norm. No thought is `[0; 4]`; one held link measures as its
+/// chain does, lane by lane.
 #[test]
 fn an_open_thought_measures_on_four_lanes_never_a_sum() {
     let mut c = Contemplation::new();
     assert_eq!(c.boundary_measure(), [0; 4], "no thought is zero on every lane, not MAX");
-    let cell = (0, 0, 1, 2);
-    c.hold(vec![cell]);
+    let link = (0, 0, 1, 2);
+    c.hold(vec![link]);
     let m = c.boundary_measure();
     assert_eq!(
         m,
-        element::measure_lanes(&[cell]),
+        element::measure_lanes(&[link]),
         "the boundary is the remainder's own lane measure, lane for lane"
     );
     assert!(m.iter().any(|&x| x > 0), "∂g ≠ 0 is a non-zero cochain: {m:?}");
@@ -219,15 +219,15 @@ fn hold_form_carries_bundle_and_remainder() {
         b.bundle.as_ref().is_some_and(|t| t.len() == 1),
         "the idea carries the train"
     );
-    let cells = b.remainders.get(&pair_idx_key(0)).expect("pair remainder");
-    assert_eq!(cells.len(), 1, "remainder is keyed by pair");
+    let links = b.remainders.get(&pair_idx_key(0)).expect("pair remainder");
+    assert_eq!(links.len(), 1, "remainder is keyed by pair");
     assert!(
         b.remainder.is_empty(),
         "Bubble.remainder is the form's own remainder, not concatenated pairs"
     );
     assert_eq!(
         b.volume,
-        crate::transducer::element::measure_lanes(cells),
+        crate::transducer::element::measure_lanes(links),
         "volume is the lane-wise sum of per-pair remainder measures"
     );
 }

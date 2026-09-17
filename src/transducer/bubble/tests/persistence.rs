@@ -19,7 +19,7 @@ fn tht1_round_trips_bubbles() {
 fn restart_refills_horizon_from_syllabus() {
     use crate::transducer::alphabet::{LetterId, Word};
     let mut c = Contemplation::new();
-    assert_eq!(c.horizon_cells(), 0);
+    assert_eq!(c.horizon_len(), 0);
     let q = LetterId::quarter((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false)]).rotor();
     let rec = ClassRecord {
