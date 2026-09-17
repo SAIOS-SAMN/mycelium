@@ -318,10 +318,12 @@ pub fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<Link>> {
 }
 
 /// THE REPLAY — in the algebra and linear in the proof. For every citation
-/// the word's own laminae are carried forward by V, each as a blade (exact
-/// under dilation), and every image lamina is one keyed read of the
-/// target: a hit with the same transition is spoken, an image lamina the
-/// target lacks is over-explanation. The scene is never walked. The
+/// the word's own laminae are carried forward by V, each as its unit
+/// square (exact, or refused: a lamina the versor carries onto no block of
+/// laminae — a tilt, a shrink — speaks nothing, law 11), and every image
+/// lamina is one keyed read of the target: a hit with the same transition
+/// is spoken, an image lamina the target lacks is over-explanation. The
+/// scene is never walked. The
 /// residual is R = Q △ S: the target links no citation speaks, plus the
 /// over-explained links. An empty residual is closure; a citation naming
 /// nothing held speaks nothing.
