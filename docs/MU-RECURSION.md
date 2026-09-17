@@ -148,10 +148,24 @@ These are not restated in each chapter; every chapter assumes them.
     the blade decomposition of its canonical holonomy versor, and its
     placement axis is the translator component of that versor. A pair of
     coordinates appears only at the sensor boundary, in `pair_form`,
-    `speak_rule`, and `orbit`, where a cell is read or written. Fluid
-    physics carried in squares is squares of fluid: looking for a square
-    inside a circle is a search for two different objects (chapters 1.4,
-    1.7, 16.4). **No matrix carries an action.** A matrix is a linear
+    `speak_rule`, and `orbit`, where a cell is read or written. **The cell
+    is the sensor's token, never the mind's carrier** (ruled 2026-09-17,
+    evening): `(r, c, before, after)` for a chain and `(r, c, k, hue)` for
+    a body's support are read once at intake (`perceive`, `germinate`,
+    A5's centering), computed on only where a sentence is replayed against
+    what the sensor read (`chain::replay_operators`, the court's
+    `vertices_carry_family`) and where a grid is written (`speak_rule`,
+    `orbit`), and between those sites they are carried as content: the
+    mind acts on the POSE — A5's translator, the carriage, the transport —
+    and compares bodies by the versor between their shapes and the gauge.
+    The sensor's own readers (`element/sensor.rs`: `cell_of`,
+    `carry_center`, `carry_cell`, `pullback`) read the three coordinates
+    of the base (51.1) exactly or refuse: a carried cell whose image is
+    not a lattice cell of one frame, or an exact block of them, is
+    refused, never rounded to the cells whose centres its image spans.
+    Fluid physics carried in squares is squares of fluid: looking for a
+    square inside a circle is a search for two different objects (chapters
+    1.4, 1.7, 16.4). **No matrix carries an action.** A matrix is a linear
     representation on a fixed set of squared coordinates: it holds only
     what that frame can hold, its product forgets the blade structure of
     what it represents, and a new axis is a larger matrix rather than a
@@ -2314,7 +2328,15 @@ meaning, and this is the choice that keeps a dilation what 42.6 says it
 is: `D(ρ)` about the origin fixes frame `0`, and the dilator of a carriage
 at frame `k` is the dilator about a point of that frame, so a similarity
 within a frame is a versor of this algebra and a body is not carried out
-of its frame by its own scale.
+of its frame by its own scale. A CELL HAS NO EXTENT ALONG `e₃` (ruled
+2026-09-17, evening): it is the unit square `[r, r+1) × [c, c+1)`
+standing in the plane `k`, a lamina, its own moment along `e₃` is zero
+(`blade::lift` adds the square's `1/12` on the two plane axes and nothing
+on the third), and a body is a stack of laminae. That is what makes a
+similarity within a frame a similarity of the body — a lamina zoomed is a
+lamina — and what a versor turning `e₃` into the plane cannot keep: it
+carries a lamina to a square standing across the frames, which is no cell
+of the sensor, and `carry_cell` refuses it (law 11).
 
 1. All coefficients zero: refuse.
 2. `i` = least mask with nonzero coefficient; divide by `|c[i]|`; negate if
@@ -2337,9 +2359,17 @@ equality use `projective_eq` for versors and A1 for rotors.
 
 ### 16.5 A5 — Chain canonicalisation
 
-Input: cells `(r, c, k, before, after) ∈ Z³ × hue²`; the base is `(r, c, k)`
-(51.3) and the hues are fibre coordinates. `min_r`, `min_c` below are
-read with `min_k` beside them; a frame origin carries no meaning (51.1).
+Input: the sensor's chain of ONE SECTION, cells `(r, c, before, after) ∈
+ℤ² × hue²` read at frame `k` (ruled 2026-09-17, evening, retracting the
+five-field cell of that morning's draft): the hues are fibre coordinates
+and `k` is not a field of the cell but the section's PLACE, carried on
+the pose. Step 1's corner leaves as the translator `T(min_r, min_c, k)`
+(`place_chain`, `PlacedChain::at`), so a section at frame `k` is the
+canonical chain at a pose along `e₃`, and two sections of one family at
+two frames are one chain at two poses — 51.1's consequence, that a family
+and the same family shifted by a frame are one body, holds by
+construction. The chain of a body spanning frames is its sections, one
+placed chain per frame; a frame origin carries no meaning (51.1).
 
 1. `min_r`, `min_c` over the cells; translate every cell by `(−min_r, −min_c)`.
 2. Sort lexicographically on the tuple; remove exact duplicates.
@@ -8056,25 +8086,59 @@ letter.
 
 ### 51.3 The cell, the body, the shape, the moduli
 
-A cell becomes `(r, c, k, before, after)`. It was `(r, c, before, after)`
-and `k` was outside it, in the name of the carrier the cell was found in.
+**Ruled 2026-09-17, evening, on the operator's word.** The morning's
+draft of this section made the cell `(r, c, k, before, after)` on every
+carrier and codec. Read against the tree before it was landed, that
+widens the lattice where the doctrine retires it: every keyed read, sort,
+floor and adjacency of the plane would have stayed and gained a third
+field, which is checklist (m)'s projection carried as the primary object,
+now in three coordinates. The five places the plane is actually carried
+as the primary object are named here so the repair is bounded: (1)
+`blade::lift3` kept a body's support as `(r, c)` and dropped `k`, so a
+body spanning frames had the topology, turns and boundary of its planar
+shadow; (2) `sensor::cell_of` refused every point outside frame `0`, so
+a transport along `e₃` landed on no cell and the replay, the gauge
+reading and the seam reading took that for nothing to disagree with; (3)
+`sensor::carry_cell` read a carried square back as the lattice cells
+whose centres fall between two carried corners — the mind writing to the
+lattice mid-reasoning; (4) extraction's move 1 matched bodies across
+separately perceived pair forms; (5) the family was handled pair by pair.
+The cell stays four fields and is the sensor's token (law 11, 16.5); the
+frame is on the pose and on the blade; what follows is the section as
+ruled.
 
 - **`Body`** — cells, shape, moduli — is unchanged in kind. Its `cells`
-  carry three coordinates; its connectivity is 4-adjacency on `(r, c)`
-  WITHIN a frame and adjacency along `k` BETWEEN frames, which is
-  6-adjacency on the three axes. A body is then a connected component of
-  one hue across the whole family, not within one pair.
+  are the sensor's support, `(r, c, k, hue)`, ONE carrier (the `cells` /
+  `cells_3d` pair of 656918d is two carriers for one fact, law 12, and is
+  retired); its connectivity is 4-adjacency on `(r, c)` WITHIN a frame and
+  adjacency along `k` BETWEEN consecutive frames, which is 6-adjacency on
+  the three axes. A body is then a connected component of one hue across
+  the whole family, not within one pair. Adjacency along `e₃` is the
+  corpus's — consecutive pairs — and is read by the chart: a versor that
+  spaces frames apart (a dilation about a point off a frame) carries cells
+  and not the body's adjacency, so its two ends are two charts, a section
+  and never a congruence.
 - **`Shape`** is the blade of the support and gains the third coordinate
-  with it. `blade::shape_of` takes positions; positions gain a third
-  component.
-- **Moduli** are `blade::moduli` of that blade. They gain the harmonics
-  the third axis contributes and lose nothing: a chart that distinguished
-  two bodies on two axes still distinguishes them on three.
-- **The harmonics** are read on the support as they are now. The one
-  thing that must be said out loud: a family of three identical pairs has
-  a body that is PERIODIC along `e₃` with period one, and its moduli must
-  say so, or "all pairs agree" is not readable from the chart. That
-  periodicity is the whole mechanism of 51.5.
+  with it. `blade::shape_of` takes positions of three coordinates, one
+  function; the blade's own support keeps the three, so the topology, the
+  turns and the boundary are read on the stack and not on its shadow.
+- **Moduli** are `blade::moduli` of that blade, the axes coarsest first:
+  components, holes and cavities (`β₀, β₁, β₂` of the 6-adjacency cube
+  complex, `χ = V − E + F − C` counted through incidence as the plane's
+  was); turns (the sum over the laminae of their turning counts); the
+  isoperimetric ratio (the laminae's perimeter, squared, over the cells);
+  the frame boundary (the sides open along `e₃` over the cells — `2` for
+  one lamina, less for a stack); the in-plane anisotropy; the spread (the
+  three-coordinate trace over the cells squared); the quartic; the gauge
+  spectrum. Every axis is invariant under every versor `carry_cell`
+  accepts, and a body of one frame reads on its old axes what it read
+  before, with `cavities 0` and `frame boundary 2` beside them. A chart
+  that distinguished two bodies on two axes still distinguishes them on
+  three.
+- **The harmonics** are read on the support as they are now. A family of
+  three identical pairs has a body that is PERIODIC along `e₃` with
+  period one; its periodicity is read by 51.5's loop, not by an axis, and
+  its chart says only what its moments and boundary say.
 - **The sheet plane's role is unchanged.** `(1,2)` is still where
   orientation lives; nothing in 51.3 puts a cell coordinate on `e₂`.
 
@@ -8163,10 +8227,11 @@ peel on; it does not gain primes.
 
 ### 51.7 The tape
 
-The tape's vertex, face and cell codecs gain the third coordinate: a cell
-is five fields where it was four, a support is a list of triples where it
-was pairs, and a versor serialises thirty-two components where it
-serialised sixteen.
+The tape's codecs, as ruled 2026-09-17 (evening): a cell stays four
+fields (16.5) and the chain of a body spanning frames is written as its
+placed sections; a support is a list of triples where it was pairs; a
+versor serialises thirty-two components where it serialised sixteen; the
+frame rides on the pose.
 
 **No version is spent before the recut, and here is why.**
 `FORM_TAPE_VERSION` is 9 today. v9's layout is fixed at a recut, and the
