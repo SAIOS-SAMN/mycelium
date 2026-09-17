@@ -312,24 +312,99 @@ pub(crate) fn differing_axes(a: &Invariant, b: &Invariant) -> Vec<u16> {
     (0..n).filter(|&i| a.0.get(i) != b.0.get(i)).map(|i| i as u16).collect()
 }
 
+/// WHY A PAIR CARRIES NO EDGE (50.3, 13.9): no single versor moves the two
+/// bodies rigidly; a versor with no rotor, translator or dilator reading —
+/// the `Cl(3,1)` bridge (51.2); or a stabilizer element whose rotor the
+/// seventeen do not spell — 37.7's candidate, carried as the demand the
+/// peel typed (50.4) and not an edge invented for it (rule 11).
+#[derive(Debug)]
+pub(crate) enum EdgeRefusal {
+    NotRigid,
+    NoReading,
+    Unspelled(crate::transducer::sentence::Demand),
+}
+
+/// THE EDGES A PAIR FORM ASKED FOR, BY WHAT CAME BACK (§8.1, measurement
+/// only): measured, or refused for one of `EdgeRefusal`'s three reasons.
+/// Read on the `pair form` line, so the corpus says whether any
+/// stabilizer element on it is 37.7's candidate.
+#[derive(Default)]
+pub(crate) struct EdgeTally {
+    pub(crate) measured: usize,
+    pub(crate) unspelled: usize,
+    pub(crate) unread: usize,
+    pub(crate) not_rigid: usize,
+}
+
+impl EdgeTally {
+    /// Count one asked edge and hand the caller what it carries.
+    pub(crate) fn take(
+        &mut self,
+        asked: Option<Result<crate::transducer::sentence::Transport, EdgeRefusal>>,
+    ) -> Option<crate::transducer::sentence::Transport> {
+        match asked {
+            Some(Ok(t)) => {
+                self.measured += 1;
+                Some(t)
+            }
+            // 37.7's candidate at an edge, said with the kind the peel
+            // typed: the one line on this path that names a generator the
+            // language lacks.
+            Some(Err(EdgeRefusal::Unspelled(d))) => {
+                self.unspelled += 1;
+                eprintln!("  edge unspelled: {}", d.label());
+                None
+            }
+            Some(Err(EdgeRefusal::NoReading)) => {
+                self.unread += 1;
+                None
+            }
+            Some(Err(EdgeRefusal::NotRigid)) => {
+                self.not_rigid += 1;
+                None
+            }
+            None => None,
+        }
+    }
+}
+
+/// THE EDGE A TRANSITION `Γ` IS (50.3): its rotor spelled by A22's peel as
+/// the word, its placement and dilation as the carriage, and no gauge —
+/// the caller reads the hue transition where it has one.
+pub(crate) fn edge_of(gamma: &Versor) -> Result<crate::transducer::sentence::Transport, EdgeRefusal> {
+    let word = match peel_versor(gamma) {
+        None => return Err(EdgeRefusal::NoReading),
+        Some(Err(d)) => return Err(EdgeRefusal::Unspelled(d)),
+        Some(Ok(w)) => w,
+    };
+    let t = element::translator_of(gamma).ok_or(EdgeRefusal::NoReading)?;
+    let d = element::dilator_of(gamma).ok_or(EdgeRefusal::NoReading)?;
+    Ok(crate::transducer::sentence::Transport { word, carriage: d.geo(&t), gauge: Vec::new() })
+}
+
 /// THE EDGE TRANSPORT of 50.3 between two carried bodies. `V_ij` carries
 /// the pair-body `(a_i ∪ a_j)` onto `(b_i ∪ b_j)`; it exists iff the pair
 /// moved rigidly, and then `Γ_ij = V_i⁻¹ · V_ij` lies in the stabilizer of
-/// `a_i` or the exchange of the two bodies. `None` is a remainder edge: no
-/// single versor carries the pair, and the two bodies are two charts.
-pub(crate) fn edge_transport(v_i: &Versor, a_i: &Body, a_j: &Body, b_i: &Body, b_j: &Body) -> Option<crate::transducer::sentence::Transport> {
+/// `a_i` or the exchange of the two bodies. A refusal is a remainder edge,
+/// and says which (`EdgeRefusal`).
+pub(crate) fn edge_transport(
+    v_i: &Versor,
+    a_i: &Body,
+    a_j: &Body,
+    b_i: &Body,
+    b_j: &Body,
+) -> Result<crate::transducer::sentence::Transport, EdgeRefusal> {
     let union = |x: &Body, y: &Body| -> Shape {
         let mut pos: Vec<(i64, i64)> = x.cells.iter().chain(y.cells.iter()).map(|&(r, c, _)| (r, c)).collect();
         pos.sort_unstable();
         pos.dedup();
         blade::shape_of(&pos)
     };
-    let v_ij = blade::versor_between(&union(a_i, a_j), &union(b_i, b_j))?;
-    let gamma = v_i.versor_inverse()?.geo(&v_ij);
-    let word = peel_versor(&gamma)?.ok()?;
-    let t = element::translator_of(&gamma)?;
-    let d = element::dilator_of(&gamma)?;
-    Some(crate::transducer::sentence::Transport { word, carriage: d.geo(&t), gauge: Vec::new() })
+    let Some(v_ij) = blade::versor_between(&union(a_i, a_j), &union(b_i, b_j)) else {
+        return Err(EdgeRefusal::NotRigid);
+    };
+    let gamma = v_i.versor_inverse().ok_or(EdgeRefusal::NoReading)?.geo(&v_ij);
+    edge_of(&gamma)
 }
 
 pub(crate) fn support_of(body: &Body) -> Vec<(i64, i64)> {

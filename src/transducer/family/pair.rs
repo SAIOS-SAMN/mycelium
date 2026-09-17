@@ -91,20 +91,18 @@ impl Scenery {
 /// `𝒽`, the carriage is `𝒮`, the gauge is `𝒢`. Dropping any of them makes
 /// the loop above blind on that lane before it is classified.
 ///
-/// `None` where the transition has no sensor block or A22 cannot spell it:
-/// that meet is a remainder edge and its loop is not evaluated, which is
-/// what `edge_holonomy` answers `None` for. A rotor the seventeen cannot
-/// spell is 37.7's business and not an edge to invent one for (rule 11).
+/// A refusal is a remainder edge and says which (`EdgeRefusal`): that meet's
+/// loop is not evaluated, which is what `edge_holonomy` answers `None` for.
+/// A rotor the seventeen cannot spell is 37.7's business and not an edge
+/// to invent one for (rule 11).
 fn meet_edge(
     va: &Vertex,
     sa: &Versor,
     vb: &Vertex,
     sb: &Versor,
-) -> Option<crate::transducer::sentence::Transport> {
-    let gamma = sb.geo(&sa.versor_inverse()?);
-    let word = peel_versor(&gamma)?.ok()?;
-    let t = element::translator_of(&gamma)?;
-    let d = element::dilator_of(&gamma)?;
+) -> Result<crate::transducer::sentence::Transport, EdgeRefusal> {
+    let gamma = sb.geo(&sa.versor_inverse().ok_or(EdgeRefusal::NoReading)?);
+    let mut edge = edge_of(&gamma)?;
     // The two bodies' own hue maps, each read at the chart its vertex stands
     // at: a cover vertex stands at one, so these are keyed reads and not
     // representatives.
@@ -116,8 +114,8 @@ fn meet_edge(
         Some(c) => crate::transducer::sentence::vertex_gauge_at(v, &c),
         None => Vec::new(),
     };
-    let gauge = crate::transducer::sentence::relative_gauge(&hue_at(va), &hue_at(vb));
-    Some(crate::transducer::sentence::Transport { word, carriage: d.geo(&t), gauge })
+    edge.gauge = crate::transducer::sentence::relative_gauge(&hue_at(va), &hue_at(vb));
+    Ok(edge)
 }
 
 /// A DEFORMATION AND THE COVER THAT READ IT. The two travel together
@@ -575,6 +573,7 @@ pub(crate) fn pair_form_uncached(
     // both halves of in `carried`. `FormFace::new` left it `None`, so
     // `edge_holonomy` answered `None` for every loop in the tree and the
     // reader has never been fed.
+    let mut edges = EdgeTally::default();
     for c in &covers {
         for (mk, ()) in c.cover.meets.scoped() {
             // The meet's address is its two ends; nothing is stored beside
@@ -596,10 +595,10 @@ pub(crate) fn pair_form_uncached(
             let (Some(ci), Some(cj)) = (vi.face_chart(), vj.face_chart()) else {
                 continue;
             };
-            let edge = match (c.cover.carried.get(ka), c.cover.carried.get(kb)) {
-                (Some((va, sa, _)), Some((vb, sb, _))) => meet_edge(va, sa, vb, sb),
+            let edge = edges.take(match (c.cover.carried.get(ka), c.cover.carried.get(kb)) {
+                (Some((va, sa, _)), Some((vb, sb, _))) => Some(meet_edge(va, sa, vb, sb)),
                 _ => None,
-            };
+            });
             if edge.is_some() {
                 crate::transducer::family::cover::tally(|t| t.edges += 1);
             }
@@ -745,18 +744,18 @@ pub(crate) fn pair_form_uncached(
         };
         // The edge transport between two carried bodies (50.3); a face to
         // the Frame or to an uncarried body carries none.
-        let edge = match (scenery.carried_at(i), scenery.carried_at(j)) {
+        let edge = edges.take(match (scenery.carried_at(i), scenery.carried_at(j)) {
             (
                 Some(Carried { ends: Some((ai, bi)), versor }),
                 Some(Carried { ends: Some((aj, bj)), .. }),
             ) => match (ins.get(ai), ins.get(aj), outs.get(bi), outs.get(bj)) {
                 (Some(ia), Some(ja), Some(ib), Some(jb)) => {
-                    edge_transport(versor, &ia.body, &ja.body, &ib.body, &jb.body)
+                    Some(edge_transport(versor, &ia.body, &ja.body, &ib.body, &jb.body))
                 }
                 _ => None,
             },
             _ => None,
-        };
+        });
         let (Some(vi), Some(vj)) = (form.vertices.get(i as usize), form.vertices.get(j as usize))
         else {
             continue;
@@ -853,10 +852,15 @@ pub(crate) fn pair_form_uncached(
         eprintln!(
             "  pair form {n} vertices, {} faces ({meet_faces} cover meets, {} cell+ring), {} loops \
              (word holonomy: flat {flat}, finite {finite}, infinite {infinite} \
-             | edge holonomy paths: flat {e_flat}, finite {e_fin}, infinite {e_inf})",
+             | edge holonomy paths: flat {e_flat}, finite {e_fin}, infinite {e_inf} \
+             | edges asked: measured {}, unspelled {}, unread {}, not rigid {})",
             form.faces.len(),
             form.faces.len() - meet_faces,
-            form.loops.len()
+            form.loops.len(),
+            edges.measured,
+            edges.unspelled,
+            edges.unread,
+            edges.not_rigid
         );
     }
     trace::trace_n("pair/4 done", n, budget);

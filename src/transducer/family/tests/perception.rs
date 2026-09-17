@@ -52,8 +52,8 @@ assert!(
 );
 let b2_still = body(&["0000", "2200"]);
 assert!(
-    edge_transport(&v1, &a1, &a2, &b1, &b2_still).is_none(),
-    "a pair no single versor carries is a remainder edge"
+    matches!(edge_transport(&v1, &a1, &a2, &b1, &b2_still), Err(EdgeRefusal::NotRigid)),
+    "a pair no single versor carries is a remainder edge, and says so"
 );
 }
 
