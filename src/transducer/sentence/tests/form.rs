@@ -448,7 +448,7 @@ fn a_sentence_chart_leads_with_axis_two_then_its_rank() {
                 u64::from(rank.offplane),
                 u64::from(rank.axes)
             ]
-            .map(crate::transducer::stalk::ChartAxis::ConnectionClass)
+            .map(crate::transducer::stalk::ChartAxis::Count)
             .as_slice()
         ),
         "the kind, then the rank: {inv:?}"

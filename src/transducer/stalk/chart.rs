@@ -61,10 +61,50 @@ pub enum ChartAxis {
     /// A topological count: components, tunnels, cavities, turns.
     Count(u64),
     /// A conformal ratio, exact (law 4): the isoperimetric ratio, the frame
-    /// boundary, the anisotropy, the spread, the quartic, a hue fraction.
+    /// boundary, the anisotropy, the spread, the quartic, a hue fraction,
+    /// and a rotor's conjugacy invariants (15.3).
     Ratio(num_rational::BigRational),
-    /// A connection's class axis, read off its rotor (15.3).
-    ConnectionClass(u64),
+}
+
+/// A ROTOR'S CONJUGACY STRATUM AS COORDINATES (15.3, A7): the leading tag,
+/// the two signs of the ray, then `a²/w` and `p²/w` — each its own
+/// coordinate carrying its own exact value.
+///
+/// `Rotor::class_axes` stood here and returned `Vec<u64>`, packing each
+/// rational into two `u64` limbs through `pack_axis`. A limb is not a
+/// coordinate: `peel` could cut between the two halves of one invariant
+/// and leave a chart naming half a rational, which is the N7 defect
+/// `ChartAxis::Ratio` exists to answer (A21 §2 as ruled 2026-09-18). The
+/// same bytes also went out as `ChartAxis::ConnectionClass(u64)`, one
+/// opaque integer per limb, so a reader could not tell a sign from a
+/// magnitude from a tag.
+///
+/// These are recorded, never compared. Law 11 forbids forming an angle —
+/// a square root, an `arccos` — and `a²/w` is 15.3's exact rational class
+/// identity, which `Rotor::class_key` already writes. Writing it as a
+/// coordinate is not the scalar selection rule 4 refuses; that was
+/// `coset_representative` choosing by it, and it no longer does.
+///
+/// `None` when the rotor carries no class (15.3: not a versor).
+pub fn rotor_axes(r: &crate::transducer::alphabet::Rotor) -> Option<Vec<ChartAxis>> {
+    let n = r.normalised();
+    // A rotor with no weight of its own is at unit weight, which is what a
+    // normalised rotor without one carries.
+    let w = match n.weight() {
+        Some(w) => w,
+        None => num_traits::One::one(),
+    };
+    let (a, p) = (n.coeff(0).clone(), n.pseudoscalar().clone());
+    let neg = |q: &num_rational::BigRational| -> u64 {
+        u64::from(num_traits::Signed::is_negative(q))
+    };
+    let mut axes = vec![ChartAxis::Count(2), ChartAxis::Count(neg(&a)), ChartAxis::Count(neg(&p))];
+    if num_traits::Zero::is_zero(&w) {
+        return Some(axes);
+    }
+    axes.push(ChartAxis::Ratio(&a * &a / &w));
+    axes.push(ChartAxis::Ratio(&p * &p / &w));
+    Some(axes)
 }
 
 impl ChartAxis {
@@ -73,14 +113,13 @@ impl ChartAxis {
         match self {
             ChartAxis::Count(_) => 0,
             ChartAxis::Ratio(_) => 1,
-            ChartAxis::ConnectionClass(_) => 2,
         }
     }
 
     /// The coordinate's own canonical bytes, without its kind or length.
     pub fn payload(&self) -> Vec<u8> {
         match self {
-            ChartAxis::Count(n) | ChartAxis::ConnectionClass(n) => n.to_le_bytes().to_vec(),
+            ChartAxis::Count(n) => n.to_le_bytes().to_vec(),
             // Sign, then each magnitude's limbs by count, for the numerator
             // and then the denominator: the rational's exact coordinates,
             // written out (law 2). Inside ONE axis, so `peel` cannot cut
@@ -140,7 +179,6 @@ impl ChartAxis {
         let u64_at = |b: &[u8]| -> Option<u64> { Some(u64::from_le_bytes(b.try_into().ok()?)) };
         match kind {
             0 => Some(ChartAxis::Count(u64_at(payload)?)),
-            2 => Some(ChartAxis::ConnectionClass(u64_at(payload)?)),
             1 => {
                 let mut p = 0usize;
                 let take_mag = |p: &mut usize| -> Option<num_bigint::BigUint> {
@@ -184,11 +222,6 @@ impl ChartAxis {
 pub struct Invariant(pub Vec<ChartAxis>);
 
 impl Invariant {
-    /// A chart of a connection's class axes, read off its rotor (15.3).
-    pub fn connection(ns: &[u64]) -> Invariant {
-        Invariant(ns.iter().map(|&n| ChartAxis::ConnectionClass(n)).collect())
-    }
-
     /// A chart of topological counts alone — the four a body leads with,
     /// and what a test names a chart by.
     pub fn counts(ns: &[u64]) -> Invariant {
@@ -329,8 +362,11 @@ pub fn invariant_of(word: &element::Element) -> Invariant {
 
 pub(crate) fn connection_chart(word: &element::Element) -> Option<Invariant> {
     let letters = word.letters()?;
-    let mut axes = vec![0u64];
-    axes.extend(letters.spelling.word.rotor().class_axes()?);
+    // The lane tag, then the rotor's conjugacy stratum as coordinates —
+    // each invariant whole, never a pair of `u64` limbs `peel` could cut
+    // between (A21 §2).
+    let mut axes = vec![ChartAxis::Count(0)];
+    axes.extend(rotor_axes(&letters.spelling.word.rotor())?);
     let mut image: [u8; 10] = std::array::from_fn(|i| i as u8);
     for &(f, t) in &letters.sigma {
         image[f as usize] = t;
@@ -355,9 +391,9 @@ pub(crate) fn connection_chart(word: &element::Element) -> Option<Invariant> {
         }
     }
     cycles.sort_unstable();
-    axes.push(cycles.len() as u64);
-    axes.extend(cycles);
-    Some(Invariant::connection(&axes))
+    axes.push(ChartAxis::Count(cycles.len() as u64));
+    axes.extend(cycles.into_iter().map(ChartAxis::Count));
+    Some(Invariant(axes))
 }
 
 /// A PLACEMENT: a transition between two connections that is a pure

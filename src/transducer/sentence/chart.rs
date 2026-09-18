@@ -551,7 +551,9 @@ pub(crate) fn chart_of_form(f: &Form) -> Option<crate::transducer::stalk::Invari
     classes.sort_unstable();
     classes.dedup();
     axes.extend(classes);
-    Some(crate::transducer::stalk::Invariant::connection(&axes))
+    Some(crate::transducer::stalk::Invariant(
+        axes.into_iter().map(crate::transducer::stalk::ChartAxis::Count).collect(),
+    ))
 }
 
 /// Chart of a sentence element. None when the tape does not decode or a

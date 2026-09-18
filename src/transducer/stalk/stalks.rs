@@ -131,15 +131,16 @@ impl Stalks {
         out
     }
 
-    /// Append class-key bytes as one axis (rewrite peel invert). Prefer
-    /// [`refine_axes`] for A7.
-    pub fn refine(inv: &Invariant, class_key: impl AsRef<[u8]>) -> Invariant {
-        let class_key = class_key.as_ref();
-        let mut b = [0u8; 8];
-        let n = class_key.len().min(8);
-        b[..n].copy_from_slice(&class_key[..n]);
-        let coordinate = u64::from_le_bytes(b);
-        Self::refine_axes(inv, &[ChartAxis::ConnectionClass(coordinate)])
+    /// Append ONE opened axis as a coordinate (3.7, I6): the axis a
+    /// rewrite opened, written out.
+    ///
+    /// It took an arbitrary key, TRUNCATED it to eight bytes and packed
+    /// those into one `u64` — a hash fragment, which `refine_axes` says in
+    /// its own line it must never be, and which no reader could invert.
+    /// Its one caller already held a `u64` and was padding it into a
+    /// thirty-two byte buffer for this reader to cut back down.
+    pub fn refine_axis(inv: &Invariant, axis: u64) -> Invariant {
+        Self::refine_axes(inv, &[ChartAxis::Count(axis)])
     }
 
     /// Append exact axes (A7). Never a hash fragment.

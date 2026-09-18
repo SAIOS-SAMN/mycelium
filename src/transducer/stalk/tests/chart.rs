@@ -140,7 +140,7 @@ fn a_connection_is_charted_on_its_fibres_not_on_an_empty_chain() {
     assert!(!invariant_of(&a).0.is_empty(), "a connection never lands on the empty chart");
     assert_eq!(invariant_of(&a), invariant_of(&b), "two identical motions at different origins share the chart");
     assert_ne!(invariant_of(&a), invariant_of(&c), "a different cycle type is a different chart");
-    assert_eq!(invariant_of(&a).0[0], ChartAxis::ConnectionClass(0), "the connection family's leading axis");
+    assert_eq!(invariant_of(&a).0[0], ChartAxis::Count(0), "the connection family's leading axis");
     let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     assert!(matches!(invariant_of(&word).0[0], ChartAxis::Count(n) if n >= 1), "a residual chart leads with its component count");
     // Congruence on connections: the fibre's representative and the transition.
@@ -185,15 +185,15 @@ fn refine_splits_the_stratum_by_the_new_coordinate() {
     let class_coord = 7u64;
     stalks.split_stratum(&inv, |addr| {
         if a.address().as_bytes() == addr {
-            vec![ChartAxis::ConnectionClass(0)]
+            vec![ChartAxis::Count(0)]
         } else {
-            vec![ChartAxis::ConnectionClass(class_coord)]
+            vec![ChartAxis::Count(class_coord)]
         }
     });
     assert!(stalks.fiber(&inv).is_empty(), "the coarse chart is empty after the split");
-    assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[ChartAxis::ConnectionClass(0)])), vec![a.address().into_vec()]);
-    assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[ChartAxis::ConnectionClass(class_coord)])), vec![b.address().into_vec()]);
-    let peeled = Stalks::peel(&Stalks::refine_axes(&inv, &[ChartAxis::ConnectionClass(class_coord)]));
+    assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[ChartAxis::Count(0)])), vec![a.address().into_vec()]);
+    assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[ChartAxis::Count(class_coord)])), vec![b.address().into_vec()]);
+    let peeled = Stalks::peel(&Stalks::refine_axes(&inv, &[ChartAxis::Count(class_coord)]));
     assert_eq!(peeled, inv, "peel drops the class axis");
     // The prefixes run coarse-last, so the tail is the root stratum.
     #[expect(
@@ -235,4 +235,56 @@ fn a_prefix_of_a_chart_is_a_byte_prefix_of_its_key() {
     assert_eq!(Invariant::from_key(key.as_bytes()), Some(inv.clone()), "recovered from its key");
     assert_eq!(inv.peel().0.len(), 2, "one whole coordinate leaves");
     assert_eq!(inv.peel().0[1], inv.0[1], "and the wide ratio it keeps is still itself, whole");
+}
+
+/// A7, A21 §2 — A ROTOR'S CONJUGACY STRATUM IS COORDINATES, NOT LIMBS.
+///
+/// `Rotor::class_axes` packed each invariant into two `u64` limbs through
+/// `pack_axis`, and the chart wrote each limb as its own axis. `peel` pops
+/// one axis, so it could stop between a numerator and its denominator and
+/// leave a chart naming half a rational as a "coarser stratum" — the N7
+/// defect `ChartAxis::Ratio` exists to answer. `pack_axis` also refused any
+/// invariant that did not fit `i64`/`u64`, so a rotor with large exact
+/// invariants had no chart at all (rule 11 answered with a refusal where
+/// the value was perfectly exact).
+#[test]
+fn a_rotors_conjugacy_stratum_is_whole_coordinates() {
+    use crate::transducer::alphabet::{LetterId, Rotor, Word, PLANE_COL, PLANE_ROW};
+    let quarter = {
+        let id = LetterId::quarter((PLANE_ROW, PLANE_COL)).expect("the sensor plane");
+        Word::from_letters(&[(id, false)]).rotor()
+    };
+    let axes = rotor_axes(&quarter).expect("a quarter turn carries a class");
+    let [tag, sign_a, sign_p, a2, p2] = axes.as_slice() else {
+        panic!("the stratum is the tag, two signs and two invariants: {axes:?}")
+    };
+    assert_eq!(*tag, ChartAxis::Count(2), "the leading tag");
+    assert!(matches!(sign_a, ChartAxis::Count(_)) && matches!(sign_p, ChartAxis::Count(_)));
+    assert!(
+        matches!(a2, ChartAxis::Ratio(_)) && matches!(p2, ChartAxis::Ratio(_)),
+        "each invariant is ONE coordinate carrying its own exact rational"
+    );
+
+    // PEEL DROPS A WHOLE COORDINATE. Every prefix of this chart round-trips
+    // through the key, which a chart ending on half a rational could not.
+    let inv = Invariant(axes.clone());
+    let mut at = inv.clone();
+    for expected in (0..=axes.len()).rev() {
+        assert_eq!(at.0.len(), expected);
+        let key = at.key();
+        assert_eq!(Invariant::from_key(key.as_bytes()), Some(at.clone()), "{at:?} round-trips");
+        if expected == 0 {
+            break;
+        }
+        at = at.peel();
+    }
+
+    // An invariant too large for `i64` is charted, not refused: `1/3` alone
+    // already has no two's-complement limb pair `pack_axis` would accept
+    // without loss, and the rational is written whole here.
+    let big = Rotor::scalar(crate::core::Q::new(
+        num_bigint::BigInt::parse_bytes(b"123456789012345678901234567890", 10).expect("a big numerator"),
+        num_bigint::BigInt::from(7),
+    ));
+    assert!(rotor_axes(&big).is_some(), "an exact invariant of any size charts");
 }

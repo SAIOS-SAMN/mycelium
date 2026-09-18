@@ -18,12 +18,11 @@ pub(crate) fn qn(n: i64, d: i64) -> Q {
     Q::new(BigInt::from(n), BigInt::from(d))
 }
 
-/// A6: two's-complement numerator and positive denominator, or refuse.
-pub(crate) fn pack_axis(x: &Q) -> Option<[u64; 2]> {
-    let n: i64 = x.numer().try_into().ok()?;
-    let d: u64 = x.denom().try_into().ok()?;
-    Some([n as u64, d])
-}
+// `pack_axis` stood here: a rational cut into a numerator limb and a
+// denominator limb for `class_axes` to write as two chart axes. Two limbs
+// are not two coordinates — `peel` could stop between them — and both
+// readers are gone (`stalk::rotor_axes` writes the rational whole as one
+// `ChartAxis::Ratio`).
 
 /// An exact multivector of `Cl(4,0)`: 16 blade coefficients indexed by a
 /// 4-bit mask over `e0..e3`, every generator squaring to +1.
@@ -397,28 +396,12 @@ impl Rotor {
         Rotor::from_bytes(k, &mut p)
     }
 
-    /// Refinement axes of this class rotor (A7): conjugacy invariants packed
-    /// exactly, never a hash fragment.
-    pub fn class_axes(&self) -> Option<Vec<u64>> {
-        let n = self.normalised();
-        // A rotor with no weight of its own is at unit weight, which is
-        // what a normalised rotor without one carries.
-        let w = match n.weight() {
-            Some(w) => w,
-            None => Q::one(),
-        };
-        let a = n.c[0].clone();
-        let p = n.c[15].clone();
-        let mut axes = vec![2u64, u64::from(a.is_negative()), u64::from(p.is_negative())];
-        if w.is_zero() {
-            return Some(axes);
-        }
-        let a2 = pack_axis(&(&(&a * &a) / &w))?;
-        let p2 = pack_axis(&(&(&p * &p) / &w))?;
-        axes.extend_from_slice(&a2);
-        axes.extend_from_slice(&p2);
-        Some(axes)
-    }
+    // `class_axes` stood here: the conjugacy invariants packed into
+    // `Vec<u64>` through `pack_axis`, two limbs per rational. A limb is
+    // not a coordinate — `peel` could cut between the halves of one
+    // invariant — so the reading moved to `stalk::rotor_axes`, which
+    // writes each invariant as one `ChartAxis` carrying its own exact
+    // value (A21 §2 as ruled 2026-09-18).
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
         for c in &self.c {

@@ -367,9 +367,9 @@ pub fn versor_chart(w: &Word) -> Option<stalk::Invariant> {
 pub fn versor_chart_of(
     r: &crate::transducer::alphabet::Rotor,
 ) -> Option<stalk::Invariant> {
-    let mut axes = vec![0u64];
-    axes.extend(r.class_axes()?);
-    Some(stalk::Invariant::connection(&axes))
+    let mut axes = vec![stalk::ChartAxis::Count(0)];
+    axes.extend(stalk::rotor_axes(r)?);
+    Some(stalk::Invariant(axes))
 }
 
 /// THE CHART OF A CLASS ON ONE LANE (42.6 as amended, L12): the leading
@@ -402,9 +402,9 @@ pub fn lane_chart(
     if occupied.is_empty() {
         return None;
     }
-    let mut axes = vec![LANE_TAG + lane as u64];
-    axes.extend(occupied);
-    Some(stalk::Invariant::connection(&axes))
+    let mut axes = vec![stalk::ChartAxis::Count(LANE_TAG + lane as u64)];
+    axes.extend(occupied.into_iter().map(stalk::ChartAxis::Count));
+    Some(stalk::Invariant(axes))
 }
 
 /// The leading value that keeps a lane chart disjoint from a versor chart

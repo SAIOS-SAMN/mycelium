@@ -471,20 +471,23 @@ impl Kernel {
     ) {
         // A class with no axes of its own refines on the leading axis,
         // which is where a chart with no coordinate sits.
-        let axes = match class.class_axes() {
+        // The rotor's conjugacy stratum as coordinates (15.3). A class
+        // with no axes of its own refines on the leading axis, which is
+        // where a chart with no coordinate sits.
+        let axes = match crate::transducer::stalk::rotor_axes(&class) {
             Some(a) => a,
-            None => vec![0],
+            None => vec![crate::transducer::stalk::ChartAxis::Count(0)],
         };
         let cx = self.complexes.get(&inv.key()).cloned();
         let coord_of = |addr: &[u8]| -> Vec<crate::transducer::stalk::ChartAxis> {
             if let Some(c) = &cx {
                 for (_, sec) in c.sections.scoped() {
                     if sec.addr.as_bytes() == addr && !sec.gamma.is_identity() {
-                        return axes.iter().copied().map(crate::transducer::stalk::ChartAxis::ConnectionClass).collect();
+                        return axes.clone();
                     }
                 }
             }
-            vec![crate::transducer::stalk::ChartAxis::ConnectionClass(0)]
+            vec![crate::transducer::stalk::ChartAxis::Count(0)]
         };
         let before: Vec<Vec<u8>> = self.listing_atlas.fiber(inv);
         let before_mag: Vec<(Vec<u8>, [u64; 4])> = before
@@ -502,10 +505,8 @@ impl Kernel {
                     // leading axis, as one whose gamma is the identity does.
                     let side = match cx.as_ref().and_then(|c| c.sections.get(&h)) {
                         Some(sec) if !sec.gamma.is_identity() => axes.clone(),
-                        Some(_) | None => vec![0],
+                        Some(_) | None => vec![crate::transducer::stalk::ChartAxis::Count(0)],
                     };
-                    let side: Vec<crate::transducer::stalk::ChartAxis> =
-                        side.into_iter().map(crate::transducer::stalk::ChartAxis::ConnectionClass).collect();
                     let new = crate::transducer::stalk::Stalks::refine_axes(inv, &side);
                     cover.rehome(lane, inv, &new, h);
                 }
@@ -521,8 +522,7 @@ impl Kernel {
         }
         if let Some(c) = self.complexes.remove(&inv.key()) {
             use crate::transducer::stalk::ChartAxis;
-            let a = crate::transducer::stalk::Stalks::refine_axes(inv, &[ChartAxis::ConnectionClass(0)]);
-            let axes: Vec<ChartAxis> = axes.iter().copied().map(ChartAxis::ConnectionClass).collect();
+            let a = crate::transducer::stalk::Stalks::refine_axes(inv, &[ChartAxis::Count(0)]);
             let b = crate::transducer::stalk::Stalks::refine_axes(inv, &axes);
             self.rekey_cocycles(inv, &a, &b);
             self.complexes.insert(a.key(), c.clone());

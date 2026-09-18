@@ -426,9 +426,7 @@ pub fn replay(e: &Element) -> Option<&'static str> {
             }
         }
         RewritePayload::Refine { chart, axis } => {
-            let mut key = [0u8; 32];
-            key[..8].copy_from_slice(&axis.to_le_bytes());
-            let refined = crate::transducer::stalk::Stalks::refine(chart, key);
+            let refined = crate::transducer::stalk::Stalks::refine_axis(chart, *axis);
             if crate::transducer::stalk::Stalks::peel(&refined) != *chart {
                 return Some("refine does not invert by peel");
             }
