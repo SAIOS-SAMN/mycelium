@@ -481,3 +481,110 @@ fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
         "the page carries an address this court ruled"
     );
 }
+
+/// The letter a kernel docketed, as an address and the element under it:
+/// found by the vertex it carries — a generator citing nothing whose rotor
+/// is `r` — never by an index into the docket (rule 15).
+fn docketed_letter(
+    k: &Kernel,
+    r: &crate::transducer::alphabet::Rotor,
+) -> Option<(Vec<u8>, crate::transducer::element::Element)> {
+    k.provisional.scoped().find_map(|(a, e)| {
+        let f = crate::transducer::sentence::from_element_form(e)?;
+        f.vertices
+            .iter()
+            .any(|v| match v {
+                Vertex::Word { derivation, .. } => {
+                    derivation.generators.is_empty() && derivation.rotor().projective_eq(r)
+                }
+                _ => false,
+            })
+            .then_some((a, e.clone()))
+    })
+}
+
+/// True where this kernel holds `addr` as a generator of its basis: the
+/// word is installed, not merely docketed.
+fn basis_holds(k: &Kernel, addr: &[u8]) -> bool {
+    k.basis().iter().any(|w| w.address().as_bytes() == addr)
+}
+
+/// P11, 37.7 / LAW 6 — A LETTER IS OPENED ON ONE VANTAGE AND RULED ON TWO.
+///
+/// Law 6: a letter beyond the seventeen is opened by the court alone, on a
+/// typed demand whose witness rotor TWO INDEPENDENT COURTS re-derived, and
+/// is adjoined by closure rather than by agreement. The docket is one
+/// court's reading; what installs it is a second organ reaching the same
+/// vertex (47.3).
+///
+/// Until this, no test in the tree drove `witness_rederived` at all: the
+/// letter tests reached a ruled letter through `rule_all_provisionals`,
+/// which rules every docket without asking a second vantage for anything,
+/// and through `confirm_peer_holds_addrs`, which is a have-list claim and
+/// says so in its own comment — "not a re-derivation this court can
+/// compare". Both leave the one condition law 6 states untested.
+#[test]
+fn a_letter_is_docketed_on_one_vantage_and_installed_on_two() {
+    const WITNESS: [u8; 32] = [9u8; 32];
+    let r = eleven();
+
+    // THE WITNESS ORGAN'S OWN READING, reached from its own voice's demand
+    // on its own kernel — not a copy of the home's element.
+    let mut far = Kernel::new();
+    far.set_court_voice([32u8; 32]);
+    assert_eq!(
+        far.perceive_speech([2u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(quarter(3), 3, standing_eleven()))),
+        vec![crate::anastome::dialogue::SPEECH_STOOD]
+    );
+    let (far_addr, reached) = docketed_letter(&far, &r).expect("the far court docketed the rotor");
+
+    // THE HOME COURT'S READING of the same rotor, from a different voice
+    // and a different sentence.
+    let mut home = Kernel::new();
+    home.set_court_voice([31u8; 32]);
+    assert_eq!(
+        home.perceive_speech([1u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(quarter(1), 1, standing_eleven()))),
+        vec![crate::anastome::dialogue::SPEECH_STOOD]
+    );
+    let (addr, _) = docketed_letter(&home, &r).expect("the home court docketed the rotor");
+    assert_eq!(addr, far_addr, "two courts, two voices, one address (law 2)");
+
+    // ONE VANTAGE IS NOT A RULING. The letter is on the docket and is not
+    // in the basis: this is the state law 6 refuses to install from.
+    assert!(home.provisional.contains(&addr), "docketed");
+    assert!(!basis_holds(&home, &addr), "and not installed on the home's own reading alone");
+
+    // THE SECOND VANTAGE. A witness is an organ with a bond and room on a
+    // lane, which is what `converge_witness` reads independence as until
+    // delegation closure lands.
+    let cover = home.genesis_cover().expect("a measured cover");
+    home.enroll(WITNESS, cover);
+    home.witness_rederived(&crate::transducer::address::Address::from(addr.clone()), WITNESS, reached);
+
+    assert!(
+        basis_holds(&home, &addr),
+        "two organs reached one vertex, so the home installs the letter"
+    );
+    // AND IT IS A LETTER, not a word the seventeen spell: the thing law 6
+    // opens is the one the alphabet lacks.
+    let held = home
+        .basis()
+        .iter()
+        .find(|w| w.address().as_bytes() == addr)
+        .cloned()
+        .expect("installed");
+    let f = crate::transducer::sentence::from_element_form(&held).expect("a form");
+    assert!(
+        f.vertices.iter().any(|v| match v {
+            Vertex::Word { derivation, .. } => {
+                derivation.generators.is_empty()
+                    && !matches!(
+                        crate::transducer::alphabet::factor_rotor(&derivation.rotor()),
+                        Some(Ok(_))
+                    )
+            }
+            _ => false,
+        }),
+        "the installed word is a generator the seventeen cannot spell"
+    );
+}
