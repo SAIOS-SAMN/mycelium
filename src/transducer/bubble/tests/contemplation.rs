@@ -447,45 +447,45 @@ fn the_dirty_ring_orbits_and_reports_its_period() {
     assert_eq!(c.ring.circuits(), 1);
 }
 
-/// P10(c), §25.12 — A CANDIDATE DIES ON A MEASURED MONODROMY, AND ONLY ON
-/// ONE. `M = ∏ γ⁻¹Vγ` is the candidate carried around the family's own
-/// frames; a candidate whose `M` is not projectively the identity
-/// contradicts the geometry the family measured.
+/// P10(c), §25.12 — THE READING IS THE ORDER, NOT AN EQUALITY, and only an
+/// INFINITE monodromy is a rupture.
 ///
-/// The product is asserted directly because the two halves fail
-/// differently: a rupture must dissolve, and an UNMEASURED monodromy must
-/// not (rule 11). An empty connection set is the empty product — the
-/// identity — so a family with fewer than two occupied frames on the chart
-/// dissolves nothing, which is a reading and not a reprieve.
+/// This asserted `!carried.projective_eq(&v)` and called the non-identity
+/// result the rupture. That is the flattened predicate: a connection with
+/// torsion does not close on the first circuit, it closes at its PERIOD, so
+/// a candidate returning after ℓ trips reads "not the identity" after one
+/// and would be dissolved for closing. `Rotor::order` answers the three
+/// readings exactly over ℚ, and they are three different facts.
 #[test]
-fn a_candidate_dies_on_a_measured_monodromy_and_not_on_an_unmeasured_one() {
-    use crate::transducer::alphabet::{Rotor, Q};
+fn a_candidate_closes_flat_closes_at_a_period_or_ruptures() {
+    use crate::transducer::alphabet::{Order, Rotor, Q};
     use crate::transducer::bubble::idea::monodromy;
     let q = |n: i64| Q::from_integer(num_bigint::BigInt::from(n));
-    // A quarter turn in one plane, and a transport in another.
     let v = Rotor::scalar(q(3)).add(&Rotor::blade(0b0011, q(4)));
-    let g = Rotor::scalar(q(5)).add(&Rotor::blade(0b0101, q(12)));
 
-    // NO CONNECTION IS NO RUPTURE: the empty product is the identity.
+    // NO CONNECTION IS NO READING. The empty product is the identity by
+    // ABSENCE, which is `Finite(1)` — and `dissolve_candidates` counts such
+    // a chart neither for nor against (rule 11).
     let none = monodromy(&v, &[]).expect("the empty product is measured");
-    assert!(none.projective_eq(&Rotor::identity()), "no frames, no monodromy, nothing dies");
+    assert_eq!(none.order(), Some(Order::Finite(1)), "nothing carried, nothing turned");
 
-    // CONJUGATION BY THE IDENTITY RETURNS THE CANDIDATE: one flat
-    // connection carries it around unchanged.
-    let flat = monodromy(&v, std::slice::from_ref(&Rotor::identity())).expect("measured");
-    assert!(flat.projective_eq(&v), "a flat connection is the candidate itself");
-
-    // A CONNECTION THAT TURNS IN ANOTHER PLANE DOES NOT COMMUTE, so the
-    // carried candidate is not the candidate and the rupture is measured.
-    let carried = monodromy(&v, std::slice::from_ref(&g)).expect("measured");
+    // A QUARTER TURN CLOSES AT FOUR. Carried around a flat connection it is
+    // itself, and its order is its period — not `1`, and not a rupture.
+    let quarter = Rotor::blade(0b0011, q(1)).add(&Rotor::scalar(q(1)));
+    let flat = monodromy(&quarter, std::slice::from_ref(&Rotor::identity())).expect("measured");
+    assert!(flat.projective_eq(&quarter), "a flat connection returns the candidate");
     assert!(
-        !carried.projective_eq(&v),
-        "conjugation by a turn in another plane moves the candidate"
+        matches!(flat.order(), Some(Order::Finite(n)) if n >= 2),
+        "and it closes at a period: {:?} — under an equality test this read as a rupture",
+        flat.order()
     );
-    let ruptured = !carried.projective_eq(&Rotor::identity());
-    assert!(ruptured, "and its monodromy is not the identity: this is what dissolves");
-    // The rupture stands at a class, which is the coordinate the line names.
-    assert!(carried.class_key().is_some(), "the rupture names its own bivector class");
+
+    // THE THREE READINGS ARE DISTINCT, which is what the dissolution reads.
+    assert_eq!(Rotor::identity().order(), Some(Order::Finite(1)), "flat");
+    let infinite = Rotor::scalar(q(3)).add(&Rotor::blade(0b0011, q(1)));
+    assert_eq!(infinite.order(), Some(Order::Infinite), "and a rupture has no period");
+    // Only the last dissolves: a candidate standing at ANY finite period on
+    // ANY measured chart keeps its sub-cover and is held.
 }
 
 /// 52.5 READING 6 — THE FRAME KEY CARRIES THE ORDER. `frame_connections`

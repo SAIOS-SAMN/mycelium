@@ -182,44 +182,53 @@ pub struct Bubble {
     pub remainders: Keyed<Vec<Link>>,
 }
 
-/// P10(c), 52.5 reading 6 — THE FAMILY'S CONNECTION AT ONE CHART: the
-/// transports between the bodies this family stands on at successive
-/// OCCUPIED frames of `chart`.
+/// ONE CHART'S AMBIENT CONNECTION: the chart, the transports between the
+/// frames it occupies, and the gauge composed around them. All three, and
+/// the gauge is not dropped — a transport that recolours is a different
+/// transport (52.5 reading 6).
+pub(crate) type Connection = (Invariant, Vec<Rotor>, Vec<(u8, u8)>);
+
+/// P10(c), 52.5 readings 6 and 8 — THE AMBIENT CONNECTIONS OF A FAMILY:
+/// per chart of the bundle occupying two or more frames, the transports
+/// between successive OCCUPIED frames and the gauge composed around them.
 ///
-/// γ IS NOT ON A DEMAND'S FORM. Measured on the forms that carry
-/// candidates — a filled hole and a puncture — `faces` is 0, so
-/// `FacePlace.edge` holds nothing and a product over the form's edges is a
-/// product over the empty set, which is the identity and would let every
-/// candidate stand. The form that does carry edges is a carried form with
-/// no demand on it. So γ is re-derived from the bundle the idea germinated
-/// from — the grids it already holds — and never stored beside it (law 12).
+/// THE BREADTH IS THE BUNDLE'S CARRIED CHARTS, not the demand's own. A
+/// `TopologicalDeformation` is a moduli defect: it is raised because the
+/// body's harmonics differ between input and image, so its chart CHANGES
+/// and no body stands at that chart across two frames. Measured on 40
+/// corpus families: 13 of 13 candidate-bearing charts had an empty
+/// connection set while the same families carried connections on 18
+/// others. The demand's chart is what a candidate must explain; the
+/// bundle's carried charts are where the explaining is measured.
 ///
-/// Succession is the next frame the chart's fiber OCCUPIES, read in
-/// coordinate order; the frames between are not coordinates of anything
-/// (52.5 reading 6). A body whose laminae span frames is one body and
-/// stands at no single frame, so it is not a section of this succession.
-pub(crate) fn frame_connections(
-    bundle: &[crate::transducer::family::TrainPair],
-    chart: &Invariant,
-) -> Vec<Rotor> {
+/// THE FRAME KEY CARRIES THE ORDER. `Keyed` walks its key bytes, so a frame
+/// written little-endian sorts by its low byte and 256 reads before 1.
+/// Written big-endian with the sign bit flipped, byte order IS order in ℤ,
+/// so the succession is the carrier's own walk and nothing is sorted into
+/// it (rule 4).
+///
+/// The whole `Carriage` is kept: the rotor the monodromy conjugates by AND
+/// the hue map it carries, composed around the cycle. A transport the
+/// seventeen do not spell names no rotor and contributes none; nothing is
+/// stood in for a connection that was not read (rule 11).
+pub(crate) fn bundle_connections(bundle: &[crate::transducer::family::TrainPair]) -> Vec<Connection> {
     let ins: Vec<crate::transducer::family::Grid> =
         bundle.iter().map(|(a, _)| a.clone()).collect();
-    let want = chart.key();
-    // THE FRAME IS THE KEY, AND THE KEY CARRIES THE ORDER. `Keyed` is a
-    // trie over bytes, so a frame written little-endian sorts by its low
-    // byte and 256 reads before 1. Written big-endian with the sign bit
-    // flipped, the byte order IS the coordinate order in ℤ — so the
-    // succession is the carrier's own walk and nothing is sorted into it
-    // (rule 4: nothing is chosen by a comparator).
     let frame_key = |k: i64| ((k as u64) ^ (1u64 << 63)).to_be_bytes();
-    let mut at: Keyed<Vec<crate::transducer::blade::Lamina>> = Keyed::new();
+    let mut charts: Keyed<Invariant> = Keyed::new();
+    let mut by_chart: Keyed<Keyed<Vec<crate::transducer::blade::Lamina>>> = Keyed::new();
     for b in &crate::transducer::family::perceive_frames(&ins) {
         let Some(k) = crate::transducer::family::frame_of_body(b) else {
             continue;
         };
-        if b.moduli.key() != want {
-            continue;
+        let ck = b.moduli.key();
+        if !charts.contains(&ck) {
+            charts.insert(&ck, b.moduli.clone());
         }
+        if !by_chart.contains(&ck) {
+            by_chart.insert(&ck, Keyed::new());
+        }
+        let Some(at) = by_chart.get_mut(&ck) else { continue };
         match at.get_mut(&frame_key(k)) {
             Some(l) => l.extend(b.laminae.iter().copied()),
             None => {
@@ -227,24 +236,53 @@ pub(crate) fn frame_connections(
             }
         }
     }
-    let occupied: Vec<Vec<crate::transducer::blade::Lamina>> =
-        at.scoped().map(|(_, l)| l.clone()).collect();
     let mut out = Vec::new();
-    for w in occupied.windows(2) {
-        let [la, lb] = w else { continue };
-        let (a, b) = (
-            crate::transducer::family::body_of(la.clone()),
-            crate::transducer::family::body_of(lb.clone()),
-        );
-        // THE WHOLE CARRIAGE is measured — versor and gauge — and the rotor
-        // is what the monodromy conjugates by. A transport the seventeen do
-        // not spell names no rotor here and contributes none: nothing is
-        // stood in for a connection that was not read (rule 11).
-        let Some(car) = crate::transducer::family::carriage(&a, &b) else {
+    for (ck, at) in by_chart.scoped() {
+        let occupied: Vec<Vec<crate::transducer::blade::Lamina>> =
+            at.scoped().map(|(_, l)| l.clone()).collect();
+        if occupied.len() < 2 {
             continue;
-        };
-        if let Some(Ok(word)) = crate::transducer::family::peel_versor(&car.v) {
-            out.push(word.rotor());
+        }
+        let mut rotors = Vec::new();
+        // THE GAUGE COMPOSED AROUND THE CYCLE, not discarded and not filed
+        // empty: each connection carries its own hue map and the loop's is
+        // their composition, which is what a filed loop's σ IS (52.3).
+        let mut image: [u8; 10] = std::array::from_fn(|i| i as u8);
+        for w in occupied.windows(2) {
+            let [la, lb] = w else { continue };
+            let (a, b) = (
+                crate::transducer::family::body_of(la.clone()),
+                crate::transducer::family::body_of(lb.clone()),
+            );
+            let Some(car) = crate::transducer::family::carriage(&a, &b) else {
+                continue;
+            };
+            let Some(Ok(word)) = crate::transducer::family::peel_versor(&car.v) else {
+                continue;
+            };
+            rotors.push(word.rotor());
+            let mut next = image;
+            for (f, t) in &car.sigma {
+                if let (Some(slot), Some(&from)) =
+                    (next.get_mut(*f as usize), image.get(*f as usize))
+                {
+                    let _ = from;
+                    *slot = *t;
+                }
+            }
+            image = next;
+        }
+        if rotors.is_empty() {
+            continue;
+        }
+        let sigma: Vec<(u8, u8)> = image
+            .iter()
+            .enumerate()
+            .filter(|(i, &t)| *i as u8 != t)
+            .map(|(i, &t)| (i as u8, t))
+            .collect();
+        if let Some(chart) = charts.get(&ck) {
+            out.push((chart.clone(), rotors, sigma));
         }
     }
     out
@@ -540,68 +578,136 @@ impl Bubble {
         (spent, pivoted, adjoined)
     }
 
-    /// P10(c), §25.12 — A CANDIDATE DIES ON A MEASURED MONODROMY.
+    /// P10(c), §25.12 — A CANDIDATE DIES ON AN INFINITE MONODROMY, AND ONLY
+    /// ON ONE.
     ///
-    /// Each transport held over an open demand is carried around the
-    /// family's own frames: `M = ∏ γ⁻¹Vγ` over the connections between the
-    /// frames the demand's chart OCCUPIES (52.5 reading 6). A candidate
-    /// whose `M` is not projectively the identity contradicts the geometry
-    /// the family measured and is dissolved; one whose `M` is the identity
-    /// stands.
+    /// THE READING IS THE ORDER, NOT AN EQUALITY. This asked whether
+    /// `M = ∏ γ⁻¹Vγ` was projectively the identity after ONE circuit, which
+    /// calls every torsioned fibre ruptured: a connection with torsion does
+    /// not close on the first trip, it closes at its period. `Rotor::order`
+    /// answers that exactly over ℚ, and the three readings are three
+    /// different facts:
     ///
-    /// NOTHING DIES ON AN UNMEASURED MONODROMY (rule 11). A family with
-    /// fewer than two occupied frames on that chart has no connection to
-    /// carry anything around — the product is empty, which is the identity
-    /// — and a bubble with no bundle has no frames to read at all. Both
-    /// leave every candidate standing, and neither is a rupture.
+    /// - `Finite(1)` — flat. The candidate returns on the first circuit.
+    /// - `Finite(ℓ ≥ 2)` — TORSION. It returns after `ℓ` circuits and not
+    ///   before; the fibre is twisted by `ℓ` and 50.8 case 3 files that as
+    ///   torsion at its period. It has not ruptured, and it stands.
+    /// - `Infinite` — RUPTURE. No number of circuits returns it. A19 spells
+    ///   that period `0`, there is no closure to file, and this alone
+    ///   dissolves.
+    ///
+    /// THE BREADTH IS THE COVER, NOT THE DEMAND'S OWN CHART. A candidate is
+    /// carried around every chart this idea stands on, and what comes back
+    /// is a period per chart. Read at the demand's chart alone it measured
+    /// nothing: a `TopologicalDeformation` is raised because the body's
+    /// harmonics differ between input and image, so its chart CHANGES, and
+    /// no body stands at that chart across two frames — measured on 40
+    /// corpus families, 13 of 13 candidate-bearing charts had an empty
+    /// connection set while the families carried connections on 18 others.
+    /// The demand's chart is what the candidate must explain; the cover is
+    /// where the explaining is measured.
+    ///
+    /// A CANDIDATE LEAVES ONLY WHEN ITS SUB-COVER IS EMPTY. A chart whose
+    /// monodromy is `Infinite` drops out of the candidate's sub-cover; a
+    /// candidate standing on no chart at all is the one that dissolves, and
+    /// when every candidate over a demand empties, nothing the mind holds
+    /// closes anywhere in the family, which is 37.7's condition. A candidate
+    /// standing on SOME charts is a section and is held, never decided
+    /// (rule 15).
+    ///
+    /// NOTHING DIES UNMEASURED (rule 11). A chart with fewer than two
+    /// occupied frames carries no connection, and the empty product is the
+    /// identity by absence rather than by measurement — such a chart is not
+    /// counted for or against, and a candidate measured nowhere stands.
     ///
     /// Condensation is the carrier's (1.5): `candidates` is keyed by
     /// `Rotor::key`, the ray's canonical coordinates, so `V` and `−V` are
     /// one candidate before this runs.
+    ///
+    /// OWED: a `Finite(ℓ ≥ 2)` period is content and wants filing on
+    /// `Bubble.torsion`, which is keyed by class and holds a `FiledLoop`
+    /// whose `chord` is a face index — and a demand's form has no faces for
+    /// it to point at. The period is read and the candidate stands on it;
+    /// where it is filed is the operator's to rule.
     pub(crate) fn dissolve_candidates(&mut self) {
         let Some(bundle) = self.bundle.clone() else {
             return;
         };
+        let connections = bundle_connections(&bundle);
+        if connections.is_empty() {
+            return;
+        }
         let charts: Vec<Vec<u8>> = self.candidates.scoped().map(|(c, _)| c).collect();
         for ck in charts {
-            let Some(chart) = Invariant::from_key(&ck) else {
-                continue;
-            };
-            let gammas = frame_connections(&bundle, &chart);
-            if gammas.is_empty() {
-                continue;
-            }
             let Some(here) = self.candidates.get(&ck) else {
                 continue;
             };
-            let dying: Vec<(Vec<u8>, Rotor)> = here
-                .scoped()
-                .filter_map(|(rk, v)| {
-                    let m = monodromy(v, &gammas)?;
-                    (!m.projective_eq(&Rotor::identity())).then_some((rk, m))
-                })
-                .collect();
+            let mut dying: Vec<(Vec<u8>, Rotor)> = Vec::new();
+            let mut filing: Vec<(crate::transducer::address::Address, crate::transducer::sentence::FiledLoop)> = Vec::new();
+            for (rk, v) in here.scoped() {
+                // THE SUB-COVER: the charts whose monodromy closes at some
+                // period. Empty is the dissolution; anything else is a
+                // section the mind keeps (rule 15).
+                let mut stands = false;
+                let mut ruptured_at: Option<Rotor> = None;
+                for (_, gammas, sigma) in &connections {
+                    let Some(m) = monodromy(v, gammas) else { continue };
+                    let Some(order) = m.order() else { continue };
+                    match order {
+                        crate::transducer::alphabet::Order::Finite(1) => stands = true,
+                        crate::transducer::alphabet::Order::Finite(period) => {
+                            stands = true;
+                            // TORSION IS CONTENT, so it is filed at the
+                            // period it closes at (50.8 case 3). `chord` is
+                            // 0: a bundle connection cycle is transversal
+                            // and closes on no planar face of this form —
+                            // a demand's form has none to point at — so the
+                            // sentinel says which kind of cycle it is
+                            // rather than naming a face that is not there.
+                            // σ is the gauge composed around the cycle,
+                            // which the connections carried.
+                            if let Some(class) = m.class_key() {
+                                filing.push((
+                                    class,
+                                    crate::transducer::sentence::FiledLoop { sigma: sigma.clone(), period, chord: 0 },
+                                ));
+                            }
+                        }
+                        crate::transducer::alphabet::Order::Infinite => {
+                            if ruptured_at.is_none() {
+                                ruptured_at = Some(m);
+                            }
+                        }
+                    }
+                }
+                if let (false, Some(m)) = (stands, ruptured_at) {
+                    dying.push((rk, m));
+                }
+            }
+            for (class, loop_at) in filing {
+                self.torsion.insert(class.clone(), loop_at.clone());
+                if let Some(f) = self.form.as_mut() {
+                    f.torsion.insert(class, loop_at);
+                }
+            }
             let Some(here) = self.candidates.get_mut(&ck) else {
                 continue;
             };
-            for (rk, m) in dying {
+            for (rk, at) in dying {
                 here.remove(&rk);
                 // The bivector the rupture stands at, by its class: the
                 // coordinate of what did not close, never a count of it.
-                let at = match m.class_key() {
+                // A rotor with no class stands at no stratum and names
+                // none; "unclassed" is that reading, never a zero key
+                // invented to fill the line (rule 11).
+                let at = match at.class_key() {
                     Some(k) => format!("{:02x}{:02x}…", k[0], k[1]),
                     None => "unclassed".to_string(),
                 };
-                // THE TAG IS THE VOICE'S AND IS NOT IN SCOPE HERE. Every
-                // line in `bubble` and `client/sdk` writes two spaces and
-                // no tag — `form held`, `form crystallized`, `vortex
-                // collapsed by`, `letter adjoined` — and the `[{tag}]`
-                // prefix is the client binary's, added where the voice is
-                // named. 34.3's vocabulary ruling writes the line with that
-                // prefix; carrying it here means threading the tag through
-                // `expand_with`, `expand_all` and `Entity`, none of which
-                // holds one. Written in the neighbours' form until the
-                // operator rules on which layer names the voice.
+                // THE TAG IS THE VOICE'S AND IS NOT IN SCOPE HERE (approved
+                // 2026-09-18): `bubble` is an internal geometric organ and
+                // every line in it and in `client/sdk` writes two spaces
+                // and no tag; `[{tag}]` is the client binary's own framing.
                 let [a, b, ..] = rk.as_slice() else { continue };
                 eprintln!("  candidate dissolved {a:02x}{b:02x}… monodromy {at}");
             }
