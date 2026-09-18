@@ -74,7 +74,15 @@ fn a_class_occupies_the_lanes_its_coordinates_name() {
         "a hue cycle with no rotation is gauge content alone"
     );
 
-    let both = ClassVector::read(&order4(), element::translator_versor(0, 3), CycleType::Identity)
+    // A SCREW, not a turn about a point: the translation runs ALONG the
+    // rotation's axis, where `(I − R)p = t` has no solution. A translation
+    // in the turning plane — `translator_versor(0, 3)` — is a base point
+    // and occupies no placement coordinate, which is what this test
+    // asserted before and what `occupies` now reads correctly.
+    let q3 = num_rational::BigRational::from_integer(num_bigint::BigInt::from(3));
+    let z = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    let screw = crate::transducer::cga::translator(&z, &z, &q3);
+    let both = ClassVector::read(&order4(), screw, CycleType::Identity)
         .expect("a placed turn");
     assert_eq!(
         both.lanes(),
@@ -121,5 +129,56 @@ fn a_lane_chart_is_that_lanes_axes_and_the_four_are_disjoint() {
     assert!(
         versor_chart(&turn).is_some_and(|c| matches!(c.0.as_slice(), [crate::transducer::stalk::ChartAxis::Count(0), ..])),
         "and it keeps its leading 0, disjoint from every lane tag"
+    );
+}
+
+/// 12.6, 3.9 — A BASE POINT IS NOT AN OBSTRUCTION, AND A SCREW IS.
+///
+/// `occupies(Axis::Placement)` read `translator_of(carriage) != identity`,
+/// so an elliptic rotation centred anywhere but the origin published a
+/// placement demand. 3.9's move for that axis is the inverse translator: it
+/// moves the frame to the origin and closes no curvature, so the loop spent
+/// itself on a discharge that cannot happen and never reached the rest of
+/// the fan. `classify` had meanwhile solved `(I − R)p = t` for the SAME
+/// carriage and filed the loop `Congruent` — two readers, one carriage,
+/// opposite answers (law 12).
+#[test]
+fn a_turns_base_point_occupies_no_placement_and_a_screw_does() {
+    use crate::transducer::sentence::Axis;
+    let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
+    // In the turning plane: `(I − R)p = t` solves, so the translation is
+    // where the turn stands.
+    let about_a_point =
+        ClassVector::read(&order4(), element::translator_versor(0, 3), CycleType::Identity)
+            .expect("a turn about a point");
+    assert!(
+        !about_a_point.occupies(Axis::Placement),
+        "a base point is a choice of origin: {:?}",
+        about_a_point.coordinates()
+    );
+    assert_eq!(
+        about_a_point.lanes(),
+        [false, false, false, true],
+        "content on the nerve alone, not on the atlas as well"
+    );
+
+    // Along the axis: no `p` fixes it, the seam walks, and that IS an
+    // obstruction with a translation word that can zero it.
+    let screw = crate::transducer::cga::translator(&q(0), &q(0), &q(3));
+    let walking = ClassVector::read(&order4(), screw, CycleType::Identity).expect("a screw");
+    assert!(
+        walking.occupies(Axis::Placement),
+        "a walk occupies placement: {:?}",
+        walking.coordinates()
+    );
+    assert_eq!(walking.lanes(), [true, false, false, true], "content on two covers");
+
+    // And the two are DIFFERENT CLASSES now: the placement status is a
+    // coordinate of the key, so a base point and a walk no longer share an
+    // address while reading identically on every other axis.
+    assert_ne!(
+        about_a_point.class_key(),
+        walking.class_key(),
+        "a turn about a point and a screw are not one class"
     );
 }

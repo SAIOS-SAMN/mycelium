@@ -125,18 +125,14 @@ impl Form {
             let Some(&Some(nc)) = face_old_to_new.get(*chord as usize) else {
                 continue;
             };
-            let Some(mapped) = sigma
-                .iter()
-                .map(|&(a, c)| {
-                    let i = old_to_new.get(a as usize).copied().flatten()?;
-                    let j = old_to_new.get(c as usize).copied().flatten()?;
-                    Some((i as u8, j as u8))
-                })
-                .collect::<Option<Vec<_>>>()
-            else {
-                continue;
-            };
-            torsion.insert(&k, FiledLoop { sigma: mapped, period: *ell, chord: nc });
+            // THE HUE MAP IS NOT RENUMBERED. `sigma` is the hue-map
+            // generator — a permutation of HUES — and this ran every entry
+            // through `old_to_new`, the VERTEX table: colours relabelled as
+            // if they were vertices, and any cycle naming a hue above the
+            // vertex count dropped the whole filed loop through the
+            // `else { continue }`. Renumbering a form's vertices moves no
+            // hue. The chord is a face index and is remapped, above.
+            torsion.insert(&k, FiledLoop { sigma: sigma.clone(), period: *ell, chord: nc });
         }
         let mut axes = Keyed::new();
         for (k, chord) in self.axes.scoped() {

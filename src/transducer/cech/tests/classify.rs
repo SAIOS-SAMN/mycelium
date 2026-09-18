@@ -124,9 +124,15 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
         crate::transducer::element::turn_base_point(&g, &kappa.carriage).is_some(),
         "and p is recoverable from the filed class, not discarded at the gate"
     );
+    // AND THE PLACEMENT AXIS DOES NOT OCCUPY. This assertion stood the
+    // other way up and asserted the defect: a base point is WHERE THE TURN
+    // STANDS, so 3.9's translation word would move the frame and discharge
+    // nothing. `classify` filing this loop `Congruent` while `occupies`
+    // called its carriage an obstruction was two readers of one carriage
+    // disagreeing (law 12).
     assert!(
-        kappa.occupies(crate::transducer::sentence::Axis::Placement),
-        "the placement axis occupies: 3.9's translation word is the move that zeroes it"
+        !kappa.occupies(crate::transducer::sentence::Axis::Placement),
+        "a turn's base point is a choice of origin, not a coordinate to discharge"
     );
     assert_eq!(g.order(), Some(Order::Finite(4)), "and the filed rotor says so itself");
     // `p − R p` is the translation the carriage holds: the point is solved

@@ -41,12 +41,13 @@ fn the_rotor_class_is_the_first_stratum_of_the_class_vector() {
         "the rotor's conjugacy class is the class vector's first coordinate, byte for byte"
     );
 
-    // And the whole key parses to its own end: four coordinates, nothing
-    // past the last.
+    // And the whole key parses to its own end: five coordinates, nothing
+    // past the last. The placement status is the fifth and is written
+    // LAST, so the conjugacy stratum every court asks by stays depth one.
     schema
         .whole(vector_key.as_bytes())
         .expect("a class key spells every coordinate and stops");
-    assert_eq!(schema.depth(), 4, "conjugacy, plane, hue, carriage");
+    assert_eq!(schema.depth(), 5, "conjugacy, plane, hue, carriage, placement");
 }
 
 /// A COARSE COORDINATE IS A FIBER AND THE WHOLE PATH IS AN EXACT READ, and
@@ -120,7 +121,7 @@ fn depth_zero_and_the_whole_path_are_not_fibers() {
     held.fiber_at_depth(key.as_bytes(), 0)
         .err()
         .expect("depth zero is `scoped`");
-    held.fiber_at_depth(key.as_bytes(), 4)
+    held.fiber_at_depth(key.as_bytes(), 5)
         .err()
         .expect("the whole path is `get`");
     assert_eq!(held.scoped().count(), 1, "and the whole carrier is one entry");

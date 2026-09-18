@@ -292,21 +292,38 @@ impl Form {
         let Some(lp) = self.loops.get(idx) else {
             return false;
         };
-        let sigma: Vec<(u8, u8)> = lp
-            .vertices
-            .windows(2)
-            .map(|p| (p[0] as u8, p[1] as u8))
-            .collect();
         let chord = lp.chord;
         let words = holonomy_words_on(&self.faces, &self.vertices, lp);
+        // THE GENERATOR FILED IS THE HUE MAP, read at the same member path
+        // the word was read at. `FiledLoop::sigma` says what it is in its
+        // own line — "the hue-map generator: the permutation one step
+        // around the loop" — and `torsion_witness::witness_cycle` walks it
+        // with `apply_hue_map` against a thought's hue assignment.
+        //
+        // This wrote `lp.vertices.windows(2)` into it: the loop's VERTEX
+        // PATH, truncated `u16` to `u8`, filed as a permutation of hues.
+        // Every witness of a cycle filed here walked vertex indices as
+        // recolourings, and a form of more than 255 vertices aliased them
+        // first. `extract.rs` files `e.gauge` into the same field, which
+        // is the reading; this site was the only one writing another
+        // object into it.
+        let transports = loop_transport_on(&self.faces, lp);
         let mut filed = false;
-        for (_, w) in words.scoped() {
+        for (path, w) in words.scoped() {
             let Some(class) = w.rotor().class_key() else {
+                continue;
+            };
+            // A path with no transport has no gauge to file. An empty
+            // listing here would be a placeholder over an unmeasured
+            // value, which is the defect `sigma` already carried (rule
+            // 11); a path whose transport IS measured and whose gauge is
+            // empty files that, because moving no hue is a reading.
+            let Some(transport) = transports.get(&path) else {
                 continue;
             };
             self.torsion.insert(
                 class,
-                FiledLoop { sigma: sigma.clone(), period: ell, chord },
+                FiledLoop { sigma: transport.gauge.clone(), period: ell, chord },
             );
             filed = true;
         }
