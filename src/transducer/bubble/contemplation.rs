@@ -202,28 +202,27 @@ impl Contemplation {
         }
     }
 
-    /// Per-lane congruent mass on each chart: ideas that share a class.
-    /// Compared per lane, never an argmax across lanes.
-    pub fn cohesion(&self) -> crate::network::nerve::Keyed<[u64; 4]> {
-        let mut out: crate::network::nerve::Keyed<[u64; 4]> = crate::network::nerve::Keyed::new();
-        // index: ideas keyed by remainder, then by chart cover
-        for (_, b) in self.bubbles.scoped() {
-            for (ck, _) in b.cover.scoped() {
-                let add = b.volume;
-                match out.get_mut(&ck) {
-                    Some(v) => {
-                        for l in 0..4 {
-                            v[l] = v[l].saturating_add(add[l]);
-                        }
-                    }
-                    None => {
-                        out.insert(&ck, add);
-                    }
-                }
-            }
-        }
-        out
-    }
+    // P10 — `cohesion` WAS HERE AND IS DELETED, with the scalar it summed.
+    //
+    // It accumulated each idea's `volume` per chart — `v[l] =
+    // v[l].saturating_add(add[l])` over every bubble standing there — and
+    // called the total a chart's congruent mass. Mass is repetition: an
+    // idea re-held ten times added ten times, and the reading said a chart
+    // was cohesive because the mind had said one thing on it often. That
+    // is not what agreement between two ideas is. Two ideas agree when the
+    // transition between their transports is the identity, which is a
+    // reading of the two and not a count of them.
+    //
+    // NOTHING READ IT. Measured across the tree at this commit: no caller
+    // in `src`, tests included — the `cohesion_over` of `server::cognition`
+    // is the court's rank reading and a different function. So the scalar
+    // is removed by deleting its only reader rather than by giving a dead
+    // carrier a better formula, which is R6's ruling applied again (law 12:
+    // a carrier nothing reads is deleted, not improved).
+    //
+    // What replaces it is not written until something asks: the transition
+    // between two candidates is `Vⱼ⁻¹Vₖ` and flatness is that quotient
+    // being the identity, which `candidates` holds the operands for.
 
     pub fn cavity_len(&self) -> usize {
         self.cavity.len()

@@ -74,6 +74,37 @@ fn an_open_demand_is_held_as_an_idea_standing_on_its_chart() {
     assert!(b.rotor().is_none(), "and no rotor stands in for the one it lacks");
 }
 
+/// P10 (1.5) — TWO PROJECTIVELY EQUAL CANDIDATES ARE ONE CANDIDATE, and
+/// that is structural rather than a pass that runs. `candidates` is keyed
+/// by `Rotor::key`, which writes `normalised()` — the ray's canonical
+/// coefficients, scaled so the first non-zero one is positive — so `V` and
+/// `−V` reach the same key and cannot both stand. A condensation pass over
+/// this carrier would find nothing to condense; the carrier's own key does
+/// it (rule 3, rule 6).
+#[test]
+fn a_candidate_and_its_negation_are_one_candidate() {
+    use crate::transducer::alphabet::{Rotor, Q};
+    let q = |n: i64| Q::from_integer(num_bigint::BigInt::from(n));
+    let v = Rotor::scalar(q(3)).add(&Rotor::blade(0b0011, q(1))).add(&Rotor::blade(0b0101, q(1)));
+    let minus_v = v.scale(&-Q::from_integer(num_bigint::BigInt::from(1)));
+    assert!(v.projective_eq(&minus_v), "the two are one ray");
+    assert_eq!(v.key(), minus_v.key(), "so they are one coordinate");
+    let mut over_chart: Keyed<Rotor> = Keyed::new();
+    over_chart.insert(v.key(), v.clone());
+    over_chart.insert(minus_v.key(), minus_v);
+    assert_eq!(over_chart.len(), 1, "and one candidate stands, not two");
+    // A TRANSPORT ON ANOTHER PLANE IS ANOTHER CANDIDATE. The second rotor
+    // differs from the first ONLY in which bivector plane it turns in —
+    // same scalar, same weight — because that is the coordinate that has to
+    // stay distinct. Separating them by their scalar instead would prove
+    // nothing about the planes: `normalised` divides through by the leading
+    // coefficient, so a scalar-led pair is told apart by a ratio and the
+    // plane capacity the candidates exist to carry is never exercised.
+    let other = Rotor::scalar(q(3)).add(&Rotor::blade(0b0011, q(1))).add(&Rotor::blade(0b1001, q(1)));
+    assert_ne!(other.key(), v.key(), "a turn in another plane keeps its own coordinate");
+    assert!(!other.projective_eq(&v), "and the two are not one ray");
+}
+
 #[test]
 fn wrap_glues_crystallized_form() {
     use crate::transducer::element::{Element, FIBER_SPATIAL};

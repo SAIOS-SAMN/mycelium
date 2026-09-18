@@ -255,12 +255,14 @@ fn genome_unchanged_by_dialect() {
     assert_eq!(epi.genome_len(), n0, "dialect is not the genome");
 }
 
-#[test]
-fn cohesion_is_per_lane() {
-    let c = mycelium::transducer::bubble::Contemplation::new();
-    let mass = c.cohesion();
-    assert_eq!(mass.len(), 0);
-}
+// `cohesion_is_per_lane` was here and is DELETED with the reading it named
+// (P10). It built an EMPTY contemplation and asserted the map came back
+// empty, so the per-lane sum it was named for never ran: the walk had
+// nothing to walk and the test passed by iterating nothing (rule 13). The
+// function it called summed each idea's `volume` per chart and called the
+// total a chart's congruent mass, which counts how often the mind repeated
+// itself rather than whether two ideas agree; agreement is the transition
+// between their transports being the identity, a reading of the two.
 
 #[test]
 fn mint_once_on_home_install() {
