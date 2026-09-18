@@ -2770,6 +2770,15 @@ budget: &mut Budget) -> Vec<PivotCertificate>` **new** in sentence.rs;
 `Form::class_vector`, `ClassVector::occupied`, `Form::rank` (A18) are its
 reads.
 
+**Why the pivot machinery sat idle (ruled 2026-09-18).** A form produced by the
+cover's descent to single-pixel laminae carries no held loop: its rank is zero,
+every meet is flat or dissolved into pixels, and `AxisIndex::on_axis` answers 0
+on 123 of 123 reads because closed pixel forms occupy no coordinate. The pivot
+loop never fires because it is never offered an occupied axis. Truncating the
+cover at perceived bodies (51.3) holds the uncarried motion as an open demand,
+which becomes the vortex of Chapter 25; that vortex is what feeds candidate
+pivots into A16.
+
 ### 16.17 A17 — Torsion filing and witness
 
 Input: a chord with finite-order holonomy `h` (`order ℓ`) on a form `F`
@@ -4554,6 +4563,14 @@ Claiming the stroke costs; failing to close does not. Pressure is unchanged
 — it is the backlog, not the tax — and the witness still refines how much of
 it rides with a stored cycle.
 
+**25.12 The vortex as a gauge fiber, candidate monodromy, and in-memory destructive pruning (ruled 2026-09-18).**
+An idea's vortex is the set of candidate transports over one demand.
+The transition between two candidates is their quotient in $\text{Spin}(4,0)(\mathbb{Q})$.
+Two candidates are one section when the transition is projectively the identity (1.5) or conjugate under 15.3.
+A candidate's monodromy over the frames the family measured is the product of its conjugates by the edge transports P5 already carries, and a candidate dies on a measured monodromy that is not the identity, never on an unmeasured one (rule 11) and never on age (`last_used_k`).
+`link_new` keeps the transition it computes; cohesion is flatness of those transitions, and the volume sums leave.
+In the Hopf fibration reading, A22's two quaternion factors are the two fibrations: base the class, fiber the gauge.
+
 ## 26. Wire and economics
 
 Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/dialogue/speech.rs`:
@@ -5240,7 +5257,14 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] contracted {addr} → {addr'} by {kind} at {coordinate}
 [{tag}] quiescent {addr}: held inert on chart {inv}
 [{tag}] sealed {addr}: refused at K {k}, not uttered again
+[{tag}] candidate dissolved {addr} monodromy {bivector}
 ```
+
+**Vocabulary ruling (2026-09-18).**
+- *Interference* means closure to identity or its bivector obstruction.
+- *Superposition* means a vortex with transitions between candidates.
+- *Prune* means a measured non-identity monodromy rupture across frames.
+Any other use is refused by the gate's word check.
 
 `court orbit` and `[{tag}] orbit` (45.7, ruled 2026-09-09) are written
 once per completed circuit of a carrier — the docket, the exchange to
@@ -5594,6 +5618,13 @@ is a remainder at the rotor's own level: its canonical holonomy rotor is
 the candidate, carrying itself as witness, and `3 + e₀₁ + e₀₂` (weight 11,
 held by no coordinate plane) is the shape of one. It is docketed and
 adjoined exactly as the others: by closure, never by agreement.
+
+**The trigger and the primality proof (ruled 2026-09-18).** The residue of a
+vortex whose every candidate has died on a measured monodromy is prime relative
+to the alphabet when its bivector plane meets none of the six coordinate planes
+(factor.rs:29), replacing any search or quantifier over the group. It is
+presented to the court as the witness N4 already defined, docketed on two
+courts' re-derivation, and adjoined when a closure composes through it.
 
 **The kind is a level, never a dispatch.** A remainder lives at the level
 its factorisation stopped at, and the level is a coordinate read off the
@@ -7858,11 +7889,13 @@ every voice that learned the page spells the same word.
 
 **The topology of the bodies — `TopologicalDeformation`.** No versor
 carries a body onto an image with different harmonics; but a body is a
-union of pieces, and pieces carry. `F` peels `B_in` into pieces each of
-which a versor carries onto a piece of `B_out` — the shells of
-`peel_body_scaled` (chapter 22) read against the image, or the one-hue
-components of each (20) — and speaks one `Word` vertex per piece, the
-contact faces between pieces carrying `Γ` (50.3). Then, by the pieces'
+union of pieces, and pieces carry. The cover does not descend below a body
+(51.3 as ruled 2026-09-18): a piece is a word vertex only if it is a body
+under 51.3's definition (one hue, 6-adjacent across the whole family).
+Under no circumstances does `cover.rs` or `peel_body_scaled` shatter a body
+into single-pixel laminae to force a carriage. What no single versor carries
+whole is not a listing of pieces but one demand of the kind its reading types
+(50.5), with contact faces between pieces carrying `Γ` (50.3). Then, by the pieces'
 overlap:
 
 1. **Every meet good and every edge in the stabilizer.** The pieces glue
@@ -8235,6 +8268,13 @@ is the section as ruled.
   its chart says only what its moments and boundary say.
 - **The sheet plane's role is unchanged.** `(1,2)` is still where
   orientation lives; nothing in 51.3 puts a site coordinate on `e₂`.
+- **A piece is a word vertex only if it is a body (ruled 2026-09-18).** A piece
+  is a word vertex only if it is a body under 51.3's definition: a connected
+  component of one hue, 6-adjacent across the whole family. The cover does not
+  descend below a body; under no circumstances does `cover.rs` or `peel_body_scaled`
+  shatter a body into single-pixel laminae or concentric peel rings to force a
+  carriage. What no single versor carries whole is not a listing of pieces but one
+  demand of the kind its reading types (50.5, 50.8). Cited from 50.8 and 23.1 step 6.
 
 ### 51.4 The family is one body
 
