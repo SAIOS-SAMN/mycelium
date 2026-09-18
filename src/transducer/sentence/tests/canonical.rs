@@ -47,7 +47,7 @@ fn a_form_address_is_one_under_every_scaling_of_a_members_carriage() {
         f.vertices.push(Vertex::word_on(
             crate::transducer::address::Address::new(Vec::new()),
             alphabet::Derivation::spelled(order4()),
-            stalk::Invariant(vec![3, 5]),
+            stalk::Invariant::counts(&[3, 5]),
             Box::new(car),
             vec![(1, 2)],
             None,

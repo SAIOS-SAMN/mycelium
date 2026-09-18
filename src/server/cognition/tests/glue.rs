@@ -236,8 +236,8 @@ assert!(
 fn a_have_list_carries_this_charts_heard_addresses_and_not_every_chart() {
 use crate::transducer::stalk::Invariant;
 let mut k = Kernel::new();
-let here = Invariant(vec![1]);
-let elsewhere = Invariant(vec![2]);
+let here = Invariant::counts(&[1]);
+let elsewhere = Invariant::counts(&[2]);
 let mine = vec![0xA1u8; 32];
 let other = vec![0xB2u8; 32];
 k.heard_mark(&mine, &here);

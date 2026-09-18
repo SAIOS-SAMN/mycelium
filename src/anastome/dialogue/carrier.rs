@@ -68,22 +68,22 @@ pub(crate) fn push_invariant(
     out: &mut Vec<u8>,
     inv: &crate::transducer::stalk::Invariant,
 ) -> Option<()> {
-    crate::transducer::address::put_u8_count(out, inv.0.len())?;
-    for v in &inv.0 {
-        out.extend_from_slice(&v.to_le_bytes());
-    }
+    // THE CHART'S OWN KEY ON THE WIRE (law 2): the canonical coordinates
+    // written out, kind-tagged and length-prefixed, which is one encoding
+    // shared with the trie and the tape rather than an axis loop per codec.
+    let key = inv.key();
+    let bytes = key.as_bytes();
+    crate::transducer::address::put_u8_count(out, bytes.len())?;
+    out.extend_from_slice(bytes);
     Some(())
 }
 
 pub(crate) fn read_invariant(b: &[u8], p: &mut usize) -> Option<crate::transducer::stalk::Invariant> {
     let len = *b.get(*p)? as usize;
     *p += 1;
-    let mut v = Vec::with_capacity(len);
-    for _ in 0..len {
-        v.push(u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?));
-        *p += 8;
-    }
-    Some(crate::transducer::stalk::Invariant(v))
+    let bytes = b.get(*p..*p + len)?;
+    *p += len;
+    crate::transducer::stalk::Invariant::from_key(bytes)
 }
 
 pub(crate) fn push_grid(out: &mut Vec<u8>, g: &[Vec<u8>]) {

@@ -11,7 +11,7 @@ use crate::transducer::stalk;
 fn an_assignment_key_is_one_under_every_scaling_of_the_carriage() {
     let c = element::translator_versor(1, 2);
     let neg = c.scale(&num_rational::BigRational::from_integer(num_bigint::BigInt::from(-1)));
-    let chart = stalk::Invariant(vec![3, 5]);
+    let chart = stalk::Invariant::counts(&[3, 5]);
     let a = Acting {
         chart: chart.clone(),
         carriage: Box::new(c.clone()),

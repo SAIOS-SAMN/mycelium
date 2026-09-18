@@ -103,7 +103,11 @@ fn a_chart_prefix_is_the_topological_stratum() {
     let (a, b) = (moduli(&shape_of(&bar_support).blade), moduli(&shape_of(&plank_support).blade));
     assert_ne!(a, b, "different proportions, different charts");
     assert_eq!(a[..4], b[..4], "one topology: components, holes, cavities and turns lead the chart");
-    assert_eq!(a[..4], [1u64, 0, 0, 4], "one component, no hole, no cavity, four turns");
+    assert_eq!(
+        a[..4],
+        [1u64, 0, 0, 4].map(crate::transducer::stalk::ChartAxis::Count),
+        "one component, no hole, no cavity, four turns"
+    );
     let word_of = |support: &[(i64, i64, i64)]| {
         let raw: Vec<(i64, i64, u8, u8)> =
             support.iter().map(|&(r, c, _)| (r, c, 1u8, 2u8)).collect();
@@ -133,27 +137,39 @@ fn a_chart_prefix_is_the_topological_stratum() {
     assert_eq!(atlas.fiber_under(&at).len(), 2, "and the stratum's fibre is read under that prefix");
 }
 
-/// N7 (ruled 2026-09-18) — A RATIO WIDER THAN ℤ₆₄ IS A COORDINATE, NOT AN
-/// ABSENCE. `axes_of` refused such a ratio, `moduli` read the refusal as an
-/// empty axis list and `stalk::invariant` as the empty chart — the root of
-/// the trie — so bodies whose only fault was the width of their own moduli
-/// were filed together at one coordinate, and with every word that has no
-/// support at all.
+/// N7 as corrected by A21 (ruled 2026-09-18) — A RATIO IS ONE COORDINATE,
+/// WHATEVER ITS WIDTH. `axes_of` packed a rational into two `u64` limbs and
+/// refused when either overflowed; `moduli` read the refusal as an empty
+/// axis list and `stalk::invariant` as the empty chart, the root of the
+/// trie, so bodies whose only fault was the width of their own moduli were
+/// filed together there and with every word that has no support at all.
+///
+/// Widening the limbs alone would have moved the defect rather than closed
+/// it: a two-limb axis is two positions, `peel` pops one, and the "coarser
+/// stratum" left behind is half a rational. The ratio is a whole
+/// `ChartAxis` instead, so its width is inside one coordinate.
 #[test]
-fn a_ratio_wider_than_an_axis_is_written_as_limbs_and_keeps_its_sign() {
-    let neg = BigRational::new(BigInt::from(-3), BigInt::from(7));
-    let p = axes_of(&neg);
-    assert_eq!(p, vec![1, 1, 3, 1, 7], "sign, then each magnitude's limbs by count");
-    let pos = BigRational::new(BigInt::from(3), BigInt::from(7));
-    assert_ne!(axes_of(&pos), p, "and the sign is a coordinate, not dropped");
-    // WIDER THAN ℤ₆₄ IS STILL A COORDINATE, and two distinct wide ratios
-    // are two coordinates — which is the collapse this retires.
-    let huge = BigRational::new(BigInt::from(1) << 80, BigInt::from(1));
-    let wider = BigRational::new(BigInt::from(1) << 81, BigInt::from(1));
-    let (a, b) = (axes_of(&huge), axes_of(&wider));
-    assert_eq!(a[1], 2, "a ratio past one limb writes two of them");
-    assert!(!a.is_empty() && !b.is_empty(), "neither is read as absence");
-    assert_ne!(a, b, "and they are distinct coordinates, not one root bucket");
+fn a_ratio_is_one_coordinate_whatever_its_width() {
+    use crate::transducer::stalk::ChartAxis;
+    let axis = |n: i64, d: i64| {
+        ChartAxis::Ratio(BigRational::new(BigInt::from(n), BigInt::from(d)))
+    };
+    let neg = axis(-3, 7);
+    assert_ne!(neg, axis(3, 7), "the sign is a coordinate, not dropped");
+    // WIDER THAN ℤ₆₄ IS STILL ONE COORDINATE, and two distinct wide ratios
+    // are two — which is the collapse this retires.
+    let huge = ChartAxis::Ratio(BigRational::new(BigInt::from(1) << 80, BigInt::from(1)));
+    let wider = ChartAxis::Ratio(BigRational::new(BigInt::from(1) << 81, BigInt::from(1)));
+    assert_ne!(huge, wider, "two wide ratios are two coordinates, not one root bucket");
+    // AND EACH ROUND-TRIPS THROUGH ITS OWN BYTES, which is the unit the
+    // chart key and the stratum trie both branch on (law 2).
+    for a in [neg, huge, wider] {
+        assert_eq!(
+            ChartAxis::from_key_bytes(&a.key_bytes()),
+            Some(a.clone()),
+            "a coordinate is recovered from its key exactly"
+        );
+    }
 }
 
 /// The same reading one level up: a body whose harmonics exceed ℤ₆₄ has a

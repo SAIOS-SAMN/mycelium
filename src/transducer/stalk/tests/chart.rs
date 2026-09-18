@@ -48,9 +48,9 @@ fn chart_axes_read_from_the_rotor_not_a_matrix() {
 
 #[test]
 fn chart_prefix_is_its_coarser_stratum() {
-    let coarse = Invariant(vec![1]).key();
-    let fine = Invariant(vec![1, 2]).key();
-    let sib = Invariant(vec![1, 3]).key();
+    let coarse = Invariant::counts(&[1]).key();
+    let fine = Invariant::counts(&[1, 2]).key();
+    let sib = Invariant::counts(&[1, 3]).key();
     assert!(
         fine.as_bytes().starts_with(coarse.as_bytes()),
         "a finer chart's key starts with the coarser chart"
@@ -96,8 +96,8 @@ fn structure_separates_equal_volumes() {
     let ring = chain(&[(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]);
     assert_ne!(invariant(&square), invariant(&bar));
     assert_ne!(invariant(&square), invariant(&ring));
-    assert_eq!(&invariant(&square).0[..4], &[1, 0, 0, 4], "one body, no hole, no cavity, four turns");
-    assert_eq!(&invariant(&ring).0[..4], &[1, 1, 0, 8], "one body, one hole, no cavity, eight turns");
+    assert_eq!(&invariant(&square).0[..4], &[1u64, 0, 0, 4].map(ChartAxis::Count), "one body, no hole, no cavity, four turns");
+    assert_eq!(&invariant(&ring).0[..4], &[1u64, 1, 0, 8].map(ChartAxis::Count), "one body, one hole, no cavity, eight turns");
 }
 
 /// The lookup finds a rotated sibling's base point through its chart and
@@ -140,9 +140,9 @@ fn a_connection_is_charted_on_its_fibres_not_on_an_empty_chain() {
     assert!(!invariant_of(&a).0.is_empty(), "a connection never lands on the empty chart");
     assert_eq!(invariant_of(&a), invariant_of(&b), "two identical motions at different origins share the chart");
     assert_ne!(invariant_of(&a), invariant_of(&c), "a different cycle type is a different chart");
-    assert_eq!(invariant_of(&a).0[0], 0, "the connection family's leading axis");
+    assert_eq!(invariant_of(&a).0[0], ChartAxis::ConnectionClass(0), "the connection family's leading axis");
     let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-    assert!(invariant_of(&word).0[0] >= 1, "a residual chart leads with its component count");
+    assert!(matches!(invariant_of(&word).0[0], ChartAxis::Count(n) if n >= 1), "a residual chart leads with its component count");
     // Congruence on connections: the fibre's representative and the transition.
     let stalks = Stalks::over_elements([&a, &c].into_iter());
     let at = |x: &[u8]| [&a, &c].into_iter().find(|w| w.address().as_bytes() == x);
@@ -185,15 +185,15 @@ fn refine_splits_the_stratum_by_the_new_coordinate() {
     let class_coord = 7u64;
     stalks.split_stratum(&inv, |addr| {
         if a.address().as_bytes() == addr {
-            vec![0]
+            vec![ChartAxis::ConnectionClass(0)]
         } else {
-            vec![class_coord]
+            vec![ChartAxis::ConnectionClass(class_coord)]
         }
     });
     assert!(stalks.fiber(&inv).is_empty(), "the coarse chart is empty after the split");
-    assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[0])), vec![a.address().into_vec()]);
-    assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[class_coord])), vec![b.address().into_vec()]);
-    let peeled = Stalks::peel(&Stalks::refine_axes(&inv, &[class_coord]));
+    assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[ChartAxis::ConnectionClass(0)])), vec![a.address().into_vec()]);
+    assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[ChartAxis::ConnectionClass(class_coord)])), vec![b.address().into_vec()]);
+    let peeled = Stalks::peel(&Stalks::refine_axes(&inv, &[ChartAxis::ConnectionClass(class_coord)]));
     assert_eq!(peeled, inv, "peel drops the class axis");
     // The prefixes run coarse-last, so the tail is the root stratum.
     #[expect(
@@ -202,4 +202,37 @@ fn refine_splits_the_stratum_by_the_new_coordinate() {
     )]
     let coarsest = inv.prefixes().last().map(|p| p.0.is_empty());
     assert_eq!(coarsest, Some(true), "the coarsest prefix is the root stratum");
+}
+
+/// A21 as ruled 2026-09-18 — A PREFIX OF A CHART'S KEY IS A COARSER
+/// STRATUM'S KEY, in bytes. `Keyed` is a PATRICIA trie over these bytes and
+/// `fiber_under`, `link` and `peel` are byte-prefix reads, so this is the
+/// one property the encoding has to hold. A count in the key's header would
+/// break it — a chart and its prefix would differ in their first bytes —
+/// which is why the key carries none and each coordinate carries its own
+/// length instead.
+#[test]
+fn a_prefix_of_a_chart_is_a_byte_prefix_of_its_key() {
+    use crate::transducer::stalk::ChartAxis;
+    use num_bigint::BigInt;
+    use num_rational::BigRational;
+    let wide = BigRational::new(BigInt::from(1) << 80, BigInt::from(7));
+    let inv = Invariant(vec![
+        ChartAxis::Count(1),
+        ChartAxis::Ratio(wide),
+        ChartAxis::Count(4),
+    ]);
+    let key = inv.key();
+    for coarser in inv.prefixes() {
+        assert!(
+            key.as_bytes().starts_with(coarser.key().as_bytes()),
+            "a coarser stratum's key is a byte prefix: {coarser:?}"
+        );
+    }
+    // AND IT ROUND-TRIPS WHOLE. A ratio wider than one limb is one
+    // coordinate, so `peel` drops it entire and never between its numerator
+    // and its denominator.
+    assert_eq!(Invariant::from_key(key.as_bytes()), Some(inv.clone()), "recovered from its key");
+    assert_eq!(inv.peel().0.len(), 2, "one whole coordinate leaves");
+    assert_eq!(inv.peel().0[1], inv.0[1], "and the wide ratio it keeps is still itself, whole");
 }

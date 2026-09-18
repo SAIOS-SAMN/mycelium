@@ -11,7 +11,7 @@ use crate::anastome::dialogue::*;
 fn a_count_past_its_field_refuses_the_frame() {
     let voice = [3u8; 32];
     let charts: Vec<crate::transducer::stalk::Invariant> =
-        (0..256u64).map(|i| crate::transducer::stalk::Invariant(vec![i])).collect();
+        (0..256u64).map(|i| crate::transducer::stalk::Invariant::counts(&[i])).collect();
     assert!(
         encode_quote_request_charts(&voice, &charts[..255]).is_some(),
         "255 charts fit the count the ask writes"

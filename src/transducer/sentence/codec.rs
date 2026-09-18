@@ -87,24 +87,22 @@ pub(crate) fn take_count(b: &[u8], pos: usize, n: usize, item: usize) -> Option<
 }
 
 pub(crate) fn put_inv(inv: &stalk::Invariant, out: &mut Vec<u8>) -> Option<()> {
-    let n = u16::try_from(inv.0.len()).ok()?;
+    // The chart's own key (law 2), length-prefixed: one encoding for the
+    // tape, the wire and the trie.
+    let key = inv.key();
+    let bytes = key.as_bytes();
+    let n = u16::try_from(bytes.len()).ok()?;
     out.extend_from_slice(&n.to_le_bytes());
-    for a in &inv.0 {
-        out.extend_from_slice(&a.to_le_bytes());
-    }
+    out.extend_from_slice(bytes);
     Some(())
 }
 
 pub(crate) fn take_inv(b: &[u8], pos: &mut usize) -> Option<stalk::Invariant> {
     let n = take_u16(b, pos)? as usize;
-    let n = take_count(b, *pos, n, 8)?;
-    let mut axes = Vec::with_capacity(n);
-    for _ in 0..n {
-        let v = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-        *pos += 8;
-        axes.push(v);
-    }
-    Some(stalk::Invariant(axes))
+    let n = take_count(b, *pos, n, 1)?;
+    let bytes = b.get(*pos..*pos + n)?;
+    *pos += n;
+    stalk::Invariant::from_key(bytes)
 }
 
 pub(crate) fn take_u16(b: &[u8], pos: &mut usize) -> Option<u16> {

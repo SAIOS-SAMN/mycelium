@@ -15,7 +15,8 @@ fn topology_counts_components_and_holes_exactly() {
     let two = at_frame_0(&[(0, 0), (0, 1), (5, 5), (5, 6)]);
     assert_eq!(topology(&two), (2, 0, 0));
     let m = moduli(&shape_of(&ring).blade);
-    assert_eq!((m[0], m[1], m[2], m[3]), (1, 1, 0, 8));
+    use crate::transducer::stalk::ChartAxis::Count;
+    assert_eq!((m[0].clone(), m[1].clone(), m[2].clone(), m[3].clone()), (Count(1), Count(1), Count(0), Count(8)));
     assert_eq!(moduli(&shape_of(&dilate(&ring, 2)).blade), m, "a dilated ring reads the same moduli");
     // The fourth-order axis separates bodies the inertia cannot: an
     // L-tetromino and a T-tetromino... share a lamina count; the moduli

@@ -95,7 +95,7 @@ fn a_conjugacy_stratum_answers_every_class_vector_under_it() {
 #[test]
 fn a_foreign_key_refuses_by_name_instead_of_reading_as_absent() {
     let mut held: Stratified<u8> = Stratified::new(ClassVector::class_schema());
-    let chart = crate::transducer::stalk::Invariant(vec![1, 3, 5]).key();
+    let chart = crate::transducer::stalk::Invariant::counts(&[1, 3, 5]).key();
 
     let refused = held.get(chart.as_bytes()).expect_err("a chart is not a class vector");
     assert_eq!(refused.system, "class vector");

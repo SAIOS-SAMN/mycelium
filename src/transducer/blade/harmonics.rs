@@ -70,19 +70,30 @@ impl Harmonics {
         }
     }
 
-    /// The harmonics laid out as the atlas's axes, coarsest first. Total
-    /// since N7 (ruled 2026-09-18): every ratio writes its exact limbs, so
-    /// no harmonic refuses and no body with a blade is charted at the root
+    /// The harmonics laid out as the atlas's axes, coarsest first: four
+    /// counts, then the conformal ratios, then the hue spectrum. Each is
+    /// ONE coordinate carrying its own exact value (A21 as ruled
+    /// 2026-09-18), so a ratio is a `ChartAxis::Ratio` in ℚ and never a
+    /// pair of integer limbs that `peel` could cut between. Total: no
+    /// harmonic refuses, and no body with a blade is charted at the root
     /// for the width of its own moduli.
-    pub fn axes(&self) -> Vec<u64> {
-        let mut axes = vec![self.components, self.holes, self.cavities, self.turns];
-        axes.extend(blade::axes_of(&self.isoperimetric));
-        axes.extend(blade::axes_of(&self.frame_boundary));
-        axes.extend(blade::axes_of(&self.anisotropy));
-        axes.extend(blade::axes_of(&self.spread));
-        axes.extend(blade::axes_of(&self.quartic));
+    pub fn axes(&self) -> Vec<crate::transducer::stalk::ChartAxis> {
+        use crate::transducer::stalk::ChartAxis;
+        let mut axes: Vec<ChartAxis> = [self.components, self.holes, self.cavities, self.turns]
+            .into_iter()
+            .map(ChartAxis::Count)
+            .collect();
+        for r in [
+            &self.isoperimetric,
+            &self.frame_boundary,
+            &self.anisotropy,
+            &self.spread,
+            &self.quartic,
+        ] {
+            axes.push(ChartAxis::Ratio(r.clone()));
+        }
         for f in &self.gauge {
-            axes.extend(blade::axes_of(f));
+            axes.push(ChartAxis::Ratio(f.clone()));
         }
         axes
     }

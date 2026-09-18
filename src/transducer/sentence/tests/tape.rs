@@ -52,7 +52,7 @@ fn form_tape_v6_round_trips() {
     f.vertices.push(Vertex::rebased_on(
         0,
         1,
-        stalk::Invariant(vec![3, 5]),
+        stalk::Invariant::counts(&[3, 5]),
         Box::new(element::carriage(&q1(), &(q0(), q1()))),
         vec![(1, 2)],
     ));
@@ -60,7 +60,7 @@ fn form_tape_v6_round_trips() {
     let demand = f.vertices.len() as u16;
     f.vertices.push(Vertex::Demand {
         kind: Demand::Source { multiplicity: 2 },
-        chart: stalk::Invariant(vec![1, 4, 4]),
+        chart: stalk::Invariant::counts(&[1, 4, 4]),
         bodies: vec![(9, 9, 0, 1), (9, 10, 0, 1)],
     });
     // A FACE CARRYING AN EDGE AT ONE MEMBER PAIR. `FormFace::new` records the
@@ -69,7 +69,7 @@ fn form_tape_v6_round_trips() {
     edged.at.insert(
         crate::transducer::sentence::face_pair_key(
             &stalk::Invariant::default(),
-            &stalk::Invariant(vec![1, 4, 4]),
+            &stalk::Invariant::counts(&[1, 4, 4]),
         ),
         crate::transducer::sentence::FacePlace {
             carriage: element::identity_versor(),
@@ -137,7 +137,7 @@ fn form_tape_v6_round_trips() {
             // hue map at each chart `of` acted on, and one member here.
             assert_eq!(acts, was, "every member comes back filed at its own chart");
             let m = acts
-                .get(stalk::Invariant(vec![3, 5]).key().as_bytes())
+                .get(stalk::Invariant::counts(&[3, 5]).key().as_bytes())
                 .expect("the member at the chart it was written on");
             assert!(element::same_versor(
                 &m.carriage,
@@ -179,7 +179,7 @@ fn form_tape_v6_round_trips() {
     }
     assert!(!back.is_closed(), "a sentence with a demand vertex is not closed");
     assert_eq!(
-        back.demands.get(&demand_key(&Demand::Source { multiplicity: 2 }, &stalk::Invariant(vec![1, 4, 4]))),
+        back.demands.get(&demand_key(&Demand::Source { multiplicity: 2 }, &stalk::Invariant::counts(&[1, 4, 4]))),
         Some(&demand),
         "the demand is read by (kind, chart)"
     );
@@ -207,8 +207,8 @@ fn form_tape_v6_round_trips() {
 fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
     use crate::transducer::alphabet::{standing, Rotor};
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
-    let chart = stalk::Invariant(vec![1, 4, 4]);
-    let other = stalk::Invariant(vec![1, 6, 2]);
+    let chart = stalk::Invariant::counts(&[1, 4, 4]);
+    let other = stalk::Invariant::counts(&[1, 6, 2]);
     // `3 + e₀₁ + e₀₂`: weight 11, held by no coordinate plane (37.7).
     let eleven = Rotor::scalar(q(3)).add(&Rotor::blade(0b0011, q(1))).add(&Rotor::blade(0b0101, q(1)));
     // `(1 + e₀₂)(1 + e₁₃)` carries the sensor plane wholly off itself: its
@@ -295,8 +295,8 @@ fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
 /// under the one vertex, and a different chart is a second vertex.
 #[test]
 fn a_form_stands_one_demand_per_kind_and_chart_and_gathers_the_bodies() {
-    let chart = stalk::Invariant(vec![1, 4, 4]);
-    let other = stalk::Invariant(vec![1, 6, 2]);
+    let chart = stalk::Invariant::counts(&[1, 4, 4]);
+    let other = stalk::Invariant::counts(&[1, 6, 2]);
     let mut f = Form::default();
     f.stand_demand(Demand::Creation, &chart, vec![(0, 0, 0, 3)]);
     f.stand_demand(Demand::Creation, &chart, vec![(0, 1, 0, 3), (0, 0, 0, 3)]);

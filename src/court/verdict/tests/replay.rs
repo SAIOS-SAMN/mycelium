@@ -50,7 +50,7 @@ fn closed_turn_form() -> Form {
     f.vertices.push(Vertex::word_on(
         crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
         crate::transducer::alphabet::Derivation::spelled(w),
-        stalk::Invariant(vec![7]),
+        stalk::Invariant::counts(&[7]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         vec![(1, 2)],
         None,
@@ -416,7 +416,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     let mut dem = closed_turn_form();
     dem.vertices.push(Vertex::Demand {
         kind: crate::transducer::sentence::Demand::Source { multiplicity: 0 },
-        chart: stalk::Invariant(vec![1, 2, 2]),
+        chart: stalk::Invariant::counts(&[1, 2, 2]),
         bodies: vec![(3, 3, 0, 2)],
     });
     let dem_e = as_element_form(&dem, [1, 0, 0, 0]).expect("demand tape");
@@ -428,7 +428,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     let mut typed = closed_turn_form();
     typed.vertices.push(Vertex::Demand {
         kind: crate::transducer::sentence::Demand::Creation,
-        chart: stalk::Invariant(vec![1, 2, 2]),
+        chart: stalk::Invariant::counts(&[1, 2, 2]),
         bodies: vec![(3, 3, 0, 2)],
     });
     let typed_e = as_element_form(&typed, [1, 0, 0, 0]).expect("typed demand tape");
@@ -595,7 +595,7 @@ fn citing_form(
             9,
         ]),
         derivation,
-        stalk::Invariant(vec![7]),
+        stalk::Invariant::counts(&[7]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         vec![(1, 2)],
         None,

@@ -18,7 +18,7 @@ fn a_still_orbit_contracts_its_contact_word_to_a_demand() {
     let Some(Vertex::Word { address, contact: Some(_), .. }) = f.vertices.get(1).cloned() else {
         panic!("the fixture's word is a contact word");
     };
-    let chart = stalk::Invariant(vec![3, 5]);
+    let chart = stalk::Invariant::counts(&[3, 5]);
     let at = At::Vertex { address: address.clone(), chart: chart.clone() };
     let remainder = vec![(0i64, 1i64, 1u8, 2u8)];
     assert!(f.faces.iter().any(|face| face.j == 1), "the contact word has its star face");

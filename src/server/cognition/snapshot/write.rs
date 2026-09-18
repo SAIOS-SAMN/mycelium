@@ -90,14 +90,15 @@ impl Kernel {
             body.extend_from_slice(&c.to_le_bytes());
             // A listing the reading holds no invariant for sits at the
             // root stratum, which the empty axis list is.
+            let root = crate::transducer::stalk::Invariant::default();
             let inv = match rank.invariants.get(addr) {
-                Some(i) => i.0.as_slice(),
-                None => &[],
+                Some(i) => i,
+                None => &root,
             };
-            body.extend_from_slice(&(inv.len() as u64).to_le_bytes());
-            for axis in inv {
-                body.extend_from_slice(&axis.to_le_bytes());
-            }
+            let key = inv.key();
+            let bytes = key.as_bytes();
+            body.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
+            body.extend_from_slice(bytes);
             Some(())
         });
         // DEFLATION section: each provisional's measured descent, so a
@@ -132,10 +133,9 @@ impl Kernel {
             put_key(body, addr);
             body.extend_from_slice(&(listing.entries.len() as u64).to_le_bytes());
             for e in &listing.entries {
-                body.extend_from_slice(&(e.chart.0.len() as u64).to_le_bytes());
-                for axis in &e.chart.0 {
-                    body.extend_from_slice(&axis.to_le_bytes());
-                }
+                let key = e.chart.key();
+                body.extend_from_slice(&(key.as_bytes().len() as u64).to_le_bytes());
+                body.extend_from_slice(key.as_bytes());
                 match &e.state {
                     crate::transducer::stalk::Closure::Flat => body.push(0),
                     crate::transducer::stalk::Closure::Twisted(v) => {
@@ -202,10 +202,9 @@ impl Kernel {
             put_key(body, addr);
             body.extend_from_slice(&(listing.entries.len() as u64).to_le_bytes());
             for e in &listing.entries {
-                body.extend_from_slice(&(e.chart.0.len() as u64).to_le_bytes());
-                for axis in &e.chart.0 {
-                    body.extend_from_slice(&axis.to_le_bytes());
-                }
+                let key = e.chart.key();
+                body.extend_from_slice(&(key.as_bytes().len() as u64).to_le_bytes());
+                body.extend_from_slice(key.as_bytes());
                 match &e.state {
                     crate::transducer::stalk::Closure::Flat => body.push(0),
                     crate::transducer::stalk::Closure::Twisted(v) => {

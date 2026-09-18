@@ -260,7 +260,7 @@ assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
 fn listings_on_is_the_open_listings_on_the_chart() {
 use crate::transducer::address::Address;
 let mut k = Kernel::new();
-let inv = crate::transducer::stalk::Invariant(vec![7]);
+let inv = crate::transducer::stalk::Invariant::counts(&[7]);
 let (v1, v2) = ([1u8; 32], [2u8; 32]);
 let both = Address::from(&b"both"[..]);
 let only_v1 = Address::from(&b"only_v1"[..]);
@@ -283,7 +283,7 @@ assert!(held.contains(only_v1.as_bytes()), "spoken by one voice, and on the char
 assert!(!held.contains(shut.as_bytes()), "a closed listing is not held");
 assert!(!held.contains(off_chart.as_bytes()), "a listing off the chart is not held");
 assert_eq!(held.len(), 2, "exactly the open, on-chart listings");
-assert_eq!(k.listings_on(&crate::transducer::stalk::Invariant(vec![8])).len(), 0, "a chart with no listings holds nothing");
+assert_eq!(k.listings_on(&crate::transducer::stalk::Invariant::counts(&[8])).len(), 0, "a chart with no listings holds nothing");
 }
 
 /// The genome boundary. A taught word is CRYSTALLIZED on the receiver — it

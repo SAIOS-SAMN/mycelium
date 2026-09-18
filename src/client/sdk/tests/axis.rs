@@ -29,7 +29,7 @@ fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
     use crate::transducer::sentence::{as_element_form, on_axis_of, ClassVector, Form, Vertex};
     use crate::transducer::stalk::Invariant;
 
-    let chart = Invariant(vec![1, 7, 11]);
+    let chart = Invariant::counts(&[1, 7, 11]);
     let w = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));

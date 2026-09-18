@@ -468,15 +468,15 @@ impl Kernel {
             None => vec![0],
         };
         let cx = self.complexes.get(&inv.key()).cloned();
-        let coord_of = |addr: &[u8]| -> Vec<u64> {
+        let coord_of = |addr: &[u8]| -> Vec<crate::transducer::stalk::ChartAxis> {
             if let Some(c) = &cx {
                 for (_, sec) in c.sections.scoped() {
                     if sec.addr.as_bytes() == addr && !sec.gamma.is_identity() {
-                        return axes.clone();
+                        return axes.iter().copied().map(crate::transducer::stalk::ChartAxis::ConnectionClass).collect();
                     }
                 }
             }
-            vec![0]
+            vec![crate::transducer::stalk::ChartAxis::ConnectionClass(0)]
         };
         let before: Vec<Vec<u8>> = self.listing_atlas.fiber(inv);
         let before_mag: Vec<(Vec<u8>, [u64; 4])> = before
@@ -496,6 +496,8 @@ impl Kernel {
                         Some(sec) if !sec.gamma.is_identity() => axes.clone(),
                         Some(_) | None => vec![0],
                     };
+                    let side: Vec<crate::transducer::stalk::ChartAxis> =
+                        side.into_iter().map(crate::transducer::stalk::ChartAxis::ConnectionClass).collect();
                     let new = crate::transducer::stalk::Stalks::refine_axes(inv, &side);
                     cover.rehome(lane, inv, &new, h);
                 }
@@ -510,7 +512,9 @@ impl Kernel {
             }
         }
         if let Some(c) = self.complexes.remove(&inv.key()) {
-            let a = crate::transducer::stalk::Stalks::refine_axes(inv, &[0]);
+            use crate::transducer::stalk::ChartAxis;
+            let a = crate::transducer::stalk::Stalks::refine_axes(inv, &[ChartAxis::ConnectionClass(0)]);
+            let axes: Vec<ChartAxis> = axes.iter().copied().map(ChartAxis::ConnectionClass).collect();
             let b = crate::transducer::stalk::Stalks::refine_axes(inv, &axes);
             self.rekey_cocycles(inv, &a, &b);
             self.complexes.insert(a.key(), c.clone());

@@ -205,13 +205,11 @@ impl Kernel {
                     *pos += 8;
                     let m = read_u64(b, pos)?;
                     fits(b, pos, m)?;
-                    let mut axes = Vec::new();
-                    for _ in 0..m {
-                        axes.push(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?));
-                        *pos += 8;
-                    }
+                    let bytes = b.get(*pos..*pos + m)?;
+                    *pos += m;
+                    let inv = crate::transducer::stalk::Invariant::from_key(bytes)?;
                     rank.put_closure(&addr, (closed != u64::MAX).then_some(closed as usize));
-                    rank.invariants.insert(&addr, crate::transducer::stalk::Invariant(axes));
+                    rank.invariants.insert(&addr, inv);
                 }
                 closes("RNK1", pos, start, sec_end, n)?;
                 kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
@@ -276,11 +274,8 @@ impl Kernel {
                     for _ in 0..ne {
                         let m = read_u64(b, pos)?;
                         fits(b, pos, m)?;
-                        let mut axes = Vec::new();
-                        for _ in 0..m {
-                            axes.push(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?));
-                            *pos += 8;
-                        }
+                        let chart = crate::transducer::stalk::Invariant::from_key(b.get(*pos..*pos + m)?)?;
+                        *pos += m;
                         let tag = *b.get(*pos)?;
                         *pos += 1;
                         let state = match tag {
@@ -318,7 +313,7 @@ impl Kernel {
                             *pos += 4;
                         }
                         entries.push(FieldEntry {
-                            chart: crate::transducer::stalk::Invariant(axes),
+                            chart,
                             state,
                             remainder,
                             stagnant,
@@ -409,11 +404,8 @@ impl Kernel {
                     for _ in 0..ne {
                         let m = read_u64(b, pos)?;
                         fits(b, pos, m)?;
-                        let mut axes = Vec::new();
-                        for _ in 0..m {
-                            axes.push(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?));
-                            *pos += 8;
-                        }
+                        let chart = crate::transducer::stalk::Invariant::from_key(b.get(*pos..*pos + m)?)?;
+                        *pos += m;
                         let tag = *b.get(*pos)?;
                         *pos += 1;
                         let state = match tag {
@@ -451,7 +443,7 @@ impl Kernel {
                             *pos += 4;
                         }
                         entries.push(FieldEntry {
-                            chart: crate::transducer::stalk::Invariant(axes),
+                            chart,
                             state,
                             remainder,
                             stagnant,

@@ -89,7 +89,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     }
     // The witness's own signed position over the root hash (47.1).
-    let Some(section) = crate::admission::sign_position(&door.kernel, &door.mesh, &[], &p.root.hash) else {
+    let Some(section) = crate::admission::sign_position(&door.kernel, &door.mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else {
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
         return;
     };

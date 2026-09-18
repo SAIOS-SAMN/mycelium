@@ -448,6 +448,7 @@ fn a_sentence_chart_leads_with_axis_two_then_its_rank() {
                 u64::from(rank.offplane),
                 u64::from(rank.axes)
             ]
+            .map(crate::transducer::stalk::ChartAxis::ConnectionClass)
             .as_slice()
         ),
         "the kind, then the rank: {inv:?}"
@@ -548,7 +549,7 @@ fn chord_is_never_a_star_face() {
 /// chart is not a word there.
 #[test]
 fn a_chart_names_the_word_vertices_on_it() {
-    let (near, far) = (stalk::Invariant(vec![3, 5]), stalk::Invariant(vec![7]));
+    let (near, far) = (stalk::Invariant::counts(&[3, 5]), stalk::Invariant::counts(&[7]));
     let mut f = Form::default();
     for (k, class) in [(1u8, &near), (2, &far), (3, &near)] {
         f.vertices.push(word_vertex_on(k, Word::identity(), class.clone()));
@@ -561,7 +562,7 @@ fn a_chart_names_the_word_vertices_on_it() {
     f.reindex();
     assert_eq!(f.by_class.get(&near.key()), Some(&vec![1u16, 3]), "both words on the near chart, in vertex order");
     assert_eq!(f.by_class.get(&far.key()), Some(&vec![2u16]), "the one word on the far chart");
-    assert_eq!(f.by_class.get(&stalk::Invariant(vec![9]).key()), None, "a chart no vertex is on names nothing");
+    assert_eq!(f.by_class.get(&stalk::Invariant::counts(&[9]).key()), None, "a chart no vertex is on names nothing");
     for (chart, on) in f.by_class.scoped() {
         for &i in on {
             let v = f.vertices.get(i as usize).expect("an index the fiber names is a vertex");
@@ -588,7 +589,7 @@ fn a_chart_names_the_word_vertices_on_it() {
 /// index a reader cannot address with the key it builds is not an index.
 #[test]
 fn a_transport_class_names_the_word_vertices_of_that_class() {
-    let (near, far) = (stalk::Invariant(vec![3, 5]), stalk::Invariant(vec![7]));
+    let (near, far) = (stalk::Invariant::counts(&[3, 5]), stalk::Invariant::counts(&[7]));
     let mut f = Form::default();
     // Two words of one class on two charts, and a third of a DIFFERENT class
     // (the quarter turn) on a chart one of them is already on.

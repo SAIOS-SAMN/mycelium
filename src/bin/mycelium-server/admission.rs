@@ -68,7 +68,7 @@ pub(crate) fn rebuild_own_cover(kernel: &Mutex<Kernel>, mesh: &Mesh) -> (Vec<(u8
 pub(crate) fn sign_position(
     kernel: &Mutex<Kernel>,
     mesh: &Mesh,
-    chart: &[u64],
+    chart: &mycelium::transducer::stalk::Invariant,
     payload: &[u8],
 ) -> Option<dialogue::ReceiptSection> {
     let (genesis, epoch) = mesh.origin.lock().ok().and_then(|o| *o)?;
@@ -81,7 +81,7 @@ pub(crate) fn sign_position(
         prev_receipt_hash: head.prev_receipt_hash,
         k: head.step_index,
         height: head.height,
-        chart: chart.to_vec(),
+        chart: chart.key().as_bytes().to_vec(),
         payload: payload.to_vec(),
     };
     if !prefix.fits() {
@@ -134,7 +134,7 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> 
     // peer can run 47.2 and cite this receipt as a parent of its next step.
     // A node with no genesis sends none: it has no origin to claim. The
     // digest is a root over the whole cover, so its prefix names no chart.
-    if let Some(bytes) = sign_position(kernel, mesh, &[], &ruled_root)
+    if let Some(bytes) = sign_position(kernel, mesh, &mycelium::transducer::stalk::Invariant::default(), &ruled_root)
         .and_then(|sec| dialogue::encode_receipt_section(&sec.prefix, &sec.sig, &sec.receipt))
     {
         out.extend(bytes);

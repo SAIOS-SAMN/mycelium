@@ -22,24 +22,29 @@ pub(crate) struct Stratum {
 
 /// An axis value as a key: the coordinate's bytes, big-endian, so the
 /// trie's order is the axis's order.
-pub(crate) fn axis_key(a: u64) -> [u8; 8] {
-    crate::network::nerve::axis_key_le(a)
+/// A STRATUM BRANCHES ON A WHOLE COORDINATE (A21 as ruled 2026-09-18).
+/// The branch key is the coordinate's own kind-tagged, length-prefixed
+/// bytes — the same unit `Invariant::key` writes — so the chart a word is
+/// filed under and the path a fiber walks are one construction (law 12).
+/// It was eight bare bytes, which is one `u64` limb and not one coordinate.
+pub(crate) fn axis_key(a: &ChartAxis) -> Vec<u8> {
+    a.key_bytes()
 }
 
-pub(crate) fn axis_of(key: &[u8]) -> u64 {
-    let mut b = [0u8; 8];
-    let n = key.len().min(8);
-    b[..n].copy_from_slice(&key[..n]);
-    u64::from_le_bytes(b)
+/// The coordinate a branch key names. `None` where the bytes are not one:
+/// a branch that does not decode contributes no axis rather than an
+/// invented one (rule 11).
+pub(crate) fn axis_of(key: &[u8]) -> Option<ChartAxis> {
+    ChartAxis::from_key_bytes(key)
 }
 
 impl Stratum {
-    pub(crate) fn admit(&mut self, axes: &[u64], addr: &[u8]) {
+    pub(crate) fn admit(&mut self, axes: &[ChartAxis], addr: &[u8]) {
         match axes.split_first() {
             None => {
                 self.members.insert(addr, ());
             }
-            Some((&a, rest)) => {
+            Some((a, rest)) => {
                 let key = axis_key(a);
                 match self.branches.get_mut(&key) {
                     Some(s) => s.admit(rest, addr),
@@ -53,12 +58,12 @@ impl Stratum {
         }
     }
 
-    pub(crate) fn fiber(&self, axes: &[u64]) -> Vec<Vec<u8>> {
+    pub(crate) fn fiber(&self, axes: &[ChartAxis]) -> Vec<Vec<u8>> {
         match axes.split_first() {
             None => self.members.scoped().map(|(k, _)| k).collect(),
             // A stratum with no branch on this axis holds no members
             // under it: the empty fiber is that reading (0.11c).
-            Some((&a, rest)) => match self.branches.get(&axis_key(a)) {
+            Some((a, rest)) => match self.branches.get(&axis_key(a)) {
                 Some(s) => s.fiber(rest),
                 None => Vec::new(),
             },
@@ -70,12 +75,12 @@ impl Stratum {
     }
 
     /// Drop one member along its own chart path; strata left empty are pruned.
-    pub(crate) fn remove(&mut self, axes: &[u64], addr: &[u8]) {
+    pub(crate) fn remove(&mut self, axes: &[ChartAxis], addr: &[u8]) {
         match axes.split_first() {
             None => {
                 self.members.remove(addr);
             }
-            Some((&a, rest)) => {
+            Some((a, rest)) => {
                 let key = axis_key(a);
                 let empty = {
                     let Some(s) = self.branches.get_mut(&key) else { return };
@@ -97,29 +102,32 @@ impl Stratum {
         n
     }
 
-    pub(crate) fn strata(&self, path: &mut Vec<u64>, out: &mut Vec<(Invariant, Vec<Vec<u8>>)>) {
+    pub(crate) fn strata(&self, path: &mut Vec<ChartAxis>, out: &mut Vec<(Invariant, Vec<Vec<u8>>)>) {
         if !self.members.is_empty() {
             let members: Vec<Vec<u8>> = self.members.scoped().map(|(k, _)| k).collect();
             out.push((Invariant(path.clone()), members));
         }
         for (k, s) in self.branches.scoped() {
-            path.push(axis_of(&k));
+            let Some(a) = axis_of(&k) else { continue };
+            path.push(a);
             s.strata(path, out);
             path.pop();
         }
     }
 
-    pub(crate) fn child_axes(&self, axes: &[u64]) -> Vec<u64> {
+    pub(crate) fn child_axes(&self, axes: &[ChartAxis]) -> Vec<ChartAxis> {
         match axes.split_first() {
             None => {
                 let mut out = Vec::new();
                 for (k, _) in self.branches.scoped() {
-                    out.push(axis_of(&k));
+                    if let Some(a) = axis_of(&k) {
+                        out.push(a);
+                    }
                 }
                 out
             }
             // No branch on this axis, no axes under it.
-            Some((&a, rest)) => match self.branches.get(&axis_key(a)) {
+            Some((a, rest)) => match self.branches.get(&axis_key(a)) {
                 Some(s) => s.child_axes(rest),
                 None => Vec::new(),
             },
@@ -141,7 +149,7 @@ impl Stratum {
         }
     }
 
-    pub(crate) fn fiber_under(&self, axes: &[u64]) -> Vec<Vec<u8>> {
+    pub(crate) fn fiber_under(&self, axes: &[ChartAxis]) -> Vec<Vec<u8>> {
         match axes.split_first() {
             None => {
                 let mut out = Vec::new();
@@ -149,7 +157,7 @@ impl Stratum {
                 out
             }
             // No branch on this axis, no members under it.
-            Some((&a, rest)) => match self.branches.get(&axis_key(a)) {
+            Some((a, rest)) => match self.branches.get(&axis_key(a)) {
                 Some(s) => s.fiber_under(rest),
                 None => Vec::new(),
             },

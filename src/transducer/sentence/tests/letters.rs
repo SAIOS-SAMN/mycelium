@@ -13,7 +13,7 @@ use crate::transducer::stalk;
 #[test]
 fn an_adjoined_generator_is_among_its_forms_words() {
     let r = order4().rotor();
-    let letter = generator_form(&r, &stalk::Invariant(vec![3, 5]), &[]).expect("a rotor mints a generator");
+    let letter = generator_form(&r, &stalk::Invariant::counts(&[3, 5]), &[]).expect("a rotor mints a generator");
     let words = acting_of_element(&letter);
     let [t] = words.as_slice() else {
         panic!("one letter, one word, got {}", words.len())

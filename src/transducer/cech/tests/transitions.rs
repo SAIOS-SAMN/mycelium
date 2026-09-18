@@ -35,7 +35,7 @@ fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() 
         f.vertices.push(Vertex::word_on(
             crate::transducer::address::Address::new(Vec::new()),
             alphabet::Derivation::spelled(w.clone()),
-            stalk::Invariant(vec![3, 5]),
+            stalk::Invariant::counts(&[3, 5]),
             Box::new(crate::transducer::element::carriage(&q(1), &(q(0), q(1)))),
             Vec::new(),
             None,
@@ -80,7 +80,7 @@ fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() 
         mixed.vertices.push(Vertex::word_on(
             crate::transducer::address::Address::new(Vec::new()),
             alphabet::Derivation::spelled(w.clone()),
-            stalk::Invariant(vec![3, 5]),
+            stalk::Invariant::counts(&[3, 5]),
             Box::new(crate::transducer::element::carriage(&q(1), &(q(0), q(1)))),
             Vec::new(),
             None,

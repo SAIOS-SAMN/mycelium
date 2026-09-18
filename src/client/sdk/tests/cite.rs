@@ -33,7 +33,7 @@ assert!(
     "a dialect fiber carries Stood, not a boolean"
 );
 assert!(
-    !entity.incident_chart(&crate::transducer::stalk::Invariant(vec![99])),
+    !entity.incident_chart(&crate::transducer::stalk::Invariant::counts(&[99])),
     "an unseen chart is not incident"
 );
 let idea_chain = vec![(3, 0, 5, 6), (3, 1, 5, 6)];

@@ -384,7 +384,7 @@ fn a_loops_class_and_row_read_off_its_faces_and_the_axis_carrier() {
 fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
     use crate::transducer::alphabet::Derivation;
     use crate::transducer::stalk::Invariant;
-    let chart = Invariant(vec![3, 5]);
+    let chart = Invariant::counts(&[3, 5]);
     let pair = face_pair_key(&chart, &chart);
     let q = order4();
     let word_vertex = |b: u8| {

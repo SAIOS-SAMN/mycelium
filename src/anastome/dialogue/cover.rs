@@ -228,7 +228,7 @@ pub(crate) fn digests_reply_end(body: &[u8]) -> Option<usize> {
     let digests = decode_digests_reply(body)?;
     let mut p = 4usize;
     for d in &digests {
-        p += 1 + 8 * d.inv.0.len() + 4 + 4 + d.root.len();
+        p += 1 + d.inv.key().as_bytes().len() + 4 + 4 + d.root.len();
     }
     (p < body.len()).then_some(p)
 }
@@ -333,25 +333,30 @@ pub fn encode_cover_page(
         if key.as_slice() <= from {
             continue;
         }
-        let (lane, axes) = key.split_first()?;
-        // A chart wider than the axis count is PASSED OVER, not refused
-        // with the page: the asker resumes from the last cursor it read, so
-        // a refusal here would meet the same chart as the head of every
-        // later ask and the tail of the cover would never be served. The
-        // field is not widened either (I33) -- the door names the width
-        // off its own charts.
-        if axes.len() % 8 != 0 || axes.len() / 8 > u8::MAX as usize {
+        let (lane, chart) = key.split_first()?;
+        // A chart whose key does not fit the length byte is PASSED OVER,
+        // not refused with the page: the asker resumes from the last cursor
+        // it read, so a refusal here would meet the same chart as the head
+        // of every later ask and the tail of the cover would never be
+        // served. The field is not widened either (I33) -- the door names
+        // the width off its own charts.
+        //
+        // The width is the KEY'S, in bytes. It was `axes.len() / 8`, a
+        // count of `u64` limbs, which stopped being a count of coordinates
+        // when a coordinate became whole (A21 as ruled 2026-09-18) and
+        // passed over every chart rather than serving it.
+        if chart.len() > u8::MAX as usize {
             continue;
         }
-        // One chart's width on the wire, exact: the lane byte, the axis
-        // count, and the cursor's axis bytes -- which are the axes.
-        if out.len() + 2 + axes.len() + 1 > budget {
+        // One chart's width on the wire, exact: the lane byte, the key's
+        // length byte, and the key -- which is what `read_invariant` reads.
+        if out.len() + 2 + chart.len() + 1 > budget {
             more = true;
             break;
         }
         out.push(*lane);
-        out.push((axes.len() / 8) as u8);
-        out.extend_from_slice(axes);
+        out.push(chart.len() as u8);
+        out.extend_from_slice(chart);
         served = served.checked_add(1)?;
     }
     out.get_mut(count_at..count_at + 4)?.copy_from_slice(&served.to_le_bytes());
@@ -363,10 +368,10 @@ pub fn encode_cover_page(
 /// asker sends the last one it holds and the server continues past it, so
 /// neither side keeps a position (S13.3).
 pub fn cover_cursor(lane: u8, inv: &crate::transducer::stalk::Invariant) -> Vec<u8> {
+    // The lane, then the chart's own key: a cursor is a coordinate, so it
+    // is written the way every other chart coordinate is (law 2).
     let mut out = vec![lane];
-    for a in &inv.0 {
-        out.extend_from_slice(&a.to_le_bytes());
-    }
+    out.extend_from_slice(inv.key().as_bytes());
     out
 }
 

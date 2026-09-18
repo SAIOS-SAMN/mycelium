@@ -208,7 +208,7 @@ fn a_simplex_volume_is_the_open_listings_on_its_chart() {
 use crate::transducer::address::Address;
 use crate::transducer::stalk::{Closure, Invariant};
 let mut k = Kernel::new();
-let inv = Invariant(vec![7]);
+let inv = Invariant::counts(&[7]);
 let listed = Address::from(&b"listed"[..]);
 let flat = Address::from(&b"flat"[..]);
 let elsewhere = Address::from(&b"elsewhere"[..]);
@@ -217,10 +217,10 @@ let mag = crate::transducer::element::measure_lanes(&rem);
 assert!(mag.iter().any(|&x| x > 0));
 k.write_field(listed.as_bytes(), inv.clone(), Closure::Cavity, rem.clone(), &[0; 4], &mag);
 k.write_field(flat.as_bytes(), inv.clone(), Closure::Flat, Vec::new(), &[0; 4], &[0; 4]);
-k.write_field(elsewhere.as_bytes(), Invariant(vec![8]), Closure::Cavity, rem.clone(), &[0; 4], &mag);
+k.write_field(elsewhere.as_bytes(), Invariant::counts(&[8]), Closure::Cavity, rem.clone(), &[0; 4], &mag);
 assert_eq!(k.volume_of_simplex(&inv), mag, "the open listing on the chart is the simplex's volume");
 assert_eq!(k.listings_on(&inv).len(), 1, "the flat field and the other chart's field are not on it");
-assert_eq!(k.volume_of_simplex(&Invariant(vec![9])), [0; 4], "a chart with no open listing has no volume");
+assert_eq!(k.volume_of_simplex(&Invariant::counts(&[9])), [0; 4], "a chart with no open listing has no volume");
 }
 
 /// 45.7, S9.14, S13.3 — THE DOCKET IS AN ORBIT: a docket of more listings
@@ -449,8 +449,8 @@ fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
     let h = q.rotor();
     let w = h.conjugate(&gamma.rotor());
     assert!(!w.projective_eq(&h), "the gauge moves the operator");
-    let held = generator_form(&h, &Invariant(vec![3, 5]), &[]).expect("a rotor mints a generator");
-    let word = generator_form(&w, &Invariant(vec![3, 5]), &[]).expect("a rotor mints a generator");
+    let held = generator_form(&h, &Invariant::counts(&[3, 5]), &[]).expect("a rotor mints a generator");
+    let word = generator_form(&w, &Invariant::counts(&[3, 5]), &[]).expect("a rotor mints a generator");
     // The tape carries each letter's own action (L14, 37.7): the decoded
     // vertex is the rotor that was minted, and two letters are two
     // addresses (law 6 — a letter is named by its content).
@@ -504,7 +504,7 @@ fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
         f.vertices.push(Vertex::word_on(
             crate::transducer::address::Address::new(Vec::new()),
             Derivation::adjoined(h.clone()),
-            Invariant(vec![3, 5]),
+            Invariant::counts(&[3, 5]),
             Box::new(crate::transducer::element::identity_versor()),
             vec![(1, 2)],
             None,

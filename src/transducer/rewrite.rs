@@ -111,10 +111,10 @@ impl Rewrite {
                 out.extend_from_slice(&period.to_le_bytes());
             }
             RewritePayload::Refine { chart, axis } => {
-                crate::transducer::address::put_u8_count(&mut out, chart.0.len())?;
-                for a in &chart.0 {
-                    out.extend_from_slice(&a.to_le_bytes());
-                }
+                // The chart's own key (law 2), one encoding with the trie.
+                let key = chart.key();
+                crate::transducer::address::put_u8_count(&mut out, key.as_bytes().len())?;
+                out.extend_from_slice(key.as_bytes());
                 out.extend_from_slice(&axis.to_le_bytes());
             }
             RewritePayload::Reanchor { gamma } => {
@@ -205,13 +205,10 @@ impl Rewrite {
             RewriteKind::Refine => {
                 let nax = *b.get(pos)? as usize;
                 pos += 1;
-                let mut axes = Vec::with_capacity(nax);
-                for _ in 0..nax {
-                    axes.push(u64::from_le_bytes(b.get(pos..pos + 8)?.try_into().ok()?));
-                    pos += 8;
-                }
+                let chart = Invariant::from_key(b.get(pos..pos + nax)?)?;
+                pos += nax;
                 let axis = u64::from_le_bytes(b.get(pos..pos + 8)?.try_into().ok()?);
-                RewritePayload::Refine { chart: Invariant(axes), axis }
+                RewritePayload::Refine { chart, axis }
             }
             RewriteKind::Reanchor => {
                 let n = u16::from_le_bytes(b.get(pos..pos + 2)?.try_into().ok()?) as usize;

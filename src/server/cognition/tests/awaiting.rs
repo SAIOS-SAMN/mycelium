@@ -220,7 +220,7 @@ fn a_ruling_that_did_not_happen_rehears_nothing() {
 fn a_ruled_word_is_filed_at_the_chart_its_vertex_acts_on() {
     use crate::transducer::sentence::{on_axis_of, ClassVector};
     use crate::transducer::stalk::Invariant;
-    let chart = Invariant(vec![1, 7, 11]);
+    let chart = Invariant::counts(&[1, 7, 11]);
     let w = quarter(1);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));

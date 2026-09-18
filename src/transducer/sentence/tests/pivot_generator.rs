@@ -86,7 +86,7 @@ fn a_minted_generator_is_filed_and_answerable_on_its_own_coordinates() {
         admit_words_acting, from_element_form, generator_form, on_axis_of, AxisIndex,
     };
     use crate::transducer::stalk::Invariant;
-    let chart = Invariant(vec![1, 7, 4]);
+    let chart = Invariant::counts(&[1, 7, 4]);
     let rotor = order4().rotor();
     assert!(!rotor.is_identity(), "the rotor turns, or there is nothing to adjoin");
 
@@ -210,7 +210,7 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
     use crate::transducer::alphabet::Derivation;
     use crate::transducer::sentence::pivot::loops::{apply_by, unapply_by};
     use crate::transducer::stalk::Invariant;
-    let chart = Invariant(vec![3, 5]);
+    let chart = Invariant::counts(&[3, 5]);
     let pair = face_pair_key(&chart, &chart);
     let q = order4();
     let word_vertex = |b: u8| {
@@ -311,7 +311,7 @@ fn a_word_is_filed_under_the_carriage_and_the_gauge_it_acts_by() {
     use crate::transducer::alphabet::Derivation;
     use crate::transducer::sentence::{admit_words_acting, on_axis_of, retract_words_acting, AxisIndex};
     use crate::transducer::stalk::Invariant;
-    let acting = Invariant(vec![1, 7, 4]);
+    let acting = Invariant::counts(&[1, 7, 4]);
     let gauge = vec![(1u8, 2u8), (2, 1)];
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
@@ -392,7 +392,7 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
     use crate::transducer::sentence::{admit_words_acting, on_axis_of, retract_words_acting, AxisIndex};
     use crate::transducer::stalk::Invariant;
     let q = order4();
-    let acting = Invariant(vec![1, 7, 4]);
+    let acting = Invariant::counts(&[1, 7, 4]);
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
         crate::transducer::address::Address::from_bytes([4u8, 1]),
@@ -425,7 +425,7 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
     // AND THE CHART COARSENS. A loop standing on a finer stratum than the
     // word was filed at asks a narrower question; the read widens it one
     // axis at a time rather than answering nothing.
-    let finer = Invariant(vec![1, 7, 4, 9, 2]);
+    let finer = Invariant::counts(&[1, 7, 4, 9, 2]);
     for axis in &occupied {
         let got = on_axis_of(&ix, &finer, *axis);
         assert!(
@@ -482,7 +482,7 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
     use crate::transducer::alphabet::Derivation;
     use crate::transducer::sentence::{loop_row_on, opened_axis_on};
     use crate::transducer::stalk::Invariant;
-    let chart = Invariant(vec![3, 5]);
+    let chart = Invariant::counts(&[3, 5]);
     let pair = face_pair_key(&chart, &chart);
     let q = order4();
     let word_vertex = |b: u8| {
@@ -860,8 +860,8 @@ fn face_words_and_edge_transports_admit_bidirectionally_on_member_charts() {
     };
     use crate::transducer::stalk::Invariant;
 
-    let chart_a = Invariant(vec![1, 7, 4]);
-    let chart_b = Invariant(vec![1, 7, 5]);
+    let chart_a = Invariant::counts(&[1, 7, 4]);
+    let chart_b = Invariant::counts(&[1, 7, 5]);
     let q = order4();
 
     let mut f = Form::default();

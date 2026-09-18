@@ -39,7 +39,7 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
     };
     let rsig = [9u8; 64];
     let digests = vec![crate::transducer::sheaf::StratumDigest {
-        inv: Invariant(vec![4, 5]),
+        inv: Invariant::counts(&[4, 5]),
         count: 3,
         root: vec![7u8; 12],
     }];
@@ -110,18 +110,29 @@ fn a_cover_is_read_by_page_from_the_last_cursor_held() {
     // Out of cursor order on purpose: lane 2 before lane 0, and the wide
     // chart before the narrow one inside lane 0.
     let charts = vec![
-        (2u8, Invariant(vec![9])),
-        (0u8, Invariant(vec![2, 7, 7])),
-        (0u8, Invariant(vec![2, 3])),
+        (2u8, Invariant::counts(&[9])),
+        (0u8, Invariant::counts(&[2, 7, 7])),
+        (0u8, Invariant::counts(&[2, 3])),
     ];
     let ask = encode_cover_request(&vk, b"");
     assert_eq!(decode_cover_request(&ask), Some((vk, Vec::new())), "an ask round-trips");
     assert!(decode_cover_page(&ask).is_none(), "an ask is not a page");
 
     // Two rows of the three: the act byte, the vk, the bind's length and
-    // bytes, the count, then per row the lane byte, the axis count and the
-    // axes, then the `more` byte.
-    let two = 1 + 32 + 1 + "127.0.0.1:7500".len() + 4 + (2 + 8 * 2) + (2 + 8 * 3) + 1;
+    // bytes, the count, then per row the lane byte, the key's length byte
+    // and the chart's own key, then the `more` byte. A row is measured from
+    // `cover_cursor` — the cursor IS the lane and the key — rather than from
+    // a width formula, which went stale the moment a coordinate stopped
+    // being eight bytes (A21 as ruled 2026-09-18).
+    let row = |lane: u8, inv: &Invariant| cover_cursor(lane, inv).len() + 1;
+    let two = 1
+        + 32
+        + 1
+        + "127.0.0.1:7500".len()
+        + 4
+        + row(0, &Invariant::counts(&[2, 3]))
+        + row(0, &Invariant::counts(&[2, 7, 7]))
+        + 1;
     let page = encode_cover_page(&vk, "127.0.0.1:7500", &charts, b"", two).expect("a page");
     assert!(decode_cover_request(&page).is_none(), "a page is not an ask");
     let (first, more) = decode_cover_page(&page).expect("a page decodes");
@@ -129,7 +140,7 @@ fn a_cover_is_read_by_page_from_the_last_cursor_held() {
     assert_eq!(first.bind, "127.0.0.1:7500");
     assert_eq!(
         first.charts,
-        vec![(0u8, Invariant(vec![2, 3])), (0u8, Invariant(vec![2, 7, 7]))],
+        vec![(0u8, Invariant::counts(&[2, 3])), (0u8, Invariant::counts(&[2, 7, 7]))],
         "cursor order, not the caller's order"
     );
     assert!(more, "the third chart did not fit and the page says so");
@@ -139,17 +150,17 @@ fn a_cover_is_read_by_page_from_the_last_cursor_held() {
     let last = cover_cursor(end.0, &end.1);
     let rest = encode_cover_page(&vk, "127.0.0.1:7500", &charts, &last, 1 << 16).expect("a page");
     let (tail, more) = decode_cover_page(&rest).expect("a page decodes");
-    assert_eq!(tail.charts, vec![(2u8, Invariant(vec![9]))], "past the cursor, nothing repeated");
+    assert_eq!(tail.charts, vec![(2u8, Invariant::counts(&[9]))], "past the cursor, nothing repeated");
     assert!(!more, "the cover is served");
 
     // A chart wider than the axis count is passed over, not refused with
     // the page: a refusal would meet it at the head of every later ask.
-    let wide = vec![(0u8, Invariant(vec![1])), (1u8, Invariant(vec![4u64; 256]))];
+    let wide = vec![(0u8, Invariant::counts(&[1])), (1u8, Invariant::counts(&[4u64; 256]))];
     let (only, more) = encode_cover_page(&vk, "a", &wide, b"", 1 << 16)
         .as_deref()
         .and_then(decode_cover_page)
         .expect("a page");
-    assert_eq!(only.charts, vec![(0u8, Invariant(vec![1]))]);
+    assert_eq!(only.charts, vec![(0u8, Invariant::counts(&[1]))]);
     assert!(!more, "and the page is complete without it");
 }
 
@@ -165,7 +176,7 @@ fn a_prefix_that_does_not_fit_the_wire_is_refused_not_wrapped() {
     let mut chain = crate::chronometry::ReceiptChain::with_vk([6u8; 32]);
     chain.append(crate::chronometry::ActKind::List, [0; 4],b"an address", [0; 32], Vec::new()).expect("appends");
     let head = chain.receipts()[0].clone();
-    let prefix = |chart: Vec<u64>| crate::court::admission::SignedPrefix {
+    let prefix = |chart: Vec<u8>| crate::court::admission::SignedPrefix {
         genesis: [8; 32],
         epoch: 2,
         prev_receipt_hash: head.prev_receipt_hash,
@@ -174,7 +185,7 @@ fn a_prefix_that_does_not_fit_the_wire_is_refused_not_wrapped() {
         chart,
         payload: b"a root".to_vec(),
     };
-    let cover = prefix(vec![7u64; 10_855]);
+    let cover = prefix(vec![7u8; 86_840]);
     assert!(!cover.fits(), "a whole cover does not fit two bytes of length");
     assert!(
         encode_receipt_section(&cover, &[9u8; 64], &head).is_none(),

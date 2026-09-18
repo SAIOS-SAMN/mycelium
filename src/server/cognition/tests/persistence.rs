@@ -52,7 +52,7 @@ assert_eq!(booted.basis_len(), 2, "no re-germination");
 #[test]
 fn myc2_round_trips_cocycle_class_key() {
 let mut k = Kernel::new();
-let inv = crate::transducer::stalk::Invariant(vec![1]);
+let inv = crate::transducer::stalk::Invariant::counts(&[1]);
 let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
 let w = crate::transducer::alphabet::Word::from_letters(&[(q, false)]);
 let r = w.rotor();

@@ -369,7 +369,7 @@ pub fn versor_chart_of(
 ) -> Option<stalk::Invariant> {
     let mut axes = vec![0u64];
     axes.extend(r.class_axes()?);
-    Some(stalk::Invariant(axes))
+    Some(stalk::Invariant::connection(&axes))
 }
 
 /// THE CHART OF A CLASS ON ONE LANE (42.6 as amended, L12): the leading
@@ -404,7 +404,7 @@ pub fn lane_chart(
     }
     let mut axes = vec![LANE_TAG + lane as u64];
     axes.extend(occupied);
-    Some(stalk::Invariant(axes))
+    Some(stalk::Invariant::connection(&axes))
 }
 
 /// The leading value that keeps a lane chart disjoint from a versor chart

@@ -139,11 +139,11 @@ impl Stalks {
         let n = class_key.len().min(8);
         b[..n].copy_from_slice(&class_key[..n]);
         let coordinate = u64::from_le_bytes(b);
-        Self::refine_axes(inv, &[coordinate])
+        Self::refine_axes(inv, &[ChartAxis::ConnectionClass(coordinate)])
     }
 
     /// Append exact axes (A7). Never a hash fragment.
-    pub fn refine_axes(inv: &Invariant, axes: &[u64]) -> Invariant {
+    pub fn refine_axes(inv: &Invariant, axes: &[ChartAxis]) -> Invariant {
         let mut out = inv.0.clone();
         out.extend_from_slice(axes);
         Invariant(out)
@@ -151,7 +151,7 @@ impl Stalks {
 
     /// Re-admit members of `inv` under the refined chart, splitting the
     /// stratum by the new axes. Prefix only: other charts are untouched.
-    pub fn split_stratum(&mut self, inv: &Invariant, mut coordinate_of: impl FnMut(&[u8]) -> Vec<u64>) {
+    pub fn split_stratum(&mut self, inv: &Invariant, mut coordinate_of: impl FnMut(&[u8]) -> Vec<ChartAxis>) {
         let members = self.fiber(inv);
         for addr in members {
             let next = Self::refine_axes(inv, &coordinate_of(&addr));

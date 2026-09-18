@@ -67,7 +67,7 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
         // that has adopted no origin, or holds no receipt yet, has
         // no position to sign from and offers nothing.
         // The prefix's chart is the offered word's (47.1), never the cover.
-        let Some(section) = crate::admission::sign_position(kernel, mesh, &inv.0, oaddr.as_bytes())
+        let Some(section) = crate::admission::sign_position(kernel, mesh, &inv, oaddr.as_bytes())
         else {
             continue;
         };

@@ -293,7 +293,7 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
 fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
     use crate::transducer::alphabet::{Derivation, LetterId, Order, Word};
     use crate::transducer::sentence::{face_pair_key, FacePlace, Form, FormFace, Transport, Vertex};
-    let chart = crate::transducer::stalk::Invariant(vec![3, 5]);
+    let chart = crate::transducer::stalk::Invariant::counts(&[3, 5]);
     let pair = face_pair_key(&chart, &chart);
     let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("plane"), false)]);
     let mut f = Form::default();
@@ -391,7 +391,7 @@ fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
     let mut demanding = filed;
     demanding.vertices.push(crate::transducer::family::demand_vertex(
         crate::transducer::sentence::Demand::Source { multiplicity: 1 },
-        &crate::transducer::stalk::Invariant(vec![3, 5]),
+        &crate::transducer::stalk::Invariant::counts(&[3, 5]),
         vec![(0, 0, 0, 1)],
     ));
     demanding.reindex();

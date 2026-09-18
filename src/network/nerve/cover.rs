@@ -5,19 +5,15 @@
 //! is its bond against its occupancy. `home` refuses when none dominates.
 
 use super::*;
+use crate::transducer::stalk::ChartAxis;
 
-/// An invariant axis as a Keyed key: the coordinate little-endian, so a
-/// prefix of axes is a prefix of the plane.
-pub fn axis_key_le(a: u64) -> [u8; 8] {
-    a.to_le_bytes()
-}
-
-fn axis_of_le(key: &[u8]) -> u64 {
-    let mut b = [0u8; 8];
-    let n = key.len().min(8);
-    b[..n].copy_from_slice(&key[..n]);
-    u64::from_le_bytes(b)
-}
+// `axis_key_le` and `axis_of_le` stood here and are DELETED. They wrote a
+// chart axis as eight little-endian bytes, which is one `u64` limb and not
+// one coordinate: a trie branching on them cut a rational between its
+// numerator and its denominator, and the branch a walk read back was half a
+// value. The coordinate's own kind-tagged, length-prefixed bytes are
+// `ChartAxis::key_bytes`, which is the one construction the chart key, this
+// cover's trie and the stalk's stratum all branch on (law 12).
 
 /// Cover trie: per lane, nested Keyed by invariant axes. The fiber at a
 /// node is the hyphas covering that plane (this prefix and every finer
@@ -63,13 +59,13 @@ impl CoverNode {
         self.here.is_empty() && self.next.is_empty()
     }
 
-    fn admit(&mut self, axes: &[u64], hypha: &[u8]) {
+    fn admit(&mut self, axes: &[ChartAxis], hypha: &[u8]) {
         match axes.split_first() {
             None => {
                 self.here.insert(hypha, ());
             }
-            Some((&a, rest)) => {
-                let k = axis_key_le(a);
+            Some((a, rest)) => {
+                let k = a.key_bytes();
                 match self.next.get_mut(&k) {
                     Some(ch) => ch.admit(rest, hypha),
                     None => {
@@ -104,10 +100,10 @@ impl CoverNode {
     /// Longest common prefix: descend while axes match. A miss after some
     /// match returns the fiber at that plane. A miss at the first axis is
     /// novel — empty. The empty chart (no axes) is the root fiber.
-    fn lcp(&self, axes: &[u64], matched: bool) -> Vec<Vec<u8>> {
+    fn lcp(&self, axes: &[ChartAxis], matched: bool) -> Vec<Vec<u8>> {
         match axes.split_first() {
             None => self.collect(),
-            Some((&a, rest)) => match self.next.get(&axis_key_le(a)) {
+            Some((a, rest)) => match self.next.get(&a.key_bytes()) {
                 Some(child) => child.lcp(rest, true),
                 None if matched => self.collect(),
                 None => Vec::new(),
@@ -116,13 +112,13 @@ impl CoverNode {
     }
 
     /// Retract one hypha along one chart path (the hypha's own axes).
-    fn retract_path(&mut self, axes: &[u64], hypha: &[u8]) {
+    fn retract_path(&mut self, axes: &[ChartAxis], hypha: &[u8]) {
         match axes.split_first() {
             None => {
                 self.here.remove(hypha);
             }
-            Some((&a, rest)) => {
-                let k = axis_key_le(a);
+            Some((a, rest)) => {
+                let k = a.key_bytes();
                 let empty = {
                     let Some(ch) = self.next.get_mut(&k) else { return };
                     ch.retract_path(rest, hypha);
@@ -135,10 +131,10 @@ impl CoverNode {
         }
     }
 
-    fn hash_charts(&self, hasher: &mut blake3::Hasher, path: &mut Vec<u64>) {
+    fn hash_charts(&self, hasher: &mut blake3::Hasher, path: &mut Vec<ChartAxis>) {
         if !self.here.is_empty() {
             for a in path.iter() {
-                hasher.update(&a.to_le_bytes());
+                hasher.update(&a.key_bytes());
             }
             hasher.update(&[0xff]);
         }
@@ -146,18 +142,20 @@ impl CoverNode {
         // charts. `next` is this node's own children (scoped by the axis
         // path above), and every one of them is in the hash by definition.
         for (k, ch) in self.next.scoped() {
-            path.push(axis_of_le(k.as_slice()));
+            let Some(a) = ChartAxis::from_key_bytes(k.as_slice()) else { continue };
+            path.push(a);
             ch.hash_charts(hasher, path);
             path.pop();
         }
     }
 
-    fn walk(&self, path: &mut Vec<u64>, out: &mut Vec<crate::transducer::stalk::Invariant>) {
+    fn walk(&self, path: &mut Vec<ChartAxis>, out: &mut Vec<crate::transducer::stalk::Invariant>) {
         if !self.here.is_empty() {
             out.push(crate::transducer::stalk::Invariant(path.clone()));
         }
         for (k, ch) in self.next.scoped() {
-            path.push(axis_of_le(k.as_slice()));
+            let Some(a) = ChartAxis::from_key_bytes(k.as_slice()) else { continue };
+            path.push(a);
             ch.walk(path, out);
             path.pop();
         }

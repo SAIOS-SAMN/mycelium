@@ -434,8 +434,8 @@ mod tests {
             f.reindex();
             f
         };
-        let a = build(vec![(1, 2)], Invariant(vec![3, 5]));
-        let again = build(vec![(1, 2)], Invariant(vec![3, 5]));
+        let a = build(vec![(1, 2)], Invariant::counts(&[3, 5]));
+        let again = build(vec![(1, 2)], Invariant::counts(&[3, 5]));
         assert_eq!(
             form_vertex_key(&a),
             form_vertex_key(&again),
@@ -444,13 +444,13 @@ mod tests {
         assert_eq!(form_vertex_key(&a).tag(), Some(TAG_FORM));
         // One coordinate moved at a time, each of which 17.2 says the address
         // writes: the member's gauge, then the member's chart.
-        let other_gauge = build(vec![(1, 3)], Invariant(vec![3, 5]));
+        let other_gauge = build(vec![(1, 3)], Invariant::counts(&[3, 5]));
         assert_ne!(
             form_vertex_key(&a),
             form_vertex_key(&other_gauge),
             "two forms whose vertex recolours differently are two addresses"
         );
-        let other_chart = build(vec![(1, 2)], Invariant(vec![7]));
+        let other_chart = build(vec![(1, 2)], Invariant::counts(&[7]));
         assert_ne!(
             form_vertex_key(&a),
             form_vertex_key(&other_chart),
@@ -469,9 +469,9 @@ mod tests {
         keys.push(a.address());
         keys.push(b.address());
         keys.push(listing_key(a.sub(), &IDENTITY_FRAME).expect("a held word's chain is A5's"));
-        keys.push(Invariant(vec![1, 2]).key());
-        keys.push(Invariant(vec![1, 3]).key());
-        keys.push(Invariant(vec![2]).key());
+        keys.push(Invariant::counts(&[1, 2]).key());
+        keys.push(Invariant::counts(&[1, 3]).key());
+        keys.push(Invariant::counts(&[2]).key());
         for (i, x) in keys.iter().enumerate() {
             for (j, y) in keys.iter().enumerate() {
                 if i == j {

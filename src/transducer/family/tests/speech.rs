@@ -56,7 +56,7 @@ let mut f = one_pair_form(&x, &y);
 // chart is the key the member is filed under: the vertex keeps its address,
 // its derivation, its carriage and its gauge, and acts on a chart no body
 // in the scene carries.
-let far = Invariant(vec![0xEEEE_EEEE_EEEE_EEEE]);
+let far = Invariant::counts(&[0xEEEE_EEEE_EEEE_EEEE]);
 for v in &mut f.vertices {
     let moved = match &*v {
         Vertex::Word { address, derivation, acts, contact } => {

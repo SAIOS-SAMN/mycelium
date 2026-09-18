@@ -90,7 +90,7 @@ fn a_chart_the_mind_holds_no_body_on_answers_nothing() {
     let mut epi = Epigenome::new();
     epi.stand_dialect_at(e, 1, 1).expect("stood");
     let mut other = chart.0.clone();
-    other.push(u64::MAX);
+    other.push(crate::transducer::stalk::ChartAxis::Count(u64::MAX));
     let elsewhere = crate::transducer::stalk::Invariant(other);
     assert!(
         Crystal::on_body(&epi, &elsewhere).is_empty(),

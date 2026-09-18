@@ -23,7 +23,7 @@ pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form 
     f.vertices.push(Vertex::word_on(
         crate::transducer::address::Address::new(Vec::new()),
         alphabet::Derivation::spelled(word.clone()),
-        stalk::Invariant(vec![3, 5]),
+        stalk::Invariant::counts(&[3, 5]),
         Box::new(element::carriage(&q1(), &(q0(), q1()))),
         vec![(1, 2)],
         contact,

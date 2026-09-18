@@ -159,7 +159,7 @@ fn a_form_speaking_two_rotors_carries_two_sections_and_no_single_rotor() {
         f.vertices.push(Vertex::word_on(
             crate::transducer::address::Address::from_bytes([4u8, i as u8]),
             Derivation::spelled(Word::from_letters(&[(id, false)])),
-            Invariant(vec![3, 5]),
+            Invariant::counts(&[3, 5]),
             Box::new(element::identity_versor()),
             Vec::new(),
             None,
@@ -198,7 +198,7 @@ fn two_vertices_whose_carriages_differ_by_sign_hold_one_section() {
         f.vertices.push(Vertex::word_on(
             crate::transducer::address::Address::from_bytes([4u8, i as u8]),
             Derivation::spelled(Word::from_letters(&[(q01, false)])),
-            Invariant(vec![3, 5]),
+            Invariant::counts(&[3, 5]),
             Box::new(car),
             Vec::new(),
             None,
@@ -240,7 +240,7 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
         f.vertices.push(Vertex::word_on(
             crate::transducer::address::Address::from_bytes([4u8, i as u8]),
             Derivation::spelled(w),
-            Invariant(vec![3, 5]),
+            Invariant::counts(&[3, 5]),
             Box::new(element::identity_versor()),
             Vec::new(),
             None,
@@ -283,10 +283,10 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     // charts. The collapse is read at the candidate's own key, so the
     // bubble is found whatever it covers and whatever class the loop was
     // left in.
-    let word = crate::transducer::sentence::generator_form(&a.rotor(), &Invariant(vec![3, 5]), &[])
+    let word = crate::transducer::sentence::generator_form(&a.rotor(), &Invariant::counts(&[3, 5]), &[])
         .expect("a rotor mints a generator");
     let mut cover = crate::network::nerve::Keyed::new();
-    cover.insert(Invariant(vec![1, 3, 5]).key(), ());
+    cover.insert(Invariant::counts(&[1, 3, 5]).key(), ());
     let key = crate::transducer::bubble::idea::idea_key(&f);
     let bubble = Bubble { form: Some(f), vortex, cover, ..Default::default() };
     let mut c = Contemplation::new();
@@ -345,8 +345,8 @@ fn an_idea_meets_its_own_charts_and_not_their_siblings() {
     use crate::transducer::family::NoCrystal;
     use crate::transducer::sentence::{Form, Vertex};
     use crate::transducer::stalk::{Invariant, Stalks};
-    let mine = Invariant(vec![3, 5]);
-    let sibling = Invariant(vec![3, 7]);
+    let mine = Invariant::counts(&[3, 5]);
+    let sibling = Invariant::counts(&[3, 7]);
     let q = LetterId::quarter((0, 1)).expect("the sensor plane");
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
@@ -404,7 +404,7 @@ fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
     form.vertices.push(Vertex::word_on(
         crate::transducer::address::Address::from_bytes([4u8, 9]),
         Derivation::spelled(Word::from_letters(&[(q, false)])),
-        crate::transducer::stalk::Invariant(vec![3, 5]),
+        crate::transducer::stalk::Invariant::counts(&[3, 5]),
         Box::new(element::identity_versor()),
         Vec::new(),
         None,
@@ -446,7 +446,7 @@ fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
     other.vertices.push(Vertex::word_on(
         crate::transducer::address::Address::from_bytes([4u8, 77]),
         Derivation::spelled(Word::from_letters(&[(q, false)])),
-        crate::transducer::stalk::Invariant(vec![9, 9]),
+        crate::transducer::stalk::Invariant::counts(&[9, 9]),
         Box::new(element::identity_versor()),
         Vec::new(),
         None,
@@ -486,7 +486,7 @@ fn a_bubble_rekeyed_by_a_mutation_keeps_its_inception() {
         f.vertices.push(Vertex::word_on(
             crate::transducer::address::Address::from_bytes([4u8, 1]),
             Derivation::spelled(Word::from_letters(&[(q, false)])),
-            crate::transducer::stalk::Invariant(chart),
+            crate::transducer::stalk::Invariant::counts(&chart),
             Box::new(element::identity_versor()),
             Vec::new(),
             None,

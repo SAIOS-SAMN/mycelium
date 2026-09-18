@@ -16,7 +16,7 @@ use crate::cognition::*;
 #[test]
 fn cocycle_supersedes_by_causal_order_and_keeps_concurrent() {
 use crate::transducer::alphabet::{LetterId, Word};
-let inv = crate::transducer::stalk::Invariant(vec![1]);
+let inv = crate::transducer::stalk::Invariant::counts(&[1]);
 // Two words on the sensor plane: one quarter turn and two. Both keep
 // the plane closed, so both lift to versors, and they are not the same
 // projective element.

@@ -33,8 +33,16 @@ pub struct SignedPrefix {
     pub prev_receipt_hash: [u8; 32],
     pub k: u64,
     pub height: u64,
-    /// The chart's axes, written out. Never a fingerprint of the chart.
-    pub chart: Vec<u64>,
+    /// THE CHART'S AXES, WRITTEN OUT — its own key (law 2): each coordinate
+    /// kind-tagged and length-prefixed, so the chart is recovered from the
+    /// signed bytes and a prefix of them is a coarser stratum. Never a
+    /// fingerprint of the chart.
+    ///
+    /// These were `u64` limbs, which is what an axis was before a
+    /// coordinate became whole (A21 as ruled 2026-09-18): a rational
+    /// crossed two of them and a signer could not write one without
+    /// splitting it.
+    pub chart: Vec<u8>,
     /// The payload's ADDRESS bytes (A21), written out and decodable.
     pub payload: Vec<u8>,
 }
@@ -51,20 +59,18 @@ impl SignedPrefix {
         let max = u16::MAX as usize;
         self.chart.len() <= max
             && self.payload.len() <= max
-            && 84 + 2 + 8 * self.chart.len() + 2 + self.payload.len() <= max
+            && 84 + 2 + self.chart.len() + 2 + self.payload.len() <= max
     }
 
     pub fn bytes(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(84 + self.chart.len() * 8 + self.payload.len());
+        let mut out = Vec::with_capacity(84 + self.chart.len() + self.payload.len());
         out.extend_from_slice(&self.genesis);
         out.extend_from_slice(&self.epoch.to_le_bytes());
         out.extend_from_slice(&self.prev_receipt_hash);
         out.extend_from_slice(&self.k.to_le_bytes());
         out.extend_from_slice(&self.height.to_le_bytes());
         out.extend_from_slice(&(self.chart.len() as u16).to_le_bytes());
-        for a in &self.chart {
-            out.extend_from_slice(&a.to_le_bytes());
-        }
+        out.extend_from_slice(&self.chart);
         out.extend_from_slice(&(self.payload.len() as u16).to_le_bytes());
         out.extend_from_slice(&self.payload);
         out
@@ -85,10 +91,7 @@ impl SignedPrefix {
         let k = u64::from_le_bytes(take(8)?.try_into().ok()?);
         let height = u64::from_le_bytes(take(8)?.try_into().ok()?);
         let n = u16::from_le_bytes(take(2)?.try_into().ok()?) as usize;
-        let mut chart = Vec::with_capacity(n);
-        for _ in 0..n {
-            chart.push(u64::from_le_bytes(take(8)?.try_into().ok()?));
-        }
+        let chart = take(n)?.to_vec();
         let m = u16::from_le_bytes(take(2)?.try_into().ok()?) as usize;
         let payload = take(m)?.to_vec();
         if p != b.len() {

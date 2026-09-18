@@ -6,7 +6,7 @@ use crate::network::nerve::*;
 use crate::transducer::stalk::Invariant;
 
 fn inv(axes: &[u64]) -> Invariant {
-    Invariant(axes.to_vec())
+    Invariant::counts(axes)
 }
 
 #[test]
