@@ -361,6 +361,29 @@ fn main() {
                 "[{tag}] stroke outcome fed {:?} pivoted {:?} stood {:?} uttered {:?} closed {:?} learned {:?}",
                 outcome.fed, outcome.pivoted, outcome.stood, outcome.uttered, outcome.closed, outcome.learned
             );
+            // WHAT THE COVERS' LOOPS CLASSIFIED AS, read from the counter
+            // the engine already keeps. `tally_loop` records every `Fill`
+            // at `extract.rs` on the live path, and only `mycelium-soak`
+            // ever read it: the fleet counted these at every stroke and
+            // dropped them, so the only way to ask a running voice what it
+            // filed was to grep its prose for a word — and the Congruent
+            // arm prints "simplex filled", so that grep answered zero
+            // while the counter held the number.
+            let cover = mycelium::transducer::family::cover::take_cover_tally();
+            eprintln!(
+                "[{tag}] stroke covers meets {} edges {} carried {} | loops flat {} filed {} standing {} unspellable {} | refused {} propagated {} spend {} pending {}",
+                cover.meets,
+                cover.edges,
+                cover.carried,
+                cover.flat,
+                cover.filed,
+                cover.standing,
+                cover.unspellable,
+                cover.refused,
+                cover.propagated,
+                cover.spend,
+                cover.pending
+            );
             last_logged_k = k_step;
             last_logged_n = stroke_n;
         }
