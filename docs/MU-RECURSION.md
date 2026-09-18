@@ -4567,7 +4567,16 @@ it rides with a stored cycle.
 An idea's vortex is the set of candidate transports over one demand.
 The transition between two candidates is their quotient in $\text{Spin}(4,0)(\mathbb{Q})$.
 Two candidates are one section when the transition is projectively the identity (1.5) or conjugate under 15.3.
-A candidate's monodromy over the frames the family measured is the product of its conjugates by the edge transports P5 already carries, and a candidate dies on a measured monodromy that is not the identity, never on an unmeasured one (rule 11) and never on age (`last_used_k`).
+
+A candidate's monodromy over the frames the family measured is the product of its conjugates by the edge transports P5 already carries: $M^c = \prod (\gamma^c)^{-1} V \gamma^c$.
+The ambient gauge connection $\gamma^c$ lives on the carried charts of the family bundle that occupy $\ge 2$ frames, never on the deformation demand's own chart (a demand is a singularity where moduli changed, so its chart does not persist across frames by construction).
+The monodromy is evaluated over the bundle's connection-bearing charts using exact algebraic order (`Rotor::order()`):
+- $\text{Order::Finite}(1)$: Flat. $V$ commutes with the ambient connection $\gamma^c$ and stands on chart $c$.
+- $\text{Order::Finite}(\ell \ge 2)$: Torsion. Fiber twisted by $\ell$, closing after $\ell$ circuits. Filed into `Bubble.torsion` (and `Form.torsion`) under $M^c$'s class key with period $\ell$ and `chord = 0` (bundle connection loop). $V$ stands on chart $c$.
+- $\text{Order::Infinite}$: Rupture. Fails to close on chart $c$. Chart $c$ leaves $V$'s sub-cover.
+
+A candidate stands on the sub-cover of connection charts where its order is finite. It dissolves from `Bubble.candidates` if and only if its sub-cover is empty (ruptured to `Infinite` on every measured connection chart in the bundle). A bubble with no measured connection charts in its bundle leaves every candidate standing (rule 11: nothing dies on an unmeasured monodromy).
+When every candidate over a demand dissolves, the residue is prime relative to the alphabet (§37.7) and enters court docketing as witness N4.
 `link_new` keeps the transition it computes; cohesion is flatness of those transitions, and the volume sums leave.
 In the Hopf fibration reading, A22's two quaternion factors are the two fibrations: base the class, fiber the gauge.
 
@@ -8738,6 +8747,8 @@ operator reads with the rest:**
    recursion are contained by circuit loop-back (`Orbit::period`),
    projective ray singularity condensation ($\nabla(V) \cup -\nabla(V)$
    congruence via $V \sim -V$), and stratum depth bounds.
+8. **The ambient connection of a deformation lives on the family bundle, not the defect chart** (ruled
+   2026-09-18): a demand is a topological singularity where moduli change, so its chart does not persist across frames by construction. Monodromy of candidate $V$ is evaluated against the family bundle's carried charts: $M^c = \prod (\gamma^c)^{-1} V \gamma^c$. Order is evaluated via `Rotor::order()` (`Finite(1)` flat, `Finite(\ell \ge 2)` filed as torsion, `Infinite` rupture). A candidate stands on its surviving sub-cover and dissolves only when every measured connection ruptures to `Infinite`.
 
 ### 52.6 Binding
 
