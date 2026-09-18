@@ -8725,6 +8725,19 @@ operator reads with the rest:**
    with the placement the vertex no longer has is refused as a face that
    does not re-derive (23.1 step 4). An edge face claims the frames its
    edge re-derives on and no other.
+6. **Succession along $e₃$ is a non-linear coordinate move** (ruled
+   2026-09-18): traversal across frames is not a linear $k \to k+1$ scan,
+   but a keyed read of the body's occupied sections ($k \to k + \{\text{next
+   coordinate}\}$), which may skip, repeat or reorder in ℤ. The connection
+   $\gamma_{ij}$ between successive occupied frames carries the full
+   multi-axial `Carriage { v, sigma }` (spatial versor and gauge
+   permutation).
+7. **Lanes are multi-axial coordinate spaces, never scalar counts** (ruled
+   2026-09-18): no scalars on lanes. $\{S, G, T, H\}$ is a 4-dimensional
+   rotor coordinate space (`lane_charts_of`). Expansion velocity and
+   recursion are contained by circuit loop-back (`Orbit::period`),
+   projective ray singularity condensation ($\nabla(V) \cup -\nabla(V)$
+   congruence via $V \sim -V$), and stratum depth bounds.
 
 ### 52.6 Binding
 
