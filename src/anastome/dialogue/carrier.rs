@@ -73,14 +73,13 @@ pub(crate) fn push_invariant(
     // shared with the trie and the tape rather than an axis loop per codec.
     let key = inv.key();
     let bytes = key.as_bytes();
-    crate::transducer::address::put_u8_count(out, bytes.len())?;
+    crate::transducer::address::put_u16_count(out, bytes.len())?;
     out.extend_from_slice(bytes);
     Some(())
 }
 
 pub(crate) fn read_invariant(b: &[u8], p: &mut usize) -> Option<crate::transducer::stalk::Invariant> {
-    let len = *b.get(*p)? as usize;
-    *p += 1;
+    let len = crate::transducer::address::take_u16_count(b, p)?;
     let bytes = b.get(*p..*p + len)?;
     *p += len;
     crate::transducer::stalk::Invariant::from_key(bytes)

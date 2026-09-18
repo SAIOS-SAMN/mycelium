@@ -287,6 +287,24 @@ pub fn put_u8_bytes(out: &mut Vec<u8>, b: &[u8]) -> Option<()> {
     Some(())
 }
 
+/// A COUNT BEHIND TWO BYTES, for a carrier whose width is the data's and
+/// not a fixed size: a chart key is as wide as the body's own moduli (A21),
+/// and one byte caps it at 255. Measured under `ChartAxis`: a `Count` is 11
+/// bytes and a single-limb `Ratio` 28, so a body's chart — four counts,
+/// five conformal ratios and one ratio per hue — passes 255 at four hues.
+/// Refuses rather than truncates, as the one-byte form does.
+pub fn put_u16_count(out: &mut Vec<u8>, n: usize) -> Option<()> {
+    out.extend_from_slice(&u16::try_from(n).ok()?.to_le_bytes());
+    Some(())
+}
+
+/// The same count read back. `None` where the two bytes are not there.
+pub fn take_u16_count(b: &[u8], p: &mut usize) -> Option<usize> {
+    let n = u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?) as usize;
+    *p += 2;
+    Some(n)
+}
+
 pub fn put_bytes(out: &mut Vec<u8>, b: &[u8]) {
     out.extend_from_slice(&(b.len() as u32).to_le_bytes());
     out.extend_from_slice(b);

@@ -113,7 +113,7 @@ impl Rewrite {
             RewritePayload::Refine { chart, axis } => {
                 // The chart's own key (law 2), one encoding with the trie.
                 let key = chart.key();
-                crate::transducer::address::put_u8_count(&mut out, key.as_bytes().len())?;
+                crate::transducer::address::put_u16_count(&mut out, key.as_bytes().len())?;
                 out.extend_from_slice(key.as_bytes());
                 out.extend_from_slice(&axis.to_le_bytes());
             }
@@ -203,8 +203,7 @@ impl Rewrite {
                 RewritePayload::Torse { sigma, period }
             }
             RewriteKind::Refine => {
-                let nax = *b.get(pos)? as usize;
-                pos += 1;
+                let nax = crate::transducer::address::take_u16_count(b, &mut pos)?;
                 let chart = Invariant::from_key(b.get(pos..pos + nax)?)?;
                 pos += nax;
                 let axis = u64::from_le_bytes(b.get(pos..pos + 8)?.try_into().ok()?);

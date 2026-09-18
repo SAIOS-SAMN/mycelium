@@ -226,9 +226,17 @@ pub(crate) fn cover_digest_at(body: &[u8], at: usize) -> Option<(CoverDigest, us
 /// `judge` sends, so the two cannot be told apart by looking at the head.
 pub(crate) fn digests_reply_end(body: &[u8]) -> Option<usize> {
     let digests = decode_digests_reply(body)?;
+    // THE WIDTH IS THE WRITER'S, not a literal restated here. `1 +` was
+    // the chart key's one length byte; the field is two (A21), and a width
+    // computed a second time is a width that can disagree with the one the
+    // writer used — which it did: the end moved, `whole_cover_digest` found
+    // a second parse that consumed the buffer, and the frame decoded as
+    // ambiguous and refused (law 12).
     let mut p = 4usize;
     for d in &digests {
-        p += 1 + d.inv.key().as_bytes().len() + 4 + 4 + d.root.len();
+        let mut one = Vec::new();
+        push_invariant(&mut one, &d.inv)?;
+        p += one.len() + 4 + 4 + d.root.len();
     }
     (p < body.len()).then_some(p)
 }
@@ -341,21 +349,26 @@ pub fn encode_cover_page(
         // served. The field is not widened either (I33) -- the door names
         // the width off its own charts.
         //
-        // The width is the KEY'S, in bytes. It was `axes.len() / 8`, a
-        // count of `u64` limbs, which stopped being a count of coordinates
-        // when a coordinate became whole (A21 as ruled 2026-09-18) and
-        // passed over every chart rather than serving it.
-        if chart.len() > u8::MAX as usize {
+        // The width is the KEY'S, in bytes, behind TWO of them. It was
+        // `axes.len() / 8`, a count of `u64` limbs, which stopped being a
+        // count of coordinates when a coordinate became whole (A21 as ruled
+        // 2026-09-18); then it was one length byte, which caps a chart at
+        // 255 and SILENTLY passed over every wider one -- a body's chart
+        // passes 255 at four hues, so four-hue bodies left the cover with
+        // no refusal anywhere. `u16::try_from` inside `put_u16_count`
+        // refuses rather than truncates.
+        if u16::try_from(chart.len()).is_err() {
             continue;
         }
         // One chart's width on the wire, exact: the lane byte, the key's
-        // length byte, and the key -- which is what `read_invariant` reads.
-        if out.len() + 2 + chart.len() + 1 > budget {
+        // two length bytes, and the key -- which is what `read_invariant`
+        // reads.
+        if out.len() + 3 + chart.len() + 1 > budget {
             more = true;
             break;
         }
         out.push(*lane);
-        out.push(chart.len() as u8);
+        crate::transducer::address::put_u16_count(&mut out, chart.len())?;
         out.extend_from_slice(chart);
         served = served.checked_add(1)?;
     }

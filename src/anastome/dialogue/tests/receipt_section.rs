@@ -119,12 +119,12 @@ fn a_cover_is_read_by_page_from_the_last_cursor_held() {
     assert!(decode_cover_page(&ask).is_none(), "an ask is not a page");
 
     // Two rows of the three: the act byte, the vk, the bind's length and
-    // bytes, the count, then per row the lane byte, the key's length byte
-    // and the chart's own key, then the `more` byte. A row is measured from
+    // bytes, the count, then per row the lane byte, the key's TWO length
+    // bytes and the chart's own key, then the `more` byte. A row is measured from
     // `cover_cursor` — the cursor IS the lane and the key — rather than from
     // a width formula, which went stale the moment a coordinate stopped
     // being eight bytes (A21 as ruled 2026-09-18).
-    let row = |lane: u8, inv: &Invariant| cover_cursor(lane, inv).len() + 1;
+    let row = |lane: u8, inv: &Invariant| cover_cursor(lane, inv).len() + 2;
     let two = 1
         + 32
         + 1
@@ -153,14 +153,24 @@ fn a_cover_is_read_by_page_from_the_last_cursor_held() {
     assert_eq!(tail.charts, vec![(2u8, Invariant::counts(&[9]))], "past the cursor, nothing repeated");
     assert!(!more, "the cover is served");
 
-    // A chart wider than the axis count is passed over, not refused with
-    // the page: a refusal would meet it at the head of every later ask.
-    let wide = vec![(0u8, Invariant::counts(&[1])), (1u8, Invariant::counts(&[4u64; 256]))];
-    let (only, more) = encode_cover_page(&vk, "a", &wide, b"", 1 << 16)
+    // A chart wider than the row's LENGTH FIELD is passed over, not
+    // refused with the page: a refusal would meet it at the head of every
+    // later ask. The field is two bytes (A21), so the width that is passed
+    // over is past 65535 and not past 255 — a 256-coordinate chart, which
+    // the one-byte field dropped, is served.
+    let served = vec![(0u8, Invariant::counts(&[1])), (1u8, Invariant::counts(&[4u64; 256]))];
+    let (both, more) = encode_cover_page(&vk, "a", &served, b"", 1 << 16)
         .as_deref()
         .and_then(decode_cover_page)
         .expect("a page");
-    assert_eq!(only.charts, vec![(0u8, Invariant::counts(&[1]))]);
+    assert_eq!(both.charts.len(), 2, "a 256-coordinate chart is served, not dropped");
+    assert!(!more, "and the page is complete");
+    let over = vec![(0u8, Invariant::counts(&[1])), (1u8, Invariant::counts(&[4u64; 6000]))];
+    let (only, more) = encode_cover_page(&vk, "a", &over, b"", 1 << 20)
+        .as_deref()
+        .and_then(decode_cover_page)
+        .expect("a page");
+    assert_eq!(only.charts, vec![(0u8, Invariant::counts(&[1]))], "past the field, passed over");
     assert!(!more, "and the page is complete without it");
 }
 
@@ -197,4 +207,36 @@ fn a_prefix_that_does_not_fit_the_wire_is_refused_not_wrapped() {
     let back = decode_receipt_section(&framed, 0).expect("and reads back whole");
     assert_eq!(back.prefix, one);
     assert_eq!(receipt_section_end(&framed, 0), Some(framed.len()));
+}
+
+/// A21 — A CHART IS AS WIDE AS THE BODY'S OWN MODULI, and the cover serves
+/// it. The row's length field was ONE byte, so a chart key past 255 was
+/// passed over with no refusal anywhere: `encode_cover_page` skipped it and
+/// the asker resumed past it, so the body simply never appeared on any
+/// peer's cover. Measured under `ChartAxis`: a `Count` is 11 bytes and a
+/// single-limb `Ratio` 28, so a body's chart — four counts, five conformal
+/// ratios, one ratio per hue — passes 255 at four hues.
+#[test]
+fn a_chart_wider_than_one_length_byte_is_served_not_dropped() {
+    use crate::transducer::stalk::{ChartAxis, Invariant};
+    use num_bigint::BigInt;
+    use num_rational::BigRational;
+    let vk = [4u8; 32];
+    // Four counts and nine ratios: past 255 bytes, which one length byte
+    // cannot name.
+    let mut axes: Vec<ChartAxis> = [1u64, 0, 0, 4].into_iter().map(ChartAxis::Count).collect();
+    for n in 1..=9i64 {
+        axes.push(ChartAxis::Ratio(BigRational::new(BigInt::from(n), BigInt::from(7))));
+    }
+    let wide = Invariant(axes);
+    assert!(
+        wide.key().as_bytes().len() > u8::MAX as usize,
+        "the fixture is past one byte of length: {} bytes",
+        wide.key().as_bytes().len()
+    );
+    let charts = vec![(0u8, wide.clone())];
+    let page = encode_cover_page(&vk, "127.0.0.1:7500", &charts, b"", 1 << 16).expect("a page");
+    let (read, more) = decode_cover_page(&page).expect("a page decodes");
+    assert_eq!(read.charts, charts, "the wide chart is served whole and reads back exactly");
+    assert!(!more, "and the cover is served");
 }
