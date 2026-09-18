@@ -540,33 +540,51 @@ fn cavities(sorted: &[(i64, i64, i64)]) -> i64 {
     enclosed
 }
 
-/// A6: two's-complement numerator and positive denominator. Refuses when
-/// either limb overflows; nothing saturates, the sign is kept.
-pub(crate) fn ratio_axes(x: &BigRational) -> Option<[u64; 2]> {
-    let n: i64 = x.numer().try_into().ok()?;
-    let d: u64 = x.denom().try_into().ok()?;
-    Some([n as u64, d])
+/// N7 (ruled 2026-09-18) — A RATIONAL AS EXACT LIMBS, NEVER A REFUSAL.
+///
+/// This packed the numerator into `i64` and the denominator into `u64` and
+/// refused when either overflowed. The refusal was not a reading of the
+/// body: `moduli` turned it into an empty axis list and `stalk::invariant`
+/// into `Invariant(Vec::new())`, which is the ROOT of the chart trie. So a
+/// body with real geometric support, whose only fault was a harmonic ratio
+/// wider than ℤ₆₄, was filed at one coordinate with every other such body
+/// AND with every word that has no support at all — `prefixes()` on the
+/// empty chart yields the empty chart alone, so `by_chart` held them in a
+/// single undifferentiated bucket. The bodies were distinct; their chart
+/// was one. Nothing downstream could tell them apart, so no axis opened
+/// and no stratum formed.
+///
+/// The limbs are written out instead: for the numerator its sign, its limb
+/// count and its magnitude's `u64` digits least significant first; for the
+/// denominator, which `BigRational` normalises positive, the count and the
+/// digits. A ratio inside one limb is three axes and one needing two is
+/// four, so an axis vector is no longer a fixed width — `Invariant::key`
+/// writes each axis out whole and `from_key` reads them back, and neither
+/// ever assumed one (A21). Zero is sign 0 and count 0, which is a
+/// coordinate like any other.
+///
+/// GENUINE ABSENCE IS UNTOUCHED AND IS NOW THE ONLY ROOT: a word with no
+/// support and a chart no tape names still answer the empty invariant in
+/// `stalk::invariant_of`, above this. What is retired is the overflow
+/// masquerading as absence.
+pub fn axes_of(x: &BigRational) -> Vec<u64> {
+    let mut out = Vec::new();
+    let (sign, digits) = x.numer().to_u64_digits();
+    out.push(u64::from(matches!(sign, num_bigint::Sign::Minus)));
+    out.push(digits.len() as u64);
+    out.extend_from_slice(&digits);
+    let (_, digits) = x.denom().to_u64_digits();
+    out.push(digits.len() as u64);
+    out.extend_from_slice(&digits);
+    out
 }
 
-/// A rational as two exact axis limbs, or none when the ratio exceeds ℤ₆₄.
-pub fn axes_of(x: &BigRational) -> Option<[u64; 2]> {
-    ratio_axes(x)
-}
-
-/// THE MODULI of a body — its coordinates on the base. Empty on A6
-/// refusal: novelty, never a saturated MAX axis.
+/// THE MODULI of a body — its coordinates on the base. Total since N7: a
+/// body that has a blade has harmonics, and every harmonic writes its exact
+/// limbs, so there is no overflow left to read as absence. A body with
+/// support is never charted at the root.
 pub fn moduli(b: &Blade) -> Vec<u64> {
-    // A6 refusing is NOVELTY, and the empty axis list is what novelty
-    // reads as here — a measurement of this body, not a default put in
-    // place of one (rule 11).
-    #[expect(
-        clippy::manual_unwrap_or_default,
-        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; empty axes is A6's refusal read out"
-    )]
-    match crate::transducer::blade::harmonics::Harmonics::of(b).axes() {
-        Some(axes) => axes,
-        None => Vec::new(),
-    }
+    crate::transducer::blade::harmonics::Harmonics::of(b).axes()
 }
 
 /// A body as the carrier a transport is solved on and verified against.

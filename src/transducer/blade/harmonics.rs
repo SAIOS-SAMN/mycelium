@@ -70,19 +70,21 @@ impl Harmonics {
         }
     }
 
-    /// The harmonics laid out as the atlas's axes. None if any ratio
-    /// exceeds the axis (A6 refusal).
-    pub fn axes(&self) -> Option<Vec<u64>> {
+    /// The harmonics laid out as the atlas's axes, coarsest first. Total
+    /// since N7 (ruled 2026-09-18): every ratio writes its exact limbs, so
+    /// no harmonic refuses and no body with a blade is charted at the root
+    /// for the width of its own moduli.
+    pub fn axes(&self) -> Vec<u64> {
         let mut axes = vec![self.components, self.holes, self.cavities, self.turns];
-        axes.extend(blade::axes_of(&self.isoperimetric)?);
-        axes.extend(blade::axes_of(&self.frame_boundary)?);
-        axes.extend(blade::axes_of(&self.anisotropy)?);
-        axes.extend(blade::axes_of(&self.spread)?);
-        axes.extend(blade::axes_of(&self.quartic)?);
+        axes.extend(blade::axes_of(&self.isoperimetric));
+        axes.extend(blade::axes_of(&self.frame_boundary));
+        axes.extend(blade::axes_of(&self.anisotropy));
+        axes.extend(blade::axes_of(&self.spread));
+        axes.extend(blade::axes_of(&self.quartic));
         for f in &self.gauge {
-            axes.extend(blade::axes_of(f)?);
+            axes.extend(blade::axes_of(f));
         }
-        Some(axes)
+        axes
     }
 }
 
@@ -114,7 +116,7 @@ mod tests {
             "a section is open on both sides along e₃"
         );
         assert_eq!(
-            a.axes().expect("a measured harmonic reading has axes"),
+            a.axes(),
             crate::transducer::stalk::invariant(&l).0
         );
     }

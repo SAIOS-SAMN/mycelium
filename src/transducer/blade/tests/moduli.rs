@@ -133,12 +133,38 @@ fn a_chart_prefix_is_the_topological_stratum() {
     assert_eq!(atlas.fiber_under(&at).len(), 2, "and the stratum's fibre is read under that prefix");
 }
 
+/// N7 (ruled 2026-09-18) — A RATIO WIDER THAN ℤ₆₄ IS A COORDINATE, NOT AN
+/// ABSENCE. `axes_of` refused such a ratio, `moduli` read the refusal as an
+/// empty axis list and `stalk::invariant` as the empty chart — the root of
+/// the trie — so bodies whose only fault was the width of their own moduli
+/// were filed together at one coordinate, and with every word that has no
+/// support at all.
 #[test]
-fn a6_refuses_overflow_keeps_sign() {
+fn a_ratio_wider_than_an_axis_is_written_as_limbs_and_keeps_its_sign() {
     let neg = BigRational::new(BigInt::from(-3), BigInt::from(7));
-    let p = axes_of(&neg).expect("fits");
-    assert_eq!(p[0], (-3i64) as u64, "sign is two's complement, not dropped");
-    assert_eq!(p[1], 7);
+    let p = axes_of(&neg);
+    assert_eq!(p, vec![1, 1, 3, 1, 7], "sign, then each magnitude's limbs by count");
+    let pos = BigRational::new(BigInt::from(3), BigInt::from(7));
+    assert_ne!(axes_of(&pos), p, "and the sign is a coordinate, not dropped");
+    // WIDER THAN ℤ₆₄ IS STILL A COORDINATE, and two distinct wide ratios
+    // are two coordinates — which is the collapse this retires.
     let huge = BigRational::new(BigInt::from(1) << 80, BigInt::from(1));
-    assert!(axes_of(&huge).is_none(), "overflow refuses, never saturates to MAX");
+    let wider = BigRational::new(BigInt::from(1) << 81, BigInt::from(1));
+    let (a, b) = (axes_of(&huge), axes_of(&wider));
+    assert_eq!(a[1], 2, "a ratio past one limb writes two of them");
+    assert!(!a.is_empty() && !b.is_empty(), "neither is read as absence");
+    assert_ne!(a, b, "and they are distinct coordinates, not one root bucket");
+}
+
+/// The same reading one level up: a body whose harmonics exceed ℤ₆₄ has a
+/// chart of its own, where it was charted at the root before N7.
+#[test]
+fn a_body_is_never_charted_at_the_root_for_the_width_of_its_moduli() {
+    use crate::transducer::stalk::invariant;
+    let l: Vec<(i64, i64, u8, u8)> = vec![(0, 0, 1, 2), (1, 0, 1, 2), (2, 0, 1, 2), (2, 1, 1, 2)];
+    let inv = invariant(&l);
+    assert!(!inv.0.is_empty(), "a body with support is charted by its moduli");
+    // The root belongs to genuine absence alone (`invariant_of`'s no-support
+    // arm), which is above this and untouched.
+    assert!(invariant(&[]).0.is_empty(), "and no support is still the root");
 }
