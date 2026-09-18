@@ -604,6 +604,22 @@ impl Contemplation {
                     cover.insert(chart.key(), ());
                     glues.insert(address, ());
                 }
+                // P9 — AN OPEN DEMAND STANDS ON ITS OWN CHART. A demand
+                // carries the chart its reading was typed at (50.5), and the
+                // chart is the coordinate the contemplation files a bubble
+                // under (`by_chart`). Dropped here, an idea whose form is a
+                // demand was held on NO chart: `admit_incidence` wrote no
+                // incidence, `link_new` found no neighbour, and nothing the
+                // mind held could ever meet it. Measured before this on the
+                // one-body deformation P8 leaves standing: one bubble, cover
+                // 0, horizon 0 — held and unreachable.
+                //
+                // It carries no word, so it contributes no section and no
+                // rotor; what it contributes is the coordinate, which is
+                // what a meet is read at.
+                Vertex::Demand { chart, .. } => {
+                    cover.insert(chart.key(), ());
+                }
                 _ => {}
             }
         }

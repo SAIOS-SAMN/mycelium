@@ -22,6 +22,58 @@ fn an_open_thought_measures_on_four_lanes_never_a_sum() {
     assert!(m.iter().any(|&x| x > 0), "∂g ≠ 0 is a non-zero cochain: {m:?}");
 }
 
+/// P9 — AN OPEN DEMAND IS AN IDEA THAT STANDS ON ITS OWN CHART. A demand
+/// carries the chart its reading was typed at (50.5), and a chart is the
+/// coordinate a bubble is filed under (`by_chart`). Held without it, an
+/// idea whose form is a demand stood on nothing: `admit_incidence` wrote no
+/// incidence and `link_new` found no neighbour, so nothing the mind held
+/// could meet it. Measured before this on the one-body deformation P8
+/// leaves standing: one bubble, cover 0.
+#[test]
+fn an_open_demand_is_held_as_an_idea_standing_on_its_chart() {
+    use crate::transducer::sentence::{Demand, Form, Vertex};
+    let bodies = vec![(0i64, 0i64, 1u8, 0u8), (0, 1, 1, 0)];
+    let chart = crate::transducer::stalk::invariant(&bodies);
+    let mut f = Form::default();
+    f.vertices.push(Vertex::Frame);
+    f.vertices.push(Vertex::Demand {
+        kind: Demand::TopologicalDeformation {
+            image: crate::transducer::stalk::Invariant::default(),
+            axes: Vec::new(),
+        },
+        chart: chart.clone(),
+        bodies: bodies.clone(),
+    });
+    f.reindex();
+    let mut c = Contemplation::new();
+    c.hold_form(&f, &[], &[]);
+    assert_eq!(c.len(), 1, "the demand is one idea the mind holds");
+    let held: Vec<&Bubble> = c.bubbles.scoped().map(|(_, b)| b).collect();
+    let [b] = held.as_slice() else { panic!("one bubble, got {}", held.len()) };
+    assert!(
+        b.cover.contains(chart.key().as_bytes()),
+        "and it stands on the chart its demand was typed at"
+    );
+    // THE COORDINATE IS WHAT A MEET IS READ AT, so the claim is that the
+    // chart reaches the idea back — not merely that a cover is non-empty.
+    let key = super::super::idea::idea_key(&f);
+    let at_chart: Vec<Vec<u8>> = c
+        .by_chart
+        .get(chart.key().as_bytes())
+        .expect("the chart names the ideas standing on it")
+        .scoped()
+        .map(|(k, _)| k)
+        .collect();
+    assert!(
+        at_chart.iter().any(|k| k.as_slice() == key.as_bytes()),
+        "the chart names this idea, so a meet at it can be read"
+    );
+    // It carries no word, so it contributes no section and no rotor: what
+    // it contributes is the coordinate (rule 11, nothing is invented).
+    assert!(b.sections().is_empty(), "a demand speaks no section");
+    assert!(b.rotor().is_none(), "and no rotor stands in for the one it lacks");
+}
+
 #[test]
 fn wrap_glues_crystallized_form() {
     use crate::transducer::element::{Element, FIBER_SPATIAL};
