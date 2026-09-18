@@ -76,6 +76,94 @@ fn a_chord_that_disagrees_returns_the_cocycle_it_measures() {
     );
 }
 
+/// TWO CHORDS ARE TWO LOOPS, AND THE COMPOSITE IS NEITHER. Two chords
+/// carrying opposite classes have the identity as their product, so a
+/// reader that composed them read "nothing curved" off two real classes
+/// and enumerated no occupied axis — 3.9 would have had no candidate move
+/// to instantiate. Each `Ω` is its own cocycle.
+#[test]
+fn two_chords_are_two_cocycles_and_not_their_product() {
+    let r = quarter_on((0, 1));
+    // A path 0–1–2–3 carrying one quarter turn, closed by two chords. The
+    // tree puts `r` on 1, 2 and 3, so the chord 0–2 (carrying nothing)
+    // reads `Ω = r` and the chord 1–3 (carrying `r`) reads `Ω = r⁻¹`:
+    // two loops of opposite class on one simplex.
+    let edges = [
+        edge(0, 1, r.clone()),
+        edge(1, 2, Rotor::identity()),
+        edge(2, 3, Rotor::identity()),
+        edge(0, 2, Rotor::identity()),
+        edge(1, 3, r.clone()),
+    ];
+    let Some(Gauge { holonomy, .. }) = solve_gauge(4, &edges) else {
+        panic!("every reading here is invertible");
+    };
+    assert_eq!(holonomy.len(), 2, "two chords close two independent loops");
+    let composite = holonomy
+        .iter()
+        .fold(Rotor::identity(), |acc, (_, _, class, _)| acc.geo(class));
+    assert!(
+        composite.is_identity(),
+        "their product is the identity — which is why composing them erased both"
+    );
+    for (_, _, class, _) in &holonomy {
+        assert!(!class.is_identity(), "and neither loop is flat on its own");
+        assert!(
+            matches!(class.order(), Some(Order::Finite(_))),
+            "each closes at its own period"
+        );
+    }
+}
+
+/// THE LOOPS REACH THE COMPLEX, AT THEIR OWN COORDINATE. A degree-2
+/// simplex whose chord disagrees files that chord's `Ω` under
+/// `simplex_key ++ vertex_i ++ vertex_j`, so `loops_of` is a fiber read
+/// on the simplex and `classes()` carries what it holds. The simplex's
+/// own fill is untouched: the loops are filed BESIDE it.
+#[test]
+fn a_disagreeing_chord_files_its_loop_on_the_complex() {
+    use super::common::{quarter, v, vol};
+    use crate::transducer::cech::{Complex, Fill};
+    use crate::transducer::element::identity_versor as ident;
+    let (a, b, c) = (v(1), v(2), v(3));
+    let mut cx = Complex::new();
+    for x in [&a, &b, &c] {
+        cx.set_section(
+            x,
+            crate::transducer::cech::Section::at(x.clone(), Rotor::identity()),
+            vol(),
+        );
+    }
+    // Two quarter-turn legs and an identity chord: the tree says a half
+    // turn round the triangle, the chord says nothing, so the loop stands.
+    cx.set_edge(&a, &b, quarter(), ident(), vol());
+    cx.set_edge(&b, &c, quarter(), ident(), vol());
+    cx.set_edge(&a, &c, Rotor::identity(), ident(), vol());
+    cx.coboundary_on_link(&a, |_| vol());
+    let tri = cx.link(&a, 2);
+    let [key] = tri.as_slice() else { panic!("one triangle stands on this link, got {tri:?}") };
+    let key = key.clone();
+    let filled = cx.fill(&key);
+    let loops = cx.loops_of(&key);
+    assert_eq!(loops.len(), 1, "one chord, one loop filed at its own coordinate");
+    let [Fill::Congruent(kappa, class, ell)] = loops.as_slice() else {
+        panic!("the loop closes at a finite period, got {loops:?}")
+    };
+    assert_eq!(*ell, 2, "two quarters against an identity chord close at two");
+    assert!(
+        class.projective_eq(&quarter().geo(&quarter())),
+        "and the filed class is the loop's own holonomy: {class:?}"
+    );
+    assert!(
+        !kappa.coordinates().is_empty(),
+        "held WITH its class vector (11.3), so 3.9 has axes to read candidates off"
+    );
+    assert!(
+        matches!(filled, Fill::Congruent(..)),
+        "and the simplex's own fill still stands beside the loop, not replaced by it"
+    );
+}
+
 /// BOTH HALVES, SEPARATELY. A chord whose ROTOR agrees and whose CARRIAGE
 /// does not is still a class: the loop returns to the same orientation at a
 /// different place. A reader of the rotor alone called this exact.

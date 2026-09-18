@@ -342,25 +342,33 @@ impl Kernel {
             return None;
         }
         for (class, ell, rep) in cycles {
-            let held = self
-                .complexes
-                .get(&inv.key())
-                .and_then(|cx| cx.congruent(&class).map(|(_, ell2)| *ell2));
-            match held {
-                Some(ell2) if ell2 != ell => {
+            // THE WHOLE FIBER UNDER THE ROTOR'S CONJUGACY CLASS, not one
+            // member of it. `congruent` is keyed by the loop's full class
+            // key now and `class` is its depth-one stratum, so the ask
+            // returns every filed loop of that conjugacy class at whatever
+            // finer coordinates it stands. A period that any of them
+            // disagrees with is a refusal: the chart holds that class at
+            // another period, whichever member says so. It read one entry,
+            // which was the last one written at that rotor class.
+            let held: Vec<u32> = match self.complexes.get(&inv.key()) {
+                Some(cx) => cx.congruent(&class).into_iter().map(|(_, ell2)| ell2).collect(),
+                None => Vec::new(),
+            };
+            match (held.iter().find(|ell2| **ell2 != ell), held.is_empty()) {
+                (Some(_), _) => {
                     eprintln!(
                         "  court torsion refused {:02x}{:02x}… ℓ {ell}",
                         class[0], class[1]
                     );
                     return Some(crate::verdict::REFUSE_NOT_NATURAL);
                 }
-                Some(_) => {
+                (None, false) => {
                     eprintln!(
                         "  court torsion consilient {:02x}{:02x}… ℓ {ell}",
                         class[0], class[1]
                     );
                 }
-                None => {
+                (None, true) => {
                     if let Some(rep) = rep {
                         if let Some(cx) = self.complexes.get_mut(&inv.key()) {
                             cx.file_congruent(self_id, peer, rep, ell);

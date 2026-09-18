@@ -197,7 +197,7 @@ fn fill_is_gauge_or_class() {
     c.coboundary_on_link(&a, |_| vol());
     let key = c.link(&a, 2)[0].clone();
     match c.fill(&key) {
-        Fill::Congruent(g, ell) => {
+        Fill::Congruent(_, g, ell) => {
             assert_eq!(ell, 2, "two quarter turns against an identity chord close at two");
             assert_eq!(g.order(), Some(Order::Finite(2)), "and the filed rotor says so");
             assert!(
@@ -280,16 +280,22 @@ fn congruent_is_read_by_class_key() {
     let q = quarter();
     let ck = q.class_key().expect("quarter class");
     c.file_congruent(v(1), v(2), q.clone(), 4);
-    let got = c.congruent(ck.as_bytes()).expect("Congruent simplex by class key");
-    assert_eq!(got.1, 4);
-    assert!(got.0.projective_eq(&q), "the index holds the rotor that was filed");
+    // The index is keyed by the loop's WHOLE class key and asked here by
+    // the rotor's conjugacy key, which is that key's depth-one stratum:
+    // the answer is the fiber under it, holding the one loop filed.
+    let got = c.congruent(ck.as_bytes());
+    let [(rotor, ell)] = got.as_slice() else {
+        panic!("one Congruent loop stands under the quarter's conjugacy class, got {got:?}")
+    };
+    assert_eq!(*ell, 4);
+    assert!(rotor.projective_eq(&q), "the index holds the rotor that was filed");
     // A class key that was NEVER filed is absent, asked at a rotor that
     // HAS a class key: the identity may have none, and a claim that passes
     // on its `None` arm reads the index not at all. `pythag5` has one and
     // was never filed, so the index must answer for it.
     let other = pythag5().class_key().expect("the (3,4,5) rotor has a class key");
     assert!(
-        c.congruent(other.as_bytes()).is_none(),
+        c.congruent(other.as_bytes()).is_empty(),
         "a class never filed is not in the index"
     );
 }

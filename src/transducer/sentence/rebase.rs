@@ -165,7 +165,7 @@ impl Form {
         // gauge filed one class and dropped the rest.
         for chart in v.charts() {
             let hue = CycleType::of(&vertex_gauge_at(v, &chart));
-            let Fill::Congruent(g, ell) =
+            let Fill::Congruent(_, g, ell) =
                 crate::transducer::cech::classify(&word.rotor(), delta, hue)
             else {
                 continue;

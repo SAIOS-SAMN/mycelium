@@ -28,8 +28,7 @@ let idk = crate::transducer::alphabet::Rotor::identity().class_key().expect("ide
 let filed = k
     .complexes
     .get(&inv.key())
-    .and_then(|cx| cx.congruent(&idk))
-    .is_some();
+    .is_some_and(|cx| !cx.congruent(&idk).is_empty());
 assert!(
     !filed,
     "the residual arm files nothing when no class can be read"
@@ -117,8 +116,7 @@ assert_eq!(
 let filed = k
     .complexes
     .get(&inv.key())
-    .and_then(|cx| cx.congruent(&class))
-    .is_some();
+    .is_some_and(|cx| !cx.congruent(&class).is_empty());
 assert!(filed, "court torsion filed by the loop's class key");
 assert_eq!(
     k.court_torsion(&spoken, &inv, [1; 32], [2; 32]),

@@ -78,7 +78,7 @@ impl Kernel {
                 for layer in &cx.degrees {
                     for (_, simplex) in layer.scoped() {
                         match &simplex.fill {
-                            crate::transducer::cech::Fill::Congruent(r, ell) => {
+                            crate::transducer::cech::Fill::Congruent(_, r, ell) => {
                                 push(&mut out, &mut seen, r, *ell)
                             }
                             crate::transducer::cech::Fill::Class(_, r) => {
@@ -95,7 +95,7 @@ impl Kernel {
                     for layer in &cx.degrees {
                         for (_, simplex) in layer.scoped() {
                             match &simplex.fill {
-                                crate::transducer::cech::Fill::Congruent(r, ell) => {
+                                crate::transducer::cech::Fill::Congruent(_, r, ell) => {
                                     push(&mut out, &mut seen, r, *ell)
                                 }
                                 crate::transducer::cech::Fill::Class(_, r) => {

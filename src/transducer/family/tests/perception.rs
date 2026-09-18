@@ -51,9 +51,12 @@ assert!(
     "and carries no relative placement"
 );
 let b2_still = body(&["0000", "2200"]);
+// Every member of the coset refuses, and every refusal comes back; an
+// empty coset is the one that says `NotRigid`.
+let refused = edge_transport(&v1, &a1, &a2, &b1, &b2_still);
 assert!(
-    matches!(edge_transport(&v1, &a1, &a2, &b1, &b2_still), Err(EdgeRefusal::NotRigid)),
-    "a pair no single versor carries is a remainder edge, and says so"
+    matches!(refused.as_ref().err().map(|r| r.as_slice()), Some([EdgeRefusal::NotRigid])),
+    "a pair no versor of the coset carries is a remainder edge, and says so: {refused:?}"
 );
 }
 

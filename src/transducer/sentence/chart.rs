@@ -538,7 +538,13 @@ pub(crate) fn chart_of_form(f: &Form) -> Option<crate::transducer::stalk::Invari
         let k = f.class_vector(i)?;
         let mut packed = 0u64;
         for axis in k.coordinates() {
-            packed |= 1u64 << axis.to_byte();
+            // AN AXIS THAT DOES NOT FIT THE CARRIER IS REFUSED, never
+            // aliased onto another axis's bit (rule 11). `Axis::Open` is
+            // byte `8 << 3` = 64 and `1u64 << 64` masks to bit 0 in
+            // release, which is `Orientation(0)`: the pack was safe only
+            // because `coordinates()` happens not to emit `Open`, not
+            // because the shift is. The guarantee now lives at the shift.
+            packed |= 1u64.checked_shl(axis.to_byte() as u32)?;
         }
         classes.push(packed);
     }

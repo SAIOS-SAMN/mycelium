@@ -208,7 +208,7 @@ impl Kernel {
                 crate::transducer::cech::Fill::Filled(gamma, carriage) => {
                     if volume.iter().any(|&x| x > 0) {
                         filled = true;
-                        fill_gamma = gamma;
+                        fill_gamma = *gamma;
                         fill_carriage = *carriage;
                         fill_addrs = vertices
                             .iter()
@@ -220,12 +220,12 @@ impl Kernel {
                         );
                     }
                 }
-                crate::transducer::cech::Fill::Congruent(g, ell) => {
+                crate::transducer::cech::Fill::Congruent(_, g, ell) => {
                     let addrs: Vec<Address> = vertices
                         .iter()
                         .filter_map(|v| cx.sections.get(v).map(|s| s.addr.clone()))
                         .collect();
-                    congruent = Some((g, ell, addrs));
+                    congruent = Some((*g, ell, addrs));
                     eprintln!(
                         "  court simplex congruent degree {d} {:02x}{:02x}…",
                         key[0], key[1]

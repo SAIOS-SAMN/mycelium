@@ -17,9 +17,32 @@ pub struct Complex {
     pub sections: Keyed<Section>,
     pub(crate) star: Keyed<Keyed<()>>,
     pub(crate) remainder: Keyed<()>,
-    /// Congruent fills keyed by the rotor's class key (15.4). Court torsion
-    /// reads this; remember and fill write it.
+    /// Congruent fills keyed by the loop's whole class key (15.4, rule 6).
+    /// Court torsion reads this by the rotor's conjugacy key, which is that
+    /// key's depth-one stratum, so the read is a fiber; remember and fill
+    /// write it.
     pub(crate) congruent: Keyed<(Rotor, u32)>,
+    /// THE LOOPS OF EACH SIMPLEX, one per chord, each at its OWN
+    /// coordinate: `simplex_key ++ vertex_i ++ vertex_j` (law 2, A21), so
+    /// a simplex's loops are the fiber under its key and a reader moves to
+    /// them rather than walking a list.
+    ///
+    /// One `Ω` per chord and never their product. 11.3 holds each `H¹`
+    /// loop "with its class vector (12.6)", and composing the loops of one
+    /// simplex destroys that: two chords of opposite class multiply to the
+    /// identity, so two real classes annihilate into "nothing curved" and
+    /// the axes 3.9 would have read its candidate pivots off are gone.
+    pub(crate) loops: Keyed<Fill>,
+}
+
+/// The coordinate of ONE loop: the simplex it closes on, then the two
+/// vertices its chord runs between, each written out (A21). A prefix of it
+/// is the simplex, which is what makes `loops_of` a fiber read.
+pub(crate) fn loop_key(simplex: &[u8], i: &[u8], j: &[u8]) -> crate::transducer::address::Address {
+    let mut buf = simplex.to_vec();
+    crate::transducer::address::put_bytes(&mut buf, i);
+    crate::transducer::address::put_bytes(&mut buf, j);
+    crate::transducer::address::Address::new(buf)
 }
 
 impl Complex {
@@ -62,18 +85,43 @@ impl Complex {
         self.degrees[degree].insert(&key, simplex);
     }
 
+    /// FILED AT ITS FULL COORDINATES (rule 6). `ClassVector::class_key`
+    /// writes the rotor's conjugacy invariants FIRST — proven, not
+    /// assumed, by `the_rotor_class_is_the_first_stratum_of_the_class_vector`
+    /// — so the rotor class a court asks by is this key's depth-one
+    /// stratum and the ask is a fiber read under it.
+    ///
+    /// It filed at the rotor class alone. Every congruent loop of one
+    /// conjugacy class landed on ONE key, so the last writer won and every
+    /// finer coordinate of the loops before it was unreachable: a whole
+    /// fiber stored as its most recent member.
     pub(crate) fn index_congruent(&mut self, fill: &Fill) {
-        if let Fill::Congruent(g, ell) = fill {
-            if let Some(ck) = g.class_key() {
-                self.congruent.insert(ck, (g.clone(), *ell));
-            }
+        if let Fill::Congruent(kappa, g, ell) = fill {
+            self.congruent.insert(kappa.class_key(), (g.as_ref().clone(), *ell));
         }
     }
 
-    /// The Congruent simplex whose rotor has this class key, if the chart
-    /// holds one.
-    pub fn congruent(&self, class: &[u8]) -> Option<&(Rotor, u32)> {
-        self.congruent.get(class)
+    /// THE CONGRUENT LOOPS UNDER A CLASS COORDINATE — a fiber read, not a
+    /// lookup. `class` may be a rotor's conjugacy key (the depth-one
+    /// stratum) or a whole class key; either way the answer is every filed
+    /// loop standing at or below that coordinate, at whatever finer
+    /// coordinates they hold. Empty when the chart holds none.
+    pub fn congruent(&self, class: &[u8]) -> Vec<(Rotor, u32)> {
+        match self.congruent.fiber_at(class) {
+            Some(fiber) => fiber.map(|(_, v)| v.clone()).collect(),
+            None => Vec::new(),
+        }
+    }
+
+    /// THE LOOPS ON ONE SIMPLEX — the fiber under its key. Each is one
+    /// chord's `Ω`, classified on its own, so a simplex whose 1-skeleton
+    /// closes two independent loops answers with two classes and not with
+    /// one composite that is the holonomy of neither.
+    pub fn loops_of(&self, simplex: &[u8]) -> Vec<Fill> {
+        match self.loops.fiber_at(simplex) {
+            Some(fiber) => fiber.map(|(_, f)| f.clone()).collect(),
+            None => Vec::new(),
+        }
     }
 
     pub(crate) fn store_coeff(g: Rotor) -> Rotor {
@@ -90,7 +138,7 @@ impl Complex {
                 carriage: crate::transducer::element::identity_versor(),
                 volume,
                 fill: Fill::Filled(
-                    Rotor::identity(),
+                    Box::new(Rotor::identity()),
                     Box::new(crate::transducer::element::identity_versor()),
                 ),
             });
@@ -141,15 +189,28 @@ impl Complex {
         if vertices.len() != 2 {
             return;
         }
+        let carriage = crate::transducer::element::identity_versor();
+        // The class vector is read through the SAME reader every other
+        // congruence is read through, so a filed torsion axis carries the
+        // coordinates 3.9 instantiates candidate moves from. A rotor with
+        // no conjugacy invariants is not a versor (15.3): nothing is filed
+        // for it rather than a period filed with no coordinates (rule 11).
+        let Some(kappa) = crate::transducer::sentence::ClassVector::of_rotor(
+            &g,
+            carriage.clone(),
+            crate::transducer::sentence::CycleType::Identity,
+        ) else {
+            return;
+        };
         self.remember(Simplex {
             vertices,
             coefficient: g.clone(),
             // A filed congruence is residue-free by construction: it is a
             // finite-order rotation about a point, which `classify` returns
             // only where both residues are the identity.
-            carriage: crate::transducer::element::identity_versor(),
+            carriage,
             volume: [1, 0, 0, 0],
-            fill: Fill::Congruent(g, ell),
+            fill: Fill::Congruent(Box::new(kappa), Box::new(g), ell),
         });
     }
 

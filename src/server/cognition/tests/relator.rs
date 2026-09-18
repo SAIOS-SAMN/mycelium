@@ -268,7 +268,7 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
             "the first hearing files the relation"
         );
         assert!(
-            k.complexes.get(&inv.key()).and_then(|cx| cx.congruent(&class)).is_some(),
+            k.complexes.get(&inv.key()).is_some_and(|cx| !cx.congruent(&class).is_empty()),
             "under the relator's own class key"
         );
         assert_eq!(

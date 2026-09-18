@@ -82,9 +82,14 @@ fn a_dilation_stands_with_its_scale() {
 /// class at its own period.
 #[test]
 fn a_residue_free_quarter_turn_files_at_its_period() {
-    let Fill::Congruent(g, ell) = classify(&quarter(), &ident(), CycleType::Identity) else {
+    let Fill::Congruent(kappa, g, ell) = classify(&quarter(), &ident(), CycleType::Identity) else {
         panic!("a residue-free finite rotation files");
     };
+    assert!(
+        !kappa.coordinates().is_empty(),
+        "and it files WITH its class vector: 11.3 holds the loop with it, and 3.9 reads \
+         the candidate pivots off the axes it occupies — a period alone has none"
+    );
     assert_eq!(ell, 4, "a quarter turn closes at four");
     assert_eq!(g.order(), Some(Order::Finite(4)), "and the filed rotor says so itself");
     assert!(g.projective_eq(&quarter()), "and it is the rotor that caused it");
@@ -107,10 +112,22 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
     use crate::transducer::element::turn_base_point;
     let about_a_point = cga::translator(&q(5), &q(0), &q(0));
     let p = turn_base_point(&quarter(), &about_a_point).expect("a quarter turn has a base point");
-    let Fill::Congruent(g, ell) = classify(&quarter(), &about_a_point, CycleType::Identity) else {
+    let Fill::Congruent(kappa, g, ell) =
+        classify(&quarter(), &about_a_point, CycleType::Identity)
+    else {
         panic!("a turn about a point files at its period");
     };
     assert_eq!(ell, 4, "a quarter turn about a point closes at four, wherever the point is");
+    // The base point is not lost by filing: the class vector carries the
+    // carriage `T(p − Rp)`, so `p` is re-solved from what was filed.
+    assert!(
+        crate::transducer::element::turn_base_point(&g, &kappa.carriage).is_some(),
+        "and p is recoverable from the filed class, not discarded at the gate"
+    );
+    assert!(
+        kappa.occupies(crate::transducer::sentence::Axis::Placement),
+        "the placement axis occupies: 3.9's translation word is the move that zeroes it"
+    );
     assert_eq!(g.order(), Some(Order::Finite(4)), "and the filed rotor says so itself");
     // `p − R p` is the translation the carriage holds: the point is solved
     // from the turn, not measured against it. The base's three axes sit at
@@ -183,7 +200,7 @@ fn a_body_turned_about_itself_files_though_its_carriage_is_not_flat() {
         if !same_versor(&carriage, &ident()) {
             placed += 1;
         }
-        if matches!(classify(&r, &carriage, CycleType::Identity), Fill::Congruent(_, 4)) {
+        if matches!(classify(&r, &carriage, CycleType::Identity), Fill::Congruent(_, _, 4)) {
             filed += 1;
         }
     }

@@ -500,8 +500,8 @@ impl Bubble {
                 };
                 match cech::extend(&a, &b, &simplex) {
                     Fill::Filled(..) => {}
-                    Fill::Congruent(g, ell) => {
-                        self.nerve.file_congruent(me.clone(), head, g, ell);
+                    Fill::Congruent(_, g, ell) => {
+                        self.nerve.file_congruent(me.clone(), head, *g, ell);
                     }
                     Fill::Class(_, r) => {
                         closed = false;

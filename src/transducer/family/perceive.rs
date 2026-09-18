@@ -389,29 +389,39 @@ pub(crate) struct EdgeTally {
 
 impl EdgeTally {
     /// Count one asked edge and hand the caller what it carries.
+    /// EVERY MEMBER'S REFUSAL IS COUNTED, not the first. The stabilizer the
+    /// coset quotients is exactly the freedom in which member to read `Γ`
+    /// through, so each member refuses for its own reason — and an
+    /// `Unspelled` standing behind another member's `NotRigid` was 37.7's
+    /// candidate, discarded for sorting second. The refusals arrive in the
+    /// coset's own content-fixed order and are only ever iterated, never
+    /// indexed.
+    ///
+    /// The counters are therefore per READING and may exceed the number of
+    /// pairs asked. That is what they now count.
     pub(crate) fn take(
         &mut self,
-        asked: Option<Result<crate::transducer::sentence::Transport, EdgeRefusal>>,
+        asked: Option<Result<crate::transducer::sentence::Transport, Vec<EdgeRefusal>>>,
     ) -> Option<crate::transducer::sentence::Transport> {
         match asked {
             Some(Ok(t)) => {
                 self.measured += 1;
                 Some(t)
             }
-            // 37.7's candidate at an edge, said with the kind the peel
-            // typed: the one line on this path that names a generator the
-            // language lacks.
-            Some(Err(EdgeRefusal::Unspelled(d))) => {
-                self.unspelled += 1;
-                eprintln!("  edge unspelled: {}", d.label());
-                None
-            }
-            Some(Err(EdgeRefusal::NoReading)) => {
-                self.unread += 1;
-                None
-            }
-            Some(Err(EdgeRefusal::NotRigid)) => {
-                self.not_rigid += 1;
+            Some(Err(refusals)) => {
+                for refusal in refusals {
+                    match refusal {
+                        // 37.7's candidate at an edge, said with the kind
+                        // the peel typed: the one line on this path that
+                        // names a generator the language lacks.
+                        EdgeRefusal::Unspelled(d) => {
+                            self.unspelled += 1;
+                            eprintln!("  edge unspelled: {}", d.label());
+                        }
+                        EdgeRefusal::NoReading => self.unread += 1,
+                        EdgeRefusal::NotRigid => self.not_rigid += 1,
+                    }
+                }
                 None
             }
             None => None,
@@ -454,7 +464,7 @@ pub(crate) fn edge_transport(
     a_j: &Body,
     b_i: &Body,
     b_j: &Body,
-) -> Result<crate::transducer::sentence::Transport, EdgeRefusal> {
+) -> Result<crate::transducer::sentence::Transport, Vec<EdgeRefusal>> {
     let union = |x: &Body, y: &Body| -> Shape {
         let mut pos: Vec<(i64, i64, i64)> =
             x.laminae.iter().chain(y.laminae.iter()).map(|&(r, c, k, _)| (r, c, k)).collect();
@@ -463,23 +473,21 @@ pub(crate) fn edge_transport(
         blade::shape_of(&pos)
     };
     let members = blade::versor_coset_ordered(&union(a_i, a_j), &union(b_i, b_j));
-    let inv = v_i.versor_inverse().ok_or(EdgeRefusal::NoReading)?;
-    let mut refusal: Option<EdgeRefusal> = None;
+    let inv = v_i.versor_inverse().ok_or_else(|| vec![EdgeRefusal::NoReading])?;
+    let mut refusals: Vec<EdgeRefusal> = Vec::new();
     for v_ij in &members {
         match edge_of(&inv.geo(v_ij)) {
             Ok(transport) => return Ok(transport),
-            Err(e) => {
-                refusal.get_or_insert(e);
-            }
+            Err(e) => refusals.push(e),
         }
     }
-    match refusal {
-        Some(e) => Err(e),
-        // Every member either answered or refused, so nothing is held
-        // here: this is the empty coset, and an empty coset is the pair
-        // not moving rigidly. Not a default standing in for a reading.
-        None => Err(EdgeRefusal::NotRigid),
+    if refusals.is_empty() {
+        // Nothing refused because nothing carried: the empty coset, which
+        // is the pair not moving rigidly. Not a default standing in for a
+        // reading (rule 11).
+        refusals.push(EdgeRefusal::NotRigid);
     }
+    Err(refusals)
 }
 
 /// A body's support on the three coordinates of the base, sorted.

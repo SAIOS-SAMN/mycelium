@@ -82,9 +82,20 @@ pub enum Fill {
     Open,
     /// The gauge that closed the simplex: its rotor and its carriage,
     /// because a transition is `D(ρ)·T(t)·R` and a gauge that is a pure
-    /// placement has the identity rotor and is not the identity.
-    Filled(Rotor, Box<Versor>),
-    Congruent(Rotor, u32),
+    /// placement has the identity rotor and is not the identity. Both
+    /// boxed, as every other variant's carriers are: a `Rotor` is sixteen
+    /// rationals and an unboxed one here sized the whole enum.
+    Filled(Box<Rotor>, Box<Versor>),
+    /// A loop that CLOSES, held with its class vector and the period it
+    /// closes at. Three objects, because 11.3 holds an `H¹` loop "with its
+    /// class vector (12.6)" and 3.9 reads the candidate pivots off the
+    /// axes that vector occupies — so `(rotor, ℓ)` alone was a loop that
+    /// filed and then had nothing to say. The period is the TORSION PART
+    /// of 11.3, filed beside the coordinates and never instead of them,
+    /// and it is itself an axis with a move of its own (the fibre row of
+    /// the 3.9 table): filing at ℓ opens a candidate, it does not close
+    /// the loop.
+    Congruent(Box<crate::transducer::sentence::ClassVector>, Box<Rotor>, u32),
     /// A standing class: the class vector of 12.6 AND the rotor it was read
     /// from. Both, because they are different objects — the vector holds
     /// the rotor's CONJUGACY INVARIANTS together with the placement and
@@ -147,7 +158,7 @@ pub fn classify(
     use crate::transducer::element::{identity_versor, same_versor, turn_base_point};
     let flat = same_versor(carriage, &identity_versor());
     if flat && rotor.is_identity() {
-        return Fill::Filled(rotor.clone(), Box::new(identity_versor()));
+        return Fill::Filled(Box::new(rotor.clone()), Box::new(identity_versor()));
     }
     // The transport's FIXED POINT: the origin when the carriage is flat,
     // the turn's own base point when the carriage is exactly `T(p − Rp)`.
@@ -157,7 +168,18 @@ pub fn classify(
     // where the rotation CLOSES at ℓ — so it is not filed as one, and every
     // reader of a filed period may take `ℓ − 1` whole.
     if let (true, Some(Order::Finite(ell @ 1..))) = (fixed, rotor.order()) {
-        return Fill::Congruent(rotor.clone(), ell);
+        // The class vector is read HERE, on the way to filing, so the
+        // filed loop carries the axes 3.9 instantiates its candidate moves
+        // from. A rotor with no conjugacy invariants is not a versor
+        // (15.3) and files nothing: it falls through to the readings
+        // below rather than filing a period with no coordinates.
+        if let Some(kappa) = crate::transducer::sentence::ClassVector::of_rotor(
+            rotor,
+            carriage.clone(),
+            hue.clone(),
+        ) {
+            return Fill::Congruent(Box::new(kappa), Box::new(rotor.clone()), ell);
+        }
     }
     // 37.7's condition, discriminated from an off-plane rotor rather than
     // conflated with it: the rotor DOES act on the sensor plane (it has a
@@ -218,7 +240,7 @@ pub fn extend(section_a: &Section, section_b: &Section, simplex: &Simplex) -> Fi
         // is extended BY THE TRANSITION, which is the gauge it was waiting
         // for.
         if g_r.is_identity() && same_versor(&g_c, &identity_versor()) {
-            return Fill::Filled(trans_r, Box::new(trans_c));
+            return Fill::Filled(Box::new(trans_r), Box::new(trans_c));
         }
         return classify(&g_r, &g_c, hue);
     }

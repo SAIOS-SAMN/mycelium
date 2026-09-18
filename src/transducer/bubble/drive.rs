@@ -316,7 +316,7 @@ impl Contemplation {
                                 }
                             }
                         }
-                        Fill::Congruent(g, ell) => {
+                        Fill::Congruent(_, g, ell) => {
                             self.torsion_merges += 1;
                             if let Some(merged) = self.merge(&vertices) {
                                 if let Some(b) = self.bubbles.get_mut(merged.as_bytes()) {
@@ -329,7 +329,7 @@ impl Contemplation {
                                         [a] => (a.clone(), a.clone()),
                                         [] => continue,
                                     };
-                                    b.nerve.file_congruent(&a, &c, g, ell);
+                                    b.nerve.file_congruent(&a, &c, *g, ell);
                                 }
                             }
                         }

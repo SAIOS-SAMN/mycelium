@@ -64,7 +64,7 @@ impl Kernel {
                         }
                     }
                 }
-                (crate::transducer::cech::Fill::Congruent(_g, _ell), addrs) => {
+                (crate::transducer::cech::Fill::Congruent(_, _g, _ell), addrs) => {
                     eprintln!(
                         "  court simplex congruent {:02x}{:02x}… torsion filed",
                         sim_key[0], sim_key[1]

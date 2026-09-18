@@ -649,7 +649,13 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             let (Some(vi), Some(vj)) = (form.vertices.get(i as usize), form.vertices.get(j as usize)) else { continue };
             let (Some(ci), Some(cj)) = (vi.face_chart(), vj.face_chart()) else { continue };
             let edge = edges.take(match (c.cover.carried.get(ka), c.cover.carried.get(kb)) {
-                (Some((va, sa, _)), Some((vb, sb, _))) => Some(meet_edge(va, sa, vb, sb)),
+                // A meet of two SECTIONS has one `Γ` and therefore one
+                // refusal — there is no coset to read it through here, so
+                // the single reading is carried as the one-member list the
+                // tally counts.
+                (Some((va, sa, _)), Some((vb, sb, _))) => {
+                    Some(meet_edge(va, sa, vb, sb).map_err(|e| vec![e]))
+                }
                 _ => None,
             });
             if edge.is_some() {
@@ -702,7 +708,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             let fill = crate::transducer::cech::classify(&e.word.rotor(), &e.carriage, hue);
             crate::transducer::family::cover::tally_loop(&fill);
             match fill {
-                crate::transducer::cech::Fill::Congruent(g, ell) => {
+                crate::transducer::cech::Fill::Congruent(_, g, ell) => {
                     let Some(class) = g.class_key() else { continue };
                     eprintln!("  simplex filled {:02x}{:02x}… class {ell}", class.as_bytes()[0], class.as_bytes()[1]);
                     form.torsion.insert(class, crate::transducer::sentence::FiledLoop { sigma, period: ell, chord: lp.chord });

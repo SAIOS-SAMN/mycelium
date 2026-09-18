@@ -123,7 +123,7 @@ impl Contemplation {
                     let _ = self.merge(&vertices);
                     return;
                 }
-                Fill::Congruent(g, ell) if vol_nz => {
+                Fill::Congruent(_, g, ell) if vol_nz => {
                     self.torsion_merges += 1;
                     // A simplex of one vertex is a loop at that vertex: both
                     // ends are it, which is what the simplex says and not a
@@ -136,7 +136,7 @@ impl Contemplation {
                     };
                     if let Some(nk) = self.merge(&vertices) {
                         if let Some(b) = self.bubbles.get_mut(nk.as_bytes()) {
-                            b.nerve.file_congruent(&ends[0], &ends[1], g, ell);
+                            b.nerve.file_congruent(&ends[0], &ends[1], *g, ell);
                         }
                         let before: Vec<crate::transducer::address::Address> = vertices
                             .iter()
@@ -166,7 +166,7 @@ impl Contemplation {
                 // 37.7 at a simplex: a rotation the seventeen do not spell,
                 // which merges nothing and seeds no horizon.
                 Fill::Unspellable(_) => {}
-                Fill::Filled(..) | Fill::Congruent(_, _) => {}
+                Fill::Filled(..) | Fill::Congruent(..) => {}
                 Fill::Class(_, r) => {
                     self.classes += 1;
                     for v in &vertices {

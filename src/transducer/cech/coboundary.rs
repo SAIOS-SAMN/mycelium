@@ -145,7 +145,7 @@ impl Complex {
                     sec.carriage = carriage.clone();
                 }
             }
-            let filled = Fill::Filled(gamma.clone(), Box::new(carriage.clone()));
+            let filled = Fill::Filled(Box::new(gamma.clone()), Box::new(carriage.clone()));
             if let Some(c) = self.degrees[degree].get_mut(key) {
                 c.fill = filled.clone();
             }
@@ -324,7 +324,7 @@ impl Complex {
         );
         if simplex.degree() == 0 || (simplex.coefficient.is_identity() && flat) {
             let filled = Fill::Filled(
-                Rotor::identity(),
+                Box::new(Rotor::identity()),
                 Box::new(crate::transducer::element::identity_versor()),
             );
             if let Some(c) = self.degrees[degree].get_mut(key) {
@@ -353,33 +353,40 @@ impl Complex {
                     let Some((g1, c1)) = gauge.sections.get(1).cloned() else {
                         return Fill::Open;
                     };
-                    let filled = Fill::Filled(g1, Box::new(c1));
+                    let filled = Fill::Filled(Box::new(g1), Box::new(c1));
                     if let Some(c) = self.degrees[degree].get_mut(key) {
                         c.fill = filled.clone();
                     }
                     return filled;
                 }
-                // THE CHORDS CARRY A CLASS. The sections are NOT placed:
-                // a forest that its own chords contradict is not a gauge,
-                // and writing it onto the sections would publish a frame
-                // the complex does not have. What the loops carry is
-                // classified instead — the holonomy composed, read by the
-                // one classifier (L23b), so a loop that closes at ℓ files
-                // its period and one that walks stands with its residue.
-                // It returned `None` here and this simplex fell through to
-                // `extend`, which classifies the simplex's stored
-                // coboundary and never sees the loop at all.
-                let (hr, hc) = gauge.holonomy.iter().fold(
-                    (Rotor::identity(), crate::transducer::element::identity_versor()),
-                    |(r, c), (_, _, gr, gc)| (r.geo(gr), c.geo(gc)),
-                );
-                let outcome = classify(&hr, &hc, crate::transducer::sentence::CycleType::of(&[]));
-                if !matches!(outcome, Fill::Open) {
-                    self.index_congruent(&outcome);
-                    if let Some(c) = self.degrees[degree].get_mut(key) {
-                        c.fill = outcome.clone();
+                // THE CHORDS CARRY CLASSES — one per loop, each filed at
+                // its own coordinate. The sections are NOT placed: a
+                // forest its own chords contradict is not a gauge, and
+                // writing it onto the sections would publish a frame the
+                // complex does not have.
+                //
+                // Each `Ω` is classified alone, by the one classifier
+                // (L23b), and written at `loop_key`. It COMPOSED them and
+                // classified the product: the product of holonomies around
+                // different loops is the holonomy of none of them, and two
+                // chords of opposite class multiplied to the identity — two
+                // real classes reading as "nothing curved". Before that it
+                // returned `None` and the loops were not read at all.
+                //
+                // The simplex's own fill still comes from `extend` below:
+                // this adds the loops beside it and takes nothing away.
+                for (i, j, gr, gc) in &gauge.holonomy {
+                    let (Some(vi), Some(vj)) = (verts.get(*i), verts.get(*j)) else {
+                        continue;
+                    };
+                    let outcome =
+                        classify(gr, gc, crate::transducer::sentence::CycleType::of(&[]));
+                    if matches!(outcome, Fill::Open) {
+                        continue;
                     }
-                    return outcome;
+                    self.index_congruent(&outcome);
+                    let lk = crate::transducer::cech::complex::loop_key(key, vi, vj);
+                    self.loops.insert(lk, outcome);
                 }
             }
         }
@@ -437,6 +444,16 @@ impl Complex {
             if let Some(c) = self.degrees.get(d).and_then(|l| l.get(&k)) {
                 if let Fill::Class(kappa, r) = &c.fill {
                     out.push((kappa.as_ref().clone(), r.as_ref().clone(), d));
+                }
+            }
+            // AND THE LOOPS ON IT, each one its own standing class (11.3:
+            // an `H¹` loop is held with its class vector). Read as the
+            // fiber under the simplex's key, at the degree the simplex
+            // already carries — the loops were stored and unread, which is
+            // inert (24), and folding them was worse.
+            for fill in self.loops_of(&k) {
+                if let Fill::Class(kappa, r) = fill {
+                    out.push((*kappa, *r, d));
                 }
             }
         }

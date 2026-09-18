@@ -61,8 +61,13 @@ impl Complex {
                         crate::snapshot::put_key(body, k.class_key());
                         r.to_bytes(body);
                     }
-                    Fill::Congruent(g, ell) => {
+                    Fill::Congruent(kappa, g, ell) => {
                         body.push(3);
+                        // The class vector rides as its own key, exactly
+                        // as tag 2 writes one: the coordinates go on the
+                        // wire and no second codec exists to drift from
+                        // them (law 12).
+                        crate::snapshot::put_key(body, kappa.class_key());
                         g.to_bytes(body);
                         body.extend_from_slice(&ell.to_le_bytes());
                     }
@@ -128,7 +133,7 @@ impl Complex {
                 *pos += 1;
                 let fill = match tag {
                     1 => Fill::Filled(
-                        Rotor::from_bytes(b, pos)?,
+                        Box::new(Rotor::from_bytes(b, pos)?),
                         Box::new(Versor::from_bytes(b, pos)?),
                     ),
                     2 => {
@@ -138,6 +143,9 @@ impl Complex {
                         Fill::Class(Box::new(kappa), Box::new(Rotor::from_bytes(b, pos)?))
                     }
                     3 => {
+                        let k = take_id(b, pos)?;
+                        let kappa =
+                            crate::transducer::sentence::ClassVector::from_key(k.as_bytes())?;
                         let g = Rotor::from_bytes(b, pos)?;
                         let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
                         // A17, as at every other tape: a congruence is
@@ -146,7 +154,7 @@ impl Complex {
                             return None;
                         }
                         *pos += 4;
-                        Fill::Congruent(g, ell)
+                        Fill::Congruent(Box::new(kappa), Box::new(g), ell)
                     }
                     4 => Fill::Unspellable(Box::new(Rotor::from_bytes(b, pos)?)),
                     _ => Fill::Open,
