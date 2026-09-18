@@ -639,3 +639,53 @@ assert!(
 assert_eq!(links.len(), 8, "both frames' moved bars, before and after, ride the demand: {links:?}");
 assert!(!rule.form.is_closed(), "and the rule is valid, never closed");
 }
+
+/// 52.5 READING 6 (ruled 2026-09-18) — SUCCESSION ALONG e₃ IS THE NEXT
+/// FRAME OCCUPIED. `edge_between` read `for k in 0..n`, probing every
+/// integer up to the family's pair count and skipping each miss: a scan
+/// over a range, where the frames a member stands on are named by its own
+/// fiber of `bodies_at`. The occupied set may skip, repeat or reorder in ℤ,
+/// and a frame outside `0..n` was never read at all.
+///
+/// The order is the COORDINATE'S, not the trie's. The frame is written
+/// little-endian, so byte order puts 256 (`[0, 1]`) before 1 (`[1, 0]`);
+/// read in that order the succession is not the family's.
+#[test]
+fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
+    use crate::network::nerve::Keyed;
+    use crate::transducer::family::{body_of, occupied_frames};
+    use crate::transducer::sentence::vertex_ix_key;
+    let body = || body_of(vec![(0i64, 0i64, 0i64, 1u8)]);
+    let v = crate::transducer::element::identity_versor();
+    let mut at: Keyed<(
+        crate::transducer::family::Body,
+        crate::transducer::family::Body,
+        crate::transducer::element::Versor,
+    )> = Keyed::new();
+    let put = |at: &mut Keyed<_>, ix: u16, ck: &[u8], k: u16| {
+        let mut bk = vertex_ix_key(ix);
+        crate::transducer::address::put_bytes(&mut bk, ck);
+        bk.extend_from_slice(&k.to_le_bytes());
+        at.insert(bk, (body(), body(), v.clone()));
+    };
+    // ONE member on sparse, non-contiguous frames — including 256, which is
+    // outside any `0..n` a three-pair family would have scanned.
+    for k in [5u16, 0, 256, 2, 1] {
+        put(&mut at, 7, b"chart-a", k);
+    }
+    // A second member, and the same vertex on another chart: neither is
+    // this member's fiber.
+    put(&mut at, 9, b"chart-a", 3);
+    put(&mut at, 7, b"chart-b", 4);
+
+    let occ = occupied_frames(&at, 7, b"chart-a");
+    assert_eq!(occ, vec![0, 1, 2, 5, 256], "the occupied set, in coordinate order");
+    assert!(occ.contains(&256), "a frame outside 0..n is occupied and is read");
+    assert!(!occ.contains(&3), "another member's frame is not in this member's fiber");
+    assert!(!occ.contains(&4), "nor the same vertex's frame on another chart");
+    // THE ORDERING IS LOAD-BEARING. The frame is little-endian, so the
+    // trie's own order — the key's bytes — reads 256 as `[0, 1]` and 1 as
+    // `[1, 0]`, putting 256 second. That sequence is written out here
+    // rather than sorted into existence, and it is not the succession.
+    assert_ne!(vec![0u16, 256, 1, 2, 5], occ, "trie order is not coordinate order");
+}

@@ -768,7 +768,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         .map(|c| member_key(frame_ix, c.key().as_bytes()));
     for (ak, bk) in star_and_site_faces(frame_member.as_deref(), &scenery.supports) {
         let (Some((i, cik)), Some((j, cjk))) = (read_member_key(&ak), read_member_key(&bk)) else { continue };
-        let (edge, pairs) = edge_between(&bodies_at, n, n_reached, i, &cik, j, &cjk, &mut edges);
+        let (edge, pairs) = edge_between(&bodies_at, n_reached, i, &cik, j, &cjk, &mut edges);
         let (Some(vi), Some(vj)) = (form.vertices.get(i as usize), form.vertices.get(j as usize)) else { continue };
         let (Some(ci), Some(cj)) = (vi.chart_keyed(&cik), vj.chart_keyed(&cjk)) else { continue };
         let Some(word) = form.face_word(i, j) else { continue };
@@ -805,14 +805,38 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     Percept { form, sections, varying, unreached }
 }
 
+/// THE FRAMES A MEMBER OCCUPIES, read at its own coordinate (52.5 reading
+/// 6). `bodies_at` is keyed `vertex ++ chart ++ frame`, so the frames this
+/// member stands on are the fiber under its own `vertex ++ chart` prefix
+/// and the remaining key IS the frame. Read in coordinate order, because
+/// succession along `e₃` is the next frame OCCUPIED and the set may skip,
+/// repeat or reorder in ℤ; the trie's own order is the key's bytes, which
+/// for a little-endian frame is not the coordinate's.
+///
+/// Re-derived from the carrier that already holds the bodies, never stored
+/// beside them (law 12).
+pub(crate) fn occupied_frames(bodies_at: &Keyed<(Body, Body, Versor)>, ix: u16, ck: &[u8]) -> Vec<u16> {
+    let mut prefix = vertex_ix_key(ix);
+    crate::transducer::address::put_bytes(&mut prefix, ck);
+    let Some(fiber) = bodies_at.fiber_at(&prefix) else {
+        return Vec::new();
+    };
+    let mut out: Vec<u16> = fiber
+        .filter_map(|(k, _)| {
+            let tail = k.get(prefix.len()..)?;
+            Some(u16::from_le_bytes(tail.try_into().ok()?))
+        })
+        .collect();
+    out.sort_unstable();
+    out
+}
+
 /// THE EDGE BETWEEN TWO MEMBERS (50.3): measured on the union of their two
 /// bodies at the least frame both stand on, and the frames on which that
 /// edge re-derives — the face's section. A pair with no common frame, or
 /// no edge on the least one, carries none.
-#[expect(clippy::too_many_arguments, reason = "50.3 — the edge is read at two members over the family's frames, and the tally is the instrument's")]
 fn edge_between(
     bodies_at: &Keyed<(Body, Body, Versor)>,
-    n: usize,
     n_reached: usize,
     i: u16,
     cik: &[u8],
@@ -820,16 +844,23 @@ fn edge_between(
     cjk: &[u8],
     tally: &mut EdgeTally,
 ) -> (Option<Transport>, Option<Vec<u16>>) {
-    let at = |ix: u16, ck: &[u8], k: usize| -> Option<&(Body, Body, Versor)> {
+    let at = |ix: u16, ck: &[u8], k: u16| -> Option<&(Body, Body, Versor)> {
         let mut bk = vertex_ix_key(ix);
         crate::transducer::address::put_bytes(&mut bk, ck);
-        bk.extend_from_slice(&(k as u16).to_le_bytes());
+        bk.extend_from_slice(&k.to_le_bytes());
         bodies_at.get(&bk)
     };
     let mut edge: Option<Transport> = None;
     let mut agreeing: Vec<u16> = Vec::new();
     let mut common = 0usize;
-    for k in 0..n {
+    // SUCCESSION ALONG e₃ IS THE NEXT FRAME OCCUPIED, never `k + 1` (52.5
+    // reading 6, ruled 2026-09-18). This read `for k in 0..n`, probing every
+    // integer up to the family's pair count and `continue`-ing on each miss:
+    // a linear scan over a range, where the frames a member actually stands
+    // on are named by its own fiber of `bodies_at`. The occupied set may
+    // skip, repeat or reorder in ℤ, and the integers between it are not
+    // coordinates of anything.
+    for k in occupied_frames(bodies_at, i, cik) {
         let (Some((a_i, b_i, v_i)), Some((a_j, b_j, _))) = (at(i, cik, k), at(j, cjk, k)) else {
             continue;
         };
@@ -839,12 +870,12 @@ fn edge_between(
             None => {
                 edge = tally.take(Some(measured));
                 if edge.is_some() {
-                    agreeing.push(k as u16);
+                    agreeing.push(k);
                 }
             }
             Some(e) => {
                 if measured.as_ref().is_ok_and(|t| same_transport(t, e)) {
-                    agreeing.push(k as u16);
+                    agreeing.push(k);
                 }
             }
         }
