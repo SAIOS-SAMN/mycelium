@@ -282,6 +282,36 @@ pub fn coset_representative(coset: &[(Mv, Mv)]) -> Option<Mv> {
     geodesic.map(|(_, _, v)| v.clone())
 }
 
+/// THE COSET AS CANDIDATES, GEODESIC FIRST (50.2 step 1, L7c): the
+/// representative [`coset_representative`] names, then every other member
+/// by its own A21 key — a content-fixed order, so two voices reading one
+/// pair walk the same list in the same order and nothing here is chosen by
+/// a scalar (rule 4).
+///
+/// Every member carries the body; they differ in which word the alphabet
+/// spells them with. [`versor_between`] answers the geodesic alone, and a
+/// caller that needs a reading — not a name — had no way to reach the
+/// rest, so a pair whose geodesic the seventeen could not spell was filed
+/// as carrying no transport at all while a turning member of the same
+/// coset spelled fine. The geodesic stays first, so naming and replay are
+/// unchanged.
+pub fn versor_coset_ordered(a: &Shape, b: &Shape) -> Vec<Mv> {
+    let coset = versor_coset(a, b);
+    let geodesic = coset_representative(&coset);
+    // The key IS the member's coordinates written inline (A21), so sorting
+    // the keys is sorting by content and the member rides along by the
+    // position it was measured at — never the other way round.
+    let mut rest: Vec<(Vec<u8>, usize)> = coset
+        .iter()
+        .enumerate()
+        .filter(|(_, (_, v))| geodesic.as_ref() != Some(v))
+        .filter_map(|(at, (_, v))| v.key().map(|k| (k.into_vec(), at)))
+        .collect();
+    rest.sort();
+    rest.dedup_by(|x, y| x.0 == y.0);
+    geodesic.into_iter().chain(rest.into_iter().map(|(_, at)| coset[at].1.clone())).collect()
+}
+
 /// EVERY LAMINA CARRIED, BOTH WAYS: `v` carries each lamina's center of
 /// `a` onto a lamina of `b`, and its inverse carries each lamina's center
 /// of `b` back onto a lamina of `a`. The verification every candidate of

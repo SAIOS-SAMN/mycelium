@@ -115,13 +115,26 @@ pub enum Fill {
 /// the rotor in `Cl(4,0)` over all six planes, the carriage `D·T` in
 /// `Cl(3,1)`. Nothing is projected and nothing is re-factored.
 ///
-/// `Congruent` requires BOTH residues gone. A quarter turn carried along a
-/// translation has the same rotor order as one about a fixed point and is
-/// not the same class: filing it at period four would put a theorem on the
-/// simplex that the seam does not satisfy, because the seam does not
-/// return after four turns — it walks. A rotation about a point away from
-/// the origin is `T_p R T_p⁻¹ = T(p − Rp)·R`, so it stands until the tree
-/// gauge of [`solve_gauge`] conjugates the base-point translation away.
+/// `Congruent` requires a FIXED POINT, not a flat carriage. A quarter turn
+/// carried along a translation has the same rotor order as one about a
+/// fixed point and is not the same class: filing it at period four would
+/// put a theorem on the simplex that the seam does not satisfy, because
+/// the seam does not return after four turns — it walks. But a rotation
+/// about a point away from the origin is `T_p R T_p⁻¹ = T(p − Rp)·R`, and
+/// that DOES return after four turns: it is conjugate to `R`, at `R`'s
+/// order, and its translation is where it stands rather than a residue.
+/// [`crate::transducer::element::turn_base_point`] reads `p` exactly or
+/// refuses, so the two are told apart by solving for the fixed point and
+/// never by the size of anything.
+///
+/// It read `flat` for both and filed every turn as a standing class. The
+/// note here said such a turn stood "until the tree gauge of
+/// [`solve_gauge`] conjugates the base-point translation away", and that
+/// gauge never conjugated: it composes placements along a spanning tree
+/// and returns them, so at degree ≥ 2 a solved simplex fills `Filled` and
+/// an unsolved one classifies on its ungauged carriage. Neither road
+/// reached `Congruent` while a body turned about its own centroid, which
+/// is how every transport a voice measures arrives.
 ///
 /// The 12.6 order of the standing class: the rotor's conjugacy invariants
 /// first, then the placement and dilation residues, then the plane blocks.
@@ -131,15 +144,19 @@ pub fn classify(
     hue: crate::transducer::sentence::CycleType,
 ) -> Fill {
     use crate::transducer::alphabet::Order;
-    use crate::transducer::element::{identity_versor, same_versor};
+    use crate::transducer::element::{identity_versor, same_versor, turn_base_point};
     let flat = same_versor(carriage, &identity_versor());
     if flat && rotor.is_identity() {
         return Fill::Filled(rotor.clone(), Box::new(identity_versor()));
     }
+    // The transport's FIXED POINT: the origin when the carriage is flat,
+    // the turn's own base point when the carriage is exactly `T(p − Rp)`.
+    // A walk and a dilation have neither and still stand.
+    let fixed = flat || turn_base_point(rotor, carriage).is_some();
     // A17: an order of zero is not an order — a congruence is believed only
     // where the rotation CLOSES at ℓ — so it is not filed as one, and every
     // reader of a filed period may take `ℓ − 1` whole.
-    if let (true, Some(Order::Finite(ell @ 1..))) = (flat, rotor.order()) {
+    if let (true, Some(Order::Finite(ell @ 1..))) = (fixed, rotor.order()) {
         return Fill::Congruent(rotor.clone(), ell);
     }
     // 37.7's condition, discriminated from an off-plane rotor rather than

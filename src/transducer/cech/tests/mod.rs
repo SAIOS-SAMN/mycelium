@@ -5,4 +5,5 @@ pub mod common;
 
 mod bianchi;
 mod classify;
+mod gauge;
 mod transitions;

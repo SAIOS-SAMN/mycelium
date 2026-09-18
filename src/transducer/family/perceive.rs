@@ -438,6 +438,16 @@ pub(crate) fn edge_of(gamma: &Versor) -> Result<crate::transducer::sentence::Tra
 /// moved rigidly, and then `Γ_ij = V_i⁻¹ · V_ij` lies in the stabilizer of
 /// `a_i` or the exchange of the two bodies. A refusal is a remainder edge,
 /// and says which (`EdgeRefusal`).
+///
+/// EVERY MEMBER OF THE COSET IS A CANDIDATE, geodesic first. It read
+/// `versor_between` — the geodesic alone — and the whole pair refused when
+/// that one member's `Γ` had no reading, though the stabilizer the coset
+/// quotients is exactly the freedom in which member to read `Γ` through.
+/// The first member that reads answers, in
+/// [`crate::transducer::blade::versor_coset_ordered`]'s content-fixed
+/// order, so the answer does not depend on the order the coset was
+/// measured in; the geodesic's refusal is the one reported when none
+/// reads, because that is the member the naming uses.
 pub(crate) fn edge_transport(
     v_i: &Versor,
     a_i: &Body,
@@ -452,11 +462,24 @@ pub(crate) fn edge_transport(
         pos.dedup();
         blade::shape_of(&pos)
     };
-    let Some(v_ij) = blade::versor_between(&union(a_i, a_j), &union(b_i, b_j)) else {
-        return Err(EdgeRefusal::NotRigid);
-    };
-    let gamma = v_i.versor_inverse().ok_or(EdgeRefusal::NoReading)?.geo(&v_ij);
-    edge_of(&gamma)
+    let members = blade::versor_coset_ordered(&union(a_i, a_j), &union(b_i, b_j));
+    let inv = v_i.versor_inverse().ok_or(EdgeRefusal::NoReading)?;
+    let mut refusal: Option<EdgeRefusal> = None;
+    for v_ij in &members {
+        match edge_of(&inv.geo(v_ij)) {
+            Ok(transport) => return Ok(transport),
+            Err(e) => {
+                refusal.get_or_insert(e);
+            }
+        }
+    }
+    match refusal {
+        Some(e) => Err(e),
+        // Every member either answered or refused, so nothing is held
+        // here: this is the empty coset, and an empty coset is the pair
+        // not moving rigidly. Not a default standing in for a reading.
+        None => Err(EdgeRefusal::NotRigid),
+    }
 }
 
 /// A body's support on the three coordinates of the base, sorted.

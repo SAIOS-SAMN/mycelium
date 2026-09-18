@@ -7,26 +7,48 @@
 
 use super::*;
 
+/// What a tree walk produces: the 0-cochain γ that places each vertex, and
+/// the 1-cocycle the chords carry that γ cannot place.
+///
+/// The two are one reading and are returned together. `sections` is exact
+/// iff `holonomy` is empty; a non-empty `holonomy` does not make `sections`
+/// a gauge, and no caller may treat it as one.
+#[derive(Clone, Debug)]
+pub struct Gauge {
+    /// γ_v for each vertex: the rotor and the carriage that place it,
+    /// composed along the spanning forest.
+    pub sections: Vec<(Rotor, Versor)>,
+    /// Ω on each chord that disagrees: `(i, j, γ_j γ_i⁻¹ g⁻¹, …)` on both
+    /// halves. This is H¹ — the curvature of the 1-skeleton, measured on a
+    /// closed loop — and it is the content of the disagreement, not a
+    /// symptom of one.
+    pub holonomy: Vec<(usize, usize, Rotor, Versor)>,
+}
+
 /// Tree-plus-chord solver for δγ = ω on a transition's BOTH halves — the
 /// rotor in `Cl(4,0)` and the carriage in `Cl(3,1)` (L11e). A forest
-/// 1-cochain is exact; a chord that does not match the tree path is a
-/// withheld class.
+/// 1-cochain is exact; a chord that does not match the tree path closes a
+/// loop, and what it carries round that loop is returned.
 ///
-/// THIS IS THE GAUGE THAT LETS A TURN ABOUT A POINT FILE. A rotation about
-/// `p` is `T_p R T_p⁻¹ = T(p − Rp)·R`, which `classify` reads as a standing
-/// class because it carries a placement residue. Once the tree has placed
-/// the sections, the base-point translation is conjugated away and the same
-/// transition classifies as `Congruent` at `R`'s order. Ungauged it stands,
-/// which is the honest reading of a transition with no frame and not a
-/// missed fill. Solving the rotor half alone could not do this: the
-/// placement is the half that has to move.
-pub fn solve_gauge(
-    n: usize,
-    edges: &[(usize, usize, Rotor, Versor)],
-) -> Option<Vec<(Rotor, Versor)>> {
+/// IT COMPUTED THE HOLONOMY AND THREW IT AWAY. The disagreement test was
+/// `γ_j γ_i⁻¹ ≠ g`, which is `Ω = γ_j γ_i⁻¹ g⁻¹ ≠ 1` with `Ω` formed
+/// inside the comparison and discarded on the next line by returning
+/// `None` for the whole complex — one chord's class erasing every vertex
+/// the tree had placed. `Ω` is the Čech 1-cocycle: the obstruction to the
+/// sections gluing, and the only object in the tree walk that a spanning
+/// forest does not already determine. `None` now means only that a reading
+/// has no inverse.
+///
+/// The note here claimed this gauge conjugates a turn's base-point
+/// translation away so the turn can file `Congruent`. It never did: it
+/// composes placements along the tree and returns them, and `fill` stores
+/// them and answers `Filled`. A turn about a point is read where a turn is
+/// read — [`crate::transducer::element::turn_base_point`], through
+/// [`classify`].
+pub fn solve_gauge(n: usize, edges: &[(usize, usize, Rotor, Versor)]) -> Option<Gauge> {
     use crate::transducer::element::{identity_versor, same_versor};
     if n == 0 {
-        return Some(Vec::new());
+        return Some(Gauge { sections: Vec::new(), holonomy: Vec::new() });
     }
     let mut parent: Vec<usize> = (0..n).collect();
     let find = |parent: &mut [usize], mut x: usize| {
@@ -76,16 +98,23 @@ pub fn solve_gauge(
             }
         }
     }
+    let mut holonomy: Vec<(usize, usize, Rotor, Versor)> = Vec::new();
     for (i, j, g, c) in &chords {
         let (gi, ci) = (gamma[*i].inverse()?, carriage[*i].versor_inverse()?);
+        let (path_r, path_c) = (gamma[*j].geo(&gi), carriage[*j].geo(&ci));
         // A chord must agree on BOTH halves. Agreeing on the rotor alone
         // would call a tree exact when its placements disagree, which is
         // the class the gauge exists to withhold.
-        if gamma[*j].geo(&gi) != *g || !same_versor(&carriage[*j].geo(&ci), c) {
-            return None;
+        if path_r == *g && same_versor(&path_c, c) {
+            continue;
         }
+        // `Ω = (tree path) · (chord)⁻¹` on each half: what the loop
+        // through the tree and back along the chord carries. Both halves,
+        // for the reason the test above is on both.
+        let (gc, cc) = (g.inverse()?, c.versor_inverse()?);
+        holonomy.push((*i, *j, path_r.geo(&gc), path_c.geo(&cc)));
     }
-    Some(gamma.into_iter().zip(carriage).collect())
+    Some(Gauge { sections: gamma.into_iter().zip(carriage).collect(), holonomy })
 }
 
 impl Complex {
@@ -313,21 +342,45 @@ impl Complex {
                     }
                 }
             }
-            if let Some(gs) = solve_gauge(verts.len(), &edges) {
-                for (v, (g, c)) in verts.iter().zip(gs.iter()) {
-                    if let Some(sec) = self.sections.get_mut(v) {
-                        sec.gamma = g.clone();
-                        sec.carriage = c.clone();
+            if let Some(gauge) = solve_gauge(verts.len(), &edges) {
+                if gauge.holonomy.is_empty() {
+                    for (v, (g, c)) in verts.iter().zip(gauge.sections.iter()) {
+                        if let Some(sec) = self.sections.get_mut(v) {
+                            sec.gamma = g.clone();
+                            sec.carriage = c.clone();
+                        }
                     }
+                    let Some((g1, c1)) = gauge.sections.get(1).cloned() else {
+                        return Fill::Open;
+                    };
+                    let filled = Fill::Filled(g1, Box::new(c1));
+                    if let Some(c) = self.degrees[degree].get_mut(key) {
+                        c.fill = filled.clone();
+                    }
+                    return filled;
                 }
-                let Some((g1, c1)) = gs.get(1).cloned() else {
-                    return Fill::Open;
-                };
-                let filled = Fill::Filled(g1, Box::new(c1));
-                if let Some(c) = self.degrees[degree].get_mut(key) {
-                    c.fill = filled.clone();
+                // THE CHORDS CARRY A CLASS. The sections are NOT placed:
+                // a forest that its own chords contradict is not a gauge,
+                // and writing it onto the sections would publish a frame
+                // the complex does not have. What the loops carry is
+                // classified instead — the holonomy composed, read by the
+                // one classifier (L23b), so a loop that closes at ℓ files
+                // its period and one that walks stands with its residue.
+                // It returned `None` here and this simplex fell through to
+                // `extend`, which classifies the simplex's stored
+                // coboundary and never sees the loop at all.
+                let (hr, hc) = gauge.holonomy.iter().fold(
+                    (Rotor::identity(), crate::transducer::element::identity_versor()),
+                    |(r, c), (_, _, gr, gc)| (r.geo(gr), c.geo(gc)),
+                );
+                let outcome = classify(&hr, &hc, crate::transducer::sentence::CycleType::of(&[]));
+                if !matches!(outcome, Fill::Open) {
+                    self.index_congruent(&outcome);
+                    if let Some(c) = self.degrees[degree].get_mut(key) {
+                        c.fill = outcome.clone();
+                    }
+                    return outcome;
                 }
-                return filled;
             }
         }
         let Some(a) = self.sections.get(&verts[0]).cloned() else {

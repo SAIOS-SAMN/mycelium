@@ -88,6 +88,44 @@ fn the_versor_between_symmetric_bodies_is_the_cosets_geodesic() {
     assert_eq!(carry(&v2, 2, 3, 0), Some((q(4), q(6), q(0))));
 }
 
+/// 50.2 step 1, L7c — THE COSET IS THE CANDIDATES, AND THE GEODESIC IS
+/// ONLY THE FIRST OF THEM. `versor_between` answers one member, so a
+/// caller that needed a member the alphabet can READ — not the one the
+/// language NAMES — had nowhere to go and filed the whole pair as
+/// carrying nothing. The ordering is content-fixed: the geodesic, then
+/// every other member by its own A21 key, so two voices measuring one
+/// pair walk the same list whatever order the candidates were tried in,
+/// and no scalar picks among them (rule 4).
+#[test]
+fn the_coset_is_ordered_geodesic_first_and_holds_every_carrying_member() {
+    let sq = shape_of(&rect(0, 0, 2, 2));
+    let sq3 = shape_of(&rect(4, 4, 6, 6));
+    let ordered = versor_coset_ordered(&sq, &sq3);
+    let raw = versor_coset(&sq, &sq3);
+    let [geodesic, rest @ ..] = ordered.as_slice() else {
+        panic!("a square's stabilizer is not trivial: the coset has members");
+    };
+    assert!(!rest.is_empty(), "more than one member carries the square");
+    assert_eq!(
+        Some(geodesic.key()),
+        versor_between(&sq, &sq3).map(|v| v.key()),
+        "the geodesic is first: naming and replay are unchanged"
+    );
+    for v in &ordered {
+        assert!(carries(v, &sq, &sq3), "every candidate offered carries the body");
+    }
+    for (_, member) in &raw {
+        assert!(
+            ordered.iter().any(|v| v.key() == member.key()),
+            "and no member the coset measured is dropped on the way out"
+        );
+    }
+    let tail: Vec<_> = rest.iter().filter_map(|v| v.key()).collect();
+    let mut by_content = tail.clone();
+    by_content.sort();
+    assert_eq!(tail, by_content, "the members after the geodesic stand in their own key order");
+}
+
 /// 24.4, A21 §2, Stage 12 S12.1a — A CHART'S PREFIX IS THE TOPOLOGICAL
 /// STRATUM. Two rectangles of different proportions have the same
 /// components, holes, cavities and turns and different moment ratios:

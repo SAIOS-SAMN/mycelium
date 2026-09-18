@@ -187,6 +187,105 @@ pub fn dilator_of(v: &Versor) -> Option<Versor> {
     }
 }
 
+/// The base's three axes in the rotor chart (51.2): `e₀, e₁, e₃` are `r,
+/// c, k`, and `e₂` is off the base. Index 2 of a rotor's action is the row
+/// that says a turn leaves the base, and it is a row of the system here,
+/// never dropped.
+const BASE_AXES: [usize; 3] = [0, 1, 3];
+
+/// THE BASE POINT OF A TURN (12.6; `cech::classify`'s standing note): a
+/// rotation about `p` rather than the origin is `T_p R T_p⁻¹ = T(p − R p)
+/// · R`, so its carriage is not a residue — it is WHERE the turn stands,
+/// and `p` is determined by `R` and the translation together. `Some(p)`
+/// when the carriage is exactly `T(p − R p)` for some rational `p`; `None`
+/// when it is not — a dilation, a walk, or a turn that leaves the base.
+///
+/// It stood unread, and that is why a turning body never filed a period.
+/// `classify` will only read a finite order off a FLAT carriage, and every
+/// transport a voice measures arrives turning about its body's own
+/// centroid: `versor_coset` builds each member as `T(c_b)·D(ρ)·R·T(−c_a)`,
+/// so the translation is always there and every turn classified as a
+/// standing class instead. Reading `p` loses nothing law 12 would keep —
+/// it is a FUNCTION of `R` and `t`, not a coordinate beside them — while
+/// refusing to read it lost the turn itself.
+pub fn turn_base_point(
+    rotor: &crate::transducer::alphabet::Rotor,
+    carriage: &Versor,
+) -> Option<[Q; 3]> {
+    // A dilation is a residue and not a base point, and a carriage that is
+    // not exactly the translator by the origin's image carries something
+    // this reading does not name: refused whole rather than approximated
+    // (rule 11).
+    if !rho_of(carriage)?.is_one() {
+        return None;
+    }
+    let z = Q::zero();
+    let t = crate::transducer::cga::base(
+        &carriage.sandwich(&crate::transducer::cga::point(&z, &z, &z)),
+    )?;
+    if !same_versor(carriage, &crate::transducer::cga::translator(&t.0, &t.1, &t.2)) {
+        return None;
+    }
+    // `(I − R) p = t`, four rows in three unknowns: the base's three and
+    // the off-base row that must come out zero, so a turn carrying the
+    // base off itself refuses here instead of being solved on a projection
+    // (checklist (m)).
+    let mut rows: [[Q; 4]; 4] = std::array::from_fn(|_| std::array::from_fn(|_| Q::zero()));
+    for (col, &axis) in BASE_AXES.iter().enumerate() {
+        let mut e: [Q; 4] = std::array::from_fn(|_| Q::zero());
+        e[axis] = Q::one();
+        let image = rotor.carry(&e)?;
+        for (row, &r_axis) in BASE_AXES.iter().enumerate() {
+            rows[row][col] = match row == col {
+                true => Q::one() - &image[r_axis],
+                false => -image[r_axis].clone(),
+            };
+        }
+        rows[3][col] = -image[2].clone();
+    }
+    for (row, rhs) in [t.0, t.1, t.2, Q::zero()].into_iter().enumerate() {
+        rows[row][3] = rhs;
+    }
+    solve_base_point(rows)
+}
+
+/// Exact rational elimination on the four rows of `(I − R) p = t`. Any
+/// solution answers, because every point of a turn's axis is a base point
+/// of the same turn and the reading asks whether one exists, not which.
+/// `None` is a row that is zero on the left and not on the right: the
+/// system saying no point turns this way.
+fn solve_base_point(mut rows: [[Q; 4]; 4]) -> Option<[Q; 3]> {
+    let mut pivot_of: [Option<usize>; 3] = [None, None, None];
+    let mut pivot = 0usize;
+    for col in 0..3 {
+        let Some(found) = (pivot..4).find(|&r| !rows[r][col].is_zero()) else { continue };
+        rows.swap(pivot, found);
+        let lead = rows[pivot][col].clone();
+        for cell in rows[pivot].iter_mut().skip(col) {
+            *cell = &*cell / &lead;
+        }
+        let lead_row = rows[pivot].clone();
+        for (r, row) in rows.iter_mut().enumerate() {
+            if r == pivot || row[col].is_zero() {
+                continue;
+            }
+            let f = row[col].clone();
+            for (cell, above) in row.iter_mut().zip(lead_row.iter()).skip(col) {
+                *cell = &*cell - &(above * &f);
+            }
+        }
+        pivot_of[col] = Some(pivot);
+        pivot += 1;
+    }
+    if (pivot..4).any(|r| !rows[r][3].is_zero()) {
+        return None;
+    }
+    Some(std::array::from_fn(|c| match pivot_of[c] {
+        Some(r) => rows[r][3].clone(),
+        None => Q::zero(),
+    }))
+}
+
 // `sensor_plane_block` — the 2×2 projection of a versor's rotation onto
 // the sensor plane — stood here. `base_rotor_of` reads the rotation whole
 // on the base's three planes (51.2), and a projection of it is what
