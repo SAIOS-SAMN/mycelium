@@ -275,6 +275,7 @@ impl Contemplation {
             torsion,
             certificates,
             vortex,
+            candidates: Keyed::new(),
             form,
             bundle,
             remainders,

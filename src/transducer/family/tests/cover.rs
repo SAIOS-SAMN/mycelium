@@ -63,6 +63,61 @@ fn composite(g: &Grid) -> Body {
     body_of(perceive(g).iter().flat_map(|b| b.laminae.iter().copied()).collect::<Vec<_>>())
 }
 
+/// P9 — A DEMAND'S CANDIDATE TRANSPORT IS RE-DERIVED FROM ITS OWN BODIES.
+/// The demand carries the bodies it stands for (50.5) and the two sides of
+/// its transition are its links split by which hue they occupy, so the
+/// transport between them is read at hold time and never stored beside
+/// them (law 12). `carriage_with_core` answers the versor where one exists
+/// and the homeomorphic core's where the shapes differ by a surgery, which
+/// is the case an uncarried body is in.
+#[test]
+fn a_demands_candidate_transport_is_read_from_the_bodies_it_stands_for() {
+    use crate::transducer::bubble::contemplation::Contemplation;
+    let held = |ga: &[&str], gb: &[&str]| -> (usize, usize) {
+        let f = measured(&grid(ga), &grid(gb));
+        let chart = f
+            .vertices
+            .iter()
+            .find_map(|v| match v {
+                Vertex::Demand { kind: Demand::TopologicalDeformation { .. }, chart, .. } => {
+                    Some(chart.clone())
+                }
+                _ => None,
+            })
+            .expect("the deformation stands as a typed demand");
+        let mut c = Contemplation::new();
+        c.hold_form(&f, &[], &[]);
+        let (_, b) = c.bubbles.scoped().next().expect("the demand is held as an idea");
+        let over_chart =
+            b.candidates.get(chart.key().as_bytes()).map_or(0, |m| m.len());
+        let total: usize = b.candidates.scoped().map(|(_, m)| m.len()).sum();
+        assert_eq!(over_chart, total, "every candidate stands over the demand's own chart");
+        (total, b.cover.len())
+    };
+    // A HOLE FILLED AND A BODY PUNCTURED are surgeries, so the core carries
+    // and its rotor is the candidate this mind holds over the demand.
+    let (fill, cover) = held(
+        &["11111", "10001", "10001", "10001", "11111"],
+        &["11111", "11111", "11111", "11111", "11111"],
+    );
+    assert_eq!((fill, cover), (1, 1), "the filled hole's core is one candidate on one chart");
+    let (punch, _) = held(
+        &["11111", "11111", "11111", "11111", "11111"],
+        &["11111", "10001", "10001", "10001", "11111"],
+    );
+    assert_eq!(punch, 1, "and so is the puncture's");
+    // A CORNER ERODED IS NO SURGERY: `Surgery::factor` classifies none of
+    // the four kinds on it, so no core transport is measured and NOTHING is
+    // held. An absent candidate is the reading, never an invented one
+    // (rule 11).
+    let (none, cover) = held(
+        &["11111", "11111", "11111", "11111", "11111"],
+        &["11111", "11111", "11111", "11111", "11110"],
+    );
+    assert_eq!(none, 0, "no core transport, so no candidate stands in for one");
+    assert_eq!(cover, 1, "and the idea still stands on the demand's chart");
+}
+
 /// A stroke large enough that the cover runs to the end of its pieces.
 /// The machine's own stroke does not reach it, so a fixture on the machine
 /// stroke would assert the starvation and not the reading.

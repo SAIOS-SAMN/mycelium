@@ -92,6 +92,48 @@ pub struct Contemplation {
     pub(crate) by_vortex: Keyed<Keyed<()>>,
 }
 
+/// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the
+/// bodies it stands for (50.5) and never stored beside them (law 12).
+///
+/// A demand's links are the two sides of one transition split by which hue
+/// they occupy — `before` where the hue it came from is set, `after` where
+/// the hue it goes to is — which is the same split `ring_answer` makes in
+/// `family/memo.rs`. `carriage_with_core` is the transport between the two
+/// bodies: the versor where one exists, and the homeomorphic core's where
+/// the shapes differ by a surgery (`Surgery::factor`), which is the case an
+/// uncarried body is in.
+///
+/// The candidate is the ROTOR of that transport. `peel_versor` answers it
+/// where the seventeen spell the versor, and where they do not the peel's
+/// own `Standing` demand carries the canonical holonomy it stopped at
+/// (16.16 step 6) — which is 37.7's object and is the candidate that
+/// matters. Every other outcome names no rotor and contributes none:
+/// nothing is stood in for a transport that was not measured (rule 11).
+pub(crate) fn candidates_over(bodies: &[Link]) -> Keyed<Rotor> {
+    let mut out: Keyed<Rotor> = Keyed::new();
+    let before: Vec<Link> = bodies.iter().copied().filter(|c| c.2 != 0).collect();
+    let after: Vec<Link> = bodies.iter().copied().filter(|c| c.3 != 0).collect();
+    if before.is_empty() || after.is_empty() {
+        return out;
+    }
+    let lift = |links: &[Link]| {
+        crate::transducer::family::body_of(
+            links.iter().map(|&(r, c, _, h)| (r, c, 0i64, h)).collect::<Vec<_>>(),
+        )
+    };
+    let (a, b) = (lift(&before), lift(&after));
+    let Some(car) = crate::transducer::family::carriage_with_core(&a, &b) else {
+        return out;
+    };
+    let rotor = match crate::transducer::family::peel_versor(&car.v) {
+        Some(Ok(w)) => w.rotor(),
+        Some(Err(crate::transducer::sentence::Demand::Standing { rotor, .. })) => *rotor,
+        _ => return out,
+    };
+    out.insert(rotor.key(), rotor);
+    out
+}
+
 impl Contemplation {
     pub fn new() -> Contemplation {
         Contemplation::default()
@@ -591,6 +633,7 @@ impl Contemplation {
             }
         }
         let mut glues = Keyed::new();
+        let mut candidates: Keyed<Keyed<Rotor>> = Keyed::new();
         for v in &f.vertices {
             match v {
                 // EVERY CHART THE VERTEX ACTS ON is a chart the bubble's
@@ -617,8 +660,18 @@ impl Contemplation {
                 // It carries no word, so it contributes no section and no
                 // rotor; what it contributes is the coordinate, which is
                 // what a meet is read at.
-                Vertex::Demand { chart, .. } => {
+                //
+                // P9 — AND THE TRANSPORT BETWEEN THE BODIES IT STANDS FOR,
+                // as a candidate. The demand carries those bodies (50.5)
+                // and the two sides of its transition are its links split
+                // by which hue they occupy, so the transport is RE-DERIVED
+                // here and never stored beside them (law 12, and the same
+                // reading `ring_answer` makes in `family/memo.rs`).
+                Vertex::Demand { chart, bodies, .. } => {
                     cover.insert(chart.key(), ());
+                    for (rk, r) in candidates_over(bodies).scoped() {
+                        candidates.nested_insert(chart.key(), rk, r.clone());
+                    }
                 }
                 _ => {}
             }
@@ -663,6 +716,7 @@ impl Contemplation {
             torsion: f.torsion.clone(),
             certificates: certs,
             vortex: f.vortex.clone(),
+            candidates,
             form: Some(held),
             bundle,
             remainders: rem_keyed,
@@ -753,6 +807,7 @@ impl Contemplation {
             torsion: Keyed::new(),
             certificates: Keyed::new(),
             vortex: Keyed::new(),
+            candidates: Keyed::new(),
             form: None,
             bundle: None,
             remainders: Keyed::new(),

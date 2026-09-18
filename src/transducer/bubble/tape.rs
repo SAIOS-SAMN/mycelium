@@ -248,6 +248,9 @@ impl Contemplation {
                 torsion,
                 certificates,
                 vortex,
+                // Not persisted: re-derived from the demand's own bodies
+                // at hold time (law 12).
+                candidates: Keyed::new(),
                 form,
                 bundle: None,
                 remainders: Keyed::new(),

@@ -155,6 +155,25 @@ pub struct Bubble {
     /// ruling. Outer key is the after class; inner is the discharging
     /// word's M1 key.
     pub vortex: Keyed<Keyed<PivotCertificate>>,
+    /// P9 — CANDIDATE TRANSPORTS HELD OVER AN OPEN DEMAND (25, 37.7).
+    /// Outer key is the demand's chart; inner is the candidate rotor's own
+    /// key.
+    ///
+    /// NOT `vortex`, which holds `PivotCertificate`s. A certificate asserts
+    /// a chord, an axis, a before and after class, a `RankMove` and a μ⃗
+    /// measured over a bundle — a closed loop's discharge. An open demand
+    /// has closed nothing and has none of them, so putting a candidate
+    /// there means writing those fields with values nothing measured (rule
+    /// 8, rule 11). The two carriers hold two different objects: a
+    /// certified discharge, and a transport this mind has not yet ruled on.
+    ///
+    /// Re-derived at hold time from the demand's own bodies and never
+    /// stored beside them (law 12): the demand carries the bodies it stands
+    /// for (50.5), the two sides of the transition are the links split by
+    /// which hue they occupy, and `carriage_with_core` reads the transport
+    /// between them. Not persisted — a candidate is this session's reading
+    /// of a demand the tape already carries, and the tape rebuilds it.
+    pub candidates: Keyed<Keyed<Rotor>>,
     /// The form this idea is (chapter 30 step 6).
     pub form: Option<Form>,
     /// Pairs the idea germinated from; trial speaks over them for μ⃗.
