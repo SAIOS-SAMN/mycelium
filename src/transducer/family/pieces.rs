@@ -116,40 +116,53 @@ pub(crate) fn meet_ends(k: &[u8]) -> Option<(&[u8], &[u8])> {
     tail.is_empty().then_some((lo, hi))
 }
 
-/// The pieces of a body: its peel shells, and within each shell the
-/// one-hue connected components (13.9's split, `blade::components` on the
-/// three coordinates of the base), filed by their own address.
-pub(crate) fn pieces_of(
-    laminae: &[Lamina],
-    scale: Option<((usize, usize), (usize, usize))>,
-) -> crate::network::nerve::Keyed<Piece> {
+/// THE PIECES OF A BODY ARE BODIES: its one-hue connected components
+/// (13.9's split, `blade::components` on the three coordinates of the
+/// base, which is 51.3's 6-adjacency), filed by their own address.
+///
+/// THE COVER DOES NOT DESCEND BELOW A BODY (51.3, 50.8 as ruled
+/// 2026-09-18). This peeled the body into concentric shells first and took
+/// the components of each shell, so a body no single versor carried whole
+/// became one word vertex per shell component rather than one demand: 1 655
+/// vertices, 11 762 faces and 10 118 loops on one 22×22 family of epoch 65.
+/// Two readings followed from that shape and neither was a separate defect.
+/// The form's address is its vertex key, so 1 655 pieces made it 9 990 312
+/// bytes, and every index naming the idea copied it (R6). And a shell
+/// component is carried by a translation, whose rotor is the identity and
+/// which occupies no coordinate of the class vector, so `admit_words` filed
+/// those vertices on no axis and the pivot was offered nothing —
+/// `crystal.on_axis` answered 0 on 123 of 123 reads.
+///
+/// What no single versor carries whole is one demand of the kind its
+/// reading types (50.5), declared from `Cover::uncarried` in `extract.rs`,
+/// never a listing of pieces. `ShellKind::Whole` is the kind of a body read
+/// without a peel — the value, not a placeholder for one.
+pub(crate) fn pieces_of(laminae: &[Lamina]) -> crate::network::nerve::Keyed<Piece> {
     let mut out: crate::network::nerve::Keyed<Piece> = crate::network::nerve::Keyed::new();
-    for shell in crate::transducer::peel::peel_body_scaled(laminae, scale) {
-        // One hue at a time, so a component is a piece of ONE colour: a
-        // seam between two hues is a meet, not a body (13.9).
-        let mut hues: crate::network::nerve::Keyed<Vec<Lamina>> = crate::network::nerve::Keyed::new();
-        for &(r, c, k, h) in &shell.laminae {
-            match hues.get_mut(&[h]) {
-                Some(v) => v.push((r, c, k, h)),
-                None => {
-                    hues.insert([h], vec![(r, c, k, h)]);
-                }
+    // One hue at a time, so a component is a piece of ONE colour: a seam
+    // between two hues is a meet, not a body (13.9).
+    let mut hues: crate::network::nerve::Keyed<Vec<Lamina>> = crate::network::nerve::Keyed::new();
+    for &(r, c, k, h) in laminae {
+        match hues.get_mut(&[h]) {
+            Some(v) => v.push((r, c, k, h)),
+            None => {
+                hues.insert([h], vec![(r, c, k, h)]);
             }
         }
-        for (hue_key, of_hue) in hues.scoped() {
-            // The hue is the KEY this group was filed under, not a lamina
-            // read out of it by position (rule 15): every lamina here has
-            // that hue by construction.
-            let [hue] = hue_key.as_slice() else { continue };
-            let hue = *hue;
-            for comp in crate::transducer::blade::components(of_hue) {
-                if comp.is_empty() {
-                    continue;
-                }
-                let body = body_of(comp);
-                let k = piece_key(shell.kind, hue, &support_of(&body));
-                out.insert(k, Piece { body });
+    }
+    for (hue_key, of_hue) in hues.scoped() {
+        // The hue is the KEY this group was filed under, not a lamina read
+        // out of it by position (rule 15): every lamina here has that hue
+        // by construction.
+        let [hue] = hue_key.as_slice() else { continue };
+        let hue = *hue;
+        for comp in crate::transducer::blade::components(of_hue) {
+            if comp.is_empty() {
+                continue;
             }
+            let body = body_of(comp);
+            let k = piece_key(ShellKind::Whole, hue, &support_of(&body));
+            out.insert(k, Piece { body });
         }
     }
     out

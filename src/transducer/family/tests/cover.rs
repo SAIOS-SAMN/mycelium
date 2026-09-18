@@ -14,12 +14,53 @@ use crate::transducer::sentence::{Demand, Vertex};
 
 /// A solid block against the same block with ONE LAMINA REMOVED. No versor
 /// carries the whole body onto the whole image — that is what makes it a
-/// deformation — and the peel's shells carry piece by piece.
+/// deformation — and under 51.3 as ruled 2026-09-18 the cover does not
+/// descend below the body, so this carries NOTHING and stands as one typed
+/// demand. It is kept for exactly that reading.
 fn notched() -> (Grid, Grid) {
     (
         grid(&["11111", "11111", "11111", "11111", "11111"]),
         grid(&["11111", "11111", "11111", "11111", "11110"]),
     )
+}
+
+/// FOUR BODIES OF ONE HUE, THE FOURTH SLID ONE COLUMN. The cover's pieces
+/// are bodies (51.3 as ruled 2026-09-18), so a fixture that exercises the
+/// pullback, the meets and their loops needs SEVERAL bodies. These tests
+/// stood on one body peeled into shells, which the peel no longer produces
+/// and which `notched` now demonstrates the absence of.
+///
+/// The four blocks are one hue and one shape, so they share a chart and
+/// `extract_rule_with` unions them into one composite (extract.rs:281).
+/// They are separated by background, so they are four distinct components
+/// under 51.3's 6-adjacency while their rings still meet. Three stand in
+/// place and the fourth slides one column, so no versor carries the
+/// composite whole — that is what makes it a deformation — while the
+/// slide still overlaps its own source, so the pullback places all four.
+fn four_bodies() -> (Grid, Grid) {
+    (
+        grid(&["1100110", "1100110", "0000000", "1100110", "1100110"]),
+        grid(&["1100110", "1100110", "0000000", "1101100", "1101100"]),
+    )
+}
+
+/// THE SAME FOUR BODIES, THE FOURTH DEFORMED RATHER THAN SLID: its upper
+/// row holds and its lower row slides, so the pullback cannot place it and
+/// pass (b) is offered it under the versors pass (a) placed. This is the
+/// fixture for propagation, which the sliding one does not reach.
+fn four_bodies_one_left() -> (Grid, Grid) {
+    (
+        grid(&["1100110", "1100110", "0000000", "1100110", "1100110"]),
+        grid(&["1100110", "1100110", "0000000", "1100110", "1101100"]),
+    )
+}
+
+/// The composite of every body a grid perceives, as `extract_rule_with`
+/// forms it for one chart (extract.rs:281). The cover is given a composite
+/// and reads its bodies back out with `pieces_of`; a fixture of one body
+/// has nothing for it to cover (51.3).
+fn composite(g: &Grid) -> Body {
+    body_of(perceive(g).iter().flat_map(|b| b.laminae.iter().copied()).collect::<Vec<_>>())
 }
 
 /// A stroke large enough that the cover runs to the end of its pieces.
@@ -35,19 +76,39 @@ fn measured(a: &Grid, b: &Grid) -> crate::transducer::sentence::Form {
 /// cover's carriages were written to `cover.carried` and read by a count.
 #[test]
 fn the_carried_pieces_are_word_vertices_of_the_form() {
-    let (a, b) = notched();
+    let (a, b) = four_bodies();
     let f = measured(&a, &b);
     let words = f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
-    assert_eq!(words, 5, "the five pieces the cover carried are five word vertices");
-    // No versor carries the whole body onto the whole image, so every one
-    // of them came from the cover.
+    assert_eq!(words, 4, "the four bodies the cover carried are four word vertices");
+    // No versor carries the composite onto its image, so every one of them
+    // came from the cover and not from a whole-body quotient.
+    assert!(
+        carriage(&composite(&a), &composite(&b)).is_none(),
+        "the composite does not carry whole; these vertices are the cover's"
+    );
+}
+
+/// 51.3 AS RULED 2026-09-18 — A PIECE IS A WORD VERTEX ONLY IF IT IS A
+/// BODY. One body no versor carries whole is not a listing of its parts: it
+/// carries nothing and stands as one typed demand. Before the ruling the
+/// peel cut this block into shells and the form held five word vertices for
+/// a scene with one body in it.
+#[test]
+fn one_body_that_does_not_carry_whole_is_a_demand_and_not_a_listing() {
+    let (a, b) = notched();
+    let f = measured(&a, &b);
     let (ia, ib) = (perceive(&a), perceive(&b));
     let ([input], [image]) = (ia.as_slice(), ib.as_slice()) else {
         panic!("the notched fixture perceives one body on each side");
     };
+    assert!(carriage(input, image).is_none(), "the whole body does not carry");
+    let words = f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
+    assert_eq!(words, 0, "and the cover lists no pieces of it");
     assert!(
-        carriage(input, image).is_none(),
-        "the whole body does not carry; these vertices are the cover's"
+        f.vertices
+            .iter()
+            .any(|v| matches!(v, Vertex::Demand { kind: Demand::TopologicalDeformation { .. }, .. })),
+        "what no versor carries whole stands as one typed demand"
     );
 }
 
@@ -87,7 +148,7 @@ fn a_meets_address_gives_back_its_two_ends() {
 /// two vertices, and a cycle of those faces is what carries a holonomy.
 #[test]
 fn the_meets_are_faces_and_the_faces_close_into_loops() {
-    let (a, b) = notched();
+    let (a, b) = four_bodies();
     let f = measured(&a, &b);
     assert!(!f.faces.is_empty(), "the cover's meets became faces");
     assert!(!f.loops.is_empty(), "and the faces close into cycles");
@@ -128,7 +189,7 @@ fn the_meets_are_faces_and_the_faces_close_into_loops() {
 /// simplex, and a form that filled none carries none.
 #[test]
 fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
-    let (a, b) = notched();
+    let (a, b) = four_bodies();
     let f = measured(&a, &b);
     // WHAT THIS FIXTURE ACTUALLY CONTAINS, asserted, because every check below
     // is inside a walk of `f.torsion` and that carrier is EMPTY here — a test
@@ -137,15 +198,15 @@ fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
     // surprise, which is exactly why the content has to be asserted instead
     // of walked.
     //
-    // On this fixture: 12 loops, 8 carrying one evaluated member path each
-    // whose edge holonomy has order Finite(1) — the identity, flat, and 50.8
-    // case 3 files nothing there because there is nothing to fill — and 4
-    // carrying no evaluated path at all, which is a remainder edge on them
-    // (13.9 step 7). The engine is right and the fixture is not curved.
+    // On this fixture: 3 loops, each carrying evaluated member paths whose
+    // edge holonomy is the identity — flat, and 50.8 case 3 files nothing
+    // there because there is nothing to fill — and none unevaluated. The
+    // four bodies are carried by translations, so the engine is right and
+    // the fixture is not curved.
     //
     // 50.8 CASE 3'S FILING PATH THEREFORE HAS NO TEST. Exercising it needs a
     // cover whose meet loop composes to a finite NON-identity rotor — three
-    // pieces whose pairwise frame transitions do not telescope — which is a
+    // bodies whose pairwise frame transitions do not telescope — which is a
     // fixture to build and not a line to write, so it is named here rather
     // than implied by a green test.
     let (mut flat, mut unevaluated) = (0usize, 0usize);
@@ -168,8 +229,8 @@ fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
     }
     assert_eq!(
         (f.loops.len(), flat, unevaluated),
-        (12, 8, 4),
-        "the notched cover's loops are flat or unevaluated, so nothing is filed"
+        (3, 3, 0),
+        "the cover's loops are flat, so nothing is filed"
     );
     assert!(
         f.torsion.is_empty(),
@@ -221,25 +282,19 @@ fn an_uncarried_remainder_leaves_the_deformation_standing() {
 /// The test asserts that a small stroke does NOT finish in one pass, so
 /// what it proves is a resume and not a single run.
 ///
-/// THE FLOOR IS REAL AND IS NOT A SCHEDULING FAULT. Measured on this
-/// fixture: at a stroke of 6 and above the cover completes across several
-/// strokes; at 4 it never does, and parks forever at `placed 5 meets 0`.
-/// A piece the cover cannot carry is re-read every stroke and fails again
-/// — it is the uncarried support, a standing defect, and `uncarried` is
-/// where it reports — so a stroke smaller than the cost of re-reading the
-/// defects never reaches past them. That is the defect exerting its cost
-/// on every stroke, not a queue starving a latecomer, and the reading to
-/// take from it is that the stroke is too small for this scene.
+/// THE FLOOR IS REAL AND IS NOT A SCHEDULING FAULT. A body the cover
+/// cannot carry is re-read every stroke and fails again — it is the
+/// uncarried support, a standing defect, and `uncarried` is where it
+/// reports — so a stroke smaller than the cost of re-reading the defects
+/// never reaches past them. That is the defect exerting its cost on every
+/// stroke, not a queue starving a latecomer, and the reading to take from
+/// it is that the stroke is too small for this scene.
 #[test]
 fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
     use crate::transducer::family::cover::cover_deformation;
     use crate::transducer::family::cursor;
-    let (ga, gb) = notched();
-    let (ia, ib) = (perceive(&ga), perceive(&gb));
-    // The fixture perceives ONE body on each side, which the slice says.
-    let ([input], [image]) = (ia.as_slice(), ib.as_slice()) else {
-        panic!("the notched fixture perceives one body on each side");
-    };
+    let (ga, gb) = four_bodies();
+    let (input, image) = (composite(&ga), composite(&gb));
     fn keys<T>(k: &crate::network::nerve::Keyed<T>) -> Vec<Vec<u8>> {
         k.scoped().map(|(a, _)| a).collect()
     }
@@ -247,24 +302,23 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
     // WHOLE, in a stroke that cannot end.
     cursor::clear();
     let whole = cover_deformation(
-        input,
-        image,
+        &input,
+        &image,
         None,
         &mut crate::physics::Physics::default().stroke_n(1 << 20),
     )
     .expect("a cover that runs to its end");
     assert_eq!(cursor::parked(), 0, "a cover that completed leaves nothing parked");
 
-    // THE SAME DEFORMATION, one small stroke at a time.
+    // THE SAME DEFORMATION, one small stroke at a time. The smallest stroke
+    // on this fixture that both needs more than one and reaches the end;
+    // below it the uncarried bodies consume the whole stroke, see above.
     cursor::clear();
-    // Six: the smallest stroke on this fixture that both needs more than
-    // one and reaches the end. Below it the uncarried pieces consume the
-    // whole stroke; see the note above.
-    const STROKE: usize = 6;
+    const STROKE: usize = 4;
     let mut strokes = 0u32;
     let piecewise = loop {
         let mut small = crate::physics::Physics::default().stroke_n(STROKE);
-        match cover_deformation(input, image, None, &mut small) {
+        match cover_deformation(&input, &image, None, &mut small) {
             Ok(c) => break c,
             Err(_) => {
                 strokes += 1;
@@ -306,7 +360,7 @@ fn the_reading_is_the_forms_and_is_stable() {
 }
 
 /// One cover run to the end of its pieces: the cover, its tally, and how
-/// many pieces the input peeled into.
+/// many bodies the input composite holds.
 fn measured_cover(
     a: &Grid,
     b: &Grid,
@@ -315,21 +369,18 @@ fn measured_cover(
     use crate::transducer::family::cover::{cover_deformation, take_cover_tally};
     use crate::transducer::family::cursor;
     use crate::transducer::family::pieces::pieces_of;
-    let (ia, ib) = (perceive(a), perceive(b));
-    let ([input], [image]) = (ia.as_slice(), ib.as_slice()) else {
-        panic!("each fixture perceives one body on each side")
-    };
+    let (input, image) = (composite(a), composite(b));
     cursor::clear();
     let _ = take_cover_tally();
     let cover = cover_deformation(
-        input,
-        image,
+        &input,
+        &image,
         None,
         &mut crate::physics::Physics::default().stroke_n(1 << 20),
     )
     .expect("a cover that runs to its end");
     let t = take_cover_tally();
-    let ins = pieces_of(&input.laminae, None).scoped().count();
+    let ins = pieces_of(&input.laminae).scoped().count();
     (cover, t, ins)
 }
 
@@ -337,15 +388,14 @@ fn measured_cover(
 /// no obligation to agree on granularity, so a carried piece whose image
 /// lies across several output pieces is assembled whole and carried once.
 ///
-/// Skipping that case instead refuses every carriage where the output peel
-/// is finer than the input peel — which is the same fault the pullback's
-/// own preimage exists to avoid, taken in the other direction. It is not
-/// rare: on `notched`, where the output peel splits the block into shells,
-/// EVERY propagation attempt landed across two output pieces, so the pass
-/// made no attempt at all and the skip was silent.
+/// Skipping that case instead refuses every carriage where the output side
+/// holds more bodies than the input — which is the same fault the
+/// pullback's own preimage exists to avoid, taken in the other direction.
+/// The body the pullback cannot place is the one pass (b) is offered, and
+/// its image is read from the versors pass (a) already placed.
 #[test]
 fn an_image_across_several_output_pieces_is_assembled_and_carried_once() {
-    let (a, b) = notched();
+    let (a, b) = four_bodies_one_left();
     let (_, t, _) = measured_cover(&a, &b);
     assert!(
         t.propagated > 0,
@@ -384,9 +434,9 @@ fn cover_attempts_are_placed_times_unplaced() {
     );
 
     // A DEFORMATION THE PULLBACK REACHES. The attempts (b) makes are
-    // bounded by the versors (a) placed times the input's own pieces —
+    // bounded by the versors (a) placed times the input's own bodies —
     // never by the output's count, which is what the search read.
-    let (a, b) = notched();
+    let (a, b) = four_bodies_one_left();
     let (_, t, ins) = measured_cover(&a, &b);
     assert!(t.carried > 0, "the pullback places the pieces that stand in place");
     assert!(

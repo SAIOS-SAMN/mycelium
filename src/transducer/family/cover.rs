@@ -256,8 +256,8 @@ pub(crate) fn cover_deformation(
 ) -> Result<Cover, Unmeasured> {
     use super::cursor;
     let opened = budget.remaining();
-    let ins = pieces_of(&input.laminae, scale);
-    let outs = pieces_of(&image.laminae, scale);
+    let ins = pieces_of(&input.laminae);
+    let outs = pieces_of(&image.laminae);
     // WHERE THIS COVER STOPPED, if a stroke stopped it (L20, S13.3). A
     // fresh deformation starts at the pullback's first piece; one a stroke
     // parked starts where that stroke left off, with what it had placed.
