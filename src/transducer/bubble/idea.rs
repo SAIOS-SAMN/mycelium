@@ -182,6 +182,91 @@ pub struct Bubble {
     pub remainders: Keyed<Vec<Link>>,
 }
 
+/// P10(c), 52.5 reading 6 — THE FAMILY'S CONNECTION AT ONE CHART: the
+/// transports between the bodies this family stands on at successive
+/// OCCUPIED frames of `chart`.
+///
+/// γ IS NOT ON A DEMAND'S FORM. Measured on the forms that carry
+/// candidates — a filled hole and a puncture — `faces` is 0, so
+/// `FacePlace.edge` holds nothing and a product over the form's edges is a
+/// product over the empty set, which is the identity and would let every
+/// candidate stand. The form that does carry edges is a carried form with
+/// no demand on it. So γ is re-derived from the bundle the idea germinated
+/// from — the grids it already holds — and never stored beside it (law 12).
+///
+/// Succession is the next frame the chart's fiber OCCUPIES, read in
+/// coordinate order; the frames between are not coordinates of anything
+/// (52.5 reading 6). A body whose laminae span frames is one body and
+/// stands at no single frame, so it is not a section of this succession.
+pub(crate) fn frame_connections(
+    bundle: &[crate::transducer::family::TrainPair],
+    chart: &Invariant,
+) -> Vec<Rotor> {
+    let ins: Vec<crate::transducer::family::Grid> =
+        bundle.iter().map(|(a, _)| a.clone()).collect();
+    let want = chart.key();
+    // THE FRAME IS THE KEY, AND THE KEY CARRIES THE ORDER. `Keyed` is a
+    // trie over bytes, so a frame written little-endian sorts by its low
+    // byte and 256 reads before 1. Written big-endian with the sign bit
+    // flipped, the byte order IS the coordinate order in ℤ — so the
+    // succession is the carrier's own walk and nothing is sorted into it
+    // (rule 4: nothing is chosen by a comparator).
+    let frame_key = |k: i64| ((k as u64) ^ (1u64 << 63)).to_be_bytes();
+    let mut at: Keyed<Vec<crate::transducer::blade::Lamina>> = Keyed::new();
+    for b in &crate::transducer::family::perceive_frames(&ins) {
+        let Some(k) = crate::transducer::family::frame_of_body(b) else {
+            continue;
+        };
+        if b.moduli.key() != want {
+            continue;
+        }
+        match at.get_mut(&frame_key(k)) {
+            Some(l) => l.extend(b.laminae.iter().copied()),
+            None => {
+                at.insert(frame_key(k), b.laminae.to_vec());
+            }
+        }
+    }
+    let occupied: Vec<Vec<crate::transducer::blade::Lamina>> =
+        at.scoped().map(|(_, l)| l.clone()).collect();
+    let mut out = Vec::new();
+    for w in occupied.windows(2) {
+        let [la, lb] = w else { continue };
+        let (a, b) = (
+            crate::transducer::family::body_of(la.clone()),
+            crate::transducer::family::body_of(lb.clone()),
+        );
+        // THE WHOLE CARRIAGE is measured — versor and gauge — and the rotor
+        // is what the monodromy conjugates by. A transport the seventeen do
+        // not spell names no rotor here and contributes none: nothing is
+        // stood in for a connection that was not read (rule 11).
+        let Some(car) = crate::transducer::family::carriage(&a, &b) else {
+            continue;
+        };
+        if let Some(Ok(word)) = crate::transducer::family::peel_versor(&car.v) {
+            out.push(word.rotor());
+        }
+    }
+    out
+}
+
+/// P10(c), §25.12 — THE CANDIDATE'S MONODROMY AROUND THE FAMILY'S FRAMES:
+/// `M = ∏ γ⁻¹ V γ`, the product of `V` conjugated by each measured
+/// connection.
+///
+/// `None` where a connection does not invert: the product was not measured,
+/// which is not a rupture (rule 11). An EMPTY connection set is the empty
+/// product — the identity — and is returned as such, so a family with no
+/// measured succession dissolves nothing.
+pub(crate) fn monodromy(v: &Rotor, gammas: &[Rotor]) -> Option<Rotor> {
+    let mut m = Rotor::identity();
+    for g in gammas {
+        let gi = g.inverse()?;
+        m = m.geo(&gi.geo(v).geo(g));
+    }
+    Some(m)
+}
+
 impl Bubble {
     /// Read off what the bubble holds on every call, never stored beside
     /// it (rule 6, law 12): the remainder carries A5's proof in its type,
@@ -450,8 +535,77 @@ impl Bubble {
                 self.take_form(form);
             }
         }
+        self.dissolve_candidates();
         self.dirty = spent > 0 && budget.remaining() == 0;
         (spent, pivoted, adjoined)
+    }
+
+    /// P10(c), §25.12 — A CANDIDATE DIES ON A MEASURED MONODROMY.
+    ///
+    /// Each transport held over an open demand is carried around the
+    /// family's own frames: `M = ∏ γ⁻¹Vγ` over the connections between the
+    /// frames the demand's chart OCCUPIES (52.5 reading 6). A candidate
+    /// whose `M` is not projectively the identity contradicts the geometry
+    /// the family measured and is dissolved; one whose `M` is the identity
+    /// stands.
+    ///
+    /// NOTHING DIES ON AN UNMEASURED MONODROMY (rule 11). A family with
+    /// fewer than two occupied frames on that chart has no connection to
+    /// carry anything around — the product is empty, which is the identity
+    /// — and a bubble with no bundle has no frames to read at all. Both
+    /// leave every candidate standing, and neither is a rupture.
+    ///
+    /// Condensation is the carrier's (1.5): `candidates` is keyed by
+    /// `Rotor::key`, the ray's canonical coordinates, so `V` and `−V` are
+    /// one candidate before this runs.
+    pub(crate) fn dissolve_candidates(&mut self) {
+        let Some(bundle) = self.bundle.clone() else {
+            return;
+        };
+        let charts: Vec<Vec<u8>> = self.candidates.scoped().map(|(c, _)| c).collect();
+        for ck in charts {
+            let Some(chart) = Invariant::from_key(&ck) else {
+                continue;
+            };
+            let gammas = frame_connections(&bundle, &chart);
+            if gammas.is_empty() {
+                continue;
+            }
+            let Some(here) = self.candidates.get(&ck) else {
+                continue;
+            };
+            let dying: Vec<(Vec<u8>, Rotor)> = here
+                .scoped()
+                .filter_map(|(rk, v)| {
+                    let m = monodromy(v, &gammas)?;
+                    (!m.projective_eq(&Rotor::identity())).then_some((rk, m))
+                })
+                .collect();
+            let Some(here) = self.candidates.get_mut(&ck) else {
+                continue;
+            };
+            for (rk, m) in dying {
+                here.remove(&rk);
+                // The bivector the rupture stands at, by its class: the
+                // coordinate of what did not close, never a count of it.
+                let at = match m.class_key() {
+                    Some(k) => format!("{:02x}{:02x}…", k[0], k[1]),
+                    None => "unclassed".to_string(),
+                };
+                // THE TAG IS THE VOICE'S AND IS NOT IN SCOPE HERE. Every
+                // line in `bubble` and `client/sdk` writes two spaces and
+                // no tag — `form held`, `form crystallized`, `vortex
+                // collapsed by`, `letter adjoined` — and the `[{tag}]`
+                // prefix is the client binary's, added where the voice is
+                // named. 34.3's vocabulary ruling writes the line with that
+                // prefix; carrying it here means threading the tag through
+                // `expand_with`, `expand_all` and `Entity`, none of which
+                // holds one. Written in the neighbours' form until the
+                // operator rules on which layer names the voice.
+                let [a, b, ..] = rk.as_slice() else { continue };
+                eprintln!("  candidate dissolved {a:02x}{b:02x}… monodromy {at}");
+            }
+        }
     }
 
     /// THE VORTEX HERE STANDING AT A CONJUGACY STRATUM AND HOLDING `word`.

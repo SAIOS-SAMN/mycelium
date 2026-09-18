@@ -446,3 +446,70 @@ fn the_dirty_ring_orbits_and_reports_its_period() {
     assert_eq!(c.expand_cursor, visited[0], "and continues from the first bubble");
     assert_eq!(c.ring.circuits(), 1);
 }
+
+/// P10(c), §25.12 — A CANDIDATE DIES ON A MEASURED MONODROMY, AND ONLY ON
+/// ONE. `M = ∏ γ⁻¹Vγ` is the candidate carried around the family's own
+/// frames; a candidate whose `M` is not projectively the identity
+/// contradicts the geometry the family measured.
+///
+/// The product is asserted directly because the two halves fail
+/// differently: a rupture must dissolve, and an UNMEASURED monodromy must
+/// not (rule 11). An empty connection set is the empty product — the
+/// identity — so a family with fewer than two occupied frames on the chart
+/// dissolves nothing, which is a reading and not a reprieve.
+#[test]
+fn a_candidate_dies_on_a_measured_monodromy_and_not_on_an_unmeasured_one() {
+    use crate::transducer::alphabet::{Rotor, Q};
+    use crate::transducer::bubble::idea::monodromy;
+    let q = |n: i64| Q::from_integer(num_bigint::BigInt::from(n));
+    // A quarter turn in one plane, and a transport in another.
+    let v = Rotor::scalar(q(3)).add(&Rotor::blade(0b0011, q(4)));
+    let g = Rotor::scalar(q(5)).add(&Rotor::blade(0b0101, q(12)));
+
+    // NO CONNECTION IS NO RUPTURE: the empty product is the identity.
+    let none = monodromy(&v, &[]).expect("the empty product is measured");
+    assert!(none.projective_eq(&Rotor::identity()), "no frames, no monodromy, nothing dies");
+
+    // CONJUGATION BY THE IDENTITY RETURNS THE CANDIDATE: one flat
+    // connection carries it around unchanged.
+    let flat = monodromy(&v, std::slice::from_ref(&Rotor::identity())).expect("measured");
+    assert!(flat.projective_eq(&v), "a flat connection is the candidate itself");
+
+    // A CONNECTION THAT TURNS IN ANOTHER PLANE DOES NOT COMMUTE, so the
+    // carried candidate is not the candidate and the rupture is measured.
+    let carried = monodromy(&v, std::slice::from_ref(&g)).expect("measured");
+    assert!(
+        !carried.projective_eq(&v),
+        "conjugation by a turn in another plane moves the candidate"
+    );
+    let ruptured = !carried.projective_eq(&Rotor::identity());
+    assert!(ruptured, "and its monodromy is not the identity: this is what dissolves");
+    // The rupture stands at a class, which is the coordinate the line names.
+    assert!(carried.class_key().is_some(), "the rupture names its own bivector class");
+}
+
+/// 52.5 READING 6 — THE FRAME KEY CARRIES THE ORDER. `frame_connections`
+/// reads the frames a chart's fiber occupies from a `Keyed`, whose walk is
+/// its key bytes. A frame written little-endian sorts by its low byte, so
+/// 256 (`[0, 1, …]`) would read before 1 (`[1, 0, …]`) and the succession
+/// would not be the family's. Written big-endian with the sign bit flipped,
+/// byte order IS order in ℤ — negatives before zero before positives — so
+/// the carrier walks the coordinate and nothing is sorted into it (rule 4).
+#[test]
+fn the_frame_key_orders_by_coordinate_and_not_by_byte() {
+    let key = |k: i64| ((k as u64) ^ (1u64 << 63)).to_be_bytes();
+    let mut at: Keyed<i64> = Keyed::new();
+    for k in [256i64, 1, -3, 0, 2, -1] {
+        at.insert(key(k), k);
+    }
+    let walked: Vec<i64> = at.scoped().map(|(_, v)| *v).collect();
+    assert_eq!(walked, vec![-3, -1, 0, 1, 2, 256], "the trie walks ℤ in order");
+    // Little-endian would not: 256 is [0, 1, ..] and reads before 1.
+    let le = |k: i64| k.to_le_bytes();
+    let mut wrong: Keyed<i64> = Keyed::new();
+    for k in [256i64, 1] {
+        wrong.insert(le(k), k);
+    }
+    let wrong_walk: Vec<i64> = wrong.scoped().map(|(_, v)| *v).collect();
+    assert_eq!(wrong_walk, vec![256, 1], "which is why the key is not little-endian");
+}
