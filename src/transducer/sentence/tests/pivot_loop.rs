@@ -555,3 +555,43 @@ fn two_certified_discharges_are_held_as_a_vortex() {
         );
     }
 }
+
+/// A21 §2, R6 — THE BASE IS THE RANK, AND ITS WIDTH DOES NOT GROW WITH THE
+/// FORM. π: P → B, so a form's chart is five coordinates whatever it holds
+/// and the loops inhabit the fiber over it.
+///
+/// The chart appended one packed coordinate per distinct loop class. Key
+/// width grew with the loop count, every `Keyed` entry naming the chart
+/// copied that width (R6), and `on_axis_of` re-entered the trie at the root
+/// once per coordinate it coarsened through — `n·d` descents to answer one
+/// axis, over an index whose own type is the bundle.
+#[test]
+fn a_forms_base_chart_is_five_coordinates_however_many_loops_it_holds() {
+    use crate::transducer::sentence::chart_of_form;
+    let many = chord_form(&[order4(), order2(), Word::identity()]);
+    assert!(many.loops.len() >= 3, "a form carrying several loops: {}", many.loops.len());
+    let one = chord_form(&[order4()]);
+    let base = chart_of_form(&many).expect("a measured rank is a base point");
+    assert_eq!(base.0.len(), 5, "the tag and the four rank coordinates, and nothing else");
+    assert!(
+        base.0.iter().all(|a| matches!(a, crate::transducer::stalk::ChartAxis::Count(_))),
+        "every one of them a count: {:?}",
+        base.0
+    );
+    if let Some(single) = chart_of_form(&one) {
+        assert_eq!(
+            single.0.len(),
+            base.0.len(),
+            "and a form with fewer loops is charted at the same width, not a shorter key"
+        );
+    }
+    // `peel` reaches the root in five steps, bounded by the base and never
+    // by the loop count: that is the coarsening walk `on_axis_of` makes.
+    let mut at = base.clone();
+    let mut steps = 0usize;
+    while !at.0.is_empty() {
+        at = at.peel();
+        steps += 1;
+    }
+    assert_eq!(steps, 5, "five strata from the base to the root");
+}

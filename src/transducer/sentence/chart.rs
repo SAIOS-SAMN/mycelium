@@ -500,59 +500,37 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     }
     crate::transducer::address::Address::new(buf)
 }
-/// CHART OF A CRYSTALLIZED FORM: WHAT IT HOLDS UP TO GAUGE, and nothing
-/// per vertex. Its RANK first (A18: torsion, free, off-plane, axes opened
-/// — four integers off one tree walk), then the classes its loops occupy,
-/// each written in 12.6's own fixed coordinate order, sorted and taken
-/// once. A form whose loops are all closed carries the zero vector and
-/// nothing else.
+/// THE BASE OF THE BUNDLE (A21 §2, A18): a form's chart is its RANK and
+/// nothing else — torsion, free, off-plane, axes opened, four integers off
+/// one tree walk behind the leading tag. Five coordinates, always, whatever
+/// the form holds.
 ///
-/// A21 §2 puts the coarse stratum first, and the rank IS the coarse
-/// stratum: many complexes compose by that reading (R5 — the rank of a
-/// union is the sum of the parts) and never by enumeration, so a form of
-/// three hundred vertices and a form of three sit together when they hold
-/// the same thing. T2 says gauge cannot change a class, so a pivot, a
-/// rebase and a regauge leave this chart where it is. Nothing per vertex
-/// is written: a chart is what many objects share, and its width does not
-/// grow with the object.
+/// π: P → B. The loops' classes are the FIBER over this base, not deeper
+/// coordinates of it. They were appended here, one packed `u64` per
+/// distinct loop, which made the base key grow with the loop count and put
+/// every fiber element on its own leaf: a reader wanting the loops of one
+/// form descended the trie once per loop and coarsened back through the
+/// root between them, `n·d` where the bundle says `d + n`. The R6 failure
+/// is the same shape — a key that grows with the object, copied by every
+/// entry that names it.
 ///
-/// `None` where the rank or a loop's class is unmeasured — a form whose
-/// holonomy is not a versor has no class to be charted by (15.3), and that
-/// is a refusal, not a chart of zeros (rule 11).
+/// T2 says gauge cannot change a class, so a pivot, a rebase and a regauge
+/// leave this chart where it is; that was true of the old chart and is
+/// true a fortiori of this one. Many complexes compose by rank (R5 — the
+/// rank of a union is the sum of the parts) and never by enumeration.
+///
+/// `None` where the RANK is unmeasured. It also refused where any loop's
+/// class was unmeasured, which is now the fiber's refusal to make where
+/// the class is read (15.3): a form whose rank is measured has a base
+/// point, and whether a loop over it carries a class is a fact about that
+/// loop.
 pub(crate) fn chart_of_form(f: &Form) -> Option<crate::transducer::stalk::Invariant> {
     let r = f.rank()?;
-    let mut axes = vec![
-        2u64,
-        u64::from(r.torsion),
-        u64::from(r.free),
-        u64::from(r.offplane),
-        u64::from(r.axes),
-    ];
-    // THE CLASSES THE LOOPS OCCUPY, each one 12.6's coordinate vector
-    // packed in its own fixed order — one bit per axis, the zero vector
-    // where the loop is closed. Taken ONCE: a chart is what many objects
-    // share, so a form with five hundred flat loops and one with one sit
-    // on the same coordinate.
-    let mut classes: Vec<u64> = Vec::with_capacity(f.loops.len());
-    for i in 0..f.loops.len() {
-        let k = f.class_vector(i)?;
-        let mut packed = 0u64;
-        for axis in k.coordinates() {
-            // AN AXIS THAT DOES NOT FIT THE CARRIER IS REFUSED, never
-            // aliased onto another axis's bit (rule 11). `Axis::Open` is
-            // byte `8 << 3` = 64 and `1u64 << 64` masks to bit 0 in
-            // release, which is `Orientation(0)`: the pack was safe only
-            // because `coordinates()` happens not to emit `Open`, not
-            // because the shift is. The guarantee now lives at the shift.
-            packed |= 1u64.checked_shl(axis.to_byte() as u32)?;
-        }
-        classes.push(packed);
-    }
-    classes.sort_unstable();
-    classes.dedup();
-    axes.extend(classes);
     Some(crate::transducer::stalk::Invariant(
-        axes.into_iter().map(crate::transducer::stalk::ChartAxis::Count).collect(),
+        [2u64, u64::from(r.torsion), u64::from(r.free), u64::from(r.offplane), u64::from(r.axes)]
+            .into_iter()
+            .map(crate::transducer::stalk::ChartAxis::Count)
+            .collect(),
     ))
 }
 

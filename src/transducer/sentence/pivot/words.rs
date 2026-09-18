@@ -323,17 +323,37 @@ pub fn retract_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[T
 /// narrows the search; it never certifies a match.
 pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Vec<Word> {
     let slot = axis_slot(axis);
+    // ONE DESCENT PER STRATUM, AND THE STRATA ARE THE RANK'S. `AxisIndex`
+    // is `Keyed<Keyed<Keyed<Word>>>` — chart, then axis slot, then the
+    // words — so `get` on the chart hands back the WHOLE fiber over that
+    // base and the slot is read off it without touching the trie again.
+    //
+    // The walk is bounded by the base's own width, which `chart_of_form`
+    // now fixes at five coordinates whatever the form holds. It was
+    // bounded by five PLUS one coordinate per distinct loop class, so a
+    // form with n loops re-entered at the root up to n times to answer one
+    // axis: `n·d` where the bundle says `d + n` (A21 §2, and `link`'s own
+    // reading of the nested trie).
     let mut at = chart.clone();
     loop {
-        let held: Vec<Word> = match index.get(&at.key()).and_then(|mid| mid.get(&slot)) {
-            // Two keyed reads reached this bucket -- the chart, then the axis
-            // slot -- so what it holds is the words on that axis, all of them.
-            Some(bucket) => bucket.scoped().map(|(_, w)| w.clone()).collect(),
+        let held: Vec<Word> = match index.get(&at.key()) {
+            Some(fiber) => match fiber.get(&slot) {
+                // Two keyed reads reached this bucket -- the base, then the
+                // axis slot -- so what it holds is the words on that axis,
+                // all of them.
+                Some(bucket) => bucket.scoped().map(|(_, w)| w.clone()).collect(),
+                None => Vec::new(),
+            },
             None => Vec::new(),
         };
         if !held.is_empty() || at.0.is_empty() {
             return held;
         }
+        // Coarsening is along the RANK's declared coordinates and nothing
+        // else. `Invariant::peel` drops one whole `ChartAxis`;
+        // `Keyed::peel`'s `Shell` cuts at a trie BIT boundary
+        // (`clear_after_bit`) and can bisect a `ChartAxis::Ratio`, so it is
+        // not a stratum reader and is not used here.
         at = at.peel();
     }
 }
