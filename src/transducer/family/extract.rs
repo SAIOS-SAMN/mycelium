@@ -772,16 +772,40 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         .get(frame_ix as usize)
         .and_then(|v| v.face_chart())
         .map(|c| member_key(frame_ix, c.key().as_bytes()));
+    // WHAT WAS OFFERED AND WHAT WAS DROPPED, at the step that dropped it.
+    // Five `continue`s stood here and none of them counted: a form came out
+    // with two faces on nine vertices and nothing said which reader
+    // discarded the other six. A face offered and refused is a measurement
+    // (§8.1) and it was being thrown away silently.
+    let mut drops = FaceDrops::default();
     for (ak, bk) in star_and_site_faces(frame_member.as_deref(), &scenery.supports) {
-        let (Some((i, cik)), Some((j, cjk))) = (read_member_key(&ak), read_member_key(&bk)) else { continue };
+        drops.offered += 1;
+        let (Some((i, cik)), Some((j, cjk))) = (read_member_key(&ak), read_member_key(&bk)) else {
+            drops.member_key += 1;
+            continue;
+        };
         let (edge, pairs) = edge_between(&bodies_at, n_reached, i, &cik, j, &cjk, &mut edges);
-        let (Some(vi), Some(vj)) = (form.vertices.get(i as usize), form.vertices.get(j as usize)) else { continue };
-        let (Some(ci), Some(cj)) = (vi.chart_keyed(&cik), vj.chart_keyed(&cjk)) else { continue };
-        let Some(word) = form.face_word(i, j) else { continue };
-        let Some(place) = form.face_place(i, &ci, j, &cj, edge) else { continue };
+        let (Some(vi), Some(vj)) = (form.vertices.get(i as usize), form.vertices.get(j as usize))
+        else {
+            drops.vertex += 1;
+            continue;
+        };
+        let (Some(ci), Some(cj)) = (vi.chart_keyed(&cik), vj.chart_keyed(&cjk)) else {
+            drops.chart += 1;
+            continue;
+        };
+        let Some(word) = form.face_word(i, j) else {
+            drops.word += 1;
+            continue;
+        };
+        let Some(place) = form.face_place(i, &ci, j, &cj, edge) else {
+            drops.place += 1;
+            continue;
+        };
         let mut at = Keyed::new();
         at.insert(face_pair_key(&ci, &cj), place);
         form.faces.push(FormFace { i, j, word, at, pairs });
+        drops.built += 1;
     }
     // THE WORDS THE FAMILY SPOKE ON OTHER FRAMES between the Frame and a
     // vertex are faces of their own, each on the frames it was spoken on
@@ -794,19 +818,34 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     form.loops = Form::loops_of(&form.faces, nv);
     form.hue_maps = hue_maps;
     form.reindex();
-    if !form.loops.is_empty() || meet_faces > 0 {
-        eprintln!(
-            "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} loops \
-             | edges asked: measured {}, unspelled {}, unread {}, not rigid {}",
-            form.faces.len(),
-            form.faces.len() - meet_faces,
-            form.loops.len(),
-            edges.measured,
-            edges.unspelled,
-            edges.unread,
-            edges.not_rigid
-        );
-    }
+    // READ WHETHER OR NOT ANYTHING CLOSED. It was gated on
+    // `!form.loops.is_empty() || meet_faces > 0`, so the one row that says
+    // why a form is empty was printed only when the form was not empty:
+    // fifteen forms crystallized at `loops 0` and this line never fired
+    // once. A reading suppressed in the failure case is not a reading.
+    eprintln!(
+        "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} loops \
+         | edges asked: measured {}, unspelled {}, unread {}, not rigid {} \
+         | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {}",
+        form.faces.len(),
+        // The site+ring faces COUNTED as they were built, not the total
+        // less the meets: a subtraction floored at zero invents a value
+        // where the two carriers disagree (rule 11), and `drops.built` is
+        // the measurement this label was reaching for.
+        drops.built,
+        form.loops.len(),
+        edges.measured,
+        edges.unspelled,
+        edges.unread,
+        edges.not_rigid,
+        drops.offered,
+        drops.built,
+        drops.member_key,
+        drops.vertex,
+        drops.chart,
+        drops.word,
+        drops.place
+    );
     trace::trace_n("extract/2 faces", form.faces.len(), budget);
     Percept { form, sections, varying, unreached }
 }
@@ -840,6 +879,21 @@ pub(crate) fn occupied_frames(bodies_at: &Keyed<(Body, Body, Versor)>, ix: u16, 
 /// THE EDGE BETWEEN TWO MEMBERS (50.3): measured on the union of their two
 /// bodies at the least frame both stand on, and the frames on which that
 /// edge re-derives — the face's section. A pair with no common frame, or
+/// WHAT HAPPENED TO EVERY FACE THIS FORM WAS OFFERED, by the reader that
+/// answered. Each field is one `continue` in the incidence loop; `offered`
+/// is what `star_and_site_faces` proposed and `built` is what stood. The
+/// counts are a measurement and never a gate (§8.1).
+#[derive(Default)]
+struct FaceDrops {
+    offered: usize,
+    built: usize,
+    member_key: usize,
+    vertex: usize,
+    chart: usize,
+    word: usize,
+    place: usize,
+}
+
 /// no edge on the least one, carries none.
 fn edge_between(
     bodies_at: &Keyed<(Body, Body, Versor)>,
