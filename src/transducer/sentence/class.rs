@@ -386,20 +386,98 @@ impl ClassVector {
         out
     }
 
-    /// Every coordinate other than `axis` agrees: the discharge condition of
-    /// 12.6 (a coordinate may fall to zero, none may rise or move).
-    pub fn agrees_except(&self, other: &ClassVector, axis: Axis) -> bool {
-        let mut a = self.clone();
-        let mut b = other.clone();
-        a.clear(axis);
-        b.clear(axis);
-        let plane_ok = a.plane == b.plane;
-        let off_ok = a.offplane == b.offplane
-            || (!a.occupies(Axis::OffPlane) && !b.occupies(Axis::OffPlane));
-        plane_ok
-            && element::same_versor(&a.carriage, &b.carriage)
-            && a.hue == b.hue
-            && off_ok
+    /// LAW 10's DISCHARGE GUARD: did any coordinate but `axis` RISE?
+    ///
+    /// `self` is the reading AFTER the move, `before` the reading before
+    /// it. True when some other coordinate grew — which refuses the move —
+    /// and false when every one of them held or fell.
+    ///
+    /// `agrees_except` stood here and demanded IDENTITY on every
+    /// non-target coordinate: it cleared the target from both sides and
+    /// compared `plane`, `carriage`, `hue` and `offplane` for equality. Its
+    /// own doc line said the opposite — "a coordinate may fall to zero,
+    /// none may rise or move" — and law 10 says the summand becomes zero
+    /// "with no other rising". A pivot writes a face carrier that every
+    /// loop through that face reads, so a move that zeroes its target
+    /// routinely moves other coordinates too, and every one that FELL was
+    /// refused by the identity test. One predicate, one carrier (law 12):
+    /// that reader is deleted rather than kept beside this one.
+    ///
+    /// Every comparison is on ONE coordinate's own exact value and no two
+    /// are combined — law 5's covers are never summed, and rule 4 refuses
+    /// choosing among CANDIDATES by a scalar, not reading whether one
+    /// coordinate grew.
+    ///
+    /// A reading that cannot be taken is a rise: the move is refused
+    /// rather than certified on an unread coordinate (rule 11).
+    pub fn rises_against(&self, before: &ClassVector, axis: Axis) -> bool {
+        let (mut after, mut before) = (self.clone(), before.clone());
+        after.clear(axis);
+        before.clear(axis);
+        let mag = |q: &num_rational::BigRational| -> num_rational::BigRational {
+            if q < &Self::zero_q() { -q.clone() } else { q.clone() }
+        };
+        // THE PLANE BLOCKS, slot by slot: an orientation character
+        // appearing, a unit turn count growing, a prime exponent growing
+        // in magnitude. A section that was there and is gone has fallen;
+        // one that appears where there was none is the holonomy moving the
+        // plane, which is `OffPlane` and is read there.
+        let plane_rose = match (before.plane, after.plane) {
+            (_, None) => false,
+            (None, Some(pl)) => pl.iter().any(|s| s.0 || s.1 != 0 || s.2 != 0 || s.3 != 0),
+            (Some(b), Some(a)) => b.iter().zip(a.iter()).any(|(b, a)| {
+                (a.0 && !b.0)
+                    || a.1 > b.1
+                    || a.2.unsigned_abs() > b.2.unsigned_abs()
+                    || a.3.unsigned_abs() > b.3.unsigned_abs()
+            }),
+        };
+        // THE CARRIAGE, componentwise. The placement is three coordinates
+        // and each is compared alone: a norm would sum them, which is
+        // exactly what law 5 refuses of the covers.
+        let placement = |c: &Versor| -> Option<(num_rational::BigRational, num_rational::BigRational, num_rational::BigRational)> {
+            let rho = element::rho_of(c)?;
+            let z = Self::zero_q();
+            let img = crate::transducer::cga::base(
+                &c.sandwich(&crate::transducer::cga::point(&z, &z, &z)),
+            )?;
+            Some((img.0 / &rho, img.1 / &rho, img.2 / &rho))
+        };
+        let carriage_rose = match (placement(&before.carriage), placement(&after.carriage)) {
+            (Some(b), Some(a)) => {
+                mag(&a.0) > mag(&b.0) || mag(&a.1) > mag(&b.1) || mag(&a.2) > mag(&b.2)
+            }
+            _ => true,
+        };
+        // The dilation's own coordinate: displacement from unity.
+        let one: num_rational::BigRational = num_traits::One::one();
+        let dilation_rose = match (element::rho_of(&before.carriage), element::rho_of(&after.carriage)) {
+            (Some(b), Some(a)) => mag(&(a - &one)) > mag(&(b - &one)),
+            _ => true,
+        };
+        // THE HUE PARTITION, sub-multiset bounded (ruled 2026-09-18): each
+        // cycle after must be bounded by a DISTINCT cycle before of equal
+        // or greater length. `CycleType::of` sorts ascending, so pairing
+        // largest-first is the only matching that can succeed and a
+        // mismatch at any position is a rise. Condensation toward the
+        // identity falls ([2,3] → [2], → nothing); merging two cycles into
+        // one longer one raises the permutation's period and is refused
+        // ([2,3] → [5]).
+        let cycles = |h: &CycleType| -> Vec<u8> {
+            match h {
+                CycleType::Identity => Vec::new(),
+                CycleType::Type(v) => v.clone(),
+            }
+        };
+        let (cb, ca) = (cycles(&before.hue), cycles(&after.hue));
+        let hue_rose =
+            ca.len() > cb.len() || ca.iter().rev().zip(cb.iter().rev()).any(|(a, b)| a > b);
+        // The off-plane invariants, each on its own: zero to non-zero, or
+        // growing. A sign is not a magnitude and a sign change is not a
+        // rise.
+        let offplane_rose = mag(&after.offplane.0) > mag(&before.offplane.0)
+            || mag(&after.offplane.1) > mag(&before.offplane.1);
+        plane_rose || carriage_rose || dilation_rose || hue_rose || offplane_rose
     }
 
     fn offplane_zero() -> (num_rational::BigRational, num_rational::BigRational, u8) {

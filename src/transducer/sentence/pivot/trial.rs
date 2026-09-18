@@ -72,7 +72,7 @@ impl Form {
             if cand.axis == Axis::Open {
                 kappa_after.is_zero()
             } else {
-                !kappa_after.occupies(cand.axis) && kappa.agrees_except(kappa_after, cand.axis)
+                !kappa_after.occupies(cand.axis) && !kappa_after.rises_against(kappa, cand.axis)
             }
         });
         if !discharged {

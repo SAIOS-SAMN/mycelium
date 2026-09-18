@@ -245,8 +245,8 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     let after = f.class_vector(0).expect("loop remains");
     assert!(!after.occupies(Axis::Placement), "Placement zeroes");
     assert!(
-        before.agrees_except(&after, Axis::Placement),
-        "no other coordinate moved"
+        !after.rises_against(&before, Axis::Placement),
+        "and no other coordinate rose (law 10)"
     );
 
     // T14: Orientation.
@@ -271,7 +271,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
         "Orientation zeroes, got {:?}",
         after.coordinates()
     );
-    assert!(before.agrees_except(&after, Axis::Orientation(0)));
+    assert!(!after.rises_against(&before, Axis::Orientation(0)));
 
     // T14: Dilation.
     let mut f = chord_form(&[Word::identity()]);
@@ -300,7 +300,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     );
     let after = f.class_vector(0).expect("dil after");
     assert!(!after.occupies(Axis::Dilation), "Dilation zeroes, got {:?}", after.coordinates());
-    assert!(before.agrees_except(&after, Axis::Dilation));
+    assert!(!after.rises_against(&before, Axis::Dilation));
 }
 
 /// A16 — A LOOP'S READINGS ARE A FUNCTION OF ITS FACES AND THE FORM'S AXIS
@@ -594,4 +594,52 @@ fn a_forms_base_chart_is_five_coordinates_however_many_loops_it_holds() {
         steps += 1;
     }
     assert_eq!(steps, 5, "five strata from the base to the root");
+}
+
+/// LAW 10 — A COORDINATE MAY FALL. The discharge condition is the target
+/// summand zeroing "with no other rising"; `agrees_except` demanded that
+/// no other coordinate MOVE — it cleared the target from both sides and
+/// compared the rest for equality. Its own doc line said "a coordinate may
+/// fall to zero", so the reader and its description disagreed and the
+/// reader won.
+///
+/// A pivot writes a face carrier that every loop through that face reads,
+/// so a move zeroing its target routinely carries other coordinates down
+/// with it. The first assertion here is exactly that move: admitted now,
+/// refused before.
+#[test]
+fn a_falling_coordinate_is_not_a_rise() {
+    use crate::transducer::sentence::{Axis, ClassVector};
+    let of = |w: &Word| ClassVector::of_word(w).expect("a word carries a class");
+    // Measured, not assumed: a quarter turn stands on `Unit(0)`, a half
+    // turn on `Orientation(0)`, and the identity on nothing.
+    let (four, two, flat) = (of(&order4()), of(&order2()), ClassVector::zero());
+    assert_eq!(four.coordinates(), vec![Axis::Unit(0)]);
+    assert_eq!(two.coordinates(), vec![Axis::Orientation(0)]);
+    assert!(flat.coordinates().is_empty());
+
+    // THE DISCRIMINATING CASE. Target `Orientation(0)`, and `Unit(0)` —
+    // which is not the target — falls to zero. Nothing rose, so law 10
+    // admits it; `agrees_except` compared the planes, found them unequal,
+    // and refused.
+    assert!(
+        !flat.rises_against(&four, Axis::Orientation(0)),
+        "a NON-TARGET coordinate falling to zero is not a rise: {:?} → {:?}",
+        four.coordinates(),
+        flat.coordinates()
+    );
+
+    // The target's own fall, with nothing beside it.
+    assert!(!flat.rises_against(&four, Axis::Unit(0)), "the target zeroing is not a rise");
+
+    // And the moves that DO rise, each on a coordinate that is not the
+    // target: a unit count appearing, an orientation character appearing.
+    assert!(
+        four.rises_against(&flat, Axis::Orientation(0)),
+        "a unit count appearing out of nothing is a rise"
+    );
+    assert!(
+        two.rises_against(&flat, Axis::Unit(0)),
+        "an orientation character appearing out of nothing is a rise"
+    );
 }
