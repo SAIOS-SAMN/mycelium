@@ -21,20 +21,34 @@ fn same_transport(a: &Transport, b: &Transport) -> bool {
 
 /// THE QUOTIENT OF A FIBER'S UNION SHAPES (52.5): every lamina the member
 /// stands on across its occupied frames, read at its own `(r, c, k)` and
-/// never at frame zero, and the versor carrying the one onto the other.
+/// never at frame zero, with the versor that carries the one union onto
+/// the other — VERIFIED here, on the union, lamina by lamina.
 ///
 /// A quotient measured at ONE frame is a motion of that frame's slice: its
 /// bodies all sit at a single `k`, so `versor_between` has no `e₃` extent
-/// to read and the transport it returns cannot carry `(r,k)` or `(c,k)`
-/// content whatever the family does along the frame axis. The union has
-/// that extent by construction, which is the whole of why the face is
-/// measured here (51.3: the family is one body on `(r, c, k)`).
+/// to read. The union has that extent by construction (51.3: the family is
+/// one body on `(r, c, k)`), and it is what the face above this member is
+/// measured on.
 ///
-/// `None` where either side is empty or no versor carries the one union
-/// onto the other — a member whose fiber is not one rigid motion along
-/// `e₃` has no union edge, and the per-frame reading stands instead
-/// (rule 11).
-pub(crate) fn union_quotient(mut ins: Vec<Lamina>, mut outs: Vec<Lamina>) -> Option<(Body, Body, Versor)> {
+/// THE VERSOR IS NOT SEARCHED FOR AGAIN. The member's frames are exactly
+/// the frames that read `v` — that is what makes them one member, and the
+/// grouping upstream has already decided it. `v` carries no `e₃`
+/// component, so the frame it acts at rides along and `v` carries `a_k`
+/// onto `b_k` at every `k` the member stands on, hence the union onto the
+/// union. Calling `carriage` here would run `versor_between` over the whole
+/// fiber's moments to re-derive a versor already in hand — measured on the
+/// 60-task slice at 4 000 000 stroke: 32.5 s to 38.9 s, +19% wall clock for
+/// a reading identical in every count.
+///
+/// It is verified rather than asserted (rule 11, law 12): every lamina of
+/// the union is carried and its image read, which is `carriage`'s own check
+/// without `carriage`'s search, and a fiber the versor does not carry
+/// whole has no union quotient. `None` also where either side is empty.
+pub(crate) fn union_quotient(
+    mut ins: Vec<Lamina>,
+    mut outs: Vec<Lamina>,
+    v: &Versor,
+) -> Option<(Body, Body, Versor)> {
     if ins.is_empty() || outs.is_empty() {
         return None;
     }
@@ -44,8 +58,12 @@ pub(crate) fn union_quotient(mut ins: Vec<Lamina>, mut outs: Vec<Lamina>) -> Opt
     outs.dedup();
     let a = body_of(ins);
     let b = body_of(outs);
-    let car = carriage(&a, &b)?;
-    Some((a, b, car.v))
+    for &(r, c, k, _) in &a.laminae {
+        let p = element::carry_center(v, r, c, k)?;
+        let (tr, tc, tk) = element::site_of(&p)?;
+        b.laminae.binary_search_by(|x| (x.0, x.1, x.2).cmp(&(tr, tc, tk))).ok()?;
+    }
+    Some((a, b, v.clone()))
 }
 
 /// THE FRAMES A MEMBER OCCUPIES, read at its own coordinate (52.5 reading

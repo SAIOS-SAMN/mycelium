@@ -715,7 +715,9 @@ fn a_members_fiber_reads_as_one_union_body_or_not_at_all() {
         (2, 1, 2, 1),
     ];
     let outs: Vec<Lamina> = ins.iter().map(|&(r, c, k, h)| (r, c + 2, k, h)).collect();
-    let (a, b, v) = union_quotient(ins.clone(), outs).expect("one motion carries the whole fiber");
+    let shift = element::translator_versor(0, 2);
+    let (a, b, v) =
+        union_quotient(ins.clone(), outs, &shift).expect("one motion carries the whole fiber");
     let frames: Vec<i64> = {
         let mut f: Vec<i64> = a.laminae.iter().map(|&(_, _, k, _)| k).collect();
         f.sort_unstable();
@@ -725,8 +727,8 @@ fn a_members_fiber_reads_as_one_union_body_or_not_at_all() {
     assert_eq!(frames, vec![0, 1, 2], "the union body stands on every frame of the fiber");
     assert_eq!(b.laminae.len(), a.laminae.len(), "and carries the whole of it");
     assert!(
-        element::same_versor(&v, &element::translator_versor(0, 2)),
-        "the fiber's quotient is the one translation"
+        element::same_versor(&v, &shift),
+        "the fiber's quotient is the one translation, verified on the union"
     );
     // The same three frames with the middle one moved the other way: no
     // single motion carries the union.
@@ -735,7 +737,7 @@ fn a_members_fiber_reads_as_one_union_body_or_not_at_all() {
         .map(|&(r, c, k, h)| if k == 1 { (r, c + 3, k, h) } else { (r, c + 2, k, h) })
         .collect();
     assert!(
-        union_quotient(ins, mixed).is_none(),
+        union_quotient(ins, mixed, &shift).is_none(),
         "a fiber that is not one motion along e₃ has no union quotient"
     );
 }

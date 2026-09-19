@@ -399,7 +399,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             }
             support.sort_unstable();
             support.dedup();
-            let union = union_quotient(union_in, union_out);
+            let union = union_quotient(union_in, union_out, &first.car.v);
             // THE OTHER VERSORS THE CHART READ ON OTHER FRAMES: the placement
             // varies (move 6's reading), and a word that differs is a face the
             // family spoke between the Frame and this vertex on those frames
