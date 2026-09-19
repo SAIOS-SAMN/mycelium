@@ -26,7 +26,7 @@ impl<'a, V> Iterator for Fiber<'a, V> {
             match node {
                 Node::Leaf(k, v) => {
                     if key_in_fiber(k, &self.prefix) {
-                        return Some((k.clone(), v));
+                        return Some((k.to_vec(), v));
                     }
                 }
                 Node::Branch { children, end, .. } => {
@@ -38,7 +38,7 @@ impl<'a, V> Iterator for Fiber<'a, V> {
                     }
                     if let Some((k, v)) = end.as_deref() {
                         if key_in_fiber(k, &self.prefix) {
-                            return Some((k.clone(), v));
+                            return Some((k.to_vec(), v));
                         }
                     }
                 }
@@ -132,10 +132,10 @@ impl<'a, V> Iterator for Cursor<'a, V> {
             };
             match (&self.from, self.wrapped) {
                 // Before the wrap: the keys after `from` only.
-                (Some(f), false) if k.as_slice() <= f.as_slice() => continue,
+                (Some(f), false) if &k[..] <= f.as_slice() => continue,
                 // After it: the keys skipped, up to and including `from` —
                 // the walk ends where it began.
-                (Some(f), true) if k.as_slice() > f.as_slice() => {
+                (Some(f), true) if &k[..] > f.as_slice() => {
                     self.done = true;
                     return None;
                 }

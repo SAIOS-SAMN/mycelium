@@ -263,7 +263,7 @@ impl Contemplation {
                 bundle: None,
                 remainders: Keyed::new(),
             };
-            c.admit_incidence(&key, &bubble);
+            c.admit_incidence(&key.shared(), &bubble);
             c.bubbles.insert(&key, bubble);
         }
         c.complex = Complex::from_bytes(b, pos)?;

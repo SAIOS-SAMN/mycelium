@@ -10,15 +10,28 @@ use super::relation::Keyed;
 /// first differ, a leaf holding its whole key. One node per key, so the
 /// relation costs what it holds, and every operation is O(bits).
 #[derive(Clone, Debug)]
+/// Z4c — A LEAF OWNS ITS KEY AS SHARED EXACT BYTES.
+///
+/// The key is the object's coordinates written out (law 2) and for a form
+/// it is megabytes: 7.3 MB on the 590-vertex rule, measured at e0f4e0d.
+/// Every carrier that files that form by its address held its OWN copy —
+/// `bubbles`, `dirty`, `ordinals`, the Čech complex's sections — and a
+/// hold paid for all of them.
+///
+/// `Arc<[u8]>` moves WHO OWNS THE BYTES and nothing else. The content is
+/// the same bytes, the trie's order is the same order, and identity is
+/// still the coordinates; `insert` from a slice still copies, for keys
+/// built at the site, and `insert_shared` takes the copy the object
+/// already holds.
 pub(crate) enum Node<V> {
-    Leaf(Vec<u8>, V),
+    Leaf(std::sync::Arc<[u8]>, V),
     Branch {
         bit: usize,
         children: [Option<Box<Node<V>>>; 2],
         /// A key whose bit-length equals `bit`. Discriminates a key from
         /// a proper extension whose next bit is 0 (`key_bit` past the end
         /// would otherwise walk into the same child).
-        end: Option<Box<(Vec<u8>, V)>>,
+        end: Option<Box<(std::sync::Arc<[u8]>, V)>>,
     },
 }
 
@@ -79,10 +92,10 @@ impl<V> Node<V> {
         let mut node = self;
         loop {
             match node {
-                Node::Leaf(k, v) => return (k.as_slice() == key).then_some(v),
+                Node::Leaf(k, v) => return (&k[..] == key).then_some(v),
                 Node::Branch { bit, children, end } => {
                     if Self::bits(key) == Some(*bit) {
-                        return end.as_deref().and_then(|(k, v)| (k.as_slice() == key).then_some(v));
+                        return end.as_deref().and_then(|(k, v)| (&k[..] == key).then_some(v));
                     }
                     if Self::bits(key).is_some_and(|b| b < *bit) {
                         return None;
@@ -95,10 +108,10 @@ impl<V> Node<V> {
 
     pub(crate) fn get_mut(&mut self, key: &[u8]) -> Option<&mut V> {
         match self {
-            Node::Leaf(k, v) => (k.as_slice() == key).then_some(v),
+            Node::Leaf(k, v) => (&k[..] == key).then_some(v),
             Node::Branch { bit, children, end } => {
                 if Node::<V>::bits(key) == Some(*bit) {
-                    return end.as_mut().and_then(|e| (e.0.as_slice() == key).then_some(&mut e.1));
+                    return end.as_mut().and_then(|e| (&e.0[..] == key).then_some(&mut e.1));
                 }
                 if Node::<V>::bits(key).is_some_and(|b| b < *bit) {
                     return None;
@@ -116,7 +129,7 @@ impl<V> Node<V> {
             Node::Branch { children, end, .. } => match children
                 .iter()
                 .find_map(|c| c.as_deref().map(|n| n.representative()))
-                .or_else(|| end.as_deref().map(|(k, _)| k.as_slice()))
+                .or_else(|| end.as_deref().map(|(k, _)| &k[..]))
             {
                 Some(k) => k,
                 None => &[],
@@ -125,10 +138,10 @@ impl<V> Node<V> {
     }
 }
 
-pub(crate) fn meet_end<V, W>(end: Option<&(Vec<u8>, V)>, other: Option<&Node<W>>, out: &mut Keyed<()>) {
+pub(crate) fn meet_end<V, W>(end: Option<&(std::sync::Arc<[u8]>, V)>, other: Option<&Node<W>>, out: &mut Keyed<()>) {
     let Some((k, _)) = end else { return };
     if other.is_some_and(|n| n.get(k).is_some()) {
-        out.insert(k.as_slice(), ());
+        out.insert(&k[..], ());
     }
 }
 
@@ -137,7 +150,7 @@ pub(crate) fn meet_nodes<V, W>(a: Option<&Node<V>>, b: Option<&Node<W>>, out: &m
         (None, _) | (_, None) => {}
         (Some(Node::Leaf(k, _)), Some(Node::Leaf(k2, _))) => {
             if k == k2 {
-                out.insert(k.as_slice(), ());
+                out.insert(&k[..], ());
             }
         }
         (Some(leaf @ Node::Leaf(k, _)), Some(Node::Branch { bit, children, end })) => {
@@ -182,7 +195,7 @@ pub(crate) fn meet_nodes<V, W>(a: Option<&Node<V>>, b: Option<&Node<W>>, out: &m
 pub(crate) fn branch<V>(
     bit: usize,
     children: [Option<Box<Node<V>>>; 2],
-    end: Option<Box<(Vec<u8>, V)>>,
+    end: Option<Box<(std::sync::Arc<[u8]>, V)>>,
 ) -> Box<Node<V>> {
     Box::new(Node::Branch { bit, children, end })
 }
@@ -208,7 +221,7 @@ pub(crate) fn collapse<V>(slot: &mut Option<Box<Node<V>>>) {
 
 /// Insert into the subtree at `slot`, splitting at bit `d` (the first bit
 /// at which `key` differs from the leaf its path reaches).
-pub(crate) fn insert_at<V>(slot: &mut Option<Box<Node<V>>>, key: Vec<u8>, value: V, d: usize) {
+pub(crate) fn insert_at<V>(slot: &mut Option<Box<Node<V>>>, key: std::sync::Arc<[u8]>, value: V, d: usize) {
     let key_ends = Node::<V>::bits(&key) == Some(d);
     let descend = match slot.as_deref() {
         Some(Node::Branch { bit, .. }) if *bit < d => Some(key_bit(&key, *bit)),
@@ -270,7 +283,7 @@ pub(crate) fn insert_at<V>(slot: &mut Option<Box<Node<V>>>, key: Vec<u8>, value:
 /// Remove `key` from the subtree at `slot`; a branch left with one child
 /// and no `end` collapses into it.
 pub(crate) fn remove_at<V>(slot: &mut Option<Box<Node<V>>>, key: &[u8]) -> Option<V> {
-    let is_leaf = matches!(slot.as_deref(), Some(Node::Leaf(k, _)) if k.as_slice() == key);
+    let is_leaf = matches!(slot.as_deref(), Some(Node::Leaf(k, _)) if &k[..] == key);
     if is_leaf {
         return match slot.take().map(|b| *b) {
             Some(Node::Leaf(_, v)) => Some(v),
@@ -283,7 +296,7 @@ pub(crate) fn remove_at<V>(slot: &mut Option<Box<Node<V>>>, key: &[u8]) -> Optio
     if Node::<V>::bits(key) == Some(*bit) {
         let taken = end.take().and_then(|e| {
             let (k, v) = *e;
-            (k.as_slice() == key).then_some(v)
+            (&k[..] == key).then_some(v)
         });
         if taken.is_some() {
             collapse(slot);

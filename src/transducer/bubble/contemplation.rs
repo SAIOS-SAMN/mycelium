@@ -110,7 +110,7 @@ pub struct Contemplation {
     /// retracted. A RETRACTED ORDINAL IS NEVER REUSED within one
     /// contemplation, so a stale index entry names nothing rather than
     /// naming another bubble — which is the one way an ordinal could lie.
-    pub(crate) addresses: Vec<Option<Vec<u8>>>,
+    pub(crate) addresses: Vec<Option<std::sync::Arc<[u8]>>>,
     pub complex: Complex,
     /// Bubbles whose cover still has work; written when dirty is set.
     pub(crate) dirty: Keyed<()>,
@@ -449,7 +449,7 @@ impl Contemplation {
             Some(b) => b.vortex_strata(),
             None => return,
         };
-        let ord = self.ordinal_for(key).to_le_bytes();
+        let ord = self.ordinal_for(&std::sync::Arc::from(key)).to_le_bytes();
         for ck in strata {
             self.by_vortex.nested_insert(&ck, ord, ());
         }
@@ -570,8 +570,9 @@ impl Contemplation {
                 standing.moved_k = standing.moved_k.min(moving.moved_k);
             }
             None => {
-                self.admit_incidence(to, &moving);
-                self.bubbles.insert(to, moving);
+                let shared: std::sync::Arc<[u8]> = std::sync::Arc::from(to);
+                self.admit_incidence(&shared, &moving);
+                self.bubbles.insert_shared(shared, moving);
             }
         }
         if was_dirty {
@@ -587,13 +588,16 @@ impl Contemplation {
     /// is that address copied once per entry for no reading (law 12).
     /// THE ORDINAL OF A BUBBLE, assigned on its first admission and held
     /// while the contemplation lives. Never reused after retraction.
-    pub(crate) fn ordinal_for(&mut self, key: &[u8]) -> u16 {
+    /// Z4c: the caller hands the ONE copy of the address. `Arc::from(&[u8])`
+    /// would copy it here — 7 MB per hold on the 590-vertex rule — and the
+    /// caller always has the address as an object, never only as a slice.
+    pub(crate) fn ordinal_for(&mut self, key: &std::sync::Arc<[u8]>) -> u16 {
         if let Some(&o) = self.ordinals.get(key) {
             return o;
         }
         let o = self.addresses.len() as u16;
-        self.addresses.push(Some(key.to_vec()));
-        self.ordinals.insert(key, o);
+        self.addresses.push(Some(std::sync::Arc::clone(key)));
+        self.ordinals.insert_shared(std::sync::Arc::clone(key), o);
         o
     }
 
@@ -608,8 +612,7 @@ impl Contemplation {
         Some(u16::from_le_bytes(k.try_into().ok()?))
     }
 
-    pub(crate) fn admit_incidence(&mut self, key: impl AsRef<[u8]>, b: &Bubble) {
-        let key = key.as_ref();
+    pub(crate) fn admit_incidence(&mut self, key: &std::sync::Arc<[u8]>, b: &Bubble) {
         let ord = self.ordinal_for(key);
         let ord = ord.to_le_bytes();
         let key = &ord[..];
@@ -820,9 +823,9 @@ impl Contemplation {
         if let Some(old) = self.bubbles.get(key.as_bytes()).cloned() {
             self.retract_incidence(key.as_bytes(), &old);
         }
-        self.admit_incidence(&key, &bubble);
-        self.bubbles.insert(&key, bubble);
-        self.dirty.insert(&key, ());
+        self.admit_incidence(&key.shared(), &bubble);
+        self.bubbles.insert_shared(key.shared(), bubble);
+        self.dirty.insert_shared(key.shared(), ());
         self.link_new(&key);
     }
 

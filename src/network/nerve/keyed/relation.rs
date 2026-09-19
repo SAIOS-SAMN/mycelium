@@ -189,10 +189,41 @@ impl<V> Keyed<V> {
 
     /// Bind `key` to `value`; a held key is rebound. Returns the value
     /// displaced, if any.
+    /// Z4c — FILE AN OBJECT UNDER THE COPY IT ALREADY HOLDS.
+    ///
+    /// `insert` copies, which is right for a key built at the site: the
+    /// caller's buffer is scratch and the trie must own what it keys by.
+    /// A key that IS an object's address is different — the object holds
+    /// it, several carriers name it, and the address of a form is
+    /// megabytes (7.3 MB on the 590-vertex rule). Handing the trie that
+    /// one copy makes every carrier naming the form point at the same
+    /// bytes.
+    ///
+    /// Content, trie order and identity are unchanged; only who owns the
+    /// bytes moves.
+    pub fn insert_shared(&mut self, key: std::sync::Arc<[u8]>, value: V) -> Option<V> {
+        #[cfg(test)]
+        work::count_insert();
+        let Some(root) = self.root.as_deref() else {
+            self.root = Some(Box::new(Node::Leaf(key, value)));
+            self.n = 1;
+            return None;
+        };
+        let held = root.held_key(&key).to_vec();
+        match first_difference(&key, &held) {
+            None => self.root.as_deref_mut()?.get_mut(&key).map(|v| std::mem::replace(v, value)),
+            Some(d) => {
+                insert_at(&mut self.root, key, value, d);
+                self.n = self.n.saturating_add(1);
+                None
+            }
+        }
+    }
+
     pub fn insert(&mut self, key: impl AsRef<[u8]>, value: V) -> Option<V> {
         #[cfg(test)]
         work::count_insert();
-        let key = key.as_ref().to_vec();
+        let key: std::sync::Arc<[u8]> = std::sync::Arc::from(key.as_ref());
         let Some(root) = self.root.as_deref() else {
             self.root = Some(Box::new(Node::Leaf(key, value)));
             self.n = 1;
@@ -358,7 +389,7 @@ impl<V> Keyed<V> {
         loop {
             match node {
                 Node::Leaf(k, _) => {
-                    if k.as_slice() != key {
+                    if &k[..] != key {
                         return None;
                     }
                     let p = parent?;
@@ -370,7 +401,7 @@ impl<V> Keyed<V> {
                 Node::Branch { bit, children, end } => {
                     if Node::<V>::bits(key) == Some(*bit) {
                         let (k, _) = end.as_deref()?;
-                        if k.as_slice() != key {
+                        if &k[..] != key {
                             return None;
                         }
                         return Some(Shell {

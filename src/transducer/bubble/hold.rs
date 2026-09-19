@@ -230,7 +230,7 @@ impl Contemplation {
             self.retract_incidence(key.as_bytes(), &old);
         }
         mark("retract_incidence");
-        self.admit_incidence(&key, &bubble);
+        self.admit_incidence(&key.shared(), &bubble);
         mark("admit_incidence");
         self.bubbles.insert(&key, bubble);
         mark("bubbles.insert");

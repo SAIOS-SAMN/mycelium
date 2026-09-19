@@ -283,7 +283,7 @@ impl Contemplation {
             bundle,
             remainders,
         };
-        self.admit_incidence(&key, &bubble);
+        self.admit_incidence(&key.shared(), &bubble);
         self.bubbles.insert(&key, bubble);
         self.dirty.insert(&key, ());
         self.link_new(&key);

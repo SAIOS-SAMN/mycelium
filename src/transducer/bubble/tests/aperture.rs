@@ -326,7 +326,7 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     let key = crate::transducer::bubble::idea::idea_key(&f);
     let bubble = Bubble { form: Some(f), vortex, cover, ..Default::default() };
     let mut c = Contemplation::new();
-    c.admit_incidence(&key, &bubble);
+    c.admit_incidence(&std::sync::Arc::from(&key[..]), &bubble);
     c.bubbles.insert(&key, bubble);
     // THE STRATUM IS THE COORDINATE, and it is the depth-one projection of
     // the class vector the candidate hangs under — not a second key written

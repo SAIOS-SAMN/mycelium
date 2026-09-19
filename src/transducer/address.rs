@@ -38,15 +38,36 @@ pub const TAG_DEMAND_AT: u8 = 18;
 /// Equality is Address-to-Address only: not a chain's bytes, not a socket
 /// string, not a verifying key.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Address(Vec<u8>);
+/// Z4c — AN ADDRESS OWNS ITS BYTES ONCE AND SHARES THEM.
+///
+/// The address IS the object's coordinates written out (law 2, A21), and
+/// for a form that is megabytes: `form_vertex_key` writes every vertex,
+/// member and gauge, 7.3 MB on the 590-vertex rule. Every carrier that
+/// names the form by it held a separate copy — the bubbles trie, `dirty`,
+/// `ordinals`, the Čech complex's sections — and a hold paid for all of
+/// them.
+///
+/// `Arc<[u8]>` changes WHO OWNS THE BYTES and nothing else. The coordinates
+/// are the same coordinates, `as_bytes` is the same slice, and a reader
+/// that compares, peels or descends on it cannot tell the difference —
+/// which is the point: the compression is by CITATION, one object written
+/// once and named everywhere by reference, not by shortening a coordinate,
+/// which would make it a stratum and not the object.
+pub struct Address(std::sync::Arc<[u8]>);
 
 impl Address {
     pub fn new(bytes: Vec<u8>) -> Address {
-        Address(bytes)
+        Address(bytes.into())
+    }
+
+    /// The one copy, to hand a carrier that files by this address
+    /// (`Keyed::insert_shared`).
+    pub fn shared(&self) -> std::sync::Arc<[u8]> {
+        std::sync::Arc::clone(&self.0)
     }
 
     pub fn from_bytes(bytes: impl AsRef<[u8]>) -> Address {
-        Address(bytes.as_ref().to_vec())
+        Address(std::sync::Arc::from(bytes.as_ref()))
     }
 
     pub fn as_bytes(&self) -> &[u8] {
@@ -54,7 +75,7 @@ impl Address {
     }
 
     pub fn into_vec(self) -> Vec<u8> {
-        self.0
+        self.0.to_vec()
     }
 
     pub fn is_empty(&self) -> bool {
@@ -153,19 +174,19 @@ impl std::borrow::Borrow<[u8]> for Address {
 
 impl From<Vec<u8>> for Address {
     fn from(v: Vec<u8>) -> Address {
-        Address(v)
+        Address(v.into())
     }
 }
 
 impl From<&[u8]> for Address {
     fn from(v: &[u8]) -> Address {
-        Address(v.to_vec())
+        Address(std::sync::Arc::from(v))
     }
 }
 
 impl From<Address> for Vec<u8> {
     fn from(a: Address) -> Vec<u8> {
-        a.0
+        a.0.to_vec()
     }
 }
 
@@ -338,7 +359,7 @@ pub fn take_addr(b: &[u8], p: &mut usize) -> Option<Address> {
     if n > b.len().checked_sub(*p)? {
         return None;
     }
-    let s = b.get(*p..*p + n)?.to_vec();
+    let s = std::sync::Arc::from(b.get(*p..*p + n)?);
     *p += n;
     Some(Address(s))
 }
