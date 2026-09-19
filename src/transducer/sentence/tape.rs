@@ -20,13 +20,59 @@ use crate::transducer::alphabet::Rotor;
 use crate::transducer::element::{self, Element};
 
 pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
+    // Z12b (1.7, part 2) — THE ADDRESS TABLE: EACH DISTINCT CITED ADDRESS
+    // WRITTEN ONCE, AND THE TAPE IS TRANSPORT.
+    //
+    // Measured on the fleet at 123a849: the glued vertices' addresses were
+    // 68.4% of every tape, and the SAME cited address appeared in seven
+    // distinct words — `10462` bytes copied whole into each of them — while
+    // a word gluing nothing cost ~9 KB however full the genome was. The
+    // cost was never the vertex count: a 28-vertex form carried 10 462
+    // bytes of it and a 10-vertex form carried 224 424.
+    //
+    // IDENTITY IS NOT SHORTENED (1.7). A form that cites another still
+    // writes the cited form's WHOLE address into its own key — the cited
+    // coordinates are the only name it has — and `form_vertex_key` is
+    // untouched by this. What changes is transport: the tape names each
+    // distinct address once here and refers to it by a TAPE-LOCAL ORDINAL
+    // that never leaves the tape. The decoder rebuilds every address whole,
+    // so `by_address`, every address comparison and the court's replay see
+    // exactly what they saw before. An ordinal is no more an identity than
+    // a byte offset is; nothing outside this file and its decoder can
+    // observe one.
+    //
+    // THE TABLE IS IN THE TRIE'S ORDER, which is the addresses' own order
+    // and is content (law 2) — not first-appearance order, which would
+    // make one form's tape depend on the order its vertices were built in.
+    let mut names: Keyed<()> = Keyed::new();
+    for v in &f.vertices {
+        match v {
+            Vertex::Word { address, .. } | Vertex::Glued { address, .. } => {
+                names.insert(address, ());
+            }
+            _ => {}
+        }
+    }
+    let table: Vec<Vec<u8>> = names.scoped().map(|(k, ())| k).collect();
+    let mut ordinal: Keyed<u16> = Keyed::new();
+    for (i, k) in table.iter().enumerate() {
+        ordinal.insert(k, u16::try_from(i).ok()?);
+    }
+    out.extend_from_slice(&(u16::try_from(table.len()).ok()?).to_le_bytes());
+    for k in &table {
+        crate::transducer::address::put_addr(out, k)?;
+    }
+    let put_name = |out: &mut Vec<u8>, a: &crate::transducer::address::Address| -> Option<()> {
+        out.extend_from_slice(&ordinal.get(a.as_bytes())?.to_le_bytes());
+        Some(())
+    };
     out.extend_from_slice(&(f.vertices.len() as u16).to_le_bytes());
     for v in &f.vertices {
         match v {
             Vertex::Frame => out.push(0),
             Vertex::Word { address, derivation, acts, contact } => {
                 out.push(1);
-                crate::transducer::address::put_addr(out, address);
+                put_name(out, address)?;
                 derivation_to_form_bytes(derivation, *contact, out)?;
                 // THE FIBRE (v8, D7): the member count, then each member's
                 // carriage, gauge and chart, in the trie's order — which is
@@ -51,7 +97,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                 placement,
             } => {
                 out.push(2);
-                crate::transducer::address::put_addr(out, address);
+                put_name(out, address)?;
                 put_inv(chart, out)?;
                 for m in magnitude {
                     out.extend_from_slice(&m.to_le_bytes());
@@ -244,6 +290,13 @@ fn take_transport(b: &[u8], pos: &mut usize) -> Option<Transport> {
 }
 
 pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
+    // Z12b — the address table first: every address the vertices name,
+    // rebuilt WHOLE here, so nothing downstream ever sees an ordinal.
+    let nt = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+    let mut table: Vec<crate::transducer::address::Address> = Vec::with_capacity(nt);
+    for _ in 0..nt {
+        table.push(crate::transducer::address::take_addr(b, pos)?);
+    }
     let nv = take_count(b, *pos, take_u16(b, pos)? as usize, 1)?;
     if nv == 0 {
         return None;
@@ -255,7 +308,9 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         let v = match kind {
             0 => Vertex::Frame,
             1 => {
-                let address = crate::transducer::address::take_addr(b, pos)?;
+                // An ordinal the table does not hold is a tape that does
+                // not parse (rule 11): no address is invented for it.
+                let address = table.get(take_u16(b, pos)? as usize)?.clone();
                 let (derivation, contact) = derivation_from_form_bytes(b, pos)?;
                 // THE FIBRE, one member per chart (D7): a count, then each
                 // member's carriage, gauge and chart.
@@ -281,7 +336,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 Vertex::Word { address, derivation, acts, contact }
             }
             2 => {
-                let address = crate::transducer::address::take_addr(b, pos)?;
+                let address = table.get(take_u16(b, pos)? as usize)?.clone();
                 let chart = take_inv(b, pos)?;
                 let mut magnitude = [0u64; 4];
                 for m in &mut magnitude {
@@ -522,7 +577,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
 /// Version 10 is the three-coordinate base (51.7): supports as sites of
 /// three coordinates, versors of thirty-two components, the sections
 /// placed, and a loop's period filed as `0` for infinite order (52.3).
-pub const FORM_TAPE_VERSION: u8 = 10;
+pub const FORM_TAPE_VERSION: u8 = 11;
 
 /// 37.7 — MINT A GENERATOR FROM A ROTOR, the one construction that turns a
 /// measured action the alphabet cannot spell into a word the language holds.
