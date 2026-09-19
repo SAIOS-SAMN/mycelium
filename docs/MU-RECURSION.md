@@ -4423,6 +4423,35 @@ the schema's, read by `Keyed::fiber`, and are for readers of the forms'
 own trie. A form the voice extracted is moved into its bubble, never
 cloned into it.
 
+**What bounds a hold** (ruled 2026-09-19, on the reading that
+`shed_unglued` retired nothing structurally — every bubble `hold_form`
+built was `dirty` for life and `retire_on_t` bounded the count by a
+reserve read off the machine's memory at boot). A hold is bounded by
+content, through three doors and no other:
+
+1. **Lapse.** A held thought stands while a demand it carries is docketed,
+   and lapses with that docket's lapse — 47.5's lapse in receipts, the
+   same one the courts apply, read from the ledger height the voice
+   already sees. Every bubble whose dockets have lapsed is retired on the
+   stroke that reads the height; the set is retired, never one by age or
+   size (rule 4).
+2. **Promotion.** A bubble whose form was ratified into the genome, or
+   stood into the dialect, is retired at the promotion: its content is now
+   long-term memory on the atlas and the trie reaches it there; a second
+   copy in the contemplation is a second carrier for one fact (law 12).
+3. **Room, per lane.** The room a voice holds thoughts in is measured in
+   μ⃗ — the contemplation's `boundary_measure` against the voice's reserve,
+   lane by lane (law 5, 23.8) — never in a count of bubbles and never by
+   a number read off the box. When the room is spent on a lane, a new
+   thought is not held: it is withheld (47.5), its demand stands on the
+   court's docket, and the voice's memory of it is that docket. Nothing
+   already held is evicted to make room, because eviction chooses.
+
+`dirty` is a reading, not a costume: it says the bubble's idea has moved
+since it was last exchanged, so a bubble is born clean and becomes dirty
+by a merge, a pivot or a collapse. A flag every bubble carries from birth
+reads nothing and is deleted with its reader.
+
 **The files.** The contemplation is eight files, one organ each (Stage 8b
 S5): `idea.rs` one bubble and what it measures; `contemplation.rs` the
 complex of held thoughts and their incidence; `merge.rs` when two held
