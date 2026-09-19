@@ -49,7 +49,7 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
         return false;
     };
     f.remainder = joined;
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     match f.solve_coboundary() {
         Some(gamma) => {
             let _ = f.regauge(&gamma);

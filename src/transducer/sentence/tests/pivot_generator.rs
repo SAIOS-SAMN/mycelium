@@ -240,7 +240,7 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
         face.at.insert(pair.clone(), place(edge));
         f.faces.push(face);
     }
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     let [lp, ..] = f.loops.as_slice() else { panic!("one loop") };
     let chord = lp.chord;
     let before = f.loop_holonomy(lp).expect("one holonomy");
@@ -254,7 +254,7 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
     let by = PivotBy::Word { face: chord, word: before.clone(), side: Side::Right };
     apply_by(&mut f.faces, &by);
     let read = |faces: &[FormFace], vs: &[Vertex]| {
-        let loops = Form::loops_of(faces, vs.len());
+        let loops = Form::loops_of(faces, vs);
         let [lp, ..] = loops.as_slice() else { panic!("one loop") };
         crate::transducer::sentence::pivot::drive::loop_holonomy_on(faces, vs, lp)
             .expect("one holonomy")
@@ -512,7 +512,7 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
         face.at.insert(pair.clone(), place(edge));
         f.faces.push(face);
     }
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     let [lp, ..] = f.loops.as_slice() else { panic!("three faces close one loop") };
     let chord = lp.chord;
 

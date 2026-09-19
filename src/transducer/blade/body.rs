@@ -89,7 +89,21 @@ impl Blade {
         }
     }
 
-    /// The deviatoric harmonic tensor on a given rotation plane in `SLOT_PLANES_SIX`.
+    /// THE PLANES A BODY HAS. The base is three coordinates — `e₀, e₁, e₃`
+    /// are `r, c, k` (51.2) — so a body's inertia spans three planes and not
+    /// the six of `Cl(4,0)`; the three through `e₂` are not the base's.
+    ///
+    /// `harmonic_on_plane`'s match arms ARE this list, and a caller sweeping
+    /// `SLOT_PLANES_SIX` tried six to find three and dropped the rest through
+    /// a `continue` — the carrier naming its own planes is the reading, and
+    /// the sweep was the question asked of a table that answers it (law 3).
+    pub(crate) const BASE_PLANES: [(u8, u8); 3] = [
+        (crate::transducer::alphabet::PLANE_ROW, crate::transducer::alphabet::PLANE_COL),
+        (crate::transducer::alphabet::PLANE_ROW, 3),
+        (crate::transducer::alphabet::PLANE_COL, 3),
+    ];
+
+    /// The deviatoric harmonic tensor on a given rotation plane in `BASE_PLANES`.
     /// On plane (0,1) reads `(Ixx - Iyy, 2Ixy)`; on (0,3) reads `(Ixx - Izz, 2Ixz)`;
     /// on (1,3) reads `(Iyy - Izz, 2Iyz)`.
     pub(crate) fn harmonic_on_plane(&self, plane: (u8, u8), mirrored: bool) -> Option<[BigRational; 2]> {

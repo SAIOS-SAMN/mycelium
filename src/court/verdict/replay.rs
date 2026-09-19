@@ -244,7 +244,7 @@ pub fn replay_form_at(
         return Some(tape(REFUSE_RANK_LOST));
     };
     let mut walked = f.clone();
-    walked.loops = Form::loops_of(&f.faces, f.vertices.len());
+    walked.loops = Form::loops_of(&f.faces, &f.vertices);
     let by_chord = chord_loops(&walked);
     // Chapter 23.1 step 4: a face equals face_of(i, j), or it is the
     // Kruskal chord of a loop whose holonomy is what the chord carries
@@ -555,7 +555,7 @@ pub(crate) fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'s
         };
         let mut pre = f.clone();
         pre.unapply_move(&cert.by);
-        pre.loops = Form::loops_of(&pre.faces, pre.vertices.len());
+        pre.loops = Form::loops_of(&pre.faces, &pre.vertices);
         // An opened axis (I6) is seeded by the loop's own holonomy versor
         // (16.20): the court re-derives the seed from the loop it re-walked
         // and refuses a certificate whose seed is anything else (law 12).

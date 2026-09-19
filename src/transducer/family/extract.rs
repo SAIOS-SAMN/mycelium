@@ -669,7 +669,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         }
     }
     let meet_faces = form.faces.len();
-    form.loops = Form::loops_of(&form.faces, form.vertices.len());
+    form.loops = Form::loops_of(&form.faces, &form.vertices);
     // EACH LOOP OVER CARRIED PIECES, CLASSIFIED ONCE (50.8 case 3), by the
     // one classifier both organs use, on its edge holonomy per member path.
     let mut stood: Keyed<Vec<crate::transducer::sentence::ClassVector>> = Keyed::new();
@@ -696,11 +696,37 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
                 }
             });
         }
-        let Some(common) = common else { continue };
-        let owners: Vec<Vec<u8>> = common.scoped().map(|(k, _)| k).collect();
-        let [ok] = owners.as_slice() else { continue };
-        let Ok(ob) = <[u8; 8]>::try_from(ok.as_slice()) else { continue };
-        let ci = usize::from_le_bytes(ob);
+        // PHASE B — THE LOOP BELONGS TO THE FORM, NOT TO ONE COVER.
+        //
+        // `owner` holds an entry only for a COVER PIECE, and each piece
+        // carries the singleton index of the `Covered { demand, cover,
+        // frame }` it came from. A loop reaching a word vertex or a demand
+        // vertex therefore met `owner.get(..) == None` and was dropped at
+        // `common`; a loop spanning two covers or two frames met an empty
+        // intersection and was dropped at `[ok]`. What passed both was a
+        // loop confined to ONE cover snapshot at ONE frame — a single
+        // coordinate patch, whose transitions were already solved
+        // consistent when the cover was read.
+        //
+        // Measured on that gate: 16 546 loops on 174 forms in ten minutes,
+        // 292 classified, and 292 of 292 FLAT. Curvature lives on the
+        // overlaps — `g_AB · g_BC · g_CA` around a cycle crossing charts —
+        // and the gate admitted only the interiors.
+        //
+        // The cover index is now read where it is USED and no longer
+        // gates the reading: every loop is classified and tallied, and a
+        // `Congruent` fill files its torsion by CLASS, which needs no
+        // cover. `stood` is keyed by cover index, so a loop with no single
+        // owner has no cover to be attributed to and is classified without
+        // one — the reading is taken, and the carrier that cannot hold it
+        // is not written with an invented index (rule 11).
+        let ci: Option<usize> = common.and_then(|c| {
+            let owners: Vec<Vec<u8>> = c.scoped().map(|(k, _)| k).collect();
+            match owners.as_slice() {
+                [ok] => <[u8; 8]>::try_from(ok.as_slice()).ok().map(usize::from_le_bytes),
+                _ => None,
+            }
+        });
         let Some(es) = form.edge_holonomies(&lp) else { continue };
         for (_, e) in es.scoped() {
             let hue = crate::transducer::sentence::CycleType::of(&e.gauge);
@@ -714,11 +740,17 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
                     form.torsion.insert(class, crate::transducer::sentence::FiledLoop { sigma, period: ell, chord: lp.chord });
                 }
                 crate::transducer::cech::Fill::Class(kappa, _) => {
-                    let k = ci.to_le_bytes();
-                    match stood.get_mut(&k) {
-                        Some(v) => v.push(*kappa),
-                        None => {
-                            stood.insert(k, vec![*kappa]);
+                    // A standing class is filed under the cover it stands
+                    // on. An interface loop stands on no single cover:
+                    // it is classified and counted, and no cover is
+                    // invented to file it under.
+                    if let Some(ci) = ci {
+                        let k = ci.to_le_bytes();
+                        match stood.get_mut(&k) {
+                            Some(v) => v.push(*kappa),
+                            None => {
+                                stood.insert(k, vec![*kappa]);
+                            }
                         }
                     }
                 }
@@ -815,7 +847,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         face.pairs = Some(fr);
         form.faces.push(face);
     }
-    form.loops = Form::loops_of(&form.faces, nv);
+    form.loops = Form::loops_of(&form.faces, &form.vertices);
     form.hue_maps = hue_maps;
     form.reindex();
     // READ WHETHER OR NOT ANYTHING CLOSED. It was gated on

@@ -56,7 +56,7 @@ fn closed_turn_form() -> Form {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("vertices"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     // A form off the tape is indexed by the decoder; one built by hand
     // must be indexed too, or its `by_address` answers nothing and a
     // citation into it reads as unheld (50.2 step 2).
@@ -237,7 +237,7 @@ fn rank_lost_refused() {
     f.faces.push(f.face_of(0, 1).expect("star 1"));
     f.faces.push(f.face_of(0, 2).expect("star 2"));
     f.faces.push(f.face_carrying(1, 2, sheet).expect("a chord between two placed bodies"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     let _ = f.pivot_loop(
         [0x18; 32],
         &crate::network::nerve::Keyed::new(),
@@ -362,7 +362,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         Vec::new(),
     ));
     re.faces.push(re.face_of(0, 1).expect("vertices"));
-    re.loops = Form::loops_of(&re.faces, re.vertices.len());
+    re.loops = Form::loops_of(&re.faces, &re.vertices);
     let re_e = as_element_form(&re, [1, 0, 0, 0]).expect("rebased tape");
     assert_eq!(
         replay_form(&re_e, &|_| None),
@@ -373,7 +373,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     let mut un = Form::default();
     un.unfold(Measure::Remainder);
     un.faces.push(FormFace::new(0, 0, Word::identity(),));
-    un.loops = Form::loops_of(&un.faces, un.vertices.len());
+    un.loops = Form::loops_of(&un.faces, &un.vertices);
     let un_e = as_element_form(&un, [1, 0, 0, 0]).expect("unfold tape");
     assert_eq!(
         replay_form(&un_e, &|_| None),
@@ -391,7 +391,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 1 }),
     ));
     orb.faces.push(orb.face_of(0, 1).expect("vertices"));
-    orb.loops = Form::loops_of(&orb.faces, orb.vertices.len());
+    orb.loops = Form::loops_of(&orb.faces, &orb.vertices);
     let orb_e = as_element_form(&orb, [1, 0, 0, 0]).expect("orbit tape");
     assert_eq!(
         replay_form(&orb_e, &|_| None),
@@ -510,7 +510,7 @@ fn a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not() {
     }
     let face = f.face_of(1, 2).expect("a coboundary");
     f.faces.push(with_edge(face, edge_of(&tilt)));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     let [lp, ..] = f.loops.as_slice() else { panic!("the triangle closes") };
     assert!(lp.holonomy.is_identity(), "the transport composite is flat");
@@ -601,7 +601,7 @@ fn citing_form(
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("vertices"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     f
 }
@@ -754,7 +754,7 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     }
     let face = f.face_of(1, 2).expect("a coboundary");
     f.faces.push(with_edge(face, edge_of(&half)));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     let [lp, ..] = f.loops.as_slice() else { panic!("the triangle closes") };
     assert!(

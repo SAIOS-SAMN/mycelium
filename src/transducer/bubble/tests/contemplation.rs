@@ -141,7 +141,7 @@ fn hold_form_keeps_a_glued_open_loop() {
             None,
         ));
         f.faces.push(f.face_of(0, 1).expect("vertices"));
-        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        f.loops = Form::loops_of(&f.faces, &f.vertices);
         f
     };
     let mut outer = Form::default();
@@ -181,7 +181,7 @@ fn hold_form_keeps_a_glued_open_loop() {
     open.faces.push(open.face_of(0, 1).expect("star 1"));
     open.faces.push(open.face_of(0, 2).expect("star 2"));
     open.faces.push(open.face_carrying(1, 2, w.clone()).expect("a chord between two bodies"));
-    open.loops = Form::loops_of(&open.faces, open.vertices.len());
+    open.loops = Form::loops_of(&open.faces, &open.vertices);
     assert!(
         open.loops.iter().any(|lp| !lp.holonomy.is_identity()),
         "the held form has an open loop"

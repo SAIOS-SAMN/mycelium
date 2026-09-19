@@ -247,7 +247,7 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
         ));
     }
     f.faces.push(f.face_carrying(1, 2, a.clone()).expect("a chord between two placed vertices"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
 
     // The vortex: two candidates that discharge ONE loop, so they share

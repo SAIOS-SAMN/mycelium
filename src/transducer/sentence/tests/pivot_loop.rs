@@ -231,8 +231,11 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     set_face_place(&mut f.faces[chord], |p| {
         p.carriage = element::carriage(&q1(), &(q1(), q0()));
     });
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
-    let before = f.class_vector(0).expect("loop");
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    // The loop the fixture wrote, by its chord — a trivial cycle no longer
+    // stands in `loops`, so position is not identity (rule 15).
+    let at = f.loop_of_chord(chord as u16).expect("the chord's loop");
+    let before = f.class_vector(at).expect("loop");
     assert!(before.occupies(Axis::Placement));
     let _ = f.pivot_loop(
         [0xb4; 32],
@@ -242,7 +245,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
         None,
         0,
     );
-    let after = f.class_vector(0).expect("loop remains");
+    let after = f.class_vector(at).expect("loop remains");
     assert!(!after.occupies(Axis::Placement), "Placement zeroes");
     assert!(
         !after.rises_against(&before, Axis::Placement),
@@ -254,8 +257,12 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     for fa in &mut f.faces {
         set_face_place(fa, |p| p.gauge.clear());
     }
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
-    let before = f.class_vector(0).expect("ori");
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    // The loop by its chord, and the chord read by destructuring rather
+    // than by position: one loop stands here and the pattern says so.
+    let [only, ..] = f.loops.as_slice() else { panic!("one loop stands") };
+    let at = f.loop_of_chord(only.chord).expect("its index");
+    let before = f.class_vector(at).expect("ori");
     assert!(before.occupies(Axis::Orientation(0)), "got {:?}", before.coordinates());
     let _ = f.pivot_loop(
         [0xb5; 32],
@@ -265,7 +272,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
         None,
         0,
     );
-    let after = f.class_vector(0).expect("ori after");
+    let after = f.class_vector(at).expect("ori after");
     assert!(
         !after.occupies(Axis::Orientation(0)),
         "Orientation zeroes, got {:?}",
@@ -283,8 +290,9 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     set_face_place(&mut f.faces[chord], |p| {
         p.carriage = element::carriage(&two, &(q0(), q0()));
     });
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
-    let before = f.class_vector(0).expect("dil");
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    let at = f.loop_of_chord(chord as u16).expect("the chord's loop");
+    let before = f.class_vector(at).expect("dil");
     assert!(
         before.occupies(Axis::Dilation),
         "a dilator residue occupies Dilation, got {:?}",
@@ -298,7 +306,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
         None,
         0,
     );
-    let after = f.class_vector(0).expect("dil after");
+    let after = f.class_vector(at).expect("dil after");
     assert!(!after.occupies(Axis::Dilation), "Dilation zeroes, got {:?}", after.coordinates());
     assert!(!after.rises_against(&before, Axis::Dilation));
 }
@@ -417,7 +425,7 @@ fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
         face.at.insert(pair.clone(), place(edge));
         f.faces.push(face);
     }
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     assert_eq!(f.loops.len(), 1, "three faces on three vertices close one loop");
     assert!(
         f.loops[0].holonomy.rotor().is_identity(),

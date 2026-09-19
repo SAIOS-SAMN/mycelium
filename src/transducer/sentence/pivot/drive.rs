@@ -250,7 +250,7 @@ impl Form {
     /// written.
     pub fn apply_pivot(&mut self, cert: &PivotCertificate) {
         self.apply_move(&cert.by);
-        self.loops = Self::loops_of(&self.faces, self.vertices.len());
+        self.loops = Self::loops_of(&self.faces, &self.vertices);
         self.reindex();
     }
 
@@ -282,7 +282,7 @@ impl Form {
             if budget.remaining() == 0 {
                 break;
             }
-            self.loops = Self::loops_of(&self.faces, self.vertices.len());
+            self.loops = Self::loops_of(&self.faces, &self.vertices);
             let mut pending: Keyed<Order> = Keyed::new();
             for lp in &self.loops {
                 if self

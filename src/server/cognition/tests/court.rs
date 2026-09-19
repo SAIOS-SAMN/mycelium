@@ -509,7 +509,7 @@ fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
             vec![(1, 2)],
             None,
         ));
-        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        f.loops = Form::loops_of(&f.faces, &f.vertices);
         f.reindex();
         as_element_form(&f, [0, 0, 0, 1]).expect("a recolouring section has a tape")
     };

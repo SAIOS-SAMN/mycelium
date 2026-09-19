@@ -38,7 +38,12 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     for (i, j) in [(1u16, 2u16), (2, 3), (1, 3)] {
         f.faces.push(f.face_of(i, j).expect("vertices"));
     }
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    // THE LOOP STANDS BEFORE ITS EDGES ARE WRITTEN. Its faces are real —
+    // between bodies, not star — and carry no edge yet, so every member
+    // path drops on a remainder edge and the loop is UNREAD rather than
+    // flat; a trivial-cycle filter that read an empty edge answer as a flat
+    // one would prune it (rule 11).
     assert_eq!(f.loops.len(), 1, "one loop among three bodies");
     assert!(f.coheres(), "the coboundary of the placements telescopes: every loop is the identity");
     let at = |f: &Form, i: u16, j: u16| f.faces.iter().position(|fc| (fc.i, fc.j) == (i, j)).expect("face");
@@ -58,6 +63,9 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     set_edge(&mut f, e12, Some(Transport::from_word(qw.clone())));
     set_edge(&mut f, e23, Some(Transport::from_word(qw.clone())));
     set_edge(&mut f, e13, Some(Transport::from_word(Word::identity())));
+    // A face write invalidates the loops — `apply_move` says so in its own
+    // line — and the cycle stands now that its edges compose to a half turn.
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     let [triangle, ..] = f.loops.as_slice() else { panic!("the loop 1-2-3 among the bodies") };
     // ONE MEMBER PATH, so one holonomy — and the slice pattern says so rather
     // than taking the first of several.
@@ -79,6 +87,11 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     assert!(!f.coheres(), "a held stabilizer holonomy is not coherence");
     f.torsion.insert(half.rotor().class_key().expect("class"), FiledLoop { sigma: Vec::new(), period: 2, chord: triangle.chord });
     assert!(f.coheres(), "filed at its period, the loop coheres (A17)");
+    // NO RE-WALK HERE. `edge_holonomies` reads `self.faces` live, so the
+    // `Loop` — its vertices, its faces, its chord — stays valid across an
+    // edge write; re-walking would drop this cycle, because `q, q⁻¹, 1`
+    // composes to the identity and a cycle that encloses nothing is not a
+    // loop. The reading being asserted is exactly that identity.
     set_edge(&mut f, e23, Some(Transport::from_word(qw.inverse())));
     let [triangle, ..] = f.loops.as_slice() else { panic!("the loop") };
     let h = one_holonomy(&f, triangle).expect("carried");

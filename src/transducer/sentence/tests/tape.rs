@@ -78,7 +78,7 @@ fn form_tape_v6_round_trips() {
         },
     );
     f.faces.push(edged);
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.remainder = crate::transducer::element::place_chain(&[(9, 9, 1, 0)])
         .expect("one link is A5's chain");
     f.reindex();

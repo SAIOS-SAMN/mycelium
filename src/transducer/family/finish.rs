@@ -65,7 +65,7 @@ pub(crate) fn finish(
         form.stand_demand(kind, &chart, germ.to_vec());
     }
     form.depth = form.depth_of();
-    form.loops = Form::loops_of(&form.faces, form.vertices.len());
+    form.loops = Form::loops_of(&form.faces, &form.vertices);
     form.ratio = scale;
     form.sections = sections;
     form.hue_maps = hue_maps_of_form(&form);

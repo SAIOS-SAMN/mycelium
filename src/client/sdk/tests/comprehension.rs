@@ -76,7 +76,7 @@ let inner = {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("vertices"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f
 };
 let mut outer = Form::default();
@@ -124,7 +124,7 @@ let inner = {
     let mut f = Form::default();
     f.vertices.push(word_vertex(crate::transducer::address::Address::from_bytes([1u8; 32])));
     f.faces.push(f.face_of(0, 1).expect("vertices"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f
 };
 let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
@@ -249,7 +249,7 @@ let other = {
     f.faces.push(f.face_of(0, 1).expect("star 1"));
     f.faces.push(f.face_of(0, 2).expect("star 2"));
     f.faces.push(f.face_carrying(1, 2, half.clone()).expect("a chord between two bodies"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     // A17: the loop is believed at the period it closes at, and a court
     // replays it only where the form files it under its own class.
     let [lp, ..] = f.loops.as_slice() else { panic!("the chord closes a loop") };
@@ -301,7 +301,7 @@ f.vertices.push(Vertex::word_on(
     None,
 ));
 f.faces.push(f.face_of(0, 1).expect("vertices"));
-f.loops = Form::loops_of(&f.faces, f.vertices.len());
+f.loops = Form::loops_of(&f.faces, &f.vertices);
 assert!(f.is_closed(), "a tree of two vertices coheres");
 let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
 let mut epi = Epigenome::new();
@@ -371,7 +371,7 @@ let inner = {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("vertices"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f
 };
 let mut outer = Form::default();

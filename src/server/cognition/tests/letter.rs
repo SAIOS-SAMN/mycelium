@@ -41,7 +41,7 @@ fn demanding_sentence(w: crate::transducer::alphabet::Word, tag: u8, kind: Deman
         // whose bodies measure nothing cost the language nothing.
         bodies: vec![(0, 0, 0, 1), (0, 1, 0, 1)],
     });
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     as_element_form(&f, [1, 0, 0, 0]).expect("a tape")
 }
@@ -243,7 +243,7 @@ fn derived_sentence(d: Derivation, tag: u8) -> Element {
         Vec::new(),
         None,
     ));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     as_element_form(&f, [1, 0, 0, 0]).expect("a tape")
 }

@@ -265,7 +265,7 @@ fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
     f.faces.push(f.face_of(0, 1).expect("star 1"));
     f.faces.push(f.face_of(0, 2).expect("star 2"));
     f.faces.push(f.face_carrying(1, 2, w).expect("a chord between two bodies"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     assert!(f.coheres(), "coheres reads projective identity");
     assert!(
@@ -404,7 +404,7 @@ fn a_loop_residue_is_the_translator_of_its_holonomy_versor() {
     set_face_place(&mut f.faces[chord], |p| {
         p.carriage = element::carriage(&q1(), &(q1(), q0()));
     });
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     let kappa = f.class_vector(0).expect("loop");
     assert!(kappa.occupies(Axis::Placement));
     let t = element::translator_of(&kappa.carriage).expect("translator");

@@ -40,7 +40,7 @@ fn generator_form(w: Word, gauge: Vec<(u8, u8)>, tag: u8) -> (Address, Form) {
         gauge,
         None,
     ));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     (Address::from_bytes([TAG_FORM, tag]), f)
 }

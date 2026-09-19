@@ -189,7 +189,7 @@ impl Form {
 
     /// Loops and indices re-derived from the faces that remain.
     fn rewalk(&mut self) {
-        self.loops = Form::loops_of(&self.faces, self.vertices.len());
+        self.loops = Form::loops_of(&self.faces, &self.vertices);
         self.reindex();
     }
 

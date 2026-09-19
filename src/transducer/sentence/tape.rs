@@ -564,7 +564,7 @@ pub fn generator_form(
         Vec::new(),
         None,
     ));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     // What the language could not say without it: the demand's own bodies,
     // measured lane-wise, the same measure a remainder takes. A mint with no

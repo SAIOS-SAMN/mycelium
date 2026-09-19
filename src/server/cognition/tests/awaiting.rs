@@ -28,7 +28,7 @@ fn sentence_with(d: Derivation, tag: u8) -> Element {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("star"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     as_element_form(&f, [1, 0, 0, 0]).expect("a tape")
 }
@@ -234,7 +234,7 @@ fn a_ruled_word_is_filed_at_the_chart_its_vertex_acts_on() {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("star"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     let sentence = as_element_form(&f, [1, 0, 0, 0]).expect("a tape");
 

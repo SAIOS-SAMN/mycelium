@@ -3,7 +3,16 @@
 use super::*;
 
 impl Form {
-    pub fn loops_of(faces: &[FormFace], n: usize) -> Vec<Loop> {
+    /// THE CYCLES OF THE 1-SKELETON, less the ones that enclose nothing.
+    ///
+    /// Takes the VERTICES and not a count: `loop_is_trivial` reads the
+    /// edge holonomies to decide, and `edge_holonomies_on` needs them. A
+    /// loop flat on its WORD can carry a real edge composite — that is
+    /// what `a_loop_flat_on_the_word_files_under_its_edge_composite`
+    /// asserts — and a predicate blind to edges would prune the
+    /// obstruction along with the noise.
+    pub fn loops_of(faces: &[FormFace], vertices: &[Vertex]) -> Vec<Loop> {
+        let n = vertices.len();
         if n == 0 {
             return Vec::new();
         }
@@ -64,6 +73,15 @@ impl Form {
                 holonomy,
                 carriages: Keyed::new(),
             };
+            // A CHORD THAT ENCLOSES NOTHING IS NOT A LOOP (ruled
+            // 2026-09-18). `loop_is_trivial` states the predicate once;
+            // a cycle that encloses no rotation, no placement and no hue
+            // occupies no axis of 12.6, drives no pivot, and was walked by
+            // every reader of `loops` for nothing — 16 546 of them on 174
+            // forms in ten minutes.
+            if loop_is_trivial(faces, vertices, &lp) {
+                continue;
+            }
             for (k, t) in loop_transport_on(faces, &lp).scoped() {
                 lp.carriages.insert(&k, t.carriage.clone());
             }
@@ -520,5 +538,75 @@ pub fn unpivoted_face(g: &Word, w: &Word, side: Side) -> Word {
     match side {
         Side::Right => g.compose(w).normal_form(),
         Side::Left => w.inverse().compose(g).normal_form(),
+    }
+}
+
+/// IS THIS CYCLE ALGEBRAICALLY TRIVIAL — identity word holonomy, and every
+/// member path's transport exactly `(1, 0, ∅)`?
+///
+/// `Form::loops_of` is union-find over faces and returns `b₁` of a graph:
+/// every redundant path is a cycle, and a form carried 16 546 of them in
+/// ten minutes while 292 reached a classifier. A cycle that encloses
+/// nothing occupies no axis of 12.6 and can drive no pivot.
+///
+/// THE FILTER IS HERE AND NOT IN `loops_of`. `Form.loops` carries two
+/// readings: the cycle set of the 1-skeleton — a structural fact about
+/// which faces closed, asserted by `the_1_skeleton_is_not_a_star_tree` and
+/// `the_triangle_among_the_bodies_closes` — and the obstructions a pivot
+/// discharges. Dropping trivial cycles at construction served the second
+/// and destroyed the first: fifteen tests, two of them asserting incidence
+/// structure through `loops.len()`.
+///
+/// It is also NOT the whole of `coheres`. A loop can carry an identity
+/// WORD holonomy over edges that compose to a rotation, and `edge_coheres`
+/// accepts that only where the class is filed in the form's `torsion`. A
+/// cycle carrying any edge transport is not trivial by this reader and
+/// reaches every reading that holds it to account.
+pub(crate) fn loop_is_trivial(faces: &[FormFace], vertices: &[Vertex], lp: &Loop) -> bool {
+    use crate::transducer::alphabet::Rotor;
+    let flat = |t: &Transport| {
+        t.word.rotor().projective_eq(&Rotor::identity())
+            && element::same_versor(&t.carriage, &element::identity_versor())
+            && t.gauge.is_empty()
+    };
+    // THE EDGE IS A THIRD CARRIER. `loop_transport_on` composes the
+    // faces' words and the members' carriage and gauge;
+    // `edge_holonomies_on` reads 50.3's edge transport, which
+    // `class_vectors_on` and `edge_coheres` both turn on. A loop whose
+    // word telescopes to the identity over edges that compose to a
+    // rotation is an obstruction, and reading only the first two carriers
+    // would prune it.
+    // AN UNREAD LOOP IS NOT A FLAT ONE (rule 11). `loop_transport_on`
+    // answers empty where no member path CLOSES, and `all(..)` on nothing
+    // is true — so a loop whose paths do not join up read as trivial and
+    // was pruned, which is a refusal reported as a measurement. A cycle
+    // is trivial only where a path was read and every one of them is
+    // flat.
+    let transports = loop_transport_on(faces, lp);
+    if transports.scoped().next().is_none() {
+        return false;
+    }
+    if !lp.holonomy.rotor().projective_eq(&Rotor::identity())
+        || !transports.scoped().all(|(_, t)| flat(t))
+    {
+        return false;
+    }
+    // THE EDGE READING, AND WHAT AN EMPTY ONE MEANS. `edge_holonomies_on`
+    // answers empty in two different situations and the difference decides:
+    // a loop of nothing but star faces crossed no edge, and its reading is
+    // the faces' WORDS, already taken above; a loop that DOES cross a real
+    // face and still answers empty had every path dropped on a remainder
+    // edge, which is unread, not flat (rule 11). `None` is a loop naming a
+    // face this form does not have, and that is unread too.
+    let crosses_a_real_face = lp
+        .faces
+        .iter()
+        .any(|&fi| faces.get(fi as usize).is_some_and(|f| !touches_frame(vertices, f)));
+    match edge_holonomies_on(faces, vertices, lp) {
+        None => false,
+        Some(hs) => match hs.scoped().next().is_none() {
+            true => !crosses_a_real_face,
+            false => hs.scoped().all(|(_, h)| flat(h)),
+        },
     }
 }

@@ -282,9 +282,14 @@ fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
             flat += 1;
         }
     }
+    // THE CLAIM, not the count: every loop this cover stands is flat on its
+    // words and evaluated on its edges, so nothing is filed. The number of
+    // cycles is not the claim and moved when algebraically trivial ones
+    // stopped standing — one of these three enclosed nothing at all.
+    assert!(!f.loops.is_empty(), "the cover stands loops");
     assert_eq!(
-        (f.loops.len(), flat, unevaluated),
-        (3, 3, 0),
+        (flat, unevaluated),
+        (f.loops.len(), 0),
         "the cover's loops are flat, so nothing is filed"
     );
     assert!(
@@ -534,8 +539,13 @@ fn a_pure_coboundary_form_yields_no_evaluated_loop() {
     for (i, j) in [(0u16, 1u16), (0, 2), (0, 3), (1, 2), (2, 3), (1, 3)] {
         f.faces.push(f.face_of(i, j).expect("a coboundary of two vertices"));
     }
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
+    // THE TRIANGLE STANDS. Its faces are real — between bodies, not star —
+    // and carry no edge, so every member path drops on a remainder edge and
+    // the loop is UNREAD rather than flat. A trivial-cycle filter that took
+    // an empty edge reading for a flat one would prune exactly the loops
+    // this test is about (rule 11).
     assert!(!f.loops.is_empty(), "the triangle among the bodies closes");
     for lp in &f.loops {
         // NO MEMBER PATH IS EVALUATED, which is what "not evaluated" means once

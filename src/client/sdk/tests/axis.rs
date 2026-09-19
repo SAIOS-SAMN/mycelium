@@ -43,7 +43,7 @@ fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("the star face"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     let sentence = as_element_form(&f, [1, 0, 0, 0]).expect("a tape");
 

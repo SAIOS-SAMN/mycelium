@@ -219,7 +219,7 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     // fixture chose: it is `quarter(2)` because that is what the holonomy
     // above read, asserted there.
     f.faces.push(f.face_carrying(1, 2, quarter(2)).expect("a chord between two bodies"));
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     let _ = f.pivot_loop(
         [31; 32],
         &crate::network::nerve::Keyed::new(),

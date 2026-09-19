@@ -283,7 +283,13 @@ let faces: Vec<FormFace> = ends
     .iter()
     .map(|&(i, j)| FormFace::new(i, j, crate::transducer::alphabet::Word::identity()))
     .collect();
-let loops = Form::loops_of(&faces, 4);
+// `loops_of` reads the vertices, not a count: the trivial-cycle
+// predicate consults the edge holonomies and `touches_frame` names the
+// Frame by what a vertex IS, not by the index it sits at.
+let vs: Vec<Vertex> = std::iter::once(Vertex::Frame)
+    .chain((1..4).map(|_| Vertex::Frame))
+    .collect();
+let loops = Form::loops_of(&faces, &vs);
 assert!(
     !loops.is_empty(),
     "the 1-skeleton is not a star tree; got {} loops",
@@ -361,8 +367,9 @@ assert_eq!(adj4, 31, "and thirty-two chain in thirty-one, not 496: {adj4}");
 // DEPENDENT ones. k(k−1)/2 chords carry k(k−1)/2 loops of which only k−1
 // are independent, and the rest are sums of those — fake homology inside
 // one contractible site. k−1 in, k−1 out.
-assert_eq!(Form::loops_of(&run_faces(8), 9).len(), 7, "eight occupants carry seven loops, not 28");
-assert_eq!(Form::loops_of(&run_faces(32), 33).len(), 31, "and thirty-two carry thirty-one, not 496");
+let frames = |n: usize| -> Vec<Vertex> { (0..n).map(|_| Vertex::Frame).collect() };
+assert_eq!(Form::loops_of(&run_faces(8), &frames(9)).len(), 7, "eight occupants carry seven loops, not 28");
+assert_eq!(Form::loops_of(&run_faces(32), &frames(33)).len(), 31, "and thirty-two carry thirty-one, not 496");
 let (_, _, w) = run(8);
 assert!(
     w.checked_mul(5).is_some_and(|cap| w4 <= cap),

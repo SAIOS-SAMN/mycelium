@@ -34,7 +34,7 @@ impl Form {
         let mut faces = self.faces.clone();
         let mut axes = self.axes.clone();
         apply_by(&mut faces, &cand.by);
-        let loops = Form::loops_of(&faces, self.vertices.len());
+        let loops = Form::loops_of(&faces, &self.vertices);
         // OPENING AN AXIS files the loop's class against the chord it closes
         // on (I6). A move that does not apply — no loop on that chord, no
         // class, no seed to re-derive it from — is not a candidate that

@@ -99,7 +99,7 @@ pub fn star_form(n_words: usize, extra: Vec<(u16, u16, Word)>) -> Form {
     for (i, j, w) in extra {
         f.faces.push(f.face_carrying(i, j, w).expect("a chord between two placed vertices"));
     }
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     f
 }
@@ -131,7 +131,7 @@ pub fn chord_form(chords: &[Word]) -> Form {
         f.faces.push(f.face_of(0, b).expect("star b"));
         f.faces.push(f.face_carrying(a, b, w.clone()).expect("a chord between two bodies"));
     }
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     f
 }
@@ -155,7 +155,7 @@ pub fn edge_chord_form(edges: &[Word]) -> Form {
                 .expect("a chord between two bodies"),
         );
     }
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     f
 }
@@ -168,7 +168,7 @@ pub fn coboundary_chord_form() -> Form {
     for (i, j, w) in [(0u16, 1u16, r.clone()), (0, 2, Word::identity()), (1, 2, r.inverse())] {
         f.faces.push(f.face_carrying(i, j, w).expect("two placed vertices and the Frame"));
     }
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     f.reindex();
     f
 }

@@ -72,14 +72,19 @@ pub fn rotor_and_placement_between(
     a: &Shape,
     b: &Shape,
 ) -> Option<(crate::transducer::alphabet::Rotor, Mv)> {
-    use crate::transducer::alphabet::{Rotor, SLOT_PLANES_SIX};
+    use crate::transducer::alphabet::Rotor;
     let _ = versor_between(a, b)?;
     let ca = a.blade.centroid()?;
     let cb = b.blade.centroid()?;
     let t = cga::translator(&(cb.0 - ca.0), &(cb.1 - ca.1), &(cb.2 - ca.2));
 
     let mut total_rotor = Rotor::identity();
-    for &plane in &SLOT_PLANES_SIX {
+    // THE BODY'S OWN PLANES. `harmonic_on_plane` answers on three — the
+    // base's `(r,c)`, `(r,k)`, `(c,k)` — and returns `None` on the three
+    // of `Cl(4,0)` that run through `e₂`, which the base does not have.
+    // Sweeping `SLOT_PLANES_SIX` asked six times and discarded three
+    // answers with a `continue`.
+    for &plane in &Blade::BASE_PLANES {
         let Some(ha) = a.blade.harmonic_on_plane(plane, false) else { continue };
         let Some(hb) = b.blade.harmonic_on_plane(plane, false) else { continue };
         if (ha[0].is_zero() && ha[1].is_zero()) || (hb[0].is_zero() && hb[1].is_zero()) {

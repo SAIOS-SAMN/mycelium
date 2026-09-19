@@ -50,7 +50,7 @@ impl Form {
             Some(face) => self.faces.push(face),
             None => self.faces.push(FormFace::new(0, idx, placement)),
         }
-        self.loops = Self::loops_of(&self.faces, self.vertices.len());
+        self.loops = Self::loops_of(&self.faces, &self.vertices);
         self.depth = self.depth_of();
         self.reindex();
         Some(idx)
@@ -147,7 +147,7 @@ impl Form {
         self.sections = sections;
         self.torsion = torsion;
         self.axes = axes;
-        self.loops = Self::loops_of(&self.faces, self.vertices.len());
+        self.loops = Self::loops_of(&self.faces, &self.vertices);
         self.depth = self.depth_of();
         self.reindex();
     }
@@ -188,7 +188,7 @@ impl Form {
             f.word = word;
             f.at = at;
         }
-        self.loops = Self::loops_of(&self.faces, self.vertices.len());
+        self.loops = Self::loops_of(&self.faces, &self.vertices);
         Some(())
     }
 

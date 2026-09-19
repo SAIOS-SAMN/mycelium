@@ -97,7 +97,7 @@ impl Form {
         f.rebase_by_word(&gamma.word);
         f.regauge_listing(&gamma.gauge);
         f.compose_carriages(&gamma.carriage);
-        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        f.loops = Form::loops_of(&f.faces, &f.vertices);
         f.reindex();
         let mut addr = crate::transducer::address::Address::new(Vec::new());
         for v in &self.vertices {

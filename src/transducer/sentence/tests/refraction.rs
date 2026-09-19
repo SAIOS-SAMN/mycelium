@@ -58,7 +58,7 @@ fn refraction_replays_as_its_three_moves() {
     by_hand.rebase_by_word(&gamma.word);
     by_hand.regauge_listing(&gamma.gauge);
     by_hand.compose_carriages(&gamma.carriage);
-    by_hand.loops = Form::loops_of(&by_hand.faces, by_hand.vertices.len());
+    by_hand.loops = Form::loops_of(&by_hand.faces, &by_hand.vertices);
     by_hand.reindex();
     assert_eq!(via.vertices.len(), by_hand.vertices.len());
     for (a, b) in via.vertices.iter().zip(&by_hand.vertices) {

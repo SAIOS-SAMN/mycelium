@@ -69,7 +69,7 @@ for tag in [2u8, 3u8] {
 f.faces.push(f.face_of(0, 1).expect("star 1"));
 f.faces.push(f.face_of(0, 2).expect("star 2"));
 f.faces.push(f.face_carrying(1, 2, order4).expect("a chord between two bodies"));
-f.loops = Form::loops_of(&f.faces, f.vertices.len());
+f.loops = Form::loops_of(&f.faces, &f.vertices);
 let _ = f.pivot_loop(
     [0xca; 32],
     &crate::network::nerve::Keyed::new(),

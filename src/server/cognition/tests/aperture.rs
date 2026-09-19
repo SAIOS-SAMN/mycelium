@@ -232,7 +232,7 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
     for (i, j) in [(0u16, 1u16), (1, 2), (0, 2)] {
         f.faces.push(f.face_of(i, j).expect("face"));
     }
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     assert!(!f.loops.is_empty(), "a triangle closes a loop");
     assert!(!f.loop_words().is_empty(), "and the loop carries a holonomy word");
     let spoken = as_element_form(&f, [1, 1, 0, 0]).expect("a sentence tape");
@@ -323,7 +323,7 @@ fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
         );
         f.faces.push(face);
     }
-    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
     assert_eq!(f.loops.len(), 1, "the triangle closes one loop");
     assert_eq!(
         f.loops[0].holonomy.order(),
