@@ -267,6 +267,25 @@ impl<V> Keyed<V> {
         v
     }
 
+    /// THE BYTES THIS CARRIER'S KEYS OCCUPY, walked (§8.1).
+    ///
+    /// A key is the object's coordinates written out (law 2) and for a form
+    /// it is megabytes, so "how many entries" says nothing about what a
+    /// carrier costs and "how many bytes" says it exactly. Shared keys
+    /// (Z4c) are counted where they are HELD, so a carrier naming a form by
+    /// the one copy reports the same bytes as one that owns it — the
+    /// reading is what this carrier reaches, not what it alone allocated,
+    /// and the vector of them names the grower without any of them
+    /// claiming the whole.
+    ///
+    /// Values are not counted: their sizes differ by type and summing them
+    /// with the keys would make one number out of two facts (law 5's habit,
+    /// one level down). A carrier whose VALUES grow is named by its entry
+    /// count beside this, never folded into it.
+    pub fn key_bytes(&self) -> usize {
+        self.scoped().map(|(k, _)| k.len()).sum()
+    }
+
     pub fn len(&self) -> usize {
         self.n
     }

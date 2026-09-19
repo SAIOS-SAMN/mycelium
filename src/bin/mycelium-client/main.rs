@@ -106,6 +106,23 @@ fn heap() -> String {
 /// the voice came up, says WHICH arm retains what the heap line says grows.
 /// Unmeasured where the allocator does not answer; a difference is taken
 /// only between two readings.
+/// THE PER-CARRIER VECTOR AS ONE FIELD, `name=bytes/entries` each, never
+/// summed. Carriers holding nothing are left out, so the line names what
+/// is there rather than padding with zeroes.
+fn carrier_line(entity: &mycelium::client::sdk::Entity) -> String {
+    let mut out = String::new();
+    for (name, bytes, n) in entity.carrier_bytes() {
+        if bytes == 0 && n == 0 {
+            continue;
+        }
+        if !out.is_empty() {
+            out.push(' ');
+        }
+        out.push_str(&format!("{name}={bytes}/{n}"));
+    }
+    out
+}
+
 fn allocated() -> Option<i128> {
     tikv_jemalloc_ctl::epoch::advance().ok()?;
     Some(tikv_jemalloc_ctl::stats::allocated::read().ok()? as i128)
@@ -316,7 +333,7 @@ fn main() {
             let (axis_charts, axis_words) = entity.axis_index_counts();
             if moved == [false; 4] {
                 eprintln!(
-                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed census {:?} | reserve {:?} | feed {}",
+                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed census {:?} | reserve {:?} | carriers {} | feed {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
@@ -335,11 +352,16 @@ fn main() {
                     // lanes can be watched moving apart (Z4d).
                     entity.shed_census(),
                     entity.reserve(),
+                    // The growth's own instrument, on the wire: every
+                    // carrier this voice owns, its key bytes and its
+                    // entries, never a sum. A total cannot say which
+                    // carrier moved.
+                    carrier_line(&entity),
                     if feed.exhausted() { "clear" } else { "held" },
                 );
             } else {
                 eprintln!(
-                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} census {:?} reserve {:?} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
+                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} census {:?} reserve {:?} carriers {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
@@ -354,6 +376,7 @@ fn main() {
                     entity.shed_n(),
                     entity.shed_census(),
                     entity.reserve(),
+                    carrier_line(&entity),
                     entity.impedance(),
                     match entity.discordance() {
                         Some(strata) => strata.to_string(),
