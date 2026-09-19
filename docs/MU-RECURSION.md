@@ -4437,7 +4437,16 @@ bounded by content, through three doors and no other:
    same one the courts apply, read from the ledger height the voice
    already sees. Every bubble whose dockets have lapsed is retired on the
    stroke that reads the height; the set is retired, never one by age or
-   size (rule 4).
+   size (rule 4). **A citation is a pin and a pin needs an exhale** (read
+   2026-09-19: of 51 held thoughts the shed declined 21, every one for
+   citing a form, and `glues` is written at the hold and emptied nowhere).
+   A citing bubble stands while what it cites stands — on the atlas or on
+   a docket — and lapses when the cited address lapses from its docket or
+   is retired from the atlas, read by `glues_word` and the ledger height;
+   a bubble pinned by a citation nothing holds any more is retired on the
+   stroke that reads it. The pin itself becomes a coordinate under 53.4:
+   a citation over a fiber of charts is grouped by chart, and the group is
+   asked whether it still stands, which an address alone cannot answer.
 2. **Promotion.** A bubble whose form was ratified into the genome, or
    stood into the dialect, is retired at the promotion: its content is now
    long-term memory on the atlas and the trie reaches it there; a second
