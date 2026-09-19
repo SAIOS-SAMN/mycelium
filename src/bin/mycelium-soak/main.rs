@@ -14,6 +14,7 @@
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
+mod calibrate;
 mod cover;
 mod delta;
 mod solve;
@@ -155,6 +156,15 @@ fn main() {
                 std::process::exit(1);
             }
         }
+        return;
+    }
+    // Z10's calibration: the walk's arithmetic against the allocator's.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--calibrate") {
+        let (Some(dir), Some(name)) = (argv.get(1), argv.get(2)) else {
+            eprintln!("  calibrate refused: name the corpus directory and the task");
+            std::process::exit(1);
+        };
+        calibrate::report(dir, name);
         return;
     }
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--cover") {

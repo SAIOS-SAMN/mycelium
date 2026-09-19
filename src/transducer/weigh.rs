@@ -31,13 +31,23 @@ pub trait Weigh {
     fn weigh(&self) -> usize;
 }
 
-/// Two arbitrary-precision integers and their headers. `bits()` is the
-/// magnitude the library reports; the rest is the struct itself.
+/// THE HEAP BEHIND A RATIONAL, and only that.
+///
+/// It added `2 * size_of::<BigInt>()` for the two integers' headers, and
+/// those headers are INLINE in the struct the caller has already counted
+/// with `size_of::<Self>()` — a `Versor` is thirty-two `BigRational`s laid
+/// out in an array, so every header was counted twice. Calibrated on the
+/// allocator: the walk read 1.76x the allocator's figure on a thousand
+/// versors and 1.44x on a 713-vertex form, heavy where I had expected it
+/// light.
+///
+/// What is left is the magnitude: the limbs each integer needs, which is
+/// what `bits()` reports and what the allocator actually went and got.
 fn weigh_q(q: &crate::core::Q) -> usize {
     use num_traits::Signed;
     let n = q.numer().abs().bits().div_ceil(8) as usize;
     let d = q.denom().abs().bits().div_ceil(8) as usize;
-    n + d + 2 * std::mem::size_of::<num_bigint::BigInt>()
+    n + d
 }
 
 impl Weigh for crate::transducer::alphabet::Rotor {
