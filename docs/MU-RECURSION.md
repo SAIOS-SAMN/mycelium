@@ -4473,6 +4473,21 @@ passed, promotion is the escrow returned because the atlas now pays, and
 room is the μ⃗ a voice can still escrow on a lane, so a thought the room
 cannot pay for is withheld and nothing paid for is evicted.
 
+**Long-term memory is the genome and short-term memory is the epigenome**
+(the operator's word, 2026-09-19). The genome is the court-ratified
+language and persists across startup, shutdown and restart: it lives on
+the voice's disk as tapes with their addresses, and what a voice keeps
+resident of it is an index by address, never every word decoded. The
+epigenome is volatile: the dialect, the holds and the escrows, pruned,
+truncated and overrun by the voice's own dialect as it works, in memory
+and never persisted. A ratified word is written to the genome as its tape
+and is decoded into the epigenome only when cited or spoken, under the
+escrow of this chapter, and leaves resident memory when the escrow lapses;
+the working atlas answers a fiber read by address from the genome's index
+and decodes what the read reaches. A genome held resident as decoded
+forms is the epigenome wearing the genome's name, and it grows with every
+ratification until the box ends it.
+
 `dirty` is a reading and stays one: it says the bubble's expansion did
 not finish within its stroke, written once, where the expansion ends
 (`expand_with`, law 12), and it is not written a second time anywhere
