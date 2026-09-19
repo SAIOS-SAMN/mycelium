@@ -15,6 +15,7 @@
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 mod calibrate;
+mod census;
 mod cover;
 mod delta;
 mod solve;
@@ -153,6 +154,29 @@ fn main() {
             Ok(names) => solve::report(dir, &names, stand),
             Err(e) => {
                 eprintln!("  solve refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
+    // 53.2's probe — `--census DIR [id,id,…]`: what each family READS as,
+    // on the task files the journal's ids map to. It reads the corpus on
+    // disk and no fleet number is taken from it.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--census") {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  census refused: name the corpus directory");
+            std::process::exit(1);
+        };
+        // No ids given is the whole corpus, not an empty selection of it:
+        // the two are different questions and the match says which.
+        let want: Vec<String> = match argv.get(2) {
+            Some(a) => a.split(',').map(str::to_string).collect(),
+            None => Vec::new(),
+        };
+        match slice_names(dir, usize::MAX) {
+            Ok(names) => census::report(dir, &names, &want),
+            Err(e) => {
+                eprintln!("  census refused: {e}");
                 std::process::exit(1);
             }
         }

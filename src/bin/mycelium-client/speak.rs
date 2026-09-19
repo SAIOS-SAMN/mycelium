@@ -27,6 +27,17 @@ use mycelium::sdk::{Entity};
 /// voice's working atlas. A form with a held loop, a remainder, or no
 /// measured descent is withheld and held as thought; the wire never sees
 /// a nerve.
+/// THE FAMILY ID AS THE JOURNAL PRINTS IT, and it is FOUR bytes, not two.
+///
+/// It was two, and the first of those is `TAG_TASK` — a constant — so the
+/// line carried eight bits of identity over a thousand-task corpus. 53.2's
+/// census maps a journal id back to the task file through `task_id`, and
+/// `1019…` resolved to EIGHT tasks: the stall could be seen and not named.
+/// Four bytes is twenty-four bits of identity and resolves to one.
+pub(crate) fn fam_id(family: &[u8]) -> String {
+    family.iter().take(4).map(|b| format!("{b:02x}")).collect::<String>() + "…"
+}
+
 pub(crate) fn speak_form(
     entity: &mut Entity,
     tag: &str,
@@ -37,7 +48,7 @@ pub(crate) fn speak_form(
     use mycelium::transducer::alphabet::Rotor;
     use mycelium::transducer::family::trace;
     use mycelium::transducer::sentence::{as_element_form, Vertex};
-    let fam = format!("{:02x}{:02x}…", family[0], family[1]);
+    let fam = fam_id(family);
     let form = &rule.form;
     // Why the form is withheld, in the order the court would refuse it.
     let why_open = || {
@@ -184,7 +195,7 @@ fn speak_with_demands(
     remainders: &[Vec<(i64, i64, u8, u8)>],
 ) -> Option<[u64; 4]> {
     use mycelium::transducer::sentence::Vertex;
-    let fam = format!("{:02x}{:02x}…", family[0], family[1]);
+    let fam = fam_id(family);
     let form = &rule.form;
     // Lane 𝒯 is the span in receipts this form's idea has stood over. A form
     // the contemplation does not hold was minted in the stroke it was
@@ -320,7 +331,7 @@ pub(crate) fn withhold_unextracted(
     train: &mycelium::transducer::family::Family,
     family: &[u8],
 ) {
-    let fam = format!("{:02x}{:02x}…", family[0], family[1]);
+    let fam = fam_id(family);
     for (a, b) in train {
         // One pair, sized by the pair (L8w): a fixed spend unit does not
         // reach one scene, and this arm would withhold as much as the

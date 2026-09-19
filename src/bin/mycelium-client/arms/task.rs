@@ -46,10 +46,9 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
         &entity.epigenome,
     );
     eprintln!(
-        "[{tag}] [{}] family {:02x}{:02x}… {} pairs, {} tests: {}",
+        "[{tag}] [{}] family {} {} pairs, {} tests: {}",
         mycelium::chronometry::Height::stamp_of(entity.now_tu()),
-        tid[0],
-        tid[1],
+        crate::speak::fam_id(&tid),
         train.len(),
         tests.len(),
         match extracted.as_ref() {
