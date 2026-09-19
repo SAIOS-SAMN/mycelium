@@ -249,6 +249,17 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     let mut quotient_charts: Vec<Keyed<()>> = vec![Keyed::new(); n];
     let mut out_reached: Keyed<()> = Keyed::new();
     let mut cut = false;
+    // Z1b — THE MOVES OF THE PERCEPT ARE LINES OF THEIR OWN. `extract/1
+    // fibers` held one span over four moves and a reader of the timeline
+    // could not tell which of them cost the seconds; a line that names four
+    // moves at once is a reading of the instrument, not of the engine.
+    //
+    // EVERY LINE IS AT ITS MOVE'S ENTRY, because the timeline's `held` is
+    // the gap to the NEXT line: a line at a move's exit reports the move
+    // after it under the name of the move before it. The regions BETWEEN
+    // the four are named too — otherwise their cost lands on whichever of
+    // the four happens to precede them.
+    trace::trace("percept/1 covers", trace::Wrote::Nothing, Some(budget));
     'charts: for (ck, c) in charts.scoped() {
         let in_frames = fib_in.get(&ck).map(|(_, f)| f);
         let out_frames = fib_out.get(&ck).map(|(_, f)| f);
@@ -557,6 +568,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         }
     }
 
+    trace::trace("percept/2 vertices", trace::Wrote::Nothing, Some(budget));
     // THE VERTICES: a class's quotient with a member per chart (D7), and a
     // cover's pieces, each a vertex of the nerve it is a piece of (50.8),
     // claimed on the frame its cover was read on. The sections along e₃
@@ -672,6 +684,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         varying.class_frames.insert(&tk, frames);
     }
     let mut form = Form { vertices: scenery.vertices.clone(), ..Form::default() };
+    trace::trace("percept/3 meets", trace::Wrote::Nothing, Some(budget));
     // THE COVER'S MEETS ARE FACES carrying the edge between the two pieces'
     // own frames (50.3); a meet with no transport gets no face (13.9).
     let mut edges = EdgeTally::default();
@@ -701,6 +714,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             form.faces.push(FormFace { i, j, word, at, pairs: None });
         }
     }
+    trace::trace("percept/4 loops+classify", trace::Wrote::Nothing, Some(budget));
     let meet_faces = form.faces.len();
     form.loops = Form::loops_of(&form.faces, &form.vertices);
     // EACH LOOP OVER CARRIED PIECES, CLASSIFIED ONCE (50.8 case 3), by the
@@ -791,6 +805,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             }
         }
     }
+    trace::trace("percept/5 demands", trace::Wrote::Nothing, Some(budget));
     // THE DEMANDS, one vertex per (kind, chart) (50.5), in key order. A
     // deformation dissolves when every lamina of both bodies is carried AND
     // no loop over its pieces stands (50.8).
@@ -827,6 +842,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     form.vertices = scenery.vertices.clone();
     let nv = form.vertices.len();
 
+    trace::trace("percept/6 site faces", trace::Wrote::Nothing, Some(budget));
     // THE INCIDENCE IS THE OCCUPANCY (21 step 2): star faces from the Frame
     // and faces between members whose supports meet or sit at ring distance
     // one, each carrying 50.3's edge measured on the union of the two
