@@ -9,7 +9,7 @@ impl Epigenome {
     /// form is a field and not a decode this read performs (L16); it
     /// derefs to the element, so every element reader takes it unchanged.
     pub fn word_at(&self, addr: &[u8]) -> Option<&Held> {
-        self.index.get(addr).and_then(|&i| self.genome.get(i))
+        self.genome.get(addr).map(|w| &w.held)
     }
 
     /// Working-atlas root: concatenated A21 stratum roots of genome ∪ dialect.
@@ -28,24 +28,36 @@ impl Epigenome {
         crate::transducer::address::Address::new(buf)
     }
 
-    /// The genome index of an address, read from the key.
-    pub fn index_of(&self, addr: &[u8]) -> Option<usize> {
-        self.index.get(addr).copied()
-    }
-
-    /// Re-key the genome after a removal shifted positions.
-    pub(crate) fn reindex(&mut self) {
-        self.index = crate::network::nerve::Keyed::new();
-        for (i, w) in self.genome.iter().enumerate() {
-            self.index.insert(w.address(), i);
-        }
+    /// This word's shape, lifted once under the word it measures.
+    pub fn shape_at(&self, addr: &[u8]) -> Option<&crate::transducer::blade::Shape> {
+        let w = self.genome.get(addr)?;
+        w.shape
+            .get_or_init(|| crate::transducer::element::shape_of_chain(w.held.sub()))
+            .as_ref()
     }
 
     /// Deepen a held word's fiber with a section this genome verified.
     /// Through `Held::update`, so the form is re-decoded with the word and
     /// the two cannot describe different tapes.
-    pub fn puncture(&mut self, i: usize, asg: Vec<(u8, u8)>) -> bool {
-        self.genome.get_mut(i).is_some_and(|w| w.update(|e| e.puncture(asg)))
+    ///
+    /// A PUNCTURE CHANGES THE TAPE AND THEREFORE THE ADDRESS, so the entry
+    /// is re-filed at the coordinate it now derives for itself rather than
+    /// left sitting under the coordinate it used to have. Under the old
+    /// parallel vectors the word stayed at its slot and `index` silently
+    /// went stale; law 2 does not allow a key that no longer names its
+    /// value.
+    pub fn puncture(&mut self, addr: &[u8], asg: Vec<(u8, u8)>) -> bool {
+        let Some(mut w) = self.genome.remove(addr) else { return false };
+        if !w.held.update(|e| e.puncture(asg)) {
+            self.genome.insert(addr, w);
+            return false;
+        }
+        // The shape was measured on the old chain and is not the new
+        // word's; it is dropped rather than carried across (law 12).
+        w.shape = std::sync::OnceLock::new();
+        let at = w.held.address();
+        self.genome.insert(at, w);
+        true
     }
 
     pub fn new() -> Self {
@@ -137,7 +149,7 @@ impl Epigenome {
     /// (24.1): Ruled, then Stood. A word this epigenome does not hold has
     /// no standing here.
     pub fn standing_of(&self, addr: &[u8]) -> Option<Standing> {
-        if self.index.contains(addr) {
+        if self.genome.contains(addr) {
             return Some(Standing::Ruled);
         }
         if self.dialect.contains(addr) {
@@ -185,8 +197,69 @@ impl Epigenome {
         self.genome.len()
     }
 
-    pub fn genome(&self) -> &[Held] {
-        &self.genome
+    /// Every genome word, in the trie's order — which is the addresses'
+    /// own order and is content (law 2), not arrival order.
+    pub fn genome_words(&self) -> impl Iterator<Item = &Held> {
+        self.genome.scoped().map(|(_, w)| &w.held)
+    }
+
+    /// The words admitted at or after an admission ordinal — what
+    /// `thought_gen` watermarks read. The ordinal is content the entry
+    /// carries; it is not a position in a vector.
+    pub fn genome_since(&self, seq: u64) -> Vec<Element> {
+        self.genome
+            .scoped()
+            .filter(|(_, w)| w.seq >= seq)
+            .map(|(_, w)| w.held.element().clone())
+            .collect()
+    }
+
+    /// The next admission ordinal — one past the highest admitted.
+    pub fn genome_seq(&self) -> u64 {
+        self.next_seq
+    }
+
+    /// THE NEXT WORD AFTER A COORDINATE, wrapping to the first — the
+    /// trie's own orbit, which is how a cursor walks a carrier whose size
+    /// changes under it (45.7, X3). `None` from a genome that holds
+    /// nothing; from `None` it starts at the first coordinate.
+    /// THE ORBIT FROM A COORDINATE: every genome address once, starting
+    /// after `at` and wrapping to close on it (45.7). This is what a walk
+    /// `for offset in 0..len { (start + offset) % len }` was reaching for
+    /// — with the difference that an orbit over coordinates does not
+    /// renumber itself when a word is admitted or retired mid-walk.
+    pub fn genome_orbit_from(&self, at: Option<&[u8]>) -> Vec<Vec<u8>> {
+        let all: Vec<Vec<u8>> = self.genome.scoped().map(|(k, _)| k).collect();
+        let Some(at) = at else { return all };
+        match all.iter().position(|k| k.as_slice() == at) {
+            // The cursor's word has retired; the orbit starts where the
+            // carrier now starts rather than at an invented offset.
+            None => all,
+            Some(i) => {
+                let mut out: Vec<Vec<u8>> = all[i + 1..].to_vec();
+                out.extend_from_slice(&all[..=i]);
+                out
+            }
+        }
+    }
+
+    pub fn next_word_after(&self, at: Option<&[u8]>) -> Option<Vec<u8>> {
+        let mut past = at.is_none();
+        let mut first: Option<Vec<u8>> = None;
+        for (k, _) in self.genome.scoped() {
+            if first.is_none() {
+                first = Some(k.clone());
+            }
+            if past {
+                return Some(k);
+            }
+            if at == Some(k.as_slice()) {
+                past = true;
+            }
+        }
+        // Past the last coordinate, or the cursor named a word that has
+        // since retired: the orbit closes on the first.
+        first
     }
 
     /// RETIRE a word whose meaning the rest of the genome already carries
@@ -290,12 +363,12 @@ impl Epigenome {
     /// The same debug-only re-derivation, and the index can also LAG the
     /// carrier: a slot that names a word the genome has since moved is not
     /// a smaller answer, it is no answer (rule 11).
-    pub(crate) fn same_vertex_in_genome(&self, e: &Element) -> Option<usize> {
-        let i = self.index.get(&e.address()).copied()?;
-        if !self.genome.get(i).is_some_and(|w| w.same_vertex(e)) {
+    pub(crate) fn same_vertex_in_genome(&self, e: &Element) -> Option<Vec<u8>> {
+        let addr = e.address();
+        if !self.genome.get(addr.as_bytes()).is_some_and(|w| w.held.same_vertex(e)) {
             return None;
         }
-        Some(i)
+        Some(addr.into_vec())
     }
 
     /// Deconstruct a chain over the working language: genome and dialect,
@@ -304,7 +377,7 @@ impl Epigenome {
     pub(crate) fn locate(
         &mut self,
         chain: &[(i64, i64, u8, u8)],
-        exclude: Option<usize>,
+        exclude: Option<&[u8]>,
     ) -> crate::transducer::sentence::Sentence {
         self.locate_on(chain, exclude, &crate::transducer::sentence::no_held)
     }
@@ -313,48 +386,42 @@ impl Epigenome {
     /// the caller reads at each body's chart (24.1 as ruled 2026-09-09):
     /// `held_at` is the contemplation's forms evaluated on the body, never
     /// a list of elements joined to the snapshot.
+    ///
+    /// THERE IS NO SNAPSHOT AND NO OFFSET SPACE. It built `dialect_addrs`
+    /// and a `loc: Keyed<usize>` on EVERY call so the dialect's words could
+    /// be given offsets `n..` above the genome's `0..n`, and the reading
+    /// then converted each address the atlas handed it into one of those
+    /// offsets and straight back into a word. Both strata are keyed by
+    /// address already, so the reader tries the genome and then the dialect
+    /// at the coordinate and there is nothing to number.
     pub(crate) fn locate_on<H>(
         &mut self,
         chain: &[(i64, i64, u8, u8)],
-        exclude: Option<usize>,
+        exclude: Option<&[u8]>,
         held_at: &H,
     ) -> crate::transducer::sentence::Sentence
     where
         H: Fn(&crate::transducer::stalk::Invariant, &[(i64, i64, u8, u8)]) -> Vec<crate::transducer::sentence::HeldCite>,
     {
-        let n = self.genome.len();
-        // THE DIALECT IS THE LANGUAGE ABOVE THE GENOME, and a deconstruction
-        // reads through all of it: a dialect word left out is a word this
-        // voice holds and cannot speak through. The carrier is bounded by
-        // the shed, which is what `shed_except` is for.
-        let dialect_addrs: Vec<Vec<u8>> = self.dialect.scoped().map(|(a, _)| a).collect();
-        let mut loc: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
-        for (j, a) in dialect_addrs.iter().enumerate() {
-            loc.insert(a, n + j);
-        }
         let genome = &self.genome;
         let dialect = &self.dialect;
         let atlas = &self.atlas;
         let dialect_atlas = &self.dialect_atlas;
-        let index = &self.index;
-        let shapes = &self.shapes;
-        let word_at = |i: usize| -> Option<&Element> {
-            if i < n {
-                genome.get(i).map(|h| h.element())
-            } else {
-                dialect_addrs
-                    .get(i - n)
-                    .and_then(|a| dialect.get(a).map(|d| d.sentence.element()))
-            }
+        // RULED FIRST, THEN STOOD (24.1), read at the coordinate in that
+        // order — the same precedence the offset ranges used to encode.
+        let word_at = |a: &[u8]| -> Option<&Element> {
+            genome
+                .get(a)
+                .map(|w| w.held.element())
+                .or_else(|| dialect.get(a).map(|d| d.sentence.element()))
         };
-        let index_of = |a: &[u8]| -> Option<usize> {
-            index.get(a).copied().or_else(|| loc.get(a).copied())
-        };
-        let shape_at = |i: usize| -> Option<&crate::transducer::blade::Shape> {
-            if i < n {
-                shapes.get(i).and_then(|c| c.get_or_init(|| crate::transducer::element::shape_of_chain(genome[i].sub())).as_ref())
-            } else {
-                dialect_addrs.get(i - n).and_then(|a| dialect.get(a).and_then(|d| d.shape.as_ref()))
+        let shape_at = |a: &[u8]| -> Option<&crate::transducer::blade::Shape> {
+            match genome.get(a) {
+                Some(w) => w
+                    .shape
+                    .get_or_init(|| crate::transducer::element::shape_of_chain(w.held.sub()))
+                    .as_ref(),
+                None => dialect.get(a).and_then(|d| d.shape.as_ref()),
             }
         };
         let fiber_of = |inv: &crate::transducer::stalk::Invariant| {
@@ -370,7 +437,6 @@ impl Epigenome {
             &crate::transducer::sentence::Reading {
                 word_at: &word_at,
                 fiber_of: &fiber_of,
-                index_of: &index_of,
                 shape_at: &shape_at,
                 held_at,
             },

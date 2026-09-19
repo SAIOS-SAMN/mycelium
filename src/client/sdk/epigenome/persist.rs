@@ -11,8 +11,8 @@ impl Epigenome {
         let mut out = Vec::with_capacity(4 + self.genome.len() * 64);
         out.extend_from_slice(b"GEN3");
         out.extend_from_slice(&(self.genome.len() as u32).to_le_bytes());
-        for g in &self.genome {
-            let b = g.to_bytes();
+        for (_, g) in self.genome.scoped() {
+            let b = g.held.to_bytes();
             out.extend_from_slice(&(b.len() as u32).to_le_bytes());
             out.extend_from_slice(&b);
         }
@@ -75,8 +75,8 @@ impl Epigenome {
         if skipped > 0 {
             eprintln!("genome restored: {} words, {skipped} skipped", genome.len());
         }
-        self.expression = vec![0; genome.len()];
-        self.genome = genome;
+        self.genome = crate::network::nerve::Keyed::new();
+        self.next_seq = 0;
         self.atlas = crate::transducer::stalk::Stalks::default();
         self.axis_index = crate::transducer::sentence::AxisIndex::new();
         // 21 step 3 (L8r): the body-chart index is derived from the genome
@@ -87,23 +87,20 @@ impl Epigenome {
         // process that had never restarted.
         self.by_moduli = crate::network::nerve::Keyed::new();
         self.generators = crate::transducer::sentence::GeneratorIndex::new();
-        self.shapes.clear();
-        for w in &self.genome {
-            self.atlas.admit(&crate::transducer::stalk::invariant_of(w), w.address());
-            self.shapes.push(std::sync::OnceLock::new());
-        }
-        let restored: Vec<crate::transducer::element::Held> = self.genome.clone();
-        for w in &restored {
-            // THE SAME ADMISSION THE LIVE PATH MAKES. This filed at the
-            // sentence's own chart while `axis_admit` files where each
-            // vertex ACTS, so every word restored from disk was invisible
-            // to the pivot until it happened to be re-admitted live — and
-            // a fleet client boots from its genome.
-            self.axis_admit(w);
-            self.moduli_admit(w);
+        // THE SAME ADMISSION THE LIVE PATH MAKES, once per word (`admit_word`),
+        // so a restored genome and a learned one are indexed identically.
+        // This used to file at the sentence's own chart while `axis_admit`
+        // files where each vertex ACTS, so every word restored from disk
+        // was invisible to the pivot until it happened to be re-admitted
+        // live — and a fleet client boots from its genome.
+        //
+        // The admission ordinals are handed out in restore order, which is
+        // the file's order; nothing downstream reads them as anything but
+        // "later than" a watermark.
+        for w in genome {
+            self.admit_word(w, 0);
         }
         self.atlas_len = self.genome.len();
-        self.reindex();
         true
     }
 

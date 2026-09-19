@@ -462,7 +462,7 @@ fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, Strin
 fn read_engine(epi: &mut Epigenome, r: &mut Reading) {
     let mut seen: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
     let mut charts: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
-    for e in epi.genome() {
+    for e in epi.genome_words() {
         let Some(f) = e.form() else {
             continue;
         };

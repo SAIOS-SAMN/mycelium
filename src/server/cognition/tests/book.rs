@@ -44,7 +44,7 @@ k.glue_local();
 // the SAME rotation, transposed +10 in col: the same sentence.
 let a_far = vec![(0, 10, 1), (0, 11, 1), (1, 10, 1)];
 let rot_far = vec![(0, 11, 1), (1, 10, 1), (1, 11, 1)];
-assert_eq!(speak_pair(&mut k, &a_far, &rot_far, [3; 32]), Outcome::Decomposed(vec![0]), "transposed → the same sentence");
+assert_eq!(speak_pair(&mut k, &a_far, &rot_far, [3; 32]), Outcome::Decomposed(vec![k.basis()[0].address()]), "transposed → the same sentence");
 assert_eq!(k.basis_len(), 1, "transposition mints nothing");
 }
 

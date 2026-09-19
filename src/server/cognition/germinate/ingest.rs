@@ -79,8 +79,9 @@ impl Kernel {
         // below remains for pure-algebra elements.
         let sub = g.substance();
         if !sub.sub().is_empty() {
-            let ex = exclude.and_then(|a| self.live_slot(a));
-            return self.reduce_chain(sub.sub().to_vec(), ex);
+            // The address passes straight through: it was converted to a
+            // slot here only because the reduction addressed words by slot.
+            return self.reduce_chain(sub.sub().to_vec(), exclude);
         }
         // A12, ONCE. This peeled one generator at a time for up to 64
         // steps, re-deriving the whole question at every step from the new
@@ -109,12 +110,13 @@ impl Kernel {
                     // substance, and the reduction reported Decomposed on
                     // it (law 2). Where it does not hold there is no
                     // terminal here, and the general path below runs.
-                    if let Some(held) = self.basis.get(addr) {
-                        if held.substance().same_action(&s) {
-                            if let Some(i) = self.live_slot(addr) {
-                                return NormalForm::Decomposed(vec![i]);
-                            }
-                        }
+                    let held = self.basis.get(addr);
+                    if held.is_some_and(|h| h.substance().same_action(&s))
+                        && self.live_slot(addr).is_some()
+                    {
+                        return NormalForm::Decomposed(vec![
+                            crate::transducer::address::Address::new(addr.to_vec()),
+                        ]);
                     }
                 }
             }
@@ -136,20 +138,26 @@ impl Kernel {
         let Some(gf) = g.letters().and_then(|l| l.spelling.word.form()) else {
             return NormalForm::Irreducible;
         };
-        let mut slots = Vec::new();
+        // THE FACTORS CARRY THEIR OWN COORDINATES. `slots` held the live
+        // slot of each generator so the factorisation could report offsets;
+        // the address is what the basis is keyed by and what `Decomposed`
+        // now names.
+        let mut at: Vec<crate::transducer::address::Address> = Vec::new();
         let mut forms = Vec::new();
         for (addr, gen) in self.basis.scoped() {
             if exclude.map(|e| e == addr.as_slice()) == Some(true) {
                 continue;
             }
-            let Some(i) = self.live_slot(&addr) else { continue };
+            if self.live_slot(&addr).is_none() {
+                continue;
+            }
             if gen.substance().solution().is_none() {
                 continue; // only group generators factor
             }
             let Some(f) = gen.letters().and_then(|l| l.spelling.word.form()) else {
                 continue;
             };
-            slots.push(i);
+            at.push(crate::transducer::address::Address::new(addr.clone()));
             forms.push(f);
         }
         if forms.is_empty() {
@@ -164,13 +172,12 @@ impl Kernel {
                 let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
                 let mut word = Vec::new();
                 for (i, _) in tape {
-                    let Some(slot) = slots.get(i).copied() else { continue };
-                    let k = (slot as u64).to_le_bytes();
-                    if cited.contains(&k) {
+                    let Some(a) = at.get(i).cloned() else { continue };
+                    if cited.contains(a.as_bytes()) {
                         continue;
                     }
-                    cited.insert(k, ());
-                    word.push(slot);
+                    cited.insert(a.as_bytes(), ());
+                    word.push(a);
                 }
                 NormalForm::Decomposed(word)
             }
@@ -188,7 +195,11 @@ impl Kernel {
     /// whose magnitude descends most, tie-broken by basis order" — a choice
     /// by a scalar (rule 4) that this function does not make and the
     /// doctrine refuses; whether `normal_form` still makes one is row I29.
-    pub(crate) fn reduce_chain(&self, first: Vec<(i64, i64, u8, u8)>, exclude: Option<usize>) -> NormalForm {
+    pub(crate) fn reduce_chain(
+        &self,
+        first: Vec<(i64, i64, u8, u8)>,
+        exclude: Option<&[u8]>,
+    ) -> NormalForm {
         normal_form(&self.language, &first, exclude)
     }
 

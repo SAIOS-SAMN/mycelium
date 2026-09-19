@@ -13,19 +13,28 @@ use crate::transducer::sentence::chain::{
 use crate::transducer::sentence::form::Vertex;
 use crate::transducer::stalk::{self, Stalks};
 
-/// THE FIVE LOOKUPS A READING NEEDS, which always travel together: the word
-/// at an index, the fibre of a chart, the index of an address, the shape
-/// at an index, and the held words read at a chart for a body (24.1 as
-/// ruled 2026-09-09: the Held stratum is the contemplation's forms, read
-/// at the coordinate the listing supplies, never a list of elements). This
-/// file sits BELOW the language — the cognition book reads 18.x, never the
-/// other way — so a reading takes the lookups rather than the language
-/// itself, and a caller can point them at the genome, the dialect, a
-/// working atlas, or all three.
-pub struct Reading<'r, W, F, I, S, H> {
+/// THE FOUR LOOKUPS A READING NEEDS, which always travel together: the word
+/// AT AN ADDRESS, the fibre of a chart, the shape at an address, and the
+/// held words read at a chart for a body (24.1 as ruled 2026-09-09: the
+/// Held stratum is the contemplation's forms, read at the coordinate the
+/// listing supplies, never a list of elements). This file sits BELOW the
+/// language — the cognition book reads 18.x, never the other way — so a
+/// reading takes the lookups rather than the language itself, and a caller
+/// can point them at the genome, the dialect, a working atlas, or all three.
+///
+/// IT WAS FIVE, AND THE FIFTH WAS A CARTESIAN ROUND TRIP. `fiber_of`
+/// answers a chart with ADDRESSES; `index_of` turned each address into an
+/// offset into whatever vector the caller happened to hold, and `word_at`
+/// turned the offset back into a word. The offsets existed only to be
+/// undone, and the carriers that stored them — `Epigenome::index`,
+/// `Epigenome::expressed_index`, `Language::index` — were pure functions of
+/// the words they indexed, rebuilt from nothing by `reindex()` and costing
+/// 11.5 MB on a voice eleven minutes into a soak. The address IS the
+/// coordinate (law 2) and the trie descends to the word directly, so the
+/// round trip and all three carriers are gone.
+pub struct Reading<'r, W, F, S, H> {
     pub word_at: &'r W,
     pub fiber_of: &'r F,
-    pub index_of: &'r I,
     pub shape_at: &'r S,
     pub held_at: &'r H,
 }
@@ -124,14 +133,13 @@ fn vertex_cites_by(
 /// moments and verify it by replay. Returns the citation and the stratum's
 /// multiplicity (the measurement, not a search width).
 pub fn locate<'a>(
-    words: &'a [Element],
+    word_at: &impl Fn(&[u8]) -> Option<&'a Element>,
     atlas: &Stalks,
-    index_of: &impl Fn(&[u8]) -> Option<usize>,
-    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
+    shape_at: &impl Fn(&[u8]) -> Option<&'a Shape>,
     piece: &[Link],
-    exclude: Option<usize>,
+    exclude: Option<&[u8]>,
 ) -> (Option<Cite>, usize) {
-    let found = locate_or_puncture_at(&|i| words.get(i), atlas, index_of, shape_at, piece, exclude);
+    let found = locate_or_puncture_at(word_at, atlas, shape_at, piece, exclude);
     (found.cite, found.multiplicity)
 }
 
@@ -140,28 +148,16 @@ pub fn locate<'a>(
 /// transitions pulled back through the transport, verified by replay. A
 /// citation is preferred; a puncture is returned only when no word speaks
 /// the body as held.
-pub fn locate_or_puncture<'a>(
-    words: &'a [Element],
-    atlas: &Stalks,
-    index_of: &impl Fn(&[u8]) -> Option<usize>,
-    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
-    piece: &[Link],
-    exclude: Option<usize>,
-) -> Located {
-    locate_or_puncture_at(&|i| words.get(i), atlas, index_of, shape_at, piece, exclude)
-}
-
 pub fn locate_or_puncture_at<'a>(
-    word_at: &impl Fn(usize) -> Option<&'a Element>,
+    word_at: &impl Fn(&[u8]) -> Option<&'a Element>,
     atlas: &Stalks,
-    index_of: &impl Fn(&[u8]) -> Option<usize>,
-    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
+    shape_at: &impl Fn(&[u8]) -> Option<&'a Shape>,
     piece: &[Link],
-    exclude: Option<usize>,
+    exclude: Option<&[u8]>,
 ) -> Located {
     let fiber_of = |inv: &stalk::Invariant| atlas.fiber(inv);
     locate_or_puncture_on(
-        &Reading { word_at, fiber_of: &fiber_of, index_of, shape_at, held_at: &no_held },
+        &Reading { word_at, fiber_of: &fiber_of, shape_at, held_at: &no_held },
         piece,
         exclude,
     )
@@ -178,29 +174,29 @@ fn unlocated(multiplicity: usize) -> Located {
 /// read only where no ruled or stood word is on the body's chart, and
 /// there exactly one held form's word must reconstruct the body; several
 /// are sections and stand as multiplicity, never a choice.
-pub fn locate_or_puncture_on<'a, W, F, I, S, H>(
-    read: &Reading<'_, W, F, I, S, H>,
+pub fn locate_or_puncture_on<'a, W, F, S, H>(
+    read: &Reading<'_, W, F, S, H>,
     piece: &[Link],
-    exclude: Option<usize>,
+    exclude: Option<&[u8]>,
 ) -> Located
 where
-    W: Fn(usize) -> Option<&'a Element>,
+    W: Fn(&[u8]) -> Option<&'a Element>,
     F: Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
-    I: Fn(&[u8]) -> Option<usize>,
-    S: Fn(usize) -> Option<&'a Shape>,
+    S: Fn(&[u8]) -> Option<&'a Shape>,
     H: Fn(&stalk::Invariant, &[Link]) -> Vec<HeldCite>,
 {
-    let &Reading { word_at, fiber_of, index_of, shape_at, held_at } = read;
+    let &Reading { word_at, fiber_of, shape_at, held_at } = read;
     let Some(shape) = element::shape_of_chain(piece) else {
         return unlocated(0);
     };
     let chart = stalk::invariant(piece);
-    let stratum: Vec<usize> = fiber_of(&chart).iter().filter_map(|a| index_of(a)).collect();
     let key = element::gauge_key(&element::assignment(piece));
-    let stratum: Vec<usize> = stratum
+    // THE STRATUM IS ADDRESSES, WHICH IS WHAT THE ATLAS ANSWERS WITH. It
+    // was converted to offsets here and converted back one line later.
+    let stratum: Vec<Vec<u8>> = fiber_of(&chart)
         .into_iter()
-        .filter(|&i| Some(i) != exclude)
-        .filter(|&i| word_at(i).is_some_and(|w| !w.assignments_by_profile(&key).is_empty()))
+        .filter(|a| Some(a.as_slice()) != exclude)
+        .filter(|a| word_at(a).is_some_and(|w| !w.assignments_by_profile(&key).is_empty()))
         .collect();
     let m = stratum.len();
     if stratum.is_empty() {
@@ -209,10 +205,9 @@ where
         let [h] = held.as_slice() else { return unlocated(m) };
         return Located { cite: None, puncture: None, held: Some(h.clone()), multiplicity: m };
     }
-    let [i] = stratum.as_slice() else { return unlocated(m) };
-    let i = *i;
-    let Some(word) = word_at(i) else { return unlocated(m) };
-    let Some(held) = shape_at(i) else { return unlocated(m) };
+    let [addr] = stratum.as_slice() else { return unlocated(m) };
+    let Some(word) = word_at(addr) else { return unlocated(m) };
+    let Some(held) = shape_at(addr) else { return unlocated(m) };
     let Some(to_word) = blade::versor_between(&shape, held) else { return unlocated(m) };
     let Some(v) = to_word.versor_inverse() else { return unlocated(m) };
     let agreeing = gauge_of(word, &v, piece);
@@ -221,7 +216,11 @@ where
     let mut asgs = agreeing.scoped();
     if let Some((_, &asg)) = asgs.next() {
         if asgs.next().is_none() {
-            let cite = Cite { word: i, transport: v.clone(), gauge: asg };
+            let cite = Cite {
+                word: crate::transducer::address::Address::new(addr.clone()),
+                transport: v.clone(),
+                gauge: asg,
+            };
             if replay_at(word_at, std::slice::from_ref(&cite), piece).is_empty() {
                 return Located { cite: Some(cite), puncture: None, held: None, multiplicity: m };
             }
@@ -234,7 +233,11 @@ where
         let mut body: Vec<Link> = pos.iter().zip(&asg).map(|(&(r, c), &(b, a))| (r, c, b, a)).collect();
         body.sort_unstable();
         if replay_operators(&[(v.clone(), body.clone())], piece).is_empty() {
-            let puncture = Puncture { word: i, transport: v, links: body };
+            let puncture = Puncture {
+                word: crate::transducer::address::Address::new(addr.clone()),
+                transport: v,
+                links: body,
+            };
             return Located { cite: None, puncture: Some(puncture), held: None, multiplicity: m };
         }
     }
@@ -250,17 +253,16 @@ fn body_key(body: &[Link]) -> Option<crate::transducer::address::Address> {
     Some(element::from_residual(&body.to_vec())?.address())
 }
 
-fn place_located<'a, W, F, I, S, H>(
+fn place_located<'a, W, F, S, H>(
     out: &mut Sentence,
     located: Located,
     body: &[Link],
-    read: &Reading<'_, W, F, I, S, H>,
-    exclude: Option<usize>,
+    read: &Reading<'_, W, F, S, H>,
+    exclude: Option<&[u8]>,
 ) where
-    W: Fn(usize) -> Option<&'a Element>,
+    W: Fn(&[u8]) -> Option<&'a Element>,
     F: Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
-    I: Fn(&[u8]) -> Option<usize>,
-    S: Fn(usize) -> Option<&'a Shape>,
+    S: Fn(&[u8]) -> Option<&'a Shape>,
     H: Fn(&stalk::Invariant, &[Link]) -> Vec<HeldCite>,
 {
     if let Some(k) = body_key(body) {
@@ -293,36 +295,18 @@ fn place_located<'a, W, F, I, S, H>(
 /// word of several bodies), then each body; the connection between
 /// consecutive cited bodies is their relative transport; the residual is
 /// what no word speaks. `exclude` keeps a word from citing itself.
-pub fn deconstruct<'a>(
-    words: &'a [Element],
-    atlas: &Stalks,
-    index_of: &impl Fn(&[u8]) -> Option<usize>,
-    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
-    chain: &[Link],
-    exclude: Option<usize>,
-) -> Sentence {
-    let word_at = |i: usize| words.get(i);
-    let fiber_of = |inv: &stalk::Invariant| atlas.fiber(inv);
-    deconstruct_on(
-        &Reading { word_at: &word_at, fiber_of: &fiber_of, index_of, shape_at, held_at: &no_held },
-        chain,
-        exclude,
-    )
-}
-
 /// Deconstruct over a getter, so a language snapshot of `Arc<Element>`
 /// never flattens into a cloned slice.
 pub fn deconstruct_at<'a>(
-    word_at: &impl Fn(usize) -> Option<&'a Element>,
+    word_at: &impl Fn(&[u8]) -> Option<&'a Element>,
     atlas: &Stalks,
-    index_of: &impl Fn(&[u8]) -> Option<usize>,
-    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
+    shape_at: &impl Fn(&[u8]) -> Option<&'a Shape>,
     chain: &[Link],
-    exclude: Option<usize>,
+    exclude: Option<&[u8]>,
 ) -> Sentence {
     let fiber_of = |inv: &stalk::Invariant| atlas.fiber(inv);
     deconstruct_on(
-        &Reading { word_at, fiber_of: &fiber_of, index_of, shape_at, held_at: &no_held },
+        &Reading { word_at, fiber_of: &fiber_of, shape_at, held_at: &no_held },
         chain,
         exclude,
     )
@@ -330,16 +314,15 @@ pub fn deconstruct_at<'a>(
 
 /// Deconstruct over a fiber the caller names — genome, dialect, or both —
 /// and over the held words the caller reads at each body's chart.
-pub fn deconstruct_on<'a, W, F, I, S, H>(
-    read: &Reading<'_, W, F, I, S, H>,
+pub fn deconstruct_on<'a, W, F, S, H>(
+    read: &Reading<'_, W, F, S, H>,
     chain: &[Link],
-    exclude: Option<usize>,
+    exclude: Option<&[u8]>,
 ) -> Sentence
 where
-    W: Fn(usize) -> Option<&'a Element>,
+    W: Fn(&[u8]) -> Option<&'a Element>,
     F: Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
-    I: Fn(&[u8]) -> Option<usize>,
-    S: Fn(usize) -> Option<&'a Shape>,
+    S: Fn(&[u8]) -> Option<&'a Shape>,
     H: Fn(&stalk::Invariant, &[Link]) -> Vec<HeldCite>,
 {
     let mut out = Sentence::default();

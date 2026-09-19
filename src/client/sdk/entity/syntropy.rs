@@ -52,23 +52,24 @@ impl Entity {
         &mut self,
         mut budget: crate::physics::Budget,
     ) -> Option<(Element, Vec<Address>, Option<Element>)> {
-        let g = self.epigenome.genome();
-        if g.is_empty() {
-            return None;
-        }
-        self.bundle_cursor = (self.bundle_cursor + 1) % g.len();
-        let start = self.bundle_cursor;
+        // THE ORBIT AS COORDINATES (45.7): every genome word once from
+        // where this walk last stood, wrapping to close on it.
+        let orbit = self.epigenome.genome_orbit_from(self.bundle_cursor.as_deref());
+        // Where this walk now stands: the orbit's opening coordinate, which
+        // is the trie's own successor to the last and is content, not a
+        // member picked out of an arrival order.
+        let [from, ..] = orbit.as_slice() else { return None };
+        self.bundle_cursor = Some(from.clone());
 
         // 1. Coboundary gauge transitions on sentence forms:
         // A sentence whose 1-cochain is exact has gauge frame transitions γ in Spin(4,0)
         // connecting its loop frames to a single basepoint.
         // Regauging extracts the connection and aligns the local sections.
-        for offset in 0..g.len() {
+        for at in &orbit {
             if !budget.spend() {
                 break;
             }
-            let idx = (start + offset) % g.len();
-            let Some(held) = g.get(idx) else { continue };
+            let Some(held) = self.epigenome.word_at(at) else { continue };
             if let Some(mut form) = held.form().cloned() {
                 if let Some(gamma) = form.solve_coboundary() {
                     let non_id = gamma.iter().filter(|w| !w.is_identity()).count();
@@ -98,12 +99,11 @@ impl Entity {
         // 2. Word pairs sharing the same conjugacy class (class_key):
         // For words w1, w2 with w1.class_key() == w2.class_key(),
         // solve for connecting gauge rotor γ such that w2 = γ * w1 * γ^-1.
-        for offset in 0..g.len() {
+        for at in &orbit {
             if !budget.spend() {
                 break;
             }
-            let i = (start + offset) % g.len();
-            let Some(h2) = g.get(i) else { continue };
+            let Some(h2) = self.epigenome.word_at(at) else { continue };
             let Some(letters2) = h2.letters() else { continue };
             let w2 = letters2.spelling.word.clone();
             let Some(ck2) = w2.class_key() else { continue };
@@ -182,19 +182,21 @@ impl Entity {
         &mut self,
         mut budget: crate::physics::Budget,
     ) -> Option<(Element, Vec<Address>, Option<Element>)> {
-        let g = self.epigenome.genome();
-        if g.len() < 2 {
+        if self.epigenome.genome_len() < 2 {
             return None;
         }
-        self.bundle_cursor = (self.bundle_cursor + 1) % g.len();
-        let start = self.bundle_cursor;
+        let orbit = self.epigenome.genome_orbit_from(self.bundle_cursor.as_deref());
+        // Where this walk now stands: the orbit's opening coordinate, which
+        // is the trie's own successor to the last and is content, not a
+        // member picked out of an arrival order.
+        let [from, ..] = orbit.as_slice() else { return None };
+        self.bundle_cursor = Some(from.clone());
 
-        for offset in 0..g.len() {
+        for at in &orbit {
             if !budget.spend() {
                 break;
             }
-            let i = (start + offset) % g.len();
-            let Some(h1) = g.get(i) else { continue };
+            let Some(h1) = self.epigenome.word_at(at) else { continue };
             if h1.sub().is_empty() {
                 continue;
             }

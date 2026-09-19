@@ -5,7 +5,7 @@ use super::common::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::blade::Shape;
-use crate::transducer::element::{self, from_canonical};
+use crate::transducer::element::{self, from_canonical, Element};
 use crate::transducer::germinate::germinate;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self, Stalks};
@@ -316,34 +316,37 @@ fn a_chain_deconstructs_into_its_words_and_residual() {
     let bar_other = from_canonical(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
     let words = vec![bar, dot, bar_other];
     let atlas = Stalks::over_elements(words.iter());
-    let mut index = crate::network::nerve::Keyed::new();
-    for (i, w) in words.iter().enumerate() {
-        index.insert(w.address(), i);
+    // The language AT ITS COORDINATES: a word is reached by its address,
+    // which is what the atlas hands the reading.
+    let mut at: Keyed<Element> = crate::network::nerve::Keyed::new();
+    let mut shapes: Keyed<Option<Shape>> = crate::network::nerve::Keyed::new();
+    for w in &words {
+        shapes.insert(w.address(), element::shape_of_chain(w.sub()));
+        at.insert(w.address(), w.clone());
     }
-    let index_of = |a: &[u8]| index.get(a).copied();
-    let shapes: Vec<Option<Shape>> = words.iter().map(|w| element::shape_of_chain(w.sub())).collect();
-    let shape_at = |i: usize| shapes.get(i).and_then(|s| s.as_ref());
+    let word_at = |a: &[u8]| at.get(a);
+    let shape_at = |a: &[u8]| shapes.get(a).and_then(|s| s.as_ref());
     // A vertical bar far away: the bar rotated and translated.
     let target = vec![(5, 5, 1, 2), (6, 5, 1, 2)];
-    let s = deconstruct(&words, &atlas, &index_of, &shape_at,&target, None);
+    let s = deconstruct_at(&word_at, &atlas, &shape_at,&target, None);
     assert_eq!(s.cites.len(), 1);
-    assert_eq!(s.cites[0].word, 0, "the bar, not the other-hued bar");
+    assert_eq!(s.cites[0].word, words[0].address(), "the bar, not the other-hued bar");
     assert!(s.is_closed());
-    assert!(replay(&words, &s.cites, &target).is_empty(), "the citation replays to closure");
+    assert!(replay_at(&word_at, &s.cites, &target).is_empty(), "the citation replays to closure");
     assert!(
         !s.multiplicity.is_empty(),
         "stratum width is recorded per body"
     );
     // A 2× dilated bar with the other hues: the other bar at ρ = 2.
     let big = vec![(0, 0, 7, 8), (0, 1, 7, 8), (0, 2, 7, 8), (0, 3, 7, 8), (1, 0, 7, 8), (1, 1, 7, 8), (1, 2, 7, 8), (1, 3, 7, 8)];
-    let s = deconstruct(&words, &atlas, &index_of, &shape_at,&big, None);
+    let s = deconstruct_at(&word_at, &atlas, &shape_at,&big, None);
     assert_eq!(s.cites.len(), 1);
-    assert_eq!(s.cites[0].word, 2);
+    assert_eq!(s.cites[0].word, words[2].address());
     assert!(s.is_closed());
     // Two bodies and an unknown: two citations with one relative
     // transport between them, one residual body.
     let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4), (9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)];
-    let s = deconstruct(&words, &atlas, &index_of, &shape_at,&mixed, None);
+    let s = deconstruct_at(&word_at, &atlas, &shape_at,&mixed, None);
     assert_eq!(s.cites.len(), 2);
     assert_eq!(
         s.multiplicity.len(),
@@ -353,7 +356,7 @@ fn a_chain_deconstructs_into_its_words_and_residual() {
     assert_eq!(s.connection.len(), 1, "one relative transport between two cited bodies");
     assert_eq!(s.residual, vec![(9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)]);
     // Excluding the bar itself: a bar chain has no other word of hue 1→2.
-    let s = deconstruct(&words, &atlas, &index_of, &shape_at,words[0].sub(), Some(0));
+    let s = deconstruct_at(&word_at, &atlas, &shape_at,words[0].sub(), Some(words[0].address().as_bytes()));
     assert!(s.cites.is_empty() && !s.is_closed(), "no word but itself speaks it");
 }
 
@@ -363,15 +366,16 @@ fn deconstruct_multiplicity_is_per_body() {
     let dot = from_canonical(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
     let words = vec![bar, dot];
     let atlas = Stalks::over_elements(words.iter());
-    let mut index = Keyed::new();
-    for (i, w) in words.iter().enumerate() {
-        index.insert(w.address(), i);
+    let mut at: Keyed<Element> = Keyed::new();
+    let mut shapes: Keyed<Option<Shape>> = Keyed::new();
+    for w in &words {
+        shapes.insert(w.address(), element::shape_of_chain(w.sub()));
+        at.insert(w.address(), w.clone());
     }
-    let index_of = |a: &[u8]| index.get(a).copied();
-    let shapes: Vec<Option<Shape>> = words.iter().map(|w| element::shape_of_chain(w.sub())).collect();
-    let shape_at = |i: usize| shapes.get(i).and_then(|s| s.as_ref());
+    let word_at = |a: &[u8]| at.get(a);
+    let shape_at = |a: &[u8]| shapes.get(a).and_then(|s| s.as_ref());
     let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4)];
-    let s = deconstruct(&words, &atlas, &index_of, &shape_at, &mixed, None);
+    let s = deconstruct_at(&word_at, &atlas, &shape_at, &mixed, None);
     assert_eq!(s.cites.len(), 2);
     assert_eq!(
         s.multiplicity.len(),
@@ -399,16 +403,21 @@ fn seams_and_holonomy_are_located_exactly() {
     let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let bar_other = from_canonical(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
     let words = vec![bar, bar_other];
+    let mut at: Keyed<Element> = crate::network::nerve::Keyed::new();
+    for w in &words {
+        at.insert(w.address(), w.clone());
+    }
+    let word_at = |a: &[u8]| at.get(a);
     let target = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
     let id = element::identity_versor();
     let cites: Vec<Cite> = vec![
-        Cite { word: 0, transport: id.clone(), gauge: 0 },
-        Cite { word: 1, transport: id.clone(), gauge: 0 },
+        Cite { word: words[0].address(), transport: id.clone(), gauge: 0 },
+        Cite { word: words[1].address(), transport: id.clone(), gauge: 0 },
     ];
-    assert!(replay(&words, &cites[..1], &target).is_empty());
-    assert_eq!(seam_defect(&words, &cites, &target), target, "both links spoken twice, differently");
-    assert_eq!(verify(&words, &cites, &target), target);
-    assert!(verify(&words, &cites[..1], &target).is_empty(), "one word, no seam");
+    assert!(replay_at(&word_at, &cites[..1], &target).is_empty());
+    assert_eq!(seam_defect_at(&word_at, &cites, &target), target, "both links spoken twice, differently");
+    assert_eq!(verify_at(&word_at, &cites, &target), target);
+    assert!(verify_at(&word_at, &cites[..1], &target).is_empty(), "one word, no seam");
     let t = element::translator_versor(3, 0);
     assert!(is_flat(&[t.clone(), t.versor_inverse().unwrap()]));
     assert!(!is_flat(&[t.clone(), element::translator_versor(0, 2)]));

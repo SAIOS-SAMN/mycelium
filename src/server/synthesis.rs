@@ -225,10 +225,9 @@ pub fn adopt(
     // is not installed twice.
     let sub = word.substance();
     let sentence = crate::transducer::sentence::deconstruct_at(
-        &|i| language.get(i),
+        &|a| language.word_at(a),
         &language.stalks,
-        &|a| language.index.get(a).copied(),
-        &|i| language.shape(i),
+        &|a| language.shape_at(a),
         sub.sub(),
         None,
     );

@@ -117,10 +117,7 @@ fn a_restored_genome_answers_at_the_chart_of_the_bodies_it_carries() {
     let mut booted = Epigenome::new();
     assert!(booted.uncrystallize(&tape), "the genome restores");
     assert!(
-        booted
-            .genome()
-            .iter()
-            .any(|w| w.same_vertex(&e)),
+        booted.genome_words().any(|w| w.same_vertex(&e)),
         "the restored genome holds the same vertex"
     );
     assert!(

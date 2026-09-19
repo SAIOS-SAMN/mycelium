@@ -36,8 +36,8 @@ impl Entity {
         Entity {
             session,
             epigenome: Epigenome::new(),
-            refine_cursor: 0,
-            bundle_cursor: 0,
+            refine_cursor: None,
+            bundle_cursor: None,
             taught_up: crate::network::nerve::Keyed::new(),
             taught_at: crate::network::nerve::Keyed::new(),
             discordance: 0,
@@ -97,7 +97,7 @@ impl Entity {
         } else {
             eprintln!("genome 0 words, epigenome empty");
         }
-        e.thought_gen = e.epigenome.genome_len();
+        e.thought_gen = e.epigenome.genome_seq();
         e
     }
 

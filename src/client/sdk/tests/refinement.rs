@@ -29,12 +29,21 @@ let bar = [(5i64, 5i64, 3u8, 4u8), (6, 5, 3, 4)];
 assert!(entity.epigenome.express(&bar, 1, 1), "the residual is claimed and stands");
 assert_eq!(entity.dialect_len(), 1, "it stands in the dialect, not the genome");
 // The second genome word deconstructs on the working atlas through the
-// stood word alone: its cite's index runs past the genome.
-let located = entity.epigenome.locate(w2.sub(), Some(1));
+// STOOD word alone. The claim used to be spelled `c.word >= 2` — "its
+// index runs past the genome" — which is only true while the dialect is
+// numbered above the genome in one snapshot's offset space. The claim
+// itself is that the cited word is one the genome does not hold, and at a
+// coordinate that is what it says.
+let w2_addr = w2.address();
+let located = entity.epigenome.locate(w2.sub(), Some(w2_addr.as_bytes()));
 assert!(
-    located.cites.iter().any(|c| c.word >= 2) && located.residual.is_empty(),
-    "the deconstruction cites the stood word, past the genome: {:?}",
-    located.cites.iter().map(|c| c.word).collect::<Vec<_>>()
+    located
+        .cites
+        .iter()
+        .any(|c| entity.epigenome.word_at(c.word.as_bytes()).is_none())
+        && located.residual.is_empty(),
+    "the deconstruction cites the stood word, which the genome does not hold: {:?}",
+    located.cites.iter().map(|c| c.word.clone()).collect::<Vec<_>>()
 );
 // The cursor advances from 0 to that second word.
 let bid = entity.seek_refinement();

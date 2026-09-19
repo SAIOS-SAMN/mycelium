@@ -299,16 +299,50 @@ pub struct GenomeView<'a> {
     pub words: &'a [Element],
 }
 
+/// ONE GENOME WORD AND EVERYTHING KEPT ABOUT IT, AT ITS OWN COORDINATE.
+///
+/// It was four carriers side by side — `genome: Vec<Held>`, `expression:
+/// Vec<u64>`, `shapes: Vec<OnceLock<..>>` and `index: Keyed<usize>` — three
+/// of them documented "parallel to the genome" and the fourth a stored
+/// derivation of the first, rebuilt from nothing by `reindex()` and holding
+/// 11.5 MB of duplicated address on a voice eleven minutes into a soak.
+/// Parallel vectors are a Cartesian frame: they make POSITION the identity
+/// of a word, so a removal has to shift three carriers and re-key a fourth,
+/// and the word's own coordinate — which law 2 says IS its identity — is
+/// carried beside it instead of under it.
+///
+/// One word, one entry, filed at the address the word derives for itself.
+/// Nothing is parallel, nothing shifts, and there is no index because the
+/// trie descent IS the lookup.
+pub struct GenomeWord {
+    /// The word, with the form its tape decodes to (L16).
+    pub(crate) held: crate::transducer::element::Held,
+    /// How often this entity speaks or hears it — the recollection
+    /// efficiency. Content: how often a word was used is not derivable
+    /// from the word.
+    pub(crate) expression: u64,
+    /// This word's shape, lifted once on first use. A measurement
+    /// memoized under the word it measures, never persisted.
+    pub(crate) shape: std::sync::OnceLock<Option<crate::transducer::blade::Shape>>,
+    /// The admission ordinal. Content, not derivation: WHEN a word entered
+    /// is not readable off the word, and `thought_gen` watermarks read it.
+    pub(crate) seq: u64,
+}
+
+/// An expressed word — a residual this mind germinated and has not had
+/// ratified — at its own coordinate, for the same reason.
+pub struct ExpressedWord {
+    pub(crate) word: Element,
+    pub(crate) shape: std::sync::OnceLock<Option<crate::transducer::blade::Shape>>,
+}
+
 #[derive(Default)]
 pub struct Epigenome {
     /// THE CRYSTALLIZED LANGUAGE AS THIS MIND HOLDS IT (L16): each word
     /// with the form its tape decodes to, decoded once at the admission.
     /// Held as `Element`, every reader that wanted a form decoded the tape
     /// behind a `OnceLock` that a clone did not carry.
-    pub(crate) genome: Vec<crate::transducer::element::Held>,
-    /// Expression weighting per genome word — how often this entity speaks/hears
-    /// it (the recollection efficiency; parallel to `genome`).
-    pub(crate) expression: Vec<u64>,
+    pub(crate) genome: crate::network::nerve::Keyed<GenomeWord>,
     /// Locally comprehended sentences, keyed by the sentence's word addresses
     /// (not by basis indices that shift on retire).
     pub(crate) recollections: crate::network::nerve::Keyed<(Vec<Vec<u8>>, u64)>,
@@ -316,8 +350,10 @@ pub struct Epigenome {
     /// or restored; rebuilt only on retire. Never persisted.
     pub(crate) atlas: crate::transducer::stalk::Stalks,
     pub(crate) atlas_len: usize,
-    /// Each word's shape, lifted once on first use (parallel to the genome).
-    pub(crate) shapes: Vec<std::sync::OnceLock<Option<crate::transducer::blade::Shape>>>,
+    /// The next admission ordinal to hand out. A counter, not a length:
+    /// `genome.len()` falls when a word retires and an ordinal must not
+    /// be reissued to a different word.
+    pub(crate) next_seq: u64,
     /// Taught words refused because they did not verify (a transition
     /// that is not a versor, a section that does not span the support) —
     /// the entity's measured discordance with what it was taught.
@@ -327,13 +363,8 @@ pub struct Epigenome {
     /// them. They let the entity recognise a residual it has already
     /// claimed, so a claim is spoken once; a ratified word arrives by
     /// teaching and enters the genome.
-    pub(crate) expressed: Vec<Element>,
+    pub(crate) expressed: crate::network::nerve::Keyed<ExpressedWord>,
     pub(crate) expressed_atlas: crate::transducer::stalk::Stalks,
-    pub(crate) expressed_shapes: Vec<std::sync::OnceLock<Option<crate::transducer::blade::Shape>>>,
-    pub(crate) expressed_index: crate::network::nerve::Keyed<usize>,
-    /// Every genome word reached by its address (index-aligned with
-    /// `genome`): a keyed relation, never a walk of the genome.
-    pub(crate) index: crate::network::nerve::Keyed<usize>,
     /// Sentences this mind spoke that stood. Memory only.
     pub(crate) dialect: crate::network::nerve::Keyed<Dialect>,
     /// Charts of stood sentences, admitted in stand_dialect_at, retracted in shed.
@@ -396,9 +427,19 @@ pub struct Entity {
     pub epigenome: Epigenome,
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.
-    pub(crate) refine_cursor: usize,
+    /// WHERE THE REFINEMENT WALK STOOD, AS A COORDINATE. It was a `usize`
+    /// advanced by `% genome.len()`: modular arithmetic over a length that
+    /// changes whenever a word is admitted or retired, so the cursor
+    /// silently skipped and re-visited words as the genome moved under it.
+    /// The court's own refine cursor has been an address since 45.7; this
+    /// is the same object. `None` is a walk that has not started (X3) and
+    /// is an absence, not an empty key.
+    pub(crate) refine_cursor: Option<Vec<u8>>,
     /// Rotating cursor for the bundle synthesis engine (reanchor / condense).
-    pub(crate) bundle_cursor: usize,
+    /// Where the bundle walk stood, as a coordinate — the same reading as
+    /// [`refine_cursor`], and for the same reason: `% genome.len()` is a
+    /// position in a carrier whose length moves.
+    pub(crate) bundle_cursor: Option<Vec<u8>>,
     /// Words this voice has spoken up for adoption: said once, the judge
     /// decided (installed, derivable, or refused). Keyed by transport
     /// address; membership is vertex equality, never the digest alone.
@@ -448,7 +489,9 @@ pub struct Entity {
     /// lost on restart.
     pub(crate) contemplation: crate::transducer::bubble::Contemplation,
     /// Genome length last seen by the pivot; words added since dirty their charts.
-    pub(crate) thought_gen: usize,
+    /// The admission ordinal the pivot has thought through. A watermark on
+    /// the genome's own counter, not a length of it.
+    pub(crate) thought_gen: u64,
     /// Listings this mind has opened an axis on (Vec-of-relations, keyed by
     /// listing address on read): an axis is opened once per listing.
     pub(crate) opened: crate::network::nerve::Keyed<()>,

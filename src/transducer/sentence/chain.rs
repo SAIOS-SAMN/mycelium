@@ -25,9 +25,15 @@ pub type Link = (i64, i64, u8, u8);
 /// them and measures what remains.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Cite {
-    /// Which word of the language is cited — an index into the snapshot the
-    /// reading ran over, resolved to an address at commit.
-    pub word: usize,
+    /// WHICH WORD IS CITED, BY ITS OWN COORDINATE (law 2). It was `usize` —
+    /// an offset into the snapshot the reading happened to run over — and
+    /// the whole `epi.index`/`Language::index` carrier existed to convert an
+    /// address the atlas had already produced into that offset, so a reader
+    /// went coordinate → offset → word. `HeldCite` beside this struct has
+    /// said the right shape since 24.1: "a held cite is never an index into
+    /// a snapshot; the Held stratum is read at the coordinate, so there is
+    /// no snapshot to index." A cite is now the same object.
+    pub word: crate::transducer::address::Address,
     /// The transport carrying that word's chain into the utterance's frame.
     pub transport: Versor,
     /// The gauge coordinate: which assignment along the punctured axis. Read
@@ -41,8 +47,9 @@ pub struct Cite {
 /// not a residual.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Puncture {
-    /// The word that carries the body.
-    pub word: usize,
+    /// The word that carries the body, by its coordinate — the same reading
+    /// as `Cite::word`.
+    pub word: crate::transducer::address::Address,
     /// The transport taking the word's shape onto the body.
     pub transport: Versor,
     /// The word's links under the BODY's own transitions — what the section
@@ -96,11 +103,11 @@ impl Sentence {
     /// The operators this sentence's citations carry: each cited word's
     /// pattern under its transport, and each held cite's body in the frame
     /// it was derived in, which is the chain's own.
-    fn operators_at<'a>(&self, word_at: &impl Fn(usize) -> Option<&'a Element>) -> Vec<(Versor, Vec<Link>)> {
+    fn operators_at<'a>(&self, word_at: &impl Fn(&[u8]) -> Option<&'a Element>) -> Vec<(Versor, Vec<Link>)> {
         let mut ops: Vec<(Versor, Vec<Link>)> = self
             .cites
             .iter()
-            .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word)?, c.gauge)?)))
+            .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, c.gauge)?)))
             .collect();
         ops.extend(self.held.iter().map(|h| (element::identity_versor(), h.body.clone())));
         ops
@@ -109,11 +116,7 @@ impl Sentence {
     /// What the language does not yet hold: the residual, together with the
     /// bodies spoken only as punctures — novelty in the fiber is novelty.
     /// Measured as the replay of the citations alone over the chain.
-    pub fn open(&self, words: &[Element], chain: &[Link]) -> Vec<Link> {
-        self.open_at(&|i| words.get(i), chain)
-    }
-
-    pub fn open_at<'a>(&self, word_at: &impl Fn(usize) -> Option<&'a Element>, chain: &[Link]) -> Vec<Link> {
+    pub fn open_at<'a>(&self, word_at: &impl Fn(&[u8]) -> Option<&'a Element>, chain: &[Link]) -> Vec<Link> {
         match self.punctures.is_empty() {
             true => self.residual.clone(),
             false => replay_operators(&self.operators_at(word_at), chain),
@@ -327,14 +330,10 @@ pub fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<Link>> {
 /// residual is R = Q △ S: the target links no citation speaks, plus the
 /// over-explained links. An empty residual is closure; a citation naming
 /// nothing held speaks nothing.
-pub fn replay(language: &[Element], cites: &[Cite], target: &[Link]) -> Vec<Link> {
-    replay_at(&|i| language.get(i), cites, target)
-}
-
-pub fn replay_at<'a>(word_at: &impl Fn(usize) -> Option<&'a Element>, cites: &[Cite], target: &[Link]) -> Vec<Link> {
+pub fn replay_at<'a>(word_at: &impl Fn(&[u8]) -> Option<&'a Element>, cites: &[Cite], target: &[Link]) -> Vec<Link> {
     let ops: Vec<(Versor, Vec<Link>)> = cites
         .iter()
-        .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word)?, c.gauge)?)))
+        .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, c.gauge)?)))
         .collect();
     replay_operators(&ops, target)
 }
@@ -447,10 +446,14 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<usize> {
 /// their words onto the same target site, they must speak the same
 /// transition; the links where they disagree are the seam defect, located
 /// exactly. A sentence with no overlap has no seam.
-pub fn seam_defect(language: &[Element], cites: &[Cite], target: &[Link]) -> Vec<Link> {
+pub fn seam_defect_at<'a>(
+    word_at: &impl Fn(&[u8]) -> Option<&'a Element>,
+    cites: &[Cite],
+    target: &[Link],
+) -> Vec<Link> {
     let ops: Vec<(Versor, Vec<Link>)> = cites
         .iter()
-        .filter_map(|c| Some((c.transport.clone(), cited_pattern(language.get(c.word)?, c.gauge)?)))
+        .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, c.gauge)?)))
         .collect();
     seam_defect_operators(&ops, target)
 }
@@ -494,9 +497,13 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Ve
 /// VERIFY a received sentence — the receiving direction of the algebra:
 /// the replay's residual together with the seam defect. Empty is closure
 /// with a coherent cover.
-pub fn verify(language: &[Element], cites: &[Cite], target: &[Link]) -> Vec<Link> {
-    let mut out = replay(language, cites, target);
-    out.extend(seam_defect(language, cites, target));
+pub fn verify_at<'a>(
+    word_at: &impl Fn(&[u8]) -> Option<&'a Element>,
+    cites: &[Cite],
+    target: &[Link],
+) -> Vec<Link> {
+    let mut out = replay_at(word_at, cites, target);
+    out.extend(seam_defect_at(word_at, cites, target));
     out.sort_unstable();
     out.dedup();
     out

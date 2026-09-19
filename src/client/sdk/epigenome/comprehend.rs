@@ -5,18 +5,23 @@ use crate::client::sdk::*;
 use crate::transducer::element::Element;
 
 impl Epigenome {
+    /// RETIRE a word whose meaning the rest of the genome already carries.
+    ///
+    /// It used to be a shift: remove at a slot, remove the same slot from
+    /// `expression` and `shapes` — each guarded by its own length, because
+    /// the three could disagree — and then `reindex()` the whole genome
+    /// because every word after the hole had moved. Positions were the
+    /// identity, so removing one word renamed all the others. At a
+    /// coordinate a word leaves and nothing else moves.
     pub fn retire(&mut self, addr: &[u8]) -> bool {
-        let Some(i) = self.index.get(addr).copied() else {
+        let Some(word) = self.genome.remove(addr) else {
             return false;
         };
-        let gone = self.genome[i].address();
-        let held = self.genome[i].clone();
-        self.axis_retract(&held);
-        self.moduli_retract(&held);
-        self.genome.remove(i);
-        if i < self.expression.len() {
-            self.expression.remove(i);
-        }
+        let gone = word.held.address();
+        self.axis_retract(&word.held);
+        self.moduli_retract(&word.held);
+        // The recollections that spelled themselves with this word were
+        // spellings in the old vocabulary and dissolve with it.
         let drop: Vec<Vec<u8>> = self
             .recollections
             .scoped()
@@ -27,11 +32,7 @@ impl Epigenome {
             self.recollections.remove(&k);
         }
         self.atlas.remove(&gone);
-        if i < self.shapes.len() {
-            self.shapes.remove(i);
-        }
         self.atlas_len = self.genome.len();
-        self.reindex();
         true
     }
 
@@ -196,17 +197,18 @@ impl Epigenome {
         // understood arm; anything left over is the novelty, measured.
         match (located.residual.len(), located.punctures.len()) {
             (0, 0) => {
+                // THE CITE ALREADY CARRIES THE ADDRESS. This went
+                // position → word → address to recover what the cite had
+                // been built from one call earlier.
                 let sentence: Vec<(Vec<u8>, Standing)> = located
                     .cites
                     .iter()
-                    .filter_map(|c| {
-                        let w = self.genome.get(c.word)?;
-                        Some((w.address().into_vec(), Standing::Ruled))
-                    })
+                    .filter(|c| self.genome.contains(c.word.as_bytes()))
+                    .map(|c| (c.word.clone().into_vec(), Standing::Ruled))
                     .collect();
                 for c in &located.cites {
-                    if let Some(x) = self.expression.get_mut(c.word) {
-                        *x += 1;
+                    if let Some(w) = self.genome.get_mut(c.word.as_bytes()) {
+                        w.expression += 1;
                     }
                 }
                 if !sentence.is_empty() {
@@ -227,14 +229,12 @@ impl Epigenome {
             _ => {
                 let genome = &self.genome;
                 let open = located
-                    .open_at(&|i| genome.get(i).map(|h| h.element()), utterance.sub());
+                    .open_at(&|a| genome.get(a).map(|w| w.held.element()), utterance.sub());
                 let understood: Vec<(Vec<u8>, Standing)> = located
                     .cites
                     .iter()
-                    .filter_map(|c| {
-                        let w = self.genome.get(c.word)?;
-                        Some((w.address().into_vec(), Standing::Ruled))
-                    })
+                    .filter(|c| self.genome.contains(c.word.as_bytes()))
+                    .map(|c| (c.word.clone().into_vec(), Standing::Ruled))
                     .collect();
                 // An open chain with no A5 form is no element to lack, so
                 // there is no demand to speak and what did factor is the
@@ -264,10 +264,8 @@ impl Epigenome {
             };
             let address = address.clone();
             let chart = chart.clone();
-            if let Some(&i) = self.index.get(&address) {
-                if let Some(x) = self.expression.get_mut(i) {
-                    *x += 1;
-                }
+            if let Some(w) = self.genome.get_mut(address.as_bytes()) {
+                w.expression += 1;
                 understood.push((address.clone().into_vec(), Standing::Ruled));
                 continue;
             }
@@ -416,23 +414,16 @@ impl Epigenome {
                 None => 1,
             };
             self.drop_dialect(&da);
-            if let Some(i) = self.same_vertex_in_genome(&e) {
-                // Through `Held::update`: the fibre deepens and the form is
-                // re-decoded with it, so the two describe one tape (L16).
-                let _ = self.genome[i].update(|w| w.merge_fibre(&e));
-                if let Some(x) = self.expression.get_mut(i) {
-                    *x = x.saturating_add(uses);
+            match self.same_vertex_in_genome(&e) {
+                Some(at) => {
+                    // Through `Held::update`: the fibre deepens and the form
+                    // is re-decoded with it, so the two describe one tape.
+                    if let Some(w) = self.genome.get_mut(&at) {
+                        let _ = w.held.update(|x| x.merge_fibre(&e));
+                        w.expression = w.expression.saturating_add(uses);
+                    }
                 }
-            } else {
-                let held = crate::transducer::element::Held::of(e);
-                self.atlas.admit(&crate::transducer::stalk::invariant_of(&held), held.address());
-                self.axis_admit(&held);
-                self.moduli_admit(&held);
-                self.shapes.push(std::sync::OnceLock::new());
-                self.atlas_len = self.atlas_len.saturating_add(1);
-                self.index.insert(held.address(), self.genome.len());
-                self.genome.push(held);
-                self.expression.push(uses);
+                None => self.admit_word(crate::transducer::element::Held::of(e), uses),
             }
             self.promoted.push(addr.into_vec());
             return Some(heard);
@@ -440,21 +431,33 @@ impl Epigenome {
         let arrived = e.clone();
         // ONE DECODE, HERE, where the word is taken in.
         let held = crate::transducer::element::Held::of(e);
-        match self.index.get(&addr).copied() {
-            Some(i) => self.genome[i] = held,
-            None => {
-                self.atlas.admit(&crate::transducer::stalk::invariant_of(&held), held.address());
-                self.axis_admit(&held);
-                self.moduli_admit(&held);
-                self.shapes.push(std::sync::OnceLock::new());
-                self.atlas_len = self.atlas_len.saturating_add(1);
-                self.index.insert(held.address(), self.genome.len());
-                self.genome.push(held);
-                self.expression.push(0);
-            }
+        match self.genome.get_mut(&addr) {
+            // A word already at this coordinate is replaced in place; its
+            // expression and admission ordinal are what this mind measured
+            // about it and do not reset because the tape arrived again.
+            Some(w) => w.held = held,
+            None => self.admit_word(held, 0),
         }
         self.resolve_withheld(&arrived);
         Some(heard)
+    }
+
+    /// ADMIT A WORD AT ITS OWN COORDINATE. One entry, filed where the word
+    /// says it belongs — the atlas, the axis index and the moduli index all
+    /// take the same address, and there is no fourth carrier to keep in
+    /// step and no slot to append to.
+    pub(crate) fn admit_word(&mut self, held: crate::transducer::element::Held, uses: u64) {
+        let at = held.address();
+        self.atlas.admit(&crate::transducer::stalk::invariant_of(&held), at.clone());
+        self.axis_admit(&held);
+        self.moduli_admit(&held);
+        self.atlas_len = self.atlas_len.saturating_add(1);
+        let seq = self.next_seq;
+        self.next_seq = self.next_seq.saturating_add(1);
+        self.genome.insert(
+            at,
+            GenomeWord { held, expression: uses, shape: std::sync::OnceLock::new(), seq },
+        );
     }
 
     /// A cited tape that just arrived: withheld sentences naming it

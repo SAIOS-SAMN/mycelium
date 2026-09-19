@@ -81,9 +81,9 @@ impl Epigenome {
     }
 
     pub fn stand_dialect_at(&mut self, sentence: Element, k: u64, now_tu: u64) -> Option<Vec<u8>> {
-        if let Some(i) = self.same_vertex_in_genome(&sentence) {
-            if let Some(x) = self.expression.get_mut(i) {
-                *x = x.saturating_add(1);
+        if let Some(at) = self.same_vertex_in_genome(&sentence) {
+            if let Some(w) = self.genome.get_mut(&at) {
+                w.expression = w.expression.saturating_add(1);
             }
             return None;
         }
@@ -158,12 +158,20 @@ impl Epigenome {
         }
         let located = {
             let expressed = &self.expressed;
-            let shapes = &self.expressed_shapes;
-            let index = &self.expressed_index;
-            let shape_at = |i: usize| {
-                shapes.get(i).and_then(|c| c.get_or_init(|| crate::transducer::element::shape_of_chain(expressed[i].sub())).as_ref())
+            let word_at = |a: &[u8]| expressed.get(a).map(|e| &e.word);
+            let shape_at = |a: &[u8]| {
+                let e = expressed.get(a)?;
+                e.shape
+                    .get_or_init(|| crate::transducer::element::shape_of_chain(e.word.sub()))
+                    .as_ref()
             };
-            crate::transducer::sentence::deconstruct(expressed, &self.expressed_atlas, &|a| index.get(a).copied(), &shape_at, residual, None)
+            crate::transducer::sentence::deconstruct_at(
+                &word_at,
+                &self.expressed_atlas,
+                &shape_at,
+                residual,
+                None,
+            )
         };
         if let ([], []) = (located.residual.as_slice(), located.punctures.as_slice()) {
             return false; // already spoken: the same body under a transport
@@ -172,11 +180,10 @@ impl Epigenome {
         let Some(word) = crate::transducer::element::from_residual(&residual.to_vec()) else {
             return false;
         };
-        self.expressed_atlas.admit(&crate::transducer::stalk::invariant_of(&word), word.address());
-        self.expressed_index.insert(word.address(), self.expressed.len());
-        self.expressed_shapes.push(std::sync::OnceLock::new());
+        let at = word.address();
+        self.expressed_atlas.admit(&crate::transducer::stalk::invariant_of(&word), at.clone());
         self.stand_dialect_at(word.clone(), k, now_tu);
-        self.expressed.push(word);
+        self.expressed.insert(at, ExpressedWord { word, shape: std::sync::OnceLock::new() });
         true
     }
 
@@ -186,10 +193,10 @@ impl Epigenome {
     /// a measurement with nothing to take it on.
     #[expect(
         clippy::disallowed_methods,
-        reason = "rule 4 — the peak of the expression vector is its extent, content"
+        reason = "rule 4 — the peak of the expression readings is their extent, content"
     )]
     pub fn peak_expression(&self) -> Option<u64> {
-        self.expression.iter().copied().max()
+        self.genome.scoped().map(|(_, w)| w.expression).max()
     }
 
     pub fn recollections(&self) -> Vec<(Vec<Vec<u8>>, u64)> {

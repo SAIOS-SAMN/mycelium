@@ -288,17 +288,20 @@ pub fn cohesion_over(rank: &Rank) -> (u64, u64) {
 /// composed into an element here: what the language does not span is the
 /// speaker's to say (law 8), and the redundancy probe asks only whether
 /// the rest of the basis derives a held word.
-pub fn normal_form(language: &Language, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> NormalForm {
+pub fn normal_form(
+    language: &Language,
+    chain: &[(i64, i64, u8, u8)],
+    exclude: Option<&[u8]>,
+) -> NormalForm {
     let sentence = crate::transducer::sentence::deconstruct_at(
-        &|i| language.get(i),
+        &|a| language.word_at(a),
         &language.stalks,
-        &|a| language.index.get(a).copied(),
-        &|i| language.shape(i),
+        &|a| language.shape_at(a),
         chain,
         exclude,
     );
     match (sentence.residual.as_slice(), sentence.punctures.as_slice()) {
-        ([], []) => NormalForm::Decomposed(sentence.cites.iter().map(|c| c.word).collect()),
+        ([], []) => NormalForm::Decomposed(sentence.cites.iter().map(|c| c.word.clone()).collect()),
         _ => NormalForm::Irreducible,
     }
 }

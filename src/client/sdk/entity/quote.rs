@@ -11,14 +11,21 @@ impl Entity {
     /// redundancy the vocabulary is carrying — a compression bid. The probe
     /// is a virtual rollout (zero mutation); the hypha's deterministic
     /// replay, not this discovery, decides retirement.
-    pub fn seek_refinement(&mut self) -> Option<(crate::transducer::address::Address, Vec<dialogue::CiteWire>)> {
-        let g = self.epigenome.genome();
-        if g.len() < 2 {
+    /// ADVANCE THE REFINEMENT WALK BY ONE COORDINATE, wrapping at the end
+    /// of the trie — the carrier's own orbit (45.7), not `% len`. A genome
+    /// of fewer than two words has no redundancy to seek.
+    fn advance_refine_cursor(&mut self) -> Option<Vec<u8>> {
+        if self.epigenome.genome_len() < 2 {
             return None;
         }
-        self.refine_cursor = (self.refine_cursor + 1) % g.len();
-        let i = self.refine_cursor;
-        let sub = g.get(i)?.substance();
+        let at = self.epigenome.next_word_after(self.refine_cursor.as_deref())?;
+        self.refine_cursor = Some(at.clone());
+        Some(at)
+    }
+
+    pub fn seek_refinement(&mut self) -> Option<(crate::transducer::address::Address, Vec<dialogue::CiteWire>)> {
+        let at = self.advance_refine_cursor()?;
+        let sub = self.epigenome.word_at(&at)?.substance();
         if sub.sub().is_empty() {
             // A SENTENCE HAS NO CHAIN AND IS NOT THEREFORE IRREDUCIBLE.
             // `as_element_form` writes a description and a magnitude and
@@ -41,17 +48,21 @@ impl Entity {
         // does not hold is not a compression the mesh can replay), so a
         // deconstruction that leans on a stood or held word is no bid; it
         // was read as a genome index and voice 4 died on it (I35).
-        let located = self.epigenome.locate(sub.sub(), Some(i));
+        let located = self.epigenome.locate(sub.sub(), Some(&at));
         let (cites, residual) = (located.cites, located.residual);
-        let g = self.epigenome.genome();
-        let ruled = cites.iter().all(|c| c.word < g.len());
+        // RULED IS "THE GENOME HOLDS THIS ADDRESS", asked at the coordinate.
+        // It was `c.word < g.len()` — an offset compared against a length,
+        // which is true of any index into the dialect's range as soon as
+        // the genome grows past it. That is the read voice 4 died on (I35).
+        let ruled = cites.iter().all(|c| self.epigenome.word_at(c.word.as_bytes()).is_some());
         match (cites.len(), residual.as_slice(), ruled) {
             (1.., [], true) => {
-                let word = g.get(i)?.address();
+                let word = self.epigenome.word_at(&at)?.address();
+                let epi = &self.epigenome;
                 let wires: Option<Vec<dialogue::CiteWire>> = cites
                     .into_iter()
                     .map(|c| {
-                        let cited = g.get(c.word)?;
+                        let cited = epi.word_at(c.word.as_bytes())?;
                         // L6: a cite IS the body it reconstructs. One whose
                         // gauge reconstructs none is no cite, and a bid
                         // that cannot spell one of its cites is no bid.
@@ -351,12 +362,8 @@ impl Entity {
     /// solvable change of basepoint (Expansion 2). A word outside the fibre
     /// is in another conjugacy class and can answer neither.
     pub fn algebraic_redundancy(&mut self) -> Option<Redundancy> {
-        let g = self.epigenome.genome();
-        if g.len() < 2 {
-            return None;
-        }
-        let i = self.refine_cursor % g.len();
-        let held = g.get(i)?;
+        let at = self.refine_cursor.clone()?;
+        let held = self.epigenome.word_at(&at)?;
         let me = held.address();
         let mine = crate::transducer::sentence::acting_of_element(held.element())
             .into_iter()
@@ -427,11 +434,8 @@ impl Entity {
     pub fn algebraic_step(&mut self) -> Option<AlgebraicStep> {
         use crate::anastome::dialogue::AlgebraicWitness;
         let word = {
-            let g = self.epigenome.genome();
-            if g.len() < 2 {
-                return None;
-            }
-            g.get(self.refine_cursor % g.len())?.address()
+            let at = self.refine_cursor.clone()?;
+            self.epigenome.word_at(&at)?.address()
         };
         match self.algebraic_redundancy()? {
             Redundancy::UnspellableGauge { held, gamma, chart } => {

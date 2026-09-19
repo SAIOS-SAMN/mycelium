@@ -15,7 +15,8 @@ pub enum Outcome {
     /// replay closes it and never because an order on tapes says so. The
     /// algebra spans it, nothing minted. An empty word is a pure
     /// transposition (no substance). One reduction, not two search kinds.
-    Decomposed(Vec<usize>),
+    /// The words the speech decomposed through, BY THEIR OWN COORDINATES.
+    Decomposed(Vec<crate::transducer::address::Address>),
     /// A novel generator docketed on one vantage, awaiting a witness organ's
     /// independent re-derivation of the same address (47.3).
     GermPending,
@@ -61,12 +62,16 @@ pub enum Glue {
 }
 
 /// The result of the redundancy probe over the language: the held words a
-/// word's substance decomposes through (indices into the language the
-/// reduction ran over), or none. `Irreducible` carries no element: what
-/// the language does not span is not composed by the court (law 8).
+/// word's substance decomposes through, BY THEIR OWN COORDINATES, or none.
+/// `Irreducible` carries no element: what the language does not span is not
+/// composed by the court (law 8).
+///
+/// They were "indices into the language the reduction ran over" — which
+/// named nothing the moment that snapshot retired a word, and the snapshot
+/// was never carried alongside them to say which one was meant.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NormalForm {
-    Decomposed(Vec<usize>),
+    Decomposed(Vec<crate::transducer::address::Address>),
     Irreducible,
 }
 
@@ -111,6 +116,21 @@ impl Language {
     /// The index of the word at an address.
     pub fn at(&self, addr: &[u8]) -> Option<usize> {
         self.index.get(addr).copied()
+    }
+
+    /// THE WORD AT AN ADDRESS — the reading's own contract (law 2). The
+    /// storage here is still a `Vec` with a `Keyed<usize>` beside it, the
+    /// same duplicated-address defect the epigenome carried; it is named in
+    /// the ledger and is the next carrier to be keyed by its coordinate.
+    /// The reading no longer converts addresses to offsets and back, so
+    /// nothing downstream depends on the slot any more.
+    pub fn word_at(&self, addr: &[u8]) -> Option<&Element> {
+        self.get(self.at(addr)?)
+    }
+
+    /// The shape of the word at an address, lifted on first use.
+    pub fn shape_at(&self, addr: &[u8]) -> Option<&crate::transducer::blade::Shape> {
+        self.shape(self.at(addr)?)
     }
 }
 

@@ -229,8 +229,7 @@ fn the_conjugacy_fibre_answers_every_sibling_the_genome_walk_would_have_found() 
     // inner loop did.
     let by_walk: Vec<Vec<u8>> = entity
         .epigenome
-        .genome()
-        .iter()
+        .genome_words()
         .filter(|h| {
             h.letters()
                 .and_then(|l| l.spelling.word.class_key())

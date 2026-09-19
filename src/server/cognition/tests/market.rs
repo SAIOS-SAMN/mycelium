@@ -250,13 +250,19 @@ let _word = k.basis()[0].address();
 // The entity's reduction over the language: the word cited at the
 // origin, the far link left as the residual.
 let language = k.language();
-let sentence = crate::transducer::sentence::deconstruct_at(&|i| language.get(i), &language.stalks, &|a| language.index.get(a).copied(), &|i| language.shape(i), &chain, None);
+let sentence = crate::transducer::sentence::deconstruct_at(
+    &|a| language.word_at(a),
+    &language.stalks,
+    &|a| language.shape_at(a),
+    &chain,
+    None,
+);
 let (void, cites) = (sentence.residual.clone(), sentence.cites.clone());
 assert_eq!(void, vec![(0, 3, 3, 4)]);
 assert_eq!(cites.len(), 1);
 let basis = k.basis();
 assert_eq!(
-    replay_at(&|i| basis.get(i).map(|w| w.element()), &cites, &chain),
+    replay_at(&|a| basis.iter().find(|w| w.address().as_bytes() == a).map(|w| w.element()), &cites, &chain),
     void,
     "the replay reproduces the residual"
 );

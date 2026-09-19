@@ -215,8 +215,8 @@ impl Kernel {
     pub(crate) fn list_sentence(&mut self, word: &Element, voice: [u8; 32]) -> Outcome {
         let addr = word.address();
         let mag = word.magnitude();
-        if let Some(slot) = self.live_slot(&addr) {
-            return self.settle_use_of(voice, slot, &mag);
+        if self.live_slot(&addr).is_some() {
+            return self.settle_use_of(voice, &addr, &mag);
         }
         if self.provisional.contains(&addr) {
             // A second voice on the address is a party to the settlement
@@ -258,7 +258,12 @@ impl Kernel {
     /// they close the voice's room on a lane while its claim in flight there
     /// stands (§3.1 as ruled) — the discoverer paid the structure exercised,
     /// and order built.
-    fn settle_use_of(&mut self, voice: [u8; 32], slot: usize, mag: &[u64; 4]) -> Outcome {
+    fn settle_use_of(
+        &mut self,
+        voice: [u8; 32],
+        at: &crate::transducer::address::Address,
+        mag: &[u64; 4],
+    ) -> Outcome {
         let anchor = self.anchor();
         let pressure = self.physics.pressure;
         let (_paid, short) = self.treasury.settle_recall(voice, mag, &pressure, anchor);
@@ -269,14 +274,14 @@ impl Kernel {
                 voice[0], voice[1], short[l]
             );
         }
-        if let Some(w) = self.language.words.get(slot) {
+        if let Some(w) = self.language.word_at(at.as_bytes()) {
             let held = w.magnitude();
             if let Some(disc) = self.discoverer_of(&w.address()) {
                 self.treasury.settle_use(voice, disc, held, anchor);
             }
         }
         self.physics.syntropy(mag);
-        Outcome::Decomposed(vec![slot])
+        Outcome::Decomposed(vec![at.clone()])
     }
 
     /// ONE VANTAGE DOCKETS (47.3): this court replayed the sentence to get

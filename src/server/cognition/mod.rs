@@ -22,7 +22,7 @@ mod room;
 mod snapshot;
 mod wire;
 
-pub use crate::transducer::sentence::{cited_pattern, replay, verify, Cite};
+pub use crate::transducer::sentence::{cited_pattern, replay_at, verify_at, Cite};
 pub use court::fold::Proposal;
 pub use kernel::Kernel;
 pub(crate) use keys::*;

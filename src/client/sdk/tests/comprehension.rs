@@ -39,7 +39,11 @@ let frozen = epi.crystallize();
 let mut back = Epigenome::new();
 assert!(back.uncrystallize(&frozen), "crystallized genome restores");
 assert_eq!(back.genome_len(), epi.genome_len());
-assert_eq!(back.genome()[0].address(), epi.genome()[0].address(), "words identical by address");
+assert_eq!(
+    back.genome_words().next().map(|w| w.address()),
+    epi.genome_words().next().map(|w| w.address()),
+    "words identical by address"
+);
 assert_eq!(
     back.peak_expression(),
     Some(0),
@@ -429,7 +433,7 @@ assert_eq!(epi.dialect_len(), 0, "dialect moves, it is not copied");
 assert_eq!(epi.genome_len(), 1, "genome is the promoted vertex");
 let promoted = epi.take_promoted();
 assert_eq!(promoted.len(), 1);
-assert_eq!(epi.expression[0], 2, "uses ride with the promotion");
+assert_eq!(epi.peak_expression(), Some(2), "uses ride with the promotion");
 // The crystal is read at two coordinates and they are not one (21 step 3
 // as ruled 2026-09-10): `on_class` at the form's own chart, which is what
 // comprehension of a citation asks, and `on_body` at the chart of a body

@@ -20,7 +20,7 @@ assert_eq!(speak_pair(&mut k, &a, &rot, [2; 32]), Outcome::GermPending, "two voi
 assert_eq!(k.basis_len(), 0, "zero basis installs from a single hypha's two voices");
 k.glue_local();
 assert_eq!(k.basis_len(), 1, "the basis grows from gluing");
-assert_eq!(speak_pair(&mut k, &a, &rot, [3; 32]), Outcome::Decomposed(vec![0]), "a use of the length-1 sentence");
+assert_eq!(speak_pair(&mut k, &a, &rot, [3; 32]), Outcome::Decomposed(vec![k.basis()[0].address()]), "a use of the length-1 sentence");
 }
 
 /// THE CONDENSE STROKE: position-identical sibling cards already in the basis

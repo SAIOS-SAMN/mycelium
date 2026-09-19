@@ -139,44 +139,28 @@ impl Entity {
                 .collect::<Vec<_>>()
         };
         let located = self.epigenome.locate_on(chain, None, &held_at);
-        let n_genome = self.epigenome.genome_len();
-        let dialect_addrs: Vec<Vec<u8>> = self
-            .epigenome
-            .dialect
-            .scoped()
-            .map(|(a, _)| a)
-            .collect();
-        let word_of = |i: usize| -> Option<&Element> {
-            if i < n_genome {
-                self.epigenome.genome().get(i).map(|h| h.element())
-            } else {
-                dialect_addrs
-                    .get(i - n_genome)
-                    .and_then(|a| self.epigenome.working_word(a))
-                    .map(|h| h.element())
-            }
+        let word_of = |a: &[u8]| -> Option<&Element> {
+            self.epigenome.working_word(a).map(|h| h.element())
         };
-        // Standing is a coordinate on the cited word (Ruled, Stood, Held),
-        // never a weight multiplied into μ⃗.
-        let standing_of = |i: usize| -> Standing {
-            if i < n_genome {
-                Standing::Ruled
-            } else {
-                Standing::Stood
-            }
-        };
+        // STANDING IS A COORDINATE ON THE CITED WORD (Ruled, Stood, Held),
+        // never a weight multiplied into μ⃗ — and never, as it was here, a
+        // comparison of an offset against the genome's length. Each stratum
+        // is asked at the address, in the strata's own order (24.1); a word
+        // the working language does not hold has no standing to report and
+        // is not put on the wire.
+        let standing_of = |a: &[u8]| -> Option<Standing> { self.epigenome.standing_of(a) };
         let mut cites: Vec<dialogue::CiteWire> = located
             .cites
             .into_iter()
             .filter_map(|c| {
-                let w = word_of(c.word)?;
+                let w = word_of(c.word.as_bytes())?;
                 // L6: A CITE IS THE BODY IT RECONSTRUCTS. One whose gauge
                 // reconstructs none is not a cite carrying nothing — it is
                 // no cite, and it does not go on the wire.
                 let body = crate::transducer::sentence::cited_pattern(w, c.gauge)?;
                 Some(dialogue::CiteWire {
                     addr: w.address(),
-                    standing: standing_of(c.word).as_u8(),
+                    standing: standing_of(c.word.as_bytes())?.as_u8(),
                     transport: c.transport,
                     gauge: c.gauge as u32,
                     body,
@@ -184,10 +168,11 @@ impl Entity {
             })
             .collect();
         for p in &located.punctures {
-            let Some(w) = word_of(p.word) else { continue };
+            let Some(w) = word_of(p.word.as_bytes()) else { continue };
+            let Some(st) = standing_of(p.word.as_bytes()) else { continue };
             cites.push(dialogue::CiteWire {
                 addr: w.address(),
-                standing: standing_of(p.word).as_u8(),
+                standing: st.as_u8(),
                 transport: p.transport.clone(),
                 gauge: u32::MAX,
                 body: p.links.clone(),
@@ -222,8 +207,7 @@ impl Entity {
             if c.gauge != u32::MAX {
                 continue;
             }
-            let Some(i) = self.epigenome.index_of(&c.addr) else { continue };
-            if self.epigenome.puncture(i, crate::transducer::element::assignment(&c.body)) {
+            if self.epigenome.puncture(&c.addr, crate::transducer::element::assignment(&c.body)) {
                 deepened += 1;
             }
         }

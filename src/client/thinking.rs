@@ -4,4 +4,4 @@
 //! is deconstructed into the words that compose it, in closed form, and what
 //! no word speaks is the residual the entity germinates.
 
-pub use crate::transducer::sentence::{deconstruct, locate, pieces, replay, Cite, Sentence};
+pub use crate::transducer::sentence::{deconstruct_at, locate, pieces, replay_at, Cite, Sentence};

@@ -81,9 +81,13 @@ impl Kernel {
         // Each cite resolves or the bid withholds that cite.
         let mut resolved: Vec<Cite> = Vec::new();
         for c in cites {
-            let j = self.live_slot(&c.addr).filter(|_| c.addr.as_bytes() != addr)?;
+            // The cite already NAMES the word; what has to be checked is
+            // that the word is live and is not the candidate citing itself.
+            // It used to be resolved to a slot here, which is the offset
+            // round trip the reading no longer does.
+            self.live_slot(&c.addr).filter(|_| c.addr.as_bytes() != addr)?;
             resolved.push(Cite {
-                word: j,
+                word: c.addr.clone(),
                 transport: c.transport.clone(),
                 gauge: c.gauge as usize,
             });
