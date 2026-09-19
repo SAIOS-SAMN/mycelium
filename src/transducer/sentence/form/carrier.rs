@@ -811,7 +811,7 @@ impl Form {
         pairs: &[(stalk::Invariant, stalk::Invariant)],
         word: &Word,
     ) -> Option<FormFace> {
-        crate::transducer::family::trace::trace_at("face_at", j as usize);
+        crate::transducer::family::trace::trace("face_at", crate::transducer::family::trace::Wrote::Key(&vertex_ix_key(j)), None);
         let mut at = Keyed::new();
         for (ci, cj) in pairs {
             if let Some(p) = self.face_place_by(i, ci, j, cj, word, None) {
@@ -855,7 +855,7 @@ impl Form {
     ) -> Option<FormFace> {
         match self.face_pairs(i, j) {
             Some(pairs) => {
-                crate::transducer::family::trace::trace_at("face_at", j as usize);
+                crate::transducer::family::trace::trace("face_at", crate::transducer::family::trace::Wrote::Key(&vertex_ix_key(j)), None);
                 let mut at = Keyed::new();
                 for (ci, cj) in &pairs {
                     if let Some(p) = self.face_place_by(i, ci, j, cj, &word, edge.clone()) {

@@ -201,7 +201,7 @@ fn vanished(body: &Body) -> Demanded {
 /// as the demands of `finish` and says so.
 fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::physics::Budget) -> Percept {
     use crate::transducer::sentence::face_pair_key;
-    trace::trace_n("extract/0 frames", family.len(), budget);
+    trace::trace("extract/0 frames", trace::Wrote::Nothing, Some(budget));
     let n = family.len();
     let mut unreached: Vec<usize> = Vec::new();
     let mut ins: Vec<Body> = Vec::new();
@@ -236,7 +236,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         out_bodies.insert(bk, b.clone());
     }
 
-    trace::trace_n("extract/1 fibers", charts.len(), budget);
+    trace::trace("extract/1 fibers", trace::Wrote::Nothing, Some(budget));
     let mut reads: Keyed<ClassRead> = Keyed::new();
     let mut demanded: Vec<Demanded> = Vec::new();
     let mut covers: Vec<Covered> = Vec::new();
@@ -361,6 +361,10 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             let vertex = match word_or_demand_on_chart(&first.a0, &first.b0, c) {
                 Some(Ok(v)) => v,
                 Some(Err(d)) => {
+                    // A reader that returns a typed demand has answered
+                    // (rule 17), and the timeline says so rather than
+                    // showing a gap where the vertex would have been.
+                    trace::trace("extract/1 chart", trace::Wrote::Demand, Some(budget));
                     demanded.push(d);
                     continue;
                 }
@@ -908,7 +912,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         drops.word,
         drops.place
     );
-    trace::trace_n("extract/2 faces", form.faces.len(), budget);
+    trace::trace("extract/2 faces", trace::Wrote::Nothing, Some(budget));
     Percept { form, sections, varying, unreached }
 }
 
@@ -945,9 +949,9 @@ pub fn extract_rule_with(
     };
     let Percept { form, mut sections, varying, unreached } = percept;
     let unreached_pairs: Vec<(Grid, Grid)> = unreached.iter().filter_map(|&k| family.get(k).cloned()).collect();
-    trace::trace_n("extract/1 derive_against", form.vertices.len(), budget);
+    trace::trace("extract/1 derive_against", trace::Wrote::Nothing, Some(budget));
     let mut form = derive_against(form, crystal, budget)?;
-    trace::trace_n("extract/3 glue", form.faces.len(), budget);
+    trace::trace("extract/3 glue", trace::Wrote::Nothing, Some(budget));
     let measured = trace::carriage_of(&form);
     // 3. Glue: the placement is the vertex's own word from the Frame; the
     // crystal is asked at every chart the class acts on (21 step 3).
@@ -1022,12 +1026,12 @@ pub fn extract_rule_with(
         }
     }
     trace::trace_carriage("extract/3 glue", &measured, &form);
-    trace::trace_n("extract/4 rebase", form.vertices.len(), budget);
+    trace::trace("extract/4 rebase", trace::Wrote::Nothing, Some(budget));
     // 4. Rebase: w_j = t · w_i · t⁻¹ with t the relative placement, read on
     // the form's own faces. Named faces only; Frame is not a conjugator.
 
     rebase_named_faces(&mut form);
-    trace::trace("extract/5 unfold", budget);
+    trace::trace("extract/5 unfold", trace::Wrote::Nothing, Some(budget));
     // 5. Unfold grow-to-frame.
     if family.iter().all(|(a, b)| grows_to_frame(a, b)) {
         form.unfold(crate::transducer::sentence::Measure::Occupied);
@@ -1039,14 +1043,14 @@ pub fn extract_rule_with(
         return finish(form, scale, sections, &unreached_pairs);
     }
     trace::trace_carriage("extract/6 contact", &measured, &form);
-    trace::trace_n("extract/7 coherence", form.loops.len(), budget);
+    trace::trace("extract/7 coherence", trace::Wrote::Nothing, Some(budget));
     // 7. Coherence: tree gauge, else hold the loops.
     if !form.coheres() {
         if let Some(gamma) = form.solve_coboundary() {
             let _ = form.regauge(&gamma);
         }
     }
-    trace::trace("extract/8 finish", budget);
+    trace::trace("extract/8 finish", trace::Wrote::Nothing, Some(budget));
     finish(form, scale, sections, &unreached_pairs)
 }
 

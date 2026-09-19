@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# TIMELINE — D1's renderer: what each reader of one voice's stroke cost,
+# in order, from the journal and not from a model of it. Run by the
+# operator, owned by the repository.
+#
+# Usage: scripts/timeline UNIT [SINCE] [FAMILY]
+#        UNIT    a systemd --user unit (mycelium-client@4) or a file of
+#                journal/stderr lines (a soak run's own output)
+#        SINCE   journalctl's form, default -15m; ignored for a file
+#        FAMILY  four hex digits, e.g. 10d1 — one family instead of all
+#
+# THE GROUPING IS THE JOURNAL'S OWN ORDER. A voice writes `[tag] [h K]
+# family XXXX… N pairs` before it extracts and `  trace <reader> …` inside,
+# so the family and the stroke height a trace line belongs to are the last
+# ones written above it. Nothing is inferred and nothing is joined on a
+# clock.
+#
+# WHAT IS PRINTED PER READER: the seconds it entered at, the seconds it
+# held (to the next reader's entry), the budget it spent since the previous
+# line, and what it WROTE — a key of that prefix length, a typed demand, or
+# `-`. The `-` is rule 17's reading: a line that writes neither a
+# coordinate nor a demand is not reading anything, and it is shown beside
+# the cost so the two can be read together.
+#
+# The move that ate the stroke is the one with the largest held; it is
+# marked, so the answer is read off the render and not grepped for.
+set -uo pipefail
+
+UNIT="${1:-}"
+SINCE="${2:--15m}"
+WANT="${3:-}"
+
+if [ -z "$UNIT" ]; then
+  echo "usage: scripts/timeline UNIT [SINCE] [FAMILY]" >&2
+  exit 2
+fi
+
+if [ -f "$UNIT" ]; then
+  SRC="cat -- $UNIT"
+else
+  SRC="journalctl --user -u $UNIT --since $SINCE --no-pager -o cat"
+fi
+
+$SRC 2>/dev/null | awk -v want="$WANT" '
+function flush_group(   i, n, worst, wi, held, rn, rat, rheld, rsp, rwr, rc) {
+  if (nl == 0) return
+  if (want != "" && index(fam, want) == 0) { nl = 0; return }
+  # CONSECUTIVE RUNS OF ONE READER ARE ONE ROW. A reader entered four
+  # thousand times is one move of the stroke, and printing it four thousand
+  # times is a render that has to be grepped — which is the thing this
+  # script exists so the operator does not have to do. Order is kept: only
+  # ADJACENT repeats collapse, so a reader entered, left, and entered again
+  # is two rows and the shape of the stroke survives.
+  n = 0
+  for (i = 1; i <= nl; i++) {
+    held = (i < nl) ? (at[i+1] - at[i]) : 0
+    if (n > 0 && rn[n] == rd[i] && rwr[n] == wr[i]) {
+      rheld[n] += held
+      rc[n]++
+      if (sp[i] != "-") rsp[n] = (rsp[n] == "-" ? sp[i] : rsp[n] + sp[i])
+    } else {
+      n++
+      rn[n] = rd[i]; rat[n] = at[i]; rheld[n] = held; rwr[n] = wr[i]
+      rsp[n] = sp[i]; rc[n] = 1
+    }
+  }
+  printf "\n=== family %s  stroke %s  %s ===\n", (fam == "" ? "(none)" : fam), (hk == "" ? "-" : hk), note
+  printf "  %-28s %6s %9s %9s %8s  %s\n", "reader", "n", "at (s)", "held (s)", "spend", "wrote"
+  worst = -1; wi = 0
+  for (i = 1; i <= n; i++) if (rheld[i] > worst) { worst = rheld[i]; wi = i }
+  for (i = 1; i <= n; i++) {
+    printf "  %-28s %6d %9.3f %9.3f %8s  %s%s\n", rn[i], rc[i], rat[i], rheld[i], rsp[i], rwr[i], \
+      (i == wi && worst > 0 ? "   <== ate the stroke" : "")
+  }
+  nl = 0
+}
+# The stroke height and the family are the last ones written above a trace
+# line; both are read where the voice writes them.
+/\[h [0-9a-z]+\]/ { if (match($0, /\[h [0-9a-z]+\]/)) hk = substr($0, RSTART+3, RLENGTH-4) }
+/family [0-9a-f]+…/ {
+  flush_group()
+  # "family " is 7 chars and the ellipsis is one CHARACTER to gawk,
+  # whatever its byte length; the id is what is between them.
+  if (match($0, /family [0-9a-f]+…/)) fam = substr($0, RSTART+7, RLENGTH-8)
+  note = ""
+  if (match($0, /[0-9]+ pairs/)) note = substr($0, RSTART, RLENGTH)
+  next
+}
+/^  soak task / { flush_group(); fam = $3; note = $4 " " $5; next }
+/^  trace / {
+  # trace <reader...> <key N|demand|-> spend <n|-> budget <r|-> t <s>
+  ti = 0
+  for (i = 1; i <= NF; i++) if ($i == "t") ti = i
+  if (ti == 0) next
+  secs = $(ti+1) + 0
+  bi = 0
+  for (i = 1; i <= NF; i++) if ($i == "budget") bi = i
+  si = 0
+  for (i = 1; i <= NF; i++) if ($i == "spend") si = i
+  if (bi == 0 || si == 0) next
+  # the reader is everything between "trace" and the wrote slot
+  wrote = ""
+  reader = ""
+  for (i = 2; i < si; i++) {
+    if ($i == "key" || $i == "demand" || $i == "-") { for (j = i; j < si; j++) wrote = wrote (wrote == "" ? "" : " ") $j; break }
+    reader = reader (reader == "" ? "" : " ") $i
+  }
+  nl++
+  rd[nl] = reader; at[nl] = secs; sp[nl] = $(si+1); wr[nl] = wrote
+  next
+}
+END { flush_group() }
+'

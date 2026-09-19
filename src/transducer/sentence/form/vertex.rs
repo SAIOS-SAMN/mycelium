@@ -82,7 +82,7 @@ impl Vertex {
                     let Vertex::Rebased { by, of, .. } = at else {
                         return at.word_in(form);
                     };
-                    crate::transducer::family::trace::trace_at("word_in/rebased by", *by as usize);
+                    crate::transducer::family::trace::trace("word_in/rebased by", crate::transducer::family::trace::Wrote::Key(&crate::transducer::sentence::vertex_ix_key(*by)), None);
                     if seen.contains(&vertex_ix_key(*of)) {
                         return Some(Word::identity());
                     }

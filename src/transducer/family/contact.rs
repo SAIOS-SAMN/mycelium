@@ -81,7 +81,7 @@ pub(crate) fn contact_named_vertices(
     sections: &mut Keyed<Keyed<()>>,
     budget: &mut Budget,
 ) -> bool {
-    trace::trace_n("extract/6 contact", form.vertices.len(), budget);
+    trace::trace("extract/6 contact", trace::Wrote::Nothing, Some(budget));
     let ring = one_ring(family);
     let mut touched = false;
     for (tk, ()) in varying.place_varies.scoped() {

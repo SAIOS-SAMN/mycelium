@@ -6,6 +6,7 @@
 //! `extract_rule_with` calls it between the glue and the unfold.
 
 use super::*;
+use crate::transducer::sentence::vertex_ix_key;
 
 /// Step 4 of chapter 21: along each named face (i, j) with `w_i` not the
 /// identity, `j` is `i` read in `j`'s frame when, on every pair of the
@@ -40,8 +41,6 @@ pub(crate) fn rebase_named_faces(form: &mut Form) {
         if di.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
             continue;
         }
-        trace::trace_at("extract/4 face-i", i);
-        trace::trace_at("extract/4 face-j", j);
         let Some(tc_i) = transport_class(&form.vertices[i]) else {
             continue;
         };
@@ -98,10 +97,10 @@ pub(crate) fn rebase_named_faces(form: &mut Form) {
             .is_some_and(|rs| !rs.is_empty() && rs.scoped().all(|(_, (_, r))| element::same_versor(r, &relative)));
         if constant {
             let _ = form.rebase(face.i, face.j, relative, fi as u16);
-            trace::trace_at("extract/4 rebased", j);
+            trace::trace("extract/4 rebased", trace::Wrote::Key(&vertex_ix_key(face.j)), None);
         }
     }
-    trace::trace_at("extract/4 reindex", form.vertices.len());
+    trace::trace("extract/4 reindex", trace::Wrote::Nothing, None);
     form.reindex();
     rederive_star_faces(form);
 }
@@ -118,7 +117,7 @@ pub(crate) fn rederive_star_faces(form: &mut Form) {
             continue;
         };
         let (i, j) = (face.i, face.j);
-        trace::trace_at("extract/4 star-face", fi as usize);
+        trace::trace("extract/4 star-face", trace::Wrote::Key(&vertex_ix_key(j)), None);
         // THE RE-DERIVATION KEEPS THE MEMBER PAIRS THE FACE ALREADY CARRIES
         // and keeps their edges: the rebase moved the vertices' placements, so
         // the carriage at each pair is stale, but WHICH pairs this face relates
@@ -149,6 +148,5 @@ pub(crate) fn rederive_star_faces(form: &mut Form) {
             form.faces[fi as usize].word = word;
             form.faces[fi as usize].at = at;
         }
-        trace::trace_at("extract/4 star-face-done", fi as usize);
     }
 }

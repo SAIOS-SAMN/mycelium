@@ -17,6 +17,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 mod delta;
 mod ledger;
 mod mint;
+mod regime;
 
 use mycelium::client::sdk::Epigenome;
 use mycelium::transducer::family::{extract_rule_with, mint_sentence};
@@ -124,6 +125,31 @@ fn main() {
                     std::process::exit(1);
                 }
             },
+        }
+        return;
+    }
+    // D1's standing reading: a mind stood on a slice, then ONE named
+    // family pulled under the voice's own budget, the pull and the mint
+    // timed apart. `--regime DIR NAME [SLICE]`, slice 60 by default.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--regime") {
+        let (Some(dir), Some(name)) = (argv.get(1), argv.get(2)) else {
+            eprintln!("  regime refused: name the corpus directory and the task");
+            std::process::exit(1);
+        };
+        let slice: usize = match argv.get(3).map(|n| n.parse::<usize>()) {
+            Some(Ok(n)) => n,
+            Some(Err(e)) => {
+                eprintln!("  regime refused: the slice count does not read: {e}");
+                std::process::exit(1);
+            }
+            None => 60,
+        };
+        match slice_names(dir, slice) {
+            Ok(names) => regime::report(dir, &names, name),
+            Err(e) => {
+                eprintln!("  regime refused: {e}");
+                std::process::exit(1);
+            }
         }
         return;
     }
