@@ -12,7 +12,7 @@
 use super::cover::cover_deformation;
 pub use super::finish::assignment_key;
 use super::finish::finish;
-use super::pair::{delta_links, meet_edge, Covered, Scenery};
+use super::pair::{delta_links, Covered, Scenery};
 use super::perceive::{
     at_frame_zero, demand_vertex, differing_axes, frame_of_body, perceive_at, support_at,
     word_or_demand_on_chart, Demanded, EdgeTally,
@@ -609,6 +609,79 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             }
         }
     };
+    // 53.6 — A COVER'S CARRIED PIECES ARE GROUPED BY TRANSPORT CLASS,
+    // exactly as a chart's quotients are: ONE Word vertex per class present
+    // in the cover, one member per chart the class carries a piece on.
+    //
+    // Each piece was its own vertex. That is what made a form of thousands:
+    // `484b58aa` read 2 055 vertices, 11 167 faces and 3 986 loops, and
+    // every carrier the engine has is multiplied by that count — the
+    // address, the indexes, the genome entry, the resident hold. A piece is
+    // not an idea; the CLASS that carries the pieces is, and 21 step 1
+    // already says two bodies carried by one transport are one vertex.
+    //
+    // MULTIPLICITY IS A DEMAND, NOT A SECOND VERTEX (50.5, item 2 of the
+    // ruling). Where one class carries two pieces on one chart by two
+    // DIFFERENT carriages, there is no single member to write; that is the
+    // chart's multiplicity and it leaves as a `Source` on that chart, never
+    // as two vertices and never as two members.
+    let mut piece_seen: Keyed<Vec<u8>> = Keyed::new();
+    for c in &covers {
+        let frame = c.frame as u16;
+        for (_, (v, _versor, codomain)) in c.cover.carried.scoped() {
+            let (Some(chart), Some(tc)) = (v.face_chart(), transport_class(v)) else { continue };
+            let Some(acting) = v.acting_on(&chart) else { continue };
+            let Vertex::Word { address, derivation, .. } = v else { continue };
+            let support: Vec<(i64, i64, i64)> =
+                codomain.iter().map(|&(r, cc, _)| (r, cc, c.frame)).collect();
+            // One class, one chart, two carriages: the multiplicity.
+            let mut mk = tc.key();
+            crate::transducer::address::put_bytes(&mut mk, chart.key().as_bytes());
+            let mut carriage = Vec::new();
+            acting.carriage.put_canonical(&mut carriage);
+            match piece_seen.get(&mk) {
+                Some(held) if held != &carriage => {
+                    let links: Vec<Link> =
+                        support.iter().map(|&(r, cc, _)| (r, cc, 0u8, 0u8)).collect();
+                    demanded.push((Demand::Source { multiplicity: 2 }, chart.clone(), links));
+                    continue;
+                }
+                Some(_) => {}
+                None => {
+                    piece_seen.insert(&mk, carriage);
+                }
+            }
+            let member = Member {
+                chart: chart.clone(),
+                acting: acting.clone(),
+                frames: vec![frame],
+                at: Vec::new(),
+                support,
+                union: None,
+                section_words: Vec::new(),
+            };
+            match reads.get_mut(&tc.key()) {
+                Some(read) => {
+                    if address < &read.address {
+                        read.address = address.clone();
+                        read.derivation = derivation.clone();
+                    }
+                    read.members.push(member);
+                }
+                None => {
+                    reads.insert(
+                        tc.key(),
+                        ClassRead {
+                            address: address.clone(),
+                            derivation: derivation.clone(),
+                            members: vec![member],
+                        },
+                    );
+                }
+            }
+        }
+    }
+
     for (_, read) in reads.scoped() {
         let mut acts: Keyed<Acting> = Keyed::new();
         for m in &read.members {
@@ -635,23 +708,6 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         }
     }
 
-    // THE COVER'S PIECES ARE VERTICES (50.8, L23c), at the frame the cover
-    // was read on; their meets are faces below.
-    let mut cover_vertex: Keyed<u16> = Keyed::new();
-    let mut owner: Keyed<Keyed<()>> = Keyed::new();
-    for (ci, c) in covers.iter().enumerate() {
-        let frame = c.frame as u16;
-        for (key, (v, _versor, codomain)) in c.cover.carried.scoped() {
-            let Some(chart) = v.face_chart() else { continue };
-            let support: Vec<(i64, i64, i64)> = codomain.iter().map(|&(r, cc, _)| (r, cc, c.frame)).collect();
-            let ix = scenery.place(v.clone(), support);
-            claim_member(&scenery, &mut member_frames, &mut member_of, ix, &chart, &[frame]);
-            cover_vertex.insert(&key, ix);
-            let mut set = Keyed::new();
-            set.insert(ci.to_le_bytes(), ());
-            owner.insert(vertex_ix_key(ix), set);
-        }
-    }
     // THE SECTIONS: a member claimed on fewer frames than the family
     // reached is filed at its own key, and a class claimed on fewer at its
     // — the union over every vertex of the class.
@@ -685,127 +741,14 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     }
     let mut form = Form { vertices: scenery.vertices.clone(), ..Form::default() };
     trace::trace("percept/3 meets", trace::Wrote::Nothing, Some(budget));
-    // THE COVER'S MEETS ARE FACES carrying the edge between the two pieces'
-    // own frames (50.3); a meet with no transport gets no face (13.9).
+    // 53.6 items 3 and 4, in their own organ: the pieces' form is built,
+    // its loops are classified, and it is discarded. What comes back is
+    // what the SCENE keeps — the torsion each loop filed, awaiting a chord
+    // this form can name, and the classes standing per cover.
     let mut edges = EdgeTally::default();
-    for c in &covers {
-        for (mk, ()) in c.cover.meets.scoped() {
-            let Some((ka, kb)) = crate::transducer::family::pieces::meet_ends(&mk) else { continue };
-            let (Some(&i), Some(&j)) = (cover_vertex.get(ka), cover_vertex.get(kb)) else { continue };
-            let (Some(vi), Some(vj)) = (form.vertices.get(i as usize), form.vertices.get(j as usize)) else { continue };
-            let (Some(ci), Some(cj)) = (vi.face_chart(), vj.face_chart()) else { continue };
-            let edge = edges.take(match (c.cover.carried.get(ka), c.cover.carried.get(kb)) {
-                // A meet of two SECTIONS has one `Γ` and therefore one
-                // refusal — there is no coset to read it through here, so
-                // the single reading is carried as the one-member list the
-                // tally counts.
-                (Some((va, sa, _)), Some((vb, sb, _))) => {
-                    Some(meet_edge(va, sa, vb, sb).map_err(|e| vec![e]))
-                }
-                _ => None,
-            });
-            if edge.is_some() {
-                crate::transducer::family::cover::tally(|t| t.edges += 1);
-            }
-            let Some(word) = form.face_word(i, j) else { continue };
-            let Some(place) = form.face_place(i, &ci, j, &cj, edge) else { continue };
-            let mut at = Keyed::new();
-            at.insert(face_pair_key(&ci, &cj), place);
-            form.faces.push(FormFace { i, j, word, at, pairs: None });
-        }
-    }
+    let (meet_faces, pending_torsion, stood) =
+        crate::transducer::family::covered::classify_cover(&covers, &mut edges);
     trace::trace("percept/4 loops+classify", trace::Wrote::Nothing, Some(budget));
-    let meet_faces = form.faces.len();
-    form.loops = Form::loops_of(&form.faces, &form.vertices);
-    // EACH LOOP OVER CARRIED PIECES, CLASSIFIED ONCE (50.8 case 3), by the
-    // one classifier both organs use, on its edge holonomy per member path.
-    let mut stood: Keyed<Vec<crate::transducer::sentence::ClassVector>> = Keyed::new();
-    for lp in form.loops.clone() {
-        // THE LOOP'S COVER: the one cover that placed every vertex of it —
-        // a vertex two covers' pieces became is in both — and none where a
-        // vertex belongs to no cover or the vertices to different ones.
-        let mut common: Option<Keyed<()>> = None;
-        for v in &lp.vertices {
-            let Some(set) = owner.get(&vertex_ix_key(*v)) else {
-                common = None;
-                break;
-            };
-            common = Some(match common {
-                None => set.clone(),
-                Some(held) => {
-                    let mut meet = Keyed::new();
-                    for (k, ()) in held.scoped() {
-                        if set.contains(&k) {
-                            meet.insert(&k, ());
-                        }
-                    }
-                    meet
-                }
-            });
-        }
-        // PHASE B — THE LOOP BELONGS TO THE FORM, NOT TO ONE COVER.
-        //
-        // `owner` holds an entry only for a COVER PIECE, and each piece
-        // carries the singleton index of the `Covered { demand, cover,
-        // frame }` it came from. A loop reaching a word vertex or a demand
-        // vertex therefore met `owner.get(..) == None` and was dropped at
-        // `common`; a loop spanning two covers or two frames met an empty
-        // intersection and was dropped at `[ok]`. What passed both was a
-        // loop confined to ONE cover snapshot at ONE frame — a single
-        // coordinate patch, whose transitions were already solved
-        // consistent when the cover was read.
-        //
-        // Measured on that gate: 16 546 loops on 174 forms in ten minutes,
-        // 292 classified, and 292 of 292 FLAT. Curvature lives on the
-        // overlaps — `g_AB · g_BC · g_CA` around a cycle crossing charts —
-        // and the gate admitted only the interiors.
-        //
-        // The cover index is now read where it is USED and no longer
-        // gates the reading: every loop is classified and tallied, and a
-        // `Congruent` fill files its torsion by CLASS, which needs no
-        // cover. `stood` is keyed by cover index, so a loop with no single
-        // owner has no cover to be attributed to and is classified without
-        // one — the reading is taken, and the carrier that cannot hold it
-        // is not written with an invented index (rule 11).
-        let ci: Option<usize> = common.and_then(|c| {
-            let owners: Vec<Vec<u8>> = c.scoped().map(|(k, _)| k).collect();
-            match owners.as_slice() {
-                [ok] => <[u8; 8]>::try_from(ok.as_slice()).ok().map(usize::from_le_bytes),
-                _ => None,
-            }
-        });
-        let Some(es) = form.edge_holonomies(&lp) else { continue };
-        for (_, e) in es.scoped() {
-            let hue = crate::transducer::sentence::CycleType::of(&e.gauge);
-            let sigma = e.gauge.clone();
-            let fill = crate::transducer::cech::classify(&e.word.rotor(), &e.carriage, hue);
-            crate::transducer::family::cover::tally_loop(&fill);
-            match fill {
-                crate::transducer::cech::Fill::Congruent(_, g, ell) => {
-                    let Some(class) = g.class_key() else { continue };
-                    eprintln!("  simplex filled {:02x}{:02x}… class {ell}", class.as_bytes()[0], class.as_bytes()[1]);
-                    form.torsion.insert(class, crate::transducer::sentence::FiledLoop { sigma, period: ell, chord: lp.chord });
-                }
-                crate::transducer::cech::Fill::Class(kappa, _) => {
-                    // A standing class is filed under the cover it stands
-                    // on. An interface loop stands on no single cover:
-                    // it is classified and counted, and no cover is
-                    // invented to file it under.
-                    if let Some(ci) = ci {
-                        let k = ci.to_le_bytes();
-                        match stood.get_mut(&k) {
-                            Some(v) => v.push(*kappa),
-                            None => {
-                                stood.insert(k, vec![*kappa]);
-                            }
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-    }
-    trace::trace("percept/5 demands", trace::Wrote::Nothing, Some(budget));
     // THE DEMANDS, one vertex per (kind, chart) (50.5), in key order. A
     // deformation dissolves when every lamina of both bodies is carried AND
     // no loop over its pieces stands (50.8).
@@ -900,6 +843,35 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     form.loops = Form::loops_of(&form.faces, &form.vertices);
     form.hue_maps = hue_maps;
     form.reindex();
+    // 53.6 item 4 — THE COVER'S FILED LOOPS TAKE A CHORD OF THE SCENE.
+    // Each was classified inside the cover; its chord there indexed the
+    // pieces' own form. Here it takes the face between the two CLASS
+    // vertices its ends belong to, which is a coordinate this form has. A
+    // loop whose classes the scene relates by no face is NOT filed: there
+    // is no chord to name and none is invented (rule 11).
+    for (class, mut filed, ends) in pending_torsion {
+        let ixs: Vec<u16> = ends
+            .iter()
+            .filter_map(|tc| form.by_transport.get(&tc.key()))
+            // A class stands at one or more vertices; the loop's end is
+            // the class, so any vertex of it names the same class and the
+            // slice pattern reads one rather than choosing among them.
+            .filter_map(|on| match on.as_slice() {
+                [ix, ..] => Some(*ix),
+                [] => None,
+            })
+            .collect();
+        let chord = match ixs.as_slice() {
+            [a, b, ..] => form.faces.iter().position(|f| {
+                (f.i == *a && f.j == *b) || (f.i == *b && f.j == *a)
+            }),
+            _ => None,
+        };
+        if let Some(c) = chord {
+            filed.chord = c as u16;
+            form.torsion.insert(class, filed);
+        }
+    }
     // READ WHETHER OR NOT ANYTHING CLOSED. It was gated on
     // `!form.loops.is_empty() || meet_faces > 0`, so the one row that says
     // why a form is empty was printed only when the form was not empty:

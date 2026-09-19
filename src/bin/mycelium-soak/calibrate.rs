@@ -40,6 +40,35 @@ fn ratio(walk: i128, alloc: i128) -> String {
     }
 }
 
+/// The corpus file whose registry task id begins with `want` — the map the
+/// fleet's journal needs, since a voice names a family by its registry id
+/// and the census must read that family's own file.
+pub(crate) fn find_id(dir: &str, names: &[String], want: &str) {
+    for file in names {
+        let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
+        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Some(id) = mycelium::server::registry::task_id(&task) else { continue };
+        let hx: String = id.as_bytes().iter().take(2).map(|b| format!("{b:02x}")).collect();
+        if hx != want {
+            continue;
+        }
+        // And its form, which is what the census is for: the reading is
+        // the family's own size, not the id.
+        let epi = mycelium::client::sdk::Epigenome::new();
+        let mut physics = mycelium::physics::Physics::default();
+        let mut b = physics.stroke_n(extraction_spend(&task.train));
+        match extract_rule_with(&task.train, &epi, &mut b) {
+            Some(r) => println!(
+                "  id {hx} = {file}: {} vertices {} faces {} loops",
+                r.form.vertices.len(),
+                r.form.faces.len(),
+                r.form.loops.len()
+            ),
+            None => println!("  id {hx} = {file}: withheld"),
+        }
+    }
+}
+
 pub(crate) fn report(dir: &str, name: &str) {
     // ── ONE VERSOR, a thousand times. A single one is smaller than the
     // allocator's granularity; a thousand held at once is not, and the

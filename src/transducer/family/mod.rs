@@ -8,6 +8,7 @@
 pub mod contact;
 pub mod correspondence;
 pub mod cover;
+pub mod covered;
 pub mod cursor;
 pub mod deflation;
 pub mod derivation;

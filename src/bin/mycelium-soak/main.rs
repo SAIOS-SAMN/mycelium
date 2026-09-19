@@ -159,6 +159,20 @@ fn main() {
         return;
     }
     // Z10's calibration: the walk's arithmetic against the allocator's.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--find-id") {
+        let (Some(dir), Some(want)) = (argv.get(1), argv.get(2)) else {
+            eprintln!("  find-id refused: name the corpus directory and the id prefix");
+            std::process::exit(1);
+        };
+        match slice_names(dir, usize::MAX) {
+            Ok(names) => calibrate::find_id(dir, &names, want),
+            Err(e) => {
+                eprintln!("  find-id refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--calibrate") {
         let (Some(dir), Some(name)) = (argv.get(1), argv.get(2)) else {
             eprintln!("  calibrate refused: name the corpus directory and the task");

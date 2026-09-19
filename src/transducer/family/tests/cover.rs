@@ -126,20 +126,34 @@ fn measured(a: &Grid, b: &Grid) -> crate::transducer::sentence::Form {
     scene_form(&NoCrystal, &mut budget, a, b).expect("a cover that runs to its end")
 }
 
-/// THE CARRIED PIECES ARE VERTICES OF THE FORM (L23c). Before this, a
-/// deformation's form held a frame and a demand and nothing else: the
-/// cover's carriages were written to `cover.carried` and read by a count.
+/// 53.6 — THE CARRIED PIECES ARE GROUPED BY TRANSPORT CLASS, and the CLASS
+/// is the vertex.
+///
+/// THIS TEST ASSERTED FOUR AND ITS CLAIM IS FALSE UNDER THE RULING. It was
+/// `the_carried_pieces_are_word_vertices_of_the_form`, and it read four
+/// word vertices for the four bodies this cover carries. A piece is a
+/// reading inside a cover, not an idea the scene holds; 21 step 1 already
+/// says two bodies carried by ONE transport are one vertex, and a cover's
+/// pieces are grouped exactly as a chart's quotients are.
+///
+/// What is measured now is that the four pieces, all carried by one
+/// transport, are ONE vertex with a member per chart — and the reading
+/// that matters beside it is still the old one's: no versor carries the
+/// composite onto its image, so this vertex came from the cover and not
+/// from a whole-body quotient.
 #[test]
-fn the_carried_pieces_are_word_vertices_of_the_form() {
+fn a_covers_pieces_are_one_vertex_per_transport_class() {
     let (a, b) = four_bodies();
     let f = measured(&a, &b);
-    let words = f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
-    assert_eq!(words, 4, "the four bodies the cover carried are four word vertices");
-    // No versor carries the composite onto its image, so every one of them
-    // came from the cover and not from a whole-body quotient.
+    let words: Vec<&Vertex> =
+        f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).collect();
+    assert_eq!(words.len(), 1, "four pieces of one transport class are one vertex");
+    let [w] = words.as_slice() else { panic!("one vertex") };
+    let members = w.acts().map_or(0, crate::network::nerve::Keyed::len);
+    assert!(members >= 1, "with a member per chart it carries a piece on: {members}");
     assert!(
         carriage(&composite(&a), &composite(&b)).is_none(),
-        "the composite does not carry whole; these vertices are the cover's"
+        "the composite does not carry whole; this vertex is the cover's"
     );
 }
 
@@ -198,15 +212,23 @@ fn a_meets_address_gives_back_its_two_ends() {
     }
 }
 
-/// THE MEETS ARE FACES, AND THE FACES MAKE LOOPS. A meet is a 1-simplex of
-/// the nerve; the transport across it is `face_of`'s to compute from the
-/// two vertices, and a cycle of those faces is what carries a holonomy.
+/// 53.6 item 3 — THE MEETS ARE FACES OF THE PIECES' OWN FORM, NOT OF THE
+/// SCENE'S.
+///
+/// The old claim was that a cover's meets become faces of the scene's form
+/// and close into its loops. They do not any more: between the CLASS
+/// vertices a meet is incidence the form already builds on supports, and
+/// the pieces' meets are faces of a form built inside the cover and
+/// discarded once its loops are classified.
+///
+/// What survives, and is asserted here, is that the scene's form still has
+/// faces and that every loop it does stand names a live chord over at
+/// least two vertices — the structural claim, on the form the scene keeps.
 #[test]
-fn the_meets_are_faces_and_the_faces_close_into_loops() {
+fn the_scenes_faces_are_its_own_incidence_not_the_covers_meets() {
     let (a, b) = four_bodies();
     let f = measured(&a, &b);
-    assert!(!f.faces.is_empty(), "the cover's meets became faces");
-    assert!(!f.loops.is_empty(), "and the faces close into cycles");
+    assert!(!f.faces.is_empty(), "the scene's form carries its own incidence");
     for lp in &f.loops {
         assert!(
             f.faces.get(lp.chord as usize).is_some(),
@@ -282,15 +304,20 @@ fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
             flat += 1;
         }
     }
-    // THE CLAIM, not the count: every loop this cover stands is flat on its
-    // words and evaluated on its edges, so nothing is filed. The number of
-    // cycles is not the claim and moved when algebraically trivial ones
-    // stopped standing — one of these three enclosed nothing at all.
-    assert!(!f.loops.is_empty(), "the cover stands loops");
+    // THE CLAIM, not the count: nothing is filed, because every loop this
+    // cover stands is flat.
+    //
+    // 53.6 MOVED WHERE THE COVER'S LOOPS LIVE and the old assertion —
+    // `!f.loops.is_empty()`, "the cover stands loops" — is false on the
+    // scene's form now. A cover's loops are classified inside the cover, on
+    // a form of its pieces that is discarded; the scene's form walks loops
+    // among its CLASS vertices only. So the cover's flatness is read where
+    // it lands, in `f.torsion`, and the loops walked above are the scene's
+    // own — flat and evaluated, which is still asserted.
     assert_eq!(
         (flat, unevaluated),
         (f.loops.len(), 0),
-        "the cover's loops are flat, so nothing is filed"
+        "the scene's loops are flat and every one is evaluated"
     );
     assert!(
         f.torsion.is_empty(),
@@ -563,4 +590,42 @@ fn a_pure_coboundary_form_yields_no_evaluated_loop() {
         f.torsion.scoped().next().is_none(),
         "the voice files nothing on a form it evaluated no loop of"
     );
+}
+
+/// 53.6's DoD — A FORM'S WORD VERTICES ARE BOUNDED BY ITS TRANSPORT
+/// CLASSES, not by the pieces a cover cut.
+///
+/// The bound is the claim: one Word vertex per transport class present,
+/// times the readings, plus one per demand kind and chart. A cover of `n`
+/// pieces used to be `n` vertices, so the form grew with the cut rather
+/// than with what the cut FOUND — `484b58aa` read 2 055 vertices, 11 167
+/// faces and 3 986 loops, and every carrier the engine has is multiplied
+/// by that count.
+///
+/// This is the bound asked of the form directly: no two Word vertices
+/// share a transport class. A count would not say it — four pieces of one
+/// class reading "one" is the same number as one piece reading "one" — so
+/// the classes are compared coordinatewise.
+#[test]
+fn a_forms_word_vertices_are_bounded_by_its_transport_classes() {
+    let (a, b) = four_bodies();
+    let f = measured(&a, &b);
+    let classes: Vec<Vec<u8>> = f
+        .vertices
+        .iter()
+        .filter(|v| matches!(v, Vertex::Word { .. }))
+        .filter_map(crate::transducer::family::transport_class)
+        .map(|tc| tc.key())
+        .collect();
+    let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for k in &classes {
+        assert!(
+            !seen.contains(k),
+            "two Word vertices of one transport class: the cover's pieces are not grouped"
+        );
+        seen.insert(k, ());
+    }
+    // And every Word vertex HAS a class, or the bound names nothing.
+    let words = f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
+    assert_eq!(classes.len(), words, "every word vertex is bounded by a class it carries");
 }
