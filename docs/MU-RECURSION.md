@@ -8993,6 +8993,38 @@ of one chart, and the tape carries no per-chart placement. This is what
 makes a chart's rule general enough to be worth extracting: one citation
 speaks every chart of a banded scene.
 
+### 53.6 A form's vertices are its charts, never its pieces (ruled 2026-09-19)
+
+On the operator's word, against the fleet reading at dac0b89: a 25×25
+scene of three frames arriving as a form of 2 899 vertices, 12 011 faces
+and 971 loops is not a large form, it is an enumeration of the scene's
+bodies wearing a form's carriers, and every reader that walks it is
+brute force by construction. Nothing a perception produces may be
+proportional to the laminae or the pieces of a scene; it is proportional
+to the scene's charts.
+
+A form's word vertices are the quotients of its charts (52.5 item 2), one
+per transport class acting on the charts it acts on, and its demand
+vertices are one per (kind, chart) (50.5). A cover's pieces are not
+vertices of the family's form. A cover is what one chart's quotient
+refused, and it is carried as **one vertex per cover** — the deformation
+on that chart — whose nerve, meets and filed classes are the cover's own
+content, held below that vertex in the chart's fiber and reached by key
+when the form is spoken or replayed. The loops the form walks are the
+loops among its charts; the loops among a cover's pieces are classified
+once inside the cover and filed as torsion on the cover's vertex (50.8
+case 3), never lifted to the form. Pieces correspond across frames by the
+chart coordinate along `e₃` (51.3, 52.5 reading 1), so a piece at frame k
+and its image at frame k+1 are one fiber, not two vertices.
+
+The bound is therefore structural and is written as a test, not a limit:
+the number of word vertices of a form does not exceed the number of
+charts of the scene times the number of readings that cut it, plus one
+vertex per cover and one per demand kind and chart. On `1d0a4b61` that is
+tens, and a form of thousands is refused by the claim. This is P7's
+ruling 1 landed at the form rather than at the index, and it is what the
+cut of 53.1 cuts.
+
 ### 53.5 Binding
 
 ```
