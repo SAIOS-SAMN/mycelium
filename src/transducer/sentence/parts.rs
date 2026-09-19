@@ -83,6 +83,13 @@ pub struct TapeParts {
     pub loops: usize,
     /// The A5 remainder the form carries.
     pub remainder: usize,
+    /// THE DEMAND VERTICES' BODIES (50.5): eighteen bytes a link, and the
+    /// demand's kind. Restructuring the address accounting dropped these
+    /// and `rest` went to 53% — which is what the field is for.
+    pub demands: usize,
+    /// What a Glued vertex carries besides its address: the magnitude it
+    /// was glued at, its depth, and its placement word.
+    pub glue_body: usize,
     /// The certified pivots the crystallization rests on (A20), which the
     /// tape carries WHOLE. This was the reading's first large gap: 35% of
     /// the tape sat in `rest` until the certificates were named.
@@ -175,10 +182,15 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
                     p.charts += 2 + a.chart.key().as_bytes().len();
                 }
             }
-            Vertex::Glued { chart, .. } => {
+            Vertex::Glued { chart, placement, .. } => {
                 p.charts += 2 + chart.key().as_bytes().len();
+                // magnitude (four u64) and depth, then the placement word.
+                p.glue_body += 32 + 2 + bytes_of(|b| placement.to_bytes(b));
             }
-            Vertex::Demand { chart, .. } => p.charts += 2 + chart.key().as_bytes().len(),
+            Vertex::Demand { chart, kind, bodies } => {
+                p.charts += 2 + chart.key().as_bytes().len();
+                p.demands += bytes_of(|b| kind.to_bytes(b)) + 4 + bodies.len() * 18;
+            }
             Vertex::Frame | Vertex::Unfolded { .. } => {}
         }
     }
@@ -261,6 +273,8 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
         + p.torsion
         + p.loops
         + p.remainder
+        + p.demands
+        + p.glue_body
         + p.certs
         + p.axes;
     // A component this reading does not name shows as a positive gap; one
@@ -279,7 +293,7 @@ impl TapeParts {
             "z12 word {id}… seq {seq} verts {verts} \
              tape {} = table {} ords {} (per-vertex {}) glued {}/{} rotor {} cites {}/{} carriage {} gauge {} \
              charts {} faces {} sections {} torsion {} loops {} rem {} \
-             certs {} axes {} frame {} rest {} | key {} cited {}",
+             certs {} axes {} demands {} glue {} frame {} rest {} | key {} cited {}",
             self.total,
             self.table,
             self.addr_ord,
@@ -299,6 +313,8 @@ impl TapeParts {
             self.remainder,
             self.certs,
             self.axes,
+            self.demands,
+            self.glue_body,
             self.frame,
             self.rest,
             self.key_total,
