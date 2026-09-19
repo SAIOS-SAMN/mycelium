@@ -1070,6 +1070,71 @@ the same night ("fold this into your current implementation"), R1 and R2
 before R3 because the refusals the contraction does not act on are what
 the held forms accrue from, and R3's reading before its fix (§8.1).
 
+## Stage 19 — coordinates and the cut (ruled 2026-09-19, the operator's word on the coordinator's console)
+
+Two rulings, one stage. The first: a reader takes a stratum and returns a
+stratum or a typed demand, and never a list to walk or a form to hold — rule
+17 and checklist (o), recorded at 513004d with 3.10's hearing ruling: the
+harmonics eye writes the first coordinate of every heard bit, and a heard
+abstract is opened along the axes its class vector occupies (law 10), never
+walked back down the tape. The second, from the auditor's reading of
+2026-09-19: a 25×25 scene arriving as one form of 712 vertices is not a cost
+to optimise but the absence of a cut. The decomposition organ of the parent
+tree — a scene covered by charts under a reading, each chart's rule
+extracted small and recomposed, a chart with no rule handed back as a
+routable demand — never crossed the fork; 948 of 1 120 corpus tasks have a
+side above the old floor and go in whole. The cut lands here as coordinates,
+not as a port: a chart is its support written out (A21, `pieces::piece_key`),
+a cover is a `Keyed` of charts, and the recursion ends where the cover's key
+is the scene's own key — an identity of coordinates, never a count or a
+floor.
+
+Refused on sight from the parent's construction, each with what is written
+instead: `FRAGMENT_FLOOR = 9` (rule 5 — the recursion ends at the identity
+above, the routing floor is the voice's drawable room); the first cover that
+addresses a demand (rules 4, 15 — every reading in roster order, every
+closing cover kept, incomparable covers held as a vortex); `wall_digest =
+blake3(chain)` (law 2, rule 6 — the chart's support written out, a prefix a
+stratum); a bounding box as `(i64, i64)` anywhere but the sensor boundary
+(law 11, (f′)); the parent's written recomposition map (the Čech complex
+and the alternating coboundary already built here are the recomposition).
+The readings are governed like the letters (law 6): a fixed roster, grown by
+the court on a probe receipt and never by a voice or a commit.
+
+Standing terms for every row: gates and tests will break, and a test whose
+claim is false under the ruling is rewritten with the claim named, never
+deleted while its claim holds (§3.7, §3.8); a gate that refuses a row's
+shape is reported with its line and changed in its own commit citing the
+ruling; no `#[allow]` without its reason, no `#[ignore]`, no new walker; a
+blocker is a fact with evidence and the row stands. Every landing carries
+the suite and gate lines and the fleet-regime reading of
+`training/1d0a4b61.json` (voice budget, mind stood on 60 tasks): the pull
+and the mint, before and after. Row ids here are `Z` for the coordinate
+rows and `K` for the cut; the implementor's `D0` of 513004d is Z0.
+
+| id | row | chapters | files | status | the observable that closes it |
+|---|---|---|---|---|---|
+| Z0 | **The ruling, recorded**: rule 17, checklist (o), 3.10's hearing ruling. | preamble, 3.10, §9 | docs | landed (513004d) | `grep 2026-09-19 MU-RECURSION.md` names rule 17, (o), 3.10 |
+| Z1 | **The instrument first (§8.1).** Every trace line carries the reader's name, the prefix length of the key it wrote or `demand`, the spend, and the wall clock read once at the line and never by a kernel; `scripts/timeline` renders, per family and per stroke, the moves in order with spend and seconds from the journal. Behaviour unchanged. | §8.1, rule 10 | `family/trace.rs`, `scripts/timeline` | in flight | the timeline of one voice's stroke over `1d0a4b61` names the move that ate the stroke without a grep |
+| Z2 | **The glue retracts once and cites by reference.** `Crystal::by_address` returns references on every impl; the glue pass collects its retractions and retracts once after the pass; one speech per (form, placement, frame). | 21 step 3, law 12, R7 owed | `family/extract.rs`, `family/mod.rs`, `epigenome/crystal.rs`, `sentence/chart.rs` | open | the `1d0a4b61` pull on a 30-form mind under 20 s and the mint under 10 s; `a_glue_pass_retracts_once_and_a_citation_is_never_cloned` |
+| K1 | **The scene cover, one reading: Bands.** A scene whose every input carries a uniform separator row or column is covered by the charts the separators bound; each chart is keyed by its support written out and the cover is a `Keyed` of them; the family is extracted per chart as the ordinary family of a small scene and the charts recomposed on the Čech complex by the alternating coboundary. The recursion ends where the cover's key is the scene's key. No floor, no constant, no bounding box past the sensor boundary. | 51.3, 13.9, A21, law 6, law 11 | `family/cover.rs` or a new `family/scene.rs`, `family/extract.rs`, `cech/` | open | on the 850 corpus tasks with a separator, extraction runs per chart and the `family form` line names the chart; `1d0a4b61`'s form is the charts' forms, none above 100 vertices; test `a_banded_scene_is_covered_by_its_charts_and_recomposed_by_the_coboundary` |
+| K2 | **The quantified citation.** A `Glued` vertex cites a form over a fiber — every chart of a reading — with its placement re-derived from the chart it is spoken on (law 12), never stored once for one placement; `speak` and the court's replay re-derive it per chart. | 26, law 12, 3.10 | `sentence/form/carrier.rs`, `sentence/chart.rs`, `family/speak.rs`, `court/verdict/replay.rs` | open | one citation speaks every chart of a banded scene; the tape carries no per-chart placement; test `a_citation_over_a_fiber_re_derives_its_placement_at_every_chart` |
+| K3 | **`Demand::Chart`, the first routable demand.** A chart under a reading with no rule leaves as `Demand::Chart { reading, chart, links }`, keyed by (reading, chart key); the registry dispatches it as a sub-problem another mind can take and the market prices it; deduplicated by its key, never by count. | 50.5, 24.3, 42.6 | `sentence/demand.rs`, `server/registry.rs`, `anastome/dialogue/demand.rs`, `sentence/tape.rs` (version byte spent in the final commit) | open | a voice hands back a chart it could not close and a second voice pulls it, read on the wire; every `REFUSE_*` the new kind adds has its test |
+| Z3 | **Loops carry their one walk.** `loops_of` builds one tree from the Frame and reads each chord's path by parent pointers; `Loop` carries `carried: Keyed<PathCarried>` derived at construction and every reader of a loop's class, holonomy, coherence or row reads it and walks nothing; not on the tape. | 12.2, 18.2, law 12 | `sentence/pivot/loops.rs`, `sentence/pivot/drive.rs`, `sentence/pivot/trial.rs`, `sentence/form/carrier.rs` | open | work counter: one `paths_carried` per loop per `loops_of`; the walk-counting tests in `pivot_loop.rs` rewritten to the new count with the claim |
+| Z4 | **A hold is a key.** `Contemplation` holds a form's address and the fiber it stands on, never a copy of the form; `on_body`, `on_class`, `working_word` hand out references. | 25, law 12, R6 | `bubble/contemplation.rs`, `bubble/idea.rs`, `epigenome/crystal.rs` | open | a voice's resident memory flat across ten pulls of `1d0a4b61` on the instrument; the `grew` task-arm lane under 50 MB per pull |
+| Z5 | **Hearing writes coordinates.** `hear_speech`, `hear_frame` and the harmonics `hear` file every decoded vertex, face and demand on the trie by its key at the moment of hearing; every reader after them takes the key or the `Held`, never a `Form` by value; a bit that cannot be written as a key leaves as a typed demand. | 3.10 as ruled, A21, law 12 | `server/cognition/book/speech.rs`, `blade/harmonics.rs`, `client/sdk/`, `server/cognition/` | open | no `Form` passed by value across an organ boundary in `server/cognition` or `client/sdk`, read as a type and not by a walker; the A21 property `decode(key) == object` runs on every heard kind |
+| K4 | **Charts as a Čech nerve, with RingShells.** The cover's charts are vertices of the nerve, their overlaps its simplices, and the agreement arm of `cech::` is load-bearing on the recomposition; the RingShells reading joins the roster behind a probe receipt. | 13.9, 14.8, law 6 | `cech/`, `family/scene.rs`, `court/` | open | a scene covered under two readings recomposes to one form address; the roster event is a court receipt |
+| Z6 | **Multi-axial deconstruction at hearing.** Every heard vertex, demand vertices through their witness rotor included, has its class vector read and its occupied axes filed at admission; the pivot is offered those axes on the next stroke. | law 10, 12.6, 3.10 as ruled | `sentence/pivot/words.rs`, `server/cognition/book/`, `client/sdk/epigenome/` | open | `crystal.on_axis` answers non-zero on the fleet where it answers 0 on 123 of 123 reads; the pivot loop discharges one held loop on the corpus, read on the wire |
+| Z7 | **Refraction is the response.** A reply to a heard sentence is rebuilt by `Transport::refract` from the congruent stratum and the heard key, never assembled from a walk of the form. | 3.10, 42.5 | `sentence/transport.rs`, `client/sdk/entity/`, `anastome/dialogue/` | open | a reply's address re-derives from the heard key and the refraction alone; the wire's `silent` cluster count falls on the readings |
+| K5 | **The rest of the roster**, each reading behind a probe receipt: Components, Lines, PeriodCells (the spectrum cut, integer frame ratios: 102 tasks), HueStrata. | law 6, 38.2 | `family/scene.rs`, `court/` | open | each reading's roster event is a receipt and its first cover on corpus is read on the wire |
+
+Order: Z0 · Z1 · Z2 · K1 · K2 · K3 · Z3 · Z4 · Z5 · K4 · Z6 · Z7 · K5. Z1
+before any fix so every later row lands with its reading; K1–K3 ahead of
+the coordinate hygiene rows because they are the first additive cognition
+since Y4 and they remove the shape Z3 optimises; Z4 stays ahead of Z5
+because the fleet's voices grow at 100 MB a minute on held forms and a
+reading taken on a dying voice is not a reading.
+
 ## Owed ledger (opened by the auditor, 2026-09-11)
 
 What a row marked landed or done still lacks against its own claim, in
