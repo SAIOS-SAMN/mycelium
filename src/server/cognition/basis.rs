@@ -229,8 +229,11 @@ impl Kernel {
         self.pending.get(addr).map(|(p, _)| p)
     }
 
-    pub(crate) fn live_slot(&self, addr: &[u8]) -> Option<usize> {
-        self.language.index.get(addr).copied()
+    /// WHETHER THE LIVE SNAPSHOT HOLDS A WORD AT THIS ADDRESS. It was
+    /// `live_slot -> Option<usize>` and every one of its four callers threw
+    /// the slot away and kept the `is_some`.
+    pub(crate) fn is_live(&self, addr: &[u8]) -> bool {
+        self.language.holds(addr)
     }
 
     pub(crate) fn index_word(&mut self, w: &Element) {

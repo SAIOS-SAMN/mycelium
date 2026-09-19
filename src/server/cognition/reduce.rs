@@ -82,8 +82,11 @@ pub fn rank_over(
     let reuse = prior.retire_gen == language.retire_gen && !prior.closure_is_empty();
     let mut moved: crate::network::nerve::Keyed<crate::transducer::stalk::Invariant> =
         crate::network::nerve::Keyed::new();
-    if reuse && prior.basis_gen != basis_gen && language.words.len() >= prior.basis_len {
-        for w in &language.words[prior.basis_len..] {
+    // THE WORDS ADDED SINCE, read off each word's own admission ordinal.
+    // It was `language.words[prior.basis_len..]` — a tail of a vector,
+    // which named different words the moment a retirement shifted it.
+    if reuse && prior.basis_gen != basis_gen {
+        for w in language.words_since(prior.basis_seq) {
             let inv = crate::transducer::stalk::invariant_of(w);
             moved.insert(inv.key(), inv);
         }
@@ -91,10 +94,13 @@ pub fn rank_over(
     let locate = |p: &Element| {
         crate::transducer::stalk::congruent_shaped(
             stalks,
-            |a| language.index.get(a).and_then(|&i| language.shape(i)),
+            |a| language.shape_at(a),
             p.sub(),
         )
-        .and_then(|(a, _)| language.index.get(&a).copied())
+        // THE BASE POINT IS THE COORDINATE the congruence landed on, which
+        // is what `congruent_shaped` already returns; it was converted to
+        // a slot here and the slot was what the rank stored.
+        .and_then(|(a, _)| language.holds(a.as_bytes()).then_some(a))
     };
     // THE MEASUREMENT IS OVER THE OPEN BOOK, which is what a rank is; the
     // carrier is `pending` and its whole content is the object. What keeps
@@ -121,7 +127,7 @@ pub fn rank_over(
                 };
                 invariants.insert(&addr, inv);
                 match prior.closure_of(&addr) {
-                    Some(c) => out.put_closure(&addr, *c),
+                    Some(c) => out.put_closure(&addr, c.clone()),
                     None => out.put_closure(&addr, locate(p)),
                 }
             }
@@ -141,7 +147,7 @@ pub fn rank_over(
     }
     out.invariants = invariants;
     out.basis_gen = basis_gen;
-    out.basis_len = language.words.len();
+    out.basis_seq = language.next_seq;
     out.retire_gen = language.retire_gen;
     out
 }

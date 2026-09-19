@@ -137,7 +137,8 @@ let w1 = crate::transducer::element::from_canonical(
 k.leak_unruled(w0);
 let first = k.language();
 assert_eq!(first.words.len(), 1);
-let p0 = std::sync::Arc::as_ptr(&first.words[0]);
+let w0_addr = first.words().next().expect("one word").address();
+let p0 = std::sync::Arc::as_ptr(&first.words.get(w0_addr.as_bytes()).expect("at its address").held);
 assert!(
     std::sync::Arc::ptr_eq(&first, &k.language()),
     "a stable language is shared by pointer"
@@ -146,7 +147,7 @@ k.leak_unruled(w1);
 let second = k.language();
 assert_eq!(second.words.len(), 2);
 assert_eq!(
-    std::sync::Arc::as_ptr(&second.words[0]),
+    std::sync::Arc::as_ptr(&second.words.get(w0_addr.as_bytes()).expect("still at its address").held),
     p0,
     "the first word is the same Arc, not a cloned element"
 );

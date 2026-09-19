@@ -75,62 +75,90 @@ pub enum NormalForm {
     Irreducible,
 }
 
+/// ONE WORD OF THE SNAPSHOT, AT ITS OWN COORDINATE.
+#[derive(Debug, Clone)]
+pub struct LanguageWord {
+    /// Its own Arc, so a snapshot shares pointers and never copies the
+    /// basis.
+    pub held: std::sync::Arc<crate::transducer::element::Held>,
+    /// Its shape, lifted once on first use and shared by every lookup over
+    /// this snapshot (a measurement memoized under the word it measures,
+    /// never persisted).
+    pub shape: std::sync::OnceLock<Option<crate::transducer::blade::Shape>>,
+    /// The admission ordinal. Content: WHEN a word entered the basis is not
+    /// readable off the word, and the rank's reuse read needs "added since".
+    pub seq: u64,
+}
+
 /// THE LANGUAGE SNAPSHOT: the held words and their atlas, immutable and
 /// shared by pointer with every reflex worker. Reduction, congruence, and
 /// quoting run over it with no lock held.
 #[derive(Debug, Clone, Default)]
 pub struct Language {
-    /// Shared snapshot: each word is its own Arc, so a snapshot shares
-    /// pointers and never copies the basis. The vector and the index are
-    /// owned so an admit MODIFIES this snapshot in place through
+    /// THE SNAPSHOT AT ITS COORDINATES. It was `Vec<Arc<Held>>` with a
+    /// parallel `Vec<OnceLock<..>>` of shapes and a `Keyed<usize>` index
+    /// beside them, and the comment on that index said "a coordinate read,
+    /// never a scan" — which it was not: it read a coordinate, produced an
+    /// OFFSET, and every caller immediately converted the offset back into
+    /// a word. `language_rebuild` states the defect plainly: it walks
+    /// `self.basis.scoped()`, which is ALREADY keyed by address, flattens
+    /// it into a vector, and rebuilds an index to undo the flattening.
+    ///
+    /// Owned, so an admit MODIFIES this snapshot in place through
     /// `Arc::make_mut` rather than building a new one beside it; a copy is
     /// paid once, and only when a reader is actually holding the old one.
-    pub words: Vec<std::sync::Arc<crate::transducer::element::Held>>,
+    pub words: crate::network::nerve::Keyed<LanguageWord>,
     pub stalks: std::sync::Arc<crate::transducer::stalk::Stalks>,
-    /// Each word's shape, lifted once on first use and shared by every
-    /// lookup over this snapshot (a measurement memoized, never persisted).
-    pub shapes: Vec<std::sync::OnceLock<Option<crate::transducer::blade::Shape>>>,
     /// The retirement generation of the basis this snapshot was taken at.
     pub retire_gen: u64,
-    /// Each word reached by its address — a coordinate read, never a scan.
-    pub index: crate::network::nerve::Keyed<usize>,
+    /// The next admission ordinal to hand out.
+    pub next_seq: u64,
 }
 
 impl Language {
-    pub fn get(&self, i: usize) -> Option<&Element> {
-        self.words.get(i).map(|w| w.element())
-    }
-
-    /// The held word at a slot: the element AND the form its tape decodes
-    /// to (L16), for a reader that needs the form.
-    pub fn held(&self, i: usize) -> Option<&crate::transducer::element::Held> {
-        self.words.get(i).map(|w| w.as_ref())
-    }
-
-    /// The shape of word `i`, lifted on first use.
-    pub fn shape(&self, i: usize) -> Option<&crate::transducer::blade::Shape> {
-        let slot = self.shapes.get(i)?;
-        slot.get_or_init(|| element::shape_of_chain(self.words[i].sub())).as_ref()
-    }
-
-    /// The index of the word at an address.
-    pub fn at(&self, addr: &[u8]) -> Option<usize> {
-        self.index.get(addr).copied()
-    }
-
-    /// THE WORD AT AN ADDRESS — the reading's own contract (law 2). The
-    /// storage here is still a `Vec` with a `Keyed<usize>` beside it, the
-    /// same duplicated-address defect the epigenome carried; it is named in
-    /// the ledger and is the next carrier to be keyed by its coordinate.
-    /// The reading no longer converts addresses to offsets and back, so
-    /// nothing downstream depends on the slot any more.
+    /// THE WORD AT AN ADDRESS — the reading's own contract (law 2).
     pub fn word_at(&self, addr: &[u8]) -> Option<&Element> {
-        self.get(self.at(addr)?)
+        self.words.get(addr).map(|w| w.held.element())
+    }
+
+    /// The held word at an address: the element AND the form its tape
+    /// decodes to (L16), for a reader that needs the form.
+    pub fn held_at(&self, addr: &[u8]) -> Option<&crate::transducer::element::Held> {
+        self.words.get(addr).map(|w| w.held.as_ref())
     }
 
     /// The shape of the word at an address, lifted on first use.
     pub fn shape_at(&self, addr: &[u8]) -> Option<&crate::transducer::blade::Shape> {
-        self.shape(self.at(addr)?)
+        let w = self.words.get(addr)?;
+        w.shape.get_or_init(|| element::shape_of_chain(w.held.sub())).as_ref()
+    }
+
+    /// Whether this snapshot holds a word at an address.
+    pub fn holds(&self, addr: &[u8]) -> bool {
+        self.words.contains(addr)
+    }
+
+    pub fn len(&self) -> usize {
+        self.words.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.words.is_empty()
+    }
+
+    /// Every word, in the trie's order — the addresses' own order, content.
+    pub fn words(&self) -> impl Iterator<Item = &crate::transducer::element::Held> {
+        self.words.scoped().map(|(_, w)| w.held.as_ref())
+    }
+
+    /// The words admitted at or after an ordinal — "added since", read off
+    /// each word's own admission and not off a length watermark.
+    pub fn words_since(&self, seq: u64) -> Vec<&crate::transducer::element::Held> {
+        self.words
+            .scoped()
+            .filter(|(_, w)| w.seq >= seq)
+            .map(|(_, w)| w.held.as_ref())
+            .collect()
     }
 }
 
@@ -181,15 +209,20 @@ pub struct MarketView {
 /// Identity is the listing address; there is no parallel Vec of positions.
 #[derive(Debug, Clone, Default)]
 pub struct Rank {
-    closure: crate::network::nerve::Keyed<Option<usize>>,
+    /// The base point of each listing, BY ITS COORDINATE. It was
+    /// `Option<usize>` — a slot — and `basis_len`/`retire_gen` were carried
+    /// beside it purely to notice when that slot had stopped naming its
+    /// word. An address does not go stale: it either resolves in the
+    /// snapshot being read or it does not.
+    closure: crate::network::nerve::Keyed<Option<crate::transducer::address::Address>>,
     /// Per listing, its moduli — the coordinate that says whether a word
     /// added since could have closed it.
     pub invariants: crate::network::nerve::Keyed<crate::transducer::stalk::Invariant>,
     /// The basis generation the closure was measured at.
     pub basis_gen: u64,
-    /// The basis length and retirement generation at measurement: with no
-    /// retirement since, every prior closure index still names its word.
-    pub basis_len: usize,
+    /// The admission ordinal the basis stood at when this rank was
+    /// measured — what "added since" is read against.
+    pub basis_seq: u64,
     pub retire_gen: u64,
     /// THE COHESION READING, CARRIED WHERE THE CLOSURE IS BOUND: listings
     /// with a base point in the language, and listings without one. Kept
@@ -206,10 +239,11 @@ impl Rank {
     /// Bind a listing's closure and keep the counts with it. The two are
     /// one fact written once (law 12): nothing else may touch `closure`,
     /// which is why it is private.
-    pub fn put_closure(&mut self, addr: &[u8], closed: Option<usize>) {
+    pub fn put_closure(&mut self, addr: &[u8], closed: Option<crate::transducer::address::Address>) {
         // A rebind carries its old reading out of the count first. A count
         // at zero holding an entry is a broken count and stays at zero,
         // which is `Keyed::remove`'s own treatment (rule 11: no floor).
+        let was_closed = closed.is_some();
         match self.closure.insert(addr, closed) {
             Some(Some(_)) => {
                 if let Some(n) = self.closed.checked_sub(1) {
@@ -223,15 +257,16 @@ impl Rank {
             }
             None => {}
         }
-        match closed {
-            Some(_) => self.closed += 1,
-            None => self.open += 1,
+        if was_closed {
+            self.closed += 1;
+        } else {
+            self.open += 1;
         }
     }
 
     /// One listing's base point: `Some(None)` is a listing measured and
     /// not closed, `None` a listing this reading does not hold at all.
-    pub fn closure_of(&self, addr: &[u8]) -> Option<&Option<usize>> {
+    pub fn closure_of(&self, addr: &[u8]) -> Option<&Option<crate::transducer::address::Address>> {
         self.closure.get(addr)
     }
 
@@ -250,7 +285,7 @@ impl Rank {
     }
 
     /// The closure map for the persist walk, which writes it whole.
-    pub fn closure_carrier(&self) -> &crate::network::nerve::Keyed<Option<usize>> {
+    pub fn closure_carrier(&self) -> &crate::network::nerve::Keyed<Option<crate::transducer::address::Address>> {
         &self.closure
     }
 }

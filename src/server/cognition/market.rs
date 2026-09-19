@@ -85,7 +85,7 @@ impl Kernel {
             // that the word is live and is not the candidate citing itself.
             // It used to be resolved to a slot here, which is the offset
             // round trip the reading no longer does.
-            self.live_slot(&c.addr).filter(|_| c.addr.as_bytes() != addr)?;
+            (self.is_live(&c.addr) && c.addr.as_bytes() != addr).then_some(())?;
             resolved.push(Cite {
                 word: c.addr.clone(),
                 transport: c.transport.clone(),

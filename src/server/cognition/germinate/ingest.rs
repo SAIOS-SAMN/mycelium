@@ -112,7 +112,7 @@ impl Kernel {
                     // terminal here, and the general path below runs.
                     let held = self.basis.get(addr);
                     if held.is_some_and(|h| h.substance().same_action(&s))
-                        && self.live_slot(addr).is_some()
+                        && self.is_live(addr)
                     {
                         return NormalForm::Decomposed(vec![
                             crate::transducer::address::Address::new(addr.to_vec()),
@@ -148,7 +148,7 @@ impl Kernel {
             if exclude.map(|e| e == addr.as_slice()) == Some(true) {
                 continue;
             }
-            if self.live_slot(&addr).is_none() {
+            if !self.is_live(&addr) {
                 continue;
             }
             if gen.substance().solution().is_none() {

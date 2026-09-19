@@ -1,6 +1,7 @@
 // 23.8 — THE LANGUAGE SNAPSHOT: the arc a reduction runs against with no
 // lock held, and the closure it is sealed at.
 
+use super::super::language::{Language, LanguageWord};
 use crate::cognition::*;
 use crate::transducer::element::Element;
 
@@ -56,54 +57,50 @@ impl Kernel {
     /// pointer slice and one new Arc; a retirement rebuilds. Never clones
     /// the whole basis of Elements.
     pub fn language(&mut self) -> std::sync::Arc<Language> {
-        if self.language_gen != self.basis_gen || self.language.words.len() != self.basis.len() {
+        if self.language_gen != self.basis_gen || self.language.len() != self.basis.len() {
             self.language_rebuild();
         }
         std::sync::Arc::clone(&self.language)
     }
 
-    pub(crate) fn language_from_words(
-        &self,
-        words: Vec<std::sync::Arc<crate::transducer::element::Held>>,
-        stalks: std::sync::Arc<crate::transducer::stalk::Stalks>,
-        index: crate::network::nerve::Keyed<usize>,
-    ) -> Language {
-        let shapes = (0..words.len()).map(|_| std::sync::OnceLock::new()).collect();
-        Language {
-            words,
-            stalks,
-            shapes,
-            retire_gen: self.retire_gen,
-            index,
-        }
-    }
-
+    /// THE SNAPSHOT IS THE BASIS AT ITS OWN COORDINATES. The basis is a
+    /// `Keyed` by address; this used to flatten it into a vector and build
+    /// an index to undo the flattening, plus a third vector of empty
+    /// `OnceLock`s to sit parallel to it.
     pub(crate) fn language_rebuild(&mut self) {
-        let mut words = Vec::new();
-        let mut index = crate::network::nerve::Keyed::new();
+        let mut words: crate::network::nerve::Keyed<LanguageWord> =
+            crate::network::nerve::Keyed::new();
+        let mut seq = 0u64;
         for (addr, w) in self.basis.scoped() {
-            index.insert(&addr, words.len());
-            words.push(std::sync::Arc::clone(w));
+            words.insert(
+                &addr,
+                LanguageWord {
+                    held: std::sync::Arc::clone(w),
+                    shape: std::sync::OnceLock::new(),
+                    seq,
+                },
+            );
+            seq = seq.saturating_add(1);
         }
-        let stalks = std::sync::Arc::clone(&self.stalks);
-        self.language = std::sync::Arc::new(self.language_from_words(words, stalks, index));
+        self.language = std::sync::Arc::new(Language {
+            words,
+            stalks: std::sync::Arc::clone(&self.stalks),
+            retire_gen: self.retire_gen,
+            next_seq: seq,
+        });
         self.language_gen = self.basis_gen;
     }
 
+    /// A word leaves the snapshot. It used to rebuild the vector, re-key
+    /// the whole index and discard every shape lifted so far, because a
+    /// removal renumbered everything after the hole.
     pub(crate) fn language_drop(&mut self, addr: &[u8]) {
-        let words: Vec<std::sync::Arc<crate::transducer::element::Held>> = self
-            .language
-            .words
-            .iter()
-            .filter(|w| w.address().as_bytes() != addr)
-            .cloned()
-            .collect();
-        let mut index = crate::network::nerve::Keyed::new();
-        for (i, w) in words.iter().enumerate() {
-            index.insert(w.address(), i);
-        }
         let stalks = std::sync::Arc::clone(&self.stalks);
-        self.language = std::sync::Arc::new(self.language_from_words(words, stalks, index));
+        let retire_gen = self.retire_gen;
+        let lang = std::sync::Arc::make_mut(&mut self.language);
+        lang.words.remove(addr);
+        lang.stalks = stalks;
+        lang.retire_gen = retire_gen;
         self.language_gen = self.basis_gen;
     }
 
@@ -131,20 +128,18 @@ impl Kernel {
         let lang = std::sync::Arc::make_mut(&mut self.language);
         lang.stalks = stalks;
         lang.retire_gen = retire_gen;
-        match lang.index.get(&addr).copied() {
-            Some(i) if i < lang.words.len() => {
-                // One vertex, one slot: the word at its address is replaced,
-                // and its lifted shape with it.
-                lang.words[i] = word;
-                lang.shapes[i] = std::sync::OnceLock::new();
+        // One vertex, one coordinate: a word already at this address is
+        // replaced with its lifted shape, keeping the ordinal it was
+        // admitted at; a new one takes the next ordinal.
+        let seq = match lang.words.get(&addr) {
+            Some(w) => w.seq,
+            None => {
+                let s = lang.next_seq;
+                lang.next_seq = lang.next_seq.saturating_add(1);
+                s
             }
-            _ => {
-                let i = lang.words.len();
-                lang.index.insert(&addr, i);
-                lang.words.push(word);
-                lang.shapes.push(std::sync::OnceLock::new());
-            }
-        }
+        };
+        lang.words.insert(&addr, LanguageWord { held: word, shape: std::sync::OnceLock::new(), seq });
         self.language_gen = self.basis_gen;
     }
 

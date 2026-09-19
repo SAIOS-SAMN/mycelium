@@ -215,7 +215,7 @@ impl Kernel {
     pub(crate) fn list_sentence(&mut self, word: &Element, voice: [u8; 32]) -> Outcome {
         let addr = word.address();
         let mag = word.magnitude();
-        if self.live_slot(&addr).is_some() {
+        if self.is_live(&addr) {
             return self.settle_use_of(voice, &addr, &mag);
         }
         if self.provisional.contains(&addr) {

@@ -189,29 +189,33 @@ impl Kernel {
             kernel.archive = archive;
             // The prior measurement, continued incrementally (never read as
             // current: its generations are unknowable here).
-            tag(b, pos, b"RNK1")?;
+            tag(b, pos, b"RNK2")?;
             {
-                let basis_len = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?) as usize;
+                let basis_seq = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                 *pos += 8;
                 let (n, sec_end) = section(b, pos)?;
                 let start = *pos;
                 let mut rank = Rank::default();
                 rank.basis_gen = u64::MAX;
-                rank.basis_len = basis_len;
+                rank.basis_seq = basis_seq;
                 rank.retire_gen = kernel.retire_gen;
                 for _ in 0..n {
                     let addr = Address::from(crate::snapshot::take_key(b, pos)?);
-                    let closed = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                    *pos += 8;
+                    let closed = crate::snapshot::take_key(b, pos)?;
                     let m = read_u64(b, pos)?;
                     fits(b, pos, m)?;
                     let bytes = b.get(*pos..*pos + m)?;
                     *pos += m;
                     let inv = crate::transducer::stalk::Invariant::from_key(bytes)?;
-                    rank.put_closure(&addr, (closed != u64::MAX).then_some(closed as usize));
+                    // An empty key is the absent closure; a non-empty one is
+                    // the base point's own coordinate.
+                    rank.put_closure(
+                        &addr,
+                        (!closed.is_empty()).then(|| Address::from(closed.clone())),
+                    );
                     rank.invariants.insert(&addr, inv);
                 }
-                closes("RNK1", pos, start, sec_end, n)?;
+                closes("RNK2", pos, start, sec_end, n)?;
                 kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
             }
             tag(b, pos, b"DEF1")?;

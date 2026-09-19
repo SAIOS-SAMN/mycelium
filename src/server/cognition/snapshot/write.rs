@@ -82,12 +82,18 @@ impl Kernel {
         // measured, so a boot continues the measurement instead of walking
         // the book from nothing.
         let rank = &self.closure.2;
-        out.extend_from_slice(b"RNK1");
-        out.extend_from_slice(&(rank.basis_len as u64).to_le_bytes());
+        // RNK2: the closure is the base point's ADDRESS, not a slot into a
+        // basis snapshot that has since moved. An absent closure is the
+        // empty key, which `put_key` writes as a zero length — a slot could
+        // only spell absence as a sentinel (`u64::MAX`).
+        out.extend_from_slice(b"RNK2");
+        out.extend_from_slice(&rank.basis_seq.to_le_bytes());
         counted(&mut out, rank.closure_carrier(), |body, addr, closed| {
             put_key(body, addr);
-            let c = closed.map_or(u64::MAX, |i| i as u64);
-            body.extend_from_slice(&c.to_le_bytes());
+            match closed {
+                Some(c) => put_key(body, c.as_bytes()),
+                None => put_key(body, []),
+            }
             // A listing the reading holds no invariant for sits at the
             // root stratum, which the empty axis list is.
             let root = crate::transducer::stalk::Invariant::default();
