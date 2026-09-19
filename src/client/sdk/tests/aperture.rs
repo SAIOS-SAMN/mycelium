@@ -206,3 +206,46 @@ fn the_contemplation_is_stamped_with_tuniversal_and_the_shed_with_the_voices_own
         "and it is not the voice's receipt index"
     );
 }
+
+/// 25 DOOR 3 — A THOUGHT THE ROOM CANNOT HOLD IS WITHHELD, NEVER EVICTED.
+///
+/// Room is `boundary_measure` against the voice's reserve, LANE BY LANE
+/// (law 5): the open thoughts' own four-lane measure, never their sum and
+/// never a count of bubbles. `retire_on_t` read a bubble count against
+/// `reserve_max`, which is the box's RAM at boot — probed at 88 on this
+/// machine — and it is deleted.
+///
+/// The three readings are the door. With room, the thought is held. With a
+/// lane spent, the new thought is NOT held — and, the reading that matters,
+/// every thought already held is still there. Eviction chooses: whichever
+/// held thought went would be picked by age, size or arrival, and rules 4
+/// and 15 refuse all three. What the withheld thought gets instead is its
+/// demand standing on the court's docket, which `withhold_form` does
+/// whether or not there was room.
+#[test]
+fn a_thought_the_room_cannot_hold_is_withheld_not_evicted() {
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("room"));
+    entity.hold_chain(vec![(9, 0, 1, 2)]);
+    let held_now = entity.contemplation.len();
+    assert!(held_now > 0, "a mind with room holds the thought");
+    // Spend every lane: a reserve of zero is no room on any lane.
+    entity.physics.reserve = [0; 4];
+    let second = crate::transducer::sentence::Form {
+        remainder: crate::transducer::element::place_chain(&[(4i64, 4i64, 7u8, 8u8)])
+            .expect("a one-link chain places"),
+        ..crate::transducer::sentence::Form::default()
+    };
+    assert!(
+        !entity.room_for(&second),
+        "a lane with no room has no room for a thought that occupies one"
+    );
+    assert!(
+        !entity.hold_form(second, &[], &[]),
+        "a lane with no room withholds the new thought"
+    );
+    assert_eq!(
+        entity.contemplation.len(),
+        held_now,
+        "and NOTHING already held is evicted: eviction chooses, and rules 4 and 15 refuse it"
+    );
+}

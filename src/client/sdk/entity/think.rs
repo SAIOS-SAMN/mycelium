@@ -53,8 +53,43 @@ impl Entity {
         f: crate::transducer::sentence::Form,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<(i64, i64, u8, u8)>],
-    ) {
+    ) -> bool {
+        if !self.room_for(&f) {
+            return false;
+        }
         self.contemplation.hold_form(f, train, remainders);
+        true
+    }
+
+    /// DOOR 3 OF CHAPTER 25 — ROOM, PER LANE, AND NOTHING IS EVICTED.
+    ///
+    /// Room is `boundary_measure` against this voice's reserve, LANE BY
+    /// LANE (law 5): the open thoughts' own four-lane measure, never their
+    /// sum, never a count of bubbles, and never the box's memory — which is
+    /// what `retire_on_t` read and why it is deleted.
+    ///
+    /// A LANE WITH NO ROOM WITHHOLDS THE NEW THOUGHT. It does not evict a
+    /// held one, because eviction CHOOSES: whichever held thought went
+    /// would be picked by age, size or arrival, and rules 4 and 15 refuse
+    /// all three. The thought that cannot be held is withheld and its
+    /// demand stands on the court's docket, which is the one place a
+    /// thought this mind has no room for can still be answered.
+    ///
+    /// A thought whose lanes overflow the carrier has no room either: the
+    /// sum is refused rather than ceilinged (rule 11).
+    pub fn room_for(&self, f: &crate::transducer::sentence::Form) -> bool {
+        let held = self.contemplation.boundary_measure();
+        let want = crate::transducer::element::measure_lanes(&f.remainder.placed());
+        // index: the four lanes, a fixed physical size of the carrier
+        for l in 0..4 {
+            let Some(after) = held[l].checked_add(want[l]) else {
+                return false;
+            };
+            if after > self.physics.reserve[l] {
+                return false;
+            }
+        }
+        true
     }
 
     /// LANE 𝒯 FOR A FORM THIS MIND IS ABOUT TO SPEAK: the span in receipts
@@ -84,10 +119,16 @@ impl Entity {
         let tu = self.now_tu();
         // The element is taken from the form BEFORE it is handed over, so
         // the withhold pays no copy of the form either (Z4 item 1).
+        // THE DEMAND STANDS WHETHER OR NOT THERE IS ROOM TO HOLD IT. The
+        // standing is what puts it on the court's docket; the hold is this
+        // mind keeping a copy to work on. Door 3 refuses the second when a
+        // lane is spent, and never the first.
         if let Some(word) = crate::transducer::sentence::as_element_form(&f, mag) {
             self.epigenome.stand_dialect_withheld(word, k, tu);
         }
-        self.hold_form(f, train, remainders);
+        if !self.hold_form(f, train, remainders) {
+            eprintln!("  thought withheld: no room on a lane, the demand stands on the docket");
+        }
     }
 
     /// Hold a withheld sentence as a bubble: form, remainder, cover. A word
