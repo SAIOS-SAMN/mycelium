@@ -1,10 +1,25 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! L20, D1 — THE TRACE THAT NAMES THE READER. One line per reader entered,
-//! carrying the four things a timeline needs and nothing else: the
+//! carrying the five things a timeline needs and nothing else: the
 //! READER'S NAME, the PREFIX LENGTH of the key it wrote (or `demand`, or
-//! `-`), the SPEND since the previous line on this token, and the WALL
-//! CLOCK.
+//! `-`), the SPEND since the previous line on this token, the BYTES the
+//! reader moved where it can say, and the WALL CLOCK.
+//!
+//! THE TRACE REACHED ONLY EXTRACTION, which is why the `1019…` stall had
+//! no instrument: a family is extracted, and then it is SPOKEN, MINTED and
+//! HELD, and those three readers wrote no line. Extended to them at the
+//! coordinator's ruling of 2026-09-19. Each is a reader under rule 17 and
+//! each is now asked the same two questions as the seven moves — what
+//! coordinate did you write, and what did it cost.
+//!
+//! A READER THAT CANNOT SAY WHAT IT SPENT PRINTS `-`, AND THAT IS THE
+//! READING. `speak`, `mint` and `hold` carry no `Budget` between them: the
+//! extraction's token is spent by the time a form reaches the wire, and
+//! nothing bounds what happens after. Every `spend -` on those three lines
+//! is a place rule 10 is not met — a loop that neither spends a Budget nor
+//! walks a boundary — and the instrument says so rather than inventing a
+//! number to fill the column.
 //!
 //! THE `-` IN THE SECOND SLOT IS ITSELF A READING. Rule 17 (2026-09-19)
 //! says a reader writes a coordinate or returns a demand; a line that
@@ -68,8 +83,21 @@ fn on() -> bool {
     *ON.get_or_init(|| std::env::var("MYC_TRACE").is_ok_and(|v| v != "0"))
 }
 
+/// WHETHER THE TRACE IS LISTENING, so a reader whose coordinate costs
+/// something to derive does not derive it into a line nobody asked for.
+/// With `MYC_TRACE` unset this is one atomic read and the caller skips the
+/// work entirely, which is what the module promises above.
+pub fn tracing() -> bool {
+    on()
+}
+
 /// WHAT A READER WROTE, which under rule 17 is the whole of what it did.
-pub(crate) enum Wrote<'a> {
+///
+/// Public because a reader is traced WHERE IT RUNS, and `speak` runs in the
+/// voice's own binary. An instrument that can only be called from inside
+/// one module traces that module, which is how the trace came to cover the
+/// seven moves and nothing downstream of them.
+pub enum Wrote<'a> {
     /// The coordinate it wrote. The line carries the key's PREFIX LENGTH —
     /// the depth of the stratum the read landed on (law 2) — and not the
     /// key itself, which would put content in a log line.
@@ -86,7 +114,35 @@ pub(crate) enum Wrote<'a> {
 /// is itself the reading: a stage that cannot say what it has left is a
 /// stage nothing bounds, and every such line is a place a fix has to
 /// thread the caller's `Budget` through.
-pub(crate) fn trace(reader: &str, wrote: Wrote<'_>, budget: Option<&crate::physics::Budget>) {
+pub fn trace(reader: &str, wrote: Wrote<'_>, budget: Option<&crate::physics::Budget>) {
+    line(reader, wrote, budget, None);
+}
+
+/// The same line from a reader that can also say HOW MANY BYTES it moved —
+/// the tape a mint wrote, the form a hold took in, the description a speech
+/// put on the wire. `spend` and `bytes` are two different questions and a
+/// reader may answer either, both, or neither; law 5 keeps them in separate
+/// columns rather than summed into one cost.
+///
+/// SIGNED, BECAUSE A HOLD CAN GIVE BYTES BACK. `hold_form` reads the
+/// allocator before and after, and a hold that retracts more than it takes
+/// in reads negative — a true reading of what the process kept, which law 7
+/// says is kept and not clamped to zero.
+pub fn trace_bytes(
+    reader: &str,
+    wrote: Wrote<'_>,
+    budget: Option<&crate::physics::Budget>,
+    bytes: i128,
+) {
+    line(reader, wrote, budget, Some(bytes));
+}
+
+fn line(
+    reader: &str,
+    wrote: Wrote<'_>,
+    budget: Option<&crate::physics::Budget>,
+    bytes: Option<i128>,
+) {
     if !on() {
         return;
     }
@@ -109,8 +165,9 @@ pub(crate) fn trace(reader: &str, wrote: Wrote<'_>, budget: Option<&crate::physi
             (spend, now.to_string())
         }
     };
+    let bytes = bytes.map_or_else(|| "-".to_string(), |b| b.to_string());
     eprintln!(
-        "  trace {reader} {wrote} spend {spend} budget {remaining} t {}.{:03}",
+        "  trace {reader} {wrote} spend {spend} bytes {bytes} budget {remaining} t {}.{:03}",
         t.as_secs(),
         t.subsec_millis()
     );

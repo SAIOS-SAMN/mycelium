@@ -35,6 +35,7 @@ pub(crate) fn speak_form(
     family: &[u8],
 ) -> Option<[u64; 4]> {
     use mycelium::transducer::alphabet::Rotor;
+    use mycelium::transducer::family::trace;
     use mycelium::transducer::sentence::{as_element_form, Vertex};
     let fam = format!("{:02x}{:02x}…", family[0], family[1]);
     let form = &rule.form;
@@ -65,6 +66,7 @@ pub(crate) fn speak_form(
     // An unmeasurable span withholds rather than minting against an invented
     // extent, exactly as the demands arm does.
     let Some(deliberation) = entity.span_of(form) else {
+        trace::trace("speak/span", trace::Wrote::Nothing, None);
         eprintln!("[{tag}] form withheld: family {fam} the span is unmeasurable");
         return None;
     };
@@ -73,6 +75,9 @@ pub(crate) fn speak_form(
     // its closed sub-complex and its demands together — never withheld
     // and never expressed as a residual.
     if form.demand_vertices().next().is_some() {
+        // A form carrying demands leaves as the demands it carries, which
+        // under rule 17 is a complete answer and not a failure to write.
+        trace::trace("speak/form", trace::Wrote::Demand, None);
         // The remainders are measured above and ride with it: that arm holds
         // what it does not speak, and it holds it against these.
         return speak_with_demands(entity, tag, rule, train, family, &remainders);
@@ -80,6 +85,7 @@ pub(crate) fn speak_form(
     let n_rem: usize = remainders.iter().map(|r| r.len()).sum();
     if remainders.iter().any(|r| !r.is_empty()) {
         let n_pairs = remainders.iter().filter(|r| !r.is_empty()).count();
+        trace::trace("speak/remainder", trace::Wrote::Nothing, None);
         entity.withhold_form(form.clone(), train, &remainders, mag);
         eprintln!(
             "[{tag}] form withheld: family {fam} remainder {n_rem} links over {n_pairs} pairs"
@@ -87,11 +93,13 @@ pub(crate) fn speak_form(
         return None;
     }
     let Some(word) = as_element_form(form, mag) else {
+        trace::trace("speak/mint", trace::Wrote::Nothing, None);
         entity.hold_form(form.clone(), train, &remainders);
         eprintln!("[{tag}] form withheld: family {fam} {}", why_open());
         return None;
     };
     if entity.already_taught(&word) {
+        trace::trace("speak/taught", trace::Wrote::Key(word.address().as_bytes()), None);
         entity.remember_spoken(&word);
         return Some(word.magnitude());
     }
@@ -99,10 +107,27 @@ pub(crate) fn speak_form(
         // One sentence was sent, so the reply is one code.
         Ok(codes) => match codes.as_slice() {
             [mycelium::anastome::dialogue::SPEECH_REFUSED] => {
+                // THE `1019…` STALL'S OWN LINE. The court refused what the
+                // voice put on the wire, and until now the only record was
+                // this `eprintln!` — no coordinate, no cost, nothing a
+                // timeline could line up against the extraction that made
+                // it. The bytes are the tape the wire carried and threw away.
+                trace::trace_bytes(
+                    "speak/refused",
+                    trace::Wrote::Key(word.address().as_bytes()),
+                    None,
+                    word.description().len() as i128,
+                );
                 eprintln!("[{tag}] form withheld: family {fam} refused on the wire");
                 None
             }
             _ => {
+                trace::trace_bytes(
+                    "speak/form",
+                    trace::Wrote::Key(word.address().as_bytes()),
+                    None,
+                    word.description().len() as i128,
+                );
                 let glued = form.vertices.iter().filter(|v| matches!(v, Vertex::Glued { .. })).count();
                 eprintln!(
                     "[{tag}] form spoken: {:02x}{:02x}… depth {} vertices {} glued {} faces {} \
@@ -121,6 +146,7 @@ pub(crate) fn speak_form(
             }
         }
         Err(e) => {
+            trace::trace("speak/wire", trace::Wrote::Nothing, None);
             eprintln!("[{tag}] form withheld: family {fam} {e}");
             None
         }

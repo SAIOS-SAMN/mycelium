@@ -584,14 +584,28 @@ pub fn generator_form(
 /// Addresses are len16 + bytes. `mag` is the descent the form measures over
 /// its bundle. Zero is not a word.
 pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
+    use crate::transducer::family::trace;
     if f.vertices.is_empty() || mag.iter().all(|&x| x == 0) {
+        // THE MINT'S REFUSAL IS A LINE. An empty form or a zero magnitude
+        // mints nothing, and under rule 17 a reader that writes no
+        // coordinate and returns no demand is a site the timeline must be
+        // able to name — this one silently ended `speak_form`'s fast arm.
+        trace::trace("mint/form", trace::Wrote::Nothing, None);
         return None;
     }
     let mut e = Element::identity();
     let mut word = vec![element::SENTENCE_TAG, FORM_TAPE_VERSION];
-    encode_form_v2(f, &mut word)?;
+    let Some(()) = encode_form_v2(f, &mut word) else {
+        trace::trace("mint/encode", trace::Wrote::Nothing, None);
+        return None;
+    };
+    let n = word.len();
     e.set_description(word);
     e.set_magnitude(mag);
+    // The coordinate the mint wrote is the word's ADDRESS (law 2), and the
+    // bytes it moved are the tape it laid down — which is also what the
+    // wire will carry. Two columns, never one (law 5).
+    trace::trace_bytes("mint/form", trace::Wrote::Key(e.address().as_bytes()), None, n as i128);
     Some(e)
 }
 

@@ -27,19 +27,43 @@ impl Contemplation {
         remainders: &[Vec<Link>],
         escrow: [u64; 4],
     ) {
+        use crate::transducer::family::trace;
         if f.vertices.len() <= 1
             && f.faces.is_empty()
             && f.remainder.is_empty()
             && remainders.iter().all(|r| r.is_empty())
         {
+            // A form with nothing on it is not held, and under rule 17 that
+            // is a reader writing no coordinate: the line names the site.
+            trace::trace("hold/empty", trace::Wrote::Nothing, None);
             return;
         }
         // Z4's instrument: the live bytes this hold adds. Read at entry and
         // again at exit, so what is counted is what the hold RETAINED.
         let before = live_bytes();
+        // The idea key is derived once for the line and only when a line is
+        // wanted; `hold_form_inner` derives its own from the form it owns,
+        // and neither is stored beside the other (law 12).
+        let key = trace::tracing().then(|| idea_key(&f));
         self.hold_form_inner(f, train, remainders, escrow);
-        if let (Some(a), Some(b)) = (before, live_bytes()) {
-            HELD_BYTES.with(|c| c.set(c.get().saturating_add(b - a)));
+        let retained = match (before, live_bytes()) {
+            (Some(a), Some(b)) => {
+                HELD_BYTES.with(|c| c.set(c.get().saturating_add(b - a)));
+                Some(b - a)
+            }
+            // The allocator was not readable at one of the two points, so
+            // there is no difference to report. A hold is not claimed to
+            // have retained zero because the instrument could not look.
+            _ => None,
+        };
+        // THE HOLD'S COORDINATE IS THE IDEA KEY it filed the bubble under,
+        // and the bytes are what the process kept because of it. This is
+        // the one reader of the three that can answer both columns.
+        if let Some(key) = &key {
+            match retained {
+                Some(n) => trace::trace_bytes("hold/form", trace::Wrote::Key(key.as_ref()), None, n),
+                None => trace::trace("hold/form", trace::Wrote::Key(key.as_ref()), None),
+            }
         }
     }
 
