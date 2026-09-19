@@ -689,3 +689,53 @@ fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
     // rather than sorted into existence, and it is not the succession.
     assert_ne!(vec![0u16, 256, 1, 2, 5], occ, "trie order is not coordinate order");
 }
+
+/// 52.5, 51.3 — THE FACE IS MEASURED ON THE FIBER'S UNION SHAPES. A
+/// member's fiber is one body on `(r, c, k)`, and `union_quotient` is that
+/// body's quotient: every lamina the member stands on across its occupied
+/// frames, read at its own `k` and never flattened to frame zero.
+///
+/// The two assertions are the point. A member whose frames all read one
+/// motion HAS a union quotient, and that quotient's bodies carry the frame
+/// extent — three distinct `k` on a three-frame fiber — which is what a
+/// reading taken at one frame cannot carry at all. A member whose frames
+/// read different motions has NO union quotient, and the per-frame reading
+/// stands instead rather than a union invented for it (rule 11).
+#[test]
+fn a_members_fiber_reads_as_one_union_body_or_not_at_all() {
+    use crate::transducer::family::union_quotient;
+    // Three frames, each a bar translated by the same vector: one motion
+    // over the whole fiber.
+    let ins: Vec<Lamina> = vec![
+        (0, 0, 0, 1),
+        (0, 1, 0, 1),
+        (1, 0, 1, 1),
+        (1, 1, 1, 1),
+        (2, 0, 2, 1),
+        (2, 1, 2, 1),
+    ];
+    let outs: Vec<Lamina> = ins.iter().map(|&(r, c, k, h)| (r, c + 2, k, h)).collect();
+    let (a, b, v) = union_quotient(ins.clone(), outs).expect("one motion carries the whole fiber");
+    let frames: Vec<i64> = {
+        let mut f: Vec<i64> = a.laminae.iter().map(|&(_, _, k, _)| k).collect();
+        f.sort_unstable();
+        f.dedup();
+        f
+    };
+    assert_eq!(frames, vec![0, 1, 2], "the union body stands on every frame of the fiber");
+    assert_eq!(b.laminae.len(), a.laminae.len(), "and carries the whole of it");
+    assert!(
+        element::same_versor(&v, &element::translator_versor(0, 2)),
+        "the fiber's quotient is the one translation"
+    );
+    // The same three frames with the middle one moved the other way: no
+    // single motion carries the union.
+    let mixed: Vec<Lamina> = ins
+        .iter()
+        .map(|&(r, c, k, h)| if k == 1 { (r, c + 3, k, h) } else { (r, c + 2, k, h) })
+        .collect();
+    assert!(
+        union_quotient(ins, mixed).is_none(),
+        "a fiber that is not one motion along e₃ has no union quotient"
+    );
+}
