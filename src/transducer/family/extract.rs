@@ -849,7 +849,8 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // vertices its ends belong to, which is a coordinate this form has. A
     // loop whose classes the scene relates by no face is NOT filed: there
     // is no chord to name and none is invented (rule 11).
-    for (class, mut filed, ends) in pending_torsion {
+    let mut standing_demands: Vec<(Demand, Invariant)> = Vec::new();
+    for (class, mut filed, ends, rotor) in pending_torsion {
         let ixs: Vec<u16> = ends
             .iter()
             .filter_map(|tc| form.by_transport.get(&tc.key()))
@@ -867,11 +868,46 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             }),
             _ => None,
         };
-        if let Some(c) = chord {
-            filed.chord = c as u16;
-            form.torsion.insert(class, filed);
+        match chord {
+            Some(c) => {
+                filed.chord = c as u16;
+                form.torsion.insert(class, filed);
+            }
+            // A MEASURED CLASS IS NEVER DISCARDED (law 7, rule 11). The
+            // loop was classified inside the cover and its class is a
+            // reading the engine made; the scene simply has no face
+            // between the two classes to name a chord in, which is a fact
+            // about this form's incidence and not about the class. So it
+            // leaves as the demand it IS — `Standing`, with the holonomy's
+            // own rotor as the witness — and the line below counts it.
+            //
+            // The first cut of 53.6 dropped these, which is the fault
+            // 53.6's own item 2 refuses one paragraph earlier: a thing
+            // measured and then not written down.
+            None => {
+                let chart = ends
+                    .iter()
+                    .filter_map(|tc| form.by_transport.get(&tc.key()))
+                    .filter_map(|on| match on.as_slice() {
+                        [ix, ..] => form.vertices.get(*ix as usize),
+                        [] => None,
+                    })
+                    .find_map(crate::transducer::sentence::Vertex::face_chart);
+                if let (Some(chart), Some(d)) =
+                    (chart, crate::transducer::alphabet::standing_of(&rotor))
+                {
+                    standing_demands.push((d, chart));
+                }
+            }
         }
     }
+    for (kind, chart) in standing_demands {
+        crate::transducer::family::cover::tally(|t| t.standing += 1);
+        let ix = form.vertices.len() as u16;
+        form.vertices.push(demand_vertex(kind, &chart, Vec::new()));
+        let _ = ix;
+    }
+    form.reindex();
     // READ WHETHER OR NOT ANYTHING CLOSED. It was gated on
     // `!form.loops.is_empty() || meet_faces > 0`, so the one row that says
     // why a form is empty was printed only when the form was not empty:

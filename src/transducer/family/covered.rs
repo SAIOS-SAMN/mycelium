@@ -28,6 +28,7 @@ pub(crate) type PendingTorsion = (
     crate::transducer::address::Address,
     crate::transducer::sentence::FiledLoop,
     Vec<TransportClass>,
+    crate::transducer::alphabet::Rotor,
 );
 
 /// Build the pieces' form, classify its loops, and return what the scene
@@ -103,11 +104,7 @@ pub(crate) fn classify_cover(
     let mut stood: Keyed<Vec<crate::transducer::sentence::ClassVector>> = Keyed::new();
     // The cover's filed loops, held until the scene has faces to name a
     // chord in (53.6 item 4).
-    let mut pending_torsion: Vec<(
-        crate::transducer::address::Address,
-        crate::transducer::sentence::FiledLoop,
-        Vec<TransportClass>,
-    )> = Vec::new();
+    let mut pending_torsion: Vec<PendingTorsion> = Vec::new();
     for lp in piece_form.loops.clone() {
         // THE LOOP'S COVER: the one cover that placed every vertex of it —
         // a vertex two covers' pieces became is in both — and none where a
@@ -191,6 +188,7 @@ pub(crate) fn classify_cover(
                         class,
                         crate::transducer::sentence::FiledLoop { sigma, period: ell, chord: 0 },
                         ends,
+                        g.as_ref().clone(),
                     ));
                 }
                 crate::transducer::cech::Fill::Class(kappa, _) => {

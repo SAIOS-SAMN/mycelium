@@ -225,6 +225,26 @@ pub(crate) fn arc_block(s: &BigInt, t: &BigInt) -> [[Q; 2]; 2] {
 
 /// The standing reading of a rotor that did not decompose: its own action
 /// on `plane`, the in-plane components of the plane's axes' images.
+/// THE STANDING DEMAND OF A ROTOR ON THE PLANE IT TURNS, for a caller
+/// that has a rotor and no plane in hand — a cover's filed loop, whose
+/// holonomy the scene cannot give a chord to (53.6 item 4 as amended).
+///
+/// The plane is the rotor's own: the first of the base's three that its
+/// action actually turns. A rotor that turns none has no standing reading
+/// and answers `None` rather than one on a plane it does not occupy
+/// (rule 11).
+pub fn standing_of(r: &Rotor) -> Option<Demand> {
+    // index: the base's three planes, a fixed physical size (51.2)
+    for plane in crate::transducer::blade::Blade::BASE_PLANES {
+        if let Some(d) = standing(r, plane) {
+            if d.typed().is_ok() {
+                return Some(d);
+            }
+        }
+    }
+    None
+}
+
 pub(crate) fn standing(r: &Rotor, plane: (u8, u8)) -> Option<Demand> {
     let (i, j) = (plane.0 as usize, plane.1 as usize);
     let unit = |k: usize| -> [Q; 4] { std::array::from_fn(|t| if t == k { Q::one() } else { Q::zero() }) };

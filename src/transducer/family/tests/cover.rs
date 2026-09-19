@@ -629,3 +629,40 @@ fn a_forms_word_vertices_are_bounded_by_its_transport_classes() {
     let words = f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
     assert_eq!(classes.len(), words, "every word vertex is bounded by a class it carries");
 }
+
+/// 53.6 item 4 AS AMENDED — A CLASSIFIED LOOP THE SCENE CANNOT GIVE A
+/// CHORD TO LEAVES AS THE DEMAND IT IS, never dropped.
+///
+/// A cover's loop is classified inside the cover, on a form of its pieces
+/// that is discarded. Its chord indexes THAT form, so the scene resolves a
+/// chord of its own between the two class vertices the loop's ends belong
+/// to. Where the scene relates those classes by no face there is no chord
+/// to name — and the first cut of 53.6 dropped the reading there, which is
+/// a measured class discarded (law 7, rule 11).
+///
+/// It leaves as `Standing` with the holonomy's own rotor as the witness.
+/// The two readings here are that the demand is TYPED — a versor that
+/// turns, or it is not a standing reading at all — and that the rotor it
+/// carries is the one measured and not a representative.
+#[test]
+fn a_filed_loop_with_no_chord_leaves_as_a_standing_demand() {
+    use crate::transducer::alphabet::{standing_of, LetterId, Word};
+    use crate::transducer::sentence::Demand;
+    // The quarter turn is a versor that turns, so it has a standing
+    // reading; the identity is a versor that does not, and has none.
+    let q = LetterId::quarter((0, 1)).expect("quarter");
+    let turned = Word::from_letters(&[(q, false)]).rotor();
+    let Some(d @ Demand::Standing { .. }) = standing_of(&turned) else {
+        panic!("a rotor that turns has a standing reading");
+    };
+    assert!(d.typed().is_ok(), "and it is typed: a versor that turns");
+    let Demand::Standing { rotor, .. } = &d else { panic!("standing") };
+    assert!(
+        rotor.projective_eq(&turned),
+        "the witness is the holonomy measured, not a representative"
+    );
+    assert!(
+        standing_of(&crate::transducer::alphabet::Rotor::identity()).is_none(),
+        "the identity turns nothing and has no standing reading (rule 11)"
+    );
+}
