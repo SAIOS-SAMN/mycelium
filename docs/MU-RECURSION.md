@@ -4408,6 +4408,21 @@ one of the three, called once.
 Carried from chapter 24: comprehension re-gauges. Germination pivots, files,
 cauterizes, and wraps (M9). `/opt/mycelium-v0.1.0/src/transducer/bubble/`:
 
+**An index names a held thought by its place in the one carrier that
+holds it** (ruled 2026-09-19, Z4). A held form is written once, on its
+bubble, with its address once beside it; every index of the contemplation
+— by chart, by vortex, by stratum — is keyed by the coordinate its reader
+asks with and holds the bubble's ordinal in the contemplation's own
+carrier, the shape `Form.by_address` already has. The ordinal is a
+coordinate of that carrier and never leaves it: nothing on the wire, on the
+tape or in an address carries it, and two minds compare bubbles by address
+as before. No prefix of the address is an index key: a fixed byte count is
+a constant (rule 5) and the shortest distinguishing prefix moves as
+bubbles arrive, so neither is a coordinate; the strata of an address are
+the schema's, read by `Keyed::fiber`, and are for readers of the forms'
+own trie. A form the voice extracted is moved into its bubble, never
+cloned into it.
+
 **The files.** The contemplation is eight files, one organ each (Stage 8b
 S5): `idea.rs` one bubble and what it measures; `contemplation.rs` the
 complex of held thoughts and their incidence; `merge.rs` when two held
