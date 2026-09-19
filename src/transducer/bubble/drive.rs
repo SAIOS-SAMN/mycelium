@@ -158,7 +158,13 @@ impl Contemplation {
         let mut keys = Keyed::new();
         for p in inv.prefixes() {
             for (id, _) in self.by_chart.link(&p.key()) {
-                keys.insert(&id, ());
+                // The index names bubbles by ordinal (Z4 item 2); the
+                // address is what the readers below ask the bubbles with.
+                let Some(addr) = Contemplation::ordinal_of_key(&id).and_then(|o| self.address_at(o))
+                else {
+                    continue;
+                };
+                keys.insert(addr, ());
             }
         }
         let word_rotor = cech::rotor_of(word);

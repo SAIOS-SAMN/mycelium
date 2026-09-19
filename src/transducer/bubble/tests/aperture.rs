@@ -304,10 +304,14 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
         Some(stratum.as_bytes()),
         "the deciding word's class IS the loop class's first coordinate"
     );
-    assert!(
-        c.by_vortex.get(stratum.as_bytes()).is_some_and(|m| m.contains(&key)),
-        "the vortex is filed at its conjugacy stratum"
-    );
+    // Same claim, read through the ordinal the index now holds (Z4 item 2).
+    let filed_here = c.by_vortex.get(stratum.as_bytes()).is_some_and(|m| {
+        m.scoped()
+            .filter_map(|(k, _)| Contemplation::ordinal_of_key(&k))
+            .filter_map(|o| c.address_at(o))
+            .any(|a| a == key.as_bytes())
+    });
+    assert!(filed_here, "the vortex is filed at its conjugacy stratum");
     assert!(
         c.by_vortex.get(after.as_bytes()).is_none(),
         "and not at the class the move would leave the loop in"

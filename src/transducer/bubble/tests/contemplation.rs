@@ -57,12 +57,17 @@ fn an_open_demand_is_held_as_an_idea_standing_on_its_chart() {
     // THE COORDINATE IS WHAT A MEET IS READ AT, so the claim is that the
     // chart reaches the idea back — not merely that a cover is non-empty.
     let key = super::super::idea::idea_key(&f);
+    // THE CLAIM IS UNCHANGED — the chart names this idea — and the index
+    // now names it by its ORDINAL (Z4 item 2), so the check resolves the
+    // ordinal to the address rather than looking for the address in the
+    // index, where a 7.3 MB key used to sit once per chart.
     let at_chart: Vec<Vec<u8>> = c
         .by_chart
         .get(chart.key().as_bytes())
         .expect("the chart names the ideas standing on it")
         .scoped()
-        .map(|(k, _)| k)
+        .filter_map(|(k, _)| Contemplation::ordinal_of_key(&k))
+        .filter_map(|o| c.address_at(o).map(<[u8]>::to_vec))
         .collect();
     assert!(
         at_chart.iter().any(|k| k.as_slice() == key.as_bytes()),

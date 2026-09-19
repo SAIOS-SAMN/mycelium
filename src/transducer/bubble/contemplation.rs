@@ -79,7 +79,27 @@ impl Deliberation {
 #[derive(Clone, Debug, Default)]
 pub struct Contemplation {
     pub bubbles: Keyed<Bubble>,
+    /// THE CHARTS' INCIDENCE: chart key → the ORDINALS of the bubbles
+    /// standing there (Z4 item 2). The inner key is the ordinal's two
+    /// bytes, which is where the ordinal is held: a keyed inner trie
+    /// removes one entry by its own coordinate at retraction, where a list
+    /// would be scanned.
+    ///
+    /// IT HELD THE BUBBLE'S ADDRESS, ONCE PER CHART OF ITS COVER, and a
+    /// form's address is its every vertex, member and gauge written out
+    /// (law 2): 7.3 MB on the 590-vertex rule, measured at e0f4e0d, copied
+    /// into every entry. The address is written ONCE now, on the bubble —
+    /// `bubbles` is keyed by it — and every index names the bubble by the
+    /// ordinal instead.
     pub by_chart: Keyed<Keyed<()>>,
+    /// Bubble address → its ordinal in this contemplation. The shape
+    /// `Form.by_address` already has.
+    pub(crate) ordinals: Keyed<u16>,
+    /// Ordinal → the bubble's address, or `None` where the bubble was
+    /// retracted. A RETRACTED ORDINAL IS NEVER REUSED within one
+    /// contemplation, so a stale index entry names nothing rather than
+    /// naming another bubble — which is the one way an ordinal could lie.
+    pub(crate) addresses: Vec<Option<Vec<u8>>>,
     pub complex: Complex,
     /// Bubbles whose cover still has work; written when dirty is set.
     pub(crate) dirty: Keyed<()>,
@@ -327,21 +347,41 @@ impl Contemplation {
     }
 
     pub(crate) fn retract_incidence(&mut self, key: &[u8], b: &Bubble) {
+        let Some(&ord) = self.ordinals.get(key) else {
+            self.complex.drop_vertex(key);
+            return;
+        };
+        let ob = ord.to_le_bytes();
         let charts: Vec<Vec<u8>> = b.cover.scoped().map(|(k, _)| k).collect();
         for ck in charts {
             if let Some(m) = self.by_chart.get_mut(&ck) {
-                m.remove(key);
+                m.remove(&ob);
             }
         }
         self.unfile_vortex(key, &b.vortex_strata());
+        // THE ORDINAL IS SPENT, NOT FREED. Its slot is emptied and the
+        // ordinal is never issued again, so an entry this retraction
+        // missed names nothing instead of naming whatever arrived next.
+        if let Some(slot) = self.addresses.get_mut(ord as usize) {
+            *slot = None;
+        }
+        self.ordinals.remove(key);
         self.complex.drop_vertex(key);
     }
 
     /// The bubble leaves the vortex index under each of `strata`.
+    /// THE TRANSLATION HAPPENS HERE AND NOWHERE ELSE. Every caller names
+    /// a bubble by its ADDRESS, which is the identity; the index holds the
+    /// ordinal, which is a coordinate of this carrier alone. One place
+    /// converts, so no caller can hold an ordinal it did not get from here.
     pub(crate) fn unfile_vortex(&mut self, key: &[u8], strata: &[Vec<u8>]) {
+        let Some(&ord) = self.ordinals.get(key) else {
+            return;
+        };
+        let ob = ord.to_le_bytes();
         for ck in strata {
             if let Some(m) = self.by_vortex.get_mut(ck) {
-                m.remove(key);
+                m.remove(&ob);
             }
         }
     }
@@ -357,8 +397,9 @@ impl Contemplation {
             Some(b) => b.vortex_strata(),
             None => return,
         };
+        let ord = self.ordinal_for(key).to_le_bytes();
         for ck in strata {
-            self.by_vortex.nested_insert(&ck, key, ());
+            self.by_vortex.nested_insert(&ck, ord, ());
         }
     }
 
@@ -391,11 +432,15 @@ impl Contemplation {
                 continue;
             };
             let rk = r.key();
-            // index: the bubbles filed at this conjugacy stratum
+            // index: the bubbles filed at this conjugacy stratum, each by
+            // its ORDINAL, resolved to its address here — an ordinal that
+            // names nothing is a retracted bubble and yields no holder
+            // (Z4 item 2).
             let holders: Vec<Vec<u8>> = self
                 .by_vortex
                 .link(stratum.as_bytes())
-                .map(|(k, _)| k)
+                .filter_map(|(k, _)| Self::ordinal_of_key(&k))
+                .filter_map(|o| self.address_at(o).map(<[u8]>::to_vec))
                 .collect();
             for bk in holders {
                 let held: Vec<Vec<u8>> = match self.bubbles.get(&bk) {
@@ -488,8 +533,34 @@ impl Contemplation {
     /// the form, so an index is written here only where a reader takes it
     /// (`held_at`, `link_new`, the vortex collapse); an index nothing reads
     /// is that address copied once per entry for no reading (law 12).
+    /// THE ORDINAL OF A BUBBLE, assigned on its first admission and held
+    /// while the contemplation lives. Never reused after retraction.
+    pub(crate) fn ordinal_for(&mut self, key: &[u8]) -> u16 {
+        if let Some(&o) = self.ordinals.get(key) {
+            return o;
+        }
+        let o = self.addresses.len() as u16;
+        self.addresses.push(Some(key.to_vec()));
+        self.ordinals.insert(key, o);
+        o
+    }
+
+    /// The address an ordinal names, or `None` where it names nothing —
+    /// a retracted bubble, or an ordinal this contemplation never issued.
+    pub(crate) fn address_at(&self, ord: u16) -> Option<&[u8]> {
+        self.addresses.get(ord as usize)?.as_deref()
+    }
+
+    /// The ordinal an index entry's key IS.
+    pub(crate) fn ordinal_of_key(k: &[u8]) -> Option<u16> {
+        Some(u16::from_le_bytes(k.try_into().ok()?))
+    }
+
     pub(crate) fn admit_incidence(&mut self, key: impl AsRef<[u8]>, b: &Bubble) {
         let key = key.as_ref();
+        let ord = self.ordinal_for(key);
+        let ord = ord.to_le_bytes();
+        let key = &ord[..];
         for (ck, _) in b.cover.scoped() {
             match self.by_chart.get_mut(&ck) {
                 Some(m) => {
@@ -522,8 +593,11 @@ impl Contemplation {
         let mut out = Vec::new();
         // index: the bubbles this chart names; then the vertices each
         // form's by_class names on it
-        for (bk, _) in ideas.scoped() {
-            let Some(form) = self.bubbles.get(&bk).and_then(|b| b.form.as_ref()) else {
+        for (ok, _) in ideas.scoped() {
+            let Some(bk) = Self::ordinal_of_key(&ok).and_then(|o| self.address_at(o)) else {
+                continue;
+            };
+            let Some(form) = self.bubbles.get(bk).and_then(|b| b.form.as_ref()) else {
                 continue;
             };
             let Some(on) = form.by_class.get(chart.as_bytes()) else {
@@ -570,8 +644,11 @@ impl Contemplation {
         let mut neighbors = Keyed::new();
         for ck in &charts {
             for (id, _) in self.by_chart.link(ck) {
-                if id.as_slice() != key.as_slice() {
-                    neighbors.insert(&id, ());
+                let Some(addr) = Self::ordinal_of_key(&id).and_then(|o| self.address_at(o)) else {
+                    continue;
+                };
+                if addr != key.as_slice() {
+                    neighbors.insert(addr, ());
                 }
             }
         }
