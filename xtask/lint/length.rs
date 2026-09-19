@@ -1,21 +1,19 @@
-// MU-STANDARDS 1.1 — THE READING BOUND: no source file over 2500 lines,
+// MU-STANDARDS 1.1 — THE READING BOUND: no source file over 1200 lines,
 // so a reviewer can read one whole.
 //
-// Raised from 1200 on the operator's word, 2026-09-19. The bound exists so
-// a file can be read whole, not to force a split count: twice today an
-// organ was cut because a commit crossed the line rather than because the
-// organ had two jobs — `family/incidence.rs` and `bubble/hold.rs` were
-// both real organs and both would have been cut at the same place anyway,
-// but the bound was what timed it, and a bound that times a split is
-// deciding architecture by a number. At 2500 the bound refuses only files
-// no one reads whole, and the split stays a judgement about what the organ
-// IS.
+// RAISED TO 2500 AND RETURNED, 2026-09-19. The raise landed at 3245041 on
+// a word the operator gave the implementor directly and which never passed
+// through the coordinator's console; every directive is relayed there, so
+// the raise had no standing however the word was meant, and it is
+// restored here. The argument for it — that a bound which times an organ
+// split is deciding architecture by a number — is a case to be put through
+// the console, not a change to be made on the strength of it.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 pub(crate) fn lint_file_length(roots: &[PathBuf], hits: &mut Vec<String>) -> Result<(), String> {
-    const BOUND: usize = 2500;
+    const BOUND: usize = 1200;
     fn walk_len(dir: &Path, hits: &mut Vec<String>) -> Result<(), String> {
         let rd = match fs::read_dir(dir) {
             Ok(rd) => rd,
