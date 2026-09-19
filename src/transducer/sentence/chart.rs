@@ -11,8 +11,56 @@ use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Word;
 use crate::transducer::element::{self, Element, Versor};
 
+thread_local! {
+    /// HOW MANY TIMES A FORM WAS RENUMBERED, so a pass that claims to
+    /// retract once can be asked rather than believed (rule 13: verify the
+    /// claim, not the outcome). `retract_vertices` rebuilds the vertices,
+    /// the faces, the cycle basis and every index; the glue pass ran it per
+    /// citation and now runs it once for the pass.
+    ///
+    /// A plain counter in the shape `family::pairing`'s `FACE_WORK` already
+    /// has: read and never branched on, and no engine path consults it.
+    static RETRACTIONS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+/// Renumberings since the last reset.
+#[cfg(test)]
+pub fn retractions() -> u64 {
+    RETRACTIONS.with(|c| c.get())
+}
+
+#[cfg(test)]
+pub fn reset_retractions() {
+    RETRACTIONS.with(|c| c.set(0));
+}
+
 impl Form {
+    /// Glue a closed form in as one vertex, and walk the loops and the
+    /// index for it. The single-citation reader; a PASS of citations calls
+    /// [`Form::glue_append`] and walks once at the end (Z2 item 1).
     pub fn glue(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
+        let idx = self.glue_append(s, s_addr, placement, magnitude)?;
+        self.loops = Self::loops_of(&self.faces, &self.vertices);
+        self.reindex();
+        Some(idx)
+    }
+
+    /// THE CITATION APPENDED AND NOTHING WALKED (Z2 item 1): the `Glued`
+    /// vertex, its placement face, the glue index and the depth — every
+    /// coordinate the citation itself writes — and neither `loops_of` nor
+    /// `reindex`.
+    ///
+    /// The glue pass of `extract_rule_with` cited one form 578 times on
+    /// `1d0a4b61`, and each citation rebuilt the cycle basis over 2 850
+    /// faces and reindexed the whole form. Measured on the instrument: 4.9 s
+    /// of `face_at` inside `loops_of`, on a 16.8 s pull.
+    ///
+    /// AN APPEND CANNOT INVALIDATE WHAT THE PASS READS. A `Glued` vertex
+    /// carries no transport class, so `by_transport` — the index the pass
+    /// asks for the vertices to retract — is untouched by it; the loops the
+    /// appended face closes are read once after the pass, with the
+    /// retractions, which rebuilds them anyway.
+    pub fn glue_append(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
         if !s.is_closed() {
             return None;
         }
@@ -50,15 +98,14 @@ impl Form {
             Some(face) => self.faces.push(face),
             None => self.faces.push(FormFace::new(0, idx, placement)),
         }
-        self.loops = Self::loops_of(&self.faces, &self.vertices);
         self.depth = self.depth_of();
-        self.reindex();
         Some(idx)
     }
 
     /// Drop the named vertices (keyed by old index), drop faces that touched
     /// them, remap surviving faces through the old-to-new map, rebuild loops.
     pub fn retract_vertices(&mut self, drop: &Keyed<()>) {
+        RETRACTIONS.with(|c| c.set(c.get().saturating_add(1)));
         let n = self.vertices.len();
         if n == 0 {
             return;

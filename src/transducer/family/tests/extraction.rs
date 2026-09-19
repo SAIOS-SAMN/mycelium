@@ -334,9 +334,9 @@ impl Crystal for Held {
     ) -> Option<Speech> {
         apply_form(f, x, placement, self)
     }
-    fn by_address(&self, addr: &[u8]) -> Option<(Element, Form)> {
+    fn by_address(&self, addr: &[u8]) -> Option<(&Element, &Form)> {
         if addr == self.e.address().as_bytes() {
-            Some((self.e.clone(), self.f.clone()))
+            Some((&self.e, &self.f))
         } else {
             None
         }
@@ -462,8 +462,8 @@ fn the_glue_speaks_a_cited_form_once_per_placement_and_asks_once_per_chart() {
             self.speeches.set(self.speeches.get() + 1);
             apply_form(f, x, placement, self)
         }
-        fn by_address(&self, addr: &[u8]) -> Option<(Element, Form)> {
-            (addr == self.e.address().as_bytes()).then(|| (self.e.clone(), self.f.clone()))
+        fn by_address(&self, addr: &[u8]) -> Option<(&Element, &Form)> {
+            (addr == self.e.address().as_bytes()).then_some((&self.e, &self.f))
         }
         fn on_axis(&self, _chart: &Invariant, _axis: crate::transducer::sentence::Axis) -> Vec<crate::transducer::alphabet::Word> {
             Vec::new()
@@ -488,6 +488,87 @@ fn the_glue_speaks_a_cited_form_once_per_placement_and_asks_once_per_chart() {
     assert!(
         rule.form.vertices.iter().any(|v| matches!(v, Vertex::Glued { .. })),
         "and the bar's shift, which reproduces the family, is glued"
+    );
+}
+
+/// Z2 — THE GLUE PASS RETRACTS ONCE, AND A CITATION IS NEVER CLONED.
+///
+/// Both halves were measured before they were written. `Form::glue` ran
+/// `loops_of` and `reindex` per citation, and `retract_vertices` — which
+/// rebuilds the vertices, the faces, the cycle basis and every index —
+/// ran per citation too: on `1d0a4b61` that is 578 rebuilds over 2 850
+/// faces, 4.9 s of a 16.8 s pull on the instrument. And `Crystal::by_address`
+/// returned `(Element, Form)` BY VALUE, so resolving one citation 578
+/// times copied the cited form 578 times.
+///
+/// THE CLAIM IS ASKED, NOT THE OUTCOME (rule 13). The retraction counter is
+/// the work counter for the first half — a count of rebuilds, not a
+/// wall-clock — and the second half is pointer identity on what the reader
+/// handed back: a `&Form` that IS the crystal's own field cannot have been
+/// cloned, and no timing can say that.
+#[test]
+fn a_glue_pass_retracts_once_and_a_citation_is_never_cloned() {
+    let family = vec![
+        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
+        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
+    ];
+    let bar = (grid(&["1100", "0000"]), grid(&["0011", "0000"]));
+    let held_form = cipher_form(&bar.0, &bar.1);
+    assert!(held_form.is_closed(), "the bar's shift is a closed form to cite");
+    let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
+
+    struct Held {
+        e: Element,
+        f: Form,
+    }
+    impl Crystal for Held {
+        fn on_class(&self, _class: &Invariant) -> Vec<(Element, Form, Standing)> {
+            vec![(self.e.clone(), self.f.clone(), Standing::Held)]
+        }
+        fn on_body(&self, c: &Invariant) -> Vec<(Element, Form, Standing)> {
+            self.on_class(c)
+        }
+        fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
+            apply_form(f, x, placement, self)
+        }
+        fn by_address(&self, addr: &[u8]) -> Option<(&Element, &Form)> {
+            (addr == self.e.address().as_bytes()).then_some((&self.e, &self.f))
+        }
+        fn on_axis(&self, _chart: &Invariant, _axis: crate::transducer::sentence::Axis) -> Vec<crate::transducer::alphabet::Word> {
+            Vec::new()
+        }
+        fn generators_under(
+            &self,
+            _chart: &Invariant,
+            _budget: &mut crate::physics::Budget,
+        ) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address, crate::transducer::alphabet::Word)> {
+            Vec::new()
+        }
+    }
+    let crystal = Held { e: held_e, f: held_form };
+
+    // A CITATION IS NEVER CLONED: the reader hands back the crystal's own
+    // form, and `ptr::eq` is the whole question — a clone would be a
+    // different object with the same content, which content equality could
+    // not tell apart and which is exactly the defect.
+    let (e, f) = crystal
+        .by_address(crystal.e.address().as_bytes())
+        .expect("the crystal resolves its own citation");
+    assert!(std::ptr::eq(f, &crystal.f), "by_address hands back the held form, not a copy of it");
+    assert!(std::ptr::eq(e, &crystal.e), "and the held element, not a copy of it");
+
+    // THE GLUE PASS RETRACTS ONCE. The extraction is run whole, so the
+    // count is what a voice's own stroke pays and not a contrived call.
+    crate::transducer::sentence::reset_retractions();
+    let rule = extract_rule_with(&family, &crystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("the family extracts against the crystal");
+    let cited = rule.form.vertices.iter().filter(|v| matches!(v, Vertex::Glued { .. })).count();
+    assert!(cited > 0, "the bar's shift, which reproduces the family, is cited");
+    assert!(
+        crate::transducer::sentence::retractions() <= 1,
+        "the pass renumbers the form once however many citations it makes: {cited} citations, \
+         {} retractions",
+        crate::transducer::sentence::retractions()
     );
 }
 

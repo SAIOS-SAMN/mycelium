@@ -60,10 +60,9 @@ impl crate::transducer::family::Crystal for Kernel {
     fn by_address(
         &self,
         addr: &[u8],
-    ) -> Option<(Element, crate::transducer::sentence::Form)> {
+    ) -> Option<(&Element, &crate::transducer::sentence::Form)> {
         let held = self.held_word(addr)?;
-        let f = held.form()?.clone();
-        Some((held.element().clone(), f))
+        Some((held.element(), held.form()?))
     }
 
     fn on_axis(

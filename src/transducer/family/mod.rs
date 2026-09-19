@@ -65,8 +65,12 @@ pub trait Crystal {
     /// that meet only at the empty root, so one reader cannot answer both.
     fn on_body(&self, chart: &Invariant) -> Vec<(Element, Form, Standing)>;
     fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech>;
-    /// Keyed read of a crystallized form by address. No scan.
-    fn by_address(&self, addr: &[u8]) -> Option<(Element, Form)>;
+    /// Keyed read of a crystallized form by address. No scan, AND NO CLONE
+    /// (Z2 item 2, rule 17): a reader hands back the stratum it holds, and
+    /// a caller that resolves one citation 578 times must not pay a form
+    /// copy for each. The borrow is the crystal's own and it outlives no
+    /// call that does not hold the crystal.
+    fn by_address(&self, addr: &[u8]) -> Option<(&Element, &Form)>;
     /// Held words on `chart` whose class vector occupies `axis` (12.6): the
     /// vocabulary a pivot may write onto a loop on that chart. One keyed read
     /// of the axis index the crystal filled when the word was admitted.
@@ -204,7 +208,7 @@ impl Crystal for NoCrystal {
     fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech> {
         apply_form(f, x, placement, self)
     }
-    fn by_address(&self, _addr: &[u8]) -> Option<(Element, Form)> {
+    fn by_address(&self, _addr: &[u8]) -> Option<(&Element, &Form)> {
         None
     }
     fn on_axis(&self, _chart: &Invariant, _axis: super::sentence::Axis) -> Vec<super::alphabet::Word> {

@@ -220,7 +220,7 @@ fn hold_form_keeps_a_glued_open_loop() {
         ) -> Option<crate::transducer::family::Speech> {
             None
         }
-        fn by_address(&self, _a: &[u8]) -> Option<(crate::transducer::element::Element, Form)> {
+        fn by_address(&self, _a: &[u8]) -> Option<(&crate::transducer::element::Element, &Form)> {
             None
         }
         fn on_axis(

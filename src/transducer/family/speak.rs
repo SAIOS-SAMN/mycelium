@@ -141,6 +141,20 @@ pub fn apply_form_on(
 pub(crate) struct Scene {
     bodies: Vec<Body>,
     atlas: crate::transducer::stalk::Stalks,
+    /// WHAT A CITED FORM SPEAKS ON THIS GRID, by the citation's own
+    /// coordinate (Z2 item 3): the cited form's address and the COMPOSED
+    /// placement, written out (rule 6). What a citation emits is a function
+    /// of the cited form, the placement it is spoken at, and the grid — and
+    /// of nothing else, so a rule citing one form 578 times at one
+    /// placement speaks it once and reads the painted set back 577 times.
+    ///
+    /// It is on the SCENE because the scene is the grid: a memo held
+    /// anywhere wider would answer for a grid it was not measured on, and
+    /// one held narrower could not outlive the citation that filled it.
+    /// `RefCell` because `speak_on_scene` recurses through `&Scene` and the
+    /// memo is written by the recursion, never read by the engine as a
+    /// decision.
+    spoken: std::cell::RefCell<crate::network::nerve::Keyed<(Vec<Painted>, Vec<Painted>)>>,
 }
 
 impl Scene {
@@ -150,7 +164,18 @@ impl Scene {
         for (i, body) in bodies.iter().enumerate() {
             atlas.admit(&body.moduli, (i as u64).to_le_bytes());
         }
-        Scene { bodies, atlas }
+        Scene { bodies, atlas, spoken: std::cell::RefCell::new(crate::network::nerve::Keyed::new()) }
+    }
+
+    /// The citation's coordinate: the cited address and the composed
+    /// placement's canonical bytes, length-delimited (A21).
+    fn citation_key(address: &[u8], composed: &crate::transducer::alphabet::Word) -> Vec<u8> {
+        let mut k = Vec::new();
+        crate::transducer::address::put_bytes(&mut k, address);
+        let mut w = Vec::new();
+        composed.put_canonical(&mut w);
+        crate::transducer::address::put_bytes(&mut k, &w);
+        k
     }
 }
 
@@ -166,7 +191,7 @@ fn speak_on_scene(
 ) -> Option<Speech> {
     let fx = frame_of(x);
     let fy = output_frame(fx, f.ratio);
-    let Scene { bodies, atlas } = scene;
+    let Scene { bodies, atlas, .. } = scene;
     let mut painted: Vec<Painted> = Vec::new();
     let mut remainder: Vec<Painted> = Vec::new();
     let mut unspoken: Vec<u16> = Vec::new();
@@ -244,9 +269,24 @@ fn speak_on_scene(
                 placement: q,
                 ..
             } => {
-                let (_e, s) = crystal.by_address(address)?;
                 let composed = placement.compose(q);
-                let sp = speak_on_scene(&s, x, scene, &composed, crystal, None)?;
+                let key = Scene::citation_key(address.as_bytes(), &composed);
+                // READ THE CITATION AT ITS OWN COORDINATE. This rule cites
+                // one form 578 times at one placement and spoke it 578
+                // times onto the same grid; what comes back is the same
+                // painted set every time, because nothing in the citation
+                // varies.
+                if let Some((p, r)) = scene.spoken.borrow().get(&key) {
+                    painted.extend_from_slice(p);
+                    remainder.extend_from_slice(r);
+                    continue;
+                }
+                let (_e, s) = crystal.by_address(address)?;
+                let sp = speak_on_scene(s, x, scene, &composed, crystal, None)?;
+                scene
+                    .spoken
+                    .borrow_mut()
+                    .insert(&key, (sp.painted.clone(), sp.remainder.clone()));
                 painted.extend(sp.painted);
                 remainder.extend(sp.remainder);
             }
