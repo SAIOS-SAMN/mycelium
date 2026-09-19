@@ -105,7 +105,10 @@ These are not restated in each chapter; every chapter assumes them.
    the witness rotor's own factor, read exactly, and the seventeen were
    frozen by doctrine, not by arithmetic (36.3). The two organs of a
    letter's consilience are two independent courts, never two voices: a
-   letter is no exception to 47.3 (ruled 2026-09-10).
+   letter is no exception to 47.3 (ruled 2026-09-10). **The readings of
+   the scene cover are governed as the letters are** (ruled 2026-09-19,
+   chapter 53): a fixed roster, grown only by a court receipt on a probe,
+   never by a voice and never by a commit.
 7. **Residuals are never discarded.** A remainder is the exact demand. The
    one exception is a computed class that Leray's theorem shows to be an
    artefact of a spanning tree (chapter 14.8); it was never a class.
@@ -574,6 +577,10 @@ already projective because `Rotor`'s `PartialEq` is `projective_eq`.
 A proof built on a hash is a proof about a name, and a name proves
 nothing. This section is the reason behind laws 2, 11 and 12 and A21,
 written once so that no later convenience reopens the question.
+**Compression is a prefix** (ruled 2026-09-19): the compressed form of an
+object is a prefix of its key, which is a coarser stratum the object still
+lies in, and nothing shorter than the coordinates is the object. A
+"compact form" that is not a prefix is a digest under another name.
 
 **What a proof is here.** A word is a path in the Cayley graph; the
 theorem it proves is the vertex it reaches, and the proof is the
@@ -7815,6 +7822,7 @@ one case of the rule, not the rule.
 | `Demand::Source(B_out, chart, multiplicity)` | say which input body an output body is the image of | the output body's chart and the number of input charts a versor carries onto it, every one standing as a section, none first-found |
 | `Demand::Creation(B_out, chart)` | find any input body carrying onto `B_out` | the output body's chart |
 | `Demand::TopologicalDeformation(B_in, B_out)` | find any element of `Cl(4,1)(ℚ)` carrying `B_in` onto `B_out` — the harmonics differ | both charts and the axes on which they differ; answered by the cover of 50.8 — pieces each carried, the loop of their meet, the simplex the court fills — through Mayer–Vietoris boundary splitting (13.9), never held for a rotor that cannot exist |
+| `Demand::Chart { reading, chart, links }` (ruled 2026-09-19, chapter 53) | close the rule of one chart of the scene cover under one reading | the reading, the chart's own key — its support written out — and the links the chart leaves; keyed by (reading, chart key) and deduplicated by that key, never by a count; the one demand the registry dispatches as a sub-problem another mind may take (53.3) |
 
 Demands ride the sentence as vertices (`Vertex::Demand`), aggregated per
 chart: one vertex per (kind, chart), never one per body, carrying the
@@ -8819,3 +8827,95 @@ and `two_courts_reach_one_address_for_one_family`; the multiplicity of
 
 Rows: Q1 (this part), Q2, Q3, P5 with P4 folded in, P7, in
 `MU-RECURSION-TASKS.md`.
+
+## 53. The cut: a scene is covered before it is one form (ruled 2026-09-19)
+
+Ruled on the operator's word, on the coordinator's console, against
+114b307 and the auditor's reading of the same day. Carried from Part XI: the
+family is one body on `(r, c, k)`; from 52.5: its form is a quotient per
+chart; from rule 17: a reader writes a coordinate or returns a demand. What
+this chapter adds is the organ that stood between a scene and its form in
+the parent tree and never crossed the fork: a 25×25 scene arriving at
+extraction as one form of 712 vertices is not a cost to optimise but the
+absence of a cut. 948 of the 1 120 corpus tasks have a side that was above
+the parent's floor; 850 present a uniform separator row or column in every
+input; 102 are integer frame ratios on every pair. The Stage 16 gap reads
+differently under this: fifteen per cent of a 25×25 scene is a form that
+cannot close, and fifteen per cent of one 4×5 chart of it can.
+
+### 53.1 The scene cover
+
+A scene is covered by charts under a reading before it is perceived as one
+form. A **chart** is a region of the sensor plane named by its support
+written out (A21, `pieces::piece_key`): a key, of which every prefix is a
+coarser stratum, and never a bounding box carried past the sensor
+boundary (law 11, checklist (f′)). A **cover** is a `Keyed` of charts under
+one reading. The family is then the ordinary family of each chart — the
+train inputs and outputs restricted to it, frame by frame — extracted as
+52.5 extracts any family, and the charts' forms are recomposed on the Čech
+complex of the cover by the alternating coboundary (13.9, `cech::`), which
+is the recomposition and needs no written map.
+
+**The recursion ends at an identity of coordinates.** A chart is itself a
+scene and is covered again; the recursion ends where the cover's key is the
+scene's own key, one chart equal to the whole. There is no floor and no
+constant: `FRAGMENT_FLOOR = 9` is refused by rule 5 and is not replaced by
+a count of charts (rule 2). The routing floor — how much of a scene one
+voice takes — is the voice's drawable room (23.8) and is read from the
+book, never from the geometry.
+
+**No reading is chosen** (rules 4, 15). Every reading of the roster is
+tried in roster order; every cover that closes is kept; covers that
+close and are incomparable are held as a vortex until a court replay or a
+perception collapses them. The first cover that addresses a demand is a
+choice by arrival and is refused.
+
+### 53.2 The readings
+
+A **reading** is a way the sensor plane is cut into charts: Bands (the
+uniform separator rows and columns every input carries), Components,
+Lines, RingShells, PeriodCells (the spectrum cut, integer frame ratios),
+HueStrata. The roster is governed as the letters are (law 6 as amended):
+fixed, grown only by a court receipt on a probe — a reading whose first
+cover on the corpus closes a family no other reading closes — and never by
+a voice or a commit. Bands enters first because it is deducible in one
+pass over the inputs and covers 850 tasks; each further reading enters
+behind its own receipt (rows K1, K4, K5).
+
+### 53.3 A demand may name a stratum
+
+50.5 gains one kind: `Demand::Chart { reading, chart, links }`, a chart
+under a reading with no rule. It is keyed by (reading, chart key) and
+deduplicated by that key, never by a count, so a hundred scenes blocked on
+one chart class under one reading are one demand. It is the first demand
+the registry may dispatch as a **sub-problem**: a voice that refuses a
+chart hands it back as this demand; another mind may take it and the
+market prices it (24.3, 42.6). The five algebraic kinds of 50.5 stand
+unchanged; a `Demand::Chart` is spatial in the sense of a key on the
+sensor's stratum and in no other.
+
+### 53.4 The quantified citation
+
+A `Glued` vertex cites a form **over a fiber** — every chart of a reading
+on which the cited form closes — and its placement is re-derived at each
+chart it is spoken on from that chart's own key and the cited form's
+frame, never stored once for one placement (law 12). The single-placement
+citation `Form::glue(s, addr, placement, magnitude)` is the degenerate case
+of one chart, and the tape carries no per-chart placement. This is what
+makes a chart's rule general enough to be worth extracting: one citation
+speaks every chart of a banded scene.
+
+### 53.5 Binding
+
+```
+family/scene.rs                 the scene cover: charts by support key, the cover as Keyed, the readings, the recursion's identity end (53.1, 53.2)
+family/extract.rs               extraction per chart; the charts' forms recomposed on the Čech complex (53.1)
+cech/                           the nerve of the cover and the alternating coboundary as the recomposition (53.1, K4)
+sentence/demand.rs, tape.rs     Demand::Chart, its key, the version byte spent in the final commit (53.3)
+server/registry.rs              the sub-problem dispatched and priced (53.3)
+sentence/form/carrier.rs, chart.rs, family/speak.rs, court/verdict/replay.rs   the quantified citation and its re-derived placement (53.4)
+```
+
+Rows: K1 (Bands and the recomposition), K2 (the quantified citation), K3
+(`Demand::Chart`), K4 (the nerve, RingShells), K5 (the rest of the
+roster), Stage 19 of `MU-RECURSION-TASKS.md`.

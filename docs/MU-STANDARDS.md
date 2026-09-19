@@ -191,7 +191,10 @@ in `<module>/tests/properties.rs`.
 touch the file system outside a temp dir it creates, depend on another
 test, use `#[ignore]`, or be deleted when its claim still holds on the new
 carrier (rewrite it; a test is deleted only when its claim is false under
-the doctrine, and the commit message says which claim and why).
+the doctrine, and the commit message says which claim and why). A test
+that asserts a scene extracts as one form asserts a claim chapter 53
+makes false, and is rewritten to the charts' forms, never deleted (ruled
+2026-09-19).
 
 3.8 **Test deletion and weakening are review items.** The auditor lists
 removed test names and removed assertions not re-added on every landing;
