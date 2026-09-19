@@ -581,6 +581,22 @@ written once so that no later convenience reopens the question.
 object is a prefix of its key, which is a coarser stratum the object still
 lies in, and nothing shorter than the coordinates is the object. A
 "compact form" that is not a prefix is a digest under another name.
+**A citation is written whole, held once, and carried once** (ruled
+2026-09-19 on the reading that a Glued vertex's cited address was 68% of
+every word's tape, the same address copied into every word that glued it,
+and nested wherever the cited form itself cited). Identity is not
+shortened: a form that cites another writes the cited form's whole address
+into its own, because the cited form's coordinates are the only name it
+has (law 2), and the citing form's address is recovered from its key with
+them. Resident, an address is shared segments — its own bytes and
+references to the cited addresses it contains — so `n` citers hold one
+copy of what they cite and a nested citation holds one copy per cited
+form, the discipline of Z4c applied to addresses that contain addresses.
+On the tape, which is transport, each distinct cited address is written
+once in the tape's own table and cited by a tape-local ordinal that never
+leaves the tape; the decoder rebuilds the addresses whole, the court
+compares addresses as before, and the ordinal is no more an identity than
+a byte offset is (Part IX). That spends a version byte.
 
 **What a proof is here.** A word is a path in the Cayley graph; the
 theorem it proves is the vertex it reaches, and the proof is the
