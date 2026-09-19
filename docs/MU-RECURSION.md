@@ -9032,6 +9032,21 @@ case 3), never lifted to the form. Pieces correspond across frames by the
 chart coordinate along `e₃` (51.3, 52.5 reading 1), so a piece at frame k
 and its image at frame k+1 are one fiber, not two vertices.
 
+**The carrier is unchanged and the tape is unbroken.** A `Vertex::Word`
+already is what this section names: one transport class, acting on the
+charts it acts on through its `acts` fiber, one member per chart (D7).
+The ruling lands in the percept and nowhere else: a cover's carried pieces
+are grouped by transport class exactly as a chart's quotients are, one
+Word vertex per class with one member per chart the class carries a piece
+on; a chart on which one class carries two pieces by two different
+carriages is 50.5's multiplicity, a `Source` demand on that chart, never
+two vertices and never two members; the cover's meets are faces between
+those members through the incidence the form already builds on supports;
+the loops among pieces are classified inside the cover and filed as
+torsion by class, where the form already files them. No vertex kind, no
+tape field and no address of an unchanged form moves; the version byte
+stays K3's.
+
 The bound is therefore structural and is written as a test, not a limit:
 the number of word vertices of a form does not exceed the number of
 charts of the scene times the number of readings that cut it, plus one
