@@ -200,10 +200,7 @@ fn main() {
         let stop = Arc::clone(&stop);
         let _ = ctrlc::set_handler(move || stop.store(true, Ordering::SeqCst));
     }
-    let mut extract_memo: mycelium::network::nerve::Keyed<(
-        mycelium::transducer::address::Address,
-        Option<mycelium::transducer::sentence::SentenceRule>,
-    )> = mycelium::network::nerve::Keyed::new();
+    let mut extract_memo = mycelium::transducer::family::ExtractMemo::new();
     m.last_lang = (usize::MAX, usize::MAX, usize::MAX);
     m.last_synced_lang = (usize::MAX, usize::MAX, usize::MAX);
     let mut stroke_n = 0u64;

@@ -16,10 +16,7 @@ use mycelium::physics::{Physics, StrokeOutcome};
 pub(crate) fn feed_arm(
     stroke: &mut Stroke<'_>,
     feed: &mut Feed,
-    extract_memo: &mut mycelium::network::nerve::Keyed<(
-        mycelium::transducer::address::Address,
-        Option<mycelium::transducer::sentence::SentenceRule>,
-    )>,
+    extract_memo: &mut mycelium::transducer::family::ExtractMemo,
     occluded: bool,
 ) {
     let Stroke { entity, physics, c, outcome, m, tag } = stroke;

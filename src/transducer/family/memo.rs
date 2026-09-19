@@ -124,24 +124,80 @@ pub fn rule_replays_family(
         == crate::transducer::sentence::form_vertex_key(&rule.form)
 }
 
-/// Extract, memoized by family id and working-atlas generation.
+/// THE LAST FAMILY'S RULE, memoised by the family it is for and the
+/// working atlas it was read against — ONE entry, the shape
+/// `extract.rs`'s own `PERCEPT_MEMO` already has at the sensor boundary.
+///
+/// IT WAS A `Keyed` WITH NO EVICTION, holding one whole `SentenceRule` per
+/// task id the voice had ever pulled, and that is the fleet's OOM.
+/// Measured on voice 4 of the 2026-09-19 recut, 18 minutes in: 89 pulls,
+/// 54 distinct families, task arm +522 MB net — **9.7 MB per stored rule**,
+/// which is a `Form`'s vertices, faces, loops and carriers. The training
+/// corpus is 1001 tasks, so a voice that sees it once holds **9.4 GB**, and
+/// five voices share 15 GB. Every voice OOMed; survival was 1 h 33 m to
+/// 4 h 53 m and the arm was recorded as unattributed. It is this.
+///
+/// AND THE UNBOUNDED CACHE BOUGHT NOTHING. Its hit rate was 39% (89 pulls,
+/// 54 distinct), and the CONSECUTIVE-repeat rate over the same journal is
+/// 39% on voice 4 and 40% on voice 1 — every hit was the envelope the
+/// hypha had just handed back. One entry captures the whole of it.
+///
+/// The key is the family's own id and the atlas root it was read against,
+/// both compared as content: a pull of another family, or of this one
+/// after the mind has learned, is a miss and re-extracts. Nothing is
+/// evicted by recency or by a bound — there is one slot, and what is in it
+/// is what was last read (rule 4: nothing chosen by a scalar).
+#[derive(Default)]
+pub struct ExtractMemo {
+    held: Option<(Vec<u8>, crate::transducer::address::Address, Option<crate::transducer::sentence::SentenceRule>)>,
+}
+
+impl ExtractMemo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// What the memo holds: one rule, or none. Read by the voice's own
+    /// stroke line, where it was `extract_memo.len()`.
+    pub fn len(&self) -> usize {
+        usize::from(self.held.is_some())
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.held.is_none()
+    }
+
+    /// The rule this memo holds for `fam` at `atlas_root`, or `None`.
+    fn get(&self, fam: &[u8], atlas_root: &crate::transducer::address::Address) -> Option<&Option<crate::transducer::sentence::SentenceRule>> {
+        match &self.held {
+            Some((f, g, r)) if f == fam && g == atlas_root => Some(r),
+            _ => None,
+        }
+    }
+}
+
+/// Extract, memoised on the last family and the working-atlas generation.
+///
+/// A budget that ends before the extraction starts returns what the memo
+/// holds for THIS family and this atlas, and nothing otherwise: a rule read
+/// for another family is not this family's answer (rule 11). It read
+/// `cache.get(fam)` without the atlas check there, so a starved stroke
+/// could hand back a rule the mind had already outgrown.
 pub fn extract_rule_cached(
-    cache: &mut crate::network::nerve::Keyed<(crate::transducer::address::Address, Option<crate::transducer::sentence::SentenceRule>)>,
+    cache: &mut ExtractMemo,
     fam: &[u8],
     family: &[(Grid, Grid)],
     atlas_root: crate::transducer::address::Address,
     budget: &mut crate::physics::Budget,
     crystal: &dyn Crystal,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
-    if let Some((g, rule)) = cache.get(fam) {
-        if *g == atlas_root {
-            return rule.clone();
-        }
+    if let Some(rule) = cache.get(fam, &atlas_root) {
+        return rule.clone();
     }
     if !budget.spend() {
-        return cache.get(fam).and_then(|(_, r)| r.clone());
+        return cache.get(fam, &atlas_root).and_then(|r| r.clone());
     }
     let rule = extract_rule_with(family, crystal, budget);
-    cache.insert(fam, (atlas_root, rule.clone()));
+    cache.held = Some((fam.to_vec(), atlas_root, rule.clone()));
     rule
 }

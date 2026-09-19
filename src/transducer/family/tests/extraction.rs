@@ -441,7 +441,7 @@ for r in listings {
 fn extract_rule_cached_spends_once_per_generation() {
 let family = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
 let fam = b"fam";
-let mut cache = crate::network::nerve::Keyed::new();
+let mut cache = ExtractMemo::new();
 let mut budget = crate::physics::Physics::default().stroke_n(8);
 let atlas1 = crate::transducer::address::Address::from(vec![1]);
 let atlas2 = crate::transducer::address::Address::from(vec![2]);
@@ -452,6 +452,52 @@ assert_eq!(a.is_some(), b.is_some());
 assert_eq!(budget.remaining(), left, "a cache hit spends nothing");
 let _ = extract_rule_cached(&mut cache, fam, &family, atlas2, &mut budget, &NoCrystal);
 assert!(budget.remaining() < left, "a new atlas generation re-extracts");
+}
+
+/// THE MEMO HOLDS ONE RULE, and that bound is the fleet's OOM.
+///
+/// It was a `Keyed` with no eviction, one whole `SentenceRule` per task id
+/// the voice had ever pulled. Measured on voice 4 of the 2026-09-19 recut,
+/// 18 minutes in: 89 pulls, 54 distinct families, task arm +522 MB net —
+/// 9.7 MB per stored rule, which is a `Form`'s vertices, faces, loops and
+/// carriers. The training corpus is 1001 tasks, so a voice that sees it
+/// once holds 9.4 GB.
+///
+/// And it bought nothing: its hit rate was 39%, and the CONSECUTIVE-repeat
+/// rate over the same journal is 39% on voice 4 and 40% on voice 1 — every
+/// hit was the envelope the hypha had just handed back.
+///
+/// Three readings here. A second family REPLACES the first rather than
+/// joining it, so the memo cannot grow. Returning to the first is a miss
+/// and re-extracts, which is the cost of the bound, stated. And a starved
+/// stroke on a family the memo does not hold answers `None` rather than
+/// handing back another family's rule.
+#[test]
+fn the_extract_memo_holds_one_rule_and_a_second_family_replaces_it() {
+    let one = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
+    let two = vec![(grid(&["0011", "0000"]), grid(&["0033", "0000"]))];
+    let atlas = crate::transducer::address::Address::from(vec![1]);
+    let mut cache = ExtractMemo::new();
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+    assert_eq!(cache.len(), 0, "a memo that has read nothing holds nothing");
+    let _ = extract_rule_cached(&mut cache, b"one", &one, atlas.clone(), &mut budget, &NoCrystal);
+    assert_eq!(cache.len(), 1, "one family read, one rule held");
+    let _ = extract_rule_cached(&mut cache, b"two", &two, atlas.clone(), &mut budget, &NoCrystal);
+    assert_eq!(cache.len(), 1, "a second family REPLACES the first: the memo cannot grow");
+    // Returning to the first is a miss. That is the cost of the bound and
+    // it is stated, not hidden: the spend is the reading.
+    let left = budget.remaining();
+    let back = extract_rule_cached(&mut cache, b"one", &one, atlas.clone(), &mut budget, &NoCrystal);
+    assert!(back.is_some(), "and it re-extracts rather than answering for the other family");
+    assert!(budget.remaining() < left, "which is a spend, and the memo says so by spending it");
+    // A STARVED STROKE ANSWERS FOR THIS FAMILY OR NOT AT ALL. The memo now
+    // holds `one`; asked for `two` with nothing to spend it must not hand
+    // back `one`'s rule (rule 11).
+    let mut starved = crate::physics::Physics::default().stroke_n(0);
+    assert!(
+        extract_rule_cached(&mut cache, b"two", &two, atlas, &mut starved, &NoCrystal).is_none(),
+        "a rule read for another family is not this family's answer"
+    );
 }
 
 /// A class present in one of two pairs keeps its star face: a missing

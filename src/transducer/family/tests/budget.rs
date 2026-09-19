@@ -110,7 +110,7 @@ fn a_partial_extraction_is_cached_and_advances_when_the_language_moves() {
         (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
     ];
     let mut ph = crate::physics::Physics::default();
-    let mut cache = crate::network::nerve::Keyed::new();
+    let mut cache = crate::transducer::family::ExtractMemo::new();
     let root = crate::transducer::address::Address::new(Vec::new());
     let mut small = ph.stroke_n(2);
     let partial =
