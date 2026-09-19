@@ -24,6 +24,7 @@ pub mod anchor;
 pub mod beam;
 /// A6, A7, 17.4 — the chart a word is filed under.
 pub mod stalk;
+pub mod weigh;
 /// 18.2, 12.6, A16, A20 — the form: loops, the pivot, the certificate.
 pub mod sentence;
 /// Chapter 25 — the contemplation: what a mind holds at once.

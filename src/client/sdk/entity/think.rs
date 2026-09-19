@@ -689,34 +689,42 @@ impl Entity {
     /// form's address is megabytes, so a carrier can grow in bytes without
     /// gaining an entry (a bigger form held) or gain entries without bytes
     /// (small keys), and one number could not tell those apart.
-    pub fn carrier_bytes(&self) -> Vec<(&'static str, usize, usize)> {
+    pub fn carrier_bytes(&self) -> Vec<(&'static str, usize, usize, usize)> {
+        use crate::transducer::weigh::Weigh;
         let c = &self.contemplation;
         let e = &self.epigenome;
+        let held_w = |k: &crate::network::nerve::Keyed<crate::transducer::element::Element>| -> usize {
+            k.scoped().map(|(_, v)| v.weigh()).sum()
+        };
         vec![
-            ("taught_up", self.taught_up.key_bytes(), self.taught_up.len()),
-            ("taught_at", self.taught_at.key_bytes(), self.taught_at.len()),
-            ("obstructions", self.obstructions.key_bytes(), self.obstructions.len()),
-            ("glued", self.glued.key_bytes(), self.glued.len()),
-            ("opened", self.opened.key_bytes(), self.opened.len()),
-            ("sealed", self.sealed.key_bytes(), self.sealed.len()),
-            ("contractions", self.contractions.key_bytes(), self.contractions.len()),
-            ("contracted", 0, self.contracted.len()),
-            ("owed", 0, self.owed.len()),
-            ("epi.genome", 0, e.genome.len()),
-            ("epi.dialect", e.dialect.key_bytes(), e.dialect.len()),
-            ("epi.index", e.index.key_bytes(), e.index.len()),
-            ("epi.expressed", 0, e.expressed.len()),
-            ("epi.expressed_index", e.expressed_index.key_bytes(), e.expressed_index.len()),
-            ("epi.recollections", e.recollections.key_bytes(), e.recollections.len()),
-            ("epi.promoted", e.promoted.iter().map(Vec::len).sum(), e.promoted.len()),
-            ("con.bubbles", c.bubbles.key_bytes(), c.bubbles.len()),
-            ("con.by_chart", c.by_chart.key_bytes(), c.by_chart.len()),
-            ("con.cited", c.cited.key_bytes(), c.cited.len()),
-            ("con.ordinals", c.ordinals.key_bytes(), c.ordinals.len()),
-            ("con.addresses", c.addresses.iter().flatten().map(|a| a.len()).sum(), c.addresses.len()),
-            ("con.dirty", c.dirty.key_bytes(), c.dirty.len()),
-            ("con.cavity", c.cavity.key_bytes(), c.cavity.len()),
-            ("con.complex", c.complex.sections.key_bytes(), c.complex.sections.len()),
+            ("taught_up", self.taught_up.key_bytes(), held_w(&self.taught_up), self.taught_up.len()),
+            ("taught_at", self.taught_at.key_bytes(), self.taught_at.scoped().map(|(_, m)| m.key_bytes()).sum(), self.taught_at.len()),
+            ("obstructions", self.obstructions.key_bytes(), held_w(&self.obstructions), self.obstructions.len()),
+            ("glued", self.glued.key_bytes(), 0, self.glued.len()),
+            ("opened", self.opened.key_bytes(), 0, self.opened.len()),
+            ("sealed", self.sealed.key_bytes(), 0, self.sealed.len()),
+            ("contractions", self.contractions.key_bytes(), 0, self.contractions.len()),
+            ("contracted", 0, 0, self.contracted.len()),
+            ("owed", 0, 0, self.owed.len()),
+            // THE GENOME IS WHERE LONG-TERM MEMORY LIVES BY DESIGN and it
+            // holds DECODED forms: its weight is the whole of each `Held`,
+            // tape and form together, which is exactly what the previous
+            // instrument read as zero.
+            ("epi.genome", 0, e.genome.iter().map(Weigh::weigh).sum(), e.genome.len()),
+            ("epi.dialect", e.dialect.key_bytes(), e.dialect.scoped().map(|(_, d)| d.sentence.weigh()).sum(), e.dialect.len()),
+            ("epi.index", e.index.key_bytes(), 0, e.index.len()),
+            ("epi.expressed", 0, e.expressed.iter().map(Weigh::weigh).sum(), e.expressed.len()),
+            ("epi.expressed_index", e.expressed_index.key_bytes(), 0, e.expressed_index.len()),
+            ("epi.recollections", e.recollections.key_bytes(), e.recollections.scoped().map(|(_, (v, _))| v.iter().map(Vec::len).sum::<usize>()).sum(), e.recollections.len()),
+            ("epi.promoted", e.promoted.iter().map(Vec::len).sum(), 0, e.promoted.len()),
+            ("con.bubbles", c.bubbles.key_bytes(), c.bubbles.scoped().map(|(_, b)| b.form.as_ref().map_or(0, Weigh::weigh)).sum(), c.bubbles.len()),
+            ("con.by_chart", c.by_chart.key_bytes(), c.by_chart.scoped().map(|(_, m)| m.key_bytes()).sum(), c.by_chart.len()),
+            ("con.cited", c.cited.key_bytes(), c.cited.scoped().map(|(_, m)| m.key_bytes()).sum(), c.cited.len()),
+            ("con.ordinals", c.ordinals.key_bytes(), 0, c.ordinals.len()),
+            ("con.addresses", c.addresses.iter().flatten().map(|a| a.len()).sum(), 0, c.addresses.len()),
+            ("con.dirty", c.dirty.key_bytes(), 0, c.dirty.len()),
+            ("con.cavity", c.cavity.key_bytes(), c.cavity.scoped().map(|(_, v)| v.len() * std::mem::size_of::<crate::transducer::sentence::Link>()).sum(), c.cavity.len()),
+            ("con.complex", c.complex.sections.key_bytes(), 0, c.complex.sections.len()),
         ]
     }
 

@@ -106,19 +106,39 @@ fn heap() -> String {
 /// the voice came up, says WHICH arm retains what the heap line says grows.
 /// Unmeasured where the allocator does not answer; a difference is taken
 /// only between two readings.
-/// THE PER-CARRIER VECTOR AS ONE FIELD, `name=bytes/entries` each, never
-/// summed. Carriers holding nothing are left out, so the line names what
-/// is there rather than padding with zeroes.
+/// Z10 — THE PER-CARRIER VECTOR AS ONE FIELD: `name=keys+values/entries`
+/// each, never summed across carriers.
+///
+/// Keys and values are apart because they answer different questions: a
+/// carrier can grow in bytes without gaining an entry (a bigger form held)
+/// or gain entries without bytes (short keys), and the genome grows only
+/// in VALUES — sixty-five decoded forms in six minutes, which the
+/// key-only instrument read as zero.
+///
+/// `account` is the reconciliation the row requires: the carriers' total
+/// against what jemalloc says this process has allocated. A table that
+/// cannot account for the process is not reading the process, and the
+/// residue is printed rather than hidden — what the carriers do NOT reach
+/// is as much a reading as what they do.
 fn carrier_line(entity: &mycelium::client::sdk::Entity) -> String {
     let mut out = String::new();
-    for (name, bytes, n) in entity.carrier_bytes() {
-        if bytes == 0 && n == 0 {
+    let mut total = 0usize;
+    for (name, keys, values, n) in entity.carrier_bytes() {
+        total = total.saturating_add(keys).saturating_add(values);
+        if keys == 0 && values == 0 && n == 0 {
             continue;
         }
         if !out.is_empty() {
             out.push(' ');
         }
-        out.push_str(&format!("{name}={bytes}/{n}"));
+        out.push_str(&format!("{name}={keys}+{values}/{n}"));
+    }
+    // An allocator that does not read is an unread value, not a zero
+    // (rule 11): the account says so rather than reconciling against a
+    // number nothing measured.
+    match allocated() {
+        Some(live) => out.push_str(&format!(" | account carriers {total} live {live}")),
+        None => out.push_str(&format!(" | account carriers {total} live unread")),
     }
     out
 }
