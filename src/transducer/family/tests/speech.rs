@@ -4,6 +4,59 @@
 use super::common::*;
 use crate::transducer::family::*;
 
+/// LAW 12 — A GLUED VERTEX SPEAKS ITS CITED FORM ONTO THE SCENE THE SPEECH
+/// ALREADY PERCEIVED. A form citing the bar's shift twice speaks the grid
+/// with the sensor read once — its own perception — and not once more per
+/// citation: the bodies are one fact of the grid, and the cited form is
+/// spoken onto them at its composed placement.
+#[test]
+fn a_glued_vertex_speaks_its_cited_form_on_the_one_perception_of_the_scene() {
+    let (x, y) = (grid(&["1100", "0000"]), grid(&["0011", "0000"]));
+    let held_form = cipher_form(&x, &y);
+    assert!(held_form.is_closed(), "the bar's shift is a closed form to cite");
+    let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
+    struct Cited {
+        e: Element,
+        f: Form,
+    }
+    impl Crystal for Cited {
+        fn on_class(&self, _class: &Invariant) -> Vec<(Element, Form, Standing)> {
+            Vec::new()
+        }
+        fn on_body(&self, _chart: &Invariant) -> Vec<(Element, Form, Standing)> {
+            Vec::new()
+        }
+        fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
+            apply_form(f, x, placement, self)
+        }
+        fn by_address(&self, addr: &[u8]) -> Option<(Element, Form)> {
+            (addr == self.e.address().as_bytes()).then(|| (self.e.clone(), self.f.clone()))
+        }
+        fn on_axis(&self, _chart: &Invariant, _axis: crate::transducer::sentence::Axis) -> Vec<crate::transducer::alphabet::Word> {
+            Vec::new()
+        }
+        fn generators_under(
+            &self,
+            _chart: &Invariant,
+            _budget: &mut crate::physics::Budget,
+        ) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address, crate::transducer::alphabet::Word)> {
+            Vec::new()
+        }
+    }
+    let crystal = Cited { e: held_e.clone(), f: held_form.clone() };
+    let mut citing = Form::default();
+    let identity = crate::transducer::alphabet::Word::identity();
+    for _ in 0..2 {
+        citing.glue(&held_form, held_e.address(), identity.clone(), held_e.magnitude()).expect("the closed form glues");
+    }
+    let glued = citing.vertices.iter().filter(|v| matches!(v, Vertex::Glued { .. })).count();
+    assert_eq!(glued, 2, "two citations of the one form");
+    reset_sensor_reads();
+    let spoken = apply_form(&citing, &x, &identity, &crystal).expect("the citing form speaks");
+    assert_eq!(sensor_reads(), (x.len() * x[0].len()) as u64, "the grid is perceived once for the whole speech");
+    assert_eq!(spoken.grid(), Some(y), "and both citations speak the bar's shift onto it");
+}
+
 /// An unspellable vertex is unspoken: conformal_of None is not replaced
 /// by an invented identity versor.
 #[test]

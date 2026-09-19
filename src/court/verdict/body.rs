@@ -55,10 +55,62 @@ pub(crate) const FAIL_PART: &str = "an image body is reached in part";
 /// indistinguishable from `FAIL_HUE`.
 pub(crate) const FAIL_GAUGE_AMBIGUOUS: &str = "the gauge names two images for one hue";
 
-/// The bodies of `x` on the vertex's chart, read by the chart's key.
-fn fiber_on<'a>(bodies: &'a [Body], class: &stalk::Invariant) -> Vec<&'a Body> {
-    let key = class.key();
-    bodies.iter().filter(|b| b.moduli.key() == key).collect()
+/// ONE FRAME OF THE FAMILY, PERCEIVED ONCE (law 12): the bodies of `x`
+/// filed by their chart, the images of `y`, and the image each base site
+/// belongs to. Every reader of a frame — a vertex's replay, an edge's
+/// re-measurement, the coverage of a part-reached image — reads this and
+/// perceives nothing itself: the frame's bodies are one fact of the frame,
+/// not of the vertex or the face asking about them.
+pub(crate) struct Frame<'a> {
+    pub(crate) y: &'a Grid,
+    pub(crate) bodies: Vec<Body>,
+    pub(crate) images: Vec<Body>,
+    /// Chart key → the bodies standing on that chart, by index.
+    by_chart: Keyed<Vec<usize>>,
+    /// Base site → the image standing on it, by index.
+    image_at: Keyed<usize>,
+}
+
+impl<'a> Frame<'a> {
+    pub(crate) fn of(x: &Grid, y: &'a Grid) -> Frame<'a> {
+        let bodies = perceive(x);
+        let images = perceive(y);
+        let mut by_chart: Keyed<Vec<usize>> = Keyed::new();
+        for (i, b) in bodies.iter().enumerate() {
+            let k = b.moduli.key();
+            match by_chart.get_mut(k.as_bytes()) {
+                Some(on) => on.push(i),
+                None => {
+                    by_chart.insert(k.as_bytes(), vec![i]);
+                }
+            }
+        }
+        let mut image_at: Keyed<usize> = Keyed::new();
+        for (i, b) in images.iter().enumerate() {
+            for &(r, c, k, _) in &b.laminae {
+                image_at.insert(crate::transducer::sentence::base_key(r, c, k), i);
+            }
+        }
+        Frame { y, bodies, images, by_chart, image_at }
+    }
+
+    /// The bodies of `x` on one chart: a keyed read of the fiber.
+    pub(crate) fn on_chart(&self, chart: &stalk::Invariant) -> Vec<&Body> {
+        match self.by_chart.get(chart.key().as_bytes()) {
+            Some(on) => on.iter().filter_map(|&i| self.bodies.get(i)).collect(),
+            None => Vec::new(),
+        }
+    }
+
+    /// The image of `y` standing on a base site, if one does.
+    pub(crate) fn image_at(&self, (r, c, k): (i64, i64, i64)) -> Option<&Body> {
+        self.images.get(*self.image_at.get(&crate::transducer::sentence::base_key(r, c, k))?)
+    }
+}
+
+/// The family's frames, each perceived once, in the family's own order.
+pub(crate) fn frames_of(family: &[(Grid, Grid)]) -> Vec<Frame<'_>> {
+    family.iter().map(|(x, y)| Frame::of(x, y)).collect()
 }
 
 /// A section's site, written out: the key a landed lamina is filed under.
@@ -71,11 +123,10 @@ fn site_key(r: i64, c: i64) -> Vec<u8> {
 
 /// 50.1 step 1 at one FRAME of the family's one body (51.8): `(V · W · γ) ·
 /// B_in = B_out` under exact equality lamina by lamina, for every body of
-/// the vertex's chart on `x`.
+/// the vertex's chart on the frame.
 pub(crate) fn vertex_carries_frame(
     vertex: &Vertex,
-    x: &Grid,
-    y: &Grid,
+    here: &Frame<'_>,
     frame: usize,
     sections: &Keyed<Keyed<()>>,
 ) -> Carried {
@@ -89,7 +140,7 @@ pub(crate) fn vertex_carries_frame(
     if contact.is_some() {
         return Carried::Silent;
     }
-    let bodies = perceive(x);
+    let y = here.y;
     let mut landed: Keyed<()> = Keyed::new();
     // THE COURT REPLAYS EVERY MEMBER, each against the bodies on its OWN
     // chart, by the carriage and the gauge it acts by there. Replaying one
@@ -114,7 +165,7 @@ pub(crate) fn vertex_carries_frame(
         let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else {
             return Carried::Fails(FAIL_NO_VERSOR, at());
         };
-        let fiber = fiber_on(&bodies, &member.chart);
+        let fiber = here.on_chart(&member.chart);
         if fiber.is_empty() {
             continue;
         }
@@ -166,7 +217,7 @@ pub(crate) fn vertex_carries_frame(
     // what this asks about — two members whose images meet in one image body
     // cover it between them, and asking per member would call that coverage
     // a part.
-    for image in perceive(y) {
+    for image in &here.images {
         let touched = image.laminae.iter().any(|&(r, c, _, _)| landed.contains(&site_key(r, c)));
         if touched && !image.laminae.iter().all(|&(r, c, _, _)| landed.contains(&site_key(r, c))) {
             // The image body is reached in part BY THE FIBRE AS A WHOLE, so the
@@ -183,7 +234,7 @@ pub(crate) fn vertex_carries_frame(
 fn form_covers_laminae(
     f: &Form,
     frame: usize,
-    x: &Grid,
+    at: &Frame<'_>,
     laminae: &[Lamina],
 ) -> bool {
     let mut covered: Keyed<u8> = Keyed::new();
@@ -192,7 +243,6 @@ fn form_covers_laminae(
             covered.insert(site_key(r, c), after);
         }
     }
-    let bodies = perceive(x);
     for v in &f.vertices {
         let Vertex::Word { acts, derivation, contact, .. } = v else { continue; };
         if contact.is_some() { continue; }
@@ -211,7 +261,7 @@ fn form_covers_laminae(
                 }
             }
             let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else { continue; };
-            for b in fiber_on(&bodies, &member.chart) {
+            for b in at.on_chart(&member.chart) {
                 for &(r, c, k, h) in &b.laminae {
                     let Some(p) = element::carry_center(&versor, r, c, k) else { continue; };
                     let Some((tr, tc, tk)) = element::site_of(&p) else { continue; };
@@ -232,13 +282,12 @@ fn form_covers_laminae(
 /// body; a vertex silent at every frame is a section nothing here
 /// contradicts, and the closure check reads it.
 ///
-/// It was `vertices_carry_family` and it asked that every rule vertex speak
-/// in every PAIR of a list. With one body it asks that every rule vertex's
-/// support meet every FRAME — that the vertex stands along the whole of
-/// `e₃` and is not a section of some frames only. Same refusal, same
-/// computation, indexed by the coordinate: `f.sections` is keyed by
-/// [`frame_key`] and the claim is a keyed read, not a walk of a list.
+/// Every rule vertex's support meets every FRAME it claims — the vertex
+/// stands along the whole of `e₃` unless it is a section of some frames
+/// only — and the claim is a keyed read of `f.sections` at the frame's own
+/// coordinate, [`frame_key`], never a walk of a list.
 pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
+    let frames = frames_of(family);
     for v in &f.vertices {
         let Vertex::Word { address, .. } = v else {
             continue;
@@ -254,15 +303,15 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
         // checked whole, which is what it says of itself.
         let only = crate::transducer::family::transport_class(v)
             .and_then(|tc| f.sections.get(&tc.key()).cloned());
-        for (frame, (x, y)) in family.iter().enumerate() {
+        for (frame, at) in frames.iter().enumerate() {
             if only.as_ref().is_some_and(|ps| !ps.contains(&frame_key(frame as u16))) {
                 continue;
             }
-            if let Carried::Fails(why, chart) = vertex_carries_frame(v, x, y, frame, &f.sections) {
+            if let Carried::Fails(why, chart) = vertex_carries_frame(v, at, frame, &f.sections) {
                 if why == FAIL_PART {
-                    let uncovered = perceive(y).into_iter().any(|image| {
+                    let uncovered = at.images.iter().any(|image| {
                         if image.moduli == chart {
-                            !form_covers_laminae(f, frame, x, &image.laminae)
+                            !form_covers_laminae(f, frame, at, &image.laminae)
                         } else {
                             false
                         }
@@ -296,15 +345,15 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
 }
 
 /// The body of `y` the image of `body`'s anchor lamina falls in, under
-/// `versor`. The anchor is the least lamina in the body's own order — a
-/// coordinate of the body, never a choice among its laminae.
-fn image_body(body: &Body, versor: &Versor, images: &[Body]) -> Option<usize> {
+/// `versor`: a keyed read of the frame's occupancy at the carried site. The
+/// anchor is the least lamina in the body's own order — a coordinate of
+/// the body, never a choice among its laminae.
+fn image_body<'a>(body: &Body, versor: &Versor, at: &'a Frame<'_>) -> Option<&'a Body> {
     let [(r, c, k, _), ..] = body.laminae.as_slice() else {
         return None;
     };
     let (r, c, k) = (*r, *c, *k);
-    let (tr, tc, tk) = element::site_of(&element::carry_center(versor, r, c, k)?)?;
-    images.iter().position(|b| b.laminae.iter().any(|&(br, bc, bk, _)| (br, bc, bk) == (tr, tc, tk)))
+    at.image_at(element::site_of(&element::carry_center(versor, r, c, k)?)?)
 }
 
 fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
@@ -323,11 +372,11 @@ fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
 /// addresses when the union has no versor (the speaker claimed an edge
 /// where the pair is not rigid) or the transport is not the one measured.
 ///
-/// It was `edges_rederive_family`, an edge transport re-derived per PAIR of
-/// a list. It is the same computation indexed by a coordinate: the face's
-/// own section says which frames it was measured at, and `measured_on` asks
-/// it at the frame rather than walking its list.
+/// The edge is re-derived at each frame the face's own section names:
+/// `measured_on` asks the section at the frame's coordinate rather than
+/// walking its list.
 pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
+    let frames = frames_of(family);
     for face in &f.faces {
         let (Some(vi), Some(vj)) = (f.vertices.get(face.i as usize), f.vertices.get(face.j as usize)) else {
             continue;
@@ -370,7 +419,7 @@ pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
         else {
             return Some(refused());
         };
-        for (frame, (x, y)) in family.iter().enumerate() {
+        for (frame, at) in frames.iter().enumerate() {
             // A FACE IS ASKED FOR THE FRAMES ITS WORD WAS MEASURED AT. 21
             // step 2 keeps every word the bundle spoke between two ends as
             // a face of its own, each a section along `e₃` over the frames
@@ -384,19 +433,17 @@ pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
             if !face.measured_on(frame) {
                 continue;
             }
-            let bodies = perceive(x);
-            let images = perceive(y);
-            let fiber_i = fiber_on(&bodies, class_i);
-            let fiber_j = fiber_on(&bodies, class_j);
+            let fiber_i = at.on_chart(class_i);
+            let fiber_j = at.on_chart(class_j);
             let ([a_i], [a_j]) = (fiber_i.as_slice(), fiber_j.as_slice()) else {
                 continue;
             };
-            let (Some(bi), Some(bj)) = (image_body(a_i, &v_i, &images), image_body(a_j, &v_j, &images)) else {
+            let (Some(bi), Some(bj)) = (image_body(a_i, &v_i, at), image_body(a_j, &v_j, at)) else {
                 return Some(refused());
             };
             let Some(v_ij) = crate::transducer::blade::versor_between(
                 &union_shape(a_i, a_j),
-                &union_shape(&images[bi], &images[bj]),
+                &union_shape(bi, bj),
             ) else {
                 return Some(refused());
             };

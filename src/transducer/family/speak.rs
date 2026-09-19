@@ -130,13 +130,43 @@ pub fn apply_form_on(
     crystal: &dyn Crystal,
     pair: Option<usize>,
 ) -> Option<Speech> {
+    speak_on_scene(f, x, &Scene::of(x), placement, crystal, pair)
+}
+
+/// THE SCENE A FORM IS SPOKEN ONTO, PERCEIVED ONCE (law 12): the grid's
+/// bodies and the atlas that files them by chart. A cited form spoken
+/// inside this speech speaks onto the same scene and perceives nothing
+/// itself: the bodies are one fact of the grid, not of the vertex citing
+/// them.
+pub(crate) struct Scene {
+    bodies: Vec<Body>,
+    atlas: crate::transducer::stalk::Stalks,
+}
+
+impl Scene {
+    pub(crate) fn of(x: &Grid) -> Scene {
+        let bodies = perceive(x);
+        let mut atlas = crate::transducer::stalk::Stalks::default();
+        for (i, body) in bodies.iter().enumerate() {
+            atlas.admit(&body.moduli, (i as u64).to_le_bytes());
+        }
+        Scene { bodies, atlas }
+    }
+}
+
+/// The speech itself, on a scene already perceived: each vertex kind
+/// emits onto the scene's bodies, read by chart from its atlas.
+fn speak_on_scene(
+    f: &Form,
+    x: &Grid,
+    scene: &Scene,
+    placement: &crate::transducer::alphabet::Word,
+    crystal: &dyn Crystal,
+    pair: Option<usize>,
+) -> Option<Speech> {
     let fx = frame_of(x);
     let fy = output_frame(fx, f.ratio);
-    let bodies = perceive(x);
-    let mut atlas = crate::transducer::stalk::Stalks::default();
-    for (i, body) in bodies.iter().enumerate() {
-        atlas.admit(&body.moduli, (i as u64).to_le_bytes());
-    }
+    let Scene { bodies, atlas } = scene;
     let mut painted: Vec<Painted> = Vec::new();
     let mut remainder: Vec<Painted> = Vec::new();
     let mut unspoken: Vec<u16> = Vec::new();
@@ -205,6 +235,10 @@ pub fn apply_form_on(
                     unspoken.push(vi as u16);
                 }
             }
+            // A CITED FORM SPEAKS ONTO THE SCENE THIS SPEECH ALREADY
+            // PERCEIVED, at the composed placement: the crystal resolves the
+            // citation by address, and the cited form's bodies are this
+            // grid's bodies (law 12).
             Vertex::Glued {
                 address,
                 placement: q,
@@ -212,7 +246,7 @@ pub fn apply_form_on(
             } => {
                 let (_e, s) = crystal.by_address(address)?;
                 let composed = placement.compose(q);
-                let sp = crystal.speak_form(&s, x, &composed)?;
+                let sp = speak_on_scene(&s, x, scene, &composed, crystal, None)?;
                 painted.extend(sp.painted);
                 remainder.extend(sp.remainder);
             }

@@ -951,39 +951,73 @@ pub fn extract_rule_with(
     let measured = trace::carriage_of(&form);
     // 3. Glue: the placement is the vertex's own word from the Frame; the
     // crystal is asked at every chart the class acts on (21 step 3).
-    let glued_classes: Vec<(TransportClass, Invariant, crate::transducer::alphabet::Word)> = form
-        .vertices
-        .iter()
-        .filter_map(|v| {
-            let tc = transport_class(v)?;
-            let acts = v.acts()?;
-            let placement = v.word_in(&form)?;
-            Some(acts.scoped().map(|(_, a)| (tc.clone(), a.chart.clone(), placement.clone())).collect::<Vec<_>>())
-        })
-        .flatten()
-        .collect();
-    for (tc, moduli, placement) in glued_classes {
-        if !budget.spend() {
-            return finish(form, scale, sections, &unreached_pairs);
-        }
-        for (e, s, _st) in crystal.on_body(&moduli) {
-            if !s.is_closed() {
-                continue;
-            }
-            let reproduces = family.iter().all(|(x, y)| {
-                crystal
-                    .speak_form(&s, x, &placement)
-                    .is_some_and(|sp| painted_within_grid(&sp.painted, y))
-            });
-            if reproduces {
-                let _ = form.glue(&s, e.address(), placement.clone(), e.magnitude());
-                let mut drop = Keyed::new();
-                for (i, v) in form.vertices.iter().enumerate() {
-                    if matches!(v, Vertex::Word { .. }) && transport_class(v).as_ref() == Some(&tc) {
-                        drop.insert(vertex_ix_key(i as u16), ());
-                    }
+    //
+    // THE CLASSES BY THE CHART THEY ACT ON, in chart-key order, which is
+    // content: the crystal is asked once per chart, and every class
+    // standing on that chart reads the one answer.
+    let mut by_chart: Keyed<(Invariant, Vec<(TransportClass, crate::transducer::alphabet::Word)>)> =
+        Keyed::new();
+    for v in &form.vertices {
+        let (Some(tc), Some(acts), Some(placement)) = (transport_class(v), v.acts(), v.word_in(&form))
+        else {
+            continue;
+        };
+        for (ck, a) in acts.scoped() {
+            match by_chart.get_mut(&ck) {
+                Some((_, on)) => on.push((tc.clone(), placement.clone())),
+                None => {
+                    by_chart.insert(&ck, (a.chart.clone(), vec![(tc.clone(), placement.clone())]));
                 }
-                form.retract_vertices(&drop);
+            }
+        }
+    }
+    // WHAT A CITED FORM SPEAKS OVER THE FAMILY is a function of that form,
+    // the placement it is spoken at and the family, and of nothing else:
+    // neither the class nor the chart the reading is made for enters
+    // `speak_form`. So the reading is keyed by the cited form's address and
+    // the placement written out (rule 6), measured once, and read back by
+    // every class that asks at that form and that placement: the classes
+    // are not a coordinate of the reading, so they are not a factor of it.
+    let mut spoken: Keyed<bool> = Keyed::new();
+    for (_, (moduli, classes)) in by_chart.scoped() {
+        let held = crystal.on_body(moduli);
+        for (tc, placement) in classes {
+            if !budget.spend() {
+                return finish(form, scale, sections, &unreached_pairs);
+            }
+            let mut placement_key = Vec::new();
+            placement.put_canonical(&mut placement_key);
+            for (e, s, _st) in &held {
+                if !s.is_closed() {
+                    continue;
+                }
+                let mut key = e.address().as_bytes().to_vec();
+                crate::transducer::address::put_bytes(&mut key, &placement_key);
+                let reproduces = match spoken.get(&key) {
+                    Some(&r) => r,
+                    None => {
+                        let r = family.iter().all(|(x, y)| {
+                            crystal
+                                .speak_form(s, x, placement)
+                                .is_some_and(|sp| painted_within_grid(&sp.painted, y))
+                        });
+                        spoken.insert(&key, r);
+                        r
+                    }
+                };
+                if reproduces {
+                    let _ = form.glue(s, e.address(), placement.clone(), e.magnitude());
+                    // THE VERTICES OF THE CLASS, read off the transport index
+                    // the form keeps current (rule 1), never a walk of every
+                    // vertex asking each its class.
+                    let mut drop = Keyed::new();
+                    if let Some(on) = form.by_transport.get(&tc.key()) {
+                        for &i in on {
+                            drop.insert(vertex_ix_key(i), ());
+                        }
+                    }
+                    form.retract_vertices(&drop);
+                }
             }
         }
     }

@@ -67,46 +67,58 @@ pub(crate) fn member_section_key(v: &Vertex, chart: &Invariant) -> Option<Vec<u8
     Some(k)
 }
 
-/// THE RELATIVE PLACEMENTS BETWEEN TWO CLASSES ON ONE FORM, keyed by the
-/// member pair, read off THE FORM'S OWN FACES between them.
+/// THE KEY OF AN ORDERED PAIR OF TRANSPORT CLASSES: `a`'s key then `b`'s,
+/// each length-delimited, so the relatives from `a`'s bodies to `b`'s are
+/// one stratum and the reverse direction is another.
+pub(crate) fn class_pair_key(a: &TransportClass, b: &TransportClass) -> Vec<u8> {
+    let mut k = Vec::new();
+    crate::transducer::address::put_bytes(&mut k, &a.key());
+    crate::transducer::address::put_bytes(&mut k, &b.key());
+    k
+}
+
+/// THE RELATIVE PLACEMENTS BETWEEN EVERY TWO CLASSES ON ONE FORM, read off
+/// THE FORM'S OWN FACES in one pass: ordered class pair → member pair →
+/// `(w_b, C_b · C_a⁻¹)`, the word the far end speaks and the relative
+/// carriage `rebase_named_faces` asks about.
 ///
 /// The incidence is the face: a face exists because two bodies' supports meet
 /// or sit at ring distance one (21 step 2), so the face says which body of
 /// class `a` relates to which body of class `b`. Taking the product of the two
 /// classes' placements would relate bodies nothing in the scene relates.
 ///
-/// The value is `(w_b, C_b · C_a⁻¹)` — the word the far end speaks and the
-/// relative carriage `rebase_named_faces` asks about. A pair whose words differ
-/// contributes nothing: the two ends do not speak one word there and there is
-/// no rebase to make.
-pub(crate) fn relatives_between(
+/// Every face is walked once and files its relative under both directions,
+/// so a caller holding two classes reads their stratum by key (rule 1). A
+/// pair whose words differ contributes nothing: the two ends do not speak
+/// one word there and there is no rebase to make. Each vertex's class is
+/// read once, from the vertices, not once per face end.
+pub(crate) fn relatives_by_class(
     faces: &[crate::transducer::sentence::FormFace],
     vertices: &[Vertex],
-    a: &TransportClass,
-    b: &TransportClass,
-) -> crate::network::nerve::Keyed<(crate::transducer::alphabet::Word, Versor)> {
-    let mut out = crate::network::nerve::Keyed::new();
-    let (ka, kb) = (a.key(), b.key());
-    // index: the form's own faces, which are its boundary (rule 1)
-    for face in faces {
-        let (Some(vi), Some(vj)) = (
-            vertices.get(face.i as usize),
-            vertices.get(face.j as usize),
-        ) else {
-            continue;
-        };
-        let (Some(ci), Some(cj)) = (
-            transport_class(vi).map(|c| c.key()),
-            transport_class(vj).map(|c| c.key()),
-        ) else {
-            continue;
-        };
-        // The face runs a→b or b→a; either way the relative asked for is the
-        // one from `a`'s body to `b`'s.
-        let forward = ci == ka && cj == kb;
-        if !(forward || (ci == kb && cj == ka)) {
-            continue;
+) -> crate::network::nerve::Keyed<crate::network::nerve::Keyed<(crate::transducer::alphabet::Word, Versor)>> {
+    let classes: Vec<Option<TransportClass>> = vertices.iter().map(transport_class).collect();
+    let mut out: crate::network::nerve::Keyed<crate::network::nerve::Keyed<_>> =
+        crate::network::nerve::Keyed::new();
+    let mut file = |pair: Vec<u8>, at: Vec<u8>, value: (crate::transducer::alphabet::Word, Versor)| {
+        match out.get_mut(&pair) {
+            Some(rels) => {
+                rels.insert(&at, value);
+            }
+            None => {
+                let mut rels = crate::network::nerve::Keyed::new();
+                rels.insert(&at, value);
+                out.insert(&pair, rels);
+            }
         }
+    };
+    for face in faces {
+        let (Some(vi), Some(vj)) = (vertices.get(face.i as usize), vertices.get(face.j as usize)) else {
+            continue;
+        };
+        let (Some(Some(ci)), Some(Some(cj))) = (classes.get(face.i as usize), classes.get(face.j as usize))
+        else {
+            continue;
+        };
         let (Vertex::Word { derivation: di, .. }, Vertex::Word { derivation: dj, .. }) = (vi, vj)
         else {
             continue;
@@ -117,28 +129,32 @@ pub(crate) fn relatives_between(
         if wi != wj {
             continue;
         }
+        let (forward, backward) = (class_pair_key(ci, cj), class_pair_key(cj, ci));
         for (pk, _) in face.at.scoped() {
             let Some((ik, jk)) = crate::transducer::sentence::read_face_pair_key(&pk) else {
                 continue;
             };
-            let (Some(cca), Some(ccb)) = (
-                if forward { vi.chart_keyed(&ik) } else { vj.chart_keyed(&jk) },
-                if forward { vj.chart_keyed(&jk) } else { vi.chart_keyed(&ik) },
-            ) else {
+            let (Some(cci), Some(ccj)) = (vi.chart_keyed(&ik), vj.chart_keyed(&jk)) else {
                 continue;
             };
-            let (Some(ma), Some(mb)) = (
-                if forward { vi.acting_on(&cca) } else { vj.acting_on(&cca) },
-                if forward { vj.acting_on(&ccb) } else { vi.acting_on(&ccb) },
-            ) else {
+            let (Some(mi), Some(mj)) = (vi.acting_on(&cci), vj.acting_on(&ccj)) else {
                 continue;
             };
-            let Some(inv) = ma.carriage.versor_inverse() else {
+            let (Some(inv_i), Some(inv_j)) = (mi.carriage.versor_inverse(), mj.carriage.versor_inverse())
+            else {
                 continue;
             };
-            out.insert(
-                crate::transducer::sentence::face_pair_key(&cca, &ccb),
-                (wj.clone(), mb.carriage.geo(&inv)),
+            // From `i`'s body to `j`'s under `(class_i, class_j)`, and back
+            // under `(class_j, class_i)`: the one incidence, both directions.
+            file(
+                forward.clone(),
+                crate::transducer::sentence::face_pair_key(&cci, &ccj),
+                (wj.clone(), mj.carriage.geo(&inv_i)),
+            );
+            file(
+                backward.clone(),
+                crate::transducer::sentence::face_pair_key(&ccj, &cci),
+                (wj.clone(), mi.carriage.geo(&inv_j)),
             );
         }
     }

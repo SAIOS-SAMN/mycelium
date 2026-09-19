@@ -183,6 +183,48 @@ fn a_carried_edge_rederives_on_the_union_or_is_refused() {
     );
 }
 
+/// 51.8, LAW 12 — THE COURT PERCEIVES EACH FRAME ONCE. A turned L, a
+/// shifted bar and a shifted dot are two word vertices — the quarter turn,
+/// and the translation acting on two charts — with two faces between them
+/// where the bar and the dot land beside the L. The replay reads each frame
+/// from one perception of it: the vertex replay reads the sensor once per
+/// grid of the family, and so does the edge replay, whatever the number of
+/// vertices, faces and member pairs asked about that frame.
+#[test]
+fn the_court_perceives_each_frame_once_for_every_vertex_and_face() {
+    use crate::transducer::family::{reset_sensor_reads, sensor_reads};
+    let x = ["100000", "100000", "110000", "033000", "000000", "000500"];
+    let y = ["111000", "133000", "500000", "000000", "000000", "000000"];
+    let family = vec![(digits(&x), digits(&y))];
+    let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("the turned L and the two shifts extract");
+    let words: Vec<usize> = rule
+        .form
+        .vertices
+        .iter()
+        .enumerate()
+        .filter_map(|(i, v)| matches!(v, Vertex::Word { contact: None, .. }).then_some(i))
+        .collect();
+    assert_eq!(words.len(), 2, "the quarter turn and the translation: {:?}", rule.form.vertices);
+    let between_words = rule
+        .form
+        .faces
+        .iter()
+        .filter(|f| words.contains(&(f.i as usize)) && words.contains(&(f.j as usize)))
+        .count();
+    assert_eq!(between_words, 2, "the bar and the dot each land beside the L: {:?}", rule.form.faces);
+    let cells: u64 = family
+        .iter()
+        .map(|(x, y)| (x.len() * x[0].len() + y.len() * y[0].len()) as u64)
+        .sum();
+    reset_sensor_reads();
+    let _ = crate::verdict::body::vertices_carry_frames(&rule.form, &family);
+    assert_eq!(sensor_reads(), cells, "the vertex replay reads each grid of the family once");
+    reset_sensor_reads();
+    let _ = crate::verdict::body::edges_rederive_frames(&rule.form, &family);
+    assert_eq!(sensor_reads(), cells, "and so does the edge replay");
+}
+
 /// MEMBER REPLAY IS SCOPED TO ACTIVE CHART SECTIONS.
 ///
 /// A rule vertex carrying member charts from different pairs (Chart A from

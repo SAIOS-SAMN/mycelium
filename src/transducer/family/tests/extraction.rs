@@ -411,6 +411,86 @@ assert_eq!(
 );
 }
 
+/// 21 STEP 3 — A CITED FORM IS SPOKEN OVER THE FAMILY ONCE PER PLACEMENT,
+/// AND THE CRYSTAL IS ASKED ONCE PER CHART. Three shapes translated by one
+/// vector are one class acting on three charts at one placement. What a
+/// held form speaks over the family depends on the form, the placement and
+/// the family, not on the class asking, so the glue speaks it once — as
+/// many times as the family has frames — while it asks the crystal at each
+/// of the three charts. Spoken per class it was charts × frames speeches
+/// of one reading, under one spend per class.
+#[test]
+fn the_glue_speaks_a_cited_form_once_per_placement_and_asks_once_per_chart() {
+    use std::cell::Cell;
+    let family = vec![
+        (
+            grid(&["1100000", "0000000", "3000000", "0000000", "5550000", "0000000"]),
+            grid(&["0011000", "0000000", "0030000", "0000000", "0055500", "0000000"]),
+        ),
+        (
+            grid(&["0000000", "1100000", "0000000", "3000000", "0000000", "5550000"]),
+            grid(&["0000000", "0011000", "0000000", "0030000", "0000000", "0055500"]),
+        ),
+    ];
+    let flat = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("the family extracts");
+    let words: Vec<&Vertex> = flat.form.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).collect();
+    let [word] = words.as_slice() else {
+        panic!("one translation, one class: {:?}", flat.form.vertices)
+    };
+    let charts = word.acts().map_or(0, |a| a.len());
+    assert_eq!(charts, 3, "acting on the three shapes' charts");
+    let bar = (grid(&["1100", "0000"]), grid(&["0011", "0000"]));
+    let held_form = cipher_form(&bar.0, &bar.1);
+    assert!(held_form.is_closed(), "the bar's shift is a closed form to cite");
+    let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
+    struct Counting {
+        e: Element,
+        f: Form,
+        asked: Cell<u64>,
+        speeches: Cell<u64>,
+    }
+    impl Crystal for Counting {
+        fn on_class(&self, _class: &Invariant) -> Vec<(Element, Form, Standing)> {
+            vec![(self.e.clone(), self.f.clone(), Standing::Held)]
+        }
+        fn on_body(&self, c: &Invariant) -> Vec<(Element, Form, Standing)> {
+            self.asked.set(self.asked.get() + 1);
+            self.on_class(c)
+        }
+        fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
+            self.speeches.set(self.speeches.get() + 1);
+            apply_form(f, x, placement, self)
+        }
+        fn by_address(&self, addr: &[u8]) -> Option<(Element, Form)> {
+            (addr == self.e.address().as_bytes()).then(|| (self.e.clone(), self.f.clone()))
+        }
+        fn on_axis(&self, _chart: &Invariant, _axis: crate::transducer::sentence::Axis) -> Vec<crate::transducer::alphabet::Word> {
+            Vec::new()
+        }
+        fn generators_under(
+            &self,
+            _chart: &Invariant,
+            _budget: &mut crate::physics::Budget,
+        ) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address, crate::transducer::alphabet::Word)> {
+            Vec::new()
+        }
+    }
+    let crystal = Counting { e: held_e, f: held_form, asked: Cell::new(0), speeches: Cell::new(0) };
+    let rule = extract_rule_with(&family, &crystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("the family extracts against the crystal");
+    assert_eq!(crystal.asked.get(), charts as u64, "the crystal is asked once per chart the class acts on");
+    assert_eq!(
+        crystal.speeches.get(),
+        family.len() as u64,
+        "the held form is spoken over the family once: one reading at one placement, read back for every chart"
+    );
+    assert!(
+        rule.form.vertices.iter().any(|v| matches!(v, Vertex::Glued { .. })),
+        "and the bar's shift, which reproduces the family, is glued"
+    );
+}
+
 /// A withheld remainder is a listing chain: from_residual reads it,
 /// so the residual path can mint against the book.
 #[test]
