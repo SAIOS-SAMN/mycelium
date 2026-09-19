@@ -307,7 +307,7 @@ impl Form {
         // first. `extract.rs` files `e.gauge` into the same field, which
         // is the reading; this site was the only one writing another
         // object into it.
-        let transports = loop_transport_on(&self.faces, lp);
+        let transports = loop_transport_on(&self.faces, &self.vertices, lp);
         let mut filed = false;
         for (path, w) in words.scoped() {
             let Some(class) = w.rotor().class_key() else {

@@ -79,7 +79,7 @@ pub(crate) fn class_vectors_on(
     // The carriage and the gauge were already the member path's own. Only the
     // rotor was taken from the loop.
     let words = holonomy_words_on(faces, vertices, lp);
-    for (k, t) in loop_transport_on(faces, lp).scoped() {
+    for (k, t) in loop_transport_on(faces, vertices, lp).scoped() {
         let Some(w) = words.get(&k) else {
             continue;
         };
@@ -121,7 +121,7 @@ pub(crate) fn holonomy_words_on(
 ) -> crate::network::nerve::Keyed<Word> {
     let edges = edge_holonomies_on(faces, vertices, lp);
     let mut out = crate::network::nerve::Keyed::new();
-    for (k, _) in loop_transport_on(faces, lp).scoped() {
+    for (k, _) in loop_transport_on(faces, vertices, lp).scoped() {
         // A path with no edge composite carries no measured transport, so the
         // only holonomy it has is the word's — which is the reading of a loop
         // whose faces are all coboundaries, not a default standing in for one.

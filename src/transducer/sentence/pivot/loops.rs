@@ -79,11 +79,17 @@ impl Form {
             // occupies no axis of 12.6, drives no pivot, and was walked by
             // every reader of `loops` for nothing — 16 546 of them on 174
             // forms in ten minutes.
-            if loop_is_trivial(faces, vertices, &lp) {
+            // ONE WALK, read twice. `loop_is_trivial` and the carriages
+            // are two readings of the same frontier, and calling the two
+            // readers would walk it again for each.
+            let Some(carried) = paths_carried(faces, vertices, &lp) else {
+                continue;
+            };
+            if loop_is_trivial(faces, vertices, &lp, &carried) {
                 continue;
             }
-            for (k, t) in loop_transport_on(faces, &lp).scoped() {
-                lp.carriages.insert(&k, t.carriage.clone());
+            for (k, c) in carried.scoped() {
+                lp.carriages.insert(&k, c.face.carriage.clone());
             }
             loops.push(lp);
         }
@@ -185,95 +191,167 @@ fn touches_frame(vertices: &[Vertex], f: &FormFace) -> bool {
         .any(|&v| matches!(vertices.get(v as usize), Some(Vertex::Frame)))
 }
 
-/// The same walk, off the faces alone, so a reader that has the faces and
-/// not a whole `Form` can take it — `class_vectors_on` is that reader, and
-/// the class it reads is what every pivot decision downstream turns on.
+
+/// WHAT ONE MEMBER PATH CARRIES: the face composite and the edge composite,
+/// read in ONE walk of the frontier.
+///
+/// `loop_transport_on` and `edge_holonomies_on` walked the same frontier
+/// twice — same `live`, same branch on `f.at`, same `step_charts`, same
+/// `extend`, same `closed_key` — accumulating different fields. This file
+/// already records that correction being made once, for `path_carriages`:
+/// "the same frontier, the same `step_charts`, the same `closed_key` — so
+/// one quantity had two carriers (law 12) and the walk that produces it ran
+/// twice per loop." It was never applied to this pair, which is the same
+/// two facts about the same structure.
+///
+/// THE TWO FAIL INDEPENDENTLY, which is why they are two fields and not one
+/// composite. A remainder edge drops the EDGE reading for that path and
+/// leaves the face composite standing; `edge_holonomies_on` dropped the
+/// whole path, and fusing them without this would delete a carriage and a
+/// gauge that were measured.
+#[derive(Clone)]
+pub(crate) struct PathCarried {
+    /// The faces' words with the members' carriage and gauge.
+    pub(crate) face: Transport,
+    /// 50.3's edge composite: `None` where a remainder edge stands on this
+    /// path, or where the path crossed no real face and measured no edge.
+    pub(crate) edge: Option<Transport>,
+}
+
+/// THE ONE WALK. Every member path of the loop, with both composites.
+///
+/// A star face is the trivialization every body is read against (2.2): it
+/// contributes the identity to the edge composite and the path passes
+/// through it. A path that crosses no real face measured no edge at all and
+/// carries `None` there — answering "identity" would report a measurement
+/// never taken.
+pub(crate) fn paths_carried(
+    faces: &[FormFace],
+    vertices: &[Vertex],
+    lp: &Loop,
+) -> Option<Keyed<PathCarried>> {
+    let crosses_a_real_face = lp
+        .faces
+        .iter()
+        .any(|&fi| faces.get(fi as usize).is_some_and(|f| !touches_frame(vertices, f)));
+    let seed = PathCarried {
+        face: Transport {
+            word: Word::identity(),
+            carriage: element::identity_versor(),
+            gauge: Vec::new(),
+        },
+        edge: match crosses_a_real_face {
+            true => Some(Transport {
+                word: Word::identity(),
+                carriage: element::identity_versor(),
+                gauge: Vec::new(),
+            }),
+            false => None,
+        },
+    };
+    let mut live = vec![PartialPath::seed(seed)];
+    for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
+        let f = faces.get(fi as usize)?;
+        let forward = f.i == win[0] && f.j == win[1];
+        let word_step = if forward { f.word.clone() } else { f.word.inverse() };
+        let star = touches_frame(vertices, f);
+        let mut next = Vec::new();
+        for p in &live {
+            // THE STEP IS A DESCENT, NOT A SCAN. `f.at` is keyed
+            // `put_bytes(ci) ++ put_bytes(cj)`, so on a forward step the
+            // members that continue this path are the fiber under
+            // `put_bytes(path.at)` — a byte prefix, which is what the trie
+            // is. The scan built every branch and `step_charts` threw away
+            // the ones that did not continue; the frontier was the
+            // Cartesian product of the faces' member pairs, bounded by
+            // nothing (law 3, rule 10).
+            //
+            // A path that has not started yet stands at no chart and takes
+            // the whole carrier — that is `f.at`'s own fiber (rule 1), not
+            // a walk of a collection to find something.
+            let members: Vec<(Vec<u8>, &FacePlace)> = match (&p.at, forward) {
+                (Some(at), true) => {
+                    let mut pre = Vec::new();
+                    crate::transducer::address::put_bytes(&mut pre, at);
+                    match f.at.fiber_at(&pre) {
+                        Some(fib) => fib.collect(),
+                        None => Vec::new(),
+                    }
+                }
+                _ => f.at.scoped().collect(),
+            };
+            for (k, place) in members {
+                let Some((here, there)) = p.step_charts(&k, forward) else {
+                    continue;
+                };
+                let (carriage, gauge) = if forward {
+                    (place.carriage.clone(), place.gauge.clone())
+                } else {
+                    match place.carriage.versor_inverse() {
+                        Some(inv) => (inv, gauge_invert(&place.gauge)),
+                        None => continue,
+                    }
+                };
+                let mut held = p.acc.clone();
+                held.face.carriage = carriage.geo(&held.face.carriage);
+                held.face.word = word_step.compose(&held.face.word);
+                held.face.gauge = compose_gauge(&gauge, &held.face.gauge);
+                // THE EDGE HALF, failing on its own. A star face composes
+                // the identity into it; a real face with no edge, or an
+                // edge that does not invert, leaves this path with no edge
+                // reading and does not touch the face composite.
+                if !star {
+                    held.edge = match (held.edge.take(), place.edge.as_ref()) {
+                        (Some(acc), Some(edge)) => {
+                            let step = if forward {
+                                Some(edge.clone())
+                            } else {
+                                edge.inverse()
+                            };
+                            step.map(|step| Transport {
+                                carriage: step.carriage.geo(&acc.carriage),
+                                word: step.word.compose(&acc.word),
+                                gauge: compose_gauge(&step.gauge, &acc.gauge),
+                            })
+                        }
+                        _ => None,
+                    };
+                }
+                next.push(p.extend(here, there, held));
+            }
+        }
+        live = next;
+    }
+    let mut out = Keyed::new();
+    for p in live {
+        if let Some(k) = p.closed_key() {
+            let mut c = p.acc;
+            c.face.word = c.face.word.normal_form();
+            if let Some(e) = c.edge.as_mut() {
+                e.word = e.word.normal_form();
+            }
+            out.insert(k, c);
+        }
+    }
+    Some(out)
+}
+
+/// THE HOLONOMY OF THE EDGE TRANSPORTS around a loop (50.3), one per member
+/// path: a reader of the one walk. A path with no edge reading is absent,
+/// which is what "not evaluated" means (13.9).
 pub(crate) fn edge_holonomies_on(
     faces: &[FormFace],
     vertices: &[Vertex],
     lp: &Loop,
 ) -> Option<Keyed<Transport>> {
-    // ONE HOLONOMY PER MEMBER PATH. The edge is a member coordinate — it
-    // is measured on the union of TWO BODIES — so a loop whose faces relate
-    // several pairs of bodies has one edge composite per path through them,
-    // and composing "the" edge of each face asserted one path's reading for
-    // every other. The paths are walked from the faces' own pairs, exactly
-    // as `path_carriages` walks them, and a path whose faces do not join up
-    // is not a cycle of this complex and yields nothing.
-    {
-        // A LOOP OF NOTHING BUT STAR FACES MEASURED NO EDGE. The Frame is the
-        // trivialization, so a star face contributes the identity to a path
-        // that also crosses real faces — but a path whose every leg is a star
-        // face crossed no edge at all, and answering "identity" there reports
-        // a measurement that was never taken. The distinction decides: such a
-        // loop's holonomy is whatever its faces' WORDS name (a section face
-        // carries a word that is not the coboundary, 21 step 2), and a reader
-        // that took the star-path identity for a reading would overrule it
-        // with a transport nobody measured.
-        if !lp
-            .faces
-            .iter()
-            .any(|&fi| faces.get(fi as usize).is_some_and(|f| !touches_frame(vertices, f)))
-        {
-            return Some(Keyed::new());
+    let carried = paths_carried(faces, vertices, lp)?;
+    let mut out = Keyed::new();
+    for (k, c) in carried.scoped() {
+        if let Some(e) = &c.edge {
+            out.insert(&k, e.clone());
         }
-        let mut live = vec![PartialPath::seed(Transport {
-            word: Word::identity(),
-            carriage: element::identity_versor(),
-            gauge: Vec::new(),
-        })];
-        for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
-            let f = faces.get(fi as usize)?;
-            let forward = f.i == win[0] && f.j == win[1];
-            let star = touches_frame(vertices, f);
-            let mut next = Vec::new();
-            for p in &live {
-                for (k, place) in f.at.scoped() {
-                    let Some((here, there)) = p.step_charts(&k, forward) else {
-                        continue;
-                    };
-                    // The Frame is the trivialization every body is read
-                    // against (2.2): a star face contributes the identity, so
-                    // a loop through the Frame reads the edges among the
-                    // bodies it joins. The path still passes through it.
-                    let mut held = p.acc.clone();
-                    if !star {
-                        let Some(edge) = place.edge.as_ref() else {
-                            continue;
-                        };
-                        let step = if forward {
-                            edge.clone()
-                        } else {
-                            match edge.inverse() {
-                                Some(i) => i,
-                                None => continue,
-                            }
-                        };
-                        held.carriage = step.carriage.geo(&held.carriage);
-                        held.word = step.word.compose(&held.word);
-                        // THE GAUGE COMPOSES TOO. A holonomy has three
-                        // coordinates — the rotor on `𝒽`, the carriage on `𝒮`,
-                        // the hue cycle on `𝒢` (42.6) — and this returned an
-                        // empty gauge unconditionally, so every class vector
-                        // read off an edge holonomy was blind on one lane
-                        // before it was read.
-                        held.gauge = compose_gauge(&step.gauge, &held.gauge);
-                    }
-                    next.push(p.extend(here, there, held));
-                }
-            }
-            live = next;
-        }
-        let mut out = Keyed::new();
-        for p in live {
-            if let Some(k) = p.closed_key() {
-                let mut t = p.acc;
-                t.word = t.word.normal_form();
-                out.insert(k, t);
-            }
-        }
-        Some(out)
     }
+    Some(out)
 }
 
 impl Form {
@@ -347,57 +425,25 @@ impl Form {
 }
 
 pub(crate) fn loop_transport(form: &Form, lp: &Loop) -> Keyed<Transport> {
-    loop_transport_on(&form.faces, lp)
+    loop_transport_on(&form.faces, &form.vertices, lp)
 }
 
-/// The same composite over FACES ALONE. A loop's transport is a product of
-/// the faces it runs over and of nothing else on the form, so a trial that
-/// has written one face can read it without a form to read it from.
-pub(crate) fn loop_transport_on(faces: &[FormFace], lp: &Loop) -> Keyed<Transport> {
-    // ONE COMPOSITE PER MEMBER PATH, the word the same on all of them: the
-    // words are vertex coordinates and telescope identically whichever bodies
-    // the path runs through, while the carriage and the gauge are the members'.
-    let mut live = vec![PartialPath::seed(Transport {
-        word: Word::identity(),
-        carriage: element::identity_versor(),
-        gauge: Vec::new(),
-    })];
-    for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
-        let Some(f) = faces.get(fi as usize) else {
-            return Keyed::new();
-        };
-        let forward = f.i == win[0] && f.j == win[1];
-        let word_step = if forward { f.word.clone() } else { f.word.inverse() };
-        let mut next = Vec::new();
-        for p in &live {
-            for (k, place) in f.at.scoped() {
-                let Some((here, there)) = p.step_charts(&k, forward) else {
-                    continue;
-                };
-                let (carriage, gauge) = if forward {
-                    (place.carriage.clone(), place.gauge.clone())
-                } else {
-                    match place.carriage.versor_inverse() {
-                        Some(inv) => (inv, gauge_invert(&place.gauge)),
-                        None => continue,
-                    }
-                };
-                let mut held = p.acc.clone();
-                held.carriage = carriage.geo(&held.carriage);
-                held.word = word_step.compose(&held.word);
-                held.gauge = compose_gauge(&gauge, &held.gauge);
-                next.push(p.extend(here, there, held));
-            }
-        }
-        live = next;
-    }
+/// The face composite of every member path: a reader of the one walk.
+///
+/// It walked the frontier itself, beside `edge_holonomies_on` walking the
+/// identical frontier for the other half. `vertices` is taken because the
+/// star-face rule belongs to the walk, not to its readers.
+pub(crate) fn loop_transport_on(
+    faces: &[FormFace],
+    vertices: &[Vertex],
+    lp: &Loop,
+) -> Keyed<Transport> {
+    let Some(carried) = paths_carried(faces, vertices, lp) else {
+        return Keyed::new();
+    };
     let mut out = Keyed::new();
-    for p in live {
-        if let Some(k) = p.closed_key() {
-            let mut t = p.acc;
-            t.word = t.word.normal_form();
-            out.insert(k, t);
-        }
+    for (k, c) in carried.scoped() {
+        out.insert(&k, c.face.clone());
     }
     out
 }
@@ -562,7 +608,12 @@ pub fn unpivoted_face(g: &Word, w: &Word, side: Side) -> Word {
 /// accepts that only where the class is filed in the form's `torsion`. A
 /// cycle carrying any edge transport is not trivial by this reader and
 /// reaches every reading that holds it to account.
-pub(crate) fn loop_is_trivial(faces: &[FormFace], vertices: &[Vertex], lp: &Loop) -> bool {
+pub(crate) fn loop_is_trivial(
+    faces: &[FormFace],
+    vertices: &[Vertex],
+    lp: &Loop,
+    carried: &Keyed<PathCarried>,
+) -> bool {
     use crate::transducer::alphabet::Rotor;
     let flat = |t: &Transport| {
         t.word.rotor().projective_eq(&Rotor::identity())
@@ -582,12 +633,11 @@ pub(crate) fn loop_is_trivial(faces: &[FormFace], vertices: &[Vertex], lp: &Loop
     // was pruned, which is a refusal reported as a measurement. A cycle
     // is trivial only where a path was read and every one of them is
     // flat.
-    let transports = loop_transport_on(faces, lp);
-    if transports.scoped().next().is_none() {
+    if carried.scoped().next().is_none() {
         return false;
     }
     if !lp.holonomy.rotor().projective_eq(&Rotor::identity())
-        || !transports.scoped().all(|(_, t)| flat(t))
+        || !carried.scoped().all(|(_, c)| flat(&c.face))
     {
         return false;
     }
@@ -602,11 +652,17 @@ pub(crate) fn loop_is_trivial(faces: &[FormFace], vertices: &[Vertex], lp: &Loop
         .faces
         .iter()
         .any(|&fi| faces.get(fi as usize).is_some_and(|f| !touches_frame(vertices, f)));
-    match edge_holonomies_on(faces, vertices, lp) {
-        None => false,
-        Some(hs) => match hs.scoped().next().is_none() {
-            true => !crosses_a_real_face,
-            false => hs.scoped().all(|(_, h)| flat(h)),
-        },
+    let mut any_edge = false;
+    for (_, c) in carried.scoped() {
+        if let Some(e) = &c.edge {
+            any_edge = true;
+            if !flat(e) {
+                return false;
+            }
+        }
+    }
+    match any_edge {
+        true => true,
+        false => !crosses_a_real_face,
     }
 }
