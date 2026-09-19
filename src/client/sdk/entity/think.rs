@@ -458,7 +458,16 @@ impl Entity {
         for a in &dropped {
             self.forget_utterance(a);
         }
-        dropped.len().saturating_add(self.contemplation.shed_unglued())
+        // DOOR 1 (25): the addresses the dialect just dropped have lapsed
+        // from the working atlas, so the bubbles standing at them and the
+        // bubbles citing them lapse on THIS stroke, jointly. `dropped` is
+        // the signal and it is already in hand; no sweep discovers these
+        // later.
+        let lapsed = self.contemplation.lapse_with(&dropped);
+        dropped
+            .len()
+            .saturating_add(lapsed)
+            .saturating_add(self.contemplation.shed_unglued())
     }
 
     pub fn dialect_len(&self) -> usize {

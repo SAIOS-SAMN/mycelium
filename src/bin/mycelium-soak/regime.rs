@@ -89,12 +89,114 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
         }
     }
     let stand_s = stand_start.elapsed();
+    // Directive 3: the bound is PROBED, not computed from boot invariants.
+    let probe_reserve = physics.reserve;
+    let probe_stroke = physics.stroke().remaining();
+    println!(
+        "  regime physics reserve {probe_reserve:?} | stroke {probe_stroke} | reserve_max {} spend_unit {}",
+        mycelium::physics::reserve_max(),
+        mycelium::physics::spend_unit()
+    );
     println!(
         "  regime stood {stood} of {} in {}.{:03}s",
         slice.len(),
         stand_s.as_secs(),
         stand_s.subsec_millis()
     );
+
+    // Z4b's reading: hold the whole slice's forms in ONE contemplation and
+    // census the shed's filter, so the term that rejects is measured and
+    // not named from one family.
+    {
+        use mycelium::transducer::bubble::contemplation::Contemplation;
+        let mut hold = Contemplation::new();
+        let mut held = 0u64;
+        for file in slice {
+            let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
+            let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+            let mut b = physics.stroke_n(extraction_spend(&task.train));
+            let Some(r) = extract_rule_with(&task.train, &epi, &mut b) else { continue };
+            hold.hold_form(r.form, &task.train, &[]);
+            held += 1;
+        }
+        // EXPAND BEFORE CENSUSING. `hold_form` writes `dirty: true` at
+        // construction and `expand_with` is the only writer after it, so a
+        // census taken without expanding reads the constructor, not the
+        // filter.
+        let before = hold.shed_census();
+        let atlas = epi.working_atlas();
+        let section_at = |a: &[u8]| {
+            epi.working_word(a).and_then(|h| mycelium::transducer::cech::section_of(h.element()))
+        };
+        // COLUMN 2 — THE VOICE'S OWN STROKE, not a million. `expand_ideas`
+        // passes `physics.stroke()`, so that is what the fleet's bubbles
+        // are expanded under; a reading at a million says nothing about
+        // whether a voice finishes.
+        let mut voiced = physics.stroke();
+        let voice_stroke = voiced.remaining();
+        let _ = hold.expand_all(&atlas, &section_at, &epi, &mut voiced);
+        let at_voice = hold.shed_census();
+        println!(
+            "    at voice stroke ({voice_stroke})  glued_by {} glues {} dirty {} sheddable {} | left {}",
+            at_voice[0], at_voice[1], at_voice[2], at_voice[3], voiced.remaining()
+        );
+        // And again, repeatedly, as a voice does one expand per stroke.
+        for _ in 0..20 {
+            let mut v = physics.stroke();
+            let _ = hold.expand_all(&atlas, &section_at, &epi, &mut v);
+        }
+        let after20 = hold.shed_census();
+        println!(
+            "    after 21 voice strokes        glued_by {} glues {} dirty {} sheddable {}",
+            after20[0], after20[1], after20[2], after20[3]
+        );
+        let mut b = physics.stroke_n(1 << 20);
+        let _ = hold.expand_all(&atlas, &section_at, &epi, &mut b);
+        let c = hold.shed_census();
+        println!(
+            "  regime slice census extracted {held} held {}",
+            c[0] + c[1] + c[2] + c[3]
+        );
+        println!(
+            "    before expand  glued_by {} glues {} dirty {} sheddable {}",
+            before[0], before[1], before[2], before[3]
+        );
+        println!(
+            "    after expand   glued_by {} glues {} dirty {} sheddable {}",
+            c[0], c[1], c[2], c[3]
+        );
+        println!("    budget left {} of {}", b.remaining(), 1u32 << 20);
+        // COLUMN 1 — DEAD PINS. A citing bubble is held by `glues`; is what
+        // it cites still standing? Live means the mind holds the word, or a
+        // bubble stands at that address. Neither is a count compared to a
+        // number: each pin is asked at its own coordinate.
+        let (mut pinned, mut live_pins, mut dead_pins, mut all_dead) = (0u64, 0u64, 0u64, 0u64);
+        for (_, bub) in hold.bubbles.scoped() {
+            if bub.glues.is_empty() {
+                continue;
+            }
+            pinned += 1;
+            let (mut l, mut d) = (0u64, 0u64);
+            for (addr, ()) in bub.glues.scoped() {
+                let held = epi.working_word(&addr).is_some() || hold.bubbles.get(&addr).is_some();
+                if held {
+                    l += 1;
+                } else {
+                    d += 1;
+                }
+            }
+            live_pins += l;
+            dead_pins += d;
+            if l == 0 {
+                all_dead += 1;
+            }
+        }
+        println!(
+            "    pins: citing bubbles {pinned} | pins live {live_pins} dead {dead_pins} | \
+             bubbles whose every pin is dead {all_dead}"
+        );
+        println!("  regime slice shed_unglued retired {}", hold.shed_unglued());
+    }
 
     let path = format!("{dir}/{name}");
     let Ok(json) = std::fs::read_to_string(&path) else {
@@ -166,6 +268,14 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             let mut b = physics.stroke_n(spend);
             let Some(r) = extract_rule_with(&task.train, &epi, &mut b) else { continue };
             hold.hold_form(r.form.clone(), &task.train, &[]);
+            if pull == 9 {
+                let c = hold.shed_census();
+                println!(
+                    "  regime shed census held {} glued_by {} glues {} dirty {} sheddable {}",
+                    c[0] + c[1] + c[2] + c[3], c[0], c[1], c[2], c[3]
+                );
+                println!("  regime shed_unglued retired {}", hold.shed_unglued());
+            }
             println!(
                 "  regime pull {pull} held {:+} B  live {} B",
                 Contemplation::held_bytes(),

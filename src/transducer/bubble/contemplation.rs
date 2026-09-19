@@ -92,6 +92,17 @@ pub struct Contemplation {
     /// `bubbles` is keyed by it — and every index names the bubble by the
     /// ordinal instead.
     pub by_chart: Keyed<Keyed<()>>,
+    /// THE CITATION FIBRATION (25 door 1): cited address → the ORDINALS of
+    /// the bubbles citing it. A bubble is pinned by `glues`, and `glues` is
+    /// written at the hold and emptied nowhere, so a pin outlives every
+    /// reason for it; this is the carrier that lets a pin be asked about.
+    ///
+    /// MEASURED, on the 60-task slice: 21 of 51 held bubbles cite, 21 of 21
+    /// pins are live, 0 are dead. A dead-pin sweep would retire none of
+    /// them. What retires them is the CITED address lapsing, and that is a
+    /// keyed read here rather than a walk of every bubble asking each what
+    /// it cites (rule 1, rule 17).
+    pub(crate) cited: Keyed<Keyed<()>>,
     /// Bubble address → its ordinal in this contemplation. The shape
     /// `Form.by_address` already has.
     pub(crate) ordinals: Keyed<u16>,
@@ -359,6 +370,11 @@ impl Contemplation {
             }
         }
         self.unfile_vortex(key, &b.vortex_strata());
+        for (addr, ()) in b.glues.scoped() {
+            if let Some(m) = self.cited.get_mut(&addr) {
+                m.remove(&ob);
+            }
+        }
         // THE ORDINAL IS SPENT, NOT FREED. Its slot is emptied and the
         // ordinal is never issued again, so an entry this retraction
         // missed names nothing instead of naming whatever arrived next.
@@ -575,6 +591,11 @@ impl Contemplation {
         }
         for ck in b.vortex_strata() {
             self.by_vortex.nested_insert(&ck, key, ());
+        }
+        // The citation fibration: this bubble is filed under every address
+        // it cites, by ordinal.
+        for (addr, ()) in b.glues.scoped() {
+            self.cited.nested_insert(&addr, key, ());
         }
     }
 

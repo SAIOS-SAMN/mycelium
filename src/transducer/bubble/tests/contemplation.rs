@@ -518,3 +518,85 @@ fn the_frame_key_orders_by_coordinate_and_not_by_byte() {
     let wrong_walk: Vec<i64> = wrong.scoped().map(|(_, v)| *v).collect();
     assert_eq!(wrong_walk, vec![256, 1], "which is why the key is not little-endian");
 }
+
+/// 25 DOOR 1 — A HOLD LAPSES WITH ITS DOCKET, AND ITS CITERS LAPSE WITH IT.
+///
+/// A bubble is pinned by `glues`, which is written at the hold and emptied
+/// nowhere, so a pin outlives every reason for it. Measured on the 60-task
+/// slice before this door was written: 21 of 51 held bubbles cite, all 21
+/// pins are LIVE and none is dead — so a dead-pin collector retires none of
+/// them and the cited address lapsing is the only signal that reaches them.
+///
+/// The three readings are the door. The cited bubble goes when its address
+/// lapses. The citer goes WITH it, on the same call and not by a later
+/// sweep that would hold a dead reference until it came round. And the
+/// lapse is TRANSITIVE along the fibration: a citer of a citer goes too, in
+/// one call, because the frontier is walked until it adds nothing.
+/// A form that stands on a chart and cites nothing.
+fn standing_form(hue: u8) -> crate::transducer::sentence::Form {
+    use crate::transducer::sentence::{Demand, Form, Vertex};
+    let bodies = vec![(0i64, 0i64, hue, 0u8), (0, 1, hue, 0)];
+    let chart = crate::transducer::stalk::invariant(&bodies);
+    let mut f = Form::default();
+    f.vertices.push(Vertex::Demand {
+        kind: Demand::TopologicalDeformation {
+            image: crate::transducer::stalk::Invariant::default(),
+            axes: Vec::new(),
+        },
+        chart,
+        bodies,
+    });
+    f.reindex();
+    f
+}
+
+/// The same, plus a `Glued` vertex citing `cited` — which is what writes
+/// `glues` at the hold and pins the bubble.
+fn citing_form(hue: u8, cited: &crate::transducer::address::Address) -> crate::transducer::sentence::Form {
+    use crate::transducer::sentence::Vertex;
+    let mut f = standing_form(hue);
+    let chart = crate::transducer::stalk::invariant(&[(0i64, 0i64, hue, 0u8)]);
+    f.vertices.push(Vertex::Glued {
+        address: cited.clone(),
+        chart,
+        magnitude: [1, 0, 0, 0],
+        depth: 0,
+        placement: crate::transducer::alphabet::Word::identity(),
+    });
+    f.reindex();
+    f
+}
+
+#[test]
+fn a_hold_lapses_with_its_docket() {
+    use crate::transducer::bubble::contemplation::Contemplation;
+    let mut c = Contemplation::new();
+    // Three bubbles: `inner` stands alone, `mid` cites it, `outer` cites
+    // `mid`. Built by hand so the citation is the only relation between
+    // them and nothing else can retire them.
+    let inner = standing_form(7);
+    let inner_key = crate::transducer::sentence::form_vertex_key(&inner);
+    c.hold_form(inner, &[], &[]);
+    let mid = citing_form(8, &inner_key);
+    let mid_key = crate::transducer::sentence::form_vertex_key(&mid);
+    c.hold_form(mid, &[], &[]);
+    let outer = citing_form(9, &mid_key);
+    let outer_key = crate::transducer::sentence::form_vertex_key(&outer);
+    c.hold_form(outer, &[], &[]);
+    assert_eq!(c.bubbles.len(), 3, "three bubbles stand");
+    assert!(
+        c.bubbles.get(&mid_key).is_some_and(|b| !b.glues.is_empty()),
+        "the middle bubble is pinned by its citation"
+    );
+
+    // The inner address lapses from the atlas. Everything pinned to it
+    // goes on THIS call.
+    let n = c.lapse_with(std::slice::from_ref(&inner_key.clone().into_vec()));
+    assert_eq!(n, 3, "the cited bubble and both citers lapse together, transitively");
+    assert_eq!(c.bubbles.len(), 0, "and none is left standing");
+    for k in [&inner_key, &mid_key, &outer_key] {
+        assert!(c.bubbles.get(k).is_none(), "retired: {:02x}{:02x}…", k[0], k[1]);
+    }
+    // An address nothing holds lapses nothing: the door is not a sweep.
+    assert_eq!(c.lapse_with(&[vec![0xde, 0xad]]), 0, "an unheld address retires nothing");
+}

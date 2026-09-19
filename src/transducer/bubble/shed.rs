@@ -69,8 +69,96 @@ impl Contemplation {
         }
     }
 
+    /// DOOR 1 OF CHAPTER 25 — LAPSE, ALONG THE CITATION FIBRATION.
+    ///
+    /// A bubble stands while what it cites stands. When an address lapses
+    /// from the working atlas — the dialect shed it, or the court retired
+    /// it — the bubble AT that address and every bubble CITING it are
+    /// retired on the same stroke, as a set.
+    ///
+    /// JOINTLY, NOT BY A LATER SWEEP. A pin that outlives its target is a
+    /// dead reference, and a sweep that discovers dead references after
+    /// the fact holds them for however long the sweep takes to come round.
+    /// The lapse of the cited address is the signal, and it is already in
+    /// the caller's hand: `Epigenome::shed_except` returns exactly the
+    /// addresses it dropped.
+    ///
+    /// AND IT IS TRANSITIVE. A cites B and B cites C: when C lapses, B goes
+    /// with it and A goes with B, in this call and not on three successive
+    /// strokes. The frontier is walked until it adds nothing, which is a
+    /// walk of the fibration's own boundary (rule 1) and not a search.
+    ///
+    /// MEASURED before it was written (the 60-task slice): 21 of 51 held
+    /// bubbles cite, every one of their 21 pins is LIVE, and none is dead.
+    /// So a dead-pin collector would retire nothing and this door is the
+    /// only one that reaches them.
+    ///
+    /// Returns how many bubbles left.
+    pub fn lapse_with(&mut self, lapsed: &[Vec<u8>]) -> usize {
+        let mut frontier: Vec<Vec<u8>> = lapsed.to_vec();
+        let mut doomed: Keyed<()> = Keyed::new();
+        while let Some(addr) = frontier.pop() {
+            // The bubble standing AT the lapsed address.
+            if self.bubbles.contains(&addr) && !doomed.contains(&addr) {
+                doomed.insert(&addr, ());
+                frontier.push(addr.clone());
+            }
+            // And every bubble citing it, by keyed read of the fibration.
+            let citers: Vec<u16> = match self.cited.get(&addr) {
+                Some(m) => m.scoped().filter_map(|(k, _)| Self::ordinal_of_key(&k)).collect(),
+                None => Vec::new(),
+            };
+            for o in citers {
+                let Some(k) = self.address_at(o).map(<[u8]>::to_vec) else { continue };
+                if doomed.contains(&k) {
+                    continue;
+                }
+                doomed.insert(&k, ());
+                frontier.push(k);
+            }
+        }
+        let keys: Vec<Vec<u8>> = doomed.scoped().map(|(k, _)| k).collect();
+        let n = keys.len();
+        for k in &keys {
+            if let Some(b) = self.bubbles.remove(k) {
+                self.retract_incidence(k, &b);
+                self.dirty.remove(k);
+                // What it could not close goes to the cavity at its chart,
+                // as a retirement has always left it, so a word arriving on
+                // that chart can read it back (`pivot_on`).
+                self.cavity.insert(cavity_key(&b.remainder, k), b.remainder.to_vec());
+            }
+        }
+        n
+    }
+
     /// Shed ideas no live glue holds. Returns how many bubbles left.
+    /// Why a bubble was not shed, by the term that rejected it. A
+    /// measurement (§8.1), printed only under `MYC_TRACE`, never a branch.
+    pub fn shed_census(&self) -> [usize; 4] {
+        let mut c = [0usize; 4];
+        for (_, b) in self.bubbles.scoped() {
+            if !b.glued_by.is_empty() {
+                c[0] += 1;
+            } else if !b.glues.is_empty() {
+                c[1] += 1;
+            } else if b.dirty {
+                c[2] += 1;
+            } else {
+                c[3] += 1;
+            }
+        }
+        c
+    }
+
     pub fn shed_unglued(&mut self) -> usize {
+        if std::env::var("MYC_TRACE").is_ok_and(|v| v != "0") {
+            let c = self.shed_census();
+            eprintln!(
+                "  shed census held {} glued_by {} glues {} dirty {} sheddable {}",
+                self.bubbles.len(), c[0], c[1], c[2], c[3]
+            );
+        }
         let drop: Vec<Vec<u8>> = self
             .bubbles
             .scoped()
