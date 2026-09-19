@@ -317,7 +317,7 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
     y_recoloured[0][6] = 6;
     y_recoloured[0][7] = 6;
     let pure_family = vec![(x.clone(), y_recoloured.clone())];
-    let mut pf = crate::transducer::family::one_pair_form(&x, &y_recoloured);
+    let mut pf = crate::transducer::family::cipher_form(&x, &y_recoloured);
     // THREE BODIES OF ONE TRANSPORT CLASS — each recoloured in place — are
     // one word vertex acting on three charts (D7, 21 step 1), each member
     // carrying its own hue map.

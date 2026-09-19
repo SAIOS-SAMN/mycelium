@@ -194,7 +194,7 @@ impl CommonRefinement {
     /// rounded — the division is exact by construction.
     ///
     /// This is what lets the refinement change nothing downstream: the pair
-    /// that comes back is site-for-site, so `pair_scene` and everything
+    /// that comes back is site-for-site, so the scene reading and everything
     /// after it read an ordinary equal-extent pair.
     pub fn refined(&self, grid_in: &Grid, grid_out: &Grid) -> Option<(Grid, Grid)> {
         let lift = |g: &Grid, (sr, sc): (usize, usize)| -> Option<Grid> {

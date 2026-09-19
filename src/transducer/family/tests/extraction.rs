@@ -312,7 +312,7 @@ let flat_words = flat
     .iter()
     .filter(|v| matches!(v, Vertex::Word { .. }))
     .count();
-let held_form = one_pair_form(&family[0].0, &family[0].1);
+let held_form = cipher_form(&family[0].0, &family[0].1);
 assert!(held_form.is_closed(), "a pair form of a shift coheres");
 let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
 struct Held {
@@ -597,7 +597,7 @@ let family = vec![
     (grid(&["110022", "000000"]), grid(&["001122", "000000"])),
     (grid(&["000000", "110022"]), grid(&["000000", "001122"])),
 ];
-let pf = one_pair_form(&family[0].0, &family[0].1);
+let pf = cipher_form(&family[0].0, &family[0].1);
 let words: Vec<&Vertex> = pf.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).collect();
 assert!(!words.is_empty(), "the bar that stood is carried in place by the cover: {:?}", pf.vertices);
 let bar_chart = perceive(&family[0].0)

@@ -51,7 +51,7 @@ assert!(
 fn empty_fiber_is_unspoken_not_every_body() {
 let x = grid(&["1100", "0000"]);
 let y = grid(&["0011", "0000"]);
-let mut f = one_pair_form(&x, &y);
+let mut f = cipher_form(&x, &y);
 // MOVING A VERTEX TO ANOTHER CHART IS REBUILDING ITS MEMBER, because the
 // chart is the key the member is filed under: the vertex keeps its address,
 // its derivation, its carriage and its gauge, and acts on a chart no body

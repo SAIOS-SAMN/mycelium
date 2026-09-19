@@ -5,7 +5,7 @@
 use super::common::*;
 use crate::anastome::dialogue::{self, Adjudication, Spoken};
 use crate::cognition::*;
-use crate::transducer::family::{mint_sentence, one_pair_form, sentence_measure, NoCrystal, TrainPair};
+use crate::transducer::family::{mint_sentence, cipher_form, sentence_measure, NoCrystal, TrainPair};
 use crate::transducer::sentence::{
     as_element_form, form_vertex_key, rule_of_form, Contracted, Contraction, RefusalKind,
 };
@@ -29,7 +29,7 @@ fn sentence_over(family: &[TrainPair]) -> Element {
     let [(x, y)] = family else {
         panic!("one pair");
     };
-    let f = one_pair_form(x, y);
+    let f = cipher_form(x, y);
     let mag = sentence_measure(&f, family, &NoCrystal, 0).expect("every body is spoken");
     as_element_form(&f, mag).expect("a tape")
 }

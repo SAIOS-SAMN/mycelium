@@ -90,7 +90,7 @@ assert_eq!(k.basis_len(), 1, "the pair form is one word");
 /// W2: the spoken pair is pair_form → extract_rule_with, minted by the
 /// voice. The court lists the minted sentence as spoken.
 #[test]
-fn the_spoken_pair_is_the_extracted_pair_form() {
+fn the_spoken_scene_is_the_extracted_form() {
 use crate::transducer::family::{extract_rule_with, grid_of_painted, mint_sentence, NoCrystal};
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];

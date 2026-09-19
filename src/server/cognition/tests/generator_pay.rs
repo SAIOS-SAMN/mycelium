@@ -130,14 +130,14 @@ fn install_on(k: &mut Kernel, voice: [u8; 32], e: &Element, task: &[u8]) {
 fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
     use crate::client::sdk::Epigenome;
     use crate::transducer::family::{
-        extract_rule_with, mint_sentence, one_pair_form, sentence_measure, NoCrystal,
+        extract_rule_with, mint_sentence, cipher_form, sentence_measure, NoCrystal,
     };
     use crate::transducer::sentence::{as_element_form, Vertex};
     let teacher = [1u8; 32];
     let speaker = [3u8; 32];
     let (gen_fam, cite_fam) = (bar_quarter(), l_half());
 
-    let g = one_pair_form(&gen_fam[0].0, &gen_fam[0].1);
+    let g = cipher_form(&gen_fam[0].0, &gen_fam[0].1);
     let g_mag = sentence_measure(&g, &gen_fam, &NoCrystal, 0).expect("the bar is spoken");
     let g_e = as_element_form(&g, g_mag).expect("a tape");
     let g_addr = g_e.address();
@@ -228,7 +228,7 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
     use crate::anastome::dialogue;
     use crate::client::sdk::Epigenome;
     use crate::transducer::family::{
-        extract_rule_with, mint_sentence, one_pair_form, sentence_measure, NoCrystal,
+        extract_rule_with, mint_sentence, cipher_form, sentence_measure, NoCrystal,
     };
     use crate::transducer::sentence::{as_element_form, Vertex};
 
@@ -240,7 +240,7 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
     // One court teaches both generators; each mind learns its own.
     let mut school = Kernel::new();
     let taught = |k: &mut Kernel, fam: &[crate::transducer::family::TrainPair], who: [u8; 32], task: [u8; 32]| {
-        let f = one_pair_form(&fam[0].0, &fam[0].1);
+        let f = cipher_form(&fam[0].0, &fam[0].1);
         let mag = sentence_measure(&f, fam, &NoCrystal, 0).expect("the bar is spoken");
         let e = as_element_form(&f, mag).expect("a tape");
         k.bind_task_family(task, fam.to_vec());

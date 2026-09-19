@@ -6,7 +6,7 @@
 
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::element::Element;
-use crate::transducer::family::{extract_rule, mint_sentence, one_pair_form, sentence_measure, Grid, NoCrystal};
+use crate::transducer::family::{extract_rule, mint_sentence, cipher_form, sentence_measure, Grid, NoCrystal};
 use crate::transducer::sentence::{as_element_form, Vertex};
 use crate::verdict::*;
 
@@ -75,7 +75,7 @@ fn a_vertex_that_does_not_carry_its_body_on_the_family_is_refused() {
 #[test]
 fn a_tape_with_no_acting_vertex_is_a_chain() {
     let family = vec![(digits(&["110", "100"]), digits(&["111", "000"]))];
-    let f = one_pair_form(&family[0].0, &family[0].1);
+    let f = cipher_form(&family[0].0, &family[0].1);
     assert!(
         !f.vertices.iter().any(|v| matches!(v, Vertex::Word { .. })),
         "no body pair the eyes admit"
@@ -97,7 +97,7 @@ fn a_tape_with_no_acting_vertex_is_a_chain() {
 #[test]
 fn a_carried_edge_rederives_on_the_union_or_is_refused() {
     let family = vec![(digits(&["11200"]), digits(&["00112"]))];
-    let f = one_pair_form(&family[0].0, &family[0].1);
+    let f = cipher_form(&family[0].0, &family[0].1);
     assert!(f.faces.iter().any(|face| face.has_edge()), "the rigid pair carries an edge");
     let mag = sentence_measure(&f, &family, &NoCrystal, 0).expect("both bodies are spoken");
     let e = as_element_form(&f, mag).expect("a tape");
