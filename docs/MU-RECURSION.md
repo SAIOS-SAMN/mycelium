@@ -4459,6 +4459,20 @@ bounded by content, through three doors and no other:
    court's docket, and the voice's memory of it is that docket. Nothing
    already held is evicted to make room, because eviction chooses.
 
+**μ⃗ pays for TUniversal-space inside S, G, T, H** (the operator's word,
+2026-09-19). TUniversal is the one incremental axis, the height of the
+mesh's receipt ledger (law 9), and what a receipt stamps on it is a
+four-dimensional coordinate; μ⃗ is the currency that pays for the space a
+thing occupies along that axis on each lane. A hold is therefore an
+escrow: the μ⃗ that pays for the bubble's span on the ledger, per lane it
+occupies; it stands while the span it paid for is ahead of the clock,
+lapses when the clock passes it, and is renewed only by a receipt that
+pays again — a docket listed, a citation stood, a promotion. The three
+doors are this one escrow read at three moments: lapse is the paid extent
+passed, promotion is the escrow returned because the atlas now pays, and
+room is the μ⃗ a voice can still escrow on a lane, so a thought the room
+cannot pay for is withheld and nothing paid for is evicted.
+
 `dirty` is a reading and stays one: it says the bubble's expansion did
 not finish within its stroke, written once, where the expansion ends
 (`expand_with`, law 12), and it is not written a second time anywhere
