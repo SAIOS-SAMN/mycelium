@@ -269,7 +269,6 @@ impl Entity {
             self.contemplation
                 .expand_all(&atlas, &section_at, epigenome, &mut budget)
         };
-        self.contemplation.retire_on_t(self.physics.reserve[2] as usize);
         // 37.7 — ADJOIN WHAT THE ALPHABET CANNOT SPELL. A cover meet that
         // produced a rotor the seventeen have no letter for is the one place
         // a mind can CONSTRUCT a generator rather than receive one, and it
@@ -509,8 +508,31 @@ impl Entity {
         f
     }
 
+    /// DOOR 2 OF CHAPTER 25 — RETIREMENT AT PROMOTION.
+    ///
+    /// A form ratified into the genome is held by the atlas; the bubble
+    /// still standing for it in the contemplation is a SECOND CARRIER FOR
+    /// ONE FACT (law 12), and it is retired here, at the promotion, rather
+    /// than left for a later sweep to notice.
+    ///
+    /// THE RETIREMENT RIDES THE ONE DRAIN. `take_promoted` empties the
+    /// list, so a second reader draining it would find nothing; the
+    /// retirement happens where the drain does and the caller still gets
+    /// the addresses it logs.
+    ///
+    /// It goes through door 1's `lapse_with`, because a promoted address is
+    /// an address that has left the contemplation's keeping: whatever cited
+    /// it cited a bubble that no longer stands here, and it lapses with it
+    /// on the same stroke.
     pub fn take_promoted(&mut self) -> Vec<Vec<u8>> {
-        self.epigenome.take_promoted()
+        let promoted = self.epigenome.take_promoted();
+        if !promoted.is_empty() {
+            let n = self.contemplation.lapse_with(&promoted);
+            if n > 0 {
+                eprintln!("  promotion retired {n} held thoughts");
+            }
+        }
+        promoted
     }
 
     /// Working incidence: a non-empty fiber on the working atlas.

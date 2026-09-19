@@ -24,50 +24,28 @@ pub(crate) fn cavity_key(rem: &[Link], bubble: &[u8]) -> Vec<u8> {
 }
 
 impl Contemplation {
-    /// When T-room on the entity's reserve is exhausted, the bubble with
-    /// the largest T magnitude (ticks since its charts last moved) goes to
-    /// a cavity chart; pivot_on reads it back when its chart moves.
-    pub fn retire_on_t(&mut self, room: usize) {
-        // A room of zero is no room (L7b, rule 5): nothing is floored so
-        // that one bubble is always kept; the reserve says how many stand.
-        if self.bubbles.len() <= room {
-            return;
-        }
-        let now = self.now_k;
-        let mut best: Option<(Vec<u8>, u64)> = None;
-        for (k, b) in self.bubbles.scoped() {
-            if !b.glued_by.is_empty() {
-                continue;
-            }
-            // The receipts since the bubble's charts last moved — the FIFO
-            // head by the kernel's own K (law 9), zero when it moved now. A
-            // bubble marked above this clock is not shed against a count
-            // that went backwards.
-            let Some(t) = super::idea::held_since(now, b.moved_k) else {
-                continue;
-            };
-            match best {
-                Some((_, bt)) if t <= bt => {}
-                _ => best = Some((k.clone(), t)),
-            }
-        }
-        let Some((k, _)) = best else {
-            return;
-        };
-        if let Some(b) = self.bubbles.remove(&k) {
-            self.retract_incidence(&k, &b);
-            self.dirty.remove(&k);
-            // THE CAVITY IS KEYED BY THE CHART ITS REMAINDER STANDS ON, then
-            // by the bubble's own key. `pivot_on` reads it back when a word
-            // arrives on a matching chart, so the CHART is the coordinate
-            // that read asks at; keyed by the bubble alone it could not ask.
-            //
-            // The bubble key stays as the suffix. Two remainders retired at
-            // one chart are two remainders and law 7 does not lose either;
-            // collapsing them onto the chart alone would.
-            self.cavity.insert(cavity_key(&b.remainder, &k), b.remainder.to_vec());
-        }
-    }
+    // `retire_on_t(room)` STOOD HERE AND IS DELETED (25, Z4b).
+    //
+    // It retired ONE bubble per stroke, the one with the largest T extent,
+    // and only when `self.bubbles.len() > room` — with `room` being
+    // `physics.reserve[2]`. PROBED on this box: `reserve [88, 88, 88, 88]`,
+    // `reserve_max 88`, and `reserve_max` is
+    // `((cores × (1 + MemAvailable_GiB)).max(16) / 8) × 8` read at boot. So
+    // the only live bound on the contemplation was the machine's memory,
+    // and the fleet's holds reached 47 against a bound of 88 — the trigger
+    // never fired at all.
+    //
+    // Two faults, not one. A COUNT against a bound is rule 2's, and the
+    // bound being the box's RAM is rule 5's; and choosing the oldest is
+    // rule 4's, a selection by a scalar. The three doors replace it: a hold
+    // lapses with what it cites (door 1), is retired at its promotion
+    // (door 2), and a lane with no room WITHHOLDS a new thought rather than
+    // evicting a held one (door 3). None of the three reads a count, a
+    // size, or an age.
+    //
+    // The cavity is unchanged and still fed: `lapse_with` leaves every
+    // retirement's remainder at its chart, which is what `pivot_on` reads
+    // back.
 
     /// DOOR 1 OF CHAPTER 25 — LAPSE, ALONG THE CITATION FIBRATION.
     ///

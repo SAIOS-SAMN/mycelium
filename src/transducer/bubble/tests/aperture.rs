@@ -3,17 +3,44 @@
 
 use crate::transducer::bubble::*;
 
+/// Every bubble the contemplation holds, by address — what a door is
+/// handed. `retire_on_t` picked ONE by age against a count; the doors are
+/// handed the set that lapsed and retire it whole.
+fn all_keys(c: &Contemplation) -> Vec<Vec<u8>> {
+    c.bubbles.scoped().map(|(k, _)| k).collect()
+}
+
+/// 25, Z4b — NO HOLD IS RETIRED BY AGE OR BY A COUNT.
+///
+/// THIS TEST ASSERTED THE OPPOSITE AND ITS CLAIM IS FALSE UNDER THE RULING.
+/// It was `t_room_moves_the_oldest_bubble_to_cavity`: two bubbles, a room
+/// of one, and the OLDER retired. `retire_on_t` is deleted and both halves
+/// of what it did are refused — a count against a bound is rule 2's and
+/// the bound was the box's RAM (rule 5, `reserve_max` probed at 88), and
+/// picking the oldest is rule 4's, a selection by a scalar.
+///
+/// What replaces it is the three doors, and none of them reads an age or a
+/// count: a hold lapses with what it cites, is retired at its promotion,
+/// and a lane with no room WITHHOLDS rather than evicting. So two bubbles
+/// nothing has lapsed or promoted both stand, however old either is.
 #[test]
-fn t_room_moves_the_oldest_bubble_to_cavity() {
+fn no_hold_is_retired_by_age_or_by_a_count() {
     let mut c = Contemplation::new();
     c.set_now(10);
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     c.set_now(50);
     c.hold(vec![(5, 5, 3, 4), (5, 6, 3, 4)]);
-    assert_eq!(c.len(), 2);
-    c.retire_on_t(1);
-    assert_eq!(c.len(), 1, "T-room of one keeps the younger bubble");
-    assert_eq!(c.cavity_len(), 1, "the older remainder is a cavity chart");
+    assert_eq!(c.len(), 2, "two thoughts stand");
+    // Time passes and nothing lapses: age is not a door.
+    c.set_now(5_000);
+    assert_eq!(c.len(), 2, "age alone retires nothing");
+    assert_eq!(c.cavity_len(), 0, "and nothing was evicted to the cavity");
+    // The door retires what it is handed, as a set, and the remainders are
+    // kept exactly as a retirement always kept them (law 7).
+    let keys = all_keys(&c);
+    assert_eq!(c.lapse_with(&keys), 2, "the door retires the set it is handed");
+    assert_eq!(c.len(), 0);
+    assert_eq!(c.cavity_len(), 2, "both remainders are kept, neither lost");
 }
 
 /// 24.1, law 7, rule 1 — A RETIRED REMAINDER IS FILED UNDER ITS CHART, and
@@ -39,9 +66,11 @@ fn a_cavity_entry_is_read_back_at_its_own_chart_and_two_at_one_chart_are_two() {
 
     // Both retire, and both are kept: law 7 loses no remainder, and two
     // remainders are two entries however their charts compare.
-    c.retire_on_t(1);
-    c.retire_on_t(0);
-    assert_eq!(c.len(), 0, "no room, no bubble");
+    // The CLAIM here is the cavity's key shape and is unchanged; only the
+    // trigger is, from `retire_on_t`'s age pick to the door's set.
+    let keys = all_keys(&c);
+    c.lapse_with(&keys);
+    assert_eq!(c.len(), 0, "the door retired both");
     assert_eq!(c.cavity_len(), 2, "both remainders are kept, neither collapsed");
     assert_eq!(
         c.cavity_links(),
@@ -71,7 +100,8 @@ fn a_cavity_entry_is_read_back_at_its_own_chart_and_two_at_one_chart_are_two() {
     // that answered everything to everything.
     c.set_now(30);
     c.hold(vec![(2, 2, 7, 8), (2, 3, 7, 8), (3, 2, 7, 8)]);
-    c.retire_on_t(0);
+    let keys = all_keys(&c);
+    c.lapse_with(&keys);
     assert_eq!(c.cavity_len(), 3, "three remainders kept");
     let three_link =
         crate::transducer::stalk::invariant(&[(2i64, 2i64, 7u8, 8u8), (2, 3, 7, 8), (3, 2, 7, 8)]);
@@ -92,17 +122,23 @@ fn a_cavity_entry_is_read_back_at_its_own_chart_and_two_at_one_chart_are_two() {
     );
 }
 
-/// L7b, rule 5: a room of zero is no room. The aperture was floored at one
-/// bubble, so a reserve with no T room still held a thought it could not
-/// afford; the reserve decides, and zero means the last bubble goes too.
+/// Law 7: A RETIREMENT LOSES NO REMAINDER, whichever door took the bubble.
+///
+/// Was `a_room_of_zero_keeps_no_bubble`, which asserted that a reserve with
+/// no T room evicts the last thought. That claim is false under the ruling
+/// — door 3 WITHHOLDS a new thought when a lane is spent and never evicts a
+/// held one, because eviction chooses. What survives from it, and is
+/// asserted here, is law 7: the retired remainder is kept as a cavity chart
+/// and never lost.
 #[test]
-fn a_room_of_zero_keeps_no_bubble() {
+fn a_retired_remainder_is_kept_as_a_cavity_chart() {
     let mut c = Contemplation::new();
     c.set_now(10);
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     assert_eq!(c.len(), 1);
-    c.retire_on_t(0);
-    assert_eq!(c.len(), 0, "no room, no bubble");
+    let keys = all_keys(&c);
+    c.lapse_with(&keys);
+    assert_eq!(c.len(), 0, "the door retired it");
     assert_eq!(c.cavity_len(), 1, "the remainder is kept as a cavity chart, never lost (law 7)");
 }
 

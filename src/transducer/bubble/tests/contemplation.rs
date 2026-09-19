@@ -600,3 +600,32 @@ fn a_hold_lapses_with_its_docket() {
     // An address nothing holds lapses nothing: the door is not a sweep.
     assert_eq!(c.lapse_with(&[vec![0xde, 0xad]]), 0, "an unheld address retires nothing");
 }
+
+/// 25 DOOR 2 — A PROMOTED THOUGHT IS NOT HELD TWICE.
+///
+/// A form ratified into the genome is held by the atlas. The bubble still
+/// standing for it in the contemplation is a second carrier for one fact
+/// (law 12), and it is retired AT the promotion rather than left for a
+/// later sweep to notice.
+///
+/// The door goes through door 1's `lapse_with`, and the second reading is
+/// why that is right rather than merely convenient: a promoted address has
+/// left the contemplation's keeping, so whatever CITED it is pinned to a
+/// bubble that no longer stands here and lapses on the same stroke.
+#[test]
+fn a_promoted_thought_is_not_held_twice() {
+    use crate::transducer::bubble::contemplation::Contemplation;
+    let mut c = Contemplation::new();
+    let stood = standing_form(4);
+    let stood_key = crate::transducer::sentence::form_vertex_key(&stood);
+    c.hold_form(stood, &[], &[]);
+    let citer = citing_form(5, &stood_key);
+    c.hold_form(citer, &[], &[]);
+    assert_eq!(c.bubbles.len(), 2, "the thought and a thought citing it");
+
+    // It is ratified: the address is promoted into the genome.
+    let n = c.lapse_with(std::slice::from_ref(&stood_key.clone().into_vec()));
+    assert_eq!(n, 2, "the promoted thought and its citer both leave the contemplation");
+    assert_eq!(c.bubbles.len(), 0, "nothing is held twice");
+    assert_eq!(c.cavity_len(), 2, "and law 7 keeps both remainders");
+}
