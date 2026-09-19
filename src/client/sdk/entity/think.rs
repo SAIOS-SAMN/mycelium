@@ -54,11 +54,49 @@ impl Entity {
         train: &crate::transducer::family::Family,
         remainders: &[Vec<(i64, i64, u8, u8)>],
     ) -> bool {
-        if !self.room_for(&f) {
-            return false;
+        // Z4d — THE DRAW IS THE ROOM (door 3), AND IT IS PER LANE. The
+        // thought's own four-lane measure leaves the reserve when it is
+        // held and returns when it lapses or is promoted, so what a voice
+        // can still escrow on each lane IS its attention: a mind spent on
+        // `𝒮` withholds placements while it still holds turns on `𝒽`. The
+        // four lanes move apart because the MEASURE differs per lane; they
+        // were four copies of one number only while nothing drew on them
+        // separately.
+        //
+        // EXACT OR WITHHELD (rule 11). A lane that cannot fund the thought
+        // has no room for it, and the subtraction refuses rather than
+        // flooring at zero — which is the same reading as door 3's, taken
+        // once, where the payment happens.
+        let draw = crate::transducer::element::measure_lanes(&f.remainder.placed());
+        let mut next = self.physics.reserve;
+        for (r, d) in next.iter_mut().zip(&draw) {
+            match r.checked_sub(*d) {
+                Some(v) => *r = v,
+                None => return false,
+            }
         }
+        self.physics.reserve = next;
         self.contemplation.hold_form(f, train, remainders);
         true
+    }
+
+    /// Z4d — THE STROKE'S LAPSE: every thought the clock has passed leaves,
+    /// as a set, and its escrow returns to the reserve LANE BY LANE.
+    ///
+    /// A thought held before any aperture was measured is paid through one
+    /// here, on the first stroke that can measure a horizon, so it is
+    /// neither held against a height nothing measured nor held forever for
+    /// want of one (rule 15).
+    pub fn lapse_held(&mut self) -> usize {
+        let _ = self.contemplation.repay_unpaid();
+        let (returned, n) = self.contemplation.lapse_on_clock();
+        for (r, back) in self.physics.reserve.iter_mut().zip(&returned) {
+            *r = r.saturating_add(*back);
+        }
+        if n > 0 {
+            eprintln!("  held lapsed {n}, escrow returned {returned:?}");
+        }
+        n
     }
 
     /// DOOR 3 OF CHAPTER 25 — ROOM, PER LANE, AND NOTHING IS EVICTED.
@@ -78,18 +116,11 @@ impl Entity {
     /// A thought whose lanes overflow the carrier has no room either: the
     /// sum is refused rather than ceilinged (rule 11).
     pub fn room_for(&self, f: &crate::transducer::sentence::Form) -> bool {
-        let held = self.contemplation.boundary_measure();
         let want = crate::transducer::element::measure_lanes(&f.remainder.placed());
-        // index: the four lanes, a fixed physical size of the carrier
-        for l in 0..4 {
-            let Some(after) = held[l].checked_add(want[l]) else {
-                return false;
-            };
-            if after > self.physics.reserve[l] {
-                return false;
-            }
-        }
-        true
+        // The reserve already excludes what is escrowed on held thoughts
+        // (Z4d), so the room on a lane is the reserve on it and the check
+        // is the draw's own, asked without making it.
+        self.physics.reserve.iter().zip(&want).all(|(r, d)| r.checked_sub(*d).is_some())
     }
 
     /// LANE 𝒯 FOR A FORM THIS MIND IS ABOUT TO SPEAK: the span in receipts

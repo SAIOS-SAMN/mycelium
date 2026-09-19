@@ -253,6 +253,11 @@ impl Contemplation {
                 candidates: Keyed::new(),
                 // Re-derived from the form the tape decoded, never carried
                 // on it (law 12).
+                // Z4d: the escrow is what THIS voice paid this session, not
+                // a fact of the tape; a restored thought is re-paid on the
+                // next stroke that holds it (law 12).
+                escrow: volume,
+                until: None,
                 rotor: form.as_ref().and_then(Bubble::rotor_of_form),
                 form,
                 bundle: None,

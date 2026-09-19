@@ -249,3 +249,62 @@ fn a_thought_the_room_cannot_hold_is_withheld_not_evicted() {
         "and NOTHING already held is evicted: eviction chooses, and rules 4 and 15 refuse it"
     );
 }
+
+/// Z4d — THE RECEIPT IS THE ESCROW, AND THE LANES MOVE APART.
+///
+/// `Physics::default` sets `reserve: [reserve_max(); 4]` — four copies of
+/// one number — and they stayed four copies for as long as nothing drew on
+/// them separately. A hold now draws the thought's OWN four-lane measure,
+/// so a thought that occupies `𝒮` and not `𝒽` leaves `𝒽` where it was.
+/// That is law 5 made true of the carrier rather than asserted about it.
+///
+/// Three readings. The draw is per lane and the untouched lanes do not
+/// move. The draw is EXACT OR THE THOUGHT IS WITHHELD — a lane that cannot
+/// fund it refuses rather than flooring at zero (rule 11), which is door
+/// 3's room check taken once, where the payment happens. And the escrow
+/// RETURNS on the lapse, lane by lane, so the reserve is not a one-way
+/// ratchet: this is the exhale the breathing condition asked for.
+#[test]
+fn a_hold_draws_its_own_lanes_and_returns_them_on_the_lapse() {
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("escrow"));
+    let before = entity.physics.reserve;
+    assert_eq!(before[0], before[3], "the reserve begins as four copies of one number");
+
+    entity.hold_chain(vec![(9, 0, 1, 2)]);
+    let thought = crate::transducer::element::measure_lanes(&[(9i64, 0i64, 1u8, 2u8)]);
+    assert!(
+        thought.iter().any(|&x| x > 0) && thought.contains(&0),
+        "the thought occupies some lanes and not others, or this proves nothing: {thought:?}"
+    );
+
+    // `hold_chain` does not draw; `hold_form` does. Draw against a form
+    // carrying the same chain and read the reserve lane by lane.
+    let f = crate::transducer::sentence::Form {
+        remainder: crate::transducer::element::place_chain(&[(9i64, 0i64, 1u8, 2u8)])
+            .expect("a one-link chain places"),
+        ..crate::transducer::sentence::Form::default()
+    };
+    let drew = crate::transducer::element::measure_lanes(&f.remainder.placed());
+    assert!(entity.hold_form(f, &[], &[]), "a mind with room holds it");
+    let after = entity.physics.reserve;
+    for l in 0..4 {
+        match drew[l] {
+            0 => assert_eq!(after[l], before[l], "lane {l} was not occupied and did not move"),
+            d => assert_eq!(
+                after[l] + d,
+                before[l],
+                "lane {l} fell by exactly what the thought occupies there"
+            ),
+        }
+    }
+    assert!(
+        (0..4).any(|l| after[l] != before[l]) && (0..4).any(|l| after[l] == before[l]),
+        "the lanes moved APART: {before:?} -> {after:?}"
+    );
+
+    // The escrow returns on the lapse. The aperture is unmeasured here, so
+    // nothing is paid to a height and nothing lapses — which is rule 15,
+    // and the reading that a thought is never held against a height
+    // nothing measured.
+    assert_eq!(entity.lapse_held(), 0, "an unmeasured horizon lapses nothing");
+}

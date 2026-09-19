@@ -16,6 +16,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 mod cover;
 mod delta;
+mod solve;
 mod ledger;
 mod mint;
 mod regime;
@@ -133,6 +134,29 @@ fn main() {
     // family pulled under the voice's own budget, the pull and the mint
     // timed apart. `--regime DIR NAME [SLICE]`, slice 60 by default.
     // K1's reading: what the scene cover deduces on a corpus (53.2).
+    // The only question the corpus asks: how many does it solve.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--solve") {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  solve refused: name the corpus directory");
+            std::process::exit(1);
+        };
+        let limit: usize = match argv.get(2).map(|n| n.parse::<usize>()) {
+            Some(Ok(n)) => n,
+            _ => usize::MAX,
+        };
+        let stand: usize = match argv.get(3).map(|n| n.parse::<usize>()) {
+            Some(Ok(n)) => n,
+            _ => 0,
+        };
+        match slice_names(dir, limit) {
+            Ok(names) => solve::report(dir, &names, stand),
+            Err(e) => {
+                eprintln!("  solve refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--cover") {
         let Some(dir) = argv.get(1) else {
             eprintln!("  cover refused: name the corpus directory");

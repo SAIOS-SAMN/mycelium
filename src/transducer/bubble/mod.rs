@@ -6,6 +6,7 @@
 
 
 pub mod contemplation;
+pub mod hold;
 pub mod drive;
 pub mod horizon;
 pub mod idea;

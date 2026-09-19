@@ -143,6 +143,21 @@ pub struct Bubble {
     pub dirty: bool,
     /// TUniversal when this bubble's charts last moved.
     pub moved_k: u64,
+    /// Z4d — THE ESCROW THIS THOUGHT IS HELD ON: the μ⃗ drawn from the
+    /// voice's reserve to keep it, per lane, returned when it lapses or is
+    /// promoted. What a voice can still escrow on each lane is its
+    /// attention, and the four lanes move apart (law 5): a mind rich on
+    /// `𝒽` and spent on `𝒮` holds turns and withholds placements.
+    pub escrow: [u64; 4],
+    /// THE HEIGHT THIS THOUGHT IS PAID THROUGH, on TUniversal. It stands
+    /// while its receipts are ahead of the clock and leaves when the clock
+    /// passes it.
+    ///
+    /// `None` is NOT "forever": it is a thought held before any aperture
+    /// was measured, and an unmeasured horizon is held rather than guessed
+    /// (rule 15). Such a thought lapses when the aperture is first measured
+    /// and it is paid to a height, never against a default.
+    pub until: Option<u64>,
     /// Addresses this idea glued (crystallized forms it rests on).
     pub glues: Keyed<()>,
     /// Ideas that glued this bubble; a non-empty set is not shed.

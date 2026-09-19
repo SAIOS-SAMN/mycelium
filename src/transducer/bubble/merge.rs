@@ -276,6 +276,8 @@ impl Contemplation {
             certificates,
             vortex,
             candidates: Keyed::new(),
+            escrow: volume,
+            until: None,
             rotor: form.as_ref().and_then(Bubble::rotor_of_form),
             form,
             bundle,
