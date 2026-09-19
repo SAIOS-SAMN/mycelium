@@ -1112,6 +1112,34 @@ the suite and gate lines and the fleet-regime reading of
 and the mint, before and after. Row ids here are `Z` for the coordinate
 rows and `K` for the cut; the implementor's `D0` of 513004d is Z0.
 
+**The breathing condition** (ruled 2026-09-19, on the implementor's
+reading that descent-only recursion from an expansionary origin is a
+ratchet, and that the fleet's +492 MB/min was exactly that: the task arm
+inhaling with both exhale doors shut). Every organ that opens names its
+closing move in the same row, and a row that opens without one is
+returned: a cover cuts a scene and the alternating coboundary recomposes
+it (53.1); a pivot opens an axis over a held loop and the discharge closes
+it (law 10); a hold takes a form in and lapse, promotion or room let it go
+(25 as ruled). The condition is checkable and not a metaphor: the descent
+terminates at an identity of coordinates (53.1), the ascent is exact —
+`H¹ = 0` on the cover, everything the descent took apart came back — and
+what does not come back leaves as a typed demand (rule 11, 50.5), never
+as silent accumulation. Proposed for the preamble as rule 18 on the
+operator's word.
+
+**The reading of a hold is a fiber at the address, not a vector over
+carriers** (the implementor's correction of its own instrument, accepted).
+The carriers that name one bubble are charts of a cover of one object; a
+per-carrier list is a cochain whose dimension grows with every carrier
+anyone adds, the enumeration one level up. The instrument asks the
+address which carriers name it: a carrier holding the same bytes by
+reference is a trivial transition and collapses; one holding a copy is a
+coboundary to be collapsed (Z4c); a carrier holding different content at
+that address is not a class of this cover but another object. Read as
+`Arc` pointer identity across carriers, never as bytes compared; a
+multiplicity is read off the object (law 12) and is a reading, never a
+branch.
+
 | id | row | chapters | files | status | the observable that closes it |
 |---|---|---|---|---|---|
 | Z0 | **The ruling, recorded**: rule 17, checklist (o), 3.10's hearing ruling. | preamble, 3.10, §9 | docs | landed (513004d) | `grep 2026-09-19 MU-RECURSION.md` names rule 17, (o), 3.10 |
@@ -1132,7 +1160,7 @@ rows and `K` for the cut; the implementor's `D0` of 513004d is Z0.
 | Z7 | **Refraction is the response.** A reply to a heard sentence is rebuilt by `Transport::refract` from the congruent stratum and the heard key, never assembled from a walk of the form. | 3.10, 42.5 | `sentence/transport.rs`, `client/sdk/entity/`, `anastome/dialogue/` | open | a reply's address re-derives from the heard key and the refraction alone; the wire's `silent` cluster count falls on the readings |
 | K5 | **The rest of the roster**, each reading behind a probe receipt: Components, Lines, PeriodCells (the spectrum cut, integer frame ratios: 102 tasks), HueStrata. | law 6, 38.2 | `family/scene.rs`, `court/` | open | each reading's roster event is a receipt and its first cover on corpus is read on the wire |
 
-Order: Z0 · Z1 · Z1b · Z2 · K1a · Z4 · Z4c · Z4b · K1 · K2 · K3 · Z3 · Z5 · K4 · Z6 · Z7 · K5 (Z4 pulled ahead on the fleet reading at c1c5c4a, 2026-09-19: a fleet that dies in nine minutes takes no reading). Z1
+Order: Z0 · Z1 · Z1b · Z2 · K1a · Z4 · Z4b · Z4c · K1 · K2 (Z4b ahead of Z4c on the breathing condition: a smaller inhale does not make a ratchet breathe, and the fleet's hour depends on the exhale) · K3 · Z3 · Z5 · K4 · Z6 · Z7 · K5 (Z4 pulled ahead on the fleet reading at c1c5c4a, 2026-09-19: a fleet that dies in nine minutes takes no reading). Z1
 before any fix so every later row lands with its reading; K1–K3 ahead of
 the coordinate hygiene rows because they are the first additive cognition
 since Y4 and they remove the shape Z3 optimises; Z4 stays ahead of Z5
