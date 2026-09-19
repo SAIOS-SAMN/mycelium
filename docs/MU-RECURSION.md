@@ -219,6 +219,7 @@ shape is not reviewed further; it is returned.
 | 13 | **Verify the claim, not the outcome.** A test that asserts a count or a boolean proves nothing about how the result was reached; a test named after a theorem must exercise the move. | asserting `faces.len() <= 2·germs` and calling it "the adjacency rule"; testing `Word::rebase` and reporting "rebase works" when the extraction step never fires | N vs 4N work counters for cost claims; a trace of the move on a family that needs it (a `Rebased` vertex that speaks the test); a refusal test for every refusal string |
 | 14 | **The whole suite, every commit.** "Module green" is not green. | "family 14, sentence 18, sdk 12 green" while `server::cognition` has four red tests | one foreground `cargo test --release`, the `test result` line in the commit message, one item per commit with its trace value |
 | 15 | **When unsure, hold; never choose.** If two readings of the data are both consistent, the code keeps both as candidates and lets a perception, a glue, or a ruling collapse them. | a tie-break by index, by size, by "first found" presented as a decision | a vortex (3.9); a section (chapter 21); a `Pending` (14.5); a `Novel(g_rem)` demand |
+| 17 | **A reader writes a coordinate or returns a demand** (ruled 2026-09-19). A reader takes a stratum and returns a stratum or a typed demand. One that returns a list for the caller to walk, hands out a whole form for the caller to walk, or measures a reading inside a loop carrying more coordinates than the reading has, has not read anything: it has moved the search one frame up the stack, where the carrier's keys are no longer in scope to stop it. This is law 2, rule 1, rule 6 and law 12 applied at the diff and it is not a new preference — every earlier row of this table is a special case of it. | `fn relatives_between(faces, vertices, a, b)` scanning every face for the two classes asked for, called once per face (2850² visits on one corpus form); `fn on_body(&self) -> Vec<(Element, Form, Standing)>` handing out cloned forms for the caller to walk; a reading taken inside a loop over vertices × charts × frames when the reading is a property of the chart alone | build the class-pair index once in a single pass and read it by key; return `Option<(&Element, &Form)>` and let the caller ask at the coordinate it already holds; hoist the reading to the coordinate it belongs to, and where the carrier has no key for it, WRITE THAT KEY FIRST — a missing key is the defect, the walk is only its symptom |
 
 **The review checklist**, applied to every diff before it is committed and
 again by the auditor, in this order: (a) any `i < j` loop not over a site's
@@ -245,8 +246,14 @@ fiber, a sensor-plane block rebuilt into a rotor before the rotor the
 vertex carries, a frame coordinate fixed to zero before the base's own
 (51.1, ruled 2026-09-17); (n) any `QMatrix`, affine block, or matrix product used to carry,
 compose, or compare an action, outside `core::zlinalg` and A3's
-sensor-plane block. A diff that fails (a) through (j), (l), (m) or (n) is
-returned with the rule number; a diff without (k) is not reviewed.
+sensor-plane block; (o) any reading measured inside a loop with more
+coordinates than the reading has — a chart's property taken per
+(vertex, chart, frame), a class's relatives taken per face, a form's
+standing taken per member — which is rule 17 at the loop, and the fix is
+never to cache the reading but to hoist it to its own coordinate
+(ruled 2026-09-19). A diff that fails (a) through (j), (l), (m), (n) or
+(o) is returned with the rule number; a diff without (k) is not
+reviewed.
 
 **Why the rules on keys and coordinates are absolute.** Chapter 1.7 is
 the standing explanation: a proof is arithmetic on coordinates, a digest
@@ -1083,6 +1090,29 @@ and translator) between the frames. Mayer–Vietoris's `theta` (13.5), the
 restriction of 15.5, and comprehension's re-gauging (24.2) are all
 refractions. A thought that does not refract, no `Γ` under which it
 re-derives in the receiving frame, is `Withheld` or `Novel`, never forced.
+
+**Hearing is where the coordinates are written** (ruled 2026-09-19). A
+heard sentence arrives as a tape, and a tape is a serialisation, not a
+carrier: nothing on it can be asked a question. THE HARMONICS EYE WRITES
+THE FIRST COORDINATE OF EVERY HEARD BIT at the moment of hearing — every
+decoded vertex, face and demand is filed on the trie under its own key as
+it is decoded, and every reader downstream takes that key or the `Held`,
+never the `Form` by value. A bit that cannot be written as a key does not
+become a value passed along: it leaves as a typed demand (rule 11).
+
+**And the deconstruction of a heard abstract is multi-axial.** A heard
+vertex's class vector is read AT HEARING and its occupied axes filed with
+it, demand vertices included by way of their witness rotor. Law 10 is why:
+direction is a pivot along an occupied axis, never a gradient, so the axes
+are the only thing a later stroke can pivot along — and a reader that
+walks back down the tape to recover them has already lost the strata the
+decode passed through. The pivot is offered those axes on the next stroke
+because they were written when they were known, not reconstructed when
+they were wanted (law 12).
+
+A reply is built the same way round: `Transport::refract` from the
+congruent stratum and the heard key, never assembled from a walk of the
+form the tape decoded to.
 
 `Form::refract(&self, gamma: &Transport) -> Option<Form>` **new**
 (sentence/transport.rs, 0.12): change of basepoint by `gamma.word` (3.2),
