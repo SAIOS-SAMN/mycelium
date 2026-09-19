@@ -20,10 +20,10 @@ fn a_glued_vertex_speaks_its_cited_form_on_the_one_perception_of_the_scene() {
         f: Form,
     }
     impl Crystal for Cited {
-        fn on_class(&self, _class: &Invariant) -> Vec<(Element, Form, Standing)> {
+        fn on_class(&self, _class: &Invariant) -> Vec<(&Element, &Form, Standing)> {
             Vec::new()
         }
-        fn on_body(&self, _chart: &Invariant) -> Vec<(Element, Form, Standing)> {
+        fn on_body(&self, _chart: &Invariant) -> Vec<(&Element, &Form, Standing)> {
             Vec::new()
         }
         fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {

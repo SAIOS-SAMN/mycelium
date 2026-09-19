@@ -201,8 +201,8 @@ fn hold_form_keeps_a_glued_open_loop() {
             &self,
             _c: &crate::transducer::stalk::Invariant,
         ) -> Vec<(
-            crate::transducer::element::Element,
-            Form,
+            &crate::transducer::element::Element,
+            &Form,
             crate::transducer::stalk::Standing,
         )> {
             Vec::new()
@@ -211,8 +211,8 @@ fn hold_form_keeps_a_glued_open_loop() {
             &self,
             c: &crate::transducer::stalk::Invariant,
         ) -> Vec<(
-            crate::transducer::element::Element,
-            Form,
+            &crate::transducer::element::Element,
+            &Form,
             crate::transducer::stalk::Standing,
         )> {
             self.on_class(c)

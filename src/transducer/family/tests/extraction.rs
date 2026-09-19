@@ -320,10 +320,10 @@ struct Held {
     f: Form,
 }
 impl Crystal for Held {
-    fn on_class(&self, _class: &Invariant) -> Vec<(Element, Form, Standing)> {
-        vec![(self.e.clone(), self.f.clone(), Standing::Held)]
+    fn on_class(&self, _class: &Invariant) -> Vec<(&Element, &Form, Standing)> {
+        vec![(&self.e, &self.f, Standing::Held)]
     }
-    fn on_body(&self, c: &Invariant) -> Vec<(Element, Form, Standing)> {
+    fn on_body(&self, c: &Invariant) -> Vec<(&Element, &Form, Standing)> {
         self.on_class(c)
     }
     fn speak_form(
@@ -451,10 +451,10 @@ fn the_glue_speaks_a_cited_form_once_per_placement_and_asks_once_per_chart() {
         speeches: Cell<u64>,
     }
     impl Crystal for Counting {
-        fn on_class(&self, _class: &Invariant) -> Vec<(Element, Form, Standing)> {
-            vec![(self.e.clone(), self.f.clone(), Standing::Held)]
+        fn on_class(&self, _class: &Invariant) -> Vec<(&Element, &Form, Standing)> {
+            vec![(&self.e, &self.f, Standing::Held)]
         }
-        fn on_body(&self, c: &Invariant) -> Vec<(Element, Form, Standing)> {
+        fn on_body(&self, c: &Invariant) -> Vec<(&Element, &Form, Standing)> {
             self.asked.set(self.asked.get() + 1);
             self.on_class(c)
         }
@@ -522,10 +522,10 @@ fn a_glue_pass_retracts_once_and_a_citation_is_never_cloned() {
         f: Form,
     }
     impl Crystal for Held {
-        fn on_class(&self, _class: &Invariant) -> Vec<(Element, Form, Standing)> {
-            vec![(self.e.clone(), self.f.clone(), Standing::Held)]
+        fn on_class(&self, _class: &Invariant) -> Vec<(&Element, &Form, Standing)> {
+            vec![(&self.e, &self.f, Standing::Held)]
         }
-        fn on_body(&self, c: &Invariant) -> Vec<(Element, Form, Standing)> {
+        fn on_body(&self, c: &Invariant) -> Vec<(&Element, &Form, Standing)> {
             self.on_class(c)
         }
         fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {

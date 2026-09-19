@@ -9,8 +9,8 @@ impl crate::transducer::family::Crystal for Epigenome {
         &self,
         class: &crate::transducer::stalk::Invariant,
     ) -> Vec<(
-        Element,
-        crate::transducer::sentence::Form,
+        &Element,
+        &crate::transducer::sentence::Form,
         crate::transducer::stalk::Standing,
     )> {
         // 24.2: the closed forms this mind holds at a CITED FORM's chart,
@@ -26,12 +26,16 @@ impl crate::transducer::family::Crystal for Epigenome {
                 // carrier the working memory of the organ — the workaround
                 // was to read off the held element, and `Held` is what that
                 // workaround was reaching for.
+                // Z4 item 3: the reader hands out REFERENCES into the one
+                // held object. It cloned the element and the form out of
+                // `Held` on every call, which on the glue pass is one copy
+                // of every closed form on the chart per question asked.
                 let held = self.working_word(&a)?;
-                let f = held.form()?.clone();
+                let f = held.form()?;
                 if !f.is_closed() {
                     return None;
                 }
-                Some((held.element().clone(), f, st))
+                Some((held.element(), f, st))
             })
             .collect()
     }
@@ -40,8 +44,8 @@ impl crate::transducer::family::Crystal for Epigenome {
         &self,
         chart: &crate::transducer::stalk::Invariant,
     ) -> Vec<(
-        Element,
-        crate::transducer::sentence::Form,
+        &Element,
+        &crate::transducer::sentence::Form,
         crate::transducer::stalk::Standing,
     )> {
         // 21 step 3: the closed forms carrying a body on this chart, read
@@ -55,12 +59,16 @@ impl crate::transducer::family::Crystal for Epigenome {
             .scoped()
             .filter_map(|(a, ())| {
                 let st = self.standing_of(&a)?;
+                // Z4 item 3: the reader hands out REFERENCES into the one
+                // held object. It cloned the element and the form out of
+                // `Held` on every call, which on the glue pass is one copy
+                // of every closed form on the chart per question asked.
                 let held = self.working_word(&a)?;
-                let f = held.form()?.clone();
+                let f = held.form()?;
                 if !f.is_closed() {
                     return None;
                 }
-                Some((held.element().clone(), f, st))
+                Some((held.element(), f, st))
             })
             .collect()
     }

@@ -870,6 +870,8 @@ impl Contemplation {
             certificates: certs,
             vortex,
             candidates,
+            // Derived once, here, where the form is taken (Z4 item 3).
+            rotor: Bubble::rotor_of_form(&held),
             form: Some(held),
             bundle,
             remainders: rem_keyed,
@@ -966,6 +968,8 @@ impl Contemplation {
             certificates: Keyed::new(),
             vortex: Keyed::new(),
             candidates: Keyed::new(),
+            // A bubble with no form has no rotor to derive (rule 11).
+            rotor: None,
             form: None,
             bundle: None,
             remainders: Keyed::new(),

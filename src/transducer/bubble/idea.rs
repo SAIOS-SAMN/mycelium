@@ -176,6 +176,15 @@ pub struct Bubble {
     pub candidates: Keyed<Keyed<Rotor>>,
     /// The form this idea is (chapter 30 step 6).
     pub form: Option<Form>,
+    /// THE ROTOR ITS WORD VERTICES AGREE ON, derived ONCE when the form is
+    /// taken and read thereafter (Z4 item 3). It walked every vertex of the
+    /// form on every call, and `rotor_between` asks two bubbles for it per
+    /// neighbour pair.
+    ///
+    /// Not on the tape: the decoder re-derives it from the form it decoded
+    /// (law 12), so there is one construction of it and a tape cannot carry
+    /// a rotor the form does not have.
+    pub(crate) rotor: Option<Rotor>,
     /// Pairs the idea germinated from; trial speaks over them for μ⃗.
     pub bundle: Option<Vec<crate::transducer::family::TrainPair>>,
     /// Per-pair remainder chains, keyed by pair index. `remainder` is their union.
@@ -329,8 +338,13 @@ impl Bubble {
     /// A form whose word vertices all speak one rotor up to projective
     /// equality has that rotor. One that speaks several has no single one,
     /// and says so — absence, not a representative. Nothing here is chosen.
-    pub(crate) fn rotor(&self) -> Option<Rotor> {
-        let f = self.form.as_ref()?;
+    pub(crate) fn rotor(&self) -> Option<&Rotor> {
+        self.rotor.as_ref()
+    }
+
+    /// The derivation itself, run once at `take_form` and at every other
+    /// site that builds a bubble around a form.
+    pub(crate) fn rotor_of_form(f: &Form) -> Option<Rotor> {
         let mut held: Option<Rotor> = None;
         for v in &f.vertices {
             let Vertex::Word { derivation, .. } = v else {
@@ -818,6 +832,7 @@ impl Bubble {
     /// Total: the form's remainder carries A5's proof in its own type, so
     /// there is nothing to ask here (§4.4).
     pub(crate) fn take_form(&mut self, f: Form) {
+        self.rotor = Self::rotor_of_form(&f);
         self.remainder = f.remainder.clone();
         self.torsion = f.torsion.clone();
         self.certificates = f.certificates.clone();

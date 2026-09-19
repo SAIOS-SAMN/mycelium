@@ -24,10 +24,10 @@ struct Held {
     f: Form,
 }
 impl Crystal for Held {
-    fn on_class(&self, _class: &Invariant) -> Vec<(Element, Form, Standing)> {
-        vec![(self.e.clone(), self.f.clone(), Standing::Held)]
+    fn on_class(&self, _class: &Invariant) -> Vec<(&Element, &Form, Standing)> {
+        vec![(&self.e, &self.f, Standing::Held)]
     }
-    fn on_body(&self, c: &Invariant) -> Vec<(Element, Form, Standing)> {
+    fn on_body(&self, c: &Invariant) -> Vec<(&Element, &Form, Standing)> {
         self.on_class(c)
     }
     fn speak_form(

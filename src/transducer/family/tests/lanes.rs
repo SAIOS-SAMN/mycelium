@@ -65,10 +65,10 @@ impl Lanes {
 }
 
 impl Crystal for Lanes {
-    fn on_class(&self, _c: &Invariant) -> Vec<(element::Element, Form, crate::transducer::stalk::Standing)> {
+    fn on_class(&self, _c: &Invariant) -> Vec<(&element::Element, &Form, crate::transducer::stalk::Standing)> {
         Vec::new()
     }
-    fn on_body(&self, _c: &Invariant) -> Vec<(element::Element, Form, crate::transducer::stalk::Standing)> {
+    fn on_body(&self, _c: &Invariant) -> Vec<(&element::Element, &Form, crate::transducer::stalk::Standing)> {
         Vec::new()
     }
     fn speak_form(

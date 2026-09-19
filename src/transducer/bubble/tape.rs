@@ -251,6 +251,9 @@ impl Contemplation {
                 // Not persisted: re-derived from the demand's own bodies
                 // at hold time (law 12).
                 candidates: Keyed::new(),
+                // Re-derived from the form the tape decoded, never carried
+                // on it (law 12).
+                rotor: form.as_ref().and_then(Bubble::rotor_of_form),
                 form,
                 bundle: None,
                 remainders: Keyed::new(),

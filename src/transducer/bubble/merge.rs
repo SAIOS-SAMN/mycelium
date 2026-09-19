@@ -276,6 +276,7 @@ impl Contemplation {
             certificates,
             vortex,
             candidates: Keyed::new(),
+            rotor: form.as_ref().and_then(Bubble::rotor_of_form),
             form,
             bundle,
             remainders,

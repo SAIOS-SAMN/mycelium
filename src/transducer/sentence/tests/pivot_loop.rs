@@ -17,13 +17,13 @@ impl crate::transducer::family::Crystal for Hold {
         &self,
         _class: &stalk::Invariant,
     ) -> Vec<(
-        Element,
-        Form,
+        &Element,
+        &Form,
         Standing,
     )> {
         Vec::new()
     }
-    fn on_body(&self, c: &stalk::Invariant) -> Vec<(Element, Form, Standing)> {
+    fn on_body(&self, c: &stalk::Invariant) -> Vec<(&Element, &Form, Standing)> {
         self.on_class(c)
     }
     fn speak_form(

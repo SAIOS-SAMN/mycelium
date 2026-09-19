@@ -12,8 +12,8 @@ impl crate::transducer::family::Crystal for Kernel {
         &self,
         class: &crate::transducer::stalk::Invariant,
     ) -> Vec<(
-        Element,
-        crate::transducer::sentence::Form,
+        &Element,
+        &crate::transducer::sentence::Form,
         crate::transducer::stalk::Standing,
     )> {
         self.ruled
@@ -23,9 +23,9 @@ impl crate::transducer::family::Crystal for Kernel {
                 // The court's ruled word, read off the word it HOLDS (L16):
                 // the form is a field of the basis entry and this read
                 // parses nothing.
+                // Z4 item 3: references into the one held word.
                 let held = self.held_word(&addr)?;
-                let f = held.form()?.clone();
-                Some((held.element().clone(), f, crate::transducer::stalk::Standing::Ruled))
+                Some((held.element(), held.form()?, crate::transducer::stalk::Standing::Ruled))
             })
             .collect()
     }
@@ -41,8 +41,8 @@ impl crate::transducer::family::Crystal for Kernel {
         &self,
         _chart: &crate::transducer::stalk::Invariant,
     ) -> Vec<(
-        Element,
-        crate::transducer::sentence::Form,
+        &Element,
+        &crate::transducer::sentence::Form,
         crate::transducer::stalk::Standing,
     )> {
         Vec::new()
