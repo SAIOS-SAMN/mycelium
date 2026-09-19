@@ -82,6 +82,15 @@ pub struct TapeParts {
     /// The tape's fixed frame: the count ahead of each carrier and the
     /// per-item tags between them.
     pub frame: usize,
+    /// THE WORD'S OWN KEY, in bytes — not part of the tape, and the thing
+    /// 1.7 part 1 is about. Identity is not shortened, so this carries the
+    /// cited forms' whole addresses and always will; the question part 1
+    /// asks is whether those bytes are HELD once or once per citer.
+    pub key_total: usize,
+    /// How many of `key_total`'s bytes ARE cited addresses — what a
+    /// shared-segment address would stop duplicating. `key_total` minus
+    /// this is the form's own contribution to its name.
+    pub key_cited: usize,
     /// Whatever the components above do not account for. SIGNED: a large
     /// positive `rest` is a component this reading forgot, and a NEGATIVE
     /// one is a component counted twice. Clamping it at zero would hide
@@ -200,6 +209,15 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
             let _ = (derivation, acts);
         }
     }
+    // 1.7 part 1's prize, measured: the word's own key and how much of it
+    // is the cited forms' addresses written inline by `form_vertex_key`'s
+    // Glued arm. `put_bytes` writes a u32 length ahead of each.
+    p.key_total = e.address().len();
+    for v in &f.vertices {
+        if let Vertex::Glued { address, .. } = v {
+            p.key_cited += 4 + address.len();
+        }
+    }
     let named = p.addr_word
         + p.addr_glued
         + p.frame
@@ -231,7 +249,7 @@ impl TapeParts {
             "z12 word {id}… seq {seq} verts {verts} \
              tape {} = addrW {} addrG {} rotor {} cites {}/{} carriage {} gauge {} \
              charts {} faces {} sections {} torsion {} loops {} rem {} \
-             certs {} axes {} frame {} rest {}",
+             certs {} axes {} frame {} rest {} | key {} cited {}",
             self.total,
             self.addr_word,
             self.addr_glued,
@@ -250,6 +268,8 @@ impl TapeParts {
             self.axes,
             self.frame,
             self.rest,
+            self.key_total,
+            self.key_cited,
         )
     }
 }
