@@ -1131,7 +1131,7 @@ rows and `K` for the cut; the implementor's `D0` of 513004d is Z0.
 | Z7 | **Refraction is the response.** A reply to a heard sentence is rebuilt by `Transport::refract` from the congruent stratum and the heard key, never assembled from a walk of the form. | 3.10, 42.5 | `sentence/transport.rs`, `client/sdk/entity/`, `anastome/dialogue/` | open | a reply's address re-derives from the heard key and the refraction alone; the wire's `silent` cluster count falls on the readings |
 | K5 | **The rest of the roster**, each reading behind a probe receipt: Components, Lines, PeriodCells (the spectrum cut, integer frame ratios: 102 tasks), HueStrata. | law 6, 38.2 | `family/scene.rs`, `court/` | open | each reading's roster event is a receipt and its first cover on corpus is read on the wire |
 
-Order: Z0 · Z1 · Z1b · Z2 · K1a · Z4 · K1 · K2 · K3 · Z3 · Z5 · K4 · Z6 · Z7 · K5 (Z4 pulled ahead on the fleet reading at c1c5c4a, 2026-09-19: a fleet that dies in nine minutes takes no reading). Z1
+Order: Z0 · Z1 · Z1b · Z2 · K1a · Z4 · Z4b · K1 · K2 · K3 · Z3 · Z5 · K4 · Z6 · Z7 · K5 (Z4 pulled ahead on the fleet reading at c1c5c4a, 2026-09-19: a fleet that dies in nine minutes takes no reading). Z1
 before any fix so every later row lands with its reading; K1–K3 ahead of
 the coordinate hygiene rows because they are the first additive cognition
 since Y4 and they remove the shape Z3 optimises; Z4 stays ahead of Z5
