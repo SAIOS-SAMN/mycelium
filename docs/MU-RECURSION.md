@@ -4424,10 +4424,13 @@ own trie. A form the voice extracted is moved into its bubble, never
 cloned into it.
 
 **What bounds a hold** (ruled 2026-09-19, on the reading that
-`shed_unglued` retired nothing structurally — every bubble `hold_form`
-built was `dirty` for life and `retire_on_t` bounded the count by a
-reserve read off the machine's memory at boot). A hold is bounded by
-content, through three doors and no other:
+`retire_on_t` bounded the count of held thoughts by a reserve read off the
+machine's memory at boot, and that the shed's filter retired nothing in a
+six-minute window in which it ran on every stroke — for which term of the
+filter, the instrument says, not a grep; a first reading of this ruling
+said `dirty` was never cleared, and that was false: `expand_with` clears
+it when an expansion finishes within its stroke, idea.rs). A hold is
+bounded by content, through three doors and no other:
 
 1. **Lapse.** A held thought stands while a demand it carries is docketed,
    and lapses with that docket's lapse — 47.5's lapse in receipts, the
@@ -4447,10 +4450,12 @@ content, through three doors and no other:
    court's docket, and the voice's memory of it is that docket. Nothing
    already held is evicted to make room, because eviction chooses.
 
-`dirty` is a reading, not a costume: it says the bubble's idea has moved
-since it was last exchanged, so a bubble is born clean and becomes dirty
-by a merge, a pivot or a collapse. A flag every bubble carries from birth
-reads nothing and is deleted with its reader.
+`dirty` is a reading and stays one: it says the bubble's expansion did
+not finish within its stroke, written once, where the expansion ends
+(`expand_with`, law 12), and it is not written a second time anywhere
+else. A bubble that cites a form (`glues` non-empty) is not shed by the
+filter and is not meant to be: its door is promotion or lapse, since what
+it cites stands on the atlas or on a docket.
 
 **The files.** The contemplation is eight files, one organ each (Stage 8b
 S5): `idea.rs` one bubble and what it measures; `contemplation.rs` the
