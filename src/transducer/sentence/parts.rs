@@ -42,8 +42,13 @@ use crate::transducer::element::Element;
 pub struct TapeParts {
     /// The whole tape, as `encode_form_v2` writes it.
     pub total: usize,
-    /// Word vertices' own addresses (`put_addr`), and Glued vertices'.
-    pub addrs: usize,
+    /// Word vertices' own addresses (`put_addr`).
+    pub addr_word: usize,
+    /// GLUED vertices' addresses: the CITED form's address, carried inline.
+    /// Split from the Word vertices' because the two have different fixes:
+    /// a word's address is its own M2 composite, a glued vertex's is
+    /// another form's whole key written into this one.
+    pub addr_glued: usize,
     /// The rotor each derivation carries: its residue word's letter tape
     /// and the composed rotor where one travels (A1, 37.7).
     pub rotor: usize,
@@ -74,6 +79,9 @@ pub struct TapeParts {
     pub certs: usize,
     /// The chart axes opened over held loops (3.7, 15.5).
     pub axes: usize,
+    /// The tape's fixed frame: the count ahead of each carrier and the
+    /// per-item tags between them.
+    pub frame: usize,
     /// Whatever the components above do not account for. SIGNED: a large
     /// positive `rest` is a component this reading forgot, and a NEGATIVE
     /// one is a component counted twice. Clamping it at zero would hide
@@ -97,7 +105,7 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
     for v in &f.vertices {
         match v {
             Vertex::Word { address, derivation, acts, .. } => {
-                p.addrs += bytes_of(|b| {
+                p.addr_word += bytes_of(|b| {
                     crate::transducer::address::put_addr(b, address);
                 });
                 p.rotor += bytes_of(|b| derivation.residue.to_bytes(b));
@@ -128,7 +136,7 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
                 }
             }
             Vertex::Glued { address, chart, .. } => {
-                p.addrs += bytes_of(|b| {
+                p.addr_glued += bytes_of(|b| {
                     crate::transducer::address::put_addr(b, address);
                 });
                 p.charts += 2 + chart.key().as_bytes().len();
@@ -178,7 +186,23 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
     for (k, _) in f.axes.scoped() {
         p.axes += 2 + k.len() + 2;
     }
-    let named = p.addrs
+    // The tape's fixed frame: one count ahead of each carrier and the
+    // per-item tags the encoder writes between them. Named so `rest` is a
+    // reading of what is MISSING and not of what was never counted.
+    p.frame = 2 + f.vertices.len()
+        + 2 + f.faces.len() * 7
+        + 2 + f.loops.len() * 8
+        + 2 + 2 + 8 + 2 + 2 + 2;
+    for v in &f.vertices {
+        if let Vertex::Word { derivation, acts, contact, .. } = v {
+            // generators count, acts count, contact tag (+ its body).
+            p.frame += 2 + 2 + if contact.is_some() { 10 } else { 1 };
+            let _ = (derivation, acts);
+        }
+    }
+    let named = p.addr_word
+        + p.addr_glued
+        + p.frame
         + p.rotor
         + p.cites
         + p.carriage
@@ -205,11 +229,12 @@ impl TapeParts {
         let id: String = at.iter().take(4).map(|b| format!("{b:02x}")).collect();
         format!(
             "z12 word {id}… seq {seq} verts {verts} \
-             tape {} = addr {} rotor {} cites {}/{} carriage {} gauge {} \
+             tape {} = addrW {} addrG {} rotor {} cites {}/{} carriage {} gauge {} \
              charts {} faces {} sections {} torsion {} loops {} rem {} \
-             certs {} axes {} rest {}",
+             certs {} axes {} frame {} rest {}",
             self.total,
-            self.addrs,
+            self.addr_word,
+            self.addr_glued,
             self.rotor,
             self.cite_n,
             self.cites,
@@ -223,6 +248,7 @@ impl TapeParts {
             self.remainder,
             self.certs,
             self.axes,
+            self.frame,
             self.rest,
         )
     }
