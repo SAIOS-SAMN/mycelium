@@ -42,13 +42,23 @@ use crate::transducer::element::Element;
 pub struct TapeParts {
     /// The whole tape, as `encode_form_v2` writes it.
     pub total: usize,
-    /// Word vertices' own addresses (`put_addr`).
-    pub addr_word: usize,
-    /// GLUED vertices' addresses: the CITED form's address, carried inline.
-    /// Split from the Word vertices' because the two have different fixes:
-    /// a word's address is its own M2 composite, a glued vertex's is
-    /// another form's whole key written into this one.
-    pub addr_glued: usize,
+    /// THE ADDRESS TABLE as the tape now carries it (Z12b part 2): each
+    /// DISTINCT address the vertices name, written once, with its length
+    /// prefix. This is what the addresses cost in the tape today.
+    pub table: usize,
+    /// The ordinals the vertices carry in place of addresses — two bytes
+    /// each, whatever the address is.
+    pub addr_ord: usize,
+    /// COUNTERFACTUAL, AND NEVER SUMMED INTO THE TAPE: what those same
+    /// addresses cost when each vertex wrote its own, which is what the
+    /// tape did before part 2. `table` against this is what part 2 saved
+    /// on this word, and a word whose citations are all distinct saves
+    /// nothing — which is itself the reading.
+    pub addr_per_vertex: usize,
+    /// Glued vertices on this form, and how many DISTINCT forms they cite.
+    /// Equal counts mean part 2 has nothing to collapse here.
+    pub glued_n: usize,
+    pub glued_distinct: usize,
     /// The rotor each derivation carries: its residue word's letter tape
     /// and the composed rotor where one travels (A1, 37.7).
     pub rotor: usize,
@@ -111,12 +121,33 @@ fn bytes_of(f: impl FnOnce(&mut Vec<u8>)) -> usize {
 pub fn tape_parts(e: &Element) -> Option<TapeParts> {
     let f = crate::transducer::sentence::from_element_form(e)?;
     let mut p = TapeParts { total: e.description().len(), ..TapeParts::default() };
+    // THE TABLE AS THE ENCODER BUILDS IT: the distinct addresses the
+    // vertices name. Measured here the same way, so the reading is of the
+    // tape that exists and not of the one that used to.
+    let mut names: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let mut glued_names: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for v in &f.vertices {
+        match v {
+            Vertex::Word { address, .. } => {
+                names.insert(address, ());
+                p.addr_ord += 2;
+            }
+            Vertex::Glued { address, .. } => {
+                names.insert(address, ());
+                glued_names.insert(address, ());
+                p.glued_n += 1;
+                p.addr_ord += 2;
+                p.addr_per_vertex += 2 + address.len();
+            }
+            _ => {}
+        }
+    }
+    p.glued_distinct = glued_names.len();
+    p.table = 2 + names.scoped().map(|(k, ())| 2 + k.len()).sum::<usize>();
     for v in &f.vertices {
         match v {
             Vertex::Word { address, derivation, acts, .. } => {
-                p.addr_word += bytes_of(|b| {
-                    crate::transducer::address::put_addr(b, address);
-                });
+                p.addr_per_vertex += 2 + address.len();
                 p.rotor += bytes_of(|b| derivation.residue.to_bytes(b));
                 // The composed rotor travels only where the residue does
                 // not determine it (A1, 37.7); its absence is one byte,
@@ -144,10 +175,7 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
                     p.charts += 2 + a.chart.key().as_bytes().len();
                 }
             }
-            Vertex::Glued { address, chart, .. } => {
-                p.addr_glued += bytes_of(|b| {
-                    crate::transducer::address::put_addr(b, address);
-                });
+            Vertex::Glued { chart, .. } => {
                 p.charts += 2 + chart.key().as_bytes().len();
             }
             Vertex::Demand { chart, .. } => p.charts += 2 + chart.key().as_bytes().len(),
@@ -218,8 +246,10 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
             p.key_cited += 4 + address.len();
         }
     }
-    let named = p.addr_word
-        + p.addr_glued
+    // `addr_per_vertex` is the counterfactual and is NOT summed: what the
+    // tape holds is the table and the ordinals.
+    let named = p.table
+        + p.addr_ord
         + p.frame
         + p.rotor
         + p.cites
@@ -247,12 +277,15 @@ impl TapeParts {
         let id: String = at.iter().take(4).map(|b| format!("{b:02x}")).collect();
         format!(
             "z12 word {id}… seq {seq} verts {verts} \
-             tape {} = addrW {} addrG {} rotor {} cites {}/{} carriage {} gauge {} \
+             tape {} = table {} ords {} (per-vertex {}) glued {}/{} rotor {} cites {}/{} carriage {} gauge {} \
              charts {} faces {} sections {} torsion {} loops {} rem {} \
              certs {} axes {} frame {} rest {} | key {} cited {}",
             self.total,
-            self.addr_word,
-            self.addr_glued,
+            self.table,
+            self.addr_ord,
+            self.addr_per_vertex,
+            self.glued_distinct,
+            self.glued_n,
             self.rotor,
             self.cite_n,
             self.cites,
