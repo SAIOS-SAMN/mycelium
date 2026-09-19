@@ -14,7 +14,8 @@ pub mod pivot;
 pub mod tape;
 pub mod chart;
 pub mod rebase;
-pub mod reading;
+pub mod parts;
+mod reading;
 pub mod demand;
 
 pub use chain::*;
@@ -26,6 +27,7 @@ pub use pivot::*;
 pub use tape::*;
 pub use chart::*;
 pub use reading::*;
+pub use parts::*;
 
 #[cfg(test)]
 pub(crate) mod tests;

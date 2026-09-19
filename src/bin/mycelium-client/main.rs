@@ -120,6 +120,25 @@ fn heap() -> String {
 /// cannot account for the process is not reading the process, and the
 /// residue is printed rather than hidden — what the carriers do NOT reach
 /// is as much a reading as what they do.
+/// Z12 — WHAT A WORD'S TAPE IS MADE OF, on three words spread along the
+/// admission ordinal: the earliest the genome still holds, the middle one,
+/// and the latest. One line each.
+///
+/// The question is which component of a tape scales with the genome's
+/// size, so the three are chosen along the axis that size is measured on
+/// — `seq`, the ordinal the word was absorbed at — and not along the
+/// trie's order, which is the addresses' and says nothing about when.
+/// Three lines a stroke, bounded whatever the genome's size.
+fn z12_lines(entity: &mycelium::client::sdk::Entity, tag: &str) {
+    for (at, seq, held) in entity.epigenome.genome_ordinal_spread() {
+        let Some(parts) = mycelium::transducer::sentence::tape_parts(held.element()) else {
+            continue;
+        };
+        let verts = held.form().map_or(0, |f| f.vertices.len());
+        eprintln!("[{tag}] {}", parts.line(&at, seq, verts));
+    }
+}
+
 fn carrier_line(entity: &mycelium::client::sdk::Entity) -> String {
     let mut out = String::new();
     let mut total = 0usize;
@@ -379,6 +398,7 @@ fn main() {
                     carrier_line(&entity),
                     if feed.exhausted() { "clear" } else { "held" },
                 );
+                z12_lines(&entity, &tag);
             } else {
                 eprintln!(
                     "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} census {:?} reserve {:?} carriers {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",

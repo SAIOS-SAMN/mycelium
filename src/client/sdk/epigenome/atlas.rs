@@ -223,6 +223,38 @@ impl Epigenome {
     /// trie's own orbit, which is how a cursor walks a carrier whose size
     /// changes under it (45.7, X3). `None` from a genome that holds
     /// nothing; from `None` it starts at the first coordinate.
+    /// Z12 — THREE WORDS BY ADMISSION ORDINAL: the earliest the genome
+    /// still holds, the one at the middle of the ordinals, and the latest.
+    ///
+    /// The point of the reading is what a word's tape costs AGAINST THE
+    /// GENOME'S SIZE WHEN IT WAS ABSORBED, so the three have to be spread
+    /// along that axis and not along the trie's — which is the addresses'
+    /// order and says nothing about when anything arrived. `seq` is that
+    /// axis and it is content the entry carries.
+    ///
+    /// The middle is taken at the middle POSITION of the ordinals in
+    /// order, not at the mean of them: a mean is arithmetic on a
+    /// coordinate, and retirements leave the ordinals with holes.
+    pub fn genome_ordinal_spread(&self) -> Vec<(Vec<u8>, u64, &crate::transducer::element::Held)> {
+        let mut by_seq: Vec<(u64, Vec<u8>)> =
+            self.genome.scoped().map(|(k, w)| (w.seq, k)).collect();
+        by_seq.sort_unstable();
+        let n = by_seq.len();
+        let picks = match n {
+            0 => Vec::new(),
+            1 | 2 => (0..n).collect::<Vec<_>>(),
+            _ => vec![0, n / 2, n - 1],
+        };
+        picks
+            .into_iter()
+            .filter_map(|i| {
+                let (seq, k) = by_seq.get(i)?;
+                let w = self.genome.get(k)?;
+                Some((k.clone(), *seq, &w.held))
+            })
+            .collect()
+    }
+
     /// THE ORBIT FROM A COORDINATE: every genome address once, starting
     /// after `at` and wrapping to close on it (45.7). This is what a walk
     /// `for offset in 0..len { (start + offset) % len }` was reaching for
