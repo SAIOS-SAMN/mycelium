@@ -86,7 +86,7 @@ fn a_demands_candidate_transport_is_read_from_the_bodies_it_stands_for() {
             })
             .expect("the deformation stands as a typed demand");
         let mut c = Contemplation::new();
-        c.hold_form(f.clone(), &[], &[]);
+        c.hold_form(f.clone(), &[], &[], [0; 4]);
         let (_, b) = c.bubbles.scoped().next().expect("the demand is held as an idea");
         let over_chart =
             b.candidates.get(chart.key().as_bytes()).map_or(0, |m| m.len());

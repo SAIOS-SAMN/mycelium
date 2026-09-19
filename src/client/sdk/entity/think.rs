@@ -76,7 +76,7 @@ impl Entity {
             }
         }
         self.physics.reserve = next;
-        self.contemplation.hold_form(f, train, remainders);
+        self.contemplation.hold_form(f, train, remainders, draw);
         true
     }
 

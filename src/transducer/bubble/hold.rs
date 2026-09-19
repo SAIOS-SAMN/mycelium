@@ -25,6 +25,7 @@ impl Contemplation {
         f: Form,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<Link>],
+        escrow: [u64; 4],
     ) {
         if f.vertices.len() <= 1
             && f.faces.is_empty()
@@ -36,7 +37,7 @@ impl Contemplation {
         // Z4's instrument: the live bytes this hold adds. Read at entry and
         // again at exit, so what is counted is what the hold RETAINED.
         let before = live_bytes();
-        self.hold_form_inner(f, train, remainders);
+        self.hold_form_inner(f, train, remainders, escrow);
         if let (Some(a), Some(b)) = (before, live_bytes()) {
             HELD_BYTES.with(|c| c.set(c.get().saturating_add(b - a)));
         }
@@ -47,6 +48,7 @@ impl Contemplation {
         f: Form,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<Link>],
+        escrow: [u64; 4],
     ) {
         mark("idea_key");
         let key = idea_key(&f);
@@ -161,9 +163,16 @@ impl Contemplation {
             volume,
             dirty: true,
             moved_k: self.now_k,
-            // Z4d: the thought is held on an escrow of its own lane
-            // measure, paid through one measured aperture of TUniversal.
-            escrow: volume,
+            // Z4d: THE ESCROW IS WHAT THE CALLER DREW, not what the
+            // thought measures. They were the same number written in two
+            // places and they disagreed: a bubble built here without a
+            // draw — `hold`, a merge, the tape — still returned `volume`
+            // on its lapse, and the reserve INFLATED. Measured on the fleet
+            // at 3245041: `reserve [2194, 203, 88, 3382]` against a
+            // `reserve_max` of 88, with lane T at exactly 88 because
+            // nothing draws or returns on it. One place draws, one place
+            // records, the same number (law 12).
+            escrow,
             until: self.aperture_tu().and_then(|span| self.now_k.checked_add(span)),
             glues,
             glued_by: Keyed::new(),

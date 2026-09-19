@@ -46,7 +46,7 @@ fn an_open_demand_is_held_as_an_idea_standing_on_its_chart() {
     });
     f.reindex();
     let mut c = Contemplation::new();
-    c.hold_form(f.clone(), &[], &[]);
+    c.hold_form(f.clone(), &[], &[], [0; 4]);
     assert_eq!(c.len(), 1, "the demand is one idea the mind holds");
     let held: Vec<&Bubble> = c.bubbles.scoped().map(|(_, b)| b).collect();
     let [b] = held.as_slice() else { panic!("one bubble, got {}", held.len()) };
@@ -155,7 +155,7 @@ fn hold_form_keeps_a_glued_open_loop() {
         .expect("glue");
     assert!(outer.remainder.is_empty(), "no remainder to hold()");
     let mut c = Contemplation::new();
-    c.hold_form(outer.clone(), &[], &[]);
+    c.hold_form(outer.clone(), &[], &[], [0; 4]);
     assert_eq!(c.bubbles.len(), 1, "the glued form is an idea");
     let b = c.bubbles.scoped().next().map(|(_, b)| b).expect("held");
     assert!(
@@ -192,7 +192,7 @@ fn hold_form_keeps_a_glued_open_loop() {
         "the held form has an open loop"
     );
     let mut c2 = Contemplation::new();
-    c2.hold_form(open.clone(), &[], &[]);
+    c2.hold_form(open.clone(), &[], &[], [0; 4]);
     let k = c2.bubbles.scoped().next().map(|(k, _)| k).expect("held");
     assert_eq!(k.as_slice(), crate::transducer::bubble::idea::idea_key(&open).as_bytes(), "hold, merge and Bubble::key share idea_key");
     struct HoldQ(Word);
@@ -299,7 +299,7 @@ fn hold_form_carries_bundle_and_remainder() {
     let train = vec![(vec![vec![1u8]], vec![vec![2u8]])];
     let rem = vec![vec![(0i64, 0i64, 1u8, 2u8)]];
     let mut c = Contemplation::new();
-    c.hold_form(f.clone(), &train, &rem);
+    c.hold_form(f.clone(), &train, &rem, [0; 4]);
     assert_eq!(c.bubbles.len(), 1);
     let (k, b) = c.bubbles.scoped().next().expect("held");
     assert_eq!(k.as_slice(), crate::transducer::bubble::idea::idea_key(&f).as_bytes(), "idea_key stays the form's vertex key");
@@ -342,7 +342,7 @@ fn a_closed_idea_crystallizes_with_its_descent_and_leaves_the_contemplation() {
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the recolour family extracts");
     let minted = mint_sentence(&rule, &family, &NoCrystal, 0).expect("the family mints");
     let mut c = Contemplation::new();
-    c.hold_form(rule.form.clone(), &family, &[Vec::new()]);
+    c.hold_form(rule.form.clone(), &family, &[Vec::new()], [0; 4]);
     assert_eq!(c.bubbles.len(), 1, "the closed form is held as an idea");
     let atlas = crate::transducer::stalk::Stalks::default();
     let mut budget = crate::physics::Physics::default().stroke_n(8);
@@ -576,13 +576,13 @@ fn a_hold_lapses_with_its_docket() {
     // them and nothing else can retire them.
     let inner = standing_form(7);
     let inner_key = crate::transducer::sentence::form_vertex_key(&inner);
-    c.hold_form(inner, &[], &[]);
+    c.hold_form(inner, &[], &[], [0; 4]);
     let mid = citing_form(8, &inner_key);
     let mid_key = crate::transducer::sentence::form_vertex_key(&mid);
-    c.hold_form(mid, &[], &[]);
+    c.hold_form(mid, &[], &[], [0; 4]);
     let outer = citing_form(9, &mid_key);
     let outer_key = crate::transducer::sentence::form_vertex_key(&outer);
-    c.hold_form(outer, &[], &[]);
+    c.hold_form(outer, &[], &[], [0; 4]);
     assert_eq!(c.bubbles.len(), 3, "three bubbles stand");
     assert!(
         c.bubbles.get(&mid_key).is_some_and(|b| !b.glues.is_empty()),
@@ -618,9 +618,9 @@ fn a_promoted_thought_is_not_held_twice() {
     let mut c = Contemplation::new();
     let stood = standing_form(4);
     let stood_key = crate::transducer::sentence::form_vertex_key(&stood);
-    c.hold_form(stood, &[], &[]);
+    c.hold_form(stood, &[], &[], [0; 4]);
     let citer = citing_form(5, &stood_key);
-    c.hold_form(citer, &[], &[]);
+    c.hold_form(citer, &[], &[], [0; 4]);
     assert_eq!(c.bubbles.len(), 2, "the thought and a thought citing it");
 
     // It is ratified: the address is promoted into the genome.

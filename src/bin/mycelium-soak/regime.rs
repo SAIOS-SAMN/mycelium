@@ -116,7 +116,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             let Some(task) = mycelium::arc::parse_task(&json) else { continue };
             let mut b = physics.stroke_n(extraction_spend(&task.train));
             let Some(r) = extract_rule_with(&task.train, &epi, &mut b) else { continue };
-            hold.hold_form(r.form, &task.train, &[]);
+            hold.hold_form(r.form, &task.train, &[], [0; 4]);
             held += 1;
         }
         // EXPAND BEFORE CENSUSING. `hold_form` writes `dirty: true` at
@@ -267,7 +267,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             Contemplation::reset_held_bytes();
             let mut b = physics.stroke_n(spend);
             let Some(r) = extract_rule_with(&task.train, &epi, &mut b) else { continue };
-            hold.hold_form(r.form.clone(), &task.train, &[]);
+            hold.hold_form(r.form.clone(), &task.train, &[], [0; 4]);
             if pull == 9 {
                 let c = hold.shed_census();
                 println!(

@@ -308,3 +308,43 @@ fn a_hold_draws_its_own_lanes_and_returns_them_on_the_lapse() {
     // nothing measured.
     assert_eq!(entity.lapse_held(), 0, "an unmeasured horizon lapses nothing");
 }
+
+/// Z4d — A LAPSE RETURNS ONLY WHAT THE HOLD DREW, and a thought held
+/// without a draw returns nothing.
+///
+/// THE FLEET FOUND THIS AND THE SUITE DID NOT. `hold_form` set the
+/// bubble's escrow to the thought's own measure while the DRAW happened a
+/// level up in the entity, so the same number lived in two places and they
+/// disagreed: every bubble built without a draw — `hold`, a merge, a tape
+/// restore — returned a full escrow on its lapse and the reserve inflated.
+/// Read on the fleet at 3245041: `reserve [2194, 203, 88, 3382]` against a
+/// `reserve_max` of 88, with lane `𝒯` alone still at 88 because nothing
+/// draws or returns on it.
+///
+/// The escrow is now what the caller DREW, passed in, so one place draws
+/// and one place records the same number (law 12).
+#[test]
+fn a_lapse_returns_only_what_the_hold_drew() {
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("drew"));
+    let before = entity.physics.reserve;
+    // Held with no draw: `hold_chain` goes to the contemplation directly.
+    entity.hold_chain(vec![(9, 0, 1, 2)]);
+    assert_eq!(entity.physics.reserve, before, "a hold that drew nothing takes nothing");
+    // Stamp a whole aperture so a horizon can be MEASURED, then pay the
+    // held thought through it. A thought paid on this stroke cannot lapse
+    // on this stroke, which is the escrow working and not a miss.
+    for k in 1..=(crate::physics::aperture_cycle().max(1) as u64) {
+        entity.contemplation.set_now(k);
+    }
+    assert_eq!(entity.lapse_held(), 0, "a thought paid this stroke does not lapse on it");
+    // Now the clock passes the height it was paid through.
+    let paid_through = entity.contemplation.now_k()
+        + entity.contemplation.aperture_tu().expect("a measured horizon");
+    entity.contemplation.set_now(paid_through + 1);
+    let n = entity.lapse_held();
+    assert!(n > 0, "a measured horizon lapses what the clock has passed");
+    assert_eq!(
+        entity.physics.reserve, before,
+        "and it returns NOTHING, because nothing was drawn: the reserve cannot inflate"
+    );
+}
