@@ -2324,6 +2324,16 @@ Input: `R: Rotor`, coefficients `c[0..16]` by blade mask.
    `3, 5, 6, 9, 10, 12`) and the pseudoscalar (mask `15`) may be nonzero,
    eight rational coordinates. A nonzero coefficient on an odd mask, or all
    coefficients zero, is refused: not a rotor, never a vertex.
+   **The weight is the versor norm** (named 2026-09-19): `Φ Φ̃` is a
+   nonzero scalar iff the even element is a product of vectors, which is
+   Study's condition and bites in four dimensions and not below — for
+   `Φ = a + b·e₁₂ + c·e₃₄ + d·e₁₂₃₄`, `Φ Φ̃ = (a² + b² + c² + d²) +
+   2(ad − bc)·e₁₂₃₄`, so `Φ` is a versor iff `ad = bc`; the double quarter
+   turn `½(1 + e₁₂ + e₃₄ + e₁₂₃₄)` passes with its pseudoscalar intact
+   and `1 + e₁₂ + e₃₄` is refused. `Rotor::weight` reads that scalar and
+   refuses otherwise; it is the only thing the tree calls a rotor's
+   weight, the peel's `weight` is a Gaussian norm and says so at its
+   site, and a byte count is `bytes`, never a weight.
 2. `i` = least mask with `c[i] ≠ 0`; `a = |c[i]|`; `R' = R / a`, so
    `c'[i] = ±1`.
 3. If `c'[i] = −1`, `R' = −R'`. Now `c'[i] = +1`.
