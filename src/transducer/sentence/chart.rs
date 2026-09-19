@@ -116,7 +116,7 @@ impl Form {
         //
         // A class whose vertex was dropped keeps its entry: nothing reads a
         // section without first finding the Word vertex that carries the
-        // class (`vertices_carry_family`), so a stale entry is unreachable
+        // class (`vertices_carry_frames`), so a stale entry is unreachable
         // rather than wrong, and dropping it by an index arithmetic that
         // does not apply is the only way to be wrong here.
         let sections = self.sections.clone();
@@ -246,8 +246,9 @@ impl Form {
 #[derive(Debug, Clone)]
 pub struct SentenceRule {
     pub form: Form,
-    /// Classes present in some pairs only: class key → pair indices.
-    pub sections: Keyed<Vec<u16>>,
+    /// Classes present on some frames only: class key → the frames it
+    /// stands on, each its own coordinate (51.8).
+    pub sections: Keyed<Keyed<()>>,
     /// Family frame ratio ((h_out, h_in), (w_out, w_in)).
     pub ratio: ((usize, usize), (usize, usize)),
 }
@@ -466,7 +467,8 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
             Some(ps) => {
                 buf.push(1);
                 buf.extend_from_slice(&(ps.len() as u16).to_le_bytes());
-                for &p in ps {
+                // Coordinate order: the inner key IS the frame.
+                for p in frames_of_section(ps) {
                     buf.extend_from_slice(&p.to_le_bytes());
                 }
             }
@@ -485,8 +487,10 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     for (class, members) in f.sections.scoped() {
         crate::transducer::address::put_bytes(&mut buf, &class);
         buf.extend_from_slice(&(members.len() as u16).to_le_bytes());
-        for m in members {
-            buf.extend_from_slice(&m.to_le_bytes());
+        // The inner key IS the frame and its order IS the succession, so
+        // the identity is spelled in coordinate order with nothing sorted.
+        for (m, ()) in members.scoped() {
+            buf.extend_from_slice(&m);
         }
     }
     // An opened axis is a coordinate of the form (I6): the class it was

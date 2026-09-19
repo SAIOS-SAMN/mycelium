@@ -250,7 +250,39 @@ pub struct FormFace {
     /// Carried on the face, the section rides through both rewrites and
     /// through `retract_vertices` with the face it describes, and the court
     /// reads it where it stands.
-    pub pairs: Option<Vec<u16>>,
+    pub pairs: Option<Keyed<()>>,
+}
+
+/// A FRAME AS A COORDINATE (51.1, 51.8): the frame index along `e₃`,
+/// written big-endian so the trie's order is the coordinate's order.
+///
+/// Little-endian would put 256 before 1, and a section enumerated in that
+/// order is not the succession — `occupied_frames` already carries that
+/// note for the fibers carrier, where the reading is sorted afterwards.
+/// Here the key is the order, and nothing sorts.
+pub fn frame_key(k: u16) -> [u8; 2] {
+    k.to_be_bytes()
+}
+
+/// The frame a section's inner key names. `None` for a key that is not one.
+pub fn frame_of_key(k: &[u8]) -> Option<u16> {
+    Some(u16::from_be_bytes(k.try_into().ok()?))
+}
+
+/// The frames a section stands on, in succession. A reader that needs the
+/// list — the tape, the form key — takes it here rather than keeping a
+/// second copy beside the carrier (law 12).
+pub fn frames_of_section(section: &Keyed<()>) -> Vec<u16> {
+    section.scoped().filter_map(|(k, _)| frame_of_key(&k)).collect()
+}
+
+/// A section over the frames it stands on.
+pub fn section_of_frames(frames: impl IntoIterator<Item = u16>) -> Keyed<()> {
+    let mut out = Keyed::new();
+    for k in frames {
+        out.insert(frame_key(k), ());
+    }
+    out
 }
 
 impl FormFace {
@@ -265,13 +297,18 @@ impl FormFace {
         FormFace { i, j, word, at: Keyed::new(), pairs: None }
     }
 
-    /// Is this face's word measured on `pair` of the bundle? A face that
-    /// was never sectioned claims them all, so it is; a sectioned face
-    /// answers for the pairs it names and for no others.
-    pub fn measured_on(&self, pair: usize) -> bool {
+    /// Is this face's word measured at `frame` of the family's one body
+    /// (51.8)? A face that was never sectioned claims every frame, so it
+    /// is; a sectioned face answers at the frames it names and at no
+    /// others.
+    ///
+    /// A keyed read at the frame's own coordinate. It was
+    /// `ps.contains(&(pair as u16))` — a walk of the whole list, once per
+    /// face per frame in the court's edge replay.
+    pub fn measured_on(&self, frame: usize) -> bool {
         match &self.pairs {
             None => true,
-            Some(ps) => ps.contains(&(pair as u16)),
+            Some(ps) => u16::try_from(frame).is_ok_and(|k| ps.contains(&frame_key(k))),
         }
     }
 
@@ -355,7 +392,21 @@ pub struct Form {
     pub depth: u16,
     pub hue_maps: Keyed<Vec<(u8, u8)>>,
     pub ratio: ((usize, usize), (usize, usize)),
-    pub sections: Keyed<Vec<u16>>,
+    /// THE SECTIONS ALONG `e₃` (51.8): class or member key → the FRAMES it
+    /// stands on, each frame its own coordinate in the inner carrier.
+    ///
+    /// It was `Keyed<Vec<u16>>` and every reader asked it the same question
+    /// — does this section claim frame `k` — with `ps.contains(&k)`, a walk
+    /// of the whole list, once per vertex per member per frame in the
+    /// court's replay. 51.8 rules the court's readers onto the coordinate:
+    /// "the same refusal on a coordinate instead of on a list". Keyed by
+    /// [`frame_key`] all the way down, the frame IS the coordinate and the
+    /// question is a keyed read.
+    ///
+    /// The inner key is big-endian, so the trie's own order is the frame's
+    /// order and a reader that enumerates a section — the tape, the form
+    /// key — gets the frames in succession without sorting them (law 2).
+    pub sections: Keyed<Keyed<()>>,
     /// The certified pivots this form's crystallization rests on (A20).
     /// Evidence, replayed by the court; never part of the address.
     pub certificates: Keyed<PivotCertificate>,

@@ -3,7 +3,7 @@
 // re-derives in the stabilizer, and the remainder is what the demands name.
 //
 //! Nothing here is trusted from the tape. A vertex is carried onto the
-//! court's own copy of each pair and every landed lamina is read; an edge
+//! court's own copy of each frame and every landed lamina is read; an edge
 //! is re-measured on the union of the two bodies; a remainder link stands
 //! only where a demand vertex said it would (50.5: valid, not closed). Each
 //! refusal names its coordinate as content (50.9): the vertex with its
@@ -11,10 +11,11 @@
 
 use super::*;
 use crate::transducer::family::{perceive, Body, Grid, Lamina};
+use crate::transducer::sentence::frame_key;
 
-/// What one vertex does on one pair of the family.
+/// What one vertex does at one frame of the family's one body.
 pub(crate) enum Carried {
-    /// No body of the vertex's chart on this pair: a section elsewhere.
+    /// No body of the vertex's chart at this frame: a section elsewhere.
     Silent,
     /// Every lamina of every body of its chart lands on its image with the
     /// gauged hue, and every touched image body is reached whole.
@@ -68,14 +69,15 @@ fn site_key(r: i64, c: i64) -> Vec<u8> {
     k
 }
 
-/// 50.1 step 1 on one pair: `(V · W · γ) · B_in = B_out` under exact
-/// equality lamina by lamina, for every body of the vertex's chart on `x`.
-pub(crate) fn vertex_carries_pair(
+/// 50.1 step 1 at one FRAME of the family's one body (51.8): `(V · W · γ) ·
+/// B_in = B_out` under exact equality lamina by lamina, for every body of
+/// the vertex's chart on `x`.
+pub(crate) fn vertex_carries_frame(
     vertex: &Vertex,
     x: &Grid,
     y: &Grid,
-    pair: usize,
-    sections: &Keyed<Vec<u16>>,
+    frame: usize,
+    sections: &Keyed<Keyed<()>>,
 ) -> Carried {
     let Vertex::Word { derivation, contact, acts, .. } = vertex else {
         return Carried::Silent;
@@ -94,7 +96,7 @@ pub(crate) fn vertex_carries_pair(
     // member for a vertex that carries several would pass a sentence on the
     // strength of the part of it the court happened to read first.
     //
-    // A member whose chart this pair carries nothing on is silent, not a
+    // A member whose chart this frame carries nothing on is silent, not a
     // fault; a vertex silent on every member is `Silent` exactly as one with
     // an empty fiber was.
     let mut spoke = false;
@@ -104,7 +106,7 @@ pub(crate) fn vertex_carries_pair(
         if let Some(mps) =
             crate::transducer::family::member_section_key(vertex, &member.chart).and_then(|mk| sections.get(&mk))
         {
-            if !mps.contains(&(pair as u16)) {
+            if !mps.contains(&frame_key(frame as u16)) {
                 continue;
             }
         }
@@ -126,7 +128,7 @@ pub(crate) fn vertex_carries_pair(
                 // A centre the sensor cannot convert is not a lamina at all
                 // (W6) — the transport left the sensor's own geometry — and
                 // a centre carried into another frame is no lamina of the
-                // grid this pair is replayed against.
+                // grid this frame is replayed against.
                 let Some((tr, tc, tk)) = element::site_of(&p) else {
                     return Carried::Fails(FAIL_NO_LAMINA, at());
                 };
@@ -176,11 +178,11 @@ pub(crate) fn vertex_carries_pair(
     Carried::Carries
 }
 
-/// Does the form, spoken on this pair, cover every one of `laminae` with
+/// Does the form, spoken at this frame, cover every one of `laminae` with
 /// the hue it carries — by a word vertex's carriage or a demand's claim?
 fn form_covers_laminae(
     f: &Form,
-    pair: usize,
+    frame: usize,
     x: &Grid,
     laminae: &[Lamina],
 ) -> bool {
@@ -196,7 +198,7 @@ fn form_covers_laminae(
         if contact.is_some() { continue; }
         let only = crate::transducer::family::transport_class(v)
             .and_then(|tc| f.sections.get(&tc.key()).cloned());
-        if only.as_ref().is_some_and(|ps| !ps.contains(&(pair as u16))) {
+        if only.as_ref().is_some_and(|ps| !ps.contains(&frame_key(frame as u16))) {
             continue;
         }
         let rotor = derivation.rotor();
@@ -204,7 +206,7 @@ fn form_covers_laminae(
             if let Some(mps) =
                 crate::transducer::family::member_section_key(v, &member.chart).and_then(|mk| f.sections.get(&mk))
             {
-                if !mps.contains(&(pair as u16)) {
+                if !mps.contains(&frame_key(frame as u16)) {
                     continue;
                 }
             }
@@ -225,35 +227,42 @@ fn form_covers_laminae(
     laminae.iter().all(|&(r, c, _, h)| covered.get(&site_key(r, c)).is_some_and(|&w| w == h))
 }
 
-/// 23.1 step 3 over the family: `REFUSE_VERTEX_BODY` at the vertex, with
-/// its chart, for a word vertex that fails on any pair; a vertex silent on
-/// every pair is a section nothing here contradicts, and the closure check
-/// reads it.
-pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
+/// 23.1 step 3 ALONG `e₃` (51.8): `REFUSE_VERTEX_BODY` at the vertex, with
+/// its chart, for a word vertex that fails at any frame of the family's one
+/// body; a vertex silent at every frame is a section nothing here
+/// contradicts, and the closure check reads it.
+///
+/// It was `vertices_carry_family` and it asked that every rule vertex speak
+/// in every PAIR of a list. With one body it asks that every rule vertex's
+/// support meet every FRAME — that the vertex stands along the whole of
+/// `e₃` and is not a section of some frames only. Same refusal, same
+/// computation, indexed by the coordinate: `f.sections` is keyed by
+/// [`frame_key`] and the claim is a keyed read, not a walk of a list.
+pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
     for v in &f.vertices {
         let Vertex::Word { address, .. } = v else {
             continue;
         };
-        // A VERTEX IS ASKED FOR THE PAIRS ITS RULE CLAIMS. A class whose
-        // placement varies across the bundle is a section (18.2), and the
-        // rule names the pairs it was measured on; asking it for the rest
-        // is asking it to answer for a claim it did not make, and checking
-        // every word vertex against every pair would refuse a section for
-        // being one.
+        // A VERTEX IS ASKED FOR THE FRAMES ITS RULE CLAIMS. A class whose
+        // placement varies along `e₃` is a section (18.2), and the rule
+        // names the frames it was measured at; asking it for the rest is
+        // asking it to answer for a claim it did not make, and checking
+        // every word vertex at every frame would refuse a section for being
+        // one.
         //
         // A class the rule declares no section for is claimed whole and is
         // checked whole, which is what it says of itself.
         let only = crate::transducer::family::transport_class(v)
             .and_then(|tc| f.sections.get(&tc.key()).cloned());
-        for (pair, (x, y)) in family.iter().enumerate() {
-            if only.as_ref().is_some_and(|ps| !ps.contains(&(pair as u16))) {
+        for (frame, (x, y)) in family.iter().enumerate() {
+            if only.as_ref().is_some_and(|ps| !ps.contains(&frame_key(frame as u16))) {
                 continue;
             }
-            if let Carried::Fails(why, chart) = vertex_carries_pair(v, x, y, pair, &f.sections) {
+            if let Carried::Fails(why, chart) = vertex_carries_frame(v, x, y, frame, &f.sections) {
                 if why == FAIL_PART {
                     let uncovered = perceive(y).into_iter().any(|image| {
                         if image.moduli == chart {
-                            !form_covers_laminae(f, pair, x, &image.laminae)
+                            !form_covers_laminae(f, frame, x, &image.laminae)
                         } else {
                             false
                         }
@@ -262,8 +271,8 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
                         continue;
                     }
                 }
-                // WHICH PAIR AND WHICH FAULT. The refusal's coordinate is
-                // the vertex (50.9 contracts there), so the pair and the
+                // WHICH FRAME AND WHICH FAULT. The refusal's coordinate is
+                // the vertex (50.9 contracts there), so the frame and the
                 // fault ride the journal instead: a voice whose rotor is
                 // wrong and a voice reading a different frame than this
                 // court replays against would otherwise produce one line.
@@ -273,7 +282,7 @@ pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option
                 let member_sec = crate::transducer::family::member_section_key(v, &chart)
                     .is_some_and(|mk| f.sections.get(&mk).is_some());
                 eprintln!(
-                    "  court vertex body {at}… pair {pair} of {}: {why} [class_sec: {class_sec}, member_sec: {member_sec}]",
+                    "  court vertex body {at}… frame {frame} of {}: {why} [class_sec: {class_sec}, member_sec: {member_sec}]",
                     family.len()
                 );
                 return Some(Refusal {
@@ -306,14 +315,19 @@ fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
     crate::transducer::blade::shape_of(&pos)
 }
 
-/// 23.1 step 4, 50.3 over the family: on every pair where each end of a
+/// 23.1 step 4, 50.3 ALONG `e₃` (51.8): at every FRAME where each end of a
 /// carried edge has exactly one body of its chart, `V_ij` is re-measured
 /// on the union of the two bodies and `Γ_ij = V_i⁻¹ · V_ij` must be the
-/// transport the face carries. A pair with several bodies of one chart is
+/// transport the face carries. A frame with several bodies of one chart is
 /// sections, read by the closure check. `REFUSE_EDGE` at the face's two
 /// addresses when the union has no versor (the speaker claimed an edge
 /// where the pair is not rigid) or the transport is not the one measured.
-pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
+///
+/// It was `edges_rederive_family`, an edge transport re-derived per PAIR of
+/// a list. It is the same computation indexed by a coordinate: the face's
+/// own section says which frames it was measured at, and `measured_on` asks
+/// it at the frame rather than walking its list.
+pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
     for face in &f.faces {
         let (Some(vi), Some(vj)) = (f.vertices.get(face.i as usize), f.vertices.get(face.j as usize)) else {
             continue;
@@ -356,18 +370,18 @@ pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option
         else {
             return Some(refused());
         };
-        for (pair, (x, y)) in family.iter().enumerate() {
-            // A FACE IS ASKED FOR THE PAIRS ITS WORD WAS MEASURED ON. 21
+        for (frame, (x, y)) in family.iter().enumerate() {
+            // A FACE IS ASKED FOR THE FRAMES ITS WORD WAS MEASURED AT. 21
             // step 2 keeps every word the bundle spoke between two ends as
-            // a face of its own, each a section over the pairs it holds on
-            // (18.2: two carriages on one class are two sections), and
-            // re-deriving every face against every pair would refuse each
-            // section on the pairs it never claimed — the fault the class
-            // path above refuses the same way.
+            // a face of its own, each a section along `e₃` over the frames
+            // it holds on (18.2: two carriages on one class are two
+            // sections), and re-deriving every face at every frame would
+            // refuse each section at the frames it never claimed — the
+            // fault the class path above refuses the same way.
             //
             // A face nothing sectioned claims them all and is checked
             // whole, which is what it says of itself.
-            if !face.measured_on(pair) {
+            if !face.measured_on(frame) {
                 continue;
             }
             let bodies = perceive(x);

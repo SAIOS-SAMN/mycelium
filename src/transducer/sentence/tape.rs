@@ -139,7 +139,9 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
             Some(ps) => {
                 out.push(1);
                 out.extend_from_slice(&(ps.len() as u16).to_le_bytes());
-                for &p in ps {
+                // The inner key IS the frame, and its order IS the
+                // succession, so the section is written in coordinate order.
+                for p in frames_of_section(ps) {
                     out.extend_from_slice(&p.to_le_bytes());
                 }
             }
@@ -190,7 +192,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
     let sec: Vec<(Vec<u8>, Vec<u16>)> = f
         .sections
         .scoped()
-        .map(|(k, v)| (k, v.clone()))
+        .map(|(k, v)| (k, frames_of_section(v)))
         .collect();
     out.extend_from_slice(&(sec.len() as u16).to_le_bytes());
     for (k, ix) in sec {
@@ -391,7 +393,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 for _ in 0..np {
                     ps.push(take_u16(b, pos)?);
                 }
-                Some(ps)
+                Some(section_of_frames(ps))
             }
             _ => return None,
         };
@@ -462,7 +464,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         for _ in 0..nv {
             ix.push(take_u16(b, pos)?);
         }
-        sections.insert(k, ix);
+        sections.insert(k, section_of_frames(ix));
     }
     let nt = take_u16(b, pos)? as usize;
     let mut torsion = Keyed::new();

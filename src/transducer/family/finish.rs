@@ -51,7 +51,7 @@ pub fn extraction_spend(family: &[(Grid, Grid)]) -> usize {
 pub(crate) fn finish(
     mut form: Form,
     scale: ((usize, usize), (usize, usize)),
-    sections: Keyed<Vec<u16>>,
+    sections: Keyed<Keyed<()>>,
     unreached: &[(Grid, Grid)],
 ) -> Option<SentenceRule> {
     for (a, b) in unreached {

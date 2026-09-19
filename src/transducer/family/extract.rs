@@ -19,7 +19,7 @@ use super::perceive::{
 };
 use super::*;
 use crate::network::nerve::Keyed;
-use crate::transducer::sentence::{vertex_ix_key, Acting, Demand, FormFace, Transport};
+use crate::transducer::sentence::{section_of_frames, vertex_ix_key, Acting, Demand, FormFace, Transport};
 use std::cell::RefCell;
 
 type Ratio = ((usize, usize), (usize, usize));
@@ -30,7 +30,7 @@ type Ratio = ((usize, usize), (usize, usize));
 #[derive(Clone)]
 pub(crate) struct Percept {
     pub(crate) form: Form,
-    pub(crate) sections: Keyed<Vec<u16>>,
+    pub(crate) sections: Keyed<Keyed<()>>,
     pub(crate) varying: contact::Varying,
     pub(crate) unreached: Vec<usize>,
 }
@@ -49,11 +49,16 @@ thread_local! {
     static PERCEPT_MEMO: RefCell<Option<PerceptMemo>> = const { RefCell::new(None) };
 }
 
-fn frame_key(k: i64) -> [u8; 8] {
+/// THE FIBERS CARRIER'S OWN KEY: a frame as `i64`, little-endian, keying
+/// `fibers`'s inner trie. It is NOT [`crate::transducer::sentence::frame_key`],
+/// which is the frame COORDINATE a section is read at — big-endian, `u16`,
+/// and in succession order. Two keys of one frame for two carriers, named
+/// apart so a reader cannot take one for the other.
+fn fiber_key(k: i64) -> [u8; 8] {
     k.to_le_bytes()
 }
 
-fn frame_of_key(k: &[u8]) -> Option<i64> {
+fn fiber_frame_of_key(k: &[u8]) -> Option<i64> {
     Some(i64::from_le_bytes(k.try_into().ok()?))
 }
 
@@ -85,22 +90,14 @@ fn fibers(bodies: &[Body]) -> Keyed<(Invariant, Keyed<Vec<Body>>)> {
             out.insert(&ck, (b.moduli.clone(), Keyed::new()));
         }
         let Some((_, frames)) = out.get_mut(&ck) else { continue };
-        match frames.get_mut(&frame_key(k)) {
+        match frames.get_mut(&fiber_key(k)) {
             Some(v) => v.push(b.clone()),
             None => {
-                frames.insert(frame_key(k), vec![b.clone()]);
+                frames.insert(fiber_key(k), vec![b.clone()]);
             }
         }
     }
     out
-}
-
-/// Two transports are one edge: the word projectively, the carriage as a
-/// versor, the gauge as a listing (rule 3).
-fn same_transport(a: &Transport, b: &Transport) -> bool {
-    a.word.rotor().projective_eq(&b.word.rotor())
-        && element::same_versor(&a.carriage, &b.carriage)
-        && a.gauge == b.gauge
 }
 
 /// WHAT ONE FRAME'S QUOTIENT OF ONE CHART MEASURED: the frame, the versor
@@ -131,34 +128,6 @@ struct Member {
     section_words: Vec<(crate::transducer::alphabet::Word, Vec<u16>)>,
 }
 
-/// THE QUOTIENT OF A FIBER'S UNION SHAPES (52.5): every lamina the member
-/// stands on across its occupied frames, read at its own `(r, c, k)` and
-/// never at frame zero, and the versor carrying the one onto the other.
-///
-/// A quotient measured at ONE frame is a motion of that frame's slice: its
-/// bodies all sit at a single `k`, so `versor_between` has no `e₃` extent
-/// to read and the transport it returns cannot carry `(r,k)` or `(c,k)`
-/// content whatever the family does along the frame axis. The union has
-/// that extent by construction, which is the whole of why the face is
-/// measured here (51.3: the family is one body on `(r, c, k)`).
-///
-/// `None` where either side is empty or no versor carries the one union
-/// onto the other — a member whose fiber is not one rigid motion along
-/// `e₃` has no union edge, and the per-frame reading stands instead
-/// (rule 11).
-pub(crate) fn union_quotient(mut ins: Vec<Lamina>, mut outs: Vec<Lamina>) -> Option<(Body, Body, Versor)> {
-    if ins.is_empty() || outs.is_empty() {
-        return None;
-    }
-    ins.sort_unstable();
-    ins.dedup();
-    outs.sort_unstable();
-    outs.dedup();
-    let a = body_of(ins);
-    let b = body_of(outs);
-    let car = carriage(&a, &b)?;
-    Some((a, b, car.v))
-}
 
 /// A class's vertex before it is placed: the least address among its
 /// members' readings, that member's derivation, and every member.
@@ -296,7 +265,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         }
         let mut quotients: Vec<Quotient> = Vec::new();
         for (fk, ()) in frames.scoped() {
-            let Some(k) = frame_of_key(&fk) else { continue };
+            let Some(k) = fiber_frame_of_key(&fk) else { continue };
             let (Some(ai), Some(bo)) = (
                 in_frames.and_then(|f| f.get(&fk)),
                 out_frames.and_then(|f| f.get(&fk)),
@@ -309,7 +278,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
                 break 'charts;
             }
             let mut ak = ck.clone();
-            ak.extend_from_slice(&frame_key(k));
+            ak.extend_from_slice(&fiber_key(k));
             attempted.insert(&ak, ());
             let a_k = body_of(laminae_of(ai));
             let b_k = body_of(laminae_of(bo));
@@ -442,7 +411,10 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
                 }
                 varying.place_varies.insert(tc.key(), ());
                 let [g, ..] = group.as_slice() else { continue };
-                let g_frames: Vec<u16> = group.iter().map(|q| q.frame).collect();
+                let mut g_frames: Vec<u16> = group.iter().map(|q| q.frame).collect();
+                // A coordinate set, read by `claims_frame` at the frame.
+                g_frames.sort_unstable();
+                g_frames.dedup();
                 if let Some(Ok(w)) = peel_versor(&g.car.v) {
                     if !w.rotor().projective_eq(&rotor) {
                         section_words.push((w, g_frames));
@@ -476,7 +448,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             if unreached.contains(&k) {
                 continue;
             }
-            let fk = frame_key(k as i64);
+            let fk = fiber_key(k as i64);
             let mut short = false;
             for (ck, _) in charts.scoped() {
                 let both = fib_in.get(&ck).is_some_and(|(_, f)| f.contains(&fk))
@@ -509,7 +481,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             if unreached.contains(&k) {
                 continue;
             }
-            let fk = frame_key(k as i64);
+            let fk = fiber_key(k as i64);
             let ins_k: Vec<Body> = fib_in
                 .scoped()
                 .filter_map(|(_, (_, f))| f.get(&fk).cloned())
@@ -588,7 +560,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // stands.
     let mut scenery = Scenery::new();
     let frame_ix = scenery.place(frame_vertex(), Vec::new());
-    let mut sections: Keyed<Vec<u16>> = Keyed::new();
+    let mut sections: Keyed<Keyed<()>> = Keyed::new();
     let mut bodies_at: Keyed<(Body, Body, Versor)> = Keyed::new();
     // THE UNION SHAPE OF EACH MEMBER'S FIBER, keyed as its support is —
     // `member_key(vertex, chart)` — and holding no frame, because the union
@@ -683,7 +655,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             }
         }
         if frames.len() < n_reached {
-            sections.insert(&mk, frames);
+            sections.insert(&mk, section_of_frames(frames));
         }
     }
     for (tk, frames) in class_union.scoped() {
@@ -691,7 +663,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         frames.sort_unstable();
         frames.dedup();
         if frames.len() < n_reached {
-            sections.insert(&tk, frames.clone());
+            sections.insert(&tk, section_of_frames(frames.iter().copied()));
         }
         varying.class_frames.insert(&tk, frames);
     }
@@ -902,7 +874,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // (21 step 2, S12.2).
     for (ix, w, fr, edge) in section_faces {
         let Some(mut face) = form.face_carrying_with_edge(frame_ix, ix, w, edge) else { continue };
-        face.pairs = Some(fr);
+        face.pairs = Some(section_of_frames(fr));
         form.faces.push(face);
     }
     form.loops = Form::loops_of(&form.faces, &form.vertices);
@@ -940,129 +912,6 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     Percept { form, sections, varying, unreached }
 }
 
-/// THE FRAMES A MEMBER OCCUPIES, read at its own coordinate (52.5 reading
-/// 6). `bodies_at` is keyed `vertex ++ chart ++ frame`, so the frames this
-/// member stands on are the fiber under its own `vertex ++ chart` prefix
-/// and the remaining key IS the frame. Read in coordinate order, because
-/// succession along `e₃` is the next frame OCCUPIED and the set may skip,
-/// repeat or reorder in ℤ; the trie's own order is the key's bytes, which
-/// for a little-endian frame is not the coordinate's.
-///
-/// Re-derived from the carrier that already holds the bodies, never stored
-/// beside them (law 12).
-pub(crate) fn occupied_frames(bodies_at: &Keyed<(Body, Body, Versor)>, ix: u16, ck: &[u8]) -> Vec<u16> {
-    let mut prefix = vertex_ix_key(ix);
-    crate::transducer::address::put_bytes(&mut prefix, ck);
-    let Some(fiber) = bodies_at.fiber_at(&prefix) else {
-        return Vec::new();
-    };
-    let mut out: Vec<u16> = fiber
-        .filter_map(|(k, _)| {
-            let tail = k.get(prefix.len()..)?;
-            Some(u16::from_le_bytes(tail.try_into().ok()?))
-        })
-        .collect();
-    out.sort_unstable();
-    out
-}
-
-/// WHAT HAPPENED TO EVERY FACE THIS FORM WAS OFFERED, by the reader that
-/// answered. Each field is one `continue` in the incidence loop; `offered`
-/// is what `star_and_site_faces` proposed and `built` is what stood. The
-/// counts are a measurement and never a gate (§8.1).
-#[derive(Default)]
-struct FaceDrops {
-    offered: usize,
-    built: usize,
-    member_key: usize,
-    vertex: usize,
-    chart: usize,
-    word: usize,
-    place: usize,
-}
-
-/// THE EDGE BETWEEN TWO MEMBERS (50.3), MEASURED ON THEIR UNION SHAPES
-/// (52.5), and the frames on which the per-frame reading re-derives one
-/// edge — the face's section along `e₃`.
-///
-/// THE FACE IS ON THE UNION SHAPES, not on a slice. The edge was measured
-/// on the two members' bodies AT THE LEAST FRAME BOTH STAND ON: every
-/// lamina of that reading sits at one `k`, so `edge_transport`'s union
-/// `(a_i ∪ a_j)` has no `e₃` extent and `versor_between` on it cannot
-/// return a transport with `(r,k)` or `(c,k)` content whatever the family
-/// does along the frame axis. That is the shape of the flatness measured
-/// at epoch 70 — 292 of 292 loops flat — and no amount of classifying
-/// downstream recovers a bivector the reading never had. The union of a
-/// member's fiber has the extent by construction (51.3: the family is one
-/// body on `(r, c, k)`), and it is what the face carries here.
-///
-/// The per-frame readings below stay, and are the SECTION: the frames on
-/// which one edge re-derives. They are compared with each other and not
-/// with the union, because a union edge is placed in the union's own
-/// coordinates and a frame's is placed in that frame's — asking a slice to
-/// equal the whole would report every face as claiming nothing.
-///
-/// A pair whose fibers have no union between them — a cover piece stands
-/// at one frame and has none — falls to the per-frame edge, and a pair
-/// with no common frame and no union carries none.
-fn edge_between(
-    bodies_at: &Keyed<(Body, Body, Versor)>,
-    unions: &Keyed<(Body, Body, Versor)>,
-    n_reached: usize,
-    (i, cik): (u16, &[u8]),
-    (j, cjk): (u16, &[u8]),
-    tally: &mut EdgeTally,
-) -> (Option<Transport>, Option<Vec<u16>>) {
-    let at = |ix: u16, ck: &[u8], k: u16| -> Option<&(Body, Body, Versor)> {
-        let mut bk = vertex_ix_key(ix);
-        crate::transducer::address::put_bytes(&mut bk, ck);
-        bk.extend_from_slice(&k.to_le_bytes());
-        bodies_at.get(&bk)
-    };
-    let union_edge = match (unions.get(&member_key(i, cik)), unions.get(&member_key(j, cjk))) {
-        (Some((a_i, b_i, v_i)), Some((a_j, b_j, _))) => {
-            tally.take(Some(edge_transport(v_i, a_i, a_j, b_i, b_j)))
-        }
-        _ => None,
-    };
-    let mut edge: Option<Transport> = None;
-    let mut agreeing: Vec<u16> = Vec::new();
-    let mut common = 0usize;
-    // SUCCESSION ALONG e₃ IS THE NEXT FRAME OCCUPIED, never `k + 1` (52.5
-    // reading 6, ruled 2026-09-18). This read `for k in 0..n`, probing every
-    // integer up to the family's pair count and `continue`-ing on each miss:
-    // a linear scan over a range, where the frames a member actually stands
-    // on are named by its own fiber of `bodies_at`. The occupied set may
-    // skip, repeat or reorder in ℤ, and the integers between it are not
-    // coordinates of anything.
-    for k in occupied_frames(bodies_at, i, cik) {
-        let (Some((a_i, b_i, v_i)), Some((a_j, b_j, _))) = (at(i, cik, k), at(j, cjk, k)) else {
-            continue;
-        };
-        common += 1;
-        let measured = edge_transport(v_i, a_i, a_j, b_i, b_j);
-        match &edge {
-            None => {
-                edge = tally.take(Some(measured));
-                if edge.is_some() {
-                    agreeing.push(k);
-                }
-            }
-            Some(e) => {
-                if measured.as_ref().is_ok_and(|t| same_transport(t, e)) {
-                    agreeing.push(k);
-                }
-            }
-        }
-    }
-    let pairs = match (&edge, common) {
-        (Some(_), _) if agreeing.len() < n_reached => Some(agreeing),
-        _ => None,
-    };
-    // The union edge is the face's where the two fibers have one; the
-    // per-frame edge stands where they do not.
-    (union_edge.or(edge), pairs)
-}
 
 /// Seven moves on the family's one form (chapter 21 as ruled in 52.5),
 /// under the stroke (L8w, rule 10). An extraction the budget cuts off keeps

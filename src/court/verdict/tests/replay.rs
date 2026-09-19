@@ -439,7 +439,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
 /// on an edge has no period and is not refused for that: with no family to
 /// re-derive its transport against, the tape replays exactly as it does
 /// with a quarter turn there. What an edge carries is judged on the family
-/// (`edges_rederive_family`), never by its order.
+/// (`edges_rederive_frames`), never by its order.
 #[test]
 fn a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order() {
     use crate::transducer::alphabet::{Order, Word};

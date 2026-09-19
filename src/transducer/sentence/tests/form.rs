@@ -248,7 +248,7 @@ fn ratio_and_sections_are_on_the_form_key() {
     let mut b = closed_word_form(w.clone(), None);
     b.ratio = ((2, 1), (2, 1));
     let mut c = closed_word_form(w, None);
-    c.sections.insert(form_addr(7), vec![1]);
+    c.sections.insert(form_addr(7), section_of_frames([1]));
     let ea = as_element_form(&a, [1, 0, 0, 0]).expect("a");
     let eb = as_element_form(&b, [1, 0, 0, 0]).expect("b");
     let ec = as_element_form(&c, [1, 0, 0, 0]).expect("c");
@@ -257,7 +257,11 @@ fn ratio_and_sections_are_on_the_form_key() {
     let back_b = crate::transducer::sentence::from_element_form(&eb).expect("v2 tape");
     assert_eq!(back_b.ratio, ((2, 1), (2, 1)));
     let back_c = crate::transducer::sentence::from_element_form(&ec).expect("v2 tape");
-    assert_eq!(back_c.sections.get(&form_addr(7)), Some(&vec![1u16]));
+    assert_eq!(
+        back_c.sections.get(&form_addr(7)).map(frames_of_section),
+        Some(vec![1u16]),
+        "the section round-trips as the frame it stands on"
+    );
     // Zero the height denominator on the tape: after certificates the
     // tail is ratio (8) + sections count (2) + torsion count (2) + axes
     // count (2). hd is the second u16 of the ratio.

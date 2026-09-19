@@ -100,7 +100,7 @@ assert!(
 // The same rule against a family whose images it does not produce.
 let other = vec![(grid(&["11"]), grid(&["33"]))];
 assert!(
-    crate::court::verdict::body::vertices_carry_family(&rule.form, &other).is_some(),
+    crate::court::verdict::body::vertices_carry_frames(&rule.form, &other).is_some(),
     "the court would refuse this rule on this family"
 );
 assert!(

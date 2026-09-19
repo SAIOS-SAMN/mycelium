@@ -12,6 +12,7 @@ pub mod cursor;
 pub mod deflation;
 pub mod derivation;
 pub mod extract;
+pub mod incidence;
 pub mod finish;
 pub mod memo;
 pub mod orbit;
@@ -38,6 +39,7 @@ pub type TrainPair = (perceive::Grid, perceive::Grid);
 /// rule speaks the family or it is not a rule (21).
 pub type Family = [TrainPair];
 pub use extract::*;
+pub(crate) use incidence::*;
 pub use memo::*;
 pub use orbit::*;
 pub use pairing::*;

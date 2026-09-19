@@ -5,6 +5,7 @@
 use super::orbit::positions_of;
 use super::perceive::{frame_of, Grid, Painted};
 use super::*;
+use crate::transducer::sentence::section_of_frames;
 use crate::network::nerve::Keyed;
 use crate::physics::Budget;
 use crate::transducer::element;
@@ -77,7 +78,7 @@ pub(crate) fn contact_named_vertices(
     form: &mut Form,
     family: &[(Grid, Grid)],
     varying: &Varying,
-    sections: &mut Keyed<Vec<u16>>,
+    sections: &mut Keyed<Keyed<()>>,
     budget: &mut Budget,
 ) -> bool {
     trace::trace_n("extract/6 contact", form.vertices.len(), budget);
@@ -92,7 +93,7 @@ pub(crate) fn contact_named_vertices(
             // The sections the percept filed stand; the class is claimed on
             // the frames its members were measured on.
             if let Some(frames) = varying.class_frames.get(&tk) {
-                sections.insert(&tk, frames.clone());
+                sections.insert(&tk, section_of_frames(frames.iter().copied()));
             }
             continue;
         };
@@ -110,7 +111,7 @@ pub(crate) fn contact_named_vertices(
             }
             if !orbits_everywhere(&candidate, family) {
                 if let Some(frames) = varying.class_frames.get(&tk) {
-                    sections.insert(&tk, frames.clone());
+                    sections.insert(&tk, section_of_frames(frames.iter().copied()));
                 }
                 continue;
             }

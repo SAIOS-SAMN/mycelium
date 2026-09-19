@@ -5,6 +5,7 @@
 //! refused; a spoken grid that does not grow to the frame is not a speech.
 
 use super::*;
+use crate::transducer::sentence::frame_key;
 
 pub(crate) fn grows_to_frame(a: &Grid, b: &Grid) -> bool {
     let (fa, fb) = (frame_of(a), frame_of(b));
@@ -157,7 +158,7 @@ pub fn apply_form_on(
                 let tc_key = crate::transducer::family::transport_class(v).map(|tc| tc.key());
                 if let (Some(k), Some(pi)) = (&tc_key, pair) {
                     if let Some(only) = f.sections.get(k) {
-                        if !only.contains(&(pi as u16)) {
+                        if !only.contains(&frame_key(pi as u16)) {
                             unspoken.push(vi as u16);
                             continue;
                         }
@@ -176,7 +177,7 @@ pub fn apply_form_on(
                 for (_, member) in acts.scoped() {
                     if let Some(pi) = pair {
                         if let Some(mps) = member_section_key(v, &member.chart).and_then(|mk| f.sections.get(&mk)) {
-                            if !mps.contains(&(pi as u16)) {
+                            if !mps.contains(&frame_key(pi as u16)) {
                                 continue;
                             }
                         }

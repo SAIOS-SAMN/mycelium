@@ -338,3 +338,48 @@ assert_eq!(
     "the deflation re-measures from the tape"
 );
 }
+
+/// 52.5, 16.5 — THE OPEN SECTION IS SPOKEN THROUGH `carry_lamina`, AT ITS
+/// OWN FRAME. `emit_carried` is the one carry on the speaking path — the
+/// only other writer of `painted` is 16.16's unfold, which grows from
+/// neighbours and carries nothing — and it hands the sensor the body's own
+/// `k`, never a zero substituted for it.
+///
+/// The two readings are the assertion. The frame RIDES ON THE POSE: a body
+/// at frame `n` speaks the same `(r, c)` as the same body at frame 0 and
+/// stays at frame `n`, which is what makes the test input an open section
+/// of the family's one body rather than a separate scene. And the sensor
+/// REFUSES rather than rounds: a versor whose image does not land on the
+/// base emits no paint at all, and the body leaves as remainder.
+#[test]
+fn the_open_section_is_carried_at_its_own_frame_and_a_tilt_is_refused() {
+    use crate::transducer::family::{body_of, emit_carried};
+    let bar = |k: i64| body_of(vec![(0, 0, k, 1u8), (0, 1, k, 1u8)]);
+    let shift = element::translator_versor(2, 0);
+    let mut at_zero = Vec::new();
+    let mut rem_zero = Vec::new();
+    emit_carried(&bar(0), &shift, &[(1, 1)], (6, 6), &mut at_zero, &mut rem_zero);
+    let mut at_three = Vec::new();
+    let mut rem_three = Vec::new();
+    emit_carried(&bar(3), &shift, &[(1, 1)], (6, 6), &mut at_three, &mut rem_three);
+    assert_eq!(at_zero, vec![(2, 0, 1), (2, 1, 1)], "the bar is carried two rows down");
+    assert_eq!(
+        at_three, at_zero,
+        "an open section at frame 3 speaks what the same body at frame 0 speaks"
+    );
+    assert!(rem_zero.is_empty() && rem_three.is_empty(), "and neither leaves remainder");
+    // A rotation by an angle the base does not close on: the sensor refuses
+    // the image rather than rounding it onto a site, and the whole body is
+    // remainder.
+    let letter = crate::transducer::alphabet::LetterId::pythagorean_5((0, 1))
+        .expect("the (3,4,5) rotor on the sensor plane");
+    let tilt = element::versor_of_word(&crate::transducer::alphabet::Word::from_letters(&[(letter, false)]))
+        .expect("a base action");
+    let mut painted = Vec::new();
+    let mut remainder = Vec::new();
+    emit_carried(&bar(3), &tilt, &[(1, 1)], (6, 6), &mut painted, &mut remainder);
+    assert!(
+        painted.is_empty() && remainder.len() == 2,
+        "a coordinate that does not fit the base is refused, not rounded: {painted:?} {remainder:?}"
+    );
+}

@@ -98,7 +98,7 @@ pub fn mint_sentence(
         eprintln!("  mint refused: nothing in the form acts");
         return None;
     }
-    if let Some(why) = crate::court::verdict::body::vertices_carry_family(&rule.form, family) {
+    if let Some(why) = crate::court::verdict::body::vertices_carry_frames(&rule.form, family) {
         eprintln!("  mint refused: a vertex does not carry its family ({why:?})");
         return None;
     }

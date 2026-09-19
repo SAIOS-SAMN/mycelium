@@ -143,10 +143,11 @@ fn a_carried_edge_rederives_on_the_union_or_is_refused() {
     // TAKEN AT THE MOVE, not at the verdict: a tampered edge is a real
     // defect and the form is refused for it by the loop-holonomy check too,
     // so asserting a whole replay here would pass with the section ignored.
-    // `edges_rederive_family` is the organ that changed, and it is what is
+    // `edges_rederive_frames` is the organ that changed, and it is what is
     // asked (§3.2).
     let section = |f: &crate::transducer::sentence::Form, ps: Option<Vec<u16>>| {
         let mut s = f.clone();
+        let ps = ps.map(crate::transducer::sentence::section_of_frames);
         for face in &mut s.faces {
             face.pairs = ps.clone();
         }
@@ -156,22 +157,22 @@ fn a_carried_edge_rederives_on_the_union_or_is_refused() {
         crate::transducer::sentence::from_element_form(&e).expect("the tape reads back")
     };
     let rederives = |f: &crate::transducer::sentence::Form| {
-        crate::verdict::body::edges_rederive_family(f, &family).map(|r| r.reason)
+        crate::verdict::body::edges_rederive_frames(f, &family).map(|r| r.reason)
     };
     assert_eq!(
         rederives(&section(&g, None)),
         Some(REFUSE_EDGE),
-        "a face claiming every pair is re-derived on every pair"
+        "a face claiming every frame is re-derived at every frame"
     );
     assert_eq!(
         rederives(&section(&g, Some(vec![1]))),
         None,
-        "a face measured on pair 1 is asked nothing in a one-pair family"
+        "a face measured at frame 1 is asked nothing in a one-frame family"
     );
     assert_eq!(
         rederives(&section(&g, Some(vec![0]))),
         Some(REFUSE_EDGE),
-        "and naming the pair it does stand on brings the re-derivation back"
+        "and naming the frame it does stand on brings the re-derivation back"
     );
     // The honest form is unaffected either way: a section restricts which
     // pairs are asked, never what the answer is.

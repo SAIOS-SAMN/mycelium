@@ -5,7 +5,7 @@
 //! every loop's holonomy to the identity, and every pivot certificate from
 //! the axis it names. A form that does not is REFUSED, never scored.
 
-use super::body::{edges_rederive_family, undeclared_remainder, vertices_carry_family};
+use super::body::{edges_rederive_frames, undeclared_remainder, vertices_carry_frames};
 use super::*;
 
 /// Chapter 23.1: replay a crystallized form from its tape and the forms it
@@ -68,7 +68,7 @@ fn face_rederives(f: &Form, face: &crate::transducer::sentence::FormFace) -> boo
             return false;
         };
         // The edge is evidence the court re-measures against the FAMILY
-        // (`edges_rederive_family`), not something the vertices re-derive, so it
+        // (`edges_rederive_frames`), not something the vertices re-derive, so it
         // is carried in and compared by its presence alone here.
         match f.face_place(face.i, &ci, face.j, &cj, place.edge.clone()) {
             Some(p) if p == *place => {}
@@ -235,7 +235,7 @@ pub fn replay_form_at(
     // G steps 2–3 (50.2) on the court's copy of the family: every word
     // vertex carries its body onto its image, exactly (L7).
     if let Some(fam) = family {
-        if let Some(refusal) = vertices_carry_family(f, fam) {
+        if let Some(refusal) = vertices_carry_frames(f, fam) {
             return Some(refusal);
         }
     }
@@ -253,7 +253,7 @@ pub fn replay_form_at(
     // that does not carry the holonomy is REFUSE_FACE.
     for (i, face) in f.faces.iter().enumerate() {
         // 50.3, 52.3: an edge transport of any order is a face. What it
-        // carries is re-derived on the family below (`edges_rederive_family`),
+        // carries is re-derived on the family below (`edges_rederive_frames`),
         // and a period is never a gate.
         // THE FACE RE-DERIVES AT EVERY MEMBER PAIR IT CARRIES. The word is the
         // face's and re-derives once; the placement and hue map at each pair
@@ -272,7 +272,7 @@ pub fn replay_form_at(
     // the reading names it there; the loop reading over that same edge
     // would answer second-hand, as an unfiled class.
     if let Some(fam) = family {
-        if let Some(refusal) = edges_rederive_family(&walked, fam) {
+        if let Some(refusal) = edges_rederive_frames(&walked, fam) {
             return Some(refusal);
         }
     }
