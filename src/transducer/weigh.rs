@@ -54,6 +54,18 @@ impl Weigh for Versor {
     }
 }
 
+impl Weigh for crate::transducer::blade::Blade {
+    fn weigh(&self) -> usize {
+        std::mem::size_of::<Self>()
+            + self.spatial.weigh()
+            + self.inertia.iter().map(weigh_q).sum::<usize>()
+            + self.quartic.iter().map(weigh_q).sum::<usize>()
+            + self.gauge.iter().map(|(_, q)| 1 + weigh_q(q)).sum::<usize>()
+            + weigh_q(&self.shell)
+            + self.support.len() * std::mem::size_of::<(i64, i64, i64)>()
+    }
+}
+
 impl Weigh for Vertex {
     fn weigh(&self) -> usize {
         let mut n = std::mem::size_of::<Self>();

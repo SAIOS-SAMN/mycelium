@@ -39,6 +39,18 @@ pub(crate) fn axis_of(key: &[u8]) -> Option<ChartAxis> {
 }
 
 impl Stratum {
+    /// Z10 — the bytes this stratum and everything under it reach: its
+    /// members' addresses and its branches' coordinates, all the way down.
+    /// An atlas is a trie of tries and a reading that stopped at the root
+    /// would report a chart hierarchy as one entry.
+    pub(crate) fn weigh(&self) -> usize {
+        let mut n = self.members.key_bytes();
+        for (k, b) in self.branches.scoped() {
+            n += k.len() + b.weigh();
+        }
+        n
+    }
+
     pub(crate) fn admit(&mut self, axes: &[ChartAxis], addr: &[u8]) {
         match axes.split_first() {
             None => {

@@ -689,6 +689,20 @@ impl Entity {
     /// form's address is megabytes, so a carrier can grow in bytes without
     /// gaining an entry (a bigger form held) or gain entries without bytes
     /// (small keys), and one number could not tell those apart.
+    /// A shape cache's own bytes: every blade its `OnceLock` has filled.
+    /// An unfilled slot is the header alone, which is what it costs.
+    fn weigh_shapes_of(
+        v: &[std::sync::OnceLock<Option<crate::transducer::blade::Shape>>],
+    ) -> usize {
+        v.iter()
+            .map(|c| {
+                use crate::transducer::weigh::Weigh;
+                std::mem::size_of_val(c)
+                    + c.get().and_then(Option::as_ref).map_or(0, |s| s.blade.weigh())
+            })
+            .sum()
+    }
+
     pub fn carrier_bytes(&self) -> Vec<(&'static str, usize, usize, usize)> {
         use crate::transducer::weigh::Weigh;
         let c = &self.contemplation;
@@ -717,6 +731,19 @@ impl Entity {
             ("epi.expressed_index", e.expressed_index.key_bytes(), 0, e.expressed_index.len()),
             ("epi.recollections", e.recollections.key_bytes(), e.recollections.scoped().map(|(_, (v, _))| v.iter().map(Vec::len).sum::<usize>()).sum(), e.recollections.len()),
             ("epi.promoted", e.promoted.iter().map(Vec::len).sum(), 0, e.promoted.len()),
+            // Z10, the vector completed: the atlases, the shape caches, the
+            // axis index and the moduli index. The first table reached 45%
+            // of the allocator's figure and these are what it did not list.
+            ("epi.atlas", 0, e.atlas.weigh(), e.atlas_len),
+            ("epi.dialect_atlas", 0, e.dialect_atlas.weigh(), 0),
+            ("epi.expressed_atlas", 0, e.expressed_atlas.weigh(), 0),
+            ("epi.shapes", 0, Self::weigh_shapes_of(&e.shapes), e.shapes.len()),
+            ("epi.expressed_shapes", 0, Self::weigh_shapes_of(&e.expressed_shapes), e.expressed_shapes.len()),
+            ("epi.axis_index", e.axis_index.key_bytes(), e.axis_index.scoped().map(|(_, a)| a.key_bytes() + a.scoped().map(|(_, w)| w.key_bytes() + w.scoped().map(|(_, x)| x.rotor().weigh()).sum::<usize>()).sum::<usize>()).sum::<usize>(), e.axis_index.len()),
+            ("epi.by_moduli", e.by_moduli.key_bytes(), e.by_moduli.scoped().map(|(_, m)| m.key_bytes()).sum(), e.by_moduli.len()),
+            ("epi.waiting_on", e.waiting_on.key_bytes(), e.waiting_on.scoped().map(|(_, m)| m.key_bytes()).sum(), e.waiting_on.len()),
+            ("epi.expression", 0, e.expression.len() * 8, e.expression.len()),
+            ("epi.stroke_k", 0, e.stroke_k.len() * 8, e.stroke_k.len()),
             ("con.bubbles", c.bubbles.key_bytes(), c.bubbles.scoped().map(|(_, b)| b.form.as_ref().map_or(0, Weigh::weigh)).sum(), c.bubbles.len()),
             ("con.by_chart", c.by_chart.key_bytes(), c.by_chart.scoped().map(|(_, m)| m.key_bytes()).sum(), c.by_chart.len()),
             ("con.cited", c.cited.key_bytes(), c.cited.scoped().map(|(_, m)| m.key_bytes()).sum(), c.cited.len()),

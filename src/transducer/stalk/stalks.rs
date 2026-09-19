@@ -13,6 +13,14 @@ pub struct Stalks {
 }
 
 impl Stalks {
+    /// Z10 — the bytes this atlas reaches: its chart index and its whole
+    /// stratum tree.
+    pub fn weigh(&self) -> usize {
+        self.charts.key_bytes()
+            + self.charts.scoped().map(|(_, i)| i.key().as_bytes().len()).sum::<usize>()
+            + self.root.weigh()
+    }
+
     /// Chart a relation of words by each word's own invariant.
     pub fn over_elements<'a>(words: impl Iterator<Item = &'a element::Element>) -> Stalks {
         let mut s = Stalks::default();
