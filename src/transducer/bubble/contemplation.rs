@@ -640,9 +640,15 @@ impl Contemplation {
         HELD_BYTES.with(|c| c.set(0));
     }
 
+    /// Z4 item 1 — THE FORM IS MOVED IN, NOT COPIED. It took `&Form` and
+    /// the bubble kept `f.clone()`: 12.8 MB on a 590-vertex rule, measured
+    /// at e0f4e0d, paid once per distinct form the mind holds. The caller
+    /// has an extracted form it does not need afterwards, so it hands it
+    /// over; where a caller does need it after, it reads it back from the
+    /// bubble by reference (`form_at`).
     pub fn hold_form(
         &mut self,
-        f: &Form,
+        f: Form,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<Link>],
     ) {
@@ -664,12 +670,12 @@ impl Contemplation {
 
     fn hold_form_inner(
         &mut self,
-        f: &Form,
+        f: Form,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<Link>],
     ) {
         mark("idea_key");
-        let key = idea_key(f);
+        let key = idea_key(&f);
         let mut rem_keyed: Keyed<Vec<Link>> = Keyed::new();
         let mut volume = [0u64; 4];
         let mut cover = Keyed::new();
@@ -754,20 +760,26 @@ impl Contemplation {
         // not ruled. A loop whose class vector occupies nothing is not a
         // horizon member — there is nothing to discharge — and a rotor
         // with no order or no class key is refused by `horizon_put`.
-        self.paint_standing(f, &mut horizon);
+        self.paint_standing(&f, &mut horizon);
         mark("paint");
-        let certs = f.certificates.clone();
         let bundle = if train.is_empty() {
             None
         } else {
             Some(train.to_vec())
         };
-        mark("carrier clones");
-        let mut held = f.clone();
+        mark("bundle");
+        // THE FORM IS MOVED IN HERE (Z4 item 1). What follows reads the
+        // four duplicated carriers off the MOVED form rather than off the
+        // caller's, because there is no caller's any more: the same bytes,
+        // one fewer copy of the whole.
+        let mut held = f;
         held.reindex();
-        mark("form clone+reindex");
+        mark("form move+reindex");
+        let certs = held.certificates.clone();
+        let torsion = held.torsion.clone();
+        let vortex = held.vortex.clone();
         let bubble = Bubble {
-            remainder: f.remainder.clone(),
+            remainder: held.remainder.clone(),
             nerve: Complex::new(),
             cover,
             horizon,
@@ -777,9 +789,9 @@ impl Contemplation {
             moved_k: self.now_k,
             glues,
             glued_by: Keyed::new(),
-            torsion: f.torsion.clone(),
+            torsion,
             certificates: certs,
-            vortex: f.vortex.clone(),
+            vortex,
             candidates,
             form: Some(held),
             bundle,

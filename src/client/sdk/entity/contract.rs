@@ -90,7 +90,11 @@ impl Entity {
             at.label()
         );
         let rems = form_deflation(&form, train, &self.epigenome).1;
-        self.hold_form(&form, train, &rems);
+        // The form is handed over (Z4 item 1) and what this arm needs of it
+        // afterwards is read from the value it still has here, before the
+        // move: `acts` and the remainder are read below off `form`, so the
+        // hold takes a clone at this one site and the other does not.
+        self.hold_form(form.clone(), train, &rems);
         self.contractions.insert(&after, certificate.clone());
         if !form.acts() {
             let chart = crate::transducer::stalk::invariant(&remainder);
@@ -134,8 +138,11 @@ impl Entity {
             hx(chart.key().as_bytes())
         );
         if let Some(f) = crate::transducer::sentence::from_element_form(spoken) {
-            self.hold_form(&f, train, &[]);
-            self.contemplation.dirty.remove(&form_vertex_key(&f));
+            // The key is the form's own coordinate and is taken BEFORE the
+            // form is handed over, so nothing is cloned to read it back.
+            let key = form_vertex_key(&f);
+            self.hold_form(f, train, &[]);
+            self.contemplation.dirty.remove(&key);
         }
         Contracted::Quiescent
     }

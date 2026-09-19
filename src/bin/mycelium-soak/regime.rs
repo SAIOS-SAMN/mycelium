@@ -165,7 +165,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             Contemplation::reset_held_bytes();
             let mut b = physics.stroke_n(spend);
             let Some(r) = extract_rule_with(&task.train, &epi, &mut b) else { continue };
-            hold.hold_form(&r.form, &task.train, &[]);
+            hold.hold_form(r.form.clone(), &task.train, &[]);
             println!(
                 "  regime pull {pull} held {:+} B  live {} B",
                 Contemplation::held_bytes(),

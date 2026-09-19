@@ -80,14 +80,14 @@ pub(crate) fn speak_form(
     let n_rem: usize = remainders.iter().map(|r| r.len()).sum();
     if remainders.iter().any(|r| !r.is_empty()) {
         let n_pairs = remainders.iter().filter(|r| !r.is_empty()).count();
-        entity.withhold_form(form, train, &remainders, mag);
+        entity.withhold_form(form.clone(), train, &remainders, mag);
         eprintln!(
             "[{tag}] form withheld: family {fam} remainder {n_rem} links over {n_pairs} pairs"
         );
         return None;
     }
     let Some(word) = as_element_form(form, mag) else {
-        entity.hold_form(form, train, &remainders);
+        entity.hold_form(form.clone(), train, &remainders);
         eprintln!("[{tag}] form withheld: family {fam} {}", why_open());
         return None;
     };
@@ -174,7 +174,7 @@ fn speak_with_demands(
     else {
         // The mint refused it, so it is not a word — it is not stood in the
         // dialect, and it is held as the open work it is.
-        entity.hold_form(form, train, remainders);
+        entity.hold_form(form.clone(), train, remainders);
         eprintln!("[{tag}] form withheld: family {fam} mint refused (descent, carry or demands)");
         return None;
     };
@@ -197,7 +197,7 @@ fn speak_with_demands(
                 // The court refused it. The work it names is still open, so
                 // it is held: the refusal names a coordinate (50.9) and the
                 // pivot loop is what acts on it.
-                entity.hold_form(form, train, remainders);
+                entity.hold_form(form.clone(), train, remainders);
                 eprintln!("[{tag}] sentence withheld: family {fam} refused on the wire");
                 None
             }
@@ -235,7 +235,7 @@ fn speak_with_demands(
         Err(e) => {
             // The wire failed, which says nothing about the form: it is held
             // exactly as it would be had it never been offered.
-            entity.hold_form(form, train, remainders);
+            entity.hold_form(form.clone(), train, remainders);
             eprintln!("[{tag}] sentence withheld: family {fam} {e}");
             None
         }
@@ -315,7 +315,7 @@ pub(crate) fn withhold_unextracted(
         };
         let pair = vec![(a.clone(), b.clone())];
         let (mag, rem) = mycelium::transducer::family::form_deflation(&f, &pair, &entity.epigenome);
-        entity.withhold_form(&f, &pair, &rem, mag);
+        entity.withhold_form(f.clone(), &pair, &rem, mag);
     }
     eprintln!("[{tag}] form withheld: family {fam} extract refused");
 }

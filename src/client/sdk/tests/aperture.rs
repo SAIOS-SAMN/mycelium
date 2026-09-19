@@ -55,7 +55,7 @@ let run = |strokes: u64| -> (usize, usize) {
     for k in 1..=strokes {
         // A body no earlier stroke spoke: a bar one site longer each stroke.
         let bar: Vec<(i64, i64, u8, u8)> = (0..=k as i64).map(|c| (0, c, 1u8, 2u8)).collect();
-        entity.withhold_form(&form, &[], std::slice::from_ref(&bar), [1, 0, 0, 0]);
+        entity.withhold_form(form.clone(), &[], std::slice::from_ref(&bar), [1, 0, 0, 0]);
         entity.shed_at(k);
     }
     (entity.dialect_len(), entity.utterances_filed())

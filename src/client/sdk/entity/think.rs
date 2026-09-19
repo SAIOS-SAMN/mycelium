@@ -37,7 +37,7 @@ impl Entity {
         let Some(f) = scene_form(&self.epigenome, &mut budget, &scene.0, &scene.1) else {
             return;
         };
-        self.hold_form(&f, &[], &[]);
+        self.hold_form(f, &[], &[]);
     }
 
     /// Hold a withheld form as an idea so the pivot loop sees it next
@@ -46,9 +46,11 @@ impl Entity {
     /// what the form does not speak, and its words are read at a chart
     /// when a cite asks — through the form's own `by_class` — never
     /// listed here ahead of the question.
+    /// Z4 item 1: the form is MOVED into the bubble. A caller that needs
+    /// it afterwards reads it back from the contemplation by reference.
     pub fn hold_form(
         &mut self,
-        f: &crate::transducer::sentence::Form,
+        f: crate::transducer::sentence::Form,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<(i64, i64, u8, u8)>],
     ) {
@@ -73,14 +75,16 @@ impl Entity {
     /// names is the idea's own work.
     pub fn withhold_form(
         &mut self,
-        f: &crate::transducer::sentence::Form,
+        f: crate::transducer::sentence::Form,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<(i64, i64, u8, u8)>],
         mag: [u64; 4],
     ) {
         let k = self.session.voice().k();
         let tu = self.now_tu();
-        if let Some(word) = crate::transducer::sentence::as_element_form(f, mag) {
+        // The element is taken from the form BEFORE it is handed over, so
+        // the withhold pays no copy of the form either (Z4 item 1).
+        if let Some(word) = crate::transducer::sentence::as_element_form(&f, mag) {
             self.epigenome.stand_dialect_withheld(word, k, tu);
         }
         self.hold_form(f, train, remainders);
@@ -90,7 +94,7 @@ impl Entity {
     /// that is not a sentence is held as the form of its chain.
     pub fn hold_sentence(&mut self, word: &Element) {
         if let Some(f) = crate::transducer::sentence::from_element_form(word) {
-            self.hold_form(&f, &[], &[]);
+            self.hold_form(f, &[], &[]);
         } else {
             self.hold_chain(word.sub().to_vec());
         }

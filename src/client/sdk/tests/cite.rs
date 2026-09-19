@@ -173,7 +173,7 @@ let family = vec![
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("rule");
 let (mag, rems) = form_deflation(&rule.form, &family, &NoCrystal);
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("withhold"));
-entity.withhold_form(&rule.form, &family, &rems, mag);
+entity.withhold_form(rule.form.clone(), &family, &rems, mag);
 assert!(entity.dialect_len() >= 1, "the withheld form stands, dialect {}", entity.dialect_len());
 assert!(entity.ideas_len() >= 1, "and is held as an idea");
 assert_eq!(entity.uttered_n(), 0, "nothing is uttered for a remainder, taught_up {}", entity.uttered_n());

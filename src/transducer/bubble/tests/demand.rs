@@ -58,7 +58,7 @@ fn a_pivoted_on_bubble_stands_its_loops_demand_on_the_form_it_takes() {
     let rem = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];
     let mut c = Contemplation::new();
     c.set_now(10);
-    c.hold_form(&form, &[], std::slice::from_ref(&rem));
+    c.hold_form(form.clone(), &[], std::slice::from_ref(&rem));
     let word = from_canonical(&canonical_chain(&rem).expect("one entry per position is A5's chain"));
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 8);
     let _ = c.pivot_on(&word, &crate::transducer::family::NoCrystal, &mut budget);
