@@ -21,6 +21,7 @@ pub mod perceive;
 pub mod pairing;
 pub mod rebase;
 pub mod refine;
+pub mod scene;
 pub mod pieces;
 pub mod speak;
 pub mod trace;
@@ -45,6 +46,7 @@ pub use orbit::*;
 pub use pairing::*;
 pub(crate) use rebase::*;
 pub use perceive::*;
+pub use scene::*;
 pub use speak::*;
 
 use super::blade::{self, Shape};

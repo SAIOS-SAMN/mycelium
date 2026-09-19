@@ -11,5 +11,6 @@ mod derivation;
 mod extraction;
 mod lanes;
 mod orbit;
+mod scene;
 mod perception;
 mod speech;

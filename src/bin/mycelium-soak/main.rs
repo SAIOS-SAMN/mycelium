@@ -14,6 +14,7 @@
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
+mod cover;
 mod delta;
 mod ledger;
 mod mint;
@@ -131,6 +132,29 @@ fn main() {
     // D1's standing reading: a mind stood on a slice, then ONE named
     // family pulled under the voice's own budget, the pull and the mint
     // timed apart. `--regime DIR NAME [SLICE]`, slice 60 by default.
+    // K1's reading: what the scene cover deduces on a corpus (53.2).
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--cover") {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  cover refused: name the corpus directory");
+            std::process::exit(1);
+        };
+        let limit: usize = match argv.get(2).map(|n| n.parse::<usize>()) {
+            Some(Ok(n)) => n,
+            Some(Err(e)) => {
+                eprintln!("  cover refused: the task count does not read: {e}");
+                std::process::exit(1);
+            }
+            None => usize::MAX,
+        };
+        match slice_names(dir, limit) {
+            Ok(names) => cover::report(dir, &names),
+            Err(e) => {
+                eprintln!("  cover refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--regime") {
         let (Some(dir), Some(name)) = (argv.get(1), argv.get(2)) else {
             eprintln!("  regime refused: name the corpus directory and the task");
