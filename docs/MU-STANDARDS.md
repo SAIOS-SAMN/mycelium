@@ -215,7 +215,8 @@ the compiler reads it, or it is a type, or it is a review item. Nothing
 in between exists again.
 
 4.1 **Two gates remain.** The reading bound (`xtask/lint/length.rs`: no
-source file over 1200 lines, no list of exceptions) and the warning gate
+source file over 2500 lines, raised from 1200 on the operator's word
+2026-09-19, no list of exceptions) and the warning gate
 (`cargo clippy --release --all-targets -- -D warnings`, rustc's warnings
 denied). `cd xtask && cargo run` runs the bound and then clippy and exits
 non-zero on either. There is no `build.rs`. Closing a warning by naming a

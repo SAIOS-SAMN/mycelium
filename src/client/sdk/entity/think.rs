@@ -535,10 +535,30 @@ impl Entity {
         // the signal and it is already in hand; no sweep discovers these
         // later.
         let lapsed = self.contemplation.lapse_with(&dropped);
+        // Z4d: AND THE CLOCK'S OWN LAPSE. A thought whose paid height
+        // TUniversal has passed leaves here too, as a set, with its escrow
+        // returned per lane. Door 1 answers for what a thought CITES;
+        // this answers for what it was PAID, and a thought that cites
+        // nothing standing still has a horizon.
+        let expired = self.lapse_held();
         dropped
             .len()
             .saturating_add(lapsed)
+            .saturating_add(expired)
             .saturating_add(self.contemplation.shed_unglued())
+    }
+
+    /// Z4b's instrument: why the shed declined each held thought, by the
+    /// term that rejected it — glued_by, glues, dirty, sheddable. A
+    /// measurement (§8.1), read on the stroke line so the holds column is
+    /// attributed and never a branch.
+    pub fn shed_census(&self) -> [usize; 4] {
+        self.contemplation.shed_census()
+    }
+
+    /// Z4d: what this voice can still escrow, per lane. Its attention.
+    pub fn reserve(&self) -> [u64; 4] {
+        self.physics.reserve
     }
 
     pub fn dialect_len(&self) -> usize {
