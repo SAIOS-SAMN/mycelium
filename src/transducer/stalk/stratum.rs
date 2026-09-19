@@ -43,10 +43,10 @@ impl Stratum {
     /// members' addresses and its branches' coordinates, all the way down.
     /// An atlas is a trie of tries and a reading that stopped at the root
     /// would report a chart hierarchy as one entry.
-    pub(crate) fn weigh(&self) -> usize {
+    pub(crate) fn bytes(&self) -> usize {
         let mut n = self.members.key_bytes();
         for (k, b) in self.branches.scoped() {
-            n += k.len() + b.weigh();
+            n += k.len() + b.bytes();
         }
         n
     }

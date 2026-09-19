@@ -691,24 +691,24 @@ impl Entity {
     /// (small keys), and one number could not tell those apart.
     /// A shape cache's own bytes: every blade its `OnceLock` has filled.
     /// An unfilled slot is the header alone, which is what it costs.
-    fn weigh_shapes_of(
+    fn bytes_of_shapes(
         v: &[std::sync::OnceLock<Option<crate::transducer::blade::Shape>>],
     ) -> usize {
         v.iter()
             .map(|c| {
-                use crate::transducer::weigh::Weigh;
+                use crate::transducer::bytes::Bytes;
                 std::mem::size_of_val(c)
-                    + c.get().and_then(Option::as_ref).map_or(0, |s| s.blade.weigh())
+                    + c.get().and_then(Option::as_ref).map_or(0, |s| s.blade.bytes())
             })
             .sum()
     }
 
     pub fn carrier_bytes(&self) -> Vec<(&'static str, usize, usize, usize)> {
-        use crate::transducer::weigh::Weigh;
+        use crate::transducer::bytes::Bytes;
         let c = &self.contemplation;
         let e = &self.epigenome;
         let held_w = |k: &crate::network::nerve::Keyed<crate::transducer::element::Element>| -> usize {
-            k.scoped().map(|(_, v)| v.weigh()).sum()
+            k.scoped().map(|(_, v)| v.bytes()).sum()
         };
         vec![
             ("taught_up", self.taught_up.key_bytes(), held_w(&self.taught_up), self.taught_up.len()),
@@ -724,27 +724,27 @@ impl Entity {
             // holds DECODED forms: its weight is the whole of each `Held`,
             // tape and form together, which is exactly what the previous
             // instrument read as zero.
-            ("epi.genome", 0, e.genome.iter().map(Weigh::weigh).sum(), e.genome.len()),
-            ("epi.dialect", e.dialect.key_bytes(), e.dialect.scoped().map(|(_, d)| d.sentence.weigh()).sum(), e.dialect.len()),
+            ("epi.genome", 0, e.genome.iter().map(Bytes::bytes).sum(), e.genome.len()),
+            ("epi.dialect", e.dialect.key_bytes(), e.dialect.scoped().map(|(_, d)| d.sentence.bytes()).sum(), e.dialect.len()),
             ("epi.index", e.index.key_bytes(), 0, e.index.len()),
-            ("epi.expressed", 0, e.expressed.iter().map(Weigh::weigh).sum(), e.expressed.len()),
+            ("epi.expressed", 0, e.expressed.iter().map(Bytes::bytes).sum(), e.expressed.len()),
             ("epi.expressed_index", e.expressed_index.key_bytes(), 0, e.expressed_index.len()),
             ("epi.recollections", e.recollections.key_bytes(), e.recollections.scoped().map(|(_, (v, _))| v.iter().map(Vec::len).sum::<usize>()).sum(), e.recollections.len()),
             ("epi.promoted", e.promoted.iter().map(Vec::len).sum(), 0, e.promoted.len()),
             // Z10, the vector completed: the atlases, the shape caches, the
             // axis index and the moduli index. The first table reached 45%
             // of the allocator's figure and these are what it did not list.
-            ("epi.atlas", 0, e.atlas.weigh(), e.atlas_len),
-            ("epi.dialect_atlas", 0, e.dialect_atlas.weigh(), 0),
-            ("epi.expressed_atlas", 0, e.expressed_atlas.weigh(), 0),
-            ("epi.shapes", 0, Self::weigh_shapes_of(&e.shapes), e.shapes.len()),
-            ("epi.expressed_shapes", 0, Self::weigh_shapes_of(&e.expressed_shapes), e.expressed_shapes.len()),
-            ("epi.axis_index", e.axis_index.key_bytes(), e.axis_index.scoped().map(|(_, a)| a.key_bytes() + a.scoped().map(|(_, w)| w.key_bytes() + w.scoped().map(|(_, x)| x.rotor().weigh()).sum::<usize>()).sum::<usize>()).sum::<usize>(), e.axis_index.len()),
+            ("epi.atlas", 0, e.atlas.bytes(), e.atlas_len),
+            ("epi.dialect_atlas", 0, e.dialect_atlas.bytes(), 0),
+            ("epi.expressed_atlas", 0, e.expressed_atlas.bytes(), 0),
+            ("epi.shapes", 0, Self::bytes_of_shapes(&e.shapes), e.shapes.len()),
+            ("epi.expressed_shapes", 0, Self::bytes_of_shapes(&e.expressed_shapes), e.expressed_shapes.len()),
+            ("epi.axis_index", e.axis_index.key_bytes(), e.axis_index.scoped().map(|(_, a)| a.key_bytes() + a.scoped().map(|(_, w)| w.key_bytes() + w.scoped().map(|(_, x)| x.rotor().bytes()).sum::<usize>()).sum::<usize>()).sum::<usize>(), e.axis_index.len()),
             ("epi.by_moduli", e.by_moduli.key_bytes(), e.by_moduli.scoped().map(|(_, m)| m.key_bytes()).sum(), e.by_moduli.len()),
             ("epi.waiting_on", e.waiting_on.key_bytes(), e.waiting_on.scoped().map(|(_, m)| m.key_bytes()).sum(), e.waiting_on.len()),
             ("epi.expression", 0, e.expression.len() * 8, e.expression.len()),
             ("epi.stroke_k", 0, e.stroke_k.len() * 8, e.stroke_k.len()),
-            ("con.bubbles", c.bubbles.key_bytes(), c.bubbles.scoped().map(|(_, b)| b.form.as_ref().map_or(0, Weigh::weigh)).sum(), c.bubbles.len()),
+            ("con.bubbles", c.bubbles.key_bytes(), c.bubbles.scoped().map(|(_, b)| b.form.as_ref().map_or(0, Bytes::bytes)).sum(), c.bubbles.len()),
             ("con.by_chart", c.by_chart.key_bytes(), c.by_chart.scoped().map(|(_, m)| m.key_bytes()).sum(), c.by_chart.len()),
             ("con.cited", c.cited.key_bytes(), c.cited.scoped().map(|(_, m)| m.key_bytes()).sum(), c.cited.len()),
             ("con.ordinals", c.ordinals.key_bytes(), 0, c.ordinals.len()),
