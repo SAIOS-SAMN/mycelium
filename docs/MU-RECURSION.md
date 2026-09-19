@@ -8879,8 +8879,24 @@ HueStrata. The roster is governed as the letters are (law 6 as amended):
 fixed, grown only by a court receipt on a probe — a reading whose first
 cover on the corpus closes a family no other reading closes — and never by
 a voice or a commit. Bands enters first because it is deducible in one
-pass over the inputs and covers 850 tasks; each further reading enters
-behind its own receipt (rows K1, K4, K5).
+pass over the inputs; each further reading enters behind its own receipt
+(rows K1, K4, K5).
+
+**A reading has its own coordinate system, and a chart is named in it**
+(ruled 2026-09-19, on the corpus reading that a separator shared by every
+input of a family cuts 156 of 1 000 tasks while 566 tasks have inputs of
+differing frames and no shared site set at all). Bands is read **per
+frame**: each input's own separator rows and columns are its band
+lattice, and a chart is named by its coordinate in that lattice — its band
+index along `r` and along `c` — never by its support. The support at a
+frame is the section that coordinate reads there (51.4: the fiber's unit
+is the section), so charts correspond across frames by coordinate and
+never by a search over supports, and a frame whose lattice does not reach
+a coordinate holds that chart's fiber empty there: a section along `e₃`
+(52.5 item 3), not a refusal. A family whose inputs carry no separator has
+one chart under Bands, itself, and is cut by another reading or not at
+all; `1d0a4b61` is such a family, and its cut is PeriodCells' or
+Components' (K5), not Bands'.
 
 ### 53.3 A demand may name a stratum
 
