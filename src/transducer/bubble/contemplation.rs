@@ -7,6 +7,29 @@
 
 use super::*;
 
+thread_local! {
+    /// Live allocator bytes every `hold_form` on this thread has added.
+    static HELD_BYTES: std::cell::Cell<i128> = const { std::cell::Cell::new(0) };
+}
+
+/// Live bytes jemalloc holds, or `None` where the counter does not read.
+/// The epoch is advanced first, because jemalloc's stats are a snapshot
+/// refreshed on demand and a read without it returns the previous one.
+/// Z4's bisect: live bytes at a named point inside the hold, printed only
+/// under `MYC_TRACE`. Instrument, never a decision.
+fn mark(at: &str) {
+    if std::env::var("MYC_TRACE").is_ok_and(|v| v != "0") {
+        if let Some(b) = live_bytes() {
+            eprintln!("  hold mark {at} live {b}");
+        }
+    }
+}
+
+fn live_bytes() -> Option<i128> {
+    tikv_jemalloc_ctl::epoch::advance().ok()?;
+    Some(tikv_jemalloc_ctl::stats::allocated::read().ok()? as i128)
+}
+
 /// The complex over bubbles. by_chart is the incidence trie that makes
 /// every connection a read.
 ///
@@ -596,6 +619,27 @@ impl Contemplation {
     /// form is taken into custody. The train is the germinating bundle;
     /// remainders are per-pair residual chains. idea_key is the form's
     /// vertex key.
+    /// Z4's instrument (§8.1): the allocator bytes a hold ADDS, read
+    /// between `hold_form`'s entry and its exit and totalled per stroke.
+    ///
+    /// IT IS THE CLAIM AND NOT THE OUTCOME (rule 13). "The fleet grows at
+    /// 492 MB a minute" is an outcome and names nothing; "one hold of a
+    /// 712-vertex form costs N bytes" is the claim, and a fix either moves
+    /// N or it did not fix anything. The `grew` lane beside it is the
+    /// arm's total; this is the hold's own share of it.
+    ///
+    /// The reading is jemalloc's `allocated` — LIVE bytes, so a hold that
+    /// allocates and frees within itself reads zero and a hold that
+    /// retains reads what it retained. Nothing in the engine branches on
+    /// it and `hold_form` returns `()`.
+    pub fn held_bytes() -> i128 {
+        HELD_BYTES.with(|c| c.get())
+    }
+
+    pub fn reset_held_bytes() {
+        HELD_BYTES.with(|c| c.set(0));
+    }
+
     pub fn hold_form(
         &mut self,
         f: &Form,
@@ -609,6 +653,22 @@ impl Contemplation {
         {
             return;
         }
+        // Z4's instrument: the live bytes this hold adds. Read at entry and
+        // again at exit, so what is counted is what the hold RETAINED.
+        let before = live_bytes();
+        self.hold_form_inner(f, train, remainders);
+        if let (Some(a), Some(b)) = (before, live_bytes()) {
+            HELD_BYTES.with(|c| c.set(c.get().saturating_add(b - a)));
+        }
+    }
+
+    fn hold_form_inner(
+        &mut self,
+        f: &Form,
+        train: &crate::transducer::family::Family,
+        remainders: &[Vec<Link>],
+    ) {
+        mark("idea_key");
         let key = idea_key(f);
         let mut rem_keyed: Keyed<Vec<Link>> = Keyed::new();
         let mut volume = [0u64; 4];
@@ -631,6 +691,7 @@ impl Contemplation {
                 cover.insert(&ck, ());
             }
         }
+        mark("remainders+cover");
         let mut glues = Keyed::new();
         let mut candidates: Keyed<Keyed<Rotor>> = Keyed::new();
         for v in &f.vertices {
@@ -675,6 +736,7 @@ impl Contemplation {
                 _ => {}
             }
         }
+        mark("vertex walk");
         let mut horizon = Keyed::new();
         self.paint_seeded(&mut horizon);
         // THE FORM'S OWN STANDING LOOPS ENTER THE HORIZON (L24). The pivot
@@ -693,14 +755,17 @@ impl Contemplation {
         // horizon member — there is nothing to discharge — and a rotor
         // with no order or no class key is refused by `horizon_put`.
         self.paint_standing(f, &mut horizon);
+        mark("paint");
         let certs = f.certificates.clone();
         let bundle = if train.is_empty() {
             None
         } else {
             Some(train.to_vec())
         };
+        mark("carrier clones");
         let mut held = f.clone();
         held.reindex();
+        mark("form clone+reindex");
         let bubble = Bubble {
             remainder: f.remainder.clone(),
             nerve: Complex::new(),
@@ -759,13 +824,18 @@ impl Contemplation {
                 }
             }
         }
+        mark("prior merge");
         if let Some(old) = self.bubbles.get(key.as_bytes()).cloned() {
             self.retract_incidence(key.as_bytes(), &old);
         }
+        mark("retract_incidence");
         self.admit_incidence(&key, &bubble);
+        mark("admit_incidence");
         self.bubbles.insert(&key, bubble);
+        mark("bubbles.insert");
         self.dirty.insert(&key, ());
         self.link_new(&key);
+        mark("link_new");
         eprintln!(
             "  form held {:02x}{:02x}…",
             key[0], key[1]

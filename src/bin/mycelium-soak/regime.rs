@@ -39,6 +39,17 @@ use mycelium::client::sdk::Epigenome;
 use mycelium::transducer::family::{extract_rule_with, extraction_spend, mint_sentence};
 use std::time::Instant;
 
+/// Live allocator bytes, for the ten-pull reading. Instrument only.
+fn live_now() -> i128 {
+    match tikv_jemalloc_ctl::epoch::advance() {
+        Ok(_) => match tikv_jemalloc_ctl::stats::allocated::read() {
+            Ok(n) => n as i128,
+            Err(_) => 0,
+        },
+        Err(_) => 0,
+    }
+}
+
 /// A corpus file's name without its suffix — the family's own id, which is
 /// what the voice writes and what the timeline groups on.
 fn stem_of(file: &str) -> &str {
@@ -120,6 +131,47 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             pull_s.as_secs(),
             pull_s.subsec_millis()
         ),
+    }
+
+    // Z4's DoD: TEN PULLS, the held bytes and the resident read at each.
+    // A leak is a number that does not come back down across repeats of
+    // one pull, and one pull cannot show that whatever it reads.
+    {
+        use mycelium::transducer::bubble::contemplation::Contemplation;
+        // WHERE THE FIRST HOLD'S BYTES GO, component by component, so the
+        // fix is aimed at a measurement and not at a guess.
+        {
+            let mut b = physics.stroke_n(spend);
+            if let Some(r) = extract_rule_with(&task.train, &epi, &mut b) {
+                let a0 = live_now();
+                let mut cloned = r.form.clone();
+                let a1 = live_now();
+                cloned.reindex();
+                let a2 = live_now();
+                let train_copy = task.train.to_vec();
+                let a3 = live_now();
+                println!(
+                    "  regime hold parts: form.clone {} B  reindex {} B  train.to_vec {} B",
+                    a1 - a0,
+                    a2 - a1,
+                    a3 - a2
+                );
+                drop(cloned);
+                drop(train_copy);
+            }
+        }
+        let mut hold = Contemplation::new();
+        for pull in 0..10u32 {
+            Contemplation::reset_held_bytes();
+            let mut b = physics.stroke_n(spend);
+            let Some(r) = extract_rule_with(&task.train, &epi, &mut b) else { continue };
+            hold.hold_form(&r.form, &task.train, &[]);
+            println!(
+                "  regime pull {pull} held {:+} B  live {} B",
+                Contemplation::held_bytes(),
+                live_now()
+            );
+        }
     }
 
     // THE MINT, timed apart: a pull that returns and a mint that does not
