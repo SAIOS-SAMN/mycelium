@@ -1057,8 +1057,8 @@ pub fn extract_rule_with(
     trace::trace_n("extract/4 rebase", form.vertices.len(), budget);
     // 4. Rebase: w_j = t · w_i · t⁻¹ with t the relative placement, read on
     // the form's own faces. Named faces only; Frame is not a conjugator.
-    let before = form.clone();
-    rebase_named_faces(&mut form, std::slice::from_ref(&before));
+
+    rebase_named_faces(&mut form);
     trace::trace("extract/5 unfold", budget);
     // 5. Unfold grow-to-frame.
     if family.iter().all(|(a, b)| grows_to_frame(a, b)) {

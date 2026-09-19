@@ -238,7 +238,7 @@ assert_eq!(
     "two hue sections on one word class, got {}",
     pf.hue_maps.len()
 );
-rebase_named_faces(&mut form, std::slice::from_ref(&pf));
+rebase_named_faces(&mut form);
 let n_re = form
     .vertices
     .iter()

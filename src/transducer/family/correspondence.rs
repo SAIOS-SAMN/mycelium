@@ -80,16 +80,18 @@ pub(crate) fn member_section_key(v: &Vertex, chart: &Invariant) -> Option<Vec<u8
 /// contributes nothing: the two ends do not speak one word there and there is
 /// no rebase to make.
 pub(crate) fn relatives_between(
-    pf: &Form,
+    faces: &[crate::transducer::sentence::FormFace],
+    vertices: &[Vertex],
     a: &TransportClass,
     b: &TransportClass,
 ) -> crate::network::nerve::Keyed<(crate::transducer::alphabet::Word, Versor)> {
     let mut out = crate::network::nerve::Keyed::new();
     let (ka, kb) = (a.key(), b.key());
-    for face in &pf.faces {
+    // index: the form's own faces, which are its boundary (rule 1)
+    for face in faces {
         let (Some(vi), Some(vj)) = (
-            pf.vertices.get(face.i as usize),
-            pf.vertices.get(face.j as usize),
+            vertices.get(face.i as usize),
+            vertices.get(face.j as usize),
         ) else {
             continue;
         };

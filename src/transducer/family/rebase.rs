@@ -13,8 +13,15 @@ use super::*;
 /// relative placement `t = p_j − p_i`. Conjugation by a translation keeps
 /// the linear block and moves the centre, so `t · w_i · t⁻¹` is realised
 /// by `apply_form` as `w_i` at `p_i + t`; nothing is spelled for `t`.
-pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
+pub(crate) fn rebase_named_faces(form: &mut Form) {
+    // THE FORM AS IT WAS, taken once. This took `pair_forms: &[Form]` and
+    // its one production caller passed `std::slice::from_ref(&form.clone())`
+    // — a one-element slice holding a clone of this same form, a vestige of
+    // the per-pair extraction 52.5 deleted (P5). The `all(..)` over it ran
+    // once, and the whole second `Form` existed to compare the form with
+    // itself at a cost of one full clone per extraction.
     let named: Vec<FormFace> = form.faces.clone();
+    let was: Vec<Vertex> = form.vertices.clone();
     // The face's own index IS the chord it closes on where it closes: this
     // is a clone of `form.faces` and the rebase adds no face, so the two
     // agree throughout. A caller that walked a face knows which one; it is
@@ -87,13 +94,12 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
         // own face between the two classes records. The incidence is the pair
         // form's face, so the bodies compared are the bodies the scene relates
         // and never a product of the two classes' placements.
-        let constant = pair_forms.iter().all(|pf| {
-            let rs = relatives_between(pf, &tc_i, &tc_j);
-            !rs.is_empty()
-                && rs
-                    .scoped()
-                    .all(|(_, (_, r))| element::same_versor(r, &relative))
-        });
+        // EVERY MEMBER PAIR MEASURES THE SAME RELATIVE, at every face this
+        // form records between the two classes. The incidence is the face,
+        // so the bodies compared are the bodies the scene relates.
+        let rs = relatives_between(&named, &was, &tc_i, &tc_j);
+        let constant = !rs.is_empty()
+            && rs.scoped().all(|(_, (_, r))| element::same_versor(r, &relative));
         if constant {
             let _ = form.rebase(face.i, face.j, relative, fi as u16);
             trace::trace_at("extract/4 rebased", j);
