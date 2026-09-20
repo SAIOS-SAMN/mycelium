@@ -12,7 +12,123 @@ impl Form {
     /// asserts — and a predicate blind to edges would prune the
     /// obstruction along with the noise.
     pub fn loops_of(faces: &[FormFace], vertices: &[Vertex]) -> Vec<Loop> {
-        let n = vertices.len();
+        // THE CYCLE BASIS IS BUILT ON THE MEMBER COMPLEX, NOT ON THE VERTEX
+        // INDICES (54.4, as ruled 2026-09-20).
+        //
+        // There are two complexes here and the engine was computing the
+        // homotopy of one and the transport of the other.
+        //
+        //   V — nodes are `vertices`, edges are `(f.i, f.j)`. This is what
+        //   this function walked: `adj` indexed by vertex, union-find over
+        //   vertex indices.
+        //
+        //   M — nodes are MEMBERS, `member_key(vertex, chart)`: a vertex
+        //   ACTING ON A CHART. `extract.rs` builds the faces over exactly
+        //   this — `star_and_site_faces` walks `scenery.supports`, whose
+        //   nodes are member keys — and every face stores its one member
+        //   pair under `face_pair_key(&ci, &cj)`. All the transport lives
+        //   here: the carriage, the gauge, and 50.3's edge.
+        //
+        // `π: M → V` forgets the chart, and it is NOT a fibration. A cycle
+        // of V lifts to M only where, at every vertex it passes, the
+        // incoming face's far chart is the outgoing face's near chart —
+        // and nothing arranges that, because the faces were built
+        // independently over member supports. So `paths_carried` was handed
+        // cycles that had no lift, and reported "no lift" and "no holonomy"
+        // as the same empty answer.
+        //
+        // MEASURED, before the change, on three voices of a live fleet:
+        // 281 real loops (crossing a face between two bodies rather than
+        // the Frame), every face of every one of them carrying a member
+        // pair — 0 tears — and 0 closed member paths. 96 of 96, 97 of 97,
+        // 88 of 88 passed through a vertex that splits into several
+        // members, which is where the lift has to break. And exactly
+        // `members − vertices` of the loops ran through the Frame alone —
+        // 285 = 860 − 575, 266 = 702 − 436, 300 = 769 − 469, exact on all
+        // three — because `k` charts on one vertex are `k` parallel
+        // Frame-edges in V and `k − 1` spurious cycles that enclose
+        // nothing.
+        //
+        // Built on M, every cycle lifts BY CONSTRUCTION: the arrival chart
+        // at each node is the departure chart, because the node IS the
+        // chart. `paths_carried`'s frontier then has exactly one survivor
+        // and it closes.
+        //
+        // A FACE THAT RELATES NO MEMBER PAIR JOINS ITS VERTICES AT NO
+        // NAMED CHART, and that is a node of M like any other — written
+        // `member_key(v, &[])`, the empty chart key.
+        //
+        // This is not a sentinel standing for a chart; it is the ABSENCE
+        // of one, written out, and it is a real sector of the complex. A
+        // holonomy that moves the sensor plane places no member pair —
+        // `face_place_by` derives each pair's carriage through
+        // `versor_of_word`, one plane by construction (51.2) — so every
+        // off-plane loop lives here, and `Rank.offplane` is a lane that
+        // could never be non-zero if these faces were dropped
+        // (`rank_offplane_is_its_own_lane`).
+        //
+        // The unnamed node is DISTINCT from every named one, so the two
+        // sectors do not chain: a path carrying a body cannot step across
+        // a face that places none, which is the truth about that face and
+        // not a refusal invented here.
+        if vertices.is_empty() {
+            return Vec::new();
+        }
+        // THE NODES, discovered from the faces' own member pairs. `at` is
+        // keyed by `face_pair_key`, so the two member keys of an edge are
+        // read out of the key the transport is filed under — the same
+        // coordinate, not a second derivation of it (law 12).
+        let mut node_of: Keyed<u16> = Keyed::new();
+        let mut node_vertex: Vec<u16> = Vec::new();
+        let mut edges: Vec<(usize, usize, usize)> = Vec::new();
+        let node = |node_of: &mut Keyed<u16>,
+                        node_vertex: &mut Vec<u16>,
+                        v: u16,
+                        chart: &[u8]|
+         -> usize {
+            let k = crate::transducer::family::member_key(v, chart);
+            match node_of.get(&k) {
+                Some(&ix) => ix as usize,
+                None => {
+                    let ix = node_vertex.len();
+                    node_of.insert(&k, ix as u16);
+                    node_vertex.push(v);
+                    ix
+                }
+            }
+        };
+        // STAR FACES FIRST, as before, so the spanning tree prefers the
+        // basepoint's edges and a chord is a face between two bodies.
+        let star = |f: &FormFace| {
+            [f.i, f.j].iter().any(|&v| matches!(vertices.get(v as usize), Some(Vertex::Frame)))
+        };
+        for pass in [true, false] {
+            for (fi, f) in faces.iter().enumerate() {
+                if star(f) != pass {
+                    continue;
+                }
+                if f.i as usize >= vertices.len() || f.j as usize >= vertices.len() {
+                    continue;
+                }
+                let mut named = 0usize;
+                for (pk, _) in f.at.scoped() {
+                    let Some((ci, cj)) = crate::transducer::sentence::read_face_pair_key(&pk)
+                    else {
+                        continue;
+                    };
+                    named += 1;
+                    let a = node(&mut node_of, &mut node_vertex, f.i, &ci);
+                    let b = node(&mut node_of, &mut node_vertex, f.j, &cj);
+                    edges.push((a, b, fi));
+                }
+                if named == 0 {
+                    let a = node(&mut node_of, &mut node_vertex, f.i, &[]);
+                    let b = node(&mut node_of, &mut node_vertex, f.j, &[]);
+                    edges.push((a, b, fi));
+                }
+            }
+        }
+        let n = node_vertex.len();
         if n == 0 {
             return Vec::new();
         }
@@ -26,23 +142,7 @@ impl Form {
         };
         let mut adj: Vec<Vec<(usize, usize)>> = vec![Vec::new(); n];
         let mut loops = Vec::new();
-        let mut order = Vec::with_capacity(faces.len());
-        for (fi, f) in faces.iter().enumerate() {
-            if f.i == 0 || f.j == 0 {
-                order.push(fi);
-            }
-        }
-        for (fi, f) in faces.iter().enumerate() {
-            if f.i != 0 && f.j != 0 {
-                order.push(fi);
-            }
-        }
-        for fi in order {
-            let f = &faces[fi];
-            let (a, b) = (f.i as usize, f.j as usize);
-            if a >= n || b >= n {
-                continue;
-            }
+        for (a, b, fi) in edges {
             let (pa, pb) = (find(&mut parent, a), find(&mut parent, b));
             if pa != pb {
                 parent[pa] = pb;
@@ -50,10 +150,20 @@ impl Form {
                 adj[b].push((a, fi));
                 continue;
             }
-            let Some((mut path, mut walked)) = tree_path(&adj, a, b) else {
+            let Some((path, mut walked)) = tree_path(&adj, a, b) else {
                 continue;
             };
-            path.push(a);
+            // THE CYCLE PROJECTED TO ITS VERTICES. `Loop` names its nodes
+            // by vertex index because every reader of it — the holonomy
+            // composite, the charts of a loop, the face-direction test in
+            // `paths_carried` — asks the form for a vertex. The CHART at
+            // each step is carried by the faces the cycle walks, which is
+            // where the transport is; the projection loses nothing the
+            // readers need, and the cycle is a cycle of M whatever it is
+            // named by.
+            let mut path: Vec<usize> =
+                path.into_iter().map(|ix| node_vertex[ix] as usize).collect();
+            path.push(node_vertex[a] as usize);
             walked.push(fi);
             let holonomy = form_named_holonomy(faces, &path, &walked);
             // THE CARRIAGES ARE THE TRANSPORT COMPOSITE'S, read from the one

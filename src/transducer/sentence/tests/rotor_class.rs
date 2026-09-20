@@ -114,13 +114,29 @@ fn rank_offplane_is_its_own_lane() {
     ]);
     assert!(w.plane_block().is_none(), "it moves the sensor plane");
     assert!(w.form().is_none(), "and turns no pair plane at all");
-    let two = chord_form(&[w.clone(), w.clone()]);
+    // THE OFF-PLANE ROTOR RIDES THE EDGE, not the face word (54.4, as
+    // ruled 2026-09-20). This stood on `chord_form`, which puts the rotor
+    // in the face's WORD — and a word with no sensor action places no
+    // member pair, which `edge_chord_form`'s own doc has said since it was
+    // written: "a loop with no member path has no class to read".
+    //
+    // It passed anyway because the cycle basis was built on the VERTEX
+    // graph, where a face joins its two vertices whether or not it relates
+    // any bodies, and `loop_holonomy_on` then fell back to the word. Built
+    // on the MEMBER complex the cycle does not exist, and that is correct:
+    // no body can be carried across a face that places none.
+    //
+    // `edge_chord_form` is the carrier the codebase already names for this
+    // — an identity face word, which DOES place its pair, with the
+    // off-plane rotor on 50.3's edge transport — so the loop is a cycle of
+    // the member complex and its composite is off-plane where it belongs.
+    let two = edge_chord_form(&[w.clone(), w.clone()]);
     let r = two.rank().expect("rank");
     assert_eq!(r.offplane, 1, "two chords of one off-plane class count once, got {r:?}");
     assert_eq!(r.free, 0, "plane free rank is empty, got {r:?}");
     assert_ne!(r.offplane, 2, "the old per-chord count is not a coordinate");
     assert_ne!(r.free, 2, "the old folded sum is not free");
-    let mixed = chord_form(&[infinite(), w]);
+    let mixed = edge_chord_form(&[infinite(), w]);
     let r = mixed.rank().expect("rank");
     assert_eq!(r.free, 1, "one plane free chord, got {r:?}");
     assert_eq!(r.offplane, 1, "one off-plane class, got {r:?}");

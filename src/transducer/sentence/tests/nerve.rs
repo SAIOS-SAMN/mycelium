@@ -9,6 +9,7 @@
 use super::common::*;
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::*;
+use crate::transducer::stalk;
 
 /// A closed one-word form at a given quarter-turn plane, so three of them
 /// are three distinct addresses.
@@ -270,5 +271,75 @@ fn a_citation_truncated_to_its_chart_names_two_forms() {
         form_vertex_key(&g1),
         form_vertex_key(&g2),
         "two forms citing two sub-complexes are two forms; the address is what says so"
+    );
+}
+
+/// 54.4 — EVERY LOOP LIFTS, because the cycle basis is built where the
+/// transport is.
+///
+/// This is the property that was false on the whole fleet: 281 real loops
+/// across three voices, every face of every one carrying a member pair — no
+/// tears — and ZERO closed member paths. `loops_of` built its spanning tree
+/// and fundamental cycles over the VERTEX graph, `adj` indexed by `f.i`,
+/// while `extract.rs` built the faces over the MEMBER graph, whose nodes are
+/// `member_key(vertex, chart)`. A vertex acting on several charts is several
+/// nodes to the face builder and one node to the cycle basis, so a cycle of
+/// the vertex graph need not be a cycle of the member graph — and
+/// `paths_carried`, which walks members, reported "there is no lift" and
+/// "there is no holonomy" as the same empty answer.
+///
+/// Built on the member complex the lift exists BY CONSTRUCTION: the arrival
+/// chart at each node is the departure chart, because the node IS the chart.
+/// So every loop has at least one closed member path, and the composite the
+/// classifier reads is never empty for want of one.
+///
+/// `loop_words` yields one entry per (loop, member path), so a loop with no
+/// path contributes nothing and the count is the test.
+#[test]
+fn every_loop_lifts_to_the_member_complex() {
+    let cases: Vec<(&str, Form)> = vec![
+        ("a chord with a quarter turn", chord_form(&[order4()])),
+        ("two chords of one class", chord_form(&[order4(), order4()])),
+        ("a chord whose EDGE carries the word", edge_chord_form(&[order4()])),
+        ("a coboundary triangle", coboundary_chord_form()),
+        ("an infinite-order chord", chord_form(&[infinite()])),
+    ];
+    for (what, f) in cases {
+        assert!(!f.loops.is_empty(), "{what}: the fixture must have a loop");
+        assert!(
+            f.loop_words().len() >= f.loops.len(),
+            "{what}: {} loops carry only {} member paths — a loop with no lift is a loop \
+             of the wrong complex",
+            f.loops.len(),
+            f.loop_words().len()
+        );
+    }
+}
+
+/// AND THE SPURIOUS CYCLES ARE GONE. `k` charts on one vertex are `k`
+/// parallel Frame-edges in the vertex graph and `k − 1` fundamental cycles
+/// that enclose nothing — measured on the fleet as an exact identity, the
+/// count of Frame-only loops equalling `members − vertices` on all three
+/// voices (285 = 860 − 575, 266 = 702 − 436, 300 = 769 − 469).
+///
+/// In the member complex `Frame → (v, c₁)` and `Frame → (v, c₂)` is a PATH
+/// of length two between two distinct nodes, not a cycle. This builds that
+/// shape directly: one vertex standing on two charts, reached from the Frame
+/// at each, and nothing else.
+#[test]
+fn two_charts_of_one_vertex_are_not_a_cycle() {
+    let mut f = Form::default();
+    // Two vertices at two charts — the two members the fleet's split
+    // vertices present, here as the smallest form that has them.
+    f.vertices.push(word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])));
+    f.vertices.push(word_vertex_on(2, Word::identity(), stalk::Invariant::counts(&[2])));
+    f.faces.push(f.face_of(0, 1).expect("star one"));
+    f.faces.push(f.face_of(0, 2).expect("star two"));
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.reindex();
+    assert!(
+        f.loops.is_empty(),
+        "a star of two members encloses nothing; the vertex graph counted {} cycles",
+        f.loops.len()
     );
 }
