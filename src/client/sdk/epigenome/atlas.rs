@@ -8,8 +8,19 @@ impl Epigenome {
     /// The held word at an address, read from the key. A `Held`, so its
     /// form is a field and not a decode this read performs (L16); it
     /// derefs to the element, so every element reader takes it unchanged.
+    /// THE HELD WORD AT AN ADDRESS. Under Z11 the index says whether the
+    /// genome HOLDS a word (`holds`) and this says whether it is decoded
+    /// and here; today every held word is resident, so the two agree.
     pub fn word_at(&self, addr: &[u8]) -> Option<&Held> {
-        self.genome.get(addr).map(|w| &w.held)
+        self.resident.get(addr).map(|w| &w.held)
+    }
+
+    /// WHETHER THE GENOME HOLDS A WORD, asked of the INDEX — which is the
+    /// question, and which stays true under Z11 whether or not the word is
+    /// decoded. Every reader that means "does this mind know it" asks
+    /// here; a reader that means "can I read its form now" asks `word_at`.
+    pub fn holds(&self, addr: &[u8]) -> bool {
+        self.genome.contains(addr)
     }
 
     /// Working-atlas root: concatenated A21 stratum roots of genome ∪ dialect.
@@ -30,7 +41,7 @@ impl Epigenome {
 
     /// This word's shape, lifted once under the word it measures.
     pub fn shape_at(&self, addr: &[u8]) -> Option<&crate::transducer::blade::Shape> {
-        let w = self.genome.get(addr)?;
+        let w = self.resident.get(addr)?;
         w.shape
             .get_or_init(|| crate::transducer::element::shape_of_chain(w.held.sub()))
             .as_ref()
@@ -47,16 +58,25 @@ impl Epigenome {
     /// went stale; law 2 does not allow a key that no longer names its
     /// value.
     pub fn puncture(&mut self, addr: &[u8], asg: Vec<(u8, u8)>) -> bool {
-        let Some(mut w) = self.genome.remove(addr) else { return false };
+        let Some(entry) = self.genome.remove(addr) else { return false };
+        let Some(mut w) = self.resident.remove(addr) else {
+            // The index holds it and the payload does not: under Z11 that
+            // is a word on disk and not decoded, and a puncture of a word
+            // this mind has not read is refused rather than guessed.
+            self.genome.insert(addr, entry);
+            return false;
+        };
         if !w.held.update(|e| e.puncture(asg)) {
-            self.genome.insert(addr, w);
+            self.genome.insert(addr, entry);
+            self.resident.insert(addr, w);
             return false;
         }
         // The shape was measured on the old chain and is not the new
         // word's; it is dropped rather than carried across (law 12).
         w.shape = std::sync::OnceLock::new();
         let at = w.held.address();
-        self.genome.insert(at, w);
+        self.genome.insert(&at, entry);
+        self.resident.insert(&at, w);
         true
     }
 
@@ -200,7 +220,7 @@ impl Epigenome {
     /// Every genome word, in the trie's order — which is the addresses'
     /// own order and is content (law 2), not arrival order.
     pub fn genome_words(&self) -> impl Iterator<Item = &Held> {
-        self.genome.scoped().map(|(_, w)| &w.held)
+        self.resident.scoped().map(|(_, w)| &w.held)
     }
 
     /// The words admitted at or after an admission ordinal — what
@@ -209,8 +229,8 @@ impl Epigenome {
     pub fn genome_since(&self, seq: u64) -> Vec<Element> {
         self.genome
             .scoped()
-            .filter(|(_, w)| w.seq >= seq)
-            .map(|(_, w)| w.held.element().clone())
+            .filter(|(_, e)| e.seq >= seq)
+            .filter_map(|(k, _)| self.resident.get(&k).map(|w| w.held.element().clone()))
             .collect()
     }
 
@@ -237,7 +257,7 @@ impl Epigenome {
     /// coordinate, and retirements leave the ordinals with holes.
     pub fn genome_ordinal_spread(&self) -> Vec<(Vec<u8>, u64, &crate::transducer::element::Held)> {
         let mut by_seq: Vec<(u64, Vec<u8>)> =
-            self.genome.scoped().map(|(k, w)| (w.seq, k)).collect();
+            self.genome.scoped().map(|(k, e)| (e.seq, k)).collect();
         by_seq.sort_unstable();
         let n = by_seq.len();
         let picks = match n {
@@ -249,7 +269,7 @@ impl Epigenome {
             .into_iter()
             .filter_map(|i| {
                 let (seq, k) = by_seq.get(i)?;
-                let w = self.genome.get(k)?;
+                let w = self.resident.get(k)?;
                 Some((k.clone(), *seq, &w.held))
             })
             .collect()
@@ -397,7 +417,7 @@ impl Epigenome {
     /// a smaller answer, it is no answer (rule 11).
     pub(crate) fn same_vertex_in_genome(&self, e: &Element) -> Option<Vec<u8>> {
         let addr = e.address();
-        if !self.genome.get(addr.as_bytes()).is_some_and(|w| w.held.same_vertex(e)) {
+        if !self.resident.get(addr.as_bytes()).is_some_and(|w| w.held.same_vertex(e)) {
             return None;
         }
         Some(addr.into_vec())
@@ -435,7 +455,11 @@ impl Epigenome {
     where
         H: Fn(&crate::transducer::stalk::Invariant, &[(i64, i64, u8, u8)]) -> Vec<crate::transducer::sentence::HeldCite>,
     {
-        let genome = &self.genome;
+        // THE READING RUNS OVER WHAT IS DECODED. Under Z11 the fiber read
+        // decodes what it reaches before the closures are built; today
+        // every word the index holds is resident and the two are the same
+        // set.
+        let genome = &self.resident;
         let dialect = &self.dialect;
         let atlas = &self.atlas;
         let dialect_atlas = &self.dialect_atlas;

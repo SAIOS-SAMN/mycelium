@@ -314,19 +314,40 @@ pub struct GenomeView<'a> {
 /// One word, one entry, filed at the address the word derives for itself.
 /// Nothing is parallel, nothing shifts, and there is no index because the
 /// trie descent IS the lookup.
-pub struct GenomeWord {
-    /// The word, with the form its tape decodes to (L16).
-    pub(crate) held: crate::transducer::element::Held,
+/// Z11's FIRST STEP — THE INDEX IS A SEPARATE OBJECT FROM THE PAYLOAD.
+///
+/// The row rules that the genome persists on disk and a voice keeps
+/// resident "an index by address", decoding a word only when cited or
+/// spoken. That target is not measurable while the index and the word are
+/// one struct: the carrier line can only report `epi.genome` as one number
+/// and cannot say which half Z11 removes. Split here first, with the
+/// payload still resident, so the vector reads them apart and the row
+/// lands against a reading rather than against a hope.
+///
+/// Both are keyed by the word's own address (law 2). Nothing is parallel:
+/// an entry and its word are two carriers at ONE coordinate, which is not
+/// the parallel-vector defect Z9 removed — that made POSITION the identity
+/// and made a removal shift three carriers. Here a removal is two keyed
+/// removes at the same key, and neither can name a word the other does not.
+pub struct GenomeEntry {
     /// How often this entity speaks or hears it — the recollection
     /// efficiency. Content: how often a word was used is not derivable
     /// from the word.
     pub(crate) expression: u64,
-    /// This word's shape, lifted once on first use. A measurement
-    /// memoized under the word it measures, never persisted.
-    pub(crate) shape: std::sync::OnceLock<Option<crate::transducer::blade::Shape>>,
     /// The admission ordinal. Content, not derivation: WHEN a word entered
     /// is not readable off the word, and `thought_gen` watermarks read it.
     pub(crate) seq: u64,
+}
+
+/// THE PAYLOAD: the decoded word, and what Z11 moves to disk. Resident
+/// today; under Z11 this carrier is the bounded escrowed cache and holds
+/// only what a reading has reached.
+pub struct GenomeWord {
+    /// The word, with the form its tape decodes to (L16).
+    pub(crate) held: crate::transducer::element::Held,
+    /// This word's shape, lifted once on first use. A measurement
+    /// memoized under the word it measures, never persisted.
+    pub(crate) shape: std::sync::OnceLock<Option<crate::transducer::blade::Shape>>,
 }
 
 /// An expressed word — a residual this mind germinated and has not had
@@ -342,7 +363,10 @@ pub struct Epigenome {
     /// with the form its tape decodes to, decoded once at the admission.
     /// Held as `Element`, every reader that wanted a form decoded the tape
     /// behind a `OnceLock` that a clone did not carry.
-    pub(crate) genome: crate::network::nerve::Keyed<GenomeWord>,
+    pub(crate) genome: crate::network::nerve::Keyed<GenomeEntry>,
+    /// The decoded words, at the same coordinates as `genome`. Z11 backs
+    /// this with the genome file and bounds it by escrow.
+    pub(crate) resident: crate::network::nerve::Keyed<GenomeWord>,
     /// Locally comprehended sentences, keyed by the sentence's word addresses
     /// (not by basis indices that shift on retire).
     pub(crate) recollections: crate::network::nerve::Keyed<(Vec<Vec<u8>>, u64)>,

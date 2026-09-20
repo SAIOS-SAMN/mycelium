@@ -14,7 +14,13 @@ impl Epigenome {
     /// identity, so removing one word renamed all the others. At a
     /// coordinate a word leaves and nothing else moves.
     pub fn retire(&mut self, addr: &[u8]) -> bool {
-        let Some(word) = self.genome.remove(addr) else {
+        let Some(_entry) = self.genome.remove(addr) else {
+            return false;
+        };
+        // The index and the payload leave together at one coordinate. A
+        // word whose index entry is gone and whose payload is not is a
+        // genome that holds what it cannot read (law 2).
+        let Some(word) = self.resident.remove(addr) else {
             return false;
         };
         let gone = word.held.address();
@@ -227,9 +233,9 @@ impl Epigenome {
             // a number; the chain those links form is the element the mind
             // lacks, and a hypha can docket that.
             _ => {
-                let genome = &self.genome;
+                let resident = &self.resident;
                 let open = located
-                    .open_at(&|a| genome.get(a).map(|w| w.held.element()), utterance.sub());
+                    .open_at(&|a| resident.get(a).map(|w| w.held.element()), utterance.sub());
                 let understood: Vec<(Vec<u8>, Standing)> = located
                     .cites
                     .iter()
@@ -418,9 +424,11 @@ impl Epigenome {
                 Some(at) => {
                     // Through `Held::update`: the fibre deepens and the form
                     // is re-decoded with it, so the two describe one tape.
-                    if let Some(w) = self.genome.get_mut(&at) {
+                    if let Some(w) = self.resident.get_mut(&at) {
                         let _ = w.held.update(|x| x.merge_fibre(&e));
-                        w.expression = w.expression.saturating_add(uses);
+                    }
+                    if let Some(x) = self.genome.get_mut(&at) {
+                        x.expression = x.expression.saturating_add(uses);
                     }
                 }
                 None => self.admit_word(crate::transducer::element::Held::of(e), uses),
@@ -431,11 +439,14 @@ impl Epigenome {
         let arrived = e.clone();
         // ONE DECODE, HERE, where the word is taken in.
         let held = crate::transducer::element::Held::of(e);
-        match self.genome.get_mut(&addr) {
-            // A word already at this coordinate is replaced in place; its
-            // expression and admission ordinal are what this mind measured
-            // about it and do not reset because the tape arrived again.
-            Some(w) => w.held = held,
+        // A word already at this coordinate is replaced in place; its
+        // expression and admission ordinal are what this mind measured
+        // about it and do not reset because the tape arrived again.
+        match self.resident.get_mut(&addr) {
+            Some(w) => {
+                w.held = held;
+                w.shape = std::sync::OnceLock::new();
+            }
             None => self.admit_word(held, 0),
         }
         self.resolve_withheld(&arrived);
@@ -454,10 +465,9 @@ impl Epigenome {
         self.atlas_len = self.atlas_len.saturating_add(1);
         let seq = self.next_seq;
         self.next_seq = self.next_seq.saturating_add(1);
-        self.genome.insert(
-            at,
-            GenomeWord { held, expression: uses, shape: std::sync::OnceLock::new(), seq },
-        );
+        self.genome.insert(&at, GenomeEntry { expression: uses, seq });
+        self.resident
+            .insert(&at, GenomeWord { held, shape: std::sync::OnceLock::new() });
     }
 
     /// A cited tape that just arrived: withheld sentences naming it

@@ -11,7 +11,7 @@ impl Epigenome {
         let mut out = Vec::with_capacity(4 + self.genome.len() * 64);
         out.extend_from_slice(b"GEN3");
         out.extend_from_slice(&(self.genome.len() as u32).to_le_bytes());
-        for (_, g) in self.genome.scoped() {
+        for (_, g) in self.resident.scoped() {
             let b = g.held.to_bytes();
             out.extend_from_slice(&(b.len() as u32).to_le_bytes());
             out.extend_from_slice(&b);
@@ -76,6 +76,7 @@ impl Epigenome {
             eprintln!("genome restored: {} words, {skipped} skipped", genome.len());
         }
         self.genome = crate::network::nerve::Keyed::new();
+        self.resident = crate::network::nerve::Keyed::new();
         self.next_seq = 0;
         self.atlas = crate::transducer::stalk::Stalks::default();
         self.axis_index = crate::transducer::sentence::AxisIndex::new();

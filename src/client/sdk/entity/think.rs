@@ -720,10 +720,13 @@ impl Entity {
             // holds DECODED forms: its weight is the whole of each `Held`,
             // tape and form together, which is exactly what the previous
             // instrument read as zero.
-            // The key bytes are now the genome's OWN addresses, held once
-            // as the trie path the words live at, where `epi.index` used to
-            // hold a second copy of every one of them.
-            ("epi.genome", e.genome.key_bytes(), e.genome.scoped().map(|(_, w)| w.held.bytes() + 16).sum(), e.genome.len()),
+            // Z11's TWO HALVES, READ APART. `epi.index` is what stays
+            // resident when the genome moves to disk — the addresses as the
+            // trie path the words live at, plus each entry's expression and
+            // ordinal. `epi.resident` is the payload the row moves out.
+            // One number for both could not say which half Z11 removes.
+            ("epi.index", e.genome.key_bytes(), e.genome.len() * 16, e.genome.len()),
+            ("epi.resident", 0, e.resident.scoped().map(|(_, w)| w.held.bytes() + 16).sum(), e.resident.len()),
             ("epi.dialect", e.dialect.key_bytes(), e.dialect.scoped().map(|(_, d)| d.sentence.bytes()).sum(), e.dialect.len()),
             ("epi.expressed", e.expressed.key_bytes(), e.expressed.scoped().map(|(_, x)| x.word.bytes() + 16).sum(), e.expressed.len()),
             ("epi.recollections", e.recollections.key_bytes(), e.recollections.scoped().map(|(_, (v, _))| v.iter().map(Vec::len).sum::<usize>()).sum(), e.recollections.len()),
@@ -736,7 +739,7 @@ impl Entity {
             ("epi.expressed_atlas", 0, e.expressed_atlas.bytes(), 0),
             // The shape caches are no longer carriers of their own: each
             // word's shape is lifted under the word it measures.
-            ("epi.shapes", 0, e.genome.scoped().map(|(_, w)| Self::bytes_of_shape(&w.shape)).sum(), e.genome.len()),
+            ("epi.shapes", 0, e.resident.scoped().map(|(_, w)| Self::bytes_of_shape(&w.shape)).sum(), e.resident.len()),
             ("epi.axis_index", e.axis_index.key_bytes(), e.axis_index.scoped().map(|(_, a)| a.key_bytes() + a.scoped().map(|(_, w)| w.key_bytes() + w.scoped().map(|(_, x)| x.rotor().bytes()).sum::<usize>()).sum::<usize>()).sum::<usize>(), e.axis_index.len()),
             ("epi.by_moduli", e.by_moduli.key_bytes(), e.by_moduli.scoped().map(|(_, m)| m.key_bytes()).sum(), e.by_moduli.len()),
             ("epi.waiting_on", e.waiting_on.key_bytes(), e.waiting_on.scoped().map(|(_, m)| m.key_bytes()).sum(), e.waiting_on.len()),
