@@ -338,6 +338,7 @@ pub(crate) fn reconcile(path: &str) {
     let (mut chain_broke, mut chain_closed, mut chain_open, mut chain_break_step) = (0usize, 0usize, 0usize, 0usize);
     let (mut tape_loops, mut rederived_loops) = (0usize, 0usize);
     let mut dumped = 0usize;
+    let (mut edged_loops, mut edgeless_loops) = (0usize, 0usize);
     let (mut torn_loops, mut unchained_loops) = (0usize, 0usize);
     let (mut split_loops, mut verts, mut members, mut split_verts) = (0usize, 0usize, 0usize, 0usize);
     let mut rank = [0u64; 4];
@@ -435,24 +436,36 @@ pub(crate) fn reconcile(path: &str) {
             let mut broke = false;
             for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
                 let Some(fa) = f.faces.get(fi as usize) else { broke = true; break };
-                let forward = fa.i == win[0] && fa.j == win[1];
+                // BOTH ORIENTATIONS WHERE THE VERTICES CANNOT SAY. A face
+                // between two members of one vertex has `fa.i == fa.j`, so
+                // the direction is not readable off the step's vertex pair
+                // — the same ambiguity `paths_carried` resolves by stepping
+                // both. Read one way here and this instrument would report
+                // a break the engine does not have (law 12: two readers of
+                // one walk).
+                let runs: &[bool] = match fa.i == fa.j {
+                    true => &[true, false],
+                    false => &[fa.i == win[0] && fa.j == win[1]],
+                };
                 let mut stepped = false;
-                for (pk, _) in fa.at.scoped() {
-                    let Some((ik, jk)) =
-                        mycelium::transducer::sentence::read_face_pair_key(&pk)
-                    else {
-                        continue;
-                    };
-                    let (here, there) = if forward { (ik, jk) } else { (jk, ik) };
-                    if at.as_ref().is_some_and(|a| *a != here) {
-                        continue;
+                'step: for &forward in runs {
+                    for (pk, _) in fa.at.scoped() {
+                        let Some((ik, jk)) =
+                            mycelium::transducer::sentence::read_face_pair_key(&pk)
+                        else {
+                            continue;
+                        };
+                        let (here, there) = if forward { (ik, jk) } else { (jk, ik) };
+                        if at.as_ref().is_some_and(|a| *a != here) {
+                            continue;
+                        }
+                        if first.is_none() {
+                            first = Some(here);
+                        }
+                        at = Some(there);
+                        stepped = true;
+                        break 'step;
                     }
-                    if first.is_none() {
-                        first = Some(here);
-                    }
-                    at = Some(there);
-                    stepped = true;
-                    break;
                 }
                 if !stepped {
                     broke = true;
@@ -473,6 +486,21 @@ pub(crate) fn reconcile(path: &str) {
                     }
                     break;
                 }
+            }
+            // DOES THE LOOP CARRY 50.3'S EDGE AT ALL? `holonomy_words_on`
+            // composes the EDGE transport where a member path has one and
+            // falls back to the loop's own WORD where it does not — and the
+            // word is the coboundary `w_j ∘ w_i⁻¹`, which telescopes to the
+            // identity around any cycle. So a loop whose faces carry no
+            // edge is flat by algebra whatever it turns by, and this is
+            // what tells that apart from a loop that is genuinely flat.
+            match lp.faces.iter().all(|&fi| {
+                f.faces
+                    .get(fi as usize)
+                    .is_some_and(|fa| fa.at.scoped().all(|(_, pl)| pl.edge.is_some()))
+            }) {
+                true => edged_loops += 1,
+                false => edgeless_loops += 1,
             }
             match (broke, first == at) {
                 (true, _) => chain_broke += 1,
@@ -521,6 +549,9 @@ pub(crate) fn reconcile(path: &str) {
     );
     println!(
         "      {tape_loops} loops on the tapes, {rederived_loops} re-derived from the same faces"
+    );
+    println!(
+        "      50.3's edge: {edged_loops} loops carry it on every face, {edgeless_loops} do not"
     );
     println!(
         "      rank over the {ranked} that have one: torsion {} free {} off-plane {} axes {}",
