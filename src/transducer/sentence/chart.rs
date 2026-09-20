@@ -628,8 +628,10 @@ fn take_chain_address(k: &[u8], p: &mut usize) -> Option<Vec<crate::transducer::
         return Some(Vec::new());
     }
     let mut q = 0usize;
+    // A chain's address carries `TAG_RESIDUAL`: an unclosed 1-chain is not
+    // a closed complex and no longer shares the form's tag.
     match a.as_slice() {
-        [tag, ..] if *tag == crate::transducer::address::TAG_FORM => q += 1,
+        [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL => q += 1,
         _ => return None,
     }
     let block = take_bytes(&a, &mut q)?;

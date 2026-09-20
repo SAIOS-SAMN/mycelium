@@ -33,6 +33,23 @@ pub const TAG_DEMAND: u8 = 17;
 /// a probe closes.
 pub const TAG_DEMAND_AT: u8 = 18;
 
+/// AN ELEMENT THAT IS NOT A CLOSED FORM: a residual 1-chain, a letter, a
+/// rewrite — everything `form_key_bytes` addresses.
+///
+/// It shared `TAG_FORM` with the closed forms, and the two are different
+/// algebraic objects: a form is a graded cell complex whose faces and
+/// loops satisfy `δ¹g = 1`, written in the vertex-key layout; a residual
+/// is an unclosed chain, `∂c ≠ 0`, written as its own bytes. One tag over
+/// both meant `from_address` could not tell which layout it held, so a
+/// master equation needed a second decoder beside it — and
+/// `Element::address` FELL THROUGH from the first to the second whenever
+/// a sentence's tape did not decode, which is how a soak's genome reported
+/// a 0.9 KB address against a 46 KB tape and looked like a 50x saving.
+///
+/// Two kinds, two tags. `from_address` reads `TAG_FORM` and refuses this
+/// one rather than misreading it.
+pub const TAG_RESIDUAL: u8 = 19;
+
 /// Canonical A21 coordinates of a form, listing, or class. Coarse-first:
 /// a proper prefix is a coarser stratum of the same kind, never a sibling.
 /// Equality is Address-to-Address only: not a chain's bytes, not a socket

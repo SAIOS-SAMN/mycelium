@@ -387,7 +387,11 @@ impl Element {
                         return k;
                     }
                 }
-                let mut buf = vec![crate::transducer::address::TAG_FORM];
+                // NOT `TAG_FORM`: this is the non-form path, and a
+                // residual chain is not a closed complex. A sentence whose
+                // tape does not decode also arrives here, and now says so
+                // by its tag instead of impersonating a form's key.
+                let mut buf = vec![crate::transducer::address::TAG_RESIDUAL];
                 // W6: AN ADDRESS IS NEVER THE TAG ALONE, and never a tape.
                 // Both refusals this reader used to carry are gone by
                 // type: `sub` is A5's accepted chain, and a rewrite's
