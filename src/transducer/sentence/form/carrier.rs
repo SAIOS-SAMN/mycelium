@@ -374,6 +374,20 @@ impl FormFace {
 /// charts the loop passes through, keyed by those charts in walk order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Loop {
+    /// THE CYCLE ITSELF, as an element of `Z₁(M)`: the MEMBER at each node,
+    /// `member_key(vertex, chart)`, in walk order and closing on its first.
+    ///
+    /// `vertices` below is `π` of this — the projection that forgets the
+    /// chart — and it is kept because every reader of a loop asks the form
+    /// for a vertex. It is not the cycle. Under `π` a 1-cell between two
+    /// charts AT ONE VERTEX, `((v,c_a),(v,c_b))`, collapses to the
+    /// degenerate self-loop `(v,v)` and loses its orientation, which is
+    /// exactly the defect that broke 62 of 62 live loops at `437d253`: the
+    /// walker could not tell which way it ran because the projection had
+    /// thrown the answer away.
+    ///
+    /// Carried, the cycle IS its own path. There is nothing to search for.
+    pub members: Vec<Vec<u8>>,
     pub vertices: Vec<u16>,
     pub faces: Vec<u16>,
     pub chord: u16,

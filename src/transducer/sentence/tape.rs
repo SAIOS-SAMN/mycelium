@@ -169,25 +169,25 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
             }
         }
     }
-    out.extend_from_slice(&(f.loops.len() as u16).to_le_bytes());
-    for lp in &f.loops {
-        out.extend_from_slice(&(lp.vertices.len() as u16).to_le_bytes());
-        for &i in &lp.vertices {
-            out.extend_from_slice(&i.to_le_bytes());
-        }
-        out.extend_from_slice(&(lp.faces.len() as u16).to_le_bytes());
-        for &i in &lp.faces {
-            out.extend_from_slice(&i.to_le_bytes());
-        }
-        out.extend_from_slice(&lp.chord.to_le_bytes());
-        word_to_form_bytes(&lp.holonomy, None, out);
-        // ONE CARRIAGE PER MEMBER PATH, in path key order.
-        out.extend_from_slice(&(lp.carriages.len() as u16).to_le_bytes());
-        for (path, c) in lp.carriages.scoped() {
-            crate::transducer::address::put_addr(out, &path);
-            c.to_bytes(out);
-        }
-    }
+    // THE LOOPS ARE NOT ON THE TAPE (54.5, as ruled 2026-09-20). §1.5 has
+    // said since it was written that "loops and holonomies are derived and
+    // never keyed", and the tape carried them anyway — a second statement
+    // of the incidence the faces above already are (law 12).
+    //
+    // Measured, it was the WHOLE of what the tape held beyond the key: 2
+    // parts in 10 000, `loops + carriages`, everything else either in the
+    // key or empty. So this block was the tape's entire reason to exist,
+    // and it was reason for nothing: `loops_of` re-derives it from the
+    // faces deterministically.
+    //
+    // AND IT COST THE GEOMETRY. `Loop.vertices` is a list of VERTEX
+    // INDICES because that is what the tape could carry cheaply, so a
+    // cycle of the member complex had to be projected down to the base to
+    // be written — and under that projection a 1-cell between two charts
+    // at one vertex, `((v,c_a),(v,c_b))`, becomes the degenerate self-loop
+    // `(v,v)` with no orientation. That is the defect `437d253` patched by
+    // trying both directions. The frozen layout deformed the mathematics;
+    // removing it is what lets the cycle carry its own coordinates.
     // The remainder rides the tape AS IT SITS IN THE SCENE, so the decoder
     // re-derives both A5's chain and the translator from one reading.
     let placed = f.remainder.placed();
@@ -423,38 +423,11 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         };
         faces.push(FormFace { i, j, word, at, pairs });
     }
-    let nl = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
-    let mut loops = Vec::with_capacity(nl);
-    for _ in 0..nl {
-        let nv = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
-        if nv == 0 {
-            return None;
-        }
-        let mut vs = Vec::with_capacity(nv);
-        for _ in 0..nv {
-            vs.push(take_u16(b, pos)?);
-        }
-        let n = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
-        let mut fs = Vec::with_capacity(n);
-        for _ in 0..n {
-            fs.push(take_u16(b, pos)?);
-        }
-        let chord = take_u16(b, pos)?;
-        let (holonomy, _) = word_from_form_bytes(b, pos)?;
-        let nc = take_count(b, *pos, take_u16(b, pos)? as usize, 3)?;
-        let mut carriages = Keyed::new();
-        for _ in 0..nc {
-            let path = crate::transducer::address::take_addr(b, pos)?;
-            carriages.insert(path.as_bytes(), element::Versor::from_bytes(b, pos)?);
-        }
-        loops.push(Loop {
-            vertices: vs,
-            faces: fs,
-            chord,
-            holonomy,
-            carriages,
-        });
-    }
+    // THE LOOPS ARE RE-DERIVED, NOT READ (§1.5, 54.5). Nothing is taken
+    // from the tape here because the writer puts nothing there; the cycle
+    // basis is a theorem of the faces just parsed, and `loops_of` proves
+    // it the same way for a decoded form as for an extracted one. It runs
+    // below, once the vertices are in hand.
     let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
     let mut links = Vec::with_capacity(nr);
     for _ in 0..nr {
@@ -517,7 +490,8 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     let mut form = Form {
         vertices,
         faces,
-        loops,
+        // Re-derived below, from the faces just parsed (§1.5, 54.5).
+        loops: Vec::new(),
         remainder,
         depth,
         hue_maps: Keyed::new(),
@@ -538,11 +512,23 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         demands: Keyed::new(),
     };
     form.reindex();
+    // THE CYCLE BASIS IS A THEOREM OF THE INCIDENCE, proved here the same
+    // way the extractor proves it, rather than read back from a carrier
+    // that would be a second statement of the faces (law 12, §1.5).
+    form.loops = Form::loops_of(&form.faces, &form.vertices);
     Some(form)
 }
 
-/// THE TAPE'S LAST VERSION (54.5). Frozen at 13, and the byte is never
-/// bumped for the form again.
+/// THE TAPE'S LAST VERSION (54.5). 14, and the byte is never bumped for the
+/// form again.
+///
+/// 13 → 14 REMOVES the loop block, and is the only bump this file will take
+/// that makes the tape SMALLER. §1.5 has always said "loops and holonomies
+/// are derived and never keyed"; the tape carried them anyway, and measured
+/// they were the whole of `Tape ∖ Key` — 2 parts in 10 000, with every
+/// other component either in the key or empty. A v13 tape read by this
+/// build would take those bytes for the remainder that follows them, so the
+/// byte refuses it, which is the byte's entire job.
 ///
 /// The tape is no longer a living schema. Under 54.5 the genome on disk is
 /// the trie of addresses and `from_address` is the only decoder, so the
@@ -570,7 +556,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
 /// Version 10 is the three-coordinate base (51.7): supports as sites of
 /// three coordinates, versors of thirty-two components, the sections
 /// placed, and a loop's period filed as `0` for infinite order (52.3).
-pub const FORM_TAPE_VERSION: u8 = 13;
+pub const FORM_TAPE_VERSION: u8 = 14;
 
 /// 37.7 — MINT A GENERATOR FROM A ROTOR, the one construction that turns a
 /// measured action the alphabet cannot spell into a word the language holds.

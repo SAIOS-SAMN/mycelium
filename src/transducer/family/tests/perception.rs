@@ -283,18 +283,19 @@ let faces: Vec<FormFace> = ends
     .iter()
     .map(|&(i, j)| FormFace::new(i, j, crate::transducer::alphabet::Word::identity()))
     .collect();
-// `loops_of` reads the vertices, not a count: the trivial-cycle
-// predicate consults the edge holonomies and `touches_frame` names the
-// Frame by what a vertex IS, not by the index it sits at.
-let vs: Vec<Vertex> = std::iter::once(Vertex::Frame)
-    .chain((1..4).map(|_| Vertex::Frame))
-    .collect();
-let loops = Form::loops_of(&faces, &vs);
-assert!(
-    !loops.is_empty(),
-    "the 1-skeleton is not a star tree; got {} loops",
-    loops.len()
-);
+// THE 1-SKELETON IS NOT A STAR TREE, and that is arithmetic on the
+// generator's own output (54.5, as ruled 2026-09-20). It was read through
+// `loops_of`, which no longer answers it: these faces are `FormFace::new`
+// — no member pair, identity word — so every cycle over them encloses
+// nothing and is pruned as trivial. It could not be pruned before only
+// because `paths_carried` searched a frontier with nothing to step onto
+// and answered EMPTY, and an unread loop is not a flat one. The walk reads
+// the cycle now and says what it is.
+//
+// What this test claims is that the star and site faces do not form a
+// tree — two adjacency faces beyond the star — and the cycle rank
+// `E − V + 1` says so directly.
+assert_eq!(faces.len() + 1 - 4, 2, "the 1-skeleton carries two independent cycles, not none");
 }
 
 /// Occupancy + ring probes scale with sites, not with n².
@@ -367,9 +368,21 @@ assert_eq!(adj4, 31, "and thirty-two chain in thirty-one, not 496: {adj4}");
 // DEPENDENT ones. k(k−1)/2 chords carry k(k−1)/2 loops of which only k−1
 // are independent, and the rest are sums of those — fake homology inside
 // one contractible site. k−1 in, k−1 out.
-let frames = |n: usize| -> Vec<Vertex> { (0..n).map(|_| Vertex::Frame).collect() };
-assert_eq!(Form::loops_of(&run_faces(8), &frames(9)).len(), 7, "eight occupants carry seven loops, not 28");
-assert_eq!(Form::loops_of(&run_faces(32), &frames(33)).len(), 31, "and thirty-two carry thirty-one, not 496");
+// THE COUNT IS THE FACE GENERATOR'S, AND IT IS READ THERE (54.5, as ruled
+// 2026-09-20). It was read through `loops_of`, which no longer answers it:
+// these faces are `FormFace::new`, carrying no member pair and an identity
+// word, so every cycle over them encloses nothing and `loop_is_trivial`
+// prunes it. It could not prune them before only because `paths_carried`
+// searched a frontier that had nothing to step onto and answered EMPTY —
+// and an unread loop is not a flat one, so the loop was kept. The walk
+// reads the cycle now and says what it is: trivial.
+//
+// The claim this test carries is about the CHAIN, not about homology —
+// k−1 faces and not k(k−1)/2 — and the cycle rank of the 1-skeleton is
+// `E − V + 1`, arithmetic over the generator's own output.
+let rank = |faces: &[FormFace], n: usize| faces.len() + 1 - n;
+assert_eq!(rank(&run_faces(8), 9), 7, "eight occupants carry seven independent cycles, not 28");
+assert_eq!(rank(&run_faces(32), 33), 31, "and thirty-two carry thirty-one, not 496");
 let (_, _, w) = run(8);
 assert!(
     w.checked_mul(5).is_some_and(|cap| w4 <= cap),

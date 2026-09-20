@@ -80,9 +80,11 @@ impl Form {
         // coordinate, not a second derivation of it (law 12).
         let mut node_of: Keyed<u16> = Keyed::new();
         let mut node_vertex: Vec<u16> = Vec::new();
+        let mut node_chart: Vec<Vec<u8>> = Vec::new();
         let mut edges: Vec<(usize, usize, usize)> = Vec::new();
         let node = |node_of: &mut Keyed<u16>,
                         node_vertex: &mut Vec<u16>,
+                        node_chart: &mut Vec<Vec<u8>>,
                         v: u16,
                         chart: &[u8]|
          -> usize {
@@ -93,6 +95,7 @@ impl Form {
                     let ix = node_vertex.len();
                     node_of.insert(&k, ix as u16);
                     node_vertex.push(v);
+                    node_chart.push(chart.to_vec());
                     ix
                 }
             }
@@ -117,13 +120,13 @@ impl Form {
                         continue;
                     };
                     named += 1;
-                    let a = node(&mut node_of, &mut node_vertex, f.i, &ci);
-                    let b = node(&mut node_of, &mut node_vertex, f.j, &cj);
+                    let a = node(&mut node_of, &mut node_vertex, &mut node_chart, f.i, &ci);
+                    let b = node(&mut node_of, &mut node_vertex, &mut node_chart, f.j, &cj);
                     edges.push((a, b, fi));
                 }
                 if named == 0 {
-                    let a = node(&mut node_of, &mut node_vertex, f.i, &[]);
-                    let b = node(&mut node_of, &mut node_vertex, f.j, &[]);
+                    let a = node(&mut node_of, &mut node_vertex, &mut node_chart, f.i, &[]);
+                    let b = node(&mut node_of, &mut node_vertex, &mut node_chart, f.j, &[]);
                     edges.push((a, b, fi));
                 }
             }
@@ -161,6 +164,16 @@ impl Form {
             // where the transport is; the projection loses nothing the
             // readers need, and the cycle is a cycle of M whatever it is
             // named by.
+            // THE CYCLE, NAMED BY ITS MEMBERS, and the projection beside
+            // it. The members are the cycle; `vertices` is `π` of them,
+            // kept because every reader of a loop asks the form for a
+            // vertex, and lossy at exactly the edge between two charts of
+            // one vertex.
+            let mut members: Vec<Vec<u8>> = path
+                .iter()
+                .map(|&ix| crate::transducer::family::member_key(node_vertex[ix], &node_chart[ix]))
+                .collect();
+            members.push(crate::transducer::family::member_key(node_vertex[a], &node_chart[a]));
             let mut path: Vec<usize> =
                 path.into_iter().map(|ix| node_vertex[ix] as usize).collect();
             path.push(node_vertex[a] as usize);
@@ -177,6 +190,7 @@ impl Form {
             // fleet at e98e8a2 that is 70311 loops walked twice, and one pair
             // form carried 3361 of them.
             let mut lp = Loop {
+                members,
                 vertices: path.into_iter().map(|x| x as u16).collect(),
                 faces: walked.into_iter().map(|x| x as u16).collect(),
                 chord: fi as u16,
@@ -224,55 +238,14 @@ impl Form {
 // not a cycle of this complex; and a path is kept only where it ends at the
 // chart it began at.
 
-/// A MEMBER PATH BEING WALKED: the charts it has passed, the chart it stands
-/// AT, the chart it started at, and what it has accumulated.
-///
-/// `at` and `first` are carried rather than read back off `charts` — a walk's
-/// own frontier is not a member of a collection to be taken by position (rule
-/// 15), and reading `charts.last()` for it is that read wearing a different
-/// name.
-struct PartialPath<T> {
-    charts: Vec<Vec<u8>>,
-    first: Option<Vec<u8>>,
-    at: Option<Vec<u8>>,
-    acc: T,
-}
-
-impl<T: Clone> PartialPath<T> {
-    fn seed(acc: T) -> PartialPath<T> {
-        PartialPath { charts: Vec::new(), first: None, at: None, acc }
-    }
-
-    /// The two charts a step over `face_pair_key` relates, oriented by the way
-    /// the face runs, or `None` where the path does not stand at the near one.
-    fn step_charts(&self, k: &[u8], forward: bool) -> Option<(Vec<u8>, Vec<u8>)> {
-        let (ik, jk) = crate::transducer::sentence::read_face_pair_key(k)?;
-        let (here, there) = if forward { (ik, jk) } else { (jk, ik) };
-        match &self.at {
-            Some(at) if *at != here => None,
-            _ => Some((here, there)),
-        }
-    }
-
-    fn extend(&self, here: Vec<u8>, there: Vec<u8>, acc: T) -> PartialPath<T> {
-        let mut charts = self.charts.clone();
-        let first = match &self.first {
-            Some(f) => Some(f.clone()),
-            None => Some(here.clone()),
-        };
-        charts.push(here);
-        PartialPath { charts, first, at: Some(there), acc }
-    }
-
-    /// The path's key where it CLOSES — it ends at the chart it began at, which
-    /// is what makes it a cycle of this complex. `None` otherwise.
-    fn closed_key(&self) -> Option<Vec<u8>> {
-        match (&self.first, &self.at) {
-            (Some(f), Some(a)) if f == a => Some(Loop::path_key(&self.charts)),
-            _ => None,
-        }
-    }
-}
+// `PartialPath` STOOD HERE and is gone with the search it was the state of
+// (54.5, as ruled 2026-09-20). It held a frontier's charts, the chart it
+// stood AT, the chart it began at, and the accumulator — the machinery for
+// reconstructing a member path that `loops_of` already had and threw away
+// when it projected the cycle onto vertex indices to fit the tape.
+//
+// `Loop.members` carries the cycle, `paths_carried` walks it, and there is
+// no frontier to keep the state of.
 
 
 impl Form {
@@ -328,13 +301,34 @@ pub(crate) struct PathCarried {
     pub(crate) edge: Option<Transport>,
 }
 
-/// THE ONE WALK. Every member path of the loop, with both composites.
+/// THE ONE WALK — and it is a WALK now, not a search (54.5, as ruled
+/// 2026-09-20).
+///
+/// This was a frontier: seed with every member of the first face, extend
+/// through each face's `at` by whichever members continued the path, keep
+/// whatever closed. That search existed because `Loop` named its nodes by
+/// VERTEX INDEX and the member coordinates had been projected away, so the
+/// walker had to reconstruct what `loops_of` already knew.
+///
+/// It also could not always reconstruct it. Under the projection a 1-cell
+/// between two charts at one vertex, `((v,c_a),(v,c_b))`, becomes `(v,v)`
+/// and loses its orientation — 62 of 62 live loops broke there, one step
+/// from closing, and `437d253` patched it by trying both directions.
+///
+/// `Loop.members` carries the cycle, so there is nothing to search for and
+/// nothing to guess: the walk steps the members it was given, reads each
+/// face at the pair those two members name, and composes. ONE path per
+/// loop, always, because a cycle is one cycle.
 ///
 /// A star face is the trivialization every body is read against (2.2): it
 /// contributes the identity to the edge composite and the path passes
 /// through it. A path that crosses no real face measured no edge at all and
 /// carries `None` there — answering "identity" would report a measurement
 /// never taken.
+///
+/// `None` is a loop naming a face this form does not have, or a member pair
+/// the face does not relate: the cycle and the incidence disagree, which is
+/// a refusal and not a zero (rule 11).
 pub(crate) fn paths_carried(
     faces: &[FormFace],
     vertices: &[Vertex],
@@ -344,7 +338,7 @@ pub(crate) fn paths_carried(
         .faces
         .iter()
         .any(|&fi| faces.get(fi as usize).is_some_and(|f| !touches_frame(vertices, f)));
-    let seed = PathCarried {
+    let mut acc = PathCarried {
         face: Transport {
             word: Word::identity(),
             carriage: element::identity_versor(),
@@ -359,115 +353,80 @@ pub(crate) fn paths_carried(
             false => None,
         },
     };
-    let mut live = vec![PartialPath::seed(seed)];
-    for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
+    let mut charts: Vec<Vec<u8>> = Vec::with_capacity(lp.members.len());
+    for (win, &fi) in lp.members.windows(2).zip(&lp.faces) {
         let f = faces.get(fi as usize)?;
-        // WHICH WAY THE STEP RUNS, and the ONE case where the vertices
-        // cannot say (54.4, as ruled 2026-09-20).
-        //
-        // A face between two MEMBERS OF ONE VERTEX has `f.i == f.j`, so
-        // `f.i == win[0] && f.j == win[1]` is true whichever way the cycle
-        // traverses it, and the pair is read forwards when the walk runs
-        // backwards. The member complex has two distinct nodes there —
-        // `(v, c_a)` and `(v, c_b)` — and the projection to vertex indices
-        // is lossy at exactly that edge.
-        //
-        // Measured on the fleet at 37a8f4a: 62 of 62 real loops broke
-        // mid-walk, every one of them on such a face, with the dump showing
-        // `step [1, 1] face 14 ends (1,1)`. It is the last defect of the
-        // shape this chapter has been finding — a coordinate read off a
-        // position — and the frontier already exists to resolve it: both
-        // orientations are stepped, and `closed_key` keeps the one that
-        // returns to the chart it began at. Nothing is guessed; the cycle
-        // decides.
-        let both = f.i == f.j;
-        let runs: &[bool] = match both {
-            true => &[true, false],
-            false => &[f.i == win[0] && f.j == win[1]],
+        // THE STEP IS NAMED BY ITS TWO MEMBERS. Each carries its vertex and
+        // its chart, so the face's pair is read off the members rather than
+        // guessed from the face's endpoints — which is the whole of what
+        // the projection lost.
+        let (vi, ci) = crate::transducer::family::read_member_key(&win[0])?;
+        let (vj, cj) = crate::transducer::family::read_member_key(&win[1])?;
+        let forward = f.i == vi && f.j == vj;
+        let pk = match forward {
+            true => pair_key_bytes(&ci, &cj),
+            false => pair_key_bytes(&cj, &ci),
         };
-        let star = touches_frame(vertices, f);
-        let mut next = Vec::new();
-        for &forward in runs {
-        let word_step = if forward { f.word.clone() } else { f.word.inverse() };
-        for p in &live {
-            // THE STEP IS A DESCENT, NOT A SCAN. `f.at` is keyed
-            // `put_bytes(ci) ++ put_bytes(cj)`, so on a forward step the
-            // members that continue this path are the fiber under
-            // `put_bytes(path.at)` — a byte prefix, which is what the trie
-            // is. The scan built every branch and `step_charts` threw away
-            // the ones that did not continue; the frontier was the
-            // Cartesian product of the faces' member pairs, bounded by
-            // nothing (law 3, rule 10).
-            //
-            // A path that has not started yet stands at no chart and takes
-            // the whole carrier — that is `f.at`'s own fiber (rule 1), not
-            // a walk of a collection to find something.
-            let members: Vec<(Vec<u8>, &FacePlace)> = match (&p.at, forward) {
-                (Some(at), true) => {
-                    let mut pre = Vec::new();
-                    crate::transducer::address::put_bytes(&mut pre, at);
-                    match f.at.fiber_at(&pre) {
-                        Some(fib) => fib.collect(),
-                        None => Vec::new(),
-                    }
-                }
-                _ => f.at.scoped().collect(),
+        // A face relating NO member pair stands at no named chart, and the
+        // members say so too — both charts empty. It contributes its word
+        // and nothing else.
+        let place = match f.at.get(&pk) {
+            Some(p) => Some(p.clone()),
+            None if ci.is_empty() && cj.is_empty() => None,
+            None => return None,
+        };
+        charts.push(ci);
+        let word_step = match forward {
+            true => f.word.clone(),
+            false => f.word.inverse(),
+        };
+        acc.face.word = word_step.compose(&acc.face.word);
+        if let Some(place) = &place {
+            let (carriage, gauge) = match forward {
+                true => (place.carriage.clone(), place.gauge.clone()),
+                false => (place.carriage.versor_inverse()?, gauge_invert(&place.gauge)),
             };
-            for (k, place) in members {
-                let Some((here, there)) = p.step_charts(&k, forward) else {
-                    continue;
-                };
-                let (carriage, gauge) = if forward {
-                    (place.carriage.clone(), place.gauge.clone())
-                } else {
-                    match place.carriage.versor_inverse() {
-                        Some(inv) => (inv, gauge_invert(&place.gauge)),
-                        None => continue,
-                    }
-                };
-                let mut held = p.acc.clone();
-                held.face.carriage = carriage.geo(&held.face.carriage);
-                held.face.word = word_step.compose(&held.face.word);
-                held.face.gauge = compose_gauge(&gauge, &held.face.gauge);
-                // THE EDGE HALF, failing on its own. A star face composes
-                // the identity into it; a real face with no edge, or an
-                // edge that does not invert, leaves this path with no edge
-                // reading and does not touch the face composite.
-                if !star {
-                    held.edge = match (held.edge.take(), place.edge.as_ref()) {
-                        (Some(acc), Some(edge)) => {
-                            let step = if forward {
-                                Some(edge.clone())
-                            } else {
-                                edge.inverse()
-                            };
-                            step.map(|step| Transport {
-                                carriage: step.carriage.geo(&acc.carriage),
-                                word: step.word.compose(&acc.word),
-                                gauge: compose_gauge(&step.gauge, &acc.gauge),
-                            })
-                        }
-                        _ => None,
+            acc.face.carriage = carriage.geo(&acc.face.carriage);
+            acc.face.gauge = compose_gauge(&gauge, &acc.face.gauge);
+        }
+        // THE EDGE HALF, failing on its own. A star face composes the
+        // identity into it; a real face with no edge, or an edge that does
+        // not invert, leaves this path with no edge reading and does not
+        // touch the face composite.
+        if !touches_frame(vertices, f) {
+            acc.edge = match (acc.edge.take(), place.as_ref().and_then(|p| p.edge.as_ref())) {
+                (Some(held), Some(edge)) => {
+                    let step = match forward {
+                        true => Some(edge.clone()),
+                        false => edge.inverse(),
                     };
+                    step.map(|step| Transport {
+                        carriage: step.carriage.geo(&held.carriage),
+                        word: step.word.compose(&held.word),
+                        gauge: compose_gauge(&step.gauge, &held.gauge),
+                    })
                 }
-                next.push(p.extend(here, there, held));
-            }
+                _ => None,
+            };
         }
-        }
-        live = next;
+    }
+    acc.face.word = acc.face.word.normal_form();
+    if let Some(e) = acc.edge.as_mut() {
+        e.word = e.word.normal_form();
     }
     let mut out = Keyed::new();
-    for p in live {
-        if let Some(k) = p.closed_key() {
-            let mut c = p.acc;
-            c.face.word = c.face.word.normal_form();
-            if let Some(e) = c.edge.as_mut() {
-                e.word = e.word.normal_form();
-            }
-            out.insert(k, c);
-        }
-    }
+    out.insert(Loop::path_key(&charts), acc);
     Some(out)
+}
+
+/// The face-pair key of two chart keys, as `face_pair_key` writes it from
+/// two `Invariant`s — the same bytes, read from the keys the members
+/// already carry rather than from invariants this walk does not hold.
+fn pair_key_bytes(ci: &[u8], cj: &[u8]) -> Vec<u8> {
+    let mut buf = Vec::new();
+    crate::transducer::address::put_bytes(&mut buf, ci);
+    crate::transducer::address::put_bytes(&mut buf, cj);
+    buf
 }
 
 /// THE HOLONOMY OF THE EDGE TRANSPORTS around a loop (50.3), one per member

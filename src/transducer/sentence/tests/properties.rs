@@ -298,7 +298,7 @@ fn the_tapes_version_is_frozen_and_a_foreign_one_refuses() {
     assert!(from_element_form(&e).is_some(), "and this build reads it");
 
     // Every other version is refused — the baseline is cut at this one.
-    for other in [0u8, 10, 11, 12, 14, 255] {
+    for other in [0u8, 10, 11, 12, 13, 15, 255] {
         let mut wrong = e.clone();
         let mut bytes = tape.to_vec();
         bytes[1] = other;

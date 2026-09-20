@@ -160,6 +160,14 @@ fn a_loop_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
     let mut f = closed_turn_form();
     assert!(f.loops.is_empty() && f.rank().is_some(), "a tree has a rank, and it is zero");
     f.loops.push(crate::transducer::sentence::Loop {
+        // The cycle names its members; `vertices` is π of them. This one is
+        // hand-built to carry a holonomy that is not a versor, so its nodes
+        // are the two vertices at no named chart.
+        members: vec![
+            crate::transducer::family::member_key(0, &[]),
+            crate::transducer::family::member_key(1, &[]),
+            crate::transducer::family::member_key(0, &[]),
+        ],
         vertices: vec![0, 1, 0],
         faces: vec![0, 0],
         chord: 0,
@@ -252,70 +260,38 @@ fn rank_lost_refused() {
     );
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("filed tape");
     assert_eq!(replay_form(&e, &|_| None), None, "filed torsion replays");
+    // S9.2'S FORGERY CANNOT BE BUILT ANY MORE (54.5, as ruled 2026-09-20).
+    //
+    // This went on to strip the tape's loops, then to add a loop of a class
+    // the walk does not derive, then to duplicate one — three tapes whose
+    // STORED forest disagreed with the one the faces prove, each checked
+    // against `REFUSE_RANK_LOST`. The tape no longer carries a forest. The
+    // decoder runs `loops_of` on the faces it parsed, so `f.loops` IS the
+    // walk and `Rank::moved(taped, derived)` compared a call with itself.
+    //
+    // The three attacks are not unguarded; they are unconstructible. A
+    // forger can forge FACES, and `face_rederives` reads those. There is
+    // nothing left to claim a rank with.
     let mut gone = crate::transducer::sentence::from_element_form(&e).expect("v2");
     gone.loops.clear();
-    let bad = as_element_form(&gone, [1, 0, 0, 0]).expect("loops stripped");
+    let bad = as_element_form(&gone, [1, 0, 0, 0]).expect("a tape from a form with no loops");
     assert_eq!(
-        replay_form(&bad, &|_| None),
-        Some(REFUSE_RANK_LOST),
-        "stored loops below the re-derived forest refuse"
+        crate::transducer::sentence::from_element_form(&bad)
+            .expect("it decodes")
+            .loops
+            .len(),
+        f.loops.len(),
+        "clearing the loops changes no byte of the tape: they were never on it"
     );
+    assert_eq!(replay_form(&bad, &|_| None), None, "so the same form replays");
 
-    // S9.2 — AND A TAPE CLAIMING MORE THAN THE WALK IS REFUSED TOO. The
-    // clause used to test `taped < derived` alone, so a form whose stored
-    // loops carry rank the re-walk does not produce passed: structure the
-    // court could not derive, admitted because it pointed the convenient
-    // way.
-    //
-    // THE CLAIM IS A CLASS, NOT A ROW. This duplicated a stored loop, which
-    // raised the tape's audit while A18 counted torsion per loop. Every
-    // coordinate now counts by CLASS — a rank is a count of independent
-    // generators — so a duplicated loop is the same obstruction listed twice
-    // and claims no rank at all. That is the correct reading and it leaves
-    // this clause nothing to refuse, so the fixture claims what a claim is:
-    // a loop of a class the walk does not derive.
-    //
-    // The added loop carries no faces, so `loop_holonomy_on` has no member
-    // path to read and answers the loop's own word — which is how a loop
-    // with no edge composite anywhere is read, not a default. Its word is a
-    // half turn against the chord's quarter, so it is a second torsion
-    // class and the tape's audit stands one above the forest's.
-    let mut extra = crate::transducer::sentence::from_element_form(&e).expect("v2");
-    let [held, ..] = extra.loops.as_slice() else { panic!("one filed loop") };
-    let mut claimed = held.clone();
-    claimed.faces.clear();
-    claimed.carriages = crate::network::nerve::Keyed::new();
-    claimed.holonomy = crate::transducer::alphabet::PlaneForm {
-        orientation: true,
-        rot: [0; crate::transducer::alphabet::CAYLEY_ALPHABET_LEN],
-    }
-    .to_word();
-    assert_ne!(
-        claimed.holonomy.rotor().class_key(),
-        held.holonomy.rotor().class_key(),
-        "the claimed loop is a SECOND class, or it claims nothing"
-    );
-    extra.loops.push(claimed);
-    let over = as_element_form(&extra, [1, 0, 0, 0]).expect("a class added");
-    assert_eq!(
-        replay_form(&over, &|_| None),
-        Some(REFUSE_RANK_LOST),
-        "a rank the walk does not re-derive refuses in either direction"
-    );
-
-    // AND A DUPLICATE CLAIMS NOTHING, which is the other half of the same
-    // ruling: the court refuses invented structure, not a second mention of
-    // structure it already derived.
-    let mut twice = crate::transducer::sentence::from_element_form(&e).expect("v2");
-    let [held, ..] = twice.loops.as_slice() else { panic!("one filed loop") };
-    let dup = held.clone();
-    twice.loops.push(dup);
-    let doubled = as_element_form(&twice, [1, 0, 0, 0]).expect("loops duplicated");
-    assert_eq!(
-        replay_form(&doubled, &|_| None),
-        None,
-        "one obstruction listed twice is one obstruction"
-    );
+    // WHAT `REFUSE_RANK_LOST` STILL MEANS, and it is the reading that was
+    // always underneath: the rank is UNMEASURABLE. A loop whose holonomy is
+    // not a versor has no class (15.3), `rank()` answers `None`, and the
+    // court refuses rather than counting it under a key of the rotor's
+    // bytes — which is
+    // `a_loop_whose_holonomy_is_not_a_versor_is_refused_not_keyed`.
+    assert!(f.rank().is_some(), "this form's rank is measurable");
 }
 
 /// Chapter 23.1 steps 3 and 6: a Word whose affine does not spell

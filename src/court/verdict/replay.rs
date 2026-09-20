@@ -261,10 +261,13 @@ pub fn replay_form_at(
             return Some(refusal);
         }
     }
-    // Loops are derived, never trusted from the tape: re-walk the forest.
-    let Some(taped_rank) = f.rank() else {
-        return Some(tape(REFUSE_RANK_LOST));
-    };
+    // LOOPS ARE DERIVED, AND SINCE 54.5 THE TAPE DOES NOT CARRY THEM, so
+    // there is no taped forest to compare a walked one against. The decoder
+    // runs `loops_of` on the faces it just parsed, and this re-walk is the
+    // same call on the same faces: `f.loops` and `walked.loops` are one
+    // set. What remains is what was always the real reading — whether the
+    // rank is MEASURABLE at all, which a loop whose holonomy is not a
+    // versor makes it not (15.3).
     let mut walked = f.clone();
     walked.loops = Form::loops_of(&f.faces, &f.vertices);
     let by_chord = chord_loops(&walked);
@@ -304,20 +307,17 @@ pub fn replay_form_at(
     let Some(derived) = walked.rank() else {
         return Some(tape(REFUSE_RANK_LOST));
     };
-    // S9.2 — THE RANK RE-DERIVES OR THE WORD IS REFUSED. The court walks
-    // the forest itself and compares the audit it derived against the one
-    // the tape claims, coordinate by coordinate, and demands EQUALITY.
+    // S9.2'S COMPARISON IS GONE WITH THE CARRIER IT COMPARED (54.5). It
+    // read `Rank::moved(taped_rank, derived) != Equal` and refused a tape
+    // whose stored loops carried a different rank from the walked forest —
+    // in either direction, which was the right shape for the question.
     //
-    // A clause that refused only a tape claiming LESS than the walk on
-    // some coordinate would pass a tape claiming MORE: structure the court
-    // cannot derive, admitted because it points the convenient way. Rule
-    // 11 is exact or refused, and a rank that does not re-derive is not
-    // exact in either direction.
-    if crate::transducer::sentence::Rank::moved(taped_rank, derived)
-        != crate::transducer::sentence::RankMove::Equal
-    {
-        return Some(tape(REFUSE_RANK_LOST));
-    }
+    // The question no longer exists. The tape carries no loops, so the
+    // decoder's `f.loops` IS `loops_of(&f.faces, &f.vertices)` and the two
+    // sides of that comparison were the same call on the same faces. A
+    // forged tape can forge FACES, and `face_rederives` above is what reads
+    // those; it cannot forge a forest, because it does not carry one.
+    let _ = derived;
     if let Some(fam) = family {
         // `Form.glued` is keyed by the cited address and `reindex` builds it,
         // so "does this form cite anything" is a read of that index and not a
