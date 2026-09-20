@@ -159,6 +159,15 @@ fn a_loop_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
     use crate::transducer::alphabet::{Rotor, Word};
     let mut f = closed_turn_form();
     assert!(f.loops.is_empty() && f.rank().is_some(), "a tree has a rank, and it is zero");
+    // THE NON-VERSOR HOLONOMY GOES ON THE FACE, which is where a holonomy
+    // comes from (54.5, as ruled 2026-09-20). It was written onto
+    // `Loop.holonomy` alone — a composite cached on the projected vertex
+    // path — and `holonomy_words_on` reads the composite THIS PATH walked
+    // now, member by member, so a value parked on that field is not what
+    // the class is read from. The face carries it and the walk composes it.
+    if let Some(face) = f.faces.first_mut() {
+        face.word = Word::formed(Rotor::zero());
+    }
     f.loops.push(crate::transducer::sentence::Loop {
         // The cycle names its members; `vertices` is π of them. This one is
         // hand-built to carry a holonomy that is not a versor, so its nodes

@@ -121,13 +121,23 @@ pub(crate) fn holonomy_words_on(
 ) -> crate::network::nerve::Keyed<Word> {
     let edges = edge_holonomies_on(faces, vertices, lp);
     let mut out = crate::network::nerve::Keyed::new();
-    for (k, _) in loop_transport_on(faces, vertices, lp).scoped() {
-        // A path with no edge composite carries no measured transport, so the
-        // only holonomy it has is the word's — which is the reading of a loop
-        // whose faces are all coboundaries, not a default standing in for one.
+    for (k, t) in loop_transport_on(faces, vertices, lp).scoped() {
+        // THE FALLBACK IS THE PATH'S OWN WORD, NOT THE LOOP'S (54.5, as
+        // ruled 2026-09-20). It read `None => lp.holonomy.clone()`, and
+        // `lp.holonomy` is `form_named_holonomy` over the loop's PROJECTED
+        // vertex path — a base-space object composed without the members
+        // the transport lives on. `t.word` is the composite this path
+        // actually walked, member by member.
+        //
+        // The fallback itself stays, and stripping it was wrong: a section
+        // face (21 step 2, S12.2) carries a word that is DELIBERATELY not
+        // the coboundary `w_j ∘ w_i⁻¹`, so a loop over one is curved on the
+        // word while its edges compose to the identity. Both carriers are
+        // real and the path decides which it has — removing either deletes
+        // an obstruction the engine measured.
         let w = match edges.as_ref().and_then(|e| e.get(&k)) {
             Some(e) => e.word.clone(),
-            None => lp.holonomy.clone(),
+            None => t.word.clone(),
         };
         out.insert(&k, w);
     }

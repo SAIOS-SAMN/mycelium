@@ -357,24 +357,26 @@ pub(crate) fn paths_carried(
     vertices: &[Vertex],
     lp: &Loop,
 ) -> Option<Keyed<PathCarried>> {
-    let crosses_a_real_face = lp
-        .faces
-        .iter()
-        .any(|&fi| faces.get(fi as usize).is_some_and(|f| !touches_frame(vertices, f)));
+    // THE EDGE COMPOSITE OPENS AT THE IDENTITY AND EVERY STEP CONTRIBUTES.
+    // It used to open at `None` unless the loop crossed a face between two
+    // bodies, because the star faces contributed nothing and a star-only
+    // loop would then have reported "identity" for a measurement never
+    // taken. Under the hybrid rule below every face carries a transport —
+    // the stabilizer between bodies, the member's carriage to the Frame —
+    // so a star-only loop measures its own equivocation instead of
+    // vanishing, and `None` now means a step whose transport is genuinely
+    // unread (rule 11).
     let mut acc = PathCarried {
         face: Transport {
             word: Word::identity(),
             carriage: element::identity_versor(),
             gauge: Vec::new(),
         },
-        edge: match crosses_a_real_face {
-            true => Some(Transport {
-                word: Word::identity(),
-                carriage: element::identity_versor(),
-                gauge: Vec::new(),
-            }),
-            false => None,
-        },
+        edge: Some(Transport {
+            word: Word::identity(),
+            carriage: element::identity_versor(),
+            gauge: Vec::new(),
+        }),
     };
     let mut charts: Vec<Vec<u8>> = Vec::with_capacity(lp.members.len());
     for (win, &fi) in lp.members.windows(2).zip(&lp.faces) {
@@ -412,26 +414,59 @@ pub(crate) fn paths_carried(
             acc.face.carriage = carriage.geo(&acc.face.carriage);
             acc.face.gauge = compose_gauge(&gauge, &acc.face.gauge);
         }
-        // THE EDGE HALF, failing on its own. A star face composes the
-        // identity into it; a real face with no edge, or an edge that does
-        // not invert, leaves this path with no edge reading and does not
-        // touch the face composite.
-        if !touches_frame(vertices, f) {
-            acc.edge = match (acc.edge.take(), place.as_ref().and_then(|p| p.edge.as_ref())) {
-                (Some(held), Some(edge)) => {
-                    let step = match forward {
-                        true => Some(edge.clone()),
-                        false => edge.inverse(),
-                    };
-                    step.map(|step| Transport {
-                        carriage: step.carriage.geo(&held.carriage),
-                        word: step.word.compose(&held.word),
-                        gauge: compose_gauge(&step.gauge, &held.gauge),
-                    })
-                }
-                _ => None,
-            };
-        }
+        // THE EDGE HALF IS HYBRID, AND EVERY STEP CONTRIBUTES (54.5, as
+        // ruled 2026-09-20). A cycle of the member complex crosses two
+        // kinds of face and each has its own carrier:
+        //
+        //   A STAR FACE anchors a member to the Frame. The Frame carries no
+        //   body, so there is no stabilizer to measure — and the transport
+        //   is not therefore ABSENT: it is the member's own CARRIAGE, where
+        //   that body stands in its chart.
+        //
+        //   AN INTER-BODY FACE relates two bodies, and its transport is
+        //   50.3's measured stabilizer element, `place.edge`.
+        //
+        // This skipped the star faces entirely, which is not the same as
+        // gauging them: §3.6 defines a re-gauging as `g_ij → γ_j g_ij γ_i⁻¹`,
+        // a CONJUGATION, and dropping a factor out of a product is a
+        // different operation with a different answer. Composing the star
+        // carriages IS that conjugation — they are the γ — so the composite
+        // is the holonomy in the tree gauge rather than the chord's raw
+        // transport mistaken for it.
+        //
+        // AND IT CATCHES WHAT SKIPPING COULD NOT. Two star faces to one
+        // member compose `γ₁ · γ₂⁻¹`, which is an equivocation — one body,
+        // two transports from the basepoint — and read as identity-and-
+        // identity it was exactly nothing.
+        let step = match (touches_frame(vertices, f), place.as_ref()) {
+            // THE STAR STEP IS THE FACE'S WHOLE TRANSPORT, word included.
+            // §3.6's `γ` is a WORD — a re-gauging is `γ_j · g_ij · γ_i⁻¹`
+            // — so a star step that contributed the identity word would
+            // erase the word-holonomy of every loop whose bodies measured
+            // no stabilizer edge, replacing a real obstruction with
+            // nothing. What the face measured is what it contributes.
+            (true, Some(p)) => Some(Transport {
+                word: f.word.clone(),
+                carriage: p.carriage.clone(),
+                gauge: p.gauge.clone(),
+            }),
+            (false, Some(p)) => p.edge.clone(),
+            (_, None) => None,
+        };
+        acc.edge = match (acc.edge.take(), step) {
+            (Some(held), Some(step)) => {
+                let step = match forward {
+                    true => Some(step),
+                    false => step.inverse(),
+                };
+                step.map(|step| Transport {
+                    carriage: step.carriage.geo(&held.carriage),
+                    word: step.word.compose(&held.word),
+                    gauge: compose_gauge(&step.gauge, &held.gauge),
+                })
+            }
+            _ => None,
+        };
     }
     acc.face.word = acc.face.word.normal_form();
     if let Some(e) = acc.edge.as_mut() {
