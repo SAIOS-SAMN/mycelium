@@ -698,3 +698,64 @@ fn a_pivot_derives_the_address_meet_it_reads() {
     }
     assert_eq!(words, 2, "the chord form carries its two word vertices");
 }
+
+/// A21 §4 AT THE ONE KIND THE ENGINE IS MADE OF — `from_key` for
+/// `TAG_FORM`, written at last.
+///
+/// §1.5 writes the key "so that the word form is recovered from its key",
+/// and nothing recovered it: `Rotor::from_key`, `Mv::from_key` and
+/// `ClassVector::from_key` existed, `TAG_FORM` had no decoder, and that
+/// gap was read as a structural division between naming and rebuilding.
+/// It was an unwritten inverse, and the tape carried the key's content a
+/// second time because of it — measured at 68% of every tape.
+///
+/// THE READING IS RE-DERIVATION, NEVER BYTES (1.5). A form rebuilt from
+/// its key is the same form iff it keys to the same address. That is the
+/// property; byte equality of two serialisations is not, and asserting it
+/// would pin a layout as an invariant.
+///
+/// Two shapes, both closed and remainder-free: a word form on one chart,
+/// and a form that glues — so a `Glued` vertex's cited address, which IS
+/// in the key, comes back through the inverse.
+#[test]
+fn a_form_is_recovered_from_its_key() {
+    use crate::transducer::sentence::{form_from_key, form_vertex_key, FormRest};
+    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let w = Word::from_letters(&[(q, false)]);
+    let inner = closed_word_form(w.clone(), None);
+    let inner_addr = as_element_form(&inner, [1, 0, 0, 0]).expect("inner").address();
+    let mut host = Form::default();
+    host.glue(&inner, inner_addr.clone(), Word::identity(), [0, 0, 0, 1])
+        .expect("glue");
+
+    for f in [&inner, &host] {
+        let key = form_vertex_key(f);
+        // What the key does not determine, read off the form it came from:
+        // the Word vertices' addresses, the demands' bodies, the remainder.
+        let rest = FormRest::of(f);
+        let back = form_from_key(key.as_bytes(), &rest).expect("the key recovers its form");
+        assert_eq!(
+            form_vertex_key(&back),
+            key,
+            "the recovered form keys to the address it was recovered from"
+        );
+        assert_eq!(back.vertices.len(), f.vertices.len(), "every vertex");
+        assert_eq!(back.faces.len(), f.faces.len(), "every face");
+    }
+
+    // The cited address is IN the key and comes back through the inverse —
+    // identity is not shortened (1.7), so the inverse does not shorten it.
+    let key = form_vertex_key(&host);
+    let back = form_from_key(key.as_bytes(), &FormRest::of(&host)).expect("recovers");
+    assert!(
+        back.vertices.iter().any(|v| matches!(
+            v,
+            crate::transducer::sentence::Vertex::Glued { address, .. } if *address == inner_addr
+        )),
+        "the glued citation is recovered from the key alone"
+    );
+
+    // A key that is not one is refused rather than part-read (rule 11).
+    assert!(form_from_key(b"", &FormRest::default()).is_none());
+    assert!(form_from_key(&[0xFF, 0, 0, 0, 0], &FormRest::default()).is_none());
+}
