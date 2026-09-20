@@ -20,9 +20,9 @@ fn sentence_with(d: Derivation, tag: u8) -> Element {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        Address::from_bytes([TAG_FORM, tag]),
         d,
-        crate::transducer::stalk::Invariant::default(),
+        // Its own chart: an address is derived from its coordinates (54.2).
+        crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         Vec::new(),
         None,
@@ -226,7 +226,6 @@ fn a_ruled_word_is_filed_at_the_chart_its_vertex_acts_on() {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        Address::from_bytes([TAG_FORM, 4]),
         Derivation::spelled(w.clone()),
         chart.clone(),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),

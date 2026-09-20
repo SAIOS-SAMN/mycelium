@@ -22,7 +22,6 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     let mut f = Form::default();
     for k in 1..=3u8 {
         f.vertices.push(Vertex::word_on(
-            form_addr(k),
             alphabet::Derivation::spelled(Word::identity()),
             stalk::Invariant::default(),
             Box::new(element::carriage(
@@ -155,7 +154,6 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
     let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
     let mut host = Form::default();
     host.vertices.push(Vertex::word_on(
-        form_addr(1),
         alphabet::Derivation::spelled(w.clone()),
         stalk::Invariant::default(),
         Box::new(element::carriage(&q1(), &(q0(), q0()))),
@@ -163,7 +161,6 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
         None,
     ));
     host.vertices.push(Vertex::word_on(
-        form_addr(2),
         alphabet::Derivation::spelled(w.clone()),
         stalk::Invariant::default(),
         Box::new(element::carriage(&q1(), &(q0(), q1()))),
@@ -719,7 +716,7 @@ fn a_pivot_derives_the_address_meet_it_reads() {
 /// in the key, comes back through the inverse.
 #[test]
 fn a_form_is_recovered_from_its_key() {
-    use crate::transducer::sentence::{form_from_key, form_vertex_key, FormRest};
+    use crate::transducer::sentence::{form_vertex_key, from_address};
     let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
@@ -730,10 +727,7 @@ fn a_form_is_recovered_from_its_key() {
 
     for f in [&inner, &host] {
         let key = form_vertex_key(f);
-        // The last thing the key does not carry: the Word vertices'
-        // citations (54.2 moves them to the ledger as receipts).
-        let rest = FormRest::of(f);
-        let back = form_from_key(key.as_bytes(), &rest).expect("the key recovers its form");
+        let back = from_address(key.as_bytes()).expect("the key recovers its form");
         assert_eq!(
             form_vertex_key(&back),
             key,
@@ -746,7 +740,7 @@ fn a_form_is_recovered_from_its_key() {
     // The cited address is IN the key and comes back through the inverse —
     // identity is not shortened (1.7), so the inverse does not shorten it.
     let key = form_vertex_key(&host);
-    let back = form_from_key(key.as_bytes(), &FormRest::of(&host)).expect("recovers");
+    let back = from_address(key.as_bytes()).expect("recovers");
     assert!(
         back.vertices.iter().any(|v| matches!(
             v,
@@ -756,8 +750,8 @@ fn a_form_is_recovered_from_its_key() {
     );
 
     // A key that is not one is refused rather than part-read (rule 11).
-    assert!(form_from_key(b"", &FormRest::default()).is_none());
-    assert!(form_from_key(&[0xFF, 0, 0, 0, 0], &FormRest::default()).is_none());
+    assert!(from_address(b"").is_none());
+    assert!(from_address(&[0xFF, 0, 0, 0, 0]).is_none());
 }
 
 /// 54.2/54.3 — THE KEY CARRIES THE CLOSED SUB-COMPLEX WHOLE, so the
@@ -772,7 +766,7 @@ fn a_form_is_recovered_from_its_key() {
 /// back as the transport it is, where only its presence was keyed.
 #[test]
 fn the_key_carries_the_demand_the_remainder_and_the_edge() {
-    use crate::transducer::sentence::{form_from_key, form_vertex_key, FormRest, Vertex};
+    use crate::transducer::sentence::{form_vertex_key, from_address, Vertex};
     let mut f = Form::default();
     // A demand standing for two bodies, and a remainder the form does not
     // close.
@@ -786,7 +780,7 @@ fn the_key_carries_the_demand_the_remainder_and_the_edge() {
     f.remainder = crate::transducer::element::place_chain(&rem).expect("a chain places");
 
     let key = form_vertex_key(&f);
-    let back = form_from_key(key.as_bytes(), &FormRest::of(&f)).expect("recovers");
+    let back = from_address(key.as_bytes()).expect("recovers");
 
     let got: Vec<Vec<(i64, i64, u8, u8)>> = back
         .vertices

@@ -30,12 +30,11 @@ fn swap() -> Vec<(u8, u8)> {
 /// A one-word-vertex form carrying `w` as its action and `gauge` as its
 /// hue map: a generator as the language holds one (L5).
 fn generator_form(w: Word, gauge: Vec<(u8, u8)>, tag: u8) -> (Address, Form) {
-    let address = Address::from_bytes([TAG_FORM, tag]);
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        address,
         Derivation::spelled(w),
-        Invariant::default(),
+        // `tag` named the vertex and now charts it (54.2).
+        Invariant::counts(&[u64::from(tag)]),
         Box::new(element::identity_versor()),
         gauge,
         None,

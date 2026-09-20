@@ -318,7 +318,6 @@ pub(crate) fn word_vertex_on_chart(
         car.sigma.clone()
     };
     Some(Vertex::word_on(
-        element::from_residual(&chain)?.address(),
         derivation,
         chart.clone(),
         Box::new(carriage),

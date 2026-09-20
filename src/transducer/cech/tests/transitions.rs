@@ -33,7 +33,6 @@ fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() 
     let spoken = |w: &Word| -> Element {
         let mut f = Form::default();
         f.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::new(Vec::new()),
             alphabet::Derivation::spelled(w.clone()),
             stalk::Invariant::counts(&[3, 5]),
             Box::new(crate::transducer::element::carriage(&q(1), &(q(0), q(1)))),
@@ -78,7 +77,6 @@ fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() 
     let mut mixed = Form::default();
     for w in [&q01, &q23] {
         mixed.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::new(Vec::new()),
             alphabet::Derivation::spelled(w.clone()),
             stalk::Invariant::counts(&[3, 5]),
             Box::new(crate::transducer::element::carriage(&q(1), &(q(0), q(1)))),

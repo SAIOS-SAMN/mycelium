@@ -377,47 +377,7 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
             // vertex into one address per presentation.
             Vertex::Word { derivation, acts, contact, .. } => {
                 buf.push(1);
-                crate::transducer::address::put_bytes(&mut buf, &derivation.rotor().key());
-                // THE MEMBERS, IN CANONICAL ORDER, which is the trie's —
-                // their chart keys sorted, and a chart key is content.
-                //
-                // THE COUNT AND THE CHART ARE ALWAYS WRITTEN. A single
-                // member used to write neither, so that D7a left every
-                // address in the tree untouched; the cost was that a
-                // one-member vertex's CHART was not in its key and could
-                // not be read back out of it. §1.5 says the key is written
-                // "so that the word form is recovered from its key", and a
-                // key that omits a coordinate the form needs does not
-                // recover it. The compatibility that omission bought is
-                // spent here: every address changes and a layout change is
-                // a recut (§10).
-                buf.extend_from_slice(&(acts.len() as u32).to_le_bytes());
-                for (ck, a) in acts.scoped() {
-                    crate::transducer::address::put_bytes(&mut buf, &ck);
-                    // A4 OUTPUT, NOT RAW VERSOR BYTES — 17.2's open item,
-                    // named at `same_vertex`: "a carriage and its negation
-                    // still read as two addresses here". Closed. An address
-                    // is now the same bytes for one projective carriage
-                    // however an organ derived it, so a differing address
-                    // means a differing vertex and the fast path is the
-                    // whole test.
-                    a.carriage.put_canonical(&mut buf);
-                    match contact {
-                        None => buf.push(0),
-                        Some(c) => {
-                            buf.push(1);
-                            buf.extend_from_slice(&c.anchor.to_le_bytes());
-                            buf.push(c.ring);
-                        }
-                    }
-                    let mut g = a.gauge.clone();
-                    g.sort_unstable();
-                    buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
-                    for (x, y) in g {
-                        buf.push(x);
-                        buf.push(y);
-                    }
-                }
+                put_word_vertex(&mut buf, derivation, acts, *contact);
             }
             Vertex::Glued {
                 address,
@@ -783,6 +743,81 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
     Some(gamma)
 }
 
+/// THE BYTES A `Word` VERTEX CONTRIBUTES TO A KEY (54.2), written ONCE.
+/// Two writers of one fact is law 12's defect, and an address that drifted
+/// from the key containing it would be a vertex the form could not find.
+fn put_word_vertex(
+    buf: &mut Vec<u8>,
+    derivation: &crate::transducer::alphabet::Derivation,
+    acts: &Keyed<Acting>,
+    contact: Option<crate::transducer::alphabet::Contact>,
+) {
+    crate::transducer::address::put_bytes(buf, &derivation.rotor().key());
+
+    // THE MEMBERS, IN CANONICAL ORDER, which is the trie's —
+    // their chart keys sorted, and a chart key is content.
+    //
+    // THE COUNT AND THE CHART ARE ALWAYS WRITTEN. A single
+    // member used to write neither, so that D7a left every
+    // address in the tree untouched; the cost was that a
+    // one-member vertex's CHART was not in its key and could
+    // not be read back out of it. §1.5 says the key is written
+    // "so that the word form is recovered from its key", and a
+    // key that omits a coordinate the form needs does not
+    // recover it. The compatibility that omission bought is
+    // spent here: every address changes and a layout change is
+    // a recut (§10).
+    buf.extend_from_slice(&(acts.len() as u32).to_le_bytes());
+    for (ck, a) in acts.scoped() {
+        crate::transducer::address::put_bytes(buf, &ck);
+        // A4 OUTPUT, NOT RAW VERSOR BYTES — 17.2's open item,
+        // named at `same_vertex`: "a carriage and its negation
+        // still read as two addresses here". Closed. An address
+        // is now the same bytes for one projective carriage
+        // however an organ derived it, so a differing address
+        // means a differing vertex and the fast path is the
+        // whole test.
+        a.carriage.put_canonical(buf);
+        match contact {
+            None => buf.push(0),
+            Some(c) => {
+                buf.push(1);
+                buf.extend_from_slice(&c.anchor.to_le_bytes());
+                buf.push(c.ring);
+            }
+        }
+        let mut g = a.gauge.clone();
+        g.sort_unstable();
+        buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+        for (x, y) in g {
+            buf.push(x);
+            buf.push(y);
+        }
+    }
+}
+
+/// A `Word` VERTEX'S OWN ADDRESS, DERIVED FROM ITS COORDINATES (54.2).
+///
+/// It was supplied by the caller and was the address of the word the
+/// reading located — a CITATION, which 54.2 rules off the key and onto the
+/// ledger as a receipt. §1.5: "two vertices with different derivations and
+/// one rotor are one vertex, one address".
+///
+/// EXTRACTION GUARANTEES THIS IS SOUND. `extract_rule`'s `reads` carrier is
+/// keyed by TRANSPORT CLASS and emits one `Vertex::Word` per class, members
+/// accumulated per chart, so two word vertices of one form differ in class
+/// and therefore in rotor. Only a caller naming them apart ever made two
+/// vertices of one, and that is identity by fiat.
+pub fn word_vertex_address(
+    derivation: &crate::transducer::alphabet::Derivation,
+    acts: &Keyed<Acting>,
+    contact: Option<crate::transducer::alphabet::Contact>,
+) -> crate::transducer::address::Address {
+    let mut buf = vec![crate::transducer::address::TAG_FORM, 1];
+    put_word_vertex(&mut buf, derivation, acts, contact);
+    crate::transducer::address::Address::new(buf)
+}
+
 /// THE INVERSE OF [`form_vertex_key`] (A21 §4, 1.5 as ruled 2026-09-20).
 ///
 /// §1.5 writes the key "so that the word form is recovered from its key",
@@ -808,7 +843,7 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
 /// (law 7) and so cannot be derived from the generators. They arrive as
 /// `rest`, and a caller that has none passes none — which is exactly a
 /// closed, remainder-free form.
-pub fn form_from_key(k: &[u8], rest: &FormRest) -> Option<Form> {
+pub fn from_address(k: &[u8]) -> Option<Form> {
     let mut p = 0usize;
     match k {
         [tag, ..] if *tag == crate::transducer::address::TAG_FORM => p += 1,
@@ -820,7 +855,6 @@ pub fn form_from_key(k: &[u8], rest: &FormRest) -> Option<Form> {
     // from the key alone and not appended to what the default seeded.
     f.vertices.clear();
     let nv = take_u32(k, &mut p)? as usize;
-    let mut words = 0usize;
     for _ in 0..nv {
         let kind = *k.get(p)?;
         p += 1;
@@ -829,17 +863,11 @@ pub fn form_from_key(k: &[u8], rest: &FormRest) -> Option<Form> {
             1 => {
                 let rotor = Rotor::from_key(&take_bytes(k, &mut p)?)?;
                 let acts = take_acts(k, &mut p, true)?;
-                // The contact rides with each member and is one per vertex;
-                // the members agree, so the last read is the vertex's.
                 let contact = take_contact_key(k, &mut p, &acts)?;
-                let address = rest.word_addresses.get(words)?.clone();
-                words += 1;
-                Vertex::Word {
-                    address,
-                    derivation: crate::transducer::alphabet::Derivation::spelled(Word::formed(rotor)),
-                    acts: acts.0,
-                    contact,
-                }
+                let derivation =
+                    crate::transducer::alphabet::Derivation::spelled(Word::formed(rotor));
+                let address = word_vertex_address(&derivation, &acts.0, contact);
+                Vertex::Word { address, derivation, acts: acts.0, contact }
             }
             2 => {
                 let address = crate::transducer::address::Address::new(take_bytes(k, &mut p)?);
@@ -972,34 +1000,6 @@ pub fn form_from_key(k: &[u8], rest: &FormRest) -> Option<Form> {
     f.reindex();
     f.loops = Form::loops_of(&f.faces, &f.vertices);
     Some(f)
-}
-
-/// THE LAST THING THE KEY DOES NOT CARRY (54.2).
-///
-/// The demands' bodies and the A5 remainder moved into the key as their
-/// chains' own addresses, and the edge's value with them. What remains is
-/// a `Word` vertex's own `address`, which names the word the reading
-/// located — a CITATION, and 54.2 rules citations off the key and onto
-/// the ledger as receipts keyed by the address they evidence. Until that
-/// lands (K6 directive 3) the caller supplies them, and the A21 property
-/// `from_address(address(f)) ≡ f` cannot yet be stated without this.
-#[derive(Debug, Clone, Default)]
-pub struct FormRest {
-    /// One per `Word` vertex, in vertex order.
-    pub word_addresses: Vec<crate::transducer::address::Address>,
-}
-
-impl FormRest {
-    /// The citations a form's word vertices carry.
-    pub fn of(f: &Form) -> FormRest {
-        let mut r = FormRest::default();
-        for v in &f.vertices {
-            if let Vertex::Word { address, .. } = v {
-                r.word_addresses.push(address.clone());
-            }
-        }
-        r
-    }
 }
 
 /// A run of members as the key writes them: the chart, the carriage, the

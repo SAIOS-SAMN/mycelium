@@ -58,9 +58,9 @@ let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
 for tag in [2u8, 3u8] {
     f.vertices.push(Vertex::word_on(
-        Address::from_bytes([tag; 32]),
         crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-        crate::transducer::stalk::Invariant::default(),
+        // Its own chart: an address is derived from its coordinates (54.2).
+        crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
         Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
         vec![(1, 2)],
         None,

@@ -149,11 +149,14 @@ fn coboundary_gauge_matches_by_address() {
 #[test]
 fn solve_coboundary_is_a_spanning_forest() {
     let mut f = Form::default();
+    // TWO ISOLATED VERTICES ARE TWO SITES. Under 54.2 a vertex's address
+    // is derived from its coordinates, so two on one chart with one rotor,
+    // one carriage and one gauge are ONE vertex (§1.5); `k` names the chart
+    // each stands on, which is what made them two all along.
     for k in 1..=2u8 {
         f.vertices.push(Vertex::word_on(
-            form_addr(k),
             alphabet::Derivation::spelled(Word::identity()),
-            stalk::Invariant::default(),
+            stalk::Invariant::counts(&[u64::from(k)]),
             Box::new(element::carriage(&q1(), &(q0(), q0()))),
             Vec::new(),
             None,

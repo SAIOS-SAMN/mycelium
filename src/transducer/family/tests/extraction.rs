@@ -208,7 +208,6 @@ assert_ne!(a.moduli, b.moduli, "two shapes, two charts");
 // Form::default() carries the Frame at index 0.
 let mut pf = Form::default();
 pf.vertices.push(Vertex::word_on(
-    crate::transducer::address::Address::from(vec![1]),
     crate::transducer::alphabet::Derivation::spelled(rot.clone()),
     a.moduli.clone(),
     Box::new(element::carriage(&q(1), &(q(3), q(3)))),
@@ -216,7 +215,6 @@ pf.vertices.push(Vertex::word_on(
     None,
 ));
 pf.vertices.push(Vertex::word_on(
-    crate::transducer::address::Address::from(vec![2]),
     crate::transducer::alphabet::Derivation::spelled(rot.clone()),
     b.moduli.clone(),
     Box::new(element::carriage(&q(1), &(q(3), q(3)))),

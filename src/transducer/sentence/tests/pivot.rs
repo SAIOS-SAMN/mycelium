@@ -111,7 +111,6 @@ fn mu_neither_certifies_nor_selects() {
     assert!(!class.0.is_empty(), "the body has a chart");
     let mut spoken = Form::default();
     spoken.vertices.push(Vertex::word_on(
-        form_addr(1),
         crate::transducer::alphabet::Derivation::spelled(q.clone()),
         class.clone(),
         Box::new(element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()))),
@@ -133,13 +132,13 @@ fn mu_neither_certifies_nor_selects() {
     let mut f = chord_form(std::slice::from_ref(&q));
     // THE VERTEX KEEPS ITS IDENTITY AND CHANGES ITS MEMBER. The chart is the
     // key the member is filed under, so putting the vertex on `class` is
-    // building the member on that chart — the address and the derivation are
-    // read off the vertex that is there rather than restated here.
-    let Vertex::Word { address, derivation, .. } = &f.vertices[1] else {
+    // building the member on that chart — the derivation is read off the
+    // vertex that is there rather than restated here. The address is no
+    // longer read: it is derived from the coordinates being rebuilt (54.2).
+    let Vertex::Word { derivation, .. } = &f.vertices[1] else {
         panic!("the chord form's first body is a word vertex");
     };
     f.vertices[1] = Vertex::word_on(
-        address.clone(),
         derivation.clone(),
         class,
         Box::new(element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()))),

@@ -19,3 +19,4 @@ mod rotor_class;
 mod stratum;
 mod symmetry;
 mod tape;
+mod properties;

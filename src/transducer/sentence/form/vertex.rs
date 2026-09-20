@@ -21,7 +21,6 @@ impl Vertex {
     /// stays the constructor for the one-chart case rather than being
     /// widened into a builder: a site that knows one chart says one chart.
     pub fn word_on(
-        address: crate::transducer::address::Address,
         derivation: crate::transducer::alphabet::Derivation,
         chart: stalk::Invariant,
         carriage: Box<crate::transducer::element::Versor>,
@@ -31,6 +30,8 @@ impl Vertex {
         let member = super::Acting { chart, carriage, gauge };
         let mut acts = Keyed::new();
         acts.insert(member.key(), member);
+        // 54.2 — the vertex's address is its own coordinates, derived.
+        let address = crate::transducer::sentence::word_vertex_address(&derivation, &acts, contact);
         Vertex::Word { address, derivation, acts, contact }
     }
 

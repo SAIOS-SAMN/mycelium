@@ -138,7 +138,6 @@ fn hold_form_keeps_a_glued_open_loop() {
     let inner = {
         let mut f = Form::default();
         f.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::from(vec![1]),
             crate::transducer::alphabet::Derivation::spelled(w.clone()),
             crate::transducer::stalk::Invariant::default(),
             Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
@@ -173,11 +172,12 @@ fn hold_form_keeps_a_glued_open_loop() {
     assert_eq!(back.bubbles.len(), 1, "the glued form survives the tape");
 
     let mut open = Form::default();
+    // Two vertices, two charts: with one chart they would be one vertex,
+    // since an address is derived from its coordinates (54.2, §1.5).
     for tag in [2u8, 3u8] {
         open.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::from(vec![tag]),
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            crate::transducer::stalk::Invariant::default(),
+            crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
             vec![(1, 2)],
             None,
@@ -288,7 +288,6 @@ fn hold_form_carries_bundle_and_remainder() {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::from(vec![9]),
         crate::transducer::alphabet::Derivation::spelled(Word::identity()),
         crate::transducer::stalk::Invariant::default(),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),

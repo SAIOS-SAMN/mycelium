@@ -578,7 +578,6 @@ pub fn generator_form(
     rotor.weight()?;
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::new(Vec::new()),
         Derivation::adjoined(rotor.clone()),
         chart.clone(),
         crate::transducer::element::identity_versor().into(),

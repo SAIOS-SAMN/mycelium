@@ -18,9 +18,9 @@ fn sentence_at(d: Derivation, tag: u8, mag: [u64; 4]) -> Element {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        Address::from_bytes([TAG_FORM, tag]),
         d,
-        crate::transducer::stalk::Invariant::default(),
+        // Its own chart: an address is derived from its coordinates (54.2).
+        crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         Vec::new(),
         None,

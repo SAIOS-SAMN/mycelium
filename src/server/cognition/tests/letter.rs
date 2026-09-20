@@ -4,7 +4,6 @@
 // second organ reaches the same address. The adjoined count leaves zero.
 
 use crate::cognition::*;
-use crate::transducer::address::{Address, TAG_FORM};
 use crate::transducer::alphabet::Derivation;
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::{as_element_form, Demand, Form, Vertex};
@@ -26,9 +25,9 @@ fn demanding_sentence(w: crate::transducer::alphabet::Word, tag: u8, kind: Deman
     let zero = q(0);
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        Address::from_bytes([TAG_FORM, tag]),
         Derivation::spelled(w),
-        crate::transducer::stalk::Invariant::default(),
+        // Its own chart: an address is derived from its coordinates (54.2).
+        crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         Vec::new(),
         None,
@@ -236,9 +235,9 @@ fn derived_sentence(d: Derivation, tag: u8) -> Element {
     let (one, zero) = (q(1), q(0));
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        Address::from_bytes([TAG_FORM, tag]),
         d,
-        crate::transducer::stalk::Invariant::default(),
+        // Its own chart: an address is derived from its coordinates (54.2).
+        crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         Vec::new(),
         None,

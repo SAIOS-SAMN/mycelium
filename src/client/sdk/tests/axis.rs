@@ -23,8 +23,7 @@ use crate::transducer::germinate::germinate;
 /// admission filed, the shed removes.
 #[test]
 fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
-    use crate::transducer::address::{Address, TAG_FORM};
-    use crate::transducer::alphabet::{Derivation, LetterId, Word};
+        use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::element;
     use crate::transducer::sentence::{as_element_form, on_axis_of, ClassVector, Form, Vertex};
     use crate::transducer::stalk::Invariant;
@@ -35,7 +34,6 @@ fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        Address::from_bytes([TAG_FORM, 3]),
         Derivation::spelled(w.clone()),
         chart.clone(),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),

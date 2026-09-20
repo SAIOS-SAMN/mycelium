@@ -252,10 +252,11 @@ fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
     let w = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
     assert!(w.is_identity(), "Φ⁴ is projectively 1");
     let mut f = Form::default();
+    // Each empty vertex stands on its own chart: two with one rotor, one
+    // chart, one carriage and one gauge would be ONE vertex (54.2, §1.5).
     let empty = |addr: u8| Vertex::word_on(
-        form_addr(addr),
         alphabet::Derivation::spelled(Word::identity()),
-        stalk::Invariant::default(),
+        stalk::Invariant::counts(&[u64::from(addr)]),
         Box::new(element::carriage(&q1(), &(q0(), q0()))),
         Vec::new(),
         None,

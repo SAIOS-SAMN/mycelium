@@ -19,12 +19,10 @@ fn quarter(n: usize) -> Word {
 fn sentence_of(w: Word, tag: u8) -> (Address, Form) {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    let address = Address::from_bytes([TAG_FORM, tag]);
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        address,
         crate::transducer::alphabet::Derivation::spelled(w),
-        Invariant::default(),
+        Invariant::counts(&[u64::from(tag)]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         Vec::new(),
         None,
@@ -189,12 +187,10 @@ fn letter_of(a: i64, b: i64, tag: u8) -> (Address, Form) {
     use crate::transducer::alphabet::{Derivation, Rotor};
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let rotor = Rotor::scalar(q(a)).add(&Rotor::blade(0b0011, q(b)));
-    let address = Address::from_bytes([TAG_FORM, tag]);
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        address,
         Derivation::adjoined(rotor),
-        Invariant::default(),
+        Invariant::counts(&[u64::from(tag)]),
         Box::new(element::identity_versor()),
         Vec::new(),
         None,
@@ -298,9 +294,21 @@ fn a_court_holding_the_letter_composes_a_citation_of_it() {
         }
     };
     assert_eq!(d.verify_with(&cover), Verified::Composes, "the court re-derives and agrees");
+    // THE CITATION'S VERTEX HALF IS THE VERTEX'S OWN ADDRESS (50.2 step 2,
+    // 54.2). It used to be the letter FORM's address, because `word_on`
+    // was handed one and the minting site passed the form's; a vertex now
+    // derives its address from its coordinates.
+    let cited_vertex = letter_form
+        .vertices
+        .iter()
+        .find_map(|v| match v {
+            crate::transducer::sentence::Vertex::Word { address, .. } => Some(address.clone()),
+            _ => None,
+        })
+        .expect("the letter has a word vertex");
     assert_eq!(
         d.verify_with(&|_: &Address, _: &Address| None),
-        Verified::Unresolved { form: letter_addr.clone(), vertex: letter_addr },
+        Verified::Unresolved { form: letter_addr.clone(), vertex: cited_vertex },
         "a court that has not ruled it waits, as it does for any citation"
     );
 }
@@ -356,7 +364,6 @@ fn adjoined_basis_discovers_generators_on_offplane_channels() {
     let address = Address::from_bytes([TAG_FORM, 55]);
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        address.clone(),
         Derivation::adjoined(rotor),
         Invariant::default(),
         Box::new(element::identity_versor()),

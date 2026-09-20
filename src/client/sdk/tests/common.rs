@@ -11,7 +11,6 @@ let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
 f.vertices.push(Vertex::word_on(
-    crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
     crate::transducer::alphabet::Derivation::spelled(w),
     crate::transducer::stalk::Invariant::default(),
     Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
@@ -31,7 +30,6 @@ let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
 for (i, g) in gauges.iter().enumerate() {
     f.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, i as u8 + 1]),
         crate::transducer::alphabet::Derivation::spelled(Word::identity()),
         crate::transducer::stalk::Invariant::default(),
         Box::new(crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),

@@ -100,10 +100,19 @@ fn a_minted_generator_is_filed_and_answerable_on_its_own_coordinates() {
     // THE VERTEX CARRIES THE ROTOR, not a spelling of it: a `Word` travels
     // as its letter tape, so an adjoined generator that put the rotor in the
     // residue would reach the wire as the identity.
-    let carried = crate::transducer::sentence::rotor_at_vertex(
-        &f,
-        crate::transducer::address::Address::new(Vec::new()).as_bytes(),
-    );
+    // THE VERTEX IS READ AT ITS OWN ADDRESS (54.2). It was read at the
+    // EMPTY address, because `generator_form` handed `word_on` an empty
+    // one; a vertex now derives its address from its coordinates, so the
+    // minted letter is found where it actually stands.
+    let minted = f
+        .vertices
+        .iter()
+        .find_map(|v| match v {
+            crate::transducer::sentence::Vertex::Word { address, .. } => Some(address.clone()),
+            _ => None,
+        })
+        .expect("the letter has a word vertex");
+    let carried = crate::transducer::sentence::rotor_at_vertex(&f, minted.as_bytes());
     assert!(
         carried.is_some_and(|r| r.projective_eq(&rotor)),
         "the minted vertex carries the measured rotor"
@@ -213,11 +222,13 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
     let chart = Invariant::counts(&[3, 5]);
     let pair = face_pair_key(&chart, &chart);
     let q = order4();
+    // The two ends are two SITES: one chart each, so they are two vertices
+    // rather than one named twice (54.2). The faces carry their own pair
+    // key and their own edges, so the holonomy this test reads is unmoved.
     let word_vertex = |b: u8| {
         Vertex::word_on(
-            crate::transducer::address::Address::from_bytes([4u8, b]),
             Derivation::spelled(Word::identity()),
-            chart.clone(),
+            Invariant::counts(&[u64::from(b)]),
             Box::new(element::identity_versor()),
             Vec::new(),
             None,
@@ -315,7 +326,6 @@ fn a_word_is_filed_under_the_carriage_and_the_gauge_it_acts_by() {
     let gauge = vec![(1u8, 2u8), (2, 1)];
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::from_bytes([4u8, 2]),
         Derivation::spelled(Word::identity()),
         acting.clone(),
         Box::new(element::translator_versor(3, 5)),
@@ -395,7 +405,6 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
     let acting = Invariant::counts(&[1, 7, 4]);
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::from_bytes([4u8, 1]),
         Derivation::spelled(q.clone()),
         acting.clone(),
         Box::new(element::identity_versor()),
@@ -485,11 +494,13 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
     let chart = Invariant::counts(&[3, 5]);
     let pair = face_pair_key(&chart, &chart);
     let q = order4();
+    // The ends are two SITES: one chart each, so they are two vertices and
+    // not one named twice (54.2). The faces carry their own pair key and
+    // their own edges, so the holonomy this test reads is unmoved.
     let word_vertex = |b: u8| {
         Vertex::word_on(
-            crate::transducer::address::Address::from_bytes([4u8, b]),
             Derivation::spelled(Word::identity()),
-            chart.clone(),
+            Invariant::counts(&[u64::from(b)]),
             Box::new(element::identity_versor()),
             Vec::new(),
             None,

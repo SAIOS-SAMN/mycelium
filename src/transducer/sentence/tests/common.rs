@@ -21,7 +21,6 @@ pub fn form_addr(n: u8) -> crate::transducer::address::Address {
 pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form {
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::new(Vec::new()),
         alphabet::Derivation::spelled(word.clone()),
         stalk::Invariant::counts(&[3, 5]),
         Box::new(element::carriage(&q1(), &(q0(), q1()))),
@@ -74,11 +73,29 @@ pub fn word_vertex(addr: u8, word: Word) -> Vertex {
 /// filed under, so a test that wants a vertex on a particular chart says
 /// so when it builds the vertex; it cannot reach in and rewrite the key
 /// afterwards, which is the whole of what keying by content means (law 2).
+/// `addr` USED TO NAME THE VERTEX AND NOW PLACES IT (54.2).
+///
+/// A vertex's address is derived from its coordinates, so two fixtures
+/// handed different names but one rotor, one chart, one carriage and one
+/// gauge are ONE vertex (§1.5). Extraction never emits two of them:
+/// `extract_rule`'s `reads` is keyed by TRANSPORT CLASS, one `Vertex::Word`
+/// per class.
+///
+/// `addr` NO LONGER NAMES THE VERTEX (54.2): a vertex's address is derived
+/// from its coordinates, so two vertices with one rotor, one chart, one
+/// carriage and one gauge are ONE vertex (§1.5), and extraction never
+/// emits two — `reads` is keyed by transport class.
+///
+/// This builds ONE vertex and says nothing about distinctness; a fixture
+/// that needs two says how they differ. [`chord_form`] does, on the chart,
+/// because two ends of a chord are two SITES; separating them on the
+/// carriage would put a placement component into every loop those tests
+/// read, which is a different measurement, not a truer one.
 pub fn word_vertex_on(addr: u8, word: Word, chart: stalk::Invariant) -> Vertex {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    let _ = addr;
     Vertex::word_on(
-        form_addr(addr),
         alphabet::Derivation::spelled(word),
         chart,
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
@@ -125,8 +142,14 @@ pub fn chord_form(chords: &[Word]) -> Form {
     for (ci, w) in chords.iter().enumerate() {
         let a = (ci * 2 + 1) as u16;
         let b = (ci * 2 + 2) as u16;
-        f.vertices.push(word_vertex(a as u8, Word::identity()));
-        f.vertices.push(word_vertex(b as u8, Word::identity()));
+        // TWO ENDS ARE TWO SITES, and the site is the chart. They used to
+        // be one vertex twice — same rotor, same chart, same carriage,
+        // same gauge — distinguished only by the address each was handed,
+        // which is identity by fiat (§1.5) and a form extraction cannot
+        // produce. The chord's own transport is unchanged by this: the
+        // chart is where a body stands, not how it is carried.
+        f.vertices.push(word_vertex_on(a as u8, Word::identity(), stalk::Invariant::counts(&[u64::from(a)])));
+        f.vertices.push(word_vertex_on(b as u8, Word::identity(), stalk::Invariant::counts(&[u64::from(b)])));
         f.faces.push(f.face_of(0, a).expect("star a"));
         f.faces.push(f.face_of(0, b).expect("star b"));
         f.faces.push(f.face_carrying(a, b, w.clone()).expect("a chord between two bodies"));

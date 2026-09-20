@@ -502,7 +502,6 @@ fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
         use crate::transducer::sentence::{as_element_form, Form, Vertex};
         let mut f = Form::default();
         f.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::new(Vec::new()),
             Derivation::adjoined(h.clone()),
             Invariant::counts(&[3, 5]),
             Box::new(crate::transducer::element::identity_versor()),

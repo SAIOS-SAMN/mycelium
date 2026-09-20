@@ -9,7 +9,6 @@ fn orbit_contact_and_no_orbit() {
 let zero = q(0);
 let one = q(1);
 let moving = Vertex::word_on(
-    crate::transducer::address::Address::from(vec![1]),
     crate::transducer::alphabet::Derivation::spelled(
         crate::transducer::alphabet::Word::identity(),
     ),
@@ -19,7 +18,6 @@ let moving = Vertex::word_on(
     None,
 );
 let still = Vertex::word_on(
-    crate::transducer::address::Address::from(vec![2]),
     crate::transducer::alphabet::Derivation::spelled(
         crate::transducer::alphabet::Word::identity(),
     ),
@@ -41,7 +39,6 @@ assert_eq!(
     "a still word has no orbit"
 );
 let with_c = Vertex::word_on(
-    crate::transducer::address::Address::from(vec![3]),
     crate::transducer::alphabet::Derivation::spelled(
         crate::transducer::alphabet::Word::identity(),
     ),

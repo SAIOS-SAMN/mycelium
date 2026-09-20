@@ -205,9 +205,9 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     let mut f = Form::default();
     for tag in [2u8, 3u8] {
         f.vertices.push(Vertex::word_on(
-            Address::from_bytes([tag; 32]),
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            crate::transducer::stalk::Invariant::default(),
+            // Its own chart: an address is derived from its coordinates (54.2).
+            crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(element::carriage(&q1, &(q0.clone(), q0.clone()))),
             Vec::new(),
             None,

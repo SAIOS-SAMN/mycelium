@@ -395,11 +395,13 @@ fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
     let chart = Invariant::counts(&[3, 5]);
     let pair = face_pair_key(&chart, &chart);
     let q = order4();
+    // The ends are two SITES: one chart each, so they are two vertices and
+    // not one named twice (54.2). The faces carry their own pair key and
+    // their own edges, so the holonomy this test reads is unmoved.
     let word_vertex = |b: u8| {
         Vertex::word_on(
-            crate::transducer::address::Address::from_bytes([4u8, b]),
             Derivation::spelled(Word::identity()),
-            chart.clone(),
+            Invariant::counts(&[u64::from(b)]),
             Box::new(element::identity_versor()),
             Vec::new(),
             None,

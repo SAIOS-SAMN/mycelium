@@ -45,7 +45,6 @@ fn a_form_address_is_one_under_every_scaling_of_a_members_carriage() {
     let form_with = |car: element::Versor| -> Form {
         let mut f = Form::default();
         f.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::new(Vec::new()),
             alphabet::Derivation::spelled(order4()),
             stalk::Invariant::counts(&[3, 5]),
             Box::new(car),

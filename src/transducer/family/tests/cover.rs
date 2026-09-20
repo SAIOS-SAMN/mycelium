@@ -551,11 +551,12 @@ fn a_pure_coboundary_form_yields_no_evaluated_loop() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::Form;
     let mut f = Form::default();
+    // Three vertices, three charts: one chart would make them one vertex,
+    // since an address is derived from its coordinates (54.2, §1.5).
     for tag in [1u8, 2u8, 3u8] {
         f.vertices.push(crate::transducer::sentence::Vertex::word_on(
-            crate::transducer::address::Address::from_bytes([tag; 32]),
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            crate::transducer::stalk::Invariant::default(),
+            crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(crate::transducer::element::identity_versor()),
             Vec::new(),
             None,

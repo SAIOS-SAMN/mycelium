@@ -191,9 +191,8 @@ fn a_form_speaking_two_rotors_carries_two_sections_and_no_single_rotor() {
     let q01 = LetterId::quarter((0, 1)).expect("the sensor plane");
     let q02 = LetterId::quarter((0, 2)).expect("another plane");
     let mut f = Form::default();
-    for (i, id) in [q01, q02].into_iter().enumerate() {
+    for id in [q01, q02] {
         f.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::from_bytes([4u8, i as u8]),
             Derivation::spelled(Word::from_letters(&[(id, false)])),
             Invariant::counts(&[3, 5]),
             Box::new(element::identity_versor()),
@@ -230,9 +229,8 @@ fn two_vertices_whose_carriages_differ_by_sign_hold_one_section() {
     let c = element::translator_versor(1, 2);
     let neg = c.scale(&num_rational::BigRational::from_integer(num_bigint::BigInt::from(-1)));
     let mut f = Form::default();
-    for (i, car) in [c, neg].into_iter().enumerate() {
+    for car in [c, neg] {
         f.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::from_bytes([4u8, i as u8]),
             Derivation::spelled(Word::from_letters(&[(q01, false)])),
             Invariant::counts(&[3, 5]),
             Box::new(car),
@@ -272,9 +270,8 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
 
     // A form with one face for the certificate to name.
     let mut f = Form::default();
-    for (i, w) in [a.clone(), b.clone()].into_iter().enumerate() {
+    for w in [a.clone(), b.clone()] {
         f.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::from_bytes([4u8, i as u8]),
             Derivation::spelled(w),
             Invariant::counts(&[3, 5]),
             Box::new(element::identity_versor()),
@@ -390,7 +387,6 @@ fn an_idea_meets_its_own_charts_and_not_their_siblings() {
     let q = LetterId::quarter((0, 1)).expect("the sensor plane");
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::from_bytes([4u8, 1]),
         Derivation::spelled(Word::from_letters(&[(q, false)])),
         mine.clone(),
         Box::new(element::identity_versor()),
@@ -442,7 +438,6 @@ fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
     let q = LetterId::quarter((0, 1)).expect("the sensor plane");
     let mut form = Form::default();
     form.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::from_bytes([4u8, 9]),
         Derivation::spelled(Word::from_letters(&[(q, false)])),
         crate::transducer::stalk::Invariant::counts(&[3, 5]),
         Box::new(element::identity_versor()),
@@ -484,7 +479,6 @@ fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
     );
     let mut other = Form::default();
     other.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::from_bytes([4u8, 77]),
         Derivation::spelled(Word::from_letters(&[(q, false)])),
         crate::transducer::stalk::Invariant::counts(&[9, 9]),
         Box::new(element::identity_versor()),
@@ -524,7 +518,6 @@ fn a_bubble_rekeyed_by_a_mutation_keeps_its_inception() {
     let build = |chart: Vec<u64>| {
         let mut f = Form::default();
         f.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::from_bytes([4u8, 1]),
             Derivation::spelled(Word::from_letters(&[(q, false)])),
             crate::transducer::stalk::Invariant::counts(&chart),
             Box::new(element::identity_versor()),

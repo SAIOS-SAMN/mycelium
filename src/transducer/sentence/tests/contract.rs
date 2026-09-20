@@ -43,7 +43,15 @@ fn a_still_orbit_contracts_its_contact_word_to_a_demand() {
 fn a_face_that_does_not_rederive_is_dropped_by_its_contraction() {
     let mut f = chord_form(&[order4()]);
     assert_eq!(f.loops.len(), 1, "the chord closes one loop");
-    let at = At::Face(form_addr(1), form_addr(2));
+    // THE FACE IS NAMED BY ITS ENDS' OWN ADDRESSES (54.2). It was named by
+    // `form_addr(1)`/`form_addr(2)` — coordinates fabricated by the test —
+    // which named the vertices only because a caller used to hand a vertex
+    // whatever address it liked.
+    let end = |i: usize| match f.vertices.get(i) {
+        Some(Vertex::Word { address, .. }) => address.clone(),
+        _ => panic!("vertex {i} is a word"),
+    };
+    let at = At::Face(end(1), end(2));
     assert_eq!(f.contract(RefusalKind::FaceDerivation, &at, &[]), Some(Contracted::Moved));
     assert!(
         !f.faces.iter().any(|face| (face.i == 1 && face.j == 2) || (face.i == 2 && face.j == 1)),

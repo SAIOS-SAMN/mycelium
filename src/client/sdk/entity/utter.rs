@@ -129,13 +129,38 @@ impl Entity {
             return (Vec::new(), chain.to_vec());
         };
         let own = own.address();
+        let _ = &own;
+        // The chain as the cite would reconstruct it: sorted and deduped,
+        // which is the form `vertex_cites` hands back.
+        let whole = {
+            let mut w = chain.to_vec();
+            w.sort_unstable();
+            w.dedup();
+            w
+        };
         let contemplation = &self.contemplation;
         let held_at = |inv: &crate::transducer::stalk::Invariant, piece: &[(i64, i64, u8, u8)]| {
             contemplation
                 .held_at(inv)
                 .into_iter()
-                .filter(|v| !matches!(v, crate::transducer::sentence::Vertex::Word { address, .. } if *address == own))
                 .filter_map(|v| crate::transducer::sentence::vertex_cites(v, piece))
+                // A REMAINDER IS NOT A CITATION OF ITSELF, and what says so
+                // is the BODY the cite reconstructs (L6: "a cite IS the
+                // body it reconstructs"), not the vertex's name.
+                //
+                // It used to drop a held vertex whose ADDRESS equalled the
+                // chain's, which worked only while a word vertex carried
+                // the address of the word the reading located. Under 54.2
+                // a vertex's address is its own coordinates and that
+                // citation is a receipt, so the guard now asks the question
+                // it always meant: does this cite reconstruct the very
+                // chain being cited.
+                .filter(|c| {
+                    let mut body = c.body.clone();
+                    body.sort_unstable();
+                    body.dedup();
+                    body != whole
+                })
                 .collect::<Vec<_>>()
         };
         let located = self.epigenome.locate_on(chain, None, &held_at);

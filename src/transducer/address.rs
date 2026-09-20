@@ -462,7 +462,6 @@ mod tests {
         let build = |gauge: Vec<(u8, u8)>, chart: Invariant| -> Form {
             let mut f = Form::default();
             f.vertices.push(Vertex::word_on(
-                Address::from_bytes([TAG_FORM, 1]),
                 Derivation::spelled(sample_words()[0].clone()),
                 chart,
                 Box::new(crate::transducer::element::identity_versor()),

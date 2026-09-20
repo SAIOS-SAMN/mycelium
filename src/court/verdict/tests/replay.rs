@@ -48,7 +48,6 @@ fn closed_turn_form() -> Form {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
         crate::transducer::alphabet::Derivation::spelled(w),
         stalk::Invariant::counts(&[7]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
@@ -226,9 +225,10 @@ fn rank_lost_refused() {
     let mut f = Form::default();
     for tag in 1..=2u8 {
         f.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, tag]),
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            stalk::Invariant::default(),
+            // Each vertex stands on its OWN chart: with one chart they would be one
+            // vertex, since an address is derived from its coordinates (54.2, §1.5).
+            stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
             vec![(1, 2)],
             None,
@@ -347,7 +347,6 @@ fn vertex_tape_and_moves_replay_or_refuse() {
 
     let mut re = Form::default();
     re.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 2]),
         crate::transducer::alphabet::Derivation::spelled(Word::identity()),
         stalk::Invariant::default(),
         Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
@@ -383,7 +382,6 @@ fn vertex_tape_and_moves_replay_or_refuse() {
 
     let mut orb = Form::default();
     orb.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 3]),
         crate::transducer::alphabet::Derivation::spelled(Word::identity()),
         stalk::Invariant::default(),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
@@ -404,8 +402,22 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     let still = replay_form_at(&orb_e, &|_| None, None, &crate::transducer::family::NoCrystal)
         .expect("the still orbit refuses");
     assert_eq!(still.kind(), crate::transducer::sentence::RefusalKind::OrbitStill);
+    // THE CONTACT VERTEX IS NAMED BY ITS OWN ADDRESS (54.2). It was
+    // `[TAG_FORM, 3]`, a coordinate the fixture invented and handed to
+    // `word_on`; a vertex now derives its address from its coordinates.
+    let contact_at = crate::transducer::sentence::from_element_form(&orb_e)
+        .expect("the orbit form decodes")
+        .vertices
+        .iter()
+        .find_map(|v| match v {
+            crate::transducer::sentence::Vertex::Word { address, contact: Some(_), .. } => {
+                Some(address.clone())
+            }
+            _ => None,
+        })
+        .expect("the orbit form has a contact vertex");
     assert!(
-        matches!(&still.at, crate::transducer::sentence::At::Vertex { address, .. } if address.as_bytes() == [crate::transducer::address::TAG_FORM, 3]),
+        matches!(&still.at, crate::transducer::sentence::At::Vertex { address, .. } if *address == contact_at),
         "at the contact vertex: {:?}",
         still.at
     );
@@ -487,9 +499,9 @@ fn a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not() {
     let mut f = Form::default();
     for tag in [1u8, 2u8] {
         f.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::from_bytes([tag; 32]),
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            stalk::Invariant::default(),
+            // Its own chart: an address is derived from its coordinates (54.2).
+            stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(element::identity_versor()),
             Vec::new(),
             None,
@@ -590,10 +602,6 @@ fn citing_form(
     );
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
-        crate::transducer::address::Address::from_bytes([
-            crate::transducer::address::TAG_FORM,
-            9,
-        ]),
         derivation,
         stalk::Invariant::counts(&[7]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
@@ -726,9 +734,9 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     let mut f = Form::default();
     for tag in [1u8, 2u8] {
         f.vertices.push(Vertex::word_on(
-            crate::transducer::address::Address::from_bytes([tag; 32]),
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            stalk::Invariant::default(),
+            // Its own chart: an address is derived from its coordinates (54.2).
+            stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(element::identity_versor()),
             Vec::new(),
             None,

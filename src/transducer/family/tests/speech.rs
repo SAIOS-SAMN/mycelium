@@ -68,7 +68,6 @@ let [body] = bodies.as_slice() else { panic!("a body") };
 let class = body.moduli.clone();
 let mut f = Form::default();
 f.vertices.push(Vertex::word_on(
-    crate::transducer::address::Address::from(vec![1]),
     crate::transducer::alphabet::Derivation::spelled(
         crate::transducer::alphabet::Word::from_letters(&[(
             crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane"),
@@ -112,10 +111,9 @@ let mut f = cipher_form(&x, &y);
 let far = Invariant::counts(&[0xEEEE_EEEE_EEEE_EEEE]);
 for v in &mut f.vertices {
     let moved = match &*v {
-        Vertex::Word { address, derivation, acts, contact } => {
+        Vertex::Word { derivation, acts, contact, .. } => {
             acts.scoped().next().map(|(_, a)| {
                 Vertex::word_on(
-                    address.clone(),
                     derivation.clone(),
                     far.clone(),
                     a.carriage.clone(),

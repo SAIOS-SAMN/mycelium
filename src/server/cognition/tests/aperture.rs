@@ -221,9 +221,10 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
     let mut f = Form::default();
     for tag in [2u8, 3u8, 4u8] {
         f.vertices.push(Vertex::word_on(
-            Address::from_bytes([tag; 32]),
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            crate::transducer::stalk::Invariant::default(),
+            // Each vertex stands on its OWN chart: with one chart they would be one
+            // vertex, since an address is derived from its coordinates (54.2, §1.5).
+            crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(element::carriage(&one, &(zero.clone(), zero.clone()))),
             vec![(1, 2)],
             None,
@@ -299,9 +300,10 @@ fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
     let mut f = Form::default();
     for tag in [2u8, 3u8] {
         f.vertices.push(Vertex::word_on(
-            Address::from_bytes([tag; 32]),
             Derivation::spelled(Word::identity()),
-            chart.clone(),
+            // Its own chart: two on one chart with one rotor, one carriage
+            // and one gauge are ONE vertex (54.2, §1.5).
+            crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(element::identity_versor()),
             Vec::new(),
             None,
