@@ -466,10 +466,16 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
             }
             // 50.5: a demand is named by its kind and chart; the bodies it
             // stands for are the remainder, on the tape and not in the key.
-            Vertex::Demand { kind, chart, .. } => {
+            // 54.2: a demand is its kind, its chart, AND ITS REMAINDER AS
+            // THAT CHAIN'S OWN ADDRESS. The bodies were "on the tape and
+            // not in the key", which made them unreachable by the inverse;
+            // `form_key_bytes` writes "the key IS the chain", so the chain's
+            // address carries the chain and the demand's identity is whole.
+            Vertex::Demand { kind, chart, bodies } => {
                 buf.push(5);
                 crate::transducer::address::put_bytes(&mut buf, kind.key().as_bytes());
                 crate::transducer::address::put_bytes(&mut buf, chart.key().as_bytes());
+                put_chain_address(&mut buf, bodies);
             }
         }
     }
@@ -494,10 +500,27 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
                 buf.push(a);
                 buf.push(b);
             }
-            // 50.3's edge is evidence the court re-measures, not identity:
-            // its PRESENCE is on the key, because a remainder edge and a
-            // carried edge are two different faces, and its value is not.
-            buf.push(u8::from(place.edge.is_some()));
+            // 54.2 — THE EDGE'S VALUE, AS THE TRANSPORT IT IS. Only its
+            // PRESENCE was keyed, on the reading that the court re-measures
+            // it; a property the key does not carry is a property the
+            // inverse cannot return, and 54.3 makes the key the only
+            // decoder. Written whole: the transport's word, its A4
+            // carriage, its sorted gauge.
+            match &place.edge {
+                None => buf.push(0),
+                Some(t) => {
+                    buf.push(1);
+                    t.word.put_canonical(&mut buf);
+                    t.carriage.put_canonical(&mut buf);
+                    let mut eg = t.gauge.clone();
+                    eg.sort_unstable();
+                    buf.extend_from_slice(&(eg.len() as u16).to_le_bytes());
+                    for (x, y) in eg {
+                        buf.push(x);
+                        buf.push(y);
+                    }
+                }
+            }
         }
         // THE SECTION IS MEANING (rule 7). A face measured on pairs 0 and 2
         // and a face claiming every pair of the bundle SAY different things
@@ -550,7 +573,87 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     for (class, _) in f.axes.scoped() {
         crate::transducer::address::put_bytes(&mut buf, &class);
     }
+    // 54.2 — THE REMAINDER CHAIN IS IDENTITY, NOT EVIDENCE: it is what the
+    // form does not close, and a form that closes and one that does not are
+    // two forms. Carried as that chain's own address, as a demand's is.
+    put_chain_address(&mut buf, &f.remainder.placed());
     crate::transducer::address::Address::new(buf)
+}
+
+/// A chain as its own address (54.2, A5), AND THE CORNER IT SITS AT.
+///
+/// `from_residual` runs A5's centring — "the body's absolute position is
+/// already quotiented on the chain" — so the address names the chain up to
+/// placement, which is what makes two demands at two places one demand.
+/// The place itself is not thereby nothing: `place_chain` reconstructs a
+/// `PlacedChain` from the centred chain AND its min corner, and the tape
+/// carried the remainder "as it sits in the scene" for that reason. The
+/// corner is a lamina coordinate (51.3, law 11's one exception) and is
+/// written beside the address, so the inverse returns the chain where it
+/// stood and not only which chain it was.
+///
+/// An empty chain has no residual element and no address; it is written as
+/// the empty key, an absence rather than a sentinel standing for one.
+fn put_chain_address(buf: &mut Vec<u8>, chain: &[crate::transducer::sentence::Link]) {
+    match element::from_residual(&chain.to_vec()) {
+        Some(e) => {
+            crate::transducer::address::put_bytes(buf, e.address().as_bytes());
+            let (r, c) = corner_of(chain);
+            buf.extend_from_slice(&r.to_le_bytes());
+            buf.extend_from_slice(&c.to_le_bytes());
+        }
+        None => crate::transducer::address::put_bytes(buf, &[]),
+    }
+}
+
+/// The chain's min corner, which is its extent and is content — the same
+/// reading `place_chain`'s `corner_translator` takes.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "rule 4 — the min corner is the chain's extent, content; §1.4, the sensor boundary where a site's coordinates are read"
+)]
+fn corner_of(chain: &[crate::transducer::sentence::Link]) -> (i64, i64) {
+    match (
+        chain.iter().map(|(r, _, _, _)| *r).min(),
+        chain.iter().map(|(_, c, _, _)| *c).min(),
+    ) {
+        (Some(r), Some(c)) => (r, c),
+        _ => (0, 0),
+    }
+}
+
+/// The chain back out of its address. `form_key_bytes` writes "the key IS
+/// the chain" for a residual element — no letters, no spatial action, so
+/// the address is the tag and the chain block — and this is that read.
+fn take_chain_address(k: &[u8], p: &mut usize) -> Option<Vec<crate::transducer::sentence::Link>> {
+    let a = take_bytes(k, p)?;
+    if a.is_empty() {
+        return Some(Vec::new());
+    }
+    let mut q = 0usize;
+    match a.as_slice() {
+        [tag, ..] if *tag == crate::transducer::address::TAG_FORM => q += 1,
+        _ => return None,
+    }
+    let block = take_bytes(&a, &mut q)?;
+    let mut b = 0usize;
+    let n = take_u32(&block, &mut b)? as usize;
+    let mut out = Vec::with_capacity(n.min(block.len()));
+    for _ in 0..n {
+        let r = i64::from_le_bytes(block.get(b..b + 8)?.try_into().ok()?);
+        let c = i64::from_le_bytes(block.get(b + 8..b + 16)?.try_into().ok()?);
+        out.push((r, c, *block.get(b + 16)?, *block.get(b + 17)?));
+        b += 18;
+    }
+    // The corner the centred chain sits at, put back.
+    let cr = i64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
+    let cc = i64::from_le_bytes(k.get(*p + 8..*p + 16)?.try_into().ok()?);
+    *p += 16;
+    for l in &mut out {
+        l.0 += cr;
+        l.1 += cc;
+    }
+    Some(out)
 }
 /// THE BASE OF THE BUNDLE (A21 §2, A18): a form's chart is its RANK and
 /// nothing else — torsion, free, off-plane, axes opened, four integers off
@@ -718,7 +821,6 @@ pub fn form_from_key(k: &[u8], rest: &FormRest) -> Option<Form> {
     f.vertices.clear();
     let nv = take_u32(k, &mut p)? as usize;
     let mut words = 0usize;
-    let mut demands = 0usize;
     for _ in 0..nv {
         let kind = *k.get(p)?;
         p += 1;
@@ -776,8 +878,8 @@ pub fn form_from_key(k: &[u8], rest: &FormRest) -> Option<Form> {
                 // A demand whose bodies the caller did not supply is not a
                 // demand standing for nothing — it is a form that cannot be
                 // rebuilt from what was given, and it refuses (rule 11).
-                let bodies = rest.demand_bodies.get(demands)?.clone();
-                demands += 1;
+                // 54.2: the remainder is in the key, as its chain's address.
+                let bodies = take_chain_address(k, &mut p)?;
                 Vertex::Demand { kind, chart, bodies }
             }
             _ => return None,
@@ -799,12 +901,22 @@ pub fn form_from_key(k: &[u8], rest: &FormRest) -> Option<Form> {
             // not, because the court re-measures it. An absent value is
             // not a zero edge; the face records that one stood and the
             // court supplies what it measures.
-            let present = *k.get(p)?;
-            p += 1;
-            if present > 1 {
-                return None;
-            }
-            at.insert(&pk, FacePlace { carriage, gauge, edge: None });
+            // 54.2: the edge's VALUE, as the transport it is.
+            let edge = match *k.get(p)? {
+                0 => {
+                    p += 1;
+                    None
+                }
+                1 => {
+                    p += 1;
+                    let word = Word::formed(Rotor::from_bytes(k, &mut p)?);
+                    let carriage = Versor::from_bytes(k, &mut p)?;
+                    let gauge = take_gauge(k, &mut p)?;
+                    Some(Transport { word, carriage, gauge })
+                }
+                _ => return None,
+            };
+            at.insert(&pk, FacePlace { carriage, gauge, edge });
         }
         let pairs = match *k.get(p)? {
             0 => {
@@ -845,7 +957,14 @@ pub fn form_from_key(k: &[u8], rest: &FormRest) -> Option<Form> {
         let class = take_bytes(k, &mut p)?;
         f.axes.insert(&class, 0);
     }
-    f.remainder = rest.remainder.clone();
+    // 54.2: the remainder is identity and is in the key.
+    // `place_chain` is the tape decoder's own reader of a placed chain —
+    // the same one, not a second that agrees with it (law 12). An empty
+    // chain places nothing and leaves the default.
+    let rem = take_chain_address(k, &mut p)?;
+    if !rem.is_empty() {
+        f.remainder = crate::transducer::element::place_chain(&rem)?;
+    }
     // LOOPS AND HOLONOMIES ARE DERIVED AND NEVER KEYED (§1.5), so they are
     // re-derived from the incidence just read, by the same reader the
     // extractor uses — not read back from a carrier that would be a second
@@ -855,29 +974,28 @@ pub fn form_from_key(k: &[u8], rest: &FormRest) -> Option<Form> {
     Some(f)
 }
 
-/// What a key does not determine, supplied by the caller. A closed,
-/// remainder-free form with no demands needs only its word addresses.
+/// THE LAST THING THE KEY DOES NOT CARRY (54.2).
+///
+/// The demands' bodies and the A5 remainder moved into the key as their
+/// chains' own addresses, and the edge's value with them. What remains is
+/// a `Word` vertex's own `address`, which names the word the reading
+/// located — a CITATION, and 54.2 rules citations off the key and onto
+/// the ledger as receipts keyed by the address they evidence. Until that
+/// lands (K6 directive 3) the caller supplies them, and the A21 property
+/// `from_address(address(f)) ≡ f` cannot yet be stated without this.
 #[derive(Debug, Clone, Default)]
 pub struct FormRest {
-    /// One per `Word` vertex, in vertex order: the address of the word the
-    /// reading located there.
+    /// One per `Word` vertex, in vertex order.
     pub word_addresses: Vec<crate::transducer::address::Address>,
-    /// One per `Demand` vertex, in vertex order (50.5).
-    pub demand_bodies: Vec<Vec<crate::transducer::sentence::Link>>,
-    /// A5's chain and the translator that places it.
-    pub remainder: crate::transducer::element::PlacedChain,
 }
 
 impl FormRest {
-    /// What a form carries beyond its key — the reading that says what the
-    /// payload must be.
+    /// The citations a form's word vertices carry.
     pub fn of(f: &Form) -> FormRest {
-        let mut r = FormRest { remainder: f.remainder.clone(), ..FormRest::default() };
+        let mut r = FormRest::default();
         for v in &f.vertices {
-            match v {
-                Vertex::Word { address, .. } => r.word_addresses.push(address.clone()),
-                Vertex::Demand { bodies, .. } => r.demand_bodies.push(bodies.clone()),
-                _ => {}
+            if let Vertex::Word { address, .. } = v {
+                r.word_addresses.push(address.clone());
             }
         }
         r

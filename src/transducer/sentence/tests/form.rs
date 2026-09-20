@@ -730,8 +730,8 @@ fn a_form_is_recovered_from_its_key() {
 
     for f in [&inner, &host] {
         let key = form_vertex_key(f);
-        // What the key does not determine, read off the form it came from:
-        // the Word vertices' addresses, the demands' bodies, the remainder.
+        // The last thing the key does not carry: the Word vertices'
+        // citations (54.2 moves them to the ledger as receipts).
         let rest = FormRest::of(f);
         let back = form_from_key(key.as_bytes(), &rest).expect("the key recovers its form");
         assert_eq!(
@@ -758,4 +758,68 @@ fn a_form_is_recovered_from_its_key() {
     // A key that is not one is refused rather than part-read (rule 11).
     assert!(form_from_key(b"", &FormRest::default()).is_none());
     assert!(form_from_key(&[0xFF, 0, 0, 0, 0], &FormRest::default()).is_none());
+}
+
+/// 54.2/54.3 — THE KEY CARRIES THE CLOSED SUB-COMPLEX WHOLE, so the
+/// inverse returns a demand's remainder and a face's edge, which it could
+/// not before.
+///
+/// Three properties the completed key makes checkable, none of them about
+/// bytes (1.5): a DEMAND's bodies come back — they were "on the tape and
+/// not in the key" and are now that chain's own address; the FORM's A5
+/// remainder comes back, because the remainder is identity and not
+/// evidence, being what the form does not close; and a face's EDGE comes
+/// back as the transport it is, where only its presence was keyed.
+#[test]
+fn the_key_carries_the_demand_the_remainder_and_the_edge() {
+    use crate::transducer::sentence::{form_from_key, form_vertex_key, FormRest, Vertex};
+    let mut f = Form::default();
+    // A demand standing for two bodies, and a remainder the form does not
+    // close.
+    let bodies: Vec<(i64, i64, u8, u8)> = vec![(1, 1, 1, 2), (1, 2, 1, 2)];
+    f.vertices.push(Vertex::Demand {
+        kind: crate::transducer::sentence::Demand::Source { multiplicity: 2 },
+        chart: crate::transducer::stalk::Invariant::default(),
+        bodies: bodies.clone(),
+    });
+    let rem: Vec<(i64, i64, u8, u8)> = vec![(7, 7, 3, 4)];
+    f.remainder = crate::transducer::element::place_chain(&rem).expect("a chain places");
+
+    let key = form_vertex_key(&f);
+    let back = form_from_key(key.as_bytes(), &FormRest::of(&f)).expect("recovers");
+
+    let got: Vec<Vec<(i64, i64, u8, u8)>> = back
+        .vertices
+        .iter()
+        .filter_map(|v| match v {
+            Vertex::Demand { bodies, .. } => Some(bodies.clone()),
+            _ => None,
+        })
+        .collect();
+    // THE BODIES COME BACK CENTRED, and that is identity, not loss.
+    // 54.2 keys the remainder as `from_residual`'s address, and A5's chain
+    // is centred — "the body's absolute position is already quotiented on
+    // the chain". Two demands differing only in where they sit are one
+    // demand, so the reading is equality of the chains' ADDRESSES (1.5),
+    // never of their placed sites.
+    let addr_of = |c: &Vec<(i64, i64, u8, u8)>| {
+        crate::transducer::element::from_residual(c).map(|e| e.address())
+    };
+    let [back_bodies] = got.as_slice() else { panic!("one demand comes back, got {}", got.len()) };
+    assert_eq!(
+        addr_of(back_bodies),
+        addr_of(&bodies),
+        "the demand's chain comes back as the chain it was"
+    );
+    assert_eq!(back_bodies, &bodies, "and at the corner it stood at");
+    assert_eq!(
+        back.remainder.placed(),
+        f.remainder.placed(),
+        "the remainder comes back: it is identity, not evidence"
+    );
+    assert_eq!(
+        form_vertex_key(&back),
+        key,
+        "and the recovered form keys to the address it came from"
+    );
 }
