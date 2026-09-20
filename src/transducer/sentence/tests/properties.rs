@@ -287,37 +287,31 @@ fn the_tapes_version_is_frozen_and_a_foreign_one_refuses() {
     }
 }
 
-/// THE ADDRESS STILL DEPENDS ON THE ORDER VERTICES WERE APPENDED, and
-/// that is law 2 violated at the centre of the engine.
+/// THE ADDRESS DOES NOT DEPEND ON THE ORDER VERTICES WERE APPENDED
+/// (law 2, rule 15).
 ///
-/// A `Form` holds `vertices: Vec<Vertex>`, and every relation in it is an
-/// INDEX into that vector: `face.i`/`face.j` as `u16`, `lp.vertices` as a
-/// list of `u16`, `lp.chord` as a face position, `by_address`/`by_class`/
-/// `glued`/`star` as maps onto `u16`. `form_vertex_key` walks
-/// `for v in &f.vertices` and writes them in that order, so two forms
-/// holding the SAME set of vertices reach two addresses if they were built
-/// in two orders. Rule 15's question — "is the order content or arrival?"
-/// — is answered here by arrival.
+/// It did. A `Form` holds `vertices: Vec<Vertex>` and `form_vertex_key`
+/// walked it, so two forms holding ONE set of vertices reached two
+/// addresses if they were built in two orders — arrival in the address,
+/// measured at `63d6e40`, where this test asserted the defect with
+/// `assert_ne` and said it would flip.
 ///
-/// This is the flat dimension the coordinate work has not reached. Z9 took
-/// positional identity out of the genome, the court's `Language`, the
-/// cursors and the watermark; it left it untouched inside the object all
-/// of those point at. It is also why the key must write every vertex out
-/// positionally, which is the inlining that made a word 46 KB: a vertex
-/// has no coordinate WITHIN its form, so the form spells it in place.
+/// The key now writes the vertices in their OWN canonical order: the
+/// Frame first, because "a form opens at its frame" (18) and it is the
+/// basepoint rather than a member of the set, then every other vertex by
+/// its own coordinate bytes, read back from a `Keyed` whose trie order IS
+/// those coordinates' order. A face names its ends by their place in that
+/// ordering, so the incidence is read against the coordinates and not
+/// against the vector the vertices happen to sit in.
 ///
-/// The fix is available and was not before `b2756eb`: every `Word` vertex
-/// now derives its own address from its coordinates, so vertices can be
-/// keyed by it, faces can be `(addr_i, addr_j)`, and `reindex` — which
-/// exists only because positions shift — goes away with the `Vec`.
-///
-/// THE ASSERTION IS THE DEFECT, DELIBERATELY. It reads `!=` because that
-/// is what the tree does today; when the form is keyed by coordinate it
-/// becomes `==` and this test is renamed. Asserting the wrong thing to
-/// make a suite green is what fixtures at the identity did, so the reading
-/// says plainly which way it points.
+/// WHAT IS NOT YET DONE, so the flip is not read as more than it is: the
+/// form still HOLDS a `Vec` and the key still names a face's ends by a
+/// place in an order rather than by the ends' own addresses. The order is
+/// now content, which is the difference between this and arrival — but
+/// `Frame`, `Rebased` and `Unfolded` vertices have no derived address of
+/// their own yet, and until they do a face cannot be `(A_i, A_j)`.
 #[test]
-fn the_address_still_depends_on_vertex_append_order() {
+fn the_address_is_independent_of_vertex_append_order() {
     let q01 = alphabet::LetterId::quarter((0, 1)).expect("q");
     let q23 = alphabet::LetterId::quarter((2, 3)).expect("q");
     let mk = |ids: [alphabet::LetterId; 2]| {
@@ -340,11 +334,9 @@ fn the_address_still_depends_on_vertex_append_order() {
     };
     let a = mk([q01, q23]);
     let b = mk([q23, q01]);
-    assert_ne!(
+    assert_eq!(
         form_vertex_key(&a),
         form_vertex_key(&b),
-        "TODAY: one set of vertices in two append orders reaches two \
-         addresses. When the form is keyed by coordinate this becomes \
-         assert_eq and the test is renamed."
+        "one set of vertices is one form, however it was built"
     );
 }

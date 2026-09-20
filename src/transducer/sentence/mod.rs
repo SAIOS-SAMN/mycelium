@@ -14,7 +14,8 @@ pub mod pivot;
 pub mod tape;
 pub mod chart;
 pub mod rebase;
-pub mod parts;
+pub mod inverse;
+mod parts;
 mod reading;
 pub mod demand;
 
@@ -27,6 +28,7 @@ pub use pivot::*;
 pub use tape::*;
 pub use chart::*;
 pub use reading::*;
+pub use inverse::*;
 pub use parts::*;
 
 #[cfg(test)]

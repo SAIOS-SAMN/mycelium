@@ -8,9 +8,8 @@ use super::form::*;
 use super::tape::from_element_form;
 use super::transport::*;
 use crate::network::nerve::Keyed;
-use crate::transducer::alphabet::{Rotor, Word};
+use crate::transducer::alphabet::Word;
 use crate::transducer::element::{self, Element, Versor};
-use crate::transducer::stalk;
 
 thread_local! {
     /// HOW MANY TIMES A FORM WAS RENUMBERED, so a pass that claims to
@@ -395,91 +394,34 @@ pub fn vertex_address(e: &Element) -> Option<crate::transducer::address::Address
 pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     let mut buf = vec![crate::transducer::address::TAG_FORM];
     buf.extend_from_slice(&(f.vertices.len() as u32).to_le_bytes());
-    for v in &f.vertices {
-        match v {
-            Vertex::Frame => buf.push(0),
-            // 1.5: the key is the COMPOSED product's canonical rotor, so
-            // two minds whose derivations differ reach one address. The
-            // citations are content the court replays (50.2 step 2) and
-            // are deliberately not keyed: keying them would fork one
-            // vertex into one address per presentation.
-            Vertex::Word { derivation, acts, contact, .. } => {
-                buf.push(1);
-                put_word_vertex(&mut buf, derivation, acts, *contact);
-            }
-            // 54.2 — A CITATION IS ⟨A_c, φ⟩: the cited form's canonical
-            // address, and the transition versor it acts under here. The
-            // address alone made the citation a static pointer — two forms
-            // citing one sub-complex at two places reached one address,
-            // because `placement` is a rotor and cannot translate or
-            // dilate. φ is A4's canonical writing and is O(1) whatever the
-            // cited form's size, so the key does not inline it.
-            Vertex::Glued {
-                address,
-                placement,
-                depth,
-                carriage,
-                ..
-            } => {
-                buf.push(2);
-                crate::transducer::address::put_bytes(&mut buf, address);
-                placement.put_canonical(&mut buf);
-                buf.extend_from_slice(&depth.to_le_bytes());
-                carriage.put_canonical(&mut buf);
-            }
-            Vertex::Rebased { by, of, acts } => {
-                buf.push(3);
-                buf.extend_from_slice(&by.to_le_bytes());
-                buf.extend_from_slice(&of.to_le_bytes());
-                // THE MEMBERS IN CHART-KEY ORDER, each with the relative it
-                // carries there and its sorted gauge. A rebased vertex acting on
-                // two charts SAYS more than one acting on one, so the count is
-                // on the key (D10); the chart key goes with each member for the
-                // same reason a face's pair key does.
-                buf.extend_from_slice(&(acts.len() as u16).to_le_bytes());
-                for (ck, a) in acts.scoped() {
-                    crate::transducer::address::put_bytes(&mut buf, &ck);
-                    // A4 output here as in the Word arm (17.2).
-                    a.carriage.put_canonical(&mut buf);
-                    let mut g = a.gauge.clone();
-                    g.sort_unstable();
-                    buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
-                    for (x, y) in g {
-                        buf.push(x);
-                        buf.push(y);
-                    }
-                }
-            }
-            Vertex::Unfolded { measure } => {
-                buf.push(4);
-                match measure {
-                    Measure::Occupied => buf.push(0),
-                    Measure::Remainder => buf.push(1),
-                    Measure::Ring { anchor } => {
-                        buf.push(2);
-                        buf.extend_from_slice(&anchor.to_le_bytes());
-                    }
-                }
-            }
-            // 50.5: a demand is named by its kind and chart; the bodies it
-            // stands for are the remainder, on the tape and not in the key.
-            // 54.2: a demand is its kind, its chart, AND ITS REMAINDER AS
-            // THAT CHAIN'S OWN ADDRESS. The bodies were "on the tape and
-            // not in the key", which made them unreachable by the inverse;
-            // `form_key_bytes` writes "the key IS the chain", so the chain's
-            // address carries the chain and the demand's identity is whole.
-            Vertex::Demand { kind, chart, bodies } => {
-                buf.push(5);
-                crate::transducer::address::put_bytes(&mut buf, kind.key().as_bytes());
-                crate::transducer::address::put_bytes(&mut buf, chart.key().as_bytes());
-                put_chain_address(&mut buf, bodies);
-            }
-        }
+    // THE VERTICES IN THEIR OWN CANONICAL ORDER, not the order they were
+    // appended (law 2, rule 15).
+    //
+    // This walked `f.vertices` as a `Vec`, so two forms holding ONE set of
+    // vertices reached two addresses if they were built in two orders —
+    // arrival in the address, measured at `63d6e40`. The order is now each
+    // vertex's own coordinate bytes, read back from a `Keyed`: the trie's
+    // order IS the coordinates' order and is content, the same reading
+    // every other carrier in the tree takes.
+    //
+    // THE FRAME STAYS FIRST. "A form opens at its frame" (18) and vertex
+    // zero is the frame by the form's own shape — `glue_append` reads it
+    // with `[frame @ Vertex::Frame, ..]`. It is the basepoint, not a member
+    // of the set being ordered.
+    for v in canonical_vertices(f) {
+        put_vertex(&mut buf, v);
     }
     buf.extend_from_slice(&(f.faces.len() as u32).to_le_bytes());
+    // A face names its ends by their place in the CANONICAL order, so the
+    // incidence is read against the same ordering the vertices were
+    // written in and not against the vector they happen to sit in.
+    let at = canonical_places(f);
     for face in &f.faces {
-        buf.extend_from_slice(&face.i.to_le_bytes());
-        buf.extend_from_slice(&face.j.to_le_bytes());
+        // `canonical_places` covers every index a face names, so this is a
+        // total read and there is no missing value to stand in for
+        // (rule 11).
+        buf.extend_from_slice(&at[face.i as usize].to_le_bytes());
+        buf.extend_from_slice(&at[face.j as usize].to_le_bytes());
         // THE WORD ONCE, then THE MEMBERS IN CHART-PAIR KEY ORDER — the
         // trie's, which is content (law 2), so two nodes holding one face
         // reach one address. The count is written because a face with two
@@ -619,41 +561,6 @@ fn corner_of(chain: &[crate::transducer::sentence::Link]) -> (i64, i64) {
     }
 }
 
-/// The chain back out of its address. `form_key_bytes` writes "the key IS
-/// the chain" for a residual element — no letters, no spatial action, so
-/// the address is the tag and the chain block — and this is that read.
-fn take_chain_address(k: &[u8], p: &mut usize) -> Option<Vec<crate::transducer::sentence::Link>> {
-    let a = take_bytes(k, p)?;
-    if a.is_empty() {
-        return Some(Vec::new());
-    }
-    let mut q = 0usize;
-    // A chain's address carries `TAG_RESIDUAL`: an unclosed 1-chain is not
-    // a closed complex and no longer shares the form's tag.
-    match a.as_slice() {
-        [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL => q += 1,
-        _ => return None,
-    }
-    let block = take_bytes(&a, &mut q)?;
-    let mut b = 0usize;
-    let n = take_u32(&block, &mut b)? as usize;
-    let mut out = Vec::with_capacity(n.min(block.len()));
-    for _ in 0..n {
-        let r = i64::from_le_bytes(block.get(b..b + 8)?.try_into().ok()?);
-        let c = i64::from_le_bytes(block.get(b + 8..b + 16)?.try_into().ok()?);
-        out.push((r, c, *block.get(b + 16)?, *block.get(b + 17)?));
-        b += 18;
-    }
-    // The corner the centred chain sits at, put back.
-    let cr = i64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
-    let cc = i64::from_le_bytes(k.get(*p + 8..*p + 16)?.try_into().ok()?);
-    *p += 16;
-    for l in &mut out {
-        l.0 += cr;
-        l.1 += cc;
-    }
-    Some(out)
-}
 /// THE BASE OF THE BUNDLE (A21 §2, A18): a form's chart is its RANK and
 /// nothing else — torsion, free, off-plane, axes opened, four integers off
 /// one tree walk behind the leading tag. Five coordinates, always, whatever
@@ -782,6 +689,158 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
     Some(gamma)
 }
 
+/// ONE VERTEX'S CONTRIBUTION TO A KEY, written ONCE (law 12). It stood
+/// inline in `form_vertex_key`'s loop, and `vertex_bytes` needs the same
+/// bytes to order the vertices by their own coordinates; two writers of
+/// one fact would let the order disagree with what is written.
+fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
+    match v {
+        Vertex::Frame => buf.push(0),
+        // 1.5: the key is the COMPOSED product's canonical rotor, so
+        // two minds whose derivations differ reach one address. The
+        // citations are content the court replays (50.2 step 2) and
+        // are deliberately not keyed: keying them would fork one
+        // vertex into one address per presentation.
+        Vertex::Word { derivation, acts, contact, .. } => {
+            buf.push(1);
+            put_word_vertex(buf, derivation, acts, *contact);
+        }
+        // 54.2 — A CITATION IS ⟨A_c, φ⟩: the cited form's canonical
+        // address, and the transition versor it acts under here. The
+        // address alone made the citation a static pointer — two forms
+        // citing one sub-complex at two places reached one address,
+        // because `placement` is a rotor and cannot translate or
+        // dilate. φ is A4's canonical writing and is O(1) whatever the
+        // cited form's size, so the key does not inline it.
+        Vertex::Glued {
+            address,
+            placement,
+            depth,
+            carriage,
+            ..
+        } => {
+            buf.push(2);
+            crate::transducer::address::put_bytes(buf, address);
+            placement.put_canonical(buf);
+            buf.extend_from_slice(&depth.to_le_bytes());
+            carriage.put_canonical(buf);
+        }
+        Vertex::Rebased { by, of, acts } => {
+            buf.push(3);
+            buf.extend_from_slice(&by.to_le_bytes());
+            buf.extend_from_slice(&of.to_le_bytes());
+            // THE MEMBERS IN CHART-KEY ORDER, each with the relative it
+            // carries there and its sorted gauge. A rebased vertex acting on
+            // two charts SAYS more than one acting on one, so the count is
+            // on the key (D10); the chart key goes with each member for the
+            // same reason a face's pair key does.
+            buf.extend_from_slice(&(acts.len() as u16).to_le_bytes());
+            for (ck, a) in acts.scoped() {
+                crate::transducer::address::put_bytes(buf, &ck);
+                // A4 output here as in the Word arm (17.2).
+                a.carriage.put_canonical(buf);
+                let mut g = a.gauge.clone();
+                g.sort_unstable();
+                buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+                for (x, y) in g {
+                    buf.push(x);
+                    buf.push(y);
+                }
+            }
+        }
+        Vertex::Unfolded { measure } => {
+            buf.push(4);
+            match measure {
+                Measure::Occupied => buf.push(0),
+                Measure::Remainder => buf.push(1),
+                Measure::Ring { anchor } => {
+                    buf.push(2);
+                    buf.extend_from_slice(&anchor.to_le_bytes());
+                }
+            }
+        }
+        // 50.5: a demand is named by its kind and chart; the bodies it
+        // stands for are the remainder, on the tape and not in the key.
+        // 54.2: a demand is its kind, its chart, AND ITS REMAINDER AS
+        // THAT CHAIN'S OWN ADDRESS. The bodies were "on the tape and
+        // not in the key", which made them unreachable by the inverse;
+        // `form_key_bytes` writes "the key IS the chain", so the chain's
+        // address carries the chain and the demand's identity is whole.
+        Vertex::Demand { kind, chart, bodies } => {
+            buf.push(5);
+            crate::transducer::address::put_bytes(buf, kind.key().as_bytes());
+            crate::transducer::address::put_bytes(buf, chart.key().as_bytes());
+            put_chain_address(buf, bodies);
+        }
+    }
+}
+
+/// A VERTEX'S OWN BYTES — what it contributes to a key, and therefore its
+/// coordinate within the form.
+fn vertex_bytes(v: &Vertex) -> Vec<u8> {
+    let mut b = Vec::new();
+    put_vertex(&mut b, v);
+    b
+}
+
+/// The form's vertices in canonical order: the Frame, then every other
+/// vertex by its own coordinate bytes, read back from the trie whose order
+/// those bytes are.
+fn canonical_vertices(f: &Form) -> Vec<&Vertex> {
+    let mut at: Keyed<u16> = Keyed::new();
+    let mut out: Vec<&Vertex> = Vec::with_capacity(f.vertices.len());
+    for (i, v) in f.vertices.iter().enumerate() {
+        match v {
+            Vertex::Frame => out.push(v),
+            _ => {
+                at.insert(vertex_bytes(v), i as u16);
+            }
+        }
+    }
+    for (_, i) in at.scoped() {
+        if let Some(v) = f.vertices.get(*i as usize) {
+            out.push(v);
+        }
+    }
+    out
+}
+
+/// Where each vertex of `f` stands in the canonical order, indexed by its
+/// place in the form's own vector.
+fn canonical_places(f: &Form) -> Vec<u16> {
+    // Sized to cover every index a FACE names as well as every vertex, so
+    // the read at each face's ends is total. A face naming an index the
+    // form does not hold keeps that index, which is the only thing true of
+    // it; nothing is invented for it (rule 11).
+    let mut n = f.vertices.len();
+    for face in &f.faces {
+        n = n.max(face.i as usize + 1).max(face.j as usize + 1);
+    }
+    let mut out: Vec<u16> = (0..n).map(|i| i as u16).collect();
+    let mut at: Keyed<u16> = Keyed::new();
+    let mut n = 0u16;
+    for (i, v) in f.vertices.iter().enumerate() {
+        match v {
+            Vertex::Frame => {
+                if let Some(slot) = out.get_mut(i) {
+                    *slot = n;
+                }
+                n += 1;
+            }
+            _ => {
+                at.insert(vertex_bytes(v), i as u16);
+            }
+        }
+    }
+    for (_, i) in at.scoped() {
+        if let Some(slot) = out.get_mut(*i as usize) {
+            *slot = n;
+        }
+        n += 1;
+    }
+    out
+}
+
 /// THE BYTES A `Word` VERTEX CONTRIBUTES TO A KEY (54.2), written ONCE.
 /// Two writers of one fact is law 12's defect, and an address that drifted
 /// from the key containing it would be a vertex the form could not find.
@@ -855,263 +914,4 @@ pub fn word_vertex_address(
     let mut buf = vec![crate::transducer::address::TAG_FORM, 1];
     put_word_vertex(&mut buf, derivation, acts, contact);
     crate::transducer::address::Address::new(buf)
-}
-
-/// THE INVERSE OF [`form_vertex_key`] (A21 §4, 1.5 as ruled 2026-09-20).
-///
-/// §1.5 writes the key "so that the word form is recovered from its key",
-/// and until now nothing recovered it: `Rotor::from_key`, `Mv::from_key`
-/// and `ClassVector::from_key` existed and there was no decoder for
-/// `TAG_FORM`. That gap was read as a structural division — "the address
-/// names a form and cannot rebuild it; the tape rebuilds a form and does
-/// not name it" — which made an unwritten function into an ontology and
-/// left the tape carrying the key's content a second time. Measured, that
-/// duplication was 68% of every tape.
-///
-/// WHAT THE KEY DETERMINES, THIS POPULATES. Vertex kinds and their
-/// coordinates, the members each acts through, the faces and their
-/// incidence, the sections along `e₃`, the opened axes and the frame
-/// ratio. Loops and holonomies are DERIVED and never keyed (§1.5), so
-/// they are re-derived here by the form's own reader rather than read.
-///
-/// WHAT THE KEY DOES NOT DETERMINE IS NOT INVENTED (rule 11). Three
-/// things: a `Word` vertex's own address, which names the word the
-/// reading located and is a citation rather than a coordinate of this
-/// vertex; a `Demand`'s bodies, which 50.5 puts on the tape and not in the
-/// key; and the A5 remainder, which is precisely what no generator covers
-/// (law 7) and so cannot be derived from the generators. They arrive as
-/// `rest`, and a caller that has none passes none — which is exactly a
-/// closed, remainder-free form.
-pub fn from_address(k: &[u8]) -> Option<Form> {
-    let mut p = 0usize;
-    match k {
-        [tag, ..] if *tag == crate::transducer::address::TAG_FORM => p += 1,
-        _ => return None,
-    }
-    let mut f = Form::default();
-    // `Form::default()` opens with its Frame vertex; the key writes every
-    // vertex the form has, that one included, so the vertices are taken
-    // from the key alone and not appended to what the default seeded.
-    f.vertices.clear();
-    let nv = take_u32(k, &mut p)? as usize;
-    for _ in 0..nv {
-        let kind = *k.get(p)?;
-        p += 1;
-        let v = match kind {
-            0 => Vertex::Frame,
-            1 => {
-                let rotor = Rotor::from_key(&take_bytes(k, &mut p)?)?;
-                let acts = take_acts(k, &mut p, true)?;
-                let contact = take_contact_key(k, &mut p, &acts)?;
-                let derivation =
-                    crate::transducer::alphabet::Derivation::spelled(Word::formed(rotor));
-                let address = word_vertex_address(&derivation, &acts.0, contact);
-                Vertex::Word { address, derivation, acts: acts.0, contact }
-            }
-            2 => {
-                let address = crate::transducer::address::Address::new(take_bytes(k, &mut p)?);
-                let placement = Word::formed(Rotor::from_bytes(k, &mut p)?);
-                let depth = take_u16k(k, &mut p)?;
-                let carriage = Box::new(Versor::from_bytes(k, &mut p)?);
-                Vertex::Glued {
-                    address,
-                    chart: stalk::Invariant::default(),
-                    magnitude: [0; 4],
-                    depth,
-                    placement,
-                    carriage,
-                }
-            }
-            3 => {
-                let by = take_u16k(k, &mut p)?;
-                let of = take_u16k(k, &mut p)?;
-                let acts = take_acts(k, &mut p, false)?;
-                Vertex::Rebased { by, of, acts: acts.0 }
-            }
-            4 => {
-                let m = *k.get(p)?;
-                p += 1;
-                let measure = match m {
-                    0 => Measure::Occupied,
-                    1 => Measure::Remainder,
-                    2 => Measure::Ring { anchor: take_u16k(k, &mut p)? },
-                    _ => return None,
-                };
-                Vertex::Unfolded { measure }
-            }
-            5 => {
-                let kb = take_bytes(k, &mut p)?;
-                let mut kp = 1usize;
-                let kind = crate::transducer::sentence::Demand::from_bytes(&kb, &mut kp)?;
-                let chart = stalk::Invariant::from_key(&take_bytes(k, &mut p)?)?;
-                // A demand whose bodies the caller did not supply is not a
-                // demand standing for nothing — it is a form that cannot be
-                // rebuilt from what was given, and it refuses (rule 11).
-                // 54.2: the remainder is in the key, as its chain's address.
-                let bodies = take_chain_address(k, &mut p)?;
-                Vertex::Demand { kind, chart, bodies }
-            }
-            _ => return None,
-        };
-        f.vertices.push(v);
-    }
-    let nf = take_u32(k, &mut p)? as usize;
-    for _ in 0..nf {
-        let i = take_u16k(k, &mut p)?;
-        let j = take_u16k(k, &mut p)?;
-        let word = Word::formed(Rotor::from_bytes(k, &mut p)?);
-        let n = take_u16k(k, &mut p)? as usize;
-        let mut at = Keyed::new();
-        for _ in 0..n {
-            let pk = take_bytes(k, &mut p)?;
-            let carriage = Versor::from_bytes(k, &mut p)?;
-            let gauge = take_gauge(k, &mut p)?;
-            // 50.3's edge: its PRESENCE is on the key and its value is
-            // not, because the court re-measures it. An absent value is
-            // not a zero edge; the face records that one stood and the
-            // court supplies what it measures.
-            // 54.2: the edge's VALUE, as the transport it is.
-            let edge = match *k.get(p)? {
-                0 => {
-                    p += 1;
-                    None
-                }
-                1 => {
-                    p += 1;
-                    let word = Word::formed(Rotor::from_bytes(k, &mut p)?);
-                    let carriage = Versor::from_bytes(k, &mut p)?;
-                    let gauge = take_gauge(k, &mut p)?;
-                    Some(Transport { word, carriage, gauge })
-                }
-                _ => return None,
-            };
-            at.insert(&pk, FacePlace { carriage, gauge, edge });
-        }
-        let pairs = match *k.get(p)? {
-            0 => {
-                p += 1;
-                None
-            }
-            1 => {
-                p += 1;
-                let m = take_u16k(k, &mut p)? as usize;
-                let mut ps = Keyed::new();
-                for _ in 0..m {
-                    ps.insert(frame_key(take_u16k(k, &mut p)?), ());
-                }
-                Some(ps)
-            }
-            _ => return None,
-        };
-        f.faces.push(FormFace { i, j, word, at, pairs });
-    }
-    let mut r = [0u64; 4];
-    for x in &mut r {
-        *x = u64::from_le_bytes(k.get(p..p + 8)?.try_into().ok()?);
-        p += 8;
-    }
-    f.ratio = ((r[0] as usize, r[1] as usize), (r[2] as usize, r[3] as usize));
-    let ns = take_u32(k, &mut p)? as usize;
-    for _ in 0..ns {
-        let class = take_bytes(k, &mut p)?;
-        let m = take_u16k(k, &mut p)? as usize;
-        let mut members = Keyed::new();
-        for _ in 0..m {
-            members.insert(frame_key(take_u16k(k, &mut p)?), ());
-        }
-        f.sections.insert(&class, members);
-    }
-    let na = take_u32(k, &mut p)? as usize;
-    for _ in 0..na {
-        let class = take_bytes(k, &mut p)?;
-        f.axes.insert(&class, 0);
-    }
-    // 54.2: the remainder is identity and is in the key.
-    // `place_chain` is the tape decoder's own reader of a placed chain —
-    // the same one, not a second that agrees with it (law 12). An empty
-    // chain places nothing and leaves the default.
-    let rem = take_chain_address(k, &mut p)?;
-    if !rem.is_empty() {
-        f.remainder = crate::transducer::element::place_chain(&rem)?;
-    }
-    // LOOPS AND HOLONOMIES ARE DERIVED AND NEVER KEYED (§1.5), so they are
-    // re-derived from the incidence just read, by the same reader the
-    // extractor uses — not read back from a carrier that would be a second
-    // statement of the faces (law 12).
-    f.reindex();
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    Some(f)
-}
-
-/// A run of members as the key writes them: the chart, the carriage, the
-/// contact where the vertex carries one, and the sorted gauge.
-struct Acts(Keyed<Acting>);
-
-fn take_acts(k: &[u8], p: &mut usize, contact: bool) -> Option<Acts> {
-    let n = match contact {
-        true => take_u32(k, p)? as usize,
-        false => take_u16k(k, p)? as usize,
-    };
-    let mut out = Keyed::new();
-    for _ in 0..n {
-        let ck = take_bytes(k, p)?;
-        let chart = stalk::Invariant::from_key(&ck)?;
-        let carriage = Versor::from_bytes(k, p)?;
-        if contact {
-            // The contact sits between the carriage and the gauge on a
-            // Word member; it is skipped here and read by `take_contact_key`
-            // from the same run, so the two readers agree by construction.
-            match *k.get(*p)? {
-                0 => *p += 1,
-                1 => *p += 4,
-                _ => return None,
-            }
-        }
-        let gauge = take_gauge(k, p)?;
-        out.insert(&ck, Acting { chart, carriage: Box::new(carriage), gauge });
-    }
-    Some(Acts(out))
-}
-
-/// The contact the members carried, read from the first of them. A vertex
-/// with no member carries none.
-fn take_contact_key(
-    _k: &[u8],
-    _p: &mut usize,
-    _acts: &Acts,
-) -> Option<Option<crate::transducer::alphabet::Contact>> {
-    // `take_acts` consumed the contact bytes in the run; the value is not
-    // recoverable per member without re-walking, and a vertex's contact is
-    // one value. It is carried on the key and read here as absent until a
-    // caller needs it, which no reader of a rebuilt form does today.
-    Some(None)
-}
-
-fn take_gauge(k: &[u8], p: &mut usize) -> Option<Vec<(u8, u8)>> {
-    let n = take_u16k(k, p)? as usize;
-    let mut g = Vec::with_capacity(n.min(k.len()));
-    for _ in 0..n {
-        g.push((*k.get(*p)?, *k.get(*p + 1)?));
-        *p += 2;
-    }
-    Some(g)
-}
-
-fn take_u32(k: &[u8], p: &mut usize) -> Option<u32> {
-    let v = u32::from_le_bytes(k.get(*p..*p + 4)?.try_into().ok()?);
-    *p += 4;
-    Some(v)
-}
-
-fn take_u16k(k: &[u8], p: &mut usize) -> Option<u16> {
-    let v = u16::from_le_bytes(k.get(*p..*p + 2)?.try_into().ok()?);
-    *p += 2;
-    Some(v)
-}
-
-fn take_bytes(k: &[u8], p: &mut usize) -> Option<Vec<u8>> {
-    let n = take_u32(k, p)? as usize;
-    let b = k.get(*p..*p + n)?.to_vec();
-    *p += n;
-    Some(b)
 }
