@@ -351,77 +351,60 @@ fn a_sentence_round_trips_its_nerve() {
     assert_eq!(back.loops.len(), f.loops.len());
 }
 
-/// Z12b (1.7 part 2) — A CITED ADDRESS IS HELD ONCE BY EVERY WORD THAT
-/// GLUES IT, and the tape is transport.
+/// 1.5 AND 1.7 — A CITATION IS THE CITED FORM'S ADDRESS, WRITTEN WHOLE,
+/// AND WHAT IS CHECKED IS THAT IT RE-DERIVES.
 ///
-/// Measured on the fleet at 123a849: the glued vertices' addresses were
-/// 68.4% of every tape, the SAME cited address appeared in seven distinct
-/// words, and a word gluing nothing cost ~9 KB however full the genome
-/// was. The defect was never the vertex count — a 28-vertex form carried
-/// 10 462 bytes of cited address and a 10-vertex form carried 224 424.
+/// This test asserted, for four commits, that the tape held a cited
+/// address exactly ONCE — a reading of where bytes sit, defending a
+/// tape-local table of addresses named by ordinal. 1.5 is titled
+/// "byte-exactness is not identity" and says what is checked "is never
+/// byte exactness; it is the mathematics adding up"; rule 15 says a
+/// position is not a coordinate. The table and the byte count are gone and
+/// the version is spent.
 ///
-/// IDENTITY IS NOT SHORTENED. The citing form's KEY still contains the
-/// cited form's whole address, because the cited coordinates are the only
-/// name it has; `form_vertex_key` is untouched, and the first reading here
-/// is exactly that. What the tape does is name each distinct address once
-/// and refer to it by an ordinal that never leaves the tape — so the
-/// second reading is that the bytes appear once, and the third is that the
-/// decoder gives back the addresses whole, on a NESTED citation, which is
-/// A21 §4's decode property at the one kind the engine is made of.
+/// What remains is the property that was always the right one: identity is
+/// not shortened, so the citing form's KEY carries the cited form's whole
+/// address, and a NESTED citation — a form gluing a form that glues a form
+/// — decodes to the address it cited and re-mints to the same address,
+/// which is A21 §4's decode property at the one kind the engine is made of.
+///
+/// The repetition a tape can carry — one word gluing one form at many
+/// vertices — is real and is not the encoder's to shorten: 53.4's
+/// quantified citation removes it in kind, one citation per fiber (K2).
 #[test]
-fn a_cited_address_is_held_once_by_every_word_that_glues_it() {
+fn a_citation_is_the_cited_address_and_it_re_derives() {
     use crate::transducer::sentence::{as_element_form, from_element_form, Vertex};
     let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
     let inner_addr = as_element_form(&inner, [1, 0, 0, 0]).expect("inner").address();
 
-    // A host that glues ONE form at three vertices: three Glued vertices,
-    // one distinct cited address between them.
     let mut host = Form::default();
     for _ in 0..3 {
         host.glue(&inner, inner_addr.clone(), Word::identity(), [0, 0, 0, 1])
             .expect("glue the same form again");
     }
-    let glued: Vec<&Vertex> = host
+    let glued = host
         .vertices
         .iter()
         .filter(|v| matches!(v, Vertex::Glued { .. }))
-        .collect();
-    assert_eq!(glued.len(), 3, "three glued vertices, got {}", glued.len());
-
-    let e = as_element_form(&host, [1, 0, 0, 0]).expect("the host mints");
-    let tape = e.description();
-    // THE BYTES APPEAR ONCE. Three vertices cite one address; the tape
-    // carries it a single time and names it by ordinal thereafter.
-    let occurrences = tape
-        .windows(inner_addr.len())
-        .filter(|w| *w == inner_addr.as_bytes())
         .count();
-    assert_eq!(
-        occurrences, 1,
-        "the cited address is written once in the tape, found {occurrences}"
-    );
+    assert_eq!(glued, 3, "three glued vertices, got {glued}");
 
-    // IDENTITY IS NOT SHORTENED: the citing form's own key still contains
-    // the cited form's whole address (1.7).
+    // IDENTITY IS NOT SHORTENED (1.7): the citing form's own key carries
+    // the cited form's whole address.
     let key = crate::transducer::sentence::form_vertex_key(&host);
     assert!(
         key.as_bytes()
             .windows(inner_addr.len())
-            .any(|w| w == inner_addr.as_bytes()),
+            .any(|x| x == inner_addr.as_bytes()),
         "the citing form's key carries the cited coordinates whole"
     );
 
-    // AND THE DECODER GIVES THEM BACK WHOLE, on a NESTED citation: a form
-    // that glues a form that glues a form.
-    let host_addr = e.address();
-    let mut nested = Form::default();
-    nested
-        .glue(&host, host_addr.clone(), Word::identity(), [0, 0, 0, 1])
-        .expect("glue the host, which itself glues");
-    let ne = as_element_form(&nested, [1, 0, 0, 0]).expect("the nested form mints");
-    let back = from_element_form(&ne).expect("a nested tape round trips");
+    // AND THE TAPE RE-DERIVES: the host decodes to a form that cites the
+    // same address and re-mints to the same one.
+    let e = as_element_form(&host, [1, 0, 0, 0]).expect("the host mints");
+    let back = from_element_form(&e).expect("the tape round trips");
     let cited: Vec<crate::transducer::address::Address> = back
         .vertices
         .iter()
@@ -430,13 +413,29 @@ fn a_cited_address_is_held_once_by_every_word_that_glues_it() {
             _ => None,
         })
         .collect();
+    assert_eq!(cited.len(), 3, "every citation comes back");
+    assert!(cited.iter().all(|a| *a == inner_addr), "each is the address cited");
+    assert_eq!(
+        as_element_form(&back, [1, 0, 0, 0]).map(|x| x.address()),
+        Some(e.address()),
+        "re-minting the decoded form reaches the same address (A21 §4, 1.5)"
+    );
+
+    // NESTED: a form that glues a form that glues a form.
+    let host_addr = e.address();
+    let mut nested = Form::default();
+    nested
+        .glue(&host, host_addr.clone(), Word::identity(), [0, 0, 0, 1])
+        .expect("glue the host, which itself glues");
+    let ne = as_element_form(&nested, [1, 0, 0, 0]).expect("the nested form mints");
+    let nback = from_element_form(&ne).expect("a nested tape round trips");
     assert!(
-        cited.contains(&host_addr),
+        nback.vertices.iter().any(|v| matches!(v, Vertex::Glued { address, .. } if *address == host_addr)),
         "the nested citation decodes to the address it cited, whole"
     );
     assert_eq!(
-        as_element_form(&back, [1, 0, 0, 0]).map(|x| x.address()),
+        as_element_form(&nback, [1, 0, 0, 0]).map(|x| x.address()),
         Some(ne.address()),
-        "and re-minting the decoded form reaches the same address (A21 §4)"
+        "and the nested form re-derives its address too"
     );
 }

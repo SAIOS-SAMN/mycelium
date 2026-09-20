@@ -42,21 +42,15 @@ use crate::transducer::element::Element;
 pub struct TapeParts {
     /// The whole tape, as `encode_form_v2` writes it.
     pub total: usize,
-    /// THE ADDRESS TABLE as the tape now carries it (Z12b part 2): each
-    /// DISTINCT address the vertices name, written once, with its length
-    /// prefix. This is what the addresses cost in the tape today.
-    pub table: usize,
-    /// The ordinals the vertices carry in place of addresses — two bytes
-    /// each, whatever the address is.
-    pub addr_ord: usize,
-    /// COUNTERFACTUAL, AND NEVER SUMMED INTO THE TAPE: what those same
-    /// addresses cost when each vertex wrote its own, which is what the
-    /// tape did before part 2. `table` against this is what part 2 saved
-    /// on this word, and a word whose citations are all distinct saves
-    /// nothing — which is itself the reading.
-    pub addr_per_vertex: usize,
+    /// The Word vertices' own addresses, written whole (`put_addr`).
+    pub addr_word: usize,
+    /// The GLUED vertices' addresses — the cited form's address, written
+    /// whole into the citing tape. 1.7: identity is not shortened.
+    pub addr_glued: usize,
     /// Glued vertices on this form, and how many DISTINCT forms they cite.
-    /// Equal counts mean part 2 has nothing to collapse here.
+    /// The gap between them is repetition WITHIN one tape, which 53.4's
+    /// quantified citation removes in kind (K2) and which nothing here
+    /// shortens.
     pub glued_n: usize,
     pub glued_distinct: usize,
     /// The rotor each derivation carries: its residue word's letter tape
@@ -128,33 +122,22 @@ fn bytes_of(f: impl FnOnce(&mut Vec<u8>)) -> usize {
 pub fn tape_parts(e: &Element) -> Option<TapeParts> {
     let f = crate::transducer::sentence::from_element_form(e)?;
     let mut p = TapeParts { total: e.description().len(), ..TapeParts::default() };
-    // THE TABLE AS THE ENCODER BUILDS IT: the distinct addresses the
-    // vertices name. Measured here the same way, so the reading is of the
-    // tape that exists and not of the one that used to.
-    let mut names: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    // HOW MANY DISTINCT FORMS THE GLUED VERTICES CITE, read beside how
+    // many there are. The gap is repetition within one tape and it is K2's
+    // to remove by quantifying the citation, not the encoder's to shorten.
     let mut glued_names: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     for v in &f.vertices {
-        match v {
-            Vertex::Word { address, .. } => {
-                names.insert(address, ());
-                p.addr_ord += 2;
-            }
-            Vertex::Glued { address, .. } => {
-                names.insert(address, ());
-                glued_names.insert(address, ());
-                p.glued_n += 1;
-                p.addr_ord += 2;
-                p.addr_per_vertex += 2 + address.len();
-            }
-            _ => {}
+        if let Vertex::Glued { address, .. } = v {
+            glued_names.insert(address, ());
+            p.glued_n += 1;
+            p.addr_glued += 2 + address.len();
         }
     }
     p.glued_distinct = glued_names.len();
-    p.table = 2 + names.scoped().map(|(k, ())| 2 + k.len()).sum::<usize>();
     for v in &f.vertices {
         match v {
             Vertex::Word { address, derivation, acts, .. } => {
-                p.addr_per_vertex += 2 + address.len();
+                p.addr_word += 2 + address.len();
                 p.rotor += bytes_of(|b| derivation.residue.to_bytes(b));
                 // The composed rotor travels only where the residue does
                 // not determine it (A1, 37.7); its absence is one byte,
@@ -258,10 +241,8 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
             p.key_cited += 4 + address.len();
         }
     }
-    // `addr_per_vertex` is the counterfactual and is NOT summed: what the
-    // tape holds is the table and the ordinals.
-    let named = p.table
-        + p.addr_ord
+    let named = p.addr_word
+        + p.addr_glued
         + p.frame
         + p.rotor
         + p.cites
@@ -291,13 +272,12 @@ impl TapeParts {
         let id: String = at.iter().take(4).map(|b| format!("{b:02x}")).collect();
         format!(
             "z12 word {id}… seq {seq} verts {verts} \
-             tape {} = table {} ords {} (per-vertex {}) glued {}/{} rotor {} cites {}/{} carriage {} gauge {} \
+             tape {} = addrW {} addrG {} glued {}/{} rotor {} cites {}/{} carriage {} gauge {} \
              charts {} faces {} sections {} torsion {} loops {} rem {} \
              certs {} axes {} demands {} glue {} frame {} rest {} | key {} cited {}",
             self.total,
-            self.table,
-            self.addr_ord,
-            self.addr_per_vertex,
+            self.addr_word,
+            self.addr_glued,
             self.glued_distinct,
             self.glued_n,
             self.rotor,
