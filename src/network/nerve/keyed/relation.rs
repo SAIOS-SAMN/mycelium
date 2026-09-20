@@ -282,6 +282,13 @@ impl<V> Keyed<V> {
     /// with the keys would make one number out of two facts (law 5's habit,
     /// one level down). A carrier whose VALUES grow is named by its entry
     /// count beside this, never folded into it.
+    /// The trie's root, for the persist walk that writes it out as the
+    /// trie it is (Z11). Sealed to the nerve: a reader outside it holds a
+    /// carrier and asks at a coordinate, never a node.
+    pub(crate) fn root_node(&self) -> Option<&Node<V>> {
+        self.root.as_deref()
+    }
+
     pub fn key_bytes(&self) -> usize {
         self.scoped().map(|(k, _)| k.len()).sum()
     }

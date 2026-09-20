@@ -7,6 +7,7 @@
 
 pub mod relation;
 pub mod schema;
+pub mod ondisk;
 pub mod trie;
 pub mod walks;
 #[cfg(test)]
@@ -16,3 +17,8 @@ pub use relation::*;
 pub use schema::*;
 pub(crate) use trie::*;
 pub use walks::*;
+
+#[cfg(test)]
+mod tests {
+    mod ondisk;
+}
