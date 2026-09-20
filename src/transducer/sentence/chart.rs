@@ -474,6 +474,24 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
         buf.extend_from_slice(&(members.len() as u16).to_le_bytes());
         // The inner key IS the frame and its order IS the succession, so
         // the identity is spelled in coordinate order with nothing sorted.
+        //
+        // THE FRAME IS WRITTEN AS ITS KEY, AND READ AS ITS KEY (54.5, as
+        // ruled 2026-09-20). `frame_key` is `to_be_bytes` and that is
+        // load-bearing: the field's own doc says "the inner key is
+        // big-endian, so the trie's own order is the frame's order and a
+        // reader that enumerates a section gets the frames in succession
+        // without sorting them (law 2)".
+        //
+        // The writer wrote those bytes and `from_address` read them with
+        // `take_u16k`, which is LITTLE-endian, then re-encoded big. So
+        // `0x0001` went out as `[0,1]`, came back as 256, and re-keyed as
+        // `[1,0]`: the inverse was not a retract for any form carrying a
+        // section, and every such form had two addresses. The corpus guard
+        // found it on the first task that has one.
+        //
+        // Writing little-endian here would have agreed with that reader and
+        // given a frame TWO spellings — the carrier's and the key's — which
+        // is the defect one level up. The reader reads the key instead.
         for (m, ()) in members.scoped() {
             buf.extend_from_slice(&m);
         }
@@ -552,9 +570,14 @@ fn put_face(buf: &mut Vec<u8>, face: &FormFace, at: &[u16]) {
             Some(ps) => {
                 buf.push(1);
                 buf.extend_from_slice(&(ps.len() as u16).to_le_bytes());
-                // Coordinate order: the inner key IS the frame.
-                for p in frames_of_section(ps) {
-                    buf.extend_from_slice(&p.to_le_bytes());
+                // Coordinate order: the inner key IS the frame, and it is
+                // written AS that key — big-endian, the one spelling the
+                // carrier uses (54.5). It went out through
+                // `frames_of_section` and `to_le_bytes`, which is a second
+                // spelling of a frame and the thing that let the sections
+                // run above disagree with its own reader.
+                for (m, ()) in ps.scoped() {
+                    buf.extend_from_slice(&m);
                 }
             }
         }
@@ -613,14 +636,44 @@ fn canonical_faces<'a>(f: &'a Form, at: &[u16]) -> Vec<&'a FormFace> {
 /// An empty chain has no residual element and no address; it is written as
 /// the empty key, an absence rather than a sentinel standing for one.
 fn put_chain_address(buf: &mut Vec<u8>, chain: &[crate::transducer::sentence::Link]) {
+    if chain.is_empty() {
+        buf.push(0);
+        return;
+    }
     match element::from_residual(&chain.to_vec()) {
         Some(e) => {
+            buf.push(1);
             crate::transducer::address::put_bytes(buf, e.address().as_bytes());
             let (r, c) = corner_of(chain);
             buf.extend_from_slice(&r.to_le_bytes());
             buf.extend_from_slice(&c.to_le_bytes());
         }
-        None => crate::transducer::address::put_bytes(buf, &[]),
+        // A CHAIN A5 REFUSES IS WRITTEN OUT, NOT DROPPED (54.5, as ruled
+        // 2026-09-20). `canonical_chain` answers `None` where two distinct
+        // transitions stand on one site (A5 step 3), and that refusal is
+        // right — such a chain has no centring and therefore no address.
+        //
+        // This wrote the EMPTY key for it, which is an absence standing for
+        // a refusal: a demand whose bodies A5 cannot address keyed exactly
+        // as one with no bodies at all, so two demands carrying different
+        // unaddressable chains reached ONE address. Measured on the second
+        // corpus form the extractor builds: a demand of 25 links came back
+        // with 0 (`from_address_retracts_every_corpus_form`).
+        //
+        // The links ARE the coordinate, so they are written out (law 2,
+        // rule 6) — the same road 51.3 takes for a lamina. It costs 18
+        // bytes a link and it keeps the form's identity, which is not
+        // optional.
+        None => {
+            buf.push(2);
+            buf.extend_from_slice(&(chain.len() as u32).to_le_bytes());
+            for &(r, c, before, after) in chain {
+                buf.extend_from_slice(&r.to_le_bytes());
+                buf.extend_from_slice(&c.to_le_bytes());
+                buf.push(before);
+                buf.push(after);
+            }
+        }
     }
 }
 

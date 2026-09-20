@@ -21,19 +21,37 @@ use super::chart::word_vertex_address;
 /// is where it stood. `from_residual` is the one reader of a residual
 /// address and this uses it rather than restating the layout (law 12).
 fn take_chain_address(k: &[u8], p: &mut usize) -> Option<Vec<Link>> {
-    let a = take_bytes(k, p)?;
-    if a.is_empty() {
-        return Some(Vec::new());
+    // THE SHAPE LEADS: no chain, a chain by its address, or a chain A5
+    // refuses an address and the key writes out (54.5).
+    let shape = *k.get(*p)?;
+    *p += 1;
+    match shape {
+        0 => Some(Vec::new()),
+        1 => {
+            let a = take_bytes(k, p)?;
+            let mut out = from_residual(&a)?;
+            let cr = i64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
+            let cc = i64::from_le_bytes(k.get(*p + 8..*p + 16)?.try_into().ok()?);
+            *p += 16;
+            for l in &mut out {
+                l.0 += cr;
+                l.1 += cc;
+            }
+            Some(out)
+        }
+        2 => {
+            let n = take_u32(k, p)? as usize;
+            let mut out = Vec::with_capacity(n.min(k.len()));
+            for _ in 0..n {
+                let r = i64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
+                let c = i64::from_le_bytes(k.get(*p + 8..*p + 16)?.try_into().ok()?);
+                out.push((r, c, *k.get(*p + 16)?, *k.get(*p + 17)?));
+                *p += 18;
+            }
+            Some(out)
+        }
+        _ => None,
     }
-    let mut out = from_residual(&a)?;
-    let cr = i64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
-    let cc = i64::from_le_bytes(k.get(*p + 8..*p + 16)?.try_into().ok()?);
-    *p += 16;
-    for l in &mut out {
-        l.0 += cr;
-        l.1 += cc;
-    }
-    Some(out)
 }
 
 /// THE INVERSE OF [`form_vertex_key`] (A21 §4, 1.5 as ruled 2026-09-20).
@@ -81,7 +99,7 @@ pub fn from_address(k: &[u8]) -> Option<Form> {
             1 => {
                 let rotor = Rotor::from_key(&take_bytes(k, &mut p)?)?;
                 let acts = take_acts(k, &mut p, true)?;
-                let contact = take_contact_key(k, &mut p, &acts)?;
+                let contact = acts.1;
                 let derivation =
                     crate::transducer::alphabet::Derivation::spelled(Word::formed(rotor));
                 let address = word_vertex_address(&derivation, &acts.0, contact);
@@ -176,7 +194,7 @@ pub fn from_address(k: &[u8]) -> Option<Form> {
                 let m = take_u16k(k, &mut p)? as usize;
                 let mut ps = Keyed::new();
                 for _ in 0..m {
-                    ps.insert(frame_key(take_u16k(k, &mut p)?), ());
+                    ps.insert(take_frame_key(k, &mut p)?, ());
                 }
                 Some(ps)
             }
@@ -196,7 +214,7 @@ pub fn from_address(k: &[u8]) -> Option<Form> {
         let m = take_u16k(k, &mut p)? as usize;
         let mut members = Keyed::new();
         for _ in 0..m {
-            members.insert(frame_key(take_u16k(k, &mut p)?), ());
+            members.insert(take_frame_key(k, &mut p)?, ());
         }
         f.sections.insert(&class, members);
     }
@@ -254,7 +272,10 @@ pub fn from_address(k: &[u8]) -> Option<Form> {
 
 /// A run of members as the key writes them: the chart, the carriage, the
 /// contact where the vertex carries one, and the sorted gauge.
-struct Acts(Keyed<Acting>);
+///
+/// The contact is the VERTEX's and the writer repeats it at every member,
+/// so it rides beside the run rather than inside it.
+struct Acts(Keyed<Acting>, Option<crate::transducer::alphabet::Contact>);
 
 fn take_acts(k: &[u8], p: &mut usize, contact: bool) -> Option<Acts> {
     let n = match contact {
@@ -262,38 +283,59 @@ fn take_acts(k: &[u8], p: &mut usize, contact: bool) -> Option<Acts> {
         false => take_u16k(k, p)? as usize,
     };
     let mut out = Keyed::new();
+    let mut got: Option<Option<crate::transducer::alphabet::Contact>> = None;
     for _ in 0..n {
         let ck = take_bytes(k, p)?;
         let chart = stalk::Invariant::from_key(&ck)?;
         let carriage = Versor::from_bytes(k, p)?;
         if contact {
-            // The contact sits between the carriage and the gauge on a
-            // Word member; it is skipped here and read by `take_contact_key`
-            // from the same run, so the two readers agree by construction.
+            // THE CONTACT IS READ, NOT SKIPPED (54.5, as ruled 2026-09-20).
+            // It sits between the carriage and the gauge on every Word
+            // member, `put_word_vertex` writes it once per member, and this
+            // stepped over the bytes and answered `None` — so a vertex with
+            // a stop ring decoded WITHOUT one and re-keyed to a different
+            // address. `from_address` was not a retract for any form
+            // carrying a contact.
+            //
+            // No fixture carried one — `closed_word_form(w, None)` — so the
+            // property passed over the hole for the whole of K6. The second
+            // form the extractor built from the corpus found it
+            // (`from_address_retracts_every_corpus_form`), which is what
+            // reading real data is for.
+            //
+            // It is the same value on every member of one vertex, because
+            // the writer writes the vertex's one contact into each; the
+            // last read wins and they agree by construction.
             match *k.get(*p)? {
-                0 => *p += 1,
-                1 => *p += 4,
+                0 => {
+                    *p += 1;
+                    got = Some(None);
+                }
+                1 => {
+                    *p += 1;
+                    let anchor = u16::from_le_bytes(k.get(*p..*p + 2)?.try_into().ok()?);
+                    let ring = *k.get(*p + 2)?;
+                    *p += 3;
+                    got = Some(Some(crate::transducer::alphabet::Contact { anchor, ring }));
+                }
                 _ => return None,
             }
         }
         let gauge = take_gauge(k, p)?;
         out.insert(&ck, Acting { chart, carriage: Box::new(carriage), gauge });
     }
-    Some(Acts(out))
+    Some(Acts(out, got.flatten()))
 }
 
-/// The contact the members carried, read from the first of them. A vertex
-/// with no member carries none.
-fn take_contact_key(
-    _k: &[u8],
-    _p: &mut usize,
-    _acts: &Acts,
-) -> Option<Option<crate::transducer::alphabet::Contact>> {
-    // `take_acts` consumed the contact bytes in the run; the value is not
-    // recoverable per member without re-walking, and a vertex's contact is
-    // one value. It is carried on the key and read here as absent until a
-    // caller needs it, which no reader of a rebuilt form does today.
-    Some(None)
+/// A FRAME AS ITS OWN KEY, the two bytes `frame_key` writes. Read as bytes
+/// and not through a `u16`, because `frame_key` is big-endian on purpose —
+/// the trie's order is then the frame's order — and routing it through
+/// `take_u16k`, which is little-endian, is what gave a frame two spellings
+/// and the sections run two addresses (54.5).
+fn take_frame_key(k: &[u8], p: &mut usize) -> Option<Vec<u8>> {
+    let b = k.get(*p..*p + 2)?.to_vec();
+    *p += 2;
+    Some(b)
 }
 
 fn take_gauge(k: &[u8], p: &mut usize) -> Option<Vec<(u8, u8)>> {
