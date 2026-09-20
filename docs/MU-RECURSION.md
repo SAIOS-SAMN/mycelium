@@ -4514,6 +4514,22 @@ and decodes what the read reaches. A genome held resident as decoded
 forms is the epigenome wearing the genome's name, and it grows with every
 ratification until the box ends it.
 
+**The genome on disk is the trie, persisted, and nothing else** (ruled
+2026-09-20, after a first cut of Z11 wrote a file of rows with numbers).
+The genome file is the `Keyed` of tapes by address written out as the
+trie it is, descended on disk exactly as in memory, by the key's own bits;
+a word is reached by its address and by no position, no row number, no
+offset table and no ordinal, because a number that names a place in a file
+is positional identity wearing a file's costume (rule 15), and a file on
+the cognition path is a carrier, not transport. Bytes repeated on disk
+across the tapes of words that cite one form are storage and are not
+chased: identity is not shortened (1.7), and what removes the repetition
+in kind is 53.4's quantified citation, one citation per fiber, never a
+table. The same holds for the tape in flight: a tape writes each address
+whole where the form carries it; a tape-local table with ordinals is the
+same costume on the wire and is refused, and the version byte it spent is
+spent again to remove it.
+
 `dirty` is a reading and stays one: it says the bubble's expansion did
 not finish within its stroke, written once, where the expansion ends
 (`expand_with`, law 12), and it is not written a second time anywhere
