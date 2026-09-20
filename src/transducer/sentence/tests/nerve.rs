@@ -10,6 +10,7 @@ use super::common::*;
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk;
+use crate::network::nerve::Keyed;
 
 /// A closed one-word form at a given quarter-turn plane, so three of them
 /// are three distinct addresses.
@@ -341,5 +342,61 @@ fn two_charts_of_one_vertex_are_not_a_cycle() {
         f.loops.is_empty(),
         "a star of two members encloses nothing; the vertex graph counted {} cycles",
         f.loops.len()
+    );
+}
+
+/// 54.4 — A VERTEX ON TWO CHARTS, AND THE CYCLE THROUGH BOTH OF THEM.
+///
+/// `every_loop_lifts_to_the_member_complex` runs on fixtures whose vertices
+/// each act on ONE chart, where the member complex and the vertex graph
+/// coincide and the property is true for free. This is the shape the fleet
+/// actually has — 140 members on 74 vertices, every real loop passing
+/// through one that splits — and it is the shape that has to lift.
+///
+/// Two bodies, each standing on two charts, related by faces that cross
+/// between the charts: `(1,cA) — (2,cB)` and `(2,cB) — (1,cA)` is not a
+/// cycle of the vertex graph in any useful sense, but `(1,cA) → (2,cB) →
+/// (1,cA)` through two distinct faces is a genuine element of `Z₁(M)`.
+#[test]
+fn a_cycle_through_a_split_vertex_lifts() {
+    let a = stalk::Invariant::counts(&[7]);
+    let b = stalk::Invariant::counts(&[9]);
+    let mut f = Form::default();
+    // TWO VERTICES, EACH ACTING ON TWO CHARTS. `Vertex::word_on` takes one
+    // chart, so the second is written onto `acts` directly — which is what
+    // a vertex with a section IS (18.2, 21 step 1).
+    for _ in 0..2 {
+        let mut v = word_vertex_on(1, Word::identity(), a.clone());
+        if let Vertex::Word { acts, .. } = &mut v {
+            let first = acts.scoped().next().map(|(_, x)| x.clone()).expect("one member");
+            acts.insert(b.key().as_bytes(), Acting { chart: b.clone(), ..first });
+        }
+        f.vertices.push(v);
+    }
+    assert_eq!(f.vertices[1].charts().len(), 2, "the fixture must split, or nothing is tested");
+
+    // TWO FACES BETWEEN THE SAME PAIR OF MEMBERS. In the vertex graph
+    // those are parallel edges between two indices; in the member complex
+    // they are parallel edges between `(1,a)` and `(2,a)`, and the second
+    // is a chord closing the cycle `(1,a) → (2,a) → (1,a)`. The vertices
+    // split, so the cycle exists only because the basis names the CHART:
+    // the other members of each vertex stand outside it.
+    for (ci, cj) in [(&a, &a), (&a, &a)] {
+        let mut face = f.face_carrying(1, 2, order4()).expect("a face between two bodies");
+        let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
+        let place = face.at.get(&pairs[0]).cloned().expect("one place");
+        face.at = Keyed::new();
+        face.at.insert(face_pair_key(ci, cj), place);
+        f.faces.push(face);
+    }
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.reindex();
+
+    assert!(!f.loops.is_empty(), "two faces between two members are a cycle of M");
+    assert!(
+        f.loop_words().len() >= f.loops.len(),
+        "{} loops through a split vertex carry only {} member paths",
+        f.loops.len(),
+        f.loop_words().len()
     );
 }

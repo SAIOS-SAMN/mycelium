@@ -362,10 +362,33 @@ pub(crate) fn paths_carried(
     let mut live = vec![PartialPath::seed(seed)];
     for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
         let f = faces.get(fi as usize)?;
-        let forward = f.i == win[0] && f.j == win[1];
-        let word_step = if forward { f.word.clone() } else { f.word.inverse() };
+        // WHICH WAY THE STEP RUNS, and the ONE case where the vertices
+        // cannot say (54.4, as ruled 2026-09-20).
+        //
+        // A face between two MEMBERS OF ONE VERTEX has `f.i == f.j`, so
+        // `f.i == win[0] && f.j == win[1]` is true whichever way the cycle
+        // traverses it, and the pair is read forwards when the walk runs
+        // backwards. The member complex has two distinct nodes there —
+        // `(v, c_a)` and `(v, c_b)` — and the projection to vertex indices
+        // is lossy at exactly that edge.
+        //
+        // Measured on the fleet at 37a8f4a: 62 of 62 real loops broke
+        // mid-walk, every one of them on such a face, with the dump showing
+        // `step [1, 1] face 14 ends (1,1)`. It is the last defect of the
+        // shape this chapter has been finding — a coordinate read off a
+        // position — and the frontier already exists to resolve it: both
+        // orientations are stepped, and `closed_key` keeps the one that
+        // returns to the chart it began at. Nothing is guessed; the cycle
+        // decides.
+        let both = f.i == f.j;
+        let runs: &[bool] = match both {
+            true => &[true, false],
+            false => &[f.i == win[0] && f.j == win[1]],
+        };
         let star = touches_frame(vertices, f);
         let mut next = Vec::new();
+        for &forward in runs {
+        let word_step = if forward { f.word.clone() } else { f.word.inverse() };
         for p in &live {
             // THE STEP IS A DESCENT, NOT A SCAN. `f.at` is keyed
             // `put_bytes(ci) ++ put_bytes(cj)`, so on a forward step the
@@ -429,6 +452,7 @@ pub(crate) fn paths_carried(
                 }
                 next.push(p.extend(here, there, held));
             }
+        }
         }
         live = next;
     }

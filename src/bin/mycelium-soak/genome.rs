@@ -335,6 +335,9 @@ pub(crate) fn reconcile(path: &str) {
     let (mut looped, mut curved, mut ranked) = (0usize, 0usize, 0usize);
     let (mut paths, mut classed) = (0usize, 0usize);
     let (mut star_loops, mut real_loops) = (0usize, 0usize);
+    let (mut chain_broke, mut chain_closed, mut chain_open, mut chain_break_step) = (0usize, 0usize, 0usize, 0usize);
+    let (mut tape_loops, mut rederived_loops) = (0usize, 0usize);
+    let mut dumped = 0usize;
     let (mut torn_loops, mut unchained_loops) = (0usize, 0usize);
     let (mut split_loops, mut verts, mut members, mut split_verts) = (0usize, 0usize, 0usize, 0usize);
     let mut rank = [0u64; 4];
@@ -370,6 +373,14 @@ pub(crate) fn reconcile(path: &str) {
         // carry a holonomy — which is a different fact from a real loop
         // whose bodies fail to close around it, and the two are what this
         // pair of counts tells apart.
+        // THE LOOPS THE TAPE CARRIES, AND THE LOOPS THE FACES PROVE. The
+        // tape writes `Loop` whole and the decoder reads it back, so a
+        // genome word's loops are whatever the build that MINTED it
+        // computed. Re-deriving them from the same form's faces says
+        // whether the two agree; if they do not, the loops on the tape are
+        // a second statement of the incidence (law 12), gone stale.
+        tape_loops += f.loops.len();
+        rederived_loops += mycelium::transducer::sentence::Form::loops_of(&f.faces, &f.vertices).len();
         for lp in &f.loops {
             let star = lp.faces.iter().all(|&fi| {
                 f.faces.get(fi as usize).is_some_and(|fa| fa.i == 0 || fa.j == 0)
@@ -412,6 +423,62 @@ pub(crate) fn reconcile(path: &str) {
             }) {
                 split_loops += 1;
             }
+            // WHERE THE CHART CHAIN BREAKS, walked the way `paths_carried`
+            // walks it: at each step the face's pair must relate the chart
+            // the path STANDS AT to the one it steps to, and the last step
+            // must return to the chart it began at. A cycle built on the
+            // member complex satisfies both by construction, so a break
+            // here is a break between the basis and the walker — and the
+            // step it happens at is the reading.
+            let mut at: Option<Vec<u8>> = None;
+            let mut first: Option<Vec<u8>> = None;
+            let mut broke = false;
+            for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
+                let Some(fa) = f.faces.get(fi as usize) else { broke = true; break };
+                let forward = fa.i == win[0] && fa.j == win[1];
+                let mut stepped = false;
+                for (pk, _) in fa.at.scoped() {
+                    let Some((ik, jk)) =
+                        mycelium::transducer::sentence::read_face_pair_key(&pk)
+                    else {
+                        continue;
+                    };
+                    let (here, there) = if forward { (ik, jk) } else { (jk, ik) };
+                    if at.as_ref().is_some_and(|a| *a != here) {
+                        continue;
+                    }
+                    if first.is_none() {
+                        first = Some(here);
+                    }
+                    at = Some(there);
+                    stepped = true;
+                    break;
+                }
+                if !stepped {
+                    broke = true;
+                    chain_break_step += 1;
+                    if dumped < 1 {
+                        dumped += 1;
+                        println!("      --- one broken loop ---");
+                        println!("      vertices {:?} faces {:?}", lp.vertices, lp.faces);
+                        println!("      standing at {:?}", at.as_ref().map(|a| &a[..a.len().min(6)]));
+                        for (w2, &f2) in lp.vertices.windows(2).zip(&lp.faces) {
+                            let Some(fb) = f.faces.get(f2 as usize) else { continue };
+                            let ps: Vec<String> = fb.at.scoped().filter_map(|(k, _)| {
+                                let (i2, j2) = mycelium::transducer::sentence::read_face_pair_key(&k)?;
+                                Some(format!("({:?},{:?})", &i2[..i2.len().min(6)], &j2[..j2.len().min(6)]))
+                            }).collect();
+                            println!("        step {:?} face {f2} ends ({},{}) pairs {}", w2, fb.i, fb.j, ps.join(" "));
+                        }
+                    }
+                    break;
+                }
+            }
+            match (broke, first == at) {
+                (true, _) => chain_broke += 1,
+                (false, true) => chain_closed += 1,
+                (false, false) => chain_open += 1,
+            }
         }
         for v in &f.vertices {
             let c = v.charts().len();
@@ -448,6 +515,12 @@ pub(crate) fn reconcile(path: &str) {
     );
     println!(
         "      {split_loops} loops pass through a vertex that splits into several members"
+    );
+    println!(
+        "      the chart chain: {chain_closed} close, {chain_open} walk but do not return,          {chain_broke} break mid-walk ({chain_break_step} on a face with no matching pair)"
+    );
+    println!(
+        "      {tape_loops} loops on the tapes, {rederived_loops} re-derived from the same faces"
     );
     println!(
         "      rank over the {ranked} that have one: torsion {} free {} off-plane {} axes {}",
