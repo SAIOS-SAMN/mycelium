@@ -335,6 +335,7 @@ pub(crate) fn reconcile(path: &str) {
     let (mut looped, mut curved, mut ranked) = (0usize, 0usize, 0usize);
     let (mut paths, mut classed) = (0usize, 0usize);
     let (mut star_loops, mut real_loops) = (0usize, 0usize);
+    let (mut torn_loops, mut unchained_loops) = (0usize, 0usize);
     let mut rank = [0u64; 4];
     for (_, e) in &held {
         let held_word = mycelium::transducer::element::Held::of(e.clone());
@@ -369,11 +370,34 @@ pub(crate) fn reconcile(path: &str) {
         // whose bodies fail to close around it, and the two are what this
         // pair of counts tells apart.
         for lp in &f.loops {
-            match lp.faces.iter().all(|&fi| {
+            let star = lp.faces.iter().all(|&fi| {
                 f.faces.get(fi as usize).is_some_and(|fa| fa.i == 0 || fa.j == 0)
+            });
+            if star {
+                star_loops += 1;
+                continue;
+            }
+            real_loops += 1;
+            // WHERE THE WALK DIES, on a loop that crosses between bodies.
+            // `paths_carried` steps a member from face to face and keeps the
+            // paths that return to the chart they began at (`closed_key`
+            // compares CHARTS, not carrier state — it does not demand flat
+            // holonomy). So there are exactly two ways to get no path:
+            //
+            //   the loop has a face with NO MEMBER PAIR, and the walk has
+            //   nothing to step onto there — a tear in the cover; or
+            //
+            //   every face carries a pair and the CHARTS DO NOT CHAIN: the
+            //   member standing at the far chart of one face is not at the
+            //   near chart of the next, so the frontier empties.
+            //
+            // The two are different defects with different fixes and this
+            // is what tells them apart.
+            match lp.faces.iter().any(|&fi| {
+                f.faces.get(fi as usize).is_some_and(|fa| fa.at.is_empty())
             }) {
-                true => star_loops += 1,
-                false => real_loops += 1,
+                true => torn_loops += 1,
+                false => unchained_loops += 1,
             }
         }
         if let Some(r) = f.rank() {
@@ -394,6 +418,9 @@ pub(crate) fn reconcile(path: &str) {
     );
     println!(
         "      {star_loops} loops through the Frame alone, {real_loops} crossing a face between two bodies"
+    );
+    println!(
+        "      of the {real_loops}: {torn_loops} carry a face with NO member pair, {unchained_loops} carry a pair on every face"
     );
     println!(
         "      rank over the {ranked} that have one: torsion {} free {} off-plane {} axes {}",
