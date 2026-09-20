@@ -336,6 +336,7 @@ pub(crate) fn reconcile(path: &str) {
     let (mut paths, mut classed) = (0usize, 0usize);
     let (mut star_loops, mut real_loops) = (0usize, 0usize);
     let (mut torn_loops, mut unchained_loops) = (0usize, 0usize);
+    let (mut split_loops, mut verts, mut members, mut split_verts) = (0usize, 0usize, 0usize, 0usize);
     let mut rank = [0u64; 4];
     for (_, e) in &held {
         let held_word = mycelium::transducer::element::Held::of(e.clone());
@@ -399,6 +400,26 @@ pub(crate) fn reconcile(path: &str) {
                 true => torn_loops += 1,
                 false => unchained_loops += 1,
             }
+            // DOES THE LOOP EVEN PASS THROUGH A VERTEX THAT SPLITS? A cycle
+            // of the vertex graph lifts to the member graph only where each
+            // vertex it passes through contributes ONE member; a vertex
+            // acting on several charts is several nodes to the face builder
+            // and one node to the cycle basis, and that is where the lift
+            // has to break. If no loop passed through such a vertex the
+            // account would be wrong, so it is counted rather than assumed.
+            if lp.vertices.iter().any(|&vi| {
+                f.vertices.get(vi as usize).is_some_and(|v| v.charts().len() > 1)
+            }) {
+                split_loops += 1;
+            }
+        }
+        for v in &f.vertices {
+            let c = v.charts().len();
+            verts += 1;
+            members += c;
+            if c > 1 {
+                split_verts += 1;
+            }
         }
         if let Some(r) = f.rank() {
             ranked += 1;
@@ -421,6 +442,12 @@ pub(crate) fn reconcile(path: &str) {
     );
     println!(
         "      of the {real_loops}: {torn_loops} carry a face with NO member pair, {unchained_loops} carry a pair on every face"
+    );
+    println!(
+        "      {verts} vertices carry {members} members; {split_verts} act on more than one chart"
+    );
+    println!(
+        "      {split_loops} loops pass through a vertex that splits into several members"
     );
     println!(
         "      rank over the {ranked} that have one: torsion {} free {} off-plane {} axes {}",
