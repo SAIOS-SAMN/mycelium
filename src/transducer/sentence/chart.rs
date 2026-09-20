@@ -870,6 +870,7 @@ fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
             placement,
             depth,
             carriage,
+            chart,
             ..
         } => {
             buf.push(2);
@@ -877,6 +878,22 @@ fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
             placement.put_canonical(buf);
             buf.extend_from_slice(&depth.to_le_bytes());
             carriage.put_canonical(buf);
+            // AND THE CHART THE CITATION STANDS AT (54.5, as ruled
+            // 2026-09-20). It is the cited form's RANK — five counts,
+            // `[2, torsion, free, offplane, axes]` — and `from_address`
+            // cannot re-derive it, because that needs the cited FORM and
+            // the decoder holds only its address.
+            //
+            // Law 12 asks for a theorem rather than a stored fact, and this
+            // is not one of this key: re-deriving it requires an external
+            // resolver, so it is a coordinate OF THE CITATION — what kind
+            // of chart is being cited — and the key writes it out.
+            //
+            // It was defaulted on decode, so every citing form came back
+            // with `Invariant::default()` on its `Glued` vertices and the
+            // court refused the placement face: "a vertex does not act on
+            // the chart the pair names". Bounded, `O(1)` per citation.
+            crate::transducer::address::put_bytes(buf, chart.key().as_bytes());
         }
         Vertex::Rebased { by, of, acts } => {
             buf.push(3);

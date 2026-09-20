@@ -57,9 +57,30 @@ impl Vertex {
     pub fn word_in(&self, form: &Form) -> Option<Word> {
         match self {
             Vertex::Frame | Vertex::Unfolded { .. } => Some(Word::identity()),
-            // A face reads the ACTION spelled, not the residue: a cited
-            // vertex spells its rotor by A22 (L14, 50.2 step 2).
-            Vertex::Word { derivation, .. } => derivation.spelling(),
+            // A FACE READS THE ACTION, WHICH IS THE COMPOSED ROTOR (§1.5,
+            // 54.5 as ruled 2026-09-20). The line above already said "the
+            // ACTION spelled, not the residue" and the code did the
+            // opposite for a factored derivation: `spelling()` answers
+            // `word_local()` where there is one, and for a vertex that
+            // cites generators that is the RESIDUE A22 peeled after
+            // factoring them out — not what the vertex does.
+            //
+            // §1.5: "two vertices with different derivations and one rotor
+            // are one vertex, one address", and `form_vertex_key` writes
+            // `derivation.rotor()`, the composed product, for exactly that
+            // reason. Reading the residue here made the face word depend on
+            // the PRESENTATION: two vertices at one address gave two face
+            // words, so `face_word` was not a function of the key and a
+            // form decoded from its address refused `REFUSE_FACE`.
+            //
+            // The composition is not taken on trust: `derivations_compose`
+            // re-derives the product from the cited generators on the
+            // court's own cover and refuses a vertex whose citations do not
+            // reach the rotor it carries (50.2 step 2). The action is
+            // verified; this reads it.
+            Vertex::Word { derivation, .. } => {
+                Some(Word::formed(derivation.rotor()))
+            }
             Vertex::Glued { placement, .. } => Some(placement.clone()),
             // THE CHAIN A REBASE MAKES, walked and never recursed into.
             //

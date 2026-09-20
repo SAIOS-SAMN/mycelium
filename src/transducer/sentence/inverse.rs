@@ -110,9 +110,10 @@ pub fn from_address(k: &[u8]) -> Option<Form> {
                 let placement = Word::formed(Rotor::from_bytes(k, &mut p)?);
                 let depth = take_u16k(k, &mut p)?;
                 let carriage = Box::new(Versor::from_bytes(k, &mut p)?);
+                let chart = stalk::Invariant::from_key(&take_bytes(k, &mut p)?)?;
                 Vertex::Glued {
                     address,
-                    chart: stalk::Invariant::default(),
+                    chart,
                     magnitude: [0; 4],
                     depth,
                     placement,

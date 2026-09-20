@@ -202,3 +202,105 @@ fn from_address_retracts_every_corpus_form() {
     eprintln!("  retract: {seen} corpus forms round-tripped, {with_loops} of them carrying a loop");
     assert!(seen > 0, "no task of the slice extracted a rule; the property ran over nothing");
 }
+
+/// 54.5 PHASE A — THE PREDICATE GUARD: the address is a retract for what
+/// the ENGINE asks of a form, not merely for its own key.
+///
+/// `from_address_retracts_every_corpus_form` asserts a fixed point of the
+/// key map — `key(from_address(key)) == key` — and that is weaker than
+/// what the purge needs. Every failure of the two attempts at it was
+/// DOWNSTREAM of that: a decoded form whose depth was zero, whose citation
+/// carried a default chart, whose member carriage matched only up to a
+/// rational scale, whose face word came off a presentation rather than an
+/// action. The key round-tripped through all four.
+///
+/// So this compares the two decoders — the tape's `decode_form_v2` and the
+/// address's `from_address` — through the readings the court actually
+/// makes. While both exist the tape is an oracle, and this is the
+/// deliberate form of the accidental one it has been all session.
+///
+/// It is the precondition for deleting `Element.description`: what the
+/// tape has been doing by redundancy, this does by assertion.
+#[test]
+fn the_address_and_the_tape_agree_on_every_reading_the_court_makes() {
+    let Ok(dir) = std::fs::read_dir(CORPUS) else {
+        eprintln!("  predicate guard: {CORPUS} does not read");
+        return;
+    };
+    let mut names: Vec<String> = dir
+        .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
+        .filter(|n| n.ends_with(".json"))
+        .collect();
+    names.sort_unstable();
+    names.truncate(TASKS);
+
+    let epi = crate::client::sdk::Epigenome::new();
+    let mut physics = crate::physics::Physics::default();
+    let (mut seen, mut diverged) = (0usize, 0usize);
+    let mut why: crate::network::nerve::Keyed<u64> = crate::network::nerve::Keyed::new();
+    let note = |k: &str, why: &mut crate::network::nerve::Keyed<u64>| {
+        match why.get_mut(k.as_bytes()) {
+            Some(n) => *n += 1,
+            None => {
+                why.insert(k.as_bytes(), 1);
+            }
+        }
+    };
+    for name in &names {
+        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let mut budget =
+            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
+        let Some(rule) = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
+        else {
+            continue;
+        };
+        let f = &rule.form;
+        let Some(back) = from_address(form_vertex_key(f).as_bytes()) else {
+            note("the address does not decode", &mut why);
+            diverged += 1;
+            continue;
+        };
+        seen += 1;
+        let mut bad = false;
+        // EVERY FACE RE-DERIVES FROM ITS OWN VERTICES, which is what
+        // `face_rederives` asks and what refused 28 tests. Asked here of
+        // the DECODED form, since that is the one the court would hold.
+        for face in &back.faces {
+            if back.face_word(face.i, face.j).as_ref() != Some(&face.word) {
+                note("a face word does not re-derive", &mut why);
+                bad = true;
+                break;
+            }
+        }
+        // THE BUNDLE'S AUDIT, the closure test, and the cycles' holonomy —
+        // the three readings a court takes after the faces.
+        if f.rank().map(|r| (r.torsion, r.free, r.offplane, r.axes))
+            != back.rank().map(|r| (r.torsion, r.free, r.offplane, r.axes))
+        {
+            note("the rank audit differs", &mut why);
+            bad = true;
+        }
+        if f.is_closed() != back.is_closed() {
+            note("closure differs", &mut why);
+            bad = true;
+        }
+        if f.depth_of() != back.depth_of() {
+            note("the citation depth differs", &mut why);
+            bad = true;
+        }
+        if f.loop_words().len() != back.loop_words().len() {
+            note("the loops carry a different number of member paths", &mut why);
+            bad = true;
+        }
+        if bad {
+            diverged += 1;
+        }
+    }
+    eprintln!("  predicate guard: {seen} corpus forms, {diverged} diverged");
+    for (k, n) in why.scoped() {
+        eprintln!("    {n:>4}  {}", String::from_utf8_lossy(&k));
+    }
+    assert!(seen > 0, "the guard ran over nothing");
+    assert_eq!(diverged, 0, "the address and the tape must agree on every reading");
+}

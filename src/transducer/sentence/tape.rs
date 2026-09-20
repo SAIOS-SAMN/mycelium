@@ -697,20 +697,42 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // filing moved to `Element.filing` and the court reads it there, which
     // is the half of this that landed.
     //
-    // THE READER STAYS ON THE TAPE FOR ONE MORE REASON, and it is not the
-    // filing. Switching it leaves 28 tests refusing `REFUSE_FACE`, "face
-    // does not re-derive from its vertices" — because `face_rederives`
-    // recomputes each member pair's relative carriage from the two
-    // vertices, and the key stores every carriage in A4 CANONICAL form. The
-    // canonical of a product is not the product of the canonicals, so
-    // `canonical(a) · canonical(b)⁻¹` and the stored `canonical(a·b⁻¹)` can
-    // differ by a scale. The tape preserved exact bytes and hid it.
+    // THE READER WAITS ON THE RECEIPTS ENVELOPE, and the reason is measured
+    // (54.5, attempted twice 2026-09-20).
     //
-    // That is a real question about what A4 canonicalization preserves, not
-    // a gap in this reader, and it is the last thing standing between the
-    // address and the tape. `from_address_retracts_every_corpus_form` does
-    // not catch it: it asserts the KEY round-trips, which it does, and the
-    // court's predicates are a stronger claim the guard does not yet make.
+    // `from_address` is a faithful retract of the GEOMETRY:
+    // `the_address_and_the_tape_agree_on_every_reading_the_court_makes`
+    // runs both decoders over 36 corpus forms and finds no divergence on
+    // face words, the rank audit, closure, citation depth or the loops'
+    // member paths. Four real defects were fixed getting there — a
+    // defaulted citation chart, a byte-exact carriage comparison, a face
+    // word read off a presentation rather than an action, and an underived
+    // depth.
+    //
+    // WHAT IS LEFT IS NOT GEOMETRY. Three carriers ride the tape that the
+    // key deliberately excludes, because each is EVIDENCE and not a
+    // coordinate (§1.5, `evidence_is_not_identity`):
+    //
+    //   `Derivation.generators` — the citations a mind factored through.
+    //   A decoded vertex is `spelled`, so the court cannot verify a
+    //   factored derivation and the economy cannot pay a cited generator's
+    //   speaker.
+    //
+    //   `Form.certificates` — the pivots a crystallization rests on (A20).
+    //
+    //   The filing, which moved to `Element.filing` at df1eeaa and is the
+    //   one of the three already done.
+    //
+    // `Tape ∖ Key` measured 2 parts in 10 000 IN BYTES, and that reading
+    // missed all of this: certificates were 0 bytes and `cites` was 0 bytes
+    // on the fleet, so a carrier empty for an unrelated reason read as a
+    // carrier not needed. That is the fifth time this session an
+    // empty-carrier reading has misled, and the last one.
+    //
+    // So the tape cannot go until the receipts envelope carries the other
+    // two, which is Road (d): a citation is a 1-simplex `⟨A_i, A_j, φ⟩` of
+    // the nerve, in the incidence ledger, not inlined in a key. The purge
+    // and Road (d) are one change seen from two ends.
     let b = e.description();
     let mut pos = 2usize;
     decode_form_v2(b, &mut pos)

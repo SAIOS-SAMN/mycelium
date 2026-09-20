@@ -50,6 +50,51 @@ pub fn replay_form_with(
 /// the product of the two fibres, and which bodies a face relates is the
 /// scene's fact, not something the court recomputes. A pair the two vertices no
 /// longer relate does not re-derive, and the face refuses.
+/// TWO PLACES ARE ONE PLACE, projectively (§1.5, 54.5 as ruled
+/// 2026-09-20).
+///
+/// `FacePlace` derives `PartialEq`, so `p == *place` demanded BYTE
+/// equality of a versor. §1.5 is titled "byte-exactness is not identity"
+/// and this site never got it.
+///
+/// It matters exactly where a carriage has been through the key. A versor
+/// acts by the sandwich `x ↦ V x Ṽ`, and for any `λ ∈ ℚ×`
+///
+///     (λV) x (λV)~ = λ² (V x Ṽ)
+///
+/// so a ray of versors is ONE transformation. A4 canonicalization picks a
+/// representative of that ray, and canonicalization is not a homomorphism:
+///
+///     can(a)·can(b)⁻¹ = λ · can(a·b⁻¹),  some λ ∈ ℚ×
+///
+/// So `face_rederives` recomputing a member pair's RELATIVE carriage from
+/// two canonical absolutes gets the right geometry and the wrong scalar,
+/// and an exact comparison refuses it. That is not an approximation being
+/// admitted — `same_versor` is `projective_ratio(a,b).is_some()`, an exact
+/// rational ratio over ℚ× with no tolerance anywhere. It is the quotient
+/// the algebra already is.
+///
+/// The gauge is a permutation of hues and is compared exactly, because a
+/// permutation has no ray.
+fn same_place(
+    a: &crate::transducer::sentence::FacePlace,
+    b: &crate::transducer::sentence::FacePlace,
+) -> bool {
+    use crate::transducer::element::same_versor;
+    if !same_versor(&a.carriage, &b.carriage) || a.gauge != b.gauge {
+        return false;
+    }
+    match (&a.edge, &b.edge) {
+        (None, None) => true,
+        // `Word`'s own equality is already M1's — the rotor up to `λ ∈ ℚ×`,
+        // either sign — so the edge's word needs no separate reading.
+        (Some(x), Some(y)) => {
+            x.word == y.word && same_versor(&x.carriage, &y.carriage) && x.gauge == y.gauge
+        }
+        _ => false,
+    }
+}
+
 fn face_rederives(f: &Form, face: &crate::transducer::sentence::FormFace) -> bool {
     let (Some(vi), Some(vj)) = (
         f.vertices.get(face.i as usize),
@@ -58,21 +103,37 @@ fn face_rederives(f: &Form, face: &crate::transducer::sentence::FormFace) -> boo
         return false;
     };
     if f.face_word(face.i, face.j).as_ref() != Some(&face.word) {
+        // §8.1 — WHICH BRANCH REFUSED. `REFUSE_FACE` names the face and
+        // not the reading inside it, and the five ways a face can fail to
+        // re-derive are five different defects.
+        eprintln!("  face {}-{} refused: the word does not re-derive", face.i, face.j);
         return false;
     }
     for (pk, place) in face.at.scoped() {
         let Some((ik, jk)) = crate::transducer::sentence::read_face_pair_key(&pk) else {
+            eprintln!("  face {}-{} refused: a member pair key does not read", face.i, face.j);
             return false;
         };
         let (Some(ci), Some(cj)) = (vi.chart_keyed(&ik), vj.chart_keyed(&jk)) else {
+            eprintln!(
+                "  face {}-{} refused: a vertex does not act on the chart the pair names",
+                face.i, face.j
+            );
             return false;
         };
         // The edge is evidence the court re-measures against the FAMILY
         // (`edges_rederive_frames`), not something the vertices re-derive, so it
         // is carried in and compared by its presence alone here.
         match f.face_place(face.i, &ci, face.j, &cj, place.edge.clone()) {
-            Some(p) if p == *place => {}
-            _ => return false,
+            Some(p) if same_place(&p, place) => {}
+            Some(_) => {
+                eprintln!("  face {}-{} refused: the place does not re-derive", face.i, face.j);
+                return false;
+            }
+            None => {
+                eprintln!("  face {}-{} refused: the place does not derive at all", face.i, face.j);
+                return false;
+            }
         }
     }
     true

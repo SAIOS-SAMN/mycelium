@@ -123,12 +123,35 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
         None,
         "closure certifies; a zero magnitude prices at zero and refuses nothing"
     );
+    // A TAMPERED DEPTH NO LONGER SURVIVES THE COORDINATE (54.5, as ruled
+    // 2026-09-20). This moved a citation's stored depth to 1 and expected
+    // `REFUSE_GLUED_DEPTH`, which fired because `f.depth` came off the tape
+    // and disagreed with `f.depth_of()`.
+    //
+    // `from_address` DERIVES `Form.depth` now — one more than the deepest
+    // citation, read off the `Glued` vertices the key writes — so once the
+    // address is the only decoder this tamper will be ERASED rather than
+    // refused, which is the stronger property: a derived coordinate cannot
+    // be forged, so there is nothing left to catch.
+    //
+    // Both readings are asserted, and the first is decoder-independent: a
+    // citation's own `depth` is in the key, so moving it names a different
+    // word whatever reads it.
     let mut cited_deeper = outer.clone();
     if let Vertex::Glued { depth, .. } = &mut cited_deeper.vertices[gi as usize] {
         *depth = 1;
     }
     let deeper_e = as_element_form(&cited_deeper, [1, 0, 0, 0]).expect("tape");
-    assert_eq!(blind_replay_with(&deeper_e, &resolve), Some(REFUSE_GLUED_DEPTH));
+    assert_ne!(
+        deeper_e.address(),
+        outer_e.address(),
+        "a citation's depth is in the key: moving it names a different word"
+    );
+    assert_eq!(
+        blind_replay_with(&deeper_e, &resolve),
+        Some(REFUSE_GLUED_DEPTH),
+        "and while the tape carries `f.depth`, the court catches the disagreement"
+    );
 }
 
 /// 34.1: a sentence whose tape does not parse whole is refused by name,
