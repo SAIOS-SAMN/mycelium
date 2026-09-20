@@ -207,6 +207,10 @@ pub(crate) fn reconcile(path: &str) {
     let mut pos = 8usize;
     let mut total = mycelium::transducer::sentence::TapeParts::default();
     let mut read = 0usize;
+    // The sentences themselves, kept for the homotopy reading below: it
+    // asks each form for its loops and its rank, which the byte accounting
+    // does not carry.
+    let mut held: Vec<((), Element)> = Vec::new();
     for _ in 0..n {
         let Some(len) = bytes.get(pos..pos + 4).and_then(|b| b.try_into().ok()).map(u32::from_le_bytes)
         else {
@@ -220,6 +224,7 @@ pub(crate) fn reconcile(path: &str) {
         let Some(e) = Element::from_bytes(slice, &mut ep) else { continue };
         let Some(p) = mycelium::transducer::sentence::tape_parts(&e) else { continue };
         read += 1;
+        held.push(((), e.clone()));
         total.total += p.total;
         total.addr_word += p.addr_word;
         total.addr_glued += p.addr_glued;
@@ -316,5 +321,82 @@ pub(crate) fn reconcile(path: &str) {
     println!(
         "      citations {} in all, {} distinct addresses among them",
         total.glued_n, total.glued_distinct
+    );
+    // H^1 AS THE GENOME ACTUALLY HOLDS IT. `coheres` decides what may be
+    // STOOD, and it does so silently — a form it refuses is a `continue` at
+    // `epigenome::crystal`, never a line on the wire — so the only way to
+    // ask whether curvature reaches the genome is to ask the genome.
+    //
+    // Four lanes, never summed with each other (law 5): the rank's torsion,
+    // free, off-plane and axes coordinates, each totalled over the words
+    // that have a rank at all. `curved` counts the sentences holding at
+    // least one loop whose holonomy is not the identity — the number that is
+    // zero exactly when the genome is flat.
+    let (mut looped, mut curved, mut ranked) = (0usize, 0usize, 0usize);
+    let (mut paths, mut classed) = (0usize, 0usize);
+    let (mut star_loops, mut real_loops) = (0usize, 0usize);
+    let mut rank = [0u64; 4];
+    for (_, e) in &held {
+        let held_word = mycelium::transducer::element::Held::of(e.clone());
+        let Some(f) = held_word.form() else { continue };
+        if f.loops.is_empty() {
+            continue;
+        }
+        looped += 1;
+        // `lp.holonomy` IS A COBOUNDARY AND CANNOT BE ASKED THIS. A face's
+        // word is `w_j ∘ w_i⁻¹`, so a product of them around a cycle
+        // telescopes to the identity: `delta1` reads `Finite(1)` on every
+        // loop of every form, always, and a reading taken off it says only
+        // that `δ∘δ = 0`. `Form::loop_words` is the true carrier — the EDGE
+        // composite where a member path has one, the word where it does not
+        // — which is what R8/D1 moved the FILER onto and what `coheres`
+        // reaches through `loop_is_congruent`.
+        let words = f.loop_words();
+        if words.iter().any(|(w, _)| {
+            !w.rotor().projective_eq(&mycelium::transducer::alphabet::Rotor::identity())
+        }) {
+            curved += 1;
+        }
+        paths += words.len();
+        classed += words.iter().filter(|(_, k)| k.as_ref().is_some_and(|k| !k.is_zero())).count();
+        // A LOOP OF FRAME STAR FACES CARRIES NOTHING BY CONSTRUCTION.
+        // `paths_carried` seeds a loop's edge half only where the loop
+        // crosses a face that does NOT touch the Frame, and 18 puts the
+        // Frame at vertex zero by the form's own shape. A loop every face
+        // of which is a star face is a cycle through the basepoint and
+        // relates no two bodies to each other, so it has no member path to
+        // carry a holonomy — which is a different fact from a real loop
+        // whose bodies fail to close around it, and the two are what this
+        // pair of counts tells apart.
+        for lp in &f.loops {
+            match lp.faces.iter().all(|&fi| {
+                f.faces.get(fi as usize).is_some_and(|fa| fa.i == 0 || fa.j == 0)
+            }) {
+                true => star_loops += 1,
+                false => real_loops += 1,
+            }
+        }
+        if let Some(r) = f.rank() {
+            ranked += 1;
+            rank[0] += u64::from(r.torsion);
+            rank[1] += u64::from(r.free);
+            rank[2] += u64::from(r.offplane);
+            rank[3] += u64::from(r.axes);
+        }
+    }
+    println!();
+    println!("    the homotopy the genome holds, over the same {read} sentences:");
+    println!(
+        "      {looped} carry a loop, {curved} carry a loop with NON-IDENTITY holonomy"
+    );
+    println!(
+        "      {paths} member paths in all, {classed} of them standing at a NON-ZERO class"
+    );
+    println!(
+        "      {star_loops} loops through the Frame alone, {real_loops} crossing a face between two bodies"
+    );
+    println!(
+        "      rank over the {ranked} that have one: torsion {} free {} off-plane {} axes {}",
+        rank[0], rank[1], rank[2], rank[3]
     );
 }
