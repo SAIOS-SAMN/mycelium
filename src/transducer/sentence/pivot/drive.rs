@@ -814,7 +814,16 @@ impl Form {
         for axis in kappa.coordinates() {
             match axis {
                 Axis::Placement => {
-                    let Some(translator) = element::translator_of(&kappa.carriage) else {
+                    // THE SLIP, NOT THE WHOLE TRANSLATION (54.4, as ruled
+                    // 2026-09-20). This read `translator_of(&kappa.carriage)`
+                    // — `t` entire — and `t = t_im ⊕ τ` where `t_im` is the
+                    // part a choice of origin absorbs. Writing `t_im` onto a
+                    // face drags the CENTRE of the rotation across the chart
+                    // and moves the invariant plane with it; the obstruction
+                    // is `τ` alone, which acts on `ker(I − R)` and leaves the
+                    // centre standing. The aim was unsplittable while the
+                    // placement was an enum.
+                    let Some(translator) = kappa.slip_translator() else {
                         continue;
                     };
                     out.push(Candidate {

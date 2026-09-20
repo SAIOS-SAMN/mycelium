@@ -234,6 +234,26 @@ impl ClassVector {
         std::array::from_fn(|_| Self::zero_q())
     }
 
+    /// THE SLIP THIS CLASS STANDS AT, as the translator that is exactly it.
+    ///
+    /// `Axis::Placement`'s 3.9 move offered `translator_of(&kappa.carriage)`
+    /// — the WHOLE translation `t`. The split says `t = t_im ⊕ τ`, and
+    /// `t_im = (I − R)p` is the part a choice of origin absorbs: it is
+    /// WHERE THE TURN STANDS, and writing it onto a face drags the centre
+    /// of rotation across the chart along with the slip. Only `τ` is the
+    /// obstruction, so only `τ` is offered — it acts on `ker(I − R)`, which
+    /// leaves the centre and the invariant plane exactly where they are.
+    ///
+    /// `None` where the class does not slip: there is no placement move to
+    /// make, and `occupies(Axis::Placement)` already says so.
+    pub(crate) fn slip_translator(&self) -> Option<Versor> {
+        if !self.occupies(Axis::Placement) {
+            return None;
+        }
+        let [r, c, k] = &self.placement;
+        Some(crate::transducer::cga::translator(r, c, k))
+    }
+
     fn zero_q() -> num_rational::BigRational {
         num_rational::BigRational::from_integer(num_bigint::BigInt::from(0))
     }
