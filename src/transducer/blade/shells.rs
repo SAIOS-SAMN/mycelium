@@ -71,11 +71,11 @@ pub fn adjacent_ring(painted: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
     out
 }
 
-/// Background sites inside the body's bbox that cannot reach the bbox
-/// border through background (enclosed interior / holes).
+/// Background sites inside the body's EXTENT that cannot reach its border
+/// through background (enclosed interior / holes).
 #[expect(
     clippy::disallowed_methods,
-    reason = "rule 4 — a bounding box is the extent of the painted sites, content: two nodes holding one body read the same corners"
+    reason = "rule 4 — the extent is the reach of the painted sites, content: two nodes holding one body read the same corners"
 )]
 pub fn enclosed_interior(painted: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
     if painted.is_empty() {
@@ -132,11 +132,23 @@ pub fn enclosed_interior(painted: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
     out
 }
 
+/// THE BODY'S EXTENT: the least and greatest lamina coordinate its painted
+/// sites occupy, read at the sensor boundary (§1.4, law 11's one place
+/// where a pair of integers is a coordinate).
+///
+/// It was called `bbox`. That is computer science's noun for an
+/// axis-aligned box used to INDEX points in a flat grid, and the gate
+/// refuses that shape — but this is not it: nothing here partitions,
+/// bins, or locates anything by the box. The extent IS the object, the
+/// same reading `place_chain`'s `corner_translator` takes when it centres
+/// a chain on its min corner. The name carried a Euclidean crutch's
+/// vocabulary over a lawful sensor reading, which is §2.1's fault, and
+/// renaming it is the whole fix.
 #[expect(
     clippy::disallowed_methods,
-    reason = "rule 4 — the bounding box IS this function's object, the extent of the painted sites and not a candidate chosen from them; an empty set has no box and refuses"
+    reason = "rule 4 — the extent IS this function's object, the reach of the painted sites and not a candidate chosen from them; an empty set has no extent and refuses"
 )]
-pub(crate) fn bbox(painted: &[(i64, i64, u8)]) -> Option<(i64, i64, i64, i64)> {
+pub(crate) fn extent(painted: &[(i64, i64, u8)]) -> Option<(i64, i64, i64, i64)> {
     let r0 = painted.iter().map(|c| c.0).min()?;
     let r1 = painted.iter().map(|c| c.0).max()?;
     let c0 = painted.iter().map(|c| c.1).min()?;
@@ -144,9 +156,9 @@ pub(crate) fn bbox(painted: &[(i64, i64, u8)]) -> Option<(i64, i64, i64, i64)> {
     Some((r0, r1, c0, c1))
 }
 
-/// CUT: the body's bounding box as its own whole, origin at the min site.
+/// CUT: the body's EXTENT as its own whole, origin at its least site.
 pub fn cut(painted: &[(i64, i64, u8)]) -> Option<Vec<(i64, i64, u8)>> {
-    let (r0, _, c0, _) = bbox(painted)?;
+    let (r0, _, c0, _) = extent(painted)?;
     let mut out: Vec<_> = painted.iter().map(|&(r, c, h)| (r - r0, c - c0, h)).collect();
     out.sort_unstable();
     Some(out)
@@ -178,7 +190,7 @@ pub fn reduced(painted: &[(i64, i64, u8)], k: i64) -> Option<Vec<(i64, i64, u8)>
     if k <= 1 {
         return Some(painted.to_vec());
     }
-    let (r0, r1, c0, c1) = bbox(painted)?;
+    let (r0, r1, c0, c1) = extent(painted)?;
     if (r1 - r0 + 1) % k != 0 || (c1 - c0 + 1) % k != 0 {
         return None;
     }
@@ -214,7 +226,7 @@ pub fn reduced(painted: &[(i64, i64, u8)], k: i64) -> Option<Vec<(i64, i64, u8)>
 /// TILED down×across — the cut body repeated as a grid of itself.
 pub fn tiled(painted: &[(i64, i64, u8)], down: i64, across: i64) -> Vec<(i64, i64, u8)> {
     let Some(cut) = cut(painted) else { return Vec::new() };
-    let Some((_, r1, _, c1)) = bbox(&cut) else { return Vec::new() };
+    let Some((_, r1, _, c1)) = extent(&cut) else { return Vec::new() };
     let (h, w) = (r1 + 1, c1 + 1);
     let mut out = Vec::new();
     for tr in 0..down.max(0) {
@@ -231,7 +243,7 @@ pub fn tiled(painted: &[(i64, i64, u8)], down: i64, across: i64) -> Vec<(i64, i6
 /// BORDERED — a ring of `hue` one site wide around the cut body.
 pub fn bordered(painted: &[(i64, i64, u8)], hue: u8) -> Vec<(i64, i64, u8)> {
     let Some(cut) = cut(painted) else { return Vec::new() };
-    let Some((_, r1, _, c1)) = bbox(&cut) else { return Vec::new() };
+    let Some((_, r1, _, c1)) = extent(&cut) else { return Vec::new() };
     let (rows, cols) = (r1 + 1, c1 + 1);
     let mut out: Vec<_> = cut.iter().map(|&(r, c, h)| (r + 1, c + 1, h)).collect();
     for r in 0..rows + 2 {

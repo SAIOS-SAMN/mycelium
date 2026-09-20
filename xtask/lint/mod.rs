@@ -1,8 +1,12 @@
-// MU-STANDARDS 4.1 — THE READING BOUND, over `src/` and `xtask/`. Every
-// other rule the compiler can read is a lint (§4.2) or a type (§4.4).
+// MU-STANDARDS 4.1 — THE GATES THE COMPILER CANNOT READ, over `src/` and
+// `xtask/`: the reading bound (§4.1) and the Euclidean grid vocabulary
+// (law 2, rule 15, the Anti-Flattening Law). Every other rule is a clippy
+// lint (§4.2) or a type (§4.4).
 
+pub mod euclidean;
 pub mod length;
 
+use euclidean::lint_euclidean;
 use length::lint_file_length;
 
 use std::path::PathBuf;
@@ -21,6 +25,10 @@ pub fn run() -> Result<(), String> {
     };
     let mut hits = Vec::new();
     lint_file_length(&bounded, &mut hits)?;
+    // The manifold is not a grid: no Morton curve, no bounding box, no
+    // subdivision index standing in for a coordinate (law 2, rule 15,
+    // the Anti-Flattening Law).
+    lint_euclidean(&bounded, &mut hits)?;
     if hits.is_empty() {
         return Ok(());
     }

@@ -16,6 +16,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 mod calibrate;
 mod census;
+mod genome;
 mod cover;
 mod delta;
 mod solve;
@@ -157,6 +158,17 @@ fn main() {
                 std::process::exit(1);
             }
         }
+        return;
+    }
+    // K6.4's reading — `--genome PATH`: what a genome file holds that its
+    // addresses do not, which is what 54.5's empty value must not lose.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--genome") {
+        let Some(path) = argv.get(1) else {
+            eprintln!("  genome refused: name the genome file");
+            std::process::exit(1);
+        };
+        genome::report(path);
+        genome::reconcile(path);
         return;
     }
     // 53.2's probe — `--census DIR [id,id,…]`: what each family READS as,

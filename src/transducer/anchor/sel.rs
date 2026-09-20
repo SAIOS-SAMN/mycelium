@@ -36,12 +36,12 @@ pub enum Sel {
     Flood(Box<Sel>, Box<Sel>),
     /// ORDER-INVARIANT component selection: of the support's connected
     /// components, the one UNIQUELY extremizing a measured C₀ invariant.
-    /// Code 0..4 = (max |K|, min |K|, max L1-bbox-diameter, min diameter).
+    /// Code 0..4 = (max |K|, min |K|, max L1 extent diameter, min diameter).
     /// A tie selects NOTHING — no unique extremum, no selection (exactness,
     /// never a coin flip).
     ArgExt(Box<Sel>, u8),
     /// SITE TRANSPORT intersection: a ∩ Shift_d(b) where d is the exact
-    /// bbox-min corner difference extrema(a) − extrema(b) — the offset is
+    /// least-corner difference extrema(a) − extrema(b) — the offset is
     /// DERIVED from the two supports at evaluation time, never a parameter.
     Transport(Box<Sel>, Box<Sel>),
 }
@@ -68,7 +68,7 @@ impl Sel {
     /// component uniquely extremizing a measured invariant: the reading is
     /// the operator's definition, not a candidate picked by a scalar, and
     /// `ArgExt` selects nothing on a tie rather than breaking one (rule 4).
-    /// `Transport` derives its offset from the two bbox corners.
+    /// `Transport` derives its offset from the two least corners.
     #[expect(
         clippy::disallowed_methods,
         reason = "rule 4 — an extremum on an axis is this algebra's operator, and a tie selects nothing"
