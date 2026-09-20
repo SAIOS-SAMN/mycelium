@@ -13,6 +13,21 @@
 use super::drive::{class_vectors_on, holonomy_words_on, loop_holonomy_on, Prior};
 use super::*;
 
+/// WHAT ONE MEMBER PATH OF A LOOP CLOSES AT: the class its holonomy stands
+/// in, the period it closes at, and the hue generator it turns by.
+///
+/// The three coordinates `FiledLoop` is written from, minus the chord —
+/// which belongs to the LOOP and not to the path, so it is supplied by the
+/// filer and is not re-stated here (law 12).
+#[derive(Debug, Clone)]
+pub(crate) struct LoopClass {
+    pub(crate) class: crate::transducer::address::Address,
+    /// `0` is infinite order, A19's spelling of it (52.3): the transport
+    /// has no fixed point and the path is non-compact.
+    pub(crate) period: u32,
+    pub(crate) sigma: Vec<(u8, u8)>,
+}
+
 impl Form {
     pub(crate) fn trial(
         &self,
@@ -323,6 +338,33 @@ impl Form {
             return Vec::new();
         };
         let chord = lp.chord;
+        let mut filed: crate::network::nerve::Keyed<u32> = crate::network::nerve::Keyed::new();
+        for LoopClass { class, period, sigma } in self.loop_classes(lp) {
+            self.torsion.insert(class, FiledLoop { sigma, period, chord });
+            filed.insert(period.to_be_bytes(), period);
+        }
+        filed.scoped().map(|(_, ell)| *ell).collect()
+    }
+
+    /// WHAT EACH MEMBER PATH OF A LOOP CLOSES AT: its class, the period it
+    /// closes at, and the hue generator it turns by — one row per path that
+    /// carries a class AND a measured transport.
+    ///
+    /// ONE READER FOR THREE CALLERS (law 12). [`file_loop`] writes these
+    /// rows onto `Form.torsion`, `Form::coheres` asks whether they are all
+    /// compact, and `Form::is_cauterized` asks whether what is filed agrees
+    /// with them. Those three asked three different questions of one loop
+    /// before: the filer took its period as a parameter, `coheres` read
+    /// `lp.holonomy` and never looked at a carriage at all, and
+    /// `is_cauterized` read `lp.holonomy.order()` — the rotor's order with
+    /// no fixed-point test — so a screw was filed at 0 by the first and
+    /// demanded at 4 by the third.
+    ///
+    /// The period is `0` where the transport has no fixed point: a screw
+    /// generates a non-compact ℤ and closes at nothing, which is A19's
+    /// spelling of infinite order. See
+    /// [`crate::transducer::cech::classify`].
+    pub(crate) fn loop_classes(&self, lp: &Loop) -> Vec<LoopClass> {
         let words = holonomy_words_on(&self.faces, &self.vertices, lp);
         // THE GENERATOR FILED IS THE HUE MAP, read at the same member path
         // the word was read at. `FiledLoop::sigma` says what it is in its
@@ -338,7 +380,7 @@ impl Form {
         // is the reading; this site was the only one writing another
         // object into it.
         let transports = loop_transport_on(&self.faces, &self.vertices, lp);
-        let mut filed: crate::network::nerve::Keyed<u32> = crate::network::nerve::Keyed::new();
+        let mut out = Vec::new();
         for (path, w) in words.scoped() {
             let Some(class) = w.rotor().class_key() else {
                 continue;
@@ -362,12 +404,28 @@ impl Form {
                 crate::transducer::cech::Fill::Congruent(_, _, ell) => ell,
                 _ => 0,
             };
-            self.torsion.insert(
-                class,
-                FiledLoop { sigma: transport.gauge.clone(), period: ell, chord },
-            );
-            filed.insert(ell.to_be_bytes(), ell);
+            out.push(LoopClass { class, period: ell, sigma: transport.gauge.clone() });
         }
-        filed.scoped().map(|(_, ell)| *ell).collect()
+        out
+    }
+
+    /// 10.3 AS A COCYCLE AND NOT AS FLATNESS: does every member path of
+    /// this loop close at a COMPACT period?
+    ///
+    /// A loop whose holonomy is the identity is flat. A loop whose holonomy
+    /// is a finite-order rotation about a fixed point is NOT flat and is
+    /// still closed: it returns after ℓ turns, and what it returns by is a
+    /// `ℤ/ℓℤ` class the form carries. Treating the second as an unclosed
+    /// form is what made curvature illegal — see `Form::coheres`.
+    ///
+    /// A loop with NO classifiable path answers false: it is unmeasured,
+    /// not compact (rule 11). A path that closes at `0` is non-compact — a
+    /// screw or a dilation, a free generator — and that is an obstruction
+    /// the form has genuinely not resolved, so it answers false too. The
+    /// free part is what a demand is for (52.3); only the torsion part
+    /// closes.
+    pub(crate) fn loop_is_congruent(&self, lp: &Loop) -> bool {
+        let rows = self.loop_classes(lp);
+        !rows.is_empty() && rows.iter().all(|r| r.period >= 1)
     }
 }

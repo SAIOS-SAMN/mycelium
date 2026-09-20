@@ -7,6 +7,7 @@
 
 pub mod carrier;
 pub mod certificate;
+pub mod closure;
 pub mod contract;
 pub mod keys;
 pub mod vertex;

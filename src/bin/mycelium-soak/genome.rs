@@ -83,20 +83,29 @@ fn read(e: &Element) -> Option<Word> {
     // `tape_parts` reads the form, and using it here is what makes the two
     // halves of this file agree rather than two readers of one tape
     // disagreeing (law 12).
-    match mycelium::transducer::sentence::tape_parts(e) {
-        Some(p) => {
-            w.sections = p.sections;
-            w.torsion = p.torsion;
-        }
-        None => {
-            for s in e.sections() {
-                w.sections += 4 + s.len() * 2;
-            }
-            for t in e.torsion() {
-                w.torsion += 4 + t.sigma.len() * 2;
-            }
-        }
-    }
+    //
+    // BUT ONLY TORSION MOVES CARRIER, AND SECTIONS DO NOT. They are two
+    // different objects with one name, which this line got wrong in both
+    // directions before it got it right:
+    //
+    //   `Element.sections` — transition ASSIGNMENTS over a base, the free
+    //   part. NOT in the key, so it belongs in `Form ∖ Key`. Empty for a
+    //   sentence, because a form has no free-section carrier and none is
+    //   substituted (`Form::fibre_volume`'s own line).
+    //
+    //   `Form.sections` — class key → PAIR INDICES of the bundle, which
+    //   `form_vertex_key` writes out whole. It IS in the key, and adding it
+    //   to the value would count 1.3 MB of the key as what the key does not
+    //   carry — which is the reading this instrument printed for one
+    //   commit.
+    //
+    // Torsion is the one that genuinely changed carrier: `Form.torsion` is
+    // what a sentence files and the key does not write it.
+    w.torsion = match mycelium::transducer::sentence::tape_parts(e) {
+        Some(p) => p.torsion,
+        None => e.torsion().iter().map(|t| 4 + t.sigma.len() * 2).sum(),
+    };
+    w.sections = e.sections().iter().map(|s| 4 + s.len() * 2).sum();
     Some(w)
 }
 
@@ -240,6 +249,10 @@ pub(crate) fn reconcile(path: &str) {
         total.gauge += p.gauge;
         total.glue_body += p.glue_body;
         total.frame += p.frame;
+        total.key_total += p.key_total;
+        total.key_cited += p.key_cited;
+        total.glued_n += p.glued_n;
+        total.glued_distinct += p.glued_distinct;
         total.rest += p.rest;
     }
     if read == 0 {
@@ -282,5 +295,26 @@ pub(crate) fn reconcile(path: &str) {
         "unaccounted",
         total.rest,
         total.rest * 10000 / t as i64
+    );
+    // 1.7 PART 1, WHICH `key_cited` EXISTS TO ANSWER: how much of a word's
+    // OWN NAME is cited addresses copied into it, and how many distinct
+    // forms those bytes name. A citation that inlines the cited form's
+    // whole subtree compounds; one that names it at a bounded coordinate
+    // does not, and the two are told apart by `key_cited / key_total`
+    // against `glued_distinct / glued_n` — the share of the name that is
+    // copied, beside the number of distinct things it copies.
+    let k = total.key_total.max(1);
+    println!();
+    println!("    the name itself, over the same {read} sentences:");
+    println!(
+        "      key {} bytes, {} per word; of which cited addresses {} bytes, {} parts in 10000",
+        total.key_total,
+        total.key_total / read,
+        total.key_cited,
+        total.key_cited * 10000 / k
+    );
+    println!(
+        "      citations {} in all, {} distinct addresses among them",
+        total.glued_n, total.glued_distinct
     );
 }

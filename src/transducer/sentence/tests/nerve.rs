@@ -196,3 +196,79 @@ fn a_triangle_of_citations_closes_or_carries_its_holonomy() {
         "and what it fails to glue BY is the holonomy it carries"
     );
 }
+
+/// 1.7 PART 1 — A CITATION TRUNCATED TO ITS INTRINSIC COORDINATES NAMES
+/// TWO FORMS, AND SO IS NOT A NAME.
+///
+/// A word's own key is 97.94% cited addresses, measured on a live genome at
+/// 288 sentences: 18 313 275 bytes of 18 698 090, over 621 citations naming
+/// 440 distinct forms. The cause is recursion — `A_G` writes `A_H` whole for
+/// every form `G` cites, so a citation inlines its entire transitive subtree
+/// and the name compounds with the citation DAG rather than with the form.
+/// Each citation averages 29 490 bytes against 1 336 bytes for a form's own
+/// cells, which is that subtree, counted.
+///
+/// THE OBVIOUS CUT DOES NOT HOLD. Writing only the cited form's intrinsic
+/// coordinates into the `Glued` vertex — its chart, magnitude, depth,
+/// placement and the transition φ, all of them bounded — terminates the
+/// recursion and collides. This is the collision: two forms with the same
+/// own-cells citing two different sub-complexes agree on every one of those
+/// coordinates and are two forms. Under the truncation they would be one,
+/// and a court resolving the citation would have a set where it needs an
+/// object.
+///
+/// So the compounding is real and the cut is not free. Bounded, non-
+/// positional and fully determining are three properties a name of an
+/// arbitrary DAG cannot have at once: the address is recursive (today), or
+/// bounded and ambiguous (this test), or a digest — which the
+/// Anti-Flattening Law admits as transport and cold-cache index only, never
+/// as a coordinate. The fourth road is that a citation stops being part of
+/// the name at all and rides the receipt, as a derivation's generators
+/// already do (`evidence_is_not_identity`, `cites` 0 bytes in the key). That
+/// is a ruling about what a form IS, and it is not taken by a serializer.
+#[test]
+fn a_citation_truncated_to_its_chart_names_two_forms() {
+    let (x, y) = (leaf((2, 3)), leaf((1, 2)));
+    assert_ne!(form_vertex_key(&x), form_vertex_key(&y), "two distinct sub-complexes");
+
+    // The same own-cells, citing two different forms at the same place.
+    let cite = |s: &Form| -> Form {
+        let mut g = leaf((0, 1));
+        g.glue(s, addr_of(s), Word::identity(), [0, 0, 0, 1]).expect("cites");
+        g
+    };
+    let (g1, g2) = (cite(&x), cite(&y));
+
+    let glued_of = |f: &Form| {
+        f.vertices
+            .iter()
+            .find_map(|v| match v {
+                Vertex::Glued { address, chart, magnitude, depth, placement, carriage } => {
+                    Some((address.clone(), chart.clone(), *magnitude, *depth, placement.clone(), (**carriage).clone()))
+                }
+                _ => None,
+            })
+            .expect("one citation")
+    };
+    let (a1, c1, m1, d1, p1, phi1) = glued_of(&g1);
+    let (a2, c2, m2, d2, p2, phi2) = glued_of(&g2);
+
+    // EVERY BOUNDED COORDINATE OF THE CITATION AGREES.
+    assert_eq!(c1.key(), c2.key(), "the cited forms' charts are one");
+    assert_eq!(m1, m2, "and their magnitudes");
+    assert_eq!(d1, d2, "and their depths");
+    assert_eq!(p1.rotor().class_key(), p2.rotor().class_key(), "and their placements");
+    assert!(
+        crate::transducer::element::same_versor(&phi1, &phi2),
+        "and the morphisms they act under"
+    );
+
+    // AND THE ONLY THING THAT SEPARATES THEM IS THE CITED ADDRESS — the
+    // unbounded, recursive half. Truncate it and these two forms are one.
+    assert_ne!(a1, a2, "the cited addresses differ, and they are all that does");
+    assert_ne!(
+        form_vertex_key(&g1),
+        form_vertex_key(&g2),
+        "two forms citing two sub-complexes are two forms; the address is what says so"
+    );
+}

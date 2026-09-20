@@ -186,10 +186,34 @@ fn mu_neither_certifies_nor_selects() {
     assert_eq!(o.axes, (held[0].axis, held[1].axis), "the axes are the obstruction");
 }
 
+/// 54.2 — A LOOP THAT CLOSES WITH MONODROMY IS CLOSED, and one that walks
+/// is not.
+///
+/// This opened `assert!(!f.is_closed())` on a form whose single loop is a
+/// quarter turn about a fixed point — a `ℤ/4ℤ` class, the most ordinary
+/// torsion there is — and that assertion was the whole defect in one line.
+/// `coheres` demanded holonomy ≡ 1 on every loop, which is `H¹ = 0`, and
+/// since only closed forms are stood and only closed forms survive the
+/// court, curvature could not enter the genome. Measured on the fleet:
+/// 1 870 extracted forms carried loops, filed torsion was 0 bytes on every
+/// voice, `REFUSE_NOT_CLOSED` was 36 of 39 wire refusals.
+///
+/// Both arms are asserted now, so admitting curvature cannot be mistaken
+/// for admitting everything: the compact class closes, and an
+/// infinite-order holonomy — a free generator, which never returns — does
+/// not. The free part is what a demand is for (52.3).
 #[test]
 fn cauterize_filed_torsion_crystallizes() {
     let mut f = chord_form(&[order4()]);
-    assert!(!f.is_closed());
+    assert!(
+        f.is_closed(),
+        "a quarter turn about a fixed point closes at four: the form carries a ℤ/4ℤ \
+         class and is closed WITH it, not opened BY it"
+    );
+    assert!(
+        !chord_form(&[infinite()]).is_closed(),
+        "and an infinite-order holonomy is not compact: it walks, and the form stands open"
+    );
     let _ = f.pivot_loop(
         [0xca; 32],
         &crate::network::nerve::Keyed::new(),
