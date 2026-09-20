@@ -911,10 +911,26 @@ A sentence is a set of word forms placed relative to one another:
 - **holonomies**: for each independent loop of faces, the product of the
   relative words around it.
 
-A sentence **coheres** when every holonomy is the identity vertex. A
-sentence form is **closed** when it coheres and its remainder is empty. A
+A sentence **coheres** when every holonomy is the identity vertex, **or
+closes with monodromy** (corrected 2026-09-20). The second clause is not a
+relaxation of the first; the first was a mistake. Demanding the identity on
+every 1-cycle is not the cocycle condition — a cocycle is `g_ij g_jk g_ki =
+1` on the TRIPLE OVERLAPS of the nerve — it is the strictly stronger claim
+that `H¹ = 0`, and since only a form that coheres may be stood or ruled,
+the genome was by construction the subspace where there is nothing to
+measure. A finite-order rotation about a fixed point RETURNS: it closes at
+`ℓ` carrying a `ℤ/ℓℤ` class, which is torsion and is content. A screw does
+not — it walks, and its slip is a free part, which is what a demand is for
+(52.3). The fixed point is what tells them apart, solved exactly, and the
+free part carries its Burgers vector as a coordinate rather than a flag
+(54.4).
+
+A sentence form is **closed** when it coheres and its remainder is empty. A
 closed sentence form is a **crystallized form**: it can be stored, cited,
-and replayed from its tape alone.
+and replayed. It is NOT replayed "from its tape alone" — as of 54.5 the
+tape carries no loops, because the cycle basis is a theorem of the faces
+and `loops_of` proves it on decode; and under 54.3 the address is the only
+decoder a form needs.
 
 A sentence is **valid** (ruled 2026-09-09, chapter 50) when every word
 vertex reconstructs its body — the carriage, the word and the gauge carry

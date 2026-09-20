@@ -320,11 +320,34 @@ pub(crate) struct PathCarried {
 /// face at the pair those two members name, and composes. ONE path per
 /// loop, always, because a cycle is one cycle.
 ///
-/// A star face is the trivialization every body is read against (2.2): it
-/// contributes the identity to the edge composite and the path passes
-/// through it. A path that crosses no real face measured no edge at all and
-/// carries `None` there — answering "identity" would report a measurement
-/// never taken.
+/// THE STAR FACES ARE SKIPPED IN THE EDGE HALF, and the reason written here
+/// was wrong (corrected 2026-09-20). It read "a star face is the
+/// trivialization every body is read against (2.2)". Chapter 2.2 says no
+/// such thing — it defines vertices, faces and holonomies and never
+/// mentions the star — and SKIPPING A FACE IS NOT GAUGING IT: §3.6 defines
+/// a re-gauging as `g_ij → γ_j · g_ij · γ_i⁻¹`, a conjugation, under which
+/// holonomies are conjugated and the identity stays the identity. Dropping
+/// a factor out of a product is a different operation with a different
+/// answer.
+///
+/// WHAT IS ACTUALLY TRUE. 50.3's edge is the stabilizer element between two
+/// BODIES, and the Frame carries no body at any frame, so `edge_between`
+/// measures nothing across a star face — `at(0, c_F, k)` finds nothing and
+/// the reading is ABSENT, not identity. The placement of a body against the
+/// scene is not lost with it: it is the member's own carriage, and the FACE
+/// composite above composes it at every step. Two carriers, one for where a
+/// body stands and one for how two bodies relate, and the edge half reads
+/// only the second.
+///
+/// WHAT IS NOT ESTABLISHED, and is not claimed here. The star faces are the
+/// spanning forest's first pass, so a loop's star faces are tree edges —
+/// but nothing in this walk checks that, and a star face reached as a CHORD
+/// would be skipped too. A chord is where the holonomy is; gauging one away
+/// would delete the obstruction rather than move it.
+///
+/// A path that crosses no real face measured no edge at all and carries
+/// `None` there — answering "identity" would report a measurement never
+/// taken.
 ///
 /// `None` is a loop naming a face this form does not have, or a member pair
 /// the face does not relate: the cycle and the incidence disagree, which is

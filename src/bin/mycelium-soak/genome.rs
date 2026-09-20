@@ -494,10 +494,24 @@ pub(crate) fn reconcile(path: &str) {
             // identity around any cycle. So a loop whose faces carry no
             // edge is flat by algebra whatever it turns by, and this is
             // what tells that apart from a loop that is genuinely flat.
+            // ON THE REAL FACES ONLY. A STAR FACE HAS NO EDGE BY DESIGN:
+            // it is the trivialization every body is read against (2.2),
+            // `edge_between` measures nothing across it because the Frame
+            // carries no body at any frame, and `paths_carried` composes
+            // the identity through it. Demanding one there reported "0
+            // loops carry the edge" on every voice — which was a fact
+            // about this check, since every loop's spanning tree is built
+            // star-first and so every loop has star faces.
             match lp.faces.iter().all(|&fi| {
-                f.faces
-                    .get(fi as usize)
-                    .is_some_and(|fa| fa.at.scoped().all(|(_, pl)| pl.edge.is_some()))
+                f.faces.get(fi as usize).is_some_and(|fa| {
+                    let star = [fa.i, fa.j].iter().any(|&v| {
+                        matches!(
+                            f.vertices.get(v as usize),
+                            Some(mycelium::transducer::sentence::Vertex::Frame)
+                        )
+                    });
+                    star || fa.at.scoped().all(|(_, pl)| pl.edge.is_some())
+                })
             }) {
                 true => edged_loops += 1,
                 false => edgeless_loops += 1,
@@ -551,7 +565,7 @@ pub(crate) fn reconcile(path: &str) {
         "      {tape_loops} loops on the tapes, {rederived_loops} re-derived from the same faces"
     );
     println!(
-        "      50.3's edge: {edged_loops} loops carry it on every face, {edgeless_loops} do not"
+        "      50.3's edge: {edged_loops} loops carry it on every REAL face, {edgeless_loops} do not"
     );
     println!(
         "      rank over the {ranked} that have one: torsion {} free {} off-plane {} axes {}",
