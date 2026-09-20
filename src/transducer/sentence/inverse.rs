@@ -219,6 +219,36 @@ pub fn from_address(k: &[u8]) -> Option<Form> {
     // statement of the faces (law 12).
     f.reindex();
     f.loops = Form::loops_of(&f.faces, &f.vertices);
+    // THE FILED TORSION IS NOT DERIVED HERE, AND THE REASON IS A READING
+    // AND NOT A PREFERENCE (54.3, measured 2026-09-20).
+    //
+    // `Form.torsion` is not in the key, so the obvious move is to re-derive
+    // it the way the loops above are re-derived: walk each loop, classify
+    // its holonomy, file what closes. That was written and it is WRONG,
+    // because filing is not a function of the incidence.
+    //
+    // `pivot::drive` files a loop in ONE of its four branches —
+    // `NoneDischarged`. A loop the stroke DISCHARGED leaves no filing
+    // because the obstruction is gone; a loop that went to `Vortex`, and a
+    // loop whose `Starved` budget ran out before its candidates were
+    // reached, stand UNFILED with their holonomy intact. So two forms with
+    // the same faces, the same vertices and the same loops carry different
+    // filings depending on what a stroke could afford, and a derivation
+    // from the incidence alone would hand a starved form the filing its
+    // stroke never made. `from_address(address(f)) ≡ f` failed on the very
+    // first fixture that has a loop and has never run a stroke, which is
+    // the reading.
+    //
+    // SO THE KEY DOES NOT DETERMINE THE FILING, and this says so rather
+    // than covering it: torsion is `Form ∖ Key`, exactly where the K6.4
+    // genome instrument already counts it. Closing that is one of two
+    // rulings — torsion enters the key, which is a layout change and
+    // therefore a recut, or 54.5's value carries it — and neither is taken
+    // by a decoder inventing a theorem (rule 11).
+    //
+    // What DID move is the filer itself: `file_loop` no longer takes its
+    // period as a parameter, so a screw is no longer filed at its rotor's
+    // order. See `the_filer_reaches_the_fixed_point_gate`.
     Some(f)
 }
 

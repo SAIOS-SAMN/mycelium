@@ -26,9 +26,32 @@ fn same_form(a: &Form, b: &Form) -> bool {
             return false;
         }
     }
+    if !same_torsion(a, b) {
+        return false;
+    }
     a.sections.len() == b.sections.len()
         && a.axes.len() == b.axes.len()
         && a.remainder.placed() == b.remainder.placed()
+}
+
+/// THE FILED CYCLES, CLASS BY CLASS. `Form.torsion` is not in the key —
+/// it is a theorem the incidence proves — so two forms that key alike must
+/// nonetheless carry the same filing, or the inverse is returning a form
+/// whose cycles the original had and the recovery does not.
+fn same_torsion(a: &Form, b: &Form) -> bool {
+    if a.torsion.len() != b.torsion.len() {
+        return false;
+    }
+    for (class, filed) in a.torsion.scoped() {
+        let Some(other) = b.torsion.get(&class) else {
+            return false;
+        };
+        if filed.period != other.period || filed.chord != other.chord || filed.sigma != other.sigma
+        {
+            return false;
+        }
+    }
+    true
 }
 
 /// The forms this property runs over: a word form, a chord with a loop, a
@@ -394,4 +417,108 @@ fn a_form_and_a_residual_refuse_each_others_decoder() {
         "the form reader refuses a residual's address"
     );
     assert!(from_residual(&[]).is_none(), "and refuses nothing at all");
+}
+
+/// 54.3 — THE FILED TORSION IS A THEOREM OF THE ADDRESS, and is re-derived
+/// by the inverse rather than carried beside it (law 12).
+///
+/// THE ADDRESS DOES NOT DETERMINE THE FILING, and this is the reading that
+/// says so. `Form.torsion` is not in the key, and the obvious repair — have
+/// `from_address` re-derive it the way it re-derives the loops — was
+/// written and is wrong, because filing is not a function of the incidence.
+///
+/// `pivot::drive` files in ONE of its four branches, `NoneDischarged`. A
+/// loop the stroke DISCHARGED leaves no filing, because the obstruction is
+/// gone; a loop that went to `Vortex`, and a loop whose `Starved` budget ran
+/// out before its candidates were reached, stand UNFILED with their
+/// holonomy intact. Two forms with the same vertices, faces and loops
+/// therefore carry different filings depending on what a stroke could
+/// afford. A derivation from the incidence alone hands a starved form the
+/// filing its stroke never made, and the first fixture that HAS a loop and
+/// has never run a stroke is where that shows.
+///
+/// So the two are held apart and BOTH are asserted: the address round-trips
+/// exactly, and the filing does not travel with it. Torsion is `Form ∖ Key`
+/// — where the K6.4 genome instrument already counts it — and closing that
+/// is a ruling (torsion enters the key, which is a layout change and so a
+/// recut; or 54.5's value carries it), never a decoder inventing a theorem.
+#[test]
+fn the_address_does_not_carry_the_filing() {
+    let mut f = chord_form(&[order4()]);
+    assert!(!f.loops.is_empty(), "the fixture must have a loop, or nothing is being tested");
+    let mut filed = 0usize;
+    for idx in 0..f.loops.len() {
+        filed += f.file_loop(idx).len();
+    }
+    assert!(filed > 0, "the fixture's loop must file, or nothing is being measured");
+    assert!(!f.torsion.is_empty(), "and the filing lands on the form");
+
+    // THE FILING IS NOT IN THE ADDRESS: a form that has filed and the same
+    // form before it filed reach ONE key.
+    let before = chord_form(&[order4()]);
+    assert!(before.torsion.is_empty(), "the unfiled twin has no filing");
+    assert_eq!(
+        form_vertex_key(&f),
+        form_vertex_key(&before),
+        "filing a loop does not move the form's address — torsion is not keyed"
+    );
+
+    // AND THE INVERSE RETURNS THE FORM THE KEY NAMES, which is the unfiled
+    // one. It does not invent the filing, and it does not pretend to have
+    // recovered it (rule 11).
+    let key = form_vertex_key(&f);
+    let back = from_address(key.as_bytes()).expect("the key recovers its form");
+    assert_eq!(form_vertex_key(&back), key, "the recovery re-derives its address");
+    assert!(
+        back.torsion.is_empty(),
+        "the recovery carries no filing, because the key carries none to carry"
+    );
+    assert!(
+        !same_torsion(&f, &back),
+        "and the gap is REAL: this is the measurement, not a passing round-trip"
+    );
+}
+
+/// 54.3 — AND THE PERIOD IT FILES AT IS THE ONE THE LOOP CLOSES AT.
+///
+/// `file_loop` took its period as a PARAMETER and `drive.rs` passed
+/// `hw.order()` — the rotor's order alone. A quarter turn carried along a
+/// translation has the rotor order of one about a fixed point and closes at
+/// neither: the screw walks, generating a non-compact ℤ rather than a
+/// compact ℤ/4ℤ. Filed at four, a theorem stood on the loop that the loop
+/// does not satisfy, and `from_address` asserting `torsion == torsion`
+/// would have certified it.
+///
+/// The filer now solves for the fixed point through
+/// [`crate::transducer::cech::classify`], whose own gate is proved in
+/// `cech::tests::classify::a_turn_about_a_point_files_and_a_screw_stands`.
+/// This asserts the FILER reaches it — that the two are connected, which is
+/// what was missing — by reading the periods off both arms of that gate.
+#[test]
+fn the_filer_reaches_the_fixed_point_gate() {
+    use crate::transducer::cech::{classify, Fill};
+    use crate::transducer::cga;
+    use crate::transducer::element::identity_versor;
+    let quarter = order4().rotor();
+    let period = |carriage: &crate::transducer::element::Versor| {
+        match classify(&quarter, carriage, CycleType::Identity) {
+            Fill::Congruent(_, _, ell) => ell,
+            _ => 0,
+        }
+    };
+    let q = |n: i64| -> crate::core::Q {
+        num_rational::BigRational::from_integer(num_bigint::BigInt::from(n))
+    };
+    let (zero, five) = (q(0), q(5));
+    assert_eq!(period(&identity_versor()), 4, "a residue-free quarter turn closes at four");
+    assert_eq!(
+        period(&cga::translator(&five, &zero, &zero)),
+        4,
+        "and so does one about a point away from the origin: it is conjugate to the rotor"
+    );
+    assert_eq!(
+        period(&cga::translator(&zero, &zero, &five)),
+        0,
+        "a screw fixes no point and is non-compact: it files at 0, never at the rotor's order"
+    );
 }

@@ -280,17 +280,47 @@ impl Form {
     /// Torsion is filed under the holonomy's CLASS (16.17, 15.4), and the
     /// holonomy of a path is its edge composite where it has one, so a loop
     /// flat on its words and curved on its edges files the edges' classes.
-    /// The period is the order the caller read: finite at `ℓ`, `0` for
-    /// infinite order, A19's spelling of it (52.3).
+    /// The period is finite at `ℓ`, `0` for infinite order, A19's spelling
+    /// of it (52.3).
+    ///
+    /// THE PERIOD IS DERIVED HERE AND NO LONGER HANDED IN (54.3, as ruled
+    /// 2026-09-20). It was a parameter, and `drive.rs` passed `hw.order()`
+    /// — THE ROTOR'S ORDER ALONE. A quarter turn carried along a
+    /// translation has the same rotor order as one about a fixed point and
+    /// is not the same class: the screw does not return after four turns,
+    /// it WALKS, and it generates a non-compact ℤ rather than a compact
+    /// ℤ/4ℤ. Filed at four, a theorem stood on the loop that the loop does
+    /// not satisfy.
+    ///
+    /// [`crate::transducer::cech::classify`] is the engine's one reader of
+    /// that distinction: it solves for the transport's fixed point exactly
+    /// (`turn_base_point`) and answers `Congruent` only where there is one,
+    /// so a rotation about ANY point is congruent at its rotor's order — it
+    /// is conjugate to that rotor — and a screw or a dilation is not
+    /// congruent at all. A path whose holonomy has no fixed point files at
+    /// `0`: non-compact, which is A19's infinite order and exactly what it
+    /// is. Nothing is discarded (law 7) and nothing is filed at a period it
+    /// does not close at (rule 11).
+    ///
+    /// ONE READER, TWO CALLERS. The court reaches this through the pivot
+    /// stroke and `from_address` reaches it while rebuilding a form from
+    /// its key, because `Form.torsion` is NOT in the key: it is a theorem
+    /// the form's own incidence proves, and law 12 says it is re-derived
+    /// rather than stored beside the coordinates that determine it.
     ///
     /// One class per member path, not one for the loop: a loop whose faces
     /// relate several pairs of bodies has one composite per path through
     /// them, and each is its own obstruction. A path that carries no versor
-    /// has no class and is skipped; a loop where no path files returns
-    /// `false` and stays open, which is what `torsion open` reports.
-    pub(crate) fn file_loop(&mut self, idx: usize, ell: u32) -> bool {
+    /// has no class and is skipped; a loop where no path files returns an
+    /// EMPTY listing and stays open, which is what `torsion open` reports.
+    ///
+    /// Returns THE PERIODS FILED, each once, in coordinate order — so the
+    /// caller reports what was filed rather than what it asked for. Two
+    /// member paths of one loop may close at two periods, and a single
+    /// number would have to pick one of them by position (rule 15).
+    pub(crate) fn file_loop(&mut self, idx: usize) -> Vec<u32> {
         let Some(lp) = self.loops.get(idx) else {
-            return false;
+            return Vec::new();
         };
         let chord = lp.chord;
         let words = holonomy_words_on(&self.faces, &self.vertices, lp);
@@ -308,7 +338,7 @@ impl Form {
         // is the reading; this site was the only one writing another
         // object into it.
         let transports = loop_transport_on(&self.faces, &self.vertices, lp);
-        let mut filed = false;
+        let mut filed: crate::network::nerve::Keyed<u32> = crate::network::nerve::Keyed::new();
         for (path, w) in words.scoped() {
             let Some(class) = w.rotor().class_key() else {
                 continue;
@@ -321,12 +351,23 @@ impl Form {
             let Some(transport) = transports.get(&path) else {
                 continue;
             };
+            // THE PERIOD THIS PATH ACTUALLY CLOSES AT, read from the
+            // holonomy's ROTOR AND ITS CARRIAGE together. A path with no
+            // fixed point is non-compact and files at `0`.
+            let ell = match crate::transducer::cech::classify(
+                &w.rotor(),
+                &transport.carriage,
+                crate::transducer::sentence::CycleType::of(&[]),
+            ) {
+                crate::transducer::cech::Fill::Congruent(_, _, ell) => ell,
+                _ => 0,
+            };
             self.torsion.insert(
                 class,
                 FiledLoop { sigma: transport.gauge.clone(), period: ell, chord },
             );
-            filed = true;
+            filed.insert(ell.to_be_bytes(), ell);
         }
-        filed
+        filed.scoped().map(|(_, ell)| *ell).collect()
     }
 }

@@ -453,7 +453,7 @@ fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
     // And the filing follows the judging: the class written is the edge's,
     // and the identity's class — which is what the word would have filed —
     // is not.
-    assert!(f.file_loop(0, 4), "a path with a class files");
+    assert_eq!(f.file_loop(0), vec![4], "a path with a class files, at its own period");
     let edge_class = q.rotor().class_key().expect("the quarter turn has a class");
     let flat_class = crate::transducer::alphabet::Rotor::identity()
         .class_key()

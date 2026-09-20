@@ -678,16 +678,27 @@ impl Form {
                         }
                         // A loop of any order files under its class at its
                         // period, `0` for infinite order (52.3, A19).
-                        let ell = order.to_u32();
-                        if self.file_loop(idx, ell) {
+                        //
+                        // THE PERIOD IS THE FILER'S, NOT THIS CALLER'S. It
+                        // passed `order.to_u32()` — the ROTOR'S order — and
+                        // a quarter turn carried along a translation has
+                        // the same rotor order as one about a fixed point
+                        // while closing at neither: the screw walks. The
+                        // filer solves for the fixed point exactly and
+                        // answers what each member path actually closes at,
+                        // and the snap now carries THAT (54.3).
+                        let periods = self.file_loop(idx);
+                        if !periods.is_empty() {
                             if !held {
-                                snaps.push(Snap::TorsionFiled { chord: idx, ell });
-                                eprintln!(
-                                    "  torsion filed {:02x}{:02x}… (σ,{})",
-                                    idea[0],
-                                    idea[1],
-                                    period_written(ell)
-                                );
+                                for ell in &periods {
+                                    snaps.push(Snap::TorsionFiled { chord: idx, ell: *ell });
+                                    eprintln!(
+                                        "  torsion filed {:02x}{:02x}… (σ,{}) rotor order {order:?}",
+                                        idea[0],
+                                        idea[1],
+                                        period_written(*ell)
+                                    );
+                                }
                             }
                         } else {
                             snaps.push(Snap::TorsionOpen { chord: idx });

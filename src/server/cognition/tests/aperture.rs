@@ -356,7 +356,13 @@ fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
     // (50.5) — and a sentence that merely carries a cycle it could not close
     // is refused at the gate for free.
     let mut filed = f.clone();
-    assert!(filed.file_loop(0, 4), "the loop files under its holonomy's class");
+    // The period is the FILER'S now, derived through the fixed-point
+    // gate, so this reads what the loop closes at rather than handing it in.
+    assert_eq!(
+        filed.file_loop(0),
+        vec![4],
+        "the loop files under its holonomy's class, at the period it closes at"
+    );
     let bare = crate::transducer::sentence::as_element_form(&filed, [1, 1, 0, 0])
         .expect("a sentence tape");
     assert!(

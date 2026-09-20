@@ -29,7 +29,7 @@ fn a_published_residue_no_generator_reaches_is_adjoined() {
 
     // PUBLISHED AND UNANSWERED, with nothing in the basis: adjoin.
     let mut f = chord_form(std::slice::from_ref(&q));
-    assert!(f.file_loop(0, 4), "the class is published first");
+    assert_eq!(f.file_loop(0), vec![4], "the class is published first, at its own period");
     let snaps = f.pivot_loop(
         [0x9a; 32],
         &Keyed::new(),
@@ -51,7 +51,7 @@ fn a_published_residue_no_generator_reaches_is_adjoined() {
     // THE BASIS REACHES IT: no adjunction, because the mind already holds
     // the word and minting a second is a duplicate generator.
     let mut g = chord_form(std::slice::from_ref(&q));
-    assert!(g.file_loop(0, 4));
+    assert_eq!(g.file_loop(0), vec![4]);
     let snaps = g.pivot_loop(
         [0x9b; 32],
         &Keyed::new(),
@@ -766,7 +766,11 @@ fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_
     // reduction's inverse. The filing is read as the PREVIOUS stroke's,
     // which is what the drive hands down: a class filed by this stroke is
     // not a demand anyone has had a stroke to answer.
-    assert!(f.file_loop(0, 4), "the finite holonomy files under its class");
+    assert_eq!(
+        f.file_loop(0),
+        vec![4],
+        "the finite holonomy files under its class at four"
+    );
     let published = f.torsion.clone();
     let asked =
         f.candidates_for(0, &kappa, &crate::transducer::family::NoCrystal, false, &published);
