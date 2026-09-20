@@ -80,6 +80,15 @@ fn a_citation_set_is_not_an_arrival_order() {
 /// stored `depth` field of each `Glued` vertex and never descends, and
 /// `from_address` rebuilds a `Glued` vertex from the address bytes without
 /// resolving them.
+///
+/// AN EDGE IS ITS OWN OBJECT, and content addressing is what says so. A
+/// `Glued` vertex writes the cited form's address INTO the citing form's
+/// key, so `key(U) ⊃ key(V)` strictly: two GIVEN forms can never cite each
+/// other, whatever any guard says, because each key would have to contain
+/// the other. The overlap of `a` and `b` is therefore recorded in two
+/// further objects — `a` with the edge to `b`, and `b` with the edge to `a`
+/// — which is exactly a nerve's own shape, where a 1-simplex is an object
+/// and not a pointer stored inside a 0-simplex.
 #[test]
 fn two_charts_may_cite_each_other() {
     use crate::transducer::element::{identity_versor, translator_versor};
@@ -100,44 +109,90 @@ fn two_charts_may_cite_each_other() {
     assert_eq!(form_vertex_key(&back), form_vertex_key(&u), "a cycle's edge re-derives");
 }
 
-/// THE COCYCLE CONDITION ON A 2-SIMPLEX: `φ_ij · φ_jk · φ_ki = 1`.
+/// THE COCYCLE CONDITION ON A 2-SIMPLEX OF THE CITATION NERVE:
+/// `φ_ij · φ_jk · φ_ki = 1`.
 ///
-/// This is what replaces the depth refusal. A cycle of citations is not
-/// forbidden; it is MEASURED, and what it measures is the holonomy of the
-/// loop it closes. A cycle whose composite transition is the identity
-/// versor glues — the three charts agree on their triple overlap and carry
-/// one section — and a cycle whose composite is not the identity carries
-/// that composite as its obstruction, which is the content of `H²` and is
-/// the thing a posetal height can never express.
+/// This is what replaces the depth refusal. A cycle is not forbidden; it is
+/// MEASURED, and what it measures is the holonomy of the loop it closes. A
+/// triangle whose composite transition is the identity versor GLUES — the
+/// three charts agree on their triple overlap and carry one section — and
+/// one whose composite is not the identity carries that composite as its
+/// obstruction. That composite is the content of `H²`, and it is the thing
+/// a posetal height can never express: a height orders charts, and an
+/// ordering has no triangles to be obstructed on.
 ///
-/// Both readings are taken here, on one triangle, so a pass cannot come
-/// from a cocycle that is trivially satisfied by construction.
+/// THE TRANSITIONS ARE READ BACK OUT OF THE ADDRESSES, not held in local
+/// variables and multiplied. Each edge of the triangle is a form citing the
+/// next chart under its φ; each is addressed; each address is decoded by
+/// `from_address`; and the three φ the DECODER returns are what compose
+/// here. A test that multiplied the three versors it had just written would
+/// prove a fact about `Versor::geo` and nothing about this engine — the
+/// claim is that the morphism survives the coordinate, which is only
+/// testable through it.
 #[test]
 fn a_triangle_of_citations_closes_or_carries_its_holonomy() {
-    use crate::transducer::element::{identity_versor, same_versor, translator_versor};
-    // Three transitions around a triangle. Composed, the translations
-    // cancel exactly over ℚ: `T(3,0) · T(0,5) · T(−3,−5) = 1`.
+    use crate::transducer::element::{identity_versor, same_versor, translator_versor, Versor};
+
+    // Three charts of a cover, and the three transitions around their
+    // triple overlap. Composed, the translations cancel exactly over ℚ:
+    // `T(3,0) · T(0,5) · T(−3,−5) = 1`. Nothing is rounded and nothing is
+    // near: the identity is the identity (rule 11).
+    let charts = [leaf((0, 1)), leaf((2, 3)), leaf((1, 2))];
     let phi_ij = translator_versor(3, 0);
     let phi_jk = translator_versor(0, 5);
     let phi_ki = phi_ij.geo(&phi_jk).versor_inverse().expect("a translator inverts");
 
-    let closes = phi_ij.geo(&phi_jk).geo(&phi_ki);
+    // ONE EDGE OF THE NERVE: chart `i` with its citation of chart `j` under
+    // φ. The edge is its own object, because a content address cannot
+    // contain itself.
+    let edge = |i: usize, j: usize, phi: &Versor| -> Form {
+        let mut e = charts[i].clone();
+        e.glue_under(
+            &charts[j],
+            addr_of(&charts[j]),
+            Word::identity(),
+            [0, 0, 0, 1],
+            phi.clone(),
+        )
+        .expect("an edge of the nerve");
+        e
+    };
+
+    // AND THE TRANSITION THE EDGE'S ADDRESS CARRIES, recovered by the only
+    // decoder there is.
+    let transition_of = |e: &Form| -> Versor {
+        let key = form_vertex_key(e);
+        let back = from_address(key.as_bytes()).expect("the edge's address decodes");
+        back.vertices
+            .iter()
+            .find_map(|v| match v {
+                Vertex::Glued { carriage, .. } => Some((**carriage).clone()),
+                _ => None,
+            })
+            .expect("a nerve edge carries its morphism")
+    };
+
+    let round = [
+        transition_of(&edge(0, 1, &phi_ij)),
+        transition_of(&edge(1, 2, &phi_jk)),
+        transition_of(&edge(2, 0, &phi_ki)),
+    ];
+    let closes = round[0].geo(&round[1]).geo(&round[2]);
     assert!(
         same_versor(&closes, &identity_versor()),
-        "the triple overlap glues: δφ = 1 around the 2-simplex"
+        "the triple overlap glues: δφ = 1 around the 2-simplex, read off the three addresses"
     );
 
     // AND A TRIANGLE THAT DOES NOT CLOSE carries its composite, exactly.
-    // The same three charts with one edge displaced compose to that
-    // displacement and to nothing else — the obstruction is the coordinate,
-    // never a flag saying one was found.
-    let bent = phi_ij.geo(&phi_jk).geo(&translator_versor(1, 0)).geo(&phi_ki);
+    // The same three charts with one edge displaced by `T(1,0)` compose to
+    // that displacement and to nothing else: the obstruction IS the
+    // coordinate, never a flag saying one was found (`curvature is
+    // content`).
+    let bent = transition_of(&edge(0, 1, &phi_ij.geo(&translator_versor(1, 0))));
+    let holonomy = bent.geo(&round[1]).geo(&round[2]);
+    assert!(!same_versor(&holonomy, &identity_versor()), "a bent triangle does not glue");
     assert!(
-        !same_versor(&bent, &identity_versor()),
-        "a bent triangle does not glue"
-    );
-    assert!(
-        same_versor(&bent, &translator_versor(1, 0)),
+        same_versor(&holonomy, &translator_versor(1, 0)),
         "and what it fails to glue BY is the holonomy it carries"
     );
 }
