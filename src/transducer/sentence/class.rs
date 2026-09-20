@@ -30,34 +30,38 @@ pub struct ClassVector {
     /// lift's — see [`crate::transducer::alphabet::Rotor::class_invariants`],
     /// which is why there is one sign byte here and not two.
     offplane: (num_rational::BigRational, num_rational::BigRational, u8),
-    /// Whether the carriage's translation is the turn's base point or a
-    /// residue (see [`PlacementStatus`]). Read where the ROTOR is in hand,
-    /// because `(I − R)p = t` cannot be solved without `R` and this vector
-    /// does not carry one.
-    placement: PlacementStatus,
-}
-
-/// WHAT A LOOP'S TRANSLATION IS, which is not how big it is.
-///
-/// A rotation about `p` carries `T(p − Rp)`: that translation is WHERE THE
-/// TURN STANDS, a choice of origin, and zeroing it moves the frame rather
-/// than discharging anything. A translation with no such `p` is a walk —
-/// the seam does not return — and that is an obstruction.
-///
-/// `occupies(Axis::Placement)` read `translator_of(carriage) != identity`
-/// and could not tell them apart, so every turn about a point off the
-/// origin published a placement demand. `classify` had already solved
-/// `(I − R)p = t` for the same carriage and filed the loop `Congruent`:
-/// two readers, one carriage, opposite answers (law 12).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PlacementStatus {
-    /// No translation at all.
-    Zero,
-    /// `T(p − Rp)` for an exact rational `p`: the turn's base point.
-    FixedPoint,
-    /// A translation no `p` accounts for: a walk, or a reading that could
-    /// not be taken (rule 11 — unread is refused, never assumed flat).
-    Residue,
+    /// THE BURGERS VECTOR: the slip per circuit — the part of the
+    /// carriage's translation that no choice of origin absorbs, lying in
+    /// `ker(I − R)`, the plane the rotor leaves POINTWISE FIXED. Read where
+    /// the ROTOR is in hand, because `(I − R)p = t` cannot be split without
+    /// `R` and this vector does not carry one.
+    ///
+    /// WHAT A LOOP'S TRANSLATION IS, which is not how big it is. A rotation
+    /// about `p` carries `T(p − Rp)`: that translation is WHERE THE TURN
+    /// STANDS, a choice of origin, and zeroing it moves the frame rather
+    /// than discharging anything. A translation with no such `p` is a walk
+    /// — the seam does not return — and that is an obstruction.
+    ///
+    /// `occupies(Axis::Placement)` read `translator_of(carriage) !=
+    /// identity` and could not tell the two apart, so every turn about a
+    /// point off the origin published a placement demand. `classify` had
+    /// already solved `(I − R)p = t` for the same carriage and filed the
+    /// loop `Congruent`: two readers, one carriage, opposite answers
+    /// (law 12).
+    ///
+    /// AND THEN IT WAS A THREE-VALUED ENUM — `Zero | FixedPoint | Residue`
+    /// — which is the same collapse one level up (54.4, as ruled
+    /// 2026-09-20). A walk HAS a magnitude and a direction. Reducing it to
+    /// the word "Residue" is a measured vector written down as a scalar
+    /// status: rule 4 and law 7 together, and the reason a screw filed as
+    /// an undifferentiated free generator with nothing said about how far
+    /// it slips.
+    ///
+    /// The field carries the vector now, `element::screw_of` splits it off
+    /// the centre exactly over ℚ, and ZERO IS A TURN THAT RETURNS —
+    /// including one standing away from the origin, since `T(p − Rp)·R` is
+    /// conjugate to `R`. Those were two key values for one conjugacy class.
+    placement: [num_rational::BigRational; 3],
 }
 
 /// The hue cycle type of a loop: sorted cycle lengths of the composed
@@ -162,7 +166,7 @@ impl ClassVector {
         } else {
             h.form().map(|pf| pf.coordinates())
         };
-        let placement = Self::placement_status(&h.rotor(), &carriage);
+        let placement = Self::twist_of(&h.rotor(), &carriage)?;
         Some(ClassVector { plane, carriage, hue, offplane, placement })
     }
 
@@ -186,7 +190,7 @@ impl ClassVector {
         carriage: Versor,
         hue: CycleType,
     ) -> Option<ClassVector> {
-        let placement = Self::placement_status(r, &carriage);
+        let placement = Self::twist_of(r, &carriage)?;
         if r.is_identity() {
             return Some(ClassVector {
                 plane: Some([(false, 0, 0, 0); alphabet::PAIR_PLANES]),
@@ -205,24 +209,29 @@ impl ClassVector {
         })
     }
 
-    /// Read the translation against the rotation that carries it. The
-    /// dilator is stripped first: a dilation is its own coordinate, and a
-    /// turn about a point composed with a scale still turns about that
+    /// THE SLIP PER CIRCUIT, read against the rotation that carries it.
+    /// The dilator is stripped first: a dilation is its own coordinate, and
+    /// a turn about a point composed with a scale still turns about that
     /// point.
-    fn placement_status(
+    ///
+    /// `None` is a reading that CANNOT BE TAKEN — a carriage that is not a
+    /// conformal versor, or a turn that carries the base off itself — and
+    /// it refuses the whole class vector rather than being written down as
+    /// a slip of zero or as an undifferentiated residue (rule 11). That
+    /// second case is `Axis::OffPlane`'s and is carried there.
+    fn twist_of(
         r: &crate::transducer::alphabet::Rotor,
         carriage: &Versor,
-    ) -> PlacementStatus {
-        let Some(t) = element::translator_of(carriage) else {
-            return PlacementStatus::Residue;
-        };
+    ) -> Option<[num_rational::BigRational; 3]> {
+        let t = element::translator_of(carriage)?;
         if element::same_versor(&t, &element::identity_versor()) {
-            return PlacementStatus::Zero;
+            return Some(Self::no_twist());
         }
-        match element::turn_base_point(r, &t) {
-            Some(_) => PlacementStatus::FixedPoint,
-            None => PlacementStatus::Residue,
-        }
+        Some(element::screw_of(r, &t)?.twist)
+    }
+
+    fn no_twist() -> [num_rational::BigRational; 3] {
+        std::array::from_fn(|_| Self::zero_q())
     }
 
     fn zero_q() -> num_rational::BigRational {
@@ -240,7 +249,7 @@ impl ClassVector {
             carriage: element::identity_versor(),
             hue: CycleType::Identity,
             offplane: Self::offplane_zero(),
-            placement: PlacementStatus::Zero,
+            placement: Self::no_twist(),
         }
     }
 
@@ -269,11 +278,14 @@ impl ClassVector {
         // stays the depth-one prefix every court asks by. It is a
         // coordinate of 12.6 the vector did not carry: a base point and a
         // walk read identically on every other axis.
-        buf.push(match self.placement {
-            PlacementStatus::Zero => 0,
-            PlacementStatus::FixedPoint => 1,
-            PlacementStatus::Residue => 2,
-        });
+        // THE SLIP, WRITTEN OUT (rule 6, law 4): three exact rationals,
+        // never a status byte. A turn about a point off the origin is
+        // conjugate to the same turn about the origin, so both write the
+        // zero vector here and reach ONE class — which the three-valued
+        // byte split into two.
+        for q in &self.placement {
+            alphabet::put_q(buf, q);
+        }
     }
 
     /// The conjugacy invariants and the sensor coordinates together (A21):
@@ -334,12 +346,10 @@ impl ClassVector {
         };
         let hue = CycleType::from_bytes(k, &mut p)?;
         let carriage = Versor::from_bytes(k, &mut p)?;
-        let placement = match *k.get(p)? {
-            0 => PlacementStatus::Zero,
-            1 => PlacementStatus::FixedPoint,
-            2 => PlacementStatus::Residue,
-            _ => return None,
-        };
+        let mut placement = Self::no_twist();
+        for q in &mut placement {
+            *q = alphabet::take_q(k, &mut p)?;
+        }
         Some(ClassVector { plane, carriage, hue, offplane: (x, y, sp), placement })
     }
 
@@ -360,7 +370,7 @@ impl ClassVector {
             // `p` accounts for occupies this axis; `T(p − Rp)` is where the
             // turn stands, and 3.9's move for Placement — the inverse
             // translator — would move the frame and close nothing.
-            Axis::Placement => matches!(self.placement, PlacementStatus::Residue),
+            Axis::Placement => self.placement.iter().any(|q| !num_traits::Zero::is_zero(q)),
             Axis::Dilation => element::dilator_of(&self.carriage)
                 .is_some_and(|d| !element::same_versor(&d, &element::identity_versor())),
             Axis::OffPlane => self.plane.is_none(),
@@ -525,10 +535,23 @@ impl ClassVector {
                 }
                 _ => true,
             },
-            false => matches!(
-                (before.placement, after.placement),
-                (PlacementStatus::Zero | PlacementStatus::FixedPoint, PlacementStatus::Residue)
-            ),
+            // The base moved, so no componentwise magnitude reading of the
+            // carriage exists. What is readable is the SLIP: a turn that
+            // returned and now walks is a rise, the reverse is a fall, and
+            // a walk that stays a walk is compared by its own magnitude —
+            // lane by lane, never summed (law 5).
+            false => {
+                let b = &before.placement;
+                let a = &after.placement;
+                let walked = |v: &[num_rational::BigRational; 3]| {
+                    v.iter().any(|q| !num_traits::Zero::is_zero(q))
+                };
+                match (walked(b), walked(a)) {
+                    (false, true) => true,
+                    (true, true) => (0..3).any(|i| mag(&a[i]) > mag(&b[i])),
+                    _ => false,
+                }
+            }
         };
         // The dilation's own coordinate: displacement from unity.
         let one: num_rational::BigRational = num_traits::One::one();
@@ -599,7 +622,7 @@ impl ClassVector {
                 if let Some(d) = element::dilator_of(&self.carriage) {
                     self.carriage = d;
                 }
-                self.placement = PlacementStatus::Zero;
+                self.placement = Self::no_twist();
             }
             Axis::Dilation => {
                 if let Some(t) = element::translator_of(&self.carriage) {
@@ -710,19 +733,26 @@ impl Segment for Carriage {
     }
 }
 
-/// What the translation is: one byte, `Zero`, `FixedPoint` or `Residue`.
+/// THE SLIP PER CIRCUIT: the Burgers vector, three exact rationals, each a
+/// length-framed numerator and denominator as `put_q` writes them.
+///
+/// It was ONE BYTE — a `Zero | FixedPoint | Residue` status — and the
+/// schema is the writer's own declaration of what it wrote, so it moves
+/// with it (rule 6). A reader asking this segment for a stratum now gets
+/// the vector's three coordinates and not a word standing for them.
 struct Placement;
 
 impl Segment for Placement {
     fn name(&self) -> &'static str {
-        "placement status"
+        "burgers vector"
     }
 
     fn skip(&self, key: &[u8], pos: &mut usize) -> Option<()> {
-        match take_u8(key, pos)? {
-            0..=2 => Some(()),
-            _ => None,
+        for _ in 0..3 {
+            skip_len_u32(key, pos)?;
+            skip_len_u32(key, pos)?;
         }
+        Some(())
     }
 }
 

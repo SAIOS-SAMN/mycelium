@@ -161,6 +161,74 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
         !same_versor(&kappa.carriage, &ident()),
         "and the class carries the placement that refused it"
     );
+
+    // 54.4 — AND THE SLIP IS THE COORDINATE, not the word "no".
+    //
+    // `turn_base_point` answering `None` was the whole of what a screw used
+    // to say, so it filed as an undifferentiated free generator and how far
+    // it walks per circuit was discarded — a measured vector thrown away
+    // (law 7), and a vector written down as a status (rule 4).
+    //
+    // `screw_of` splits the transport exactly: the CENTRE on `Im(I − R)`,
+    // where the bend holds a point still, and the TWIST on `ker(I − R)`,
+    // the plane the rotor leaves pointwise fixed, along which no choice of
+    // origin absorbs the translation. A screw is curvature on the first
+    // tensored with torsion on the second, and both are returned.
+    //
+    // This screw turns a quarter on `e₀∧e₁` and translates by 5 along `e₃`
+    // — the axis the rotor fixes — so the Burgers vector is exactly
+    // `(0, 0, 5)` and the centre is the origin. Exact over ℚ: not near it,
+    // it IS it.
+    let split = crate::transducer::element::screw_of(&quarter(), &screw)
+        .expect("a screw splits; it is the FIXED POINT that does not exist");
+    assert_eq!(split.twist, [q(0), q(0), q(5)], "the slip per circuit, on the axis the rotor fixes");
+    assert_eq!(split.centre, [q(0), q(0), q(0)], "and the bend turns about the origin");
+    assert!(
+        kappa.occupies(crate::transducer::sentence::Axis::Placement),
+        "a walk occupies the placement axis — this is the obstruction a demand is for"
+    );
+
+    // A PURE TURN HAS NO SLIP, and the same reader says so: the two arms
+    // are one function, so a fixed point cannot be found by one reader and
+    // denied by another (law 12).
+    let about = crate::transducer::element::screw_of(&quarter(), &about_a_point)
+        .expect("a turn about a point splits too");
+    assert_eq!(about.twist, [q(0), q(0), q(0)], "a turn that returns slips by nothing");
+    assert_eq!(
+        crate::transducer::element::turn_base_point(&quarter(), &about_a_point),
+        Some(about.centre),
+        "and `turn_base_point` IS the zero-twist case of the split"
+    );
+
+    // AND THE TWO TURNS ARE ONE CLASS. `T(p − Rp)·R = T_p R T_p⁻¹` is
+    // CONJUGATE to `R`, so a quarter turn about the origin and the same
+    // quarter turn about `p` stand at one conjugacy stratum. The old
+    // placement byte wrote `0` for the first and `1` for the second and
+    // split them into two class keys — a choice of origin promoted to
+    // identity. Both write the zero Burgers vector now, and the split is
+    // gone.
+    let at_origin = crate::transducer::sentence::ClassVector::of_rotor(
+        &quarter(),
+        ident(),
+        CycleType::Identity,
+    )
+    .expect("a quarter turn has a class");
+    let about_p = crate::transducer::sentence::ClassVector::of_rotor(
+        &quarter(),
+        about_a_point.clone(),
+        CycleType::Identity,
+    )
+    .expect("so does the same turn about a point");
+    assert_eq!(
+        at_origin.class_key().as_bytes()[..9],
+        about_p.class_key().as_bytes()[..9],
+        "the conjugacy stratum is the same, which it always was"
+    );
+    assert!(
+        !at_origin.occupies(crate::transducer::sentence::Axis::Placement)
+            && !about_p.occupies(crate::transducer::sentence::Axis::Placement),
+        "and neither occupies the placement axis: a base point is where the turn stands"
+    );
 }
 
 /// THE READING THE ENGINE ACTUALLY TAKES, from two bodies rather than a

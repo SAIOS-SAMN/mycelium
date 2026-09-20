@@ -212,6 +212,65 @@ pub fn turn_base_point(
     rotor: &crate::transducer::alphabet::Rotor,
     carriage: &Versor,
 ) -> Option<[Q; 3]> {
+    // ONE READER (law 12): the base point is the screw whose twist is zero.
+    // It answered `None` for a walk, and the walk's SLIP — the thing that
+    // makes it a walk — went with it.
+    let s = screw_of(rotor, carriage)?;
+    match s.twist.iter().all(num_traits::Zero::is_zero) {
+        true => Some(s.centre),
+        false => None,
+    }
+}
+
+/// THE CARTAN SPLIT OF A TRANSPORT: where it BENDS, and how far it SLIPS.
+///
+/// `(I − R) p = t` was read as a yes-or-no — solvable and the turn has a
+/// base point, unsolvable and it is "a screw", filed as an undifferentiated
+/// free generator. The unsolvable part of `t` is not noise. It is the
+/// BURGERS VECTOR of a dislocation, and throwing it away is law 7 at the
+/// one place the engine measures torsion in Cartan's sense.
+///
+/// For an ORTHOGONAL `R` the two halves are exact and orthogonal
+/// complements: `ker(I − R) = ker(I − R⁻¹) = ker((I − R)ᵀ)`, so
+/// `Im(I − R) ⊥ ker(I − R)` and `ℝ⁴ = Im(I − R) ⊕ ker(I − R)`. Therefore
+///
+///   CENTRE — `p` solving `(I − R) p = t` on `Im(I − R)`. The rotation is
+///   invertible there, and `p` is the point the bend holds still. This is
+///   CURVATURE: `R` turning about `p`, angular defect around the loop.
+///
+///   TWIST — `t − (I − R) p`, which lies in `ker(I − R)`: the plane the
+///   rotor leaves POINTWISE FIXED, along which no choice of origin can
+///   absorb the translation. The seam slips by exactly this much per
+///   circuit. This is TORSION in Cartan's sense, `Θ = Dθ`.
+///
+/// A screw is neither of these alone — it is curvature on the turning
+/// plane TENSORED with twist on the fixed plane, and both coordinates are
+/// returned rather than one being collapsed into the other's absence.
+///
+/// THE SPLIT IS TAKEN BY THE NORMAL EQUATIONS, `AᵀA p = Aᵀ t`, which over
+/// ℚ is exact elimination and nothing else: the residual `t − A p` is
+/// orthogonal to `Im(A)` by construction, hence lies in `ker(A)`, which is
+/// precisely the canonical twist. No tolerance, no rounding, no choice of
+/// free variable leaking into the answer (law 4, rule 11).
+///
+/// `None` is still returned for a reading that CANNOT BE TAKEN in this
+/// chart: a carriage that is not `D(ρ)·T(t)` at all, a dilation, or a turn
+/// that carries the base off itself — the last being the off-base row of
+/// the system, which `Axis::OffPlane` already carries and which is not a
+/// slip within the base (rule 11: unread is refused, never assumed zero).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Screw {
+    /// The point the bend holds still: `p` on `Im(I − R)`.
+    pub centre: [Q; 3],
+    /// The Burgers vector: the translation no point absorbs, in
+    /// `ker(I − R)`.
+    pub twist: [Q; 3],
+}
+
+pub fn screw_of(
+    rotor: &crate::transducer::alphabet::Rotor,
+    carriage: &Versor,
+) -> Option<Screw> {
     // A dilation is a residue and not a base point, and a carriage that is
     // not exactly the translator by the origin's image carries something
     // this reading does not name: refused whole rather than approximated
@@ -246,7 +305,45 @@ pub fn turn_base_point(
     for (row, rhs) in [t.0, t.1, t.2, Q::zero()].into_iter().enumerate() {
         rows[row][3] = rhs;
     }
-    solve_base_point(rows)
+    // THE CENTRE, by the normal equations on the four rows. `AᵀA` is 3×3
+    // over ℚ; where it is singular the rotor fixes a direction of the base
+    // pointwise, the free coordinate is set to zero, and adding a kernel
+    // vector to `p` changes neither `A p` nor the residual below.
+    let a: [[Q; 3]; 4] = std::array::from_fn(|r| std::array::from_fn(|c| rows[r][c].clone()));
+    let rhs: [Q; 4] = std::array::from_fn(|r| rows[r][3].clone());
+    let mut normal: [[Q; 4]; 3] = std::array::from_fn(|_| std::array::from_fn(|_| Q::zero()));
+    for i in 0..3 {
+        for j in 0..3 {
+            normal[i][j] = (0..4).map(|r| &a[r][i] * &a[r][j]).fold(Q::zero(), |s, x| s + x);
+        }
+        normal[i][3] = (0..4).map(|r| &a[r][i] * &rhs[r]).fold(Q::zero(), |s, x| s + x);
+    }
+    let centre = solve_base_point(square_to_rows(normal))?;
+    // THE RESIDUAL, exact: `t − A p`. Orthogonal to `Im(A)` by the normal
+    // equations, hence in `ker(A)`.
+    let residual: [Q; 4] = std::array::from_fn(|r| {
+        (0..3).map(|c| &a[r][c] * &centre[c]).fold(Q::zero(), |s, x| s + x)
+    });
+    let residual: [Q; 4] = std::array::from_fn(|r| &rhs[r] - &residual[r]);
+    // THE OFF-BASE ROW IS NOT A SLIP. Row three says whether the turn
+    // carries the base off itself; a residual there is a reading this chart
+    // cannot take, which `Axis::OffPlane` carries, and it refuses rather
+    // than being counted as a translation within the base (rule 11).
+    if !residual[3].is_zero() {
+        return None;
+    }
+    Some(Screw {
+        centre,
+        twist: [residual[0].clone(), residual[1].clone(), residual[2].clone()],
+    })
+}
+
+/// The 3×4 normal system as the four-row shape `solve_base_point` reads,
+/// its fourth row all zeros — a row that is zero on both sides, which the
+/// elimination passes over.
+fn square_to_rows(n: [[Q; 4]; 3]) -> [[Q; 4]; 4] {
+    let [a, b, c] = n;
+    [a, b, c, std::array::from_fn(|_| Q::zero())]
 }
 
 /// Exact rational elimination on the four rows of `(I − R) p = t`. Any
