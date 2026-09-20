@@ -164,6 +164,28 @@ pub enum Vertex {
         magnitude: [u64; 4],
         depth: u16,
         placement: Word,
+        /// THE TRANSITION VERSOR φ — HOW THE CITED FORM IS EMBEDDED HERE.
+        ///
+        /// A citation is not a foreign key. The cited form stands
+        /// canonical and unmutated at its own address; it ACTS inside this
+        /// one under a morphism, `x_host = φ x_cited φ̃`. Without φ the
+        /// incidence is a static pointer and the embedding is not in the
+        /// key, so `from_address` cannot know where the sub-complex sits.
+        ///
+        /// It was `placement: Word` alone — a rotor in `Spin(4,0)`, which
+        /// can turn the cited form and cannot translate or dilate it —
+        /// and `vertex_carriage_at` answered `identity_versor()` for every
+        /// Glued vertex, so the placement face carried the identity too.
+        /// Two forms citing one sub-complex at two places were one
+        /// address, and the property test never saw it because every
+        /// fixture glues at the origin.
+        ///
+        /// A conformal versor (A4) carries the rotor, the translator and
+        /// the dilator together, is `O(1)` per citation whatever the cited
+        /// form's size, and is exactly invertible by its reversion — so
+        /// the incidence is a groupoid edge, `φ` one way and `φ̃` the
+        /// other, not a one-directional descent.
+        carriage: Box<crate::transducer::element::Versor>,
     },
     /// Vertex `of` read in its own frame as `by`'s word (3.2): the linear
     /// word is `by`'s, realised at `placement_by + shift`; the body it

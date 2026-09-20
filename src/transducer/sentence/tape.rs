@@ -68,6 +68,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                 magnitude,
                 depth,
                 placement,
+                carriage,
             } => {
                 out.push(2);
                 crate::transducer::address::put_addr(out, address)?;
@@ -77,6 +78,8 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                 }
                 out.extend_from_slice(&depth.to_le_bytes());
                 word_to_form_bytes(placement, None, out);
+                // φ — the transition versor the cited form acts under here.
+                carriage.to_bytes(out);
             }
             Vertex::Rebased { by, of, acts } => {
                 out.push(3);
@@ -309,12 +312,14 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 }
                 let depth = take_u16(b, pos)?;
                 let (placement, _) = word_from_form_bytes(b, pos)?;
+                let carriage = Box::new(element::Versor::from_bytes(b, pos)?);
                 Vertex::Glued {
                     address,
                     chart,
                     magnitude,
                     depth,
                     placement,
+                    carriage,
                 }
             }
             3 => {

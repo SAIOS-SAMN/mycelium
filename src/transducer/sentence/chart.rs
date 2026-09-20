@@ -40,7 +40,22 @@ impl Form {
     /// index for it. The single-citation reader; a PASS of citations calls
     /// [`Form::glue_append`] and walks once at the end (Z2 item 1).
     pub fn glue(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
-        let idx = self.glue_append(s, s_addr, placement, magnitude)?;
+        self.glue_under(s, s_addr, placement, magnitude, element::identity_versor())
+    }
+
+    /// THE CITATION UNDER ITS MORPHISM φ (54.2): the cited form acts inside
+    /// this one as `x ↦ φ x φ̃`. `glue` is this at the identity — a
+    /// citation that turns and neither translates nor dilates — which is
+    /// every citation the extractor builds today.
+    pub fn glue_under(
+        &mut self,
+        s: &Form,
+        s_addr: crate::transducer::address::Address,
+        placement: Word,
+        magnitude: [u64; 4],
+        phi: element::Versor,
+    ) -> Option<u16> {
+        let idx = self.glue_append_under(s, s_addr, placement, magnitude, phi)?;
         self.loops = Self::loops_of(&self.faces, &self.vertices);
         self.reindex();
         Some(idx)
@@ -62,6 +77,18 @@ impl Form {
     /// appended face closes are read once after the pass, with the
     /// retractions, which rebuilds them anyway.
     pub fn glue_append(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
+        self.glue_append_under(s, s_addr, placement, magnitude, element::identity_versor())
+    }
+
+    /// [`glue_append`] under a named morphism.
+    pub fn glue_append_under(
+        &mut self,
+        s: &Form,
+        s_addr: crate::transducer::address::Address,
+        placement: Word,
+        magnitude: [u64; 4],
+        phi: element::Versor,
+    ) -> Option<u16> {
         if !s.is_closed() {
             return None;
         }
@@ -90,6 +117,7 @@ impl Form {
             magnitude,
             depth: d,
             placement: placement.clone(),
+            carriage: Box::new(phi),
         });
         // THE PLACEMENT FACE CARRIES ITS PLACEMENT. A Glued vertex stands at
         // the cited form's chart and the Frame at the root, so there is one
@@ -379,16 +407,25 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
                 buf.push(1);
                 put_word_vertex(&mut buf, derivation, acts, *contact);
             }
+            // 54.2 — A CITATION IS ⟨A_c, φ⟩: the cited form's canonical
+            // address, and the transition versor it acts under here. The
+            // address alone made the citation a static pointer — two forms
+            // citing one sub-complex at two places reached one address,
+            // because `placement` is a rotor and cannot translate or
+            // dilate. φ is A4's canonical writing and is O(1) whatever the
+            // cited form's size, so the key does not inline it.
             Vertex::Glued {
                 address,
                 placement,
                 depth,
+                carriage,
                 ..
             } => {
                 buf.push(2);
                 crate::transducer::address::put_bytes(&mut buf, address);
                 placement.put_canonical(&mut buf);
                 buf.extend_from_slice(&depth.to_le_bytes());
+                carriage.put_canonical(&mut buf);
             }
             Vertex::Rebased { by, of, acts } => {
                 buf.push(3);
@@ -873,12 +910,14 @@ pub fn from_address(k: &[u8]) -> Option<Form> {
                 let address = crate::transducer::address::Address::new(take_bytes(k, &mut p)?);
                 let placement = Word::formed(Rotor::from_bytes(k, &mut p)?);
                 let depth = take_u16k(k, &mut p)?;
+                let carriage = Box::new(Versor::from_bytes(k, &mut p)?);
                 Vertex::Glued {
                     address,
                     chart: stalk::Invariant::default(),
                     magnitude: [0; 4],
                     depth,
                     placement,
+                    carriage,
                 }
             }
             3 => {

@@ -192,3 +192,64 @@ fn evidence_is_not_identity() {
         "a certificate is evidence on the ledger, not a coordinate of the form"
     );
 }
+
+/// 54.2 — A CITATION IS ⟨A_c, φ⟩, AND φ IS IN THE KEY.
+///
+/// A citation is not a foreign key. The cited form stands canonical and
+/// unmutated at its own address; it ACTS inside the citing form under a
+/// morphism, `x_host = φ x_cited φ̃`. Before this, a `Glued` vertex carried
+/// `placement: Word` — a rotor in `Spin(4,0)`, which can turn the cited
+/// form and can neither translate nor dilate it — and `vertex_carriage_at`
+/// answered `identity_versor()` for every Glued vertex, so the placement
+/// face carried the identity too and the embedding was nowhere in the key.
+///
+/// `from_address(address(f)) ≡ f` passed anyway, because every fixture
+/// glued at the origin and no test ever cited a sub-complex placed
+/// somewhere. This is that test.
+///
+/// Two readings: one form cited under two different morphisms reaches two
+/// addresses, and each recovers the morphism it was written with. φ is a
+/// conformal versor (A4) — rotor, translator and dilator together — and is
+/// `O(1)` per citation whatever the cited form's size, so carrying it does
+/// not re-inline what 1.7 keeps whole.
+#[test]
+fn a_citation_carries_the_morphism_it_acts_under() {
+    use crate::transducer::element::{identity_versor, translator_versor};
+    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let w = Word::from_letters(&[(q, false)]);
+    let inner = closed_word_form(w, None);
+    let at = as_element_form(&inner, [1, 0, 0, 0]).expect("inner").address();
+
+    let host = |phi: crate::transducer::element::Versor| {
+        let mut f = Form::default();
+        f.glue_under(&inner, at.clone(), Word::identity(), [0, 0, 0, 1], phi)
+            .expect("glue under a morphism");
+        f
+    };
+    // The SAME sub-complex, cited at the origin and cited three sites over.
+    let here = host(identity_versor());
+    let over = host(translator_versor(3, 0));
+
+    assert_ne!(
+        form_vertex_key(&here),
+        form_vertex_key(&over),
+        "one form cited at two places is two forms: φ is in the key"
+    );
+
+    // AND EACH RECOVERS ITS OWN MORPHISM. The inverse reads φ back, so the
+    // embedding survives `from_address` and is not re-derived from a
+    // placement that never carried it.
+    for (f, phi) in [(&here, identity_versor()), (&over, translator_versor(3, 0))] {
+        let key = form_vertex_key(f);
+        let back = from_address(key.as_bytes()).expect("recovers");
+        assert_eq!(form_vertex_key(&back), key, "the recovery re-derives its address");
+        let got = back.vertices.iter().find_map(|v| match v {
+            Vertex::Glued { carriage, .. } => Some((**carriage).clone()),
+            _ => None,
+        });
+        assert!(
+            got.is_some_and(|g| crate::transducer::element::same_versor(&g, &phi)),
+            "the citation comes back under the morphism it was written with"
+        );
+    }
+}

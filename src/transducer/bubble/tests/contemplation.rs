@@ -561,6 +561,7 @@ fn citing_form(hue: u8, cited: &crate::transducer::address::Address) -> crate::t
         magnitude: [1, 0, 0, 0],
         depth: 0,
         placement: crate::transducer::alphabet::Word::identity(),
+            carriage: Box::new(crate::transducer::element::identity_versor()),
     });
     f.reindex();
     f

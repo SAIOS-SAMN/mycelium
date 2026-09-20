@@ -477,9 +477,12 @@ pub(crate) fn vertex_carriage_at(
                 _ => None,
             }
         }
-        Vertex::Frame | Vertex::Glued { .. } | Vertex::Unfolded { .. } => {
-            Some(element::identity_versor())
-        }
+        // φ — THE MORPHISM THE CITED FORM ACTS UNDER HERE (54.2). It
+        // answered `identity_versor()` for every Glued vertex, so the
+        // placement face carried the identity and the embedding was not in
+        // the key at all.
+        Vertex::Glued { carriage, .. } => Some((**carriage).clone()),
+        Vertex::Frame | Vertex::Unfolded { .. } => Some(element::identity_versor()),
         Vertex::Demand { .. } => None,
     }
 }
