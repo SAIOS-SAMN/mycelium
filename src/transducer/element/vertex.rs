@@ -7,6 +7,15 @@
 use crate::transducer::germinate::ResidualGerm;
 use super::*;
 
+/// THE SHAPE OF A NON-SENTENCE ADDRESS, written as its first byte so a
+/// reader knows what follows (rule 11). `TAG_RESIDUAL` covers four shapes
+/// and nothing distinguished them; an inverse could only have guessed.
+pub const KIND_REWRITE: u8 = 0;
+pub const KIND_LETTERS: u8 = 1;
+pub const KIND_SPATIAL: u8 = 2;
+pub const KIND_SPATIAL_ROTOR: u8 = 3;
+pub const KIND_CHAIN: u8 = 4;
+
 impl Element {
     /// THE CARRIAGE between two thoughts — the versor carrying this one's
     /// base geometry onto the other's, when they sit on one orbit. The chain
@@ -403,11 +412,24 @@ impl Element {
             .clone()
     }
 
-    /// Meaning of a non-sentence word: M1 ‖ carriage ‖ σ ‖ chain (17.2).
-    /// ρ is in the carriage, never beside it.
+    /// Meaning of a non-sentence word: KIND ‖ M1 ‖ carriage ‖ σ ‖ chain
+    /// (17.2). ρ is in the carriage, never beside it.
+    ///
+    /// THE KIND BYTE LEADS, so the shape is readable (rule 11). Four
+    /// different shapes were written here with nothing saying which: a
+    /// rewrite, a letters word, a spatial action with or without its
+    /// rotor, and a bare chain. A reader could not tell a rewrite's tag
+    /// byte from a chain's length prefix, so `TAG_RESIDUAL` had the same
+    /// collision one level down that `TAG_FORM` had one level up — and an
+    /// inverse for it could only have guessed.
+    ///
+    /// 0 rewrite · 1 letters · 2 spatial · 3 spatial with rotor · 4 chain.
+    /// Every residual address in the tree changes; §10, a layout change is
+    /// a recut.
     fn form_key_bytes(&self) -> Vec<u8> {
         let mut out = Vec::new();
         if let Some(rw) = crate::transducer::rewrite::Rewrite::from_element(self) {
+            out.push(KIND_REWRITE);
             out.push(REWRITE_TAG);
             out.push(rw.kind as u8);
             out.extend_from_slice(&(rw.before.len() as u16).to_le_bytes());
@@ -421,6 +443,7 @@ impl Element {
             return out;
         }
         if let Some(letters) = self.letters() {
+            out.push(KIND_LETTERS);
             letters.spelling.word.put_canonical(&mut out);
             // A4 output (17.2): one projective carriage, one writing. Raw
             // coefficients here made a carriage and its negation two
@@ -434,6 +457,10 @@ impl Element {
                 out.push(t);
             }
         } else if let Some(v) = self.action.spatial.as_ref() {
+            out.push(match self.action.rotor.is_some() {
+                true => KIND_SPATIAL_ROTOR,
+                false => KIND_SPATIAL,
+            });
             // The spatial action is a versor too; the same A4 writing.
             v.put_canonical(&mut out);
             // AND THE ROTOR BESIDE IT, where one is carried. The versor is
@@ -444,6 +471,8 @@ impl Element {
             if let Some(r) = self.action.rotor.as_ref() {
                 r.put_canonical(&mut out);
             }
+        } else {
+            out.push(KIND_CHAIN);
         }
         // The key IS the chain (law 2), and the chain is A5's by type: one
         // that says two things at a site has no centering and is refused

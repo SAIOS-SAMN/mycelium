@@ -340,3 +340,58 @@ fn the_address_is_independent_of_vertex_append_order() {
         "one set of vertices is one form, however it was built"
     );
 }
+
+/// 54.3 — THE LANGUAGE HAS TWO DECODERS AND THEY REFUSE EACH OTHER.
+///
+/// A form is a closed cell complex in the vertex-key layout; a residual is
+/// an unclosed 1-chain written as its own bytes. They shared `TAG_FORM`,
+/// so neither could be decoded without guessing which it held, and
+/// `Element::address` fell through from the first to the second whenever a
+/// sentence's tape did not decode — a genome then reported a 0.9 KB
+/// address against a 46 KB tape and looked like a 50x saving.
+///
+/// Four readings: a residual address gives its chain back; a form's
+/// address is refused by the chain reader; a residual's address is refused
+/// by the form reader; and a REWRITE, which names the forms it rewrites
+/// and carries no chain, is refused rather than answered with an empty one
+/// — "not a chain" is not "a chain that says nothing" (rule 11).
+#[test]
+fn a_form_and_a_residual_refuse_each_others_decoder() {
+    use crate::transducer::element::from_residual as mint_residual;
+    use crate::transducer::sentence::from_residual;
+
+    let chain: Vec<(i64, i64, u8, u8)> = vec![(2, 2, 1, 2), (2, 3, 1, 2)];
+    let residual = mint_residual(&chain).expect("a chain mints a residual");
+    let r_addr = residual.address();
+    assert!(
+        matches!(r_addr.as_bytes(), [t, ..] if *t == crate::transducer::address::TAG_RESIDUAL),
+        "a residual says so by its tag"
+    );
+
+    // THE CHAIN COMES BACK, centred: A5 quotients placement, so the
+    // reading is the chain it is and not where it sat.
+    let back = from_residual(r_addr.as_bytes()).expect("a residual address inverts");
+    assert_eq!(
+        mint_residual(&back).map(|e| e.address()),
+        Some(r_addr.clone()),
+        "the chain read back mints the address it was read from"
+    );
+
+    // AND THE TWO DECODERS REFUSE EACH OTHER.
+    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let form = closed_word_form(Word::from_letters(&[(q, false)]), None);
+    let f_addr = form_vertex_key(&form);
+    assert!(
+        matches!(f_addr.as_bytes(), [t, ..] if *t == crate::transducer::address::TAG_FORM),
+        "a form says so by its tag"
+    );
+    assert!(
+        from_residual(f_addr.as_bytes()).is_none(),
+        "the chain reader refuses a form's address"
+    );
+    assert!(
+        from_address(r_addr.as_bytes()).is_none(),
+        "the form reader refuses a residual's address"
+    );
+    assert!(from_residual(&[]).is_none(), "and refuses nothing at all");
+}

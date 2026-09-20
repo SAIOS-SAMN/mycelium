@@ -11,35 +11,21 @@ use super::transport::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{Rotor, Word};
 use crate::transducer::element::Versor;
+use crate::transducer::sentence::Link;
 use crate::transducer::stalk;
 use super::chart::word_vertex_address;
 
-/// The chain back out of its address. `form_key_bytes` writes "the key IS
-/// the chain" for a residual element — no letters, no spatial action, so
-/// the address is the tag and the chain block — and this is that read.
-fn take_chain_address(k: &[u8], p: &mut usize) -> Option<Vec<crate::transducer::sentence::Link>> {
+/// The chain back out of its address, AND THE CORNER IT SAT AT.
+///
+/// The address names the chain up to A5's centring; the corner beside it
+/// is where it stood. `from_residual` is the one reader of a residual
+/// address and this uses it rather than restating the layout (law 12).
+fn take_chain_address(k: &[u8], p: &mut usize) -> Option<Vec<Link>> {
     let a = take_bytes(k, p)?;
     if a.is_empty() {
         return Some(Vec::new());
     }
-    let mut q = 0usize;
-    // A chain's address carries `TAG_RESIDUAL`: an unclosed 1-chain is not
-    // a closed complex and no longer shares the form's tag.
-    match a.as_slice() {
-        [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL => q += 1,
-        _ => return None,
-    }
-    let block = take_bytes(&a, &mut q)?;
-    let mut b = 0usize;
-    let n = take_u32(&block, &mut b)? as usize;
-    let mut out = Vec::with_capacity(n.min(block.len()));
-    for _ in 0..n {
-        let r = i64::from_le_bytes(block.get(b..b + 8)?.try_into().ok()?);
-        let c = i64::from_le_bytes(block.get(b + 8..b + 16)?.try_into().ok()?);
-        out.push((r, c, *block.get(b + 16)?, *block.get(b + 17)?));
-        b += 18;
-    }
-    // The corner the centred chain sits at, put back.
+    let mut out = from_residual(&a)?;
     let cr = i64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
     let cc = i64::from_le_bytes(k.get(*p + 8..*p + 16)?.try_into().ok()?);
     *p += 16;
@@ -307,4 +293,68 @@ fn take_bytes(k: &[u8], p: &mut usize) -> Option<Vec<u8>> {
     let b = k.get(*p..*p + n)?.to_vec();
     *p += n;
     Some(b)
+}
+
+/// 54.3 — THE INVERSE OF A RESIDUAL ADDRESS: the chain a non-sentence word
+/// stands for, read back out of the coordinate it is keyed at.
+///
+/// `from_address` and this are the language's two decoders and they REFUSE
+/// EACH OTHER. A form is a closed cell complex written in the vertex-key
+/// layout; a residual is an unclosed 1-chain, `∂c ≠ 0`, written as its own
+/// bytes. They shared `TAG_FORM` until `8b861ea`, so a reader could not
+/// tell which layout it held and `Element::address` fell through from the
+/// first to the second whenever a sentence's tape did not decode — which
+/// is how a soak's genome reported a 0.9 KB address against a 46 KB tape.
+/// Two kinds, two tags, two totals, no fallback between them.
+///
+/// The KIND byte says which of the four shapes follows, and the chain is
+/// at the end of every shape that has one. A REWRITE has no chain: it
+/// names the forms it rewrites and nothing else, so this refuses it rather
+/// than returning an empty chain, which would read as "a word that says
+/// nothing" instead of "not a chain" (rule 11).
+pub fn from_residual(addr: &[u8]) -> Option<Vec<Link>> {
+    let mut p = 0usize;
+    match addr {
+        [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL => p += 1,
+        // A form's address is not a chain's, and reading one as the other
+        // is the collision this pair exists to end.
+        _ => return None,
+    }
+    let block = take_bytes(addr, &mut p)?;
+    let mut q = 0usize;
+    // The shape leads, and the slice pattern reads that coordinate rather
+    // than taking a member by position (rule 15).
+    let [kind, ..] = block.as_slice() else { return None };
+    let kind = *kind;
+    q += 1;
+    match kind {
+        // A rewrite carries no chain.
+        crate::transducer::element::vertex::KIND_REWRITE => return None,
+        crate::transducer::element::vertex::KIND_LETTERS => {
+            // M1's rotor, the A4 carriage, then σ.
+            Rotor::from_bytes(&block, &mut q)?;
+            Versor::from_bytes(&block, &mut q)?;
+            let n = u16::from_le_bytes(block.get(q..q + 2)?.try_into().ok()?) as usize;
+            q += 2 + n * 2;
+        }
+        crate::transducer::element::vertex::KIND_SPATIAL => {
+            Versor::from_bytes(&block, &mut q)?;
+        }
+        crate::transducer::element::vertex::KIND_SPATIAL_ROTOR => {
+            Versor::from_bytes(&block, &mut q)?;
+            Rotor::from_bytes(&block, &mut q)?;
+        }
+        crate::transducer::element::vertex::KIND_CHAIN => {}
+        _ => return None,
+    }
+    let n = u32::from_le_bytes(block.get(q..q + 4)?.try_into().ok()?) as usize;
+    q += 4;
+    let mut out = Vec::with_capacity(n.min(block.len()));
+    for _ in 0..n {
+        let r = i64::from_le_bytes(block.get(q..q + 8)?.try_into().ok()?);
+        let c = i64::from_le_bytes(block.get(q + 8..q + 16)?.try_into().ok()?);
+        out.push((r, c, *block.get(q + 16)?, *block.get(q + 17)?));
+        q += 18;
+    }
+    Some(out)
 }
