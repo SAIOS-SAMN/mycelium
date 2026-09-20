@@ -3127,7 +3127,11 @@ spelling, serialisation, and scaling.
 
 **Invariant.** Address equality ⇔ same vertex, same frame, same canonical
 chain; a tape version change never changes an address; `decode(address)`
-re-derives the form's vertices and faces.
+re-derives the form's vertices and faces. **The invariant is not met by
+the tree's `form_vertex_key` as of 2026-09-20** (chapter 54): it omits a
+single-member vertex's chart, a demand's remainder and an edge's value,
+so no decoder could be written and the tape stood in for the key.
+Chapter 54 completes the key and writes the inverse.
 
 **Binding.** `Element::address` (1026), `sentence::vertex_address`,
 `element::listing_key`, `composite_parent_id` and `section_address`
@@ -9111,3 +9115,105 @@ sentence/form/carrier.rs, chart.rs, family/speak.rs, court/verdict/replay.rs   t
 Rows: K1 (Bands and the recomposition), K2 (the quantified citation), K3
 (`Demand::Chart`), K4 (the nerve, RingShells), K5 (the rest of the
 roster), Stage 19 of `MU-RECURSION-TASKS.md`.
+
+## 54. The derivation of a coordinate and its inverse (ruled 2026-09-20)
+
+Ruled by the coordinator under A21, M2, law 12 and Part IX, on the reading
+that the genome on disk had become a trie keyed by addresses whose values
+were tapes 68% made of those same addresses, with the derivation empty on
+every voice — a structure that navigates a name in order to read the name
+back, built because the key could not be inverted. M2's own invariant says
+`decode(address)` re-derives the form; the tree never met it, and treated
+the gap as a wall ("there is no decoder"). This chapter composes the
+derivation the document already states across nine chapters into one
+chain, names what the key was missing, and writes the inverse.
+
+### 54.1 The chain, sensor to key
+
+Every coordinate the engine holds is an output of one of these steps, and
+nothing else is a coordinate (rule 17):
+
+1. **Laminae.** The sensor reads `(r, c, k, h)`: row, column, frame, hue
+   (51.3). The only place a pair of integers is a coordinate (law 11).
+2. **Bodies.** One-hue 6-adjacent components on `(r, c, k)`; a body's shape
+   and moduli from its harmonics (B2, 38.2); its chart is its moduli, an
+   `Invariant`.
+3. **The cover.** The scene's charts under a reading (53.1, 53.2), each
+   named by its coordinate in the reading's own lattice.
+4. **The quotient.** The versor carrying one body onto another, in closed
+   form from the moments, the coset's geodesic (16.4, 50.2 step 1); the
+   hue map read lamina by lamina.
+5. **Canonical form.** The rotor in A1's form; the versor in A4's writing;
+   the class vector as the blade decomposition of the holonomy (12.6).
+6. **The word.** A22's peel of the rotor, factored through the presentation
+   by A12 (50.2 step 2): the citations and the residue.
+7. **The form.** One `Word` vertex per transport class on the charts it acts
+   on (52.5, 53.6); faces between members by the incidence (21 step 2);
+   loops by 12.2; sections along `e₃` at their frames (51.4, 51.8);
+   demands one per kind and chart (50.5).
+8. **The key.** A21: the coordinates of 5 and 7 written in a fixed order,
+   length-prefixed, a prefix a coarser stratum; the address is M2's
+   composite of them.
+
+### 54.2 What the key carries, and what is a receipt
+
+The key carries the closed sub-complex whole, so that step 8 inverts to
+step 7: for every vertex its kind, its rotor's A1 key, **every member's
+chart** and that member's A4 carriage, contact and sorted gauge; for every
+face its two ends, its word, and at every member pair the carriage, the
+gauge and **the edge's value** as the transport it is; for every demand
+its kind, its chart and **its remainder as that chain's own address**
+(from_residual, A5); the ratio, the sections at their frame coordinates,
+the opened axes. Nothing in it is a digest, a position or a count standing
+for a property.
+
+The key does not carry evidence, and evidence is a receipt (Part IX): the
+derivation's citations — which generators a mind factored through — and
+the certificates of the pivots a form rests on are receipts on the ledger,
+keyed by the address they are evidence for, replayed by the court there
+and never part of identity, because two minds reaching one vertex by two
+derivations reach one address (1.5). The remainder chain is identity, not
+evidence: it is what the form does not close.
+
+### 54.3 The inverse
+
+`Form::from_address` is A21's inverse and the only decoder: it reads the
+key and re-derives the form's vertices, faces, loops, sections, demands
+and axes, with `loops_of` run on the faces read (loops are never written).
+The A21 property `from_address(address(f)) ≡ f` — same vertices by
+`same_vertex`, same faces by their words and places, same sections and
+demands — is a property test over generated forms, and it is the test of
+this chapter.
+
+### 54.4 Succession is a section, not a replay
+
+What stands at frame `n` is `σ(n)`, read at the frame's own coordinate
+from the sections the key carries and the members' frames (51.8); the
+transition between frames `k` and `k + 1` is the connection the edge
+carries along `e₃` (52.5 reading 6). No reader reconstructs a form by
+walking frames in order, and no carrier stores the order in which a form
+was built.
+
+### 54.5 What retires
+
+The form tape as a cognitive carrier: the genome on disk is the trie of
+addresses (25 as ruled), and a word's value on disk is nothing, because
+the key is the form; the tape survives only as the wire's frame for an
+address plus its receipts (Part IX), and `FORM_TAPE_VERSION` is never bumped
+for the form again. `from_element_form`, `as_element_form` and every reader
+that decodes a tape to reach a form read `from_address`. Every address in
+the tree changes once, at the recut that lands this chapter (§10).
+
+### 54.6 Binding
+
+```
+sentence/chart.rs        form_vertex_key completed (54.2); Form::from_address (54.3)
+sentence/tape.rs, codec.rs   the form's tape retired from cognition; the wire frame carries the address and receipts (54.5)
+element/vertex.rs        the demand's remainder as a chain address; the edge value written
+court/verdict/replay.rs, court/ledger.rs   citations and certificates as receipts keyed by address (54.2)
+client/sdk/epigenome/    the genome as addresses; Held reads from_address (25, 54.5)
+sentence/tests/properties.rs   from_address(address(f)) ≡ f
+```
+
+Rows: K6 (the complete key and its inverse, the tape retired), Stage 19 of
+`MU-RECURSION-TASKS.md`; K2 and Z11 are re-shaped by it and wait behind it.
