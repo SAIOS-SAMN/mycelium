@@ -286,3 +286,65 @@ fn the_tapes_version_is_frozen_and_a_foreign_one_refuses() {
         );
     }
 }
+
+/// THE ADDRESS STILL DEPENDS ON THE ORDER VERTICES WERE APPENDED, and
+/// that is law 2 violated at the centre of the engine.
+///
+/// A `Form` holds `vertices: Vec<Vertex>`, and every relation in it is an
+/// INDEX into that vector: `face.i`/`face.j` as `u16`, `lp.vertices` as a
+/// list of `u16`, `lp.chord` as a face position, `by_address`/`by_class`/
+/// `glued`/`star` as maps onto `u16`. `form_vertex_key` walks
+/// `for v in &f.vertices` and writes them in that order, so two forms
+/// holding the SAME set of vertices reach two addresses if they were built
+/// in two orders. Rule 15's question — "is the order content or arrival?"
+/// — is answered here by arrival.
+///
+/// This is the flat dimension the coordinate work has not reached. Z9 took
+/// positional identity out of the genome, the court's `Language`, the
+/// cursors and the watermark; it left it untouched inside the object all
+/// of those point at. It is also why the key must write every vertex out
+/// positionally, which is the inlining that made a word 46 KB: a vertex
+/// has no coordinate WITHIN its form, so the form spells it in place.
+///
+/// The fix is available and was not before `b2756eb`: every `Word` vertex
+/// now derives its own address from its coordinates, so vertices can be
+/// keyed by it, faces can be `(addr_i, addr_j)`, and `reindex` — which
+/// exists only because positions shift — goes away with the `Vec`.
+///
+/// THE ASSERTION IS THE DEFECT, DELIBERATELY. It reads `!=` because that
+/// is what the tree does today; when the form is keyed by coordinate it
+/// becomes `==` and this test is renamed. Asserting the wrong thing to
+/// make a suite green is what fixtures at the identity did, so the reading
+/// says plainly which way it points.
+#[test]
+fn the_address_still_depends_on_vertex_append_order() {
+    let q01 = alphabet::LetterId::quarter((0, 1)).expect("q");
+    let q23 = alphabet::LetterId::quarter((2, 3)).expect("q");
+    let mk = |ids: [alphabet::LetterId; 2]| {
+        let mut f = Form::default();
+        for id in ids {
+            // The chart follows the LETTER, not the position, so both
+            // forms hold the same set of vertices and differ only in the
+            // order they were appended.
+            let c = u64::from(id.raw());
+            f.vertices.push(Vertex::word_on(
+                alphabet::Derivation::spelled(Word::from_letters(&[(id, false)])),
+                stalk::Invariant::counts(&[c]),
+                Box::new(crate::transducer::element::identity_versor()),
+                Vec::new(),
+                None,
+            ));
+        }
+        f.reindex();
+        f
+    };
+    let a = mk([q01, q23]);
+    let b = mk([q23, q01]);
+    assert_ne!(
+        form_vertex_key(&a),
+        form_vertex_key(&b),
+        "TODAY: one set of vertices in two append orders reaches two \
+         addresses. When the form is keyed by coordinate this becomes \
+         assert_eq and the test is renamed."
+    );
+}
