@@ -177,24 +177,46 @@ pub fn replay_form_at(
         return Some(tape(REFUSE_FORM_TAPE));
     };
     let f = &f;
+    // A FORM'S OWN DEPTH AGREES WITH ITS OWN CITATIONS. This is a reading
+    // of the sentence against itself — no cited form is resolved for it —
+    // so it holds whatever the citation relation's shape is, and it is
+    // what catches a tape whose `depth` was moved under its vertices.
     if f.depth != f.depth_of() {
         return Some(tape(REFUSE_GLUED_DEPTH));
     }
     for v in &f.vertices {
-        let Vertex::Glued { address, depth, .. } = v else {
+        let Vertex::Glued { address, .. } = v else {
             continue;
         };
-        if *depth >= f.depth {
-            return Some(tape(REFUSE_GLUED_DEPTH));
-        }
+        // TWO DEPTH REFUSALS STOOD HERE AND BOTH ARE GONE (54.2, as ruled
+        // 2026-09-20).
+        //
+        // `*depth >= f.depth` said nothing: `f.depth == f.depth_of()` was
+        // checked one line above and `depth_of` IS one more than the
+        // deepest citation, so every citation is already strictly below it
+        // and the branch was unreachable. It read as the DAG's statement
+        // and was a tautology.
+        //
+        // `cited.depth_of() != *depth` was the DAG, and it is not a fact
+        // about this edge. `depth` is the cited form's depth WHEN IT WAS
+        // CITED; a cited form goes on being cited after, so its depth
+        // moves and the citation's coordinate does not. In a nerve where
+        // `U_i` cites `U_j` and `U_j` cites `U_i`, the second citation
+        // raises `U_j`'s depth and this check then refuses the first —
+        // which is how a posetal height forbade mutual incidence and with
+        // it every 2-simplex, and so `H²`.
+        //
+        // WHAT THE COURT STILL VERIFIES OF A CITATION is below and is
+        // unchanged: the cited form resolves on this court's ruled cover,
+        // it is CLOSED, and it opens at an ungauged frame. Those are
+        // properties of the cited object. Its depth is a reading the
+        // citation carries, and the court does not re-derive a reading
+        // from an object that has moved since.
         let Some(cited) = resolve(address) else {
             return Some(tape(REFUSE_GLUED_UNRULED));
         };
         if !cited.is_closed() {
             return Some(tape(REFUSE_GLUED_UNRULED));
-        }
-        if cited.depth_of() != *depth {
-            return Some(tape(REFUSE_GLUED_DEPTH));
         }
         // 18: A FORM OPENS AT ITS FRAME. Vertex zero is the frame by the
         // form's own shape, so the slice pattern reads the coordinate and

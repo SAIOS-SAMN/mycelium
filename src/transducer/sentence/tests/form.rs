@@ -271,7 +271,19 @@ fn ratio_and_sections_are_on_the_form_key() {
     assert!(crate::transducer::sentence::from_element_form(&broken).is_none(), "a zero denominator refuses the tape");
 }
 
-/// Depth is one plus the deepest glued form; gluing at equal depth is refused.
+/// Depth is one plus the deepest glued form — A READING OF THE CITATIONS,
+/// and no longer a refusal (54.2, as ruled 2026-09-20).
+///
+/// This asserted that a citation at equal or greater depth was refused, and
+/// read that as acyclicity. It was neither: the refusal compared against
+/// the host's depth AS IT STOOD, so it answered by arrival order, and it
+/// exempted a host with no citation yet, so two leaves could always cite
+/// each other. Charts of an open cover do not own each other; the guard
+/// against a cycle is `φ_ij φ_jk φ_ki = 1`, not a posetal height, and
+/// `sentence::tests::nerve` carries both readings.
+///
+/// What remains true, and is what this test is for: `depth_of` is one more
+/// than the DEEPEST citation, never a count of them.
 #[test]
 fn depth_is_one_plus_max_glued() {
     let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
@@ -286,15 +298,18 @@ fn depth_is_one_plus_max_glued() {
     let mut wrap = Form::default();
     wrap.glue(&outer, form_addr(2), Word::identity(), [0, 0, 0, 1]).expect("glue depth 1 into depth 0");
     assert_eq!(wrap.depth_of(), 2);
+    // A CITATION AT EQUAL DEPTH, AND ONE DEEPER, both stand: the nerve has
+    // no stratification and the depth that comes back is the deepest of
+    // them, read off the citations themselves.
     let outer_copy = outer.clone();
-    assert!(
-        outer.glue(&outer_copy, form_addr(3), Word::identity(), [0, 0, 0, 1]).is_none(),
-        "equal depth is refused"
-    );
-    assert!(
-        outer.glue(&wrap, form_addr(4), Word::identity(), [0, 0, 0, 1]).is_none(),
-        "deeper form is refused"
-    );
+    outer
+        .glue(&outer_copy, form_addr(3), Word::identity(), [0, 0, 0, 1])
+        .expect("a citation at equal depth is a citation");
+    assert_eq!(outer.depth_of(), 2, "the equal-depth citation is one deep, so the host is two");
+    outer
+        .glue(&wrap, form_addr(4), Word::identity(), [0, 0, 0, 1])
+        .expect("a citation of a deeper form is a citation");
+    assert_eq!(outer.depth_of(), 3, "and the deepest citation is what depth reads");
     let mut again = Form::default();
     again.glue(&inner, a0.clone(), Word::identity(), [0, 0, 0, 1]).unwrap();
     again.glue(&inner, form_addr(5), Word::identity(), [0, 0, 0, 1]).expect("another depth-0 glue");

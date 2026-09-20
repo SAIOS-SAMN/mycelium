@@ -99,11 +99,37 @@ impl Form {
         if !frame.word_in(s).is_some_and(|w| w.is_identity()) {
             return None;
         }
+        // THE DEPTH REFUSAL IS GONE (54.2, as ruled 2026-09-20). It read
+        //
+        //     let host = self.depth_of();
+        //     if host > 0 && d >= host { return None }
+        //
+        // and was taken for an acyclicity invariant. It was not one. `host`
+        // is one more than the DEEPEST CITATION ALREADY APPENDED, so the
+        // refusal asked a question about arrival order: the same set of
+        // citations was admitted deep-first and refused shallow-first, and a
+        // fresh host (`host == 0`) was exempt altogether, so two leaves could
+        // always cite each other. It forbade not cycles but a second citation
+        // deeper than the first — the 63d6e40 defect in its second home, and
+        // `a_citation_set_is_not_an_arrival_order` is its reading.
+        //
+        // WHAT STANDS IN ITS PLACE. Charts of an open cover do not own each
+        // other; `U_i` citing `U_j` and `U_j` citing `U_i` is one overlap
+        // written from both sides, and it is the 1-skeleton of the nerve
+        // whose 2-simplices carry `H²`. The guard against a runaway is not a
+        // posetal height but topological closure — `φ_ij φ_jk φ_ki = 1` — and
+        // a cycle that does not close carries its composite as its holonomy,
+        // which is content and not an error (`curvature is content`).
+        //
+        // NOTHING RECURSES ON A CITATION. A `Glued` vertex holds the cited
+        // form's ADDRESS, never the form: `depth_of` reads each vertex's own
+        // stored `depth` field, and `from_address` rebuilds the vertex from
+        // the address bytes without resolving them. A cycle is finite data
+        // and every reader of it terminates.
+        //
+        // `depth` stays a COORDINATE OF THE CITATION — the cited form's depth
+        // when it was cited — and is no longer a contract about the relation.
         let d = s.depth_of();
-        let host = self.depth_of();
-        if host > 0 && d >= host {
-            return None;
-        }
         let chart = chart_of_form(s)?;
         if chart.0.is_empty() {
             return None;
@@ -416,69 +442,15 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     // incidence is read against the same ordering the vertices were
     // written in and not against the vector they happen to sit in.
     let at = canonical_places(f);
-    for face in &f.faces {
-        // `canonical_places` covers every index a face names, so this is a
-        // total read and there is no missing value to stand in for
-        // (rule 11).
-        buf.extend_from_slice(&at[face.i as usize].to_le_bytes());
-        buf.extend_from_slice(&at[face.j as usize].to_le_bytes());
-        // THE WORD ONCE, then THE MEMBERS IN CHART-PAIR KEY ORDER — the
-        // trie's, which is content (law 2), so two nodes holding one face
-        // reach one address. The count is written because a face with two
-        // member pairs SAYS something a face with one does not, and the
-        // address is what says it (D10).
-        face.word.put_canonical(&mut buf);
-        buf.extend_from_slice(&(face.at.len() as u16).to_le_bytes());
-        for (pk, place) in face.at.scoped() {
-            crate::transducer::address::put_bytes(&mut buf, &pk);
-            place.carriage.put_canonical(&mut buf);
-            let mut g = place.gauge.clone();
-            g.sort_unstable();
-            buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
-            for (a, b) in g {
-                buf.push(a);
-                buf.push(b);
-            }
-            // 54.2 — THE EDGE'S VALUE, AS THE TRANSPORT IT IS. Only its
-            // PRESENCE was keyed, on the reading that the court re-measures
-            // it; a property the key does not carry is a property the
-            // inverse cannot return, and 54.3 makes the key the only
-            // decoder. Written whole: the transport's word, its A4
-            // carriage, its sorted gauge.
-            match &place.edge {
-                None => buf.push(0),
-                Some(t) => {
-                    buf.push(1);
-                    t.word.put_canonical(&mut buf);
-                    t.carriage.put_canonical(&mut buf);
-                    let mut eg = t.gauge.clone();
-                    eg.sort_unstable();
-                    buf.extend_from_slice(&(eg.len() as u16).to_le_bytes());
-                    for (x, y) in eg {
-                        buf.push(x);
-                        buf.push(y);
-                    }
-                }
-            }
-        }
-        // THE SECTION IS MEANING (rule 7). A face measured on pairs 0 and 2
-        // and a face claiming every pair of the bundle SAY different things
-        // — the court asks the second for pair 1 and not the first — so
-        // they are two faces and the address is what says so. The lists
-        // used to sit in `Form.sections`, which this key already writes out
-        // whole, so the coordinate does not leave the address; it moves to
-        // the face it describes.
-        match &face.pairs {
-            None => buf.push(0),
-            Some(ps) => {
-                buf.push(1);
-                buf.extend_from_slice(&(ps.len() as u16).to_le_bytes());
-                // Coordinate order: the inner key IS the frame.
-                for p in frames_of_section(ps) {
-                    buf.extend_from_slice(&p.to_le_bytes());
-                }
-            }
-        }
+    // AND THE FACES THEMSELVES IN THEIR OWN ORDER, not the order they were
+    // pushed (law 2, rule 15). `ba645e3` canonicalised the VERTICES and
+    // left this walk over `f.faces` as a `Vec`, so arrival order stayed in
+    // the address one level down: two hosts citing one pair of forms in two
+    // orders reached two addresses, with the same vertices at the same
+    // canonical places and their two star faces written in opposite order.
+    // `a_citation_set_is_not_an_arrival_order` is the reading.
+    for face in canonical_faces(f, &at) {
+        put_face(&mut buf, face, &at);
     }
     // The bundle's frame ratio and its sections are meaning (rule 7): two
     // forms that speak the same words onto differently scaled frames, or
@@ -517,6 +489,113 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     // two forms. Carried as that chain's own address, as a demand's is.
     put_chain_address(&mut buf, &f.remainder.placed());
     crate::transducer::address::Address::new(buf)
+}
+
+/// ONE FACE'S OWN BYTES — its ends at their canonical places, its word, its
+/// members and the section it was measured on. Factored out of
+/// [`form_vertex_key`] so the canonical ORDER of the faces is read from the
+/// same bytes the key writes, and the two cannot drift (law 12).
+fn put_face(buf: &mut Vec<u8>, face: &FormFace, at: &[u16]) {
+    // `canonical_places` covers every index a face names, so this is a
+    // total read and there is no missing value to stand in for (rule 11).
+    buf.extend_from_slice(&at[face.i as usize].to_le_bytes());
+    buf.extend_from_slice(&at[face.j as usize].to_le_bytes());
+    {
+        // THE WORD ONCE, then THE MEMBERS IN CHART-PAIR KEY ORDER — the
+        // trie's, which is content (law 2), so two nodes holding one face
+        // reach one address. The count is written because a face with two
+        // member pairs SAYS something a face with one does not, and the
+        // address is what says it (D10).
+        face.word.put_canonical(buf);
+        buf.extend_from_slice(&(face.at.len() as u16).to_le_bytes());
+        for (pk, place) in face.at.scoped() {
+            crate::transducer::address::put_bytes(buf, &pk);
+            place.carriage.put_canonical(buf);
+            let mut g = place.gauge.clone();
+            g.sort_unstable();
+            buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+            for (a, b) in g {
+                buf.push(a);
+                buf.push(b);
+            }
+            // 54.2 — THE EDGE'S VALUE, AS THE TRANSPORT IT IS. Only its
+            // PRESENCE was keyed, on the reading that the court re-measures
+            // it; a property the key does not carry is a property the
+            // inverse cannot return, and 54.3 makes the key the only
+            // decoder. Written whole: the transport's word, its A4
+            // carriage, its sorted gauge.
+            match &place.edge {
+                None => buf.push(0),
+                Some(t) => {
+                    buf.push(1);
+                    t.word.put_canonical(buf);
+                    t.carriage.put_canonical(buf);
+                    let mut eg = t.gauge.clone();
+                    eg.sort_unstable();
+                    buf.extend_from_slice(&(eg.len() as u16).to_le_bytes());
+                    for (x, y) in eg {
+                        buf.push(x);
+                        buf.push(y);
+                    }
+                }
+            }
+        }
+        // THE SECTION IS MEANING (rule 7). A face measured on pairs 0 and 2
+        // and a face claiming every pair of the bundle SAY different things
+        // — the court asks the second for pair 1 and not the first — so
+        // they are two faces and the address is what says so. The lists
+        // used to sit in `Form.sections`, which this key already writes out
+        // whole, so the coordinate does not leave the address; it moves to
+        // the face it describes.
+        match &face.pairs {
+            None => buf.push(0),
+            Some(ps) => {
+                buf.push(1);
+                buf.extend_from_slice(&(ps.len() as u16).to_le_bytes());
+                // Coordinate order: the inner key IS the frame.
+                for p in frames_of_section(ps) {
+                    buf.extend_from_slice(&p.to_le_bytes());
+                }
+            }
+        }
+    }
+}
+
+/// ONE FACE'S BYTES, for ordering by them.
+fn face_bytes(face: &FormFace, at: &[u16]) -> Vec<u8> {
+    let mut b = Vec::new();
+    put_face(&mut b, face, at);
+    b
+}
+
+/// The form's faces in canonical order: each by its own written bytes, read
+/// back from the trie whose order those bytes are — the same reading
+/// [`canonical_vertices`] takes one level up.
+///
+/// TWO FACES MAY WRITE THE SAME BYTES and both are kept. A `Keyed` holds one
+/// value per key, so the index is from the bytes to the LIST of faces that
+/// write them; a form with a face repeated says something a form with it
+/// once does not, and the count written ahead of this run is what says so.
+fn canonical_faces<'a>(f: &'a Form, at: &[u16]) -> Vec<&'a FormFace> {
+    let mut by: Keyed<Vec<u16>> = Keyed::new();
+    for (i, face) in f.faces.iter().enumerate() {
+        let k = face_bytes(face, at);
+        match by.get_mut(&k) {
+            Some(v) => v.push(i as u16),
+            None => {
+                by.insert(&k, vec![i as u16]);
+            }
+        }
+    }
+    let mut out: Vec<&FormFace> = Vec::with_capacity(f.faces.len());
+    for (_, ixs) in by.scoped() {
+        for i in ixs {
+            if let Some(face) = f.faces.get(*i as usize) {
+                out.push(face);
+            }
+        }
+    }
+    out
 }
 
 /// A chain as its own address (54.2, A5), AND THE CORNER IT SITS AT.
