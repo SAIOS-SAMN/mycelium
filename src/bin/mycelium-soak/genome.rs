@@ -69,11 +69,33 @@ fn read(e: &Element) -> Option<Word> {
         sentence: e.is_sentence(),
         ..Word::default()
     };
-    for s in e.sections() {
-        w.sections += 4 + s.len() * 2;
-    }
-    for t in e.torsion() {
-        w.torsion += 4 + t.sigma.len() * 2;
+    // ASK THE CARRIER THAT HOLDS IT, AND FOR A SENTENCE THAT IS THE FORM.
+    //
+    // This read `e.sections()` and `e.torsion()` for every word, and those
+    // are the ELEMENT's two fibre carriers. A minted sentence leaves both
+    // empty because its cycles are on the form — `Form::fibre_volume` says
+    // so in its own doc, and says that asking the element "was how the
+    // instrument came to report 1 everywhere by construction". This
+    // instrument then made the same mistake one row down and reported
+    // `torsion cycles 0` on every voice of a live fleet, which is a fact
+    // about where it looked and not about the engine.
+    //
+    // `tape_parts` reads the form, and using it here is what makes the two
+    // halves of this file agree rather than two readers of one tape
+    // disagreeing (law 12).
+    match mycelium::transducer::sentence::tape_parts(e) {
+        Some(p) => {
+            w.sections = p.sections;
+            w.torsion = p.torsion;
+        }
+        None => {
+            for s in e.sections() {
+                w.sections += 4 + s.len() * 2;
+            }
+            for t in e.torsion() {
+                w.torsion += 4 + t.sigma.len() * 2;
+            }
+        }
     }
     Some(w)
 }
@@ -200,6 +222,24 @@ pub(crate) fn reconcile(path: &str) {
         total.rotor += p.rotor;
         total.certs += p.certs;
         total.demands += p.demands;
+        // THREE CARRIERS WERE COMPUTED AND NEITHER SUMMED NOR PRINTED, so
+        // every byte of them landed in `rest` and the row that would have
+        // shown the filed cycles did not exist. `torsion` is the one that
+        // matters — the reading above reported it as zero from the wrong
+        // carrier, and this row is where a non-zero would have contradicted
+        // that. `axes` and `remainder` sat in `rest` with it.
+        total.torsion += p.torsion;
+        total.axes += p.axes;
+        total.remainder += p.remainder;
+        // AND THE FOUR `tape_parts` NAMES THAT THIS PRINTOUT DID NOT. Its
+        // own `rest` subtracts eighteen components; this summed twelve, so
+        // six of them read as "unaccounted" here while the carrier had
+        // named them. A reading whose gap is its own omission is not a
+        // reading of the tape (rule 13).
+        total.cites += p.cites;
+        total.gauge += p.gauge;
+        total.glue_body += p.glue_body;
+        total.frame += p.frame;
         total.rest += p.rest;
     }
     if read == 0 {
@@ -219,6 +259,13 @@ pub(crate) fn reconcile(path: &str) {
         ("charts", total.charts, false),
         ("sections", total.sections, false),
         ("faces", total.faces, false),
+        ("filed torsion", total.torsion, false),
+        ("opened axes", total.axes, false),
+        ("A5 remainder", total.remainder, false),
+        ("derivations' citations", total.cites, false),
+        ("member gauges", total.gauge, false),
+        ("glue bodies", total.glue_body, false),
+        ("the tape's own frame", total.frame, false),
         ("certificates", total.certs, true),
         ("word addresses", total.addr_word, false),
         ("rotors", total.rotor, false),
