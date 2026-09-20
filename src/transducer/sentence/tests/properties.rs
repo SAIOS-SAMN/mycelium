@@ -253,3 +253,36 @@ fn a_citation_carries_the_morphism_it_acts_under() {
         );
     }
 }
+
+/// 54.5 — THE TAPE'S VERSION IS FROZEN, and a tape of any other version is
+/// refused rather than read at a guess.
+///
+/// The byte's whole job is to refuse a foreign layout. A version that does
+/// not match the bytes the encoder writes refuses nothing — which is what
+/// happened when φ entered the tape at `01760af` without a bump — and a
+/// version that keeps moving is a schema, which 54.5 says the tape is not.
+#[test]
+fn the_tapes_version_is_frozen_and_a_foreign_one_refuses() {
+    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let inner = closed_word_form(Word::from_letters(&[(q, false)]), None);
+    let e = as_element_form(&inner, [1, 0, 0, 0]).expect("mints");
+    let tape = e.description();
+    assert_eq!(
+        tape.get(1).copied(),
+        Some(FORM_TAPE_VERSION),
+        "the tape carries the frozen version"
+    );
+    assert!(from_element_form(&e).is_some(), "and this build reads it");
+
+    // Every other version is refused — the baseline is cut at this one.
+    for other in [0u8, 10, 11, 12, 14, 255] {
+        let mut wrong = e.clone();
+        let mut bytes = tape.to_vec();
+        bytes[1] = other;
+        wrong.set_description(bytes);
+        assert!(
+            from_element_form(&wrong).is_none(),
+            "a tape at version {other} is refused, not read at a guess"
+        );
+    }
+}

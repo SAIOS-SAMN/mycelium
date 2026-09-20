@@ -541,12 +541,36 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     Some(form)
 }
 
-/// The tape layout this tree writes and reads (chapter 19). A layout change
-/// is a recut: no reader for an older version exists (MU-STANDARDS §10).
+/// THE TAPE'S LAST VERSION (54.5). Frozen at 13, and the byte is never
+/// bumped for the form again.
+///
+/// The tape is no longer a living schema. Under 54.5 the genome on disk is
+/// the trie of addresses and `from_address` is the only decoder, so the
+/// tape survives solely as the wire's frame for an address and its
+/// receipts. A format that defines nothing has no versions to take.
+///
+/// THE BUMPS THAT GOT HERE WERE A MISTAKE AND ARE NAMED. 10 → 11 added a
+/// per-tape address table (Z12b part 2); 11 → 12 returned it when the same
+/// shape was about to be carried onto the genome file, where a number
+/// naming a place in a carrier is rule 15's defect. Both treated the tape
+/// as the carrier of cognition, which 54.5 says it is not — and the second
+/// bump is what made the previous soak's genomes unreadable to this build,
+/// so `--genome` reported an `Element::address` FALLBACK as if it were the
+/// form's key.
+///
+/// 12 → 13 is the last, and it is a correction rather than a change of
+/// intent: a citation gained its morphism φ at `01760af` and the tape
+/// began carrying it WITHOUT a bump, so the constant named a layout the
+/// encoder had already left. A version that does not match its bytes
+/// refuses nothing.
+///
+/// THE MIGRATION BASELINE IS CUT HERE: nothing written before 13 is read
+/// by this tree, and §10's rule holds — a layout change is a recut, and
+/// this is the last one the form's tape takes.
 /// Version 10 is the three-coordinate base (51.7): supports as sites of
 /// three coordinates, versors of thirty-two components, the sections
 /// placed, and a loop's period filed as `0` for infinite order (52.3).
-pub const FORM_TAPE_VERSION: u8 = 12;
+pub const FORM_TAPE_VERSION: u8 = 13;
 
 /// 37.7 — MINT A GENERATOR FROM A ROTOR, the one construction that turns a
 /// measured action the alphabet cannot spell into a word the language holds.
