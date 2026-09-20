@@ -113,3 +113,82 @@ fn a_key_that_is_not_one_is_refused() {
         );
     }
 }
+
+/// 54.2, §1.5 — EVIDENCE IS NOT IDENTITY: two forms differing only in the
+/// generators a mind factored through, or in the pivot certificates they
+/// rest on, reach ONE address.
+///
+/// This is the invariant K6.3c's split stands on. Citations and
+/// certificates move off the form onto the ledger as receipts keyed by the
+/// address they evidence, and that is only sound if the address does not
+/// depend on them — §1.5: "two minds whose presentations differ compose
+/// different generators to reach the one vertex… two vertices with
+/// different derivations and one rotor are one vertex, one address."
+///
+/// `form_vertex_key` writes `derivation.rotor()`, the COMPOSED product,
+/// and never the citations; it never reads `certificates` at all. Asserted
+/// here so a future writer cannot quietly make identity depend on
+/// evidence — which would fork one word into one address per presentation.
+#[test]
+fn evidence_is_not_identity() {
+    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let w = Word::from_letters(&[(q, false)]);
+    let cited = crate::transducer::address::Address::from_bytes([9u8; 8]);
+
+    // One vertex spelled, one FACTORED through a citation, both composing
+    // to the same rotor.
+    let spelled = alphabet::Derivation::spelled(w.clone());
+    let factored = alphabet::Derivation::factored(
+        vec![(cited.clone(), cited.clone(), 1i64)],
+        w.clone(),
+        w.rotor(),
+    );
+    assert!(
+        spelled.rotor().projective_eq(&factored.rotor()),
+        "the fixture is only meaningful if both reach one rotor"
+    );
+    assert!(
+        !factored.generators.is_empty(),
+        "the factored derivation must actually cite, or nothing is being tested"
+    );
+
+    let build = |d: alphabet::Derivation| {
+        let mut f = Form::default();
+        f.vertices.push(Vertex::word_on(
+            d,
+            stalk::Invariant::counts(&[1]),
+            Box::new(crate::transducer::element::identity_versor()),
+            Vec::new(),
+            None,
+        ));
+        f
+    };
+    let a = build(spelled);
+    let b = build(factored);
+    assert_eq!(
+        form_vertex_key(&a),
+        form_vertex_key(&b),
+        "a citation is evidence the court replays, not a coordinate of the vertex"
+    );
+
+    // AND THE CERTIFICATES: a form resting on pivots reaches the address a
+    // form resting on none does.
+    let mut c = build(alphabet::Derivation::spelled(w));
+    let bare = form_vertex_key(&c);
+    let cert = PivotCertificate {
+        chord: 0,
+        axis: Axis::Unit(0),
+        before: crate::transducer::address::Address::from_bytes([1u8]),
+        after: ClassVector::of_word(&Word::identity()).expect("identity is a versor").class_key(),
+        rank_move: RankMove::Discharged { from: RankAxis::Torsion },
+        mu: Mu::Unmeasured,
+        by: PivotBy::Word { face: 0, word: Word::identity(), side: Side::Left },
+    };
+    c.certificates.insert(cert.key(), cert);
+    assert_eq!(c.certificates.len(), 1, "the fixture carries a certificate");
+    assert_eq!(
+        form_vertex_key(&c),
+        bare,
+        "a certificate is evidence on the ledger, not a coordinate of the form"
+    );
+}
