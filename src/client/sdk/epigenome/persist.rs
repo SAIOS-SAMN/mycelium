@@ -77,7 +77,7 @@ impl Epigenome {
         }
         self.genome = crate::network::nerve::Keyed::new();
         self.resident = crate::network::nerve::Keyed::new();
-        self.next_seq = 0;
+        self.unpivoted = crate::network::nerve::Keyed::new();
         self.atlas = crate::transducer::stalk::Stalks::default();
         self.axis_index = crate::transducer::sentence::AxisIndex::new();
         // 21 step 3 (L8r): the body-chart index is derived from the genome
@@ -95,9 +95,11 @@ impl Epigenome {
         // was invisible to the pivot until it happened to be re-admitted
         // live — and a fleet client boots from its genome.
         //
-        // The admission ordinals are handed out in restore order, which is
-        // the file's order; nothing downstream reads them as anything but
-        // "later than" a watermark.
+        // A RESTORED WORD IS WORK THE PIVOT HAS NOT REACHED, exactly as a
+        // learned one is: `admit_word` puts its coordinate in the pending
+        // set. A boot that skipped that left every restored word unpivoted
+        // and unrecorded — the pivot could not tell them from words it had
+        // already taken, because nothing said which was which.
         for w in genome {
             self.admit_word(w, 0);
         }

@@ -333,10 +333,20 @@ pub struct GenomeEntry {
     /// How often this entity speaks or hears it — the recollection
     /// efficiency. Content: how often a word was used is not derivable
     /// from the word.
+    ///
+    /// THE ADMISSION ORDINAL STOOD HERE and is gone. It was `seq`, a
+    /// counter handed out per admission, read by `thought_gen` as "every
+    /// word added since". That is an append-only timeline: it answers
+    /// "which words arrived after the n-th" when the question the pivot
+    /// actually asks is "which words has it not reached". Whether a word
+    /// arrived at stroke 2 or stroke 200 is not a property of the word;
+    /// whether its obstruction is still undischarged is. The pending work
+    /// is a set of COORDINATES (`unpivoted`), drained at the address.
+    ///
+    /// It replaced a positional watermark (`genome()[thought_gen..]`, a
+    /// tail of a vector) with an ordinal one and I called that a fix. It
+    /// was the same linear reflex in a different uniform.
     pub(crate) expression: u64,
-    /// The admission ordinal. Content, not derivation: WHEN a word entered
-    /// is not readable off the word, and `thought_gen` watermarks read it.
-    pub(crate) seq: u64,
 }
 
 /// THE PAYLOAD: the decoded word, and what Z11 moves to disk. Resident
@@ -374,10 +384,10 @@ pub struct Epigenome {
     /// or restored; rebuilt only on retire. Never persisted.
     pub(crate) atlas: crate::transducer::stalk::Stalks,
     pub(crate) atlas_len: usize,
-    /// The next admission ordinal to hand out. A counter, not a length:
-    /// `genome.len()` falls when a word retires and an ordinal must not
-    /// be reissued to a different word.
-    pub(crate) next_seq: u64,
+    /// THE WORDS THE PIVOT HAS NOT REACHED, as coordinates. A word's
+    /// address enters on admission and leaves when the pivot has taken
+    /// it; nothing here says when anything arrived, and nothing counts.
+    pub(crate) unpivoted: crate::network::nerve::Keyed<()>,
     /// Taught words refused because they did not verify (a transition
     /// that is not a versor, a section that does not span the support) —
     /// the entity's measured discordance with what it was taught.
@@ -513,9 +523,6 @@ pub struct Entity {
     /// lost on restart.
     pub(crate) contemplation: crate::transducer::bubble::Contemplation,
     /// Genome length last seen by the pivot; words added since dirty their charts.
-    /// The admission ordinal the pivot has thought through. A watermark on
-    /// the genome's own counter, not a length of it.
-    pub(crate) thought_gen: u64,
     /// Listings this mind has opened an axis on (Vec-of-relations, keyed by
     /// listing address on read): an axis is opened once per listing.
     pub(crate) opened: crate::network::nerve::Keyed<()>,

@@ -24,6 +24,9 @@ impl Epigenome {
             return false;
         };
         let gone = word.held.address();
+        // A retired word is no longer work: its coordinate leaves the
+        // pending set with it.
+        self.unpivoted.remove(addr);
         self.axis_retract(&word.held);
         self.moduli_retract(&word.held);
         // The recollections that spelled themselves with this word were
@@ -463,9 +466,11 @@ impl Epigenome {
         self.axis_admit(&held);
         self.moduli_admit(&held);
         self.atlas_len = self.atlas_len.saturating_add(1);
-        let seq = self.next_seq;
-        self.next_seq = self.next_seq.saturating_add(1);
-        self.genome.insert(&at, GenomeEntry { expression: uses, seq });
+        // A NEWLY ADMITTED WORD IS WORK THE PIVOT HAS NOT REACHED. Its
+        // coordinate enters the pending set; no ordinal is handed out and
+        // nothing records when it arrived.
+        self.unpivoted.insert(&at, ());
+        self.genome.insert(&at, GenomeEntry { expression: uses });
         self.resident
             .insert(&at, GenomeWord { held, shape: std::sync::OnceLock::new() });
     }

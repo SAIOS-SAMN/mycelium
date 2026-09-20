@@ -46,7 +46,6 @@ impl Entity {
             obstructions: crate::network::nerve::Keyed::new(),
             glued: crate::network::nerve::Keyed::new(),
             contemplation: crate::transducer::bubble::Contemplation::new(),
-            thought_gen: 0,
             opened: crate::network::nerve::Keyed::new(),
             axes_spoken: 0,
             physics: crate::physics::Physics::default(),
@@ -97,7 +96,6 @@ impl Entity {
         } else {
             eprintln!("genome 0 words, epigenome empty");
         }
-        e.thought_gen = e.epigenome.genome_seq();
         e
     }
 

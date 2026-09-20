@@ -478,18 +478,15 @@ impl Entity {
         n
     }
 
-    /// Pivot every genome word added since last stroke.
+    /// PIVOT THE WORDS THE PIVOT HAS NOT REACHED — a set of coordinates,
+    /// drained.
+    ///
+    /// It was "every genome word added since last stroke", read first off
+    /// a vector's tail and then off an admission ordinal. Both answer a
+    /// question about arrival; the pivot's question is which obstructions
+    /// are undischarged, and that is a set at coordinates.
     pub fn pivot_thoughts(&mut self) -> usize {
-        // WORDS ADMITTED SINCE THE WATERMARK, read off each entry's own
-        // admission ordinal. It was `genome()[thought_gen..]` — a tail of a
-        // vector — which named the wrong words the moment a retirement
-        // shifted the tail under the watermark.
-        let n = self.epigenome.genome_seq();
-        if n <= self.thought_gen {
-            return 0;
-        }
-        let added: Vec<Element> = self.epigenome.genome_since(self.thought_gen);
-        self.thought_gen = n;
+        let added: Vec<Element> = self.epigenome.take_unpivoted();
         let mut spoken = 0usize;
         for w in &added {
             spoken += self.pivot_on(w);

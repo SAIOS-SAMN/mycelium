@@ -265,13 +265,11 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
 }
 
 impl TapeParts {
-    /// The line the journal carries. `seq` is the genome's size when the
-    /// word was absorbed, which is the coordinate every other number here
-    /// is read against.
-    pub fn line(&self, at: &[u8], seq: u64, verts: usize) -> String {
+    /// The line the journal carries, read at the word's own coordinate.
+    pub fn line(&self, at: &[u8], verts: usize) -> String {
         let id: String = at.iter().take(4).map(|b| format!("{b:02x}")).collect();
         format!(
-            "z12 word {id}… seq {seq} verts {verts} \
+            "z12 word {id}… verts {verts} \
              tape {} = addrW {} addrG {} glued {}/{} rotor {} cites {}/{} carriage {} gauge {} \
              charts {} faces {} sections {} torsion {} loops {} rem {} \
              certs {} axes {} demands {} glue {} frame {} rest {} | key {} cited {}",

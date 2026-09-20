@@ -223,43 +223,42 @@ impl Epigenome {
         self.resident.scoped().map(|(_, w)| &w.held)
     }
 
-    /// The words admitted at or after an admission ordinal — what
-    /// `thought_gen` watermarks read. The ordinal is content the entry
-    /// carries; it is not a position in a vector.
-    pub fn genome_since(&self, seq: u64) -> Vec<Element> {
-        self.genome
-            .scoped()
-            .filter(|(_, e)| e.seq >= seq)
-            .filter_map(|(k, _)| self.resident.get(&k).map(|w| w.held.element().clone()))
+    /// THE WORDS THE PIVOT HAS NOT REACHED, taken and cleared. Their
+    /// coordinates, not their arrival: a word is here because its
+    /// obstruction is undischarged, and it leaves when the pivot takes it.
+    ///
+    /// This replaced `genome_since(seq)` — "every word admitted at or
+    /// after an ordinal" — which answered a question about history when
+    /// the pivot's question is about standing work.
+    pub fn take_unpivoted(&mut self) -> Vec<Element> {
+        let at: Vec<Vec<u8>> = self.unpivoted.scoped().map(|(k, ())| k).collect();
+        self.unpivoted = crate::network::nerve::Keyed::new();
+        at.iter()
+            .filter_map(|k| self.resident.get(k).map(|w| w.held.element().clone()))
             .collect()
     }
 
-    /// The next admission ordinal — one past the highest admitted.
-    pub fn genome_seq(&self) -> u64 {
-        self.next_seq
+    /// How many coordinates the pivot has not reached.
+    pub fn unpivoted_len(&self) -> usize {
+        self.unpivoted.len()
     }
 
     /// THE NEXT WORD AFTER A COORDINATE, wrapping to the first — the
     /// trie's own orbit, which is how a cursor walks a carrier whose size
     /// changes under it (45.7, X3). `None` from a genome that holds
     /// nothing; from `None` it starts at the first coordinate.
-    /// Z12 — THREE WORDS BY ADMISSION ORDINAL: the earliest the genome
-    /// still holds, the one at the middle of the ordinals, and the latest.
+    /// Z12's reading, SPREAD ALONG THE TRIE and not along arrival. Three
+    /// words at the first, middle and last COORDINATE the genome holds.
     ///
-    /// The point of the reading is what a word's tape costs AGAINST THE
-    /// GENOME'S SIZE WHEN IT WAS ABSORBED, so the three have to be spread
-    /// along that axis and not along the trie's — which is the addresses'
-    /// order and says nothing about when anything arrived. `seq` is that
-    /// axis and it is content the entry carries.
-    ///
-    /// The middle is taken at the middle POSITION of the ordinals in
-    /// order, not at the mean of them: a mean is arithmetic on a
-    /// coordinate, and retirements leave the ordinals with holes.
-    pub fn genome_ordinal_spread(&self) -> Vec<(Vec<u8>, u64, &crate::transducer::element::Held)> {
-        let mut by_seq: Vec<(u64, Vec<u8>)> =
-            self.genome.scoped().map(|(k, e)| (e.seq, k)).collect();
-        by_seq.sort_unstable();
-        let n = by_seq.len();
+    /// It used to spread along the admission ordinal, because the question
+    /// was "what does a word's tape cost against the genome's size when it
+    /// was absorbed". That question has an append-only timeline inside it.
+    /// The tape's cost is a property of the word — how much it glues and
+    /// what it cites — and three words from across the address space read
+    /// that without asking when any of them arrived.
+    pub fn genome_spread(&self) -> Vec<(Vec<u8>, &crate::transducer::element::Held)> {
+        let at: Vec<Vec<u8>> = self.genome.scoped().map(|(k, _)| k).collect();
+        let n = at.len();
         let picks = match n {
             0 => Vec::new(),
             1 | 2 => (0..n).collect::<Vec<_>>(),
@@ -268,9 +267,9 @@ impl Epigenome {
         picks
             .into_iter()
             .filter_map(|i| {
-                let (seq, k) = by_seq.get(i)?;
+                let k = at.get(i)?;
                 let w = self.resident.get(k)?;
-                Some((k.clone(), *seq, &w.held))
+                Some((k.clone(), &w.held))
             })
             .collect()
     }

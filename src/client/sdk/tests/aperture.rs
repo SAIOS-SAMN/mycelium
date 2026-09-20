@@ -348,3 +348,46 @@ fn a_lapse_returns_only_what_the_hold_drew() {
         "and it returns NOTHING, because nothing was drawn: the reserve cannot inflate"
     );
 }
+
+/// THE PIVOT'S PENDING WORK IS A SET OF COORDINATES, not a point on a
+/// timeline.
+///
+/// It was `genome()[thought_gen..]` — a tail of a vector — and then
+/// `genome_since(seq)`, an admission ordinal. Both answer "which words
+/// arrived after the n-th", and the pivot's question is "which
+/// obstructions has it not reached". Whether a word arrived at stroke 2
+/// or stroke 200 is not a property of the word; whether it is still
+/// undischarged is, and that is a coordinate in or out of a set.
+///
+/// Three readings: an admitted word's address enters the set, draining
+/// takes it and leaves the set empty, and a RETIRED word leaves the set
+/// with it — which the ordinal could not express, because an ordinal
+/// already handed out cannot be withdrawn.
+#[test]
+fn the_pivots_pending_work_is_a_set_of_coordinates() {
+    let mut epi = Epigenome::new();
+    let a = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+    let addr = a.address();
+    assert_eq!(epi.unpivoted_len(), 0, "a fresh mind has no pending work");
+
+    epi.learn(&a.to_bytes());
+    assert_eq!(epi.unpivoted_len(), 1, "an admitted word is work the pivot has not reached");
+
+    let taken = epi.take_unpivoted();
+    assert_eq!(taken.len(), 1, "draining yields the word");
+    assert_eq!(
+        taken.iter().map(crate::transducer::element::Element::address).collect::<Vec<_>>(),
+        vec![addr.clone()]
+    );
+    assert_eq!(epi.unpivoted_len(), 0, "and the set is empty after");
+    assert!(epi.take_unpivoted().is_empty(), "draining again yields nothing");
+
+    // A RETIRED WORD IS NO LONGER WORK. An ordinal handed out cannot be
+    // taken back; a coordinate leaves the set with the word.
+    let b = two_body_sentence([&[(1, 3), (1, 3)], &[(3, 5), (3, 5)]]);
+    let b_addr = b.address();
+    epi.learn(&b.to_bytes());
+    assert_eq!(epi.unpivoted_len(), 1);
+    assert!(epi.retire(b_addr.as_bytes()), "the word retires");
+    assert_eq!(epi.unpivoted_len(), 0, "and leaves the pending set with it");
+}
