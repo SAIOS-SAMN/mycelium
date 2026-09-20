@@ -41,6 +41,18 @@ impl Element {
         let mut out = vec![Self::GEN3_MAGIC];
         out.extend_from_slice(&(self.description.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.description);
+        // THE ADDRESS RIDES THE RECORD (54.5, as ruled 2026-09-20). It was
+        // derived on read — `Element::address` calls `vertex_address`,
+        // which parses the tape — so the tape had to be present for a word
+        // to know its own name. That is the dependency that kept the tape
+        // alive: retiring it inverts the derivation, and the address is
+        // what a word IS (law 2) rather than a summary of a byte run.
+        //
+        // Written for every kind, because a residual's address is just as
+        // much its name as a form's.
+        let a = self.address();
+        out.extend_from_slice(&(a.len() as u32).to_le_bytes());
+        out.extend_from_slice(a.as_bytes());
         for m in &self.mag {
             out.extend_from_slice(&m.to_le_bytes());
         }
@@ -142,6 +154,12 @@ impl Element {
         let dlen = u32_at(b, pos)? as usize;
         let description = b.get(*pos..*pos + dlen)?.to_vec();
         *pos += dlen;
+        // THE ADDRESS AS THE RECORD CARRIES IT (54.5). Read here and set on
+        // the element below, so `Element::address` answers it rather than
+        // re-deriving it from a tape — which is what lets the tape go.
+        let alen = u32_at(b, pos)? as usize;
+        let address = b.get(*pos..*pos + alen)?.to_vec();
+        *pos += alen;
         let mut mag = [0u64; 4];
         for m in &mut mag {
             *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -311,6 +329,14 @@ impl Element {
             anchor,
         };
         e.sync_action_from_tape();
+        // THE NAME THE RECORD CARRIED. An empty one is a record written
+        // before the address rode it, and it is refused rather than
+        // re-derived at a guess (rule 11) — a word whose name this build
+        // cannot read is not a word this build holds.
+        if address.is_empty() {
+            return None;
+        }
+        let _ = e.address.set(crate::transducer::address::Address::new(address));
         Some(e)
     }
 

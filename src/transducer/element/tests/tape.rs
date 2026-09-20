@@ -167,10 +167,16 @@ fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
     // The same site saying two different things. It cannot be put on an
     // element at all — `sub` is A5's chain by type — so the claim is made
     // where such bytes could still arrive: the tape. The chain is written
-    // as a u32 count then 18 bytes per link, straight after the
-    // magic, the word and the four lane words, so the count is at a known
-    // offset and a second row at (0,0) goes in behind the first.
-    let at = 1 + 4 + one.description().len() + 32;
+    // as a u32 count then 18 bytes per link, straight after the magic, the
+    // word, THE ADDRESS and the four lane words, so the count is at a
+    // known offset and a second row at (0,0) goes in behind the first.
+    //
+    // The address joined the record at 54.5: `Element::address` used to
+    // derive a word's name by parsing its tape, so the tape had to be
+    // there for a word to know what it was, and that is the dependency
+    // retiring the tape has to invert. Each of the two is a u32 length and
+    // its bytes.
+    let at = 1 + 4 + one.description().len() + 4 + one.address().len() + 32;
     assert_eq!(
         u32::from_le_bytes(bytes[at..at + 4].try_into().expect("the chain count")),
         1,

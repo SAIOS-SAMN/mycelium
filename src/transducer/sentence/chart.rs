@@ -415,7 +415,28 @@ pub fn rule_of_form(mut form: Form) -> SentenceRule {
 /// gauge) and face words. The body's absolute position is already quotiented
 /// on the chain; the bundle's carriage is meaning.
 pub fn vertex_address(e: &Element) -> Option<crate::transducer::address::Address> {
-    from_element_form(e).map(|f| form_vertex_key(&f))
+    // THIS READS THE TAPE DIRECTLY AND MUST (54.5, as ruled 2026-09-20).
+    //
+    // It called `from_element_form`, which now reads the form out of the
+    // ADDRESS — and this function is what `Element::address` calls to
+    // compute one. The two closed into a cycle through a `OnceLock`:
+    // `address()` → `vertex_address` → `from_element_form` → `address()`,
+    // re-entering `get_or_init` on the same cell, which deadlocks. The
+    // whole suite hung on it.
+    //
+    // A minted word and a word read from a record both carry their address
+    // already, so this path runs only for an element assembled by hand
+    // from a tape and never told its name. For that one the tape IS what
+    // is in hand, so the tape is what it reads — `decode_form_v2` under
+    // the version gate, the same decision `from_element_form` used to
+    // make. It is the last reader of a form tape in the tree, and it goes
+    // when the description does.
+    let b = e.description();
+    if b.get(1).copied() != Some(crate::transducer::sentence::FORM_TAPE_VERSION) {
+        return None;
+    }
+    let mut pos = 2usize;
+    crate::transducer::sentence::decode_form_v2(b, &mut pos).map(|f| form_vertex_key(&f))
 }
 pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     let mut buf = vec![crate::transducer::address::TAG_FORM];

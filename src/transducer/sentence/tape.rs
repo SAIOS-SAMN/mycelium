@@ -635,6 +635,13 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     let n = word.len();
     e.set_description(word);
     e.set_magnitude(mag);
+    // THE ADDRESS IS SET, NOT DERIVED (54.5, as ruled 2026-09-20).
+    // `Element::address` derived it by parsing the tape — so a word could
+    // not know its own name without one, which is the dependency that kept
+    // the tape alive. The mint has the form in hand and the key IS the
+    // form (law 2), so it writes the coordinate directly and
+    // `from_element_form` reads the form back out of it.
+    let _ = e.address.set(crate::transducer::sentence::form_vertex_key(f));
     // The coordinate the mint wrote is the word's ADDRESS (law 2), and the
     // bytes it moved are the tape it laid down — which is also what the
     // wire will carry. Two columns, never one (law 5).
@@ -659,10 +666,30 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     if !e.is_sentence() {
         return None;
     }
-    let b = e.description();
-    if b.get(1).copied() != Some(FORM_TAPE_VERSION) {
+    if e.description().get(1).copied() != Some(FORM_TAPE_VERSION) {
         return None;
     }
+    // THE FORM STILL COMES OUT OF THE TAPE, AND THE MEASUREMENT THAT SAYS
+    // WHY IS BELOW (54.5, attempted and reverted 2026-09-20).
+    //
+    // Switching this to `from_address(e.address())` — the whole point of
+    // the tape purge — failed 20 tests with one cause: `Form.torsion` is
+    // NOT in the key, so a form decoded from its address arrives with its
+    // filed cycles gone and `form_loops_replay` refuses it, "loop holonomy
+    // is not identity".
+    //
+    // Torsion cannot simply be keyed. If a filing moved a form's address
+    // then applying a pivot would RENAME the word, and every citation of
+    // it, every receipt against it and every entry of the ruled cover would
+    // name something that no longer exists. A form's identity cannot depend
+    // on what a stroke has done to it — which is `evidence_is_not_identity`
+    // read one level up, and 54.2's own division: what the key carries
+    // versus what is a receipt.
+    //
+    // So the filing is a RECEIPT, and the on-disk value of a word cannot be
+    // the 32-byte μ⃗ alone; it is ⟨μ⃗, filing⟩. That is a ruling, and until
+    // it is made this reader stays on the tape.
+    let b = e.description();
     let mut pos = 2usize;
     decode_form_v2(b, &mut pos)
 }
