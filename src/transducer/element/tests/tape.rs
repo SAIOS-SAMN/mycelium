@@ -171,12 +171,16 @@ fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
     // word, THE ADDRESS and the four lane words, so the count is at a
     // known offset and a second row at (0,0) goes in behind the first.
     //
-    // The address joined the record at 54.5: `Element::address` used to
-    // derive a word's name by parsing its tape, so the tape had to be
-    // there for a word to know what it was, and that is the dependency
-    // retiring the tape has to invert. Each of the two is a u32 length and
-    // its bytes.
-    let at = 1 + 4 + one.description().len() + 4 + one.address().len() + 32;
+    // Two carriers joined the record at 54.5. The ADDRESS, because
+    // `Element::address` used to derive a word's name by parsing its tape,
+    // so the tape had to be there for a word to know what it was — the
+    // dependency retiring the tape has to invert. And the FILING, the
+    // speaker's attestation about its form's cycles, which moved off
+    // `Form.torsion` because a filing does not factor through the geometry.
+    // The address is a u32 length and its bytes; the filing is a u32 count,
+    // and this word is a residual with none.
+    let at = 1 + 4 + one.description().len() + 4 + one.address().len() + 4 + 32;
+    assert!(one.filing().scoped().next().is_none(), "a residual attests no filing");
     assert_eq!(
         u32::from_le_bytes(bytes[at..at + 4].try_into().expect("the chain count")),
         1,

@@ -53,6 +53,22 @@ impl Element {
         let a = self.address();
         out.extend_from_slice(&(a.len() as u32).to_le_bytes());
         out.extend_from_slice(a.as_bytes());
+        // THE SPEAKER'S FILING (54.5): class ‖ σ ‖ ℓ ‖ chord, in key order.
+        // It is an attestation and travels with the word that makes it, so
+        // the court can check a claim against geometry it re-derives rather
+        // than asking a form to vouch for itself.
+        out.extend_from_slice(&(self.filing.len() as u32).to_le_bytes());
+        for (class, f) in self.filing.scoped() {
+            out.extend_from_slice(&(class.len() as u32).to_le_bytes());
+            out.extend_from_slice(&class);
+            out.extend_from_slice(&(f.sigma.len() as u32).to_le_bytes());
+            for &(x, y) in &f.sigma {
+                out.push(x);
+                out.push(y);
+            }
+            out.extend_from_slice(&f.period.to_le_bytes());
+            out.extend_from_slice(&f.chord.to_le_bytes());
+        }
         for m in &self.mag {
             out.extend_from_slice(&m.to_le_bytes());
         }
@@ -160,6 +176,26 @@ impl Element {
         let alen = u32_at(b, pos)? as usize;
         let address = b.get(*pos..*pos + alen)?.to_vec();
         *pos += alen;
+        let nfil = u32_at(b, pos)? as usize;
+        let mut filing = crate::network::nerve::Keyed::new();
+        for _ in 0..nfil {
+            let clen = u32_at(b, pos)? as usize;
+            let class = b.get(*pos..*pos + clen)?.to_vec();
+            *pos += clen;
+            let nsig = u32_at(b, pos)? as usize;
+            let mut sigma = Vec::with_capacity(nsig.min(b.len()));
+            for _ in 0..nsig {
+                sigma.push((*b.get(*pos)?, *b.get(*pos + 1)?));
+                *pos += 2;
+            }
+            let period = u32_at(b, pos)?;
+            let chord = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
+            *pos += 2;
+            filing.insert(
+                &class,
+                crate::transducer::sentence::FiledLoop { sigma, period, chord },
+            );
+        }
         let mut mag = [0u64; 4];
         for m in &mut mag {
             *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -323,6 +359,7 @@ impl Element {
             sub,
             sections,
             torsion,
+            filing,
             transitions,
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),

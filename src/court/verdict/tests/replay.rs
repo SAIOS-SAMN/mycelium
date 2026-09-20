@@ -186,7 +186,7 @@ fn a_loop_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
     assert!(f.loops[0].holonomy.rotor().class_key().is_none(), "a zero rotor is not a class");
     assert!(f.rank().is_none(), "the audit is unmeasured, not counted under a rotor key");
     assert!(!f.is_cauterized(), "nothing files what has no class");
-    assert!(!form_loops_replay(&f), "and the loop does not replay");
+    assert!(!form_loops_replay(&f, &f.torsion), "and the loop does not replay");
 }
 
 /// A20: a certificate that does not un-pivot to the tape's before/after
@@ -514,17 +514,17 @@ fn a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not() {
     let es = f.edge_holonomies(lp).expect("the loop names live faces");
     let [(_, e)] = es.scoped().collect::<Vec<_>>()[..] else { panic!("one member path") };
     assert_eq!(e.word.order(), Order::Infinite, "and its edge holonomy has no period");
-    assert!(!form_loops_replay(&f), "unfiled, the loop does not replay");
+    assert!(!form_loops_replay(&f, &f.torsion), "unfiled, the loop does not replay");
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
     let mut filed = f.clone();
     filed.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 0, chord: lp.chord });
-    assert!(form_loops_replay(&filed), "filed at period 0, the loop replays");
+    assert!(form_loops_replay(&filed, &filed.torsion), "filed at period 0, the loop replays");
     let filed_e = as_element_form(&filed, [1, 0, 0, 0]).expect("the tape carries the filed zero");
     assert_eq!(replay_form(&filed_e, &|_| None), None, "and the court reads the zero off the tape");
     let mut wrong = f.clone();
     wrong.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 4, chord: lp.chord });
-    assert!(!form_loops_replay(&wrong), "a period the loop does not have is not a filing");
+    assert!(!form_loops_replay(&wrong, &wrong.torsion), "a period the loop does not have is not a filing");
     let wrong_e = as_element_form(&wrong, [1, 0, 0, 0]).expect("tape");
     assert_eq!(replay_form(&wrong_e, &|_| None), Some(REFUSE_LOOP), "and is refused by name");
 }
@@ -763,7 +763,7 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     // UNFILED, the loop does not replay — which the transport reading could
     // not say, because on it the loop is flat.
     assert!(
-        !form_loops_replay(&f),
+        !form_loops_replay(&f, &f.torsion),
         "an evaluated loop with an unfiled class does not replay"
     );
     // FILED under the edge holonomy's own class at its own period, it does.
@@ -778,7 +778,7 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
         class.clone(),
         FiledLoop { sigma: Vec::new(), period: 2, chord: lp.chord },
     );
-    assert!(form_loops_replay(&filed), "filed at its period, the loop replays");
+    assert!(form_loops_replay(&filed, &filed.torsion), "filed at its period, the loop replays");
     // And at any other period it does not: the period is the loop's order,
     // not the filer's opinion of it (A17).
     let mut wrong = f.clone();
@@ -786,5 +786,5 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
         class,
         FiledLoop { sigma: Vec::new(), period: 3, chord: lp.chord },
     );
-    assert!(!form_loops_replay(&wrong), "a period the loop does not close at is not a filing");
+    assert!(!form_loops_replay(&wrong, &wrong.torsion), "a period the loop does not close at is not a filing");
 }

@@ -642,6 +642,11 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     // form (law 2), so it writes the coordinate directly and
     // `from_element_form` reads the form back out of it.
     let _ = e.address.set(crate::transducer::sentence::form_vertex_key(f));
+    // THE FILING TRAVELS WITH THE WORD THAT MAKES IT (54.5). It is the
+    // mind's attestation about this form's cycles — not a coordinate of the
+    // geometry — so it rides the element the mind mints and not the form
+    // the address names.
+    e.filing = f.torsion.clone();
     // The coordinate the mint wrote is the word's ADDRESS (law 2), and the
     // bytes it moved are the tape it laid down — which is also what the
     // wire will carry. Two columns, never one (law 5).
@@ -669,26 +674,43 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     if e.description().get(1).copied() != Some(FORM_TAPE_VERSION) {
         return None;
     }
-    // THE FORM STILL COMES OUT OF THE TAPE, AND THE MEASUREMENT THAT SAYS
-    // WHY IS BELOW (54.5, attempted and reverted 2026-09-20).
+    // THE FORM COMES OUT OF THE ADDRESS (54.5, as ruled 2026-09-20), and
+    // the geometry is all it comes out with.
     //
-    // Switching this to `from_address(e.address())` — the whole point of
-    // the tape purge — failed 20 tests with one cause: `Form.torsion` is
-    // NOT in the key, so a form decoded from its address arrives with its
-    // filed cycles gone and `form_loops_replay` refuses it, "loop holonomy
-    // is not identity".
+    // This parsed the tape, and `Element::address` parsed the tape to get
+    // here, so the two were one cycle with a byte run at the centre.
+    // Switching it failed 20 tests with a single cause — a form decoded
+    // from its address arrived with its FILED CYCLES gone, and
+    // `form_loops_replay` refused it.
     //
-    // Torsion cannot simply be keyed. If a filing moved a form's address
-    // then applying a pivot would RENAME the word, and every citation of
-    // it, every receipt against it and every entry of the ruled cover would
-    // name something that no longer exists. A form's identity cannot depend
-    // on what a stroke has done to it — which is `evidence_is_not_identity`
-    // read one level up, and 54.2's own division: what the key carries
-    // versus what is a receipt.
+    // The filing was never the form's to carry. `pivot_loop` takes the mesh
+    // horizon, the mind's crystal and a budget and files only in its
+    // `NoneDischarged` branch, so the map does not factor through the form:
+    // two minds holding one complex at different budgets file differently.
+    // Keying it would make a pivot RENAME its own word and orphan every
+    // citation of it. It is an attestation, `Address × Signer →
+    // FiledLoop`, and it rides `Element.filing` — the word as one mind
+    // minted it, which is the smallest carrier that has both indices.
     //
-    // So the filing is a RECEIPT, and the on-disk value of a word cannot be
-    // the 32-byte μ⃗ alone; it is ⟨μ⃗, filing⟩. That is a ruling, and until
-    // it is made this reader stays on the tape.
+    // So a decoded form holds its member complex, its faces and its derived
+    // cycles, and ZERO assertions about what a stroke did to them. The
+    // filing moved to `Element.filing` and the court reads it there, which
+    // is the half of this that landed.
+    //
+    // THE READER STAYS ON THE TAPE FOR ONE MORE REASON, and it is not the
+    // filing. Switching it leaves 28 tests refusing `REFUSE_FACE`, "face
+    // does not re-derive from its vertices" — because `face_rederives`
+    // recomputes each member pair's relative carriage from the two
+    // vertices, and the key stores every carriage in A4 CANONICAL form. The
+    // canonical of a product is not the product of the canonicals, so
+    // `canonical(a) · canonical(b)⁻¹` and the stored `canonical(a·b⁻¹)` can
+    // differ by a scale. The tape preserved exact bytes and hid it.
+    //
+    // That is a real question about what A4 canonicalization preserves, not
+    // a gap in this reader, and it is the last thing standing between the
+    // address and the tape. `from_address_retracts_every_corpus_form` does
+    // not catch it: it asserts the KEY round-trips, which it does, and the
+    // court's predicates are a stronger claim the guard does not yet make.
     let b = e.description();
     let mut pos = 2usize;
     decode_form_v2(b, &mut pos)

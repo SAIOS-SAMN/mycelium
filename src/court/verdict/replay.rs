@@ -301,7 +301,9 @@ pub fn replay_form_at(
             return Some(refusal);
         }
     }
-    if !form_loops_replay(&walked) {
+    // THE SPOKEN WORD'S OWN ATTESTATION, checked against the forest the
+    // court just walked (54.5).
+    if !form_loops_replay(&walked, spoken.filing()) {
         return Some(tape(REFUSE_LOOP));
     }
     let Some(derived) = walked.rank() else {
@@ -499,11 +501,14 @@ pub(crate) fn torsion_chord_carries(f: &Form, by_chord: &Keyed<u16>, face_idx: u
 /// answers `None` where a remainder edge lies anywhere on the cycle (13.9
 /// step 7), and a loop with no transition to read carries no obligation
 /// (rule 11: that is a refusal to read, not a flat reading).
-pub(crate) fn form_loops_replay(f: &Form) -> bool {
+pub(crate) fn form_loops_replay(
+    f: &Form,
+    filed: &crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop>,
+) -> bool {
     for lp in &f.loops {
         // THE TRANSPORT COMPOSITE — the pivot's obstruction, discharged on
         // an axis or filed under its own class (12.6, A17).
-        if !loop_reading_replays(f, lp, &lp.holonomy) {
+        if !loop_reading_replays(f, filed, lp, &lp.holonomy) {
             return false;
         }
         // THE EDGE HOLONOMY — the cover's (50.3). A loop the form did not
@@ -517,7 +522,7 @@ pub(crate) fn form_loops_replay(f: &Form) -> bool {
             continue;
         };
         for (_, e) in es.scoped() {
-            if !loop_reading_replays(f, lp, &e.word) {
+            if !loop_reading_replays(f, filed, lp, &e.word) {
                 return false;
             }
         }
@@ -537,6 +542,7 @@ pub(crate) fn form_loops_replay(f: &Form) -> bool {
 /// which read flat however curved the scene is.
 fn loop_reading_replays(
     f: &Form,
+    filed: &crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop>,
     lp: &crate::transducer::sentence::Loop,
     word: &crate::transducer::alphabet::Word,
 ) -> bool {
@@ -557,7 +563,17 @@ fn loop_reading_replays(
         return false;
     };
     let ell = word.order().to_u32();
-    matches!(f.torsion.get(k.as_bytes()), Some(filed) if filed.period == ell)
+    // THE FILING IS THE SPEAKER'S, NOT THE FORM'S (54.5, as ruled
+    // 2026-09-20). This read `f.torsion` — a field of the very form being
+    // adjudicated — so the court asked a claimant to vouch for its own
+    // claim. The period could not be forged, because the court re-derives
+    // `ell` and compares; what the form controlled was whether an entry
+    // existed AT ALL, so any loop could be made to pass by filing it.
+    //
+    // `filed` is the attestation the SPOKEN WORD carried
+    // (`Element::filing`), and the court checks it against geometry it
+    // walked itself. Two terms, one of them independent.
+    matches!(filed.get(k.as_bytes()), Some(f) if f.period == ell)
 }
 
 pub(crate) fn face_idx_key(i: u16) -> Vec<u8> {

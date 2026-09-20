@@ -120,6 +120,29 @@ pub struct Element {
     /// individually witnessed: capacity earned by exact structure. The fiber is
     /// thus ℤ^r ⊕ ⊕ᵢ ℤ/tᵢ — free sections ⊕ torsion cycles.
     pub(crate) torsion: Vec<TorsionCycle>,
+    /// THE SPEAKER'S ATTESTATION ABOUT THIS WORD'S CYCLES (54.5, as ruled
+    /// 2026-09-20): class ↦ `(σ, ℓ, chord)`, the loops a mind's own pivot
+    /// stroke filed before it spoke.
+    ///
+    /// It lived on `Form.torsion`, and a form is GEOMETRY — the same
+    /// complex whatever mind holds it. A filing is not: `pivot_loop` takes
+    /// the mesh horizon, the mind's crystal and a budget, and files only in
+    /// its `NoneDischarged` branch, so two minds holding one form at
+    /// different budgets file differently. The map does not factor through
+    /// the form, which is exactly why `from_address` cannot rebuild it and
+    /// why keying it would make a pivot RENAME its own word.
+    ///
+    /// Its type is `Address × Signer → FiledLoop`, and an element is a word
+    /// as one mind minted it — the smallest carrier that has both. The
+    /// court reads it here as the speaker's CLAIM and checks it against the
+    /// geometry it re-derives itself, instead of asking a form to vouch for
+    /// its own filing.
+    ///
+    /// `TorsionCycle` above is NOT this and the two are never converted:
+    /// its third coordinate is a fibre index of the element's own axis,
+    /// this one's is a chord of the form's faces, and carrying either
+    /// across as the other invents a coordinate the source never held.
+    pub(crate) filing: crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop>,
     /// THE ANCHOR FIBER (Step 7) — γ = (π_anchor, Δ_substance): the recursive
     /// selection term restricting WHERE this word's substance applies on a
     /// scene. None = ⊤, the unconstrained carrier (pure topological actions,
@@ -154,6 +177,7 @@ impl Element {
             sub: CanonicalChain::default(),
             sections: Vec::new(),
             torsion: Vec::new(),
+            filing: crate::network::nerve::Keyed::new(),
             transitions: Vec::new(),
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),
@@ -328,6 +352,11 @@ impl Element {
     }
 
     /// The torsion cycles of the axis: `(generator σ, period ℓ)` each.
+    /// The speaker's filing: class ↦ `(σ, ℓ, chord)`.
+    pub fn filing(&self) -> &crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop> {
+        &self.filing
+    }
+
     pub fn torsion(&self) -> &[TorsionCycle] {
         &self.torsion
     }

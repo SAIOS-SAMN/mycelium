@@ -237,6 +237,12 @@ pub fn from_address(k: &[u8]) -> Option<Form> {
     // statement of the faces (law 12).
     f.reindex();
     f.loops = Form::loops_of(&f.faces, &f.vertices);
+    // AND THE DEPTH, which is `one more than the deepest citation` and so a
+    // reading of the `Glued` vertices the key just wrote (law 12). It was
+    // left at `Form::default()`'s zero, and the court checks `f.depth ==
+    // f.depth_of()` — so every citing form decoded from its address was
+    // refused `REFUSE_GLUED_DEPTH` the moment this became the only decoder.
+    f.depth = f.depth_of();
     // THE FILED TORSION IS NOT DERIVED HERE, AND THE REASON IS A READING
     // AND NOT A PREFERENCE (54.3, measured 2026-09-20).
     //
