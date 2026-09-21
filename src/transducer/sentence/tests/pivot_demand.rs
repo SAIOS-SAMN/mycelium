@@ -71,9 +71,7 @@ fn the_open_seed_is_the_holonomys_base_action_and_the_axis_is_keyed_by_the_rotor
     assert_ne!(whole, q01.rotor().class_key().expect("a class"), "the loop's class is the double rotation's");
     f.open_axis_on(lp.chord).expect("the axis opens on the loop");
     assert_eq!(
-        f.axes.at(
-            &crate::network::nerve::Key::from_address(&whole).expect("a holonomy coordinate")
-        ),
+        f.axes.at(&holonomy.holonomy_key().expect("a holonomy coordinate")),
         Some(&lp.chord),
         "and the axis is keyed by that class"
     );

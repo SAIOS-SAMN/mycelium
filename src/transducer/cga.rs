@@ -309,6 +309,35 @@ impl Mv {
         Some((i1, i2, ty))
     }
 
+    /// 54.7 R4 — THE HOLONOMY CLASS OF A MOTION, AS THE COORDINATE THE
+    /// TORSION AND AXIS CARRIERS ANSWER.
+    ///
+    /// The same bytes as [`Mv::class_key`], declared as `coord::Holonomy`.
+    /// This is the producer that replaces `Rotor::class_key` beneath
+    /// `Rotor::holonomy_key`: the outer type is unchanged, so every carrier
+    /// typed in R5 — `Form.torsion`, `Form.axes`, `Element.filing`,
+    /// `Idea.torsion` — keeps its signature and its call sites.
+    ///
+    /// WHAT CHANGES IS WHAT THE CLASS CAN SAY. In `Cl(4,0)` the metric is
+    /// positive definite, so for every bivector `B = B⁺ + B⁻`,
+    ///
+    /// ```text
+    ///     ⟨B²⟩₀ = −(‖B⁺‖² + ‖B⁻‖²) ≤ 0
+    /// ```
+    ///
+    /// with equality only at `B = 0`. A `Cl(4,0)` rotor therefore has
+    /// exactly one bivector type — elliptic — and a holonomy class read
+    /// from it cannot distinguish a rotation from a geodesic translation,
+    /// because it cannot represent the translation at all. Here `⋀²ℚ^{4,1}`
+    /// is ten-dimensional and the trichotomy is a reading: `eᵢ∧eⱼ` and
+    /// `eᵢ∧e₊` elliptic (`I₁ < 0`), `eᵢ∧e₋` hyperbolic transvections
+    /// (`I₁ > 0`), `e₊∧e₋` parabolic (`I₁ = 0`).
+    pub fn holonomy_key(
+        &self,
+    ) -> Option<crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>> {
+        crate::network::nerve::Key::from_address(&self.class_key()?).ok()
+    }
+
     /// The class as canonical coordinates (A21, law 2): the two invariants
     /// written out and the bivector's type, never a digest.
     pub fn class_key(&self) -> Option<crate::transducer::address::Address> {

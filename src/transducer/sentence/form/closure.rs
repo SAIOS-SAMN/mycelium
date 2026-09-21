@@ -284,13 +284,7 @@ impl Form {
                 return false;
             }
             for row in rows {
-                let Ok(class) = crate::network::nerve::Key::<
-                    crate::network::nerve::coord::Holonomy,
-                >::from_address(&row.class)
-                else {
-                    return false;
-                };
-                match self.torsion.at(&class) {
+                match self.torsion.at(&row.class) {
                     // BOTH PLANES, not the envelope: a claim that agrees on
                     // `lcm` and disagrees on the pair is a different loop
                     // (54.7).

@@ -439,8 +439,12 @@ impl Kernel {
                 Vec::new();
             for lp in &f.loops {
                 for row in f.loop_classes(lp) {
-                    let rotor = torsion_loop_rotor(&f, &row.class);
-                    rows.push((row.class, row.periods, rotor));
+                    let rotor = torsion_loop_rotor(&f, row.class.as_bytes());
+                    rows.push((
+                        Address::from_bytes(row.class.as_bytes()),
+                        row.periods,
+                        rotor,
+                    ));
                 }
             }
             if !rows.is_empty() {

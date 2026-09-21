@@ -573,7 +573,7 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
     assert_eq!(
         loop_row_on(&opened.faces, &opened.vertices, &opened.axes, olp),
         Some(LoopRow::Opened(
-            composite.rotor().class_key().expect("the composite has a class")
+            composite.rotor().holonomy_key().expect("the composite has a class")
         )),
         "and the audit counts the loop as opened under the composite's class, \
          not as the defect it was"

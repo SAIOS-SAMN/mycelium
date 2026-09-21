@@ -1291,7 +1291,7 @@ pub(crate) fn loop_row_on(
     if opened_axis_on(faces, vertices, axes, lp).is_some() {
         let class = crate::transducer::sentence::pivot::drive::loop_holonomy_on(faces, vertices, lp)?
             .rotor()
-            .class_key()?;
+            .holonomy_key()?;
         return Some(crate::transducer::sentence::LoopRow::Opened(class));
     }
     // The row is the obstruction's, so it is read off the obstruction the

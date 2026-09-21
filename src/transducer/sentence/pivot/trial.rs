@@ -21,7 +21,7 @@ use super::*;
 /// filer and is not re-stated here (law 12).
 #[derive(Debug, Clone)]
 pub(crate) struct LoopClass {
-    pub(crate) class: crate::transducer::address::Address,
+    pub(crate) class: crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>,
     /// THE TWO PLANE PERIODS (54.7). It was `u32`, the `lcm` of them, and
     /// an `lcm` is an envelope: it cannot tell a planar rotation `[ℓ, 1]`
     /// from an isoclinic `[ℓ, ℓ]`, it reports a dense orbit on the 2-torus
@@ -192,7 +192,10 @@ impl Form {
             // tail is taken as well as its head: a class key leads with the
             // conjugacy invariants, which two finite classes of one order
             // share, and differs further along.
-            let tag = |k: &crate::transducer::address::Address| -> String {
+            let tag = |k: &crate::network::nerve::Key<
+                crate::network::nerve::coord::Holonomy,
+            >|
+             -> String {
                 let b = k.as_bytes();
                 let n = b.len();
                 match n >= 4 {
@@ -344,12 +347,6 @@ impl Form {
         let chord = lp.chord;
         let mut filed: crate::network::nerve::Keyed<u32> = crate::network::nerve::Keyed::new();
         for LoopClass { class, periods, sigma } in self.loop_classes(lp) {
-            let Ok(class) = crate::network::nerve::Key::<
-                crate::network::nerve::coord::Holonomy,
-            >::from_address(&class)
-            else {
-                continue;
-            };
             self.torsion.put(&class, FiledLoop { sigma, periods, chord });
             // THE YIELD IS ACROSS BOTH PLANES: `(ℓ₁ − 1) + (ℓ₂ − 1)`, not
             // `(lcm − 1)`, which is neither plane's labour.
@@ -406,7 +403,7 @@ impl Form {
         let transports = loop_transport_on(&self.faces, &self.vertices, lp);
         let mut out = Vec::new();
         for (path, w) in words.scoped() {
-            let Some(class) = w.rotor().class_key() else {
+            let Some(class) = w.rotor().holonomy_key() else {
                 continue;
             };
             // A path with no transport has no gauge to file. An empty

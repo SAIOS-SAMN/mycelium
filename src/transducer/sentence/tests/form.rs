@@ -81,7 +81,7 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     assert!(h.word.rotor().projective_eq(&half.rotor()), "quarter, quarter, identity compose to the half turn: {:?}", h.word);
     assert_eq!(
         f.edge_classes(triangle).scoped().map(|(_, c)| c.clone()).collect::<Vec<_>>(),
-        vec![half.rotor().class_key().expect("the half turn has a class")],
+        vec![half.rotor().holonomy_key().expect("the half turn has a class")],
         "read up to conjugacy: the half turn's class, on the one path"
     );
     // A COMPACT HOLONOMY IS CONTENT AND COHERES (54.5, as ruled
@@ -159,8 +159,6 @@ fn a_loop_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
     assert!(!f.coheres());
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
-    let class = Key::<coord::Holonomy>::from_address(class)
-        .expect("an edge class is a holonomy coordinate");
     // A FILING DOES NOT CLOSE A CIRCUIT THAT WALKS (54.5, as ruled
     // 2026-09-20). This filed period 0 — A19's spelling of infinite order
     // — and then asserted the loop COHERED, which made an open dislocation

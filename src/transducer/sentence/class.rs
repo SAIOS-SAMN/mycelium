@@ -830,15 +830,15 @@ pub enum LoopRow {
     Closed,
     /// The loop's finite-order class. CARRIED, because the audit counts
     /// torsion by class and not by loop — see [`rank_of_rows`].
-    Torsion(crate::transducer::address::Address),
+    Torsion(crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>),
     Free([i64; FREE_ROW]),
-    OffPlane(crate::transducer::address::Address),
+    OffPlane(crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>),
     /// The loop's class is a chart axis the form opened (I6, 15.5): its
     /// holonomy is the transition on that axis, so it counts on `axes`
     /// and on no other coordinate. The class is carried for the same
     /// reason `Torsion` carries it: the axis carrier is keyed by class, so
     /// one opening opens every loop of that class and they are one axis.
-    Opened(crate::transducer::address::Address),
+    Opened(crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>),
 }
 
 /// `None` when the holonomy is not a versor: it has no class (15.3), so
@@ -854,9 +854,14 @@ pub fn loop_row(h: &Word) -> Option<LoopRow> {
         // returns. It was written out as `12`, a second statement of
         // `PAIR_PLANES * 2` that a change of rank would have left behind
         // (rule 5).
-        Some(row) if row == [0i64; FREE_ROW] => LoopRow::Torsion(h.rotor().class_key()?),
+        // 54.7 R4 — ONE PRODUCER OF A HOLONOMY CLASS. This read
+        // `Rotor::class_key`, the `Cl(4,0)` conjugacy coordinates, while
+        // the carriers these rows are filed into are read at
+        // `holonomy_key` — two producers of one fact (law 12), which is the
+        // R1 shape. Both ends ask the same function now.
+        Some(row) if row == [0i64; FREE_ROW] => LoopRow::Torsion(h.rotor().holonomy_key()?),
         Some(row) => LoopRow::Free(row),
-        None => LoopRow::OffPlane(h.rotor().class_key()?),
+        None => LoopRow::OffPlane(h.rotor().holonomy_key()?),
     })
 }
 

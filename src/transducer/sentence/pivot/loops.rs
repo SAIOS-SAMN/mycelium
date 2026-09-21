@@ -510,13 +510,18 @@ impl Form {
     /// one per member path that is evaluated. Keyed by the path, so a caller
     /// asking "what class did this loop file" gets an answer per path and not
     /// one path's answer for all of them.
-    pub fn edge_classes(&self, lp: &Loop) -> Keyed<crate::transducer::address::Address> {
+    pub fn edge_classes(
+        &self,
+        lp: &Loop,
+    ) -> Keyed<crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>> {
         let mut out = Keyed::new();
         let Some(hs) = self.edge_holonomies(lp) else {
             return out;
         };
         for (k, h) in hs.scoped() {
-            if let Some(c) = h.word.rotor().class_key() {
+            // 54.7 R4 — the holonomy producer, the same one the torsion
+            // and axis carriers are read at.
+            if let Some(c) = h.word.rotor().holonomy_key() {
                 out.insert(&k, c);
             }
         }
@@ -631,7 +636,7 @@ impl Form {
             }
             // A holonomy with no class is not a versor (15.3) and coheres
             // nowhere; refused, never keyed by the rotor's bytes.
-            let Some(class) = h.word.rotor().class_key() else {
+            let Some(class) = h.word.rotor().holonomy_key() else {
                 return false;
             };
             // A path `loop_classes` produced no row for carries no measured

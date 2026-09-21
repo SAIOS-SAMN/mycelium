@@ -587,13 +587,9 @@ fn a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not() {
     assert!(!form_loops_replay(&f), "a free part does not replay");
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
-    let class = crate::network::nerve::Key::<crate::network::nerve::coord::Holonomy>::from_address(
-        class,
-    )
-    .expect("an edge class is a holonomy coordinate");
     let mut filed = f.clone();
     filed.torsion.put(
-        &class,
+        class,
         FiledLoop { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
     );
     assert!(!form_loops_replay(&filed), "and filing it as open does not close a circuit that walks");
@@ -868,10 +864,7 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     let [class] = classes.as_slice() else {
         panic!("one member path, so one class; got {}", classes.len())
     };
-    let class = crate::network::nerve::Key::<crate::network::nerve::coord::Holonomy>::from_address(
-        class,
-    )
-    .expect("an edge class is a holonomy coordinate");
+    let class = class.clone();
     let mut filed = f.clone();
     filed.torsion.put(
         &class,

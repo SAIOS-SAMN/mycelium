@@ -22,7 +22,7 @@ fn the_tape_carries_a_filed_zero_as_infinite_order() {
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
     f.torsion.put(
-        &crate::network::nerve::Key::from_address(class).expect("a holonomy coordinate"),
+        class,
         FiledLoop { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
     );
     // THE FILING IS THE SPEAKER'S AND IT DOES NOT CLOSE THE CIRCUIT (54.5,
