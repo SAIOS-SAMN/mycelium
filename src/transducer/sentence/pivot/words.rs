@@ -673,7 +673,9 @@ pub fn generators_under(
 pub fn word_at_vertex(f: &Form, vertex: &[u8]) -> Option<Word> {
     let i = *f
         .by_address
-        .at(&crate::network::nerve::Key::write(vertex).ok()?)?;
+        .at(&<crate::network::nerve::coord::Member
+            as crate::network::nerve::Coordinate>::decode(vertex)
+            .ok()?)?;
     match f.vertices.get(i as usize)? {
         // What the vertex CARRIES: its letters when it spells, its action
         // when it is an adjoined generator (37.7). `word_local` alone
@@ -692,7 +694,9 @@ pub fn word_at_vertex(f: &Form, vertex: &[u8]) -> Option<Word> {
 pub fn rotor_at_vertex(f: &Form, vertex: &[u8]) -> Option<crate::transducer::alphabet::Rotor> {
     let i = *f
         .by_address
-        .at(&crate::network::nerve::Key::write(vertex).ok()?)?;
+        .at(&<crate::network::nerve::coord::Member
+            as crate::network::nerve::Coordinate>::decode(vertex)
+            .ok()?)?;
     match f.vertices.get(i as usize)? {
         Vertex::Word { derivation, .. } => Some(derivation.rotor()),
         _ => None,

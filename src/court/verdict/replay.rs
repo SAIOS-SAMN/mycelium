@@ -190,9 +190,9 @@ fn derivations_compose(
         // THE CITE'S BYTES BECOME A MEMBER COORDINATE HERE, at the court's
         // boundary, and a cite whose bytes are not one is evidence about
         // nothing exactly as an unheld vertex is (54.7 R5, rule 11).
-        let Ok(vk) = crate::network::nerve::Key::<
-            crate::network::nerve::coord::Member,
-        >::write(&cite.vertex) else {
+        let Ok(vk) = <crate::network::nerve::coord::Member as crate::network::nerve::Coordinate>::decode(
+            &cite.vertex,
+        ) else {
             continue;
         };
         let Some(&i) = f.by_address.at(&vk) else {
@@ -847,14 +847,17 @@ pub(crate) fn receipts_price_the_terrain(
     // THE PERIODS THE COMPLEX DERIVES, by class, over every loop. One
     // reader (`loop_classes`), the same one `file_loop` writes through and
     // `edge_coheres` asks.
-    let mut derived: Keyed<crate::transducer::sentence::ToralPeriod> = Keyed::new();
+    let mut derived: Keyed<
+        crate::transducer::sentence::ToralPeriod,
+        crate::network::nerve::coord::Holonomy,
+    > = Keyed::new();
     for lp in &f.loops {
         for row in f.loop_classes(lp) {
-            derived.insert(&row.class, row.periods);
+            derived.put(&row.class, row.periods);
         }
     }
-    for (class, claim) in filed.scoped() {
-        match derived.get(&class) {
+    for (class, claim) in filed.entries() {
+        match derived.at(&class) {
             // The period is a claim about the terrain and the terrain
             // disagrees.
             // BOTH PLANES. A claim that agrees on the `lcm` and differs on

@@ -273,7 +273,9 @@ impl Mv {
     /// ray's sign — `−Ω` and `Ω` are one transition and read alike. `None`
     /// when `Ω` is not a versor, which is a refusal and never a zero class
     /// (rule 11).
-    pub fn class_invariants(&self) -> Option<(BigRational, BigRational, u8)> {
+    pub fn class_invariants(
+        &self,
+    ) -> Option<(BigRational, BigRational, crate::network::nerve::coord::BivectorKind)> {
         let w = is_versor(self)?;
         if w.is_zero() {
             return None;
@@ -299,14 +301,28 @@ impl Mv {
         // wrong geometry for a manifold with curvature. On the hyperboloid
         // there is no `e_∞` to fix, and a geodesic translation is a true
         // transvection `eᵢ∧e₋` with `B² = +1`.
-        let ty = if i1.is_negative() {
-            0
+        // 54.7 — TRIVIAL IS NOT PARABOLIC, and collapsing them put every
+        // identity loop in the same class as every null shear.
+        //
+        //   TRIVIAL     B = 0            — the identity, Ω = 1, turns nothing
+        //   ELLIPTIC    ⟨B²⟩₀ < 0        — a rotation, eᵢ∧eⱼ or eᵢ∧e₊
+        //   HYPERBOLIC  ⟨B²⟩₀ > 0        — a transvection, eᵢ∧e₋
+        //   PARABOLIC   B ≠ 0, ⟨B²⟩₀ = 0 — a genuine null shear on e₊∧e₋
+        //
+        // The first three are readings of a motion; the fourth is too, and
+        // the identity is the absence of one. `I₁ = 0` alone cannot tell
+        // the last two apart, so the bivector itself is asked.
+        use crate::network::nerve::coord::BivectorKind;
+        let kind = if b.is_zero() {
+            BivectorKind::Trivial
+        } else if i1.is_negative() {
+            BivectorKind::Elliptic
         } else if i1.is_positive() {
-            1
+            BivectorKind::Hyperbolic
         } else {
-            2
+            BivectorKind::Parabolic
         };
-        Some((i1, i2, ty))
+        Some((i1, i2, kind))
     }
 
     /// 54.7 R4 — THE HOLONOMY CLASS OF A MOTION, AS THE COORDINATE THE
@@ -332,21 +348,22 @@ impl Mv {
     /// is ten-dimensional and the trichotomy is a reading: `eᵢ∧eⱼ` and
     /// `eᵢ∧e₊` elliptic (`I₁ < 0`), `eᵢ∧e₋` hyperbolic transvections
     /// (`I₁ > 0`), `e₊∧e₋` parabolic (`I₁ = 0`).
-    pub fn holonomy_key(
-        &self,
-    ) -> Option<crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>> {
-        crate::network::nerve::Key::from_address(&self.class_key()?).ok()
+    pub fn holonomy_key(&self) -> Option<crate::network::nerve::coord::Holonomy> {
+        let (i1, i2, kind) = self.class_invariants()?;
+        Some(crate::network::nerve::coord::Holonomy { i1, i2, kind })
     }
 
     /// The class as canonical coordinates (A21, law 2): the two invariants
     /// written out and the bivector's type, never a digest.
+    /// The class as canonical coordinates — written by the coordinate
+    /// itself, so the bytes here and the bytes a carrier is keyed by are
+    /// one construction and not two agreeing (rule 12).
     pub fn class_key(&self) -> Option<crate::transducer::address::Address> {
-        let (i1, i2, ty) = self.class_invariants()?;
-        let mut buf = vec![crate::transducer::address::TAG_CLASS];
-        crate::transducer::alphabet::put_q(&mut buf, &i1);
-        crate::transducer::alphabet::put_q(&mut buf, &i2);
-        buf.push(ty);
-        Some(crate::transducer::address::Address::new(buf))
+        use crate::network::nerve::Coordinate;
+        let h = self.holonomy_key()?;
+        Some(crate::transducer::address::Address::from_bytes(
+            h.encode().as_bytes(),
+        ))
     }
 
     /// The grade-`g` part.

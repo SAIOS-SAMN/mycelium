@@ -337,7 +337,7 @@ fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
         f.torsion.is_empty(),
         "and the form files nothing, which is why the walk below is empty"
     );
-    for (class, filed) in f.torsion.scoped() {
+    for (class, filed) in f.torsion.entries() {
         // A FILED SPECTRUM IS A REAL ROTATION'S, and a plane of period one
         // is an idle plane, not a turn. Where the loop closes, at least one
         // plane must do work (54.7).
@@ -349,7 +349,11 @@ fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
             f.faces.get(filed.chord as usize).is_some(),
             "the chord names a live face of this form"
         );
-        assert!(!class.is_empty(), "and it is filed under the holonomy's class key");
+        assert_ne!(
+            class.kind,
+            crate::network::nerve::coord::BivectorKind::Trivial,
+            "a filed loop's class is a motion, never the identity"
+        );
         // The filed class is re-derivable from the loop the chord names,
         // which is what the court replays (23.1 step 4).
         assert!(
@@ -628,20 +632,21 @@ fn a_pure_coboundary_form_yields_no_evaluated_loop() {
 fn a_forms_word_vertices_are_bounded_by_its_transport_classes() {
     let (a, b) = four_bodies();
     let f = measured(&a, &b);
-    let classes: Vec<crate::network::nerve::Key<crate::network::nerve::coord::Transport>> = f
+    let classes: Vec<crate::network::nerve::coord::Transport> = f
         .vertices
         .iter()
         .filter(|v| matches!(v, Vertex::Word { .. }))
         .filter_map(crate::transducer::family::transport_class)
         .map(|tc| tc.key())
         .collect();
-    let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let mut seen: crate::network::nerve::Keyed<(), crate::network::nerve::coord::Transport> =
+        crate::network::nerve::Keyed::new();
     for k in &classes {
         assert!(
-            !seen.contains(k),
+            !seen.holds(k),
             "two Word vertices of one transport class: the cover's pieces are not grouped"
         );
-        seen.insert(k, ());
+        seen.put(k, ());
     }
     // And every Word vertex HAS a class, or the bound names nothing.
     let words = f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();

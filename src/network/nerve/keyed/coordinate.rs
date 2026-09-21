@@ -1,368 +1,702 @@
-// A21, §4.4 — THE COORDINATE SYSTEM AS A TYPE: which coordinate an index
-// answers, held where the compiler reads it.
+// A21, §4.4 — THE COORDINATE AN INDEX ANSWERS, AS A VALUE THAT DECODES.
 //
-//! `Keyed` already carried its coordinate system — as a FIELD, set by
-//! `for_system`, checked by `read_exact` and `read_fiber`. Every production
-//! carrier in the tree left it `Any` and called `insert`/`get`, which do not
-//! check it. The declaration existed and nothing was declared: `by_class`,
-//! whose doc comment says "chart key → the Word vertices on that chart",
-//! was handed a member key, answered nothing, and `incident_chart` read
-//! every idea as standing on no chart.
+//! A first cut of this made `Key<C>` a phantom type wrapped around an
+//! opaque `Arc<[u8]>`. `Key<Chart>` and `Key<Section>` were then BYTE
+//! IDENTICAL at runtime, the claim about which coordinate they carried
+//! lived in a type parameter that `declared`, `as_bytes` and `into_vec`
+//! discarded on contact, and `declared` accepted any bytes at all for a
+//! system with no tag. That is a label beside bytes, not a coordinate:
+//! rule 2 wants the key to BE the object's coordinates written out, so
+//! that identity is content and a reader can get the object back.
 //!
-//! A doc comment is not a gate, and a runtime check nobody calls is not a
-//! gate either. This lifts the declaration into the TYPE: a carrier names
-//! the system its keys belong to, a [`Key`] names the system it was written
-//! from, and `insert` will not typecheck unless they agree. The byte check
-//! stays underneath, because two systems can open with the same tag — a
-//! section key is `chart ‖ carriage` and opens with `TAG_CHART` exactly as
-//! a chart key does, so the tag separates neither and the TYPE separates
-//! both.
+//! A coordinate here is a VALUE. It encodes to its canonical bytes and
+//! decodes back to itself:
 //!
-//! §4.4: where a type can hold the rule, it does, and the type is the gate.
-//! Not as a preference over a lint — the lint is impossible. Nothing in the
-//! source distinguishes a correct key from a wrong one when both are
-//! `Vec<u8>`.
+//! ```text
+//!     x ≡ decode(encode(x))
+//! ```
+//!
+//! An index is `Keyed<V, C>` for that value type, and its reads and writes
+//! take `&C` — never bytes. There is no escape: the byte form exists only
+//! inside the trie, where the walk needs it, and every key handed back out
+//! of a walk is decoded first. A key that cannot decode is a refusal and
+//! says which coordinate it failed at (rule 11), never an empty answer.
 
 use super::*;
-use std::marker::PhantomData;
 
-/// A COORDINATE SYSTEM, AS A TYPE.
+/// THE CANONICAL BYTES OF ONE COORDINATE.
 ///
-/// One implementor per system a key can be written from. `SYSTEM` is the
-/// runtime declaration this refines — it is what the bytes are checked
-/// against — and two distinct types may name the same `SYSTEM` when their
-/// keys open with the same tag and differ in DEPTH (`Chart` and `Section`).
-/// The type separates those; the tag cannot.
-pub trait Coordinate: Copy + Clone + std::fmt::Debug + PartialEq + Eq + 'static {
-    /// The runtime system these keys belong to, for the byte check.
-    const SYSTEM: CoordinateSystem;
-    /// The system's name, for a refusal that says which coordinate it is.
-    const NAME: &'static str;
+/// Sealed: it is produced by [`Coordinate::encode`] and consumed by the
+/// trie, and nothing else can make one out of arbitrary bytes. That is
+/// what stops the escape hatch from growing back — there is no
+/// `CompactBytes::from(&[u8])` for a caller to reach for.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CompactBytes(std::sync::Arc<[u8]>);
 
-    /// The schema this system's keys are written from, where one is
-    /// declared. `Some` makes a key's DEPTH checked as well as its tag —
-    /// which is what separates a chart key from a section key written over
-    /// it. `None` leaves the tag as the only byte check, and that is a
-    /// statement about this system, not a default to leave standing.
-    fn schema() -> Option<&'static Schema> {
-        None
-    }
-}
-
-/// THE COORDINATE SYSTEMS, one marker per A21 tag.
-///
-/// A carrier declares one of these and a key is written from one of these.
-/// `Any` is the undeclared carrier — the state every carrier in the tree
-/// was in — and it is the only one whose `insert` takes loose bytes.
-pub mod coord {
-    use super::{Coordinate, CoordinateSystem, Schema};
-
-    macro_rules! coordinate {
-        ($($name:ident => $system:ident, $label:literal;)*) => {$(
-            #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-            pub struct $name;
-            impl Coordinate for $name {
-                const SYSTEM: CoordinateSystem = CoordinateSystem::$system;
-                const NAME: &'static str = $label;
-            }
-        )*};
+impl CompactBytes {
+    /// Written by a coordinate's own `encode`, which is the only caller.
+    pub fn written(buf: Vec<u8>) -> CompactBytes {
+        CompactBytes(buf.into())
     }
 
-    coordinate! {
-        Any      => Any,      "any";
-        Rotor    => Rotor,    "rotor";
-        Versor   => Versor,   "versor";
-        Word     => Word,     "word";
-        Form     => Form,     "form";
-        Chart    => Chart,    "chart";
-        Cert     => Cert,     "cert";
-        Listing  => Listing,  "listing";
-        Sel      => Sel,      "sel";
-        Hue      => Hue,      "hue";
-        Assign   => Assign,   "assign";
-        Gauge    => Gauge,    "gauge";
-        Plane    => Plane,    "plane";
-        Simplex  => Simplex,  "simplex";
-        Cocycle  => Cocycle,  "cocycle";
-        Task     => Task,     "task";
-        Demand   => Demand,   "demand";
-        DemandAt => DemandAt, "demand-at";
-        Residual => Residual, "residual";
+    /// The object's one allocation, shared rather than copied (Z4c): a
+    /// form's address is megabytes and every carrier naming it points at
+    /// the same bytes.
+    pub fn shared(bytes: std::sync::Arc<[u8]>) -> CompactBytes {
+        CompactBytes(bytes)
     }
 
-    /// THE CLASS COORDINATE, the one system whose key layout is parsed
-    /// rather than trusted: `ClassVector::class_schema` reads its five
-    /// segments, so a class key is checked to its last coordinate and a
-    /// key carrying bytes past it is refused by name.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-    pub struct Class;
-    impl Coordinate for Class {
-        const SYSTEM: CoordinateSystem = CoordinateSystem::Class;
-        const NAME: &'static str = "class";
-        fn schema() -> Option<&'static Schema> {
-            Some(crate::transducer::sentence::ClassVector::class_schema())
-        }
+    pub(crate) fn as_bytes(&self) -> &[u8] {
+        &self.0
     }
 
-    /// A SECTION OF A CHART — `chart ‖ carriage`, which opens with
-    /// `TAG_CHART` exactly as a chart key does and is NOT a chart key.
-    ///
-    /// This is R1's defect written as a type. `by_class` answers [`Chart`];
-    /// `acts` is keyed by [`Section`]; they share a tag and share nothing
-    /// else, and for eight sites the difference lived only in prose.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-    pub struct Section;
-    impl Coordinate for Section {
-        const SYSTEM: CoordinateSystem = CoordinateSystem::Chart;
-        const NAME: &'static str = "section";
-    }
-
-    /// A MEMBER OF A FORM — the vertex key a form's member is written
-    /// under. Opens with `TAG_FORM` and is a strictly finer coordinate
-    /// than the form's own address.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-    pub struct Member;
-    impl Coordinate for Member {
-        const SYSTEM: CoordinateSystem = CoordinateSystem::Form;
-        const NAME: &'static str = "member";
-    }
-
-    /// A TRANSPORT CLASS — `kind ‖ word class` (21 step 1).
-    ///
-    /// `TransportClass::key` opens with the shell kind, not an A21 tag, so
-    /// there is no tag to check and `SYSTEM` is `Any`: the byte gate says
-    /// nothing here and the TYPE says everything. That is the honest
-    /// spelling — a system whose keys are not tag-led cannot pretend to a
-    /// check it does not have.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-    pub struct Transport;
-    impl Coordinate for Transport {
-        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
-        const NAME: &'static str = "transport-class";
-    }
-
-    /// A VERTEX'S POSITION IN ITS OWN FORM — `vertex_ix_key`, an ordinal
-    /// and not a coordinate (rule 15). Typed so that it cannot be handed
-    /// to a carrier that answers a coordinate, which is the whole of the
-    /// distinction rule 15 makes.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-    pub struct VertexIx;
-    impl Coordinate for VertexIx {
-        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
-        const NAME: &'static str = "vertex-index";
-    }
-
-    /// A SITE OF THE COVER — where a citation stands, as distinct from what
-    /// it cites (54.7 B5a). It is the Glued vertex's own record as
-    /// `put_vertex` writes it: the host's statement of its own boundary, in
-    /// the form's local encoding and under no A21 tag. `NerveEdge` is keyed
-    /// `site ‖ target`; the site alone is this.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-    pub struct Site;
-    impl Coordinate for Site {
-        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
-        const NAME: &'static str = "cover-site";
-    }
-
-    /// A HOLONOMY CLASS — `Rotor::class_key`, which opens `TAG_CLASS` and
-    /// is NOT a `ClassVector` key even though that opens with the same
-    /// byte. A class vector spells five coordinates and this spells one, so
-    /// [`Class`]'s schema refuses it by name — two systems over one tag,
-    /// separated by the type and by nothing else.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-    pub struct Holonomy;
-    impl Coordinate for Holonomy {
-        const SYSTEM: CoordinateSystem = CoordinateSystem::Class;
-        const NAME: &'static str = "holonomy-class";
-    }
-
-    /// THE FORM-LOCAL SYSTEMS. Each opens with its own discriminant byte in
-    /// the form's private namespace, NOT an A21 tag — `unfolded_key` opens
-    /// with `4`, which is `TAG_FORM` in the other namespace and means
-    /// nothing here. They are separate systems that happen to share a byte,
-    /// which is precisely the case a tag check cannot decide and a type can.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-    pub struct Unfolded;
-    impl Coordinate for Unfolded {
-        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
-        const NAME: &'static str = "unfolded-measure";
-    }
-
-    /// ONE DEMAND VERTEX OF ONE FORM — `(kind, chart)` (50.5), each end
-    /// length-delimited, opening with neither's tag.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-    pub struct DemandVertex;
-    impl Coordinate for DemandVertex {
-        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
-        const NAME: &'static str = "demand-vertex";
-    }
-
-    /// A MEMBER'S SECTION — `transport class ‖ chart ‖ address ‖ carriage`
-    /// (18.2, 21 step 1, 52.5 item 3). It opens with the shell kind, like
-    /// the transport class it extends, and is a strictly finer coordinate:
-    /// two members of one class on one chart are two sections, and reading
-    /// one carrier at the other's key is the defect this separates.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-    pub struct MemberSection;
-    impl Coordinate for MemberSection {
-        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
-        const NAME: &'static str = "member-section";
-    }
-
-    /// A PLACEMENT — `vertex transport ‖ chart` (18.2). Two carriages on one
-    /// transport class are two placements because the chart separates them;
-    /// keyed by the transport class alone they were one entry conflicting
-    /// with itself, and `place_conflict` dropped both.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-    pub struct Placement;
-    impl Coordinate for Placement {
-        const SYSTEM: CoordinateSystem = CoordinateSystem::Word;
-        const NAME: &'static str = "placement";
-    }
-}
-
-/// A KEY WRITTEN FROM A DECLARED COORDINATE SYSTEM.
-///
-/// The bytes are the object's coordinates written out (law 2); what this
-/// adds is the system they were written from, carried in the type so that
-/// handing them to a carrier of another system does not compile.
-///
-/// A key OWNS ITS BYTES ONCE AND SHARES THEM (Z4c): a form's address is
-/// megabytes, and every carrier naming it points at the same allocation.
-pub struct Key<C: Coordinate> {
-    bytes: std::sync::Arc<[u8]>,
-    _coord: PhantomData<C>,
-}
-
-impl<C: Coordinate> Clone for Key<C> {
-    fn clone(&self) -> Self {
-        Key { bytes: std::sync::Arc::clone(&self.bytes), _coord: PhantomData }
-    }
-}
-
-impl<C: Coordinate> std::fmt::Debug for Key<C> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Key<{}>({} bytes)", C::NAME, self.bytes.len())
-    }
-}
-
-impl<C: Coordinate> PartialEq for Key<C> {
-    fn eq(&self, other: &Self) -> bool {
-        self.bytes == other.bytes
-    }
-}
-
-impl<C: Coordinate> Eq for Key<C> {}
-
-impl<C: Coordinate> std::ops::Deref for Key<C> {
-    type Target = [u8];
-    fn deref(&self) -> &[u8] {
-        &self.bytes
-    }
-}
-
-impl<C: Coordinate> AsRef<[u8]> for Key<C> {
-    fn as_ref(&self) -> &[u8] {
-        &self.bytes
-    }
-}
-
-impl<C: Coordinate> Key<C> {
-    /// WRITE A KEY OF THIS SYSTEM, checking the bytes spell it.
-    ///
-    /// The tag is checked against the system; where the system declares a
-    /// schema, every coordinate is parsed and a key carrying bytes past its
-    /// last one is refused — which is the check that separates a chart key
-    /// from a section key written over it, since the tag does not.
-    pub fn write(bytes: impl AsRef<[u8]>) -> Result<Key<C>, SchemaRefusal> {
-        let bytes = bytes.as_ref();
-        if let Some(expected) = C::SYSTEM.tag() {
-            match crate::transducer::address::tag_of(bytes) {
-                Some(tag) if tag == expected => {}
-                Some(tag) => {
-                    return Err(SchemaRefusal::IncompatibleSystem {
-                        expected: C::SYSTEM,
-                        actual_tag: tag,
-                    })
-                }
-                // An empty key spells no coordinate at all. `Prefix` refuses
-                // it on the read side for the same reason (rule 11).
-                None => {
-                    return Err(SchemaRefusal::IncompatibleSystem {
-                        expected: C::SYSTEM,
-                        actual_tag: 0,
-                    })
-                }
-            }
-        }
-        if let Some(schema) = C::schema() {
-            schema.whole(bytes).map_err(SchemaRefusal::Stratum)?;
-        }
-        Ok(Key { bytes: std::sync::Arc::from(bytes), _coord: PhantomData })
-    }
-
-    /// THE OBJECT'S OWN COPY, filed without a second allocation (Z4c).
-    ///
-    /// Same checks as [`Key::write`]; what differs is that the caller hands
-    /// the one allocation the object already holds instead of a scratch
-    /// buffer, so every carrier naming a megabyte address points at it.
-    pub fn from_shared(bytes: std::sync::Arc<[u8]>) -> Result<Key<C>, SchemaRefusal> {
-        Key::<C>::write(&bytes[..])?;
-        Ok(Key { bytes, _coord: PhantomData })
-    }
-
-    /// THE ADDRESS AS A KEY OF THIS SYSTEM, sharing its bytes.
-    pub fn from_address(a: &crate::transducer::address::Address) -> Result<Key<C>, SchemaRefusal> {
-        Key::<C>::from_shared(a.shared())
-    }
-
-    /// A KEY THIS SITE ASSERTS IT WROTE, checked on neither tag nor depth.
-    ///
-    /// The escape hatch, named so it is legible at its site and countable
-    /// across the tree. It exists for the systems whose layout has no
-    /// schema and whose tag is written by a producer this module cannot
-    /// reach; every use is a place where the gate is a comment again, and
-    /// the count of them is the remaining work.
-    pub fn declared(bytes: impl AsRef<[u8]>) -> Key<C> {
-        Key { bytes: std::sync::Arc::from(bytes.as_ref()), _coord: PhantomData }
-    }
-
-    /// As [`Key::declared`], taking the object's own allocation (Z4c).
-    pub fn declared_shared(bytes: std::sync::Arc<[u8]>) -> Key<C> {
-        Key { bytes, _coord: PhantomData }
-    }
-
-    pub fn as_bytes(&self) -> &[u8] {
-        &self.bytes
-    }
-
-    /// THE BYTES, AS THE OPENING OF A FINER COORDINATE.
-    ///
-    /// A key of system `C` is the coarse stratum of the keys written over
-    /// it — a transport class opening a member section, a chart opening a
-    /// section. Extending one is a real operation and this is where the
-    /// coordinate is deliberately left behind; the result is not a key of
-    /// any system until whoever finishes it says which.
-    pub fn into_vec(self) -> Vec<u8> {
-        self.bytes.to_vec()
-    }
-
-    /// The one allocation, to file under without copying (Z4c).
-    pub fn shared(&self) -> std::sync::Arc<[u8]> {
-        std::sync::Arc::clone(&self.bytes)
+    pub(crate) fn arc(&self) -> std::sync::Arc<[u8]> {
+        std::sync::Arc::clone(&self.0)
     }
 
     pub fn len(&self) -> usize {
-        self.bytes.len()
+        self.0.len()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.bytes.is_empty()
+        self.0.is_empty()
+    }
+}
+
+/// WHY A COORDINATE DID NOT DECODE.
+///
+/// The empty answer and the refusal are different facts, and naming which
+/// coordinate failed is what keeps them apart (rule 11).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CoordinateError {
+    /// The system the bytes were read against.
+    pub system: &'static str,
+    /// What the bytes did not spell.
+    pub why: &'static str,
+}
+
+impl std::fmt::Display for CoordinateError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} coordinate: {}", self.system, self.why)
+    }
+}
+
+impl std::error::Error for CoordinateError {}
+
+/// A COORDINATE: a value that is its own canonical bytes, both ways.
+///
+/// `decode(encode(x)) == x` for every `x`, which is the property that
+/// makes the bytes a coordinate rather than a label. A type that cannot
+/// satisfy it is not a coordinate and does not belong in a key.
+pub trait Coordinate: Eq + Clone + std::fmt::Debug + Send + Sync + 'static {
+    /// The system's name, for a refusal that says which coordinate it is.
+    const NAME: &'static str;
+    /// The runtime system these bytes belong to, where the A21 tag names
+    /// one. `Any` is for a system whose keys are not tag-led; it is a
+    /// statement about the layout, never a licence to skip the decode.
+    const SYSTEM: CoordinateSystem;
+
+    fn encode(&self) -> CompactBytes;
+    fn decode(bytes: &[u8]) -> Result<Self, CoordinateError>
+    where
+        Self: Sized;
+
+    /// The refusal this system raises, so implementors say it in one line.
+    fn refuse(why: &'static str) -> CoordinateError {
+        CoordinateError { system: Self::NAME, why }
+    }
+}
+
+/// THE PREFIX A COARSE COORDINATE MAKES IN A FINER ONE.
+///
+/// A fibre read descends on a coarse coordinate — every section over one
+/// chart, every member of one class — and that is only meaningful where
+/// the coarse system's bytes are genuinely an opening segment of the fine
+/// system's. Declaring it is what makes `fiber_over` a stratum read rather
+/// than a byte-prefix coincidence.
+pub trait Stratum<Fine: Coordinate>: Coordinate {
+    /// THE OPENING BYTES OF A FINE KEY THAT THIS COARSE COORDINATE FIXES.
+    ///
+    /// Not always `encode()`: a [`coord::Section`] opens with the chart's
+    /// key LENGTH-DELIMITED, so the chart's own bytes are not a byte
+    /// prefix of it and reading the fibre at `encode()` would descend on
+    /// the wrong bits. Stating the opening separately is what keeps the
+    /// two ends from drifting — the coarse reader and the fine writer are
+    /// the same function here, rather than two written to agree.
+    fn opening(&self) -> CompactBytes;
+}
+
+/// THE COORDINATE SYSTEMS, as values.
+pub mod coord {
+    use super::{CompactBytes, Coordinate, CoordinateError, CoordinateSystem, Stratum};
+    use crate::transducer::address as a;
+
+    /// Read the A21 tag and refuse a foreign one in a single line.
+    fn tagged<C: Coordinate>(bytes: &[u8], want: u8) -> Result<usize, CoordinateError> {
+        match a::tag_of(bytes) {
+            Some(t) if t == want => Ok(1),
+            Some(_) => Err(C::refuse("the key opens with another system's tag")),
+            None => Err(C::refuse("an empty key spells no coordinate")),
+        }
     }
 
-    /// The coordinate this key descends on, or `None` where it is empty —
-    /// an empty key names the whole carrier and that is not a coordinate.
-    pub fn prefix(&self) -> Option<Prefix<'_>> {
-        Prefix::new(&self.bytes)
+    /// THE COORDINATE WHOSE STRUCTURE IS NOT YET DECLARED.
+    ///
+    /// Transitional, and the count of carriers still spelling it is the
+    /// exact remaining work of §4.4 — not a permanent member of this
+    /// module. It satisfies invertibility vacuously (the bytes are the
+    /// value), which is precisely the statement that it asserts nothing:
+    /// an `Any` carrier cannot tell a chart from a member key, and every
+    /// one of them is a latent wrong-key defect until it is replaced by
+    /// the coordinate it actually answers.
+    ///
+    /// It is NOT an escape hatch for a typed carrier: a `Keyed<V, Chart>`
+    /// cannot be handed one of these, because `put` takes `&Chart`.
+    #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+    pub struct Any(pub Vec<u8>);
+
+    impl Any {
+        /// Bytes a site has not yet given a coordinate. Greppable on
+        /// purpose: each one is a place the declaration is still missing.
+        pub fn undeclared(bytes: impl AsRef<[u8]>) -> Any {
+            Any(bytes.as_ref().to_vec())
+        }
+    }
+
+    impl Coordinate for Any {
+        const NAME: &'static str = "undeclared";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
+
+        fn encode(&self) -> CompactBytes {
+            CompactBytes::written(self.0.clone())
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            Ok(Any(bytes.to_vec()))
+        }
+    }
+
+    /// A CHART — the invariant that names it (18.2). Decodes through
+    /// `Invariant::from_key`, which is total or refuses: a key ending
+    /// mid-coordinate decodes to nothing rather than to the coordinates
+    /// before it, which would be a different chart read as this one.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct Chart(pub crate::transducer::stalk::Invariant);
+
+    impl Coordinate for Chart {
+        const NAME: &'static str = "chart";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Chart;
+
+        fn encode(&self) -> CompactBytes {
+            CompactBytes::shared(self.0.key().shared())
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            tagged::<Self>(bytes, a::TAG_CHART)?;
+            crate::transducer::stalk::Invariant::from_key(bytes)
+                .map(Chart)
+                .ok_or_else(|| Self::refuse("the bytes do not spell a chart's axes"))
+        }
+    }
+
+    /// A HOLONOMY CLASS — the two Casimirs of the bivector generator and
+    /// the trichotomy byte, `(I₁, I₂, type)` read in `Cl(4,1)`.
+    ///
+    /// The type is a READING of the motion and `Trivial` is not
+    /// `Parabolic`: `B = 0` is the identity, which turns nothing, while a
+    /// genuine parabolic has `B ≠ 0` and `B² = 0` — a null shear that
+    /// displaces along its own null direction. Collapsing them put every
+    /// identity loop in the same class as every dislocation.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct Holonomy {
+        pub i1: crate::transducer::alphabet::Q,
+        pub i2: crate::transducer::alphabet::Q,
+        pub kind: BivectorKind,
+    }
+
+    /// THE FOUR READINGS OF A BIVECTOR GENERATOR.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub enum BivectorKind {
+        /// `B = 0` — the identity. Zero holonomy, not a null shear.
+        Trivial = 0,
+        /// `⟨B²⟩₀ < 0` — a spatial rotation, `eᵢ∧eⱼ` or `eᵢ∧e₊`.
+        Elliptic = 1,
+        /// `⟨B²⟩₀ > 0` — a geodesic transvection, `eᵢ∧e₋`. The generator
+        /// `Cl(4,0)` cannot represent at all.
+        Hyperbolic = 2,
+        /// `B ≠ 0` and `⟨B²⟩₀ = 0` — a genuine null shear on `e₊∧e₋`.
+        Parabolic = 3,
+    }
+
+    impl BivectorKind {
+        pub const fn as_u8(self) -> u8 {
+            self as u8
+        }
+
+        pub const fn from_u8(b: u8) -> Option<BivectorKind> {
+            match b {
+                0 => Some(BivectorKind::Trivial),
+                1 => Some(BivectorKind::Elliptic),
+                2 => Some(BivectorKind::Hyperbolic),
+                3 => Some(BivectorKind::Parabolic),
+                _ => None,
+            }
+        }
+    }
+
+    impl Coordinate for Holonomy {
+        const NAME: &'static str = "holonomy-class";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Class;
+
+        fn encode(&self) -> CompactBytes {
+            let mut buf = vec![a::TAG_CLASS];
+            crate::transducer::alphabet::put_q(&mut buf, &self.i1);
+            crate::transducer::alphabet::put_q(&mut buf, &self.i2);
+            buf.push(self.kind.as_u8());
+            CompactBytes::written(buf)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            let mut pos = tagged::<Self>(bytes, a::TAG_CLASS)?;
+            let i1 = crate::transducer::alphabet::take_q(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the first invariant does not spell an exact ℚ"))?;
+            let i2 = crate::transducer::alphabet::take_q(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the second invariant does not spell an exact ℚ"))?;
+            let kind = bytes
+                .get(pos)
+                .copied()
+                .and_then(BivectorKind::from_u8)
+                .ok_or_else(|| Self::refuse("the type byte names no bivector reading"))?;
+            if pos + 1 != bytes.len() {
+                return Err(Self::refuse("the key carries bytes past its last coordinate"));
+            }
+            Ok(Holonomy { i1, i2, kind })
+        }
+    }
+
+    /// A VERTEX'S POSITION IN ITS OWN FORM — an ordinal, not a coordinate
+    /// of the manifold (rule 15), typed so it cannot reach a carrier that
+    /// answers one.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct VertexIx(pub u16);
+
+    impl Coordinate for VertexIx {
+        const NAME: &'static str = "vertex-index";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
+
+        fn encode(&self) -> CompactBytes {
+            let mut buf = vec![0u8];
+            buf.extend_from_slice(&self.0.to_le_bytes());
+            CompactBytes::written(buf)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            match bytes {
+                [0u8, a, b] => Ok(VertexIx(u16::from_le_bytes([*a, *b]))),
+                _ => Err(Self::refuse("a vertex ordinal is one tag byte and a u16")),
+            }
+        }
+    }
+
+    /// AN UNFOLDED VERTEX'S MEASURE. The form's own namespace, not A21's:
+    /// it opens with `4`, which is `TAG_FORM` in the other namespace and
+    /// means nothing here — two systems over one byte, which is the case
+    /// only a type can decide.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub struct Unfolded(pub crate::transducer::sentence::Measure);
+
+    impl Coordinate for Unfolded {
+        const NAME: &'static str = "unfolded-measure";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
+
+        fn encode(&self) -> CompactBytes {
+            use crate::transducer::sentence::Measure;
+            let mut k = vec![4u8];
+            match self.0 {
+                Measure::Occupied => k.push(0),
+                Measure::Remainder => k.push(1),
+                Measure::Ring { anchor } => {
+                    k.push(2);
+                    k.extend_from_slice(&anchor.to_le_bytes());
+                }
+            }
+            CompactBytes::written(k)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            use crate::transducer::sentence::Measure;
+            match bytes {
+                [4u8, 0] => Ok(Unfolded(Measure::Occupied)),
+                [4u8, 1] => Ok(Unfolded(Measure::Remainder)),
+                [4u8, 2, a, b] => {
+                    Ok(Unfolded(Measure::Ring { anchor: u16::from_le_bytes([*a, *b]) }))
+                }
+                _ => Err(Self::refuse("the bytes spell no unfolded measure")),
+            }
+        }
+    }
+
+    /// A DEMAND VERTEX OF ONE FORM — `(kind, chart)` (50.5), each end
+    /// length-delimited so the pair reads back apart.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct DemandVertex {
+        pub kind: crate::transducer::sentence::Demand,
+        pub chart: crate::transducer::stalk::Invariant,
+    }
+
+    impl Coordinate for DemandVertex {
+        const NAME: &'static str = "demand-vertex";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
+
+        fn encode(&self) -> CompactBytes {
+            let mut buf = Vec::new();
+            a::put_bytes(&mut buf, self.kind.key().as_bytes());
+            a::put_bytes(&mut buf, self.chart.key().as_bytes());
+            CompactBytes::written(buf)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            let mut pos = 0usize;
+            let kb = a::take_bytes(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the demand kind is not length-delimited"))?;
+            let cb = a::take_bytes(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the chart is not length-delimited"))?;
+            if pos != bytes.len() {
+                return Err(Self::refuse("the key carries bytes past its last coordinate"));
+            }
+            let mut kp = tagged::<Self>(&kb, a::TAG_DEMAND)?;
+            let kind = crate::transducer::sentence::Demand::from_bytes(&kb, &mut kp)
+                .ok_or_else(|| Self::refuse("the bytes spell no demand kind"))?;
+            if kp != kb.len() {
+                return Err(Self::refuse("the demand kind carries trailing bytes"));
+            }
+            let chart = crate::transducer::stalk::Invariant::from_key(&cb)
+                .ok_or_else(|| Self::refuse("the bytes spell no chart"))?;
+            Ok(DemandVertex { kind, chart })
+        }
+    }
+
+    /// A SECTION OF A CHART — `chart ‖ carriage`, the coordinate that
+    /// separates two sheets of one fibre (18.2, 21 step 1).
+    ///
+    /// It opens with `TAG_CHART` exactly as [`Chart`] does, which is why
+    /// the tag separated neither and eight readers asked a chart index
+    /// with one of these and got nothing. It is a strictly finer
+    /// coordinate, and a [`Stratum`] of it.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct Section {
+        pub chart: crate::transducer::stalk::Invariant,
+        pub carriage: crate::transducer::element::Versor,
+    }
+
+    impl Coordinate for Section {
+        const NAME: &'static str = "section";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Chart;
+
+        fn encode(&self) -> CompactBytes {
+            let mut k = Vec::new();
+            a::put_bytes(&mut k, self.chart.key().as_bytes());
+            self.carriage.put_canonical(&mut k);
+            CompactBytes::written(k)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            let mut pos = 0usize;
+            let cb = a::take_bytes(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the chart is not length-delimited"))?;
+            let chart = crate::transducer::stalk::Invariant::from_key(&cb)
+                .ok_or_else(|| Self::refuse("the bytes spell no chart"))?;
+            let carriage = crate::transducer::cga::Mv::from_bytes(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the carriage does not spell an exact versor"))?;
+            if pos != bytes.len() {
+                return Err(Self::refuse("the key carries bytes past its last coordinate"));
+            }
+            Ok(Section { chart, carriage })
+        }
+    }
+
+    /// A TRANSPORT CLASS — shell kind and the conjugacy of the word
+    /// (21 step 1, 15.4). Never the hue map and never the body's moduli,
+    /// which are section coordinates.
+    ///
+    /// It opens with the shell kind, not an A21 tag, so `SYSTEM` is `Any`
+    /// and the decode is the whole check — which is the honest spelling of
+    /// a system whose keys are not tag-led.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct Transport {
+        pub kind: crate::transducer::peel::ShellKind,
+        pub class: Holonomy,
+    }
+
+    impl Coordinate for Transport {
+        const NAME: &'static str = "transport-class";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
+
+        fn encode(&self) -> CompactBytes {
+            let mut buf = vec![self.kind.as_u8()];
+            a::put_bytes(&mut buf, self.class.encode().as_bytes());
+            CompactBytes::written(buf)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            let kind = bytes
+                .first()
+                .copied()
+                .and_then(crate::transducer::peel::ShellKind::from_u8)
+                .ok_or_else(|| Self::refuse("the leading byte names no shell kind"))?;
+            let mut pos = 1usize;
+            let cb = a::take_bytes(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the word class is not length-delimited"))?;
+            if pos != bytes.len() {
+                return Err(Self::refuse("the key carries bytes past its last coordinate"));
+            }
+            Ok(Transport { kind, class: Holonomy::decode(&cb)? })
+        }
+    }
+
+    /// A MEMBER'S SECTION — `transport class ‖ chart ‖ address ‖ carriage`
+    /// (18.2, 21 step 1, 52.5 item 3).
+    ///
+    /// `Form.sections` is read at BOTH depths — by transport class and by
+    /// member section — and that is one system at two strata rather than
+    /// two carriers sharing a name, because this opens with exactly the
+    /// transport class's bytes. [`Transport`] declares that relation.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct MemberSection {
+        pub class: Transport,
+        pub chart: crate::transducer::stalk::Invariant,
+        pub address: crate::transducer::address::Address,
+        pub carriage: crate::transducer::element::Versor,
+    }
+
+    impl Coordinate for MemberSection {
+        const NAME: &'static str = "member-section";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
+
+        fn encode(&self) -> CompactBytes {
+            let mut k = self.class.encode().as_bytes().to_vec();
+            a::put_bytes(&mut k, self.chart.key().as_bytes());
+            a::put_bytes(&mut k, self.address.as_bytes());
+            let mut carriage = Vec::new();
+            self.carriage.put_canonical(&mut carriage);
+            a::put_bytes(&mut k, &carriage);
+            CompactBytes::written(k)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            // The class is itself length-framed at its tail, so the member
+            // coordinates are parsed after it rather than at a remembered
+            // offset (A21 §2).
+            let kind = bytes
+                .first()
+                .copied()
+                .and_then(crate::transducer::peel::ShellKind::from_u8)
+                .ok_or_else(|| Self::refuse("the leading byte names no shell kind"))?;
+            let mut pos = 1usize;
+            let cb = a::take_bytes(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the word class is not length-delimited"))?;
+            let class = Transport { kind, class: Holonomy::decode(&cb)? };
+            let chb = a::take_bytes(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the chart is not length-delimited"))?;
+            let chart = crate::transducer::stalk::Invariant::from_key(&chb)
+                .ok_or_else(|| Self::refuse("the bytes spell no chart"))?;
+            let ab = a::take_bytes(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the address is not length-delimited"))?;
+            let vb = a::take_bytes(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the carriage is not length-delimited"))?;
+            let mut vp = 0usize;
+            let carriage = crate::transducer::cga::Mv::from_bytes(&vb, &mut vp)
+                .ok_or_else(|| Self::refuse("the carriage does not spell an exact versor"))?;
+            if pos != bytes.len() {
+                return Err(Self::refuse("the key carries bytes past its last coordinate"));
+            }
+            Ok(MemberSection {
+                class,
+                chart,
+                address: crate::transducer::address::Address::from_bytes(&ab),
+                carriage,
+            })
+        }
+    }
+
+    /// THE CLASS DEPTH of the section system: a transport class is the
+    /// coarse stratum of every member section written over it, and this is
+    /// the declaration that makes the two-depth read of `Form.sections` a
+    /// stratum read rather than a coincidence.
+    impl Stratum<MemberSection> for Transport {
+        fn opening(&self) -> CompactBytes {
+            self.encode()
+        }
+    }
+
+    /// WHAT `Form.sections` IS KEYED BY — one system at two depths.
+    ///
+    /// 54.7 — the carrier is written at the CLASS depth by `extract`'s
+    /// class union and at the MEMBER depth by its member loop, and read at
+    /// both by the court. Its doc comment named only the first. The type
+    /// says both now, and the two are unambiguous because a
+    /// [`MemberSection`] must consume its bytes to the last coordinate:
+    /// a class-length key fails that and decodes as [`Transport`].
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub enum SectionAt {
+        /// Every member of this class is claimed on these frames.
+        Class(Transport),
+        /// This member, on this chart, by this carriage.
+        Member(MemberSection),
+    }
+
+    impl Coordinate for SectionAt {
+        const NAME: &'static str = "section";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
+
+        fn encode(&self) -> CompactBytes {
+            match self {
+                SectionAt::Class(t) => t.encode(),
+                SectionAt::Member(m) => m.encode(),
+            }
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            match MemberSection::decode(bytes) {
+                Ok(m) => Ok(SectionAt::Member(m)),
+                Err(_) => Transport::decode(bytes)
+                    .map(SectionAt::Class)
+                    .map_err(|_| Self::refuse("the bytes spell neither depth of a section")),
+            }
+        }
+    }
+
+    /// THE CLASS DEPTH IS A STRATUM OF THE CARRIER, so "every section of
+    /// this class" is a fibre read and not a walk.
+    impl Stratum<SectionAt> for Transport {
+        fn opening(&self) -> CompactBytes {
+            self.encode()
+        }
+    }
+
+    /// A WORD VERTEX'S ADDRESS — the coordinate `by_address` and
+    /// `by_rebased` answer, as `word_vertex_address` writes it under
+    /// `TAG_FORM`.
+    ///
+    /// NOT YET STRUCTURAL, AND SAYING SO IS THE POINT. The value is
+    /// `(Derivation, sections, Contact)` and the tree has `put_word_vertex`
+    /// with no `take_word_vertex` beside it, so `decode` here validates the
+    /// tag and the form-vertex discriminant and carries the bytes. That is
+    /// weaker than `x ≡ decode(encode(x))` promises and it is counted as
+    /// outstanding, not quietly accepted: writing the vertex parser is what
+    /// closes it.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct Member(pub crate::transducer::address::Address);
+
+    impl Coordinate for Member {
+        const NAME: &'static str = "member";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Form;
+
+        fn encode(&self) -> CompactBytes {
+            CompactBytes::shared(self.0.shared())
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            tagged::<Self>(bytes, a::TAG_FORM)?;
+            match bytes.get(1) {
+                Some(1) => Ok(Member(crate::transducer::address::Address::from_bytes(bytes))),
+                _ => Err(Self::refuse("the record is not a word vertex")),
+            }
+        }
+    }
+
+    /// A SITE OF THE COVER — where a citation stands, as distinct from what
+    /// it cites (54.7 B5a): the Glued vertex's own boundary record as
+    /// `put_vertex` writes it, in the form's local encoding.
+    ///
+    /// NOT YET STRUCTURAL, for the same reason [`Member`] is not: the
+    /// vertex parser does not exist. `decode` checks the record's
+    /// discriminant and carries the bytes, and that gap is counted.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct Site(pub Vec<u8>);
+
+    impl Coordinate for Site {
+        const NAME: &'static str = "cover-site";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
+
+        fn encode(&self) -> CompactBytes {
+            CompactBytes::written(self.0.clone())
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            // `put_vertex` writes the kind discriminant first, and a
+            // citation is kind 2.
+            match bytes.first() {
+                Some(2) => Ok(Site(bytes.to_vec())),
+                _ => Err(Self::refuse("the record is not a citation's boundary")),
+            }
+        }
+    }
+
+    /// A PLACEMENT — `vertex transport ‖ chart` (18.2). Two carriages on
+    /// one transport class are two placements because the chart separates
+    /// them; keyed by the class alone they were one entry conflicting with
+    /// itself.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct Placement {
+        pub vertex_transport: crate::transducer::address::Address,
+        pub chart: crate::transducer::stalk::Invariant,
+    }
+
+    impl Coordinate for Placement {
+        const NAME: &'static str = "placement";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Word;
+
+        fn encode(&self) -> CompactBytes {
+            let mut k = self.vertex_transport.as_bytes().to_vec();
+            a::put_bytes(&mut k, self.chart.key().as_bytes());
+            CompactBytes::written(k)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            tagged::<Self>(bytes, a::TAG_WORD)?;
+            // The chart is the last length-delimited run; the transport
+            // prefix is what precedes it, parsed by finding that frame.
+            let n = bytes.len();
+            let mut best: Option<(usize, crate::transducer::stalk::Invariant)> = None;
+            // index: the one framed tail this layout writes — scanned from
+            // the only position a u32 length can start such that it spans
+            // exactly to the end (A21 self-delimiting tail).
+            for start in 0..n.saturating_sub(4) {
+                let Some(raw) = bytes.get(start..start + 4) else { continue };
+                let len = u32::from_le_bytes(raw.try_into().map_err(|_| {
+                    Self::refuse("the chart frame is not a u32 length")
+                })?) as usize;
+                if start + 4 + len != n {
+                    continue;
+                }
+                if let Some(inv) =
+                    crate::transducer::stalk::Invariant::from_key(&bytes[start + 4..n])
+                {
+                    best = Some((start, inv));
+                    break;
+                }
+            }
+            let (start, chart) =
+                best.ok_or_else(|| Self::refuse("no framed chart closes the placement"))?;
+            Ok(Placement {
+                vertex_transport: crate::transducer::address::Address::from_bytes(
+                    &bytes[..start],
+                ),
+                chart,
+            })
+        }
+    }
+
+    /// THE CHART A SECTION STANDS OVER is the section's own opening
+    /// segment, so every section over one chart is a fibre read at it —
+    /// descending on the LENGTH-DELIMITED chart key, which is what
+    /// `Section::encode` writes first and what the bare chart key is not.
+    impl Stratum<Section> for Chart {
+        fn opening(&self) -> CompactBytes {
+            let mut k = Vec::new();
+            a::put_bytes(&mut k, self.0.key().as_bytes());
+            CompactBytes::written(k)
+        }
     }
 }

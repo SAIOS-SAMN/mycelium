@@ -8,7 +8,7 @@
 
 use super::form::*;
 use super::transport::*;
-use crate::network::nerve::Keyed;
+use crate::network::nerve::{Coordinate, Keyed};
 use crate::transducer::alphabet::{Rotor, Word};
 use crate::transducer::element::Versor;
 use crate::transducer::sentence::Link;
@@ -249,7 +249,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
             members.insert(take_frame_key(k, &mut p)?, ());
         }
         f.sections
-            .put(&crate::network::nerve::Key::declared(&class), members);
+            .put(&crate::network::nerve::coord::SectionAt::decode(&class).ok()?, members);
     }
     let na = take_u32(k, &mut p)? as usize;
     for _ in 0..na {
@@ -257,7 +257,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
         // The tape's own bytes, declared as the holonomy coordinate `axes`
         // answers — the decoder is where wire bytes become a coordinate.
         f.axes
-            .put(&crate::network::nerve::Key::declared(&class), 0);
+            .put(&crate::network::nerve::coord::Holonomy::decode(&class).ok()?, 0);
     }
     // 54.2: the remainder is identity and is in the key.
     // `place_chain` is the tape decoder's own reader of a placed chain —

@@ -15,7 +15,7 @@ use super::codec::{
 };
 use super::form::*;
 use super::transport::*;
-use crate::network::nerve::Keyed;
+use crate::network::nerve::{Coordinate, Keyed};
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::element::{self, Element};
 
@@ -475,7 +475,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     }
     let ratio = ((hn as usize, hd as usize), (wn as usize, wd as usize));
     let ns = take_u16(b, pos)? as usize;
-    let mut sections: Keyed<Keyed<()>, crate::network::nerve::coord::MemberSection> =
+    let mut sections: Keyed<Keyed<()>, crate::network::nerve::coord::SectionAt> =
         Keyed::new();
     for _ in 0..ns {
         let k = crate::transducer::address::take_addr(b, pos)?;
@@ -484,7 +484,11 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         for _ in 0..nv {
             ix.push(take_u16(b, pos)?);
         }
-        sections.put(&crate::network::nerve::Key::declared(&k), section_of_frames(ix));
+        // THE TAPE IS WHERE WIRE BYTES BECOME A COORDINATE, and a tape that
+        // does not spell one is refused rather than filed under bytes
+        // nothing can read back (rule 11).
+        let at = crate::network::nerve::coord::SectionAt::decode(&k).ok()?;
+        sections.put(&at, section_of_frames(ix));
     }
     let nt = take_u16(b, pos)? as usize;
     let mut torsion: Keyed<FiledLoop, crate::network::nerve::coord::Holonomy> = Keyed::new();
@@ -505,7 +509,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         // decoder declares the system it read them under; a reader further
         // in gets the coordinate and never the bytes.
         torsion.put(
-            &crate::network::nerve::Key::declared(&k),
+            &crate::network::nerve::coord::Holonomy::decode(&k).ok()?,
             FiledLoop { sigma, periods, chord },
         );
     }
@@ -514,7 +518,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     for _ in 0..na {
         let k = crate::transducer::address::take_addr(b, pos)?;
         let chord = take_u16(b, pos)?;
-        axes.put(&crate::network::nerve::Key::declared(&k), chord);
+        axes.put(&crate::network::nerve::coord::Holonomy::decode(&k).ok()?, chord);
     }
     // `glued` is `reindex`'s to build (law 12), and `reindex` runs below.
     let mut form = Form {
@@ -953,7 +957,10 @@ pub fn carries_torsion(e: &Element) -> bool {
 
 /// The rotor a filed torsion cycle names: the chord face stored on the
 /// class key. None when that face is missing — never an identity rotor.
-pub fn torsion_loop_rotor(f: &Form, class: &[u8]) -> Option<Rotor> {
+pub fn torsion_loop_rotor(
+    f: &Form,
+    class: &crate::network::nerve::coord::Holonomy,
+) -> Option<Rotor> {
     // THE CHORD IS FOUND BY THE CLASS THE COMPLEX DERIVES (54.5, as ruled
     // 2026-09-20). This read `f.torsion.get(class)?.chord` — the FILING's
     // chord — and a form recovered from its address files nothing, so it
@@ -964,7 +971,7 @@ pub fn torsion_loop_rotor(f: &Form, class: &[u8]) -> Option<Rotor> {
     // class is found by asking the geometry which one does. The filing only
     // ever memoized that answer, and law 12 keeps a theorem out of storage.
     for lp in &f.loops {
-        if f.loop_classes(lp).iter().any(|row| row.class.as_bytes() == class) {
+        if f.loop_classes(lp).iter().any(|row| &row.class == class) {
             return f.faces.get(lp.chord as usize).map(|face| face.word.rotor());
         }
     }

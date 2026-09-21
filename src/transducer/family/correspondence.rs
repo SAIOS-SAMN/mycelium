@@ -15,21 +15,26 @@ use super::*;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct TransportClass {
     kind: crate::transducer::peel::ShellKind,
-    word_class: Vec<u8>,
+    /// 54.7 — THE CONJUGACY AS THE COORDINATE IT IS, not its bytes. It was
+    /// a `Vec<u8>` holding a class key, which made every reader of it
+    /// trust a comment; it is the holonomy class itself now, so a
+    /// correspondence match reads `(I₁, I₂, kind)` and can say which.
+    class: crate::network::nerve::coord::Holonomy,
 }
 
 impl TransportClass {
-    /// 54.7 R5 — THE ONE WRITER OF A TRANSPORT COORDINATE.
+    /// 54.7 R5 — THE TRANSPORT COORDINATE THIS CLASS IS.
     ///
-    /// The return type names the system these bytes belong to, so a carrier
-    /// that answers the transport class takes this and nothing else. The
-    /// bytes open with the shell kind rather than an A21 tag, so there is
-    /// no tag to check and the type is the whole gate — which is the honest
-    /// statement of what this key is.
-    pub(crate) fn key(&self) -> crate::network::nerve::Key<crate::network::nerve::coord::Transport> {
-        let mut buf = vec![self.kind.as_u8()];
-        crate::transducer::address::put_bytes(&mut buf, &self.word_class);
-        crate::network::nerve::Key::declared(&buf)
+    /// Not bytes: the coordinate value, which carries its own encoding. A
+    /// carrier that answers the transport class takes this and nothing
+    /// else, and a reader walking one gets the shell kind and the
+    /// conjugacy back rather than a slice it has to believe a comment
+    /// about (rule 2).
+    pub(crate) fn key(&self) -> crate::network::nerve::coord::Transport {
+        crate::network::nerve::coord::Transport {
+            kind: self.kind,
+            class: self.class.clone(),
+        }
     }
 }
 
@@ -40,7 +45,7 @@ pub(crate) fn transport_class(v: &Vertex) -> Option<TransportClass> {
         // (50.2 step 2), and a class read off a residue would split them.
         Vertex::Word { derivation, .. } => Some(TransportClass {
             kind: crate::transducer::peel::ShellKind::Whole,
-            word_class: derivation.rotor().class_key()?.into_vec(),
+            class: derivation.rotor().holonomy_key()?,
         }),
         _ => None,
     }
@@ -65,20 +70,18 @@ pub(crate) fn pair_idx_key(i: u16) -> Vec<u8> {
 pub(crate) fn member_section_key(
     v: &Vertex,
     chart: &Invariant,
-) -> Option<crate::network::nerve::Key<crate::network::nerve::coord::MemberSection>> {
+) -> Option<crate::network::nerve::coord::MemberSection> {
     let Vertex::Word { address, .. } = v else { return None };
     let member = v.acting_on(chart)?;
-    // THE TRANSPORT CLASS OPENS A FINER COORDINATE. What is written here
-    // is a member SECTION — class, chart, address, carriage — and it is a
-    // key of that system and not of the transport one, so the coordinate
-    // is left behind explicitly at the point the extension begins.
-    let mut k = transport_class(v)?.key().into_vec();
-    crate::transducer::address::put_bytes(&mut k, chart.key().as_bytes());
-    crate::transducer::address::put_bytes(&mut k, address.as_bytes());
-    let mut carriage = Vec::new();
-    member.carriage.put_canonical(&mut carriage);
-    crate::transducer::address::put_bytes(&mut k, &carriage);
-    Some(crate::network::nerve::Key::declared(&k))
+    // THE COORDINATE, WHOLE. The transport class is the coarse stratum it
+    // is built over, and that relation is `Stratum<MemberSection>` rather
+    // than a byte concatenation a reader has to reverse by hand.
+    Some(crate::network::nerve::coord::MemberSection {
+        class: transport_class(v)?.key(),
+        chart: chart.clone(),
+        address: address.clone(),
+        carriage: (*member.carriage).clone(),
+    })
 }
 
 /// THE CLASS-LEVEL SECTION: a transport class read as the COARSE STRATUM of
@@ -93,8 +96,8 @@ pub(crate) fn member_section_key(
 /// a name. This is where a class key becomes that coordinate, said once.
 pub(crate) fn class_section_key(
     tc: &TransportClass,
-) -> crate::network::nerve::Key<crate::network::nerve::coord::MemberSection> {
-    crate::network::nerve::Key::declared(tc.key().as_bytes())
+) -> crate::network::nerve::coord::Transport {
+    tc.key()
 }
 
 /// THE KEY OF AN ORDERED PAIR OF TRANSPORT CLASSES: `a`'s key then `b`'s,
@@ -102,8 +105,9 @@ pub(crate) fn class_section_key(
 /// one stratum and the reverse direction is another.
 pub(crate) fn class_pair_key(a: &TransportClass, b: &TransportClass) -> Vec<u8> {
     let mut k = Vec::new();
-    crate::transducer::address::put_bytes(&mut k, &a.key());
-    crate::transducer::address::put_bytes(&mut k, &b.key());
+    use crate::network::nerve::Coordinate;
+    crate::transducer::address::put_bytes(&mut k, a.key().encode().as_bytes());
+    crate::transducer::address::put_bytes(&mut k, b.key().encode().as_bytes());
     k
 }
 

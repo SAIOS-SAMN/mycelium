@@ -242,11 +242,8 @@ impl Acting {
     /// of these and got nothing back. `coord::Section` and `coord::Chart`
     /// are different types over the same tag, which is the only place that
     /// distinction can live.
-    pub fn key(&self) -> Key<coord::Section> {
-        let mut k = Vec::new();
-        crate::transducer::address::put_bytes(&mut k, self.chart.key().as_bytes());
-        self.carriage.put_canonical(&mut k);
-        Key::declared(&k)
+    pub fn key(&self) -> coord::Section {
+        coord::Section { chart: self.chart.clone(), carriage: (*self.carriage).clone() }
     }
 
     /// The prefix every section over `chart` shares — the coarser stratum
@@ -605,7 +602,7 @@ pub struct Form {
     /// The inner key is big-endian, so the trie's own order is the frame's
     /// order and a reader that enumerates a section — the tape, the form
     /// key — gets the frames in succession without sorting them (law 2).
-    pub sections: Keyed<Keyed<()>, coord::MemberSection>,
+    pub sections: Keyed<Keyed<()>, coord::SectionAt>,
     /// The certified pivots this form's crystallization rests on (A20).
     /// Evidence, replayed by the court; never part of the address.
     pub certificates: Keyed<PivotCertificate>,
@@ -881,7 +878,7 @@ impl Form {
             match v {
                 Vertex::Word { address, derivation, acts, .. } => {
                     let rotor = derivation.rotor();
-                    let Ok(member_key) = Key::<coord::Member>::from_address(address) else {
+                    let Ok(member_key) = coord::Member::decode(address.as_bytes()) else {
                         continue;
                     };
                     by_address.put(&member_key, i as u16);
@@ -895,7 +892,6 @@ impl Form {
                         // class it is. `TransportClass::key` is the one
                         // writer of these bytes, so this is the one place
                         // they become a coordinate of that system.
-                        let tk = Key::<coord::Transport>::declared(&tk);
                         match by_transport.at_mut(&tk) {
                             Some(on) => on.push(i as u16),
                             None => {
@@ -919,11 +915,8 @@ impl Form {
                         // written as a chart coordinate here or this vertex
                         // stands on no chart at all; the member's key is a
                         // different type and cannot reach this carrier.
-                        let Ok(chart_key) = Key::<coord::Chart>::from_address(&a.chart.key())
-                        else {
-                            continue;
-                        };
-                        let ck = chart_key.as_bytes().to_vec();
+                        let chart_key = coord::Chart(a.chart.clone());
+                        let ck = chart_key.encode().as_bytes().to_vec();
                         match by_class.at_mut(&chart_key) {
                             Some(on) => {
                                 if !on.contains(&(i as u16)) {
@@ -960,7 +953,7 @@ impl Form {
                 }
                 Vertex::Rebased { of, .. } => {
                     if let Some(Vertex::Word { address, .. }) = self.vertices.get(*of as usize) {
-                        if let Ok(k) = Key::<coord::Member>::from_address(address) {
+                        if let Ok(k) = coord::Member::decode(address.as_bytes()) {
                             by_rebased.put(&k, i as u16);
                         }
                     }
@@ -978,12 +971,11 @@ impl Form {
                 // now holds. It was keyed by the cited address, and that
                 // address is the cover's fact on `Form::cover`.
                 v @ Vertex::Glued { .. } => {
-                    glued.put(
-                        &Key::<coord::Site>::declared(
-                            crate::transducer::sentence::vertex_bytes(v),
-                        ),
-                        i as u16,
-                    );
+                    if let Ok(site) =
+                        coord::Site::decode(&crate::transducer::sentence::vertex_bytes(v))
+                    {
+                        glued.put(&site, i as u16);
+                    }
                 }
                 _ => {}
             }
@@ -1122,7 +1114,7 @@ impl Form {
         pairs: &[(stalk::Invariant, stalk::Invariant)],
         word: &Word,
     ) -> Option<FormFace> {
-        crate::transducer::family::trace::trace("face_at", crate::transducer::family::trace::Wrote::Key(&vertex_ix_key(j)), None);
+        crate::transducer::family::trace::trace("face_at", crate::transducer::family::trace::Wrote::Ordinal(j), None);
         let mut at = Keyed::new();
         for (ci, cj) in pairs {
             if let Some(p) = self.face_place_by(i, ci, j, cj, word, None) {
@@ -1166,7 +1158,7 @@ impl Form {
     ) -> Option<FormFace> {
         match self.face_pairs(i, j) {
             Some(pairs) => {
-                crate::transducer::family::trace::trace("face_at", crate::transducer::family::trace::Wrote::Key(&vertex_ix_key(j)), None);
+                crate::transducer::family::trace::trace("face_at", crate::transducer::family::trace::Wrote::Ordinal(j), None);
                 let mut at = Keyed::new();
                 for (ci, cj) in &pairs {
                     if let Some(p) = self.face_place_by(i, ci, j, cj, &word, edge.clone()) {

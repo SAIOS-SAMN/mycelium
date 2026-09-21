@@ -99,16 +99,21 @@ impl Vertex {
             // contraction of the cycle to its stationary point.
             Vertex::Rebased { .. } => {
                 let mut at = self;
-                let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+                let mut seen: crate::network::nerve::Keyed<(), coord::VertexIx> =
+                    crate::network::nerve::Keyed::new();
                 loop {
                     let Vertex::Rebased { by, of, .. } = at else {
                         return at.word_in(form);
                     };
-                    crate::transducer::family::trace::trace("word_in/rebased by", crate::transducer::family::trace::Wrote::Key(&crate::transducer::sentence::vertex_ix_key(*by)), None);
-                    if seen.contains(&vertex_ix_key(*of)) {
+                    crate::transducer::family::trace::trace(
+                        "word_in/rebased by",
+                        crate::transducer::family::trace::Wrote::Ordinal(*by),
+                        None,
+                    );
+                    if seen.holds(&vertex_ix_key(*of)) {
                         return Some(Word::identity());
                     }
-                    seen.insert(vertex_ix_key(*of), ());
+                    seen.put(&vertex_ix_key(*of), ());
                     at = form.vertices.get(*by as usize)?;
                 }
             }

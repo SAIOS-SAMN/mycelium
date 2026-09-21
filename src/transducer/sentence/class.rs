@@ -29,7 +29,11 @@ pub struct ClassVector {
     /// read; identity is the zero vector. The signs are the RAY's, not a
     /// lift's — see [`crate::transducer::alphabet::Rotor::class_invariants`],
     /// which is why there is one sign byte here and not two.
-    offplane: (num_rational::BigRational, num_rational::BigRational, u8),
+    offplane: (
+        num_rational::BigRational,
+        num_rational::BigRational,
+        crate::network::nerve::coord::BivectorKind,
+    ),
     /// THE BURGERS VECTOR: the slip per circuit — the part of the
     /// carriage's translation that no choice of origin absorbs, lying in
     /// `ker(I − R)`, the plane the rotor leaves POINTWISE FIXED. Read where
@@ -278,7 +282,7 @@ impl ClassVector {
     pub fn put_canonical(&self, buf: &mut Vec<u8>) {
         alphabet::put_q(buf, &self.offplane.0);
         alphabet::put_q(buf, &self.offplane.1);
-        buf.push(self.offplane.2);
+        buf.push(self.offplane.2.as_u8());
         match self.plane {
             None => buf.push(0),
             Some(pl) => {
@@ -339,7 +343,10 @@ impl ClassVector {
         let mut p = 1usize;
         let x = alphabet::take_q(k, &mut p)?;
         let y = alphabet::take_q(k, &mut p)?;
-        let sp = *k.get(p)?;
+        // 54.7 — THE BYTE NAMES A BIVECTOR READING OR THE VECTOR DOES NOT
+        // DECODE. It was carried as a raw `u8`, so a tape could spell a
+        // type that is not one of the four and be believed (rule 11).
+        let sp = crate::network::nerve::coord::BivectorKind::from_u8(*k.get(p)?)?;
         p += 1;
         let plane = match *k.get(p)? {
             0 => {
@@ -604,8 +611,19 @@ impl ClassVector {
         plane_rose || carriage_rose || dilation_rose || hue_rose || offplane_rose
     }
 
-    fn offplane_zero() -> (num_rational::BigRational, num_rational::BigRational, u8) {
-        (Self::zero_q(), Self::zero_q(), 0)
+    /// THE IDENTITY'S OFF-PLANE READING IS TRIVIAL, NOT PARABOLIC (54.7).
+    /// `B = 0` turns nothing; a parabolic has `B ≠ 0` and `B² = 0` and
+    /// displaces along its own null direction. They were one byte.
+    fn offplane_zero() -> (
+        num_rational::BigRational,
+        num_rational::BigRational,
+        crate::network::nerve::coord::BivectorKind,
+    ) {
+        (
+            Self::zero_q(),
+            Self::zero_q(),
+            crate::network::nerve::coord::BivectorKind::Trivial,
+        )
     }
 
     fn clear(&mut self, axis: Axis) {
@@ -830,15 +848,15 @@ pub enum LoopRow {
     Closed,
     /// The loop's finite-order class. CARRIED, because the audit counts
     /// torsion by class and not by loop — see [`rank_of_rows`].
-    Torsion(crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>),
+    Torsion(crate::network::nerve::coord::Holonomy),
     Free([i64; FREE_ROW]),
-    OffPlane(crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>),
+    OffPlane(crate::network::nerve::coord::Holonomy),
     /// The loop's class is a chart axis the form opened (I6, 15.5): its
     /// holonomy is the transition on that axis, so it counts on `axes`
     /// and on no other coordinate. The class is carried for the same
     /// reason `Torsion` carries it: the axis carrier is keyed by class, so
     /// one opening opens every loop of that class and they are one axis.
-    Opened(crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>),
+    Opened(crate::network::nerve::coord::Holonomy),
 }
 
 /// `None` when the holonomy is not a versor: it has no class (15.3), so
@@ -887,22 +905,24 @@ pub fn loop_row(h: &Word) -> Option<LoopRow> {
 /// the rows already say which, because `loop_row_on` answers `Opened` for a
 /// loop whose class the carrier holds and never `Torsion`.
 pub fn rank_of_rows(rows: &[LoopRow]) -> Option<Rank> {
-    let mut torsion: Keyed<()> = Keyed::new();
-    let mut axes: Keyed<()> = Keyed::new();
-    let mut offplane: Keyed<()> = Keyed::new();
+    // A18 COUNTS DISTINCT CLASSES, so each lane is a carrier keyed by the
+    // holonomy class itself — the coordinate, not bytes standing for it.
+    let mut torsion: Keyed<(), crate::network::nerve::coord::Holonomy> = Keyed::new();
+    let mut axes: Keyed<(), crate::network::nerve::coord::Holonomy> = Keyed::new();
+    let mut offplane: Keyed<(), crate::network::nerve::coord::Holonomy> = Keyed::new();
     let mut free: Vec<[i64; FREE_ROW]> = Vec::new();
     for r in rows {
         match r {
             LoopRow::Closed => {}
             LoopRow::Torsion(k) => {
-                torsion.insert(k, ());
+                torsion.put(k, ());
             }
             LoopRow::Free(row) => free.push(*row),
             LoopRow::OffPlane(k) => {
-                offplane.insert(k, ());
+                offplane.put(k, ());
             }
             LoopRow::Opened(k) => {
-                axes.insert(k, ());
+                axes.put(k, ());
             }
         }
     }

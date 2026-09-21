@@ -15,6 +15,7 @@
 
 use super::form::*;
 use super::chart::{chart_of_form, vertex_bytes};
+use crate::network::nerve::Coordinate;
 use crate::transducer::alphabet::Word;
 use crate::transducer::element;
 
@@ -134,9 +135,7 @@ impl Form {
         // THE SITE IS A COORDINATE OF ITS OWN SYSTEM (54.7 B5a, R5): the
         // host's boundary record, which is what `glued` answers — never the
         // address of what it cites, which left the vertex with the target.
-        let site = crate::network::nerve::Key::<crate::network::nerve::coord::Site>::declared(
-            vertex_bytes(&v),
-        );
+        let site = crate::network::nerve::coord::Site::decode(&vertex_bytes(&v)).ok()?;
         // ONE EDGE PER INCIDENCE (54.7 B5a). `U_i` overlaps `U_j` under φ
         // is one fact however many times it is stated, and `of_form` files
         // the nerve under site‖target, so a duplicate would be collapsed

@@ -102,6 +102,10 @@ pub enum Wrote<'a> {
     /// the depth of the stratum the read landed on (law 2) — and not the
     /// key itself, which would put content in a log line.
     Key(&'a [u8]),
+    /// IT WROTE AT AN ORDINAL, not a coordinate (rule 15). A vertex's
+    /// position in its own form is an index; the line carries the index
+    /// because there is no stratum depth to report for one.
+    Ordinal(u16),
     /// It returned a typed demand and wrote no coordinate. That is a
     /// complete answer under rule 17 and the line says so.
     Demand,
@@ -149,6 +153,7 @@ fn line(
     let t = ORIGIN.get_or_init(Instant::now).elapsed();
     let wrote = match wrote {
         Wrote::Key(k) => format!("key {}", k.len()),
+        Wrote::Ordinal(i) => format!("ordinal {i}"),
         Wrote::Demand => "demand".to_string(),
         Wrote::Nothing => "-".to_string(),
     };

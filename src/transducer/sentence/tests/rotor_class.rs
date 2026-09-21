@@ -184,7 +184,7 @@ fn filed_torsion_chord_replays_or_refuses() {
         })
         .expect("the complex derives its own class");
     assert_eq!(
-        torsion_loop_rotor(&keyed, class.as_bytes()).and_then(|r| r.holonomy_key()),
+        torsion_loop_rotor(&keyed, &class).and_then(|r| r.holonomy_key()),
         Some(class),
         "the chord face is the keyed representative"
     );

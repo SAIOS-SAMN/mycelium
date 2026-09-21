@@ -306,74 +306,83 @@ impl<V, C: Coordinate> Keyed<V, C> {
         self.root.as_deref_mut()?.get_mut(key)
     }
 
-    /// BIND A KEY OF THIS CARRIER'S OWN COORDINATE SYSTEM.
+    /// BIND A COORDINATE OF THIS CARRIER'S OWN SYSTEM.
     ///
-    /// The gate. A [`Key<C>`] can only be written by [`Key::write`], which
-    /// checks the tag and — where the system declares a schema — every
-    /// coordinate to the last. A key of another system does not typecheck
-    /// here, and that is the whole of §4.4's ruling made operational: the
-    /// coordinate an index answers is in the type, so `by_class` cannot be
-    /// handed a member key and answer nothing.
-    ///
-    /// The key's own allocation is filed (Z4c): a form's address is
-    /// megabytes and every carrier naming it points at the one copy.
-    pub fn put(&mut self, key: &Key<C>, value: V) -> Option<V> {
-        self.insert_shared_raw(key.shared(), value)
+    /// The gate, and it takes the coordinate VALUE, never bytes. There is
+    /// no way to reach this with a key of another system: `C` encodes
+    /// itself, so `by_class` cannot be handed a member coordinate at all,
+    /// and the eight sites of R1 are not wrong answers but programs that
+    /// do not exist.
+    pub fn put(&mut self, key: &C, value: V) -> Option<V> {
+        self.insert_shared_raw(key.encode().arc(), value)
     }
 
     /// The exact read at a coordinate of this carrier's system.
-    pub fn at(&self, key: &Key<C>) -> Option<&V> {
-        self.get_raw(key.as_bytes())
+    pub fn at(&self, key: &C) -> Option<&V> {
+        self.get_raw(key.encode().as_bytes())
     }
 
-    pub fn at_mut(&mut self, key: &Key<C>) -> Option<&mut V> {
-        self.get_mut_raw(key.as_bytes())
+    pub fn at_mut(&mut self, key: &C) -> Option<&mut V> {
+        let k = key.encode();
+        self.get_mut_raw(k.as_bytes())
     }
 
-    pub fn holds(&self, key: &Key<C>) -> bool {
+    pub fn holds(&self, key: &C) -> bool {
         self.at(key).is_some()
     }
 
     /// Unbind a coordinate of this carrier's system.
-    pub fn drop_at(&mut self, key: &Key<C>) -> Option<V> {
-        self.remove_raw(key.as_bytes())
+    pub fn drop_at(&mut self, key: &C) -> Option<V> {
+        let k = key.encode();
+        self.remove_raw(k.as_bytes())
     }
 
-    /// THE FIBER OVER A COARSER COORDINATE OF A RELATED SYSTEM.
+    /// THE FIBER OVER A DECLARED COARSER COORDINATE.
     ///
-    /// `D` is the coarse system and `C` the fine one — a chart key read
-    /// against a carrier of sections, say. The two must share their opening
-    /// tag, which is what makes one a stratum of the other; where they do
-    /// not, the reading is a refusal and not an empty walk (rule 11).
-    pub fn fiber_over<D: Coordinate>(&self, coarse: &Key<D>) -> Result<Fiber<'_, V>, SchemaRefusal> {
-        match (C::SYSTEM.tag(), D::SYSTEM.tag()) {
-            (Some(fine), Some(coarse_tag)) if fine != coarse_tag => {
-                return Err(SchemaRefusal::IncompatibleSystem {
-                    expected: C::SYSTEM,
-                    actual_tag: coarse_tag,
-                })
-            }
-            _ => {}
-        }
-        match coarse.prefix() {
+    /// `D: Stratum<C>` is the declaration that `D`'s opening bytes are the
+    /// opening of a `C` key — a chart under a carrier of sections. Without
+    /// the bound there is no fibre read, so a byte-prefix coincidence
+    /// cannot be mistaken for a stratum.
+    pub fn fiber_over<D: Stratum<C>>(&self, coarse: &D) -> Result<Fiber<'_, V>, CoordinateError> {
+        let opening = coarse.opening();
+        match Prefix::new(opening.as_bytes()) {
             Some(p) => Ok(self.fiber(p)),
-            None => Err(SchemaRefusal::Stratum(Refusal {
-                system: C::NAME,
-                segment: "",
-                why: "the coordinate is empty, which names no stratum",
-            })),
+            None => Err(D::refuse("the coordinate is empty, which names no stratum")),
         }
     }
 
-    /// THE CARRIER'S ENTRIES, each key carried as the coordinate it is.
+    /// THE CARRIER'S ENTRIES, each key DECODED back to the coordinate it is.
     ///
-    /// [`Keyed::scoped`] yields `Vec<u8>`, and a key that leaves a typed
-    /// carrier as loose bytes can be filed into any other — which is the
-    /// gate holding on the write side and leaking on the read side. This is
-    /// the same walk, asserting the same scoping, handing back keys that
-    /// still know what they are.
-    pub fn entries(&self) -> impl Iterator<Item = (Key<C>, &V)> {
-        self.scoped().map(|(k, v)| (Key::<C>::declared(&k), v))
+    /// This is where invertibility earns its place: a walk hands back the
+    /// chart, the section, the class — not bytes that a reader has to
+    /// believe a comment about. A key that does not decode is a refusal
+    /// carrying which coordinate failed, never an entry silently skipped.
+    /// A KEY THIS CARRIER WROTE DECODES, because `put` is the only writer
+    /// and it took the coordinate itself. A refusal here is a key that did
+    /// NOT come through `put` — bytes off a tape, a trie built by hand —
+    /// and [`Keyed::refusals`] counts them so the absence is a reading and
+    /// not a silence (rule 11).
+    pub fn entries(&self) -> impl Iterator<Item = (C, &V)> {
+        self.scoped().filter_map(|(k, v)| C::decode(&k).ok().map(|c| (c, v)))
+    }
+
+    /// The keys of this carrier that do NOT decode to its coordinate, each
+    /// naming what it failed to spell. Zero on a carrier only `put` wrote.
+    pub fn refusals(&self) -> Vec<CoordinateError> {
+        self.scoped().filter_map(|(k, _)| C::decode(&k).err()).collect()
+    }
+
+    /// Both readings at once, for a caller that must be total.
+    pub fn decoded(&self) -> (Vec<(C, &V)>, Vec<CoordinateError>) {
+        let mut ok = Vec::new();
+        let mut bad = Vec::new();
+        for (k, v) in self.scoped() {
+            match C::decode(&k) {
+                Ok(c) => ok.push((c, v)),
+                Err(e) => bad.push(e),
+            }
+        }
+        (ok, bad)
     }
 
     pub(crate) fn contains_raw(&self, key: &[u8]) -> bool {

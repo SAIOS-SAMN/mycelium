@@ -7,6 +7,7 @@
 
 use crate::cognition::*;
 use crate::transducer::sentence::ToralPeriod;
+use crate::network::nerve::Coordinate;
 use crate::transducer::address::Address;
 use crate::transducer::element::{self, Element};
 
@@ -359,7 +360,10 @@ impl Kernel {
             let held: Vec<crate::transducer::sentence::ToralPeriod> =
                 match self.complexes.get(&inv.key()) {
                     Some(cx) => {
-                        cx.congruent(&class).into_iter().map(|(r, _)| r.toral_period()).collect()
+                        cx.congruent(class.encode().as_bytes())
+                            .into_iter()
+                            .map(|(r, _)| r.toral_period())
+                            .collect()
                     }
                     None => Vec::new(),
                 };
@@ -373,15 +377,15 @@ impl Kernel {
             match (held.iter().find(|p2| **p2 != ell_periods), held.is_empty()) {
                 (Some(_), _) => {
                     eprintln!(
-                        "  court torsion refused {:02x}{:02x}… ℓ {ell}",
-                        class[0], class[1]
+                        "  court torsion refused {:?}/{} ℓ {ell}",
+                        class.kind, class.i1
                     );
                     return Some(crate::verdict::REFUSE_NOT_NATURAL);
                 }
                 (None, false) => {
                     eprintln!(
-                        "  court torsion consilient {:02x}{:02x}… ℓ {ell}",
-                        class[0], class[1]
+                        "  court torsion consilient {:?}/{} ℓ {ell}",
+                        class.kind, class.i1
                     );
                 }
                 (None, true) => {
@@ -402,8 +406,8 @@ impl Kernel {
                         }
                     }
                     eprintln!(
-                        "  court torsion filed {:02x}{:02x}… ℓ {ell}",
-                        class[0], class[1]
+                        "  court torsion filed {:?}/{} ℓ {ell}",
+                        class.kind, class.i1
                     );
                 }
             }
@@ -415,7 +419,7 @@ impl Kernel {
     /// rotor of the filed loop. Residual germs keep the element's section.
     pub(crate) fn spoken_torsion_cycles(
         spoken: &Element,
-    ) -> Vec<(Address, crate::transducer::sentence::ToralPeriod, Option<crate::transducer::alphabet::Rotor>)> {
+    ) -> Vec<(crate::network::nerve::coord::Holonomy, crate::transducer::sentence::ToralPeriod, Option<crate::transducer::alphabet::Rotor>)> {
         use crate::transducer::sentence::torsion_loop_rotor;
         // THE CYCLES COME FROM THE GEOMETRY, THE PERIODS WITH THEM (54.5,
         // as ruled 2026-09-20).
@@ -435,16 +439,12 @@ impl Kernel {
         // speaker's attestation is checked separately, against this same
         // derivation, in `receipts_price_the_terrain`.
         if let Some(f) = crate::transducer::sentence::from_element_form(spoken) {
-            let mut rows: Vec<(Address, crate::transducer::sentence::ToralPeriod, Option<crate::transducer::alphabet::Rotor>)> =
+            let mut rows: Vec<(crate::network::nerve::coord::Holonomy, crate::transducer::sentence::ToralPeriod, Option<crate::transducer::alphabet::Rotor>)> =
                 Vec::new();
             for lp in &f.loops {
                 for row in f.loop_classes(lp) {
-                    let rotor = torsion_loop_rotor(&f, row.class.as_bytes());
-                    rows.push((
-                        Address::from_bytes(row.class.as_bytes()),
-                        row.periods,
-                        rotor,
-                    ));
+                    let rotor = torsion_loop_rotor(&f, &row.class);
+                    rows.push((row.class, row.periods, rotor));
                 }
             }
             if !rows.is_empty() {
@@ -456,7 +456,7 @@ impl Kernel {
             .iter()
             .filter_map(|c| {
                 let r = spoken.letters()?.spelling.word.rotor();
-                Some((r.class_key()?, r.toral_period(), Some(r)))
+                Some((r.holonomy_key()?, r.toral_period(), Some(r)))
             })
             .collect()
     }

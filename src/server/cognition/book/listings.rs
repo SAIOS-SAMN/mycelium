@@ -556,7 +556,10 @@ impl Kernel {
         let f = self.held_word(form.as_bytes()).and_then(|e| e.form().cloned())?;
         let i = *f
             .by_address
-            .at(&crate::network::nerve::Key::from_address(vertex).ok()?)?;
+            .at(&<crate::network::nerve::coord::Member as crate::network::nerve::Coordinate>::decode(
+                vertex.as_bytes(),
+            )
+            .ok()?)?;
         let crate::transducer::sentence::Vertex::Word { derivation, .. } = f.vertices.get(i as usize)?
         else {
             return None;

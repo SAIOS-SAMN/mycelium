@@ -65,9 +65,11 @@ impl Kernel {
         // demand vertex it answers, and `demands` answers that system and no
         // other; the declaration is made here, at the boundary, rather than
         // inside the carrier where nothing could see it (54.7 R5).
-        let demand = crate::network::nerve::Key::<
-            crate::network::nerve::coord::DemandVertex,
-        >::declared(demand);
+        let Ok(demand) = <crate::network::nerve::coord::DemandVertex
+            as crate::network::nerve::Coordinate>::decode(demand)
+        else {
+            return (PROBE_NOTHING, [0; 4], [0; 4]);
+        };
         let Some(&vi) = form.demands.at(&demand) else {
             return (PROBE_NOTHING, [0; 4], [0; 4]);
         };
@@ -150,7 +152,11 @@ impl Kernel {
                 }
             }
             let by = short(cited.as_bytes());
-            self.answered.nested_insert(at, demand, (cited, transport));
+            self.answered.nested_insert(
+                at,
+                crate::network::nerve::Coordinate::encode(&demand).as_bytes(),
+                (cited, transport),
+            );
             self.write_field(at, chart, Closure::Flat, Vec::new(), &before, &[0; 4]);
             self.physics.relieve(&before);
             self.physics.syntropy(&before);

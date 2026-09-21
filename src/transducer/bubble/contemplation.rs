@@ -663,9 +663,7 @@ impl Contemplation {
             // 54.7 R5 — ASKED AT THE COORDINATE IT ANSWERS. `by_class` is a
             // chart index and this read is written as one; a key of any
             // other system does not reach it.
-            let Ok(ck) = Key::<coord::Chart>::from_address(&chart) else {
-                return Vec::new();
-            };
+            let ck = coord::Chart(inv.clone());
             let Some(on) = form.by_class.at(&ck) else {
                 continue;
             };

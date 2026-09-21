@@ -684,7 +684,13 @@ for (i, v) in rule.form.vertices.iter().enumerate() {
     let Some(tc) = transport_class(v) else {
         continue;
     };
-    if rule.sections.at(&crate::transducer::family::class_section_key(&tc)).is_none() {
+    if rule
+        .sections
+        .at(&crate::network::nerve::coord::SectionAt::Class(
+            crate::transducer::family::class_section_key(&tc),
+        ))
+        .is_none()
+    {
         continue;
     }
     let ii = i as u16;
@@ -874,7 +880,9 @@ fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
         crate::transducer::element::Versor,
     )> = Keyed::new();
     let put = |at: &mut Keyed<_>, ix: u16, ck: &[u8], k: u16| {
-        let mut bk = vertex_ix_key(ix).into_vec();
+        let mut bk = crate::network::nerve::Coordinate::encode(&vertex_ix_key(ix))
+            .as_bytes()
+            .to_vec();
         crate::transducer::address::put_bytes(&mut bk, ck);
         bk.extend_from_slice(&k.to_le_bytes());
         at.insert(bk, (body(), body(), v.clone()));

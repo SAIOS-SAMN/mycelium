@@ -21,7 +21,7 @@ use super::*;
 /// filer and is not re-stated here (law 12).
 #[derive(Debug, Clone)]
 pub(crate) struct LoopClass {
-    pub(crate) class: crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>,
+    pub(crate) class: crate::network::nerve::coord::Holonomy,
     /// THE TWO PLANE PERIODS (54.7). It was `u32`, the `lcm` of them, and
     /// an `lcm` is an envelope: it cannot tell a planar rotation `[ℓ, 1]`
     /// from an isoclinic `[ℓ, ℓ]`, it reports a dense orbit on the 2-torus
@@ -188,26 +188,15 @@ impl Form {
             // had appeared. The audit was right and the label was blind.
             //
             // `rank_of_rows` counts DISTINCT classes, so a label that cannot
-            // tell two apart cannot say what the audit did. The key's own
-            // tail is taken as well as its head: a class key leads with the
-            // conjugacy invariants, which two finite classes of one order
-            // share, and differs further along.
-            let tag = |k: &crate::network::nerve::Key<
-                crate::network::nerve::coord::Holonomy,
-            >|
-             -> String {
-                let b = k.as_bytes();
-                let n = b.len();
-                match n >= 4 {
-                    true => format!(
-                        "{:02x}{:02x}..{:02x}{:02x}",
-                        b[0],
-                        b[1],
-                        b[n - 2],
-                        b[n - 1]
-                    ),
-                    false => format!("{:02x?}", b),
-                }
+            // tell two apart cannot say what the audit did.
+            //
+            // 54.7 — IT SAYS THE CLASS, NOT A DIGEST OF ITS KEY. It took
+            // the first two and last two bytes of the key and hoped they
+            // differed, which is a hash of a coordinate standing in for the
+            // coordinate. The class IS `(I₁, I₂, kind)`; two classes differ
+            // exactly when those differ, and the line now shows them.
+            let tag = |k: &crate::network::nerve::coord::Holonomy| -> String {
+                format!("{:?}/{}/{}", k.kind, k.i1, k.i2)
             };
             let cls = |rs: &[LoopRow]| -> Vec<String> {
                 rs.iter()

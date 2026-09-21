@@ -244,7 +244,9 @@ impl Rotor {
     ///
     /// The evenness refusal stays here: an odd element is a reflection, not
     /// a rotor, and has no conjugacy class of this kind (rule 11).
-    pub fn class_invariants(&self) -> Option<(Q, Q, u8)> {
+    pub fn class_invariants(
+        &self,
+    ) -> Option<(Q, Q, crate::network::nerve::coord::BivectorKind)> {
         if !self.is_even() {
             return None;
         }
@@ -266,10 +268,10 @@ impl Rotor {
 
     /// Conjugacy invariants written sequentially as canonical coordinates (Rule 6).
     pub fn put_class_coordinates(&self, out: &mut Vec<u8>) -> Option<()> {
-        let (x, y, sp) = self.class_invariants()?;
+        let (x, y, kind) = self.class_invariants()?;
         put_q(out, &x);
         put_q(out, &y);
-        out.push(sp);
+        out.push(kind.as_u8());
         Some(())
     }
 
@@ -336,10 +338,8 @@ impl Rotor {
     /// §10 — IT IS A LAYOUT CHANGE. Every filed loop, opened axis and
     /// class vector is keyed by these bytes, so the corpus on disk is
     /// keyed by the old producer until a recut.
-    pub fn holonomy_key(
-        &self,
-    ) -> Option<crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>> {
-        crate::network::nerve::Key::from_address(&self.class_key()?).ok()
+    pub fn holonomy_key(&self) -> Option<crate::network::nerve::coord::Holonomy> {
+        self.lift().holonomy_key()
     }
 
     /// The exact inverse `Φ̃ / (Φ Φ̃)`.

@@ -25,7 +25,7 @@ use crate::transducer::sentence::{face_pair_key, vertex_ix_key, Form, FormFace};
 /// holonomy's class key, the loop as filed, and the transport classes its
 /// ends belong to.
 pub(crate) type PendingTorsion = (
-    crate::transducer::address::Address,
+    crate::network::nerve::coord::Holonomy,
     crate::transducer::sentence::FiledLoop,
     Vec<TransportClass>,
     crate::transducer::alphabet::Rotor,
@@ -92,7 +92,7 @@ pub(crate) fn classify_cover(
     // ever sees it.
     let mut piece_form = Form::default();
     let mut cover_vertex: Keyed<u16> = Keyed::new();
-    let mut owner: Keyed<Keyed<()>> = Keyed::new();
+    let mut owner: Keyed<Keyed<()>, crate::network::nerve::coord::VertexIx> = Keyed::new();
     for (ci, c) in covers.iter().enumerate() {
         for (key, (v, _versor, _codomain)) in c.cover.carried.scoped() {
             if v.face_chart().is_none() {
@@ -103,7 +103,7 @@ pub(crate) fn classify_cover(
             cover_vertex.insert(&key, ix);
             let mut set = Keyed::new();
             set.insert(ci.to_le_bytes(), ());
-            owner.insert(vertex_ix_key(ix), set);
+            owner.put(&vertex_ix_key(ix), set);
         }
     }
     // THE COVER'S MEETS ARE FACES OF THE PIECES' OWN FORM (50.3), not of
@@ -227,7 +227,10 @@ pub(crate) fn classify_cover(
                             phi: &Versor,
                             d: &[(i64, i64, i64)]| {
                     let mut k = Vec::new();
-                    crate::transducer::address::put_bytes(&mut k, &t.key());
+                    crate::transducer::address::put_bytes(
+                        &mut k,
+                        crate::network::nerve::Coordinate::encode(&t.key()).as_bytes(),
+                    );
                     crate::transducer::address::put_bytes(&mut k, c.key().as_bytes());
                     phi.put_canonical(&mut k);
                     for (r, col, f) in d {
@@ -295,7 +298,7 @@ pub(crate) fn classify_cover(
         // vertex belongs to no cover or the vertices to different ones.
         let mut common: Option<Keyed<()>> = None;
         for v in &lp.vertices {
-            let Some(set) = owner.get(&vertex_ix_key(*v)) else {
+            let Some(set) = owner.at(&vertex_ix_key(*v)) else {
                 common = None;
                 break;
             };
@@ -351,8 +354,11 @@ pub(crate) fn classify_cover(
             crate::transducer::family::cover::tally_loop(&fill);
             match fill {
                 crate::transducer::cech::Fill::Congruent(_, g, ell) => {
-                    let Some(class) = g.class_key() else { continue };
-                    eprintln!("  simplex filled {:02x}{:02x}… class {ell}", class.as_bytes()[0], class.as_bytes()[1]);
+                    let Some(class) = g.holonomy_key() else { continue };
+                    // THE CLASS SAYS WHAT IT IS, not what its first two
+                    // bytes are: the line carried a digest of a key and now
+                    // carries the bivector reading the class IS (rule 2).
+                    eprintln!("  simplex filled {:?} class {ell}", class.kind);
                     // 53.6 item 4: the loop is classified HERE, inside the
                     // cover, and filed by class where the form files
                     // torsion — but its chord indexes the PIECES' form,

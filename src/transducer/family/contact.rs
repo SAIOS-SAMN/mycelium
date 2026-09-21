@@ -82,7 +82,7 @@ pub(crate) fn contact_named_vertices(
     form: &mut Form,
     family: &[(Grid, Grid)],
     varying: &Varying,
-    sections: &mut Keyed<Keyed<()>, coord::MemberSection>,
+    sections: &mut Keyed<Keyed<()>, coord::SectionAt>,
     budget: &mut Budget,
 ) -> bool {
     trace::trace("extract/6 contact", trace::Wrote::Nothing, Some(budget));
@@ -104,7 +104,7 @@ pub(crate) fn contact_named_vertices(
                 // The class depth of the section system: the transport key is
                 // the coarse stratum of a member section (54.7 R5).
                 sections.put(
-                    &crate::network::nerve::Key::declared(tk.as_bytes()),
+                    &coord::SectionAt::Class(tk.clone()),
                     section_of_frames(frames.iter().copied()),
                 );
             }
@@ -116,7 +116,7 @@ pub(crate) fn contact_named_vertices(
             if let Vertex::Word { contact, acts, .. } = &mut candidate {
                 *contact = Some(crate::transducer::alphabet::Contact { anchor: 0, ring: r });
                 // SECTIONS, not charts (54.7 R5) — `chart ‖ carriage`.
-                let sections: Vec<crate::network::nerve::Key<coord::Section>> =
+                let sections: Vec<coord::Section> =
                     acts.entries().map(|(k, _)| k).collect();
                 for k in sections {
                     if let Some(a) = acts.at_mut(&k) {
@@ -129,7 +129,7 @@ pub(crate) fn contact_named_vertices(
                     // The class depth of the section system: the transport key is
                 // the coarse stratum of a member section (54.7 R5).
                 sections.put(
-                    &crate::network::nerve::Key::declared(tk.as_bytes()),
+                    &coord::SectionAt::Class(tk.clone()),
                     section_of_frames(frames.iter().copied()),
                 );
                 }

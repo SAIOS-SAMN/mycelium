@@ -50,7 +50,7 @@ pub use perceive::*;
 pub use scene::*;
 pub use speak::*;
 
-use crate::network::nerve::{coord, Key};
+use crate::network::nerve::{coord, Coordinate};
 
 use super::blade::{self, Shape};
 use super::element::{self, Element, Versor};

@@ -248,14 +248,11 @@ impl Demand {
 pub fn demand_key(
     kind: &Demand,
     chart: &Invariant,
-) -> crate::network::nerve::Key<crate::network::nerve::coord::DemandVertex> {
-    let mut buf = Vec::new();
-    crate::transducer::address::put_bytes(&mut buf, kind.key().as_bytes());
-    crate::transducer::address::put_bytes(&mut buf, chart.key().as_bytes());
-    // 54.7 R5 — the one writer of a demand-vertex coordinate. Neither end's
-    // tag opens it, so there is nothing for a byte check to read and the
-    // type carries the whole declaration.
-    crate::network::nerve::Key::declared(&buf)
+) -> crate::network::nerve::coord::DemandVertex {
+    // 54.7 R5 — THE COORDINATE, NOT ITS BYTES. The pair is the value; its
+    // encoding lives on the coordinate itself, so the writer here and the
+    // reader in `reindex` are one construction (rule 12).
+    crate::network::nerve::coord::DemandVertex { kind: kind.clone(), chart: chart.clone() }
 }
 
 /// THE TARGET A PROBE NAMES WHEN IT ANSWERS ONE DEMAND (L8q): the
@@ -267,7 +264,9 @@ pub fn demand_key(
 pub fn demand_at(listing: &[u8], kind: &Demand, chart: &Invariant) -> Vec<u8> {
     let mut buf = vec![crate::transducer::address::TAG_DEMAND_AT];
     crate::transducer::address::put_bytes(&mut buf, listing);
-    buf.extend_from_slice(&demand_key(kind, chart));
+    buf.extend_from_slice(
+        crate::network::nerve::Coordinate::encode(&demand_key(kind, chart)).as_bytes(),
+    );
     buf
 }
 

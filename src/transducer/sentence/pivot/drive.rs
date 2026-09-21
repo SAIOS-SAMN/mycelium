@@ -287,20 +287,20 @@ impl Form {
         // answer them. See `candidates_for`.
         let published = self.torsion.clone();
         let mut snaps = Vec::new();
-        let mut handled: Keyed<()> = Keyed::new();
+        let mut handled: Keyed<(), crate::network::nerve::coord::VertexIx> = Keyed::new();
         loop {
             if budget.remaining() == 0 {
                 break;
             }
             self.loops = Self::loops_of(&self.faces, &self.vertices);
-            let mut pending: Keyed<Order> = Keyed::new();
+            let mut pending: Keyed<Order, crate::network::nerve::coord::VertexIx> = Keyed::new();
             for lp in &self.loops {
                 if self
                     .faces
                     .get(lp.chord as usize)
                     .is_some_and(|f| !f.word.is_identity())
                 {
-                    pending.insert(vertex_ix_key(lp.chord), lp.holonomy.order());
+                    pending.put(&vertex_ix_key(lp.chord), lp.holonomy.order());
                 }
             }
             let Some(rank_before_gauge) = self.rank() else {
@@ -345,7 +345,7 @@ impl Form {
                 }
             }
             for (idx, lp) in self.loops.iter().enumerate() {
-                let Some(&order) = pending.get(&vertex_ix_key(lp.chord)) else {
+                let Some(&order) = pending.at(&vertex_ix_key(lp.chord)) else {
                     continue;
                 };
                 if self
@@ -432,7 +432,7 @@ impl Form {
                     continue;
                 };
                 let loop_k = vertex_ix_key(idx as u16);
-                if handled.contains(&loop_k) {
+                if handled.holds(&loop_k) {
                     continue;
                 }
                 // The holonomy the member paths carry — the edge composite
@@ -613,7 +613,7 @@ impl Form {
                             chord: idx,
                             certificate: cert,
                         });
-                        handled.insert(loop_k, ());
+                        handled.put(&loop_k, ());
                         applied = true;
                         break;
                     }
@@ -647,7 +647,7 @@ impl Form {
                                 held: held_certs,
                             });
                         }
-                        handled.insert(loop_k, ());
+                        handled.put(&loop_k, ());
                     }
                     // THE STROKE ENDED, NOT THE SEARCH. Nothing is spoken,
                     // filed or widened on an evaluation that did not
@@ -660,7 +660,7 @@ impl Form {
                             idea[1],
                             cands.len()
                         );
-                        handled.insert(loop_k, ());
+                        handled.put(&loop_k, ());
                     }
                     Discharge::NoneDischarged => {
                         let infinite = matches!(order, Order::Infinite);
@@ -758,7 +758,7 @@ impl Form {
                                 idea[0], idea[1]
                             );
                         }
-                        handled.insert(loop_k, ());
+                        handled.put(&loop_k, ());
                     }
                 }
             }

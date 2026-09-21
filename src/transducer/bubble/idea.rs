@@ -672,7 +672,8 @@ impl Bubble {
                 continue;
             };
             let mut dying: Vec<(Vec<u8>, Rotor)> = Vec::new();
-            let mut filing: Vec<(crate::transducer::address::Address, crate::transducer::sentence::FiledLoop)> = Vec::new();
+            let mut filing: Vec<(coord::Holonomy, crate::transducer::sentence::FiledLoop)> =
+                Vec::new();
             for (rk, v) in here.scoped() {
                 // THE SUB-COVER: the charts whose monodromy closes at some
                 // period. Empty is the dissolution; anything else is a
@@ -695,7 +696,7 @@ impl Bubble {
                             // rather than naming a face that is not there.
                             // σ is the gauge composed around the cycle,
                             // which the connections carried.
-                            if let Some(class) = m.class_key() {
+                            if let Some(class) = m.holonomy_key() {
                                 filing.push((
                                     class,
                                     crate::transducer::sentence::FiledLoop {
@@ -718,9 +719,6 @@ impl Bubble {
                 }
             }
             for (class, loop_at) in filing {
-                let Ok(class) = Key::<coord::Holonomy>::from_address(&class) else {
-                    continue;
-                };
                 self.torsion.put(&class, loop_at.clone());
                 if let Some(f) = self.form.as_mut() {
                     f.torsion.put(&class, loop_at);

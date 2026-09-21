@@ -97,7 +97,7 @@ pub(crate) fn rebase_named_faces(form: &mut Form) {
             .is_some_and(|rs| !rs.is_empty() && rs.scoped().all(|(_, (_, r))| element::same_versor(r, &relative)));
         if constant {
             let _ = form.rebase(face.i, face.j, relative, fi as u16);
-            trace::trace("extract/4 rebased", trace::Wrote::Key(&vertex_ix_key(face.j)), None);
+            trace::trace("extract/4 rebased", trace::Wrote::Ordinal(face.j), None);
         }
     }
     trace::trace("extract/4 reindex", trace::Wrote::Nothing, None);
@@ -117,7 +117,7 @@ pub(crate) fn rederive_star_faces(form: &mut Form) {
             continue;
         };
         let (i, j) = (face.i, face.j);
-        trace::trace("extract/4 star-face", trace::Wrote::Key(&vertex_ix_key(j)), None);
+        trace::trace("extract/4 star-face", trace::Wrote::Ordinal(j), None);
         // THE RE-DERIVATION KEEPS THE MEMBER PAIRS THE FACE ALREADY CARRIES
         // and keeps their edges: the rebase moved the vertices' placements, so
         // the carriage at each pair is stale, but WHICH pairs this face relates

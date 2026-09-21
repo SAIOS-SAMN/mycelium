@@ -51,7 +51,7 @@ pub fn extraction_spend(family: &[(Grid, Grid)]) -> usize {
 pub(crate) fn finish(
     mut form: Form,
     scale: ((usize, usize), (usize, usize)),
-    sections: Keyed<Keyed<()>, crate::network::nerve::coord::MemberSection>,
+    sections: Keyed<Keyed<()>, crate::network::nerve::coord::SectionAt>,
     unreached: &[(Grid, Grid)],
 ) -> Option<SentenceRule> {
     for (a, b) in unreached {

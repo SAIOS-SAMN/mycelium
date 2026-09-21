@@ -242,7 +242,9 @@ impl Element {
             let chord = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
             *pos += 2;
             filing.put(
-                &crate::network::nerve::Key::declared(&class),
+                &<crate::network::nerve::coord::Holonomy
+                    as crate::network::nerve::Coordinate>::decode(&class)
+                    .ok()?,
                 crate::transducer::sentence::FiledLoop { sigma, periods, chord },
             );
         }

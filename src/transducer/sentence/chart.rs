@@ -7,7 +7,7 @@
 use super::form::*;
 use super::tape::from_element_form;
 use super::transport::*;
-use crate::network::nerve::Keyed;
+use crate::network::nerve::{Coordinate, Keyed};
 use crate::transducer::alphabet::Word;
 use crate::transducer::element::{self, Element, Versor};
 
@@ -37,7 +37,7 @@ pub fn reset_retractions() {
 impl Form {
     /// Drop the named vertices (keyed by old index), drop faces that touched
     /// them, remap surviving faces through the old-to-new map, rebuild loops.
-    pub fn retract_vertices(&mut self, drop: &Keyed<()>) {
+    pub fn retract_vertices(&mut self, drop: &Keyed<(), crate::network::nerve::coord::VertexIx>) {
         RETRACTIONS.with(|c| c.set(c.get().saturating_add(1)));
         let n = self.vertices.len();
         if n == 0 {
@@ -46,7 +46,7 @@ impl Form {
         let mut old_to_new: Vec<Option<u16>> = vec![None; n];
         let mut new_verts = Vec::new();
         for (i, v) in self.vertices.iter().enumerate() {
-            if i != 0 && drop.contains(&vertex_ix_key(i as u16)) {
+            if i != 0 && drop.holds(&vertex_ix_key(i as u16)) {
                 continue;
             }
             old_to_new[i] = Some(new_verts.len() as u16);
@@ -96,9 +96,8 @@ impl Form {
         // sites, and an edge belongs exactly when its host is one of them
         // (rule 15).
         self.cover.retain(|e| {
-            glued
-                .at(&crate::network::nerve::Key::declared(e.host().as_bytes()))
-                .is_some()
+            crate::network::nerve::coord::Site::decode(e.host().as_bytes())
+                .is_ok_and(|s| glued.holds(&s))
         });
         // SECTIONS ARE NOT RENUMBERED, AND THE REMAP HERE WAS A TYPE ERROR.
         // `Form.sections` is class key → PAIR INDICES OF THE BUNDLE, which
@@ -244,7 +243,7 @@ pub struct SentenceRule {
     pub form: Form,
     /// Classes present on some frames only: class key → the frames it
     /// stands on, each its own coordinate (51.8).
-    pub sections: Keyed<Keyed<()>, crate::network::nerve::coord::MemberSection>,
+    pub sections: Keyed<Keyed<()>, crate::network::nerve::coord::SectionAt>,
     /// Family frame ratio ((h_out, h_in), (w_out, w_in)).
     pub ratio: ((usize, usize), (usize, usize)),
 }
@@ -656,6 +655,12 @@ pub fn chart_of(e: &Element) -> Option<crate::transducer::stalk::Invariant> {
     chart_of_form(&from_element_form(e)?)
 }
 
+/// One coordinate's canonical bytes, for a site that must hold several
+/// systems' keys side by side and compare them as bytes.
+fn encoded<C: crate::network::nerve::Coordinate>(c: &C) -> Vec<u8> {
+    c.encode().as_bytes().to_vec()
+}
+
 /// THE KEY A VERTEX IS MATCHED BY, ACROSS THE FIVE KINDS.
 ///
 /// Loose bytes deliberately: this is a union over five different coordinate
@@ -665,7 +670,7 @@ pub fn chart_of(e: &Element) -> Option<crate::transducer::stalk::Invariant> {
 /// Each arm leaves its own coordinate at the point it does so (54.7 R5).
 pub(crate) fn vertex_match_key(form: &Form, i: u16) -> Option<Vec<u8>> {
     match form.vertices.get(i as usize)? {
-        Vertex::Frame => Some(vertex_ix_key(0).into_vec()),
+        Vertex::Frame => Some(encoded(&vertex_ix_key(0))),
         Vertex::Word { address, .. } => Some(address.clone().into_vec()),
         // 54.7 B5a — A CITATION IS MATCHED BY ITS SITE. It was matched by
         // the form it cites, which is the cover's fact and no longer on the
@@ -675,9 +680,9 @@ pub(crate) fn vertex_match_key(form: &Form, i: u16) -> Option<Vec<u8>> {
             Some(Vertex::Word { address, .. }) => Some(address.clone().into_vec()),
             _ => None,
         },
-        Vertex::Unfolded { measure } => Some(unfolded_key(measure).into_vec()),
+        Vertex::Unfolded { measure } => Some(encoded(&unfolded_key(measure))),
         Vertex::Demand { kind, chart, .. } => {
-            Some(crate::transducer::sentence::demand_key(kind, chart).into_vec())
+            Some(encoded(&crate::transducer::sentence::demand_key(kind, chart)))
         }
     }
 }
@@ -703,13 +708,13 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
             Vertex::Word { address, .. } => {
                 let j = *b
                     .by_address
-                    .at(&crate::network::nerve::Key::from_address(address).ok()?)?;
+                    .at(&crate::network::nerve::coord::Member::decode(address.as_bytes()).ok()?)?;
                 b.vertices.get(j as usize)?
             }
             v @ Vertex::Glued { .. } => {
                 let j = *b
                     .glued
-                    .at(&crate::network::nerve::Key::declared(vertex_bytes(v)))?;
+                    .at(&crate::network::nerve::coord::Site::decode(&vertex_bytes(v)).ok()?)?;
                 b.vertices.get(j as usize)?
             }
             Vertex::Rebased { of, .. } => {
@@ -718,7 +723,7 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
                 };
                 let j = *b
                     .by_rebased
-                    .at(&crate::network::nerve::Key::from_address(address).ok()?)?;
+                    .at(&crate::network::nerve::coord::Member::decode(address.as_bytes()).ok()?)?;
                 b.vertices.get(j as usize)?
             }
             Vertex::Unfolded { measure } => {

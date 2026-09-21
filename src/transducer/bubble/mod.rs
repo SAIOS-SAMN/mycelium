@@ -20,7 +20,7 @@ pub(crate) use horizon::horizon_put;
 pub(crate) use idea::*;
 pub(crate) use merge::*;
 
-use crate::network::nerve::{coord, Key, Keyed};
+use crate::network::nerve::{coord, Coordinate, Keyed};
 use crate::physics::Budget;
 use crate::transducer::alphabet::{Order, Rotor};
 use crate::transducer::cech::{self, Complex, Fill, Section, Simplex};

@@ -74,14 +74,17 @@ impl Form {
     ///
     /// A form declaring nothing answers `false`, and that is the honest
     /// reading of a shear nobody mentioned (rule 11).
-    pub(crate) fn declares_dislocation(&self, class: &[u8]) -> bool {
+    pub(crate) fn declares_dislocation(
+        &self,
+        class: &crate::network::nerve::coord::Holonomy,
+    ) -> bool {
         use crate::transducer::sentence::Demand;
         let mut owed: Vec<(stalk::Invariant, [crate::core::Q; 3])> = Vec::new();
         for (i, lp) in self.loops.iter().enumerate() {
             let Some(hs) = self.edge_holonomies(lp) else { continue };
             for (_, h) in hs.scoped() {
                 let rotor = h.word.rotor();
-                if rotor.class_key().map(|k| k.as_bytes() == class) != Some(true) {
+                if rotor.holonomy_key().as_ref() != Some(class) {
                     continue;
                 }
                 let Some(s) = crate::transducer::element::screw_of(&rotor, &h.carriage) else {
@@ -232,15 +235,18 @@ impl Form {
         &self,
         filed: &Keyed<FiledLoop, crate::network::nerve::coord::Holonomy>,
     ) -> usize {
-        let mut derived: Keyed<crate::transducer::sentence::ToralPeriod> = Keyed::new();
+        let mut derived: Keyed<
+            crate::transducer::sentence::ToralPeriod,
+            crate::network::nerve::coord::Holonomy,
+        > = Keyed::new();
         for lp in &self.loops {
             for row in self.loop_classes(lp) {
-                derived.insert(&row.class, row.periods);
+                derived.put(&row.class, row.periods);
             }
         }
         filed
-            .scoped()
-            .filter_map(|(k, _)| derived.get(&k).copied())
+            .entries()
+            .filter_map(|(k, _)| derived.at(&k).copied())
             // THE LABOUR OF BOTH PLANES: `(ℓ₁ − 1) + (ℓ₂ − 1)`. It read
             // `(lcm − 1)`, which is neither plane's (54.7). A plane that
             // does not close earns nothing — that is torsion, charged as

@@ -125,15 +125,15 @@ impl Form {
     /// `target` is the vertex it closes on.
     fn rebase_reaches(&self, from: u16, target: u16) -> bool {
         let mut at = from;
-        let mut seen: Keyed<()> = Keyed::new();
+        let mut seen: Keyed<(), crate::network::nerve::coord::VertexIx> = Keyed::new();
         loop {
             if at == target {
                 return true;
             }
-            if seen.contains(&vertex_ix_key(at)) {
+            if seen.holds(&vertex_ix_key(at)) {
                 return true;
             }
-            seen.insert(vertex_ix_key(at), ());
+            seen.put(&vertex_ix_key(at), ());
             match self.vertices.get(at as usize) {
                 Some(Vertex::Rebased { by, .. }) => at = *by,
                 _ => return false,

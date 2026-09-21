@@ -204,7 +204,9 @@ impl Contemplation {
                     let chord = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
                     *pos += 2;
                     torsion.put(
-                        &crate::network::nerve::Key::declared(&tk),
+                        &<crate::network::nerve::coord::Holonomy
+                            as crate::network::nerve::Coordinate>::decode(&tk)
+                            .ok()?,
                         crate::transducer::sentence::FiledLoop { sigma, periods, chord },
                     );
                 }

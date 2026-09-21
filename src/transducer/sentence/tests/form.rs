@@ -3,7 +3,7 @@
 
 use super::common::*;
 use crate::transducer::sentence::ToralPeriod;
-use crate::network::nerve::{coord, Key, Keyed};
+use crate::network::nerve::{coord, Coordinate, Keyed};
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::blade::Shape;
 use crate::transducer::element::{self, from_canonical, Element};
@@ -230,9 +230,10 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
         .expect("glue");
     // 54.7 B5a — `glued` IS KEYED BY THE SITE, and the site is what the
     // vertex holds; the cited address is the cover's.
-    let site = Key::<coord::Site>::declared(crate::transducer::sentence::vertex_bytes(
+    let site = coord::Site::decode(&crate::transducer::sentence::vertex_bytes(
         &host.vertices[gi as usize],
-    ));
+    ))
+    .expect("a citation's own boundary record");
     assert_eq!(host.glued.at(&site).copied(), Some(gi));
     assert!(
         host.cover.iter().any(|e| e.target == inner_e.address()),
@@ -245,8 +246,8 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
     )]
     let wrote = host.faces.last().map(|f| (f.i, f.j));
     assert_eq!(wrote, Some((0, gi)), "glue writes the Frame→Glued placement face");
-    let mut drop = Keyed::new();
-    drop.insert(vertex_ix_key(1), ());
+    let mut drop: Keyed<(), coord::VertexIx> = Keyed::new();
+    drop.put(&vertex_ix_key(1), ());
     host.retract_vertices(&drop);
     assert_eq!(host.vertices.len(), 3, "Frame, remaining Word, Glued");
     for face in &host.faces {
@@ -314,9 +315,15 @@ fn ratio_and_sections_are_on_the_form_key() {
     let a = closed_word_form(w.clone(), None);
     let mut b = closed_word_form(w.clone(), None);
     b.ratio = ((2, 1), (2, 1));
-    let mut c = closed_word_form(w, None);
-    c.sections
-        .put(&Key::declared(form_addr(7)), section_of_frames([1]));
+    let mut c = closed_word_form(w.clone(), None);
+    // 54.7 — A SECTION IS FILED AT A SECTION COORDINATE, not at arbitrary
+    // bytes. It stood at `form_addr(7)`, two bytes that spell no stratum of
+    // this system, and the carrier accepted them because it took bytes.
+    let class = coord::SectionAt::Class(coord::Transport {
+        kind: crate::transducer::peel::ShellKind::Whole,
+        class: w.rotor().holonomy_key().expect("the quarter turn has a class"),
+    });
+    c.sections.put(&class, section_of_frames([1]));
     let ea = as_element_form(&a, [1, 0, 0, 0]).expect("a");
     let eb = as_element_form(&b, [1, 0, 0, 0]).expect("b");
     let ec = as_element_form(&c, [1, 0, 0, 0]).expect("c");
@@ -326,7 +333,7 @@ fn ratio_and_sections_are_on_the_form_key() {
     assert_eq!(back_b.ratio, ((2, 1), (2, 1)));
     let back_c = crate::transducer::sentence::from_element_form(&ec).expect("v2 tape");
     assert_eq!(
-        back_c.sections.at(&Key::declared(form_addr(7))).map(frames_of_section),
+        back_c.sections.at(&class).map(frames_of_section),
         Some(vec![1u16]),
         "the section round-trips as the frame it stands on"
     );
@@ -677,7 +684,7 @@ fn a_chart_names_the_word_vertices_on_it() {
     // coordinate `reindex` files by — which is the agreement that used to
     // hold only in prose, and did not hold.
     let chart_key = |i: &stalk::Invariant| {
-        Key::<coord::Chart>::from_address(&i.key()).expect("an invariant's key is a chart key")
+        coord::Chart(i.clone())
     };
     assert_eq!(f.by_class.at(&chart_key(&near)), Some(&vec![1u16, 3]), "both words on the near chart, in vertex order");
     assert_eq!(f.by_class.at(&chart_key(&far)), Some(&vec![2u16]), "the one word on the far chart");
@@ -736,18 +743,18 @@ fn a_transport_class_names_the_word_vertices_of_that_class() {
     // The chart fiber cannot answer the same question: it splits the one
     // class over two charts and merges two classes on one chart.
     let chart_key = |i: &stalk::Invariant| {
-        Key::<coord::Chart>::from_address(&i.key()).expect("an invariant's key is a chart key")
+        coord::Chart(i.clone())
     };
     assert_eq!(f.by_class.at(&chart_key(&near)), Some(&vec![1u16, 3]), "chart near: two classes");
     assert_eq!(f.by_class.at(&chart_key(&far)), Some(&vec![2u16]), "chart far: one of the identity class");
     // Every index the fiber names is a Word of that class, and every Word is
     // named by its own: the relation is total in both directions.
-    for (k, on) in f.by_transport.scoped() {
+    for (k, on) in f.by_transport.entries() {
         for &i in on {
             let v = f.vertices.get(i as usize).expect("an index the fiber names is a vertex");
             assert_eq!(
-                crate::transducer::family::transport_class(v).map(|c| c.key()).as_deref(),
-                Some(k.as_slice()),
+                crate::transducer::family::transport_class(v).map(|c| c.key()),
+                Some(k.clone()),
                 "vertex {i} is of the class that names it"
             );
         }
@@ -786,7 +793,8 @@ fn a_pivot_derives_the_address_meet_it_reads() {
             words += 1;
             assert_eq!(
                 f.by_address
-                    .at(&Key::from_address(address).expect("a word vertex address")),
+                    .at(&coord::Member::decode(address.as_bytes())
+                        .expect("a word vertex address")),
                 Some(&(i as u16)),
                 "vertex {i} at {:?} is not what the meet resolves",
                 address.as_bytes()

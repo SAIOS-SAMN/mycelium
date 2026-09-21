@@ -513,7 +513,7 @@ impl Form {
     pub fn edge_classes(
         &self,
         lp: &Loop,
-    ) -> Keyed<crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>> {
+    ) -> Keyed<crate::network::nerve::coord::Holonomy> {
         let mut out = Keyed::new();
         let Some(hs) = self.edge_holonomies(lp) else {
             return out;

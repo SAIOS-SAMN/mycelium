@@ -75,13 +75,17 @@ impl Form {
                 // is `chart ‖ carriage` now, so the chart is a PREFIX and
                 // the refusal is about the CHART — every sheet over it goes,
                 // not one of them.
-                let prefix = crate::transducer::sentence::Acting::chart_prefix(chart);
-                let gone: Vec<crate::network::nerve::Key<crate::network::nerve::coord::Section>> =
-                    acts
-                        .entries()
-                        .filter(|(k, _)| k.starts_with(&prefix))
-                        .map(|(k, _)| k)
-                        .collect();
+                //
+                // 54.7 — AND THE PREFIX ARITHMETIC IS GONE WITH IT. This
+                // built the chart's opening bytes and tested `starts_with`,
+                // which is a stratum read written by hand and one layout
+                // change away from being wrong. A section CARRIES its
+                // chart; the test is that the charts are equal.
+                let gone: Vec<crate::network::nerve::coord::Section> = acts
+                    .entries()
+                    .filter(|(k, _)| k.chart == *chart)
+                    .map(|(k, _)| k)
+                    .collect();
                 if gone.is_empty() {
                     return None;
                 }

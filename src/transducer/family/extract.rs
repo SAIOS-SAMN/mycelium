@@ -30,7 +30,7 @@ type Ratio = ((usize, usize), (usize, usize));
 #[derive(Clone)]
 pub(crate) struct Percept {
     pub(crate) form: Form,
-    pub(crate) sections: Keyed<Keyed<()>, coord::MemberSection>,
+    pub(crate) sections: Keyed<Keyed<()>, coord::SectionAt>,
     pub(crate) varying: contact::Varying,
     pub(crate) unreached: Vec<usize>,
 }
@@ -237,7 +237,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     }
 
     trace::trace("extract/1 fibers", trace::Wrote::Nothing, Some(budget));
-    let mut reads: Keyed<ClassRead> = Keyed::new();
+    let mut reads: Keyed<ClassRead, coord::Transport> = Keyed::new();
     let mut demanded: Vec<Demanded> = Vec::new();
     let mut covers: Vec<Covered> = Vec::new();
     let mut hue_maps: Keyed<Vec<(u8, u8)>> = Keyed::new();
@@ -449,7 +449,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             }
             let member =
                 Member { chart: c.clone(), acting, frames, at, support, union, section_words };
-            match reads.get_mut(&tc.key()) {
+            match reads.at_mut(&tc.key()) {
                 Some(read) => {
                     // ONE VERTEX PER TRANSPORT CLASS, its address the least of
                     // its members' (content order, law 2), its derivation
@@ -461,7 +461,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
                     read.members.push(member);
                 }
                 None => {
-                    reads.insert(tc.key(), ClassRead { address: address.clone(), derivation: derivation.clone(), members: vec![member] });
+                    reads.put(&tc.key(), ClassRead { address: address.clone(), derivation: derivation.clone(), members: vec![member] });
                 }
             }
         }
@@ -587,7 +587,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // stands.
     let mut scenery = Scenery::new();
     let frame_ix = scenery.place(frame_vertex(), Vec::new());
-    let mut sections: Keyed<Keyed<()>, coord::MemberSection> = Keyed::new();
+    let mut sections: Keyed<Keyed<()>, coord::SectionAt> = Keyed::new();
     let mut bodies_at: Keyed<(Body, Body, Versor)> = Keyed::new();
     // THE UNION SHAPE OF EACH MEMBER'S FIBER, keyed as its support is —
     // `member_key(vertex, chart)` — and holding no frame, because the union
@@ -601,22 +601,22 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // Member section key → the frames that member is claimed on, and the
     // member the key names. Two members whose every coordinate agrees —
     // one action placed twice — are one key and claim the union.
-    let mut member_frames: Keyed<Vec<u16>> = Keyed::new();
-    let mut member_of: Keyed<(u16, Invariant)> = Keyed::new();
+    let mut member_frames: Keyed<Vec<u16>, coord::MemberSection> = Keyed::new();
+    let mut member_of: Keyed<(u16, Invariant), coord::MemberSection> = Keyed::new();
     let claim_member = |scenery: &Scenery,
-                        member_frames: &mut Keyed<Vec<u16>>,
-                        member_of: &mut Keyed<(u16, Invariant)>,
+                        member_frames: &mut Keyed<Vec<u16>, coord::MemberSection>,
+                        member_of: &mut Keyed<(u16, Invariant), coord::MemberSection>,
                         ix: u16,
                         chart: &Invariant,
                         frames: &[u16]| {
         let Some(k) = scenery.vertices.get(ix as usize).and_then(|v| member_section_key(v, chart)) else {
             return;
         };
-        match member_frames.get_mut(&k) {
+        match member_frames.at_mut(&k) {
             Some(v) => v.extend_from_slice(frames),
             None => {
-                member_frames.insert(&k, frames.to_vec());
-                member_of.insert(&k, (ix, chart.clone()));
+                member_frames.put(&k, frames.to_vec());
+                member_of.put(&k, (ix, chart.clone()));
             }
         }
     };
@@ -648,7 +648,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             // One class, one chart, two carriages: the multiplicity.
             // The class opens a member coordinate — class ‖ chart — and the
             // transport coordinate is left behind where the extension begins.
-            let mut mk = tc.key().into_vec();
+            let mut mk = tc.key().encode().as_bytes().to_vec();
             crate::transducer::address::put_bytes(&mut mk, chart.key().as_bytes());
             let mut carriage = Vec::new();
             acting.carriage.put_canonical(&mut carriage);
@@ -673,7 +673,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
                 union: None,
                 section_words: Vec::new(),
             };
-            match reads.get_mut(&tc.key()) {
+            match reads.at_mut(&tc.key()) {
                 Some(read) => {
                     if address < &read.address {
                         read.address = address.clone();
@@ -682,8 +682,8 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
                     read.members.push(member);
                 }
                 None => {
-                    reads.insert(
-                        tc.key(),
+                    reads.put(
+                        &tc.key(),
                         ClassRead {
                             address: address.clone(),
                             derivation: derivation.clone(),
@@ -711,7 +711,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             for (k, a0, b0, v) in &m.at {
                 // The vertex ordinal opens a body coordinate — ordinal ‖
                 // chart ‖ body — and is left behind where that begins.
-                let mut bk = vertex_ix_key(ix).into_vec();
+                let mut bk = vertex_ix_key(ix).encode().as_bytes().to_vec();
                 crate::transducer::address::put_bytes(&mut bk, ck.as_bytes());
                 bk.extend_from_slice(&k.to_le_bytes());
                 bodies_at.insert(bk, (a0.clone(), b0.clone(), v.clone()));
@@ -727,8 +727,8 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // reached is filed at its own key, and a class claimed on fewer at its
     // — the union over every vertex of the class.
     let mut class_union: Keyed<Vec<u16>, coord::Transport> = Keyed::new();
-    for (mk, frames) in member_frames.scoped() {
-        let Some((ix, _)) = member_of.get(&mk) else { continue };
+    for (mk, frames) in member_frames.entries() {
+        let Some((ix, _)) = member_of.at(&mk) else { continue };
         let Some(v) = scenery.vertices.get(*ix as usize) else { continue };
         let mut frames = frames.clone();
         frames.sort_unstable();
@@ -745,7 +745,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             // THE MEMBER DEPTH of the section system (54.7 R5) — `mk` is a
             // member key and the class-level write below is the coarse
             // stratum of the same system, not a second carrier.
-            sections.put(&Key::declared(&mk), section_of_frames(frames));
+            sections.put(&coord::SectionAt::Member(mk.clone()), section_of_frames(frames));
         }
     }
     // The key stays a transport coordinate from the walk to both writes.
@@ -756,7 +756,10 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         if frames.len() < n_reached {
             // THE CLASS DEPTH — the coarse stratum, written through the one
             // conversion that says so.
-            sections.put(&Key::declared(tk.as_bytes()), section_of_frames(frames.iter().copied()));
+            sections.put(
+                &coord::SectionAt::Class(tk.clone()),
+                section_of_frames(frames.iter().copied()),
+            );
         }
         varying.class_frames.put(&tk, frames);
     }
@@ -773,13 +776,13 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // THE DEMANDS, one vertex per (kind, chart) (50.5), in key order. A
     // deformation dissolves when every lamina of both bodies is carried AND
     // no loop over its pieces stands (50.8).
-    let mut by_demand: Keyed<Demanded> = Keyed::new();
+    let mut by_demand: Keyed<Demanded, coord::DemandVertex> = Keyed::new();
     let mut declare = |kind: Demand, chart: Invariant, links: Vec<Link>| {
         let key = crate::transducer::sentence::demand_key(&kind, &chart);
-        match by_demand.get_mut(&key) {
+        match by_demand.at_mut(&key) {
             Some((_, _, held)) => held.extend(links),
             None => {
-                by_demand.insert(key, (kind, chart, links));
+                by_demand.put(&key, (kind, chart, links));
             }
         }
     };
@@ -989,9 +992,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         match chord {
             Some(c) => {
                 filed.chord = c as u16;
-                if let Ok(class) = crate::network::nerve::Key::from_address(&class) {
-                    form.torsion.put(&class, filed);
-                }
+                form.torsion.put(&class, filed);
             }
             // A MEASURED CLASS IS NEVER DISCARDED (law 7, rule 11). The
             // loop was classified inside the cover and its class is a
@@ -1137,7 +1138,7 @@ pub fn extract_rule_with(
     // citation retracts are the same vertices whatever order the pass
     // reaches them in, so the set is the pass's and the walk is taken once
     // after it.
-    let mut retract: Keyed<()> = Keyed::new();
+    let mut retract: Keyed<(), coord::VertexIx> = Keyed::new();
     for (_, (moduli, classes)) in by_chart.scoped() {
         let held = crystal.on_body(moduli);
         for (tc, placement) in classes {
@@ -1173,7 +1174,7 @@ pub fn extract_rule_with(
                     // transport class, so nothing here reads a stale entry.
                     if let Some(on) = form.by_transport.at(&tc.key()) {
                         for &i in on {
-                            retract.insert(vertex_ix_key(i), ());
+                            retract.put(&vertex_ix_key(i), ());
                         }
                     }
                 }

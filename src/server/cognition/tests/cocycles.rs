@@ -49,7 +49,11 @@ assert_eq!(
 );
 }
 
-fn filed_v2_form() -> (Element, crate::transducer::stalk::Invariant, Address) {
+fn filed_v2_form() -> (
+    Element,
+    crate::transducer::stalk::Invariant,
+    crate::network::nerve::coord::Holonomy,
+) {
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::sentence::{as_element_form, form_torsion, Form, Vertex};
 let order4 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
@@ -82,9 +86,9 @@ assert!(f.is_cauterized(), "filed finite torsion cauterizes");
 let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
 let inv = crate::transducer::stalk::invariant_of(&e);
 let class = form_torsion(&e)
-    .scoped()
+    .entries()
     .next()
-    .map(|(k, _)| Address::from(k))
+    .map(|(k, _)| k)
     .expect("the form files a class");
 (e, inv, class)
 }
@@ -102,8 +106,20 @@ assert!(
 assert!(carries_torsion(&spoken), "the form carries the filed cycle");
 assert_ne!(
     class,
-    crate::transducer::alphabet::Rotor::identity().class_key().expect("identity class"),
+    crate::transducer::alphabet::Rotor::identity()
+        .holonomy_key()
+        .expect("identity class"),
     "the class is the loop's, not the identity"
+);
+// 54.7 — AND THE IDENTITY READS AS TRIVIAL, NOT PARABOLIC. `B = 0` turns
+// nothing; a parabolic has `B ≠ 0` and `B² = 0`. They shared a byte.
+assert_eq!(
+    crate::transducer::alphabet::Rotor::identity()
+        .holonomy_key()
+        .expect("identity class")
+        .kind,
+    crate::network::nerve::coord::BivectorKind::Trivial,
+    "the identity is the absence of a motion, not a null shear"
 );
 let mut k = Kernel::new();
 k.complexes
@@ -116,7 +132,10 @@ assert_eq!(
 let filed = k
     .complexes
     .get(&inv.key())
-    .is_some_and(|cx| !cx.congruent(&class).is_empty());
+    .is_some_and(|cx| {
+        !cx.congruent(crate::network::nerve::Coordinate::encode(&class).as_bytes())
+            .is_empty()
+    });
 assert!(filed, "court torsion filed by the loop's class key");
 assert_eq!(
     k.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
