@@ -36,7 +36,24 @@ pub(crate) struct Metabolism {
     pub(crate) last_quoted_height: u64,
     pub(crate) last_pressure: [u64; 4],
     pub(crate) dwell_remaining: [u64; 4],
-    pub(crate) k_step: u64,
+    /// THE BOOK'S K, NOT THIS MIND'S (45.4). It is `YieldQuote::k` — "the
+    /// judge's k-step at the quote, the temporal coordinate of the book
+    /// this quote reads" — taken off a hypha's reply and used to pace the
+    /// stroke line.
+    ///
+    /// It was named `k_step` and printed as `K`, so the stroke line read a
+    /// COURT-SIDE coordinate under the mind's own label, beside
+    /// `Height::stamp_of(now_tu())` — which is the mesh height, the other
+    /// court-side clock. Four voices printed `[h 16504] K 16504` and the
+    /// fifth `[h 16502] K 2587`, and the pair read as one mind racing and
+    /// four in lockstep. They were two readings of the same organ's time,
+    /// and the outlier was a voice whose quotes were not landing.
+    ///
+    /// A mind's own K is `Seat::k` — `chain.next_step_index()`, its own
+    /// admitted acts — and it is what `shed_at` ages the dialect by. Both
+    /// are now on the line, under their own names, so a per-voice rate has
+    /// a denominator that belongs to the voice.
+    pub(crate) book_k: u64,
     pub(crate) last_genome: usize,
     /// The language and the book height the syntropy arm last synced at
     /// (24.3, I37): the sheaf sync, the syllabus pull and peer discovery
@@ -357,16 +374,20 @@ fn main() {
             learned,
             solves_paid,
         } = c;
-        let Metabolism { dwell_remaining, k_step, .. } = m;
+        let Metabolism { dwell_remaining, book_k, .. } = m;
         let cycle = mycelium::physics::aperture_cycle() as u64;
         // The mark is a stroke this voice has passed, so the gap is exact.
         let since = stroke_n.checked_sub(last_logged_n).is_some_and(|g| g >= cycle);
-        if last_logged_k == u64::MAX || k_step != last_logged_k || since {
+        // PACED ON THE MIND'S OWN K (45.4). It paced on the book's, so a
+        // voice thinking hard between quotes logged nothing and a voice
+        // idle through a busy book logged every reply.
+        let own_k = entity.own_k();
+        if last_logged_k == u64::MAX || own_k != last_logged_k || since {
             let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
             let (axis_charts, axis_words) = entity.axis_index_counts();
             if moved == [false; 4] {
                 eprintln!(
-                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed census {:?} | reserve {:?} | carriers {} | feed {}",
+                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {own_k} book {book_k} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed census {:?} | reserve {:?} | carriers {} | feed {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
@@ -395,7 +416,7 @@ fn main() {
                 z12_lines(&entity, &tag);
             } else {
                 eprintln!(
-                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} census {:?} reserve {:?} carriers {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
+                    "[{tag}] [{}] K {own_k} book {book_k} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} census {:?} reserve {:?} carriers {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
@@ -447,7 +468,7 @@ fn main() {
                 cover.spend,
                 cover.pending
             );
-            last_logged_k = k_step;
+            last_logged_k = own_k;
             last_logged_n = stroke_n;
         }
         // The lanes the next stroke needs to expand on and cannot: one

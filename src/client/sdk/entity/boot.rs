@@ -78,6 +78,20 @@ impl Entity {
         self.height.get()
     }
 
+    /// THIS MIND'S OWN K (45.4) — `Seat::k`, the next index on its own
+    /// receipt chain, which counts the acts this voice had admitted and
+    /// nothing else.
+    ///
+    /// It is the clock the dialect ages by (`shed_at`) and the only
+    /// denominator a per-voice rate may use. [`Self::now_tu`] beside it is
+    /// the MESH's height, and the book's k-step carried on a quote reply is
+    /// a third quantity belonging to a hypha's chain; none of the three is
+    /// interchangeable with another, and the stroke line prints this one
+    /// and the height under their own names.
+    pub fn own_k(&self) -> u64 {
+        self.session.voice().k()
+    }
+
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
     /// if present (GEN3). The epigenome starts empty. An older file is refused.
     pub fn open_persistent(addr: &str, kernel: Kernel, genome_path: &str, _thoughts_path: &str) -> Self {

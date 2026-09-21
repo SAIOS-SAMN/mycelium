@@ -112,7 +112,29 @@ impl Refusal {
         match self.reason {
             REFUSE_VERTEX_BODY => sentence::RefusalKind::VertexBody,
             REFUSE_EDGE => sentence::RefusalKind::EdgeHolonomy,
-            REFUSE_NOT_CLOSED => sentence::RefusalKind::RemainderUndeclared,
+            // 54.6 — ONE REASON, TWO KINDS, TOLD APART BY THE COORDINATE.
+            //
+            // A remainder the form was SILENT on (`spoken == 0`) is a
+            // demand the speaker can mount; one it SPOKE WRONGLY is not,
+            // and `undeclared_remainder` keeps the latter whatever a demand
+            // says of it. `replay_form_at` partitions them and packs one or
+            // the other, never both, so the links themselves say which
+            // refusal this is — and the kind is read from them rather than
+            // from the reason, which cannot tell them apart.
+            //
+            // Reading it off the reason alone sent both as
+            // `RemainderUndeclared`: the speaker contracted over the union,
+            // the contraction moved the address, the old seal stopped
+            // matching, and the same guaranteed refusal returned at a fresh
+            // coordinate — one minted word per cycle.
+            REFUSE_NOT_CLOSED => match &self.at {
+                sentence::At::Chart(_, links)
+                    if links.iter().any(|&(_, _, spoken, _)| spoken != 0) =>
+                {
+                    sentence::RefusalKind::RemainderWrong
+                }
+                _ => sentence::RefusalKind::RemainderUndeclared,
+            },
             REFUSE_ORBIT_STILL => sentence::RefusalKind::OrbitStill,
             REFUSE_FACE => sentence::RefusalKind::FaceDerivation,
             _ => sentence::RefusalKind::MalformedComplex,

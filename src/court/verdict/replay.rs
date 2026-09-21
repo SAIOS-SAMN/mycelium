@@ -448,8 +448,74 @@ pub fn replay_form_at(
         let _ = pay;
         let undeclared = undeclared_remainder(&rems, &walked);
         if !undeclared.is_empty() {
+            // ρ_rem — HOW MUCH OF THE FAMILY THE FORM MISSED (§8.1, the
+            // reading before the fix).
+            //
+            // This refusal is 223 of 230 on the wire and it is the engine's
+            // wall: nothing stands, so `court basis` is 0 on every hypha,
+            // so the syllabus teaches only genesis vocabulary. What it does
+            // NOT say is whether the extractor is near or nowhere — a form
+            // missing four cells of two hundred and a form missing a
+            // hundred and eighty are one refusal here, and they are two
+            // different defects with two different repairs.
+            //
+            //   ρ ≪ 1 — the rule is right and the form does not DECLARE
+            //   what it leaves: untouched background, a frame boundary, a
+            //   hue plane nothing acts on. The repair is a declaration.
+            //
+            //   ρ ≈ 1 — the form is not the family's rule at all, and the
+            //   links are not a generator to synthesise.
+            //
+            // The denominator is the links the family's own remainders
+            // carry, which is what the deflation measured against; the
+            // numerator is what no demand vertex declared. Both are in hand
+            // here and neither was written down.
+            // THE TWO REMAINDERS ARE TWO REFUSALS (54.6).
+            //
+            //   `spoken == 0` — the form was SILENT at that cell. The
+            //   language has no word for it, which is what a demand is:
+            //   the speaker mounts `Demand::Source` over exactly these
+            //   links, the form becomes valid-not-closed (50.1), and the
+            //   mesh is asked. `contract.rs` builds that demand from this
+            //   coordinate.
+            //
+            //   `spoken != 0` — the form ASSERTED something the family
+            //   contradicts. No demand declares a false projection, and
+            //   `undeclared_remainder` keeps such a link whatever a demand
+            //   says of it, so a contraction over it cannot succeed. And a
+            //   contraction MOVES THE ADDRESS, so the old seal stops
+            //   matching and the same refusal returns at a fresh
+            //   coordinate — one mint per cycle.
+            //
+            // They arrived merged under one kind, so a speaker could not
+            // tell which it had and contracted over the union. Partitioned,
+            // each carries its own verdict and its own links.
+            let total: usize = rems.iter().map(Vec::len).sum();
+            let (silent, wrong): (Vec<_>, Vec<_>) =
+                undeclared.iter().copied().partition(|&(_, _, spoken, _)| spoken == 0);
             let chart = stalk::invariant(&undeclared);
-            return Some(Refusal { reason: REFUSE_NOT_CLOSED, at: sentence::At::Chart(chart, undeclared) });
+            let prefix: String =
+                chart.key().as_bytes().iter().take(2).map(|b| format!("{b:02x}")).collect();
+            eprintln!(
+                "  court remainder chart {prefix}… {} of {total} links: {} silent, {} wrong",
+                undeclared.len(),
+                silent.len(),
+                wrong.len()
+            );
+            // THE WRONG ONES FIRST. A form carrying both said something
+            // false, and that is the refusal it owes; contracting its
+            // silence while leaving the falsehood would mint an address
+            // that refuses again.
+            if !wrong.is_empty() {
+                return Some(Refusal {
+                    reason: REFUSE_NOT_CLOSED,
+                    at: sentence::At::Chart(stalk::invariant(&wrong), wrong),
+                });
+            }
+            return Some(Refusal {
+                reason: REFUSE_NOT_CLOSED,
+                at: sentence::At::Chart(stalk::invariant(&silent), silent),
+            });
         }
     }
     replay_certificates(&walked, &spoken.receipts().certificates, &by_chord).map(tape)

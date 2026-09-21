@@ -281,6 +281,26 @@ pub enum RefusalKind {
     /// A face that does not re-derive from its vertices (23.1 step 4),
     /// at its two addresses (50.9 move 6).
     FaceDerivation,
+    /// 54.6 — A REMAINDER THE FORM SPOKE WRONGLY, which is not the same
+    /// refusal as one it was silent on and is not curable by the same move.
+    ///
+    /// `undeclared_remainder` keeps a link where `spoken != 0` WHATEVER a
+    /// demand says of it, and it is right to: a demand declares SILENCE —
+    /// "the language has no word for this cell" — and a false projection is
+    /// not silence. Mounting `Demand::Source` over a cell the form asserted
+    /// incorrectly would be an apology, not a coordinate, and the next
+    /// replay refuses it again by construction.
+    ///
+    /// Both kinds arrived as `RemainderUndeclared`, so a speaker could not
+    /// tell which it had and contracted over the union. Under a contraction
+    /// the address MOVES (`form_vertex_key` of the contracted form), so the
+    /// seal on the old address no longer matches and the same guaranteed
+    /// refusal returns at a fresh coordinate — a mint per cycle, bounded by
+    /// nothing in the loop itself.
+    ///
+    /// Split out, the two carry their own verdicts: this one contracts to
+    /// `Quiescent` and mints nothing.
+    RemainderWrong,
 }
 
 impl RefusalKind {
@@ -292,6 +312,7 @@ impl RefusalKind {
             RefusalKind::MalformedComplex => 3,
             RefusalKind::OrbitStill => 4,
             RefusalKind::FaceDerivation => 5,
+            RefusalKind::RemainderWrong => 6,
         }
     }
 
@@ -303,6 +324,7 @@ impl RefusalKind {
             3 => RefusalKind::MalformedComplex,
             4 => RefusalKind::OrbitStill,
             5 => RefusalKind::FaceDerivation,
+            6 => RefusalKind::RemainderWrong,
             _ => return None,
         })
     }
@@ -316,6 +338,7 @@ impl RefusalKind {
             RefusalKind::MalformedComplex => "malformed complex",
             RefusalKind::OrbitStill => "orbit still",
             RefusalKind::FaceDerivation => "face derivation",
+            RefusalKind::RemainderWrong => "remainder wrong",
         }
     }
 }

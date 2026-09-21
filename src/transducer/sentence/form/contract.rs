@@ -139,7 +139,28 @@ impl Form {
                 self.rewalk();
                 Some(Contracted::Moved)
             }
+            // A DEMAND DECLARES SILENCE, NOT A FALSE PROJECTION (54.6).
+            //
+            // `undeclared_remainder` keeps a link where `spoken != 0`
+            // whatever a demand says of it, so mounting `Demand::Source`
+            // over a cell the form spoke wrongly cannot cure the refusal —
+            // and the contraction MOVES THE ADDRESS, so the seal on the old
+            // one no longer matches and the same guaranteed refusal returns
+            // at a fresh coordinate. That is a mint per cycle with nothing
+            // in the loop to stop it.
+            //
+            // The court partitions before it sends, so a link arriving
+            // under this kind should already be silent; this filters again
+            // because the guard belongs where the demand is mounted, not
+            // only where the coordinate was packed (a ruling applies at
+            // every site). A coordinate with nothing declarable in it
+            // contracts to NOTHING — `None`, which `receive_adjudication`
+            // reads as `Quiescent`: the form is held inert and no address
+            // is minted.
             (RefusalKind::RemainderUndeclared, At::Chart(inv, links)) => {
+                let links: Vec<Link> =
+                    links.iter().copied().filter(|&(_, _, spoken, _)| spoken == 0).collect();
+                let links = &links;
                 if links.is_empty() {
                     return None;
                 }
@@ -168,6 +189,13 @@ impl Form {
             (RefusalKind::OrbitStill, at @ At::Vertex { .. }) => {
                 self.contract(RefusalKind::VertexBody, at, remainder)
             }
+            // 54.6 — A WRONG REMAINDER CONTRACTS TO NOTHING. There is no
+            // move that makes a false assertion true: the form said
+            // something at a cell and the family says otherwise, and no
+            // demand declares that. `None` here is `Quiescent` at the
+            // voice — the form is held until this mind's language moves —
+            // and the address does not move, so the seal keeps holding.
+            (RefusalKind::RemainderWrong, _) => None,
             // 50.9 move 6: the face that does not re-derive from its
             // vertices leaves the form, and the two vertices stand without
             // it; a loop through it dissolves with the re-walk.

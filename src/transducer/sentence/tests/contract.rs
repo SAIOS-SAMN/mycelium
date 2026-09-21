@@ -62,3 +62,84 @@ fn a_face_that_does_not_rederive_is_dropped_by_its_contraction() {
     assert!(f.is_contraction_at(RefusalKind::FaceDerivation, &at), "the court finds no face between them");
     assert_eq!(f.contract(RefusalKind::FaceDerivation, &at, &[]), None, "a face already gone contracts nothing");
 }
+
+/// 54.6 — A DEMAND DECLARES SILENCE, AND A FALSE PROJECTION CONTRACTS TO
+/// NOTHING.
+///
+/// `undeclared_remainder` keeps a remainder link where `spoken != 0`
+/// WHATEVER a demand says of it — a demand says "the language has no word
+/// for this cell", and a cell the form spoke wrongly is not that. So a
+/// contraction over such a link cannot cure the refusal.
+///
+/// It also cannot be harmless, and that is why the guard is here rather
+/// than only at the court. A contraction MOVES THE ADDRESS —
+/// `form_vertex_key` of the contracted form — so the seal the voice holds
+/// on the refused address stops matching, the contracted form is uttered,
+/// the same links refuse again, and the cycle mints one word per turn with
+/// nothing in it to stop.
+///
+/// The three readings: a silent remainder mounts its demand; a wrong one
+/// contracts to `None`, which `receive_adjudication` reads as `Quiescent`;
+/// and a mixed coordinate mounts a demand over the silent links ALONE,
+/// never over the ones the form got wrong.
+#[test]
+fn a_demand_declares_silence_and_a_wrong_remainder_contracts_to_nothing() {
+    use crate::transducer::sentence::Demand;
+    let chart = crate::transducer::stalk::Invariant::counts(&[3, 5]);
+    let silent = |r: i64| (r, 0i64, 0u8, 4u8);
+    let wrong = |r: i64| (r, 1i64, 2u8, 4u8);
+
+    // SILENT ALONE: the demand mounts, over exactly those links.
+    let mut f = chord_form(&[order4()]);
+    let at = At::Chart(chart.clone(), vec![silent(0), silent(1)]);
+    assert_eq!(
+        f.contract(RefusalKind::RemainderUndeclared, &at, &[]),
+        Some(Contracted::Moved),
+        "a remainder the form was silent on is a demand it can mount"
+    );
+    let stood: Vec<Vec<(i64, i64, u8, u8)>> = f
+        .demand_vertices()
+        .filter(|(_, k, _, _)| matches!(k, Demand::Source { .. }))
+        .map(|(_, _, _, b)| b.to_vec())
+        .collect();
+    assert_eq!(stood, vec![vec![silent(0), silent(1)]], "the demand carries the silent links");
+
+    // WRONG ALONE: nothing mounts, and the form does not move.
+    let mut g = chord_form(&[order4()]);
+    let before = crate::transducer::sentence::form_vertex_key(&g);
+    let at = At::Chart(chart.clone(), vec![wrong(0), wrong(1)]);
+    assert_eq!(
+        g.contract(RefusalKind::RemainderUndeclared, &at, &[]),
+        None,
+        "no move makes a false assertion true"
+    );
+    assert_eq!(
+        crate::transducer::sentence::form_vertex_key(&g),
+        before,
+        "and the address does not move, so the voice's seal keeps holding"
+    );
+    assert_eq!(
+        g.contract(RefusalKind::RemainderWrong, &at, &[]),
+        None,
+        "and the kind the court sends for it contracts to nothing by name"
+    );
+
+    // MIXED: the silent links mount; the wrong ones are not in the demand.
+    let mut h = chord_form(&[order4()]);
+    let at = At::Chart(chart, vec![silent(0), wrong(1)]);
+    assert_eq!(
+        h.contract(RefusalKind::RemainderUndeclared, &at, &[]),
+        Some(Contracted::Moved),
+        "a coordinate with something declarable in it contracts"
+    );
+    let stood: Vec<Vec<(i64, i64, u8, u8)>> = h
+        .demand_vertices()
+        .filter(|(_, k, _, _)| matches!(k, Demand::Source { .. }))
+        .map(|(_, _, _, b)| b.to_vec())
+        .collect();
+    assert_eq!(
+        stood,
+        vec![vec![silent(0)]],
+        "over the silent link alone — a demand is never an apology for a wrong one"
+    );
+}

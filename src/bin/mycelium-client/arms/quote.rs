@@ -33,7 +33,7 @@ match entity.quote() {
         // K (S13.4): the surface is dwelt on below and the book's K is
         // taken only from a quote that named one.
         if q.k != 0 {
-            m.k_step = q.k;
+            m.book_k = q.k;
         }
         // 24.3, V1: the language moved, so every listing may open an axis
         // again; a listing refused in this language is not retried on
