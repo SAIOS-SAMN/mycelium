@@ -11,6 +11,75 @@ thread_local! {
 }
 
 thread_local! {
+    /// HOW THE CLOSING CYCLES DIVIDE — `(vacuum, resonant, the charges the
+    /// resonant ones carried)` (54.7, ruled 2026-09-21).
+    ///
+    /// `gate(3)` counts every cycle whose boundary product is the
+    /// identity, and two opposite facts land in that one number: a cycle
+    /// over a subgraph where the corpus wrote no transport, and a cycle
+    /// whose non-zero shears cancel around the perimeter. The first
+    /// quotients nothing; the second is a relator of `π₁`.
+    ///
+    /// OBSERVATIONAL ONLY. `loop_is_trivial` keeps pruning exactly what it
+    /// pruned before, so `loops.len()` and the tests asserting incidence
+    /// through it are untouched. Both kinds genuinely belong to `ker(ρ)` —
+    /// neither deposits net holonomic shear at `x₀` — so the gate is right
+    /// and only the reporting was blind.
+    ///
+    /// The charges are kept whole rather than summed: the distribution is
+    /// the content and a total cannot be un-added (rule 2).
+    /// The last two count EVERY step of EVERY cycle, closing or not:
+    /// `(steps whose charge was read, of those, steps carrying μ ≠ 0)`.
+    /// Without them "all closures are vacuum" cannot be distinguished from
+    /// "the charge was never computed" — a probe that never fired reporting
+    /// zero as though it had measured one (rule 11).
+    static RESONANCE: std::cell::RefCell<(u64, u64, Vec<num_rational::BigRational>, u64, u64)> =
+        const { std::cell::RefCell::new((0, 0, Vec::new(), 0, 0)) };
+}
+
+/// File one STEP's charge, on every cycle the walk reaches.
+fn note_step_charge(mu: &num_rational::BigRational) {
+    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    RESONANCE.with(|r| {
+        let mut b = r.borrow_mut();
+        b.3 += 1;
+        if *mu != zero {
+            b.4 += 1;
+        }
+    });
+}
+
+/// File one CLOSING cycle by whether it carried any charge at all.
+fn note_closure(carried: &Keyed<PathCarried>) {
+    let mut charges: Vec<num_rational::BigRational> = Vec::new();
+    for (_, c) in carried.scoped() {
+        charges.extend(c.charges.iter().cloned());
+    }
+    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    let charged: Vec<num_rational::BigRational> =
+        charges.into_iter().filter(|m| *m != zero).collect();
+    RESONANCE.with(|r| {
+        let mut b = r.borrow_mut();
+        match charged.is_empty() {
+            true => b.0 += 1,
+            false => {
+                b.1 += 1;
+                b.2.extend(charged);
+            }
+        }
+    });
+}
+
+/// `(vacuum closures, resonant closures, the resonant charges)`.
+pub fn loop_resonance() -> (u64, u64, Vec<num_rational::BigRational>, u64, u64) {
+    RESONANCE.with(|r| r.borrow().clone())
+}
+
+pub fn reset_loop_resonance() {
+    RESONANCE.with(|r| *r.borrow_mut() = (0, 0, Vec::new(), 0, 0));
+}
+
+thread_local! {
     /// THE DEFECT EACH KEPT CYCLE CARRIES, read off its transport
     /// composite: `(trivial, elliptic, hyperbolic, parabolic, non-simple)`.
     ///
@@ -660,6 +729,11 @@ impl Form {
             };
             if loop_is_trivial(faces, vertices, &lp, &carried) {
                 gate(3);
+                // OBSERVE ONLY: the gate is unchanged, but a closure that
+                // cancelled real charge is a relator and a closure over an
+                // uncharged subgraph is vacuum, and `gate(3)` alone cannot
+                // tell them apart.
+                note_closure(&carried);
                 continue;
             }
             for (k, c) in carried.scoped() {
@@ -795,6 +869,44 @@ pub(crate) struct PathCarried {
     /// 50.3's edge composite: `None` where a remainder edge stands on this
     /// path, or where the path crossed no real face and measured no edge.
     pub(crate) edge: Option<Transport>,
+    /// THE KINEMATIC CHARGE EACH STEP OF THIS BOUNDARY DEPOSITED, in
+    /// boundary order and exact over ℚ (54.7, ruled 2026-09-21).
+    ///
+    /// `face` and `edge` above are ORDERED PRODUCTS around `∂f`, so a
+    /// composite reading identity is already the resonance condition
+    /// `Π Ω_e ∼ ±1`. But a product of identities is the identity too, and
+    /// the two are opposite physical facts:
+    ///
+    /// ```text
+    ///   RELATOR  some μ_e ≠ 0, and the versors cancel  — geometry closing
+    ///   VACUUM   every μ_e = 0                         — no geometry
+    /// ```
+    ///
+    /// A relator is a Seifert–van Kampen boundary word and quotients `π₁`;
+    /// a vacuum cycle quotients nothing and says only that the corpus
+    /// wrote no transport there. One count for both reports the ABSENCE of
+    /// geometry as the CANCELLATION of it (rule 11).
+    ///
+    /// Kept as a SEQUENCE and never summed. `Σ μ_e` cannot tell one edge
+    /// carrying 12 from twelve edges carrying 1, and those are different
+    /// circuits; the sum is a moment any reader can take, while the
+    /// distribution cannot be recovered from it (rule 2).
+    ///
+    /// ```text
+    ///     μ = ⟨Ω⟩₀² / ⟨Ω Ω̃⟩₀ − 1
+    /// ```
+    ///
+    /// SCALE-FREE, which the closed form `(w − 4)/4` is not: a versor is
+    /// projective, so `Ω` and `λΩ` are one transport while `w → λ²w`, and
+    /// the stored identity is `1` rather than the canonical `1 − v_a v_a =
+    /// 2` — under `(w − 4)/4` the identity would read `−3/4` instead of
+    /// `0`. On the canonical normalisation `w = 2⟨R⟩₀` the two agree. It
+    /// reads the TRANSVECTION factor, not the composed step: the identity
+    /// is exact only where no rotation contributes cross-terms, and the
+    /// coupling belongs at the loop, where `Π Ω_e` already evaluates it.
+    /// Over the whole group `μ > 0` is hyperbolic, `μ < 0` elliptic
+    /// (`−sin²(θ/2)`), `μ = 0` trivial — `I₁`'s own sign convention.
+    pub(crate) charges: Vec<num_rational::BigRational>,
 }
 
 /// THE ONE WALK — and it is a WALK now, not a search (54.5, as ruled
@@ -873,6 +985,7 @@ pub(crate) fn paths_carried(
             carriage: element::identity_versor(),
             gauge: Vec::new(),
         }),
+        charges: Vec::with_capacity(lp.faces.len()),
     };
     let mut charts: Vec<Vec<u8>> = Vec::with_capacity(lp.members.len());
     for (win, &fi) in lp.members.windows(2).zip(&lp.faces) {
@@ -949,6 +1062,21 @@ pub(crate) fn paths_carried(
             (false, Some(p)) => p.edge.clone(),
             (_, None) => None,
         };
+        // THE STEP'S KINEMATIC CHARGE, before the step is folded into the
+        // product and its identity is lost. Read off the TRANSVECTION
+        // factor this step carries; a step whose transport was never read
+        // contributes no charge rather than a zero one, because unread is
+        // not flat (rule 11) — and `acc.edge` below goes `None` for it, so
+        // the whole boundary is already refused.
+        if let Some(t) = step.as_ref() {
+            if let Some(w) = crate::transducer::cga::is_versor(&t.carriage) {
+                let s = t.carriage.scalar_part();
+                let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+                let mu = &s * &s / &w - one;
+                note_step_charge(&mu);
+                acc.charges.push(mu);
+            }
+        }
         acc.edge = match (acc.edge.take(), step) {
             (Some(held), Some(step)) => {
                 let step = match forward {

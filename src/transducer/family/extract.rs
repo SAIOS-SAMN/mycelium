@@ -1315,7 +1315,9 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     eprintln!(
         "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} loops \
          | edges asked: measured {}, unspelled {}, unread {}, not rigid {} \
-         | chords {} offered {} | cycles: reflexive {} no-tree-path {} unread {} trivial {} \
+         | chords {} offered {} | cycles: reflexive {} no-tree-path {} unread {} \
+         trivial {} (vacuum {} resonant {} over {} charged edges; \
+         μ read on {} steps, {} of them non-zero) \
          | defects: trivial {} elliptic {} hyperbolic {} parabolic {} non-simple {} \
          | spectra: closes {} open {} undecomposed {} isoclinic {} \
          | ρ: |im| {} |conj| {} of {} generators, {} in ker | this form: b₁ {} |im| {} \
@@ -1337,6 +1339,14 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         crate::transducer::sentence::Form::loop_gates().1,
         crate::transducer::sentence::Form::loop_gates().2,
         crate::transducer::sentence::Form::loop_gates().3,
+        // HOW THE CLOSURES DIVIDE. `trivial` above counts every cycle whose
+        // boundary product is the identity; these two say whether that
+        // identity was a cancellation or an absence (54.7).
+        crate::transducer::sentence::loop_resonance().0,
+        crate::transducer::sentence::loop_resonance().1,
+        crate::transducer::sentence::loop_resonance().2.len(),
+        crate::transducer::sentence::loop_resonance().3,
+        crate::transducer::sentence::loop_resonance().4,
         crate::transducer::sentence::loop_defects().0,
         crate::transducer::sentence::loop_defects().1,
         crate::transducer::sentence::loop_defects().2,
