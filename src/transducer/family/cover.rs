@@ -87,6 +87,33 @@ pub struct CoverTally {
     /// prevent one level down.
     pub geodesic: u64,
     pub off_sheet: u64,
+    /// THE FOOTPRINT'S OWN DISPLACEMENT, offered and reaching the operator
+    /// (54.7, ruled 2026-09-21).
+    ///
+    /// `chords_offered` is every chord the gate emitted; `tau_active` is
+    /// those whose two footprints have DIFFERENT basepoints, so
+    /// `τ = p(D_b) − p(D_a) ≠ 0` and the chord's transport is the
+    /// composition `Ω_frame · T(τ)` rather than the frame transvection
+    /// alone.
+    ///
+    /// Counted because `R = 1 − v_b v_a` has `⟨R⟩₂ = v_a ∧ v_b`, a wedge of
+    /// two vectors and therefore SIMPLE with `I₂ = 0` identically — so a
+    /// corpus of pure transvections reads `non-simple 0` whether or not the
+    /// footprint contributes. Only a composition of two non-parallel boosts
+    /// is non-simple, so without this pair the reading `non-simple 4 of
+    /// 545` cannot distinguish "τ is absent" from "τ is collinear".
+    pub chords_offered: u64,
+    pub tau_active: u64,
+    /// THE THREE WAYS `τ` DOES NOT REACH THE OPERATOR, kept apart because
+    /// they are three different facts and one count of "inactive" reports
+    /// them as one. `tau_unfooted` is a chord end carrying no footprint at
+    /// all; `tau_met` is two footprints standing on one basepoint, so
+    /// `τ = 0` and the identity is the honest transport; `tau_refused` is a
+    /// τ the Cayley transform could not carry, which is a defect and not a
+    /// reading. Only the last is a refusal (rule 11).
+    pub tau_unfooted: u64,
+    pub tau_met: u64,
+    pub tau_refused: u64,
     /// THE LOOPS THE FORM CLASSIFIED over those carriages, by their
     /// reading. They are counted where they are read — on the form, over a
     /// whole cycle — and not in the cover, which classifies nothing.

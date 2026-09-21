@@ -83,6 +83,82 @@ thread_local! {
     /// generators seen, generators with ρ ~ ±1)`.
     static SYNONYMS: std::cell::RefCell<(Keyed<u64>, Keyed<u64>, u64, u64)> =
         std::cell::RefCell::new((Keyed::new(), Keyed::new(), 0, 0));
+
+    /// THE OPERATORS OF EACH CASIMIR CLASS — level 1 grouped by level 2.
+    ///
+    /// The antipodal hypothesis needs the operators WITHIN a class, not
+    /// just how many there are: if a class holds exactly two and they are
+    /// mutually inverse, the pair is one undirected geodesic channel
+    /// traversed both ways, and the corpus vocabulary is a set of
+    /// bidirectional dislocation lines rather than scattered directions.
+    ///
+    /// Keyed by the class so the question is a keyed read (rule 3); the
+    /// value carries each distinct operator's own bytes so the product can
+    /// be re-derived and tested rather than assumed.
+    static CLASS_OPS: std::cell::RefCell<Keyed<Vec<Vec<u8>>>> =
+        std::cell::RefCell::new(Keyed::new());
+}
+
+/// THE ANTIPODAL TEST, run over the classes (54.7).
+///
+/// `(operators in the class, whether the class is exactly a mutually
+/// inverse pair)` for every Casimir class, in the carrier's own key order.
+/// A class of two whose product is projectively the identity is one
+/// geodesic line read forward and backward.
+pub fn loop_class_report() -> Vec<(usize, bool)> {
+    CLASS_OPS.with(|c| {
+        c.borrow()
+            .scoped()
+            .map(|(_, ops)| {
+                let inverse = match ops.as_slice() {
+                    [a, b] => {
+                        let decode = |v: &Vec<u8>| {
+                            let mut p = 0usize;
+                            crate::transducer::cga::Mv::from_bytes(v, &mut p)
+                        };
+                        match (decode(a), decode(b)) {
+                            (Some(x), Some(y)) => {
+                                x.geo(&y).projective_eq(&element::identity_versor())
+                            }
+                            _ => false,
+                        }
+                    }
+                    _ => false,
+                };
+                (ops.len(), inverse)
+            })
+            .collect()
+    })
+}
+
+pub fn reset_loop_class_ops() {
+    CLASS_OPS.with(|c| *c.borrow_mut() = Keyed::new());
+}
+
+/// THE OPERATORS OF ONE FORM — the univalence test.
+///
+/// `|im(ρ_F)|` over this form's own cycle basis. A form with one operator
+/// is an elementary token: however many internal cycles it carries, they
+/// are that many geometric proofs of ONE theorem. A form with several is
+/// compound — an unresolved sentence rather than a letter — and the
+/// distinction between alphabet and grammar depends on which it is.
+///
+/// Computed where it is reported, from the form's own loops, so there is
+/// no cumulative state to reset and no way for one form's reading to leak
+/// into another's.
+pub fn form_operators(f: &Form) -> usize {
+    let mut ops: Keyed<()> = Keyed::new();
+    for lp in &f.loops {
+        let Some(inv) = lp.based_at.versor_inverse() else { continue };
+        for (_, omega) in lp.carriages.scoped() {
+            let based = lp.based_at.geo(omega).geo(&inv);
+            let Some(canonical) = based.canonical() else { continue };
+            let mut bytes = Vec::new();
+            canonical.to_bytes(&mut bytes);
+            ops.insert(&bytes, ());
+        }
+    }
+    ops.len()
 }
 
 /// `(|im(ρ)|, |Conj|, generators seen, generators with ρ ~ ±1)`.
@@ -120,9 +196,27 @@ fn note_synonym(based: &element::Versor) {
         }
         let seen = b.0.get(&bytes).copied().unwrap_or(0);
         b.0.insert(&bytes, seen + 1);
-        if let Some(c) = class {
+        if let Some(c) = class.clone() {
             let seen = b.1.get(&c).copied().unwrap_or(0);
             b.1.insert(&c, seen + 1);
+        }
+    });
+    // AND THE OPERATOR FILED UNDER ITS CLASS, so the antipodal test can ask
+    // which operators share a kinematic scale.
+    let Some(c) = class else { return };
+    let mut wire = Vec::new();
+    canonical.to_bytes(&mut wire);
+    CLASS_OPS.with(|m| {
+        let mut m = m.borrow_mut();
+        match m.get_mut(&c) {
+            Some(held) => {
+                if !held.contains(&wire) {
+                    held.push(wire);
+                }
+            }
+            None => {
+                m.insert(&c, vec![wire]);
+            }
         }
     });
 }

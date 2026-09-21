@@ -850,6 +850,26 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
          | axiom B: geodesic {} off-sheet {} | forms carrying a loop: {with_loops}",
         t.meets, t.edges, t.chords, t.within_class, t.unclassed, t.geodesic, t.off_sheet
     );
+    // THE ANTIPODAL TEST (54.7): the operators of each Casimir class, and
+    // whether a class of exactly two is a mutually inverse pair — one
+    // geodesic channel read forward and backward.
+    let classes = crate::transducer::sentence::loop_class_report();
+    let pairs = classes.iter().filter(|(n, _)| *n == 2).count();
+    let inverse = classes.iter().filter(|(_, inv)| *inv).count();
+    eprintln!(
+        "  antipodal: {} classes, sizes {:?}, {pairs} of size two, {inverse} mutually inverse",
+        classes.len(),
+        classes.iter().map(|(n, _)| *n).collect::<Vec<_>>()
+    );
+    // THE DISCRIMINATING TEST (54.7): does the footprint's own displacement
+    // reach the operator, or is the chord carrying the frame transvection
+    // alone? `non-simple 4 of 545` cannot answer this, because a pure
+    // transvection `R = 1 − v_b v_a` is simple by construction.
+    eprintln!(
+        "  τ: {} of {} chords carry a footprint displacement \
+         (unfooted {}, met {}, refused {})",
+        t.tau_active, t.chords_offered, t.tau_unfooted, t.tau_met, t.tau_refused
+    );
     assert!(forms > 0, "the lift ran over no form");
     // EVERY MEET IS ACCOUNTED FOR. The three outcomes partition the meets
     // that reached the lift, so a meet that is none of them is a reader
