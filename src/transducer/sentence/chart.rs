@@ -84,6 +84,18 @@ impl Form {
                 glued.insert(&k, ni);
             }
         }
+        // AND THE COVER LOSES THE BONDS WHOSE PORTS WENT (54.7 B5a).
+        //
+        // `glued` is remapped above and `cover` was not, so retracting a
+        // `Glued` vertex left its `NerveEdge` standing at a site no
+        // boundary reaches — a PHANTOM EDGE, which is the direction that
+        // does not fail safe: it would resolve, replay and be paid for
+        // against a boundary the complex no longer holds.
+        //
+        // Kept by SITE and not by index: `glued` above is the surviving
+        // sites, and an edge belongs exactly when its host is one of them
+        // (rule 15).
+        self.cover.retain(|e| glued.get(e.host().as_bytes()).is_some());
         // SECTIONS ARE NOT RENUMBERED, AND THE REMAP HERE WAS A TYPE ERROR.
         // `Form.sections` is class key → PAIR INDICES OF THE BUNDLE, which
         // its own field doc says; this ran those pair indices through

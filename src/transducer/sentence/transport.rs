@@ -134,6 +134,28 @@ impl Form {
                 _ => {}
             }
         }
+        // AND THE COVER REBASES WITH THE PORTS IT BONDS TO (54.7 B5a, as
+        // measured on the recut at epoch 93).
+        //
+        // `placement` is part of a citation's SITE — the boundary record
+        // `[2][placement][depth][carriage][chart]` that `put_vertex` writes
+        // and `NerveEdge::host` asks for. Rebasing the vertex and not the
+        // edge moves every port to a new site and leaves every bond naming
+        // the old one, which is an orphan port and a phantom edge in one
+        // step, for every citation the form holds.
+        //
+        // It read 10 `REFUSE_ORPHAN_PORT` across the three courts in the
+        // first five minutes of the fleet on this layout — the defect was
+        // invisible before B5 because the target rode the vertex, so a
+        // rebase moved the whole citation at once and there was no second
+        // carrier to fall out of step.
+        //
+        // The order is re-taken because a rebase can reorder the sites.
+        for e in &mut self.cover {
+            e.placement = e.placement.rebase(by);
+        }
+        self.cover =
+            crate::transducer::element::canonical_nerve(std::mem::take(&mut self.cover));
         for face in &mut self.faces {
             face.word = face.word.rebase(by);
         }
