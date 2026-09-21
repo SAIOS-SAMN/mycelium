@@ -37,6 +37,96 @@ thread_local! {
         const { std::cell::Cell::new((0, 0, 0, 0)) };
 }
 
+thread_local! {
+    /// `ker(ρ)` ON THE CYCLE BASIS — the based generators, counted by the
+    /// OPERATOR each enacts (54.7, ruled 2026-09-21).
+    ///
+    /// Now that Axiom A puts every cycle in the basepoint's frame, two
+    /// generators can be compared: `ρ(γ_i) ~ ±ρ(γ_j)` means two distinct
+    /// cellular paths enact the identical physical dislocation — literal
+    /// synonyms, which 13.10 predicts ("one theorem has as many proofs as
+    /// the form has synonyms of one class") and which nothing has ever
+    /// counted.
+    ///
+    /// `trivial` counts `ρ(γ) ~ ±1`: a chord whose transport the spanning
+    /// tree's return path cancelled exactly. Such a generator is in
+    /// `ker(ρ)` outright — a real cycle of `π₁` carrying no geometry.
+    ///
+    /// COUNTED BY A KEYED READ, never a pairwise walk (rule 3): the
+    /// operator's own canonical bytes are its coordinate, so uniqueness is
+    /// a trie insert and `|im(ρ)|` is the carrier's length.
+    /// THE QUOTIENT TOWER, MEASURED AT EACH LEVEL (54.7, ruled
+    /// 2026-09-21):
+    ///
+    /// ```text
+    ///   words in π₁(X¹) ↠ π₁(X, x₀) ↠ im(ρ) ↠ Conj(im ρ)
+    ///        level 0          level 1      level 2
+    /// ```
+    ///
+    /// The two axioms project onto ORTHOGONAL factors and neither sees the
+    /// other's level:
+    ///
+    ///   AXIOM B is spatial — it fixes `(I₁, I₂, kind)`, the eigenvalues
+    ///   and plane signatures, and is completely blind to which tree or
+    ///   basepoint was chosen. It determines LEVEL 2.
+    ///
+    ///   AXIOM A is compositional — it orients the operator inside the
+    ///   shared tangent space at `x₀`, acting along the fibre of level 1
+    ///   over level 2. Re-rooting applies one inner automorphism `Ad_Θ`,
+    ///   which moves the level-1 representative and leaves its level-2
+    ///   projection fixed.
+    ///
+    /// `Ad_θ` is therefore a CONGRUENCE: an equivalence compatible with
+    /// the group operation, and the reason basing had to move no reading.
+    ///
+    /// Held: `(operators by exact projective equality, classes by Casimir,
+    /// generators seen, generators with ρ ~ ±1)`.
+    static SYNONYMS: std::cell::RefCell<(Keyed<u64>, Keyed<u64>, u64, u64)> =
+        std::cell::RefCell::new((Keyed::new(), Keyed::new(), 0, 0));
+}
+
+/// `(|im(ρ)|, |Conj|, generators seen, generators with ρ ~ ±1)`.
+///
+/// `b₁ − |im(ρ)|` is the semantic compression: distinct cellular paths
+/// enacting one physical displacement. `|im(ρ)| / |Conj|` is the
+/// directional dispersion — how many distinct Burgers vectors the corpus
+/// spans within each kinematic class.
+pub fn loop_synonyms() -> (u64, u64, u64, u64) {
+    SYNONYMS.with(|s| {
+        let b = s.borrow();
+        (b.0.len() as u64, b.1.len() as u64, b.2, b.3)
+    })
+}
+
+pub fn reset_loop_synonyms() {
+    SYNONYMS.with(|s| *s.borrow_mut() = (Keyed::new(), Keyed::new(), 0, 0));
+}
+
+/// File one BASED generator by the operator it enacts.
+fn note_synonym(based: &element::Versor) {
+    let Some(canonical) = based.canonical() else { return };
+    let mut bytes = Vec::new();
+    canonical.put_canonical(&mut bytes);
+    let trivial = based.projective_eq(&element::identity_versor());
+    // LEVEL 2 — the conjugacy class, which Axiom A cannot move. A
+    // generator whose class cannot be read is counted at level 1 and not
+    // at level 2, rather than filed under a class it does not have.
+    let class = based.class_key().map(|a| a.as_bytes().to_vec());
+    SYNONYMS.with(|s| {
+        let mut b = s.borrow_mut();
+        b.2 += 1;
+        if trivial {
+            b.3 += 1;
+        }
+        let seen = b.0.get(&bytes).copied().unwrap_or(0);
+        b.0.insert(&bytes, seen + 1);
+        if let Some(c) = class {
+            let seen = b.1.get(&c).copied().unwrap_or(0);
+            b.1.insert(&c, seen + 1);
+        }
+    });
+}
+
 /// `(closes, open, undecomposed over ℚ, isoclinic)`.
 pub fn loop_spectra() -> (u64, u64, u64, u64) {
     SPECTRA.with(|c| c.get())
@@ -482,6 +572,16 @@ impl Form {
                 // THE DEFECT THIS CYCLE CARRIES, read once per member path
                 // off the transport it composes (§8.1).
                 note_defect(c);
+                // AND THE OPERATOR THIS GENERATOR ENACTS, at the basepoint
+                // (Axiom A). Two cycles agreeing here are synonyms: distinct
+                // cellular paths, one physical dislocation.
+                if let Some(inv) = lp.based_at.versor_inverse() {
+                    let composite = match &c.edge {
+                        Some(e) => e.carriage.geo(&c.face.carriage),
+                        None => c.face.carriage.clone(),
+                    };
+                    note_synonym(&lp.based_at.geo(&composite).geo(&inv));
+                }
                 // AND WHETHER ITS ORBIT CLOSES — asked of the CONNECTION,
                 // not of the alphabet (54.7).
                 //

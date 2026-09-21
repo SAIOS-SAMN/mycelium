@@ -985,52 +985,84 @@ pub fn frame_base_point(v: &Mv) -> Option<Mv> {
 ///
 /// `None` is the projective boundary `[1:0]`: an open orbit, charged as
 /// shear rather than sounding a pitch.
+/// THE CYCLOTOMIC CANDIDATES — every order a versor of this algebra can
+/// close at (54.7, ruled 2026-09-21).
+///
+/// A finite-order motion has eigenvalues that are roots of unity, so its
+/// minimal polynomial is a product of cyclotomics. Acting on a
+/// four-dimensional space bounds that degree:
+///
+/// ```text
+///     φ(ℓ) ≤ 4   ⟹   ℓ ∈ {1, 2, 3, 4, 5, 6, 8, 10, 12}
+/// ```
+///
+/// `φ(7) = 6`, `φ(9) = 6`, `φ(11) = 10` — excluded, so an order of 7 is
+/// not merely absent from a corpus, it is unreachable.
+///
+/// `{1,2,3,4,6}` are the crystallographic orders, reachable when the
+/// discriminant is a rational square (`φ(ℓ) ≤ 2`, Niven). `{5,8,10,12}`
+/// need `φ(ℓ) = 4` — the minimal polynomial staying irreducible over ℚ —
+/// which happens exactly when `√Δ ∉ ℚ`. Pentagonal and dodecagonal
+/// symmetry are therefore not forbidden; they live in `ℚ(√Δ)`, and an
+/// earlier note here claiming order 5 unreachable was true only of the
+/// rationally-split case.
+pub const CYCLOTOMIC_ORDERS: [u32; 9] = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+
+/// DOES THIS MOTION CLOSE, AND AT WHAT ORDER — asked of `Ω` WHOLE.
+///
+/// ```text
+///     Ω^ℓ ~ ±1  in  Spin⁺(3,1)(ℚ)
+/// ```
+///
+/// PROJECTIVELY, because `Ω` and `−Ω` are one element of the ray: a `2π`
+/// spatial turn evaluates to `−1` and acts identically on every vector, so
+/// testing `Ω^ℓ = 1` would levy shear on a gauge sign.
+///
+/// NO SPLIT, NO ROOT, NO SCALAR DISCRIMINANT. This replaces
+/// [`bivector_split`] as the gatekeeper of periodicity, and the reason is
+/// that the split was never the question. Decomposing `B` to measure a
+/// period projected a coupled six-parameter group action onto isolated 2D
+/// tangent slices in order to run a scalar angle formula — and then
+/// refused whenever `√Δ ∉ ℚ`, reporting an arithmetic decline as if it were
+/// a property of the cycle. Iterated Clifford multiplication asks the
+/// motion directly.
+///
+/// The iteration is over [`CYCLOTOMIC_ORDERS`], a set fixed by `φ(ℓ) ≤ 4`
+/// — a theorem about this algebra, not a walk over a carrier (rule 3),
+/// exactly as `TRANSVECTION_PLANES` is the algebra's own declaration.
+///
+/// `None` is an open orbit. A motion with any hyperbolic content cannot
+/// close at all: `Ω = Ω_ell Ω_hyp` commuting gives
+/// `Ω^k = Ω_ell^k Ω_hyp^k`, and `Ω_hyp^k = cosh(kβ) + sinh(kβ)B_hyp/β` is
+/// never `±1` for `β > 0` — so even a dispiration whose rotation closes at
+/// a fifth root of unity drifts along its screw axis forever.
+pub fn finite_order(m: &Mv) -> Option<std::num::NonZeroU32> {
+    is_versor(m)?;
+    let unit = Mv::scalar(one());
+    let mut acc = m.clone();
+    // index: the algebra's own cyclotomic candidates, bounded by φ(ℓ) ≤ 4.
+    for k in 1..=12u32 {
+        if CYCLOTOMIC_ORDERS.contains(&k) && acc.projective_eq(&unit) {
+            return std::num::NonZeroU32::new(k);
+        }
+        acc = acc.geo(m);
+    }
+    None
+}
+
 pub fn compact_period(m: &Mv) -> Spectrum {
     use crate::transducer::sentence::ToralPeriod;
-    let Some((ell, _hyp)) = bivector_split(m) else {
-        // THE SPLIT DOES NOT EXIST OVER ℚ. The commuting eigenplanes live
-        // in `ℚ(√Δ)` and this is an algebraic obstruction, NOT an open
-        // orbit — reporting it as one would be a refusal counted as a
-        // measurement (rule 11).
-        return Spectrum::Undecomposed;
-    };
-    if ell.is_zero() {
-        // No compact part: a pure transvection, open by construction.
-        return Spectrum::Open;
+    // 54.7 — ASKED OF THE MOTION WHOLE, NOT OF A DECOMPOSITION OF IT.
+    match finite_order(m) {
+        // ONE PLANE TURNS AND THE ORTHOGONAL ONE IS IDLE, which is a period
+        // of one and not an absence: an idle plane closes trivially and
+        // earns no yield, where absence would say it turns forever.
+        Some(plane) => Spectrum::Closes(ToralPeriod {
+            plane_1: Some(plane),
+            plane_2: std::num::NonZeroU32::new(1),
+        }),
+        None => Spectrum::Open,
     }
-    // THE COMPACT PART MUST TURN IN ONE PLANE for a single period to name
-    // it. An isoclinic double rotation needs a second split, which this
-    // does not perform — refused rather than reported as one plane's order.
-    if !bivector_is_simple(&ell) {
-        return Spectrum::Isoclinic;
-    }
-    let (Some(omega), ) = (cayley(&ell), ) else {
-        return Spectrum::Undecomposed;
-    };
-    let Some(w) = is_versor(&omega) else {
-        return Spectrum::Undecomposed;
-    };
-    let s = omega.scalar_part();
-    // `cos²(θ/2) = s²/w`, which is `half_angle`'s own reading — the one
-    // writer of Niven's five rationals in this tree (rule 12).
-    let Some((k, denom)) = crate::transducer::alphabet::half_angle(&s, &w) else {
-        // NIVEN: the cosine is rational and is not one of the five, so the
-        // winding is irrational and the orbit is dense. Genuinely open,
-        // with a non-zero compact part — the trap, read correctly.
-        return Spectrum::Open;
-    };
-    // `θ = 2kπ/m`, so the order is `m / gcd(k, m)`; `k = 0` is no turn.
-    let order = match k {
-        0 => 1,
-        _ => denom / gcd_u32(k, denom),
-    };
-    let Some(plane) = std::num::NonZeroU32::new(order) else {
-        return Spectrum::Undecomposed;
-    };
-    // ONE PLANE TURNS AND THE ORTHOGONAL ONE IS IDLE, which is a period of
-    // one and not an absence: an idle plane closes trivially and earns no
-    // yield, where absence would say the factor turns forever.
-    Spectrum::Closes(ToralPeriod { plane_1: Some(plane), plane_2: std::num::NonZeroU32::new(1) })
 }
 
 /// WHAT A MOTION'S ACOUSTIC READING IS — and the three ways there is none,

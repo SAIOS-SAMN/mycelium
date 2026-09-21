@@ -1143,6 +1143,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
          | chords {} offered {} | cycles: reflexive {} no-tree-path {} unread {} trivial {} \
          | defects: trivial {} elliptic {} hyperbolic {} parabolic {} non-simple {} \
          | spectra: closes {} open {} undecomposed {} isoclinic {} \
+         | ρ: |im| {} |conj| {} of {} generators, {} in ker \
          | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {}",
         form.faces.len(),
         // The site+ring faces COUNTED as they were built, not the total
@@ -1170,6 +1171,10 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         crate::transducer::sentence::loop_spectra().1,
         crate::transducer::sentence::loop_spectra().2,
         crate::transducer::sentence::loop_spectra().3,
+        crate::transducer::sentence::loop_synonyms().0,
+        crate::transducer::sentence::loop_synonyms().1,
+        crate::transducer::sentence::loop_synonyms().2,
+        crate::transducer::sentence::loop_synonyms().3,
         drops.offered,
         drops.built,
         drops.member_key,
