@@ -1129,6 +1129,59 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             (centre, one + moment)
         }
     };
+    // THE CERTIFIED 2-SIMPLICES OF THIS PERCEPT'S COVER (54.7, ruled
+    // 2026-09-21).
+    //
+    // IT MUST HAPPEN HERE AND NOWHERE LATER. A nerve's 2-simplex exists
+    // exactly where `U_i ∩ U_j ∩ U_k ≠ ∅`, which is a fact about the BASE
+    // and needs every chart's cells in ONE frame. By the time a form is a
+    // word on the wire its chain is CENTERED — framed with its min-corner
+    // at the origin (`element::residual`) — so each arrives in its own
+    // frame, and the only thing relating two of them is the transition
+    // carriage, which is the very thing a cocycle test evaluates. The
+    // court would need the frames to agree to find the overlap, and the
+    // overlap to know whether they agree. Here the footprints are still
+    // the scene's own absolute `(r, c, hue)`, so the question is answerable
+    // and is answered once.
+    //
+    // A chart is a footprint — a region of the base — so two chord ends
+    // standing on the same cells are one chart and are offered once.
+    let (certified, certified_refused) = {
+        let mut seen: Keyed<()> = Keyed::new();
+        let mut charts: Vec<Vec<coord::Lamina>> = Vec::new();
+        for ((_, _, _, da), (_, _, _, db), _) in meet_chords.iter() {
+            for d in [da, db] {
+                let mut key = Vec::with_capacity(d.len() * 24);
+                for (r, c, k) in d.iter() {
+                    key.extend_from_slice(&r.to_le_bytes());
+                    key.extend_from_slice(&c.to_le_bytes());
+                    key.extend_from_slice(&k.to_le_bytes());
+                }
+                if seen.get(&key).is_some() {
+                    continue;
+                }
+                seen.insert(&key, ());
+                charts.push(
+                    d.iter()
+                        .map(|&(row, col, hue)| coord::Lamina { row, col, hue })
+                        .collect(),
+                );
+            }
+        }
+        // THE PAIRWISE READING TOO, because "0 triples" has two very
+        // different causes and one number cannot tell them apart: a cover
+        // whose charts overlap in pairs but never in threes is a genuine
+        // 1-complex, while a cover whose charts never overlap AT ALL is a
+        // PARTITION — and the nerve of a partition is a set of isolated
+        // points, with no edges to climb from. The meets would then be
+        // ADJACENCY between disjoint regions, not intersection, and no
+        // amount of attaching machinery would find a 2-cell.
+        let support = crate::transducer::cech::support_of_cover(&charts);
+        let (cells, _) = support.decoded();
+        let shared = cells.iter().filter(|(_, s)| s.len() >= 2).count();
+        let (triples, refused) = crate::transducer::cech::certified_triples(&charts);
+        ((charts.len(), triples, cells.len(), shared), refused)
+    };
     let chord_pairs: Vec<OfferedChord> = meet_chords
         .iter()
         .filter_map(|((ta, ca, pa, da), (tb, cb, pb, db), e)| {
@@ -1321,6 +1374,8 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
          | defects: trivial {} elliptic {} hyperbolic {} parabolic {} non-simple {} \
          | spectra: closes {} open {} undecomposed {} isoclinic {} \
          | ρ: |im| {} |conj| {} of {} generators, {} in ker | this form: b₁ {} |im| {} \
+         | nerve: {} charts over {} cells, {} shared by two or more, \
+         {} certified triples, {} refused \
          | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {}",
         form.faces.len(),
         // The site+ring faces COUNTED as they were built, not the total
@@ -1362,6 +1417,11 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         crate::transducer::sentence::loop_synonyms().3,
         form.loops.len(),
         crate::transducer::sentence::form_operators(&form),
+        certified.0,
+        certified.2,
+        certified.3,
+        certified.1.len(),
+        certified_refused.len(),
         drops.offered,
         drops.built,
         drops.member_key,
