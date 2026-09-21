@@ -5,6 +5,7 @@ pub mod common;
 
 mod bianchi;
 mod classify;
+mod determinism;
 mod gauge;
 mod nerve;
 mod tape;
