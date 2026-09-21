@@ -19,6 +19,25 @@ thread_local! {
     /// the distribution is a reading of the corpus and not of this code.
     static DEFECTS: std::cell::Cell<(u64, u64, u64, u64, u64)> =
         const { std::cell::Cell::new((0, 0, 0, 0, 0)) };
+
+    /// THE TORAL SPECTRUM OF EACH KEPT CYCLE: `(closes, open)`.
+    ///
+    /// A toral period is a COMPACT invariant — the order of a rotation. A
+    /// pure transvection generates a non-compact one-parameter subgroup and
+    /// its geodesic flow has no returning orbit, so it has no finite period
+    /// at all: it lands on the projective boundary `[1:0]` and charges
+    /// shear rather than sounding a pitch. This counts which, so the claim
+    /// is a reading and not a prediction.
+    static SPECTRA: std::cell::Cell<(u64, u64)> = const { std::cell::Cell::new((0, 0)) };
+}
+
+/// `(cycles whose orbit closes, cycles on the open boundary)`.
+pub fn loop_spectra() -> (u64, u64) {
+    SPECTRA.with(|c| c.get())
+}
+
+pub fn reset_loop_spectra() {
+    SPECTRA.with(|c| c.set((0, 0)));
 }
 
 /// The defect distribution of every cycle kept since the last reset.
@@ -331,6 +350,17 @@ impl Form {
                 // THE DEFECT THIS CYCLE CARRIES, read once per member path
                 // off the transport it composes (§8.1).
                 note_defect(c);
+                // AND WHETHER ITS ORBIT CLOSES. The period is read off the
+                // loop's own holonomy rotor, which is the COMPACT chart —
+                // the only place a finite order can live.
+                SPECTRA.with(|s| {
+                    let mut t = s.get();
+                    match lp.holonomy.rotor().toral_period().closes() {
+                        true => t.0 += 1,
+                        false => t.1 += 1,
+                    }
+                    s.set(t);
+                });
                 lp.carriages.insert(&k, c.face.carriage.clone());
             }
             loops.push(lp);

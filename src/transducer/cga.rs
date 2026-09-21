@@ -724,6 +724,121 @@ pub fn transport_around(edges: &[Mv]) -> Option<Mv> {
     Some(out)
 }
 
+/// THE CANONICAL SPLIT OF A GENERATOR INTO COMMUTING PARTS (54.7, ruled
+/// 2026-09-21).
+///
+/// ```text
+///     B = B_ell + B_hyp,   [B_ell, B_hyp] = 0,
+///     B_ell² = −a² < 0  (compact rotation),
+///     B_hyp² = +b² > 0  (open transvection)
+/// ```
+///
+/// WHY IT IS NEEDED. A toral period is the order of a ROTATION — a compact
+/// invariant. A transvection generates a non-compact one-parameter subgroup
+/// whose geodesic flow has no returning orbit, so a screw's acoustic pitch
+/// is the frequency of its twist about the axis and NOT of its slip along
+/// it. Reading a period off the whole generator asks a compact question of
+/// a non-compact object; reading it off `B_ell` asks it of the only part
+/// that can answer.
+///
+/// THE ALGEBRA, and it is exact. Writing `S = B_hyp − B_ell`, the two parts
+/// commute and `B_ell B_hyp = ½⟨B²⟩₄`, so
+///
+/// ```text
+///     B²  = ⟨B²⟩₀ + ⟨B²⟩₄        S²  = ⟨B²⟩₀ − ⟨B²⟩₄
+/// ```
+///
+/// and `B_ell = (B − S)/2`, `B_hyp = (B + S)/2`. `S` is sought in the
+/// commutative subalgebra `⟨1, Q⟩` with `Q = ⟨B²⟩₄`, `Q² = κ ∈ ℚ`:
+/// `S = α + βQ` with `α² + β²κ = ⟨B²⟩₀` and `2αβ = −1`, which reduces to a
+/// quadratic in `α²` solved by [`crate::transducer::alphabet::rational_sqrt`].
+///
+/// EXACT OR REFUSED (rule 4, rule 11). The discriminant need not be a
+/// rational square, and where it is not the split does not exist over ℚ and
+/// is refused — never rounded onto a nearby one. A SIMPLE generator splits
+/// trivially: one part is `B`, the other is zero, and which is which is the
+/// sign of `⟨B²⟩₀`.
+pub fn bivector_split(m: &Mv) -> Option<(Mv, Mv)> {
+    let b = m.grade(2);
+    let bb = b.geo(&b);
+    let i1 = bb.scalar_part();
+    let q = bb.grade(4);
+    if q.is_zero() {
+        // SIMPLE: one part carries the whole blade and the other is zero.
+        // Which is which is the SIGN of `⟨B²⟩₀` — a reading, not a
+        // convention — and the PLANE travels with it either way.
+        return match i1.is_negative() {
+            true => Some((b, Mv::zero())),
+            false => Some((Mv::zero(), b)),
+        };
+    }
+    // `Q² = κ` is a scalar in five dimensions; refuse if this algebra says
+    // otherwise rather than proceeding on an assumption.
+    let qq = q.geo(&q);
+    let kappa = qq.scalar_part();
+    if !qq.sub(&Mv::scalar(kappa.clone())).is_zero() {
+        return None;
+    }
+    // `S = B_hyp − B_ell` lies in the commutative subalgebra `⟨B, BQ⟩` —
+    // NOT in `⟨1, Q⟩`, which is scalar-plus-grade-4 and could never be a
+    // bivector. Writing `S = xB + yBQ` and expanding `S² = ⟨B²⟩₀ − ⟨B²⟩₄`:
+    //
+    //     u = x² + y²κ = (⟨B²⟩₀² + κ)/Δ ,   v = 2xy = −2⟨B²⟩₀/Δ
+    //     x² = (u ± √(u² − κv²))/2 ,        y = v/(2x)
+    //
+    // with `Δ = ⟨B²⟩₀² − κ`. Exact or refused (rule 4): neither root need
+    // be rational, and where one is not the split does not exist over ℚ.
+    let two = BigRational::from_integer(num_bigint::BigInt::from(2));
+    let delta = &i1 * &i1 - &kappa;
+    if delta.is_zero() {
+        return None;
+    }
+    let v = -(&two * &i1) / &delta;
+    let u = (&i1 * &i1 + &kappa) / &delta;
+    let inner = &u * &u - &kappa * &v * &v;
+    let r = crate::transducer::alphabet::rational_sqrt(&inner)?;
+    // Either root of `x²` gives `S` or `−S`; the one that matters is which
+    // half comes out compact, and that is read below rather than chosen.
+    let x2 = (&u + &r) / &two;
+    let x2 = match x2.is_zero() {
+        true => (&u - &r) / &two,
+        false => x2,
+    };
+    let x = crate::transducer::alphabet::rational_sqrt(&x2)?;
+    if x.is_zero() {
+        return None;
+    }
+    let y = &v / (&two * &x);
+    let s = b.scale(&x).add(&b.geo(&q).scale(&y));
+    // VERIFIED AGAINST THE ALGEBRA, never assumed.
+    if !s.geo(&s).sub(&Mv::scalar(i1).sub(&q)).is_zero() {
+        return None;
+    }
+    let half = one() / &two;
+    let (p, n) = (b.sub(&s).scale(&half), b.add(&s).scale(&half));
+    // WHICH HALF IS COMPACT IS MEASURED. `B_ell² < 0` and `B_hyp² > 0`;
+    // the sign of the root decided the labelling, so the labelling is read
+    // back off the algebra instead of trusted.
+    let (ell, hyp) = match p.geo(&p).scalar_part().is_negative() {
+        true => (p, n),
+        false => (n, p),
+    };
+    if !ell.geo(&ell).scalar_part().is_negative() && !ell.is_zero() {
+        return None;
+    }
+    if !hyp.geo(&hyp).scalar_part().is_positive() && !hyp.is_zero() {
+        return None;
+    }
+    // The parts must COMMUTE and re-sum, or this is not the split.
+    if !ell.geo(&hyp).sub(&hyp.geo(&ell)).is_zero() {
+        return None;
+    }
+    if !ell.add(&hyp).sub(&b).is_zero() {
+        return None;
+    }
+    Some((ell, hyp))
+}
+
 /// IS THIS GENERATOR SIMPLE? `B ∧ B = 0` means `B` is a single blade — one
 /// plane, one motion. `B ∧ B ≠ 0` means it is a SCREW: a rotation and a
 /// transvection on orthogonal planes at once, which cannot be split into
@@ -1046,6 +1161,51 @@ mod tests {
         // geometric product's, never `a² − b²` (rule 11).
         assert!(transvection(&q(1, 1), &q(1, 1), TRANSVECTION_PLANES[0]).is_none());
         assert!(transvection(&q(1, 1), &q(0, 1), E1 | E2).is_none(), "e₁e₂ is not a hyperbolic generator");
+    }
+
+    /// 54.7 — THE CANONICAL SPLIT, verified by the algebra and not asserted.
+    ///
+    /// A screw's pitch is the frequency of its TWIST; its slip along the
+    /// axis is open and sounds nothing. The split is what lets a period be
+    /// asked of the part that can answer.
+    #[test]
+    fn a_screw_splits_into_commuting_compact_and_open_parts() {
+        // A COUPLED generator: a rotation in e₁e₂ (a² = 1) and a boost on
+        // e₃e₋ at half magnitude (b² = ¼). Worked by hand:
+        //   ⟨B²⟩₀ = −1 + ¼ = −¾ ,  Q = e₁e₂e₃e₋ ,  κ = Q² = −1
+        //   disc = 9/16 + 1 = 25/16 ,  √disc = 5/4
+        //   b² = (−¾ + 5/4)/2 = ¼ ,  a² = ¼ + ¾ = 1
+        let screw = Mv::blade(E1 | E2, q(1, 1)).add(&Mv::blade(E3 | EM, q(1, 2)));
+        assert!(!bivector_is_simple(&screw), "the generator couples two planes");
+        let (ell, hyp) = bivector_split(&screw).expect("the split is exact over ℚ here");
+
+        // THE BLADES, not their magnitudes: each part carries its own PLANE
+        // and that is the whole point. `e₁e₂` is the twist, `e₃e₋` the slip.
+        assert_eq!(ell, Mv::blade(E1 | E2, q(1, 1)), "the compact part IS the rotation plane");
+        assert_eq!(hyp, Mv::blade(E3 | EM, q(1, 2)), "the open part IS the boost plane");
+        assert!(ell.geo(&ell).scalar_part().is_negative(), "B_ell² < 0");
+        assert!(hyp.geo(&hyp).scalar_part().is_positive(), "B_hyp² > 0");
+        assert!(ell.geo(&hyp).sub(&hyp.geo(&ell)).is_zero(), "[B_ell, B_hyp] = 0");
+        assert!(ell.add(&hyp).sub(&screw.grade(2)).is_zero(), "B_ell + B_hyp = B");
+        assert!(bivector_is_simple(&ell) && bivector_is_simple(&hyp), "each part turns in ONE plane");
+
+        // A SIMPLE generator carries the whole blade in one part, and WHICH
+        // is the sign of ⟨B²⟩₀ — a reading, not a convention.
+        let rot = Mv::blade(E1 | E2, q(1, 1));
+        let (e3, h3) = bivector_split(&rot).expect("a rotation splits");
+        assert!(h3.is_zero() && e3 == rot, "a rotation is wholly compact, plane intact");
+        let boost = Mv::blade(TRANSVECTION_PLANES[0], q(1, 1));
+        let (e4, h4) = bivector_split(&boost).expect("a boost splits");
+        assert!(e4.is_zero() && h4 == boost, "a transvection is wholly open, plane intact");
+
+        // THE COMPACT PART IS THE ONLY ONE THAT CAN SOUND, and evolving it
+        // proves which: the twist is elliptic, the slip hyperbolic.
+        use crate::network::nerve::coord::BivectorKind;
+        let turn = cayley(&ell).expect("the compact part evolves");
+        assert_eq!(turn.class_invariants().map(|(_, _, k)| k), Some(BivectorKind::Elliptic));
+        let slip = cayley(&hyp).expect("the open part evolves");
+        assert_eq!(slip.class_invariants().map(|(_, _, k)| k), Some(BivectorKind::Hyperbolic));
+        assert!(e4.is_zero(), "a pure dislocation has no compact part to sound");
     }
 
     /// 54.7 R3 — A GENERATOR IS NOT A MOTION, and Cayley is the finite
