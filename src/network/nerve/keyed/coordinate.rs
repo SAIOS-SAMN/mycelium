@@ -290,6 +290,60 @@ pub mod coord {
         }
     }
 
+    /// A CELL OF THE BASE — `(row, col, hue)`, the sensor's lamina, and a
+    /// genuine coordinate of the manifold rather than an ordinal.
+    ///
+    /// It exists so the nerve's overlaps can be derived by WALKING THE
+    /// BASE. A 2-simplex of a cover is certified by a WITNESS: a cell
+    /// standing in three charts at once, `p ∈ U_i ∩ U_j ∩ U_k`. Keyed by
+    /// this coordinate, the support of the cover is an inverted reading
+    /// `p ↦ charts(p)` built in one linear pass, and any cell whose
+    /// reading names three or more charts hands back the simplex directly.
+    ///
+    /// THE ALTERNATIVE IS FALSE. Taking 3-cliques of the pairwise meet
+    /// graph proves only `U_i ∩ U_j ≠ ∅` three times over, and three
+    /// charts can ring a pore they do not cover — filling that triangle
+    /// would kill an authentic `H₁` class by fiat. It is also a
+    /// combinatorial scan over triples, which is a search (rule 3); the
+    /// base walk is `O(cells · valence)` and derives the simplex from the
+    /// cover the engine already built.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct Lamina {
+        pub row: i64,
+        pub col: i64,
+        pub hue: i64,
+    }
+
+    impl Coordinate for Lamina {
+        const NAME: &'static str = "lamina-cell";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
+
+        fn encode(&self) -> CompactBytes {
+            let mut buf = vec![7u8];
+            buf.extend_from_slice(&self.row.to_le_bytes());
+            buf.extend_from_slice(&self.col.to_le_bytes());
+            buf.extend_from_slice(&self.hue.to_le_bytes());
+            CompactBytes::written(buf)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            let axis = |i: usize| -> Result<i64, CoordinateError> {
+                let at = 1 + i * 8;
+                let eight: [u8; 8] = bytes
+                    .get(at..at + 8)
+                    .and_then(|s| s.try_into().ok())
+                    .ok_or_else(|| Self::refuse("a lamina cell is a tag byte and three i64"))?;
+                Ok(i64::from_le_bytes(eight))
+            };
+            match bytes.first() {
+                Some(7u8) if bytes.len() == 25 => {
+                    Ok(Lamina { row: axis(0)?, col: axis(1)?, hue: axis(2)? })
+                }
+                _ => Err(Self::refuse("a lamina cell is a tag byte and three i64")),
+            }
+        }
+    }
+
     /// A VERTEX'S POSITION IN ITS OWN FORM — an ordinal, not a coordinate
     /// of the manifold (rule 15), typed so it cannot reach a carrier that
     /// answers one.

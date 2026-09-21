@@ -696,33 +696,23 @@ pub fn inverse_even(u: &Mv) -> Option<Mv> {
     Some(rev.geo(&bar).scale(&(one() / ds)))
 }
 
-/// THE PATH-ORDERED TRANSPORT AROUND A CLOSED CHAIN OF EDGES.
-///
-/// ```text
-///     Ω_∂e² = 𝒫 ∏ Ω_e
-/// ```
-///
-/// An edge of the complex is not an annotation carrying a bivector label;
-/// it is a FINITE transport operator, and the curvature a 2-cell traps is
-/// the ordered product of the transitions around its attaching map. The
-/// order is the path's — the product does not commute, and that is the
-/// content.
-///
-/// `Ω_∂e² = 1` is a flat cell. Anything else is an obstruction the cell
-/// holds: a Burgers transvection where the composite reads hyperbolic, a
-/// curvature rotation where it reads elliptic — which
-/// [`Mv::class_invariants`] answers and nothing here decides.
-pub fn transport_around(edges: &[Mv]) -> Option<Mv> {
-    let mut out = Mv::scalar(one());
-    // index: the edges of one attaching map, in the order the boundary
-    // walks them — the cell's own declaration, never a search.
-    for e in edges {
-        is_versor(e)?;
-        out = out.geo(e);
-    }
-    is_versor(&out)?;
-    Some(out)
-}
+// THE PATH-ORDERED TRANSPORT AROUND A CLOSED CHAIN, `Ω_∂e² = 𝒫 ∏ Ω_e`,
+// STOOD HERE AND IS RETIRED (54.7, ruled 2026-09-21).
+//
+// It was written, never called, and computed the boundary product along a
+// SINGLE channel — the `Cl(4,1)` carriage alone. A transition of this
+// complex has two halves, the orientation rotor in `Cl(4,0)` and the
+// spatial transvection in `Spin⁺(3,1)(ℚ)`, and by the Cartan decomposition
+// `Spin⁺(3,1) ≅ Spin(3) × exp(𝔭)` with `K ∩ exp(𝔭) = {1}` a transvection
+// can never cancel a rotation. A boundary product taken on the carriage
+// alone therefore reports a cell as flat while its orientation rotor holds
+// a disclination.
+//
+// `cech::coboundary::solve_gauge` already solves `δγ = ω` on BOTH halves
+// together and returns the 1-cocycle the tree cannot place, and
+// `Complex::coboundary_on_link` closes what a simplex's faces determine.
+// Two implementations of one operation is one too many, and the surviving
+// one is the one that is correct about the group.
 
 /// THE CANONICAL SPLIT OF A GENERATOR INTO COMMUTING PARTS (54.7, ruled
 /// 2026-09-21).
@@ -1606,9 +1596,9 @@ mod tests {
         // closed chain of transports that returns is flat; one that does
         // not is the obstruction the cell traps.
         let inv = boost.versor_inverse().expect("a versor inverts");
-        let flat = transport_around(&[boost.clone(), inv]).expect("a closed transport");
+        let flat = boost.geo(&inv);
         assert!(flat.projective_eq(&Mv::scalar(one())), "Ω Ω⁻¹ = 1 is a flat cell");
-        let held = transport_around(&[boost.clone(), screw.clone()]).expect("a transport");
+        let held = boost.geo(&screw);
         assert!(!held.projective_eq(&Mv::scalar(one())), "a cell that traps an obstruction");
         assert!(
             !boost.geo(&screw).projective_eq(&screw.geo(&boost)),
