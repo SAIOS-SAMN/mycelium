@@ -158,8 +158,30 @@ pub enum Vertex {
         /// Stop ring. A form coordinate with the carriage and gauge; not M1.
         contact: Option<alphabet::Contact>,
     },
+    /// AN OPEN BOUNDARY OF THIS CHART — and NOT what it mates with (54.7,
+    /// B5a, as ruled 2026-09-21).
+    ///
+    /// THE TARGET IS GONE FROM HERE. It sat on the vertex and, through
+    /// `put_vertex`, inside `form_vertex_key`, and that made the address
+    /// space provably acyclic: `key(A) ⊃ key(B)` gives `|A| > |B|`, so by
+    /// well-ordering no cycle `A → … → A` could exist. `b₁` of the nerve
+    /// was zero by construction.
+    ///
+    /// What the host holds is its own boundary — the rank of chart it mates
+    /// with, the depth that chart had when cited, the placement and the
+    /// transition φ. All of it is LOCAL and bounded, `O(1)` per citation,
+    /// and all of it stays. WHICH form the boundary was instantiated
+    /// against is the cover's fact and lives on [`Form::cover`] as a
+    /// `NerveEdge`.
+    ///
+    /// IT IS DELETED RATHER THAN EMPTIED. Left as a field, a form decoded
+    /// from a key would carry an empty address and every reader would go on
+    /// compiling while resolving nothing — the empty-carrier reading, which
+    /// on `rule_matches_tests` means a court painting nothing for a rule
+    /// the client painted, and every citing solve failing verification.
+    /// Gone, each of those readers is a compile error until it takes the
+    /// cover from where the cover is.
     Glued {
-        address: crate::transducer::address::Address,
         chart: stalk::Invariant,
         magnitude: [u64; 4],
         depth: u16,
@@ -462,6 +484,38 @@ pub struct Form {
     /// Cited form address → glued vertex index. Written by [`Form::glue`]
     /// and rebuilt by the decoder from Glued vertices.
     pub glued: Keyed<u16>,
+    /// THE COVER: WHICH FORM EACH OPEN BOUNDARY MATES WITH (54.7, B5a, as
+    /// ruled 2026-09-21).
+    ///
+    /// This was `Vertex::Glued.address` — the target sitting on the vertex
+    /// and, through `put_vertex`, inside `form_vertex_key`. Both are wrong,
+    /// and the second is the one that forced the topology: with `key(A) ⊃
+    /// key(B)` for every citation, `|A| > |B|`, and by well-ordering no
+    /// cycle `A → … → A` could exist. The manifold was a directed acyclic
+    /// forest because of how it was NAMED, and `b₁` was zero by
+    /// construction rather than by measurement.
+    ///
+    /// A CHART DOES NOT KNOW WHAT IT OVERLAPS. The host states its own
+    /// boundary — a rank, a depth, a placement, a φ — and that is all the
+    /// vertex carries and all the key writes. WHICH form that boundary was
+    /// instantiated against is a fact about the COVER, so the form carries
+    /// it here as `N(𝒰)`'s 1-skeleton and the key does not carry it at all.
+    ///
+    /// IT IS NOT AN INDEX, AND IT IS NOT KEYED BY SITE. `glued` above maps
+    /// a cited address to a vertex index, and an index is a position rather
+    /// than a coordinate (rule 15). A map keyed the other way — site to
+    /// edge — fails for a different reason: once the target leaves the key,
+    /// two citations of two forms under one φ at one chart rank stand at
+    /// ONE site (gauge universality), so a keyed carrier would hold one and
+    /// silently drop the other. The cover is a list of edges, ordered by
+    /// their own coordinates when the envelope is built.
+    ///
+    /// EMPTY IS HONEST. `from_address` reconstitutes a form from its key,
+    /// and the key does not name the cover, so the form it returns has
+    /// none. `from_element_form` has the word's `ReceiptsEnvelope` in hand
+    /// and fills it. A reader that finds it empty is reading a form whose
+    /// citations nothing told it — which is the truth, not a zero.
+    pub cover: Vec<crate::transducer::element::NerveEdge>,
     /// Incomparable discharges held as candidates until a glue or ruling.
     /// Outer key is the after class; inner is the discharging rotor A1 key.
     pub vortex: Keyed<Keyed<PivotCertificate>>,
@@ -519,6 +573,7 @@ impl Default for Form {
             torsion: Keyed::new(),
             axes: Keyed::new(),
             glued: Keyed::new(),
+            cover: Vec::new(),
             vortex: Keyed::new(),
             by_address: Keyed::new(),
             by_class: Keyed::new(),
@@ -725,8 +780,11 @@ impl Form {
                 Vertex::Demand { kind, chart, .. } => {
                     demands.insert(crate::transducer::sentence::demand_key(kind, chart), i as u16);
                 }
-                Vertex::Glued { address, .. } => {
-                    glued.insert(address, i as u16);
+                // 54.7 B5a — KEYED BY THE SITE, which is what the vertex
+                // now holds. It was keyed by the cited address, and that
+                // address is the cover's fact on `Form::cover`.
+                v @ Vertex::Glued { .. } => {
+                    glued.insert(crate::transducer::sentence::vertex_bytes(v), i as u16);
                 }
                 _ => {}
             }
@@ -981,15 +1039,17 @@ fn note_unplaced(i: u16, j: u16, word: &Word, named: usize, placed: usize) {
 /// are two chances to disagree about what a citation is (law 12).
 pub fn cited_addresses(f: &Form) -> Vec<crate::transducer::address::Address> {
     let mut out = Vec::new();
+    // CHART CITING CHART, off the cover (54.7 B5a). It walked the `Glued`
+    // vertices, and a vertex no longer names the form it mates with; the
+    // 1-skeleton of `N(𝒰)` does.
+    for e in &f.cover {
+        out.push(e.target.clone());
+    }
     for v in &f.vertices {
-        match v {
-            Vertex::Glued { address, .. } => out.push(address.clone()),
-            Vertex::Word { derivation, .. } => {
-                for (form_addr, _, _) in &derivation.generators {
-                    out.push(form_addr.clone());
-                }
+        if let Vertex::Word { derivation, .. } = v {
+            for (form_addr, _, _) in &derivation.generators {
+                out.push(form_addr.clone());
             }
-            _ => {}
         }
     }
     out

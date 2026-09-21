@@ -98,8 +98,8 @@ impl Bytes for Vertex {
                     n += k.len() + a.carriage.bytes() + a.gauge.len() * 2;
                 }
             }
-            Vertex::Glued { address, chart, .. } => {
-                n += address.as_bytes().len() + chart.key().as_bytes().len();
+            Vertex::Glued { chart, .. } => {
+                n += chart.key().as_bytes().len();
             }
             Vertex::Demand { chart, bodies, .. } => {
                 n += chart.key().as_bytes().len() + bodies.len() * std::mem::size_of::<crate::transducer::sentence::Link>();

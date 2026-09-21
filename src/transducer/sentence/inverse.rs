@@ -121,13 +121,19 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
                 Vertex::Word { address, derivation, acts: acts.0, contact }
             }
             2 => {
-                let address = crate::transducer::address::Address::new(take_bytes(k, &mut p)?);
+                // 54.7 (B5) — THE CITATION'S TARGET IS NOT IN THE KEY, so
+                // it is not read from one and none is invented (rule 11).
+                // `form_vertex_key` writes the boundary — the chart's rank,
+                // the depth, the placement and φ — and WHICH form that
+                // boundary mates with is the cover's fact, carried on
+                // `Form::cover` and filled by `from_element_form` from the
+                // word's `ReceiptsEnvelope`. A form reconstituted from a
+                // key alone has no cover, and that is the truth about it.
                 let placement = Word::formed(Rotor::from_bytes(k, &mut p)?);
                 let depth = take_u16k(k, &mut p)?;
                 let carriage = Box::new(Versor::from_bytes(k, &mut p)?);
                 let chart = stalk::Invariant::from_key(&take_bytes(k, &mut p)?)?;
                 Vertex::Glued {
-                    address,
                     chart,
                     magnitude: [0; 4],
                     depth,

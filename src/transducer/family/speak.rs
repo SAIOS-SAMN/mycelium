@@ -264,31 +264,52 @@ fn speak_on_scene(
             // PERCEIVED, at the composed placement: the crystal resolves the
             // citation by address, and the cited form's bodies are this
             // grid's bodies (law 12).
-            Vertex::Glued {
-                address,
-                placement: q,
-                ..
-            } => {
+            v @ Vertex::Glued { placement: q, .. } => {
                 let composed = placement.compose(q);
-                let key = Scene::citation_key(address.as_bytes(), &composed);
-                // READ THE CITATION AT ITS OWN COORDINATE. This rule cites
-                // one form 578 times at one placement and spoke it 578
-                // times onto the same grid; what comes back is the same
-                // painted set every time, because nothing in the citation
-                // varies.
-                if let Some((p, r)) = scene.spoken.borrow().get(&key) {
-                    painted.extend_from_slice(p);
-                    remainder.extend_from_slice(r);
-                    continue;
+                // 54.7 B5a — EVERY FORM THIS BOUNDARY MATES WITH, off the
+                // cover. It read the target off the vertex, and a vertex no
+                // longer names the form it cites: the boundary is the
+                // chart's fact, the incidence is `N(𝒰)`'s. One site may
+                // carry several edges (gauge universality), and each of
+                // them speaks.
+                //
+                // A DECODED FORM CARRIES ITS COVER OR SPEAKS NOTHING HERE,
+                // and that is why `from_element_form` fills it from the
+                // word's envelope: the court reaches this through
+                // `rule_matches_tests`, and a rule whose cover it did not
+                // receive would paint nothing while the client painted it,
+                // failing every citing solve on the verification.
+                let site = crate::transducer::sentence::vertex_bytes(v);
+                let mut spoke_any = false;
+                for edge in f.edges_at(&site) {
+                    spoke_any = true;
+                    let key = Scene::citation_key(edge.target.as_bytes(), &composed);
+                    // READ THE CITATION AT ITS OWN COORDINATE. This rule
+                    // cites one form 578 times at one placement and spoke it
+                    // 578 times onto the same grid; what comes back is the
+                    // same painted set every time, because nothing in the
+                    // citation varies.
+                    if let Some((p, r)) = scene.spoken.borrow().get(&key) {
+                        painted.extend_from_slice(p);
+                        remainder.extend_from_slice(r);
+                        continue;
+                    }
+                    let (_e, s) = crystal.by_address(&edge.target)?;
+                    let sp = speak_on_scene(s, x, scene, &composed, crystal, None)?;
+                    scene
+                        .spoken
+                        .borrow_mut()
+                        .insert(&key, (sp.painted.clone(), sp.remainder.clone()));
+                    painted.extend(sp.painted);
+                    remainder.extend(sp.remainder);
                 }
-                let (_e, s) = crystal.by_address(address)?;
-                let sp = speak_on_scene(s, x, scene, &composed, crystal, None)?;
-                scene
-                    .spoken
-                    .borrow_mut()
-                    .insert(&key, (sp.painted.clone(), sp.remainder.clone()));
-                painted.extend(sp.painted);
-                remainder.extend(sp.remainder);
+                // A BOUNDARY WITH NO INCIDENCE IS UNSPOKEN, NOT SILENT
+                // (rule 11). The form states a citation and nothing told it
+                // which form; that is a gap in what reached this reader and
+                // it is reported, never painted over as an empty citation.
+                if !spoke_any {
+                    unspoken.push(vi as u16);
+                }
             }
             // A REBASED VERTEX SPEAKS EVERY CHART `of` ACTED ON, as a Word
             // vertex does: `by`'s word, the relative at that chart composed with

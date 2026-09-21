@@ -126,12 +126,10 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
     // many there are. The gap is repetition within one tape and it is K2's
     // to remove by quantifying the citation, not the encoder's to shorten.
     let mut glued_names: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    for v in &f.vertices {
-        if let Vertex::Glued { address, .. } = v {
-            glued_names.insert(address, ());
-            p.glued_n += 1;
-            p.addr_glued += 2 + address.len();
-        }
+    for e in &f.cover {
+        glued_names.insert(&e.target, ());
+        p.glued_n += 1;
+        p.addr_glued += 2 + e.target.len();
     }
     p.glued_distinct = glued_names.len();
     for v in &f.vertices {
@@ -236,11 +234,13 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
     // is the cited forms' addresses written inline by `form_vertex_key`'s
     // Glued arm. `put_bytes` writes a u32 length ahead of each.
     p.key_total = e.address().len();
-    for v in &f.vertices {
-        if let Vertex::Glued { address, .. } = v {
-            p.key_cited += 4 + address.len();
-        }
-    }
+    // 54.7 B5a — ZERO, AND THAT IS THE MEASUREMENT. The key's `Glued` arm
+    // wrote each cited form's address inline, and on var/1 at 288 sentences
+    // that was 97.94% of 64 923 B/word. The arm now writes the boundary
+    // alone, so no cited address is in the key and this reads what it
+    // should: the cost of a citation in a key is the boundary's, and the
+    // cover it names is the envelope's.
+    let _ = &f.cover;
     let named = p.addr_word
         + p.addr_glued
         + p.frame

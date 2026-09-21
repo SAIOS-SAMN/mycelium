@@ -264,15 +264,18 @@ impl Epigenome {
     /// a closed citation contributes no class. No Dialect from a sentence.
     pub(crate) fn comprehend_form(&mut self, f: &crate::transducer::sentence::Form) -> Comprehension {
         use crate::transducer::family::Crystal;
-        use crate::transducer::sentence::Vertex;
         let mut missing = Vec::new();
         let mut understood = Vec::new();
-        for v in &f.vertices {
-            let Vertex::Glued { address, chart, .. } = v else {
-                continue;
-            };
-            let address = address.clone();
-            let chart = chart.clone();
+        // 54.7 B5a — THE CITATIONS ARE THE COVER'S, not the vertices'. A
+        // `Glued` vertex states a boundary — a rank, a depth, a placement, a
+        // φ — and WHICH form it mates with is `Form::cover`, filled from
+        // the utterance's `ReceiptsEnvelope` by `from_element_form`. Walked
+        // off the vertices after the eviction, every citation would resolve
+        // at nothing and the mind would call a sentence it cannot read
+        // `Admitted`.
+        for edge in &f.cover {
+            let address = edge.target.clone();
+            let chart = edge.chart.clone();
             if let Some(w) = self.genome.get_mut(address.as_bytes()) {
                 w.expression += 1;
                 understood.push((address.clone().into_vec(), Standing::Ruled));

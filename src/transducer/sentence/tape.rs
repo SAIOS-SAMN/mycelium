@@ -62,8 +62,14 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                     put_inv(&a.chart, out)?;
                 }
             }
-            Vertex::Glued {
-                address,
+            // 54.7 B5a — THE TAPE STILL NAMES THE TARGET, and it is the
+            // FORM's cover that supplies it. The vertex holds the boundary
+            // alone, so the writer is handed the edge standing at this
+            // vertex's site; a citation whose cover the form does not carry
+            // cannot be written, and refusing is the honest answer (rule
+            // 11) rather than a zero address that reads back as a citation
+            // of nothing.
+            v @ Vertex::Glued {
                 chart,
                 magnitude,
                 depth,
@@ -71,7 +77,9 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                 carriage,
             } => {
                 out.push(2);
-                crate::transducer::address::put_addr(out, address)?;
+                let site = crate::transducer::sentence::vertex_bytes(v);
+                let edge = f.cover.iter().find(|e| e.host().as_bytes() == site)?;
+                crate::transducer::address::put_addr(out, &edge.target)?;
                 put_inv(chart, out)?;
                 for m in magnitude {
                     out.extend_from_slice(&m.to_le_bytes());
@@ -271,6 +279,8 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         return None;
     }
     let mut vertices = Vec::with_capacity(nv);
+    // THE COVER, COLLECTED AS THE CITATIONS ARE PARSED (54.7 B5a).
+    let mut cover: Vec<crate::transducer::element::NerveEdge> = Vec::new();
     for _ in 0..nv {
         let kind = *b.get(*pos)?;
         *pos += 1;
@@ -313,13 +323,19 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 let depth = take_u16(b, pos)?;
                 let (placement, _) = word_from_form_bytes(b, pos)?;
                 let carriage = Box::new(element::Versor::from_bytes(b, pos)?);
-                Vertex::Glued {
-                    address,
-                    chart,
-                    magnitude,
-                    depth,
-                    placement,
-                    carriage,
+                {
+                    // 54.7 B5a — THE TARGET GOES TO THE COVER, not onto the
+                    // vertex. The tape is the pre-eviction carrier and
+                    // names it; where it belongs is the form's 1-skeleton.
+                    cover.push(crate::transducer::element::NerveEdge {
+                        target: address,
+                        chart: chart.clone(),
+                        magnitude,
+                        depth,
+                        placement: placement.clone(),
+                        carriage: carriage.clone(),
+                    });
+                    Vertex::Glued { chart, magnitude, depth, placement, carriage }
                 }
             }
             3 => {
@@ -501,6 +517,11 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         torsion,
         axes,
         glued: Keyed::new(),
+        // THE COVER, OFF THE TAPE'S OWN CITATIONS (54.7, B5a). The tape is
+        // the pre-eviction carrier and writes each citation's target, so
+        // the edges were collected at the parse site above and nothing is
+        // invented for them here.
+        cover,
         vortex: Keyed::new(),
         by_address: Keyed::new(),
         by_class: Keyed::new(),
@@ -742,9 +763,27 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // the evidence a court replays with — and the six readers that wanted
     // them take them from there. So the decoder asks the ADDRESS, which is
     // what the form IS (law 2), and the tape it used to parse is now written
-    // and read by nothing but itself. B5 evicts the citation targets from the
-    // key; B6 deletes the tape.
-    crate::transducer::sentence::from_address(&e.address())
+    // and read by nothing but itself. B5 has evicted the citation targets
+    // from the key; B6 deletes the tape.
+    let mut f = crate::transducer::sentence::from_address(&e.address())?;
+    // THE COVER, FROM THE WORD'S OWN ENVELOPE (54.7 B5a).
+    //
+    // `from_address` is a faithful retract of the GEOMETRY and the geometry
+    // is all it retracts: the key states each citation's BOUNDARY — a
+    // rank, a depth, a placement, a φ — and not which form that boundary
+    // mates with, because a chart does not know what it overlaps. So the
+    // form comes back with no cover, which is true of a form reconstituted
+    // from a key alone.
+    //
+    // Here there is a WORD in hand, and a word carries what its mind
+    // attests: `ReceiptsEnvelope.nerve` is `N(𝒰)`'s 1-skeleton, one edge
+    // per incidence, each keyed by the site of the boundary it leaves from.
+    // Without this line every reader of the cover on a received sentence —
+    // the court speaking a submitted rule, the mind comprehending an
+    // utterance, the retirement scope, the use credit — reads an empty
+    // cover and resolves nothing, silently.
+    f.cover = e.receipts().nerve.clone();
+    Some(f)
 }
 
 /// RE-MINT A FORM A MIND ALREADY HOLDS, carrying that mind's attestation

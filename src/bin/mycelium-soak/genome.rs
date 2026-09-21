@@ -608,7 +608,7 @@ pub(crate) fn reconcile(path: &str) {
 pub(crate) fn nerve(path: &str) {
     use mycelium::network::nerve::Keyed;
     use mycelium::transducer::address::Address;
-    use mycelium::transducer::sentence::{from_address, Vertex};
+    use mycelium::transducer::sentence::from_address;
     let Ok(bytes) = std::fs::read(path) else {
         eprintln!("  nerve refused: {path} does not read");
         std::process::exit(1);
@@ -706,9 +706,11 @@ pub(crate) fn nerve(path: &str) {
         };
         let here = id_of(&addr, &mut node, &mut nodes);
         let mut cited_any = false;
-        for v in &f.vertices {
-            let Vertex::Glued { address, .. } = v else { continue };
-            let there = id_of(address, &mut node, &mut nodes);
+        // 54.7 B5a — THE 1-SKELETON IS THE FORM'S COVER. It was walked off
+        // the `Glued` vertices, and a vertex states a boundary rather than
+        // an incidence; the incidence is what this audit measures.
+        for e in &f.cover {
+            let there = id_of(&e.target, &mut node, &mut nodes);
             edges.push((here, there));
             cited_any = true;
         }

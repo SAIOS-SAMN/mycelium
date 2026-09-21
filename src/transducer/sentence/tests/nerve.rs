@@ -242,15 +242,12 @@ fn a_citation_truncated_to_its_chart_names_two_forms() {
     let (g1, g2) = (cite(&x), cite(&y));
 
     let glued_of = |f: &Form| {
-        f.vertices
-            .iter()
-            .find_map(|v| match v {
-                Vertex::Glued { address, chart, magnitude, depth, placement, carriage } => {
-                    Some((address.clone(), chart.clone(), *magnitude, *depth, placement.clone(), (**carriage).clone()))
-                }
-                _ => None,
-            })
-            .expect("one citation")
+        // 54.7 B5a — THE CITATION IS THE COVER'S EDGE. Its boundary is on
+        // the vertex and its incidence is here, and an edge carries both.
+        let [e] = f.cover.as_slice() else {
+            panic!("one citation");
+        };
+        (e.target.clone(), e.chart.clone(), e.magnitude, e.depth, e.placement.clone(), (*e.carriage).clone())
     };
     let (a1, c1, m1, d1, p1, phi1) = glued_of(&g1);
     let (a2, c2, m2, d2, p2, phi2) = glued_of(&g2);
@@ -266,12 +263,27 @@ fn a_citation_truncated_to_its_chart_names_two_forms() {
     );
 
     // AND THE ONLY THING THAT SEPARATES THEM IS THE CITED ADDRESS — the
-    // unbounded, recursive half. Truncate it and these two forms are one.
+    // unbounded, recursive half, which is no longer in either key.
     assert_ne!(a1, a2, "the cited addresses differ, and they are all that does");
-    assert_ne!(
+    // 54.7 B5a — SO THE TWO FORMS ARE ONE FORM. Every bounded coordinate
+    // agrees, and the one that disagreed was the cited address; with it
+    // gone from the key, two isomorphic local boundaries reach one
+    // coordinate. That is gauge universality and it is the point: what
+    // distinguishes these two citations is incidence in `N(𝒰)`, which is
+    // not a property of either chart, and it is carried on the cover.
+    //
+    // This asserted the opposite, and the opposite is what forced the
+    // topology: `key(A) ⊃ key(B)` made the address space provably acyclic
+    // by well-ordering, so `b₁` of the nerve was zero by construction
+    // rather than by measurement.
+    assert_eq!(
         form_vertex_key(&g1),
         form_vertex_key(&g2),
-        "two forms citing two sub-complexes are two forms; the address is what says so"
+        "two isomorphic local boundaries are one boundary, and the key says so"
+    );
+    assert_ne!(
+        g1.cover, g2.cover,
+        "and the cover is where they differ, because the incidence is the cover's fact"
     );
 }
 

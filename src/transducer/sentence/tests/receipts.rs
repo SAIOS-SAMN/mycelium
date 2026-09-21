@@ -136,12 +136,21 @@ fn a_citation_carries_its_slip_and_not_only_its_bend() {
 
 /// THE SITE OF AN EDGE IS ITS OWN COORDINATE, NOT ITS POSITION (rule 15).
 ///
-/// `host()` is the bytes `form_vertex_key`'s `Glued` arm keeps once the
-/// target address leaves it — chart, depth, placement, carriage. Two edges
-/// citing DIFFERENT forms under the SAME transition from charts of the same
-/// rank stand at the same site, and an edge ledger keyed by vertex index
-/// would have called them two sites and broken under any re-ordering the
-/// form is entitled to.
+/// `host()` is the key contribution of the `Glued` vertex an edge came off,
+/// asked of `put_vertex` — the one writer of that record — and never
+/// re-written beside it. It hand-wrote the record beside `put_vertex`'s
+/// `Glued` arm until 2026-09-21, and two byte runs that agree is identity
+/// by bytes, which law 2 and §1.5 refuse.
+///
+/// The reading: glue two citations in one order and then the other. The
+/// vertices land at different POSITIONS, and the envelope's listing is the
+/// same either way, because `of_form` files edges through a `Keyed` on
+/// their sites and a PATRICIA trie IS the order of its keys.
+///
+/// AND TWO CITATIONS OF DIFFERENT FORMS STAND AT ONE SITE — gauge
+/// universality, asserted below: the host form has ONE `Glued` vertex and
+/// the cover has TWO edges at it, because two isomorphic local boundaries
+/// ARE one boundary and what distinguishes them is incidence in `N(𝒰)`.
 #[test]
 fn an_edge_stands_at_a_site_and_not_at_an_index() {
     let a = leaf((0, 1));
@@ -150,23 +159,27 @@ fn an_edge_stands_at_a_site_and_not_at_an_index() {
     let b_at = addr_of(&b);
     assert_ne!(a_at, b_at, "two leaves at two planes are two forms");
 
-    let edge_of = |target: crate::transducer::address::Address, f: &Form| {
+    let sites = |first: (&Form, crate::transducer::address::Address),
+                 second: (&Form, crate::transducer::address::Address)| {
         let mut host = Form::default();
-        host.glue_append_under(f, target, Word::identity(), [0, 0, 0, 1], shift(2, 0))
-            .expect("cite");
+        for (f, at) in [first, second] {
+            host.glue_append_under(f, at, Word::identity(), [0, 0, 0, 1], shift(2, 0))
+                .expect("cite");
+        }
         host.loops = Form::loops_of(&host.faces, &host.vertices);
         host.reindex();
         let e = as_element_form(&host, [1, 0, 0, 0]).expect("mint");
-        e.receipts().nerve[0].clone()
+        e.receipts().nerve.iter().map(NerveEdge::host).collect::<Vec<_>>()
     };
-    let ea = edge_of(a_at, &a);
-    let eb = edge_of(b_at, &b);
-    assert_ne!(ea.target, eb.target, "the two edges cite two different forms");
+    let forward = sites((&a, a_at.clone()), (&b, b_at.clone()));
+    let backward = sites((&b, b_at), (&a, a_at));
+    assert_eq!(forward.len(), 2, "two citations are two 1-simplices");
     assert_eq!(
-        ea.host(),
-        eb.host(),
-        "and stand at one site, because the site is the transition and the chart"
+        forward, backward,
+        "the listing is by the edges' own sites, so the order they were glued in is not in it"
     );
+    let [x, y] = forward.as_slice() else { panic!("two edges") };
+    assert_eq!(x, y, "and both stand at ONE site: the boundary is the same boundary");
 }
 
 /// A 2-SIMPLEX READS ITS HOLONOMY OFF ITS THREE EDGES (law 12).
@@ -250,6 +263,97 @@ fn a_word_that_attests_nothing_says_so() {
         ReceiptsEnvelope::from_block(&0u32.to_le_bytes(), &mut p),
         None,
         "an envelope that did not serialize is not an envelope with nothing in it"
+    );
+}
+
+/// TWO FORMS CITING TWO DIFFERENT FORMS ARE ONE FORM (B5, 54.7).
+///
+/// This is the coordinate reading of the eviction, one level up from
+/// `an_edge_stands_at_a_site_and_not_at_an_index`: not just that the two
+/// EDGES stand at one site, but that the two CITING FORMS reach one
+/// address. A host says "I have an open boundary that mates under φ at a
+/// chart of this rank and this depth". Two hosts saying that say the same
+/// thing, and WHICH form each boundary was instantiated against is the
+/// cover's fact — incidence in `N(𝒰)` — and not a property of either
+/// chart.
+///
+/// Before the eviction the cited address was inline, so these were two
+/// addresses and the difference between them was 29 490 bytes of another
+/// form's coordinates that neither host had any claim to.
+#[test]
+fn two_hosts_citing_two_forms_reach_one_coordinate() {
+    let a = leaf((0, 1));
+    let b = leaf((0, 2));
+    let a_at = addr_of(&a);
+    let b_at = addr_of(&b);
+    assert_ne!(a_at, b_at, "two leaves at two planes are two forms");
+
+    let cite = |f: &Form, at: crate::transducer::address::Address| {
+        let mut host = Form::default();
+        host.glue_append_under(f, at, Word::identity(), [0, 0, 0, 1], shift(2, 0))
+            .expect("cite");
+        host.loops = Form::loops_of(&host.faces, &host.vertices);
+        host.reindex();
+        host
+    };
+    let ha = cite(&a, a_at.clone());
+    let hb = cite(&b, b_at);
+    assert_eq!(
+        form_vertex_key(&ha),
+        form_vertex_key(&hb),
+        "two isomorphic local boundaries ARE one boundary"
+    );
+
+    // AND THE ENVELOPES SEPARATE THEM. Gauge universality is not a loss of
+    // information — it is the information moving to the carrier that owns
+    // it. The two words are one word; the two ATTESTATIONS are two.
+    let ea = as_element_form(&ha, [1, 0, 0, 0]).expect("mint");
+    let eb = as_element_form(&hb, [1, 0, 0, 0]).expect("mint");
+    assert_eq!(ea.address(), eb.address(), "one address");
+    assert_ne!(ea.receipts(), eb.receipts(), "two covers");
+}
+
+/// A CITATION COSTS THE SAME WHATEVER IT CITES, AND THAT IS WHAT SEVERS
+/// THE ACYCLICITY (B5, 54.7).
+///
+/// Inlining `A_c` meant `key(A) ⊃ key(B)`, so `|A| > |B|` for every
+/// citation, and by well-ordering of the naturals no cycle `A → … → A`
+/// could exist — the cognitive manifold was a directed acyclic forest
+/// because of how it was NAMED, and `b₁` of the nerve was zero by
+/// construction rather than by measurement.
+///
+/// The reading that the constraint is gone is not a byte run's absence; it
+/// is that the host's key has the same DIMENSION whichever form it cites.
+/// Here one host cites a leaf and the other cites a form that already
+/// carries a citation of its own — strictly larger, by a margin that grows
+/// with depth — and the two hosts stand at keys of one size. With no strict
+/// order on lengths there is no well-ordering argument, and a cycle is
+/// expressible.
+#[test]
+fn a_citation_does_not_grow_with_what_it_cites() {
+    let a = leaf((0, 1));
+    let a_at = addr_of(&a);
+
+    let cite = |f: &Form, at: crate::transducer::address::Address| {
+        let mut host = Form::default();
+        host.glue_append_under(f, at, Word::identity(), [0, 0, 0, 1], shift(2, 0))
+            .expect("cite");
+        host.loops = Form::loops_of(&host.faces, &host.vertices);
+        host.reindex();
+        host
+    };
+    let one = cite(&a, a_at.clone());
+    let one_at = addr_of(&one);
+    assert!(
+        one_at.as_bytes().len() > a_at.as_bytes().len(),
+        "a form that cites is larger than the leaf it cites — it has more cells"
+    );
+
+    let two = cite(&one, one_at);
+    assert_eq!(
+        form_vertex_key(&one).as_bytes().len(),
+        form_vertex_key(&two).as_bytes().len(),
+        "the citation is O(1) in what it cites: placement, depth, carriage, rank"
     );
 }
 

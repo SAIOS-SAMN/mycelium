@@ -525,7 +525,14 @@ pub fn replay_form_at(
 /// a vertex with no address is refused at the tape.
 fn face_at(f: &Form, face: &crate::transducer::sentence::FormFace, spoken: &Element) -> Refusal {
     let addr_of = |i: u16| match f.vertices.get(i as usize) {
-        Some(Vertex::Word { address, .. }) | Some(Vertex::Glued { address, .. }) => Some(address.clone()),
+        Some(Vertex::Word { address, .. }) => Some(address.clone()),
+        // 54.7 B5a — A CITATION IS REFUSED AT ITS SITE. It was refused at
+        // the form it cites, which is the cover's fact and not the
+        // vertex's; the boundary's own record is what this end of the face
+        // IS, and it is a coordinate the citing form holds (A21).
+        Some(v @ Vertex::Glued { .. }) => {
+            Some(crate::transducer::address::Address::new(sentence::vertex_bytes(v)))
+        }
         _ => None,
     };
     match (addr_of(face.i), addr_of(face.j)) {

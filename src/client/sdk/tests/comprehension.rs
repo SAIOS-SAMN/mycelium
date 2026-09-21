@@ -139,10 +139,9 @@ outer.faces.push(outer.face_of(0, 1).expect("vertices"));
 let _gi = outer
     .glue(&inner, inner_addr.clone(), Word::identity(), [1, 0, 0, 0])
     .expect("glue");
-assert_eq!(
-    outer.glued.get(&inner_addr).copied(),
-    Some(_gi),
-    "glue records the cited address"
+assert!(
+    outer.cover.iter().any(|e| e.target == inner_addr),
+    "glue records the cited address on the cover"
 );
 assert!(
     outer.faces.iter().any(|f| f.i == 0 && f.j == _gi && f.i != 1),

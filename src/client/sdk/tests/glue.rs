@@ -4,7 +4,7 @@
 use crate::arc::Grid;
 use crate::client::sdk::*;
 use crate::transducer::family::{cipher_form, sentence_measure, Crystal, NoCrystal};
-use crate::transducer::sentence::{as_element_form, Vertex};
+use crate::transducer::sentence::as_element_form;
 
 fn digits(rows: &[&str]) -> Grid {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
@@ -72,10 +72,7 @@ fn a_mind_that_stood_a_form_cites_it_when_it_extracts_a_rule() {
     let rule = crate::transducer::family::extract_rule_with(&family, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
     assert!(
-        rule.form
-            .vertices
-            .iter()
-            .any(|v| matches!(v, Vertex::Glued { address, .. } if *address == e.address())),
+        rule.form.cover.iter().any(|edge| edge.target == e.address()),
         "the rule cites the form the mind stood, by address"
     );
 }

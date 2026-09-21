@@ -212,7 +212,14 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
     let gi = host
         .glue(&inner, inner_e.address(), w.clone(), [1, 0, 0, 0])
         .expect("glue");
-    assert_eq!(host.glued.get(&inner_e.address()).copied(), Some(gi));
+    // 54.7 B5a — `glued` IS KEYED BY THE SITE, and the site is what the
+    // vertex holds; the cited address is the cover's.
+    let site = crate::transducer::sentence::vertex_bytes(&host.vertices[gi as usize]);
+    assert_eq!(host.glued.get(&site).copied(), Some(gi));
+    assert!(
+        host.cover.iter().any(|e| e.target == inner_e.address()),
+        "and the cover names the form the boundary mates with"
+    );
     // The placement face is the one glue just pushed, so the tail is it.
     #[expect(
         clippy::disallowed_methods,
@@ -793,13 +800,22 @@ fn a_form_is_recovered_from_its_key() {
     // identity is not shortened (1.7), so the inverse does not shorten it.
     let key = form_vertex_key(&host);
     let back = from_address(&key).expect("recovers");
+    // 54.7 B5a — THE BOUNDARY IS RECOVERED FROM THE KEY, AND THE COVER IS
+    // NOT. The key states that this chart has an open boundary at a rank, a
+    // depth, a placement and a φ; which form that boundary mates with is
+    // the cover's fact and reaches a reader on the word's envelope, never
+    // from the key. `from_address` invents nothing for it (rule 11).
     assert!(
-        back.vertices.iter().any(|v| matches!(
-            v,
-            crate::transducer::sentence::Vertex::Glued { address, .. } if *address == inner_addr
-        )),
-        "the glued citation is recovered from the key alone"
+        back.vertices
+            .iter()
+            .any(|v| matches!(v, crate::transducer::sentence::Vertex::Glued { .. })),
+        "the glued boundary is recovered from the key alone"
     );
+    assert!(
+        back.cover.is_empty(),
+        "and a form reconstituted from a key alone knows of no incidence, because the key carries none"
+    );
+    let _ = &inner_addr;
 
     // A key that is not one is refused rather than part-read (rule 11).
     // `from_address` takes an ADDRESS (law 2), so calling a run of bytes a

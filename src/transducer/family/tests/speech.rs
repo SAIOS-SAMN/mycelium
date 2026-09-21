@@ -49,8 +49,14 @@ fn a_glued_vertex_speaks_its_cited_form_on_the_one_perception_of_the_scene() {
     for _ in 0..2 {
         citing.glue(&held_form, held_e.address(), identity.clone(), held_e.magnitude()).expect("the closed form glues");
     }
+    // 54.7 B5a — ONE BOUNDARY, ONE INCIDENCE. The same form cited twice
+    // under the same φ at the same chart is one overlap stated twice: one
+    // `Glued` vertex at one site, and one edge in the cover. It was two
+    // vertices because each carried the cited address, and two vertices at
+    // one site have a key that does not round-trip to them.
     let glued = citing.vertices.iter().filter(|v| matches!(v, Vertex::Glued { .. })).count();
-    assert_eq!(glued, 2, "two citations of the one form");
+    assert_eq!(glued, 1, "two statements of one citation are one boundary");
+    assert_eq!(citing.cover.len(), 1, "and one incidence");
     reset_sensor_reads();
     let spoken = apply_form(&citing, &x, &identity, &crystal).expect("the citing form speaks");
     assert_eq!(sensor_reads(), (x.len() * x[0].len()) as u64, "the grid is perceived once for the whole speech");

@@ -35,127 +35,6 @@ pub fn reset_retractions() {
 }
 
 impl Form {
-    /// Glue a closed form in as one vertex, and walk the loops and the
-    /// index for it. The single-citation reader; a PASS of citations calls
-    /// [`Form::glue_append`] and walks once at the end (Z2 item 1).
-    pub fn glue(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
-        self.glue_under(s, s_addr, placement, magnitude, element::identity_versor())
-    }
-
-    /// THE CITATION UNDER ITS MORPHISM φ (54.2): the cited form acts inside
-    /// this one as `x ↦ φ x φ̃`. `glue` is this at the identity — a
-    /// citation that turns and neither translates nor dilates — which is
-    /// every citation the extractor builds today.
-    pub fn glue_under(
-        &mut self,
-        s: &Form,
-        s_addr: crate::transducer::address::Address,
-        placement: Word,
-        magnitude: [u64; 4],
-        phi: element::Versor,
-    ) -> Option<u16> {
-        let idx = self.glue_append_under(s, s_addr, placement, magnitude, phi)?;
-        self.loops = Self::loops_of(&self.faces, &self.vertices);
-        self.reindex();
-        Some(idx)
-    }
-
-    /// THE CITATION APPENDED AND NOTHING WALKED (Z2 item 1): the `Glued`
-    /// vertex, its placement face, the glue index and the depth — every
-    /// coordinate the citation itself writes — and neither `loops_of` nor
-    /// `reindex`.
-    ///
-    /// The glue pass of `extract_rule_with` cited one form 578 times on
-    /// `1d0a4b61`, and each citation rebuilt the cycle basis over 2 850
-    /// faces and reindexed the whole form. Measured on the instrument: 4.9 s
-    /// of `face_at` inside `loops_of`, on a 16.8 s pull.
-    ///
-    /// AN APPEND CANNOT INVALIDATE WHAT THE PASS READS. A `Glued` vertex
-    /// carries no transport class, so `by_transport` — the index the pass
-    /// asks for the vertices to retract — is untouched by it; the loops the
-    /// appended face closes are read once after the pass, with the
-    /// retractions, which rebuilds them anyway.
-    pub fn glue_append(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
-        self.glue_append_under(s, s_addr, placement, magnitude, element::identity_versor())
-    }
-
-    /// [`glue_append`] under a named morphism.
-    pub fn glue_append_under(
-        &mut self,
-        s: &Form,
-        s_addr: crate::transducer::address::Address,
-        placement: Word,
-        magnitude: [u64; 4],
-        phi: element::Versor,
-    ) -> Option<u16> {
-        if !s.is_closed() {
-            return None;
-        }
-        // 18: A FORM OPENS AT ITS FRAME, so vertex zero is the frame by the
-        // form's own shape and the slice pattern reads that coordinate.
-        let [frame @ Vertex::Frame, ..] = s.vertices.as_slice() else {
-            return None;
-        };
-        if !frame.word_in(s).is_some_and(|w| w.is_identity()) {
-            return None;
-        }
-        // THE DEPTH REFUSAL IS GONE (54.2, as ruled 2026-09-20). It read
-        //
-        //     let host = self.depth_of();
-        //     if host > 0 && d >= host { return None }
-        //
-        // and was taken for an acyclicity invariant. It was not one. `host`
-        // is one more than the DEEPEST CITATION ALREADY APPENDED, so the
-        // refusal asked a question about arrival order: the same set of
-        // citations was admitted deep-first and refused shallow-first, and a
-        // fresh host (`host == 0`) was exempt altogether, so two leaves could
-        // always cite each other. It forbade not cycles but a second citation
-        // deeper than the first — the 63d6e40 defect in its second home, and
-        // `a_citation_set_is_not_an_arrival_order` is its reading.
-        //
-        // WHAT STANDS IN ITS PLACE. Charts of an open cover do not own each
-        // other; `U_i` citing `U_j` and `U_j` citing `U_i` is one overlap
-        // written from both sides, and it is the 1-skeleton of the nerve
-        // whose 2-simplices carry `H²`. The guard against a runaway is not a
-        // posetal height but topological closure — `φ_ij φ_jk φ_ki = 1` — and
-        // a cycle that does not close carries its composite as its holonomy,
-        // which is content and not an error (`curvature is content`).
-        //
-        // NOTHING RECURSES ON A CITATION. A `Glued` vertex holds the cited
-        // form's ADDRESS, never the form: `depth_of` reads each vertex's own
-        // stored `depth` field, and `from_address` rebuilds the vertex from
-        // the address bytes without resolving them. A cycle is finite data
-        // and every reader of it terminates.
-        //
-        // `depth` stays a COORDINATE OF THE CITATION — the cited form's depth
-        // when it was cited — and is no longer a contract about the relation.
-        let d = s.depth_of();
-        let chart = chart_of_form(s)?;
-        if chart.0.is_empty() {
-            return None;
-        }
-        let idx = self.vertices.len() as u16;
-        self.glued.insert(&s_addr, idx);
-        self.vertices.push(Vertex::Glued {
-            address: s_addr,
-            chart,
-            magnitude,
-            depth: d,
-            placement: placement.clone(),
-            carriage: Box::new(phi),
-        });
-        // THE PLACEMENT FACE CARRIES ITS PLACEMENT. A Glued vertex stands at
-        // the cited form's chart and the Frame at the root, so there is one
-        // member pair and `face_carrying` names it; `FormFace::new` left it
-        // empty and the loop through this face had no member path.
-        match self.face_carrying(0, idx, placement.clone()) {
-            Some(face) => self.faces.push(face),
-            None => self.faces.push(FormFace::new(0, idx, placement)),
-        }
-        self.depth = self.depth_of();
-        Some(idx)
-    }
-
     /// Drop the named vertices (keyed by old index), drop faces that touched
     /// them, remap surviving faces through the old-to-new map, rebuild loops.
     pub fn retract_vertices(&mut self, drop: &Keyed<()>) {
@@ -775,7 +654,11 @@ pub fn chart_of(e: &Element) -> Option<crate::transducer::stalk::Invariant> {
 pub(crate) fn vertex_match_key(form: &Form, i: u16) -> Option<Vec<u8>> {
     match form.vertices.get(i as usize)? {
         Vertex::Frame => Some(vertex_ix_key(0)),
-        Vertex::Word { address, .. } | Vertex::Glued { address, .. } => Some(address.clone().into_vec()),
+        Vertex::Word { address, .. } => Some(address.clone().into_vec()),
+        // 54.7 B5a — A CITATION IS MATCHED BY ITS SITE. It was matched by
+        // the form it cites, which is the cover's fact and no longer on the
+        // vertex; the boundary's own record is what this chart holds.
+        v @ Vertex::Glued { .. } => Some(vertex_bytes(v)),
         Vertex::Rebased { of, .. } => match form.vertices.get(*of as usize) {
             Some(Vertex::Word { address, .. }) => Some(address.clone().into_vec()),
             _ => None,
@@ -807,8 +690,8 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
                 let j = *b.by_address.get(address)?;
                 b.vertices.get(j as usize)?
             }
-            Vertex::Glued { address, .. } => {
-                let j = *b.glued.get(address)?;
+            v @ Vertex::Glued { .. } => {
+                let j = *b.glued.get(&vertex_bytes(v))?;
                 b.vertices.get(j as usize)?
             }
             Vertex::Rebased { of, .. } => {
@@ -864,7 +747,12 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
 /// inline in `form_vertex_key`'s loop, and `vertex_bytes` needs the same
 /// bytes to order the vertices by their own coordinates; two writers of
 /// one fact would let the order disagree with what is written.
-fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
+///
+/// `pub(crate)` for the third reader of that fact: [`NerveEdge::host`] is
+/// the site a nerve edge re-attaches at, which IS a `Glued` vertex's key
+/// contribution. It hand-wrote the record beside this arm until 2026-09-21,
+/// and two byte runs that agree is identity by bytes — law 2, §1.5.
+pub(crate) fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
     match v {
         Vertex::Frame => buf.push(0),
         // 1.5: the key is the COMPOSED product's canonical rotor, so
@@ -876,15 +764,55 @@ fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
             buf.push(1);
             put_word_vertex(buf, derivation, acts, *contact);
         }
-        // 54.2 — A CITATION IS ⟨A_c, φ⟩: the cited form's canonical
-        // address, and the transition versor it acts under here. The
-        // address alone made the citation a static pointer — two forms
-        // citing one sub-complex at two places reached one address,
-        // because `placement` is a rotor and cannot translate or
-        // dilate. φ is A4's canonical writing and is O(1) whatever the
-        // cited form's size, so the key does not inline it.
+        // 54.7 (B5) — A CITATION IS A BOUNDARY, AND THE KEY WILL WRITE THE
+        // BOUNDARY ALONE (Road (d), as ruled 2026-09-21). THE EVICTION IS
+        // NOT CUT HERE YET, AND THE ORDER IS THE WHOLE POINT.
+        //
+        // Inlining `A_c` makes the address space PROVABLY ACYCLIC. If
+        // `key(A)` contains `key(B)` then `|A| > |B|`, so by well-ordering
+        // of lengths no cycle `A → … → A` can exist at all — the cognitive
+        // manifold is forced to be a directed acyclic forest by its own
+        // naming scheme, and `b₁` of the nerve is zero by construction.
+        // `two_charts_may_cite_each_other` is the reading: an edge must be
+        // its own object because `key(U) ⊃ key(V)` in both directions is
+        // impossible.
+        //
+        // WHAT THE HOST SAYS AND WHAT THE COVER SAYS ARE TWO FACTS. The
+        // host form states "I have an open boundary that mates under φ at
+        // a chart of this rank and this depth" — every coordinate of that
+        // is LOCAL and bounded. WHICH form the boundary was instantiated
+        // against is the cover's fact, not the chart's, and it rides
+        // `ReceiptsEnvelope.nerve` as a `NerveEdge` carrying the full
+        // affine transition.
+        //
+        // WHY THE ADDRESS IS STILL WRITTEN. Cut on 2026-09-21 and run, the
+        // eviction took ten readings down with ONE cause: a `Form` decoded
+        // from a key can no longer name what it cites, and six live readers
+        // still asked the form. The sharpest is `rule_matches_tests` — the
+        // court speaking a submitted rule onto withheld tests — whose form
+        // comes from `sentence_rule_of` → `from_element_form`, so a rule
+        // that cites would paint nothing at the court while the client
+        // painted it, and every citing solve would fail verification.
+        //
+        // AND THE COVER IS NOT RECOVERABLE HERE, not even in multiplicity:
+        // `canonical_vertices` files vertices by `vertex_bytes`, so once
+        // the target leaves, two citations of two forms at one site are ONE
+        // vertex with one record. Re-attaching an envelope edge to it on
+        // decode would be pairing by position, and a position is not a
+        // coordinate (rule 15). The readers must move to the envelope; the
+        // form cannot be made to answer.
+        //
+        // So the eviction lands AFTER the readers, not before: while both
+        // carriers hold the cover, each migrated reader is checked against
+        // the key's answer, which is a guard neither carrier gives alone.
+        // The eviction and its two readings are parked at
+        // `scratchpad/B5-full.patch`.
+        //
+        // Measured before the eviction on var/1 at 288 sentences: key
+        // 64 923 B/word, of which 97.94% is cited addresses — 621
+        // citations naming 440 distinct forms at ~29 490 B each, against
+        // 1 336 B for a form's own cells.
         Vertex::Glued {
-            address,
             placement,
             depth,
             carriage,
@@ -892,7 +820,6 @@ fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
             ..
         } => {
             buf.push(2);
-            crate::transducer::address::put_bytes(buf, address);
             placement.put_canonical(buf);
             buf.extend_from_slice(&depth.to_le_bytes());
             carriage.put_canonical(buf);
@@ -965,7 +892,12 @@ fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
 
 /// A VERTEX'S OWN BYTES — what it contributes to a key, and therefore its
 /// coordinate within the form.
-fn vertex_bytes(v: &Vertex) -> Vec<u8> {
+/// A VERTEX'S OWN COORDINATES, as the key writes them (A21). `pub(crate)`
+/// since 54.7 B5a: a `Glued` vertex no longer carries the form it cites,
+/// so its SITE — this record — is what identifies it, and `reindex`,
+/// `vertex_match_key` and `coboundary_gauge` all ask for it by name
+/// instead of each writing it again (law 12).
+pub(crate) fn vertex_bytes(v: &Vertex) -> Vec<u8> {
     let mut b = Vec::new();
     put_vertex(&mut b, v);
     b

@@ -141,6 +141,16 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     if let Vertex::Glued { depth, .. } = &mut cited_deeper.vertices[gi as usize] {
         *depth = 1;
     }
+    // 54.7 B5a — AND THE EDGE MOVES WITH IT, because the boundary and the
+    // incidence are two coordinates of one citation. `depth` is part of the
+    // vertex's SITE, so tampering the vertex alone leaves it standing where
+    // no edge of the cover stands, and the tape writer refuses to write a
+    // citation whose target the form does not carry (rule 11) rather than
+    // writing a zero address. A forger has to move both, which is what this
+    // does — and the key still names a different word for it.
+    for e in &mut cited_deeper.cover {
+        e.depth = 1;
+    }
     let deeper_e = as_element_form(&cited_deeper, [1, 0, 0, 0]).expect("tape");
     assert_ne!(
         deeper_e.address(),

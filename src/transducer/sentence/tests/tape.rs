@@ -142,12 +142,14 @@ fn form_tape_v6_round_trips() {
         _ => panic!("word vertex"),
     }
     match (&f.vertices[glued as usize], &back.vertices[glued as usize]) {
-        (Vertex::Glued { address: a, depth: da, .. }, Vertex::Glued { address: b, depth: db, .. }) => {
-            assert_eq!(a, b);
+        (Vertex::Glued { depth: da, .. }, Vertex::Glued { depth: db, .. }) => {
             assert_eq!(da, db);
         }
         _ => panic!("glued vertex"),
     }
+    // 54.7 B5a — AND THE COVER COMES BACK WITH IT. The target left the
+    // vertex; the incidence is the form's, one edge per citation.
+    assert_eq!(f.cover, back.cover, "the cover round-trips whole");
     match (&back.vertices[rebased as usize], &f.vertices[rebased as usize]) {
         (Vertex::Rebased { by, of, acts }, Vertex::Rebased { acts: was, .. }) => {
             assert_eq!(*by, 0);
@@ -422,28 +424,34 @@ fn a_citation_is_the_cited_address_and_it_re_derives() {
         .count();
     assert_eq!(glued, 3, "three glued vertices, got {glued}");
 
-    // IDENTITY IS NOT SHORTENED (1.7): the citing form's own key carries
-    // the cited form's whole address.
+    // IDENTITY IS NOT SHORTENED (1.7) — AND IT IS THE COVER THAT CARRIES
+    // IT (54.7 B5a). The cited form's whole address stands on every edge,
+    // unshortened and undigested; what the KEY carries is this chart's own
+    // boundary, because a chart does not know what it overlaps.
+    //
+    // The eviction is why: with the target inline, `key(A) ⊃ key(B)` gives
+    // `|A| > |B|` for every citation, so by well-ordering no cycle
+    // `A → … → A` could exist and the manifold was a directed acyclic
+    // forest by its naming scheme alone.
+    assert_eq!(host.cover.len(), 3, "three boundaries, three incidences");
+    assert!(
+        host.cover.iter().all(|e| e.target == inner_addr),
+        "the cover carries the cited coordinates whole, on every edge"
+    );
     let key = crate::transducer::sentence::form_vertex_key(&host);
     assert!(
-        key.as_bytes()
+        !key.as_bytes()
             .windows(inner_addr.len())
             .any(|x| x == inner_addr.as_bytes()),
-        "the citing form's key carries the cited coordinates whole"
+        "and the key carries none of them: a citation costs the boundary, not the form"
     );
 
     // AND THE TAPE RE-DERIVES: the host decodes to a form that cites the
     // same address and re-mints to the same one.
     let e = as_element_form(&host, [1, 0, 0, 0]).expect("the host mints");
     let back = from_element_form(&e).expect("the tape round trips");
-    let cited: Vec<crate::transducer::address::Address> = back
-        .vertices
-        .iter()
-        .filter_map(|v| match v {
-            Vertex::Glued { address, .. } => Some(address.clone()),
-            _ => None,
-        })
-        .collect();
+    let cited: Vec<crate::transducer::address::Address> =
+        back.cover.iter().map(|e| e.target.clone()).collect();
     assert_eq!(cited.len(), 3, "every citation comes back");
     assert!(cited.iter().all(|a| *a == inner_addr), "each is the address cited");
 
@@ -479,7 +487,7 @@ fn a_citation_is_the_cited_address_and_it_re_derives() {
     let ne = as_element_form(&nested, [1, 0, 0, 0]).expect("the nested form mints");
     let nback = from_element_form(&ne).expect("a nested tape round trips");
     assert!(
-        nback.vertices.iter().any(|v| matches!(v, Vertex::Glued { address, .. } if *address == host_addr)),
+        nback.cover.iter().any(|e| e.target == host_addr),
         "the nested citation decodes to the address it cited, whole"
     );
     assert_eq!(

@@ -556,12 +556,21 @@ fn citing_form(hue: u8, cited: &crate::transducer::address::Address) -> crate::t
     let mut f = standing_form(hue);
     let chart = crate::transducer::stalk::invariant(&[(0i64, 0i64, hue, 0u8)]);
     f.vertices.push(Vertex::Glued {
-        address: cited.clone(),
+        chart: chart.clone(),
+        magnitude: [1, 0, 0, 0],
+        depth: 0,
+        placement: crate::transducer::alphabet::Word::identity(),
+        carriage: Box::new(crate::transducer::element::identity_versor()),
+    });
+    // 54.7 B5a — AND THE INCIDENCE IT STANDS FOR. The vertex is the
+    // boundary; `glues` at the hold is written off the cover.
+    f.cover.push(crate::transducer::element::NerveEdge {
+        target: cited.clone(),
         chart,
         magnitude: [1, 0, 0, 0],
         depth: 0,
         placement: crate::transducer::alphabet::Word::identity(),
-            carriage: Box::new(crate::transducer::element::identity_versor()),
+        carriage: Box::new(crate::transducer::element::identity_versor()),
     });
     f.reindex();
     f

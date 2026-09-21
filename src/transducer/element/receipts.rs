@@ -88,7 +88,9 @@ use crate::transducer::stalk::Invariant;
 /// (rule 15).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NerveEdge {
-    /// `A_j` — the cited form. This is the byte run that leaves the key.
+    /// `A_j` — the cited form. This is the coordinate that leaves the key:
+    /// which form a boundary was instantiated against is the COVER's fact,
+    /// not the chart's.
     pub target: Address,
     /// The cited form's rank: what KIND of chart is being cited.
     pub chart: Invariant,
@@ -110,21 +112,43 @@ pub struct NerveEdge {
 }
 
 impl NerveEdge {
-    /// THE SITE IN THE CITING FORM, by its own coordinates (A21) — the
-    /// bytes `form_vertex_key`'s `Glued` arm keeps once the target address
-    /// leaves it.
+    /// THE SITE IN THE CITING FORM, by its own coordinates (A21) — the key
+    /// contribution of the `Vertex::Glued` this edge came off.
     ///
     /// An edge re-attaches to its vertex by this key. It is NOT the vertex's
     /// index: the vertex list is canonically ordered, but an ordering is a
     /// position and a position is not a coordinate (rule 15), and an edge
     /// ledger keyed by position would break under any re-ordering the form
     /// is entitled to.
+    ///
+    /// IT GOES THROUGH THE ONE WRITER, and that is law 2 and not tidiness.
+    /// This hand-wrote the record — `[2]`, placement, depth, carriage,
+    /// chart — beside `put_vertex`'s `Glued` arm, and the two agreed only
+    /// because they were written on one afternoon to agree. What that makes
+    /// the site is a byte run that MATCHES another byte run, and identity is
+    /// content, never bytes (law 2; byte exactness is never what is checked,
+    /// §1.5). `put_vertex` carries the same ruling in its own doc comment —
+    /// two writers of one fact let the order disagree with what is written —
+    /// and this was the second writer.
+    ///
+    /// So the edge reconstitutes the vertex it denotes, from its OWN
+    /// coordinates and no placeholder, and asks the key's writer what that
+    /// vertex's contribution is. There is then no agreement to maintain and
+    /// nothing to assert about bytes: the site of an edge and the site of a
+    /// vertex are one fact with one writer, and a coordinate the `Glued` arm
+    /// starts or stops writing moves both at once.
     pub fn host(&self) -> Address {
-        let mut buf = vec![2u8];
-        self.placement.put_canonical(&mut buf);
-        buf.extend_from_slice(&self.depth.to_le_bytes());
-        self.carriage.put_canonical(&mut buf);
-        crate::transducer::address::put_bytes(&mut buf, self.chart.key().as_bytes());
+        let mut buf = Vec::new();
+        crate::transducer::sentence::put_vertex(
+            &mut buf,
+            &crate::transducer::sentence::Vertex::Glued {
+                chart: self.chart.clone(),
+                magnitude: self.magnitude,
+                depth: self.depth,
+                placement: self.placement.clone(),
+                carriage: self.carriage.clone(),
+            },
+        );
         Address::new(buf)
     }
 
@@ -383,19 +407,13 @@ impl ReceiptsEnvelope {
     /// would be a coordinate standing for no theorem (T21(iii)).
     pub fn of_form(f: &crate::transducer::sentence::Form) -> ReceiptsEnvelope {
         use crate::transducer::sentence::Vertex;
-        let mut env = ReceiptsEnvelope::default();
+        // THE 1-SKELETON IS THE FORM'S COVER, taken whole (54.7 B5a). It
+        // was rebuilt here by walking the `Glued` vertices for their target
+        // addresses, and a vertex no longer names the form it mates with:
+        // the boundary is the chart's, the incidence is the cover's.
+        let mut env = ReceiptsEnvelope { nerve: f.cover.clone(), ..ReceiptsEnvelope::default() };
         for v in &f.vertices {
             match v {
-                Vertex::Glued { address, chart, magnitude, depth, placement, carriage } => {
-                    env.nerve.push(NerveEdge {
-                        target: address.clone(),
-                        chart: chart.clone(),
-                        magnitude: *magnitude,
-                        depth: *depth,
-                        placement: placement.clone(),
-                        carriage: carriage.clone(),
-                    });
-                }
                 // A SPELLED VERTEX LEAVES NO CITE. Its whole word is the
                 // residue and the key carries the rotor, so an entry for it
                 // would be evidence of nothing (law 12).
@@ -415,12 +433,29 @@ impl ReceiptsEnvelope {
         // the key is the object's coordinates written out. Two minds that
         // walked a form's vertices differently reach one listing without
         // anyone choosing a comparison.
-        let mut by_site: crate::network::nerve::Keyed<NerveEdge> =
+        // ORDERED BY SITE AND THEN BY TARGET, AND BOTH ARE THE KEY (54.7
+        // B5a). This filed edges under `host()` alone, which held while the
+        // target was still in the key: two citations of different forms
+        // were two sites, so one entry per site lost nothing.
+        //
+        // Once the target leaves, two citations of two forms under one φ
+        // from charts of one rank stand at ONE site — that is gauge
+        // universality and it is the point — and a carrier keyed by site
+        // alone keeps ONE of them and drops the rest, silently. The form
+        // would attest one incidence where it has two, and the cover would
+        // be wrong in the direction nothing reports.
+        //
+        // The site orders the listing and the target separates the edges
+        // standing at it. Both are coordinates the edge already holds, and
+        // the trie's walk IS their order — nothing compares anything.
+        let mut by_incidence: crate::network::nerve::Keyed<NerveEdge> =
             crate::network::nerve::Keyed::new();
         for e in env.nerve.drain(..) {
-            by_site.insert(e.host(), e);
+            let mut k = e.host().into_vec();
+            crate::transducer::address::put_bytes(&mut k, e.target.as_bytes());
+            by_incidence.insert(k, e);
         }
-        env.nerve = by_site.scoped().map(|(_, e)| e.clone()).collect();
+        env.nerve = by_incidence.scoped().map(|(_, e)| e.clone()).collect();
         let mut by_vertex: crate::network::nerve::Keyed<DerivationCite> =
             crate::network::nerve::Keyed::new();
         for d in env.derivations.drain(..) {

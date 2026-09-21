@@ -99,6 +99,9 @@ impl Contemplation {
         }
         mark("remainders+cover");
         let mut glues = Keyed::new();
+        for e in &f.cover {
+            glues.insert(&e.target, ());
+        }
         let mut candidates: Keyed<Keyed<Rotor>> = Keyed::new();
         for v in &f.vertices {
             match v {
@@ -109,9 +112,12 @@ impl Contemplation {
                         cover.insert(&ck, ());
                     }
                 }
-                Vertex::Glued { address, chart, .. } => {
+                // THE CHART IS THE BOUNDARY'S, THE GLUE IS THE COVER'S
+                // (54.7 B5a). A vertex says what rank of chart it mates
+                // with; which form it mates with is on `Form::cover`, read
+                // below, and one boundary may mate with several.
+                Vertex::Glued { chart, .. } => {
                     cover.insert(chart.key(), ());
-                    glues.insert(address, ());
                 }
                 // P9 — AN OPEN DEMAND STANDS ON ITS OWN CHART. A demand
                 // carries the chart its reading was typed at (50.5), and the

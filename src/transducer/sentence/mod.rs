@@ -13,6 +13,7 @@ pub mod class;
 pub mod pivot;
 pub mod tape;
 pub mod chart;
+pub mod glue;
 pub mod rebase;
 pub mod inverse;
 mod parts;
