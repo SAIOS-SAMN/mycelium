@@ -651,13 +651,20 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
         return None;
     }
     let mut e = Element::identity();
-    let mut word = vec![element::SENTENCE_TAG, FORM_TAPE_VERSION];
-    let Some(()) = encode_form_v2(f, &mut word) else {
-        trace::trace("mint/encode", trace::Wrote::Nothing, None);
-        return None;
-    };
-    let n = word.len();
-    e.set_description(word);
+    // 54.7 B6 — A SENTENCE MINTS NO TAPE.
+    //
+    // This wrote `[SENTENCE_TAG][FORM_TAPE_VERSION]` and then the whole
+    // form as bytes, and that buffer was the word's identity, its kind and
+    // its decoder all at once. All three moved: the address IS the form
+    // (law 2) and is set below, the kind is the address's own `TAG_FORM`,
+    // and the evidence the key excludes rides `ReceiptsEnvelope`.
+    //
+    // WORDS, CONNECTIONS AND RESIDUAL CHAINS KEEP THEIRS. For those the
+    // description is the content carrier and not a second copy of a
+    // coordinate — `letters`, `rewrite` and `residual` read it as the
+    // object itself. It is the SENTENCE tape that was redundant, because a
+    // sentence's content is a cell complex its key writes out in full.
+    let n = 0usize;
     e.set_magnitude(mag);
     // THE ADDRESS IS SET, NOT DERIVED (54.5, as ruled 2026-09-20).
     // `Element::address` derived it by parsing the tape — so a word could
@@ -704,9 +711,14 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     if !e.is_sentence() {
         return None;
     }
-    if e.description().get(1).copied() != Some(FORM_TAPE_VERSION) {
-        return None;
-    }
+    // 54.7 B6 — THE VERSION GATE IS GONE WITH THE TAPE IT GATED.
+    //
+    // It read `description()[1] == FORM_TAPE_VERSION` and refused a tape
+    // this build could not parse. There is no tape: the form comes out of
+    // the ADDRESS, whose layout is versioned by §10 — a layout change is a
+    // recut — and whose kind is its own leading `TAG_FORM`, which
+    // `is_sentence` above has already read. A gate on a byte buffer that
+    // is no longer written would have refused every sentence.
     // THE FORM COMES OUT OF THE ADDRESS (54.5, as ruled 2026-09-20), and
     // the geometry is all it comes out with.
     //

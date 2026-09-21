@@ -510,8 +510,23 @@ impl Element {
     }
 
     /// A sentence: its own tape tag, never merely an opened-axis connection.
+    /// 54.7 B6 — A SENTENCE IS KNOWN BY ITS COORDINATE, not by a magic
+    /// byte at the head of a tape.
+    ///
+    /// This read `description()[0] == SENTENCE_TAG`, which made the kind of
+    /// a word a property of a byte buffer. It is a property of the word's
+    /// ADDRESS: `TAG_FORM` opens the canonical A21 coordinates of a closed
+    /// form and `TAG_RESIDUAL` opens everything else, and the two were
+    /// separated for exactly this reason — one tag over both meant
+    /// `from_address` could not tell which layout it held.
+    ///
+    /// THE CYCLE IS BROKEN AT `address()`, not here. That reader used to
+    /// ask `is_sentence()` and then parse the tape for the key, so the two
+    /// were mutually recursive through the description. The mint sets the
+    /// address (54.5) and the record carries it, refusing an empty one, so
+    /// a word always knows its own name without a tape to read it from.
     pub fn is_sentence(&self) -> bool {
-        self.description_tag() == Some(SENTENCE_TAG)
+        self.address().tag() == Some(crate::transducer::address::TAG_FORM)
     }
 
     /// A translation: the gauge between two sections.

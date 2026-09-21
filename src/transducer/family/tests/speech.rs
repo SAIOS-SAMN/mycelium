@@ -368,10 +368,16 @@ let minted = mint_sentence(&rule, &family, &NoCrystal, 0).expect("the family min
 let mu = minted.magnitude();
 assert!(mu[1] >= 1, "recolour is gauge content, got {mu:?}");
 assert!(mu.iter().any(|&x| x > 0), "T is form_deflation, never a floor on the lane");
+// 54.7 B6 — THE MINTED WORD IS THE FORM'S ADDRESS, and no longer its tape.
+// This asserted `description()[1] == FORM_TAPE_VERSION`: that the mint had
+// written a byte buffer carrying a version. A sentence mints no buffer, so
+// the claim is the one below, which was always the real one — the minted
+// word stands at the coordinate the form itself keys to.
+assert!(minted.description().is_empty(), "a sentence mints no tape");
 assert_eq!(
-    minted.description().get(1),
-    Some(&crate::transducer::sentence::FORM_TAPE_VERSION),
-    "the minted word is the form's tape"
+    minted.address().tag(),
+    Some(crate::transducer::address::TAG_FORM),
+    "it is a sentence by the grade-0 coordinate its address opens with"
 );
 assert_eq!(
     minted.address(),

@@ -391,15 +391,23 @@ impl Element {
     pub fn address(&self) -> crate::transducer::address::Address {
         self.address
             .get_or_init(|| {
-                if self.is_sentence() {
-                    if let Some(k) = crate::transducer::sentence::vertex_address(self) {
-                        return k;
-                    }
-                }
-                // NOT `TAG_FORM`: this is the non-form path, and a
-                // residual chain is not a closed complex. A sentence whose
-                // tape does not decode also arrives here, and now says so
-                // by its tag instead of impersonating a form's key.
+                // 54.7 B6 — THE FORM PATH IS GONE FROM HERE, and with it the
+                // last reader of a sentence tape.
+                //
+                // This asked `is_sentence()` — which read the description's
+                // magic byte — and then called `vertex_address`, which
+                // parsed the tape under a version gate to recover the key.
+                // So a word could not know its own name without a tape, and
+                // `is_sentence` could not be moved onto the address while
+                // the address was derived from the tape: the two were
+                // mutually recursive through the byte buffer.
+                //
+                // A FORM'S ADDRESS IS NEVER DERIVED HERE NOW. The mint sets
+                // it (`as_element_form`, 54.5) because the mint has the form
+                // in hand and the key IS the form (law 2); the record
+                // carries it and refuses an empty one rather than guessing
+                // (rule 11). An element that reaches this closure is not a
+                // closed form, and says so by its tag.
                 let mut buf = vec![crate::transducer::address::TAG_RESIDUAL];
                 // W6: AN ADDRESS IS NEVER THE TAG ALONE, and never a tape.
                 // Both refusals this reader used to carry are gone by

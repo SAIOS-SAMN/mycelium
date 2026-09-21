@@ -335,36 +335,33 @@ fn a_citation_carries_the_morphism_it_acts_under() {
 }
 
 /// 54.5 — THE TAPE'S VERSION IS FROZEN, and a tape of any other version is
-/// refused rather than read at a guess.
+/// 54.7 B6 — A SENTENCE IS KNOWN BY ITS COORDINATE, NOT BY A VERSION BYTE.
 ///
-/// The byte's whole job is to refuse a foreign layout. A version that does
-/// not match the bytes the encoder writes refuses nothing — which is what
-/// happened when φ entered the tape at `01760af` without a bump — and a
-/// version that keeps moving is a schema, which 54.5 says the tape is not.
+/// `the_tapes_version_is_frozen_and_a_foreign_one_refuses` stood here. It
+/// asserted that `description()[1] == FORM_TAPE_VERSION` and that a
+/// foreign byte refused, which was the whole job of a magic prefix on a
+/// byte buffer. A sentence has no buffer: the kind is `TAG_FORM` at the
+/// head of the word's own ADDRESS, and the layout is versioned by §10 — a
+/// layout change is a recut, so there is no in-band version to freeze and
+/// nothing to bump without one.
+///
+/// What the byte actually guarded was a foreign LAYOUT reaching a decoder
+/// that would misread it. `from_address` refuses that by construction: a
+/// key it cannot parse yields no form, and `TAG_RESIDUAL` and `TAG_FORM`
+/// were split precisely so one decoder cannot be handed the other's bytes.
 #[test]
-fn the_tapes_version_is_frozen_and_a_foreign_one_refuses() {
+fn a_sentence_is_known_by_its_tag_and_carries_no_tape() {
     let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
     let inner = closed_word_form(Word::from_letters(&[(q, false)]), None);
     let e = as_element_form(&inner, [1, 0, 0, 0]).expect("mints");
-    let tape = e.description();
+    assert!(e.description().is_empty(), "a sentence mints no tape");
     assert_eq!(
-        tape.get(1).copied(),
-        Some(FORM_TAPE_VERSION),
-        "the tape carries the frozen version"
+        e.address().tag(),
+        Some(crate::transducer::address::TAG_FORM),
+        "and is a sentence by the tag its own coordinate opens with"
     );
-    assert!(from_element_form(&e).is_some(), "and this build reads it");
-
-    // Every other version is refused — the baseline is cut at this one.
-    for other in [0u8, 10, 11, 12, 13, 15, 255] {
-        let mut wrong = e.clone();
-        let mut bytes = tape.to_vec();
-        bytes[1] = other;
-        wrong.set_description(bytes);
-        assert!(
-            from_element_form(&wrong).is_none(),
-            "a tape at version {other} is refused, not read at a guess"
-        );
-    }
+    assert!(e.is_sentence(), "which is what `is_sentence` reads");
+    assert!(from_element_form(&e).is_some(), "and the form comes back out of it");
 }
 
 /// THE ADDRESS DOES NOT DEPEND ON THE ORDER VERTICES WERE APPENDED

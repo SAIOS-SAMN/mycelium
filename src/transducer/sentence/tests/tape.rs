@@ -3,7 +3,7 @@
 
 use super::common::*;
 use crate::transducer::alphabet::{self, Word};
-use crate::transducer::element::{self, Element};
+use crate::transducer::element;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self};
 
@@ -113,10 +113,10 @@ fn form_tape_v6_round_trips() {
         }
     ));
 
-    let e = as_element_form(&f, [1, 0, 0, 0]).expect("v4 tape");
-    assert!(e.is_sentence());
-    assert_eq!(e.description()[1], FORM_TAPE_VERSION, "the tape names its version");
-    let back = crate::transducer::sentence::from_element_form(&e).expect("decode v4");
+    let e = as_element_form(&f, [1, 0, 0, 0]).expect("mint");
+    assert!(e.is_sentence(), "by its address's own TAG_FORM (54.7 B6)");
+    assert!(e.description().is_empty(), "and it carries no tape to name a version");
+    let back = crate::transducer::sentence::from_element_form(&e).expect("decode");
     assert_eq!(back.vertices.len(), f.vertices.len());
     assert_eq!(back.faces.len(), f.faces.len());
     assert_eq!(back.loops.len(), f.loops.len());
@@ -336,29 +336,31 @@ fn a_form_stands_one_demand_per_kind_and_chart_and_gathers_the_bodies() {
     assert_eq!(bodies, &vec![(0, 0, 0, 3), (0, 1, 0, 3)], "the bodies are gathered, sorted, once each");
 }
 
+/// 54.7 B6 — A TRUNCATED KEY REFUSES, and that is where the reading now
+/// lives.
+///
+/// `tape_v4_refuses_short_or_partial` truncated `Element.description` and
+/// asked the tape decoder to refuse it. A sentence has no description; the
+/// carrier that can arrive short is the ADDRESS, and a key missing its tail
+/// must yield no form rather than a form missing its tail. Same claim, one
+/// carrier over.
 #[test]
-fn tape_v4_refuses_short_or_partial() {
+fn a_truncated_key_refuses_rather_than_decoding_short() {
     let f = closed_word_form(Word::identity(), None);
-    let e = as_element_form(&f, [1, 0, 0, 0]).expect("tape");
-    assert_eq!(e.description()[1], FORM_TAPE_VERSION);
-    let mut short = e.description().to_vec();
-    short.pop();
-    let mut truncated = Element::identity();
-    truncated.set_description(short);
-    truncated.set_magnitude([1, 0, 0, 0]);
+    let key = crate::transducer::sentence::form_vertex_key(&f);
     assert!(
-        crate::transducer::sentence::from_element_form(&truncated).is_none(),
-        "a short v4 tape is refused"
+        crate::transducer::sentence::from_address(&key).is_some(),
+        "the whole key decodes"
     );
-    let mut v2 = e.description().to_vec();
-    v2[1] = 2;
-    let mut old = Element::identity();
-    old.set_description(v2);
-    old.set_magnitude([1, 0, 0, 0]);
-    assert!(
-        crate::transducer::sentence::from_element_form(&old).is_none(),
-        "a v2 tape is refused"
-    );
+    let bytes = key.as_bytes();
+    for cut in [bytes.len() - 1, bytes.len() / 2, 1] {
+        let short = crate::transducer::address::Address::new(bytes[..cut].to_vec());
+        assert!(
+            crate::transducer::sentence::from_address(&short).is_none(),
+            "a key cut at {cut} of {} decodes to nothing, never to a shorter form",
+            bytes.len()
+        );
+    }
 }
 
 #[test]

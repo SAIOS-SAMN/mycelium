@@ -229,6 +229,16 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
         *x = u64::from_le_bytes(k.get(p..p + 8)?.try_into().ok()?);
         p += 8;
     }
+    // A ZERO DENOMINATOR IS NOT A RATIO (54.7 B6, rule 11). The tape
+    // decoder carried this refusal and this one did not, so the purge would
+    // have dropped it silently: a bundle whose frame ratio has `hd = 0` or
+    // `wd = 0` is no bundle, and reading one back as a form would hand
+    // every downstream reader a division it cannot take. Refused, never
+    // repaired to 1 — a coordinate this build cannot read is not a
+    // coordinate to guess at.
+    if r[1] == 0 || r[3] == 0 {
+        return None;
+    }
     f.ratio = ((r[0] as usize, r[1] as usize), (r[2] as usize, r[3] as usize));
     let ns = take_u32(k, &mut p)? as usize;
     for _ in 0..ns {

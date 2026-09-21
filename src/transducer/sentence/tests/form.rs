@@ -278,9 +278,17 @@ fn two_shifts_are_two_addresses() {
     assert!(!ea.same_vertex(&eb));
 }
 
-/// The bundle's frame ratio and its sections are meaning: they are on
-/// the form key and on the tape, and a tape with a zero denominator is
-/// refused rather than repaired.
+/// The bundle's frame ratio and its sections are meaning: they are on the
+/// form key, and a key with a zero denominator is refused rather than
+/// repaired.
+///
+/// 54.7 B6 — THE TAMPER MOVED WITH THE CARRIER. It zeroed two bytes of
+/// `Element.description` at a fixed offset from its end and asked the tape
+/// decoder to refuse them. A sentence has no tape, so the offset indexed
+/// into nothing; and a byte offset into a buffer was never the reading —
+/// the claim is that a ratio whose denominator is zero is not a bundle,
+/// wherever it is written. Put on the FORM, it needs no offset at all and
+/// asks the one decoder that remains.
 #[test]
 fn ratio_and_sections_are_on_the_form_key() {
     let letter = alphabet::LetterId::quarter((0, 1)).expect("quarter");
@@ -303,16 +311,19 @@ fn ratio_and_sections_are_on_the_form_key() {
         Some(vec![1u16]),
         "the section round-trips as the frame it stands on"
     );
-    // Zero the height denominator on the tape: after certificates the
-    // tail is ratio (8) + sections count (2) + torsion count (2) + axes
-    // count (2). hd is the second u16 of the ratio.
-    let mut bytes = ea.description().to_vec();
-    let n = bytes.len();
-    bytes[n - 12] = 0;
-    bytes[n - 11] = 0;
-    let mut broken = ea.clone();
-    broken.set_description(bytes);
-    assert!(crate::transducer::sentence::from_element_form(&broken).is_none(), "a zero denominator refuses the tape");
+    // A ZERO HEIGHT DENOMINATOR IS NOT A BUNDLE. `ratio` is `((wn, wd),
+    // (hn, hd))` and `hd = 0` is no ratio at all, so the key that carries
+    // it does not decode back to a form — refused, never repaired to 1.
+    let mut broken = closed_word_form(
+        Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).expect("quarter"), false)]),
+        None,
+    );
+    broken.ratio = ((1, 1), (1, 0));
+    let key = crate::transducer::sentence::form_vertex_key(&broken);
+    assert!(
+        crate::transducer::sentence::from_address(&key).is_none(),
+        "a zero denominator refuses the key"
+    );
 }
 
 /// Depth is one plus the deepest glued form — A READING OF THE CITATIONS,

@@ -39,13 +39,23 @@ impl Element {
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut out = vec![Self::GEN3_MAGIC];
-        out.extend_from_slice(&(self.description.len() as u32).to_le_bytes());
-        out.extend_from_slice(&self.description);
+        // THE ADDRESS LEADS THE RECORD, AND THE KIND DECIDES THE REST
+        // (54.7 B6 Site 4, as ruled 2026-09-21).
+        //
+        // It was written after the description, which meant the reader had
+        // to consume a byte buffer before it could learn what kind of
+        // object it was reading — position determined the shape. The tag is
+        // the GRADE-0 COORDINATE of an address: it names the algebraic
+        // species before any later stratum describes the cells. Read first,
+        // it tells the reader the shape of everything after it, and the
+        // record becomes self-describing by a coordinate rather than by an
+        // order somebody chose.
+        //
         // THE ADDRESS RIDES THE RECORD (54.5, as ruled 2026-09-20). It was
-        // derived on read — `Element::address` calls `vertex_address`,
-        // which parses the tape — so the tape had to be present for a word
+        // derived on read — `Element::address` called `vertex_address`,
+        // which parsed the tape — so the tape had to be present for a word
         // to know its own name. That is the dependency that kept the tape
-        // alive: retiring it inverts the derivation, and the address is
+        // alive; retiring it inverts the derivation, and the address is
         // what a word IS (law 2) rather than a summary of a byte run.
         //
         // Written for every kind, because a residual's address is just as
@@ -53,6 +63,19 @@ impl Element {
         let a = self.address();
         out.extend_from_slice(&(a.len() as u32).to_le_bytes());
         out.extend_from_slice(a.as_bytes());
+        // AND A SENTENCE WRITES NO DESCRIPTION FIELD AT ALL — not a tape,
+        // and not a zero length standing in for one. A form's content is a
+        // cell complex and its key writes that complex out in full, so a
+        // description beside it would be a second statement of the same
+        // object (law 12). Words, connections and residual chains keep
+        // theirs: for them the description IS the content, read by
+        // `letters`, `rewrite` and `residual` as the object itself.
+        //
+        // §10 — a layout change is a recut, and B7 is the recut.
+        if a.tag() != Some(crate::transducer::address::TAG_FORM) {
+            out.extend_from_slice(&(self.description.len() as u32).to_le_bytes());
+            out.extend_from_slice(&self.description);
+        }
         // THE SPEAKER'S FILING (54.5): class ‖ σ ‖ ℓ ‖ chord, in key order.
         // It is an attestation and travels with the word that makes it, so
         // the court can check a claim against geometry it re-derives rather
@@ -180,15 +203,26 @@ impl Element {
             *p += 4;
             Some(v)
         };
-        let dlen = u32_at(b, pos)? as usize;
-        let description = b.get(*pos..*pos + dlen)?.to_vec();
-        *pos += dlen;
-        // THE ADDRESS AS THE RECORD CARRIES IT (54.5). Read here and set on
-        // the element below, so `Element::address` answers it rather than
-        // re-deriving it from a tape — which is what lets the tape go.
+        // THE ADDRESS FIRST, AND THE KIND IT OPENS WITH DECIDES THE REST
+        // (54.7 B6 Site 4). Read here and set on the element below, so
+        // `Element::address` answers it rather than re-deriving it from a
+        // tape — which is what lets the tape go.
         let alen = u32_at(b, pos)? as usize;
         let address = b.get(*pos..*pos + alen)?.to_vec();
         *pos += alen;
+        // A SENTENCE CARRIES NO DESCRIPTION FIELD. The tag is the grade-0
+        // coordinate and it has already been read, so the reader knows the
+        // shape of what follows without consuming anything to find out.
+        let description = if crate::transducer::address::tag_of(&address)
+            == Some(crate::transducer::address::TAG_FORM)
+        {
+            Vec::new()
+        } else {
+            let dlen = u32_at(b, pos)? as usize;
+            let d = b.get(*pos..*pos + dlen)?.to_vec();
+            *pos += dlen;
+            d
+        };
         let nfil = u32_at(b, pos)? as usize;
         let mut filing = crate::network::nerve::Keyed::new();
         for _ in 0..nfil {
