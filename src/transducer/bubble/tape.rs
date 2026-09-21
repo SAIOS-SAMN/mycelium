@@ -44,14 +44,14 @@ impl Contemplation {
             out.extend_from_slice(b"TOR1");
             out.extend_from_slice(&(b.torsion.len() as u32).to_le_bytes());
             crate::snapshot::persist(&b.torsion, |tk, filed| {
-                let (sigma, ell, chord) = (&filed.sigma, &filed.period, &filed.chord);
+                let (sigma, periods, chord) = (&filed.sigma, &filed.periods, &filed.chord);
                 crate::snapshot::put_key(out, tk);
                 out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
                 for &(a, c) in sigma {
                     out.push(a);
                     out.push(c);
                 }
-                out.extend_from_slice(&ell.to_le_bytes());
+                periods.to_bytes(out);
                 out.extend_from_slice(&chord.to_le_bytes());
             });
             out.extend_from_slice(&(b.certificates.len() as u32).to_le_bytes());
@@ -165,7 +165,10 @@ impl Contemplation {
                     *pos += 8;
                 }
             }
-            let mut torsion = Keyed::new();
+            let mut torsion: Keyed<
+                crate::transducer::sentence::FiledLoop,
+                crate::network::nerve::coord::Holonomy,
+            > = Keyed::new();
             let mut certificates = Keyed::new();
             let mut vortex = Keyed::new();
             if b.get(*pos..*pos + 4) == Some(b"TOR1") {
@@ -186,19 +189,23 @@ impl Contemplation {
                         *pos += 1;
                         sigma.push((a, cpair));
                     }
-                    let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
+                    let p1 = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
+                    *pos += 4;
+                    let p2 = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
+                    *pos += 4;
                     // A17: a loop is filed at the period it CLOSES at, so a
-                    // filed zero is a malformed tape and not a loop of no
-                    // extent.
-                    if ell == 0 {
+                    // filed zero is a malformed record and not a loop of no
+                    // extent — and BOTH planes must close, since a loop
+                    // closes when its orbit on the 2-torus does (54.7).
+                    let periods = crate::transducer::sentence::ToralPeriod::from_pair(p1, p2);
+                    if !periods.closes() {
                         return None;
                     }
-                    *pos += 4;
                     let chord = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
                     *pos += 2;
-                    torsion.insert(
-                        tk,
-                        crate::transducer::sentence::FiledLoop { sigma, period: ell, chord },
+                    torsion.put(
+                        &crate::network::nerve::Key::declared(&tk),
+                        crate::transducer::sentence::FiledLoop { sigma, periods, chord },
                     );
                 }
                 let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;

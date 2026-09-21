@@ -19,10 +19,17 @@ pub(crate) struct TransportClass {
 }
 
 impl TransportClass {
-    pub(crate) fn key(&self) -> Vec<u8> {
+    /// 54.7 R5 — THE ONE WRITER OF A TRANSPORT COORDINATE.
+    ///
+    /// The return type names the system these bytes belong to, so a carrier
+    /// that answers the transport class takes this and nothing else. The
+    /// bytes open with the shell kind rather than an A21 tag, so there is
+    /// no tag to check and the type is the whole gate — which is the honest
+    /// statement of what this key is.
+    pub(crate) fn key(&self) -> crate::network::nerve::Key<crate::network::nerve::coord::Transport> {
         let mut buf = vec![self.kind.as_u8()];
         crate::transducer::address::put_bytes(&mut buf, &self.word_class);
-        buf
+        crate::network::nerve::Key::declared(&buf)
     }
 }
 
@@ -55,16 +62,39 @@ pub(crate) fn pair_idx_key(i: u16) -> Vec<u8> {
 /// one chart — a cover's pieces at two frames, a chart whose frames read
 /// two versors — and each is claimed on its own frames; two members whose
 /// every coordinate agrees act alike and are claimed alike.
-pub(crate) fn member_section_key(v: &Vertex, chart: &Invariant) -> Option<Vec<u8>> {
+pub(crate) fn member_section_key(
+    v: &Vertex,
+    chart: &Invariant,
+) -> Option<crate::network::nerve::Key<crate::network::nerve::coord::MemberSection>> {
     let Vertex::Word { address, .. } = v else { return None };
     let member = v.acting_on(chart)?;
-    let mut k = transport_class(v)?.key();
+    // THE TRANSPORT CLASS OPENS A FINER COORDINATE. What is written here
+    // is a member SECTION — class, chart, address, carriage — and it is a
+    // key of that system and not of the transport one, so the coordinate
+    // is left behind explicitly at the point the extension begins.
+    let mut k = transport_class(v)?.key().into_vec();
     crate::transducer::address::put_bytes(&mut k, chart.key().as_bytes());
     crate::transducer::address::put_bytes(&mut k, address.as_bytes());
     let mut carriage = Vec::new();
     member.carriage.put_canonical(&mut carriage);
     crate::transducer::address::put_bytes(&mut k, &carriage);
-    Some(k)
+    Some(crate::network::nerve::Key::declared(&k))
+}
+
+/// THE CLASS-LEVEL SECTION: a transport class read as the COARSE STRATUM of
+/// [`member_section_key`], which opens with exactly these bytes.
+///
+/// 54.7 R5 — `Form.sections` is read at both depths and nothing said so.
+/// Its doc comment names only the class level; `extract` writes member keys
+/// into it as well, and the court reads both. They are one system — a
+/// member section is a class key with chart, address and carriage written
+/// over it — so a class key IS a prefix of a member key and the two reads
+/// are a coarse and a fine stratum of one carrier, not two carriers sharing
+/// a name. This is where a class key becomes that coordinate, said once.
+pub(crate) fn class_section_key(
+    tc: &TransportClass,
+) -> crate::network::nerve::Key<crate::network::nerve::coord::MemberSection> {
+    crate::network::nerve::Key::declared(tc.key().as_bytes())
 }
 
 /// THE KEY OF AN ORDERED PAIR OF TRANSPORT CLASSES: `a`'s key then `b`'s,

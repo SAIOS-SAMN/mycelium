@@ -358,9 +358,15 @@ fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
     let mut filed = f.clone();
     // The period is the FILER'S now, derived through the fixed-point
     // gate, so this reads what the loop closes at rather than handing it in.
+    // 54.7 — THE YIELD IS BOTH PLANES. `file_loop` returns the labour the
+    // filing earns, and that is `(ℓ₁ − 1) + (ℓ₂ − 1)` across the two
+    // invariant planes of the double rotation, not `lcm − 1`. A quarter
+    // turn is isoclinic here — `[4, 4]` — so it earns `3 + 3 = 6`, where
+    // the envelope said `4`. The two planes are doing the work; the
+    // envelope was never either plane's.
     assert_eq!(
         filed.file_loop(0),
-        vec![4],
+        vec![6],
         "the loop files under its holonomy's class, at the period it closes at"
     );
     let bare = crate::transducer::sentence::as_element_form(&filed, [1, 1, 0, 0])

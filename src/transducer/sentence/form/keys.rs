@@ -17,13 +17,16 @@ pub fn class_key_of_versor(v: &Versor) -> Option<crate::transducer::address::Add
     spell_versor(v)?.class_key()
 }
 
-pub fn vertex_ix_key(i: u16) -> Vec<u8> {
+/// 54.7 R5 — AN ORDINAL, NOT A COORDINATE (rule 15), and the type says so.
+/// The one writer of these bytes; a carrier keyed by a vertex's position in
+/// its own form takes this and no coordinate of any A21 system can reach it.
+pub fn vertex_ix_key(i: u16) -> Key<coord::VertexIx> {
     let mut k = vec![0u8];
     k.extend_from_slice(&i.to_le_bytes());
-    k
+    Key::declared(&k)
 }
 
-pub(crate) fn unfolded_key(measure: &Measure) -> Vec<u8> {
+pub(crate) fn unfolded_key(measure: &Measure) -> Key<coord::Unfolded> {
     let mut k = vec![4u8];
     match measure {
         Measure::Occupied => k.push(0),
@@ -33,7 +36,7 @@ pub(crate) fn unfolded_key(measure: &Measure) -> Vec<u8> {
             k.extend_from_slice(&anchor.to_le_bytes());
         }
     }
-    k
+    Key::declared(&k)
 }
 
 /// Hue map as a section coordinate: word conjugacy and the map, never a

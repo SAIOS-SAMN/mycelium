@@ -141,7 +141,7 @@ assert_eq!(demands.len(), 1, "one vertex for one (kind, chart): {:?}", f.vertice
 let (idx, kind, chart, links) = demands[0];
 assert_eq!(*kind, Demand::Source { multiplicity: 1 });
 assert_eq!(links.len(), 4, "both bars' links ride it");
-assert_eq!(f.demands.get(&crate::transducer::sentence::demand_key(kind, chart)), Some(&idx), "and it is read by (kind, chart)");
+assert_eq!(f.demands.at(&crate::transducer::sentence::demand_key(kind, chart)), Some(&idx), "and it is read by (kind, chart)");
 }
 
 /// 50.5 (F step 5) — THE DEMANDS RIDE THE RULE: over a bundle of two pairs

@@ -128,7 +128,7 @@ pub(crate) fn vertex_carries_frame(
     vertex: &Vertex,
     here: &Frame<'_>,
     frame: usize,
-    sections: &Keyed<Keyed<()>>,
+    sections: &Keyed<Keyed<()>, crate::network::nerve::coord::MemberSection>,
 ) -> Carried {
     let Vertex::Word { derivation, contact, acts, .. } = vertex else {
         return Carried::Silent;
@@ -155,7 +155,7 @@ pub(crate) fn vertex_carries_frame(
     // refuses at the coordinate that actually failed.
     for (_, member) in acts.scoped() {
         if let Some(mps) =
-            crate::transducer::family::member_section_key(vertex, &member.chart).and_then(|mk| sections.get(&mk))
+            crate::transducer::family::member_section_key(vertex, &member.chart).and_then(|mk| sections.at(&mk))
         {
             if !mps.contains(&frame_key(frame as u16)) {
                 continue;
@@ -247,14 +247,14 @@ fn form_covers_laminae(
         let Vertex::Word { acts, derivation, contact, .. } = v else { continue; };
         if contact.is_some() { continue; }
         let only = crate::transducer::family::transport_class(v)
-            .and_then(|tc| f.sections.get(&tc.key()).cloned());
+            .and_then(|tc| f.sections.at(&crate::transducer::family::class_section_key(&tc)).cloned());
         if only.as_ref().is_some_and(|ps| !ps.contains(&frame_key(frame as u16))) {
             continue;
         }
         let rotor = derivation.rotor();
         for (_, member) in acts.scoped() {
             if let Some(mps) =
-                crate::transducer::family::member_section_key(v, &member.chart).and_then(|mk| f.sections.get(&mk))
+                crate::transducer::family::member_section_key(v, &member.chart).and_then(|mk| f.sections.at(&mk))
             {
                 if !mps.contains(&frame_key(frame as u16)) {
                     continue;
@@ -302,7 +302,7 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
         // A class the rule declares no section for is claimed whole and is
         // checked whole, which is what it says of itself.
         let only = crate::transducer::family::transport_class(v)
-            .and_then(|tc| f.sections.get(&tc.key()).cloned());
+            .and_then(|tc| f.sections.at(&crate::transducer::family::class_section_key(&tc)).cloned());
         for (frame, at) in frames.iter().enumerate() {
             if only.as_ref().is_some_and(|ps| !ps.contains(&frame_key(frame as u16))) {
                 continue;
@@ -329,7 +329,7 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
                     address.iter().take(2).map(|b| format!("{b:02x}")).collect();
                 let class_sec = only.is_some();
                 let member_sec = crate::transducer::family::member_section_key(v, &chart)
-                    .is_some_and(|mk| f.sections.get(&mk).is_some());
+                    .is_some_and(|mk| f.sections.at(&mk).is_some());
                 eprintln!(
                     "  court vertex body {at}… frame {frame} of {}: {why} [class_sec: {class_sec}, member_sec: {member_sec}]",
                     family.len()

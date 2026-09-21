@@ -22,9 +22,13 @@ use super::*;
 #[derive(Debug, Clone)]
 pub(crate) struct LoopClass {
     pub(crate) class: crate::transducer::address::Address,
-    /// `0` is infinite order, A19's spelling of it (52.3): the transport
-    /// has no fixed point and the path is non-compact.
-    pub(crate) period: u32,
+    /// THE TWO PLANE PERIODS (54.7). It was `u32`, the `lcm` of them, and
+    /// an `lcm` is an envelope: it cannot tell a planar rotation `[ℓ, 1]`
+    /// from an isoclinic `[ℓ, ℓ]`, it reports a dense orbit on the 2-torus
+    /// as closed, and it discards the beat two loops would resonate on.
+    /// A plane's `None` is that factor turning forever — A19 spelled it
+    /// `0` and the type says it now (rule 11).
+    pub(crate) periods: crate::transducer::sentence::ToralPeriod,
     pub(crate) sigma: Vec<(u8, u8)>,
 }
 
@@ -62,9 +66,9 @@ impl Form {
             // `class_vectors_on` reads two lines below to decide whether the
             // loop discharged. Keyed off `self` the axis would be filed under
             // the holonomy the loop had before its own opening.
-            let class = loop_holonomy_on(&faces, &self.vertices, lp)?.rotor().class_key()?;
+            let class = loop_holonomy_on(&faces, &self.vertices, lp)?.rotor().holonomy_key()?;
             element::versor_of_word(&loop_holonomy_on(&faces, &self.vertices, lp)?)?;
-            axes.insert(class, *face);
+            axes.put(&class, *face);
         }
         // 12.6: a pivot on axis x discharges when x reads zero after and no
         // other coordinate moved; opening an axis discharges the LOOP — it
@@ -339,9 +343,29 @@ impl Form {
         };
         let chord = lp.chord;
         let mut filed: crate::network::nerve::Keyed<u32> = crate::network::nerve::Keyed::new();
-        for LoopClass { class, period, sigma } in self.loop_classes(lp) {
-            self.torsion.insert(class, FiledLoop { sigma, period, chord });
-            filed.insert(period.to_be_bytes(), period);
+        for LoopClass { class, periods, sigma } in self.loop_classes(lp) {
+            let Ok(class) = crate::network::nerve::Key::<
+                crate::network::nerve::coord::Holonomy,
+            >::from_address(&class)
+            else {
+                continue;
+            };
+            self.torsion.put(&class, FiledLoop { sigma, periods, chord });
+            // THE YIELD IS ACROSS BOTH PLANES: `(ℓ₁ − 1) + (ℓ₂ − 1)`, not
+            // `(lcm − 1)`, which is neither plane's labour.
+            //
+            // A SPECTRUM THAT DOES NOT CLOSE YIELDS ZERO AND IS STILL
+            // FILED. The insert above happened — the class was measured and
+            // written down — and A19 spells a non-closing order `0` on the
+            // ledger. Dropping the entry would make the FILING invisible to
+            // every reader of this list, including the `TorsionFiled` snap
+            // that says a free part was filed beside its demand; a thing
+            // measured and then not written down is 53.6 item 2's own
+            // refusal (rule 11).
+            let u = periods
+                .yield_units()
+                .map_or(0, |units| u32::try_from(units).unwrap_or(u32::MAX));
+            filed.insert(u.to_be_bytes(), u);
         }
         filed.scoped().map(|(_, ell)| *ell).collect()
     }
@@ -393,18 +417,22 @@ impl Form {
             let Some(transport) = transports.get(&path) else {
                 continue;
             };
-            // THE PERIOD THIS PATH ACTUALLY CLOSES AT, read from the
-            // holonomy's ROTOR AND ITS CARRIAGE together. A path with no
-            // fixed point is non-compact and files at `0`.
-            let ell = match crate::transducer::cech::classify(
+            // THE SPECTRUM THIS PATH CLOSES ON, read from the holonomy's
+            // ROTOR AND ITS CARRIAGE together (54.7). A path with no fixed
+            // point is non-compact and neither plane closes.
+            //
+            // `Fill::Congruent(_, _, ell)` carries the `lcm`; the two plane
+            // periods are the rotor's own and are read from it directly, so
+            // the envelope is never the thing stored.
+            let periods = match crate::transducer::cech::classify(
                 &w.rotor(),
                 &transport.carriage,
                 crate::transducer::sentence::CycleType::of(&[]),
             ) {
-                crate::transducer::cech::Fill::Congruent(_, _, ell) => ell,
-                _ => 0,
+                crate::transducer::cech::Fill::Congruent(..) => w.rotor().toral_period(),
+                _ => crate::transducer::sentence::ToralPeriod { plane_1: None, plane_2: None },
             };
-            out.push(LoopClass { class, period: ell, sigma: transport.gauge.clone() });
+            out.push(LoopClass { class, periods, sigma: transport.gauge.clone() });
         }
         out
     }
@@ -426,6 +454,10 @@ impl Form {
     /// closes.
     pub(crate) fn loop_is_congruent(&self, lp: &Loop) -> bool {
         let rows = self.loop_classes(lp);
-        !rows.is_empty() && rows.iter().all(|r| r.period >= 1)
+        // BOTH PLANES MUST CLOSE. It read `period >= 1` on the `lcm`, which
+        // is true whenever EITHER factor is a root of unity — so a loop with
+        // one plane turning forever read as compact. A loop closes when its
+        // orbit on the 2-torus closes, which is both planes (54.7).
+        !rows.is_empty() && rows.iter().all(|r| r.periods.closes())
     }
 }

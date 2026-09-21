@@ -74,8 +74,8 @@ fn refraction_replays_as_its_three_moves() {
                 // `same_versor` — projectively, which is what a versor's
                 // equality is — and never by the struct's own derive.
                 assert_eq!(aa.len(), ab.len(), "the two paths act on the same number of charts");
-                for (k, ma) in aa.scoped() {
-                    let mb = ab.get(&k).expect("the other path acts on the same chart");
+                for (k, ma) in aa.entries() {
+                    let mb = ab.at(&k).expect("the other path acts on the same section");
                     assert!(element::same_versor(&ma.carriage, &mb.carriage));
                     assert_eq!(ma.gauge, mb.gauge);
                 }

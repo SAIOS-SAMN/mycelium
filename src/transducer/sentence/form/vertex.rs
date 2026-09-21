@@ -28,8 +28,8 @@ impl Vertex {
         contact: Option<alphabet::Contact>,
     ) -> Vertex {
         let member = super::Acting { chart, carriage, gauge };
-        let mut acts = Keyed::new();
-        acts.insert(member.key(), member);
+        let mut acts: Keyed<super::Acting, coord::Section> = Keyed::new();
+        acts.put(&member.key(), member);
         // 54.2 — the vertex's address is its own coordinates, derived.
         let address = crate::transducer::sentence::word_vertex_address(&derivation, &acts, contact);
         Vertex::Word { address, derivation, acts, contact }
@@ -47,8 +47,8 @@ impl Vertex {
         gauge: Vec<(u8, u8)>,
     ) -> Vertex {
         let member = super::Acting { chart, carriage, gauge };
-        let mut acts = Keyed::new();
-        acts.insert(member.key(), member);
+        let mut acts: Keyed<super::Acting, coord::Section> = Keyed::new();
+        acts.put(&member.key(), member);
         Vertex::Rebased { by, of, acts }
     }
 
@@ -127,7 +127,22 @@ impl Vertex {
         match self {
             // A REBASED VERTEX STANDS WHERE `of` STOOD, on every chart of it.
             Vertex::Word { acts, .. } | Vertex::Rebased { acts, .. } if !acts.is_empty() => {
-                acts.scoped().map(|(_, a)| a.chart.clone()).collect()
+                // THE CHARTS, ONCE EACH (54.7 R1). This asks which charts
+                // the vertex stands at — a question about the BASE — and it
+                // walked the fibre, which since R1 holds one entry per
+                // SECTION. A vertex with two carriages on one chart reported
+                // that chart twice, and `face_pairs` then read `(many,
+                // many)` where the incidence is `([one], many)` and answered
+                // `None`: the face lost every member pair, so every loop
+                // through it lost its carriage.
+                //
+                // Deduped through a `Keyed` on the chart's own key, so the
+                // order is the trie's and nothing compares (law 3).
+                let mut seen: Keyed<stalk::Invariant> = Keyed::new();
+                for (_, a) in acts.scoped() {
+                    seen.insert(a.chart.key(), a.chart.clone());
+                }
+                seen.scoped().map(|(_, c)| c.clone()).collect()
             }
             Vertex::Glued { chart, .. } | Vertex::Demand { chart, .. } => vec![chart.clone()],
             Vertex::Word { .. }
@@ -151,7 +166,7 @@ impl Vertex {
     /// reliably. Deleted, the compiler names all of them, exactly as
     /// `Keyed::fiber` taking a non-empty `Prefix` named the walk sites in X3.
     /// The type does the enumeration.
-    pub fn acts(&self) -> Option<&Keyed<super::Acting>> {
+    pub fn acts(&self) -> Option<&Keyed<super::Acting, coord::Section>> {
         match self {
             // A REBASED VERTEX HAS THE SAME FIBRE SHAPE, with the relative in
             // place of the placement at each chart (D10). A reader that wants
@@ -267,8 +282,34 @@ impl Vertex {
     /// way to ask a fibre for one of its members. `None` is "this vertex does
     /// not act there", which is what a rule says about a body on a chart it
     /// has never seen.
+    /// ONE SECTION OF THE FIBRE OVER `chart`. The key is `chart ‖ carriage`
+    /// since 54.7 R1, so the chart is a PREFIX and this is a fibre read at
+    /// that stratum rather than an exact lookup (A21). A vertex with
+    /// several sections on one chart answers with the first in the trie's
+    /// own order, which is content; a reader wanting the sheet structure
+    /// asks [`Vertex::acting_all_on`].
     pub fn acting_on(&self, chart: &stalk::Invariant) -> Option<&super::Acting> {
-        self.acts()?.get(chart.key().as_bytes())
+        let p = super::Acting::chart_prefix(chart);
+        self.acts()?.scoped().find(|(k, _)| k.starts_with(&p)).map(|(_, a)| a)
+    }
+
+    /// DOES THIS VERTEX ACT ON THE CHART THIS KEY NAMES — a fibre read at
+    /// the chart's stratum, for a reader holding the key rather than the
+    /// `Invariant` (54.7 R1).
+    pub fn acts_on_chart_key(&self, ck: &[u8]) -> bool {
+        let p = super::Acting::chart_prefix_bytes(ck);
+        self.acts().is_some_and(|a| a.scoped().any(|(k, _)| k.starts_with(&p)))
+    }
+
+    /// EVERY SECTION OVER `chart` — the sheets of the covering space at
+    /// this vertex. Two carriages on one class are two sections (18.2), and
+    /// this is the reader that can see both.
+    pub fn acting_all_on(&self, chart: &stalk::Invariant) -> Vec<&super::Acting> {
+        let p = super::Acting::chart_prefix(chart);
+        match self.acts() {
+            Some(a) => a.scoped().filter(|(k, _)| k.starts_with(&p)).map(|(_, x)| x).collect(),
+            None => Vec::new(),
+        }
     }
 
     /// THE CHART OF THIS VERTEX WHOSE KEY IS `key`. A keyed read back: a face
@@ -312,10 +353,10 @@ impl Vertex {
         let Vertex::Word { acts, .. } = self else {
             return;
         };
-        let Some(k) = acts.scoped().next().map(|(k, _)| k) else {
+        let Some(k) = acts.entries().next().map(|(k, _)| k) else {
             return;
         };
-        if let Some(a) = acts.get_mut(&k) {
+        if let Some(a) = acts.at_mut(&k) {
             *a.carriage = carriage;
         }
     }

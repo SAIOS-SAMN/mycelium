@@ -82,8 +82,8 @@ impl<T> Keyed<Keyed<T>> {
 /// at the end of the key order had walked off the edge of its book.
 /// `circuit` reports that the walk passed the end of the order — one
 /// completed circuit of the carrier, which the stroke counts as its orbit.
-pub struct Cursor<'a, V> {
-    pub(crate) keyed: &'a Keyed<V>,
+pub struct Cursor<'a, V, C: Coordinate = coord::Any> {
+    pub(crate) keyed: &'a Keyed<V, C>,
     pub(crate) fiber: Fiber<'a, V>,
     pub(crate) budget: &'a mut crate::physics::Budget,
     /// The key the walk began after; `None` began at the first key.
@@ -93,7 +93,7 @@ pub struct Cursor<'a, V> {
     pub(crate) done: bool,
 }
 
-impl<'a, V> Cursor<'a, V> {
+impl<'a, V, C: Coordinate> Cursor<'a, V, C> {
     /// Last key yielded, so the next stroke resumes after it.
     pub fn last_key(&self) -> Option<&[u8]> {
         self.last.as_deref()
@@ -106,7 +106,7 @@ impl<'a, V> Cursor<'a, V> {
     }
 }
 
-impl<'a, V> Iterator for Cursor<'a, V> {
+impl<'a, V, C: Coordinate> Iterator for Cursor<'a, V, C> {
     type Item = (Vec<u8>, &'a V);
 
     fn next(&mut self) -> Option<Self::Item> {

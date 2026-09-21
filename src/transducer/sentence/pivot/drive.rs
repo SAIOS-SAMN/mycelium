@@ -48,7 +48,7 @@ pub(crate) struct Prior<'a> {
 pub(crate) fn class_vectors_on(
     faces: &[FormFace],
     vertices: &[Vertex],
-    axes: &crate::network::nerve::Keyed<u16>,
+    axes: &crate::network::nerve::Keyed<u16, crate::network::nerve::coord::Holonomy>,
     lp: &Loop,
 ) -> crate::network::nerve::Keyed<ClassVector> {
     let mut out = crate::network::nerve::Keyed::new();
@@ -554,7 +554,7 @@ impl Form {
                 if held_gens == 0
                     && !held
                     && !hw.rotor().is_identity()
-                    && hw.rotor().class_key().is_some_and(|k| published.get(&k).is_some())
+                    && hw.rotor().holonomy_key().is_some_and(|k| published.at(&k).is_some())
                 {
                     // Every chart the loop stands on (rule 15): a loop through
                     // vertices on two charts is an obstruction on both.
@@ -781,7 +781,7 @@ impl Form {
         links: Vec<crate::transducer::sentence::Link>,
     ) {
         let key = crate::transducer::sentence::demand_key(&kind, chart);
-        let held = self.demands.get(&key).copied();
+        let held = self.demands.at(&key).copied();
         match held.and_then(|i| self.vertices.get_mut(i as usize)) {
             Some(Vertex::Demand { bodies, .. }) => {
                 bodies.extend(links);
@@ -874,7 +874,7 @@ impl Form {
         kappa: &ClassVector,
         crystal: &dyn Crystal,
         held: bool,
-        published: &Keyed<FiledLoop>,
+        published: &Keyed<FiledLoop, crate::network::nerve::coord::Holonomy>,
     ) -> Vec<Candidate> {
         let Some(lp) = self.loops.get(idx) else {
             return Vec::new();
@@ -1032,8 +1032,8 @@ impl Form {
         // `LoopRow::Opened` moves `torsion −1, axes +1`.
         let asked = |h: &Word| {
             h.rotor()
-                .class_key()
-                .is_some_and(|k| published.get(&k).is_some())
+                .holonomy_key()
+                .is_some_and(|k| published.at(&k).is_some())
         };
         if let Some(h) = loop_holonomy_on(&self.faces, &self.vertices, lp) {
             if !held && !h.is_identity() && (kappa.free_part() || (!reached && asked(&h))) {

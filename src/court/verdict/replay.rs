@@ -187,7 +187,15 @@ fn derivations_compose(
         // the form does not carry is evidence about nothing; it is skipped
         // rather than refused, because the envelope is per-mind and a mind
         // may carry a cite for a vertex a later stroke replaced.
-        let Some(&i) = f.by_address.get(&cite.vertex) else {
+        // THE CITE'S BYTES BECOME A MEMBER COORDINATE HERE, at the court's
+        // boundary, and a cite whose bytes are not one is evidence about
+        // nothing exactly as an unheld vertex is (54.7 R5, rule 11).
+        let Ok(vk) = crate::network::nerve::Key::<
+            crate::network::nerve::coord::Member,
+        >::write(&cite.vertex) else {
+            continue;
+        };
+        let Some(&i) = f.by_address.at(&vk) else {
             continue;
         };
         let Some(v @ Vertex::Word { address, derivation, .. }) = f.vertices.get(i as usize) else {
@@ -828,7 +836,10 @@ pub(crate) fn form_loops_replay(f: &Form) -> bool {
 /// what makes the attestation worth carrying.
 pub(crate) fn receipts_price_the_terrain(
     f: &Form,
-    filed: &crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop>,
+    filed: &crate::network::nerve::Keyed<
+        crate::transducer::sentence::FiledLoop,
+        crate::network::nerve::coord::Holonomy,
+    >,
 ) -> Option<&'static str> {
     if filed.is_empty() {
         return None;
@@ -836,17 +847,20 @@ pub(crate) fn receipts_price_the_terrain(
     // THE PERIODS THE COMPLEX DERIVES, by class, over every loop. One
     // reader (`loop_classes`), the same one `file_loop` writes through and
     // `edge_coheres` asks.
-    let mut derived: Keyed<u32> = Keyed::new();
+    let mut derived: Keyed<crate::transducer::sentence::ToralPeriod> = Keyed::new();
     for lp in &f.loops {
         for row in f.loop_classes(lp) {
-            derived.insert(&row.class, row.period);
+            derived.insert(&row.class, row.periods);
         }
     }
     for (class, claim) in filed.scoped() {
         match derived.get(&class) {
             // The period is a claim about the terrain and the terrain
             // disagrees.
-            Some(&ell) if claim.period != ell => return Some(REFUSE_INFLATED_YIELD),
+            // BOTH PLANES. A claim that agrees on the `lcm` and differs on
+            // the pair is a different loop, and the terrain is what the
+            // complex derives — so the comparison is the spectrum (54.7).
+            Some(&p) if claim.periods != p => return Some(REFUSE_INFLATED_YIELD),
             // Claimed, and the complex agrees.
             Some(_) => {}
             // A class this form does not carry. It earns nothing here and

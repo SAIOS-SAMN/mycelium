@@ -108,8 +108,15 @@ impl Contemplation {
                 // EVERY CHART THE VERTEX ACTS ON is a chart the bubble's
                 // cover holds: a vertex acting on several is on several.
                 Vertex::Word { acts, .. } => {
-                    for (ck, _) in acts.scoped() {
-                        cover.insert(&ck, ());
+                    // THE CHART, NOT THE MEMBER'S KEY (54.7 R1). `cover` is
+                    // a set of CHART keys and this inserted whatever the
+                    // fibre was keyed by — which WAS the chart until the
+                    // fibre had to separate its sections. Keyed by
+                    // `chart ‖ carriage`, the working atlas answered nothing
+                    // to a reader asking for a chart, and `incident_chart`
+                    // read every idea as standing on no chart at all.
+                    for (_, a) in acts.scoped() {
+                        cover.insert(a.chart.key(), ());
                     }
                 }
                 // THE CHART IS THE BOUNDARY'S, THE GLUE IS THE COVER'S

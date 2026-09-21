@@ -61,7 +61,14 @@ impl Kernel {
         let Some(form) = held.form() else {
             return (PROBE_NOTHING, [0; 4], [0; 4]);
         };
-        let Some(&vi) = form.demands.get(demand) else {
+        // THE WIRE IS WHERE BYTES BECOME A COORDINATE. A probe names the
+        // demand vertex it answers, and `demands` answers that system and no
+        // other; the declaration is made here, at the boundary, rather than
+        // inside the carrier where nothing could see it (54.7 R5).
+        let demand = crate::network::nerve::Key::<
+            crate::network::nerve::coord::DemandVertex,
+        >::declared(demand);
+        let Some(&vi) = form.demands.at(&demand) else {
             return (PROBE_NOTHING, [0; 4], [0; 4]);
         };
         let Some(crate::transducer::sentence::Vertex::Demand { chart, bodies, .. }) =

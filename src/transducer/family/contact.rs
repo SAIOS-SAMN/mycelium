@@ -16,8 +16,12 @@ use crate::transducer::sentence::{Form, Vertex};
 /// are claimed on.
 #[derive(Clone)]
 pub(crate) struct Varying {
-    pub(crate) place_varies: Keyed<()>,
-    pub(crate) class_frames: Keyed<Vec<u16>>,
+    /// TRANSPORT CLASS → the class's placement varies across frames.
+    /// Written from `TransportClass::key` and read against `by_transport`,
+    /// so it answers that coordinate and says so (54.7 R5).
+    pub(crate) place_varies: Keyed<(), coord::Transport>,
+    /// TRANSPORT CLASS → the frames its members were measured on.
+    pub(crate) class_frames: Keyed<Vec<u16>, coord::Transport>,
 }
 
 impl Varying {
@@ -78,22 +82,31 @@ pub(crate) fn contact_named_vertices(
     form: &mut Form,
     family: &[(Grid, Grid)],
     varying: &Varying,
-    sections: &mut Keyed<Keyed<()>>,
+    sections: &mut Keyed<Keyed<()>, coord::MemberSection>,
     budget: &mut Budget,
 ) -> bool {
     trace::trace("extract/6 contact", trace::Wrote::Nothing, Some(budget));
     let ring = one_ring(family);
     let mut touched = false;
-    for (tk, ()) in varying.place_varies.scoped() {
+    // THE KEY STAYS A TRANSPORT COORDINATE ACROSS THE WHOLE BODY (54.7 R5).
+    // `scoped` hands out loose bytes, and a key that leaves a typed carrier
+    // as bytes can be filed into any other; `entries` is the same walk with
+    // the coordinate still on it, so all three reads below are checked.
+    for (tk, ()) in varying.place_varies.entries() {
         if !budget.spend() {
             return false;
         }
-        let Some(on) = form.by_transport.get(&tk).cloned() else { continue };
+        let Some(on) = form.by_transport.at(&tk).cloned() else { continue };
         let Some(r) = ring else {
             // The sections the percept filed stand; the class is claimed on
             // the frames its members were measured on.
-            if let Some(frames) = varying.class_frames.get(&tk) {
-                sections.insert(&tk, section_of_frames(frames.iter().copied()));
+            if let Some(frames) = varying.class_frames.at(&tk) {
+                // The class depth of the section system: the transport key is
+                // the coarse stratum of a member section (54.7 R5).
+                sections.put(
+                    &crate::network::nerve::Key::declared(tk.as_bytes()),
+                    section_of_frames(frames.iter().copied()),
+                );
             }
             continue;
         };
@@ -102,16 +115,23 @@ pub(crate) fn contact_named_vertices(
             let Some(mut candidate) = form.vertices.get(i as usize).cloned() else { continue };
             if let Vertex::Word { contact, acts, .. } = &mut candidate {
                 *contact = Some(crate::transducer::alphabet::Contact { anchor: 0, ring: r });
-                let charts: Vec<Vec<u8>> = acts.scoped().map(|(k, _)| k).collect();
-                for k in charts {
-                    if let Some(a) = acts.get_mut(&k) {
+                // SECTIONS, not charts (54.7 R5) — `chart ‖ carriage`.
+                let sections: Vec<crate::network::nerve::Key<coord::Section>> =
+                    acts.entries().map(|(k, _)| k).collect();
+                for k in sections {
+                    if let Some(a) = acts.at_mut(&k) {
                         *a.carriage = element::identity_versor();
                     }
                 }
             }
             if !orbits_everywhere(&candidate, family) {
-                if let Some(frames) = varying.class_frames.get(&tk) {
-                    sections.insert(&tk, section_of_frames(frames.iter().copied()));
+                if let Some(frames) = varying.class_frames.at(&tk) {
+                    // The class depth of the section system: the transport key is
+                // the coarse stratum of a member section (54.7 R5).
+                sections.put(
+                    &crate::network::nerve::Key::declared(tk.as_bytes()),
+                    section_of_frames(frames.iter().copied()),
+                );
                 }
                 continue;
             }

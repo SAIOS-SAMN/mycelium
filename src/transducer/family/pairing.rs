@@ -119,6 +119,29 @@ pub(crate) fn star_and_site_faces(
                 continue;
             };
             for u in others {
+                // THE REFLEXIVE 1-CELL IS ADMITTED (54.7, as ruled
+                // 2026-09-21). `if *u != mk` stood here and it outlawed the
+                // fundamental generator of the circle.
+                //
+                // A GRAPH needs two distinct vertices for an edge; a CW
+                // complex does not. The minimal decomposition of `S¹` is one
+                // 0-cell and one 1-cell with `∂e¹ = e⁰ − e⁰ = 0` — a closed
+                // 1-cycle on a single vertex, `b₁ = 1`. An anastomosis is a
+                // RECONVERGENCE: a channel rejoining its own stream, and a
+                // rigid shape displaced by `τ` across the lattice joins its
+                // OWN translate. There are not two shapes; the translation
+                // is an automorphism identifying the shape with its image.
+                //
+                // Since 54.7 the key is the SECTION — member ‖ carriage — so
+                // two sheets of one fibre are two keys that read back to one
+                // `(vertex, chart)`. The guard compared sections and dropped
+                // every pair whose sheets differed only by their carriage,
+                // which is every dislocation in the corpus: 186 meets, all
+                // `within one class` and on one chart, `0 loops` on every
+                // form, `pivoted [0,0,0,0]` on every voice of the fleet.
+                //
+                // What remains excluded is a section meeting ITSELF, which
+                // is an identity and carries no `τ` (rule 11).
                 if *u != mk {
                     related.insert(member_pair_key(&mk, u), ());
                 }

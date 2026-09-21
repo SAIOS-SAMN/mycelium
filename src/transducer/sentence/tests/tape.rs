@@ -2,6 +2,7 @@
 // partial tape is refused rather than partly read.
 
 use super::common::*;
+use crate::transducer::sentence::ToralPeriod;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::element;
 use crate::transducer::sentence::*;
@@ -20,7 +21,10 @@ fn the_tape_carries_a_filed_zero_as_infinite_order() {
     let [lp] = loops.as_slice() else { panic!("one chord closes one loop") };
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
-    f.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 0, chord: lp.chord });
+    f.torsion.put(
+        &crate::network::nerve::Key::from_address(class).expect("a holonomy coordinate"),
+        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
+    );
     // THE FILING IS THE SPEAKER'S AND IT DOES NOT CLOSE THE CIRCUIT (54.5,
     // as ruled 2026-09-20). This asserted `f.coheres()` — that writing "0"
     // in the form's own side-table made a free part cohere. A (3,4,5)
@@ -33,8 +37,12 @@ fn the_tape_carries_a_filed_zero_as_infinite_order() {
     // lifts it off the form it was made on; a form decoded from its ADDRESS
     // carries none, because the address is the geometry and a filing is not
     // geometry.
-    let filed: Vec<u32> = e.filing().scoped().map(|(_, l)| l.period).collect();
-    assert_eq!(filed, vec![0], "the period reads 0, infinite order, on the speaker's word");
+    let filed: Vec<ToralPeriod> = e.filing().scoped().map(|(_, l)| l.periods).collect();
+    assert_eq!(
+        filed,
+        vec![ToralPeriod::OPEN],
+        "neither plane closes, on the speaker's word — a (3,4,5) rotor has no period at all"
+    );
     let read = from_element_form(&e).expect("the address rebuilds the form");
     assert!(
         read.torsion.is_empty(),
@@ -157,8 +165,15 @@ fn form_tape_v6_round_trips() {
             // THE WHOLE FIBRE ROUND-TRIPS, keyed by chart: the relative and the
             // hue map at each chart `of` acted on, and one member here.
             assert_eq!(acts, was, "every member comes back filed at its own chart");
+            // A FIBRE READ AT THE CHART'S STRATUM (54.7 R1): the key is
+            // `chart ‖ carriage`, so the chart is a prefix.
+            let prefix = crate::transducer::sentence::Acting::chart_prefix(
+                &stalk::Invariant::counts(&[3, 5]),
+            );
             let m = acts
-                .get(stalk::Invariant::counts(&[3, 5]).key().as_bytes())
+                .scoped()
+                .find(|(k, _)| k.starts_with(&prefix))
+                .map(|(_, x)| x.clone())
                 .expect("the member at the chart it was written on");
             assert!(element::same_versor(
                 &m.carriage,
@@ -200,7 +215,7 @@ fn form_tape_v6_round_trips() {
     }
     assert!(!back.is_closed(), "a sentence with a demand vertex is not closed");
     assert_eq!(
-        back.demands.get(&demand_key(&Demand::Source { multiplicity: 2 }, &stalk::Invariant::counts(&[1, 4, 4]))),
+        back.demands.at(&demand_key(&Demand::Source { multiplicity: 2 }, &stalk::Invariant::counts(&[1, 4, 4]))),
         Some(&demand),
         "the demand is read by (kind, chart)"
     );
@@ -327,7 +342,7 @@ fn a_form_stands_one_demand_per_kind_and_chart_and_gathers_the_bodies() {
     assert_eq!(demanded.len(), 2, "one vertex per (kind, chart), got {demanded:?}");
     let on_chart = f
         .demands
-        .get(&demand_key(&Demand::Creation, &chart))
+        .at(&demand_key(&Demand::Creation, &chart))
         .copied()
         .expect("the demand is indexed under its key");
     let Some(Vertex::Demand { bodies, .. }) = f.vertices.get(on_chart as usize) else {

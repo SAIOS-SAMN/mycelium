@@ -228,19 +228,26 @@ impl Form {
     /// A FINITE PERIOD IS EXACT AND AT LEAST ONE (A17), so the subtraction
     /// is total; a class of infinite order, filed at `0` (52.3), condenses
     /// no members and reaches nothing.
-    pub fn fibre_volume(&self, filed: &Keyed<FiledLoop>) -> usize {
-        let mut derived: Keyed<u32> = Keyed::new();
+    pub fn fibre_volume(
+        &self,
+        filed: &Keyed<FiledLoop, crate::network::nerve::coord::Holonomy>,
+    ) -> usize {
+        let mut derived: Keyed<crate::transducer::sentence::ToralPeriod> = Keyed::new();
         for lp in &self.loops {
             for row in self.loop_classes(lp) {
-                derived.insert(&row.class, row.period);
+                derived.insert(&row.class, row.periods);
             }
         }
         filed
             .scoped()
             .filter_map(|(k, _)| derived.get(&k).copied())
-            .map(|ell| match Order::from_u32(ell) {
-                Order::Finite(l) => l as usize - 1,
-                Order::Infinite => 0,
+            // THE LABOUR OF BOTH PLANES: `(ℓ₁ − 1) + (ℓ₂ − 1)`. It read
+            // `(lcm − 1)`, which is neither plane's (54.7). A plane that
+            // does not close earns nothing — that is torsion, charged as
+            // shear, never estimated through an invented finite order.
+            .map(|p| match p.yield_units() {
+                Some(u) => u as usize,
+                None => 0,
             })
             .sum()
     }
@@ -277,8 +284,17 @@ impl Form {
                 return false;
             }
             for row in rows {
-                match self.torsion.get(&row.class) {
-                    Some(filed) if filed.period == row.period => {}
+                let Ok(class) = crate::network::nerve::Key::<
+                    crate::network::nerve::coord::Holonomy,
+                >::from_address(&row.class)
+                else {
+                    return false;
+                };
+                match self.torsion.at(&class) {
+                    // BOTH PLANES, not the envelope: a claim that agrees on
+                    // `lcm` and disagrees on the pair is a different loop
+                    // (54.7).
+                    Some(filed) if filed.periods == row.periods => {}
                     _ => return false,
                 }
             }

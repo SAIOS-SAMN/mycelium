@@ -69,7 +69,26 @@ impl Form {
                 // faces that reached it leave with it. A vertex that keeps
                 // other members keeps its faces at those members' pairs and
                 // loses the pairs at the refused one.
-                acts.remove(ck.as_bytes())?;
+                // EVERY SECTION AT THE REFUSED CHART LEAVES (54.7 R1). It
+                // removed one entry by the chart key, which named the
+                // member while the fibre was keyed by chart alone. The key
+                // is `chart ‖ carriage` now, so the chart is a PREFIX and
+                // the refusal is about the CHART — every sheet over it goes,
+                // not one of them.
+                let prefix = crate::transducer::sentence::Acting::chart_prefix(chart);
+                let gone: Vec<crate::network::nerve::Key<crate::network::nerve::coord::Section>> =
+                    acts
+                        .entries()
+                        .filter(|(k, _)| k.starts_with(&prefix))
+                        .map(|(k, _)| k)
+                        .collect();
+                if gone.is_empty() {
+                    return None;
+                }
+                for k in gone {
+                    acts.drop_at(&k)?;
+                }
+                let _ = &ck;
                 let last = acts.is_empty();
                 if last {
                     self.vertices[i as usize] = Vertex::Demand {

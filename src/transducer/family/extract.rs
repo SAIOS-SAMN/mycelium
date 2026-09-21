@@ -30,7 +30,7 @@ type Ratio = ((usize, usize), (usize, usize));
 #[derive(Clone)]
 pub(crate) struct Percept {
     pub(crate) form: Form,
-    pub(crate) sections: Keyed<Keyed<()>>,
+    pub(crate) sections: Keyed<Keyed<()>, coord::MemberSection>,
     pub(crate) varying: contact::Varying,
     pub(crate) unreached: Vec<usize>,
 }
@@ -383,7 +383,18 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             };
             let Vertex::Word { address, derivation, acts, .. } = &vertex else { continue };
             let Some(tc) = transport_class(&vertex) else { continue };
-            let Some(acting) = acts.get(c.key().as_bytes()).cloned() else { continue };
+            // A FIBRE READ AT THE CHART'S STRATUM (54.7 R1). `Acting::key`
+            // is `chart ‖ carriage`, so an exact lookup on the chart key
+            // misses every section — and this `continue` then skipped every
+            // Word vertex, leaving a form in which nothing acts.
+            let prefix = crate::transducer::sentence::Acting::chart_prefix(c);
+            let Some(acting) = acts
+                .scoped()
+                .find(|(k, _)| k.starts_with(&prefix))
+                .map(|(_, a)| a.clone())
+            else {
+                continue;
+            };
             let rotor = derivation.rotor();
             // THE HUE MAP IS A SECTION COORDINATE (21 step 1): every frame's
             // map is a hue section on the form, the vertex carries the least
@@ -403,7 +414,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
                     hue_maps.insert(hk, q.car.sigma.clone());
                 }
                 if !crate::transducer::sentence::gauge_agrees(&q.car.sigma, &acting.gauge) {
-                    varying.place_varies.insert(tc.key(), ());
+                    varying.place_varies.put(&tc.key(), ());
                     continue;
                 }
                 frames.push(q.frame);
@@ -424,7 +435,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
                 if vk == rep_key {
                     continue;
                 }
-                varying.place_varies.insert(tc.key(), ());
+                varying.place_varies.put(&tc.key(), ());
                 let [g, ..] = group.as_slice() else { continue };
                 let mut g_frames: Vec<u16> = group.iter().map(|q| q.frame).collect();
                 // A coordinate set, read by `claims_frame` at the frame.
@@ -576,7 +587,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // stands.
     let mut scenery = Scenery::new();
     let frame_ix = scenery.place(frame_vertex(), Vec::new());
-    let mut sections: Keyed<Keyed<()>> = Keyed::new();
+    let mut sections: Keyed<Keyed<()>, coord::MemberSection> = Keyed::new();
     let mut bodies_at: Keyed<(Body, Body, Versor)> = Keyed::new();
     // THE UNION SHAPE OF EACH MEMBER'S FIBER, keyed as its support is —
     // `member_key(vertex, chart)` — and holding no frame, because the union
@@ -635,7 +646,9 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             let support: Vec<(i64, i64, i64)> =
                 codomain.iter().map(|&(r, cc, _)| (r, cc, c.frame)).collect();
             // One class, one chart, two carriages: the multiplicity.
-            let mut mk = tc.key();
+            // The class opens a member coordinate — class ‖ chart — and the
+            // transport coordinate is left behind where the extension begins.
+            let mut mk = tc.key().into_vec();
             crate::transducer::address::put_bytes(&mut mk, chart.key().as_bytes());
             let mut carriage = Vec::new();
             acting.carriage.put_canonical(&mut carriage);
@@ -683,9 +696,9 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     }
 
     for (_, read) in reads.scoped() {
-        let mut acts: Keyed<Acting> = Keyed::new();
+        let mut acts: Keyed<Acting, coord::Section> = Keyed::new();
         for m in &read.members {
-            acts.insert(m.acting.key(), m.acting.clone());
+            acts.put(&m.acting.key(), m.acting.clone());
         }
         let vertex = Vertex::Word { address: read.address.clone(), derivation: read.derivation.clone(), acts, contact: None };
         let ix = scenery.place(vertex, Vec::new());
@@ -696,7 +709,9 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
                 unions.insert(member_key(ix, ck.as_bytes()), (ua.clone(), ub.clone(), uv.clone()));
             }
             for (k, a0, b0, v) in &m.at {
-                let mut bk = vertex_ix_key(ix);
+                // The vertex ordinal opens a body coordinate — ordinal ‖
+                // chart ‖ body — and is left behind where that begins.
+                let mut bk = vertex_ix_key(ix).into_vec();
                 crate::transducer::address::put_bytes(&mut bk, ck.as_bytes());
                 bk.extend_from_slice(&k.to_le_bytes());
                 bodies_at.insert(bk, (a0.clone(), b0.clone(), v.clone()));
@@ -711,7 +726,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // THE SECTIONS: a member claimed on fewer frames than the family
     // reached is filed at its own key, and a class claimed on fewer at its
     // — the union over every vertex of the class.
-    let mut class_union: Keyed<Vec<u16>> = Keyed::new();
+    let mut class_union: Keyed<Vec<u16>, coord::Transport> = Keyed::new();
     for (mk, frames) in member_frames.scoped() {
         let Some((ix, _)) = member_of.get(&mk) else { continue };
         let Some(v) = scenery.vertices.get(*ix as usize) else { continue };
@@ -719,25 +734,31 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         frames.sort_unstable();
         frames.dedup();
         if let Some(tc) = transport_class(v) {
-            match class_union.get_mut(&tc.key()) {
+            match class_union.at_mut(&tc.key()) {
                 Some(u) => u.extend_from_slice(&frames),
                 None => {
-                    class_union.insert(tc.key(), frames.clone());
+                    class_union.put(&tc.key(), frames.clone());
                 }
             }
         }
         if frames.len() < n_reached {
-            sections.insert(&mk, section_of_frames(frames));
+            // THE MEMBER DEPTH of the section system (54.7 R5) — `mk` is a
+            // member key and the class-level write below is the coarse
+            // stratum of the same system, not a second carrier.
+            sections.put(&Key::declared(&mk), section_of_frames(frames));
         }
     }
-    for (tk, frames) in class_union.scoped() {
+    // The key stays a transport coordinate from the walk to both writes.
+    for (tk, frames) in class_union.entries() {
         let mut frames = frames.clone();
         frames.sort_unstable();
         frames.dedup();
         if frames.len() < n_reached {
-            sections.insert(&tk, section_of_frames(frames.iter().copied()));
+            // THE CLASS DEPTH — the coarse stratum, written through the one
+            // conversion that says so.
+            sections.put(&Key::declared(tk.as_bytes()), section_of_frames(frames.iter().copied()));
         }
-        varying.class_frames.insert(&tk, frames);
+        varying.class_frames.put(&tk, frames);
     }
     let mut form = Form { vertices: scenery.vertices.clone(), ..Form::default() };
     trace::trace("percept/3 meets", trace::Wrote::Nothing, Some(budget));
@@ -746,7 +767,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // what the SCENE keeps — the torsion each loop filed, awaiting a chord
     // this form can name, and the classes standing per cover.
     let mut edges = EdgeTally::default();
-    let (meet_faces, pending_torsion, stood) =
+    let (meet_chords, meet_faces, pending_torsion, stood) =
         crate::transducer::family::covered::classify_cover(&covers, &mut edges);
     trace::trace("percept/4 loops+classify", trace::Wrote::Nothing, Some(budget));
     // THE DEMANDS, one vertex per (kind, chart) (50.5), in key order. A
@@ -802,14 +823,111 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // discarded the other six. A face offered and refused is a measurement
     // (§8.1) and it was being thrown away silently.
     let mut drops = FaceDrops::default();
-    for (ak, bk) in star_and_site_faces(frame_member.as_deref(), &scenery.supports) {
+    // 53.6 item 3 — THE COVER'S MEETS ARE OFFERED AS FACES, BETWEEN THE
+    // CLASSES THEY RELATE.
+    //
+    // `star_and_site_faces` offers the Frame's star, a spanning CHAIN of
+    // each site's occupants and the ring pairs. Its own comment says what
+    // that leaves: "the only cycles that survive are the ones spanning
+    // DISTINCT sites". Nothing offered such a pair, so every form came out
+    // a forest — `faces == site+ring` on every row of every recut — and
+    //
+    //     b₁ = E − V + C = 0
+    //
+    // identically. `0 loops` everywhere, and with no cycle there is no
+    // held obstruction, so `pivot_loop` had nothing to discharge:
+    // `pivoted [0,0,0,0]` on all five voices at epoch 94, `stood` and
+    // `closed` likewise, and `court basis 0` on all three courts. Descent
+    // worked because descent asks whether the genome already holds a word
+    // that reproduces the demand, which needs no cycle; everything above
+    // grade 0 consumes H₁ and H₁ was empty.
+    //
+    // The chords are the meets lifted to classes by `transport_class`, the
+    // same lift the loops' ENDS already used one screen down. They are
+    // offered to THIS builder and not pushed as faces directly, so a meet
+    // is subject to every reading a face is — the word must re-derive, the
+    // place must exist — and a chord that cannot be built is counted in
+    // `drops` beside the others rather than forced in (§8.1).
+    //
+    // `by_transport` is the index that resolves a class to its vertex, and
+    // it is built by `reindex`; the scene's vertices are final above, so it
+    // is built here rather than after the faces that need it.
+    form.reindex();
+    // THE CHORD IS BETWEEN TWO MEMBERS, AND THE CHART IS THE HALF THAT
+    // DIFFERS (53.6 item 3, corrected by the lift's own reading).
+    //
+    // Measured over the 36 corpus forms: 186 meets, 186 of them carrying an
+    // edge, `unclassed` 0 — and 186 of 186 WITHIN ONE CLASS. A first cut
+    // kept only meets whose CLASSES differed and therefore kept none.
+    //
+    // That is what a `TransportClass` is. 21 step 1 excludes the carriage
+    // deliberately — "never the hue map and never the body's moduli" — and
+    // that exclusion is what makes two copies of one shape at two places
+    // CORRESPOND, so a rule generalises. A deformation that moves a rigid
+    // shape carries every piece by the same rotation and differs only in
+    // TRANSLATION, so every piece lands at one class vertex by construction.
+    //
+    // The cycle therefore does not span two class vertices; it spans two
+    // MEMBERS of one — `(V, chart A)` and `(V, chart B)`, each with its own
+    // carriage — and the relative transport between them is
+    // `τ = φ_B · φ_A⁻¹`, a Burgers vector, which is what
+    // `Demand::Dislocation { chart, tau }` was built to carry. 18.2 says it
+    // in one line: two carriages on one class are two sections.
+    //
+    // A face is between two members and `star_and_site_faces` already
+    // returns member pairs, so the chord is offered at the same granularity
+    // the builder consumes. Both ends may sit at ONE vertex; what must
+    // differ is the member key, which is the pair `(vertex, chart)`.
+    type OfferedChord = (Vec<u8>, Vec<u8>, Option<crate::transducer::sentence::Transport>);
+    let chord_pairs: Vec<OfferedChord> = meet_chords
+        .iter()
+        .filter_map(|((ta, ca, pa), (tb, cb, pb), e)| {
+            let at = |t: &TransportClass,
+                      c: &Invariant,
+                      phi: &crate::transducer::element::Versor|
+             -> Option<Vec<u8>> {
+                // A class stands at one or more vertices and any of them
+                // names the same class, so the slice pattern reads one
+                // rather than choosing among them (rule 15). The SECTION is
+                // that member and the carriage it acts by, which is the
+                // coordinate separating two sheets of one fibre.
+                let ix = match form.by_transport.at(&t.key())?.as_slice() {
+                    [ix, ..] => *ix,
+                    [] => return None,
+                };
+                Some(section_key(ix, c.key().as_bytes(), phi))
+            };
+            let (ma, mb) = (at(ta, ca, pa)?, at(tb, cb, pb)?);
+            // ONE MEMBER IS NOT A CHORD. Both ends resolving to the same
+            // `(vertex, chart)` is a self-pair, which the face builder
+            // would refuse at `face_word` anyway; refused here so the
+            // reading says why rather than counting it as a drop.
+            (ma != mb).then_some((ma, mb, e.clone()))
+        })
+        .collect();
+    let n_chords = chord_pairs.len();
+    // A STAR OR SITE PAIR BRINGS NO EDGE OF ITS OWN — `edge_between` reads
+    // it off the two bodies — and a CHORD brings the one its meet measured,
+    // because `edge_between` is keyed by `(vertex, chart)` and cannot
+    // re-derive a transition between two sections of one member.
+    for (ak, bk, chord_edge) in star_and_site_faces(frame_member.as_deref(), &scenery.supports)
+        .into_iter()
+        .map(|(a, b)| (a, b, None))
+        .chain(chord_pairs)
+    {
         drops.offered += 1;
         let (Some((i, cik)), Some((j, cjk))) = (read_member_key(&ak), read_member_key(&bk)) else {
             drops.member_key += 1;
             continue;
         };
-        let (edge, pairs) =
+        let (measured, pairs) =
             edge_between(&bodies_at, &unions, n_reached, (i, &cik), (j, &cjk), &mut edges);
+        // THE CHORD'S OWN TRANSITION WINS where it has one: the meet
+        // measured `V_b ∘ V_a⁻¹` between the two pieces' frames, and the
+        // bodies at one member cannot say what the transition between two
+        // of its sections is. Where the chord carries none, the reading off
+        // the bodies stands.
+        let edge = chord_edge.or(measured);
         let (Some(vi), Some(vj)) = (form.vertices.get(i as usize), form.vertices.get(j as usize))
         else {
             drops.vertex += 1;
@@ -853,7 +971,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     for (class, mut filed, ends, rotor) in pending_torsion {
         let ixs: Vec<u16> = ends
             .iter()
-            .filter_map(|tc| form.by_transport.get(&tc.key()))
+            .filter_map(|tc| form.by_transport.at(&tc.key()))
             // A class stands at one or more vertices; the loop's end is
             // the class, so any vertex of it names the same class and the
             // slice pattern reads one rather than choosing among them.
@@ -871,7 +989,9 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         match chord {
             Some(c) => {
                 filed.chord = c as u16;
-                form.torsion.insert(class, filed);
+                if let Ok(class) = crate::network::nerve::Key::from_address(&class) {
+                    form.torsion.put(&class, filed);
+                }
             }
             // A MEASURED CLASS IS NEVER DISCARDED (law 7, rule 11). The
             // loop was classified inside the cover and its class is a
@@ -887,7 +1007,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             None => {
                 let chart = ends
                     .iter()
-                    .filter_map(|tc| form.by_transport.get(&tc.key()))
+                    .filter_map(|tc| form.by_transport.at(&tc.key()))
                     .filter_map(|on| match on.as_slice() {
                         [ix, ..] => form.vertices.get(*ix as usize),
                         [] => None,
@@ -916,6 +1036,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     eprintln!(
         "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} loops \
          | edges asked: measured {}, unspelled {}, unread {}, not rigid {} \
+         | chords {} offered {} \
          | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {}",
         form.faces.len(),
         // The site+ring faces COUNTED as they were built, not the total
@@ -928,6 +1049,8 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         edges.unspelled,
         edges.unread,
         edges.not_rigid,
+        meet_chords.len(),
+        n_chords,
         drops.offered,
         drops.built,
         drops.member_key,
@@ -1048,7 +1171,7 @@ pub fn extract_rule_with(
                     // vertex asking each its class. The index is the one the
                     // form carried into the pass: an append writes no
                     // transport class, so nothing here reads a stale entry.
-                    if let Some(on) = form.by_transport.get(&tc.key()) {
+                    if let Some(on) = form.by_transport.at(&tc.key()) {
                         for &i in on {
                             retract.insert(vertex_ix_key(i), ());
                         }

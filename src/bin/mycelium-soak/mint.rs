@@ -105,7 +105,12 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             form_sections += rule.form.sections.len() as u64;
             form_torsion += rule.form.torsion.len() as u64;
             let periods: Vec<u32> =
-                rule.form.torsion.scoped().map(|(_, f)| f.period).collect();
+                rule
+                .form
+                .torsion
+                .scoped()
+                .filter_map(|(_, f)| f.periods.yield_units().and_then(|u| u32::try_from(u).ok()))
+                .collect();
             println!(
                 "  mint {name} reach: form fibre_volume {reach} \
                  (form sections {} torsion {} periods {periods:?}) \

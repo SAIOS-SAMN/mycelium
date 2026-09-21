@@ -639,7 +639,11 @@ impl Form {
             // against the form (rule 11, 13.9 step 7). A row with period 0
             // is the screw: non-compact, and owed a dislocation.
             match compact.iter().find(|row| row.class == class) {
-                Some(row) if row.period > 0 => true,
+                // COMPACT IS BOTH PLANES CLOSING. It read `period > 0` on
+                // the `lcm`, which is non-zero whenever EITHER factor is a
+                // root of unity — so a loop with one plane turning forever
+                // read as compact and was never owed a dislocation (54.7).
+                Some(row) if row.periods.closes() => true,
                 // A FREE PART THE FORM DECLARES IS CARRIED, NOT HIDDEN
                 // (54.5, Directive 4). `REFUSE_LOOP` reads "a free part and
                 // NO DISLOCATION DECLARES IT", and this is the clause that

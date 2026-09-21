@@ -142,7 +142,10 @@ pub struct Element {
     /// its third coordinate is a fibre index of the element's own axis,
     /// this one's is a chord of the form's faces, and carrying either
     /// across as the other invents a coordinate the source never held.
-    pub(crate) filing: crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop>,
+    pub(crate) filing: crate::network::nerve::Keyed<
+        crate::transducer::sentence::FiledLoop,
+        crate::network::nerve::coord::Holonomy,
+    >,
     /// THE RECEIPTS ENVELOPE (54.5 Road (d)): the graded nerve incidence
     /// this word stands in, and the evidence a court replays it with —
     /// citations with their affine transitions, derivations, and pivot
@@ -369,7 +372,10 @@ impl Element {
 
     /// The torsion cycles of the axis: `(generator σ, period ℓ)` each.
     /// The speaker's filing: class ↦ `(σ, ℓ, chord)`.
-    pub fn filing(&self) -> &crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop> {
+    pub fn filing(&self) -> &crate::network::nerve::Keyed<
+        crate::transducer::sentence::FiledLoop,
+        crate::network::nerve::coord::Holonomy,
+    > {
         &self.filing
     }
 

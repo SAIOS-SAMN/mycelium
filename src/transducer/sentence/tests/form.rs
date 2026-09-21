@@ -2,7 +2,8 @@
 // and what a chain deconstructs into.
 
 use super::common::*;
-use crate::network::nerve::Keyed;
+use crate::transducer::sentence::ToralPeriod;
+use crate::network::nerve::{coord, Key, Keyed};
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::blade::Shape;
 use crate::transducer::element::{self, from_canonical, Element};
@@ -100,7 +101,14 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     // attestation — what its stroke discharged against its own budget —
     // and it prices the yield (E2) and answers whether the stroke
     // finished. Neither is a fact about the connection.
-    f.torsion.insert(half.rotor().class_key().expect("class"), FiledLoop { sigma: Vec::new(), period: 2, chord: triangle.chord });
+    // THE SPECTRUM THE ROTOR ACTUALLY HAS (54.7), not a scalar chosen for
+    // it: a filing that names a period the geometry does not carry is the
+    // thing `REFUSE_INFLATED_YIELD` exists to catch, so a fixture must file
+    // what the rotor says.
+    f.torsion.put(
+        &half.rotor().holonomy_key().expect("class"),
+        FiledLoop { sigma: Vec::new(), periods: half.rotor().toral_period(), chord: triangle.chord },
+    );
     assert!(f.coheres(), "and filing it says nothing the geometry did not already say");
     // NO RE-WALK HERE. `edge_holonomies` reads `self.faces` live, so the
     // `Loop` — its vertices, its faces, its chord — stays valid across an
@@ -151,6 +159,8 @@ fn a_loop_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
     assert!(!f.coheres());
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
+    let class = Key::<coord::Holonomy>::from_address(class)
+        .expect("an edge class is a holonomy coordinate");
     // A FILING DOES NOT CLOSE A CIRCUIT THAT WALKS (54.5, as ruled
     // 2026-09-20). This filed period 0 — A19's spelling of infinite order
     // — and then asserted the loop COHERED, which made an open dislocation
@@ -158,10 +168,18 @@ fn a_loop_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
     // never the identity, the circuit never returns, and no annotation
     // changes that. Writing "0" in a notebook records that the stroke
     // looked; it does not make the geometry close.
-    f.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 0, chord: lp.chord });
+    f.torsion.put(
+        &class,
+        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
+    );
     assert!(!f.edge_coheres(lp), "filed or unfiled, a free part is not a compact resonance");
     assert!(!f.coheres());
-    f.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 4, chord: lp.chord });
+    // A SPECTRUM THE LOOP DOES NOT HAVE. `[4, 4]` is an isoclinic quarter
+    // turn and this loop is a free part; naming it is not a filing.
+    f.torsion.put(
+        &class,
+        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::from_pair(4, 4), chord: lp.chord },
+    );
     assert!(!f.coheres(), "and a period the loop does not have is not a filing either");
 
     let mut g = chord_form(std::slice::from_ref(&w));
@@ -169,11 +187,11 @@ fn a_loop_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
     let [gl] = loops.as_slice() else { panic!("one chord closes one loop") };
     assert!(!gl.holonomy.is_identity(), "the transport composite carries the rotor");
     assert!(!g.is_cauterized(), "unfiled on the word, the form is not cauterized");
-    g.torsion.insert(
-        gl.holonomy.rotor().class_key().expect("a class"),
-        FiledLoop { sigma: Vec::new(), period: 0, chord: gl.chord },
+    g.torsion.put(
+        &gl.holonomy.rotor().holonomy_key().expect("a class"),
+        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: gl.chord },
     );
-    assert!(g.is_cauterized(), "filed at period 0 under the holonomy's class, it is");
+    assert!(g.is_cauterized(), "filed as open under the holonomy's class, it is");
 }
 
 #[test]
@@ -214,8 +232,10 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
         .expect("glue");
     // 54.7 B5a — `glued` IS KEYED BY THE SITE, and the site is what the
     // vertex holds; the cited address is the cover's.
-    let site = crate::transducer::sentence::vertex_bytes(&host.vertices[gi as usize]);
-    assert_eq!(host.glued.get(&site).copied(), Some(gi));
+    let site = Key::<coord::Site>::declared(crate::transducer::sentence::vertex_bytes(
+        &host.vertices[gi as usize],
+    ));
+    assert_eq!(host.glued.at(&site).copied(), Some(gi));
     assert!(
         host.cover.iter().any(|e| e.target == inner_e.address()),
         "and the cover names the form the boundary mates with"
@@ -297,7 +317,8 @@ fn ratio_and_sections_are_on_the_form_key() {
     let mut b = closed_word_form(w.clone(), None);
     b.ratio = ((2, 1), (2, 1));
     let mut c = closed_word_form(w, None);
-    c.sections.insert(form_addr(7), section_of_frames([1]));
+    c.sections
+        .put(&Key::declared(form_addr(7)), section_of_frames([1]));
     let ea = as_element_form(&a, [1, 0, 0, 0]).expect("a");
     let eb = as_element_form(&b, [1, 0, 0, 0]).expect("b");
     let ec = as_element_form(&c, [1, 0, 0, 0]).expect("c");
@@ -307,7 +328,7 @@ fn ratio_and_sections_are_on_the_form_key() {
     assert_eq!(back_b.ratio, ((2, 1), (2, 1)));
     let back_c = crate::transducer::sentence::from_element_form(&ec).expect("v2 tape");
     assert_eq!(
-        back_c.sections.get(&form_addr(7)).map(frames_of_section),
+        back_c.sections.at(&Key::declared(form_addr(7))).map(frames_of_section),
         Some(vec![1u16]),
         "the section round-trips as the frame it stands on"
     );
@@ -653,9 +674,16 @@ fn a_chart_names_the_word_vertices_on_it() {
         bodies: vec![(0, 0, 0, 1)],
     });
     f.reindex();
-    assert_eq!(f.by_class.get(&near.key()), Some(&vec![1u16, 3]), "both words on the near chart, in vertex order");
-    assert_eq!(f.by_class.get(&far.key()), Some(&vec![2u16]), "the one word on the far chart");
-    assert_eq!(f.by_class.get(&stalk::Invariant::counts(&[9]).key()), None, "a chart no vertex is on names nothing");
+    // THE READ IS WRITTEN AS THE CHART IT IS (54.7 R5). `by_class` takes a
+    // `Key<coord::Chart>` and nothing else, so the test asks at the same
+    // coordinate `reindex` files by — which is the agreement that used to
+    // hold only in prose, and did not hold.
+    let chart_key = |i: &stalk::Invariant| {
+        Key::<coord::Chart>::from_address(&i.key()).expect("an invariant's key is a chart key")
+    };
+    assert_eq!(f.by_class.at(&chart_key(&near)), Some(&vec![1u16, 3]), "both words on the near chart, in vertex order");
+    assert_eq!(f.by_class.at(&chart_key(&far)), Some(&vec![2u16]), "the one word on the far chart");
+    assert_eq!(f.by_class.at(&chart_key(&stalk::Invariant::counts(&[9]))), None, "a chart no vertex is on names nothing");
     for (chart, on) in f.by_class.scoped() {
         for &i in on {
             let v = f.vertices.get(i as usize).expect("an index the fiber names is a vertex");
@@ -665,7 +693,7 @@ fn a_chart_names_the_word_vertices_on_it() {
             // is the defect, and a test that reads `acting()` would report
             // the representative agreeing with itself).
             assert!(
-                matches!(v, Vertex::Word { acts, .. } if acts.get(chart.as_slice()).is_some()),
+                matches!(v, Vertex::Word { .. }) && v.acts_on_chart_key(chart.as_slice()),
                 "vertex {i} is a Word acting on the chart that names it"
             );
         }
@@ -698,19 +726,22 @@ fn a_transport_class_names_the_word_vertices_of_that_class() {
     let (identity_class, quarter_class) = (key_of(1), key_of(3));
     assert_ne!(identity_class, quarter_class, "two words, two transport classes");
     assert_eq!(
-        f.by_transport.get(&identity_class),
+        f.by_transport.at(&identity_class),
         Some(&vec![1u16, 2]),
         "the identity class names both its vertices, across the two charts"
     );
     assert_eq!(
-        f.by_transport.get(&quarter_class),
+        f.by_transport.at(&quarter_class),
         Some(&vec![3u16]),
         "the quarter turn is its own class on a chart another vertex is also on"
     );
     // The chart fiber cannot answer the same question: it splits the one
     // class over two charts and merges two classes on one chart.
-    assert_eq!(f.by_class.get(&near.key()), Some(&vec![1u16, 3]), "chart near: two classes");
-    assert_eq!(f.by_class.get(&far.key()), Some(&vec![2u16]), "chart far: one of the identity class");
+    let chart_key = |i: &stalk::Invariant| {
+        Key::<coord::Chart>::from_address(&i.key()).expect("an invariant's key is a chart key")
+    };
+    assert_eq!(f.by_class.at(&chart_key(&near)), Some(&vec![1u16, 3]), "chart near: two classes");
+    assert_eq!(f.by_class.at(&chart_key(&far)), Some(&vec![2u16]), "chart far: one of the identity class");
     // Every index the fiber names is a Word of that class, and every Word is
     // named by its own: the relation is total in both directions.
     for (k, on) in f.by_transport.scoped() {
@@ -728,7 +759,7 @@ fn a_transport_class_names_the_word_vertices_of_that_class() {
             continue;
         };
         assert!(
-            f.by_transport.get(&k).is_some_and(|on| on.contains(&(i as u16))),
+            f.by_transport.at(&k).is_some_and(|on| on.contains(&(i as u16))),
             "vertex {i} carries a transport class and the fiber names it"
         );
     }
@@ -756,7 +787,8 @@ fn a_pivot_derives_the_address_meet_it_reads() {
         if let Vertex::Word { address, .. } = v {
             words += 1;
             assert_eq!(
-                f.by_address.get(address),
+                f.by_address
+                    .at(&Key::from_address(address).expect("a word vertex address")),
                 Some(&(i as u16)),
                 "vertex {i} at {:?} is not what the meet resolves",
                 address.as_bytes()

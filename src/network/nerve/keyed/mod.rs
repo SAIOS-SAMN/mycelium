@@ -5,6 +5,7 @@
 //! a cursor and a shell are reads of structure rather than searches over a
 //! list. `meet_nodes` intersects two relations by descending both at once.
 
+pub mod coordinate;
 pub mod relation;
 pub mod schema;
 pub mod ondisk;
@@ -13,6 +14,7 @@ pub mod walks;
 #[cfg(test)]
 pub mod work;
 
+pub use coordinate::*;
 pub use relation::*;
 pub use schema::*;
 pub(crate) use trie::*;

@@ -50,6 +50,8 @@ pub use perceive::*;
 pub use scene::*;
 pub use speak::*;
 
+use crate::network::nerve::{coord, Key};
+
 use super::blade::{self, Shape};
 use super::element::{self, Element, Versor};
 use super::sentence::{base_key, Form, FormFace, Link, Vertex};
@@ -284,6 +286,37 @@ pub(crate) fn member_key(vertex: u16, chart: &[u8]) -> Vec<u8> {
     let mut k = Vec::new();
     crate::transducer::address::put_bytes(&mut k, &vertex.to_le_bytes());
     crate::transducer::address::put_bytes(&mut k, chart);
+    k
+}
+
+/// ONE SECTION OF THE FIBRE OVER A MEMBER (54.7, as ruled 2026-09-21):
+/// the member, then the carriage that section acts by.
+///
+/// `member_key` names a point of the BASE — a vertex and a chart — and 53.6
+/// item 1 quotients two pieces of one rotor class onto one such point,
+/// correctly. The meets between those pieces live in the TOTAL space, so
+/// the carrier that indexes them must separate `σ₁ = (V, U, φ₁)` from
+/// `σ₂ = (V, U, φ₂)`. Keyed by the member alone it could not: the second
+/// `insert` overwrote the first, the site had one occupant, and
+/// `star_and_site_faces`'s chain over `windows(2)` had nothing to pair.
+///
+/// Measured before this: 186 meets over the 36 corpus forms, every one
+/// `within one class` and on one chart, `0 loops` on every form.
+///
+/// THE MEMBER IS A PREFIX, so `read_member_key` reads the vertex and the
+/// chart and stops — every reader that wants the base point still gets it,
+/// unchanged, and the sheet is the tail (A21: a prefix is a coarser
+/// stratum). Two sections of one member are two keys that read back to one
+/// `(vertex, chart)`, which is exactly a 1-cell whose two ends project to
+/// one 0-cell: `∂e = e⁰ − e⁰ = 0`, the minimal CW decomposition of the
+/// circle, `b₁ = 1`, holonomy `τ = φ₂ · φ₁⁻¹`.
+pub(crate) fn section_key(
+    vertex: u16,
+    chart: &[u8],
+    carriage: &crate::transducer::element::Versor,
+) -> Vec<u8> {
+    let mut k = member_key(vertex, chart);
+    carriage.put_canonical(&mut k);
     k
 }
 

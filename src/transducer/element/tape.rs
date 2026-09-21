@@ -89,7 +89,7 @@ impl Element {
                 out.push(x);
                 out.push(y);
             }
-            out.extend_from_slice(&f.period.to_le_bytes());
+            f.periods.to_bytes(&mut out);
             out.extend_from_slice(&f.chord.to_le_bytes());
         }
         // THE RECEIPTS ENVELOPE (54.5 Road (d)). The GEN3 record is
@@ -224,7 +224,10 @@ impl Element {
             d
         };
         let nfil = u32_at(b, pos)? as usize;
-        let mut filing = crate::network::nerve::Keyed::new();
+        let mut filing: crate::network::nerve::Keyed<
+            crate::transducer::sentence::FiledLoop,
+            crate::network::nerve::coord::Holonomy,
+        > = crate::network::nerve::Keyed::new();
         for _ in 0..nfil {
             let clen = u32_at(b, pos)? as usize;
             let class = b.get(*pos..*pos + clen)?.to_vec();
@@ -235,12 +238,12 @@ impl Element {
                 sigma.push((*b.get(*pos)?, *b.get(*pos + 1)?));
                 *pos += 2;
             }
-            let period = u32_at(b, pos)?;
+            let periods = crate::transducer::sentence::ToralPeriod::from_pair(u32_at(b, pos)?, u32_at(b, pos)?);
             let chord = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
             *pos += 2;
-            filing.insert(
-                &class,
-                crate::transducer::sentence::FiledLoop { sigma, period, chord },
+            filing.put(
+                &crate::network::nerve::Key::declared(&class),
+                crate::transducer::sentence::FiledLoop { sigma, periods, chord },
             );
         }
         // THE RECEIPTS ENVELOPE (54.5 Road (d)), framed, so a malformed one

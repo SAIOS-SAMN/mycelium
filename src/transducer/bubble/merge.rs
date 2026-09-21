@@ -62,9 +62,15 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
 /// ABSORB IS THE WHOLE OF THE SOURCE, by the meaning of the word: two
 /// bubbles merging carry every entry of each other's carriers across, and
 /// an entry left behind is a fact the merged bubble has lost.
-pub(crate) fn absorb_keyed<V: Clone>(dst: &mut Keyed<V>, src: &Keyed<V>) {
-    for (k, v) in src.scoped() {
-        dst.insert(&k, v.clone());
+pub(crate) fn absorb_keyed<V: Clone, C: crate::network::nerve::Coordinate>(
+    dst: &mut Keyed<V, C>,
+    src: &Keyed<V, C>,
+) {
+    // BOTH CARRIERS ANSWER THE SAME COORDINATE OR THIS DOES NOT TYPECHECK
+    // (54.7 R5). An absorb between two systems is what the type refuses,
+    // and the key stays the coordinate it was across the move.
+    for (k, v) in src.entries() {
+        dst.put(&k, v.clone());
     }
 }
 
@@ -216,7 +222,8 @@ impl Contemplation {
         let mut cover = Keyed::new();
         let mut nerve = Complex::new();
         let mut horizon: Keyed<(Rotor, Order, Standing)> = Keyed::new();
-        let mut torsion = Keyed::new();
+        let mut torsion: Keyed<sentence::FiledLoop, crate::network::nerve::coord::Holonomy> =
+            Keyed::new();
         let mut certificates = Keyed::new();
         let mut vortex = Keyed::new();
         let mut form = None;

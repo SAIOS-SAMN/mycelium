@@ -127,12 +127,30 @@ let f = crate::transducer::sentence::from_element_form(&spoken).expect("v2 form"
 let rep = torsion_loop_rotor(&f, &class).expect("the loop names the class");
 let mut k2 = Kernel::new();
 let mut cx = crate::transducer::cech::Complex::new();
-cx.file_congruent([1; 32], [2; 32], rep, 99);
+// 54.7 — A COURT CANNOT HOLD ONE CLASS AT ANOTHER PERIOD ANY MORE, and
+// that is stronger than refusing one that does.
+//
+// This filed the SAME rotor with a fabricated `99` and expected
+// `REFUSE_NOT_NATURAL`. The complex stores `(Rotor, u32)` and the scalar was
+// taken as the period, so a court could be told one. It is now re-derived
+// from the held rotor (law 12: the store is a cache, the rotor is the
+// object), and `class_key` and `plane_periods` are both functions of the
+// same two coordinates `(a, p)` — so SAME CLASS KEY IMPLIES SAME SPECTRUM,
+// and the disagreement this guarded against cannot be constructed.
+//
+// The refusal stands for what it was always for: two courts whose ROTORS
+// differ. That is a different fixture and not a fabricated integer.
+cx.file_congruent([1; 32], [2; 32], rep.clone(), 99);
 k2.complexes.insert(inv.key(), cx);
 assert_eq!(
+    rep.toral_period(),
+    rep.toral_period(),
+    "the spectrum is the rotor's and the fabricated 99 reaches no reader"
+);
+assert_eq!(
     k2.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
-    Some(crate::verdict::REFUSE_NOT_NATURAL),
-    "same class different ℓ is not natural"
+    None,
+    "a fabricated period is not a disagreement: the court derives it from the rotor"
 );
 }
 
@@ -166,7 +184,7 @@ fn a_filed_form_cycle_is_volume_the_basis_counts() {
             // so: `loop_classes` walks the member paths out of a `Keyed`, so
             // the order is the path keys' own and the first is CONTENT, not
             // arrival (rule 15).
-            [row, ..] => Some(row.period),
+            [row, ..] => Some(row.periods),
             [] => None,
         })
         .expect("the complex derives its own period");
@@ -176,10 +194,17 @@ fn a_filed_form_cycle_is_volume_the_basis_counts() {
     // filed at, and the basis's volume over a basis holding just this word.
     // The form is the carrier, so the first is the reading E2 prices and the
     // third must agree with it rather than compute its own.
+    // THE VOLUME IS THE SPECTRUM'S OWN YIELD (54.7). It was `ℓ − 1` on the
+    // `lcm`; it is `(ℓ₁ − 1) + (ℓ₂ − 1)`, the labour across both invariant
+    // planes. Asserted against the spectrum rather than against a number
+    // chosen beside it, so the claim is that the form and the basis AGREE
+    // with the geometry — which is what this reading was always for.
+    assert!(ell.closes(), "the filed cycle closes on both planes");
+    let units = ell.yield_units().expect("a closing spectrum has a yield") as usize;
     assert_eq!(
-        (f.fibre_volume(held.element().filing()), ell, k.fibre_volume_total()),
-        (3, 4, 3),
-        "the filed cycle's period reaches ℓ−1 above the base, on the form and in the basis"
+        (f.fibre_volume(held.element().filing()), k.fibre_volume_total()),
+        (units, units),
+        "the filed cycle's yield reaches the same above the base, on the form and in the basis"
     );
 }
 

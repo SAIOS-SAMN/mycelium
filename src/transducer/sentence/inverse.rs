@@ -248,12 +248,16 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
         for _ in 0..m {
             members.insert(take_frame_key(k, &mut p)?, ());
         }
-        f.sections.insert(&class, members);
+        f.sections
+            .put(&crate::network::nerve::Key::declared(&class), members);
     }
     let na = take_u32(k, &mut p)? as usize;
     for _ in 0..na {
         let class = take_bytes(k, &mut p)?;
-        f.axes.insert(&class, 0);
+        // The tape's own bytes, declared as the holonomy coordinate `axes`
+        // answers — the decoder is where wire bytes become a coordinate.
+        f.axes
+            .put(&crate::network::nerve::Key::declared(&class), 0);
     }
     // 54.2: the remainder is identity and is in the key.
     // `place_chain` is the tape decoder's own reader of a placed chain —
@@ -313,7 +317,10 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
 ///
 /// The contact is the VERTEX's and the writer repeats it at every member,
 /// so it rides beside the run rather than inside it.
-struct Acts(Keyed<Acting>, Option<crate::transducer::alphabet::Contact>);
+struct Acts(
+    Keyed<Acting, crate::network::nerve::coord::Section>,
+    Option<crate::transducer::alphabet::Contact>,
+);
 
 fn take_acts(k: &[u8], p: &mut usize, contact: bool) -> Option<Acts> {
     let n = match contact {
@@ -360,7 +367,12 @@ fn take_acts(k: &[u8], p: &mut usize, contact: bool) -> Option<Acts> {
             }
         }
         let gauge = take_gauge(k, p)?;
-        out.insert(&ck, Acting { chart, carriage: Box::new(carriage), gauge });
+        // THE MEMBER NAMES ITSELF (54.7 R1, law 12). It was inserted under
+        // the bytes just read, which made the address's field and the
+        // carrier's key two statements of one fact; they agreed only while
+        // the key WAS the chart. `Acting::key` is the one writer.
+        let member = Acting { chart, carriage: Box::new(carriage), gauge };
+        out.put(&member.key(), member);
     }
     Some(Acts(out, got.flatten()))
 }

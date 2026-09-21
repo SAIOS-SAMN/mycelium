@@ -163,7 +163,7 @@ pub struct Bubble {
     /// Ideas that glued this bubble; a non-empty set is not shed.
     pub glued_by: Keyed<()>,
     /// Filed torsion `(σ, ℓ, chord)` keyed by class, written from `pivot_loop`.
-    pub torsion: Keyed<crate::transducer::sentence::FiledLoop>,
+    pub torsion: Keyed<crate::transducer::sentence::FiledLoop, coord::Holonomy>,
     /// Certified discharges this idea's crystallization rests on (A20).
     pub certificates: Keyed<PivotCertificate>,
     /// Incomparable discharges held as candidates (25.1) until a glue or
@@ -698,7 +698,11 @@ impl Bubble {
                             if let Some(class) = m.class_key() {
                                 filing.push((
                                     class,
-                                    crate::transducer::sentence::FiledLoop { sigma: sigma.clone(), period, chord: 0 },
+                                    crate::transducer::sentence::FiledLoop {
+                                        sigma: sigma.clone(),
+                                        periods: m.toral_period(),
+                                        chord: 0,
+                                    },
                                 ));
                             }
                         }
@@ -714,9 +718,12 @@ impl Bubble {
                 }
             }
             for (class, loop_at) in filing {
-                self.torsion.insert(class.clone(), loop_at.clone());
+                let Ok(class) = Key::<coord::Holonomy>::from_address(&class) else {
+                    continue;
+                };
+                self.torsion.put(&class, loop_at.clone());
                 if let Some(f) = self.form.as_mut() {
-                    f.torsion.insert(class, loop_at);
+                    f.torsion.put(&class, loop_at);
                 }
             }
             let Some(here) = self.candidates.get_mut(&ck) else {

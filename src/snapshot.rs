@@ -21,19 +21,22 @@ pub trait Persist: sealed::Sealed {
     }
 }
 
-impl<V> sealed::Sealed for Keyed<V> {
+impl<V, C: crate::network::nerve::Coordinate> sealed::Sealed for Keyed<V, C> {
     type Value = V;
     fn walk<F: FnMut(&[u8], &V)>(&self, mut f: F) {
         crate::network::nerve::keyed_persist_walk(self, &mut f);
     }
 }
 
-impl<V> Persist for Keyed<V> {}
+impl<V, C: crate::network::nerve::Coordinate> Persist for Keyed<V, C> {}
 
 /// Walk `k` in key order. Callers live in this module or in a carrier's
 /// `to_bytes` that is the wire of that carrier.
-pub fn persist<V>(k: &Keyed<V>, f: impl FnMut(&[u8], &V)) {
-    <Keyed<V> as Persist>::persist(k, f);
+pub fn persist<V, C: crate::network::nerve::Coordinate>(
+    k: &Keyed<V, C>,
+    f: impl FnMut(&[u8], &V),
+) {
+    <Keyed<V, C> as Persist>::persist(k, f);
 }
 
 /// WRITE A SECTION AND COUNT WHAT IT WROTE, in one act.

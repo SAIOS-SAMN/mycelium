@@ -86,7 +86,7 @@ impl Form {
             return None;
         };
         let single = held_acts.len() == 1;
-        let mut acts: Keyed<Acting> = Keyed::new();
+        let mut acts: Keyed<Acting, crate::network::nerve::coord::Section> = Keyed::new();
         for (ck, a) in held_acts.scoped() {
             let relative = match (single, &base_inv) {
                 // One chart: the caller's own measurement, unchanged.
@@ -97,14 +97,18 @@ impl Form {
                 // zero; the member carries none and is not written (rule 11).
                 (false, None) => continue,
             };
-            acts.insert(
-                &ck,
-                Acting {
-                    chart: a.chart.clone(),
-                    carriage: Box::new(relative),
-                    gauge: a.gauge.clone(),
-                },
-            );
+            // THE MEMBER NAMES ITSELF (54.7 R1, law 12). This inserted
+            // under the SOURCE member's key `ck` while building an `Acting`
+            // with a different carriage — the relative `t = C_of,chart ·
+            // C_by⁻¹`. While the key was the chart alone the two agreed by
+            // accident; once the key is `chart ‖ carriage` it files a
+            // section under another section's name.
+            let member = Acting {
+                chart: a.chart.clone(),
+                carriage: Box::new(relative),
+                gauge: a.gauge.clone(),
+            };
+            acts.put(&member.key(), member);
         }
         if acts.is_empty() {
             return None;
@@ -170,15 +174,19 @@ impl Form {
             else {
                 continue;
             };
-            let Some(class) = g.class_key() else { continue };
+            let Some(class) = g.holonomy_key() else { continue };
             // `sigma` is EMPTY and that is the reading, not a placeholder: a
             // stabilizer orbit at one vertex permutes no hues between
             // vertices, so there is no generator of a hue cycle to record. The
             // period is the rotor's own order and the chord is the face that
             // closed it.
-            self.torsion.insert(
-                class,
-                crate::transducer::sentence::FiledLoop { sigma: Vec::new(), period: ell, chord },
+            self.torsion.put(
+                &class,
+                crate::transducer::sentence::FiledLoop {
+                    sigma: Vec::new(),
+                    periods: g.toral_period(),
+                    chord,
+                },
             );
         }
     }

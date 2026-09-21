@@ -86,6 +86,35 @@ pub struct CoverTally {
     /// Pieces carried geometrically whose rotor the seventeen do not
     /// spell — the adjunction candidates the cover used to discard.
     pub refused: u64,
+    /// 53.6 item 3 — WHAT EACH MEET DID AT THE LIFT TO CLASSES.
+    ///
+    /// A meet relates two PIECES; the scene holds classes, so a meet
+    /// becomes incidence the scene can carry only through
+    /// `transport_class`. Three outcomes and they mean different things,
+    /// which is why they are three counters and not one:
+    ///
+    ///   `chords` — the two pieces carry DISTINCT classes, so the meet
+    ///   names a chord between two of the scene's vertices. These are the
+    ///   pairs that span distinct sites, which `star_and_site_faces` says
+    ///   in its own comment are "the cycles that carry a class" — and which
+    ///   nothing offered until 54.7.
+    ///
+    ///   `within_class` — both pieces are one class. The meet is real and
+    ///   closes nothing the scene can see; skipping it is correct.
+    ///
+    ///   `unclassed` — a piece carries no transport class at all, so the
+    ///   meet cannot be lifted whatever its geometry. `transport_class`
+    ///   answers only for `Vertex::Word`, and it gates the loops' ENDS by
+    ///   the same predicate, so this counter reads a blockage that stops
+    ///   the chord and the torsion chord together.
+    ///
+    /// Counted here rather than printed, because a count recovered by
+    /// matching a rendered line is a second carrier of one fact: the text
+    /// can drift from the writer and nothing makes them agree (law 12).
+    /// The line that prints them is a VIEW of this carrier.
+    pub chords: u64,
+    pub within_class: u64,
+    pub unclassed: u64,
 }
 
 thread_local! {

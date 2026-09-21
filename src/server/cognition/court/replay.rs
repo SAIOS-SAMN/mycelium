@@ -6,6 +6,7 @@
 //! `fills.rs`, on the same Budget.
 
 use crate::cognition::*;
+use crate::transducer::sentence::ToralPeriod;
 use crate::transducer::address::Address;
 use crate::transducer::element::{self, Element};
 
@@ -341,7 +342,7 @@ impl Kernel {
         if cycles.is_empty() {
             return None;
         }
-        for (class, ell, rep) in cycles {
+        for (class, ell_periods, rep) in cycles {
             // THE WHOLE FIBER UNDER THE ROTOR'S CONJUGACY CLASS, not one
             // member of it. `congruent` is keyed by the loop's full class
             // key now and `class` is its depth-one stratum, so the ask
@@ -350,11 +351,26 @@ impl Kernel {
             // disagrees with is a refusal: the chart holds that class at
             // another period, whichever member says so. It read one entry,
             // which was the last one written at that rotor class.
-            let held: Vec<u32> = match self.complexes.get(&inv.key()) {
-                Some(cx) => cx.congruent(&class).into_iter().map(|(_, ell2)| ell2).collect(),
-                None => Vec::new(),
+            // THE HELD SPECTRUM, RE-DERIVED FROM THE HELD ROTOR (law 12).
+            // The complex stores `(Rotor, u32)` and the `u32` is the `lcm`;
+            // the rotor is right there, so the two plane periods are a
+            // reading of it rather than a second copy that can disagree
+            // (54.7).
+            let held: Vec<crate::transducer::sentence::ToralPeriod> =
+                match self.complexes.get(&inv.key()) {
+                    Some(cx) => {
+                        cx.congruent(&class).into_iter().map(|(r, _)| r.toral_period()).collect()
+                    }
+                    None => Vec::new(),
+                };
+            let show = |p: &crate::transducer::sentence::ToralPeriod| {
+                let of = |n: Option<std::num::NonZeroU32>| {
+                    n.map_or("∞".to_string(), |v| v.get().to_string())
+                };
+                format!("[{}, {}]", of(p.plane_1), of(p.plane_2))
             };
-            match (held.iter().find(|ell2| **ell2 != ell), held.is_empty()) {
+            let ell = show(&ell_periods);
+            match (held.iter().find(|p2| **p2 != ell_periods), held.is_empty()) {
                 (Some(_), _) => {
                     eprintln!(
                         "  court torsion refused {:02x}{:02x}… ℓ {ell}",
@@ -371,6 +387,17 @@ impl Kernel {
                 (None, true) => {
                     if let Some(rep) = rep {
                         if let Some(cx) = self.complexes.get_mut(&inv.key()) {
+                            // THE COMPLEX STILL STORES THE ENVELOPE beside
+                            // the rotor it re-derives from, so what is
+                            // filed there is the rotor's own order. The
+                            // reading above is the SPECTRUM and is taken
+                            // from the rotor, never from this number
+                            // (54.7): the store is a cache of the rotor and
+                            // the rotor is the object.
+                            let ell = rep.order().map_or(0, |o| match o {
+                                crate::transducer::alphabet::Order::Finite(n) => n,
+                                crate::transducer::alphabet::Order::Infinite => 0,
+                            });
                             cx.file_congruent(self_id, peer, rep, ell);
                         }
                     }
@@ -388,7 +415,7 @@ impl Kernel {
     /// rotor of the filed loop. Residual germs keep the element's section.
     pub(crate) fn spoken_torsion_cycles(
         spoken: &Element,
-    ) -> Vec<(Address, u32, Option<crate::transducer::alphabet::Rotor>)> {
+    ) -> Vec<(Address, crate::transducer::sentence::ToralPeriod, Option<crate::transducer::alphabet::Rotor>)> {
         use crate::transducer::sentence::torsion_loop_rotor;
         // THE CYCLES COME FROM THE GEOMETRY, THE PERIODS WITH THEM (54.5,
         // as ruled 2026-09-20).
@@ -408,12 +435,12 @@ impl Kernel {
         // speaker's attestation is checked separately, against this same
         // derivation, in `receipts_price_the_terrain`.
         if let Some(f) = crate::transducer::sentence::from_element_form(spoken) {
-            let mut rows: Vec<(Address, u32, Option<crate::transducer::alphabet::Rotor>)> =
+            let mut rows: Vec<(Address, crate::transducer::sentence::ToralPeriod, Option<crate::transducer::alphabet::Rotor>)> =
                 Vec::new();
             for lp in &f.loops {
                 for row in f.loop_classes(lp) {
                     let rotor = torsion_loop_rotor(&f, &row.class);
-                    rows.push((row.class, row.period, rotor));
+                    rows.push((row.class, row.periods, rotor));
                 }
             }
             if !rows.is_empty() {
@@ -425,7 +452,7 @@ impl Kernel {
             .iter()
             .filter_map(|c| {
                 let r = spoken.letters()?.spelling.word.rotor();
-                Some((r.class_key()?, c.period, Some(r)))
+                Some((r.class_key()?, r.toral_period(), Some(r)))
             })
             .collect()
     }

@@ -304,28 +304,45 @@ fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
             flat += 1;
         }
     }
-    // THE CLAIM, not the count: nothing is filed, because every loop this
-    // cover stands is flat.
+    // EVERY LOOP IS EVALUATED, AND THEY ARE NO LONGER ALL FLAT (54.7, as
+    // ruled 2026-09-21).
     //
-    // 53.6 MOVED WHERE THE COVER'S LOOPS LIVE and the old assertion —
-    // `!f.loops.is_empty()`, "the cover stands loops" — is false on the
-    // scene's form now. A cover's loops are classified inside the cover, on
-    // a form of its pieces that is discarded; the scene's form walks loops
-    // among its CLASS vertices only. So the cover's flatness is read where
-    // it lands, in `f.torsion`, and the loops walked above are the scene's
-    // own — flat and evaluated, which is still asserted.
-    assert_eq!(
-        (flat, unevaluated),
-        (f.loops.len(), 0),
-        "the scene's loops are flat and every one is evaluated"
-    );
+    // 53.6 MOVED WHERE THE COVER'S LOOPS LIVE and the assertion before that
+    // — `!f.loops.is_empty()`, "the cover stands loops" — became false on
+    // the scene's form: a cover's loops are classified inside the cover, on
+    // a form of its pieces that is discarded, and the scene's form walked
+    // loops among its CLASS vertices only.
+    //
+    // It walked NONE. The scene's faces were the Frame's star, a spanning
+    // chain of each site's occupants and the ring pairs — a forest by
+    // construction, `b₁ = E − V + C = 0` identically, `0 loops` on all 36
+    // corpus forms and `pivoted [0,0,0,0]` on every voice of the fleet.
+    // This reading asserted `flat == f.loops.len()` and passed because both
+    // sides were zero.
+    //
+    // The cover's meets are now offered to the face builder as chords
+    // between SECTIONS, so the scene stands a loop of its own — and that
+    // loop is NOT flat: its holonomy is the transition across the interface
+    // the meet names, which is what a cover meet is for. `(0, 1)` where
+    // this once read `(1, 0)`.
+    //
+    // So the claim is the one that was always meant: every loop the scene
+    // stands is EVALUATED. A loop with no reading is the defect —
+    // `paths_carried` answering "there is no lift" and "there is no
+    // holonomy" as one empty answer — and flatness is a verdict, not a
+    // precondition.
+    assert_eq!(unevaluated, 0, "every loop the scene stands is evaluated");
+    let _ = flat;
     assert!(
         f.torsion.is_empty(),
         "and the form files nothing, which is why the walk below is empty"
     );
     for (class, filed) in f.torsion.scoped() {
+        // A FILED SPECTRUM IS A REAL ROTATION'S, and a plane of period one
+        // is an idle plane, not a turn. Where the loop closes, at least one
+        // plane must do work (54.7).
         assert!(
-            filed.period >= 2,
+            filed.periods.yield_units().is_none_or(|u| u >= 1),
             "a filed period is a real rotation's order, never one: {filed:?}"
         );
         assert!(
@@ -611,7 +628,7 @@ fn a_pure_coboundary_form_yields_no_evaluated_loop() {
 fn a_forms_word_vertices_are_bounded_by_its_transport_classes() {
     let (a, b) = four_bodies();
     let f = measured(&a, &b);
-    let classes: Vec<Vec<u8>> = f
+    let classes: Vec<crate::network::nerve::Key<crate::network::nerve::coord::Transport>> = f
         .vertices
         .iter()
         .filter(|v| matches!(v, Vertex::Word { .. }))

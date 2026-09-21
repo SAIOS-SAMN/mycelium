@@ -131,7 +131,12 @@ impl Form {
             placement: placement.clone(),
             carriage: Box::new(phi.clone()),
         };
-        let site = vertex_bytes(&v);
+        // THE SITE IS A COORDINATE OF ITS OWN SYSTEM (54.7 B5a, R5): the
+        // host's boundary record, which is what `glued` answers — never the
+        // address of what it cites, which left the vertex with the target.
+        let site = crate::network::nerve::Key::<crate::network::nerve::coord::Site>::declared(
+            vertex_bytes(&v),
+        );
         // ONE EDGE PER INCIDENCE (54.7 B5a). `U_i` overlaps `U_j` under φ
         // is one fact however many times it is stated, and `of_form` files
         // the nerve under site‖target, so a duplicate would be collapsed
@@ -165,10 +170,10 @@ impl Form {
         // i-th vertex at this site with the i-th edge, which is an index and
         // not a coordinate (rule 15). One vertex, and the cover carries the
         // multiplicity.
-        if let Some(&at) = self.glued.get(&site) {
+        if let Some(&at) = self.glued.at(&site) {
             return Some(at);
         }
-        self.glued.insert(site, idx);
+        self.glued.put(&site, idx);
         self.vertices.push(v);
         // THE PLACEMENT FACE CARRIES ITS PLACEMENT. A Glued vertex stands at
         // the cited form's chart and the Frame at the root, so there is one

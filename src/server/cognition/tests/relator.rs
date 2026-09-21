@@ -232,9 +232,9 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     let inv = crate::transducer::stalk::invariant_of(&e);
 
     // FILED UNDER THE RELATOR'S OWN CLASS, AT ITS OWN PERIOD.
-    let filed: Vec<(Vec<u8>, u32)> = form_torsion(&e)
+    let filed: Vec<(Vec<u8>, crate::transducer::sentence::ToralPeriod)> = form_torsion(&e)
         .scoped()
-        .map(|(k, v)| (k, v.period))
+        .map(|(k, v)| (k, v.periods))
         .collect();
     assert_eq!(
         filed.iter().map(|(k, _)| k.clone()).collect::<Vec<_>>(),
@@ -242,8 +242,12 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
         "the form files the triangle's relator and no other class"
     );
     // One class filed, asserted above; so one period.
-    let [(_, period)] = filed.as_slice() else { panic!("one filed relator") };
-    assert_eq!(*period, 2, "at the order the relator closes at");
+    let [(_, periods)] = filed.as_slice() else { panic!("one filed relator") };
+    assert!(periods.closes(), "at a spectrum the relator closes on, both planes");
+    assert!(
+        periods.yield_units().is_some_and(|u| u >= 1),
+        "and it does work on at least one plane: {periods:?}"
+    );
 
     // AND THE COURT READS IT WITH NO CHORD SPECIAL CASE. `torsion_chord_
     // carries` asked whether the chord's own word equalled the loop's
@@ -279,8 +283,12 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
         assert_eq!(k.adjoined(), 0, "a relation is not an adjoined letter");
     }
 
-    // A THIRD COURT HOLDING THE SAME CLASS AT ANOTHER PERIOD REFUSES IT.
-    // The period is the loop's order and not the court's opinion of it.
+    // 54.7 — A THIRD COURT CANNOT HOLD THE SAME CLASS AT ANOTHER PERIOD.
+    // The period is the loop's order and not the court's opinion of it, and
+    // that is now true by construction rather than by refusal: the spectrum
+    // is re-derived from the held ROTOR, so the `99` below reaches no
+    // reader. `class_key` and `plane_periods` are both functions of `(a, p)`
+    // — one class key, one spectrum.
     let mut c = Kernel::new();
     c.set_court_voice([33; 32]);
     let mut cx = crate::transducer::cech::Complex::new();
@@ -288,7 +296,7 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     c.complexes.insert(inv.key(), cx);
     assert_eq!(
         c.court_torsion(&e, &inv, [31; 32], [32; 32]),
-        Some(crate::verdict::REFUSE_NOT_NATURAL),
+        None,
         "one class, one period: a court holding another is not natural"
     );
 }

@@ -42,11 +42,13 @@ fn same_torsion(a: &Form, b: &Form) -> bool {
     if a.torsion.len() != b.torsion.len() {
         return false;
     }
-    for (class, filed) in a.torsion.scoped() {
-        let Some(other) = b.torsion.get(&class) else {
+    for (class, filed) in a.torsion.entries() {
+        let Some(other) = b.torsion.at(&class) else {
             return false;
         };
-        if filed.period != other.period || filed.chord != other.chord || filed.sigma != other.sigma
+        if filed.periods != other.periods
+            || filed.chord != other.chord
+            || filed.sigma != other.sigma
         {
             return false;
         }

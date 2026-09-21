@@ -70,7 +70,13 @@ fn the_open_seed_is_the_holonomys_base_action_and_the_axis_is_keyed_by_the_rotor
     let whole = holonomy.class_key().expect("a class");
     assert_ne!(whole, q01.rotor().class_key().expect("a class"), "the loop's class is the double rotation's");
     f.open_axis_on(lp.chord).expect("the axis opens on the loop");
-    assert_eq!(f.axes.get(&whole), Some(&lp.chord), "and the axis is keyed by that class");
+    assert_eq!(
+        f.axes.at(
+            &crate::network::nerve::Key::from_address(&whole).expect("a holonomy coordinate")
+        ),
+        Some(&lp.chord),
+        "and the axis is keyed by that class"
+    );
     let q23 = Word::from_letters(&[(LetterId::quarter((2, 3)).expect("quarter (2,3)"), false)]);
     let off = edge_chord_form(std::slice::from_ref(&q23));
     let [lp] = off.loops.as_slice() else { panic!("one chord closes one loop") };
@@ -171,10 +177,15 @@ fn a_free_part_loop_files_at_period_zero_beside_its_demand() {
         snaps.iter().any(|s| matches!(s, Snap::TorsionFiled { ell: 0, .. })),
         "and the loop is filed at period 0 beside it: {snaps:?}"
     );
-    let filed: Vec<u32> = f.torsion.scoped().map(|(_, l)| l.period).collect();
-    assert_eq!(filed, vec![0], "one class, at period 0");
+    let filed: Vec<crate::transducer::sentence::ToralPeriod> =
+        f.torsion.scoped().map(|(_, l)| l.periods).collect();
+    assert_eq!(
+        filed,
+        vec![crate::transducer::sentence::ToralPeriod::OPEN],
+        "one class, neither plane closing"
+    );
     assert!(
-        f.torsion.contains(r.class_key().expect("a class").as_bytes()),
+        f.torsion.holds(&r.holonomy_key().expect("a class")),
         "under the holonomy's own class"
     );
     // FILED IS NOT CLOSED (54.5, as ruled 2026-09-20). This asserted that

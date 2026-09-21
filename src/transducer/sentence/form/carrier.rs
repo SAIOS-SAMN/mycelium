@@ -85,13 +85,105 @@ pub enum Measure {
 /// source never held. `Element::adopt_torsion` did exactly that, writing
 /// `FIBER_SPATIAL` in the chord's place, and is deleted. A form's cycles are
 /// read where they are filed.
+/// THE TWO-PLANE SPECTRUM OF A HOLONOMY: one period per invariant plane
+/// of the double rotation, `None` where that factor does not close.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ToralPeriod {
+    pub plane_1: Option<std::num::NonZeroU32>,
+    pub plane_2: Option<std::num::NonZeroU32>,
+}
+
+impl ToralPeriod {
+    /// NEITHER PLANE CLOSES — the orbit is dense on the 2-torus and the
+    /// residue is intrinsic torsion. A19 spelled this `0` on the class
+    /// ledger; the type says it now, so a reader cannot mistake it for a
+    /// period of no extent (rule 11).
+    pub const OPEN: ToralPeriod = ToralPeriod { plane_1: None, plane_2: None };
+
+    /// Both planes close, at the same period: an ISOCLINIC rotation, the
+    /// Clifford translation of `S³`. Its stabiliser and its fixed-point set
+    /// are not a planar rotation's, which is the distinction `lcm` erased.
+    pub fn isoclinic(&self) -> Option<std::num::NonZeroU32> {
+        match (self.plane_1, self.plane_2) {
+            (Some(a), Some(b)) if a == b => Some(a),
+            _ => None,
+        }
+    }
+
+    /// Neither plane turns forever, so the loop closes — and the pair is
+    /// its beat, not one number.
+    pub fn closes(&self) -> bool {
+        self.plane_1.is_some() && self.plane_2.is_some()
+    }
+
+    /// THE YIELD ACROSS THE ACTUAL DEGREES OF FREEDOM: `(ℓ₁ − 1) + (ℓ₂ − 1)`.
+    /// The court charged `(ℓ − 1)` on the `lcm`, which is neither plane's
+    /// labour. `None` where a plane does not close: that is torsion and is
+    /// charged as shear, never estimated through an invented finite order
+    /// (rule 11).
+    /// BOTH PLANES ON THE RECORD, each as a `u32` with `0` for the factor
+    /// that does not close — A19's spelling, kept on the wire and made a
+    /// type in memory. Written once here so no codec re-states it (law 12).
+    pub fn to_bytes(&self, out: &mut Vec<u8>) {
+        let of = |n: Option<std::num::NonZeroU32>| n.map_or(0u32, std::num::NonZeroU32::get);
+        out.extend_from_slice(&of(self.plane_1).to_le_bytes());
+        out.extend_from_slice(&of(self.plane_2).to_le_bytes());
+    }
+
+    pub fn from_pair(a: u32, b: u32) -> ToralPeriod {
+        ToralPeriod {
+            plane_1: std::num::NonZeroU32::new(a),
+            plane_2: std::num::NonZeroU32::new(b),
+        }
+    }
+
+    pub fn yield_units(&self) -> Option<u64> {
+        let (a, b) = (self.plane_1?, self.plane_2?);
+        Some(u64::from(a.get() - 1) + u64::from(b.get() - 1))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FiledLoop {
     /// The hue-map generator: the permutation one step around the loop.
     pub sigma: Vec<(u8, u8)>,
-    /// The period it closes at — the order of the loop's holonomy; `0` is
-    /// infinite order, as A19 spells it on the class ledger (52.3).
-    pub period: u32,
+    /// THE TWO PLANE PERIODS OF THE HOLONOMY (54.7, as ruled 2026-09-21).
+    ///
+    /// It was `period: u32`, the `lcm` of the two, and the collapse
+    /// destroys the eigenspace decomposition at the moment a cycle reaches
+    /// the classifier. `Spin(4)` splits by the central idempotents
+    /// `(1 ± I)/2` into two commuting quaternion factors, so
+    ///
+    /// ```text
+    ///     Ω = exp(½θ₁B₁ + ½θ₂B₂) ,   B₁B₂ = B₂B₁ = I₄
+    /// ```
+    ///
+    /// acts on two orthogonal invariant planes with their own periods.
+    /// `lcm` throws three things away at once:
+    ///
+    ///   EIGENSPACE — a simple planar rotation `[ℓ, 1]` and an isoclinic
+    ///   Clifford translation `[ℓ, ℓ]` both give `lcm = ℓ` and land in one
+    ///   congruence class, with different stabilisers, different fixed
+    ///   points and different actions.
+    ///
+    ///   INCOMMENSURABILITY — where `ℓ₁/ℓ₂ ∉ ℚ` the orbit is dense on the
+    ///   2-torus and never closes. That is intrinsic torsion, and an
+    ///   integer `lcm` reports it as a closed periodic orbit.
+    ///
+    ///   RESONANCE — commensurate periods beat at `|ℓ₁ − ℓ₂|⁻¹` under an
+    ///   envelope of `lcm(ℓ₁, ℓ₂)`. Storing the envelope alone discards the
+    ///   beat, and two loops cannot resonate because no reader can compare
+    ///   their harmonic ratio.
+    ///
+    /// `None` on a plane is infinite order — that factor turns forever —
+    /// which A19 spelled as `0` on the class ledger and which is now said
+    /// by the type (rule 11: a refusal is not a zero).
+    ///
+    /// IT LANDS INSIDE THE B6/B7 BOUNDARY. B6 already severed the sentence
+    /// tape and moved the address to the head of the GEN3 record, so the
+    /// recut is required anyway; leaving this scalar would persist collapsed
+    /// periods into the fresh genome and demand a second recut to undo.
+    pub periods: ToralPeriod,
     /// The chord it closes on: an index into the form's faces.
     pub chord: u16,
 }
@@ -117,9 +209,58 @@ pub struct Acting {
 }
 
 impl Acting {
-    /// The key this member is filed under: its chart's own.
-    pub fn key(&self) -> Vec<u8> {
-        self.chart.key().into_vec()
+    /// THE KEY A SECTION IS FILED UNDER: its chart AND the carriage it acts
+    /// by (54.7 R1, as ruled 2026-09-21).
+    ///
+    /// Keyed by chart alone this held at most ONE section per chart and
+    /// silently overwrote the second, so a vertex acting twice on one chart
+    /// with two carriages kept one. That collapses the covering space: 53.6
+    /// item 1 quotients two pieces of one rotor class to one base vertex
+    /// `V ∈ B⁽⁰⁾` — correctly, so shape correspondence survives a change of
+    /// frame — and 53.6 item 3 puts their meets in the TOTAL space, between
+    /// `σ₁ = (V,U,φ₁)` and `σ₂ = (V,U,φ₂)` of the fibre `π⁻¹(V)`. With one
+    /// section per chart the fibre is a point, `E` is `B`, and 18.2's own
+    /// sentence — two carriages on one class are two sections — is not
+    /// reachable through its own carrier.
+    ///
+    /// THE CHART LEADS AND IS LENGTH-PREFIXED, so it is an exact byte
+    /// prefix and "every section on this chart" is a fibre read at that
+    /// stratum (A21: a prefix of the key is a coarser stratum).
+    ///
+    /// IT IS A LAYOUT CHANGE (§10). `put_word_vertex` writes the CHART into
+    /// the address and the members are written in this key's order, so
+    /// widening it moves every address in the tree. A first attempt wrote
+    /// the map's key into the address and 25 forms stopped decoding —
+    /// `take_acts` parses an `Invariant` out of what it reads there, and a
+    /// carriage tail is not one. The writer emits the chart and both sides
+    /// ask THIS function for the carrier's key, which is the same
+    /// one-writer rule that took `NerveEdge::host` off its second writer.
+    ///
+    /// 54.7 R5 — THE SECTION IS IN THE TYPE. A section key opens with
+    /// `TAG_CHART`, exactly as a chart key does, so no byte check separates
+    /// them and eight readers asked `by_class` — a CHART index — with one
+    /// of these and got nothing back. `coord::Section` and `coord::Chart`
+    /// are different types over the same tag, which is the only place that
+    /// distinction can live.
+    pub fn key(&self) -> Key<coord::Section> {
+        let mut k = Vec::new();
+        crate::transducer::address::put_bytes(&mut k, self.chart.key().as_bytes());
+        self.carriage.put_canonical(&mut k);
+        Key::declared(&k)
+    }
+
+    /// The prefix every section over `chart` shares — the coarser stratum
+    /// of [`Acting::key`], and what a fibre read asks at.
+    pub fn chart_prefix(chart: &stalk::Invariant) -> Vec<u8> {
+        Self::chart_prefix_bytes(chart.key().as_bytes())
+    }
+
+    /// The same, from the chart's key as bytes — for a reader holding the
+    /// key a face or an index recorded rather than the `Invariant`.
+    pub fn chart_prefix_bytes(ck: &[u8]) -> Vec<u8> {
+        let mut k = Vec::new();
+        crate::transducer::address::put_bytes(&mut k, ck);
+        k
     }
 }
 
@@ -154,7 +295,7 @@ pub enum Vertex {
         /// at the body's own chart: a keyed read, never a search, and a
         /// body on a chart this rule has never seen finds no member and is
         /// honestly unspoken.
-        acts: Keyed<Acting>,
+        acts: Keyed<Acting, coord::Section>,
         /// Stop ring. A form coordinate with the carriage and gauge; not M1.
         contact: Option<alphabet::Contact>,
     },
@@ -234,7 +375,7 @@ pub enum Vertex {
         /// `by` stands at ONE chart — `Form::rebase` refuses otherwise — because
         /// `t` is measured against one member of the base and a fibre keyed by
         /// `of`'s chart has no room to say which.
-        acts: Keyed<Acting>,
+        acts: Keyed<Acting, coord::Section>,
     },
     Unfolded { measure: Measure },
     /// 50.5: what the speaker could not spell or the eyes could not pair,
@@ -464,7 +605,7 @@ pub struct Form {
     /// The inner key is big-endian, so the trie's own order is the frame's
     /// order and a reader that enumerates a section — the tape, the form
     /// key — gets the frames in succession without sorting them (law 2).
-    pub sections: Keyed<Keyed<()>>,
+    pub sections: Keyed<Keyed<()>, coord::MemberSection>,
     /// The certified pivots this form's crystallization rests on (A20).
     /// Evidence, replayed by the court; never part of the address.
     pub certificates: Keyed<PivotCertificate>,
@@ -474,16 +615,21 @@ pub struct Form {
     /// organ holding a word reads the form it decoded at admission
     /// (`Held::form`, L16). `Element::adopt_torsion` copied it into the
     /// element's own `torsion` field and is deleted.
-    pub torsion: Keyed<FiledLoop>,
+    pub torsion: Keyed<FiledLoop, coord::Holonomy>,
     /// CHART AXES OPENED OVER HELD LOOPS (3.7, 15.5, 16.16 step 3; I6):
     /// the holonomy class opened on → the chord of the loop that is its
     /// section. The relation is all the form carries; the seed versor and
     /// A7's coordinate are re-derived from that loop on every read (law
     /// 12), never stored beside it. On the tape and in the address.
-    pub axes: Keyed<u16>,
-    /// Cited form address → glued vertex index. Written by [`Form::glue`]
-    /// and rebuilt by the decoder from Glued vertices.
-    pub glued: Keyed<u16>,
+    pub axes: Keyed<u16, coord::Holonomy>,
+    /// SITE → glued vertex index. Written by [`Form::glue`] and rebuilt by
+    /// the decoder from Glued vertices.
+    ///
+    /// 54.7 B5a — THE DOC SAID "cited form address" AND THE CODE SAID SITE.
+    /// The target left the vertex when it left `form_vertex_key`; this is
+    /// keyed by `vertex_bytes`, the host's own boundary record, and the
+    /// sentence that had drifted from the code is now the type.
+    pub glued: Keyed<u16, coord::Site>,
     /// THE COVER: WHICH FORM EACH OPEN BOUNDARY MATES WITH (54.7, B5a, as
     /// ruled 2026-09-21).
     ///
@@ -520,12 +666,25 @@ pub struct Form {
     /// Outer key is the after class; inner is the discharging rotor A1 key.
     pub vortex: Keyed<Keyed<PivotCertificate>>,
     /// Word vertex address → index. The meet for A6 and Mayer–Vietoris.
-    pub by_address: Keyed<u16>,
+    ///
+    /// The address is `word_vertex_address`'s, which opens `TAG_FORM` — a
+    /// MEMBER coordinate, strictly finer than the form's own address and
+    /// coarser than a section (54.7 R5).
+    pub by_address: Keyed<u16, coord::Member>,
     /// Chart key → the Word vertices on that chart (18.2): the fiber a
     /// listing body's chart reads when a cite asks what this form holds
     /// there (24.1 as ruled 2026-09-09). Derived by `reindex`, never on
     /// the tape.
-    pub by_class: Keyed<Vec<u16>>,
+    ///
+    /// 54.7 R5 — THE CHART IS IN THE TYPE. This sentence was a doc comment
+    /// over a `Keyed<Vec<u16>>` identical to every other index in the tree,
+    /// and `reindex` filed the MEMBER's key under it — `chart ‖ carriage`,
+    /// which opens with `TAG_CHART` exactly as a chart key does, so no byte
+    /// check could have separated them. Every reader asked for a chart and
+    /// got nothing, `incident_chart` read every idea as standing on no
+    /// chart, and the defect surfaced only when a cite broke. `coord::Chart`
+    /// is that sentence where the compiler reads it (§4.4).
+    pub by_class: Keyed<Vec<u16>, coord::Chart>,
     /// TRANSPORT CLASS KEY → the Word vertices of that class (21 step 1).
     /// Derived by `reindex`, never on the tape.
     ///
@@ -544,18 +703,19 @@ pub struct Form {
     /// The key is `TransportClass::key()`'s own, taken from
     /// `family::transport_class(v)`, so a reader asks with the key it already
     /// builds and there is one definition of it.
-    pub by_transport: Keyed<Vec<u16>>,
+    pub by_transport: Keyed<Vec<u16>, coord::Transport>,
     /// Vertex index key → Frame face index. Star incidence, one face per vertex.
-    pub star: Keyed<u16>,
+    pub star: Keyed<u16, coord::VertexIx>,
     /// Word vertex address → carriage, filled at construction.
     pub carriages: Keyed<Versor>,
-    /// Rebased vertex keyed by the `of` Word address.
-    pub by_rebased: Keyed<u16>,
+    /// Rebased vertex keyed by the `of` Word address — the same member
+    /// coordinate `by_address` answers, over a different vertex kind.
+    pub by_rebased: Keyed<u16, coord::Member>,
     /// Unfolded vertex keyed by its measure key.
-    pub by_unfolded: Keyed<u16>,
+    pub by_unfolded: Keyed<u16, coord::Unfolded>,
     /// Demand vertex keyed by (kind, chart) (50.5): the read that keeps a
     /// sentence to one demand vertex per pair. Written by `reindex`.
-    pub demands: Keyed<u16>,
+    pub demands: Keyed<u16, coord::DemandVertex>,
 }
 
 impl Default for Form {
@@ -660,9 +820,9 @@ impl Form {
     pub(crate) fn open_axis_on(&mut self, chord: u16) -> Option<()> {
         let i = self.loop_of_chord(chord)?;
         let lp = self.loops.get(i)?;
-        let class = self.loop_holonomy(lp)?.rotor().class_key()?;
+        let class = self.loop_holonomy(lp)?.rotor().holonomy_key()?;
         self.axis_seed_of(lp)?;
-        self.axes.insert(class, chord);
+        self.axes.put(&class, chord);
         Some(())
     }
 
@@ -673,8 +833,8 @@ impl Form {
     pub(crate) fn close_axis_on(&mut self, chord: u16) -> Option<()> {
         let i = self.loop_of_chord(chord)?;
         let lp = self.loops.get(i)?;
-        let class = self.loop_holonomy(lp)?.rotor().class_key()?;
-        self.axes.remove(&class)?;
+        let class = self.loop_holonomy(lp)?.rotor().holonomy_key()?;
+        self.axes.drop_at(&class)?;
         Some(())
     }
 
@@ -703,46 +863,75 @@ impl Form {
     /// sections: that class is refused as one carriage. Two Word vertices
     /// on one chart are both on that chart's fiber (24.1).
     pub fn reindex(&mut self) {
-        let mut by_address = Keyed::new();
-        let mut by_class: Keyed<Vec<u16>> = Keyed::new();
-        let mut by_transport: Keyed<Vec<u16>> = Keyed::new();
-        let mut by_rebased = Keyed::new();
-        let mut by_unfolded = Keyed::new();
-        let mut demands = Keyed::new();
+        let mut by_address: Keyed<u16, coord::Member> = Keyed::new();
+        let mut by_class: Keyed<Vec<u16>, coord::Chart> = Keyed::new();
+        let mut by_transport: Keyed<Vec<u16>, coord::Transport> = Keyed::new();
+        let mut by_rebased: Keyed<u16, coord::Member> = Keyed::new();
+        let mut by_unfolded: Keyed<u16, coord::Unfolded> = Keyed::new();
+        let mut demands: Keyed<u16, coord::DemandVertex> = Keyed::new();
         // `glued` IS BUILT HERE TOO. `Form::glue` wrote it as it appended each
         // vertex and the tape decoder rebuilt it in a walk of its own; now that
         // `depth_of` reads it, whoever builds it is the indexer and that is
         // this pass (law 12).
-        let mut glued = Keyed::new();
+        let mut glued: Keyed<u16, coord::Site> = Keyed::new();
         let mut hue_maps = std::mem::take(&mut self.hue_maps);
         let mut places: Keyed<Versor> = Keyed::new();
-        let mut star = Keyed::new();
+        let mut star: Keyed<u16, coord::VertexIx> = Keyed::new();
         for (i, v) in self.vertices.iter().enumerate() {
             match v {
                 Vertex::Word { address, derivation, acts, .. } => {
                     let rotor = derivation.rotor();
-                    by_address.insert(address, i as u16);
+                    let Ok(member_key) = Key::<coord::Member>::from_address(address) else {
+                        continue;
+                    };
+                    by_address.put(&member_key, i as u16);
                     // THE TRANSPORT CLASS IS THE VERTEX'S, not a member's, so
                     // this files the vertex once however many charts it acts
                     // on. A rotor with no class has no transport class (15.3)
                     // and is filed under none: no key of its bytes stands in.
                     if let Some(tk) = crate::transducer::family::transport_class(v).map(|c| c.key())
                     {
-                        match by_transport.get_mut(&tk) {
+                        // 21 step 1's own key, declared as the transport
+                        // class it is. `TransportClass::key` is the one
+                        // writer of these bytes, so this is the one place
+                        // they become a coordinate of that system.
+                        let tk = Key::<coord::Transport>::declared(&tk);
+                        match by_transport.at_mut(&tk) {
                             Some(on) => on.push(i as u16),
                             None => {
-                                by_transport.insert(&tk, vec![i as u16]);
+                                by_transport.put(&tk, vec![i as u16]);
                             }
                         }
                     }
                     // EVERY CHART THIS VERTEX ACTS ON is a chart it stands
                     // at, so `by_class` files it under each of them. One
                     // member is the single-chart case and reads as before.
-                    for (ck, a) in acts.scoped() {
-                        match by_class.get_mut(&ck) {
-                            Some(on) => on.push(i as u16),
+                    for (_, a) in acts.scoped() {
+                        // KEYED BY THE CHART IT INDEXES (54.7 R1). It used
+                        // the member's own key, which WAS the chart until
+                        // the fibre had to separate its sections; now the
+                        // key is `chart ‖ carriage` and a reader asking
+                        // `by_class` for a chart found nothing. An index is
+                        // keyed by the coordinate it answers, not by
+                        // whatever the carrier it was built from used.
+                        //
+                        // 54.7 R5 — AND NOW THE COMPILER READS IT. `ck` is
+                        // written as a chart coordinate here or this vertex
+                        // stands on no chart at all; the member's key is a
+                        // different type and cannot reach this carrier.
+                        let Ok(chart_key) = Key::<coord::Chart>::from_address(&a.chart.key())
+                        else {
+                            continue;
+                        };
+                        let ck = chart_key.as_bytes().to_vec();
+                        match by_class.at_mut(&chart_key) {
+                            Some(on) => {
+                                if !on.contains(&(i as u16)) {
+                                    on.push(i as u16);
+                                }
+                            }
                             None => {
-                                by_class.insert(&ck, vec![i as u16]);
+                                by_class.put(&chart_key, vec![i as u16]);
                             }
                         }
                         // `hue_maps` and `carriages` are DERIVATIONS OF THE
@@ -771,20 +960,30 @@ impl Form {
                 }
                 Vertex::Rebased { of, .. } => {
                     if let Some(Vertex::Word { address, .. }) = self.vertices.get(*of as usize) {
-                        by_rebased.insert(address, i as u16);
+                        if let Ok(k) = Key::<coord::Member>::from_address(address) {
+                            by_rebased.put(&k, i as u16);
+                        }
                     }
                 }
                 Vertex::Unfolded { measure } => {
-                    by_unfolded.insert(unfolded_key(measure), i as u16);
+                    by_unfolded.put(&unfolded_key(measure), i as u16);
                 }
                 Vertex::Demand { kind, chart, .. } => {
-                    demands.insert(crate::transducer::sentence::demand_key(kind, chart), i as u16);
+                    demands.put(
+                        &crate::transducer::sentence::demand_key(kind, chart),
+                        i as u16,
+                    );
                 }
                 // 54.7 B5a — KEYED BY THE SITE, which is what the vertex
                 // now holds. It was keyed by the cited address, and that
                 // address is the cover's fact on `Form::cover`.
                 v @ Vertex::Glued { .. } => {
-                    glued.insert(crate::transducer::sentence::vertex_bytes(v), i as u16);
+                    glued.put(
+                        &Key::<coord::Site>::declared(
+                            crate::transducer::sentence::vertex_bytes(v),
+                        ),
+                        i as u16,
+                    );
                 }
                 _ => {}
             }
@@ -814,8 +1013,8 @@ impl Form {
             } else {
                 continue;
             };
-            if !star.contains(&key) {
-                star.insert(key, fi as u16);
+            if !star.holds(&key) {
+                star.put(&key, fi as u16);
             }
         }
         self.by_address = by_address;
@@ -1068,13 +1267,13 @@ pub fn cited_addresses(f: &Form) -> Vec<crate::transducer::address::Address> {
 pub(crate) fn opened_axis_on(
     faces: &[FormFace],
     vertices: &[Vertex],
-    axes: &Keyed<u16>,
+    axes: &Keyed<u16, coord::Holonomy>,
     lp: &Loop,
 ) -> Option<u16> {
     let class = crate::transducer::sentence::pivot::drive::loop_holonomy_on(faces, vertices, lp)?
         .rotor()
-        .class_key()?;
-    axes.get(&class).copied()
+        .holonomy_key()?;
+    axes.at(&class).copied()
 }
 
 /// The row one loop contributes to the rank audit (A18), read off the axis
@@ -1083,7 +1282,7 @@ pub(crate) fn opened_axis_on(
 pub(crate) fn loop_row_on(
     faces: &[FormFace],
     vertices: &[Vertex],
-    axes: &Keyed<u16>,
+    axes: &Keyed<u16, coord::Holonomy>,
     lp: &Loop,
 ) -> Option<crate::transducer::sentence::LoopRow> {
     // The class the axis was opened under IS the row's coordinate, so it is

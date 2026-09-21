@@ -172,7 +172,7 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
     );
     assert!(snaps.is_empty(), "a court-ruled class files silently: {snaps:?}");
     assert!(
-        q.rotor().class_key().is_some_and(|k| f.torsion.contains(k.as_bytes())),
+        q.rotor().holonomy_key().is_some_and(|k| f.torsion.holds(&k)),
         "filed torsion is keyed by the class"
     );
 
@@ -469,17 +469,23 @@ fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
     // And the filing follows the judging: the class written is the edge's,
     // and the identity's class — which is what the word would have filed —
     // is not.
-    assert_eq!(f.file_loop(0), vec![4], "a path with a class files, at its own period");
-    let edge_class = q.rotor().class_key().expect("the quarter turn has a class");
+    // 54.7 — THE YIELD IS BOTH PLANES. `file_loop` returns the labour the
+    // filing earns, and that is `(ℓ₁ − 1) + (ℓ₂ − 1)` across the two
+    // invariant planes of the double rotation, not `lcm − 1`. A quarter
+    // turn is isoclinic here — `[4, 4]` — so it earns `3 + 3 = 6`, where
+    // the envelope said `4`. The two planes are doing the work; the
+    // envelope was never either plane's.
+    assert_eq!(f.file_loop(0), vec![6], "a path with a class files, at its own spectrum");
+    let edge_class = q.rotor().holonomy_key().expect("the quarter turn has a class");
     let flat_class = crate::transducer::alphabet::Rotor::identity()
-        .class_key()
+        .holonomy_key()
         .expect("the identity has a class");
     assert!(
-        f.torsion.contains(edge_class.as_bytes()),
+        f.torsion.holds(&edge_class),
         "filed under the class the loop is judged by"
     );
     assert!(
-        !f.torsion.contains(flat_class.as_bytes()),
+        !f.torsion.holds(&flat_class),
         "and not under the identity the word holonomy reports"
     );
 

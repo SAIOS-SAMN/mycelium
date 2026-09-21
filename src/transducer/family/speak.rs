@@ -210,9 +210,10 @@ fn speak_on_scene(
             // one member's carriage and applying it to another chart's bodies
             // would carry a body by a versor measured on a different one.
             Vertex::Word { derivation, acts, .. } => {
-                let tc_key = crate::transducer::family::transport_class(v).map(|tc| tc.key());
+                let tc_key = crate::transducer::family::transport_class(v)
+                    .map(|tc| crate::transducer::family::class_section_key(&tc));
                 if let (Some(k), Some(pi)) = (&tc_key, pair) {
-                    if let Some(only) = f.sections.get(k) {
+                    if let Some(only) = f.sections.at(k) {
                         if !only.contains(&frame_key(pi as u16)) {
                             unspoken.push(vi as u16);
                             continue;
@@ -231,7 +232,7 @@ fn speak_on_scene(
                 let mut spoke = false;
                 for (_, member) in acts.scoped() {
                     if let Some(pi) = pair {
-                        if let Some(mps) = member_section_key(v, &member.chart).and_then(|mk| f.sections.get(&mk)) {
+                        if let Some(mps) = member_section_key(v, &member.chart).and_then(|mk| f.sections.at(&mk)) {
                             if !mps.contains(&frame_key(pi as u16)) {
                                 continue;
                             }

@@ -381,7 +381,12 @@ fn a_cycle_through_a_split_vertex_lifts() {
         let mut v = word_vertex_on(1, Word::identity(), a.clone());
         if let Vertex::Word { acts, .. } = &mut v {
             let first = acts.scoped().next().map(|(_, x)| x.clone()).expect("one member");
-            acts.insert(b.key().as_bytes(), Acting { chart: b.clone(), ..first });
+            // THE MEMBER NAMES ITSELF (54.7 R1). This inserted under the
+            // chart's key while building a member on a DIFFERENT chart —
+            // harmless while the key WAS the chart, and a section filed
+            // under another's name once it is `chart ‖ carriage`.
+            let member = Acting { chart: b.clone(), ..first };
+            acts.put(&member.key(), member);
         }
         f.vertices.push(v);
     }

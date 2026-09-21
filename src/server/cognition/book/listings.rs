@@ -554,7 +554,9 @@ impl Kernel {
         vertex: &crate::transducer::address::Address,
     ) -> Option<crate::transducer::alphabet::Rotor> {
         let f = self.held_word(form.as_bytes()).and_then(|e| e.form().cloned())?;
-        let i = *f.by_address.get(vertex.as_bytes())?;
+        let i = *f
+            .by_address
+            .at(&crate::network::nerve::Key::from_address(vertex).ok()?)?;
         let crate::transducer::sentence::Vertex::Word { derivation, .. } = f.vertices.get(i as usize)?
         else {
             return None;

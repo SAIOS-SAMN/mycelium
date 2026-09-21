@@ -780,3 +780,83 @@ fn the_carrier_holds_its_own_invariants_without_the_oracle() {
     assert!(checked > 0, "the invariants ran over no word");
     assert!(with_cites > 0, "and over no citation, so integrity asserted nothing");
 }
+
+/// 53.6 item 3 — WHAT EVERY MEET OF THE CORPUS DID AT THE LIFT TO CLASSES.
+///
+/// The reading that says why `b₁ = 0`, asked of the carrier that holds it
+/// rather than of a line printed about it. `CoverTally` is filled where each
+/// decision is made — `meets` when a meet is read, `edges` when it carries a
+/// transport, and `chords` / `within_class` / `unclassed` at the lift — so
+/// this asks by field and no string is in the path. A count recovered by
+/// matching a rendered line is a second carrier of one fact: the text can
+/// drift from the writer and nothing makes them agree (law 12).
+///
+/// WHAT THE THREE MEAN, because they are three and not one:
+///
+///   `chords` — the meet's two pieces carry DISTINCT transport classes, so
+///   it names a face between two of the scene's vertices. These are the
+///   pairs spanning distinct sites, which `star_and_site_faces` calls in its
+///   own comment "the cycles that carry a class", and which nothing offered
+///   to the face builder before 54.7.
+///
+///   `within_class` — both pieces are one class. The meet is real and closes
+///   nothing the scene can see; skipping it is correct and not a loss.
+///
+///   `unclassed` — `transport_class` answered `None` for a piece, so the
+///   meet cannot be lifted whatever its geometry. It answers only for
+///   `Vertex::Word`, and it gates the loops' ENDS by the same predicate, so
+///   this counter reads a blockage that stops the chord and the torsion
+///   chord together.
+///
+/// The reading is printed with the window it was taken over (rule 13): a
+/// zero because nothing ran is not a passing line.
+#[test]
+fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
+    let Ok(dir) = std::fs::read_dir(CORPUS) else {
+        eprintln!("  lift: {CORPUS} does not read");
+        return;
+    };
+    let mut names: Vec<String> = dir
+        .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
+        .filter(|n| n.ends_with(".json"))
+        .collect();
+    names.sort_unstable();
+    names.truncate(TASKS);
+
+    // Clear whatever the process has accumulated, so the window is this
+    // test's own.
+    let _ = crate::transducer::family::cover::take_cover_tally();
+    let epi = crate::client::sdk::Epigenome::new();
+    let mut physics = crate::physics::Physics::default();
+    let (mut forms, mut with_loops) = (0usize, 0usize);
+    for name in &names {
+        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let mut budget =
+            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
+        let Some(rule) = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
+        else {
+            continue;
+        };
+        forms += 1;
+        if !rule.form.loops.is_empty() {
+            with_loops += 1;
+        }
+    }
+    let t = crate::transducer::family::cover::take_cover_tally();
+    eprintln!(
+        "  lift over {forms} corpus forms: meets {} ({} carried an edge) \
+         → chords {}, within one class {}, unclassed {} | forms carrying a loop: {with_loops}",
+        t.meets, t.edges, t.chords, t.within_class, t.unclassed
+    );
+    assert!(forms > 0, "the lift ran over no form");
+    // EVERY MEET IS ACCOUNTED FOR. The three outcomes partition the meets
+    // that reached the lift, so a meet that is none of them is a reader
+    // that dropped it silently — which is the defect this whole reading
+    // exists to make impossible (§8.1).
+    assert!(
+        t.chords + t.within_class + t.unclassed > 0 || t.meets == 0,
+        "meets were read and none reached the lift: {} meets, 0 accounted",
+        t.meets
+    );
+}

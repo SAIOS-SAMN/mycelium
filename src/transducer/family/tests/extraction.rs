@@ -249,8 +249,14 @@ match &form.vertices[2] {
         // B'S OWN CHART IS A MEMBER OF THE REBASED VERTEX'S FIBRE, asked for by
         // key: B kept its chart, and the rebase carries it by the relative at
         // that chart (D10). One member here, because B acted on one.
+        // A FIBRE READ AT THE CHART'S STRATUM (54.7 R1): the key is
+        // `chart ‖ carriage`, so the chart is a prefix and not the whole
+        // name of a section.
+        let prefix = crate::transducer::sentence::Acting::chart_prefix(&b.moduli);
         let m = acts
-            .get(b.moduli.key().as_bytes())
+            .scoped()
+            .find(|(k, _)| k.starts_with(&prefix))
+            .map(|(_, x)| x.clone())
             .expect("B keeps its own chart, and the rebase keeps the member there");
         assert_eq!(acts.len(), 1, "B acted on one chart, so the rebase carries one member");
         assert!(
@@ -678,7 +684,7 @@ for (i, v) in rule.form.vertices.iter().enumerate() {
     let Some(tc) = transport_class(v) else {
         continue;
     };
-    if rule.sections.get(&tc.key()).is_none() {
+    if rule.sections.at(&crate::transducer::family::class_section_key(&tc)).is_none() {
         continue;
     }
     let ii = i as u16;
@@ -868,7 +874,7 @@ fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
         crate::transducer::element::Versor,
     )> = Keyed::new();
     let put = |at: &mut Keyed<_>, ix: u16, ck: &[u8], k: u16| {
-        let mut bk = vertex_ix_key(ix);
+        let mut bk = vertex_ix_key(ix).into_vec();
         crate::transducer::address::put_bytes(&mut bk, ck);
         bk.extend_from_slice(&k.to_le_bytes());
         at.insert(bk, (body(), body(), v.clone()));

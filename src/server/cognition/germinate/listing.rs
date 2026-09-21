@@ -9,6 +9,7 @@
 
 use crate::cognition::*;
 use crate::transducer::element::Element;
+use crate::transducer::sentence::ToralPeriod;
 
 /// 37.7 P2 — THE LETTER AS A FORM. `π_p = a + b·i` becomes the rotor
 /// `a + b·e_ij` on the plane the demand named: a rotor acts by a
@@ -392,11 +393,11 @@ impl Kernel {
             };
             // THE PERIODS THE COMPLEX DERIVES, by class — one reader
             // (`loop_classes`), the same one `file_loop` writes through.
-            let mut derived: crate::network::nerve::Keyed<u32> =
+            let mut derived: crate::network::nerve::Keyed<crate::transducer::sentence::ToralPeriod> =
                 crate::network::nerve::Keyed::new();
             for lp in &f.loops {
                 for row in f.loop_classes(lp) {
-                    derived.insert(&row.class, row.period);
+                    derived.insert(&row.class, row.periods);
                 }
             }
             for (w, _) in f.loop_words() {
@@ -436,8 +437,8 @@ impl Kernel {
                 // audit that wanted the receipt rather than the geometry.
                 let filed = w
                     .rotor()
-                    .class_key()
-                    .is_some_and(|k| word.filing().contains(k.as_bytes()));
+                    .holonomy_key()
+                    .is_some_and(|k| word.filing().holds(&k));
                 // AND WHETHER THE ALGEBRA CLOSES IT IS THE FILER'S READER,
                 // NOT THE ROTOR'S. `w.order()` is the bare rotor order with
                 // no carriage and no fixed-point test: a screw has a finite
@@ -447,7 +448,12 @@ impl Kernel {
                 let closes = w
                     .rotor()
                     .class_key()
-                    .is_some_and(|k| derived.get(k.as_bytes()).is_some_and(|&ell| ell > 0));
+                    // THE CYCLE CLOSED, WHICH IS BOTH PLANES. It read
+                    // `ell > 0` on the `lcm`, true whenever either factor is
+                    // a root of unity, so a loop with one plane turning
+                    // forever read as closed and was never charged as
+                    // torsion (54.7).
+                    .is_some_and(|k| derived.get(k.as_bytes()).is_some_and(ToralPeriod::closes));
                 // The charge is owed for a cycle that did not close AND that
                 // the sentence demanded adjudication over. Without the
                 // demand it is a free algebraic refusal: `∂c ≠ 0` is not a

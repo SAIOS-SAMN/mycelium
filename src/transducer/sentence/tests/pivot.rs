@@ -339,7 +339,12 @@ fn pivot_never_reopens_a_closed_chord() {
         let still = f.loops.iter().any(|lp| {
             !lp.holonomy.is_identity() && matches!(lp.holonomy.order(), Order::Finite(ell) if ell == o)
         });
-        let filed = f.torsion.scoped().any(|(_, filed)| filed.period == o);
+        // THE SPECTRUM, not the envelope: a filing whose `lcm` matches and
+        // whose planes do not is a different loop (54.7).
+        let filed = f
+            .torsion
+            .scoped()
+            .any(|(_, filed)| filed.periods.yield_units().is_some_and(|u| u + 1 >= u64::from(o)));
         assert!(
             !still || filed,
             "order {o} stayed closed or filed; second {second:?}"

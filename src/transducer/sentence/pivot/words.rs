@@ -671,7 +671,9 @@ pub fn generators_under(
 /// The word a form's vertex carries, by the address that names it. A keyed
 /// read of the form's own index, never a walk (law 3).
 pub fn word_at_vertex(f: &Form, vertex: &[u8]) -> Option<Word> {
-    let i = *f.by_address.get(vertex)?;
+    let i = *f
+        .by_address
+        .at(&crate::network::nerve::Key::write(vertex).ok()?)?;
     match f.vertices.get(i as usize)? {
         // What the vertex CARRIES: its letters when it spells, its action
         // when it is an adjoined generator (37.7). `word_local` alone
@@ -688,7 +690,9 @@ pub fn word_at_vertex(f: &Form, vertex: &[u8]) -> Option<Word> {
 /// citation of an adjoined generator verifies exactly as one of a
 /// spelled generator does.
 pub fn rotor_at_vertex(f: &Form, vertex: &[u8]) -> Option<crate::transducer::alphabet::Rotor> {
-    let i = *f.by_address.get(vertex)?;
+    let i = *f
+        .by_address
+        .at(&crate::network::nerve::Key::write(vertex).ok()?)?;
     match f.vertices.get(i as usize)? {
         Vertex::Word { derivation, .. } => Some(derivation.rotor()),
         _ => None,

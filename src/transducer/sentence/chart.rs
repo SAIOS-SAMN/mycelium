@@ -78,10 +78,10 @@ impl Form {
         // opened axes — and each is rebuilt whole against the new indices,
         // because an entry left behind names a vertex that no longer
         // exists. There is nothing to descend on: the form IS the scope.
-        let mut glued = Keyed::new();
-        for (k, &old_i) in self.glued.scoped() {
+        let mut glued: Keyed<u16, crate::network::nerve::coord::Site> = Keyed::new();
+        for (k, &old_i) in self.glued.entries() {
             if let Some(&Some(ni)) = old_to_new.get(old_i as usize) {
-                glued.insert(&k, ni);
+                glued.put(&k, ni);
             }
         }
         // AND THE COVER LOSES THE BONDS WHOSE PORTS WENT (54.7 B5a).
@@ -95,7 +95,11 @@ impl Form {
         // Kept by SITE and not by index: `glued` above is the surviving
         // sites, and an edge belongs exactly when its host is one of them
         // (rule 15).
-        self.cover.retain(|e| glued.get(e.host().as_bytes()).is_some());
+        self.cover.retain(|e| {
+            glued
+                .at(&crate::network::nerve::Key::declared(e.host().as_bytes()))
+                .is_some()
+        });
         // SECTIONS ARE NOT RENUMBERED, AND THE REMAP HERE WAS A TYPE ERROR.
         // `Form.sections` is class key → PAIR INDICES OF THE BUNDLE, which
         // its own field doc says; this ran those pair indices through
@@ -112,8 +116,8 @@ impl Form {
         // rather than wrong, and dropping it by an index arithmetic that
         // does not apply is the only way to be wrong here.
         let sections = self.sections.clone();
-        let mut torsion = Keyed::new();
-        for (k, FiledLoop { sigma, period: ell, chord }) in self.torsion.scoped() {
+        let mut torsion: Keyed<FiledLoop, crate::network::nerve::coord::Holonomy> = Keyed::new();
+        for (k, FiledLoop { sigma, periods, chord }) in self.torsion.entries() {
             let Some(&Some(nc)) = face_old_to_new.get(*chord as usize) else {
                 continue;
             };
@@ -124,14 +128,14 @@ impl Form {
             // vertex count dropped the whole filed loop through the
             // `else { continue }`. Renumbering a form's vertices moves no
             // hue. The chord is a face index and is remapped, above.
-            torsion.insert(&k, FiledLoop { sigma: sigma.clone(), period: *ell, chord: nc });
+            torsion.put(&k, FiledLoop { sigma: sigma.clone(), periods: *periods, chord: nc });
         }
-        let mut axes = Keyed::new();
-        for (k, chord) in self.axes.scoped() {
+        let mut axes: Keyed<u16, crate::network::nerve::coord::Holonomy> = Keyed::new();
+        for (k, chord) in self.axes.entries() {
             let Some(&Some(nc)) = face_old_to_new.get(*chord as usize) else {
                 continue;
             };
-            axes.insert(&k, nc);
+            axes.put(&k, nc);
         }
         self.vertices = new_verts;
         self.faces = new_faces;
@@ -240,7 +244,7 @@ pub struct SentenceRule {
     pub form: Form,
     /// Classes present on some frames only: class key → the frames it
     /// stands on, each its own coordinate (51.8).
-    pub sections: Keyed<Keyed<()>>,
+    pub sections: Keyed<Keyed<()>, crate::network::nerve::coord::MemberSection>,
     /// Family frame ratio ((h_out, h_in), (w_out, w_in)).
     pub ratio: ((usize, usize), (usize, usize)),
 }
@@ -652,9 +656,16 @@ pub fn chart_of(e: &Element) -> Option<crate::transducer::stalk::Invariant> {
     chart_of_form(&from_element_form(e)?)
 }
 
+/// THE KEY A VERTEX IS MATCHED BY, ACROSS THE FIVE KINDS.
+///
+/// Loose bytes deliberately: this is a union over five different coordinate
+/// systems — an ordinal for the Frame, a rotor address for a Word, a site
+/// for a citation, a measure for an Unfolded, a demand vertex for a Demand —
+/// and it answers "is this the same vertex", not "where does this stand".
+/// Each arm leaves its own coordinate at the point it does so (54.7 R5).
 pub(crate) fn vertex_match_key(form: &Form, i: u16) -> Option<Vec<u8>> {
     match form.vertices.get(i as usize)? {
-        Vertex::Frame => Some(vertex_ix_key(0)),
+        Vertex::Frame => Some(vertex_ix_key(0).into_vec()),
         Vertex::Word { address, .. } => Some(address.clone().into_vec()),
         // 54.7 B5a — A CITATION IS MATCHED BY ITS SITE. It was matched by
         // the form it cites, which is the cover's fact and no longer on the
@@ -664,8 +675,10 @@ pub(crate) fn vertex_match_key(form: &Form, i: u16) -> Option<Vec<u8>> {
             Some(Vertex::Word { address, .. }) => Some(address.clone().into_vec()),
             _ => None,
         },
-        Vertex::Unfolded { measure } => Some(unfolded_key(measure)),
-        Vertex::Demand { kind, chart, .. } => Some(crate::transducer::sentence::demand_key(kind, chart)),
+        Vertex::Unfolded { measure } => Some(unfolded_key(measure).into_vec()),
+        Vertex::Demand { kind, chart, .. } => {
+            Some(crate::transducer::sentence::demand_key(kind, chart).into_vec())
+        }
     }
 }
 
@@ -688,26 +701,32 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
                 _ => return None,
             },
             Vertex::Word { address, .. } => {
-                let j = *b.by_address.get(address)?;
+                let j = *b
+                    .by_address
+                    .at(&crate::network::nerve::Key::from_address(address).ok()?)?;
                 b.vertices.get(j as usize)?
             }
             v @ Vertex::Glued { .. } => {
-                let j = *b.glued.get(&vertex_bytes(v))?;
+                let j = *b
+                    .glued
+                    .at(&crate::network::nerve::Key::declared(vertex_bytes(v)))?;
                 b.vertices.get(j as usize)?
             }
             Vertex::Rebased { of, .. } => {
                 let Vertex::Word { address, .. } = a.vertices.get(*of as usize)? else {
                     return None;
                 };
-                let j = *b.by_rebased.get(address)?;
+                let j = *b
+                    .by_rebased
+                    .at(&crate::network::nerve::Key::from_address(address).ok()?)?;
                 b.vertices.get(j as usize)?
             }
             Vertex::Unfolded { measure } => {
-                let j = *b.by_unfolded.get(&unfolded_key(measure))?;
+                let j = *b.by_unfolded.at(&unfolded_key(measure))?;
                 b.vertices.get(j as usize)?
             }
             Vertex::Demand { kind, chart, .. } => {
-                let j = *b.demands.get(&crate::transducer::sentence::demand_key(kind, chart))?;
+                let j = *b.demands.at(&crate::transducer::sentence::demand_key(kind, chart))?;
                 b.vertices.get(j as usize)?
             }
         };
@@ -851,8 +870,12 @@ pub(crate) fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
             // on the key (D10); the chart key goes with each member for the
             // same reason a face's pair key does.
             buf.extend_from_slice(&(acts.len() as u16).to_le_bytes());
-            for (ck, a) in acts.scoped() {
-                crate::transducer::address::put_bytes(buf, &ck);
+            for (_, a) in acts.scoped() {
+                // THE CHART, NOT THE CARRIER'S KEY (54.7 R1) — the same
+                // rule as the Word arm: `take_acts` parses an `Invariant`
+                // out of what is written here, and `Acting::key` is
+                // `chart ‖ carriage`.
+                crate::transducer::address::put_bytes(buf, a.chart.key().as_bytes());
                 // A4 output here as in the Word arm (17.2).
                 a.carriage.put_canonical(buf);
                 let mut g = a.gauge.clone();
@@ -990,7 +1013,7 @@ fn canonical_places(f: &Form) -> Vec<u16> {
 fn put_word_vertex(
     buf: &mut Vec<u8>,
     derivation: &crate::transducer::alphabet::Derivation,
-    acts: &Keyed<Acting>,
+    acts: &Keyed<Acting, crate::network::nerve::coord::Section>,
     contact: Option<crate::transducer::alphabet::Contact>,
 ) {
     crate::transducer::address::put_bytes(buf, &derivation.rotor().key());
@@ -1009,8 +1032,14 @@ fn put_word_vertex(
     // spent here: every address changes and a layout change is
     // a recut (§10).
     buf.extend_from_slice(&(acts.len() as u32).to_le_bytes());
-    for (ck, a) in acts.scoped() {
-        crate::transducer::address::put_bytes(buf, &ck);
+    for (_, a) in acts.scoped() {
+        // THE CHART, NOT THE CARRIER'S KEY (54.7 R1). `Acting::key` is
+        // `chart ‖ carriage` and `take_acts` parses an `Invariant` out of
+        // what is written here, so writing the map's key stops 25 forms
+        // decoding. The address carries the chart and the carriage as its
+        // own fields; the carrier's key is re-derived on insert, by the one
+        // function that owns it.
+        crate::transducer::address::put_bytes(buf, a.chart.key().as_bytes());
         // A4 OUTPUT, NOT RAW VERSOR BYTES — 17.2's open item,
         // named at `same_vertex`: "a carriage and its negation
         // still read as two addresses here". Closed. An address
@@ -1051,7 +1080,7 @@ fn put_word_vertex(
 /// vertices of one, and that is identity by fiat.
 pub fn word_vertex_address(
     derivation: &crate::transducer::alphabet::Derivation,
-    acts: &Keyed<Acting>,
+    acts: &Keyed<Acting, crate::network::nerve::coord::Section>,
     contact: Option<crate::transducer::alphabet::Contact>,
 ) -> crate::transducer::address::Address {
     let mut buf = vec![crate::transducer::address::TAG_FORM, 1];

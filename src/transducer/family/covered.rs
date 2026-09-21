@@ -31,13 +31,53 @@ pub(crate) type PendingTorsion = (
     crate::transducer::alphabet::Rotor,
 );
 
+/// THE CHORD A COVER'S MEET NAMES, AT THE MEMBER AND NOT AT THE VERTEX
+/// (53.6 item 3, corrected 2026-09-21 by the lift's own reading).
+///
+/// A meet is between two PIECES; the scene holds classes. The lift is the
+/// transport class of each end — the coordinate `Form::by_transport` files
+/// the scene's vertices under — TOGETHER WITH the chart that end stands at,
+/// because a face is between two MEMBERS and not between two vertices.
+///
+/// MEASURED: 186 meets over the 36 corpus forms, 186 of them carrying an
+/// edge, `unclassed` 0 — and 186 of 186 WITHIN ONE CLASS. A first cut kept
+/// only meets whose classes differed and so kept none of them.
+///
+/// That is not a defect of the corpus, it is what a `TransportClass` IS. It
+/// is `⟨kind, conjugacy of the rotor⟩` and 21 step 1 excludes the carriage
+/// deliberately — "never the hue map and never the body's moduli" — which
+/// is exactly what makes two copies of one shape at two places CORRESPOND,
+/// so a rule generalises. A deformation that moves a shape carries every
+/// piece by the same rotation and differs only in TRANSLATION, so every
+/// piece lands in one class by construction.
+///
+/// So the cycle is not between two class vertices; it is between two
+/// MEMBERS of one class vertex — two `Acting` entries on two charts, each
+/// with its own carriage — and its holonomy is the relative transport
+/// between them, which is a translation: a Burgers vector, a dislocation.
+/// 18.2's own sentence is "two carriages on one class are two sections".
+///
+/// Widening the class to separate them would fix the count and destroy
+/// correspondence. The translation belongs at the member level, which is
+/// where `loops_of` already builds: `every_loop_lifts_to_the_member_complex`.
+pub(crate) type MeetChord = (
+    (TransportClass, Invariant, Versor),
+    (TransportClass, Invariant, Versor),
+    Option<crate::transducer::sentence::Transport>,
+);
+
 /// Build the pieces' form, classify its loops, and return what the scene
-/// keeps: how many meet faces stood, the torsion each loop filed, and the
-/// classes standing per cover.
+/// keeps: the chords its meets name between classes, how many meet faces
+/// stood, the torsion each loop filed, and the classes standing per cover.
 pub(crate) fn classify_cover(
     covers: &[Covered],
     edges: &mut EdgeTally,
-) -> (usize, Vec<PendingTorsion>, Keyed<Vec<crate::transducer::sentence::ClassVector>>) {
+) -> (
+    Vec<MeetChord>,
+    usize,
+    Vec<PendingTorsion>,
+    Keyed<Vec<crate::transducer::sentence::ClassVector>>,
+) {
     // 53.6 items 3 and 4 — THE PIECES' OWN FORM, BUILT HERE AND DISCARDED.
     //
     // The pieces were placed into the SCENE's form and their meets became
@@ -71,6 +111,29 @@ pub(crate) fn classify_cover(
     // the form already builds on supports (53.6 item 3), which is where a
     // meet between two ideas belongs; here they are only what the loops
     // below are read around.
+    // 53.6 item 3 — THE MEETS, LIFTED TO THE CLASSES THEY RELATE.
+    //
+    // This said the meets "become incidence the form already builds on
+    // supports", and the telemetry said otherwise: `faces == site+ring` on
+    // every row of every recut, so a form with 45 measured meets carried
+    // one face and that face was a star face. The supports builder
+    // (`star_and_site_faces`) offers the Frame's star, a spanning CHAIN of
+    // each site's occupants, and the ring pairs — by construction a forest,
+    // as its own comment says: "the only cycles that survive are the ones
+    // spanning DISTINCT sites". Those cycles are exactly what a meet
+    // between two classes would close, and nothing offered one.
+    //
+    // So b₁ = E − V + C = 0 identically, every form carried `0 loops`, and
+    // everything downstream of a cycle — `pivot_loop`, the stand, the
+    // close, the torsion filing, the court's basis — was starved rather
+    // than broken. Measured at epoch 94: `pivoted [0,0,0,0]` on all five
+    // voices, `court basis 0` on all three courts.
+    //
+    // The lift already existed for the loops' ENDS, one screen down: a
+    // piece's `transport_class` is the coordinate the scene files vertices
+    // under. It was never applied to the meets themselves.
+    let mut chords: Vec<MeetChord> = Vec::new();
+    let mut named: Keyed<()> = Keyed::new();
     for c in covers {
         for (mk, ()) in c.cover.meets.scoped() {
             let Some((ka, kb)) = crate::transducer::family::pieces::meet_ends(&mk) else { continue };
@@ -90,11 +153,132 @@ pub(crate) fn classify_cover(
             if edge.is_some() {
                 crate::transducer::family::cover::tally(|t| t.edges += 1);
             }
+            let carried_edge = edge.clone();
             let Some(word) = piece_form.face_word(i, j) else { continue };
             let Some(place) = piece_form.face_place(i, &ci, j, &cj, edge) else { continue };
             let mut at = Keyed::new();
             at.insert(face_pair_key(&ci, &cj), place);
             piece_form.faces.push(FormFace { i, j, word, at, pairs: None });
+            // AND THE CHORD IT NAMES BETWEEN TWO CLASSES. Two pieces of ONE
+            // class meet inside that class and close nothing the scene can
+            // see, so only a meet between DISTINCT classes is a chord. Named
+            // once: several pieces of two classes meeting is one incidence
+            // between those two classes, and the scene has one face for it.
+            // WHY A MEET IS NOT A CHORD, counted at the step that decides
+            // it (§8.1). Three outcomes and they mean different things: a
+            // meet inside ONE class closes nothing the scene can see, a
+            // meet whose pieces carry no transport class cannot be lifted
+            // at all, and the rest are chords.
+            let (Some((_, pa, da)), Some((_, pb, db))) =
+                (c.cover.carried.get(ka), c.cover.carried.get(kb))
+            else {
+                crate::transducer::family::cover::tally(|t| t.unclassed += 1);
+                continue;
+            };
+            if let (Some(ta), Some(tb)) = (transport_class(vi), transport_class(vj)) {
+                // THE CHORD IS BETWEEN TWO SECTIONS, so the coordinate that
+                // must differ is `(class, chart, CARRIAGE)`.
+                //
+                // Gated on `(class, chart)` it admitted nothing: 186 meets
+                // over the 36 corpus forms, 186 of them `within one class`,
+                // `0 loops` on every form. That is what 53.6 item 1 IS —
+                // two pieces of one rotor class quotient to one base vertex,
+                // and on one chart they are one member. The meet is not in
+                // the base; it is in the TOTAL space, between two sections
+                // `σ₁ = (V,U,φ₁)` and `σ₂ = (V,U,φ₂)` of the fibre `π⁻¹(V)`,
+                // and the only coordinate separating them is the carriage.
+                //
+                // Projected to the base this 1-cell is a SELF-LOOP on `V`:
+                // `∂e = e⁰ − e⁰ = 0`, `b₁ = 1`, holonomy `τ = φ₂·φ₁⁻¹`. A
+                // graph forbids that edge by convention; a CW complex does
+                // not, and the circle's minimal decomposition IS it.
+                //
+                // Two copies of one shape never share a support site, so
+                // `star_and_site_faces` — which relates members whose
+                // supports meet or sit at ring distance one — cannot see
+                // them at all. The cover's meet is the only carrier of that
+                // relation, which is why the chord has to come from here.
+                // AND THE FOOTPRINT, which is the coordinate two pieces
+                // carried by ONE versor differ in (54.7, as ruled
+                // 2026-09-21).
+                //
+                // Gated on `(class, chart, carriage)` this admitted 2 of 186
+                // meets. The other 184 have both ends at one class, one
+                // chart and ONE CARRIAGE — two disjoint bodies undergoing
+                // the identical transformation, so `φ₂·φ₁⁻¹ = 1` and the
+                // gate read them as one section meeting itself at zero
+                // distance.
+                //
+                // They are not one section. `D₁ ≠ D₂`, so their basepoints
+                // on the absolute differ, and the transport across the
+                // interface is not the relative carriage but the SOLDER
+                // FORM displacement between them:
+                //
+                //     Ω₁₂ = φ · T(Δx) · φ⁻¹ ,   Δx = p(D₂) − p(D₁) ≠ 0
+                //
+                // `T(Δx)` is a hyperbolic transvection — `B = eᵢ∧e₋`,
+                // `B² = +1 > 0` — so `Ω₁₂ ≠ 1` and the chord carries a
+                // Burgers vector `τ = Δx`. Omitting the footprint is the
+                // same collapse the session has now found four times: a
+                // coordinate excluded from IDENTITY, correctly, and then
+                // excluded from INCIDENCE, which does not follow.
+                let site = |t: &TransportClass,
+                            c: &Invariant,
+                            phi: &Versor,
+                            d: &[(i64, i64, i64)]| {
+                    let mut k = Vec::new();
+                    crate::transducer::address::put_bytes(&mut k, &t.key());
+                    crate::transducer::address::put_bytes(&mut k, c.key().as_bytes());
+                    phi.put_canonical(&mut k);
+                    for (r, col, f) in d {
+                        k.extend_from_slice(&r.to_le_bytes());
+                        k.extend_from_slice(&col.to_le_bytes());
+                        k.extend_from_slice(&f.to_le_bytes());
+                    }
+                    k
+                };
+                let ma = site(&ta, &ci, pa, da);
+                let mb = site(&tb, &cj, pb, db);
+                if ma == mb {
+                    // ONE SECTION MEETING ITSELF: one class, one chart, one
+                    // carriage. The transition is the identity and carries
+                    // no `τ`, so there is no cycle and none is invented
+                    // (rule 11).
+                    crate::transducer::family::cover::tally(|t| t.within_class += 1);
+                } else {
+                    crate::transducer::family::cover::tally(|t| t.chords += 1);
+                    let mut pk = Vec::new();
+                    let (lo, hi) = if ma < mb { (&ma, &mb) } else { (&mb, &ma) };
+                    crate::transducer::address::put_bytes(&mut pk, lo);
+                    crate::transducer::address::put_bytes(&mut pk, hi);
+                    if named.get(&pk).is_none() {
+                        named.insert(pk, ());
+                        // AND THE MEET'S OWN EDGE RIDES WITH IT. The
+                        // transition across this interface was measured
+                        // just above — `meet_edge(va, sa, vb, sb)`, the
+                        // `V_b ∘ V_a⁻¹` between the two pieces' own frames
+                        // — and it was spent on the piece form that is
+                        // discarded.
+                        //
+                        // The scene's face cannot re-derive it:
+                        // `edge_between` is keyed by `(vertex, chart)`,
+                        // which is identical at both ends of a section
+                        // chord, so it answers nothing and the loop stands
+                        // with no holonomy to read. A loop that exists and
+                        // cannot be evaluated is the empty-answer defect —
+                        // "there is no lift" and "there is no holonomy"
+                        // returned as one silence — so the measurement
+                        // travels to the carrier that needs it.
+                        chords.push((
+                            (ta, ci.clone(), pa.clone()),
+                            (tb, cj.clone(), pb.clone()),
+                            carried_edge.clone(),
+                        ));
+                    }
+                }
+            } else {
+                crate::transducer::family::cover::tally(|t| t.unclassed += 1);
+            }
         }
     }
     let meet_faces = piece_form.faces.len();
@@ -186,7 +370,11 @@ pub(crate) fn classify_cover(
                         .collect();
                     pending_torsion.push((
                         class,
-                        crate::transducer::sentence::FiledLoop { sigma, period: ell, chord: 0 },
+                        crate::transducer::sentence::FiledLoop {
+                            sigma,
+                            periods: g.toral_period(),
+                            chord: 0,
+                        },
                         ends,
                         g.as_ref().clone(),
                     ));
@@ -211,5 +399,5 @@ pub(crate) fn classify_cover(
         }
     }
 
-    (meet_faces, pending_torsion, stood)
+    (chords, meet_faces, pending_torsion, stood)
 }

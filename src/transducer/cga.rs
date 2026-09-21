@@ -219,6 +219,107 @@ impl Mv {
         self.geo(v).grade(g + 1)
     }
 
+    /// THE CONJUGACY INVARIANTS OF A TRANSITION, READ OFF ITS GRADE-2
+    /// GENERATOR (54.7, as ruled 2026-09-21).
+    ///
+    /// A transition is `Ω = R · T(τ)` and its generator is the bivector
+    /// `B = ⟨Ω⟩₂`. In `Cl(4,1)` that bivector is NOT one kind of thing:
+    ///
+    /// ```text
+    ///     B = B_ell + B_hyp ,   B_ell = Σ b_ij (eᵢ∧eⱼ)   1 ≤ i<j ≤ 3
+    ///                           B_hyp = Σ b_i₋ (eᵢ∧e₋)   1 ≤ i ≤ 3
+    /// ```
+    ///
+    /// `B_ell` generates an ELLIPTIC rotation stabilising a timelike
+    /// geodesic; `B_hyp` generates a HYPERBOLIC transvection, a pure
+    /// geodesic translation; a null `B` generates a PARABOLIC limit
+    /// rotation stabilising a point on the asymptotic sphere. The three are
+    /// not conjugate to one another, and the sign of
+    ///
+    /// ```text
+    ///     I₁ = ⟨B²⟩₀ = ‖B_ell‖² − ‖B_hyp‖²
+    /// ```
+    ///
+    /// is what tells them apart.
+    ///
+    /// WHY THIS CANNOT BE DONE IN `Cl(4,0)`. `Rotor::class_invariants` reads
+    /// `c[0]` and `c[15]` — grade 0 and grade 4 — and discards all six
+    /// bivector components. That is not an oversight there: `Cl(4,0)` is
+    /// POSITIVE DEFINITE, every bivector squares negative, every plane is
+    /// carried to every other by a conjugation, and the conjugacy classes of
+    /// `Spin(4)` genuinely are the two angles alone. The planes are the
+    /// rotation's position, not its class, so reading grade 2 in `Cl(4,0)`
+    /// would add nothing.
+    ///
+    /// It adds everything here. Under the signature `(+,+,+,+,−)` the sign
+    /// of `I₁` is a real coordinate, and a rotation, a boost and a limit
+    /// rotation are three classes rather than one. `Cl(4,0)` could not hold
+    /// that distinction because it has no absolute to be hyperbolic about —
+    /// which is why the transition's two halves must be composed into ONE
+    /// element of `Spin(4,1)` before the class is taken, rather than a rotor
+    /// classified in a flat algebra beside a carriage classified in a curved
+    /// one.
+    ///
+    /// ```text
+    ///     I₂ = ‖⟨B²⟩₄‖²      the screw coupling, 2(B_ell · B_hyp) squared
+    /// ```
+    ///
+    /// `I₂ = 0` is a planar rotation or a pure transvection; `I₂ ≠ 0` is a
+    /// helicoidal screw, the two halves coupled.
+    ///
+    /// EXACT AND SCALE-FREE. `B ↦ λB` sends `⟨B²⟩₀ ↦ λ²⟨B²⟩₀` and
+    /// `w = ΩΩ̃ ↦ λ²w`, so `I₁/w` is invariant; `‖⟨B²⟩₄‖² ↦ λ⁴‖·‖²`, so
+    /// `I₂/w²` is. Both are quadratic in `B`, so neither depends on the
+    /// ray's sign — `−Ω` and `Ω` are one transition and read alike. `None`
+    /// when `Ω` is not a versor, which is a refusal and never a zero class
+    /// (rule 11).
+    pub fn class_invariants(&self) -> Option<(BigRational, BigRational, u8)> {
+        let w = is_versor(self)?;
+        if w.is_zero() {
+            return None;
+        }
+        let b = self.grade(2);
+        let bb = b.geo(&b);
+        let i1 = bb.scalar_part() / &w;
+        let quad = bb.grade(4);
+        let i2 = quad.geo(&quad.reverse()).scalar_part() / (&w * &w);
+        // THE SIGN IS THE TYPE, and it is the reading this whole function
+        // exists for. Computed, not assumed — with `eᵢ² = +1` for
+        // `i ∈ {1,2,3,+}` and `e₋² = −1`, all anticommuting:
+        //
+        //   ELLIPTIC   B = e₁∧e₂ :  B² = e₁e₂e₁e₂ = −e₁e₁e₂e₂ = −1  < 0
+        //   HYPERBOLIC B = eᵢ∧e₋ :  B² = eᵢe₋eᵢe₋ = −eᵢeᵢe₋e₋ = +1  > 0
+        //   PARABOLIC  B = −½ d e_∞ : e_∞² = e₋² + e₊² = 0 and d ⊥ e_∞,
+        //              so B² = −¼ d² e_∞² = 0
+        //
+        // A first cut had elliptic and hyperbolic the wrong way round. The
+        // parabolic case is the one that names the absolute: the CONFORMAL
+        // translator `T(d) = 1 − ½ d e_∞` has a NULL bivector and fixes the
+        // point at infinity, which is what makes the flat embedding the
+        // wrong geometry for a manifold with curvature. On the hyperboloid
+        // there is no `e_∞` to fix, and a geodesic translation is a true
+        // transvection `eᵢ∧e₋` with `B² = +1`.
+        let ty = if i1.is_negative() {
+            0
+        } else if i1.is_positive() {
+            1
+        } else {
+            2
+        };
+        Some((i1, i2, ty))
+    }
+
+    /// The class as canonical coordinates (A21, law 2): the two invariants
+    /// written out and the bivector's type, never a digest.
+    pub fn class_key(&self) -> Option<crate::transducer::address::Address> {
+        let (i1, i2, ty) = self.class_invariants()?;
+        let mut buf = vec![crate::transducer::address::TAG_CLASS];
+        crate::transducer::alphabet::put_q(&mut buf, &i1);
+        crate::transducer::alphabet::put_q(&mut buf, &i2);
+        buf.push(ty);
+        Some(crate::transducer::address::Address::new(buf))
+    }
+
     /// The grade-`g` part.
     pub fn grade(&self, g: u32) -> Self {
         Self {

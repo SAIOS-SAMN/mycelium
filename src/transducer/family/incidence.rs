@@ -77,7 +77,7 @@ pub(crate) fn union_quotient(
 /// Re-derived from the carrier that already holds the bodies, never stored
 /// beside them (law 12).
 pub(crate) fn occupied_frames(bodies_at: &Keyed<(Body, Body, Versor)>, ix: u16, ck: &[u8]) -> Vec<u16> {
-    let mut prefix = vertex_ix_key(ix);
+    let mut prefix = vertex_ix_key(ix).into_vec();
     crate::transducer::address::put_bytes(&mut prefix, ck);
     let Some(fiber) = bodies_at.fiber_at(&prefix) else {
         return Vec::new();
@@ -140,7 +140,7 @@ pub(crate) fn edge_between(
     tally: &mut EdgeTally,
 ) -> (Option<Transport>, Option<Keyed<()>>) {
     let at = |ix: u16, ck: &[u8], k: u16| -> Option<&(Body, Body, Versor)> {
-        let mut bk = vertex_ix_key(ix);
+        let mut bk = vertex_ix_key(ix).into_vec();
         crate::transducer::address::put_bytes(&mut bk, ck);
         bk.extend_from_slice(&k.to_le_bytes());
         bodies_at.get(&bk)

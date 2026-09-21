@@ -245,11 +245,17 @@ impl Demand {
 
 /// The key a sentence aggregates its demands under: one vertex per
 /// (kind, chart), 50.5.
-pub fn demand_key(kind: &Demand, chart: &Invariant) -> Vec<u8> {
+pub fn demand_key(
+    kind: &Demand,
+    chart: &Invariant,
+) -> crate::network::nerve::Key<crate::network::nerve::coord::DemandVertex> {
     let mut buf = Vec::new();
     crate::transducer::address::put_bytes(&mut buf, kind.key().as_bytes());
     crate::transducer::address::put_bytes(&mut buf, chart.key().as_bytes());
-    buf
+    // 54.7 R5 — the one writer of a demand-vertex coordinate. Neither end's
+    // tag opens it, so there is nothing for a byte check to read and the
+    // type carries the whole declaration.
+    crate::network::nerve::Key::declared(&buf)
 }
 
 /// THE TARGET A PROBE NAMES WHEN IT ANSWERS ONE DEMAND (L8q): the

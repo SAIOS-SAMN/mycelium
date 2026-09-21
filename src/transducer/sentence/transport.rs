@@ -5,7 +5,7 @@
 //! those coordinates compose and invert by.
 
 use super::form::{Form, Vertex};
-use crate::network::nerve::Keyed;
+use crate::network::nerve::{coord, Key, Keyed};
 use crate::transducer::alphabet::{Derivation, Word};
 use crate::transducer::element::{self, Versor};
 
@@ -168,23 +168,30 @@ impl Form {
                 // charts composes the map into each of their gauges: one
                 // member is the single-chart case and reads as before.
                 Vertex::Word { acts, .. } => {
-                    // The chart keys are unchanged by a regauge, so they are
-                    // read once and each member reached by its own key —
+                    // The section keys are unchanged by a regauge, so they
+                    // are read once and each member reached by its own key —
                     // `Keyed` has no mutable walk, and this is the pattern
                     // `ReceiptChain::reindex_placed` already uses.
-                    let charts: Vec<Vec<u8>> = acts.scoped().map(|(k, _)| k).collect();
-                    for k in charts {
-                        if let Some(a) = acts.get_mut(&k) {
+                    //
+                    // 54.7 R5 — THEY ARE SECTIONS, NOT CHARTS. This local was
+                    // called `charts` and held `chart ‖ carriage`, which is
+                    // the same confusion that sent a member key into a chart
+                    // index at eight sites. The type now says which it is.
+                    let sections: Vec<Key<coord::Section>> =
+                        acts.entries().map(|(k, _)| k).collect();
+                    for k in sections {
+                        if let Some(a) = acts.at_mut(&k) {
                             a.gauge = compose_gauge(g, &a.gauge);
                         }
                     }
                 }
                 // A Rebased vertex's fibre regauges the same way its base's
-                // does — every member, at its own chart.
+                // does — every member, at its own section.
                 Vertex::Rebased { acts, .. } => {
-                    let charts: Vec<Vec<u8>> = acts.scoped().map(|(k, _)| k).collect();
-                    for k in charts {
-                        if let Some(a) = acts.get_mut(&k) {
+                    let sections: Vec<Key<coord::Section>> =
+                        acts.entries().map(|(k, _)| k).collect();
+                    for k in sections {
+                        if let Some(a) = acts.at_mut(&k) {
                             a.gauge = compose_gauge(g, &a.gauge);
                         }
                     }
@@ -210,17 +217,19 @@ impl Form {
                 // EVERY MEMBER'S CARRIAGE composes: the placement moves the
                 // vertex wherever it acts, on every chart it acts on.
                 Vertex::Word { acts, .. } => {
-                    let charts: Vec<Vec<u8>> = acts.scoped().map(|(k, _)| k).collect();
-                    for k in charts {
-                        if let Some(a) = acts.get_mut(&k) {
+                    let sections: Vec<Key<coord::Section>> =
+                        acts.entries().map(|(k, _)| k).collect();
+                    for k in sections {
+                        if let Some(a) = acts.at_mut(&k) {
                             *a.carriage = c.geo(&a.carriage);
                         }
                     }
                 }
                 Vertex::Rebased { acts, .. } => {
-                    let charts: Vec<Vec<u8>> = acts.scoped().map(|(k, _)| k).collect();
-                    for k in charts {
-                        if let Some(a) = acts.get_mut(&k) {
+                    let sections: Vec<Key<coord::Section>> =
+                        acts.entries().map(|(k, _)| k).collect();
+                    for k in sections {
+                        if let Some(a) = acts.at_mut(&k) {
                             *a.carriage = c.geo(&a.carriage);
                         }
                     }

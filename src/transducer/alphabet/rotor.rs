@@ -261,6 +261,19 @@ impl Rotor {
         Some(crate::transducer::address::Address::new(buf))
     }
 
+    /// 54.7 R5 — THE SAME KEY, AS THE COORDINATE `torsion` AND `axes` ANSWER.
+    ///
+    /// Not a second writer (law 12): it calls [`Rotor::class_key`] and
+    /// declares the system those bytes belong to. The distinction it carries
+    /// is real — a holonomy class opens `TAG_CLASS` and so does a
+    /// `ClassVector`, which spells five coordinates where this spells one,
+    /// so the tag separates them and nothing else does.
+    pub fn holonomy_key(
+        &self,
+    ) -> Option<crate::network::nerve::Key<crate::network::nerve::coord::Holonomy>> {
+        crate::network::nerve::Key::from_address(&self.class_key()?).ok()
+    }
+
     /// The exact inverse `Φ̃ / (Φ Φ̃)`.
     pub fn inverse(&self) -> Option<Rotor> {
         let w = self.weight()?;
@@ -496,6 +509,29 @@ impl Rotor {
     /// lcm-th powers are opposite scalars. `None` for a non-versor: no
     /// weight, no class, and no scalar power at all. Never a spelling, and
     /// never the sensor plane's shadow.
+    /// THE TWO PLANE PERIODS AS THE SPECTRUM THEY ARE (54.7).
+    ///
+    /// [`Rotor::order`] returns `lcm(ℓ₁, ℓ₂)` and that is an envelope, not a
+    /// period: a planar rotation `[ℓ, 1]` and an isoclinic Clifford
+    /// translation `[ℓ, ℓ]` give one `lcm` and land in one class though
+    /// their stabilisers and fixed-point sets differ; an incommensurate
+    /// pair never closes and an integer envelope reports it as closed; and
+    /// the beat `|ℓ₁ − ℓ₂|⁻¹` is thrown away, so no reader can compare two
+    /// loops' harmonic ratio.
+    ///
+    /// `None` on a plane is that factor turning forever.
+    pub fn toral_period(&self) -> crate::transducer::sentence::ToralPeriod {
+        use crate::transducer::sentence::ToralPeriod;
+        let of = |o: Order| match o {
+            Order::Finite(n) => std::num::NonZeroU32::new(n),
+            Order::Infinite => None,
+        };
+        match self.plane_periods() {
+            Some([a, b]) => ToralPeriod { plane_1: of(a), plane_2: of(b) },
+            None => ToralPeriod { plane_1: None, plane_2: None },
+        }
+    }
+
     pub fn order(&self) -> Option<Order> {
         let w = self.weight()?;
         let (a, p) = (&self.c[0], &self.c[15]);

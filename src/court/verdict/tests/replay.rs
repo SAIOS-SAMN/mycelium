@@ -2,6 +2,7 @@
 // form whose rank or certificate does not re-derive is refused.
 
 use crate::transducer::element::Element;
+use crate::transducer::sentence::ToralPeriod;
 use crate::verdict::*;
 use super::common::*;
 
@@ -586,9 +587,16 @@ fn a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not() {
     assert!(!form_loops_replay(&f), "a free part does not replay");
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
+    let class = crate::network::nerve::Key::<crate::network::nerve::coord::Holonomy>::from_address(
+        class,
+    )
+    .expect("an edge class is a holonomy coordinate");
     let mut filed = f.clone();
-    filed.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 0, chord: lp.chord });
-    assert!(!form_loops_replay(&filed), "and filing it at 0 does not close a circuit that walks");
+    filed.torsion.put(
+        &class,
+        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
+    );
+    assert!(!form_loops_replay(&filed), "and filing it as open does not close a circuit that walks");
     let filed_e = as_element_form(&filed, [1, 0, 0, 0]).expect("the tape carries the filed zero");
     assert_eq!(
         replay_form(&filed_e, &|_| None),
@@ -600,7 +608,10 @@ fn a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not() {
     // terrain contradicts it. The geometric refusal comes first because it
     // is asked first — the labour is only priced on terrain that stands.
     let mut wrong = f.clone();
-    wrong.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 4, chord: lp.chord });
+    wrong.torsion.put(
+        &class,
+        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::from_pair(4, 4), chord: lp.chord },
+    );
     assert_eq!(
         receipts_price_the_terrain(&wrong, &wrong.torsion),
         Some(REFUSE_INFLATED_YIELD),
@@ -857,11 +868,28 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     let [class] = classes.as_slice() else {
         panic!("one member path, so one class; got {}", classes.len())
     };
-    let class = class.clone();
+    let class = crate::network::nerve::Key::<crate::network::nerve::coord::Holonomy>::from_address(
+        class,
+    )
+    .expect("an edge class is a holonomy coordinate");
     let mut filed = f.clone();
-    filed.torsion.insert(
-        class.clone(),
-        FiledLoop { sigma: Vec::new(), period: 2, chord: lp.chord },
+    filed.torsion.put(
+        &class,
+        FiledLoop {
+            // THE SPECTRUM THE COMPLEX ITSELF DERIVES (54.7). Not the
+            // loop's holonomy rotor: `loop_classes` reads the period off
+            // each MEMBER PATH's word, and a receipt is honest when it
+            // matches what the terrain derives — which is the whole point
+            // of the terrain/labour split. Taking it from the loop's
+            // composite instead was filing one rotor's spectrum against
+            // another's, and `REFUSE_INFLATED_YIELD` caught it, correctly.
+            sigma: Vec::new(),
+            periods: match f.loop_classes(lp).as_slice() {
+                [row, ..] => row.periods,
+                [] => panic!("the loop carries a class"),
+            },
+            chord: lp.chord,
+        },
     );
     assert!(form_loops_replay(&filed), "and filing it says nothing the geometry did not");
     assert_eq!(
@@ -876,9 +904,9 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     // the loop's order, not the filer's opinion of it (A17), and it is the
     // one lie in an envelope the court can catch.
     let mut wrong = f.clone();
-    wrong.torsion.insert(
-        class,
-        FiledLoop { sigma: Vec::new(), period: 3, chord: lp.chord },
+    wrong.torsion.put(
+        &class,
+        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::from_pair(3, 3), chord: lp.chord },
     );
     assert!(form_loops_replay(&wrong), "the terrain is what it is, whatever is claimed of it");
     assert_eq!(
@@ -886,4 +914,41 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
         Some(REFUSE_INFLATED_YIELD),
         "and the claim is refused as perjury about a period"
     );
+
+    // TWO CLAIMS WITH ONE ENVELOPE AND TWO YIELDS (54.7). This is the
+    // reading that only exists because the carrier is a spectrum.
+    //
+    //     [12, 1]  →  (12−1) + (1−1)  =  11 units
+    //     [ 3, 4]  →  ( 3−1) + (4−1)  =   5 units
+    //
+    // `lcm(12, 1) = lcm(3, 4) = 12`, so under the old scalar these two
+    // claims were the SAME number and the court could not tell them apart —
+    // a speaker claiming `[12, 1]` on terrain that derives `[3, 4]` was
+    // claiming twice the labour and passing. The eigenspaces differ: one is
+    // a planar rotation with an idle orthogonal plane, the other a genuine
+    // double rotation doing work on both.
+    assert_eq!(ToralPeriod::from_pair(12, 1).yield_units(), Some(11));
+    assert_eq!(ToralPeriod::from_pair(3, 4).yield_units(), Some(5));
+    assert_ne!(
+        ToralPeriod::from_pair(12, 1),
+        ToralPeriod::from_pair(3, 4),
+        "one lcm, two spectra, two yields — and the court compares the spectrum"
+    );
+    let mut colliding = f.clone();
+    colliding.torsion.put(
+        &class,
+        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::from_pair(12, 1), chord: lp.chord },
+    );
+    assert_eq!(
+        receipts_price_the_terrain(&colliding, &colliding.torsion),
+        Some(REFUSE_INFLATED_YIELD),
+        "a claim that agrees on the envelope and differs on the planes is still perjury"
+    );
+
+    // AND A PLANE THAT DOES NOT CLOSE EARNS NOTHING. That is torsion, and
+    // it is charged as shear — never estimated through an invented finite
+    // order (rule 11).
+    assert_eq!(ToralPeriod::from_pair(5, 0).yield_units(), None);
+    assert!(!ToralPeriod::from_pair(5, 0).closes());
+    assert_eq!(ToralPeriod::OPEN.yield_units(), None);
 }

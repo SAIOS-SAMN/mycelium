@@ -253,9 +253,13 @@ let other = {
     // replays it only where the form files it under its own class.
     let [lp, ..] = f.loops.as_slice() else { panic!("the chord closes a loop") };
     let chord = lp.chord;
-    f.torsion.insert(
-        half.rotor().class_key().expect("the half turn has a class"),
-        crate::transducer::sentence::FiledLoop { sigma: Vec::new(), period: 2, chord },
+    f.torsion.put(
+        &half.rotor().holonomy_key().expect("the half turn has a class"),
+        crate::transducer::sentence::FiledLoop {
+            sigma: Vec::new(),
+            periods: half.rotor().toral_period(),
+            chord,
+        },
     );
     f.reindex();
     f

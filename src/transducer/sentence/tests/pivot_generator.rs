@@ -29,7 +29,13 @@ fn a_published_residue_no_generator_reaches_is_adjoined() {
 
     // PUBLISHED AND UNANSWERED, with nothing in the basis: adjoin.
     let mut f = chord_form(std::slice::from_ref(&q));
-    assert_eq!(f.file_loop(0), vec![4], "the class is published first, at its own period");
+    // 54.7 — THE YIELD IS BOTH PLANES. `file_loop` returns the labour the
+    // filing earns, and that is `(ℓ₁ − 1) + (ℓ₂ − 1)` across the two
+    // invariant planes of the double rotation, not `lcm − 1`. A quarter
+    // turn is isoclinic here — `[4, 4]` — so it earns `3 + 3 = 6`, where
+    // the envelope said `4`. The two planes are doing the work; the
+    // envelope was never either plane's.
+    assert_eq!(f.file_loop(0), vec![6], "the class is published first, at its own spectrum");
     let snaps = f.pivot_loop(
         [0x9a; 32],
         &Keyed::new(),
@@ -51,7 +57,9 @@ fn a_published_residue_no_generator_reaches_is_adjoined() {
     // THE BASIS REACHES IT: no adjunction, because the mind already holds
     // the word and minting a second is a duplicate generator.
     let mut g = chord_form(std::slice::from_ref(&q));
-    assert_eq!(g.file_loop(0), vec![4]);
+    // 54.7 — `(ℓ₁ − 1) + (ℓ₂ − 1)`: a quarter turn is isoclinic, `[4, 4]`,
+    // so it earns `3 + 3 = 6` where the envelope said `4`.
+    assert_eq!(g.file_loop(0), vec![6]);
     let snaps = g.pivot_loop(
         [0x9b; 32],
         &Keyed::new(),
@@ -737,7 +745,7 @@ fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_
 
     // FIRST: the basis divides it. There is something to reduce by, so the
     // contraction is offered and the widening is not.
-    let unpublished: Keyed<FiledLoop> = Keyed::new();
+    let unpublished: Keyed<FiledLoop, crate::network::nerve::coord::Holonomy> = Keyed::new();
     let reducible = f.candidates_for(0, &kappa, &Hold(vec![q.clone()]), false, &unpublished);
     assert!(
         reducible.iter().any(|c| c.axis != Axis::Open),
@@ -766,9 +774,15 @@ fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_
     // reduction's inverse. The filing is read as the PREVIOUS stroke's,
     // which is what the drive hands down: a class filed by this stroke is
     // not a demand anyone has had a stroke to answer.
+    // 54.7 — THE YIELD IS BOTH PLANES. `file_loop` returns the labour the
+    // filing earns, and that is `(ℓ₁ − 1) + (ℓ₂ − 1)` across the two
+    // invariant planes of the double rotation, not `lcm − 1`. A quarter
+    // turn is isoclinic here — `[4, 4]` — so it earns `3 + 3 = 6`, where
+    // the envelope said `4`. The two planes are doing the work; the
+    // envelope was never either plane's.
     assert_eq!(
         f.file_loop(0),
-        vec![4],
+        vec![6],
         "the finite holonomy files under its class at four"
     );
     let published = f.torsion.clone();
@@ -833,7 +847,7 @@ fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
         t_extent: 0,
         mu_before: None,
     };
-    let unpublished: Keyed<FiledLoop> = Keyed::new();
+    let unpublished: Keyed<FiledLoop, crate::network::nerve::coord::Holonomy> = Keyed::new();
     let cands = f.candidates_for(0, &kappa, &Hold(vec![q.clone()]), false, &unpublished);
     assert!(
         cands.iter().any(|c| matches!(c.by, PivotBy::Word { .. })),

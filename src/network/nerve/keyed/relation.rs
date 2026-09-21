@@ -14,27 +14,59 @@ use super::*;
 /// key's bits, O(bits) per read and write, never a scan. A prefix of a
 /// A declared coordinate system naming the carrier's mathematical schema (Rule 6).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+/// THE SYSTEMS, one per A21 tag. This enumerated seven of nineteen, so a
+/// carrier over the other twelve could not declare itself even in the
+/// runtime form — `for_system` had nothing to name. Every tag `address`
+/// writes is a system a carrier can be keyed by, and the two lists are the
+/// same list or the declaration is partial by construction.
 pub enum CoordinateSystem {
     #[default]
     Any,
-    Class,
     Rotor,
-    Chart,
+    Versor,
+    Word,
     Form,
-    Task,
+    Chart,
+    Class,
+    Cert,
+    Listing,
+    Sel,
+    Hue,
+    Assign,
+    Gauge,
+    Plane,
     Simplex,
+    Cocycle,
+    Task,
+    Demand,
+    DemandAt,
+    Residual,
 }
 
 impl CoordinateSystem {
     pub const fn tag(self) -> Option<u8> {
+        use crate::transducer::address as a;
         match self {
             CoordinateSystem::Any => None,
-            CoordinateSystem::Rotor => Some(crate::transducer::address::TAG_ROTOR),
-            CoordinateSystem::Chart => Some(crate::transducer::address::TAG_CHART),
-            CoordinateSystem::Class => Some(crate::transducer::address::TAG_CLASS),
-            CoordinateSystem::Form => Some(crate::transducer::address::TAG_FORM),
-            CoordinateSystem::Simplex => Some(crate::transducer::address::TAG_SIMPLEX),
-            CoordinateSystem::Task => Some(crate::transducer::address::TAG_TASK),
+            CoordinateSystem::Rotor => Some(a::TAG_ROTOR),
+            CoordinateSystem::Versor => Some(a::TAG_VERSOR),
+            CoordinateSystem::Word => Some(a::TAG_WORD),
+            CoordinateSystem::Form => Some(a::TAG_FORM),
+            CoordinateSystem::Chart => Some(a::TAG_CHART),
+            CoordinateSystem::Class => Some(a::TAG_CLASS),
+            CoordinateSystem::Cert => Some(a::TAG_CERT),
+            CoordinateSystem::Listing => Some(a::TAG_LISTING),
+            CoordinateSystem::Sel => Some(a::TAG_SEL),
+            CoordinateSystem::Hue => Some(a::TAG_HUE),
+            CoordinateSystem::Assign => Some(a::TAG_ASSIGN),
+            CoordinateSystem::Gauge => Some(a::TAG_GAUGE),
+            CoordinateSystem::Plane => Some(a::TAG_PLANE),
+            CoordinateSystem::Simplex => Some(a::TAG_SIMPLEX),
+            CoordinateSystem::Cocycle => Some(a::TAG_COCYCLE),
+            CoordinateSystem::Task => Some(a::TAG_TASK),
+            CoordinateSystem::Demand => Some(a::TAG_DEMAND),
+            CoordinateSystem::DemandAt => Some(a::TAG_DEMAND_AT),
+            CoordinateSystem::Residual => Some(a::TAG_RESIDUAL),
         }
     }
 }
@@ -50,6 +82,10 @@ pub enum SchemaRefusal {
         max_depth: usize,
         requested: usize,
     },
+    /// The key opened with this system's tag and did not spell its
+    /// coordinates — the refusal that separates a coarse key from a finer
+    /// one written over it, which the tag alone cannot.
+    Stratum(Refusal),
 }
 
 impl std::fmt::Display for SchemaRefusal {
@@ -61,6 +97,9 @@ impl std::fmt::Display for SchemaRefusal {
             SchemaRefusal::InvalidDepth { max_depth, requested } => {
                 write!(f, "invalid depth {requested} over max depth {max_depth}")
             }
+            SchemaRefusal::Stratum(r) => {
+                write!(f, "{} coordinate `{}`: {}", r.system, r.segment, r.why)
+            }
         }
     }
 }
@@ -70,19 +109,28 @@ impl std::error::Error for SchemaRefusal {}
 /// A KEYED RELATION over A21 coordinate bytes: a value reached by its
 /// key's bits, O(bits) per read and write, never a scan. A prefix of a
 /// key is a coarser stratum (`fiber`). Digests are not keys.
+///
+/// `C` IS THE COORDINATE THIS INDEX ANSWERS (§4.4). It defaults to
+/// [`coord::Any`], which is what every carrier in the tree was: undeclared,
+/// taking loose bytes, unable to tell a chart key from a member key written
+/// over it. A carrier that names its system instead takes only a [`Key`] of
+/// that system, and the eight sites of R1 stop being silent wrong answers
+/// and become compile errors.
 #[derive(Clone, Debug)]
-pub struct Keyed<V> {
+pub struct Keyed<V, C: Coordinate = coord::Any> {
     root: Option<Box<Node<V>>>,
     n: usize,
     system: CoordinateSystem,
+    _coord: std::marker::PhantomData<C>,
 }
 
-impl<V> Default for Keyed<V> {
+impl<V, C: Coordinate> Default for Keyed<V, C> {
     fn default() -> Self {
         Keyed {
             root: None,
             n: 0,
-            system: CoordinateSystem::Any,
+            system: C::SYSTEM,
+            _coord: std::marker::PhantomData,
         }
     }
 }
@@ -97,7 +145,7 @@ impl<V> Default for Keyed<V> {
 ///
 /// The walk is the left carrier's own, and every key it yields is read
 /// from the right by a keyed read — no product of the two.
-impl<V: PartialEq> PartialEq for Keyed<V> {
+impl<V: PartialEq, C: Coordinate> PartialEq for Keyed<V, C> {
     fn eq(&self, other: &Self) -> bool {
         if self.n != other.n
             || (self.system != other.system
@@ -106,23 +154,31 @@ impl<V: PartialEq> PartialEq for Keyed<V> {
         {
             return false;
         }
-        self.scoped().all(|(k, v)| other.get(&k) == Some(v))
+        self.scoped().all(|(k, v)| other.get_raw(&k) == Some(v))
     }
 }
 
-impl<V: Eq> Eq for Keyed<V> {}
+impl<V: Eq, C: Coordinate> Eq for Keyed<V, C> {}
 
-impl<V> Keyed<V> {
-    pub fn new() -> Self {
-        Keyed::default()
-    }
-
+impl<V> Keyed<V, coord::Any> {
+    /// AN UNDECLARED CARRIER WITH ITS SYSTEM SET AT RUNTIME.
+    ///
+    /// The weaker half of the gate, kept for the carriers that have not yet
+    /// named their coordinate in the type. A carrier that CAN name it does,
+    /// and then this constructor is not reachable for it.
     pub fn for_system(system: CoordinateSystem) -> Self {
         Keyed {
             root: None,
             n: 0,
             system,
+            _coord: std::marker::PhantomData,
         }
+    }
+}
+
+impl<V, C: Coordinate> Keyed<V, C> {
+    pub fn new() -> Self {
+        Keyed::default()
     }
 
     pub fn system(&self) -> CoordinateSystem {
@@ -143,7 +199,7 @@ impl<V> Keyed<V> {
                 }
             }
         }
-        Ok(self.get(key))
+        Ok(self.get_raw(key))
     }
 
     /// Read a fiber under the declared coordinate system, refusing on a foreign system (Rule 11).
@@ -201,7 +257,7 @@ impl<V> Keyed<V> {
     ///
     /// Content, trie order and identity are unchanged; only who owns the
     /// bytes moves.
-    pub fn insert_shared(&mut self, key: std::sync::Arc<[u8]>, value: V) -> Option<V> {
+    pub(crate) fn insert_shared_raw(&mut self, key: std::sync::Arc<[u8]>, value: V) -> Option<V> {
         #[cfg(test)]
         work::count_insert();
         let Some(root) = self.root.as_deref() else {
@@ -220,7 +276,7 @@ impl<V> Keyed<V> {
         }
     }
 
-    pub fn insert(&mut self, key: impl AsRef<[u8]>, value: V) -> Option<V> {
+    pub(crate) fn insert_raw(&mut self, key: impl AsRef<[u8]>, value: V) -> Option<V> {
         #[cfg(test)]
         work::count_insert();
         let key: std::sync::Arc<[u8]> = std::sync::Arc::from(key.as_ref());
@@ -240,22 +296,92 @@ impl<V> Keyed<V> {
         }
     }
 
-    pub fn get(&self, key: &[u8]) -> Option<&V> {
+    pub(crate) fn get_raw(&self, key: &[u8]) -> Option<&V> {
         #[cfg(test)]
         work::count_get();
         self.root.as_deref()?.get(key)
     }
 
-    pub fn get_mut(&mut self, key: &[u8]) -> Option<&mut V> {
+    pub(crate) fn get_mut_raw(&mut self, key: &[u8]) -> Option<&mut V> {
         self.root.as_deref_mut()?.get_mut(key)
     }
 
-    pub fn contains(&self, key: &[u8]) -> bool {
-        self.get(key).is_some()
+    /// BIND A KEY OF THIS CARRIER'S OWN COORDINATE SYSTEM.
+    ///
+    /// The gate. A [`Key<C>`] can only be written by [`Key::write`], which
+    /// checks the tag and — where the system declares a schema — every
+    /// coordinate to the last. A key of another system does not typecheck
+    /// here, and that is the whole of §4.4's ruling made operational: the
+    /// coordinate an index answers is in the type, so `by_class` cannot be
+    /// handed a member key and answer nothing.
+    ///
+    /// The key's own allocation is filed (Z4c): a form's address is
+    /// megabytes and every carrier naming it points at the one copy.
+    pub fn put(&mut self, key: &Key<C>, value: V) -> Option<V> {
+        self.insert_shared_raw(key.shared(), value)
+    }
+
+    /// The exact read at a coordinate of this carrier's system.
+    pub fn at(&self, key: &Key<C>) -> Option<&V> {
+        self.get_raw(key.as_bytes())
+    }
+
+    pub fn at_mut(&mut self, key: &Key<C>) -> Option<&mut V> {
+        self.get_mut_raw(key.as_bytes())
+    }
+
+    pub fn holds(&self, key: &Key<C>) -> bool {
+        self.at(key).is_some()
+    }
+
+    /// Unbind a coordinate of this carrier's system.
+    pub fn drop_at(&mut self, key: &Key<C>) -> Option<V> {
+        self.remove_raw(key.as_bytes())
+    }
+
+    /// THE FIBER OVER A COARSER COORDINATE OF A RELATED SYSTEM.
+    ///
+    /// `D` is the coarse system and `C` the fine one — a chart key read
+    /// against a carrier of sections, say. The two must share their opening
+    /// tag, which is what makes one a stratum of the other; where they do
+    /// not, the reading is a refusal and not an empty walk (rule 11).
+    pub fn fiber_over<D: Coordinate>(&self, coarse: &Key<D>) -> Result<Fiber<'_, V>, SchemaRefusal> {
+        match (C::SYSTEM.tag(), D::SYSTEM.tag()) {
+            (Some(fine), Some(coarse_tag)) if fine != coarse_tag => {
+                return Err(SchemaRefusal::IncompatibleSystem {
+                    expected: C::SYSTEM,
+                    actual_tag: coarse_tag,
+                })
+            }
+            _ => {}
+        }
+        match coarse.prefix() {
+            Some(p) => Ok(self.fiber(p)),
+            None => Err(SchemaRefusal::Stratum(Refusal {
+                system: C::NAME,
+                segment: "",
+                why: "the coordinate is empty, which names no stratum",
+            })),
+        }
+    }
+
+    /// THE CARRIER'S ENTRIES, each key carried as the coordinate it is.
+    ///
+    /// [`Keyed::scoped`] yields `Vec<u8>`, and a key that leaves a typed
+    /// carrier as loose bytes can be filed into any other — which is the
+    /// gate holding on the write side and leaking on the read side. This is
+    /// the same walk, asserting the same scoping, handing back keys that
+    /// still know what they are.
+    pub fn entries(&self) -> impl Iterator<Item = (Key<C>, &V)> {
+        self.scoped().map(|(k, v)| (Key::<C>::declared(&k), v))
+    }
+
+    pub(crate) fn contains_raw(&self, key: &[u8]) -> bool {
+        self.get_raw(key).is_some()
     }
 
     /// Unbind `key`; the value it held, if any.
-    pub fn remove(&mut self, key: &[u8]) -> Option<V> {
+    pub(crate) fn remove_raw(&mut self, key: &[u8]) -> Option<V> {
         let v = remove_at(&mut self.root, key);
         if v.is_some() {
             // A key was bound, so the count carries it; a carrier at zero
@@ -304,7 +430,7 @@ impl<V> Keyed<V> {
     /// Keys present in both carriers. Simultaneous PATRICIA descent (A13):
     /// subtrees that share no prefix are pruned; cost is the shared
     /// structure, never a product of the two fibers.
-    pub fn meet<W>(&self, other: &Keyed<W>) -> Keyed<()> {
+    pub fn meet<W, D: Coordinate>(&self, other: &Keyed<W, D>) -> Keyed<()> {
         let mut out = Keyed::new();
         meet_nodes(self.root.as_deref(), other.root.as_deref(), &mut out);
         out
@@ -454,7 +580,7 @@ impl<V> Keyed<V> {
     /// line, which is the sentinel being translated one step later than it
     /// should be (rule 11). Eight resume cursors in the kernel held a
     /// `Vec<u8>` that was empty until the first yield for the same reason.
-    pub fn cursor<'a>(&'a self, from: Option<&[u8]>, budget: &'a mut crate::physics::Budget) -> Cursor<'a, V> {
+    pub fn cursor<'a>(&'a self, from: Option<&[u8]>, budget: &'a mut crate::physics::Budget) -> Cursor<'a, V, C> {
         let from = from.map(|f| f.to_vec());
         Cursor {
             keyed: self,
@@ -469,6 +595,42 @@ impl<V> Keyed<V> {
             wrapped: false,
             done: false,
         }
+    }
+}
+
+/// THE UNDECLARED CARRIER — loose bytes in, loose bytes out.
+///
+/// Every reader and writer that has not yet named the coordinate it answers
+/// lives here. These are the SAME operations as [`Keyed::put`] and
+/// [`Keyed::at`] with the check removed, and the count of carriers still
+/// spelled `Keyed<V>` is the remaining work of §4.4 — not a permanent half
+/// of the API. A carrier that names its system in the type loses access to
+/// this block entirely, which is what makes the naming a gate rather than a
+/// suggestion.
+impl<V> Keyed<V, coord::Any> {
+    /// Z4c — FILE AN OBJECT UNDER THE COPY IT ALREADY HOLDS.
+    pub fn insert_shared(&mut self, key: std::sync::Arc<[u8]>, value: V) -> Option<V> {
+        self.insert_shared_raw(key, value)
+    }
+
+    pub fn insert(&mut self, key: impl AsRef<[u8]>, value: V) -> Option<V> {
+        self.insert_raw(key, value)
+    }
+
+    pub fn get(&self, key: &[u8]) -> Option<&V> {
+        self.get_raw(key)
+    }
+
+    pub fn get_mut(&mut self, key: &[u8]) -> Option<&mut V> {
+        self.get_mut_raw(key)
+    }
+
+    pub fn contains(&self, key: &[u8]) -> bool {
+        self.contains_raw(key)
+    }
+
+    pub fn remove(&mut self, key: &[u8]) -> Option<V> {
+        self.remove_raw(key)
     }
 }
 
@@ -511,7 +673,7 @@ impl<'a> Prefix<'a> {
 }
 
 /// Sealed persist walk: only [`crate::snapshot`] names this.
-pub(crate) fn keyed_persist_walk<V>(k: &Keyed<V>, f: &mut impl FnMut(&[u8], &V)) {
+pub(crate) fn keyed_persist_walk<V, C: Coordinate>(k: &Keyed<V, C>, f: &mut impl FnMut(&[u8], &V)) {
     // A SNAPSHOT IS THE CARRIER. Persisting less than all of it is a
     // ledger that loses what it does not name, which is X8's row from the
     // other side; there is no prefix here and there should not be one.

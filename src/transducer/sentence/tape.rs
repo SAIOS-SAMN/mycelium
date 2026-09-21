@@ -233,14 +233,14 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
         }
     }
     out.extend_from_slice(&(f.torsion.len() as u16).to_le_bytes());
-    for (k, FiledLoop { sigma, period: ell, chord }) in f.torsion.scoped() {
+    for (k, FiledLoop { sigma, periods, chord }) in f.torsion.scoped() {
         crate::transducer::address::put_addr(out, &k);
         out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
         for &(a, b) in sigma {
             out.push(a);
             out.push(b);
         }
-        out.extend_from_slice(&ell.to_le_bytes());
+        periods.to_bytes(out);
         out.extend_from_slice(&chord.to_le_bytes());
     }
     out.extend_from_slice(&(f.axes.len() as u16).to_le_bytes());
@@ -292,7 +292,10 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 // THE FIBRE, one member per chart (D7): a count, then each
                 // member's carriage, gauge and chart.
                 let nm = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
-                let mut acts: crate::network::nerve::Keyed<crate::transducer::sentence::Acting> =
+                let mut acts: crate::network::nerve::Keyed<
+                    crate::transducer::sentence::Acting,
+                    crate::network::nerve::coord::Section,
+                > =
                     crate::network::nerve::Keyed::new();
                 for _ in 0..nm {
                     let carriage = element::Versor::from_bytes(b, pos)?;
@@ -308,7 +311,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                         carriage: Box::new(carriage),
                         gauge,
                     };
-                    acts.insert(member.key(), member);
+                    acts.put(&member.key(), member);
                 }
                 Vertex::Word { address, derivation, acts, contact }
             }
@@ -343,7 +346,10 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 let of = take_u16(b, pos)?;
                 // The fibre, as a Word vertex's (v8, D10).
                 let nm = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
-                let mut acts: Keyed<crate::transducer::sentence::Acting> = Keyed::new();
+                let mut acts: Keyed<
+                    crate::transducer::sentence::Acting,
+                    crate::network::nerve::coord::Section,
+                > = Keyed::new();
                 for _ in 0..nm {
                     let carriage = element::Versor::from_bytes(b, pos)?;
                     let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
@@ -358,7 +364,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                         carriage: Box::new(carriage),
                         gauge,
                     };
-                    acts.insert(member.key(), member);
+                    acts.put(&member.key(), member);
                 }
                 Vertex::Rebased { by, of, acts }
             }
@@ -469,7 +475,8 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     }
     let ratio = ((hn as usize, hd as usize), (wn as usize, wd as usize));
     let ns = take_u16(b, pos)? as usize;
-    let mut sections = Keyed::new();
+    let mut sections: Keyed<Keyed<()>, crate::network::nerve::coord::MemberSection> =
+        Keyed::new();
     for _ in 0..ns {
         let k = crate::transducer::address::take_addr(b, pos)?;
         let nv = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
@@ -477,10 +484,10 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         for _ in 0..nv {
             ix.push(take_u16(b, pos)?);
         }
-        sections.insert(k, section_of_frames(ix));
+        sections.put(&crate::network::nerve::Key::declared(&k), section_of_frames(ix));
     }
     let nt = take_u16(b, pos)? as usize;
-    let mut torsion = Keyed::new();
+    let mut torsion: Keyed<FiledLoop, crate::network::nerve::coord::Holonomy> = Keyed::new();
     for _ in 0..nt {
         let k = crate::transducer::address::take_addr(b, pos)?;
         let nsig = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
@@ -489,18 +496,25 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             sigma.push((*b.get(*pos)?, *b.get(*pos + 1)?));
             *pos += 2;
         }
-        // The period as filed: finite at `ℓ`, `0` for infinite order, A19's
-        // spelling of it (52.3).
-        let ell = take_u32(b, pos)?;
+        // BOTH PLANE PERIODS as filed: finite at `ℓ`, `0` for the factor
+        // that turns forever, A19's spelling of it (52.3). It was ONE `u32`
+        // — the `lcm` — until 54.7.
+        let periods = crate::transducer::sentence::ToralPeriod::from_pair(take_u32(b, pos)?, take_u32(b, pos)?);
         let chord = take_u16(b, pos)?;
-        torsion.insert(k, FiledLoop { sigma, period: ell, chord });
+        // THE TAPE IS WHERE WIRE BYTES BECOME A COORDINATE (54.7 R5). The
+        // decoder declares the system it read them under; a reader further
+        // in gets the coordinate and never the bytes.
+        torsion.put(
+            &crate::network::nerve::Key::declared(&k),
+            FiledLoop { sigma, periods, chord },
+        );
     }
     let na = take_count(b, *pos, take_u16(b, pos)? as usize, 4)?;
-    let mut axes = Keyed::new();
+    let mut axes: Keyed<u16, crate::network::nerve::coord::Holonomy> = Keyed::new();
     for _ in 0..na {
         let k = crate::transducer::address::take_addr(b, pos)?;
         let chord = take_u16(b, pos)?;
-        axes.insert(k, chord);
+        axes.put(&crate::network::nerve::Key::declared(&k), chord);
     }
     // `glued` is `reindex`'s to build (law 12), and `reindex` runs below.
     let mut form = Form {
@@ -687,6 +701,73 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     // They are taken from the form and not from its tape, so this is the
     // reading that does not need the tape to exist.
     e.set_receipts(crate::transducer::element::ReceiptsEnvelope::of_form(f));
+    // THE DESYNC IS NAMED AT THE MINT, NOT ONLY AT THE COURT (54.7 B5a,
+    // §8.1 — instruments before fixes).
+    //
+    // A `Vertex::Glued` is a port and a `NerveEdge` is a bond, and the two
+    // are in bijection by site. The court refuses a form where they are
+    // not — `REFUSE_ORPHAN_PORT`, `REFUSE_PHANTOM_EDGE` — and on the recut
+    // at epoch 93 it refused 10 speeches for it, at 94 fifteen. That names
+    // the READER; it does not name the producer, and two rounds of reading
+    // the mutators found one of them (`rebase_by_word`) and missed the
+    // rest.
+    //
+    // So the mint says it. Every form that leaves here as a word is
+    // checked against its own cover, and a mismatch prints the counts at
+    // the one place that has the form in hand and knows which pass built
+    // it. A reading, never a refusal: the mint does not decide what the
+    // court decides (law 8).
+    {
+        let env = e.receipts();
+        // AGAINST THE FORM THE COURT WILL HOLD, not the one in hand.
+        //
+        // The mint has `f`; the court has `from_address(address)`. The
+        // bonds are the envelope's and are never round-tripped, while the
+        // ports the court sees come back through `put_vertex` and
+        // `from_address`. If a placement or a carriage is not a fixed point
+        // of that round trip, the two sites differ and every citation is
+        // both an orphan port and a phantom edge — at the COURT, while the
+        // mint's own form is perfectly in bijection.
+        //
+        // Checked here on the decoded form, so the reading names which of
+        // the two it is: a desync the mint's form already has, or one the
+        // decode introduces.
+        let decoded = crate::transducer::sentence::from_address(&e.address());
+        let f = decoded.as_ref().unwrap_or(f);
+        let mut orphan = 0usize;
+        for v in &f.vertices {
+            if !matches!(v, crate::transducer::sentence::Vertex::Glued { .. }) {
+                continue;
+            }
+            let site = crate::transducer::sentence::vertex_bytes(v);
+            if !env.nerve.iter().any(|x| x.host().as_bytes() == site) {
+                orphan += 1;
+            }
+        }
+        let mut phantom = 0usize;
+        for x in &env.nerve {
+            let host = x.host();
+            if !f.vertices.iter().any(|v| {
+                matches!(v, crate::transducer::sentence::Vertex::Glued { .. })
+                    && crate::transducer::sentence::vertex_bytes(v) == host.as_bytes()
+            }) {
+                phantom += 1;
+            }
+        }
+        if orphan > 0 || phantom > 0 {
+            let ports = f
+                .vertices
+                .iter()
+                .filter(|v| matches!(v, crate::transducer::sentence::Vertex::Glued { .. }))
+                .count();
+            eprintln!(
+                "  mint cover desync: {ports} ports, {} bonds, {orphan} orphan, {phantom} phantom, \
+                 decoded {}",
+                env.nerve.len(),
+                decoded.is_some()
+            );
+        }
+    }
     // The coordinate the mint wrote is the word's ADDRESS (law 2), and the
     // bytes it moved are the tape it laid down — which is also what the
     // wire will carry. Two columns, never one (law 5).
@@ -857,7 +938,9 @@ pub fn remint_form(f: &Form, mag: [u64; 4], from: &Element) -> Option<Element> {
 /// the ADDRESS instead, they answered EMPTY for every word in the tree:
 /// seven claims failed at once with one cause, which is the shape of a move
 /// that was made at the court and not at its readers.
-pub fn form_torsion(e: &Element) -> Keyed<FiledLoop> {
+pub fn form_torsion(
+    e: &Element,
+) -> Keyed<FiledLoop, crate::network::nerve::coord::Holonomy> {
     e.filing().clone()
 }
 
