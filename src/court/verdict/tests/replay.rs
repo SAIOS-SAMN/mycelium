@@ -238,6 +238,9 @@ fn a_loop_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
         chord: 0,
         holonomy: Word::formed(Rotor::zero()),
         carriages: crate::network::nerve::Keyed::new(),
+        // Hand-built at the basepoint: this cycle's frame IS the form's,
+        // so its tree transport is the identity (54.7 Axiom A).
+        based_at: crate::transducer::element::identity_versor(),
     });
     assert!(f.loops[0].holonomy.rotor().class_key().is_none(), "a zero rotor is not a class");
     assert!(f.rank().is_none(), "the audit is unmeasured, not counted under a rotor key");

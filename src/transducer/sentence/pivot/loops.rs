@@ -91,6 +91,97 @@ fn note_defect(carried: &PathCarried) {
     });
 }
 
+/// AXIOM A — THE TRANSPORT FROM EACH COMPONENT'S BASEPOINT TO EVERY NODE
+/// OF IT (54.7, ruled 2026-09-21).
+///
+/// ```text
+///     θ_{x₀} = 1 ,     θ_c = θ_p · Ω_e   along each tree edge p → c
+/// ```
+///
+/// A DESCENT OVER THE FOREST, NOT A SEARCH. The spanning forest is already
+/// built; this walks it once from each root, and every node is reached
+/// exactly once because a tree has one path to each of its nodes — which
+/// is also why `θ` is well defined and needs no choice (rule 1).
+///
+/// THE ROOT IS THE COMPONENT'S LEAST NODE, which is the order the nodes
+/// were discovered in, which is the faces' own content order. So the
+/// basepoint is intrinsic to the form and two minds reading one form pick
+/// the same one; it is not the order edges happened to arrive in.
+///
+/// `b₀ > 1` GIVES ONE BASEPOINT PER COMPONENT. A node in no component of
+/// the forest keeps the identity, and a chord spanning two components has
+/// no transport between them — that is refused where it is read, never
+/// synthesised here (rule 11).
+///
+/// A tree edge whose transport cannot be read leaves its subtree at the
+/// identity rather than halting the descent: the cycle that later asks for
+/// that node's `θ` is then based at its own node, which is the reading
+/// before Axiom A and is honest about what was not measured.
+fn tree_transports(
+    faces: &[FormFace],
+    vertices: &[Vertex],
+    adj: &[Vec<(usize, usize)>],
+    node_vertex: &[u16],
+    node_chart: &[Vec<u8>],
+) -> Vec<element::Versor> {
+    let n = node_vertex.len();
+    let mut theta: Vec<element::Versor> = vec![element::identity_versor(); n];
+    let mut seen = vec![false; n];
+    // index: the forest's own nodes, each visited once (rule 1).
+    for root in 0..n {
+        if seen[root] {
+            continue;
+        }
+        seen[root] = true;
+        let mut frontier = vec![root];
+        while let Some(p) = frontier.pop() {
+            for &(c, fi) in &adj[p] {
+                if seen[c] {
+                    continue;
+                }
+                seen[c] = true;
+                let step = tree_step(faces, vertices, node_vertex, node_chart, p, c, fi);
+                theta[c] = theta[p].geo(&step);
+                frontier.push(c);
+            }
+        }
+    }
+    theta
+}
+
+/// THE TRANSPORT ACROSS ONE TREE EDGE, in the direction `p → c`.
+///
+/// Read off the face's own member pair, exactly as `paths_carried` reads a
+/// step — the same coordinate, not a second derivation of it (rule 12) —
+/// and inverted where the walk runs against the face's orientation.
+/// Identity where the face carries no transport at that pair, which is a
+/// face relating no member and is a real sector of the complex.
+fn tree_step(
+    faces: &[FormFace],
+    vertices: &[Vertex],
+    node_vertex: &[u16],
+    node_chart: &[Vec<u8>],
+    p: usize,
+    c: usize,
+    fi: usize,
+) -> element::Versor {
+    let id = element::identity_versor();
+    let Some(f) = faces.get(fi) else { return id };
+    let _ = vertices;
+    let (vp, cp) = (node_vertex[p], &node_chart[p]);
+    let (vc, cc) = (node_vertex[c], &node_chart[c]);
+    let forward = f.i == vp && f.j == vc;
+    let pk = match forward {
+        true => pair_key_bytes(cp, cc),
+        false => pair_key_bytes(cc, cp),
+    };
+    let Some(place) = f.at.get(&pk) else { return id };
+    match forward {
+        true => place.carriage.clone(),
+        false => place.carriage.versor_inverse().unwrap_or(id),
+    }
+}
+
 fn gate(which: usize) {
     CYCLES.with(|c| {
         let mut t = c.get();
@@ -261,6 +352,20 @@ impl Form {
         };
         let mut adj: Vec<Vec<(usize, usize)>> = vec![Vec::new(); n];
         let mut loops = Vec::new();
+        // AXIOM A — THE FOREST IS BUILT WHOLE BEFORE ANY CHORD IS CLOSED.
+        //
+        // This ran one pass: a tree edge extended `adj`, a chord closed a
+        // cycle, in the order the edges happened to arrive. A cycle closed
+        // early therefore saw a PARTIAL tree, and its transport from the
+        // basepoint could not be known — so every loop was based wherever
+        // its own chord sat, in that node's frame, and two loops of one
+        // form were operators on different tangent spaces.
+        //
+        // Two passes: the spanning forest first, then `θ` by descent from
+        // each component's root, then the chords. Nothing about which
+        // edges are tree edges changes — the union-find is the same and in
+        // the same order — only when the chords are read.
+        let mut chords: Vec<(usize, usize, usize)> = Vec::new();
         for (a, b, fi) in edges {
             let (pa, pb) = (find(&mut parent, a), find(&mut parent, b));
             if pa != pb {
@@ -269,6 +374,20 @@ impl Form {
                 adj[b].push((a, fi));
                 continue;
             }
+            chords.push((a, b, fi));
+        }
+        // THE TRANSPORT FROM EACH COMPONENT'S ROOT TO EVERY NODE OF IT.
+        //
+        // `θ_root = 1` and `θ_c = θ_p · Ω_e` along each tree edge, by
+        // descent over the forest the union-find just built — the carrier's
+        // own structure, walked once, never a search (rule 1).
+        //
+        // A component's root is its least node index, which is the order
+        // the nodes were discovered in, which is the faces' own content
+        // order — so two minds reading one form choose the same basepoint
+        // and the gauge is not a matter of arrival order.
+        let theta = tree_transports(faces, vertices, &adj, &node_vertex, &node_chart);
+        for (a, b, fi) in chords {
             // A 1-CELL ATTACHED AT ONE 0-CELL IS A CYCLE (54.7, ruled
             // 2026-09-21). `tree_path(adj, a, a)` yields nothing, so this
             // fell through the `continue` below and every reflexive chord
@@ -334,6 +453,13 @@ impl Form {
                 chord: fi as u16,
                 holonomy,
                 carriages: Keyed::new(),
+                // AXIOM A — the cycle closes at `a` through the tree, so
+                // `a` is where it is based and `θ_a` is what carries it to
+                // the form's basepoint.
+                based_at: theta
+                    .get(a)
+                    .cloned()
+                    .unwrap_or_else(element::identity_versor),
             };
             // A CHORD THAT ENCLOSES NOTHING IS NOT A LOOP (ruled
             // 2026-09-18). `loop_is_trivial` states the predicate once;

@@ -554,6 +554,33 @@ pub struct Loop {
     pub holonomy: Word,
     /// Member path key → the carriage accumulated along it.
     pub carriages: Keyed<Versor>,
+    /// AXIOM A — THE TREE TRANSPORT FROM THE FORM'S BASEPOINT TO WHERE THIS
+    /// CYCLE IS BASED (54.7, ruled 2026-09-21).
+    ///
+    /// `tree_path` closes a cycle through the spanning forest, so the
+    /// holonomy `paths_carried` composes is based at the chord's own node
+    /// `u`, in `u`'s frame. Two cycles based at different nodes are
+    /// operators on DIFFERENT tangent spaces, and multiplying them is
+    /// meaningless — which is why `π₁` could not be formed even with `b₁ >
+    /// 0`: the generators existed and could not be concatenated.
+    ///
+    /// `θ_u = Ω_{T(x₀ → u)}` carries the basepoint's frame to `u`'s, so
+    ///
+    /// ```text
+    ///     ρ(γ) = θ_u · Ω_γ · θ_u⁻¹  ∈  Spin⁺(3,1)(ℚ)
+    /// ```
+    ///
+    /// is the same cycle read at `x₀`, where every other cycle is also
+    /// read. `Ad_θ` is an isometry of the algebra, so the defect
+    /// invariants `(I₁, I₂, kind)` are unchanged by it — which is the
+    /// acceptance test: basing must move no reading, only make the
+    /// operators composable.
+    ///
+    /// The identity where the cycle is based at the basepoint itself, and
+    /// for a component whose root is its own basepoint (`b₀ > 1` gives one
+    /// per component; a chord between components has no transport and is
+    /// refused, never synthesised).
+    pub based_at: Versor,
 }
 
 impl Loop {

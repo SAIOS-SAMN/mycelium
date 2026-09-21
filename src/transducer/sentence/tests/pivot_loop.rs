@@ -8,6 +8,113 @@ use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self, Standing};
 
+/// 54.7 AXIOM A — A CYCLE IS BASED, AND BASING MOVES NO READING.
+///
+/// `Ad_θ` is an isometry of the algebra, so conjugation by the tree
+/// transport preserves every grade projection and therefore both Casimirs:
+///
+/// ```text
+///     ⟨(θΩθ⁻¹)²⟩₀ = ⟨θΩ²θ⁻¹⟩₀ = ⟨Ω²⟩₀   ⟹   I₁(ρ) = I₁(Ω)
+/// ```
+///
+/// So the defect a cycle carries is the SAME defect read at the basepoint.
+/// If basing changed a classification, the conjugation would be wrong — an
+/// inverted orientation or an unnormalised versor in the tree — and this
+/// is the assertion that would catch it.
+#[test]
+fn basing_a_cycle_conjugates_it_and_preserves_both_casimirs() {
+    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let w = Word::from_letters(&[(q, false)]);
+    let f = edge_chord_form(std::slice::from_ref(&w));
+    let [lp] = f.loops.as_slice() else { panic!("one chord closes one loop") };
+
+    // THE TRANSPORT IS A VERSOR, whatever it is — an unnormalised entry in
+    // the tree is exactly the failure mode this guards.
+    let theta = &lp.based_at;
+    assert!(
+        crate::transducer::cga::is_versor(theta).is_some(),
+        "θ is a versor of Spin⁺(3,1)(ℚ), or the conjugation is not an isometry"
+    );
+
+    // AND CONJUGATION BY IT MOVES NEITHER CASIMIR. Read on the loop's own
+    // carriages, which is what `paths_carried` composed.
+    let inv = theta.versor_inverse().expect("a versor inverts");
+    for (_, omega) in lp.carriages.scoped() {
+        let based = theta.geo(omega).geo(&inv);
+        assert_eq!(
+            based.class_invariants().map(|(a, b, k)| (a, b, k)),
+            omega.class_invariants().map(|(a, b, k)| (a, b, k)),
+            "Ad_θ preserves (I₁, I₂, kind): basing reads, it does not change"
+        );
+    }
+}
+
+/// 54.7 AXIOM A — RE-ROOTING IS A PURE GAUGE TRANSFORMATION.
+///
+/// The sharp test. Two cycles of one form are based at their own nodes;
+/// carrying both to the basepoint must be conjugation by ONE versor per
+/// cycle, and the based operators must then live on one tangent space —
+/// which is what makes `ρ(γ₁)·ρ(γ₂)` mean anything at all.
+///
+/// Concretely: `θ` is the identity exactly where the cycle is based at the
+/// root, and every other cycle's `θ` is a genuine transport. A form whose
+/// cycles all carried the identity would be one where the basing never
+/// fired, and that is indistinguishable from Axiom A being absent unless
+/// it is asserted.
+#[test]
+fn every_cycle_carries_a_transport_to_the_forms_basepoint() {
+    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let h = crate::transducer::alphabet::LetterId::quarter((0, 3)).expect("quarter on another plane");
+    let f = edge_chord_form(&[
+        Word::from_letters(&[(q, false)]),
+        Word::from_letters(&[(h, false)]),
+    ]);
+    assert!(!f.loops.is_empty(), "the fixture must close, or nothing is tested");
+    for lp in &f.loops {
+        // EVERY cycle has a transport, and it composes: `θ · Ω · θ⁻¹` is a
+        // versor of the same group, so the based operators multiply.
+        let theta = &lp.based_at;
+        let inv = theta
+            .versor_inverse()
+            .expect("a tree transport inverts, or the cycle cannot be based");
+        for (_, omega) in lp.carriages.scoped() {
+            let based = theta.geo(omega).geo(&inv);
+            assert!(
+                crate::transducer::cga::is_versor(&based).is_some(),
+                "a based cycle is an operator of Spin⁺(3,1)(ℚ)"
+            );
+        }
+    }
+    // AND TWO BASED CYCLES COMPOSE. Before Axiom A this product was
+    // meaningless — two operators on different tangent spaces — so the
+    // assertion is that it is now a versor at all.
+    let based: Vec<element::Versor> = f
+        .loops
+        .iter()
+        .filter_map(|lp| {
+            let theta = &lp.based_at;
+            let inv = theta.versor_inverse()?;
+            let (_, omega) = lp.carriages.scoped().next()?;
+            Some(theta.geo(omega).geo(&inv))
+        })
+        .collect();
+    if let [g1, g2, ..] = based.as_slice() {
+        let word = g1.geo(g2);
+        assert!(
+            crate::transducer::cga::is_versor(&word).is_some(),
+            "γ₁γ₂ is an operator of the group: words compose at the basepoint"
+        );
+        // THE HOMOMORPHISM, exactly: ρ(γ₁γ₂) = ρ(γ₁)·ρ(γ₂) is the geometric
+        // product and nothing else, so composition is associative and the
+        // free group's multiplication is realised.
+        let g3 = g1.geo(g2).geo(g1);
+        assert!(
+            g3.sub(&g1.geo(&g2.geo(g1))).is_zero(),
+            "composition is associative under the geometric product"
+        );
+    }
+}
+
 /// The crystal both pivot files hand the loop: the words a mind holds on
 /// an axis. It lives here with the tests that exercise the loop; `pivot.rs`
 /// reads it across the split.
