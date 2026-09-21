@@ -50,7 +50,16 @@ impl Complex {
                 // back, so the wire carries the coordinates and no second
                 // codec exists to drift from them (law 12).
                 match &c.fill {
-                    Fill::Open | Fill::Already => body.push(0),
+                    Fill::Open => body.push(0),
+                    // `Already` IS NOT A STATE — it is the answer `fill`
+                    // and `fill_by_gauge` give when a simplex was not
+                    // `Open` and nothing changed (coboundary.rs:131, :318),
+                    // and it is returned, never assigned into a simplex.
+                    // A stored one therefore cannot hold it, and writing it
+                    // as `Open` would put an outcome code on the wire as a
+                    // topological state. Refused, so the drop is counted
+                    // rather than silently aliased (rule 11).
+                    Fill::Already => return None,
                     Fill::Filled(g, carriage) => {
                         body.push(1);
                         g.to_bytes(body);
@@ -132,6 +141,12 @@ impl Complex {
                 let tag = *b.get(*pos)?;
                 *pos += 1;
                 let fill = match tag {
+                    // NAMED, not reached by falling through. The decoder
+                    // had no `0` arm and got `Open` from the catch-all
+                    // below, so tightening the catch-all into a refusal
+                    // silently removed the only path that reads an open
+                    // simplex. A state the writer emits must be spelled.
+                    0 => Fill::Open,
                     1 => Fill::Filled(
                         Box::new(Rotor::from_bytes(b, pos)?),
                         Box::new(Versor::from_bytes(b, pos)?),
@@ -157,7 +172,13 @@ impl Complex {
                         Fill::Congruent(Box::new(kappa), Box::new(g), ell)
                     }
                     4 => Fill::Unspellable(Box::new(Rotor::from_bytes(b, pos)?)),
-                    _ => Fill::Open,
+                    // AN UNKNOWN TAG IS A REFUSAL, NOT AN OPEN CELL. This
+                    // read `_ => Fill::Open`, so a corrupt or truncated
+                    // byte FABRICATED an unfilled simplex — and an open
+                    // 2-cell is a 1-hole, so a bad read invented homology
+                    // the corpus does not have. The tags are 0..=4; nothing
+                    // else decodes (rule 11).
+                    _ => return None,
                 };
                 c.remember(Simplex {
                     vertices: sorted_verts(verts),

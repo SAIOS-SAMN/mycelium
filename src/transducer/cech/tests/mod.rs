@@ -7,4 +7,5 @@ mod bianchi;
 mod classify;
 mod gauge;
 mod nerve;
+mod tape;
 mod transitions;
