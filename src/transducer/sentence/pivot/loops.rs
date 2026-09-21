@@ -37,6 +37,23 @@ thread_local! {
         const { std::cell::RefCell::new((0, 0, Vec::new(), 0, 0)) };
 }
 
+/// THE KINEMATIC CHARGE A TRANSPORT CARRIES — a PROJECTION of the versor,
+/// computed where it is read and never stored beside it (LAW-0).
+///
+/// ```text
+///     μ = ⟨Ω⟩₀² / ⟨Ω Ω̃⟩₀ − 1
+/// ```
+///
+/// Scale-free, so `Ω` and `λΩ` — one transport, since a versor is
+/// projective — give one charge. `None` where the argument is not a
+/// versor, which is a refusal and not a zero charge (rule 11).
+pub fn step_charge(omega: &element::Versor) -> Option<num_rational::BigRational> {
+    let w = crate::transducer::cga::is_versor(omega)?;
+    let s = omega.scalar_part();
+    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+    Some(&s * &s / &w - one)
+}
+
 /// File one STEP's charge, on every cycle the walk reaches.
 fn note_step_charge(mu: &num_rational::BigRational) {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
@@ -51,9 +68,11 @@ fn note_step_charge(mu: &num_rational::BigRational) {
 
 /// File one CLOSING cycle by whether it carried any charge at all.
 fn note_closure(carried: &Keyed<PathCarried>) {
+    // The charge is taken HERE, off the stored versors, rather than read
+    // back from a scalar written beside them (LAW-0, law 12: one producer).
     let mut charges: Vec<num_rational::BigRational> = Vec::new();
     for (_, c) in carried.scoped() {
-        charges.extend(c.charges.iter().cloned());
+        charges.extend(c.steps.iter().filter_map(step_charge));
     }
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let charged: Vec<num_rational::BigRational> =
@@ -887,10 +906,24 @@ pub(crate) struct PathCarried {
     /// wrote no transport there. One count for both reports the ABSENCE of
     /// geometry as the CANCELLATION of it (rule 11).
     ///
-    /// Kept as a SEQUENCE and never summed. `Σ μ_e` cannot tell one edge
+    /// Kept as a SEQUENCE and never summed: `Σ μ_e` cannot tell one edge
     /// carrying 12 from twelve edges carrying 1, and those are different
-    /// circuits; the sum is a moment any reader can take, while the
-    /// distribution cannot be recovered from it (rule 2).
+    /// circuits. The composed product is no better — `Π Ω_e` is an
+    /// irreversible reduction and does not determine its factors.
+    ///
+    /// AND KEPT AS THE VERSORS, NOT AS THE CHARGES. A first cut stored
+    /// `Vec<BigRational>` — the scalar `μ_e` per step — which is a LOSSY
+    /// PROJECTION of the step, discarding the bivector plane of the shear,
+    /// its orientation, and the Clifford sign. That is LAW-0's "the
+    /// gradient is the state; the scalars are projections of it, never
+    /// stored as independent fields" (`ipsal-autic`, `orbital/tether.rs`),
+    /// and here it is not merely a purity argument: A.8's ANNIHILATION
+    /// rule discharges strain only by exhibiting an opposing pair,
+    /// `Ω_a · Ω_b ∼ ±1`, and two opposite Burgers vectors have the SAME
+    /// `μ`. Storing magnitudes destroys exactly the coordinate that
+    /// identifies a partner, so a drain could never find one.
+    ///
+    /// The charge remains an `O(1)` projection any reader takes on demand:
     ///
     /// ```text
     ///     μ = ⟨Ω⟩₀² / ⟨Ω Ω̃⟩₀ − 1
@@ -906,7 +939,7 @@ pub(crate) struct PathCarried {
     /// coupling belongs at the loop, where `Π Ω_e` already evaluates it.
     /// Over the whole group `μ > 0` is hyperbolic, `μ < 0` elliptic
     /// (`−sin²(θ/2)`), `μ = 0` trivial — `I₁`'s own sign convention.
-    pub(crate) charges: Vec<num_rational::BigRational>,
+    pub(crate) steps: Vec<element::Versor>,
 }
 
 /// THE ONE WALK — and it is a WALK now, not a search (54.5, as ruled
@@ -985,7 +1018,7 @@ pub(crate) fn paths_carried(
             carriage: element::identity_versor(),
             gauge: Vec::new(),
         }),
-        charges: Vec::with_capacity(lp.faces.len()),
+        steps: Vec::with_capacity(lp.faces.len()),
     };
     let mut charts: Vec<Vec<u8>> = Vec::with_capacity(lp.members.len());
     for (win, &fi) in lp.members.windows(2).zip(&lp.faces) {
@@ -1062,19 +1095,16 @@ pub(crate) fn paths_carried(
             (false, Some(p)) => p.edge.clone(),
             (_, None) => None,
         };
-        // THE STEP'S KINEMATIC CHARGE, before the step is folded into the
-        // product and its identity is lost. Read off the TRANSVECTION
-        // factor this step carries; a step whose transport was never read
-        // contributes no charge rather than a zero one, because unread is
-        // not flat (rule 11) — and `acc.edge` below goes `None` for it, so
-        // the whole boundary is already refused.
+        // THE STEP ITSELF, before it is folded into the product and its
+        // identity is lost. The TRANSVECTION factor this step carries is
+        // kept whole; a step whose transport was never read contributes
+        // nothing rather than an identity, because unread is not flat
+        // (rule 11) — and `acc.edge` below goes `None` for it, so the
+        // whole boundary is already refused.
         if let Some(t) = step.as_ref() {
-            if let Some(w) = crate::transducer::cga::is_versor(&t.carriage) {
-                let s = t.carriage.scalar_part();
-                let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
-                let mu = &s * &s / &w - one;
-                note_step_charge(&mu);
-                acc.charges.push(mu);
+            if crate::transducer::cga::is_versor(&t.carriage).is_some() {
+                note_step_charge(&step_charge(&t.carriage).unwrap_or_default());
+                acc.steps.push(t.carriage.clone());
             }
         }
         acc.edge = match (acc.edge.take(), step) {
