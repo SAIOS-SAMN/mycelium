@@ -219,12 +219,28 @@ pub mod coord {
     pub enum BivectorKind {
         /// `B = 0` — the identity. Zero holonomy, not a null shear.
         Trivial = 0,
-        /// `⟨B²⟩₀ < 0` — a spatial rotation, `eᵢ∧eⱼ` or `eᵢ∧e₊`.
+        /// `⟨B²⟩₀ < 0` — a spatial rotation, `eᵢ∧eⱼ` or `eᵢ∧e₊`. Six of the
+        /// ten bivectors of `⋀²ℚ^{4,1}`, and the only kind `Cl(4,0)` has.
         Elliptic = 1,
-        /// `⟨B²⟩₀ > 0` — a geodesic transvection, `eᵢ∧e₋`. The generator
-        /// `Cl(4,0)` cannot represent at all.
+        /// `⟨B²⟩₀ > 0` — a geodesic transvection, `eₐ∧e₋` for any spacelike
+        /// `a`. Four of the ten. The generator `Cl(4,0)` cannot represent
+        /// at all, its metric being positive definite.
         Hyperbolic = 2,
-        /// `B ≠ 0` and `⟨B²⟩₀ = 0` — a genuine null shear on `e₊∧e₋`.
+        /// `B ≠ 0` and `⟨B²⟩₀ = 0` — a null shear.
+        ///
+        /// ITS GENERATOR IS `e_∞ ∧ v`, NOT `e₊ ∧ e₋`. A first cut named the
+        /// latter, and the algebra says otherwise:
+        ///
+        /// ```text
+        ///     (e₊e₋)² = e₊e₋e₊e₋ = −e₊e₊e₋e₋ = −(+1)(−1) = +1
+        /// ```
+        ///
+        /// so `e₊∧e₋` is HYPERBOLIC — the fourth boost of ℍ⁴, which the same
+        /// cut had also dropped from the generator list. The null bivectors
+        /// are the ones built on `e_∞ = e₋ + e₊`, where `e_∞² = e₋² + e₊² =
+        /// −1 + 1 = 0`: the conformal translator `T(d) = 1 − ½ d e_∞` is
+        /// exactly this type, which is why it fixes the point at infinity
+        /// and why it is the flatness R3 removes.
         Parabolic = 3,
     }
 

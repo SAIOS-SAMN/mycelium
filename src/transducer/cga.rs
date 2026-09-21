@@ -515,15 +515,232 @@ pub fn translator(d1: &BigRational, d2: &BigRational, d3: &BigRational) -> Mv {
     Mv::scalar(one()).sub(&d_einf.scale(&half()))
 }
 
-/// The three HYPERBOLIC generators `eᵢ ∧ e₋`, the mixed bivectors `Cl(4,0)`
+/// THE FOUR HYPERBOLIC GENERATORS `eₐ ∧ e₋`, the mixed bivectors `Cl(4,0)`
 /// has none of. Each squares to `+1`:
 ///
 /// ```text
-///     (eᵢe₋)² = eᵢe₋eᵢe₋ = −eᵢeᵢe₋e₋ = −(+1)(−1) = +1
+///     (eₐe₋)² = eₐe₋eₐe₋ = −eₐeₐe₋e₋ = −(+1)(−1) = +1
 /// ```
-pub const TRANSVECTION_PLANES: [usize; 3] = [E1 | EM, E2 | EM, E3 | EM];
+///
+/// FOUR, NOT THREE. A first cut declared `e₁∧e₋, e₂∧e₋, e₃∧e₋` and dropped
+/// `e₊∧e₋`. `Spin(4,1)` is the isometry group of HYPERBOLIC 4-SPACE whose
+/// boundary at infinity is the three-coordinate base (51.2), and ℍ⁴ is four
+/// dimensional: its boosts are `eₐ ∧ e₋` for every spacelike `a`, and `e₊`
+/// is spacelike (`e₊² = +1`). Declaring three of four restricts dimensional
+/// capacity, which the Anti-Flattening Law clause 5 refuses by name — the
+/// same defect as collapsing `Λ²(ℝ⁴)` to one blade, one dimension up.
+pub const TRANSVECTION_PLANES: [usize; 4] = [E1 | EM, E2 | EM, E3 | EM, EP | EM];
 
-/// A GEODESIC TRANSVECTION OF ℍ³, EXACTLY OVER ℚ (54.7 R3).
+/// A VECTOR OF `ℚ^{4,1}` THAT REFLECTS: `v² ∈ ℚ*`, so `v` is invertible and
+/// `x ↦ −v x v⁻¹` is a reflection in its orthogonal hyperplane.
+///
+/// A null vector (`v² = 0`) reflects nothing — it has no inverse — and is
+/// refused rather than returned as a factor that would silently annihilate
+/// the versor it was multiplied into (rule 11).
+pub fn reflector_vector(
+    x1: &BigRational,
+    x2: &BigRational,
+    x3: &BigRational,
+    xp: &BigRational,
+    xm: &BigRational,
+) -> Option<Mv> {
+    let v = Mv::blade(E1, x1.clone())
+        .add(&Mv::blade(E2, x2.clone()))
+        .add(&Mv::blade(E3, x3.clone()))
+        .add(&Mv::blade(EP, xp.clone()))
+        .add(&Mv::blade(EM, xm.clone()));
+    // v² is read by the geometric product, never as Σxᵢ² (rule 11): the
+    // metric's signs live in the product and nowhere else.
+    let sq = v.geo(&v).scalar_part();
+    (!sq.is_zero()).then_some(v)
+}
+
+/// THE FULL SPIN GROUP OVER ℚ, BY REFLECTION FACTORIZATION (54.7 R4).
+///
+/// ```text
+///     Ω = v₁ v₂ ⋯ v_{2k} ,    vᵢ² ∈ ℚ*
+/// ```
+///
+/// Cartan–Dieudonné: every element of the group is a product of an even
+/// number of reflections, and this is how it is BUILT here rather than
+/// parameterised.
+///
+/// WHY NOT `Ω = a + b·B` ON ONE BLADE. That spans `ℚ[B] ≅ ℚ ⊕ ℚ`, a
+/// two-dimensional split-complex slice of a ten-dimensional bivector space,
+/// and its generator is a SIMPLE bivector — rank one, so
+///
+/// ```text
+///     I₂ = ⟨B ∧ B⟩₄ = 0
+/// ```
+///
+/// identically. A simple generator turns in one plane and translates along
+/// one track: no screw, no helicoidal coupling, no simultaneous rotation
+/// and transvection. Forcing every motion through that form collapses the
+/// coupled degrees of freedom into uncoupled one-dimensional coordinate
+/// tracks, which is the Anti-Flattening Law's clause 5 exactly — restricted
+/// dimensional capacity — one dimension up from collapsing `Λ²(ℝ⁴)` to a
+/// single blade.
+///
+/// A product of reflections carries no such restriction: `⟨Ω⟩₂` is a
+/// general bivector, `I₂` is free to be non-zero, and a screw displacement
+/// is an ordinary element rather than something the representation cannot
+/// hold.
+///
+/// The versor condition is CHECKED, not assumed: `Ω Ω̃` must be a non-zero
+/// SCALAR, so `⟨Ω Ω̃⟩₂` and `⟨Ω Ω̃⟩₄` both vanish. `is_versor` reads exactly
+/// that through the geometric product.
+pub fn versor_of_reflections(vs: &[Mv]) -> Option<Mv> {
+    if vs.is_empty() || vs.len() % 2 != 0 {
+        return None;
+    }
+    let mut out = Mv::scalar(one());
+    // index: the factors the caller handed, in the order they compose —
+    // reflections do not commute, and the order is the motion.
+    for v in vs {
+        if v.geo(v).scalar_part().is_zero() {
+            return None;
+        }
+        out = out.geo(v);
+    }
+    is_versor(&out)?;
+    Some(out)
+}
+
+/// FINITE EVOLUTION OF A GENERATOR, EXACTLY OVER ℚ — the rational Cayley
+/// transform (54.7 R3, on the operator's ruling).
+///
+/// ```text
+///     Ω = (1 − B)(1 + B)⁻¹  ∈  Spin⁺(3,1)(ℚ)
+/// ```
+///
+/// A BIVECTOR IS NOT A MOTION. `B ∈ ⋀²ℚ^{4,1} ≅ 𝔰𝔭𝔦𝔫(3,1)` is the
+/// infinitesimal element — a rate of change at one point of the tangent
+/// space — and an engine that transports by carrying `B` around is working
+/// in the tangent space, where every transformation is a linear
+/// approximation of the motion it stands for. That is where the flattening
+/// happens: the mixed generators `eᵢ ∧ e₋` get handled as independent
+/// Cartesian offsets and the translational shear decouples from the ambient
+/// curvature.
+///
+/// The finite action is the group element, and on the quadric it is
+/// hyperbolic parallel transport along a geodesic:
+///
+/// ```text
+///     dp/dτ = ½(Bp − pB)   ⟹   p(τ) = Ω(τ) p(0) Ω̃(τ)
+/// ```
+///
+/// WHY NOT `exp`. `exp(½τB) = cosh(τ/2) + B sinh(τ/2)` leaves ℚ for every
+/// rational `τ` worth having, and the two ways round that — floating point,
+/// or pinning `Ω` to one blade as `a + bB` — destroy exactness and the
+/// grade-4 coupling respectively. Cayley leaves neither behind: it is two
+/// geometric products and an inverse, all rational, and it carries a
+/// GENERAL bivector, so `I₂ = ⟨B∧B⟩₄` survives the passage and a screw
+/// stays a screw.
+///
+/// `None` where `1 + B` is not invertible — the transform's pole, which is
+/// the rotation by π that Cayley genuinely cannot reach, refused rather
+/// than approximated (rule 11).
+pub fn cayley(b: &Mv) -> Option<Mv> {
+    let bivector = b.grade(2);
+    if !b.sub(&bivector).is_zero() {
+        return None;
+    }
+    let one_mv = Mv::scalar(one());
+    let plus = one_mv.add(&bivector);
+    let minus = one_mv.sub(&bivector);
+    let omega = minus.geo(&inverse_even(&plus)?);
+    is_versor(&omega)?;
+    Some(omega)
+}
+
+/// THE EXACT INVERSE OF AN EVEN ELEMENT `u = ⟨u⟩₀ + ⟨u⟩₂ + ⟨u⟩₄`.
+///
+/// `versor_inverse` is `ũ / (u ũ)` and needs `u ũ` to be a pure SCALAR —
+/// which holds for a versor and fails for the very elements this exists
+/// for. With `B` non-simple,
+///
+/// ```text
+///     (1 + B)(1 + B)~ = 1 − B² = (1 − ⟨B²⟩₀) − ⟨B²⟩₄
+/// ```
+///
+/// carries a grade-4 part, so `1 + B` is invertible in the algebra and is
+/// NOT a versor. Reaching for the versor inverse there refuses every
+/// coupled generator — which is the flattening returning by the back door:
+/// the only motions that would pass are the simple ones.
+///
+/// The general inverse in `Cl(4,1)`: with `w = u ũ = s + Q`, `Q` a
+/// 4-vector, take `w̄ = s − Q`. `Q` commutes with scalars and `Q²` is a
+/// scalar in five dimensions, so `w w̄ = s² − Q²` is scalar, and
+///
+/// ```text
+///     u⁻¹ = ũ w̄ / ⟨w w̄⟩₀
+/// ```
+///
+/// verified by `u · ũ w̄ / ⟨w w̄⟩₀ = w w̄ / ⟨w w̄⟩₀ = 1`. Exact throughout,
+/// and `None` where the denominator vanishes — a genuine non-invertible
+/// element, refused rather than divided by (rule 4, rule 11).
+pub fn inverse_even(u: &Mv) -> Option<Mv> {
+    let rev = u.reverse();
+    let w = u.geo(&rev);
+    let bar = w.grade(0).sub(&w.grade(4));
+    if !w.sub(&w.grade(0).add(&w.grade(4))).is_zero() {
+        // `u ũ` carries a grade this closed form does not cover; refused
+        // rather than silently inverted by a formula that does not apply.
+        return None;
+    }
+    let d = w.geo(&bar);
+    let ds = d.scalar_part();
+    if ds.is_zero() || !d.sub(&Mv::scalar(ds.clone())).is_zero() {
+        return None;
+    }
+    Some(rev.geo(&bar).scale(&(one() / ds)))
+}
+
+/// THE PATH-ORDERED TRANSPORT AROUND A CLOSED CHAIN OF EDGES.
+///
+/// ```text
+///     Ω_∂e² = 𝒫 ∏ Ω_e
+/// ```
+///
+/// An edge of the complex is not an annotation carrying a bivector label;
+/// it is a FINITE transport operator, and the curvature a 2-cell traps is
+/// the ordered product of the transitions around its attaching map. The
+/// order is the path's — the product does not commute, and that is the
+/// content.
+///
+/// `Ω_∂e² = 1` is a flat cell. Anything else is an obstruction the cell
+/// holds: a Burgers transvection where the composite reads hyperbolic, a
+/// curvature rotation where it reads elliptic — which
+/// [`Mv::class_invariants`] answers and nothing here decides.
+pub fn transport_around(edges: &[Mv]) -> Option<Mv> {
+    let mut out = Mv::scalar(one());
+    // index: the edges of one attaching map, in the order the boundary
+    // walks them — the cell's own declaration, never a search.
+    for e in edges {
+        is_versor(e)?;
+        out = out.geo(e);
+    }
+    is_versor(&out)?;
+    Some(out)
+}
+
+/// IS THIS GENERATOR SIMPLE? `B ∧ B = 0` means `B` is a single blade — one
+/// plane, one motion. `B ∧ B ≠ 0` means it is a SCREW: a rotation and a
+/// transvection on orthogonal planes at once, which cannot be split into
+/// independent planar projections without losing the coupling (51.2,
+/// Anti-Flattening clause 5).
+pub fn bivector_is_simple(m: &Mv) -> bool {
+    let b = m.grade(2);
+    b.geo(&b).grade(4).is_zero()
+}
+
+/// A GEODESIC TRANSVECTION OF ℍ⁴, EXACTLY OVER ℚ (54.7 R3).
+///
+/// SIMPLE BY CONSTRUCTION, and that is a statement about this particular
+/// motion rather than a shape imposed on all of them: a boost along ONE
+/// geodesic has a rank-one generator and `I₂ = 0` honestly. A motion that
+/// couples planes is built with [`versor_of_reflections`], which places no
+/// such restriction on `⟨Ω⟩₂`.
 ///
 /// The motion generated by a hyperbolic bivector `B = eᵢ ∧ e₋`, `B² = +1`.
 /// Its one-parameter form is `Ω = exp(½ τ B) = cosh(τ/2) + sinh(τ/2)·B`,
@@ -532,19 +749,23 @@ pub const TRANSVECTION_PLANES: [usize; 3] = [E1 | EM, E2 | EM, E3 | EM];
 /// rule 11), and this does not pretend to hold one.
 ///
 /// It is written the way [`rotator`] already writes a rotation: the
-/// UNNORMALISED even element
+/// UNNORMALISED even element `Ω = a + b·(eₐ ∧ e₋)` with `a, b ∈ ℚ`. The
+/// sandwich carries the weight and homogeneity on the null cone absorbs
+/// it, exactly as a rotation's is absorbed.
 ///
-/// ```text
-///     Ω = a + b·(eᵢ ∧ e₋),    Ω Ω̃ = a² − b²
-/// ```
+/// THE WEIGHT IS `Ω Ω̃`, TAKEN BY THE GEOMETRIC PRODUCT (rule 11). A first
+/// cut wrote it as `a² − b²` — the components squared and subtracted, a
+/// Pythagorean form on a pair of numbers. That is the flat two-dimensional
+/// square rule 11 forbids, written inside the one function whose purpose is
+/// to leave flatness behind: "fluid physics carried in squares is squares
+/// of fluid". `is_versor` already computes `Ω Ω̃` through `geo` and
+/// `reverse`, so the weight is a reading of the algebra and never an
+/// arithmetic identity someone remembered for one blade.
 ///
-/// with `a, b ∈ ℚ`. The sandwich carries the scale and homogeneity on the
-/// null cone absorbs it, exactly as `s² + b²` is absorbed for a rotation.
-/// The difference of signs is the metric: a rotation's norm `s² + b²` never
-/// vanishes off zero, and a transvection's `a² − b²` vanishes on the light
-/// cone `a = ±b` — which is a PARABOLIC limit rotation and not a
-/// transvection at all, so it is refused here rather than returned as a
-/// versor with no inverse.
+/// The refusal it produces is the same one and means more: `Ω Ω̃ = 0` is the
+/// light cone, where the element is a PARABOLIC limit rotation rather than
+/// a transvection and has no inverse. `is_versor` also refuses an `Ω Ω̃`
+/// that is not a pure scalar, which no hand-written norm can see at all.
 ///
 /// `plane` is one of [`TRANSVECTION_PLANES`]; any other blade is not a
 /// hyperbolic generator and is refused.
@@ -552,27 +773,49 @@ pub fn transvection(a: &BigRational, b: &BigRational, plane: usize) -> Option<Mv
     if !TRANSVECTION_PLANES.contains(&plane) {
         return None;
     }
-    let w = a * a - b * b;
-    if w == zero() {
-        return None;
-    }
-    Some(Mv::scalar(a.clone()).add(&Mv::blade(plane, b.clone())))
+    let omega = Mv::scalar(a.clone()).add(&Mv::blade(plane, b.clone()));
+    is_versor(&omega)?;
+    Some(omega)
 }
 
-/// The composite geodesic motion along all three axes: `Ω₁ Ω₂ Ω₃`, each an
-/// exact transvection. Unlike the parabolic translators, which commute
-/// because the base is flat (51.2), these do NOT commute — the failure to
-/// commute IS the curvature, and composing them in a fixed order is the
-/// statement that a path on ℍ³ has a holonomy.
-pub fn transvection_along(
-    t1: (&BigRational, &BigRational),
-    t2: (&BigRational, &BigRational),
-    t3: (&BigRational, &BigRational),
-) -> Option<Mv> {
-    let a = transvection(t1.0, t1.1, TRANSVECTION_PLANES[0])?;
-    let b = transvection(t2.0, t2.1, TRANSVECTION_PLANES[1])?;
-    let c = transvection(t3.0, t3.1, TRANSVECTION_PLANES[2])?;
-    Some(a.geo(&b).geo(&c))
+/// THE COMPOSITE GEODESIC MOTION ALONG EVERY AXIS OF ℍ⁴ — one transvection
+/// per generator of [`TRANSVECTION_PLANES`], composed by the geometric
+/// product in the generators' own order.
+///
+/// Unlike the conformal translators `eᵢ ∧ e_∞`, which commute because that
+/// reading is of a flat lattice base (51.2), these do NOT commute: their
+/// commutator is a rotation scaled by the sectional curvature. The failure
+/// to commute IS the curvature, which is why the order is the algebra's and
+/// not a caller's, and why `K` is read off a remainder rather than carried
+/// as a constant (51.2, Anti-Flattening clause 7).
+pub fn transvection_along(axes: [(&BigRational, &BigRational); 4]) -> Option<Mv> {
+    let mut out = Mv::scalar(one());
+    // index: this algebra's own hyperbolic generators, in the order the
+    // blades are numbered — the carrier's declaration, never a search.
+    for (i, plane) in TRANSVECTION_PLANES.iter().enumerate() {
+        let (a, b) = axes.get(i)?;
+        out = out.geo(&transvection(a, b, *plane)?);
+    }
+    is_versor(&out)?;
+    Some(out)
+}
+
+/// THE HOLONOMY OF A GEODESIC BIGON: `Ω₁ Ω₂ Ω₁⁻¹ Ω₂⁻¹`, the group
+/// commutator of two transvections.
+///
+/// On a flat base this is the identity — that is what "translators commute"
+/// means. Here it is a ROTATION whose magnitude is the sectional curvature
+/// of the plane the two boosts span (51.2). Returning it is how the
+/// curvature is READ off the geometry rather than asserted as a value:
+/// [`Mv::class_invariants`] on the result says which bivector type the
+/// commutator is, and an elliptic answer on two hyperbolic generators is
+/// the curvature being non-zero, measured.
+pub fn transvection_commutator(a: &Mv, b: &Mv) -> Option<Mv> {
+    let ai = a.versor_inverse()?;
+    let bi = b.versor_inverse()?;
+    let c = a.geo(b).geo(&ai).geo(&bi);
+    is_versor(&c)?;
+    Some(c)
 }
 
 /// The Euclidean rotation versor in the `e1e2` plane as an EXACT even
@@ -772,21 +1015,156 @@ mod tests {
         let rot = rotator(&q(0, 1), &q(1, 1));
         assert_eq!(kind(&rot), Some(BivectorKind::Elliptic));
 
-        // HYPERBOLIC: a geodesic transvection on e₁e₋. B² = +1 > 0. There
-        // is NO element of Cl(4,0) with this reading — its metric is
-        // positive definite, so ⟨B²⟩₀ ≤ 0 for every bivector it has.
-        let tv = transvection(&q(2, 1), &q(1, 1), TRANSVECTION_PLANES[0])
-            .expect("a² − b² = 3 ≠ 0 is a transvection");
-        assert_eq!(kind(&tv), Some(BivectorKind::Hyperbolic));
+        // HYPERBOLIC: a geodesic transvection on EVERY generator of ℍ⁴,
+        // `e₊∧e₋` included. B² = +1 > 0. There is NO element of Cl(4,0)
+        // with this reading — its metric is positive definite, so
+        // ⟨B²⟩₀ ≤ 0 for every bivector it has.
+        for plane in TRANSVECTION_PLANES {
+            let tv = transvection(&q(2, 1), &q(1, 1), plane)
+                .expect("off the light cone, this is a transvection");
+            assert_eq!(
+                kind(&tv),
+                Some(BivectorKind::Hyperbolic),
+                "generator {plane:05b} is a boost of hyperbolic 4-space"
+            );
+        }
+        assert_eq!(TRANSVECTION_PLANES.len(), 4, "ℍ⁴ has four boosts, not three");
 
         // TRIVIAL: B = 0. The identity turns nothing.
         assert_eq!(kind(&Mv::scalar(one())), Some(BivectorKind::Trivial));
 
-        // And a transvection on the light cone `a = ±b` is a parabolic
-        // limit, not a transvection: refused rather than handed back as a
-        // versor with no inverse.
+        // PARABOLIC: the generator is built on `e_∞`, where `e_∞² = 0` —
+        // NOT on `e₊∧e₋`, which is the fourth boost above. The conformal
+        // translator is exactly this type, which is what makes it the
+        // flatness R3 removes.
+        let t = translator(&q(1, 1), &q(0, 1), &q(0, 1));
+        assert_eq!(kind(&t), Some(BivectorKind::Parabolic), "T(d) fixes the point at infinity");
+        assert!(e_inf().geo(&e_inf()).is_zero(), "e_∞² = e₋² + e₊² = 0");
+
+        // And an element on the light cone `Ω Ω̃ = 0` has no inverse, so it
+        // is refused rather than handed back as a versor. The weight is the
+        // geometric product's, never `a² − b²` (rule 11).
         assert!(transvection(&q(1, 1), &q(1, 1), TRANSVECTION_PLANES[0]).is_none());
         assert!(transvection(&q(1, 1), &q(0, 1), E1 | E2).is_none(), "e₁e₂ is not a hyperbolic generator");
+    }
+
+    /// 54.7 R3 — A GENERATOR IS NOT A MOTION, and Cayley is the finite
+    /// action over ℚ.
+    ///
+    /// `exp(½τB)` leaves the rationals for every `τ` worth having, and the
+    /// two ways round it — floating point, or pinning `Ω` to one blade —
+    /// lose exactness and the grade-4 coupling respectively. This measures
+    /// that Cayley loses neither: a SCREW generator evolves to a screw
+    /// versor, `I₂ ≠ 0` on both sides.
+    #[test]
+    fn cayley_evolves_a_generator_to_a_finite_versor_and_keeps_the_coupling() {
+        use crate::network::nerve::coord::BivectorKind;
+        // A SIMPLE hyperbolic generator evolves to a hyperbolic motion.
+        let boost_gen = Mv::blade(TRANSVECTION_PLANES[0], q(1, 3));
+        let boost = cayley(&boost_gen).expect("1 + B is invertible off the pole");
+        assert_eq!(
+            boost.class_invariants().map(|(_, _, k)| k),
+            Some(BivectorKind::Hyperbolic),
+            "the finite action of a boost generator is a boost"
+        );
+        assert!(bivector_is_simple(&boost), "one geodesic stays one geodesic");
+
+        // A COUPLED generator — a rotation plane and a boost plane at once —
+        // evolves to a screw, and `I₂` survives the passage. Under
+        // `Ω = a + bB` this motion has no representation at all.
+        let screw_gen = Mv::blade(E1 | E2, q(1, 2)).add(&Mv::blade(E3 | EM, q(1, 5)));
+        assert!(!bivector_is_simple(&screw_gen), "the generator couples two planes");
+        let screw = cayley(&screw_gen).expect("1 + B is invertible");
+        assert!(!bivector_is_simple(&screw), "and so does its finite action");
+        let (_, i2, _) = screw.class_invariants().expect("a versor has invariants");
+        assert!(!i2.is_zero(), "I₂ = ⟨B∧B⟩₄ survives evolution, got {i2}");
+
+        // The transform's pole is refused, never approximated.
+        assert!(cayley(&Mv::scalar(one())).is_none(), "a scalar is not a generator");
+
+        // AND A LOOP'S HOLONOMY IS THE ORDERED PRODUCT OF ITS EDGES. A
+        // closed chain of transports that returns is flat; one that does
+        // not is the obstruction the cell traps.
+        let inv = boost.versor_inverse().expect("a versor inverts");
+        let flat = transport_around(&[boost.clone(), inv]).expect("a closed transport");
+        assert!(flat.projective_eq(&Mv::scalar(one())), "Ω Ω⁻¹ = 1 is a flat cell");
+        let held = transport_around(&[boost.clone(), screw.clone()]).expect("a transport");
+        assert!(!held.projective_eq(&Mv::scalar(one())), "a cell that traps an obstruction");
+        assert!(
+            !boost.geo(&screw).projective_eq(&screw.geo(&boost)),
+            "the product is path-ORDERED: transport does not commute"
+        );
+    }
+
+    /// 54.7, Anti-Flattening clause 5 — A SCREW IS REACHABLE, which is what
+    /// the single-blade form `Ω = a + bB` made impossible.
+    ///
+    /// That form spans `ℚ[B] ≅ ℚ ⊕ ℚ`, a two-dimensional split-complex
+    /// slice, and its generator is rank one — so `I₂ = ⟨B∧B⟩₄ = 0`
+    /// identically, no matter what `a` and `b` are. Every motion built that
+    /// way turns in one plane and slides along one track. Reflection
+    /// factorization has no such ceiling, and this MEASURES the difference:
+    /// a simple boost reads `I₂ = 0`, a coupled motion reads `I₂ ≠ 0`.
+    #[test]
+    fn a_coupled_screw_has_a_non_zero_second_casimir() {
+        let z = q(0, 1);
+        let v = |a: (i64, i64), b: (i64, i64), c: (i64, i64), p: (i64, i64), m: (i64, i64)| {
+            reflector_vector(&q(a.0, a.1), &q(b.0, b.1), &q(c.0, c.1), &q(p.0, p.1), &q(m.0, m.1))
+                .expect("a non-null vector reflects")
+        };
+        // Two reflection pairs on orthogonal planes: the first pair turns in
+        // e₁e₂, the second boosts along e₃e₋. Their product couples them.
+        let screw = versor_of_reflections(&[
+            v((1, 1), (0, 1), (0, 1), (0, 1), (0, 1)),
+            v((1, 1), (1, 1), (0, 1), (0, 1), (0, 1)),
+            v((0, 1), (0, 1), (1, 1), (0, 1), (0, 1)),
+            v((0, 1), (0, 1), (2, 1), (0, 1), (1, 1)),
+        ])
+        .expect("four reflections compose to a versor");
+        assert!(
+            !bivector_is_simple(&screw),
+            "B ∧ B ≠ 0: the generator couples two planes, which a single blade cannot"
+        );
+        let (_, i2, _) = screw.class_invariants().expect("a versor has invariants");
+        assert!(!i2.is_zero(), "I₂ = ⟨B∧B⟩₄ is non-zero on a screw, got {i2}");
+
+        // A single-generator boost is simple, honestly: one geodesic, one
+        // plane. The point is that the REPRESENTATION no longer forces it.
+        let boost = transvection(&q(2, 1), &q(1, 1), TRANSVECTION_PLANES[0]).expect("a boost");
+        assert!(bivector_is_simple(&boost), "one geodesic has a rank-one generator");
+        let (_, i2_boost, _) = boost.class_invariants().expect("a versor has invariants");
+        assert_eq!(i2_boost, z, "I₂ = 0 on a simple motion, which is a reading and not a ceiling");
+
+        // An odd number of reflections is not in the spin group, and a null
+        // vector reflects nothing — both refused rather than multiplied in.
+        assert!(versor_of_reflections(&[v((1, 1), (0, 1), (0, 1), (0, 1), (0, 1))]).is_none());
+        assert!(reflector_vector(&z, &z, &z, &q(1, 1), &q(1, 1)).is_none(), "e₊+e₋ is null");
+    }
+
+    /// 51.2, Anti-Flattening clause 7 — TRANSVECTIONS DO NOT COMMUTE, and
+    /// the failure IS the curvature. On a flat base the commutator of two
+    /// translations is the identity; here it is a rotation, and that is
+    /// read off the algebra rather than asserted as a value.
+    #[test]
+    fn two_boosts_do_not_commute_and_their_commutator_is_a_rotation() {
+        use crate::network::nerve::coord::BivectorKind;
+        let a = transvection(&q(2, 1), &q(1, 1), TRANSVECTION_PLANES[0]).expect("boost on e₁e₋");
+        let b = transvection(&q(3, 1), &q(1, 1), TRANSVECTION_PLANES[1]).expect("boost on e₂e₋");
+        assert!(!a.geo(&b).projective_eq(&b.geo(&a)), "ΩₐΩ_b ≠ Ω_bΩₐ: the base is not flat");
+        let c = transvection_commutator(&a, &b).expect("the commutator is a versor");
+        assert!(!c.projective_eq(&Mv::scalar(one())), "a non-zero curvature is a non-trivial commutator");
+        assert_eq!(
+            c.class_invariants().map(|(_, _, k)| k),
+            Some(BivectorKind::Elliptic),
+            "the commutator of two boosts is a ROTATION scaled by the sectional curvature"
+        );
+        // The conformal translators, by contrast, commute — which is the
+        // statement that THAT reading is of a flat lattice (51.2).
+        let (t1, t2) = (
+            translator(&q(1, 1), &q(0, 1), &q(0, 1)),
+            translator(&q(0, 1), &q(1, 1), &q(0, 1)),
+        );
+        assert!(t1.geo(&t2).projective_eq(&t2.geo(&t1)), "e_i ∧ e_∞ commute");
     }
 
     /// EVERY ROTOR LIFTS ELLIPTIC, and that is the statement that `Cl(4,0)`
