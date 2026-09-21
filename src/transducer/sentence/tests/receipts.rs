@@ -10,7 +10,7 @@
 
 use super::common::*;
 use crate::transducer::alphabet::Word;
-use crate::transducer::element::{NerveEdge, NerveTriangle, ReceiptsEnvelope};
+use crate::transducer::element::{NerveEdge, ReceiptsEnvelope};
 use crate::transducer::sentence::*;
 
 fn leaf(plane: (u8, u8)) -> Form {
@@ -182,52 +182,105 @@ fn an_edge_stands_at_a_site_and_not_at_an_index() {
     assert_eq!(x, y, "and both stand at ONE site: the boundary is the same boundary");
 }
 
-/// A 2-SIMPLEX READS ITS HOLONOMY OFF ITS THREE EDGES (law 12).
+/// A ROUND IS ONE BLADE, AND ITS GRADE RISES BY WEDGING (54.7 B8).
 ///
 /// The Čech differential `(δφ)_ijk = φ_jk · φ_ik⁻¹ · φ_ij` evaluates on a
 /// TRIPLE overlap, and with a carrier only for 1-simplices that composite
-/// has nowhere to be registered — the nerve would have generators and no
-/// relations. `NerveTriangle` is the carrier; the holonomy is a READING of
-/// the three edges and never a field beside them.
+/// has nowhere to be registered. It was `NerveTriangle` — three edge
+/// indices and a walk around them — so a junction of `k` charts was
+/// `C(k,3)` objects whose indices named positions in a list.
 ///
-/// Three translations that sum to zero close. The same three with one
-/// altered do not, and what they carry is the composite — content, not an
-/// error.
+/// A round is the object the physics has. Charts on the hyperboloid
+/// `⟨x,x⟩_{3,1} = −R²` embed as strictly null `p = x₁e₁ + x₂e₂ + x₃e₃ +
+/// x₀e₋ + Re₊`, and the junction through them is their outer product, one
+/// blade at grade `m` for `m` charts. The reading here is the ladder and
+/// its ceiling: grade rises by one per chart wedged on, and `⋀⁶(ℚ^{4,1}) ≡
+/// 0` ends it — by exterior-algebra arithmetic, with no bound anywhere in
+/// the code to enforce.
 #[test]
-fn a_triangle_reads_the_cocycle_off_its_edges() {
-    use num_traits::Zero;
-    let a = leaf((0, 1));
-    let a_at = addr_of(&a);
-    let mk = |dx: i64, dy: i64| NerveEdge {
-        target: a_at.clone(),
-        chart: crate::transducer::sentence::chart_of_form(&a).expect("chart"),
-        magnitude: [0, 0, 0, 1],
-        depth: 0,
-        placement: Word::identity(),
-        carriage: Box::new(shift(dx, dy)),
+fn a_round_rises_by_wedging_and_ends_where_the_algebra_does() {
+    use num_bigint::BigInt;
+    use num_rational::BigRational;
+    let q = |n: i64| BigRational::from(BigInt::from(n));
+    // R = 1, so x₁² + x₂² + x₃² − x₀² = −1 and x₀ = 1 at the origin. Five
+    // points on the unit hyperboloid with exact rational x₀: the Pythagorean
+    // triples are what make x₀ rational, which is law 4 refusing to round.
+    let r = q(1);
+    let on = |x1: i64, x2: i64, x3: i64, x0: i64| [q(x1), q(x2), q(x3), q(x0)];
+    let round = |xs: &[[BigRational; 4]]| crate::transducer::element::NerveRound {
+        charts: xs
+            .iter()
+            .enumerate()
+            .map(|(i, _)| crate::transducer::address::Address::new(vec![i as u8]))
+            .collect(),
+        points: xs.to_vec(),
+        radius: r.clone(),
+        attached: None,
     };
-    let closes = [mk(1, 0), mk(0, 1), mk(-1, -1)];
-    let tri = NerveTriangle { edges: [0, 1, 2], attached: None };
-    let screw = tri.screw(&closes).expect("the composite splits");
-    assert!(
-        screw.twist.iter().all(num_traits::Zero::is_zero),
-        "φ_ij φ_jk φ_ki = 1: three displacements summing to zero close the triangle"
-    );
+    // EXACT POINTS ON THE ABSOLUTE. `x₀² − (x₁²+x₂²+x₃²) = R² = 1`, so each
+    // is a solution of a Pell-type equation over ℚ; scaled rationals give
+    // them without any root being taken.
+    let p0 = on(0, 0, 0, 1);
+    let p1 = [q(3) / q(4), q(0), q(0), q(5) / q(4)];
+    let p2 = [q(0), q(3) / q(4), q(0), q(5) / q(4)];
+    let p3 = [q(0), q(0), q(3) / q(4), q(5) / q(4)];
+    let p4 = [q(4) / q(3), q(0), q(0), q(5) / q(3)];
+    let p5 = [q(0), q(4) / q(3), q(0), q(5) / q(3)];
 
-    let bent = [mk(1, 0), mk(0, 1), mk(-1, 0)];
-    let screw = NerveTriangle { edges: [0, 1, 2], attached: None }
-        .screw(&bent)
-        .expect("the composite splits");
-    assert!(
-        !screw.twist[1].is_zero(),
-        "a triangle that does not close CARRIES its holonomy — one unit of slip, \
-         which is an H² obstruction and not a refusal"
+    // ONE POINT IS NOT A ROUND: an overlap needs two charts.
+    assert_eq!(round(std::slice::from_ref(&p0)).grade(), 0, "a single chart is no junction");
+
+    // THE LADDER.
+    assert_eq!(round(&[p0.clone(), p1.clone()]).grade(), 2, "two charts: a geodesic point pair");
+    assert_eq!(round(&[p0.clone(), p1.clone(), p2.clone()]).grade(), 3, "three: a circle");
+    assert_eq!(
+        round(&[p0.clone(), p1.clone(), p2.clone(), p3.clone()]).grade(),
+        4,
+        "four: a 2-sphere"
     );
     assert_eq!(
-        screw.twist[1],
-        num_rational::BigRational::from(num_bigint::BigInt::from(1)),
-        "and the obstruction is exact"
+        round(&[p0.clone(), p1.clone(), p2.clone(), p3.clone(), p4.clone()]).grade(),
+        5,
+        "five: the volume element"
     );
+
+    // AND THE CEILING IS GRASSMANN'S, NOT A GUARD'S. `⋀⁶(ℚ^{4,1}) ≡ 0`, so
+    // the sixth point wedges to nothing and the round reports grade 0 —
+    // which is the algebra answering, not a bound being checked.
+    let six = round(&[p0.clone(), p1, p2, p3, p4, p5]);
+    assert_eq!(six.grade(), 0, "the sixth chart wedges to zero by exterior algebra");
+    assert!(
+        six.blade().expect("the wedge is taken").is_zero(),
+        "and the blade itself is the zero multivector, not a refusal"
+    );
+}
+
+/// A POINT OFF THE ABSOLUTE IS REFUSED, NOT PROJECTED ONTO IT (law 4, rule
+/// 11).
+///
+/// `x₀` is a COORDINATE of a chart's base point, not something solved for:
+/// `x₀² = ‖x‖² + R²` has no rational root in general, so a chart whose four
+/// coordinates miss the hyperboloid is refused here rather than rounded on
+/// to it. The flat embedding had no such condition to fail, which is part
+/// of why it was the wrong absolute.
+#[test]
+fn a_chart_off_the_hyperboloid_is_refused() {
+    use num_bigint::BigInt;
+    use num_rational::BigRational;
+    let q = |n: i64| BigRational::from(BigInt::from(n));
+    let r = q(1);
+    let bad = crate::transducer::element::NerveRound {
+        charts: vec![
+            crate::transducer::address::Address::new(vec![0]),
+            crate::transducer::address::Address::new(vec![1]),
+        ],
+        // 1 + 0 + 0 − 1 + 1 = 1 ≠ 0: not null.
+        points: vec![[q(0), q(0), q(0), q(1)], [q(1), q(0), q(0), q(1)]],
+        radius: r,
+        attached: None,
+    };
+    assert_eq!(bad.blade(), None, "a base point off the absolute has no round");
+    assert_eq!(bad.grade(), 0, "and no grade");
 }
 
 /// AN ENVELOPE WITH NOTHING TO SAY IS EMPTY, NOT ABSENT (rule 11).
@@ -384,3 +437,4 @@ fn an_envelope_carries_an_address_wider_than_the_wire_prefix() {
     assert_eq!(back, env, "the 70 000-byte address survives, whole");
     assert_eq!(p, block.len(), "and the block is consumed exactly");
 }
+

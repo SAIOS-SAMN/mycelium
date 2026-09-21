@@ -31,6 +31,38 @@ pub const REFUSE_NOT_NATURAL: &str = "class key changes under restriction";
 pub const REFUSE_FORM_TAPE: &str = "form does not parse from its tape";
 pub const REFUSE_GLUED_DEPTH: &str = "glued form depth not below sentence depth";
 pub const REFUSE_GLUED_UNRULED: &str = "glued form not ruled";
+/// 54.7 B5a — AN UNBONDED PORT. A `Vertex::Glued` states that this chart
+/// exposes a boundary interface at `(chart, depth, placement, φ)`; a
+/// `NerveEdge` states which form that interface mates with. A vertex whose
+/// site carries no edge is an open boundary of the manifold and the court
+/// says so, rather than leaving it to a reader's silent omission.
+///
+/// The two readers already fail safe — the tape writer refuses to write a
+/// citation whose target the form does not carry, and `speak_on_scene`
+/// reports the boundary unspoken — but neither NAMES the defect, and an
+/// absence that only shows as a missing paint is the empty-carrier reading
+/// that misled five times on 2026-09-20. Stated here it has a coordinate.
+pub const REFUSE_ORPHAN_PORT: &str = "glued boundary stands at a site no citation reaches";
+/// 54.7 B5a — A PHANTOM BOND, and it is the dangerous direction.
+///
+/// An orphan port is an incomplete attachment and fails safe everywhere: the
+/// tape writer refuses, `speak_on_scene` reports unspoken. A phantom edge is
+/// an UNANCHORED CLAIM OF CONNECTIVITY — a citation in the envelope that the
+/// complex never constructed — and it does not fail safe: it would be
+/// resolved, replayed and PAID FOR against a boundary the form does not hold.
+///
+/// It is never silently erased. Erasure masks perjury and corrupts the
+/// economic attestation that reads the cover for use credit.
+pub const REFUSE_PHANTOM_EDGE: &str = "citation claims a site the complex has no boundary at";
+/// 54.7 B5a — THE SAME FORM MATED TWICE TO ONE FACET.
+///
+/// Multi-incidence at a site is a multi-sheeted seam and is admissible when
+/// the targets are DISTINCT: the port is a junction between several charts,
+/// and each sheet is an independent topological interface. Attaching the
+/// SAME external chart twice to the same local facet under the same carriage
+/// is redundant topological noise, and it would inflate the yield by
+/// declaring one geometric overlap as two.
+pub const REFUSE_SHEET_REPEATED: &str = "two citations of one form at one boundary site";
 pub const REFUSE_GLUED_FRAME_GAUGED: &str = "glued form frame is not identity";
 pub const REFUSE_VERTEX_TAPE: &str = "vertex does not re-derive from its tape";
 /// 37.7 P2: a `RotorPrime` demand whose witness does not carry the prime

@@ -197,6 +197,28 @@ impl Mv {
         }
     }
 
+    /// THE OUTER PRODUCT `A ∧ v` FOR A BLADE `A` AND A VECTOR `v` (54.7 B8).
+    ///
+    /// `⟨A v⟩_{g+1}` — the geometric product's top grade. It is the whole of
+    /// the wedge when `A` is a homogeneous blade of grade `g`, which is the
+    /// only case a round is built from: a round is `p₀ ∧ p₁ ∧ … ∧ pₘ` and
+    /// each step wedges one more null point onto a blade.
+    ///
+    /// GRASSMANN TERMINATES IT AND NO GUARD DOES. `v ∧ v = 0`, so a point
+    /// already on the round contributes nothing; a point conformally
+    /// dependent on the round gives zero the same way; and `⋀⁶(ℚ^{4,1}) ≡
+    /// 0`, so a sixth point vanishes identically. Dimensional exhaustion is
+    /// exterior-algebra arithmetic, never a `grade > MAX` branch.
+    ///
+    /// `Cl(4,1)` is this tree's conformal algebra — five generators
+    /// `{e1, e2, e3, e+, e-}`, 32 blades, the conformal model of 3-space —
+    /// so the ladder of rounds is: grade 2 a point pair (0-sphere), grade 3
+    /// a circle (1-sphere), grade 4 a sphere (2-sphere), grade 5 the
+    /// pseudoscalar, grade 6 identically zero.
+    pub fn wedge_vector(&self, g: u32, v: &Self) -> Self {
+        self.geo(v).grade(g + 1)
+    }
+
     /// The grade-`g` part.
     pub fn grade(&self, g: u32) -> Self {
         Self {
@@ -265,6 +287,63 @@ pub fn point(x1: &BigRational, x2: &BigRational, x3: &BigRational) -> Mv {
     let mut m = Mv::blade(E1, x1.clone()).add(&Mv::blade(E2, x2.clone())).add(&Mv::blade(E3, x3.clone()));
     m = m.add(&e_inf().scale(&(half() * x2n)));
     m.add(&e_o())
+}
+
+/// A CHART BASE POINT ON THE NULL CONE OF A NON-EUCLIDEAN SPACE (54.7 B8,
+/// as ruled 2026-09-21).
+///
+/// ```text
+///     p(x) = x₁e₁ + x₂e₂ + x₃e₃ + x₀e₋ + R e₊
+/// ```
+///
+/// with `x` on the hyperboloid `⟨x,x⟩_{3,1} = x₁² + x₂² + x₃² − x₀² = −R²`,
+/// `x₀ > 0`. Then, since `e₊² = +1` and `e₋² = −1`,
+///
+/// ```text
+///     p² = (x₁² + x₂² + x₃²) − x₀² + R² = ⟨x,x⟩_{3,1} + R² = 0
+/// ```
+///
+/// so every chart base point is strictly null, and the inner product of two
+/// of them is the NON-EUCLIDEAN invariant:
+///
+/// ```text
+///     pᵢ · pⱼ = ⟨xᵢ,xⱼ⟩_{3,1} + R² = R²(1 − cosh(d_ℍ(xᵢ,xⱼ)/R))
+/// ```
+///
+/// WHY NOT [`point`]. That is the flat embedding `x + ½‖x‖²e_∞ + e_o`: it
+/// introduces a degenerate point at infinity and a Cartesian norm, which
+/// puts a privileged planar boundary into a manifold whose sectional
+/// curvature is not zero. Its translations are the parabolic `T(a) = 1 +
+/// ½a e_∞`; here there is no `e_∞` generator to build one from, and a
+/// geodesic motion is a hyperbolic transvection — a mixed bivector `eᵢ ∧
+/// e₋` — with elliptic rotations `eᵢ ∧ eⱼ` stabilising a timelike axis and
+/// parabolic limit rotations on null bivectors. `Isom(ℍ³) ≅ Spin⁺(3,1) ⊂
+/// Spin(4,1)`.
+///
+/// EXACT OR REFUSED (law 4, rule 11). `x₀` is a COORDINATE of the point and
+/// is never solved for: `x₀² = ‖x‖² + R²` has no rational root in general,
+/// and a chart whose four coordinates do not satisfy the hyperboloid
+/// condition exactly is refused here rather than rounded onto it.
+pub fn hyperbolic_point(
+    x1: &BigRational,
+    x2: &BigRational,
+    x3: &BigRational,
+    x0: &BigRational,
+    r: &BigRational,
+) -> Option<Mv> {
+    if x1 * x1 + x2 * x2 + x3 * x3 - x0 * x0 + r * r != zero() {
+        return None;
+    }
+    if *x0 <= zero() {
+        return None;
+    }
+    Some(
+        Mv::blade(E1, x1.clone())
+            .add(&Mv::blade(E2, x2.clone()))
+            .add(&Mv::blade(E3, x3.clone()))
+            .add(&Mv::blade(EM, x0.clone()))
+            .add(&Mv::blade(EP, r.clone())),
+    )
 }
 
 /// The dual sphere `S = X(c) − ½ r² e_∞`: a point at squared-distance `r2` from

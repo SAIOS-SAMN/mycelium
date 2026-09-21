@@ -36,8 +36,9 @@
 //! composite has nowhere to be registered. `cech::complex::loops_of` can
 //! already produce `Fill::Congruent` at a triple overlap and nothing
 //! converts it into a coordinate of the cover: `H²` has a detector and no
-//! carrier. [`NerveTriangle`] is that carrier, so the structure does not
-//! have to be redesigned the moment an attachment exists.
+//! carrier. [`NerveRound`] is that carrier — and it is a CONFORMAL ROUND
+//! rather than a simplex, because a junction of `k` charts is one blade
+//! `p₀ ∧ … ∧ p_{k-1}` and not `C(k,3)` triangles.
 //!
 //! # A 1-simplex carries the FULL affine transition
 //!
@@ -70,10 +71,10 @@
 //! triple overlap. What is not derivable is whether a 2-CELL WAS ATTACHED
 //! along it: that is an act of a mind against a budget, the inter-form
 //! analogue of `open_axis_on`, and it pays for a dimension under T21(iii).
-//! So [`NerveTriangle::attached`] is the one stored field on a 2-simplex.
+//! So [`NerveRound::attached`] is the one stored field on a round.
 
 use crate::transducer::address::Address;
-use crate::transducer::alphabet::{Cited, Derivation, Rotor, Word};
+use crate::transducer::alphabet::{Cited, Derivation, Rotor, Word, Q};
 use crate::transducer::element::{Screw, Versor};
 use crate::transducer::sentence::PivotCertificate;
 use crate::transducer::stalk::Invariant;
@@ -109,6 +110,41 @@ pub struct NerveEdge {
     /// size, and exactly invertible by its reversion, so the incidence is a
     /// groupoid edge — `φ` one way and `φ̃` the other.
     pub carriage: Box<Versor>,
+}
+
+/// THE COVER IN ITS OWN ORDER, and there is ONE writer of it (law 12).
+///
+/// ORDERED BY SITE AND THEN BY TARGET, AND BOTH ARE THE KEY (54.7 B5a).
+/// `of_form` filed edges under `host()` alone, which held while the target
+/// was still in the key: two citations of different forms were two sites,
+/// so one entry per site lost nothing.
+///
+/// Once the target leaves, two citations of two forms under one φ from
+/// charts of one rank stand at ONE site — that is gauge universality and it
+/// is the point — and a carrier keyed by site alone keeps ONE of them and
+/// drops the rest, silently. The form would attest one incidence where it
+/// has two, and the cover would be wrong in the direction nothing reports.
+///
+/// The site orders the listing and the target separates the edges standing
+/// at it. Both are coordinates the edge already holds, and the trie's walk
+/// IS their order — nothing compares anything, and no comparator decides.
+///
+/// IT IS CALLED FROM BOTH DECODERS. The tape writes citations in the
+/// form's vertex order and the envelope files them here, so before this was
+/// one function the two carriers held the same edges in two orders and the
+/// pre-B6 parity oracle refused at reader 3 — correctly, since a reader
+/// that took the first edge of a cover would have taken different edges
+/// from the two. Order is not content, and the way to say so is one writer
+/// of the order rather than two producers that happen to agree.
+pub fn canonical_nerve(edges: impl IntoIterator<Item = NerveEdge>) -> Vec<NerveEdge> {
+    let mut by_incidence: crate::network::nerve::Keyed<NerveEdge> =
+        crate::network::nerve::Keyed::new();
+    for e in edges {
+        let mut k = e.host().into_vec();
+        crate::transducer::address::put_bytes(&mut k, e.target.as_bytes());
+        by_incidence.insert(k, e);
+    }
+    by_incidence.scoped().map(|(_, e)| e.clone()).collect()
 }
 
 impl NerveEdge {
@@ -208,71 +244,198 @@ impl NerveEdge {
     }
 }
 
-/// A 2-SIMPLEX OF THE NERVE: a triple overlap, and whether a cell has been
-/// attached along it.
+/// A CONFORMAL ROUND OF THE NERVE (54.7 B8, as ruled 2026-09-21): the joint
+/// NON-EUCLIDEAN geometry of the charts that meet, carried as ONE blade.
 ///
-/// The three edges are named by their index in the envelope's own `nerve`
-/// list, which is this envelope's internal ordering and not a coordinate of
-/// anything outside it.
+/// A junction of `m` charts was a simplex — `NerveTriangle`, three edge
+/// indices and a composite walked around them — so a junction of `k` charts
+/// was `C(k,3)` independent objects whose indices named positions in this
+/// envelope's own list rather than coordinates of anything (rule 15).
+/// Replaced by the object the physics already has: a round is not
+/// assembled, it is a blade.
 ///
-/// EVERYTHING ELSE IS A READING of those three edges — the holonomy `Ω`, the
-/// net slip around the circuit, and the `Fill` that classifies it — so none
-/// of them is a field (law 12). What a triangle CARRIES is the attachment:
-/// under T21(iii) a dimension is never declared, it is paid for by retiring
-/// an obstruction, and attaching a 2-cell along a resonant `Ω` kills a class
-/// in `H²` and yields an inter-form axis. That act is a mind's, against a
-/// budget, and does not factor through the geometry.
+/// ```text
+///     S = p₀ ∧ p₁ ∧ … ∧ pₘ ,   pᵢ = x₁e₁ + x₂e₂ + x₃e₃ + x₀e₋ + R e₊ ,  pᵢ² = 0
+/// ```
 ///
-/// NOTHING POPULATES THIS YET, and it is not pretending to. `cech::classify`
-/// can already answer `Fill::Congruent` at a triple overlap; the attachment
-/// that would convert one into a coordinate of the cover does not exist. The
-/// type is here so the envelope is a graded simplicial structure from the
-/// start rather than a 1-skeleton that has to be redesigned around.
+/// THE ABSOLUTE IS NON-DEGENERATE. Each `pᵢ` is a chart's base point on the
+/// null cone of `Cl(4,1)` under the HYPERBOLIC embedding: `x` lies on
+/// `⟨x,x⟩_{3,1} = −R²` and `{e₊, e₋}` parameterise the intrinsic curvature
+/// scale rather than a flat origin and a parabolic infinity. The flat
+/// embedding `x + ½‖x‖²e_∞ + e_o` would put a privileged planar boundary
+/// and a Cartesian norm into a manifold whose sectional curvature is not
+/// zero, and its translations would be parabolic `T(a) = 1 + ½a e_∞`;
+/// here a geodesic motion is a hyperbolic transvection and `τ` lives in the
+/// Killing algebra `𝔰𝔬(3,1)` as displacement along a geodesic axis, not as
+/// a translation across a flat vector space.
+///
+/// The inner product of two base points is then the invariant itself:
+/// `pᵢ · pⱼ = R²(1 − cosh(d_ℍ(xᵢ,xⱼ)/R))`, so the round's geometry is the
+/// manifold's and not a chart of it.
+///
+/// THE LADDER, and its ceiling is arithmetic:
+///
+/// ```text
+///     grade 2   two points     geodesic point pair   the 1-skeleton seam
+///     grade 3   three points   hyperbolic circle     a triple junction
+///     grade 4   four points    2-sphere / horosphere a quadruple junction
+///     grade 5   five points    the volume element I₅ orientation and density
+///     grade 6   six points     ≡ 0
+/// ```
+///
+/// `Cl(4,1)` has five generators and 32 blades, so `⋀⁶(ℚ^{4,1}) ≡ 0` and a
+/// sixth point wedges to nothing; conformally dependent charts do the same
+/// at any grade. There is no `if grade > MAX` anywhere — exhaustion is
+/// Grassmann's.
+///
+/// WHY THIS IS THE ANSWER TO MULTI-INCIDENCE. Once the citation's target
+/// left the key, two forms mating one boundary under one φ at one chart
+/// rank stand at ONE site, and the citing chart cannot tell them apart
+/// LOCALLY — that is gauge universality and it is correct. What separates
+/// them is the joint geometry of the charts that meet, which is this blade:
+/// a multi-sheeted seam of `k` sheets is ONE grade-`(k+1)` round, not
+/// `C(k,3)` triangles.
+///
+/// THE BLADE IS DERIVED, NOT STORED (law 12). It is the outer product of
+/// the base points and follows from them; what the round CARRIES is the
+/// attachment, because under T21(iii) a dimension is never declared, it is
+/// paid for, and attaching a cell along a stable round kills a class and
+/// yields an inter-form axis. That act is a mind's, against a budget, and
+/// does not factor through the geometry.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct NerveTriangle {
-    /// `e_ij, e_jk, e_ki` by index into [`ReceiptsEnvelope::nerve`].
-    pub edges: [u32; 3],
-    /// The axis the attachment opened, where a 2-cell was attached.
+pub struct NerveRound {
+    /// The charts this round passes through, by their own addresses — a
+    /// coordinate set, never indices into a list (rule 15).
+    pub charts: Vec<Address>,
+    /// Each chart's base point on the hyperboloid, in the same order:
+    /// `(x₁, x₂, x₃, x₀)` with `x₁² + x₂² + x₃² − x₀² = −R²`. Four
+    /// coordinates because `x₀` IS one: solving for it would need a root
+    /// that is not rational in general, and law 4 does not round.
+    pub points: Vec<[Q; 4]>,
+    /// The curvature scale `R`, with `κ = −1/R²`. One per round: the charts
+    /// of a junction lie on one absolute.
+    pub radius: Q,
+    /// The axis the attachment opened, where a cell was attached along this
+    /// round. The one stored fact.
     pub attached: Option<Box<Versor>>,
 }
 
-impl NerveTriangle {
-    /// `Ω_ijk = g_ki ∘ g_jk ∘ g_ij`, both halves composed in their own
-    /// algebras. `None` when an edge index names nothing.
-    pub fn holonomy(&self, nerve: &[NerveEdge]) -> Option<(Rotor, Versor)> {
-        let mut r = Rotor::identity();
-        let mut c = crate::transducer::element::identity_versor();
-        for &e in &self.edges {
-            let (er, ec) = nerve.get(e as usize)?.transition();
-            r = r.geo(&er);
-            c = c.geo(&ec);
+impl NerveRound {
+    /// `S = p₀ ∧ p₁ ∧ … ∧ pₘ`, wedged progressively.
+    ///
+    /// `None` for fewer than two points — a round needs an overlap — and for
+    /// a point off the absolute, which `hyperbolic_point` refuses rather
+    /// than projecting onto it (rule 11). The ZERO multivector where the
+    /// points are conformally dependent or exceed the algebra: that is
+    /// Grassmann's own answer and not a refusal.
+    pub fn blade(&self) -> Option<crate::transducer::cga::Mv> {
+        let at = |x: &[Q; 4]| {
+            crate::transducer::cga::hyperbolic_point(&x[0], &x[1], &x[2], &x[3], &self.radius)
+        };
+        let mut it = self.points.iter();
+        let first = it.next()?;
+        let _ = self.points.get(1)?;
+        let mut s = at(first)?;
+        // THE GRADE IS HOW MANY POINTS ARE IN THE BLADE, so it is read off
+        // the walk rather than counted beside it (law 12): after `i` further
+        // points the blade has grade `i + 1`.
+        for (i, x) in it.enumerate() {
+            s = s.wedge_vector(i as u32 + 1, &at(x)?);
+            if s.is_zero() {
+                return Some(s);
+            }
         }
-        Some((r, c))
+        Some(s)
     }
 
-    /// The NET DISLOCATION around the circuit: the Burgers vector of the
-    /// triple overlap. `None` where the composite is not a transition this
-    /// chart can split (rule 11).
-    pub fn screw(&self, nerve: &[NerveEdge]) -> Option<Screw> {
-        let (r, c) = self.holonomy(nerve)?;
-        crate::transducer::element::screw_of(&r, &c)
+    /// The grade the round actually reached — `0` where the wedge vanished.
+    /// A reading, never a field.
+    pub fn grade(&self) -> u32 {
+        match self.blade() {
+            Some(s) if !s.is_zero() => self.points.len() as u32,
+            _ => 0,
+        }
     }
 
-    /// 12.6 at a triple overlap: flat, filed at a finite period, standing,
-    /// or a rotation the alphabet does not spell.
-    pub fn fill(&self, nerve: &[NerveEdge]) -> Option<crate::transducer::cech::Fill> {
-        let (r, c) = self.holonomy(nerve)?;
-        Some(crate::transducer::cech::classify(
-            &r,
-            &c,
-            crate::transducer::sentence::CycleType::of(&[]),
-        ))
+    /// DOES THE COMPOSITE TRANSITION STABILISE THE ROUND?
+    ///
+    /// ```text
+    ///     S' = Ω S Ω̃        coherent ⟺ S' ∧ S = 0  (S' ∥ S)
+    /// ```
+    ///
+    /// The simplicial reading walked `δφ_ijk = φ_jk φ_ik⁻¹ φ_ij` around three
+    /// edges and asked whether it was the identity. This asks whether the
+    /// versor's adjoint action is an isometry OF THE ROUND, which is the
+    /// same question at every grade and does not need the junction
+    /// decomposed into triples first.
+    ///
+    /// Projectively (§1.5): a round is a homogeneous blade, so `λS` and `S`
+    /// are one round and the scale is not the reading.
+    pub fn stabilises(&self, omega: &crate::transducer::cga::Mv) -> Option<bool> {
+        let s = self.blade()?;
+        if s.is_zero() {
+            return None;
+        }
+        let moved = omega.geo(&s).geo(&omega.reverse());
+        Some(crate::transducer::cga::projective_ratio(&moved, &s).is_some())
+    }
+
+    /// THE REJECTION `ΔS = S' − proj_S(S')`, the part of the moved round
+    /// that does not lie along it.
+    ///
+    /// ```text
+    ///     proj_S(S') = (⟨S' S̃⟩₀ / ⟨S S̃⟩₀) S ,     ΔS = S' − proj_S(S')
+    /// ```
+    ///
+    /// It is CONTENT and not an error (rule 7, "curvature is content"): the
+    /// exact non-Euclidean shear across the junction, which a mind may
+    /// declare as an open boundary and a court refuses only when it is
+    /// undeclared. At grade 3 it is the `H²` obstruction that separates two
+    /// mates the citing chart sees as one boundary.
+    ///
+    /// `None` when the round is stabilised — there is no defect to carry —
+    /// and when `⟨S S̃⟩₀ = 0`, where the projection is not defined and a
+    /// zero would be a fabricated reading (rule 11).
+    pub fn shear(&self, omega: &crate::transducer::cga::Mv) -> Option<crate::transducer::cga::Mv> {
+        let s = self.blade()?;
+        if s.is_zero() {
+            return None;
+        }
+        let moved = omega.geo(&s).geo(&omega.reverse());
+        if crate::transducer::cga::projective_ratio(&moved, &s).is_some() {
+            return None;
+        }
+        let denom = s.geo(&s.reverse()).scalar_part();
+        if denom == num_traits::Zero::zero() {
+            return None;
+        }
+        let lambda = moved.geo(&s.reverse()).scalar_part() / denom;
+        Some(moved.sub(&s.scale(&lambda)))
+    }
+
+    /// The coordinate this round is filed under: its chart addresses in
+    /// order, length-delimited (A21). Two minds that met the same charts
+    /// reach one key without anyone choosing an order.
+    pub fn key(&self) -> Vec<u8> {
+        let mut k = Vec::new();
+        for c in &self.charts {
+            crate::transducer::address::put_bytes(&mut k, c.as_bytes());
+        }
+        k
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        for e in self.edges {
-            out.extend_from_slice(&e.to_le_bytes());
+        out.extend_from_slice(&(self.charts.len() as u64).to_le_bytes());
+        for c in &self.charts {
+            crate::transducer::address::put_bytes(out, c.as_bytes());
         }
+        out.extend_from_slice(&(self.points.len() as u64).to_le_bytes());
+        for x in &self.points {
+            for q in x {
+                crate::transducer::alphabet::put_q(out, q);
+            }
+        }
+        crate::transducer::alphabet::put_q(out, &self.radius);
         match &self.attached {
             Some(v) => {
                 out.push(1);
@@ -282,12 +445,25 @@ impl NerveTriangle {
         }
     }
 
-    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<NerveTriangle> {
-        let mut edges = [0u32; 3];
-        for e in &mut edges {
-            *e = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
-            *pos += 4;
+    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<NerveRound> {
+        let n = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?) as usize;
+        *pos += 8;
+        let mut charts = Vec::new();
+        for _ in 0..n {
+            charts.push(Address::new(crate::transducer::address::take_bytes(b, pos)?));
         }
+        let m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?) as usize;
+        *pos += 8;
+        let mut points = Vec::new();
+        for _ in 0..m {
+            points.push([
+                crate::transducer::alphabet::take_q(b, pos)?,
+                crate::transducer::alphabet::take_q(b, pos)?,
+                crate::transducer::alphabet::take_q(b, pos)?,
+                crate::transducer::alphabet::take_q(b, pos)?,
+            ]);
+        }
+        let radius = crate::transducer::alphabet::take_q(b, pos)?;
         let attached = match *b.get(*pos)? {
             0 => {
                 *pos += 1;
@@ -299,7 +475,7 @@ impl NerveTriangle {
             }
             _ => return None,
         };
-        Some(NerveTriangle { edges, attached })
+        Some(NerveRound { charts, points, radius, attached })
     }
 }
 
@@ -380,7 +556,7 @@ pub struct ReceiptsEnvelope {
     /// 1-simplices: the citations, with their transitions.
     pub nerve: Vec<NerveEdge>,
     /// 2-simplices: triple overlaps with a cell attached.
-    pub triangles: Vec<NerveTriangle>,
+    pub rounds: Vec<NerveRound>,
     /// The derivations, one per citing vertex.
     pub derivations: Vec<DerivationCite>,
     /// The pivots this crystallization rests on (A20).
@@ -397,8 +573,7 @@ impl ReceiptsEnvelope {
     /// EVERY LIST IS IN ITS OWN CONTENT ORDER (rule 15). The nerve is sorted
     /// by each edge's site key and the derivations by their vertex address,
     /// so two minds that walked a form's vertices in different orders emit
-    /// the same envelope, and a `NerveTriangle`'s edge indices name the same
-    /// edges on every node. `certificates` comes off a `Keyed`, which is
+    /// the same envelope. `certificates` comes off a `Keyed`, which is
     /// already in key order.
     ///
     /// NO TRIANGLES ARE EMITTED. A triple overlap is derivable from the
@@ -433,29 +608,7 @@ impl ReceiptsEnvelope {
         // the key is the object's coordinates written out. Two minds that
         // walked a form's vertices differently reach one listing without
         // anyone choosing a comparison.
-        // ORDERED BY SITE AND THEN BY TARGET, AND BOTH ARE THE KEY (54.7
-        // B5a). This filed edges under `host()` alone, which held while the
-        // target was still in the key: two citations of different forms
-        // were two sites, so one entry per site lost nothing.
-        //
-        // Once the target leaves, two citations of two forms under one φ
-        // from charts of one rank stand at ONE site — that is gauge
-        // universality and it is the point — and a carrier keyed by site
-        // alone keeps ONE of them and drops the rest, silently. The form
-        // would attest one incidence where it has two, and the cover would
-        // be wrong in the direction nothing reports.
-        //
-        // The site orders the listing and the target separates the edges
-        // standing at it. Both are coordinates the edge already holds, and
-        // the trie's walk IS their order — nothing compares anything.
-        let mut by_incidence: crate::network::nerve::Keyed<NerveEdge> =
-            crate::network::nerve::Keyed::new();
-        for e in env.nerve.drain(..) {
-            let mut k = e.host().into_vec();
-            crate::transducer::address::put_bytes(&mut k, e.target.as_bytes());
-            by_incidence.insert(k, e);
-        }
-        env.nerve = by_incidence.scoped().map(|(_, e)| e.clone()).collect();
+        env.nerve = canonical_nerve(env.nerve.drain(..));
         let mut by_vertex: crate::network::nerve::Keyed<DerivationCite> =
             crate::network::nerve::Keyed::new();
         for d in env.derivations.drain(..) {
@@ -468,7 +621,7 @@ impl ReceiptsEnvelope {
 
     pub fn is_empty(&self) -> bool {
         self.nerve.is_empty()
-            && self.triangles.is_empty()
+            && self.rounds.is_empty()
             && self.derivations.is_empty()
             && self.certificates.is_empty()
     }
@@ -488,10 +641,20 @@ impl ReceiptsEnvelope {
     /// generator inside one. They are one mechanism at two levels and the
     /// economy counts them the same way, so they are read together.
     ///
-    /// Duplicates are kept. A form cited by two vertices is two citations
-    /// and one USE; collapsing them here would decide that at the reading
+    /// Duplicates are kept. A form cited at two SITES is two citations and
+    /// one USE; collapsing them here would decide that at the reading
     /// instead of at the ledger that keys by citer address, which is where
-    /// `use_credit` actually counts.
+    /// `use_credit` actually counts — `cited_by` inserts the citer into a
+    /// `Keyed`, so a form cited twice by one sentence is one entry.
+    ///
+    /// 54.7 B5a — LABOUR IS CREDITED PER DISTINCT GEOMETRIC OVERLAP, NOT
+    /// PER STATEMENT. A multi-sheeted seam credits each sheet, because each
+    /// distinct target is an independent interface in the cover. The same
+    /// target twice at one site is ONE overlap declared as two: it cannot
+    /// arise from `glue_append_under`, which refuses a duplicate edge, and
+    /// an envelope that presents one is refused at the court with
+    /// `REFUSE_SHEET_REPEATED` rather than quietly collapsed here — a
+    /// speaker must not be able to inflate yield by restating an interface.
     pub fn cited_addresses(&self) -> Vec<Address> {
         let mut out = Vec::new();
         for e in &self.nerve {
@@ -510,8 +673,8 @@ impl ReceiptsEnvelope {
         for e in &self.nerve {
             e.to_bytes(out);
         }
-        out.extend_from_slice(&(self.triangles.len() as u64).to_le_bytes());
-        for t in &self.triangles {
+        out.extend_from_slice(&(self.rounds.len() as u64).to_le_bytes());
+        for t in &self.rounds {
             t.to_bytes(out);
         }
         out.extend_from_slice(&(self.derivations.len() as u64).to_le_bytes());
@@ -572,7 +735,7 @@ impl ReceiptsEnvelope {
         }
         let n = count(b, pos)?;
         for _ in 0..n {
-            env.triangles.push(NerveTriangle::from_bytes(b, pos)?);
+            env.rounds.push(NerveRound::from_bytes(b, pos)?);
         }
         let n = count(b, pos)?;
         for _ in 0..n {

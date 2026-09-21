@@ -520,8 +520,11 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         // THE COVER, OFF THE TAPE'S OWN CITATIONS (54.7, B5a). The tape is
         // the pre-eviction carrier and writes each citation's target, so
         // the edges were collected at the parse site above and nothing is
-        // invented for them here.
-        cover,
+        // invented for them here — put through the ONE writer of the
+        // cover's order, which is the envelope's, so a form decoded from
+        // the tape and the same form decoded from its address hold their
+        // edges in one order.
+        cover: crate::transducer::element::canonical_nerve(cover),
         vortex: Keyed::new(),
         by_address: Keyed::new(),
         by_class: Keyed::new(),

@@ -154,6 +154,28 @@ fn face_rederives(f: &Form, face: &crate::transducer::sentence::FormFace) -> boo
 /// exactly what the vertex the key rebuilds is. That is the whole reason the
 /// envelope has to exist: reading the citations off the form meant reading
 /// them off the tape, and a form decoded from its address has none.
+/// [`derivations_compose`] by name, for the pre-B6 parity oracle. The
+/// reader is otherwise reached only through the whole verdict, and the
+/// guard has to ask it on its own so a divergence has ONE line.
+pub fn derivations_compose_at(
+    f: &Form,
+    env: &crate::transducer::element::ReceiptsEnvelope,
+    resolve: &dyn Fn(&[u8]) -> Option<Form>,
+) -> Option<Refusal> {
+    derivations_compose(f, env, resolve)
+}
+
+/// [`replay_certificates`] with the chord index built from the form the
+/// certificates are being replayed against — which is the coordinate the
+/// parity oracle is testing, since a chord is an index into `faces` and a
+/// decoder that reordered them would diverge here and nowhere else.
+pub fn replay_certificates_at(
+    f: &Form,
+    certificates: &[crate::transducer::sentence::PivotCertificate],
+) -> Option<&'static str> {
+    replay_certificates(f, certificates, &chord_loops(f))
+}
+
 fn derivations_compose(
     f: &Form,
     env: &crate::transducer::element::ReceiptsEnvelope,
@@ -259,20 +281,102 @@ pub fn replay_form_at(
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
 ) -> Option<Refusal> {
-    let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
     // A SPOKEN word under replay: the court re-derives it from the tape it
     // was sent, which is the point of a replay, so the decode is named
-    // (L16).
+    // (L16) — and it is named HERE, once, so the verdict below is a
+    // function of the FORM and not of which decoder produced it.
+    //
+    // That seam is the pre-B6 parity guard's (54.5 Phase A). While both
+    // decoders exist the tape is an oracle, and
+    // `every_court_reader_agrees_on_both_decoders` feeds each of them into
+    // [`replay_form_on`] and asserts one verdict. Without the seam the
+    // legacy path could not be reached at all, and the guard would be
+    // asserting the decoupled reader against itself.
     let Some(f) = crate::transducer::sentence::from_element_form(spoken) else {
-        return Some(tape(REFUSE_FORM_TAPE));
+        return Some(Refusal::of_tape(REFUSE_FORM_TAPE, spoken));
     };
-    let f = &f;
+    replay_form_on(&f, spoken, resolve, family, crystal)
+}
+
+/// [`replay_form_at`] on a form already decoded — the whole verdict, with
+/// the decode lifted out so it can be supplied.
+pub fn replay_form_on(
+    f: &Form,
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8]) -> Option<Form>,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    crystal: &dyn crate::transducer::family::Crystal,
+) -> Option<Refusal> {
+    let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
     // A FORM'S OWN DEPTH AGREES WITH ITS OWN CITATIONS. This is a reading
     // of the sentence against itself — no cited form is resolved for it —
     // so it holds whatever the citation relation's shape is, and it is
     // what catches a tape whose `depth` was moved under its vertices.
     if f.depth != f.depth_of() {
         return Some(tape(REFUSE_GLUED_DEPTH));
+    }
+    // EVERY BOUNDARY IS BONDED (54.7 B5a). A `Vertex::Glued` is a PORT —
+    // "this chart exposes a boundary interface at this rank, depth,
+    // placement and φ" — and an edge of the cover is what says which form
+    // it mates with. B5 put those two facts in two carriers, and nothing
+    // held them together: a vertex whose site no edge stands at is an
+    // un-bonded port, and it reached the readers as silence.
+    //
+    // The court states it instead. The cover is the SPOKEN word's, since
+    // that is where a received sentence carries it, and the site is the
+    // vertex's own key contribution — a coordinate, never an index.
+    let cover = &spoken.receipts().nerve;
+    for v in &f.vertices {
+        // THE CHART COMES OFF THE VERTEX ITSELF, not through
+        // `face_chart().unwrap_or_default()`: `Invariant::default()` is the
+        // chart trie's ROOT and naming it would put the refusal at the top
+        // of the atlas rather than at the boundary that is open.
+        let Vertex::Glued { chart, .. } = v else { continue };
+        let site = crate::transducer::sentence::vertex_bytes(v);
+        let at = |reason| Refusal {
+            reason,
+            at: sentence::At::Vertex {
+                address: crate::transducer::address::Address::new(site.clone()),
+                chart: chart.clone(),
+            },
+        };
+        // A MULTI-SHEETED SEAM IS ADMISSIBLE, A REPEATED SHEET IS NOT.
+        // Several edges at one site is a junction between several charts —
+        // gauge universality means the citing chart cannot tell them apart
+        // locally, and each distinct target is an independent interface. The
+        // same target twice is one geometric overlap declared as two, which
+        // would inflate the yield, so the sheets must be distinct.
+        let mut sheets: Keyed<()> = Keyed::new();
+        let mut n = 0usize;
+        for e in cover.iter().filter(|e| e.host().as_bytes() == site) {
+            n += 1;
+            sheets.insert(&e.target, ());
+        }
+        if n == 0 {
+            return Some(at(REFUSE_ORPHAN_PORT));
+        }
+        if sheets.len() != n {
+            return Some(at(REFUSE_SHEET_REPEATED));
+        }
+    }
+    // AND NO BOND WITHOUT A PORT (54.7 B5a). The converse of the orphan
+    // check, and the direction that does not fail safe: an orphan port is an
+    // incomplete attachment and every reader of it refuses or reports
+    // unspoken, while a phantom edge is a claim of connectivity the complex
+    // never constructed — it WOULD resolve, replay and be paid for against a
+    // boundary the form does not hold. Never erased, because erasure masks
+    // perjury and corrupts the attestation that reads the cover for credit.
+    for e in cover {
+        let host = e.host();
+        if !f.vertices.iter().any(|v| {
+            matches!(v, Vertex::Glued { .. })
+                && crate::transducer::sentence::vertex_bytes(v) == host.as_bytes()
+        }) {
+            return Some(Refusal {
+                reason: REFUSE_PHANTOM_EDGE,
+                at: sentence::At::Vertex { address: host, chart: e.chart.clone() },
+            });
+        }
     }
     // THE CITATIONS ARE THE NERVE'S 1-SIMPLICES, READ FROM THE ENVELOPE
     // (54.5 Road (d), B4 — and this is the reader B5 turns on).

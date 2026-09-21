@@ -597,3 +597,284 @@ fn where_the_corpus_goes_silent() {
         loops - unread - no_path
     );
 }
+
+/// 54.5 PHASE A — THE DUAL-READER PARITY ORACLE, at the four readers the
+/// purge is about (as ruled 2026-09-21).
+///
+/// `the_address_and_the_tape_agree_on_every_reading_the_court_makes`
+/// compares the two DECODERS on the geometry: faces, rank, closure, depth,
+/// loops. That is necessary and not sufficient. What B6 deletes is
+/// `Element.description`, and what has to hold before it goes is that no
+/// COURT VERDICT depends on which carrier produced the form:
+///
+/// ```text
+///                      one spoken Element
+///                              │
+///          ┌───────────────────┴───────────────────┐
+///          ▼                                       ▼
+///   description → decode_form_v2           address → from_address
+///   (the legacy tape)                      + ReceiptsEnvelope
+///          │                                       │
+///          ├──────────┬────────────┬───────────────┤
+///          ▼          ▼            ▼               ▼
+///  derivations  certificates  unruled cite   replay_form verdict
+///          └──────────┴────────────┴───────────────┘
+///                              ▼
+///                   assert_eq!(legacy, decoupled)
+/// ```
+///
+/// THE SEAM IS `replay_form_on`. `replay_form_at` decodes internally, so
+/// without lifting that out this guard would feed the decoupled reader to
+/// itself and assert nothing. The decode is named once and the verdict is
+/// a function of the form it is handed.
+///
+/// `unruled_citation` is on the envelope already and has no form in it, so
+/// its parity is the one that can be stated as an equality of SETS: the
+/// addresses the envelope's edges name are exactly the addresses the legacy
+/// tape's citations named. That is the whole content of "no hidden
+/// semantics depend on the description" for the citation reader.
+///
+/// Over the corpus AND the fixtures, because they fail differently: a
+/// fixture is a shape somebody chose and is where adjudication actually
+/// executes today, and a corpus form is whatever the scene turned out to
+/// be. The two attempts at B4 that failed were caught by fixtures, not by
+/// the fleet.
+#[test]
+fn every_court_reader_agrees_on_both_decoders() {
+    use crate::transducer::sentence::as_element_form;
+    let no_resolve = |_: &[u8]| None;
+
+    // THE TWO PATHS, off one word. `legacy` is the tape under its version
+    // gate — the same decision `vertex_address` still makes — and
+    // `decoupled` is the address plus the word's own envelope.
+    let both = |e: &crate::transducer::element::Element| -> Option<(Form, Form)> {
+        let b = e.description();
+        if b.get(1).copied() != Some(crate::transducer::sentence::FORM_TAPE_VERSION) {
+            return None;
+        }
+        let mut pos = 2usize;
+        let legacy = crate::transducer::sentence::decode_form_v2(b, &mut pos)?;
+        let decoupled = crate::transducer::sentence::from_element_form(e)?;
+        Some((legacy, decoupled))
+    };
+
+    let mut checked = 0usize;
+    let mut with_cites = 0usize;
+    let (mut site_total, mut site_arity1) = (0usize, 0usize);
+    let mut reader3 = 0usize;
+    let mut arity_gt1 = 0usize;
+    let mut forms: Vec<Form> = Vec::new();
+
+    // THE CORPUS: whatever the scene turned out to be.
+    if let Ok(dir) = std::fs::read_dir(CORPUS) {
+        let mut names: Vec<String> = dir
+            .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
+            .filter(|n| n.ends_with(".json"))
+            .collect();
+        names.sort_unstable();
+        names.truncate(TASKS);
+        let epi = crate::client::sdk::Epigenome::new();
+        let mut physics = crate::physics::Physics::default();
+        for name in &names {
+            let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+            let Some(task) = crate::arc::parse_task(&json) else { continue };
+            let mut budget =
+                physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
+            if let Some(rule) =
+                crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
+            {
+                forms.push(rule.form);
+            }
+        }
+    }
+
+    // THE FIXTURES, BUILT ON THE CORPUS FORMS. A corpus form is whatever
+    // the scene turned out to be, and the extractor's own output cites
+    // rarely; the readers the purge is about are the CITATION readers, so
+    // the fixtures are hosts that cite — one citation, two citations of
+    // two different forms at one site (gauge universality), and a nested
+    // host that cites a citing form. Built rather than hand-written so
+    // they carry real geometry and not a shape chosen to pass.
+    let cited: Vec<(Form, crate::transducer::address::Address)> = forms
+        .iter()
+        .filter(|f| f.is_closed())
+        .take(2)
+        .filter_map(|f| as_element_form(f, [1, 0, 0, 0]).map(|e| (f.clone(), e.address())))
+        .collect();
+    if let [(a, a_at), (b, b_at)] = cited.as_slice() {
+        let identity = crate::transducer::alphabet::Word::identity();
+        let mut one = Form::default();
+        if one.glue(a, a_at.clone(), identity.clone(), [0, 0, 0, 1]).is_some() {
+            let mut two = one.clone();
+            if two.glue(b, b_at.clone(), identity.clone(), [0, 0, 0, 1]).is_some() {
+                if let Some(one_e) = as_element_form(&one, [1, 0, 0, 0]) {
+                    let mut nested = Form::default();
+                    if nested.glue(&one, one_e.address(), identity, [0, 0, 0, 1]).is_some() {
+                        forms.push(nested);
+                    }
+                }
+                forms.push(two);
+            }
+            forms.push(one);
+        }
+    }
+
+    for f in &forms {
+        let Some(e) = as_element_form(f, [1, 0, 0, 0]) else { continue };
+        let env = e.receipts();
+
+        // THE ORACLE'S DOMAIN, AND THE PARTITION IS THE RULING (54.7, as
+        // ruled 2026-09-21). The legacy tape's citation record is per
+        // `Glued` VERTEX; the cover is per INCIDENCE. Before B5 those
+        // arities were equal because the target sat on the vertex. After it
+        // a site can carry several edges — gauge universality, and what B5
+        // was for — so the tape is structurally an ARITY-1 CODEC.
+        //
+        // Demanding that it act as a faithful second opinion for a
+        // multi-sheeted cover demands that a dead format anticipate the
+        // feature designed to replace it. So the oracle is consulted where
+        // it has a domain, and the multi-sheeted fixtures assert their own
+        // integrity instead — retraction and envelope, with no legacy side.
+        let mut sites: crate::network::nerve::Keyed<u64> = crate::network::nerve::Keyed::new();
+        for x in &env.nerve {
+            let h = x.host();
+            match sites.get_mut(h.as_bytes()) {
+                Some(n) => *n += 1,
+                None => {
+                    sites.insert(h.as_bytes(), 1);
+                }
+            }
+        }
+        let mut multi = false;
+        for (_, n) in sites.scoped() {
+            site_total += 1;
+            if *n == 1 {
+                site_arity1 += 1;
+            } else {
+                multi = true;
+            }
+        }
+        if multi {
+            arity_gt1 += 1;
+            // RETRACTION PARITY: the key is a fixed point of the decoder.
+            let key = form_vertex_key(f);
+            let back = from_address(&key).expect("a multi-sheeted form decodes from its key");
+            assert_eq!(form_vertex_key(&back), key, "key(from_address(key)) == key");
+            // ENVELOPE INTEGRITY: every edge stands at a port and every
+            // port carries a bond, and the sheets at a site are distinct.
+            for x in &env.nerve {
+                let host = x.host();
+                assert!(
+                    back.vertices.iter().any(|v| {
+                        matches!(v, crate::transducer::sentence::Vertex::Glued { .. })
+                            && crate::transducer::sentence::vertex_bytes(v) == host.as_bytes()
+                    }),
+                    "no phantom edge: every citation stands at a boundary the complex holds"
+                );
+            }
+            for v in &back.vertices {
+                if !matches!(v, crate::transducer::sentence::Vertex::Glued { .. }) {
+                    continue;
+                }
+                let site = crate::transducer::sentence::vertex_bytes(v);
+                let mut sheets: crate::network::nerve::Keyed<()> =
+                    crate::network::nerve::Keyed::new();
+                let mut n = 0usize;
+                for x in env.nerve.iter().filter(|x| x.host().as_bytes() == site) {
+                    n += 1;
+                    sheets.insert(&x.target, ());
+                }
+                assert!(n > 0, "no orphan port: every boundary carries a citation");
+                assert_eq!(sheets.len(), n, "the sheets at a site are distinct targets");
+            }
+            checked += 1;
+            if !env.nerve.is_empty() {
+                with_cites += 1;
+            }
+            continue;
+        }
+
+        let Some((legacy, decoupled)) = both(&e) else { continue };
+        checked += 1;
+
+        // READER 1 — `derivations_compose`. The evidence is the envelope's
+        // either way; what is under test is whether the FORM it is checked
+        // against changes the verdict.
+        assert_eq!(
+            crate::verdict::derivations_compose_at(&legacy, env, &no_resolve).map(|r| r.reason),
+            crate::verdict::derivations_compose_at(&decoupled, env, &no_resolve).map(|r| r.reason),
+            "derivations compose to the same verdict on both decoders"
+        );
+
+        // READER 2 — `replay_certificates`, each certificate un-pivoted
+        // against the chord face it names. The chord is an index into
+        // `faces`, so a decoder that reordered faces would diverge here and
+        // nowhere else.
+        assert_eq!(
+            crate::verdict::replay_certificates_at(&legacy, &env.certificates),
+            crate::verdict::replay_certificates_at(&decoupled, &env.certificates),
+            "the certificates replay to the same verdict on both decoders"
+        );
+
+        // READER 3 — the unruled citation's ADDRESS SET. The envelope names
+        // the targets; the legacy tape named them on its `Glued` records.
+        // Equality of the two sets is what "nothing depends on the
+        // description" means for the citation reader.
+        // ARITY 1, SO THE TAPE IS A FAITHFUL SECOND OPINION and the
+        // citation sets are compared outright.
+        let from_legacy: Vec<Vec<u8>> =
+            legacy.cover.iter().map(|x| x.target.as_bytes().to_vec()).collect();
+        // ONE PER SITE, IN THE COVER'S OWN ORDER. `env.nerve` is already
+        // canonical, so the first edge at each host is the one the tape's
+        // per-vertex `find` reaches.
+        let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        let mut from_env_one: Vec<Vec<u8>> = Vec::new();
+        for x in &env.nerve {
+            let h = x.host();
+            if seen.get(h.as_bytes()).is_none() {
+                seen.insert(h.as_bytes(), ());
+                from_env_one.push(x.target.as_bytes().to_vec());
+            }
+        }
+        if from_env_one != from_legacy {
+            reader3 += 1;
+        }
+        if !env.nerve.is_empty() {
+            with_cites += 1;
+        }
+
+        // READER 4 — THE WHOLE VERDICT, every return variant.
+        assert_eq!(
+            crate::verdict::replay_form_on(
+                &legacy,
+                &e,
+                &no_resolve,
+                None,
+                &crate::transducer::family::NoCrystal
+            )
+            .map(|r| r.reason),
+            crate::verdict::replay_form_on(
+                &decoupled,
+                &e,
+                &no_resolve,
+                None,
+                &crate::transducer::family::NoCrystal
+            )
+            .map(|r| r.reason),
+            "the form replays to the same verdict on both decoders"
+        );
+    }
+
+    // THE READING THE TEST TOOK (rule 13): a pass over nothing is not a
+    // pass, and a pass over nothing that CITES would not exercise the
+    // reader the purge is about.
+    eprintln!("  parity: {checked} words on both decoders, {with_cites} of them citing");
+    eprintln!(
+        "  cover arity: {site_total} sites, {site_arity1} of arity 1, {} of arity >1; \
+         {arity_gt1} words multi-sheeted and audited without the oracle",
+        site_total - site_arity1
+    );
+    assert!(checked > 0, "the parity oracle ran over no word");
+    assert!(with_cites > 0, "the parity oracle saw no citation, so reader 3 asserted nothing");
+    assert_eq!(reader3, 0, "the tape names the envelope's citations, one per site");
+}
