@@ -1182,6 +1182,47 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         let (triples, refused) = crate::transducer::cech::certified_triples(&charts);
         ((charts.len(), triples, cells.len(), shared), refused)
     };
+    // THE SPECTRAL WITNESS (54.7, ruled 2026-09-22): do three tethers share
+    // a phase, rather than a place?
+    //
+    // Every spatial criterion tried before this one — an `ℓ¹` stencil, the
+    // open star, the Khalimsky corner — asked whether three charts contain
+    // a mutual POINT, and each reintroduced a lattice to answer it. The
+    // physical criterion is congruence of PHASE: three currents in laminar
+    // flow lock into a surface where their compact rotor projections share
+    // a commensurate cyclotomic period, `ℓ ∈ {1,2,3,4,5,6,8,10,12}` by
+    // `φ(ℓ) ≤ 4`. Where no mutual period divides them no standing wave can
+    // form, the boundary never freezes, and the strain stays in the
+    // 1-skeleton as open kinematic flux.
+    //
+    // This needs NO spatial infrastructure: the rotor half is compact, so
+    // `Rotor::order` answers the period exactly, and the meets are already
+    // in hand.
+    let spectrum = {
+        let mut finite = 0usize;
+        let mut infinite = 0usize;
+        let mut unread = 0usize;
+        // The periods in the cyclotomic order they may occupy, counted at
+        // their own index rather than summed into a total (rule 5).
+        let mut by_period = [0usize; 13];
+        for (_, _, e) in meet_chords.iter() {
+            let Some(t) = e.as_ref() else {
+                unread += 1;
+                continue;
+            };
+            match t.word.rotor().order() {
+                Some(crate::transducer::alphabet::Order::Finite(l)) => {
+                    finite += 1;
+                    if let Some(slot) = by_period.get_mut(l as usize) {
+                        *slot += 1;
+                    }
+                }
+                Some(crate::transducer::alphabet::Order::Infinite) => infinite += 1,
+                None => unread += 1,
+            }
+        }
+        (finite, infinite, unread, by_period)
+    };
     let chord_pairs: Vec<OfferedChord> = meet_chords
         .iter()
         .filter_map(|((ta, ca, pa, da), (tb, cb, pb, db), e)| {
@@ -1376,6 +1417,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
          | ρ: |im| {} |conj| {} of {} generators, {} in ker | this form: b₁ {} |im| {} \
          | nerve: {} charts over {} cells, {} shared by two or more, \
          {} certified triples, {} refused \
+         | phase: {} finite {} infinite {} unread, periods {:?} \
          | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {}",
         form.faces.len(),
         // The site+ring faces COUNTED as they were built, not the total
@@ -1422,6 +1464,10 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         certified.3,
         certified.1.len(),
         certified_refused.len(),
+        spectrum.0,
+        spectrum.1,
+        spectrum.2,
+        spectrum.3,
         drops.offered,
         drops.built,
         drops.member_key,
