@@ -60,9 +60,27 @@ pub(crate) type PendingTorsion = (
 /// Widening the class to separate them would fix the count and destroy
 /// correspondence. The translation belongs at the member level, which is
 /// where `loops_of` already builds: `every_loop_lifts_to_the_member_complex`.
+/// THE FOOTPRINT RIDES THE CHORD (54.7, ruled 2026-09-21).
+///
+/// MEASURED: `classify_cover`'s gate keys a meet's end by
+/// `(class, chart, carriage, FOOTPRINT)` and admitted 186 of 186. The chord
+/// it pushed carried only the first three, so `extract`'s face builder
+/// rebuilt each end as `section_key(ix, chart, φ)` — identical at both ends
+/// for 184 of them — and `(ma != mb)` dropped every one. 186 chords in, 2
+/// faces out, `b₁ = 0` on every form of the corpus.
+///
+/// The footprint is what distinguishes them: two disjoint bodies under the
+/// identical transformation have `φ_a = φ_b` and `D_a ≠ D_b`, so the
+/// relative carriage is `1` and the transport across the interface is the
+/// SOLDER FORM displacement between their basepoints — a hyperbolic
+/// transvection, `B = eᵢ∧e₋`, `I₁ > 0`, carrying a Burgers vector. A
+/// coordinate excluded from IDENTITY, correctly, and then excluded from
+/// INCIDENCE, which does not follow.
+pub(crate) type ChordEnd = (TransportClass, Invariant, Versor, Vec<(i64, i64, i64)>);
+
 pub(crate) type MeetChord = (
-    (TransportClass, Invariant, Versor),
-    (TransportClass, Invariant, Versor),
+    ChordEnd,
+    ChordEnd,
     Option<crate::transducer::sentence::Transport>,
 );
 
@@ -272,9 +290,13 @@ pub(crate) fn classify_cover(
                         // "there is no lift" and "there is no holonomy"
                         // returned as one silence — so the measurement
                         // travels to the carrier that needs it.
+                        // AND THE FOOTPRINT TRAVELS WITH IT. The gate above
+                        // separated these two ends BY the footprint; the
+                        // chord dropped it and the face builder then could
+                        // not tell them apart either (54.7).
                         chords.push((
-                            (ta, ci.clone(), pa.clone()),
-                            (tb, cj.clone(), pb.clone()),
+                            (ta, ci.clone(), pa.clone(), da.clone()),
+                            (tb, cj.clone(), pb.clone(), db.clone()),
                             carried_edge.clone(),
                         ));
                     }

@@ -153,7 +153,25 @@ impl Form {
                 adj[b].push((a, fi));
                 continue;
             }
-            let Some((path, mut walked)) = tree_path(&adj, a, b) else {
+            // A 1-CELL ATTACHED AT ONE 0-CELL IS A CYCLE (54.7, ruled
+            // 2026-09-21). `tree_path(adj, a, a)` yields nothing, so this
+            // fell through the `continue` below and every reflexive chord
+            // was dropped — which is a GRAPH's convention, not a CW
+            // complex's. The minimal decomposition of `S¹` is exactly this
+            // cell: one vertex, one edge, `∂e¹ = e⁰ − e⁰ = 0`, `b₁ = 1`.
+            //
+            // It is the shape a footprint chord has by construction. Two
+            // disjoint bodies under the identical transformation are one
+            // class, one chart and one carriage, so both ends resolve to
+            // ONE member — and the 1-cell between them is a self-loop whose
+            // holonomy is the Burgers transvection `τ = p(D_b) − p(D_a)`.
+            // Refusing the edge because its ends coincide discards the
+            // dislocation the cover measured.
+            let Some((path, mut walked)) = (if a == b {
+                Some((vec![a], Vec::new()))
+            } else {
+                tree_path(&adj, a, b)
+            }) else {
                 continue;
             };
             // THE CYCLE PROJECTED TO ITS VERTICES. `Loop` names its nodes

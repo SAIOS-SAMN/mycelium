@@ -882,30 +882,133 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // the builder consumes. Both ends may sit at ONE vertex; what must
     // differ is the member key, which is the pair `(vertex, chart)`.
     type OfferedChord = (Vec<u8>, Vec<u8>, Option<crate::transducer::sentence::Transport>);
+
+    /// THE BURGERS VECTOR BETWEEN TWO FOOTPRINTS, as a finite transvection.
+    ///
+    /// The basepoint of a footprint is its least lamina in the base's own
+    /// coordinate order — content order, so two minds reading one scene
+    /// pick the same one and never a centroid, which would be an average
+    /// standing in for a place (rule 15).
+    ///
+    /// `τ = p(D_b) − p(D_a)` generates `B = Σ τᵢ (eᵢ ∧ e₋)`, a HYPERBOLIC
+    /// bivector — `I₁ > 0`, the reading `Cl(4,0)` cannot make — and the
+    /// finite motion is `cayley(B)`, exact over ℚ. `None` where the two
+    /// footprints share a basepoint, since a zero displacement is not a
+    /// dislocation and none is invented (rule 11).
+    /// THE DEFECT A CHORD CARRIES — a DISPIRATION, not one of its halves.
+    ///
+    /// A first cut wrote `measured.or_else(transvection)`: the rotational
+    /// reading OR the translational one, whichever was present. That is the
+    /// projection into uncoupled sub-actions — a chord whose two sections
+    /// differ in BOTH carriage and footprint has a rotation about an axis
+    /// and a slip along it at once, and choosing one discards the coupling
+    /// that makes it helicoidal.
+    ///
+    /// ```text
+    ///     Ω_ab = (φ_b φ_a⁻¹) · T(τ),   τ = p(D_b) − p(D_a)
+    /// ```
+    ///
+    /// The composite's generator is non-simple where both parts are
+    /// present, so `I₂ = ⟨B∧B⟩₄ ≠ 0` and the screw survives. Where the
+    /// carriages agree it degenerates to a pure Volterra dislocation —
+    /// uniform Burgers vector, `I₂ = 0` honestly — and where the footprints
+    /// agree it is the measured rotation alone. Each is a reading of what
+    /// the two sections differ in, never a shape imposed on all of them.
+    fn dispiration(
+        measured: Option<&crate::transducer::sentence::Transport>,
+        da: &[(i64, i64, i64)],
+        db: &[(i64, i64, i64)],
+    ) -> Option<crate::transducer::sentence::Transport> {
+        let slip = basepoint_transvection(da, db);
+        match (measured, slip) {
+            (None, s) => s,
+            (Some(m), None) => Some(m.clone()),
+            // BOTH: compose, and the product is the helicoidal transport.
+            (Some(m), Some(s)) => Some(crate::transducer::sentence::Transport {
+                word: m.word.clone(),
+                carriage: m.carriage.geo(&s.carriage),
+                gauge: m.gauge.clone(),
+            }),
+        }
+    }
+
+    fn basepoint_transvection(
+        da: &[(i64, i64, i64)],
+        db: &[(i64, i64, i64)],
+    ) -> Option<crate::transducer::sentence::Transport> {
+        let base = |d: &[(i64, i64, i64)]| d.iter().min().copied();
+        let (a, b) = (base(da)?, base(db)?);
+        let tau = (b.0 - a.0, b.1 - a.1, b.2 - a.2);
+        if tau == (0, 0, 0) {
+            return None;
+        }
+        let q = |v: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(v));
+        let planes = crate::transducer::cga::TRANSVECTION_PLANES;
+        let generator = crate::transducer::element::Versor::blade(planes[0], q(tau.0))
+            .add(&crate::transducer::element::Versor::blade(planes[1], q(tau.1)))
+            .add(&crate::transducer::element::Versor::blade(planes[2], q(tau.2)));
+        let carriage = crate::transducer::cga::cayley(&generator)?;
+        Some(crate::transducer::sentence::Transport {
+            word: crate::transducer::alphabet::Word::identity(),
+            carriage,
+            gauge: Vec::new(),
+        })
+    }
     let chord_pairs: Vec<OfferedChord> = meet_chords
         .iter()
-        .filter_map(|((ta, ca, pa), (tb, cb, pb), e)| {
+        .filter_map(|((ta, ca, pa, da), (tb, cb, pb, db), e)| {
             let at = |t: &TransportClass,
                       c: &Invariant,
-                      phi: &crate::transducer::element::Versor|
+                      phi: &crate::transducer::element::Versor,
+                      d: &[(i64, i64, i64)]|
              -> Option<Vec<u8>> {
                 // A class stands at one or more vertices and any of them
                 // names the same class, so the slice pattern reads one
                 // rather than choosing among them (rule 15). The SECTION is
                 // that member and the carriage it acts by, which is the
                 // coordinate separating two sheets of one fibre.
+                //
+                // 54.7 — AND THE FOOTPRINT, which is what separates two
+                // sections carried by ONE versor. This key omitted it while
+                // `classify_cover`'s gate included it, so 184 of 186 chords
+                // arrived here with both ends identical and were dropped by
+                // the `ma != mb` below. The two ends of a chord are told
+                // apart by the same coordinates at both places or they are
+                // not told apart at all (rule 12: one construction).
                 let ix = match form.by_transport.at(&t.key())?.as_slice() {
                     [ix, ..] => *ix,
                     [] => return None,
                 };
-                Some(section_key(ix, c.key().as_bytes(), phi))
+                let mut k = section_key(ix, c.key().as_bytes(), phi);
+                for (r, col, f) in d {
+                    k.extend_from_slice(&r.to_le_bytes());
+                    k.extend_from_slice(&col.to_le_bytes());
+                    k.extend_from_slice(&f.to_le_bytes());
+                }
+                Some(k)
             };
-            let (ma, mb) = (at(ta, ca, pa)?, at(tb, cb, pb)?);
-            // ONE MEMBER IS NOT A CHORD. Both ends resolving to the same
-            // `(vertex, chart)` is a self-pair, which the face builder
-            // would refuse at `face_word` anyway; refused here so the
-            // reading says why rather than counting it as a drop.
-            (ma != mb).then_some((ma, mb, e.clone()))
+            let (ma, mb) = (at(ta, ca, pa, da)?, at(tb, cb, pb, db)?);
+            // ONE SECTION MEETING ITSELF IS NOT A CHORD — same class, same
+            // chart, same carriage AND same footprint. Anything else is two
+            // sections and closes a cycle.
+            if ma == mb {
+                return None;
+            }
+            // THE TRANSPORT ACROSS THE INTERFACE. Where the meet measured
+            // one, that stands. Where it did not — two disjoint bodies under
+            // the identical transformation, `φ_a = φ_b`, so the relative
+            // carriage is the identity and says nothing — the transport is
+            // the SOLDER FORM displacement between the two basepoints:
+            //
+            //     τ = p(D_b) − p(D_a) ≠ 0
+            //
+            // a hyperbolic transvection, `B = Σ τᵢ (eᵢ∧e₋)`, evolved to a
+            // finite versor by the rational Cayley transform. A chord whose
+            // holonomy is the identity carries no obstruction and would
+            // leave the cycle unreadable; this is the Burgers vector the
+            // dislocation actually has.
+            let edge = dispiration(e.as_ref(), da, db);
+            Some((ma, mb, edge))
         })
         .collect();
     let n_chords = chord_pairs.len();
