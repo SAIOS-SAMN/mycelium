@@ -179,7 +179,7 @@ pub(crate) fn tally_loop(fill: &crate::transducer::cech::Fill) {
         Fill::Congruent(..) => t.filed += 1,
         Fill::Class(..) => t.standing += 1,
         Fill::Unspellable(..) => t.unspellable += 1,
-        Fill::Open | Fill::Already => {}
+        Fill::Open => {}
     });
 }
 

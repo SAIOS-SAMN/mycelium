@@ -181,7 +181,7 @@ fn fill_is_gauge_or_class() {
     // and some gauge coming back is true of every gauge including a wrong
     // one.
     match c.fill(&key) {
-        Fill::Filled(g, carriage) => {
+        CoboundaryOutcome::Attached(Fill::Filled(g, carriage)) => {
             assert!(g.is_identity(), "a coboundary's leftover is the identity: {g:?}");
             assert!(same_versor(&carriage, &ident()), "and carries no placement");
         }
@@ -195,7 +195,7 @@ fn fill_is_gauge_or_class() {
     c.coboundary_on_link(&a, |_| vol());
     let key = c.link(&a, 2)[0].clone();
     match c.fill(&key) {
-        Fill::Congruent(_, g, ell) => {
+        CoboundaryOutcome::Attached(Fill::Congruent(_, g, ell)) => {
             assert_eq!(ell, 2, "two quarter turns against an identity chord close at two");
             assert_eq!(g.order(), Some(Order::Finite(2)), "and the filed rotor says so");
             assert!(
@@ -213,7 +213,7 @@ fn fill_is_gauge_or_class() {
     c.coboundary_on_link(&a, |_| vol());
     let key = c.link(&a, 2)[0].clone();
     match c.fill(&key) {
-        Fill::Class(kappa, r) => {
+        CoboundaryOutcome::Attached(Fill::Class(kappa, r)) => {
             assert_eq!(
                 r.order(),
                 Some(Order::Infinite),
@@ -260,7 +260,7 @@ fn a_placement_that_does_not_close_is_a_class_carrying_it() {
         "and the placement half does not: it is the whole obstruction"
     );
     match c.fill(&key) {
-        Fill::Class(kappa, r) => {
+        CoboundaryOutcome::Attached(Fill::Class(kappa, r)) => {
             assert!(r.is_identity(), "the class's rotor part is the identity");
             assert!(
                 !same_versor(&kappa.carriage, &ident()),
@@ -324,8 +324,12 @@ fn fill_is_attempted_once() {
     c.set_edge(&a, &b, Rotor::identity(), ident(), vol());
     let key = c.link(&a, 1)[0].clone();
     let first = c.fill(&key);
-    assert!(matches!(first, Fill::Filled(..)));
+    assert!(matches!(first.attached(), Some(Fill::Filled(..))));
     let second = c.fill(&key);
-    assert!(matches!(second, Fill::Already), "a second fill is not a transition");
+    assert!(
+        matches!(second, CoboundaryOutcome::AlreadyFilled),
+        "a second fill is not a transition — and it is now a distinct TYPE \
+         from the state the simplex holds, so it can no longer be stored"
+    );
     assert!(matches!(c.simplex(&key).map(|c| &c.fill), Some(Fill::Filled(..))));
 }

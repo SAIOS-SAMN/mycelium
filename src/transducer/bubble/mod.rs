@@ -23,7 +23,7 @@ pub(crate) use merge::*;
 use crate::network::nerve::{coord, Coordinate, Keyed};
 use crate::physics::Budget;
 use crate::transducer::alphabet::{Order, Rotor};
-use crate::transducer::cech::{self, Complex, Fill, Section, Simplex};
+use crate::transducer::cech::{self, CoboundaryOutcome, Complex, Fill, Section, Simplex};
 use crate::transducer::element::{self, Element};
 use crate::transducer::family::Crystal;
 use crate::transducer::sentence::{self, Form, Link, PivotCertificate, Vertex};

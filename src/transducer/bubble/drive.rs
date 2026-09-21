@@ -296,7 +296,7 @@ impl Contemplation {
                     self.complex.fill(&key)
                 };
                     match outcome {
-                        Fill::Filled(gamma, _carriage) => {
+                        CoboundaryOutcome::Attached(Fill::Filled(gamma, _carriage)) => {
                             fills += 1;
                             self.fills += 1;
                             if d == 1 && !gamma.is_identity() {
@@ -322,7 +322,7 @@ impl Contemplation {
                                 }
                             }
                         }
-                        Fill::Congruent(_, g, ell) => {
+                        CoboundaryOutcome::Attached(Fill::Congruent(_, g, ell)) => {
                             self.torsion_merges += 1;
                             if let Some(merged) = self.merge(&vertices) {
                                 if let Some(b) = self.bubbles.get_mut(merged.as_bytes()) {
@@ -339,7 +339,7 @@ impl Contemplation {
                                 }
                             }
                         }
-                        Fill::Class(_, r) => {
+                        CoboundaryOutcome::Attached(Fill::Class(_, r)) => {
                             new_classes += 1;
                             self.classes += 1;
                             for v in &vertices {
@@ -355,8 +355,13 @@ impl Contemplation {
                         // from and not a fill — it is an adjunction
                         // candidate, and it is left standing rather than
                         // folded into a catch-all that would lose it.
-                        Fill::Unspellable(_) => {}
-                        Fill::Open | Fill::Already => {}
+                        CoboundaryOutcome::Attached(Fill::Unspellable(_)) => {}
+                        // Evaluated and still open, already settled, or
+                        // not there to evaluate — three different facts,
+                        // none of which drives a merge here.
+                        CoboundaryOutcome::Attached(Fill::Open)
+                        | CoboundaryOutcome::AlreadyFilled
+                        | CoboundaryOutcome::Absent => {}
                     }
             }
         }

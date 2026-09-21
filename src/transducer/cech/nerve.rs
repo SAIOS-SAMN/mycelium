@@ -5,7 +5,6 @@
 //! `U_{i₀} ∩ … ∩ U_{i_k} ≠ ∅`, and the only honest proof of that is a
 //! WITNESS — a cell of the base standing in all of them at once.
 
-use super::*;
 use crate::network::nerve::keyed::coord;
 
 /// A 2-SIMPLEX OF THE COVER, with the cell that certifies it.

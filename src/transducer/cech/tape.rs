@@ -50,16 +50,11 @@ impl Complex {
                 // back, so the wire carries the coordinates and no second
                 // codec exists to drift from them (law 12).
                 match &c.fill {
+                    // The variants here are exactly the STORED states, and
+                    // the enum no longer holds anything else: the outcome
+                    // code that used to need aliasing onto tag 0 is now
+                    // `CoboundaryOutcome`, which never reaches a tape.
                     Fill::Open => body.push(0),
-                    // `Already` IS NOT A STATE — it is the answer `fill`
-                    // and `fill_by_gauge` give when a simplex was not
-                    // `Open` and nothing changed (coboundary.rs:131, :318),
-                    // and it is returned, never assigned into a simplex.
-                    // A stored one therefore cannot hold it, and writing it
-                    // as `Open` would put an outcome code on the wire as a
-                    // topological state. Refused, so the drop is counted
-                    // rather than silently aliased (rule 11).
-                    Fill::Already => return None,
                     Fill::Filled(g, carriage) => {
                         body.push(1);
                         g.to_bytes(body);

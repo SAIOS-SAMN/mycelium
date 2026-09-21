@@ -113,10 +113,48 @@ pub enum Fill {
     /// A rotor that acts on ANOTHER plane is not this: it is spelled by a
     /// letter of the seventeen and carries a class with no sensor section.
     Unspellable(Box<Rotor>),
-    /// A fill attempted on a simplex that has already transitioned. Not
-    /// stored on the simplex; the return of `fill` when there is no new
-    /// state.
-    Already,
+}
+
+/// THE OUTCOME OF ATTEMPTING TO FILL A SIMPLEX — a transition result, and
+/// never a stored state (54.7, ruled 2026-09-21).
+///
+/// `Fill` carried an `Already` variant whose own documentation said "not
+/// stored on the simplex; the return of `fill` when there is no new
+/// state" — an operational answer living in a persistent enum. It could
+/// not be written to the tape, so the codec aliased it onto `Open`'s tag,
+/// and every consumer carried a defensive `Open | Already` arm for a case
+/// that could never arrive from storage.
+///
+/// `Fill::Open` was doing three jobs besides: the stored state of an
+/// unfilled simplex, the answer when NO SUCH SIMPLEX exists, and the
+/// answer when a section the fill needed was missing. A cell that is not
+/// there and a cell that is there and unfilled are different facts, and
+/// returning one value for both is a refusal reported as a measurement
+/// (rule 11).
+#[derive(Clone, Debug)]
+pub enum CoboundaryOutcome {
+    /// The attempt completed and the simplex now holds this state.
+    /// `Attached(Fill::Open)` is a genuine reading: the boundary was
+    /// evaluated and did not close, so the cell stands open.
+    Attached(Fill),
+    /// The simplex was not `Open`, so nothing was attempted and nothing
+    /// changed.
+    AlreadyFilled,
+    /// No such simplex, or a reading the fill required was not there.
+    /// This is the case that used to answer `Open`.
+    Absent,
+}
+
+impl CoboundaryOutcome {
+    /// The state the simplex holds after the attempt, where the attempt
+    /// reached one. `None` for both non-attempts, which are different
+    /// facts and are kept apart at the call sites that care.
+    pub fn attached(&self) -> Option<&Fill> {
+        match self {
+            CoboundaryOutcome::Attached(f) => Some(f),
+            _ => None,
+        }
+    }
 }
 
 /// CLASSIFY A TRANSITION (12.6). One reader for both organs: the court

@@ -25,7 +25,6 @@ fn fills(cx: &Complex) -> Vec<String> {
         for (_, s) in layer.scoped() {
             out.push(match &s.fill {
                 Fill::Open => "open".to_string(),
-                Fill::Already => "already".to_string(),
                 Fill::Filled(..) => "filled".to_string(),
                 Fill::Class(..) => "class".to_string(),
                 Fill::Congruent(_, _, ell) => format!("congruent:{ell}"),

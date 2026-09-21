@@ -120,16 +120,21 @@ pub fn solve_gauge(n: usize, edges: &[(usize, usize, Rotor, Versor)]) -> Option<
 impl Complex {
     /// Mark a simplex Extended by a known gauge (a translation, a taught
     /// coboundary). Degree-1 never tree-solves — that would always succeed.
-    pub fn fill_by_gauge(&mut self, key: &[u8], gamma: &Rotor, carriage: &Versor) -> Fill {
+    pub fn fill_by_gauge(
+        &mut self,
+        key: &[u8],
+        gamma: &Rotor,
+        carriage: &Versor,
+    ) -> CoboundaryOutcome {
         use crate::transducer::element::same_versor;
         let Some(degree) = self.degree_of(key) else {
-            return Fill::Open;
+            return CoboundaryOutcome::Absent;
         };
         let Some(simplex) = self.degrees[degree].get(key).cloned() else {
-            return Fill::Open;
+            return CoboundaryOutcome::Absent;
         };
         if !matches!(simplex.fill, Fill::Open) {
-            return Fill::Already;
+            return CoboundaryOutcome::AlreadyFilled;
         }
         // The gauge must match on BOTH halves, forward or reversed: a
         // rotor-only match would call a simplex closed by a gauge whose
@@ -149,7 +154,7 @@ impl Complex {
             if let Some(c) = self.degrees[degree].get_mut(key) {
                 c.fill = filled.clone();
             }
-            return filled;
+            return CoboundaryOutcome::Attached(filled);
         }
         self.fill(key)
     }
@@ -308,15 +313,15 @@ impl Complex {
 
     /// Fill a simplex by extend: coboundary is Extended, finite order is
     /// Congruent, otherwise Class.
-    pub fn fill(&mut self, key: &[u8]) -> Fill {
+    pub fn fill(&mut self, key: &[u8]) -> CoboundaryOutcome {
         let Some(degree) = self.degree_of(key) else {
-            return Fill::Open;
+            return CoboundaryOutcome::Absent;
         };
         let Some(simplex) = self.degrees[degree].get(key).cloned() else {
-            return Fill::Open;
+            return CoboundaryOutcome::Absent;
         };
         if !matches!(simplex.fill, Fill::Open) {
-            return Fill::Already;
+            return CoboundaryOutcome::AlreadyFilled;
         }
         let flat = crate::transducer::element::same_versor(
             &simplex.carriage,
@@ -330,7 +335,7 @@ impl Complex {
             if let Some(c) = self.degrees[degree].get_mut(key) {
                 c.fill = filled.clone();
             }
-            return filled;
+            return CoboundaryOutcome::Attached(filled);
         }
         let verts = &simplex.vertices;
         if simplex.degree() >= 2 {
@@ -351,13 +356,15 @@ impl Complex {
                         }
                     }
                     let Some((g1, c1)) = gauge.sections.get(1).cloned() else {
-                        return Fill::Open;
+                        // The gauge placed no second section, so there is
+                        // no reading to attach — absent, not open.
+                        return CoboundaryOutcome::Absent;
                     };
                     let filled = Fill::Filled(Box::new(g1), Box::new(c1));
                     if let Some(c) = self.degrees[degree].get_mut(key) {
                         c.fill = filled.clone();
                     }
-                    return filled;
+                    return CoboundaryOutcome::Attached(filled);
                 }
                 // THE CHORDS CARRY CLASSES — one per loop, each filed at
                 // its own coordinate. The sections are NOT placed: a
@@ -390,18 +397,22 @@ impl Complex {
                 }
             }
         }
+        // A SECTION THE FILL NEEDS IS NOT THERE. This answered `Open`,
+        // which a caller then read as "the simplex stands unfilled" — but
+        // nothing was evaluated, and an unread cell is not an open one
+        // (rule 11).
         let Some(a) = self.sections.get(&verts[0]).cloned() else {
-            return Fill::Open;
+            return CoboundaryOutcome::Absent;
         };
         let Some(b) = verts.get(1).and_then(|v| self.sections.get(v).cloned()) else {
-            return Fill::Open;
+            return CoboundaryOutcome::Absent;
         };
         let outcome = extend(&a, &b, &simplex);
         self.index_congruent(&outcome);
         if let Some(c) = self.degrees[degree].get_mut(key) {
             c.fill = outcome.clone();
         }
-        outcome
+        CoboundaryOutcome::Attached(outcome)
     }
 
     /// The class a simplex carries and the degree it carries it at: the

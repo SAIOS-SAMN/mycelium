@@ -547,7 +547,7 @@ impl Bubble {
                         closed = false;
                         adjoined.push((r.as_ref().clone(), chart.clone()));
                     }
-                    Fill::Open | Fill::Already => closed = false,
+                    Fill::Open => closed = false,
                 }
             }
             // THE CHART ENTERS THE COVER WHEN EVERY SECTION CLOSES ON IT,

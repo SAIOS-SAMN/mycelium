@@ -20,7 +20,7 @@ fn an_exact_cochain_on_k4_fills_at_every_degree() {
     let coeff = c.simplex(&key).expect("the tetra is held").coefficient.clone();
     assert!(coeff.is_identity(), "an exact cochain's coboundary is the identity: {coeff:?}");
     match c.fill(&key) {
-        Fill::Filled(g, carriage) => {
+        CoboundaryOutcome::Attached(Fill::Filled(g, carriage)) => {
             assert!(g.is_identity(), "the gauge that closed it is the identity");
             assert!(
                 crate::transducer::element::same_versor(
@@ -52,7 +52,7 @@ fn an_infinite_order_edge_is_a_class_naming_its_rotor() {
     c.coboundary_on_link(&vs[0], |_| vol());
     let key = triangle(&c, &vs[0], &[&vs[0], &vs[1], &vs[2]]);
     match c.fill(&key) {
-        Fill::Class(kappa, r) => {
+        CoboundaryOutcome::Attached(Fill::Class(kappa, r)) => {
             assert!(
                 r.projective_eq(&pythag5()) || r.inverse().is_some_and(|i| i.projective_eq(&pythag5())),
                 "the class names the rotor that caused it, not some other: {r:?}"
@@ -107,7 +107,7 @@ fn a_finite_order_edge_off_the_sensor_plane_is_congruent_at_its_period() {
     c.coboundary_on_link(&vs[0], |_| vol());
     let key = triangle(&c, &vs[0], &[&vs[0], &vs[1], &vs[2]]);
     match c.fill(&key) {
-        Fill::Congruent(_, g, ell) => {
+        CoboundaryOutcome::Attached(Fill::Congruent(_, g, ell)) => {
             assert_eq!(ell, 4, "the period is the rotor's order");
             assert_eq!(g.order(), Some(crate::transducer::alphabet::Order::Finite(4)));
             assert!(

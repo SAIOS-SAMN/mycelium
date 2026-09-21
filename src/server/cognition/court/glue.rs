@@ -203,7 +203,9 @@ impl Kernel {
                 cx.fill(&key)
             };
             match outcome_fill {
-                crate::transducer::cech::Fill::Filled(gamma, carriage) => {
+                crate::transducer::cech::CoboundaryOutcome::Attached(
+                    crate::transducer::cech::Fill::Filled(gamma, carriage),
+                ) => {
                     if volume.iter().any(|&x| x > 0) {
                         filled = true;
                         fill_gamma = *gamma;
@@ -218,7 +220,9 @@ impl Kernel {
                         );
                     }
                 }
-                crate::transducer::cech::Fill::Congruent(_, g, ell) => {
+                crate::transducer::cech::CoboundaryOutcome::Attached(
+                    crate::transducer::cech::Fill::Congruent(_, g, ell),
+                ) => {
                     let addrs: Vec<Address> = vertices
                         .iter()
                         .filter_map(|v| cx.sections.get(v).map(|s| s.addr.clone()))
@@ -229,7 +233,9 @@ impl Kernel {
                         key[0], key[1]
                     );
                 }
-                crate::transducer::cech::Fill::Class(_, class) => {
+                crate::transducer::cech::CoboundaryOutcome::Attached(
+                    crate::transducer::cech::Fill::Class(_, class),
+                ) => {
                     let class = class.as_ref().clone();
                     class_simplex = Some((class.clone(), d as u8));
                     let dkey = chart_simplex_key(&inv, &key);
@@ -250,7 +256,9 @@ impl Kernel {
                 // are not alternatives: the transition is still an
                 // obstruction on this cover, and the language now has a
                 // word for it.
-                crate::transducer::cech::Fill::Unspellable(r) => {
+                crate::transducer::cech::CoboundaryOutcome::Attached(
+                    crate::transducer::cech::Fill::Unspellable(r),
+                ) => {
                     let dkey = chart_simplex_key(&inv, &key);
                     self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
                     eprintln!(
@@ -259,11 +267,25 @@ impl Kernel {
                     );
                     self.open_unspellable(r.as_ref(), &inv, &[], &peer);
                 }
-                crate::transducer::cech::Fill::Open => {
+                // THE BOUNDARY WAS EVALUATED AND DID NOT CLOSE. The
+                // simplex stands open and is filed as unfilled, which is
+                // the court's record of work still owed.
+                crate::transducer::cech::CoboundaryOutcome::Attached(
+                    crate::transducer::cech::Fill::Open,
+                ) => {
                     let dkey = chart_simplex_key(&inv, &key);
                     self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
                 }
-                crate::transducer::cech::Fill::Already => {}
+                // ALREADY SETTLED: nothing was attempted, so nothing is
+                // owed and nothing is filed.
+                crate::transducer::cech::CoboundaryOutcome::AlreadyFilled => {}
+                // NOT THERE TO EVALUATE — no such simplex, or a section
+                // the fill needed was missing. This used to answer `Open`
+                // and was filed as unfilled alongside genuinely open
+                // cells, so the court's ledger of owed work counted cells
+                // it had never read. An unread simplex is not an open one
+                // (rule 11), and it is not filed.
+                crate::transducer::cech::CoboundaryOutcome::Absent => {}
             }
         }
         self.complexes.insert(inv.key(), cx);

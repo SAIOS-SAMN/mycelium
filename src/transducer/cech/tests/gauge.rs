@@ -159,7 +159,7 @@ fn a_disagreeing_chord_files_its_loop_on_the_complex() {
         "held WITH its class vector (11.3), so 3.9 has axes to read candidates off"
     );
     assert!(
-        matches!(filled, Fill::Congruent(..)),
+        matches!(filled.attached(), Some(Fill::Congruent(..))),
         "and the simplex's own fill still stands beside the loop, not replaced by it"
     );
 }

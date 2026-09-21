@@ -44,7 +44,12 @@ impl Kernel {
                 (cx.fill(&sim_key), addrs)
             };
             match filled {
-                (crate::transducer::cech::Fill::Filled(gamma, carriage), addrs) => {
+                (
+                    crate::transducer::cech::CoboundaryOutcome::Attached(
+                        crate::transducer::cech::Fill::Filled(gamma, carriage),
+                    ),
+                    addrs,
+                ) => {
                     eprintln!(
                         "  court simplex filled {:02x}{:02x}… γ recorded",
                         sim_key[0], sim_key[1]
@@ -64,7 +69,12 @@ impl Kernel {
                         }
                     }
                 }
-                (crate::transducer::cech::Fill::Congruent(_, _g, _ell), addrs) => {
+                (
+                    crate::transducer::cech::CoboundaryOutcome::Attached(
+                        crate::transducer::cech::Fill::Congruent(_, _g, _ell),
+                    ),
+                    addrs,
+                ) => {
                     eprintln!(
                         "  court simplex congruent {:02x}{:02x}… torsion filed",
                         sim_key[0], sim_key[1]
@@ -73,7 +83,12 @@ impl Kernel {
                     self.pay_simplex_volume(&inv, &addrs);
                     self.pay_torse(&addrs);
                 }
-                (crate::transducer::cech::Fill::Class(_, class), _) => {
+                (
+                    crate::transducer::cech::CoboundaryOutcome::Attached(
+                        crate::transducer::cech::Fill::Class(_, class),
+                    ),
+                    _,
+                ) => {
                     let class = *class;
                     eprintln!(
                         "  court simplex class {:02x}{:02x}…",
@@ -104,13 +119,28 @@ impl Kernel {
                 // put in `unfilled` by `glue_fetched`, which has the peer
                 // whose speech produced them and adjoins there. Minting here
                 // would have to name a party that does not exist.
-                (crate::transducer::cech::Fill::Unspellable(_), _) => {
+                (
+                    crate::transducer::cech::CoboundaryOutcome::Attached(
+                        crate::transducer::cech::Fill::Unspellable(_),
+                    ),
+                    _,
+                ) => {
                     eprintln!(
                         "  court simplex unspellable {:02x}{:02x}… 37.7",
                         sim_key[0], sim_key[1]
                     );
                 }
-                (crate::transducer::cech::Fill::Open, _) | (crate::transducer::cech::Fill::Already, _) => {}
+                // Evaluated and still open, already settled, or not there
+                // to evaluate — three different facts, none of which this
+                // sweep acts on.
+                (
+                    crate::transducer::cech::CoboundaryOutcome::Attached(
+                        crate::transducer::cech::Fill::Open,
+                    ),
+                    _,
+                )
+                | (crate::transducer::cech::CoboundaryOutcome::AlreadyFilled, _)
+                | (crate::transducer::cech::CoboundaryOutcome::Absent, _) => {}
             }
         }
         let mut refine: Vec<(
