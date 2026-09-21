@@ -75,6 +75,18 @@ pub struct CoverTally {
     /// whose faces carry no edge to evaluate: without this, wiring the
     /// edge and not wiring it read the same on the line.
     pub edges: u64,
+    /// AXIOM B — INTERFACES WHOSE TRANSITION WAS TAKEN AS A GEODESIC
+    /// TRANSVECTION between the two frames' own base points on the sheet,
+    /// and those where a frame did not stand on it.
+    ///
+    /// Counted because the wiring is an `if let`: a frame off the chart
+    /// falls through to `edge_of`'s conformal carriage, and a fallback that
+    /// is not counted is a refusal reported as nothing (rule 11). Without
+    /// these two, Axiom B being live and Axiom B never firing read the same
+    /// on the line — which is the defect `edges` above already exists to
+    /// prevent one level down.
+    pub geodesic: u64,
+    pub off_sheet: u64,
     /// THE LOOPS THE FORM CLASSIFIED over those carriages, by their
     /// reading. They are counted where they are read — on the form, over a
     /// whole cycle — and not in the cover, which classifies nothing.

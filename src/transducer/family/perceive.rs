@@ -437,7 +437,29 @@ pub(crate) fn edge_of(gamma: &Versor) -> Result<crate::transducer::sentence::Tra
         Some(Err(d)) => return Err(EdgeRefusal::Unspelled(d)),
         Some(Ok(w)) => w,
     };
-    let t = element::translator_of(gamma).ok_or(EdgeRefusal::NoReading)?;
+    // 54.7 R3 — THE EDGE IS A CONNECTION, SO ITS DISPLACEMENT IS A
+    // TRANSVECTION (ruled 2026-09-21).
+    //
+    // This read `translator_of(gamma)`: the conformal motor
+    // `T(d) = 1 − ½ d e_∞`, whose generator is NULL because
+    // `e_∞² = e₋² + e₊² = 0`. With `R_a = R_b` the relative transition
+    // `V_b ∘ V_a⁻¹` collapses to `R · T(d_b − d_a) · R⁻¹`, a conjugated
+    // parabolic — so the edge carried `I₁ = 0` by construction, and then
+    // `Δ = −I₂² < 0` forbids any rational eigenplane split. Four corpus
+    // cycles read Parabolic AND Undecomposed for that one reason, and they
+    // are the same four seen from two directions.
+    //
+    // MEASURED, before the change: dropping the member carriage from the
+    // cycle composite left those four completely unchanged, which is what
+    // proves the null generator was sealed in HERE rather than accumulated
+    // from poses around the loop.
+    //
+    // 51.2 holds both readings in one algebra: a lattice POSE keeps the
+    // conformal translator, which commutes and is derived; a CONNECTION
+    // takes the geodesic transvection `eᵢ ∧ e₋`, which does not commute —
+    // and the failure to commute is the curvature this edge exists to
+    // carry.
+    let t = element::transvection_of(gamma).ok_or(EdgeRefusal::NoReading)?;
     let d = element::dilator_of(gamma).ok_or(EdgeRefusal::NoReading)?;
     Ok(crate::transducer::sentence::Transport { word, carriage: d.geo(&t), gauge: Vec::new() })
 }

@@ -20,24 +20,30 @@ thread_local! {
     static DEFECTS: std::cell::Cell<(u64, u64, u64, u64, u64)> =
         const { std::cell::Cell::new((0, 0, 0, 0, 0)) };
 
-    /// THE TORAL SPECTRUM OF EACH KEPT CYCLE: `(closes, open)`.
+    /// THE TORAL SPECTRUM OF EACH KEPT CYCLE:
+    /// `(closes, open, undecomposed over ℚ, isoclinic)`.
     ///
     /// A toral period is a COMPACT invariant — the order of a rotation. A
     /// pure transvection generates a non-compact one-parameter subgroup and
     /// its geodesic flow has no returning orbit, so it has no finite period
     /// at all: it lands on the projective boundary `[1:0]` and charges
-    /// shear rather than sounding a pitch. This counts which, so the claim
-    /// is a reading and not a prediction.
-    static SPECTRA: std::cell::Cell<(u64, u64)> = const { std::cell::Cell::new((0, 0)) };
+    /// shear rather than sounding a pitch.
+    ///
+    /// FOUR COUNTERS, NOT TWO. An orbit that does not close and a split
+    /// that does not EXIST are different facts about different things, and
+    /// folding them together reported 545 "open" when the truth was 541
+    /// open and 4 undecomposed (rule 11).
+    static SPECTRA: std::cell::Cell<(u64, u64, u64, u64)> =
+        const { std::cell::Cell::new((0, 0, 0, 0)) };
 }
 
-/// `(cycles whose orbit closes, cycles on the open boundary)`.
-pub fn loop_spectra() -> (u64, u64) {
+/// `(closes, open, undecomposed over ℚ, isoclinic)`.
+pub fn loop_spectra() -> (u64, u64, u64, u64) {
     SPECTRA.with(|c| c.get())
 }
 
 pub fn reset_loop_spectra() {
-    SPECTRA.with(|c| c.set((0, 0)));
+    SPECTRA.with(|c| c.set((0, 0, 0, 0)));
 }
 
 /// The defect distribution of every cycle kept since the last reset.
@@ -350,14 +356,36 @@ impl Form {
                 // THE DEFECT THIS CYCLE CARRIES, read once per member path
                 // off the transport it composes (§8.1).
                 note_defect(c);
-                // AND WHETHER ITS ORBIT CLOSES. The period is read off the
-                // loop's own holonomy rotor, which is the COMPACT chart —
-                // the only place a finite order can live.
+                // AND WHETHER ITS ORBIT CLOSES — asked of the CONNECTION,
+                // not of the alphabet (54.7).
+                //
+                // This read `lp.holonomy.rotor().toral_period()`: the
+                // composite of the faces' WORDS, which live in the
+                // `Cl(4,0)` letter chart where every letter is a Euclidean
+                // rotation and therefore every word is compact. 545 of 545
+                // read as CLOSING while 541 classified Hyperbolic — two
+                // readings of one object that cannot both be true. That
+                // reader interrogates the ALPHABET; the transvection is in
+                // the transport composite.
+                //
+                // `Ω_e = Ω_carriage · Ω_edge` is the TOTAL transport, and
+                // dropping either half is the projection defect one level
+                // out from the algebra — measured: dropping the carriage
+                // left the four parabolics completely unchanged, which is
+                // what proves the null generator is sealed inside `edge` at
+                // the moment `meet_edge` evaluates `V_b ∘ V_a⁻¹`.
+                let composite = match &c.edge {
+                    Some(e) => e.carriage.geo(&c.face.carriage),
+                    None => c.face.carriage.clone(),
+                };
                 SPECTRA.with(|s| {
+                    use crate::transducer::cga::Spectrum;
                     let mut t = s.get();
-                    match lp.holonomy.rotor().toral_period().closes() {
-                        true => t.0 += 1,
-                        false => t.1 += 1,
+                    match crate::transducer::cga::compact_period(&composite) {
+                        Spectrum::Closes(_) => t.0 += 1,
+                        Spectrum::Open => t.1 += 1,
+                        Spectrum::Undecomposed => t.2 += 1,
+                        Spectrum::Isoclinic => t.3 += 1,
                     }
                     s.set(t);
                 });

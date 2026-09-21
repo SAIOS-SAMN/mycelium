@@ -163,6 +163,47 @@ pub fn rho_of(v: &Versor) -> Option<Q> {
 /// placement residue was ρ times the placement and `dilator_of` was not a
 /// dilator (I12). `None` when the origin is sent to infinity or ρ cannot
 /// be read.
+/// THE DISPLACEMENT A VERSOR CARRIES, as three exact coordinates (54.7 R3).
+///
+/// [`translator_of`] answers the same reading already WRAPPED in a
+/// conformal translator `T(d) = 1 − ½ d e_∞`, whose generator is null
+/// (`e_∞² = 0`). A caller that wants the displacement in order to build a
+/// HYPERBOLIC motion out of it cannot use that: it would have to unwrap a
+/// parabolic to get at the number, and the wrapping is the defect.
+///
+/// So the displacement is read once, here, and the two constructors —
+/// conformal for a lattice pose (51.2, derived), transvection for a
+/// connection (51.2's asserted second reading) — are both built from it.
+/// One reading, two realisations, rather than one realisation two readers
+/// have to agree about (rule 12).
+pub fn displacement_of(v: &Versor) -> Option<(Q, Q, Q)> {
+    let rho = rho_of(v)?;
+    let z = Q::zero();
+    let img = crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&z, &z, &z)))?;
+    Some((img.0 / &rho, img.1 / &rho, img.2 / &rho))
+}
+
+/// THE SAME DISPLACEMENT AS A GEODESIC TRANSVECTION of `Spin⁺(3,1)(ℚ)`.
+///
+/// `B = Σ τᵢ (eᵢ ∧ e₋)` with `⟨B²⟩₀ > 0`, evolved to a finite versor by the
+/// rational Cayley transform. No `e_∞` is formed, so no null direction
+/// enters and the metric degeneracy that forbids an orthogonal eigenplane
+/// split never arises.
+///
+/// A zero displacement is the identity and not a refusal: standing still is
+/// a reading.
+pub fn transvection_of(v: &Versor) -> Option<Versor> {
+    let (t1, t2, t3) = displacement_of(v)?;
+    if t1.is_zero() && t2.is_zero() && t3.is_zero() {
+        return Some(identity_versor());
+    }
+    let planes = crate::transducer::cga::TRANSVECTION_PLANES;
+    let generator = Versor::blade(planes[0], t1)
+        .add(&Versor::blade(planes[1], t2))
+        .add(&Versor::blade(planes[2], t3));
+    crate::transducer::cga::cayley(&generator)
+}
+
 pub fn translator_of(v: &Versor) -> Option<Versor> {
     let rho = rho_of(v)?;
     let z = Q::zero();

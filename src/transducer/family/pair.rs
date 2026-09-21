@@ -66,6 +66,33 @@ pub(crate) fn meet_edge(
 ) -> Result<crate::transducer::sentence::Transport, EdgeRefusal> {
     let gamma = sb.geo(&sa.versor_inverse().ok_or(EdgeRefusal::NoReading)?);
     let mut edge = edge_of(&gamma)?;
+    // AXIOM B — THE INTERFACE TRANSITION IS A GEODESIC TRANSVECTION BETWEEN
+    // THE TWO FRAMES' OWN BASE POINTS (54.7, ruled 2026-09-21).
+    //
+    // `edge_of` reads a DISPLACEMENT out of `γ` and rebuilds it, and it
+    // reads it through `cga::point`/`cga::base` — the flat conformal
+    // embedding, `e_∞`-normalised, answering three scalars. So the geodesic
+    // PLANE was destroyed and then re-synthesised from a triple, which is
+    // rank-2 content reconstructed by assumption.
+    //
+    // Here the two frames are asked where they STAND — `V v₀ Ṽ` back on the
+    // sheet — and the transition between those two points is
+    // `R = 1 − v_b v_a`, whose generator IS the geodesic 2-blade
+    // `v_a ∧ v_b`. No `e_∞` is formed and no coordinate is extracted.
+    //
+    // Where either frame does not stand on the sheet the reading is refused
+    // rather than approximated, and `edge_of`'s own carriage stands (rule
+    // 11): that is a frame this chart does not reach, not a zero transition.
+    let geodesic = crate::transducer::cga::frame_base_point(sa)
+        .zip(crate::transducer::cga::frame_base_point(sb))
+        .and_then(|(pa, pb)| crate::transducer::cga::geodesic_transvection(&pa, &pb));
+    match geodesic {
+        Some(r) => {
+            edge.carriage = r;
+            crate::transducer::family::cover::tally(|t| t.geodesic += 1);
+        }
+        None => crate::transducer::family::cover::tally(|t| t.off_sheet += 1),
+    }
     // Each body's own hue map at the chart its vertex stands at. A cover
     // vertex stands at exactly one, and a vertex standing at none carries no
     // map — which is the empty map, a map that moves no hue, and not a

@@ -839,6 +839,233 @@ pub fn bivector_split(m: &Mv) -> Option<(Mv, Mv)> {
     Some((ell, hyp))
 }
 
+/// AXIOM B — A LAMINA LANDS ON THE HYPERBOLOID SHEET, EXACTLY OVER ℚ
+/// (54.7, ruled 2026-09-21).
+///
+/// ```text
+///     v(u) = (2u₁, 2u₂, 2u₃, 1+|u|²) / (1−|u|²),     u = (r,c,k)/M
+/// ```
+///
+/// Rational stereographic projection from the pole `(0,0,0,1)`. Every
+/// component is a rational polynomial in `u`, so there is no square root
+/// and no Diophantine refusal:
+///
+/// ```text
+///     v² = [4|u|² − (1+|u|²)²] / (1−|u|²)² = −(1−|u|²)²/(1−|u|²)² = −1
+/// ```
+///
+/// THE SHEET, NOT THE CONE. `v² = −1` is the INTERIOR `ℍ³`, where a lamina
+/// and a member frame actually sit; the null cone `p² = 0` is the ideal
+/// boundary `∂_∞ℍ³`, the asymptotic horizon of infinite geodesic rays. A
+/// first cut put laminae on the cone, and there
+/// [`geodesic_transvection`] degenerates: `p_a² = 0` collapses the
+/// transport step and the operator carries nothing.
+///
+/// `M` is the LATTICE QUANTUM: an integer with `M² > r²+c²+k²`, which keeps
+/// `|u| < 1` so the denominator never vanishes and the point stays on the
+/// upper sheet. It sets the unit of one lattice step and nothing else — the
+/// curvature is still read off a remainder, never carried as a constant
+/// (51.2, 51.11). `None` where `M` does not bound the point: that lamina is
+/// outside this chart and says so rather than being rounded into it.
+pub fn hyperbolic_lamina(r: &BigRational, c: &BigRational, k: &BigRational, m: &BigRational) -> Option<Mv> {
+    if m.is_zero() {
+        return None;
+    }
+    let (u1, u2, u3) = (r / m, c / m, k / m);
+    let n2 = &u1 * &u1 + &u2 * &u2 + &u3 * &u3;
+    let denom = one() - &n2;
+    if denom.is_zero() || denom.is_negative() {
+        // `|u| ≥ 1` is off this chart — outside the sheet's stereographic
+        // image, refused rather than projected onto its edge (rule 11).
+        return None;
+    }
+    let two = BigRational::from_integer(num_bigint::BigInt::from(2));
+    let s = one() / &denom;
+    Some(
+        Mv::blade(E1, &two * &u1 * &s)
+            .add(&Mv::blade(E2, &two * &u2 * &s))
+            .add(&Mv::blade(E3, &two * &u3 * &s))
+            .add(&Mv::blade(EM, (one() + &n2) * &s)),
+    )
+}
+
+/// THE POLE OF THE SHEET — `v₀ = e₋`, the point `u = 0` maps to, and the
+/// reference a frame's own base point is obtained from by its sandwich.
+pub fn hyperboloid_pole() -> Mv {
+    Mv::blade(EM, one())
+}
+
+/// AXIOM B's TRANSITION — the directed geodesic transvection carrying
+/// `v_a` to `v_b` on the sheet, exactly over ℚ (54.7).
+///
+/// ```text
+///     R = 1 − v_b v_a  ∈  Cl⁰(3,1)(ℚ)
+/// ```
+///
+/// VERIFIED BY THE PRODUCT, not asserted. With `v_a² = v_b² = −1`:
+///
+/// ```text
+///     R R̃ = 1 − 2(v_a·v_b) + v_b v_a² v_b = 2(1 − v_a·v_b) ≥ 4 > 0
+///     R v_a R̃ = 2(1 − v_a·v_b) v_b        ⟹  R v_a R̃ / R R̃ = v_b
+/// ```
+///
+/// so the norm is a strictly positive rational — invertible with no square
+/// root — and the transport is exact, forward-directed, and needs no
+/// projective sign fix.
+///
+/// WHY NOT `Ω = m n` WITH `m = v_b+v_a`, `n = v_b−v_a`. On null rays those
+/// are orthogonal (`m·n = p_b² − p_a² = 0`), so they anticommute and
+/// `Ω² = −m²n² = 4s² ∈ ℚ*`: an INVOLUTION of order two, a half-turn that
+/// swaps its endpoints. Edges built from it would oscillate `v_a ↔ v_b`
+/// rather than propagate along the geodesic, and every scalar check would
+/// still pass.
+///
+/// THE PLANE IS CARRIED, not a magnitude: `⟨R⟩₂ = v_a ∧ v_b` is the
+/// geodesic 2-blade, with
+/// `(v_a∧v_b)² = (v_a·v_b)² − v_a²v_b² = cosh²d − 1 > 0` — hyperbolic, and
+/// `d` is never formed (rule 1).
+pub fn geodesic_transvection(va: &Mv, vb: &Mv) -> Option<Mv> {
+    let on_sheet = |v: &Mv| {
+        let s = v.geo(v);
+        s.scalar_part() == -one() && s.sub(&Mv::scalar(s.scalar_part())).is_zero()
+    };
+    if !on_sheet(va) || !on_sheet(vb) {
+        return None;
+    }
+    let r = Mv::scalar(one()).sub(&vb.geo(va));
+    // `R R̃ = 2(1 − v_a·v_b)` must be a non-zero pure scalar, which is what
+    // `is_versor` reads — and it is ≥ 4 on the sheet, so the only way this
+    // refuses is a vector that is not where it claimed to be.
+    is_versor(&r)?;
+    Some(r)
+}
+
+/// THE BASE POINT A FRAME STANDS AT: its own versor applied to the pole,
+/// renormalised onto the sheet.
+///
+/// `v = V v₀ Ṽ` has `v² = −(V Ṽ)²`, so dividing by the weight puts it back
+/// on `v² = −1` — one exact rational division, no root.
+pub fn frame_base_point(v: &Mv) -> Option<Mv> {
+    let w = is_versor(v)?;
+    if w.is_zero() {
+        return None;
+    }
+    let p = v.sandwich(&hyperboloid_pole());
+    let out = p.scale(&(one() / w));
+    let s = out.geo(&out);
+    (s.scalar_part() == -one() && s.sub(&Mv::scalar(s.scalar_part())).is_zero()).then_some(out)
+}
+
+/// THE TORAL PERIOD OF A MOTION OF `Cl(4,1)` — the acoustic reading (54.7).
+///
+/// A toral period is the order of a ROTATION: a compact invariant. So it is
+/// asked of the COMPACT PART of the generator and of nothing else.
+///
+/// WHY NOT OF THE WHOLE MOTION. `Rotor::toral_period` reads the `Cl(4,0)`
+/// alphabet chart, where every letter is a Euclidean rotation and therefore
+/// every word is compact and periodic — 545 of 545 corpus cycles read as
+/// CLOSING while 541 of them classified Hyperbolic. That reader interrogates
+/// the ALPHABET; this one interrogates the GEOMETRY.
+///
+/// AN OPEN ORBIT HAS TWO CAUSES AND BOTH ARE READ HERE (the Niven trap):
+///
+///   1. `B_ell = 0` — no rotation at all. A pure Burgers dislocation slips
+///      along a geodesic and never returns.
+///   2. `B_ell ≠ 0` and the winding is IRRATIONAL. `cos θ` is rational by
+///      construction for a rational rotor, and Niven's theorem says a
+///      rational cosine with `θ/π ∈ ℚ` forces `cos θ ∈ {0, ±½, ±1}`. The
+///      `(3,4,5)` rotor has `cos θ = −7/25`, which is rational and not one
+///      of those — so its orbit is dense on the circle and closes never.
+///      `half_angle` is exactly that test and answers `None` there.
+///
+/// So `B_ell ≠ 0` does NOT imply a finite period, and a finite period is
+/// always one of `{1, 2, 3, 4, 6}` — the crystallographic restriction,
+/// arriving from ℚ rather than from a convention. A period of 5 or 7 is
+/// not merely absent; it is unreachable.
+///
+/// `None` is the projective boundary `[1:0]`: an open orbit, charged as
+/// shear rather than sounding a pitch.
+pub fn compact_period(m: &Mv) -> Spectrum {
+    use crate::transducer::sentence::ToralPeriod;
+    let Some((ell, _hyp)) = bivector_split(m) else {
+        // THE SPLIT DOES NOT EXIST OVER ℚ. The commuting eigenplanes live
+        // in `ℚ(√Δ)` and this is an algebraic obstruction, NOT an open
+        // orbit — reporting it as one would be a refusal counted as a
+        // measurement (rule 11).
+        return Spectrum::Undecomposed;
+    };
+    if ell.is_zero() {
+        // No compact part: a pure transvection, open by construction.
+        return Spectrum::Open;
+    }
+    // THE COMPACT PART MUST TURN IN ONE PLANE for a single period to name
+    // it. An isoclinic double rotation needs a second split, which this
+    // does not perform — refused rather than reported as one plane's order.
+    if !bivector_is_simple(&ell) {
+        return Spectrum::Isoclinic;
+    }
+    let (Some(omega), ) = (cayley(&ell), ) else {
+        return Spectrum::Undecomposed;
+    };
+    let Some(w) = is_versor(&omega) else {
+        return Spectrum::Undecomposed;
+    };
+    let s = omega.scalar_part();
+    // `cos²(θ/2) = s²/w`, which is `half_angle`'s own reading — the one
+    // writer of Niven's five rationals in this tree (rule 12).
+    let Some((k, denom)) = crate::transducer::alphabet::half_angle(&s, &w) else {
+        // NIVEN: the cosine is rational and is not one of the five, so the
+        // winding is irrational and the orbit is dense. Genuinely open,
+        // with a non-zero compact part — the trap, read correctly.
+        return Spectrum::Open;
+    };
+    // `θ = 2kπ/m`, so the order is `m / gcd(k, m)`; `k = 0` is no turn.
+    let order = match k {
+        0 => 1,
+        _ => denom / gcd_u32(k, denom),
+    };
+    let Some(plane) = std::num::NonZeroU32::new(order) else {
+        return Spectrum::Undecomposed;
+    };
+    // ONE PLANE TURNS AND THE ORTHOGONAL ONE IS IDLE, which is a period of
+    // one and not an absence: an idle plane closes trivially and earns no
+    // yield, where absence would say the factor turns forever.
+    Spectrum::Closes(ToralPeriod { plane_1: Some(plane), plane_2: std::num::NonZeroU32::new(1) })
+}
+
+/// WHAT A MOTION'S ACOUSTIC READING IS — and the three ways there is none,
+/// kept apart (rule 11).
+///
+/// A first cut returned `Option<ToralPeriod>` and every `None` was counted
+/// as an open orbit: 545 of 545 "open", which folded a genuine dense
+/// winding together with two algebraic refusals and reported the sum as a
+/// measurement. An orbit that does not close and a split that does not
+/// exist are different facts about different things.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Spectrum {
+    /// The compact part closes at a crystallographic order.
+    Closes(crate::transducer::sentence::ToralPeriod),
+    /// The orbit genuinely never returns: either there is no compact part
+    /// (a pure dislocation) or its winding is irrational (Niven). This is
+    /// the projective boundary `[1:0]`, charged as shear.
+    Open,
+    /// `√Δ ∉ ℚ`: the commuting eigenplanes live in `ℚ(√Δ)` and the motion
+    /// cannot be decomposed into rational simple parts without extending
+    /// the field. An obstruction, not an orbit.
+    Undecomposed,
+    /// The compact part turns in two planes at once. It has a spectrum;
+    /// this reader does not take it, and says so rather than reporting one
+    /// plane's order as the whole.
+    Isoclinic,
+}
+
+fn gcd_u32(a: u32, b: u32) -> u32 {
+    match b {
+        0 => a.max(1),
+        _ => gcd_u32(b, a % b),
+    }
+}
+
 /// IS THIS GENERATOR SIMPLE? `B ∧ B = 0` means `B` is a single blade — one
 /// plane, one motion. `B ∧ B ≠ 0` means it is a SCREW: a rotation and a
 /// transvection on orthogonal planes at once, which cannot be split into
@@ -1206,6 +1433,107 @@ mod tests {
         let slip = cayley(&hyp).expect("the open part evolves");
         assert_eq!(slip.class_invariants().map(|(_, _, k)| k), Some(BivectorKind::Hyperbolic));
         assert!(e4.is_zero(), "a pure dislocation has no compact part to sound");
+    }
+
+    /// 54.7 AXIOM B — A LAMINA IS A RATIONAL POINT OF `ℍ³`, and the
+    /// transition between two of them is a DIRECTED transvection.
+    ///
+    /// Every assertion here is a blade or a product, never a magnitude.
+    #[test]
+    fn a_lamina_lands_on_the_sheet_and_transports_along_a_geodesic() {
+        let m = q(4, 1);
+        let a = hyperbolic_lamina(&q(0, 1), &q(0, 1), &q(0, 1), &m).expect("the pole");
+        let b = hyperbolic_lamina(&q(1, 1), &q(0, 1), &q(0, 1), &m).expect("one step");
+        let c = hyperbolic_lamina(&q(0, 1), &q(1, 1), &q(0, 1), &m).expect("one step, other axis");
+
+        // ON THE SHEET, exactly — `v² = −1` with no root taken anywhere.
+        for v in [&a, &b, &c] {
+            assert_eq!(v.geo(v), Mv::scalar(-one()), "v² = −1 on the hyperboloid");
+        }
+        assert_eq!(a, hyperboloid_pole(), "u = 0 is the pole");
+        // OFF THE CHART IS REFUSED, not clamped: `|u| ≥ 1`.
+        assert!(hyperbolic_lamina(&q(4, 1), &q(0, 1), &q(0, 1), &m).is_none());
+
+        // THE TRANSITION TRANSPORTS, and is not an involution.
+        let r = geodesic_transvection(&a, &b).expect("a geodesic joins them");
+        let w = is_versor(&r).expect("R R̃ is a positive rational scalar");
+        assert!(w.is_positive(), "R R̃ = 2(1 − v_a·v_b) ≥ 4, got {w}");
+        assert_eq!(r.sandwich(&a).scale(&(one() / &w)), b, "R v_a R̃ / R R̃ = v_b exactly");
+
+        // THE PLANE IS CARRIED: ⟨R⟩₂ is the geodesic 2-blade, simple, and
+        // HYPERBOLIC — `(v_a∧v_b)² = cosh²d − 1 > 0`.
+        let plane = r.grade(2);
+        assert!(!plane.is_zero(), "the generator is a blade, not a scalar");
+        assert!(bivector_is_simple(&r), "one geodesic spans one plane");
+        assert!(
+            plane.geo(&plane).scalar_part().is_positive(),
+            "the geodesic plane is timelike: a transvection, not a rotation"
+        );
+
+        // AND IT IS NOT ORDER TWO. `Ω = mn` on the null cone squares to a
+        // scalar and merely swaps its endpoints; this propagates.
+        assert!(
+            !r.geo(&r).sub(&Mv::scalar(r.geo(&r).scalar_part())).is_zero()
+                || !r.geo(&r).grade(2).is_zero()
+                || {
+                    // If R² happened to be scalar, transporting twice would
+                    // return to the start — which a real transvection does
+                    // not do.
+                    let twice = r.geo(&r);
+                    let wt = is_versor(&twice).expect("a versor squared is a versor");
+                    twice.sandwich(&a).scale(&(one() / wt)) != a
+                },
+            "a transvection propagates; an involution returns"
+        );
+
+        // TWO AXES DO NOT COMMUTE — the curvature, measured.
+        let rb = geodesic_transvection(&a, &b).expect("step one way");
+        let rc = geodesic_transvection(&a, &c).expect("step the other");
+        assert!(!rb.geo(&rc).projective_eq(&rc.geo(&rb)), "boosts do not commute on ℍ³");
+    }
+
+    /// A FRAME'S BASE POINT is its versor applied to the pole, back on the
+    /// sheet — one exact division, no root.
+    #[test]
+    fn a_frames_base_point_returns_to_the_sheet() {
+        let m = q(4, 1);
+        let a = hyperbolic_lamina(&q(1, 1), &q(0, 1), &q(0, 1), &m).expect("a lamina");
+        let r = geodesic_transvection(&hyperboloid_pole(), &a).expect("a geodesic");
+        let p = frame_base_point(&r).expect("the frame stands somewhere");
+        assert_eq!(p.geo(&p), Mv::scalar(-one()), "and that somewhere is on the sheet");
+        assert_eq!(p, a, "the transvection's own base point is where it carried the pole");
+    }
+
+    /// 54.7 — THE NIVEN TRAP: an open orbit has TWO causes, and reading
+    /// only the first would report a dense winding as a closed circuit.
+    #[test]
+    fn a_period_is_crystallographic_or_it_is_infinite() {
+        // A pure transvection has no compact part: open, and no pitch.
+        let boost = transvection(&q(2, 1), &q(1, 1), TRANSVECTION_PLANES[0]).expect("a boost");
+        assert_eq!(compact_period(&boost), Spectrum::Open, "a dislocation slips and never returns");
+
+        // A quarter turn closes at a crystallographic order, which is ℚ's
+        // doing and not a convention.
+        let quarter = rotator(&q(0, 1), &q(1, 1));
+        let Spectrum::Closes(p) = compact_period(&quarter) else { panic!("a quarter turn closes") };
+        let ell = p.plane_1.expect("the turning plane has an order").get();
+        assert_eq!(ell, 2, "s = 0 is the half-angle π/2, so the turn is by π");
+        assert!(matches!(ell, 1 | 2 | 3 | 4 | 6), "Niven allows only these, got {ell}");
+
+        // THE TRAP ITSELF. `cos θ = (s²−b²)/(s²+b²) = −7/25` is RATIONAL and
+        // is not one of Niven's five, so `θ/π` is irrational: the rotor is
+        // purely elliptic — a non-zero compact part — and its orbit is dense
+        // and closes never. `B_ell ≠ 0` does not imply a finite period.
+        let pyth = rotator(&q(3, 1), &q(4, 1));
+        let (e, h) = bivector_split(&pyth).expect("a simple rotation splits");
+        assert!(!e.is_zero(), "the (3,4,5) rotor HAS a compact part");
+        assert!(h.is_zero(), "and no open part at all");
+        assert_eq!(
+            compact_period(&pyth),
+            Spectrum::Open,
+            "yet cos θ = −7/25 winds densely: OPEN, not undecomposed — the \
+             split exists and the orbit still never closes"
+        );
     }
 
     /// 54.7 R3 — A GENERATOR IS NOT A MOTION, and Cayley is the finite

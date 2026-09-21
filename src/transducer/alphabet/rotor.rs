@@ -617,7 +617,7 @@ impl Rotor {
 /// rationals are the only ones a root of unity has (Niven), and a
 /// negative cosine is the supplement. `None`: not a root of unity, the
 /// factor turns forever.
-fn half_angle(s: &Q, w: &Q) -> Option<(u32, u32)> {
+pub(crate) fn half_angle(s: &Q, w: &Q) -> Option<(u32, u32)> {
     let c = &(s * s) / w;
     let (k, m) = if c.is_one() {
         (0, 1)

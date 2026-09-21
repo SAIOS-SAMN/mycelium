@@ -846,8 +846,9 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
     let t = crate::transducer::family::cover::take_cover_tally();
     eprintln!(
         "  lift over {forms} corpus forms: meets {} ({} carried an edge) \
-         → chords {}, within one class {}, unclassed {} | forms carrying a loop: {with_loops}",
-        t.meets, t.edges, t.chords, t.within_class, t.unclassed
+         → chords {}, within one class {}, unclassed {} \
+         | axiom B: geodesic {} off-sheet {} | forms carrying a loop: {with_loops}",
+        t.meets, t.edges, t.chords, t.within_class, t.unclassed, t.geodesic, t.off_sheet
     );
     assert!(forms > 0, "the lift ran over no form");
     // EVERY MEET IS ACCOUNTED FOR. The three outcomes partition the meets
