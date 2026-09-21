@@ -30,27 +30,28 @@ impl Kernel {
     /// here: a `Glued` vertex citing a whole form, and a word vertex's
     /// derivation citing a `Word` vertex inside one. They are one
     /// mechanism, so they wait the same way.
+    /// THE CITATIONS ARE READ OFF THE ENVELOPE, NOT DECODED (54.5 Road (d),
+    /// B3). This parsed the sentence's whole tape to walk its vertices for
+    /// citations, and the citations were never geometry: the nerve's
+    /// 1-simplices are `⟨A_i, A_j, φ⟩` and a vertex's generators are its
+    /// presentation. Both ride `Element.receipts`, which is a flat list and
+    /// needs no decode at all — so the door's read is now `O(citations)`
+    /// with no form built, on the one path every arriving sentence takes.
     pub(crate) fn unruled_citation(
         &self,
         s: &Element,
     ) -> Option<crate::transducer::address::Address> {
-        use crate::transducer::sentence::Vertex;
-        // An ARRIVING sentence, not one this court holds: it has no held
-        // word to read a form off, so the decode is named here (L16).
-        let f = crate::transducer::sentence::from_element_form(s)?;
-        for v in &f.vertices {
-            match v {
-                Vertex::Glued { address, .. } if !self.ruled_contains(address.as_bytes()) => {
-                    return Some(address.clone())
+        let env = s.receipts();
+        for e in &env.nerve {
+            if !self.ruled_contains(e.target.as_bytes()) {
+                return Some(e.target.clone());
+            }
+        }
+        for cite in &env.derivations {
+            for (form, _, _) in &cite.generators {
+                if !self.ruled_contains(form.as_bytes()) {
+                    return Some(form.clone());
                 }
-                Vertex::Word { derivation, .. } => {
-                    for (form, _, _) in &derivation.generators {
-                        if !self.ruled_contains(form.as_bytes()) {
-                            return Some(form.clone());
-                        }
-                    }
-                }
-                _ => {}
             }
         }
         None

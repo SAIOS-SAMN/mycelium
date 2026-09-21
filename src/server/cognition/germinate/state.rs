@@ -48,10 +48,15 @@ impl Kernel {
             // the organ took it in (L16), not through `form_torsion`, which
             // re-parses the tape on every call for every word.
             .map(|(_, t)| match t.form() {
-                // `Form::fibre_volume` is the form's own reading, not this
-                // reader's arithmetic over the form's carrier: the sum belongs
-                // to the object that holds the cycles.
-                Some(f) if !f.torsion.is_empty() => f.fibre_volume(),
+                // THE CLASS FROM THE RECEIPT, THE PERIOD FROM THE COMPLEX
+                // (54.5). `Form::fibre_volume` takes the speaker's filing and
+                // prices it against the periods the form's own loops derive,
+                // so a word cannot be paid for capacity its geometry does not
+                // carry. The filing rides the ELEMENT the organ holds; a form
+                // recovered from an address files nothing.
+                Some(f) if !t.element().filing().is_empty() => {
+                    f.fibre_volume(t.element().filing())
+                }
                 // A v1 sentence that adopted its cycles element-side still
                 // reads as a bundle here, which is why the form arm is guarded
                 // on having filed anything rather than on being a sentence.

@@ -43,7 +43,24 @@ pub const REFUSE_LETTER_WITNESS: &str = "rotor prime witness does not carry its 
 /// a refusal at that vertex, never a smaller answer.
 pub const REFUSE_DERIVATION: &str = "vertex derivation does not compose to its word";
 pub const REFUSE_FACE: &str = "face does not re-derive from its vertices";
-pub const REFUSE_LOOP: &str = "loop holonomy is not identity";
+/// 54.5 (ruled 2026-09-20) — THE NAME IS THE OLD LAW AND THE READING IS
+/// THE NEW ONE. It read "not identity", which was `H¹ = 0`: every 1-cycle
+/// trivial. A compact holonomy about a fixed point RETURNS and is `ℤ/ℓℤ`
+/// torsion, which is content (law 7); what refuses is a free part, a
+/// circuit that walks and never closes, and a form owes that a
+/// `Demand::Dislocation` rather than a filing.
+pub const REFUSE_LOOP: &str = "loop holonomy is a free part and no dislocation declares it";
+/// 54.5 — PERJURY ABOUT THE TERRAIN, which is the one thing in a receipt
+/// the complex can contradict.
+///
+/// A receipt is a SUB-SELECTION of the cycles a stroke discharged: it says
+/// WHICH classes, and the complex says what `ℓ` each closes at. A class the
+/// form does not carry yields nothing and is not a refusal — an observer
+/// may track cycles outside this form's horizon without defrauding anyone.
+/// But a receipt that carries a period and names one the geometry does not
+/// derive is claiming terrain, and `Σ(ℓ − 1)` prices reserve regeneration
+/// (E2), so an unchecked claim mints capacity out of nothing.
+pub const REFUSE_INFLATED_YIELD: &str = "receipt attests a period the complex does not derive";
 pub const REFUSE_REBASE_TRIVIAL: &str = "rebased form equals its base";
 pub const REFUSE_UNFOLD_STILL: &str = "unfolding measure does not move";
 pub const REFUSE_ORBIT_STILL: &str = "orbit does not move";

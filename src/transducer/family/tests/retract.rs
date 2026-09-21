@@ -161,7 +161,7 @@ fn from_address_retracts_every_corpus_form() {
             with_loops += 1;
         }
         let key = form_vertex_key(f);
-        let Some(back) = from_address(key.as_bytes()) else {
+        let Some(back) = from_address(&key) else {
             panic!("{name}: a form's own address does not decode")
         };
         if let Err(why) = same_complex(f, &back) {
@@ -256,7 +256,7 @@ fn the_address_and_the_tape_agree_on_every_reading_the_court_makes() {
             continue;
         };
         let f = &rule.form;
-        let Some(back) = from_address(form_vertex_key(f).as_bytes()) else {
+        let Some(back) = from_address(&form_vertex_key(f)) else {
             note("the address does not decode", &mut why);
             diverged += 1;
             continue;
@@ -303,4 +303,297 @@ fn the_address_and_the_tape_agree_on_every_reading_the_court_makes() {
     }
     assert!(seen > 0, "the guard ran over nothing");
     assert_eq!(diverged, 0, "the address and the tape must agree on every reading");
+}
+
+/// GRADE 0 ON THE CORPUS — how many vertices are not one 0-cell, and does
+/// that account for what `face_rederives` has been refusing (L37).
+///
+/// This is an INSTRUMENT and not a gate (§8.1). `body_coheres` is a new
+/// predicate and the first thing owed of one is a measurement: how much it
+/// refuses, where, and whether the number explains a refusal already on the
+/// board. L37 reads `face does not re-derive from its vertices` at 192 on
+/// voices and 22 on hyphae in 2 h 10 m, cause unverified.
+///
+/// THE PREDICTION BEING TESTED. `face_rederives` re-derives a face at EVERY
+/// member pair it records, `face_place(i, &c_i, j, &c_j, …)`. If a vertex's
+/// own fibre is twisted — two members turning relative to one another in
+/// their own charts — those per-pair places disagree, and the refusal is
+/// reported at the FACE because that is where the reader stands. A missing
+/// grade-0 predicate attributes its faults to grade 1. So a form with an
+/// incoherent body should be a form whose faces do not all re-derive, and a
+/// form with none should not fail there for this reason.
+///
+/// It asserts only what it can prove from the corpus in front of it; the
+/// counts are printed so the reading is the reading and not a claim about
+/// the fleet.
+#[test]
+fn grade_zero_over_the_corpus_and_what_it_accounts_for() {
+    let Ok(dir) = std::fs::read_dir(CORPUS) else {
+        eprintln!("  grade 0: {CORPUS} does not read — no corpus, no reading");
+        return;
+    };
+    let mut names: Vec<String> = dir
+        .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
+        .filter(|n| n.ends_with(".json"))
+        .collect();
+    names.sort_unstable();
+    names.truncate(TASKS);
+    assert!(!names.is_empty(), "the corpus directory holds no tasks");
+
+    let epi = crate::client::sdk::Epigenome::new();
+    let mut physics = crate::physics::Physics::default();
+    let (mut forms, mut vertices, mut fibred, mut incoherent) = (0usize, 0usize, 0usize, 0usize);
+    let (mut forms_with_incoherent, mut widest) = (0usize, 0usize);
+    let (mut standing, mut unspellable, mut other, mut slipping) = (0usize, 0usize, 0usize, 0usize);
+    // KEYED, NEVER A BTREE (the standing rule, and rule 15 under it): a
+    // `Keyed` is a PATRICIA trie over the key's own bytes, so the walk order
+    // IS the coordinate's order. The period is written big-endian so the
+    // trie's order is the period's order and nothing sorts.
+    let mut compact: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+    for name in &names {
+        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let mut budget =
+            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
+        let Some(rule) = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
+        else {
+            continue;
+        };
+        let f = &rule.form;
+        forms += 1;
+        for v in &f.vertices {
+            let Some(acts) = v.acts() else { continue };
+            vertices += 1;
+            let n = acts.scoped().count();
+            widest = widest.max(n);
+            // A FIBRE WITH ONE MEMBER HAS NO VERTICAL TRANSITION, so it is
+            // not evidence either way and is counted apart.
+            if n > 1 {
+                fibred += 1;
+            }
+        }
+        // THE CLASSES, NOT A COUNT OF REFUSALS (rule 4). Each is an exact
+        // conformal element; what is tallied is how it CLASSIFIES, because
+        // a compact one is a coordinate the pivot can open and a standing
+        // one is a parallax the form has not absorbed.
+        for (_, t, fill) in f.gauge_obstructions() {
+            forms_with_incoherent += 1;
+            incoherent += 1;
+            match fill {
+                crate::transducer::cech::Fill::Congruent(_, _, ell) => {
+                    let at = match compact.get(&ell.to_be_bytes()) {
+                        Some(n) => *n + 1,
+                        None => 1,
+                    };
+                    compact.insert(ell.to_be_bytes(), at);
+                }
+                crate::transducer::cech::Fill::Class(..) => standing += 1,
+                crate::transducer::cech::Fill::Unspellable(..) => unspellable += 1,
+                _ => other += 1,
+            }
+            if let Some(s) = t.screw() {
+                if !s.twist.iter().all(num_traits::Zero::is_zero) {
+                    slipping += 1;
+                }
+            }
+        }
+    }
+    eprintln!(
+        "  grade 0: {forms} forms, {vertices} vertices with a fibre, {fibred} standing on more \
+         than one chart (widest {widest}); {incoherent} vertices are not one 0-cell, across \
+         {forms_with_incoherent} transitions"
+    );
+    let compact_rows: Vec<(u32, usize)> = compact
+        .scoped()
+        .filter_map(|(k, n)| {
+            let b: [u8; 4] = k.as_slice().try_into().ok()?;
+            Some((u32::from_be_bytes(b), *n))
+        })
+        .collect();
+    eprintln!(
+        "  grade 0 classes: compact {compact_rows:?} · standing {standing} · unspellable \
+         {unspellable} · other {other} · with a fibre slip {slipping}"
+    );
+    // WHAT IS ASSERTED: a vertex standing on ONE chart has no vertical
+    // transition and cannot be incoherent, so the incoherent count is
+    // bounded by the multi-chart count. If that ever fails the predicate is
+    // reading something other than a fibre.
+    assert!(
+        incoherent <= fibred,
+        "a vertex on one chart has no vertical transition to be twisted: \
+         {incoherent} twisted of {fibred} fibred"
+    );
+}
+
+/// THE CORPUS'S SPECTRUM — what the engine actually sounds like, note by
+/// note, with nothing summed (54.5).
+///
+/// `coheres() -> bool` answered one bit for a whole form and the fleet read
+/// `REFUSE_NOT_CLOSED` 36 times in 39 refusals with no way to ask what was
+/// wrong. This prints the chord: the plane periods of every cycle
+/// UNCOLLAPSED, the gauge cycle types of every fibre, and the shears no
+/// origin absorbs — separately, because a lane is never summed into another
+/// (law 5).
+///
+/// It asserts nothing about how much should ring. It is an instrument and
+/// the numbers are the reading (§8.1).
+#[test]
+fn the_corpus_spectrum() {
+    use crate::transducer::alphabet::Order;
+    let Ok(dir) = std::fs::read_dir(CORPUS) else {
+        eprintln!("  spectrum: {CORPUS} does not read — no corpus, no reading");
+        return;
+    };
+    let mut names: Vec<String> = dir
+        .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
+        .filter(|n| n.ends_with(".json"))
+        .collect();
+    names.sort_unstable();
+    names.truncate(TASKS);
+
+    let epi = crate::client::sdk::Epigenome::new();
+    let mut physics = crate::physics::Physics::default();
+    let (mut forms, mut cycles, mut both_compact, mut one_plane_only) = (0usize, 0usize, 0usize, 0usize);
+    let (mut neither, mut slips, mut undeclared, mut gauge) = (0usize, 0usize, 0usize, 0usize);
+    // KEYED, NEVER A BTREE (the standing rule): the period big-endian, so
+    // the trie's order is the period's.
+    let mut periods: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+    for name in &names {
+        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let mut budget =
+            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
+        let Some(rule) = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
+        else {
+            continue;
+        };
+        forms += 1;
+        let s = rule.form.spectrum();
+        gauge += s.gauge_cycles.len();
+        slips += s.dislocations.len();
+        undeclared += s.undeclared().len();
+        for c in &s.cycles {
+            cycles += 1;
+            let fin = |o: &Order| matches!(o, Order::Finite(l) if *l > 0);
+            match (fin(&c.planes[0]), fin(&c.planes[1])) {
+                (true, true) => both_compact += 1,
+                (false, false) => neither += 1,
+                // THE READING THE lcm DESTROYS: one plane rings and the
+                // other walks. `order()` answers `Infinite` for this and
+                // the compact half is lost.
+                _ => one_plane_only += 1,
+            }
+            for p in &c.planes {
+                if let Order::Finite(l) = p {
+                    let at = match periods.get(&l.to_be_bytes()) {
+                        Some(n) => *n + 1,
+                        None => 1,
+                    };
+                    periods.insert(l.to_be_bytes(), at);
+                }
+            }
+        }
+    }
+    eprintln!(
+        "  spectrum: {forms} forms · {cycles} evaluated cycles — both planes compact \
+         {both_compact}, one plane only {one_plane_only}, neither {neither}"
+    );
+    let rows: Vec<(u32, usize)> = periods
+        .scoped()
+        .filter_map(|(k, n)| {
+            let b: [u8; 4] = k.as_slice().try_into().ok()?;
+            Some((u32::from_be_bytes(b), *n))
+        })
+        .collect();
+    eprintln!("  spectrum: plane periods {rows:?}");
+    eprintln!(
+        "  spectrum: gauge cycles {gauge} · dislocations {slips} ({undeclared} undeclared)"
+    );
+}
+
+/// WHERE THE SILENCE BEGINS (54.5). The spectrum reads zero on every note
+/// over the corpus; this says which step produced nothing, because "no
+/// curvature" has three different causes and three different repairs.
+///
+///   NO LOOPS — the complex is a tree. There is no 1-cycle, so there is
+///   nothing to be flat OR curved: a single fibration between two nodes
+///   carries no constraint. The repair is more incidence, not a better
+///   classifier.
+///
+///   LOOPS, NO EVALUATED PATH — `edge_holonomies` answers `None` or an
+///   empty listing: a remainder edge lies on the cycle and the transport
+///   between two bodies was never measured (13.9 step 7). The repair is at
+///   the EDGE measurement — 50.3's stabilizer — and the classifier would
+///   have nothing to say however it were written.
+///
+///   PATHS, ALL IDENTITY — the transport composes to `1` around every
+///   cycle. The cover is genuinely flat and the reading is honest.
+#[test]
+fn where_the_corpus_goes_silent() {
+    let Ok(dir) = std::fs::read_dir(CORPUS) else {
+        eprintln!("  silence: {CORPUS} does not read");
+        return;
+    };
+    let mut names: Vec<String> = dir
+        .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
+        .filter(|n| n.ends_with(".json"))
+        .collect();
+    names.sort_unstable();
+    names.truncate(TASKS);
+
+    let epi = crate::client::sdk::Epigenome::new();
+    let mut physics = crate::physics::Physics::default();
+    let (mut forms, mut with_loops, mut loops, mut faces, mut verts) = (0usize, 0usize, 0usize, 0usize, 0usize);
+    let (mut unread, mut no_path, mut paths, mut ident, mut live) = (0usize, 0usize, 0usize, 0usize, 0usize);
+    let (mut faces_with_edge, mut word_live) = (0usize, 0usize);
+    for name in &names {
+        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let mut budget =
+            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
+        let Some(rule) = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
+        else {
+            continue;
+        };
+        let f = &rule.form;
+        forms += 1;
+        verts += f.vertices.len();
+        faces += f.faces.len();
+        faces_with_edge += f.faces.iter().filter(|x| x.has_edge()).count();
+        if !f.loops.is_empty() {
+            with_loops += 1;
+        }
+        for lp in &f.loops {
+            loops += 1;
+            // THE WORD HALF, for comparison: the transport composite.
+            if !lp.holonomy.is_identity() {
+                word_live += 1;
+            }
+            match f.edge_holonomies(lp) {
+                None => unread += 1,
+                Some(hs) if hs.scoped().next().is_none() => no_path += 1,
+                Some(hs) => {
+                    for (_, h) in hs.scoped() {
+                        paths += 1;
+                        if h.word.rotor().projective_eq(
+                            &crate::transducer::alphabet::Rotor::identity(),
+                        ) {
+                            ident += 1;
+                        } else {
+                            live += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    eprintln!(
+        "  silence: {forms} forms · {verts} vertices · {faces} faces ({faces_with_edge} carrying a \
+         50.3 edge) · {with_loops} forms with loops · {loops} loops"
+    );
+    eprintln!(
+        "  silence: loops — unread {unread} · no evaluated path {no_path} · with paths {} ; \
+         paths {paths} — identity {ident}, live {live}; word holonomy non-identity {word_live}",
+        loops - unread - no_path
+    );
 }

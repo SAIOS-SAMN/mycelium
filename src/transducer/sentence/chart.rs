@@ -440,7 +440,25 @@ pub fn vertex_address(e: &Element) -> Option<crate::transducer::address::Address
 }
 pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     let mut buf = vec![crate::transducer::address::TAG_FORM];
-    buf.extend_from_slice(&(f.vertices.len() as u32).to_le_bytes());
+    // THE COUNT IS OF WHAT IS WRITTEN, and until 54.5 it was not.
+    //
+    // It read `f.vertices.len()` while the body below walks
+    // `canonical_vertices`, which reads distinct vertices out of a trie
+    // keyed by each one's own coordinate bytes. Those two numbers differ
+    // whenever a form holds two vertices with ONE coordinate — which §1.5
+    // says ARE one vertex — and then the key claimed n records and carried
+    // fewer. The address compared and ordered correctly and could not be
+    // PARSED: `from_address` read the count, ran out of bytes on the last
+    // record and refused the whole form.
+    //
+    // The tape hid it for as long as the tape was the decoder. `star_form`
+    // builds its vertices from one fixture, so two of them are one
+    // coordinate, and every reading taken through `decode_form_v2` was
+    // fine while the same form's ADDRESS was unreadable. Two writers of one
+    // fact, and the one that was never read is the one that was wrong
+    // (law 12).
+    let vs = canonical_vertices(f);
+    buf.extend_from_slice(&(vs.len() as u32).to_le_bytes());
     // THE VERTICES IN THEIR OWN CANONICAL ORDER, not the order they were
     // appended (law 2, rule 15).
     //
@@ -455,7 +473,7 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     // zero is the frame by the form's own shape — `glue_append` reads it
     // with `[frame @ Vertex::Frame, ..]`. It is the basepoint, not a member
     // of the set being ordered.
-    for v in canonical_vertices(f) {
+    for v in vs {
         put_vertex(&mut buf, v);
     }
     buf.extend_from_slice(&(f.faces.len() as u32).to_le_bytes());
@@ -987,26 +1005,48 @@ fn canonical_places(f: &Form) -> Vec<u16> {
         n = n.max(face.i as usize + 1).max(face.j as usize + 1);
     }
     let mut out: Vec<u16> = (0..n).map(|i| i as u16).collect();
-    let mut at: Keyed<u16> = Keyed::new();
+    // EVERY VERTEX SHARING A COORDINATE GETS THAT COORDINATE'S PLACE
+    // (§1.5, 54.5).
+    //
+    // This kept `coordinate → INDEX` in the trie, so two vertices with one
+    // coordinate overwrote each other and only the LAST index was ever
+    // given a place. The first kept its identity mapping `out[i] = i` from
+    // the initialisation above — a stale index into a walk that no longer
+    // has that many entries — and every face naming it pointed somewhere
+    // else. Keying `coordinate → PLACE` and then mapping each vertex
+    // through its own coordinate says the thing that is true: they are one
+    // vertex, so they stand at one place, and a face at either end names
+    // that place.
     let mut n = 0u16;
+    // The frames first and in the form's own order. "A form opens at its
+    // frame" (18) — the basepoint is not one of the coordinates being
+    // ordered, so it is not in the trie.
     for (i, v) in f.vertices.iter().enumerate() {
-        match v {
-            Vertex::Frame => {
-                if let Some(slot) = out.get_mut(i) {
-                    *slot = n;
-                }
-                n += 1;
+        if matches!(v, Vertex::Frame) {
+            if let Some(slot) = out.get_mut(i) {
+                *slot = n;
             }
-            _ => {
-                at.insert(vertex_bytes(v), i as u16);
-            }
+            n += 1;
         }
     }
-    for (_, i) in at.scoped() {
-        if let Some(slot) = out.get_mut(*i as usize) {
-            *slot = n;
+    let mut distinct: Keyed<()> = Keyed::new();
+    for v in &f.vertices {
+        if !matches!(v, Vertex::Frame) {
+            distinct.insert(vertex_bytes(v), ());
         }
+    }
+    let mut place: Keyed<u16> = Keyed::new();
+    for (k, ()) in distinct.scoped() {
+        place.insert(&k, n);
         n += 1;
+    }
+    for (i, v) in f.vertices.iter().enumerate() {
+        if matches!(v, Vertex::Frame) {
+            continue;
+        }
+        if let (Some(&p), Some(slot)) = (place.get(&vertex_bytes(v)), out.get_mut(i)) {
+            *slot = p;
+        }
     }
     out
 }

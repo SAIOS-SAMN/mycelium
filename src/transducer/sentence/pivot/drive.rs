@@ -686,6 +686,47 @@ impl Form {
                                 charts.len()
                             );
                         }
+                        // 54.5, DIRECTIVE 4 — A CIRCUIT THAT WALKS MOUNTS
+                        // ITS SHEAR AS A BOUNDARY CELL.
+                        //
+                        // A screw composes to `g = T(τ)·R` with
+                        // `τ ∈ ker(I − R)`, so `g^ℓ = T(ℓτ)` and no power
+                        // returns: there is no period that closes it and no
+                        // filing that can. `edge_coheres` refuses such a
+                        // loop unless the form DECLARES it, and this is
+                        // what declares it — the obstruction converted from
+                        // something hidden in a side-table into a vertex in
+                        // the key, saying what the shear is and what would
+                        // close it.
+                        //
+                        // ONE PER CHART, AND THE SLIP IS THE CHART'S OWN. A
+                        // Burgers vector is coordinatized by the local
+                        // frame: under a transition `g_AB = D(ρ)·T(t)·R`
+                        // the slip transforms as `τ_B = ρ·R(τ_A)`, so it is
+                        // not an ambient invariant and a declaration on one
+                        // chart does not answer for another. 50.5 already
+                        // stands one demand per `(kind, chart)`, and
+                        // `demand_key` keys on both, so each boundary the
+                        // loop fails to close gets its own cell.
+                        //
+                        // A ZERO TWIST MOUNTS NOTHING: that circuit RETURNS
+                        // and is a congruence, and a demand for it would be
+                        // a coordinate standing for no obstruction
+                        // (T21(iii), `Demand::typed`).
+                        for (chart, tau) in self.loop_slips(idx) {
+                            self.stand_demand(
+                                crate::transducer::sentence::Demand::Dislocation {
+                                    chart: chart.clone(),
+                                    tau: Box::new(tau.clone()),
+                                },
+                                &chart,
+                                Vec::new(),
+                            );
+                            eprintln!(
+                                "  dislocation stood {:02x}{:02x}… chord {idx} τ ≠ 0",
+                                idea[0], idea[1]
+                            );
+                        }
                         // A loop of any order files under its class at its
                         // period, `0` for infinite order (52.3, A19).
                         //
@@ -752,8 +793,56 @@ impl Form {
         self.reindex();
     }
 
+    /// 54.5, Directive 4 — THE SHEARS A LOOP LEAVES, ONE PER CHART.
+    ///
+    /// `screw_of` splits a transport exactly over ℚ by the normal equations
+    /// `AᵀA p = Aᵀt`: the centre is where the bend holds still, on
+    /// `Im(I − R)`, and the twist is what no choice of origin absorbs, on
+    /// `ker(I − R)`. The twist is the Burgers vector — the circuit slips by
+    /// exactly that much per turn — and it is the quantity a
+    /// `Demand::Dislocation` carries.
+    ///
+    /// A TWIST IS READ IN A FRAME, so this pairs each with the chart it was
+    /// measured on. Under a transition `g_AB = D(ρ)·T(t)·R` a slip
+    /// transforms as `τ_B = ρ·R(τ_A)`; carrying one τ for a loop that
+    /// crosses several charts would assert an ambient vector the geometry
+    /// does not have.
+    ///
+    /// Only NON-ZERO twists are returned. A zero twist is a circuit that
+    /// returns — a congruence, filed at its period — and it owes no
+    /// declaration (T21(iii): a coordinate is earned by retiring an
+    /// obstruction, never by naming one that is not there).
+    fn loop_slips(&self, idx: usize) -> Vec<(stalk::Invariant, [crate::core::Q; 3])> {
+        let Some(lp) = self.loops.get(idx) else {
+            return Vec::new();
+        };
+        let Some(hs) = self.edge_holonomies(lp) else {
+            return Vec::new();
+        };
+        let charts = self.charts_of_loop(idx);
+        let mut out = Vec::new();
+        for (_, h) in hs.scoped() {
+            let Some(screw) =
+                crate::transducer::element::screw_of(&h.word.rotor(), &h.carriage)
+            else {
+                continue;
+            };
+            if screw.twist.iter().all(num_traits::Zero::is_zero) {
+                continue;
+            }
+            for chart in &charts {
+                out.push((chart.clone(), screw.twist.clone()));
+            }
+        }
+        out
+    }
+
     /// Every chart a loop stands on, once each, in key order: the charts of
     /// its vertices, never one of them by position (rule 15).
+    pub(crate) fn charts_of_loop_at(&self, idx: usize) -> Vec<stalk::Invariant> {
+        self.charts_of_loop(idx)
+    }
+
     fn charts_of_loop(&self, idx: usize) -> Vec<stalk::Invariant> {
         let mut at: Keyed<stalk::Invariant> = Keyed::new();
         if let Some(lp) = self.loops.get(idx) {

@@ -139,12 +139,41 @@ fn face_rederives(f: &Form, face: &crate::transducer::sentence::FormFace) -> boo
     true
 }
 
-fn derivations_compose(f: &Form, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Option<Refusal> {
+/// 50.2 step 2 — THE CITATIONS COMPOSE TO THE ACTION THE VERTEX CARRIES.
+///
+/// THE EVIDENCE COMES FROM THE ENVELOPE AND THE ACTION FROM THE FORM (54.5
+/// Road (d), B3), and that separation is the check rather than a relocation
+/// of it. The rotor is the vertex's KEY — §1.5 makes the composed action the
+/// coordinate, so two minds with different presentations reach one address —
+/// and the citations are a presentation, which the key deliberately excludes
+/// (`evidence_is_not_identity`). A mind that lies about its citations is
+/// caught here by composing them against a rotor it did not get to write;
+/// a mind that lies about the rotor has renamed its own word.
+///
+/// A VERTEX WITH NO CITE IS SPELLED, and composes vacuously — which is
+/// exactly what the vertex the key rebuilds is. That is the whole reason the
+/// envelope has to exist: reading the citations off the form meant reading
+/// them off the tape, and a form decoded from its address has none.
+fn derivations_compose(
+    f: &Form,
+    env: &crate::transducer::element::ReceiptsEnvelope,
+    resolve: &dyn Fn(&[u8]) -> Option<Form>,
+) -> Option<Refusal> {
     use crate::transducer::alphabet::Verified;
-    for v in &f.vertices {
-        let Vertex::Word { address, derivation, .. } = v else {
+    for cite in &env.derivations {
+        // THE VERTEX THE CITE NAMES, in this form. A cite naming a vertex
+        // the form does not carry is evidence about nothing; it is skipped
+        // rather than refused, because the envelope is per-mind and a mind
+        // may carry a cite for a vertex a later stroke replaced.
+        let Some(&i) = f.by_address.get(&cite.vertex) else {
             continue;
         };
+        let Some(v @ Vertex::Word { address, derivation, .. }) = f.vertices.get(i as usize) else {
+            continue;
+        };
+        // The derivation reassembled: the citations from the envelope, the
+        // action from the key.
+        let derivation = cite.against(&derivation.rotor());
         // THE CHART IN THE QUESTION (D10 item 10). A derivation is a vertex
         // coordinate, so the composition is asked once; what the refusal NAMES
         // is a chart, and the chart a vertex acting on several is refused at is
@@ -245,10 +274,18 @@ pub fn replay_form_at(
     if f.depth != f.depth_of() {
         return Some(tape(REFUSE_GLUED_DEPTH));
     }
-    for v in &f.vertices {
-        let Vertex::Glued { address, .. } = v else {
-            continue;
-        };
+    // THE CITATIONS ARE THE NERVE'S 1-SIMPLICES, READ FROM THE ENVELOPE
+    // (54.5 Road (d), B4 — and this is the reader B5 turns on).
+    //
+    // It walked `f.vertices` for `Vertex::Glued { address }`. The host form
+    // says "I have an open boundary that mates under φ"; WHICH form that
+    // boundary was instantiated against is the cover's fact, not the
+    // chart's, and B5 evicts the target address from `form_vertex_key`
+    // entirely — after which this loop would have found nothing to resolve
+    // and every citation would have passed unchecked. Reading the edge list
+    // now means the eviction changes this reader not at all.
+    for edge in &spoken.receipts().nerve {
+        let address = edge.target.as_bytes();
         // TWO DEPTH REFUSALS STOOD HERE AND BOTH ARE GONE (54.2, as ruled
         // 2026-09-20).
         //
@@ -298,7 +335,7 @@ pub fn replay_form_at(
     // deferral a `Glued` citation already takes above — the sentence is
     // docketed and the syllabus serves the generator (21 step 3), one
     // mechanism at two levels.
-    if let Some(refusal) = derivations_compose(f, resolve) {
+    if let Some(refusal) = derivations_compose(f, spoken.receipts(), resolve) {
         return Some(refusal);
     }
     // 37.7 P2: a demand that names a prime must carry a witness that
@@ -364,8 +401,14 @@ pub fn replay_form_at(
     }
     // THE SPOKEN WORD'S OWN ATTESTATION, checked against the forest the
     // court just walked (54.5).
-    if !form_loops_replay(&walked, spoken.filing()) {
+    if !form_loops_replay(&walked) {
         return Some(tape(REFUSE_LOOP));
+    }
+    // AND THE SPEAKER'S CLAIM, CHECKED AGAINST THE GEOMETRY THE COURT JUST
+    // WALKED (54.5). The terrain is priced above; this is the labour, and
+    // the two are never one reading.
+    if let Some(why) = receipts_price_the_terrain(&walked, spoken.filing()) {
+        return Some(tape(why));
     }
     let Some(derived) = walked.rank() else {
         return Some(tape(REFUSE_RANK_LOST));
@@ -409,7 +452,7 @@ pub fn replay_form_at(
             return Some(Refusal { reason: REFUSE_NOT_CLOSED, at: sentence::At::Chart(chart, undeclared) });
         }
     }
-    replay_certificates(&walked, &by_chord).map(tape)
+    replay_certificates(&walked, &spoken.receipts().certificates, &by_chord).map(tape)
 }
 
 /// `REFUSE_FACE` at the face's two vertex addresses (50.9); a face reaching
@@ -562,79 +605,79 @@ pub(crate) fn torsion_chord_carries(f: &Form, by_chord: &Keyed<u16>, face_idx: u
 /// answers `None` where a remainder edge lies anywhere on the cycle (13.9
 /// step 7), and a loop with no transition to read carries no obligation
 /// (rule 11: that is a refusal to read, not a flat reading).
-pub(crate) fn form_loops_replay(
-    f: &Form,
-    filed: &crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop>,
-) -> bool {
-    for lp in &f.loops {
-        // THE TRANSPORT COMPOSITE — the pivot's obstruction, discharged on
-        // an axis or filed under its own class (12.6, A17).
-        if !loop_reading_replays(f, filed, lp, &lp.holonomy) {
-            return false;
-        }
-        // THE EDGE HOLONOMY — the cover's (50.3). A loop the form did not
-        // evaluate, a remainder edge anywhere on it, answers `None` and
-        // carries no obligation: that is a refusal to read (13.9 step 7),
-        // not a flat reading, and `pair.rs` classifies nothing there either.
-        // EVERY EVALUATED MEMBER PATH must replay its own reading. A loop
-        // running through two pairs of bodies carries an obligation at each,
-        // and one path replaying said nothing about the others.
-        let Some(es) = f.edge_holonomies(lp) else {
-            continue;
-        };
-        for (_, e) in es.scoped() {
-            if !loop_reading_replays(f, filed, lp, &e.word) {
-                return false;
-            }
-        }
-    }
-    true
+pub(crate) fn form_loops_replay(f: &Form) -> bool {
+    // ONE READER FOR ONE QUESTION (law 12, 54.5 as ruled 2026-09-20).
+    //
+    // This walked the loops itself and asked `loop_reading_replays` of each
+    // holonomy, which is the question `Form::coheres` already answers — two
+    // readers of one fact, and they disagreed. `coheres` was corrected at
+    // 54.2 to admit monodromy through `loop_is_congruent`; this was not,
+    // and it is what the court actually ran.
+    //
+    // Both halves stay, because a loop HAS two obstructions and neither
+    // replaces the other (`Form::edge_class_vector`): the transport
+    // composite the pivot discharges, and the edge holonomy the cover
+    // reads. `coheres` is exactly that conjunction.
+    //
+    // AND IT TAKES NO ATTESTATION. It read `filed` and demanded an entry
+    // per class, so a form was refused for a permit rather than for its
+    // geometry — and with the period taken from `word.order()`, the bare
+    // rotor order, a screw was filed at 0 by `file_loop` and demanded at 4
+    // here. Fifth site of one law-12 ruling and the second of the permit
+    // conflation. What the speaker CLAIMED is a separate reading and is
+    // [`receipts_price_the_terrain`].
+    f.coheres()
 }
 
-/// ONE READING OF ONE LOOP: flat, the transition on an axis the form
-/// opened, or filed as torsion under its own class at its own period.
+/// 54.5 — THE LABOUR, CHECKED AGAINST THE TERRAIN.
 ///
-/// It is called twice per loop because a loop HAS two obstructions and
-/// neither replaces the other (`Form::edge_class_vector`): the transport
-/// composite the pivot discharges, and the edge holonomy the cover files.
-/// A court that read the first alone would never look for the class a
-/// cover actually files — keyed by the edge holonomy — and the transport
-/// composite telescopes over the sensor-plane words a pair form composes,
-/// which read flat however curved the scene is.
-fn loop_reading_replays(
+/// A receipt is a SUB-SELECTION: it names which cycles this mind's stroke
+/// discharged, and the complex says what each closes at. So the court does
+/// not take `ℓ` from the claimant — it takes the class from the claimant
+/// and the period from the geometry.
+///
+///     yield(F, r) = Σ_{κ ∈ r ∩ dom(loop_classes F)} (ℓ_derived(κ) − 1)
+///
+/// A class the form does not carry projects to ZERO and is not a refusal.
+/// An observer may track cycles outside this form's horizon — that is
+/// pruning, not fraud, and refusing it would make a mind's own memory a
+/// liability.
+///
+/// What IS refused is a receipt that carries a period the complex does not
+/// derive. `Σ(ℓ − 1)` prices reserve regeneration (E2), so an unchecked
+/// period mints capacity from nothing; and unlike the class, the period is
+/// a claim ABOUT THE TERRAIN, which the terrain can contradict. That is
+/// the one lie in the envelope the court can catch, and catching it is
+/// what makes the attestation worth carrying.
+pub(crate) fn receipts_price_the_terrain(
     f: &Form,
     filed: &crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop>,
-    lp: &crate::transducer::sentence::Loop,
-    word: &crate::transducer::alphabet::Word,
-) -> bool {
-    if word.is_identity() {
-        return true;
+) -> Option<&'static str> {
+    if filed.is_empty() {
+        return None;
     }
-    // An axis the form opened over this loop (I6): the holonomy is the
-    // transition on that axis, and it replays only when the recorded
-    // seed re-derives from the loop itself (law 12).
-    if let Some(chord) = f.opened_axis_of(lp) {
-        return f.axis_rederives(lp, chord);
+    // THE PERIODS THE COMPLEX DERIVES, by class, over every loop. One
+    // reader (`loop_classes`), the same one `file_loop` writes through and
+    // `edge_coheres` asks.
+    let mut derived: Keyed<u32> = Keyed::new();
+    for lp in &f.loops {
+        for row in f.loop_classes(lp) {
+            derived.insert(&row.class, row.period);
+        }
     }
-    // Filed under its class at the period the court re-derives — `0` for
-    // infinite order, A19's spelling of it (52.3). No class, no filing: a
-    // holonomy that is not a versor is a loop that does not replay, never
-    // one keyed by its bytes.
-    let Some(k) = word.rotor().class_key() else {
-        return false;
-    };
-    let ell = word.order().to_u32();
-    // THE FILING IS THE SPEAKER'S, NOT THE FORM'S (54.5, as ruled
-    // 2026-09-20). This read `f.torsion` — a field of the very form being
-    // adjudicated — so the court asked a claimant to vouch for its own
-    // claim. The period could not be forged, because the court re-derives
-    // `ell` and compares; what the form controlled was whether an entry
-    // existed AT ALL, so any loop could be made to pass by filing it.
-    //
-    // `filed` is the attestation the SPOKEN WORD carried
-    // (`Element::filing`), and the court checks it against geometry it
-    // walked itself. Two terms, one of them independent.
-    matches!(filed.get(k.as_bytes()), Some(f) if f.period == ell)
+    for (class, claim) in filed.scoped() {
+        match derived.get(&class) {
+            // The period is a claim about the terrain and the terrain
+            // disagrees.
+            Some(&ell) if claim.period != ell => return Some(REFUSE_INFLATED_YIELD),
+            // Claimed, and the complex agrees.
+            Some(_) => {}
+            // A class this form does not carry. It earns nothing here and
+            // says nothing against the speaker (rule 11).
+            None => {}
+        }
+    }
+    None
 }
 
 pub(crate) fn face_idx_key(i: u16) -> Vec<u8> {
@@ -643,11 +686,21 @@ pub(crate) fn face_idx_key(i: u16) -> Vec<u8> {
 
 /// A20: each certificate is the un-pivot of one chord face, re-walked.
 /// The loop's class key and rank before and after must match the tape.
-pub(crate) fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'static str> {
-    // ONE FORM'S certificates: the carrier hangs off the form being
-    // replayed, and every certificate on it is re-walked or the tape is
-    // refused -- there is no subset of them that would do.
-    for (_, cert) in f.certificates.scoped() {
+pub(crate) fn replay_certificates(
+    f: &Form,
+    certificates: &[crate::transducer::sentence::PivotCertificate],
+    by_chord: &Keyed<u16>,
+) -> Option<&'static str> {
+    // THE CERTIFICATES ARE THE SPEAKER'S (54.5 Road (d), B3). They hung off
+    // the form, and a certificate is not geometry: it is what ONE mind's
+    // stroke did to this complex against ONE budget. Two minds holding the
+    // same form pivot differently, so the map does not factor through the
+    // form and `from_address` cannot rebuild it — the same argument that
+    // moved the filing at `df1eeaa`, one carrier later.
+    //
+    // Every certificate the envelope carries is re-walked or the word is
+    // refused; there is no subset of them that would do.
+    for cert in certificates {
         let face = cert.by.face();
         let Some(&li) = by_chord.get(&face_idx_key(face)) else {
             return Some(REFUSE_PIVOT_INEXACT);

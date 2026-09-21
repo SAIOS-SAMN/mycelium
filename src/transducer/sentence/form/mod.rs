@@ -7,15 +7,19 @@
 
 pub mod carrier;
 pub mod certificate;
+pub mod fiber;
 pub mod closure;
 pub mod contract;
 pub mod keys;
+pub mod spectrum;
 pub mod vertex;
 
 pub use carrier::*;
 pub use certificate::*;
+pub use fiber::*;
 pub use contract::*;
 pub use keys::*;
+pub use spectrum::*;
 
 use crate::transducer::sentence::chain::Link;
 use crate::transducer::sentence::class::{Axis, ClassVector};

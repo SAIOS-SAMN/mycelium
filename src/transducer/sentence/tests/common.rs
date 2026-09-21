@@ -104,11 +104,30 @@ pub fn word_vertex_on(addr: u8, word: Word, chart: stalk::Invariant) -> Vertex {
     )
 }
 
+/// `n` SPOKES ARE `n` SITES (§1.5, 54.5 — the repair `chord_form` already
+/// carries, applied at the site it was missed).
+///
+/// Every spoke was `word_vertex(i + 1, Word::identity())`, and since 54.2
+/// made `addr` non-naming those are the SAME vertex: one rotor, one chart,
+/// one carriage, one gauge. §1.5 says they are one vertex, and
+/// `form_vertex_key` agreed — it wrote them through a trie keyed by each
+/// one's coordinates and emitted ONE record — while the tape wrote three.
+/// So every reading taken through the tape saw a star with `n` spokes and
+/// the same form's ADDRESS named a star with one, and nothing compared the
+/// two until the decoder moved.
+///
+/// The chart is what separates them, for `chord_form`'s reason: the chart
+/// is where a body stands, not how it is carried, so the star's transports
+/// are untouched.
 pub fn star_form(n_words: usize, extra: Vec<(u16, u16, Word)>) -> Form {
     let mut f = Form::default();
     for i in 0..n_words {
-        f.vertices.push(word_vertex(i as u8 + 1, Word::identity()));
         let j = (i as u16) + 1;
+        f.vertices.push(word_vertex_on(
+            j as u8,
+            Word::identity(),
+            stalk::Invariant::counts(&[u64::from(j)]),
+        ));
         f.faces.push(f.face_of(0, j).expect("star"));
     }
     // A CHORD CARRIES ITS PLACEMENTS as well as its word, or the loop it
@@ -169,8 +188,12 @@ pub fn edge_chord_form(edges: &[Word]) -> Form {
     for (ci, w) in edges.iter().enumerate() {
         let a = (ci * 2 + 1) as u16;
         let b = (ci * 2 + 2) as u16;
-        f.vertices.push(word_vertex(a as u8, Word::identity()));
-        f.vertices.push(word_vertex(b as u8, Word::identity()));
+        // TWO ENDS ARE TWO SITES (§1.5), for `chord_form`'s reason and at
+        // the site that repair missed: one rotor, one chart, one carriage
+        // and one gauge is ONE vertex, and a form holding it twice keys to
+        // a form holding it once.
+        f.vertices.push(word_vertex_on(a as u8, Word::identity(), stalk::Invariant::counts(&[u64::from(a)])));
+        f.vertices.push(word_vertex_on(b as u8, Word::identity(), stalk::Invariant::counts(&[u64::from(b)])));
         f.faces.push(f.face_of(0, a).expect("star a"));
         f.faces.push(f.face_of(0, b).expect("star b"));
         f.faces.push(
@@ -186,8 +209,9 @@ pub fn edge_chord_form(edges: &[Word]) -> Form {
 pub fn coboundary_chord_form() -> Form {
     let r = order4();
     let mut f = Form::default();
-    f.vertices.push(word_vertex(1, Word::identity()));
-    f.vertices.push(word_vertex(2, Word::identity()));
+    // TWO ENDS ARE TWO SITES (§1.5), as in `chord_form`.
+    f.vertices.push(word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])));
+    f.vertices.push(word_vertex_on(2, Word::identity(), stalk::Invariant::counts(&[2])));
     for (i, j, w) in [(0u16, 1u16, r.clone()), (0, 2, Word::identity()), (1, 2, r.inverse())] {
         f.faces.push(f.face_carrying(i, j, w).expect("two placed vertices and the Frame"));
     }

@@ -69,6 +69,19 @@ impl Element {
             out.extend_from_slice(&f.period.to_le_bytes());
             out.extend_from_slice(&f.chord.to_le_bytes());
         }
+        // THE RECEIPTS ENVELOPE (54.5 Road (d)). The GEN3 record is
+        // `Key → ⟨μ⃗, ReceiptsEnvelope⟩` as ruled 2026-09-20: the form
+        // is the manifold and its address IS its structure, but an
+        // utterance is a speech act and carries the evidence to prove
+        // itself. The genome is a client's cache of adjudicated
+        // utterances, not a dictionary of forms, so the envelope
+        // persists here and a restarted voice does not lose its
+        // certificates, its citations or its derivations.
+        //
+        // Written but not yet read back into the readers (B1/B2 of the
+        // glide path); `from_bytes` below restores it, and the three
+        // verifiers take it at B3.
+        self.receipts.to_block(&mut out);
         for m in &self.mag {
             out.extend_from_slice(&m.to_le_bytes());
         }
@@ -196,6 +209,9 @@ impl Element {
                 crate::transducer::sentence::FiledLoop { sigma, period, chord },
             );
         }
+        // THE RECEIPTS ENVELOPE (54.5 Road (d)), framed, so a malformed one
+        // refuses the record rather than eating the fields after it.
+        let receipts = crate::transducer::element::ReceiptsEnvelope::from_block(b, pos)?;
         let mut mag = [0u64; 4];
         for m in &mut mag {
             *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -360,6 +376,7 @@ impl Element {
             sections,
             torsion,
             filing,
+            receipts,
             transitions,
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),

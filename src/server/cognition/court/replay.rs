@@ -390,19 +390,34 @@ impl Kernel {
         spoken: &Element,
     ) -> Vec<(Address, u32, Option<crate::transducer::alphabet::Rotor>)> {
         use crate::transducer::sentence::torsion_loop_rotor;
-        // A SPOKEN word, decoded by name (L16): it is what a voice sent,
-        // not what this court holds.
+        // THE CYCLES COME FROM THE GEOMETRY, THE PERIODS WITH THEM (54.5,
+        // as ruled 2026-09-20).
+        //
+        // This read `from_element_form(spoken).torsion` — the DECODED
+        // form's filing. A form recovered from its address carries none:
+        // every field of a `FiledLoop` is derivable (`loop_classes`
+        // computes the class, the period through `cech::classify`, σ from
+        // the transports), so law 12 keeps it out of the key, and after B4
+        // this walk returned empty for every word in the tree.
+        //
+        // What it should have asked all along is the complex. This is the
+        // COURT deciding whether a class it holds at one period is being
+        // spoken at another (`REFUSE_NOT_NATURAL`) — a question about
+        // geometry — and taking the period from the speaker's own filing
+        // let the claimant supply the evidence against itself. The
+        // speaker's attestation is checked separately, against this same
+        // derivation, in `receipts_price_the_terrain`.
         if let Some(f) = crate::transducer::sentence::from_element_form(spoken) {
-            if !f.torsion.is_empty() {
-                return f
-                    .torsion
-                    .scoped()
-                    .map(|(k, filed)| {
-                        let ell = filed.period;
-                        let rotor = torsion_loop_rotor(&f, &k);
-                        (Address::from(k), ell, rotor)
-                    })
-                    .collect();
+            let mut rows: Vec<(Address, u32, Option<crate::transducer::alphabet::Rotor>)> =
+                Vec::new();
+            for lp in &f.loops {
+                for row in f.loop_classes(lp) {
+                    let rotor = torsion_loop_rotor(&f, &row.class);
+                    rows.push((row.class, row.period, rotor));
+                }
+            }
+            if !rows.is_empty() {
+                return rows;
             }
         }
         spoken

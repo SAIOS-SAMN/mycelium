@@ -647,6 +647,15 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     // geometry — so it rides the element the mind mints and not the form
     // the address names.
     e.filing = f.torsion.clone();
+    // THE RECEIPTS ENVELOPE (54.5 Road (d), B2). The three carriers the key
+    // deliberately excludes as EVIDENCE — the citations a vertex factored
+    // through, the citations a chart makes of another chart with the affine
+    // transition they meet under, and the pivots the crystallization rests
+    // on — come off the form here, at the one place a word is made.
+    //
+    // They are taken from the form and not from its tape, so this is the
+    // reading that does not need the tape to exist.
+    e.set_receipts(crate::transducer::element::ReceiptsEnvelope::of_form(f));
     // The coordinate the mint wrote is the word's ADDRESS (law 2), and the
     // bytes it moved are the tape it laid down — which is also what the
     // wire will carry. Two columns, never one (law 5).
@@ -697,8 +706,8 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // filing moved to `Element.filing` and the court reads it there, which
     // is the half of this that landed.
     //
-    // THE READER WAITS ON THE RECEIPTS ENVELOPE, and the reason is measured
-    // (54.5, attempted twice 2026-09-20).
+    // THE READER NO LONGER WAITS (54.5 Road (d), B4 — attempted twice and
+    // landed on the third, 2026-09-20).
     //
     // `from_address` is a faithful retract of the GEOMETRY:
     // `the_address_and_the_tape_agree_on_every_reading_the_court_makes`
@@ -709,62 +718,120 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // word read off a presentation rather than an action, and an underived
     // depth.
     //
-    // WHAT IS LEFT IS NOT GEOMETRY. Three carriers ride the tape that the
-    // key deliberately excludes, because each is EVIDENCE and not a
-    // coordinate (§1.5, `evidence_is_not_identity`):
+    // WHAT WAS LEFT WAS NOT GEOMETRY, and the two attempts that failed both
+    // failed on that. Three carriers rode the tape that the key deliberately
+    // excludes, because each is EVIDENCE and not a coordinate (§1.5,
+    // `evidence_is_not_identity`):
     //
     //   `Derivation.generators` — the citations a mind factored through.
-    //   A decoded vertex is `spelled`, so the court cannot verify a
-    //   factored derivation and the economy cannot pay a cited generator's
-    //   speaker.
+    //   A decoded vertex is `spelled`, so the court could not verify a
+    //   factored derivation and the economy could not pay a cited
+    //   generator's speaker.
     //
     //   `Form.certificates` — the pivots a crystallization rests on (A20).
     //
-    //   The filing, which moved to `Element.filing` at df1eeaa and is the
-    //   one of the three already done.
+    //   The filing, which moved to `Element.filing` at df1eeaa.
     //
     // `Tape ∖ Key` measured 2 parts in 10 000 IN BYTES, and that reading
-    // missed all of this: certificates were 0 bytes and `cites` was 0 bytes
-    // on the fleet, so a carrier empty for an unrelated reason read as a
-    // carrier not needed. That is the fifth time this session an
-    // empty-carrier reading has misled, and the last one.
+    // missed all of it: certificates were 0 bytes and `cites` was 0 bytes on
+    // the fleet, so a carrier empty for an unrelated reason read as a
+    // carrier not needed. The fixtures, not the fleet, are where adjudication
+    // executes today, and they are what refused.
     //
-    // So the tape cannot go until the receipts envelope carries the other
-    // two, which is Road (d): a citation is a 1-simplex `⟨A_i, A_j, φ⟩` of
-    // the nerve, in the incidence ledger, not inlined in a key. The purge
-    // and Road (d) are one change seen from two ends.
-    let b = e.description();
-    let mut pos = 2usize;
-    decode_form_v2(b, &mut pos)
+    // All three now ride `Element.receipts` — the graded nerve incidence and
+    // the evidence a court replays with — and the six readers that wanted
+    // them take them from there. So the decoder asks the ADDRESS, which is
+    // what the form IS (law 2), and the tape it used to parse is now written
+    // and read by nothing but itself. B5 evicts the citation targets from the
+    // key; B6 deletes the tape.
+    crate::transducer::sentence::from_address(&e.address())
 }
 
-/// Filed torsion on a sentence tape: `Form.torsion`, keyed by class.
-/// Empty when the word is not a sentence, or when the tape is v1 and the
-/// cycles live only on the element's residual section.
+/// RE-MINT A FORM A MIND ALREADY HOLDS, carrying that mind's attestation
+/// forward (54.5 Road (d), B4).
+///
+/// [`as_element_form`] takes the attestation off the FORM, which is right
+/// for a fresh mint — the extractor's form carries the filing its own stroke
+/// made, the derivations its own peel found and the certificates its own
+/// pivot wrote. A form that came back out of an ADDRESS carries none of
+/// them, because none of them is geometry: a decoded vertex is `spelled`, a
+/// decoded form files nothing and certifies nothing. So a caller that
+/// decodes a held word, moves it, and mints the result got an element
+/// attesting NOTHING, and its next replay refused.
+///
+/// The tape hid this completely. A taped form carried its own filing, so
+/// `decode → regauge → as_element_form` round-tripped the attestation by
+/// accident; the moment the decoder read the address the accident stopped.
+/// `germinate::stroke`'s re-anchor is the live site.
+///
+/// WHY THE FILING SURVIVES THE MOVE, which is a theorem and not a
+/// convenience. A re-gauge conjugates: §3.6 rewrites every face word as
+/// `γ_j · w · γ_i⁻¹`, so a loop's holonomy becomes `Ω' = γ_0 Ω γ_0⁻¹`. A
+/// `FiledLoop` is keyed by the CLASS key, which is a conjugacy invariant,
+/// so the classes are the same classes and the periods are the same
+/// periods. Carrying the filing across is carrying it to the same keys.
+///
+/// THE NERVE IS NOT CARRIED, IT IS RE-DERIVED. A citation's coordinates —
+/// target, chart, depth, placement, transition — are all in the key, so the
+/// decoded form still has its `Glued` vertices whole and `of_form` rebuilds
+/// the 1-simplices from the NEW geometry, which is where they should come
+/// from after a move. Only the derivations and the certificates, which the
+/// key excludes as evidence, come from the mind.
+pub fn remint_form(f: &Form, mag: [u64; 4], from: &Element) -> Option<Element> {
+    let mut e = as_element_form(f, mag)?;
+    e.filing = from.filing().clone();
+    let mut env = e.receipts().clone();
+    env.derivations = from.receipts().derivations.clone();
+    env.certificates = from.receipts().certificates.clone();
+    e.set_receipts(env);
+    Some(e)
+}
+
+/// THE SPEAKER'S FILING, keyed by class: the cycles this mind's own pivot
+/// stroke filed before it spoke.
+///
+/// IT READS `Element.filing` AND NOT THE FORM (54.5, the other half of
+/// `df1eeaa`). The filing moved off `Form.torsion` because it does not
+/// factor through the geometry — `pivot_loop` takes the mesh horizon, the
+/// mind's crystal and a budget, so two minds holding one complex at
+/// different budgets file differently — and the court was re-pointed to
+/// `Element::filing` then. These two public readers were not, and went on
+/// asking the form.
+///
+/// While the decoder still parsed the tape they kept answering, because a
+/// taped form carried its own filing. The moment `from_element_form` read
+/// the ADDRESS instead, they answered EMPTY for every word in the tree:
+/// seven claims failed at once with one cause, which is the shape of a move
+/// that was made at the court and not at its readers.
 pub fn form_torsion(e: &Element) -> Keyed<FiledLoop> {
-    match from_element_form(e) {
-        Some(f) => f.torsion,
-        None => Keyed::new(),
-    }
+    e.filing().clone()
 }
 
-/// Whether a spoken word carries a torsion cycle: the form first, then
-/// the residual element's section so a v1 tape that adopted torsion still
-/// reads as a bundle.
+/// Whether a spoken word carries a torsion cycle: the speaker's filing
+/// first, then the residual element's own section, so a word whose cycles
+/// live on the axis rather than on a form's loops still reads as a bundle.
 pub fn carries_torsion(e: &Element) -> bool {
-    if let Some(f) = from_element_form(e) {
-        if !f.torsion.is_empty() {
-            return true;
-        }
-    }
-    !e.torsion().is_empty()
+    !e.filing().is_empty() || !e.torsion().is_empty()
 }
 
 /// The rotor a filed torsion cycle names: the chord face stored on the
 /// class key. None when that face is missing — never an identity rotor.
 pub fn torsion_loop_rotor(f: &Form, class: &[u8]) -> Option<Rotor> {
-    let chord = f.torsion.get(class)?.chord;
-    f.faces.get(chord as usize).map(|face| face.word.rotor())
+    // THE CHORD IS FOUND BY THE CLASS THE COMPLEX DERIVES (54.5, as ruled
+    // 2026-09-20). This read `f.torsion.get(class)?.chord` — the FILING's
+    // chord — and a form recovered from its address files nothing, so it
+    // answered `None` for every word in the tree after B4.
+    //
+    // It never needed the filing. A loop's class is a theorem of its faces
+    // (`loop_classes`, through `cech::classify`), so the loop carrying this
+    // class is found by asking the geometry which one does. The filing only
+    // ever memoized that answer, and law 12 keeps a theorem out of storage.
+    for lp in &f.loops {
+        if f.loop_classes(lp).iter().any(|row| row.class.as_bytes() == class) {
+            return f.faces.get(lp.chord as usize).map(|face| face.word.rotor());
+        }
+    }
+    None
 }
 
 /// A sentence Element: tagged tape, not an opened-axis connection.

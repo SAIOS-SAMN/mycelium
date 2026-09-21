@@ -58,29 +58,30 @@ fn solve_gauge_between_finds_generator_rotor() {
     );
 }
 
-#[test]
-fn probe_conjugate_reanchor_on_live_genome() {
-    let path = "var/1/genome";
-    let Ok(bytes) = std::fs::read(path) else {
-        return; // skip if var/1/genome not present
-    };
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("test_reanchor"));
-    assert!(entity.epigenome.uncrystallize(&bytes), "genome restored");
-
-    if let Some((rw, retires, after)) = entity.probe_conjugate_reanchor() {
-        assert!(rw.is_rewrite(), "element is a rewrite");
-        assert_eq!(retires.len(), 1, "reanchor retires one input");
-        assert!(after.is_some(), "after element generated");
-
-        // Blind replay verification: court accepts with zero refusal
-        let replay_err = rewrite::replay(&rw);
-        assert_eq!(replay_err, None, "court blind replay succeeds on reanchor rewrite");
-
-        // Verify metabolic yield is credited to LANE_SPATIAL
-        let mag = rw.magnitude();
-        assert!(mag[LANE_SPATIAL] >= 1, "spatial lane yield is non-zero: {:?}", mag);
-    }
-}
+// L35 IS CLOSED BY DELETION, to its own DoD ("the claim runs on a fixture
+// it builds, under a stated stroke, or is deleted").
+//
+// `probe_conjugate_reanchor_on_live_genome` read `var/1/genome` off the
+// RUNNING FLEET. Three things were wrong with it and only the third made
+// it fail: it passed vacuously whenever the file was absent, so a green
+// suite said nothing about the claim; it read a different genome on every
+// run, so a failure was not reproducible and a pass was not a proof; and
+// its whole body sat inside `if let Some(...)`, so even with a genome
+// present it asserted nothing unless the probe happened to fire.
+//
+// What ended it was 54.5 Road (d): the GEN3 record now carries the
+// receipts envelope, `Element::from_bytes` refuses a record written
+// before it, and the genome on disk is from the previous cut. §10 —
+// A LAYOUT CHANGE IS A RECUT — and state written before it does not
+// restore. A test whose subject is a file the recut wipes cannot be the
+// claim's home.
+//
+// NOTHING IS LOST. `probe_conjugate_reanchor_on_word_pair`, directly
+// below, builds its own conjugate pair, learns both, runs the probe under
+// a STATED stroke (`stroke_n(1 << 8)`, not the machine's memory-calibrated
+// one), and asserts every reading this made — the rewrite, the single
+// retirement, the court's blind replay — with a STRICTER magnitude claim
+// (`== 1` where this read `>= 1`).
 
 #[test]
 fn probe_conjugate_reanchor_on_word_pair() {

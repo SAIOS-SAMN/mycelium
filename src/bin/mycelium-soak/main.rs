@@ -169,6 +169,7 @@ fn main() {
         };
         genome::report(path);
         genome::reconcile(path);
+        genome::nerve(path);
         return;
     }
     // 53.2's probe — `--census DIR [id,id,…]`: what each family READS as,

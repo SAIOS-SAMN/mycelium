@@ -390,6 +390,15 @@ impl Kernel {
             let Some(f) = crate::transducer::sentence::from_element_form(word) else {
                 return;
             };
+            // THE PERIODS THE COMPLEX DERIVES, by class — one reader
+            // (`loop_classes`), the same one `file_loop` writes through.
+            let mut derived: crate::network::nerve::Keyed<u32> =
+                crate::network::nerve::Keyed::new();
+            for lp in &f.loops {
+                for row in f.loop_classes(lp) {
+                    derived.insert(&row.class, row.period);
+                }
+            }
             for (w, _) in f.loop_words() {
                 // A CYCLE THIS SENTENCE FILED is one the speaker could not
                 // discharge: `file_loop` writes `Form.torsion` only where no
@@ -412,11 +421,33 @@ impl Kernel {
                 //
                 // A cycle the tree gauge closed or a pivot discharged is not
                 // filed and charges nothing here; it closed.
+                // THE FILING IS THE SPEAKER'S AND IS READ ON THE SPEAKER'S
+                // WORD (54.5, as ruled 2026-09-20). This asked
+                // `f.torsion` — the DECODED form's — and a form recovered
+                // from its address files nothing, so `filed` was false for
+                // every sentence and the charge stopped being assessed at
+                // all.
+                //
+                // The carrier moved; the reading did not. This line is
+                // about LABOUR — "the filing says whether this mind did",
+                // two paragraphs up — so the attestation is exactly what it
+                // should ask, and `Element::filing` is where an attestation
+                // lives (df1eeaa). It is the one reader in this session's
+                // audit that wanted the receipt rather than the geometry.
                 let filed = w
                     .rotor()
                     .class_key()
-                    .is_some_and(|k| f.torsion.contains(k.as_bytes()));
-                let closes = matches!(w.order(), crate::transducer::alphabet::Order::Finite(_));
+                    .is_some_and(|k| word.filing().contains(k.as_bytes()));
+                // AND WHETHER THE ALGEBRA CLOSES IT IS THE FILER'S READER,
+                // NOT THE ROTOR'S. `w.order()` is the bare rotor order with
+                // no carriage and no fixed-point test: a screw has a finite
+                // rotor order and closes at nothing, so this read `Finite`
+                // and called a circuit that walks closed. `loop_classes`
+                // gates on the fixed point and gives it `0`.
+                let closes = w
+                    .rotor()
+                    .class_key()
+                    .is_some_and(|k| derived.get(k.as_bytes()).is_some_and(|&ell| ell > 0));
                 // The charge is owed for a cycle that did not close AND that
                 // the sentence demanded adjudication over. Without the
                 // demand it is a free algebraic refusal: `∂c ≠ 0` is not a

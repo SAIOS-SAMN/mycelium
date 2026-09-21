@@ -103,33 +103,56 @@ fn a_free_part_loop_is_spoken_as_a_standing_demand_carrying_its_holonomy() {
             _ => None,
         })
         .collect();
-    let [(rotor, chart)] = demands.as_slice() else {
-        panic!("one standing demand, on the one chart the loop stands on: {snaps:?}")
-    };
-    // The loop runs the chord backward, so the holonomy it carries is
-    // `r⁻¹`: the same class as `r` (15.3 reads the ray, and inversion
-    // fixes both invariants), and the class is what the loop is judged by.
-    assert_eq!(
-        rotor.class_key(),
-        r.class_key(),
-        "the demand carries the loop's holonomy as its witness, in the class the loop is judged by"
-    );
-    assert!(
-        rotor.projective_eq(&r) || rotor.projective_eq(&r.reverse()),
-        "and it is that holonomy, read along the loop"
-    );
-    assert_eq!(*chart, stalk::Invariant::default(), "on the chart the loop's vertices stand at");
-    assert!(
-        matches!(factor_rotor(rotor), Some(Err(Demand::Standing { .. }))),
-        "and no coordinate plane holds it"
-    );
+    // ONE DEMAND PER CHART THE LOOP STANDS ON, which is what the line above
+    // this test has always said and what the assertion did not check.
+    //
+    // It read `let [(rotor, chart)] = ...` — exactly one — and passed
+    // because `edge_chord_form` built its two chord ends with identical
+    // coordinates, so §1.5 made them ONE vertex standing on ONE chart. Two
+    // ends of a chord are two SITES (the note `chord_form` has carried since
+    // 54.2), and with the ends separated the loop runs through two charts
+    // and stands a demand at each — which is 50.5's `(kind, chart)` and is
+    // the doctrine the doc comment states.
+    assert!(!demands.is_empty(), "the loop is spoken as a standing demand: {snaps:?}");
+    let charts: Vec<stalk::Invariant> =
+        f.vertices.iter().filter_map(|v| v.face_chart()).collect();
+    for (rotor, chart) in &demands {
+        // The loop runs the chord backward, so the holonomy it carries is
+        // `r⁻¹`: the same class as `r` (15.3 reads the ray, and inversion
+        // fixes both invariants), and the class is what the loop is judged
+        // by.
+        assert_eq!(
+            rotor.class_key(),
+            r.class_key(),
+            "the demand carries the loop's holonomy as its witness, in the class the loop is judged by"
+        );
+        assert!(
+            rotor.projective_eq(&r) || rotor.projective_eq(&r.reverse()),
+            "and it is that holonomy, read along the loop"
+        );
+        assert!(
+            charts.contains(chart),
+            "on a chart the loop's vertices stand at, got {chart:?} of {charts:?}"
+        );
+        assert!(
+            matches!(factor_rotor(rotor), Some(Err(Demand::Standing { .. }))),
+            "and no coordinate plane holds it"
+        );
+    }
 }
 
-/// 52.3 — THE FILING RIDES BESIDE THE DEMAND. The same held loop of
-/// infinite order files under its holonomy's class at period 0, A19's
-/// spelling of infinite order, in the stroke that speaks its standing
-/// demand: the pivot's `TorsionFiled` snap carries the zero, the form's
-/// torsion holds the class, and the loop coheres on the form.
+/// 52.3 — THE FILING RIDES BESIDE THE DEMAND, AND THE DEMAND IS WHAT
+/// CARRIES THE OBSTRUCTION (54.5, as amended 2026-09-20).
+///
+/// The same held loop of infinite order files under its holonomy's class
+/// at period 0, A19's spelling of infinite order, in the stroke that
+/// speaks its standing demand: the pivot's `TorsionFiled` snap carries the
+/// zero and the filing holds the class. All of that stands.
+///
+/// What does NOT follow is that the loop coheres. A free part never
+/// returns, and the form says so by standing a DEMAND — a vertex, in the
+/// key, carried as content — rather than by an entry in a side-table. The
+/// form is then VALID and not closed, which is 50.1's own distinction.
 #[test]
 fn a_free_part_loop_files_at_period_zero_beside_its_demand() {
     let r = eleven();
@@ -154,5 +177,24 @@ fn a_free_part_loop_files_at_period_zero_beside_its_demand() {
         f.torsion.contains(r.class_key().expect("a class").as_bytes()),
         "under the holonomy's own class"
     );
-    assert!(f.coheres(), "filed, the loop coheres on the form");
+    // FILED IS NOT CLOSED (54.5, as ruled 2026-09-20). This asserted that
+    // filing the class made the loop cohere. A free part of infinite order
+    // never returns; the filing records that the stroke read it, and the
+    // DEMAND is what carries the obstruction — which is this test's own
+    // subject two assertions above.
+    assert!(!f.coheres(), "a free part is not a compact resonance, filed or not");
+    // AND THE FORM IS VALID THOUGH NOT CLOSED, which is 50.1's own
+    // distinction and the whole point of speaking a demand: the obstruction
+    // is carried as a vertex, in the key, rather than hidden by a filing.
+    assert!(!f.is_closed(), "and so the form is not closed");
+    // THE DEMAND IS ON THE SNAPS, NOT YET ON THE FORM, and this asserted
+    // otherwise on my own reading rather than on the engine's. `pivot_loop`
+    // REPORTS the obstruction it met; `Form::stand_demand` is what writes
+    // the vertex, and the bubble calls it — `bubble/tests/demand.rs` is
+    // where the vertex on the form is asserted, on both pivot paths.
+    // Claiming it here named a carrier this call does not write (rule 11).
+    assert!(
+        snaps.iter().any(|s| matches!(s, Snap::Demand { .. })),
+        "what the stroke carries instead of a permit is the demand it reported"
+    );
 }

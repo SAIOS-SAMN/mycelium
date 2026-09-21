@@ -83,9 +83,25 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
         vec![half.rotor().class_key().expect("the half turn has a class")],
         "read up to conjugacy: the half turn's class, on the one path"
     );
-    assert!(!f.coheres(), "a held stabilizer holonomy is not coherence");
+    // A COMPACT HOLONOMY IS CONTENT AND COHERES (54.5, as ruled
+    // 2026-09-20). This read `!f.coheres()` and then filed a period to
+    // make it true, which asserted that an ANNOTATION'S PRESENCE changes a
+    // geometric property. Every field of a `FiledLoop` is derivable —
+    // `loop_classes` computes the class, the period through
+    // `cech::classify`, σ from the transports — so law 12 forbids storing
+    // one beside the coordinates that determine it, and a predicate
+    // reading it was asking "has a stroke got around to this loop".
+    //
+    // The half turn returns after two circuits about a fixed point. That
+    // is `ℤ/2ℤ` torsion, and torsion is content (law 7): the loop coheres
+    // BECAUSE it is compact, not because anyone wrote it down.
+    assert!(f.coheres(), "a half turn returns: ℤ/2ℤ is a compact resonance, and it coheres");
+    // AND THE FILING CHANGES NOTHING HERE. It is the speaker's
+    // attestation — what its stroke discharged against its own budget —
+    // and it prices the yield (E2) and answers whether the stroke
+    // finished. Neither is a fact about the connection.
     f.torsion.insert(half.rotor().class_key().expect("class"), FiledLoop { sigma: Vec::new(), period: 2, chord: triangle.chord });
-    assert!(f.coheres(), "filed at its period, the loop coheres (A17)");
+    assert!(f.coheres(), "and filing it says nothing the geometry did not already say");
     // NO RE-WALK HERE. `edge_holonomies` reads `self.faces` live, so the
     // `Loop` — its vertices, its faces, its chord — stays valid across an
     // edge write; re-walking would drop this cycle, because `q, q⁻¹, 1`
@@ -104,28 +120,49 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     assert!(f.coheres(), "and holds nothing against the form");
 }
 
-/// 52.3 — A LOOP OF ANY ORDER FILES. A (3,4,5) rotor on a chord's edge is a
-/// holonomy with no period: unfiled, the loop holds against the form; filed
-/// under its class at period 0, A19's spelling of infinite order, it
-/// coheres; at a period the loop does not have it does not. The same rotor
-/// on the chord's word is the transport composite, and the form is
-/// cauterized by the same filing under the holonomy's class.
+/// 52.3 AS AMENDED (54.5, ruled 2026-09-20) — A LOOP OF ANY ORDER FILES,
+/// AND FILING IS NOT COHERING.
+///
+/// A (3,4,5) rotor on a chord's edge is a holonomy with NO PERIOD: `g^ℓ`
+/// is never the identity, so the circuit walks and never returns. It is a
+/// free part — a non-compact obstruction — and what the form owes for it
+/// is a `Demand::Dislocation` carrying the slip, not an entry in a
+/// side-table.
+///
+/// This test asserted the opposite for four commits: that filing the class
+/// at period 0 made the loop COHERE. That is procedural compliance wearing
+/// geometry's clothes, and it let an open dislocation read as a closed
+/// manifold. Every field of a `FiledLoop` is derivable from the complex
+/// (`loop_classes`), so by law 12 the annotation carries no fact the
+/// geometry does not already determine — it records that a stroke looked.
+///
+/// What remains true, and is what the filing is FOR: the stroke reads the
+/// class, files it at 0, and the reading rides `Element.filing` as the
+/// speaker's attestation, where it prices the yield and says whether the
+/// stroke finished.
 #[test]
-fn a_loop_of_infinite_order_is_filed_at_period_zero_and_coheres() {
+fn a_loop_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
     let w = infinite();
     assert_eq!(w.order(), alphabet::Order::Infinite, "the (3,4,5) rotor has no period");
     let mut f = edge_chord_form(std::slice::from_ref(&w));
     let loops = f.loops.clone();
     let [lp] = loops.as_slice() else { panic!("one chord closes one loop") };
-    assert!(!f.edge_coheres(lp), "unfiled, the edge of infinite order holds against the form");
+    assert!(!f.edge_coheres(lp), "an edge of infinite order holds against the form");
     assert!(!f.coheres());
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
+    // A FILING DOES NOT CLOSE A CIRCUIT THAT WALKS (54.5, as ruled
+    // 2026-09-20). This filed period 0 — A19's spelling of infinite order
+    // — and then asserted the loop COHERED, which made an open dislocation
+    // read as a closed manifold. A (3,4,5) rotor has no period: `g^ℓ` is
+    // never the identity, the circuit never returns, and no annotation
+    // changes that. Writing "0" in a notebook records that the stroke
+    // looked; it does not make the geometry close.
     f.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 0, chord: lp.chord });
-    assert!(f.edge_coheres(lp), "filed at period 0, it coheres");
-    assert!(f.coheres());
+    assert!(!f.edge_coheres(lp), "filed or unfiled, a free part is not a compact resonance");
+    assert!(!f.coheres());
     f.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 4, chord: lp.chord });
-    assert!(!f.coheres(), "a period the loop does not have is not a filing");
+    assert!(!f.coheres(), "and a period the loop does not have is not a filing either");
 
     let mut g = chord_form(std::slice::from_ref(&w));
     let loops = g.loops.clone();
@@ -742,7 +779,7 @@ fn a_form_is_recovered_from_its_key() {
 
     for f in [&inner, &host] {
         let key = form_vertex_key(f);
-        let back = from_address(key.as_bytes()).expect("the key recovers its form");
+        let back = from_address(&key).expect("the key recovers its form");
         assert_eq!(
             form_vertex_key(&back),
             key,
@@ -755,7 +792,7 @@ fn a_form_is_recovered_from_its_key() {
     // The cited address is IN the key and comes back through the inverse —
     // identity is not shortened (1.7), so the inverse does not shorten it.
     let key = form_vertex_key(&host);
-    let back = from_address(key.as_bytes()).expect("recovers");
+    let back = from_address(&key).expect("recovers");
     assert!(
         back.vertices.iter().any(|v| matches!(
             v,
@@ -765,8 +802,12 @@ fn a_form_is_recovered_from_its_key() {
     );
 
     // A key that is not one is refused rather than part-read (rule 11).
-    assert!(from_address(b"").is_none());
-    assert!(from_address(&[0xFF, 0, 0, 0, 0]).is_none());
+    // `from_address` takes an ADDRESS (law 2), so calling a run of bytes a
+    // coordinate is a claim the caller has to write out — and refusing it
+    // is what this asserts.
+    use crate::transducer::address::Address;
+    assert!(from_address(&Address::new(Vec::new())).is_none());
+    assert!(from_address(&Address::new(vec![0xFF, 0, 0, 0, 0])).is_none());
 }
 
 /// 54.2/54.3 — THE KEY CARRIES THE CLOSED SUB-COMPLEX WHOLE, so the
@@ -795,7 +836,7 @@ fn the_key_carries_the_demand_the_remainder_and_the_edge() {
     f.remainder = crate::transducer::element::place_chain(&rem).expect("a chain places");
 
     let key = form_vertex_key(&f);
-    let back = from_address(key.as_bytes()).expect("recovers");
+    let back = from_address(&key).expect("recovers");
 
     let got: Vec<Vec<(i64, i64, u8, u8)>> = back
         .vertices

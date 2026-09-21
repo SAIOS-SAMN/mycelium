@@ -452,6 +452,38 @@ impl Rotor {
         Some(spell(&block)?.word)
     }
 
+    /// THE TWO PERIODS OF A DOUBLE ROTATION, UNCOLLAPSED (54.5, as ruled
+    /// 2026-09-20).
+    ///
+    /// A rotation in four dimensions is not a turn about an axis: the even
+    /// subalgebra splits by the central idempotents `(1 ± I)/2` into two
+    /// COMMUTING simple rotations, on two orthogonal planes, each with its
+    /// own period. [`Self::order`] computes both exactly and then returns
+    /// `lcm(m₁, m₂)` — one number for two independent quantities — and
+    /// answers `Infinite` when EITHER factor is not a root of unity, which
+    /// discards a compact half.
+    ///
+    /// That collapse is law 5's shape one level below the lanes: two
+    /// coordinates summed into one, after which no reader can tell a
+    /// `ℤ/6ℤ` on one plane from a `ℤ/2ℤ` and a `ℤ/3ℤ` on two. The
+    /// projective order is a true and useful reading — `order` keeps it —
+    /// but it is a reading OF this pair, and a spectrum needs the pair.
+    ///
+    /// Each factor turns by `2θ = 2kπ/m`, so `R^n` is real for that factor
+    /// exactly when `n = m / gcd(k, m)`, which is its period. `None` for a
+    /// non-versor: no weight, no class, no periods.
+    pub fn plane_periods(&self) -> Option<[Order; 2]> {
+        let w = self.weight()?;
+        let (a, p) = (&self.c[0], &self.c[15]);
+        let period = |s: Q| -> Order {
+            match half_angle(&s, &w) {
+                Some((k, m)) => Order::Finite(m / gcd_u32(k, m).max(1)),
+                None => Order::Infinite,
+            }
+        };
+        Some([period(a + p), period(a - p)])
+    }
+
     /// THE ORDER OF A ROTOR, read from its class (15.3, ruled 2026-09-09).
     /// The even subalgebra splits by the central idempotents `(1 ± I)/2`
     /// into two commuting quaternion factors of one weight `w`, with

@@ -554,8 +554,26 @@ impl Form {
     /// seed (A20 `OpenAxis`) re-derives from it. Otherwise the relation is
     /// a stored coordinate the form cannot re-derive, and the loop stays a
     /// defect.
-    pub fn axis_rederives(&self, lp: &Loop, chord: u16) -> bool {
-        chord == lp.chord && self.axis_seed_of(lp).is_some()
+    /// AN AXIS IS KEYED BY A CLASS, SO THE CLASS IS WHAT IDENTIFIES IT
+    /// (rule 15, 54.5 as ruled 2026-09-20).
+    ///
+    /// This read `chord == lp.chord` beside the seed, and the chord is a
+    /// FACE INDEX — a position, not a coordinate. `form_vertex_key` knows
+    /// that and writes an opened axis as its CLASS alone; the decoder has
+    /// nothing to put in the chord slot and writes `0`. So on every form
+    /// that came out of an address the stored chord was a placeholder, and
+    /// this compared it as though it were real: the axis re-derived only
+    /// when the loop's chord happened to be face zero, and otherwise a form
+    /// that opened an axis was refused for it.
+    ///
+    /// `opened_axis_of` already finds the axis BY THE LOOP'S OWN CLASS,
+    /// which is content. Two loops of one class are one obstruction and one
+    /// axis serves both — that is what keying by class means — so there is
+    /// nothing left for an index to disambiguate. What remains is the real
+    /// question: does this loop have a holonomy for the axis to be the
+    /// transition OF (16.20).
+    pub fn axis_rederives(&self, lp: &Loop, _chord: u16) -> bool {
+        self.axis_seed_of(lp).is_some()
     }
 
     /// The seed of the axis a loop opens: its own holonomy versor (16.20),

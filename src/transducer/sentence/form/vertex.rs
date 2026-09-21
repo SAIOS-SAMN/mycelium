@@ -163,6 +163,106 @@ impl Vertex {
         }
     }
 
+    /// GRADE 0 — THE VERTICAL TRANSITIONS IN THE FIBRE OVER THIS VERTEX,
+    /// AS COORDINATES (54.5, as ruled 2026-09-20).
+    ///
+    /// IT IS NOT A BOOLEAN AND THAT IS THE WHOLE POINT (rule 4). Written as
+    /// `body_coheres(&self) -> bool` — which is how it was written first —
+    /// it is a one-bit scalar deciding a branch, and it DISCARDS the exact
+    /// quantity it just computed. A gauge twist between two charts of one
+    /// body is not an error with an infinite threshold; it is internal
+    /// gauge curvature, and under T21(iii) a coordinate is earned by
+    /// retiring an obstruction, never by refusing one. A boolean here is
+    /// gradient descent with a step of one: it reads structural difference
+    /// as a penalty.
+    ///
+    /// THE OBJECT. `π: M → V` gives the fibre `π⁻¹(v) = {(v,c)}`, and the
+    /// vertical automorphism between two of its points is
+    ///
+    ///     g_{c₁c₂} = C_{v,c₂} · C_{v,c₁}⁻¹ = D(ρ) · T(t) · R_gauge
+    ///
+    /// exact in `Cl(5,1)(ℚ)`: a dilation, a centroid offset, and the
+    /// relative rotation of the two frame bases. `R_gauge ≡ ±1` is a body
+    /// merely displaced between charts. `R_gauge` of finite order about a
+    /// fixed point is an intrinsic cyclic symmetry — `ℤ/ℓℤ` on the `𝒢`
+    /// lane, a coordinate the pivot may open. A slip in `ker(I − R)` is a
+    /// perspective parallax no choice of origin absorbs, which is
+    /// `Demand::Dislocation`'s object.
+    ///
+    /// A SPANNING SET, NOT EVERY PAIR. The transitions telescope —
+    /// `g_{c₂c₃} = g_{c₁c₃} · g_{c₁c₂}⁻¹` — so the `n−1` against the LEAST
+    /// chart generate the rest and the others are composites law 12 does
+    /// not store. The least chart is the trie's first, which is the chart
+    /// keys sorted and so is content (rule 15).
+    ///
+    /// A vertex acting on nothing or on one chart has no vertical
+    /// transition and yields none; that is an absence, never a flat
+    /// reading (rule 11).
+    pub fn fiber_holonomy(&self) -> Vec<super::FiberTransition> {
+        let Some(acts) = self.acts() else {
+            return Vec::new();
+        };
+        let members: Vec<&super::Acting> = acts.scoped().map(|(_, a)| a).collect();
+        let [first, rest @ ..] = members.as_slice() else {
+            return Vec::new();
+        };
+        let Some(inv) = first.carriage.versor_inverse() else {
+            return Vec::new();
+        };
+        rest.iter()
+            .map(|m| super::FiberTransition {
+                from: first.chart.clone(),
+                to: m.chart.clone(),
+                carriage: m.carriage.geo(&inv),
+                gauge_from: first.gauge.clone(),
+                gauge_to: m.gauge.clone(),
+            })
+            .collect()
+    }
+
+    /// GRADE 0 — IS THE FIBRE OVER THIS VERTEX PURE CARRIAGE? (54.5, as
+    /// ruled 2026-09-20.)
+    ///
+    /// THE PREDICATE IS A READING OF [`Self::fiber_holonomy`] AND NEVER A
+    /// CARRIER OF ITS OWN (law 12). It exists for the one caller that
+    /// genuinely asks a yes-or-no — "is this vertex a single 0-cell" — and
+    /// every caller that wants to ACT on the answer takes the transitions
+    /// and their classes instead, because that is where the coordinate is.
+    ///
+    /// Coherence is GRADED and the engine had it at one grade. `coheres`,
+    /// `edge_coheres` and `is_cauterized` all read LOOPS — 1-cycles — and
+    /// nothing read a 0-cell at all, so a vertex could assert any set of
+    /// members and no reader could disagree.
+    ///
+    /// D7/18.2 makes a `Word` vertex ONE derivation and MANY `Acting`: one
+    /// action, several placements, "two bodies of different shapes carried
+    /// by one transport correspond". That is a claim, and this is the test
+    /// of it. Between two members the vertical transition is
+    ///
+    ///     τ_{c₁c₂} = C_{v,c₂} · C_{v,c₁}⁻¹
+    ///
+    /// a 1-cell of the member complex `M` with BOTH ENDPOINTS OVER ONE
+    /// VERTEX. For the vertex to be one 0-cell, τ must be pure carriage — a
+    /// placement and a dilation, with no rotor. A τ that TURNS means the two
+    /// members rotate relative to one another in their own charts, and
+    /// calling them one vertex asserts an identity the geometry denies
+    /// (§1.5: identity is never by fiat).
+    ///
+    /// ONE REPRESENTATIVE SUFFICES, and that is a theorem rather than a
+    /// shortcut. Translations and dilations form a subgroup, so if τ₁₂ and
+    /// τ₁₃ are both rotor-free then τ₂₃ = τ₁₃ · τ₁₂⁻¹ is too. The walk is
+    /// `O(n)` against the LEAST chart the vertex stands at — the trie's
+    /// first, which is the chart keys sorted and so is content, the same
+    /// choice `derivations_compose` makes for the chart it refuses at
+    /// (rule 15).
+    ///
+    /// A vertex acting on nothing, or on one chart, has no vertical
+    /// transition and coheres vacuously. A τ whose base action cannot be
+    /// READ is refused rather than assumed flat (rule 11).
+    pub fn body_coheres(&self) -> bool {
+        self.fiber_holonomy().iter().all(|t| t.is_vertical())
+    }
+
     /// THE MEMBER AT A NAMED CHART: a keyed read, which is the only honest
     /// way to ask a fibre for one of its members. `None` is "this vertex does
     /// not act there", which is what a rule says about a body on a chart it

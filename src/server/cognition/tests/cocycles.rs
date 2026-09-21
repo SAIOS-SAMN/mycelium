@@ -154,12 +154,22 @@ fn a_filed_form_cycle_is_volume_the_basis_counts() {
     );
     let held = std::sync::Arc::new(crate::transducer::element::Held::of(spoken));
     let f = held.form().expect("the v2 tape decodes to a form");
+    // THE PERIOD IS THE COMPLEX'S (54.5). This read it off the decoded
+    // form's `torsion`, which is empty: a form recovered from its address
+    // files nothing, because a filing is not geometry. The period the
+    // cycle closes at is a theorem of the faces (`loop_classes`).
     let ell = f
-        .torsion
-        .scoped()
-        .map(|(_, l)| l.period)
-        .next()
-        .expect("the form files the cycle");
+        .loops
+        .iter()
+        .find_map(|lp| match f.loop_classes(lp).as_slice() {
+            // THE LEAST CLASS THIS LOOP DERIVES, and the slice pattern says
+            // so: `loop_classes` walks the member paths out of a `Keyed`, so
+            // the order is the path keys' own and the first is CONTENT, not
+            // arrival (rule 15).
+            [row, ..] => Some(row.period),
+            [] => None,
+        })
+        .expect("the complex derives its own period");
     let mut k = Kernel::new();
     k.basis.insert(held.address(), std::sync::Arc::clone(&held));
     // Three readings of one cycle: the form's own reach, the period it was
@@ -167,7 +177,7 @@ fn a_filed_form_cycle_is_volume_the_basis_counts() {
     // The form is the carrier, so the first is the reading E2 prices and the
     // third must agree with it rather than compute its own.
     assert_eq!(
-        (f.fibre_volume(), ell, k.fibre_volume_total()),
+        (f.fibre_volume(held.element().filing()), ell, k.fibre_volume_total()),
         (3, 4, 3),
         "the filed cycle's period reaches ℓ−1 above the base, on the form and in the basis"
     );

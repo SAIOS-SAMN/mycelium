@@ -106,21 +106,37 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
         "a certified discharge replays: every after-face is face_of, then the certificate"
     );
     let mut tampered =
-        crate::transducer::sentence::from_element_form(&e).expect("v2 tape");
-    let fi = tampered
-        .certificates
-        .scoped()
-        .next()
-        .expect("one certificate")
-        .1
-        .by
-        .face() as usize;
+        crate::transducer::sentence::from_element_form(&e).expect("the address decodes");
+    // THE CERTIFICATE RIDES THE ENVELOPE (54.5 Road (d), B3). It read
+    // `tampered.certificates` — the DECODED form's — and a form recovered
+    // from its address carries none: a certificate is what one mind's
+    // stroke did against one budget, which does not factor through the
+    // geometry, so `evidence_is_not_identity` keeps it out of the key.
+    // ONE CERTIFICATE, and the slice pattern says so rather than taking the
+    // first of several (rule 15).
+    let [cert] = e.receipts().certificates.as_slice() else {
+        panic!("one certificate, on the word that made it")
+    };
+    let fi = cert.by.face() as usize;
     tampered.faces[fi].word = q.clone();
     let bad = as_element_form(&tampered, e.magnitude()).expect("tampered tape");
-    assert_eq!(
-        crate::court::verdict::blind_replay(&bad),
-        Some(crate::court::verdict::REFUSE_LOOP),
-        "tampering a certified face re-opens an unfiled loop"
+    // TAMPERING A CERTIFIED FACE NAMES A DIFFERENT WORD (54.5, as ruled
+    // 2026-09-20), and that is the stronger property.
+    //
+    // This expected `REFUSE_LOOP` — the tamper "re-opens an UNFILED loop" —
+    // which is the permit reading: the loop was refused for lacking an
+    // entry rather than for its geometry. Coherence no longer asks for a
+    // filing, so a tampered face whose loop is still a compact resonance
+    // still coheres, and the court says so honestly.
+    //
+    // What the forger cannot do is keep the word's NAME. A face's word is
+    // in the key (A21), so moving it moves the address: the tampered form
+    // is a different word, and the certificate it carries is for the one it
+    // is no longer.
+    assert_ne!(
+        bad.address(),
+        e.address(),
+        "a face's word is in the key, so tampering with it names another word"
     );
 
     let mut f = chord_form(std::slice::from_ref(&q));

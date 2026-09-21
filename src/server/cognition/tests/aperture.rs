@@ -365,12 +365,16 @@ fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
     );
     let bare = crate::transducer::sentence::as_element_form(&filed, [1, 1, 0, 0])
         .expect("a sentence tape");
+    // THE FILING RIDES THE SPEAKER'S WORD, AND THE CYCLE RE-DERIVES FROM
+    // THE GEOMETRY (54.5). This read the DECODED form's `torsion`, which is
+    // empty by construction: `from_address` recovers the complex and a
+    // filing is not part of it (law 12 — `loop_classes` derives the class
+    // and the period from the faces).
+    assert!(!bare.filing().is_empty(), "the filed cycle rides the word that made it");
+    let back = crate::transducer::sentence::from_element_form(&bare).expect("its address decodes");
     assert!(
-        !crate::transducer::sentence::from_element_form(&bare)
-            .expect("its tape decodes")
-            .torsion
-            .is_empty(),
-        "the filed cycle rides the tape"
+        back.loops.iter().any(|lp| !back.loop_classes(lp).is_empty()),
+        "and the cycle itself re-derives from the complex, with no filing consulted"
     );
 
     // The charge is read on a DEPLETED lane (23.8): a court with reserve to

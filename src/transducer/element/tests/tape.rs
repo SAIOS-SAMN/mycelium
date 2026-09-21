@@ -171,15 +171,25 @@ fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
     // word, THE ADDRESS and the four lane words, so the count is at a
     // known offset and a second row at (0,0) goes in behind the first.
     //
-    // Two carriers joined the record at 54.5. The ADDRESS, because
+    // Three carriers joined the record at 54.5. The ADDRESS, because
     // `Element::address` used to derive a word's name by parsing its tape,
     // so the tape had to be there for a word to know what it was — the
-    // dependency retiring the tape has to invert. And the FILING, the
-    // speaker's attestation about its form's cycles, which moved off
-    // `Form.torsion` because a filing does not factor through the geometry.
-    // The address is a u32 length and its bytes; the filing is a u32 count,
-    // and this word is a residual with none.
-    let at = 1 + 4 + one.description().len() + 4 + one.address().len() + 4 + 32;
+    // dependency retiring the tape has to invert. The FILING, the speaker's
+    // attestation about its form's cycles, which moved off `Form.torsion`
+    // because a filing does not factor through the geometry. And the
+    // RECEIPTS ENVELOPE (Road (d)): the nerve incidence and the evidence a
+    // court replays with, which moved off the tape for the same reason.
+    //
+    // The address is a u32 length and its bytes; the filing is a u32 count;
+    // the envelope is a u32 block length and its body. This word is a
+    // residual — no filing, and an envelope of four zero counts, which is
+    // 32 bytes and never 0 (an unreadable envelope must not be able to
+    // masquerade as an empty one).
+    let mut envelope = Vec::new();
+    one.receipts().to_block(&mut envelope);
+    assert!(one.receipts().is_empty(), "a residual attests nothing");
+    assert_eq!(envelope.len(), 4 + 32, "the empty envelope is a block of four zero counts");
+    let at = 1 + 4 + one.description().len() + 4 + one.address().len() + 4 + envelope.len() + 32;
     assert!(one.filing().scoped().next().is_none(), "a residual attests no filing");
     assert_eq!(
         u32::from_le_bytes(bytes[at..at + 4].try_into().expect("the chain count")),

@@ -147,10 +147,32 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
         outer_e.address(),
         "a citation's depth is in the key: moving it names a different word"
     );
+    // AND THE TAMPER IS NOW ERASED RATHER THAN REFUSED (54.5 B4, landed
+    // 2026-09-20) — which is what the note above predicted, and it is the
+    // stronger property.
+    //
+    // `f.depth` used to ride the tape, so a forged value survived the
+    // decode and disagreed with `f.depth_of()`, and the court caught the
+    // disagreement. `from_address` DERIVES `Form.depth` from the `Glued`
+    // vertices the key writes, so there is no longer a carrier to forge:
+    // the decoded form's depth is one more than its deepest citation by
+    // construction, the disagreement cannot exist, and the check has
+    // nothing left to catch.
+    //
+    // A derived coordinate cannot be lied about. The word this tamper
+    // names is a DIFFERENT word — asserted above, decoder-independently,
+    // because the citation's own depth is in the key — and that word
+    // replays honestly as itself.
     assert_eq!(
         blind_replay_with(&deeper_e, &resolve),
-        Some(REFUSE_GLUED_DEPTH),
-        "and while the tape carries `f.depth`, the court catches the disagreement"
+        None,
+        "the forged depth is erased by derivation, not caught by a check"
+    );
+    let rebuilt = crate::transducer::sentence::from_element_form(&deeper_e).expect("decodes");
+    assert_eq!(
+        rebuilt.depth,
+        rebuilt.depth_of(),
+        "a derived depth agrees with its own citations by construction"
     );
 }
 
@@ -209,7 +231,7 @@ fn a_loop_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
     assert!(f.loops[0].holonomy.rotor().class_key().is_none(), "a zero rotor is not a class");
     assert!(f.rank().is_none(), "the audit is unmeasured, not counted under a rotor key");
     assert!(!f.is_cauterized(), "nothing files what has no class");
-    assert!(!form_loops_replay(&f, &f.torsion), "and the loop does not replay");
+    assert!(!form_loops_replay(&f), "and the loop does not replay");
 }
 
 /// A20: a certificate that does not un-pivot to the tape's before/after
@@ -306,7 +328,14 @@ fn rank_lost_refused() {
     // nothing left to claim a rank with.
     let mut gone = crate::transducer::sentence::from_element_form(&e).expect("v2");
     gone.loops.clear();
-    let bad = as_element_form(&gone, [1, 0, 0, 0]).expect("a tape from a form with no loops");
+    // RE-MINTED BY THE SAME SPEAKER (54.5 Road (d)). `as_element_form` takes
+    // the attestation off the form, and a form that came out of an ADDRESS
+    // carries none — so this minted a word that filed nothing and refused on
+    // the filing rather than on the loops, which is not the claim. The
+    // forgery being tested is about the FOREST, so everything else is held
+    // fixed and `remint_form` is what holds it.
+    let bad = crate::transducer::sentence::remint_form(&gone, [1, 0, 0, 0], &e)
+        .expect("a tape from a form with no loops");
     assert_eq!(
         crate::transducer::sentence::from_element_form(&bad)
             .expect("it decodes")
@@ -537,19 +566,36 @@ fn a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not() {
     let es = f.edge_holonomies(lp).expect("the loop names live faces");
     let [(_, e)] = es.scoped().collect::<Vec<_>>()[..] else { panic!("one member path") };
     assert_eq!(e.word.order(), Order::Infinite, "and its edge holonomy has no period");
-    assert!(!form_loops_replay(&f, &f.torsion), "unfiled, the loop does not replay");
+    // A FREE PART DOES NOT REPLAY, AND A FILING DOES NOT CHANGE THAT
+    // (54.5, as ruled 2026-09-20). The edge holonomy has NO period: `g^ℓ`
+    // is never the identity, so the circuit walks. It read that filing the
+    // class at 0 made the loop replay, which is a permit deciding a
+    // geometric question — every field of a `FiledLoop` is derivable
+    // (`loop_classes`), so by law 12 the annotation carries no fact the
+    // complex does not already determine.
+    assert!(!form_loops_replay(&f), "a free part does not replay");
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
     let mut filed = f.clone();
     filed.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 0, chord: lp.chord });
-    assert!(form_loops_replay(&filed, &filed.torsion), "filed at period 0, the loop replays");
+    assert!(!form_loops_replay(&filed), "and filing it at 0 does not close a circuit that walks");
     let filed_e = as_element_form(&filed, [1, 0, 0, 0]).expect("the tape carries the filed zero");
-    assert_eq!(replay_form(&filed_e, &|_| None), None, "and the court reads the zero off the tape");
+    assert_eq!(
+        replay_form(&filed_e, &|_| None),
+        Some(REFUSE_LOOP),
+        "the court refuses it on the geometry, by name"
+    );
+    // AND THE RECEIPT IS PRICED SEPARATELY. The complex derives 0 for this
+    // class; a receipt claiming 4 is a claim ABOUT THE TERRAIN, and the
+    // terrain contradicts it. The geometric refusal comes first because it
+    // is asked first — the labour is only priced on terrain that stands.
     let mut wrong = f.clone();
     wrong.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 4, chord: lp.chord });
-    assert!(!form_loops_replay(&wrong, &wrong.torsion), "a period the loop does not have is not a filing");
-    let wrong_e = as_element_form(&wrong, [1, 0, 0, 0]).expect("tape");
-    assert_eq!(replay_form(&wrong_e, &|_| None), Some(REFUSE_LOOP), "and is refused by name");
+    assert_eq!(
+        receipts_price_the_terrain(&wrong, &wrong.torsion),
+        Some(REFUSE_INFLATED_YIELD),
+        "a period the complex does not derive is perjury, not pruning"
+    );
 }
 
 /// S9.4 — CLOSURE IS WHAT THE COURT CHECKS. A form minted over one train
@@ -783,13 +829,19 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     };
     assert!(!e.word.is_identity(), "and its edge holonomy is the half turn");
 
-    // UNFILED, the loop does not replay — which the transport reading could
-    // not say, because on it the loop is flat.
+    // A COMPACT EDGE HOLONOMY REPLAYS ON ITS OWN ALGEBRA (54.5, as ruled
+    // 2026-09-20). The half turn returns after two circuits about a fixed
+    // point: `ℤ/2ℤ`, which is torsion, and torsion is content (law 7).
+    //
+    // This asserted the loop did NOT replay until a class was filed, which
+    // made an annotation's presence a geometric property. What the
+    // transport reading still cannot say is the interesting half, and it
+    // stands: on the transport composite this loop is FLAT, and only the
+    // edge holonomy sees the half turn (50.3, `edge_class_vector`).
     assert!(
-        !form_loops_replay(&f, &f.torsion),
-        "an evaluated loop with an unfiled class does not replay"
+        form_loops_replay(&f),
+        "a compact edge holonomy replays unfiled: ℤ/2ℤ is a resonance, not a debt"
     );
-    // FILED under the edge holonomy's own class at its own period, it does.
     // One member path here, so one class — said by the slice pattern.
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else {
@@ -801,13 +853,27 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
         class.clone(),
         FiledLoop { sigma: Vec::new(), period: 2, chord: lp.chord },
     );
-    assert!(form_loops_replay(&filed, &filed.torsion), "filed at its period, the loop replays");
-    // And at any other period it does not: the period is the loop's order,
-    // not the filer's opinion of it (A17).
+    assert!(form_loops_replay(&filed), "and filing it says nothing the geometry did not");
+    assert_eq!(
+        receipts_price_the_terrain(&filed, &filed.torsion),
+        None,
+        "a receipt whose period the complex derives is honest labour"
+    );
+    // THE TWO HALVES SEPARATE HERE, and this is the whole point of the
+    // split. At the wrong period the GEOMETRY is unchanged — the loop is
+    // still a compact ℤ/2ℤ and still replays — while the RECEIPT is now a
+    // claim about the terrain that the terrain contradicts. The period is
+    // the loop's order, not the filer's opinion of it (A17), and it is the
+    // one lie in an envelope the court can catch.
     let mut wrong = f.clone();
     wrong.torsion.insert(
         class,
         FiledLoop { sigma: Vec::new(), period: 3, chord: lp.chord },
     );
-    assert!(!form_loops_replay(&wrong, &wrong.torsion), "a period the loop does not close at is not a filing");
+    assert!(form_loops_replay(&wrong), "the terrain is what it is, whatever is claimed of it");
+    assert_eq!(
+        receipts_price_the_terrain(&wrong, &wrong.torsion),
+        Some(REFUSE_INFLATED_YIELD),
+        "and the claim is refused as perjury about a period"
+    );
 }

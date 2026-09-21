@@ -423,14 +423,16 @@ impl Kernel {
         let Some(bidder) = self.discoverer_of(new) else {
             return;
         };
-        let Some(mine) = crate::transducer::sentence::from_element_form(&after) else {
-            return;
-        };
+        // WHO THIS WORD CITES IS READ OFF ITS ENVELOPE (54.5 Road (d), B4).
+        // It decoded the whole form to walk its vertices; a citation is a
+        // 1-simplex of the nerve and a vertex's generators are its
+        // presentation, and both ride `Element.receipts`.
+        let cites = after.receipts().cited_addresses();
         // The candidates, by keyed read: every form that cites an address
         // this one cites. Two forms over one bundle are where a
         // redundancy can be, and nowhere else is read.
         let mut candidates: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for cited in crate::transducer::sentence::cited_addresses(&mine) {
+        for cited in &cites {
             let Some(bucket) = self.cited_by.get(cited.as_bytes()) else {
                 continue;
             };
@@ -465,7 +467,7 @@ impl Kernel {
             // being refined here; a word is being retired.
             let freed = candidate.magnitude();
             let payload = crate::transducer::rewrite::RewritePayload::Retire {
-                cites: crate::transducer::sentence::cited_addresses(&mine),
+                cites: cites.clone(),
                 freed,
             };
             let _ = self.mint_rewrite(
@@ -505,18 +507,26 @@ impl Kernel {
         let Some(f) = crate::transducer::sentence::from_element_form(candidate) else {
             return false;
         };
+        // THE CITATIONS FROM THE ENVELOPE, THE ACTION FROM THE FORM (54.5
+        // Road (d), B3). The two halves of the question are deliberately in
+        // two carriers: the rotor is the vertex's key and the citations are
+        // its presentation, which the key excludes (`evidence_is_not_identity`).
+        let env = candidate.receipts();
         let mut any = false;
         for v in &f.vertices {
-            let crate::transducer::sentence::Vertex::Word { derivation, .. } = v else {
+            let crate::transducer::sentence::Vertex::Word { address, derivation, .. } = v else {
                 continue;
             };
             any = true;
             // A vertex that cites nothing is derived by nothing.
-            if derivation.generators.is_empty() {
+            let Some(cite) = env.cite_for(address.as_bytes()) else {
+                return false;
+            };
+            if cite.generators.is_empty() {
                 return false;
             }
             let mut composed = crate::transducer::alphabet::Rotor::identity();
-            for (form, vertex, e) in &derivation.generators {
+            for (form, vertex, e) in &cite.generators {
                 if form.as_bytes() == exclude {
                     return false;
                 }

@@ -152,14 +152,23 @@ impl Kernel {
             // court installed it, and this read parses nothing. `word_at`
             // falls through to the cavity and the provisional on purpose,
             // and neither is a word this court installed.
-            let Some(f) = self.held_word(&addr).and_then(|e| e.form()) else {
+            let Some(held) = self.held_word(&addr) else {
+                continue;
+            };
+            let env = held.element().receipts();
+            let Some(f) = held.form() else {
                 continue;
             };
             for v in &f.vertices {
-                let crate::transducer::sentence::Vertex::Word { derivation, .. } = v else {
+                let crate::transducer::sentence::Vertex::Word { address, derivation, .. } = v else {
                     continue;
                 };
-                if !derivation.generators.is_empty() {
+                // "CITES NOTHING" IS READ OFF THE ENVELOPE (54.5 Road (d),
+                // B3). It was `derivation.generators.is_empty()`, which is
+                // a reading of the tape, and a vertex the key rebuilds is
+                // always spelled — so every factored vertex would have
+                // counted as a letter once the tape went.
+                if env.cite_for(address.as_bytes()).is_some() {
                     continue;
                 }
                 let spelled = crate::transducer::alphabet::factor_rotor(&derivation.rotor());

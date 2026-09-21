@@ -31,21 +31,19 @@ impl Kernel {
         let inv = crate::transducer::stalk::invariant_of(&spoken);
         let asg = element::assignment(spoken.sub());
         if spoken.is_sentence() {
-            // A sentence ARRIVING from a peer: not held here yet, so the
-            // decode is named (L16).
-            if let Some(f) = crate::transducer::sentence::from_element_form(&spoken) {
-                // A pair form's Word vertices are the percept's own bodies, not
-                // citations. Only Glued vertices name a held form that must resolve.
-                let missing = f.vertices.iter().any(|v| match v {
-                    crate::transducer::sentence::Vertex::Glued { address, .. } => {
-                        address.clone() != addr && self.word_at(address.as_bytes()).is_none()
-                    }
-                    _ => false,
-                });
-                if missing {
-                    self.heard_mark(addr, &inv);
-                    return Glue::Dialect;
-                }
+            // COVER COMPLETENESS IS ASKED OF THE NERVE (54.5 Road (d), B4).
+            // This decoded the arriving sentence to walk its vertices for
+            // `Glued` citations; a citation is a 1-simplex `⟨A_i, A_j, φ⟩`
+            // and rides the envelope, so the question — does every form this
+            // one mates with resolve here — is a walk of `nerve` and builds
+            // no form. A pair form's Word vertices were never part of it:
+            // they are the percept's own bodies, not citations.
+            let missing = spoken.receipts().nerve.iter().any(|e| {
+                e.target != addr && self.word_at(e.target.as_bytes()).is_none()
+            });
+            if missing {
+                self.heard_mark(addr, &inv);
+                return Glue::Dialect;
             }
         }
         let mag = spoken.magnitude();

@@ -132,7 +132,15 @@ impl Kernel {
                 continue;
             }
             let _ = form.regauge(&gamma);
-            let after = crate::transducer::sentence::as_element_form(&form, w.magnitude());
+            // A RE-ANCHOR IS THE SAME MIND SPEAKING THE SAME WORD MOVED, so
+            // the attestation goes with it (54.5 Road (d)). `as_element_form`
+            // would have taken the filing, the derivations and the
+            // certificates off the DECODED form, which carries none of them
+            // — the word would have re-anchored into a word attesting
+            // nothing and refused on its next replay. A re-gauge conjugates
+            // (§3.6), and a class key is a conjugacy invariant, so the filing
+            // carries to the same keys.
+            let after = crate::transducer::sentence::remint_form(&form, w.magnitude(), &w);
             let Some(after) = after else {
                 continue;
             };

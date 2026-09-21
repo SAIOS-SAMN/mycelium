@@ -34,6 +34,33 @@ pub enum Demand {
     Creation,
     /// A body whose image has different harmonics: no versor exists.
     TopologicalDeformation { image: Invariant, axes: Vec<u16> },
+    /// 54.5, Directive 4 — A DISLOCATION: two fibrations that reach the
+    /// same place disagree by a SHEAR no choice of origin absorbs.
+    ///
+    /// This is Cartan torsion, `Θ = Dθ`, carried as a vertex. Around a
+    /// cycle the transport composes to `g = T(τ)·R` with
+    /// `τ ∈ ker(I − R)` — the plane the rotor leaves pointwise fixed — so
+    /// `g^ℓ = T(ℓτ)` and the circuit NEVER RETURNS. It walks. There is no
+    /// period at which it closes, and `cech::classify` refuses it the
+    /// fixed-point gate for exactly that reason.
+    ///
+    /// IT IS NOT AN ERROR AND IT IS NOT COHERENCE EITHER. A screw is an
+    /// exact, measured quantity — the Burgers vector of the defect — and
+    /// what it says to the mesh is "these fibrations shear by `τ`; to make
+    /// them agree, `T(−τ)` must be introduced." That is a demand in 50.5's
+    /// sense: something the speaker could not close, typed, carried as
+    /// content, reconstructing nothing.
+    ///
+    /// It replaces a filing. `Form.torsion` was carrying "period 0" for
+    /// this case — A19's spelling of infinite order — and a predicate was
+    /// reading that annotation's PRESENCE as coherence, which made an open
+    /// dislocation read as a closed manifold. The slip is the content; the
+    /// annotation was bookkeeping about a quantity the geometry already
+    /// determines (law 12).
+    /// Boxed for the reason `Standing`'s block and `RotorPrime`'s witness
+    /// are: three exact rationals beside variants of a few bytes would size
+    /// the whole enum, and `EdgeRefusal` carries a `Demand` by value.
+    Dislocation { chart: Invariant, tau: Box<[Q; 3]> },
 }
 
 impl Demand {
@@ -44,6 +71,7 @@ impl Demand {
             Demand::Source { .. } => 2,
             Demand::Creation => 3,
             Demand::TopologicalDeformation { .. } => 4,
+            Demand::Dislocation { .. } => 5,
         }
     }
 
@@ -55,6 +83,7 @@ impl Demand {
             Demand::Source { .. } => "source",
             Demand::Creation => "creation",
             Demand::TopologicalDeformation { .. } => "deformation",
+            Demand::Dislocation { .. } => "dislocation",
         }
     }
 
@@ -87,6 +116,11 @@ impl Demand {
             Demand::Source { multiplicity } => *multiplicity > 0,
             Demand::Creation => true,
             Demand::TopologicalDeformation { axes, .. } => !axes.is_empty(),
+            // A SLIP OF ZERO IS NOT A DISLOCATION. `τ = 0` means the
+            // circuit returns and the transport has a fixed point, which
+            // is a congruence and files as one; a demand for it would be
+            // a coordinate standing for no obstruction (T21(iii)).
+            Demand::Dislocation { tau, .. } => tau.iter().any(|q| !q.is_zero()),
         };
         if ok {
             Ok(())
@@ -127,6 +161,15 @@ impl Demand {
                 out.extend_from_slice(&(axes.len() as u16).to_le_bytes());
                 for a in axes {
                     out.extend_from_slice(&a.to_le_bytes());
+                }
+            }
+            // THE SLIP IS THE COORDINATE (54.5). The chart says where the
+            // shear stands; τ says how far, exactly over ℚ, so a reader
+            // knows the translation `T(−τ)` that would close it.
+            Demand::Dislocation { chart, tau } => {
+                let _ = crate::transducer::sentence::codec::put_inv(chart, out);
+                for q in tau.iter() {
+                    put_q(out, q);
                 }
             }
         }
@@ -179,6 +222,13 @@ impl Demand {
                     *pos += 2;
                 }
                 Demand::TopologicalDeformation { image, axes }
+            }
+            5 => {
+                let chart = crate::transducer::sentence::codec::take_inv(b, pos)?;
+                let t0 = take_q(b, pos)?;
+                let t1 = take_q(b, pos)?;
+                let t2 = take_q(b, pos)?;
+                Demand::Dislocation { chart, tau: Box::new([t0, t1, t2]) }
             }
             _ => return None,
         };

@@ -132,7 +132,7 @@ fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
     use crate::transducer::family::{
         extract_rule_with, mint_sentence, cipher_form, sentence_measure, NoCrystal,
     };
-    use crate::transducer::sentence::{as_element_form, Vertex};
+    use crate::transducer::sentence::as_element_form;
     let teacher = [1u8; 32];
     let speaker = [3u8; 32];
     let (gen_fam, cite_fam) = (bar_quarter(), l_half());
@@ -230,7 +230,7 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
     use crate::transducer::family::{
         extract_rule_with, mint_sentence, cipher_form, sentence_measure, NoCrystal,
     };
-    use crate::transducer::sentence::{as_element_form, Vertex};
+    use crate::transducer::sentence::as_element_form;
 
     let (teacher_a, teacher_b) = ([1u8; 32], [2u8; 32]);
     let (voice_a, voice_b) = ([3u8; 32], [4u8; 32]);
@@ -268,17 +268,21 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
     );
 
     // TWO DERIVATIONS, each naming its own mind's teacher.
+    // THE PROOFS ARE READ OFF THE ENVELOPE (54.5 Road (d)). This read
+    // `derivation.generators` from the decoded form, and that is precisely
+    // what the address does not carry: §1.5 makes the composed ROTOR the
+    // coordinate so two presentations reach one address, which is the claim
+    // three lines above this. A decoded vertex is therefore `spelled`, and
+    // reading the proof off the form would have made the next two
+    // assertions vacuous rather than false.
+    //
+    // The two halves of this test are the two carriers: the ADDRESS cannot
+    // tell the minds apart, and the ENVELOPE must.
     let cites = |e: &crate::transducer::element::Element| -> Vec<crate::transducer::address::Address> {
-        crate::transducer::sentence::from_element_form(e)
-            .expect("the tape reads back")
-            .vertices
+        e.receipts()
+            .derivations
             .iter()
-            .filter_map(|v| match v {
-                Vertex::Word { derivation, .. } => Some(derivation.generators.clone()),
-                _ => None,
-            })
-            .flatten()
-            .map(|(form, _, _)| form)
+            .flat_map(|d| d.generators.iter().map(|(form, _, _)| form.clone()))
             .collect()
     };
     let (ca, cb) = (cites(&said_a), cites(&said_b));

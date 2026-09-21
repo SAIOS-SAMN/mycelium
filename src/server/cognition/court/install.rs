@@ -117,15 +117,15 @@ impl Kernel {
     /// vertices closes what it closes once. Keyed by the cited address,
     /// so the second citation of one address is not a second share.
     fn cited_shares(&self, addr: &[u8], w: &Element, pay: [u64; 4]) -> Vec<([u8; 32], [u64; 4])> {
-        use crate::transducer::sentence::Vertex;
         if pay.iter().all(|&m| m == 0) {
             return Vec::new();
         }
-        // The word being INSTALLED — not yet on the basis, so the decode is
-        // named (L16).
-        let Some(f) = crate::transducer::sentence::from_element_form(w) else {
-            return Vec::new();
-        };
+        // WHO IS CITED IS READ OFF THE ENVELOPE (54.5 Road (d), B3). This
+        // decoded the whole form to walk its vertices for citations, and a
+        // citation is not geometry — it is a 1-simplex of the nerve and a
+        // vertex's presentation. Both ride `Element.receipts`, so the
+        // economy's read is now a walk of two flat lists and builds no form.
+        let env = w.receipts();
         let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         let mut out = Vec::new();
         let take = |k: &mut crate::network::nerve::Keyed<()>,
@@ -153,25 +153,20 @@ impl Kernel {
             }
             out.push((who, share));
         };
-        for v in &f.vertices {
-            match v {
-                // A `Glued` vertex names the placement it cited at.
-                Vertex::Glued { address, placement, .. } => {
-                    take(&mut cited, &mut out, address, placement)
-                }
-                // A derivation citation's placement is the citing
-                // vertex's own frame. Its carriage is `D(ρ)·T(t)` and
-                // carries no rotation (L14), and `apply_form` places by a
-                // WORD, so what is passed here is the identity: the cited
-                // form speaks in its own frame. Where the generator acts
-                // on a body the citer's family does not carry, that
-                // measures zero, and a zero share is no share (rule 11).
-                Vertex::Word { derivation, .. } => {
-                    for (form_addr, _, _) in &derivation.generators {
-                        take(&mut cited, &mut out, form_addr, &crate::transducer::alphabet::Word::identity());
-                    }
-                }
-                _ => {}
+        // A nerve edge names the placement it cited at: the rotational half
+        // of the transition it is embedded under.
+        for e in &env.nerve {
+            take(&mut cited, &mut out, &e.target, &e.placement);
+        }
+        // A derivation citation's placement is the citing vertex's own
+        // frame. Its carriage is `D(ρ)·T(t)` and carries no rotation (L14),
+        // and `apply_form` places by a WORD, so what is passed here is the
+        // identity: the cited form speaks in its own frame. Where the
+        // generator acts on a body the citer's family does not carry, that
+        // measures zero, and a zero share is no share (rule 11).
+        for cite in &env.derivations {
+            for (form_addr, _, _) in &cite.generators {
+                take(&mut cited, &mut out, form_addr, &crate::transducer::alphabet::Word::identity());
             }
         }
         out
@@ -203,16 +198,19 @@ impl Kernel {
     }
 
     pub(crate) fn note_form_citations(&mut self, addr: &[u8], w: &Element) {
-        // The word being INSTALLED, decoded by name (L16).
-        let Some(f) = crate::transducer::sentence::from_element_form(w) else {
-            return;
-        };
-        // 26 as ruled 2026-09-10: BOTH LEVELS are uses, which is what
-        // `cited_addresses` reads. One entry per citer address per cited
-        // address, so a form cited by two vertices of one sentence is one
-        // use of one verdict and two sentences citing it are two — which
-        // is what `use_credit` counts.
-        for address in crate::transducer::sentence::cited_addresses(&f) {
+        // BOTH READINGS COME OFF THE ENVELOPE (54.5 Road (d), B4). This
+        // decoded the form to walk it for citations and for certificates,
+        // and NEITHER is geometry: a citation is a 1-simplex of the nerve
+        // and a certificate is what one mind's stroke did against one
+        // budget. The ledger the court keeps of who cited whom, and the
+        // memo of which pivots it has certified, are both about the
+        // SPEAKER, so they are read from the speaker's own attestation.
+        let env = w.receipts();
+        // 26 as ruled 2026-09-10: BOTH LEVELS are uses. One entry per citer
+        // address per cited address, so a form cited by two vertices of one
+        // sentence is one use of one verdict and two sentences citing it are
+        // two — which is what `use_credit` counts.
+        for address in env.cited_addresses() {
             match self.cited_by.get_mut(&address) {
                 Some(bucket) => {
                     bucket.insert(addr, ());
@@ -224,7 +222,7 @@ impl Kernel {
                 }
             }
         }
-        for (_, cert) in f.certificates.scoped() {
+        for cert in &env.certificates {
             let k = cert.key();
             match self.replay_memo.get_mut(addr) {
                 Some(bucket) => {

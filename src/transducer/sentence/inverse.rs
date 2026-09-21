@@ -79,7 +79,22 @@ fn take_chain_address(k: &[u8], p: &mut usize) -> Option<Vec<Link>> {
 /// (law 7) and so cannot be derived from the generators. They arrive as
 /// `rest`, and a caller that has none passes none — which is exactly a
 /// closed, remainder-free form.
-pub fn from_address(k: &[u8]) -> Option<Form> {
+/// IT TAKES AN ADDRESS AND NOT A BYTE SLICE (law 2, as ruled 2026-09-20).
+///
+/// This read `k: &[u8]`, so its interface was a BYTE RUN: any slice in the
+/// tree typechecked here, and the signature said nothing about whether what
+/// arrived was a coordinate or a tape. That is the same conflation the whole
+/// purge is retiring, one level up from the carrier — the decoder is the
+/// inverse of `form_vertex_key`, whose codomain is `Address`, so its domain
+/// is `Address` and nothing else.
+///
+/// `Address` is bytes underneath, and that is not the point: it is the type
+/// that says these bytes ARE the object's coordinates written out, reached
+/// only through a writer that wrote them as such. A caller that has a byte
+/// run and wants a form must say so by building an address from it, at its
+/// own line, where a reader can see the claim being made.
+pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
+    let k = a.as_bytes();
     let mut p = 0usize;
     match k {
         [tag, ..] if *tag == crate::transducer::address::TAG_FORM => p += 1,

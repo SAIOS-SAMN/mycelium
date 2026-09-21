@@ -47,6 +47,106 @@ impl Form {
         })
     }
 
+    /// DOES THIS FORM DECLARE THE SHEAR ON THIS CLASS? (54.5, Directive 4.)
+    ///
+    /// A free part — a circuit whose transport composes to `T(τ)·R` with
+    /// `τ ∈ ker(I − R)` — never returns, so no period closes it and no
+    /// filing can. What the form owes it is a `Demand::Dislocation`
+    /// carrying the slip: a VERTEX, in the key, saying what the obstruction
+    /// is and what would close it.
+    ///
+    /// THE MATCH IS ON `(chart, τ)` AND NOT ON A NAME. A demand declares a
+    /// cycle when it carries that cycle's own Burgers vector ON THE CHART
+    /// IT WAS MEASURED, and both halves are load-bearing.
+    ///
+    /// Matching the CLASS KEY would let one declaration answer for another
+    /// shear of the same conjugacy class: two cycles may share a rotor `R`,
+    /// hence a class, while slipping along orthogonal directions of
+    /// `ker(I − R)` — `τ₁ = (1,0,0)` and `τ₂ = (0,0,1)` are two
+    /// obstructions and one of them is not the other.
+    ///
+    /// Matching τ ALONE would treat a Burgers vector as an ambient
+    /// invariant, and it is not one: it is coordinatized by the local
+    /// frame, and under a transition `g_AB = D(ρ)·T(t)·R` it transforms as
+    /// `τ_B = ρ·R(τ_A)`. A form owes a declaration for each chart boundary
+    /// it fails to close, which is why `stand_demand` keys on
+    /// `(kind, chart)` and why the emitter mounts one cell per chart.
+    ///
+    /// A form declaring nothing answers `false`, and that is the honest
+    /// reading of a shear nobody mentioned (rule 11).
+    pub(crate) fn declares_dislocation(&self, class: &[u8]) -> bool {
+        use crate::transducer::sentence::Demand;
+        let mut owed: Vec<(stalk::Invariant, [crate::core::Q; 3])> = Vec::new();
+        for (i, lp) in self.loops.iter().enumerate() {
+            let Some(hs) = self.edge_holonomies(lp) else { continue };
+            for (_, h) in hs.scoped() {
+                let rotor = h.word.rotor();
+                if rotor.class_key().map(|k| k.as_bytes() == class) != Some(true) {
+                    continue;
+                }
+                let Some(s) = crate::transducer::element::screw_of(&rotor, &h.carriage) else {
+                    continue;
+                };
+                if s.twist.iter().all(num_traits::Zero::is_zero) {
+                    continue;
+                }
+                for chart in self.charts_of_loop_at(i) {
+                    owed.push((chart, s.twist.clone()));
+                }
+            }
+        }
+        if owed.is_empty() {
+            return false;
+        }
+        // EVERY BOUNDARY, NOT ONE OF THEM. A loop crossing two charts owes
+        // two declarations, and answering `true` on the first would admit a
+        // form that named one of its shears and hid the other.
+        owed.iter().all(|(chart, tau)| {
+            self.demand_vertices().any(|(_, kind, at, _)| {
+                at == chart
+                    && matches!(kind, Demand::Dislocation { tau: t, .. } if **t == *tau)
+            })
+        })
+    }
+
+    /// GRADE 0 OVER THE WHOLE FORM: every vertical transition in every
+    /// fibre, with the vertex it stands over.
+    ///
+    /// IT RETURNS THE TRANSITIONS AND NOT A VERDICT (rule 4). The pivot
+    /// reads this to find the `𝒢`-lane coordinates a form is carrying
+    /// unopened; the instrument reads it to count them; a caller that
+    /// genuinely wants a yes-or-no asks each transition whether it is
+    /// vertical. A reader that answered `Vec<u16>` of "bad" vertices would
+    /// have collapsed an exact conformal element to an index and a
+    /// judgement, which is the scalar this grade exists to stop making.
+    pub fn fiber_transitions(&self) -> Vec<(u16, crate::transducer::sentence::FiberTransition)> {
+        self.vertices
+            .iter()
+            .enumerate()
+            .flat_map(|(i, v)| {
+                v.fiber_holonomy().into_iter().map(move |t| (i as u16, t))
+            })
+            .collect()
+    }
+
+    /// The `𝒢`-LANE OBSTRUCTIONS A FORM CARRIES: every vertical transition
+    /// that is not a pure displacement, with the class it stands in.
+    ///
+    /// A `Fill::Congruent` here is an intrinsic `ℤ/ℓℤ` symmetry of the body
+    /// — a coordinate the pivot may open, paying `−1` torsion `+1` axes on
+    /// `𝒢` under T21(iii). A standing class is a parallax the form has not
+    /// absorbed, which is `Demand::Dislocation`'s object. Neither is a
+    /// refusal.
+    pub fn gauge_obstructions(
+        &self,
+    ) -> Vec<(u16, crate::transducer::sentence::FiberTransition, crate::transducer::cech::Fill)> {
+        self.fiber_transitions()
+            .into_iter()
+            .filter(|(_, t)| !t.is_vertical())
+            .filter_map(|(i, t)| t.fill().map(|f| (i, t, f)))
+            .collect()
+    }
+
     /// Closed: coheres, no remainder, and no demand vertex (2.2, 50.1);
     /// a sentence with demands is valid, never closed.
     pub fn is_closed(&self) -> bool {
@@ -105,11 +205,41 @@ impl Form {
     /// infinite order, filed at `0` (52.3), condenses no members and reaches
     /// nothing here. No rounding, nothing saturating: this is a sum over an
     /// exact carrier, and an empty carrier sums to 0 because it is empty.
-    pub fn fibre_volume(&self) -> usize {
-        self.torsion
+    /// THE CLASS COMES FROM THE RECEIPT, THE PERIOD FROM THE COMPLEX (54.5,
+    /// as ruled 2026-09-20):
+    ///
+    ///     yield(F, r) = Σ_{κ ∈ r ∩ dom(loop_classes F)} (ℓ_derived(κ) − 1)
+    ///
+    /// This summed `(ℓ − 1)` over `self.torsion` — the form's own filing —
+    /// so the claimant supplied both halves of its own price. `Σ(ℓ − 1)` is
+    /// reserve regeneration (E2), so an unchecked period mints capacity out
+    /// of nothing, and the field was self-supplied, which made the attack
+    /// surface invisible rather than absent.
+    ///
+    /// A receipt is a SUB-SELECTION: it names WHICH cycles this mind's
+    /// stroke discharged, and the complex says what each closes at. A class
+    /// the form does not carry projects to ZERO and is not an error — an
+    /// observer may track cycles outside this form's horizon, which is
+    /// pruning and not fraud. A period the receipt states and the complex
+    /// contradicts is perjury, and `receipts_price_the_terrain` refuses it
+    /// at the court; here it simply cannot inflate the sum, because the sum
+    /// never reads it.
+    ///
+    /// A FINITE PERIOD IS EXACT AND AT LEAST ONE (A17), so the subtraction
+    /// is total; a class of infinite order, filed at `0` (52.3), condenses
+    /// no members and reaches nothing.
+    pub fn fibre_volume(&self, filed: &Keyed<FiledLoop>) -> usize {
+        let mut derived: Keyed<u32> = Keyed::new();
+        for lp in &self.loops {
+            for row in self.loop_classes(lp) {
+                derived.insert(&row.class, row.period);
+            }
+        }
+        filed
             .scoped()
-            .map(|(_, l)| match Order::from_u32(l.period) {
-                Order::Finite(ell) => ell as usize - 1,
+            .filter_map(|(k, _)| derived.get(&k).copied())
+            .map(|ell| match Order::from_u32(ell) {
+                Order::Finite(l) => l as usize - 1,
                 Order::Infinite => 0,
             })
             .sum()

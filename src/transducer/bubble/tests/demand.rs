@@ -14,19 +14,51 @@ fn eleven() -> Rotor {
     Rotor::scalar(q(3)).add(&Rotor::blade(0b0011, q(1))).add(&Rotor::blade(0b0101, q(1)))
 }
 
-/// The one standing demand a held form carries, with its chart.
-fn the_standing_demand(f: &crate::transducer::sentence::Form) -> (Rotor, Invariant) {
-    let mut found: Vec<(Rotor, Invariant)> = f
+/// THE STANDING DEMANDS A HELD FORM CARRIES, with the chart each stands on.
+///
+/// It asserted exactly ONE, and that was a reading of a broken fixture
+/// (54.5). 50.5 stands one demand per `(kind, chart)`, and `edge_chord_form`
+/// built its two chord ends with identical coordinates — one rotor, one
+/// chart, one carriage, one gauge — so §1.5 made them ONE vertex and the
+/// loop stood on ONE chart. Two ends of a chord are two SITES, which is the
+/// note `chord_form` has carried since 54.2, and with the ends separated the
+/// loop runs through two charts and stands a demand at each. That is the
+/// doctrine, not a regression: what the claim is about is that every demand
+/// carries the loop's holonomy, on a chart the loop actually stands on.
+fn standing_demands(f: &crate::transducer::sentence::Form) -> Vec<(Rotor, Invariant)> {
+    let found: Vec<(Rotor, Invariant)> = f
         .demand_vertices()
         .filter_map(|(_, kind, chart, _)| match kind {
             Demand::Standing { rotor, .. } => Some((rotor.as_ref().clone(), chart.clone())),
             _ => None,
         })
         .collect();
-    let [one] = found.as_mut_slice() else {
-        panic!("one standing demand on the held form, got {}", found.len())
-    };
-    one.clone()
+    assert!(!found.is_empty(), "the held form carries a standing demand");
+    found
+}
+
+/// Every demand the loop stood, checked against the holonomy and the charts
+/// its own vertices stand at.
+fn each_demand_carries(
+    f: &crate::transducer::sentence::Form,
+    rotor: &Rotor,
+) {
+    let charts: Vec<Invariant> = f
+        .vertices
+        .iter()
+        .filter_map(|v| v.face_chart())
+        .collect();
+    for (got, chart) in standing_demands(f) {
+        assert_eq!(
+            got.class_key(),
+            rotor.class_key(),
+            "the witness is the loop's holonomy, by class"
+        );
+        assert!(
+            charts.contains(&chart),
+            "on a chart the loop's vertices stand at, got {chart:?} of {charts:?}"
+        );
+    }
 }
 
 /// THE EXPAND PATH: a bubble holding a form whose one loop carries the
@@ -42,9 +74,7 @@ fn an_expanded_bubble_stands_its_loops_demand_on_the_form_it_takes() {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 8);
     let _ = b.expand_with(&atlas, &section_at, 0, &crate::transducer::family::NoCrystal, &mut budget);
     let f = b.form.as_ref().expect("the bubble keeps its form");
-    let (rotor, chart) = the_standing_demand(f);
-    assert_eq!(rotor.class_key(), eleven().class_key(), "the witness is the loop's holonomy, by class");
-    assert_eq!(chart, Invariant::default(), "on the chart the loop's vertices stand at");
+    each_demand_carries(f, &eleven());
     assert!(!f.is_closed(), "a form carrying a demand is not closed");
 }
 
@@ -65,7 +95,5 @@ fn a_pivoted_on_bubble_stands_its_loops_demand_on_the_form_it_takes() {
     let held: Vec<&Bubble> = c.bubbles.scoped().map(|(_, b)| b).collect();
     let [b] = held.as_slice() else { panic!("one bubble holds the form, got {}", held.len()) };
     let f = b.form.as_ref().expect("the bubble keeps its form");
-    let (rotor, chart) = the_standing_demand(f);
-    assert_eq!(rotor.class_key(), eleven().class_key(), "the witness is the loop's holonomy, by class");
-    assert_eq!(chart, Invariant::default(), "on the chart the loop's vertices stand at");
+    each_demand_carries(f, &eleven());
 }

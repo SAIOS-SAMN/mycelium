@@ -572,3 +572,224 @@ pub(crate) fn reconcile(path: &str) {
         rank[0], rank[1], rank[2], rank[3]
     );
 }
+
+/// 54.5 — THE CITATION NERVE, WALKED AS A COMPLEX.
+///
+/// Every reading this session looked for curvature INSIDE a form and found
+/// none: 36 corpus forms carry 361 vertices, 126 faces and ZERO loops —
+/// `E − V + C = 126 − 361 + 235 = 0`, a forest by edge starvation. Grade 1
+/// is silent because there is no 1-cycle to be flat or curved.
+///
+/// THE NETWORK IS THE NERVE, and it was never traversed. A citation is a
+/// 1-simplex `⟨A_i, A_j, φ⟩` of `N(𝒰)` and the engine treated it as a
+/// pointer inlined into a key. That inlining is not merely expensive, it is
+/// a PROOF OF ACYCLICITY: if `key(A)` contains `key(B)` then `|A| > |B|`,
+/// so by well-ordering of lengths no directed cycle `A → … → A` can exist
+/// in the address space at all. The cognitive manifold was forced to be a
+/// directed acyclic forest by its own naming scheme.
+///
+/// The UNDIRECTED 1-skeleton is not so constrained — `A → B`, `A → C`,
+/// `B → D`, `C → D` is a diamond and carries a fundamental cycle — so
+/// `b₁ = |E| − |V| + C` may be large even under inlining, and the
+/// holonomy around those cycles is the Čech coboundary
+/// `(δφ)_ijk = φ_jk · φ_ik⁻¹ · φ_ij` evaluated for real.
+///
+/// THE ADDRESSES ARE READ WITHOUT THE ELEMENT DECODER, and that matters
+/// here: the citations are INLINED IN THE KEY, so `from_address` recovers
+/// every `Glued` target from the address alone. The element's own record
+/// layout moved at 54.5 and this reading is indifferent to it — the address
+/// sits in the prefix, before anything that changed.
+///
+/// `|V|` IS `|citers ∪ targets|` AND NOT THE TARGET COUNT. 621 citations
+/// naming 440 distinct targets from 288 sentences is a forest necessarily
+/// if the two sets are disjoint (`|V| = 728 > |E| = 621`) and carries ~182
+/// cycles if they coincide. The overlap is the quantity that decides it and
+/// nothing has ever measured it.
+pub(crate) fn nerve(path: &str) {
+    use mycelium::network::nerve::Keyed;
+    use mycelium::transducer::address::Address;
+    use mycelium::transducer::sentence::{from_address, Vertex};
+    let Ok(bytes) = std::fs::read(path) else {
+        eprintln!("  nerve refused: {path} does not read");
+        std::process::exit(1);
+    };
+    if bytes.get(..4) != Some(b"GEN3") {
+        eprintln!("  nerve refused: {path} is not GEN3");
+        std::process::exit(1);
+    }
+    let Some(n) = bytes.get(4..8).and_then(|b| b.try_into().ok()).map(u32::from_le_bytes) else {
+        eprintln!("  nerve refused: no count");
+        std::process::exit(1);
+    };
+    // THE ADDRESS OUT OF A RECORD'S PREFIX: magic, the description's length
+    // and bytes, then the address's. Nothing past it is touched.
+    let address_of = |rec: &[u8]| -> Option<Address> {
+        let u32_at = |p: usize| -> Option<usize> {
+            rec.get(p..p + 4).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize)
+        };
+        // THE MAGIC BY SLICE PATTERN, not by position (rule 15): the tag
+        // leads the record by the layout's own shape.
+        let [0xA3, ..] = rec else {
+            return None;
+        };
+        let dlen = u32_at(1)?;
+        let alen = u32_at(1 + 4 + dlen)?;
+        let at = 1 + 4 + dlen + 4;
+        Some(Address::new(rec.get(at..at + alen)?.to_vec()))
+    };
+
+    let mut pos = 8usize;
+    let (mut records, mut unread, mut sentences) = (0usize, 0usize, 0usize);
+    // Tapes this build does not read, by the version they claim.
+    // KEYED, NEVER A BTREE (the standing rule): the version byte is its own
+    // key and the trie walks it in order.
+    let mut stale: mycelium::network::nerve::Keyed<usize> = mycelium::network::nerve::Keyed::new();
+    // The 1-skeleton: every form that cites or is cited, and the edges.
+    let mut node: Keyed<usize> = Keyed::new();
+    let mut nodes: Vec<Address> = Vec::new();
+    let mut edges: Vec<(usize, usize)> = Vec::new();
+    let mut citers = 0usize;
+    for _ in 0..n {
+        let Some(len) = bytes.get(pos..pos + 4).and_then(|b| b.try_into().ok()).map(u32::from_le_bytes)
+        else {
+            break;
+        };
+        pos += 4;
+        let Some(rec) = bytes.get(pos..pos + len as usize) else { break };
+        pos += len as usize;
+        records += 1;
+        // WHAT VERSION THE TAPE SAYS IT IS, before anything is parsed off
+        // it (rule 11). A reading taken against the wrong layout answers
+        // ZEROS, and a zero that means "I could not read this" is
+        // indistinguishable from a zero that means "there is nothing here"
+        // — the empty-carrier collapse, which has misled six times this
+        // session. The version byte is one byte and it ends the question.
+        if let Some(v) = rec.get(5..7) {
+            if v[0] == mycelium::transducer::element::SENTENCE_TAG
+                && v[1] != mycelium::transducer::sentence::FORM_TAPE_VERSION
+            {
+                // A COUNT NOT YET SEEN IS THE FIRST (rule 11): absence here
+                // is the honest "none of these yet", said by the match rather
+                // than by a default standing in for a read.
+                let at = match stale.get(&[v[1]]) {
+                    Some(n) => *n + 1,
+                    None => 1,
+                };
+                stale.insert([v[1]], at);
+                continue;
+            }
+        }
+        let Some(addr) = address_of(rec) else {
+            unread += 1;
+            continue;
+        };
+        // A FORM, BY ITS OWN TAG. A residual chain cites nothing.
+        // A FORM BY ITS OWN TAG, read as the coordinate's leading byte
+        // (A21) rather than as element zero of a list (rule 15).
+        let [tag, ..] = addr.as_bytes() else { continue };
+        if *tag != mycelium::transducer::address::TAG_FORM {
+            continue;
+        }
+        sentences += 1;
+        let Some(f) = from_address(&addr) else {
+            unread += 1;
+            continue;
+        };
+        let id_of = |k: &Address, node: &mut Keyed<usize>, nodes: &mut Vec<Address>| -> usize {
+            if let Some(&i) = node.get(k.as_bytes()) {
+                return i;
+            }
+            let i = nodes.len();
+            node.insert(k.clone(), i);
+            nodes.push(k.clone());
+            i
+        };
+        let here = id_of(&addr, &mut node, &mut nodes);
+        let mut cited_any = false;
+        for v in &f.vertices {
+            let Vertex::Glued { address, .. } = v else { continue };
+            let there = id_of(address, &mut node, &mut nodes);
+            edges.push((here, there));
+            cited_any = true;
+        }
+        if cited_any {
+            citers += 1;
+        }
+    }
+
+    // CONNECTED COMPONENTS of the UNDIRECTED 1-skeleton, by union-find.
+    let mut up: Vec<usize> = (0..nodes.len()).collect();
+    fn find(up: &mut [usize], mut x: usize) -> usize {
+        while up[x] != x {
+            up[x] = up[up[x]];
+            x = up[x];
+        }
+        x
+    }
+    for &(a, b) in &edges {
+        let (ra, rb) = (find(&mut up, a), find(&mut up, b));
+        if ra != rb {
+            up[ra] = rb;
+        }
+    }
+    let mut roots: Keyed<()> = Keyed::new();
+    for i in 0..nodes.len() {
+        let r = find(&mut up, i);
+        roots.insert((r as u64).to_be_bytes(), ());
+    }
+    let (v, e, c) = (nodes.len(), edges.len(), roots.len());
+    // b₁ = E − V + C, the cycle rank of the 1-skeleton. Zero is a forest:
+    // every citation is a leaf and no two paths ever meet again.
+    let b1 = (e as i64) - (v as i64) + (c as i64);
+    // How many distinct forms are BOTH cited and citing — the overlap that
+    // decides whether the graph can close at all.
+    let mut cites_out: Keyed<()> = Keyed::new();
+    let mut cited_in: Keyed<()> = Keyed::new();
+    for &(a, b) in &edges {
+        cites_out.insert((a as u64).to_be_bytes(), ());
+        cited_in.insert((b as u64).to_be_bytes(), ());
+    }
+    let both = (0..nodes.len())
+        .filter(|i| {
+            cites_out.contains(&(*i as u64).to_be_bytes())
+                && cited_in.contains(&(*i as u64).to_be_bytes())
+        })
+        .count();
+    println!("  nerve {path}");
+    println!(
+        "      {records} records, {sentences} forms, {unread} unread; {citers} of them cite"
+    );
+    // THE REFUSAL IS THE READING when the layout is not this build's.
+    // §10: a layout change is a recut and state written before it does not
+    // restore, so a stale genome is not a genome with no nerve — it is a
+    // genome this build cannot ask.
+    if !stale.is_empty() {
+        let rows: Vec<(u8, usize)> =
+            stale
+                .scoped()
+                .filter_map(|(k, n)| match k.as_slice() {
+                    [v, ..] => Some((*v, *n)),
+                    [] => None,
+                })
+                .collect();
+        let total: usize = rows.iter().map(|(_, n)| *n).sum();
+        println!(
+            "      REFUSED: {total} tapes are not this build's — versions {rows:?} against \
+             FORM_TAPE_VERSION {}. The nerve is not measurable on this file; it needs the recut \
+             (§10), and the numbers below are of what remained, not of the genome.",
+            mycelium::transducer::sentence::FORM_TAPE_VERSION
+        );
+    }
+    println!(
+        "      1-skeleton: V {v} · E {e} · components {c} · b₁ = E − V + C = {b1}"
+    );
+    println!(
+        "      {} distinct forms both cite and are cited — the overlap a cycle needs",
+        both
+    );
+    println!(
+        "      {} cite only, {} are cited only",
+        cites_out.len() - both,
+        cited_in.len() - both
+    );
+}

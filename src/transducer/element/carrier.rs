@@ -143,6 +143,21 @@ pub struct Element {
     /// this one's is a chord of the form's faces, and carrying either
     /// across as the other invents a coordinate the source never held.
     pub(crate) filing: crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop>,
+    /// THE RECEIPTS ENVELOPE (54.5 Road (d)): the graded nerve incidence
+    /// this word stands in, and the evidence a court replays it with —
+    /// citations with their affine transitions, derivations, and pivot
+    /// certificates.
+    ///
+    /// It is here for the same reason `filing` is here. A form is GEOMETRY,
+    /// the same complex whatever mind holds it, and none of this factors
+    /// through it: a derivation is a PRESENTATION and two minds reaching one
+    /// rotor by different ones must reach one address (§1.5); a certificate
+    /// is what one mind's stroke did against one budget. `Address × Signer`
+    /// is the index, and an element is the smallest carrier that has both.
+    ///
+    /// All three rode `description` — the tape — which is precisely why the
+    /// tape could not be retired. See [`crate::transducer::element::receipts`].
+    pub(crate) receipts: crate::transducer::element::ReceiptsEnvelope,
     /// THE ANCHOR FIBER (Step 7) — γ = (π_anchor, Δ_substance): the recursive
     /// selection term restricting WHERE this word's substance applies on a
     /// scene. None = ⊤, the unconstrained carrier (pure topological actions,
@@ -178,6 +193,7 @@ impl Element {
             sections: Vec::new(),
             torsion: Vec::new(),
             filing: crate::network::nerve::Keyed::new(),
+            receipts: crate::transducer::element::ReceiptsEnvelope::default(),
             transitions: Vec::new(),
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),
@@ -355,6 +371,19 @@ impl Element {
     /// The speaker's filing: class ↦ `(σ, ℓ, chord)`.
     pub fn filing(&self) -> &crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop> {
         &self.filing
+    }
+
+    /// THE RECEIPTS ENVELOPE this word carries (54.5 Road (d)): its nerve
+    /// incidence and the evidence a court replays it with.
+    pub fn receipts(&self) -> &crate::transducer::element::ReceiptsEnvelope {
+        &self.receipts
+    }
+
+    /// Set the envelope. The address does not move: none of this is a
+    /// coordinate of the form (§1.5, `evidence_is_not_identity`), which is
+    /// the whole reason it rides here.
+    pub fn set_receipts(&mut self, receipts: crate::transducer::element::ReceiptsEnvelope) {
+        self.receipts = receipts;
     }
 
     pub fn torsion(&self) -> &[TorsionCycle] {

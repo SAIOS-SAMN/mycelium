@@ -96,7 +96,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         // The sweep mints in the stroke it extracts: the bundle stood over no
         // receipts, so 𝒯 is zero as a reading.
         if let Some(w) = mycelium::transducer::family::mint_sentence(&rule, &task.train, &empty, 0) {
-            let reach = rule.form.fibre_volume();
+            let reach = rule.form.fibre_volume(&rule.form.torsion);
             if reach > 0 {
                 reach_more += 1;
             } else {

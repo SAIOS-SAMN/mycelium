@@ -562,15 +562,103 @@ impl Form {
         let Some(hs) = self.edge_holonomies(lp) else {
             return true;
         };
+        // GRADE 1 IS A GEOMETRIC PREDICATE, NOT A PROGRESS FLAG (54.5, as
+        // ruled 2026-09-20). Two defects stood here and they compounded.
+        //
+        // THE WRONG READER (law 12, the fourth site of one ruling).
+        // `loop_classes` states its own contract: "ONE READER FOR THREE
+        // CALLERS — `file_loop` writes these rows, `Form::coheres` asks
+        // whether they are all compact, and `Form::is_cauterized` asks
+        // whether what is filed agrees with them", and it names this exact
+        // fault as fixed at the third: "a screw was filed at 0 by the first
+        // and demanded at 4 by the third." The unification reached
+        // `file_loop`, `loop_is_congruent` and `is_cauterized`. It did not
+        // reach here. This read `h.word.order()` — the BARE ROTOR ORDER,
+        // with no carriage and no fixed-point test — while `file_loop`
+        // derives the period through `cech::classify`, which gates on the
+        // fixed point and files a screw at `0`. So a screw was filed at 0
+        // and demanded at 4. Never equal, so the form never cohered.
+        //
+        // And every transport a voice measures arrives turning about a
+        // body's own centroid: `versor_coset` builds each member as
+        // `T(c_b)·D(ρ)·R·T(−c_a)`, so the translation is always there.
+        //
+        // COHERENCE IS GEOMETRY AND CONSULTS NO FILING (54.5, as ruled
+        // 2026-09-20). Two faults stood here and they compounded.
+        //
+        // THE WRONG READER. `loop_classes` derives a period through
+        // `cech::classify`, which GATES ON THE FIXED POINT and gives a
+        // screw `0`; this read `h.word.order()` — the bare rotor order,
+        // with no carriage and no fixed-point test — and demanded a filing
+        // match THAT. A screw was filed at 0 and demanded at 4. Never
+        // equal, so no curved form ever cohered. `loop_classes` names this
+        // exact fault as fixed at its third caller — "a screw was filed at
+        // 0 by the first and demanded at 4 by the third" — and this was its
+        // fourth site (law 12).
+        //
+        // AND COHERENCE IS NOT A PERMIT. Even with the right reader this
+        // demanded that an ENTRY EXIST, which asks whether a stroke has got
+        // around to the loop. Every field of a `FiledLoop` is DERIVABLE:
+        // `loop_classes` computes the class from `holonomy_words_on`, the
+        // period from `cech::classify`, σ from `loop_transport_on`, and the
+        // chord is the loop's own. Law 12 says a derivable fact is
+        // re-derived and never stored beside the coordinates that determine
+        // it — so an annotation's PRESENCE cannot be a geometric property,
+        // and a predicate reading it made an open dislocation look like a
+        // closed manifold.
+        //
+        // WHAT COHERES, on the complex and nothing else: identity, a class
+        // of FINITE order about a fixed point — `ℤ/ℓℤ`, which is content
+        // (law 7) — or an axis the form opened over this loop. A screw
+        // walks and never returns: `g^ℓ = T(ℓτ)` with `τ ∈ ker(I − R)`, so
+        // there is no period at which the circuit closes. It is not an
+        // error and it is not coherence; it is a `Demand::Dislocation`,
+        // carried as a vertex, in the key, saying "these fibrations shear
+        // by τ and `T(−τ)` would close them".
+        //
+        // THE FILING IS NOT DELETED, IT IS RELOCATED. `Element.filing` is
+        // the speaker's ATTESTATION — what this mind's stroke discharged
+        // against its own budget — and it prices the yield (`fibre_volume`,
+        // E2) and answers whether the stroke finished (`is_cauterized`).
+        // Those are mind-state and they say so. Geometry is asked here.
+        if self.opened_axis_of(lp).is_some_and(|chord| self.axis_rederives(lp, chord)) {
+            return true;
+        }
+        let compact = self.loop_classes(lp);
         hs.scoped().all(|(_, h)| {
             if h.word.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
                 return true;
             }
+            // A holonomy with no class is not a versor (15.3) and coheres
+            // nowhere; refused, never keyed by the rotor's bytes.
             let Some(class) = h.word.rotor().class_key() else {
                 return false;
             };
-            let ell = h.word.order().to_u32();
-            matches!(self.torsion.get(&class), Some(filed) if filed.period == ell)
+            // A path `loop_classes` produced no row for carries no measured
+            // transport, and a reading that was not taken holds nothing
+            // against the form (rule 11, 13.9 step 7). A row with period 0
+            // is the screw: non-compact, and owed a dislocation.
+            match compact.iter().find(|row| row.class == class) {
+                Some(row) if row.period > 0 => true,
+                // A FREE PART THE FORM DECLARES IS CARRIED, NOT HIDDEN
+                // (54.5, Directive 4). `REFUSE_LOOP` reads "a free part and
+                // NO DISLOCATION DECLARES IT", and this is the clause that
+                // makes the second half true.
+                //
+                // A circuit that walks is an obstruction, and 50.5's answer
+                // to an obstruction is a DEMAND: a vertex, in the key,
+                // carried as content, saying "these fibrations shear by τ
+                // and `T(−τ)` would close them". That is the opposite of a
+                // filing — a filing is a side-table entry about a theorem
+                // the geometry already determines, and a demand is a
+                // coordinate the address names.
+                //
+                // So the form may carry its shear honestly and still
+                // cohere, and `is_closed` is what keeps the distinction:
+                // a sentence with a demand is VALID, never closed (50.1).
+                Some(_) => self.declares_dislocation(&class),
+                None => true,
+            }
         })
     }
 }

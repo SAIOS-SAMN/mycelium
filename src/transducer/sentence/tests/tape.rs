@@ -7,9 +7,11 @@ use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self};
 
-/// 52.3 — THE TAPE CARRIES A FILED ZERO AS INFINITE ORDER (A19): a loop
-/// whose edge is a (3,4,5) rotor, filed at period 0, round-trips its
-/// filing, the read form coheres on it, and the class reaches no members.
+/// 52.3 AS AMENDED (54.5, ruled 2026-09-20) — A FILED ZERO IS LABOUR, NOT
+/// CLOSURE. A loop whose edge is a (3,4,5) rotor files at period 0, A19's
+/// spelling of infinite order; the filing rides the SPEAKER'S word and the
+/// form does not cohere on it, because a circuit that walks is not closed
+/// by anyone writing down that it walks.
 #[test]
 fn the_tape_carries_a_filed_zero_as_infinite_order() {
     let w = infinite();
@@ -19,13 +21,30 @@ fn the_tape_carries_a_filed_zero_as_infinite_order() {
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
     f.torsion.insert(class.clone(), FiledLoop { sigma: Vec::new(), period: 0, chord: lp.chord });
-    assert!(f.coheres(), "filed, the loop coheres");
+    // THE FILING IS THE SPEAKER'S AND IT DOES NOT CLOSE THE CIRCUIT (54.5,
+    // as ruled 2026-09-20). This asserted `f.coheres()` — that writing "0"
+    // in the form's own side-table made a free part cohere. A (3,4,5)
+    // rotor has no period; `g^ℓ` is never the identity and the circuit
+    // walks. What the zero records is that the stroke READ the class, which
+    // is labour, and labour rides `Element.filing`.
+    assert!(!f.coheres(), "a free part does not cohere, filed or not");
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("a filed form has a tape");
-    let read = from_element_form(&e).expect("the tape admits the filed zero");
-    let filed: Vec<u32> = read.torsion.scoped().map(|(_, l)| l.period).collect();
-    assert_eq!(filed, vec![0], "the period reads 0, infinite order");
-    assert!(read.coheres(), "and the read form coheres on it");
-    assert_eq!(read.fibre_volume(), 0, "an infinite class reaches no members");
+    // AND THE FILING RIDES THE ELEMENT, NOT THE FORM (df1eeaa). The mint
+    // lifts it off the form it was made on; a form decoded from its ADDRESS
+    // carries none, because the address is the geometry and a filing is not
+    // geometry.
+    let filed: Vec<u32> = e.filing().scoped().map(|(_, l)| l.period).collect();
+    assert_eq!(filed, vec![0], "the period reads 0, infinite order, on the speaker's word");
+    let read = from_element_form(&e).expect("the address rebuilds the form");
+    assert!(
+        read.torsion.is_empty(),
+        "and the decoded form files nothing: `from_address` recovers geometry alone"
+    );
+    assert_eq!(
+        read.fibre_volume(e.filing()),
+        0,
+        "an infinite class reaches no members, whatever is filed for it"
+    );
 }
 
 /// SENTENCE_TAG v6 round-trips Frame, Word (with contact), Glued,
@@ -379,10 +398,22 @@ fn a_citation_is_the_cited_address_and_it_re_derives() {
     let inner = closed_word_form(w.clone(), None);
     let inner_addr = as_element_form(&inner, [1, 0, 0, 0]).expect("inner").address();
 
+    // THREE CITATIONS OF ONE FORM AT THREE PLACES. They were three at ONE
+    // place — same address, same chart, same depth, same identity
+    // placement and transition — which §1.5 makes ONE vertex, so the form
+    // held a citation three times and said nothing a form holding it once
+    // does not. The address collapsed them and the tape did not, and this
+    // test read the tape.
+    //
+    // What distinguishes a citation is its own coordinates, and the
+    // placement is one of them: the cited form stands at three different
+    // places inside the host, which is three boundaries and three
+    // citations.
     let mut host = Form::default();
-    for _ in 0..3 {
-        host.glue(&inner, inner_addr.clone(), Word::identity(), [0, 0, 0, 1])
-            .expect("glue the same form again");
+    let places = [Word::identity(), order4(), order2()];
+    for p in &places {
+        host.glue(&inner, inner_addr.clone(), p.clone(), [0, 0, 0, 1])
+            .expect("glue the same form at another place");
     }
     let glued = host
         .vertices
@@ -415,6 +446,24 @@ fn a_citation_is_the_cited_address_and_it_re_derives() {
         .collect();
     assert_eq!(cited.len(), 3, "every citation comes back");
     assert!(cited.iter().all(|a| *a == inner_addr), "each is the address cited");
+
+    // AND THE SAME FORM CITED THREE TIMES AT ONE PLACE IS ONE CITATION.
+    // The three differ in nothing — one address, one chart, one depth, one
+    // placement, one transition — so §1.5 makes them one vertex and the
+    // address says so. This is the quotient the key lives on, and it is
+    // what 53.4's quantified citation removes in kind (K2).
+    let mut once = Form::default();
+    for _ in 0..3 {
+        once.glue(&inner, inner_addr.clone(), Word::identity(), [0, 0, 0, 1])
+            .expect("glue the same form at the same place");
+    }
+    let one = from_element_form(&as_element_form(&once, [1, 0, 0, 0]).expect("mints"))
+        .expect("decodes");
+    assert_eq!(
+        one.vertices.iter().filter(|v| matches!(v, Vertex::Glued { .. })).count(),
+        1,
+        "one boundary mating under one transition is one citation, however often it was written"
+    );
     assert_eq!(
         as_element_form(&back, [1, 0, 0, 0]).map(|x| x.address()),
         Some(e.address()),

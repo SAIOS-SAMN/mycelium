@@ -95,7 +95,54 @@ fn generated() -> Vec<(&'static str, Form)> {
         ("a nested citation", nested),
         ("a demand with its bodies", demanding),
         ("a form with an A5 remainder", residual),
+        ("a star of two spokes", star_form(2, Vec::new())),
+        ("a star of three spokes", star_form(3, Vec::new())),
     ]
+}
+
+/// §1.5 — TWO VERTICES AT ONE COORDINATE ARE ONE VERTEX, and the address
+/// says so.
+///
+/// `≡` is the wrong relation to ask for here and asking for it is what
+/// found the defect. A form holding one coordinate twice is not a fixed
+/// point of `from_address ∘ address`: the address NORMALISES it, because a
+/// vertex's identity is its coordinates and a set does not hold a member
+/// twice. What must hold is that the normal form is reached and then
+/// stands — `address` is idempotent from the second application on.
+///
+/// The defect this guards: `form_vertex_key` wrote `f.vertices.len()` as
+/// its vertex count and then walked the DISTINCT vertices out of a trie, so
+/// a form like this claimed three records and carried two. The address
+/// compared and ordered correctly and could not be PARSED, and it stayed
+/// invisible for as long as the tape was what the decoder read.
+/// `canonical_places` had the same collapse one level down: it kept
+/// `coordinate → index`, so of two vertices sharing a coordinate only the
+/// last was given a place and the first kept a stale index every face at
+/// that end pointed through.
+#[test]
+fn two_vertices_at_one_coordinate_are_one_vertex() {
+    let mut f = Form::default();
+    for _ in 0..3 {
+        f.vertices.push(word_vertex_on(9, Word::identity(), stalk::Invariant::counts(&[7])));
+        let j = (f.vertices.len() - 1) as u16;
+        f.faces.push(f.face_of(0, j).expect("star"));
+    }
+    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.reindex();
+    assert_eq!(f.vertices.len(), 4, "the form was built holding one coordinate three times");
+
+    let key = form_vertex_key(&f);
+    let back = from_address(&key).expect("the address parses — the count is of what was written");
+    assert_eq!(
+        back.vertices.len(),
+        2,
+        "and names the frame and ONE vertex, because that is how many coordinates there are"
+    );
+    // The normal form stands: addressing it reaches the same address, and
+    // that address recovers it exactly.
+    assert_eq!(form_vertex_key(&back), key, "the normal form keys to the address it came from");
+    let again = from_address(&form_vertex_key(&back)).expect("recovers");
+    assert!(same_form(&back, &again), "and is a fixed point from there on");
 }
 
 /// `from_address(address(f)) ≡ f` — A21 §4 at `TAG_FORM`, the property this
@@ -111,7 +158,7 @@ fn generated() -> Vec<(&'static str, Form)> {
 fn from_address_recovers_every_form_it_addresses() {
     for (what, f) in generated() {
         let key = form_vertex_key(&f);
-        let Some(back) = from_address(key.as_bytes()) else {
+        let Some(back) = from_address(&key) else {
             panic!("{what}: the key does not recover its form")
         };
         assert!(same_form(&f, &back), "{what}: recovered form is not the form");
@@ -122,15 +169,25 @@ fn from_address_recovers_every_form_it_addresses() {
 
 /// A KEY THAT IS NOT ONE IS REFUSED, never part-read (rule 11), and a
 /// truncation of a real key is refused rather than yielding a short form.
+///
+/// EVERY CLAIM HERE IS MADE THROUGH `Address::new` AND THAT IS THE SHAPE OF
+/// THE CLAIM. `from_address` takes an address, not a byte slice (law 2), so
+/// a test that wants to hand it a run of bytes has to say out loud that it
+/// is calling those bytes a coordinate — which is exactly what is being
+/// refused here, and the line now reads as the assertion it is.
 #[test]
 fn a_key_that_is_not_one_is_refused() {
-    assert!(from_address(b"").is_none(), "no bytes, no form");
-    assert!(from_address(&[0xFF, 0, 0, 0, 0]).is_none(), "a foreign tag refuses");
+    use crate::transducer::address::Address;
+    assert!(from_address(&Address::new(Vec::new())).is_none(), "no bytes, no form");
+    assert!(
+        from_address(&Address::new(vec![0xFF, 0, 0, 0, 0])).is_none(),
+        "a foreign tag refuses"
+    );
     let key = form_vertex_key(&chord_form(&[order4()]));
     let bytes = key.as_bytes();
     for cut in [1, 5, bytes.len() / 3, bytes.len() / 2, bytes.len() - 1] {
         assert!(
-            from_address(&bytes[..cut]).is_none(),
+            from_address(&Address::new(bytes[..cut].to_vec())).is_none(),
             "a key cut at {cut} of {} is refused, not part-read",
             bytes.len()
         );
@@ -264,7 +321,7 @@ fn a_citation_carries_the_morphism_it_acts_under() {
     // placement that never carried it.
     for (f, phi) in [(&here, identity_versor()), (&over, translator_versor(3, 0))] {
         let key = form_vertex_key(f);
-        let back = from_address(key.as_bytes()).expect("recovers");
+        let back = from_address(&key).expect("recovers");
         assert_eq!(form_vertex_key(&back), key, "the recovery re-derives its address");
         let got = back.vertices.iter().find_map(|v| match v {
             Vertex::Glued { carriage, .. } => Some((**carriage).clone()),
@@ -413,7 +470,7 @@ fn a_form_and_a_residual_refuse_each_others_decoder() {
         "the chain reader refuses a form's address"
     );
     assert!(
-        from_address(r_addr.as_bytes()).is_none(),
+        from_address(&r_addr).is_none(),
         "the form reader refuses a residual's address"
     );
     assert!(from_residual(&[]).is_none(), "and refuses nothing at all");
@@ -467,7 +524,7 @@ fn the_address_does_not_carry_the_filing() {
     // one. It does not invent the filing, and it does not pretend to have
     // recovered it (rule 11).
     let key = form_vertex_key(&f);
-    let back = from_address(key.as_bytes()).expect("the key recovers its form");
+    let back = from_address(&key).expect("the key recovers its form");
     assert_eq!(form_vertex_key(&back), key, "the recovery re-derives its address");
     assert!(
         back.torsion.is_empty(),

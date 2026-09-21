@@ -168,16 +168,24 @@ fn filed_torsion_chord_replays_or_refuses() {
         carries_torsion(&e),
         "the form carries the filed cycle"
     );
-    let keyed = crate::transducer::sentence::from_element_form(&e).expect("v2 tape");
+    let keyed = crate::transducer::sentence::from_element_form(&e).expect("the address decodes");
+    // THE CLASS AND THE CHORD ARE DERIVED, NOT FILED (54.5). This read
+    // them off `keyed.torsion`, and a form recovered from its address files
+    // nothing — the filing rides `Element::filing`, and the class and
+    // period are theorems of the complex (`loop_classes`).
     let (class, chord) = keyed
-        .torsion
-        .scoped()
-        .next()
-        .map(|(k, v)| (k, v.chord))
-        .expect("filed class");
+        .loops
+        .iter()
+        .find_map(|lp| match keyed.loop_classes(lp).as_slice() {
+            // The least class the loop derives; `loop_classes` walks a
+            // `Keyed`, so the order is the member paths' own (rule 15).
+            [row, ..] => Some((row.class.clone(), lp.chord)),
+            [] => None,
+        })
+        .expect("the complex derives its own class");
     assert_eq!(
         torsion_loop_rotor(&keyed, &class).and_then(|r| r.class_key()),
-        Some(crate::transducer::address::Address::from(class)),
+        Some(class),
         "the chord face is the keyed representative"
     );
     assert!(
@@ -200,18 +208,44 @@ fn filed_torsion_chord_replays_or_refuses() {
     };
     f.faces[ci].word = order2();
     let bad = as_element_form(&f, mag).expect("tampered chord");
-    assert_eq!(
-        crate::court::verdict::blind_replay(&bad),
-        Some(crate::court::verdict::REFUSE_LOOP),
-        "a chord whose holonomy is not the filed class refuses the loop"
+    // A TAMPERED CHORD NAMES A DIFFERENT WORD (54.5, as ruled 2026-09-20).
+    // This expected `REFUSE_LOOP` — "a chord whose holonomy is not the FILED
+    // class refuses the loop" — which prices geometry against an annotation.
+    // Coherence asks the complex now, so a chord whose new holonomy is still
+    // a compact resonance coheres, and the court says so honestly. What the
+    // forger cannot do is keep the name: a face's word is in the key (A21).
+    assert_ne!(
+        bad.address(),
+        e.address(),
+        "a face's word is in the key, so moving it names another word"
     );
-    let mut gone = crate::transducer::sentence::from_element_form(&e).expect("v2 tape");
+    // THE FORGERY IS NOT UNGUARDED, IT IS UNCONSTRUCTIBLE (54.5, as ruled
+    // 2026-09-20) — the same reading `rank_lost_refused` already carries
+    // one carrier up.
+    //
+    // This stripped `Form.torsion` and expected `REFUSE_LOOP`: a filed
+    // chord without its entry refuses. Two things have to be true for that
+    // attack to exist, and neither is. A form recovered from its ADDRESS
+    // files nothing to begin with, so there is no entry to remove; and
+    // coherence asks `loop_classes` rather than the filing, so removing one
+    // would change no answer if there were.
+    //
+    // What a forger can still move is a FACE, and `face_rederives` reads
+    // those — asserted above, where moving a chord's word names a different
+    // word. There is nothing left here to claim a filing with.
+    let mut gone = crate::transducer::sentence::from_element_form(&e).expect("the address decodes");
+    assert!(gone.torsion.is_empty(), "a form off its address files nothing");
     gone.torsion = Keyed::new();
     let missing = as_element_form(&gone, mag).expect("torsion stripped");
     assert_eq!(
+        missing.address(),
+        e.address(),
+        "stripping a filing changes no byte of the word: it was never in the key"
+    );
+    assert_eq!(
         crate::court::verdict::blind_replay(&missing),
-        Some(crate::court::verdict::REFUSE_LOOP),
-        "a filed chord without its torsion entry refuses the loop"
+        None,
+        "and the geometry replays as it did, because that is what replay reads"
     );
 }
 

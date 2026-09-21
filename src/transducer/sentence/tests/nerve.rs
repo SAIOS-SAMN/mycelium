@@ -107,7 +107,7 @@ fn two_charts_may_cite_each_other() {
 
     // Both citations stand, and each form's address carries its own edge.
     assert_ne!(form_vertex_key(&u), form_vertex_key(&v));
-    let back = from_address(form_vertex_key(&u).as_bytes()).expect("U recovers");
+    let back = from_address(&form_vertex_key(&u)).expect("U recovers");
     assert_eq!(form_vertex_key(&back), form_vertex_key(&u), "a cycle's edge re-derives");
 }
 
@@ -164,7 +164,7 @@ fn a_triangle_of_citations_closes_or_carries_its_holonomy() {
     // decoder there is.
     let transition_of = |e: &Form| -> Versor {
         let key = form_vertex_key(e);
-        let back = from_address(key.as_bytes()).expect("the edge's address decodes");
+        let back = from_address(&key).expect("the edge's address decodes");
         back.vertices
             .iter()
             .find_map(|v| match v {
