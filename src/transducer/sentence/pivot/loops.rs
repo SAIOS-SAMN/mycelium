@@ -2,6 +2,83 @@
 
 use super::*;
 
+thread_local! {
+    /// `(reflexive cells seen, dropped at tree_path, dropped at
+    /// paths_carried, dropped as trivial)` — the three gates between a
+    /// cycle of the member complex and a `Loop` on the form.
+    static CYCLES: std::cell::Cell<(u64, u64, u64, u64)> =
+        const { std::cell::Cell::new((0, 0, 0, 0)) };
+}
+
+thread_local! {
+    /// THE DEFECT EACH KEPT CYCLE CARRIES, read off its transport
+    /// composite: `(trivial, elliptic, hyperbolic, parabolic, non-simple)`.
+    ///
+    /// A cycle's class is not a label the builder assigns; it is
+    /// `class_invariants` of the versor the loop's own faces compose, so
+    /// the distribution is a reading of the corpus and not of this code.
+    static DEFECTS: std::cell::Cell<(u64, u64, u64, u64, u64)> =
+        const { std::cell::Cell::new((0, 0, 0, 0, 0)) };
+}
+
+/// The defect distribution of every cycle kept since the last reset.
+pub fn loop_defects() -> (u64, u64, u64, u64, u64) {
+    DEFECTS.with(|c| c.get())
+}
+
+pub fn reset_loop_defects() {
+    DEFECTS.with(|c| c.set((0, 0, 0, 0, 0)));
+}
+
+/// Classify one kept cycle by THE WHOLE TRANSPORT IT COMPOSES.
+///
+/// A first cut read `PathCarried::face.carriage` alone and every one of 545
+/// cycles came back Trivial — while `loop_is_trivial` had KEPT them, which
+/// can only happen when something non-flat is present. The chord's
+/// dislocation rides in 50.3's EDGE transport, not in the member carriage:
+/// two sections under one carriage have `φ_b φ_a⁻¹ = 1` by construction,
+/// so the carriage is exactly where the Burgers vector is not.
+///
+/// The cycle's holonomy is the composite of both, which is what
+/// `Ω_∂e² = 𝒫 ∏ Ω_e` means.
+fn note_defect(carried: &PathCarried) {
+    use crate::network::nerve::coord::BivectorKind;
+    let composite = match &carried.edge {
+        Some(e) => e.carriage.geo(&carried.face.carriage),
+        None => carried.face.carriage.clone(),
+    };
+    let Some((_, _, kind)) = composite.class_invariants() else { return };
+    DEFECTS.with(|c| {
+        let mut t = c.get();
+        match kind {
+            BivectorKind::Trivial => t.0 += 1,
+            BivectorKind::Elliptic => t.1 += 1,
+            BivectorKind::Hyperbolic => t.2 += 1,
+            BivectorKind::Parabolic => t.3 += 1,
+        }
+        // A DISPIRATION IS NOT A FOURTH TYPE, it is a coupling: the
+        // generator is non-simple, so the cycle turns and slips at once.
+        // Counted beside the type rather than instead of it.
+        if !crate::transducer::cga::bivector_is_simple(&composite) {
+            t.4 += 1;
+        }
+        c.set(t);
+    });
+}
+
+fn gate(which: usize) {
+    CYCLES.with(|c| {
+        let mut t = c.get();
+        match which {
+            0 => t.0 += 1,
+            1 => t.1 += 1,
+            2 => t.2 += 1,
+            _ => t.3 += 1,
+        }
+        c.set(t);
+    });
+}
+
 impl Form {
     /// THE CYCLES OF THE 1-SKELETON, less the ones that enclose nothing.
     ///
@@ -11,6 +88,20 @@ impl Form {
     /// what `a_loop_flat_on_the_word_files_under_its_edge_composite`
     /// asserts — and a predicate blind to edges would prune the
     /// obstruction along with the noise.
+    /// WHERE A CYCLE DIES BETWEEN THE BASIS AND THE FORM (§8.1).
+    ///
+    /// `b₁` stayed at zero while the chords reached the face builder, and
+    /// three gates stand between a cycle of the member complex and a
+    /// `Loop` on the form. A reading that says only "0 loops" cannot say
+    /// which, so each is counted at the step that decides it.
+    pub fn loop_gates() -> (u64, u64, u64, u64) {
+        CYCLES.with(|c| c.get())
+    }
+
+    pub fn reset_loop_gates() {
+        CYCLES.with(|c| c.set((0, 0, 0, 0)));
+    }
+
     pub fn loops_of(faces: &[FormFace], vertices: &[Vertex]) -> Vec<Loop> {
         // THE CYCLE BASIS IS BUILT ON THE MEMBER COMPLEX, NOT ON THE VERTEX
         // INDICES (54.4, as ruled 2026-09-20).
@@ -167,11 +258,15 @@ impl Form {
             // holonomy is the Burgers transvection `τ = p(D_b) − p(D_a)`.
             // Refusing the edge because its ends coincide discards the
             // dislocation the cover measured.
+            if a == b {
+                gate(0);
+            }
             let Some((path, mut walked)) = (if a == b {
                 Some((vec![a], Vec::new()))
             } else {
                 tree_path(&adj, a, b)
             }) else {
+                gate(1);
                 continue;
             };
             // THE CYCLE PROJECTED TO ITS VERTICES. `Loop` names its nodes
@@ -225,12 +320,17 @@ impl Form {
             // are two readings of the same frontier, and calling the two
             // readers would walk it again for each.
             let Some(carried) = paths_carried(faces, vertices, &lp) else {
+                gate(2);
                 continue;
             };
             if loop_is_trivial(faces, vertices, &lp, &carried) {
+                gate(3);
                 continue;
             }
             for (k, c) in carried.scoped() {
+                // THE DEFECT THIS CYCLE CARRIES, read once per member path
+                // off the transport it composes (§8.1).
+                note_defect(c);
                 lp.carriages.insert(&k, c.face.carriage.clone());
             }
             loops.push(lp);

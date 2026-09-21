@@ -1140,7 +1140,8 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     eprintln!(
         "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} loops \
          | edges asked: measured {}, unspelled {}, unread {}, not rigid {} \
-         | chords {} offered {} \
+         | chords {} offered {} | cycles: reflexive {} no-tree-path {} unread {} trivial {} \
+         | defects: trivial {} elliptic {} hyperbolic {} parabolic {} non-simple {} \
          | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {}",
         form.faces.len(),
         // The site+ring faces COUNTED as they were built, not the total
@@ -1155,6 +1156,15 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         edges.not_rigid,
         meet_chords.len(),
         n_chords,
+        crate::transducer::sentence::Form::loop_gates().0,
+        crate::transducer::sentence::Form::loop_gates().1,
+        crate::transducer::sentence::Form::loop_gates().2,
+        crate::transducer::sentence::Form::loop_gates().3,
+        crate::transducer::sentence::loop_defects().0,
+        crate::transducer::sentence::loop_defects().1,
+        crate::transducer::sentence::loop_defects().2,
+        crate::transducer::sentence::loop_defects().3,
+        crate::transducer::sentence::loop_defects().4,
         drops.offered,
         drops.built,
         drops.member_key,
