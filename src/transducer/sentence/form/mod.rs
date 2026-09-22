@@ -5,15 +5,19 @@
 //! the certificate a pivot on it writes, and the contraction a refusal
 //! makes on it.
 
+pub mod axis;
 pub mod carrier;
 pub mod certificate;
+pub mod face;
 pub mod fiber;
 pub mod closure;
 pub mod contract;
+pub mod index;
 pub mod keys;
 pub mod spectrum;
 pub mod vertex;
 
+pub(crate) use axis::*;
 pub use carrier::*;
 pub use certificate::*;
 pub use fiber::*;
