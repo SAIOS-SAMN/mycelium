@@ -43,19 +43,43 @@ use super::*;
 pub enum Withheld {
     /// A class in `H¹`: permanent, and no generator or vantage retires it.
     LoopObstruction { loop_ix: u16, key: [u8; 2] },
-    /// Off by a coboundary: the loops close and the cochain does not.
+    /// Off by a coboundary: the form CARRIES LOOPS, every one of them
+    /// closes, and the cochain still disagrees. The thought stands and the
+    /// perspective does not — `Φ⁻¹` is the correction.
     CoboundaryResidue { links: usize, pairs: usize },
+    /// THE QUESTION WAS NOT ASKABLE. The form carries NO LOOPS, so
+    /// `delta1()` is empty and `H¹` has nothing to obstruct — the form is
+    /// a tree, and every cochain on a tree is a coboundary TRIVIALLY.
+    ///
+    /// This arm is the vacuity fix (69, ruled 2026-09-22). The first cut
+    /// folded it into `CoboundaryResidue`, which asserted "the loops all
+    /// close" of a form with no loops — a vacuous truth wearing the
+    /// stronger arm's name. Measured, it read `COBOUNDARY 34` on a corpus
+    /// slice where 34 of 36 forms were acyclic, and a retention policy
+    /// built on it would have called every one of them reachable.
+    ///
+    /// NEVER TRUE UNLESS PROVEN TRUE: an unaskable `δ¹` is not a closed
+    /// `δ¹`, and the two must not answer to one name.
+    Acyclic { links: usize, pairs: usize },
     /// The cocycle closes and nothing is left over — the form simply
     /// measured no descent to speak.
     NoDescent,
 }
 
 impl Withheld {
-    /// Is this form still reachable by a change of perspective? The one
-    /// bit a retention policy needs: `false` sheds now, `true` must not
-    /// age out.
+    /// Is this form PROVED still reachable by a change of perspective?
+    /// The one bit a retention policy needs, and `Acyclic` is deliberately
+    /// NOT it: on a tree the answer is unknown, not yes, and a policy that
+    /// retains on an unasked question retains everything.
     pub fn is_mutable(&self) -> bool {
         matches!(self, Withheld::CoboundaryResidue { .. })
+    }
+
+    /// Was the coboundary question ASKABLE at all? `false` means the form
+    /// carries no cycle and `δ¹` is silent — a reading that reports the
+    /// arms without this cannot tell an empty arm from an unreachable one.
+    pub fn is_askable(&self) -> bool {
+        !matches!(self, Withheld::Acyclic { .. })
     }
 
     /// A stable token for the journal, so a reading counts arms rather
@@ -64,6 +88,7 @@ impl Withheld {
         match self {
             Withheld::LoopObstruction { .. } => "H1-OBSTRUCTION",
             Withheld::CoboundaryResidue { .. } => "COBOUNDARY",
+            Withheld::Acyclic { .. } => "ACYCLIC-UNASKABLE",
             Withheld::NoDescent => "NO-DESCENT",
         }
     }
@@ -74,22 +99,27 @@ pub fn withheld_of(
     form: &Form,
     remainders: &[crate::transducer::germinate::ResidualGerm],
 ) -> Withheld {
-    let held = form
-        .delta1()
-        .into_iter()
+    let cocycle = form.delta1();
+    let held = cocycle
+        .iter()
         .find(|(_, w)| !w.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()));
     if let Some((loop_ix, w)) = held {
         let k = w.key();
-        return Withheld::LoopObstruction { loop_ix, key: [k[0], k[1]] };
+        return Withheld::LoopObstruction { loop_ix: *loop_ix, key: [k[0], k[1]] };
     }
-    let links: usize = remainders.iter().map(|r| r.len()).sum();
+    let links: usize = remainders.iter().map(|r| r.len()).sum::<usize>() + form.remainder.len();
     let pairs = remainders.iter().filter(|r| !r.is_empty()).count();
-    match links == 0 && form.remainder.is_empty() {
-        true => Withheld::NoDescent,
-        false => Withheld::CoboundaryResidue {
-            links: links + form.remainder.len(),
-            pairs,
-        },
+    if links == 0 {
+        return Withheld::NoDescent;
+    }
+    // THE ASKABILITY GATE. `held` being `None` means "no loop carries a
+    // non-trivial holonomy" — which is a PROOF when there are loops to
+    // check and a VACUITY when there are none. A tree has `H¹ = 0` by
+    // construction, so its cochain is a coboundary trivially and the
+    // reading says nothing about whether a perspective exists.
+    match cocycle.is_empty() {
+        true => Withheld::Acyclic { links, pairs },
+        false => Withheld::CoboundaryResidue { links, pairs },
     }
 }
 

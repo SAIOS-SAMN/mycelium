@@ -506,6 +506,84 @@ mod tests {
         );
     }
 
+    /// 69 — DOES THE ADJACENCY BAND SURVIVE A SIZE MISMATCH?
+    ///
+    /// `δ = (d² − r_a² − r_b²)/(2·r_a·r_b)` and the field admits a pair to
+    /// the frame test only on `1 < δ ≤ 2`. `δ = 2` was measured as the
+    /// similarity class of edge-adjacency and proved SCALE-FREE — meaning
+    /// invariant when BOTH bodies are dilated together, which is what a
+    /// ratio of this shape guarantees.
+    ///
+    /// THAT IS NOT THE SAME AS RATIO-FREE. `δ` divides by `r_a·r_b`, so
+    /// two bodies of DIFFERENT extent that are physically touching need
+    /// not land on the same `δ` as two equal ones. If the band is a
+    /// property of equal-sized pairs only, the horizon is turning away
+    /// bodies that are in contact — which is the famine, and it is the
+    /// same defect class as V1's cardinality gate: a criterion calibrated
+    /// at one scale and applied across scales.
+    ///
+    /// This measures it rather than assuming it either way: a single cell
+    /// placed against bars of growing length, all touching edge-to-edge.
+    #[test]
+    fn the_adjacency_band_against_a_size_mismatch() {
+        let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
+        let mut admitted = 0usize;
+        let mut rows: Vec<String> = Vec::new();
+        for n in 1..=6i64 {
+            // A bar of `n` cells along the row, and one cell touching its
+            // left end edge-to-edge. Both are genuinely in contact.
+            let bar: Vec<(i64, i64, i64)> = (0..n).map(|c| (0, c, 0)).collect();
+            let cell = vec![(0, -1, 0)];
+            let (a, b) = (blade::shape_of(&cell), blade::shape_of(&bar));
+            let Some(face) = blade::Interface::between(&a.blade, &b.blade) else {
+                rows.push(format!("n={n}: no interface"));
+                continue;
+            };
+            let sq = &face.strain.num * &face.strain.num;
+            let four = q(4);
+            let adjacent = face.strain.num > q(0)
+                && sq > face.strain.den2
+                && sq <= four * &face.strain.den2;
+            if adjacent {
+                admitted += 1;
+            }
+            rows.push(format!(
+                "n={n}: δ² = {}/{} → {} ({:?})",
+                sq,
+                face.strain.den2,
+                if adjacent { "ADMITTED" } else { "turned away" },
+                face.strain.side()
+            ));
+        }
+        for r in &rows {
+            eprintln!("  {r}");
+        }
+        eprintln!("  admitted {admitted} of 6 touching pairs");
+        // WHICH BOUND DOES THE CLIQUE TEST ACTUALLY NEED? Eight bodies on
+        // ONE SITE overlap, so their nuclei nest and `δ < 1` — the LOWER
+        // bound. If the upper bound is not what keeps a site's occupants
+        // from cliquing, it protects nothing and is pure famine.
+        let shared = vec![(0, 0, 0), (0, 1, 0)];
+        let also = vec![(0, 0, 0), (1, 0, 0)];
+        let (sa, sb) = (blade::shape_of(&shared), blade::shape_of(&also));
+        if let Some(face) = blade::Interface::between(&sa.blade, &sb.blade) {
+            let sq = &face.strain.num * &face.strain.num;
+            eprintln!(
+                "  two bodies SHARING a site: δ² = {}/{} side {:?} — \
+                 caught by the LOWER bound, not the upper",
+                sq,
+                face.strain.den2,
+                face.strain.side()
+            );
+        }
+        // The equal-sized case must admit, or the band is wrong outright.
+        assert!(
+            rows[0].contains("ADMITTED"),
+            "two unit cells edge-to-edge must be adjacent: {}",
+            rows[0]
+        );
+    }
+
     /// D2 — THE METABOLIC LEDGER READS BOTH HALVES, AND NETS THEM PER
     /// LANE (68).
     ///

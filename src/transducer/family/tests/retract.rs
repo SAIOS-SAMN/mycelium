@@ -946,6 +946,7 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
     let (mut extracted, mut spoke) = (0usize, 0usize);
     let (mut obstructed, mut coboundary, mut no_descent) = (0usize, 0usize, 0usize);
     let (mut loops_total, mut acyclic) = (0usize, 0usize);
+    let mut acyclic_residue = 0usize;
     let mut pairs_hist: [usize; 8] = [0; 8];
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
@@ -976,6 +977,10 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
                 coboundary += 1;
                 pairs_hist[pairs.min(7)] += 1;
             }
+            Withheld::Acyclic { pairs, .. } => {
+                acyclic_residue += 1;
+                pairs_hist[pairs.min(7)] += 1;
+            }
             Withheld::NoDescent => {
                 no_descent += 1;
                 spoke += 1;
@@ -984,7 +989,8 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
     }
     eprintln!(
         "  withhold census over {} tasks: extracted {extracted} | H1-OBSTRUCTION {obstructed} \
-         COBOUNDARY {coboundary} NO-DESCENT {no_descent} (spoke {spoke})",
+         COBOUNDARY {coboundary} ACYCLIC-UNASKABLE {acyclic_residue} \
+         NO-DESCENT {no_descent} (spoke {spoke})",
         names.len()
     );
     eprintln!("  coboundary residue by train pairs failed: {pairs_hist:?}");
