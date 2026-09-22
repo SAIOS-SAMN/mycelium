@@ -11173,6 +11173,240 @@ bubble/idea.rs          candidates re-derived at hold, never stored
 court/…/listing.rs      open_unspellable, docket_letter — the promotion
 ```
 
+
+## 68. The instruments, and what they measured (ruled 2026-09-22)
+
+Directive 1 asked for counters on every plane of both halves; directive 2
+for entropy, syntropy and metabolic rate; directive 4 for a valve line per
+gate. What they found was that three of four instruments were first placed
+at sites that could not answer, and the placements were caught by readings
+that came back too clean rather than by review.
+
+### 68.1 D1 — the plane census, and two wrong placements
+
+Ten counters, one per bivector plane of `Cl(4,1)`, split into the harmonic
+six and the luminal four, so a recut reads DIMENSIONAL CAPACITY rather than
+throughput. Clause 5's defect — declaring capacity and never populating it
+— was until now indistinguishable from not declaring it.
+
+The first placement censused the CARRIAGE alone and read zero on the whole
+harmonic half BY CONSTRUCTION: a transition is `D(ρ)·T(t)·R` and its halves
+live in different algebras (L11e), the carriage in `Cl(3,1)` and the rotor
+over all six planes of `Cl(4,0)`. One producer now takes both, so `read`
+counts a transition once and `coupled` can see a screw at all.
+
+The second placement sat in `classify`, which fires THREE TIMES over 36
+corpus forms. A census there is cold by construction. It sits at
+`peel_versor_with_target` instead, where the rotor has been EXTRACTED —
+censusing a composite versor's raw grade-2 part would light `eᵢ∧e₋` from a
+pure translation and report boosts that never happened.
+
+Measured, 368 transitions:
+
+```
+    harmonic: e12 7   e13 0   e23 0   e1p 20  e2p 25  e3p 0
+    luminal:  e1m 20  e2m 25  e3m 0   epm 10   | coupled 7
+```
+
+`e1p = e1m` and `e2p = e2m` EXACTLY. That is the translator's signature —
+`T = 1 − ½t∧e_∞` puts equal weight on both null poles — so those four
+counters are ONE fact and the engine never boosts. Four live generators of
+ten declared: one turn plane, two translation axes, one dilation.
+
+### 68.2 V1 — the oblique split, recut in `Cl(4,1)`
+
+`Oblique` answered for four facts of opposite permanence, and a demand
+minted from it would ask the court to adjoin a generator for relations that
+HAVE no rotor. Three arms now: `Mirrored` (improper), `Incongruent` (the
+bodies differ in a quantity no conformal motion changes), and `Oblique`
+(NOT PROVED PERMANENT — weaker and more honest than "mutable").
+
+THE FIRST CUT WAS EUCLIDEAN AND WAS RIPPED OUT. It carried a table of the
+four improper elements of `D₄`, applied each to the CELLS about the
+centroid, compared coordinate lists, and rested permanence on the
+crystallographic restriction of `ℤ²`. Three flattenings in one helper: a
+hardcoded generator set, raw coordinate scraping in place of geometry, and
+a lattice argument. None of it means anything in `Cl(4,1)`.
+
+The intrinsic reading is an ODD invariant of the body's own normalised
+tower. Under a rotation `h_m ↦ e^{imφ}h_m`; under a reflection in the axis
+at `α`, `h_m ↦ e^{imα}·conj(h_m)`. So
+
+```
+    Z = h₂² · conj(h₄)
+```
+
+is rotation-INVARIANT and CONJUGATED by every reflection, whatever axis it
+is taken about. Even moments are each blind to a reflection on their own
+axis; their product at mismatched orders is not, because the phases cancel
+against each other rather than against themselves.
+
+CHIRALITY ANSWERS THE ODD QUESTION ONLY, and the first recut got that wrong
+too. `Z` is REAL for every achiral body, so all of them share one ray and
+the gate degenerated to "handedness does not forbid it" — measured, a
+domino and an L-tromino passed it. A.12's scale certificate is the even
+half and was already built; both gates must pass.
+
+WHAT THE RECUT GAINED, not just cleaned: `L4` against its 2× dilate now
+reads `Turn` — the cardinality test refused every dilated pair by
+construction — and `Z` stands in the ratio `256 = 2⁸` exactly on both
+components, which is A.12's degree confirmed numerically. `J4` against that
+dilate reads `Mirrored`: a reflection ACROSS a change of scale, four cells
+against sixteen, which no cell comparison can reach.
+
+### 68.3 The odd harmonic, and the quartic branch's missing turns
+
+`h₃ = Σ(x+iy)³/M₀` is the odd invariant the half-turn comment said was not
+carried. Two consecutive orders give `φ` outright — `z₃·conj(z₂)` has
+argument `3φ − 2φ = φ` — exactly, over ℚ, at any relative scale. Exact on
+laminae with NO correction term: a unit square at `(a,b)` has `∫x³ = a³ +
+a/4` and `∫xy² = a(b² + 1/12)`, so the square's own odd moments cancel
+identically and the point-mass formula IS the integral.
+
+WHERE IT VANISHES THE FREEDOM IS REAL. `h₃ = 0` exactly when the body has
+2-fold symmetry, because the half turn maps it to itself and sends `h₃ ↦
+−h₃`. Both candidates then act IDENTICALLY, so `HalfOpen` is a property of
+the BODY rather than a gap in the reader.
+
+And the quartic branch offered two turns of four: a moment of azimuthal
+order `m` turns at `m·φ`, so at `m = 4`, `wedge = 0, dot > 0` is `4φ ≡ 0`
+— EVERY quarter turn — while the reader tried `[0, 2]`.
+
+### 68.4 D3 — the mint, and the four gates that can refuse it
+
+`word_or_demand_on_chart` opened with `let car = carriage(a, b)?;` — no
+versor, no vertex, no demand, relation gone. That bare `?` is where 37.7's
+pipeline starves.
+
+A rotor is a RAY, so it is a Gaussian integer `w` with `arg(w) = φ/2` and
+`w⁴ ∝ z` up to a POSITIVE rational. That makes the spellable set exactly
+`z ~ +1` (`w = 1`) and `z ~ −1` (`w = 1+i`, since `(1+i)⁴ = −4`) — which
+are precisely the two `wedge == 0` branches already in `relative_rotor`.
+
+Four gates, every one able to refuse: `Oblique` and nothing else; ORDER 2
+only (the quartic reads `4φ`, so its witness would name a rotation at half
+the angle the pair stands at, and the court cannot tell which harmonic
+produced a block); a PRIMITIVE arc (a composite mints letters the court can
+only throw out, since `gcd(s+t·i, p)` would return norm `p²`); and a prime
+the alphabet lacks (`z ~ ±i` has norm 1 and names none).
+
+Verified through the whole chain the court walks: arc `26 − 7i`, norm
+`725 = 5²·29`, the alphabet's own 5s divide out, prime 29, Euclid returns
+`5 + 2i` with norm exactly 29. Accepted.
+
+### 68.5 D2 — the ledger, and what mu is not
+
+Entropy is `Drained::Cauterized` and `Descended::Released`, counted APART
+because they terminate different skeleta. Syntropy is READ from
+`FieldTally::condensed`, never duplicated. The orbit is `ℓ = Order(R)`, the
+discrete structure `μ` is CARRIED BY. The rate is `Reserve::draw/restore`
+per lane, four lanes never summed (#34).
+
+A proposal to carry field energy as `μ = δ²` was DECLINED. `μ` is the
+engine's kinematic charge, related to the inversive distance by `μ =
+(δ−1)/2`, and writing a second quantity under that name is the defect A.12
+was raised to fix in the harmonic tower.
+
+### 68.6 The instrument that measured a dead type
+
+`draw [0,0,0,0]` does NOT mean the engine never spends budget.
+`physics::budget::Reserve` has NO PRODUCTION CALLERS — it is exported and
+used only in tests. The voices' attention carrier is `self.physics.reserve`
+in `client/sdk/entity/think.rs`. The counter was placed on a dead type,
+which is the third cold site of the session after the carriage-only census
+and cold `classify`.
+
+THE LESSON IS A RULE. No counter without its denominator, and no reading
+without an askability bit. `FieldTally` does it right — `offered` → named
+gates → `condensed`, so a zero says WHERE flow stopped.
+
+## 69. The censuses, and the ground they stood on (ruled 2026-09-22)
+
+Every figure in this chapter was taken against bodies as chapter 20 defined
+them — ONE HUE EACH. 70 supersedes that, and 70.5 rules that none of these
+numbers survives unchanged. They are recorded as what was read, and H4 is
+the row that re-takes them.
+
+### 69.1 The withhold census, and a vacuity caught in it
+
+`Form::delta1()` — the Čech coboundary, the exact non-abelian cocycle this
+engine computes — was called in ONE place in the tree: inside `why_open` in
+`speak.rs`, to build a string for an `eprintln!`. And it was not reached
+where it mattered: a form with a positional residue is withheld on a branch
+ABOVE it.
+
+`Withheld` makes the classification a structure: `LoopObstruction` (a class
+in `H¹`, permanent), `CoboundaryResidue` (the loops close and the cochain
+does not), `Acyclic`, `NoDescent`.
+
+THE FOURTH ARM IS THE VACUITY FIX. The first cut folded `Acyclic` into
+`CoboundaryResidue`, asserting "every loop closes" of a form with NO LOOPS.
+A tree has `H¹ = 0` by construction, so its cochain is a coboundary
+TRIVIALLY and the reading says nothing:
+
+```
+    before   H1-OBSTRUCTION 0   COBOUNDARY 34                  NO-DESCENT 2
+    after    H1-OBSTRUCTION 0   COBOUNDARY  2   ACYCLIC 32     NO-DESCENT 2
+```
+
+The "34 potential valids" was 32 vacuous and 2 real. `is_mutable()` stays
+FALSE for `Acyclic`: on a tree the answer is UNKNOWN rather than yes, and a
+policy that retains on an unasked question retains everything.
+
+### 69.2 The horizon turns away bodies that are touching
+
+`δ = (d² − r_a² − r_b²)/(2·r_a·r_b)` and the field admits only `1 < δ ≤ 2`.
+Measured, a single cell placed edge-to-edge against bars of growing length:
+
+```
+    n=1   δ² = 4     ADMITTED
+    n=2   δ² = 10    turned away, "Apart"
+    n=3..6           turned away, "Apart"
+```
+
+All six are in contact; only the EQUAL-SIZED pair is admitted. `δ = 2` is
+not a similarity class of adjacency — it is the inversive distance of two
+unit cells at distance 1. The scale-free proof showed invariance when BOTH
+bodies dilate together; it was applied as though invariant under
+INDEPENDENT scaling, which it is not.
+
+AND THE UPPER BOUND IS NOT WHAT PREVENTS THE CLIQUE. Two bodies sharing a
+site read `δ² = 0.16`, Intersecting — the LOWER bound. The band was
+narrowed to `≤ 2` to fix an over-count the lower bound already handled.
+What the upper bound carries is PROXIMITY, so it cannot simply be removed.
+This is T4 unlanded: a dialled `μ_c` is the `STROKE = 4` defect again.
+
+### 69.3 A.14 — the moment tower cannot carry contact
+
+A sound pair reading is CONSTANT on a contact family. Measured:
+
+```
+    rank-1 (Tr(I)/M₀):     4, 10, 81/5, 392/17, 400/13, 1458/37
+    rank-2 (directional):  25, 121/4, 361/9, 841/16, 1681/25, 3025/36
+```
+
+The rank-2 column is exactly `δ = n + 3 + 1/n`, derived before it was run.
+BOTH GROW. A second moment is an RMS SPREAD and contact is a BOUNDARY: for
+a uniform bar the two differ by `√3` and the shortfall compounds. No
+finite-order tower of the two bodies taken SEPARATELY recovers a boundary.
+
+A multipole contraction fails for a third reason: a unit cell's deviatoric
+VANISHES, so `tr(Ĩ_A Ĩ_B)` is identically zero on the whole family.
+
+**A.14 — a body-pair relation is the same primitive that defines a body.**
+A body is a connected component under lamina incidence; two bodies are in
+contact iff an incidence edge joins them. `incidence_of_3d` is explicitly
+"never a distance test against every lamina", and the invariance obligation
+is met BY CONSTRUCTION because the reading never consults extent.
+
+NOT A COUNT. The contact face is the SET of edges with their coordinates
+and its edge transport (50.3) — a tally would be count-as-choice (rule 2)
+and would discard the interface it was meant to name.
+
+The `δ` machinery is not wrong and is not removed: `Strain`, the five
+inversive regimes and the antipodal involution soundly say WHAT a relation
+is like. They were being asked WHETHER one exists, which is topological and
+was answered upstream.
 ## 70. Hue is a fiber, not a base — chapter 20 superseded (ruled 2026-09-22)
 
 Chapter 20 ruled on 2026-09-09 that A BODY IS ONE HUE. Two weeks of
