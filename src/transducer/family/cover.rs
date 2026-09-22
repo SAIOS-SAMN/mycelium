@@ -33,8 +33,9 @@
 //! shell kind, hue, and its support written out — so no arrival index
 //! survives into the nerve (rule 6, rule 15).
 
-use super::pieces::{assembly_key, carriage_key, meet_key, pieces_of};
+use super::pieces::pieces_of;
 use super::*;
+use crate::network::nerve::coord;
 
 /// WHAT THE COVERS OF ONE WALK READ. An instrument and nothing else: no
 /// cognition reads it, no branch consults it, and it is taken and cleared
@@ -170,6 +171,15 @@ pub struct CoverTally {
     pub chords: u64,
     pub within_class: u64,
     pub unclassed: u64,
+    /// §4.4 E8 — A KEY THIS READER WROTE AND COULD NOT READ BACK.
+    ///
+    /// The cover's three carriers are keyed by [`coord::Piece`],
+    /// [`coord::Carriage`] and [`coord::Meet`], each of which decodes or
+    /// refuses. A refusal is this reader failing on its own layout, which
+    /// is a defect and not a reading of the corpus, so it is counted apart
+    /// from every "nothing was there" above: absorbed into one of those it
+    /// would read as an empty cover.
+    pub undecodable: u64,
 }
 
 thread_local! {
@@ -259,16 +269,17 @@ pub(crate) type CarriedPiece = (Vertex, Versor, Supports);
 /// that filled them.
 pub(crate) struct Cover {
     /// The word vertex of each carried piece, the versor that carried it,
-    /// and the support it landed on — by `carriage_key(domain, codomain)`.
+    /// and the support it landed on — by the [`coord::Carriage`] it is.
     /// The support rides along because the form needs it for the vertex's
     /// place and the cover has already computed it.
-    pub(crate) carried: crate::network::nerve::Keyed<CarriedPiece>,
-    /// THE 1-SIMPLICES OF THE NERVE, by the meet's own address. The address
-    /// IS the unordered pair of carriage keys, so the ends are read back
-    /// with `meet_ends` and not stored a second time beside it (law 12).
-    /// No transition and no class — the face between two vertices is the
-    /// form's to compute and the cycle's holonomy is the form's to read.
-    pub(crate) meets: crate::network::nerve::Keyed<()>,
+    pub(crate) carried: crate::network::nerve::Keyed<CarriedPiece, coord::Carriage>,
+    /// THE 1-SIMPLICES OF THE NERVE, by the meet's own coordinate. The
+    /// coordinate IS the unordered pair of carriages, so the ends are read
+    /// back with [`coord::Meet::ends`] and not stored a second time beside
+    /// it (law 12). No transition and no class — the face between two
+    /// vertices is the form's to compute and the cycle's holonomy is the
+    /// form's to read.
+    pub(crate) meets: crate::network::nerve::Keyed<(), coord::Meet>,
     /// A PIECE THE COVER CARRIED GEOMETRICALLY AND COULD NOT SPELL, by
     /// cover-piece address: `carriage` found the versor and `word_or_demand`
     /// refused its rotor. Kept as the demand the peel typed, so the piece
@@ -281,7 +292,7 @@ pub(crate) struct Cover {
     /// the ring itself: it is inside the memoised percept and 50.2 step 2
     /// forbids the crystal there, so the candidate is carried out to
     /// `derive_against`, which runs per mind.
-    pub(crate) refused: crate::network::nerve::Keyed<Demanded>,
+    pub(crate) refused: crate::network::nerve::Keyed<Demanded, coord::Carriage>,
     /// What no piece carried, as a VOLUME on four lanes (law 5): the
     /// input's laminae no piece carried and the image's laminae no piece
     /// reached (50.8 case 4). A count of laminae is not this quantity —
@@ -365,8 +376,15 @@ pub(crate) fn cover_deformation(
     // Site → the input piece holding it. This is Φ: the positional
     // correspondence over the two supports, which is what a
     // deformation-in-place has in place of a whole-body versor.
-    let mut occ_in: crate::network::nerve::Keyed<Vec<u8>> = crate::network::nerve::Keyed::new();
-    for (k, p) in ins.scoped() {
+    //
+    // THE OCCUPANT IS THE PIECE'S COORDINATE, not its bytes (§4.4 E8): the
+    // decode happens once, here, where the pieces index is walked, and the
+    // pullback below reads a [`coord::Piece`] back rather than re-deriving
+    // one from a key it was handed.
+    let mut occ_in: crate::network::nerve::Keyed<coord::Piece> =
+        crate::network::nerve::Keyed::new();
+    let (in_pieces, in_refused) = ins.decoded();
+    for (k, p) in &in_pieces {
         for &(r, c, f, _) in &p.body.laminae {
             occ_in.insert(base_key(r, c, f), k.clone());
         }
@@ -375,7 +393,16 @@ pub(crate) fn cover_deformation(
     let mut placed = std::mem::replace(&mut st.placed, crate::network::nerve::Keyed::new());
     let mut consumed = std::mem::replace(&mut st.consumed, crate::network::nerve::Keyed::new());
     let mut reached = std::mem::replace(&mut st.reached, crate::network::nerve::Keyed::new());
-    let out_keys: Vec<Vec<u8>> = outs.scoped().map(|(k, _)| k).collect();
+    // A KEY THAT DID NOT DECODE IS A READING (rule 11). Both peels write
+    // their own [`coord::Piece`] keys, so a refusal here is this reader
+    // failing to read back what it wrote and is counted where it happens —
+    // never absorbed into "no pieces", which is a different fact.
+    let (out_pieces, out_refused) = outs.decoded();
+    let undecodable = (in_refused.len() + out_refused.len()) as u64;
+    if undecodable > 0 {
+        tally(|t| t.undecodable += undecodable);
+    }
+    let out_keys: Vec<coord::Piece> = out_pieces.iter().map(|(k, _)| k.clone()).collect();
     // THE PARK, written once: everything the stroke MEASURED, and nothing
     // about where it was. It is taken by value, so there is one place a
     // half-run cover is stored and no site can forget a carrier.
@@ -400,13 +427,14 @@ pub(crate) fn cover_deformation(
     // reports (50.8 case 4).
     for ko in &out_keys {
         'piece: {
-        let Some(op) = outs.get(ko) else { break 'piece };
+        let Some(op) = outs.at(ko) else { break 'piece };
         // The preimage: the input pieces named under this piece's own
         // sites, deduped by their address and read in key order.
-        let mut named: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        let mut named: crate::network::nerve::Keyed<(), coord::Piece> =
+            crate::network::nerve::Keyed::new();
         for &(r, c, f, _) in &op.body.laminae {
             if let Some(ki) = occ_in.get(&base_key(r, c, f)) {
-                named.insert(ki, ());
+                named.put(ki, ());
             }
         }
         // Φ⁻¹(V) IS ONE SET: assembled whole and carried once, closed up to
@@ -414,9 +442,13 @@ pub(crate) fn cover_deformation(
         // peels are under no obligation to agree on granularity, and this
         // is why they need not (50.8).
         let mut laminae: Vec<Lamina> = Vec::new();
-        let mut parts: Vec<Vec<u8>> = Vec::new();
-        for (ki, ()) in named.scoped() {
-            let Some(ip) = ins.get(&ki) else { continue };
+        let mut parts: Vec<coord::Piece> = Vec::new();
+        let (named_pieces, named_refused) = named.decoded();
+        if !named_refused.is_empty() {
+            tally(|t| t.undecodable += named_refused.len() as u64);
+        }
+        for (ki, ()) in named_pieces {
+            let Some(ip) = ins.at(&ki) else { continue };
             laminae.extend_from_slice(&ip.body.laminae);
             parts.push(ki);
         }
@@ -426,10 +458,10 @@ pub(crate) fn cover_deformation(
             break 'piece;
         };
         // SETTLED? The preimage is a function of this piece's own sites, so
-        // the carriage's address is too: placed or refused, this piece is
+        // the carriage's coordinate is too: placed or refused, this piece is
         // read once however many strokes the cover takes.
-        let settled = carriage_key(&assembly_key(&parts), ko);
-        if cover.carried.contains(&settled) || cover.refused.contains(&settled) {
+        let key = coord::Carriage { domain: parts.clone(), codomain: vec![ko.clone()] };
+        if cover.carried.holds(&key) || cover.refused.holds(&key) {
             break 'piece;
         }
         // ONE READ PER CARRIAGE ATTEMPT, charged at the attempt and not at
@@ -440,7 +472,6 @@ pub(crate) fn cover_deformation(
             park!();
         }
         let Some(car) = carriage_with_core(&pre, &op.body) else { break 'piece };
-        let key = carriage_key(&assembly_key(&parts), ko);
         // The carriage is CONFIRMED here — a versor exists and carries the
         // preimage onto this piece. If its rotor does not spell, that is
         // 37.7 and not a failure to carry, so the piece is kept as the
@@ -449,7 +480,7 @@ pub(crate) fn cover_deformation(
         let v = match word_or_demand(&pre, &op.body) {
             Some(Ok(v)) => v,
             Some(Err(demanded)) => {
-                cover.refused.insert(&key, demanded);
+                cover.refused.put(&key, demanded);
                 break 'piece;
             }
             // No sensor-plane block at all: the versor is not one this
@@ -460,11 +491,11 @@ pub(crate) fn cover_deformation(
             reached.insert(base_key(r, c, f), ());
         }
         for ki in &parts {
-            consumed.insert(ki, ());
+            consumed.put(ki, ());
         }
         let supports = Supports { domain: support_of(&pre), codomain: support_of(&op.body) };
-        placed.insert(&key, supports.clone());
-        cover.carried.insert(&key, (v, car.v, supports));
+        placed.put(&key, supports.clone());
+        cover.carried.put(&key, (v, car.v, supports));
         }
     }
 
@@ -483,8 +514,9 @@ pub(crate) fn cover_deformation(
     // A piece no placed versor lands on a piece is UNCARRIED and reports in
     // `uncarried` below: the deformation has a part the rest of it does not
     // explain, which is a demand (50.8 case 4).
-    let mut occ_out: crate::network::nerve::Keyed<Vec<u8>> = crate::network::nerve::Keyed::new();
-    for (k, p) in outs.scoped() {
+    let mut occ_out: crate::network::nerve::Keyed<coord::Piece> =
+        crate::network::nerve::Keyed::new();
+    for (k, p) in &out_pieces {
         for &(r, c, f, _) in &p.body.laminae {
             occ_out.insert(base_key(r, c, f), k.clone());
         }
@@ -500,26 +532,27 @@ pub(crate) fn cover_deformation(
         }
     }
     let propagate: Vec<Versor> = versors.scoped().map(|(_, v)| v.clone()).collect();
-    let in_keys: Vec<Vec<u8>> = ins.scoped().map(|(k, _)| k).collect();
+    let in_keys: Vec<coord::Piece> = in_pieces.iter().map(|(k, _)| k.clone()).collect();
     // A consumed input piece is skipped at its own address, as a placed
     // carriage is in (a): the cover's state answers it, not a cursor.
     for ki in &in_keys {
         'piece: {
-        if consumed.contains(ki) {
+        if consumed.holds(ki) {
             break 'piece;
         }
-        let Some(ip) = ins.get(ki) else { break 'piece };
+        let Some(ip) = ins.at(ki) else { break 'piece };
         for pv in &propagate {
             // WHERE THIS VERSOR PUTS THE PIECE. Each lamina's center is
             // carried and the output piece holding it is read by position;
             // a lamina whose image the lattice does not hold is one this
             // reader did not carry (W6) and names nothing.
-            let mut named: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+            let mut named: crate::network::nerve::Keyed<(), coord::Piece> =
+                crate::network::nerve::Keyed::new();
             for &(r, c, f, _) in &ip.body.laminae {
                 let Some(p) = element::carry_center(pv, r, c, f) else { continue };
                 let Some((tr, tc, tf)) = element::site_of(&p) else { continue };
                 if let Some(ko) = occ_out.get(&base_key(tr, tc, tf)) {
-                    named.insert(ko, ());
+                    named.put(ko, ());
                 }
             }
             // Φ(U) IS ONE SET, as Φ⁻¹(V) is in (a). The two peels are under
@@ -528,9 +561,13 @@ pub(crate) fn cover_deformation(
             // once; one candidate, not several, and no piece cut across the
             // image boundary.
             let mut laminae: Vec<Lamina> = Vec::new();
-            let mut parts: Vec<Vec<u8>> = Vec::new();
-            for (ko, ()) in named.scoped() {
-                let Some(op) = outs.get(&ko) else { continue };
+            let mut parts: Vec<coord::Piece> = Vec::new();
+            let (named_pieces, named_refused) = named.decoded();
+            if !named_refused.is_empty() {
+                tally(|t| t.undecodable += named_refused.len() as u64);
+            }
+            for (ko, ()) in named_pieces {
+                let Some(op) = outs.at(&ko) else { continue };
                 laminae.extend_from_slice(&op.body.laminae);
                 parts.push(ko);
             }
@@ -542,8 +579,17 @@ pub(crate) fn cover_deformation(
             // A carriage already placed between this piece and this image is
             // not attempted again: the cover's own carriers answer it at the
             // address the attempt would write.
-            let key = carriage_key(ki, &assembly_key(&parts));
-            if cover.carried.contains(&key) || cover.refused.contains(&key) {
+            // BOTH SIDES ARE LISTS (§4.4 E8). The pullback names one output
+            // piece and assembles its domain; this pass names one input
+            // piece and assembles its image. Each side is a list of pieces,
+            // so a carriage between two WHOLE pieces has one coordinate
+            // whichever pass placed it — where `assembly_key` had to
+            // collapse a one-piece assembly to that piece's bare bytes to
+            // get the same agreement, at the cost of an address that did
+            // not say what it was.
+            let key =
+                coord::Carriage { domain: vec![ki.clone()], codomain: parts.clone() };
+            if cover.carried.holds(&key) || cover.refused.holds(&key) {
                 continue;
             }
             // One read per carriage ATTEMPT, charged where the attempt is.
@@ -557,7 +603,7 @@ pub(crate) fn cover_deformation(
             let v = match word_or_demand(&ip.body, &img) {
                 Some(Ok(v)) => v,
                 Some(Err(demanded)) => {
-                    cover.refused.insert(&key, demanded);
+                    cover.refused.put(&key, demanded);
                     continue;
                 }
                 None => continue,
@@ -565,11 +611,11 @@ pub(crate) fn cover_deformation(
             for &(r, c, f, _) in ip.body.laminae.iter().chain(img.laminae.iter()) {
                 reached.insert(base_key(r, c, f), ());
             }
-            consumed.insert(ki, ());
+            consumed.put(ki, ());
             let supports =
                 Supports { domain: support_of(&ip.body), codomain: support_of(&img) };
-            placed.insert(&key, supports.clone());
-            cover.carried.insert(&key, (v, car.v, supports));
+            placed.put(&key, supports.clone());
+            cover.carried.put(&key, (v, car.v, supports));
         }
         }
     }
@@ -591,31 +637,63 @@ pub(crate) fn cover_deformation(
     cover.uncarried = element::measure_lanes(&left);
     cover.reached = reached.clone();
 
-    // (d) THE MEETS, from a keyed occupancy of the placed supports and
-    // their rings (rule 1: never a pair loop over the pieces). A site
-    // holding two or more placed pieces IS a meet, and the meet is
-    // addressed by its two ends; a site holding k of them is k−1 meets.
-    // The two sides are filed under DISTINCT keys — a side byte ahead of
-    // the position — so a domain site and a codomain site that happen to
-    // sit at one grid position are not read as a meet. They are sites of
-    // two different spaces that the correspondence relates; only the
-    // versor relates them, and a shared coordinate is a coincidence of the
-    // embedding, not an overlap.
-    let mut occ: crate::network::nerve::Keyed<Vec<Vec<u8>>> = crate::network::nerve::Keyed::new();
-    for (k, p) in placed.scoped() {
+    // (d) THE MEETS, from a keyed occupancy of the placed supports (rule 1:
+    // never a pair loop over the pieces). A site holding two or more placed
+    // pieces IS a meet, and the meet is addressed by its two ends; a site
+    // holding k of them is k−1 meets. The two sides are filed under
+    // DISTINCT keys — a side byte ahead of the position — so a domain site
+    // and a codomain site that happen to sit at one grid position are not
+    // read as a meet. They are sites of two different spaces that the
+    // correspondence relates; only the versor relates them, and a shared
+    // coordinate is a coincidence of the embedding, not an overlap.
+    //
+    // THE RING IS GONE, AND WITH IT THE LAST STENCIL IN THE NERVE (58.3,
+    // ruled 2026-09-22). This walked `support ∪ ring_of_support(support)`,
+    // so a 1-simplex existed wherever two supports came within one 4-step
+    // of each other while a 2-simplex needed three of them on one cell. A
+    // Cech nerve is functorial over ONE cover:
+    //
+    //     σ = [v₀ … v_k] ∈ N_k(𝒰)  ⟺  ⋂ᵢ U_i ≠ ∅
+    //
+    // and evaluating the 1-skeleton over `𝒰_thick = {S ∪ ring(S)}` while
+    // the 2-skeleton reads `𝒰_bare = {S}` is two competing producers of one
+    // incidence (law 12) — the 1-cells permitted to bridge a gap by raster
+    // dilation, the 2-cells starved unless three solid bodies occupy one
+    // discrete cell. A complex cannot have its dimensions evaluated against
+    // different topologies.
+    //
+    // EXTENDING THE RING UPWARD WOULD HAVE BEEN WORSE. `ring_of_support` is
+    // an extrinsic Manhattan 4-neighbourhood dilation on ℤ², an ad-hoc grid
+    // stencil simulating a systole the physics never performed — the same
+    // harness defect already purged from `extract.rs`. It also resurrects
+    // the pore case this nerve exists to refuse: three mutual neighbours
+    // around a void have overlapping RINGS inside the hole, so a thickened
+    // cover would certify a 2-cell over empty space and kill a real `H₁`
+    // class by fiat.
+    //
+    // WHAT CONTACT IS INSTEAD. Two adjacent bodies do touch, and that is
+    // not a non-empty pixel intersection: under A.10 it is a co-dimensional
+    // tether governed by the phase gradient `R = 1 − v_b v_a`. Contact
+    // between disjoint regions cannot be manufactured by pretending their
+    // coordinates overlap, and this reading now says so.
+    let mut occ: crate::network::nerve::Keyed<Vec<coord::Carriage>> =
+        crate::network::nerve::Keyed::new();
+    let (placed_carriages, placed_refused) = placed.decoded();
+    if !placed_refused.is_empty() {
+        tally(|t| t.undecodable += placed_refused.len() as u64);
+    }
+    for (k, p) in &placed_carriages {
         for (side, support) in [(0u8, &p.domain), (1u8, &p.codomain)] {
-            let ring = ring_of_support(support);
-            for (r, c, f) in support.iter().copied().chain(ring) {
+            for &(r, c, f) in support.iter() {
                 let mut pos = vec![side];
                 pos.extend_from_slice(&base_key(r, c, f));
                 match occ.get_mut(&pos) {
-                    // One piece's sites are offered contiguously — the walk
-                    // above is per piece — and a piece reaches one position
-                    // more than once only through its own ring, so a repeat
-                    // can only be the key just pushed (rule 15: the slice
-                    // pattern reads the value this loop wrote).
+                    // `support_of` dedups, and one piece's sites are offered
+                    // contiguously — the walk above is per piece — so a
+                    // repeat can only be the key just pushed (rule 15: the
+                    // slice pattern reads the value this loop wrote).
                     Some(v) => match v.as_slice() {
-                        [.., last] if *last == k => {}
+                        [.., last] if last == k => {}
                         _ => v.push(k.clone()),
                     },
                     None => {
@@ -640,8 +718,8 @@ pub(crate) fn cover_deformation(
         for w in here.windows(2) {
             let [ka, kb] = w else { continue };
             'meet: {
-                let key = meet_key(ka, kb);
-                if cover.meets.contains(&key) {
+                let key = coord::Meet::of(ka.clone(), kb.clone());
+                if cover.meets.holds(&key) {
                     break 'meet;
                 }
                 if !paid {
@@ -656,7 +734,7 @@ pub(crate) fn cover_deformation(
                 // vertices they become, and the class of a cycle of faces
                 // is the form's loop holonomy — both the form's to compute,
                 // over the whole cycle rather than edge by edge here.
-                cover.meets.insert(&key, ());
+                cover.meets.put(&key, ());
             }
         }
     }

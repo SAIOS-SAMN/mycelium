@@ -78,7 +78,14 @@ where
 }
 
 /// Perception shells of one body. Not letters: the seventeen stay fixed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+///
+/// ORDERED AND HASHABLE because it is a coordinate of [`coord::Piece`]
+/// (§4.4 E8): a piece's address opens with its kind, and a seam's two ends
+/// are stored in canonical order, so the kind has to compare. The order is
+/// the declaration's own and is the same one `as_u8` writes.
+///
+/// [`coord::Piece`]: crate::network::nerve::coord::Piece
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub enum ShellKind {
     #[default]
     Whole,

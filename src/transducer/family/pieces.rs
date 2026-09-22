@@ -27,93 +27,35 @@ pub(crate) struct Piece {
     pub(crate) body: Body,
 }
 
-/// The address of a piece, as content (A21): the shell kind, the hue, and
-/// the support on the three coordinates of the base written out,
-/// length-prefixed.
-pub(crate) fn piece_key(kind: ShellKind, hue: u8, support: &[(i64, i64, i64)]) -> Vec<u8> {
-    let mut k = vec![kind.as_u8(), hue];
-    k.extend_from_slice(&(support.len() as u32).to_le_bytes());
-    for &(r, c, f) in support {
-        k.extend_from_slice(&r.to_le_bytes());
-        k.extend_from_slice(&c.to_le_bytes());
-        k.extend_from_slice(&f.to_le_bytes());
-    }
-    k
-}
-
-/// THE ADDRESS OF AN ASSEMBLED SET OF PIECES: the pieces it is assembled
-/// from, written out length-prefixed in key order. A set of ONE piece is
-/// that piece and keeps its own address, so a carriage onto a whole piece
-/// is named the same way whichever pass placed it.
+/// THE ADDRESSES ARE COORDINATES NOW (§4.4 E8, ruled 2026-09-22). A piece,
+/// a carriage and a meet each decode back to what they name, and the
+/// carriers holding them take the coordinate rather than loose bytes.
 ///
-/// Both passes assemble, and in opposite directions: the pullback takes
-/// Φ⁻¹(V) over the input pieces under an output piece's sites, and the
-/// propagation takes Φ(U) over the output pieces under a carried piece's
-/// image. Neither requires the two peels to agree on granularity, which
-/// is why each is assembled whole and carried once (50.8).
-pub(crate) fn assembly_key(parts: &[Vec<u8>]) -> Vec<u8> {
-    match parts {
-        [only] => only.clone(),
-        many => {
-            let mut k = Vec::new();
-            for p in many {
-                k.extend_from_slice(&(p.len() as u32).to_le_bytes());
-                k.extend_from_slice(p);
-            }
-            k
-        }
-    }
-}
-
-/// THE ADDRESS OF A COVER PIECE, which is a CARRIAGE and not a piece of a
-/// body: the ordered pair of the domain's address in the input and the
-/// codomain's address in the image. Ordered, unlike a meet, because a
-/// carriage has a direction.
+/// The three functions that wrote these keys by hand are gone. What they
+/// wrote is `coord::Piece::encode`, `coord::Carriage::encode` and
+/// `coord::Meet::encode`, and what `meet_ends` read back out is
+/// `coord::Meet::ends`. There is one producer of each layout (law 12) and
+/// it is the one the trie decodes through.
 ///
-/// Keying here by the domain alone would assert that Φ is injective on
-/// the input, and keying by the codomain alone that it is injective on
-/// the image. Neither holds. A shape occurring once in the input and ten
-/// times in the image is one domain carried by ten versors — replication —
-/// and a shape occurring many times in the input and once in the image is
-/// many domains reaching one codomain — merging. Under either injectivity
-/// condition a family with one input piece and ten output pieces places
-/// exactly ONE carriage, the other nine refused by bookkeeping and not by
-/// geometry, and with one piece placed there is no second node in the
-/// nerve and no transition to have an order at all.
-pub(crate) fn carriage_key(domain: &[u8], codomain: &[u8]) -> Vec<u8> {
-    let mut k = Vec::with_capacity(domain.len() + codomain.len() + 8);
-    k.extend_from_slice(&(domain.len() as u32).to_le_bytes());
-    k.extend_from_slice(domain);
-    k.extend_from_slice(&(codomain.len() as u32).to_le_bytes());
-    k.extend_from_slice(codomain);
-    k
-}
-
-/// The unordered pair of two piece addresses: the 1-simplex of the nerve,
-/// named by its two ends and never by their positions.
-pub(crate) fn meet_key(a: &[u8], b: &[u8]) -> Vec<u8> {
-    let (lo, hi) = match a <= b {
-        true => (a, b),
-        false => (b, a),
-    };
-    let mut k = Vec::with_capacity(lo.len() + hi.len() + 8);
-    k.extend_from_slice(&(lo.len() as u32).to_le_bytes());
-    k.extend_from_slice(lo);
-    k.extend_from_slice(&(hi.len() as u32).to_le_bytes());
-    k.extend_from_slice(hi);
-    k
-}
-
-/// The two ends of a meet, read back out of its own address. The key is
-/// the pair, so the nerve stores nothing beside it (law 12).
-pub(crate) fn meet_ends(k: &[u8]) -> Option<(&[u8], &[u8])> {
-    let (n, rest) = k.split_at_checked(4)?;
-    let lo_len = u32::from_le_bytes(n.try_into().ok()?) as usize;
-    let (lo, rest) = rest.split_at_checked(lo_len)?;
-    let (m, rest) = rest.split_at_checked(4)?;
-    let hi_len = u32::from_le_bytes(m.try_into().ok()?) as usize;
-    let (hi, tail) = rest.split_at_checked(hi_len)?;
-    tail.is_empty().then_some((lo, hi))
+/// ONE DEFECT SURFACED IN THE DECLARING. `assembly_key` wrote a ONE-PIECE
+/// assembly as that piece's bare address and a many-piece assembly as a run
+/// of length-prefixed ones, so the bytes did not say which they were: the
+/// collapse existed only so that the pullback (which assembles its domain
+/// and names a single output piece) and the propagation (which names a
+/// single input piece and assembles its image) would agree on the address
+/// of a carriage between two whole pieces. A [`coord::Carriage`] carries a
+/// LIST on both sides and the two passes agree because both sides are
+/// lists, not because one collapses into the other's shape.
+///
+/// [`coord::Piece`]: crate::network::nerve::coord::Piece
+/// [`coord::Carriage`]: crate::network::nerve::coord::Carriage
+/// [`coord::Meet`]: crate::network::nerve::coord::Meet
+pub(crate) fn piece_at(
+    kind: ShellKind,
+    hue: u8,
+    support: &[(i64, i64, i64)],
+) -> crate::network::nerve::coord::Piece {
+    crate::network::nerve::coord::Piece { kind, hue, support: support.to_vec() }
 }
 
 /// THE PIECES OF A BODY ARE BODIES: its one-hue connected components
@@ -137,8 +79,11 @@ pub(crate) fn meet_ends(k: &[u8]) -> Option<(&[u8], &[u8])> {
 /// reading types (50.5), declared from `Cover::uncarried` in `extract.rs`,
 /// never a listing of pieces. `ShellKind::Whole` is the kind of a body read
 /// without a peel — the value, not a placeholder for one.
-pub(crate) fn pieces_of(laminae: &[Lamina]) -> crate::network::nerve::Keyed<Piece> {
-    let mut out: crate::network::nerve::Keyed<Piece> = crate::network::nerve::Keyed::new();
+pub(crate) fn pieces_of(
+    laminae: &[Lamina],
+) -> crate::network::nerve::Keyed<Piece, crate::network::nerve::coord::Piece> {
+    let mut out: crate::network::nerve::Keyed<Piece, crate::network::nerve::coord::Piece> =
+        crate::network::nerve::Keyed::new();
     // One hue at a time, so a component is a piece of ONE colour: a seam
     // between two hues is a meet, not a body (13.9).
     let mut hues: crate::network::nerve::Keyed<Vec<Lamina>> = crate::network::nerve::Keyed::new();
@@ -161,8 +106,8 @@ pub(crate) fn pieces_of(laminae: &[Lamina]) -> crate::network::nerve::Keyed<Piec
                 continue;
             }
             let body = body_of(comp);
-            let k = piece_key(ShellKind::Whole, hue, &support_of(&body));
-            out.insert(k, Piece { body });
+            let k = piece_at(ShellKind::Whole, hue, &support_of(&body));
+            out.put(&k, Piece { body });
         }
     }
     out

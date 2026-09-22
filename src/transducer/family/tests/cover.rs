@@ -185,30 +185,74 @@ fn one_body_that_does_not_carry_whole_is_a_demand_and_not_a_listing() {
 /// (law 12): `meets` was a `Keyed<(Vec<u8>, Vec<u8>)>` holding a second
 /// copy of what its own key already spells, cloned twice per meet. The
 /// form reads the ends back out of the address, so the address must give
-/// them back exactly — including for a piece key that is empty or that
-/// contains the length bytes of another.
+/// them back exactly.
+///
+/// §4.4 E8 — AND NOW THE ADDRESS IS A COORDINATE. `meet_key` and
+/// `meet_ends` were a hand-written pair over loose bytes; the three
+/// addresses of a cover are [`coord::Piece`], [`coord::Carriage`] and
+/// [`coord::Meet`], each of which decodes back to itself or refuses. The
+/// property this test always asserted is the coordinate's own law,
+/// `decode(encode(x)) == x`, and it is asserted here on the value rather
+/// than on a byte pair.
 #[test]
 fn a_meets_address_gives_back_its_two_ends() {
-    use crate::transducer::family::pieces::{meet_ends, meet_key};
-    let cases: [(&[u8], &[u8]); 5] = [
-        (b"a", b"b"),
-        (b"", b"b"),
-        (b"a", b""),
-        (b"", b""),
-        // A key whose bytes look like a length prefix, against a longer one.
-        (&[4, 0, 0, 0, 9, 9], &[1, 0, 0, 0]),
-    ];
-    for (a, b) in cases {
-        let k = meet_key(a, b);
-        let (lo, hi) = meet_ends(&k).expect("a meet address decodes");
-        let want = if a <= b { (a, b) } else { (b, a) };
-        assert_eq!((lo, hi), want, "the ends come back in the order the key sorts them");
-        assert_eq!(meet_key(lo, hi), k, "and re-address to the same meet");
+    use crate::network::nerve::{coord, Coordinate};
+    use crate::transducer::peel::ShellKind;
+    let piece = |kind, hue, support: &[(i64, i64, i64)]| coord::Piece {
+        kind,
+        hue,
+        support: support.to_vec(),
+    };
+    // A PIECE WITH NO SUPPORT, one with a support, and one whose support
+    // length bytes are the shape a length prefix has: the cases the byte
+    // pair had to be checked against by hand.
+    let a = piece(ShellKind::Whole, 0, &[]);
+    let b = piece(ShellKind::Outline, 3, &[(1, 2, 0), (4, 0, 0)]);
+    let c = piece(ShellKind::Magnified, 0, &[(0, 0, 0)]);
+    for p in [&a, &b, &c] {
+        assert_eq!(
+            coord::Piece::decode(p.encode().as_bytes()).as_ref(),
+            Ok(p),
+            "a piece's address gives the piece back"
+        );
+    }
+    // THE ONE-PIECE ASSEMBLY AND THE THREE-PIECE ASSEMBLY ARE TOLD APART.
+    // `assembly_key` wrote a one-piece assembly as that piece's bare bytes
+    // and a many-piece one as a run of length-prefixed pieces, so nothing
+    // could read a carriage address back at all. Both decode now.
+    let one = coord::Carriage { domain: vec![a.clone()], codomain: vec![b.clone()] };
+    let many = coord::Carriage {
+        domain: vec![a.clone(), b.clone(), c.clone()],
+        codomain: vec![b.clone()],
+    };
+    assert_ne!(one.encode(), many.encode(), "two assemblies are two coordinates");
+    for car in [&one, &many] {
+        assert_eq!(
+            coord::Carriage::decode(car.encode().as_bytes()).as_ref(),
+            Ok(car),
+            "a carriage's address gives the carriage back"
+        );
+    }
+    // AND THE SEAM'S TWO ENDS, in the order the coordinate stores them.
+    for (x, y) in [(&one, &many), (&many, &one)] {
+        let m = coord::Meet::of(x.clone(), y.clone());
+        let (lo, hi) = m.ends();
+        assert!(lo <= hi, "the ends come back in the order the coordinate sorts them");
+        assert_eq!(
+            coord::Meet::decode(m.encode().as_bytes()).as_ref(),
+            Ok(&m),
+            "and the seam re-addresses to itself"
+        );
     }
     // A truncated address is a refusal, never a half-read pair (rule 11).
-    let k = meet_key(b"ab", b"cd");
-    for n in 0..k.len() {
-        assert!(meet_ends(&k[..n]).is_none(), "a short address decodes to nothing at {n}");
+    let m = coord::Meet::of(one.clone(), many.clone());
+    let k = m.encode();
+    let bytes = k.as_bytes();
+    for n in 0..bytes.len() {
+        assert!(
+            coord::Meet::decode(&bytes[..n]).is_err(),
+            "a short address decodes to nothing at {n}"
+        );
     }
 }
 
@@ -403,12 +447,15 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
     use crate::transducer::family::cursor;
     let (ga, gb) = four_bodies();
     let (input, image) = (composite(&ga), composite(&gb));
-    fn keys<T>(k: &crate::network::nerve::Keyed<T>) -> Vec<Vec<u8>> {
+    fn keys<T, C: crate::network::nerve::Coordinate>(
+        k: &crate::network::nerve::Keyed<T, C>,
+    ) -> Vec<Vec<u8>> {
         k.scoped().map(|(a, _)| a).collect()
     }
 
-    // WHOLE, in a stroke that cannot end.
+    // WHOLE, in a stroke that cannot end — and WHAT IT SPENT.
     cursor::clear();
+    let _ = crate::transducer::family::cover::take_cover_tally();
     let whole = cover_deformation(
         &input,
         &image,
@@ -416,16 +463,30 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
         &mut crate::physics::Physics::default().stroke_n(1 << 20),
     )
     .expect("a cover that runs to its end");
+    let spend = crate::transducer::family::cover::take_cover_tally().spend;
     assert_eq!(cursor::parked(), 0, "a cover that completed leaves nothing parked");
+    assert!(spend > 1, "the whole cover spends more than one read: {spend}");
 
-    // THE SAME DEFORMATION, one small stroke at a time. The smallest stroke
-    // on this fixture that both needs more than one and reaches the end;
-    // below it the uncarried bodies consume the whole stroke, see above.
+    // THE SAME DEFORMATION, one small stroke at a time, on a stroke DERIVED
+    // FROM THAT SPEND rather than hand-calibrated.
+    //
+    // THE CONSTANT DECAYED SILENTLY (58.3). This read `STROKE = 4` — "the
+    // smallest stroke on this fixture that both needs more than one and
+    // reaches the end" — and purging the ring stencil from the meet index
+    // made the cover cheaper, because a site that yields a meet costs a
+    // read and the ring was inventing those sites. Four reads then covered
+    // the whole deformation in ONE stroke and the test was asserting a
+    // resume it no longer forced. A number calibrated against a cost is a
+    // second carrier of that cost, and the two drifted apart (law 12).
+    //
+    // One less than the whole run's own spend needs at least two strokes by
+    // construction, and is comfortably above the floor the doc names above:
+    // the defects re-read each stroke cost far less than the whole cover.
     cursor::clear();
-    const STROKE: usize = 4;
+    let stroke = (spend - 1) as usize;
     let mut strokes = 0u32;
     let piecewise = loop {
-        let mut small = crate::physics::Physics::default().stroke_n(STROKE);
+        let mut small = crate::physics::Physics::default().stroke_n(stroke);
         match cover_deformation(&input, &image, None, &mut small) {
             Ok(c) => break c,
             Err(_) => {
@@ -439,7 +500,7 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
             }
         }
     };
-    assert!(strokes > 0, "six reads do not cover this deformation in one stroke");
+    assert!(strokes > 0, "a stroke one short of the whole spend cannot finish in one pass");
     assert_eq!(
         keys(&whole.carried),
         keys(&piecewise.carried),

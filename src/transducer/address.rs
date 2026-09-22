@@ -50,6 +50,20 @@ pub const TAG_DEMAND_AT: u8 = 18;
 /// one rather than misreading it.
 pub const TAG_RESIDUAL: u8 = 19;
 
+/// §4.4 E8 — THE THREE ADDRESSES OF A COVER, DECLARED (ruled 2026-09-22).
+///
+/// `pieces.rs` wrote these three by hand and the carriers holding them were
+/// `Keyed<V, coord::Any>`: loose bytes that could not tell a piece's address
+/// from a carriage's, and a carriage's from a meet's. They are genuine
+/// coordinates — a piece IS its shell kind, its hue and its support; a
+/// carriage IS its domain and codomain in that order, because a carriage has
+/// a direction; a meet IS its two carriages unordered, because a seam does
+/// not — so each gets a tag and an invertible reading, and the carriers
+/// answer the coordinate instead of bytes.
+pub const TAG_PIECE: u8 = 20;
+pub const TAG_CARRIAGE: u8 = 21;
+pub const TAG_MEET: u8 = 22;
+
 /// Canonical A21 coordinates of a form, listing, or class. Coarse-first:
 /// a proper prefix is a coarser stratum of the same kind, never a sibling.
 /// Equality is Address-to-Address only: not a chain's bytes, not a socket

@@ -59,8 +59,11 @@ pub struct Chart {
 /// THE CHARTS OF ONE READING, keyed by their own coordinates.
 pub type Cover = Keyed<Chart>;
 
-/// A CHART'S KEY: the reading's tag, then the support written out (A21,
-/// `pieces::piece_key`), of which every prefix is a coarser stratum.
+/// A CHART'S KEY: the reading's tag, then the region written out as the
+/// [`coord::Piece`] it is (A21, §4.4 E8), of which every prefix is a
+/// coarser stratum.
+///
+/// [`coord::Piece`]: crate::network::nerve::coord::Piece
 ///
 /// `ShellKind::Frame` is the kind because a chart is a region of the
 /// GRID'S OWN EXTENT and not a body shell — which is what that member of
@@ -70,7 +73,10 @@ pub type Cover = Keyed<Chart>;
 /// without a second key family (rule 6).
 pub fn chart_key(reading: Reading, hue: u8, support: &[(i64, i64, i64)]) -> Vec<u8> {
     let mut k = vec![reading.tag()];
-    k.extend_from_slice(&super::pieces::piece_key(ShellKind::Frame, hue, support));
+    use crate::network::nerve::Coordinate;
+    k.extend_from_slice(
+        super::pieces::piece_at(ShellKind::Frame, hue, support).encode().as_bytes(),
+    );
     k
 }
 

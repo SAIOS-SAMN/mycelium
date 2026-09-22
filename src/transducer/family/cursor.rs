@@ -35,7 +35,7 @@
 //! 11) — but the placements are KEPT here, off the form, to be finished.
 
 use super::cover::{Cover, Supports};
-use crate::network::nerve::Keyed;
+use crate::network::nerve::{coord, Keyed};
 use std::cell::RefCell;
 
 /// A COVER PART-WAY THROUGH: what it has placed, what it has consumed,
@@ -45,8 +45,11 @@ use std::cell::RefCell;
 /// law 12 keeps one fact on one carrier.
 pub(crate) struct Pending {
     pub(crate) cover: Cover,
-    pub(crate) placed: Keyed<Supports>,
-    pub(crate) consumed: Keyed<()>,
+    /// The two supports of each placed carriage, by the [`coord::Carriage`]
+    /// it is; the input pieces spoken, by the [`coord::Piece`] each is; and
+    /// the sites of the base either body reached.
+    pub(crate) placed: Keyed<Supports, coord::Carriage>,
+    pub(crate) consumed: Keyed<(), coord::Piece>,
     pub(crate) reached: Keyed<()>,
 }
 

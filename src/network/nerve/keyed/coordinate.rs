@@ -290,8 +290,20 @@ pub mod coord {
         }
     }
 
-    /// A CELL OF THE BASE — `(row, col, hue)`, the sensor's lamina, and a
-    /// genuine coordinate of the manifold rather than an ordinal.
+    /// A CELL OF THE BASE — `(row, col, frame)`, the three SPATIAL
+    /// coordinates the sensor writes, and a genuine coordinate of the
+    /// manifold rather than an ordinal.
+    ///
+    /// THE THIRD AXIS IS THE FRAME, NOT THE HUE (§4.4 E8, corrected
+    /// 2026-09-22). It was named `hue` and every caller fed it
+    /// `support_of`'s third component, which is `Lamina`'s `k` — the
+    /// corpus's own `e₃`, 51.3's sixth adjacency direction, the axis
+    /// `at_frame_zero` recentres. The colour never reached this coordinate
+    /// and could not: a cover piece is of ONE hue by construction and
+    /// carries it on [`Piece`], which is why the base a cover is read over
+    /// is three spatial axes and the palette is a coordinate of the chart.
+    /// The bytes are unchanged — three `i64` after the tag — so this is a
+    /// key that now says what it always spelled.
     ///
     /// It exists so the nerve's overlaps can be derived by WALKING THE
     /// BASE. A 2-simplex of a cover is certified by a WITNESS: a cell
@@ -311,7 +323,7 @@ pub mod coord {
     pub struct Lamina {
         pub row: i64,
         pub col: i64,
-        pub hue: i64,
+        pub frame: i64,
     }
 
     impl Coordinate for Lamina {
@@ -322,7 +334,7 @@ pub mod coord {
             let mut buf = vec![7u8];
             buf.extend_from_slice(&self.row.to_le_bytes());
             buf.extend_from_slice(&self.col.to_le_bytes());
-            buf.extend_from_slice(&self.hue.to_le_bytes());
+            buf.extend_from_slice(&self.frame.to_le_bytes());
             CompactBytes::written(buf)
         }
 
@@ -337,7 +349,7 @@ pub mod coord {
             };
             match bytes.first() {
                 Some(7u8) if bytes.len() == 25 => {
-                    Ok(Lamina { row: axis(0)?, col: axis(1)?, hue: axis(2)? })
+                    Ok(Lamina { row: axis(0)?, col: axis(1)?, frame: axis(2)? })
                 }
                 _ => Err(Self::refuse("a lamina cell is a tag byte and three i64")),
             }
@@ -767,6 +779,244 @@ pub mod coord {
             let mut k = Vec::new();
             a::put_bytes(&mut k, self.0.key().as_bytes());
             CompactBytes::written(k)
+        }
+    }
+
+    /// §4.4 E8 — THE THREE COORDINATES OF A COVER (ruled 2026-09-22).
+    ///
+    /// `family::pieces` has always written these three addresses out of
+    /// their own content — "a piece is addressed by its shell kind, its hue
+    /// and its support written out; a carriage by its domain and codomain in
+    /// that order; a meet by its two ends unordered" — and every carrier
+    /// holding one was `Keyed<V, Any>`. The bytes were a coordinate and the
+    /// type said they were not, so a carriage key could be handed to the
+    /// piece index and the trie would answer.
+    ///
+    /// Declaring them closes three of E8's carriers and, in doing so, forced
+    /// one genuine defect into the open: `assembly_key` wrote a ONE-PIECE
+    /// assembly as that piece's bare address and a many-piece assembly as a
+    /// run of length-prefixed ones, so the bytes did not say which they
+    /// were. A carriage now names a list of pieces on each side, always
+    /// length-delimited, and the two passes agree because both sides are
+    /// lists — not because one collapses to the other's shape.
+    ///
+    /// A cell of the base carried into a support is `(row, col, frame)`,
+    /// where FRAME is the sensor's third axis. It is not the hue: a piece is
+    /// of one hue by construction and carries it on its own address, which
+    /// is why the support is three spatial coordinates and the colour is a
+    /// coordinate of the piece.
+    #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct Piece {
+        pub kind: crate::transducer::peel::ShellKind,
+        pub hue: u8,
+        pub support: Vec<(i64, i64, i64)>,
+    }
+
+    /// Three `i64` written and read back in one place, so the support's
+    /// layout has ONE producer and cannot drift between the three
+    /// coordinates that share it (law 12).
+    fn put_support(buf: &mut Vec<u8>, support: &[(i64, i64, i64)]) {
+        buf.extend_from_slice(&(support.len() as u32).to_le_bytes());
+        for &(r, c, f) in support {
+            buf.extend_from_slice(&r.to_le_bytes());
+            buf.extend_from_slice(&c.to_le_bytes());
+            buf.extend_from_slice(&f.to_le_bytes());
+        }
+    }
+
+    fn take_support(bytes: &[u8], pos: &mut usize) -> Option<Vec<(i64, i64, i64)>> {
+        let n = u32::from_le_bytes(bytes.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
+        *pos += 4;
+        let mut out = Vec::with_capacity(n);
+        for _ in 0..n {
+            let axis = |i: usize| -> Option<i64> {
+                let at = *pos + i * 8;
+                Some(i64::from_le_bytes(bytes.get(at..at + 8)?.try_into().ok()?))
+            };
+            out.push((axis(0)?, axis(1)?, axis(2)?));
+            *pos += 24;
+        }
+        Some(out)
+    }
+
+    impl Piece {
+        fn put(&self, buf: &mut Vec<u8>) {
+            buf.push(a::TAG_PIECE);
+            buf.push(self.kind.as_u8());
+            buf.push(self.hue);
+            put_support(buf, &self.support);
+        }
+
+        fn take(bytes: &[u8], pos: &mut usize) -> Option<Piece> {
+            match bytes.get(*pos) {
+                Some(&t) if t == a::TAG_PIECE => *pos += 1,
+                _ => return None,
+            }
+            let kind = crate::transducer::peel::ShellKind::from_u8(*bytes.get(*pos)?)?;
+            *pos += 1;
+            let hue = *bytes.get(*pos)?;
+            *pos += 1;
+            Some(Piece { kind, hue, support: take_support(bytes, pos)? })
+        }
+    }
+
+    impl Coordinate for Piece {
+        const NAME: &'static str = "cover-piece";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Piece;
+
+        fn encode(&self) -> CompactBytes {
+            let mut buf = Vec::new();
+            self.put(&mut buf);
+            CompactBytes::written(buf)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            let mut pos = 0usize;
+            let p = Piece::take(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the bytes do not spell a kind, a hue and a support"))?;
+            match pos == bytes.len() {
+                true => Ok(p),
+                false => Err(Self::refuse("the key carries bytes past its last coordinate")),
+            }
+        }
+    }
+
+    /// A COVER PIECE'S ADDRESS, WHICH IS A CARRIAGE AND NOT A PIECE OF A
+    /// BODY: the ordered pair of the pieces its domain is assembled from and
+    /// the pieces its codomain is assembled from.
+    ///
+    /// ORDERED, unlike a meet, because a carriage has a direction. A LIST on
+    /// BOTH sides, because both passes assemble and in opposite directions:
+    /// the pullback takes `Φ⁻¹(V)` over the input pieces under an output
+    /// piece's sites, the propagation takes `Φ(U)` over the output pieces
+    /// under a carried piece's image, and neither requires the two peels to
+    /// agree on granularity.
+    ///
+    /// Keyed by the domain alone this would assert that `Φ` is injective on
+    /// the input, and by the codomain alone that it is injective on the
+    /// image. Neither holds: one domain carried by ten versors is
+    /// replication, many domains reaching one codomain is merging, and under
+    /// either injectivity condition a family with one input piece and ten
+    /// output pieces places exactly ONE carriage — the other nine refused by
+    /// bookkeeping and not by geometry — leaving no second node in the nerve
+    /// and no transition to have an order at all.
+    #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct Carriage {
+        pub domain: Vec<Piece>,
+        pub codomain: Vec<Piece>,
+    }
+
+    impl Carriage {
+        fn put(&self, buf: &mut Vec<u8>) {
+            buf.push(a::TAG_CARRIAGE);
+            for side in [&self.domain, &self.codomain] {
+                buf.extend_from_slice(&(side.len() as u32).to_le_bytes());
+                for p in side {
+                    p.put(buf);
+                }
+            }
+        }
+
+        fn take(bytes: &[u8], pos: &mut usize) -> Option<Carriage> {
+            match bytes.get(*pos) {
+                Some(&t) if t == a::TAG_CARRIAGE => *pos += 1,
+                _ => return None,
+            }
+            let mut side = || -> Option<Vec<Piece>> {
+                let n =
+                    u32::from_le_bytes(bytes.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
+                *pos += 4;
+                let mut out = Vec::with_capacity(n);
+                for _ in 0..n {
+                    out.push(Piece::take(bytes, pos)?);
+                }
+                Some(out)
+            };
+            let domain = side()?;
+            let codomain = side()?;
+            Some(Carriage { domain, codomain })
+        }
+    }
+
+    impl Coordinate for Carriage {
+        const NAME: &'static str = "cover-carriage";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Carriage;
+
+        fn encode(&self) -> CompactBytes {
+            let mut buf = Vec::new();
+            self.put(&mut buf);
+            CompactBytes::written(buf)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            let mut pos = 0usize;
+            let c = Carriage::take(bytes, &mut pos)
+                .ok_or_else(|| Self::refuse("the bytes do not spell a domain and a codomain"))?;
+            match pos == bytes.len() {
+                true => Ok(c),
+                false => Err(Self::refuse("the key carries bytes past its last coordinate")),
+            }
+        }
+    }
+
+    /// A 1-SIMPLEX OF THE NERVE: two carriages that overlap, named by their
+    /// two ends and never by their positions.
+    ///
+    /// UNORDERED, because a seam has no direction. The pair is put in the
+    /// canonical order at construction, so the two ends read back the way
+    /// they were stored and the nerve keeps nothing beside the key (law 12).
+    #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct Meet {
+        lo: Carriage,
+        hi: Carriage,
+    }
+
+    impl Meet {
+        /// The seam between two carriages, in the order the key stores.
+        pub fn of(a: Carriage, b: Carriage) -> Meet {
+            match a <= b {
+                true => Meet { lo: a, hi: b },
+                false => Meet { lo: b, hi: a },
+            }
+        }
+
+        /// The two ends, read back out of the coordinate itself.
+        pub fn ends(&self) -> (&Carriage, &Carriage) {
+            (&self.lo, &self.hi)
+        }
+    }
+
+    impl Coordinate for Meet {
+        const NAME: &'static str = "cover-meet";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Meet;
+
+        fn encode(&self) -> CompactBytes {
+            let mut buf = vec![a::TAG_MEET];
+            self.lo.put(&mut buf);
+            self.hi.put(&mut buf);
+            CompactBytes::written(buf)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            let mut pos = match bytes.first() {
+                Some(&t) if t == a::TAG_MEET => 1usize,
+                Some(_) => return Err(Self::refuse("the key opens with another system's tag")),
+                None => return Err(Self::refuse("an empty key spells no coordinate")),
+            };
+            let refuse = || Self::refuse("the bytes do not spell two carriages");
+            let lo = Carriage::take(bytes, &mut pos).ok_or_else(refuse)?;
+            let hi = Carriage::take(bytes, &mut pos).ok_or_else(refuse)?;
+            if pos != bytes.len() {
+                return Err(Self::refuse("the key carries bytes past its last coordinate"));
+            }
+            // THE ORDER IS PART OF THE COORDINATE. A key written with its
+            // ends the other way round is a second address for one seam, and
+            // accepting it would break `decode(encode(x)) == x` for the value
+            // it decodes to (rule 11).
+            match lo <= hi {
+                true => Ok(Meet { lo, hi }),
+                false => Err(Self::refuse("a seam's two ends are not in canonical order")),
+            }
         }
     }
 }

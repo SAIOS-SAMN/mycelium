@@ -23,6 +23,78 @@ pub struct Certified {
     pub witness: coord::Lamina,
 }
 
+/// WHAT ONE COVER'S NERVE READ, AS ONE VALUE (58.1, ruled 2026-09-22).
+///
+/// The four numbers are one reading and are produced together, because
+/// each is meaningless without the others: `0 triples` over `0 shared`
+/// cells is a PARTITION — the nerve is a set of isolated points and no
+/// attaching machinery can ever find a 2-cell — while `0 triples` over
+/// many shared cells is a genuine 1-complex whose charts meet in pairs and
+/// never in threes. Read separately and reported separately, those two
+/// would be one number and would say the wrong thing (rule 11).
+///
+/// THE ORDINALS IN `triples` ARE THIS COVER'S OWN. A `Certified.charts`
+/// indexes the slice `read_nerve` was handed, so a caller aggregating
+/// several covers must carry the cover beside the triple or the three
+/// ordinals name charts of no particular cover (rule 15).
+#[derive(Default)]
+pub struct NerveReading {
+    /// Charts offered — one per cover piece, NOT deduplicated by
+    /// footprint. Two carriages drawing on one source region are two
+    /// sections over that region and two charts of the indexed cover;
+    /// folding them into one erases replication, which is the only case
+    /// where a transition between two copies of one shape exists at all.
+    pub charts: usize,
+    /// Cells of the base any chart stands on, and those with two or more
+    /// charts over them.
+    pub cells: usize,
+    pub shared: usize,
+    pub triples: Vec<Certified>,
+    pub refused: Vec<crate::network::nerve::keyed::CoordinateError>,
+}
+
+/// READ THE NERVE OF ONE COVER. The support, the pairwise reading and the
+/// certified 2-simplices come off ONE walk of the base, so the four
+/// numbers cannot drift apart (law 12).
+pub fn read_nerve(charts: &[Vec<coord::Lamina>]) -> NerveReading {
+    let support = support_of_cover(charts);
+    let (cells, refused) = support.decoded();
+    let shared = cells.iter().filter(|(_, s)| s.len() >= 2).count();
+    let triples = triples_over(&cells);
+    NerveReading { charts: charts.len(), cells: cells.len(), shared, triples, refused }
+}
+
+/// THE NERVE READINGS OF MANY COVERS, SUMMED — and each triple kept beside
+/// the cover whose chart ordinals it names.
+///
+/// A COVER IS ONE DEFORMATION AND ITS BASE IS THAT DEFORMATION'S OWN
+/// SOURCE. Two covers' charts are cells of two different bases — each
+/// recentred at its own frame zero — so their supports are summed and
+/// never intersected with one another. Pooling them into one
+/// `support_of_cover` would read a coincidence of two recentrings as an
+/// overlap, which is the same defect the cover's own meet index avoids by
+/// keying the two SIDES apart.
+#[derive(Default)]
+pub struct NerveTotals {
+    pub charts: usize,
+    pub cells: usize,
+    pub shared: usize,
+    /// `(cover ordinal, simplex)` — the ordinals inside a [`Certified`]
+    /// index that cover's own chart order and name nothing without it.
+    pub triples: Vec<(usize, Certified)>,
+    pub refused: Vec<crate::network::nerve::keyed::CoordinateError>,
+}
+
+impl NerveTotals {
+    pub fn absorb(&mut self, ix: usize, other: NerveReading) {
+        self.charts += other.charts;
+        self.cells += other.cells;
+        self.shared += other.shared;
+        self.refused.extend(other.refused);
+        self.triples.extend(other.triples.into_iter().map(|t| (ix, t)));
+    }
+}
+
 /// THE SUPPORT OF A COVER, READ FROM THE BASE: `p ↦ charts(p)`.
 ///
 /// One linear pass over every cell of every chart, `O(cells · valence)`.
@@ -77,8 +149,15 @@ pub fn support_of_cover(
 pub fn certified_triples(
     charts: &[Vec<coord::Lamina>],
 ) -> (Vec<Certified>, Vec<crate::network::nerve::keyed::CoordinateError>) {
-    let support = support_of_cover(charts);
-    let (cells, refused) = support.decoded();
+    let r = read_nerve(charts);
+    (r.triples, r.refused)
+}
+
+/// The triples standing over an already-decoded support. Split out so
+/// [`read_nerve`] and [`certified_triples`] are ONE producer of them and
+/// cannot drift apart, and so the base is walked once per reading rather
+/// than once per number taken off it (law 12).
+fn triples_over(cells: &[(coord::Lamina, &Vec<usize>)]) -> Vec<Certified> {
     // Keyed by the triple's own ordinals, so a simplex certified by many
     // cells is emitted once and the first witness is the one kept.
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
@@ -102,10 +181,10 @@ pub fn certified_triples(
                         continue;
                     }
                     seen.insert(&key, ());
-                    out.push(Certified { charts, witness: cell });
+                    out.push(Certified { charts, witness: *cell });
                 }
             }
         }
     }
-    (out, refused)
+    out
 }

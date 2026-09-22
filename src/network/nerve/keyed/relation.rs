@@ -41,6 +41,10 @@ pub enum CoordinateSystem {
     Demand,
     DemandAt,
     Residual,
+    /// §4.4 E8 — the three addresses of a cover (ruled 2026-09-22).
+    Piece,
+    Carriage,
+    Meet,
 }
 
 impl CoordinateSystem {
@@ -67,6 +71,9 @@ impl CoordinateSystem {
             CoordinateSystem::Demand => Some(a::TAG_DEMAND),
             CoordinateSystem::DemandAt => Some(a::TAG_DEMAND_AT),
             CoordinateSystem::Residual => Some(a::TAG_RESIDUAL),
+            CoordinateSystem::Piece => Some(a::TAG_PIECE),
+            CoordinateSystem::Carriage => Some(a::TAG_CARRIAGE),
+            CoordinateSystem::Meet => Some(a::TAG_MEET),
         }
     }
 }

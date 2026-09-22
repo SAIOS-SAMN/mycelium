@@ -3,8 +3,8 @@
 use crate::network::nerve::keyed::coord;
 use crate::transducer::cech::{certified_triples, support_of_cover};
 
-fn cell(row: i64, col: i64, hue: i64) -> coord::Lamina {
-    coord::Lamina { row, col, hue }
+fn cell(row: i64, col: i64, frame: i64) -> coord::Lamina {
+    coord::Lamina { row, col, frame }
 }
 
 /// THE PORE CASE — the whole reason the walk is over the base.

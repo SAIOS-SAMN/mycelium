@@ -1132,7 +1132,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         }
     };
     // THE CERTIFIED 2-SIMPLICES OF THIS PERCEPT'S COVER (54.7, ruled
-    // 2026-09-21).
+    // 2026-09-21; RE-TARGETED TO THE PULLBACK 58.1, ruled 2026-09-22).
     //
     // IT MUST HAPPEN HERE AND NOWHERE LATER. A nerve's 2-simplex exists
     // exactly where `U_i ∩ U_j ∩ U_k ≠ ∅`, which is a fact about the BASE
@@ -1143,32 +1143,67 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // carriage, which is the very thing a cocycle test evaluates. The
     // court would need the frames to agree to find the overlap, and the
     // overlap to know whether they agree. Here the footprints are still
-    // the scene's own absolute `(r, c, hue)`, so the question is answerable
-    // and is answered once.
+    // the cover's own absolute `(r, c, hue)`, so the question is
+    // answerable and is answered once.
     //
-    // A chart is a footprint — a region of the base — so two chord ends
-    // standing on the same cells are one chart and are offered once.
-    let (certified, certified_refused) = {
-        let mut seen: Keyed<()> = Keyed::new();
-        let mut charts: Vec<Vec<coord::Lamina>> = Vec::new();
-        for ((_, _, _, da), (_, _, _, db), _) in meet_chords.iter() {
-            for d in [da, db] {
-                let mut key = Vec::with_capacity(d.len() * 24);
-                for (r, c, k) in d.iter() {
-                    key.extend_from_slice(&r.to_le_bytes());
-                    key.extend_from_slice(&c.to_le_bytes());
-                    key.extend_from_slice(&k.to_le_bytes());
-                }
-                if seen.get(&key).is_some() {
-                    continue;
-                }
-                seen.insert(&key, ());
-                charts.push(
-                    d.iter()
-                        .map(|&(row, col, hue)| coord::Lamina { row, col, hue })
-                        .collect(),
-                );
+    // THE CHARTS ARE THE PIECES' DOMAINS, AND THAT IS THE WHOLE READING.
+    // This was built from the chord ends' CODOMAINS and read `0 certified
+    // triples` on every form of the corpus — which was a property of which
+    // half was measured, not of the corpus. `Supports` says it in its own
+    // doc: a deformation is a map OUT OF the input, so the Čech nerve is
+    // the nerve of the cover of the SOURCE, and "reading only the codomain
+    // leaves the nerve discrete".
+    //
+    // Why it could not be otherwise. On the image side the cover's pieces
+    // are a PARTITION by construction — `pieces_of` peels disjoint bodies
+    // and `occ_out` names one piece per site — so `int(B'ᵢ) ∩ int(B'ⱼ) = ∅`
+    // and a triple intersection asks three solid bodies to occupy one
+    // voxel. On the source side nothing of the kind holds: pass (a)
+    // assembles an output piece's preimage out of WHOLE input pieces, so
+    // one input piece lying under two output pieces stands in both
+    // preimages, and pass (b) carries one unplaced piece by every placed
+    // versor, so one domain is the base of as many sections as there are
+    // versors that reach an image. Both are replication, and replication is
+    // the only case in which the transition between two copies of one shape
+    // exists to be read at all.
+    //
+    // NO CHART IS FOLDED INTO ANOTHER. The codomain reading deduplicated by
+    // footprint — "two chord ends standing on the same cells are one chart"
+    // — which is right for a partition and wrong here: two carriages over
+    // one source region are two SECTIONS of that region's fibre, `g_ij =
+    // θ_j θ_i⁻¹ · γ_ij ≠ 1`, and folding them to one chart erases exactly
+    // the holonomy the 2-cell would carry. The cover is INDEXED by
+    // carriage, and the nerve of an indexed cover admits repeats.
+    //
+    // THE IMAGE READING IS TAKEN TOO, on the same walk, because the claim
+    // "the codomain is a partition" is now a measurement and not a
+    // recollection (A2).
+    let (certified, certified_refused, image_nerve) = {
+        use crate::transducer::cech::{read_nerve, NerveTotals};
+        // `support_of` writes `(row, col, frame)` — the three SPATIAL axes,
+        // the third being the corpus's own `e₃`. The hue never reaches here
+        // and could not: a cover piece is of one hue by construction and
+        // carries it on its own coordinate (§4.4 E8).
+        let cells_of = |sup: &[(i64, i64, i64)]| -> Vec<coord::Lamina> {
+            sup.iter().map(|&(row, col, frame)| coord::Lamina { row, col, frame }).collect()
+        };
+        let mut src = NerveTotals::default();
+        let mut img = NerveTotals::default();
+        for (ci, c) in covers.iter().enumerate() {
+            // A COVER IS ONE DEFORMATION. Its source is that pair's body at
+            // frame zero, recentred, so two covers' cells are cells of two
+            // different bases: each is read on its own and the readings are
+            // summed. Pooling them would read a coincidence of two
+            // recentrings as an overlap — the same defect the cover's meet
+            // index already avoids by keying its two sides apart.
+            let mut dom: Vec<Vec<coord::Lamina>> = Vec::new();
+            let mut cod: Vec<Vec<coord::Lamina>> = Vec::new();
+            for (_, (_, _, sup)) in c.cover.carried.scoped() {
+                dom.push(cells_of(&sup.domain));
+                cod.push(cells_of(&sup.codomain));
             }
+            src.absorb(ci, read_nerve(&dom));
+            img.absorb(ci, read_nerve(&cod));
         }
         // THE PAIRWISE READING TOO, because "0 triples" has two very
         // different causes and one number cannot tell them apart: a cover
@@ -1178,11 +1213,11 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         // points, with no edges to climb from. The meets would then be
         // ADJACENCY between disjoint regions, not intersection, and no
         // amount of attaching machinery would find a 2-cell.
-        let support = crate::transducer::cech::support_of_cover(&charts);
-        let (cells, _) = support.decoded();
-        let shared = cells.iter().filter(|(_, s)| s.len() >= 2).count();
-        let (triples, refused) = crate::transducer::cech::certified_triples(&charts);
-        ((charts.len(), triples, cells.len(), shared), refused)
+        (
+            (src.charts, src.triples, src.cells, src.shared),
+            src.refused,
+            (img.charts, img.cells, img.shared, img.triples.len()),
+        )
     };
     // THE SPECTRAL WITNESS (54.7, ruled 2026-09-22): do three tethers share
     // a phase, rather than a place?
@@ -1417,8 +1452,9 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
          | defects: trivial {} elliptic {} hyperbolic {} parabolic {} non-simple {} \
          | spectra: closes {} open {} undecomposed {} isoclinic {} \
          | ρ: |im| {} |conj| {} of {} generators, {} in ker | this form: b₁ {} |im| {} \
-         | nerve: {} charts over {} cells, {} shared by two or more, \
+         | nerve/source: {} charts over {} cells, {} shared by two or more, \
          {} certified triples, {} refused \
+         | nerve/image: {} charts over {} cells, {} shared, {} triples \
          | phase: {} finite {} infinite {} unread, periods {:?} \
          | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {}",
         form.faces.len(),
@@ -1466,6 +1502,10 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         certified.3,
         certified.1.len(),
         certified_refused.len(),
+        image_nerve.0,
+        image_nerve.1,
+        image_nerve.2,
+        image_nerve.3,
         spectrum.0,
         spectrum.1,
         spectrum.2,

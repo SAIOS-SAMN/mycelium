@@ -109,16 +109,22 @@ pub(crate) fn classify_cover(
     // carry their loops long enough to classify them. Nothing downstream
     // ever sees it.
     let mut piece_form = Form::default();
-    let mut cover_vertex: Keyed<u16> = Keyed::new();
+    let mut cover_vertex: Keyed<u16, crate::network::nerve::coord::Carriage> = Keyed::new();
     let mut owner: Keyed<Keyed<()>, crate::network::nerve::coord::VertexIx> = Keyed::new();
     for (ci, c) in covers.iter().enumerate() {
-        for (key, (v, _versor, _codomain)) in c.cover.carried.scoped() {
+        let (carried, carried_refused) = c.cover.carried.decoded();
+        if !carried_refused.is_empty() {
+            crate::transducer::family::cover::tally(|t| {
+                t.undecodable += carried_refused.len() as u64
+            });
+        }
+        for (key, (v, _versor, _codomain)) in carried {
             if v.face_chart().is_none() {
                 continue;
             }
             let ix = piece_form.vertices.len() as u16;
             piece_form.vertices.push(v.clone());
-            cover_vertex.insert(&key, ix);
+            cover_vertex.put(&key, ix);
             let mut set = Keyed::new();
             set.insert(ci.to_le_bytes(), ());
             owner.put(&vertex_ix_key(ix), set);
@@ -153,12 +159,21 @@ pub(crate) fn classify_cover(
     let mut chords: Vec<MeetChord> = Vec::new();
     let mut named: Keyed<()> = Keyed::new();
     for c in covers {
-        for (mk, ()) in c.cover.meets.scoped() {
-            let Some((ka, kb)) = crate::transducer::family::pieces::meet_ends(&mk) else { continue };
-            let (Some(&i), Some(&j)) = (cover_vertex.get(ka), cover_vertex.get(kb)) else { continue };
+        // THE MEETS, AS COORDINATES (§4.4 E8). A key that does not decode is
+        // this reader failing on its own layout, which the cover counts as
+        // `undecodable`; it is not a meet that named nothing.
+        let (meets, meets_refused) = c.cover.meets.decoded();
+        if !meets_refused.is_empty() {
+            crate::transducer::family::cover::tally(|t| {
+                t.undecodable += meets_refused.len() as u64
+            });
+        }
+        for (mk, ()) in meets {
+            let (ka, kb) = mk.ends();
+            let (Some(&i), Some(&j)) = (cover_vertex.at(ka), cover_vertex.at(kb)) else { continue };
             let (Some(vi), Some(vj)) = (piece_form.vertices.get(i as usize), piece_form.vertices.get(j as usize)) else { continue };
             let (Some(ci), Some(cj)) = (vi.face_chart(), vj.face_chart()) else { continue };
-            let edge = edges.take(match (c.cover.carried.get(ka), c.cover.carried.get(kb)) {
+            let edge = edges.take(match (c.cover.carried.at(ka), c.cover.carried.at(kb)) {
                 // A meet of two SECTIONS has one `Γ` and therefore one
                 // refusal — there is no coset to read it through here, so
                 // the single reading is carried as the one-member list the
@@ -197,7 +212,7 @@ pub(crate) fn classify_cover(
             // so identity reads the codomain here. The nerve's OVERLAPS
             // are a different question and read the domain (`Supports`).
             let (Some((_, pa, supa)), Some((_, pb, supb))) =
-                (c.cover.carried.get(ka), c.cover.carried.get(kb))
+                (c.cover.carried.at(ka), c.cover.carried.at(kb))
             else {
                 crate::transducer::family::cover::tally(|t| t.unclassed += 1);
                 continue;
