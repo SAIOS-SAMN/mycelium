@@ -403,7 +403,14 @@ impl Complex {
         self.forget(key);
         match reading {
             None => Drained::Vacuum,
-            Some(fill) => Drained::Cauterized(fill),
+            Some(fill) => {
+                // D2 — ENTROPY AT DIMENSION 1. A cauterization is the
+                // irreversible half of the pivot: the loop cannot be
+                // re-entered from the one it just left, which is what
+                // makes the record it leaves a record and not a state.
+                crate::physics::metabolism::note_cauterized();
+                Drained::Cauterized(fill)
+            }
         }
     }
 
@@ -475,7 +482,14 @@ impl Complex {
         self.forget(key);
         match sealed {
             None => Descended::Unsealed,
-            Some(fill) => Descended::Released(fill),
+            Some(fill) => {
+                // D2 — ENTROPY AT DIMENSION 2, counted apart from the
+                // dimension-1 cauterization: the two terminate different
+                // skeleta and a ledger that merges them cannot say which
+                // dimension the engine is spending.
+                crate::physics::metabolism::note_released();
+                Descended::Released(fill)
+            }
         }
     }
 

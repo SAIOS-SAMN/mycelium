@@ -1455,6 +1455,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
          | field: {} \
          | planes: {} \
          | mint: {} \
+         | metabolism: {} syntropy {} \
          | nerve/source: {} charts over {} cells, {} shared by two or more, \
          {} certified triples, {} refused \
          | nerve/image: {} charts over {} cells, {} shared, {} triples \
@@ -1516,6 +1517,13 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         // measured `adjoin 0` with nothing to say whether it was starved
         // or shut.
         crate::transducer::family::perceive::demand_tally().line(),
+        // D2 — THE THERMODYNAMIC LEDGER. Entropy is the cauterizations,
+        // the orbit structure is `ℓ`, and the rate is the reserve's own
+        // per-lane draw. SYNTROPY IS READ FROM THE FIELD'S COUNTER, not
+        // duplicated: condensations are already counted there, and a
+        // second counter for one fact is law 12 inside one carrier.
+        crate::physics::metabolism::metabolism().line(),
+        crate::transducer::family::pairing::field_tally().condensed,
         certified.0,
         certified.2,
         certified.3,

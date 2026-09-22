@@ -308,6 +308,13 @@ pub(crate) fn peel_versor_with_target(
     // reached by refused targets is still a plane the corpus reaches for,
     // and gating the count would hide exactly that.
     crate::transducer::cga::note_transition(&target, v);
+    // D2 — THE ORBIT STRUCTURE, at the same site and for the same reason.
+    // `ℓ = Order(R)` is the cyclotomic period: the discrete bound `μ` is
+    // CARRIED BY, rather than a scalar `μ` would be flattened into. Read
+    // here because this is where the rotor exists as a rotor, and read
+    // before the gates so a walk — infinite order, never returning — is
+    // counted as the reading it is rather than lost as a refusal.
+    crate::physics::metabolism::note_orbit(target.order());
     target.weight()?;
     if !target.is_even() {
         return None;

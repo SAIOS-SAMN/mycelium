@@ -418,6 +418,61 @@ mod tests {
         );
     }
 
+    /// D2 — THE METABOLIC LEDGER READS BOTH HALVES, AND NETS THEM PER
+    /// LANE (68).
+    ///
+    /// A draw and its restore are conjugate, so a lane that cycles has
+    /// zero flux while a lane that spends does not — and the two must be
+    /// distinguishable, or "the engine is busy" and "the engine is
+    /// draining" read the same. Arrays throughout: netting the four into
+    /// one scalar trades a lane against another, which #34 refuses.
+    ///
+    /// A REFUSED DRAW IS COUNTED AND MOVES NO LANE. `Reserve::draw` is
+    /// all-or-nothing, so a depletion must leave the reserve untouched
+    /// AND still register — otherwise a starved engine and an idle one
+    /// produce the same ledger.
+    #[test]
+    fn d2_the_ledger_separates_a_lane_that_cycles_from_one_that_spends() {
+        use crate::physics::metabolism;
+        let _ = metabolism::take_metabolism();
+        let mut r = crate::physics::budget::Reserve::of([8, 8, 8, 8]);
+        r.draw([3, 0, 0, 0]).expect("affordable");
+        r.restore([3, 0, 0, 0]);
+        r.draw([0, 5, 0, 0]).expect("affordable");
+        r.draw([0, 99, 0, 0]).expect_err("gauge cannot cover it");
+        let m = metabolism::take_metabolism();
+        assert_eq!(m.drawn, [3, 5, 0, 0], "only afforded draws move a lane");
+        assert_eq!(m.restored, [3, 0, 0, 0], "the conjugate half");
+        assert_eq!(m.flux(), [0, 5, 0, 0], "lane 0 cycled; lane 1 spent");
+        assert_eq!(m.depleted, 1, "the refusal is a reading, not a silence");
+    }
+
+    /// D2 — ENTROPY IS PER DIMENSION, AND `Σℓ` IS THE ORBIT STRUCTURE.
+    ///
+    /// The two cauterizations terminate different skeleta, so a ledger
+    /// that merges them cannot say which dimension the engine spends.
+    /// `orbit_infinite` is kept apart from a period of zero because A19
+    /// spells infinite order as `0` and the two readings are opposite —
+    /// a walk that never returns against an orbit with no period at all.
+    #[test]
+    fn d2_entropy_and_orbit_are_counted_at_their_own_dimensions() {
+        use crate::physics::metabolism;
+        use crate::transducer::alphabet::Order;
+        let _ = metabolism::take_metabolism();
+        metabolism::note_cauterized();
+        metabolism::note_released();
+        metabolism::note_released();
+        metabolism::note_orbit(Some(Order::Finite(4)));
+        metabolism::note_orbit(Some(Order::Finite(2)));
+        metabolism::note_orbit(Some(Order::Infinite));
+        metabolism::note_orbit(None);
+        let m = metabolism::take_metabolism();
+        assert_eq!((m.cauterized, m.released), (1, 2), "two dimensions, two counts");
+        assert_eq!(m.entropy(), 3, "and a total that does not lose them");
+        assert_eq!((m.orbit_finite, m.orbit_sum), (2, 6), "Σℓ over closed orbits");
+        assert_eq!(m.orbit_infinite, 1, "a walk is not a period");
+    }
+
     /// V1 — PROVED UNLIKE BY AN INVARIANT, NOT BY EXHAUSTING A GROUP (68).
     ///
     /// The L- and S-tetrominoes differ in a quantity no conformal motion

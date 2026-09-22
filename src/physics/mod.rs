@@ -75,6 +75,7 @@ pub fn expansion_unit() -> u64 {
 
 pub mod axioms;
 pub mod budget;
+pub mod metabolism;
 pub use budget::{Budget, Depleted, Reserve};
 
 /// A CARRIER'S ORBIT (45.7): the circuits a stroke ring has completed and
