@@ -844,11 +844,19 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         }
     }
     let t = crate::transducer::family::cover::take_cover_tally();
+    // T4 — AND WHAT THE CONDENSATION FIELD DID, per gate. A census that
+    // reads `0 condensed` says nothing until it says WHICH gate refused:
+    // "every pair was refused" and "the pass never ran" are the same
+    // silence otherwise, which is the vacuous-truth defect (§8.1).
+    let f = crate::transducer::family::pairing::take_field_tally();
     eprintln!(
         "  lift over {forms} corpus forms: meets {} ({} carried an edge) \
          → chords {}, within one class {}, unclassed {} \
          | axiom B: geodesic {} off-sheet {} \
          | frames: {} framed {} half-open {} unframed \
+         | field: {} offered, {} unlifted | horizon: {} apart, {} contained \
+         | frame: {} bodiless, {} isotropy, {} unoriented, {} OBLIQUE, \
+         {} mirrored, {} half-open | {} CONDENSED \
          | forms carrying a loop: {with_loops}",
         t.meets,
         t.edges,
@@ -859,7 +867,18 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         t.off_sheet,
         t.framed,
         t.frame_half_open,
-        t.unframed
+        t.unframed,
+        f.offered,
+        f.unlifted,
+        f.apart,
+        f.contained,
+        f.bodiless,
+        f.isotropy,
+        f.unoriented,
+        f.oblique,
+        f.mirrored,
+        f.half_open,
+        f.condensed
     );
     // THE ANTIPODAL TEST (54.7): the operators of each Casimir class, and
     // whether a class of exactly two is a mutually inverse pair — one

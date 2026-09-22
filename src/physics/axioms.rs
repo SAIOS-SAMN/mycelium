@@ -106,6 +106,80 @@ pub const A11_HARMONIC_MULTIPOLE_COMPLETENESS: &str =
     "a chart is characterised by its ascending harmonic multipoles; the \
      trace is scale alone and carries no orientation";
 
+/// A.12 — IRREDUCIBLE INVERSIVE EXTENT (ours, 66, ruled 2026-09-22).
+///
+/// Every body occupies a strictly SPACELIKE conformal ray. The trace of its
+/// second moment, normalised by the zeroth, carries an irreducible floor:
+///
+/// ```text
+///     r² = Tr(I)/M₀ ≥ 1/6 > 0
+/// ```
+///
+/// and no nucleus may inhabit the null cone (`s² = 0`) or the timelike
+/// interior (`s² < 0`).
+///
+/// THIS WAS LOAD-BEARING BEFORE IT WAS STATED. `r² → 0` drops the nucleus
+/// onto the light cone, `den2 = 4r_a²r_b² → 0`, and the interaction horizon
+/// stops being DEFINED rather than merely large. The floor is bought by
+/// `blade::lift` integrating each lamina's own unit square with the
+/// parallel-axis term at every order — the `+1/12` — and the smallest body
+/// the sensor can deliver reads exactly `1/6`. A point-mass reading gives
+/// `r² = 0`, and one existed until `6a5910f` retired `extract.rs`'s shadow
+/// trace as a law-12 defect. A.11's single producer is therefore not
+/// hygiene: it is what holds every nucleus off the cone.
+///
+/// AND IT FIXES THE TOWER'S NORMALISATION. Measured at 65.6: `radius2()`
+/// was `Tr(I)/M₀` while `deviatoric` and `quartic_harmonic` returned RAW
+/// moments carrying the area's own weight, so `‖D‖² ~ ρ⁸` and `‖Q‖² ~ ρ¹²`
+/// where the harmonic orders 2 and 4 predict `ρ⁴` and `ρ⁸`. One tower at
+/// two normalisations is law 12 inside a single carrier, and it forced
+/// every consumer to hold a private degree table. Dividing every central
+/// moment by `M₀` puts order `m` at degree `m`, so the `S` lane reads its
+/// exponent straight off the gauge order:
+///
+/// ```text
+///     ‖M̃_b^(m)‖² · (r_a²)^m  =  ‖M̃_a^(m)‖² · (r_b²)^m
+/// ```
+pub const A12_IRREDUCIBLE_INVERSIVE_EXTENT: &str =
+    "every body is spacelike with r² = Tr(I)/M₀ ≥ 1/6 > 0; the tower is \
+     normalised by M₀, so harmonic order m carries degree m";
+
+/// A.13 — INVERSIVE MOMENTUM AND THE CONFORMAL CONJUGATE PAIR (ours, 66,
+/// DOCKETED and NOT BUILT).
+///
+/// Translation and special conformal are one generator seen from opposite
+/// poles, exchanged by inversion `I`:
+///
+/// ```text
+///     T_i = e_i ∧ e_∞   fixes ∞          K_i = e_i ∧ e_o   fixes the origin
+///     K_i = I · T_i · I⁻¹
+/// ```
+///
+/// THE ENGINE USES ONLY ONE HALF. Translators, `translator_versor`, the
+/// whole placement lane — every motion it can express FIXES THE POINT AT
+/// INFINITY. `e_i ∧ e_o` appears nowhere. That is half a conjugate pair
+/// missing in the Lie algebra itself, 62's ratchet one level below the
+/// pivots, and it is the privileged planar boundary 54.7 already names:
+/// `T(d) = 1 − ½de_∞` has `B² = 0`, "a null bivector fixing the point at
+/// infinity, which is a privileged planar boundary in a manifold whose
+/// sectional curvature is not zero". Transvections replaced that pinning
+/// for CHORDS; the placement lane never got its conjugate, so a body can
+/// never arrive from infinity.
+///
+/// AND MOMENTUM IS NOT A DERIVATIVE. Law 1 strikes `dp/dt` outright. The
+/// discrete conjugate is the body's inertia paired with its carriage across
+/// the SUCCESSION axis — `Π = I · g_{t→t+1}` — which is `(r², carriage)`,
+/// the `S` lane against the `T` lane BETWEEN frames rather than within one.
+/// `Quotient { frame, car, … }` already carries that transition and has
+/// never been read as a momentum.
+///
+/// NOT BUILT. Stated so the asymmetry is a recorded gap rather than an
+/// unnoticed one (T21(iii): an axiom that cannot fail a test is a
+/// coordinate standing for no theorem, and this one is marked as work).
+pub const A13_INVERSIVE_MOMENTUM_DOCKETED: &str =
+    "docketed: K_i = I·T_i·I⁻¹ is unvoiced, so every motion fixes infinity; \
+     momentum is inertia paired with the inter-frame carriage";
+
 /// A.4 — RATIONAL INNER PRODUCT, "positive-definite" (REFUSED).
 ///
 /// False in this algebra. `Cl(4,1)` is indefinite, `e₋² = −1`, and the
@@ -323,9 +397,29 @@ mod tests {
     fn a11_a_mirrored_body_mints_no_rotor() {
         let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
         let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
-        assert!(
-            blade::relative_rotor(&l.blade, &j.blade).is_none(),
-            "a reflection lies in O(2)\\SO(2) and is not a rotor"
+        // AND THE REFUSAL NAMES ITSELF (66) — AS `Oblique`, WHICH IS THE
+        // FINDING. A reflection was expected to land in `Mirrored`; it
+        // does not. The mirrored deviatorics sit at `wedge ≠ 0`, so the
+        // reader refuses at the angle test and never reaches the cell test
+        // that `Mirrored` names.
+        //
+        // SO `Oblique` IS NOT "AN UNSPELLABLE ROTATION". It holds genuine
+        // non-lattice turns AND reflections, which are `O(2)\SO(2)` and
+        // are not rotations at all. That matters for 37.7: a demand minted
+        // from a reflection would be asking the court to adjoin a
+        // generator for a relation that is not a turn. The two cannot be
+        // separated from the deviatorics alone — a reflection maps
+        // `u(2φ)` to `u(2α − 2φ)`, which is a perfectly good rotation OF
+        // THE DEVIATORIC and says nothing about the body — so the split
+        // needs the cells, and the reader skips the cell test in exactly
+        // this branch.
+        //
+        // `Mirrored` therefore fires only for AXIS-ALIGNED pairs the cells
+        // refuse, which is a far narrower case than its name suggests.
+        assert_eq!(
+            blade::relative_rotor(&l.blade, &j.blade).err(),
+            Some(blade::NoFrame::Oblique),
+            "a reflection refuses at the angle test, before the cell test"
         );
     }
 
@@ -1191,5 +1285,185 @@ mod tests {
         let mut empty = Reserve::of([0, 0, 0, 0]);
         assert!(empty.is_spent());
         assert!(empty.draw([0, 0, 0, 0]).is_ok(), "a zero draw is always affordable");
+    }
+
+    /// IS `δ = 2` THE ADJACENCY SIGNATURE, AND DOES IT SURVIVE SIZE?
+    ///
+    /// The claim: two unit laminae sharing an edge sit at `δ = 2` exactly,
+    /// so `δ² ≤ 4` is a DERIVED contact gate rather than a dialled one.
+    /// `‖ΔP‖² = 1`, `r² = 1/6` each, so
+    ///
+    /// ```text
+    ///     num  = 1 − 1/6 − 1/6 = 2/3
+    ///     den2 = 4 · (1/6)(1/6) = 1/9
+    ///     δ²   = (2/3)² / (1/9) = 4
+    /// ```
+    ///
+    /// The second half is the one that decides whether it is usable: the
+    /// gyration radius GROWS with the body, so a signature calibrated on
+    /// single laminae may not hold for adjacent blocks. This measures it
+    /// rather than assuming either way.
+    #[test]
+    fn the_adjacency_signature_and_whether_it_survives_size() {
+        use crate::transducer::blade::{self, Strain};
+        let q = |n: i64| crate::core::Q::from_integer(n.into());
+        let d2 = |a: &blade::Blade, b: &blade::Blade| {
+            let s = Strain::between(a, b).expect("centroids");
+            &s.num * &s.num / s.den2
+        };
+
+        // ONE LAMINA EACH, EDGE-ADJACENT.
+        let u0 = blade::shape_of(&[(0, 0, 0)]).blade;
+        let u1 = blade::shape_of(&[(0, 1, 0)]).blade;
+        assert_eq!(u0.radius2(), q(1) / q(6), "the +1/12 floor, twice");
+        assert_eq!(d2(&u0, &u1), q(4), "edge-adjacent unit laminae sit at δ² = 4");
+
+        // DIAGONAL, and SEPARATED BY ONE CELL.
+        let diag = blade::shape_of(&[(1, 1, 0)]).blade;
+        let gap = blade::shape_of(&[(0, 2, 0)]).blade;
+        assert_eq!(d2(&u0, &diag), q(25), "a corner neighbour is δ = 5");
+        assert_eq!(d2(&u0, &gap), q(121), "a one-cell gap is δ = 11");
+
+        // So `δ² ≤ 4` admits EDGE adjacency and refuses corner adjacency,
+        // which is 51.3's own 4-neighbour convention in the plane arriving
+        // from the metric rather than from a stencil.
+
+        // NOW SIZE. Two 3x3 blocks sharing an edge: centroids 3 apart.
+        let block = |r0: i64, c0: i64| {
+            let mut cells = Vec::new();
+            for r in 0..3 {
+                for c in 0..3 {
+                    cells.push((r0 + r, c0 + c, 0));
+                }
+            }
+            blade::shape_of(&cells).blade
+        };
+        // NOW SIZE — and it is SCALE-FREE, measured across n = 1..5.
+        //
+        // An n×n block has `r² = n²/6`, so two of them sharing an edge have
+        // `‖ΔP‖² = n²` and
+        //
+        //     num  = n² − n²/6 − n²/6 = 2n²/3
+        //     den2 = 4(n²/6)² = n⁴/9
+        //     δ²   = (2n²/3)² / (n⁴/9) = 4          for EVERY n
+        //
+        // `δ² = 4` is therefore not a constant calibrated on unit laminae.
+        // It is the SIMILARITY CLASS of edge-adjacency, and `δ` is a
+        // similarity invariant, so two adjacent n-blocks are similar to two
+        // adjacent unit cells and read identically.
+        for n in 1..=5i64 {
+            let cells = |r0: i64, c0: i64| {
+                let mut v = Vec::new();
+                for r in 0..n {
+                    for c in 0..n {
+                        v.push((r0 + r, c0 + c, 0));
+                    }
+                }
+                blade::shape_of(&v).blade
+            };
+            let (a, b) = (cells(0, 0), cells(0, n));
+            assert_eq!(
+                a.radius2(),
+                q(n * n) / q(6),
+                "an n×n block carries r² = n²/6"
+            );
+            assert_eq!(d2(&a, &b), q(4), "and edge-adjacency is δ² = 4 at n = {n}");
+        }
+        let b0 = block(0, 0);
+        assert!(b0.radius2() > u0.radius2(), "a block is larger than a lamina");
+        assert!(d2(&b0, &block(0, 60)) > q(4), "and distance is still refused");
+    }
+
+    /// THE GAUGE FREQUENCY IS THE SCALE EXPONENT — MEASURED (65.6).
+    ///
+    /// The hypothesis: a harmonic of azimuthal order `m` carries scaling
+    /// degree `m`, because a conformal homothety acts as `w = ρe^{iθ}` and
+    /// `f_m(wz) = ρ^m e^{imθ} z^m` — the integer in the phase and the
+    /// exponent in the amplitude are the SAME `m`. So `S` reads its weights
+    /// off `G` rather than from a table.
+    ///
+    /// IT MUST BE MEASURED AGAINST `blade::lift`, NOT ASSUMED. The
+    /// derivation is for MASS-NORMALISED moments, and `deviatoric` returns
+    /// raw `inertia` components with no division by area. If `lift` does
+    /// not normalise, the degrees shift by the mass's own weight and every
+    /// cross-multiplication gate built on them is off.
+    ///
+    /// A body and its exact 2× dilate: each cell becomes a 2×2 block, which
+    /// is the dilation `x ↦ 2x` performed on the lattice itself.
+    #[test]
+    fn the_scaling_degrees_of_the_harmonic_tower() {
+        use crate::transducer::blade;
+        let q = |n: i64| crate::core::Q::from_integer(n.into());
+
+        // An L-tromino: `C₁`, so every harmonic is non-vanishing and each
+        // degree is observable.
+        let base = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]).blade;
+        let dilate = {
+            let mut cells = Vec::new();
+            for &(r, c) in &[(0i64, 0i64), (1, 0), (0, 1)] {
+                for dr in 0..2 {
+                    for dc in 0..2 {
+                        cells.push((2 * r + dr, 2 * c + dc, 0));
+                    }
+                }
+            }
+            blade::shape_of(&cells).blade
+        };
+
+        // ρ = 2, so ρ² = 4. The trace is claimed at degree 2.
+        let (ra2, rb2) = (base.radius2(), dilate.radius2());
+        assert_eq!(&rb2 / &ra2, q(4), "r² scales as ρ² — the trace sits at degree 2");
+
+        let norm2 = |v: [crate::core::Q; 2]| &v[0] * &v[0] + &v[1] * &v[1];
+        let da = norm2(blade::deviatoric(&base).expect("anisotropic"));
+        let db = norm2(blade::deviatoric(&dilate).expect("anisotropic"));
+        // MEASURED: `‖D‖²` scales as 256 = ρ⁸, NOT ρ⁴.
+        //
+        // THE CARRIERS ARE AT MIXED NORMALISATION, and that is the finding.
+        // The theorem "azimuthal order m carries scaling degree m" holds for
+        // MASS-NORMALISED moments, `T^(k) = (1/M₀)∫(x−P)^⊗k`. `radius2()`
+        // is normalised — it is the conformal sphere's `r²`, a length², and
+        // scales as `ρ²`. `deviatoric` is NOT: it returns raw `inertia`
+        // combinations, and a raw second moment over a 2D region carries
+        // the area's own weight, `∫x² ~ ρ²·ρ² = ρ⁴`. So `‖D‖² ~ ρ⁸`.
+        //
+        // `S` therefore CANNOT read its exponent off `G` alone. It must
+        // account for each carrier's own normalisation, and `Blade` does not
+        // use one normalisation across the tower.
+        // A.12 — NORMALISED, so the harmonic order IS the degree.
+        //
+        // Before normalisation this read `ρ⁸` for `‖D‖²` and `ρ¹²` for
+        // `‖Q‖²`: `radius2()` was `Tr(I)/M₀` while the harmonics were raw,
+        // one tower at two normalisations. Dividing every central moment by
+        // `M₀` puts order `m` at degree `m`, so `‖M̃^(m)‖² ~ (ρ²)^m`.
+        assert_eq!(&db / &da, q(16), "‖D̃‖² ~ ρ⁴ = (ρ²)², the deviatoric at m = 2");
+
+        let qa = norm2(blade::quartic_harmonic(&base).expect("has a quartic"));
+        let qb = norm2(blade::quartic_harmonic(&dilate).expect("has a quartic"));
+        assert_eq!(&qb / &qa, q(256), "‖Q̃‖² ~ ρ⁸ = (ρ²)⁴, the quartic at m = 4");
+
+        // THE SCALE CERTIFICATE, with its exponent read STRAIGHT OFF THE
+        // GAUGE ORDER and no table anywhere:
+        //
+        //     ‖M̃_b^(m)‖² · (r_a²)^m  =  ‖M̃_a^(m)‖² · (r_b²)^m
+        assert_eq!(&db * ra2.pow(2), &da * rb2.pow(2), "m = 2 certificate");
+        assert_eq!(&qb * ra2.pow(4), &qa * rb2.pow(4), "m = 4 certificate");
+
+        // A SHEAR IS NOT A DILATION, and the certificate must say so: a
+        // body with the same trace but a different eccentricity fails at
+        // m = 2 even though the scalar ratio would admit it.
+        let bar = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (0, 3, 0)]).blade;
+        let square = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (0, 1, 0), (1, 1, 0)]).blade;
+        let (rs2, rq2) = (bar.radius2(), square.radius2());
+        let ds = norm2(blade::deviatoric(&bar).expect("a bar is anisotropic"));
+        // The square is `C₄`: its deviatoric VANISHES, so the certificate
+        // is `‖D_bar‖² · (r_sq²)² = 0`, which fails unless the bar is
+        // isotropic too. Shear refused.
+        assert!(blade::deviatoric(&square).is_none(), "a square has no deviatoric");
+        assert!(
+            &ds * rq2.pow(2) != q(0),
+            "so the m = 2 certificate refuses the bar against the square"
+        );
+        let _ = rs2;
     }
 }

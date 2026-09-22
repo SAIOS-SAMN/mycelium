@@ -1452,6 +1452,7 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
          | defects: trivial {} elliptic {} hyperbolic {} parabolic {} non-simple {} \
          | spectra: closes {} open {} undecomposed {} isoclinic {} \
          | ρ: |im| {} |conj| {} of {} generators, {} in ker | this form: b₁ {} |im| {} \
+         | field: {} \
          | nerve/source: {} charts over {} cells, {} shared by two or more, \
          {} certified triples, {} refused \
          | nerve/image: {} charts over {} cells, {} shared, {} triples \
@@ -1497,6 +1498,13 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         crate::transducer::sentence::loop_synonyms().3,
         form.loops.len(),
         crate::transducer::sentence::form_operators(&form),
+        // THE VALVES, ON THE FLEET'S OWN LINE (66). The field tally was
+        // printed only by a corpus test, so a recut would have run blind:
+        // every voice would have condensed or starved with nothing in the
+        // journal to say which valve held. Read WITHOUT clearing — the
+        // corpus test takes the total, this prints the running state, and
+        // only one reader may take (law 12).
+        crate::transducer::family::pairing::field_tally().line(),
         certified.0,
         certified.2,
         certified.3,

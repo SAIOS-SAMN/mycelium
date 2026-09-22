@@ -616,10 +616,45 @@ pub struct Shape {
 /// single lamina, a square, a cross — has no principal axis, and refusing
 /// is the honest answer rather than an arbitrary axis (rule 11). Such a
 /// body is oriented by [`quartic_harmonic`] instead, which turns at `4φ`.
+/// A.12 — THE ZEROTH MOMENT, and the one place the tower is normalised.
+///
+/// `M₀ = ∫ 1 dA` is the body's own area, which on this base is its lamina
+/// count. Every central moment divides by it, so a moment of harmonic order
+/// `m` carries homogeneous degree `m` and nothing downstream needs a table
+/// of per-carrier weights.
+///
+/// `None` on an empty support: a body with no laminae has no moments to
+/// normalise, and dividing by zero is not a reading (rule 11).
+fn zeroth_moment(blade: &Blade) -> Option<BigRational> {
+    match blade.support.len() {
+        0 => None,
+        n => Some(BigRational::from_integer(BigInt::from(n))),
+    }
+}
+
 pub fn deviatoric(blade: &Blade) -> Option<[BigRational; 2]> {
     let two = BigRational::from_integer(BigInt::from(2));
-    let u1 = (&blade.inertia[0] - &blade.inertia[1]) / &two;
-    let u2 = blade.inertia[2].clone();
+    // A.12 — NORMALISED BY `M₀`, so the tower speaks one dimension.
+    //
+    // MEASURED BEFORE THIS (65.6): `radius2()` is `Tr(I)/M₀`, a length²
+    // scaling as `ρ²`, while this returned RAW `inertia` combinations,
+    // which carry the area's own weight — `∫x² ~ ρ²·ρ² = ρ⁴` — so
+    // `‖D‖²` scaled as `ρ⁸` where the harmonic order `m = 2` predicts
+    // `ρ⁴`. One tower at two normalisations is law 12 inside a single
+    // carrier, and it forced every consumer to hold a private table of
+    // degrees: `{r² ↦ 2, D ↦ 4, Q ↦ 6}`, a lookup masquerading as
+    // geometry.
+    //
+    // Normalised, a moment of azimuthal order `m` carries degree `m`, and
+    // the scale certificate reads its exponent straight off the gauge
+    // order with no table at all:
+    //
+    // ```text
+    //     ‖M̃_b^(m)‖² · (r_a²)^m  =  ‖M̃_a^(m)‖² · (r_b²)^m
+    // ```
+    let m0 = zeroth_moment(blade)?;
+    let u1 = (&blade.inertia[0] - &blade.inertia[1]) / &two / &m0;
+    let u2 = &blade.inertia[2] / &m0;
     match u1.is_zero() && u2.is_zero() {
         true => None,
         false => Some([u1, u2]),
@@ -635,7 +670,11 @@ pub fn deviatoric(blade: &Blade) -> Option<[BigRational; 2]> {
 /// discriminator. `None` where this vanishes too, which is a body with no
 /// orientation at either order.
 pub fn quartic_harmonic(blade: &Blade) -> Option<[BigRational; 2]> {
-    let (h4x, h4y) = (blade.quartic[1].clone(), blade.quartic[2].clone());
+    // A.12 — normalised by `M₀`, as the deviatoric is. Raw, this carried
+    // `∫x⁴ ~ ρ⁶` and `‖Q‖²` scaled as `ρ¹²`; normalised it is degree 4,
+    // the harmonic order it is named for.
+    let m0 = zeroth_moment(blade)?;
+    let (h4x, h4y) = (&blade.quartic[1] / &m0, &blade.quartic[2] / &m0);
     match h4x.is_zero() && h4y.is_zero() {
         true => None,
         false => Some([h4x, h4y]),
@@ -776,6 +815,48 @@ impl Interface {
     pub fn within(&self, mu_c: &BigRational) -> bool {
         self.strain.within(mu_c)
     }
+}
+
+/// A.12 — IS THIS PAIR RELATED BY A DILATION, OR BY A SHEAR?
+///
+/// A trace ratio cannot tell: a 2×2 square and a 1×4 bar of equal `Tr(I)`
+/// have the same `r²` and are not dilates of one another. The whole
+/// normalised tower must correspond, and with the tower at one
+/// normalisation a moment of azimuthal order `m` carries degree `m`, so
+/// the certificate reads its exponent STRAIGHT OFF THE GAUGE ORDER:
+///
+/// ```text
+///     ‖M̃_b^(m)‖² · (r_a²)^m  =  ‖M̃_a^(m)‖² · (r_b²)^m
+/// ```
+///
+/// checked at `m = 2` (deviatoric) and `m = 4` (quartic), by exact cross
+/// multiplication in ℚ with no root taken and no table of weights.
+///
+/// A VANISHING HARMONIC IS PART OF THE READING, not a gap in it. A `C₄`
+/// body has no deviatoric at all, so a pair where one vanishes and the
+/// other does not is REFUSED — they cannot be dilates, since a dilation
+/// preserves every harmonic's vanishing. Both vanishing is agreement.
+pub fn dilation_certified(a: &Blade, b: &Blade) -> bool {
+    let (ra2, rb2) = (a.radius2(), b.radius2());
+    let norm2 = |v: [BigRational; 2]| &v[0] * &v[0] + &v[1] * &v[1];
+    let zero = BigRational::from_integer(BigInt::from(0));
+    let order = |ma: Option<[BigRational; 2]>, mb: Option<[BigRational; 2]>, m: usize| {
+        match (ma, mb) {
+            // Both isotropic at this order: they agree, and nothing is
+            // asserted about a harmonic neither body carries.
+            (None, None) => true,
+            // One carries the harmonic and the other does not. A dilation
+            // preserves vanishing, so this is a shape difference (rule 11:
+            // the refusal is the reading).
+            (None, Some(_)) | (Some(_), None) => false,
+            (Some(x), Some(y)) => {
+                norm2(y) * ra2.pow(m as i32) == norm2(x) * rb2.pow(m as i32)
+            }
+        }
+    };
+    let _ = zero;
+    order(deviatoric(a), deviatoric(b), 2)
+        && order(quartic_harmonic(a), quartic_harmonic(b), 4)
 }
 
 /// T4 — THE PAIRWISE STRAIN FIELD, EVALUATED EXACTLY.
@@ -1050,13 +1131,43 @@ impl Frame {
 /// cheap exact test runs first and the support comparison never happens
 /// for them.
 ///
-/// `None` where the bodies are not related by a proper rotation about
-/// their centroids — a reflection, a genuine difference of shape, or a
-/// `45°` relation whose half-angle `cos(π/8)` is irrational and refused
-/// by rule 4 rather than approximated.
-pub fn relative_rotor(a: &Blade, b: &Blade) -> Option<Frame> {
+/// WHY TWO BODIES CARRY NO DETERMINED FRAME (66, ruled 2026-09-22).
+///
+/// `relative_rotor` answered `None` for FIVE different facts, and a
+/// refusal that does not say which refusal it is is rule 11's defect at
+/// the producer rather than at the call site. The census made it concrete:
+/// 89 contacting pairs of 118 came back `None`, and one number could not
+/// say whether the corpus is full of unspellable turns — 37.7's condition,
+/// live — or of bodies that simply do not orient.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NoFrame {
+    /// A body with no support. Nothing to orient.
+    Bodiless,
+    /// One body has a principal axis and the other does not, so no turn of
+    /// one is the other whatever their sizes.
+    Isotropy,
+    /// Neither body orients at any order this carrier holds — isotropic at
+    /// the second harmonic AND at the fourth.
+    Unoriented,
+    /// THE AXES SIT AT AN ANGLE THE SQUARE BASE DOES NOT TURN BY. The
+    /// relative orientation is WELL DEFINED and is not in `D₄`: `2φ = ±π/2`
+    /// is the 45° relation whose half-angle `cos(π/8)` is irrational and
+    /// refused by rule 4, and anything else is not a lattice turn at all.
+    ///
+    /// This is NOT a failure to measure. It is 37.7's condition — a
+    /// transition the alphabet cannot spell between two bodies that are
+    /// genuinely in contact — and it is where an adjoined generator comes
+    /// from.
+    Oblique,
+    /// Same cardinality and neither candidate turn carries the cells: a
+    /// reflection, or a genuine difference of shape the moments happened
+    /// to agree on. Not a proper rotation.
+    Mirrored,
+}
+
+pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Frame, NoFrame> {
     if a.support.is_empty() || b.support.is_empty() {
-        return None;
+        return Err(NoFrame::Bodiless);
     }
     // THE ORIENTATION VECTORS. The second harmonic where the body has a
     // principal axis; the fourth where it does not — a square or a cross
@@ -1064,10 +1175,13 @@ pub fn relative_rotor(a: &Blade, b: &Blade) -> Option<Frame> {
     // `None` at both orders is a body with no orientation to compare.
     let (oa, ob) = match (deviatoric(a), deviatoric(b)) {
         (Some(ua), Some(ub)) => (ua, ub),
-        (None, None) => (quartic_harmonic(a)?, quartic_harmonic(b)?),
+        (None, None) => match (quartic_harmonic(a), quartic_harmonic(b)) {
+            (Some(qa), Some(qb)) => (qa, qb),
+            _ => return Err(NoFrame::Unoriented),
+        },
         // One has a principal axis and the other does not: no turn of one
         // is the other, whatever their sizes.
-        _ => return None,
+        _ => return Err(NoFrame::Isotropy),
     };
     // SIGNS ONLY, WHICH IS WHAT MAKES IT SCALE-FREE. Under a dilation by
     // `s > 0` the moments scale as `s⁴`, so `u ↦ s⁴ · R(2φ) u` and every
@@ -1090,10 +1204,14 @@ pub fn relative_rotor(a: &Blade, b: &Blade) -> Option<Frame> {
     } else {
         // 2φ = ±π/2 is a 45° relation whose half-angle `cos(π/8)` is
         // irrational: refused rather than approximated (rule 4). Anything
-        // else is not a turn of the square base at all.
-        return None;
+        // else is not a turn of the square base at all — and in BOTH cases
+        // the relative orientation exists and is unspellable, which is
+        // 37.7's condition and not a measurement failure.
+        return Err(NoFrame::Oblique);
     };
-    let (ca, cb) = (a.centroid()?, b.centroid()?);
+    let (Some(ca), Some(cb)) = (a.centroid(), b.centroid()) else {
+        return Err(NoFrame::Bodiless);
+    };
     // Centred cells, exact over ℚ: the centroid is rational, so a cell's
     // offset is too, and a quarter turn keeps it rational.
     let centred = |s: &[(i64, i64, i64)], c: &(BigRational, BigRational, BigRational)| {
@@ -1136,15 +1254,15 @@ pub fn relative_rotor(a: &Blade, b: &Blade) -> Option<Frame> {
                 .collect();
             turned.sort();
             if turned == pb {
-                return Some(Frame::Turn(rotor.clone()));
+                return Ok(Frame::Turn(rotor.clone()));
             }
         }
         // Same cardinality and neither half turn carries it: the two are
         // not related by a proper rotation — a reflection, or a genuine
         // difference of shape the moments happened to agree on.
-        return None;
+        return Err(NoFrame::Mirrored);
     }
-    Some(Frame::HalfOpen(turns[turn_pair[0]].2.clone()))
+    Ok(Frame::HalfOpen(turns[turn_pair[0]].2.clone()))
 }
 
 /// Lift a support (sites on the three coordinates of the base, no hue) to

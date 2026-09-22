@@ -10931,3 +10931,244 @@ cover; the two are not yet joined, and the stroke will not be physical
 until a draw replaces the tick at the call sites and `cursor::park` lands
 on a CAUTERIZATION rather than at an arbitrary count (62.4). That is a
 separate row and it is not claimed here.
+
+## 66. The field fired, and the refusals named themselves (ruled 2026-09-22)
+
+T4 wired `condense` at the family pole and the census read ZERO. A zero is
+not a reading — "every gate refused" and "the pass never ran" are the same
+silence — so the field was instrumented at each step that decides, and the
+instrumenting is what produced every finding below.
+
+### 66.1 The census, over 36 corpus forms
+
+```
+308 offered · 0 unlifted
+horizon:  189 apart · 1 contained
+frame:    0 bodiless · 14 isotropy · 0 unoriented · 75 OBLIQUE
+          · 0 mirrored · 29 half-open
+0 CONDENSED
+```
+
+118 pairs are in GENUINE CONTACT, and the 1-skeleton is empty because none
+of them carries a determined frame. The dominant reason is not the one the
+session had been assuming.
+
+### 66.2 Three wrong readings, corrected by splitting one counter at a time
+
+FIRST: `dilation_certified` in the contact gate. The census read `118
+sheared` — every contacting pair refused for not being a scaled copy of its
+neighbour. In an ARC scene adjacent bodies are FUNCTIONAL COMPLEMENTS and
+are almost never homothetic: the gate was requiring two touching puzzle
+pieces to be the same shape before permitting them to touch. It is an
+equivalence test for representational bloat and belongs to the quotient
+operator, not to contact. A square may touch a rectangle.
+
+SECOND: removing it moved the SAME 118 into `half_open`, which read as "the
+parity gap blocks everything". It did not. `relative_rotor` also compares
+deviatorics, so the congruence demand had relocated rather than lifted —
+and the counter fused `None` (no rotor is DEFINED) with `HalfOpen` (a rotor
+exists and only its parity does not). Split: 89 and 29.
+
+THIRD: `Option<Frame>` fused FIVE facts into one `None`. That is rule 11's
+defect at the PRODUCER, not at the call site. `relative_rotor` now returns
+`Result<Frame, NoFrame>` over `Bodiless`, `Isotropy`, `Unoriented`,
+`Oblique`, `Mirrored`, and the 89 resolve as 75 oblique and 14 isotropy.
+
+AND THE METRIC REFUSAL WAS FUSED TOO. `|δ| ≤ 2` is antipodally symmetric
+and a single `off_horizon` counter is not: it joined `Apart` (too far) with
+`Contained` (nested too deep), opposite diagnoses with opposite repairs.
+`Contact`'s five arms exist so the involution's poles stay apart (65.2) and
+the measurement was throwing that away. Split: 189 and 1.
+
+### 66.3 What the corpus actually says
+
+`Oblique` IS NOT A FAILURE. The relative orientation between two touching
+bodies exists, is exact and rational, and is not a turn the square base
+makes. That is 37.7's condition verbatim — an unspellable transition — and
+it is 75 of 118, the single largest fact in the census.
+
+`half_open` at 29 is the `m = 3` gap, real and isolated and a quarter of the
+contacts. `isotropy` at 14 is a genuine dead end no generator repairs.
+`mirrored`, `unoriented` and `bodiless` are ZERO: chirality between touching
+bodies does not occur in this corpus at all.
+
+### 66.4 The base stack was about to be over-built
+
+The session was about to hand-carve the `m = 3` octupole and special-case
+the oblique angles INTO THE BASE STACK, while the engine's own evolutionary
+organ sat idle. `src/anastome/` is a top-level module; `Kernel::cocycle_at`
+carries a dialect transition per `(chart, hypha pair)` with a receipt so
+supersession is CAUSAL ORDER and not a height scalar; and 37.7's path —
+`open_unspellable` → `docket_letter` → `witness_rederived` →
+`converge_witness` → `home_install` — is built and tested on two vantages.
+
+IT HAS NEVER FIRED BECAUSE NOTHING REACHES IT. P11 recorded the symptom
+without the cause: "epoch 67 measured `Unspellable` 0, `adjoin` 0 …
+extraction emits translations, so nothing reaches the court to open." The
+cause is here: 104 unspellable relations per corpus pass, discarded at
+`relative_rotor` as a `continue`.
+
+So the repair is NOT to widen the alphabet by hand. It is to EMIT, and let
+five voices with divergent epigenomes each fail to spell them differently
+while the court adjudicates which adjoined letter survives two vantages.
+
+### 66.5 `Demand::Standing` cannot carry an oblique relation
+
+Its signature is `{ block, rotor: Box<Rotor> }` and the oblique case HAS NO
+RATIONAL ROTOR — which is what makes it oblique. The relation is exactly a
+rational block at DOUBLE angle, `[[dot, −wedge], [wedge, dot]] / ‖u_a‖²`,
+and a rotor needs the HALF angle: `cos φ = √((1 + cos 2φ)/2)`, irrational.
+
+The variant that fits is `Demand::RotorPrime { plane, prime, witness }`,
+whose witness IS a plane block, and `alphabet/factor.rs` already carries
+`prime_outside_the_alphabet` and `standing_of`. The emission is real work —
+normalise the block, factor over `ℤ[i]`, test the prime — and it reuses
+what exists rather than adding to it.
+
+### 66.6 The valves are on the fleet's own line
+
+`FieldTally` was printed only by a corpus test, so a recut would have run
+BLIND: a voice that starved and a voice that condensed read identically in
+the journal. Every gate now prints per form on the line each voice already
+emits, read without clearing — the corpus test takes the total, the fleet
+line shows the running state, and only one reader may take (law 12).
+
+A valve that is closed and a valve that is starved are different facts, and
+`reached_contact()` is the pair that tells them apart.
+
+### 66.7 Two corrections the suite forced, and one that changes 66.3
+
+THE CONTACT BAND IS `1 < delta <= 2`, NOT `|delta| <= 2`. Admitting
+`delta <= 1` admits OVERLAP, and overlap already has a producer: the
+occupancy pass relates a site's occupants in a spanning CHAIN, precisely
+because mutually-overlapping bodies span a simplex and writing all
+`k(k-1)/2` pairs hands `loops_of` a cycle basis with nothing to fill. The
+field rebuilt that clique exactly — eight bodies on one site condensed 28
+faces where the chain writes 7 — which is law 12 with the two producers one
+gate apart.
+
+So the operators divide BY REGIME. Overlap is the occupancy pass's;
+`1 < delta <= 2` is the field's, and it is the band the ring stencil used to
+cover: genuine contact WITHOUT shared support. The band is one-sided on
+purpose — its antipode `-2 <= delta < -1` is NESTING, a different relation
+wanting a different operator (65.3) — and the involution is honoured by
+every regime having an operator, not by one gate swallowing both poles.
+
+THE FIELD'S COST IS NOT FACE WORK. `note_face_work` gauges the occupancy
+builder, whose whole claim is linearity in occupied sites; the field is a
+pair loop over members, and counting it there fused two costs and broke the
+gauge at 36 against 528. `FieldTally::offered` is the field's own carrier.
+
+AND `Oblique` IS NOT "AN UNSPELLABLE ROTATION" — 66.3 OVERSTATES IT. A pure
+reflection reads `Oblique`: the L/J tetromino pair refuses at the ANGLE test
+(`wedge != 0`) and never reaches the cell test that `Mirrored` names. So the
+bucket holds genuine non-lattice turns AND reflections, which lie in
+`O(2)\SO(2)` and are not turns at all.
+
+THE TWO CANNOT BE SEPARATED FROM THE DEVIATORICS. A reflection maps
+`u(2phi)` to `u(2alpha - 2phi)`, which is a perfectly good rotation OF THE
+DEVIATORIC and says nothing about the body; only the cells decide, and the
+reader skips the cell test in exactly this branch. `Mirrored` therefore
+fires only for AXIS-ALIGNED pairs the cells refuse, far narrower than its
+name suggests.
+
+CONSEQUENCE FOR THE EMISSION. The 75 oblique cannot be emitted wholesale as
+37.7 demands: a demand minted from a reflection asks the court to adjoin a
+generator for a relation that is not a turn. Splitting the bucket needs the
+cell test run on the oblique branch, and that is the work directive 3
+actually requires — not a `continue -> emit` swap.
+
+AND `Oblique` IS A READING OF ORIENTATION, NOT OF TOUCH. Touch is settled
+one gate earlier by the metric band; everything reaching `relative_rotor` is
+ALREADY in contact. The question there is not "are we touching" but "how are
+you turned relative to me", which is the `G` lane and not the `T` lane.
+
+## 67. A refusal is a perspective, and only a mutable one is a demand (ruled 2026-09-22)
+
+66 reported "75 of 118 contacts are oblique" as though it were a property of
+the corpus. It is not. It is a property of THIS READER, whose epigenome has
+adjoined nothing. 60.1 already said it — what a mind cannot spell, it cannot
+connect — and the census is the reading of a mind that has learned nothing.
+Five voices, five censuses, on one scene.
+
+### 67.1 The axis that cuts across the five arms
+
+`NoFrame` sorts refusals by MECHANISM — where the reader gave up. The
+operative distinction is PERMANENCE — whether any alphabet could ever change
+the answer:
+
+```
+    IMMUTABLE  Bodiless, Isotropy, Unoriented, reflection
+               facts about the geometry; no vocabulary alters them.
+               A final reading.
+
+    MUTABLE    an unspellable turn
+               a fact about the READER's vocabulary, which grows.
+               A demand.
+```
+
+ONLY A MUTABLE REFUSAL IS A DEMAND. A demand minted from a reflection does
+not merely ask for a generator that is not a turn — it asks the court to
+change something that cannot change by learning, and minting one would
+corrupt the group: no adjunction takes `O(2)\SO(2)` into `Spin+(4,1)`.
+
+`Oblique` STRADDLES THE AXIS, which is exactly why it cannot be emitted
+wholesale, and why 66.3 overstated it.
+
+### 67.2 A refusal must never be stored; the relation must be
+
+Writing `NoFrame::Oblique` onto a cell would FREEZE A PERSPECTIVE — the
+verdict of a mind at one moment, preserved past the vocabulary that produced
+it, with nothing to re-read it when the next adjunction makes it false.
+
+P9 already rules the shape and it had not been connected: `Bubble.candidates`
+is "populated at hold time by RE-DERIVATION from the demand's own bodies and
+never stored beside them (law 12)". The demand carries the GEOMETRY, not the
+conclusion, so every hold re-reads against the CURRENT alphabet and a mind
+that has learned since gets a different answer from the same held thought.
+That is the superposition pulled back into the mind — not re-sent,
+RE-DERIVED.
+
+So the emission is not "emit `Oblique`". It is "emit the relation" — the
+bodies and their measured relative bivector — and let the verdict be a
+function of who reads and when. `Demand::RotorPrime`'s witness is shaped for
+it: it carries the BLOCK THE PRIME WAS READ OFF, never the conclusion.
+
+`FieldTally` is safe on this count: taken and cleared per pass, a reading of
+one traversal and not a stored verdict. But it is why THE CENSUS MUST BE
+RE-TAKEN AFTER EVERY ADJUNCTION rather than treated as a measurement of the
+corpus.
+
+### 67.3 Two vantages are what turn a perspective into a fact
+
+One voice saying "I cannot spell this" is a perspective and has no standing.
+Two organs independently RE-DERIVING the same generator — `witness_rederived`
+-> `converge_witness` -> `home_install` — is how it becomes structural. That
+is law 6, and it is why the emission belongs to the distributed layer: the
+base stack can only ever report its own perspective and has no standing to
+promote one.
+
+### 67.4 Precognition is the gate on the return valve
+
+The candidates a bubble holds are not answers; they are a SUPERPOSITION held
+open. What decides whether one enters the mind is whether it FORMS
+CONGRUENCE against what the mind already carries — and that test is run
+BEFORE the idea is admitted, on a candidate that does not yet stand. A
+candidate that would form congruence is admitted; one that would not is held
+or dissolves (P10's monodromy pruning is this test on the succession axis).
+
+So the return valve is gated by a reading taken on something not yet real,
+and `Frame::HalfOpen` is the same structure one level down: a `Z_2` held
+open per edge, collapsed COLLECTIVELY by the coboundary kernel (T5) rather
+than edge by edge — so new information does not reclassify one refusal, it
+can collapse a whole family of held ambiguities at once.
+
+### 67.5 Binding
+
+```
+family/pairing.rs       FieldTally per valve, taken and cleared
+blade/body.rs           NoFrame's five arms — sorted by mechanism, and
+                        the permanence axis cuts across them
+bubble/idea.rs          candidates re-derived at hold, never stored
+court/…/listing.rs      open_unspellable, docket_letter — the promotion
+```

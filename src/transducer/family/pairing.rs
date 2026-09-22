@@ -25,6 +25,124 @@ pub(crate) fn face_work() -> u64 {
     FACE_WORK.with(|c| c.get())
 }
 
+/// T4 — WHAT THE CONDENSATION FIELD DID, COUNTED AT THE STEP THAT DECIDED
+/// (§8.1, 66).
+///
+/// The first census read `0 condensed` over the whole corpus, and a zero is
+/// not a reading: "every gate refused" and "the pass never ran" are
+/// indistinguishable from the outside, which is the vacuous-truth defect
+/// exactly. Each gate counts its own refusals, so the zero says WHICH.
+///
+/// `offered` is every ordered pair the field evaluated. `unlifted` is a
+/// pair whose nuclei did not read back. The three gates then refuse in
+/// order, and `condensed` is what reached `C¹`.
+#[derive(Default, Clone, Copy, Debug)]
+pub struct FieldTally {
+    pub offered: u64,
+    pub unlifted: u64,
+    /// THE METRIC REFUSAL, SPLIT BY POLE. `|δ| ≤ 2` is antipodally
+    /// symmetric and a single `off_horizon` counter is NOT: it fused
+    /// `Apart` (`δ > 2`, the bodies are too far) with `Contained`
+    /// (`δ < −2`, one is nested deep inside the other), which are opposite
+    /// diagnoses with opposite repairs. `Contact`'s five arms exist
+    /// precisely so the involution's two poles stay apart (65.2), and
+    /// fusing them here threw that away at the measurement.
+    pub apart: u64,
+    pub contained: u64,
+    pub sheared: u64,
+    /// THE TWO WAYS A FRAME IS NOT A DETERMINED TURN, kept apart because
+    /// they are different facts and one count reports them as one.
+    ///
+    /// `unturned` is `relative_rotor` answering NONE: no rotor exists at
+    /// all, because the two bodies' harmonic towers do not correspond and
+    /// a turn between them is not defined. `half_open` is `HalfOpen`: a
+    /// rotor DOES exist as a projective class and only its parity is
+    /// undetermined, which is what `m = 3` would resolve.
+    ///
+    /// Lumped together they said "the parity gap blocks everything" when
+    /// the reading may be "no relative frame exists between dissimilar
+    /// bodies at all" — a far larger claim, and a different repair.
+    /// THE FIVE WAYS NO FRAME IS DETERMINED, each at its own name. The
+    /// census read `89 unturned` under one counter and could not say
+    /// whether the corpus is full of UNSPELLABLE TURNS — 37.7's condition,
+    /// live — or of bodies that do not orient at all.
+    pub bodiless: u64,
+    pub isotropy: u64,
+    pub unoriented: u64,
+    pub oblique: u64,
+    pub mirrored: u64,
+    pub half_open: u64,
+    pub condensed: u64,
+}
+
+thread_local! {
+    static FIELD: Cell<FieldTally> = const { Cell::new(FieldTally {
+        offered: 0, unlifted: 0, apart: 0, contained: 0, sheared: 0,
+        bodiless: 0, isotropy: 0, unoriented: 0, oblique: 0, mirrored: 0,
+        half_open: 0, condensed: 0,
+    }) };
+}
+
+pub(crate) fn note_field(f: impl Fn(&mut FieldTally)) {
+    FIELD.with(|c| {
+        let mut v = c.get();
+        f(&mut v);
+        c.set(v);
+    });
+}
+
+/// Read the field's tally and clear it, as the cover's is taken.
+pub fn take_field_tally() -> FieldTally {
+    FIELD.with(|c| c.replace(FieldTally::default()))
+}
+
+/// THE FIELD WITHOUT CLEARING IT, for a reader that prints per form while
+/// a whole-run total is still accumulating. Two readers of one counter,
+/// and only one of them may take it (law 12: the take is the clear).
+pub fn field_tally() -> FieldTally {
+    FIELD.with(|c| c.get())
+}
+
+impl FieldTally {
+    /// THE VALVE LINE — every gate, in the order the field passes them, so
+    /// a reader sees WHERE the flow stops rather than only that it did.
+    ///
+    /// A valve that is starved and a valve that is closed look the same on
+    /// a total; they do not here. `offered` is what arrived, each named
+    /// count is what one valve turned away, and `condensed` is what came
+    /// out the far end. The six frame arms are the five `NoFrame` refusals
+    /// plus the parity class, because a refusal that does not say which
+    /// refusal it is answers nothing (rule 11).
+    pub fn line(&self) -> String {
+        format!(
+            "offered {} unlifted {} | horizon: apart {} contained {} \
+             | frame: bodiless {} isotropy {} unoriented {} oblique {} \
+             mirrored {} half-open {} | CONDENSED {}",
+            self.offered,
+            self.unlifted,
+            self.apart,
+            self.contained,
+            self.bodiless,
+            self.isotropy,
+            self.unoriented,
+            self.oblique,
+            self.mirrored,
+            self.half_open,
+            self.condensed,
+        )
+    }
+
+    /// WHAT THE VALVE PASSED, AGAINST WHAT REACHED IT. A field that
+    /// refuses everything and a field nothing reached both read `condensed
+    /// 0`, and the pair tells them apart.
+    pub fn reached_contact(&self) -> u64 {
+        self.offered
+            .saturating_sub(self.unlifted)
+            .saturating_sub(self.apart)
+            .saturating_sub(self.contained)
+    }
+}
+
 /// Faces the bundle names: star from the Frame (when the form carries one),
 /// plus pairs whose after-supports overlap or sit at ring distance one.
 /// Occupancy is keyed by site; related pairs are a Keyed set.
@@ -109,6 +227,141 @@ pub(crate) fn star_and_site_faces(
             related.insert(member_pair_key(a, b), ());
         }
     }
+    // T4 — THE CONDENSATION PASS, WHERE THE STENCIL WAS (66, ruled
+    // 2026-09-22). Incidence between two bodies is the exact conformal
+    // strain between their nuclei, gated by three certificates and never by
+    // a dilation of coordinates.
+    //
+    // THE METRIC GATE IS DERIVED, NOT DIALLED. Two supports sharing an EDGE
+    // read `δ² = 4` exactly, at every size — an n×n block has `r² = n²/6`,
+    // so `num = 2n²/3`, `den2 = n⁴/9`, `δ² = 4` independent of `n`, because
+    // `δ` is a similarity invariant and adjacent n-blocks are similar to
+    // adjacent unit cells. A corner neighbour reads 25 and a one-cell gap
+    // reads 121. So `δ² ≤ 4` admits edge adjacency and refuses corner
+    // adjacency, which is 51.3's own four-neighbour convention ARRIVING
+    // FROM THE METRIC instead of from a stencil.
+    //
+    // AND IT IS WRITTEN ANTIPODALLY. `num² ≤ 4·den2` is `|δ| ≤ 2`, which
+    // the involution `σ: s ↦ −s` fixes. Writing it as `num ≤ 0 ∨ num² ≤
+    // 4·den2` would admit arbitrarily deep containment while refusing its
+    // antipode — a half-spectrum silently admitted, which is the same shape
+    // as the three-arm `Contact` collapse (65.1).
+    // THE BLADES ARE LIFTED ONCE PER MEMBER, not once per pair. `shape_of`
+    // integrates every lamina of a support, so computing it inside the pair
+    // loop would lift each body `N` times — `O(N²·cells)` where `O(N·cells)`
+    // is the whole cost. The field is a pair loop; the LIFT is not.
+    let bodies: Vec<(Vec<u8>, blade::Blade)> = supports
+        .scoped()
+        .filter(|(mk, _)| Some(mk.as_slice()) != frame)
+        .map(|(mk, supp)| (mk, blade::shape_of(&supp).blade))
+        .collect();
+    for i in 0..bodies.len() {
+        for j in (i + 1)..bodies.len() {
+            // ORDERED, so each pair is read once and the reading does not
+            // depend on the order the members were offered.
+            let ((ak, ba), (bk, bb)) = (&bodies[i], &bodies[j]);
+            // THE FIELD'S COST IS NOT FACE WORK. `note_face_work` gauges
+            // the OCCUPANCY-driven builder, whose whole claim is that it
+            // is linear in occupied sites; the field is a pair loop over
+            // members and counting it there fused two costs and broke the
+            // gauge (36 against 528). `FieldTally::offered` is the field's
+            // own carrier (law 12).
+            note_field(|t| t.offered += 1);
+            let Some(face) = blade::Interface::between(ba, bb) else {
+                note_field(|t| t.unlifted += 1);
+                continue;
+            };
+            // (1) THE METRIC GATE, antipodally symmetric.
+            // THE CONTACT BAND IS `1 < δ ≤ 2`, NOT `|δ| ≤ 2`.
+            //
+            // `δ ≤ 1` is OVERLAP — the two bodies share support — and that
+            // incidence already has a producer: the occupancy pass above,
+            // which relates a site's occupants in a spanning CHAIN
+            // precisely because they span a simplex and writing all
+            // `k(k−1)/2` pairs would hand `loops_of` a cycle basis with
+            // nothing to fill. Admitting overlap here rebuilt exactly that
+            // clique: eight bodies on one site condensed 28 faces where
+            // the chain writes 7 (law 12, two producers of one fact).
+            //
+            // So the two operators divide by regime, as ruled: overlap is
+            // the occupancy pass's, `1 < δ ≤ 2` is the field's, and it is
+            // the band the ring stencil used to cover — genuine contact
+            // WITHOUT shared support.
+            //
+            // AND THE BAND IS ONE-SIDED ON PURPOSE. Its antipode under
+            // `σ` is `−2 ≤ δ < −1`, which is nesting, a DIFFERENT relation
+            // wanting a different operator (65.3). The involution is
+            // honoured by every regime having an operator, not by one gate
+            // swallowing both poles.
+            let four = crate::core::Q::from_integer(4.into());
+            let sq = &face.strain.num * &face.strain.num;
+            let adjacent = face.strain.num > crate::core::Q::from_integer(0.into())
+                && sq > face.strain.den2
+                && sq <= four * &face.strain.den2;
+            if !adjacent {
+                // WHICH POLE. `Apart` is `δ > 2` — too far to touch;
+                // anything at or below `δ = 1` is overlap or nesting and
+                // belongs to another producer.
+                match face.strain.side() {
+                    blade::Contact::Apart => note_field(|t| t.apart += 1),
+                    _ => note_field(|t| t.contained += 1),
+                }
+                continue;
+            }
+            // THE HARMONIC CERTIFICATE STOOD HERE AND WAS IN THE WRONG SEAT
+            // (66, measured 2026-09-22). It asked whether the two bodies
+            // are DILATES of one another, and the census answered without
+            // ambiguity:
+            //
+            //     308 offered, 0 unlifted, 190 off-horizon,
+            //     118 SHEARED, 0 half-open, 0 condensed
+            //
+            // Every one of the 118 pairs that the metric gate found in
+            // contact was then refused for not being a scaled copy of its
+            // neighbour. In an ARC scene adjacent bodies are FUNCTIONAL
+            // COMPLEMENTS — a line meeting a frame, an agent against an
+            // obstacle, an L abutting a block — and are almost never
+            // homothetic. The gate was requiring two touching puzzle pieces
+            // to be the same shape before permitting them to touch.
+            //
+            // `dilation_certified` is an equivalence test for
+            // REPRESENTATIONAL BLOAT — two cells that are one thing said
+            // twice — and it belongs to the quotient operator, gated on a
+            // free face, not to contact. A square may touch a rectangle.
+            //
+            // (2) THE PARITY GATE. A 1-cell may not enter `C¹` carrying a
+            //     `±1` gauge ambiguity: `Frame::HalfOpen` is a projective
+            //     class and not a determined rotor, and admitting it would
+            //     let an unoriented reflection pass without paying. It
+            //     refuses until the odd harmonic `m = 3` exists to resolve
+            //     the half turn (57.3, 65.6).
+            match blade::relative_rotor(ba, bb) {
+                Ok(blade::Frame::Turn(_)) => {}
+                // A ROTOR EXISTS AND ITS PARITY DOES NOT. This is the
+                // `m = 3` gap: a projective class, not a determined turn.
+                Ok(blade::Frame::HalfOpen(_)) => {
+                    note_field(|t| t.half_open += 1);
+                    continue;
+                }
+                // AND THE FIVE REFUSALS, EACH AT ITS OWN NAME. `Oblique`
+                // in particular is NOT a failure: the relative orientation
+                // exists and the alphabet cannot spell it, which is 37.7.
+                Err(why) => {
+                    note_field(|t| match why {
+                        blade::NoFrame::Bodiless => t.bodiless += 1,
+                        blade::NoFrame::Isotropy => t.isotropy += 1,
+                        blade::NoFrame::Unoriented => t.unoriented += 1,
+                        blade::NoFrame::Oblique => t.oblique += 1,
+                        blade::NoFrame::Mirrored => t.mirrored += 1,
+                    });
+                    continue;
+                }
+            }
+            note_field(|t| t.condensed += 1);
+            related.insert(member_pair_key(ak, bk), ());
+        }
+    }
+
     // THE RING IS GONE — T1, THE LAST INCIDENCE STENCIL (60.5, ruled
     // 2026-09-22). A third pass stood here: each member's support dilated by
     // `ring_of_support`, a Manhattan 4-neighbourhood on ℤ², and every member

@@ -104,7 +104,7 @@ pub(crate) fn meet_edge(
         )
     };
     let framed = match (own_turn(supa), own_turn(supb)) {
-        (Some(ta), Some(tb)) => match ta.rotor().versor_inverse() {
+        (Ok(ta), Ok(tb)) => match ta.rotor().versor_inverse() {
             Some(inv) => {
                 // A frame either side of which is only fixed mod `π` makes
                 // the composite open too, and it is counted apart: an
