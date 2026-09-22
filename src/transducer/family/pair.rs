@@ -87,8 +87,7 @@ pub(crate) fn meet_edge(
         .zip(crate::transducer::cga::frame_base_point(sb))
         .and_then(|(pa, pb)| crate::transducer::cga::geodesic_transvection(&pa, &pb));
     match geodesic {
-        Some(r) => {
-            edge.carriage = r;
+        Some(_r) => {
             crate::transducer::family::cover::tally(|t| t.geodesic += 1);
         }
         None => crate::transducer::family::cover::tally(|t| t.off_sheet += 1),

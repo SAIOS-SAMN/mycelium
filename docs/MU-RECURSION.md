@@ -9233,3 +9233,254 @@ sentence/tests/properties.rs   from_address(address(f)) ≡ f
 
 Rows: K6 (the complete key and its inverse, the tape retired), Stage 19 of
 `MU-RECURSION-TASKS.md`; K2 and Z11 are re-shaped by it and wait behind it.
+
+## 55. Phase, not place: why the 2-skeleton was empty (ruled 2026-09-22)
+
+### 55.1 The reading
+
+Four constructions were tried for the witness that certifies a 2-simplex,
+and all four returned zero:
+
+```
+an l1 stencil  |dr| + |dc| = 1     a coordinate metric imposed on raw input
+the open star  St(B) = B u dB      a neighbourhood synthesised from a partition
+Khalimsky      corners at (2r,2c)  a square raster and its 4-neighbour corner
+the spectral   shared cyclotomic l  phase, not place
+```
+
+The first three are the same fiat in better clothing: each asks whether
+three charts contain a mutual POINT, and each must reintroduce a lattice
+to answer. A lattice is a cage. The fourth is not a cage and it still
+returned zero, because the quantity it measures is identically trivial.
+
+Measured over the corpus's 186 meets:
+
+```
+phase:   N finite, 0 infinite, 0 unread, every count in period slot 1
+nerve:   charts over cells, 0 shared by two or more in 9 of 10 forms
+defects: trivial 0 elliptic 0 hyperbolic N parabolic 0 non-simple 0
+cycles:  vacuum 64 resonant 0, over 1458 charged steps of 1777
+```
+
+`l = 1` is `R ~ +-1`. Of the three sectors of `Spin+(3,1)` the corpus
+occupies exactly one:
+
+```
+elliptic / compact K      l = 1 on all 186     ABSENT
+parabolic / null  L^2 = 0 parabolic 0          ABSENT
+hyperbolic / exp(p)       186 meets, mu > 0    THE WHOLE CORPUS
+```
+
+Every negative reading of the session is that single fact reported four
+ways. The 2-skeleton is not missing because the nerve builder, the codec
+or the coboundary logic is wrong.
+
+### 55.2 The scalar collapse that forced it
+
+`54.7`'s quantum was `M = 1 + sum |p_i - P|^2`, defended as "a moment, not
+an extent: every cell enters symmetrically and no axis is privileged, so
+there is no box". Privileging no axis was the defect. The second moment is
+a TENSOR and this stores its TRACE:
+
+```
+M2  = sum (p - P) (x) (p - P)          in Sym2(Q), carries orientation
+Tr M2 = sum |p_i - P|^2                 invariant under every rotation
+```
+
+`Tr M2` is an `SO(2)` invariant, so it treats every chart as an ISOTROPIC
+POINT MASS. Two isotropic point masses have no relative frame angle; the
+only relation between them is the geodesic through their centres, and
+
+```
+R = 1 - v_b v_a,  B = v_a ^ v_b,  B^2 = sinh^2 d >= 0  =>  pure boost, l = 1
+```
+
+It was algebraically impossible for bare centres of mass to yield anything
+but `l = 1`. The collapse is doubled: `|p_i - P|^2` sums the axes per
+cell, then `sum` sums the cells. A single rational cannot orient anything.
+
+This is the same defect already ruled on at `bivector_squares` — "is the
+scalar collapsing our content into a single plane" — committed a second
+time in a new place.
+
+### 55.3 Relative orientation, exactly, without eigendecomposition
+
+Diagonalising an isolated `M2` needs the roots of its characteristic
+quadratic, which lie in `Q(sqrt D)`: refused by rule 4. The RELATIVE frame
+does not need either matrix diagonalised. Split off the isotropic part:
+
+```
+M2 = (1/2) Tr(M2) I + D,   D traceless, symmetric
+
+u = ((M_rr - M_cc)/2) e1 + M_rc e2      the deviatoric bivector, in Q^2
+```
+
+A rank-2 symmetric tensor rotates at DOUBLE the shape's angle, `u_b =
+R(2phi) u_a`. For congruent shapes the anisotropic magnitudes agree, and
+the double angle is fixed in `Q` with no root taken:
+
+```
+Delta       = ((M_rr - M_cc)/2)^2 + M_rc^2      = |u_a|^2 = |u_b|^2
+cos 2phi    = (u_a . u_b) / Delta   in Q
+sin 2phi    = (u_a ^ u_b) / Delta   in Q
+```
+
+### 55.4 The grid group's projective rotors carry no roots
+
+Congruent shapes on a discrete base are related by `D4`, so
+`phi in {0, pi/2, pi, 3pi/2}` and `2phi in {0, pi, 2pi, 3pi}`, on which
+`cos 2phi` and `sin 2phi` take values in `{-1, 0, 1}` only. The half-angle
+rotors are rational as PROJECTIVE versors — a versor is projective, so the
+`1/sqrt 2` never has to be written:
+
+```
+phi     rotor                  projective versor   mu = <R>0^2/<R~R>0 - 1   l
+0       1                      1                   1/1 - 1 =  0             1
+90      (1 + e12)/sqrt 2       1 + e12             1/2 - 1 = -1/2           4
+180     e12                    e12                 0/1 - 1 = -1             2
+270     (-1 + e12)/sqrt 2      -1 + e12            1/2 - 1 = -1/2           4
+```
+
+`(1 + e12)(1 - e12) = 1 - e12^2 = 2 in Q`. A quarter turn is minted
+exactly when `u_a . u_b = -Delta` and `u_a ^ u_b = 0`.
+
+### 55.5 Where the frame is discarded
+
+`meet_edge` is handed `va, vb` and uses them only for `hue_at` (the gauge
+lane). Its carriage is OVERWRITTEN:
+
+```
+edge_of:    Transport { word, carriage: d.geo(&t), gauge }   d, t peeled from gamma
+meet_edge:  edge.carriage = r                                r = 1 - v_b v_a
+```
+
+`frame_base_point(s)` maps a versor to a POINT `V v0 V~`, and a point has
+no orientation, so the overwrite replaces a carriage carrying gamma's own
+dilator and transvection with one built from two orientation-free centres.
+The comment's hedge names it: "edge_of's own carriage stands" — only on
+the refusal path.
+
+The WORD survives the overwrite, peeled from `gamma = s_b s_a^-1`, so
+`l = 1` on the word is a fact about the corpus (the carried pieces are
+rotationally aligned) and NOT a consequence of the transvection formula.
+The two halves must not be conflated: the formula constrains the carriage,
+the measurement was on the word.
+
+TWO REPAIRS COLLIDED AND THE SECOND KILLED THE FIRST. `edge_of` was
+repaired under 54.7 R3 to stop reading `translator_of(gamma)` — the
+conformal motor whose `e_inf` generator is null, forcing `I1 = 0` and
+synthesising the four parabolic/undecomposed cycles — and to read
+`transvection_of(gamma)` instead. From that moment `edge_of` emitted an
+authentic intrinsic connection and the `meet_edge` overwrite stopped
+being a fix. It became a regression: discarding gamma's dilator `d`,
+discarding gamma's transvection `t`, and substituting a central-force
+chord between unoriented centres. The hedge "edge_of's own carriage
+stands" says it exactly — the correct code ran only on the failure path.
+
+AND IT MADE THE NON-SIMPLE SECTOR UNREACHABLE BY CONSTRUCTION, by the
+same identity 54.7 states about `basepoint_transvection`:
+
+```
+<R>2 = v_a ^ v_b,  a simple blade
+(v_a ^ v_b) ^ (v_a ^ v_b) = 0  =>  I2 = <Omega ^ Omega>4 = 0
+```
+
+So no cycle of pure chords could carry a screw, whatever the scene did.
+The theorem was proved at one site and left standing at another, where
+this ruling had installed it.
+
+MEASURED, removing the overwrite and leaving `edge_of`'s carriage:
+
+```
+clobbered   defects: ... hyperbolic N parabolic 0 non-simple 0
+gamma-derived defects: ... hyperbolic N parabolic 0 non-simple 3
+edges asked: measured N, unspelled 0, unread 0, not rigid 0
+```
+
+`non-simple 0 -> 3`: three genuine loxodromic screws — a transvection
+along an axis coupled to a twist about that same axis — were being
+erased. 54.7's conclusion that the four non-simple readings "did NOT
+survive, they were an artifact of the flat generator" is corrected here:
+three of them are real and the overwrite was destroying them.
+
+A PREDICTION OF THIS RULING THAT FAILED. Removing the overwrite was
+expected to expose `transvection_of`'s Cayley pole at `|u|^2 = 1`, the
+same pole 54.7 found in `basepoint_transvection`, and to refuse every
+unit step. It did not: `unspelled 0, unread 0, not rigid 0`. The pole
+bites on INTEGER lattice displacements, where `1^2 + 0^2 = 1` is common;
+`displacement_of` yields general rationals, and the rational unit sphere
+is measure zero among them. The pole is still there and is still a defect
+at that site — it simply is not reached by this corpus.
+
+The full connection couples the two:
+
+```
+g_ab = theta_b (1 - v_b v_a) theta_a^-1
+```
+
+spacelike ^ spacelike twist against timelike ^ timelike shear, which is
+the whole `Spin+(3,1)` versor rather than one sector of it.
+
+### 55.6 What is already in hand
+
+```
+blade::Shape { blade: Blade }            oriented, blade-valued, not scalar
+blade::shape_of, shape_of_section        support -> shape
+blade::versor_coset_ordered              shape-to-shape versors (edge_transport uses it)
+Scenery.supports                         per-member support, keyed by member
+da / db on ChordEnd                      the same supports, already at extract
+cech::certified_triples                  base-witness walker, pore test passing
+```
+
+`edge_transport` already builds its versors from SHAPES; `meet_edge` does
+not. The deviatoric tensor needs no new plumbing: `da` and `db` are the
+supports and they already arrive at the extractor.
+
+### 55.7 The layer hierarchy
+
+```
+Layer 3  transliminal crossing   attaching 2-cells        FAILED / 0
+Layer 2  luminal medium          null vectors, L^2 = 0    ABSENT  / 0
+Layer 1  hyperbolic substrate    timelike, v^2 = -1       ACTIVE  / 186
+```
+
+A crossing cannot be defined until the medium it crosses is defined.
+Building 2-simplices from 186 timelike meets is a jump from Layer 1 to
+Layer 3. `A.10` permits two manifolds to co-occupy without collapse only
+where the interface is a LUMINAL phase gradient — a null direction, on
+which the induced metric is degenerate so the two interiors do not crush
+each other. `R = 1 - v_b v_a` runs between `v^2 = -1` points: timelike,
+`mu > 0`, not luminal. Naming it the luminal gradient was an error.
+
+### 55.8 What is refused
+
+An authored generator is not a derivation. `McFarland_2026_v5_2` section
+"Worked Example" fits an ARC-AGI-2 rule by hand in its own text — guessing
+frequency rank, meeting a counterexample ("wait, let us recount"),
+switching to connected-component cardinality, hitting a tie, and minting
+"geometric complexity" to close it. Its generator was not discovered by
+the algebra. Importing that method installs the author's cognition in the
+engine and the suite then passes by memorising priors. The paper's
+DIAGNOSIS stands and is worth keeping: the transformation is not in
+`GL_n(Q)` for any fixed `n`, so no search over a fixed linear group on a
+fixed coordinate space can find it.
+
+From `ipsal-autic`: `A.8` (torsion never destroyed — promoted,
+annihilated in opposing pairs, or deposited; information monotonically
+non-decreasing) supplies drain's conservation law; `A.9` (no global
+metric) makes the form-scoped quantum correct by axiom; `A.10` supplies
+the tether; `A.6` unbound supplies escalation. Refused: `A.4`
+(positive-definiteness — false in `Cl(4,1)`, `e_-^2 = -1`), `A.7` as
+written (closure in `H1(X,Z)` — the hyperbolic sector never returns), and
+`A.6-bind-11` (`N = 11` is an architectural binding, not a theorem).
+
+### 55.9 Binding
+
+```
+family/extract.rs        the spectral witness and the nerve reading (55.1)
+family/pair.rs           meet_edge overwrites the carriage (55.5)
+family/perceive.rs       edge_of peels the word; edge_transport uses shapes (55.6)
+sentence/pivot/loops.rs  steps kept as versors, mu a projection (LAW-0)
+cech/nerve.rs            certified_triples, base witness, pore test
+cech/determinism.rs      the gauge is a functor of the complex, not of arrival order
+```
