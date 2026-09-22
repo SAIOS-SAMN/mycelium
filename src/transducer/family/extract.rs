@@ -1092,41 +1092,42 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // palette index into a spatial scale. This predates the chart and is
     // not repaired here; it wants a ruling on whether hue is a coordinate
     // of the base or of the fibre.
+    // A.11's SINGLE PRODUCER (56.3, ruled 2026-09-22). This summed the
+    // cells a second time — a SHADOW PRODUCER of moments `blade::lift`
+    // already computes exactly, and a lossy one: it took each cell as a
+    // POINT MASS at integer coordinates, where `lift` integrates the
+    // lamina's own unit square and carries the parallel-axis term
+    // `N/12` at every order. Two producers of one quantity, and the
+    // second disagreed with the first (law 12).
+    //
+    // The form's chart is one body — the union of every cell its chords
+    // stand on — so `centroid()` is `P` and the trace of `inertia` is the
+    // scale. The trace is used HERE and only here, as a radius: it is an
+    // `SO(2)` invariant and carries no orientation (A.11), which is what
+    // the frame rotor is for and not this.
     let (origin, quantum) = {
         let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
         let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
-        let mut cells = 0u64;
-        let mut sum = [
-            num_bigint::BigInt::from(0),
-            num_bigint::BigInt::from(0),
-            num_bigint::BigInt::from(0),
-        ];
+        let mut cells: Vec<(i64, i64, i64)> = Vec::new();
         for ((_, _, _, da), (_, _, _, db), _) in meet_chords.iter() {
-            for (r, c, k) in da.iter().chain(db.iter()) {
-                sum[0] += num_bigint::BigInt::from(*r);
-                sum[1] += num_bigint::BigInt::from(*c);
-                sum[2] += num_bigint::BigInt::from(*k);
-                cells += 1;
-            }
+            cells.extend(da.iter().copied());
+            cells.extend(db.iter().copied());
         }
-        if cells == 0 {
-            ([zero.clone(), zero.clone(), zero], one)
-        } else {
-            let n = num_bigint::BigInt::from(cells);
-            let centre = sum.map(|s| num_rational::BigRational::new(s, n.clone()));
-            let mut moment = zero;
-            for ((_, _, _, da), (_, _, _, db), _) in meet_chords.iter() {
-                for (r, c, k) in da.iter().chain(db.iter()) {
-                    let q = |v: i64| {
-                        num_rational::BigRational::from_integer(num_bigint::BigInt::from(v))
-                    };
-                    for (axis, value) in [q(*r), q(*c), q(*k)].iter().enumerate() {
-                        let d = value - &centre[axis];
-                        moment += &d * &d;
-                    }
-                }
+        cells.sort_unstable();
+        cells.dedup();
+        match crate::transducer::blade::shape_of(&cells).blade {
+            // A form whose chords stand on nothing has no chart to speak
+            // of; the pole and unit scale are the honest empty reading.
+            b if b.support.is_empty() => ([zero.clone(), zero.clone(), zero], one),
+            b => {
+                let (c1, c2, c3) = match b.centroid() {
+                    Some(p) => p,
+                    // A body whose centroid does not read back is refused
+                    // rather than defaulted (rule 11).
+                    None => (zero.clone(), zero.clone(), zero.clone()),
+                };
+                ([c1, c2, c3], one + (&b.inertia[0] + &b.inertia[1]))
             }
-            (centre, one + moment)
         }
     };
     // THE CERTIFIED 2-SIMPLICES OF THIS PERCEPT'S COVER (54.7, ruled
