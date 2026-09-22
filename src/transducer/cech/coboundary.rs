@@ -313,6 +313,190 @@ impl Complex {
 
     /// Fill a simplex by extend: coboundary is Extended, finite order is
     /// Congruent, otherwise Class.
+    /// T2 — `drain`, THE CONJUGATE OF `condense` (62.1, ruled 2026-09-22).
+    ///
+    /// `condense` mints a 1-cell where two bodies' strain falls inside a
+    /// mind's horizon. If that is the only arrow the 1-skeleton is a
+    /// ratchet: it accretes history and never finds a ground state. `drain`
+    /// is the release, and it is a DIMENSION-1 CAUTERIZATION — the same
+    /// event `classify` performs on a cycle, one dimension down.
+    ///
+    /// CAUTERIZATION PINS THE EDGE. An edge lying in the boundary of a
+    /// simplex that has been READ — any coface of degree ≥ 1 whose fill is
+    /// not `Open` — cannot drain. Once a loop is walked, classified and
+    /// cauterized into a class the form carries, that reading is historical:
+    /// draining an edge beneath it would retroactively invalidate a class
+    /// already recorded, and observation is a one-way phase transition from
+    /// geometry into algebra (62.4). The 2-cell must `descend` first, which
+    /// re-opens the cycle; only an unsealed edge is eligible.
+    ///
+    /// The cofaces are read as a KEYED MEET of the two vertices' stars —
+    /// `star(a) ∩ star(b)` — and never as a walk of the higher degrees
+    /// (rule 1).
+    ///
+    /// STRAIN CANNOT VANISH INTO THE VACUUM. Two outcomes and they are
+    /// different facts:
+    ///
+    /// - `g_ab = 1` — the tether carried identity transport, so its
+    ///   dissolution has no topological consequence and the 1-cell is
+    ///   simply gone. [`Drained::Vacuum`].
+    /// - `g_ab ≠ 1` — the bodies separated while carrying relative
+    ///   rotation, shear or a screw, and that cannot be wiped from the
+    ///   ledger. The edge is classified by the one classifier both organs
+    ///   use and the READING IS RETURNED, so a non-trivial coupling severed
+    ///   before a 2-cell could neutralise it is registered rather than lost
+    ///   (rule 11). [`Drained::Cauterized`].
+    ///
+    /// NOTHING IS WRITTEN TO A COFACE. Relaxing the strain by composing it
+    /// into a neighbouring simplex's holonomy would be a hidden write that
+    /// alters an already-evaluated invariant, which is the defect the
+    /// pinning rule exists to prevent. The class travels out to the caller;
+    /// the complex mutates only the cell being drained.
+    pub fn drain(&mut self, key: &[u8]) -> Drained {
+        let Some(1) = self.degree_of(key) else {
+            return Drained::Absent;
+        };
+        let Some(simplex) = self.degrees[1].get(key).cloned() else {
+            return Drained::Absent;
+        };
+        let [a, b] = simplex.vertices.as_slice() else {
+            return Drained::Absent;
+        };
+        // PINNED? The cofaces are the simplices holding BOTH ends, which is
+        // the meet of the two stars. A coface that has been read — any fill
+        // but `Open` — pins this edge until it descends.
+        if let (Some(sa), Some(sb)) = (self.star.get(a), self.star.get(b)) {
+            for (k, ()) in sa.meet(sb).scoped() {
+                if k == *key {
+                    continue;
+                }
+                let read = self
+                    .degree_of(&k)
+                    .and_then(|d| self.degrees.get(d))
+                    .and_then(|layer| layer.get(&k))
+                    .is_some_and(|s| !matches!(s.fill, Fill::Open));
+                if read {
+                    return Drained::Pinned;
+                }
+            }
+        }
+        // THE SAME TRIVIALITY TEST `fill` USES, so the two halves of the
+        // pair agree on what "carries nothing" means (law 12).
+        let flat = crate::transducer::element::same_versor(
+            &simplex.carriage,
+            &crate::transducer::element::identity_versor(),
+        );
+        let trivial = simplex.coefficient.is_identity() && flat;
+        let reading = (!trivial).then(|| {
+            crate::transducer::cech::classify(
+                &simplex.coefficient,
+                &simplex.carriage,
+                // THE HUE CYCLE OF A 1-CELL IS THE IDENTITY, and that is
+                // the reading rather than a placeholder for one: a
+                // `Simplex` carries no gauge, and an edge permutes no hues
+                // BETWEEN vertices — the same statement
+                // `close_stabilizer_orbit` makes when it files an empty
+                // `sigma` for an orbit at a single vertex.
+                crate::transducer::sentence::CycleType::Identity,
+            )
+        });
+        self.forget(key);
+        match reading {
+            None => Drained::Vacuum,
+            Some(fill) => Drained::Cauterized(fill),
+        }
+    }
+
+    /// T2b — `descend`, THE CONJUGATE OF `ascend` (63.3, ruled 2026-09-22).
+    ///
+    /// `drain` refuses with [`Drained::Pinned`] when an edge lies beneath a
+    /// coface that has been READ, and names `descend` as the remedy. Until
+    /// this existed the remedy could not be performed, so a 1-cell that
+    /// entered a 2-cell was immortal and the complex could still only
+    /// accrete at degree 2 — the ratchet moved up a dimension rather than
+    /// being removed.
+    ///
+    /// IT IS `drain` ONE DEGREE UP, and deliberately the same shape: the
+    /// same dimensional gate, the same pinning-from-above by a keyed meet,
+    /// the same `forget`, and the same refusal to write into a neighbour.
+    /// Two pivots of one ladder that did not share their mechanics would be
+    /// two mechanics, and the pair would close only by coincidence.
+    ///
+    /// PINNED FROM ABOVE. A 2-cell enclosed by a 3-cell that has been read
+    /// cannot descend, for the reason an edge under a read face cannot
+    /// drain. The guard reads the meet of the three vertices' stars, and in
+    /// a complex with an empty 3-skeleton it is vacuously empty and never
+    /// fires — which is exactly how `drain` behaved before 2-cells existed.
+    ///
+    /// THE CLASS TRAVELS OUT. A 2-cell exists because a boundary holonomy
+    /// CLOSED; releasing the membrane cannot silently erase that the
+    /// circulation was sealed, so the fill it carried is handed back the way
+    /// `drain` hands back a cauterized edge's. What stays behind is the
+    /// boundary: the three 1-cells are untouched, the cycle reverts to an
+    /// open one, and — because `forget` drops this simplex from each of
+    /// their stars — they are UNPINNED and may now drain.
+    pub fn descend(&mut self, key: &[u8]) -> Descended {
+        let Some(2) = self.degree_of(key) else {
+            return Descended::Absent;
+        };
+        let Some(simplex) = self.degrees[2].get(key).cloned() else {
+            return Descended::Absent;
+        };
+        let [a, b, c] = simplex.vertices.as_slice() else {
+            return Descended::Absent;
+        };
+        // PINNED FROM ABOVE? The cofaces of a 2-cell are the simplices
+        // holding all three of its vertices — the meet of three stars, and
+        // never a walk of degree 3 (rule 1).
+        if let (Some(sa), Some(sb), Some(sc)) =
+            (self.star.get(a), self.star.get(b), self.star.get(c))
+        {
+            for (k, ()) in sa.meet(sb).meet(sc).scoped() {
+                if k == *key {
+                    continue;
+                }
+                let read = self
+                    .degree_of(&k)
+                    .and_then(|d| self.degrees.get(d))
+                    .and_then(|layer| layer.get(&k))
+                    .is_some_and(|s| !matches!(s.fill, Fill::Open));
+                if read {
+                    return Descended::Pinned;
+                }
+            }
+        }
+        // AN UNREAD 2-CELL SEALED NOTHING. It stands `Open`, so no
+        // circulation was ever recorded closed and there is no class to
+        // hand back — the membrane simply goes.
+        let sealed = match simplex.fill {
+            Fill::Open => None,
+            held => Some(held),
+        };
+        self.forget(key);
+        match sealed {
+            None => Descended::Unsealed,
+            Some(fill) => Descended::Released(fill),
+        }
+    }
+
+    /// Unbind one simplex from every carrier that names it. The inverse of
+    /// `remember`, and it must touch the same three: the degree layer, the
+    /// degree index, and each vertex's star. A cell dropped from one and
+    /// left in another is a key that answers where nothing stands.
+    fn forget(&mut self, key: &[u8]) {
+        let Some(degree) = self.degree_of(key) else { return };
+        let vertices = self.degrees[degree].get(key).map(|s| s.vertices.clone());
+        self.degrees[degree].remove(key);
+        self.by_key.remove(key);
+        if let Some(vs) = vertices {
+            for v in vs {
+                if let Some(star) = self.star.get_mut(&v) {
+                    star.remove(key);
+                }
+            }
+        }
+    }
+
     pub fn fill(&mut self, key: &[u8]) -> CoboundaryOutcome {
         let Some(degree) = self.degree_of(key) else {
             return CoboundaryOutcome::Absent;

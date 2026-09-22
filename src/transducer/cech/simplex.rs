@@ -145,6 +145,83 @@ pub enum CoboundaryOutcome {
     Absent,
 }
 
+/// WHAT A `drain` DID — the conjugate of [`CoboundaryOutcome`], and a
+/// transition result rather than a stored state for the same reason (62.1).
+///
+/// Four outcomes and no two of them are the same fact. `Vacuum` and
+/// `Cauterized` are both successful releases and differ in whether anything
+/// was carried; `Pinned` is a refusal the caller can act on by descending
+/// first; `Absent` is no such 1-cell, which is not a refusal at all.
+#[derive(Clone, Debug)]
+pub enum Drained {
+    /// The tether carried identity transport. It returned to the vacuum
+    /// with no topological consequence and nothing is filed.
+    Vacuum,
+    /// The tether carried `g_ab ≠ 1` and was cauterized at dimension 1.
+    /// The reading travels out; strain is never dropped (rule 11).
+    Cauterized(Fill),
+    /// The edge lies in the boundary of a simplex that has been READ, so
+    /// draining it would retroactively invalidate a recorded class. The
+    /// coface must `descend` first.
+    Pinned,
+    /// No 1-cell at this key.
+    Absent,
+}
+
+/// WHAT A `descend` DID — [`Drained`] one degree up, and the same four
+/// facts (63.3).
+///
+/// `Unsealed` and `Released` are both successful descents and differ in
+/// whether the membrane had ever sealed a circulation. A 2-cell standing
+/// `Open` recorded nothing, so nothing travels out; one carrying a fill was
+/// the witness that a boundary holonomy CLOSED, and releasing it cannot
+/// silently erase that.
+#[derive(Clone, Debug)]
+pub enum Descended {
+    /// The 2-cell stood `Open` — it sealed no circulation, so the membrane
+    /// goes and no class is handed back.
+    Unsealed,
+    /// The 2-cell carried a reading. It is released and the class travels
+    /// out; its boundary 1-cells stay, now unpinned.
+    Released(Fill),
+    /// A 3-cell above this one has been read, so descending would
+    /// retroactively invalidate it. That coface must descend first.
+    Pinned,
+    /// No 2-cell at this key.
+    Absent,
+}
+
+impl Descended {
+    /// The class a sealed membrane handed back, where there was one.
+    pub fn released(&self) -> Option<&Fill> {
+        match self {
+            Descended::Released(f) => Some(f),
+            _ => None,
+        }
+    }
+
+    /// Did the membrane leave the complex? Both descents did; neither
+    /// refusal.
+    pub fn opened(&self) -> bool {
+        matches!(self, Descended::Unsealed | Descended::Released(_))
+    }
+}
+
+impl Drained {
+    /// The class a strained dissolution filed, where there was one.
+    pub fn cauterized(&self) -> Option<&Fill> {
+        match self {
+            Drained::Cauterized(f) => Some(f),
+            _ => None,
+        }
+    }
+
+    /// Did the cell leave the complex? Both releases did; neither refusal.
+    pub fn released(&self) -> bool {
+        matches!(self, Drained::Vacuum | Drained::Cauterized(_))
+    }
+}
+
 impl CoboundaryOutcome {
     /// The state the simplex holds after the attempt, where the attempt
     /// reached one. `None` for both non-attempts, which are different
