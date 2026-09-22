@@ -10576,3 +10576,129 @@ and their commutator is a rotation that neither of them is.
 So a conjugate pair is well-formed exactly when its two halves fail to
 commute, and the commutator is what the pivot RETURNS. A pair that
 round-trips is not a component; it is a no-op written twice.
+
+## 63. T2 landed — the tether and its release (ruled 2026-09-22)
+
+59 established that contact is conformal strain and 62 that a component
+without its conjugate is a ratchet. Both halves are now built.
+
+### 63.1 The metric half: `Strain { num, den2 }`
+
+The strain is carried as a RATIO THAT IS NEVER TAKEN. `mu` is irrational —
+its denominator wants `sqrt(r_a^2 r_b^2)` and law 1 refuses an inexact root
+— so the rational pair carries it and every question is a comparison of
+cross products.
+
+`num`'S SIGN IS ORTHOGONALITY, NOT TANGENCY, and a first statement of this
+had it wrong twice over. `num = 0` is `delta = 0`: two spheres meeting at
+RIGHT ANGLES. Tangency is `delta = 1`, which is `num = sqrt(den2)`. Reading
+the side off the sign of `num` would put the horizon a whole unit of `delta`
+out of place.
+
+THE COMPARISON SPLITS ON SIGN BEFORE SQUARING, because squaring loses the
+sign and a negative numerator is the COMMON case — it holds whenever two
+centroids are closer than `sqrt(r_a^2 + r_b^2)`:
+
+```
+    delta <= k     num>0  k>0   :  num^2 <= k^2 den2
+                   num>0  k<=0  :  false
+                   num<=0 k>0   :  true
+                   num<=0 k<=0  :  num^2 >= k^2 den2     (reverses)
+```
+
+MEASURED: a body against itself reads `Through` (`delta = -1`, internal
+tangency); a distant pair reads `Apart`; no horizon admits the far pair
+while refusing the near one; and doubling every coordinate moves neither the
+reading nor the side, which is Axiom C's scale-freedom holding rather than
+being argued.
+
+AND THE STRAIN IS BILINEAR. On the conformal sphere `s = P - (1/2)r^2
+e_inf`, `num = -2 (s_a . s_b)`, asserted exactly over every ordered pair of
+three bodies. `Strain::between` subtracts and squares, which READS as a
+pairwise computation and invites an `O(N^2)` walk; it is an inner product,
+linear in each argument. That is T3's whole opening.
+
+### 63.2 The conjugate half: `drain`
+
+`drain` is a DIMENSION-1 CAUTERIZATION — the event `classify` performs on a
+cycle, one dimension down (62.4).
+
+CAUTERIZATION PINS THE EDGE. An edge in the boundary of a coface that has
+been READ cannot drain: the class that coface carries is historical, and
+observation is a one-way phase transition from geometry into algebra. The
+cofaces are read as a KEYED MEET of the two vertices' stars, `star(a) ^
+star(b)`, never as a walk of the higher degrees (rule 1).
+
+STRAIN CANNOT VANISH. `g_ab = 1` returns the 1-cell to the vacuum with no
+topological consequence; `g_ab != 1` is classified and THE READING TRAVELS
+OUT, so a coupling severed before a 2-cell could neutralise it is registered
+rather than lost. Nothing is written to a coface: relaxing strain by
+composing it into a neighbour's holonomy would be a hidden write altering an
+already-evaluated invariant, which is the defect the pinning rule exists to
+prevent.
+
+`forget` IS THE EXACT INVERSE OF `remember` and touches the same three
+carriers — the degree layer, the degree index, and each vertex's star. A
+cell dropped from one and left in another is a GHOST INCIDENCE: a star
+claiming a neighbour the complex cannot evaluate.
+
+THE HUE CYCLE OF A 1-CELL IS `Identity`, and that is a theorem rather than a
+default. A 1-simplex is contractible, `pi_1(I) = 0`, so it accumulates no
+fibre permutation; a permutation lives in the LOOP and the edge carries only
+the connection. It is the same statement `close_stabilizer_orbit` makes when
+it files an empty `sigma` for an orbit at one vertex.
+
+### 63.3 The ratchet moved up a dimension, and then stopped
+
+`drain` RETURNS `Pinned` AND NAMED A REMEDY NOTHING COULD PERFORM. For as
+long as `descend` did not exist, a 1-cell that entered a 2-cell was immortal
+and the complex could still only accrete at degree 2: the ratchet had moved
+up one dimension rather than being removed, and the system was not
+conservative. `descend` is built (T2b, the same day), and the ladder reads:
+
+```
+    dim 2   ascend  ────────►   seal a 1-cycle with a 2-cell     BUILT
+            descend ◄────────   re-open it, unpin its boundary   BUILT
+    dim 1   condense ───────►   mint a tether from strain        the horizon is T4
+            drain   ◄────────   release it, cauterizing          BUILT
+    dim 0   puncture ───────►   open a hole, inject a class      ABSENT
+            seal    ◄────────   cap it, kill the class           ABSENT
+```
+
+`descend` IS `drain` ONE DEGREE UP, DELIBERATELY. The same dimensional gate,
+the same pinning-from-above by a keyed meet — `star(a) ∩ star(b) ∩ star(c)`
+against the 3-skeleton, vacuously empty today exactly as `drain`'s guard was
+before 2-cells existed — the same `forget`, and the same refusal to write
+into a neighbour. Two pivots of one ladder that did not share their
+mechanics would be two mechanics, and the pair would close by coincidence.
+
+AND IT DISTINGUISHES TWO SUCCESSFUL DESCENTS, as `drain` distinguishes two
+successful releases. A 2-cell standing `Open` SEALED NO CIRCULATION, so
+there is no class to hand back and inventing one would be a reading (rule
+11): that is `Unsealed`. A 2-cell carrying a fill was the witness that a
+boundary holonomy closed, and releasing the membrane cannot silently erase
+that — the class travels out, which is `Released`.
+
+MEASURED END TO END. `a_cell_ascends_descends_and_then_drains_leaving_no_
+ghost` runs the whole cycle: the boundary closes and a membrane seals it,
+the edge beneath reads `Pinned`, the membrane descends and hands its class
+out, BOTH boundary 1-cells are still standing, the formerly pinned edge then
+drains to vacuum, and every star names only cells the complex can evaluate.
+
+THE REMAINING PAIR PINS NOTHING. `puncture / seal` are unbuilt, but nothing
+in the engine mints a 3-cell, so no 2-cell is pinned from above and the
+ratchet has not moved up again — it has stopped. That is a fact about the
+current complex and not a licence: the moment a 3-cell exists, `descend`
+will name a remedy that does not exist, exactly as `drain` did.
+
+### 63.4 Binding
+
+```
+blade/body.rs           Strain { num, den2 }, Contact, within, side
+cech/coboundary.rs      drain and descend, forget as remember's inverse
+cech/simplex.rs         Drained — Vacuum, Cauterized, Pinned, Absent
+                        Descended — Unsealed, Released, Pinned, Absent
+cech/tests/drain.rs     both pivots' outcomes, the pinning rule at each
+                        degree, and the ladder end to end
+physics/axioms.rs       the strain measured, and num = -2 (s_a . s_b)
+```
