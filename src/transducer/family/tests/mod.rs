@@ -5,6 +5,7 @@ pub mod common;
 
 mod budget;
 mod canonical;
+mod census;
 mod cover;
 mod deflation;
 mod derivation;
