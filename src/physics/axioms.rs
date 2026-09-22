@@ -620,4 +620,211 @@ mod tests {
             }
         }
     }
+
+    /// T3 — THE STRAIN DEPENDS ONLY ON THE RELATIVE MOTOR (ruled
+    /// 2026-09-22).
+    ///
+    /// A body's nucleus is `s = M s₀ M̃` for a motor `M ∈ Spin⁺(4,1)(ℚ)`,
+    /// and a versor is an orthogonal transformation of `ℚ^{4,1}`, so it
+    /// preserves the inner product. Therefore
+    ///
+    /// ```text
+    ///     (M s_a M̃) · (M s_b M̃) = s_a · s_b
+    /// ```
+    ///
+    /// and `num = −2(s_a · s_b)` is a function of `M_a⁻¹ M_b` ALONE —
+    /// never of where either body sits absolutely. Absolute position is a
+    /// gauge artifact of the strain.
+    ///
+    /// WHAT THAT COLLAPSES. A spatial index would answer "which bodies are
+    /// near me"; the spellable horizon answers "can my mind factor `g_ab`".
+    /// Since the relative motor IS `g_ab`, those are one question, and T3
+    /// is not an index bolted beside the physics — proximity is membership
+    /// of the relative motor in the alphabet's spellable neighbourhood.
+    ///
+    /// Asserted here on a motor with BOTH halves — a turn composed with a
+    /// displacement — because a translation-only fixture would pass on the
+    /// commuting case and say nothing about the screw.
+    #[test]
+    fn the_strain_is_invariant_under_a_common_motor() {
+        use crate::transducer::blade::{self, Strain};
+        use crate::transducer::cga;
+        let q = |n: i64| crate::core::Q::from_integer(n.into());
+
+        let bodies = [
+            blade::shape_of(&[(0, 0, 0), (1, 0, 0)]).blade,
+            blade::shape_of(&[(4, 7, 0), (5, 7, 0), (4, 8, 0)]).blade,
+            blade::shape_of(&[(-3, 2, 0)]).blade,
+        ];
+        let nucleus = |b: &blade::Blade| {
+            let p = b.centroid().expect("a centroid");
+            cga::sphere(&p.0, &p.1, &p.2, &b.radius2())
+        };
+
+        // A motor with a turn AND a displacement, so the two halves do not
+        // commute and the test is not a translation identity in disguise.
+        let motor = cga::translator(&q(11), &q(-4), &q(2)).geo(&cga::rotator(&q(1), &q(1)));
+
+        // THE INVARIANCE IS PROJECTIVE, NOT ON THE NOSE, and a first
+        // statement of it claimed otherwise. A versor preserves the inner
+        // product only when it is ORTHOGONAL — `M M̃ = 1` — and in ℚ a
+        // versor cannot be normalised without a square root, so every motor
+        // here is a RAY. `rotator(1,1) = 1 + e₁₂` has `M M̃ = 2`, and the
+        // sandwich scales the inner product by `λ² = 4`:
+        //
+        //     num ↦ λ² num,   den2 ↦ λ⁴ den2,   δ² = num²/den2 unchanged
+        //
+        // which is 57.2's ray exactly — "canonicalization is not a
+        // homomorphism" — and is why Axiom C carries the ratio and never
+        // evaluates it. The scale-free reading is invariant; the numerator
+        // alone is not, and a design that keyed on `num` would key on the
+        // gauge.
+        let lambda = motor.geo(&motor.reverse()).scalar_part();
+        assert_eq!(lambda, q(2), "the fixture's motor is a ray of norm 2, not a unit");
+        for a in &bodies {
+            for b in &bodies {
+                let (sa, sb) = (nucleus(a), nucleus(b));
+                let before = sa.geo(&sb).scalar_part();
+                let after = motor.sandwich(&sa).geo(&motor.sandwich(&sb)).scalar_part();
+                assert_eq!(
+                    after,
+                    &lambda * &lambda * &before,
+                    "a common motor scales the strain by its own norm squared"
+                );
+                // AND THE SCALE-FREE READING SURVIVES EXACTLY. `num²/den2`
+                // is what the horizon is taken on, and it does not move.
+                let (ra2, rb2) = (sa.geo(&sa).scalar_part(), sb.geo(&sb).scalar_part());
+                let (ra2m, rb2m) = (
+                    motor.sandwich(&sa).geo(&motor.sandwich(&sa)).scalar_part(),
+                    motor.sandwich(&sb).geo(&motor.sandwich(&sb)).scalar_part(),
+                );
+                let delta2 = |n: &crate::core::Q, x: &crate::core::Q, y: &crate::core::Q| {
+                    let num = -q(2) * n;
+                    &num * &num / (q(4) * x * y)
+                };
+                assert_eq!(
+                    delta2(&before, &ra2, &rb2),
+                    delta2(&after, &ra2m, &rb2m),
+                    "δ² = num²/den2 is invariant under the motor, on the nose"
+                );
+            }
+        }
+
+        // AND THE SIGN CONVENTION THE WHOLE THING RESTS ON. `s² = +r² > 0`:
+        // the nucleus is SPACELIKE, which is the dual-sphere chart where
+        // contact is reachable. On the `v² = −1` hyperboloid `μ = sinh²(d/2)
+        // ≥ 0` and tangency is unreachable — that is 59.2's finding, and a
+        // statement that the nucleus has `s² = −r²` would put it back
+        // there.
+        for b in &bodies {
+            let s = nucleus(b);
+            let r2 = b.radius2();
+            assert_eq!(s.geo(&s).scalar_part(), r2, "s² = +r², spacelike");
+            assert!(r2 > q(0), "and every extracted body is invertible");
+        }
+
+        // A BODY AGAINST ITSELF IS THE IDENTITY MOTOR, and that is internal
+        // tangency rather than "no relation": δ = −1, num = −2r², num² =
+        // den2.
+        let s = Strain::between(&bodies[0], &bodies[0]).expect("a centroid");
+        assert_eq!(&s.num * &s.num, s.den2, "M_ab = 1 sits exactly on δ = −1");
+    }
+
+    /// THE HARMONIC CORE IS WHAT KEEPS THE NUCLEUS OFF THE NULL CONE
+    /// (ruled 2026-09-22).
+    ///
+    /// The luminal sector is an ENVELOPE: the projective ray wraps the
+    /// harmonic body, and it can only do so while the body holds itself
+    /// open. `s² = +r²`, so `r² → 0` drops the nucleus onto the light cone,
+    /// `den2 = 4 r_a² r_b² → 0`, and the inversive distance diverges — the
+    /// interaction horizon stops being defined at all.
+    ///
+    /// THE SMALLEST POSSIBLE BODY IS THE TEST. One lamina is the least
+    /// harmonic mass the sensor can deliver, and it is exactly where a
+    /// point-mass reading would give `r² = 0`. It does not, because
+    /// `blade::lift` INTEGRATES THE LAMINA'S OWN UNIT SQUARE and carries
+    /// the parallel-axis term at every order — which is the shadow trace's
+    /// retirement (A.11's single producer) doing structural work rather
+    /// than cosmetic work. A second producer taking cells as point masses
+    /// would have collapsed the nucleus onto the cone.
+    #[test]
+    fn the_smallest_body_still_holds_its_nucleus_off_the_cone() {
+        use crate::transducer::blade;
+        let q = |n: i64| crate::core::Q::from_integer(n.into());
+        let sixth = q(1) / q(6);
+
+        // A SINGLE LAMINA — the least mass there is.
+        let one = blade::shape_of(&[(0, 0, 0)]).blade;
+        let r2 = one.radius2();
+        assert!(
+            r2 >= sixth,
+            "one lamina integrates its own square: r² = {r2} ≥ 1/6, never 0"
+        );
+
+        // A point-mass reading would put this at zero. It does not, so the
+        // nucleus is spacelike and `den2` for a pair of them is bounded
+        // away from zero.
+        let s = blade::Strain::between(&one, &one).expect("a centroid");
+        assert!(s.den2 >= q(4) * &sixth * &sixth, "den2 = 4 r_a² r_b² is bounded below");
+        assert!(s.den2 > q(0), "so the horizon is always defined");
+    }
+
+    /// A MOTOR OF NEGATIVE NORM DOES NOT FLIP THE CONTACT SIDE (ruled
+    /// 2026-09-22, and left open as an argument until measured).
+    ///
+    /// `Cl(4,1)` is INDEFINITE — `e₋² = −1` — so a versor built from an odd
+    /// number of timelike reflections has `λ = M M̃ < 0`, which cannot
+    /// happen in a definite signature. 64.5 left it open whether the side
+    /// of the strain survives such a motor, because the sign of `num` is
+    /// what `Strain::side` splits on before squaring.
+    ///
+    /// It does survive, and here is why: the sandwich `M x M̃` is `λ` times
+    /// an orthogonal map, so the inner product picks up `λ²` — and `λ² > 0`
+    /// for every `λ ∈ ℚ×`, negative ones included. The SIDE is therefore an
+    /// absolute geometric invariant even through an indefinite reflection
+    /// channel, while `num` itself remains gauge.
+    #[test]
+    fn a_negative_norm_motor_scales_the_strain_and_never_flips_its_side() {
+        use crate::transducer::blade;
+        use crate::transducer::cga::{self, Mv, E1, EM};
+        let q = |n: i64| crate::core::Q::from_integer(n.into());
+
+        // `e₁e₋`: one spacelike and one timelike direction, so
+        // `M M̃ = e₁ e₋ e₋ e₁ = e₁ (−1) e₁ = −1`.
+        let motor = Mv::blade(E1, q(1)).geo(&Mv::blade(EM, q(1)));
+        let lambda = motor.geo(&motor.reverse()).scalar_part();
+        assert_eq!(lambda, q(-1), "an indefinite signature admits a NEGATIVE versor norm");
+        assert!(lambda < q(0), "which a definite signature never could");
+
+        let bodies = [
+            blade::shape_of(&[(0, 0, 0), (1, 0, 0)]).blade,
+            blade::shape_of(&[(0, 9, 0), (1, 9, 0)]).blade,
+            blade::shape_of(&[(0, 1, 0)]).blade,
+        ];
+        let nucleus = |b: &blade::Blade| {
+            let p = b.centroid().expect("a centroid");
+            cga::sphere(&p.0, &p.1, &p.2, &b.radius2())
+        };
+
+        for a in &bodies {
+            for b in &bodies {
+                let (sa, sb) = (nucleus(a), nucleus(b));
+                let before = sa.geo(&sb).scalar_part();
+                let after = motor.sandwich(&sa).geo(&motor.sandwich(&sb)).scalar_part();
+                assert_eq!(
+                    after,
+                    &lambda * &lambda * &before,
+                    "the inner product picks up λ², never λ"
+                );
+                // AND THAT IS THE WHOLE POINT: `λ² > 0` even for `λ < 0`,
+                // so the sign the side is read from cannot invert.
+                assert_eq!(
+                    before > q(0),
+                    after > q(0),
+                    "a negative-norm motor does not move the contact side"
+                );
+            }
+        }
+        assert!(&lambda * &lambda > q(0), "λ² is positive for every λ in ℚ×");
+    }
 }

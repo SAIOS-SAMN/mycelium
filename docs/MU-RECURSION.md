@@ -10702,3 +10702,103 @@ cech/tests/drain.rs     both pivots' outcomes, the pinning rule at each
                         degree, and the ladder end to end
 physics/axioms.rs       the strain measured, and num = -2 (s_a . s_b)
 ```
+
+## 64. The envelope: why the luminal ray sits outside the harmonic core (ruled 2026-09-22)
+
+The strain's invariance under a common motor is PROJECTIVE and not exact,
+and that is not a defect in the derivation — it is the classification. A
+ray is not a rigid motion on an interior manifold; it is the outer
+conformal hull that wraps the harmonic bodies and mediates between them.
+
+### 64.1 The hierarchy
+
+```
+    LUMINAL ENVELOPE        [M] in P Spin+(4,1)(Q)      the ray
+        weight              lambda = M M~               gauge scale
+        invariants          degree 4: den2, I_2         the screw
+        carries             refraction, transvection
+              |
+              |   refraction across the interface
+              v
+    HARMONIC CORE           s^2 = +r^2 > 0              spacelike
+        moments             m in {2, 3, 4}
+        provides            den2 > 0                    no null collapse
+```
+
+The compact stabilizer `Spin(3)` literally SITS INSIDE `Spin+(4,1)`, whose
+ten generators are three rotations, three transvections, one dilation and
+three special conformal accelerations. The luminal group contains the
+harmonic one; that containment is the envelope, not a metaphor for it.
+
+### 64.2 Why the core must be strong, and why it already is
+
+`s^2 = +r^2`, so `r^2 -> 0` drops the nucleus onto the light cone,
+`den2 = 4 r_a^2 r_b^2 -> 0`, and the inversive distance diverges: the
+interaction horizon stops being DEFINED, not merely large. The harmonic
+moments are the mass that resists conformal collapse.
+
+MEASURED, AND IT WAS BOUGHT THIS MORNING WITHOUT EITHER SIDE NOTICING. The
+smallest body the sensor can deliver is ONE LAMINA, and it reads `r^2 >=
+1/6 > 0` — because `blade::lift` integrates the lamina's own unit square
+and carries the parallel-axis term at every order. A POINT-MASS READING
+WOULD GIVE `r^2 = 0` AND COLLAPSE IT ONTO THE CONE. That reading existed
+until 6a5910f, where `extract.rs`'s shadow trace was retired as a law-12
+defect — two producers of one quantity. It is not cosmetic: A.11's single
+producer is what holds every nucleus spacelike.
+
+### 64.3 Refraction is the dimensional drop
+
+```
+    g_ab = (theta_b theta_a^-1) . gamma_ab
+```
+
+The ray does not pass through the harmonic boundary unchanged. It BREAKS:
+`theta_b theta_a^-1` is the projection into the nuclei's planar orientation
+frames, where the sensor sees `l in {1,2,4}` or a parity flip at `m = 3`;
+`gamma_ab` is the residue that REFUSES TO FLATTEN, and it is where `I_2 !=
+0` lives when the relative motor carries transverse displacement or
+isoclinic tilt (60.4).
+
+### 64.4 The weights do not cancel; they are QUOTIENTED
+
+A first statement of this said the projective weights "cancel out" around a
+closed circuit. They do not. Each edge carries its own `lambda_i`, and the
+loop product `Omega = g_ca g_bc g_ab` accumulates `lambda_a lambda_b
+lambda_c` as ONE overall scale. What removes it is the COMPARISON:
+`same_versor` is `projective_ratio(a,b).is_some()`, an exact rational ratio
+over `Q^x`, so the reading is taken on the ray and the scale is quotiented
+at the point of asking.
+
+THE DIFFERENCE IS OPERATIONAL. "The gauge disappears" would license
+comparing `Omega` to the identity with `==`; "the gauge is quotiented"
+says that comparison is WRONG and must go through `same_versor`. The
+engine already does this, and it is exactly where a bug would hide.
+
+### 64.5 What may be keyed on
+
+NEVER THE BARE NUMERATOR. `num -> lambda^2 num` and `den2 -> lambda^4
+den2`, so keying on either keys on the gauge shadow. Only the ratio is
+invariant, and it is invariant ON THE NOSE:
+
+```
+    delta^2 = num^2 / den2      unchanged under a common motor, measured
+```
+
+That is a SINGLE exact rational, reduced canonically by `BigRational`, so
+it is already a scale-free coordinate with no normalisation step and no
+root. A pair's address is that value together with the side, and the side
+is read by `Strain::side` rather than off `num`'s sign (63.1).
+
+AND THE SIDE SURVIVES A NEGATIVE-NORM MOTOR — measured, not argued. This
+stood open on the question of whether `lambda = M M~` can be negative.
+`Cl(4,1)` is INDEFINITE, so it can: `e_1 e_-` has `M M~ = e_1 e_- e_- e_1 =
+e_1 (-1) e_1 = -1`, which a definite signature never produces. The sandwich
+`M x M~` is `lambda` times an orthogonal map, so the inner product picks up
+`lambda^2` — and `lambda^2 > 0` for EVERY `lambda` in `Q^x`, negative ones
+included.
+
+So `Strain::side` is an ABSOLUTE geometric invariant: the sign it splits on
+cannot invert through an indefinite reflection channel, while `num` itself
+remains gauge. The pair `(side, delta^2)` is therefore fully characterised —
+scale-free, root-free, reduced canonically, and stable under every motor
+the algebra admits.
