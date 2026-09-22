@@ -19,7 +19,9 @@ use super::*;
 /// `M` with BOTH ENDPOINTS OVER ONE VERTEX — the automorphism carrying the
 /// body as chart `from` sees it onto the body as chart `to` sees it:
 ///
+/// ```text
 ///     g = C_{v,to} · C_{v,from}⁻¹ = D(ρ) · T(t) · R_gauge
+/// ```
 ///
 /// It carries the whole conformal element and NOT a decision about it.
 /// Every reading — the gauge rotor, the Cartan split, the class — is taken
@@ -34,9 +36,11 @@ use super::*;
 /// per class — so two members of one vertex carry the SAME `R` and the same
 /// `ρ`. Then, using `R T(v) R⁻¹ = T(Rv)` and `D(ρ) T(v) D(ρ)⁻¹ = T(ρv)`:
 ///
+/// ```text
 ///     τ = C₂ · C₁⁻¹
 ///       = T(c_b2)·D·R·T(c_a1 − c_a2)·R⁻¹·D⁻¹·T(−c_b1)
 ///       = T(c_b2 − c_b1 + ρ·R(c_a1 − c_a2))
+/// ```
 ///
 /// The rotor cancels IDENTICALLY. Verticality of the spatial part is a
 /// theorem about the construction, not a property to be measured, and the

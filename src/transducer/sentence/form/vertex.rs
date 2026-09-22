@@ -199,7 +199,9 @@ impl Vertex {
     /// THE OBJECT. `π: M → V` gives the fibre `π⁻¹(v) = {(v,c)}`, and the
     /// vertical automorphism between two of its points is
     ///
+    /// ```text
     ///     g_{c₁c₂} = C_{v,c₂} · C_{v,c₁}⁻¹ = D(ρ) · T(t) · R_gauge
+    /// ```
     ///
     /// exact in `Cl(5,1)(ℚ)`: a dilation, a centroid offset, and the
     /// relative rotation of the two frame bases. `R_gauge ≡ ±1` is a body
@@ -259,7 +261,9 @@ impl Vertex {
     /// by one transport correspond". That is a claim, and this is the test
     /// of it. Between two members the vertical transition is
     ///
+    /// ```text
     ///     τ_{c₁c₂} = C_{v,c₂} · C_{v,c₁}⁻¹
+    /// ```
     ///
     /// a 1-cell of the member complex `M` with BOTH ENDPOINTS OVER ONE
     /// VERTEX. For the vertex to be one 0-cell, τ must be pure carriage — a

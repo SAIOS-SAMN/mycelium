@@ -211,7 +211,9 @@ impl Form {
     /// THE CLASS COMES FROM THE RECEIPT, THE PERIOD FROM THE COMPLEX (54.5,
     /// as ruled 2026-09-20):
     ///
+    /// ```text
     ///     yield(F, r) = Σ_{κ ∈ r ∩ dom(loop_classes F)} (ℓ_derived(κ) − 1)
+    /// ```
     ///
     /// This summed `(ℓ − 1)` over `self.torsion` — the form's own filing —
     /// so the claimant supplied both halves of its own price. `Σ(ℓ − 1)` is

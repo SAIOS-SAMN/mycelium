@@ -60,12 +60,16 @@ pub fn replay_form_with(
 /// It matters exactly where a carriage has been through the key. A versor
 /// acts by the sandwich `x ↦ V x Ṽ`, and for any `λ ∈ ℚ×`
 ///
+/// ```text
 ///     (λV) x (λV)~ = λ² (V x Ṽ)
+/// ```
 ///
 /// so a ray of versors is ONE transformation. A4 canonicalization picks a
 /// representative of that ray, and canonicalization is not a homomorphism:
 ///
+/// ```text
 ///     can(a)·can(b)⁻¹ = λ · can(a·b⁻¹),  some λ ∈ ℚ×
+/// ```
 ///
 /// So `face_rederives` recomputing a member pair's RELATIVE carriage from
 /// two canonical absolutes gets the right geometry and the wrong scalar,
@@ -821,7 +825,9 @@ pub(crate) fn form_loops_replay(f: &Form) -> bool {
 /// not take `ℓ` from the claimant — it takes the class from the claimant
 /// and the period from the geometry.
 ///
+/// ```text
 ///     yield(F, r) = Σ_{κ ∈ r ∩ dom(loop_classes F)} (ℓ_derived(κ) − 1)
+/// ```
 ///
 /// A class the form does not carry projects to ZERO and is not a refusal.
 /// An observer may track cycles outside this form's horizon — that is
