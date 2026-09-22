@@ -397,29 +397,281 @@ mod tests {
     fn a11_a_mirrored_body_mints_no_rotor() {
         let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
         let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
-        // AND THE REFUSAL NAMES ITSELF (66) — AS `Oblique`, WHICH IS THE
-        // FINDING. A reflection was expected to land in `Mirrored`; it
-        // does not. The mirrored deviatorics sit at `wedge ≠ 0`, so the
-        // reader refuses at the angle test and never reaches the cell test
-        // that `Mirrored` names.
+        // THIS READ `Oblique` UNTIL V1, AND THAT WAS THE FINDING THAT
+        // FORCED THE SPLIT (68). The mirrored deviatorics sit at
+        // `wedge ≠ 0` — a reflection about an axis at `α` maps `u(2φ)` to
+        // `u(2α − 2φ)`, a perfectly good rotation OF THE DEVIATORIC — so
+        // the reader refused at the angle test and never reached a cell
+        // test at all. `Oblique` therefore held genuine non-lattice turns
+        // AND reflections, which are `O(2)∖SO(2)` and are not rotations at
+        // any angle.
         //
-        // SO `Oblique` IS NOT "AN UNSPELLABLE ROTATION". It holds genuine
-        // non-lattice turns AND reflections, which are `O(2)\SO(2)` and
-        // are not rotations at all. That matters for 37.7: a demand minted
-        // from a reflection would be asking the court to adjoin a
-        // generator for a relation that is not a turn. The two cannot be
-        // separated from the deviatorics alone — a reflection maps
-        // `u(2φ)` to `u(2α − 2φ)`, which is a perfectly good rotation OF
-        // THE DEVIATORIC and says nothing about the body — so the split
-        // needs the cells, and the reader skips the cell test in exactly
-        // this branch.
-        //
-        // `Mirrored` therefore fires only for AXIS-ALIGNED pairs the cells
-        // refuse, which is a far narrower case than its name suggests.
+        // That mattered for 37.7: a demand minted here would have asked
+        // the court to adjoin a generator for a relation that HAS no
+        // rotor. The deviatorics alone cannot separate the two, so the
+        // cells do it — the four improper elements of `D₄`, applied and
+        // compared, which nothing in this file had ever looked at.
         assert_eq!(
             blade::relative_rotor(&l.blade, &j.blade).err(),
-            Some(blade::NoFrame::Oblique),
-            "a reflection refuses at the angle test, before the cell test"
+            Some(blade::NoFrame::Mirrored),
+            "a reflection is proved improper by the cells, not left oblique"
+        );
+    }
+
+    /// V1 — PROVED UNLIKE BY AN INVARIANT, NOT BY EXHAUSTING A GROUP (68).
+    ///
+    /// The L- and S-tetrominoes differ in a quantity no conformal motion
+    /// changes, so no turn relates them at any angle in any vocabulary.
+    ///
+    /// WHAT CHANGED IN THE RECUT. The first cut proved this by applying
+    /// the eight elements of `D₄` to the cells and finding none that
+    /// carried — a hardcoded generator table over raw coordinates, resting
+    /// on the crystallographic restriction of `ℤ²` to rule out everything
+    /// it had not tried. None of that means anything in `Cl(4,1)`. The
+    /// refusal now comes from the bodies' own harmonic tower, holds at any
+    /// scale, and assumes no base lattice at all.
+    #[test]
+    fn v1_an_unlike_pair_is_permanently_unturned() {
+        let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+        let s = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
+        assert_eq!(
+            blade::relative_rotor(&l.blade, &s.blade).err(),
+            Some(blade::NoFrame::Incongruent),
+            "an invariant separates them, so no vocabulary reaches them"
+        );
+    }
+
+    /// V1 — WHAT IT TAKES TO LEAVE THE QUESTION OPEN, STATED AS THE TWO
+    /// GATES RATHER THAN AS A FIXTURE (68).
+    ///
+    /// `Oblique` is the arm NOT proved permanent, and reaching it needs
+    /// BOTH gates to pass at once: the odd invariant must not be conjugate
+    /// (no reflection) and A.12's scale certificate must hold (the tower
+    /// corresponds at every order), while the deviatoric relation is at an
+    /// angle the alphabet cannot spell.
+    ///
+    /// MEASURED, AND WORTH SAYING PLAINLY: across 110 ordered pairs of
+    /// eleven lattice bodies, NOTHING reached this arm. Every refusal was
+    /// `Mirrored`, `Incongruent` or `Isotropy`. A body and its dilate
+    /// satisfy the certificate but then stand at a lattice angle and read
+    /// as a turn; two bodies at an oblique angle fail the certificate.
+    /// Whether the corpus contains a pair that passes both is a
+    /// measurement the recut takes, not something a fixture should assert
+    /// into existence — so this pins the GATES, which is what the code
+    /// actually promises.
+    #[test]
+    fn v1_the_open_arm_needs_both_gates_and_a_dilate_passes_only_one() {
+        let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+        let s = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
+        let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
+        // Gate 2 alone: an unlike pair fails the certificate outright.
+        assert!(!blade::dilation_certified(&l.blade, &s.blade), "tower differs");
+        // Gate 1 alone: a reflection satisfies the certificate — every
+        // harmonic NORM survives a reflection — and is caught only by the
+        // odd invariant. Either gate alone would let it through.
+        assert!(
+            blade::dilation_certified(&l.blade, &j.blade),
+            "a reflection passes the even tower, which is why the odd gate exists"
+        );
+        assert_eq!(
+            blade::relative_rotor(&l.blade, &j.blade).err(),
+            Some(blade::NoFrame::Mirrored),
+            "and the odd gate is what refuses it"
+        );
+    }
+
+    /// D3 — THE WITNESS AN OBLIQUE PAIR MINTS IS ONE THE COURT ACCEPTS.
+    ///
+    /// Minting a demand is not the deliverable; minting one that SURVIVES
+    /// `REFUSE_LETTER_WITNESS` is. The court reads
+    /// `π_p = gcd_{ℤ[i]}(s + t·i, p)` and demands a factor whose norm is
+    /// exactly `p`, so this walks the whole chain the court walks — arc,
+    /// primitivity, norm, prime, Euclid — and refuses to call the wiring
+    /// done on the strength of a demand appearing somewhere.
+    ///
+    /// PRIMITIVITY IS THE LOAD-BEARING STEP. With `g = gcd(s,t) > 1` and
+    /// `p | g`, that gcd comes back with norm `p²` and the letter is
+    /// thrown out; the demand would be minted, counted, relayed, and
+    /// refused at the far end, which reads as a live pipeline carrying
+    /// nothing.
+    ///
+    /// THE PAIR HERE IS NOT ITSELF `Oblique` — it is `Incongruent`, and
+    /// after the recut no probed lattice pair reaches the open arm at all.
+    /// What is under test is the ARITHMETIC CHAIN the mint runs once a
+    /// pair does reach it, and `oblique_arc` is exercised directly for
+    /// that reason rather than through a classification that would be
+    /// asserting a fixture into an arm the geometry does not put it in.
+    #[test]
+    fn d3_the_mint_produces_a_witness_the_court_can_open() {
+        use crate::core::gaussian;
+        use num_integer::Integer;
+        let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+        let big = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (3, 0, 0), (3, 1, 0)]);
+        let (s, t) = blade::oblique_arc(&l.blade, &big.blade).expect("the pair has an arc");
+        assert_eq!(s.gcd(&t), num_bigint::BigInt::from(1), "the arc is primitive: {s} + {t}i");
+        let norm = &s * &s + &t * &t;
+        let plane = (
+            crate::transducer::alphabet::PLANE_ROW,
+            crate::transducer::alphabet::PLANE_COL,
+        );
+        let prime = crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane)
+            .expect("the norm carries a prime the alphabet does not");
+        let block = crate::transducer::alphabet::arc_block(&s, &t);
+        let w = gaussian::from_block(&block).expect("the block is a Gaussian arc");
+        let pi = gaussian::prime_factor(&w, &num_bigint::BigInt::from(prime))
+            .expect("the court reads the factor off the witness");
+        assert_eq!(
+            pi.norm(),
+            num_bigint::BigInt::from(prime),
+            "the factor's norm IS the prime, which is what the court checks"
+        );
+        eprintln!("d3 arc {s} + {t}i | norm {norm} | prime {prime} | factor {pi:?}");
+    }
+
+    /// D3 — A PERMANENT PAIR MINTS NOTHING.
+    ///
+    /// The demand path is reached only from `Oblique`. A reflection has no
+    /// rotor at any angle, so asking the court to adjoin a generator for
+    /// it would poison the docket with a letter that can never close.
+    #[test]
+    fn d3_a_reflection_and_an_unlike_pair_mint_no_arc() {
+        let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+        let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
+        for (other, why) in [(&j, "a reflection")] {
+            assert_ne!(
+                blade::relative_rotor(&l.blade, &other.blade).err(),
+                Some(blade::NoFrame::Oblique),
+                "{why} never reaches the demand path"
+            );
+        }
+    }
+
+    /// V1 RECUT — THE ODD INVARIANT IS SCALE-FREE, AND THAT IS THE WHOLE
+    /// GAIN OVER THE LATTICE READING IT REPLACED (68).
+    ///
+    /// `L4x2` is `L4` dilated by 2. Normalised, `h₂` has degree 2 and `h₄`
+    /// degree 4, so `Z = h₂²·conj(h₄)` has degree 8 and the pair's
+    /// invariants must stand in the ratio `2⁸ = 256` on BOTH components —
+    /// asserted here as an exact rational identity, no root and no
+    /// tolerance.
+    ///
+    /// THE FIRST CUT OF V1 COULD NOT SEE THIS AT ALL. It compared cells
+    /// about the centroid and refused outright when the supports differed
+    /// in cardinality, so every dilated pair was unreadable by
+    /// construction. The ray comparison divides the dilation out, and the
+    /// pair reads as the turn it is.
+    #[test]
+    fn v1_the_odd_invariant_scales_by_its_degree_and_reads_across_a_dilation() {
+        let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+        let l2 = blade::shape_of(&[
+            (0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0),
+            (2, 0, 0), (2, 1, 0), (3, 0, 0), (3, 1, 0),
+            (4, 0, 0), (4, 1, 0), (5, 0, 0), (5, 1, 0),
+            (4, 2, 0), (4, 3, 0), (5, 2, 0), (5, 3, 0),
+        ]);
+        let za = blade::chirality(&l.blade).expect("a chiral body");
+        let zb = blade::chirality(&l2.blade).expect("its dilate is chiral too");
+        let d8 = num_rational::BigRational::from_integer(num_bigint::BigInt::from(256));
+        assert_eq!(zb.0, &za.0 * &d8, "degree 8 on the real part");
+        assert_eq!(zb.1, &za.1 * &d8, "degree 8 on the imaginary part");
+        assert!(
+            blade::relative_rotor(&l.blade, &l2.blade).is_ok(),
+            "a dilated pair is a turn, which the cardinality test refused outright"
+        );
+    }
+
+    /// V1 RECUT — A REFLECTION IS SEEN ACROSS A CHANGE OF SCALE.
+    ///
+    /// `J4` is `L4` reflected; `L4x2` is `L4` dilated. The relation
+    /// between them is improper AND carries a dilation, so no cell
+    /// comparison could ever have read it — the supports have four cells
+    /// against sixteen. The odd invariant reads it exactly, because a
+    /// conjugate ray is a conjugate ray at any scale.
+    #[test]
+    fn v1_a_reflection_is_proved_improper_across_a_dilation() {
+        let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
+        let l2 = blade::shape_of(&[
+            (0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0),
+            (2, 0, 0), (2, 1, 0), (3, 0, 0), (3, 1, 0),
+            (4, 0, 0), (4, 1, 0), (5, 0, 0), (5, 1, 0),
+            (4, 2, 0), (4, 3, 0), (5, 2, 0), (5, 3, 0),
+        ]);
+        assert_ne!(j.blade.support.len(), l2.blade.support.len(), "four against sixteen");
+        assert_eq!(
+            blade::relative_rotor(&j.blade, &l2.blade).err(),
+            Some(blade::NoFrame::Mirrored),
+            "improper across a dilation, which no cell test can reach"
+        );
+    }
+
+    /// V1 RECUT — CHIRALITY ANSWERS THE ODD QUESTION ONLY, AND THE FIRST
+    /// RECUT GOT THIS WRONG (68).
+    ///
+    /// `Z` is REAL for every achiral body, so all of them share one ray
+    /// and a chirality-only gate degenerates to "handedness does not
+    /// forbid it". Measured: a domino and an L-tromino passed it and read
+    /// `Oblique`, which would have asked the court to adjoin a generator
+    /// relating a two-cell bar to a three-cell corner.
+    ///
+    /// A.12's scale certificate is the EVEN half of the question and was
+    /// already built. Both gates must pass for the question to stay open.
+    #[test]
+    fn v1_an_achiral_pair_is_still_refused_by_the_scale_certificate() {
+        let d2 = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]);
+        let l3 = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0)]);
+        // Both achiral: the odd invariant is real and cannot separate them.
+        assert!(blade::chirality(&d2.blade).expect("read").1.is_zero(), "achiral");
+        assert!(blade::chirality(&l3.blade).expect("read").1.is_zero(), "achiral");
+        // The even tower does separate them, and that is what decides.
+        assert!(!blade::dilation_certified(&d2.blade, &l3.blade), "not similar");
+        assert_eq!(
+            blade::relative_rotor(&d2.blade, &l3.blade).err(),
+            Some(blade::NoFrame::Incongruent),
+            "chirality permits it; the tower refuses it; the tower wins"
+        );
+    }
+
+    /// V1 — THE BRANCH SEPARATES THE TWO PERMANENT FACTS, AND SEPARATES
+    /// BOTH FROM A TURN (68).
+    ///
+    /// The point of the split is that a census can read `oblique` as "the
+    /// vocabulary is short". That only holds if the permanent cases land
+    /// elsewhere, so this pins them together rather than trusting separate
+    /// fixtures not to drift onto one arm.
+    ///
+    /// AN EARLIER VERSION OF THIS TEST ASSERTED `Oblique` FOR THE FOURTH
+    /// ROW and it was wrong: `L4` against a five-cell L read `Oblique`
+    /// only because the lattice reading had no cell test available at
+    /// unequal cardinality — a gap in the instrument, recorded as a
+    /// finding. The tower separates them, and the honest answer is
+    /// `Incongruent`.
+    #[test]
+    fn v1_the_refusals_of_the_oblique_branch_stay_apart() {
+        let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+        let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
+        let s = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
+        let big = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (3, 0, 0), (3, 1, 0)]);
+        let l2 = blade::shape_of(&[
+            (0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0),
+            (2, 0, 0), (2, 1, 0), (3, 0, 0), (3, 1, 0),
+            (4, 0, 0), (4, 1, 0), (5, 0, 0), (5, 1, 0),
+            (4, 2, 0), (4, 3, 0), (5, 2, 0), (5, 3, 0),
+        ]);
+        let read = [
+            blade::relative_rotor(&l.blade, &j.blade).err(),
+            blade::relative_rotor(&l.blade, &s.blade).err(),
+            blade::relative_rotor(&l.blade, &big.blade).err(),
+            blade::relative_rotor(&l.blade, &l2.blade).err(),
+        ];
+        assert_eq!(
+            read,
+            [
+                Some(blade::NoFrame::Mirrored),
+                Some(blade::NoFrame::Incongruent),
+                Some(blade::NoFrame::Incongruent),
+                None,
+            ],
+            "improper, unlike, unlike, and a turn across a dilation"
         );
     }
 

@@ -1453,6 +1453,8 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
          | spectra: closes {} open {} undecomposed {} isoclinic {} \
          | ρ: |im| {} |conj| {} of {} generators, {} in ker | this form: b₁ {} |im| {} \
          | field: {} \
+         | planes: {} \
+         | mint: {} \
          | nerve/source: {} charts over {} cells, {} shared by two or more, \
          {} certified triples, {} refused \
          | nerve/image: {} charts over {} cells, {} shared, {} triples \
@@ -1505,6 +1507,15 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         // corpus test takes the total, this prints the running state, and
         // only one reader may take (law 12).
         crate::transducer::family::pairing::field_tally().line(),
+        // D1 — DIMENSIONAL CAPACITY, PER FORM. Ten planes by name, the
+        // harmonic six and the luminal four kept apart, and how many
+        // generators coupled the halves (a screw, where `I₂ ≠ 0` lives).
+        crate::transducer::cga::plane_tally().line(),
+        // D3 — THE MINT, PER FORM. Where the unspellable turns stop: the
+        // three gates by name and what reached the court. 37.7's pipeline
+        // measured `adjoin 0` with nothing to say whether it was starved
+        // or shut.
+        crate::transducer::family::perceive::demand_tally().line(),
         certified.0,
         certified.2,
         certified.3,

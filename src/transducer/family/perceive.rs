@@ -257,6 +257,129 @@ pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invarian
     Vertex::Demand { kind, chart: chart.clone(), bodies }
 }
 
+/// D3, DIRECTIVE 4 — THE MINT'S OWN VALVE LINE (68).
+///
+/// Every gate of [`oblique_demand`] at its own name, so a recut reads
+/// WHERE the unspellable turns stop rather than only that none arrived.
+/// `offered` is every pair no versor carried; the three refusals are the
+/// three gates in the order they are passed; `minted` is what reached the
+/// court. A starved valve and a closed one look identical on a total and
+/// do not here.
+#[derive(Default, Clone, Copy, Debug)]
+pub struct DemandTally {
+    /// Pairs reaching the mint: no versor carried them.
+    pub offered: u64,
+    /// Refused at gate 1 — `Mirrored` or `Incongruent`, proved permanent.
+    pub permanent: u64,
+    /// Refused at gate 2 — no arc: the pair orients only at the quartic,
+    /// whose reading is `4φ` and whose witness would name a different
+    /// rotation.
+    pub arcless: u64,
+    /// Refused at gate 3 — the arc names no prime the alphabet lacks.
+    /// `z ~ ±i` is unspellable and still mints nothing.
+    pub primeless: u64,
+    /// `RotorPrime` demands minted, each with a primitive witness.
+    pub minted: u64,
+}
+
+thread_local! {
+    static DEMANDS: std::cell::Cell<DemandTally> =
+        const { std::cell::Cell::new(DemandTally {
+            offered: 0, permanent: 0, arcless: 0, primeless: 0, minted: 0,
+        }) };
+}
+
+fn note_demand(f: impl Fn(&mut DemandTally)) {
+    DEMANDS.with(|c| {
+        let mut v = c.get();
+        f(&mut v);
+        c.set(v);
+    });
+}
+
+/// Read the mint's tally and clear it.
+pub fn take_demand_tally() -> DemandTally {
+    DEMANDS.with(|c| c.replace(DemandTally::default()))
+}
+
+/// The mint's tally without clearing it, for a per-form line beside a
+/// running total (law 12: only one reader may take).
+pub fn demand_tally() -> DemandTally {
+    DEMANDS.with(|c| c.get())
+}
+
+impl DemandTally {
+    pub fn line(&self) -> String {
+        format!(
+            "offered {} | permanent {} arcless {} primeless {} | MINTED {}",
+            self.offered, self.permanent, self.arcless, self.primeless, self.minted,
+        )
+    }
+}
+
+/// D3 — THE DEMAND AN UNSPELLABLE TURN LEAVES (68, ruled 2026-09-22).
+///
+/// Reached only where NO VERSOR carries `a` onto `b`. Most such pairs are
+/// permanently unrelated and mint nothing; this asks the geometry which
+/// kind it is and mints only for the one arm that is not proved permanent.
+///
+/// THE THREE GATES, AND EVERY ONE OF THEM CAN REFUSE:
+///
+/// 1. [`blade::NoFrame::Oblique`] and nothing else. `Mirrored` is
+///    improper and `Incongruent` is the crystallographic restriction —
+///    both permanent, and a demand minted from either would ask the court
+///    to adjoin a generator for a relation that HAS no rotor. That is the
+///    whole point of V1's split: before it, this arm held all three.
+/// 2. A PRIMITIVE Gaussian arc. The court reads `π_p = gcd(s+t·i, p)` and
+///    refuses a witness whose gcd is not of norm exactly `p`
+///    (`REFUSE_LETTER_WITNESS`), so a composite arc mints letters the
+///    court can only throw out — worse than minting none.
+/// 3. A prime the alphabet does not already carry. `z ~ ±i` has norm 1
+///    and names no prime at all: unspellable, and still not a
+///    `RotorPrime`. It mints nothing rather than a demand with no prime
+///    in it (rule 11).
+///
+/// THE PLANE IS THE SENSOR'S OWN. `deviatoric` reads `(Ixx−Iyy, 2Ixy)`,
+/// which is `harmonic_on_plane((PLANE_ROW, PLANE_COL))` — the arc turns
+/// in `e₁e₂` and the demand says so rather than defaulting.
+fn oblique_demand(a: &Body, b: &Body, chart: &Invariant) -> Option<Demanded> {
+    use crate::transducer::alphabet::{PLANE_COL, PLANE_ROW};
+    use crate::transducer::blade;
+    note_demand(|t| t.offered += 1);
+    if blade::relative_rotor(&a.shape.blade, &b.shape.blade).err() != Some(blade::NoFrame::Oblique) {
+        note_demand(|t| t.permanent += 1);
+        return None;
+    }
+    let Some((s, t)) = blade::oblique_arc(&a.shape.blade, &b.shape.blade) else {
+        note_demand(|t| t.arcless += 1);
+        return None;
+    };
+    let plane = (PLANE_ROW, PLANE_COL);
+    let norm = &s * &s + &t * &t;
+    let Some(prime) = crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane) else {
+        note_demand(|t| t.primeless += 1);
+        return None;
+    };
+    note_demand(|t| t.minted += 1);
+    // THE LINKS STAND UNMOVED, because nothing moved them. A chain is
+    // each lamina carried by the versor and read on the image; there IS
+    // no versor here, so the source's laminae keep their own hues and the
+    // target's are read as they stand. Passing an identity versor instead
+    // would write a carry the geometry just refused (checklist (m)).
+    let mut bodies = chain_of(Some(a), None, &crate::transducer::element::identity_versor());
+    bodies.extend(chain_of(None, Some(b), &crate::transducer::element::identity_versor()));
+    bodies.sort_unstable();
+    Some((
+        crate::transducer::sentence::Demand::RotorPrime {
+            plane,
+            prime,
+            witness: Box::new(crate::transducer::alphabet::arc_block(&s, &t)),
+        },
+        chart.clone(),
+        bodies,
+    ))
+}
+
 /// Carriage of two bodies spelled as a word form (50.2 F steps 1–2), or the
 /// demand its rotor leaves: the versor measured, its rotor spelled by A22.
 /// Class is the target's chart. `None` when no versor carries `a` onto `b`.
@@ -272,7 +395,17 @@ pub(crate) fn word_or_demand_on_chart(
     b: &Body,
     chart: &Invariant,
 ) -> Option<Result<Vertex, Demanded>> {
-    let car = carriage(a, b)?;
+    let Some(car) = carriage(a, b) else {
+        // D3 — A PAIR NO VERSOR CARRIES IS NOT NOTHING (68, ruled
+        // 2026-09-22). This was a bare `?`: no versor, no vertex, no
+        // demand, relation gone. That silent `None` is where 37.7's
+        // pipeline starves — the court measured `Unspellable 0` and
+        // `adjoin 0` because nothing was ever minted to reach it.
+        //
+        // An unspellable turn is CONTENT. It is asked for by name here
+        // and minted only when the geometry proves it is one.
+        return oblique_demand(a, b, chart).map(Err);
+    };
     let chain = chain_of(Some(a), Some(b), &car.v);
     // A22 alone: this is the PERCEPT, which is what the memo holds. The
     // presentation enters afterwards, per mind (50.2 step 2).
