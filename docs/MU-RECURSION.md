@@ -9784,7 +9784,8 @@ blade/body.rs           deviatoric, quartic_harmonic, Frame,
 family/cover.rs         CarriedPiece carries both supports
 family/pair.rs          meet_edge composes the frame
 element/letters.rs      the cone named where it is crossed
-physics/axioms.rs       A.1-A.11 with the reading that decides each
+physics/axioms/         A.1-A.13 in imported.rs, ours.rs and refused.rs;
+                        tests/ holds the reading that decides each
 ```
 
 ## 58. The nerve on the pullback, and the cover's three addresses (ruled 2026-09-22)
@@ -10700,7 +10701,8 @@ cech/simplex.rs         Drained — Vacuum, Cauterized, Pinned, Absent
                         Descended — Unsealed, Released, Pinned, Absent
 cech/tests/drain.rs     both pivots' outcomes, the pinning rule at each
                         degree, and the ladder end to end
-physics/axioms.rs       the strain measured, and num = -2 (s_a . s_b)
+physics/axioms/tests/strain.rs
+                        the strain measured, and num = -2 (s_a . s_b)
 ```
 
 ## 64. The envelope: why the luminal ray sits outside the harmonic core (ruled 2026-09-22)
