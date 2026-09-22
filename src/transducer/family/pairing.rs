@@ -62,15 +62,26 @@ pub struct FieldTally {
     /// Lumped together they said "the parity gap blocks everything" when
     /// the reading may be "no relative frame exists between dissimilar
     /// bodies at all" — a far larger claim, and a different repair.
-    /// THE FIVE WAYS NO FRAME IS DETERMINED, each at its own name. The
+    /// THE SIX WAYS NO FRAME IS DETERMINED, each at its own name. The
     /// census read `89 unturned` under one counter and could not say
     /// whether the corpus is full of UNSPELLABLE TURNS — 37.7's condition,
     /// live — or of bodies that do not orient at all.
     pub bodiless: u64,
     pub isotropy: u64,
     pub unoriented: u64,
+    /// V1 — THE ONLY ARM A DEMAND CAN RETIRE. Everything counted here is
+    /// a proper rotation the alphabet cannot yet spell, with the
+    /// reflections now drawn off into `mirrored`. Before the split this
+    /// counter mixed the mutable with the permanent, and a rising
+    /// `oblique` could not be read as "the vocabulary is short".
     pub oblique: u64,
+    /// Proved improper: a reflection carries the pair. Permanent, and no
+    /// generator will ever retire it.
     pub mirrored: u64,
+    /// Proved unlike: no element of `D₄` carries the pair at all. Also
+    /// permanent, and kept apart from `mirrored` because a corpus of
+    /// handed pairs and a corpus of unlike ones want different answers.
+    pub incongruent: u64,
     pub half_open: u64,
     pub condensed: u64,
 }
@@ -79,7 +90,7 @@ thread_local! {
     static FIELD: Cell<FieldTally> = const { Cell::new(FieldTally {
         offered: 0, unlifted: 0, apart: 0, contained: 0, sheared: 0,
         bodiless: 0, isotropy: 0, unoriented: 0, oblique: 0, mirrored: 0,
-        half_open: 0, condensed: 0,
+        incongruent: 0, half_open: 0, condensed: 0,
     }) };
 }
 
@@ -110,14 +121,14 @@ impl FieldTally {
     /// A valve that is starved and a valve that is closed look the same on
     /// a total; they do not here. `offered` is what arrived, each named
     /// count is what one valve turned away, and `condensed` is what came
-    /// out the far end. The six frame arms are the five `NoFrame` refusals
-    /// plus the parity class, because a refusal that does not say which
-    /// refusal it is answers nothing (rule 11).
+    /// out the far end. The seven frame arms are the six `NoFrame`
+    /// refusals plus the parity class, because a refusal that does not say
+    /// which refusal it is answers nothing (rule 11).
     pub fn line(&self) -> String {
         format!(
             "offered {} unlifted {} | horizon: apart {} contained {} \
              | frame: bodiless {} isotropy {} unoriented {} oblique {} \
-             mirrored {} half-open {} | CONDENSED {}",
+             mirrored {} incongruent {} half-open {} | CONDENSED {}",
             self.offered,
             self.unlifted,
             self.apart,
@@ -127,9 +138,19 @@ impl FieldTally {
             self.unoriented,
             self.oblique,
             self.mirrored,
+            self.incongruent,
             self.half_open,
             self.condensed,
         )
+    }
+
+    /// WHAT A DEMAND COULD RETIRE, against what it never will. `oblique`
+    /// is the mutable half — a proper turn the alphabet is merely short of
+    /// — and the two permanent arms are the geometry's own answer. The
+    /// ratio is the one number that says whether adjoining generators can
+    /// move this corpus at all.
+    pub fn mutable_over_permanent(&self) -> (u64, u64) {
+        (self.oblique, self.mirrored + self.incongruent)
     }
 
     /// WHAT THE VALVE PASSED, AGAINST WHAT REACHED IT. A field that
@@ -353,6 +374,7 @@ pub(crate) fn star_and_site_faces(
                         blade::NoFrame::Unoriented => t.unoriented += 1,
                         blade::NoFrame::Oblique => t.oblique += 1,
                         blade::NoFrame::Mirrored => t.mirrored += 1,
+                        blade::NoFrame::Incongruent => t.incongruent += 1,
                     });
                     continue;
                 }

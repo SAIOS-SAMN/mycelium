@@ -1079,6 +1079,103 @@ fn quarter_turns() -> [(i64, i64, Mv); 4] {
     ]
 }
 
+/// THE CHIRALITY OF A BODY — AN ODD INVARIANT OF ITS OWN HARMONIC TOWER
+/// (V1 recut, 68 — ruled 2026-09-22).
+///
+/// THE FIRST CUT OF V1 ANSWERED THIS WITH A LATTICE, AND THAT WAS THE
+/// DEFECT. It carried a table of the four improper elements of `D₄`,
+/// applied each to the CELLS about the centroid, and compared coordinate
+/// lists. Three separate flattenings in one helper: a hardcoded generator
+/// set, raw coordinate scraping in place of geometry, and a permanence
+/// argument resting on the crystallographic restriction of `ℤ²` — none of
+/// which mean anything in `Cl(4,1)`, where the base is conformal and a
+/// body is its moment tower, not a set of squares.
+///
+/// THE INTRINSIC READING. Under a rotation by `φ` the harmonic of
+/// azimuthal order `m` carries `h_m ↦ e^{imφ}·h_m`; under a reflection in
+/// the axis at `α` it carries `h_m ↦ e^{imα}·conj(h_m)`. So the
+/// combination
+///
+/// ```text
+///     Z = h₂² · conj(h₄)
+/// ```
+///
+/// is ROTATION-INVARIANT — `e^{4iφ}·e^{−4iφ} = 1` — and CONJUGATED by
+/// every reflection, whatever axis it is taken about. That is chirality
+/// itself, read off the body, with no group table to consult, no cells to
+/// compare, and no lattice to restrict.
+///
+/// IT IS ODD WHERE THE TOWER IS EVEN, which is why it can do what neither
+/// `u` nor `h₄` can alone. Both are even-rank and satisfy `M(−x) = M(x)`,
+/// so each is blind to a reflection taken on its own axis; their PRODUCT
+/// at mismatched orders is not, because the two phases cancel against
+/// each other rather than against themselves.
+///
+/// SCALE-FREE AS A RAY, not as a value. Normalised (A.12), `h₂` has
+/// degree 2 and `h₄` degree 4, so `Z` has degree 8 and a dilation by `ρ`
+/// sends `Z ↦ ρ⁸·Z` — a POSITIVE real factor, which is exactly what
+/// [`same_ray`] divides out. Nothing is normalised away and no root is
+/// taken.
+///
+/// `None` where the body is isotropic at either order — a square, a disc,
+/// a cross. That is not a gap: such a body IS achiral at these orders,
+/// its mirror image is one of its own turns, and a chirality read off it
+/// would be invented (rule 11).
+pub fn chirality(b: &Blade) -> Option<(BigRational, BigRational)> {
+    let u = deviatoric(b)?;
+    let q = quartic_harmonic(b)?;
+    // `u²` then `· conj(q)`, written out over ℚ.
+    let (s1, s2) = (&u[0] * &u[0] - &u[1] * &u[1], &u[0] * &u[1] * BigRational::from_integer(BigInt::from(2)));
+    Some((&s1 * &q[0] + &s2 * &q[1], &s2 * &q[0] - &s1 * &q[1]))
+}
+
+/// Are two plane quantities the SAME RAY — equal up to a strictly
+/// positive rational? Exact, and the one comparison a scale-free reading
+/// of a normalised tower is allowed to make: `p ∼ q` iff `p ∧ q = 0` and
+/// `p · q > 0`. The wedge alone would identify a ray with its opposite.
+fn same_ray(p: &(BigRational, BigRational), q: &(BigRational, BigRational)) -> bool {
+    let wedge = &p.0 * &q.1 - &p.1 * &q.0;
+    let dot = &p.0 * &q.0 + &p.1 * &q.1;
+    wedge.is_zero() && dot > BigRational::from_integer(BigInt::from(0))
+}
+
+/// HOW TWO BODIES STAND TO EACH OTHER UNDER THE ODD INVARIANT (V1 recut).
+///
+/// Read off [`chirality`] alone, so it holds in `Cl(4,1)` without any
+/// appeal to a base lattice, and it answers for bodies of DIFFERENT SIZE
+/// — the ray comparison divides out the dilation, which is what the old
+/// cardinality test could not do and refused instead.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Handedness {
+    /// The invariants agree: a PROPER motion is consistent with them.
+    /// Also where both bodies are achiral (`Z` real), which is correct —
+    /// an achiral body's mirror image is one of its own turns, so there
+    /// is no improper-only relation to find.
+    Proper,
+    /// The invariants are CONJUGATE and not real: no proper motion can
+    /// relate these bodies, in any vocabulary, ever.
+    Improper,
+    /// The invariants are neither: the bodies differ in a quantity NO
+    /// conformal motion changes.
+    Unrelated,
+    /// One body or both is isotropic at an order the invariant needs, so
+    /// there is no reading. Never treated as any of the other three.
+    Unread,
+}
+
+fn handedness(a: &Blade, b: &Blade) -> Handedness {
+    let (Some(za), Some(zb)) = (chirality(a), chirality(b)) else {
+        return Handedness::Unread;
+    };
+    if same_ray(&za, &zb) {
+        return Handedness::Proper;
+    }
+    match same_ray(&za, &(zb.0.clone(), -zb.1)) {
+        true => Handedness::Improper,
+        false => Handedness::Unrelated,
+    }
+}
+
 /// A CHART'S FRAME, and whether its half turn is settled (56.5).
 ///
 /// `Turn` is a rotor the SUPPORT confirmed. `HalfOpen` is one the even
@@ -1149,40 +1246,144 @@ pub enum NoFrame {
     /// Neither body orients at any order this carrier holds — isotropic at
     /// the second harmonic AND at the fourth.
     Unoriented,
-    /// THE AXES SIT AT AN ANGLE THE SQUARE BASE DOES NOT TURN BY. The
-    /// relative orientation is WELL DEFINED and is not in `D₄`: `2φ = ±π/2`
-    /// is the 45° relation whose half-angle `cos(π/8)` is irrational and
-    /// refused by rule 4, and anything else is not a lattice turn at all.
+    /// THE AXES SIT AT AN ANGLE THE SQUARE BASE DOES NOT TURN BY, THE
+    /// BODIES DIFFER IN SIZE, AND SO NO CELL TEST CAN SETTLE IT. The
+    /// relative orientation is WELL DEFINED and is not in `D₄`: `2φ =
+    /// ±π/2` is the 45° relation whose half-angle `cos(π/8)` is irrational
+    /// and refused by rule 4, and anything else is not a lattice turn.
     ///
-    /// This is NOT a failure to measure. It is 37.7's condition — a
-    /// transition the alphabet cannot spell between two bodies that are
-    /// genuinely in contact — and it is where an adjoined generator comes
-    /// from.
+    /// THE ONLY ARM NOT PROVED PERMANENT. A dilation is in play, so the
+    /// crystallographic restriction does not close the question the way it
+    /// does at equal cardinality: `z ↦ (1+i)z` turns 45° at scale `√2` and
+    /// maps `ℤ[i]` into itself, so similarities the square base cannot
+    /// spell genuinely exist. This is 37.7's condition, and D3 is what
+    /// supplies or withholds the `ℤ[i]` witness that would settle it.
+    ///
+    /// It is NOT a claim that a generator exists — only that nothing here
+    /// has ruled one out.
     Oblique,
-    /// Same cardinality and neither candidate turn carries the cells: a
-    /// reflection, or a genuine difference of shape the moments happened
-    /// to agree on. Not a proper rotation.
+    /// A REFLECTION CARRIES IT: a named element of `D₄ ∖ SO(2)` maps one
+    /// body's cells exactly onto the other's, proved by [`mirror_carries`].
+    ///
+    /// THE OBSTRUCTION IS THE GEOMETRY, AND GEOMETRY IS IMMUTABLE. An
+    /// improper map has determinant `−1` and is a rotation at no angle in
+    /// no vocabulary, so no adjoined generator can ever spell it and no
+    /// demand should ever be raised for it. Before V1 this arm was reached
+    /// only by exhaustion — "a reflection, OR a genuine difference of
+    /// shape" — which is rule 11's defect at the producer: two facts of
+    /// opposite permanence answering to one name.
     Mirrored,
+    /// NO ELEMENT OF `D₄` CARRIES IT, PROPER OR IMPROPER. The moments
+    /// agreed far enough to get here and the cells then disagreed: a
+    /// genuine difference of shape, which no turn and no mirror repairs.
+    ///
+    /// Permanent, like [`NoFrame::Mirrored`], but for a different reason,
+    /// and the two are kept apart because a census that merges them cannot
+    /// say whether a corpus is full of handed pairs or of unlike ones.
+    Incongruent,
+}
+
+/// THE ORIENTATION VECTORS OF A PAIR. The second harmonic where the body
+/// has a principal axis; the fourth where it does not — a square or a
+/// cross is isotropic at second order and the quartic still orients it.
+/// Isotropic at both orders is a body with no orientation to compare.
+///
+/// Split out so [`relative_rotor`] and [`oblique_arc`] read the SAME
+/// orientation. Two readers deriving it separately is how the two would
+/// drift onto different harmonics and disagree about the angle they are
+/// each describing.
+///
+/// THE ORDER COMES BACK WITH THE VECTORS, and it is not decoration: a
+/// moment of azimuthal order `m` turns at `m·φ`, so the deviatoric's
+/// reading is `2φ` and the quartic's is `4φ`. A caller that reads an
+/// angle off these without knowing which order produced them is off by a
+/// factor of two and cannot tell.
+fn orientation_of(
+    a: &Blade,
+    b: &Blade,
+) -> Result<(u8, [BigRational; 2], [BigRational; 2]), NoFrame> {
+    match (deviatoric(a), deviatoric(b)) {
+        (Some(ua), Some(ub)) => Ok((2, ua, ub)),
+        (None, None) => match (quartic_harmonic(a), quartic_harmonic(b)) {
+            (Some(qa), Some(qb)) => Ok((4, qa, qb)),
+            _ => Err(NoFrame::Unoriented),
+        },
+        // One has a principal axis and the other does not: no turn of one
+        // is the other, whatever their sizes.
+        _ => Err(NoFrame::Isotropy),
+    }
+}
+
+/// THE PRIMITIVE GAUSSIAN ARC OF AN OBLIQUE PAIR'S DOUBLE ANGLE
+/// (D3, 68 — ruled 2026-09-22).
+///
+/// `z = (u_a·u_b) + (u_a∧u_b)·i`, whose argument is `2φ` — the relative
+/// orientation the deviatoric fixes, which is `φ` only mod `π` because
+/// every even moment satisfies `u(−x) = u(x)`.
+///
+/// A ROTOR IS A RAY, so it is a Gaussian integer `w` with `arg(w) = φ/2`,
+/// and therefore `w⁴ ∝ z` up to a POSITIVE rational. That is what makes
+/// the spellable set exactly two directions and not four:
+///
+/// ```text
+///   z ~ +1   w = 1        (1)⁴ = 1        φ = 0 or π
+///   z ~ −1   w = 1 + i    (1+i)⁴ = −4     φ = π/2 or 3π/2
+///   z ~ ±i   —            arg w = π/8, and tan(π/8) = √2 − 1 is
+///                         irrational, so NO Gaussian integer has it
+/// ```
+///
+/// Those two are precisely the `wedge == 0` branches of
+/// [`relative_rotor`]; everything else lands on [`NoFrame::Oblique`].
+///
+/// PRIMITIVE, AND THAT IS NOT COSMETIC. The court reads the factor as
+/// `π_p = gcd_{ℤ[i]}(s + t·i, p)` and refuses a witness whose gcd is not
+/// of norm exactly `p` (`REFUSE_LETTER_WITNESS`). If `g = gcd(s,t) > 1`
+/// and `p | g`, that gcd comes back with norm `p²` and the letter is
+/// thrown out — so a composite arc would mint demands the court can only
+/// refuse, which is worse than minting none.
+///
+/// SCALE-FREE, so a dilated pair reads the same arc: `u ↦ s⁴u` scales `z`
+/// by `s⁸ > 0`, and dividing out the content removes it.
+pub fn oblique_arc(a: &Blade, b: &Blade) -> Option<(BigInt, BigInt)> {
+    use num_integer::Integer;
+    let (order, oa, ob) = orientation_of(a, b).ok()?;
+    // ORDER 2 ONLY, AND THAT IS A REFUSAL RATHER THAN A GAP. The quartic
+    // orients a body the deviatoric cannot, but it turns at `4φ`, so its
+    // arc answers `w⁸ ∝ z` and a witness minted from it would name a
+    // rotation at half the angle the pair actually stands at. The court
+    // cannot tell the two apart from the block alone — it reads `s + t·i`
+    // and nothing says which harmonic produced it — so a wrong-order
+    // witness is not a weaker demand, it is a false one.
+    //
+    // Refused here rather than corrected, because `w⁸` is a DIFFERENT
+    // spellability question from `w⁴` and answering it is its own ruling.
+    if order != 2 {
+        return None;
+    }
+    let dot = &oa[0] * &ob[0] + &oa[1] * &ob[1];
+    let wedge = &oa[0] * &ob[1] - &oa[1] * &ob[0];
+    // `z = 0` is no direction at all: an orientation vector vanished, and
+    // an angle read off it would be invented (rule 11).
+    if dot.is_zero() && wedge.is_zero() {
+        return None;
+    }
+    // Clear denominators, then divide out the content. Any factor the
+    // clearing introduced is common to both parts and the gcd removes it,
+    // so the result is primitive however it was scaled.
+    let d = dot.denom() * wedge.denom();
+    let (s, t) = (dot.numer() * (&d / dot.denom()), wedge.numer() * (&d / wedge.denom()));
+    let g = s.gcd(&t);
+    match g.is_zero() {
+        true => None,
+        false => Some((&s / &g, &t / &g)),
+    }
 }
 
 pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Frame, NoFrame> {
     if a.support.is_empty() || b.support.is_empty() {
         return Err(NoFrame::Bodiless);
     }
-    // THE ORIENTATION VECTORS. The second harmonic where the body has a
-    // principal axis; the fourth where it does not — a square or a cross
-    // is isotropic at second order and the quartic still orients it.
-    // `None` at both orders is a body with no orientation to compare.
-    let (oa, ob) = match (deviatoric(a), deviatoric(b)) {
-        (Some(ua), Some(ub)) => (ua, ub),
-        (None, None) => match (quartic_harmonic(a), quartic_harmonic(b)) {
-            (Some(qa), Some(qb)) => (qa, qb),
-            _ => return Err(NoFrame::Unoriented),
-        },
-        // One has a principal axis and the other does not: no turn of one
-        // is the other, whatever their sizes.
-        _ => return Err(NoFrame::Isotropy),
-    };
+    let (_order, oa, ob) = orientation_of(a, b)?;
     // SIGNS ONLY, WHICH IS WHAT MAKES IT SCALE-FREE. Under a dilation by
     // `s > 0` the moments scale as `s⁴`, so `u ↦ s⁴ · R(2φ) u` and every
     // sign survives. Taking `cos 2φ = (u_a·u_b)/(‖u_a‖‖u_b‖)` would need
@@ -1204,10 +1405,49 @@ pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Frame, NoFrame> {
     } else {
         // 2φ = ±π/2 is a 45° relation whose half-angle `cos(π/8)` is
         // irrational: refused rather than approximated (rule 4). Anything
-        // else is not a turn of the square base at all — and in BOTH cases
-        // the relative orientation exists and is unspellable, which is
-        // 37.7's condition and not a measurement failure.
-        return Err(NoFrame::Oblique);
+        // else is not a turn of the square base at all.
+        //
+        // V1 — WHICH KIND OF REFUSAL IS THIS (68, ruled 2026-09-22).
+        //
+        // The deviatoric CANNOT tell these apart on its own: a reflection
+        // about an axis at `α` maps `u(2φ)` to `u(2α − 2φ)`, which is a
+        // perfectly good rotation OF THE DEVIATORIC and lands here looking
+        // exactly like an oblique turn. That is why an L and a J tetromino
+        // — mirror images, no rotation between them at any angle — read
+        // `Oblique` and would have raised a demand for a generator that
+        // cannot exist.
+        //
+        // So the BODY'S OWN ODD INVARIANT answers it — `Z = h₂²·conj(h₄)`,
+        // rotation-invariant and conjugated by every reflection:
+        //
+        //   Improper   the invariants are conjugate and not real. There is
+        //              no rotor at any angle in any vocabulary. PERMANENT.
+        //   Unrelated  the invariants are neither equal nor conjugate, so
+        //              the bodies differ in a quantity NO conformal motion
+        //              changes. PERMANENT, and proved by an invariant
+        //              rather than by exhausting a finite group.
+        //
+        // AND CHIRALITY ALONE IS NOT ENOUGH, which the first recut got
+        // wrong. `Z` is REAL for every achiral body, so all of them share
+        // one ray and `Proper` degenerates to "handedness does not forbid
+        // it" — true, and far too weak: a domino and an L-tromino passed
+        // it, and would have asked the court to adjoin a generator
+        // relating them. Chirality answers the ODD question only.
+        //
+        // The EVEN question is A.12's, already built: a similarity must
+        // carry the whole normalised tower, `‖M̃_b^(m)‖²·(r_a²)^m =
+        // ‖M̃_a^(m)‖²·(r_b²)^m` at every order. A pair the certificate
+        // refuses is not similar at ANY angle — permanent, proved by an
+        // invariant, and nothing about a lattice is assumed.
+        //
+        // Both gates must pass for the question to stay open. `Unread` is
+        // no chirality reading at all, so it proves nothing on its own and
+        // leans entirely on the certificate.
+        return Err(match (handedness(a, b), dilation_certified(a, b)) {
+            (Handedness::Improper, _) => NoFrame::Mirrored,
+            (Handedness::Unrelated, _) | (_, false) => NoFrame::Incongruent,
+            _ => NoFrame::Oblique,
+        });
     };
     let (Some(ca), Some(cb)) = (a.centroid(), b.centroid()) else {
         return Err(NoFrame::Bodiless);
@@ -1257,10 +1497,21 @@ pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Frame, NoFrame> {
                 return Ok(Frame::Turn(rotor.clone()));
             }
         }
-        // Same cardinality and neither half turn carries it: the two are
-        // not related by a proper rotation — a reflection, or a genuine
-        // difference of shape the moments happened to agree on.
-        return Err(NoFrame::Mirrored);
+        // Neither candidate turn carries it: the two are not related by a
+        // proper rotation. WHICH of the two facts that is, the body's own
+        // odd invariant now says — the same question asked on the oblique
+        // branch above, asked here too, because a ruling applies to every
+        // site of its shape and not only to the one that reported it.
+        return Err(match handedness(a, b) {
+            Handedness::Improper => NoFrame::Mirrored,
+            // The cells refused a turn the invariant permits, so the two
+            // differ above the fourth harmonic. `Unread` lands here for
+            // the same reason: the cell test already spoke, and it said
+            // no turn carries these bodies.
+            Handedness::Unrelated | Handedness::Proper | Handedness::Unread => {
+                NoFrame::Incongruent
+            }
+        });
     }
     Ok(Frame::HalfOpen(turns[turn_pair[0]].2.clone()))
 }
