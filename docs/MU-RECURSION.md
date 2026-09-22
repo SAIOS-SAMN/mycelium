@@ -535,7 +535,7 @@ Part III:
 | `alphabet/word.rs` `same_form` | tape-equality arm `(None, None) => self.0 == other.0` | `projective_eq` |
 | `alphabet/plane.rs` `PlaneForm` | structural equality on unreduced unit exponents; `form()` does not reduce; `sentence::chart_of` (1885) reads raw exponents | A3 |
 | `alphabet/rotor.rs` `Rotor::key`, `coordinate` | hash of unnormalised coefficients used at `cognition.rs:2947` as class key and refinement axis; `PlaneForm::key/coordinate` (849, 858) likewise | A1, A7 |
-| `cga.rs:46` `Mv` (`Versor`) | derived structural equality; `cognition.rs:1006` `push_cocycle` `old == g` | A4 |
+| `cga.rs:46` `Mv` (`Versor`) (now `cga/multivector.rs`) | derived structural equality; `cognition.rs:1006` `push_cocycle` `old == g` | A4 |
 | `element.rs:140` `Element::eq` (now `element/vertex.rs`) | tape bytes plus structural fields; inherited by `Germ`, `Face`, `Nerve` (sentence.rs 583, 600, 633) | M1 `same_vertex` |
 | `sentence.rs:1144` `vertex_address` | writes raw versor bytes beside geodesic keys | A4 canonical versors |
 | `cognition.rs:5635, 5526` `composite_parent_id`, `section_address` | hash links in given order, uncentred; assignment unsorted | A5, M2 |
@@ -553,7 +553,7 @@ A21, in one landing (chapter 41, 0.11):
 | site | what it does | replaced by |
 |---|---|---|
 | `alphabet/rotor.rs` `Rotor::key`, `alphabet/word.rs` `Word::class_key`, `alphabet/plane.rs` `PlaneForm::key` | blake3 over canonical coefficients or conjugacy invariants | the coefficients and invariants written out (A21) |
-| `cga.rs` `Mv::key` | blake3 over canonical versor coefficients | the coefficients written out |
+| `cga.rs` `Mv::key` (now `cga/multivector.rs`) | blake3 over canonical versor coefficients | the coefficients written out |
 | `element/vertex.rs` `Element::address`, `form_key_bytes`; `element/residual.rs` `listing_key` | blake3 over the M2 composite | the M2 composite itself (17.2) |
 | `stalk.rs` `Invariant::key` | blake3 over the exact axes before the trie sees them | the axes' bytes, so `fiber_under` is a prefix read |
 | `sentence/class.rs` `ClassVector::class_key`, `CLOSED_KEY` | blake3 over the class vector | the class vector's coordinates; closed is the zero vector |
@@ -2435,7 +2435,7 @@ never a single `(plane, exponent)` pair.
 
 ### 16.4 A4 — Canonical conformal versor
 
-Input: `V: Mv` (cga.rs; `Versor = Mv`, element/letters.rs). The conformal
+Input: `V: Mv` (cga/multivector.rs; `Versor = Mv`, element/letters.rs). The conformal
 algebra in this tree is `Cl(4,1)` over `{e1, e2, e3, e+, e−}` with squares
 `(+,+,+,+,−)`, `e_o = ½(e− − e+)`, `e_∞ = e− + e+`, masks `E1 = 1, E2 = 2,
 E3 = 4, EP = 8, EM = 16`, thirty-two blades: the conformal model of the
@@ -3375,7 +3375,7 @@ it always named:
 
 | short name | absolute path |
 |---|---|
-| `alphabet/`, `sentence/`, `element/`, `cech/`, `stalk/`, `blade/`, `bubble/`, `family/`, `cga.rs`, `peel.rs`, `anchor/`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
+| `alphabet/`, `sentence/`, `element/`, `cech/`, `stalk/`, `blade/`, `bubble/`, `family/`, `cga/`, `peel.rs`, `anchor/`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
 | `cognition/`, `registry.rs`, `synthesis.rs` | `/opt/mycelium-v0.1.0/src/server/<name>` |
 | `verdict/`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
 | `nerve/`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
@@ -4996,7 +4996,7 @@ alphabet/rotor.rs  Rotor::normalised (sign step), Rotor::projective_eq (either s
               PlaneForm::torsion_part() -> (u8,u8) NEW, PlaneForm::free_part() -> (i64,i64) NEW,
               Word::form (reduced), Word::normal_form (A2 step 1 off-plane), Word::key (= A1 key), Word::class_key (15.4),
               Word::{with_contact, contact, rebase} NEW, shorter_tape(word, budget) NEW, Contact NEW
-cga.rs        Mv::canonical NEW, Mv::projective_eq NEW, Mv::key NEW, derive(PartialEq) REMOVED
+cga/multivector.rs  Mv::canonical NEW, Mv::projective_eq NEW, Mv::key NEW, derive(PartialEq) REMOVED
 element/       canonical_chain(&[Link]) -> Vec<Link> NEW (A5), Element::same_vertex NEW, PartialEq REMOVED,
               form_key_bytes uses the M1 key, depth field, GEN2 depth after mag
 sentence.rs   Vertex/Face/Loop/Form NEW (18.2), Form::{face_of, delta1, coheres, is_closed, depth_of, regauge, glue, retract_vertices, rebase, unfold, loops_of},
@@ -6063,7 +6063,7 @@ rule is the same rule at every frame. Nothing in `Form`, `coheres`,
 
 ### 38.5 B5 The conformal model climbs with the base
 
-`cga.rs` is `Cl(4,1)` (51.2, ruled 2026-09-17): the conformal model of
+`cga/` is `Cl(4,1)` (51.2, ruled 2026-09-17): the conformal model of
 the three-coordinate base `(r, c, k)`, the frame `k` on `e₃`. `Cl(5,1)`
 is not derived — `e₂` is the orientation character and not a point
 coordinate — and `z` waits for a corpus that carries one (51.11).
@@ -6081,7 +6081,7 @@ as it carries `k` (38.1); `blade/`,
 `blade/harmonics.rs`: `d`-dimensional moments and Betti numbers, axes
 prefixed by `d`; `peel.rs`:
 `d`-cube shells; `family/perceive.rs`: `perceive` over frames writes `t`;
-`stalk.rs`: `invariant` on `d`-sites; `cga.rs`: dimension-generic `Mv`.
+`stalk.rs`: `invariant` on `d`-sites; `cga/multivector.rs`: dimension-generic `Mv`.
 Tests and traces: chapters 39–40.
 
 What does not change under either upgrade: the 17 letters and their
