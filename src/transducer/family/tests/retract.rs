@@ -1001,3 +1001,133 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
     // A reading over no extraction is not a reading (rule 11).
     assert!(extracted > 0, "no form extracted from the corpus: nothing to classify");
 }
+
+/// A.14 — THE CONTACT THE ENGINE ALREADY COMPUTES AND THROWS AWAY (69).
+///
+/// `components()` reads the whole scene's 6-incidence with
+/// `incidence_of_3d` and then keeps only the SAME-HUE edges:
+///
+/// ```text
+///     .filter(|&(i, j)| sorted[i].3 == sorted[j].3)
+/// ```
+///
+/// The edges that filter removes are exactly "two touching bodies of
+/// different hues sharing a boundary" — chapter 20's own words, which go
+/// on to say where they belong: "which the pair form carries as a contact
+/// face with its edge transport (50.3)".
+///
+/// They are computed in full, dropped on that line, and then the horizon
+/// spends a rank-1 bounding-sphere band trying to reconstruct them. This
+/// counts what is discarded, against what the field currently condenses.
+///
+/// NOT A SCALAR VERDICT: the reading is per scene and the pairs are named
+/// by their component roots, because a tally of contacts would be the
+/// same count-as-choice defect one level up (rule 2). The count here is
+/// the SIZE of a reading, not the reading.
+#[test]
+fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
+    use crate::transducer::sentence::{components, incidence_of_3d};
+    let Ok(dir) = std::fs::read_dir(CORPUS) else {
+        eprintln!("  a14: {CORPUS} does not read — no corpus, no reading");
+        return;
+    };
+    let mut names: Vec<String> = dir
+        .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
+        .filter(|n| n.ends_with(".json"))
+        .collect();
+    names.sort_unstable();
+    names.truncate(TASKS);
+
+    let (mut scenes, mut bodies_total) = (0usize, 0usize);
+    let (mut same_hue, mut cross_hue, mut contact_pairs) = (0usize, 0usize, 0usize);
+    let (mut contact_b1, mut scenes_with_cycles) = (0usize, 0usize);
+    for name in &names {
+        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Some(task) = crate::arc::parse_task(&json) else { continue };
+        for (input, _) in &task.train {
+            // The scene's laminae, exactly as `perceive_at` builds them.
+            let mut laminae: Vec<crate::transducer::blade::Lamina> = Vec::new();
+            for (r, row) in input.iter().enumerate() {
+                for (c, &h) in row.iter().enumerate() {
+                    if h != 0 {
+                        laminae.push((r as i64, c as i64, 0, h));
+                    }
+                }
+            }
+            if laminae.is_empty() {
+                continue;
+            }
+            laminae.sort_unstable();
+            laminae.dedup_by_key(|x| (x.0, x.1, x.2));
+            let positions: Vec<(i64, i64, i64)> =
+                laminae.iter().map(|x| (x.0, x.1, x.2)).collect();
+            let all = incidence_of_3d(&positions);
+            let intra: Vec<(usize, usize)> = all
+                .iter()
+                .copied()
+                .filter(|&(i, j)| laminae[i].3 == laminae[j].3)
+                .collect();
+            let roots = components(laminae.len(), &intra);
+            // THE DISCARDED EDGES, named by the bodies they join.
+            let mut pairs: Vec<(usize, usize)> = all
+                .iter()
+                .filter(|&&(i, j)| laminae[i].3 != laminae[j].3)
+                .map(|&(i, j)| {
+                    let (a, b) = (roots[i], roots[j]);
+                    if a <= b { (a, b) } else { (b, a) }
+                })
+                .collect();
+            pairs.sort_unstable();
+            pairs.dedup();
+            let n_bodies = {
+                let mut r = roots.clone();
+                r.sort_unstable();
+                r.dedup();
+                r.len()
+            };
+            // DOES THE CONTACT GRAPH CARRY CYCLES? This is the whole
+            // question A.14 is for: `b₁ = E − V + C` on the graph whose
+            // vertices are BODIES and whose edges are the discarded
+            // cross-hue contacts. If it is a forest, restoring contact
+            // gives more relations and still no loops, and the tree
+            // famine has a second cause.
+            let mut root_ids: Vec<usize> = roots.clone();
+            root_ids.sort_unstable();
+            root_ids.dedup();
+            let ix = |r: usize| root_ids.binary_search(&r).unwrap_or(0);
+            let cg: Vec<(usize, usize)> =
+                pairs.iter().map(|&(a, b)| (ix(a), ix(b))).collect();
+            let comps = components(root_ids.len(), &cg);
+            let n_comp = {
+                let mut c = comps.clone();
+                c.sort_unstable();
+                c.dedup();
+                c.len()
+            };
+            // E − V + C, floored at zero: a negative reading is a broken
+            // counter and not a Betti number (rule 11).
+            let b1 = (pairs.len() + n_comp).saturating_sub(root_ids.len());
+            contact_b1 += b1;
+            if b1 > 0 {
+                scenes_with_cycles += 1;
+            }
+            scenes += 1;
+            bodies_total += n_bodies;
+            same_hue += intra.len();
+            cross_hue += all.len() - intra.len();
+            contact_pairs += pairs.len();
+        }
+    }
+    eprintln!(
+        "  a14 over {scenes} scenes: bodies {bodies_total} | incidence edges: \
+         same-hue {same_hue} (kept, they DEFINE the bodies) \
+         cross-hue {cross_hue} (DISCARDED — the contact faces) \
+         | distinct body pairs in contact {contact_pairs}"
+    );
+    eprintln!(
+        "  a14 contact graph: b₁ {contact_b1} over {scenes} scenes, \
+         {scenes_with_cycles} of them carrying a cycle — this is whether \
+         restoring contact breaks the tree famine, or only widens it"
+    );
+    assert!(scenes > 0, "no scene read: nothing to count");
+}

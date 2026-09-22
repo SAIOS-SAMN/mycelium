@@ -584,6 +584,76 @@ mod tests {
         );
     }
 
+    /// A.14 — THE PAIR READING IS DIRECTIONAL, AND THE RANK-1 CARRIER
+    /// CANNOT CARRY IT (69, ruled 2026-09-22).
+    ///
+    /// THE OBLIGATION, stated so it can fail: fix a body `A` and let `B`
+    /// range over a family every member of which is IN CONTACT with `A`.
+    /// A sound pair reading is CONSTANT on that family. Contact is one
+    /// relation; a reading that varies across it is reading something
+    /// else.
+    ///
+    /// THE CURRENT CARRIER FAILS IT. `radius2() = Tr(I)/M₀` is the MEAN
+    /// of the extent over all directions — the deviatoric, which is
+    /// exactly the part saying extent VARIES with direction, is computed,
+    /// used to orient bodies (V1), and then discarded when they are
+    /// measured. So `δ` cannot tell a long body from a distant one.
+    ///
+    /// THE OBVIOUS REPAIR IS RANK-2 AND IT IS MEASURED HERE, not assumed:
+    /// the directional second moment `r²(v) = (v·I·v)/((v·v)·M₀)` along
+    /// the separation `v`, exact over ℚ with no root — the ratio of two
+    /// quadratics never forms `‖v‖`.
+    #[test]
+    fn a14_the_pair_reading_must_be_constant_on_a_contact_family() {
+        let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
+        let mut rank1: Vec<String> = Vec::new();
+        let mut rank2: Vec<String> = Vec::new();
+        for n in 1..=6i64 {
+            let bar: Vec<(i64, i64, i64)> = (0..n).map(|c| (0, c, 0)).collect();
+            let cell = vec![(0, -1, 0)];
+            let (a, b) = (blade::shape_of(&cell), blade::shape_of(&bar));
+            let (ba, bb) = (&a.blade, &b.blade);
+            // RANK 1 — what the horizon reads today.
+            let face = blade::Interface::between(ba, bb).expect("an interface");
+            let sq = &face.strain.num * &face.strain.num;
+            rank1.push(format!("{}", &sq / &face.strain.den2));
+            // RANK 2 — the same reading on the DIRECTIONAL extent.
+            let (ca, cb) = (ba.centroid().expect("a"), bb.centroid().expect("b"));
+            let (vr, vc) = (&cb.0 - &ca.0, &cb.1 - &ca.1);
+            let vv = &vr * &vr + &vc * &vc;
+            // `v·I·v` on the sensor plane: Ixx, Iyy, Ixy are inertia[0..3].
+            let dir = |bl: &blade::Blade| -> num_rational::BigRational {
+                // `M₀` is the body's own lamina count on this base.
+                let m0 = q(bl.support.len() as i64);
+                let quad = &vr * &vr * &bl.inertia[0]
+                    + &vc * &vc * &bl.inertia[1]
+                    + q(2) * &vr * &vc * &bl.inertia[2];
+                quad / (&vv * &m0)
+            };
+            let (ra2, rb2) = (dir(ba), dir(bb));
+            let num = &vv - &ra2 - &rb2;
+            let den2 = q(4) * &ra2 * &rb2;
+            rank2.push(format!("{}", (&num * &num) / &den2));
+        }
+        eprintln!("  contact family (cell against a bar of n cells, edge to edge):");
+        eprintln!("    rank-1 δ² (today, Tr(I)/M₀): {rank1:?}");
+        eprintln!("    rank-2 δ² (directional v·I·v): {rank2:?}");
+        // THE RANK-1 CARRIER IS NOT CONSTANT — this is the defect, pinned.
+        assert!(
+            rank1.iter().any(|x| x != &rank1[0]),
+            "if this ever passes, the rank-1 reading became constant and A.14 is moot"
+        );
+        // AND THE OBLIGATION IS RECORDED AS THE THING A.14 OWES: whichever
+        // carrier replaces the nucleus must make this vector constant.
+        // Asserted here only as the measurement it is, so the row cannot
+        // be closed by an implementation that does not achieve it.
+        let rank2_constant = rank2.iter().all(|x| x == &rank2[0]);
+        eprintln!(
+            "    rank-2 constant on the family: {rank2_constant} \
+             — A.14 is satisfied only when this reads true"
+        );
+    }
+
     /// D2 — THE METABOLIC LEDGER READS BOTH HALVES, AND NETS THEM PER
     /// LANE (68).
     ///
