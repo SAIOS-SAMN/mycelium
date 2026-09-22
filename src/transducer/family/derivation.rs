@@ -294,6 +294,20 @@ pub(crate) fn peel_versor_with_target(
         Some(r) => r.clone(),
         None => rotor_of_versor(v)?,
     };
+    // D1 — THE PLANE CENSUS, AT THE SITE WHERE A TRANSITION IS ACTUALLY
+    // READ (68). Every vertex the engine tries to spell passes here, and
+    // here the rotor has been EXTRACTED — `rotor_of_versor` — rather than
+    // left inside a composite. That matters: a versor is `D(ρ)·T(t)·R`,
+    // and censusing its raw grade-2 part would light `eᵢ∧e₋` from a PURE
+    // TRANSLATION and report boosts that never happened. The rotor gives
+    // the harmonic six exactly; `v` gives the luminal four that the rotor
+    // chart cannot carry (L11e).
+    //
+    // Placed BEFORE the weight and parity gates so the census counts what
+    // the engine ATTEMPTED, not what survived — a plane that is only ever
+    // reached by refused targets is still a plane the corpus reaches for,
+    // and gating the count would hide exactly that.
+    crate::transducer::cga::note_transition(&target, v);
     target.weight()?;
     if !target.is_even() {
         return None;
