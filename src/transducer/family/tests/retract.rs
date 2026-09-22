@@ -1041,6 +1041,8 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
     let (mut scenes, mut bodies_total) = (0usize, 0usize);
     let (mut same_hue, mut cross_hue, mut contact_pairs) = (0usize, 0usize, 0usize);
     let (mut contact_b1, mut scenes_with_cycles) = (0usize, 0usize);
+    let (mut isolated, mut contact_components, mut scenes_e_ge_v) = (0usize, 0usize, 0usize);
+    let mut b1_hist: [usize; 16] = [0; 16];
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
@@ -1110,6 +1112,21 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
             contact_b1 += b1;
             if b1 > 0 {
                 scenes_with_cycles += 1;
+                b1_hist[b1.min(15)] += 1;
+            }
+            // WHY IS IT A FOREST? A body touching NOTHING contributes a
+            // vertex and no edge, so a scene of isolated pieces is sparse
+            // by its own nature and not by anything the engine filtered.
+            // This separates a real scene fact from a second famine.
+            let mut degree = vec![0usize; root_ids.len()];
+            for &(a, b) in &cg {
+                degree[a] += 1;
+                degree[b] += 1;
+            }
+            isolated += degree.iter().filter(|&&d| d == 0).count();
+            contact_components += n_comp;
+            if pairs.len() >= root_ids.len() {
+                scenes_e_ge_v += 1;
             }
             scenes += 1;
             bodies_total += n_bodies;
@@ -1129,5 +1146,12 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
          {scenes_with_cycles} of them carrying a cycle — this is whether \
          restoring contact breaks the tree famine, or only widens it"
     );
+    eprintln!(
+        "  a14 topology: V {bodies_total} E {contact_pairs} C {contact_components} \
+         | ISOLATED bodies {isolated} ({:.1}% touch nothing at all) \
+         | scenes with E>=V {scenes_e_ge_v} of {scenes}",
+        100.0 * isolated as f64 / bodies_total.max(1) as f64
+    );
+    eprintln!("  a14 b₁ per cyclic scene: {b1_hist:?}");
     assert!(scenes > 0, "no scene read: nothing to count");
 }
