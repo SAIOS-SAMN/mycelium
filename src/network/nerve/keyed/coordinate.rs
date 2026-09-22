@@ -808,9 +808,9 @@ pub mod coord {
     /// §4.4 E8 — THE THREE COORDINATES OF A COVER (ruled 2026-09-22).
     ///
     /// `family::pieces` has always written these three addresses out of
-    /// their own content — "a piece is addressed by its shell kind, its hue
-    /// and its support written out; a carriage by its domain and codomain in
-    /// that order; a meet by its two ends unordered" — and every carrier
+    /// their own content — a piece by its shell kind and its support written
+    /// out; a carriage by its domain and codomain in that order; a meet by
+    /// its two ends unordered — and every carrier
     /// holding one was `Keyed<V, Any>`. The bytes were a coordinate and the
     /// type said they were not, so a carriage key could be handed to the
     /// piece index and the trie would answer.
@@ -824,14 +824,13 @@ pub mod coord {
     /// lists — not because one collapses to the other's shape.
     ///
     /// A cell of the base carried into a support is `(row, col, frame)`,
-    /// where FRAME is the sensor's third axis. It is not the hue: a piece is
-    /// of one hue by construction and carries it on its own address, which
-    /// is why the support is three spatial coordinates and the colour is a
-    /// coordinate of the piece.
+    /// where FRAME is the sensor's third axis. It is not the hue, and the hue
+    /// is not on this address either: a piece is a HUE-BLIND component
+    /// (70.4), its colours are the gauge its laminae carry, and nothing reads
+    /// a colour back off a piece's key, so none is written there (law 12).
     #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Piece {
         pub kind: crate::transducer::peel::ShellKind,
-        pub hue: u8,
         pub support: Vec<(i64, i64, i64)>,
     }
 
@@ -866,7 +865,6 @@ pub mod coord {
         fn put(&self, buf: &mut Vec<u8>) {
             buf.push(a::TAG_PIECE);
             buf.push(self.kind.as_u8());
-            buf.push(self.hue);
             put_support(buf, &self.support);
         }
 
@@ -877,9 +875,7 @@ pub mod coord {
             }
             let kind = crate::transducer::peel::ShellKind::from_u8(*bytes.get(*pos)?)?;
             *pos += 1;
-            let hue = *bytes.get(*pos)?;
-            *pos += 1;
-            Some(Piece { kind, hue, support: take_support(bytes, pos)? })
+            Some(Piece { kind, support: take_support(bytes, pos)? })
         }
     }
 
@@ -896,7 +892,7 @@ pub mod coord {
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
             let mut pos = 0usize;
             let p = Piece::take(bytes, &mut pos)
-                .ok_or_else(|| Self::refuse("the bytes do not spell a kind, a hue and a support"))?;
+                .ok_or_else(|| Self::refuse("the bytes do not spell a kind and a support"))?;
             match pos == bytes.len() {
                 true => Ok(p),
                 false => Err(Self::refuse("the key carries bytes past its last coordinate")),

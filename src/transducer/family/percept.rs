@@ -700,8 +700,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // 53.6 item 3 — THE COVER'S MEETS ARE OFFERED AS FACES, BETWEEN THE
     // CLASSES THEY RELATE.
     //
-    // `star_and_site_faces` offers the Frame's star, a spanning CHAIN of
-    // each site's occupants and the ring pairs. Its own comment says what
+    // `named_faces` (then `star_and_site_faces`) offered the Frame's star, a
+    // spanning CHAIN of each site's occupants and the ring pairs. Its own comment says what
     // that leaves: "the only cycles that survive are the ones spanning
     // DISTINCT sites". Nothing offered such a pair, so every form came out
     // a forest — `faces == site+ring` on every row of every recut — and
@@ -748,7 +748,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // `Demand::Dislocation { chart, tau }` was built to carry. 18.2 says it
     // in one line: two carriages on one class are two sections.
     //
-    // A face is between two members and `star_and_site_faces` already
+    // A face is between two members and `named_faces` already
     // returns member pairs, so the chord is offered at the same granularity
     // the builder consumes. Both ends may sit at ONE vertex; what must
     // differ is the member key, which is the pair `(vertex, chart)`.
@@ -907,16 +907,21 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         })
         .collect();
     let n_chords = chord_pairs.len();
-    // A STAR OR SITE PAIR BRINGS NO EDGE OF ITS OWN — `edge_between` reads
-    // it off the two bodies — and a CHORD brings the one its meet measured,
-    // because `edge_between` is keyed by `(vertex, chart)` and cannot
-    // re-derive a transition between two sections of one member.
-    for (ak, bk, chord_edge) in star_and_site_faces(frame_member.as_deref(), &scenery.supports)
+    // A STAR, SITE OR CONTACT PAIR BRINGS NO EDGE OF ITS OWN — `edge_between`
+    // reads it off the two bodies, as it reads any meet's (50.3) — and a
+    // CHORD brings the one its meet measured, because `edge_between` is
+    // keyed by `(vertex, chart)` and cannot re-derive a transition between
+    // two sections of one member.
+    for (ak, bk, chord_edge, how) in named_faces(frame_member.as_deref(), &scenery.supports)
         .into_iter()
-        .map(|(a, b)| (a, b, None))
-        .chain(chord_pairs)
+        .map(|(a, b, hows)| (a, b, None, hows))
+        .chain(chord_pairs.into_iter().map(|(a, b, e)| (a, b, e, Vec::new())))
     {
         drops.offered += 1;
+        let contact = how.contains(&Incidence::Contact);
+        if contact {
+            drops.contact_offered += 1;
+        }
         let (Some((i, cik)), Some((j, cjk))) = (read_member_key(&ak), read_member_key(&bk)) else {
             drops.member_key += 1;
             continue;
@@ -950,6 +955,9 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         at.insert(face_pair_key(&ci, &cj), place);
         form.faces.push(FormFace { i, j, word, at, pairs });
         drops.built += 1;
+        if contact {
+            drops.contact_built += 1;
+        }
     }
     // THE WORDS THE FAMILY SPOKE ON OTHER FRAMES between the Frame and a
     // vertex are faces of their own, each on the frames it was spoken on
@@ -1049,7 +1057,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
          {} certified triples, {} refused \
          | nerve/image: {} charts over {} cells, {} shared, {} triples \
          | phase: {} finite {} infinite {} unread, periods {:?} \
-         | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {}",
+         | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {} \
+         | contact faces offered {} built {}",
         form.faces.len(),
         // The site+ring faces COUNTED as they were built, not the total
         // less the meets: a subtraction floored at zero invents a value
@@ -1132,7 +1141,9 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         drops.vertex,
         drops.chart,
         drops.word,
-        drops.place
+        drops.place,
+        drops.contact_offered,
+        drops.contact_built
     );
     trace::trace("extract/2 faces", trace::Wrote::Nothing, Some(budget));
     Percept { form, sections, varying, unreached }

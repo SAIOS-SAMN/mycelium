@@ -5,7 +5,7 @@
 //! each named by their own content.
 //!
 //! Nothing here is keyed by position. A piece is addressed by its shell
-//! kind, its hue and its support written out; a preimage by the pieces it
+//! kind and its support written out; a preimage by the pieces it
 //! is assembled from; a carriage by its domain and codomain in that order,
 //! because a carriage has a direction; a meet by its two ends unordered,
 //! because a seam does not. No digest appears in any of them — a hash
@@ -18,11 +18,14 @@
 use super::*;
 use crate::transducer::peel::ShellKind;
 
-/// A piece of a body: one shell, one hue, one connected component.
+/// A piece of a body: one shell, one HUE-BLIND connected component (70.4).
+/// Its hues are the gauge its laminae carry, read off them where a reader
+/// needs them; a seam between two hues inside a piece is that piece's own
+/// gauge section, never a meet.
 ///
-/// The kind and the hue are ON ITS ADDRESS and are not carried beside it
-/// (law 12): the cover's second pass propagates the placed versors and
-/// reads the image by position, so nothing asks a piece what kind it is.
+/// The kind is ON ITS ADDRESS and is not carried beside it (law 12): the
+/// cover's second pass propagates the placed versors and reads the image
+/// by position, so nothing asks a piece what kind it is.
 pub(crate) struct Piece {
     pub(crate) body: Body,
 }
@@ -52,15 +55,15 @@ pub(crate) struct Piece {
 /// [`coord::Meet`]: crate::network::nerve::coord::Meet
 pub(crate) fn piece_at(
     kind: ShellKind,
-    hue: u8,
     support: &[(i64, i64, i64)],
 ) -> crate::network::nerve::coord::Piece {
-    crate::network::nerve::coord::Piece { kind, hue, support: support.to_vec() }
+    crate::network::nerve::coord::Piece { kind, support: support.to_vec() }
 }
 
-/// THE PIECES OF A BODY ARE BODIES: its one-hue connected components
-/// (13.9's split, `blade::components` on the three coordinates of the
-/// base, which is 51.3's 6-adjacency), filed by their own address.
+/// THE PIECES OF A BODY ARE BODIES: its hue-blind connected components
+/// (`blade::components` on the three coordinates of the base, which is
+/// 51.3's 6-adjacency whatever hues the laminae carry, 70.4), filed by
+/// their own address.
 ///
 /// THE COVER DOES NOT DESCEND BELOW A BODY (51.3, 50.8 as ruled
 /// 2026-09-18). This peeled the body into concentric shells first and took
@@ -84,31 +87,16 @@ pub(crate) fn pieces_of(
 ) -> crate::network::nerve::Keyed<Piece, crate::network::nerve::coord::Piece> {
     let mut out: crate::network::nerve::Keyed<Piece, crate::network::nerve::coord::Piece> =
         crate::network::nerve::Keyed::new();
-    // One hue at a time, so a component is a piece of ONE colour: a seam
-    // between two hues is a meet, not a body (13.9).
-    let mut hues: crate::network::nerve::Keyed<Vec<Lamina>> = crate::network::nerve::Keyed::new();
-    for &(r, c, k, h) in laminae {
-        match hues.get_mut(&[h]) {
-            Some(v) => v.push((r, c, k, h)),
-            None => {
-                hues.insert([h], vec![(r, c, k, h)]);
-            }
+    // WHATEVER HUES THE LAMINAE CARRY (70.4): the component is taken over
+    // the body's whole support, so a polychrome body is one piece and its
+    // colour seams stay inside it as its gauge section.
+    for comp in crate::transducer::blade::components(laminae) {
+        if comp.is_empty() {
+            continue;
         }
-    }
-    for (hue_key, of_hue) in hues.scoped() {
-        // The hue is the KEY this group was filed under, not a lamina read
-        // out of it by position (rule 15): every lamina here has that hue
-        // by construction.
-        let [hue] = hue_key.as_slice() else { continue };
-        let hue = *hue;
-        for comp in crate::transducer::blade::components(of_hue) {
-            if comp.is_empty() {
-                continue;
-            }
-            let body = body_of(comp);
-            let k = piece_at(ShellKind::Whole, hue, &support_of(&body));
-            out.put(&k, Piece { body });
-        }
+        let body = body_of(comp);
+        let k = piece_at(ShellKind::Whole, &support_of(&body));
+        out.put(&k, Piece { body });
     }
     out
 }

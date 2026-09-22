@@ -141,8 +141,9 @@ pub(crate) fn classify_cover(
     // supports", and the telemetry said otherwise: `faces == site+ring` on
     // every row of every recut, so a form with 45 measured meets carried
     // one face and that face was a star face. The supports builder
-    // (`star_and_site_faces`) offers the Frame's star, a spanning CHAIN of
-    // each site's occupants, and the ring pairs — by construction a forest,
+    // (`named_faces`, then `star_and_site_faces`) offered the Frame's star,
+    // a spanning CHAIN of each site's occupants, and the ring pairs — by
+    // construction a forest,
     // as its own comment says: "the only cycles that survive are the ones
     // spanning DISTINCT sites". Those cycles are exactly what a meet
     // between two classes would close, and nothing offered one.
@@ -237,8 +238,8 @@ pub(crate) fn classify_cover(
                 // not, and the circle's minimal decomposition IS it.
                 //
                 // Two copies of one shape never share a support site, so
-                // `star_and_site_faces` — which relates members whose
-                // supports meet or sit at ring distance one — cannot see
+                // `named_faces` — which relates members whose supports meet
+                // or touch at a corner (70.4) — cannot see
                 // them at all. The cover's meet is the only carrier of that
                 // relation, which is why the chord has to come from here.
                 // AND THE FOOTPRINT, which is the coordinate two pieces

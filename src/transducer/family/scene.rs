@@ -67,22 +67,19 @@ pub type Cover = Keyed<Chart>;
 ///
 /// `ShellKind::Frame` is the kind because a chart is a region of the
 /// GRID'S OWN EXTENT and not a body shell — which is what that member of
-/// the enum says. The hue is the hue the reading cuts by, and `Bands` cuts
-/// by geometry rather than colour, so it names none; a `HueStrata` reading
-/// names its stratum's hue there and its charts key apart from these
-/// without a second key family (rule 6).
-pub fn chart_key(reading: Reading, hue: u8, support: &[(i64, i64, i64)]) -> Vec<u8> {
+/// the enum says. A reading that cut by something beyond the region would
+/// write it after its own tag, which leads the key, so its charts key apart
+/// from these without a second key family (rule 6).
+pub fn chart_key(reading: Reading, support: &[(i64, i64, i64)]) -> Vec<u8> {
     let mut k = vec![reading.tag()];
     use crate::network::nerve::Coordinate;
-    k.extend_from_slice(
-        super::pieces::piece_at(ShellKind::Frame, hue, support).encode().as_bytes(),
-    );
+    k.extend_from_slice(super::pieces::piece_at(ShellKind::Frame, support).encode().as_bytes());
     k
 }
 
 impl Chart {
     pub fn key(&self, reading: Reading) -> Vec<u8> {
-        chart_key(reading, 0, &self.support)
+        chart_key(reading, &self.support)
     }
 }
 

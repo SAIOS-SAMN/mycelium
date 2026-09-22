@@ -825,6 +825,15 @@ assert_eq!(
 /// discontinuity in the body's own gauge section, and a reader of that
 /// section can say where one sub-object ends. Until H3 lands, nothing
 /// reads it, and this test stands as the record of what is owed.
+///
+/// H1b TOOK THE LAST OF IT (Phase H). This asserted that the bar that stood
+/// is carried in place by the cover, which held only while `pieces_of`
+/// split the merged body by hue. The cover's piece is hue-blind now, so the
+/// output is one piece, and the one input bar under its sites carries no
+/// part of it. The form carries no word, and the bar that stood reads as
+/// two deformation demands. That is the claim 70.4 makes, recorded here as
+/// the number: 0 words, where the per-hue piece gave 1. H3 owes the same
+/// recovery it owed before.
 #[test]
 fn two_hues_that_meet_are_one_body_and_the_merge_is_the_percept() {
 let family = vec![
@@ -833,7 +842,11 @@ let family = vec![
 ];
 let pf = cipher_form(&family[0].0, &family[0].1);
 let words: Vec<&Vertex> = pf.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).collect();
-assert!(!words.is_empty(), "the bar that stood is carried in place by the cover: {:?}", pf.vertices);
+assert!(
+    words.is_empty(),
+    "the merged body is one hue-blind piece, and no preimage carries it whole: {:?}",
+    pf.vertices
+);
 let bar_chart = perceive(&family[0].0)
     .into_iter()
     .map(|b| b.moduli)

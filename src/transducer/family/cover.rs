@@ -30,7 +30,8 @@
 //! replays it (23.1 step 4).
 //!
 //! Nothing is keyed by position. A piece is addressed by its content —
-//! shell kind, hue, and its support written out — so no arrival index
+//! shell kind and its support written out, the hue being a gauge the
+//! piece's laminae carry and not a coordinate of it (H1b) — so no arrival index
 //! survives into the nerve (rule 6, rule 15).
 
 use super::pieces::pieces_of;
@@ -151,7 +152,7 @@ pub struct CoverTally {
     ///
     ///   `chords` — the two pieces carry DISTINCT classes, so the meet
     ///   names a chord between two of the scene's vertices. These are the
-    ///   pairs that span distinct sites, which `star_and_site_faces` says
+    ///   pairs that span distinct sites, which `named_faces` says
     ///   in its own comment are "the cycles that carry a class" — and which
     ///   nothing offered until 54.7.
     ///

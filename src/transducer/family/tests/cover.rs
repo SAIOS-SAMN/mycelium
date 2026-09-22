@@ -181,6 +181,48 @@ fn one_body_that_does_not_carry_whole_is_a_demand_and_not_a_listing() {
     );
 }
 
+/// 70.4, H1b — A POLYCHROME BODY IS ONE PIECE OF THE COVER.
+///
+/// Perception joined the two colours into one body (H1); the cover must
+/// not split it again one colour at a time, or the seam between them comes
+/// back as a meet between two pieces when it is the body's own gauge
+/// section. The piece holds both hues on its laminae — the gauge is read
+/// off them — and its address names its kind and its support, no colour.
+/// Two bodies that meet only at a corner stay two pieces: the component is
+/// hue-blind, not adjacency-blind.
+#[test]
+fn a_polychrome_body_is_one_piece_of_the_cover() {
+    use crate::network::nerve::{coord, Coordinate};
+    let block: Vec<Lamina> = vec![(0, 0, 0, 1), (1, 0, 0, 1), (0, 1, 0, 2), (1, 1, 0, 2)];
+    let pieces = crate::transducer::family::pieces::pieces_of(&block);
+    let held: Vec<(coord::Piece, Vec<Lamina>)> = pieces
+        .decoded()
+        .0
+        .into_iter()
+        .map(|(k, p)| (k, p.body.laminae.clone()))
+        .collect();
+    let [(address, laminae)] = held.as_slice() else {
+        panic!("a two-coloured body is one piece of the cover, got {}", held.len())
+    };
+    assert_eq!(address.support.len(), 4, "the piece stands on the whole body");
+    let mut hues: Vec<u8> = laminae.iter().map(|&(_, _, _, h)| h).collect();
+    hues.sort_unstable();
+    hues.dedup();
+    assert_eq!(hues, vec![1, 2], "and carries both colours as its gauge");
+    assert_eq!(
+        coord::Piece::decode(address.encode().as_bytes()).as_ref(),
+        Ok(address),
+        "an address of kind and support alone decodes back to itself"
+    );
+
+    let corner: Vec<Lamina> = vec![(0, 0, 0, 1), (1, 1, 0, 1)];
+    assert_eq!(
+        crate::transducer::family::pieces::pieces_of(&corner).decoded().0.len(),
+        2,
+        "two bodies meeting at a corner are two pieces"
+    );
+}
+
 /// A MEET'S ADDRESS IS ITS TWO ENDS, so the nerve stores nothing beside it
 /// (law 12): `meets` was a `Keyed<(Vec<u8>, Vec<u8>)>` holding a second
 /// copy of what its own key already spells, cloned twice per meet. The
@@ -198,17 +240,13 @@ fn one_body_that_does_not_carry_whole_is_a_demand_and_not_a_listing() {
 fn a_meets_address_gives_back_its_two_ends() {
     use crate::network::nerve::{coord, Coordinate};
     use crate::transducer::peel::ShellKind;
-    let piece = |kind, hue, support: &[(i64, i64, i64)]| coord::Piece {
-        kind,
-        hue,
-        support: support.to_vec(),
-    };
+    let piece = |kind, support: &[(i64, i64, i64)]| coord::Piece { kind, support: support.to_vec() };
     // A PIECE WITH NO SUPPORT, one with a support, and one whose support
     // length bytes are the shape a length prefix has: the cases the byte
     // pair had to be checked against by hand.
-    let a = piece(ShellKind::Whole, 0, &[]);
-    let b = piece(ShellKind::Outline, 3, &[(1, 2, 0), (4, 0, 0)]);
-    let c = piece(ShellKind::Magnified, 0, &[(0, 0, 0)]);
+    let a = piece(ShellKind::Whole, &[]);
+    let b = piece(ShellKind::Outline, &[(1, 2, 0), (4, 0, 0)]);
+    let c = piece(ShellKind::Magnified, &[(0, 0, 0)]);
     for p in [&a, &b, &c] {
         assert_eq!(
             coord::Piece::decode(p.encode().as_bytes()).as_ref(),

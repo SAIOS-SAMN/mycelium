@@ -94,12 +94,17 @@ pub(crate) fn occupied_frames(bodies_at: &Keyed<(Body, Body, Versor)>, ix: u16, 
 
 /// WHAT HAPPENED TO EVERY FACE THIS FORM WAS OFFERED, by the reader that
 /// answered. Each field is one `continue` in the incidence loop; `offered`
-/// is what `star_and_site_faces` proposed and `built` is what stood. The
-/// counts are a measurement and never a gate (§8.1).
+/// is what `named_faces` proposed and `built` is what stood. The counts are
+/// a measurement and never a gate (§8.1).
 #[derive(Default)]
 pub(crate) struct FaceDrops {
     pub(crate) offered: usize,
     pub(crate) built: usize,
+    /// THE CORNER CONTACTS (70.4) among them: offered by the diagonal, and
+    /// built into faces carrying 50.3's edge. Counted apart so a form's line
+    /// says whether its bodies relate, not only that faces stood.
+    pub(crate) contact_offered: usize,
+    pub(crate) contact_built: usize,
     pub(crate) member_key: usize,
     pub(crate) vertex: usize,
     pub(crate) chart: usize,

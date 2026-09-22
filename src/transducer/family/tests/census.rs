@@ -322,7 +322,7 @@ fn where_the_corpus_goes_silent() {
 ///
 ///   `chords` — the meet's two pieces carry DISTINCT transport classes, so
 ///   it names a face between two of the scene's vertices. These are the
-///   pairs spanning distinct sites, which `star_and_site_faces` calls in its
+///   pairs spanning distinct sites, which `named_faces` calls in its
 ///   own comment "the cycles that carry a class", and which nothing offered
 ///   to the face builder before 54.7.
 ///
@@ -529,31 +529,29 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
     assert!(extracted > 0, "no form extracted from the corpus: nothing to classify");
 }
 
-/// A.14 — THE CONTACT THE ENGINE ALREADY COMPUTES AND THROWS AWAY (69).
+/// A.14 ON THE DIAGONAL (70.4, H2b) — CONTACT BETWEEN HUE-BLIND BODIES.
 ///
-/// `components()` reads the whole scene's 6-incidence with
-/// `incidence_of_3d` and then keeps only the SAME-HUE edges:
+/// A body is a maximal hue-blind region of the 6-incidence, so two bodies
+/// never share an edge of the base; what relates two of them is the
+/// corner, `incidence_diagonal_3d`. This reads the contact graph on it —
+/// vertices the BODIES, edges the distinct body pairs that meet at a
+/// corner — and takes `V`, `E`, `C` and `b₁ = E − V + C`, with the bodies
+/// that touch nothing counted apart so a sparse scene is not read as a
+/// graph that failed.
 ///
-/// ```text
-///     .filter(|&(i, j)| sorted[i].3 == sorted[j].3)
-/// ```
+/// The 6-incidence edges across two hues are no longer contact at all:
+/// they lie inside one body, and they are counted as what they now are,
+/// the gauge seams H3 reads.
 ///
-/// The edges that filter removes are exactly "two touching bodies of
-/// different hues sharing a boundary" — chapter 20's own words, which go
-/// on to say where they belong: "which the pair form carries as a contact
-/// face with its edge transport (50.3)".
+/// AND IT TAKES H1'S OWN READING, which nothing asserted: the bodies
+/// perception builds are the hue-blind regions, one for one, on every
+/// scene of the corpus.
 ///
-/// They are computed in full, dropped on that line, and then the horizon
-/// spends a rank-1 bounding-sphere band trying to reconstruct them. This
-/// counts what is discarded, against what the field currently condenses.
-///
-/// NOT A SCALAR VERDICT: the reading is per scene and the pairs are named
-/// by their component roots, because a tally of contacts would be the
-/// same count-as-choice defect one level up (rule 2). The count here is
-/// the SIZE of a reading, not the reading.
+/// NOT A SCALAR VERDICT: the pairs are named by their component roots,
+/// and the counts are the SIZE of a reading, not the reading (rule 2).
 #[test]
-fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
-    use crate::transducer::sentence::{components, incidence_of_3d};
+fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
+    use crate::transducer::sentence::{components, incidence_diagonal_3d, incidence_of_3d};
     let Ok(dir) = std::fs::read_dir(CORPUS) else {
         eprintln!("  a14: {CORPUS} does not read — no corpus, no reading");
         return;
@@ -565,13 +563,12 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
     names.sort_unstable();
     names.truncate(TASKS);
 
-    let (mut scenes, mut bodies_total) = (0usize, 0usize);
-    let (mut same_hue, mut cross_hue, mut contact_pairs) = (0usize, 0usize, 0usize);
+    let (mut scenes, mut bodies_total, mut perceived) = (0usize, 0usize, 0usize);
+    let (mut seams, mut interior, mut contact_pairs) = (0usize, 0usize, 0usize);
     let (mut contact_b1, mut scenes_with_cycles) = (0usize, 0usize);
     let (mut isolated, mut contact_components, mut scenes_e_ge_v) = (0usize, 0usize, 0usize);
     let mut b1_hist: [usize; 16] = [0; 16];
-    let (mut blind_regions, mut singletons) = (0usize, 0usize);
-    let (mut isolated_singletons, mut pairs_with_singleton) = (0usize, 0usize);
+    let (mut singletons, mut isolated_singletons, mut pairs_with_singleton) = (0usize, 0usize, 0usize);
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
@@ -592,21 +589,24 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
             laminae.dedup_by_key(|x| (x.0, x.1, x.2));
             let positions: Vec<(i64, i64, i64)> =
                 laminae.iter().map(|x| (x.0, x.1, x.2)).collect();
+            // THE BODIES: hue-blind components of the 6-incidence (70.4).
             let all = incidence_of_3d(&positions);
-            let intra: Vec<(usize, usize)> = all
-                .iter()
-                .copied()
-                .filter(|&(i, j)| laminae[i].3 == laminae[j].3)
-                .collect();
-            let roots = components(laminae.len(), &intra);
-            // THE DISCARDED EDGES, named by the bodies they join.
-            let mut pairs: Vec<(usize, usize)> = all
-                .iter()
-                .filter(|&&(i, j)| laminae[i].3 != laminae[j].3)
-                .map(|&(i, j)| {
-                    let (a, b) = (roots[i], roots[j]);
-                    if a <= b { (a, b) } else { (b, a) }
-                })
+            let roots = components(laminae.len(), &all);
+            // The 6-incidence edges across two hues lie INSIDE one body now:
+            // they are its gauge seams, H3's content, and never contact.
+            for &(i, j) in &all {
+                match laminae[i].3 == laminae[j].3 {
+                    true => interior += 1,
+                    false => seams += 1,
+                }
+            }
+            // THE CONTACTS: corner incidences between two DIFFERENT bodies,
+            // named by their roots. A corner inside one body is its interior.
+            let mut pairs: Vec<(usize, usize)> = incidence_diagonal_3d(&positions)
+                .into_iter()
+                .map(|(i, j)| (roots[i], roots[j]))
+                .filter(|(a, b)| a != b)
+                .map(|(a, b)| if a <= b { (a, b) } else { (b, a) })
                 .collect();
             pairs.sort_unstable();
             pairs.dedup();
@@ -616,12 +616,11 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
                 r.dedup();
                 r.len()
             };
-            // DOES THE CONTACT GRAPH CARRY CYCLES? This is the whole
-            // question A.14 is for: `b₁ = E − V + C` on the graph whose
-            // vertices are BODIES and whose edges are the discarded
-            // cross-hue contacts. If it is a forest, restoring contact
-            // gives more relations and still no loops, and the tree
-            // famine has a second cause.
+            // H1'S READING: what perception builds is exactly these regions.
+            perceived += crate::transducer::family::perceive_at(input, 0).len();
+            // DOES THE CONTACT GRAPH CARRY CYCLES? `b₁ = E − V + C` on the
+            // graph whose vertices are BODIES and whose edges are the
+            // corner contacts between them.
             let mut root_ids: Vec<usize> = roots.clone();
             root_ids.sort_unstable();
             root_ids.dedup();
@@ -660,22 +659,6 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
             }
             isolated += degree.iter().filter(|&&d| d == 0).count();
             contact_components += n_comp;
-            // HOW HARD DOES THE ONE-HUE RULE FRAGMENT? The hue-BLIND
-            // components are the visual regions; the hue-split bodies are
-            // what the engine sees. The ratio is how many bodies one
-            // region is shattered into.
-            //
-            // NOT "are the two bodies in one hue-blind region" — every
-            // contact pair is cross-hue ADJACENT by construction, so that
-            // reads 100% on any data and measures its own definition.
-            let blind = components(laminae.len(), &all);
-            let n_blind = {
-                let mut c = blind.clone();
-                c.sort_unstable();
-                c.dedup();
-                c.len()
-            };
-            blind_regions += n_blind;
             // Body sizes, and how much of the contact graph is pixels.
             let mut size = vec![0usize; root_ids.len()];
             for r in &roots {
@@ -697,39 +680,32 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
             }
             scenes += 1;
             bodies_total += n_bodies;
-            same_hue += intra.len();
-            cross_hue += all.len() - intra.len();
             contact_pairs += pairs.len();
         }
     }
+    // Apart from the isolated bodies: the graph of the bodies that touch.
+    let (touching, touching_components) = (bodies_total - isolated, contact_components - isolated);
     eprintln!(
-        "  a14 over {scenes} scenes: bodies {bodies_total} | incidence edges: \
-         same-hue {same_hue} (kept, they DEFINE the bodies) \
-         cross-hue {cross_hue} (DISCARDED — the contact faces) \
-         | distinct body pairs in contact {contact_pairs}"
-    );
-    eprintln!(
-        "  a14 contact graph: b₁ {contact_b1} over {scenes} scenes, \
-         {scenes_with_cycles} of them carrying a cycle — this is whether \
-         restoring contact breaks the tree famine, or only widens it"
-    );
-    eprintln!(
-        "  a14 topology: V {bodies_total} E {contact_pairs} C {contact_components} \
-         | ISOLATED bodies {isolated} ({} touch nothing at all) \
-         | scenes with E>=V {scenes_e_ge_v} of {scenes}",
+        "  a14 on the diagonal over {scenes} scenes: V {bodies_total} bodies E {contact_pairs} \
+         corner contacts C {contact_components} b₁ {contact_b1}, {scenes_with_cycles} scenes \
+         carrying a cycle | isolated {isolated} ({} touch nothing) · of the rest V {touching} \
+         C {touching_components} | scenes with E>=V {scenes_e_ge_v}",
         per_mille(isolated, bodies_total)
     );
     eprintln!("  a14 b₁ per cyclic scene: {b1_hist:?}");
     eprintln!(
-        "  a14 one-hue fragmentation: {blind_regions} hue-blind regions → \
-         {bodies_total} bodies ({} bodies per visual region) \
-         | single-cell bodies {singletons} ({}), of which {isolated_singletons} isolated \
-         | contact pairs touching a single-cell body {pairs_with_singleton} of {contact_pairs} ({})",
-        per_mille(bodies_total, blind_regions),
+        "  a14 inside the bodies: 6-incidence {interior} same-hue edges, {seams} gauge seams \
+         across two hues | single-cell bodies {singletons} ({}), of which {isolated_singletons} \
+         isolated | contacts touching a single-cell body {pairs_with_singleton} of \
+         {contact_pairs} ({}) | perception built {perceived} bodies",
         per_mille(singletons, bodies_total),
         per_mille(pairs_with_singleton, contact_pairs)
     );
     assert!(scenes > 0, "no scene read: nothing to count");
+    assert_eq!(
+        perceived, bodies_total,
+        "perception's bodies are the hue-blind regions, one for one (H1)"
+    );
 }
 
 /// 70 — THE DEMAND-KIND CENSUS: how many demands can GROW LANGUAGE.

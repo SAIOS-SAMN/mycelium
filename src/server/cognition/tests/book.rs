@@ -161,7 +161,9 @@ assert_eq!(
 fn heard_and_cocycles_do_not_re_row() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
-let b = vec![(0, 0, 2), (0, 1, 2), (0, 2, 3)]; // the bar recoloured, a site painted beside it (50.5)
+// The bar recoloured, a site painted beside it (50.5). H1b, 70.4 —
+// separated: at `(0, 2)` the site is one hue-blind piece with the bar.
+let b = vec![(0, 0, 2), (0, 1, 2), (0, 3, 3)];
 speak_pair(&mut k, &a, &b, [1; 32]);
 speak_pair(&mut k, &a, &b, [2; 32]);
 let spoken = k.provisional.scoped().next().unwrap().1.clone();
@@ -233,7 +235,8 @@ assert!(!pa.is_empty(), "the book is served");
 fn heard_drops_when_stratum_root_moves() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
-let b = vec![(0, 0, 2), (0, 1, 2), (0, 2, 3)]; // the bar recoloured, a site painted beside it (50.5)
+// Separated, as above (H1b, 70.4).
+let b = vec![(0, 0, 2), (0, 1, 2), (0, 3, 3)];
 speak_pair(&mut k, &a, &b, [1; 32]);
 speak_pair(&mut k, &a, &b, [2; 32]);
 let spoken = k.provisional.scoped().next().unwrap().1.clone();

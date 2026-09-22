@@ -18,9 +18,10 @@ let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 // ENTROPIC EXPANSION: eight distinct germs drain the residual lane — each
 // a new site painted its own hue beside the bar, a creation the voice's
-// sentence carries as a demand beside the bar's own word (20 as ruled, 50.5).
+// sentence carries as a demand beside the bar's own word (50.5). H1b, 70.4 —
+// separated: at `(0, 2)` the site is one hue-blind piece with the bar.
 for n in 0..8u8 {
-    let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, n + 2)];
+    let b = vec![(0, 0, 1), (0, 1, 1), (0, 3, n + 2)];
     // One vantage dockets; a second voice on the same pair is a use.
     match speak_pair(&mut k, &a, &b, [1; 32]) {
         Outcome::GermPending => k.glue_local(),
@@ -182,9 +183,10 @@ assert_eq!(
 fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {
     let mut k = Kernel::new();
     // A bar kept and a site painted beside it (20 as ruled, L7): the
-    // sentence is the bar's word with a creation demand riding it.
+    // sentence is the bar's word with a creation demand riding it. H1b,
+    // 70.4 — separated, as in the test above.
     let a = vec![(0, 0, 1), (0, 1, 1)];
-    let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 7)];
+    let b = vec![(0, 0, 1), (0, 1, 1), (0, 3, 7)];
     // Empty every lane: eight spends empty a full reserve, exactly.
     for _ in 0..8 {
         k.physics_mut().spend([true; 4]);

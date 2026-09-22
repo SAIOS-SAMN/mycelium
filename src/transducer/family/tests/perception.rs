@@ -231,7 +231,7 @@ let declared: Vec<_> = back.demand_vertices().flat_map(|(_, _, _, c)| c.to_vec()
 assert_eq!(declared.len(), 4, "the four created links are the declared remainder: {declared:?}");
 }
 
-/// The supports a form hands `star_and_site_faces`, keyed by each
+/// The supports a form hands `named_faces`, keyed by each
 /// vertex's own coordinate. A test writes them in vertex order because
 /// that is what it is asserting about; the reader is keyed, so a vertex
 /// with no support simply has no entry.
@@ -254,6 +254,16 @@ fn root_member(i: u16) -> Vec<u8> {
         i,
         crate::transducer::stalk::Invariant::default().key().as_bytes(),
     )
+}
+
+/// The member pairs `named_faces` names, without the incidences on each —
+/// the reading the chain and star tests assert on (H1c: the reader lives
+/// with the tests that read it).
+fn named_pairs(
+    frame: Option<&[u8]>,
+    supports: &crate::network::nerve::Keyed<Vec<(i64, i64, i64)>>,
+) -> Vec<(Vec<u8>, Vec<u8>)> {
+    named_faces(frame, supports).into_iter().map(|(a, b, _)| (a, b)).collect()
 }
 
 /// T1 — THREE TOUCHING BODIES HAVE NO ADJACENCY FACE, AND THE ABSENCE IS
@@ -286,7 +296,7 @@ let supports = supports_at(&[
     vec![(0, 2), (0, 3)],
     vec![(0, 4), (0, 5)],
 ]);
-let pairs = star_and_site_faces(Some(&root_member(0)), &supports);
+let pairs = named_pairs(Some(&root_member(0)), &supports);
 // The pairs are MEMBER pairs, so the vertex each names is read back out of
 // its key rather than being the whole of it.
 let ends: Vec<(u16, u16)> = pairs
@@ -324,6 +334,76 @@ let faces: Vec<FormFace> = ends
 assert_eq!(faces.len() + 1 - 4, 0, "the 1-skeleton is the star tree: no independent cycle");
 }
 
+/// H2b, 70.4 — TWO BODIES MEETING AT A CORNER ARE NAMED A CONTACT FACE.
+///
+/// Two hue-blind bodies cannot share an edge of the base without being one
+/// body, so where two distinct bodies touch they touch at a corner. That
+/// corner is named as a contact between the two members, once, and a body
+/// whose own support turns a corner is not in contact with itself. A body
+/// a cell away from the others touches nothing and is named by the Frame
+/// alone.
+#[test]
+fn two_bodies_meeting_at_a_corner_are_named_a_contact_face() {
+let supports = supports_at(&[
+    vec![],
+    // An L whose own support turns a corner at (0,1)–(1,0)…
+    vec![(0, 0), (0, 1), (1, 0)],
+    // …and a block meeting it diagonally at (1,0)–(2,1).
+    vec![(2, 1), (2, 2)],
+    // A cell standing clear of both.
+    vec![(5, 5)],
+]);
+let named = named_faces(Some(&root_member(0)), &supports);
+let ends = |how: Incidence| -> Vec<(u16, u16)> {
+    named
+        .iter()
+        .filter(|(_, _, hows)| hows.contains(&how))
+        .filter_map(|(a, b, _)| {
+            let (i, _) = crate::transducer::family::read_member_key(a)?;
+            let (j, _) = crate::transducer::family::read_member_key(b)?;
+            Some((i.min(j), i.max(j)))
+        })
+        .collect()
+};
+assert_eq!(ends(Incidence::Contact), vec![(1, 2)], "the corner relates the L and the block, once");
+assert_eq!(ends(Incidence::Star).len(), 3, "and the Frame names all three bodies");
+assert!(
+    ends(Incidence::Site).is_empty(),
+    "no two bodies share a site, so no site face is named"
+);
+}
+
+/// N1 — A PAIR THE DIAGONAL AND THE FIELD BOTH NAME IS ONE FACE CARRYING
+/// BOTH READINGS, and neither pass is first.
+///
+/// Two L pentominoes, the one the other turned a half turn, hooked so they
+/// meet at two corners and share no edge. The diagonal names them: they
+/// touch at `(1,0)–(0,1)` and `(3,2)–(2,3)`. The field names them too: their
+/// spheres stand at `δ² = (d² − r₁² − r₂²)² / 4r₁²r₂²` inside the contact
+/// band `1 < δ ≤ 2`, and a half turn carries the one onto the other. One
+/// pair comes back, with both incidences on it.
+#[test]
+fn a_pair_the_diagonal_and_the_field_both_name_carries_both() {
+let supports = supports_at(&[
+    vec![],
+    vec![(1, 0), (2, 0), (3, 0), (3, 1), (3, 2)],
+    vec![(2, 3), (1, 3), (0, 3), (0, 2), (0, 1)],
+]);
+let named = named_faces(None, &supports);
+assert_eq!(named.len(), 1, "one pair, one face: {named:?}");
+let (a, b, hows) = &named[0];
+let ends = (
+    crate::transducer::family::read_member_key(a).map(|(i, _)| i),
+    crate::transducer::family::read_member_key(b).map(|(j, _)| j),
+);
+assert_eq!(ends, (Some(1), Some(2)), "between the two L's");
+assert_eq!(
+    hows,
+    &vec![Incidence::Contact, Incidence::Field],
+    "the corner and the strain band both read on the one face"
+);
+}
+
 /// Occupancy + ring probes scale with sites, not with n².
 #[test]
 fn face_work_is_linear_in_occupied_sites() {
@@ -333,7 +413,7 @@ let run = |n: usize| -> u64 {
     for i in 0..n {
         supports.push(vec![(0i64, (i as i64) * 3)]);
     }
-    let _ = star_and_site_faces(Some(&root_member(0)), &supports_at(&supports));
+    let _ = named_pairs(Some(&root_member(0)), &supports_at(&supports));
     face_work()
 };
 let w = run(8);
@@ -347,7 +427,7 @@ assert!(
 
 /// A SITE'S OCCUPANTS ARE CHAINED, NOT CLIQUED. The test above gives every
 /// body a site of its own, so no site ever holds two occupants and a
-/// quadratic in `star_and_site_faces` would never fire under it: a pairing
+/// quadratic in `named_faces` would never fire under it: a pairing
 /// of a site's own vertices as a complete graph, uncounted by
 /// `note_face_work`, is invisible to that gauge.
 ///
@@ -363,7 +443,7 @@ let run = |k: usize| -> (usize, usize, u64) {
     for _ in 0..k {
         supports.push(vec![(0i64, 0i64)]);
     }
-    let pairs = star_and_site_faces(Some(&root_member(0)), &supports_at(&supports));
+    let pairs = named_pairs(Some(&root_member(0)), &supports_at(&supports));
     let work = face_work();
     // The vertex each member key names, read back out of it.
     let adj = pairs
@@ -422,7 +502,7 @@ let mut supports = vec![Vec::new()];
 for _ in 0..k {
     supports.push(vec![(0i64, 0i64)]);
 }
-star_and_site_faces(Some(&root_member(0)), &supports_at(&supports))
+named_pairs(Some(&root_member(0)), &supports_at(&supports))
     .iter()
     .filter_map(|(a, b)| {
         let (i, _) = crate::transducer::family::read_member_key(a)?;

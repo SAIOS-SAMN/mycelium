@@ -1,10 +1,10 @@
 // 42 — THE COURT: a verdict installs, excises or refuses, and every organ
 // reaches it by replaying the word rather than by trusting a signature.
 //
-// The pair fixture is an L recoloured WHOLE (one body, one word): under 20
-// as ruled a body is one hue, and an L with one site recoloured is three
-// bodies no versor pairs — a pair the voice has no sentence for (50.5), so
-// nothing reaches a court.
+// The pair fixture is an L recoloured WHOLE (one body, one word). Under 70.4
+// a body is hue-blind and its hues are its gauge, so an L with one site
+// recoloured is one body whose gauge no single hue map carries — a pair the
+// voice has no sentence for (50.5), so nothing reaches a court.
 
 use super::common::*;
 use crate::cognition::*;
@@ -135,7 +135,10 @@ let mut home = Kernel::new();
 let mut peer = Kernel::new();
 let mut third = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
-let b = vec![(0, 0, 4), (0, 1, 4), (0, 2, 3)]; // the bar recoloured, a site painted beside it (50.5)
+// The bar recoloured, a site painted beside it (50.5). H1b, 70.4 —
+// separated: painted at `(0, 2)` the site is one piece with the bar once
+// the cover is hue-blind, and no versor carries that piece.
+let b = vec![(0, 0, 4), (0, 1, 4), (0, 3, 3)];
 assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(speak_pair(&mut home, &a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);

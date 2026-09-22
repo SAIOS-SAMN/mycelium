@@ -33,7 +33,8 @@ thread_local! {
 /// no transport between them — that is refused where it is read, never
 /// synthesised here (rule 11).
 ///
-/// A TREE EDGE WHOSE TRANSPORT REFUSES LEAVES ITS SUBTREE UNGAUGED (57.4).
+/// A FOREST EDGE WHOSE TRANSPORT REFUSES LEAVES THE NODES BEYOND IT
+/// UNGAUGED (57.4).
 /// The refusal is counted on the `unread` gate, every node beyond it takes
 /// no `θ`, and a cycle with an end there reads unread rather than flat: an
 /// identity written for a transport that was never read would be a
@@ -86,7 +87,7 @@ fn tree_transports(
 ///
 /// `None` where the inverse does not exist: `versor_inverse` fails only at
 /// `MM̃ = 0`, a carriage on the light cone (57.4), and that transport was
-/// never read. A face the tree names and the form does not hold refuses
+/// never read. A face the forest names and the form does not hold refuses
 /// the same way.
 fn tree_step(
     faces: &[FormFace],
@@ -162,7 +163,7 @@ impl Form {
         //
         //   M — nodes are MEMBERS, `member_key(vertex, chart)`: a vertex
         //   ACTING ON A CHART. `extract.rs` builds the faces over exactly
-        //   this — `star_and_site_faces` walks `scenery.supports`, whose
+        //   this — `named_faces` walks `scenery.supports`, whose
         //   nodes are member keys — and every face stores its one member
         //   pair under `face_pair_key(&ci, &cj)`. All the transport lives
         //   here: the carriage, the gauge, and 50.3's edge.
@@ -366,8 +367,8 @@ impl Form {
                 path.into_iter().map(|ix| node_vertex[ix] as usize).collect();
             path.push(node_vertex[a] as usize);
             walked.push(fi);
-            // A CYCLE WITH AN END THE TREE COULD NOT GAUGE IS UNREAD. Its
-            // basepoint transport, or the one across its tree path, crossed
+            // A CYCLE WITH AN END THE FOREST COULD NOT GAUGE IS UNREAD. Its
+            // basepoint transport, or the one across its forest path, crossed
             // a carriage on the light cone (57.4), and a loop based through
             // an unread transport is not a flat one (rule 11).
             let (Some(theta_a), Some(_)) = (theta[a].clone(), theta[b].as_ref()) else {

@@ -169,9 +169,46 @@ impl FieldTally {
     }
 }
 
+/// WHICH INCIDENCE NAMED A PAIR (70.4): the Frame's star, a site two
+/// members share, a corner two bodies meet at, or the condensation field.
+/// Carried with the pair so the face built from it is counted where it came
+/// from; a pair two incidences name is one face carrying both (N1).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum Incidence {
+    Star,
+    Site,
+    Contact,
+    Field,
+}
+
+/// A SITE OF THE OCCUPANCY: its own coordinates, and the members standing
+/// on it in the order they were offered.
+struct Occupied {
+    site: (i64, i64, i64),
+    members: Vec<Vec<u8>>,
+}
+
+/// A PAIR IS ONE FACE, AND EVERY INCIDENCE THAT NAMES IT RIDES ON IT (N1,
+/// rule 15). A second incidence over the same two members is the same face
+/// and never another, and it is not dropped either: the diagonal and the
+/// field naming one pair are two readings held together, in the enum's own
+/// order, so no pass is first.
+fn relate(related: &mut crate::network::nerve::Keyed<Vec<Incidence>>, key: Vec<u8>, how: Incidence) {
+    match related.get_mut(&key) {
+        Some(hows) => {
+            if let Err(at) = hows.binary_search(&how) {
+                hows.insert(at, how);
+            }
+        }
+        None => {
+            related.insert(key, vec![how]);
+        }
+    }
+}
+
 /// Faces the bundle names: star from the Frame (when the form carries one),
-/// plus pairs whose after-supports overlap or sit at ring distance one.
-/// Occupancy is keyed by site; related pairs are a Keyed set.
+/// pairs whose supports share a site, and pairs of bodies that meet at a
+/// corner (70.4). Occupancy is keyed by site; related pairs are a Keyed set.
 ///
 /// COST IS THE SITES, NOT THE BODIES ON THEM. A site with k occupants
 /// contributes k−1 faces, not k(k−1)/2 — see the chain below for why the
@@ -196,20 +233,23 @@ impl FieldTally {
 /// walking it is reading it (rule 1); a count of the integers with a keyed
 /// read inside finds nothing for a vertex with no support and says nothing
 /// about one the index holds and the count does not reach.
-pub(crate) fn star_and_site_faces(
+pub(crate) fn named_faces(
     frame: Option<&[u8]>,
     supports: &crate::network::nerve::Keyed<Vec<(i64, i64, i64)>>,
-) -> Vec<(Vec<u8>, Vec<u8>)> {
-    let mut related: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+) -> Vec<(Vec<u8>, Vec<u8>, Vec<Incidence>)> {
+    let mut related: crate::network::nerve::Keyed<Vec<Incidence>> = crate::network::nerve::Keyed::new();
     if let Some(frame) = frame {
         for (mk, _) in supports.scoped() {
             if mk == frame {
                 continue;
             }
-            related.insert(member_pair_key(frame, &mk), ());
+            relate(&mut related, member_pair_key(frame, &mk), Incidence::Star);
         }
     }
-    let mut occ: crate::network::nerve::Keyed<Vec<Vec<u8>>> = crate::network::nerve::Keyed::new();
+    // Site → the site's own coordinates and its occupants. The coordinates
+    // ride with the occupants so the corner pass below reads the sites the
+    // occupancy already holds, never a second walk of the supports.
+    let mut occ: crate::network::nerve::Keyed<Occupied> = crate::network::nerve::Keyed::new();
     for (mk, supp) in supports.scoped() {
         if Some(mk.as_slice()) == frame {
             continue;
@@ -223,12 +263,12 @@ pub(crate) fn star_and_site_faces(
                 // pushed; a walk of the site's occupants on every offer would
                 // be k² comparisons on the same site that the chain below is
                 // already paying k² for.
-                Some(v) => match v.as_slice() {
+                Some(o) => match o.members.as_slice() {
                     [.., last] if *last == mk => {}
-                    _ => v.push(mk.clone()),
+                    _ => o.members.push(mk.clone()),
                 },
                 None => {
-                    occ.insert(k, vec![mk.clone()]);
+                    occ.insert(k, Occupied { site: (r, c, f), members: vec![mk.clone()] });
                 }
             }
         }
@@ -246,11 +286,36 @@ pub(crate) fn star_and_site_faces(
     // are the ones spanning DISTINCT sites — which are the cycles that carry
     // a class. The occupants are read in the form's own vertex coordinate,
     // which is content order, so two minds holding one scene chain it alike.
-    for (_k, members) in occ.scoped() {
-        for w in members.windows(2) {
+    for (_k, o) in occ.scoped() {
+        for w in o.members.windows(2) {
             let [a, b] = w else { continue };
             note_face_work();
-            related.insert(member_pair_key(a, b), ());
+            relate(&mut related, member_pair_key(a, b), Incidence::Site);
+        }
+    }
+    // H2b, 70.4 — CONTACT IS THE CORNER. Two hue-blind bodies can never
+    // share an edge of the base — sharing one they would be one body — so
+    // where two distinct bodies touch, they touch diagonally: `|Δr| = 1`
+    // and `|Δc| = 1` within one frame. `incidence_diagonal_3d` reads that
+    // off the distinct occupied sites in its own canonical order, exact and
+    // integer, with no extent consulted and no band (A.14).
+    //
+    // The two sites of a corner name their occupants, and each occupant of
+    // one is related to each occupant of the other: the walk is the two
+    // sites' own occupants and nothing wider (rule 1). A member meeting
+    // itself at a corner of its own support is its interior, not a contact.
+    let held: Vec<&Occupied> = occ.scoped().map(|(_, o)| o).collect();
+    let positions: Vec<(i64, i64, i64)> = held.iter().map(|o| o.site).collect();
+    for (i, j) in crate::transducer::sentence::incidence_diagonal_3d(&positions) {
+        let (Some(left), Some(right)) = (held.get(i), held.get(j)) else { continue };
+        for a in &left.members {
+            for b in &right.members {
+                if a == b {
+                    continue;
+                }
+                note_face_work();
+                relate(&mut related, member_pair_key(a, b), Incidence::Contact);
+            }
         }
     }
     // T4 — THE CONDENSATION PASS, WHERE THE STENCIL WAS (66, ruled
@@ -385,7 +450,7 @@ pub(crate) fn star_and_site_faces(
                 }
             }
             note_field(|t| t.condensed += 1);
-            related.insert(member_pair_key(ak, bk), ());
+            relate(&mut related, member_pair_key(ak, bk), Incidence::Field);
         }
     }
 
@@ -417,7 +482,7 @@ pub(crate) fn star_and_site_faces(
     // the class cannot silently return.
     related
         .scoped()
-        .filter_map(|(k, _)| read_member_pair_key(&k))
+        .filter_map(|(k, hows)| read_member_pair_key(&k).map(|(a, b)| (a, b, hows.clone())))
         .collect()
 }
 

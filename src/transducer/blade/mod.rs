@@ -1,8 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 20, A6 — THE VOLUMETRIC BLADE: a connected component of one hue lifted
-//! into Cl(3,1) as a non-null dual sphere carrying four orthogonal strata,
-//! and the exact scale-free moduli read off its own moments.
+//! 20, A6, 70.4 — THE VOLUMETRIC BLADE: a hue-blind connected component
+//! lifted into Cl(3,1) as a non-null dual sphere carrying four orthogonal
+//! strata, and the exact scale-free moduli read off its own moments.
 
 pub mod body;
 pub mod harmonics;

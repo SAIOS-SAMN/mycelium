@@ -1,7 +1,7 @@
 // 16, 20, 51.3 — THE BLADE: a body lifted into the conformal algebra, and
 // the invariants read off it.
 //
-//! A component of one hue becomes a blade; its moduli, its turns and its
+//! A hue-blind component becomes a blade (70.4); its moduli, its turns and its
 //! topology are read from the algebra and from the support's own cube
 //! complex on the three coordinates of the base, never from a bounding box.
 //! The invariant signature is what two congruent bodies share.

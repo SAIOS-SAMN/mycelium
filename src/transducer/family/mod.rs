@@ -302,7 +302,7 @@ pub(crate) fn member_key(vertex: u16, chart: &[u8]) -> Vec<u8> {
 /// the carrier that indexes them must separate `σ₁ = (V, U, φ₁)` from
 /// `σ₂ = (V, U, φ₂)`. Keyed by the member alone it could not: the second
 /// `insert` overwrote the first, the site had one occupant, and
-/// `star_and_site_faces`'s chain over `windows(2)` had nothing to pair.
+/// `named_faces`'s chain over `windows(2)` had nothing to pair.
 ///
 /// Measured before this: 186 meets over the 36 corpus forms, every one
 /// `within one class` and on one chart, `0 loops` on every form.

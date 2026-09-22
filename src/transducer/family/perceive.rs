@@ -1,8 +1,9 @@
 // 20, 51.3 — PERCEPTION: a grid becomes bodies, and two bodies become a
 // vertex.
 //
-//! A body is a connected component of one hue on the three coordinates of
-//! the base. `word_or_demand` reads the versor that carries one body onto
+//! A body is a maximal hue-blind connected region on the three coordinates
+//! of the base; its hues are the gauge it carries (70.4). `word_or_demand`
+//! reads the versor that carries one body onto
 //! another and the chain of hue transitions it leaves; `sensor_reads`
 //! counts what the sensor was asked for.
 
@@ -110,8 +111,9 @@ pub struct Body {
     pub moduli: Invariant,
 }
 
-/// The body of one connected component of one hue: its shape lifted from
-/// its support, its moduli read off the shape, its laminae sorted.
+/// The body of one hue-blind connected component: its shape lifted from
+/// its support, its moduli read off the shape, its laminae — and the hues
+/// they carry — sorted.
 pub fn body_of(comp: Vec<Lamina>) -> Body {
     let mut pos: Vec<(i64, i64, i64)> = comp.iter().map(|&(r, c, k, _)| (r, c, k)).collect();
     pos.sort_unstable();
@@ -143,21 +145,21 @@ pub(crate) fn note_sensor_read() {
     SENSOR_READS.with(|c| c.set(c.get().saturating_add(1)));
 }
 
-/// Perceive one scene: its bodies, each a 4-connected component of laminae
-/// of ONE hue (chapter 20, ruled 2026-09-09) standing in frame `0`; hue 0
-/// is the background the eye does not see. Two touching bodies of
-/// different hues are two bodies sharing a boundary, and the pair form
-/// carries that boundary as a contact face with the edge transport of
-/// 50.3, so sliding, relative rotation and the evolution of a colour
-/// boundary are measured on the edge. The court reads a two-hue percept as
-/// one sentence with two body vertices and their edge, never as two
-/// detached listings (50.1).
+/// Perceive one scene: its bodies, each a maximal hue-blind 4-connected
+/// component of laminae standing in frame `0` (70.4); hue 0 is the
+/// background the eye does not see. A body's colours are the gauge it
+/// carries, and a seam between two of them is its own gauge section. Two
+/// bodies meet at a corner, never along an edge — along an edge they would
+/// be one body — and the form carries that corner as a contact face with
+/// the edge transport of 50.3, so sliding and relative rotation are
+/// measured on the edge. The court reads the percept as one sentence with
+/// its body vertices and their edges, never as detached listings (50.1).
 pub fn perceive(grid: &Grid) -> Vec<Body> {
     perceive_frames(std::slice::from_ref(grid))
 }
 
 /// Perceive one frame of a family as the sections of its bodies (51.4,
-/// 52.5): the 4-connected components of one hue in that frame, every
+/// 52.5): the hue-blind 4-connected components in that frame, every
 /// lamina standing at `k`. The section is the unit the pairing's fiber is
 /// keyed by, because its chart is the chart speech and the court perceive
 /// when they read a frame alone; a body stacked along `e₃` has a chart
@@ -176,8 +178,8 @@ pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
     blade::components(&laminae).into_iter().map(body_of).collect()
 }
 
-/// Perceive a family's frames as bodies on `(r, c, k)`: 6-connected
-/// components of one hue across the frames (51.3, 51.4), the frame of each
+/// Perceive a family's frames as bodies on `(r, c, k)`: hue-blind
+/// 6-connected components across the frames (51.3, 51.4, 70.4), the frame of each
 /// grid its place in the family.
 pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
     let mut laminae: Vec<Lamina> = Vec::new();
