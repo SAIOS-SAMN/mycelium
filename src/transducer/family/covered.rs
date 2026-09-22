@@ -163,8 +163,13 @@ pub(crate) fn classify_cover(
                 // refusal — there is no coset to read it through here, so
                 // the single reading is carried as the one-member list the
                 // tally counts.
-                (Some((va, sa, _)), Some((vb, sb, _))) => {
-                    Some(meet_edge(va, sa, vb, sb).map_err(|e| vec![e]))
+                // THE SUPPORTS TRAVEL WITH THE VERSORS (56.5). Both were
+                // in hand here and dropped as `_`, so the two charts met
+                // as unoriented bodies and no interface could carry a
+                // turn. They are the same supports the chord's ends
+                // already carry.
+                (Some((va, sa, supa)), Some((vb, sb, supb))) => {
+                    Some(meet_edge(va, sa, supa, vb, sb, supb).map_err(|e| vec![e]))
                 }
                 _ => None,
             });
@@ -187,12 +192,17 @@ pub(crate) fn classify_cover(
             // meet inside ONE class closes nothing the scene can see, a
             // meet whose pieces carry no transport class cannot be lifted
             // at all, and the rest are chords.
-            let (Some((_, pa, da)), Some((_, pb, db))) =
+            // The chord END is named by where the piece LANDED — that is
+            // the coordinate that tells two sections of one class apart —
+            // so identity reads the codomain here. The nerve's OVERLAPS
+            // are a different question and read the domain (`Supports`).
+            let (Some((_, pa, supa)), Some((_, pb, supb))) =
                 (c.cover.carried.get(ka), c.cover.carried.get(kb))
             else {
                 crate::transducer::family::cover::tally(|t| t.unclassed += 1);
                 continue;
             };
+            let (da, db) = (&supa.codomain, &supb.codomain);
             if let (Some(ta), Some(tb)) = (transport_class(vi), transport_class(vj)) {
                 // THE CHORD IS BETWEEN TWO SECTIONS, so the coordinate that
                 // must differ is `(class, chart, CARRIAGE)`.

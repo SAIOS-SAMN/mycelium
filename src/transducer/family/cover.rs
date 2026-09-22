@@ -111,6 +111,22 @@ pub struct CoverTally {
     /// `τ = 0` and the identity is the honest transport; `tau_refused` is a
     /// τ the Cayley transform could not carry, which is a defect and not a
     /// reading. Only the last is a refusal (rule 11).
+    /// WHETHER THE INTERFACE CARRIED A FRAME (56.5). `framed` is a meet
+    /// whose two supports are related by a proper turn, so `g = θ·γ`;
+    /// `unframed` is one no turn relates — a reflection, a difference of
+    /// shape, or a 45° relation refused as irrational — where `γ` stands
+    /// alone. Counted apart because "the frame never fired" and "the
+    /// frame fired and was the identity" would otherwise read the same,
+    /// which is the defect that let `ℓ = 1` pass as a measurement.
+    pub framed: u64,
+    pub unframed: u64,
+    /// A frame whose half turn no even moment can close and whose
+    /// supports differ in cardinality, so no cell test can either (56.5).
+    /// Counted apart from `framed` because it is a PROJECTIVE class, not
+    /// a determined rotor, and reporting the two as one would be the same
+    /// defect as reporting "never fired" and "fired and was identity"
+    /// together.
+    pub frame_half_open: u64,
     pub tau_unfooted: u64,
     pub tau_met: u64,
     pub tau_refused: u64,
@@ -201,16 +217,26 @@ pub(crate) fn tally(f: impl Fn(&mut CoverTally)) {
 /// and the only case in which the transition between two copies of one
 /// shape is visible at all. Meets on the codomain are the merge case.
 /// Reading only the codomain leaves the nerve discrete.
+#[derive(Clone)]
 pub(crate) struct Supports {
     pub(crate) domain: Vec<(i64, i64, i64)>,
     pub(crate) codomain: Vec<(i64, i64, i64)>,
 }
 
 /// ONE PIECE THE COVER CARRIED: the word vertex it became, the versor
-/// that carried it, and the support it landed on. The support rides along
-/// because the form needs it for the vertex's place and the cover has
-/// already computed it.
-pub(crate) type CarriedPiece = (Vertex, Versor, Vec<(i64, i64, i64)>);
+/// that carried it, and BOTH of its supports. They ride along because the
+/// form needs the landing for the vertex's place and the cover has
+/// already computed both.
+///
+/// IT CARRIED ONLY THE CODOMAIN (56.5, ruled 2026-09-22). `placed` held
+/// `Supports { domain, codomain }` and was consumed locally to build the
+/// meets index, so the domain was computed and dropped. A chart's FRAME
+/// is how that chart turned under carrying — `θ = relative_rotor(domain,
+/// codomain)`, the piece against ITSELF — and with only the landing in
+/// hand no interface could ask it. Comparing one piece's landing to
+/// another's asks whether two different pieces are congruent, which is a
+/// different question and usually answers no.
+pub(crate) type CarriedPiece = (Vertex, Versor, Supports);
 
 /// WHAT THE COVER OF ONE DEFORMATION REACHED. Every field is content, and
 /// every carrier is keyed by a piece's own address.
@@ -436,9 +462,9 @@ pub(crate) fn cover_deformation(
         for ki in &parts {
             consumed.insert(ki, ());
         }
-        let codomain = support_of(&op.body);
-        placed.insert(&key, Supports { domain: support_of(&pre), codomain: codomain.clone() });
-        cover.carried.insert(&key, (v, car.v, codomain));
+        let supports = Supports { domain: support_of(&pre), codomain: support_of(&op.body) };
+        placed.insert(&key, supports.clone());
+        cover.carried.insert(&key, (v, car.v, supports));
         }
     }
 
@@ -540,12 +566,10 @@ pub(crate) fn cover_deformation(
                 reached.insert(base_key(r, c, f), ());
             }
             consumed.insert(ki, ());
-            let codomain = support_of(&img);
-            placed.insert(
-                &key,
-                Supports { domain: support_of(&ip.body), codomain: codomain.clone() },
-            );
-            cover.carried.insert(&key, (v, car.v, codomain));
+            let supports =
+                Supports { domain: support_of(&ip.body), codomain: support_of(&img) };
+            placed.insert(&key, supports.clone());
+            cover.carried.insert(&key, (v, car.v, supports));
         }
         }
     }

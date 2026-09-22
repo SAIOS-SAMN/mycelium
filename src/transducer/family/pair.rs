@@ -61,11 +61,77 @@ impl Scenery {
 pub(crate) fn meet_edge(
     va: &Vertex,
     sa: &Versor,
+    supa: &crate::transducer::family::cover::Supports,
     vb: &Vertex,
     sb: &Versor,
+    supb: &crate::transducer::family::cover::Supports,
 ) -> Result<crate::transducer::sentence::Transport, EdgeRefusal> {
     let gamma = sb.geo(&sa.versor_inverse().ok_or(EdgeRefusal::NoReading)?);
-    let mut edge = edge_of(&gamma)?;
+    // A.11 — THE FRAME RIDES THE INTERFACE (56.5, ruled 2026-09-22).
+    //
+    // `gamma = s_b s_a⁻¹` relates the two frames' VERSORS, and this took
+    // it bare. Both supports were in hand at the call site and discarded
+    // there as `_`, so the two charts met as unoriented bodies and the
+    // word `peel_versor` reads off `gamma` carried `ℓ = 1` on all 186
+    // meets — a reading of the pipeline, not of the scene.
+    //
+    // ```text
+    //     θ_x  = relative_rotor(domain_x, codomain_x)    the piece's OWN turn
+    //     g_ab = (θ_b · θ_a⁻¹) · γ
+    // ```
+    //
+    // EACH PIECE IS COMPARED WITH ITSELF, not with the other. Comparing
+    // `a`'s support to `b`'s asks whether two DIFFERENT pieces are
+    // congruent — usually false, and no statement about frames when true.
+    // A chart's frame is how that chart turned under its own carrying,
+    // which is well defined however different the two pieces are.
+    //
+    // The relative rotor is taken, not an absolute gauge against the grid
+    // axes: an absolute frame would need a global reference direction
+    // chosen for the base, which is a generator nobody derived. `None` is
+    // a piece no proper turn carries onto its own landing — a reflection,
+    // a DILATED carry whose domain and codomain are similar but not
+    // congruent, or a 45° relation whose half-angle is irrational — and
+    // then `gamma` stands unframed rather than being rotated by an
+    // invented turn (rule 11). Both outcomes are counted, so "the frame
+    // never fired" and "the frame fired and was the identity" cannot read
+    // the same on the line, which is the defect that let `ℓ = 1` pass as
+    // a measurement of the scene.
+    let own_turn = |s: &crate::transducer::family::cover::Supports| {
+        crate::transducer::blade::relative_rotor(
+            &crate::transducer::blade::shape_of(&s.domain).blade,
+            &crate::transducer::blade::shape_of(&s.codomain).blade,
+        )
+    };
+    let framed = match (own_turn(supa), own_turn(supb)) {
+        (Some(ta), Some(tb)) => match ta.rotor().versor_inverse() {
+            Some(inv) => {
+                // A frame either side of which is only fixed mod `π` makes
+                // the composite open too, and it is counted apart: an
+                // even moment cannot close a half turn (56.5), so this is
+                // a projective class and not a determined rotor.
+                let open = matches!(
+                    (&ta, &tb),
+                    (crate::transducer::blade::Frame::HalfOpen(_), _)
+                        | (_, crate::transducer::blade::Frame::HalfOpen(_))
+                );
+                crate::transducer::family::cover::tally(|t| match open {
+                    true => t.frame_half_open += 1,
+                    false => t.framed += 1,
+                });
+                tb.rotor().geo(&inv).geo(&gamma)
+            }
+            None => {
+                crate::transducer::family::cover::tally(|t| t.unframed += 1);
+                gamma
+            }
+        },
+        _ => {
+            crate::transducer::family::cover::tally(|t| t.unframed += 1);
+            gamma
+        }
+    };
+    let mut edge = edge_of(&framed)?;
     // AXIOM B — THE INTERFACE TRANSITION IS A GEODESIC TRANSVECTION BETWEEN
     // THE TWO FRAMES' OWN BASE POINTS (54.7, ruled 2026-09-21).
     //

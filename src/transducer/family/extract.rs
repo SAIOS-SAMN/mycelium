@@ -639,7 +639,8 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     let mut piece_seen: Keyed<Vec<u8>> = Keyed::new();
     for c in &covers {
         let frame = c.frame as u16;
-        for (_, (v, _versor, codomain)) in c.cover.carried.scoped() {
+        for (_, (v, _versor, sup)) in c.cover.carried.scoped() {
+            let codomain = &sup.codomain;
             let (Some(chart), Some(tc)) = (v.face_chart(), transport_class(v)) else { continue };
             let Some(acting) = v.acting_on(&chart) else { continue };
             let Vertex::Word { address, derivation, .. } = v else { continue };

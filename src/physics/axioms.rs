@@ -217,10 +217,14 @@ mod tests {
         let theta = blade::relative_rotor(&upright.blade, &turned.blade)
             .expect("one proper turn carries an L onto its quarter turn");
         assert!(
-            !theta.projective_eq(&crate::transducer::element::identity_versor()),
+            matches!(theta, blade::Frame::Turn(_)),
+            "equal cardinality: the support settles the half turn, got {theta:?}"
+        );
+        assert!(
+            !theta.rotor().projective_eq(&crate::transducer::element::identity_versor()),
             "a turned body must not mint the identity: got {theta:?}"
         );
-        let order = crate::transducer::cga::finite_order(&theta).map(|l| l.get());
+        let order = crate::transducer::cga::finite_order(theta.rotor()).map(|l| l.get());
         assert!(
             matches!(order, Some(2) | Some(4)),
             "a proper turn of the square base closes at 2 or 4, got {order:?}"
@@ -234,8 +238,43 @@ mod tests {
         let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0)]);
         let theta = blade::relative_rotor(&l.blade, &l.blade).expect("a body carries onto itself");
         assert!(
-            theta.projective_eq(&crate::transducer::element::identity_versor()),
+            theta.rotor().projective_eq(&crate::transducer::element::identity_versor()),
             "no turn is no rotor, got {theta:?}"
+        );
+    }
+
+    /// SIMILARITY, NOT CONGRUENCE. A body and its 2× dilation are related
+    /// by NO isometry — 8 cells against 2 — yet their rotation is
+    /// perfectly well defined and is the identity. Demanding equal cell
+    /// counts and equal `‖u‖²` refused this, which modelled every
+    /// transformation as rigid when the carriage carries a dilator `D(ρ)`.
+    ///
+    /// The half turn stays OPEN here: an even moment cannot close it and
+    /// the cardinalities differ, so no cell test can. Saying so is the
+    /// honest answer; picking one of the two silently is not.
+    #[test]
+    fn a11_a_dilated_body_keeps_its_frame() {
+        let domino = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]);
+        // The same domino at twice the scale: a 2×4 block.
+        let doubled = blade::shape_of(&[
+            (0, 0, 0),
+            (0, 1, 0),
+            (1, 0, 0),
+            (1, 1, 0),
+            (2, 0, 0),
+            (2, 1, 0),
+            (3, 0, 0),
+            (3, 1, 0),
+        ]);
+        let theta = blade::relative_rotor(&domino.blade, &doubled.blade)
+            .expect("a dilation is a similarity and its rotation is defined");
+        assert!(
+            matches!(theta, blade::Frame::HalfOpen(_)),
+            "differing cardinality leaves the half turn open, got {theta:?}"
+        );
+        assert!(
+            theta.rotor().projective_eq(&crate::transducer::element::identity_versor()),
+            "a pure dilation turns nothing, got {theta:?}"
         );
     }
 

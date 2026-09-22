@@ -638,9 +638,30 @@ pub fn quartic_harmonic(blade: &Blade) -> Option<[BigRational; 2]> {
 /// these take values in `{−1, 0, 1}` only.
 ///
 /// `None` where either body is isotropic (no principal axis) or where the
-/// two anisotropies DIFFER — `‖u_a‖² ≠ ‖u_b‖²` means the bodies are not
-/// congruent, and an angle between non-congruent shapes is not a rotation
-/// (rule 11).
+/// two anisotropies DIFFER. That is not a policy: `cos 2φ = (u_a·u_b) /
+/// (‖u_a‖‖u_b‖)` needs the PRODUCT of the norms, and only when
+/// `‖u_a‖² = ‖u_b‖²` does that product equal a rational `Δ`. For unequal
+/// norms the value is irrational in general and rule 4 refuses it.
+///
+/// Dropping the gate would not loosen this reading, it would BREAK it:
+/// `(u_a·u_b)/‖u_a‖²` with unequal norms is `s⁴ cos 2φ`, a dilated
+/// projection that can exceed `±1` and is not an angle.
+///
+/// [`relative_rotor`] is therefore NOT the same reading with a weaker
+/// gate — the two live on different layers:
+///
+/// ```text
+///   METRIC        relative_double_angle   O(2), an isometry invariant
+///                 needs ‖u_a‖² = ‖u_b‖², answers an exact cosine
+///   PROJECTIVE    relative_rotor          Spin(2)/ℤ₂ on ℙ¹(ℚ), a
+///                 similitude invariant; never forms cos 2φ at all
+/// ```
+///
+/// `relative_rotor` asks only WHICH of the four turns applies, which the
+/// SIGNS of `u_a·u_b` and `u_a∧u_b` decide, and those survive any
+/// dilation because `u ↦ s⁴u` with `s⁴ > 0`. One is the metric
+/// restriction of the other's projective ray action. Exact angle values
+/// need congruence; the turn itself needs only similarity.
 ///
 /// IT DETERMINES `φ` ONLY MOD `π`. A rank-2 symmetric tensor is invariant
 /// under a half turn, so `u` cannot tell a body from its own 180°
@@ -695,6 +716,41 @@ fn quarter_turns() -> [(i64, i64, Mv); 4] {
     ]
 }
 
+/// A CHART'S FRAME, and whether its half turn is settled (56.5).
+///
+/// `Turn` is a rotor the SUPPORT confirmed. `HalfOpen` is one the even
+/// moments fixed only mod `π`: `u` and `h₄` satisfy `u(−x) = u(x)`, so no
+/// even-rank moment distinguishes `φ` from `φ + π`, and where the two
+/// bodies differ in cardinality — a transmuted carry — no cell test can
+/// settle it either. The representative is carried and the openness is
+/// carried WITH it, so a reader cannot mistake a projective class for a
+/// determined rotor.
+///
+/// WHY NOT JUST PICK ONE. Choosing a sign per edge injects EXTRINSIC
+/// PARITY into the 1-skeleton: three edges of a cycle guessed
+/// independently manufacture a `−1` holonomy out of nothing, and the
+/// complex then reports a phantom obstruction it invented. Left open, the
+/// edge carries a `ℤ₂` gauge freedom and the COBOUNDARY is the arbiter —
+/// a 2-cell either locks, in which case `∂σ` fixes the signs globally
+/// across it, or it does not, in which case the obstruction is real.
+/// Closing it locally instead needs an odd invariant (a third harmonic, a
+/// directed contour), which is not carried here.
+#[derive(Clone, Debug)]
+pub enum Frame {
+    Turn(Mv),
+    HalfOpen(Mv),
+}
+
+impl Frame {
+    /// The rotor either way — the caller that only needs to act takes
+    /// this; the caller that must not confuse the two matches instead.
+    pub fn rotor(&self) -> &Mv {
+        match self {
+            Frame::Turn(r) | Frame::HalfOpen(r) => r,
+        }
+    }
+}
+
 /// THE RELATIVE FRAME ROTOR BETWEEN TWO BODIES — `θ_ba`, exact in `ℚ`
 /// (56.5, ruled 2026-09-22).
 ///
@@ -716,35 +772,45 @@ fn quarter_turns() -> [(i64, i64, Mv); 4] {
 /// their centroids — a reflection, a genuine difference of shape, or a
 /// `45°` relation whose half-angle `cos(π/8)` is irrational and refused
 /// by rule 4 rather than approximated.
-pub fn relative_rotor(a: &Blade, b: &Blade) -> Option<Mv> {
-    // Same number of cells, or no rotation carries one onto the other.
-    if a.support.len() != b.support.len() || a.support.is_empty() {
+pub fn relative_rotor(a: &Blade, b: &Blade) -> Option<Frame> {
+    if a.support.is_empty() || b.support.is_empty() {
         return None;
     }
-    // THE HARMONIC REFUSAL FIRST (A.11). Congruent bodies share their
-    // anisotropy exactly; differing ones are not a turn apart and are
-    // refused without touching a cell.
-    match (deviatoric(a), deviatoric(b)) {
-        (Some(ua), Some(ub)) => {
-            let n = |u: &[BigRational; 2]| &u[0] * &u[0] + &u[1] * &u[1];
-            if n(&ua) != n(&ub) {
-                return None;
-            }
-        }
-        (None, None) => {
-            // Both isotropic at second order: the fourth harmonic decides,
-            // and where that vanishes too the bodies carry no orientation
-            // at either order and only the identity can be claimed.
-            if let (Some(ha), Some(hb)) = (quartic_harmonic(a), quartic_harmonic(b)) {
-                let n = |h: &[BigRational; 2]| &h[0] * &h[0] + &h[1] * &h[1];
-                if n(&ha) != n(&hb) {
-                    return None;
-                }
-            }
-        }
-        // One anisotropic and one not: not congruent.
+    // THE ORIENTATION VECTORS. The second harmonic where the body has a
+    // principal axis; the fourth where it does not — a square or a cross
+    // is isotropic at second order and the quartic still orients it.
+    // `None` at both orders is a body with no orientation to compare.
+    let (oa, ob) = match (deviatoric(a), deviatoric(b)) {
+        (Some(ua), Some(ub)) => (ua, ub),
+        (None, None) => (quartic_harmonic(a)?, quartic_harmonic(b)?),
+        // One has a principal axis and the other does not: no turn of one
+        // is the other, whatever their sizes.
         _ => return None,
-    }
+    };
+    // SIGNS ONLY, WHICH IS WHAT MAKES IT SCALE-FREE. Under a dilation by
+    // `s > 0` the moments scale as `s⁴`, so `u ↦ s⁴ · R(2φ) u` and every
+    // sign survives. Taking `cos 2φ = (u_a·u_b)/(‖u_a‖‖u_b‖)` would need
+    // that product of norms — the one place a root could enter — and it
+    // is never formed. Demanding `‖u_a‖² = ‖u_b‖²` instead, as this did,
+    // demanded CONGRUENCE: it refused a dilated carry whose rotation is
+    // perfectly well defined and often the identity. A transformation
+    // here carries a dilator `D(ρ)`, so similarity is the right group and
+    // isometry was too small.
+    let dot = &oa[0] * &ob[0] + &oa[1] * &ob[1];
+    let wedge = &oa[0] * &ob[1] - &oa[1] * &ob[0];
+    let zero = BigRational::from_integer(BigInt::from(0));
+    let turn_pair = if wedge == zero && dot > zero {
+        // 2φ = 0 — the axes agree, so φ is 0 or π.
+        [0usize, 2usize]
+    } else if wedge == zero && dot < zero {
+        // 2φ = π — the axes are at a right angle, so φ is π/2 or 3π/2.
+        [1usize, 3usize]
+    } else {
+        // 2φ = ±π/2 is a 45° relation whose half-angle `cos(π/8)` is
+        // irrational: refused rather than approximated (rule 4). Anything
+        // else is not a turn of the square base at all.
+        return None;
+    };
     let (ca, cb) = (a.centroid()?, b.centroid()?);
     // Centred cells, exact over ℚ: the centroid is rational, so a cell's
     // offset is too, and a quarter turn keeps it rational.
@@ -762,22 +828,41 @@ pub fn relative_rotor(a: &Blade, b: &Blade) -> Option<Mv> {
         out.sort();
         out
     };
-    let (pa, pb) = (centred(&a.support, &ca), centred(&b.support, &cb));
-    for (cos, sin, rotor) in quarter_turns() {
-        let (co, si) = (
-            BigRational::from_integer(BigInt::from(cos)),
-            BigRational::from_integer(BigInt::from(sin)),
-        );
-        let mut turned: Vec<(BigRational, BigRational, i64)> = pa
-            .iter()
-            .map(|(r, c, k)| (r * &co - c * &si, r * &si + c * &co, *k))
-            .collect();
-        turned.sort();
-        if turned == pb {
-            return Some(rotor);
+    // THE HALF TURN IS A PARITY OBSTRUCTION, not a gap in this reader.
+    // `u` and `h₄` are EVEN-rank moments: `(−x)² = x²` and `(−x)⁴ = x⁴`,
+    // so `u(−x) = u(x)` and no even moment can ever tell `φ` from `φ + π`.
+    // Only an odd invariant could — a third harmonic, or a directed
+    // boundary contour — and neither is carried here.
+    //
+    // Where the supports have the SAME cardinality the cells themselves
+    // settle it: the candidate is applied and compared. Where they differ
+    // the body has transmuted and no cell test exists, so the frame is
+    // returned mod `π` and SAID to be, rather than one of the two being
+    // chosen silently.
+    let turns = quarter_turns();
+    if a.support.len() == b.support.len() {
+        let (pa, pb) = (centred(&a.support, &ca), centred(&b.support, &cb));
+        for ix in turn_pair {
+            let (cos, sin, rotor) = &turns[ix];
+            let (co, si) = (
+                BigRational::from_integer(BigInt::from(*cos)),
+                BigRational::from_integer(BigInt::from(*sin)),
+            );
+            let mut turned: Vec<(BigRational, BigRational, i64)> = pa
+                .iter()
+                .map(|(r, c, k)| (r * &co - c * &si, r * &si + c * &co, *k))
+                .collect();
+            turned.sort();
+            if turned == pb {
+                return Some(Frame::Turn(rotor.clone()));
+            }
         }
+        // Same cardinality and neither half turn carries it: the two are
+        // not related by a proper rotation — a reflection, or a genuine
+        // difference of shape the moments happened to agree on.
+        return None;
     }
-    None
+    Some(Frame::HalfOpen(turns[turn_pair[0]].2.clone()))
 }
 
 /// Lift a support (sites on the three coordinates of the base, no hue) to

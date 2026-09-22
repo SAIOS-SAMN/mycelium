@@ -847,8 +847,19 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
     eprintln!(
         "  lift over {forms} corpus forms: meets {} ({} carried an edge) \
          → chords {}, within one class {}, unclassed {} \
-         | axiom B: geodesic {} off-sheet {} | forms carrying a loop: {with_loops}",
-        t.meets, t.edges, t.chords, t.within_class, t.unclassed, t.geodesic, t.off_sheet
+         | axiom B: geodesic {} off-sheet {} \
+         | frames: {} framed {} half-open {} unframed \
+         | forms carrying a loop: {with_loops}",
+        t.meets,
+        t.edges,
+        t.chords,
+        t.within_class,
+        t.unclassed,
+        t.geodesic,
+        t.off_sheet,
+        t.framed,
+        t.frame_half_open,
+        t.unframed
     );
     // THE ANTIPODAL TEST (54.7): the operators of each Casimir class, and
     // whether a class of exactly two is a mutually inverse pair — one
