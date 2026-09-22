@@ -508,4 +508,116 @@ mod tests {
             "e₁₂ against e₃e₊ spans a four-volume: this is the screw"
         );
     }
+
+    /// T2 — THE INVERSIVE STRAIN IS EXACT, SIGNED AND SCALE-FREE (59.3).
+    ///
+    /// `μ` itself is irrational — its denominator wants `√(r_a² r_b²)` —
+    /// so the pair `(num, den2)` carries it and every question is a
+    /// comparison of cross products. What must hold: the three contact
+    /// sides come out right, the horizon test agrees with them, and a
+    /// global dilation moves nothing.
+    #[test]
+    fn the_strain_reads_contact_exactly_and_scale_free() {
+        use crate::transducer::blade::{self, Contact, Strain};
+        let q = |n: i64| crate::core::Q::from_integer(n.into());
+
+        // A body against ITSELF is `δ = −1`, internal tangency: `‖ΔP‖ = 0`
+        // and `num = −2r²`, so `num² = 4r⁴ = den2`. Deep inside contact.
+        let a = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]).blade;
+        let s = Strain::between(&a, &a).expect("a body has a centroid");
+        assert_eq!(s.side(), Contact::Through, "a body against itself is inside");
+        assert!(s.num < q(0), "and its numerator is negative");
+
+        // FAR APART. Two dominoes a long way from one another: `‖ΔP‖²`
+        // dominates, `δ > 1`.
+        let far = blade::shape_of(&[(0, 100, 0), (1, 100, 0)]).blade;
+        let s_far = Strain::between(&a, &far).expect("two centroids");
+        assert_eq!(s_far.side(), Contact::Apart, "distant bodies are separated");
+
+        // THE HORIZON ORDERS THEM, and the ordering is the physics: a
+        // distant pair is outside every horizon a near pair is inside.
+        let near = blade::shape_of(&[(0, 2, 0), (1, 2, 0)]).blade;
+        let s_near = Strain::between(&a, &near).expect("two centroids");
+        for mu_c in [q(1), q(4), q(16)] {
+            assert!(
+                !(s_far.within(&mu_c) && !s_near.within(&mu_c)),
+                "no horizon admits the far pair while refusing the near one"
+            );
+        }
+        assert!(s_near.within(&q(16)), "a generous horizon admits the near pair");
+        assert!(!s_far.within(&q(16)), "and still refuses the far one");
+
+        // SCALE-FREE, which is Axiom C's whole point: `δ² = num²/den2` is
+        // invariant under `x ↦ λx` because `num ↦ λ²num` and
+        // `den2 ↦ λ⁴den2`. Doubling every coordinate must not move the
+        // reading or the side.
+        let a2 = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (0, 1, 0), (1, 1, 0)]).blade;
+        let far2 = blade::shape_of(&[
+            (0, 200, 0),
+            (1, 200, 0),
+            (0, 201, 0),
+            (1, 201, 0),
+        ])
+        .blade;
+        let scaled = Strain::between(&a2, &far2).expect("two centroids");
+        assert_eq!(scaled.side(), s_far.side(), "a dilation does not change the side");
+
+        // AND NO ROOT WAS TAKEN ANYWHERE: `den2` is a square and is never
+        // rooted; it is strictly positive because `radius2` is.
+        assert!(s.den2 > q(0), "the denominator squared is strictly positive");
+        assert!(s_far.den2 > q(0));
+    }
+
+    /// T3 — THE STRAIN IS A BILINEAR FORM, NOT A PAIRWISE TEST.
+    ///
+    /// `Strain::between` subtracts centroids and squares, which reads as a
+    /// pairwise computation and invites a pairwise walk. It is not one. On
+    /// the conformal representative `s = P − ½r²e_∞` the numerator is an
+    /// INNER PRODUCT:
+    ///
+    /// ```text
+    ///     s_a · s_b = ½(r_a² + r_b² − ‖P_a − P_b‖²)
+    ///     num       = −2 (s_a · s_b)
+    /// ```
+    ///
+    /// which is LINEAR IN EACH ARGUMENT. That is what T3 needs and what a
+    /// bucketing scheme would destroy: "which bodies lie within `A`'s
+    /// horizon" is a linear functional evaluated against the carrier, so a
+    /// keyed descent is possible exactly when the key's coarse strata are
+    /// level sets of that functional. Quantising `⌊log₂ r⌋` or `P mod 2^k`
+    /// answers it with a grid instead, which is `ring_of_support` at a
+    /// coarser pitch — and `⌊log₂⌋` is not even exact in ℚ.
+    ///
+    /// The identity is asserted here so the linear form is a measured fact
+    /// before anything is built on it.
+    #[test]
+    fn the_strain_numerator_is_an_inner_product_of_conformal_spheres() {
+        use crate::transducer::blade::{self, Strain};
+        use crate::transducer::cga;
+        let q = |n: i64| crate::core::Q::from_integer(n.into());
+        let two = q(2);
+
+        let bodies = [
+            blade::shape_of(&[(0, 0, 0), (1, 0, 0)]).blade,
+            blade::shape_of(&[(0, 5, 0), (1, 5, 0), (0, 6, 0)]).blade,
+            blade::shape_of(&[(3, 3, 0)]).blade,
+        ];
+
+        for a in &bodies {
+            for b in &bodies {
+                let s = Strain::between(a, b).expect("both centroids read");
+                let (pa, pb) = (a.centroid().expect("a"), b.centroid().expect("b"));
+                let sa = cga::sphere(&pa.0, &pa.1, &pa.2, &a.radius2());
+                let sb = cga::sphere(&pb.0, &pb.1, &pb.2, &b.radius2());
+                // The scalar part of the geometric product IS the inner
+                // product of two vectors.
+                let dot = sa.geo(&sb).scalar_part();
+                assert_eq!(
+                    s.num,
+                    -&two * &dot,
+                    "num = −2 (s_a · s_b): the strain is bilinear in the spheres"
+                );
+            }
+        }
+    }
 }

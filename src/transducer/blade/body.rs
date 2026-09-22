@@ -621,6 +621,113 @@ pub fn quartic_harmonic(blade: &Blade) -> Option<[BigRational; 2]> {
     }
 }
 
+/// T2 — THE INVERSIVE STRAIN BETWEEN TWO BODIES, CARRIED AS A RATIO AND
+/// NEVER EVALUATED (59.3, Axiom C).
+///
+/// Two bodies with centroid `P` and radius of gyration `r` are related by
+/// the inversive distance of their spheres,
+///
+/// ```text
+///     δ = (‖P_a − P_b‖² − r_a² − r_b²) / (2 r_a r_b)
+/// ```
+///
+/// and the kinematic charge of the chord between them is `μ = (δ − 1)/2`,
+/// which is `⟨R⟩₀²/⟨RR̃⟩₀ − 1` for `R = 1 − v_b v_a`. `μ = 0` is exact
+/// tangency, `μ < 0` interpenetration, `μ > 0` separation.
+///
+/// `μ` IS NOT RATIONAL AND NEVER REACHES THE WIRE. The denominator wants
+/// `r_a r_b = √(r_a² r_b²)`, and [`Blade::radius2`] carries `r²`, so law 1
+/// would refuse the root as inexact on nearly every body. What IS rational
+/// is the pair: the numerator, and the denominator SQUARED. Every question
+/// the engine asks of the strain is a comparison, and a comparison of two
+/// ratios is a comparison of cross products — which is the projective
+/// discipline stated once and obeyed here.
+///
+/// `num`'S SIGN IS ORTHOGONALITY, NOT TANGENCY. A first reading of this
+/// had `num = 0` as the contact locus; it is not. `num = 0` is `δ = 0`,
+/// two spheres meeting at RIGHT ANGLES, while tangency is `δ = 1`, which
+/// is `num = √den2`. Reading the sign of `num` as the contact side would
+/// put the horizon in the wrong place by a whole unit of `δ`, so the side
+/// is read by [`Strain::side`] and never off `num` alone.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Strain {
+    /// `‖P_a − P_b‖² − r_a² − r_b²` — the sign is `δ`'s, so it says which
+    /// side of ORTHOGONALITY the pair is on.
+    pub num: BigRational,
+    /// `4 r_a² r_b²`, strictly positive: `Blade::radius2` is `> 0` by
+    /// construction, so the pair never carries a zero denominator.
+    pub den2: BigRational,
+}
+
+/// WHERE TWO BODIES STAND RELATIVE TO CONTACT. The reading `μ` would give
+/// if `μ` could be written down, taken without writing it down.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Contact {
+    /// `μ < 0`, `δ < 1` — the spheres interpenetrate.
+    Through,
+    /// `μ = 0`, `δ = 1` — exact tangency. Measure-zero over ℚ, so this is
+    /// the locus a THRESHOLD is taken about and never the test itself
+    /// (59.4).
+    Tangent,
+    /// `μ > 0`, `δ > 1` — separated.
+    Apart,
+}
+
+impl Strain {
+    /// The strain between two bodies, or `None` where a centroid does not
+    /// read back (rule 11: refused, never defaulted).
+    pub fn between(a: &Blade, b: &Blade) -> Option<Strain> {
+        let (a1, a2, a3) = a.centroid()?;
+        let (b1, b2, b3) = b.centroid()?;
+        let (d1, d2, d3) = (&a1 - &b1, &a2 - &b2, &a3 - &b3);
+        let sep2 = &d1 * &d1 + &d2 * &d2 + &d3 * &d3;
+        let (ra2, rb2) = (a.radius2(), b.radius2());
+        let four = BigRational::from_integer(BigInt::from(4));
+        Some(Strain { num: sep2 - &ra2 - &rb2, den2: four * ra2 * rb2 })
+    }
+
+    /// `δ` COMPARED AGAINST A RATIONAL, EXACTLY AND WITHOUT A ROOT.
+    ///
+    /// `δ ≤ k` is `num ≤ k·√den2`. Both sides are compared by SIGN first
+    /// and only then by squaring, because squaring loses the sign and a
+    /// test that squares first answers the wrong question on a negative
+    /// numerator. `√den2 > 0` always, which is what makes the case split
+    /// total.
+    fn delta_at_most(&self, k: &BigRational) -> bool {
+        let zero = BigRational::from_integer(BigInt::from(0));
+        match (self.num > zero, *k > zero) {
+            // Both positive: `num ≤ k√den2 ⟺ num² ≤ k²·den2`.
+            (true, true) => &self.num * &self.num <= k * k * &self.den2,
+            // A positive numerator is never below a non-positive bound.
+            (true, false) => false,
+            // A non-positive numerator is always below a positive bound.
+            (false, true) => true,
+            // Both non-positive: the inequality REVERSES under squaring.
+            (false, false) => &self.num * &self.num >= k * k * &self.den2,
+        }
+    }
+
+    /// Is this pair inside the horizon `μ ≤ μ_c`? `μ = (δ−1)/2`, so the
+    /// bound on `δ` is `2μ_c + 1` and the comparison is the one above.
+    pub fn within(&self, mu_c: &BigRational) -> bool {
+        let one = BigRational::from_integer(BigInt::from(1));
+        let two = BigRational::from_integer(BigInt::from(2));
+        self.delta_at_most(&(two * mu_c + one))
+    }
+
+    /// Which side of exact tangency the pair stands on — `δ` against `1`.
+    pub fn side(&self) -> Contact {
+        let one = BigRational::from_integer(BigInt::from(1));
+        match (self.delta_at_most(&one), self.num.clone() * &self.num == self.den2) {
+            (_, true) if self.num > BigRational::from_integer(BigInt::from(0)) => {
+                Contact::Tangent
+            }
+            (true, _) => Contact::Through,
+            (false, _) => Contact::Apart,
+        }
+    }
+}
+
 /// THE DOUBLE ANGLE BETWEEN TWO BODIES' PRINCIPAL AXES, exact in ℚ and
 /// with no root taken (55.3).
 ///
