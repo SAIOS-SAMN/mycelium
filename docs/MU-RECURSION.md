@@ -10802,3 +10802,132 @@ cannot invert through an indefinite reflection channel, while `num` itself
 remains gauge. The pair `(side, delta^2)` is therefore fully characterised —
 scale-free, root-free, reduced canonically, and stable under every motor
 the algebra admits.
+
+## 65. Five regimes, and attention as a vector (ruled 2026-09-22)
+
+Two scalar collapses, found by asking where `condense` should be antipodal
+and why `STROKE` is still a constant. Neither was in the metric; both were
+in what the metric was read INTO.
+
+### 65.1 The inversive spectrum has five regimes, not three
+
+```
+  Contained   TangentInt     Intersecting    TangentExt    Apart
+   d < -1       d = -1        |d| < 1         d = 1        d > 1
+  ---------]------|------[-------o-------]------|------[---------
+                               d = 0
+                            (orthogonal)
+```
+
+`Contact` had three arms — `Through`, `Tangent`, `Apart` — reading
+`Tangent` only at `delta = 1` and folding the whole lower half into
+`Through`. So `delta = -1`, INTERNAL TANGENCY, where two spheres touch at
+one point from inside at `d = |r_a - r_b|`, was reported as
+interpenetration. Both `delta = +-1` are genuine codimension-1 contact
+interfaces, and calling one contact and the other penetration lost the
+boundary's symmetry. That is a scalar collapse committed in an enum rather
+than in a metric, and it mislabelled half the contact locus.
+
+THE FIXTURE HID IT. A body against ITSELF sits at `delta = -1`, where
+"touching from inside" and "fully overlapping" are both defensible — so the
+assertion passed while testing what was written rather than what is true.
+The case that is not ambiguous is two DIFFERENT bodies at `d = |r_a - r_b|`,
+and the corrected test exhibits it.
+
+READ EXACTLY AND WITHOUT A ROOT. `|delta| = 1` is `num^2 = den2` with the
+sign of `num` choosing which tangency; the rest is `delta` against `+-1`
+through `delta_at_most`, which splits on sign before squaring.
+
+### 65.2 The antipodal involution
+
+`sigma: s -> -s` is the same sphere with INSIDE AND OUTSIDE EXCHANGED. It
+sends `delta -> -delta`, so it swaps `Apart` with `Contained` and the two
+tangencies with one another, and FIXES `Intersecting`, whose own fixed point
+is `delta = 0` — inversive orthogonality, `d^2 = r_a^2 + r_b^2`. Measured:
+`sigma . sigma = id`, and no regime outside the secant band is fixed.
+
+WHAT SURVIVES IT DECIDES WHERE A GATE MAY READ. `delta^2 = num^2/den2` is
+antipodally invariant; the SIDE is not, because the involution flips
+`num`'s sign. So an orientation-blind gate reads `delta^2` and receives the
+dual pair `{Apart, Contained}` and `{TangentExt, TangentInt}` as single
+orbits; a gate that requires an exterior interface rather than containment
+reads the arm. `Blade::nucleus` is the single producer of a nucleus's
+orientation (law 12), so the sign is canonical in practice — but that is an
+invariant of ONE FUNCTION and not of the algebra, and it is stated here
+rather than assumed at every call site.
+
+### 65.3 Where `condense` belongs: the two poles, not the pullback
+
+```
+    FAMILY POLE (matter)            BUBBLE POLE (morphism)
+    entities  bodies                entities  carriages
+    generator nuclei s in Q^{4,1}   generator motors M in P Spin+(4,1)
+    condenses spatial bonds         condenses kinematic entanglement
+         |                                 |
+         +------------ PULLBACK ------------+
+                 cover_deformation
+                  (chart overlap)
+```
+
+WIRING `condense` INTO `cover_deformation` WOULD BE A CATEGORY ERROR. The
+cover's meet index is built on PULLBACK INCIDENCE across carriages, which
+are morphisms `domain -> codomain`; the field is between BODIES. Running it
+there inherits the carriage ontology and lets a body tether to its own
+replicate — which may be wanted, but as a ruling and never as a default.
+
+So the field runs at each pole on that pole's own entities, and
+`cover_deformation` keeps its integrity as an atlas pullback: it answers
+chart overlap, which is a different relation and remains true.
+
+### 65.4 `STROKE` is a scalar standing where a vector belongs
+
+`Budget` counts calls to `spend()` — IMPLEMENTATION EVENTS, not physical
+work. That is why `tests/cover.rs`'s `STROKE = 4` decayed silently when the
+ring stencil went: the same deformation cost fewer `spend()` calls and the
+constant stopped forcing the resume it was written to prove. A constant
+denominated in an implementation detail tracks the implementation, and
+every refactor falsifies it without touching the physics.
+
+AND IT COLLAPSES THE FOUR LANES LAW 5 READS SEPARATELY. Attention is
+ALREADY a vector here — `Bubble.escrow` is "the mu-vector drawn from the
+voice's reserve to keep it, per lane", and "a mind rich on `h` and spent on
+`S` holds turns and withholds placements". A single integer expresses
+neither half of that:
+
+```
+    A = (S, G, T, H) = (scale, gauge/rotor, translation, hue/fibre)
+```
+
+A mind at `[0, 10, 10, 5]` has exhausted DILATION and retains turning and
+sliding. Under a scalar stroke an expensive dilation attempt burns the
+global counter and preempts it out of the lanes it could still afford,
+which is unphysical.
+
+`Reserve` DRAWS A VECTOR, ALL OR NOTHING, AND REFUSES PER LANE. `Depleted`
+names which lane could not cover the draw, what was asked and what was
+held — because "the mind is out of attention" and "the mind cannot afford
+THIS, on the scale lane" are different facts and only the second says what
+may still be attempted (rule 11). An action with a ZERO PROJECTION on a
+depleted lane remains affordable, which is the whole content of the
+anisotropy. And `restore` is its conjugate: an escrow that can only be
+spent is the ratchet of 62 one level down.
+
+### 65.5 The observer is the boundary condition
+
+```
+    metric      mu_c    <->  the alphabet's spellable reach     (59.6)
+    temporal    STROKE  <->  the reserve's anisotropic lanes    (65.4)
+```
+
+Neither belongs in the engine as a constant. `mu_c` is how far a mind's
+alphabet reaches across the conformal quadric; the stroke is how many
+topological phase changes its four-lane escrow can afford before it yields.
+Both are properties of the OBSERVER rather than of the substrate, and both
+were numbers standing where a derived quantity belongs.
+
+WHAT IS BUILT AND WHAT IS NOT. `Reserve`, `Depleted` and the vector draw
+are built and proven. `Budget` still counts reads and still bounds the
+cover; the two are not yet joined, and the stroke will not be physical
+until a draw replaces the tick at the call sites and `cursor::park` lands
+on a CAUTERIZATION rather than at an arbitrary count (62.4). That is a
+separate row and it is not claimed here.

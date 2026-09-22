@@ -521,11 +521,24 @@ mod tests {
         use crate::transducer::blade::{self, Contact, Strain};
         let q = |n: i64| crate::core::Q::from_integer(n.into());
 
-        // A body against ITSELF is `δ = −1`, internal tangency: `‖ΔP‖ = 0`
-        // and `num = −2r²`, so `num² = 4r⁴ = den2`. Deep inside contact.
+        // A body against ITSELF is `δ = −1`: `‖ΔP‖ = 0` and `num = −2r²`,
+        // so `num² = 4r⁴ = den2` exactly.
+        //
+        // THIS ASSERTED `Through` AND WAS WRONG (65). `δ = −1` is INTERNAL
+        // TANGENCY — a codimension-1 contact interface — and the enum it
+        // was written against had only three arms, folding the whole lower
+        // half of the spectrum into "interpenetrating". The self-pair is
+        // precisely where the two labels are both defensible, so the
+        // fixture passed while testing what was written rather than what is
+        // true; `the_five_inversive_regimes_are_read_exactly` exhibits the
+        // case that is not ambiguous.
         let a = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]).blade;
         let s = Strain::between(&a, &a).expect("a body has a centroid");
-        assert_eq!(s.side(), Contact::Through, "a body against itself is inside");
+        assert_eq!(
+            s.side(),
+            Contact::TangentInternal,
+            "a body against itself touches itself from inside"
+        );
         assert!(s.num < q(0), "and its numerator is negative");
 
         // FAR APART. Two dominoes a long way from one another: `‖ΔP‖²`
@@ -826,5 +839,357 @@ mod tests {
             }
         }
         assert!(&lambda * &lambda > q(0), "λ² is positive for every λ in ℚ×");
+    }
+
+    /// T4 — THE INTERFACE IS THE WHOLE PRODUCT, AND SCALAR COLLAPSE IS
+    /// DISALLOWED (64, ruled 2026-09-22).
+    ///
+    /// Four proofs, each arithmetic rather than argued.
+    ///
+    /// (1) THE SPLIT IS COMPLETE. `s_a s_b = s_a·s_b + s_a∧s_b` and there
+    ///     is nothing else: the geometric product of two VECTORS has grades
+    ///     0 and 2 only, so the interface loses nothing by being carried as
+    ///     those two.
+    ///
+    /// (2) A LONE TETHER IS ALWAYS SIMPLE. `(s_a∧s_b) ∧ (s_a∧s_b) = 0`
+    ///     identically — a repeated factor kills the wedge — so `I₂ = 0` on
+    ///     every isolated interface and a screw can only be a property of
+    ///     the NETWORK (59.7, 60.4).
+    ///
+    /// (3) THE BLADE IS THE COAXAL PENCIL. Every sphere `λs_a + μs_b` lies
+    ///     in it: `s ∧ B = 0` for the whole one-parameter family, which is
+    ///     what makes `B` the interface rather than a pair of endpoints.
+    ///
+    /// (4) AND THE COLLAPSE IS REAL. Two pairs at the SAME `δ²` and the
+    ///     same side carry DIFFERENT blades. That is the refutation: a
+    ///     tether keyed on the scalar alone cannot tell two interactions
+    ///     apart that differ in orientation, plane and pencil.
+    #[test]
+    fn the_interface_carries_what_the_scalar_throws_away() {
+        use crate::transducer::blade::{self, Interface};
+        let q = |n: i64| crate::core::Q::from_integer(n.into());
+
+        let a = blade::shape_of(&[(0, 0, 0)]).blade;
+        let along_r = blade::shape_of(&[(4, 0, 0)]).blade;
+        let along_c = blade::shape_of(&[(0, 4, 0)]).blade;
+
+        let (na, nr) = (a.nucleus().expect("a"), along_r.nucleus().expect("r"));
+        let product = na.geo(&nr);
+
+        // (1) GRADES 0 AND 2 ONLY.
+        for g in [1u32, 3, 4, 5] {
+            assert!(
+                product.grade(g).is_zero(),
+                "the product of two vectors has no grade {g} part"
+            );
+        }
+        let face = Interface::between(&a, &along_r).expect("both nuclei");
+        assert_eq!(
+            product.grade(0).scalar_part() * q(-2),
+            face.strain.num,
+            "the scalar part IS the strain numerator"
+        );
+        assert_eq!(product.grade(2), face.blade, "and the grade-2 part IS the interface");
+        assert!(!face.blade.is_zero(), "which is not empty for two distinct bodies");
+
+        // (2) SIMPLE, IDENTICALLY.
+        assert!(
+            crate::transducer::cga::bivector_is_simple(&face.blade),
+            "a wedge of two vectors can never carry a screw: I₂ ≡ 0"
+        );
+
+        // (3) THE COAXAL PENCIL LIES IN THE BLADE. `s ∧ B = 0` for every
+        //     `s = λ s_a + μ s_b`, which is what makes B the interface.
+        for (l, m) in [(1i64, 0i64), (0, 1), (1, 1), (3, -2), (-5, 7)] {
+            let s = na.scale(&q(l)).add(&nr.scale(&q(m)));
+            // `s ∧ B` is the grade-3 part of `B s`: a vector wedged into a
+            // 2-blade, which vanishes exactly when the vector lies in it.
+            assert!(
+                face.blade.wedge_vector(2, &s).is_zero(),
+                "the pencil member ({l}, {m}) lies in the interface blade"
+            );
+        }
+
+        // (4) THE COLLAPSE IS REAL: same δ², same side, DIFFERENT blade.
+        let other = Interface::between(&a, &along_c).expect("both nuclei");
+        let d2 = |f: &Interface| {
+            &f.strain.num * &f.strain.num / f.strain.den2.clone()
+        };
+        assert_eq!(d2(&face), d2(&other), "two pairs at the same scale-free strain");
+        assert_eq!(
+            face.strain.side(),
+            other.strain.side(),
+            "and on the same side of contact"
+        );
+        assert_ne!(
+            face.blade, other.blade,
+            "yet different interfaces — the scalar cannot tell them apart"
+        );
+    }
+
+    /// T4 — `condense` IS A FIELD, AND IT MINTS THE 1-SKELETON.
+    ///
+    /// The horizon admits near pairs and refuses far ones, the reading does
+    /// not depend on the order the bodies were offered, and every tether
+    /// carries its interface blade rather than a bare link.
+    #[test]
+    fn condense_mints_tethers_from_the_strain_field() {
+        use crate::transducer::blade::{self, condense};
+        let q = |n: i64| crate::core::Q::from_integer(n.into());
+
+        // Three close together and one far away.
+        let bodies: Vec<blade::Blade> = [
+            vec![(0i64, 0i64, 0i64)],
+            vec![(0, 1, 0)],
+            vec![(1, 0, 0)],
+            vec![(0, 60, 0)],
+        ]
+        .iter()
+        .map(|cells| blade::shape_of(cells).blade)
+        .collect();
+
+        let near = condense(&bodies, &q(4));
+        assert!(!near.is_empty(), "a horizon that admits nothing is not a field");
+        assert!(
+            near.iter().all(|&(i, j, _)| i != 3 && j != 3),
+            "the distant body is outside every near horizon: {:?}",
+            near.iter().map(|&(i, j, _)| (i, j)).collect::<Vec<_>>()
+        );
+        assert!(
+            near.iter().all(|(_, _, f)| !f.blade.is_zero()),
+            "every minted tether carries its interface, never a bare link"
+        );
+
+        // A WIDER HORIZON ADMITS STRICTLY MORE, so the gate is monotone and
+        // is really reading the field rather than answering a constant.
+        //
+        // THE WIDE HORIZON IS DERIVED, NOT PICKED. A number chosen by hand
+        // here is the `STROKE = 4` defect again — it was picked at 1000 and
+        // the far pair needs 5399. The bound comes from the structural one
+        // instead: `radius2 ≥ 1/6` for every body, so `den2 = 4r_a²r_b² ≥
+        // 1/9` and `√den2 ≥ 1/3`, giving `δ = num/√den2 ≤ 3·num` and
+        // therefore `μ = (δ−1)/2 < 2·num`. Twice the largest numerator in
+        // the field admits every pair in it, whatever the fixture.
+        let widest = {
+            let mut m = q(0);
+            for i in 0..bodies.len() {
+                for j in i + 1..bodies.len() {
+                    if let Some(s) = blade::Strain::between(&bodies[i], &bodies[j]) {
+                        if s.num > m {
+                            m = s.num;
+                        }
+                    }
+                }
+            }
+            q(2) * m
+        };
+        let wide = condense(&bodies, &widest);
+        assert!(wide.len() >= near.len(), "a wider horizon admits at least as many");
+        assert_eq!(
+            wide.len(),
+            bodies.len() * (bodies.len() - 1) / 2,
+            "and a horizon past the whole field admits every pair"
+        );
+        assert!(wide.len() > near.len(), "which is strictly more than the near one");
+
+        // ORDER-FREE: the field is a property of the bodies, not of the
+        // order they were handed over.
+        let mut shuffled = bodies.clone();
+        shuffled.reverse();
+        assert_eq!(
+            condense(&shuffled, &q(4)).len(),
+            near.len(),
+            "the same field however the bodies are offered"
+        );
+    }
+
+    /// THE INVERSIVE SPECTRUM HAS FIVE REGIMES, NOT THREE (65, ruled
+    /// 2026-09-22).
+    ///
+    /// ```text
+    ///  Contained   TangentInt     Intersecting    TangentExt    Apart
+    ///   δ < −1       δ = −1        |δ| < 1         δ = 1        δ > 1
+    /// ```
+    ///
+    /// A first cut folded everything below `δ = 1` into one arm, so
+    /// INTERNAL TANGENCY — `d = |r_a − r_b|`, where the spheres touch at
+    /// one point from inside — was reported as interpenetration. Half the
+    /// contact boundary, mislabelled.
+    ///
+    /// Each regime is exhibited on a fixture whose geometry is known, built
+    /// from bodies of DIFFERENT radii so that internal tangency is a real
+    /// configuration rather than the degenerate self-pair that hid the
+    /// defect.
+    #[test]
+    fn the_five_inversive_regimes_are_read_exactly() {
+        use crate::transducer::blade::{self, Contact, Strain};
+        let q = |n: i64| crate::core::Q::from_integer(n.into());
+
+        // Radii are set by the bodies' own moments, so the fixtures are
+        // built and then MEASURED rather than assumed: `side` is checked
+        // against `δ²` and the sign of `num`, which is the definition.
+        let small = blade::shape_of(&[(0, 0, 0)]).blade;
+        let big = blade::shape_of(&[
+            (0, 0, 0), (1, 0, 0), (2, 0, 0), (0, 1, 0), (1, 1, 0),
+            (2, 1, 0), (0, 2, 0), (1, 2, 0), (2, 2, 0),
+        ])
+        .blade;
+
+        // The classification is a function of `(sign num, δ² vs 1)`, and
+        // this asserts the two agree on every pair the fixtures give.
+        let check = |a: &blade::Blade, b: &blade::Blade| {
+            let s = Strain::between(a, b).expect("centroids");
+            let sq = &s.num * &s.num;
+            let want = match (s.num > q(0), sq.cmp(&s.den2)) {
+                (_, std::cmp::Ordering::Equal) if s.num > q(0) => Contact::TangentExternal,
+                (_, std::cmp::Ordering::Equal) => Contact::TangentInternal,
+                (true, std::cmp::Ordering::Greater) => Contact::Apart,
+                (false, std::cmp::Ordering::Greater) => Contact::Contained,
+                (_, std::cmp::Ordering::Less) => Contact::Intersecting,
+            };
+            assert_eq!(s.side(), want, "the spectrum is read off (sgn num, δ² vs 1)");
+            s.side()
+        };
+
+        // A BODY AGAINST ITSELF IS INTERNAL TANGENCY, not penetration.
+        // `num = −2r²` and `num² = den2`, so `δ = −1` exactly — and the
+        // first cut called this `Through`.
+        assert_eq!(
+            check(&small, &small),
+            Contact::TangentInternal,
+            "δ = −1 is a CONTACT interface, not overlap"
+        );
+        assert_eq!(check(&big, &big), Contact::TangentInternal);
+
+        // A SMALL BODY AT THE CENTRE OF A LARGE ONE IS CONTAINED. It must
+        // be CONCENTRIC: at `d = 0`,
+        //
+        //     δ = −(r_a² + r_b²) / (2 r_a r_b)  ≤  −1
+        //
+        // by AM–GM, with equality exactly when `r_a = r_b`. Different radii
+        // therefore put it strictly below −1. A first version of this put
+        // the small body at `(0,0,0)` while the block's centroid is
+        // `(1,1,0)` — a CORNER, not the centre — and it read
+        // `Intersecting`, correctly.
+        let centred = blade::shape_of(&[(1, 1, 0)]).blade;
+        assert_eq!(check(&centred, &big), Contact::Contained, "nested, δ < −1");
+        assert!(
+            centred.radius2() != big.radius2(),
+            "and the radii differ, so it is strictly nested rather than tangent"
+        );
+
+        // FAR APART.
+        let far = blade::shape_of(&[(0, 200, 0)]).blade;
+        assert_eq!(check(&small, &far), Contact::Apart, "disjoint, δ > 1");
+
+        // AND THE BAND BETWEEN. Walking one body outward from the other
+        // must pass through `Intersecting` before reaching `Apart`.
+        let mut saw_secant = false;
+        for d in 1..12i64 {
+            let moved = blade::shape_of(&[(0, d, 0)]).blade;
+            if check(&big, &moved) == Contact::Intersecting {
+                saw_secant = true;
+            }
+        }
+        assert!(saw_secant, "the secant band is reachable and is not an empty arm");
+    }
+
+    /// THE ANTIPODAL INVOLUTION `σ: s ↦ −s` IS AN INVOLUTION, AND IT
+    /// EXCHANGES THE CONTACT BOUNDARY (65).
+    ///
+    /// A sphere and its negation are one sphere with inside and outside
+    /// swapped, so `δ ↦ −δ`: `Apart ↔ Contained`, the two tangencies
+    /// exchange, and `Intersecting` is fixed with `δ = 0` as its own fixed
+    /// point. `δ²` survives it; the SIDE does not, which is why a gate that
+    /// must be orientation-blind reads `δ²` and one that cares reads the
+    /// arm.
+    #[test]
+    fn the_antipodal_map_exchanges_the_contact_boundary_and_squares_to_one() {
+        use crate::transducer::blade::Contact;
+        let all = [
+            Contact::Apart,
+            Contact::TangentExternal,
+            Contact::Intersecting,
+            Contact::TangentInternal,
+            Contact::Contained,
+        ];
+        for c in all {
+            assert_eq!(c.antipodal().antipodal(), c, "σ∘σ = id");
+        }
+        assert_eq!(Contact::Apart.antipodal(), Contact::Contained);
+        assert_eq!(Contact::TangentExternal.antipodal(), Contact::TangentInternal);
+        assert_eq!(
+            Contact::Intersecting.antipodal(),
+            Contact::Intersecting,
+            "the secant band is self-dual"
+        );
+        // BOTH TANGENCIES ARE CONTACT. Treating one as contact and the
+        // other as penetration is what lost the boundary's symmetry.
+        assert!(Contact::TangentExternal.is_tangent());
+        assert!(Contact::TangentInternal.is_tangent());
+        for c in [Contact::Apart, Contact::Intersecting, Contact::Contained] {
+            assert!(!c.is_tangent(), "{c:?} is not a contact interface");
+        }
+        // The involution has no fixed points outside the secant band, so
+        // it genuinely pairs the spectrum rather than permuting it.
+        for c in [
+            Contact::Apart,
+            Contact::TangentExternal,
+            Contact::TangentInternal,
+            Contact::Contained,
+        ] {
+            assert_ne!(c.antipodal(), c, "{c:?} is exchanged, not fixed");
+        }
+    }
+
+    /// ATTENTION IS ANISOTROPIC: A DRAW IS A VECTOR AND REFUSES PER LANE
+    /// (65).
+    ///
+    /// A scalar stroke counts `spend()` calls — implementation events, not
+    /// physical work — which is why a constant calibrated against it decays
+    /// on any refactor. And it collapses the four lanes law 5 reads
+    /// separately: a mind bankrupt on SCALE but rich on GAUGE could not
+    /// express that at all, and an expensive dilation attempt would preempt
+    /// it out of turning.
+    ///
+    /// `Reserve` draws `[u64; 4]` all-or-nothing and refuses naming WHICH
+    /// lane is gone, so an action with a zero projection on a depleted lane
+    /// is still affordable. That is the whole content of the anisotropy.
+    #[test]
+    fn a_depleted_lane_does_not_preempt_the_others() {
+        use crate::physics::Reserve;
+
+        // A mind spent on scale and rich on gauge and translation — the
+        // exact state `Bubble.escrow`'s own doc describes.
+        let mut r = Reserve::of([0, 10, 10, 5]);
+        assert!(!r.is_spent(), "a mind with any lane left has not yielded");
+
+        // IT CANNOT DILATE, and the refusal says which lane and by how
+        // much rather than answering a bare false (rule 11).
+        let d = r.draw([1, 0, 0, 0]).expect_err("scale is gone");
+        assert_eq!((d.lane, d.asked, d.held), (0, 1, 0), "the refusal names the lane");
+        assert_eq!(r.lanes(), [0, 10, 10, 5], "and an refused draw costs nothing");
+
+        // BUT IT CAN STILL TURN AND SLIDE. Under a scalar stroke the
+        // refused dilation would have burned the counter and preempted
+        // these.
+        r.draw([0, 3, 2, 0]).expect("gauge and translation are affordable");
+        assert_eq!(r.lanes(), [0, 7, 8, 5], "the whole vector lands, or none of it");
+
+        // ALL OR NOTHING ACROSS LANES: a draw affordable on three lanes and
+        // not the fourth lands nowhere.
+        let d = r.draw([0, 1, 1, 99]).expect_err("hue cannot cover it");
+        assert_eq!(d.lane, 3, "and the refusal names the lane that could not");
+        assert_eq!(r.lanes(), [0, 7, 8, 5], "with nothing deducted");
+
+        // THE CONJUGATE. An escrow that can only be spent is the ratchet
+        // one level down (62), so a draw returns.
+        r.restore([0, 3, 2, 0]);
+        assert_eq!(r.lanes(), [0, 10, 10, 5], "a returned draw is exactly the draw");
+
+        // SPENT IS EVERY LANE, not any lane.
+        let mut empty = Reserve::of([0, 0, 0, 0]);
+        assert!(empty.is_spent());
+        assert!(empty.draw([0, 0, 0, 0]).is_ok(), "a zero draw is always affordable");
     }
 }

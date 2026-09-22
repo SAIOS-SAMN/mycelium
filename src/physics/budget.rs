@@ -48,3 +48,98 @@ impl Budget {
         true
     }
 }
+
+/// THE ANISOTROPIC RESERVE — attention as a four-lane vector, not a tick
+/// (65, ruled 2026-09-22).
+///
+/// `Budget` counts calls to `spend()`, which is a count of IMPLEMENTATION
+/// EVENTS and not of physical work. That is why a stroke calibrated against
+/// it decays silently: purging the ring stencil removed meet-yielding
+/// sites, the same deformation cost fewer `spend()` calls, and
+/// `tests/cover.rs`'s `STROKE = 4` stopped forcing the resume it was
+/// written to prove. A constant denominated in an implementation detail
+/// tracks the implementation, and every refactor falsifies it without
+/// touching the physics.
+///
+/// AND IT IS A SCALAR COLLAPSE. Law 5 reads per lane, and attention is
+/// ALREADY a four-lane quantity in this engine — `Bubble.escrow` is "the
+/// μ⃗ drawn from the voice's reserve to keep it, per lane", and "a mind
+/// rich on `𝒽` and spent on `𝒮` holds turns and withholds placements". A
+/// single integer can express neither half of that: a mind bankrupt on
+/// scale burns a global counter on an expensive dilation attempt and is
+/// preempted out of turning and sliding, which it could still afford.
+///
+/// ```text
+///     A⃗ = (S, G, T, H) = (scale, gauge/rotor, translation, hue/fibre)
+/// ```
+///
+/// A DRAW IS A VECTOR AND IT REFUSES PER LANE. `draw` deducts a whole
+/// `[u64; 4]` or deducts nothing, and it refuses naming WHICH lane is
+/// depleted — so a mind does not "run out of time", it exhausts specific
+/// degrees of freedom and goes on working in the ones it still holds.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Reserve {
+    lanes: [u64; 4],
+}
+
+/// WHICH LANE REFUSED A DRAW. Not a boolean: "the mind is out of
+/// attention" and "the mind cannot afford THIS, on the scale lane" are
+/// different facts, and only the second tells a caller what it may still
+/// attempt (rule 11).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Depleted {
+    /// The lane that could not cover the draw. Where several could not, it
+    /// is the first in `(S, G, T, H)` order, which is content order and
+    /// not a priority.
+    pub lane: usize,
+    /// What was asked on that lane, and what was held.
+    pub asked: u64,
+    pub held: u64,
+}
+
+impl Reserve {
+    pub fn of(lanes: [u64; 4]) -> Reserve {
+        Reserve { lanes }
+    }
+
+    pub fn lanes(&self) -> [u64; 4] {
+        self.lanes
+    }
+
+    /// Is this reserve spent on every lane? A mind with nothing left
+    /// anywhere yields; one with anything left on any lane does not.
+    pub fn is_spent(&self) -> bool {
+        self.lanes.iter().all(|&l| l == 0)
+    }
+
+    /// DRAW A VECTOR, ALL OR NOTHING. The whole deduction lands or none of
+    /// it does, so a refused action leaves the reserve exactly as it was
+    /// and a caller can attempt a different lane without having paid for
+    /// the one it could not afford.
+    ///
+    /// AN ACTION WITH A ZERO PROJECTION ON A DEPLETED LANE IS AFFORDABLE.
+    /// That is the whole content of the anisotropy: preemption happens only
+    /// where the action needs a lane that is gone, never because some other
+    /// lane ran out.
+    pub fn draw(&mut self, cost: [u64; 4]) -> Result<(), Depleted> {
+        for (i, (&want, &held)) in cost.iter().zip(self.lanes.iter()).enumerate() {
+            if want > held {
+                return Err(Depleted { lane: i, asked: want, held });
+            }
+        }
+        for (l, c) in self.lanes.iter_mut().zip(cost.iter()) {
+            *l -= c;
+        }
+        Ok(())
+    }
+
+    /// Return a draw to the reserve — the conjugate of `draw`, because an
+    /// escrow that can only be spent is the ratchet one level down (62).
+    /// Saturating: a return larger than what was drawn would mint
+    /// attention, and the reserve is not a place capacity is created.
+    pub fn restore(&mut self, cost: [u64; 4]) {
+        for (l, c) in self.lanes.iter_mut().zip(cost.iter()) {
+            *l = l.saturating_add(*c);
+        }
+    }
+}
