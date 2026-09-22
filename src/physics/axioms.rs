@@ -356,9 +356,17 @@ mod tests {
     /// counts and equal `‖u‖²` refused this, which modelled every
     /// transformation as rigid when the carriage carries a dilator `D(ρ)`.
     ///
-    /// The half turn stays OPEN here: an even moment cannot close it and
-    /// the cardinalities differ, so no cell test can. Saying so is the
-    /// honest answer; picking one of the two silently is not.
+    /// The half turn stays OPEN here, and the REASON CHANGED (68). It was
+    /// "the cardinalities differ, so no cell test can run" — a count
+    /// standing in for scale, and false as a general statement now that
+    /// `φ = z₃·conj(z₂)` reads across any dilation.
+    ///
+    /// It stays open because A DOMINO IS 2-FOLD SYMMETRIC, so `h₃ = 0`
+    /// exactly: the half turn maps it to itself and sends `h₃ ↦ −h₃`.
+    /// Both candidates act identically on it and there is no fact to
+    /// recover. The `ℤ₂` freedom is a property of the body, not a gap in
+    /// the reader — and an L-tetromino at the same two scales is now
+    /// DETERMINED, which this pair can never be.
     #[test]
     fn a11_a_dilated_body_keeps_its_frame() {
         let domino = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]);
@@ -377,7 +385,11 @@ mod tests {
             .expect("a dilation is a similarity and its rotation is defined");
         assert!(
             matches!(theta, blade::Frame::HalfOpen(_)),
-            "differing cardinality leaves the half turn open, got {theta:?}"
+            "a 2-fold symmetric body leaves the half turn open, got {theta:?}"
+        );
+        assert!(
+            blade::third_harmonic(&domino.blade).is_none(),
+            "and THAT is why: the odd harmonic vanishes on it"
         );
         assert!(
             theta.rotor().projective_eq(&crate::transducer::element::identity_versor()),
@@ -415,6 +427,82 @@ mod tests {
             blade::relative_rotor(&l.blade, &j.blade).err(),
             Some(blade::NoFrame::Mirrored),
             "a reflection is proved improper by the cells, not left oblique"
+        );
+    }
+
+    /// THE ODD HARMONIC CLOSES THE HALF TURN, AND VANISHES EXACTLY WHERE
+    /// THE FREEDOM IS REAL (68).
+    ///
+    /// `h₃` turns at `3φ` and is the first odd-order harmonic the tower
+    /// carries. It is zero precisely for a body with 2-fold symmetry,
+    /// because the half turn maps such a body to itself and sends
+    /// `h₃ ↦ −h₃` — so where it vanishes, the two candidate turns act
+    /// IDENTICALLY and there is no fact left to recover.
+    ///
+    /// That is what makes `HalfOpen` honest rather than a shrug: the `ℤ₂`
+    /// gauge freedom is a property of the body, not of the reader.
+    #[test]
+    fn the_odd_harmonic_vanishes_exactly_on_a_two_fold_symmetric_body() {
+        // A domino and an S-tetromino are 2-fold symmetric: h₃ = 0.
+        for cells in [
+            vec![(0, 0, 0), (1, 0, 0)],
+            vec![(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)],
+        ] {
+            let b = blade::shape_of(&cells);
+            assert!(
+                blade::third_harmonic(&b.blade).is_none(),
+                "a half turn maps it to itself, so h3 must vanish: {cells:?}"
+            );
+        }
+        // An L-tetromino has no 2-fold symmetry, so h₃ is there to read
+        // and the half turn is determined rather than left open.
+        let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+        assert!(blade::third_harmonic(&l.blade).is_some(), "chiral, no 2-fold");
+    }
+
+    /// THE HALF TURN IS NOW READ ACROSS A CHANGE OF SCALE (68).
+    ///
+    /// The cell test was gated on `support.len()` equality, so a pair of
+    /// different size was refused a reading and returned mod `π` —
+    /// a cell count standing in for scale, which is the `half-open` group.
+    /// `φ = z₃·conj(z₂)` is scale-free, so the turn between a body and its
+    /// dilate is DETERMINED, not left open.
+    #[test]
+    fn the_half_turn_is_determined_between_a_body_and_its_dilate() {
+        let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+        let l2 = blade::shape_of(&[
+            (0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0),
+            (2, 0, 0), (2, 1, 0), (3, 0, 0), (3, 1, 0),
+            (4, 0, 0), (4, 1, 0), (5, 0, 0), (5, 1, 0),
+            (4, 2, 0), (4, 3, 0), (5, 2, 0), (5, 3, 0),
+        ]);
+        assert_ne!(l.blade.support.len(), l2.blade.support.len(), "four against sixteen");
+        let frame = blade::relative_rotor(&l.blade, &l2.blade).expect("a turn");
+        assert!(
+            matches!(frame, blade::Frame::Turn(_)),
+            "determined across a dilation, not HalfOpen: {frame:?}"
+        );
+    }
+
+    /// THE QUARTIC BRANCH OFFERS ALL FOUR TURNS, NOT TWO (68).
+    ///
+    /// A moment of azimuthal order `m` turns at `m·φ`, so the same
+    /// `(wedge, dot)` means different things at `m = 2` and `m = 4`. At
+    /// `m = 4`, `wedge = 0` and `dot > 0` is `4φ ≡ 0`, which is EVERY
+    /// quarter turn — but the reader tried `[0, 2]` and refused the other
+    /// two, reporting `Incongruent` on exactly the bodies the quartic
+    /// exists to orient: those isotropic at second order.
+    ///
+    /// A square is `C₄`, so every quarter turn carries it onto itself and
+    /// all four must be reachable.
+    #[test]
+    fn a_quartic_oriented_body_reaches_every_quarter_turn() {
+        let sq = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0)]);
+        assert!(blade::deviatoric(&sq.blade).is_none(), "isotropic at order 2");
+        assert!(blade::quartic_harmonic(&sq.blade).is_some(), "the quartic orients it");
+        assert!(
+            blade::relative_rotor(&sq.blade, &sq.blade).is_ok(),
+            "a C4 body carries onto itself"
         );
     }
 

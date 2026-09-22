@@ -1129,6 +1129,97 @@ pub fn chirality(b: &Blade) -> Option<(BigRational, BigRational)> {
     Some((&s1 * &q[0] + &s2 * &q[1], &s2 * &q[0] - &s1 * &q[1]))
 }
 
+/// THE THIRD HARMONIC OF A BODY — THE ODD MOMENT THAT CLOSES THE HALF
+/// TURN (68, ruled 2026-09-22).
+///
+/// `h₃ = Σ(x + iy)³ / M₀`, turning at THREE times the body's angle. It is
+/// the first ODD-order harmonic the tower carries, and odd is the whole
+/// point: `u` and `h₄` are even-rank, satisfy `M(−x) = M(x)`, and
+/// therefore CANNOT tell `φ` from `φ + π` — which is why the half turn was
+/// left open and answered with a cell test instead.
+///
+/// EXACT ON LAMINAE, WITH NO CORRECTION TERM. A body is unit squares, and
+/// a square centred at `(a,b)` has `∫x³ = a³ + a/4` and
+/// `∫xy² = a(b² + 1/12)`, so
+///
+/// ```text
+///     ∫(x³ − 3xy²) = Σ(a³ + a/4 − 3ab² − a/4) = Σ(a³ − 3ab²)
+///     ∫(3x²y − y³) = Σ(3a²b + b/4 − b³ − b/4) = Σ(3a²b − b³)
+/// ```
+///
+/// The square's own odd moments cancel identically, so the point-mass
+/// formula IS the integral — not an approximation of it.
+///
+/// `None` where it vanishes, and that is a reading rather than a gap: a
+/// body with 2-fold symmetry has `h₃ = 0` exactly, because the half turn
+/// maps it to itself and sends `h₃ ↦ −h₃`. Such a body's two candidate
+/// turns act IDENTICALLY on it, so there is nothing to choose — and the
+/// `ℤ₂` gauge freedom `HalfOpen` carries is real, not a missing
+/// measurement.
+///
+/// Normalised by `M₀` like the rest of the tower (A.12), so it carries
+/// degree 3 and the ray comparison divides any dilation out.
+pub fn third_harmonic(blade: &Blade) -> Option<[BigRational; 2]> {
+    let (cx, cy, _) = blade.centroid()?;
+    let m0 = zeroth_moment(blade)?;
+    let three = BigRational::from_integer(BigInt::from(3));
+    let (mut re, mut im) = (
+        BigRational::from_integer(BigInt::from(0)),
+        BigRational::from_integer(BigInt::from(0)),
+    );
+    for &(r, c, _) in &blade.support {
+        let a = BigRational::from_integer(BigInt::from(r)) - &cx;
+        let b = BigRational::from_integer(BigInt::from(c)) - &cy;
+        let (a2, b2) = (&a * &a, &b * &b);
+        re += &a * &a2 - &three * &a * &b2;
+        im += &three * &a2 * &b - &b * &b2;
+    }
+    let (re, im) = (re / &m0, im / &m0);
+    match re.is_zero() && im.is_zero() {
+        true => None,
+        false => Some([re, im]),
+    }
+}
+
+/// `conj(h(a)) · h(b)` — the relative phase at one harmonic order, whose
+/// argument is `m·φ`. Scale-free as a ray: both sides carry the same
+/// degree, so a dilation contributes a positive real factor.
+fn relative_phase(ha: &[BigRational; 2], hb: &[BigRational; 2]) -> (BigRational, BigRational) {
+    (
+        &ha[0] * &hb[0] + &ha[1] * &hb[1],
+        &ha[0] * &hb[1] - &ha[1] * &hb[0],
+    )
+}
+
+/// `φ` ITSELF, FROM TWO CONSECUTIVE HARMONIC ORDERS (68).
+///
+/// The even tower fixes `m·φ` and never `φ`. But two orders that differ by
+/// one give it directly: `z_m` has argument `m·φ` and `z_{m+1}` has
+/// `(m+1)·φ`, so
+///
+/// ```text
+///     z₃ · conj(z₂)     has argument   3φ − 2φ = φ
+/// ```
+///
+/// exactly, over ℚ, with no root taken and no candidate applied to
+/// anything. This is what the support's cell test was standing in for.
+///
+/// `None` when either order vanishes on either body — the phase is not
+/// there to read, and the caller keeps the `ℤ₂` freedom rather than
+/// choosing a sign it cannot see (which is what manufactures a phantom
+/// holonomy around a cycle).
+fn relative_turn_ray(a: &Blade, b: &Blade) -> Option<(BigRational, BigRational)> {
+    let (ua, ub) = (deviatoric(a)?, deviatoric(b)?);
+    let (ta, tb) = (third_harmonic(a)?, third_harmonic(b)?);
+    let z2 = relative_phase(&ua, &ub);
+    let z3 = relative_phase(&ta, &tb);
+    // `z₃ · conj(z₂)`.
+    Some((
+        &z3.0 * &z2.0 + &z3.1 * &z2.1,
+        &z3.1 * &z2.0 - &z3.0 * &z2.1,
+    ))
+}
+
 /// Are two plane quantities the SAME RAY — equal up to a strictly
 /// positive rational? Exact, and the one comparison a scale-free reading
 /// of a normalised tower is allowed to make: `p ∼ q` iff `p ∧ q = 0` and
@@ -1383,7 +1474,7 @@ pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Frame, NoFrame> {
     if a.support.is_empty() || b.support.is_empty() {
         return Err(NoFrame::Bodiless);
     }
-    let (_order, oa, ob) = orientation_of(a, b)?;
+    let (order, oa, ob) = orientation_of(a, b)?;
     // SIGNS ONLY, WHICH IS WHAT MAKES IT SCALE-FREE. Under a dilation by
     // `s > 0` the moments scale as `s⁴`, so `u ↦ s⁴ · R(2φ) u` and every
     // sign survives. Taking `cos 2φ = (u_a·u_b)/(‖u_a‖‖u_b‖)` would need
@@ -1396,12 +1487,28 @@ pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Frame, NoFrame> {
     let dot = &oa[0] * &ob[0] + &oa[1] * &ob[1];
     let wedge = &oa[0] * &ob[1] - &oa[1] * &ob[0];
     let zero = BigRational::from_integer(BigInt::from(0));
-    let turn_pair = if wedge == zero && dot > zero {
-        // 2φ = 0 — the axes agree, so φ is 0 or π.
-        [0usize, 2usize]
-    } else if wedge == zero && dot < zero {
+    // THE CANDIDATES DEPEND ON THE ORDER THAT PRODUCED THE READING, and
+    // reading them off `2φ` unconditionally was a bug (68): a moment of
+    // azimuthal order `m` turns at `m·φ`, so the SAME `(wedge, dot)` means
+    // different things at `m = 2` and `m = 4`.
+    //
+    //   m = 2   wedge 0, dot > 0   2φ ≡ 0   φ ∈ {0, π}
+    //           wedge 0, dot < 0   2φ ≡ π   φ ∈ {π/2, 3π/2}
+    //   m = 4   wedge 0, dot > 0   4φ ≡ 0   φ ∈ {0, π/2, π, 3π/2}  ALL FOUR
+    //           wedge 0, dot < 0   4φ ≡ π   φ = π/4 + kπ/2, NO lattice turn
+    //
+    // The quartic branch tried `[0, 2]` and so refused two of the four
+    // turns available to it, which reported as `Incongruent` on exactly
+    // the bodies the quartic exists to orient — squares and crosses,
+    // isotropic at second order.
+    let turn_pair: &[usize] = if wedge == zero && dot > zero {
+        match order {
+            4 => &[0usize, 1, 2, 3],
+            _ => &[0usize, 2],
+        }
+    } else if wedge == zero && dot < zero && order == 2 {
         // 2φ = π — the axes are at a right angle, so φ is π/2 or 3π/2.
-        [1usize, 3usize]
+        &[1usize, 3]
     } else {
         // 2φ = ±π/2 is a 45° relation whose half-angle `cos(π/8)` is
         // irrational: refused rather than approximated (rule 4). Anything
@@ -1449,71 +1556,54 @@ pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Frame, NoFrame> {
             _ => NoFrame::Oblique,
         });
     };
-    let (Some(ca), Some(cb)) = (a.centroid(), b.centroid()) else {
+    // A BODY WITH NO CENTROID HAS NO MOMENTS, so the odd harmonic below
+    // cannot be read and the pair is bodiless rather than unturned.
+    if a.centroid().is_none() || b.centroid().is_none() {
         return Err(NoFrame::Bodiless);
-    };
-    // Centred cells, exact over ℚ: the centroid is rational, so a cell's
-    // offset is too, and a quarter turn keeps it rational.
-    let centred = |s: &[(i64, i64, i64)], c: &(BigRational, BigRational, BigRational)| {
-        let mut out: Vec<(BigRational, BigRational, i64)> = s
-            .iter()
-            .map(|&(r, col, k)| {
-                (
-                    BigRational::from_integer(BigInt::from(r)) - &c.0,
-                    BigRational::from_integer(BigInt::from(col)) - &c.1,
-                    k,
-                )
-            })
-            .collect();
-        out.sort();
-        out
-    };
-    // THE HALF TURN IS A PARITY OBSTRUCTION, not a gap in this reader.
-    // `u` and `h₄` are EVEN-rank moments: `(−x)² = x²` and `(−x)⁴ = x⁴`,
-    // so `u(−x) = u(x)` and no even moment can ever tell `φ` from `φ + π`.
-    // Only an odd invariant could — a third harmonic, or a directed
-    // boundary contour — and neither is carried here.
-    //
-    // Where the supports have the SAME cardinality the cells themselves
-    // settle it: the candidate is applied and compared. Where they differ
-    // the body has transmuted and no cell test exists, so the frame is
-    // returned mod `π` and SAID to be, rather than one of the two being
-    // chosen silently.
-    let turns = quarter_turns();
-    if a.support.len() == b.support.len() {
-        let (pa, pb) = (centred(&a.support, &ca), centred(&b.support, &cb));
-        for ix in turn_pair {
-            let (cos, sin, rotor) = &turns[ix];
-            let (co, si) = (
-                BigRational::from_integer(BigInt::from(*cos)),
-                BigRational::from_integer(BigInt::from(*sin)),
-            );
-            let mut turned: Vec<(BigRational, BigRational, i64)> = pa
-                .iter()
-                .map(|(r, c, k)| (r * &co - c * &si, r * &si + c * &co, *k))
-                .collect();
-            turned.sort();
-            if turned == pb {
-                return Ok(Frame::Turn(rotor.clone()));
-            }
-        }
-        // Neither candidate turn carries it: the two are not related by a
-        // proper rotation. WHICH of the two facts that is, the body's own
-        // odd invariant now says — the same question asked on the oblique
-        // branch above, asked here too, because a ruling applies to every
-        // site of its shape and not only to the one that reported it.
-        return Err(match handedness(a, b) {
-            Handedness::Improper => NoFrame::Mirrored,
-            // The cells refused a turn the invariant permits, so the two
-            // differ above the fourth harmonic. `Unread` lands here for
-            // the same reason: the cell test already spoke, and it said
-            // no turn carries these bodies.
-            Handedness::Unrelated | Handedness::Proper | Handedness::Unread => {
-                NoFrame::Incongruent
-            }
-        });
     }
-    Ok(Frame::HalfOpen(turns[turn_pair[0]].2.clone()))
+    // THE HALF TURN IS A PARITY OBSTRUCTION, AND AN ODD HARMONIC CLOSES
+    // IT (68, ruled 2026-09-22).
+    //
+    // `u` and `h₄` are EVEN-rank: `u(−x) = u(x)`, so no even moment can
+    // ever tell `φ` from `φ + π`. This stood in for the missing odd
+    // invariant by CARRYING EACH CANDIDATE THROUGH THE CELLS and comparing
+    // coordinate lists — and gated that on `support.len()` equality, so a
+    // pair of different size was refused a reading altogether and returned
+    // mod `π`. Both halves were Euclidean: a coordinate comparison where a
+    // geometric one belongs, and a cell count standing in for scale.
+    //
+    // `h₃` is the odd invariant the comment above used to say was not
+    // carried. Two consecutive orders give `φ` outright — `z₃·conj(z₂)`
+    // has argument `3φ − 2φ = φ` — exactly, over ℚ, at any relative scale,
+    // with nothing applied to anything.
+    //
+    // WHEN IT VANISHES, THE FREEDOM IS REAL. `h₃ = 0` exactly when the
+    // body has 2-fold symmetry, because the half turn maps it to itself
+    // and sends `h₃ ↦ −h₃`. Both candidates then act IDENTICALLY on the
+    // body, so there is no fact to recover and `HalfOpen` is the honest
+    // reading — the `ℤ₂` gauge freedom the coboundary arbitrates, not a
+    // measurement this reader failed to take.
+    let turns = quarter_turns();
+    let Some(phi) = relative_turn_ray(a, b) else {
+        return Ok(Frame::HalfOpen(turns[turn_pair[0]].2.clone()));
+    };
+    let q = |n: i64| BigRational::from_integer(BigInt::from(n));
+    for &ix in turn_pair {
+        let (cos, sin, rotor) = &turns[ix];
+        if same_ray(&phi, &(q(*cos), q(*sin))) {
+            return Ok(Frame::Turn(rotor.clone()));
+        }
+    }
+    // `φ` is determined and is not one of the candidates: the bodies are
+    // not related by a turn of the base. WHICH fact that is, the body's
+    // own invariants say — the same question asked on the oblique branch
+    // above, asked here too, because a ruling applies to every site of its
+    // shape and not only to the one that reported it.
+    Err(match (handedness(a, b), dilation_certified(a, b)) {
+        (Handedness::Improper, _) => NoFrame::Mirrored,
+        (Handedness::Unrelated, _) | (_, false) => NoFrame::Incongruent,
+        _ => NoFrame::Oblique,
+    })
 }
 
 /// Lift a support (sites on the three coordinates of the base, no hue) to
