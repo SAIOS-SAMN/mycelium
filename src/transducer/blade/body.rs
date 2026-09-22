@@ -664,6 +664,122 @@ pub fn relative_double_angle(
     Some((dot / &da, wedge / &da))
 }
 
+/// THE FOUR PROPER ROTATIONS OF THE SQUARE BASE, as PROJECTIVE rotors in
+/// `Spin(2)(ℚ)` — no root taken and no field extension (56.4).
+///
+/// ```text
+///     φ      R = cos(φ/2) + sin(φ/2) e₁₂     projective        ℓ
+///     0      1                               1                 1
+///     π/2    (1 + e₁₂)/√2                    1 + e₁₂           4
+///     π      e₁₂                             e₁₂               2
+///     3π/2   (−1 + e₁₂)/√2                   −1 + e₁₂          4
+/// ```
+///
+/// A versor is projective, so `Ω` and `λΩ` are one transport and the
+/// `1/√2` never has to be written: `(1 + e₁₂)(1 − e₁₂) = 1 − e₁₂² = 2 ∈ ℚ`.
+///
+/// REFLECTIONS ARE NOT HERE. `D₄` has eight elements; the four improper
+/// ones lie in `O(2) \ SO(2)` and are not rotors. A reflection between two
+/// charts is a different fact from a rotation and is not minted as one.
+fn quarter_turns() -> [(i64, i64, Mv); 4] {
+    let q = |n: i64| BigRational::from_integer(BigInt::from(n));
+    let e12 = cga::E1 | cga::E2;
+    let rotor = |s: i64, b: i64| Mv::scalar(q(s)).add(&Mv::blade(e12, q(b)));
+    // `(cos φ, sin φ)` beside the rotor that enacts it, so the test below
+    // turns the support by the SAME angle the rotor carries.
+    [
+        (1, 0, rotor(1, 0)),
+        (0, 1, rotor(1, 1)),
+        (-1, 0, rotor(0, 1)),
+        (0, -1, rotor(-1, 1)),
+    ]
+}
+
+/// THE RELATIVE FRAME ROTOR BETWEEN TWO BODIES — `θ_ba`, exact in `ℚ`
+/// (56.5, ruled 2026-09-22).
+///
+/// The deviatoric and the quartic say at what DOUBLE or QUADRUPLE angle
+/// two bodies differ, but neither fixes `φ` itself: a rank-2 symmetric
+/// tensor is invariant under a half turn, so `u` gives `φ` only mod `π`,
+/// and `1` against `e₁₂` are not projectively equal. The residue is a
+/// question about the SUPPORT, so the support answers it: each of the four
+/// proper turns is applied to `a`'s cells about their centroid and
+/// compared with `b`'s. This is a finite group's four elements checked
+/// exactly, as `versor_coset_ordered` checks its coset — not a search.
+///
+/// The harmonics are still what REFUSES: bodies whose anisotropies differ
+/// are not congruent, and no turn can carry one onto the other, so the
+/// cheap exact test runs first and the support comparison never happens
+/// for them.
+///
+/// `None` where the bodies are not related by a proper rotation about
+/// their centroids — a reflection, a genuine difference of shape, or a
+/// `45°` relation whose half-angle `cos(π/8)` is irrational and refused
+/// by rule 4 rather than approximated.
+pub fn relative_rotor(a: &Blade, b: &Blade) -> Option<Mv> {
+    // Same number of cells, or no rotation carries one onto the other.
+    if a.support.len() != b.support.len() || a.support.is_empty() {
+        return None;
+    }
+    // THE HARMONIC REFUSAL FIRST (A.11). Congruent bodies share their
+    // anisotropy exactly; differing ones are not a turn apart and are
+    // refused without touching a cell.
+    match (deviatoric(a), deviatoric(b)) {
+        (Some(ua), Some(ub)) => {
+            let n = |u: &[BigRational; 2]| &u[0] * &u[0] + &u[1] * &u[1];
+            if n(&ua) != n(&ub) {
+                return None;
+            }
+        }
+        (None, None) => {
+            // Both isotropic at second order: the fourth harmonic decides,
+            // and where that vanishes too the bodies carry no orientation
+            // at either order and only the identity can be claimed.
+            if let (Some(ha), Some(hb)) = (quartic_harmonic(a), quartic_harmonic(b)) {
+                let n = |h: &[BigRational; 2]| &h[0] * &h[0] + &h[1] * &h[1];
+                if n(&ha) != n(&hb) {
+                    return None;
+                }
+            }
+        }
+        // One anisotropic and one not: not congruent.
+        _ => return None,
+    }
+    let (ca, cb) = (a.centroid()?, b.centroid()?);
+    // Centred cells, exact over ℚ: the centroid is rational, so a cell's
+    // offset is too, and a quarter turn keeps it rational.
+    let centred = |s: &[(i64, i64, i64)], c: &(BigRational, BigRational, BigRational)| {
+        let mut out: Vec<(BigRational, BigRational, i64)> = s
+            .iter()
+            .map(|&(r, col, k)| {
+                (
+                    BigRational::from_integer(BigInt::from(r)) - &c.0,
+                    BigRational::from_integer(BigInt::from(col)) - &c.1,
+                    k,
+                )
+            })
+            .collect();
+        out.sort();
+        out
+    };
+    let (pa, pb) = (centred(&a.support, &ca), centred(&b.support, &cb));
+    for (cos, sin, rotor) in quarter_turns() {
+        let (co, si) = (
+            BigRational::from_integer(BigInt::from(cos)),
+            BigRational::from_integer(BigInt::from(sin)),
+        );
+        let mut turned: Vec<(BigRational, BigRational, i64)> = pa
+            .iter()
+            .map(|(r, c, k)| (r * &co - c * &si, r * &si + c * &co, *k))
+            .collect();
+        turned.sort();
+        if turned == pb {
+            return Some(rotor);
+        }
+    }
+    None
+}
+
 /// Lift a support (sites on the three coordinates of the base, no hue) to
 /// a shape.
 pub fn shape_of(support: &[(i64, i64, i64)]) -> Shape {

@@ -205,6 +205,58 @@ mod tests {
         );
     }
 
+    /// A.11's FRAME, MINTED: a body and its quarter turn give the rotor
+    /// `1 + e₁₂`, whose projective order is 4 — the reading `ℓ = 1` on
+    /// every word exists to be moved off.
+    #[test]
+    fn a11_a_quarter_turn_mints_an_order_four_rotor() {
+        // An L-tromino and the same L turned a quarter: chiral enough
+        // that only one of the four turns can carry it.
+        let upright = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0)]);
+        let turned = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (1, 0, 0)]);
+        let theta = blade::relative_rotor(&upright.blade, &turned.blade)
+            .expect("one proper turn carries an L onto its quarter turn");
+        assert!(
+            !theta.projective_eq(&crate::transducer::element::identity_versor()),
+            "a turned body must not mint the identity: got {theta:?}"
+        );
+        let order = crate::transducer::cga::finite_order(&theta).map(|l| l.get());
+        assert!(
+            matches!(order, Some(2) | Some(4)),
+            "a proper turn of the square base closes at 2 or 4, got {order:?}"
+        );
+    }
+
+    /// AND A BODY AGAINST ITSELF IS THE IDENTITY — the rotor is not
+    /// invented where there is no turn.
+    #[test]
+    fn a11_a_body_against_itself_is_the_identity_turn() {
+        let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0)]);
+        let theta = blade::relative_rotor(&l.blade, &l.blade).expect("a body carries onto itself");
+        assert!(
+            theta.projective_eq(&crate::transducer::element::identity_versor()),
+            "no turn is no rotor, got {theta:?}"
+        );
+    }
+
+    /// A REFLECTION IS NOT A ROTATION — on a body chiral enough to tell.
+    ///
+    /// THE THREE-CELL L WILL NOT DO, and this test first used it: the
+    /// L-tromino is ACHIRAL, its mirror image IS one of its own four
+    /// turns, and `relative_rotor` correctly found one. The smallest
+    /// chiral polyomino takes four cells, so the L- and J-tetrominoes are
+    /// the honest fixture — congruent as multisets, mirror images, and
+    /// related by NO proper turn.
+    #[test]
+    fn a11_a_mirrored_body_mints_no_rotor() {
+        let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+        let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
+        assert!(
+            blade::relative_rotor(&l.blade, &j.blade).is_none(),
+            "a reflection lies in O(2)\\SO(2) and is not a rotor"
+        );
+    }
+
     /// A NON-CONGRUENT PAIR HAS NO ANGLE. Two bodies whose anisotropies
     /// differ are not related by a rotation, and answering one anyway
     /// would be inventing a reading (rule 11).
