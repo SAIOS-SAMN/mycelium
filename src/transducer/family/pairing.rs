@@ -156,11 +156,16 @@ impl FieldTally {
     /// WHAT THE VALVE PASSED, AGAINST WHAT REACHED IT. A field that
     /// refuses everything and a field nothing reached both read `condensed
     /// 0`, and the pair tells them apart.
-    pub fn reached_contact(&self) -> u64 {
+    ///
+    /// The three arms are exclusive by construction, so they never sum past
+    /// `offered`. Where they do, the instrument contradicts itself, and that
+    /// reads `None` — a refusal — never a zero floored in its place
+    /// (rule 11).
+    pub fn reached_contact(&self) -> Option<u64> {
         self.offered
-            .saturating_sub(self.unlifted)
-            .saturating_sub(self.apart)
-            .saturating_sub(self.contained)
+            .checked_sub(self.unlifted)?
+            .checked_sub(self.apart)?
+            .checked_sub(self.contained)
     }
 }
 
@@ -274,7 +279,7 @@ pub(crate) fn star_and_site_faces(
     let bodies: Vec<(Vec<u8>, blade::Blade)> = supports
         .scoped()
         .filter(|(mk, _)| Some(mk.as_slice()) != frame)
-        .map(|(mk, supp)| (mk, blade::shape_of(&supp).blade))
+        .map(|(mk, supp)| (mk, blade::shape_of(supp).blade))
         .collect();
     for i in 0..bodies.len() {
         for j in (i + 1)..bodies.len() {

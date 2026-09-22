@@ -154,11 +154,12 @@ impl Metabolism {
     /// THE NET ORDER FLUX, per lane and never summed: what was drawn
     /// against what came back. A lane that draws and restores equally is
     /// CYCLING; one that only draws is spending down.
-    pub fn flux(&self) -> [i64; 4] {
-        std::array::from_fn(|i| {
-            i64::try_from(self.drawn[i]).unwrap_or(i64::MAX)
-                - i64::try_from(self.restored[i]).unwrap_or(i64::MAX)
-        })
+    ///
+    /// Exact over the whole of both counters: the difference of two `u64`
+    /// is taken in `i128`, which holds every such difference, so no lane
+    /// is ever read at an invented bound (rule 11).
+    pub fn flux(&self) -> [i128; 4] {
+        std::array::from_fn(|i| i128::from(self.drawn[i]) - i128::from(self.restored[i]))
     }
 
     /// Total irreversible terminations across both dimensions.

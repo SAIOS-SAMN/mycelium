@@ -329,12 +329,12 @@ impl Form {
     /// caller reports what was filed rather than what it asked for. Two
     /// member paths of one loop may close at two periods, and a single
     /// number would have to pick one of them by position (rule 15).
-    pub(crate) fn file_loop(&mut self, idx: usize) -> Vec<u32> {
+    pub(crate) fn file_loop(&mut self, idx: usize) -> Vec<u64> {
         let Some(lp) = self.loops.get(idx) else {
             return Vec::new();
         };
         let chord = lp.chord;
-        let mut filed: crate::network::nerve::Keyed<u32> = crate::network::nerve::Keyed::new();
+        let mut filed: crate::network::nerve::Keyed<u64> = crate::network::nerve::Keyed::new();
         for LoopClass { class, periods, sigma } in self.loop_classes(lp) {
             self.torsion.put(&class, FiledLoop { sigma, periods, chord });
             // THE YIELD IS ACROSS BOTH PLANES: `(ℓ₁ − 1) + (ℓ₂ − 1)`, not
@@ -348,9 +348,14 @@ impl Form {
             // that says a free part was filed beside its demand; a thing
             // measured and then not written down is 53.6 item 2's own
             // refusal (rule 11).
-            let u = periods
-                .yield_units()
-                .map_or(0, |units| u32::try_from(units).unwrap_or(u32::MAX));
+            #[expect(
+                clippy::manual_unwrap_or_default,
+                reason = "A19 — a spectrum that does not close is spelled 0 on the ledger; the zero is that spelling, not a default standing in for a reading"
+            )]
+            let u = match periods.yield_units() {
+                Some(units) => units,
+                None => 0,
+            };
             filed.insert(u.to_be_bytes(), u);
         }
         filed.scoped().map(|(_, ell)| *ell).collect()

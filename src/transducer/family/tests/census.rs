@@ -4,6 +4,17 @@
 
 use super::retract::{CORPUS, TASKS};
 
+/// A part of a whole as an integer per mille, as Z10 prints it: exact
+/// integer arithmetic, no float in a claim (law 1, law 4). A whole of
+/// nothing has no ratio, and the reading says so rather than print zero
+/// (rule 11).
+fn per_mille(part: usize, whole: usize) -> String {
+    match (part * 1000).checked_div(whole) {
+        Some(m) => format!("{m}‰"),
+        None => "unread: the whole is empty".to_string(),
+    }
+}
+
 /// GRADE 0 ON THE CORPUS — how many vertices are not one 0-cell, and does
 /// that account for what `face_rederives` has been refusing (L37).
 ///
@@ -614,7 +625,10 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
             let mut root_ids: Vec<usize> = roots.clone();
             root_ids.sort_unstable();
             root_ids.dedup();
-            let ix = |r: usize| root_ids.binary_search(&r).unwrap_or(0);
+            let ix = |r: usize| match root_ids.binary_search(&r) {
+                Ok(i) => i,
+                Err(_) => panic!("every root is one of the root ids it was read from"),
+            };
             let cg: Vec<(usize, usize)> =
                 pairs.iter().map(|&(a, b)| (ix(a), ix(b))).collect();
             let comps = components(root_ids.len(), &cg);
@@ -624,9 +638,12 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
                 c.dedup();
                 c.len()
             };
-            // E − V + C, floored at zero: a negative reading is a broken
-            // counter and not a Betti number (rule 11).
-            let b1 = (pairs.len() + n_comp).saturating_sub(root_ids.len());
+            // E − V + C is never negative on a graph: a negative reading is
+            // a broken counter and not a Betti number, so it refuses rather
+            // than floor at zero (rule 11).
+            let b1 = (pairs.len() + n_comp)
+                .checked_sub(root_ids.len())
+                .expect("b₁ = E − V + C is never negative");
             contact_b1 += b1;
             if b1 > 0 {
                 scenes_with_cycles += 1;
@@ -698,19 +715,19 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
     );
     eprintln!(
         "  a14 topology: V {bodies_total} E {contact_pairs} C {contact_components} \
-         | ISOLATED bodies {isolated} ({:.1}% touch nothing at all) \
+         | ISOLATED bodies {isolated} ({} touch nothing at all) \
          | scenes with E>=V {scenes_e_ge_v} of {scenes}",
-        100.0 * isolated as f64 / bodies_total.max(1) as f64
+        per_mille(isolated, bodies_total)
     );
     eprintln!("  a14 b₁ per cyclic scene: {b1_hist:?}");
     eprintln!(
         "  a14 one-hue fragmentation: {blind_regions} hue-blind regions → \
-         {bodies_total} bodies ({:.2} bodies per visual region) \
-         | single-cell bodies {singletons} ({:.1}%), of which {isolated_singletons} isolated \
-         | contact pairs touching a single-cell body {pairs_with_singleton} of {contact_pairs} ({:.1}%)",
-        bodies_total as f64 / blind_regions.max(1) as f64,
-        100.0 * singletons as f64 / bodies_total.max(1) as f64,
-        100.0 * pairs_with_singleton as f64 / contact_pairs.max(1) as f64
+         {bodies_total} bodies ({} bodies per visual region) \
+         | single-cell bodies {singletons} ({}), of which {isolated_singletons} isolated \
+         | contact pairs touching a single-cell body {pairs_with_singleton} of {contact_pairs} ({})",
+        per_mille(bodies_total, blind_regions),
+        per_mille(singletons, bodies_total),
+        per_mille(pairs_with_singleton, contact_pairs)
     );
     assert!(scenes > 0, "no scene read: nothing to count");
 }

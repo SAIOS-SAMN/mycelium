@@ -22,7 +22,7 @@ pub enum Snap {
     /// Several discharges with no bundle to measure μ⃗, so the obstruction
     /// has no lane reading in it — a third state, not an empty one.
     Unmeasured { chord: usize, held: Vec<PivotCertificate> },
-    TorsionFiled { chord: usize, ell: u32 },
+    TorsionFiled { chord: usize, ell: u64 },
     TorsionOpen { chord: usize },
     /// A held loop of infinite order the basis did not discharge: its
     /// canonical holonomy rotor, carried out as the witness of the standing

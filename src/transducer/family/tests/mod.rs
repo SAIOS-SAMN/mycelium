@@ -12,6 +12,7 @@ mod derivation;
 mod extraction;
 mod lanes;
 mod orbit;
+mod pairing;
 mod scene;
 mod perception;
 mod retract;

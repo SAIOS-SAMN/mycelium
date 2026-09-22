@@ -608,7 +608,7 @@ fn a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not() {
     // is asked first — the labour is only priced on terrain that stands.
     let mut wrong = f.clone();
     wrong.torsion.put(
-        &class,
+        class,
         FiledLoop { sigma: Vec::new(), periods: ToralPeriod::from_pair(4, 4), chord: lp.chord },
     );
     assert_eq!(

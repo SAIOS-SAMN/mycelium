@@ -33,19 +33,20 @@ thread_local! {
 /// no transport between them — that is refused where it is read, never
 /// synthesised here (rule 11).
 ///
-/// A tree edge whose transport cannot be read leaves its subtree at the
-/// identity rather than halting the descent: the cycle that later asks for
-/// that node's `θ` is then based at its own node, which is the reading
-/// before Axiom A and is honest about what was not measured.
+/// A TREE EDGE WHOSE TRANSPORT REFUSES LEAVES ITS SUBTREE UNGAUGED (57.4).
+/// The refusal is counted on the `unread` gate, every node beyond it takes
+/// no `θ`, and a cycle with an end there reads unread rather than flat: an
+/// identity written for a transport that was never read would be a
+/// refusal recorded as a value (rule 11).
 fn tree_transports(
     faces: &[FormFace],
     vertices: &[Vertex],
     adj: &[Vec<(usize, usize)>],
     node_vertex: &[u16],
     node_chart: &[Vec<u8>],
-) -> Vec<element::Versor> {
+) -> Vec<Option<element::Versor>> {
     let n = node_vertex.len();
-    let mut theta: Vec<element::Versor> = vec![element::identity_versor(); n];
+    let mut theta: Vec<Option<element::Versor>> = vec![Some(element::identity_versor()); n];
     let mut seen = vec![false; n];
     // index: the forest's own nodes, each visited once (rule 1).
     for root in 0..n {
@@ -61,7 +62,13 @@ fn tree_transports(
                 }
                 seen[c] = true;
                 let step = tree_step(faces, vertices, node_vertex, node_chart, p, c, fi);
-                theta[c] = theta[p].geo(&step);
+                if step.is_none() {
+                    gate(2);
+                }
+                theta[c] = match (&theta[p], step) {
+                    (Some(held), Some(step)) => Some(held.geo(&step)),
+                    _ => None,
+                };
                 frontier.push(c);
             }
         }
@@ -76,6 +83,11 @@ fn tree_transports(
 /// and inverted where the walk runs against the face's orientation.
 /// Identity where the face carries no transport at that pair, which is a
 /// face relating no member and is a real sector of the complex.
+///
+/// `None` where the inverse does not exist: `versor_inverse` fails only at
+/// `MM̃ = 0`, a carriage on the light cone (57.4), and that transport was
+/// never read. A face the tree names and the form does not hold refuses
+/// the same way.
 fn tree_step(
     faces: &[FormFace],
     vertices: &[Vertex],
@@ -84,9 +96,8 @@ fn tree_step(
     p: usize,
     c: usize,
     fi: usize,
-) -> element::Versor {
-    let id = element::identity_versor();
-    let Some(f) = faces.get(fi) else { return id };
+) -> Option<element::Versor> {
+    let f = faces.get(fi)?;
     let _ = vertices;
     let (vp, cp) = (node_vertex[p], &node_chart[p]);
     let (vc, cc) = (node_vertex[c], &node_chart[c]);
@@ -95,10 +106,10 @@ fn tree_step(
         true => pair_key_bytes(cp, cc),
         false => pair_key_bytes(cc, cp),
     };
-    let Some(place) = f.at.get(&pk) else { return id };
+    let Some(place) = f.at.get(&pk) else { return Some(element::identity_versor()) };
     match forward {
-        true => place.carriage.clone(),
-        false => place.carriage.versor_inverse().unwrap_or(id),
+        true => Some(place.carriage.clone()),
+        false => place.carriage.versor_inverse(),
     }
 }
 
@@ -355,6 +366,14 @@ impl Form {
                 path.into_iter().map(|ix| node_vertex[ix] as usize).collect();
             path.push(node_vertex[a] as usize);
             walked.push(fi);
+            // A CYCLE WITH AN END THE TREE COULD NOT GAUGE IS UNREAD. Its
+            // basepoint transport, or the one across its tree path, crossed
+            // a carriage on the light cone (57.4), and a loop based through
+            // an unread transport is not a flat one (rule 11).
+            let (Some(theta_a), Some(_)) = (theta[a].clone(), theta[b].as_ref()) else {
+                gate(2);
+                continue;
+            };
             let holonomy = form_named_holonomy(faces, &path, &walked);
             // THE CARRIAGES ARE THE TRANSPORT COMPOSITE'S, read from the one
             // walk that computes them. `path_carriages` stood here and walked
@@ -376,10 +395,7 @@ impl Form {
                 // AXIOM A — the cycle closes at `a` through the tree, so
                 // `a` is where it is based and `θ_a` is what carries it to
                 // the form's basepoint.
-                based_at: theta
-                    .get(a)
-                    .cloned()
-                    .unwrap_or_else(element::identity_versor),
+                based_at: theta_a,
             };
             // A CHORD THAT ENCLOSES NOTHING IS NOT A LOOP (ruled
             // 2026-09-18). `loop_is_trivial` states the predicate once;

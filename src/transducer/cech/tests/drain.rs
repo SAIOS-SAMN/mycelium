@@ -10,6 +10,15 @@ use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::*;
 use crate::transducer::element::identity_versor as ident;
 
+/// The cell a fixture built at a link, read by a slice pattern: the
+/// fixture holds one, so there is no position to choose among.
+fn cell_of(cells: Vec<Vec<u8>>, what: &str) -> Vec<u8> {
+    match cells.as_slice() {
+        [k, ..] => k.clone(),
+        [] => panic!("{what}"),
+    }
+}
+
 /// Two sectioned vertices and the edge between them.
 fn pair(g: Rotor) -> (Complex, Vec<u8>) {
     let mut c = Complex::new();
@@ -17,7 +26,7 @@ fn pair(g: Rotor) -> (Complex, Vec<u8>) {
         c.set_section(&n, Section::at(n.clone(), Rotor::identity()), vol());
     }
     c.set_edge(v(1), v(2), g, ident(), vol());
-    let key = c.link(v(1).as_bytes(), 1).first().cloned().expect("the edge stands");
+    let key = cell_of(c.link(v(1).as_bytes(), 1), "the edge stands");
     (c, key)
 }
 
@@ -81,8 +90,8 @@ fn an_edge_beneath_a_reading_is_pinned_until_the_coface_descends() {
         }
     }
     c.coboundary_on_link(vs[0].as_bytes(), |_| vol());
-    let face = c.link(vs[0].as_bytes(), 2).first().cloned().expect("a 2-cell stands");
-    let edge = c.link(vs[0].as_bytes(), 1).first().cloned().expect("an edge stands");
+    let face = cell_of(c.link(vs[0].as_bytes(), 2), "a 2-cell stands");
+    let edge = cell_of(c.link(vs[0].as_bytes(), 1), "an edge stands");
 
     // THE COFACE IS UNREAD, so nothing has been recorded that draining
     // could invalidate and the edge is free.
@@ -106,8 +115,8 @@ fn an_edge_beneath_a_reading_is_pinned_until_the_coface_descends() {
         }
     }
     c.coboundary_on_link(vs[0].as_bytes(), |_| vol());
-    let face = c.link(vs[0].as_bytes(), 2).first().cloned().expect("a 2-cell stands");
-    let edge = c.link(vs[0].as_bytes(), 1).first().cloned().expect("an edge stands");
+    let face = cell_of(c.link(vs[0].as_bytes(), 2), "a 2-cell stands");
+    let edge = cell_of(c.link(vs[0].as_bytes(), 1), "an edge stands");
     let attached = c.fill(&face);
     assert!(attached.attached().is_some(), "the 2-cell is read: {attached:?}");
 
@@ -142,10 +151,10 @@ fn a_cell_ascends_descends_and_then_drains_leaving_no_ghost() {
     }
     // ASCEND — the boundary closes, so a membrane seals it.
     c.coboundary_on_link(vs[0].as_bytes(), |_| vol());
-    let face = c.link(vs[0].as_bytes(), 2).first().cloned().expect("a 2-cell stands");
+    let face = cell_of(c.link(vs[0].as_bytes(), 2), "a 2-cell stands");
     assert!(c.fill(&face).attached().is_some(), "the 2-cell is read");
 
-    let edge = c.link(vs[0].as_bytes(), 1).first().cloned().expect("an edge stands");
+    let edge = cell_of(c.link(vs[0].as_bytes(), 1), "an edge stands");
     assert!(
         matches!(c.drain(&edge), Drained::Pinned),
         "and its boundary is pinned beneath the reading"
@@ -213,7 +222,7 @@ fn an_unread_membrane_descends_without_a_class() {
         }
     }
     c.coboundary_on_link(vs[0].as_bytes(), |_| vol());
-    let face = c.link(vs[0].as_bytes(), 2).first().cloned().expect("a 2-cell stands");
+    let face = cell_of(c.link(vs[0].as_bytes(), 2), "a 2-cell stands");
 
     let down = c.descend(&face);
     assert!(matches!(down, Descended::Unsealed), "it recorded nothing: {down:?}");
@@ -249,7 +258,7 @@ fn drain_answers_only_at_dimension_one() {
         }
     }
     c.coboundary_on_link(vs[0].as_bytes(), |_| vol());
-    let face = c.link(vs[0].as_bytes(), 2).first().cloned().expect("a 2-cell stands");
+    let face = cell_of(c.link(vs[0].as_bytes(), 2), "a 2-cell stands");
 
     assert!(
         matches!(c.drain(&face), Drained::Absent),

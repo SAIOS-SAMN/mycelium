@@ -29,6 +29,26 @@ fn d2_the_ledger_separates_a_lane_that_cycles_from_one_that_spends() {
     assert_eq!(m.depleted, 1, "the refusal is a reading, not a silence");
 }
 
+/// D2 — THE FLUX IS EXACT AT THE BOUND OF A LANE.
+///
+/// A lane that drew everything its counter holds and restored nothing, and
+/// one that did the reverse, read their whole difference — never a value
+/// clipped to a narrower integer (rule 11).
+#[test]
+fn the_flux_is_exact_at_the_bound_of_a_lane() {
+    let m = crate::physics::metabolism::Metabolism {
+        drawn: [u64::MAX, 0, u64::MAX, 7],
+        restored: [0, u64::MAX, u64::MAX, 7],
+        ..Default::default()
+    };
+    let whole = i128::from(u64::MAX);
+    assert_eq!(
+        m.flux(),
+        [whole, -whole, 0, 0],
+        "spent to the bound, returned from it, cycling at it, and cycling"
+    );
+}
+
 /// D2 — ENTROPY IS PER DIMENSION, AND `Σℓ` IS THE ORBIT STRUCTURE.
 ///
 /// The two cauterizations terminate different skeleta, so a ledger

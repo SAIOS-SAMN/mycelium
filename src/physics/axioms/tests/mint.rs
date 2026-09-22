@@ -59,11 +59,9 @@ fn d3_the_mint_produces_a_witness_the_court_can_open() {
 fn d3_a_reflection_and_an_unlike_pair_mint_no_arc() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
-    for (other, why) in [(&j, "a reflection")] {
-        assert_ne!(
-            blade::relative_rotor(&l.blade, &other.blade).err(),
-            Some(blade::NoFrame::Oblique),
-            "{why} never reaches the demand path"
-        );
-    }
+    assert_ne!(
+        blade::relative_rotor(&l.blade, &j.blade).err(),
+        Some(blade::NoFrame::Oblique),
+        "a reflection never reaches the demand path"
+    );
 }

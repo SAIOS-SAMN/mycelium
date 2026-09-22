@@ -45,7 +45,7 @@ fn the_strain_reads_contact_exactly_and_scale_free() {
     let s_near = Strain::between(&a, &near).expect("two centroids");
     for mu_c in [q(1), q(4), q(16)] {
         assert!(
-            !(s_far.within(&mu_c) && !s_near.within(&mu_c)),
+            !s_far.within(&mu_c) || s_near.within(&mu_c),
             "no horizon admits the far pair while refusing the near one"
         );
     }

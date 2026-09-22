@@ -268,9 +268,11 @@ pub(crate) fn paths_carried(
         // nothing rather than an identity, because unread is not flat
         // (rule 11) — and `acc.edge` below goes `None` for it, so the
         // whole boundary is already refused.
+        // `step_charge` reads exactly where the carriage is a versor, so it
+        // is the one test of whether the step is kept.
         if let Some(t) = step.as_ref() {
-            if crate::transducer::cga::is_versor(&t.carriage).is_some() {
-                note_step_charge(&step_charge(&t.carriage).unwrap_or_default());
+            if let Some(mu) = step_charge(&t.carriage) {
+                note_step_charge(&mu);
                 acc.steps.push(t.carriage.clone());
             }
         }

@@ -276,11 +276,18 @@ pub(super) fn note_synonym(based: &element::Versor) {
         if trivial {
             b.3 += 1;
         }
-        let seen = b.0.get(&bytes).copied().unwrap_or(0);
-        b.0.insert(&bytes, seen + 1);
+        // A first sighting files one; a held operator counts on.
+        let seen = match b.0.get(&bytes) {
+            Some(n) => n + 1,
+            None => 1,
+        };
+        b.0.insert(&bytes, seen);
         if let Some(c) = class.clone() {
-            let seen = b.1.get(&c).copied().unwrap_or(0);
-            b.1.insert(&c, seen + 1);
+            let seen = match b.1.get(&c) {
+                Some(n) => n + 1,
+                None => 1,
+            };
+            b.1.insert(&c, seen);
         }
     });
     // AND THE OPERATOR FILED UNDER ITS CLASS, so the antipodal test can ask

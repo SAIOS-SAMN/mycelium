@@ -338,6 +338,10 @@ pub mod coord {
             CompactBytes::written(buf)
         }
 
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
+        )]
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
             let axis = |i: usize| -> Result<i64, CoordinateError> {
                 let at = 1 + i * 8;
@@ -520,6 +524,10 @@ pub mod coord {
             CompactBytes::written(buf)
         }
 
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
+        )]
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
             let kind = bytes
                 .first()
@@ -565,6 +573,10 @@ pub mod coord {
             CompactBytes::written(k)
         }
 
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
+        )]
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
             // The class is itself length-framed at its tail, so the member
             // coordinates are parsed after it rather than at a remembered
@@ -623,8 +635,10 @@ pub mod coord {
     pub enum SectionAt {
         /// Every member of this class is claimed on these frames.
         Class(Transport),
-        /// This member, on this chart, by this carriage.
-        Member(MemberSection),
+        /// This member, on this chart, by this carriage. Boxed: the member
+        /// carries a whole carriage, and the class depth should not carry
+        /// that footprint.
+        Member(Box<MemberSection>),
     }
 
     impl Coordinate for SectionAt {
@@ -640,7 +654,7 @@ pub mod coord {
 
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
             match MemberSection::decode(bytes) {
-                Ok(m) => Ok(SectionAt::Member(m)),
+                Ok(m) => Ok(SectionAt::Member(Box::new(m))),
                 Err(_) => Transport::decode(bytes)
                     .map(SectionAt::Class)
                     .map_err(|_| Self::refuse("the bytes spell neither depth of a section")),
@@ -705,6 +719,10 @@ pub mod coord {
             CompactBytes::written(self.0.clone())
         }
 
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
+        )]
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
             // `put_vertex` writes the kind discriminant first, and a
             // citation is kind 2.
@@ -744,7 +762,12 @@ pub mod coord {
             // index: the one framed tail this layout writes — scanned from
             // the only position a u32 length can start such that it spans
             // exactly to the end (A21 self-delimiting tail).
-            for start in 0..n.saturating_sub(4) {
+            // A key shorter than one frame's length holds no chart at all,
+            // and that is a refusal rather than an empty scan (rule 11).
+            let last = n
+                .checked_sub(4)
+                .ok_or_else(|| Self::refuse("the key is too short to hold a chart frame"))?;
+            for start in 0..last {
                 let Some(raw) = bytes.get(start..start + 4) else { continue };
                 let len = u32::from_le_bytes(raw.try_into().map_err(|_| {
                     Self::refuse("the chart frame is not a u32 length")
@@ -997,6 +1020,10 @@ pub mod coord {
             CompactBytes::written(buf)
         }
 
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
+        )]
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
             let mut pos = match bytes.first() {
                 Some(&t) if t == a::TAG_MEET => 1usize,

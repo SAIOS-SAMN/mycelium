@@ -8,6 +8,68 @@ use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self, Standing};
 
+/// 57.4, G2 — A CARRIAGE ON THE LIGHT CONE LEAVES ITS LOOP UNREAD.
+///
+/// The Frame reaches `c` through one star face written from `c`, so the
+/// forest runs against it and the transport across it is the INVERSE of
+/// the face's carriage. A carriage with `MM̃ = 0` has none: `1 + e₁e₋`
+/// squares its bivector to `+1`, so `(1 + B)(1 − B) = 1 − B² = 0`.
+///
+/// THE CYCLE NEVER CROSSES THAT EDGE. `a` and `b` hang from `c` and the
+/// chord between them closes a triangle wholly beyond it, so the walk of
+/// the cycle's own faces reads every transport it meets. What the cone
+/// takes away is the BASING: an identity written for the refused inverse
+/// would base the triangle as though the Frame's edge were flat, and the
+/// loop would stand. The tree refuses instead, counts the edge on the
+/// `unread` gate, and the cycle with its ends beyond it is unread too. The
+/// same fixture with the carriage the face derived keeps its loop, so the
+/// refusal is the cone's and nothing else's.
+#[test]
+fn a_carriage_on_the_light_cone_leaves_its_loop_unread() {
+    use crate::transducer::cga::{Mv, E1, EM};
+    let build = |on_the_cone: bool| {
+        let mut f = Form::default();
+        for n in 1..=4u8 {
+            f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
+        }
+        // THE FOREST'S ROOT IS ITS FIRST-DISCOVERED NODE, so a star face
+        // from the Frame to a fourth body comes first and roots it at the
+        // Frame. Then `c`'s star face, written from `c`, is walked against
+        // its orientation.
+        f.faces.push(f.face_of(0, 4).expect("the star face of d, from the Frame"));
+        f.faces.push(f.face_of(3, 0).expect("the star face of c, oriented towards the Frame"));
+        f.faces.push(f.face_carrying(3, 1, Word::identity()).expect("c to a"));
+        f.faces.push(f.face_carrying(3, 2, Word::identity()).expect("c to b"));
+        f.faces.push(
+            f.face_carrying_with_edge(1, 2, Word::identity(), Some(Transport::from_word(order4())))
+                .expect("a chord between two bodies"),
+        );
+        if on_the_cone {
+            let one = num_rational::BigRational::from_integer(1.into());
+            let null = Mv::scalar(one.clone()).add(&Mv::blade(E1 | EM, one));
+            assert!(null.versor_inverse().is_none(), "MM̃ = 0: the carriage has no inverse");
+            let [_, star_c, ..] = f.faces.as_mut_slice() else { panic!("five faces") };
+            set_face_place(star_c, |p| p.carriage = null);
+        }
+        f
+    };
+
+    let flat = build(false);
+    assert_eq!(
+        Form::loops_of(&flat.faces, &flat.vertices).len(),
+        1,
+        "with a readable carriage the chord closes one loop"
+    );
+
+    let cone = build(true);
+    Form::reset_loop_gates();
+    let loops = Form::loops_of(&cone.faces, &cone.vertices);
+    assert!(loops.is_empty(), "a loop based through an unread transport is not a loop: {loops:?}");
+    let (_, _, unread, trivial) = Form::loop_gates();
+    assert_eq!(unread, 2, "the refused tree edge and the cycle beyond it are both counted unread");
+    assert_eq!(trivial, 0, "and nothing was read as flat");
+}
+
 /// 54.7 AXIOM A — A CYCLE IS BASED, AND BASING MOVES NO READING.
 ///
 /// `Ad_θ` is an isometry of the algebra, so conjugation by the tree
@@ -42,8 +104,8 @@ fn basing_a_cycle_conjugates_it_and_preserves_both_casimirs() {
     for (_, omega) in lp.carriages.scoped() {
         let based = theta.geo(omega).geo(&inv);
         assert_eq!(
-            based.class_invariants().map(|(a, b, k)| (a, b, k)),
-            omega.class_invariants().map(|(a, b, k)| (a, b, k)),
+            based.class_invariants(),
+            omega.class_invariants(),
             "Ad_θ preserves (I₁, I₂, kind): basing reads, it does not change"
         );
     }

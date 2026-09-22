@@ -736,40 +736,48 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
         // Checked here on the decoded form, so the reading names which of
         // the two it is: a desync the mint's form already has, or one the
         // decode introduces.
-        let decoded = crate::transducer::sentence::from_address(&e.address());
-        let f = decoded.as_ref().unwrap_or(f);
-        let mut orphan = 0usize;
-        for v in &f.vertices {
-            if !matches!(v, crate::transducer::sentence::Vertex::Glued { .. }) {
-                continue;
+        //
+        // A minted form's own address always decodes — that is the retract
+        // `from_address_retracts_every_corpus_form` asserts — so an address
+        // that does not is its own reading and is said as one, never
+        // replaced by the form in hand.
+        match crate::transducer::sentence::from_address(&e.address()) {
+            None => eprintln!(
+                "  mint cover desync: the address does not decode, so the court holds no form"
+            ),
+            Some(f) => {
+                let mut orphan = 0usize;
+                for v in &f.vertices {
+                    if !matches!(v, crate::transducer::sentence::Vertex::Glued { .. }) {
+                        continue;
+                    }
+                    let site = crate::transducer::sentence::vertex_bytes(v);
+                    if !env.nerve.iter().any(|x| x.host().as_bytes() == site) {
+                        orphan += 1;
+                    }
+                }
+                let mut phantom = 0usize;
+                for x in &env.nerve {
+                    let host = x.host();
+                    if !f.vertices.iter().any(|v| {
+                        matches!(v, crate::transducer::sentence::Vertex::Glued { .. })
+                            && crate::transducer::sentence::vertex_bytes(v) == host.as_bytes()
+                    }) {
+                        phantom += 1;
+                    }
+                }
+                if orphan > 0 || phantom > 0 {
+                    let ports = f
+                        .vertices
+                        .iter()
+                        .filter(|v| matches!(v, crate::transducer::sentence::Vertex::Glued { .. }))
+                        .count();
+                    eprintln!(
+                        "  mint cover desync: {ports} ports, {} bonds, {orphan} orphan, {phantom} phantom",
+                        env.nerve.len()
+                    );
+                }
             }
-            let site = crate::transducer::sentence::vertex_bytes(v);
-            if !env.nerve.iter().any(|x| x.host().as_bytes() == site) {
-                orphan += 1;
-            }
-        }
-        let mut phantom = 0usize;
-        for x in &env.nerve {
-            let host = x.host();
-            if !f.vertices.iter().any(|v| {
-                matches!(v, crate::transducer::sentence::Vertex::Glued { .. })
-                    && crate::transducer::sentence::vertex_bytes(v) == host.as_bytes()
-            }) {
-                phantom += 1;
-            }
-        }
-        if orphan > 0 || phantom > 0 {
-            let ports = f
-                .vertices
-                .iter()
-                .filter(|v| matches!(v, crate::transducer::sentence::Vertex::Glued { .. }))
-                .count();
-            eprintln!(
-                "  mint cover desync: {ports} ports, {} bonds, {orphan} orphan, {phantom} phantom, \
-                 decoded {}",
-                env.nerve.len(),
-                decoded.is_some()
-            );
         }
     }
     // The coordinate the mint wrote is the word's ADDRESS (law 2), and the

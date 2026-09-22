@@ -69,10 +69,10 @@ fn reading(cx: &mut Complex) -> (String, Vec<String>) {
     let a = v(1);
     cx.coboundary_on_link(&a, |_| vol());
     let tri = cx.link(&a, 2);
-    let Some(key) = tri.first().cloned() else {
+    let [key, ..] = tri.as_slice() else {
         return ("no triangle".to_string(), Vec::new());
     };
-    let filled = cx.fill(&key);
+    let filled = cx.fill(key);
     // The ELEMENT, written out — not the class. A conjugate holonomy has
     // the same class and different bytes, and it is the bytes level 1 keys
     // by, so the bytes are what this test compares.
@@ -90,7 +90,7 @@ fn reading(cx: &mut Complex) -> (String, Vec<String>) {
         CoboundaryOutcome::AlreadyFilled => "already".to_string(),
         CoboundaryOutcome::Absent => "absent".to_string(),
     };
-    (outcome, cx.loops_of(&key).iter().map(show).collect())
+    (outcome, cx.loops_of(key).iter().map(show).collect())
 }
 
 /// EVERY INSERTION ORDER REACHES THE SAME GAUGE — the same fill, and the

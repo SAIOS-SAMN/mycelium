@@ -8,11 +8,12 @@
 use super::*;
 
 /// The period as the filing line writes it: `ℓ`, or `∞` for the `0` that
-/// spells infinite order (A19, 52.3).
-fn period_written(ell: u32) -> String {
-    match Order::from_u32(ell) {
-        Order::Finite(p) => p.to_string(),
-        Order::Infinite => "∞".to_string(),
+/// spells infinite order (A19, 52.3) — the two arms of `Order::from_u32`,
+/// read on the filer's own `u64` so nothing narrows it on the way.
+fn period_written(ell: u64) -> String {
+    match ell {
+        0 => "∞".to_string(),
+        p => p.to_string(),
     }
 }
 

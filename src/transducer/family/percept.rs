@@ -616,7 +616,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             // THE MEMBER DEPTH of the section system (54.7 R5) — `mk` is a
             // member key and the class-level write below is the coarse
             // stratum of the same system, not a second carrier.
-            sections.put(&coord::SectionAt::Member(mk.clone()), section_of_frames(frames));
+            sections.put(&coord::SectionAt::Member(Box::new(mk.clone())), section_of_frames(frames));
         }
     }
     // The key stays a transport coordinate from the walk to both writes.

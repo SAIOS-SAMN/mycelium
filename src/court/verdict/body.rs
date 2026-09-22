@@ -155,7 +155,7 @@ pub(crate) fn vertex_carries_frame(
     // refuses at the coordinate that actually failed.
     for (_, member) in acts.scoped() {
         if let Some(mps) =
-            crate::transducer::family::member_section_key(vertex, &member.chart).and_then(|mk| sections.at(&crate::network::nerve::coord::SectionAt::Member(mk)))
+            crate::transducer::family::member_section_key(vertex, &member.chart).and_then(|mk| sections.at(&crate::network::nerve::coord::SectionAt::Member(Box::new(mk))))
         {
             if !mps.contains(&frame_key(frame as u16)) {
                 continue;
@@ -260,7 +260,7 @@ fn form_covers_laminae(
         let rotor = derivation.rotor();
         for (_, member) in acts.scoped() {
             if let Some(mps) =
-                crate::transducer::family::member_section_key(v, &member.chart).and_then(|mk| f.sections.at(&crate::network::nerve::coord::SectionAt::Member(mk)))
+                crate::transducer::family::member_section_key(v, &member.chart).and_then(|mk| f.sections.at(&crate::network::nerve::coord::SectionAt::Member(Box::new(mk))))
             {
                 if !mps.contains(&frame_key(frame as u16)) {
                     continue;
@@ -343,7 +343,7 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
                 let member_sec = crate::transducer::family::member_section_key(v, &chart)
                     .is_some_and(|mk| {
                         f.sections
-                            .at(&crate::network::nerve::coord::SectionAt::Member(mk))
+                            .at(&crate::network::nerve::coord::SectionAt::Member(Box::new(mk)))
                             .is_some()
                     });
                 eprintln!(

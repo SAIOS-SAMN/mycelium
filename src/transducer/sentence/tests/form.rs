@@ -167,7 +167,7 @@ fn a_loop_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
     // changes that. Writing "0" in a notebook records that the stroke
     // looked; it does not make the geometry close.
     f.torsion.put(
-        &class,
+        class,
         FiledLoop { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
     );
     assert!(!f.edge_coheres(lp), "filed or unfiled, a free part is not a compact resonance");
@@ -175,7 +175,7 @@ fn a_loop_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
     // A SPECTRUM THE LOOP DOES NOT HAVE. `[4, 4]` is an isoclinic quarter
     // turn and this loop is a free part; naming it is not a filing.
     f.torsion.put(
-        &class,
+        class,
         FiledLoop { sigma: Vec::new(), periods: ToralPeriod::from_pair(4, 4), chord: lp.chord },
     );
     assert!(!f.coheres(), "and a period the loop does not have is not a filing either");

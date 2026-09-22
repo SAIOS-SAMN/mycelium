@@ -236,7 +236,7 @@ fn speak_on_scene(
                 for (_, member) in acts.scoped() {
                     if let Some(pi) = pair {
                         if let Some(mps) = member_section_key(v, &member.chart).and_then(|mk| {
-                            f.sections.at(&crate::network::nerve::coord::SectionAt::Member(mk))
+                            f.sections.at(&crate::network::nerve::coord::SectionAt::Member(Box::new(mk)))
                         }) {
                             if !mps.contains(&frame_key(pi as u16)) {
                                 continue;
