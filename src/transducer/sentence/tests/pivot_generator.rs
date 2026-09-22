@@ -225,7 +225,7 @@ fn the_eliminator_keeps_every_word_that_can_cancel_and_drops_the_rest() {
 #[test]
 fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
     use crate::transducer::alphabet::Derivation;
-    use crate::transducer::sentence::pivot::loops::{apply_by, unapply_by};
+    use crate::transducer::sentence::pivot::moves::{apply_by, unapply_by};
     use crate::transducer::stalk::Invariant;
     let chart = Invariant::counts(&[3, 5]);
     let pair = face_pair_key(&chart, &chart);

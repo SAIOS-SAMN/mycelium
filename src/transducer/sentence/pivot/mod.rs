@@ -4,14 +4,19 @@
 //! the trial that opens one axis, the discharge it certifies, and the loops
 //! and axis index the move is read and written on.
 
+pub mod census;
 pub mod drive;
 pub mod loops;
+pub mod moves;
 pub mod snap;
 pub mod trial;
+pub mod walk;
 pub mod words;
 
-pub use loops::*;
+pub use census::*;
+pub use moves::*;
 pub use snap::*;
+pub(crate) use walk::*;
 pub use words::*;
 
 use super::class::*;

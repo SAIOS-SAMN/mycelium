@@ -8943,7 +8943,7 @@ operator reads with the rest:**
 transducer/cayley/chart.rs      bivector_of(&Versor) -> Option<Versor>, versor_of_bivector(&Versor) -> Option<Versor>: 52.1, refusing as 52.1 lists
 transducer/cayley/tests/chart.rs  the claims of 39 under Part XII
 sentence/form/carrier.rs        FiledLoop.period: 0 is infinite order (A19); fibre_volume counts finite periods; is_cauterized files any order
-sentence/pivot/loops.rs         edge_coheres reads any order; the filing keyed by class at the re-derived period
+sentence/pivot/walk.rs          edge_coheres reads any order; the filing keyed by class at the re-derived period
 sentence/pivot/trial.rs         file_loop files at any period, 0 included
 sentence/pivot/drive.rs         NoneDischarged files a loop of any order; the Standing demand rides beside the filing
 sentence/tape.rs                the filed zero admitted
@@ -9482,7 +9482,7 @@ written (closure in `H1(X,Z)` — the hyperbolic sector never returns), and
 family/witness.rs        the spectral witness and the nerve reading (55.1)
 family/pair.rs           meet_edge overwrites the carriage (55.5)
 family/perceive.rs       edge_of peels the word; edge_transport uses shapes (55.6)
-sentence/pivot/loops.rs  steps kept as versors, mu a projection (LAW-0)
+sentence/pivot/walk.rs   steps kept as versors, mu a projection (LAW-0)
 cech/nerve.rs            certified_triples, base witness, pore test
 cech/determinism.rs      the gauge is a functor of the complex, not of arrival order
 ```
