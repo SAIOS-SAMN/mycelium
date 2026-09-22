@@ -334,7 +334,8 @@ let one_pair = vec![(x.clone(), y.clone())];
 let rule = extract_rule(&one_pair, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour is a rule");
 let word = mint_sentence(&rule, &one_pair, &NoCrystal, 0).expect("it closes its own pair");
 let addr = word.address();
-let wider = vec![(x, y), (grid(&["10"]), grid(&["23"]))];
+// H1, 70.4 — separated: `"23"` is ONE two-hue body once hue is a fiber.
+let wider = vec![(x, y), (grid(&["100"]), grid(&["203"]))];
 
 let mut refusing = Kernel::new();
 let task = [7u8; 32];
@@ -394,7 +395,8 @@ fn a_sentence_declaring_its_unspoken_remainder_is_heard_and_its_demand_listed() 
     let learned = vec![(grid(&["1"]), grid(&["2"]))];
     let rule = extract_rule(&learned, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("a recolour extracts");
-    let family = vec![(grid(&["1"]), grid(&["2"])), (grid(&["10"]), grid(&["23"]))];
+    // H1, 70.4 — separated, as above.
+    let family = vec![(grid(&["1"]), grid(&["2"])), (grid(&["100"]), grid(&["203"]))];
     let s = mint_sentence(&rule, &family, &NoCrystal, 0).expect("spoken with its demand");
     let mut k = Kernel::new();
     let task = [7u8; 32];

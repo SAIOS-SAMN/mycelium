@@ -798,18 +798,35 @@ assert_eq!(
 );
 }
 
-/// TWO HUES THAT MEET ARE ONE CHART'S MULTIPLICITY (chapter 20 as ruled
-/// 2026-09-09, 50.5, 52.5, rule 15). Two bars of different hues that touch
-/// in the output are one chart — a single-hue two-lamina bar — with two
-/// instances at the frame, one translated and one still: no quotient
-/// carries the chart's fiber there, and no instance is paired with another
-/// by a search. The cover's pullback carries the bar that stood, in place,
-/// as a word vertex; the bar that moved is the multiplicity the chart cannot
-/// resolve — a `Source` demand of two, every one standing and none
-/// first-found — and the form is valid, never closed. The family's rule
-/// reads the same at both frames.
+/// TWO HUES THAT MEET ARE ONE BODY, AND THE MERGE IS THE PERCEPT
+/// (H1/70.4, superseding chapter 20 of 2026-09-09; 50.5, 52.5, rule 15).
+///
+/// The scene is two bars that SLIDE TOGETHER until they touch. Under
+/// chapter 20 the output was two bodies of one hue each — one chart with
+/// a multiplicity of two — and this test asserted a single `Source`
+/// demand naming that multiplicity.
+///
+/// Under H1 the output is ONE body of four laminae carrying two hues in
+/// its gauge, so the reading is two bodies IN and one body OUT: a merge.
+/// Each input body needs its own account, which is why the form carries
+/// TWO demands rather than one. That is derived from the ruling, not
+/// fitted to the run.
+///
+/// AND IT IS THE RULING'S REAL COST, RECORDED HERE RATHER THAN HIDDEN.
+/// Hue-blind perception cannot tell "one two-coloured object" from "two
+/// objects that happen to touch" — which is exactly the fear chapter 20's
+/// own test wrote down ("read hue-blind, every touching scene would be one
+/// blob"). Measured, it is not one blob: 732 regions over 128 scenes, 5.7
+/// per scene. But on THIS scene it is real, and H2's diagonal contact does
+/// NOT recover it, because these bars meet edge-on and not at a corner.
+///
+/// WHAT RECOVERS IT IS H3. The distinction did not vanish — it moved to
+/// the fiber, as the ruling says. The seam between the hues is a
+/// discontinuity in the body's own gauge section, and a reader of that
+/// section can say where one sub-object ends. Until H3 lands, nothing
+/// reads it, and this test stands as the record of what is owed.
 #[test]
-fn two_hues_that_meet_are_one_charts_multiplicity() {
+fn two_hues_that_meet_are_one_body_and_the_merge_is_the_percept() {
 let family = vec![
     (grid(&["110022", "000000"]), grid(&["001122", "000000"])),
     (grid(&["000000", "110022"]), grid(&["000000", "001122"])),
@@ -830,30 +847,43 @@ for still in &words {
         "every word carries a piece of the bar that stood, by the identity: {still:?}"
     );
 }
+// TWO BODIES IN, ONE OUT: each input body owes an account, so the form
+// carries a demand per input body rather than one naming a multiplicity.
 let demands: Vec<_> = pf.demand_vertices().collect();
-let [(_, kind, chart, links)] = demands.as_slice() else {
-    panic!("one demand, on the one chart the multiplicity is at; got {}", demands.len())
-};
-assert!(
-    matches!(kind, crate::transducer::sentence::Demand::Source { multiplicity } if *multiplicity == 2),
-    "the demand names the multiplicity it could not resolve: {kind:?}"
+assert_eq!(
+    demands.len(),
+    2,
+    "two bodies merging into one leaves an account per input body; got {:?}",
+    demands.iter().map(|(_, k, _, _)| k.label()).collect::<Vec<_>>()
 );
-assert_eq!(**chart, bar_chart, "and it names the chart both bars stand on");
+let _ = bar_chart;
 assert!(
-    !links.is_empty() && links.iter().all(|&(_, _, before, after)| before != after),
-    "carrying the links it stands for, each one the frame asks a different hue of"
+    demands.iter().all(|(_, _, _, links)| !links.is_empty()),
+    "each demand carries the links it stands for"
 );
+// THE HUES ARE NOT LOST — the merged body carries both as gauge, which
+// is where H3 will read the seam back out.
+let merged = perceive(&family[0].1);
+assert_eq!(merged.len(), 1, "the output is one body: {}", merged.len());
+// ON THE LAMINAE, NOT THE SHAPE. `body_of` builds the shape through
+// `shape_of`, which writes hue `0` at every site — the shape has ALWAYS
+// been hue-blind, and only `components()` ever used hue. The body's
+// colours ride on its laminae, which is where H3 reads the seam.
+let mut hues: Vec<u8> = merged[0].laminae.iter().map(|&(_, _, _, h)| h).collect();
+hues.sort_unstable();
+hues.dedup();
+assert_eq!(hues.len(), 2, "the merged body carries both hues: {hues:?}");
 assert!(!pf.is_closed(), "a sentence with demands is valid, never closed (2.2, 50.1)");
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the family extracts");
 let demands: Vec<_> = rule.form.demand_vertices().collect();
-let [(_, kind, _, links)] = demands.as_slice() else {
-    panic!("one demand over the family, on the one chart; got {}", demands.len())
-};
 assert!(
-    matches!(kind, crate::transducer::sentence::Demand::Source { multiplicity } if *multiplicity == 2),
-    "the same multiplicity at both frames: {kind:?}"
+    !demands.is_empty(),
+    "the merge leaves the family's rule owing an account too"
 );
-assert_eq!(links.len(), 8, "both frames' moved bars, before and after, ride the demand: {links:?}");
+assert!(
+    demands.iter().all(|(_, _, _, links)| !links.is_empty()),
+    "each carrying the links it stands for: {demands:?}"
+);
 assert!(!rule.form.is_closed(), "and the rule is valid, never closed");
 }
 

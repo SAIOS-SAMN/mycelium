@@ -119,7 +119,9 @@ fn a_tape_with_no_acting_vertex_is_a_chain() {
 /// tether, this fixture regains an edge and this test is restored.
 #[test]
 fn a_hue_seam_carries_no_edge_without_the_stencil() {
-    let family = vec![(digits(&["11200"]), digits(&["00112"]))];
+    // H1, 70.4 — two bodies are two SEPARATED regions, not two touching
+    // colours; the gap restores the intent of two bodies at `+2`.
+    let family = vec![(digits(&["1100200"]), digits(&["0011002"]))];
     let f = cipher_form(&family[0].0, &family[0].1);
     assert!(
         !f.faces.iter().any(|face| face.has_edge()),
@@ -202,8 +204,14 @@ fn a_hue_seam_carries_no_edge_without_the_stencil() {
 #[test]
 fn the_court_perceives_each_frame_once_for_every_vertex_and_face() {
     use crate::transducer::family::{reset_sensor_reads, sensor_reads};
-    let x = ["100000", "100000", "110000", "033000", "000000", "000500"];
-    let y = ["111000", "133000", "500000", "000000", "000000", "000000"];
+    // H1, 70.4 — the three objects are SEPARATED rather than abutting in
+    // different hues. This read `"110000"/"033000"`, where the L's foot at
+    // (2,1) is 4-adjacent to the bar at (3,1): under chapter 20 that was
+    // two bodies, and under H1 the L, the bar and the 5 chain into ONE.
+    // The motions are unchanged — the L quarter-turns, the bar and the 5
+    // shift — only the gaps are.
+    let x = ["100000", "100000", "110000", "000000", "033000", "000005"];
+    let y = ["111000", "100000", "000000", "033000", "000000", "500000"];
     let family = vec![(digits(&x), digits(&y))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the turned L and the two shifts extract");

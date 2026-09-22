@@ -46,22 +46,42 @@ fn a_lone_lamina_has_volume() {
     assert!(b.is_invertible());
 }
 
-/// A BODY IS ONE HUE (chapter 20, ruled 2026-09-09): two touching laminae
-/// of different hues are TWO bodies sharing a boundary — the contact face
-/// a pair form carries with its edge transport — two touching laminae of
-/// one hue are one body, and a gap splits. (Read hue-blind, every touching
-/// scene would be one blob no versor carried, and every such percept a
-/// deformation demand.)
+/// H1, 70.4 — A BODY IS A MAXIMAL HUE-BLIND CONNECTED REGION. Adjacency
+/// joins whatever hues the laminae carry; a gap splits; the hue rides in
+/// the gauge.
+///
+/// THIS REPLACES CHAPTER 20 (2026-09-09), AND ITS FEAR IS RECORDED
+/// BECAUSE IT WAS MEASURED RATHER THAN ARGUED AWAY. The old test read:
+/// "read hue-blind, every touching scene would be one blob no versor
+/// carried, and every such percept a deformation demand." Measured over
+/// 40 tasks and 128 scenes, hue-blind reading gives 732 regions — 5.7
+/// objects per scene, not one blob — and 598 of them are monochrome
+/// anyway. What merges is exactly the polychrome object that chapter 20
+/// was shattering into 7.8 pieces.
+///
+/// The cost of the old rule, on the same corpus: 1646 bodies for 732
+/// objects, 64.0% of them single cells, and a "contact graph" whose
+/// component count was exactly the region count — because it was the
+/// INTERNAL gauge structure of single objects, never contact at all.
 #[test]
-fn components_join_by_adjacency_and_one_hue() {
-    let two = components(&laminae(&[(0, 0, 1), (0, 1, 2)]));
-    assert_eq!(two.len(), 2, "adjacent laminae of two hues are two bodies sharing a boundary");
-    let one = components(&laminae(&[(0, 0, 1), (0, 1, 1)]));
-    assert_eq!(one.len(), 1, "adjacent laminae of one hue are one body");
+fn components_join_by_adjacency_whatever_the_hue() {
+    let one = components(&laminae(&[(0, 0, 1), (0, 1, 2)]));
+    assert_eq!(one.len(), 1, "adjacent laminae of two hues are ONE body, in two colours");
+    let same = components(&laminae(&[(0, 0, 1), (0, 1, 1)]));
+    assert_eq!(same.len(), 1, "adjacent laminae of one hue are one body");
     let apart = components(&laminae(&[(0, 0, 1), (0, 5, 1)]));
     assert_eq!(apart.len(), 2, "a gap separates bodies");
     let across = components(&[(0, 0, 0, 1), (0, 0, 1, 1)]);
     assert_eq!(across.len(), 1, "one site in two consecutive frames is one body (51.3)");
+    // THE HUE IS NOT LOST, IT MOVES TO THE FIBER. `Blade.gauge` carries it
+    // as sorted `(hue, count)` relations — which is where every reader
+    // downstream of perception already looked for it.
+    let body = lift(&laminae(&[(0, 0, 1), (0, 1, 2)]));
+    assert_eq!(body.gauge.len(), 2, "both hues carried as gauge: {:?}", body.gauge);
+    // AND THE DIAGONAL DOES NOT JOIN. H2 gives it to contact; if it
+    // entered here it would merge the bodies it is meant to relate.
+    let corner = components(&[(0, 0, 0, 1), (1, 1, 0, 1)]);
+    assert_eq!(corner.len(), 2, "a corner meeting is contact, never one body");
 }
 
 /// A translated square is the SAME body up to rigid motion: identical

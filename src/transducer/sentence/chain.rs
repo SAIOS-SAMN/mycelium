@@ -551,3 +551,64 @@ pub fn holonomy(cycle: &[Versor]) -> Versor {
 pub fn is_flat(cycle: &[Versor]) -> bool {
     element::same_versor(&holonomy(cycle), &element::identity_versor())
 }
+
+/// H2, 70.4 — THE DIAGONAL INCIDENCE, WHICH IS INTER-BODY CONTACT.
+///
+/// Under H1 a body is a maximal HUE-BLIND connected region, so two
+/// distinct bodies can never be 4-adjacent: if they were, they would be
+/// ONE body. 4-adjacency therefore stops being the inter-body relation
+/// and becomes strictly interior, and contact needs its own primitive.
+///
+/// It is the corner meeting — `|Δr| = 1` AND `|Δc| = 1` within one frame.
+/// Two maximal regions CAN meet diagonally without merging, because
+/// diagonal adjacency is not in the relation that formed them, so this
+/// is exactly the relation 4-adjacency leaves available.
+///
+/// KEPT APART FROM [`incidence_of_3d`] ON PURPOSE. If the diagonal ever
+/// entered the component relation it would merge bodies that only touch
+/// at a corner, and the base would swallow the contact it is meant to
+/// expose. One primitive defines bodies; the other relates them.
+///
+/// Both diagonals, in this file's own idiom: a canonical sort and a
+/// windowed successor test, never a distance test against every lamina.
+/// The anti-diagonal needs its own ordering because `(r+1, c−1)` is not a
+/// successor of `(r, c)` in any order that puts `(r+1, c+1)` next to it.
+pub fn incidence_diagonal_3d(positions: &[(i64, i64, i64)]) -> Vec<(usize, usize)> {
+    let mut edges = Vec::new();
+    if positions.is_empty() {
+        return edges;
+    }
+    // MAIN DIAGONAL `(r+1, c+1)`: constant `r − c` within a frame, so
+    // ordering by `(k, r−c, r)` puts the two ends of every such step
+    // adjacent, and the step is `r + 1`.
+    let mut by_main: Vec<usize> = (0..positions.len()).collect();
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: (k, r−c, r) is where a main-diagonal step is a successor"
+    )]
+    by_main.sort_unstable_by_key(|&i| {
+        (positions[i].2, positions[i].0 - positions[i].1, positions[i].0)
+    });
+    for w in by_main.windows(2) {
+        let (p, q) = (positions[w[0]], positions[w[1]]);
+        if p.2 == q.2 && p.0 - p.1 == q.0 - q.1 && p.0 + 1 == q.0 {
+            edges.push((w[0], w[1]));
+        }
+    }
+    // ANTI-DIAGONAL `(r+1, c−1)`: constant `r + c`, ordered by `(k, r+c, r)`.
+    let mut by_anti: Vec<usize> = (0..positions.len()).collect();
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: (k, r+c, r) is where an anti-diagonal step is a successor"
+    )]
+    by_anti.sort_unstable_by_key(|&i| {
+        (positions[i].2, positions[i].0 + positions[i].1, positions[i].0)
+    });
+    for w in by_anti.windows(2) {
+        let (p, q) = (positions[w[0]], positions[w[1]]);
+        if p.2 == q.2 && p.0 + p.1 == q.0 + q.1 && p.0 + 1 == q.0 {
+            edges.push((w[0], w[1]));
+        }
+    }
+    edges
+}

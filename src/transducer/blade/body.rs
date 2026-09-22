@@ -259,24 +259,51 @@ pub fn lift(comp: &[Lamina]) -> Blade {
 }
 
 /// The connected components of a scene on the three coordinates of the
-/// base, as `Vec`-of-`Vec` (no maps/sets — Law II). A BODY IS ONE HUE
-/// (chapter 20, ruled 2026-09-09): two laminae join iff they are adjacent
-/// — 4-adjacent within a frame or one frame apart at one site (51.3) —
-/// and carry the same hue. Two touching bodies of different hues are two
-/// bodies sharing a boundary, which the pair form carries as a contact
-/// face with its edge transport (50.3).
+/// base, as `Vec`-of-`Vec` (no maps/sets — Law II).
+///
+/// H1, 70.4 — A BODY IS A MAXIMAL HUE-BLIND CONNECTED REGION, and its hue
+/// is the gauge section it carries, not its identity. Two laminae join iff
+/// they are adjacent — 4-adjacent within a frame, or one frame apart at
+/// one site (51.3) — WHATEVER HUES THEY CARRY.
+///
+/// THIS SUPERSEDES CHAPTER 20 (ruled 2026-09-09), WHICH MADE PERCEPTION
+/// MONOCHROME. "A body is one hue" defines a body by its colour, which is
+/// not a body seen in colour — it is a body seen one colour at a time.
+/// Measured over 40 tasks and 128 scenes under the old rule:
+///
+/// ```text
+///     732 hue-blind regions → 1646 bodies      2.25 bodies per region
+///     single-cell bodies    1053 of 1646       64.0%
+///     134 polychrome objects → 1048 bodies, 7.8 fragments each
+/// ```
+///
+/// And the tell was that the discarded cross-hue edges formed a graph
+/// whose COMPONENT COUNT was exactly 732 — the region count — so what
+/// looked like a contact graph between bodies was the internal gauge
+/// structure of single objects, and its 188 cycles were loops WITHIN
+/// polychrome shapes rather than between anything.
+///
+/// THE DEFECT WAS FIBER DATA IN THE BASE. Everything downstream already
+/// treats hue as a gauge the body carries — `Carriage.sigma`, the `𝒢`
+/// lane, `CycleType::of(gauge)`, `hue_pair_key` — and `Blade.gauge`
+/// already carries a body's hues as sorted `(hue, count)` relations. A
+/// body is WHERE MASS IS; its colour is what it CARRIES.
+///
+/// INTER-BODY CONTACT IS NOT 4-ADJACENCY ANY MORE, and cannot be: two
+/// distinct bodies that were 4-adjacent would be ONE body by maximality.
+/// [`crate::transducer::sentence::incidence_diagonal_3d`] carries it
+/// instead (H2, 70.4) — exact, integer, and in this same idiom.
 pub fn components(laminae: &[Lamina]) -> Vec<Vec<Lamina>> {
     // The support in canonical order; its 1-skeleton read off the ordering
     // (sentence::incidence_of_3d), never a distance test against every
-    // lamina; an edge between two hues is a boundary, not an adjacency.
+    // lamina. Every adjacency joins, because hue no longer decides
+    // identity.
     let mut sorted: Vec<Lamina> = laminae.to_vec();
     sorted.sort_unstable();
     sorted.dedup_by_key(|c| (c.0, c.1, c.2));
     let positions: Vec<(i64, i64, i64)> = sorted.iter().map(|c| (c.0, c.1, c.2)).collect();
-    let edges: Vec<(usize, usize)> = crate::transducer::sentence::incidence_of_3d(&positions)
-        .into_iter()
-        .filter(|&(i, j)| sorted[i].3 == sorted[j].3)
-        .collect();
+    let edges: Vec<(usize, usize)> =
+        crate::transducer::sentence::incidence_of_3d(&positions);
     let roots = crate::transducer::sentence::components(sorted.len(), &edges);
     let mut out: Vec<(usize, Vec<Lamina>)> = Vec::new();
     for (i, lamina) in sorted.into_iter().enumerate() {

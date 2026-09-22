@@ -15,7 +15,13 @@ fn digits(rows: &[&str]) -> Grid {
 /// rigid pair): two word vertices and their edge — the voice's pair form,
 /// measured over its family and spoken as a sentence.
 fn two_bars() -> (Vec<TrainPair>, Element) {
-    let family = vec![(digits(&["11200"]), digits(&["00112"]))];
+    // H1, 70.4 — TWO BODIES ARE TWO SEPARATED REGIONS, NOT TWO COLOURS.
+    // This read `"11200" → "00112"`, where the `11` and the `2` are
+    // ADJACENT: under chapter 20's one-hue rule that was two bodies, and
+    // under H1 it is ONE body carrying two hues in its gauge. The
+    // fixture's intent is two bodies both translating by `+2`, so the
+    // intent is now written with a GAP instead of a colour change.
+    let family = vec![(digits(&["1100200"]), digits(&["0011002"]))];
     let f = cipher_form(&family[0].0, &family[0].1);
     let mag = sentence_measure(&f, &family, &NoCrystal, 0).expect("both bodies are spoken");
     let e = as_element_form(&f, mag).expect("a tape");

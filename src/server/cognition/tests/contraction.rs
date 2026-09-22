@@ -14,13 +14,20 @@ use crate::transducer::sentence::{
 /// rigid pair): two word vertices and their edge — the voice's family, and
 /// the sentence it mints over an empty genome.
 fn voice_family() -> Vec<TrainPair> {
-    vec![(digits(&["11200"]), digits(&["00112"]))]
+    // H1, 70.4 — two bodies are two SEPARATED regions, not two touching
+    // colours: `"11200"` is one body carrying two hues once hue moves to
+    // the fiber. The gap restores the fixture's intent, two bodies both
+    // translating by `+2`.
+    vec![(digits(&["1100200"]), digits(&["0011002"]))]
 }
 
 /// The court's copy of the task: the lone site lands painted another hue,
 /// so the voice's word for it does not carry its body there.
 fn court_family() -> Vec<TrainPair> {
-    vec![(digits(&["11200"]), digits(&["00113"]))]
+    // The same scene as `voice_family` with the lone site landing painted
+    // another hue, so the voice's word for it does not carry its body
+    // there. Separated for the same reason (H1, 70.4).
+    vec![(digits(&["1100200"]), digits(&["0011003"]))]
 }
 
 /// The voice's pair form for a one-pair family, measured over it and

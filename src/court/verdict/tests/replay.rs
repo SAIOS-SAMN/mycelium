@@ -644,7 +644,8 @@ fn a_form_that_leaves_a_remainder_is_refused_for_closure() {
     );
 
     // A second pair the same rule does not speak: the remainder is not empty.
-    let wider = vec![(x, y), (grid(&["10"]), grid(&["23"]))];
+    // H1, 70.4 — separated, because `"23"` is ONE two-hue body now.
+    let wider = vec![(x, y), (grid(&["100"]), grid(&["203"]))];
     assert_eq!(
         blind_replay_on(&word, &|_| None, Some(&wider), &NoCrystal),
         Some(REFUSE_NOT_CLOSED),
