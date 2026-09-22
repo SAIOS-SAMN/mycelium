@@ -9,6 +9,7 @@
 //! derivation against a mind's presentation runs per call (50.2 step 2),
 //! and moves 3 to 7 run on the one form after it.
 
+use super::chord::dispiration;
 use super::cover::cover_deformation;
 pub use super::finish::assignment_key;
 use super::finish::finish;
@@ -17,6 +18,7 @@ use super::perceive::{
     at_frame_zero, demand_vertex, differing_axes, frame_of_body, perceive_at, support_at,
     word_or_demand_on_chart, Demanded, EdgeTally,
 };
+use super::witness::{cover_nerves, phase_spectrum};
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::sentence::{section_of_frames, vertex_ix_key, Acting, Demand, FormFace, Transport};
@@ -884,160 +886,6 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
     // differ is the member key, which is the pair `(vertex, chart)`.
     type OfferedChord = (Vec<u8>, Vec<u8>, Option<crate::transducer::sentence::Transport>);
 
-    /// THE BURGERS VECTOR BETWEEN TWO FOOTPRINTS, as a geodesic on the
-    /// sheet (54.7, ruled 2026-09-21).
-    ///
-    /// This read `d.iter().min()` for a footprint's basepoint and defended
-    /// it as "content order, never a centroid, which would be an average
-    /// standing in for a place". That defence was backwards. A lexicographic
-    /// minimum over `(i64, i64, i64)` is EXTRINSIC: it is decided by which
-    /// axis the tuple happens to name first, so renaming the axes moves the
-    /// basepoint while the scene stands still. The centre of mass is
-    /// equivariant — `p(g·D) = g·p(D)` for any affine `g` — so it is the
-    /// intrinsic representative and `min` was the rule 15 violation.
-    ///
-    /// The displacement was then `τ = b − a`, an affine difference in `ℝ³`
-    /// injected as `B = Σ τᵢ (eᵢ ∧ e₋) = u ∧ e₋`. A single wedge of two
-    /// 1-vectors is a simple 2-blade by construction:
-    ///
-    /// ```text
-    ///     B ∧ B = (u ∧ e₋) ∧ (u ∧ e₋) = 0  ⟹  ⟨B²⟩₄ = 0  ⟹  I₂ ≡ 0
-    /// ```
-    ///
-    /// so a flat translation injected as an `e₋` boost CANNOT generate a
-    /// dispiration, no matter what the scene does. Both cells are now
-    /// carried onto the upper sheet by the form's quantum `M(X)` and the
-    /// transport is Axiom B's own transition:
-    ///
-    /// ```text
-    ///     v_a = lamina(p(D_a), M),  v_b = lamina(p(D_b), M),  v² = −1
-    ///     R   = 1 − v_b v_a,        ⟨R⟩₂ = v_a ∧ v_b
-    /// ```
-    ///
-    /// `None` where the two footprints share a centre, since a zero
-    /// displacement is not a dislocation and none is invented (rule 11).
-    /// The 4 non-simple readings are therefore NOT from `τ` — they are the
-    /// composition `Ω_rot · Ω_trans` in `dispiration` below, where a face
-    /// word's rotation axis has a component along the boost direction, the
-    /// two bivectors fail to commute, and `B_rot ∧ B_trans ≠ 0`.
-    /// THE DEFECT A CHORD CARRIES — a DISPIRATION, not one of its halves.
-    ///
-    /// A first cut wrote `measured.or_else(transvection)`: the rotational
-    /// reading OR the translational one, whichever was present. That is the
-    /// projection into uncoupled sub-actions — a chord whose two sections
-    /// differ in BOTH carriage and footprint has a rotation about an axis
-    /// and a slip along it at once, and choosing one discards the coupling
-    /// that makes it helicoidal.
-    ///
-    /// ```text
-    ///     Ω_ab = (φ_b φ_a⁻¹) · T(τ),   τ = p(D_b) − p(D_a)
-    /// ```
-    ///
-    /// The composite's generator is non-simple where both parts are
-    /// present, so `I₂ = ⟨B∧B⟩₄ ≠ 0` and the screw survives. Where the
-    /// carriages agree it degenerates to a pure Volterra dislocation —
-    /// uniform Burgers vector, `I₂ = 0` honestly — and where the footprints
-    /// agree it is the measured rotation alone. Each is a reading of what
-    /// the two sections differ in, never a shape imposed on all of them.
-    fn dispiration(
-        origin: &[num_rational::BigRational; 3],
-        quantum: &num_rational::BigRational,
-        measured: Option<&crate::transducer::sentence::Transport>,
-        da: &[(i64, i64, i64)],
-        db: &[(i64, i64, i64)],
-    ) -> Option<crate::transducer::sentence::Transport> {
-        let slip = basepoint_transvection(origin, quantum, da, db);
-        crate::transducer::family::cover::tally(|t| {
-            t.chords_offered += 1;
-            if slip.is_some() {
-                t.tau_active += 1;
-            }
-        });
-        match (measured, slip) {
-            (None, s) => s,
-            (Some(m), None) => Some(m.clone()),
-            // BOTH: compose, and the product is the helicoidal transport.
-            (Some(m), Some(s)) => Some(crate::transducer::sentence::Transport {
-                word: m.word.clone(),
-                carriage: m.carriage.geo(&s.carriage),
-                gauge: m.gauge.clone(),
-            }),
-        }
-    }
-
-    fn basepoint_transvection(
-        origin: &[num_rational::BigRational; 3],
-        quantum: &num_rational::BigRational,
-        da: &[(i64, i64, i64)],
-        db: &[(i64, i64, i64)],
-    ) -> Option<crate::transducer::sentence::Transport> {
-        // THE INTRINSIC CENTRE of a support domain: its centre of mass,
-        // exact over ℚ and invariant under the order the cells arrive in.
-        let centre = |d: &[(i64, i64, i64)]| -> Option<[num_rational::BigRational; 3]> {
-            if d.is_empty() {
-                return None;
-            }
-            let n = num_bigint::BigInt::from(u64::try_from(d.len()).ok()?);
-            let mut sum = [
-                num_bigint::BigInt::from(0),
-                num_bigint::BigInt::from(0),
-                num_bigint::BigInt::from(0),
-            ];
-            for (r, c, k) in d {
-                sum[0] += num_bigint::BigInt::from(*r);
-                sum[1] += num_bigint::BigInt::from(*c);
-                sum[2] += num_bigint::BigInt::from(*k);
-            }
-            Some(sum.map(|s| num_rational::BigRational::new(s, n.clone())))
-        };
-        let (a, b) = match (centre(da), centre(db)) {
-            (Some(a), Some(b)) => (a, b),
-            _ => {
-                crate::transducer::family::cover::tally(|t| t.tau_unfooted += 1);
-                return None;
-            }
-        };
-        if a == b {
-            // THE TWO ENDS MET. Not "collinear" — they do not lie on a
-            // line — and not a coincidence, which would make a structural
-            // fact sound contingent. Two footprints sharing a centre stand
-            // over ONE base point, so they are two sections of one fibre
-            // and their difference is VERTICAL. There is no horizontal
-            // displacement for a 1-cell to carry, so none is invented
-            // (rule 11); what differs between them is higher-moment shape,
-            // which is a 2-cell's business.
-            crate::transducer::family::cover::tally(|t| t.tau_met += 1);
-            return None;
-        }
-        // Read from the form's own origin, so the transport does not depend
-        // on where in the grid the scene happened to be drawn (rule 15).
-        let lamina = |p: &[num_rational::BigRational; 3]| {
-            crate::transducer::cga::hyperbolic_lamina(
-                &(&p[0] - &origin[0]),
-                &(&p[1] - &origin[1]),
-                &(&p[2] - &origin[2]),
-                quantum,
-            )
-        };
-        let carriage = match (lamina(&a), lamina(&b)) {
-            (Some(va), Some(vb)) => crate::transducer::cga::geodesic_transvection(&va, &vb),
-            // Off the stereographic chart: the quantum did not cover this
-            // form's extent, which is a defect in `M(X)` and not a reading.
-            _ => None,
-        };
-        let carriage = match carriage {
-            Some(c) => c,
-            None => {
-                crate::transducer::family::cover::tally(|t| t.tau_refused += 1);
-                return None;
-            }
-        };
-        Some(crate::transducer::sentence::Transport {
-            word: crate::transducer::alphabet::Word::identity(),
-            carriage,
-            gauge: Vec::new(),
-        })
-    }
     // AXIOM B's QUANTUM `M(X)` — THE FORM'S OWN LATTICE SCALE, and one
     // chart for every chord of this percept.
     //
@@ -1131,135 +979,8 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
             }
         }
     };
-    // THE CERTIFIED 2-SIMPLICES OF THIS PERCEPT'S COVER (54.7, ruled
-    // 2026-09-21; RE-TARGETED TO THE PULLBACK 58.1, ruled 2026-09-22).
-    //
-    // IT MUST HAPPEN HERE AND NOWHERE LATER. A nerve's 2-simplex exists
-    // exactly where `U_i ∩ U_j ∩ U_k ≠ ∅`, which is a fact about the BASE
-    // and needs every chart's cells in ONE frame. By the time a form is a
-    // word on the wire its chain is CENTERED — framed with its min-corner
-    // at the origin (`element::residual`) — so each arrives in its own
-    // frame, and the only thing relating two of them is the transition
-    // carriage, which is the very thing a cocycle test evaluates. The
-    // court would need the frames to agree to find the overlap, and the
-    // overlap to know whether they agree. Here the footprints are still
-    // the cover's own absolute `(r, c, hue)`, so the question is
-    // answerable and is answered once.
-    //
-    // THE CHARTS ARE THE PIECES' DOMAINS, AND THAT IS THE WHOLE READING.
-    // This was built from the chord ends' CODOMAINS and read `0 certified
-    // triples` on every form of the corpus — which was a property of which
-    // half was measured, not of the corpus. `Supports` says it in its own
-    // doc: a deformation is a map OUT OF the input, so the Čech nerve is
-    // the nerve of the cover of the SOURCE, and "reading only the codomain
-    // leaves the nerve discrete".
-    //
-    // Why it could not be otherwise. On the image side the cover's pieces
-    // are a PARTITION by construction — `pieces_of` peels disjoint bodies
-    // and `occ_out` names one piece per site — so `int(B'ᵢ) ∩ int(B'ⱼ) = ∅`
-    // and a triple intersection asks three solid bodies to occupy one
-    // voxel. On the source side nothing of the kind holds: pass (a)
-    // assembles an output piece's preimage out of WHOLE input pieces, so
-    // one input piece lying under two output pieces stands in both
-    // preimages, and pass (b) carries one unplaced piece by every placed
-    // versor, so one domain is the base of as many sections as there are
-    // versors that reach an image. Both are replication, and replication is
-    // the only case in which the transition between two copies of one shape
-    // exists to be read at all.
-    //
-    // NO CHART IS FOLDED INTO ANOTHER. The codomain reading deduplicated by
-    // footprint — "two chord ends standing on the same cells are one chart"
-    // — which is right for a partition and wrong here: two carriages over
-    // one source region are two SECTIONS of that region's fibre, `g_ij =
-    // θ_j θ_i⁻¹ · γ_ij ≠ 1`, and folding them to one chart erases exactly
-    // the holonomy the 2-cell would carry. The cover is INDEXED by
-    // carriage, and the nerve of an indexed cover admits repeats.
-    //
-    // THE IMAGE READING IS TAKEN TOO, on the same walk, because the claim
-    // "the codomain is a partition" is now a measurement and not a
-    // recollection (A2).
-    let (certified, certified_refused, image_nerve) = {
-        use crate::transducer::cech::{read_nerve, NerveTotals};
-        // `support_of` writes `(row, col, frame)` — the three SPATIAL axes,
-        // the third being the corpus's own `e₃`. The hue never reaches here
-        // and could not: a cover piece is of one hue by construction and
-        // carries it on its own coordinate (§4.4 E8).
-        let cells_of = |sup: &[(i64, i64, i64)]| -> Vec<coord::Lamina> {
-            sup.iter().map(|&(row, col, frame)| coord::Lamina { row, col, frame }).collect()
-        };
-        let mut src = NerveTotals::default();
-        let mut img = NerveTotals::default();
-        for (ci, c) in covers.iter().enumerate() {
-            // A COVER IS ONE DEFORMATION. Its source is that pair's body at
-            // frame zero, recentred, so two covers' cells are cells of two
-            // different bases: each is read on its own and the readings are
-            // summed. Pooling them would read a coincidence of two
-            // recentrings as an overlap — the same defect the cover's meet
-            // index already avoids by keying its two sides apart.
-            let mut dom: Vec<Vec<coord::Lamina>> = Vec::new();
-            let mut cod: Vec<Vec<coord::Lamina>> = Vec::new();
-            for (_, (_, _, sup)) in c.cover.carried.scoped() {
-                dom.push(cells_of(&sup.domain));
-                cod.push(cells_of(&sup.codomain));
-            }
-            src.absorb(ci, read_nerve(&dom));
-            img.absorb(ci, read_nerve(&cod));
-        }
-        // THE PAIRWISE READING TOO, because "0 triples" has two very
-        // different causes and one number cannot tell them apart: a cover
-        // whose charts overlap in pairs but never in threes is a genuine
-        // 1-complex, while a cover whose charts never overlap AT ALL is a
-        // PARTITION — and the nerve of a partition is a set of isolated
-        // points, with no edges to climb from. The meets would then be
-        // ADJACENCY between disjoint regions, not intersection, and no
-        // amount of attaching machinery would find a 2-cell.
-        (
-            (src.charts, src.triples, src.cells, src.shared),
-            src.refused,
-            (img.charts, img.cells, img.shared, img.triples.len()),
-        )
-    };
-    // THE SPECTRAL WITNESS (54.7, ruled 2026-09-22): do three tethers share
-    // a phase, rather than a place?
-    //
-    // Every spatial criterion tried before this one — an `ℓ¹` stencil, the
-    // open star, the Khalimsky corner — asked whether three charts contain
-    // a mutual POINT, and each reintroduced a lattice to answer it. The
-    // physical criterion is congruence of PHASE: three currents in laminar
-    // flow lock into a surface where their compact rotor projections share
-    // a commensurate cyclotomic period, `ℓ ∈ {1,2,3,4,5,6,8,10,12}` by
-    // `φ(ℓ) ≤ 4`. Where no mutual period divides them no standing wave can
-    // form, the boundary never freezes, and the strain stays in the
-    // 1-skeleton as open kinematic flux.
-    //
-    // This needs NO spatial infrastructure: the rotor half is compact, so
-    // `Rotor::order` answers the period exactly, and the meets are already
-    // in hand.
-    let spectrum = {
-        let mut finite = 0usize;
-        let mut infinite = 0usize;
-        let mut unread = 0usize;
-        // The periods in the cyclotomic order they may occupy, counted at
-        // their own index rather than summed into a total (rule 5).
-        let mut by_period = [0usize; 13];
-        for (_, _, e) in meet_chords.iter() {
-            let Some(t) = e.as_ref() else {
-                unread += 1;
-                continue;
-            };
-            match t.word.rotor().order() {
-                Some(crate::transducer::alphabet::Order::Finite(l)) => {
-                    finite += 1;
-                    if let Some(slot) = by_period.get_mut(l as usize) {
-                        *slot += 1;
-                    }
-                }
-                Some(crate::transducer::alphabet::Order::Infinite) => infinite += 1,
-                None => unread += 1,
-            }
-        }
-        (finite, infinite, unread, by_period)
-    };
+    let (source, image) = cover_nerves(&covers);
+    let spectrum = phase_spectrum(&meet_chords);
     let chord_pairs: Vec<OfferedChord> = meet_chords
         .iter()
         .filter_map(|((ta, ca, pa, da), (tb, cb, pb, db), e)| {
@@ -1524,15 +1245,15 @@ fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::phy
         // second counter for one fact is law 12 inside one carrier.
         crate::physics::metabolism::metabolism().line(),
         crate::transducer::family::pairing::field_tally().condensed,
-        certified.0,
-        certified.2,
-        certified.3,
-        certified.1.len(),
-        certified_refused.len(),
-        image_nerve.0,
-        image_nerve.1,
-        image_nerve.2,
-        image_nerve.3,
+        source.charts,
+        source.cells,
+        source.shared,
+        source.triples.len(),
+        source.refused.len(),
+        image.charts,
+        image.cells,
+        image.shared,
+        image.triples.len(),
         spectrum.0,
         spectrum.1,
         spectrum.2,

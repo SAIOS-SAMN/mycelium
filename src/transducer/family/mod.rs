@@ -5,6 +5,7 @@
 //! form spoken back onto a scene. A family it does not close is a withheld
 //! form.
 
+mod chord;
 pub mod contact;
 pub mod correspondence;
 pub mod cover;
@@ -26,6 +27,7 @@ pub mod scene;
 pub mod pieces;
 pub mod speak;
 pub mod trace;
+mod witness;
 
 pub(crate) use correspondence::*;
 pub use deflation::*;

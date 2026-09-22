@@ -9477,7 +9477,7 @@ written (closure in `H1(X,Z)` — the hyperbolic sector never returns), and
 ### 55.9 Binding
 
 ```
-family/extract.rs        the spectral witness and the nerve reading (55.1)
+family/witness.rs        the spectral witness and the nerve reading (55.1)
 family/pair.rs           meet_edge overwrites the carriage (55.5)
 family/perceive.rs       edge_of peels the word; edge_transport uses shapes (55.6)
 sentence/pivot/loops.rs  steps kept as versors, mu a projection (LAW-0)
