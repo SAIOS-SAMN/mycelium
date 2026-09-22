@@ -1043,6 +1043,8 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
     let (mut contact_b1, mut scenes_with_cycles) = (0usize, 0usize);
     let (mut isolated, mut contact_components, mut scenes_e_ge_v) = (0usize, 0usize, 0usize);
     let mut b1_hist: [usize; 16] = [0; 16];
+    let (mut blind_regions, mut singletons) = (0usize, 0usize);
+    let (mut isolated_singletons, mut pairs_with_singleton) = (0usize, 0usize);
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
@@ -1125,6 +1127,38 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
             }
             isolated += degree.iter().filter(|&&d| d == 0).count();
             contact_components += n_comp;
+            // HOW HARD DOES THE ONE-HUE RULE FRAGMENT? The hue-BLIND
+            // components are the visual regions; the hue-split bodies are
+            // what the engine sees. The ratio is how many bodies one
+            // region is shattered into.
+            //
+            // NOT "are the two bodies in one hue-blind region" — every
+            // contact pair is cross-hue ADJACENT by construction, so that
+            // reads 100% on any data and measures its own definition.
+            let blind = components(laminae.len(), &all);
+            let n_blind = {
+                let mut c = blind.clone();
+                c.sort_unstable();
+                c.dedup();
+                c.len()
+            };
+            blind_regions += n_blind;
+            // Body sizes, and how much of the contact graph is pixels.
+            let mut size = vec![0usize; root_ids.len()];
+            for r in &roots {
+                size[ix(*r)] += 1;
+            }
+            singletons += size.iter().filter(|&&s| s == 1).count();
+            for (i, &d) in degree.iter().enumerate() {
+                if d == 0 && size[i] == 1 {
+                    isolated_singletons += 1;
+                }
+            }
+            for &(a, b) in &cg {
+                if size[a] == 1 || size[b] == 1 {
+                    pairs_with_singleton += 1;
+                }
+            }
             if pairs.len() >= root_ids.len() {
                 scenes_e_ge_v += 1;
             }
@@ -1153,5 +1187,14 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
         100.0 * isolated as f64 / bodies_total.max(1) as f64
     );
     eprintln!("  a14 b₁ per cyclic scene: {b1_hist:?}");
+    eprintln!(
+        "  a14 one-hue fragmentation: {blind_regions} hue-blind regions → \
+         {bodies_total} bodies ({:.2} bodies per visual region) \
+         | single-cell bodies {singletons} ({:.1}%), of which {isolated_singletons} isolated \
+         | contact pairs touching a single-cell body {pairs_with_singleton} of {contact_pairs} ({:.1}%)",
+        bodies_total as f64 / blind_regions.max(1) as f64,
+        100.0 * singletons as f64 / bodies_total.max(1) as f64,
+        100.0 * pairs_with_singleton as f64 / contact_pairs.max(1) as f64
+    );
     assert!(scenes > 0, "no scene read: nothing to count");
 }

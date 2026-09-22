@@ -11172,3 +11172,122 @@ blade/body.rs           NoFrame's five arms — sorted by mechanism, and
 bubble/idea.rs          candidates re-derived at hold, never stored
 court/…/listing.rs      open_unspellable, docket_letter — the promotion
 ```
+
+## 70. Hue is a fiber, not a base — chapter 20 superseded (ruled 2026-09-22)
+
+Chapter 20 ruled on 2026-09-09 that A BODY IS ONE HUE. Two weeks of
+readings say it cannot stand: it makes perception MONOCHROME. A body
+defined by its colour is not a body seen in colour — it is a body seen
+one colour at a time, which is the absence of chromatic reception rather
+than an implementation of it.
+
+### 70.1 What the one-hue rule actually built
+
+`components()` reads the scene's whole 6-incidence and keeps one half:
+
+```rust
+    let edges = incidence_of_3d(&positions)
+        .into_iter()
+        .filter(|&(i, j)| sorted[i].3 == sorted[j].3)   // ← same hue only
+        .collect();
+```
+
+Measured over 40 tasks, 128 scenes:
+
+```
+    732 hue-blind regions  →  1646 bodies      2.25 bodies per visual region
+    single-cell bodies     1053 of 1646        64.0%
+    contact pairs touching a single-cell body   816 of 1102   74.0%
+```
+
+AND ONE NUMBER FIXES THE STRUCTURE EXACTLY. The contact graph's component
+count is 732 — the same as the hue-blind region count. That is not a
+coincidence: what 69 measured as a "contact graph" is precisely the
+INTERNAL GAUGE STRUCTURE of 732 visual objects. Its edges are colour
+seams inside objects; its components ARE the objects.
+
+Which corrects 69's own reading. `b₁ = 188` is NOT inter-object cycle
+structure. Those are loops WITHIN multi-coloured objects — a ring of one
+colour about a centre of another. They were reported as the manifold
+gaining cycles; they were never between objects at all.
+
+The decomposition:
+
+```
+    598 monochrome objects  →  1 body each, no seams        the "isolated" 36.3%
+    134 polychrome objects  →  1048 bodies, 7.8 fragments each,
+                               carrying all 188 loops
+```
+
+### 70.2 The defect has a name: fiber data in the base
+
+Everything downstream of perception ALREADY treats hue as a gauge the body
+carries — `Carriage.sigma: Vec<(u8,u8)>` is the hue map, `𝒢` is the gauge
+lane, `CycleType::of(gauge)` reads its cycle type, `hue_pair_key`
+coordinates it. Perception alone treats hue as the body's IDENTITY.
+
+That is fiber data placed in the base, and monochrome vision is what it
+produces. A body is WHERE MASS IS; its colour is what it CARRIES.
+
+### 70.3 Hue is a luminal ray, and that is why it is a fiber
+
+The operator's framing, and it is the one that makes the split
+dimensional rather than merely tidy: a hue is a RAY, presented in the
+luminal layer as a fiber at a higher order, and DEPTH is the distance
+between rays. Harmonic perception and luminal/ocular perception are then
+separable layers a single mind can hold at once.
+
+D1's census is the evidence that the luminal layer has never been
+inhabited. Measured over 368 transitions:
+
+```
+    e1p 20  e1m 20        e2p 25  e2m 25
+```
+
+`eᵢ∧e₊` and `eᵢ∧e₋` carry IDENTICAL counts, which is the translator's
+signature — `T = 1 − ½t∧e_∞` puts equal weight on both null poles. Those
+four counters are ONE fact and the engine never boosts. The luminal half
+is populated only by translation's shadow.
+
+An engine with no chromatic perception has nothing to put in its ocular
+layer, and the census says exactly that.
+
+### 70.4 The ruling, and why its two halves cannot land apart
+
+**A body is a maximal HUE-BLIND connected region of the support. Its hue
+is the gauge section it carries, not its identity.**
+
+1. Bodies become the 732 visual regions, not 1646 shards. The colour
+   seams stop being discarded filter noise and become the body's own
+   gauge section, `δ⁰θ = θ_bθ_a⁻¹` WITHIN a body. That is content, and it
+   is precisely the cocycle that stays ASKABLE when a form's 1-skeleton is
+   a tree — 69 measured `delta1()` vacuous on 34 of 36 forms and had
+   nothing else to read.
+
+2. Inter-body contact needs its OWN primitive, and this is the half that
+   must land with the first. Under hue-blind bodies two distinct bodies
+   can never be 4-adjacent — if they were, they would be ONE body. So
+   cross-hue incidence stops being the inter-body relation and becomes
+   intra-body gauge content, and A.14's contact primitive is left with
+   nothing to range over. DIAGONAL incidence is the replacement: exact,
+   integer, in `incidence_of_3d`'s own idiom, no bounding sphere and no
+   band.
+
+LANDING (1) ALONE COLLAPSES THE ENGINE into 732 isolated islands with no
+external pathway at all — a worse famine than the one 69 diagnosed, and
+arrived at deliberately. The halves are one ruling.
+
+### 70.5 What must be re-measured, because every 69 reading moves
+
+`b₁ = 188` is internal and must be re-read as gauge content. The
+famine census, the withhold census, the plane census and the metabolic
+ledger were all taken against 1646 shards and will read differently
+against 732 bodies. No number from 68 or 69 survives this unchanged, and
+none of them should be quoted forward without a re-run.
+
+```
+blade/body.rs           components() — the filter line that is the ruling
+sentence/chain.rs       incidence_of_3d — 6-incidence; diagonal is the addition
+family/perceive.rs      perceive_at — where laminae become bodies
+transducer/element.rs   hue_pair_key, the gauge coordinate hue belongs in
+```
