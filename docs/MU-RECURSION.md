@@ -9679,6 +9679,13 @@ reported as a property of the corpus.
 measurement still reads the codomain and is still wrong; correcting it is
 open work, not a landed result.
 
+CORRECTED IN 58.1, AND THE EXPECTATION ABOVE IS REFUSED BY THE READING.
+The nerve now reads the source. `0 certified triples` holds on BOTH halves
+over 252 forms, and the source shares LESS than the image, not more. The
+2-skeleton is empty as a property of this corpus's decomposition, which is
+what 55.1 concluded; the reason 55.1 gave for it, and the reason this
+section gave for withdrawing it, are both wrong.
+
 ### 57.2 Congruence was the wrong group
 
 56.4 gave `relative_rotor` a congruence gate — equal cell counts, equal
@@ -9770,8 +9777,8 @@ scene when nothing had asked it.
 ### 57.6 Binding
 
 ```
-family/extract.rs       the chart off the blade; the nerve reading still
-                        on codomains (57.1, open)
+family/extract.rs       the chart off the blade; the nerve reading was
+                        still on codomains here and is re-targeted in 58.1
 blade/body.rs           deviatoric, quartic_harmonic, Frame,
                         relative_rotor, relative_double_angle
 family/cover.rs         CarriedPiece carries both supports
@@ -9779,3 +9786,793 @@ family/pair.rs          meet_edge composes the frame
 element/letters.rs      the cone named where it is crossed
 physics/axioms.rs       A.1-A.11 with the reading that decides each
 ```
+
+## 58. The nerve on the pullback, and the cover's three addresses (ruled 2026-09-22)
+
+57.1 withdrew "the cover is a partition" on the ground that the reading had
+measured the CODOMAIN — where each piece landed — while the Cech nerve of a
+deformation belongs on the SOURCE. The reading has now been taken on the
+source. The conclusion survives; the reason for it does not.
+
+### 58.1 A1 — the reading, on both halves
+
+`certified_triples` is re-targeted to `supports.domain`, read per cover,
+with the charts NOT deduplicated by footprint: two carriages over one
+source region are two SECTIONS of that region's fibre, `g_ij = theta_j
+theta_i^-1 . gamma_ij`, and folding them to one chart erases exactly the
+holonomy a 2-cell would carry. A cover is INDEXED by carriage and the nerve
+of an indexed cover admits repeats.
+
+The image reading is taken on the same walk, so "the codomain is a
+partition" is a measurement rather than a recollection.
+
+Over 252 family forms — the seven tests of `family::tests::retract`, four
+of them corpus-wide, 36 corpus forms at the lift:
+
+```
+nerve/source   245 forms  0 shared by two or more      0 certified triples
+                 7 forms  2 shared by two or more      0 certified triples
+nerve/image    245 forms  0 shared                     0 triples
+                 7 forms  8 shared                     0 triples
+```
+
+`0 certified triples` on 252 of 252, on BOTH halves. No cell of either base
+stands in three charts, so there is no 2-simplex to certify and none is
+invented (rule 11). The reading is not vacuous: `cech::tests::nerve`
+carries the positive case, `a_cell_standing_in_three_charts_certifies_one_simplex`.
+
+### 58.2 What that overturns, and what it leaves standing
+
+THE CONCLUSION OF 55.1 STANDS. The 2-skeleton is empty, and it is empty as
+a property of this corpus's decomposition rather than of which half was
+stored. 57.1's expectation — that the domain would show the replication the
+codomain cannot — is REFUSED by the measurement.
+
+THE EXPECTED ASYMMETRY IS THE OTHER WAY ROUND. The source shares LESS than
+the image, on the same seven forms: 2 cells against 8. Replication (one
+domain carried by several versors) does not occur in this corpus; merging
+(several domains reaching one codomain) does, slightly.
+
+AND THE CODOMAIN IS NOT A STRICT PARTITION. `int(B'_i) ^ int(B'_j) = {}`
+was asserted "by construction" and is false on seven forms. A cover piece's
+codomain is an ASSEMBLY — one output piece in the pullback, a set of them
+in the propagation — and two assemblies can share a member. The peels are
+under no obligation to agree on granularity, which is the whole of 50.8,
+and that is where the shared cells come from.
+
+WHY THE SOURCE IS THIN. `pieces_of` takes one-hue 6-connected components,
+and the pullback assembles WHOLE pieces. Two preimages therefore overlap
+only where one input piece lies under two output pieces. In this corpus
+`charts` is close to `cells` on most forms — 33 charts over 33 cells, 36
+over 38 — so the pieces are near-singletons and there is nothing to share.
+
+### 58.3 The 1-cells and the 2-cells are read on two different covers
+
+THIS IS OPEN AND IS NOT ACTED ON HERE. The cover's meet index is built over
+`support UNION ring_of_support(support)` — a site one 4-step out counts as
+an occupant — so the 1-simplices of the nerve come from a THICKENED cover.
+The 2-simplices are certified over the bare support. Two covers, one nerve:
+by law 12 that is two producers of one fact, and the simplex dimension
+decides which one answers.
+
+Either both dimensions read the thickened cover or neither does. The ring
+is a lattice stencil, which is what the standing constraint on rigid
+lattices refuses, so this wants a ruling and not a patch. It is recorded
+here because it is the one structural reason a 2-cell could exist over this
+corpus and does not.
+
+### 58.4 E8 — the cover's three addresses are coordinates
+
+`family::pieces` wrote a piece, a carriage and a meet out of their own
+content and every carrier holding one was `Keyed<V, Any>`: loose bytes that
+could not tell one from another. They are declared — `coord::Piece`,
+`coord::Carriage`, `coord::Meet`, tags 20 to 22 — each invertible, and
+`pieces_of`, `Cover::carried`, `Cover::meets`, `Cover::refused`,
+`Pending::placed`, `Pending::consumed` and `cover_vertex` take the
+coordinate rather than bytes.
+
+ONE DEFECT SURFACED IN THE DECLARING. `assembly_key` wrote a ONE-PIECE
+assembly as that piece's bare address and a many-piece one as a run of
+length-prefixed pieces, so the bytes did not say which they were and
+nothing could read a carriage address back at all. The collapse existed
+only so the pullback — which assembles a domain and names one output piece
+— and the propagation — which names one input piece and assembles an image
+— would agree on the address of a carriage between two whole pieces. A
+`coord::Carriage` carries a LIST on both sides and the two passes agree
+because both sides are lists, not because one collapses into the other's
+shape.
+
+A key this reader wrote and cannot read back is a defect and not a reading
+of the corpus, so `CoverTally::undecodable` counts it apart from every
+"nothing was there" beside it.
+
+### 58.5 The frame axis was named the hue
+
+`coord::Lamina` named its third axis `hue` and every caller fed it
+`support_of`'s third component, which is `Lamina`'s `k`: the corpus's own
+`e_3`, 51.3's sixth adjacency direction, the axis `at_frame_zero`
+recentres. The colour never reached that coordinate and could not — a cover
+piece is of ONE hue by construction and carries it on `coord::Piece` — so
+the base a cover is read over is three SPATIAL axes and the palette is a
+coordinate of the chart. The bytes are unchanged; the key now says what it
+always spelled.
+
+### 58.6 Binding
+
+```
+cech/nerve.rs           read_nerve is the one producer of the four
+                        numbers; NerveTotals sums per cover and keeps
+                        each triple beside the cover it indexes
+family/extract.rs       the nerve reads supports.domain, per cover,
+                        undeduplicated; the image reading beside it
+family/pieces.rs        piece_at; the four hand-written key writers gone
+family/cover.rs         Cover keyed by coord::Carriage and coord::Meet;
+                        undecodable counted
+family/cursor.rs        Pending keyed by the same two
+family/covered.rs       the meets decoded, not walked as bytes
+keyed/coordinate.rs     Piece, Carriage, Meet; Lamina's third axis named
+address.rs              TAG_PIECE 20, TAG_CARRIAGE 21, TAG_MEET 22
+```
+
+## 59. Contact is tension, not coincidence (ruled 2026-09-22)
+
+58.3 purged `ring_of_support` from the cover's meet index on the ruling that
+neither dimension of a nerve may read a stencil. The reading that followed
+is the largest correction this session has taken, and it opens the bridge
+between the harmonic layer and the luminal one.
+
+### 59.1 What the purge measured
+
+```
+                       with the stencil          bare supports
+meets                  186                       2
+   carried an edge     186                       2
+chords                 186                       2
+geodesic / off-sheet   186 / 0                   2 / 0
+frames                 184 framed 2 half-open    0 framed 2 half-open 0 unframed
+forms carrying a loop  14                        2
+lib suite              510 s                     289 s
+```
+
+184 of 186 meets were raster artifacts. The two survivors are the two that
+were already `Frame::HalfOpen`.
+
+57.5 IS OVERTURNED. It read "the frame computes on every one of the 186
+meets and the words stay at `l = 1`, so `theta_b theta_a^-1 = 1`
+throughout", and called `0 unframed` the reading that made it trustworthy.
+Every one of those 184 framed meets was between two raster-adjacent
+DISJOINT bodies under one global transformation — the `phi_2 phi_1^-1 = 1`
+case exactly — so the frame was reading the identity off pairs that never
+touched. `l = 1` was the stencil's signature and not a fact about the
+corpus. The corpus's real content is ZERO determined relative frames and
+TWO projective half-turns.
+
+A SECOND READING CAME FREE. The lib suite fell from 510 s to 289 s: nearly
+half of it was occupancy entries and meets manufactured by dilation. That
+also retires the performance question the typed coordinates were suspected
+of — there was no regression; the stencil was the cost.
+
+AND A CONSTANT DECAYED SILENTLY. `tests/cover.rs` carried `STROKE = 4`,
+"the smallest stroke on this fixture that both needs more than one and
+reaches the end". A site that yields a meet costs a read, so purging the
+stencil made the cover cheaper and four reads then covered the whole
+deformation in ONE stroke: the test asserted a resume it no longer forced.
+A number calibrated against a cost is a second carrier of that cost (law
+12). It is now the run's own measured `spend - 1`.
+
+### 59.2 `R R~ = 4(1 + mu)`, and why contact was unreachable
+
+With `R = 1 - v_b v_a` the algebra gives, in BOTH charts,
+
+```
+    <R>_0   = 1 - v_a . v_b
+    R R~    = 2(1 - v_a . v_b) = 4(1 + mu)
+    mu      = <R>_0^2 / <R R~>_0 - 1 = (-v_a . v_b - 1)/2
+```
+
+On Axiom B's sheet `v^2 = -1`, `v_a . v_b = -cosh d`, so `mu = sinh^2(d/2)
+>= 0` and `R R~ >= 4` with equality IFF THE TWO BASEPOINTS COINCIDE. In the
+dual-sphere chart `s^2 = +1` the identical formula gives `R R~ = 4` at
+EXACT TANGENCY and `R R~ < 4` on interpenetration.
+
+So `R R~ >= 4`, recorded as a non-singularity result, is the CONTACT FLOOR
+READ IN A CHART WHERE CONTACT IS UNREACHABLE. The engine has been measuring
+chords whose floor is the tangency condition and could never recognise it,
+because on the hyperboloid `mu = 0` means "same point" and not "touching".
+That is the structural reason the stencil had to exist.
+
+THE RESOLUTION IS NOT TO CHANGE AXIOM B. Transport between basepoints
+belongs on `H^3` with `v^2 = -1`. Contact is a relation between the bodies'
+SPHERES, `s^2 = +1`. Two pairings of two different objects, sharing one
+algebraic identity.
+
+### 59.3 The tether: the inversive strain, exactly, without a root
+
+For bodies with centroid `P` and radius of gyration `r`, the inversive
+distance is
+
+```
+    delta = -v_a . v_b = (||P_a - P_b||^2 - r_a^2 - r_b^2) / (2 r_a r_b)
+```
+
+external tangency `||dP|| = r_a + r_b` gives `delta = 1`; internal tangency
+`||dP|| = |r_a - r_b|` gives `-1`; intersecting gives `|delta| < 1`. NOTE
+THE MINUS ON THE RADII: a first statement of this carried `+ r_a^2 + r_b^2`
+and does not reach 1 at tangency. Then
+
+```
+    mu(a,b) = (delta - 1)/2 = (||P_a - P_b||^2 - (r_a + r_b)^2) / (4 r_a r_b)
+```
+
+`mu < 0` overlap, `mu = 0` tangency, `mu > 0` separated.
+
+MU IS NOT RATIONAL, AND THIS SHAPES THE IMPLEMENTATION. `Blade` carries
+`radius2()` — `r^2`, exact — and the denominator needs `r_a r_b =
+sqrt(r_a^2 r_b^2)`. Law 1 would refuse it as an inexact root on nearly
+every body, so `mu` AS A VALUE can never be written down and must never be
+put on the wire.
+
+The predicate survives where the value does not. Carry
+
+```
+    N   = ||P_a - P_b||^2 - r_a^2 - r_b^2     in Q   (its sign is the side)
+    D^2 = 4 r_a^2 r_b^2                        in Q   (D > 0 always)
+```
+
+Then `delta = N/D` and `delta <= 1  <=>  N <= 0 or N^2 <= D^2` — a sign test
+and one rational comparison, no root anywhere. Ordering two strains is the
+same move. Under `x -> lambda x`, `N -> lambda^2 N` and `D^2 -> lambda^4
+D^2`, so `delta^2 = N^2/D^2` is scale-free exactly.
+
+### 59.4 Exact tangency is measure-zero; the sector is a coordinate
+
+`mu = 0` is `||dP||^2 = (r_a + r_b)^2`, a rational locus of measure zero —
+the same argument that made the Cayley pole never fire when the chord
+clobber came off (`unspelled 0, unread 0`, because the rational unit sphere
+is measure-zero). A hard threshold `mu_c = 0` would leave the 1-skeleton
+exactly as empty as the purge left it. CONTACT IS A SECTOR, NEVER A LOCUS.
+
+AND THE SECTOR MUST BE A COORDINATE. A sector that is only a PREDICATE has
+to be evaluated on every pair — `C(N,2)`, which is the brute force the
+standing constraint forbids. The set of spheres at fixed inversive distance
+from a given sphere is a PENCIL, and a pencil is the orbit of a
+one-parameter transvection subgroup `exp(tB)`, `B = e_i ^ e_-`. That is the
+containment cylinder: an orbit coordinate, exact, non-Euclidean, and KEYED,
+so "which bodies share my sector" is a keyed read and nothing is
+enumerated.
+
+### 59.5 Superposition, not probability; a kernel, not a prune
+
+Law 1 strikes probabilities by name and nothing is scored, so a weighted
+tether is the harness returning by the side door. But a quantum
+superposition is NOT probabilistic: amplitudes are exact and the evolution
+deterministic; probability enters only at measurement, by a rule imposed
+from outside. Several tethers held at once as EXACT ALTERNATIVES WITH NO
+WEIGHT is admissible; tethers carrying likelihoods are not.
+
+The engine already has the shape. `Frame::HalfOpen` carries a projective
+class rather than a determined rotor — one genuine `Z_2` gauge freedom, one
+qubit — and after the purge BOTH surviving meets are half-open, so the
+entire real 1-skeleton of this corpus is currently in superposition and
+nothing else.
+
+PRUNING IS REFUSED. Generate candidates and remove those that do not fit is
+generate-and-test, a search over the scene. The exact equivalent that is
+not a search: `k` half-open edges give `2^k` sign assignments, and the
+coboundary condition is LINEAR OVER `F_2`. Compute a KERNEL, which returns
+every consistent assignment at once in `O(k^3)` with no candidate ever
+generated. Trivial kernel means the obstruction is real and the 2-cell
+refuses; otherwise the surviving assignments ARE the collapsed
+superposition. 57.3 already says this in words — "the coboundary
+arbitrates: `d sigma` fixes the signs globally where a 2-cell locks" — and
+it has never been computed because there have never been enough real edges
+to have a kernel.
+
+### 59.6 The horizon is spellability, and it is mind-relative
+
+A dialled `mu_c` is the `STROKE = 4` defect again: a number standing where a
+derived quantity belongs. The non-arbitrary cut available from the algebra
+is SPELLABILITY — the tether condenses where the chord's transvection is a
+word the alphabet holds, finite order under `phi(l) <= 4`, and refuses where
+it is not. That ties the metric sector to the rotor sector through the one
+bound already ruled, and gives 37.7 work it has never had: a strain just
+outside the horizon is a DEMAND FOR A GENERATOR, not a dropped edge.
+
+AND SPELLABILITY IS PER MIND. `word_or_demand` and `derive_against` run
+against that voice's own crystal, and the five Epigenomes differ by what
+each has adjoined. So two ideas tether for a mind that holds the generator
+and refuse for one that does not — the same exact geometry condensing
+differently in each voice. The five will not agree on the 1-skeleton, and
+that disagreement is content the court arbitrates rather than noise.
+
+### 59.7 The bridge: harmonic, luminal and contact meet at `mu = 0`
+
+```
+    mu = -sin^2(theta/2) < 0    elliptic     compact; A.11's even multipoles at 2phi, 4phi
+    mu = 0                      TWO things   trivial (B = 0) AND parabolic (B != 0, B^2 = 0)
+    mu = +sinh^2(d/2)  > 0      hyperbolic   transvection, Burgers vector, solder form
+```
+
+For a null generator `Omega = 1 + B`, `Omega Omega~ = 1 - B^2 = 1` and
+`<Omega>_0 = 1`, so `mu = 0` — IDENTICAL TO THE IDENTITY. That is why
+`BivectorKind` carries a type byte, and why collapsing Trivial into
+Parabolic "put every identity loop in the same class as every dislocation".
+The scalar charge cannot see the luminal sector at all.
+
+What separates them is the second Casimir `I_2 = ||<B^2>_4||^2 / w^2`, and
+`I_2 = 0` identically for any SIMPLE blade. `R = 1 - v_b v_a` has `<R>_2 =
+v_a ^ v_b`, a wedge of two vectors, therefore simple. SO A TRANSVECTION
+CHORD CAN NEVER BE LUMINAL. That is the reason Layer 2 is unbuildable from
+chords, independent of the cone refusal in `transvection_of` (57.4), and it
+is why the `non-simple 3` defects recovered when the clobber came off are
+not a curiosity: they are the ONLY three places in the corpus where `I_2 !=
+0`, and therefore the only luminal candidates that exist.
+
+THE BRIDGE BETWEEN HARMONIC AND LUMINAL IS THE NON-SIMPLE SECTOR. Harmonic,
+luminal and contact all arrive at `mu = 0`; what tells them apart is the
+Casimir the chord is structurally incapable of carrying.
+
+### 59.8 Axiom C — the projective discipline, and what it refuses
+
+The question was whether to widen the scalars to `Z`, `R`, the irrationals
+or `C`. The answer is no, and the reasons are load-bearing:
+
+- `R` BREAKS THE SPINE. Equality in `R` is undecidable and comparison only
+  semi-decidable, so admitting it reintroduces tolerance — the flattening
+  the project exists to refuse. Law 1's "things are equal, or they are not"
+  does not survive it.
+- `C` DESTROYS THE TETRACHOTOMY. `I_1` classifies a bivector by the SIGN of
+  a scalar, and sign is a property of an ORDERED field. `C` is not
+  orderable: `B^2 = -1` and `B^2 = +1` differ by `B -> iB`, so elliptic and
+  hyperbolic become conjugate cases of one thing and `mu`'s sign — the
+  whole kinematic charge — evaporates.
+- `Z` ADDS NOTHING. Law 11 already places `Z^2` as the sensor's substrate
+  and forbids it as a carrier.
+
+THE ENGINE ALREADY HAS A BOUNDED-DEGREE AXIOM AND NEVER SAID SO. The
+crystallographic restriction `phi(l) <= 4` is exactly a bound on field
+extension degree: a rotor of order `l` lives in `Q(zeta_l)`, of degree
+`phi(l)` over `Q`, and orders 5, 10, 12 are degree-4 extensions. "Exact Q"
+has always been shorthand for "exact, ordered, decidably comparable, of
+bounded degree".
+
+WHAT AXIOM C SHOULD SAY IS A NARROWING, NOT A WIDENING. Every time this
+engine met an apparently irrational quantity the resolution was to stay
+PROJECTIVE and never normalize: `relative_rotor` decides a turn from
+`sgn(u_a . u_b)` and `sgn(u_a ^ u_b)` rather than forming `cos 2phi`;
+`same_versor` is an exact rational ratio over `Q^x` with no tolerance;
+`mu` is the same shape, and `(N, D^2)` is that discipline written out.
+
+    AXIOM C (PROJECTIVE CLOSURE). No quantity is normalized. Every
+    invariant is a ratio of homogeneous forms of equal degree, carried as
+    its numerator and its denominator, and the ratio is never evaluated.
+    Scalars are exact, ordered and decidably comparable; extensions of Q
+    are admitted only at bounded degree, and the bound is the one the
+    crystallographic restriction already fixes.
+
+ONE QUESTION DECIDES WHETHER EVEN THAT IS NEEDED. The above holds if
+tension is COMPARED. It fails if tension is SUMMED: an action `S = sum_e
+mu(e)` minimized globally needs one field containing every
+`sqrt(r_a^2 r_b^2)` in the scene, and the tower degree grows with the
+number of distinct radii, unboundedly. If condensation is instead a LOCAL
+threshold per tether and a LOCAL holonomy test per membrane, nothing is
+ever summed, everything stays in `Q`, and the ground state is reached by
+relaxation rather than by evaluating a global scalar — which is also the
+only one of the two that is not a search over the scene.
+
+### 59.9 The mind carries the same defect, and this is measured
+
+"Perceptions of thoughts through ideas" is `family_percept` (harmonic
+multipoles) -> the form's loops (hyperbolic transport) -> `Bubble` (the
+mind's own cover), read downward.
+
+`Bubble` ALREADY CARRIES BOTH HALVES OF THE TETHER. `remainder:
+element::PlacedChain` is a chain and the translator placing it, so a
+centroid and a second moment come straight off it: an idea already has a
+conformal representative. And `horizon: Keyed<(Rotor, Order, Standing)>` is
+"classes this idea has met", keyed by rotor class and carrying `Order` —
+the field is already named `horizon` and already keyed by the quantity
+spellability turns on.
+
+AND `Contemplation` HAS THE FAMILY COVER'S DEFECT, ONE LEVEL UP (verified
+2026-09-22). `link_new` builds 1-simplices from `by_chart.link(ck)` —
+bubbles that SHARE A CHART KEY, combinatorial key sharing and not geometry
+— and gates every higher simplex on `volume_of`, which is `intersect` of
+the two bubbles' PLACED LINKS at `remainder_site_key(r, c)`: a raster set
+intersection on sensor coordinates. `coboundary_on_link` attaches a 2-cell
+only where that intersection has non-zero lane volume. It will read as
+discrete for exactly the reason the family cover did.
+
+So the intertwining is ONE GENERATOR AT TWO LEVELS: bodies tether in a
+scene, ideas tether in a mind, by the same scale-free strain on their own
+blades, with the horizon per mind.
+
+### 59.10 What is open, and what is not yet answered
+
+- THE THIRD AXIS OF AN IDEA. `blade::shape_of` takes `(r, c, k)` and a
+  remainder's `Link` is `(r, c, before, after)` — two spatial coordinates
+  and two hues, no third spatial axis. What `k` is for an idea is the same
+  unanswered question `extract.rs` already flags at the form's chart: "it
+  wants a ruling on whether hue is a coordinate of the base or of the
+  fibre". The tether cannot be wired into `Contemplation` until it is
+  ruled. A.11's single producer is `blade::lift` and must remain so: the
+  idea's moments come off `shape_of`, never off a second sum.
+- WHETHER THE ACTION IS SUMMED OR CHECKED LOCALLY (59.8).
+- WHAT CARRIES A LUMINAL GENERATOR. `e_inf ^ v` is non-simple and no chord
+  is; the three `non-simple` defects are the only candidates the corpus
+  has.
+
+### 59.11 Binding
+
+```
+family/cover.rs         the meet index reads bare supports; the ring gone
+family/tests/cover.rs   the stroke derived from the run's own spend
+cech/nerve.rs           read_nerve, NerveReading, NerveTotals
+family/extract.rs       nerve/source and nerve/image, both per cover
+keyed/coordinate.rs     Piece, Carriage, Meet; Lamina's third axis named
+bubble/contemplation.rs link_new — the same defect, verified, not yet fixed
+bubble/idea.rs          volume_of — raster intersect at remainder_site_key
+```
+
+## 60. The mind's own condensation, and the second stencil (ruled 2026-09-22)
+
+59 established that contact is tension and that the horizon is
+spellability. Spellability is per mind, and that turns the 1-skeleton from
+a property of the scene into a property of the observer.
+
+### 60.1 Perception is the alphabet
+
+With a dialled `mu_c` every mind sees the same connections. With the
+horizon at spellability, perception becomes an ACTIVE ALGEBRAIC FILTER, and
+the three words of "perceptions of thoughts through ideas" become three
+steps of one mechanism:
+
+- THE HARMONIC INPUT (the thought). The body's shape sits in the scene as
+  its invariants — trace, deviatoric, quartic, off `blade::lift` and
+  nowhere else (A.11).
+- THE LUMINAL INTERFACE (the tension). As two bodies approach, `mu -> 0`,
+  and their geometry generates the relative conformal versor `g_ab =
+  (theta_b theta_a^-1) . gamma_ab`.
+- THE PERCEPTUAL CROSSING (the mind). The mind parses `g_ab` against its
+  own horizon by running `word_or_demand`. Where the versor factors into
+  generators the mind holds, the tension is resolved and THE TETHER
+  CONDENSES. Where it needs a generator the mind lacks, the connection
+  REFUSES and stands as an open topological strain — a demand.
+
+Perceiving an idea is a mind successfully factoring the luminal tension
+between harmonic bodies into its own finite alphabet. WHAT A MIND CANNOT
+SPELL, IT CANNOT CONNECT.
+
+### 60.2 The five voices do not share a 1-skeleton
+
+The five Epigenomes adjoin generators independently under 37.7, on separate
+histories, so their alphabets diverge and the 1-skeleton is not a single
+objective graph:
+
+- A voice holding the `D_4` rotations reads four bubbles as a closed
+  four-edge cycle, evaluates its coboundary, and condenses a 2-cell. It has
+  formed a coherent concept.
+- A voice holding only translations reads the same four bubbles as
+  disconnected fragments with unspannable rotational strain between them —
+  an empty 1-skeleton and a set of open demands.
+
+This is 50.8's own sentence one level up: the peels are under no obligation
+to agree on granularity. The minds partition one base into different
+topological spaces by algebraic capacity alone, and nothing about the base
+decides between them.
+
+### 60.3 The court arbitrates by adjunction, not by vote
+
+Five different 1-skeletons are not resolved by counting. A vote needs
+scores and law 1 strikes them. The court is a TOPOLOGICAL ARBITRATION
+LAYER, and every object it compares is an exact field:
+
+```
+    voice A presents  a closed 2-cell             (a resolved concept)
+    voice B presents  an open boundary + a demand (a missing generator)
+    the court asks    does A's generator satisfy B's demand exactly in Q?
+```
+
+Where it does, 37.7 adjoins the generator to B's Epigenome, B's topology
+shifts, the tether condenses and the superposition collapses
+deterministically. Disagreement between the voices is therefore CONTENT the
+court consumes, not noise it averages.
+
+### 60.4 Non-simplicity is born in the composition, never in either factor
+
+59.7 found that a transvection chord can never be luminal because `<R>_2 =
+v_a ^ v_b` is a wedge of two vectors and therefore simple. The composition
+is where it can change. With `Theta = theta_b theta_a^-1` compact and
+`gamma` the chord,
+
+```
+    <g>_4 = <Theta_2 gamma_2>_4 = Theta_2 ^ gamma_2
+```
+
+which is non-zero exactly when the ROTATION PLANE AND THE BOOST PLANE ARE
+NOT COPLANAR — a screw. That is `[p, p] subset k`, Thomas precession, the
+structure Cartan already forces on this group.
+
+Two consequences. `I_2 != 0` REQUIRES THE FRAME: with `Theta = 1` the
+composition is `gamma` and is simple, so a corpus reading `0 framed`
+produces no luminal candidate at any interface. And the luminal sector is
+reachable only through the harmonic one — the frame is not decoration on
+the carriage, it is the sole source of the second Casimir.
+
+### 60.5 THE SECOND STENCIL — the purge was not universal
+
+MEASURED AFTER 58.3, and it is why the defect tetrachotomy did not move:
+
+```
+defects over the corpus, AFTER the cover's ring was purged
+    trivial 0 elliptic 0 hyperbolic 6 parabolic 0 non-simple 3   on 10 forms
+    trivial 0 elliptic 0 hyperbolic 3 parabolic 0 non-simple 0   on 11 forms
+    trivial 0 elliptic 0 hyperbolic 0 parabolic 0 non-simple 0   on 13 forms
+```
+
+`non-simple 3` survives. It survives because THE COVER'S MEET INDEX IS NOT
+THE ONLY PLACE A RING IS DILATED. `family/pairing.rs:116`, inside
+`star_and_site_faces`, walks `ring_of_support(supp)` and relates every
+member standing at a site one 4-step out. The form's own faces — and
+therefore its loops, its `b_1`, and every `loop_defects` reading above —
+are built on that dilation.
+
+So the accounting is:
+
+```
+    cover.meets  -> chords            purged (58.3); 186 -> 2
+    star_and_site_faces -> faces      STILL STENCILLED (pairing.rs:116)
+        -> loops -> b_1, loop_defects, hyperbolic, non-simple, the spectra
+```
+
+EVERY READING IN 59.1 EXCEPT THE MEET COUNTS IS STILL CONTAMINATED, by a
+different stencil. Whether the three non-simple defects are genuine luminal
+candidates or artifacts of a second dilation IS UNDETERMINED until
+`pairing.rs` is purged too, and no claim about Layer 2 may rest on them
+before that. `ring_of_support` has exactly two callers and one of them is
+now a comment; the other is this.
+
+### 60.5b T1 landed, and the collapse did not come (measured 2026-09-22)
+
+`pairing.rs`'s third pass is deleted and `ring_of_support` with it. The
+expectation on both sides of the ruling was that faces and loops would
+collapse as the meets did and that the three non-simple defects would
+vanish. THEY DID NOT.
+
+```
+over the 36 corpus forms of the lift        before T1      after T1
+faces (cover meets + star)                  128            118
+scene loops                                 2              2
+defects, cumulative: hyperbolic             6              6
+defects, cumulative: non-simple             3              3
+meets / chords / frames / geodesic          unchanged      unchanged
+```
+
+T1 removed TEN FACES OF 128 and changed no loop and no defect. The
+ring-built faces in this corpus were not closing cycles: the dramatic
+collapse had already happened at 58.3, where the meets went 186 to 2 and
+the forms carrying a loop went 14 to 2, and what `pairing.rs` was adding on
+top of that was a thin margin that bounded nothing.
+
+SO THE THREE NON-SIMPLE DEFECTS ARE NOT STENCIL ARTIFACTS. They survive
+both purges, they arise on the two genuine loops the corpus still carries,
+and they are the only places where `I_2 != 0`. 60.5's own caveat — "no
+claim about Layer 2 may rest on them before that" — is now discharged in
+the candidates' favour, which is the opposite of what it anticipated.
+
+WHERE THE UNIT FIXTURES DID COLLAPSE, and why that is not a contradiction:
+three tests failed, every one of them built deliberately on adjacency — a
+row of three disjoint bodies, a hue seam at `11200 -> 00112`, a bar and a
+dot landing BESIDE an L. Those fixtures existed to exercise the dilation,
+so they fell with it. The corpus does not lean on it nearly as hard.
+
+AND THE COMPARISON EXPOSED A SCOPE THE LINE DOES NOT NAME. On one row,
+`{} loops` is a PER-FORM quantity read off `form.loops.len()` while
+`defects: …` is a CUMULATIVE process total read off a thread-local that no
+form resets, so `0 loops … non-simple 3` reads as a form carrying three
+defects and no loop to hold them.
+
+THE FIX IS NOT TO MAKE THE COUNTERS AGREE ON SCOPE (corrected the same
+day). A first reading of this called it two scopes on one line and asked
+for one scope, and that is wrong about what a defect IS. A loop count is a
+property of a FORM. A defect is a CAUTERIZATION EVENT in a trajectory —
+the moment a loop was terminated by being read — and the process-level
+total is the honest carrier for it. The two scopes are correct and
+different; what the line owes is to SAY WHICH IT IS PRINTING, not to
+collapse one into the other.
+
+### 60.6 The order of the work
+
+1. PURGE `pairing.rs:116`. Incidence stencils go universally or the nerve
+   keeps two topologies (58.3's own argument, one level up). Re-take
+   `b_1`, `loop_defects` and the spectra afterwards: they are expected to
+   collapse the way the meets did, and that collapse is the reading.
+2. THE TETHER, on `(N, D^2)`, off `Blade`'s centroid and `radius2`, with
+   the sector as a keyed pencil coordinate and the horizon at
+   spellability.
+3. THE KERNEL over the `Z_2` gauge freedoms of the half-open edges, which
+   is what collapses the superposition without a prune.
+4. THE MIND, once the third axis of an idea is ruled (59.10):
+   `Contemplation::link_new` off `by_chart` key-sharing and off
+   `volume_of`'s raster intersect, onto the same tether.
+5. THE COURT's adjunction path on the demands the refused tethers emit,
+   which is the first live work 37.7 has ever been offered.
+
+## 61. Hue is a coordinate of the fibre (ruled 2026-09-22)
+
+59.10 left the third axis of an idea unruled and T6 blocked on it. The
+ruling closes a question `extract.rs` has carried open since the form's
+chart was built.
+
+### 61.1 The ruling
+
+THE BASE MANIFOLD IS THE TWO-DIMENSIONAL SPATIAL CONTINUUM, projected onto
+the raster as `(r, c)`. THE HUE IS THE FIBRE: a discrete field value — a
+gauge state, a scalar charge — living over that base point.
+
+`Link = (r, c, before, after)` is exactly a fibre morphism written out:
+`(r, c)` is the fixed base point and `before -> after` is the transduction
+occurring entirely within the fibre over it. The pair was never two
+coordinates of one space; it is one coordinate and one state change.
+
+### 61.2 What it settles, and what it obliges
+
+IT CONFIRMS THE RENAME. `coord::Lamina`'s third axis was named `hue` and
+was fed `support_of`'s third component, which is the FRAME — the corpus's
+own `e_3`, 51.3's sixth adjacency direction, the axis `at_frame_zero`
+recentres. Under this ruling the colour could not have been there, because
+colour is not a coordinate of the base at all. The rename was right and is
+now ruled rather than inferred.
+
+IT DECOUPLES THE MOMENTS FROM THE FIBRE. Where `blade::shape_of` demands a
+third component to compute the harmonic multipoles, it is conflating a
+fibre state with a spatial axis. The hue decides WHICH CELLS BELONG TO THE
+BODY — it is the partition `pieces_of` splits on — but the moment tensor
+is a purely spatial invariant of the footprint. The centroid `P`, the
+deviatoric `u`, the quartic `h4` are properties of `(r, c)` and of nothing
+else.
+
+So `shape_of` must accept a purely spatial support. `before`/`after` stay
+on the carried piece, where they dictate the METABOLIC TRANSMUTATION, and
+they do not enter the kinematic shape tensor. That is what unblocks T6: a
+remainder's links give `(r, c)` and need no invented `k`.
+
+A.11'S SINGLE PRODUCER IS UNTOUCHED. The multipoles come off `blade::lift`
+and nowhere else; this narrows what `lift` is given, never who computes it.
+
+### 61.3 What it does not settle
+
+The FRAME remains a third axis and is not the hue. `pieces_of` splits by
+hue and then takes 6-adjacent components across `(r, c, k)`, which is
+51.3's connectivity across frames, and `support_of` writes that `k`. The
+ruling says the palette is fibre; it does not say the succession axis is a
+spatial dimension to take moments over. Whether `lift` integrates over
+`(r, c)` alone with the frame carried beside it, or over `(r, c, k)` with
+the frame as a genuine third extent, is a separate question and is not
+answered here.
+
+## 62. Every component has two halves, and the pivots are the machinery (ruled 2026-09-22)
+
+A physics component is a CONJUGATE PAIR. One half alone is a ratchet: it
+accumulates and never returns, which is bookkeeping wearing a physics
+name. The engine has named halves without their inverses in four places,
+and all four are pivot machinery.
+
+### 62.1 The ledger
+
+```
+  THE PIVOTS — three conjugate pairs, dimension-changing
+    ascend    /  descend    seal a 1-cycle with a 2-cell / hollow it out   (2 <-> 1)
+    condense  /  drain      form a tether from tension   / dissolve it     (1 <-> 0)
+    puncture  /  seal       open a hole, injecting a class / cap and kill it
+
+  THE METABOLIC PAIR — not a pivot; it changes no dimension
+    dilate    /  contract   rho  <->  rho^-1
+```
+
+SIX PIVOTS IN THREE PAIRS, AND EXACTLY ONE IS BUILT. `ascend` is
+`coboundary_on_link`; nothing else exists. A complex that can only GAIN
+2-cells is the ratchet in its plainest form.
+
+THE SIXTH PIVOT IS `seal`, AND IT WAS MISSING (named 2026-09-22). `puncture`
+destroys a top-cell to open a hole, injecting a homology class; `seal`
+glues a cap over that hole and kills the class. Standing alone, `puncture`
+lets the engine TEAR A MANIFOLD AND NEVER HEAL IT, which is the ratchet
+again on the other side of the complex. Naming `seal` closes the pivot set
+under conjugation, and a first reading of this that called `puncture` a
+self-inverse involution was wrong.
+
+`dilate / contract` IS A CONJUGATE PAIR BUT IS NOT A PIVOT (reclassified
+the same day). A pivot changes dimension; `rho <-> rho^-1` does not. Its
+home is the METABOLIC layer of the functor, separated from the kinematic
+translation `T(t)`: a scale change in the base is a boost along the null
+direction `e_inf` in the conformal embedding, which is why `D(rho)` looked
+conformal-rather-than-isometric where it sat. The pairing was always sound;
+the organ was wrong (U7).
+
+### 62.2 What this corrects
+
+`condense / drain` IS TENSION AND RELAXATION, and 59's tether is those two
+and not a new operator. A first statement of T2 read "a tether condenses
+when `mu` is inside the horizon" and never said what releases it when the
+strain leaves — half a component, and a 1-skeleton that can only grow.
+The tether is `condense` given its physics and `drain` given its inverse,
+and the two land together or neither does.
+
+`dilate / contract` IS PIVOT MACHINERY, not a passenger. `D(rho)` has been
+riding inside the carriage, and U7 recorded that as hygiene — "conformal,
+not an `H^3` isometry, and it rides there anyway". It is not hygiene. It is
+half of a pivot sitting in the wrong organ, and its conjugate has never
+been named because the operator it belongs to was never recognised as one.
+
+`puncture` IS NOT THE UNPAIRED ONE, and reading it as a self-inverse
+involution was wrong. It is a pair like the others and its second half is
+simply unbuilt and unnamed.
+
+### 62.3 Why this decides how T2 is built
+
+`REFUSE_EDGE` is a STATIC GATE and is correct as it stands: it re-derives
+the transition on the two bodies' union and compares exactly, with no
+threshold and no constant to dial. What it has never had is a physically
+generated input — every edge it ever judged was minted where
+`ring_of_support` inflated two disjoint supports until they collided.
+
+The gate fires at the SETTLING, not at the coupling. Tension says two
+bodies are coupled; relaxation says a coupled pair settles into the
+transition it will hold, and that settled transition is what an
+independent organ can re-derive. So a tether built as condensation alone
+gives the court nothing to verify: a relation that can only appear has no
+resting state to check against.
+
+LAW 6'S TWO-ORGAN CONDITION HAS THEREFORE NEVER HELD HERE. One organ
+generates the relation, another re-derives it; with the generator a
+stencil and the relaxation absent, the court has been verifying the
+internal consistency of an artifact. Both halves of `condense / drain` are
+what make `REFUSE_EDGE` an organ rather than a formality.
+
+### 62.4 Every loop is cauterized, and none runs indefinitely
+
+A loop is not walked out of; it is TERMINATED BY BEING READ.
+`rebase.rs` already says it for the stabilizer orbit — "the engine does not
+step out of the loop, it EVALUATES the loop, and the loop becomes a class
+the form carries" — and the same holds for every cycle the complex stands.
+`classify` is the cauterization: `Filled`, `Congruent`, `Class`,
+`Unspellable` each convert a walk into content and stop it. A loop with no
+classifier is a loop that runs forever.
+
+THIS IS A THIRD KIND OF TERMINATION. Law 1 admits two — an integer measure,
+or a `Budget` — and a cauterized loop is neither. It ends because it was
+READ, not because a counter was spent, and that is why a stroke can be cut
+mid-cover without leaving a half-evaluated cycle: the reading is atomic
+even where the walk is not.
+
+So `loop_defects` accumulating across a process is not an instrument
+sloppiness. It is the ledger of cauterizations along a trajectory, and it
+grows because the engine keeps exiting loops and entering others. What it
+must not do is print beside a per-form count without naming its scope.
+
+### 62.5 A pivot changes dimension because re-entry is forbidden
+
+YOU CANNOT ENTER THE SAME DIMENSIONAL LOOP FROM THE LOOP YOU JUST EXITED.
+That is the condition that makes a pivot a pivot: having cauterized a
+cycle, the walk cannot resume it, so the only move available is out of the
+dimension it stood in. `ascend` takes a cauterized 1-cycle to a 2-cell;
+the walk does not come back down into the cycle it just closed.
+
+CONJUGATE IS NOT UNDO, and this is what saves 62.1's pairs from being a
+ratchet running backwards. `descend ∘ ascend != 1`. Creation and
+annihilation are conjugate without the second undoing the first in the
+same step, and the same holds here: `descend` from a 2-cell reaches a
+cycle, but never the one `ascend` closed to make it.
+
+THE FAILURE TO COMMUTE IS WHERE THE CONTENT IS. If the two halves
+commuted, ascend-then-descend would return the walk to its start and
+nothing would have been gained — the pair would be a pure oscillation, as
+empty as the ratchet is one-sided. `[ascend, descend]` is the curvature the
+pivot carries, which is the same shape the algebra already has in
+`[p, p] subset k` (Thomas precession, 60.4): two boosts do not commute,
+and their commutator is a rotation that neither of them is.
+
+So a conjugate pair is well-formed exactly when its two halves fail to
+commute, and the commutator is what the pivot RETURNS. A pair that
+round-trips is not a component; it is a no-op written twice.
