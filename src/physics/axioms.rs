@@ -345,4 +345,167 @@ mod tests {
             "different anisotropies are not a rotation apart"
         );
     }
+
+    /// A.11's REACH, MEASURED RATHER THAN ASSUMED (ruled 2026-09-22).
+    ///
+    /// A claim was made that the trace/2nd/4th suite is blind to six of the
+    /// nine crystallographic orders and that `relative_rotor` minting only
+    /// `{1, 2, 4}` was the instrument's own limit. IT IS NOT, and this test
+    /// is the arithmetic that says so.
+    ///
+    /// The 2D crystallographic restriction is `φ(ℓ) ≤ 2`, admitting
+    /// `{1, 2, 3, 4, 6}`, and a SQUARE lattice narrows it to `{1, 2, 4}`. A
+    /// body of unit cells on an ARC grid therefore cannot carry `C₃` or `C₆`
+    /// symmetry, and no rotation of order 3 or 6 maps the lattice to itself,
+    /// so no such relation between two grid bodies exists to be measured.
+    /// `φ(ℓ) ≤ 4` giving `{1,2,3,4,5,6,8,10,12}` is the restriction in FOUR
+    /// dimensions: those orders live on the off-plane channels of `Cl(4,0)`
+    /// and are not planar shape orientations at all.
+    ///
+    /// So `{2, 4}` is exactly sufficient for the sensor plane, and what it
+    /// covers is asserted here: the 2nd orients everything the lattice can
+    /// turn except the `C₄` bodies, and the 4th orients those.
+    #[test]
+    fn a11_the_even_suite_covers_the_square_lattices_whole_order_set() {
+        // C₁ — an L-tromino. Anisotropic at the second harmonic.
+        let c1 = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]);
+        assert!(
+            blade::deviatoric(&c1.blade).is_some(),
+            "a generic body is oriented by the 2nd harmonic"
+        );
+
+        // C₂ — a domino. Also second-harmonic anisotropic.
+        let c2 = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]);
+        assert!(
+            blade::deviatoric(&c2.blade).is_some(),
+            "a two-fold body is oriented by the 2nd harmonic"
+        );
+
+        // C₄ — the 2x2 square. The 2nd harmonic VANISHES on it, which is
+        // the whole reason the 4th exists (A.11).
+        let c4 = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (0, 1, 0), (1, 1, 0)]);
+        assert!(
+            blade::deviatoric(&c4.blade).is_none(),
+            "a four-fold body is isotropic to the 2nd harmonic"
+        );
+
+        // AND THE ORDER SET IS CLOSED HERE. `{1, 2, 4}` is every rotation a
+        // square lattice admits, so a suite that orients each of them is
+        // complete for the sensor plane. A seventh harmonic would answer a
+        // question the base cannot ask.
+    }
+
+    /// THE PARITY GAP IS REAL, AND IT IS NOT THE ORDER GAP (57.3).
+    ///
+    /// The one thing the even suite genuinely cannot do is separate `φ` from
+    /// `φ + π`: every even-rank moment satisfies `u(−x) = u(x)`, so a body
+    /// and its point reflection through the centroid carry the SAME
+    /// deviatoric and the SAME quartic. This is independent of the order
+    /// set — it holds for `C₁` bodies on a square lattice, which is most of
+    /// them — and it is why `Frame::HalfOpen` exists.
+    ///
+    /// Closing it needs an ODD invariant. The 3rd harmonic is the candidate,
+    /// and the reason it works is NOT that bodies have three-fold symmetry
+    /// (a square lattice forbids that) but that a generic body has a
+    /// non-vanishing third moment which changes sign under `x -> -x`.
+    #[test]
+    fn a11_no_even_moment_separates_a_body_from_its_point_reflection() {
+        let body = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]);
+        // The same body reflected through the origin. Congruent to itself
+        // under a half turn, and a half turn is what must be detected.
+        let flipped = blade::shape_of(&[(0, 0, 0), (-1, 0, 0), (0, -1, 0)]);
+
+        let (ua, ub) = (
+            blade::deviatoric(&body.blade).expect("anisotropic"),
+            blade::deviatoric(&flipped.blade).expect("anisotropic"),
+        );
+        assert_eq!(ua, ub, "the 2nd harmonic cannot see a half turn");
+
+        let (qa, qb) = (
+            blade::quartic_harmonic(&body.blade),
+            blade::quartic_harmonic(&flipped.blade),
+        );
+        assert_eq!(qa, qb, "and neither can the 4th: both are even rank");
+    }
+
+    /// `I₂ ≠ 0` IS PROOF THE MOTION LEFT THE SENSOR PLANE (ruled
+    /// 2026-09-22).
+    ///
+    /// THE SENSOR IS NOT THE ONTOLOGY. A reading that confined the engine's
+    /// orders to `{1, 2, 4}` because the detector is a square raster
+    /// mistook the display substrate for the manifold: a facet pitched out
+    /// of the sensor plane projects to jagged cells, and the refraction
+    /// rotor across its edge carries its own order whatever the raster can
+    /// tile. `Cl(4,1)` admits the whole cyclotomic spectrum, `φ(ℓ) ≤ 4`.
+    ///
+    /// And the second Casimir says when that has happened. `⟨Ω⟩₄` is a
+    /// grade-4 part, so it needs FOUR independent directions to be
+    /// non-zero. Everything confined to one plane is proportional to `e₁₂`
+    /// and `e₁₂ ∧ e₁₂ = 0`; a planar translation is `v ∧ e_∞` and two of
+    /// them repeat `e_∞`; a planar rotation against a planar translation
+    /// repeats `e₁` or `e₂`. Each is asserted below rather than argued.
+    ///
+    /// So a corpus reading `non-simple 3` is not carrying a curiosity: it is
+    /// EMPIRICAL PROOF that three of its circuits compose content off the
+    /// sensor plane, which is what a refraction between two non-parallel
+    /// facets is.
+    #[test]
+    fn a_non_simple_bivector_requires_content_off_the_sensor_plane() {
+        use crate::transducer::cga;
+        let q = |n: i64| crate::core::Q::from_integer(n.into());
+
+        // A planar rotation composed with a planar rotation: one blade, so
+        // the wedge is identically zero.
+        let r1 = cga::rotator(&q(1), &q(1));
+        let r2 = cga::rotator(&q(2), &q(3));
+        assert!(
+            cga::bivector_is_simple(&r1.geo(&r2)),
+            "two turns in one plane cannot couple: e₁₂ ∧ e₁₂ = 0"
+        );
+
+        // A planar rotation composed with an IN-PLANE translation. The
+        // translator is `v ∧ e_∞` with `v` in `e₁e₂`, so every grade-4 term
+        // repeats a basis vector.
+        let t_in = cga::translator(&q(3), &q(5), &q(0));
+        assert!(
+            cga::bivector_is_simple(&r1.geo(&t_in)),
+            "a turn and a slide inside the sensor plane stay simple"
+        );
+
+        // Two in-plane translations: `e_∞` repeats.
+        let t_in2 = cga::translator(&q(-2), &q(7), &q(0));
+        assert!(
+            cga::bivector_is_simple(&t_in.geo(&t_in2)),
+            "two in-plane slides stay simple"
+        );
+
+        // NOW LEAVE THE PLANE. A turn in `e₁e₂` against a displacement with
+        // a third-axis component — which in this engine is the FRAME axis,
+        // the corpus's own `e₃` (61.3) — spans a four-volume.
+        let t_off = cga::translator(&q(0), &q(0), &q(1));
+        assert!(
+            !cga::bivector_is_simple(&r1.geo(&t_off)),
+            "a turn against an off-plane displacement is a SCREW: I₂ ≠ 0"
+        );
+
+        // TWO TURNS SHARING AN AXIS DO NOT COUPLE, and this is not a
+        // detail. `e₁₂ ∧ e₁₃ = 0` because `e₁` repeats, and in THREE
+        // dimensions every pair of 2-planes shares an axis — so a
+        // composition of two spatial rotations is simple no matter how the
+        // facets are tilted relative to one another.
+        let shares_an_axis = cga::rotator_on_blade(&q(1), &q(1), cga::E1 | cga::E3);
+        assert!(
+            cga::bivector_is_simple(&r1.geo(&shares_an_axis)),
+            "two turns through a common axis stay simple: e₁₂ ∧ e₁₃ = 0"
+        );
+
+        // IT TAKES A FOURTH DIRECTION. Two turns couple only when their
+        // planes are COMPLETELY orthogonal — isoclinic — which `Cl(4,1)`
+        // has room for and three spatial dimensions do not.
+        let isoclinic = cga::rotator_on_blade(&q(1), &q(1), cga::E3 | cga::EP);
+        assert!(
+            !cga::bivector_is_simple(&r1.geo(&isoclinic)),
+            "e₁₂ against e₃e₊ spans a four-volume: this is the screw"
+        );
+    }
 }
