@@ -8,6 +8,91 @@
 
 use super::*;
 
+/// WHY A FORM IS WITHHELD, AS A STRUCTURE RATHER THAN A STRING (69,
+/// ruled 2026-09-22).
+///
+/// THE CLASSIFICATION ALREADY EXISTED AND WAS SPENT ON AN `eprintln!`.
+/// `speak.rs`'s `why_open` read `Form::delta1()` — the Čech coboundary,
+/// the exact non-abelian cocycle this engine computes over its cover —
+/// formatted it into a log line, and then withheld the form identically
+/// whatever it said. `delta1()` was called in ONE place in the tree, for
+/// a diagnostic message.
+///
+/// Worse, it was not reached where it mattered: a form with a positional
+/// residue was withheld on a branch ABOVE it, so the 113 forms per voice
+/// that actually spoke and left links were never classified at all.
+///
+/// THE TWO ARMS DIFFER IN PERMANENCE, which is the same distinction V1
+/// drew for `NoFrame` one dimension down:
+///
+/// ```text
+///   LoopObstruction    δ¹ ≠ 0 — a loop carries non-trivial holonomy, a
+///                      genuine class in H¹. NO change of perspective
+///                      removes it. PERMANENT: shed it at once.
+///   CoboundaryResidue  δ¹ = 0 and the cochain still disagrees. The loops
+///                      all close; the form is off by a COBOUNDARY. The
+///                      thought stands and the PERSPECTIVE does not.
+///                      MUTABLE: Φ⁻¹ is the exact correction, and this is
+///                      the one arm that must never age out.
+/// ```
+///
+/// Order is not arbitrary: `δ¹` is asked FIRST, because a residue means
+/// something different under an obstruction than under a closed cocycle.
+/// A form whose loops do not close has no perspective to shift into.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Withheld {
+    /// A class in `H¹`: permanent, and no generator or vantage retires it.
+    LoopObstruction { loop_ix: u16, key: [u8; 2] },
+    /// Off by a coboundary: the loops close and the cochain does not.
+    CoboundaryResidue { links: usize, pairs: usize },
+    /// The cocycle closes and nothing is left over — the form simply
+    /// measured no descent to speak.
+    NoDescent,
+}
+
+impl Withheld {
+    /// Is this form still reachable by a change of perspective? The one
+    /// bit a retention policy needs: `false` sheds now, `true` must not
+    /// age out.
+    pub fn is_mutable(&self) -> bool {
+        matches!(self, Withheld::CoboundaryResidue { .. })
+    }
+
+    /// A stable token for the journal, so a reading counts arms rather
+    /// than parsing prose.
+    pub fn arm(&self) -> &'static str {
+        match self {
+            Withheld::LoopObstruction { .. } => "H1-OBSTRUCTION",
+            Withheld::CoboundaryResidue { .. } => "COBOUNDARY",
+            Withheld::NoDescent => "NO-DESCENT",
+        }
+    }
+}
+
+/// Classify a withheld form by its coboundary before its residue.
+pub fn withheld_of(
+    form: &Form,
+    remainders: &[crate::transducer::germinate::ResidualGerm],
+) -> Withheld {
+    let held = form
+        .delta1()
+        .into_iter()
+        .find(|(_, w)| !w.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()));
+    if let Some((loop_ix, w)) = held {
+        let k = w.key();
+        return Withheld::LoopObstruction { loop_ix, key: [k[0], k[1]] };
+    }
+    let links: usize = remainders.iter().map(|r| r.len()).sum();
+    let pairs = remainders.iter().filter(|r| !r.is_empty()).count();
+    match links == 0 && form.remainder.is_empty() {
+        true => Withheld::NoDescent,
+        false => Withheld::CoboundaryResidue {
+            links: links + form.remainder.len(),
+            pairs,
+        },
+    }
+}
+
 /// THE DEFLATION a form measures by speaking every train pair through the
 /// crystal that resolves its cited forms. Per pair it is
 /// `deflation_of(lane_moves(after, before))` on the lane vectors of the two

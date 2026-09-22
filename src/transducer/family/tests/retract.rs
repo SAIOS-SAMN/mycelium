@@ -911,3 +911,87 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         t.meets
     );
 }
+
+/// 69 — THE WITHHOLD CENSUS: how many withheld forms are reachable by a
+/// change of perspective, and how many carry a real obstruction.
+///
+/// THE RATIO IS THE WHOLE QUESTION. The fleet withholds ~113 forms per
+/// voice with a positional residue and sheds every one of them on the
+/// epoch clock, because nothing distinguishes a form that is off by a
+/// COBOUNDARY — the thought right, the perspective wrong — from one
+/// carrying a class in `H¹` that no vantage removes.
+///
+/// `Form::delta1()` answers it exactly and was called in one place in the
+/// tree, to build a string for a log line. This counts the arms instead.
+///
+/// Measured offline against the corpus so the reading costs the running
+/// fleet nothing.
+#[test]
+fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
+    use crate::transducer::family::{withheld_of, Withheld};
+    let Ok(dir) = std::fs::read_dir(CORPUS) else {
+        eprintln!("  withhold: {CORPUS} does not read — no corpus, no reading");
+        return;
+    };
+    let mut names: Vec<String> = dir
+        .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
+        .filter(|n| n.ends_with(".json"))
+        .collect();
+    names.sort_unstable();
+    names.truncate(TASKS);
+    assert!(!names.is_empty(), "the corpus directory holds no tasks");
+
+    let epi = crate::client::sdk::Epigenome::new();
+    let mut physics = crate::physics::Physics::default();
+    let (mut extracted, mut spoke) = (0usize, 0usize);
+    let (mut obstructed, mut coboundary, mut no_descent) = (0usize, 0usize, 0usize);
+    let (mut loops_total, mut acyclic) = (0usize, 0usize);
+    let mut pairs_hist: [usize; 8] = [0; 8];
+    for name in &names {
+        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let mut budget =
+            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
+        let Some(rule) =
+            crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
+        else {
+            continue;
+        };
+        extracted += 1;
+        // IS THE DISCRIMINATOR EVEN ASKABLE? `δ¹` reads the loop
+        // holonomies, so a form with NO LOOPS has an empty `delta1()` and
+        // can never classify as an obstruction — not because it carries
+        // none, but because there is no cycle to carry one. A census that
+        // reports `H1 0` without this is a vacuous truth (the pivot rule).
+        loops_total += rule.form.loops.len();
+        if rule.form.loops.is_empty() {
+            acyclic += 1;
+        }
+        let (_mag, remainders) =
+            crate::transducer::family::form_deflation(&rule.form, &task.train, &epi);
+        // The arm this form would be withheld on, if it is withheld at all.
+        match withheld_of(&rule.form, &remainders) {
+            Withheld::LoopObstruction { .. } => obstructed += 1,
+            Withheld::CoboundaryResidue { pairs, .. } => {
+                coboundary += 1;
+                pairs_hist[pairs.min(7)] += 1;
+            }
+            Withheld::NoDescent => {
+                no_descent += 1;
+                spoke += 1;
+            }
+        }
+    }
+    eprintln!(
+        "  withhold census over {} tasks: extracted {extracted} | H1-OBSTRUCTION {obstructed} \
+         COBOUNDARY {coboundary} NO-DESCENT {no_descent} (spoke {spoke})",
+        names.len()
+    );
+    eprintln!("  coboundary residue by train pairs failed: {pairs_hist:?}");
+    eprintln!(
+        "  IS THE DISCRIMINATOR ASKABLE: {acyclic}/{extracted} forms carry NO loops \
+         ({loops_total} loops in total) — on those, delta1 is empty and H1 cannot be read"
+    );
+    // A reading over no extraction is not a reading (rule 11).
+    assert!(extracted > 0, "no form extracted from the corpus: nothing to classify");
+}
