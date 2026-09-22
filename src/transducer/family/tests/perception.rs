@@ -256,10 +256,30 @@ fn root_member(i: u16) -> Vec<u8> {
     )
 }
 
-/// Three touching after-supports: two adjacency faces besides the
-/// Frame star, and the 1-skeleton is not a tree.
+/// T1 — THREE TOUCHING BODIES HAVE NO ADJACENCY FACE, AND THE ABSENCE IS
+/// THE READING (60.5, ruled 2026-09-22).
+///
+/// This asserted two adjacency faces beside the Frame star and a
+/// 1-skeleton that is not a tree. The three supports are `(0,0)(0,1)`,
+/// `(0,2)(0,3)` and `(0,4)(0,5)`: PAIRWISE DISJOINT, sharing no cell of
+/// the base. Both faces came from `ring_of_support` dilating each support
+/// by one column until the neighbours collided — the fixture's own name
+/// says "touching", and touching is exactly what a Čech nerve does not
+/// see.
+///
+/// The relation the test was reaching for is REAL. Three bodies in a row
+/// do relate, and the engine should carry that. But contact is not a
+/// shared coordinate: it is the conformal strain between their spheres
+/// (59.3), condensed where a mind can spell the interface (59.6). Until
+/// the tether lands (T2), the incidence is absent, and a test that
+/// manufactured it with a stencil was asserting the dilation.
+///
+/// So what stands here is the star alone — `E − V + 1 = 0`, a tree, `b₁ =
+/// 0` — and this test is where the tether's arrival will be visible: when
+/// T2 lands, these three bodies gain their faces back from geometry
+/// rather than from a raster, and this assertion is the one that changes.
 #[test]
-fn a_row_of_three_touching_bodies_has_two_adjacency_faces_and_a_loop() {
+fn a_row_of_three_touching_bodies_has_no_adjacency_face_until_the_tether() {
 let supports = supports_at(&[
     vec![],
     vec![(0, 0), (0, 1)],
@@ -278,7 +298,11 @@ let ends: Vec<(u16, u16)> = pairs
     })
     .collect();
 let adj: Vec<_> = ends.iter().copied().filter(|&(i, j)| i != 0 && j != 0).collect();
-assert_eq!(adj.len(), 2, "two adjacency faces, got {adj:?} from {ends:?}");
+assert_eq!(adj.len(), 0, "no adjacency face without the stencil, got {adj:?} from {ends:?}");
+// THE STAR IS STILL THERE, so this is not an empty generator reporting
+// nothing: every body is related to the Frame, and it is only the
+// body-to-body incidence that the dilation was inventing.
+assert_eq!(ends.len(), 3, "the Frame star stands over all three, got {ends:?}");
 let faces: Vec<FormFace> = ends
     .iter()
     .map(|&(i, j)| FormFace::new(i, j, crate::transducer::alphabet::Word::identity()))
@@ -292,10 +316,12 @@ let faces: Vec<FormFace> = ends
 // and answered EMPTY, and an unread loop is not a flat one. The walk reads
 // the cycle now and says what it is.
 //
-// What this test claims is that the star and site faces do not form a
-// tree — two adjacency faces beyond the star — and the cycle rank
-// `E − V + 1` says so directly.
-assert_eq!(faces.len() + 1 - 4, 2, "the 1-skeleton carries two independent cycles, not none");
+// AND NOW THE STAR AND SITE FACES DO FORM A TREE. The cycle rank `E − V +
+// 1` is read on the generator's own output, and with the dilation gone it
+// is zero: three vertices on one Frame, three edges, no independent
+// cycle. Every cycle the corpus carried through this builder was a cycle
+// the stencil closed.
+assert_eq!(faces.len() + 1 - 4, 0, "the 1-skeleton is the star tree: no independent cycle");
 }
 
 /// Occupancy + ring probes scale with sites, not with n².

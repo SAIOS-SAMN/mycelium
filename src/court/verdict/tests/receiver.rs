@@ -4,7 +4,10 @@
 // remainder a demand names is valid while an undeclared one is not; and a
 // tape with no vertex that acts is a chain.
 
-use crate::transducer::alphabet::{LetterId, Word};
+// `LetterId` and `Word` were imported for the tampered-edge fixture that
+// T1 removed (60.5): a quarter turn written over a carried edge, which
+// needed an edge to write over. They come back with the fixture, when T2
+// gives two bodies a reason to relate.
 use crate::transducer::element::Element;
 use crate::transducer::family::{extract_rule, mint_sentence, cipher_form, sentence_measure, Grid, NoCrystal};
 use crate::transducer::sentence::{as_element_form, Vertex};
@@ -89,43 +92,72 @@ fn a_tape_with_no_acting_vertex_is_a_chain() {
     );
 }
 
-/// 50.3, 23.1 step 4: a bar and a lamina of two hues carried together are
-/// a rigid pair whose edge is the identity of the stabilizer; the honest
-/// edge re-derives on the union of the bodies, and an edge that names a
-/// quarter turn the union did not make is refused. Two shapes, so each
-/// chart holds one body and the edge is read on the pair, not on sections.
+/// 50.3, 23.1 step 4 — AND WHAT T1 TOOK FROM IT (60.5, ruled 2026-09-22).
+///
+/// This read: a bar and a lamina of two hues carried together are a rigid
+/// pair whose edge is the identity of the stabilizer; the honest edge
+/// re-derives on the union, and an edge naming a quarter turn the union
+/// did not make is refused.
+///
+/// `11200 -> 00112` is a HUE SEAM: the hue-1 body at cells 0,1 and the
+/// hue-2 body at cell 2 are side by side and SHARE NO CELL. The face
+/// between them existed only because `ring_of_support` dilated each by one
+/// column until they collided, and with the stencil gone the form is two
+/// vertices on two Frame-star faces carrying no edge at all.
+///
+/// THE COVERAGE THIS TEST PROVIDED IS GONE AND IS NOT REPLACED HERE. The
+/// court's `REFUSE_EDGE` path — an edge that names a turn the union did
+/// not make — is machinery that still exists and is still correct, and it
+/// now has NO FIXTURE, because every fixture that produced a carried edge
+/// produced it from adjacency. The corpus holds two genuine cover meets
+/// and neither is in a unit fixture. Building one means a deliberate
+/// replication or merge case, which is T2's ground, and the gap is
+/// recorded in the owed ledger rather than left for a green suite to hide.
+///
+/// What stands here is the collapse itself, asserted so that T2's arrival
+/// is visible at this site: when body-to-body incidence returns from the
+/// tether, this fixture regains an edge and this test is restored.
 #[test]
-fn a_carried_edge_rederives_on_the_union_or_is_refused() {
+fn a_hue_seam_carries_no_edge_without_the_stencil() {
     let family = vec![(digits(&["11200"]), digits(&["00112"]))];
     let f = cipher_form(&family[0].0, &family[0].1);
-    assert!(f.faces.iter().any(|face| face.has_edge()), "the rigid pair carries an edge");
+    assert!(
+        !f.faces.iter().any(|face| face.has_edge()),
+        "two disjoint bodies share no cell, so no face carries an edge: {:?}",
+        f.faces
+    );
+    assert!(
+        f.faces.iter().all(|face| face.i == 0 || face.j == 0),
+        "what is left is the Frame star and nothing between the bodies: {:?}",
+        f.faces
+    );
     let mag = sentence_measure(&f, &family, &NoCrystal, 0).expect("both bodies are spoken");
     let e = as_element_form(&f, mag).expect("a tape");
+    // THE TAPE IS STILL A SENTENCE. A form whose bodies are unrelated is
+    // not a broken form — the relation is absent and the absence is the
+    // reading (rule 11) — so the court replays it clean.
     assert_eq!(
         replay_form_with(&e, &|_| None, Some(&family), &NoCrystal),
         None,
-        "the identity edge re-derives on the union"
-    );
-    let quarter = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]);
-    let mut g = f.clone();
-    // EVERY MEMBER PAIR'S EDGE is tampered, so the court's refusal is not a
-    // function of which pair it happened to read.
-    for face in &mut g.faces {
-        let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
-        for k in pairs {
-            if let Some(edge) = face.at.get_mut(&k).and_then(|p| p.edge.as_mut()) {
-                edge.word = quarter.clone();
-            }
-        }
-    }
-    let tampered = as_element_form(&g, mag).expect("a tape");
-    assert_eq!(
-        replay_form_with(&tampered, &|_| None, Some(&family), &NoCrystal),
-        Some(REFUSE_EDGE)
+        "a form with no edge to re-derive replays clean"
     );
 
-    // A FACE IS ASKED FOR THE PAIRS ITS WORD WAS MEASURED ON, and the
-    // section travels on the face across the tape.
+    // THE SECTION HALF OF THIS TEST IS GONE WITH THE EDGE (T1). What stood
+    // below re-derived a TAMPERED edge against the frames a face claims —
+    // `edges_rederive_frames` with `face.pairs` set to every frame, to a
+    // frame the face does not stand on, and to the one it does — and every
+    // one of those assertions needed an edge to tamper. The fixture's two
+    // bodies are disjoint, so there is none.
+    //
+    // WHAT IS NOW UNTESTED, named so a green suite cannot hide it:
+    // `edges_rederive_frames`' section restriction, and `REFUSE_EDGE` in
+    // both its whole-replay and its per-move form. The organs are intact
+    // and unchanged; they have no input. Restoring them needs a fixture
+    // whose bodies genuinely share support — a replication or a merge,
+    // which is T2's ground — and the owed ledger carries the row.
+    //
+    // The reasoning the section half recorded is kept here because it is
+    // the reason the carrier exists at all:
     //
     // 21 step 2 keeps every word the bundle spoke between two ends as a
     // face of its own, each holding on the pairs it was spoken on. The
@@ -143,43 +175,20 @@ fn a_carried_edge_rederives_on_the_union_or_is_refused() {
     // TAKEN AT THE MOVE, not at the verdict: a tampered edge is a real
     // defect and the form is refused for it by the loop-holonomy check too,
     // so asserting a whole replay here would pass with the section ignored.
-    // `edges_rederive_frames` is the organ that changed, and it is what is
+    // `edges_rederive_frames` is the organ that changed, and it is what was
     // asked (§3.2).
-    let section = |f: &crate::transducer::sentence::Form, ps: Option<Vec<u16>>| {
-        let mut s = f.clone();
-        let ps = ps.map(crate::transducer::sentence::section_of_frames);
-        for face in &mut s.faces {
-            face.pairs = ps.clone();
-        }
-        // Through the tape, because the court replays what arrives on the
-        // wire and a section that does not travel is not a section.
-        let e = as_element_form(&s, mag).expect("a tape");
-        crate::transducer::sentence::from_element_form(&e).expect("the tape reads back")
-    };
+    //
+    // It is still asked HERE, on the honest form, which is the one half of
+    // the reading that survives: a form with no edge is re-derived and
+    // refuses nothing. That is not the tampering assertion and it is not
+    // offered as one.
     let rederives = |f: &crate::transducer::sentence::Form| {
         crate::verdict::body::edges_rederive_frames(f, &family).map(|r| r.reason)
     };
     assert_eq!(
-        rederives(&section(&g, None)),
-        Some(REFUSE_EDGE),
-        "a face claiming every frame is re-derived at every frame"
-    );
-    assert_eq!(
-        rederives(&section(&g, Some(vec![1]))),
+        rederives(&f),
         None,
-        "a face measured at frame 1 is asked nothing in a one-frame family"
-    );
-    assert_eq!(
-        rederives(&section(&g, Some(vec![0]))),
-        Some(REFUSE_EDGE),
-        "and naming the frame it does stand on brings the re-derivation back"
-    );
-    // The honest form is unaffected either way: a section restricts which
-    // pairs are asked, never what the answer is.
-    assert_eq!(
-        rederives(&section(&f, Some(vec![0]))),
-        None,
-        "the identity edge re-derives on the pair it is measured on"
+        "a form carrying no edge re-derives clean rather than refusing"
     );
 }
 
@@ -212,7 +221,23 @@ fn the_court_perceives_each_frame_once_for_every_vertex_and_face() {
         .iter()
         .filter(|f| words.contains(&(f.i as usize)) && words.contains(&(f.j as usize)))
         .count();
-    assert_eq!(between_words, 2, "the bar and the dot each land beside the L: {:?}", rule.form.faces);
+    // T1 — "BESIDE" IS NOT "OVERLAPPING" (60.5, ruled 2026-09-22). This
+    // asserted two faces where the bar and the dot land BESIDE the L, and
+    // beside is what `ring_of_support` manufactured: the three bodies are
+    // disjoint and share no cell, so with the stencil gone nothing relates
+    // two word vertices and the faces that remain are the Frame star.
+    //
+    // THE CLAIM OF THIS TEST IS NOT THE FACE COUNT. It is law 12 — the
+    // court perceives each frame ONCE, whatever the number of vertices,
+    // faces and member pairs asked about that frame — and that assertion
+    // is below and still runs. The count is a precondition, and it is kept
+    // rather than deleted so the tether's arrival (T2) is visible here: a
+    // fixture whose bodies genuinely relate will raise it off zero.
+    assert_eq!(
+        between_words, 0,
+        "three disjoint bodies relate through no face without the stencil: {:?}",
+        rule.form.faces
+    );
     let cells: u64 = family
         .iter()
         .map(|(x, y)| (x.len() * x[0].len() + y.len() * y[0].len()) as u64)

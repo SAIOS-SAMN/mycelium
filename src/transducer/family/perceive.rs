@@ -519,19 +519,19 @@ pub(crate) fn support_of(body: &Body) -> Vec<(i64, i64, i64)> {
     s
 }
 
-/// THE RING OF A SUPPORT: the sites one 4-step from it within each of its
-/// frames — the adjacent ring of each section, lifted back to its frame.
-/// Adjacency along `e₃` is the corpus's own (51.3) and is not a ring.
-pub(crate) fn ring_of_support(support: &[(i64, i64, i64)]) -> Vec<(i64, i64, i64)> {
-    let mut out = Vec::new();
-    for (k, section) in blade::sections(support) {
-        let painted: Vec<Painted> = section.iter().map(|&(r, c)| (r, c, 0)).collect();
-        out.extend(blade::adjacent_ring(&painted).into_iter().map(|(r, c, _)| (r, c, k)));
-    }
-    out.sort_unstable();
-    out.dedup();
-    out
-}
+// `ring_of_support` STOOD HERE AND IS DELETED — T1 (60.5, ruled
+// 2026-09-22). It dilated a support by a Manhattan 4-neighbourhood on ℤ²
+// and had exactly two callers: the cover's meet index, purged by 58.3, and
+// `star_and_site_faces`, purged with this. Between them they were the
+// engine's entire notion of incidence, and both were reading the dilation
+// rather than the corpus — 184 of 186 meets, and every `b₁`,
+// `loop_defects` and spectrum taken through the form's faces.
+//
+// It is deleted rather than left unused so that combinatorial pixel
+// inflation cannot silently return: a stencil with no caller is a stencil
+// waiting for one. Contact between disjoint bodies is the conformal strain
+// of 59.3, condensed at the mind's own horizon (59.6), and it enters
+// through the tether or it does not enter at all.
 
 pub(crate) fn frame_of(g: &Grid) -> (usize, usize) {
     (g.len(), crate::arc::grid_width(g))

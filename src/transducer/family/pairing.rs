@@ -109,45 +109,32 @@ pub(crate) fn star_and_site_faces(
             related.insert(member_pair_key(a, b), ());
         }
     }
-    for (mk, supp) in supports.scoped() {
-        if Some(mk.as_slice()) == frame {
-            continue;
-        }
-        for (r, c, f) in ring_of_support(supp) {
-            note_face_work();
-            let Some(others) = occ.get(&base_key(r, c, f)) else {
-                continue;
-            };
-            for u in others {
-                // THE REFLEXIVE 1-CELL IS ADMITTED (54.7, as ruled
-                // 2026-09-21). `if *u != mk` stood here and it outlawed the
-                // fundamental generator of the circle.
-                //
-                // A GRAPH needs two distinct vertices for an edge; a CW
-                // complex does not. The minimal decomposition of `S¹` is one
-                // 0-cell and one 1-cell with `∂e¹ = e⁰ − e⁰ = 0` — a closed
-                // 1-cycle on a single vertex, `b₁ = 1`. An anastomosis is a
-                // RECONVERGENCE: a channel rejoining its own stream, and a
-                // rigid shape displaced by `τ` across the lattice joins its
-                // OWN translate. There are not two shapes; the translation
-                // is an automorphism identifying the shape with its image.
-                //
-                // Since 54.7 the key is the SECTION — member ‖ carriage — so
-                // two sheets of one fibre are two keys that read back to one
-                // `(vertex, chart)`. The guard compared sections and dropped
-                // every pair whose sheets differed only by their carriage,
-                // which is every dislocation in the corpus: 186 meets, all
-                // `within one class` and on one chart, `0 loops` on every
-                // form, `pivoted [0,0,0,0]` on every voice of the fleet.
-                //
-                // What remains excluded is a section meeting ITSELF, which
-                // is an identity and carries no `τ` (rule 11).
-                if *u != mk {
-                    related.insert(member_pair_key(&mk, u), ());
-                }
-            }
-        }
-    }
+    // THE RING IS GONE — T1, THE LAST INCIDENCE STENCIL (60.5, ruled
+    // 2026-09-22). A third pass stood here: each member's support dilated by
+    // `ring_of_support`, a Manhattan 4-neighbourhood on ℤ², and every member
+    // standing in the dilation related to it.
+    //
+    // 58.3 purged the same call from the cover's meet index and the corpus
+    // went from 186 meets to 2, from 184 determined frames to 0. It did not
+    // move the defect spectrum, because the FORM's faces were built here and
+    // this dilation still ran: `b₁`, `loop_defects`, the spectra, and the
+    // `non-simple 3` that 59.7 named as the corpus's only luminal candidates
+    // were all readings of a second stencil. A stenciled screw is not chiral
+    // torsion between two bodies — it is a raster array inflated until two
+    // disjoint regions collide, minting a synthetic 1-cycle that registers
+    // as strained precisely because it should not exist.
+    //
+    // 58.3's own argument, one level up: a complex cannot have its incidence
+    // evaluated against two topologies, and a stencil is not one of them.
+    // What this pass was reaching for is real — two adjacent bodies DO
+    // relate — but contact is not a shared coordinate. It is the conformal
+    // strain between their spheres (59.3), condensed where the mind can
+    // spell the interface (59.6), and it arrives through the tether and not
+    // through a dilation. Until it does, this incidence is ABSENT and the
+    // absence is the reading (rule 11).
+    //
+    // `ring_of_support` has no caller left and is deleted with this pass, so
+    // the class cannot silently return.
     related
         .scoped()
         .filter_map(|(k, _)| read_member_pair_key(&k))
