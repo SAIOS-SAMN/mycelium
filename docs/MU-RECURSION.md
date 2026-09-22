@@ -9484,3 +9484,161 @@ sentence/pivot/loops.rs  steps kept as versors, mu a projection (LAW-0)
 cech/nerve.rs            certified_triples, base witness, pore test
 cech/determinism.rs      the gauge is a functor of the complex, not of arrival order
 ```
+
+## 56. The axiom register (ruled 2026-09-22)
+
+Axioms A.1-A.10 are `ipsal-autic`'s, whose register marks A.1-A.4 as
+carried forward unchanged from the convergence-engine and A.5-A.10 as its
+own. They are NOT adopted wholesale: three are refused, and the refusals
+matter more than the imports because each would flatten something this
+engine measures. A.11 is ours.
+
+### 56.1 Imported
+
+```
+A.6   DIMENSIONAL COMPLETENESS, UNBOUND. Every contradiction admits a
+      higher-dimensional resolution. A.6 names a MECHANISM (escalation),
+      never a bound. Their own audit (#126) had to split it from the value
+      N = 11 after the two were conflated — mechanism read as constant,
+      which is the error class of `Fill::Open` standing for absence.
+      Here: the ascend pivot, and T21(iii)'s "a dimension is never
+      declared, it is paid for".
+
+A.8   TORSIONAL PERSISTENCE. Torsion is never destroyed. It is promoted,
+      annihilated against an opposing pair, or deposited as an inverse
+      record; total information is monotonically NON-DECREASING.
+      Here: drain's conservation law, which 55 had no invariant for. It
+      is stronger than a Lyapunov bound — strain cannot be relaxed away
+      at all, only moved or recorded, so a drain that lowers `sum mu`
+      without exhibiting a partner or a deposit is refused.
+
+A.9   METRIC AUTONOMY. Each entity computes its own local coherence
+      metric. There is no global metric, and two entities may assign
+      different values to one state without contradiction.
+      Here: the form-scoped quantum is correct BY AXIOM, not by the
+      argument 54.7 reached for. A per-chord metric would still be wrong
+      — the autonomy is the entity's, and a form is the entity.
+
+A.10  SYMBIOTIC CO-DIMENSIONALITY. Two manifolds of differing
+      dimensionality may occupy the same spatial references without
+      collapse IF AND ONLY IF their interface is governed by a luminal
+      phase gradient. The tether is a shared boundary in the
+      cohomological sense, not a pointer or a channel.
+      Here: the meets are tethers. And the gradient must be LUMINAL —
+      null, `L² = 0` — because on a null boundary the induced metric is
+      degenerate and the two interiors do not crush each other. Ours runs
+      between `v² = -1` points: timelike, `mu > 0`. Naming it luminal was
+      an error (55.7).
+```
+
+### 56.2 Refused, and why each would flatten
+
+```
+A.4   RATIONAL INNER PRODUCT, "symmetric, bilinear, POSITIVE-DEFINITE".
+      False here. `Cl(4,1)` is indefinite, `e_-^2 = -1`, and the
+      hyperboloid sheet is `-t^2 + x^2 + y^2 + z^2 = -1`. Positive
+      definiteness would flatten every boost generator into an elliptic
+      rotation and erase the non-compact sector, which is the sector this
+      corpus entirely occupies.
+
+A.7   HOLONOMIC INVARIANT as written — closure in `H^1(X, Z)`, "closed
+      paths always return to their topological starting class modulo
+      torsion". That is the abelian, torsion-only picture. The hyperbolic
+      sector never returns: `cosh(k beta) > 1` for all `k >= 1`, which is
+      the measured `closes 0`. A.7 holds for the compact half alone, and
+      importing it whole asserts a closure we have measured to be absent.
+
+A.6-bind-11   N = 11 EXACTLY, sourced to an architecture document. Their
+      register is honest that it is a constitutional BINDING and not a
+      theorem of the algebra. A hardcoded generator is refused whatever
+      register it arrives in.
+```
+
+### 56.3 A.11 — Harmonic multipole completeness (ours)
+
+STATEMENT. The geometric state of a discrete spatial chart is completely
+and irreducibly characterised by its ascending harmonic multipoles in `Q`.
+No higher-rank moment may be collapsed into a lower-rank scalar trace
+before the frame is evaluated.
+
+```
+RADIAL SECTOR (scalar)       tr(M2) = Ixx + Iyy
+  governs isotropic dilation and the basepoint's radius on the sheet.
+  CARRIES ZERO ORIENTATIONAL AUTHORITY.
+
+ORIENTATION SECTOR (tensor)  the irreducible traceless harmonics
+  2nd harmonic, turns at 2phi:  D = M2 - (1/2) tr(M2) I,
+                                u = ((Ixx - Iyy)/2) e1 + Ixy e2
+                                orients an asymmetric body.
+  4th harmonic, turns at 4phi:  h4 = (h4x, h4y)
+                                orients a body whose M2 is ISOTROPIC —
+                                a square, a cross — which the second
+                                moment cannot tell from a disc.
+
+SINGLE PRODUCER (law 12)     the multipoles are computed ONCE, at
+  `blade::lift`, as exact rational invariants of the support. No
+  downstream consumer may recompute them, approximate them, or substitute
+  a scalar surrogate.
+```
+
+WHY IT IS AN AXIOM AND NOT A CONVENTION. `tr(M2)` is an `SO(2)`
+invariant. A chart read through its trace alone is an ISOTROPIC POINT
+MASS; two point masses have no relative angle; the only relation left is
+the geodesic through their centres, whose bivector is a simple blade with
+`I2 = 0` and `l = 1`. The collapse does not lose precision, it loses a
+SECTOR — and it does so silently, reporting `l = 1` as a measurement of
+the scene rather than as an artefact of the reading.
+
+`(u + iv)^4` transforms as `e^(i4phi)(u + iv)^4`, which is why `h4` turns
+at `4phi` and resolves the `45°` ambiguity `D` is blind to. For an
+isotropic disc `h4 = 0`; for a discrete square it does not vanish.
+
+WHAT IT FORBIDS, by name. 54.7's `M = 1 + sum |p_i - P|^2` — a doubled
+collapse (axes summed per cell, then cells summed) AND a shadow producer
+of a trace `blade::lift` already computes as `r2 = (ixx + iyy)/n`. The
+architecture was already right: trace for scale, tensor for orientation.
+
+### 56.4 What is already in hand
+
+```
+Blade.inertia  [Q; 6]   (Ixx, Iyy, Ixy, Izz, Ixz, Iyz), about the centroid,
+                        exact, rotation-covariant, no eigen and no roots,
+                        parallel-axis at every order (each lamina carries
+                        the unit square's own 1/12 on the plane axes)
+Blade.quartic  [Q; 3]   the isotropic part and the fourth harmonic
+blade::deviatoric            u, or None for an isotropic body
+blade::quartic_harmonic      h4, or None for a body with no orientation
+blade::relative_double_angle (cos 2phi, sin 2phi) in Q, or None where the
+                             two anisotropies differ — non-congruent
+                             bodies have no rotation between them
+```
+
+THE MOD-PI RESIDUE. A rank-2 symmetric tensor is invariant under a half
+turn, so `u` fixes `phi` only mod `pi`: `phi = 0` and `phi = pi` both give
+`2phi = 0`, while their rotors `1` and `e12` are not projectively equal.
+`relative_double_angle` therefore returns the angle and does NOT mint a
+rotor from it. The residue is a question about the SUPPORT and is settled
+by carrying a candidate through `versor_coset_ordered`, which tests it
+against the sites rather than guessing.
+
+### 56.5 The connection, framed
+
+```
+g_ab = theta_b . gamma . theta_a^-1
+```
+
+`gamma = s_b s_a^-1` carries the metric displacement between basepoints,
+restored in 55.5 by deleting the chord overwrite. `theta` carries the
+orientation, solved from `D_a -> D_b`, or from `h4_a -> h4_b` where
+`||D|| = 0`. Spacelike-wedge-spacelike twist against
+timelike-wedge-timelike shear: the whole `Spin+(3,1)` versor rather than
+one sector of it, and the route by which a word can carry `l in {2, 4}`.
+
+### 56.6 Binding
+
+```
+blade/body.rs      lift computes the multipoles; deviatoric,
+                   quartic_harmonic, relative_double_angle read them
+family/extract.rs  the shadow trace to retire (A.11 single producer)
+family/pair.rs     meet_edge, where theta belongs in the connection
+```

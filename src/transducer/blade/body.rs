@@ -569,6 +569,101 @@ pub struct Shape {
     pub blade: Blade,
 }
 
+/// THE DEVIATORIC VECTOR OF A BODY'S SECOND MOMENT — its ORIENTATION,
+/// exact in ℚ and taken with no root (55.3, ruled 2026-09-22).
+///
+/// `inertia` holds the whole tensor; `r2` already takes its TRACE and uses
+/// it where a radius belongs. The trace is an `SO(2)` invariant, so it
+/// says how big a body is and nothing about which way it faces — a body
+/// read through its trace alone is an ISOTROPIC POINT MASS, two of them
+/// have no relative angle, and the only relation left between them is the
+/// geodesic through their centres:
+///
+/// ```text
+///     R = 1 − v_b v_a,  ⟨R⟩₂ = v_a ∧ v_b,  (v_a∧v_b)∧(v_a∧v_b) = 0
+/// ```
+///
+/// a simple blade, `I₂ ≡ 0`, `ℓ = 1`. What orients the body is the
+/// ANISOTROPIC remainder, `M₂ − ½tr(M₂)I`, which in `Cl(2,0)` is a vector:
+///
+/// ```text
+///     u = ((I_xx − I_yy)/2) e₁ + I_xy e₂
+/// ```
+///
+/// A rank-2 symmetric tensor turns at TWICE the body's angle, so `u` turns
+/// at `2φ`. `None` where `u = 0`: a body whose inertia is isotropic — a
+/// single lamina, a square, a cross — has no principal axis, and refusing
+/// is the honest answer rather than an arbitrary axis (rule 11). Such a
+/// body is oriented by [`quartic_harmonic`] instead, which turns at `4φ`.
+pub fn deviatoric(blade: &Blade) -> Option<[BigRational; 2]> {
+    let two = BigRational::from_integer(BigInt::from(2));
+    let u1 = (&blade.inertia[0] - &blade.inertia[1]) / &two;
+    let u2 = blade.inertia[2].clone();
+    match u1.is_zero() && u2.is_zero() {
+        true => None,
+        false => Some([u1, u2]),
+    }
+}
+
+/// THE FOURTH HARMONIC OF A BODY — the orientation of a shape whose
+/// inertia is isotropic, turning at FOUR times the body's angle.
+///
+/// `quartic` already holds `(∫(u⁴−6u²v²+v⁴), ∫(4u³v−4uv³))` beside the
+/// isotropic part. A square's second moment cannot tell it from a disc;
+/// its fourth moment can, and on the square base that is exactly the `D₄`
+/// discriminator. `None` where this vanishes too, which is a body with no
+/// orientation at either order.
+pub fn quartic_harmonic(blade: &Blade) -> Option<[BigRational; 2]> {
+    let (h4x, h4y) = (blade.quartic[1].clone(), blade.quartic[2].clone());
+    match h4x.is_zero() && h4y.is_zero() {
+        true => None,
+        false => Some([h4x, h4y]),
+    }
+}
+
+/// THE DOUBLE ANGLE BETWEEN TWO BODIES' PRINCIPAL AXES, exact in ℚ and
+/// with no root taken (55.3).
+///
+/// Diagonalising one tensor needs the roots of its characteristic
+/// quadratic, which lie in `ℚ(√Δ)` — refused by rule 4. The RELATIVE
+/// angle needs neither diagonalised. `u` turns at `2φ`, so for congruent
+/// bodies `‖u_a‖² = ‖u_b‖² = Δ` and
+///
+/// ```text
+///     cos 2φ = (u_a · u_b) / Δ,    sin 2φ = (u_a ∧ u_b) / Δ
+/// ```
+///
+/// are both rational outright. On a square base congruent bodies are
+/// related by `D₄`, so `φ ∈ {0, π/2, π, 3π/2}`, `2φ ∈ {0, π, 2π, 3π}` and
+/// these take values in `{−1, 0, 1}` only.
+///
+/// `None` where either body is isotropic (no principal axis) or where the
+/// two anisotropies DIFFER — `‖u_a‖² ≠ ‖u_b‖²` means the bodies are not
+/// congruent, and an angle between non-congruent shapes is not a rotation
+/// (rule 11).
+///
+/// IT DETERMINES `φ` ONLY MOD `π`. A rank-2 symmetric tensor is invariant
+/// under a half turn, so `u` cannot tell a body from its own 180°
+/// rotation: `φ = 0` and `φ = π` both give `2φ ≡ 0`. The two differ as
+/// rotors — `1` against `e₁₂` — and are NOT projectively equal, so this
+/// returns the double angle and does not mint a rotor from it. Resolving
+/// the residual half turn is a question about the SUPPORT, answered by
+/// carrying a candidate through [`versor_coset_ordered`], which tests it
+/// against the sites rather than guessing.
+pub fn relative_double_angle(
+    ua: &[BigRational; 2],
+    ub: &[BigRational; 2],
+) -> Option<(BigRational, BigRational)> {
+    let da = &ua[0] * &ua[0] + &ua[1] * &ua[1];
+    let db = &ub[0] * &ub[0] + &ub[1] * &ub[1];
+    if da.is_zero() || da != db {
+        return None;
+    }
+    let dot = &ua[0] * &ub[0] + &ua[1] * &ub[1];
+    let wedge = &ua[0] * &ub[1] - &ua[1] * &ub[0];
+    Some((dot / &da, wedge / &da))
+}
+
 /// Lift a support (sites on the three coordinates of the base, no hue) to
 /// a shape.
 pub fn shape_of(support: &[(i64, i64, i64)]) -> Shape {
