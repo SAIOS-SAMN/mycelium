@@ -1198,3 +1198,77 @@ fn a14_the_cross_hue_incidence_is_computed_and_discarded() {
     );
     assert!(scenes > 0, "no scene read: nothing to count");
 }
+
+/// 70 — THE DEMAND-KIND CENSUS: how many demands can GROW LANGUAGE.
+///
+/// A fleet reading of "2,751 sentences spoken carrying demands" cannot be
+/// read without this split. `Kernel::list_demands` routes exactly two
+/// kinds onward:
+///
+/// ```text
+///     RotorPrime  → open_letter        37.7 P2–P3, the Gaussian factor
+///     Standing    → open_unspellable   the rotor the peel could not spell,
+///                                      which IS the candidate generator
+///     Source | Creation | TopologicalDeformation  → `_ => {}`
+/// ```
+///
+/// The other three adjoin nothing. A corpus that raises thousands of
+/// deformations and no `Standing` has a court with nothing to open, and
+/// "generators adjoined by closure: 0" is then a consequence rather than
+/// a finding.
+#[test]
+fn the_demand_kind_census_says_whether_language_can_grow() {
+    use crate::transducer::sentence::Demand;
+    let Ok(dir) = std::fs::read_dir(CORPUS) else {
+        eprintln!("  demands: {CORPUS} does not read — no corpus, no reading");
+        return;
+    };
+    let mut names: Vec<String> = dir
+        .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
+        .filter(|n| n.ends_with(".json"))
+        .collect();
+    names.sort_unstable();
+    names.truncate(TASKS);
+
+    let epi = crate::client::sdk::Epigenome::new();
+    let mut physics = crate::physics::Physics::default();
+    let (mut forms, mut with_demands) = (0usize, 0usize);
+    let (mut rotor_prime, mut standing) = (0usize, 0usize);
+    let (mut source, mut creation, mut deformation, mut other) =
+        (0usize, 0usize, 0usize, 0usize);
+    for name in &names {
+        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let mut budget =
+            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
+        let Some(rule) =
+            crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
+        else {
+            continue;
+        };
+        forms += 1;
+        let mut any = false;
+        for (_, kind, _, _) in rule.form.demand_vertices() {
+            any = true;
+            match kind {
+                Demand::RotorPrime { .. } => rotor_prime += 1,
+                Demand::Standing { .. } => standing += 1,
+                Demand::Source { .. } => source += 1,
+                Demand::Creation => creation += 1,
+                Demand::TopologicalDeformation { .. } => deformation += 1,
+                _ => other += 1,
+            }
+        }
+        if any {
+            with_demands += 1;
+        }
+    }
+    let growing = rotor_prime + standing;
+    eprintln!(
+        "  demand kinds over {forms} forms ({with_demands} carrying demands): \
+         GROWS LANGUAGE → RotorPrime {rotor_prime} Standing {standing} (total {growing}) \
+         | adjoins nothing → Source {source} Creation {creation} \
+         TopologicalDeformation {deformation} other {other}"
+    );
+    assert!(forms > 0, "no form extracted: nothing to census");
+}
