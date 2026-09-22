@@ -1952,6 +1952,18 @@ are one; the union's new `H¹` classes with translation words when they are
 Every step is `compose`, `inverse`, canonical form or `projective_eq`, a
 keyed read, or a tree walk.
 
+**Amended by 70.4 (Phase H, row H1b).** A cover's piece is a hue-blind
+component: `pieces_of` takes components over the body's whole support, so
+the meets of step 1 are between pieces and never at a seam between two
+hues. Such a seam lies inside one piece. It is that body's own gauge
+section, `δ⁰θ = θ_bθ_a⁻¹` inside the body (70.4 item 1), and H3 is what
+reads it. It is not an overlap between two sections. The words the ruling
+quotes, "a seam between two hues is a meet", were never written in this
+section. They describe what the per-hue `pieces_of` built, and this note
+is where 13.9 says it no longer holds. The piece's address,
+`coord::Piece`, carries its kind and its support and no hue, because
+nothing reads a hue there (law 12).
+
 ### 13.10 Instance one: two hyphae on one chart
 
 `Kernel::glue_fetched` (cognition.rs 2651) is this computation with `A` =
@@ -5381,6 +5393,22 @@ the home read the deferral's zero code as a witness's refusal by key
 or bond did not cover what was asked, read per lane as `court room
 refused` reads a draw against a room (law 5).
 
+The mint writes two lines of its own, prefix `  mint `, both from
+`sentence/tape.rs` where a sentence is minted (row D34):
+
+```
+  mint cover desync: {ports} ports, {n} bonds, {orphan} orphan, {phantom} phantom
+  mint cover desync: the address does not decode, so the court holds no form
+```
+
+Both read the form THE COURT WILL HOLD — `from_address` of the minted
+address — against the envelope's nerve, not the form in hand. The first
+says the two disagree: `orphan` glued ports the nerve names no bond for,
+`phantom` bonds naming no glued port. It is written only when either is
+non-zero. The second says the address does not decode at all, so there is
+no court form to compare. That is its own reading, and the form in hand is
+never put in its place.
+
 ### 34.3 Client log lines, `mycelium-client.rs` and `sdk.rs`
 
 Prefix `[{tag}] ` as the existing lines:
@@ -8309,6 +8337,78 @@ beside `PivotCertificate`; tests: `a_refusal_contracts_the_held_form_and_seals_t
 `a_refused_sentence_leaves_the_dialect`,
 `a_citation_is_owed_once_per_court_and_a_sealed_one_to_none`,
 `a_code_the_hypha_did_not_send_is_not_an_outcome` (a wait admits nothing).
+
+### 50.10 The court adjudicates words; grammar is content (ruled 2026-09-22)
+
+The operator's ruling, on the reading that the courts of epoch 96
+adjudicated 2 751 sentences, hardened some 440 words per court into every
+genome, and adjoined nothing: **the court adjudicates words, and the
+construction of sentences is the language's own grammar, held as content
+above a fixed interpreter.** Neither half reopens "sentences only" (law 8,
+50.6); both are read inside it.
+
+**A word is a one-vertex sentence.** Chapter 50.1's theorem has two
+conditions, and the first — the vertex reconstructs its body,
+`(V·W·γ)·B_in = B_out`, exactly, on the frames it claims — is a condition
+on one vertex and no face. A form of one word vertex carrying its body is
+therefore a valid sentence with no faces, no loops and no second
+condition, and it is uttered, replayed and ruled exactly as any sentence:
+the voice speaks it, the court replays it by M1 (the rotor composed from
+the cited generators and compared projectively) and by 23.1 step 3 (the
+body carried), a witness re-derives it, the home installs it, and the
+syllabus teaches it. That is the path from Stood to Ruled, from the
+dialect to the genome, and it is the court adjudicating a word. What
+"sentences only" refused was never this; it refused a chain of links with
+no vertex around it, which reconstructs nothing (50.6, the three seams).
+A word that fails its own body on a frame it claims is refused at the
+vertex (`REFUSE_VERTEX_BODY`); a word that carries its body on the frames
+it was measured at and is silent on the others is a section (51.8) and is
+ruled on the frames it names.
+
+**Measured, epoch 96, before this ruling:** the mint refused 4 653 words
+for not carrying their family, 3 501 of them at `a lamina lands on the
+wrong hue`, and the failing frame was the first frame of the family — the
+frame the word was measured on — in 2 016 of 3 501 three-frame cases. A
+word refused on the frame it was read from is not a word that fails its
+family; it is a quotient measured against a chart whose gauge the vertex
+does not carry, and that is read before anything is changed (row W2).
+
+**Grammar is content, and the interpreter is not.** How words are put
+into sentences — which pairs are related, by what transport, under which
+relators the loops must close, which rewrites carry one derivation to
+another — is the presentation of 1.8 and the upper rungs of 1.9: relators
+at depth 4, rewrites at depth 5, procedures over the crystals at depth 6,
+each adjoined by two courts on one witness and taught by the syllabus,
+each held, cited, paid and retired as a generator is. That is what
+"modifiable after run time" means here, on the voices and on the courts
+alike and on trajectories that differ by construction, since epigenomes
+diverge and covers converge. What never changes at run time is the
+interpreter — the geometric product over exact ℚ, the canonical forms, the
+peel, the coboundary (1.8, 1.9) — because two courts replay one another
+through it and a court running a different interpreter is a different
+mathematics. Today the sentence constructors are F on the voice (50.2)
+and G on the court, written in the host; they become content rung by rung
+as 37.7 fires at each depth, never by a commit that makes the grammar a
+table.
+
+**Order.** Words are hardened as one-vertex sentences now (W1), on the
+corpus, without waiting for a loop; faces and loops enter as H2c and H3
+make their transports readable; the first generator adjoined by closure
+is the gate on depths 4–6, and nothing at those depths is authored by hand
+before it.
+
+**Binding.**
+
+```
+family/deflation.rs         mint_sentence — a form of one word vertex that
+                            carries its body is minted; `acts()` already
+                            admits it and `vertices_carry_frames` rules it
+court/verdict/body.rs       vertices_carry_frames — 23.1 step 3 on the
+                            frames the word claims (W2 reads its faults)
+server/cognition/book/      the install path, unchanged: Stood → Ruled
+transducer/alphabet/        F, the constructor on the voice, host-written
+                            until depth 5–6 make it content
+```
 
 # Part XI — The frame axis
 
@@ -11522,6 +11622,38 @@ LANDING (1) ALONE COLLAPSES THE ENGINE into 732 isolated islands with no
 external pathway at all — a worse famine than the one 69 diagnosed, and
 arrived at deliberately. The halves are one ruling.
 
+**The contact graph as read (Phase H, row H2b).** Bodies are hue-blind
+components of the 6-incidence. A contact is a corner incidence,
+`incidence_diagonal_3d`, between two distinct bodies, and pairs are named by
+their component roots. The instrument is
+`a14_contact_is_the_diagonal_between_hue_blind_bodies`, run over the same
+40 tasks and 128 scenes as 70.1, whose figures stand in the right column:
+
+```
+                                   on the diagonal      70.1 (cross-hue 4-edges)
+    V   bodies                     732                  1646
+    E   distinct contacts          389                  1102
+    C   components                 405                  732
+    b₁ = E − V + C                 62  (21 scenes)      188
+    isolated bodies                328  (448‰)          598  (363‰)
+    the rest                       V 404, C 77          —
+    single-cell bodies             392  (535‰)          1053 (64.0%)
+    contacts touching one          295 of 389 (758‰)    816 of 1102 (74.0%)
+```
+
+Inside the bodies the 6-incidence carries 6172 same-hue edges and 1635
+gauge seams, the edges between two hues within one body. The seams are
+H3's content and not contact. Perception builds 732 bodies, one for each
+hue-blind region, and the census asserts it. That is the half of H1 no test
+asserted before.
+
+So the contact graph is not empty. Its 62 cycles are the first cycles this
+corpus has ever had between bodies, where 70.1's 188 were all inside
+objects. `named_faces` offers a face for each corner the diagonal names,
+tagged `Contact`. A pair that several incidences name is one face carrying
+all of them (row N1). The `family form` line reports them as `contact
+faces offered … built …`.
+
 ### 70.5 What must be re-measured, because every 69 reading moves
 
 `b₁ = 188` is internal and must be re-read as gauge content. The
@@ -11544,6 +11676,65 @@ Both sources of a `Standing` demand want one thing the corpus, read
 through this perception, does not produce: a transition that is hard to
 spell. The famine, withhold and metabolic censuses stand un-re-taken
 (row H4).
+
+**Re-taken on Phase H (rows H1b, H2b, H4, N1).** Every corpus census ran on
+one commit. There are three columns. BEFORE is c7ec6db, with per-hue cover
+pieces and no diagonal. AFTER is Phase H, with hue-blind pieces and corner
+contact faces. PROBE is Phase H with the per-hue split restored in
+`pieces_of` and nothing else changed. The probe was run once, in a detached
+worktree, as §6.4 permits, to check the attribution below. It is not
+restored here: the ruling at 8c715a1 refuses putting fiber data back into
+the base to keep a count up.
+
+```
+                                      before       after       probe
+    lift: cover meets (with an edge)  51 (51)      0 (0)       51 (51)
+    lift: chords                      51           0           51
+    frames half-open                  51           0           51
+    faces (carrying a 50.3 edge)      148 (44)     72 (2)      161 (49)
+    forms carrying a loop             2            0           2
+    loops (withhold census)           45           0           48
+    withhold: COBOUNDARY              2            0           2
+              ACYCLIC-UNASKABLE       32           34          32
+              NO-DESCENT              2            2           2
+    field (famine): offered           245          158         245
+              horizon apart           158          88          159
+              horizon contained       69           56          69
+              isotropy                1            0           —
+              half-open               7            7           —
+              CONDENSED               0            0           0
+    planes read (transitions)         468          155         —
+      e1p e2p | e1m e2m | epm         116 118 | 116 118 | 78    9 11 | 9 11 | 7
+      e12 e13 | coupled               4 1 | 4      3 1 | 3
+    metabolism: orbit closed / Σℓ     468 / 481    155 / 165   —
+              draw, syntropy          [0,0,0,0], 0 [0,0,0,0], 0 —
+              nerve charts            17           0           —
+    last form's cycles: reflexive     132          0           141
+              unread                  0            21          30
+    antipodal classes                 6            0           —
+    τ: chords met                     44           0           —
+    grade 0: vertices with a fibre    35           22          —
+    demands: Source / Creation / TD   34 / 21 / 134  32 / 21 / 134  —
+    contact faces on `family form`    —            12 of 216 lines   —
+```
+
+THE LOSS IS H1b'S, AND THE PROBE SAYS SO. With the per-hue split restored,
+the loops come back, 48 against 45 before, along with the meets (51) and
+both COBOUNDARY verdicts. Every loop, chord and cover meet the corpus
+carried came from a boundary between two hues inside one body. That is
+exactly what 70.1 measured in advance. Under 70.4 those boundaries are the
+body's gauge seams (1635 of them, 70.4) and H3 reads them. Until H3 lands
+nothing reads them, and the discriminator cannot be asked on any of the 36
+forms. The cost is recorded as the number: 45 loops → 0.
+
+THE UNREAD CYCLES ARE THE FINDING, NOT THE LOSS. The last form's line reads
+21 `unread` where before it read 0, and the probe, which carries the same
+contact faces, reads 30. The unread cycles came in with the corner
+contacts. A contact face exists, and the transport around a cycle through
+it refuses. The `unread` gate does not yet say which way it refuses: on
+the light cone, with no member pair at the node, or not rigid. Row H2c
+splits it. This is the first place in this corpus where a holonomy between
+two bodies could be hard to spell. It is read before anything is fixed.
 
 ```
 blade/body.rs           components() — the filter line that is the ruling
