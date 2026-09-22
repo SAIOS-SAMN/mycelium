@@ -11499,7 +11499,12 @@ is the gauge section it carries, not its identity.**
    nothing else to read.
 
 2. Inter-body contact needs its OWN primitive, and this is the half that
-   must land with the first. Under hue-blind bodies two distinct bodies
+   must land with the first. **Every site of the shape (ruled at the
+   audit of 9be21ea, 2026-09-22):** `pieces_of` files a body's laminae by
+   hue before taking components, so the cover's piece is still one hue
+   and 13.9's "a seam between two hues is a meet" is superseded here —
+   the seam is the body's gauge section and never a meet between pieces
+   (rows H1b, H2b). Under hue-blind bodies two distinct bodies
    can never be 4-adjacent — if they were, they would be ONE body. So
    cross-hue incidence stops being the inter-body relation and becomes
    intra-body gauge content, and A.14's contact primitive is left with
@@ -11518,6 +11523,21 @@ famine census, the withhold census, the plane census and the metabolic
 ledger were all taken against 1646 shards and will read differently
 against 732 bodies. No number from 68 or 69 survives this unchanged, and
 none of them should be quoted forward without a re-run.
+
+**Re-taken after H1 (926f3e5, 2026-09-22; H1b and H2b not yet landed,
+so these move again).** The plane census: transitions 368 → 468,
+dilations 10 → 78, turns `e12` 7 → 4, `Σℓ / closed` 1.03 — more motion
+and not harder motion, bigger bodies to translate rather than relations
+that resist spelling. The demand-kind census, new: over 36 forms, 31
+carrying demands, 189 demands of which RotorPrime 0 and Standing 0 — the
+two kinds `list_demands` can open — against Source 34, Creation 21 and
+TopologicalDeformation 134, which it matches with `_ => {}`. The growth
+organ of 37.7 has never been offered an item of a kind it can open; the
+zero of 45.9 is a consequence of that and not a finding about the court.
+Both sources of a `Standing` demand want one thing the corpus, read
+through this perception, does not produce: a transition that is hard to
+spell. The famine, withhold and metabolic censuses stand un-re-taken
+(row H4).
 
 ```
 blade/body.rs           components() — the filter line that is the ruling

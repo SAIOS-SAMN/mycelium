@@ -300,9 +300,19 @@ row of 4.2 or 4.4 that carries that rule.
 
 ## 5. Commits
 
-5.1 **One item per commit.** The item is a row of `MU-RECURSION-TASKS.md`
-or a numbered directive. A commit that lands two fixes is a bundle even
-when each half is green; it is returned and re-cut.
+5.1 **One phase per commit** (ruled 2026-09-22 by the operator; before
+that date, one item). The unit of a landing is a phase: the rows of
+`MU-RECURSION-TASKS.md` that together make one claim the engine can be
+audited on, landed in one commit whose message names every row it
+carries with that row's own observable, quotes the suite and the gate,
+and lists every departure. A phase is not a bundle: a bundle is two
+claims in one commit, a phase is one claim across several rows, and a
+commit whose rows do not share a claim is returned and re-cut. Move-only
+splits stay their own commit (§1.6). A phase is audited as one landing
+under §6: every changed file read whole, each row's observable
+reproduced, the Owed ledger updated per row; a phase with one row
+unreproduced is a phase landed in part, and the next phase's message
+says so.
 
 5.2 **Message.** First line: `<id>: <claim in one sentence>.` Body: what
 changed and why it is doctrine (chapter numbers); the test names added,
