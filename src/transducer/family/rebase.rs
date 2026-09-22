@@ -6,7 +6,6 @@
 //! `extract_rule_with` calls it between the glue and the unfold.
 
 use super::*;
-use crate::transducer::sentence::vertex_ix_key;
 
 /// Step 4 of chapter 21: along each named face (i, j) with `w_i` not the
 /// identity, `j` is `i` read in `j`'s frame when, on every pair of the

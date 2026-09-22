@@ -197,6 +197,35 @@ pub fn transvection_of(v: &Versor) -> Option<Versor> {
     if t1.is_zero() && t2.is_zero() && t3.is_zero() {
         return Some(identity_versor());
     }
+    // THE CAYLEY CHART ENDS AT `|u|² = 1`, AND THAT EDGE IS THE LIGHT CONE
+    // (56, ruled 2026-09-22).
+    //
+    // The generator is `B = u ∧ e₋`, for which `B² = |u|²`, so
+    // `(1 + B)(1 + B)~ = 1 − |u|²` and the transform is undefined exactly
+    // on the unit sphere. That is NOT a numerical accident. Writing the
+    // finite motion as `cosh θ − sinh θ B` gives
+    //
+    // ```text
+    //     cosh θ = (1 + |u|²)/(1 − |u|²),   |u| = tanh(θ/2)
+    // ```
+    //
+    // so `|u| → 1` is `θ → ∞`: the chart covers every FINITE boost and its
+    // boundary is infinite rapidity — the luminal limit, where the
+    // displacement leaves the timelike sector this reader can carry.
+    //
+    // Refusing there is right; refusing there ANONYMOUSLY is not. This
+    // fell through `cayley`'s generic `None` into `EdgeRefusal::NoReading`,
+    // where a displacement at the light cone read the same as a versor
+    // that could not be parsed at all — two different facts under one
+    // silence (rule 11). The boundary is now named where it is crossed.
+    //
+    // It is also the second half of why the corpus reads `parabolic 0`:
+    // the luminal sector is not merely unbuilt (55.7), it is actively
+    // refused here whenever a displacement reaches it.
+    let norm2 = &t1 * &t1 + &t2 * &t2 + &t3 * &t3;
+    if norm2 == Q::one() {
+        return None;
+    }
     let planes = crate::transducer::cga::TRANSVECTION_PLANES;
     let generator = Versor::blade(planes[0], t1)
         .add(&Versor::blade(planes[1], t2))

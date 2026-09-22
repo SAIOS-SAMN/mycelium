@@ -25,7 +25,7 @@ use crate::transducer::sentence::chain::Link;
 use crate::transducer::sentence::class::{Axis, ClassVector};
 use crate::transducer::sentence::transport::{relative_gauge, FacePlace, Transport};
 use crate::network::nerve::{coord, Coordinate, Keyed};
-use crate::transducer::alphabet::{self, Order, Rotor, Word};
+use crate::transducer::alphabet::{self, Rotor, Word};
 use crate::transducer::element::{self, Versor};
 use crate::transducer::peel::ShellKind;
 use crate::transducer::stalk;

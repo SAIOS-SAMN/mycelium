@@ -6,9 +6,7 @@
 //! `fills.rs`, on the same Budget.
 
 use crate::cognition::*;
-use crate::transducer::sentence::ToralPeriod;
 use crate::network::nerve::Coordinate;
-use crate::transducer::address::Address;
 use crate::transducer::element::{self, Element};
 
 impl Kernel {
@@ -454,7 +452,7 @@ impl Kernel {
         spoken
             .torsion()
             .iter()
-            .filter_map(|c| {
+            .filter_map(|_| {
                 let r = spoken.letters()?.spelling.word.rotor();
                 Some((r.holonomy_key()?, r.toral_period(), Some(r)))
             })

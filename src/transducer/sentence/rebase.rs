@@ -87,7 +87,7 @@ impl Form {
         };
         let single = held_acts.len() == 1;
         let mut acts: Keyed<Acting, crate::network::nerve::coord::Section> = Keyed::new();
-        for (ck, a) in held_acts.scoped() {
+        for (_ck, a) in held_acts.scoped() {
             let relative = match (single, &base_inv) {
                 // One chart: the caller's own measurement, unchanged.
                 (true, _) => carriage.clone(),
@@ -169,7 +169,7 @@ impl Form {
         // gauge filed one class and dropped the rest.
         for chart in v.charts() {
             let hue = CycleType::of(&vertex_gauge_at(v, &chart));
-            let Fill::Congruent(_, g, ell) =
+            let Fill::Congruent(_, g, _ell) =
                 crate::transducer::cech::classify(&word.rotor(), delta, hue)
             else {
                 continue;

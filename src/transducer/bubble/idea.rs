@@ -685,7 +685,7 @@ impl Bubble {
                     let Some(order) = m.order() else { continue };
                     match order {
                         crate::transducer::alphabet::Order::Finite(1) => stands = true,
-                        crate::transducer::alphabet::Order::Finite(period) => {
+                        crate::transducer::alphabet::Order::Finite(_period) => {
                             stands = true;
                             // TORSION IS CONTENT, so it is filed at the
                             // period it closes at (50.8 case 3). `chord` is

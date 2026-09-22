@@ -1081,12 +1081,10 @@ pub enum Spectrum {
     Isoclinic,
 }
 
-fn gcd_u32(a: u32, b: u32) -> u32 {
-    match b {
-        0 => a.max(1),
-        _ => gcd_u32(b, a % b),
-    }
-}
+// `gcd_u32` stood here and is deleted: `alphabet::word::gcd_u32` is the
+// one producer and the one `alphabet::rotor` already reads (law 12). Two
+// spellings of one arithmetic is one too many, and this copy had no
+// caller at all.
 
 /// IS THIS GENERATOR SIMPLE? `B ∧ B = 0` means `B` is a single blade — one
 /// plane, one motion. `B ∧ B ≠ 0` means it is a SCREW: a rotation and a
