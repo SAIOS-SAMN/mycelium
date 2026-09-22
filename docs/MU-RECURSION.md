@@ -8039,7 +8039,7 @@ sentence/demand.rs         Demand NEW: the five kinds of 50.5 and their A21 key 
 alphabet/factor.rs         factor_rotor(&Rotor) -> Result<Word, Demand> NEW (A22, 50.4), over spell_peel per commuting block
 blade/carry.rs             versor_between on the union shape for V_ij (50.3)
 family/perceive.rs         word_form → factor_rotor; demand_vertex NEW; body_only_vertex DELETED
-family/extract.rs          the family's percept: F steps 1–5 on the one form (52.5); the edge transport on every face
+family/percept.rs          the family's percept: F steps 1–5 on the one form (52.5); the edge transport on every face
 sentence/form/carrier.rs   Form::loops_of composes FormFace.edge around a cycle; holonomy read in the stabilizer up to conjugacy
 client/sdk/entity/think.rs withhold_form stands the sentence withheld and holds it; hold_thought DELETED (hold_chain holds a chain as the pair form of its scene); attest(chain) unreachable from a withheld form (L6); from a served listing until L8
 court/verdict/replay.rs    replay_form_with: G steps 1–4; REFUSE_NOT_A_SENTENCE, REFUSE_VERTEX_BODY, REFUSE_EDGE, REFUSE_DEMAND_UNTYPED (L7)
@@ -8667,8 +8667,8 @@ before it is paid, and NOT written): `transducer/family/perceive.rs`
 (`Painted`, `Body`, `perceive`), `transducer/blade` (`shape_of`, `moduli`,
 `components`, `adjacent_ring`), `transducer/cga` (`Mv` to `Cl(4,1)`),
 `transducer/element/sensor.rs` (`carry_center`, `site_of`),
-`transducer/sentence/tape.rs` (the codecs), `transducer/family/extract.rs`
-and `pair.rs` (the seven moves), `court/verdict/body.rs`
+`transducer/sentence/tape.rs` (the codecs), `transducer/family/extract.rs`,
+`percept.rs` and `pair.rs` (the seven moves), `court/verdict/body.rs`
 (`vertices_carry_family`, `edges_rederive_family`), and every fixture that
 writes a grid. Nothing in `economy/`, nothing in `chronometry/`, nothing
 in `network/`.
@@ -8948,7 +8948,9 @@ sentence/pivot/trial.rs         file_loop files at any period, 0 included
 sentence/pivot/drive.rs         NoneDischarged files a loop of any order; the Standing demand rides beside the filing
 sentence/tape.rs                the filed zero admitted
 court/verdict/replay.rs         no face refused for an edge word's order; loop_reading_replays reads any order
-family/extract.rs               52.5: the frames perceived once, the fiber quotient per frame, the sections along e₃, the covers and demands, the faces; the percept memo
+family/percept.rs               52.5: the frames perceived once, the fiber quotient per frame, the sections along e₃, the covers and demands, the faces
+family/fiber.rs                 the fibers of a side and the demands an unreached frame leaves
+family/extract.rs               the percept memo and moves 3 to 7
 family/pair.rs                  the scenery: vertices with a support per member, the meet's edge, the cover's demand
 family/pairing.rs               the incidence (star_and_site_faces) and the hue carrier; the scene's greedy pairing deleted
 family/correspondence.rs        the transport class, the member section key, the relatives on a form; the pair-form readers deleted
@@ -9121,7 +9123,7 @@ cut of 53.1 cuts.
 
 ```
 family/scene.rs                 the scene cover: charts by support key, the cover as Keyed, the readings, the recursion's identity end (53.1, 53.2)
-family/extract.rs               extraction per chart; the charts' forms recomposed on the Čech complex (53.1)
+family/extract.rs, percept.rs   extraction per chart; the charts' forms recomposed on the Čech complex (53.1)
 cech/                           the nerve of the cover and the alternating coboundary as the recomposition (53.1, K4)
 sentence/demand.rs, tape.rs     Demand::Chart, its key, the version byte spent in the final commit (53.3)
 server/registry.rs              the sub-problem dispatched and priced (53.3)
@@ -9639,7 +9641,7 @@ one sector of it, and the route by which a word can carry `l in {2, 4}`.
 ```
 blade/body.rs      lift computes the multipoles; deviatoric,
                    quartic_harmonic, relative_double_angle read them
-family/extract.rs  the shadow trace to retire (A.11 single producer)
+family/percept.rs  the shadow trace to retire (A.11 single producer)
 family/pair.rs     meet_edge, where theta belongs in the connection
 ```
 
@@ -9777,8 +9779,9 @@ scene when nothing had asked it.
 ### 57.6 Binding
 
 ```
-family/extract.rs       the chart off the blade; the nerve reading was
-                        still on codomains here and is re-targeted in 58.1
+family/percept.rs       the chart off the blade; the nerve reading (now
+                        family/witness.rs) was still on codomains here and
+                        is re-targeted in 58.1
 blade/body.rs           deviatoric, quartic_harmonic, Frame,
                         relative_rotor, relative_double_angle
 family/cover.rs         CarriedPiece carries both supports
@@ -9904,7 +9907,7 @@ always spelled.
 cech/nerve.rs           read_nerve is the one producer of the four
                         numbers; NerveTotals sums per cover and keeps
                         each triple beside the cover it indexes
-family/extract.rs       the nerve reads supports.domain, per cover,
+family/witness.rs       the nerve reads supports.domain, per cover,
                         undeduplicated; the image reading beside it
 family/pieces.rs        piece_at; the four hand-written key writers gone
 family/cover.rs         Cover keyed by coord::Carriage and coord::Meet;
@@ -10193,7 +10196,7 @@ blades, with the horizon per mind.
 - THE THIRD AXIS OF AN IDEA. `blade::shape_of` takes `(r, c, k)` and a
   remainder's `Link` is `(r, c, before, after)` — two spatial coordinates
   and two hues, no third spatial axis. What `k` is for an idea is the same
-  unanswered question `extract.rs` already flags at the form's chart: "it
+  unanswered question `percept.rs` already flags at the form's chart: "it
   wants a ruling on whether hue is a coordinate of the base or of the
   fibre". The tether cannot be wired into `Contemplation` until it is
   ruled. A.11's single producer is `blade::lift` and must remain so: the
@@ -10209,7 +10212,7 @@ blades, with the horizon per mind.
 family/cover.rs         the meet index reads bare supports; the ring gone
 family/tests/cover.rs   the stroke derived from the run's own spend
 cech/nerve.rs           read_nerve, NerveReading, NerveTotals
-family/extract.rs       nerve/source and nerve/image, both per cover
+family/witness.rs       nerve/source and nerve/image, both per cover
 keyed/coordinate.rs     Piece, Carriage, Meet; Lamina's third axis named
 bubble/contemplation.rs link_new — the same defect, verified, not yet fixed
 bubble/idea.rs          volume_of — raster intersect at remainder_site_key
