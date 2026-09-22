@@ -9639,8 +9639,9 @@ one sector of it, and the route by which a word can carry `l in {2, 4}`.
 ### 56.6 Binding
 
 ```
-blade/body.rs      lift computes the multipoles; deviatoric,
-                   quartic_harmonic, relative_double_angle read them
+blade/body.rs      lift computes the multipoles; deviatoric and
+                   quartic_harmonic (blade/tower.rs) and
+                   relative_double_angle (blade/frame.rs) read them
 family/percept.rs  the shadow trace to retire (A.11 single producer)
 family/pair.rs     meet_edge, where theta belongs in the connection
 ```
@@ -9782,8 +9783,8 @@ scene when nothing had asked it.
 family/percept.rs       the chart off the blade; the nerve reading (now
                         family/witness.rs) was still on codomains here and
                         is re-targeted in 58.1
-blade/body.rs           deviatoric, quartic_harmonic, Frame,
-                        relative_rotor, relative_double_angle
+blade/tower.rs          deviatoric, quartic_harmonic
+blade/frame.rs          Frame, relative_rotor, relative_double_angle
 family/cover.rs         CarriedPiece carries both supports
 family/pair.rs          meet_edge composes the frame
 element/letters.rs      the cone named where it is crossed
@@ -10698,7 +10699,7 @@ will name a remedy that does not exist, exactly as `drain` did.
 ### 63.4 Binding
 
 ```
-blade/body.rs           Strain { num, den2 }, Contact, within, side
+blade/strain.rs         Strain { num, den2 }, Contact, within, side
 cech/coboundary.rs      drain and descend, forget as remember's inverse
 cech/simplex.rs         Drained — Vacuum, Cauterized, Pinned, Absent
                         Descended — Unsealed, Released, Pinned, Absent
@@ -11172,7 +11173,7 @@ can collapse a whole family of held ambiguities at once.
 
 ```
 family/pairing.rs       FieldTally per valve, taken and cleared
-blade/body.rs           NoFrame's five arms — sorted by mechanism, and
+blade/frame.rs          NoFrame's five arms — sorted by mechanism, and
                         the permanence axis cuts across them
 bubble/idea.rs          candidates re-derived at hold, never stored
 court/…/listing.rs      open_unspellable, docket_letter — the promotion

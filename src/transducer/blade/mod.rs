@@ -10,12 +10,18 @@ pub mod carry;
 pub mod shells;
 pub mod surgery;
 pub mod continuous;
+pub mod frame;
+pub mod strain;
+pub mod tower;
 
 pub use body::*;
 pub use carry::*;
 pub use shells::*;
 pub use surgery::*;
 pub use continuous::*;
+pub use frame::*;
+pub use strain::*;
+pub use tower::*;
 
 use crate::transducer::cga::{self, Mv};
 use num_bigint::BigInt;
