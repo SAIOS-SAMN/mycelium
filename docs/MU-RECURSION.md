@@ -9642,3 +9642,140 @@ blade/body.rs      lift computes the multipoles; deviatoric,
 family/extract.rs  the shadow trace to retire (A.11 single producer)
 family/pair.rs     meet_edge, where theta belongs in the connection
 ```
+
+## 57. Corrections from the A.11 landing (ruled 2026-09-22)
+
+Four commits — `6a5910f`, `8fa5326`, `9ece6ee`, `046aaa6` — landed A.11's
+tasks and overturned three readings this doctrine had already recorded.
+They are corrected here rather than edited in place: the wrong reading and
+what unseated it are both part of the record.
+
+### 57.1 "The cover is a partition" is WITHDRAWN
+
+55.1 read `charts over cells, 0 shared by two or more` in nine of ten
+forms and concluded the cover is a partition whose nerve is a set of
+isolated points. That measured `da`/`db` from `cover.carried`, which held
+ONLY THE CODOMAIN — where each piece landed.
+
+The codebase already said what that reading gives. `Supports`:
+
+```
+Both, because the nerve reads meets on both. A deformation is a map OUT
+OF the input, so the Cech nerve is the nerve of the cover of the SOURCE:
+two carriages sharing a domain overlap on the whole of it, however far
+apart their codomains land. That is the replication case, and the only
+case in which the transition between two copies of one shape is visible
+at all. Meets on the codomain are the merge case. READING ONLY THE
+CODOMAIN LEAVES THE NERVE DISCRETE.
+```
+
+The nerve is of PULLBACKS, not pushouts. Two carriages that read the same
+source overlap on the whole of it and land wherever they land; looking at
+the landings shows disjoint interiors by construction and says nothing.
+`0 certified triples` was therefore a property of which half was stored,
+reported as a property of the corpus.
+
+`CarriedPiece` now holds `Supports { domain, codomain }`. The nerve
+measurement still reads the codomain and is still wrong; correcting it is
+open work, not a landed result.
+
+### 57.2 Congruence was the wrong group
+
+56.4 gave `relative_rotor` a congruence gate — equal cell counts, equal
+`||u||^2`. The carriage carries a DILATOR, so a 2x domino is 8 cells
+against 2 and was refused though its rotation is perfectly defined and is
+the identity. A transformation here is a transvection transmutation
+through transduction, not a rigid motion; isometry was too small a group
+and similarity is the right one.
+
+The scale-free form takes no roots. Under `u -> s^4 u` with `s^4 > 0`
+every sign survives, so
+
+```
+sgn(u_a . u_b)   = sgn(cos 2phi)
+sgn(u_a ^ u_b)   = sgn(sin 2phi)
+```
+
+decide which of the four turns applies and `cos 2phi` is never formed.
+Relaxing the gate on `relative_double_angle` INSTEAD would not loosen it
+but break it: `(u_a.u_b)/||u_a||^2` with unequal norms is `s^4 cos 2phi`,
+which can exceed +-1 and is not an angle. The two readings sit on
+different layers and are not rivals:
+
+```
+METRIC      relative_double_angle   O(2); needs ||u_a||^2 = ||u_b||^2;
+                                    answers an exact direction cosine
+PROJECTIVE  relative_rotor          Spin(2)/Z2 on P^1(Q); a similitude
+                                    invariant; never forms cos 2phi
+```
+
+One is the metric restriction of the other's projective ray action.
+
+### 57.3 The half turn is a parity theorem
+
+56.4 called the mod-`pi` residue something to resolve later. It cannot be
+resolved by the harmonics at all. `u` and `h4` are EVEN-rank moments —
+`(-x)^2 = x^2`, `(-x)^4 = x^4` — so `u(-x) = u(x)` and no even moment
+distinguishes `phi` from `phi + pi`. Closing it locally needs an ODD
+invariant: a third harmonic, or a directed boundary contour.
+
+Where cardinalities match the cells settle it. Where they differ — a
+transmuted carry — nothing local can, and `Frame::HalfOpen` carries the
+representative together with the fact that it is a projective class.
+
+PICKING A SIGN PER EDGE IS NOT A SHORTCUT, IT IS A FABRICATION. Three
+edges of a cycle guessed independently manufacture a `-1` holonomy out of
+nothing and the complex reports an obstruction it invented. Left open,
+each edge holds a `Z2` gauge freedom and the COBOUNDARY arbitrates: `d
+sigma` fixes the signs globally where a 2-cell locks, and where it does
+not the obstruction is real.
+
+### 57.4 The Cayley pole is the light cone
+
+`transvection_of` builds `B = u ^ e_-`, `B^2 = |u|^2`, so `1 - B^2`
+vanishes on the unit sphere. That is geometry, not arithmetic:
+
+```
+cosh theta = (1 + |u|^2)/(1 - |u|^2),     |u| = tanh(theta/2)
+```
+
+`|u| -> 1` is `theta -> infinity`. The chart covers every FINITE boost and
+its boundary is infinite rapidity. No repair removes it.
+
+What was wrong is that the boundary refused ANONYMOUSLY, falling into
+`EdgeRefusal::NoReading`, where a displacement at the cone read the same
+as a versor that could not be parsed. It is now named where it is
+crossed. And it is the second half of `parabolic 0`: the luminal sector
+is not merely unbuilt (55.7) — it is ACTIVELY REFUSED here whenever a
+displacement reaches it. Building Layer 2 means giving this boundary a
+READING rather than a refusal.
+
+### 57.5 What the frame measured
+
+With `g_ab = (theta_b . theta_a^-1) . gamma` wired on both sides:
+
+```
+frames: 184 framed, 2 half-open, 0 UNFRAMED
+phase:  periods [0, 48, 0, ...] - every word still l = 1
+defects: non-simple 3, unchanged
+```
+
+The frame computes on every one of the 186 meets and the words stay at
+`l = 1`, so `theta_b theta_a^-1 = 1` throughout: the carried pieces of
+this corpus either never turn or all turn alike. `0 unframed` is what
+makes that trustworthy — no silent refusal hides a turn. Before this the
+two were indistinguishable and `l = 1` was reported as a fact about the
+scene when nothing had asked it.
+
+### 57.6 Binding
+
+```
+family/extract.rs       the chart off the blade; the nerve reading still
+                        on codomains (57.1, open)
+blade/body.rs           deviatoric, quartic_harmonic, Frame,
+                        relative_rotor, relative_double_angle
+family/cover.rs         CarriedPiece carries both supports
+family/pair.rs          meet_edge composes the frame
+element/letters.rs      the cone named where it is crossed
+physics/axioms.rs       A.1-A.11 with the reading that decides each
+```
