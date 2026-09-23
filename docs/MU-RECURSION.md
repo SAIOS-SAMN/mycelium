@@ -10800,6 +10800,32 @@ chosen as its generator (r); the refusal's precedence puts this affine
 reading before a parabolic pair's. The census's "11 planes infinite by a
 parabolic pair" reads "11 planes affine" after MG1b.
 
+**EN1 as landed (e115bcd6), two design points ruled (2026-09-24).** A
+nucleus's centre is where its inversion sends infinity, `−½ s e_∞ s`,
+read by the sandwich and never by a radius; a cell's enclosure is the
+JOIN of its bodies' centres as null points, its carrier the sphere the
+round is a great round of, centred in the round's own span (`σ = ⟨R
+F⁻¹⟩₁`, `F = R ∧ e_∞`), FLAT by name where the centres span no round.
+Containment reads through GR1's one pair reader: `δ² ≤ 1` is ON the
+enclosure by name; `δ² > 1` reads the sign of the inversive product,
+negative APART, positive NESTED. (a) The sign alone cannot say which of
+two nested spheres wraps the other; the tie is the side of the pair's
+RADICAL PLANE `π = s − e`, the pencil's weight-zero member, read as the
+sign of `e · π = s·e − e·e` — the Gram form's own diagonal, no radius
+extracted, no root: negative INSIDE, positive WRAPS. Ruled exact and
+law-abiding. (b) Below the top grade the round is not a sphere (three
+centres join a circle); containment is read against the round's
+CARRIER, the ball that wraps in every direction, and a body off the
+circle's plane but within that ball reads inside — that IS the
+enclosure the operator named; membership in the round's own flat (`X ∧
+F = 0`, "coplanar") is a different fact, named here as a reading to add
+by row if one needs it, not now. A volumeless nucleus reads the sign of
+`X · e`; an imaginary sphere is UNREAD. Nesting is the parse (50.10):
+each enclosure under the wrapper every other wrapper of it also wraps.
+On the census forms: 48 round enclosures, none flat; the forms' other
+bodies against them inside 0, on 18, apart 12, wraps 0; nothing nested —
+the census forms hold no body inside another cell's enclosure.
+
 **Member versus body, corrected twice.** The coordinator's "the nucleus is
 the body's coordinate" was wrong: the nucleus is the tower's order-0 and
 order-1 reading (A.11: scale, no orientation), a projection — a ring and
