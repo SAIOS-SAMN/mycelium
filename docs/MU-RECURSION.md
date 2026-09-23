@@ -6189,7 +6189,7 @@ named.
 `verdict::tests::a9_sel_key_stable_under_debug_change`;
 `sdk::tests::a10_two_sockets_one_vk_one_peer`;
 `server::tests::a11_rendezvous_by_listing_key_not_bytes`;
-`sdk::tests::a12_plane_factorisation_by_hnf`, `a12_offplane_descent_or_novel`,
+`sdk::tests::a12_plane_factorisation_by_hnf`, `a12_offplane_reached_or_novel`,
 `a12_plane_remainder_is_canonical`;
 `nerve::tests::meet_is_intersection_and_costs_shared_prefixes` (meet
 equals set intersection; `count_get` grows with the shared structure, N vs
@@ -11198,6 +11198,30 @@ the fleet at the operator's recut. The quiet point between phases has
 arrived: the vocabulary sweep (VT1 and VT2 in the tree, OR2d and VT1's
 doctrine half in this document) lands here, before the recut and before
 E2.
+
+### 78.20 The vocabulary sweep's tree half landed (c521b425, 2026-09-24)
+
+VT1 and VT2 in the tree, rename semantics only: `pivot/walk.rs` is
+`pivot/circuit.rs` by `git mv`, the circuit read is `traverse`,
+`Withheld::NoDescent` is `NoTrajectory`, `PROBE_DESCENT` is
+`PROBE_RESIDUAL` (the byte's name until PR1), "no measured descent" is
+"no measured trajectory", `Order::Infinite` reads "an orbit that never
+closes" and the metabolism line's "walking N" reads "open N"; the prose
+across 170 files says the circuit, the read, the traversal or the
+crossing where it said walk. KEPT, by sense: sheaf descent, Fermat's
+descent, the pivot pair `ascend`/`descend`, the receipt chain's ancestry
+traversal, 12.2's tree walk as the record of the retired solver, and the
+iteration of a plain carrier — the keyed trie's iterators and its
+`walks` module, the soak binary's corpus walk, the heap-accounting walk
+(a carrier read is not the engine's motion). Ruled: the `walks` module
+keeps its name, A13's own for the carrier's reads. Occurrences 274 → 86
+descent and 800 → 263 walk, each remainder a kept sense; the census's
+line multiset identical once "walking N" ↔ "open N" and NO-DESCENT ↔
+NO-TRAJECTORY are mapped. One stale test comment found and left, since
+the commit was rename-only: `court/verdict/tests/replay.rs` claims a
+zero trajectory refuses by name while its body asserts a zero magnitude
+is not a refusal — rule 13, fixed to match the assertion with E2's first
+commit. This document's two citations of renamed tests follow here.
 
 # Part XI — The frame axis
 
