@@ -10238,6 +10238,92 @@ only. NB1 is new construction at the family pole, and its three choices:
   no grade-three content; four bodies at one element at n = 4 mint a
   3-cell with no arity written.
 
+### 78.11 CG1 ruled: the orbit algebra of a cell, not a sandwich (2026-09-23, the operator's word)
+
+**The finding and the word.** The implementor probed CG1 exactly: a
+2-cell's meet is odd (grade k + 1) and every boundary transport is even,
+so no equality between a cell's meet and a boundary composite can hold;
+the tether holonomy telescopes to a scalar for every triple; and the
+one candidate that could fail — `H M H̃ ∝ M`, the boundary holonomy
+carrying the round onto itself — is, on the operator's word, too basic:
+one group element asked one question, a flat frame. The engine is not on
+simple loops. A circuit's holonomy is a composite motion whose modes are
+each an orbit on their own plane — elliptic modes ellipses, parabolic
+escapes, hyperbolic pole pairs (75) — several planets circulating a star,
+and the mode through `e₃` runs its own congruent orbit that a single
+sandwich folds into the primary's. A superposed boundary — a held coset,
+several circuits sealing one cell, circuits across sections — is a set
+of circuits, not one element, and congruence between them is homotopy,
+which no sandwich can see.
+
+**The structure: the ORBIT ALGEBRA of a cell.** Exact over ℚ at every
+link, each link a producer that exists or is added (78.8):
+
+1. **Circuits, not a loop.** Every circuit `c` bounding the cell — its
+   boundary, each candidate of a held coset, each circuit across a
+   section — is composed member by member into `H_c` (the circuit reader,
+   VT2), each kept, none merged.
+2. **The chart.** `B_c = (1 − H_c)(1 + H_c)⁻¹`, the inverse of the
+   rational Cayley chart (`cga::spin::cayley`, its inverse to be added
+   there with the general even inverse); a half turn has no chart and is
+   the held `ℤ₂` arm by name (rule 11), never approximated.
+3. **The modes.** `B_c = Σ_j B_{c,j}`, commuting 2-blades, `m` read off
+   `B_c` and never fitted (MD1, `bivector_split` generalised from two
+   parts to `m`; a split that needs a root refused as `undecomposed`);
+   each mode its plane, its class by the sign of `B_{c,j}²` (elliptic,
+   parabolic, hyperbolic), its order where finite (`Order`, cyclotomic).
+   The multi-orbit is here: each mode is one planet, and the mode whose
+   plane contains `e₃` is a planet of its own.
+4. **The algebra.** `𝔥 = ⟨B_c, [B_c, B_c′], [[B_c, B_c′], B_c″], …⟩_ℚ`,
+   the bracket closure of the circuits' generators in `Λ²` — the
+   Ambrose–Singer holonomy algebra of the cell, a ℚ-span whose rank is
+   `core::lattice::sparse_rank`, exact. Its commuting part is the torus
+   the joint orbit runs on, and its rank is the cell's DIMENSIONAL
+   CAPACITY — computed from the circuits, never added by hand; its
+   derived part `[𝔥, 𝔥]` is the coupling between planets, the precession
+   62.5's first draft misplaced on the pivot pair (Thomas precession
+   lives here, between modes). A cell whose circuits generate a
+   one-dimensional `𝔥` IS on a simple loop, and says so by rank.
+5. **Congruence, per mode, by bracket.** The round `M` is congruent
+   with a mode where `[B_{c,j}, M] = 0` — the commutator, linear and
+   exact, no sandwich, no square: the mode's orbit keeps the round the
+   bodies share. Congruence of superposed boundaries is `[𝔥, M] = 0`
+   generator by generator: the enclosure survives every boundary. Where
+   a bracket does not vanish it is a blade — the direction the round is
+   carried, on the failing mode's plane, at the cell's grade — and that
+   blade IS the refusal's content: the failing grade and the failing
+   mode ride the refusal (CG1's clause, 74's coordinate).
+6. **Coherence, jointly.** The modes close together where every
+   elliptic order is finite and their least common multiple is the
+   joint period (73.1's commensurability); parabolic and hyperbolic
+   modes are held open by name; a cell congruent on every mode and
+   closing on none is a quasi-periodic orbit, HELD, never a refusal.
+   COHESION is congruence and coherence at every grade of the complex.
+7. **The puncture.** Removing the round from the base gives the
+   complement its classes, and the circuits' holonomies are a
+   representation of those classes: different holonomy, different
+   class; the same holonomy says nothing until the class is read. The
+   class itself is read as the LINKING of the circuit with the round —
+   the trajectory of the round along the circuit, member by member
+   (`M_i = g_i M_{i−1} g̃_i`, a sequence and not one sandwich), and the
+   signed crossings of the inversive distance between the carried
+   witness and the round (EN1's sign along a path). That reading is a
+   conjecture until LK1's probe: signed crossings against the linking
+   number on a circle at `n = 3` and a 2-sphere round at `n = 4`, and
+   the puncture that moves with the tube across sections (A13).
+8. **The held `ℤ₂`, collapsed by the algebra.** Two candidates of a
+   held coset that generate the same `𝔥` with the same brackets on `M`
+   are one gauge freedom and stay held; candidates that differ in `𝔥`
+   or in a bracket are told apart by the algebra, which is T5's kernel
+   given its geometric reason (78.7(4), FR1c).
+
+**The order.** CG1 depends on the mode split: MD1 with RP1 moves into E1
+ahead of CG1; E1 runs NB1 (landed) · MD1 with RP1 · CG1 with the four
+returns · LK1 as a probe · VS1 · EN1 · BQ5a. Nothing here adds a face,
+a dimension or a carrier: the capacity is the rank of what the circuits
+generate, the fluidity is the bracket, and the puncture is a reading of
+classes the round's complement already has.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
