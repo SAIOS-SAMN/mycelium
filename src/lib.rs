@@ -13,6 +13,8 @@ pub mod economy;
 pub mod arc;
 pub mod anastome;
 pub mod chronometry;
+/// §8.1 — the readings the live fleet holds about itself (the observer).
+pub mod observe;
 
 // Component roles.
 pub mod server;

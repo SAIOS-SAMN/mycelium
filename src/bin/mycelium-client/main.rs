@@ -468,6 +468,12 @@ fn main() {
                 cover.spend,
                 cover.pending
             );
+            // §8.1 — THE SAME INSTRUMENTS, AS READINGS, to the hypha's
+            // console: folded into this voice's totals and pushed whole. A
+            // push the hypha did not hold is said here, not dropped.
+            if !entity.observe(&cover) {
+                eprintln!("[{tag}] observe: the hypha did not hold this voice's readings");
+            }
             last_logged_k = own_k;
             last_logged_n = stroke_n;
         }

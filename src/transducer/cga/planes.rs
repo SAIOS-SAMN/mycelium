@@ -224,6 +224,15 @@ pub fn plane_tally() -> PlaneTally {
 }
 
 impl PlaneTally {
+    /// THE ALGEBRA THE CENSUS IS READ IN: the largest carriage noted, and
+    /// never less than the corpus's own — the letters' chart turns planes
+    /// of the grid's three axes whatever `n` a carriage narrowed to, and a
+    /// census that has read nothing names the planes a busy one would. The
+    /// one reader of it, for the line and for the observer's census.
+    pub fn algebra(&self) -> u8 {
+        self.n.max(crate::transducer::element::GRID_N)
+    }
+
     /// How often one plane was populated.
     pub fn count(&self, blade: usize) -> u64 {
         match self.planes.get(&plane_key(blade)) {
@@ -243,9 +252,7 @@ impl PlaneTally {
                 .collect::<Vec<_>>()
                 .join(" ")
         };
-        // A census that has read nothing is read in the corpus's algebra,
-        // so an idle line names the planes a busy one would.
-        let n = self.n.max(crate::transducer::element::GRID_N);
+        let n = self.algebra();
         format!(
             "read {} | harmonic: {} | luminal: {} | coupled {}",
             self.read,

@@ -181,6 +181,10 @@ pub const ACT_FOLD: u8 = 0x37;
 /// ledger rows anchored in `from..=to`, from `cursor`; reply `[total u32]
 /// [m u32][row…]`, a page within the frame budget.
 pub const ACT_ROWS: u8 = 0x38;
+/// THE OBSERVER (§8.1): a voice pushes its readings to its hypha, and any
+/// process queries a hypha for the readings it holds by key prefix. The
+/// layout and its codec are [`crate::observe`]'s, the one writer of it.
+pub const ACT_OBSERVE: u8 = 0x39;
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)

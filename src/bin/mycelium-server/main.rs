@@ -9,6 +9,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 mod admission;
 mod backfill;
+mod console;
 mod door;
 mod exchange;
 mod fold;
@@ -45,13 +46,13 @@ fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
 fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     let mut i = 1;
     while i < args.len() {
-        if args[i] == "--home" {
+        if args[i] == "--home" || args[i] == "--at" {
             i += 2;
             continue;
         }
         // Valueless flags, checked here so an unknown one is still refused
         // rather than silently ignored (rule 11).
-        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" {
+        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" {
             i += 1;
             continue;
         }
@@ -237,6 +238,12 @@ fn main() {
     // answer it gives.
     if args.iter().any(|a| a == "--check") {
         check_home(&home);
+    }
+    // §8.1 — THE CONSOLE ASKS AND EXITS, before anything is created, as the
+    // check does: it reads a hypha (this home's own bind, or `--at`) and
+    // starts nothing here.
+    if args.iter().any(|a| a == "--console") {
+        console::run(&home, flag(&args, "--at"));
     }
     let _ = std::fs::create_dir_all(&home);
     let _ = std::fs::create_dir_all(home.join("corpora"));
@@ -607,6 +614,7 @@ fn main() {
                         let kind = mycelium::anastome::dialogue::act_tag(&frame.body);
                         judge::judge(&mut stream, frame, &door);
                         if let Some(kind) = kind {
+                            mycelium::observe::note_served(kind);
                             let n = served[kind as usize]
                                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
                                 + 1;

@@ -6,6 +6,7 @@
 pub mod boot;
 pub mod contract;
 pub mod learn;
+pub mod observe;
 pub mod quote;
 pub mod syntropy;
 pub mod think;
