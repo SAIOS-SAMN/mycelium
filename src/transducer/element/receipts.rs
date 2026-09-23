@@ -330,7 +330,9 @@ impl NerveRound {
     /// Grassmann's own answer and not a refusal.
     pub fn blade(&self) -> Option<crate::transducer::cga::Mv> {
         let at = |x: &[Q; 4]| {
-            crate::transducer::cga::hyperbolic_point(&x[0], &x[1], &x[2], &x[3], &self.radius)
+            // The round's points travel as three base coordinates and `x₀`
+            // (the n = 3 wire layout of `NerveRound`, recut with BQ5b).
+            crate::transducer::cga::hyperbolic_point(&x[..3], &x[3], &self.radius)
         };
         let mut it = self.points.iter();
         let first = it.next()?;

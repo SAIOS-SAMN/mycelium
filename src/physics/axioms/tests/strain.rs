@@ -112,8 +112,8 @@ fn the_strain_numerator_is_an_inner_product_of_conformal_spheres() {
         for b in &bodies {
             let s = Strain::between(a, b).expect("both centroids read");
             let (pa, pb) = (a.centroid().expect("a"), b.centroid().expect("b"));
-            let sa = cga::sphere(&pa.0, &pa.1, &pa.2, &a.radius2());
-            let sb = cga::sphere(&pb.0, &pb.1, &pb.2, &b.radius2());
+            let sa = cga::sphere_at(&pa, &a.radius2());
+            let sb = cga::sphere_at(&pb, &b.radius2());
             // The scalar part of the geometric product IS the inner
             // product of two vectors.
             let dot = sa.geo(&sb).scalar_part();
@@ -163,12 +163,12 @@ fn the_strain_is_invariant_under_a_common_motor() {
     ];
     let nucleus = |b: &blade::Blade| {
         let p = b.centroid().expect("a centroid");
-        cga::sphere(&p.0, &p.1, &p.2, &b.radius2())
+        cga::sphere_at(&p, &b.radius2())
     };
 
     // A motor with a turn AND a displacement, so the two halves do not
     // commute and the test is not a translation identity in disguise.
-    let motor = cga::translator(&q(11), &q(-4), &q(2)).geo(&cga::rotator(&q(1), &q(1)));
+    let motor = cga::at_three::translator(&q(11), &q(-4), &q(2)).geo(&cga::rotator(&q(1), &q(1)));
 
     // THE INVARIANCE IS PROJECTIVE, NOT ON THE NOSE, and a first
     // statement of it claimed otherwise. A versor preserves the inner
@@ -269,7 +269,7 @@ fn a_negative_norm_motor_scales_the_strain_and_never_flips_its_side() {
     ];
     let nucleus = |b: &blade::Blade| {
         let p = b.centroid().expect("a centroid");
-        cga::sphere(&p.0, &p.1, &p.2, &b.radius2())
+        cga::sphere_at(&p, &b.radius2())
     };
 
     for a in &bodies {

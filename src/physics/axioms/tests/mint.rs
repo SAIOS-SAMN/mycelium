@@ -1,6 +1,6 @@
 // 37.7, 68 — the arithmetic chain a demand's witness walks to the court.
 
-use crate::transducer::blade;
+use crate::transducer::blade::sensor_plane as blade;
 
 /// D3 — THE WITNESS AN OBLIQUE PAIR MINTS IS ONE THE COURT ACCEPTS.
 ///

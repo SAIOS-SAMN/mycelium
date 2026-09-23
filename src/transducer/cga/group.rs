@@ -1,8 +1,8 @@
 //! A4 — the rational conformal group `Spin(4,1)(ℚ)`: dilation, reflection,
 //! and the closed-form tests of versorhood and projective equality.
 
-use super::embedding::{e_inf, e_o, point};
-use super::multivector::{one, zero, Mv, E1};
+use super::embedding::{e_inf, e_o, point_at};
+use super::multivector::{one, Mv, E1};
 use num_rational::BigRational;
 use num_traits::Zero;
 
@@ -21,8 +21,10 @@ fn e_plane() -> Mv {
 pub fn dilator(rho: &BigRational) -> Mv {
     let e = e_plane();
     let plus = Mv::scalar(rho + one()).add(&e.scale(&(rho - one())));
-    let target = point(rho, &zero(), &zero());
-    let probe = plus.sandwich(&point(&one(), &zero(), &zero()));
+    // Probed on the first base axis alone, which every base has: the
+    // dilation's orientation does not depend on `n`.
+    let target = point_at(std::slice::from_ref(rho));
+    let probe = plus.sandwich(&point_at(&[one()]));
     match projective_ratio(&probe, &target) {
         Some(_) => plus,
         None => Mv::scalar(rho + one()).sub(&e.scale(&(rho - one()))),

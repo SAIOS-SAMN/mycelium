@@ -2,7 +2,7 @@
 //! transvection between two, and the base point a frame stands at.
 
 use super::group::is_versor;
-use super::multivector::{one, Mv, E1, E2, E3, EM};
+use super::multivector::{base_axis, one, Mv, EM};
 use num_rational::BigRational;
 use num_traits::{Signed, Zero};
 
@@ -34,12 +34,15 @@ use num_traits::{Signed, Zero};
 /// curvature is still read off a remainder, never carried as a constant
 /// (51.2, 51.11). `None` where `M` does not bound the point: that lamina is
 /// outside this chart and says so rather than being rounded into it.
-pub fn hyperbolic_lamina(r: &BigRational, c: &BigRational, k: &BigRational, m: &BigRational) -> Option<Mv> {
+///
+/// ON THE BASE'S OWN `n` COORDINATES (PH2): `x` is the lamina's offset on
+/// every axis it has, and the sheet is `ℍⁿ` of `Cl(n+1, 1)`.
+pub fn hyperbolic_lamina(x: &[BigRational], m: &BigRational) -> Option<Mv> {
     if m.is_zero() {
         return None;
     }
-    let (u1, u2, u3) = (r / m, c / m, k / m);
-    let n2 = &u1 * &u1 + &u2 * &u2 + &u3 * &u3;
+    let u: Vec<BigRational> = x.iter().map(|xi| xi / m).collect();
+    let n2 = u.iter().fold(BigRational::zero(), |s, ui| s + ui * ui);
     let denom = one() - &n2;
     if denom.is_zero() || denom.is_negative() {
         // `|u| ≥ 1` is off this chart — outside the sheet's stereographic
@@ -48,12 +51,11 @@ pub fn hyperbolic_lamina(r: &BigRational, c: &BigRational, k: &BigRational, m: &
     }
     let two = BigRational::from_integer(num_bigint::BigInt::from(2));
     let s = one() / &denom;
-    Some(
-        Mv::blade(E1, &two * &u1 * &s)
-            .add(&Mv::blade(E2, &two * &u2 * &s))
-            .add(&Mv::blade(E3, &two * &u3 * &s))
-            .add(&Mv::blade(EM, (one() + &n2) * &s)),
-    )
+    let v = u
+        .iter()
+        .enumerate()
+        .fold(Mv::zero(), |v, (i, ui)| v.add(&Mv::blade(base_axis(i + 1), &two * ui * &s)));
+    Some(v.add(&Mv::blade(EM, (one() + &n2) * &s)))
 }
 
 /// THE POLE OF THE SHEET — `v₀ = e₋`, the point `u = 0` maps to, and the

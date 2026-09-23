@@ -23,10 +23,37 @@ pub(crate) fn rational_sqrt(x: &BigRational) -> Option<BigRational> {
     }
 }
 
-/// Apply a versor to a point of the sensor's vertex coordinates in frame
-/// `k` and read the base back; `None` at infinity.
-pub fn carry(v: &Mv, r: i64, c: i64, k: i64) -> Option<(BigRational, BigRational, BigRational)> {
-    cga::base(&v.sandwich(&cga::point(&q(r), &q(c), &q(k))))
+/// Apply a versor to a point of the base's vertex coordinates and read the
+/// base back at the point's own `n`; `None` at infinity.
+pub fn carry(v: &Mv, p: &[i64]) -> Option<Vec<BigRational>> {
+    let x: Vec<BigRational> = p.iter().map(|&a| q(a)).collect();
+    cga::base_at(&v.sandwich(&cga::point_at(&x)), p.len())
+}
+
+/// A body's centroid in the sensor's VERTEX coordinates: the laminae's
+/// centres' centroid plus one half on each grid axis (a lamina's square
+/// spans the grid axes), and the offset alone on every other axis — a
+/// lamina stands AT its frame (16.4).
+fn vertex_centroid(b: &Blade) -> Option<Vec<BigRational>> {
+    Some(
+        b.centroid()?
+            .into_iter()
+            .enumerate()
+            .map(|(i, x)| match crate::transducer::base::is_grid_axis(i) {
+                true => x + qn(1, 2),
+                false => x,
+            })
+            .collect(),
+    )
+}
+
+/// `b − a`, coordinate by coordinate; `None` where the two points stand on
+/// bases of different `n`.
+fn difference(b: &[BigRational], a: &[BigRational]) -> Option<Vec<BigRational>> {
+    match a.len() == b.len() {
+        true => Some(b.iter().zip(a).map(|(x, y)| x - y).collect()),
+        false => None,
+    }
 }
 
 /// The unnormalized rotor carrying direction `a` onto direction `b` in the
@@ -74,17 +101,18 @@ pub fn rotor_and_placement_between(
 ) -> Option<(crate::transducer::alphabet::Rotor, Mv)> {
     use crate::transducer::alphabet::Rotor;
     let _ = versor_between(a, b)?;
-    let ca = a.blade.centroid()?;
-    let cb = b.blade.centroid()?;
-    let t = cga::translator(&(cb.0 - ca.0), &(cb.1 - ca.1), &(cb.2 - ca.2));
+    let t = cga::translator_at(&difference(&b.blade.centroid()?, &a.blade.centroid()?)?);
 
     let mut total_rotor = Rotor::identity();
-    // THE BODY'S OWN PLANES. `harmonic_on_plane` answers on three — the
-    // base's `(r,c)`, `(r,k)`, `(c,k)` — and returns `None` on the three
-    // of `Cl(4,0)` that run through `e₂`, which the base does not have.
-    // Sweeping `SLOT_PLANES_SIX` asked six times and discarded three
-    // answers with a `continue`.
-    for &plane in &Blade::BASE_PLANES {
+    // THE BODY'S OWN PLANES, generated from its `n` (BQ4), each read in the
+    // rotor chart's slots (51.2). A plane whose axes the alphabet has no
+    // slot for carries no letter and is not turned here (71.2(3)).
+    for (plane, slot) in a
+        .blade
+        .planes()
+        .into_iter()
+        .filter_map(|p| crate::transducer::alphabet::slot_plane(p).map(|s| (p, s)))
+    {
         let Some(ha) = a.blade.harmonic_on_plane(plane, false) else { continue };
         let Some(hb) = b.blade.harmonic_on_plane(plane, false) else { continue };
         if (ha[0].is_zero() && ha[1].is_zero()) || (hb[0].is_zero() && hb[1].is_zero()) {
@@ -96,7 +124,7 @@ pub fn rotor_and_placement_between(
                 _ => (s, bv),
             };
             if let Some((hs, hb)) = half_rotor(&s, &bv) {
-                let mask = (1usize << plane.0) | (1usize << plane.1);
+                let mask = (1usize << slot.0) | (1usize << slot.1);
                 let r_plane = Rotor::scalar(hs).add(&Rotor::blade(mask, hb));
                 total_rotor = total_rotor.geo(&r_plane);
             }
@@ -142,14 +170,15 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
     // Body centroids in the sensor's vertex coordinates: the centroid of
     // the laminae's centers plus one half on each plane axis; a lamina
     // stands AT its frame (16.4).
-    let Some((ca1, ca2, ka)) = a.blade.centroid().map(|(x, y, z)| (x + qn(1, 2), y + qn(1, 2), z)) else {
-        return coset;
-    };
-    let Some((cb1, cb2, kb)) = b.blade.centroid().map(|(x, y, z)| (x + qn(1, 2), y + qn(1, 2), z)) else {
+    let (Some(ca), Some(cb)) = (vertex_centroid(&a.blade), vertex_centroid(&b.blade)) else {
         return coset;
     };
     let spread = |s: &Shape| {
-        (&s.blade.inertia[0] + &s.blade.inertia[1] + &s.blade.inertia[3]) / &s.blade.shell
+        // The trace on every axis the body has (PH2).
+        (0..s.blade.n())
+            .filter_map(|i| s.blade.moment2(i, i))
+            .fold(BigRational::zero(), |acc, x| acc + x)
+            / &s.blade.shell
     };
     let (sa, sb) = (spread(a), spread(b));
     // ρ is ONE rational from the per-lamina spread, so a homothety with
@@ -180,8 +209,8 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
     }
     // The bodies stand in their frames: the transport returns the frame
     // coordinate as it does the two of the plane.
-    let to_origin = cga::translator(&(-&ca1), &(-&ca2), &(-&ka));
-    let to_target = cga::translator(&cb1, &cb2, &kb);
+    let to_origin = cga::translator_at(&ca.iter().map(|x| -x).collect::<Vec<_>>());
+    let to_target = cga::translator_at(&cb);
     let dil = cga::dilator(&rho);
     // The stabilizer turns and the orientation sheet are WORDS of the
     // alphabet realised as conformal versors — the quarter letter on the
@@ -198,9 +227,15 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
     let Some(sheet) = LetterId::quarter((PLANE_COL, 2)).and_then(|f| realise(&[(f, false), (f, false)])) else {
         return coset;
     };
+    // THE COSET IS READ ON THE SENSOR'S PLANE, where its quarter letter and
+    // its rotator stand (BQ4: named, never assumed).
+    let plane = crate::transducer::base::GRID_PLANE;
     for reflect in [false, true] {
-        let a2 = a.blade.harmonic2(reflect);
-        let b2 = b.blade.harmonic2(false);
+        let (Some(a2), Some(b2)) =
+            (a.blade.harmonic_on_plane(plane, reflect), b.blade.harmonic_on_plane(plane, false))
+        else {
+            continue;
+        };
         let iso_a = a2[0].is_zero() && a2[1].is_zero();
         let iso_b = b2[0].is_zero() && b2[1].is_zero();
         // The rotation candidates: the rotor of the body's angle and its
@@ -217,8 +252,11 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
                 vec![r.clone(), r.geo(&half_turn)]
             }
             (true, true) => {
-                let a4 = a.blade.harmonic4(reflect);
-                let b4 = b.blade.harmonic4(false);
+                let (Some(a4), Some(b4)) =
+                    (a.blade.harmonic4_on(plane, reflect), b.blade.harmonic4_on(plane, false))
+                else {
+                    continue;
+                };
                 let iso4 = (a4[0].is_zero() && a4[1].is_zero()) || (b4[0].is_zero() && b4[1].is_zero());
                 match iso4 {
                     true => vec![Mv::scalar(q(1))],
@@ -350,9 +388,8 @@ pub fn versor_carrying(a: &Shape, b: &Shape, linear: &Mv) -> Option<Mv> {
     if a.blade.support.is_empty() || b.blade.support.is_empty() {
         return None;
     }
-    let (ca1, ca2, ka) = a.blade.centroid().map(|(x, y, z)| (x + qn(1, 2), y + qn(1, 2), z))?;
-    let (cb1, cb2, kb) = b.blade.centroid().map(|(x, y, z)| (x + qn(1, 2), y + qn(1, 2), z))?;
-    let (ia, ib, ik) = cga::base(&linear.sandwich(&cga::point(&ca1, &ca2, &ka)))?;
-    let v = cga::translator(&(cb1 - ia), &(cb2 - ib), &(kb - ik)).geo(linear);
+    let (ca, cb) = (vertex_centroid(&a.blade)?, vertex_centroid(&b.blade)?);
+    let image = cga::base_at(&linear.sandwich(&cga::point_at(&ca)), ca.len())?;
+    let v = cga::translator_at(&difference(&cb, &image)?).geo(linear);
     carries(&v, a, b).then_some(v)
 }

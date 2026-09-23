@@ -47,7 +47,7 @@ fn a_dilation_by_two_carries_a_lamina_onto_its_block() {
         Some(vec![(2, 4, 0), (2, 5, 0), (3, 4, 0), (3, 5, 0)]),
         "the square [1,2)×[2,3) doubled about the origin is the block [2,4)×[4,6)"
     );
-    let along = cga::translator(&q(0), &q(0), &q(1));
+    let along = cga::at_three::translator(&q(0), &q(0), &q(1));
     assert_eq!(carry_lamina(&along, 1, 2, 0), Some(vec![(1, 2, 1)]), "one lamina, one frame on");
 }
 

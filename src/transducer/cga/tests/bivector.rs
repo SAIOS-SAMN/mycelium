@@ -2,6 +2,7 @@
 // the curvature read off two boosts.
 
 use super::common::q;
+use crate::transducer::cga::at_three::translator;
 use crate::transducer::cga::multivector::one;
 use crate::transducer::cga::*;
 use num_traits::{Signed, Zero};

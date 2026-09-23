@@ -75,12 +75,12 @@ fn the_solution_inverts_the_described_motion() {
     let v = g.versor().expect("V");
     let inv = g.solution().expect("inverse").versor().expect("V⁻¹");
     let qn = |n: i64| Q::from(BigInt::from(n));
-    let p = crate::transducer::cga::point(&qn(1), &qn(2), &qn(0));
+    let p = crate::transducer::cga::at_three::point(&qn(1), &qn(2), &qn(0));
     let moved = v.sandwich(&p);
     let back = inv.sandwich(&moved);
     assert_eq!(
-        crate::transducer::cga::base(&back),
-        crate::transducer::cga::base(&p),
+        crate::transducer::cga::at_three::base(&back),
+        crate::transducer::cga::at_three::base(&p),
         "g⁻¹ carries the image back to the origin point"
     );
 }
@@ -139,7 +139,7 @@ fn a_carriage_decomposes_into_its_dilator_and_translator_at_every_rho() {
         assert_eq!(rho_of(&car), Some(rho.clone()), "ρ is read off the action on e_∞");
         let t = translator_of(&car).expect("translator");
         assert!(
-            same_versor(&t, &cga::translator(&t1, &t2, &q(0, 1))),
+            same_versor(&t, &cga::at_three::translator(&t1, &t2, &q(0, 1))),
             "the translator is t, not ρ·t, at ρ = {rho}"
         );
         let d = dilator_of(&car).expect("dilator");
@@ -151,7 +151,7 @@ fn a_carriage_decomposes_into_its_dilator_and_translator_at_every_rho() {
     let rot = cga::rotator(&q(3, 1), &q(4, 1));
     let v = carriage(&q(2, 1), &(q(1, 1), q(0, 1))).geo(&rot);
     assert_eq!(rho_of(&v), Some(q(2, 1)), "ρ through a rotor");
-    assert!(same_versor(&translator_of(&v).expect("t"), &cga::translator(&q(1, 1), &q(0, 1), &q(0, 1))));
+    assert!(same_versor(&translator_of(&v).expect("t"), &cga::at_three::translator(&q(1, 1), &q(0, 1), &q(0, 1))));
     // A reflection is the orientation character, never a scale.
     let flipped = v.geo(&cga::reflector());
     assert_eq!(rho_of(&flipped), Some(q(2, 1)), "ρ through a reflection is ρ");
@@ -173,11 +173,11 @@ fn the_base_action_of_a_rotor_is_exact_and_its_inverse_reads_it_back() {
     use crate::transducer::cga;
     let q = |n: i64| Q::from(BigInt::from(n));
     let unit = |k: usize| -> [Q; 4] { std::array::from_fn(|i| if i == k { q(1) } else { q(0) }) };
-    let point_of = |x: &[Q; 4]| cga::point(&x[0], &x[1], &x[3]);
+    let point_of = |x: &[Q; 4]| cga::at_three::point(&x[0], &x[1], &x[3]);
     let agrees = |rotor: &Rotor, v: &Versor| -> bool {
         [0usize, 1, 3].iter().all(|&k| {
             let Some(img) = rotor.carry(&unit(k)) else { return false };
-            let Some((x1, x2, x3)) = cga::base(&v.sandwich(&point_of(&unit(k)))) else { return false };
+            let Some((x1, x2, x3)) = cga::at_three::base(&v.sandwich(&point_of(&unit(k)))) else { return false };
             img[2].is_zero() && img[0] == x1 && img[1] == x2 && img[3] == x3
         })
     };

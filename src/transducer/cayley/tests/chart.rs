@@ -32,7 +32,7 @@ fn rapidity_of(b: &Mv) -> Option<BigRational> {
 fn a_versor_is_its_bivector_read_back_in_either_direction() {
     let (z, o) = (q(0, 1), q(1, 1));
     let d = cga::dilator(&q(2, 1));
-    let t = cga::translator(&o, &q(-2, 1), &q(3, 1));
+    let t = cga::at_three::translator(&o, &q(-2, 1), &q(3, 1));
     let quarter = cga::rotator(&o, &o);
     let pythagorean = cga::rotator(&q(2, 1), &o);
     let onto_frame = cga::rotator_on_blade(&o, &o, E1 | E3);

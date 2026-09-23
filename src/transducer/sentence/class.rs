@@ -254,8 +254,7 @@ impl ClassVector {
         if !self.occupies(Axis::Placement) {
             return None;
         }
-        let [r, c, k] = &self.placement;
-        Some(crate::transducer::cga::translator(r, c, k))
+        Some(crate::transducer::cga::translator_at(&self.placement))
     }
 
     fn zero_q() -> num_rational::BigRational {
@@ -534,12 +533,11 @@ impl ClassVector {
         // and each is compared alone: a norm would sum them, which is
         // exactly what law 5 refuses of the covers.
         let placement = |c: &Versor| -> Option<(num_rational::BigRational, num_rational::BigRational, num_rational::BigRational)> {
+            // The class's placement is the alphabet's three base axes (its
+            // key's Burgers segment is three rationals, 51.2).
             let rho = element::rho_of(c)?;
-            let z = Self::zero_q();
-            let img = crate::transducer::cga::base(
-                &c.sandwich(&crate::transducer::cga::point(&z, &z, &z)),
-            )?;
-            Some((img.0 / &rho, img.1 / &rho, img.2 / &rho))
+            let img = crate::transducer::cga::base_at(&c.sandwich(&crate::transducer::cga::point_at(&[])), 3)?;
+            Some((&img[0] / &rho, &img[1] / &rho, &img[2] / &rho))
         };
         // ONE FIBER OR TWO. The placements compatible with a rotation `R`
         // are constrained by `R` — `T(p − Rp)` is a base point under one

@@ -1,7 +1,7 @@
 // 68 — the frame reader: the odd invariant, the scale certificate, and
 // the refusals of the oblique branch.
 
-use crate::transducer::blade;
+use crate::transducer::blade::sensor_plane as blade;
 use num_traits::Zero;
 
 /// THE ODD HARMONIC CLOSES THE HALF TURN, AND VANISHES EXACTLY WHERE

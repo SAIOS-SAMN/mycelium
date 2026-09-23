@@ -14,8 +14,8 @@ mod planes;
 mod spin;
 
 pub use embedding::{
-    base, base_at, boundary_dual, e_inf, e_o, hyperbolic_point, on_sphere, point, point_at, rotator,
-    rotator_on_blade, sphere, sphere_at, translator,
+    base_at, boundary_dual, e_inf, e_o, hyperbolic_point, on_sphere, point_at, rotator,
+    rotator_on_blade, sphere_at, translator_at,
 };
 pub use group::{dilator, is_versor, projective_ratio, reflector};
 pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_lamina, hyperboloid_pole};
@@ -32,3 +32,6 @@ pub use spin::{
 
 #[cfg(test)]
 mod tests;
+/// The corpus's `n = 3` named for the tests' fixtures (PH2, BQ4).
+#[cfg(test)]
+pub mod at_three;

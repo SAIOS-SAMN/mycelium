@@ -171,7 +171,7 @@ fn a_disagreeing_chord_files_its_loop_on_the_complex() {
 fn a_loop_that_returns_turned_right_and_placed_wrong_is_a_class() {
     use crate::transducer::cga;
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
-    let walk = cga::translator(&q(3), &q(0), &q(0));
+    let walk = cga::at_three::translator(&q(3), &q(0), &q(0));
     let edges = [
         (0usize, 1usize, Rotor::identity(), walk.clone()),
         (1, 2, Rotor::identity(), identity_versor()),

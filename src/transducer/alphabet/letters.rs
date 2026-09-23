@@ -15,6 +15,26 @@ pub const LETTER_RANK: usize = 4;
 pub const PLANE_ROW: u8 = 0;
 pub const PLANE_COL: u8 = 1;
 
+/// THE ALPHABET'S SLOT FOR A BASE AXIS (51.2): rows on `e0`, columns on
+/// `e1`, the frame on `e3`; `e2` is the orientation character and no base
+/// axis. An axis past the frame has no slot: the seventeen act on the
+/// planes they were written on, and a plane a larger `n` opens receives a
+/// letter by 37.7 or not at all (71.2(3)).
+pub fn slot_of_axis(axis: usize) -> Option<u8> {
+    match axis {
+        0 => Some(PLANE_ROW),
+        1 => Some(PLANE_COL),
+        2 => Some(3),
+        _ => None,
+    }
+}
+
+/// A plane of the base `(i, j)` in the alphabet's slots, where both of its
+/// axes have one (BQ4).
+pub fn slot_plane(plane: (usize, usize)) -> Option<(u8, u8)> {
+    Some((slot_of_axis(plane.0)?, slot_of_axis(plane.1)?))
+}
+
 /// THE PAIR PLANES OF THE CHART: every two-subset of `e0..e3`. It is
 /// `rank choose 2`, read off the rank rather than written beside it — a
 /// count stated twice is a count that can disagree with itself, and the

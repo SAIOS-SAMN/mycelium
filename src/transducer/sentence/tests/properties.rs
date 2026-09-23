@@ -568,12 +568,12 @@ fn the_filer_reaches_the_fixed_point_gate() {
     let (zero, five) = (q(0), q(5));
     assert_eq!(period(&identity_versor()), 4, "a residue-free quarter turn closes at four");
     assert_eq!(
-        period(&cga::translator(&five, &zero, &zero)),
+        period(&cga::at_three::translator(&five, &zero, &zero)),
         4,
         "and so does one about a point away from the origin: it is conjugate to the rotor"
     );
     assert_eq!(
-        period(&cga::translator(&zero, &zero, &five)),
+        period(&cga::at_three::translator(&zero, &zero, &five)),
         0,
         "a screw fixes no point and is non-compact: it files at 0, never at the rotor's order"
     );

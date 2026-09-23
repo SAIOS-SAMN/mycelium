@@ -74,8 +74,7 @@ use crate::transducer::base::Site;
 /// the frame rotor is for and not this.
 pub(super) fn form_chart(
     meet_chords: &[super::covered::MeetChord],
-) -> ([num_rational::BigRational; 3], num_rational::BigRational) {
-    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+) -> (Vec<num_rational::BigRational>, num_rational::BigRational) {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let mut cells: Vec<Site> = Vec::new();
     for ((_, _, _, da), (_, _, _, db), _) in meet_chords.iter() {
@@ -87,15 +86,22 @@ pub(super) fn form_chart(
     match crate::transducer::blade::shape_of(&cells).blade {
         // A form whose chords stand on nothing has no chart to speak
         // of; the pole and unit scale are the honest empty reading.
-        b if b.support.is_empty() => ([zero.clone(), zero.clone(), zero], one),
+        // The pole is the origin of every base, the empty coordinate list
+        // read by inclusion.
+        b if b.support.is_empty() => (Vec::new(), one),
         b => {
-            let (c1, c2, c3) = match b.centroid() {
+            #[expect(
+                clippy::manual_unwrap_or_default,
+                reason = "rule 11 — the pole is this reader's recorded reading of an unread centroid, written as a match so it stays named; its refusal is FR2's"
+            )]
+            let origin = match b.centroid() {
                 Some(p) => p,
-                // A body whose centroid does not read back is refused
-                // rather than defaulted (rule 11).
-                None => (zero.clone(), zero.clone(), zero.clone()),
+                // A body whose centroid does not read back stands at the
+                // pole, as before (the reading this reader has always
+                // given; rule 11's refusal is FR2's to carry).
+                None => Vec::new(),
             };
-            ([c1, c2, c3], one + (&b.inertia[0] + &b.inertia[1]))
+            (origin, one + (&b.inertia[0] + &b.inertia[1]))
         }
     }
 }
@@ -156,7 +162,7 @@ pub(super) fn form_chart(
 /// agree it is the measured rotation alone. Each is a reading of what
 /// the two sections differ in, never a shape imposed on all of them.
 pub(super) fn dispiration(
-    origin: &[num_rational::BigRational; 3],
+    origin: &[num_rational::BigRational],
     quantum: &num_rational::BigRational,
     measured: Option<&crate::transducer::sentence::Transport>,
     da: &[Site],
@@ -182,17 +188,16 @@ pub(super) fn dispiration(
 }
 
 fn basepoint_transvection(
-    origin: &[num_rational::BigRational; 3],
+    origin: &[num_rational::BigRational],
     quantum: &num_rational::BigRational,
     da: &[Site],
     db: &[Site],
 ) -> Option<crate::transducer::sentence::Transport> {
     // THE INTRINSIC CENTRE of a support domain: its centre of mass, exact
     // over ℚ and invariant under the order the cells arrive in, on every
-    // axis the sites have. The sheet's lamina reads three of them (BQ4 lifts
-    // it to `n`), so a centre of another `n` is not carried and is counted
-    // as unfooted rather than cut to three.
-    let centre = |d: &[Site]| -> Option<[num_rational::BigRational; 3]> {
+    // axis the sites have (the sheet is `ℍⁿ`, BQ4). A footprint mixing two
+    // bases has no centre and is counted as unfooted.
+    let centre = |d: &[Site]| -> Option<Vec<num_rational::BigRational>> {
         let [first, ..] = d else { return None };
         let n = num_bigint::BigInt::from(u64::try_from(d.len()).ok()?);
         let mut sum: Vec<num_bigint::BigInt> = vec![num_bigint::BigInt::from(0); first.n()];
@@ -204,9 +209,7 @@ fn basepoint_transvection(
                 *acc += num_bigint::BigInt::from(*a);
             }
         }
-        let centre: Vec<num_rational::BigRational> =
-            sum.into_iter().map(|s| num_rational::BigRational::new(s, n.clone())).collect();
-        <[num_rational::BigRational; 3]>::try_from(centre).ok()
+        Some(sum.into_iter().map(|s| num_rational::BigRational::new(s, n.clone())).collect())
     };
     let (a, b) = match (centre(da), centre(db)) {
         (Some(a), Some(b)) => (a, b),
@@ -229,13 +232,17 @@ fn basepoint_transvection(
     }
     // Read from the form's own origin, so the transport does not depend
     // on where in the grid the scene happened to be drawn (rule 15).
-    let lamina = |p: &[num_rational::BigRational; 3]| {
-        crate::transducer::cga::hyperbolic_lamina(
-            &(&p[0] - &origin[0]),
-            &(&p[1] - &origin[1]),
-            &(&p[2] - &origin[2]),
-            quantum,
-        )
+    // The origin is read by inclusion: an axis it does not name is zero.
+    let lamina = |p: &[num_rational::BigRational]| {
+        let offset: Vec<num_rational::BigRational> = p
+            .iter()
+            .enumerate()
+            .map(|(i, x)| match origin.get(i) {
+                Some(o) => x - o,
+                None => x.clone(),
+            })
+            .collect();
+        crate::transducer::cga::hyperbolic_lamina(&offset, quantum)
     };
     let carriage = match (lamina(&a), lamina(&b)) {
         (Some(va), Some(vb)) => crate::transducer::cga::geodesic_transvection(&va, &vb),

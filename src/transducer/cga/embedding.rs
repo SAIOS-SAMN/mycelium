@@ -1,7 +1,7 @@
 //! A4, 51.2 — the conformal null basis, the embeddings of a base point and
 //! a sphere, and the translation and rotation versors that carry them.
 
-use super::multivector::{half, one, pseudo, zero, Mv, E1, E2, E3, EM, EP};
+use super::multivector::{half, one, pseudo, zero, Mv, E1, E2, EM, EP};
 use num_rational::BigRational;
 use num_traits::Zero;
 
@@ -17,7 +17,7 @@ pub fn e_inf() -> Mv {
 
 /// Embed a base point of ℚⁿ on the null cone: `X(x) = x + ½‖x‖² e_∞ + e_o`,
 /// with `x = Σ xᵢ eᵢ` over the point's own coordinates (71.2(3)). The ONE
-/// producer of a conformal point; [`point`] is its reading at three.
+/// producer of a conformal point, at every `n` (PH2: no fixed arity).
 ///
 /// `‖x‖²` is the base's own metric on its coordinates — every base axis
 /// squares to `+1` — written as the sum of their squares, and that sum is
@@ -30,12 +30,6 @@ pub fn point_at(x: &[BigRational]) -> Mv {
         .fold(Mv::zero(), |m, (i, xi)| m.add(&Mv::blade(super::multivector::base_axis(i + 1), xi.clone())));
     m = m.add(&e_inf().scale(&(half() * x2n)));
     m.add(&e_o())
-}
-
-/// Embed a base point on the null cone: `X(x) = x + ½‖x‖² e_∞ + e_o`, with
-/// `x = x1 e1 + x2 e2 + x3 e3` — row, column, frame.
-pub fn point(x1: &BigRational, x2: &BigRational, x3: &BigRational) -> Mv {
-    point_at(&[x1.clone(), x2.clone(), x3.clone()])
 }
 
 /// A CHART BASE POINT ON THE NULL CONE OF A NON-EUCLIDEAN SPACE (54.7 B8,
@@ -59,7 +53,7 @@ pub fn point(x1: &BigRational, x2: &BigRational, x3: &BigRational) -> Mv {
 ///     pᵢ · pⱼ = ⟨xᵢ,xⱼ⟩_{3,1} + R² = R²(1 − cosh(d_ℍ(xᵢ,xⱼ)/R))
 /// ```
 ///
-/// WHY NOT [`point`]. That is the flat embedding `x + ½‖x‖²e_∞ + e_o`: it
+/// WHY NOT [`point_at`]. That is the flat embedding `x + ½‖x‖²e_∞ + e_o`: it
 /// introduces a degenerate point at infinity and a Cartesian norm, which
 /// puts a privileged planar boundary into a manifold whose sectional
 /// curvature is not zero. Its translations are the parabolic `T(a) = 1 +
@@ -73,36 +67,28 @@ pub fn point(x1: &BigRational, x2: &BigRational, x3: &BigRational) -> Mv {
 /// is never solved for: `x₀² = ‖x‖² + R²` has no rational root in general,
 /// and a chart whose four coordinates do not satisfy the hyperboloid
 /// condition exactly is refused here rather than rounded onto it.
-pub fn hyperbolic_point(
-    x1: &BigRational,
-    x2: &BigRational,
-    x3: &BigRational,
-    x0: &BigRational,
-    r: &BigRational,
-) -> Option<Mv> {
-    if x1 * x1 + x2 * x2 + x3 * x3 - x0 * x0 + r * r != zero() {
+///
+/// ON THE BASE'S OWN `n` COORDINATES (PH2): `x` holds every base
+/// coordinate, and the condition is `‖x‖² − x₀² = −R²` at that `n`.
+pub fn hyperbolic_point(x: &[BigRational], x0: &BigRational, r: &BigRational) -> Option<Mv> {
+    let x2n = x.iter().fold(zero(), |s, xi| s + xi * xi);
+    if x2n - x0 * x0 + r * r != zero() {
         return None;
     }
     if *x0 <= zero() {
         return None;
     }
-    Some(
-        Mv::blade(E1, x1.clone())
-            .add(&Mv::blade(E2, x2.clone()))
-            .add(&Mv::blade(E3, x3.clone()))
-            .add(&Mv::blade(EM, x0.clone()))
-            .add(&Mv::blade(EP, r.clone())),
-    )
-}
-
-/// The dual sphere `S = X(c) − ½ r² e_∞`: a point at squared-distance `r2` from
-/// `c`. `r2 = 0` recovers the point (a volumeless sphere). Off-cone iff r²≠0.
-pub fn sphere(c1: &BigRational, c2: &BigRational, c3: &BigRational, r2: &BigRational) -> Mv {
-    sphere_at(&[c1.clone(), c2.clone(), c3.clone()], r2)
+    let base = x
+        .iter()
+        .enumerate()
+        .fold(Mv::zero(), |m, (i, xi)| m.add(&Mv::blade(super::multivector::base_axis(i + 1), xi.clone())));
+    Some(base.add(&Mv::blade(EM, x0.clone())).add(&Mv::blade(EP, r.clone())))
 }
 
 /// The dual sphere of ℚⁿ, `S = X(c) − ½ r² e_∞`, about a centre of the
-/// base's own `n` coordinates: the ONE producer of a sphere.
+/// base's own `n` coordinates: the ONE producer of a sphere. A point at
+/// squared distance `r2` from `c`; `r2 = 0` recovers the point (a
+/// volumeless sphere). Off-cone iff r² ≠ 0.
 pub fn sphere_at(c: &[BigRational], r2: &BigRational) -> Mv {
     point_at(c).sub(&e_inf().scale(&(half() * r2)))
 }
@@ -118,8 +104,9 @@ pub fn base_at(p: &Mv, n: usize) -> Option<Vec<BigRational>> {
     Some((1..=n).map(|i| p.coeff(super::multivector::base_axis(i)) / &alpha).collect())
 }
 
-/// The translation versor `T(d) = 1 − ½ d e_∞`, `d = d1 e1 + d2 e2 + d3 e3`.
-/// Acts by sandwich: `T X(x) T̃ = X(x + d)`, up to the homogeneous scale.
+/// The translation versor `T(d) = 1 − ½ d e_∞`, `d = Σ dᵢ eᵢ` over the
+/// displacement's own `n` coordinates (PH2: no fixed arity). Acts by
+/// sandwich: `T X(x) T̃ = X(x + d)`, up to the homogeneous scale.
 /// Translators commute (51.2): the base is a lattice.
 ///
 /// 54.7 R3 — THIS IS THE PARABOLIC PINNING, and it is what the hyperbolic
@@ -128,8 +115,11 @@ pub fn base_at(p: &Mv, n: usize) -> Option<Vec<BigRational>> {
 /// privileged planar boundary in a manifold whose sectional curvature is
 /// not zero. [`transvection`] is the geodesic motion that has no such
 /// fixed point.
-pub fn translator(d1: &BigRational, d2: &BigRational, d3: &BigRational) -> Mv {
-    let d = Mv::blade(E1, d1.clone()).add(&Mv::blade(E2, d2.clone())).add(&Mv::blade(E3, d3.clone()));
+pub fn translator_at(d: &[BigRational]) -> Mv {
+    let d = d
+        .iter()
+        .enumerate()
+        .fold(Mv::zero(), |m, (i, di)| m.add(&Mv::blade(super::multivector::base_axis(i + 1), di.clone())));
     let d_einf = d.geo(&e_inf());
     Mv::scalar(one()).sub(&d_einf.scale(&half()))
 }
@@ -147,17 +137,6 @@ pub fn rotator(s: &BigRational, b: &BigRational) -> Mv {
 /// `(1,3)` (51.2).
 pub fn rotator_on_blade(s: &BigRational, b: &BigRational, blade: usize) -> Mv {
     Mv::scalar(s.clone()).add(&Mv::blade(blade, b.clone()))
-}
-
-/// Read the base point `(x1, x2, x3)` back out of a homogeneous conformal
-/// point or sphere: the scale is `α = −(P·e_∞)`, then `x = (P_e1, P_e2,
-/// P_e3)/α`. `None` at infinity (`α = 0`).
-pub fn base(p: &Mv) -> Option<(BigRational, BigRational, BigRational)> {
-    let alpha = -p.geo(&e_inf()).scalar_part();
-    if alpha.is_zero() {
-        return None;
-    }
-    Some((p.coeff(E1) / &alpha, p.coeff(E2) / &alpha, p.coeff(E3) / &alpha))
 }
 
 /// Does base point `p` lie on dual sphere `S`? `X(p)·S = 0`, exact.

@@ -27,7 +27,7 @@ fn shift(dx: i64, dy: i64) -> crate::transducer::element::Versor {
     use num_rational::BigRational;
     use num_bigint::BigInt;
     let q = |n: i64| BigRational::from(BigInt::from(n));
-    crate::transducer::cga::translator(&q(dx), &q(dy), &q(0))
+    crate::transducer::cga::at_three::translator(&q(dx), &q(dy), &q(0))
 }
 
 /// THE ENVELOPE SURVIVES THE RECORD (B1, B2).

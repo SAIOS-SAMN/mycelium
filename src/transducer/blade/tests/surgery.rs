@@ -11,7 +11,7 @@ fn fill_hole_surgery_reduces_genus() {
         (2, 0), (2, 1), (2, 2),
     ]);
     let t_ring = topology(&ring);
-    assert_eq!(t_ring, Some((1, 1, 0)), "ring must have beta_0=1, beta_1=1");
+    assert_eq!(t_ring, Some(vec![1, 1, 0]), "ring must have beta_0=1, beta_1=1");
 
     // 3x3 solid square: beta_0 = 1, beta_1 = 0
     let solid = at_frame_0(&[
@@ -20,7 +20,7 @@ fn fill_hole_surgery_reduces_genus() {
         (2, 0), (2, 1), (2, 2),
     ]);
     let t_solid = topology(&solid);
-    assert_eq!(t_solid, Some((1, 0, 0)), "solid square must have beta_0=1, beta_1=0");
+    assert_eq!(t_solid, Some(vec![1, 0, 0]), "solid square must have beta_0=1, beta_1=0");
 
     let surg = Surgery::detect(&ring, &solid).expect("detect fill hole");
     assert_eq!(surg.kind, SurgeryKind::FillHole);
@@ -29,7 +29,7 @@ fn fill_hole_surgery_reduces_genus() {
 
     let applied = surg.apply(&ring);
     assert_eq!(applied, solid);
-    assert_eq!(topology(&applied), Some((1, 0, 0)));
+    assert_eq!(topology(&applied), Some(vec![1, 0, 0]));
 }
 
 #[test]
@@ -52,7 +52,7 @@ fn puncture_surgery_increases_genus() {
 
     let applied = surg.apply(&solid);
     assert_eq!(applied, ring);
-    assert_eq!(topology(&applied), Some((1, 1, 0)));
+    assert_eq!(topology(&applied), Some(vec![1, 1, 0]));
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn bridge_merge_connects_components() {
         (0, 0), (0, 1),
         (2, 0), (2, 1),
     ]);
-    assert_eq!(topology(&two_blocks), Some((2, 0, 0)));
+    assert_eq!(topology(&two_blocks), Some(vec![2, 0, 0]));
 
     // Connected by a bridge at (1, 0)
     let connected = at_frame_0(&[
@@ -70,7 +70,7 @@ fn bridge_merge_connects_components() {
         (1, 0),
         (2, 0), (2, 1),
     ]);
-    assert_eq!(topology(&connected), Some((1, 0, 0)));
+    assert_eq!(topology(&connected), Some(vec![1, 0, 0]));
 
     let surg = Surgery::detect(&two_blocks, &connected).expect("detect bridge merge");
     assert_eq!(surg.kind, SurgeryKind::BridgeMerge);
@@ -79,7 +79,7 @@ fn bridge_merge_connects_components() {
 
     let applied = surg.apply(&two_blocks);
     assert_eq!(applied, connected);
-    assert_eq!(topology(&applied), Some((1, 0, 0)));
+    assert_eq!(topology(&applied), Some(vec![1, 0, 0]));
 }
 
 #[test]
@@ -101,7 +101,7 @@ fn split_cut_disconnects_components() {
 
     let applied = surg.apply(&connected);
     assert_eq!(applied, two_blocks);
-    assert_eq!(topology(&applied), Some((2, 0, 0)));
+    assert_eq!(topology(&applied), Some(vec![2, 0, 0]));
 }
 
 #[test]

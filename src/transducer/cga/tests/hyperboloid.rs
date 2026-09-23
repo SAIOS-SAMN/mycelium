@@ -1,6 +1,7 @@
 // 54.7 Axiom B — laminae on the sheet, and the frame's base point.
 
 use super::common::q;
+use crate::transducer::cga::at_three::hyperbolic_lamina;
 use crate::transducer::cga::multivector::one;
 use crate::transducer::cga::*;
 use num_traits::Signed;

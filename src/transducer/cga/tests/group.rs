@@ -2,6 +2,7 @@
 // is a base coordinate.
 
 use super::common::q;
+use crate::transducer::cga::at_three::{base, point, sphere, translator};
 use crate::transducer::cga::*;
 use num_traits::Zero;
 

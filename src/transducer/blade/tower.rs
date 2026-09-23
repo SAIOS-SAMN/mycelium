@@ -46,8 +46,13 @@ fn zeroth_moment(blade: &Blade) -> Option<BigRational> {
     }
 }
 
-pub fn deviatoric(blade: &Blade) -> Option<[BigRational; 2]> {
+///
+/// ON A PLANE `(i, j)` GENERATED FROM `n` (BQ4): `u = ((I_ii − I_jj)/2,
+/// I_ij)/M₀`, read in that plane's own coordinates. The caller names the
+/// plane it reads; `None` also for a plane the body's base does not have.
+pub fn deviatoric(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
     let two = BigRational::from_integer(BigInt::from(2));
+    let (i, j) = plane;
     // A.12 — NORMALISED BY `M₀`, so the tower speaks one dimension.
     //
     // MEASURED BEFORE THIS (65.6): `radius2()` is `Tr(I)/M₀`, a length²
@@ -67,8 +72,8 @@ pub fn deviatoric(blade: &Blade) -> Option<[BigRational; 2]> {
     //     ‖M̃_b^(m)‖² · (r_a²)^m  =  ‖M̃_a^(m)‖² · (r_b²)^m
     // ```
     let m0 = zeroth_moment(blade)?;
-    let u1 = (&blade.inertia[0] - &blade.inertia[1]) / &two / &m0;
-    let u2 = &blade.inertia[2] / &m0;
+    let u1 = (blade.moment2(i, i)? - blade.moment2(j, j)?) / &two / &m0;
+    let u2 = blade.moment2(i, j)? / &m0;
     match u1.is_zero() && u2.is_zero() {
         true => None,
         false => Some([u1, u2]),
@@ -82,13 +87,14 @@ pub fn deviatoric(blade: &Blade) -> Option<[BigRational; 2]> {
 /// isotropic part. A square's second moment cannot tell it from a disc;
 /// its fourth moment can, and on the square base that is exactly the `D₄`
 /// discriminator. `None` where this vanishes too, which is a body with no
-/// orientation at either order.
-pub fn quartic_harmonic(blade: &Blade) -> Option<[BigRational; 2]> {
+/// orientation at either order. On the plane the caller names (BQ4).
+pub fn quartic_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
     // A.12 — normalised by `M₀`, as the deviatoric is. Raw, this carried
     // `∫x⁴ ~ ρ⁶` and `‖Q‖²` scaled as `ρ¹²`; normalised it is degree 4,
     // the harmonic order it is named for.
     let m0 = zeroth_moment(blade)?;
-    let (h4x, h4y) = (&blade.quartic[1] / &m0, &blade.quartic[2] / &m0);
+    let [_, qx, qy] = blade.quartic_on(plane)?;
+    let (h4x, h4y) = (qx / &m0, qy / &m0);
     match h4x.is_zero() && h4y.is_zero() {
         true => None,
         false => Some([h4x, h4y]),
@@ -114,7 +120,13 @@ pub fn quartic_harmonic(blade: &Blade) -> Option<[BigRational; 2]> {
 /// body has no deviatoric at all, so a pair where one vanishes and the
 /// other does not is REFUSED — they cannot be dilates, since a dilation
 /// preserves every harmonic's vanishing. Both vanishing is agreement.
-pub fn dilation_certified(a: &Blade, b: &Blade) -> bool {
+///
+/// ON THE PLANE ITS CALLER READS (BQ4). The norms of a plane's harmonics are
+/// invariant under turns IN that plane and not under turns out of it, so a
+/// certificate taken over every plane would refuse a pair a turn in one
+/// plane relates; the certificate belongs to the plane the relation is read
+/// on, as the turn does.
+pub fn dilation_certified(a: &Blade, b: &Blade, plane: (usize, usize)) -> bool {
     let (ra2, rb2) = (a.radius2(), b.radius2());
     let norm2 = |v: [BigRational; 2]| &v[0] * &v[0] + &v[1] * &v[1];
     let zero = BigRational::from_integer(BigInt::from(0));
@@ -133,8 +145,8 @@ pub fn dilation_certified(a: &Blade, b: &Blade) -> bool {
         }
     };
     let _ = zero;
-    order(deviatoric(a), deviatoric(b), 2)
-        && order(quartic_harmonic(a), quartic_harmonic(b), 4)
+    order(deviatoric(a, plane), deviatoric(b, plane), 2)
+        && order(quartic_harmonic(a, plane), quartic_harmonic(b, plane), 4)
 }
 
 /// THE CHIRALITY OF A BODY — AN ODD INVARIANT OF ITS OWN HARMONIC TOWER
@@ -179,9 +191,9 @@ pub fn dilation_certified(a: &Blade, b: &Blade) -> bool {
 /// a cross. That is not a gap: such a body IS achiral at these orders,
 /// its mirror image is one of its own turns, and a chirality read off it
 /// would be invented (rule 11).
-pub fn chirality(b: &Blade) -> Option<(BigRational, BigRational)> {
-    let u = deviatoric(b)?;
-    let q = quartic_harmonic(b)?;
+pub fn chirality(b: &Blade, plane: (usize, usize)) -> Option<(BigRational, BigRational)> {
+    let u = deviatoric(b, plane)?;
+    let q = quartic_harmonic(b, plane)?;
     // `u²` then `· conj(q)`, written out over ℚ.
     let (s1, s2) = (&u[0] * &u[0] - &u[1] * &u[1], &u[0] * &u[1] * BigRational::from_integer(BigInt::from(2)));
     Some((&s1 * &q[0] + &s2 * &q[1], &s2 * &q[0] - &s1 * &q[1]))
@@ -217,22 +229,29 @@ pub fn chirality(b: &Blade) -> Option<(BigRational, BigRational)> {
 ///
 /// Normalised by `M₀` like the rest of the tower (A.12), so it carries
 /// degree 3 and the ray comparison divides any dilation out.
-pub fn third_harmonic(blade: &Blade) -> Option<[BigRational; 2]> {
-    let (cx, cy, _) = blade.centroid()?;
+///
+/// ON THE PLANE THE CALLER NAMES (BQ4), from each lamina's own moments
+/// along the plane's two axes ([`super::body::lamina_moments`], the lift's
+/// one producer): `∫(u³ − 3uv²)` and `∫(3u²v − v³)`. On the grid plane the
+/// square's corrections cancel as above; on a plane with an axis off the
+/// grid the lamina is a point along it and the same product formula holds.
+pub fn third_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
+    let (i, j) = plane;
+    let centroid = blade.centroid()?;
+    let (ci, cj) = (centroid.get(i)?, centroid.get(j)?);
     let m0 = zeroth_moment(blade)?;
     let three = BigRational::from_integer(BigInt::from(3));
     let (mut re, mut im) = (
         BigRational::from_integer(BigInt::from(0)),
         BigRational::from_integer(BigInt::from(0)),
     );
-    // On the grid plane, where `h₃` turns (BQ4 generalises the plane).
-    let [ga, gb] = crate::transducer::base::GRID_AXES;
     for site in &blade.support {
-        let a = BigRational::from_integer(BigInt::from(site.axis(ga)?)) - &cx;
-        let b = BigRational::from_integer(BigInt::from(site.axis(gb)?)) - &cy;
-        let (a2, b2) = (&a * &a, &b * &b);
-        re += &a * &a2 - &three * &a * &b2;
-        im += &three * &a2 * &b - &b * &b2;
+        let a = BigRational::from_integer(BigInt::from(site.axis(i)?)) - ci;
+        let b = BigRational::from_integer(BigInt::from(site.axis(j)?)) - cj;
+        let [u1, u2, u3, _] = super::body::lamina_moments(&a, crate::transducer::base::is_grid_axis(i));
+        let [v1, v2, v3, _] = super::body::lamina_moments(&b, crate::transducer::base::is_grid_axis(j));
+        re += &u3 - &three * &u1 * &v2;
+        im += &three * &u2 * &v1 - &v3;
     }
     let (re, im) = (re / &m0, im / &m0);
     match re.is_zero() && im.is_zero() {

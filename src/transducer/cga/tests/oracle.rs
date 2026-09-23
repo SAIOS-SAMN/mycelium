@@ -53,9 +53,9 @@ fn fixtures() -> Vec<(String, Mv)> {
     for (i, a) in args.iter().enumerate() {
         let b = &args[(i + 1) % args.len()];
         let c = &args[(i + 2) % args.len()];
-        out.push((format!("point{i}"), cga::point(a, b, c)));
-        out.push((format!("sphere{i}"), cga::sphere(a, b, c, &q(i as i64 + 1, 6))));
-        out.push((format!("translator{i}"), cga::translator(a, b, c)));
+        out.push((format!("point{i}"), cga::at_three::point(a, b, c)));
+        out.push((format!("sphere{i}"), cga::at_three::sphere(a, b, c, &q(i as i64 + 1, 6))));
+        out.push((format!("translator{i}"), cga::at_three::translator(a, b, c)));
         out.push((format!("rotator{i}"), cga::rotator(b, &q(1, 1))));
     }
     // The fixtures stand at the corpus's n = 3, named.
@@ -74,7 +74,7 @@ fn fixtures() -> Vec<(String, Mv)> {
             out.push((format!("transvection{i}"), t));
         }
     }
-    let lam = |r: i64, c: i64, k: i64| cga::hyperbolic_lamina(&q(r, 1), &q(c, 1), &q(k, 1), &q(9, 1));
+    let lam = |r: i64, c: i64, k: i64| cga::at_three::hyperbolic_lamina(&q(r, 1), &q(c, 1), &q(k, 1), &q(9, 1));
     if let (Some(a), Some(b)) = (lam(1, 2, 0), lam(-3, 1, 2)) {
         out.push(("lamina_a".into(), a.clone()));
         if let Some(g) = cga::geodesic_transvection(&a, &b) {
@@ -84,7 +84,7 @@ fn fixtures() -> Vec<(String, Mv)> {
     // A screw: a turn composed with a displacement off its plane.
     out.push((
         "screw".into(),
-        cga::rotator(&q(1, 1), &q(1, 1)).geo(&cga::translator(&q(0, 1), &q(0, 1), &q(1, 1))),
+        cga::rotator(&q(1, 1), &q(1, 1)).geo(&cga::at_three::translator(&q(0, 1), &q(0, 1), &q(1, 1))),
     ));
     out
 }
@@ -205,7 +205,7 @@ pub(super) fn readings(inputs: &[(String, Mv)]) -> Vec<String> {
         ));
         out.push(format!(
             "base {name}: {}",
-            match cga::base(m) {
+            match cga::at_three::base(m) {
                 Some((a, b, c)) => format!("{a} {b} {c}"),
                 None => "refused".into(),
             }

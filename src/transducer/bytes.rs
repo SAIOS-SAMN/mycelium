@@ -75,7 +75,7 @@ impl Bytes for crate::transducer::blade::Blade {
         std::mem::size_of::<Self>()
             + self.spatial.bytes()
             + self.inertia.iter().map(bytes_q).sum::<usize>()
-            + self.quartic.iter().map(bytes_q).sum::<usize>()
+            + self.quartic.iter().flat_map(|t| t.iter()).map(bytes_q).sum::<usize>()
             + self.gauge.iter().map(|(_, q)| 1 + bytes_q(q)).sum::<usize>()
             + bytes_q(&self.shell)
             + self

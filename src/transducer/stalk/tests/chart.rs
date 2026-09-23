@@ -96,8 +96,10 @@ fn structure_separates_equal_volumes() {
     let ring = chain(&[(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]);
     assert_ne!(invariant(&square), invariant(&bar));
     assert_ne!(invariant(&square), invariant(&ring));
-    assert_eq!(&invariant(&square).0[..4], &[1u64, 0, 0, 4].map(ChartAxis::Count), "one body, no hole, no cavity, four turns");
-    assert_eq!(&invariant(&ring).0[..4], &[1u64, 1, 0, 8].map(ChartAxis::Count), "one body, one hole, no cavity, eight turns");
+    // The chart opens with the base's n, then its n Betti numbers, then the
+    // turns (BQ4).
+    assert_eq!(&invariant(&square).0[..5], &[3u64, 1, 0, 0, 4].map(ChartAxis::Count), "the base of three, one body, no hole, no cavity, four turns");
+    assert_eq!(&invariant(&ring).0[..5], &[3u64, 1, 1, 0, 8].map(ChartAxis::Count), "the base of three, one body, one hole, no cavity, eight turns");
 }
 
 /// The lookup finds a rotated sibling's base point through its chart and

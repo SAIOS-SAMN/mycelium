@@ -49,6 +49,86 @@ pub fn z_rank<const N: usize>(rows: &[[i64; N]]) -> Option<u32> {
     Some(rank as u32)
 }
 
+/// A SPARSE INTEGER ROW: its non-zero entries as `(column, value)`, columns
+/// strictly ascending.
+pub type SparseRow = Vec<(usize, i64)>;
+
+/// THE RANK OF A SPARSE INTEGER MATRIX OF ANY WIDTH (BQ4, 71.2(6)): the rank
+/// over ℚ of the rows, by exact fraction-free elimination over ℤ.
+///
+/// Written once beside [`z_rank`], which needs its width at compile time; a
+/// boundary map has as many columns as its complex has cells, so this one
+/// takes the rows as they come. Each row is reduced against the pivot
+/// already standing at its leading column, `r ← p₀·r − r₀·p`, and divided by
+/// the gcd of what is left, so the entries stay the integers they are; a
+/// row that reduces to nothing is dependent, and one that reaches a column
+/// with no pivot becomes its pivot. The rank is the number of pivots. Exact
+/// over `i128`; `None` when a multiply or subtract overflows, so a matrix
+/// too large to reduce is refused rather than wrapped (rule 11).
+pub fn sparse_rank(rows: &[SparseRow], width: usize) -> Option<usize> {
+    fn gcd(mut a: i128, mut b: i128) -> i128 {
+        while b != 0 {
+            (a, b) = (b, a % b);
+        }
+        a.abs()
+    }
+    let mut pivots: Vec<Option<Vec<(usize, i128)>>> = vec![None; width];
+    let mut rank = 0usize;
+    for row in rows {
+        let mut r: Vec<(usize, i128)> = row.iter().map(|&(c, v)| (c, i128::from(v))).filter(|&(_, v)| v != 0).collect();
+        while let &[(lead, a), ..] = r.as_slice() {
+            let slot = pivots.get_mut(lead)?;
+            let Some(p) = slot.as_ref() else {
+                *slot = Some(r);
+                rank += 1;
+                break;
+            };
+            let &[(_, b), ..] = p.as_slice() else { return None };
+            // r ← b·r − a·p, merged by column; the lead cancels.
+            let mut next: Vec<(usize, i128)> = Vec::with_capacity(r.len() + p.len());
+            let (mut i, mut j) = (0usize, 0usize);
+            while i < r.len() || j < p.len() {
+                let (ci, cj) = (r.get(i).map(|e| e.0), p.get(j).map(|e| e.0));
+                let (col, v) = match (ci, cj) {
+                    (Some(x), Some(y)) if x == y => {
+                        let v = r[i].1.checked_mul(b)?.checked_sub(p[j].1.checked_mul(a)?)?;
+                        i += 1;
+                        j += 1;
+                        (x, v)
+                    }
+                    (Some(x), Some(y)) if x < y => {
+                        let v = r[i].1.checked_mul(b)?;
+                        i += 1;
+                        (x, v)
+                    }
+                    (Some(x), None) => {
+                        let v = r[i].1.checked_mul(b)?;
+                        i += 1;
+                        (x, v)
+                    }
+                    (_, Some(y)) => {
+                        let v = p[j].1.checked_mul(a)?.checked_neg()?;
+                        j += 1;
+                        (y, v)
+                    }
+                    (None, None) => break,
+                };
+                if v != 0 {
+                    next.push((col, v));
+                }
+            }
+            let g = next.iter().fold(0i128, |g, &(_, v)| gcd(g, v));
+            if g > 1 {
+                for e in next.iter_mut() {
+                    e.1 /= g;
+                }
+            }
+            r = next;
+        }
+    }
+    Some(rank)
+}
+
 /// Row-style Hermite normal form over ℤ with the transform that produced
 /// it: `U · G = H`, `U` unimodular, `H` in row echelon with positive
 /// pivots. Exact over `i128` throughout; `None` on any overflow, so a

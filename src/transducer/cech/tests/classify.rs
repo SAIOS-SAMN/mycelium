@@ -49,7 +49,7 @@ fn the_identity_is_flat_and_so_is_a_scaled_carriage() {
 /// two separated copies produces exactly this transition.
 #[test]
 fn a_translation_stands_with_its_placement_and_is_not_flat() {
-    let t = cga::translator(&q(3), &q(-2), &q(0));
+    let t = cga::at_three::translator(&q(3), &q(-2), &q(0));
     assert!(
         crate::transducer::element::base_rotor_of(&t).is_some_and(|r| r.is_identity()),
         "the rotor part of a translation is the identity: the placement is the carriage's, not the rotor's"
@@ -110,7 +110,7 @@ fn a_residue_free_quarter_turn_files_at_its_period() {
 #[test]
 fn a_turn_about_a_point_files_and_a_screw_stands() {
     use crate::transducer::element::turn_base_point;
-    let about_a_point = cga::translator(&q(5), &q(0), &q(0));
+    let about_a_point = cga::at_three::translator(&q(5), &q(0), &q(0));
     let p = turn_base_point(&quarter(), &about_a_point).expect("a quarter turn has a base point");
     let Fill::Congruent(kappa, g, ell) =
         classify(&quarter(), &about_a_point, CycleType::Identity)
@@ -144,7 +144,7 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
     assert_eq!(&embedded[1] - &turned[1], q(0), "c: and nothing is left over");
     assert_eq!(&embedded[3] - &turned[3], q(0), "k: the axis is untouched");
 
-    let screw = cga::translator(&q(0), &q(0), &q(5));
+    let screw = cga::at_three::translator(&q(0), &q(0), &q(5));
     assert!(
         turn_base_point(&quarter(), &screw).is_none(),
         "a translation along the axis fixes no point: the system is inconsistent"
@@ -331,7 +331,7 @@ fn sections_at_different_placements_stand_where_the_identity_carriage_fills() {
     let placed = Section {
         addr: addr_b.clone(),
         gamma: Rotor::identity(),
-        carriage: cga::translator(&q(3), &q(-2), &q(0)),
+        carriage: cga::at_three::translator(&q(3), &q(-2), &q(0)),
     };
     let origin = Section { addr: addr_a.clone(), gamma: Rotor::identity(), carriage: ident() };
     let Fill::Class(kappa, _) = extend(&origin, &placed, &edge) else {

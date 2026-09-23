@@ -81,7 +81,7 @@ fn a_class_occupies_the_lanes_its_coordinates_name() {
     // asserted before and what `occupies` now reads correctly.
     let q3 = num_rational::BigRational::from_integer(num_bigint::BigInt::from(3));
     let z = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    let screw = crate::transducer::cga::translator(&z, &z, &q3);
+    let screw = crate::transducer::cga::at_three::translator(&z, &z, &q3);
     let both = ClassVector::read(&order4(), screw, CycleType::Identity)
         .expect("a placed turn");
     assert_eq!(
@@ -164,7 +164,7 @@ fn a_turns_base_point_occupies_no_placement_and_a_screw_does() {
 
     // Along the axis: no `p` fixes it, the seam walks, and that IS an
     // obstruction with a translation word that can zero it.
-    let screw = crate::transducer::cga::translator(&q(0), &q(0), &q(3));
+    let screw = crate::transducer::cga::at_three::translator(&q(0), &q(0), &q(3));
     let walking = ClassVector::read(&order4(), screw, CycleType::Identity).expect("a screw");
     assert!(
         walking.occupies(Axis::Placement),

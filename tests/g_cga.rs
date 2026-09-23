@@ -11,10 +11,27 @@
 //! EXISTS once the object has volume, because a null point is non-invertible.
 //! The base has three coordinates, row, column and frame (51.1).
 use mycelium::transducer::cga::{
-    base, boundary_dual, e_inf, e_o, on_sphere, point, rotator, rotator_on_blade, sphere, translator, Mv, E1, E3,
+    base_at, boundary_dual, e_inf, e_o, on_sphere, point_at, rotator, rotator_on_blade, sphere_at, translator_at, Mv,
+    E1, E3,
 };
 use num_bigint::BigInt;
 use num_rational::BigRational;
+
+// THE CORPUS'S `n = 3`, NAMED FOR THIS GATE (PH2, BQ4): the embeddings take
+// any `n`, and these fixtures read row, column and frame.
+fn point(a: &BigRational, b: &BigRational, c: &BigRational) -> Mv {
+    point_at(&[a.clone(), b.clone(), c.clone()])
+}
+fn sphere(a: &BigRational, b: &BigRational, c: &BigRational, r2: &BigRational) -> Mv {
+    sphere_at(&[a.clone(), b.clone(), c.clone()], r2)
+}
+fn translator(a: &BigRational, b: &BigRational, c: &BigRational) -> Mv {
+    translator_at(&[a.clone(), b.clone(), c.clone()])
+}
+fn base(p: &Mv) -> Option<(BigRational, BigRational, BigRational)> {
+    let x = base_at(p, 3)?;
+    Some((x[0].clone(), x[1].clone(), x[2].clone()))
+}
 
 fn q(v: i64) -> BigRational {
     BigRational::from_integer(BigInt::from(v))

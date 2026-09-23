@@ -131,8 +131,11 @@ impl Surgery {
     pub fn detect(src: &[Site], dst: &[Site]) -> Option<Self> {
         let t_src = topology(src)?;
         let t_dst = topology(dst)?;
-        let d_b0 = t_dst.0 as i64 - t_src.0 as i64;
-        let d_b1 = t_dst.1 as i64 - t_src.1 as i64;
+        // β₀ and β₁ at the support's own `n`; a base with no β₁ (n < 2)
+        // has no hole to fill or open.
+        let beta = |t: &[u64], k: usize| t.get(k).map_or(0, |b| *b as i64);
+        let d_b0 = beta(&t_dst, 0) - beta(&t_src, 0);
+        let d_b1 = beta(&t_dst, 1) - beta(&t_src, 1);
 
         if d_b0 == 0 && d_b1 == 0 {
             return None;

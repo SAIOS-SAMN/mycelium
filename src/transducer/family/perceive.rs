@@ -392,11 +392,14 @@ fn oblique_demand(a: &Body, b: &Body, chart: &Invariant) -> Option<Demanded> {
     use crate::transducer::alphabet::{PLANE_COL, PLANE_ROW};
     use crate::transducer::blade;
     note_demand(|t| t.offered += 1);
-    if blade::relative_rotor(&a.shape.blade, &b.shape.blade).err() != Some(blade::NoFrame::Oblique) {
+    // THE PLANE IS THE SENSOR'S OWN, named once for the frame, the arc and
+    // the demand (BQ4).
+    let sensor = crate::transducer::base::GRID_PLANE;
+    if blade::relative_rotor(&a.shape.blade, &b.shape.blade, sensor).err() != Some(blade::NoFrame::Oblique) {
         note_demand(|t| t.permanent += 1);
         return None;
     }
-    let Some((s, t)) = blade::oblique_arc(&a.shape.blade, &b.shape.blade) else {
+    let Some((s, t)) = blade::oblique_arc(&a.shape.blade, &b.shape.blade, sensor) else {
         note_demand(|t| t.arcless += 1);
         return None;
     };

@@ -17,6 +17,19 @@
 /// site that needs the square.
 pub const GRID_AXES: [usize; 2] = [0, 1];
 
+/// THE SENSOR'S OWN PLANE: the two grid axes. A reader that reads on this
+/// plane names it at its call (BQ4); every other plane is generated.
+pub const GRID_PLANE: (usize, usize) = (GRID_AXES[0], GRID_AXES[1]);
+
+/// THE PLANES OF THE BASE AT `n` (71.2(3)): every pair of base axes `i < j`,
+/// `C(n, 2)` of them, generated and never listed. Ordered by the larger axis
+/// and then the smaller, so the order is PREFIX-STABLE in `n`: the planes of
+/// `n` are the first planes of `n + 1`, as the inertia's pairs are, and the
+/// grid plane is always first.
+pub fn planes(n: usize) -> Vec<(usize, usize)> {
+    (0..n).flat_map(|j| (0..j).map(move |i| (i, j))).collect()
+}
+
 /// THE AXIS A FAMILY'S FRAMES STAND ALONG (51.3): the third coordinate the
 /// grid presents, a frame's place in its family. A section is the laminae
 /// of one value of it, and the frame rides on the pose (16.5).

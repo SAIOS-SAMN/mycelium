@@ -9,14 +9,14 @@ use crate::transducer::blade::*;
 /// carry the numbers first, and a dilation keeps them.
 #[test]
 fn topology_counts_components_and_holes_exactly() {
-    assert_eq!(topology(&rect(0, 0, 2, 2)), Some((1, 0, 0)));
+    assert_eq!(topology(&rect(0, 0, 2, 2)), Some(vec![1, 0, 0]));
     let ring = at_frame_0(&[(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]);
-    assert_eq!(topology(&ring), Some((1, 1, 0)));
+    assert_eq!(topology(&ring), Some(vec![1, 1, 0]));
     let two = at_frame_0(&[(0, 0), (0, 1), (5, 5), (5, 6)]);
-    assert_eq!(topology(&two), Some((2, 0, 0)));
+    assert_eq!(topology(&two), Some(vec![2, 0, 0]));
     let m = moduli(&shape_of(&ring).blade).expect("a ring is heard at n = 3");
     use crate::transducer::stalk::ChartAxis::Count;
-    assert_eq!((m[0].clone(), m[1].clone(), m[2].clone(), m[3].clone()), (Count(1), Count(1), Count(0), Count(8)));
+    assert_eq!(m[..5], [Count(3), Count(1), Count(1), Count(0), Count(8)], "the base, β₀ β₁ β₂, the turns");
     assert_eq!(moduli(&shape_of(&dilate(&ring, 2)).blade), Some(m), "a dilated ring reads the same moduli");
     // The fourth-order axis separates bodies the inertia cannot: an
     // L-tetromino and a T-tetromino... share a lamina count; the moduli
@@ -31,7 +31,7 @@ fn topology_counts_components_and_holes_exactly() {
 #[test]
 fn a_square_lifts_to_an_invertible_body() {
     let b = lift(&laminae(&[(0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)]));
-    assert_eq!(b.centroid(), Some((qn(1, 2), qn(1, 2), q(0))));
+    assert_eq!(b.centroid(), Some(vec![qn(1, 2), qn(1, 2), q(0)]));
     assert!(b.radius2() > q(0), "the body has volume (off the null cone)");
     assert!(b.is_invertible());
     assert_eq!(b.shell, q(4));
@@ -104,9 +104,7 @@ fn volumetric_blade_3d_lift_computes_six_moments_and_3d_centroid() {
     assert_eq!(b.shell, q(4));
     let c3 = b.centroid().expect("3D centroid");
     // Row centroid = 0, Col centroid = 1, Frame centroid = 1
-    assert_eq!(c3.0, q(0));
-    assert_eq!(c3.1, q(1));
-    assert_eq!(c3.2, q(1));
+    assert_eq!(c3, vec![q(0), q(1), q(1)]);
 
     // Inertia tensor has 6 components: [Ixx, Iyy, Ixy, Izz, Ixz, Iyz]
     assert_eq!(b.inertia.len(), 6);
@@ -115,9 +113,10 @@ fn volumetric_blade_3d_lift_computes_six_moments_and_3d_centroid() {
     // centroid.
     assert_eq!(b.inertia[3], q(4), "Izz is the offsets alone");
 
-    // Deviatoric harmonic on plane (0, 1) and off-plane (0, 3)
+    // Deviatoric harmonic on the grid plane (0, 1) and on the row–frame
+    // plane (0, 2), both generated from n (BQ4).
     let h01 = b.harmonic_on_plane((0, 1), false).expect("plane 0,1");
-    let h03 = b.harmonic_on_plane((0, 3), false).expect("plane 0,3");
+    let h03 = b.harmonic_on_plane((0, 2), false).expect("plane 0,2");
     assert_ne!(h01, [q(0), q(0)]);
     assert_ne!(h03, [q(0), q(0)]);
 }

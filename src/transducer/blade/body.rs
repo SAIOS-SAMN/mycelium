@@ -36,11 +36,14 @@ pub struct Blade {
     /// every `n`. A lamina (16.4) has the unit square's own moment on the
     /// two grid axes and none along any other.
     pub inertia: Vec<BigRational>,
-    /// 𝒮 refinement — the exact fourth body moments about the centroid on
-    /// the grid plane: the isotropic part `∫(u²+v²)²` and the fourth
-    /// harmonic `(∫(u⁴−6u²v²+v⁴), ∫(4u³v−4uv³))`, which turns at four times
-    /// the body's angle. It orients a body whose inertia is isotropic.
-    pub quartic: [BigRational; 3],
+    /// 𝒮 refinement — the exact fourth body moments about the centroid, ONE
+    /// TRIPLE PER PLANE generated from `n` ([`crate::transducer::base::planes`]
+    /// order, BQ4): on the plane `(i, j)` with `u, v` the offsets along its
+    /// two axes, the isotropic part `∫(u²+v²)²` and the fourth harmonic
+    /// `(∫(u⁴−6u²v²+v⁴), ∫(4u³v−4uv³))`, which turns at four times the
+    /// body's angle in that plane. It orients a body whose inertia is
+    /// isotropic there.
+    pub quartic: Vec<[BigRational; 3]>,
     /// 𝒢 — the gauge/hue content as sorted `(hue, count)` relations (Vec, not a
     /// map: cognition obeys the Anti-Flattening Law). Versor-invariant.
     pub gauge: Vec<(u8, BigRational)>,
@@ -52,10 +55,16 @@ pub struct Blade {
 }
 
 impl Blade {
+    /// The base's `n` this body stands on: its sites' count of coordinates
+    /// (71.2(1)). A body with no support stands on no base, `n = 0`.
+    pub fn n(&self) -> usize {
+        self.support.iter().map(|s| s.n()).fold(0, usize::max)
+    }
+
     /// The centroid on the base, read back from the homogeneous sphere —
-    /// exact ℚ³, the frame coordinate with the two of the plane.
-    pub fn centroid(&self) -> Option<(BigRational, BigRational, BigRational)> {
-        cga::base(&self.spatial)
+    /// exact ℚⁿ at the body's own `n` (PH2: no fixed arity).
+    pub fn centroid(&self) -> Option<Vec<BigRational>> {
+        cga::base_at(&self.spatial, self.n())
     }
 
     /// The squared extent `r² = S·S` — always `> 0`, so the body is invertible.
@@ -80,8 +89,7 @@ impl Blade {
     /// ONE PRODUCER (law 12). Every reader of a nucleus comes here rather
     /// than assembling `cga::sphere` from a centroid at its own call site.
     pub fn nucleus(&self) -> Option<crate::transducer::cga::Mv> {
-        let (p1, p2, p3) = self.centroid()?;
-        Some(crate::transducer::cga::sphere(&p1, &p2, &p3, &self.radius2()))
+        Some(crate::transducer::cga::sphere_at(&self.centroid()?, &self.radius2()))
     }
 
     /// Every extracted body is invertible by construction (`r² ≥ 1/6 > 0`).
@@ -119,53 +127,43 @@ impl Blade {
         }
     }
 
-    /// THE PLANES A BODY HAS. The base is three coordinates — `e₀, e₁, e₃`
-    /// are `r, c, k` (51.2) — so a body's inertia spans three planes and not
-    /// the six of `Cl(4,0)`; the three through `e₂` are not the base's.
-    ///
-    /// `harmonic_on_plane`'s match arms ARE this list, and a caller sweeping
-    /// `SLOT_PLANES_SIX` tried six to find three and dropped the rest through
-    /// a `continue` — the carrier naming its own planes is the reading, and
-    /// the sweep was the question asked of a table that answers it (law 3).
-    pub(crate) const BASE_PLANES: [(u8, u8); 3] = [
-        (crate::transducer::alphabet::PLANE_ROW, crate::transducer::alphabet::PLANE_COL),
-        (crate::transducer::alphabet::PLANE_ROW, 3),
-        (crate::transducer::alphabet::PLANE_COL, 3),
-    ];
-
-    /// The deviatoric harmonic tensor on a given rotation plane in `BASE_PLANES`.
-    /// On plane (0,1) reads `(Ixx - Iyy, 2Ixy)`; on (0,3) reads `(Ixx - Izz, 2Ixz)`;
-    /// on (1,3) reads `(Iyy - Izz, 2Iyz)`.
-    pub(crate) fn harmonic_on_plane(&self, plane: (u8, u8), mirrored: bool) -> Option<[BigRational; 2]> {
-        use crate::transducer::alphabet::{PLANE_COL, PLANE_ROW};
-        let at = |i: usize| self.inertia.get(i);
-        let read = |a: usize, b: usize, cross: usize| -> Option<[BigRational; 2]> {
-            let (d1, d2, x) = (at(a)?, at(b)?, at(cross)?);
-            let cross = x * q(2);
-            Some([d1 - d2, if mirrored { -cross } else { cross }])
-        };
-        match plane {
-            (PLANE_ROW, PLANE_COL) => read(0, 1, 2),
-            (PLANE_ROW, 3) => read(0, 3, 4),
-            (PLANE_COL, 3) => read(1, 3, 5),
-            _ => None,
-        }
+    /// THE PLANES A BODY HAS: every pair of its base's axes, generated from
+    /// its `n` (71.2(3), BQ4). The body's harmonics are read on each.
+    pub fn planes(&self) -> Vec<(usize, usize)> {
+        crate::transducer::base::planes(self.n())
     }
 
-    /// The second harmonic of the body: the anisotropy `(Ixx − Iyy, 2 Ixy)`,
-    /// a vector that turns at twice the body's angle and vanishes for an
-    /// isotropic body. `mirrored` reads it for the body reflected across
-    /// the row axis (the off-diagonal moment changes sign).
-    pub(crate) fn harmonic2(&self, mirrored: bool) -> [BigRational; 2] {
-        let (ixx, iyy, ixy) = (&self.inertia[0], &self.inertia[1], &self.inertia[2]);
-        let cross = ixy * q(2);
-        [ixx - iyy, if mirrored { -cross } else { cross }]
+    /// The second moment `I_ij` about the centroid, `i ≤ j` or either
+    /// order. `None` for an axis the body's base does not have.
+    pub fn moment2(&self, i: usize, j: usize) -> Option<&BigRational> {
+        let (lo, hi) = if i <= j { (i, j) } else { (j, i) };
+        inertia_pairs(hi + 1).iter().position(|&p| p == (lo, hi)).and_then(|at| self.inertia.get(at))
     }
 
-    /// The fourth harmonic of the body, turning at four times its angle.
-    pub(crate) fn harmonic4(&self, mirrored: bool) -> [BigRational; 2] {
-        let (hx, hy) = (&self.quartic[1], &self.quartic[2]);
-        [hx.clone(), if mirrored { -hy } else { hy.clone() }]
+    /// The fourth-moment triple on a plane `(i, j)`, `i < j`. `None` for a
+    /// plane the body's base does not have.
+    pub fn quartic_on(&self, plane: (usize, usize)) -> Option<&[BigRational; 3]> {
+        self.planes().iter().position(|&p| p == plane).and_then(|at| self.quartic.get(at))
+    }
+
+    /// THE SECOND HARMONIC ON A PLANE `(i, j)`: `(I_ii − I_jj, 2 I_ij)`, a
+    /// vector that turns at twice the body's angle in that plane and
+    /// vanishes where the body is isotropic there. `mirrored` reads it for
+    /// the body reflected across the plane's first axis (the off-diagonal
+    /// moment changes sign). `None` for a plane the body's base does not
+    /// have.
+    pub fn harmonic_on_plane(&self, plane: (usize, usize), mirrored: bool) -> Option<[BigRational; 2]> {
+        let (i, j) = plane;
+        let (di, dj, x) = (self.moment2(i, i)?, self.moment2(j, j)?, self.moment2(i, j)?);
+        let cross = x * q(2);
+        Some([di - dj, if mirrored { -cross } else { cross }])
+    }
+
+    /// THE FOURTH HARMONIC ON A PLANE, turning at four times the body's
+    /// angle there. `None` for a plane the body's base does not have.
+    pub fn harmonic4_on(&self, plane: (usize, usize), mirrored: bool) -> Option<[BigRational; 2]> {
+        let [_, hx, hy] = self.quartic_on(plane)?;
+        Some([hx.clone(), if mirrored { -hy } else { hy.clone() }])
     }
 }
 
@@ -190,6 +188,20 @@ fn inertia_pairs(n: usize) -> Vec<(usize, usize)> {
         }
     }
     out
+}
+
+/// THE LAMINA'S OWN MOMENTS ALONG ONE AXIS, `∫uᵖ` for p = 1…4, at offset
+/// `d` from the centroid (16.4). On a grid axis the lamina is the unit
+/// interval centred at `d`: ∫u = d, ∫u² = d² + 1/12, ∫u³ = d³ + d/4,
+/// ∫u⁴ = d⁴ + d²/2 + 1/80. On every other axis it is the point `d`. The
+/// ONE producer of a lamina's moments, read by the lift and by the tower's
+/// odd harmonic (law 12).
+pub(crate) fn lamina_moments(d: &BigRational, grid: bool) -> [BigRational; 4] {
+    let x2 = d * d;
+    match grid {
+        true => [d.clone(), &x2 + qn(1, 12), &x2 * d + d * qn(1, 4), &x2 * &x2 + &x2 * qn(1, 2) + qn(1, 80)],
+        false => [d.clone(), x2.clone(), &x2 * d, &x2 * &x2],
+    }
 }
 
 /// Lift one connected component into a volumetric blade — exact ℚ
@@ -233,7 +245,8 @@ pub fn lift(comp: &[Lamina]) -> Blade {
     // axes, and its offset alone along every other.
     let pairs = inertia_pairs(dim);
     let mut inertia: Vec<BigRational> = vec![q(0); pairs.len()];
-    let (mut q_iso, mut h4x, mut h4y) = (q(0), q(0), q(0));
+    let planes = crate::transducer::base::planes(dim);
+    let mut quartic: Vec<[BigRational; 3]> = vec![[q(0), q(0), q(0)]; planes.len()];
     let [ga, gb] = GRID_AXES;
     for l in comp {
         let d: Vec<BigRational> = (0..dim).map(|i| q(coord(l, i)) - &centroid[i]).collect();
@@ -245,28 +258,18 @@ pub fn lift(comp: &[Lamina]) -> Blade {
             *slot += m;
         }
 
-        // The fourth moments on the grid plane. ∫u⁴ = d⁴ + d²/2 + 1/80;
-        // ∫u² = d² + 1/12; ∫u³ = d³ + d/4; ∫u = d, each over the unit
-        // interval centered at the offset d.
-        let (dr, dc) = (
-            match d.get(ga) {
-                Some(x) => x.clone(),
-                None => q(0),
-            },
-            match d.get(gb) {
-                Some(x) => x.clone(),
-                None => q(0),
-            },
-        );
-        let (dr2, dc2) = (&dr * &dr, &dc * &dc);
-        let u4 = &dr2 * &dr2 + &dr2 * qn(1, 2) + qn(1, 80);
-        let v4 = &dc2 * &dc2 + &dc2 * qn(1, 2) + qn(1, 80);
-        let u2v2 = (&dr2 + qn(1, 12)) * (&dc2 + qn(1, 12));
-        let u3v = (&dr2 * &dr + &dr * qn(1, 4)) * &dc;
-        let uv3 = &dr * (&dc2 * &dc + &dc * qn(1, 4));
-        q_iso += &u4 + &u2v2 * q(2) + &v4;
-        h4x += &u4 - &u2v2 * q(6) + &v4;
-        h4y += (&u3v - &uv3) * q(4);
+        // The axes are independent, so a moment on a plane is the product
+        // of the lamina's own moments along its two axes.
+        let along = |i: usize| lamina_moments(&d[i], is_grid_axis(i));
+        // THE FOURTH MOMENTS ON EVERY PLANE generated from `n` (BQ4).
+        for (slot, &(i, j)) in quartic.iter_mut().zip(&planes) {
+            let ([u1, u2, u3, u4], [v1, v2, v3, v4]) = (along(i), along(j));
+            let u2v2 = &u2 * &v2;
+            let (u3v, uv3) = (&u3 * &v1, &u1 * &v3);
+            slot[0] += &u4 + &u2v2 * q(2) + &v4;
+            slot[1] += &u4 - &u2v2 * q(6) + &v4;
+            slot[2] += (&u3v - &uv3) * q(4);
+        }
     }
 
     // Extent r² = the per-unit-mass polar second moment on the grid plane,
@@ -302,7 +305,7 @@ pub fn lift(comp: &[Lamina]) -> Blade {
     Blade {
         spatial,
         inertia,
-        quartic: [q_iso, h4x, h4y],
+        quartic,
         gauge,
         shell: n_q,
         support,
@@ -520,189 +523,101 @@ pub fn frame_faces(support: &[Site]) -> usize {
     open
 }
 
-/// The three coordinates of a site of the corpus's `n = 3`, for the one
-/// reading below that is taken at three and no other (38.2).
-fn at_three(s: &Site) -> Option<[i64; 3]> {
-    <[i64; 3]>::try_from(s.axes()).ok()
-}
+/// A CELL OF THE CUBICAL COMPLEX: the axes it has extent along (a bit per
+/// base axis) and its lowest corner. Its dimension is the number of axes.
+type Cell = (u64, Vec<i64>);
 
-/// The topology of a support as the union of its closed unit cubes on the
-/// face-adjacency complex (51.3): `(β₀, β₁, β₂)` — components, tunnels and
-/// cavities. The Euler characteristic `χ = V − E + F − C` is counted
-/// through incidence, each corner contributing `1/k` for the `k` cubes
-/// meeting there and each unit segment `1/m` for the `m` cubes sharing it,
-/// so the count is exact without a vertex set; `β₂` is the number of
-/// enclosed components of the complement, and `β₁ = β₀ + β₂ − χ`. A body
-/// of one frame reads its planar components and holes, and no cavity.
+/// THE TOPOLOGY OF A SUPPORT (38.2, 71.2(6), BQ4): the Betti numbers
+/// `β₀ … β_{n−1}` of the CLOSED UNION of its unit cubes on ℤⁿ, at any `n`.
 ///
-/// AT `n = 3` AND NO OTHER, and it says so by refusing. `β₁ = β₀ + β₂ − χ`
-/// holds on a cube complex of three dimensions; past three there are Betti
-/// numbers χ does not separate, and 38.2 reads them by exact integer linear
-/// algebra over ℤ, which is BQ4's. `None` for a support of another `n`.
-pub fn topology(support: &[Site]) -> Option<(u64, u64, u64)> {
+/// The complex is enumerated whole — each cube `[s, s+1]ⁿ` contributes its
+/// `3ⁿ` closed cells, shared cells counted once — and every Betti number is
+/// read from the ranks of the boundary maps over ℤ,
+///
+/// ```text
+///     βₖ = Cₖ − rank ∂ₖ − rank ∂ₖ₊₁
+/// ```
+///
+/// by [`crate::core::lattice::sparse_rank`], exact. Two facts of the
+/// complex are theorems and are not eliminated: `rank ∂₀ = 0`, and `∂ₙ` is
+/// injective (`Hₙ = 0` for any finite cubical complex in ℝⁿ), so
+/// `rank ∂ₙ = Cₙ`.
+///
+/// THE COMPLEX IS THE UNION'S, AND A BODY IS STILL FACE-ADJACENCY. Bodies
+/// are the face-connected components ([`components`]); the chart's topology
+/// is the union's, so two parts of a support that meet only at an edge or a
+/// corner are one component here (71.2(6)). The `n = 3` formula this
+/// replaces took `β₀` from face adjacency and `χ`, `β₂` from the union,
+/// which is two complexes in one reading.
+///
+/// `None` where the sites stand on bases of different `n`, or where the
+/// elimination overflows `i128` (refused, never wrapped).
+pub fn topology(support: &[Site]) -> Option<Vec<u64>> {
     let mut sites: Vec<Site> = support.to_vec();
     sites.sort_unstable();
     sites.dedup();
-    let sorted: Vec<[i64; 3]> = sites.iter().map(at_three).collect::<Option<Vec<_>>>()?;
-    Some(topology_at_three(&sites, &sorted))
-}
-
-/// The topology of a support already read at three: `sites` sorted and
-/// unique, `sorted` their three coordinates in the same order.
-fn topology_at_three(sites: &[Site], sorted: &[[i64; 3]]) -> (u64, u64, u64) {
-    if sorted.is_empty() {
-        return (0, 0, 0);
+    let n = match sites.as_slice() {
+        [] => return Some(Vec::new()),
+        [first, rest @ ..] => {
+            if rest.iter().any(|s| s.n() != first.n()) {
+                return None;
+            }
+            first.n()
+        }
+    };
+    // THE CELLS BY DIMENSION, each sorted and unique: the index of a cell is
+    // its place in its dimension's list, read by binary search.
+    let mut by_dim: Vec<Vec<Cell>> = vec![Vec::new(); n + 1];
+    for s in &sites {
+        for dirs in 0..(1u64 << n) {
+            // Every corner offset along the axes the cell has no extent on.
+            let fixed: Vec<usize> = (0..n).filter(|i| dirs & (1 << i) == 0).collect();
+            for eps in 0..(1u64 << fixed.len()) {
+                let mut anchor = s.axes().to_vec();
+                for (b, &i) in fixed.iter().enumerate() {
+                    if eps & (1 << b) != 0 {
+                        anchor[i] += 1;
+                    }
+                }
+                by_dim[dirs.count_ones() as usize].push((dirs, anchor));
+            }
+        }
     }
-    let held = |r: i64, c: i64, k: i64| sorted.binary_search(&[r, c, k]).is_ok();
-    let edges = crate::transducer::sentence::face_incidence(sites);
-    let mut roots = crate::transducer::sentence::components(sites.len(), &edges);
-    roots.sort_unstable();
-    roots.dedup();
-    let b0 = roots.len() as i64;
-    let n = sorted.len() as i64;
-    let faces = 6 * n - edges.len() as i64;
-    let mut vertices = q(0);
-    let mut segments = q(0);
-    for &[r, c, k] in sorted {
-        // The eight corners `(x, y, z)`, each shared by the cubes whose
-        // origin is one below it on any axis.
-        for dx in 0..2 {
-            for dy in 0..2 {
-                for dz in 0..2 {
-                    let (x, y, z) = (r + dx, c + dy, k + dz);
-                    let mut m = 0i64;
-                    for ax in [x - 1, x] {
-                        for ay in [y - 1, y] {
-                            for az in [z - 1, z] {
-                                m += i64::from(held(ax, ay, az));
-                            }
+    for cells in by_dim.iter_mut() {
+        cells.sort_unstable();
+        cells.dedup();
+    }
+    // `rank ∂ₖ` for 1 ≤ k < n by elimination; `rank ∂ₙ = Cₙ`.
+    let mut rank = vec![0usize; n + 2];
+    for k in 1..n {
+        let faces = &by_dim[k - 1];
+        let rows: Vec<crate::core::lattice::SparseRow> = by_dim[k]
+            .iter()
+            .map(|(dirs, anchor)| {
+                let mut row: crate::core::lattice::SparseRow = Vec::with_capacity(2 * k);
+                for (p, i) in (0..n).filter(|i| dirs & (1 << i) != 0).enumerate() {
+                    let sign: i64 = if p % 2 == 0 { 1 } else { -1 };
+                    let face_dirs = dirs & !(1 << i);
+                    let mut upper = anchor.clone();
+                    upper[i] += 1;
+                    for (corner, s) in [(anchor.clone(), -sign), (upper, sign)] {
+                        if let Ok(at) = faces.binary_search(&(face_dirs, corner)) {
+                            row.push((at, s));
                         }
                     }
-                    vertices += qn(1, m);
                 }
-            }
-        }
-        // The twelve unit segments: four along each axis, each shared by
-        // the cubes around it in the two other axes.
-        for dy in 0..2 {
-            for dz in 0..2 {
-                let (y, z) = (c + dy, k + dz);
-                let mut m = 0i64;
-                for ay in [y - 1, y] {
-                    for az in [z - 1, z] {
-                        m += i64::from(held(r, ay, az));
-                    }
-                }
-                segments += qn(1, m);
-            }
-        }
-        for dx in 0..2 {
-            for dz in 0..2 {
-                let (x, z) = (r + dx, k + dz);
-                let mut m = 0i64;
-                for ax in [x - 1, x] {
-                    for az in [z - 1, z] {
-                        m += i64::from(held(ax, c, az));
-                    }
-                }
-                segments += qn(1, m);
-            }
-        }
-        for dx in 0..2 {
-            for dy in 0..2 {
-                let (x, y) = (r + dx, c + dy);
-                let mut m = 0i64;
-                for ax in [x - 1, x] {
-                    for ay in [y - 1, y] {
-                        m += i64::from(held(ax, ay, k));
-                    }
-                }
-                segments += qn(1, m);
-            }
-        }
+                row.sort_unstable();
+                row
+            })
+            .collect();
+        rank[k] = crate::core::lattice::sparse_rank(&rows, faces.len())?;
     }
-    // χ is exact on the cube complex. A χ that does not fit an i64 is a
-    // support wider than this reader measures, and zero would be a
-    // topological claim about it (rule 11): the body reads as one
-    // component with no tunnel and no cavity only when χ says so.
-    let Ok(chi) = i64::try_from((vertices - segments + q(faces) - q(n)).to_integer()) else {
-        return (0, 0, 0);
-    };
-    let b2 = cavities(sorted);
-    let b1 = b0 + b2 - chi;
-    (b0 as u64, if b1 >= 0 { b1 as u64 } else { 0 }, b2 as u64)
-}
-
-/// THE CAVITIES OF A SUPPORT: the components of its complement, within the
-/// box one site wider than the support on every side, that do not reach
-/// that box's border. A cavity needs a lamina of the body before it and
-/// after it along `e₃`, so a body of fewer than three frames has none and
-/// nothing is walked for it.
-#[expect(
-    clippy::disallowed_methods,
-    reason = "rule 4 — the bounding box is the extent of the support, content: the complement is walked inside it and its border is where a component reaches outside"
-)]
-fn cavities(sorted: &[[i64; 3]]) -> i64 {
-    let (Some(r0), Some(r1), Some(c0), Some(c1), Some(k0), Some(k1)) = (
-        sorted.iter().map(|p| p[0]).min(),
-        sorted.iter().map(|p| p[0]).max(),
-        sorted.iter().map(|p| p[1]).min(),
-        sorted.iter().map(|p| p[1]).max(),
-        sorted.iter().map(|p| p[2]).min(),
-        sorted.iter().map(|p| p[2]).max(),
-    ) else {
-        return 0;
-    };
-    if k1 - k0 < 2 {
-        return 0;
-    }
-    let held = |p: [i64; 3]| sorted.binary_search(&p).is_ok();
-    let inside = |[r, c, k]: [i64; 3]| {
-        (r0 - 1..=r1 + 1).contains(&r) && (c0 - 1..=c1 + 1).contains(&c) && (k0 - 1..=k1 + 1).contains(&k)
-    };
-    let on_border = |[r, c, k]: [i64; 3]| {
-        r == r0 - 1 || r == r1 + 1 || c == c0 - 1 || c == c1 + 1 || k == k0 - 1 || k == k1 + 1
-    };
-    let six = |[r, c, k]: [i64; 3]| {
-        [[r - 1, c, k], [r + 1, c, k], [r, c - 1, k], [r, c + 1, k], [r, c, k - 1], [r, c, k + 1]]
-    };
-    let key = |[r, c, k]: [i64; 3]| {
-        let mut b = [0u8; 24];
-        b[..8].copy_from_slice(&r.to_le_bytes());
-        b[8..16].copy_from_slice(&c.to_le_bytes());
-        b[16..].copy_from_slice(&k.to_le_bytes());
-        b
-    };
-    let mut visited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    let mut enclosed = 0i64;
-    // Every complement component that touches the body is entered from a
-    // lamina of the body; a component touching no lamina of it is outside.
-    for &p in sorted {
-        for start in six(p) {
-            if held(start) || visited.contains(&key(start)) {
-                continue;
-            }
-            visited.insert(key(start), ());
-            let mut stack = vec![start];
-            let mut reaches_border = false;
-            while let Some(at) = stack.pop() {
-                if on_border(at) {
-                    reaches_border = true;
-                }
-                for next in six(at) {
-                    if !inside(next) || held(next) || visited.contains(&key(next)) {
-                        continue;
-                    }
-                    visited.insert(key(next), ());
-                    stack.push(next);
-                }
-            }
-            if !reaches_border {
-                enclosed += 1;
-            }
-        }
-    }
-    enclosed
+    rank[n] = by_dim[n].len();
+    // `βₖ ≥ 0` is a theorem; a negative difference is a broken count and
+    // refuses rather than wrapping (rule 11).
+    (0..n)
+        .map(|k| by_dim[k].len().checked_sub(rank[k])?.checked_sub(rank[k + 1]).map(|b| b as u64))
+        .collect()
 }
 
 /// THE MODULI of a body — its coordinates on the base, one `ChartAxis`
@@ -710,24 +625,27 @@ fn cavities(sorted: &[[i64; 3]]) -> i64 {
 /// carrying its own exact value, and there is no width left to read as
 /// absence. A body with support is never charted at the root.
 ///
-/// `None` where the body's harmonics are not read at its `n` (38.2, BQ4):
-/// a chart is not invented for it.
+/// `None` where the body's topology is refused ([`topology`]): a chart is
+/// not invented for it.
 pub fn moduli(b: &Blade) -> Option<Vec<crate::transducer::stalk::ChartAxis>> {
     Some(crate::transducer::blade::harmonics::Harmonics::of(b)?.axes())
 }
 
 /// THE MODULI OF ONE SECTION — a chain's sites on the grid axes, the frame
-/// on the pose (16.5). A section stands at `n = 3` by construction, so its
-/// topology is read at three with nothing to refuse, and the chart is
-/// total: the same reading [`moduli`] gives the section's shape.
+/// on the pose (16.5): the same reading [`moduli`] gives the section's
+/// shape.
+///
+/// A CHART ONLY LOCATES (71.2(6)), so where the section's topology is
+/// refused the section is filed at the coarsest stratum it honestly has —
+/// its base's `n`, the chart's first axis — and nothing below it is
+/// invented. The physics decides what the section is; the chart only finds
+/// the candidates.
 pub fn section_moduli(sites: &[(i64, i64)]) -> Vec<crate::transducer::stalk::ChartAxis> {
     let shape = shape_of_section(sites);
-    let mut triples: Vec<[i64; 3]> = sites.iter().map(|&(r, c)| [r, c, 0]).collect();
-    triples.sort_unstable();
-    triples.dedup();
-    let at: Vec<Site> = triples.iter().map(|t| Site::new(t.to_vec())).collect();
-    let t = topology_at_three(&at, &triples);
-    crate::transducer::blade::harmonics::Harmonics::with_topology(&shape.blade, t).axes()
+    match moduli(&shape.blade) {
+        Some(axes) => axes,
+        None => vec![crate::transducer::stalk::ChartAxis::Count(shape.blade.n() as u64)],
+    }
 }
 
 /// A body as the carrier a transport is solved on and verified against.

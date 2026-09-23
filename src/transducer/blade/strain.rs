@@ -177,10 +177,19 @@ impl Strain {
     /// The strain between two bodies, or `None` where a centroid does not
     /// read back (rule 11: refused, never defaulted).
     pub fn between(a: &Blade, b: &Blade) -> Option<Strain> {
-        let (a1, a2, a3) = a.centroid()?;
-        let (b1, b2, b3) = b.centroid()?;
-        let (d1, d2, d3) = (&a1 - &b1, &a2 - &b2, &a3 - &b3);
-        let sep2 = &d1 * &d1 + &d2 * &d2 + &d3 * &d3;
+        // The squared separation on every axis the two bodies stand on
+        // (PH2); two bodies of different `n` have no separation to read.
+        let (ca, cb) = (a.centroid()?, b.centroid()?);
+        if ca.len() != cb.len() {
+            return None;
+        }
+        let sep2 = ca
+            .iter()
+            .zip(&cb)
+            .fold(BigRational::from_integer(BigInt::from(0)), |s, (x, y)| {
+                let d = x - y;
+                s + &d * &d
+            });
         let (ra2, rb2) = (a.radius2(), b.radius2());
         let four = BigRational::from_integer(BigInt::from(4));
         Some(Strain { num: sep2 - &ra2 - &rb2, den2: four * ra2 * rb2 })

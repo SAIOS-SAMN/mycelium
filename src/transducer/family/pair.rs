@@ -98,9 +98,12 @@ pub(crate) fn meet_edge(
     // the same on the line, which is the defect that let `ℓ = 1` pass as
     // a measurement of the scene.
     let own_turn = |s: &crate::transducer::family::cover::Supports| {
+        // Read on the sensor's plane, named (BQ4); the pose over the
+        // piece's tube is FR1's.
         crate::transducer::blade::relative_rotor(
             &crate::transducer::blade::shape_of(&s.domain).blade,
             &crate::transducer::blade::shape_of(&s.codomain).blade,
+            crate::transducer::base::GRID_PLANE,
         )
     };
     let framed = match (own_turn(supa), own_turn(supb)) {

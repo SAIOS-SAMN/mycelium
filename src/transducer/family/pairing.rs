@@ -524,7 +524,8 @@ pub(crate) fn named_faces(
             //     let an unoriented reflection pass without paying. It
             //     refuses until the odd harmonic `m = 3` exists to resolve
             //     the half turn (57.3, 65.6).
-            match blade::relative_rotor(ba, bb) {
+            // On the sensor's plane, named (BQ4); FR1 reads the pose.
+            match blade::relative_rotor(ba, bb, crate::transducer::base::GRID_PLANE) {
                 Ok(blade::Frame::Turn(_)) => {}
                 // A ROTOR EXISTS AND ITS PARITY DOES NOT. This is the
                 // `m = 3` gap: a projective class, not a determined turn.

@@ -752,7 +752,7 @@ fn perception_3d_coordinates_preserve_frame_and_moments() {
     assert!(b3d.laminae.iter().all(|c| c.site.axis(2) == Some(1)), "the support stands in its frame");
     assert_eq!(b3d.shape.blade.inertia.len(), 6);
     let c3 = b3d.shape.blade.centroid().expect("3d centroid");
-    assert_eq!(c3.2, num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)));
+    assert_eq!(c3[2], num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)));
     let at_zero = body_of(
         [(0i64, 0i64, 0i64, 1u8), (0, 1, 0, 1), (1, 0, 0, 1), (1, 1, 0, 1)].map(Lamina::from).to_vec(),
     )

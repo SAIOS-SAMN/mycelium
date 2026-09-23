@@ -132,12 +132,22 @@ pub fn same_versor(a: &Versor, b: &Versor) -> bool {
 /// `k` coordinate, not a default (16.4). Sensor pairs stay in `pair_form`,
 /// `speak_rule`, and `orbit`.
 pub fn carriage(rho: &Q, t: &(Q, Q)) -> Versor {
-    carriage_at(rho, &(t.0.clone(), t.1.clone(), Q::zero()))
+    carriage_at(rho, &[t.0.clone(), t.1.clone()])
 }
 
-/// A4 carriage on the three-coordinate base: dilator(ρ) · translator(d).
-pub fn carriage_at(rho: &Q, t: &(Q, Q, Q)) -> Versor {
-    crate::transducer::cga::dilator(rho).geo(&crate::transducer::cga::translator(&t.0, &t.1, &t.2))
+/// A4 carriage on the base's own coordinates: dilator(ρ) · translator(d).
+pub fn carriage_at(rho: &Q, t: &[Q]) -> Versor {
+    crate::transducer::cga::dilator(rho).geo(&crate::transducer::cga::translator_at(t))
+}
+
+/// The origin's image under `v`, divided by the dilation `v` carries, on
+/// the base axes of `v`'s own algebra: the displacement `v` places the
+/// origin at (A4). `None` where the origin goes to infinity or `ρ` cannot
+/// be read.
+fn origin_image(v: &Versor) -> Option<Vec<Q>> {
+    let rho = rho_of(v)?;
+    let img = crate::transducer::cga::base_at(&v.sandwich(&crate::transducer::cga::point_at(&[])), usize::from(v.n()))?;
+    Some(img.into_iter().map(|x| x / &rho).collect())
 }
 
 /// THE DILATION A VERSOR CARRIES (A4, I12), read exactly off its action:
@@ -165,7 +175,8 @@ pub fn rho_of(v: &Versor) -> Option<Q> {
 /// placement residue was ρ times the placement and `dilator_of` was not a
 /// dilator (I12). `None` when the origin is sent to infinity or ρ cannot
 /// be read.
-/// THE DISPLACEMENT A VERSOR CARRIES, as three exact coordinates (54.7 R3).
+/// THE DISPLACEMENT A VERSOR CARRIES, as exact coordinates on the base
+/// axes of its own algebra (54.7 R3; PH2: no fixed arity).
 ///
 /// [`translator_of`] answers the same reading already WRAPPED in a
 /// conformal translator `T(d) = 1 − ½ d e_∞`, whose generator is null
@@ -178,11 +189,8 @@ pub fn rho_of(v: &Versor) -> Option<Q> {
 /// connection (51.2's asserted second reading) — are both built from it.
 /// One reading, two realisations, rather than one realisation two readers
 /// have to agree about (rule 12).
-pub fn displacement_of(v: &Versor) -> Option<(Q, Q, Q)> {
-    let rho = rho_of(v)?;
-    let z = Q::zero();
-    let img = crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&z, &z, &z)))?;
-    Some((img.0 / &rho, img.1 / &rho, img.2 / &rho))
+pub fn displacement_of(v: &Versor) -> Option<Vec<Q>> {
+    origin_image(v)
 }
 
 /// THE SAME DISPLACEMENT AS A GEODESIC TRANSVECTION of `Spin⁺(3,1)(ℚ)`.
@@ -195,8 +203,8 @@ pub fn displacement_of(v: &Versor) -> Option<(Q, Q, Q)> {
 /// A zero displacement is the identity and not a refusal: standing still is
 /// a reading.
 pub fn transvection_of(v: &Versor) -> Option<Versor> {
-    let (t1, t2, t3) = displacement_of(v)?;
-    if t1.is_zero() && t2.is_zero() && t3.is_zero() {
+    let t = displacement_of(v)?;
+    if t.iter().all(|x| x.is_zero()) {
         return Some(identity_versor());
     }
     // THE CAYLEY CHART ENDS AT `|u|² = 1`, AND THAT EDGE IS THE LIGHT CONE
@@ -224,14 +232,14 @@ pub fn transvection_of(v: &Versor) -> Option<Versor> {
     // It is also the second half of why the corpus reads `parabolic 0`:
     // the luminal sector is not merely unbuilt (55.7), it is actively
     // refused here whenever a displacement reaches it.
-    let norm2 = &t1 * &t1 + &t2 * &t2 + &t3 * &t3;
+    let norm2 = t.iter().fold(Q::zero(), |s, x| s + x * x);
     if norm2 == Q::one() {
         return None;
     }
     // One boost `eᵢ ∧ e₋` per coordinate of the displacement, on that
     // coordinate's own base axis.
     use crate::transducer::cga::{base_axis, EM};
-    let generator = [t1, t2, t3]
+    let generator = t
         .into_iter()
         .enumerate()
         .fold(Versor::zero(), |g, (i, t)| g.add(&Versor::blade(base_axis(i + 1) | EM, t)));
@@ -239,14 +247,11 @@ pub fn transvection_of(v: &Versor) -> Option<Versor> {
 }
 
 pub fn translator_of(v: &Versor) -> Option<Versor> {
-    let rho = rho_of(v)?;
-    let z = Q::zero();
-    let img = crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&z, &z, &z)))?;
-    let (t1, t2, t3) = (img.0 / &rho, img.1 / &rho, img.2 / &rho);
-    if t1.is_zero() && t2.is_zero() && t3.is_zero() {
+    let t = origin_image(v)?;
+    if t.iter().all(|x| x.is_zero()) {
         Some(identity_versor())
     } else {
-        Some(crate::transducer::cga::translator(&t1, &t2, &t3))
+        Some(crate::transducer::cga::translator_at(&t))
     }
 }
 
@@ -353,13 +358,15 @@ pub fn screw_of(
     if !rho_of(carriage)?.is_one() {
         return None;
     }
-    let z = Q::zero();
-    let t = crate::transducer::cga::base(
-        &carriage.sandwich(&crate::transducer::cga::point(&z, &z, &z)),
-    )?;
-    if !same_versor(carriage, &crate::transducer::cga::translator(&t.0, &t.1, &t.2)) {
+    // THE SCREW IS THE ALPHABET'S, and the alphabet stands on three base
+    // axes (51.2, law 6: `BASE_AXES` below), so the translation is read on
+    // those three; a carriage with a component past them is no screw of
+    // this rotor and refuses at the same-versor check.
+    let t = crate::transducer::cga::base_at(&carriage.sandwich(&crate::transducer::cga::point_at(&[])), 3)?;
+    if !same_versor(carriage, &crate::transducer::cga::translator_at(&t)) {
         return None;
     }
+    let t = (t[0].clone(), t[1].clone(), t[2].clone());
     // `(I − R) p = t`, four rows in three unknowns: the base's three and
     // the off-base row that must come out zero, so a turn carrying the
     // base off itself refuses here instead of being solved on a projection
@@ -477,11 +484,10 @@ pub fn versor_conjugate(v: &Versor, by: &Versor) -> Versor {
 /// The translator by an integer lattice offset within a frame — the lattice
 /// peel's transport as a rational versor.
 pub fn translator_versor(r: i64, c: i64) -> Versor {
-    crate::transducer::cga::translator(
-        &num_rational::BigRational::from_integer(BigInt::from(r)),
-        &num_rational::BigRational::from_integer(BigInt::from(c)),
-        &Q::zero(),
-    )
+    crate::transducer::cga::translator_at(&[
+        num_rational::BigRational::from_integer(BigInt::from(r)),
+        num_rational::BigRational::from_integer(BigInt::from(c)),
+    ])
 }
 
 /// A GROUP ELEMENT: one versor, no chain. This is the thing 3.x calls a

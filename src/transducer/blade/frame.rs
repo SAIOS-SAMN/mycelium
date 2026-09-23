@@ -85,9 +85,12 @@ pub fn relative_double_angle(
 /// REFLECTIONS ARE NOT HERE. `D₄` has eight elements; the four improper
 /// ones lie in `O(2) \ SO(2)` and are not rotors. A reflection between two
 /// charts is a different fact from a rotation and is not minted as one.
-fn quarter_turns() -> [(i64, i64, Mv); 4] {
+///
+/// ON THE PLANE `(i, j)` BEING READ (BQ4): the bivector is that plane's own
+/// `eᵢ ∧ eⱼ`, generated from the base axes, and `e₁₂` on the grid plane.
+fn quarter_turns(plane: (usize, usize)) -> [(i64, i64, Mv); 4] {
     let q = |n: i64| BigRational::from_integer(BigInt::from(n));
-    let e12 = cga::E1 | cga::E2;
+    let e12 = cga::base_axis(plane.0 + 1) | cga::base_axis(plane.1 + 1);
     let rotor = |s: i64, b: i64| Mv::scalar(q(s)).add(&Mv::blade(e12, q(b)));
     // `(cos φ, sin φ)` beside the rotor that enacts it, so the test below
     // turns the support by the SAME angle the rotor carries.
@@ -126,9 +129,9 @@ fn relative_phase(ha: &[BigRational; 2], hb: &[BigRational; 2]) -> (BigRational,
 /// there to read, and the caller keeps the `ℤ₂` freedom rather than
 /// choosing a sign it cannot see (which is what manufactures a phantom
 /// holonomy around a cycle).
-fn relative_turn_ray(a: &Blade, b: &Blade) -> Option<(BigRational, BigRational)> {
-    let (ua, ub) = (deviatoric(a)?, deviatoric(b)?);
-    let (ta, tb) = (third_harmonic(a)?, third_harmonic(b)?);
+fn relative_turn_ray(a: &Blade, b: &Blade, plane: (usize, usize)) -> Option<(BigRational, BigRational)> {
+    let (ua, ub) = (deviatoric(a, plane)?, deviatoric(b, plane)?);
+    let (ta, tb) = (third_harmonic(a, plane)?, third_harmonic(b, plane)?);
     let z2 = relative_phase(&ua, &ub);
     let z3 = relative_phase(&ta, &tb);
     // `z₃ · conj(z₂)`.
@@ -172,8 +175,8 @@ enum Handedness {
     Unread,
 }
 
-fn handedness(a: &Blade, b: &Blade) -> Handedness {
-    let (Some(za), Some(zb)) = (chirality(a), chirality(b)) else {
+fn handedness(a: &Blade, b: &Blade, plane: (usize, usize)) -> Handedness {
+    let (Some(za), Some(zb)) = (chirality(a, plane), chirality(b, plane)) else {
         return Handedness::Unread;
     };
     if same_ray(&za, &zb) {
@@ -310,10 +313,11 @@ pub enum NoFrame {
 fn orientation_of(
     a: &Blade,
     b: &Blade,
+    plane: (usize, usize),
 ) -> Result<(u8, [BigRational; 2], [BigRational; 2]), NoFrame> {
-    match (deviatoric(a), deviatoric(b)) {
+    match (deviatoric(a, plane), deviatoric(b, plane)) {
         (Some(ua), Some(ub)) => Ok((2, ua, ub)),
-        (None, None) => match (quartic_harmonic(a), quartic_harmonic(b)) {
+        (None, None) => match (quartic_harmonic(a, plane), quartic_harmonic(b, plane)) {
             (Some(qa), Some(qb)) => Ok((4, qa, qb)),
             _ => Err(NoFrame::Unoriented),
         },
@@ -353,9 +357,9 @@ fn orientation_of(
 ///
 /// SCALE-FREE, so a dilated pair reads the same arc: `u ↦ s⁴u` scales `z`
 /// by `s⁸ > 0`, and dividing out the content removes it.
-pub fn oblique_arc(a: &Blade, b: &Blade) -> Option<(BigInt, BigInt)> {
+pub fn oblique_arc(a: &Blade, b: &Blade, plane: (usize, usize)) -> Option<(BigInt, BigInt)> {
     use num_integer::Integer;
-    let (order, oa, ob) = orientation_of(a, b).ok()?;
+    let (order, oa, ob) = orientation_of(a, b, plane).ok()?;
     // ORDER 2 ONLY, AND THAT IS A REFUSAL RATHER THAN A GAP. The quartic
     // orients a body the deviatoric cannot, but it turns at `4φ`, so its
     // arc answers `w⁸ ∝ z` and a witness minted from it would name a
@@ -388,11 +392,16 @@ pub fn oblique_arc(a: &Blade, b: &Blade) -> Option<(BigInt, BigInt)> {
     }
 }
 
-pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Frame, NoFrame> {
+/// ON THE PLANE THE CALLER NAMES (BQ4, 71.2(3)). The turn, its harmonics,
+/// its odd invariant and its refusal are all read in that plane's own
+/// coordinates, and the rotor is that plane's bivector. Which planes a
+/// relation between two bodies turns across — the pose over their tubes —
+/// is FR1's reading; this answers one plane.
+pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Frame, NoFrame> {
     if a.support.is_empty() || b.support.is_empty() {
         return Err(NoFrame::Bodiless);
     }
-    let (order, oa, ob) = orientation_of(a, b)?;
+    let (order, oa, ob) = orientation_of(a, b, plane)?;
     // SIGNS ONLY, WHICH IS WHAT MAKES IT SCALE-FREE. Under a dilation by
     // `s > 0` the moments scale as `s⁴`, so `u ↦ s⁴ · R(2φ) u` and every
     // sign survives. Taking `cos 2φ = (u_a·u_b)/(‖u_a‖‖u_b‖)` would need
@@ -468,7 +477,7 @@ pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Frame, NoFrame> {
         // Both gates must pass for the question to stay open. `Unread` is
         // no chirality reading at all, so it proves nothing on its own and
         // leans entirely on the certificate.
-        return Err(match (handedness(a, b), dilation_certified(a, b)) {
+        return Err(match (handedness(a, b, plane), dilation_certified(a, b, plane)) {
             (Handedness::Improper, _) => NoFrame::Mirrored,
             (Handedness::Unrelated, _) | (_, false) => NoFrame::Incongruent,
             _ => NoFrame::Oblique,
@@ -501,8 +510,8 @@ pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Frame, NoFrame> {
     // body, so there is no fact to recover and `HalfOpen` is the honest
     // reading — the `ℤ₂` gauge freedom the coboundary arbitrates, not a
     // measurement this reader failed to take.
-    let turns = quarter_turns();
-    let Some(phi) = relative_turn_ray(a, b) else {
+    let turns = quarter_turns(plane);
+    let Some(phi) = relative_turn_ray(a, b, plane) else {
         return Ok(Frame::HalfOpen(turns[turn_pair[0]].2.clone()));
     };
     let q = |n: i64| BigRational::from_integer(BigInt::from(n));
@@ -517,7 +526,7 @@ pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Frame, NoFrame> {
     // own invariants say — the same question asked on the oblique branch
     // above, asked here too, because a ruling applies to every site of its
     // shape and not only to the one that reported it.
-    Err(match (handedness(a, b), dilation_certified(a, b)) {
+    Err(match (handedness(a, b, plane), dilation_certified(a, b, plane)) {
         (Handedness::Improper, _) => NoFrame::Mirrored,
         (Handedness::Unrelated, _) | (_, false) => NoFrame::Incongruent,
         _ => NoFrame::Oblique,

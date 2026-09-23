@@ -1,6 +1,6 @@
 // 56.3, 66 — A.11's harmonic tower and A.12's extent, read on bodies.
 
-use crate::transducer::blade;
+use crate::transducer::blade::sensor_plane as blade;
 use num_traits::Zero;
 
 /// A.11's RADIAL/ORIENTATION SPLIT, on bodies that distinguish them.
@@ -310,14 +310,14 @@ fn a_non_simple_bivector_requires_content_off_the_sensor_plane() {
     // A planar rotation composed with an IN-PLANE translation. The
     // translator is `v ∧ e_∞` with `v` in `e₁e₂`, so every grade-4 term
     // repeats a basis vector.
-    let t_in = cga::translator(&q(3), &q(5), &q(0));
+    let t_in = cga::at_three::translator(&q(3), &q(5), &q(0));
     assert!(
         cga::bivector_is_simple(&r1.geo(&t_in)),
         "a turn and a slide inside the sensor plane stay simple"
     );
 
     // Two in-plane translations: `e_∞` repeats.
-    let t_in2 = cga::translator(&q(-2), &q(7), &q(0));
+    let t_in2 = cga::at_three::translator(&q(-2), &q(7), &q(0));
     assert!(
         cga::bivector_is_simple(&t_in.geo(&t_in2)),
         "two in-plane slides stay simple"
@@ -326,7 +326,7 @@ fn a_non_simple_bivector_requires_content_off_the_sensor_plane() {
     // NOW LEAVE THE PLANE. A turn in `e₁e₂` against a displacement with
     // a third-axis component — which in this engine is the FRAME axis,
     // the corpus's own `e₃` (61.3) — spans a four-volume.
-    let t_off = cga::translator(&q(0), &q(0), &q(1));
+    let t_off = cga::at_three::translator(&q(0), &q(0), &q(1));
     assert!(
         !cga::bivector_is_simple(&r1.geo(&t_off)),
         "a turn against an off-plane displacement is a SCREW: I₂ ≠ 0"
@@ -372,7 +372,7 @@ fn a_non_simple_bivector_requires_content_off_the_sensor_plane() {
 /// would have collapsed the nucleus onto the cone.
 #[test]
 fn the_smallest_body_still_holds_its_nucleus_off_the_cone() {
-    use crate::transducer::blade;
+    use crate::transducer::blade::sensor_plane as blade;
     let q = |n: i64| crate::core::Q::from_integer(n.into());
     let sixth = q(1) / q(6);
 
@@ -410,7 +410,7 @@ fn the_smallest_body_still_holds_its_nucleus_off_the_cone() {
 /// is the dilation `x ↦ 2x` performed on the lattice itself.
 #[test]
 fn the_scaling_degrees_of_the_harmonic_tower() {
-    use crate::transducer::blade;
+    use crate::transducer::blade::sensor_plane as blade;
     let q = |n: i64| crate::core::Q::from_integer(n.into());
 
     // An L-tromino: `C₁`, so every harmonic is non-vanishing and each

@@ -135,15 +135,22 @@ fn a14_the_pair_reading_must_be_constant_on_a_contact_family() {
         rank1.push(format!("{}", &sq / &face.strain.den2));
         // RANK 2 — the same reading on the DIRECTIONAL extent.
         let (ca, cb) = (ba.centroid().expect("a"), bb.centroid().expect("b"));
-        let (vr, vc) = (&cb.0 - &ca.0, &cb.1 - &ca.1);
-        let vv = &vr * &vr + &vc * &vc;
-        // `v·I·v` on the sensor plane: Ixx, Iyy, Ixy are inertia[0..3].
+        // The separation on every axis the bodies have (PH2): `v·v` and
+        // `v·I·v` are read on n axes through `moment2`, never by indexing
+        // the inertia's layout.
+        let v: Vec<num_rational::BigRational> = cb.iter().zip(&ca).map(|(x, y)| x - y).collect();
+        let vv = v.iter().fold(q(0), |s, x| s + x * x);
         let dir = |bl: &blade::Blade| -> num_rational::BigRational {
             // `M₀` is the body's own lamina count on this base.
             let m0 = q(bl.support.len() as i64);
-            let quad = &vr * &vr * &bl.inertia[0]
-                + &vc * &vc * &bl.inertia[1]
-                + q(2) * &vr * &vc * &bl.inertia[2];
+            let mut quad = q(0);
+            for (i, vi) in v.iter().enumerate() {
+                for (j, vj) in v.iter().enumerate() {
+                    if let Some(m) = bl.moment2(i, j) {
+                        quad += vi * vj * m;
+                    }
+                }
+            }
             quad / (&vv * &m0)
         };
         let (ra2, rb2) = (dir(ba), dir(bb));

@@ -234,8 +234,10 @@ pub(crate) fn arc_block(s: &BigInt, t: &BigInt) -> [[Q; 2]; 2] {
 /// and answers `None` rather than one on a plane it does not occupy
 /// (rule 11).
 pub fn standing_of(r: &Rotor) -> Option<Demand> {
-    // index: the base's three planes, a fixed physical size (51.2)
-    for plane in crate::transducer::blade::Blade::BASE_PLANES {
+    // The base's planes the alphabet has slots for (51.2, BQ4): generated
+    // from the rotor chart's own three base axes and mapped to its slots.
+    let slotted = crate::transducer::base::planes(3).into_iter().filter_map(super::slot_plane);
+    for plane in slotted {
         if let Some(d) = standing(r, plane) {
             if d.typed().is_ok() {
                 return Some(d);
