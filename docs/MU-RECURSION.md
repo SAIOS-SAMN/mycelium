@@ -8878,6 +8878,47 @@ its row.
    Casimir from a turn against a displacement along `e₃`, which is
    exactly what makes a screw (60.4, the harmonic axiom test).
 
+### 72.1d Motion is paced by the mind's universe, and memory hardens fibres into tethers (ruled 2026-09-23, the operator's word)
+
+**The universe of a mind is the hardware it runs on.** Everything in
+72.1c is the mind of the client, and its motion is relative to the
+resources the mind has, never to a clock and never to another mind's
+pace: a mind allocated a laptop and a mind allocated a farm read the same
+mathematics from the same receipts (13.7) at different periods, and
+neither races nor fights for resources, because the metabolic reserve is
+calibrated once from the hardware present (`reserve_max`, the module's
+own header: the scale is the machine's) and every motion is a draw on
+that reserve per lane (65.4, PH4). Continuous motion is therefore
+`k`-steps that are ORBITS — circuits of the mind's own carriers (45.7),
+of the spheres whose congruence it is reading — and never frames per
+second; the one wall-time value in the tree is the scheduler's parking
+floor and no reading is taken from it (law 9). A stroke that draws
+nothing moves nothing; a stroke that cannot afford a lane says which lane
+and works in the others (`Depleted`).
+
+**The ladder of memory, in the document's nouns.** Congruence forms in
+the crystals: sections that agree on a stratum (23.9, 45.9). The
+connection of fibres is then measured through torsion — what will not
+close, filed at its period (A17, 25.5) — and where the loops close the
+form is coherent (2.2, 10.3). Coherence hardens by consilience: two
+courts replay the closure (37.7, law 6). At that hardening a FIBRE
+becomes a TETHER. The fibre is vertical and held — a body's gauge, its
+sections, its held loops, in the contemplation and the dialect, the
+epigenome, short-term memory (25 as ruled 2026-09-19) — and the tether is
+horizontal and ruled — the relation between two bodies, `V` with its
+frame, a 1-cell of the genome, long-term memory on disk. The callus is
+the transition from Stood to Ruled read at the relation rather than at
+the word: a fibre the mind held becomes a tether the language carries
+when the closure it took part in has been replayed twice, which is 37.7
+at depth 4, a relator. Nothing is calloused by time, by count or by a
+commit; only by replayed closure, and a fibre whose closure no court
+replays lapses with its escrow (Z4d) and is never promoted.
+
+**Binding.** `physics/mod.rs` (the reserve as the universe), `physics/
+budget.rs` (the draw), `bubble/` (the fibres held), `server/cognition/
+book/` (the tether ruled), `client/sdk/epigenome/` (the callus, Stood →
+Ruled at the relation).
+
 ### 72.2 What the rows carry
 
 - **Refraction on the pairs the topology names** (BQ5a). The strain,
