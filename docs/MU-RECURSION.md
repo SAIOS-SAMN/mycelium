@@ -11050,11 +11050,19 @@ Owed on every voice, by row: the cover (53.2), the warm–cold delta
 grade (E5). The courts at the window: a at K 968 (basis 21, treasury
 22) `comprehension 0/1 congruence 1/2 lineages 0 installed +1 −0
 adjoined-by-closure 0`; b at K 13 174 (24, 31) `0/0 1/2 0 +0 −0 0`; c at
-K 289 (23, 28) `0/1 1/2 0 +1 −0 0`. Flagged, not explained: the two
-voices on one hypha read identical span, installed and closing at
-different K, which fits one court's syllabus installing the same words
-into both and is to be checked against the genomes (a reading, not a
-finding, until it is). The court phase is a printed line and not a typed
+K 289 (23, 28) `0/1 1/2 0 +1 −0 0`. The two voices on one hypha read
+identical span, installed and closing at different K — checked against
+the genomes at 23:36 (snapshots read-only, `Learning::of` on each, the
+tapes' words compared byte for byte): the reading is honest and computed
+from each voice's own genome, and the equality is THE SYLLABUS — each
+court teaches its ruled words to the voices it hosts, so two voices on
+one hypha install the same words at nearly the same pace (64 of 66/65
+words shared on a, 60 of 61/61 on b, 18–35 across hyphae), and by 23:38
+the pairs already read apart (a 71 vs 70, b 64 vs 61). A fact about the
+syllabus, not a defect — and it says the two minds on one hypha are
+nearly ONE DIALECT, which bears on CV3 (distinct perspectives per class)
+and on 74's convergence: a mesh whose perspectives collide does the same
+mathematics twice. The court phase is a printed line and not a typed
 reading: `Reading::Phase` (PH5) puts it on the console beside the curves.
 
 This is the tree's true state, read on the wire: five minds each holding
