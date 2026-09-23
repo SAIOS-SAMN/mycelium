@@ -11109,7 +11109,7 @@ readings per single perception, before → after:
 | contact cycles with non-trivial holonomy | 0 (6 unread) | 3 curved (gauge static, the tether holonomy hyperbolic), 3 coset open, unread 0 |
 | cells | round kept 0, unread 7 | grade 1 round kept 1, unread 5, no circuit 1; grade 2 unread 1 |
 | withhold census by kind | — | P 0, D 0, C 3, I 0, N 33, unclassified 0 |
-| viscosity over the census | no-class 1 080 | inviscid 12, elastic 75, curved 48, viscous 0, unread 270, no-class 675 |
+| viscosity, per single perception (corrected 2026-09-24: these are the spectrum test's figures, and the census's six tests read six times them, 72 / 450 / 288 / 0 / 1 620 / 4 050) | no-class 1 080 | inviscid 12, elastic 75, curved 48, viscous 0, unread 270, no-class 675 |
 
 The first CURVED contact cycles of this corpus, and the first curved
 viscosity readings — the static circuits' bends — exactly where 78.6
@@ -11150,6 +11150,54 @@ generate-and-test T5 refuses beyond small `k`. The enumeration spends
 the stroke's budget per candidate formed and refuses by name
 (`Unbounded`) when spent; the exact reader for large `k` is T5's kernel
 over `𝔽₂`, the operator's to order. Both returns ride CT2's commit.
+
+### 78.19 CT2 landed, E1 closed in the tree (2026-09-24)
+
+CT2 with 78.18's two returns and its amendment landed (9d522ca0): where
+every reuse arm is empty, the lost step is completed by a CONSTRUCTED
+route — a tether `V = s_y s_x` of the lost face's two bodies' nuclei
+from the witness cells holding both, and that tether carried by each
+other constructor the cells hold, `s_k V s_k⁻¹` — and T1 is read on the
+two routes between the lost face's bodies, the constructed one against
+the rest of the circuit, which reduces to the completed loop against the
+identity ray: flat or curved with its holonomy. A circuit only a
+constructed route reads is a CANDIDATE, its offers (arm, face,
+constructor ray, verdict, holonomy ray, modes) volatile on the circuit
+reading and never installed. The tether is now taken from the face's
+body pair at every arm, the walk keeps a refracted edge half as its
+FACTORS and forms the candidates one read each under the stroke,
+`Unbounded` by name when spent, and a static edge keeps each end's pose
+as far as it was read. Readings per single perception: the tether's
+regimes over the six contacts moved from apart 5 / contained 1 to apart
+3 / intersecting 2 / contained 1, read off the bodies now; the orbit
+line reads 2 hyperbolic and 1 rosette with the gauge static, the three
+cosets open unchanged; two of the static circuits' mode splits read
+`Unbounded(2)` — the census's stroke spent in the modes reader, named;
+CT1 and CT2 find nothing to test on this corpus, candidates 0, offers 0,
+honest at zero. Four points ruled: (i) T1 against the rest of the
+circuit as the second route is the reading, available only where every
+other step reads, by name; (ii) the fibre as the tether carried by the
+CELL's other constructors is the cell-level construction (R3); the
+member-level fibre — a member carried by a constructor the MIND holds,
+its dialect's reflections, to a new chart pair — is the second
+construction and is opened as CT2b for E4, where the dialect's
+constructors are the ones offered across the mesh; (iii) offers stay
+volatile on the circuit reading, the broadcast is CV4's; (iv) the
+`Unbounded(2)` splits are the stroke's, honest, and SP1 reads them on
+the fleet.
+
+**E1 is closed in the tree.** Every row of E1 has landed: the senses at
+every grade, the cells, the modes, the orbit algebra, the Gram form and
+the Coxeter reading, the enclosures, the viscosity, the refraction with
+its coset and static arms, every refusal typed, the reuse ladder and the
+constructed routes, and the fleet's readings typed and served. Its
+done-when — contact cycles with non-trivial holonomy, certified cells
+with their content, refusals typed by grade — reads on the census corpus
+now (3 curved of 6, 6 edges formed, every refusal typed) and reads on
+the fleet at the operator's recut. The quiet point between phases has
+arrived: the vocabulary sweep (VT1 and VT2 in the tree, OR2d and VT1's
+doctrine half in this document) lands here, before the recut and before
+E2.
 
 # Part XI — The frame axis
 
