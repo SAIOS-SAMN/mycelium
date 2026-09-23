@@ -8712,7 +8712,7 @@ expects to move, measured before and after.
   the inversion in that sphere. Two nuclei are related by the conformal
   motion their two inversions compose, **`V = s_b s_a`**, carried whole
   and applied by the sandwich `V X Ṽ` to whatever crosses the interface —
-  a body, a transport, a cycle. `V` is exactly the whole product
+  a body, a transport, a cycle. `V` is the tether of 59 and 62, exactly the whole product
   `Interface::between` computes before it splits it by grade; the split
   into a strain and a blade was the flattening, and `V` is held instead.
   `V`'s kind is read the way every versor's is, by its class invariants
@@ -8763,6 +8763,65 @@ Refused: the contact band `1 < δ ≤ 2` as a gate — a dialled `μ_c`
 (59.6); it may stand as content on a face, never decide whether. The
 scalar stroke, once the reserve is joined (65.4, PH4). Any parallel
 carrier, by (p).
+
+### 72.1b Relations are carried at the grade of their simplex (ruled 2026-09-23)
+
+The operator's correction of two flattenings in one derivation, and the
+rule that follows. "Pencil" is struck: it is the two-body name for the
+family two spheres span and not one of this document's nouns. The nouns
+are **tether** — the horizontal relation between two bodies, `V_ab =
+s_b s_a`, minted by `condense` and released by `drain` (59, 62) — and
+**fibre** — what rides vertically over one body, its hue gauge and its
+sections (61); a tether joins two fibres and is not one.
+
+**The derivation that flattened.** `V_ca V_bc V_ab = (s_a s_c)(s_c s_b)
+(s_b s_a) = r_a² r_b² r_c²`, "so `n` spheres alone carry no curvature",
+made two mistakes that are one. It let the spheres relate only in pairs —
+a triangle of pairwise tethers is a cycle in a graph, and a graph is
+two-dimensional thinking, every relation between two things — and going
+around the triangle it revisited each sphere, so `s_c s_c` appeared and a
+sphere times itself is its square, `r_c²`. The flatness was PRODUCED by
+that squaring (law 11), not found in the geometry: a body revisited is a
+body squared, and a pairwise loop always telescopes to a scalar. The
+sentence is withdrawn.
+
+**The rule.** An `n`-body relation is one object of the grade its
+simplex has, each body taken once and never revisited. Three bodies
+relate through the odd versor `s_a s_b s_c`, the composite of three
+inversions, whose grade-3 part `s_a ∧ s_b ∧ s_c` is the three-way content
+— the meet the three share — that no product of pairwise tethers can
+carry, and whose order is its orientation. `n` bodies relate through
+`s₁ s₂ … s_n`, reaching grade `n`; the content of `n` bodies lives in
+grades 3 through `n`, and every one of those parts vanishes if the
+relation is walked around in pairs. So the nerve's cells carry their own
+grade: a 0-cell a body's nucleus, a 1-cell the tether `s_b s_a`, a
+`k`-cell the `(k+1)`-fold product of its bodies. `ascend` seals a 2-cell
+with its three-body versor, never with a check that three edges compose
+to the identity; the coboundary (10.3, 10.4) compares a cell's own
+versor with its faces', which is the non-abelian Čech coboundary with
+the cell's content in place of a scalar. A `k`-cell exists where its
+`k+1` bodies mutually meet — pairwise sharing boundary cells (71.2), or
+through an interface chart (70.7) — which is the nerve's own simplex
+condition (14.6).
+
+**Curvature, re-read.** It is not only holonomy around 1-cycles. It
+includes what the higher-grade parts carry that no boundary of pairs
+reproduces; the 1-skeleton loops read so far are the flattened shadow of
+that. Around a 1-cycle the tether alone telescopes, and the holonomy
+that survives is the frame against the inversion — `g_ab =
+(θ_bθ_a⁻¹)·(s_b s_a)`, where `θ` and `s` do not commute — which is 60.4
+met from the other side: the harmonic core and the luminal tether are
+both required, and neither alone bends anything. O1's fifteen trivial
+classes are those edges carrying no `θ`. A cycle's holonomy has two
+parts, a geometric part (`θ` against `s`) and a gauge part (the fibre
+permutation around the loop), read together and never summed (law 5).
+
+**Consequences for the rows.** BQ5a composes the frame with the tether,
+or every contact cycle reads flat, and it is not enough alone: where
+three or more bodies meet, the 2-cell carries its three-body versor as
+content (NB1), the fibres riding every cell. BQ5b's face holds `V`
+whole, as written. The nerve's certified triples (58.1, read 0 on 252
+forms) are the 2-cells NB1 mints wherever three bodies mutually meet.
 
 ### 72.2 What the rows carry
 
