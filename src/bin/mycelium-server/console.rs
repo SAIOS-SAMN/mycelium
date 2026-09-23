@@ -19,6 +19,8 @@
 //!   the growth per `K` between them, and the peak: a leak is growth over
 //!   the source's own clock.
 //! - COURT — the court's `K`, basis, treasury and the acts it served.
+//! - LEARNING — a mind's curve at its `K` (LC1): dialect span, cover, what
+//!   its closures did, and every field still owed, by its row.
 
 use mycelium::observe::{self, Court, Loss, Memory, Planes, Reading, Source, LOSS_AXES};
 use mycelium::transducer::cga;
@@ -107,6 +109,7 @@ pub(crate) fn render(addr: &str, total: u32, held: &[observe::Held]) -> Vec<Stri
                 Reading::Memory(m) => memory(m),
                 Reading::Replication(r) => replication(r),
                 Reading::Adjudication(a) => adjudication(a),
+                Reading::Learning(l) => learning(l),
             });
         }
     }
@@ -266,6 +269,24 @@ fn adjudication(a: &observe::Adjudication) -> Vec<String> {
                 false => format!("{YELLOW}{}{RESET}", refused.join("  ")),
             }
         ),
+    ]
+}
+
+/// LC1 — THE LEARNING CURVE OF ONE MIND AT ITS `K` (78.1, 78.3): every field
+/// by name, zero printed as zero, and each field no producer reads yet by the
+/// row that owes it. The planes the mind reads are its DIMENSIONS reading
+/// above, never repeated here.
+fn learning(l: &observe::Learning) -> Vec<String> {
+    let words: u64 = l.strata.iter().map(|(_, n)| n).sum();
+    let owed: Vec<String> = observe::OWED.iter().map(|(field, row)| format!("{field} ({row})")).collect();
+    vec![
+        format!("  {BOLD}learning{RESET}    K {}", l.k),
+        format!("    dialect span  {} strata holding {words} words", l.strata.len()),
+        format!(
+            "    closures      adjoined-by-closure {}  installed {}  closing {}",
+            l.adjoined_by_closure, l.installed, l.closing
+        ),
+        format!("    {DIM}owed: {}{RESET}", owed.join("  ")),
     ]
 }
 

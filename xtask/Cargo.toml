@@ -6,8 +6,8 @@ edition = "2021"
 publish = false
 
 [[bin]]
-# The binary NAMES WHAT IT DOES: it runs the gate — the reading bound, then
-# clippy with warnings denied. `lint-enumeration` named one rule it has not
+# The binary NAMES WHAT IT DOES: it runs the gate — the reading bound and
+# clippy with warnings denied, both reported (I4). `lint-enumeration` named one rule it has not
 # enforced since §4.2 made the pattern rules clippy configuration, and the
 # line it printed at every commit said so.
 name = "gate"

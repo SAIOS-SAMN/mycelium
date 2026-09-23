@@ -14,6 +14,8 @@
 //!   is read per unit of the source's own clock, never wall time (law 9).
 //! - [`Court`] — WHAT A COURT HOLDS: its `K`, basis and treasury, and the
 //!   acts it has served by kind.
+//! - [`super::Learning`] — WHAT A MIND HAS LEARNED (LC1): its curve at its
+//!   own `K`, honest at zero, the fields still owed named by their rows.
 
 /// A reading's tag, the first byte of its writing and the last byte of its
 /// key.
@@ -23,6 +25,7 @@ pub const TAG_MEMORY: u8 = 3;
 pub const TAG_COURT: u8 = 4;
 pub const TAG_REPLICATION: u8 = 5;
 pub const TAG_ADJUDICATION: u8 = 6;
+pub const TAG_LEARNING: u8 = 7;
 
 fn put_u64(out: &mut Vec<u8>, v: u64) {
     out.extend_from_slice(&v.to_le_bytes());
@@ -519,6 +522,8 @@ pub enum Reading {
     Court(Court),
     Replication(Replication),
     Adjudication(Adjudication),
+    /// LC1 — the learning curve of one mind (78.1).
+    Learning(super::Learning),
 }
 
 impl Reading {
@@ -530,6 +535,7 @@ impl Reading {
             Reading::Court(_) => TAG_COURT,
             Reading::Replication(_) => TAG_REPLICATION,
             Reading::Adjudication(_) => TAG_ADJUDICATION,
+            Reading::Learning(_) => TAG_LEARNING,
         }
     }
 
@@ -546,6 +552,8 @@ impl Reading {
             (Reading::Court(a), Reading::Court(b)) => *a = b.clone(),
             (Reading::Replication(a), Reading::Replication(b)) => *a = b.clone(),
             (Reading::Adjudication(a), Reading::Adjudication(b)) => *a = b.clone(),
+            // A mind's curve is what it holds at its latest `K`.
+            (Reading::Learning(a), Reading::Learning(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -561,6 +569,7 @@ impl Reading {
             Reading::Court(r) => r.put(out),
             Reading::Replication(r) => r.put(out),
             Reading::Adjudication(r) => r.put(out),
+            Reading::Learning(r) => r.put(out),
         }
     }
 
@@ -574,6 +583,7 @@ impl Reading {
             TAG_COURT => Some(Reading::Court(Court::take(b, p)?)),
             TAG_REPLICATION => Some(Reading::Replication(Replication::take(b, p)?)),
             TAG_ADJUDICATION => Some(Reading::Adjudication(Adjudication::take(b, p)?)),
+            TAG_LEARNING => Some(Reading::Learning(super::Learning::take(b, p)?)),
             _ => None,
         }
     }

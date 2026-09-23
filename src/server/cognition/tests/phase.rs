@@ -20,8 +20,10 @@ fn reading(strata: &[(&[u8], usize)], sections: &[(&[u8], usize)]) -> CoverReadi
 
 /// Comprehension counts the settlements against the listings; congruence
 /// the charts with more than one section against the strata, and the
-/// installs that cite a lineage; growth the words adjoined against those
-/// retired, a split re-homing rather than adjoining; expansion the axes
+/// installs that cite a lineage; installed the words entering the cover
+/// against those retired, a split re-homing rather than installing (I2);
+/// adjoined-by-closure the generators a closure opened, read beside it and
+/// never from it (I1); expansion the axes
 /// opened and the strata split. Two readers of the same receipts and
 /// covers read the same phase (13.7).
 #[test]
@@ -64,7 +66,8 @@ fn the_phase_is_read_off_the_kinds_and_the_cover_at_the_windows_ends() {
     assert_eq!((p.deflated, p.held), (2, 3), "comprehension: settlements against listings");
     assert_eq!((p.sections, p.strata), (1, 4), "congruence: charts with two sections, against strata");
     assert_eq!(p.lineages, 1, "one install cites an independent lineage; the other cites none");
-    assert_eq!((p.adjoined, p.retired), (3, 1), "growth: [1] +1, the split +1, the axis +1; [4] retired");
+    assert_eq!((p.installed, p.retired), (3, 1), "installed: [1] +1, the split +1, the axis +1; [4] retired");
+    assert_eq!(p.adjoined_by_closure, 0, "the window reads installs; adjunction is the court's, read at the court");
     assert_eq!((p.axes, p.splits), (1, 1), "expansion: [3] opened, [2] split into [2,0] and [2,1]");
     assert_eq!(
         phase_over(window, &at_h0, &at_h1, h0, h1),
@@ -76,7 +79,13 @@ fn the_phase_is_read_off_the_kinds_and_the_cover_at_the_windows_ends() {
         Phase { h0: h1, h1, strata: 4, sections: 1, ..Phase::default() },
         "a still window reads only what stands"
     );
-    assert_eq!(p.line(), format!("  court phase h 0..{h1} comprehension 2/3 congruence 1/4 lineages 1 growth +3 -1 expansion 1/1"));
+    assert_eq!(
+        p.line(),
+        format!(
+            "  court phase h 0..{h1} comprehension 2/3 congruence 1/4 lineages 1 installed +3 -1 \
+             adjoined-by-closure 0 expansion 1/1"
+        )
+    );
 }
 
 /// The court writes the phase once per docket circuit and keeps only the

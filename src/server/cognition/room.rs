@@ -145,39 +145,18 @@ impl Kernel {
     /// decision from the other side: the number is derived at the read, as
     /// law 12 asks, and that is what makes the walk the reading.
     pub fn adjoined(&self) -> u64 {
-        let mut n = 0u64;
-        for (addr, ()) in self.ruled_addrs.scoped() {
-            // The court's own ruled word, read off the word it HOLDS (L16):
-            // the form is a field of the basis entry, decoded once when the
-            // court installed it, and this read parses nothing. `word_at`
-            // falls through to the cavity and the provisional on purpose,
-            // and neither is a word this court installed.
-            let Some(held) = self.held_word(&addr) else {
-                continue;
-            };
-            let env = held.element().receipts();
-            let Some(f) = held.form() else {
-                continue;
-            };
-            for v in &f.vertices {
-                let crate::transducer::sentence::Vertex::Word { address, derivation, .. } = v else {
-                    continue;
-                };
-                // "CITES NOTHING" IS READ OFF THE ENVELOPE (54.5 Road (d),
-                // B3). It was `derivation.generators.is_empty()`, which is
-                // a reading of the tape, and a vertex the key rebuilds is
-                // always spelled — so every factored vertex would have
-                // counted as a letter once the tape went.
-                if env.cite_for(address.as_bytes()).is_some() {
-                    continue;
-                }
-                let spelled = crate::transducer::alphabet::factor_rotor(&derivation.rotor());
-                if !matches!(spelled, Some(Ok(_))) {
-                    n += 1;
-                }
-            }
-        }
-        n
+        // The court's own ruled word, read off the word it HOLDS (L16): the
+        // form is a field of the basis entry, decoded once when the court
+        // installed it, and this read parses nothing. `word_at` falls
+        // through to the cavity and the provisional on purpose, and neither
+        // is a word this court installed. What counts as an opened generator
+        // is `Held::generators_opened`'s, the one reader a mind shares (LC1):
+        // "cites nothing" is read off the envelope (54.5 Road (d), B3),
+        // never off the tape, which a rebuilt vertex always spells.
+        self.ruled_addrs
+            .scoped()
+            .filter_map(|(addr, ())| self.held_word(&addr).map(|h| h.generators_opened()))
+            .sum()
     }
 
     /// 50.8, 45.9 — THE SIMPLICES FILLED, READ FROM CONTENT. A filled

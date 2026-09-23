@@ -10,10 +10,12 @@
 //! by source and kind, so a hypha can answer for itself and for its voices
 //! and any hypha can run the console (`mycelium-server --console`).
 
+mod learning;
 mod reading;
 mod store;
 #[cfg(test)]
 mod tests;
 
+pub use learning::*;
 pub use reading::*;
 pub use store::*;

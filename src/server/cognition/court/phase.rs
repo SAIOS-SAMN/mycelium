@@ -28,19 +28,28 @@ pub struct Phase {
     pub sections: u64,
     pub strata: u64,
     pub lineages: u64,
-    /// Growth: generators adjoined against retirements between the ends (E2).
-    pub adjoined: u64,
+    /// I2 — INSTALLED: ruled words entering the cover against words leaving
+    /// it between the ends. It was printed as `growth` and read as
+    /// adjunction; it counts installed words, a different reading from the
+    /// generators a closure opened (45.9, 34.2).
+    pub installed: u64,
     pub retired: u64,
     /// Expansion: axes opened and strata split between the ends (3.7).
     pub axes: u64,
     pub splits: u64,
+    /// I1 — ADJOINED BY CLOSURE: the generators this court opened, read off
+    /// its ruled cover at the window's end (`Kernel::adjoined`, 37.7, 45.9)
+    /// — the one number that bears on the architecture, on the running
+    /// court's own line.
+    pub adjoined_by_closure: u64,
 }
 
 impl Phase {
     /// The line 34.2 writes, once per window of docket circuits.
     pub fn line(&self) -> String {
         format!(
-            "  court phase h {}..{} comprehension {}/{} congruence {}/{} lineages {} growth +{} -{} expansion {}/{}",
+            "  court phase h {}..{} comprehension {}/{} congruence {}/{} lineages {} installed +{} -{} \
+             adjoined-by-closure {} expansion {}/{}",
             self.h0,
             self.h1,
             self.deflated,
@@ -48,8 +57,9 @@ impl Phase {
             self.sections,
             self.strata,
             self.lineages,
-            self.adjoined,
+            self.installed,
             self.retired,
+            self.adjoined_by_closure,
             self.axes,
             self.splits
         )
@@ -95,7 +105,7 @@ pub fn phase_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverRe
                 // keeping whichever did not go negative says the same thing
                 // through a refusal, which is not what a direction is.
                 if n1 >= n0 {
-                    p.adjoined += n1 - n0;
+                    p.installed += n1 - n0;
                 } else {
                     p.retired += n0 - n1;
                 }
@@ -123,7 +133,7 @@ pub fn phase_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverRe
                     // held, more, or less, and the DIRECTION says which
                     // reading it is.
                     if under >= n0 {
-                        p.adjoined += under - n0;
+                        p.installed += under - n0;
                     } else {
                         p.retired += n0 - under;
                     }
@@ -138,7 +148,7 @@ pub fn phase_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverRe
             continue;
         }
         p.axes += 1;
-        p.adjoined += n1 as u64;
+        p.installed += n1 as u64;
     }
     p
 }
@@ -189,7 +199,8 @@ impl Kernel {
             if k0 != k1 {
                 let h0 = k0.checked_sub(1).and_then(|i| receipts.get(i)).map_or(0, |r| r.height);
                 let h1 = self.chain.head_height();
-                let phase = phase_over(&receipts[k0..k1], &at_h0, &now, h0, h1);
+                let mut phase = phase_over(&receipts[k0..k1], &at_h0, &now, h0, h1);
+                phase.adjoined_by_closure = self.adjoined();
                 eprintln!("{}", phase.line());
                 read = true;
             }

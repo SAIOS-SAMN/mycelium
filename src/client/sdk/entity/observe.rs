@@ -25,6 +25,8 @@ impl Entity {
         if let Some(m) = Memory::now(self.own_k()) {
             observe::publish(me, Reading::Memory(m));
         }
+        // LC1 — THE CURVE, read off this mind's own genome at its own `K`.
+        observe::publish(me, Reading::Learning(observe::Learning::of(&self.epigenome, self.own_k())));
         let totals: Vec<Reading> = observe::readings(&me.prefix()).into_iter().map(|(_, r)| r).collect();
         match self.session.speak_keyed(&voice, observe::encode_push(&voice, &totals)) {
             Ok(body) => body.as_slice() == [1],

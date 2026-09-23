@@ -165,3 +165,39 @@ fn the_store_folds_its_own_readings_and_holds_pushed_ones_as_they_stand() {
     let Reading::Loss(l) = &readings(&pushed.prefix())[0].1 else { panic!("a loss reading") };
     assert_eq!(l.axes[0], 5, "a pushed total stands, it is not folded twice");
 }
+
+/// LC1 — THE CURVE TRAVELS WHOLE, A LATER ONE STANDS, AND A FRESH MIND READS
+/// ZERO HONESTLY: every field measured and zero, the four owed named by row.
+#[test]
+fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
+    let curve = Learning {
+        k: 41,
+        strata: vec![(vec![1, 2], 3), (vec![1, 2, 5], 1)],
+        adjoined_by_closure: 1,
+        installed: 4,
+        closing: 2,
+    };
+    let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]);
+    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), vec![Reading::Learning(curve.clone())])));
+    let mut earlier = Reading::Learning(Learning { k: 3, ..Learning::default() });
+    assert!(earlier.absorb(&Reading::Learning(curve.clone())), "one kind folds");
+    assert_eq!(earlier, Reading::Learning(curve), "the curve at the later K stands");
+
+    let fresh = Learning::of(&crate::client::sdk::Epigenome::default(), 0);
+    assert_eq!(
+        (fresh.strata.len(), fresh.adjoined_by_closure, fresh.installed, fresh.closing),
+        (0, 0, 0, 0),
+        "a mind holding nothing has learned nothing, and says so"
+    );
+    assert_eq!(
+        OWED.map(|(field, _)| field),
+        [
+            "cover",
+            "warm-cold delta",
+            "distinct perspectives per class",
+            "mass per lane per layer per grade",
+            "coboundary agreement per grade"
+        ],
+        "the fields no producer reads are owed by their rows, never zero"
+    );
+}

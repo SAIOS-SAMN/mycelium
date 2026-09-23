@@ -79,6 +79,26 @@ impl Held {
         self.set(e);
         out
     }
+
+    /// 37.7, 45.9 — THE GENERATORS THIS WORD OPENED: its word vertices that
+    /// cite nothing (read off the envelope, 54.5 Road (d)) and carry a rotor
+    /// the seventeen do not spell. The ONE reader of adjunction (law 12): a
+    /// court sums it over its ruled words (`Kernel::adjoined`), a mind over
+    /// its genome (LC1), and the two cannot disagree about what counts.
+    pub fn generators_opened(&self) -> u64 {
+        let Some(f) = self.form() else { return 0 };
+        let env = self.element().receipts();
+        f.vertices
+            .iter()
+            .filter(|v| match v {
+                crate::transducer::sentence::Vertex::Word { address, derivation, .. } => {
+                    env.cite_for(address.as_bytes()).is_none()
+                        && !matches!(crate::transducer::alphabet::factor_rotor(&derivation.rotor()), Some(Ok(_)))
+                }
+                _ => false,
+            })
+            .count() as u64
+    }
 }
 
 impl std::ops::Deref for Held {
