@@ -4,4 +4,5 @@ mod bivector;
 mod common;
 mod group;
 mod hyperboloid;
+mod oracle;
 mod period;
