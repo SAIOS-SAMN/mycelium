@@ -254,9 +254,14 @@ coordinates than the reading has — a chart's property taken per
 (vertex, chart, frame), a class's relatives taken per face, a form's
 standing taken per member — which is rule 17 at the loop, and the fix is
 never to cache the reading but to hoist it to its own coordinate
-(ruled 2026-09-19). A diff that fails (a) through (j), (l), (m), (n) or
-(o) is returned with the rule number; a diff without (k) is not
-reviewed.
+(ruled 2026-09-19); (p) any carrier a diff adds for a quantity the
+physics already produces — a second interface beside `Interface::between`,
+a second contact beside the strain and the frame, a second price beside
+the lanes — which is law 12 at the physics, stated as a check because the
+physics is the only producer of what a contact is and what it costs
+(ruled 2026-09-23, chapter 72). A diff that fails (a) through (j), (l),
+(m), (n), (o) or (p) is returned with the rule number; a diff without (k)
+is not reviewed.
 
 **Why the rules on keys and coordinates are absolute.** Chapter 1.7 is
 the standing explanation: a proof is arithmetic on coordinates, a digest
@@ -8681,6 +8686,88 @@ sentence/chart.rs, tape.rs   the address writes n, then coordinates
 transducer/cga (D1)          the plane census generated from n
 server/registry, arc.rs      n read at intake and written into the family
 ```
+
+## 72. The physics is the only producer (ruled 2026-09-23)
+
+The operator's ruling, on the implementor's remediation list after
+reading `src/physics` whole: **topology may decide whether two bodies
+touch; the physics — the strain field, the frame reader and the
+metabolism — is the only producer of what a contact is, what its
+transport is, and what it costs.** A carrier built beside the physics for
+a quantity the physics already produces is law 12's defect and is refused
+at review (checklist (p)). Every row from here states which physics
+quantities it reads and which it produces, and names the census it
+expects to move, measured before and after.
+
+### 72.1 The register, amended
+
+- **A.10, restated.** For two nuclei `(s_a ∧ s_b)² = (s_a·s_b)² − s_a²s_b²
+  = (num² − den2)/4`, so the interface pencil is null exactly at tangency
+  `|δ| = 1`, negative for an intersecting pencil and positive for apart or
+  contained. Co-occupation is governed by the TYPE of the interface
+  pencil, and the luminal pencil is its boundary — which ties A.10 to the
+  five regimes (65.1) and to 59.4's measure-zero ruling instead of
+  recording an absence. Whether any contact of the corpus is luminal
+  stays a measurement.
+- **A.11, extended.** The tower carries the odd harmonic `m = 3` (68.3),
+  and is stated on `n` axes as the traceless symmetric moments of each
+  order, which at `n = 2` are the complex `h_m` (38.2).
+- **A.12, derived from `n`.** One lamina's floor is `n/12`, the unit
+  `n`-cube's second moment summed over its axes; `1/6` is its value at
+  `n = 2` on the sensor plane. Tested at two values of `n`.
+- **A.13, promoted from docket to row** (A13): `K_i = I·T_i·I⁻¹` built,
+  so that a body can arrive from infinity; until then every motion fixes
+  it, the plainest Euclidean pin left in the tree.
+- **A.14, whether and what.** Whether two bodies touch is topological:
+  they share a boundary cell of grade `≥ 2` on ℚⁿ (71.2). What their
+  contact is, is conformal: the interface of their nuclei, strain and
+  pencil. The test: a contact family reads constant on whether and
+  carries the interface as what. The rank-1 obligation in its current
+  form retires (PH3).
+- **A.15, dimension is data.** `n` is read at intake and every count
+  derives from it (71) — the operational half of A.6, tested at `n = 3`
+  and `n = 4`.
+- **A.16, refraction.** A contact's transport is `g_ab = (θ_bθ_a⁻¹)·γ_ab`
+  (60.1), never a rigidity test on the two bodies' union.
+- **A.17, conservation of refusal** (A.8 widened). Every refused relation
+  is a named reading on its lane; only a mutable refusal becomes a demand
+  (67.1); nothing is dropped by a `continue`.
+
+Refused: the contact band `1 < δ ≤ 2` as a gate — a dialled `μ_c`
+(59.6); it may stand as content on a face, never decide whether. The
+scalar stroke, once the reserve is joined (65.4, PH4). Any parallel
+carrier, by (p).
+
+### 72.2 What the rows carry
+
+- **Refraction on the pairs the topology names** (BQ5a). The strain,
+  the pencil and the frame are read only on the body pairs the grade
+  pass names, at the cost of the occupied sites; the edge is `g_ab`
+  with `NoFrame` named on the face, `Oblique` minting through D3's
+  chain, the permanent arms recorded. F1 closes; the 9 edges O1 left
+  refused as `not rigid` are re-read.
+- **The face holds the field's interface** (BQ5b). The strain's side and
+  `δ²` and the pencil blade; the lattice set only as the witness of
+  whether; `interface_tower` deleted; the address change at the one
+  recut (U9).
+- **Flat cycles sorted by charge** (R4). The per-face kinematic charge
+  `μ` tells a relator from vacuum; vacuum drains, a relator is held, the
+  line names both.
+- **Contacts priced on their lanes** (P2). A condensed contact books
+  syntropy on the lanes `g_ab` occupies — `S` for the dilation, `G` for
+  `θ`, `T` for `γ`, `H` for the hue gauge; a refused contact adds pressure
+  on the refusing lane; only a mutable refusal charges torsion. The
+  metabolism routes the work.
+- **Condense and drain at the family pole** (P3, U1, T2). A contact face
+  is minted by `condense` and released by `drain`; `REFUSE_EDGE` fires at
+  the settling (62.3); faces are no longer pushed directly.
+- **`relax` derived** (P5). A fixed decrement per adjudication is a
+  scalar tick; relaxation is per lane from what that lane settled, the
+  conjugate of `bump` (62).
+- **Rule 11 across the ledger** (M1 widened, P4): `bump`, `syntropy`,
+  `pivot`, `Reserve::restore`, `Orbit::stroke` become checked with a
+  named refusal.
+- **The physics at `n`** (P6, inside Phase N as BQ4 and PH2).
 
 # Part XI — The frame axis
 
