@@ -1,7 +1,7 @@
 // 54.7 R3/R4 — the bivector trichotomy, the split, Cayley, the screw, and
 // the curvature read off two boosts.
 
-use super::common::q;
+use super::common::{budget, q};
 use crate::transducer::cga::at_three::translator;
 use crate::transducer::cga::multivector::one;
 use crate::transducer::cga::*;
@@ -74,7 +74,7 @@ fn a_screw_splits_into_commuting_compact_and_open_parts() {
     //   b² = (−¾ + 5/4)/2 = ¼ ,  a² = ¼ + ¾ = 1
     let screw = Mv::blade(E1 | E2, q(1, 1)).add(&Mv::blade(E3 | EM, q(1, 2)));
     assert!(!bivector_is_simple(&screw), "the generator couples two planes");
-    let (ell, hyp) = bivector_split(&screw).expect("the split is exact over ℚ here");
+    let (ell, hyp) = bivector_split(&screw, &mut budget()).expect("the split is exact over ℚ here");
 
     // THE BLADES, not their magnitudes: each part carries its own PLANE
     // and that is the whole point. `e₁e₂` is the twist, `e₃e₋` the slip.
@@ -89,10 +89,10 @@ fn a_screw_splits_into_commuting_compact_and_open_parts() {
     // A SIMPLE generator carries the whole blade in one part, and WHICH
     // is the sign of ⟨B²⟩₀ — a reading, not a convention.
     let rot = Mv::blade(E1 | E2, q(1, 1));
-    let (e3, h3) = bivector_split(&rot).expect("a rotation splits");
+    let (e3, h3) = bivector_split(&rot, &mut budget()).expect("a rotation splits");
     assert!(h3.is_zero() && e3 == rot, "a rotation is wholly compact, plane intact");
     let boost = Mv::blade(TRANSVECTION_PLANES[0], q(1, 1));
-    let (e4, h4) = bivector_split(&boost).expect("a boost splits");
+    let (e4, h4) = bivector_split(&boost, &mut budget()).expect("a boost splits");
     assert!(e4.is_zero() && h4 == boost, "a transvection is wholly open, plane intact");
 
     // THE COMPACT PART IS THE ONLY ONE THAT CAN SOUND, and evolving it

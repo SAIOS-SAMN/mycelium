@@ -511,8 +511,15 @@ impl Complex {
     /// fill; [`Ascended::Open`] is a boundary read and not closing, so the
     /// cell stands open by name; [`Ascended::AlreadySealed`] changed
     /// nothing; [`Ascended::Absent`] is a boundary that does not stand — an
-    /// edge missing or a remainder — or a set of fewer than three vertices.
-    pub fn ascend(&mut self, verts: &[Vec<u8>]) -> Ascended {
+    /// edge missing or a remainder — a set of fewer than three vertices, or
+    /// a cell whose volume reads zero on every lane.
+    ///
+    /// THE VOLUME IS READ, NEVER WRITTEN (checklist (s), NB1's return): a
+    /// re-minted cell's volume is the per-lane measure `volume_of` reads off
+    /// its chart — the same reader `coboundary_on_link` takes — so `ascend`
+    /// re-mints exactly the cell the climb would, and a cell with no volume
+    /// is not minted by either.
+    pub fn ascend(&mut self, verts: &[Vec<u8>], volume_of: impl FnOnce(&[Vec<u8>]) -> [u64; 4]) -> Ascended {
         let verts = sorted_verts(verts);
         if verts.len() < 3 || !self.faces_ready(&verts) {
             return Ascended::Absent;
@@ -526,10 +533,14 @@ impl Complex {
         }
         let key = simplex_key(&verts);
         if self.degree_of(key.as_bytes()).is_none() {
+            let volume = volume_of(&verts);
+            if !nonzero(&volume) {
+                return Ascended::Absent;
+            }
             let Some((coefficient, carriage)) = self.coboundary_coeff(&verts) else {
                 return Ascended::Absent;
             };
-            self.remember(Simplex { vertices: verts, coefficient, carriage, volume: [1, 0, 0, 0], fill: Fill::Open });
+            self.remember(Simplex { vertices: verts, coefficient, carriage, volume, fill: Fill::Open });
         }
         match self.fill(key.as_bytes()) {
             CoboundaryOutcome::Attached(Fill::Open) => Ascended::Open,

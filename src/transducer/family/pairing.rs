@@ -473,17 +473,54 @@ pub(crate) fn named_incidence(
                 .and_then(|n| crate::transducer::cech::meet_of(&n))
         },
     );
+    // NB1's return (coordinates, not keys) — EACH BODY BY ITS MEMBERS: the
+    // member keys standing on its sites, the coordinates `supports` is keyed
+    // by. A body's address is located through them and never copied into a
+    // cell or its key.
+    let mut members_of: Vec<Vec<Vec<u8>>> = vec![Vec::new(); positions.len()];
+    for (at, &root) in body.iter().enumerate() {
+        if let (Some(o), Some(ms)) = (held.get(at), members_of.get_mut(root)) {
+            ms.extend(o.members.iter().cloned());
+        }
+    }
+    for ms in members_of.iter_mut() {
+        ms.sort_unstable();
+        ms.dedup();
+    }
     let mut cells: crate::network::nerve::Keyed<crate::transducer::sentence::FormCell> =
         crate::network::nerve::Keyed::new();
     for c in certified {
-        let mut bodies: Vec<Vec<u8>> = c.members.iter().filter_map(|&m| address_of.get(m).cloned()).collect();
-        if bodies.len() != c.members.len() {
+        // Each body with its nucleus, filed by the body's member keys written
+        // inline and framed, so the bodies — and the constructors riding
+        // them — stand in their own coordinate order, the order the cell's
+        // key writes; two bodies whose members concatenate alike key apart.
+        //
+        // AND BY ITS ADDRESS, FRAMED BESIDE THEM: one member's support can
+        // fall into several bodies (measured on the corpus: a 2-cell and two
+        // 1-cells of one form stood under shared member keys), so member
+        // keys alone do not name a body, and keyed by them alone those cells
+        // collided and were lost. The address names the body in the key and
+        // is never carried in the cell (C3, NB1's return).
+        let mut by_body: crate::network::nerve::Keyed<(Vec<Vec<u8>>, Option<crate::transducer::cga::Mv>)> =
+            crate::network::nerve::Keyed::new();
+        for &m in &c.members {
+            let (Some(ms), Some(address)) = (members_of.get(m), address_of.get(m)) else { continue };
+            let mut body_key: Vec<u8> = (ms.len() as u32).to_le_bytes().to_vec();
+            for mk in ms {
+                crate::transducer::address::put_bytes(&mut body_key, mk);
+            }
+            crate::transducer::address::put_bytes(&mut body_key, address);
+            by_body.insert(&body_key, (ms.clone(), nucleus_of.get(m).cloned().flatten()));
+        }
+        if by_body.len() != c.members.len() {
             continue;
         }
-        bodies.sort_unstable();
-        let key: Vec<u8> = bodies.concat();
+        let key: Vec<u8> = by_body.scoped().flat_map(|(k, _)| k.to_vec()).collect();
+        let (bodies, nuclei): (Vec<Vec<Vec<u8>>>, Vec<Option<crate::transducer::cga::Mv>>) =
+            by_body.scoped().map(|(_, (b, s))| (b.clone(), s.clone())).unzip();
+        let nuclei: Option<Vec<crate::transducer::cga::Mv>> = nuclei.into_iter().collect();
         let witnesses = c.witnesses.into_iter().map(|l| l.site).collect();
-        cells.insert(&key, crate::transducer::sentence::FormCell { bodies, witnesses, meet: c.meet });
+        cells.insert(&key, crate::transducer::sentence::FormCell { bodies, witnesses, nuclei });
     }
     let mut contacts: crate::network::nerve::Keyed<Gathered> = crate::network::nerve::Keyed::new();
     for crate::transducer::sentence::SharedCell { i, j, .. } in

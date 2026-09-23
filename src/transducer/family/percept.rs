@@ -1008,23 +1008,10 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // fifteen forms crystallized at `orbits 0` and this line never fired
     // once. A reading suppressed in the failure case is not a reading.
     let unread_why = crate::transducer::sentence::Form::unread_gates();
-    // NB1 — THE CONTACT COMPLEX'S CERTIFIED CELLS BY GRADE: `(grade, cells,
-    // cells whose meet is not the zero blade)`, read off the form's own
-    // carrier.
-    let contact_cells_by_grade = {
-        let mut out: Vec<(usize, u64, u64)> = Vec::new();
-        for (_, c) in form.cells.scoped() {
-            let live = u64::from(c.meet.as_ref().is_some_and(|m| !m.is_zero()));
-            match out.binary_search_by_key(&c.grade(), |&(g, _, _)| g) {
-                Ok(at) => {
-                    out[at].1 += 1;
-                    out[at].2 += live;
-                }
-                Err(at) => out.insert(at, (c.grade(), 1, live)),
-            }
-        }
-        out
-    };
+    // NB1 — THE CONTACT COMPLEX'S CERTIFIED CELLS BY GRADE, off the form's
+    // own carrier by the nerve's one reader (law 12).
+    let contact_cells_by_grade =
+        crate::transducer::cech::cells_by_grade(form.cells.scoped().map(|(_, c)| (c.grade(), c.meet())));
     // BQ1, audit N-3 — WHAT PERCEPTION PASSED OVER, always printed: bodies
     // `body_of` refused (counted at `body_of`, whoever asked), laminae with
     // no section (counted at `on_grid`), and sections filed at their `n`
@@ -1155,10 +1142,17 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     );
     // OR1, 73.1 — EACH ORBIT THIS PERCEPT READ, beside the cycles line: its
     // type, its class, the planes its precession turns in, the precession's
-    // canonical coordinates, and its centre read or refused by name.
-    for orbit in crate::transducer::sentence::take_orbits() {
+    // canonical coordinates, and its centre read or refused by name — the
+    // modes under this stroke's budget (BD1), and the circuits' with them.
+    for orbit in crate::transducer::sentence::take_orbits(budget) {
         eprintln!("  {}", orbit.line());
     }
+    // CG1, CS1 — AND EACH CERTIFIED CELL AS ITS ORBIT ALGEBRA, by grade, off
+    // the circuits this percept walked; then the circuits read for the
+    // observer.
+    let walked = crate::transducer::sentence::walked_circuits();
+    eprintln!("  {}", super::comprehend::CellTally::of(&super::comprehend::cell_algebras(&form, &walked, budget)).line());
+    crate::transducer::sentence::finish_circuits(budget);
     // FR2, 72.1c(3) — AND WHERE EACH CYCLE STANDS ALONG `e₃`: its span, the
     // meet of its members' sections, read here from the sections the percept
     // carries and never stored beside them.

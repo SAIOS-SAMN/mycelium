@@ -6,6 +6,7 @@
 //! form.
 
 mod chord;
+mod comprehend;
 pub mod contact;
 pub mod correspondence;
 pub mod cover;

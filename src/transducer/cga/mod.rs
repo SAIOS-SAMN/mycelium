@@ -5,6 +5,7 @@
 //! between two scene states exists. The product is written once for every
 //! `n`, and a value carries the `n` it belongs to.
 
+mod constructors;
 mod embedding;
 mod fixed;
 mod group;
@@ -16,6 +17,7 @@ mod period;
 mod planes;
 mod spin;
 
+pub use constructors::{carry, constructor_orbit, is_constructor, ConstructorOrbit};
 pub use embedding::{
     base_at, base_vector, boundary_dual, e_inf, e_o, hyperbolic_point, on_sphere, point_at, rotator,
     rotator_on_blade, sphere_at, translator_at,
@@ -24,7 +26,8 @@ pub use fixed::{centre_of, nullspace, Centre, PoleAt};
 pub use group::{dilator, is_versor, projective_ratio, reflector};
 pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_lamina, hyperboloid_pole};
 pub use modes::{mode_order, modes, Mode, Undecomposed};
-pub use motion::{motion_modes, MotionMode};
+pub use motion::{action_of, motion_modes, MotionMode};
+pub(crate) use modes::{identity as identity_matrix, mul as matrix_mul};
 pub use multivector::{base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP};
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
 pub use planes::{

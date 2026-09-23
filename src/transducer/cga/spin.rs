@@ -255,12 +255,12 @@ pub fn inverse_even(u: &Mv) -> Option<Mv> {
 /// is refused — never rounded onto a nearby one. A SIMPLE generator splits
 /// trivially: one part is `B`, the other is zero, and which is which is the
 /// sign of `⟨B²⟩₀`.
-pub fn bivector_split(m: &Mv) -> Option<(Mv, Mv)> {
+pub fn bivector_split(m: &Mv, budget: &mut crate::physics::Budget) -> Option<(Mv, Mv)> {
     // MD1 — ONE PRODUCER OF THE SPLIT (law 12). The modes are read at every
     // exponent by `modes`; this is their two-part reading, the compact half
     // the elliptic modes summed and the open half the rest, as the closed
     // form below always filed a null generator.
-    if let Ok(parts) = super::modes::modes(m) {
+    if let Ok(parts) = super::modes::modes(m, budget) {
         use crate::network::nerve::coord::BivectorKind;
         let (ell, hyp) = parts.iter().fold((Mv::zero(), Mv::zero()), |(e, h), mode| match mode.kind {
             BivectorKind::Elliptic => (e.add(&mode.blade), h),

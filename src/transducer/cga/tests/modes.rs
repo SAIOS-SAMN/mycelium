@@ -2,13 +2,13 @@
 // `m` read off the bivector, each with its plane and class; undecomposed by
 // name; and the inverse Cayley chart.
 
-use super::common::q;
+use super::common::{budget, q};
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::cga::at_three::translator;
 use crate::transducer::cga::*;
 
 fn kinds(b: &Mv) -> Vec<(BivectorKind, usize)> {
-    match modes(b) {
+    match modes(b, &mut budget()) {
         Ok(ms) => ms.iter().map(|m| (m.kind, m.planes)).collect(),
         Err(e) => panic!("undecomposed: {e:?}"),
     }
@@ -20,7 +20,7 @@ fn kinds(b: &Mv) -> Vec<(BivectorKind, usize)> {
 #[test]
 fn a_screw_reads_an_elliptic_and_a_parabolic_mode() {
     let screw = rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
-    let ms = modes(&screw).expect("the screw splits over ℚ");
+    let ms = modes(&screw, &mut budget()).expect("the screw splits over ℚ");
     assert_eq!(
         ms.iter().map(|m| (m.kind, m.planes)).collect::<Vec<_>>(),
         vec![(BivectorKind::Parabolic, 1), (BivectorKind::Elliptic, 1)]
@@ -43,7 +43,7 @@ fn a_screw_reads_an_elliptic_and_a_parabolic_mode() {
 fn a_screws_turn_closes_at_its_own_order_and_its_slip_is_open() {
     let half = Mv::blade(E1 | E2, q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
     let generator = cayley_inverse(&half).expect("a half-turn screw has a rational chart point");
-    let ms = modes(&generator).expect("its modes split");
+    let ms = modes(&generator, &mut budget()).expect("its modes split");
     let orders: Vec<(BivectorKind, Option<u32>)> = ms.iter().map(|m| (m.kind, mode_order(&half, m))).collect();
     assert_eq!(orders, vec![(BivectorKind::Parabolic, None), (BivectorKind::Elliptic, Some(2))]);
     assert_eq!(finite_order(&half), None, "and the whole motion walks forever");
@@ -79,7 +79,7 @@ fn a_generator_whose_modes_lie_in_an_extension_is_undecomposed_by_name() {
     let b = Mv::blade(E1 | E2, q(1, 1))
         .add(&Mv::blade(E2 | E3, q(1, 1)))
         .add(&Mv::blade(base_axis(3) | base_axis(4), q(1, 1)));
-    assert_eq!(modes(&b), Err(Undecomposed::Irrational(2)));
+    assert_eq!(modes(&b, &mut budget()), Err(Undecomposed::Irrational(2)));
 }
 
 /// THE INVERSE CHART (78.11 link 2): a generator taken to its motion by

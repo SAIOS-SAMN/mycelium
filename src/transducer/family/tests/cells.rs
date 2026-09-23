@@ -40,7 +40,7 @@ fn three_bodies_meeting_at_a_corner_mint_one_two_cell_carrying_their_meet() {
     let (_, cells) = named_incidence(None, &three);
     let c = one(by_grade(&cells, 2), "one 2-cell");
     assert_eq!(c.witnesses, vec![Site::new(vec![2, 2, 2])], "the corner all three stand in");
-    let meet = c.meet.expect("each nucleus reads");
+    let meet = c.meet().expect("each nucleus reads");
     assert!(!meet.grade(3).is_zero(), "the meet of three spheres is a grade-3 blade");
     assert_eq!(by_grade(&cells, 1).len(), 3, "and its three faces stand as the pairs' own cells");
 
@@ -49,6 +49,24 @@ fn three_bodies_meeting_at_a_corner_mint_one_two_cell_carrying_their_meet() {
     let c = one(by_grade(&cells, 3), "one 3-cell");
     assert_eq!(c.bodies.len(), 4, "four bodies at one corner are ONE cell, not four triples");
     assert!(by_grade(&cells, 2).is_empty(), "its 2-faces are read off it, never minted as subsets");
+}
+
+/// ONE MEMBER, TWO BODIES, ONE CELL: a member whose cubes touch only along
+/// an edge stands as two bodies, and with a third member's cube at their
+/// shared corner the three bodies mint one 2-cell. Two of its bodies carry
+/// the same member keys, so member keys alone do not name a body; the cell
+/// is kept, never dropped for the collision (NB1's return, measured on the
+/// corpus).
+#[test]
+fn two_bodies_of_one_member_stand_in_one_cell_apart() {
+    let mut k = crate::network::nerve::Keyed::new();
+    k.insert(member(1), vec![Site::new(vec![0, 0, 0]), Site::new(vec![1, 1, 0])]);
+    k.insert(member(2), vec![Site::new(vec![1, 0, 1])]);
+    let (_, cells) = named_incidence(None, &k);
+    let c = one(by_grade(&cells, 2), "one 2-cell over three bodies");
+    assert_eq!(c.bodies.len(), 3, "three bodies, two of them one member's");
+    assert_eq!(c.bodies.iter().filter(|b| **b == vec![member(1)]).count(), 2, "that member stands as two bodies");
+    assert!(c.meet().is_some_and(|m| !m.is_zero()), "and the cell carries its meet");
 }
 
 /// THE PAIRWISE READING OF THE SAME THREE CARRIES NO GRADE-3 CONTENT
@@ -76,5 +94,5 @@ fn at_four_axes_four_bodies_at_one_element_mint_a_three_cell() {
     let (_, cells) = named_incidence(None, &four);
     let c = one(by_grade(&cells, 3), "one 3-cell at n = 4");
     assert_eq!(c.witnesses, vec![Site::new(vec![2, 2, 2, 2])], "the corner of ℤ⁴ the four share");
-    assert!(!c.meet.expect("each nucleus reads").grade(4).is_zero(), "their meet is a grade-4 blade");
+    assert!(!c.meet().expect("each nucleus reads").grade(4).is_zero(), "their meet is a grade-4 blade");
 }

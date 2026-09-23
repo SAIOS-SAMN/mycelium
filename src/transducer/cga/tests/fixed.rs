@@ -81,11 +81,11 @@ fn a_hyperbolic_modes_poles_are_read_when_rational_and_named_when_not() {
 fn an_orbit_reads_its_type_plane_precession_and_centre() {
     use crate::transducer::sentence::OrbitReading;
     let turn = cga::rotator(&q(0), &q(1));
-    let r = OrbitReading::of(&turn, 3);
+    let r = OrbitReading::of(&turn, 3, &mut super::common::budget());
     assert!(r.kind.starts_with("resonant"), "{}", r.line());
     assert_eq!(r.planes, vec![cga::E1 | cga::E2], "{}", r.line());
     assert!(r.line().contains("precession [e12 1]"), "{}", r.line());
-    let slide = OrbitReading::of(&cga::translator_at(&[q(1), q(0), q(0)]), 3);
+    let slide = OrbitReading::of(&cga::translator_at(&[q(1), q(0), q(0)]), 3, &mut super::common::budget());
     assert!(slide.kind.starts_with("escape"), "{}", slide.line());
     assert!(matches!(slide.centre, Centre::AtInfinity { .. }), "{}", slide.line());
     // PC1: its precession occupies one parabolic plane, read by the census's

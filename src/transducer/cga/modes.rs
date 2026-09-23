@@ -55,6 +55,9 @@ pub enum Undecomposed {
     /// The eigenspaces do not span the base: a non-diagonalisable part other
     /// than the one parabolic mode the signature allows.
     Defective,
+    /// BD1 — the stroke's budget was spent reading the rational roots of a
+    /// factor of this degree (rule 10): refused by name, never run on.
+    Unbounded(usize),
 }
 
 /// The generators of the algebra `B` lives in, as masks in ascending bit
@@ -72,12 +75,12 @@ pub(super) fn column(v: &Mv, masks: &[usize]) -> Vec<Q> {
     masks.iter().map(|&m| v.coeff(m).clone()).collect()
 }
 
-pub(super) fn mul(a: &[Vec<Q>], b: &[Vec<Q>]) -> Vec<Vec<Q>> {
+pub(crate) fn mul(a: &[Vec<Q>], b: &[Vec<Q>]) -> Vec<Vec<Q>> {
     let d = a.len();
     (0..d).map(|i| (0..d).map(|j| (0..d).fold(Q::zero(), |acc, k| acc + &a[i][k] * &b[k][j])).collect()).collect()
 }
 
-pub(super) fn identity(d: usize) -> Vec<Vec<Q>> {
+pub(crate) fn identity(d: usize) -> Vec<Vec<Q>> {
     (0..d).map(|i| (0..d).map(|j| if i == j { one() } else { Q::zero() }).collect()).collect()
 }
 
@@ -167,13 +170,18 @@ fn quotient(p: &[Q], q: &[Q]) -> Vec<Q> {
 }
 
 /// The positive divisors of `n ≠ 0`, from its prime factors by trial
-/// division — the finite set the rational root theorem names.
-fn divisors(n: &num_bigint::BigInt) -> Vec<num_bigint::BigInt> {
+/// division — the finite set the rational root theorem names. Each trial
+/// spends one read of the stroke's budget (BD1, rule 10); `None` where the
+/// budget is spent before the factorisation ends.
+fn divisors(n: &num_bigint::BigInt, budget: &mut crate::physics::Budget) -> Option<Vec<num_bigint::BigInt>> {
     use num_bigint::BigInt;
     let mut rest = n.abs();
     let mut out = vec![BigInt::from(1)];
     let mut p = BigInt::from(2);
     while &p * &p <= rest {
+        if !budget.spend() {
+            return None;
+        }
         let mut power = 0usize;
         while (&rest % &p).is_zero() {
             rest /= &p;
@@ -191,7 +199,7 @@ fn divisors(n: &num_bigint::BigInt) -> Vec<num_bigint::BigInt> {
         let base = out.clone();
         out.extend(base.iter().map(|d| d * &rest));
     }
-    out
+    Some(out)
 }
 
 /// THE DISTINCT RATIONAL ROOTS of `p`, zero among them, exact — or the
@@ -203,8 +211,10 @@ fn divisors(n: &num_bigint::BigInt) -> Vec<num_bigint::BigInt> {
 /// root `r/s` in lowest terms has `r | a₀` and `s | a_m`, a finite set named
 /// by the theorem, each candidate tested exactly and divided out. What is
 /// left has no rational root: its values lie in an extension of ℚ, and it
-/// is refused by its degree — never rounded onto a nearby split.
-pub(super) fn rational_roots(p: &[Q]) -> Result<Vec<Q>, Undecomposed> {
+/// is refused by its degree — never rounded onto a nearby split. The
+/// factorisation spends the stroke's budget, and a spent budget refuses the
+/// factor as `Unbounded` by its degree (BD1).
+pub(super) fn rational_roots(p: &[Q], budget: &mut crate::physics::Budget) -> Result<Vec<Q>, Undecomposed> {
     use num_bigint::BigInt;
     let p = trim(p.to_vec());
     let derivative: Vec<Q> =
@@ -221,8 +231,10 @@ pub(super) fn rational_roots(p: &[Q]) -> Result<Vec<Q>, Undecomposed> {
     let ints: Vec<BigInt> = rest.iter().map(|c| (c * Q::from_integer(lcm.clone())).to_integer()).collect();
     if let ([a0, ..], [.., am]) = (ints.as_slice(), ints.as_slice()) {
         if ints.len() > 1 {
-            for r in divisors(a0) {
-                for s in divisors(am) {
+            let unbounded = Undecomposed::Unbounded(ints.len() - 1);
+            let (tops, bottoms) = (divisors(a0, budget).ok_or(unbounded)?, divisors(am, budget).ok_or(unbounded)?);
+            for r in &tops {
+                for s in &bottoms {
                     for candidate in [Q::new(r.clone(), s.clone()), -Q::new(r.clone(), s.clone())] {
                         let value = rest.iter().rev().fold(Q::zero(), |acc, c| acc * &candidate + c);
                         if value.is_zero() && !roots.contains(&candidate) {
@@ -244,8 +256,8 @@ pub(super) fn rational_roots(p: &[Q]) -> Result<Vec<Q>, Undecomposed> {
 }
 
 /// The distinct non-zero rational roots of `p`: a generator's mode values.
-fn nonzero_roots(p: &[Q]) -> Result<Vec<Q>, Undecomposed> {
-    Ok(rational_roots(p)?.into_iter().filter(|r| !r.is_zero()).collect())
+fn nonzero_roots(p: &[Q], budget: &mut crate::physics::Budget) -> Result<Vec<Q>, Undecomposed> {
+    Ok(rational_roots(p, budget)?.into_iter().filter(|r| !r.is_zero()).collect())
 }
 
 /// `A` as the columns of a basis of `ker(A − λ)`.
@@ -350,7 +362,7 @@ pub(super) fn order_on(motion: &Mv, plane: &[Mv]) -> Option<u32> {
 /// returned. The generalised kernel's part is listed first where it is not
 /// zero (at most one parabolic mode), then the elliptic and hyperbolic modes
 /// by their value, ascending. An empty list is the zero generator.
-pub fn modes(b: &Mv) -> Result<Vec<Mode>, Undecomposed> {
+pub fn modes(b: &Mv, budget: &mut crate::physics::Budget) -> Result<Vec<Mode>, Undecomposed> {
     let bivector = b.grade(2);
     if bivector.is_zero() {
         return Ok(Vec::new());
@@ -363,7 +375,7 @@ pub fn modes(b: &Mv) -> Result<Vec<Mode>, Undecomposed> {
         (0..d).map(|i| (0..d).map(|j| cols[j][i].clone()).collect()).collect()
     };
     let a = mul(&f, &f);
-    let values = nonzero_roots(&characteristic(&a))?;
+    let values = nonzero_roots(&characteristic(&a), budget)?;
     // The generalised kernel: `ker(Aᵈ)`.
     let mut power = identity(d);
     for _ in 0..d {

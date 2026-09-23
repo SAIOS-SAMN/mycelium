@@ -192,7 +192,7 @@ pub(super) fn readings(inputs: &[(String, Mv)]) -> Vec<String> {
         out.push(format!("simple {name}: {}", cga::bivector_is_simple(m)));
         out.push(format!(
             "split {name}: {}",
-            match cga::bivector_split(m) {
+            match cga::bivector_split(m, &mut super::common::budget()) {
                 Some((a, b)) => format!("{} {}", hex(&a), hex(&b)),
                 None => "refused".into(),
             }

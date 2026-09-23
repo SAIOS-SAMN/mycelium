@@ -31,7 +31,9 @@ fn circuits(contact: bool) -> Vec<Circuit> {
     arm_orbits();
     let orbits = Form::orbits_of(&f.faces, &f.vertices);
     assert_eq!(orbits.len(), 1, "the fixture must close one orbit, or nothing is tested");
-    let _ = take_orbits();
+    let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
+    let _ = take_orbits(&mut stroke);
+    finish_circuits(&mut stroke);
     take_circuits().expect("the circuits were armed").circuits
 }
 
@@ -105,7 +107,9 @@ fn an_orbit_whose_edge_half_is_refused_reads_unread_at_its_step() {
     arm_orbits();
     let orbits = Form::orbits_of(&f.faces, &f.vertices);
     assert_eq!(orbits.len(), 1, "the word keeps the orbit, or nothing is tested");
-    let lines = take_orbits();
+    let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
+    let lines = take_orbits(&mut stroke);
+    finish_circuits(&mut stroke);
     let _ = take_circuits();
     let [OrbitLine::Unread { at: Some(at), why: Some(why) }] = lines.as_slice() else {
         panic!("one unread orbit: {lines:?}")

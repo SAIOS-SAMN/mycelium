@@ -1,0 +1,53 @@
+// 78.12(3), CS1 — the constructors' orbit under the generators they build:
+// closed at once where the generators are flat, closed at its own size under
+// a finite turn, open by the mode that carries a constructor off.
+
+use super::common::{budget, q};
+use crate::network::nerve::coord::BivectorKind;
+use crate::transducer::cga::at_three::translator;
+use crate::transducer::cga::*;
+
+fn axes() -> Vec<Mv> {
+    vec![Mv::blade(E1, q(1, 1)), Mv::blade(E2, q(1, 1)), Mv::blade(E3, q(1, 1))]
+}
+
+/// A FLAT CELL'S ORBIT CLOSES AT ONCE: under the identity every constructor
+/// is its own orbit.
+#[test]
+fn a_flat_cells_orbit_closes_at_once() {
+    let flat = Mv::scalar(q(1, 1));
+    assert_eq!(constructor_orbit(&axes(), &[flat], &mut budget()), ConstructorOrbit::Closed { rays: 3 });
+}
+
+/// A THREE-BODY CELL'S CONSTRUCTORS UNDER A QUARTER TURN: `e₁` and `e₂` are
+/// carried onto each other's rays and `e₃` stays — the orbit closes on the
+/// three rays it began with.
+#[test]
+fn three_constructors_under_a_quarter_turn_close_on_three_rays() {
+    let quarter = rotator(&q(1, 1), &q(1, 1));
+    assert_eq!(carry(&quarter, &axes()[0]), Some(Mv::blade(E2, q(1, 1))), "e₁ is carried onto e₂'s ray");
+    assert_eq!(constructor_orbit(&axes(), &[quarter], &mut budget()), ConstructorOrbit::Closed { rays: 3 });
+}
+
+/// A SCREW'S ORBIT NEVER CLOSES: its slip is a parabolic mode that carries
+/// a constructor off, named with the generator, the constructor and the
+/// mode's class.
+#[test]
+fn a_screws_orbit_is_open_by_its_parabolic_mode() {
+    let screw = rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
+    let orbit = constructor_orbit(&axes(), &[screw], &mut budget());
+    assert!(
+        matches!(orbit, ConstructorOrbit::Open { generator: 0, kind: BivectorKind::Parabolic, .. }),
+        "the slip carries a constructor off: {orbit:?}"
+    );
+}
+
+/// WHAT IS NOT A CONSTRUCTOR OR A GENERATOR IS NOT READ: a null vector, and
+/// an element with no inverse.
+#[test]
+fn a_null_constructor_or_a_non_versor_is_unread() {
+    let null = Mv::blade(EP, q(1, 1)).add(&Mv::blade(EM, q(1, 1)));
+    assert_eq!(constructor_orbit(&[null], &[Mv::scalar(q(1, 1))], &mut budget()), ConstructorOrbit::Unread);
+    let cone = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | EM, q(1, 1)));
+    assert_eq!(constructor_orbit(&axes(), &[cone], &mut budget()), ConstructorOrbit::Unread);
+}

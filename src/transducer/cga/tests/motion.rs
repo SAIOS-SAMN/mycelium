@@ -2,13 +2,13 @@
 // `c`, exact rays that commute and multiply back to the motion, the half turn
 // the plane's blade; rays equal by proportion; rational roots at any degree.
 
-use super::common::q;
+use super::common::{budget, q};
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::cga::at_three::translator;
 use crate::transducer::cga::*;
 
 fn read(m: &Mv) -> Vec<MotionMode> {
-    match motion_modes(m) {
+    match motion_modes(m, &mut budget()) {
         Some(Ok(ms)) => ms,
         other => panic!("the motion's modes read: {other:?}"),
     }
@@ -92,7 +92,7 @@ fn an_isoclinic_pair_is_one_mode_over_two_planes() {
 fn the_identity_reads_none_and_a_non_versor_is_not_read() {
     assert_eq!(read(&Mv::scalar(q(3, 1))), Vec::new());
     let not_a_motion = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | EM, q(1, 1)));
-    assert!(motion_modes(&not_a_motion).is_none(), "on the light cone: no inverse, no action");
+    assert!(motion_modes(&not_a_motion, &mut budget()).is_none(), "on the light cone: no inverse, no action");
 }
 
 /// EQ1 — TWO RAYS ARE EQUAL BY PROPORTION. A non-simple bivector equals
@@ -121,7 +121,7 @@ fn three_planes_read_three_modes_by_the_rational_root_theorem() {
     let at_four = Mv::blade(plane(1, 2), q(1, 1))
         .add(&Mv::blade(plane(3, 4), q(2, 1)))
         .add(&Mv::blade(EP | EM, q(3, 1)));
-    let kinds = |b: &Mv| match modes(b) {
+    let kinds = |b: &Mv| match modes(b, &mut budget()) {
         Ok(ms) => ms.iter().map(|m| (m.kind, m.planes)).collect::<Vec<_>>(),
         Err(e) => panic!("undecomposed: {e:?}"),
     };

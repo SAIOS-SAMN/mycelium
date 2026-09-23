@@ -16,12 +16,14 @@
 pub mod coboundary;
 pub mod complex;
 pub mod nerve;
+pub mod orbit_algebra;
 pub mod simplex;
 pub mod tape;
 
 pub use coboundary::*;
 pub use complex::*;
 pub use nerve::*;
+pub use orbit_algebra::*;
 pub use simplex::*;
 
 use crate::network::nerve::Keyed;

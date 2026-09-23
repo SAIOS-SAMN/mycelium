@@ -476,12 +476,9 @@ impl Form {
                 // refused is UNREAD at its step, never classed off the face
                 // half alone.
                 let composite = c.composite();
-                note_orbit(|| match &composite {
-                    Some(m) => OrbitLine::Read(Box::new(OrbitReading::of(m, crate::transducer::element::GRID_N))),
-                    None => OrbitLine::Unread { at: c.edge_lost_at, why: c.edge_refused },
-                });
+                note_orbit(|| OrbitNote { composite: composite.clone(), at: c.edge_lost_at, why: c.edge_refused });
                 // PL1 — AND THE SAME CIRCUIT'S BRICKS, step by step (78.12(4)).
-                super::trajectory::note_circuit(|| super::trajectory::read_circuit(lp.chord, c, faces));
+                super::trajectory::note_circuit(|| super::trajectory::read_circuit(lp.chord, &lp.members, c, faces));
                 // AND THE OPERATOR THIS GENERATOR ENACTS, at the basepoint
                 // (Axiom A). Two cycles agreeing here are synonyms: distinct
                 // cellular paths, one physical dislocation.

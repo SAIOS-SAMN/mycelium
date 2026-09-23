@@ -24,7 +24,7 @@ fn a_period_is_crystallographic_or_it_is_infinite() {
     // purely elliptic — a non-zero compact part — and its orbit is dense
     // and closes never. `B_ell ≠ 0` does not imply a finite period.
     let pyth = rotator(&q(3, 1), &q(4, 1));
-    let (e, h) = bivector_split(&pyth).expect("a simple rotation splits");
+    let (e, h) = bivector_split(&pyth, &mut super::common::budget()).expect("a simple rotation splits");
     assert!(!e.is_zero(), "the (3,4,5) rotor HAS a compact part");
     assert!(h.is_zero(), "and no open part at all");
     assert_eq!(

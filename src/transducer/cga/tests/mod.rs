@@ -2,6 +2,7 @@
 
 mod bivector;
 mod common;
+mod constructors;
 mod fixed;
 mod generic;
 mod group;

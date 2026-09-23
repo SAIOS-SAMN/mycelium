@@ -16,6 +16,10 @@
 //!              NOT counted here: `FieldTally::condensed` already carries
 //!              it, and a second counter for one fact is law 12's defect
 //!              inside a single carrier. It is READ beside this line.
+//!              AT DIMENSION 2 IT IS COUNTED HERE: `sealed`, an ascent
+//!              that sealed a cell (AD1) — the one producer of that fact,
+//!              beside `released`, its entropy at the same dimension, and
+//!              never netted against it.
 //!   ORBIT ℓ    `Order(Rotor)` — the cyclotomic period, a discrete integer
 //!              bound, and the structure `μ` is carried BY rather than a
 //!              scalar it is flattened into.

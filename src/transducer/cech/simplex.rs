@@ -77,7 +77,7 @@ pub(crate) fn sorted_verts(verts: impl IntoIterator<Item = impl AsRef<[u8]>>) ->
 /// State of a simplex: open work, a coboundary gauge, a finite-order
 /// congruence, a class at this degree, or a rotation the alphabet does not
 /// spell.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Fill {
     Open,
     /// The gauge that closed the simplex: its rotor and its carriage,

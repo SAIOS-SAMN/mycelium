@@ -10,5 +10,6 @@ mod determinism;
 mod drain;
 mod gauge;
 mod nerve;
+mod orbit_algebra;
 mod tape;
 mod transitions;

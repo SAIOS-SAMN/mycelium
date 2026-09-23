@@ -59,6 +59,14 @@ fn action(a: &Mv, b: &Mv, masks: &[usize]) -> Vec<Vec<Q>> {
     (0..d).map(|i| (0..d).map(|j| cols[j][i].clone()).collect()).collect()
 }
 
+/// THE ACTION OF A MOTION ON THE VECTORS, `x ↦ Ω x Ω⁻¹`, as the matrix of its
+/// columns over the algebra's generators — the `R_c` whose ℚ-algebra is a
+/// cell's capacity (CG1). `None` where the motion does not invert.
+pub fn action_of(motion: &Mv) -> Option<Vec<Vec<Q>>> {
+    let inverse = motion.versor_inverse()?;
+    Some(action(motion, &inverse, &generators(motion.n())))
+}
+
 fn vector(coords: &[Q], masks: &[usize]) -> Mv {
     masks.iter().zip(coords).fold(Mv::zero(), |acc, (&m, c)| acc.add(&Mv::blade(m, c.clone())))
 }
@@ -90,7 +98,10 @@ fn sub_scalar(a: &[Vec<Q>], c: &Q) -> Vec<Vec<Q>> {
 /// THE MODES OF A MOTION (MR1). `None` where `motion` is not a versor — it
 /// has no action to read. The parabolic mode, where there is one, first;
 /// then the rest by `c`, ascending. An empty list is the identity.
-pub fn motion_modes(motion: &Mv) -> Option<Result<Vec<MotionMode>, Undecomposed>> {
+pub fn motion_modes(
+    motion: &Mv,
+    budget: &mut crate::physics::Budget,
+) -> Option<Result<Vec<MotionMode>, Undecomposed>> {
     let inverse = motion.versor_inverse()?;
     super::is_versor(motion)?;
     let masks = generators(motion.n());
@@ -101,12 +112,18 @@ pub fn motion_modes(motion: &Mv) -> Option<Result<Vec<MotionMode>, Undecomposed>
         r.iter().zip(&r_inv).map(|(x, y)| x.iter().zip(y).map(|(p, q)| (p + q) * &half).collect()).collect();
     let a: Vec<Vec<Q>> =
         r.iter().zip(&r_inv).map(|(x, y)| x.iter().zip(y).map(|(p, q)| (p - q) * &half).collect()).collect();
-    Some(split(motion, &masks, &s, &a))
+    Some(split(motion, &masks, &s, &a, budget))
 }
 
-fn split(motion: &Mv, masks: &[usize], s: &[Vec<Q>], a: &[Vec<Q>]) -> Result<Vec<MotionMode>, Undecomposed> {
+fn split(
+    motion: &Mv,
+    masks: &[usize],
+    s: &[Vec<Q>],
+    a: &[Vec<Q>],
+    budget: &mut crate::physics::Budget,
+) -> Result<Vec<MotionMode>, Undecomposed> {
     let d = masks.len();
-    let values = rational_roots(&characteristic(s))?;
+    let values = rational_roots(&characteristic(s), budget)?;
     // EACH VALUE'S SPACE: the generalised eigenspace `ker((S − c)ᵈ)`, which
     // is the eigenspace itself everywhere but at `c = 1`, where a parabolic
     // mode's unipotent part lives.

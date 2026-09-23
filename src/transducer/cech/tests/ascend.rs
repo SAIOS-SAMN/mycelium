@@ -22,8 +22,10 @@ fn triangle(third: Rotor) -> (Complex, Vec<Vec<u8>>) {
     (c, vs)
 }
 
-fn edges(c: &Complex, vs: &[Vec<u8>]) -> Vec<String> {
-    [(0, 1), (1, 2), (0, 2)].iter().map(|&(i, j)| format!("{:?}", c.edge(&vs[i], &vs[j]))).collect()
+/// The boundary's transports, compared as the types they are (`PartialEq`),
+/// never as a rendering.
+fn edges(c: &Complex, vs: &[Vec<u8>]) -> Vec<Option<(Rotor, crate::transducer::element::Versor)>> {
+    [(0, 1), (1, 2), (0, 2)].iter().map(|&(i, j)| c.edge(&vs[i], &vs[j])).collect()
 }
 
 /// THE ROUND TRIP, ON BOTH POLES: a boundary that closes flat and one that
@@ -37,16 +39,16 @@ fn ascend_seals_descend_releases_and_ascend_reseals_the_same_content() {
         let (mut c, vs) = triangle(third);
         let boundary = edges(&c, &vs);
 
-        let Ascended::Sealed(first) = c.ascend(&vs) else { panic!("a standing boundary seals") };
-        assert!(matches!(c.ascend(&vs), Ascended::AlreadySealed), "a sealed cell is not sealed twice");
+        let Ascended::Sealed(first) = c.ascend(&vs, |_| vol()) else { panic!("a standing boundary seals") };
+        assert!(matches!(c.ascend(&vs, |_| vol()), Ascended::AlreadySealed), "a sealed cell is not sealed twice");
         let key = simplex_key(&sorted_verts(vs.clone()));
         let down = c.descend(key.as_bytes());
         let released = down.released().expect("a sealed membrane hands its fill back");
-        assert_eq!(format!("{released:?}"), format!("{first:?}"), "descend returns what ascend sealed");
+        assert_eq!(released, &first, "descend returns what ascend sealed");
         assert_eq!(edges(&c, &vs), boundary, "the boundary stands with its transports");
 
-        let Ascended::Sealed(again) = c.ascend(&vs) else { panic!("the released boundary still closes") };
-        assert_eq!(format!("{again:?}"), format!("{first:?}"), "and re-seals the same content");
+        let Ascended::Sealed(again) = c.ascend(&vs, |_| vol()) else { panic!("the released boundary still closes") };
+        assert_eq!(again, first, "and re-seals the same content");
         assert_eq!(edges(&c, &vs), boundary, "over the same boundary");
 
         let m = crate::physics::metabolism::take_metabolism();
@@ -61,5 +63,16 @@ fn ascend_over_a_missing_edge_is_absent() {
     let (mut c, vs) = triangle(Rotor::identity());
     let edge = simplex_key(&sorted_verts([&vs[0], &vs[2]]));
     assert!(matches!(c.drain(edge.as_bytes()), Drained::Vacuum));
-    assert!(matches!(c.ascend(&vs), Ascended::Absent), "the boundary does not stand");
+    assert!(matches!(c.ascend(&vs, |_| vol()), Ascended::Absent), "the boundary does not stand");
+}
+
+/// A CELL WITH NO VOLUME IS NOT MINTED — by `ascend` as by the climb: the
+/// volume is read off the chart, never written as a constant.
+#[test]
+fn ascend_over_a_cell_with_no_volume_is_absent() {
+    let (mut c, vs) = triangle(Rotor::identity());
+    assert!(matches!(c.ascend(&vs, |_| [0; 4]), Ascended::Absent), "no volume on any lane, no cell");
+    let Ascended::Sealed(_) = c.ascend(&vs, |_| vol()) else { panic!("with its volume read, it seals") };
+    let key = simplex_key(&sorted_verts(vs.clone()));
+    assert_eq!(c.simplex(key.as_bytes()).map(|s| s.volume), Some(vol()), "the volume the reader read");
 }

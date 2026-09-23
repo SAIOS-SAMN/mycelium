@@ -17,7 +17,7 @@ pub use super::axis::{Axis, Rank, RankAxis, RankMove};
 /// section, present only when `Word::form()` exists. Placement and dilation
 /// residues are the translator and dilator of the holonomy carriage, never
 /// a pair of rationals.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ClassVector {
     /// Sensor-chart section: `None` when the holonomy moves the plane.
     plane: Option<[(bool, u32, i64, i64); alphabet::PAIR_PLANES]>,

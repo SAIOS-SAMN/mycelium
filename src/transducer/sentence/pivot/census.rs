@@ -373,9 +373,10 @@ pub enum ModesRead {
 }
 
 impl ModesRead {
-    /// THE ONE READER of an orbit's modes, from its holonomy's action (MR1).
-    pub fn of(m: &element::Versor) -> ModesRead {
-        match crate::transducer::cga::motion_modes(m) {
+    /// THE ONE READER of an orbit's modes, from its holonomy's action (MR1),
+    /// under the stroke's budget (BD1).
+    pub fn of(m: &element::Versor, budget: &mut crate::physics::Budget) -> ModesRead {
+        match crate::transducer::cga::motion_modes(m, budget) {
             None => ModesRead::Unread,
             Some(Ok(ms)) => ModesRead::Split(ms.iter().map(|x| (x.kind, x.planes, x.order)).collect()),
             Some(Err(e)) => ModesRead::Undecomposed(e),
@@ -405,8 +406,8 @@ impl ModesRead {
 
 impl OrbitReading {
     /// ONE ORBIT READ FROM ITS HOLONOMY `M`, in the algebra of the form it
-    /// stands on.
-    pub fn of(m: &element::Versor, n: u8) -> OrbitReading {
+    /// stands on; its modes under the stroke's budget (BD1).
+    pub fn of(m: &element::Versor, n: u8, budget: &mut crate::physics::Budget) -> OrbitReading {
         use crate::network::nerve::coord::BivectorKind;
         use crate::transducer::cga::{self, Spectrum};
         let class = m.class_invariants().map(|(_, _, k)| k);
@@ -444,7 +445,7 @@ impl OrbitReading {
             parabolic,
             precession,
             centre: cga::centre_of(m, n),
-            modes: ModesRead::of(m),
+            modes: ModesRead::of(m, budget),
         }
     }
 
@@ -509,13 +510,22 @@ impl OrbitLine {
     }
 }
 
+/// ONE KEPT ORBIT AS THE WALK LEFT IT: its whole transport, or where and why
+/// its edge half was lost. Read into its line by the reader holding the
+/// stroke's budget (BD1).
+pub(super) struct OrbitNote {
+    pub(super) composite: Option<element::Versor>,
+    pub(super) at: Option<usize>,
+    pub(super) why: Option<Unread>,
+}
+
 thread_local! {
     /// The orbits read since a reader armed the list, in the order the walk
     /// read them; `None` while no reader is listening. `orbits_of` runs at
     /// every decode and replay, so a list nobody takes would grow for the
     /// life of a court: it collects only between [`arm_orbits`] and
     /// [`take_orbits`].
-    static ORBITS: std::cell::RefCell<Option<Vec<OrbitLine>>> = const { std::cell::RefCell::new(None) };
+    static ORBITS: std::cell::RefCell<Option<Vec<OrbitNote>>> = const { std::cell::RefCell::new(None) };
 }
 
 /// A reader starts listening: the orbits read from here are kept for it.
@@ -526,7 +536,7 @@ pub fn arm_orbits() {
 }
 
 /// File one orbit's reading, where a reader is listening.
-pub(super) fn note_orbit(r: impl FnOnce() -> OrbitLine) {
+pub(super) fn note_orbit(r: impl FnOnce() -> OrbitNote) {
     ORBITS.with(|o| {
         if let Some(held) = o.borrow_mut().as_mut() {
             held.push(r());
@@ -534,11 +544,12 @@ pub(super) fn note_orbit(r: impl FnOnce() -> OrbitLine) {
     });
 }
 
-/// The orbits read since [`arm_orbits`], and stop listening (one reader
-/// takes). Empty where nobody armed it.
-pub(crate) fn take_orbits() -> Vec<OrbitLine> {
+/// The orbits read since [`arm_orbits`], each read into its line under the
+/// stroke's budget (BD1), and stop listening (one reader takes). Empty where
+/// nobody armed it.
+pub(crate) fn take_orbits(budget: &mut crate::physics::Budget) -> Vec<OrbitLine> {
     // Nobody listening read no orbit: the empty list is that reading.
-    ORBITS.with(|o| {
+    let notes = ORBITS.with(|o| {
         #[expect(
             clippy::manual_unwrap_or_default,
             reason = "rule 11 — the empty list is the reading of a list nobody armed, written as a match so it stays named"
@@ -548,7 +559,14 @@ pub(crate) fn take_orbits() -> Vec<OrbitLine> {
             None => Vec::new(),
         };
         read
-    })
+    });
+    notes
+        .into_iter()
+        .map(|note| match note.composite {
+            Some(m) => OrbitLine::Read(Box::new(OrbitReading::of(&m, crate::transducer::element::GRID_N, budget))),
+            None => OrbitLine::Unread { at: note.at, why: note.why },
+        })
+        .collect()
 }
 
 /// Classify one kept cycle by THE WHOLE TRANSPORT IT COMPOSES.

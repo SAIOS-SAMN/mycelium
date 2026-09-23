@@ -628,8 +628,10 @@ impl Orbit {
 
 
 /// NB1, 78.2 — ONE CERTIFIED CELL OF THE CONTACT COMPLEX: the bodies
-/// standing together at one element of the base, by their addresses in
-/// their own coordinate order; every element standing under exactly them,
+/// standing together at one element of the base, each by the member keys
+/// standing on it — the coordinates the supports are keyed by, never a copy
+/// of the body's address (NB1's return) — in their own coordinate order;
+/// every element standing under exactly them,
 /// its witnesses; and the MEET of their nuclei — the round the bodies
 /// share, at the grade their number gives (`k + 1` bodies, a `k`-cell).
 ///
@@ -640,16 +642,24 @@ impl Orbit {
 /// it (`Complex::ascend`), in the circuit's own order (NB1 choice (b)).
 #[derive(Debug, Clone)]
 pub struct FormCell {
-    pub bodies: Vec<Vec<u8>>,
+    pub bodies: Vec<Vec<Vec<u8>>>,
     pub witnesses: Vec<crate::transducer::base::Site>,
-    /// `None` where a body's nucleus did not read back (rule 11).
-    pub meet: Option<crate::transducer::cga::Mv>,
+    /// CS1 — THE CELL'S CONSTRUCTORS: its bodies' nuclei, in the bodies'
+    /// order, each a reflection. `None` where a body's nucleus did not read
+    /// back (rule 11). The meet is read off them, never stored beside them.
+    pub nuclei: Option<Vec<crate::transducer::cga::Mv>>,
 }
 
 impl FormCell {
     /// `k + 1` bodies make a `k`-cell; a cell is minted over two or more.
     pub fn grade(&self) -> usize {
         self.bodies.len() - 1
+    }
+
+    /// THE MEET OF THE CELL'S NUCLEI — the round its bodies share, the
+    /// cell's shape (78.2, NB1) — read off its constructors.
+    pub fn meet(&self) -> Option<crate::transducer::cga::Mv> {
+        crate::transducer::cech::meet_of(self.nuclei.as_deref()?)
     }
 }
 

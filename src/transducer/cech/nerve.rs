@@ -158,22 +158,30 @@ impl NerveTotals {
         self.certified.extend(other.certified.into_iter().map(|c| (ix, c)));
     }
 
-    /// THE CERTIFIED CELLS BY GRADE: `(grade, cells, cells whose meet is not
-    /// the zero blade)`, ascending by grade — the nerve line's reading.
+    /// THE CERTIFIED CELLS BY GRADE — the nerve line's reading, by the one
+    /// reader [`cells_by_grade`].
     pub fn by_grade(&self) -> Vec<(usize, u64, u64)> {
-        let mut out: Vec<(usize, u64, u64)> = Vec::new();
-        for (_, c) in &self.certified {
-            let live = u64::from(c.meet.as_ref().is_some_and(|m| !m.is_zero()));
-            match out.binary_search_by_key(&c.grade(), |&(g, _, _)| g) {
-                Ok(at) => {
-                    out[at].1 += 1;
-                    out[at].2 += live;
-                }
-                Err(at) => out.insert(at, (c.grade(), 1, live)),
-            }
-        }
-        out
+        cells_by_grade(self.certified.iter().map(|(_, c)| (c.grade(), c.meet.clone())))
     }
+}
+
+/// CERTIFIED CELLS BY GRADE: `(grade, cells, cells whose meet is not the
+/// zero blade)`, ascending by grade, over any carrier's `(grade, meet)` —
+/// the ONE reader the cover nerve and the contact complex share (law 12,
+/// NB1's return).
+pub fn cells_by_grade(cells: impl Iterator<Item = (usize, Option<Mv>)>) -> Vec<(usize, u64, u64)> {
+    let mut out: Vec<(usize, u64, u64)> = Vec::new();
+    for (grade, meet) in cells {
+        let live = u64::from(meet.is_some_and(|m| !m.is_zero()));
+        match out.binary_search_by_key(&grade, |&(g, _, _)| g) {
+            Ok(at) => {
+                out[at].1 += 1;
+                out[at].2 += live;
+            }
+            Err(at) => out.insert(at, (grade, 1, live)),
+        }
+    }
+    out
 }
 
 /// THE SUPPORT OF A COVER, READ FROM THE BASE: `p ↦ charts(p)`.

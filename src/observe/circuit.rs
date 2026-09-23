@@ -162,6 +162,10 @@ fn put_modes(out: &mut Vec<u8>, m: &ModesRead) {
         }
         ModesRead::Undecomposed(Undecomposed::Defective) => out.push(2),
         ModesRead::Unread => out.push(3),
+        ModesRead::Undecomposed(Undecomposed::Unbounded(d)) => {
+            out.push(4);
+            out.extend_from_slice(&(*d as u32).to_le_bytes());
+        }
     }
 }
 
@@ -188,6 +192,7 @@ fn take_modes(b: &[u8], p: &mut usize) -> Option<ModesRead> {
         1 => Some(ModesRead::Undecomposed(Undecomposed::Irrational(take_u32(b, p)?))),
         2 => Some(ModesRead::Undecomposed(Undecomposed::Defective)),
         3 => Some(ModesRead::Unread),
+        4 => Some(ModesRead::Undecomposed(Undecomposed::Unbounded(take_u32(b, p)?))),
         _ => None,
     }
 }
