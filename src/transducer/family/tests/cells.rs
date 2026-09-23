@@ -87,13 +87,17 @@ fn a_circuit_crosses_a_cell_by_the_body_pair_of_the_face_it_steps_over() {
     form.face_bodies.insert(2u32.to_be_bytes(), (p, s));
     let turn = cga::rotator(&q(1), &q(1));
     let walked = vec![
-        (vec![1u16, 0], Some(turn.clone())),
-        (vec![1u16, 3], Some(turn.clone())),
-        (vec![2u16], Some(turn)),
+        (vec![(1u16, true), (0, false)], Some(turn.clone())),
+        (vec![(1u16, true), (3, true)], Some(turn.clone())),
+        (vec![(2u16, true)], Some(turn)),
     ];
     let cells = crate::transducer::family::comprehend::cell_algebras(&form, &walked, &mut crate::physics::Physics::default().stroke_n(1 << 16));
     let [c] = cells.as_slice() else { panic!("one cell") };
     assert_eq!(c.circuits, 1, "only the circuit over face 0, between the cell's two bodies, crosses it");
+    // CX1 — crossing face 0 against its orientation, the circuit leaves the
+    // body at the face's `j` end first: its order of the cell's bodies.
+    let [p] = c.products.as_slice() else { panic!("one product: {:?}", c.products) };
+    assert_eq!(p.order, vec![1, 0], "the circuit's own order, read off the step's way");
 }
 
 /// THE PAIRWISE READING OF THE SAME THREE CARRIES NO GRADE-3 CONTENT

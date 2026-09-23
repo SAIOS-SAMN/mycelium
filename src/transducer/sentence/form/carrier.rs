@@ -819,7 +819,8 @@ pub struct Form {
     /// perception and held in memory only (see [`FormCell`]).
     pub cells: Keyed<FormCell>,
     /// BD2 — THE BODY PAIR EACH CONTACT FACE RUNS BETWEEN, by face index:
-    /// the two bodies' pieces, the lesser first. `FormFace` carries no body,
+    /// the two bodies' pieces in the face's orientation, the body at its `i`
+    /// end first. `FormFace` carries no body,
     /// so a circuit's step reads its body off the face it crosses here —
     /// never off its member (checklist (m)). In memory only; the tape at the
     /// recut (BQ5b).

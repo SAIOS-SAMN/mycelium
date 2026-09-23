@@ -15,6 +15,7 @@
 
 pub mod coboundary;
 pub mod complex;
+pub mod coxeter;
 pub mod nerve;
 pub mod orbit_algebra;
 pub mod simplex;
@@ -22,6 +23,7 @@ pub mod tape;
 
 pub use coboundary::*;
 pub use complex::*;
+pub use coxeter::*;
 pub use nerve::*;
 pub use orbit_algebra::*;
 pub use simplex::*;

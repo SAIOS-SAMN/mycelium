@@ -49,14 +49,21 @@ pub(super) fn note_circuit(r: impl FnOnce() -> PendingCircuit) {
     });
 }
 
+/// ONE WALKED CIRCUIT: each step's face and whether it was crossed along the
+/// face's orientation, and the circuit's composite (OR3).
+pub type WalkedCircuit = (Vec<(u16, bool)>, Option<element::Versor>);
+
 /// THE CIRCUITS THE PERCEPT WALKED, each by the faces its steps crossed and
 /// its composite — what a cell's orbit algebra reads (CG1): a step's body
 /// is read off the face it crosses (BD2), never derived from its member.
 /// Taken off the walk that already ran, never by walking again; empty where
 /// nobody armed the list.
-pub fn walked_circuits() -> Vec<(Vec<u16>, Option<element::Versor>)> {
+pub fn walked_circuits() -> Vec<WalkedCircuit> {
     PENDING.with(|c| match c.borrow().as_ref() {
-        Some(held) => held.iter().map(|p| (p.steps.iter().map(|s| s.face).collect(), p.composite.clone())).collect(),
+        Some(held) => held
+            .iter()
+            .map(|p| (p.steps.iter().map(|s| (s.face, s.forward)).collect(), p.composite.clone()))
+            .collect(),
         None => Vec::new(),
     })
 }

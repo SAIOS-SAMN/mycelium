@@ -346,9 +346,21 @@ pub(super) fn order_on(motion: &Mv, plane: &[Mv]) -> Option<u32> {
     let inverse = motion.versor_inverse()?;
     let orders = super::cyclotomic_orders(n);
     let bound = orders.iter().copied().fold(1, u32::max);
+    // MR1b — AN ODD VERSOR ACTS AS `x ↦ −Ω x Ω⁻¹`, so its `k`-th power
+    // carries the sign `(−1)^k`: the action closes where `Ωᵏ x Ω⁻ᵏ` is
+    // that sign times `x`, never where the bare sandwich is.
+    let odd = super::motion::is_odd(motion);
     let (mut acc, mut acc_inv) = (motion.clone(), inverse.clone());
     for k in 1..=bound {
-        if orders.contains(&k) && plane.iter().all(|v| acc.geo(v).geo(&acc_inv).sub(v).is_zero()) {
+        let flip = odd && k % 2 == 1;
+        let closes = |v: &Mv| {
+            let image = acc.geo(v).geo(&acc_inv);
+            match flip {
+                true => image.add(v).is_zero(),
+                false => image.sub(v).is_zero(),
+            }
+        };
+        if orders.contains(&k) && plane.iter().all(closes) {
             return Some(k);
         }
         acc = acc.geo(motion);

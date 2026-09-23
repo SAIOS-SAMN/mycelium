@@ -17,7 +17,7 @@ pub mod words;
 pub use census::*;
 pub use moves::*;
 pub use snap::*;
-pub use trajectory::{finish_circuits, take_circuits, walked_circuits};
+pub use trajectory::{finish_circuits, take_circuits, walked_circuits, WalkedCircuit};
 pub(crate) use walk::*;
 pub use words::*;
 

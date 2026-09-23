@@ -286,8 +286,11 @@ struct Gathered {
 }
 
 /// BD2 — THE BODY PAIR EACH CONTACT RUNS BETWEEN, keyed by its interface
-/// ([`interface_key`]): the two bodies' pieces, the lesser first.
-pub(crate) type ContactBodies = crate::network::nerve::Keyed<(Vec<u8>, Vec<u8>)>;
+/// ([`interface_key`]): the two bodies' pieces, the lesser first, and the
+/// members standing on the lesser's side — so a face built between two
+/// members reads which body stands at each of its ends (CX1: a circuit's
+/// order of a cell's bodies runs with its steps).
+pub(crate) type ContactBodies = crate::network::nerve::Keyed<((Vec<u8>, Vec<u8>), Vec<Vec<u8>>)>;
 
 /// An interface's key: its elements' own coordinates, each framed, in the
 /// interface's order.
@@ -576,7 +579,7 @@ pub(crate) fn named_incidence(
         let Some((a, b)) = ends else { continue };
         // BD2 — the contact's body pair, by its interface: the face built
         // along this interface runs between these two bodies.
-        contact_bodies.insert(interface_key(&elements), g.bodies.clone());
+        contact_bodies.insert(interface_key(&elements), (g.bodies.clone(), left.clone()));
         relate(&mut related, member_pair_key(a, b), Incidence::Contact, Some(elements));
     }
     // T4 — THE CONDENSATION PASS, WHERE THE STENCIL WAS (66, ruled

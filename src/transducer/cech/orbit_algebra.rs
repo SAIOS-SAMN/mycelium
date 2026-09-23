@@ -138,6 +138,19 @@ pub struct CellAlgebra {
     pub gram: Option<GramReading>,
     /// The orbit of the cell's constructors under its read circuits (CS1).
     pub constructors: ConstructorOrbit,
+    /// CX1 — the product of the cell's constructors in each crossing
+    /// circuit's order, one per circuit that orders every body of the cell;
+    /// none chosen.
+    pub products: Vec<super::CoxeterProduct>,
+    /// The distinct classes among the kept products (C2a).
+    pub classes: usize,
+    /// GR2 — the constructors read as a reflection group, the nuclei as
+    /// mirrors; and (78.15(5)) the polars as mirrors, where the dual frame
+    /// stands.
+    pub coxeter: Option<super::CoxeterReading>,
+    pub polars: Option<super::CoxeterReading>,
+    /// DF1 — the dual frame, `descend`'s reader, or why there is none.
+    pub dual: Option<cga::DualFrame>,
 }
 
 /// A matrix as one sparse integer row: its denominators cleared, reduced by
@@ -228,13 +241,15 @@ fn permutation(ray: &Mv, nuclei: &[Mv], index: &Keyed<usize>) -> Option<Vec<usiz
 }
 
 /// READ ONE CELL'S ORBIT ALGEBRA: its grade, its round, its constructors,
-/// and the holonomy of every circuit crossing it (`None` where a circuit
-/// did not read, OR3), under the stroke's budget.
+/// the holonomy of every circuit crossing it (`None` where a circuit did not
+/// read, OR3), and each circuit's order of the cell's constructors (`None`
+/// where it does not visit every body), under the stroke's budget.
 pub fn read_cell(
     grade: usize,
     round: Option<&Mv>,
     nuclei: Option<&[Mv]>,
     circuits: &[Option<Mv>],
+    orders: &[Option<Vec<usize>>],
     budget: &mut crate::physics::Budget,
 ) -> CellAlgebra {
     // A zero meet is no round (78.14).
@@ -333,6 +348,38 @@ pub fn read_cell(
         Some(ns) => cga::constructor_orbit(ns, &generators, budget),
         None => ConstructorOrbit::Unread,
     };
+    // CX1 — the product per circuit that orders every body; GR2 — the
+    // group, with the products' certain refusals; DF1 — the dual frame, and
+    // the polars read as mirrors where it stands.
+    //
+    // The group is read first; the products' modes only where it is not
+    // already refused with certainty — a refused group's tether is named by
+    // its pair regime, and reading its modes would spend the stroke on what
+    // is known (rule 10).
+    let first = nuclei.map(|ns| super::read_coxeter(ns, &[], budget));
+    let refused = matches!(first.as_ref().map(|r| &r.closure), Some(super::Closure::Infinite(_)));
+    let products: Vec<super::CoxeterProduct> = match nuclei {
+        Some(ns) => orders.iter().flatten().filter_map(|o| super::coxeter_product(ns, o, !refused, budget)).collect(),
+        None => Vec::new(),
+    };
+    let mut class_keys: Keyed<()> = Keyed::new();
+    for p in &products {
+        if let Some(k) = super::product_class(p) {
+            class_keys.insert(&k, ());
+        }
+    }
+    // A product of infinite order refuses what the pairs did not (CX1).
+    let coxeter = first.map(|r| match products.iter().enumerate().find_map(|(i, p)| p.infinite.map(|k| (i, k))) {
+        Some((circuit, kind)) if !refused => {
+            super::CoxeterReading { closure: super::Closure::Infinite(super::Refusal::Product { circuit, kind }), ..r }
+        }
+        _ => r,
+    });
+    let dual = nuclei.map(cga::dual_frame);
+    let polars = match &dual {
+        Some(cga::DualFrame::Frame(ps)) => Some(super::read_coxeter(ps, &[], budget)),
+        _ => None,
+    };
     CellAlgebra {
         grade,
         circuits: circuits.len(),
@@ -344,5 +391,10 @@ pub fn read_cell(
         coherence,
         gram,
         constructors,
+        classes: class_keys.len(),
+        products,
+        coxeter,
+        polars,
+        dual,
     }
 }

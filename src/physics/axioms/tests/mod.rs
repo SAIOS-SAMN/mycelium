@@ -1,6 +1,7 @@
 // 56 — the register's readings, one file per instrument.
 
 mod contact;
+mod coxeter;
 mod frame;
 mod harmonic;
 mod hue;

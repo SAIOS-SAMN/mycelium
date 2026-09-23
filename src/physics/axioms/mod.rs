@@ -12,11 +12,13 @@
 //! theorem (T21(iii)). Every entry below is either exercised or is
 //! explicitly marked as a statement about work not yet built.
 
+mod coxeter;
 mod imported;
 mod ours;
 mod refused;
 mod routes;
 
+pub use coxeter::CX1_TREE_CONJUGACY;
 pub use imported::{
     A10_CO_DIMENSIONALITY, A6_DIMENSIONAL_COMPLETENESS, A8_TORSIONAL_PERSISTENCE,
     A9_METRIC_AUTONOMY,

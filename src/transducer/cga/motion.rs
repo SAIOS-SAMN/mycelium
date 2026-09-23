@@ -49,22 +49,54 @@ pub struct MotionMode {
     pub planes: usize,
     pub c: Q,
     pub order: Option<u32>,
+    /// MR1b — the mode holds a reflection: its space is where the action is
+    /// `−1` and its dimension is odd, so the action's determinant is `−1`
+    /// there. Only an odd versor has one.
+    pub reflects: bool,
 }
 
-/// `x ↦ a x b` on the vectors, as the matrix of its columns.
+/// MR1b — IS `m` ODD: every even grade vanishes and an odd one does not. An
+/// odd versor is a product of an odd number of reflections, and it acts as
+/// `x ↦ −m x m⁻¹`, orientation-reversing (`det R = −1`).
+pub(super) fn is_odd(m: &Mv) -> bool {
+    let top = u32::from(m.n()) + 2;
+    let even_zero = (0..=top).step_by(2).all(|g| m.grade(g).is_zero());
+    even_zero && !m.is_zero()
+}
+
+/// `x ↦ a x b` on the vectors, as the matrix of its columns, signed `−1` for
+/// an odd `a` (MR1b: the action of an odd versor carries the sign).
 fn action(a: &Mv, b: &Mv, masks: &[usize]) -> Vec<Vec<Q>> {
     let d = masks.len();
-    let cols: Vec<Vec<Q>> =
-        masks.iter().map(|&m| column(&a.geo(&Mv::blade(m, one())).geo(b).grade(1), masks)).collect();
+    let sign = match is_odd(a) {
+        true => -one(),
+        false => one(),
+    };
+    let cols: Vec<Vec<Q>> = masks
+        .iter()
+        .map(|&m| column(&a.geo(&Mv::blade(m, one())).geo(b).grade(1).scale(&sign), masks))
+        .collect();
     (0..d).map(|i| (0..d).map(|j| cols[j][i].clone()).collect()).collect()
 }
 
-/// THE ACTION OF A MOTION ON THE VECTORS, `x ↦ Ω x Ω⁻¹`, as the matrix of its
-/// columns over the algebra's generators — the `R_c` whose ℚ-algebra is a
-/// cell's capacity (CG1). `None` where the motion does not invert.
+/// THE ACTION OF A MOTION ON THE VECTORS, `x ↦ ±Ω x Ω⁻¹` (the sign `−` for an
+/// odd versor, MR1b), as the matrix of its columns over the algebra's
+/// generators — the `R_c` whose ℚ-algebra is a cell's capacity (CG1).
+/// `None` where the motion does not invert.
 pub fn action_of(motion: &Mv) -> Option<Vec<Vec<Q>>> {
     let inverse = motion.versor_inverse()?;
     Some(action(motion, &inverse, &generators(motion.n())))
+}
+
+/// MR1b — THE DETERMINANT OF THE ACTION, named on the reading: `−1` for an
+/// odd versor (orientation-reversing), `+1` for an even one. `None` where
+/// the element is not a versor (a versor is of one parity).
+pub fn action_det(motion: &Mv) -> Option<i8> {
+    super::is_versor(motion)?;
+    match is_odd(motion) {
+        true => Some(-1),
+        false => Some(1),
+    }
 }
 
 fn vector(coords: &[Q], masks: &[usize]) -> Mv {
@@ -167,7 +199,9 @@ fn split(
         let (ray, kind, planes) = match (k_j.is_zero(), lift.is_zero(), *c == one()) {
             // A FIXED SPACE: `S = 1` and no skew part — nothing turns there.
             (true, _, true) => continue,
-            // THE HALF TURN: the space's own blade, the held `ℤ₂`.
+            // THE HALF TURN: the space's own blade, the held `ℤ₂`. Of ODD
+            // dimension it holds a reflection (MR1b): an odd versor's `−1`
+            // space, its blade odd, the mirror's normal among it.
             (true, true, _) => {
                 let blade = blade_of(&plane);
                 (blade.clone(), kind_of_space(&blade).ok_or(Undecomposed::Defective)?, width / 2)
@@ -204,7 +238,8 @@ fn split(
             BivectorKind::Elliptic => order_on(motion, &plane),
             _ => None,
         };
-        out.push(MotionMode { ray, kind, planes, c: c.clone(), order });
+        let reflects = *c == -one() && width % 2 == 1;
+        out.push(MotionMode { ray, kind, planes, c: c.clone(), order, reflects });
     }
     // THE PARABOLIC MODE FIRST, then by `c` — the order `rational_roots`
     // read the values in, kept.

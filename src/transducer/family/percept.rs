@@ -920,9 +920,14 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         };
         let mut at = Keyed::new();
         at.insert(face_pair_key(&ci, &cj), place);
-        // BD2 — a contact face's body pair, on the form's side carrier.
-        if let Some(pair) = contact_bodies.get(&super::pairing::interface_key(&interface)) {
-            form.face_bodies.insert((form.faces.len() as u32).to_be_bytes(), pair.clone());
+        // BD2 — a contact face's body pair, on the form's side carrier, in
+        // the face's own orientation: the body at its `i` end first.
+        if let Some(((x, y), left)) = contact_bodies.get(&super::pairing::interface_key(&interface)) {
+            let pair = match left.contains(&ak) {
+                true => (x.clone(), y.clone()),
+                false => (y.clone(), x.clone()),
+            };
+            form.face_bodies.insert((form.faces.len() as u32).to_be_bytes(), pair);
         }
         form.faces.push(FormFace { i, j, word, at, pairs, interface });
         drops.built += 1;
