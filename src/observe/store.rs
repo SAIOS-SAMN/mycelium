@@ -3,7 +3,7 @@
 //
 //! A reading is keyed `[source kind][vk 32][reading tag]` — the source's
 //! own identity, then what the reading answers — so a query by prefix reads
-//! one source, or one kind of source, or everything, and never walks more
+//! one source, or one kind of source, or everything, and never reads more
 //! than the fiber it names (rule 1).
 //!
 //! ONE STORE PER PROCESS, beside the thread-local tallies it is fed from.

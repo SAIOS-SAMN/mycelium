@@ -34,16 +34,16 @@ impl Form {
     ///   discrete holonomy and is FILLED by a 2-simplex: the class is filed on
     ///   this form's own torsion carrier at period `ℓ`, on the chord that
     ///   closes it. That is the same `FiledOrbit` an orbit over a cover files
-    ///   (50.8 case 3); the cycle becomes content instead of a walk.
+    ///   (50.8 case 3); the cycle becomes content instead of a traversal.
     /// - anything else — the obstruction stands and nothing is invented for
     ///   it (rule 11). The vertex is unchanged either way.
     ///
-    /// `chord` is the face the caller walked to get here — the face that
+    /// `chord` is the face the caller crossed to get here — the face that
     /// closes the cycle. It is passed in and never searched for: the caller
     /// holds it, and a filed orbit names a live face or it names nothing
     /// (15.5).
     ///
-    /// The chain is WALKED, not just the one step: a `by` two hops away
+    /// The chain is TRAVERSED, not just the one step: a `by` two hops away
     /// that comes back is the same cycle with a longer boundary.
     pub fn rebase(&mut self, by: u16, of: u16, carriage: Versor, chord: u16) -> Option<u16> {
         // A vertex that is not there is not a frame to read in. Read, never
@@ -117,7 +117,7 @@ impl Form {
         Some(of)
     }
 
-    /// Does `from`'s rebase chain reach `target`? The walk carries the
+    /// Does `from`'s rebase chain reach `target`? The traversal carries the
     /// vertices it has VISITED, keyed, and stops when it meets one again —
     /// which is the same contraction `word_in` performs, not a step count
     /// standing in for one. A chain that revisits anything is closed, and a
@@ -147,7 +147,7 @@ impl Form {
     /// so there is no spelling to read off one — and the reading is
     /// `cech::classify`'s, the one classifier both organs use.
     ///
-    /// Filing it here is what turns the walk into content: the engine does
+    /// Filing it here is what turns the traversal into content: the engine does
     /// not step out of the orbit, it EVALUATES the orbit, and the orbit
     /// becomes a class the form carries. A chord that names no live face
     /// files nothing.

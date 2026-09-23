@@ -43,7 +43,7 @@ pub struct ClassVector {
     /// WHAT AN ORBIT'S TRANSLATION IS, which is not how big it is. A rotation
     /// about `p` carries `T(p − Rp)`: that translation is WHERE THE TURN
     /// STANDS, a choice of origin, and zeroing it moves the frame rather
-    /// than discharging anything. A translation with no such `p` is a walk
+    /// than discharging anything. A translation with no such `p` is a slip
     /// — the seam does not return — and that is an obstruction.
     ///
     /// `occupies(Axis::Placement)` read `translator_of(carriage) !=
@@ -55,7 +55,7 @@ pub struct ClassVector {
     ///
     /// AND THEN IT WAS A THREE-VALUED ENUM — `Zero | FixedPoint | Residue`
     /// — which is the same collapse one level up (54.4, as ruled
-    /// 2026-09-20). A walk HAS a magnitude and a direction. Reducing it to
+    /// 2026-09-20). A slip HAS a magnitude and a direction. Reducing it to
     /// the word "Residue" is a measured vector written down as a scalar
     /// status: rule 4 and law 7 together, and the reason a screw filed as
     /// an undifferentiated free generator with nothing said about how far
@@ -300,7 +300,7 @@ impl ClassVector {
         // WHAT THE TRANSLATION IS, appended LAST so the conjugacy stratum
         // stays the depth-one prefix every court asks by. It is a
         // coordinate of 12.6 the vector did not carry: a base point and a
-        // walk read identically on every other axis.
+        // slip read identically on every other axis.
         // THE SLIP, WRITTEN OUT (rule 6, law 4): three exact rationals,
         // never a status byte. A turn about a point off the origin is
         // conjugate to the same turn about the origin, so both write the
@@ -551,7 +551,7 @@ impl ClassVector {
         };
         // ONE FIBER OR TWO. The placements compatible with a rotation `R`
         // are constrained by `R` — `T(p − Rp)` is a base point under one
-        // rotor and an unremoved walk under another — so comparing two
+        // rotor and an unremoved slip under another — so comparing two
         // translations by magnitude is only meaningful when the ROTATION
         // held. It compared them always, which read a vector standing in
         // one fiber against a vector standing in another and called the
@@ -572,16 +572,16 @@ impl ClassVector {
             },
             // The base moved, so no componentwise magnitude reading of the
             // carriage exists. What is readable is the SLIP: a turn that
-            // returned and now walks is a rise, the reverse is a fall, and
-            // a walk that stays a walk is compared by its own magnitude —
+            // returned and now slips is a rise, the reverse is a fall, and
+            // a slip that stays a slip is compared by its own magnitude —
             // lane by lane, never summed (law 5).
             false => {
                 let b = &before.placement;
                 let a = &after.placement;
-                let walked = |v: &[num_rational::BigRational; 3]| {
+                let slips = |v: &[num_rational::BigRational; 3]| {
                     v.iter().any(|q| !num_traits::Zero::is_zero(q))
                 };
-                match (walked(b), walked(a)) {
+                match (slips(b), slips(a)) {
                     (false, true) => true,
                     (true, true) => (0..3).any(|i| mag(&a[i]) > mag(&b[i])),
                     _ => false,

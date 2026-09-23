@@ -193,7 +193,7 @@ impl Kernel {
     /// sentinel identity.
     pub fn install_adopted(&mut self, word: &Element, ratifier: [u8; 32]) -> Adoption {
         // The orbit check at the mint: an arriving word's torsion cycles are
-        // walked before they enter the genome. Only a witnessed closed orbit
+        // run round before they enter the genome. Only a witnessed closed orbit
         // at the spoken period is believed.
         for (stored, witness) in crate::transducer::torsion_witness::witness_stored(word) {
             match witness {
@@ -317,8 +317,8 @@ impl Kernel {
     /// read off the citing receipt's own parents, which the carrier
     /// already names (law 3). Full transitive domination across signers is
     /// deliberately NOT computed: it is a product over peers with an
-    /// ancestry descent in every entry, which at a thousand peers is a
-    /// million walks to save a few bytes. What the one-level prune leaves
+    /// ancestry traversal in every entry, which at a thousand peers is a
+    /// million traversals to save a few bytes. What the one-level prune leaves
     /// is a superset of the antichain, never a subset, so no citation this
     /// court can re-derive a height through is dropped (rule 11).
     fn antichain_of(
@@ -359,7 +359,7 @@ impl Kernel {
     }
 
     /// The receipts of speech, keyed by listing: read at a listing's own
-    /// address, never walked.
+    /// address, never read whole.
     pub fn spoken(&self) -> &crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>> {
         &self.spoken
     }

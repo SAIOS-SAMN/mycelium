@@ -5,7 +5,7 @@ use super::*;
 
 /// The atlas over a relation of words (a basis, a federation, a genome):
 /// each word's ADDRESS sits in the stratum over its chart. Every address
-/// also carries its chart in a keyed relation, so a removal walks one path.
+/// also carries its chart in a keyed relation, so a removal follows one path.
 #[derive(Debug, Clone, Default)]
 pub struct Stalks {
     root: Stratum,
@@ -89,10 +89,10 @@ impl Stalks {
     // `each_child(inv, after, budget, f)` stood here: a budgeted page of one
     // stratum's child branches, resumed from a cursor, returning the last key
     // visited. It existed for `AtlasRead::children`, whose only caller was
-    // `Bubble::expand_with`, which walked outward from an idea's chart to meet
+    // `Bubble::expand_with`, which read outward from an idea's chart to meet
     // whatever the trie held nearby. An idea's overlaps are the charts its own
     // vertices stand on, which are coordinates it already holds, so the
-    // expansion reads `fiber` at those charts and this walk has no caller.
+    // expansion reads `fiber` at those charts and this outward read has no caller.
     // `fiber_under` below is the remaining trie collect, and it answers a
     // question about one chart rather than paging a stratum.
 

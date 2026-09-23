@@ -1,8 +1,8 @@
-// 18.2 — THE FORM: vertices, faces, orbits, and the reads that walk them.
+// 18.2 — THE FORM: vertices, faces, orbits, and the reads that traverse them.
 //
 //! A face is constant in the word between its two vertices; an orbit is a
 //! cycle of faces; the holonomy of an orbit is the composite around it. All
-//! three are structure, walked and never searched.
+//! three are structure, traversed and never searched.
 
 use super::*;
 
@@ -344,7 +344,7 @@ pub enum Vertex {
         /// the dilator together, is `O(1)` per citation whatever the cited
         /// form's size, and is exactly invertible by its reversion — so
         /// the incidence is a groupoid edge, `φ` one way and `φ̃` the
-        /// other, not a one-directional descent.
+        /// other, not a one-directional reference.
         carriage: Box<crate::transducer::element::Versor>,
     },
     /// Vertex `of` read in its own frame as `by`'s word (3.2): the linear
@@ -515,7 +515,7 @@ impl FormFace {
     /// others.
     ///
     /// A keyed read at the frame's own coordinate. It was
-    /// `ps.contains(&(pair as u16))` — a walk of the whole list, once per
+    /// `ps.contains(&(pair as u16))` — a read of the whole list, once per
     /// face per frame in the court's edge replay.
     pub fn measured_on(&self, frame: usize) -> bool {
         match &self.pairs {
@@ -554,18 +554,18 @@ impl FormFace {
     }
 }
 
-/// Independent orbit of a form: the closed vertex walk, the faces along it,
+/// Independent orbit of a form: the closed vertex circuit, the faces along it,
 /// the chord (never a star face), and the oriented holonomy.
 ///
 /// The HOLONOMY is a word and is the product of the faces' words around the
 /// orbit, which are vertex coordinates, so it is one word per orbit and does
 /// not fibre. The CARRIAGE is the product of the faces' carriages, which are
 /// member coordinates, so it is one versor PER MEMBER PATH — the sequence of
-/// charts the orbit passes through, keyed by those charts in walk order.
+/// charts the orbit passes through, keyed by those charts in circuit order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Orbit {
     /// THE CYCLE ITSELF, as an element of `Z₁(M)`: the MEMBER at each node,
-    /// `member_key(vertex, chart)`, in walk order and closing on its first.
+    /// `member_key(vertex, chart)`, in circuit order and closing on its first.
     ///
     /// `vertices` below is `π` of this — the projection that forgets the
     /// chart — and it is kept because every reader of an orbit asks the form
@@ -573,7 +573,7 @@ pub struct Orbit {
     /// charts AT ONE VERTEX, `((v,c_a),(v,c_b))`, collapses to the
     /// degenerate self-loop `(v,v)` and loses its orientation, which is
     /// exactly the defect that broke 62 of 62 live orbits at `437d253`: the
-    /// walker could not tell which way it ran because the projection had
+    /// traversal could not tell which way it ran because the projection had
     /// thrown the answer away.
     ///
     /// Carried, the cycle IS its own path. There is nothing to search for.
@@ -615,7 +615,7 @@ pub struct Orbit {
 
 impl Orbit {
     /// The key a member path is filed under: the chart key at each vertex of
-    /// the orbit, in walk order, each length-delimited. Content, so the same
+    /// the orbit, in circuit order, each length-delimited. Content, so the same
     /// path reads the same on every node.
     pub fn path_key(charts: &[Vec<u8>]) -> Vec<u8> {
         let mut buf = Vec::new();
@@ -693,7 +693,7 @@ pub struct Form {
     /// stands on, each frame its own coordinate in the inner carrier.
     ///
     /// It was `Keyed<Vec<u16>>` and every reader asked it the same question
-    /// — does this section claim frame `k` — with `ps.contains(&k)`, a walk
+    /// — does this section claim frame `k` — with `ps.contains(&k)`, a read
     /// of the whole list, once per vertex per member per frame in the
     /// court's replay. 51.8 rules the court's readers onto the coordinate:
     /// "the same refusal on a coordinate instead of on a list". Keyed by
@@ -794,7 +794,7 @@ pub struct Form {
     /// one class, two charts), so it cannot say which vertices correspond;
     /// `carriages` holds versors rather than indices and its key carries the
     /// gauge, which 21 step 1 excludes from matching. Lacking the fiber,
-    /// extraction walked every pair form's vertices and accumulated the
+    /// extraction read every pair form's vertices and accumulated the
     /// correspondence itself — a second producer of one fact, beside the
     /// indexer whose job it is (law 12, 13.1).
     ///
@@ -860,9 +860,9 @@ impl Default for Form {
 }
 
 // `impl Vertex` — `word_in`, `class`, `depth` — was here and is now
-// `form/vertex.rs`. `word_in` WALKS the rebase chain instead of
+// `form/vertex.rs`. `word_in` TRAVERSES the rebase chain instead of
 // recursing on it (L20), and this file went over the §1.1 reading bound
-// with the walk in it. Moved, not rewritten (§1.6).
+// with the traversal in it. Moved, not rewritten (§1.6).
 
 
 /// WHAT A FORM CITES, at both levels (26 as ruled 2026-09-10): a `Glued`
@@ -871,12 +871,12 @@ impl Default for Form {
 /// deduplication — a form cited twice is cited twice, and the caller
 /// that counts uses decides what a repeat means.
 ///
-/// One carrier for the reading. The court's use-credit walked the
-/// vertices for it and so did the retirement scope; two walks of one fact
+/// One carrier for the reading. The court's use-credit read the
+/// vertices for it and so did the retirement scope; two reads of one fact
 /// are two chances to disagree about what a citation is (law 12).
 pub fn cited_addresses(f: &Form) -> Vec<crate::transducer::address::Address> {
     let mut out = Vec::new();
-    // CHART CITING CHART, off the cover (54.7 B5a). It walked the `Glued`
+    // CHART CITING CHART, off the cover (54.7 B5a). It read the `Glued`
     // vertices, and a vertex no longer names the form it mates with; the
     // 1-skeleton of `N(𝒰)` does.
     for e in &f.cover {
@@ -901,9 +901,9 @@ pub(crate) fn form_face_step(faces: &[FormFace], fi: usize, from: usize, to: usi
     }
 }
 
-pub(crate) fn form_named_holonomy(faces: &[FormFace], path: &[usize], walked: &[usize]) -> Word {
+pub(crate) fn form_named_holonomy(faces: &[FormFace], path: &[usize], crossed: &[usize]) -> Word {
     let mut w = Word::identity();
-    for (win, &fi) in path.windows(2).zip(walked) {
+    for (win, &fi) in path.windows(2).zip(crossed) {
         if let Some(s) = form_face_step(faces, fi, win[0], win[1]) {
             w = w.compose(&s);
         }
@@ -911,7 +911,7 @@ pub(crate) fn form_named_holonomy(faces: &[FormFace], path: &[usize], walked: &[
     w.normal_form()
 }
 
-/// The tree path from `src` to `dst` as its vertices and the faces walked
+/// The tree path from `src` to `dst` as its vertices and the faces crossed
 /// between them, named in the same pass that finds them: each vertex is
 /// reached through one face of its own adjacency, so no face is searched
 /// for afterwards.
@@ -939,15 +939,15 @@ pub(crate) fn tree_path(adj: &[Vec<(usize, usize)>], src: usize, dst: usize) -> 
     }
     prev[dst]?;
     let mut path = vec![dst];
-    let mut walked = Vec::new();
+    let mut crossed = Vec::new();
     let mut cur = dst;
     while cur != src {
         let (p, fi) = prev[cur]?;
-        walked.push(fi);
+        crossed.push(fi);
         path.push(p);
         cur = p;
     }
     path.reverse();
-    walked.reverse();
-    Some((path, walked))
+    crossed.reverse();
+    Some((path, crossed))
 }

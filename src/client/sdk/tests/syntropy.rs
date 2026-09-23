@@ -188,16 +188,16 @@ fn bid_bundle_rewrite_retires_inputs_and_credits_syntropy() {
 }
 
 /// Rule 1, law 3, A21 §2 — THE SIBLINGS OF A COORDINATE ARE READ AT IT, and
-/// the read must answer everything the walk it replaced would have found.
+/// the read must answer everything the whole read it replaced would have found.
 ///
-/// Both probes computed a chart and then used it to FILTER a walk over the
+/// Both probes computed a chart and then used it to FILTER a read of the
 /// whole genome — `for (j, h) in g.iter().enumerate()` inside
 /// `for offset in 0..g.len()`, the whole carrier per candidate, unbounded by
 /// any Budget. The chart is the coordinate and the atlas is keyed by it.
 ///
 /// A narrower read passes the probes' own fixtures silently, which is why
-/// this asserts the read against the WALK rather than against a probe
-/// succeeding. `Stratum::fiber` descends to the node at an exact path and
+/// this asserts the read against the WHOLE READ rather than against a probe
+/// succeeding. `Stratum::fiber` reaches the node at an exact path and
 /// answers the members standing THERE; `fiber_under` collects the subtree.
 /// Two words of one conjugacy class at different hues sit at different
 /// depths under the same versor chart — `connection_chart` is
@@ -205,9 +205,9 @@ fn bid_bundle_rewrite_retires_inputs_and_credits_syntropy() {
 /// the exact read answers the empty fibre for both, and measured, it did:
 /// the conjugate-pair fixture found no pair at all.
 #[test]
-fn the_conjugacy_fibre_answers_every_sibling_the_genome_walk_would_have_found() {
+fn the_conjugacy_fibre_answers_every_sibling_the_whole_genome_read_would_have_found() {
     use crate::transducer::stalk::invariant_of;
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("test_fibre_covers_walk"));
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("test_fibre_covers_whole_read"));
 
     // Two words of one conjugacy class, and a third of another, so a read
     // that answered everything would pass this as readily as one that
@@ -226,9 +226,9 @@ fn the_conjugacy_fibre_answers_every_sibling_the_genome_walk_would_have_found() 
     let ck1 = w1.class_key().expect("class");
     assert_ne!(ck1, other.class_key().expect("class"), "the third is another class");
 
-    // THE WALK: every genome word whose class key matches, which is what the
-    // inner loop did.
-    let by_walk: Vec<Vec<u8>> = entity
+    // THE WHOLE READ: every genome word whose class key matches, which is
+    // what the inner loop did.
+    let by_whole_read: Vec<Vec<u8>> = entity
         .epigenome
         .genome_words()
         .filter(|h| {
@@ -238,7 +238,7 @@ fn the_conjugacy_fibre_answers_every_sibling_the_genome_walk_would_have_found() 
         })
         .map(|h| h.address().into_vec())
         .collect();
-    assert!(by_walk.len() >= 2, "the walk finds both conjugates: {}", by_walk.len());
+    assert!(by_whole_read.len() >= 2, "the whole read finds both conjugates: {}", by_whole_read.len());
 
     // THE COORDINATE: the subtree under the versor chart, confirmed by the
     // exact class key exactly as the probe confirms it.
@@ -258,18 +258,18 @@ fn the_conjugacy_fibre_answers_every_sibling_the_genome_walk_would_have_found() 
         })
         .collect();
 
-    for a in &by_walk {
+    for a in &by_whole_read {
         assert!(
             by_coordinate.contains(a),
-            "the fibre answers {:02x}{:02x}… which the walk found",
+            "the fibre answers {:02x}{:02x}… which the whole read found",
             a[0],
             a[1]
         );
     }
     assert_eq!(
         by_coordinate.len(),
-        by_walk.len(),
-        "and answers nothing the walk did not"
+        by_whole_read.len(),
+        "and answers nothing the whole read did not"
     );
 
     // AND THE EXACT READ DOES NOT, which is the defect this replaced: the

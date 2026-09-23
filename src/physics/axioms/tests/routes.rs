@@ -183,7 +183,7 @@ fn t2_converse_fails_on_a_relator() {
 }
 
 /// C1 (a, b) — ONE REFERENCE GIVES EVERY PAIR, AND INDEPENDENCE IS EACH
-/// READING TRIVIAL: `H(r₁, r₂) = H₂⁻¹ H₁` with no pairwise walk.
+/// READING TRIVIAL: `H(r₁, r₂) = H₂⁻¹ H₁` with no pairwise read.
 #[test]
 fn c1_one_reference_gives_every_pair() {
     let [g1, g2, g3, g4, g5] = steps();

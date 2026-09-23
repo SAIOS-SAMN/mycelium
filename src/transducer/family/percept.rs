@@ -739,8 +739,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // identically. `0 orbits` everywhere, and with no cycle there is no
     // held obstruction, so `pivot_orbit` had nothing to discharge:
     // `pivoted [0,0,0,0]` on all five voices at epoch 94, `stood` and
-    // `closed` likewise, and `court basis 0` on all three courts. Descent
-    // worked because descent asks whether the genome already holds a word
+    // `closed` likewise, and `court basis 0` on all three courts. The residual
+    // probe worked because it asks whether the genome already holds a word
     // that reproduces the demand, which needs no cycle; everything above
     // grade 0 consumes H₁ and H₁ was empty.
     //

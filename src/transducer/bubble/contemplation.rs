@@ -33,9 +33,10 @@ pub(crate) fn live_bytes() -> Option<i128> {
 /// The complex over bubbles. by_chart is the incidence trie that makes
 /// every connection a read.
 ///
-/// X3: THE BUBBLES ARE THE OBJECT, and every walk of them below reads them
-/// with `scoped`. A contemplation IS the set of thoughts one mind holds at
-/// once — there is no coarser coordinate above it to descend from, and a
+/// X3: THE BUBBLES ARE THE OBJECT, and every iteration of them below reads
+/// them with `scoped`. A contemplation IS the set of thoughts one mind holds
+/// at once — there is no coarser coordinate above it whose prefix reaches
+/// it, and a
 /// bubble left out of a cohesion, a component count or a shed is a thought
 /// the mind holds and does not account for. The carriers INSIDE a bubble —
 /// its cover, its remainders, its nerve's sections — are scoped by the
@@ -100,7 +101,7 @@ pub struct Contemplation {
     /// MEASURED, on the 60-task slice: 21 of 51 held bubbles cite, 21 of 21
     /// pins are live, 0 are dead. A dead-pin sweep would retire none of
     /// them. What retires them is the CITED address lapsing, and that is a
-    /// keyed read here rather than a walk of every bubble asking each what
+    /// keyed read here rather than a read of every bubble asking each what
     /// it cites (rule 1, rule 17).
     pub(crate) cited: Keyed<Keyed<()>>,
     /// Bubble address → its ordinal in this contemplation. The shape
@@ -114,7 +115,7 @@ pub struct Contemplation {
     pub complex: Complex,
     /// Bubbles whose cover still has work; written when dirty is set.
     pub(crate) dirty: Keyed<()>,
-    /// The ring's resume cursor: `None` is a walk that has not started,
+    /// The ring's resume cursor: `None` is a circuit that has not started,
     /// which is an absence and not an empty key (rule 11, X3).
     pub(crate) expand_cursor: Option<Vec<u8>>,
     /// The dirty ring's circuits (45.7, S13.3): the circuits `expand_all`
@@ -147,7 +148,7 @@ pub struct Contemplation {
     /// the bubbles standing there. A vortex is decided by a ruled word
     /// whose rotor is conjugate to the orbit's holonomy, and a word knows
     /// its own conjugacy class and nothing finer, so that class IS the
-    /// coordinate this index is keyed by: a keyed read, never a walk of
+    /// coordinate this index is keyed by: a keyed read, never a read of
     /// every bubble asking each (rule 1).
     ///
     /// Written where a bubble's incidence is admitted and wherever a pivot
@@ -363,7 +364,7 @@ impl Contemplation {
     }
 
     /// THE CAVITY ENTRIES A CHART CAN RE-HOLD, read at that chart. The same
-    /// descent `pivot_on` makes, exposed so the keying can be asserted
+    /// prefix read `pivot_on` makes, exposed so the keying can be asserted
     /// without the drive: a cavity keyed by the bubble alone answers nothing
     /// here, which is why the drain had to copy the whole carrier instead.
     ///
@@ -648,7 +649,7 @@ impl Contemplation {
     /// caller supplies — the chart names its bubbles (`by_chart`), and each
     /// bubble's form names the vertices it holds on that chart
     /// (`Form.by_class`, 18.2). Nothing is materialised ahead of the
-    /// question, no vertex list is walked, and no second carrier of held
+    /// question, no vertex list is read whole, and no second carrier of held
     /// words exists beside this contemplation.
     pub fn held_at(&self, inv: &Invariant) -> Vec<&Vertex> {
         let chart = inv.key();
@@ -920,7 +921,7 @@ impl Contemplation {
     /// CAUTERIZE (25.2): an idea whose form is closed — every orbit the
     /// identity, filed torsion or an opened axis, every remainder empty —
     /// crystallizes. The tape carries its torsion, certificates and axes,
-    /// M2 fixes the address, and its magnitude is the descent it measures
+    /// M2 fixes the address, and its magnitude is the trajectory it measures
     /// over the bundle it germinated from (26), through the crystal that
     /// resolves what it cites; a form with no bundle carries what it glued.
     /// The bubble leaves the contemplation unless a live idea glued it

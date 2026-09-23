@@ -1,7 +1,7 @@
 // A13, A21 — THE TRIE: the radix nodes under a keyed relation, and the
 // three moves over them — insert, remove, and the meet of two.
 //
-//! Descent is by the first bit at which two keys differ, so a key is its
+//! A branch is at the first bit at which two keys differ, so a key is its
 //! own path: nothing is searched and nothing is hashed.
 use super::relation::Keyed;
 
@@ -223,12 +223,12 @@ pub(crate) fn collapse<V>(slot: &mut Option<Box<Node<V>>>) {
 /// at which `key` differs from the leaf its path reaches).
 pub(crate) fn insert_at<V>(slot: &mut Option<Box<Node<V>>>, key: std::sync::Arc<[u8]>, value: V, d: usize) {
     let key_ends = Node::<V>::bits(&key) == Some(d);
-    let descend = match slot.as_deref() {
+    let follow = match slot.as_deref() {
         Some(Node::Branch { bit, .. }) if *bit < d => Some(key_bit(&key, *bit)),
         Some(Node::Branch { bit, .. }) if *bit == d && !key_ends => Some(key_bit(&key, *bit)),
         _ => None,
     };
-    if let Some(b) = descend {
+    if let Some(b) = follow {
         if let Some(Node::Branch { children, .. }) = slot.as_deref_mut() {
             insert_at(&mut children[b], key, value, d);
         }
@@ -256,7 +256,7 @@ pub(crate) fn insert_at<V>(slot: &mut Option<Box<Node<V>>>, key: std::sync::Arc<
     let old_ends = match old.as_deref() {
         Some(Node::Leaf(k, _)) if Node::<V>::bits(k) == Some(d) => true,
         Some(Node::Branch { bit, end, .. }) if *bit == d && end.is_some() => {
-            // old already splits at d; should have descended. Fall through.
+            // old already splits at d; should have followed it. Fall through.
             false
         }
         _ => false,

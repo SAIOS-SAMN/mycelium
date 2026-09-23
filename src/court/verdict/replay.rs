@@ -16,13 +16,13 @@ use super::*;
 /// its two vertices by M1, or is the chord of an orbit whose holonomy it
 /// carries and whose class is filed on torsion; every orbit of the
 /// recomputed spanning forest is projectively identity or filed finite
-/// torsion. Descent is checked by the caller on the element.
+/// torsion. The trajectory is checked by the caller on the element.
 pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Option<&'static str> {
     replay_form_with(spoken, resolve, None, &crate::transducer::family::NoCrystal)
 }
 
 /// Chapter 23.1 with the bound family, so rebase/unfold/orbit execute on
-/// the trains when the kernel has them (step 6). Descent is measured
+/// the trains when the kernel has them (step 6). The trajectory is measured
 /// through `crystal` (the court's genome). `NoCrystal` is only for a tape
 /// with no Glued vertex. The reason alone; `replay_form_at` carries the
 /// coordinate.
@@ -36,7 +36,7 @@ pub fn replay_form_with(
 }
 
 /// 50.2 step 2 at the court. Each cited `(form, vertex)` is TWO keyed
-/// reads and no walk (law 3): the cover resolves the form by address, and
+/// reads and no whole-carrier read (law 3): the cover resolves the form by address, and
 /// the form's own `by_address` resolves the vertex inside it. `Composes`
 /// passes; `Differs` refuses at that vertex; `Unresolved` is the cited
 /// form the court has not ruled, which takes `REFUSE_GLUED_UNRULED` on
@@ -392,7 +392,7 @@ pub fn replay_form_on(
     // THE CITATIONS ARE THE NERVE'S 1-SIMPLICES, READ FROM THE ENVELOPE
     // (54.5 Road (d), B4 — and this is the reader B5 turns on).
     //
-    // It walked `f.vertices` for `Vertex::Glued { address }`. The host form
+    // It read `f.vertices` for `Vertex::Glued { address }`. The host form
     // says "I have an open boundary that mates under φ"; WHICH form that
     // boundary was instantiated against is the cover's fact, not the
     // chart's, and B5 evicts the target address from `form_vertex_key`
@@ -475,15 +475,15 @@ pub fn replay_form_on(
         }
     }
     // ORBITS ARE DERIVED, AND SINCE 54.5 THE TAPE DOES NOT CARRY THEM, so
-    // there is no taped forest to compare a walked one against. The decoder
-    // runs `orbits_of` on the faces it just parsed, and this re-walk is the
-    // same call on the same faces: `f.orbits` and `walked.orbits` are one
+    // there is no taped forest to compare a traversed one against. The decoder
+    // runs `orbits_of` on the faces it just parsed, and this re-read is the
+    // same call on the same faces: `f.orbits` and `traversed.orbits` are one
     // set. What remains is what was always the real reading — whether the
     // rank is MEASURABLE at all, which an orbit whose holonomy is not a
     // versor makes it not (15.3).
-    let mut walked = f.clone();
-    walked.orbits = Form::orbits_of(&f.faces, &f.vertices);
-    let by_chord = chord_orbits(&walked);
+    let mut traversed = f.clone();
+    traversed.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    let by_chord = chord_orbits(&traversed);
     // Chapter 23.1 step 4: a face equals face_of(i, j), or it is the
     // Kruskal chord of an orbit whose holonomy is what the chord carries
     // (tree faces of that orbit are face_of). Filing of that class is
@@ -500,7 +500,7 @@ pub fn replay_form_on(
         if face_rederives(f, face) {
             continue;
         }
-        if !torsion_chord_carries(&walked, &by_chord, i) {
+        if !torsion_chord_carries(&traversed, &by_chord, i) {
             return Some(face_at(f, face, spoken));
         }
     }
@@ -510,18 +510,18 @@ pub fn replay_form_on(
     // the reading names it there; the orbit reading over that same edge
     // would answer second-hand, as an unfiled class.
     if let Some(fam) = family {
-        if let Some(refusal) = edges_rederive_frames(&walked, fam) {
+        if let Some(refusal) = edges_rederive_frames(&traversed, fam) {
             return Some(refusal);
         }
     }
     // THE SPOKEN WORD'S OWN ATTESTATION, checked against the forest the
-    // court just walked (54.5).
-    if !form_orbits_replay(&walked) {
+    // court just traversed (54.5).
+    if !form_orbits_replay(&traversed) {
         // CV1 — the orbit's whole transport, read by the one reader (78.9):
         // no versor is P, a versor the dialect does not spell is D, one it
         // spells whose closure still refused is C.
-        let composite = walked.incoherent_orbit().and_then(|lp| {
-            let carried = crate::transducer::sentence::walk::paths_carried(&walked.faces, &walked.vertices, lp)?;
+        let composite = traversed.incoherent_orbit().and_then(|lp| {
+            let carried = crate::transducer::sentence::circuit::paths_carried(&traversed.faces, &traversed.vertices, lp)?;
             carried.scoped().find_map(|(_, c)| c.composite())
         });
         return Some(Refusal::closure(
@@ -531,17 +531,17 @@ pub fn replay_form_on(
         ));
     }
     // AND THE SPEAKER'S CLAIM, CHECKED AGAINST THE GEOMETRY THE COURT JUST
-    // WALKED (54.5). The terrain is priced above; this is the labour, and
+    // TRAVERSED (54.5). The terrain is priced above; this is the labour, and
     // the two are never one reading.
-    if let Some(why) = receipts_price_the_terrain(&walked, spoken.filing()) {
+    if let Some(why) = receipts_price_the_terrain(&traversed, spoken.filing()) {
         return Some(tape(why));
     }
-    let Some(derived) = walked.rank() else {
+    let Some(derived) = traversed.rank() else {
         return Some(tape(REFUSE_RANK_LOST));
     };
     // S9.2'S COMPARISON IS GONE WITH THE CARRIER IT COMPARED (54.5). It
     // read `Rank::moved(taped_rank, derived) != Equal` and refused a tape
-    // whose stored orbits carried a different rank from the walked forest —
+    // whose stored orbits carried a different rank from the traversed forest —
     // in either direction, which was the right shape for the question.
     //
     // The question no longer exists. The tape carries no orbits, so the
@@ -553,15 +553,15 @@ pub fn replay_form_on(
     if let Some(fam) = family {
         // `Form.glued` is keyed by the cited address and `reindex` builds it,
         // so "does this form cite anything" is a read of that index and not a
-        // walk of every vertex asking each whether it is a citation.
-        let glued = !walked.glued.is_empty();
+        // read of every vertex asking each whether it is a citation.
+        let glued = !traversed.glued.is_empty();
         let deflation_crystal: &dyn crate::transducer::family::Crystal = if glued {
             crystal
         } else {
             &crate::transducer::family::NoCrystal
         };
         let (pay, rems) =
-            crate::transducer::family::form_deflation(&walked, fam, deflation_crystal);
+            crate::transducer::family::form_deflation(&traversed, fam, deflation_crystal);
         // S9.4 — CLOSURE IS THE CERTIFICATE. A remainder on any pair means
         // the form does not close the family it claims, and that is the
         // refusal. The μ⃗ it measured is NOT: a form that closes every pair
@@ -572,7 +572,7 @@ pub fn replay_form_on(
         // not closed — and only an undeclared remainder refuses, at the
         // chart of the links it read (50.9).
         let _ = pay;
-        let undeclared = undeclared_remainder(&rems, &walked);
+        let undeclared = undeclared_remainder(&rems, &traversed);
         if !undeclared.is_empty() {
             // ρ_rem — HOW MUCH OF THE FAMILY THE FORM MISSED (§8.1, the
             // reading before the fix).
@@ -651,7 +651,7 @@ pub fn replay_form_on(
             });
         }
     }
-    replay_certificates(&walked, &spoken.receipts().certificates, &by_chord).map(tape)
+    replay_certificates(&traversed, &spoken.receipts().certificates, &by_chord).map(tape)
 }
 
 /// `REFUSE_FACE` at the face's two vertex addresses (50.9); a face reaching
@@ -693,7 +693,7 @@ pub(crate) fn vertex_tape_and_moves(
             Vertex::Word { address, derivation, contact, .. } => {
                 // EVERY MEMBER'S CARRIAGE must give a conformal versor, or
                 // the tape carries a placement nothing can be spoken at.
-                // One member today; the walk is the vertex's own fibre.
+                // One member today; the traversal is the vertex's own fibre.
                 let Some(acts) = v.acts() else {
                     return Some(tape(REFUSE_VERTEX_TAPE));
                 };
@@ -813,7 +813,7 @@ pub(crate) fn torsion_chord_carries(f: &Form, by_chord: &Keyed<u16>, face_idx: u
 pub(crate) fn form_orbits_replay(f: &Form) -> bool {
     // ONE READER FOR ONE QUESTION (law 12, 54.5 as ruled 2026-09-20).
     //
-    // This walked the orbits itself and asked `orbit_reading_replays` of each
+    // This read the orbits itself and asked `orbit_reading_replays` of each
     // holonomy, which is the question `Form::coheres` already answers — two
     // readers of one fact, and they disagreed. `coheres` was corrected at
     // 54.2 to admit monodromy through `orbit_is_congruent`; this was not,
@@ -900,7 +900,7 @@ pub(crate) fn face_idx_key(i: u16) -> Vec<u8> {
     i.to_le_bytes().to_vec()
 }
 
-/// A20: each certificate is the un-pivot of one chord face, re-walked.
+/// A20: each certificate is the un-pivot of one chord face, re-read.
 /// The orbit's class key and rank before and after must match the tape.
 pub(crate) fn replay_certificates(
     f: &Form,
@@ -914,7 +914,7 @@ pub(crate) fn replay_certificates(
     // form and `from_address` cannot rebuild it — the same argument that
     // moved the filing at `df1eeaa`, one carrier later.
     //
-    // Every certificate the envelope carries is re-walked or the word is
+    // Every certificate the envelope carries is re-read or the word is
     // refused; there is no subset of them that would do.
     for cert in certificates {
         let face = cert.by.face();
@@ -922,15 +922,15 @@ pub(crate) fn replay_certificates(
             return Some(REFUSE_PIVOT_INEXACT);
         };
         let mut pre = f.clone();
-        // A move with no inverse cannot be un-pivoted: the certificate does
-        // not re-walk, and it is refused rather than read against a form the
+        // A move with no inverse cannot be un-pivoted: the certificate is
+        // not re-read, and it is refused rather than read against a form the
         // skip left unrestored (VS1's ruling, item 6).
         if !pre.unapply_move(&cert.by) {
             return Some(REFUSE_PIVOT_INEXACT);
         }
         pre.orbits = Form::orbits_of(&pre.faces, &pre.vertices);
         // An opened axis (I6) is seeded by the orbit's own holonomy versor
-        // (16.20): the court re-derives the seed from the orbit it re-walked
+        // (16.20): the court re-derives the seed from the orbit it re-read
         // and refuses a certificate whose seed is anything else (law 12).
         if let crate::transducer::sentence::PivotBy::OpenAxis { seed, .. } = &cert.by {
             let rederived = pre
@@ -960,7 +960,7 @@ pub(crate) fn replay_certificates(
             return Some(REFUSE_PIVOT_INEXACT);
         };
         // S9.1 — THE COURT RE-DERIVES THE MOVE. The certificate claims what
-        // the pivot did to the rank; the court walks the form before and
+        // the pivot did to the rank; the court traverses the form before and
         // after for itself and computes the same move. The two absolute
         // audits it used to compare against are the court's own here, so
         // carrying them on the tape only invited a second comparison.
@@ -971,8 +971,8 @@ pub(crate) fn replay_certificates(
     None
 }
 
-/// Every torsion cycle the word speaks is walked from its base assignment.
-/// A period is believed only as a witnessed closed orbit; an open walk names
+/// Every torsion cycle the word speaks is run round from its base assignment.
+/// A period is believed only as a witnessed closed orbit; an open circuit names
 /// the anholonomity the label was filing over, and a closure at another
 /// period is a winding the word misspoke. Replay was Δ = 0 on the chain;
 /// this is ∮ dX = 0 on the fibre.

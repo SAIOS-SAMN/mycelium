@@ -40,7 +40,7 @@ pub enum Demand {
     /// This is Cartan torsion, `Θ = Dθ`, carried as a vertex. Around a
     /// cycle the transport composes to `g = T(τ)·R` with
     /// `τ ∈ ker(I − R)` — the plane the rotor leaves pointwise fixed — so
-    /// `g^ℓ = T(ℓτ)` and the circuit NEVER RETURNS. It walks. There is no
+    /// `g^ℓ = T(ℓτ)` and the circuit NEVER RETURNS. It slips. There is no
     /// period at which it closes, and `cech::classify` refuses it the
     /// fixed-point gate for exactly that reason.
     ///

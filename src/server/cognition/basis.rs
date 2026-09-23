@@ -344,7 +344,7 @@ impl Kernel {
     /// This called `sheaf::digests`, which materialises every stratum with
     /// every member and sorts each one — on EVERY ruling. Admitting the Nth
     /// word cost O(N log N) and admitting N words cost O(N² log N), on the
-    /// one path the whole engine exists to reach. It is a walk of an
+    /// one path the whole engine exists to reach. It is a read of an
     /// append-only carrier driven by that carrier's own growth.
     ///
     /// The root is a reading of the cover, and a reading is taken when it

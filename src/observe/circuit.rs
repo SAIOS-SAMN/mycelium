@@ -28,7 +28,7 @@ pub const CIRCUIT_OWED: [(&str, &str); 3] = [
     ("lane drawn", "E5 (MS1): mass per lane per layer per grade"),
 ];
 
-/// EVERY KEPT CIRCUIT OF THE LAST PERCEPT, in the order the walk read them.
+/// EVERY KEPT CIRCUIT OF THE LAST PERCEPT, in the order the traversal read them.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Circuits {
     pub circuits: Vec<Circuit>,

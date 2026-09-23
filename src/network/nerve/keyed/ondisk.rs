@@ -1,4 +1,4 @@
-// Z11 — THE TRIE PERSISTED: written out as the trie it is, and descended
+// Z11 — THE TRIE PERSISTED: written out as the trie it is, and followed
 // on disk by the key's own bits, exactly as in memory.
 //
 //! A WORD IS REACHED BY ITS ADDRESS AND BY NO POSITION (25 as ruled
@@ -14,9 +14,9 @@
 //! key's own bits; the offsets in a branch are the structure's EDGES, not
 //! names of objects. Nothing outside this file ever forms one, no carrier
 //! stores one, and a caller holds an address and gets bytes — the same
-//! contract `Keyed::get` has, with the same descent.
+//! contract `Keyed::get` has, following the same prefix.
 //!
-//! THE DESCENT IS `Node::get`'s, LINE FOR LINE. A second walk that agreed
+//! THE PREFIX READ IS `Node::get`'s, LINE FOR LINE. A second walk that agreed
 //! with the first "in principle" would be two readers of one fact (law
 //! 12); this one reuses `key_bit` and the same three decisions — a leaf
 //! compares its key, a branch whose bit equals the key's length answers
@@ -113,7 +113,7 @@ fn bits(key: &[u8]) -> Option<usize> {
     key.len().checked_mul(8)
 }
 
-/// DESCEND THE FILE BY THE KEY'S OWN BITS. The three decisions are
+/// FOLLOW THE FILE BY THE KEY'S OWN BITS. The three decisions are
 /// `Node::get`'s, in its order.
 pub fn get<'a>(file: &'a [u8], key: &[u8]) -> Option<&'a [u8]> {
     if file.get(..4)? != MAGIC {
@@ -121,8 +121,8 @@ pub fn get<'a>(file: &'a [u8], key: &[u8]) -> Option<&'a [u8]> {
     }
     let mut at = take_u32(file, 4)?;
     // A malformed file must not spin: every step moves to a node written
-    // BEFORE this one (children first), so a descent that does not fall
-    // strictly is a cycle and refuses (rule 10 — the loop walks its own
+    // BEFORE this one (children first), so a read whose offsets do not fall
+    // strictly is a cycle and refuses (rule 10 — the loop reads its own
     // boundary).
     let mut last = u32::MAX;
     loop {

@@ -284,7 +284,7 @@ pub fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<Link>> {
 /// laminae — a tilt, a shrink — speaks nothing, law 11), and every image
 /// lamina is one keyed read of the target: a hit with the same transition
 /// is spoken, an image lamina the target lacks is over-explanation. The
-/// scene is never walked. The
+/// scene is never read whole. The
 /// residual is R = Q △ S: the target links no citation speaks, plus the
 /// over-explained links. An empty residual is closure; a citation naming
 /// nothing held speaks nothing.
@@ -579,7 +579,7 @@ impl SharedCell {
 /// `d`'s share of `t` stay constant, so ordering by those invariants and
 /// then by `t` puts the two ends of every adjacency along `d` next to each
 /// other, and the test is `t + 1`. Exact and integer, with no extent and no
-/// distance test against every lamina — the directions are walked, the
+/// distance test against every lamina — the directions are read in turn, the
 /// sites are ordered, and nothing is searched.
 ///
 /// Two sites of different `n` share no cell: a cell is of one base. EVERY

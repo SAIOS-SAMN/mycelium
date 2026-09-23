@@ -184,7 +184,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             rule.ratio,
         );
         for (i, (x, y)) in task.train.iter().enumerate() {
-            // The pair as the descent sees it: the delta where the pair
+            // The pair as the trajectory sees it: the delta where the pair
             // refines, and `refine_delta` answering None where it does
             // not — reported as the engine's own reading and not
             // re-derived here.
@@ -412,7 +412,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         }
 
         // WHAT PRODUCTION DOES WITH THE SAME FORM. `speak_form` takes the
-        // descent, branches on demand vertices, and where a demandless
+        // trajectory, branches on demand vertices, and where a demandless
         // form leaves a remainder on any pair it calls `withhold_form` —
         // which is `as_element_form(f, mag)` and `stand_dialect_withheld`,
         // with `mag` being `form_deflation`'s pay and `sentence_measure`

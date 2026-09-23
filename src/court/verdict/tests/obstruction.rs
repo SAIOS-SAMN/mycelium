@@ -62,7 +62,7 @@ fn the_codes_that_are_not_a_closures_carry_their_ruled_arm() {
 }
 
 /// THE MINT'S AND THE POSE'S ARMS (78.9): a class in `H¹` and a coboundary
-/// residue are C; acyclic and no descent are N; mirrored, incongruent,
+/// residue are C; acyclic and no trajectory are N; mirrored, incongruent,
 /// isotropic and irrational poses are P on the refraction, oblique D,
 /// bodiless I, and an unoriented pair — a held stabilizer — no refusal.
 #[test]
@@ -72,7 +72,7 @@ fn the_mint_and_the_pose_arms_carry_their_kind() {
     assert_eq!(Withheld::OrbitObstruction { orbit_ix: 0, key: [0, 0] }.obstruction_kind(), ObstructionKind::C);
     assert_eq!(Withheld::CoboundaryResidue { links: 1, pairs: 1 }.obstruction_kind(), ObstructionKind::C);
     assert_eq!(Withheld::Acyclic { links: 0, pairs: 0 }.obstruction_kind(), ObstructionKind::N);
-    assert_eq!(Withheld::NoDescent.obstruction_kind(), ObstructionKind::N);
+    assert_eq!(Withheld::NoTrajectory.obstruction_kind(), ObstructionKind::N);
     for p in [NoPose::Mirrored, NoPose::Incongruent, NoPose::Isotropy, NoPose::Irrational] {
         assert_eq!(p.obstruction_kind(), Some(ObstructionKind::P), "{p:?}");
     }

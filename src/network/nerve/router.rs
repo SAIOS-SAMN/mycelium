@@ -37,7 +37,7 @@ impl Router {
     }
 
     /// The contact XOR-closest to `key` — O(bits), never O(N). A chart
-    /// Address walks the same trie as a verifying key; bits past the key
+    /// Address follows the same trie as a verifying key; bits past the key
     /// are 0, never a digest of the key.
     pub fn closest(&self, key: &[u8]) -> Option<(Vec<u8>, String)> {
         self.near(key, 0, &[])
@@ -45,7 +45,7 @@ impl Router {
 
     /// The contact XOR-closest to `key` among those not excluded — the next
     /// hop on the nerve when the closest is the speaker itself or the one
-    /// it heard from. Deterministic: the same key walks the same path from
+    /// it heard from. Deterministic: the same key follows the same path from
     /// every node.
     pub fn closest_excluding(&self, key: &[u8], exclude: &[[u8; 32]]) -> Option<(Vec<u8>, String)> {
         self.near(key, 0, exclude)

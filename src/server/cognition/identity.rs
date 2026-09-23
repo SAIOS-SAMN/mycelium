@@ -1,5 +1,5 @@
 // 21, 31 — the mind AS A CRYSTAL: what a family extraction may ask this
-// kernel for, and the descent a rule measures against what it holds.
+// kernel for, and the trajectory a rule measures against what it holds.
 //
 //! `Crystal` is the interface `family::extract_rule_with` speaks to. Every
 //! answer here is a read of the ruled cover; a miss is zero, because
@@ -93,19 +93,19 @@ impl crate::transducer::family::Crystal for Kernel {
 }
 
 impl Kernel {
-    /// Descent a rule measures by speaking every train pair, its cited
+    /// What a rule measures by speaking every train pair, its cited
     /// forms resolved through this kernel's ruled cover. Any miss is zero:
     /// association with a listing is not a mint.
-    pub(crate) fn measured_replay_descent(&self, form: &Element, family: &crate::transducer::family::Family) -> [u64; 4] {
-        self.measured_replay_descent_at(
+    pub(crate) fn measured_replay(&self, form: &Element, family: &crate::transducer::family::Family) -> [u64; 4] {
+        self.measured_replay_at(
             form,
             family,
             &crate::transducer::alphabet::Word::identity(),
         )
     }
 
-    /// The same descent at the placement a citer put the form at (26).
-    pub(crate) fn measured_replay_descent_at(
+    /// The same measure at the placement a citer put the form at (26).
+    pub(crate) fn measured_replay_at(
         &self,
         form: &Element,
         family: &crate::transducer::family::Family,

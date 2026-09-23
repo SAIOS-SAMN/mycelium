@@ -65,7 +65,7 @@ impl<T> Keyed<Keyed<T>> {
     pub fn link(&self, key: &[u8]) -> Link<'_, T> {
         Link {
             fiber: match self.get(key) {
-                // The inner trie AT a key: `get` is the descent, so what it
+                // The inner trie AT a key: `get` follows the key, so what it
                 // returns is already one stratum's fiber.
                 Some(inner) => inner.scoped(),
                 None => Fiber::empty(),

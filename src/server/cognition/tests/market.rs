@@ -1,5 +1,5 @@
 // 26 — THE MARKET: the five-act conversation, the docket and its room, the
-// door's strain, the probe, and the descent that opens a face.
+// door's strain, the probe, and the residual that opens a face.
 
 use super::common::*;
 use crate::cognition::*;
@@ -221,14 +221,14 @@ assert!(
 );
 }
 
-/// THE CONVERSATION: a listing is probed with a cited sentence. Graded
-/// descent settles the reduction and the residual replaces the listing
+/// THE CONVERSATION: a listing is probed with a cited sentence. A graded
+/// residual settles the reduction and the residual replaces the listing
 /// under its frame; closure clears it and advances the lineage; a
 /// sentence that names nothing settles nothing. The replay is linear in
 /// the proof and the hypha runs no search.
 #[test]
-fn a_probe_settles_descent_then_closure_without_search() {
-use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_DESCENT, PROBE_NOTHING};
+fn a_probe_settles_a_residual_then_closure_without_search() {
+use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_RESIDUAL, PROBE_NOTHING};
 use crate::transducer::sentence::replay_at;
 let mut k = Kernel::new();
 // A coboundary listed on an empty language: a chain listing under a
@@ -267,24 +267,24 @@ assert_eq!(
     "the replay reproduces the residual"
 );
 let (code, paid, remaining) = k.settle_probe([3; 32], &target, void.clone(), &[], false);
-assert_eq!(code, PROBE_DESCENT);
-assert_eq!(paid, [0; 4], "a descent is measured, never paid: covering links opens no axis");
+assert_eq!(code, PROBE_RESIDUAL);
+assert_eq!(paid, [0; 4], "a residual is measured, never paid: covering links opens no axis");
 assert_eq!(remaining, crate::transducer::element::measure_lanes(&void));
 let listing = k.quote().1[0].0.clone();
-assert_eq!(listing.address(), target, "the listing stays the body: a descent never re-lists a fragment");
+assert_eq!(listing.address(), target, "the listing stays the body: a residual never re-lists a fragment");
 assert_eq!(
     k.tension.get(&target).copied(),
     Some(crate::transducer::element::measure_lanes(&void)),
     "the body's remaining tension is the residual's measure, keyed by the listing"
 );
-// No descent settles nothing; closure clears the book.
+// A probe that moves nothing settles nothing; closure clears the book.
 let t2 = listing.address();
 assert_eq!(k.settle_probe([3; 32], &t2, listing.sub().to_vec(), &[], false).0, PROBE_NOTHING);
 assert_eq!(k.settle_probe([3; 32], &t2, Vec::new(), &[], false).0, PROBE_CLOSED);
 assert!(k.quote().1.is_empty(), "the listing cleared");
 }
 
-/// Descent records a remainder FACE, stagnation counts only unmoved
+/// A residual records a remainder FACE, stagnation counts only unmoved
 /// occupied lanes, and a full aperture of failed probes sheds the listing
 /// as a cavity.
 ///
@@ -297,11 +297,11 @@ assert!(k.quote().1.is_empty(), "the listing cleared");
 /// word claiming more than the chain supports, so the court would slash
 /// its own listing on the next circuit and every listing a voice made
 /// progress on would be destroyed by the court's own write. The assertion
-/// here is that property: after a descent the listing still re-derives
+/// here is that property: after a residual the listing still re-derives
 /// from its chain.
 #[test]
-fn descent_opens_a_face_and_drain_sheds_the_unmoved() {
-use crate::anastome::dialogue::PROBE_DESCENT;
+fn a_residual_opens_a_face_and_drain_sheds_the_unmoved() {
+use crate::anastome::dialogue::PROBE_RESIDUAL;
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
@@ -315,20 +315,20 @@ let before = match k.tension.get(&target) {
     None => k.quote().1[0].0.magnitude(),
 };
 let after = crate::transducer::element::measure_lanes(&rem);
-assert_ne!(after, before, "the residual is a proper descent");
+assert_ne!(after, before, "the residual moves the listing's measure");
 let (code, _, remaining) = k.settle_probe([3; 32], &target, rem.clone(), &[], false);
-assert_eq!(code, PROBE_DESCENT);
+assert_eq!(code, PROBE_RESIDUAL);
 assert_eq!(remaining, after);
 let listing = k.quote().1[0].0.clone();
 assert_eq!(listing.address(), target, "the listing stays the body");
 // THE LISTING'S MEASURE STILL RE-DERIVES FROM ITS OWN CHAIN, which is
-// what the court checks on every circuit. A descent is recorded on the
+// what the court checks on every circuit. A residual is recorded on the
 // FIELD, read below as the remainder face and the remainder chart; it
 // does not rewrite the word.
 assert_eq!(
     listing.base_magnitude(),
     crate::transducer::element::measure_lanes(&listed),
-    "a descent leaves the listing's measure a function of its chain"
+    "a residual leaves the listing's measure a function of its chain"
 );
 assert_eq!(
     crate::court::verdict::blind_replay(&listing),

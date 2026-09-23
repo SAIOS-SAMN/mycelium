@@ -67,8 +67,8 @@ pub enum Withheld {
     /// `δ¹`, and the two must not answer to one name.
     Acyclic { links: usize, pairs: usize },
     /// The cocycle closes and nothing is left over — the form simply
-    /// measured no descent to speak.
-    NoDescent,
+    /// measured no trajectory to speak.
+    NoTrajectory,
 }
 
 impl Withheld {
@@ -89,12 +89,12 @@ impl Withheld {
 
     /// CV1 — THE KIND OF WHAT THE MINT WITHHELD (78.9): a class in `H¹` and
     /// a coboundary residue are cover-relative, C; an acyclic form and one
-    /// with no descent asked no question, N.
+    /// with no trajectory asked no question, N.
     pub fn obstruction_kind(&self) -> crate::transducer::sentence::ObstructionKind {
         use crate::transducer::sentence::ObstructionKind;
         match self {
             Withheld::OrbitObstruction { .. } | Withheld::CoboundaryResidue { .. } => ObstructionKind::C,
-            Withheld::Acyclic { .. } | Withheld::NoDescent => ObstructionKind::N,
+            Withheld::Acyclic { .. } | Withheld::NoTrajectory => ObstructionKind::N,
         }
     }
 
@@ -105,7 +105,7 @@ impl Withheld {
             Withheld::OrbitObstruction { .. } => "H1-OBSTRUCTION",
             Withheld::CoboundaryResidue { .. } => "COBOUNDARY",
             Withheld::Acyclic { .. } => "ACYCLIC-UNASKABLE",
-            Withheld::NoDescent => "NO-DESCENT",
+            Withheld::NoTrajectory => "NO-TRAJECTORY",
         }
     }
 }
@@ -126,7 +126,7 @@ pub fn withheld_of(
     let links: usize = remainders.iter().map(|r| r.len()).sum::<usize>() + form.remainder.len();
     let pairs = remainders.iter().filter(|r| !r.is_empty()).count();
     if links == 0 {
-        return Withheld::NoDescent;
+        return Withheld::NoTrajectory;
     }
     // THE ASKABILITY GATE. `held` being `None` means "no orbit carries a
     // non-trivial holonomy" — which is a PROOF when there are orbits to
@@ -298,7 +298,7 @@ pub fn declare_unspoken(
     // demand the extraction already emitted names is declared, and naming
     // it again under `Source` would be one fact said twice. Sorted and
     // deduplicated by that reader, so membership is a search and not a
-    // walk of the form.
+    // read of the whole form.
     let undeclared = crate::court::verdict::body::undeclared_remainder(remainders, form);
     if undeclared.is_empty() {
         return None;

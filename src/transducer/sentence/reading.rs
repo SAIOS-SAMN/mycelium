@@ -30,7 +30,7 @@ use crate::transducer::stalk::{self, Stalks};
 /// `Epigenome::expressed_index`, `Language::index` — were pure functions of
 /// the words they indexed, rebuilt from nothing by `reindex()` and costing
 /// 11.5 MB on a voice eleven minutes into a soak. The address IS the
-/// coordinate (law 2) and the trie descends to the word directly, so the
+/// coordinate (law 2) and the trie reaches the word by its prefix directly, so the
 /// round trip and all three carriers are gone.
 pub struct Reading<'r, W, F, S, H> {
     pub word_at: &'r W,
@@ -212,7 +212,7 @@ where
     let Some(v) = to_word.versor_inverse() else { return unlocated(m) };
     let agreeing = gauge_of(word, &v, piece);
     // The gauges agreeing on THIS piece under this transport: the reading
-    // is whether there is exactly one, so the walk takes two and stops.
+    // is whether there is exactly one, so the read takes two and stops.
     let mut asgs = agreeing.scoped();
     if let Some((_, &asg)) = asgs.next() {
         if asgs.next().is_none() {

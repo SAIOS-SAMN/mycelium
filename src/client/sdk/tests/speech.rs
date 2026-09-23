@@ -35,12 +35,12 @@ fn a_withheld_remainder_is_never_a_word() {
 }
 
 /// 24.3, law 3: A MIND LOOKS IN ONE STRATUM, not through everything it has
-/// ever said. `already_taught` walked the whole of `taught_up` running an
+/// ever said. `already_taught` read the whole of `taught_up` running an
 /// exact `same_vertex` against every word this mind had ever uttered, on
 /// every sentence of every speak — law 3's "no loop over pairs the carrier
 /// does not already name", and its own answer, "the carrier is missing a
 /// key and that key is the first thing to write". On a mesh whose voices
-/// all produce language, that walk grew with the mesh's whole output.
+/// all produce language, that read grew with the mesh's whole output.
 ///
 /// The key must be NECESSARY, or the mind would speak a word twice: two
 /// words that are one vertex must land in one stratum. That is what this

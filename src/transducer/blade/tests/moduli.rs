@@ -133,7 +133,7 @@ fn the_coset_is_ordered_geodesic_first_and_holds_every_carrying_member() {
 /// STRATUM. Two rectangles of different proportions have the same
 /// base, Betti numbers and turns and different moment ratios: their charts
 /// differ, share the coarsest axes, and the atlas read at that depth holds
-/// both — the stratum a peel walks out to. The shared stratum is the
+/// both — the stratum a peel reaches. The shared stratum is the
 /// base's `n`, its `n` Betti numbers and the turns (BQ4), and it is read by
 /// peel, never by the whole chart.
 #[test]
@@ -179,7 +179,7 @@ fn a_chart_prefix_is_the_topological_stratum() {
     while at.0.len() > depth {
         at = at.peel();
     }
-    assert_eq!(at.0, a[..depth], "peel walks out to the topological stratum");
+    assert_eq!(at.0, a[..depth], "peel reaches the topological stratum");
     assert_eq!(atlas.fiber_under(&at).len(), 2, "and the stratum's fibre is read under that prefix");
 }
 

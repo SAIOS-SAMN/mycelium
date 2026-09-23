@@ -1,11 +1,11 @@
-// Z11 — the trie persisted, descended on disk by the key's own bits.
+// Z11 — the trie persisted, followed on disk by the key's own bits.
 
 use crate::network::nerve::keyed::ondisk;
 use crate::network::nerve::Keyed;
 
 /// Keys with shared prefixes, keys that are prefixes of other keys (the
 /// `end` case a PATRICIA branch carries), and keys of differing length —
-/// the three shapes the in-memory descent has three decisions for.
+/// the three shapes the in-memory prefix read has three decisions for.
 fn sample() -> Keyed<Vec<u8>> {
     let mut k: Keyed<Vec<u8>> = Keyed::new();
     for (key, val) in [
@@ -22,16 +22,16 @@ fn sample() -> Keyed<Vec<u8>> {
     k
 }
 
-/// THE ON-DISK DESCENT ANSWERS WHAT THE IN-MEMORY ONE ANSWERS, at every
+/// THE ON-DISK PREFIX READ ANSWERS WHAT THE IN-MEMORY ONE ANSWERS, at every
 /// key the carrier holds and at keys it does not.
 ///
 /// This is the reading that lets the genome live on disk: a word is
 /// reached by its address and by no position (25 as ruled 2026-09-20), so
-/// the file has to be the trie and the descent has to be the same descent.
+/// the file has to be the trie and the prefix read has to be the same read.
 /// Two walks that agreed "in principle" would be two readers of one fact
 /// (law 12); the claim checked here is that they agree on every key.
 #[test]
-fn the_file_descends_to_what_the_carrier_holds() {
+fn the_file_reaches_what_the_carrier_holds() {
     let k = sample();
     let mut file = Vec::new();
     ondisk::write(&k, &mut file).expect("the trie writes out");
@@ -40,7 +40,7 @@ fn the_file_descends_to_what_the_carrier_holds() {
         assert_eq!(
             ondisk::get(&file, &key).map(<[u8]>::to_vec),
             Some(val.clone()),
-            "the file descends to {key:02x?} as the carrier does"
+            "the file reaches {key:02x?} as the carrier does"
         );
     }
     // Keys the carrier does not hold — including a proper prefix of one it
@@ -87,8 +87,8 @@ fn an_empty_carrier_writes_a_file_that_holds_nothing() {
 }
 
 /// A FILE THAT IS NOT ONE IS REFUSED, and a truncated one does not spin:
-/// every step of the descent moves to a node written before it, so a
-/// cycle cannot be walked (rule 10).
+/// every step of the read moves to a node written before it, so a
+/// cycle cannot be followed (rule 10).
 #[test]
 fn a_file_that_is_not_a_trie_is_refused() {
     assert_eq!(ondisk::get(b"", b"k"), None);

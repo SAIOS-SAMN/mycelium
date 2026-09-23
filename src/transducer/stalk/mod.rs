@@ -12,7 +12,7 @@ pub use chart::*;
 pub use stalks::*;
 pub(crate) use stratum::*;
 
-/// A READ OF AN ATLAS (24.1): the two walks a thought takes over whatever
+/// A READ OF AN ATLAS (24.1): the two reads a thought takes over whatever
 /// language a mind holds — the genome alone, or the working atlas of
 /// three strata. Both are keyed reads: the budgeted children of one chart
 /// and the members of one chart. Nothing is enumerated.
@@ -21,11 +21,11 @@ pub(crate) use stratum::*;
 ///
 /// `children(inv, after, budget, f)` stood beside it — a budgeted page of
 /// one stratum's siblings, resumed from a cursor — and its only caller was
-/// `Bubble::expand_with`, which used it to walk outward from an idea's own
+/// `Bubble::expand_with`, which used it to read outward from an idea's own
 /// chart and meet whatever it found. That is adjacency in a trie, not
 /// incidence in a sheaf: a Čech simplex is the overlap of two sections over
 /// ONE chart, and an idea's charts are already named by its own vertices.
-/// The expansion reads `members` at those coordinates now, so the walk, its
+/// The expansion reads `members` at those coordinates now, so the outward read, its
 /// budget pacing, its resume cursor and this method are all gone together.
 ///
 /// A reader that answers "what is held here" needs no cursor and no budget,

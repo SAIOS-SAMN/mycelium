@@ -20,9 +20,9 @@ use crate::transducer::alphabet::Word;
 use crate::transducer::element;
 
 impl Form {
-    /// Glue a closed form in as one vertex, and walk the orbits and the
+    /// Glue a closed form in as one vertex, and re-read the orbits and the
     /// index for it. The single-citation reader; a PASS of citations calls
-    /// [`Form::glue_append`] and walks once at the end (Z2 item 1).
+    /// [`Form::glue_append`] and re-reads once at the end (Z2 item 1).
     pub fn glue(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
         self.glue_under(s, s_addr, placement, magnitude, element::identity_versor())
     }
@@ -45,7 +45,7 @@ impl Form {
         Some(idx)
     }
 
-    /// THE CITATION APPENDED AND NOTHING WALKED (Z2 item 1): the `Glued`
+    /// THE CITATION APPENDED AND NOTHING RE-READ (Z2 item 1): the `Glued`
     /// vertex, its placement face, the glue index and the depth — every
     /// coordinate the citation itself writes — and neither `orbits_of` nor
     /// `reindex`.

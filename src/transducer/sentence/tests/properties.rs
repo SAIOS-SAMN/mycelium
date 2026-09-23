@@ -540,7 +540,7 @@ fn the_address_does_not_carry_the_filing() {
 /// `file_orbit` took its period as a PARAMETER and `drive.rs` passed
 /// `hw.order()` — the rotor's order alone. A quarter turn carried along a
 /// translation has the rotor order of one about a fixed point and closes at
-/// neither: the screw walks, generating a non-compact ℤ rather than a
+/// neither: the screw slips, generating a non-compact ℤ rather than a
 /// compact ℤ/4ℤ. Filed at four, a theorem stood on the orbit that the orbit
 /// does not satisfy, and `from_address` asserting `torsion == torsion`
 /// would have certified it.

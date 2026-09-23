@@ -35,7 +35,7 @@ pub(super) fn laminae_of(bodies: &[Body]) -> Vec<Lamina> {
 
 /// THE FIBERS OF A SIDE: chart key → the chart, and frame → the sections
 /// of that chart standing there (Y4, 24.4, 52.5 item 2). Keyed reads all
-/// the way down; nothing is walked to find a body.
+/// the way down; nothing is read whole to find a body.
 pub(super) fn fibers(bodies: &[Body]) -> Keyed<(Invariant, Keyed<Vec<Body>>)> {
     let mut out: Keyed<(Invariant, Keyed<Vec<Body>>)> = Keyed::new();
     for b in bodies {

@@ -5,7 +5,7 @@
 use super::*;
 
 impl Form {
-    /// The orbit closing on `chord`, by index. A walk of this form's own
+    /// The orbit closing on `chord`, by index. A read of this form's own
     /// orbits — its boundary, never a search over anything else.
     pub(crate) fn orbit_of_chord(&self, chord: u16) -> Option<usize> {
         for (i, lp) in self.orbits.iter().enumerate() {

@@ -18,7 +18,7 @@
 //! extraction's token is spent by the time a form reaches the wire, and
 //! nothing bounds what happens after. Every `spend -` on those three lines
 //! is a place rule 10 is not met — a loop that neither spends a Budget nor
-//! walks a boundary — and the instrument says so rather than inventing a
+//! reads a boundary — and the instrument says so rather than inventing a
 //! number to fill the column.
 //!
 //! THE `-` IN THE SECOND SLOT IS ITSELF A READING. Rule 17 (2026-09-19)

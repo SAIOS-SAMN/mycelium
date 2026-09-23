@@ -79,7 +79,7 @@ fn a_citation_set_is_not_an_arrival_order() {
 ///
 /// A citation stores its cited form's ADDRESS and not the form, so a cycle
 /// is finite data and every reader of it terminates: `depth_of` reads the
-/// stored `depth` field of each `Glued` vertex and never descends, and
+/// stored `depth` field of each `Glued` vertex and never recurses into the cited form, and
 /// `from_address` rebuilds a `Glued` vertex from the address bytes without
 /// resolving them.
 ///
@@ -298,7 +298,7 @@ fn a_citation_truncated_to_its_chart_names_two_forms() {
 /// `member_key(vertex, chart)`. A vertex acting on several charts is several
 /// nodes to the face builder and one node to the cycle basis, so a cycle of
 /// the vertex graph need not be a cycle of the member graph — and
-/// `paths_carried`, which walks members, reported "there is no lift" and
+/// `paths_carried`, which traverses members, reported "there is no lift" and
 /// "there is no holonomy" as the same empty answer.
 ///
 /// Built on the member complex the lift exists BY CONSTRUCTION: the arrival

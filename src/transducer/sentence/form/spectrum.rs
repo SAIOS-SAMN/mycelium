@@ -58,7 +58,7 @@ pub struct CyclePeriods {
     pub projective: Order,
 }
 
-/// A SLIP NOTHING ABSORBS: the Burgers vector of a circuit that walks.
+/// A SLIP NOTHING ABSORBS: the Burgers vector of a circuit that never closes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Dislocation {
     /// Where it stands.
@@ -126,7 +126,7 @@ impl Form {
     /// THE FORM'S SPECTRUM, derived and never stored (law 12).
     ///
     /// Nothing here consults a filing. Every note is a theorem of the
-    /// complex: `orbit_classes` walks the holonomy and classifies it
+    /// complex: `orbit_classes` reads the holonomy and classifies it
     /// through `cech::classify`'s fixed-point gate, `plane_periods` splits
     /// the rotor into its two commuting factors, and `fiber_holonomy`
     /// reads the vertical transitions. A `Form.torsion` entry records that
@@ -171,7 +171,7 @@ impl Form {
                     continue;
                 };
                 s.cycles.push(CyclePeriods { chord: lp.chord, planes, projective });
-                // THE SLIP, where the circuit walks. `screw_of` splits the
+                // THE SLIP, where the circuit never closes. `screw_of` splits the
                 // transport exactly over ℚ; a zero twist is a turn that
                 // returns and is not a dislocation.
                 if let Some(screw) =

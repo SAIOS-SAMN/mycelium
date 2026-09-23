@@ -109,12 +109,12 @@ assert_eq!(
     Outcome::Refused(crate::verdict::REFUSE_ROOM),
     "while the first listing is reachable the second draw is refused"
 );
-// One descent opens a face on the listing, then a full aperture of probes
+// One residual opens a face on the listing, then a full aperture of probes
 // that move nothing: the listing is unreachable.
 let rem = vec![(0, 1, 1u8, 0u8)];
 assert_eq!(
     k.settle_probe([3; 32], &target, rem, &[], false).0,
-    crate::anastome::dialogue::PROBE_DESCENT
+    crate::anastome::dialogue::PROBE_RESIDUAL
 );
 let mut listed_sorted = listed.clone();
 listed_sorted.sort_unstable();

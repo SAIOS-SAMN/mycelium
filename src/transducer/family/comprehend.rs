@@ -9,7 +9,7 @@
 //! step's bodies are read off the face it crosses — the form's side carrier
 //! of each contact face's body pair (BD2) — never derived from its member,
 //! whose support can fall into several bodies (checklist (m)). One keyed
-//! read per step, never a pair walk.
+//! read per step, never a pairwise read.
 //!
 //! MG1 — each nucleus is read against the base's mirrors that bracket its
 //! centre, and the form's mirrors — every distinct one bracketing any of its
@@ -94,10 +94,10 @@ pub(crate) fn read_enclosures(form: &Form) -> Vec<Option<CellEnclosure>> {
 /// COMPREHEND A FORM'S CELLS (CG1, MG1), under the stroke's budget.
 pub(crate) fn comprehend(
     form: &Form,
-    walked: &[crate::transducer::sentence::WalkedCircuit],
+    traversed: &[crate::transducer::sentence::TraversedCircuit],
     budget: &mut crate::physics::Budget,
 ) -> Comprehension {
-    let algebras = cell_algebras(form, walked, budget);
+    let algebras = cell_algebras(form, traversed, budget);
     let n = form.n;
     let mirrors: Vec<Vec<Vec<MirrorReading>>> = form
         .cells
@@ -218,10 +218,10 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
 /// cross a contact face, those whose whole transport reads and is not
 /// trivial, those unread (OR3); and the certified cells by grade, off the
 /// typed cells.
-pub(crate) fn progress(form: &Form, walked: &[crate::transducer::sentence::WalkedCircuit], cells: &Cells) -> Progress {
+pub(crate) fn progress(form: &Form, traversed: &[crate::transducer::sentence::TraversedCircuit], cells: &Cells) -> Progress {
     use crate::network::nerve::coord::BivectorKind;
     let mut p = Progress { percepts: 1, ..Progress::default() };
-    for w in walked {
+    for w in traversed {
         let contact =
             w.steps.iter().any(|&(f, _)| form.faces.get(usize::from(f)).is_some_and(|x| !x.interface.is_empty()));
         if !contact {
@@ -229,7 +229,7 @@ pub(crate) fn progress(form: &Form, walked: &[crate::transducer::sentence::Walke
         }
         p.contact_cycles += 1;
         if let Some(closure) = w.coset {
-            use crate::transducer::sentence::walk::CosetClosure;
+            use crate::transducer::sentence::circuit::CosetClosure;
             match closure {
                 CosetClosure::Closed => p.contact_cycles_coset[0] += 1,
                 CosetClosure::ClosedModuloHeld => p.contact_cycles_coset[1] += 1,
@@ -284,7 +284,7 @@ pub(crate) fn progress(form: &Form, walked: &[crate::transducer::sentence::Walke
 /// THE PERCEPT'S READERS AFTER ITS FORM, each held typed for the observer
 /// and none of it printed but the orbits' lines (RC2): each kept orbit
 /// (OR1), each certified cell as its orbit algebra off the circuits this
-/// percept walked (CG1, CO1), the circuits step by step (PL1), each held
+/// percept traversed (CG1, CO1), the circuits step by step (PL1), each held
 /// loop's faces bent per pair of planes per lane (VS1, VO1), and the
 /// percept's progress (PG1). SP1 — each reader's spend is the stroke's own
 /// count before and after it, never a clock (law 9); perception's spend and
@@ -306,8 +306,8 @@ pub(crate) fn read_and_hold(form: &Form, budget: &mut crate::physics::Budget, pe
     }
     spend.reads[1] = (at - budget.remaining()) as u64;
     let at = budget.remaining();
-    let walked = crate::transducer::sentence::walked_circuits(budget);
-    let cells = cells_reading(&comprehend(form, &walked, budget));
+    let traversed = crate::transducer::sentence::traversed_circuits(budget);
+    let cells = cells_reading(&comprehend(form, &traversed, budget));
     spend.reads[2] = (at - budget.remaining()) as u64;
     spend.unbounded[2] = cells_unbounded(&cells);
     let at = budget.remaining();
@@ -319,7 +319,7 @@ pub(crate) fn read_and_hold(form: &Form, budget: &mut crate::physics::Budget, pe
     let viscosity = crate::transducer::sentence::read_viscosity(form, budget);
     spend.reads[4] = (at - budget.remaining()) as u64;
     spend.unbounded[4] = viscosity.iter().map(|p| p.unread).sum();
-    let progress = progress(form, &walked, &cells);
+    let progress = progress(form, &traversed, &cells);
     hold(cells, crate::transducer::sentence::viscosity_reading(&viscosity), spend, progress);
 }
 
@@ -398,11 +398,11 @@ pub fn take_progress() -> Option<Progress> {
 
 /// EVERY CERTIFIED CELL OF `form`, READ AS ITS ORBIT ALGEBRA, under the
 /// stroke's budget, in the cells' own key order. The circuits are the ones
-/// the percept's own walk kept — `(faces crossed, composite)` — never walked
-/// again.
+/// the percept's own traversal kept — `(faces crossed, composite)` — never
+/// traversed again.
 pub(crate) fn cell_algebras(
     form: &Form,
-    walked: &[crate::transducer::sentence::WalkedCircuit],
+    traversed: &[crate::transducer::sentence::TraversedCircuit],
     budget: &mut crate::physics::Budget,
 ) -> Vec<CellAlgebra> {
     form.cells
@@ -425,7 +425,7 @@ pub(crate) fn cell_algebras(
             };
             let mut circuits: Vec<Option<Mv>> = Vec::new();
             let mut orders: Vec<Option<Vec<usize>>> = Vec::new();
-            for crate::transducer::sentence::WalkedCircuit { steps, composite, .. } in walked {
+            for crate::transducer::sentence::TraversedCircuit { steps, composite, .. } in traversed {
                 // CX1 — the circuit's order of the cell's bodies: each body
                 // as the circuit's crossings first reach it; `None` where the
                 // circuit does not reach every body of the cell.

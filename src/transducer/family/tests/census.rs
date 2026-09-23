@@ -228,7 +228,7 @@ fn the_corpus_spectrum() {
                 (true, true) => both_compact += 1,
                 (false, false) => neither += 1,
                 // THE READING THE lcm DESTROYS: one plane rings and the
-                // other walks. `order()` answers `Infinite` for this and
+                // other's orbit never closes. `order()` answers `Infinite` for this and
                 // the compact half is lost.
                 _ => one_plane_only += 1,
             }
@@ -511,7 +511,7 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
     let epi = crate::client::sdk::Epigenome::new();
     let mut physics = crate::physics::Physics::default();
     let (mut extracted, mut spoke) = (0usize, 0usize);
-    let (mut obstructed, mut coboundary, mut no_descent) = (0usize, 0usize, 0usize);
+    let (mut obstructed, mut coboundary, mut no_trajectory) = (0usize, 0usize, 0usize);
     let (mut orbits_total, mut acyclic) = (0usize, 0usize);
     let mut acyclic_residue = 0usize;
     let mut pairs_hist: [usize; 8] = [0; 8];
@@ -550,8 +550,8 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
                 acyclic_residue += 1;
                 pairs_hist[pairs.min(7)] += 1;
             }
-            Withheld::NoDescent => {
-                no_descent += 1;
+            Withheld::NoTrajectory => {
+                no_trajectory += 1;
                 spoke += 1;
             }
         }
@@ -559,7 +559,7 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
     eprintln!(
         "  withhold census over {} tasks: extracted {extracted} | H1-OBSTRUCTION {obstructed} \
          COBOUNDARY {coboundary} ACYCLIC-UNASKABLE {acyclic_residue} \
-         NO-DESCENT {no_descent} (spoke {spoke})",
+         NO-TRAJECTORY {no_trajectory} (spoke {spoke})",
         names.len()
     );
     eprintln!("  coboundary residue by train pairs failed: {pairs_hist:?}");

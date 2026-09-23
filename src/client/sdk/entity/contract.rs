@@ -119,7 +119,7 @@ impl Entity {
                 self.contracted.push(Pending { sentence, train: train.to_vec(), task: task.to_vec(), certificate });
             }
             None => eprintln!(
-                "  contracted {} withheld: no measured descent and no demand",
+                "  contracted {} withheld: no measured trajectory and no demand",
                 hx(after.as_bytes())
             ),
         }

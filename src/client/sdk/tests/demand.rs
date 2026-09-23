@@ -81,7 +81,7 @@ fn a_mind_speaks_the_element_it_lacks_and_never_a_count() {
 /// two different rotations never share one, and a basis read at the exact
 /// chart is empty or a single word: nothing to factor through, and the
 /// mind said `Admitted` to a word it held the generators of one axis away.
-/// The stratum walks out by `peel` to the first fibre that holds anything
+/// The stratum is coarsened by `peel` to the first fibre that holds anything
 /// and no further.
 #[test]
 fn the_factoring_basis_is_read_on_the_stratum_not_the_exact_chart() {

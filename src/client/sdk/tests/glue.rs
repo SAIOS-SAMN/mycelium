@@ -54,7 +54,7 @@ fn a_stood_form_is_found_at_the_chart_of_the_body_it_carries() {
 
 /// 21 step 3 END TO END on the live crystal: a mind that stood a closed
 /// form cites it when it extracts a rule over a family that form closes
-/// part of. The same claim `glued_form_replays_descent_through_the_court_genome`
+/// part of. The same claim `glued_form_replays_its_trajectory_through_the_court_genome`
 /// makes of a stub crystal whose `on_class` ignores the chart it is asked
 /// at — made here of the epigenome the fleet runs.
 #[test]

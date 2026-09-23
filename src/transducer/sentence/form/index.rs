@@ -19,7 +19,7 @@ impl Form {
         let mut by_unfolded: Keyed<u16, coord::Unfolded> = Keyed::new();
         let mut demands: Keyed<u16, coord::DemandVertex> = Keyed::new();
         // `glued` IS BUILT HERE TOO. `Form::glue` wrote it as it appended each
-        // vertex and the tape decoder rebuilt it in a walk of its own; now that
+        // vertex and the tape decoder rebuilt it in a pass of its own; now that
         // `depth_of` reads it, whoever builds it is the indexer and that is
         // this pass (law 12).
         let mut glued: Keyed<u16, coord::Site> = Keyed::new();

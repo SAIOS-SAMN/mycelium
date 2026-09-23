@@ -299,7 +299,7 @@ impl Form {
     /// — THE ROTOR'S ORDER ALONE. A quarter turn carried along a
     /// translation has the same rotor order as one about a fixed point and
     /// is not the same class: the screw does not return after four turns,
-    /// it WALKS, and it generates a non-compact ℤ rather than a compact
+    /// it SLIPS, and it generates a non-compact ℤ rather than a compact
     /// ℤ/4ℤ. Filed at four, a theorem stood on the orbit that the orbit does
     /// not satisfy.
     ///
@@ -384,12 +384,12 @@ impl Form {
         // THE GENERATOR FILED IS THE HUE MAP, read at the same member path
         // the word was read at. `FiledOrbit::sigma` says what it is in its
         // own line — "the hue-map generator: the permutation one step
-        // around the orbit" — and `torsion_witness::witness_cycle` walks it
+        // around the orbit" — and `torsion_witness::witness_cycle` runs round it
         // with `apply_hue_map` against a thought's hue assignment.
         //
         // This wrote `lp.vertices.windows(2)` into it: the orbit's VERTEX
         // PATH, truncated `u16` to `u8`, filed as a permutation of hues.
-        // Every witness of a cycle filed here walked vertex indices as
+        // Every witness of a cycle filed here ran round vertex indices as
         // recolourings, and a form of more than 255 vertices aliased them
         // first. `extract.rs` files `e.gauge` into the same field, which
         // is the reading; this site was the only one writing another

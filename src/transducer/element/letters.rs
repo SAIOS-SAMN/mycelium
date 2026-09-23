@@ -278,7 +278,7 @@ const BASE_AXES: [usize; 3] = [0, 1, 3];
 /// · R`, so its carriage is not a residue — it is WHERE the turn stands,
 /// and `p` is determined by `R` and the translation together. `Some(p)`
 /// when the carriage is exactly `T(p − R p)` for some rational `p`; `None`
-/// when it is not — a dilation, a walk, or a turn that leaves the base.
+/// when it is not — a dilation, a screw, or a turn that leaves the base.
 ///
 /// It stood unread, and that is why a turning body never filed a period.
 /// `classify` will only read a finite order off a FLAT carriage, and every
@@ -293,8 +293,8 @@ pub fn turn_base_point(
     carriage: &Versor,
 ) -> Option<[Q; 3]> {
     // ONE READER (law 12): the base point is the screw whose twist is zero.
-    // It answered `None` for a walk, and the walk's SLIP — the thing that
-    // makes it a walk — went with it.
+    // It answered `None` for a screw, and the screw's SLIP — the thing that
+    // makes it a screw — went with it.
     let s = screw_of(rotor, carriage)?;
     match s.twist.iter().all(num_traits::Zero::is_zero) {
         true => Some(s.centre),

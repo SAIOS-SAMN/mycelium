@@ -6,8 +6,8 @@
 //! demand; a contact word that does not orbit becomes a demand as a refused
 //! vertex does; a face that does not re-derive leaves the form; a malformed
 //! complex is not moved at all — the mind is quiescent on it. Every move
-//! re-walks the orbits and reindexes; nothing here trusts the tape's own orbit
-//! list, and every read is a walk of this form's own vertices and faces
+//! re-reads the orbits and reindexes; nothing here trusts the tape's own orbit
+//! list, and every read is a read of this form's own vertices and faces
 //! (rule 1).
 
 use super::*;
@@ -138,7 +138,7 @@ impl Form {
                         }
                     }
                 }
-                self.rewalk();
+                self.reread();
                 Some(Contracted::Moved)
             }
             (RefusalKind::EdgeHolonomy, At::Face(a, b)) => {
@@ -159,7 +159,7 @@ impl Form {
                 if !moved {
                     return None;
                 }
-                self.rewalk();
+                self.reread();
                 Some(Contracted::Moved)
             }
             // A DEMAND DECLARES SILENCE, NOT A FALSE PROJECTION (54.6).
@@ -203,7 +203,7 @@ impl Form {
                         self.vertices.push(Vertex::Demand { kind, chart: inv.clone(), bodies: links.clone() });
                     }
                 }
-                self.rewalk();
+                self.reread();
                 Some(Contracted::Moved)
             }
             // 50.9 move 5: the contact word the court's family does not
@@ -221,7 +221,7 @@ impl Form {
             (RefusalKind::RemainderWrong, _) => None,
             // 50.9 move 6: the face that does not re-derive from its
             // vertices leaves the form, and the two vertices stand without
-            // it; an orbit through it dissolves with the re-walk.
+            // it; an orbit through it dissolves with the re-read.
             (RefusalKind::FaceDerivation, At::Face(a, b)) => {
                 let i = self.word_index(a)?;
                 let j = self.word_index(b)?;
@@ -230,7 +230,7 @@ impl Form {
                 if self.faces.len() == before {
                     return None;
                 }
-                self.rewalk();
+                self.reread();
                 Some(Contracted::Moved)
             }
             (RefusalKind::MalformedComplex, _) => Some(Contracted::Quiescent),
@@ -239,7 +239,7 @@ impl Form {
     }
 
     /// Orbits and indices re-derived from the faces that remain.
-    fn rewalk(&mut self) {
+    fn reread(&mut self) {
         self.orbits = Form::orbits_of(&self.faces, &self.vertices);
         self.reindex();
     }

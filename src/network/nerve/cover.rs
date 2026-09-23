@@ -1,6 +1,6 @@
 // 16.11, 26 — THE COVER: the trie that homes a word by incidence.
 //
-//! Descent is by longest common prefix on the chart's lane, never by XOR
+//! Placement follows the longest common prefix on the chart's lane, never XOR
 //! distance: a word goes where its own coordinates say, and a node's room
 //! is its bond against its occupancy. `home` refuses when none dominates.
 
@@ -81,7 +81,7 @@ impl CoverNode {
     fn collect_into(&self, out: &mut Keyed<()>) {
         // Each carrier here is ALREADY one stratum's fiber: `here` is the set
         // of hyphae standing at this plane, `next` is this node's own
-        // children. The descent that scoped them is the axis path above.
+        // children. The prefix that scoped them is the axis path above.
         for (id, _) in self.here.scoped() {
             out.insert(id, ());
         }
@@ -97,7 +97,7 @@ impl CoverNode {
         out.scoped().map(|(k, _)| k).collect()
     }
 
-    /// Longest common prefix: descend while axes match. A miss after some
+    /// Longest common prefix: follow it while axes match. A miss after some
     /// match returns the fiber at that plane. A miss at the first axis is
     /// novel — empty. The empty chart (no axes) is the root fiber.
     fn lcp(&self, axes: &[ChartAxis], matched: bool) -> Vec<Vec<u8>> {
@@ -204,7 +204,7 @@ impl Cover {
 
     /// THE LANE MOVED. The root over it is not rehashed here.
     ///
-    /// `admit` and `retract` called this per chart, and each call walks the
+    /// `admit` and `retract` called this per chart, and each call reads the
     /// WHOLE lane trie — every hypha's charts on that lane. So
     /// `rebuild_own_cover`, which admits one chart at a time and runs every
     /// exchange cycle, rehashed the entire mesh cover once per chart it
@@ -476,11 +476,11 @@ pub fn home(
             consider(&mut best, *sid, saddr.to_string(), *sroom);
         }
     }
-    // A CHART NO COVER NAMES HAS NO COORDINATE TO DESCEND ON: that is what
+    // A CHART NO COVER NAMES HAS NO PREFIX TO FOLLOW: that is what
     // novel means, and it is why this reading is the nerve's room table
     // whole. The carrier is the mesh's peers -- bounded by how many hyphae
     // this node knows, not by the corpus or the book -- so its whole
-    // content is the candidate set and walking it is one stratum's reading.
+    // content is the candidate set and reading it whole is one stratum's reading.
     // The choice among them is still the room reading, never a scalar.
     for (id, room) in rooms.scoped() {
         if fits(room) {

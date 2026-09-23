@@ -1,13 +1,13 @@
 // 21 step 3, 13.6 — THE GLUE AT THE COURT: a form that cites a held form
-// replays its descent through the genome that holds the citation.
+// replays its trajectory through the genome that holds the citation.
 
 use super::common::*;
 use crate::cognition::*;
 use crate::transducer::element::Element;
 
-/// A glued form's descent is measured through the court genome as Crystal.
+/// A glued form's trajectory is measured through the court genome as Crystal.
 #[test]
-fn glued_form_replays_descent_through_the_court_genome() {
+fn glued_form_replays_its_trajectory_through_the_court_genome() {
 use crate::transducer::family::{
     apply_form, extract_rule_with, mint_sentence, cipher_form, Crystal, Grid, Speech,
 };
@@ -100,7 +100,7 @@ let codes = k.perceive_speech([1; 32], &task, std::slice::from_ref(&spoken));
 assert_eq!(
     codes,
     vec![crate::anastome::dialogue::SPEECH_STOOD],
-    "glued descent replays through the court genome, not NoCrystal"
+    "the glued trajectory replays through the court genome, not NoCrystal"
 );
 }
 
@@ -230,7 +230,7 @@ assert!(
 /// called once per stratum, per peer, per exchange cycle. A peer serving
 /// the fetch skips an address only when it stands in the fiber over that
 /// `inv` (`sheaf::serve`), so an address heard under another chart could
-/// never match — it filtered nothing and cost wire, allocation and a walk
+/// never match — it filtered nothing and cost wire, allocation and a read
 /// of a set that grows with peers × corpus.
 #[test]
 fn a_have_list_carries_this_charts_heard_addresses_and_not_every_chart() {

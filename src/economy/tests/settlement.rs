@@ -90,7 +90,7 @@ fn a_lane_move_is_read_per_lane() {
     assert_eq!(lanes_fallen(&traded), vec![1], "and so is the fall traded for it");
     assert_eq!(deflation_of(&traded), [0, 1, 0, 0], "a raised lane pays nothing");
 
-    // Nothing moved: four held lanes, which is not "no descent" and not zero.
+    // Nothing moved: four held lanes, which is not "no trajectory" and not zero.
     let still = lane_moves(&[1, 1, 0, 0], &[1, 1, 0, 0]);
     assert_eq!(still, [Held; 4], "the mind did not reduce");
     assert!(lanes_risen(&still).is_empty() && lanes_fallen(&still).is_empty());

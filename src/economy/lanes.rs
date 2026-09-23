@@ -12,7 +12,7 @@ use super::*;
 /// (shift/rotation/scale), 𝒢 = relabeled-hue count, 𝒯 = temporal extent,
 /// 𝒽 = holonomic volume. A settled demand's residual magnitude is the zero
 /// vector and a real germ's is nonzero; the reading between two
-/// measurements is `lane_moves`, per lane, never a descent (12.6).
+/// measurements is `lane_moves`, per lane, never a verdict (12.6).
 pub fn magnitude(g: &Element) -> [u64; 4] {
     g.magnitude()
 }

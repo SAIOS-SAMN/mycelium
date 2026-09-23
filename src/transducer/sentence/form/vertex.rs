@@ -6,8 +6,8 @@
 //!
 //! Split from `carrier.rs` at the §1.1 600-line reading bound; the items
 //! are moved, not rewritten (§1.6). The rebase chain in `word_in` is
-//! WALKED rather than recursed into — L20's loop was that recursion, and
-//! the walk is what made this file too long to read whole.
+//! TRAVERSED rather than recursed into — L20's loop was that recursion, and
+//! the traversal is what made this file too long to read whole.
 
 use super::*;
 
@@ -82,17 +82,17 @@ impl Vertex {
                 Some(Word::formed(derivation.rotor()))
             }
             Vertex::Glued { placement, .. } => Some(placement.clone()),
-            // THE CHAIN A REBASE MAKES, walked and never recursed into.
+            // THE CHAIN A REBASE MAKES, traversed and never recursed into.
             //
             // This recursed on `by` with nothing bounding it, and a `by`
-            // chain returning to a vertex already on the walk never ended —
+            // chain returning to a vertex already on the traversal never ended —
             // L20's loop, measured on `0607ce86.json`. `Form::rebase` no
             // longer WRITES such a chain (it evaluates the stabilizer
             // orbit instead), but a tape arriving from a peer can carry
             // one, and a court that does not come back is a court an
             // adversary stops (chapter 48).
             //
-            // THE WALK RECOGNISES ITS OWN BASEPOINT. A chain that returns
+            // THE TRAVERSAL RECOGNISES ITS OWN BASEPOINT. A chain that returns
             // to a vertex it has already visited has closed: the loop is
             // absorbed, `rebase(v, 1) ≡ v`, and what the vertex speaks is
             // the identity — not a refusal and not a recursion, the
@@ -134,7 +134,7 @@ impl Vertex {
             Vertex::Word { acts, .. } | Vertex::Rebased { acts, .. } if !acts.is_empty() => {
                 // THE CHARTS, ONCE EACH (54.7 R1). This asks which charts
                 // the vertex stands at — a question about the BASE — and it
-                // walked the fibre, which since R1 holds one entry per
+                // read the fibre whole, which since R1 holds one entry per
                 // SECTION. A vertex with two carriages on one chart reported
                 // that chart twice, and `face_pairs` then read `(many,
                 // many)` where the incidence is `([one], many)` and answered
@@ -274,7 +274,7 @@ impl Vertex {
     ///
     /// ONE REPRESENTATIVE SUFFICES, and that is a theorem rather than a
     /// shortcut. Translations and dilations form a subgroup, so if τ₁₂ and
-    /// τ₁₃ are both rotor-free then τ₂₃ = τ₁₃ · τ₁₂⁻¹ is too. The walk is
+    /// τ₁₃ are both rotor-free then τ₂₃ = τ₁₃ · τ₁₂⁻¹ is too. The read is
     /// `O(n)` against the LEAST chart the vertex stands at — the trie's
     /// first, which is the chart keys sorted and so is content, the same
     /// choice `derivations_compose` makes for the chart it refuses at

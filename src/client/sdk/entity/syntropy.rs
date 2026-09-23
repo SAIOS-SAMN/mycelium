@@ -53,9 +53,9 @@ impl Entity {
         mut budget: crate::physics::Budget,
     ) -> Option<(Element, Vec<Address>, Option<Element>)> {
         // THE CIRCUIT AS COORDINATES (45.7): every genome word once from
-        // where this walk last stood, wrapping to close on it.
+        // where this circuit last stood, wrapping to close on it.
         let circuit = self.epigenome.genome_circuit_from(self.bundle_cursor.as_deref());
-        // Where this walk now stands: the circuit's opening coordinate, which
+        // Where this circuit now stands: the circuit's opening coordinate, which
         // is the trie's own successor to the last and is content, not a
         // member picked out of an arrival order.
         let [from, ..] = circuit.as_slice() else { return None };
@@ -109,7 +109,7 @@ impl Entity {
             let Some(ck2) = w2.class_key() else { continue };
 
             // THE SIBLINGS ARE READ AT A COORDINATE, not filtered out of the
-            // genome. This walked every word the mind holds and kept the ones
+            // genome. This read every word the mind holds and kept the ones
             // whose `class_key` matched — the whole carrier per candidate,
             // which is rule 1 and law 3, and unbounded by any Budget.
             //
@@ -119,7 +119,7 @@ impl Entity {
             // `[0, class_axes…, cycle lengths…]`, of which the versor chart
             // is a PREFIX.
             //
-            // `fiber_under`, NOT `fiber`. `Stratum::fiber` descends to the
+            // `fiber_under`, NOT `fiber`. `Stratum::fiber` reaches the
             // node at that exact path and answers the members standing
             // THERE; `fiber_under` collects the subtree below it. Two words
             // of one conjugacy class at different hues sit at different
@@ -186,7 +186,7 @@ impl Entity {
             return None;
         }
         let circuit = self.epigenome.genome_circuit_from(self.bundle_cursor.as_deref());
-        // Where this walk now stands: the circuit's opening coordinate, which
+        // Where this circuit now stands: the circuit's opening coordinate, which
         // is the trie's own successor to the last and is content, not a
         // member picked out of an arrival order.
         let [from, ..] = circuit.as_slice() else { return None };
@@ -202,12 +202,12 @@ impl Entity {
             }
             let inv1 = crate::transducer::stalk::invariant_of(h1);
 
-            // THE SIBLINGS OF A CHART ARE READ AT THAT CHART. This walked the
+            // THE SIBLINGS OF A CHART ARE READ AT THAT CHART. This read the
             // whole genome and kept the words whose `invariant_of` matched
             // the one already in hand — the chart was computed, then used as
             // a filter over everything instead of as the coordinate it is.
             // `Stalks::fiber` answers exactly that stratum in one keyed
-            // descent (rule 1, law 3).
+            // read by the prefix (rule 1, law 3).
             for addr in self.epigenome.atlas().fiber(&inv1) {
                 let Some(h2) = self.epigenome.word_at(&addr) else { continue };
                 if h2.sub().is_empty() || h1.address() == h2.address() {

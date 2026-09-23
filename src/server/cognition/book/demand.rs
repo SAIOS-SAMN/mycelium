@@ -39,9 +39,9 @@ impl Kernel {
     /// has, and one answered vertex is not a closed sentence. What retires
     /// it is the expansion (item 5).
     ///
-    /// A non-empty residual is `PROBE_DESCENT`: the demand's chart carries
+    /// A non-empty residual is `PROBE_RESIDUAL`: the demand's chart carries
     /// what the form did not reproduce, on the field, and NOTHING is
-    /// written to any magnitude. A descent that writes a link count into a
+    /// written to any magnitude. A residual that writes a link count into a
     /// word's lanes makes the court slash its own listing on the next
     /// circuit.
     pub(crate) fn settle_demand(
@@ -51,7 +51,7 @@ impl Kernel {
         demand: &[u8],
         cites: &[crate::anastome::dialogue::CiteWire],
     ) -> (u8, [u64; 4], [u64; 4]) {
-        use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_DESCENT, PROBE_NOTHING};
+        use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_RESIDUAL, PROBE_NOTHING};
         use crate::transducer::family::{apply_form, scene_at_of_chain};
         use crate::transducer::stalk::Closure;
         let Some((listed, _)) = self.pending.get(at) else {
@@ -178,6 +178,6 @@ impl Kernel {
         self.physics.relieve(&element::measure_lanes(&reached));
         self.book_gen += 1;
         self.append_step(crate::chronometry::ActKind::Settled, at, voice);
-        (PROBE_DESCENT, [0; 4], after)
+        (PROBE_RESIDUAL, [0; 4], after)
     }
 }

@@ -48,7 +48,7 @@ pub fn step_charge(omega: &element::Versor) -> Option<num_rational::BigRational>
     Some(&s * &s / &w - one)
 }
 
-/// File one STEP's charge, on every cycle the walk reaches.
+/// File one STEP's charge, on every cycle the circuit read reaches.
 pub(super) fn note_step_charge(mu: &num_rational::BigRational) {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     RESONANCE.with(|r| {
@@ -134,7 +134,7 @@ thread_local! {
     /// tree's return path cancelled exactly. Such a generator is in
     /// `ker(ρ)` outright — a real cycle of `π₁` carrying no geometry.
     ///
-    /// COUNTED BY A KEYED READ, never a pairwise walk (rule 3): the
+    /// COUNTED BY A KEYED READ, never a pairwise read (rule 3): the
     /// operator's own canonical bytes are its coordinate, so uniqueness is
     /// a trie insert and `|im(ρ)|` is the carrier's length.
     /// THE QUOTIENT TOWER, MEASURED AT EACH LEVEL (54.7, ruled
@@ -491,7 +491,7 @@ pub(crate) enum OrbitLine {
     Static(Box<OrbitReading>),
     /// 78.6(1) — through a held coset: how the coset closes, the held steps
     /// crossed and the candidates carried, none chosen.
-    Coset { closure: super::walk::CosetClosure, held: u32, candidates: usize },
+    Coset { closure: super::circuit::CosetClosure, held: u32, candidates: usize },
     /// The step, counted from one, and the refusal where one was named.
     Unread { at: Option<usize>, why: Option<Unread> },
 }
@@ -505,10 +505,10 @@ impl OrbitLine {
             OrbitLine::Coset { closure, held, candidates } => format!(
                 "orbit coset {} | {held} held steps, {candidates} candidates, no representative",
                 match closure {
-                    super::walk::CosetClosure::Closed => "closed",
-                    super::walk::CosetClosure::ClosedModuloHeld => "closed modulo the held ℤ₂ᵏ",
-                    super::walk::CosetClosure::Open => "open",
-                    super::walk::CosetClosure::Unbounded => "unbounded (the stroke spent forming its candidates)",
+                    super::circuit::CosetClosure::Closed => "closed",
+                    super::circuit::CosetClosure::ClosedModuloHeld => "closed modulo the held ℤ₂ᵏ",
+                    super::circuit::CosetClosure::Open => "open",
+                    super::circuit::CosetClosure::Unbounded => "unbounded (the stroke spent forming its candidates)",
                 }
             ),
             OrbitLine::Unread { at, why } => {
@@ -526,7 +526,7 @@ impl OrbitLine {
     }
 }
 
-/// ONE KEPT ORBIT AS THE WALK LEFT IT: its whole transport, or where and why
+/// ONE KEPT ORBIT AS THE CIRCUIT LEFT IT: its whole transport, or where and why
 /// its edge half was lost. Read into its line by the reader holding the
 /// stroke's budget (BD1).
 pub(super) struct OrbitNote {
@@ -536,11 +536,11 @@ pub(super) struct OrbitNote {
     /// 78.6 — the gauge half static; and the path through a held coset,
     /// whose candidates the reader holding the stroke forms (rule 10).
     pub(super) gauge_static: bool,
-    pub(super) coset: Option<super::walk::PathCarried>,
+    pub(super) coset: Option<super::circuit::PathCarried>,
 }
 
 thread_local! {
-    /// The orbits read since a reader armed the list, in the order the walk
+    /// The orbits read since a reader armed the list, in the order the circuit
     /// read them; `None` while no reader is listening. `orbits_of` runs at
     /// every decode and replay, so a list nobody takes would grow for the
     /// life of a court: it collects only between [`arm_orbits`] and
@@ -595,7 +595,7 @@ pub(crate) fn take_orbits(budget: &mut crate::physics::Budget) -> Vec<OrbitLine>
                     OrbitLine::Coset { closure: super::refracted::closure_of(&cands), held, candidates: cands.len() }
                 }
                 Some(Err(_)) => OrbitLine::Coset {
-                    closure: super::walk::CosetClosure::Unbounded,
+                    closure: super::circuit::CosetClosure::Unbounded,
                     held: path.refracted.as_ref().map_or(0, |r| r.held_steps()),
                     candidates: 0,
                 },

@@ -32,7 +32,7 @@ impl Form {
     /// torsion and is content (law 7, `curvature is content`).
     /// [`Form::orbit_is_congruent`] is that test, through
     /// [`crate::transducer::cech::classify`]'s fixed-point gate, so a
-    /// screw — which walks and never returns — is NOT admitted here: a
+    /// screw — which slips and never returns — is NOT admitted here: a
     /// non-compact free part is an obstruction the form has not resolved,
     /// and that is what a demand is for (52.3).
     ///
@@ -164,7 +164,7 @@ impl Form {
 
     /// The demand vertices of this sentence, with their indices (50.5),
     /// read off `demands`, which `reindex` built: one entry per (kind,
-    /// chart), a keyed read and never a walk with a filter.
+    /// chart), a keyed read and never a whole-carrier read with a filter.
     pub fn demand_vertices(&self) -> impl Iterator<Item = (u16, &crate::transducer::sentence::Demand, &stalk::Invariant, &[Link])> {
         self.demands.scoped().filter_map(move |(_, &i)| {
             match self.vertices.get(i as usize) {
@@ -178,7 +178,7 @@ impl Form {
 
     /// One more than the deepest glued vertex; zero where none is glued.
     ///
-    /// READS `glued`, WHICH `reindex` BUILT: the same walk with a filter, and
+    /// READS `glued`, WHICH `reindex` BUILT: the same whole-carrier read with a filter, and
     /// the index is keyed by the cited address, so a glued vertex reachable by
     /// the address it cites is reachable here.
     pub fn depth_of(&self) -> u16 {

@@ -1,7 +1,7 @@
 // 13, 14 — THE COBOUNDARY: which simplices are ready to close, what closes
 // them, and the class that remains when nothing does.
 //
-//! `coboundary_on_link` walks the link of a vertex and closes what its
+//! `coboundary_on_link` reads the link of a vertex and closes what its
 //! faces already determine; a simplex whose faces are not ready is left
 //! open rather than guessed at. `solve_gauge` is the tree walk of 12.2.
 
@@ -323,7 +323,7 @@ impl Complex {
     ///
     /// CAUTERIZATION PINS THE EDGE. An edge lying in the boundary of a
     /// simplex that has been READ — any coface of degree ≥ 1 whose fill is
-    /// not `Open` — cannot drain. Once an orbit is walked, classified and
+    /// not `Open` — cannot drain. Once an orbit is traversed, classified and
     /// cauterized into a class the form carries, that reading is historical:
     /// draining an edge beneath it would retroactively invalidate a class
     /// already recorded, and observation is a one-way phase transition from
@@ -331,7 +331,7 @@ impl Complex {
     /// re-opens the cycle; only an unsealed edge is eligible.
     ///
     /// The cofaces are read as a KEYED MEET of the two vertices' stars —
-    /// `star(a) ∩ star(b)` — and never as a walk of the higher degrees
+    /// `star(a) ∩ star(b)` — and never as a read of the higher degrees
     /// (rule 1).
     ///
     /// STRAIN CANNOT VANISH INTO THE VACUUM. Two outcomes and they are
@@ -454,7 +454,7 @@ impl Complex {
         };
         // PINNED FROM ABOVE? The cofaces of a 2-cell are the simplices
         // holding all three of its vertices — the meet of three stars, and
-        // never a walk of degree 3 (rule 1).
+        // never a read of degree 3 (rule 1).
         if let (Some(sa), Some(sb), Some(sc)) =
             (self.star.get(a), self.star.get(b), self.star.get(c))
         {

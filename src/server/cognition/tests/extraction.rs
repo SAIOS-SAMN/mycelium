@@ -40,7 +40,7 @@ for hue in [6u8, 7] {
     k.basis_insert(from_canonical(&germinate(&a, &bx).unwrap()), [9; 32]);
 }
 assert_eq!(k.basis_len(), 3, "the un-condensed family");
-// One versor per stroke: the cursor walks the stratum over strokes.
+// One versor per stroke: the cursor traverses the stratum over strokes.
 for _ in 0..3 {
     k.optimize();
 }

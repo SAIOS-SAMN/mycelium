@@ -94,7 +94,7 @@ fn a_chain_rehydrates_with_the_peer_receipts_its_line_cites() {
 /// ones it admitted alike — and one it does not hold is unmeasured. The
 /// admitted set was a keyed read and this chain's own receipts were the
 /// `receipts.iter().find(…)` behind it, so re-deriving the height of an
-/// own receipt walked the whole chain (rule 10): once per admission
+/// own receipt read the whole chain (rule 10): once per admission
 /// (47.2 step 4) and once per frontier visit.
 #[test]
 fn a_chains_own_receipts_are_found_by_hash_like_the_ones_it_admitted() {

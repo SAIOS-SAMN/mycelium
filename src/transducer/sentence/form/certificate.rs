@@ -89,7 +89,7 @@ pub enum Mu {
 /// two minds that discharge one orbit by one move produce one key.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PivotCertificate {
-    /// The orbit's index in the walk before the move.
+    /// The orbit's index in the orbit read before the move.
     pub chord: u16,
     pub axis: Axis,
     /// Class key of κ(ℓ) before, and after (zero vector when the orbit closed).
@@ -98,7 +98,7 @@ pub struct PivotCertificate {
     /// WHAT THE PIVOT DID TO THE RANK (S9.1): the move itself, not the two
     /// audits it was read from. The certificate makes a claim — the rank
     /// held, or one unit left this coordinate for `axes` — and the court
-    /// re-walks the form and re-derives the same move (A20). Two absolute
+    /// re-reads the form and re-derives the same move (A20). Two absolute
     /// ranks would have been data the court derives for itself anyway, and
     /// leaving them here invited a later reader to do its own comparison.
     pub rank_move: RankMove,

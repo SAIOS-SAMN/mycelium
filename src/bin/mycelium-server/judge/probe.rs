@@ -1,8 +1,8 @@
 // 23.8, 26 — ACT_PROBE: a tentative sentence against an open listing.
 //
-//! Replayed and settled on graded descent or on closure, never germinated:
+//! Replayed and settled on a graded residual or on closure, never germinated:
 //! a probe is a claim about a listing that already exists, so it either
-//! descends against it or it says nothing.
+//! measures a trajectory against it or it says nothing.
 
 use crate::door::Door;
 use crate::transport::answer;
@@ -17,7 +17,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
 
     let Some((pvoice, target, cites)) = dialogue::decode_probe(&frame.body) else { return };
     let (code, paid, remaining) = mycelium::synthesis::probe(kernel, pvoice, &target, &cites);
-    if matches!(code, dialogue::PROBE_CLOSED | dialogue::PROBE_DESCENT | dialogue::PROBE_SETTLED) {
+    if matches!(code, dialogue::PROBE_CLOSED | dialogue::PROBE_RESIDUAL | dialogue::PROBE_SETTLED) {
         if let Ok(mut k) = kernel.lock() {
             k.release_t_lease(pvoice);
         }

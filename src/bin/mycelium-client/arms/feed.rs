@@ -82,7 +82,7 @@ pub(crate) fn feed_arm(
         let gen = entity.epigenome.atlas_root();
         // Sized by the family, not by the box (L8w): a fixed spend unit is
         // three on this machine, and step 0 alone needs one per pair with
-        // the cover walk out of the same purse.
+        // the cover's read out of the same purse.
         let mut extract_budget = physics
             .stroke_n(mycelium::transducer::family::extraction_spend(&task.train));
         let extracted = mycelium::transducer::family::extract_rule_cached(

@@ -23,9 +23,9 @@ use mycelium::sdk::{Entity};
 /// is thought. Returns true when the sentence was uttered, so per-rule
 /// minting is skipped.
 /// Speak a rule as its crystallized form (chapter 30 step 4): the v2 tape
-/// carrying the descent the form measures over the bundle through the
+/// carrying the trajectory the form measures over the bundle through the
 /// voice's working atlas. A form with a held orbit, a remainder, or no
-/// measured descent is withheld and held as thought; the wire never sees
+/// measured trajectory is withheld and held as thought; the wire never sees
 /// a nerve.
 /// THE FAMILY ID AS THE JOURNAL PRINTS IT, and it is FOUR bytes, not two.
 ///
@@ -61,7 +61,7 @@ pub(crate) fn speak_form(
         } else if !form.remainder.is_empty() {
             format!("remainder {} links", form.remainder.len())
         } else {
-            "no measured descent".to_string()
+            "no measured trajectory".to_string()
         }
     };
     let (mut mag, remainders) =
@@ -212,7 +212,7 @@ fn speak_with_demands(
         // The mint refused it, so it is not a word — it is not stood in the
         // dialect, and it is held as the open work it is.
         entity.hold_form(form.clone(), train, remainders);
-        eprintln!("[{tag}] form withheld: family {fam} mint refused (descent, carry or demands)");
+        eprintln!("[{tag}] form withheld: family {fam} mint refused (trajectory, carry or demands)");
         return None;
     };
     let addr = word.address();

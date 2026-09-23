@@ -188,16 +188,16 @@ pub const ACT_OBSERVE: u8 = 0x39;
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)
-/// the hypha replays linearly. Yield settles on graded descent of the
-/// residual without germination; closure clears the listing.
+/// the hypha replays linearly. Yield settles on the graded trajectory of
+/// the residual without germination; closure clears the listing.
 /// Request: `[ACT_PROBE][voice 32][target 32][n u32][(addr 32)(g 17)(asg u32)]·n`.
 /// Reply: `[code][paid μ⃗ 4×u64][remaining μ⃗ 4×u64]`.
 pub const ACT_PROBE: u8 = 0x12;
 pub const PROBE_NOTHING: u8 = 0;
-pub const PROBE_DESCENT: u8 = 1;
+pub const PROBE_RESIDUAL: u8 = 1;
 pub const PROBE_CLOSED: u8 = 2;
 /// The listing is no longer on the book in the state it was quoted:
-/// another voice settled or descended it first.
+/// another voice settled or moved it first.
 pub const PROBE_SETTLED: u8 = 3;
 
 /// A PROVEN ROOT — a family a voice solved and a registry verified —

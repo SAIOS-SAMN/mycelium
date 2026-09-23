@@ -248,7 +248,7 @@ impl Epigenome {
     }
 
     /// THE NEXT WORD AFTER A COORDINATE, wrapping to the first — the
-    /// trie's own circuit, which is how a cursor walks a carrier whose size
+    /// trie's own circuit, which is how a cursor traverses a carrier whose size
     /// changes under it (45.7, X3). `None` from a genome that holds
     /// nothing; from `None` it starts at the first coordinate.
     /// Z12's reading, SPREAD ALONG THE TRIE and not along arrival. Three
@@ -279,10 +279,10 @@ impl Epigenome {
     }
 
     /// THE CIRCUIT FROM A COORDINATE: every genome address once, starting
-    /// after `at` and wrapping to close on it (45.7). This is what a walk
+    /// after `at` and wrapping to close on it (45.7). This is what a traversal
     /// `for offset in 0..len { (start + offset) % len }` was reaching for
     /// — with the difference that a circuit over coordinates does not
-    /// renumber itself when a word is admitted or retired mid-walk.
+    /// renumber itself when a word is admitted or retired mid-circuit.
     pub fn genome_circuit_from(&self, at: Option<&[u8]>) -> Vec<Vec<u8>> {
         let all: Vec<Vec<u8>> = self.genome.scoped().map(|(k, _)| k).collect();
         let Some(at) = at else { return all };
@@ -375,7 +375,7 @@ impl Epigenome {
         let Some(bucket) = self.by_moduli.get(chart.key().as_bytes()) else {
             return Vec::new();
         };
-        // `by_moduli.get(chart)` is the descent: the addresses on that
+        // `by_moduli.get(chart)` is the read by the key: the addresses on that
         // chart, which is what this function is asked for.
         bucket.scoped().map(|(a, ())| a).collect()
     }

@@ -429,7 +429,7 @@ impl Kernel {
         // every field of a `FiledOrbit` is derivable (`orbit_classes`
         // computes the class, the period through `cech::classify`, σ from
         // the transports), so law 12 keeps it out of the key, and after B4
-        // this walk returned empty for every word in the tree.
+        // this read returned empty for every word in the tree.
         //
         // What it should have asked all along is the complex. This is the
         // COURT deciding whether a class it holds at one period is being

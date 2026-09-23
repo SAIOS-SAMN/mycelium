@@ -84,14 +84,14 @@ pub const UNIT_BOND: [u64; 4] = [1, 1, 1, 1];
 #[derive(Debug, Clone)]
 pub struct Treasury {
     pub(crate) entries: Vec<Entry>,
-    /// THE SUPPLY, FOLDED AS IT IS WRITTEN. `supply()` walked the whole
+    /// THE SUPPLY, FOLDED AS IT IS WRITTEN. `supply()` read the whole
     /// journal on every call, and `audit()` calls it, and §6 requires the
     /// audit before every snapshot — so the cost of proving the ledger
     /// conserves grew with the ledger, on a carrier that grows for as long
     /// as the mesh runs (rule 10: a loop whose bound is neither a `Budget`
     /// nor one simplex's boundary is unbounded work in disguise).
     ///
-    /// `None` once a fold overflowed, exactly as the walk returned `None`
+    /// `None` once a fold overflowed, exactly as the whole read returned `None`
     /// from `checked_add`: a supply that does not add up is not a smaller
     /// supply, it is unmeasured (rule 11). `restore` folds the journal once
     /// at load, which is the one O(journal) pass the doctrine sanctions.
@@ -320,7 +320,7 @@ impl Treasury {
             }
         };
         // An overflow leaves the fold UNMEASURED and it stays unmeasured:
-        // the walk this replaces returned `None` from `checked_add` on the
+        // the whole read this replaces returned `None` from `checked_add` on the
         // same arithmetic (rule 11).
         *into = into.and_then(|mut t| {
             for (a, d) in t.iter_mut().zip(&e.mu) {

@@ -121,7 +121,7 @@ fn gcd(mut a: u32, mut b: u32) -> u32 {
 /// motion directly.
 ///
 /// The iteration is over [`cyclotomic_orders`] at the motion's own `n`, a
-/// set fixed by `φ(ℓ) ≤ n + 1` — a theorem about the algebra, not a walk
+/// set fixed by `φ(ℓ) ≤ n + 1` — a theorem about the algebra, not a read
 /// over a carrier (rule 3).
 ///
 /// `None` is an open orbit. A motion with any hyperbolic content cannot

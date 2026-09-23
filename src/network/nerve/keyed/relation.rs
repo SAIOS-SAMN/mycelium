@@ -4,7 +4,7 @@
 use super::*;
 
 /// XOR ROUTING TRIE — the topological structure the Kademlia metric induces.
-/// `closest(key)` descends the key's bits greedily (matching child when present,
+/// `closest(key)` follows the key's bits greedily (matching child when present,
 /// sibling otherwise): because XOR is dominated by the highest differing bit,
 /// agreeing with the key at the earliest bit minimizes XOR — so the greedy leaf
 /// IS the XOR-closest, in O(bits), INDEPENDENT of N and never a scan of the peer
@@ -467,12 +467,12 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// only to test each leaf against it —
     /// so a fiber read of one stratum cost the whole trie — every node of
     /// it, to yield the handful of keys under the prefix. That is rule 1's
-    /// whole-carrier walk arriving through the very reader the doctrine
+    /// whole-carrier read arriving through the very reader the doctrine
     /// says replaces it, and it is why the rest of X3 existed: the empty
     /// prefix was the only honest spelling, because a prefix bought nothing.
     ///
     /// A key is its own path (A13), so the keys carrying a prefix hang
-    /// under one node, and `subtree` descends to it in O(bits). The leaf
+    /// under one node, and `subtree` reaches it by the prefix in O(bits). The leaf
     /// filter stays: path compression leaves bits between branch points
     /// untested, so the subtree can hold keys that diverge from the prefix
     /// at one of them, and `key_in_fiber` is what decides. What changes is
@@ -489,7 +489,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// The fiber under `prefix`, or the reading of an EMPTY prefix, which
     /// is not a fiber: `None`. Sites that build a key from coordinates and
     /// cannot prove it non-empty at the type level ask here and refuse the
-    /// empty case themselves (rule 11), rather than walking everything.
+    /// empty case themselves (rule 11), rather than reading the whole carrier.
     pub fn fiber_at(&self, prefix: &[u8]) -> Option<Fiber<'_, V>> {
         Prefix::new(prefix).map(|p| self.fiber(p))
     }
@@ -498,10 +498,10 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// one vertex's star, one chart's incidence, one form's cited
     /// addresses. Calling this ASSERTS that scoping: the carrier was
     /// reached by a key already, so its whole content is one stratum's
-    /// reading and walking it is not rule 1's whole-carrier walk.
+    /// reading and reading it whole is not rule 1's whole-carrier read.
     ///
     /// It is the other half of [`Prefix`]: a site either has a coordinate
-    /// to descend on or is already at one, and which of the two it is
+    /// to follow or is already at one, and which of the two it is
     /// should be legible without reading the carrier's provenance. The
     /// empty prefix said neither.
     pub fn scoped(&self) -> Fiber<'_, V> {
@@ -512,13 +512,13 @@ impl<V, C: Coordinate> Keyed<V, C> {
         Fiber { stack, prefix: Vec::new() }
     }
 
-    /// The node every key carrying `prefix` hangs under, by descent on the
+    /// The node every key carrying `prefix` hangs under, by following the
     /// prefix's own bits. `None` where no key carries it — an empty fiber,
     /// which is the reading of absence and not an empty walk of the trie.
     ///
     /// The empty prefix is the root node: a carrier that is itself a fiber
     /// has its whole content under one node, and that is the one case where
-    /// walking everything is the reading (the rest of X3 names those sites).
+    /// reading the whole carrier is the reading (the rest of X3 names those sites).
     fn subtree(&self, prefix: &[u8]) -> Option<&Node<V>> {
         let mut node = self.root.as_deref()?;
         let want = Node::<V>::bits(prefix)?;
@@ -669,12 +669,12 @@ impl<V> Keyed<Keyed<V>> {
     }
 }
 
-/// A NON-EMPTY KEY PREFIX — the coordinate a fiber read descends on.
+/// A NON-EMPTY KEY PREFIX — the coordinate a fiber read follows.
 ///
 /// The empty slice is not a coordinate: it names the whole carrier, and
 /// the whole carrier is not a fiber unless the carrier is one already.
 /// Keeping the two apart in the TYPE is what makes rule 1 readable at a
-/// site: `fiber(Prefix)` descends to somewhere, `scoped()` says this
+/// site: `fiber(Prefix)` reaches somewhere by a prefix, `scoped()` says this
 /// carrier is somewhere.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Prefix<'a>(&'a [u8]);

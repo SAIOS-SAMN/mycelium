@@ -321,11 +321,11 @@ fn hold_form_carries_bundle_and_remainder() {
 
 /// 25.2 — CAUTERIZE. An idea whose form is closed on its bundle
 /// crystallizes on the stroke: the drive returns the minted sentence, its
-/// magnitude is the descent the form measures over the bundle (26, the
+/// magnitude is the trajectory the form measures over the bundle (26, the
 /// same word `mint_sentence` mints), the tape reads back closed, the court
 /// replays it against the bundle, and the idea leaves the contemplation.
 #[test]
-fn a_closed_idea_crystallizes_with_its_descent_and_leaves_the_contemplation() {
+fn a_closed_idea_crystallizes_with_its_trajectory_and_leaves_the_contemplation() {
     use crate::transducer::family::{extract_rule, mint_sentence, Grid, NoCrystal};
     let grid = |rows: &[&str]| -> Grid {
         rows.iter()
@@ -352,7 +352,7 @@ fn a_closed_idea_crystallizes_with_its_descent_and_leaves_the_contemplation() {
     };
     assert!(e.is_sentence(), "the crystallized idea is a sentence tape");
     assert_eq!(e.address(), minted.address(), "the crystallized idea is the minted word");
-    assert_eq!(e.magnitude(), minted.magnitude(), "its magnitude is the descent over the bundle");
+    assert_eq!(e.magnitude(), minted.magnitude(), "its magnitude is the trajectory over the bundle");
     assert!(
         crate::transducer::sentence::from_element_form(e).is_some_and(|f| f.is_closed()),
         "the tape reads back closed"
@@ -530,7 +530,7 @@ fn the_frame_key_orders_by_coordinate_and_not_by_byte() {
 /// lapses. The citer goes WITH it, on the same call and not by a later
 /// sweep that would hold a dead reference until it came round. And the
 /// lapse is TRANSITIVE along the fibration: a citer of a citer goes too, in
-/// one call, because the frontier is walked until it adds nothing.
+/// one call, because the frontier is traversed until it adds nothing.
 /// A form that stands on a chart and cites nothing.
 fn standing_form(hue: u8) -> crate::transducer::sentence::Form {
     use crate::transducer::sentence::{Demand, Form, Vertex};

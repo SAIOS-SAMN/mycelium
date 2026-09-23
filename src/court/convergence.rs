@@ -101,7 +101,7 @@ impl Convergence {
         // An object no voice has uttered has no parties on it: the reading
         // of absence on a keyed carrier (0.11c).
         match self.uses.get(object) {
-            // `get(object)` is the descent: what it returns is the voices
+            // `get(object)` is the read by the key: what it returns is the voices
             // on THAT object, and all of them are its parties.
             Some(v) => v
                 .scoped()

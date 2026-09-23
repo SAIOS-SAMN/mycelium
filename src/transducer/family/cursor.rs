@@ -7,11 +7,11 @@
 //!
 //! THERE IS NO CURSOR HERE. A `Stage` naming which pass is owed and the
 //! last key that pass finished would be an ITINERARY, an extrinsic index
-//! into a walk, which is the shape of a tape machine and not of a complex;
+//! into a traversal, which is the shape of a tape machine and not of a complex;
 //! every write in a cover is keyed, so redoing it writes the same entries
 //! at the same addresses, and a carrier that can be recomputed exactly
 //! carries no information — only the order a previous stroke happened to
-//! walk in.
+//! read in.
 //!
 //! WHAT IS OWED IS READ FROM THE STATE, not from a finger pointing at an
 //! index. An image piece whose sites are all in `reached` is carried; an
@@ -40,7 +40,7 @@ use std::cell::RefCell;
 
 /// A COVER PART-WAY THROUGH: what it has placed, what it has consumed,
 /// what it has reached. That is the whole of its state and it is
-/// coordinate-free — no index, no stage, no position in a walk. `occ` is
+/// coordinate-free — no index, no stage, no position in a traversal. `occ` is
 /// not kept either: it is a reading of `placed` and is re-derived, because
 /// law 12 keeps one fact on one carrier.
 pub(crate) struct Pending {

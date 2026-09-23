@@ -78,7 +78,7 @@ match entity.quote() {
         // so a T lane pinned at zero is a lane that is ALWAYS due. The
         // court's T-lane pacing reached the voice and was discarded.
         m.dwell_remaining = q.surface;
-        let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
+        let (mut n_closed, mut n_residual, mut n_nothing, mut n_settled, mut n_silent, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
         let (mut n_closing, mut n_ruled_hit, mut n_stood, mut n_held) = (0u32, 0u32, 0u32, 0u32);
         // ANSWERING A DEMAND SPEAKS A FORM, and speaking one perceives a
         // whole grid. Trying every held carrier of every demand of every
@@ -203,9 +203,9 @@ match entity.quote() {
                                     cited[1]
                                 );
                             }
-                            mycelium::anastome::dialogue::PROBE_DESCENT => {
+                            mycelium::anastome::dialogue::PROBE_RESIDUAL => {
                                 c.witnessed += 1;
-                                n_descent += 1;
+                                n_residual += 1;
                                 physics.bump(&mag);
                             }
                             mycelium::anastome::dialogue::PROBE_SETTLED => n_settled += 1,
@@ -234,7 +234,7 @@ match entity.quote() {
             mycelium::chronometry::Height::stamp_of(entity.now_tu()),
         );
         eprintln!(
-            "[{tag}] [{}] quote {} clusters: closed {n_closed} descent {n_descent} nothing {n_nothing} settled {n_settled} silent {n_silent} err {n_err}",
+            "[{tag}] [{}] quote {} clusters: closed {n_closed} residual {n_residual} nothing {n_nothing} settled {n_settled} silent {n_silent} err {n_err}",
             mycelium::chronometry::Height::stamp_of(entity.now_tu()),
             q.clusters.len(),
         );

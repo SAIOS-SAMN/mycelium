@@ -1,4 +1,4 @@
-// 50.3, 54.5 — THE ONE WALK of an orbit's member path: what it carries on the
+// 50.3, 54.5 — THE ONE CIRCUIT of an orbit's member path: what it carries on the
 // faces and on the edges, and every reader of it — the edge holonomies and
 // their classes, the face transport, coherence, and triviality.
 
@@ -33,14 +33,14 @@ fn touches_frame(vertices: &[Vertex], f: &FormFace) -> bool {
 
 
 /// WHAT ONE MEMBER PATH CARRIES: the face composite and the edge composite,
-/// read in ONE walk of the frontier.
+/// read in ONE traversal of the frontier.
 ///
-/// `orbit_transport_on` and `edge_holonomies_on` walked the same frontier
+/// `orbit_transport_on` and `edge_holonomies_on` traversed the same frontier
 /// twice — same `live`, same branch on `f.at`, same `step_charts`, same
 /// `extend`, same `closed_key` — accumulating different fields. This file
 /// already records that correction being made once, for `path_carriages`:
 /// "the same frontier, the same `step_charts`, the same `closed_key` — so
-/// one quantity had two carriers (law 12) and the walk that produces it ran
+/// one quantity had two carriers (law 12) and the traversal that produces it ran
 /// twice per orbit." It was never applied to this pair, which is the same
 /// two facts about the same structure.
 ///
@@ -150,7 +150,7 @@ pub(crate) enum Unread {
     /// A carriage on the light cone: `MM̃ = 0` and the inverse does not
     /// exist (57.4).
     Cone,
-    /// The face holds no member pair at the two members the walk names.
+    /// The face holds no member pair at the two members the circuit names.
     NoPlace,
     /// A face between two bodies that carries no edge, because no versor
     /// carries their union (50.3's `NotRigid`).
@@ -222,10 +222,10 @@ pub(super) enum Crossing {
 /// O1, 70.7 — A FACE IS CROSSED THE WAY ITS MEMBER PAIR RUNS, never the way
 /// its vertex pair does.
 ///
-/// The walk read `f.i == v_i && f.j == v_j`. On a face between two charts
+/// The circuit read `f.i == v_i && f.j == v_j`. On a face between two charts
 /// of ONE vertex both halves are true whichever way the cycle runs, so it
 /// read the pair key backwards half the time. That is the orientation
-/// `437d253` lost under the vertex projection, at the walk this time. H2c
+/// `437d253` lost under the vertex projection, at the circuit this time. H2c
 /// measured it: 18 of 18 `no place` refusals over the corpus were such
 /// faces, each holding the reversed key. The member pair names the
 /// orientation, so it is read: forward where the face holds
@@ -251,14 +251,14 @@ pub(super) fn crossing(f: &FormFace, from: (u16, &[u8]), to: (u16, &[u8])) -> Cr
     }
 }
 
-/// THE ONE WALK — and it is a WALK now, not a search (54.5, as ruled
+/// THE ONE CIRCUIT — and it is a TRAVERSAL now, not a search (54.5, as ruled
 /// 2026-09-20).
 ///
 /// This was a frontier: seed with every member of the first face, extend
 /// through each face's `at` by whichever members continued the path, keep
 /// whatever closed. That search existed because `Orbit` named its nodes by
 /// VERTEX INDEX and the member coordinates had been projected away, so the
-/// walker had to reconstruct what `orbits_of` already knew.
+/// traversal had to reconstruct what `orbits_of` already knew.
 ///
 /// It also could not always reconstruct it. Under the projection a 1-cell
 /// between two charts at one vertex, `((v,c_a),(v,c_b))`, becomes `(v,v)`
@@ -266,7 +266,7 @@ pub(super) fn crossing(f: &FormFace, from: (u16, &[u8]), to: (u16, &[u8])) -> Cr
 /// from closing, and `437d253` patched it by trying both directions.
 ///
 /// `Orbit.members` carries the cycle, so there is nothing to search for and
-/// nothing to guess: the walk steps the members it was given, reads each
+/// nothing to guess: the traversal steps the members it was given, reads each
 /// face at the pair those two members name, and composes. ONE path per
 /// orbit, always, because a cycle is one cycle.
 ///
@@ -291,7 +291,7 @@ pub(super) fn crossing(f: &FormFace, from: (u16, &[u8]), to: (u16, &[u8])) -> Cr
 ///
 /// WHAT IS NOT ESTABLISHED, and is not claimed here. The star faces are the
 /// spanning forest's first pass, so an orbit's star faces are tree edges —
-/// but nothing in this walk checks that, and a star face reached as a CHORD
+/// but nothing in this traversal checks that, and a star face reached as a CHORD
 /// would be skipped too. A chord is where the holonomy is; gauging one away
 /// would delete the obstruction rather than move it.
 ///
@@ -310,19 +310,19 @@ pub(crate) fn paths_carried(
     paths_carried_why(faces, vertices, lp).ok()
 }
 
-/// VS1 — THE SAME WALK, READ QUIETLY: no step's charge is noted. A reader
-/// that re-walks a circuit under a trial move (a bend) reads what the move
+/// VS1 — THE SAME CIRCUIT, READ QUIETLY: no step's charge is noted. A reader
+/// that re-reads a circuit under a trial move (a bend) reads what the move
 /// does and must not write the census's cumulative counters, or the counters
-/// would count the trial's walks as the corpus's.
+/// would count the trial's traversals as the corpus's.
 pub(crate) fn paths_carried_quiet(
     faces: &[FormFace],
     vertices: &[Vertex],
     lp: &Orbit,
 ) -> Option<Keyed<PathCarried>> {
-    walk(faces, vertices, lp, false).ok()
+    traverse(faces, vertices, lp, false).ok()
 }
 
-/// THE ONE WALK, SAYING WHY IT REFUSED (H2c). [`paths_carried`] is this read
+/// THE ONE CIRCUIT, SAYING WHY IT REFUSED (H2c). [`paths_carried`] is this read
 /// with the reason dropped. `orbits_of` asks here, so the `unread` gate is
 /// counted by what refused it.
 pub(crate) fn paths_carried_why(
@@ -330,11 +330,11 @@ pub(crate) fn paths_carried_why(
     vertices: &[Vertex],
     lp: &Orbit,
 ) -> Result<Keyed<PathCarried>, Unread> {
-    walk(faces, vertices, lp, true)
+    traverse(faces, vertices, lp, true)
 }
 
-/// The walk itself; `note` files each step's charge on the census counters.
-fn walk(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> Result<Keyed<PathCarried>, Unread> {
+/// The traversal itself; `note` files each step's charge on the census counters.
+fn traverse(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> Result<Keyed<PathCarried>, Unread> {
     // THE EDGE COMPOSITE OPENS AT THE IDENTITY AND EVERY STEP CONTRIBUTES.
     // It used to open at `None` unless the orbit crossed a face between two
     // bodies, because the star faces contributed nothing and a star-only
@@ -511,7 +511,7 @@ fn walk(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> Resu
 
 /// The face-pair key of two chart keys, as `face_pair_key` writes it from
 /// two `Invariant`s — the same bytes, read from the keys the members
-/// already carry rather than from invariants this walk does not hold.
+/// already carry rather than from invariants this traversal does not hold.
 pub(super) fn pair_key_bytes(ci: &[u8], cj: &[u8]) -> Vec<u8> {
     let mut buf = Vec::new();
     crate::transducer::address::put_bytes(&mut buf, ci);
@@ -520,7 +520,7 @@ pub(super) fn pair_key_bytes(ci: &[u8], cj: &[u8]) -> Vec<u8> {
 }
 
 /// THE HOLONOMY OF THE EDGE TRANSPORTS around an orbit (50.3), one per member
-/// path: a reader of the one walk. A path with no edge reading is absent,
+/// path: a reader of the one circuit. A path with no edge reading is absent,
 /// which is what "not evaluated" means (13.9).
 pub(crate) fn edge_holonomies_on(
     faces: &[FormFace],
@@ -647,7 +647,7 @@ impl Form {
         // WHAT COHERES, on the complex and nothing else: identity, a class
         // of FINITE order about a fixed point — `ℤ/ℓℤ`, which is content
         // (law 7) — or an axis the form opened over this orbit. A screw
-        // walks and never returns: `g^ℓ = T(ℓτ)` with `τ ∈ ker(I − R)`, so
+        // slips and never returns: `g^ℓ = T(ℓτ)` with `τ ∈ ker(I − R)`, so
         // there is no period at which the circuit closes. It is not an
         // error and it is not coherence; it is a `Demand::Dislocation`,
         // carried as a vertex, in the key, saying "these fibrations shear
@@ -686,7 +686,7 @@ impl Form {
                 // NO DISLOCATION DECLARES IT", and this is the clause that
                 // makes the second half true.
                 //
-                // A circuit that walks is an obstruction, and 50.5's answer
+                // A circuit that never closes is an obstruction, and 50.5's answer
                 // to an obstruction is a DEMAND: a vertex, in the key,
                 // carried as content, saying "these fibrations shear by τ
                 // and `T(−τ)` would close them". That is the opposite of a
@@ -708,11 +708,11 @@ pub(crate) fn orbit_transport(form: &Form, lp: &Orbit) -> Keyed<Transport> {
     orbit_transport_on(&form.faces, &form.vertices, lp)
 }
 
-/// The face composite of every member path: a reader of the one walk.
+/// The face composite of every member path: a reader of the one circuit.
 ///
-/// It walked the frontier itself, beside `edge_holonomies_on` walking the
+/// It traversed the frontier itself, beside `edge_holonomies_on` traversing the
 /// identical frontier for the other half. `vertices` is taken because the
-/// star-face rule belongs to the walk, not to its readers.
+/// star-face rule belongs to the traversal, not to its readers.
 pub(crate) fn orbit_transport_on(
     faces: &[FormFace],
     vertices: &[Vertex],

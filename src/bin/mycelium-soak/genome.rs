@@ -28,7 +28,7 @@ struct Word {
     /// whole of its identity.
     address: usize,
     /// The magnitude: four lanes, never summed (law 5). NOT derivable from
-    /// the form — it is the descent measured over the bundle, which needs
+    /// the form — it is the trajectory measured over the bundle, which needs
     /// the train — so it is `Form ∖ Key` and the value must carry it.
     mag: usize,
     /// The A5 chain a residual word carries. For a SENTENCE this is empty
@@ -391,13 +391,13 @@ pub(crate) fn reconcile(path: &str) {
                 continue;
             }
             real_orbits += 1;
-            // WHERE THE WALK DIES, on an orbit that crosses between bodies.
+            // WHERE THE TRAVERSAL DIES, on an orbit that crosses between bodies.
             // `paths_carried` steps a member from face to face and keeps the
             // paths that return to the chart they began at (`closed_key`
             // compares CHARTS, not carrier state — it does not demand flat
             // holonomy). So there are exactly two ways to get no path:
             //
-            //   the orbit has a face with NO MEMBER PAIR, and the walk has
+            //   the orbit has a face with NO MEMBER PAIR, and the traversal has
             //   nothing to step onto there — a tear in the cover; or
             //
             //   every face carries a pair and the CHARTS DO NOT CHAIN: the
@@ -424,12 +424,12 @@ pub(crate) fn reconcile(path: &str) {
             }) {
                 split_orbits += 1;
             }
-            // WHERE THE CHART CHAIN BREAKS, walked the way `paths_carried`
-            // walks it: at each step the face's pair must relate the chart
+            // WHERE THE CHART CHAIN BREAKS, traversed the way `paths_carried`
+            // traverses it: at each step the face's pair must relate the chart
             // the path STANDS AT to the one it steps to, and the last step
             // must return to the chart it began at. A cycle built on the
             // member complex satisfies both by construction, so a break
-            // here is a break between the basis and the walker — and the
+            // here is a break between the basis and the traversal — and the
             // step it happens at is the reading.
             let mut at: Option<Vec<u8>> = None;
             let mut first: Option<Vec<u8>> = None;
@@ -442,7 +442,7 @@ pub(crate) fn reconcile(path: &str) {
                 // — the same ambiguity `paths_carried` resolves by stepping
                 // both. Read one way here and this instrument would report
                 // a break the engine does not have (law 12: two readers of
-                // one walk).
+                // one traversal).
                 let runs: &[bool] = match fa.i == fa.j {
                     true => &[true, false],
                     false => &[fa.i == win[0] && fa.j == win[1]],
@@ -559,7 +559,7 @@ pub(crate) fn reconcile(path: &str) {
         "      {split_orbits} orbits pass through a vertex that splits into several members"
     );
     println!(
-        "      the chart chain: {chain_closed} close, {chain_open} walk but do not return,          {chain_broke} break mid-walk ({chain_break_step} on a face with no matching pair)"
+        "      the chart chain: {chain_closed} close, {chain_open} run round but do not return,          {chain_broke} break mid-traversal ({chain_break_step} on a face with no matching pair)"
     );
     println!(
         "      {tape_orbits} orbits on the tapes, {rederived_orbits} re-derived from the same faces"
@@ -573,7 +573,7 @@ pub(crate) fn reconcile(path: &str) {
     );
 }
 
-/// 54.5 — THE CITATION NERVE, WALKED AS A COMPLEX.
+/// 54.5 — THE CITATION NERVE, READ AS A COMPLEX.
 ///
 /// Every reading this session looked for curvature INSIDE a form and found
 /// none: 36 corpus forms carry 361 vertices, 126 faces and ZERO orbits —
@@ -706,7 +706,7 @@ pub(crate) fn nerve(path: &str) {
         };
         let here = id_of(&addr, &mut node, &mut nodes);
         let mut cited_any = false;
-        // 54.7 B5a — THE 1-SKELETON IS THE FORM'S COVER. It was walked off
+        // 54.7 B5a — THE 1-SKELETON IS THE FORM'S COVER. It was read off
         // the `Glued` vertices, and a vertex states a boundary rather than
         // an incidence; the incidence is what this audit measures.
         for e in &f.cover {

@@ -9,10 +9,10 @@ fn member(i: u16) -> Vec<u8> {
     crate::transducer::family::member_key(i, crate::transducer::stalk::Invariant::default().key().as_bytes())
 }
 
-/// A walked circuit by its steps and composite, through no held coset and
+/// A traversed circuit by its steps and composite, through no held coset and
 /// no static contact.
-fn walk(steps: Vec<(u16, bool)>, composite: Option<crate::transducer::cga::Mv>) -> crate::transducer::sentence::WalkedCircuit {
-    crate::transducer::sentence::WalkedCircuit { steps, composite, coset: None, gauge_static: false }
+fn traversed(steps: Vec<(u16, bool)>, composite: Option<crate::transducer::cga::Mv>) -> crate::transducer::sentence::TraversedCircuit {
+    crate::transducer::sentence::TraversedCircuit { steps, composite, coset: None, gauge_static: false }
 }
 
 /// One body per member, each a single cube at `site`.
@@ -38,7 +38,7 @@ fn one(cells: Vec<crate::transducer::sentence::FormCell>, what: &str) -> crate::
 
 /// THREE BODIES MEETING ONLY AT ONE CORNER MINT ONE 2-CELL THERE, carrying
 /// `s_a ∧ s_b ∧ s_c`; a fourth at the same corner makes it one 3-cell. The
-/// three cubes share pairwise only an edge each, so no pair walk sees the
+/// three cubes share pairwise only an edge each, so no pairwise read sees the
 /// corner they share, and the base read does.
 #[test]
 fn three_bodies_meeting_at_a_corner_mint_one_two_cell_carrying_their_meet() {
@@ -92,12 +92,12 @@ fn a_circuit_crosses_a_cell_by_the_body_pair_of_the_face_it_steps_over() {
     form.face_bodies.insert(0u32.to_be_bytes(), (p.clone(), r.clone()));
     form.face_bodies.insert(2u32.to_be_bytes(), (p, s));
     let turn = cga::rotator(&q(1), &q(1));
-    let walked = vec![
-        walk(vec![(1u16, true), (0, false)], Some(turn.clone())),
-        walk(vec![(1u16, true), (3, true)], Some(turn.clone())),
-        walk(vec![(2u16, true)], Some(turn)),
+    let circuits = vec![
+        traversed(vec![(1u16, true), (0, false)], Some(turn.clone())),
+        traversed(vec![(1u16, true), (3, true)], Some(turn.clone())),
+        traversed(vec![(2u16, true)], Some(turn)),
     ];
-    let cells = crate::transducer::family::comprehend::cell_algebras(&form, &walked, &mut crate::physics::Physics::default().stroke_n(1 << 16));
+    let cells = crate::transducer::family::comprehend::cell_algebras(&form, &circuits,&mut crate::physics::Physics::default().stroke_n(1 << 16));
     let [c] = cells.as_slice() else { panic!("one cell") };
     assert_eq!(c.circuits, 1, "only the circuit over face 0, between the cell's two bodies, crosses it");
     // CX1 — crossing face 0 against its orientation, the circuit leaves the
@@ -122,11 +122,11 @@ fn the_percepts_readings_agree_and_are_held_until_taken() {
     let cell = crate::transducer::sentence::FormCell { bodies: vec![p.clone(), r.clone()], witnesses: Vec::new(), nuclei: Some(nuclei) };
     form.cells.insert([0u8], cell);
     form.face_bodies.insert(0u32.to_be_bytes(), (p, r));
-    let walked = vec![walk(vec![(0u16, true)], Some(cga::rotator(&q(1), &q(1)))), walk(vec![(0u16, false)], None)];
+    let circuits = vec![traversed(vec![(0u16, true)], Some(cga::rotator(&q(1), &q(1)))), traversed(vec![(0u16, false)], None)];
     let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
-    let comprehension = comprehend::comprehend(&form, &walked, &mut stroke);
+    let comprehension = comprehend::comprehend(&form, &circuits, &mut stroke);
     let cells = comprehend::cells_reading(&comprehension);
-    let progress = comprehend::progress(&form, &walked, &cells);
+    let progress = comprehend::progress(&form, &circuits, &cells);
     let [g] = progress.grades.as_slice() else { panic!("one grade: {:?}", progress.grades) };
     assert_eq!((g.grade, g.cells), (1, 1), "the progress's cells are the typed cells'");
     let kept = cells.cells.iter().filter(|c| c.round == crate::observe::CellRound::Kept).count() as u64;

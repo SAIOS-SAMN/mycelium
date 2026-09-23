@@ -406,7 +406,7 @@ impl Kernel {
     /// 27, S9.8 — WHAT THIS INSTALL MAKES REDUNDANT. A word leaves the
     /// language when the basis DERIVES it, and the candidates are the
     /// forms that cite what this one cites: a keyed read at each address
-    /// `new` names, never a walk of anything.
+    /// `new` names, never a whole-carrier read.
     ///
     /// THE STRATUM IS NOT THE SCOPE. This read `stalks.fiber(&inv)` — every
     /// member of the stratum — which was invisibly cheap only because the
@@ -424,7 +424,7 @@ impl Kernel {
             return;
         };
         // WHO THIS WORD CITES IS READ OFF ITS ENVELOPE (54.5 Road (d), B4).
-        // It decoded the whole form to walk its vertices; a citation is a
+        // It decoded the whole form to read its vertices; a citation is a
         // 1-simplex of the nerve and a vertex's generators are its
         // presentation, and both ride `Element.receipts`.
         let cites = after.receipts().cited_addresses();
@@ -633,7 +633,7 @@ impl Kernel {
             // projection of what the form holds — while `candidates_for`
             // asks under the charts an orbit's face vertices act on, which
             // are body charts leading `1`. No prefix bridges the two, and
-            // `on_axis_of` peels rather than descending a fiber, so
+            // `on_axis_of` peels rather than following a fiber's prefix, so
             // everything this court filed was unreachable by the one
             // reader of the index. `admit_words_acting` is the same
             // admission the voice makes (L8r); a connection carries no

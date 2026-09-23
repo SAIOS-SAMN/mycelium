@@ -110,9 +110,9 @@ fn orbit_holonomy_in_the_stabilizer_does_not_telescope() {
         FiledOrbit { sigma: Vec::new(), periods: half.rotor().toral_period(), chord: triangle.chord },
     );
     assert!(f.coheres(), "and filing it says nothing the geometry did not already say");
-    // NO RE-WALK HERE. `edge_holonomies` reads `self.faces` live, so the
+    // NO RE-READ HERE. `edge_holonomies` reads `self.faces` live, so the
     // `Orbit` — its vertices, its faces, its chord — stays valid across an
-    // edge write; re-walking would drop this cycle, because `q, q⁻¹, 1`
+    // edge write; re-reading the orbits would drop this cycle, because `q, q⁻¹, 1`
     // composes to the identity and a cycle that encloses nothing is not an
     // orbit. The reading being asserted is exactly that identity.
     set_edge(&mut f, e23, Some(Transport::from_word(qw.inverse())));
@@ -132,7 +132,7 @@ fn orbit_holonomy_in_the_stabilizer_does_not_telescope() {
 /// AND FILING IS NOT COHERING.
 ///
 /// A (3,4,5) rotor on a chord's edge is a holonomy with NO PERIOD: `g^ℓ`
-/// is never the identity, so the circuit walks and never returns. It is a
+/// is never the identity, so the circuit runs on and never returns. It is a
 /// free part — a non-compact obstruction — and what the form owes for it
 /// is a `Demand::Dislocation` carrying the slip, not an entry in a
 /// side-table.
@@ -159,7 +159,7 @@ fn an_orbit_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
     assert!(!f.coheres());
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
-    // A FILING DOES NOT CLOSE A CIRCUIT THAT WALKS (54.5, as ruled
+    // A FILING DOES NOT CLOSE A CIRCUIT THAT NEVER RETURNS (54.5, as ruled
     // 2026-09-20). This filed period 0 — A19's spelling of infinite order
     // — and then asserted the orbit COHERED, which made an open dislocation
     // read as a closed manifold. A (3,4,5) rotor has no period: `g^ℓ` is
@@ -663,8 +663,8 @@ fn chord_is_never_a_star_face() {
 
 /// 18.2, 24.1 — A CHART NAMES THE WORD VERTICES ON IT. `reindex` files each
 /// Word vertex under its class in the one pass it already makes, so a
-/// listing body's chart reads its fiber of vertices and never walks the
-/// form; a chart no vertex is on names nothing, and a Demand vertex on a
+/// listing body's chart reads its fiber of vertices and never reads the
+/// whole form; a chart no vertex is on names nothing, and a Demand vertex on a
 /// chart is not a word there.
 #[test]
 fn a_chart_names_the_word_vertices_on_it() {

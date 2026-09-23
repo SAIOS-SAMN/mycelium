@@ -293,7 +293,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     // AND NOT A PREFERENCE (54.3, measured 2026-09-20).
     //
     // `Form.torsion` is not in the key, so the obvious move is to re-derive
-    // it the way the orbits above are re-derived: walk each orbit, classify
+    // it the way the orbits above are re-derived: read each orbit, classify
     // its holonomy, file what closes. That was written and it is WRONG,
     // because filing is not a function of the incidence.
     //

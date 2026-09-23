@@ -104,7 +104,7 @@ fn structure_separates_equal_volumes() {
 
 /// The lookup finds a rotated sibling's base point through its chart and
 /// returns the versor; an empty stratum is novelty; the atlas holds
-/// addresses, so a removal walks one path and nothing shifts.
+/// addresses, so a removal follows one path and nothing shifts.
 #[test]
 fn the_chart_finds_the_base_point_and_the_versor() {
     let held: Vec<Element> = vec![

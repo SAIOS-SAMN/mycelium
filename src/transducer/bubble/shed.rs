@@ -9,7 +9,7 @@ use super::*;
 /// THE KEY A RETIRED REMAINDER IS FILED UNDER: its chart, then the bubble it
 /// was. The chart leads because it is what `pivot_on` asks at — a word
 /// arrives on a chart and the cavity entries that chart could re-hold are the
-/// subtree under it, one keyed descent. The bubble key follows so two
+/// subtree under it, one keyed read. The bubble key follows so two
 /// remainders retired at one chart stay two remainders (law 7).
 ///
 /// `stalk::invariant` of the remainder links is the reading `pivot_on` asks
@@ -63,8 +63,8 @@ impl Contemplation {
     ///
     /// AND IT IS TRANSITIVE. A cites B and B cites C: when C lapses, B goes
     /// with it and A goes with B, in this call and not on three successive
-    /// strokes. The frontier is walked until it adds nothing, which is a
-    /// walk of the fibration's own boundary (rule 1) and not a search.
+    /// strokes. The frontier is traversed until it adds nothing, which is a
+    /// read of the fibration's own boundary (rule 1) and not a search.
     ///
     /// MEASURED before it was written (the 60-task slice): 21 of 51 held
     /// bubbles cite, every one of their 21 pins is LIVE, and none is dead.

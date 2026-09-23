@@ -55,7 +55,7 @@ fn the_flux_is_exact_at_the_bound_of_a_lane() {
 /// that merges them cannot say which dimension the engine spends.
 /// `orbit_infinite` is kept apart from a period of zero because A19
 /// spells infinite order as `0` and the two readings are opposite —
-/// a walk that never returns against an orbit with no period at all.
+/// an orbit that never closes against an orbit with no period at all.
 #[test]
 fn d2_entropy_and_orbit_are_counted_at_their_own_dimensions() {
     use crate::physics::metabolism;
@@ -72,7 +72,7 @@ fn d2_entropy_and_orbit_are_counted_at_their_own_dimensions() {
     assert_eq!((m.cauterized, m.released), (1, 2), "two dimensions, two counts");
     assert_eq!(m.entropy(), 3, "and a total that does not lose them");
     assert_eq!((m.orbit_finite, m.orbit_sum), (2, 6), "Σℓ over closed orbits");
-    assert_eq!(m.orbit_infinite, 1, "a walk is not a period");
+    assert_eq!(m.orbit_infinite, 1, "an orbit that never closes is not a period");
 }
 
 /// ATTENTION IS ANISOTROPIC: A DRAW IS A VECTOR AND REFUSES PER LANE

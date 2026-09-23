@@ -329,8 +329,8 @@ let faces: Vec<FormFace> = ends
 // — no member pair, identity word — so every cycle over them encloses
 // nothing and is pruned as trivial. It could not be pruned before only
 // because `paths_carried` searched a frontier with nothing to step onto
-// and answered EMPTY, and an unread orbit is not a flat one. The walk reads
-// the cycle now and says what it is.
+// and answered EMPTY, and an unread orbit is not a flat one. The traversal
+// reads the cycle now and says what it is.
 //
 // AND NOW THE STAR AND SITE FACES DO FORM A TREE. The cycle rank `E − V +
 // 1` is read on the generator's own output, and with the dilation gone it
@@ -614,7 +614,7 @@ assert_eq!(adj4, 31, "and thirty-two chain in thirty-one, not 496: {adj4}");
 // word, so every cycle over them encloses nothing and `orbit_is_trivial`
 // prunes it. It could not prune them before only because `paths_carried`
 // searched a frontier that had nothing to step onto and answered EMPTY —
-// and an unread orbit is not a flat one, so the orbit was kept. The walk
+// and an unread orbit is not a flat one, so the orbit was kept. The traversal
 // reads the cycle now and says what it is: trivial.
 //
 // The claim this test carries is about the CHAIN, not about homology —

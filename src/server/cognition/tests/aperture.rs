@@ -168,7 +168,7 @@ assert_eq!(
 /// depleted, germination DEFERS and the residual is listed on the open
 /// market instead: the demand stands, quotable, until the reserve recovers.
 /// Each of the three carriers charges for itself — a word of finite order
-/// charges its order, an unclosed walk charges the letters it spelled, and a
+/// charges its order, an unclosed orbit charges the letters it spelled, and a
 /// pure residual chain charges the support its chain touches — and all three
 /// are LISTED. Only an element with neither word nor chain is degenerate.
 ///
@@ -177,7 +177,7 @@ assert_eq!(
 /// it (backtrack ledger, 2026-09-07). This test reaches it and takes the
 /// PURE RESIDUAL CHAIN carrier — the one F2r1c corrected, and the one that
 /// was being refused. The two tape carriers (a word of finite order, an
-/// unclosed walk) are still unreached; the fixture that spells one under a
+/// unclosed orbit) are still unreached; the fixture that spells one under a
 /// depleted lane is owed as F2r1d.
 #[test]
 fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {

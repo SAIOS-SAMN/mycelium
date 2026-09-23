@@ -323,12 +323,12 @@ pub fn retract_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[T
 /// narrows the search; it never certifies a match.
 pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Vec<Word> {
     let slot = axis_slot(axis);
-    // ONE DESCENT PER STRATUM, AND THE STRATA ARE THE RANK'S. `AxisIndex`
+    // ONE PREFIX READ PER STRATUM, AND THE STRATA ARE THE RANK'S. `AxisIndex`
     // is `Keyed<Keyed<Keyed<Word>>>` — chart, then axis slot, then the
     // words — so `get` on the chart hands back the WHOLE fiber over that
     // base and the slot is read off it without touching the trie again.
     //
-    // The walk is bounded by the base's own width, which `chart_of_form`
+    // The read is bounded by the base's own width, which `chart_of_form`
     // now fixes at five coordinates whatever the form holds. It was
     // bounded by five PLUS one coordinate per distinct orbit class, so a
     // form with n orbits re-entered at the root up to n times to answer one
@@ -627,10 +627,10 @@ pub fn generators_at(
     budget: &mut crate::physics::Budget,
 ) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address)> {
     let mut out = Vec::new();
-    // The outer read IS a prefix descent -- one chart's buckets -- and each
+    // The outer read IS a prefix read -- one chart's buckets -- and each
     // bucket it yields is one axis slot's words.
     // A chart with no axes is the root stratum and names no coordinate to
-    // descend on: the pairs on it are read through `serve_classes`, not
+    // follow: the pairs on it are read through `serve_classes`, not
     // here, so this answers nothing rather than everything (rule 11).
     let key = chart.key();
     let Some(at) = crate::network::nerve::Prefix::new(key.as_bytes()) else {
@@ -669,7 +669,7 @@ pub fn generators_under(
 }
 
 /// The word a form's vertex carries, by the address that names it. A keyed
-/// read of the form's own index, never a walk (law 3).
+/// read of the form's own index, never a whole-carrier read (law 3).
 pub fn word_at_vertex(f: &Form, vertex: &[u8]) -> Option<Word> {
     let i = *f
         .by_address

@@ -52,7 +52,7 @@ pub(crate) fn ring_dist_peel(image: &[(i64, i64)], anchor: &[(i64, i64)], bound:
 /// of that site, and whether the body left the frame is the ORBIT's
 /// reading (`OrbitEnd::LeftFrame`), taken after the step. Clipping here
 /// would hide the exit. `None` where a site is carried out of the grid's
-/// own frame along `e₃`: the orbit walks one grid, and a body carried off
+/// own frame along `e₃`: the orbit traverses one grid, and a body carried off
 /// it has left it.
 pub(crate) fn carry_painted(v: &Versor, painted: &[Painted]) -> Option<Vec<Painted>> {
     let mut out = Vec::new();
@@ -72,7 +72,7 @@ pub(crate) fn carry_painted(v: &Versor, painted: &[Painted]) -> Option<Vec<Paint
 }
 
 /// THE VERSOR A VERTEX ACTS BY AT ONE NAMED CHART: its rotor under that
-/// member's carriage. A keyed read — an orbit is a walk of ONE body, so the
+/// member's carriage. A keyed read — an orbit is a traversal of ONE body, so the
 /// chart the body stands on is the coordinate, and reading a representative
 /// orbited one body's placement whatever body was handed in.
 pub(crate) fn vertex_versor_at(

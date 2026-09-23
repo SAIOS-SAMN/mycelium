@@ -342,7 +342,7 @@ fn nullspace(m: &[Vec<num_rational::BigRational>]) -> Vec<Vec<num_rational::BigR
     // lie on the singular cone as readily as the axes do.
     //
     // The basis vectors themselves are the object's own coordinates and
-    // walking them is bounded by it (rule 10). What follows them is a SINGLE
+    // reading them is bounded by it (rule 10). What follows them is a SINGLE
     // determined element: `Σ 2ⁱ·v_i`, one point of the kernel fixed by the
     // basis and nothing else. The singular elements — where `γγ̃` is not a
     // non-zero scalar — are a proper algebraic subvariety of `K`, so a point

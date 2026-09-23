@@ -70,7 +70,7 @@ impl Kernel {
         // THE ROOT STRATUM IS THE WHOLE COVER, and this is the one place in
         // the tree where an empty coordinate legitimately means everything:
         // a voice that names no axes is asking what this court holds at the
-        // coarsest stratum, which is every complex. The arm below descends
+        // coarsest stratum, which is every complex. The arm below follows
         // the invariant's prefixes instead, one keyed read per prefix, and
         // reaches a scoped layer the same way.
         if inv.0.is_empty() {
@@ -192,7 +192,7 @@ impl Kernel {
     /// the fetch skips an address only when it stands in the fiber over
     /// `inv` (`sheaf::serve`), so an address heard under any other chart
     /// could never match: it filtered nothing and was pure wire, pure
-    /// allocation, and pure walk.
+    /// allocation, and pure read.
     ///
     /// It is called once per stratum, per peer, per exchange cycle, and
     /// `heard` grows with peers × corpus — so the mesh paid O(P² · S · C)

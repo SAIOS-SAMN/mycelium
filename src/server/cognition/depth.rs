@@ -14,7 +14,7 @@
 //! other's — 47.3's arity is depth, not standing.
 //!
 //! What IS held is the index: address → signer ‖ kind → K. Without it
-//! the read walks the whole chain for every address, which is the
+//! the read covers the whole chain for every address, which is the
 //! enumeration law 3 forbids. It is derived and rebuilt from the chain
 //! at restore, like the axis and moduli indices.
 
@@ -64,7 +64,7 @@ impl Kernel {
     }
 
     /// L15 — THE DEPTH OF AN ADDRESS: how many distinct organs have
-    /// committed to it. The walk is over that address's OWN entries — its
+    /// committed to it. The read is over that address's OWN entries — its
     /// boundary, which rule 1 allows — and the distinct signers are read
     /// from a keyed set built for the read and dropped after it, so
     /// nothing about depth is stored (law 12).

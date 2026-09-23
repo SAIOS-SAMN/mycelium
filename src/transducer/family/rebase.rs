@@ -23,7 +23,7 @@ pub(crate) fn rebase_named_faces(form: &mut Form) {
     let relatives = relatives_by_class(&named, &form.vertices);
     // The face's own index IS the chord it closes on where it closes: this
     // is a clone of `form.faces` and the rebase adds no face, so the two
-    // agree throughout. A caller that walked a face knows which one; it is
+    // agree throughout. A caller that crossed a face knows which one; it is
     // passed and never searched for (15.5).
     for (fi, face) in named.iter().enumerate() {
         let (i, j) = (face.i as usize, face.j as usize);

@@ -192,7 +192,7 @@ pub struct Bubble {
     /// The form this idea is (chapter 30 step 6).
     pub form: Option<Form>,
     /// THE ROTOR ITS WORD VERTICES AGREE ON, derived ONCE when the form is
-    /// taken and read thereafter (Z4 item 3). It walked every vertex of the
+    /// taken and read thereafter (Z4 item 3). It read every vertex of the
     /// form on every call, and `rotor_between` asks two bubbles for it per
     /// neighbour pair.
     ///
@@ -398,7 +398,7 @@ impl Bubble {
             };
             let r = derivation.rotor();
             // index: keyed fibre of this vertex's members — its own charts,
-            // never a walk over the form (rule 1).
+            // never a read of the whole form (rule 1).
             for (_, a) in acts.scoped() {
                 let mut k = a.chart.key().into_vec();
                 r.put_canonical(&mut k);
@@ -462,7 +462,7 @@ impl Bubble {
         }
         let mut spent = 0usize;
         // THE CHARTS THIS IDEA MEETS ARE ITS OWN SECTIONS' CHARTS, and their
-        // members are a keyed read at those coordinates. Nothing is walked
+        // members are a keyed read at those coordinates. Nothing is traversed
         // and nothing is discovered.
         //
         // A Čech simplex is the OVERLAP of two sections, and two sections
@@ -759,7 +759,7 @@ impl Bubble {
     /// out of each key through the class schema and compared at depth one
     /// — never a byte count, and never the whole key.
     ///
-    /// The walk is this bubble's own carrier, which is one idea's boundary
+    /// The read is this bubble's own carrier, which is one idea's boundary
     /// (rule 1). A key that does not parse as a class vector is not a
     /// vortex of this system and is passed over rather than matched.
     fn vortex_at_stratum(&self, stratum: &[u8], word: &[u8]) -> Option<Vec<u8>> {

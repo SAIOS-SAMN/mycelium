@@ -24,7 +24,7 @@ pub enum Deliberation {
 }
 
 /// THE PROBE, off the lock: the sentence replays over the language snapshot
-/// against the listing's chain; the settlement (closure or graded descent)
+/// against the listing's chain; the settlement (closure or graded residual)
 /// runs under a brief lock. Returns (code, paid, remaining).
 pub fn probe(
     k: &std::sync::Mutex<crate::cognition::Kernel>,
@@ -90,7 +90,7 @@ pub fn probe(
     // measure spoken here is the chain's own, not the listing's fibre.
     let before = crate::transducer::element::measure_lanes(listing.sub());
     let settled = g.settle_probe(voice, target, residual, cites, section);
-    if matches!(settled.0, crate::anastome::dialogue::PROBE_CLOSED | crate::anastome::dialogue::PROBE_DESCENT) {
+    if matches!(settled.0, crate::anastome::dialogue::PROBE_CLOSED | crate::anastome::dialogue::PROBE_RESIDUAL) {
         g.puncture_from(cites); // the fiber deepens on what was verified
         // The settlement goes to the court with the utterance that made it,
         // for the court to replay and measure itself.
@@ -142,7 +142,7 @@ pub fn quote(
         "  rank: book {} listings, closed {}, sealed {sealed}, gens {:?}",
         view.pending.len(),
         // The cohesion reading's own closed count (law 12): this filtered
-        // the closure map itself, a second walk of the book for a number
+        // the closure map itself, a second read of the book for a number
         // `cohesion_over` already names and `Rank` now carries.
         crate::cognition::cohesion_over(&rank).0,
         view.gens,

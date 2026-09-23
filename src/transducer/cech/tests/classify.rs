@@ -105,8 +105,8 @@ fn a_residue_free_quarter_turn_files_at_its_period() {
 /// returns after four turns, about that point, so its period is four and
 /// `p` is where it stands rather than a residue. The second translates
 /// ALONG the turn's axis, and no point is fixed: `(I − R) p` is zero on
-/// `e₃` for every `p`, the system is inconsistent, and the seam really
-/// does walk.
+/// `e₃` for every `p`, the system is inconsistent, and the seam's orbit
+/// really never closes.
 #[test]
 fn a_turn_about_a_point_files_and_a_screw_stands() {
     use crate::transducer::element::turn_base_point;
@@ -155,7 +155,7 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
     assert_eq!(
         r.order(),
         Some(Order::Finite(4)),
-        "its rotor part still has order four — it is the WALK that refuses the fill"
+        "its rotor part still has order four — it is the SLIP that refuses the fill"
     );
     assert!(
         !same_versor(&kappa.carriage, &ident()),
@@ -166,7 +166,7 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
     //
     // `turn_base_point` answering `None` was the whole of what a screw used
     // to say, so it filed as an undifferentiated free generator and how far
-    // it walks per circuit was discarded — a measured vector thrown away
+    // it slips per circuit was discarded — a measured vector thrown away
     // (law 7), and a vector written down as a status (rule 4).
     //
     // `screw_of` splits the transport exactly: the CENTRE on `Im(I − R)`,
@@ -185,7 +185,7 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
     assert_eq!(split.centre, [q(0), q(0), q(0)], "and the bend turns about the origin");
     assert!(
         kappa.occupies(crate::transducer::sentence::Axis::Placement),
-        "a walk occupies the placement axis — this is the obstruction a demand is for"
+        "a slip occupies the placement axis — this is the obstruction a demand is for"
     );
 
     // A PURE TURN HAS NO SLIP, and the same reader says so: the two arms

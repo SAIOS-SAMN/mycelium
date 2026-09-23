@@ -8,13 +8,13 @@ use super::*;
 
 impl Treasury {
     /// A germ install admits iff the germ measures something on some lane;
-    /// nothing is ordered and nothing descends (12.6, law 5). Installing pays
+    /// nothing is ordered and no direction is read (12.6, law 5). Installing pays
     /// NOTHING here — a germ that only closes its own birth demand has proven
     /// nothing about the corpus. Reward flows later, on USE (`settle_use`),
     /// proportional to real demand unlocked.
     pub fn settle_install(&mut self, g: &Element, _voice: [u8; 32]) -> bool {
         // The germ MEASURES something on some lane. This was written as a
-        // descent from the zero vector, which is a nonzero test wearing a
+        // lane reading against the zero vector, which is a nonzero test wearing a
         // lane comparison's clothes.
         magnitude(g).iter().any(|&m| m > 0)
     }

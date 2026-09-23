@@ -687,7 +687,7 @@ pub fn generator_form(
 }
 
 /// SENTENCE_TAG v6: the Form tape. Hue maps are derived from vertices.
-/// Addresses are len16 + bytes. `mag` is the descent the form measures over
+/// Addresses are len16 + bytes. `mag` is the residual the form measures over
 /// its bundle. Zero is not a word.
 pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     use crate::transducer::family::trace;

@@ -121,10 +121,10 @@ impl Kernel {
             return Vec::new();
         }
         // WHO IS CITED IS READ OFF THE ENVELOPE (54.5 Road (d), B3). This
-        // decoded the whole form to walk its vertices for citations, and a
+        // decoded the whole form to read its vertices for citations, and a
         // citation is not geometry — it is a 1-simplex of the nerve and a
         // vertex's presentation. Both ride `Element.receipts`, so the
-        // economy's read is now a walk of two flat lists and builds no form.
+        // economy's read is now a read of two flat lists and builds no form.
         let env = w.receipts();
         let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         let mut out = Vec::new();
@@ -194,12 +194,12 @@ impl Kernel {
         let Some(family) = self.task_family.get(&task) else {
             return [0; 4];
         };
-        self.measured_replay_descent_at(cited, family, placement)
+        self.measured_replay_at(cited, family, placement)
     }
 
     pub(crate) fn note_form_citations(&mut self, addr: &[u8], w: &Element) {
         // BOTH READINGS COME OFF THE ENVELOPE (54.5 Road (d), B4). This
-        // decoded the form to walk it for citations and for certificates,
+        // decoded the form to read it for citations and for certificates,
         // and NEITHER is geometry: a citation is a 1-simplex of the nerve
         // and a certificate is what one mind's stroke did against one
         // budget. The ledger the court keeps of who cited whom, and the

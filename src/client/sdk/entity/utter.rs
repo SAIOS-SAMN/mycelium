@@ -240,8 +240,8 @@ impl Entity {
     }
 
     /// A served listing: cite over the working atlas. Residual strictly
-    /// below the chain on a lane is expressed; residual that does not
-    /// descend is held as thought — the form of the listing's chain
+    /// below the chain on a lane is expressed; residual that raised a
+    /// lane or moved nothing is held as thought — the form of the listing's chain
     /// (50.6) — and never expressed.
     pub fn conclude_listing(
         &mut self,
@@ -432,7 +432,7 @@ impl Entity {
         if self.taught_up.contains(&word.address()) {
             return true;
         }
-        // THE STRATUM, THEN THE EXACT TEST. This walked the whole of
+        // THE STRATUM, THEN THE EXACT TEST. This read the whole of
         // `taught_up` running `same_vertex` against every word this mind
         // had ever uttered, on every sentence of every speak (law 3, and
         // its answer: the carrier was missing a key). `taught_at` names the

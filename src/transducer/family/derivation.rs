@@ -312,7 +312,7 @@ pub(crate) fn peel_versor_with_target(
     // `ℓ = Order(R)` is the cyclotomic period: the discrete bound `μ` is
     // CARRIED BY, rather than a scalar `μ` would be flattened into. Read
     // here because this is where the rotor exists as a rotor, and read
-    // before the gates so a walk — infinite order, never returning — is
+    // before the gates so an orbit that never closes — infinite order — is
     // counted as the reading it is rather than lost as a refusal.
     crate::physics::metabolism::note_orbit(target.order());
     target.weight()?;

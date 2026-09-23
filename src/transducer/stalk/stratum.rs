@@ -8,12 +8,12 @@ use super::*;
 /// scanned among siblings); the members are the addresses whose chart
 /// ends here.
 ///
-/// X3: BOTH CARRIERS ARE ALREADY ONE NODE'S FIBER, and every walk below
-/// reads them with `scoped`. A `Stratum` is reached by descending the
+/// X3: BOTH CARRIERS ARE ALREADY ONE NODE'S FIBER, and every iteration
+/// below reads them with `scoped`. A `Stratum` is reached by following the
 /// chart's axes — `branches.get(&axis_key(a))`, one keyed read per axis —
 /// so `members` is the addresses at THIS chart and `branches` is this
-/// node's own children. There is no prefix to descend on inside either:
-/// the descent already happened, above.
+/// node's own children. There is no prefix to follow inside either: the
+/// prefix was already followed, above.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Stratum {
     branches: Keyed<Stratum>,
@@ -25,7 +25,7 @@ pub(crate) struct Stratum {
 /// A STRATUM BRANCHES ON A WHOLE COORDINATE (A21 as ruled 2026-09-18).
 /// The branch key is the coordinate's own kind-tagged, length-prefixed
 /// bytes — the same unit `Invariant::key` writes — so the chart a word is
-/// filed under and the path a fiber walks are one construction (law 12).
+/// filed under and the path a fiber follows are one construction (law 12).
 /// It was eight bare bytes, which is one `u64` limb and not one coordinate.
 pub(crate) fn axis_key(a: &ChartAxis) -> Vec<u8> {
     a.key_bytes()
@@ -148,7 +148,7 @@ impl Stratum {
 
     // `branches_at(axes)` stood here and handed out a stratum's whole branch
     // carrier so `each_child` could page it. Both are gone with the outward
-    // walk they existed for: an idea meets the charts its own vertices stand
+    // read they existed for: an idea meets the charts its own vertices stand
     // on, and a chart's members are `fiber`, not a page of its siblings.
     // Nothing else in the tree ever asked a stratum for its branches.
 

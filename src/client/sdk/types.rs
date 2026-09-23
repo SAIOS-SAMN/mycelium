@@ -176,7 +176,7 @@ impl<'a> WorkingAtlas<'a> {
     /// never have more than one generator and the whole Hermite computation
     /// was decorative. A stratum is the fiber under a PREFIX — "a demand is
     /// reduced against the generators of one stratum, never the language"
-    /// — and `peel` is what walks out to it.
+    /// — and `peel` is what reaches it.
     ///
     /// It coarsens no further than it must: the first non-empty stratum is
     /// the one returned, so a mind factors against the nearest generators it
@@ -313,7 +313,7 @@ pub struct GenomeView<'a> {
 ///
 /// One word, one entry, filed at the address the word derives for itself.
 /// Nothing is parallel, nothing shifts, and there is no index because the
-/// trie descent IS the lookup.
+/// trie's prefix read IS the lookup.
 /// Z11's FIRST STEP — THE INDEX IS A SEPARATE OBJECT FROM THE PAYLOAD.
 ///
 /// The row rules that the genome persists on disk and a voice keeps
@@ -461,16 +461,16 @@ pub struct Entity {
     pub epigenome: Epigenome,
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.
-    /// WHERE THE REFINEMENT WALK STOOD, AS A COORDINATE. It was a `usize`
+    /// WHERE THE REFINEMENT CIRCUIT STOOD, AS A COORDINATE. It was a `usize`
     /// advanced by `% genome.len()`: modular arithmetic over a length that
     /// changes whenever a word is admitted or retired, so the cursor
     /// silently skipped and re-visited words as the genome moved under it.
     /// The court's own refine cursor has been an address since 45.7; this
-    /// is the same object. `None` is a walk that has not started (X3) and
+    /// is the same object. `None` is a circuit that has not started (X3) and
     /// is an absence, not an empty key.
     pub(crate) refine_cursor: Option<Vec<u8>>,
     /// Rotating cursor for the bundle synthesis engine (reanchor / condense).
-    /// Where the bundle walk stood, as a coordinate — the same reading as
+    /// Where the bundle circuit stood, as a coordinate — the same reading as
     /// [`refine_cursor`], and for the same reason: `% genome.len()` is a
     /// position in a carrier whose length moves.
     pub(crate) bundle_cursor: Option<Vec<u8>>,
@@ -482,12 +482,12 @@ pub struct Entity {
     /// (or its canonical chain, where it has no letters) to the addresses
     /// uttered at it.
     ///
-    /// `already_taught` walked the whole of `taught_up` doing an exact
+    /// `already_taught` read the whole of `taught_up` doing an exact
     /// `same_vertex` against every word this mind had ever uttered, on
     /// every sentence of every speak — law 3's "no loop over pairs the
     /// carrier does not already name", and its answer: "the carrier is
     /// missing a key and that key is the first thing to write". On a mesh
-    /// whose voices all produce language, that walk grew with the mesh's
+    /// whose voices all produce language, that read grew with the mesh's
     /// whole output.
     ///
     /// The key is NECESSARY and not sufficient: `same_vertex` requires the
@@ -603,7 +603,8 @@ pub struct Concluded {
     /// The words this entity cited to speak the chain.
     pub cites: Vec<crate::anastome::dialogue::CiteWire>,
     /// The chain it could NOT reduce — its own claim, or the whole chain
-    /// back when the residual does not descend and is held as thought.
+    /// back when the residual raised a lane or moved nothing and is held
+    /// as thought.
     pub residual: Vec<(i64, i64, u8, u8)>,
     /// Whether the genome already held that residual. A familiar residual
     /// is not spoken again.

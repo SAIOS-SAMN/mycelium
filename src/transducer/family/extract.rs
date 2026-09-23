@@ -102,8 +102,8 @@ pub fn extract_rule_with(
     // rebuilds the vertices, the faces, the cycle basis and every index of
     // the form — once per citation, 578 times on `1d0a4b61`. The vertices a
     // citation retracts are the same vertices whatever order the pass
-    // reaches them in, so the set is the pass's and the walk is taken once
-    // after it.
+    // reaches them in, so the set is the pass's and the rebuild is taken
+    // once after it.
     let mut retract: Keyed<(), coord::VertexIx> = Keyed::new();
     for (_, (moduli, classes)) in by_chart.scoped() {
         let held = crystal.on_body(moduli);
@@ -134,7 +134,7 @@ pub fn extract_rule_with(
                 if reproduces {
                     let _ = form.glue_append(s, e.address(), placement.clone(), e.magnitude());
                     // THE VERTICES OF THE CLASS, read off the transport index
-                    // the form keeps current (rule 1), never a walk of every
+                    // the form keeps current (rule 1), never a read of every
                     // vertex asking each its class. The index is the one the
                     // form carried into the pass: an append writes no
                     // transport class, so nothing here reads a stale entry.
@@ -149,15 +149,15 @@ pub fn extract_rule_with(
     }
     // ONCE, AFTER THE PASS. `retract_vertices` rebuilds the cycle basis and
     // reindexes at its end, so a pass that retracted anything needs no
-    // second walk; a pass that cited without retracting still appended
-    // faces and walks them here.
+    // second read; a pass that cited without retracting still appended
+    // faces and traverses them here.
     if retract.is_empty() {
         form.orbits = Form::orbits_of(&form.faces, &form.vertices);
         form.reindex();
     } else {
         form.retract_vertices(&retract);
     }
-    trace::trace("extract/3 glue walked", trace::Wrote::Nothing, Some(budget));
+    trace::trace("extract/3 glue traversed", trace::Wrote::Nothing, Some(budget));
     trace::trace_carriage("extract/3 glue", &measured, &form);
     trace::trace("extract/4 rebase", trace::Wrote::Nothing, Some(budget));
     // 4. Rebase: w_j = t · w_i · t⁻¹ with t the relative placement, read on

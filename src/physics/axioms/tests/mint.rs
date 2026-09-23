@@ -1,4 +1,4 @@
-// 37.7, 68 — the arithmetic chain a demand's witness walks to the court.
+// 37.7, 68 — the arithmetic chain a demand's witness runs to the court.
 
 use crate::transducer::blade::sensor_plane as blade;
 
@@ -7,7 +7,7 @@ use crate::transducer::blade::sensor_plane as blade;
 /// Minting a demand is not the deliverable; minting one that SURVIVES
 /// `REFUSE_LETTER_WITNESS` is. The court reads
 /// `π_p = gcd_{ℤ[i]}(s + t·i, p)` and demands a factor whose norm is
-/// exactly `p`, so this walks the whole chain the court walks — arc,
+/// exactly `p`, so this runs the whole chain the court runs — arc,
 /// primitivity, norm, prime, Euclid — and refuses to call the wiring
 /// done on the strength of a demand appearing somewhere.
 ///

@@ -1,8 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! A17, T5 — THAT A TORSION CYCLE CLOSES: the walk of `σ` around the fibre,
+//! A17, T5 — THAT A TORSION CYCLE CLOSES: the circuit of `σ` round the fibre,
 //! and the exact residual when it does not. A period is believed only where
-//! the orbit returns to base (∮ dX = 0); an open walk names the anholonomity
+//! the orbit returns to base (∮ dX = 0); an open orbit names the anholonomity
 //! the label was filing over.
 
 use crate::core::Q;
@@ -21,17 +21,17 @@ impl HolonomicValency {
 }
 
 /// The closed-orbit integrity witness: either the orbit CLOSES (∮ dX = 0 — the
-/// walk returned to its start, trivial monodromy) or the residual step count
-/// names the anholonomity (how far from closure the walk ended).
+/// orbit returned to its start, trivial monodromy) or the residual step count
+/// names the anholonomity (how far from closure the run ended).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HolonomicOrbitWitness {
-    /// ∮_γ dX = 0: the walk closed in `period` steps — valency 1/period.
+    /// ∮_γ dX = 0: the orbit closed in `period` steps — valency 1/period.
     Closed { period: u32, valency: HolonomicValency },
-    /// The orbit did not close within the walked span — the open residual.
-    Open { walked: u32 },
+    /// The orbit did not close within the span run — the open residual.
+    Open { run: u32 },
 }
 
-/// Walk a torsion cycle's generator σ from the thought's base assignment and
+/// Run a torsion cycle's generator σ round from the thought's base assignment and
 /// WITNESS the orbit: closure at step t ⇒ `Closed { t, 1/t }` (∮ = 0, exactly);
 /// domain exhaustion or no closure within `max` ⇒ `Open`.
 pub fn witness_cycle(thought: &Element, sigma: &[(u8, u8)], max: u32) -> HolonomicOrbitWitness {
@@ -48,18 +48,18 @@ pub fn witness_cycle(thought: &Element, sigma: &[(u8, u8)], max: u32) -> Holonom
                 }
                 cur = next;
             }
-            None => return HolonomicOrbitWitness::Open { walked: step - 1 },
+            None => return HolonomicOrbitWitness::Open { run: step - 1 },
         }
     }
-    HolonomicOrbitWitness::Open { walked: max }
+    HolonomicOrbitWitness::Open { run: max }
 }
 
 /// Witness every torsion cycle a thought holds — the bundle's monodromy record.
-/// How far a witness walks a cycle of period ℓ: twice round, and at least
+/// How far a witness runs round a cycle of period ℓ: twice round, and at least
 /// four steps so a period of one or two is still seen to close. A period
-/// whose double does not fit the carrier is walked as far as the carrier
+/// whose double does not fit the carrier is run as far as the carrier
 /// counts, which is further than any orbit this reader holds.
-fn walk_of(period: u32) -> u32 {
+fn run_of(period: u32) -> u32 {
     match period.checked_mul(2) {
         Some(twice) => twice.max(4),
         None => u32::MAX,
@@ -70,12 +70,12 @@ pub fn witness_thought(thought: &Element) -> Vec<HolonomicOrbitWitness> {
     thought
         .torsion()
         .iter()
-        .map(|c| witness_cycle(thought, &c.sigma, walk_of(c.period)))
+        .map(|c| witness_cycle(thought, &c.sigma, run_of(c.period)))
         .collect()
 }
 
 /// Every stored cycle held against its witness: (the period ℓ the word
-/// speaks, the orbit as walked). A caller matches the witness arms: a
+/// speaks, the orbit as run). A caller matches the witness arms: a
 /// Closed orbit at the stored period is a witnessed winding; Closed at
 /// another period is a misspoken winding; Open names the anholonomity the
 /// label was filing over.
@@ -83,7 +83,7 @@ pub fn witness_stored(thought: &Element) -> Vec<(u32, HolonomicOrbitWitness)> {
     thought
         .torsion()
         .iter()
-        .map(|c| (c.period, witness_cycle(thought, &c.sigma, walk_of(c.period))))
+        .map(|c| (c.period, witness_cycle(thought, &c.sigma, run_of(c.period))))
         .collect()
 }
 
@@ -118,7 +118,7 @@ mod tests {
             "the cycle's monodromy is proven, not assumed"
         );
         assert_eq!(total_winding(&ws), HolonomicValency::new(1, 3).0, "Σ windings, exact ℚ");
-        // An open walk (σ leaves its domain) witnesses Open with the residual span.
+        // An open orbit (σ leaves its domain) witnesses Open with the residual span.
         let open = witness_cycle(&t, &[(1, 9)], 8);
         assert!(matches!(open, HolonomicOrbitWitness::Open { .. }), "no closure is never faked");
     }

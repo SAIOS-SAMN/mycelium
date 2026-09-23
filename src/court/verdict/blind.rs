@@ -46,8 +46,9 @@ pub fn blind_replay_at(
 /// its chain (from_residual is deterministic, the chain canonically
 /// framed); a CONNECTION re-derives by inversion of its group component,
 /// with its remainder chain re-deriving as any germ's; every torsion cycle
-/// is walked; and an install measures something on some lane
-/// (`settle_install`). Closure is the certificate, never a descent (12.6).
+/// is traversed; and an install measures something on some lane
+/// (`settle_install`). Closure is the certificate, never a measured
+/// trajectory (12.6).
 pub fn blind_replay_with(spoken: &Element, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Option<&'static str> {
     blind_replay_on_inner(spoken, resolve, None, &crate::transducer::family::NoCrystal)
 }
@@ -93,7 +94,7 @@ pub(crate) fn blind_replay_on_inner(
         }
         // S9.4 — WHAT CERTIFIES IS CLOSURE. `replay_form_with` above is the
         // certificate: the orbits return, every face re-derives, the
-        // certificates re-walk, and with a family the form closes it. A
+        // certificates are re-read, and with a family the form closes it. A
         // sentence is not refused here for carrying a zero magnitude,
         // which is not a defect in the word — μ⃗ is a COST, not a score, and
         // a word that costs nothing to say still says it. The economy

@@ -4,13 +4,13 @@
 //
 //! Rule 6 requires a key to be the canonical coordinates written out, in a
 //! fixed order, in a trie "where a prefix is a stratum". `Keyed` provides
-//! the descent (`fiber`) and refuses the empty coordinate in the type
+//! the prefix read (`fiber`) and refuses the empty coordinate in the type
 //! (`Prefix`), and stops there: it holds no record of WHICH coordinate
 //! system its keys belong to or WHERE one coordinate ends and the next
 //! begins. So every coarse reader had to rebuild the prefix by hand, from a
 //! second key function written to agree with the first, and nothing checked
 //! the agreement. A prefix that cut a coordinate in half was accepted,
-//! descended, and returned a subtree that means nothing; a key from another
+//! followed, and returned a subtree that means nothing; a key from another
 //! system was accepted and answered "nothing here".
 //!
 //! This holds that order as data beside the trie. The boundary after `k`

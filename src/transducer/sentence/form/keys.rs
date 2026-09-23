@@ -51,7 +51,7 @@ pub(crate) fn hue_section_key_of(
     rotor: &crate::transducer::alphabet::Rotor,
     gauge: &[(u8, u8)],
 ) -> Option<crate::transducer::address::Address> {
-    // Built ON the prefix, so the stratum a reader walks and the key a writer
+    // Built ON the prefix, so the stratum a reader reads and the key a writer
     // files under cannot drift apart (law 12: one fact, one construction).
     let mut buf = hue_class_prefix_of(rotor)?;
     buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());

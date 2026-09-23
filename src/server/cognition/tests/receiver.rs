@@ -30,7 +30,7 @@ fn a_spoken_sentence_is_bound_to_its_tasks_family_and_mints() {
     assert!(home.basis_len() >= 1, "the home installs on the witness");
     assert!(
         home.treasury().minted().expect("minted adds up").iter().any(|&x| x > 0),
-        "the install mints the descent the sentence closes on the pair the court bound"
+        "the install mints what the sentence closes on the pair the court bound"
     );
 }
 

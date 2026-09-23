@@ -32,10 +32,10 @@ impl Kernel {
         let asg = element::assignment(spoken.sub());
         if spoken.is_sentence() {
             // COVER COMPLETENESS IS ASKED OF THE NERVE (54.5 Road (d), B4).
-            // This decoded the arriving sentence to walk its vertices for
+            // This decoded the arriving sentence to read its vertices for
             // `Glued` citations; a citation is a 1-simplex `⟨A_i, A_j, φ⟩`
             // and rides the envelope, so the question — does every form this
-            // one mates with resolve here — is a walk of `nerve` and builds
+            // one mates with resolve here — is a read of `nerve` and builds
             // no form. A pair form's Word vertices were never part of it:
             // they are the percept's own bodies, not citations.
             let missing = spoken.receipts().nerve.iter().any(|e| {
@@ -393,7 +393,7 @@ impl Kernel {
                 }
             }
             // THIS CHART'S HEARD ADDRESSES, not every heard address filtered
-            // down to this chart. The walk was the whole of `heard` once per
+            // down to this chart. The read was the whole of `heard` once per
             // remote digest — strata × |heard|, per peer, per cycle — to
             // reach the few standing under one chart. `heard_at` is the
             // fiber; the chart test the filter made is what the fiber IS.
@@ -414,7 +414,7 @@ impl Kernel {
         }
     }
 
-    /// Deflation a form may mint: the descent speaking it measures on the
+    /// Deflation a form may mint: what speaking it measures on the
     /// bound family's trains, or the listing's own magnitude when the word
     /// *is* that listing. Association with a listing (recorded deflation,
     /// sibling trains, whole magnitude at zero) is not a mint.
@@ -427,7 +427,7 @@ impl Kernel {
                 .cloned();
             if let Some(task) = task {
                 if let Some(family) = self.task_family.get(&task) {
-                    return self.measured_replay_descent(form, family);
+                    return self.measured_replay(form, family);
                 }
             }
             return [0; 4];

@@ -46,7 +46,7 @@ fn a_screws_turn_closes_at_its_own_order_and_its_slip_is_open() {
     let ms = modes(&generator, &mut budget()).expect("its modes split");
     let orders: Vec<(BivectorKind, Option<u32>)> = ms.iter().map(|m| (m.kind, mode_order(&half, m))).collect();
     assert_eq!(orders, vec![(BivectorKind::Parabolic, None), (BivectorKind::Elliptic, Some(2))]);
-    assert_eq!(finite_order(&half), None, "and the whole motion walks forever");
+    assert_eq!(finite_order(&half), None, "and the whole motion's orbit never closes");
 
     let quarter = rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
     assert!(cayley_inverse(&quarter).is_none(), "a quarter turn has no rational chart point: tan(π/8) ∉ ℚ");

@@ -472,7 +472,7 @@ impl Kernel {
     /// SETTLE A PROBE: the replayed residual of an open listing against the
     /// speaker's sentence. Closure (empty residual) of a fibre section or a
     /// connection listing pays morphism deflation; a tape covering pays
-    /// nothing. A partial descent updates tension and relieves the physics
+    /// nothing. A partial residual updates tension and relieves the physics
     /// (the measurement is real) but pays μ⃗ = 0⃗ — covering links is not
     /// an axial move. Cited words still earn settle_use. Returns
     /// (code, paid μ⃗, remaining μ⃗).
@@ -484,7 +484,7 @@ impl Kernel {
         cites: &[crate::anastome::dialogue::CiteWire],
         section: bool,
     ) -> (u8, [u64; 4], [u64; 4]) {
-        use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_DESCENT, PROBE_NOTHING};
+        use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_RESIDUAL, PROBE_NOTHING};
         use crate::transducer::stalk::Closure;
         // A PROBE MAY NAME ONE DEMAND VERTEX of the listing (L8q), and
         // then it is not a deflation of the listing's links at all: the
@@ -599,9 +599,9 @@ impl Kernel {
         };
         self.write_field(target, rem_inv.clone(), state, residual.clone(), &before, &after);
         self.listing_atlas.admit_also(&rem_inv, target);
-        // THE DESCENT IS ON THE FIELD, AND NOWHERE ELSE. `write_field` above
+        // THE RESIDUAL IS ON THE FIELD, AND NOWHERE ELSE. `write_field` above
         // carries what the probe left — the residual chain and the closure
-        // it stands at — which is the whole of what a descent measures.
+        // it stands at — which is the whole of what a probe measures.
         //
         // NOTHING IS WRITTEN TO THE LISTING'S MAGNITUDE. `blind_replay`
         // re-derives a residual germ's lanes from its own chain and refuses
@@ -629,7 +629,7 @@ impl Kernel {
         self.book_gen += 1;
         self.physics.syntropy(&mag);
         self.append_step(crate::chronometry::ActKind::Settled, target, voice);
-        (PROBE_DESCENT, [0; 4], after)
+        (PROBE_RESIDUAL, [0; 4], after)
     }
 
 }

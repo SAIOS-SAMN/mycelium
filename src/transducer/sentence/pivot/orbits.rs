@@ -32,8 +32,8 @@ fn unread(why: Unread) {
 ///     θ_{x₀} = 1 ,     θ_c = θ_p · Ω_e   along each tree edge p → c
 /// ```
 ///
-/// A DESCENT OVER THE FOREST, NOT A SEARCH. The spanning forest is already
-/// built; this walks it once from each root, and every node is reached
+/// A TRAVERSAL OF THE FOREST, NOT A SEARCH. The spanning forest is already
+/// built; this traverses it once from each root, and every node is reached
 /// exactly once because a tree has one path to each of its nodes — which
 /// is also why `θ` is well defined and needs no choice (rule 1).
 ///
@@ -96,10 +96,10 @@ fn tree_transports(
 ///
 /// Read off the face's own member pair, exactly as `paths_carried` reads a
 /// step — the same coordinate, not a second derivation of it (rule 12) —
-/// and inverted where the walk runs against the face's orientation.
+/// and inverted where the circuit runs against the face's orientation.
 /// Identity where the face relates no member and both nodes stand at no
 /// chart, which is a real sector of the complex. A named pair the face does
-/// not hold is `NoPlace`, as the walk reads it (O1).
+/// not hold is `NoPlace`, as the circuit reads it (O1).
 ///
 /// `Cone` where the inverse does not exist: `versor_inverse` fails only at
 /// `MM̃ = 0`, a carriage on the light cone (57.4), and that transport was
@@ -118,7 +118,7 @@ fn tree_step(
     let _ = vertices;
     let (vp, cp) = (node_vertex[p], &node_chart[p]);
     let (vc, cc) = (node_vertex[c], &node_chart[c]);
-    // O1 — CROSSED THE WAY THE FACE'S MEMBER PAIR RUNS, as the walk crosses
+    // O1 — CROSSED THE WAY THE FACE'S MEMBER PAIR RUNS, as the circuit crosses
     // it. The vertex pair cannot say which way a face between two charts of
     // one vertex runs, and the pair read backwards found nothing and wrote
     // the identity for it.
@@ -185,12 +185,12 @@ impl Form {
         // homotopy of one and the transport of the other.
         //
         //   V — nodes are `vertices`, edges are `(f.i, f.j)`. This is what
-        //   this function walked: `adj` indexed by vertex, union-find over
+        //   this function traversed: `adj` indexed by vertex, union-find over
         //   vertex indices.
         //
         //   M — nodes are MEMBERS, `member_key(vertex, chart)`: a vertex
         //   ACTING ON A CHART. `extract.rs` builds the faces over exactly
-        //   this — `named_faces` walks `scenery.supports`, whose
+        //   this — `named_faces` reads `scenery.supports`, whose
         //   nodes are member keys — and every face stores its one member
         //   pair under `face_pair_key(&ci, &cj)`. All the transport lives
         //   here: the carriage, the gauge, and 50.3's edge.
@@ -320,7 +320,7 @@ impl Form {
         // its own chord sat, in that node's frame, and two orbits of one
         // form were operators on different tangent spaces.
         //
-        // Two passes: the spanning forest first, then `θ` by descent from
+        // Two passes: the spanning forest first, then `θ` by traversal from
         // each component's root, then the chords. Nothing about which
         // edges are tree edges changes — the union-find is the same and in
         // the same order — only when the chords are read.
@@ -338,8 +338,8 @@ impl Form {
         // THE TRANSPORT FROM EACH COMPONENT'S ROOT TO EVERY NODE OF IT.
         //
         // `θ_root = 1` and `θ_c = θ_p · Ω_e` along each tree edge, by
-        // descent over the forest the union-find just built — the carrier's
-        // own structure, walked once, never a search (rule 1).
+        // traversal of the forest the union-find just built — the carrier's
+        // own structure, traversed once, never a search (rule 1).
         //
         // A component's root is its least node index, which is the order
         // the nodes were discovered in, which is the faces' own content
@@ -364,7 +364,7 @@ impl Form {
             if a == b {
                 gate(0);
             }
-            let Some((path, mut walked)) = (if a == b {
+            let Some((path, mut crossed)) = (if a == b {
                 Some((vec![a], Vec::new()))
             } else {
                 tree_path(&adj, a, b)
@@ -376,7 +376,7 @@ impl Form {
             // by vertex index because every reader of it — the holonomy
             // composite, the charts of an orbit, the face-direction test in
             // `paths_carried` — asks the form for a vertex. The CHART at
-            // each step is carried by the faces the cycle walks, which is
+            // each step is carried by the faces the cycle crosses, which is
             // where the transport is; the projection loses nothing the
             // readers need, and the cycle is a cycle of M whatever it is
             // named by.
@@ -393,7 +393,7 @@ impl Form {
             let mut path: Vec<usize> =
                 path.into_iter().map(|ix| node_vertex[ix] as usize).collect();
             path.push(node_vertex[a] as usize);
-            walked.push(fi);
+            crossed.push(fi);
             // A CYCLE WITH AN END THE FOREST COULD NOT GAUGE IS UNREAD. Its
             // basepoint transport, or the one across its forest path, crossed
             // a carriage on the light cone (57.4), and an orbit based through
@@ -405,21 +405,21 @@ impl Form {
                     continue;
                 }
             };
-            let holonomy = form_named_holonomy(faces, &path, &walked);
+            let holonomy = form_named_holonomy(faces, &path, &crossed);
             // THE CARRIAGES ARE THE TRANSPORT COMPOSITE'S, read from the one
-            // walk that computes them. `path_carriages` stood here and walked
+            // traversal that computes them. `path_carriages` stood here and traversed
             // the orbit's member paths accumulating `place.carriage` —
-            // step for step the same walk `orbit_transport_on` makes, with the
+            // step for step the same traversal `orbit_transport_on` makes, with the
             // word and the gauge thrown away. Two carriers for one quantity
-            // (law 12), and the expensive half: the walk is combinatorial over
+            // (law 12), and the expensive half: the traversal is combinatorial over
             // each face's member pairs, and it ran once per orbit at
             // construction and again per orbit at every class reading. On the
-            // fleet at e98e8a2 that is 70311 orbits walked twice, and one pair
+            // fleet at e98e8a2 that is 70311 orbits traversed twice, and one pair
             // form carried 3361 of them.
             let mut lp = Orbit {
                 members,
                 vertices: path.into_iter().map(|x| x as u16).collect(),
-                faces: walked.into_iter().map(|x| x as u16).collect(),
+                faces: crossed.into_iter().map(|x| x as u16).collect(),
                 chord: fi as u16,
                 holonomy,
                 carriages: Keyed::new(),
@@ -431,12 +431,12 @@ impl Form {
             // A CHORD THAT ENCLOSES NOTHING IS NOT AN ORBIT (ruled
             // 2026-09-18). `orbit_is_trivial` states the predicate once;
             // a cycle that encloses no rotation, no placement and no hue
-            // occupies no axis of 12.6, drives no pivot, and was walked by
+            // occupies no axis of 12.6, drives no pivot, and was traversed by
             // every reader of `orbits` for nothing — 16 546 of them on 174
             // forms in ten minutes.
-            // ONE WALK, read twice. `orbit_is_trivial` and the carriages
+            // ONE TRAVERSAL, read twice. `orbit_is_trivial` and the carriages
             // are two readings of the same frontier, and calling the two
-            // readers would walk it again for each.
+            // readers would traverse it again for each.
             let carried = match paths_carried_why(faces, vertices, &lp) {
                 Ok(c) => c,
                 Err(why) => {
@@ -530,17 +530,17 @@ impl Form {
     }
 }
 
-// `path_carriages(faces, path, walked)` stood here: a walk of the orbit's
+// `path_carriages(faces, path, walked)` stood here: a traversal of the orbit's
 // member paths accumulating each face's `place.carriage`, keyed by the path.
 // It is `orbit_transport_on` with the word and the gauge discarded — the same
 // frontier, the same `step_charts`, the same `closed_key`, the same
 // `carriage.geo(&acc)` — so one quantity had two carriers (law 12) and the
-// walk that produces it ran twice per orbit: once at `orbits_of` to fill
+// traversal that produces it ran twice per orbit: once at `orbits_of` to fill
 // `Orbit.carriages`, and again at every class reading through
-// `orbit_transport_on`. `orbits_of` fills the field from that one walk now.
+// `orbit_transport_on`. `orbits_of` fills the field from that one traversal now.
 //
 // The doc it carried is true of `orbit_transport_on` and belongs to it: the
-// paths are walked FROM THE FACES and not taken as a product of the vertices'
+// paths are traversed FROM THE FACES and not taken as a product of the vertices'
 // fibres, because each face's `at` keys are its member pairs; a step extends a
 // partial path only where the face relates the chart the path stands at to the
 // chart it steps to; a path the next face does not relate simply ends and is
@@ -553,5 +553,5 @@ impl Form {
 // reconstructing a member path that `orbits_of` already had and threw away
 // when it projected the cycle onto vertex indices to fit the tape.
 //
-// `Orbit.members` carries the cycle, `paths_carried` walks it, and there is
+// `Orbit.members` carries the cycle, `paths_carried` traverses it, and there is
 // no frontier to keep the state of.

@@ -187,7 +187,7 @@ fn an_edge_stands_at_a_site_and_not_at_an_index() {
 /// The Čech differential `(δφ)_ijk = φ_jk · φ_ik⁻¹ · φ_ij` evaluates on a
 /// TRIPLE overlap, and with a carrier only for 1-simplices that composite
 /// has nowhere to be registered. It was `NerveTriangle` — three edge
-/// indices and a walk around them — so a junction of `k` charts was
+/// indices and a circuit around them — so a junction of `k` charts was
 /// `C(k,3)` objects whose indices named positions in a list.
 ///
 /// A round is the object the physics has. Charts on the hyperboloid

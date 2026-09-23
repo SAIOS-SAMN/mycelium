@@ -248,7 +248,7 @@ impl NerveEdge {
 /// NON-EUCLIDEAN geometry of the charts that meet, carried as ONE blade.
 ///
 /// A junction of `m` charts was a simplex — `NerveTriangle`, three edge
-/// indices and a composite walked around them — so a junction of `k` charts
+/// indices and a composite run round them — so a junction of `k` charts
 /// was `C(k,3)` independent objects whose indices named positions in this
 /// envelope's own list rather than coordinates of anything (rule 15).
 /// Replaced by the object the physics already has: a round is not
@@ -365,7 +365,7 @@ impl NerveRound {
     ///     S' = Ω S Ω̃        coherent ⟺ S' ∧ S = 0  (S' ∥ S)
     /// ```
     ///
-    /// The simplicial reading walked `δφ_ijk = φ_jk φ_ik⁻¹ φ_ij` around three
+    /// The simplicial reading ran `δφ_ijk = φ_jk φ_ik⁻¹ φ_ij` round three
     /// edges and asked whether it was the identity. This asks whether the
     /// versor's adjoint action is an isometry OF THE ROUND, which is the
     /// same question at every grade and does not need the junction
@@ -574,7 +574,7 @@ impl ReceiptsEnvelope {
     ///
     /// EVERY LIST IS IN ITS OWN CONTENT ORDER (rule 15). The nerve is sorted
     /// by each edge's site key and the derivations by their vertex address,
-    /// so two minds that walked a form's vertices in different orders emit
+    /// so two minds that read a form's vertices in different orders emit
     /// the same envelope. `certificates` comes off a `Keyed`, which is
     /// already in key order.
     ///
@@ -585,7 +585,7 @@ impl ReceiptsEnvelope {
     pub fn of_form(f: &crate::transducer::sentence::Form) -> ReceiptsEnvelope {
         use crate::transducer::sentence::Vertex;
         // THE 1-SKELETON IS THE FORM'S COVER, taken whole (54.7 B5a). It
-        // was rebuilt here by walking the `Glued` vertices for their target
+        // was rebuilt here by reading the `Glued` vertices for their target
         // addresses, and a vertex no longer names the form it mates with:
         // the boundary is the chart's, the incidence is the cover's.
         let mut env = ReceiptsEnvelope { nerve: f.cover.clone(), ..ReceiptsEnvelope::default() };
@@ -608,7 +608,7 @@ impl ReceiptsEnvelope {
         // asks a comparator to decide an order; a `Keyed` IS the order,
         // because a PATRICIA trie walks its keys in their own byte order and
         // the key is the object's coordinates written out. Two minds that
-        // walked a form's vertices differently reach one listing without
+        // read a form's vertices differently reach one listing without
         // anyone choosing a comparison.
         env.nerve = canonical_nerve(env.nerve.drain(..));
         let mut by_vertex: crate::network::nerve::Keyed<DerivationCite> =

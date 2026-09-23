@@ -458,7 +458,7 @@ impl Element {
     /// generators are DERIVED from the witnessed family (base → each section,
     /// link by link — the same way peel derives offsets; nothing enumerated); the
     /// first σ whose orbit spans enough of the family condenses those sections
-    /// into ONE cycle `(σ, ℓ)`. A closure found within the walk (σ^t·base = base)
+    /// into ONE cycle `(σ, ℓ)`. A closure found within the traversal (σ^t·base = base)
     /// sets ℓ = t — the FULL cycle, including unwitnessed members: capacity by
     /// exact structure. Returns the number of sections condensed (0 = no torsion
     /// found; the free part stays as it was).
@@ -470,7 +470,7 @@ impl Element {
         let base = assignment(&self.sub);
         for k in 0..self.sections.len() {
             let Some(sigma) = derive_hue_map(&base, &self.sections[k]) else { continue };
-            // Walk the orbit: collect members, note closure.
+            // Traverse the orbit: collect members, note closure.
             let mut orbit: Vec<Vec<(u8, u8)>> = Vec::new();
             let mut cur = base.clone();
             let mut period = 0u32;
@@ -493,7 +493,7 @@ impl Element {
             // Only a CLOSED orbit is a cycle (σ^t = id on its support, the orbit
             // witnessed at the mint): it condenses the sections it spans, even
             // one (a swap). An orbit that leaves its domain is not filed under
-            // a period — those sections stay free; the open walk is the
+            // a period — those sections stay free; the open orbit is the
             // remainder the word carries, never a winding it claims.
             if period > 0 && !spanned.is_empty() {
                 for &i in spanned.iter().rev() {
@@ -632,7 +632,7 @@ impl Element {
     /// The germ's polytonic MAGNITUDE — per-lane support size (‖Δ‖'s |supp|
     /// component), never summed, computed EXACTLY from the description at
     /// germination. A settled demand's residual magnitude is 0⃗; a real germ's is
-    /// nonzero — the descent the POW++ gate reads.
+    /// nonzero — the residual the POW++ gate reads.
     /// Spatial, gauge, and shell from the chain (and what a connection
     /// carries). Lane 2 is temporal extent at mint (scene-state span).
     /// Lane 3 gains the holonomic volume — sections and torsion cycles.
@@ -693,7 +693,7 @@ impl Element {
         out
     }
 
-    /// Descent order: a non-identity versor or off-plane rotor occupies 𝒮,
+    /// Reduction order: a non-identity versor or off-plane rotor occupies 𝒮,
     /// a nonempty permutation occupies 𝒢 (Law 12 parity with `axes`).
     pub fn reduction_magnitude(&self) -> [u64; 4] {
         let spatial = u64::from(

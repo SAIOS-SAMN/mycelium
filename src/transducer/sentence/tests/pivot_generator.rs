@@ -144,7 +144,7 @@ fn a_minted_generator_is_filed_and_answerable_on_its_own_coordinates() {
 ///
 /// Whether a held word can cancel an orbit's rotor is exact rational
 /// arithmetic and needs no trial, no face write and no budget. Every
-/// candidate used to pay a `faces.clone()`, an `orbits_of` walk and a full
+/// candidate used to pay a `faces.clone()`, an `orbits_of` traversal and a full
 /// `class_vectors_on` read to discover it.
 ///
 /// THE TEST IS CONJUGACY. Composing the candidate onto the composite

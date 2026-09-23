@@ -13,7 +13,7 @@ use crate::transducer::stalk;
 /// Two bodies on the Frame's star and a chord between them whose edge turns
 /// by the Pythagorean `3 + 4e₁₂` — its weight a rational square, so its
 /// modes read — the chord carrying an interface or not, and the circuits
-/// the walk read off it.
+/// the circuit read off it.
 fn circuits(contact: bool) -> Vec<Circuit> {
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let mut f = Form::default();
@@ -116,7 +116,7 @@ fn an_orbit_whose_edge_half_is_refused_reads_unread_at_its_step() {
     };
     assert_eq!(why.label(), "not rigid");
     let chord = (f.faces.len() - 1) as u16;
-    let carried = paths_carried(&f.faces, &f.vertices, &orbits[0]).expect("the walk reads the cycle");
+    let carried = paths_carried(&f.faces, &f.vertices, &orbits[0]).expect("the circuit reads the cycle");
     assert!(
         carried.scoped().all(|(_, c)| c.edge_lost_at == Some(*at) && c.steps[*at - 1].face == chord),
         "lost at the chord's step, {at}"
@@ -125,7 +125,7 @@ fn an_orbit_whose_edge_half_is_refused_reads_unread_at_its_step() {
 }
 
 /// Two bodies on the Frame's star and a chord carrying no edge, with `extra`
-/// written on the chord beside the pair the walk crosses; the circuits read.
+/// written on the chord beside the pair the circuit crosses; the circuits read.
 fn refused_circuits(extra: Option<(Vec<u8>, FacePlace)>) -> Vec<Circuit> {
     let mut f = Form::default();
     for n in 1..=2u8 {

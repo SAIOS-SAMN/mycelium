@@ -227,7 +227,7 @@ assert_eq!(k.volume_of_simplex(&Invariant::counts(&[9])), [0; 4], "a chart with 
 }
 
 /// 45.7, S9.14, S13.3 — THE DOCKET IS A CIRCUIT: a docket of more listings
-/// than one budget is ruled whole across strokes, the stroke whose walk
+/// than one budget is ruled whole across strokes, the stroke whose read
 /// passes the end of the key order reports the circuit and its period,
 /// and a listing admitted below the resume point is ruled on the next
 /// circuit — where a cursor that resumed after the last key it served and
@@ -263,7 +263,7 @@ let below = (0..cap as i64 + 2)
 let addr = below.address();
 assert!(matches!(k.install_adopted(&below, [1; 32]), Adoption::Installed));
 assert!(!k.ruled_contains(addr.as_bytes()), "admitted, not yet ruled");
-// The circuit reaches it before the walk returns to where it began: the
+// The circuit reaches it before the read returns to where it began: the
 // tail, then past the end from the first key.
 let mut strokes = 0;
 while !k.ruled_contains(addr.as_bytes()) {
@@ -272,7 +272,7 @@ while !k.ruled_contains(addr.as_bytes()) {
     k.court_stroke(one_stroke_transport);
 }
 let docket = k.docket_circuits();
-assert!(docket.circuits() >= 1, "the walk passed the end of the docket: {docket:?}");
+assert!(docket.circuits() >= 1, "the circuit passed the end of the docket: {docket:?}");
 assert!(docket.period() >= 1, "the period is measured in strokes: {docket:?}");
 }
 

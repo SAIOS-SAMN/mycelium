@@ -267,8 +267,9 @@ pub(crate) type CarriedPiece = (Vertex, Versor, Supports);
 ///
 /// X3: A COVER IS ONE DEFORMATION'S, and its carriers are read with
 /// `scoped`. `carried`, `meets` and `refused` hold what THIS pass placed,
-/// met and could not spell; a walk of them is a walk of one pair's
-/// reading, and there is no coordinate above a cover to descend from. The
+/// met and could not spell; a read of them is a read of one pair's
+/// reading, and there is no coordinate above a cover for a prefix to
+/// follow. The
 /// same holds for the sets each pass builds as it goes — `occ_in`,
 /// `occ_out`, `named`, `versors`, `occ` — which are read back by the pass
 /// that filled them.
@@ -421,7 +422,7 @@ pub(crate) fn cover_deformation(
 
     // (a) THE PULLBACK, in place (50.8). A carriage already placed is
     // skipped at its own address, so a stroke that resumes carries no
-    // memory of the order a previous one walked in.
+    // memory of the order a previous one read in.
     //
     // The address is the carriage's, never the image piece's sites: one
     // image piece carried from two domains is REPLICATION, and 50.8 exists
@@ -511,7 +512,7 @@ pub(crate) fn cover_deformation(
     //
     // Each distinct placed versor is applied to the piece's own laminae, the
     // image positions are read from the output occupancy by a keyed read
-    // per site (rule 1: never a walk of the output pieces), the pieces they
+    // per site (rule 1: never a whole read of the output pieces), the pieces they
     // name are assembled into one image, and `carriage` confirms that one
     // candidate. The attempt count is `placed × unplaced`, and a family
     // whose pullback placed nothing attempts nothing here.
@@ -652,7 +653,7 @@ pub(crate) fn cover_deformation(
     // coordinate is a coincidence of the embedding, not an overlap.
     //
     // THE RING IS GONE, AND WITH IT THE LAST STENCIL IN THE NERVE (58.3,
-    // ruled 2026-09-22). This walked `support ∪ ring_of_support(support)`,
+    // ruled 2026-09-22). This read `support ∪ ring_of_support(support)`,
     // so a 1-simplex existed wherever two supports came within one 4-step
     // of each other while a 2-simplex needed three of them on one cell. A
     // Cech nerve is functorial over ONE cover:

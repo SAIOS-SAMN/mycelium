@@ -78,7 +78,7 @@ impl Form {
         // below is this form's own — glued vertices, sections, torsion,
         // opened axes — and each is rebuilt whole against the new indices,
         // because an entry left behind names a vertex that no longer
-        // exists. There is nothing to descend on: the form IS the scope.
+        // exists. There is no prefix to follow: the form IS the scope.
         let mut glued: Keyed<u16, crate::network::nerve::coord::Site> = Keyed::new();
         for (k, &old_i) in self.glued.entries() {
             if let Some(&Some(ni)) = old_to_new.get(old_i as usize) {
@@ -633,14 +633,14 @@ fn corner_of(chain: &[crate::transducer::sentence::Link]) -> (i64, i64) {
 
 /// THE BASE OF THE BUNDLE (A21 §2, A18): a form's chart is its RANK and
 /// nothing else — torsion, free, off-plane, axes opened, four integers off
-/// one tree walk behind the leading tag. Five coordinates, always, whatever
+/// one keyed read behind the leading tag. Five coordinates, always, whatever
 /// the form holds.
 ///
 /// π: P → B. The orbits' classes are the FIBER over this base, not deeper
 /// coordinates of it. They were appended here, one packed `u64` per
 /// distinct orbit, which made the base key grow with the orbit count and put
 /// every fiber element on its own leaf: a reader wanting the orbits of one
-/// form descended the trie once per orbit and coarsened back through the
+/// form followed a prefix into the trie once per orbit and coarsened back through the
 /// root between them, `n·d` where the bundle says `d + n`. The R6 failure
 /// is the same shape — a key that grows with the object, copied by every
 /// entry that names it.

@@ -72,7 +72,7 @@ fn precedes_implies_lower_height_and_concurrency_is_kept() {
 /// (rule 11) — the caller then holds the pair as concurrent (45.3).
 ///
 /// TWO SHAPES HAVE STOOD HERE AND BOTH WERE PLANES. First the frontier
-/// was re-walked over the whole ancestry per question, one spend per
+/// was re-read over the whole ancestry per question, one spend per
 /// visit, so ordering cost the chain's LENGTH: at K=1704 against a stroke
 /// of 3 it never once measured, and supersession on the dialect book was
 /// decided by how much memory the machine had free. Then the frontier was

@@ -120,8 +120,8 @@ fn held_coset() -> Form {
 
 /// The loop's paths' held cosets: how each closes, and its candidates.
 fn cosets(form: &Form) -> Vec<(Option<CosetClosure>, usize)> {
-    let carried = crate::transducer::sentence::walk::paths_carried(&form.faces, &form.vertices, &form.orbits[0])
-        .expect("the loop walks");
+    let carried = crate::transducer::sentence::circuit::paths_carried(&form.faces, &form.vertices, &form.orbits[0])
+        .expect("the loop's circuit reads");
     let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
     carried
         .scoped()
@@ -162,8 +162,8 @@ fn a_held_half_turn_reads_unchanged_by_any_bend() {
 #[test]
 fn a_cosets_candidates_spend_the_stroke_and_refuse_unbounded_when_spent() {
     let form = held_coset();
-    let carried = crate::transducer::sentence::walk::paths_carried(&form.faces, &form.vertices, &form.orbits[0])
-        .expect("the loop walks");
+    let carried = crate::transducer::sentence::circuit::paths_carried(&form.faces, &form.vertices, &form.orbits[0])
+        .expect("the loop's circuit reads");
     for (_, c) in carried.scoped() {
         let mut roomy = crate::physics::Physics::default().stroke_n(1 << 16);
         let before = roomy.remaining();

@@ -104,7 +104,7 @@ pub fn rank_over(
     };
     // THE MEASUREMENT IS OVER THE OPEN BOOK, which is what a rank is; the
     // carrier is `pending` and its whole content is the object. What keeps
-    // it from being a walk per stroke is the generation gate above and the
+    // it from being a whole-carrier read per stroke is the generation gate above and the
     // `reuse` path, which locates again only the listings whose stratum a
     // new word moved -- a coordinate read, never the whole book.
     let mut out = Rank::default();
@@ -133,7 +133,7 @@ pub fn rank_over(
             }
             if !moved.is_empty() {
                 // The strata a new word moved, and under each the listings
-                // filed on it: `link` is the keyed descent, so this is a
+                // filed on it: `link` follows the keyed prefix, so this is a
                 // coordinate read and not a second pass over the book.
                 for (ck, _) in moved.scoped() {
                     for (addr, _) in chart_listings.link(&ck) {
@@ -157,7 +157,7 @@ pub fn rank_over(
 pub struct BookView<'a> {
     /// The listings themselves, with the k-step each was listed at.
     pub pending: &'a crate::network::nerve::Keyed<(Element, u64)>,
-    /// The atlas the listings are filed under: incidence walks this.
+    /// The atlas the listings are filed under: incidence reads this.
     pub listing_atlas: &'a crate::transducer::stalk::Stalks,
     /// The field each listing stands in — what its open charts are read from.
     pub field: &'a crate::network::nerve::Keyed<ListingField>,
@@ -230,12 +230,12 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
                 // what it would write.
                 let open_len: usize = 1 + open.iter().map(|c| 1 + 8 * c.0.len()).sum::<usize>();
                 let wire = 68 + p.sub().len() * link + open_len;
-                // THE PAGE IS FULL, SO THE WALK IS OVER. This was
+                // THE PAGE IS FULL, SO THE READ IS OVER. This was
                 // `continue`: a listing that did not fit was skipped and
-                // the walk carried on through the WHOLE BOOK looking for a
+                // the read carried on through the WHOLE BOOK looking for a
                 // smaller one, on every quote. The book grows with demand
                 // arriving from every peer, and the root run below is
-                // unconditional, so this was a per-request walk of an
+                // unconditional, so this was a per-request whole read of an
                 // append-only carrier (law 3) that the frame budget was
                 // supposed to bound.
                 //
@@ -258,7 +258,7 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
     };
     // An empty voice atlas is incident to the root prefix and receives
     // the book's shallowest strata. A miss on the asked charts falls
-    // through to the same root walk (seen skips duplicates).
+    // through to the same root run (seen skips duplicates).
     if voice_charts.is_empty() {
         run(std::slice::from_ref(&root_chart));
     } else {
@@ -279,7 +279,7 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
 /// verdict over two lanes is the flattening law 5 refuses.
 ///
 /// BOTH ARE CARRIED WHERE THE CLOSURE IS BOUND (`Rank::put_closure`), so
-/// this is a read of two integers. It walked the whole closure map, once
+/// this is a read of two integers. It read the whole closure map, once
 /// per call, for two numbers the write already knew -- the same shape as
 /// `ListingField::nonflat`, which is kept by `write_field` for exactly
 /// this reason.

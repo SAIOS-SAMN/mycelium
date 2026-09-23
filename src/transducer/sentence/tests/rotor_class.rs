@@ -67,7 +67,7 @@ fn an_infinite_class_no_word_discharges_opens_an_axis_and_is_never_filed() {
     assert_eq!(
         crate::court::verdict::blind_replay(&e),
         None,
-        "the court re-derives the seed from the orbit and the certificate re-walks"
+        "the court re-derives the seed from the orbit and the certificate re-reads"
     );
     let mut struck = back.clone();
     struck.axes = Keyed::new();
@@ -97,7 +97,7 @@ fn torsion_filed_only_when_witnessed_at_period() {
     assert!(
         ws.iter().any(|(ell, w)| *ell == 8
             && matches!(w, crate::transducer::torsion_witness::HolonomicOrbitWitness::Open { .. })),
-        "an unclosed walk is not believed: {ws:?}"
+        "an unclosed circuit is not believed: {ws:?}"
     );
 }
 

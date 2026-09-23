@@ -1,11 +1,11 @@
 // 78.12(4), PL1 — THE CIRCUIT'S TRAJECTORY READ STEP BY STEP, off the steps
-// the walk kept: each step oriented the way the circuit runs, its ray, its
+// the traversal kept: each step oriented the way the circuit runs, its ray, its
 // class and modes, and the class of the transport composed through it.
 
 use super::*;
 use crate::observe::{ArmRead, Carried, Circuit, CircuitStep, CircuitTest, Circuits, Offer, TestArm};
 
-/// ONE STEP AS THE WALK LEFT IT: oriented, its composite's class read, its
+/// ONE STEP AS THE TRAVERSAL LEFT IT: oriented, its composite's class read, its
 /// modes owed to the reader that holds the stroke's budget (BD1).
 struct PendingStep {
     face: u16,
@@ -187,8 +187,8 @@ fn ladder_of(carried: &PathCarried, faces: &[FormFace]) -> Option<(Vec<(TestArm,
 }
 
 thread_local! {
-    /// The circuits walked since the percept armed the orbits, in the order
-    /// the walk read them; `None` while nobody is listening. Armed and
+    /// The circuits traversed since the percept armed the orbits, in the order
+    /// the traversal read them; `None` while nobody is listening. Armed and
     /// replaced with the orbits' list, so at most one percept's circuits are
     /// ever held.
     static PENDING: std::cell::RefCell<Option<Vec<PendingCircuit>>> = const { std::cell::RefCell::new(None) };
@@ -211,28 +211,28 @@ pub(super) fn note_circuit(r: impl FnOnce() -> PendingCircuit) {
     });
 }
 
-/// ONE WALKED CIRCUIT: each step's face and whether it was crossed along the
+/// ONE TRAVERSED CIRCUIT: each step's face and whether it was crossed along the
 /// face's orientation, the circuit's composite (OR3), how its held coset
 /// closes where it rides one, and whether its gauge half is static (78.6).
 #[derive(Clone, Debug)]
-pub struct WalkedCircuit {
+pub struct TraversedCircuit {
     pub steps: Vec<(u16, bool)>,
     pub composite: Option<element::Versor>,
-    pub coset: Option<super::walk::CosetClosure>,
+    pub coset: Option<super::circuit::CosetClosure>,
     pub gauge_static: bool,
 }
 
-/// THE CIRCUITS THE PERCEPT WALKED, each by the faces its steps crossed and
+/// THE CIRCUITS THE PERCEPT TRAVERSED, each by the faces its steps crossed and
 /// its composite — what a cell's orbit algebra reads (CG1): a step's body
 /// is read off the face it crosses (BD2), never derived from its member.
-/// Taken off the walk that already ran, never by walking again; empty where
+/// Taken off the traversal that already ran, never by traversing again; empty where
 /// nobody armed the list. A circuit through a held coset has its closure
 /// read here, its candidates formed under the stroke (rule 10).
-pub fn walked_circuits(budget: &mut crate::physics::Budget) -> Vec<WalkedCircuit> {
+pub fn traversed_circuits(budget: &mut crate::physics::Budget) -> Vec<TraversedCircuit> {
     PENDING.with(|c| match c.borrow().as_ref() {
         Some(held) => held
             .iter()
-            .map(|p| WalkedCircuit {
+            .map(|p| TraversedCircuit {
                 steps: p.steps.iter().map(|s| (s.face, s.forward)).collect(),
                 composite: p.composite.clone(),
                 coset: p.coset.as_ref().and_then(|path| path.coset_closure(budget)),
@@ -243,7 +243,7 @@ pub fn walked_circuits(budget: &mut crate::physics::Budget) -> Vec<WalkedCircuit
     })
 }
 
-/// READ THE CIRCUITS THE PERCEPT WALKED, each step's modes under the
+/// READ THE CIRCUITS THE PERCEPT TRAVERSED, each step's modes under the
 /// stroke's budget (BD1), and hold them for the observer; stop listening.
 /// A percept that armed nothing reads nothing and leaves what is held.
 /// Returns the steps whose modes the stroke left unbounded (SP1).
@@ -327,7 +327,7 @@ pub fn take_circuits() -> Option<Circuits> {
     READ.with(|r| r.borrow_mut().take())
 }
 
-/// ONE CIRCUIT, read off the steps its walk kept. A step's transport is
+/// ONE CIRCUIT, read off the steps its traversal kept. A step's transport is
 /// oriented the way the circuit runs before it is read; the composite runs
 /// on through it, and a step that is unread or on the cone leaves every
 /// later composite unread (rule 11).

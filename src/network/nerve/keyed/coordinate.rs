@@ -109,7 +109,7 @@ pub trait Coordinate: Eq + Clone + std::fmt::Debug + Send + Sync + 'static {
 
 /// THE PREFIX A COARSE COORDINATE MAKES IN A FINER ONE.
 ///
-/// A fibre read descends on a coarse coordinate — every section over one
+/// A fibre read follows the prefix of a coarse coordinate — every section over one
 /// chart, every member of one class — and that is only meaningful where
 /// the coarse system's bytes are genuinely an opening segment of the fine
 /// system's. Declaring it is what makes `fiber_over` a stratum read rather
@@ -119,7 +119,7 @@ pub trait Stratum<Fine: Coordinate>: Coordinate {
     ///
     /// Not always `encode()`: a [`coord::Section`] opens with the chart's
     /// key LENGTH-DELIMITED, so the chart's own bytes are not a byte
-    /// prefix of it and reading the fibre at `encode()` would descend on
+    /// prefix of it and reading the fibre at `encode()` would follow
     /// the wrong bits. Stating the opening separately is what keeps the
     /// two ends from drifting — the coarse reader and the fine writer are
     /// the same function here, rather than two written to agree.
@@ -307,7 +307,7 @@ pub mod coord {
     /// row, column and frame at the corpus's `n = 3`, and whatever the base
     /// has at any other.
     ///
-    /// It exists so the nerve's overlaps can be derived by WALKING THE
+    /// It exists so the nerve's overlaps can be derived by READING THE
     /// BASE. A 2-simplex of a cover is certified by a WITNESS: a cell
     /// standing in three charts at once, `p ∈ U_i ∩ U_j ∩ U_k`. Keyed by
     /// this coordinate, the support of the cover is an inverted reading
@@ -319,7 +319,7 @@ pub mod coord {
     /// charts can ring a pore they do not cover — filling that triangle
     /// would kill an authentic `H₁` class by fiat. It is also a
     /// combinatorial scan over triples, which is a search (rule 3); the
-    /// base walk is `O(cells · valence)` and derives the simplex from the
+    /// base read is `O(cells · valence)` and derives the simplex from the
     /// cover the engine already built.
     #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Lamina {
@@ -659,7 +659,7 @@ pub mod coord {
     }
 
     /// THE CLASS DEPTH IS A STRATUM OF THE CARRIER, so "every section of
-    /// this class" is a fibre read and not a walk.
+    /// this class" is a fibre read and not a whole-carrier read.
     impl Stratum<SectionAt> for Transport {
         fn opening(&self) -> CompactBytes {
             self.encode()
@@ -791,7 +791,7 @@ pub mod coord {
 
     /// THE CHART A SECTION STANDS OVER is the section's own opening
     /// segment, so every section over one chart is a fibre read at it —
-    /// descending on the LENGTH-DELIMITED chart key, which is what
+    /// following the LENGTH-DELIMITED chart key, which is what
     /// `Section::encode` writes first and what the bare chart key is not.
     impl Stratum<Section> for Chart {
         fn opening(&self) -> CompactBytes {

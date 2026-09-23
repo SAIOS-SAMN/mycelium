@@ -64,7 +64,7 @@ pub struct Metabolism {
     /// histogram.
     pub orbit_finite: u64,
     pub orbit_sum: u64,
-    /// Rotors of infinite order: a walk, which never returns. Kept apart
+    /// Rotors of infinite order: an orbit, which never closes. Kept apart
     /// from `ℓ = 0`, because A19 spells infinite order that way and the
     /// two readings are opposite (53.6).
     pub orbit_infinite: u64,
@@ -166,7 +166,7 @@ impl Metabolism {
     /// counter by the caller rather than duplicated here.
     pub fn line(&self) -> String {
         format!(
-            "entropy: cauterized {} released {} | sealed {} | orbit: closed {} Σℓ {} walking {} \
+            "entropy: cauterized {} released {} | sealed {} | orbit: closed {} Σℓ {} open {} \
              | draw {:?} restore {:?} depleted {}",
             self.cauterized,
             self.released,

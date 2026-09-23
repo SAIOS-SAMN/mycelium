@@ -1,6 +1,6 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! Rule 10 — THE READ TOKEN: what bounds a loop that does not walk a
+//! Rule 10 — THE READ TOKEN: what bounds a loop that does not read a
 //! boundary.
 //!
 //! Split from `physics.rs` at the §1.1 600-line reading bound; the items

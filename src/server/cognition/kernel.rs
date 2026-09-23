@@ -199,7 +199,7 @@ pub struct Kernel {
     ///
     /// `fetch_have` unioned ALL of `heard` into every chart's have-list,
     /// and it is called once per stratum per peer per exchange cycle;
-    /// `confirm_peer_holds` walked all of `heard` once per remote digest.
+    /// `confirm_peer_holds` read all of `heard` once per remote digest.
     /// Both are O(strata · |heard|), and `heard` grows with peers × corpus.
     pub(crate) heard_at: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Current dialect transition per (chart, hypha pair): one versor, the
@@ -273,12 +273,12 @@ pub struct Kernel {
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
     /// Last key the syntropic cursor yielded; the next stroke resumes after
-    /// it. `None` is a walk that has not started, which is an ABSENCE and
+    /// it. `None` is a circuit that has not started, which is an ABSENCE and
     /// not an empty key (rule 11): every one of the eight resume cursors
     /// below reads the same way, and `Keyed::cursor` takes the option.
     pub(crate) optimize_cursor: Option<Vec<u8>>,
     /// Keyed cursor into `open` for `syntropic_stroke` (rule 10, S13.3):
-    /// the stagnation walk resumes where the last stroke left off, so a
+    /// the stagnation circuit resumes where the last stroke left off, so a
     /// docket beyond one budget is read whole across strokes.
     pub(crate) syntropic_cursor: Option<Vec<u8>>,
     /// Keyed cursor into `open` for `drain_unreachable` (rule 10, S13.3):
@@ -315,7 +315,7 @@ pub struct Kernel {
     /// E2, 26 — THE INVERSE OF `discoverers`: voice → the addresses that
     /// voice discovered. `use_credit` asks "which forms are this voice's",
     /// and `discoverers` answers the other question; without this carrier
-    /// the read walks every discovered address on every room check, which
+    /// the read covers every discovered address on every room check, which
     /// is the enumeration law 3 forbids. Written at the two sites that
     /// write `discoverers` and nowhere else, so the two cannot diverge.
     pub(crate) discovered_by: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
@@ -329,7 +329,7 @@ pub struct Kernel {
     /// DEPTH IS NOT HERE. This is the index; the depth of an address is
     /// the number of DISTINCT signers among these entries whose kind is
     /// `Install`, `Ruling` or `Adopted`, computed at the read and stored
-    /// nowhere (law 12). Without the index that read walks the whole
+    /// nowhere (law 12). Without the index that read covers the whole
     /// chain per address, which is law 3's enumeration.
     ///
     /// Derived, never persisted: rebuilt from the chain's own receipts at
@@ -352,7 +352,7 @@ pub struct Kernel {
     pub(crate) open_cursor: Option<Vec<u8>>,
     /// Keyed cursor into `pending` for the lapse (45.7): the stroke's circuit
     /// over the docket resumes where the last one left off, so a book that
-    /// outgrows one stroke's budget is still walked whole across strokes.
+    /// outgrows one stroke's budget is still read whole across strokes.
     pub(crate) lapse_cursor: Option<Vec<u8>>,
     /// The docket's circuits (45.7, S13.3): the circuits of `open` the court
     /// stroke completed and the strokes the last one took, written once
@@ -478,11 +478,11 @@ impl Kernel {
         // about four minutes and filled the disk.
         //
         // The root names the era, and the archive is in K order, so the
-        // question is a descent and not a scan (law 3).
+        // question is a bisection and not a scan (law 3).
         // AND IT IS FILED IN K ORDER. `push` appended, so an archive that
         // interleaves signers — a witness holds its own folds and the ones
         // it co-signed — was not ordered by `root.k` at all, and the
-        // descent `eras_over` makes over it was unsound. Inserting at the
+        // bisection `eras_over` makes over it was unsound. Inserting at the
         // position the coordinate names keeps the one invariant both reads
         // depend on.
         let seat = self.archive.partition_point(|e| e.root.k < era.root.k);

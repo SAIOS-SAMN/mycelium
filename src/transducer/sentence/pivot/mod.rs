@@ -13,17 +13,17 @@ pub mod snap;
 pub mod trajectory;
 pub mod trial;
 pub mod viscosity;
-pub mod walk;
+pub mod circuit;
 pub mod words;
 
 pub use census::*;
 pub use moves::*;
 pub use snap::*;
-pub use trajectory::{construct_routes, finish_circuits, take_circuits, walked_circuits, WalkedCircuit};
+pub use trajectory::{construct_routes, finish_circuits, take_circuits, traversed_circuits, TraversedCircuit};
 pub use viscosity::{
     bend_plane_name, read_viscosity, viscosity_line, viscosity_reading, Arm, BendLane, PairViscosity,
 };
-pub(crate) use walk::*;
+pub(crate) use circuit::*;
 pub use words::*;
 
 use super::class::*;

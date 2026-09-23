@@ -5,7 +5,7 @@
 //! and runs the pivot orbit of A16 over each; an idea whose form closes
 //! crystallizes (25.2) and is returned to the mind to stand and utter.
 //! `pivot_on` runs the pivot orbit over the ideas a word meets and files
-//! what it obstructs. Neither searches: each walks what the complex already
+//! what it obstructs. Neither searches: each reads what the complex already
 //! names.
 
 use super::*;
@@ -70,7 +70,7 @@ impl Contemplation {
             let Some(k) = nxt else {
                 break;
             };
-            // The winding of the walk: past the end once and back to a
+            // The winding of the circuit: past the end once and back to a
             // key beyond where the stroke began, or past the end twice,
             // the ring has been applied once.
             let closed = match wraps {
@@ -137,7 +137,7 @@ impl Contemplation {
         // THE CAVITY IS READ AT THE CHART, not copied and filtered:
         // `cavity_key` files a retired remainder under its chart first, so
         // the entries a chart can re-hold are the SUBTREE under that chart's
-        // key — `Keyed::fiber`, one descent per prefix of the word's chart.
+        // key — `Keyed::fiber`, one keyed read per prefix of the word's chart.
         // The cavity grows by one on every retirement, every stroke, and
         // drains only here, so a read that cloned every entry to find the
         // few whose chart matched would grow without bound while the thing

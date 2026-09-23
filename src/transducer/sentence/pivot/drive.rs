@@ -128,7 +128,7 @@ pub(crate) fn holonomy_words_on(
         // `lp.holonomy` is `form_named_holonomy` over the orbit's PROJECTED
         // vertex path — a base-space object composed without the members
         // the transport lives on. `t.word` is the composite this path
-        // actually walked, member by member.
+        // actually crossed, member by member.
         //
         // The fallback itself stays, and stripping it was wrong: a section
         // face (21 step 2, S12.2) carries a word that is DELIBERATELY not
@@ -257,7 +257,7 @@ impl Form {
     }
 
     /// Write a certified move onto the form — the chord face's transport,
-    /// or an axis opened over the orbit — and re-walk. Vertices are not
+    /// or an axis opened over the orbit — and re-read. Vertices are not
     /// written.
     pub fn apply_pivot(&mut self, cert: &PivotCertificate) {
         self.apply_move(&cert.by);
@@ -687,7 +687,7 @@ impl Form {
                                 charts.len()
                             );
                         }
-                        // 54.5, DIRECTIVE 4 — A CIRCUIT THAT WALKS MOUNTS
+                        // 54.5, DIRECTIVE 4 — A CIRCUIT THAT NEVER CLOSES MOUNTS
                         // ITS SHEAR AS A BOUNDARY CELL.
                         //
                         // A screw composes to `g = T(τ)·R` with
@@ -735,7 +735,7 @@ impl Form {
                         // passed `order.to_u32()` — the ROTOR'S order — and
                         // a quarter turn carried along a translation has
                         // the same rotor order as one about a fixed point
-                        // while closing at neither: the screw walks. The
+                        // while closing at neither: the screw slips. The
                         // filer solves for the fixed point exactly and
                         // answers what each member path actually closes at,
                         // and the snap now carries THAT (54.3).

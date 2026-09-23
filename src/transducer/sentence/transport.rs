@@ -370,8 +370,8 @@ pub fn hue_of(gauge: &[(u8, u8)], h: u8) -> Option<u8> {
 ///
 /// A gauge is a partial map on the hues and absence is the identity. Held as
 /// a LISTING of `(from, to)` it is the graph of that map written out as
-/// points, and every question about it becomes a scan: `hue_of` walks the
-/// listing to answer about ONE hue, and two listings are compared by walking
+/// points, and every question about it becomes a scan: `hue_of` reads the whole
+/// listing to answer about ONE hue, and two listings are compared by reading
 /// one against the other. The hue is the coordinate and the listing has no
 /// index at it.
 ///

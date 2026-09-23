@@ -23,7 +23,7 @@ pub struct Session {
     pub(crate) router: RefCell<crate::network::nerve::Router>,
     /// Peer addresses keyed by the contact string's bytes.
     pub(crate) peers: crate::network::nerve::Keyed<String>,
-    /// The quote's stroke: quotes walk the nerve in turn, one hypha per
+    /// The quote's stroke: quotes run round the nerve in turn, one hypha per
     /// stroke, so every book is thought about and none is a monologue.
     pub(crate) strokes: std::cell::Cell<u64>,
     /// Keep-alive streams keyed by destination address.
@@ -437,7 +437,7 @@ impl Session {
     }
 
     /// PROBE an open listing with a tentative sentence; the hypha replays and
-    /// settles graded descent or closure. Returns (code, paid, remaining).
+    /// settles a graded trajectory or closure. Returns (code, paid, remaining).
     pub fn probe(&self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
         let body = self.speak_keyed(target, dialogue::encode_probe(&self.kernel.voice, target, cites))?;
         dialogue::decode_probe_reply(&body)

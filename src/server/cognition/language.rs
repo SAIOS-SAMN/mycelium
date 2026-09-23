@@ -100,7 +100,7 @@ pub struct Language {
     /// beside them, and the comment on that index said "a coordinate read,
     /// never a scan" — which it was not: it read a coordinate, produced an
     /// OFFSET, and every caller immediately converted the offset back into
-    /// a word. `language_rebuild` states the defect plainly: it walks
+    /// a word. `language_rebuild` states the defect plainly: it reads
     /// `self.basis.scoped()`, which is ALREADY keyed by address, flattens
     /// it into a vector, and rebuilds an index to undo the flattening.
     ///
@@ -227,9 +227,9 @@ pub struct Rank {
     /// THE COHESION READING, CARRIED WHERE THE CLOSURE IS BOUND: listings
     /// with a base point in the language, and listings without one. Kept
     /// by `put_closure` for the same reason `ListingField::nonflat` is
-    /// kept by `write_field` — so a read never walks the book to count
-    /// what the write already knew (rule 1). `cohesion_over` walked the
-    /// whole closure map, and `synthesis` walked it a second time, with
+    /// kept by `write_field` — so a read never reads the whole book to count
+    /// what the write already knew (rule 1). `cohesion_over` read the
+    /// whole closure map, and `synthesis` read it a second time, with
     /// its own filter, to print one of the two numbers.
     closed: usize,
     open: usize,

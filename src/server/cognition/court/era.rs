@@ -53,13 +53,13 @@ impl Kernel {
     /// `commit_fold` files eras in K order and a fold's root is its last
     /// K, so `archive` is sorted by `root.k` within a signer and the eras
     /// that can answer a range are a CONTIGUOUS RUN of it. The first is
-    /// found by descending on `root.k`; the run then ends at the first era
-    /// whose own first K is past `to`. Nothing walks the eras before the
-    /// range, and nothing walks the receipts inside one to decide whether
+    /// found by bisection on `root.k`; the run then ends at the first era
+    /// whose own first K is past `to`. Nothing reads the eras before the
+    /// range, and nothing reads the receipts inside one to decide whether
     /// it is the right era (law 3).
     ///
     /// A court holds its own folds and the ones it witnessed for others,
-    /// so the archive interleaves signers; the descent is over the whole
+    /// so the archive interleaves signers; the bisection is over the whole
     /// of it and the signer is checked where the run is read, which keeps
     /// one ordering rather than one per signer.
     fn eras_over(&self, signer: &[u8; 32], from: u64, to: u64) -> Vec<&Era> {

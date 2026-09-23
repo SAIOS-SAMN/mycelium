@@ -11,7 +11,7 @@ impl Entity {
     /// redundancy the vocabulary is carrying — a compression bid. The probe
     /// is a virtual rollout (zero mutation); the hypha's deterministic
     /// replay, not this discovery, decides retirement.
-    /// ADVANCE THE REFINEMENT WALK BY ONE COORDINATE, wrapping at the end
+    /// ADVANCE THE REFINEMENT CIRCUIT BY ONE COORDINATE, wrapping at the end
     /// of the trie — the carrier's own circuit (45.7), not `% len`. A genome
     /// of fewer than two words has no redundancy to seek.
     fn advance_refine_cursor(&mut self) -> Option<Vec<u8>> {
@@ -342,7 +342,7 @@ impl Entity {
     /// The vocabulary read is the RULED words: a compression bid the court
     /// must replay cannot lean on a word the mesh does not hold (rule 11),
     /// which is the same condition the spatial bid already enforces.
-    /// THE CANDIDATES ARE READ AT THE CONJUGACY COORDINATE, never walked.
+    /// THE CANDIDATES ARE READ AT THE CONJUGACY COORDINATE, never read whole.
     ///
     /// The first cut of this swept the whole genome and compared the
     /// cursor's word against every other — a Cartesian pass over the carrier
@@ -354,7 +354,7 @@ impl Entity {
     /// `[0, class_axes…]` — the rotor's conjugacy axes — which is exactly
     /// what `GeneratorIndex` is keyed by (1.8, 50.2 step 2). So the words
     /// that could possibly answer either question are the fibre under that
-    /// chart, reached by one keyed descent, and `generators_under` coarsens
+    /// chart, reached by one keyed prefix, and `generators_under` coarsens
     /// as A21 §2 requires rather than answering empty at a finer stratum.
     ///
     /// Both questions are then asked of that fibre and of nothing else:
@@ -430,7 +430,7 @@ impl Entity {
     ///   where the court re-derives it.
     ///
     /// One word per stroke, at the cursor `algebraic_redundancy` already
-    /// advances — no second walk, no second cursor, and no second solve.
+    /// advances — no second circuit, no second cursor, and no second solve.
     pub fn algebraic_step(&mut self) -> Option<AlgebraicStep> {
         use crate::anastome::dialogue::AlgebraicWitness;
         let word = {

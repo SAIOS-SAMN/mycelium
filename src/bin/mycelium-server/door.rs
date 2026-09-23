@@ -70,7 +70,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             let Ok(roots) = door.roots.lock() else { return true };
             dialogue::encode_root_reply(
                 roots.get(task.as_bytes()).and_then(|v| {
-                    // `get(task)` is the descent: the solvers standing on
+                    // `get(task)` follows the task's prefix: the solvers standing on
                     // THIS task, and the first in key order is the reply.
                     v.scoped()
                         .next()

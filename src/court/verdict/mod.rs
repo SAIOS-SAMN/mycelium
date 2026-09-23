@@ -82,7 +82,7 @@ pub const REFUSE_FACE: &str = "face does not re-derive from its vertices";
 /// THE NEW ONE. It read "not identity", which was `H¹ = 0`: every 1-cycle
 /// trivial. A compact holonomy about a fixed point RETURNS and is `ℤ/ℓℤ`
 /// torsion, which is content (law 7); what refuses is a free part, a
-/// circuit that walks and never closes, and a form owes that a
+/// circuit that runs on and never closes, and a form owes that a
 /// `Demand::Dislocation` rather than a filing.
 pub const REFUSE_ORBIT: &str = "orbit holonomy is a free part and no dislocation declares it";
 /// 54.5 — PERJURY ABOUT THE TERRAIN, which is the one thing in a receipt
@@ -99,7 +99,7 @@ pub const REFUSE_INFLATED_YIELD: &str = "receipt attests a period the complex do
 pub const REFUSE_REBASE_TRIVIAL: &str = "rebased form equals its base";
 pub const REFUSE_UNFOLD_STILL: &str = "unfolding measure does not move";
 pub const REFUSE_ORBIT_STILL: &str = "orbit does not move";
-/// S9.4 — CLOSURE, NOT DESCENT (23.1 step 7, 34.1). A form is refused when
+/// S9.4 — CLOSURE, NOT TRAJECTORY (23.1 step 7, 34.1). A form is refused when
 /// it leaves a remainder on some train pair: it does not close the family
 /// it claims. What it MEASURED is priced by the economy and is not a
 /// verdict here.

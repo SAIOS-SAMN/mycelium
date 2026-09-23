@@ -30,7 +30,7 @@ impl Kernel {
     /// XOR distance on the address bytes, which is not where a chart is
     /// homed and never named a hypha the transport had measured.
     ///
-    /// THE LAPSE IS A CIRCUIT, NOT A SWEEP (45.7, rule 10). It walked the
+    /// THE LAPSE IS A CIRCUIT, NOT A SWEEP (45.7, rule 10). It read the
     /// whole `pending` fiber with no budget, collected every expired
     /// address into a `Vec`, and then ran a second unbudgeted loop that
     /// revoked an escrow, unlisted a draw and — since I10 — sealed a
@@ -42,13 +42,13 @@ impl Kernel {
     ///
     /// Now it spends the stroke's own `Budget` and resumes from
     /// `lapse_cursor`, so "every stroke over a carrier resumes where it
-    /// left off" and the docket is walked whole across strokes rather than
+    /// left off" and the docket is read whole across strokes rather than
     /// all at once in one. The extent each lapse reports is the one read
     /// when it was measured, not a second read guarded by `unwrap_or(now)`
     /// — a default standing in for a height (checklist (i)).
     /// THE SWEEP TAKES NO BUDGET FROM ITS CALLER. It was handed
     /// `court_stroke`'s one stroke, after the docket circuit had already
-    /// spent from it, so on a busy court the eviction walk reached no
+    /// spent from it, so on a busy court the eviction circuit reached no
     /// listing at all — a book whose only sink competes with whatever ran
     /// before it in the same function has no sink.
     pub(crate) fn lapse_docket(
@@ -86,7 +86,7 @@ impl Kernel {
         //
         // `court_stroke` built ONE stroke and handed it to the docket circuit
         // first, then here, then to the fills, so on a busy court the circuit
-        // spent it and the eviction walk reached no listing at all. Giving
+        // spent it and the eviction circuit reached no listing at all. Giving
         // the sweep its own stroke removed the COMPETITION and left the
         // RATE: three spends a pass against an inflow of some 250 listings
         // a minute, which loses by two orders of magnitude. Measured on the
@@ -134,7 +134,7 @@ impl Kernel {
                 //
                 // AND ABOVE THE CEILING THE HORIZON COLLAPSES. A book past
                 // what this node's memory can carry evicts whatever has
-                // stood at all, oldest reached first as the circuit walks it:
+                // stood at all, oldest reached first as the circuit reads it:
                 // the manifold is finite and the book is not entitled to
                 // exceed it whatever Λ says.
                 // AND THE TWO REFUSING ARMS ARE TWO FACTS (law 5).

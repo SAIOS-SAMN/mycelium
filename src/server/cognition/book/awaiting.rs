@@ -25,13 +25,13 @@ impl Kernel {
 
     /// 21 step 3, 50.2 step 2 — THE FIRST CITED FORM THIS COURT HAS NOT
     /// RULED, or none. Every citation is a keyed read of `ruled_contains`
-    /// and the walk is over the sentence's OWN vertices — its boundary,
+    /// and the read is over the sentence's OWN vertices — its boundary,
     /// which rule 1 allows — never over the cover. Both levels are read
     /// here: a `Glued` vertex citing a whole form, and a word vertex's
     /// derivation citing a `Word` vertex inside one. They are one
     /// mechanism, so they wait the same way.
     /// THE CITATIONS ARE READ OFF THE ENVELOPE, NOT DECODED (54.5 Road (d),
-    /// B3). This parsed the sentence's whole tape to walk its vertices for
+    /// B3). This parsed the sentence's whole tape to read its vertices for
     /// citations, and the citations were never geometry: the nerve's
     /// 1-simplices are `⟨A_i, A_j, φ⟩` and a vertex's generators are its
     /// presentation. Both ride `Element.receipts`, which is a flat list and

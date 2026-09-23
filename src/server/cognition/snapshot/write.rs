@@ -79,8 +79,8 @@ impl Kernel {
         }
         framed(&mut out, self.archive.len() as u64, &mut body);
         // THE RANK section: each listing's closure and moduli as last
-        // measured, so a boot continues the measurement instead of walking
-        // the book from nothing.
+        // measured, so a boot continues the measurement instead of reading
+        // the whole book from nothing.
         let rank = &self.closure.2;
         // RNK2: the closure is the base point's ADDRESS, not a slot into a
         // basis snapshot that has since moved. An absent closure is the
@@ -107,7 +107,7 @@ impl Kernel {
             body.extend_from_slice(bytes);
             Some(())
         });
-        // DEFLATION section: each provisional's measured descent, so a
+        // DEFLATION section: each provisional's measured deflation, so a
         // restart does not docket Δ⃗ = 0 and feed the court a slash list.
         out.extend_from_slice(b"DEF1");
         // DEF1 record: addr ‖ μ⃗[4] ‖ tag u8

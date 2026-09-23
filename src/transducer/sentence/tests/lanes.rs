@@ -162,23 +162,23 @@ fn a_turns_base_point_occupies_no_placement_and_a_screw_does() {
         "content on the nerve alone, not on the atlas as well"
     );
 
-    // Along the axis: no `p` fixes it, the seam walks, and that IS an
+    // Along the axis: no `p` fixes it, the seam slips, and that IS an
     // obstruction with a translation word that can zero it.
     let screw = crate::transducer::cga::at_three::translator(&q(0), &q(0), &q(3));
-    let walking = ClassVector::read(&order4(), screw, CycleType::Identity).expect("a screw");
+    let slipping = ClassVector::read(&order4(), screw, CycleType::Identity).expect("a screw");
     assert!(
-        walking.occupies(Axis::Placement),
-        "a walk occupies placement: {:?}",
-        walking.coordinates()
+        slipping.occupies(Axis::Placement),
+        "a slip occupies placement: {:?}",
+        slipping.coordinates()
     );
-    assert_eq!(walking.lanes(), [true, false, false, true], "content on two covers");
+    assert_eq!(slipping.lanes(), [true, false, false, true], "content on two covers");
 
     // And the two are DIFFERENT CLASSES now: the placement status is a
-    // coordinate of the key, so a base point and a walk no longer share an
+    // coordinate of the key, so a base point and a slip no longer share an
     // address while reading identically on every other axis.
     assert_ne!(
         about_a_point.class_key(),
-        walking.class_key(),
+        slipping.class_key(),
         "a turn about a point and a screw are not one class"
     );
 }

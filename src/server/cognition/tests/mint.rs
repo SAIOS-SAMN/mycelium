@@ -1,6 +1,6 @@
 // 26, E2 — WHAT MINTS AND WHAT DOES NOT: one vantage mints nothing until a
 // witness re-derives; association with a listing is not a mint; a rule that
-// speaks its family mints the descent it measured.
+// speaks its family mints what it measured.
 
 use super::common::*;
 use crate::cognition::*;
@@ -27,7 +27,7 @@ assert!(!home.pending.is_empty(), "the listing stays on the book");
 assert_eq!(home.provisional.len(), 1, "the sentence is on the docket");
 let addr = home.provisional.scoped().next().unwrap().0.clone();
 // The voice bound its task's family and the court bound the sentence to
-// it at speech (23.8), so the install measures the descent the sentence
+// it at speech (23.8), so the install measures what the sentence
 // closes (E2).
 assert!(home.family_of(&addr).is_some(), "the court bound the sentence to its task's family");
 assert!(home.offered(&addr), "the court Offers a first-vantage germ");
@@ -125,7 +125,7 @@ assert_eq!(
 
 /// A rule that speaks every train pair mints the coboundary it closed.
 #[test]
-fn a_rule_that_speaks_the_family_mints_measured_descent() {
+fn a_rule_that_speaks_the_family_mints_what_it_measured() {
 let family = vec![
     (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
     (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
@@ -141,12 +141,12 @@ for (x, y) in &family {
         expect[i] = expect[i].saturating_add(lanes[i]);
     }
 }
-assert!(expect.iter().any(|&x| x > 0), "the family has descent");
+assert!(expect.iter().any(|&x| x > 0), "the family has a coboundary to close");
 let decoded = crate::transducer::sentence::from_element_form(&spoken).expect("v2 form");
 assert_eq!(
     crate::transducer::family::form_deflation(&decoded, &family, &crate::transducer::family::NoCrystal).0,
     expect,
-    "the form read back from its tape measures the family's descent"
+    "the form read back from its tape measures the family's coboundary"
 );
 let mut k = Kernel::new();
 let task = crate::registry::task_id(&crate::arc::Task {

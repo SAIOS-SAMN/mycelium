@@ -11,8 +11,8 @@ use crate::transducer::stalk::{self};
 /// 52.3 AS AMENDED (54.5, ruled 2026-09-20) — A FILED ZERO IS LABOUR, NOT
 /// CLOSURE. An orbit whose edge is a (3,4,5) rotor files at period 0, A19's
 /// spelling of infinite order; the filing rides the SPEAKER'S word and the
-/// form does not cohere on it, because a circuit that walks is not closed
-/// by anyone writing down that it walks.
+/// form does not cohere on it, because a circuit that never returns is not
+/// closed by anyone writing down that it never returns.
 #[test]
 fn the_tape_carries_a_filed_zero_as_infinite_order() {
     let w = infinite();
@@ -29,7 +29,7 @@ fn the_tape_carries_a_filed_zero_as_infinite_order() {
     // as ruled 2026-09-20). This asserted `f.coheres()` — that writing "0"
     // in the form's own side-table made a free part cohere. A (3,4,5)
     // rotor has no period; `g^ℓ` is never the identity and the circuit
-    // walks. What the zero records is that the stroke READ the class, which
+    // never returns. What the zero records is that the stroke READ the class, which
     // is labour, and labour rides `Element.filing`.
     assert!(!f.coheres(), "a free part does not cohere, filed or not");
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("a filed form has a tape");
@@ -64,7 +64,7 @@ fn form_tape_v6_round_trips() {
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
     assert!(inner.is_closed(), "a tree of two vertices coheres");
-    assert!(as_element_form(&inner, [0; 4]).is_none(), "zero descent is not spoken");
+    assert!(as_element_form(&inner, [0; 4]).is_none(), "zero residual is not spoken");
     let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
     let inner_addr = inner_e.address();
 

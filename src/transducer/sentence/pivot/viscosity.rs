@@ -14,7 +14,7 @@
 //! THIS LANE, by name, never zero.
 //!
 //! THE READING. A single bend and its exact inverse restore the class —
-//! apply then unapply writes the face back, and the walk is a function of
+//! apply then unapply writes the face back, and the circuit read is a function of
 //! the faces — so path dependence lives on the LOOP of two bends, `A, B,
 //! A⁻¹, B⁻¹`, which multiplies the face by `K = B⁻¹A⁻¹BA`. The algebra's own
 //! part is subtracted by reading `K` alone, the loop on a flat form. Four
@@ -30,7 +30,7 @@
 //!   reading the circuit had; booked as the lane's entropy. Pure geometry is
 //!   never viscous: viscosity is the ledger's.
 //!
-//! Every re-read is QUIET (`paths_carried_quiet`): the trial's walks are not
+//! Every re-read is QUIET (`paths_carried_quiet`): the trial's traversals are not
 //! the corpus's, and the census's cumulative counters do not count them.
 
 use super::*;
@@ -233,7 +233,7 @@ pub fn read_viscosity(form: &Form, budget: &mut crate::physics::Budget) -> Vec<P
         [(BendLane::Spatial, spatial), (BendLane::Holonomic, (0..ROTOR_PLANES.len()).collect())];
     let mut out: Vec<PairViscosity> = Vec::new();
     for (lane, planes) in &lanes {
-        // The loops' classes on this lane, read once: `None` where the walk
+        // The loops' classes on this lane, read once: `None` where the circuit read
         // itself refuses, and with the count of paths no class reads on.
         let before: Vec<Option<(Keyed<Class>, u64, bool)>> = form
             .orbits
@@ -258,7 +258,7 @@ pub fn read_viscosity(form: &Form, budget: &mut crate::physics::Budget) -> Vec<P
                         seen.push(f);
                         let (Some(a), Some(b)) = (bend(*lane, f, pa), bend(*lane, f, pb)) else { continue };
                         let Some((classes, paths, any)) = read_before else {
-                            // The loop does not walk: the trial would be
+                            // The loop does not traverse: the trial would be
                             // refused before it bent anything.
                             reading.refused += 1;
                             continue;

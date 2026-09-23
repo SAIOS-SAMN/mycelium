@@ -91,7 +91,7 @@ impl Kernel {
     /// gives each address's citers. Computed at the read and stored
     /// nowhere (law 12), summed per lane and never across lanes (law 5).
     ///
-    /// THE CITERS ARE COUNTED, NOT WALKED. This nested
+    /// THE CITERS ARE COUNTED, NOT READ ONE BY ONE. This nested
     /// `mine.scoped()` × `citers.scoped()` — a product of two
     /// carriers that only ever grow, one with the corpus and one with the
     /// mesh — and the inner loop added the SAME `mu` once per citer, which
@@ -100,8 +100,8 @@ impl Kernel {
     /// reached from ACT_PEERS, from every exchange cycle, from every draw
     /// and from every court stroke.
     ///
-    /// What remains is one walk of this voice's own discoveries. That is
-    /// still a walk of a monotone carrier on a hot path, and the shape
+    /// What remains is one read of this voice's own discoveries. That is
+    /// still a whole read of a monotone carrier on a hot path, and the shape
     /// that removes it is a memo sealed at `basis_gen`, as `closure` and
     /// `language` are — owed, and named here so it is not lost.
     pub fn use_credit(&self, voice: &[u8; 32]) -> [u64; 4] {
@@ -117,7 +117,7 @@ impl Kernel {
                 continue;
             };
             let mu = form.magnitude();
-            // `mu × uses` is the sum the inner walk was computing, term by
+            // `mu × uses` is the sum the inner loop was computing, term by
             // identical term. The lane sum stays `saturating_add`, which
             // is accounting; the product is exact.
             let uses = citers.len() as u64;
@@ -143,7 +143,7 @@ impl Kernel {
     /// them is asked and no prefix would be honest — a subset would answer
     /// a different question. `no counter is kept` above is the same
     /// decision from the other side: the number is derived at the read, as
-    /// law 12 asks, and that is what makes the walk the reading.
+    /// law 12 asks, and that is what makes the whole read the reading.
     pub fn adjoined(&self) -> u64 {
         // The court's own ruled word, read off the word it HOLDS (L16): the
         // form is a field of the basis entry, decoded once when the court

@@ -269,7 +269,7 @@ impl Epigenome {
         // 54.7 B5a — THE CITATIONS ARE THE COVER'S, not the vertices'. A
         // `Glued` vertex states a boundary — a rank, a depth, a placement, a
         // φ — and WHICH form it mates with is `Form::cover`, filled from
-        // the utterance's `ReceiptsEnvelope` by `from_element_form`. Walked
+        // the utterance's `ReceiptsEnvelope` by `from_element_form`. Read
         // off the vertices after the eviction, every citation would resolve
         // at nothing and the mind would call a sentence it cannot read
         // `Admitted`.
@@ -483,7 +483,7 @@ impl Epigenome {
     pub(crate) fn resolve_withheld(&mut self, arrived: &Element) {
         let addr = arrived.address();
         let citing: Vec<Vec<u8>> = match self.waiting_on.remove(&addr) {
-            // `waiting_on.remove(&addr)` is the descent: these are the
+            // `waiting_on.remove(&addr)` is the read by the key: these are the
             // words that were waiting on THIS address, and all of them
             // are released by its arrival.
             Some(citers) => citers

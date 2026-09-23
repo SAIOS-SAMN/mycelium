@@ -119,12 +119,12 @@ fn xor(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
     std::array::from_fn(|i| a[i] ^ b[i])
 }
 
-/// The trie's closest matches a brute-force XOR argmin — but by descent, not
-/// a scan. (Correctness anchor; the trie is O(bits), the brute-force O(N).)
+/// The trie's closest matches a brute-force XOR argmin — but by following the
+/// key's bits, not a scan. (Correctness anchor; the trie is O(bits), the brute-force O(N).)
 #[test]
 #[expect(
     clippy::disallowed_methods,
-    reason = "law 2, rule 4 — the fixture needs ids spread over the key space and a brute-force argmin to check the descent against; neither is cognition"
+    reason = "law 2, rule 4 — the fixture needs ids spread over the key space and a brute-force argmin to check the prefix read against; neither is cognition"
 )]
 fn trie_closest_matches_brute_force_without_scanning() {
     let ids: Vec<[u8; 32]> = (0u8..40).map(|k| *blake3::hash(&[k]).as_bytes()).collect();
@@ -135,7 +135,7 @@ fn trie_closest_matches_brute_force_without_scanning() {
     for k in [7u8, 19, 33, 200] {
         let key = *blake3::hash(&[k, 0xAA]).as_bytes();
         let brute = ids.iter().min_by_key(|id| xor(id, &key)).copied().unwrap();
-        assert_eq!(r.closest(&key).unwrap().0.as_slice(), brute.as_slice(), "trie descent finds the XOR-closest");
+        assert_eq!(r.closest(&key).unwrap().0.as_slice(), brute.as_slice(), "the trie's prefix read finds the XOR-closest");
     }
 }
 

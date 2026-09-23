@@ -12,7 +12,7 @@
 //! carrier of which frames a class or a member stands on; the span is the
 //! meet of those fibres, `Keyed::meet`, read along the trajectory the
 //! sections' shared coordinates trace — no direction preferred and nothing
-//! chosen. No `k` is walked to find it: the frames it holds are the keys the
+//! chosen. No `k` is enumerated to find it: the frames it holds are the keys the
 //! sections hold.
 //!
 //! A READING AT A STRATUM NEVER CHANGES THE CONTENT. Asked at a stratum the

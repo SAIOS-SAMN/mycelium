@@ -79,7 +79,7 @@ fn a_cavity_entry_is_read_back_at_its_own_chart_and_two_at_one_chart_are_two() {
     );
 
     // THE KEY IS THE CHART, so the entries a chart can re-hold are a keyed
-    // descent under it — which is what the drain reads, and what a key that
+    // read under it — which is what the drain reads, and what a key that
     // was the bubble's could not answer.
     //
     // Both remainders are two adjacent links, so they are the SAME SHAPE and
@@ -95,7 +95,7 @@ fn a_cavity_entry_is_read_back_at_its_own_chart_and_two_at_one_chart_are_two() {
         "one chart, two remainders, two entries — the suffix keeps them apart"
     );
 
-    // A REMAINDER OF ANOTHER SHAPE STANDS AT ANOTHER CHART, and the descent
+    // A REMAINDER OF ANOTHER SHAPE STANDS AT ANOTHER CHART, and the prefix
     // separates them. Without this the read above would pass on a cavity
     // that answered everything to everything.
     c.set_now(30);

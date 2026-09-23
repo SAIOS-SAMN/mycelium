@@ -121,7 +121,7 @@ pub(crate) fn class_pair_key(a: &TransportClass, b: &TransportClass) -> Vec<u8> 
 /// class `a` relates to which body of class `b`. Taking the product of the two
 /// classes' placements would relate bodies nothing in the scene relates.
 ///
-/// Every face is walked once and files its relative under both directions,
+/// Every face is read once and files its relative under both directions,
 /// so a caller holding two classes reads their stratum by key (rule 1). A
 /// pair whose words differ contributes nothing: the two ends do not speak
 /// one word there and there is no rebase to make. Each vertex's class is

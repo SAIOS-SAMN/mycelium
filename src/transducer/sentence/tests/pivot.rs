@@ -1,4 +1,4 @@
-// 12.6 — DESCENT and THE PIVOT: descent certifies and never selects, the
+// 12.6 — THE TRAJECTORY and THE PIVOT: the trajectory certifies and never selects, the
 // pivot reads only occupied axes, and what cannot be ordered is held.
 
 use super::common::*;
@@ -186,8 +186,8 @@ fn mu_neither_certifies_nor_selects() {
     assert_eq!(o.axes, (held[0].axis, held[1].axis), "the axes are the obstruction");
 }
 
-/// 54.2 — AN ORBIT THAT CLOSES WITH MONODROMY IS CLOSED, and one that walks
-/// is not.
+/// 54.2 — AN ORBIT THAT CLOSES WITH MONODROMY IS CLOSED, and one that never
+/// returns is not.
 ///
 /// This opened `assert!(!f.is_closed())` on a form whose single orbit is a
 /// quarter turn about a fixed point — a `ℤ/4ℤ` class, the most ordinary
@@ -212,7 +212,7 @@ fn cauterize_filed_torsion_crystallizes() {
     );
     assert!(
         !chord_form(&[infinite()]).is_closed(),
-        "and an infinite-order holonomy is not compact: it walks, and the form stands open"
+        "and an infinite-order holonomy is not compact: it never returns, and the form stands open"
     );
     let _ = f.pivot_orbit(
         [0xca; 32],

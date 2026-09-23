@@ -67,7 +67,7 @@ fn closed_turn_form() -> Form {
 
 /// Chapter 23.1: a citer replays only when its cited form resolves on
 /// the cover; without a cover the citation refuses; a tampered face and
-/// a zero descent refuse by name; a v2 tape is never accepted unparsed.
+/// a zero trajectory refuse by name; a v2 tape is never accepted unparsed.
 #[test]
 fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     use crate::transducer::alphabet::Word;
@@ -219,9 +219,9 @@ fn an_orbit_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
     // THE NON-VERSOR HOLONOMY GOES ON THE FACE, which is where a holonomy
     // comes from (54.5, as ruled 2026-09-20). It was written onto
     // `Orbit.holonomy` alone — a composite cached on the projected vertex
-    // path — and `holonomy_words_on` reads the composite THIS PATH walked
+    // path — and `holonomy_words_on` reads the composite THIS PATH traverses
     // now, member by member, so a value parked on that field is not what
-    // the class is read from. The face carries it and the walk composes it.
+    // the class is read from. The face carries it and the traversal composes it.
     if let Some(face) = f.faces.first_mut() {
         face.word = Word::formed(Rotor::zero());
     }
@@ -332,11 +332,11 @@ fn rank_lost_refused() {
     // S9.2'S FORGERY CANNOT BE BUILT ANY MORE (54.5, as ruled 2026-09-20).
     //
     // This went on to strip the tape's orbits, then to add an orbit of a class
-    // the walk does not derive, then to duplicate one — three tapes whose
+    // the traversal does not derive, then to duplicate one — three tapes whose
     // STORED forest disagreed with the one the faces prove, each checked
     // against `REFUSE_RANK_LOST`. The tape no longer carries a forest. The
     // decoder runs `orbits_of` on the faces it parsed, so `f.orbits` IS the
-    // walk and `Rank::moved(taped, derived)` compared a call with itself.
+    // traversal and `Rank::moved(taped, derived)` compared a call with itself.
     //
     // The three attacks are not unguarded; they are unconstructible. A
     // forger can forge FACES, and `face_rederives` reads those. There is
@@ -583,7 +583,7 @@ fn a_filed_orbit_of_infinite_order_replays_and_a_wrong_period_does_not() {
     assert_eq!(e.word.order(), Order::Infinite, "and its edge holonomy has no period");
     // A FREE PART DOES NOT REPLAY, AND A FILING DOES NOT CHANGE THAT
     // (54.5, as ruled 2026-09-20). The edge holonomy has NO period: `g^ℓ`
-    // is never the identity, so the circuit walks. It read that filing the
+    // is never the identity, so the circuit runs on. It read that filing the
     // class at 0 made the orbit replay, which is a permit deciding a
     // geometric question — every field of a `FiledOrbit` is derivable
     // (`orbit_classes`), so by law 12 the annotation carries no fact the
@@ -596,7 +596,7 @@ fn a_filed_orbit_of_infinite_order_replays_and_a_wrong_period_does_not() {
         class,
         FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
     );
-    assert!(!form_orbits_replay(&filed), "and filing it as open does not close a circuit that walks");
+    assert!(!form_orbits_replay(&filed), "and filing it as open does not close a circuit that runs on");
     let filed_e = as_element_form(&filed, [1, 0, 0, 0]).expect("the tape carries the filed zero");
     assert_eq!(
         replay_form(&filed_e, &|_| None),

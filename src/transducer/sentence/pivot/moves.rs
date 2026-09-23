@@ -6,7 +6,7 @@ use super::*;
 impl Form {
     /// Apply a certified move (A20 `by`) to this form: a write onto the
     /// chord face's transport, or a chart axis opened over the orbit that
-    /// closes on the face (I6). Orbits are re-walked by the caller.
+    /// closes on the face (I6). Orbits are re-read by the caller.
     pub fn apply_move(&mut self, by: &PivotBy) {
         match by {
             PivotBy::OpenAxis { face, .. } => {

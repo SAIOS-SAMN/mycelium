@@ -200,7 +200,7 @@ fn a_filed_form_cycle_is_volume_the_basis_counts() {
         .iter()
         .find_map(|lp| match f.orbit_classes(lp).as_slice() {
             // THE LEAST CLASS THIS ORBIT DERIVES, and the slice pattern says
-            // so: `orbit_classes` walks the member paths out of a `Keyed`, so
+            // so: `orbit_classes` traverses the member paths out of a `Keyed`, so
             // the order is the path keys' own and the first is CONTENT, not
             // arrival (rule 15).
             [row, ..] => Some(row.periods),

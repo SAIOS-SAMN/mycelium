@@ -20,11 +20,11 @@ pub struct ReceiptChain {
     known: Keyed<KStepReceipt>,
     /// THIS CHAIN'S OWN RECEIPTS, keyed by chain hash — the step each hash
     /// sits at. `by_hash` and `parent_height` fell back to
-    /// `receipts.iter().find(…)`, a walk of the whole chain for one lookup
+    /// `receipts.iter().find(…)`, a read of the whole chain for one lookup
     /// (rule 10: a loop whose bound is neither a `Budget` nor one simplex's
     /// boundary). Every admitted receipt re-derives a height through it
     /// (47.2 step 4) and `frontier_from` pays it once per VISIT, so
-    /// ordering two receipts cost the walk's depth times the chain — on a
+    /// ordering two receipts cost the read's depth times the chain — on a
     /// carrier that grows for as long as the node runs. A chain hash names
     /// one receipt, and that is a keyed read.
     mine: Keyed<usize>,
@@ -107,7 +107,7 @@ impl ReceiptChain {
     /// receipt it lands on, so a chain that is not contiguous answers
     /// nothing rather than the wrong receipt (rule 11).
     ///
-    /// `receipts_range` walked `self.receipts` end to end to find one K —
+    /// `receipts_range` read `self.receipts` end to end to find one K —
     /// "no loop over peers, pairs, degrees, or planes that the carrier
     /// does not already name", and this carrier names every one of them.
     /// Every back-fill page on the fleet scanned the whole chain: at

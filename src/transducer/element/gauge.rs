@@ -3,7 +3,7 @@
 //
 //! A gauge is a set of (before, after) hue pairs: its profile and key,
 //! permutation composition and inversion, the hue map between two
-//! assignments, the transition versor, and the reads that walk a word's fibre.
+//! assignments, the transition versor, and the reads that cross a word's fibre.
 
 use super::*;
 
@@ -238,7 +238,7 @@ pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Option<GaugeFibers> {
     let mut many = false;
     // The index this function just built, keyed by hue pair: the question
     // is whether it holds ONE class or more, so it is read as a whole and
-    // the walk stops at the second.
+    // the read stops at the second.
     for (k, fiber) in idx.scoped() {
         match first {
             None => first = Some((hue_pair_of(&k)?, fiber.clone())),
@@ -292,7 +292,7 @@ impl Element {
     /// a closed cycle speaks members never individually witnessed).
     /// The assignments this word speaks with a given gauge charge, read by
     /// the charge's key: 0 is no such gauge, 1 is the citation, many is
-    /// multiplicity on the fibre. One read; the axis is never walked.
+    /// multiplicity on the fibre. One read; the axis is never read whole.
     pub fn assignments_by_profile(&self, key: &[u8]) -> Vec<usize> {
         let table = self.profiles.get_or_init(|| {
             let mut rows: Vec<(Vec<u8>, Vec<usize>)> = Vec::new();
@@ -336,7 +336,7 @@ impl Element {
 
     /// Does a centered chain SIT on this thought — same base positions, and its
     /// assignment is the base's, a free section's, or a member of a torsion
-    /// cycle's orbit (walked to the period, O(ℓ·links) — the closed-form
+    /// cycle's orbit (run round to the period, O(ℓ·links) — the closed-form
     /// membership that makes the compressed fiber CHEAPER than the list it
     /// replaced)?
     /// Which assignment (in [`assignments`] order: base, sections, torsion

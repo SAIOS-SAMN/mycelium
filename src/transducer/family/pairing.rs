@@ -446,14 +446,14 @@ pub(crate) fn members_contact_edge(
 
 /// BQ5a's guard (77, 78.4 E1) — THE CIRCUITS THAT CROSS A CONTACT FACE, a
 /// face the topology named, carrying its interface, each by its arm through
-/// the one walk (78.6): CURVED where a member path's whole transport reads
+/// the one circuit (78.6): CURVED where a member path's whole transport reads
 /// and is not the identity ray — of them, those whose gauge half is static;
 /// through a held coset, by how it closes; UNREAD where no member path read,
 /// so the circuit survives `orbits_of` for being unread (rule 11), never for
 /// carrying anything. In that order: curved, gauge static, coset closed,
 /// modulo held, open, unread.
 pub(crate) fn contact_circuits(form: &crate::transducer::sentence::Form, budget: &mut crate::physics::Budget) -> [usize; 6] {
-    use crate::transducer::sentence::walk::{paths_carried, CosetClosure};
+    use crate::transducer::sentence::circuit::{paths_carried, CosetClosure};
     let identity = crate::transducer::element::identity_versor();
     let mut t = [0usize; 6];
     for o in &form.orbits {
@@ -464,7 +464,7 @@ pub(crate) fn contact_circuits(form: &crate::transducer::sentence::Form, budget:
             t[5] += 1;
             continue;
         };
-        let curved = |c: &&crate::transducer::sentence::walk::PathCarried| {
+        let curved = |c: &&crate::transducer::sentence::circuit::PathCarried| {
             c.composite().is_some_and(|m| !crate::transducer::element::same_versor(&m, &identity))
         };
         let paths: Vec<_> = carried.scoped().map(|(_, c)| c.clone()).collect();
@@ -579,7 +579,7 @@ pub(crate) fn interface_key(interface: &[Site]) -> Vec<u8> {
 /// occupants, so the chain over `windows(2)` yields incidences the scene has.
 ///
 /// THE MEMBERS ARE READ FROM THE INDEX. `supports` IS the member index, and
-/// walking it is reading it (rule 1); a count of the integers with a keyed
+/// iterating it is reading it (rule 1); a count of the integers with a keyed
 /// read inside finds nothing for a vertex with no support and says nothing
 /// about one the index holds and the count does not reach.
 #[cfg(test)]
@@ -613,7 +613,7 @@ pub(crate) fn named_incidence(
     }
     // Site → the site's own coordinates and its occupants. The coordinates
     // ride with the occupants so the corner pass below reads the sites the
-    // occupancy already holds, never a second walk of the supports.
+    // occupancy already holds, never a second read of the supports.
     let mut occ: crate::network::nerve::Keyed<Occupied> = crate::network::nerve::Keyed::new();
     for (mk, supp) in supports.scoped() {
         if Some(mk.as_slice()) == frame {
@@ -728,7 +728,7 @@ pub(crate) fn named_incidence(
     // root here, read once per element), one certified cell per standing
     // set of two or more, every element under exactly those bodies a
     // witness, and the meet of their nuclei as the cell's content. No pair
-    // is walked and no subset minted; the faces of a cell are read off it.
+    // is traversed and no subset minted; the faces of a cell are read off it.
     let standing: Vec<(Site, Vec<usize>)> = crate::transducer::sentence::elements_standing(&positions)
         .into_iter()
         .map(|(element, at)| {

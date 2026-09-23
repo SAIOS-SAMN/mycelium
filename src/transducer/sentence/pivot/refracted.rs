@@ -5,7 +5,7 @@
 //
 //! A held `ℤ₂` doubles the candidates at every held step it is crossed on, so
 //! a circuit over `k` held steps carries `2ᵏ` — a generate-and-test T5
-//! refuses beyond small `k`. The walk keeps the factors, never the product;
+//! refuses beyond small `k`. The circuit keeps the factors, never the product;
 //! [`Refracted::candidates`] forms the product one candidate at a time,
 //! spending one read of the stroke per candidate formed, and refuses
 //! UNBOUNDED by name where the stroke is spent. T5's kernel over `𝔽₂` is the

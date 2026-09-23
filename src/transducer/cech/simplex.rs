@@ -259,7 +259,7 @@ impl CoboundaryOutcome {
 /// carried along a translation has the same rotor order as one about a
 /// fixed point and is not the same class: filing it at period four would
 /// put a theorem on the simplex that the seam does not satisfy, because
-/// the seam does not return after four turns — it walks. But a rotation
+/// the seam does not return after four turns — its orbit never closes. But a rotation
 /// about a point away from the origin is `T_p R T_p⁻¹ = T(p − Rp)·R`, and
 /// that DOES return after four turns: it is conjugate to `R`, at `R`'s
 /// order, and its translation is where it stands rather than a residue.
@@ -291,7 +291,7 @@ pub fn classify(
     }
     // The transport's FIXED POINT: the origin when the carriage is flat,
     // the turn's own base point when the carriage is exactly `T(p − Rp)`.
-    // A walk and a dilation have neither and still stand.
+    // A screw and a dilation have neither and still stand.
     let fixed = flat || turn_base_point(rotor, carriage).is_some();
     // A17: an order of zero is not an order — a congruence is believed only
     // where the rotation CLOSES at ℓ — so it is not filed as one, and every

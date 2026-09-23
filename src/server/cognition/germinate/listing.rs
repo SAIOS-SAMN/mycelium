@@ -348,12 +348,12 @@ impl Kernel {
 
     /// THE TORSION SOURCE (12.6, 18.2): the charge is read at the level the
     /// carrier is on. A stored cycle is the conjugate level already — an
-    /// Open walk pivots the lanes the sentence occupies and bumps them for
-    /// the length it walked; a Closed orbit is proven monodromy and charges
+    /// Open orbit pivots the lanes the sentence occupies and bumps them for
+    /// the length it traversed; a Closed orbit is proven monodromy and charges
     /// nothing. With no stored cycle a sentence's words are its orbit
     /// holonomies, each closing in the order of its class: a finite order
     /// bumps that many times, per orbit and never summed; an orbit that never
-    /// closes is an open walk and is charged as one.
+    /// closes is an open orbit and is charged as one.
     ///
     /// AND AN ORBIT THE SENTENCE FILED IS CHARGED AS ONE TOO, BUT ONLY WHERE
     /// THE SPEAKER DEMANDED ADJUDICATION OVER IT (ruled 2026-09-14,
@@ -446,7 +446,7 @@ impl Kernel {
                 // NOT THE ROTOR'S. `w.order()` is the bare rotor order with
                 // no carriage and no fixed-point test: a screw has a finite
                 // rotor order and closes at nothing, so this read `Finite`
-                // and called a circuit that walks closed. `orbit_classes`
+                // and called the circuit closed. `orbit_classes`
                 // gates on the fixed point and gives it `0`.
                 // THE CYCLE CLOSED, WHICH IS BOTH PLANES. It read
                 // `ell > 0` on the `lcm`, true whenever either factor is
@@ -489,15 +489,15 @@ impl Kernel {
         // not close is refused at the gate for free.
         //
         // The witness still refines how much PRESSURE rides with it — the
-        // span walked when Open, the period closed at when Closed — and
+        // span traversed when Open, the period closed at when Closed — and
         // pressure is the backlog, not the tax.
         for w in &witnesses {
             if demanded {
                 self.physics.pivot(crate::physics::Physics::lanes_of(mag));
             }
             let steps = match w {
-                crate::transducer::torsion_witness::HolonomicOrbitWitness::Open { walked } => {
-                    u64::from(*walked)
+                crate::transducer::torsion_witness::HolonomicOrbitWitness::Open { run } => {
+                    u64::from(*run)
                 }
                 crate::transducer::torsion_witness::HolonomicOrbitWitness::Closed {
                     period, ..

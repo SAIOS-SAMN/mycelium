@@ -18,7 +18,7 @@ use crate::transducer::stalk::{self, Standing};
 /// against the face.
 ///
 /// On the vertex pair, `f.i == v && f.j == v` holds whichever way the cycle
-/// runs. The walk read the key `(b, a)`, which the face does not hold, and
+/// runs. The circuit read the key `(b, a)`, which the face does not hold, and
 /// refused the cycle as `no place`. Read off the member pair, the crossing
 /// is backward on `(a, b)`, the translation is inverted, and the orbit
 /// stands with nothing unread.
@@ -46,7 +46,7 @@ fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
     let (_, _, unread, _) = Form::orbit_gates();
     assert_eq!(unread, 0, "nothing is unread: the pair is held, one way round");
     assert_eq!(orbits.len(), 1, "the cycle through the self-face stands as an orbit");
-    let carried = paths_carried(&f.faces, &f.vertices, &orbits[0]).expect("the walk reads the cycle");
+    let carried = paths_carried(&f.faces, &f.vertices, &orbits[0]).expect("the circuit reads the cycle");
     assert!(
         carried.scoped().all(|(_, c)| !element::same_versor(&c.face.carriage, &element::identity_versor())),
         "and it carries the translation, read across the face against its orientation"
@@ -61,7 +61,7 @@ fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
 /// squares its bivector to `+1`, so `(1 + B)(1 − B) = 1 − B² = 0`.
 ///
 /// THE CYCLE NEVER CROSSES THAT EDGE. `a` and `b` hang from `c` and the
-/// chord between them closes a triangle wholly beyond it, so the walk of
+/// chord between them closes a triangle wholly beyond it, so the traversal of
 /// the cycle's own faces reads every transport it meets. What the cone
 /// takes away is the BASING: an identity written for the refused inverse
 /// would base the triangle as though the Frame's edge were flat, and the
@@ -79,7 +79,7 @@ fn a_carriage_on_the_light_cone_leaves_its_orbit_unread() {
         }
         // THE FOREST'S ROOT IS ITS FIRST-DISCOVERED NODE, so a star face
         // from the Frame to a fourth body comes first and roots it at the
-        // Frame. Then `c`'s star face, written from `c`, is walked against
+        // Frame. Then `c`'s star face, written from `c`, is crossed against
         // its orientation.
         f.faces.push(f.face_of(0, 4).expect("the star face of d, from the Frame"));
         f.faces.push(f.face_of(3, 0).expect("the star face of c, oriented towards the Frame"));
@@ -544,7 +544,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
 /// A16 — AN ORBIT'S READINGS ARE A FUNCTION OF ITS FACES AND THE FORM'S AXIS
 /// CARRIER, and of nothing else the form holds. That is why a trial reads
 /// its own answer without copying a form for every candidate: it writes the
-/// one face the move names, walks the orbits those faces close into, and
+/// one face the move names, reads the orbits those faces close into, and
 /// reads the class and the row off them.
 ///
 /// The two entry points must therefore answer alike on a live form — the
@@ -705,9 +705,9 @@ fn an_orbit_flat_on_the_word_files_under_its_edge_composite() {
     );
 
     // D2: `Orbit.carriages` IS the transport composite's carriage, path for
-    // path. `path_carriages` computed it in a second walk — the same
+    // path. `path_carriages` computed it in a second traversal — the same
     // frontier, the same steps, the same closing rule, with the word and the
-    // gauge discarded — so the walk ran once at `orbits_of` and again at every
+    // gauge discarded — so the traversal ran once at `orbits_of` and again at every
     // class reading. One carrier now; this asserts they were the same thing.
     let lp = &f.orbits[0];
     let transport = orbit_transport(&f, lp);
@@ -810,7 +810,7 @@ fn two_certified_discharges_are_held_as_a_vortex() {
 /// The chart appended one packed coordinate per distinct orbit class. Key
 /// width grew with the orbit count, every `Keyed` entry naming the chart
 /// copied that width (R6), and `on_axis_of` re-entered the trie at the root
-/// once per coordinate it coarsened through — `n·d` descents to answer one
+/// once per coordinate it coarsened through — `n·d` prefix reads to answer one
 /// axis, over an index whose own type is the bundle.
 #[test]
 fn a_forms_base_chart_is_five_coordinates_however_many_orbits_it_holds() {
@@ -833,7 +833,7 @@ fn a_forms_base_chart_is_five_coordinates_however_many_orbits_it_holds() {
         );
     }
     // `peel` reaches the root in five steps, bounded by the base and never
-    // by the orbit count: that is the coarsening walk `on_axis_of` makes.
+    // by the orbit count: that is the coarsening read `on_axis_of` makes.
     let mut at = base.clone();
     let mut steps = 0usize;
     while !at.0.is_empty() {

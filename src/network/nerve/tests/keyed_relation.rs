@@ -56,11 +56,11 @@ fn a_prefix_of_a_key_is_its_stratum() {
     assert_eq!(k.fiber_at(&[1]).map(Iterator::count), Some(3), "a coordinate reads its stratum");
 }
 
-/// X3 — THE DESCENT RETURNS WHAT THE FILTER RETURNED, on every prefix of
+/// X3 — THE PREFIX READ RETURNS WHAT THE FILTER RETURNED, on every prefix of
 /// every key, over tries of many shapes.
 ///
 /// `fiber` used to push the root and test each leaf against the prefix on
-/// the way out; it now descends to a subtree and tests the leaves of that
+/// the way out; it now reaches a subtree by the prefix and tests the leaves of that
 /// subtree. The second is the first only if the pruning is exact, and I
 /// changed the primitive on an ARGUMENT — that below a branch at bit `b`
 /// every key agrees on bits `[0, b)`, so one representative answers for
@@ -68,7 +68,7 @@ fn a_prefix_of_a_key_is_its_stratum() {
 /// paid for is that a function is read at its body.
 ///
 /// So this reads the body against the definition: for every prefix of
-/// every key held, the descent's answer must equal the brute-force filter
+/// every key held, the prefix read's answer must equal the brute-force filter
 /// over all keys. TRIE SHAPE DEPENDS ON INSERTION ORDER, and two organs
 /// that admit the same keys in different orders hold differently shaped
 /// tries — which is exactly where an unsound prune would show up as two
@@ -79,7 +79,7 @@ fn a_prefix_of_a_key_is_its_stratum() {
 /// end of a key, so a short key sits among long ones as though padded, and
 /// a representative shorter than the prefix answers for nothing.
 #[test]
-fn the_descent_answers_what_the_filter_answered_whatever_the_trie_shape() {
+fn the_prefix_read_answers_what_the_filter_answered_whatever_the_trie_shape() {
     // A spread of keys: shared prefixes, one a proper prefix of another,
     // lengths from one byte to four, and a byte value that differs only in
     // its lowest bit (adjacent branch points).
@@ -145,7 +145,7 @@ fn the_descent_answers_what_the_filter_answered_whatever_the_trie_shape() {
             // this carrier holds that carry the prefix.
             let mut want: Vec<Vec<u8>> = keys.iter().filter(|key| key.starts_with(p)).cloned().collect();
             want.sort();
-            assert_eq!(got, want, "order {which}, prefix {p:?}: the descent must answer the definition");
+            assert_eq!(got, want, "order {which}, prefix {p:?}: the prefix read must answer the definition");
         }
         // And the scoped whole is every key, in every shape.
         assert_eq!(k.scoped().count(), keys.len(), "order {which}: the whole carrier");
@@ -155,14 +155,14 @@ fn the_descent_answers_what_the_filter_answered_whatever_the_trie_shape() {
 /// X3, rule 1 — A FIBER READ COSTS ITS FIBER, NOT THE CARRIER. `fiber`
 /// pushed the root node whatever the prefix was and filtered the leaves on
 /// the way out, so reading one stratum walked every node of the trie: the
-/// whole-carrier walk arriving through the reader that is supposed to
+/// whole-carrier read arriving through the reader that is supposed to
 /// replace it, and the reason `fiber(ROOT)` was the only honest spelling
 /// in 280 places.
 ///
 /// Measured here as the EXTENT of the walk — trie nodes visited, which is
 /// its own counter because `work::total` counts keyed reads and writes and
 /// a walk takes neither. One key's fiber out of a thousand keys visits a
-/// handful of nodes; before the descent it visited every one of them, and
+/// handful of nodes; before the prefix read it visited every one of them, and
 /// the reading stays true whatever the trie's shape, since the assertion
 /// is against the carrier's own size and not a constant.
 #[test]
@@ -201,10 +201,10 @@ fn a_fiber_read_visits_its_own_subtree_and_not_the_carrier() {
     assert_eq!(work::visits(), wide, "the scoped whole and the prefix every key carries are one walk");
 
     // A prefix no key carries is an EMPTY fiber, not an empty walk: the
-    // descent fails at a missing child and nothing is visited at all.
+    // prefix read fails at a missing child and nothing is visited at all.
     work::reset();
     assert_eq!(k.fiber(Prefix::new(&[0xff, 0xff]).expect("a coordinate")).count(), 0);
-    assert_eq!(work::visits(), 0, "absence costs the descent and no walk");
+    assert_eq!(work::visits(), 0, "absence costs the prefix read and no walk");
 }
 
 #[test]

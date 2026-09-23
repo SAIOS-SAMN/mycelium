@@ -81,7 +81,7 @@ pub use budget::{Budget, Depleted, Reserve};
 /// A CARRIER'S CIRCUITS (45.7; named so at OR2, 73.7: the circuit is the
 /// clock, the orbit is the word): the circuits a stroke ring has completed
 /// and the period of the last one in strokes — the kernel's local time
-/// beside K, read off the walk and never a clock. One per carrier: the
+/// beside K, read off the ring and never a clock. One per carrier: the
 /// court's docket, the exchange to one peer, the mind's dirty ring.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Circuits {
@@ -710,7 +710,7 @@ mod tests {
     }
 
     /// 45.7 — a carrier's circuits are read in circuits and their period in
-    /// strokes, off the walk: three strokes to the first circuit, one to the
+    /// strokes, off the ring: three strokes to the first circuit, one to the
     /// next.
     #[test]
     fn a_carriers_circuits_are_read_in_circuits_and_strokes() {

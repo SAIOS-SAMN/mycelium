@@ -18,7 +18,7 @@ pub enum Factored {
     /// whole word off it — and `understood` is the part that did factor.
     Novel { remainder: PlaneForm, understood: Vec<(usize, i64)> },
     /// Off the plane, with no plane form to reduce and the budget spent
-    /// before the walk reached the target: unmeasured, never "novel".
+    /// before the traversal reached the target: unmeasured, never "novel".
     /// A refusal is not a demand (rule 11).
     Unmeasured,
 }
@@ -47,7 +47,7 @@ fn generators(basis: &[PlaneForm]) -> (Vec<[i64; CAYLEY_ALPHABET_LEN]>, Vec<Gen>
     }
     // Differences of the odd words: the odd set's own members, not a
     // product over the basis — every pair here shares the one property
-    // that makes it a generator, and the walk is over that set alone.
+    // that makes it a generator, and the read is over that set alone.
     for (a, &i) in odd.iter().enumerate() {
         for &j in odd.iter().skip(a + 1) {
             let r: [i64; CAYLEY_ALPHABET_LEN] =
@@ -141,7 +141,7 @@ pub fn factor_on_plane(g: &PlaneForm, basis: &[PlaneForm]) -> Factored {
     Factored::Novel { remainder: rem, understood: tape }
 }
 
-/// A12 off the plane: a budgeted walk whose states are A1 keys, applying
+/// A12 off the plane: a budgeted traversal whose states are A1 keys, applying
 /// each held rotor and its inverse in index order. There is no HNF and no
 /// metric to say which partial is nearer, so a failure returns the whole
 /// word as the demand (16.12) — and an exhausted budget returns neither, it
@@ -153,12 +153,12 @@ pub fn factor_off_plane(
 ) -> Factored {
     let target = g.key();
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    // (rotor, tape) frontier. The walk is bounded by the Budget alone.
+    // (rotor, tape) frontier. The traversal is bounded by the Budget alone.
     let mut frontier: Vec<(Rotor, Vec<(usize, i64)>)> = vec![(Rotor::identity(), Vec::new())];
     seen.insert(Rotor::identity().key(), ());
     while budget.spend() {
         let Some((cur, tape)) = frontier.pop() else {
-            // The walk closed without reaching it: everything reachable
+            // The traversal closed without reaching it: everything reachable
             // from what is held has been visited, so the word is genuinely
             // outside the span rather than merely unreached.
             return Factored::Novel { remainder: PlaneForm::default(), understood: Vec::new() };
@@ -317,11 +317,11 @@ mod tests {
     }
 
     /// Off the plane there is no HNF and no metric to say which partial is
-    /// nearer, so the walk is budgeted and its states are A1 keys. An
+    /// nearer, so the traversal is budgeted and its states are A1 keys. An
     /// exhausted budget is UNMEASURED, never Novel: a refusal is not a
     /// demand (rule 11).
     #[test]
-    fn a12_offplane_descent_or_novel() {
+    fn a12_offplane_reached_or_novel() {
         let q01 = LetterId::quarter((0, 1)).expect("plane");
         let q12 = LetterId::quarter((1, 2)).expect("plane");
         let held = [w(&[(q01, false)]), w(&[(q12, false)])];
@@ -332,7 +332,7 @@ mod tests {
         match factor_off_plane(&g.rotor(), &rotors, &mut b) {
             Factored::Understood(tape) => assert!(
                 replays(&tape, &rotors, &g.rotor()),
-                "the walk's tape re-derives the word"
+                "the traversal's tape re-derives the word"
             ),
             other => panic!("a reachable word is understood, got {other:?}"),
         }
@@ -343,7 +343,7 @@ mod tests {
         assert_eq!(
             factor_off_plane(&g.rotor(), &rotors, &mut short),
             Factored::Unmeasured,
-            "an exhausted walk refuses"
+            "an exhausted traversal refuses"
         );
     }
 

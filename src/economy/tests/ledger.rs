@@ -255,12 +255,12 @@ fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
     assert_eq!(t.minted().expect("minted adds up"), [0; 4]);
 }
 
-/// THE SUPPLY IS FOLDED AS IT IS WRITTEN, not walked on every read.
+/// THE SUPPLY IS FOLDED AS IT IS WRITTEN, not read whole on every call.
 /// `supply()` iterated the whole journal, `audit()` calls `supply()`, and
 /// §6 requires the audit before every snapshot — so the cost of proving
 /// the ledger conserves grew with the ledger, on a carrier that grows for
-/// as long as the mesh runs (rule 10). The fold must agree with the walk
-/// it replaces on every kind, and survive a restore.
+/// as long as the mesh runs (rule 10). The fold must agree with the whole
+/// read it replaces on every kind, and survive a restore.
 #[test]
 fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
     let (a, b) = ([0x11u8; 32], [0x22u8; 32]);
@@ -276,7 +276,7 @@ fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
     t.escrow_award([7u8; 32], vec![a], [9, 0, 0, 0], (5, [0; 32]));
     t.revoke_award(&[7u8; 32], true); // slash
 
-    // The walk this replaced, recomputed here from the rows themselves.
+    // The whole read this replaced, recomputed here from the rows themselves.
     let mut issued = [0u64; 4];
     let mut burned = [0u64; 4];
     for e in t.entries() {
@@ -289,8 +289,8 @@ fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
             *x += d;
         }
     }
-    let walked: [u64; 4] = std::array::from_fn(|l| issued[l] - burned[l]);
-    assert_eq!(t.supply(), Some(walked), "the fold is the walk, on every kind");
+    let read_whole: [u64; 4] = std::array::from_fn(|l| issued[l] - burned[l]);
+    assert_eq!(t.supply(), Some(read_whole), "the fold is the whole read, on every kind");
     assert!(t.audit().is_ok(), "and the carriers agree with it");
 
     // It comes back from disk. `restore` reads rows straight off the tape,

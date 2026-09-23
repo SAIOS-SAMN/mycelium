@@ -328,12 +328,12 @@ assert_eq!(
 );
 }
 
-/// X3, rule 1 — THE COHESION READING IS CARRIED, NOT WALKED. C and I are
+/// X3, rule 1 — THE COHESION READING IS CARRIED, NOT READ WHOLE. C and I are
 /// written when a listing's closure is bound (`Rank::put_closure`), for the
 /// same reason `ListingField::nonflat` is written by `write_field`: a read
-/// that counts what the write already knew walks a carrier that grows with
-/// the book. `cohesion_over` walked the whole closure map per call, and
-/// `synthesis`'s rank line walked it a second time, with its own filter, to
+/// that counts what the write already knew reads the whole of a carrier that
+/// grows with the book. `cohesion_over` read the whole closure map per call, and
+/// `synthesis`'s rank line read it a second time, with its own filter, to
 /// print one of the two numbers.
 ///
 /// Pinned against the walk itself, so the carried counts cannot drift from

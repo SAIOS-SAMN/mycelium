@@ -50,7 +50,7 @@ use crate::transducer::cech::{read_nerve, NerveTotals};
 // the holonomy the 2-cell would carry. The cover is INDEXED by
 // carriage, and the nerve of an indexed cover admits repeats.
 //
-// THE IMAGE READING IS TAKEN TOO, on the same walk, because the claim
+// THE IMAGE READING IS TAKEN TOO, on the same pass, because the claim
 // "the codomain is a partition" is now a measurement and not a
 // recollection (A2).
 //

@@ -15,7 +15,7 @@ use crate::transducer::sentence::{Demand, Vertex};
 /// A solid block against the same block with ONE LAMINA REMOVED. No versor
 /// carries the whole body onto the whole image — that is what makes it a
 /// deformation — and under 51.3 as ruled 2026-09-18 the cover does not
-/// descend below the body, so this carries NOTHING and stands as one typed
+/// reach below the body, so this carries NOTHING and stands as one typed
 /// demand. It is kept for exactly that reading.
 fn notched() -> (Grid, Grid) {
     (
@@ -399,10 +399,10 @@ fn a_filled_simplex_is_a_filed_orbit_at_its_own_period() {
     // 53.6 MOVED WHERE THE COVER'S ORBITS LIVE and the assertion before that
     // — `!f.orbits.is_empty()`, "the cover stands orbits" — became false on
     // the scene's form: a cover's orbits are classified inside the cover, on
-    // a form of its pieces that is discarded, and the scene's form walked
+    // a form of its pieces that is discarded, and the scene's form read
     // orbits among its CLASS vertices only.
     //
-    // It walked NONE. The scene's faces were the Frame's star, a spanning
+    // It read NONE. The scene's faces were the Frame's star, a spanning
     // chain of each site's occupants and the ring pairs — a forest by
     // construction, `b₁ = E − V + C = 0` identically, `0 orbits` on all 36
     // corpus forms and `pivoted [0,0,0,0]` on every voice of the fleet.
@@ -558,7 +558,7 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
 
 /// THE COVER CLASSIFIES NOTHING (L23c): the reading is the form's, so it
 /// is a function of the form's orbits and not of the order the cover
-/// happened to walk its meets in. Two builds of one pair agree exactly.
+/// happened to read its meets in. Two builds of one pair agree exactly.
 #[test]
 fn the_reading_is_the_forms_and_is_stable() {
     let (a, b) = notched();

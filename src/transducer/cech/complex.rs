@@ -1,4 +1,4 @@
-// 13 — THE COMPLEX: every simplex a mind holds, and the walks that read it.
+// 13 — THE COMPLEX: every simplex a mind holds, and the reads that cross it.
 //
 //! The star, the link and the degree are reads of structure. Setting an
 //! edge or a section reopens exactly the simplices whose coefficients
@@ -12,7 +12,7 @@ use super::*;
 pub struct Complex {
     pub degrees: Vec<Keyed<Simplex>>,
     /// simplex key → degree, written in remember. Fill and class are keyed
-    /// reads, never a walk of degrees.
+    /// reads, never a traversal of degrees.
     pub(crate) by_key: Keyed<u8>,
     pub sections: Keyed<Section>,
     pub(crate) star: Keyed<Keyed<()>>,
@@ -25,7 +25,7 @@ pub struct Complex {
     /// THE ORBITS OF EACH SIMPLEX, one per chord, each at its OWN
     /// coordinate: `simplex_key ++ vertex_i ++ vertex_j` (law 2, A21), so
     /// a simplex's orbits are the fiber under its key and a reader moves to
-    /// them rather than walking a list.
+    /// them rather than reading a list through.
     ///
     /// One `Ω` per chord and never their product. 11.3 holds each `H¹`
     /// orbit "with its class vector (12.6)", and composing the orbits of one
@@ -338,7 +338,7 @@ impl Complex {
             return;
         };
         let mut drop: Vec<Vec<u8>> = Vec::new();
-        // THE STAR OF ONE VERTEX: `star.remove(vertex)` is the descent, so
+        // THE STAR OF ONE VERTEX: `star.remove(vertex)` is the one keyed read, so
         // these are the simplices containing it and every one of them
         // drops.
         for (k, _) in keys.scoped() {
