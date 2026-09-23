@@ -10639,10 +10639,16 @@ signature by congruent symmetric elimination over ℚ. The MEET `M = s₀ ∧ �
 (law 12 forbids storing either beside the nuclei). The Gram form is the
 carrier of shape: rank one is a sphere, rank two a pencil (elliptic — a
 shared circle, a toroid's core; parabolic — tangent; hyperbolic —
-nested, a shell), rank three and up a bundle; its diagonal form over ℚ
-is a sphere where every ratio is one, an ellipsoid where not (the ratios
-the eccentricities, ratios of squares, no root), a cylinder where a zero
-stands, a hyperboloid where a negative does.
+disjoint, side by side or nested), rank three and up a bundle. The Gram
+form is a quadratic form on the COEFFICIENT space of the bundle the
+nuclei span — `(Σ λ_a s_a)² = λᵀ G λ` — and its signature `(p, q, z)`
+classifies that bundle: the real, imaginary and null spheres it holds.
+Its pivots are NOT invariants (Sylvester: they depend on the order of
+elimination; only the signature survives), so no surface is read off
+them — the coordinator's first draft called the pivot ratios a body's
+eccentricities, which was wrong, corrected 2026-09-23 on the
+implementor's objection. A body's own shape, round or not, is the
+harmonic tower's (A.11) and is HL1's business.
 
 **Rank deficiency has two sources, and only one is affine.** The
 coordinator's "singular = affine" was wrong. A singular Gram arises from
