@@ -10735,6 +10735,22 @@ and the bodies' nuclei are a SECOND configuration placed within that
 mirror group. Coxeter reads each set, and how the nuclei sit relative to
 the mirror group is the content (MG1).
 
+**A parallel family of mirrors is one affine wall pair, ruled on MG1's
+reading (2026-09-23).** Three mirrors `x_i = 0, 1, 2` on one axis have
+every pair parabolic (`δ² = 1`) with positive products, so no sign
+balance exists (an odd cycle) and GR2 reads them "not a system, infinite
+by a parabolic pair". The group they generate is the same `Ã₁` any
+adjacent pair generates — the third mirror is the image of the first
+under the translation the other two compose — so "infinite by a pair"
+is true and "affine" is the finer name of the same infinity. Ruling: a
+component whose constructors all pass through `e_∞` and are mutually
+parallel on one axis (every pair parabolic, the span of rank two) reads
+AFFINE `Ã₁` of that axis, its translation twice the gcd of the offsets'
+spacings, exact over ℚ; every mirror is a wall of the family and none is
+chosen as its generator (r); the refusal's precedence puts this affine
+reading before a parabolic pair's. The census's "11 planes infinite by a
+parabolic pair" reads "11 planes affine" after MG1b.
+
 **Member versus body, corrected twice.** The coordinator's "the nucleus is
 the body's coordinate" was wrong: the nucleus is the tower's order-0 and
 order-1 reading (A.11: scale, no orientation), a projection — a ring and
