@@ -97,8 +97,9 @@ fn tree_transports(
 /// Read off the face's own member pair, exactly as `paths_carried` reads a
 /// step — the same coordinate, not a second derivation of it (rule 12) —
 /// and inverted where the walk runs against the face's orientation.
-/// Identity where the face carries no transport at that pair, which is a
-/// face relating no member and is a real sector of the complex.
+/// Identity where the face relates no member and both nodes stand at no
+/// chart, which is a real sector of the complex. A named pair the face does
+/// not hold is `NoPlace`, as the walk reads it (O1).
 ///
 /// `Cone` where the inverse does not exist: `versor_inverse` fails only at
 /// `MM̃ = 0`, a carriage on the light cone (57.4), and that transport was
@@ -117,15 +118,17 @@ fn tree_step(
     let _ = vertices;
     let (vp, cp) = (node_vertex[p], &node_chart[p]);
     let (vc, cc) = (node_vertex[c], &node_chart[c]);
-    let forward = f.i == vp && f.j == vc;
-    let pk = match forward {
-        true => pair_key_bytes(cp, cc),
-        false => pair_key_bytes(cc, cp),
-    };
-    let Some(place) = f.at.get(&pk) else { return Ok(element::identity_versor()) };
-    match forward {
-        true => Ok(place.carriage.clone()),
-        false => place.carriage.versor_inverse().ok_or(Unread::Cone),
+    // O1 — CROSSED THE WAY THE FACE'S MEMBER PAIR RUNS, as the walk crosses
+    // it. The vertex pair cannot say which way a face between two charts of
+    // one vertex runs, and the pair read backwards found nothing and wrote
+    // the identity for it.
+    let at = |pk: &[u8]| f.at.get(pk).ok_or(Unread::NoPlace);
+    match crossing(f, (vp, cp), (vc, cc)) {
+        Crossing::Forward(pk) => Ok(at(&pk)?.carriage.clone()),
+        Crossing::Backward(pk) => at(&pk)?.carriage.versor_inverse().ok_or(Unread::Cone),
+        Crossing::TwoWays => Err(Unread::TwoWays),
+        Crossing::Unplaced if cp.is_empty() && cc.is_empty() => Ok(element::identity_versor()),
+        Crossing::Unplaced => Err(Unread::NoPlace),
     }
 }
 

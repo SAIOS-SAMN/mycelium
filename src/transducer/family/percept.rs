@@ -1073,7 +1073,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} loops \
          | edges asked: measured {}, unspelled {}, unread {}, not rigid {} \
          | chords {} offered {} | cycles: reflexive {} no-tree-path {} unread {} \
-         (cone {} no place {} not rigid {} no face {}; edge refused: cone {} not rigid {}) \
+         (cone {} no place {} not rigid {} no face {} two ways {}; edge refused: cone {} not rigid {}) \
          trivial {} (vacuum {} resonant {} over {} charged edges; \
          μ read on {} steps, {} of them non-zero) \
          | defects: trivial {} elliptic {} hyperbolic {} parabolic {} non-simple {} \
@@ -1111,6 +1111,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         unread_why.0.no_place,
         unread_why.0.not_rigid,
         unread_why.0.no_face,
+        unread_why.0.two_ways,
         unread_why.1.cone,
         unread_why.1.not_rigid,
         crate::transducer::sentence::Form::loop_gates().3,

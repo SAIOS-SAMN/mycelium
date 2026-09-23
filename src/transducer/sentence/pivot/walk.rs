@@ -132,6 +132,9 @@ pub(crate) enum Unread {
     /// The cycle names a face the form does not hold, or a member key that
     /// does not read. The cycle and the incidence disagree.
     NoFace,
+    /// The face relates the two members once each way and the cycle does
+    /// not say which it crossed (O1).
+    TwoWays,
 }
 
 /// THE UNREAD READINGS, split by why (H2c). A measurement and never a gate.
@@ -141,6 +144,7 @@ pub struct UnreadTally {
     pub no_place: u64,
     pub not_rigid: u64,
     pub no_face: u64,
+    pub two_ways: u64,
 }
 
 impl UnreadTally {
@@ -150,7 +154,54 @@ impl UnreadTally {
             Unread::NoPlace => self.no_place += 1,
             Unread::NotRigid => self.not_rigid += 1,
             Unread::NoFace => self.no_face += 1,
+            Unread::TwoWays => self.two_ways += 1,
         }
+    }
+}
+
+/// WHICH WAY A CYCLE CROSSES A FACE, between the two members it names.
+pub(super) enum Crossing {
+    /// The face's own orientation: the first member is its `i` end. The key
+    /// is the member pair the face holds.
+    Forward(Vec<u8>),
+    /// Against it: the first member is its `j` end.
+    Backward(Vec<u8>),
+    /// The face relates the two members in both orientations, as two member
+    /// pairs, and the cycle does not say which one it crossed.
+    TwoWays,
+    /// The face holds no member pair between the two.
+    Unplaced,
+}
+
+/// O1, 70.7 — A FACE IS CROSSED THE WAY ITS MEMBER PAIR RUNS, never the way
+/// its vertex pair does.
+///
+/// The walk read `f.i == v_i && f.j == v_j`. On a face between two charts
+/// of ONE vertex both halves are true whichever way the cycle runs, so it
+/// read the pair key backwards half the time. That is the orientation
+/// `437d253` lost under the vertex projection, at the walk this time. H2c
+/// measured it: 18 of 18 `no place` refusals over the corpus were such
+/// faces, each holding the reversed key. The member pair names the
+/// orientation, so it is read: forward where the face holds
+/// `(c_from, c_to)` with `from` at its `i` end, and backward where it holds
+/// `(c_to, c_from)` with `to` there.
+///
+/// A face holding BOTH, with two different charts, relates the members
+/// twice, once each way. A cycle names the face and not the pair, so it
+/// does not say which it crossed. That refuses by name rather than taking
+/// one (rule 15). One member pair on one chart, `(c, c)`, is one key and is
+/// crossed in the face's own orientation.
+pub(super) fn crossing(f: &FormFace, from: (u16, &[u8]), to: (u16, &[u8])) -> Crossing {
+    let fwd = pair_key_bytes(from.1, to.1);
+    let bwd = pair_key_bytes(to.1, from.1);
+    let can_fwd = f.i == from.0 && f.j == to.0 && f.at.contains(&fwd);
+    let can_bwd = f.i == to.0 && f.j == from.0 && f.at.contains(&bwd);
+    match (can_fwd, can_bwd) {
+        (true, false) => Crossing::Forward(fwd),
+        (false, true) => Crossing::Backward(bwd),
+        (true, true) if fwd == bwd => Crossing::Forward(fwd),
+        (true, true) => Crossing::TwoWays,
+        (false, false) => Crossing::Unplaced,
     }
 }
 
@@ -253,18 +304,16 @@ pub(crate) fn paths_carried_why(
         // the projection lost.
         let (vi, ci) = crate::transducer::family::read_member_key(&win[0]).ok_or(Unread::NoFace)?;
         let (vj, cj) = crate::transducer::family::read_member_key(&win[1]).ok_or(Unread::NoFace)?;
-        let forward = f.i == vi && f.j == vj;
-        let pk = match forward {
-            true => pair_key_bytes(&ci, &cj),
-            false => pair_key_bytes(&cj, &ci),
-        };
-        // A face relating NO member pair stands at no named chart, and the
+        // O1 — THE CROSSING IS READ OFF THE MEMBER PAIR THE FACE HOLDS. A
+        // face relating NO member pair stands at no named chart, and the
         // members say so too — both charts empty. It contributes its word
-        // and nothing else.
-        let place = match f.at.get(&pk) {
-            Some(p) => Some(p.clone()),
-            None if ci.is_empty() && cj.is_empty() => None,
-            None => return Err(Unread::NoPlace),
+        // and nothing else, crossed the way its vertex pair runs.
+        let (forward, place) = match crossing(f, (vi, &ci), (vj, &cj)) {
+            Crossing::Forward(pk) => (true, f.at.get(&pk).cloned()),
+            Crossing::Backward(pk) => (false, f.at.get(&pk).cloned()),
+            Crossing::TwoWays => return Err(Unread::TwoWays),
+            Crossing::Unplaced if ci.is_empty() && cj.is_empty() => (f.i == vi && f.j == vj, None),
+            Crossing::Unplaced => return Err(Unread::NoPlace),
         };
         charts.push(ci);
         let word_step = match forward {

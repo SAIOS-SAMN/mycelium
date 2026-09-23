@@ -12043,6 +12043,42 @@ in the wrong direction. Whether the transport reads once the key is read
 the right way round is not measured here. No fix is in this row; the
 ruling follows the reading.
 
+**Re-read on O1 (the walk orients by member pair).** The walk and the
+forest now cross a face by the member pair it holds: forward where it holds
+`(c_from, c_to)` with `from` at its `i` end, and backward where it holds the
+pair the other way round. A face holding both, on two charts, refuses as
+`two ways` rather than taking one. On the last form's line, the same 18
+cycles:
+
+```
+                                        Phase C      O1
+    unread                              18           0
+      no place                          18           0
+      two ways                          —            0
+    trivial (vacuum)                    0            3 (3)
+    defects classified                  0            15, every one trivial
+    spectra                             —            closes 15
+    edge refused: not rigid             0            9
+    ρ generators, in ker                0            15, 15
+```
+
+So all 18 are read. 3 are vacuum: no transport was written around them.
+The other 15 reach the classifier, and every class vector is the identity.
+On 9 of them the edge half is refused as `not rigid`: the contact face
+holds a place and no edge, because no versor carries the two bodies'
+union. On the corpus as a whole, 5 loops stand on 3 forms (18 form lines
+carry 1 or 2), where Phase H and C read 0. COBOUNDARY is back to 2,
+ACYCLIC-UNASKABLE 32, and one antipodal class stands. The silence census
+reads 5 loops, 3 with no evaluated path and 2 with paths, both identity.
+
+The first inter-body cycles this corpus has had are read, and they are
+flat. Where their edge half is refused, it is because 50.3's edge was
+written for two bodies one versor carries, and two bodies meeting at an
+edge or a corner are carried by two. That is C3–C5's question, the
+transport through the interface's own frame (70.7), and O1 does not
+answer it.
+
+
 ```
 blade/body.rs           components() — the filter line that is the ruling
 sentence/chain.rs       incidence_of_3d — 6-incidence; diagonal is the addition

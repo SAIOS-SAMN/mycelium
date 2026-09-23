@@ -8,6 +8,51 @@ use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self, Standing};
 
+/// O1, 70.7 — A FACE BETWEEN TWO CHARTS OF ONE VERTEX IS CROSSED THE WAY
+/// ITS MEMBER PAIR RUNS.
+///
+/// One vertex acts on two charts, `a` and `b`, and the Frame's star reaches
+/// both. A face from the vertex to itself relates `(v, a)` to `(v, b)` and
+/// carries a translation. It is the chord, and the forest reaches its ends
+/// through the Frame, so the cycle closes by crossing it from `b` to `a`,
+/// against the face.
+///
+/// On the vertex pair, `f.i == v && f.j == v` holds whichever way the cycle
+/// runs. The walk read the key `(b, a)`, which the face does not hold, and
+/// refused the cycle as `no place`. Read off the member pair, the crossing
+/// is backward on `(a, b)`, the translation is inverted, and the loop
+/// stands with nothing unread.
+#[test]
+fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
+    let (a, b) = (stalk::Invariant::counts(&[7]), stalk::Invariant::counts(&[9]));
+    let mut f = Form::default();
+    let mut v = word_vertex_on(1, Word::identity(), a.clone());
+    if let Vertex::Word { acts, .. } = &mut v {
+        let first = acts.scoped().next().map(|(_, x)| x.clone()).expect("one member");
+        let member = Acting { chart: b.clone(), ..first };
+        acts.put(&member.key(), member);
+    }
+    f.vertices.push(v);
+    assert_eq!(f.vertices[1].charts().len(), 2, "the fixture must split, or nothing is tested");
+    f.faces.push(f.face_of(0, 1).expect("the star reaches both charts"));
+    let mut at = Keyed::new();
+    at.insert(
+        face_pair_key(&a, &b),
+        FacePlace { carriage: element::translator_versor(3, 0), gauge: Vec::new(), edge: None },
+    );
+    f.faces.push(FormFace { i: 1, j: 1, word: Word::identity(), at, pairs: None, interface: Vec::new() });
+    Form::reset_loop_gates();
+    let loops = Form::loops_of(&f.faces, &f.vertices);
+    let (_, _, unread, _) = Form::loop_gates();
+    assert_eq!(unread, 0, "nothing is unread: the pair is held, one way round");
+    assert_eq!(loops.len(), 1, "the cycle through the self-face stands as a loop");
+    let carried = paths_carried(&f.faces, &f.vertices, &loops[0]).expect("the walk reads the cycle");
+    assert!(
+        carried.scoped().all(|(_, c)| !element::same_versor(&c.face.carriage, &element::identity_versor())),
+        "and it carries the translation, read across the face against its orientation"
+    );
+}
+
 /// 57.4, G2 — A CARRIAGE ON THE LIGHT CONE LEAVES ITS LOOP UNREAD.
 ///
 /// The Frame reaches `c` through one star face written from `c`, so the
