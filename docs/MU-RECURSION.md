@@ -8960,6 +8960,51 @@ reading sits on the body from the moment it is perceived, the relative
 pose enters the tether when the tether is minted, and both harden with
 what carries them: the word by ratification, the tether by the callus.
 
+### 72.1f The layer register, and four constraints on the callus (ruled 2026-09-23)
+
+**The direction.** The mesh is the library of court-ruled, crystallized
+knowledge; each client is a lean local mind holding only what its work
+touches, at its own hardware's pace. A local installation is its own
+epigenome plus the strata of the genome its tasks reach, fetched by
+prefix (A21) and never searched; the syllabus teaches only ruled words
+(`the_syllabus_never_teaches_a_provisional_word`).
+
+**The layers may hold different axioms, and the boundary is shared.**
+Mind and mesh can specialize above one core, or no court could re-derive
+a client's word (law 6). The register:
+
+| layer | axioms | where |
+|---|---|---|
+| core, shared | the interpreter — the geometric product over exact ℚ and the canonical forms (1.8, 1.9); the address layout with `n` written first (71); the two-vantage rule (law 6, 47.3) | every binary |
+| mind only | metabolic relativity (A.18); volatility of the epigenome (25); spellability per mind (59.6, 60.1) | the client |
+| mesh only | consilience (37.7, 67.3); persistence (28, the genome on disk); deposition (A.8, a drained tether leaves its record) | the courts |
+
+Specialized nodes are strata of the library: a hypha serving one region
+of knowledge is a keyed fibre by chart or class, an A21 prefix — which
+the cover trie already is (MU-ENGINEERING §4, `nerve::home` by chart
+prefix). Row SN1 parks it until the language exists to be served.
+
+**Four constraints on the callus (MEM1), each a correction of a text
+relayed 2026-09-23.**
+
+1. No "zero internal strain" and nothing "dissolves without trace" (A.8).
+   Torsion is promoted, annihilated against a partner, or deposited; a
+   tether carries whatever its holonomy is; a drained tether leaves its
+   deposited record. Forgetting without trace is the ratchet run
+   backwards.
+2. No `∮dθ` and no "relaxed into its minimal geodesic" (law 1, 59.8).
+   The reading is the holonomy: the ordered product of the tether
+   versors around the cycle, cauterized by being read. Relaxation is
+   local; there is no globally minimized action.
+3. A tether is not a generator. Most hardened relations are spelled in
+   letters the alphabet holds; only a relation proved unspellable adjoins
+   a letter, through 37.7, or the alphabet inflates against the
+   minimality the syntropic stroke prunes toward (E2).
+4. `δ⁰θ = θ_bθ_a⁻¹` is the gauge cocycle, not the torsion. Torsion is
+   what the cocycle fails to close to around a cycle, exists only on
+   cycles, and under 72.1b is read at the grade of the simplex, never
+   edge by edge.
+
 ### 72.2 What the rows carry
 
 - **Refraction on the pairs the topology names** (BQ5a). The strain,
