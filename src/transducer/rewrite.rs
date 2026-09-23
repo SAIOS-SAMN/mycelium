@@ -50,7 +50,9 @@ pub enum RewritePayload {
     Torse { sigma: Vec<(u8, u8)>, period: u32 },
     Refine { chart: Invariant, axis: u64 },
     Reanchor { gamma: Vec<Word> },
-    AxisOpen { class: Rotor, degree: u8 },
+    /// Boxed: a rotor is half a kilobyte inline, the one large variant here
+    /// since the versor carrier holds its coefficients on the heap (BQ3).
+    AxisOpen { class: Box<Rotor>, degree: u8 },
     Translation { a: crate::transducer::address::Address, b: crate::transducer::address::Address, gauge: Versor },
     /// `cites` are the words that speak the retired one; `freed` is the lane
     /// vector the language no longer carries. The court checks from the tape
@@ -221,7 +223,7 @@ impl Rewrite {
             RewriteKind::AxisOpen => {
                 let degree = *b.get(pos)?;
                 pos += 1;
-                let class = Rotor::from_bytes(b, &mut pos)?;
+                let class = Box::new(Rotor::from_bytes(b, &mut pos)?);
                 RewritePayload::AxisOpen { class, degree }
             }
             RewriteKind::Translation => {

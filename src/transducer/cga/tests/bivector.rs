@@ -6,6 +6,11 @@ use crate::transducer::cga::multivector::one;
 use crate::transducer::cga::*;
 use num_traits::{Signed, Zero};
 
+/// The hyperbolic generators at the corpus's n = 3, named: the fixtures
+/// below are read in `Cl(4,1)`.
+static TRANSVECTION_PLANES: std::sync::LazyLock<Vec<usize>> =
+    std::sync::LazyLock::new(|| transvection_planes(3));
+
 /// 54.7 R3/R4 — THE BIVECTOR TRICHOTOMY IS A READING, AND `Cl(4,0)`
 /// CANNOT MAKE IT.
 ///
@@ -25,7 +30,7 @@ fn the_four_bivector_readings_are_distinct_and_exact() {
     // `e₊∧e₋` included. B² = +1 > 0. There is NO element of Cl(4,0)
     // with this reading — its metric is positive definite, so
     // ⟨B²⟩₀ ≤ 0 for every bivector it has.
-    for plane in TRANSVECTION_PLANES {
+    for &plane in TRANSVECTION_PLANES.iter() {
         let tv = transvection(&q(2, 1), &q(1, 1), plane)
             .expect("off the light cone, this is a transvection");
         assert_eq!(

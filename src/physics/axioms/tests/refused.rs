@@ -29,7 +29,8 @@ fn the_transvection_chart_covers_finite_boosts_and_ends_at_the_cone() {
     use crate::core::Q;
     use crate::transducer::cga;
     let q = |n: i64, d: i64| Q::new(n.into(), d.into());
-    let planes = cga::TRANSVECTION_PLANES;
+    // The hyperbolic generators at the corpus's n = 3, named.
+    let planes = cga::transvection_planes(3);
     let gen = |s: Q| crate::transducer::element::Versor::blade(planes[0], s);
 
     // Inside the cone: |u| = 1/2, a finite boost, carried exactly.

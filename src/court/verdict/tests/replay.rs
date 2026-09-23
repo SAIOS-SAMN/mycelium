@@ -276,7 +276,7 @@ fn pivot_certificate_replays_or_refuses() {
         mu: crate::transducer::sentence::Mu::Unmeasured,
         by: PivotBy::Word {
             face: 0,
-            word: Word::identity(),
+            word: Box::new(Word::identity()),
             side: Side::Left,
         },
     };

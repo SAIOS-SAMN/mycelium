@@ -95,7 +95,7 @@ fn vortex_collapses_by_glue_or_ruling() {
         mu: crate::transducer::sentence::Mu::Unmeasured,
         by: PivotBy::Word {
             face: 0,
-            word: w.clone(),
+            word: Box::new(w.clone()),
             side: Side::Right,
         },
     };
@@ -114,7 +114,7 @@ fn vortex_collapses_by_glue_or_ruling() {
         mu: crate::transducer::sentence::Mu::Unmeasured,
         by: PivotBy::Word {
             face: 0,
-            word: sheet,
+            word: Box::new(sheet),
             side: Side::Left,
         },
     };

@@ -100,10 +100,12 @@ fn base_action_of(rotor: &crate::transducer::alphabet::Rotor) -> Option<Versor> 
 /// [`versor_of_word`] on every rotor that has a base action.
 pub fn base_rotor_of(v: &Versor) -> Option<crate::transducer::alphabet::Rotor> {
     use crate::transducer::alphabet::Rotor;
-    use crate::transducer::cga::{E1, BLADES};
+    use crate::transducer::cga::E1;
     let carriage = dilator_of(v)?.geo(&translator_of(v)?);
     let r = carriage.versor_inverse()?.geo(v);
-    let on_base = |m: &Versor| (0..BLADES).all(|b| BASE_EVEN.iter().any(|&(_, vm)| vm == b) || m.coeff(b).is_zero());
+    let on_base = |m: &Versor| {
+        (0..m.slot_count()).all(|b| BASE_EVEN.iter().any(|&(_, vm)| vm == b) || m.coeff(b).is_zero())
+    };
     let read = |m: &Versor| -> Rotor {
         BASE_EVEN.iter().fold(Rotor::zero(), |acc, &(rm, vm)| acc.add(&Rotor::blade(rm, m.coeff(vm).clone())))
     };
@@ -226,10 +228,13 @@ pub fn transvection_of(v: &Versor) -> Option<Versor> {
     if norm2 == Q::one() {
         return None;
     }
-    let planes = crate::transducer::cga::TRANSVECTION_PLANES;
-    let generator = Versor::blade(planes[0], t1)
-        .add(&Versor::blade(planes[1], t2))
-        .add(&Versor::blade(planes[2], t3));
+    // One boost `eᵢ ∧ e₋` per coordinate of the displacement, on that
+    // coordinate's own base axis.
+    use crate::transducer::cga::{base_axis, EM};
+    let generator = [t1, t2, t3]
+        .into_iter()
+        .enumerate()
+        .fold(Versor::zero(), |g, (i, t)| g.add(&Versor::blade(base_axis(i + 1) | EM, t)));
     crate::transducer::cga::cayley(&generator)
 }
 

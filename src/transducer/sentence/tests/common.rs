@@ -233,7 +233,7 @@ pub fn cert(axis: Axis, mu: [u64; 4]) -> PivotCertificate {
         },
         by: PivotBy::Word {
             face: 0,
-            word: Word::identity(),
+            word: Box::new(Word::identity()),
             side: Side::Right,
         },
     }

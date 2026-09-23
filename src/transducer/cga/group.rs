@@ -2,7 +2,7 @@
 //! and the closed-form tests of versorhood and projective equality.
 
 use super::embedding::{e_inf, e_o, point};
-use super::multivector::{one, zero, Mv, BLADES, E1};
+use super::multivector::{one, zero, Mv, E1};
 use num_rational::BigRational;
 use num_traits::Zero;
 
@@ -70,7 +70,10 @@ pub fn projective_ratio(a: &Mv, b: &Mv) -> Option<BigRational> {
 /// where the reverse product carries no scalar.
 fn proportional(a: &Mv, b: &Mv) -> Option<BigRational> {
     let mut lambda: Option<BigRational> = None;
-    for mask in 0..BLADES {
+    // Both in one algebra, the larger of the two, so every slot either
+    // holds is read.
+    let (a, b) = a.common(b);
+    for mask in 0..a.slot_count() {
         let (x, y) = (a.coeff(mask), b.coeff(mask));
         match (x.is_zero(), y.is_zero()) {
             (true, true) => continue,

@@ -1,7 +1,7 @@
 //! A4, 51.2 — the conformal null basis, the embeddings of a base point and
 //! a sphere, and the translation and rotation versors that carry them.
 
-use super::multivector::{half, one, zero, Mv, E1, E2, E3, EM, EP, PSEUDO};
+use super::multivector::{half, one, pseudo, zero, Mv, E1, E2, E3, EM, EP};
 use num_rational::BigRational;
 use num_traits::Zero;
 
@@ -139,7 +139,13 @@ pub fn on_sphere(p: &Mv, s: &Mv) -> bool {
 /// 2-chain on the cube complex (which then enters the Mayer–Vietoris / L2 coboundary
 /// sequence for settlement). Here realized as the geometric product with the
 /// inverse pseudoscalar; the caller reads the grade it needs.
-pub fn boundary_dual(sigma: &Mv) -> Option<Mv> {
-    let i = Mv::blade(PSEUDO, one());
+///
+/// THE DUAL IS TAKEN IN A SPACE, and `n` names it. A value's own `n` is the
+/// smallest algebra holding it, and a planar rotor sits in the algebra at
+/// `n = 2` while living in the corpus's `n = 3`; its dual in the two is not
+/// the same element. So the caller says which space the boundary is read
+/// in, and the pseudoscalar is that space's.
+pub fn boundary_dual(sigma: &Mv, n: u8) -> Option<Mv> {
+    let i = Mv::blade(pseudo(n.max(sigma.n())), one());
     Some(sigma.geo(&i.versor_inverse()?))
 }

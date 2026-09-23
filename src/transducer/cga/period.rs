@@ -37,24 +37,39 @@ use super::multivector::{one, Mv};
 /// close at (54.7, ruled 2026-09-21).
 ///
 /// A finite-order motion has eigenvalues that are roots of unity, so its
-/// minimal polynomial is a product of cyclotomics. Acting on a
-/// four-dimensional space bounds that degree:
+/// minimal polynomial is a product of cyclotomics. Acting on the
+/// `(n+1)`-dimensional space of `Cl(n+1, 1)`'s compact part bounds that
+/// degree, `φ(ℓ) ≤ n + 1`, so the candidates are GENERATED from `n`
+/// (71.2(3)) and never listed. At the corpus's `n = 3`:
 ///
 /// ```text
 ///     φ(ℓ) ≤ 4   ⟹   ℓ ∈ {1, 2, 3, 4, 5, 6, 8, 10, 12}
 /// ```
 ///
-/// `φ(7) = 6`, `φ(9) = 6`, `φ(11) = 10` — excluded, so an order of 7 is
-/// not merely absent from a corpus, it is unreachable.
+/// `φ(7) = 6`, `φ(9) = 6`, `φ(11) = 10` — excluded there, so an order of 7
+/// is not merely absent from that corpus, it is unreachable.
 ///
 /// `{1,2,3,4,6}` are the crystallographic orders, reachable when the
 /// discriminant is a rational square (`φ(ℓ) ≤ 2`, Niven). `{5,8,10,12}`
 /// need `φ(ℓ) = 4` — the minimal polynomial staying irreducible over ℚ —
 /// which happens exactly when `√Δ ∉ ℚ`. Pentagonal and dodecagonal
-/// symmetry are therefore not forbidden; they live in `ℚ(√Δ)`, and an
-/// earlier note here claiming order 5 unreachable was true only of the
-/// rationally-split case.
-pub const CYCLOTOMIC_ORDERS: [u32; 9] = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+/// symmetry are therefore not forbidden; they live in `ℚ(√Δ)`.
+///
+/// THE SEARCH FOR CANDIDATES IS BOUNDED BY A THEOREM, not a constant:
+/// `φ(ℓ) ≥ √(ℓ/2)`, so `φ(ℓ) ≤ d` forces `ℓ ≤ 2d²`, and every `ℓ` up to
+/// that bound is read once.
+pub fn cyclotomic_orders(n: u8) -> Vec<u32> {
+    let d = u32::from(n) + 1;
+    let totient = |l: u32| (1..=l).filter(|&k| gcd(k, l) == 1).count() as u32;
+    (1..=2 * d * d).filter(|&l| totient(l) <= d).collect()
+}
+
+fn gcd(mut a: u32, mut b: u32) -> u32 {
+    while b != 0 {
+        (a, b) = (b, a % b);
+    }
+    a
+}
 
 /// DOES THIS MOTION CLOSE, AND AT WHAT ORDER — asked of `Ω` WHOLE.
 ///
@@ -75,9 +90,9 @@ pub const CYCLOTOMIC_ORDERS: [u32; 9] = [1, 2, 3, 4, 5, 6, 8, 10, 12];
 /// a property of the cycle. Iterated Clifford multiplication asks the
 /// motion directly.
 ///
-/// The iteration is over [`CYCLOTOMIC_ORDERS`], a set fixed by `φ(ℓ) ≤ 4`
-/// — a theorem about this algebra, not a walk over a carrier (rule 3),
-/// exactly as `TRANSVECTION_PLANES` is the algebra's own declaration.
+/// The iteration is over [`cyclotomic_orders`] at the motion's own `n`, a
+/// set fixed by `φ(ℓ) ≤ n + 1` — a theorem about the algebra, not a walk
+/// over a carrier (rule 3).
 ///
 /// `None` is an open orbit. A motion with any hyperbolic content cannot
 /// close at all: `Ω = Ω_ell Ω_hyp` commuting gives
@@ -87,10 +102,13 @@ pub const CYCLOTOMIC_ORDERS: [u32; 9] = [1, 2, 3, 4, 5, 6, 8, 10, 12];
 pub fn finite_order(m: &Mv) -> Option<std::num::NonZeroU32> {
     is_versor(m)?;
     let unit = Mv::scalar(one());
+    let orders = cyclotomic_orders(m.n());
     let mut acc = m.clone();
-    // index: the algebra's own cyclotomic candidates, bounded by φ(ℓ) ≤ 4.
-    for k in 1..=12u32 {
-        if CYCLOTOMIC_ORDERS.contains(&k) && acc.projective_eq(&unit) {
+    // index: the algebra's own cyclotomic candidates, bounded by
+    // φ(ℓ) ≤ n + 1, in ascending order, so the first that closes is the
+    // order.
+    for k in 1..=orders.iter().copied().fold(1, u32::max) {
+        if orders.contains(&k) && acc.projective_eq(&unit) {
             return std::num::NonZeroU32::new(k);
         }
         acc = acc.geo(m);

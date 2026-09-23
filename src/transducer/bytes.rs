@@ -65,8 +65,8 @@ impl Bytes for crate::transducer::alphabet::Rotor {
 
 impl Bytes for Versor {
     fn bytes(&self) -> usize {
-        // index: the conformal algebra's thirty-two blades, a fixed size
-        std::mem::size_of::<Self>() + (0..32).map(|m| bytes_q(self.coeff(m))).sum::<usize>()
+        // index: every slot the value's own algebra holds (71.2(3))
+        std::mem::size_of::<Self>() + (0..self.slot_count()).map(|m| bytes_q(self.coeff(m))).sum::<usize>()
     }
 }
 

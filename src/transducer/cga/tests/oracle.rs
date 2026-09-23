@@ -53,7 +53,8 @@ fn fixtures() -> Vec<(String, Mv)> {
         out.push((format!("translator{i}"), cga::translator(a, b, c)));
         out.push((format!("rotator{i}"), cga::rotator(b, &q(1, 1))));
     }
-    for (i, plane) in cga::BIVECTOR_PLANES.iter().enumerate() {
+    // The fixtures stand at the corpus's n = 3, named.
+    for (i, plane) in cga::bivector_planes(3).iter().enumerate() {
         out.push((format!("rotor_on{i}"), cga::rotator_on_blade(&q(2, 1), &q(1, 3), *plane)));
     }
     for (i, rho) in [q(2, 1), q(1, 3), q(5, 2)].iter().enumerate() {
@@ -62,8 +63,8 @@ fn fixtures() -> Vec<(String, Mv)> {
     out.push(("reflector".into(), cga::reflector()));
     out.push(("e_o".into(), cga::e_o()));
     out.push(("e_inf".into(), cga::e_inf()));
-    out.push(("pseudo".into(), Mv::blade(cga::PSEUDO, q(1, 1))));
-    for (i, plane) in cga::TRANSVECTION_PLANES.iter().enumerate() {
+    out.push(("pseudo".into(), Mv::blade(cga::pseudo(3), q(1, 1))));
+    for (i, plane) in cga::transvection_planes(3).iter().enumerate() {
         if let Some(t) = cga::transvection(&q(3, 1), &q(1, 2), *plane) {
             out.push((format!("transvection{i}"), t));
         }
@@ -204,7 +205,7 @@ pub(super) fn readings(inputs: &[(String, Mv)]) -> Vec<String> {
                 None => "refused".into(),
             }
         ));
-        out.push(format!("boundary_dual {name}: {}", opt(cga::boundary_dual(m))));
+        out.push(format!("boundary_dual {name}: {}", opt(cga::boundary_dual(m, 3))));
         out.push(format!("commutator {pair}: {}", opt(cga::transvection_commutator(m, next))));
         out.push(format!("frame_base {name}: {}", opt(cga::frame_base_point(m))));
         let key = m.key();
@@ -216,7 +217,7 @@ pub(super) fn readings(inputs: &[(String, Mv)]) -> Vec<String> {
             }
         ));
     }
-    for (i, plane) in cga::BIVECTOR_PLANES.iter().enumerate() {
+    for (i, plane) in cga::bivector_planes(3).iter().enumerate() {
         out.push(format!(
             "plane {i}: {} {} harmonic {}",
             plane,

@@ -300,7 +300,7 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
         after: after.clone(),
         rank_move: RankMove::Equal,
         mu: Mu::Unmeasured,
-        by: PivotBy::Word { face: 0, word: w.clone(), side: Side::Right },
+        by: PivotBy::Word { face: 0, word: Box::new(w.clone()), side: Side::Right },
     };
     let mut vortex = crate::network::nerve::Keyed::new();
     for c in [cert(&a), cert(&b)] {

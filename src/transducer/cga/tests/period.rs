@@ -8,7 +8,7 @@ use crate::transducer::cga::*;
 #[test]
 fn a_period_is_crystallographic_or_it_is_infinite() {
     // A pure transvection has no compact part: open, and no pitch.
-    let boost = transvection(&q(2, 1), &q(1, 1), TRANSVECTION_PLANES[0]).expect("a boost");
+    let boost = transvection(&q(2, 1), &q(1, 1), transvection_planes(3)[0]).expect("a boost");
     assert_eq!(compact_period(&boost), Spectrum::Open, "a dislocation slips and never returns");
 
     // A quarter turn closes at a crystallographic order, which is ℚ's

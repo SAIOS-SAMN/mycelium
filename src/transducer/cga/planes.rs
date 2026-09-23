@@ -1,100 +1,132 @@
-//! D1, 68 — the ten bivector planes of `Cl(4,1)`, split into the harmonic
-//! and luminal halves, and the census of which ones the engine populates.
+//! D1, 68, 71.2(3) — the bivector planes of `Cl(n+1, 1)`, GENERATED from `n`
+//! and split into the harmonic and luminal halves, and the census of which
+//! ones the engine populates.
 
-use super::multivector::{Mv, E1, E2, E3, EM, EP};
+use super::multivector::{base_axis, Mv, EM, EP};
 use num_traits::Zero;
 
-/// THE FOUR HYPERBOLIC GENERATORS `eₐ ∧ e₋`, the mixed bivectors `Cl(4,0)`
-/// has none of. Each squares to `+1`:
+/// THE HYPERBOLIC GENERATORS `eₐ ∧ e₋`, one for every spacelike generator:
+/// each base axis and `e₊`. Each squares to `+1`:
 ///
 /// ```text
 ///     (eₐe₋)² = eₐe₋eₐe₋ = −eₐeₐe₋e₋ = −(+1)(−1) = +1
 /// ```
 ///
-/// FOUR, NOT THREE. A first cut declared `e₁∧e₋, e₂∧e₋, e₃∧e₋` and dropped
-/// `e₊∧e₋`. `Spin(4,1)` is the isometry group of HYPERBOLIC 4-SPACE whose
-/// boundary at infinity is the three-coordinate base (51.2), and ℍ⁴ is four
-/// dimensional: its boosts are `eₐ ∧ e₋` for every spacelike `a`, and `e₊`
-/// is spacelike (`e₊² = +1`). Declaring three of four restricts dimensional
-/// capacity, which the Anti-Flattening Law clause 5 refuses by name — the
-/// same defect as collapsing `Λ²(ℝ⁴)` to one blade, one dimension up.
-pub const TRANSVECTION_PLANES: [usize; 4] = [E1 | EM, E2 | EM, E3 | EM, EP | EM];
+/// `n + 1` OF THEM, NOT `n`. `Spin(n+1,1)` is the isometry group of
+/// hyperbolic `(n+1)`-space whose boundary at infinity is the base, and its
+/// boosts are `eₐ ∧ e₋` for every spacelike `a` — `e₊` included, since
+/// `e₊² = +1`. At the corpus's `n = 3` that is four, and a first cut that
+/// declared three restricted dimensional capacity (Anti-Flattening clause
+/// 5).
+pub fn transvection_planes(n: u8) -> Vec<usize> {
+    let mut out: Vec<usize> = (1..=usize::from(n)).map(|i| base_axis(i) | EM).collect();
+    out.push(EP | EM);
+    out
+}
 
-/// THE TEN BIVECTOR PLANES OF `Cl(4,1)`, IN ONE PLACE AND SPLIT BY HALF
-/// (D1, 68 — ruled 2026-09-22).
+/// IS THIS BLADE A HYPERBOLIC GENERATOR — two generators, one of them `e₋`?
+/// Read off the blade's own bits, at every `n`.
+pub fn is_transvection_plane(blade: usize) -> bool {
+    blade.count_ones() == 2 && blade & EM != 0
+}
+
+/// THE HARMONIC HALF: the planes avoiding `e₋` — every pair of base axes,
+/// then each base axis with `e₊`. `B² < 0`, compact, they turn.
+pub fn harmonic_planes(n: u8) -> Vec<usize> {
+    let n = usize::from(n);
+    let mut out = Vec::new();
+    for i in 1..=n {
+        for j in (i + 1)..=n {
+            out.push(base_axis(i) | base_axis(j));
+        }
+    }
+    for i in 1..=n {
+        out.push(base_axis(i) | EP);
+    }
+    out
+}
+
+/// THE BIVECTOR PLANES OF `Cl(n+1, 1)`, IN ONE PLACE AND SPLIT BY HALF
+/// (D1, 68 — ruled 2026-09-22; generated from `n`, 71.2(3)).
 ///
-/// `Λ²(ℚ^{4,1})` is ten dimensional and the engine reads it as two halves
-/// that behave differently under `B²`:
+/// `Λ²(ℚ^{n+1,1})` has `C(n+2, 2) = C(n+1, 2) + (n+1)` planes, read as two
+/// halves that behave differently under `B²`:
 ///
 /// ```text
-///   HARMONIC   e₁e₂ e₁e₃ e₂e₃ e₁e₊ e₂e₊ e₃e₊      B² < 0, compact, turns
-///   LUMINAL    e₁e₋ e₂e₋ e₃e₋ e₊e₋                B² > 0, non-compact, boosts
+///   HARMONIC   eᵢeⱼ, eᵢe₊            B² < 0, compact, turns
+///   LUMINAL    eᵢe₋, e₊e₋            B² > 0, non-compact, boosts
 /// ```
 ///
-/// Six and four. A census that counts "bivectors" without this split
-/// cannot say whether a corpus turns or boosts, and the whole tetrachotomy
-/// is a statement about which half a generator lives in.
+/// Harmonic first, then luminal, so an index into a tally is stable and its
+/// half is read off the blade. At `n = 3` these are the ten the engine has
+/// always read, in the order it has always read them.
 ///
 /// THE NAMES ARE THE BLADE'S OWN BITS, so a reader gets the plane back
 /// rather than an ordinal (rule 15).
-pub const HARMONIC_PLANES: [usize; 6] =
-    [E1 | E2, E1 | E3, E2 | E3, E1 | EP, E2 | EP, E3 | EP];
+pub fn bivector_planes(n: u8) -> Vec<usize> {
+    let mut out = harmonic_planes(n);
+    out.extend(transvection_planes(n));
+    out
+}
 
-/// Every bivector plane, harmonic first then luminal, so an index into a
-/// tally is stable and its half is read off the index.
-pub const BIVECTOR_PLANES: [usize; 10] = [
-    E1 | E2,
-    E1 | E3,
-    E2 | E3,
-    E1 | EP,
-    E2 | EP,
-    E3 | EP,
-    E1 | EM,
-    E2 | EM,
-    E3 | EM,
-    EP | EM,
-];
+/// A generator's place in the algebra's own order — the base axes by index,
+/// then `e₊`, then `e₋` — and its name: the axis index, `p`, or `m`.
+fn generator(bit: usize) -> (usize, String) {
+    match bit {
+        0..=2 => (bit + 1, format!("{}", bit + 1)),
+        3 => (usize::MAX - 1, "p".into()),
+        4 => (usize::MAX, "m".into()),
+        b => (b - 1, format!("{}", b - 1)),
+    }
+}
 
-/// The plane's own name, for a line a reader can act on.
-pub fn plane_name(blade: usize) -> &'static str {
-    match blade {
-        b if b == E1 | E2 => "e12",
-        b if b == E1 | E3 => "e13",
-        b if b == E2 | E3 => "e23",
-        b if b == E1 | EP => "e1p",
-        b if b == E2 | EP => "e2p",
-        b if b == E3 | EP => "e3p",
-        b if b == E1 | EM => "e1m",
-        b if b == E2 | EM => "e2m",
-        b if b == E3 | EM => "e3m",
-        b if b == EP | EM => "epm",
-        _ => "?",
+/// The plane's own name, read off its two generators in the algebra's
+/// order, for a line a reader can act on: `e12`, `e1p`, `e3m`, `epm`. An
+/// axis index of two digits is set apart, `e1_10`, so a name never reads as
+/// another plane's.
+pub fn plane_name(blade: usize) -> String {
+    let mut gens: Vec<(usize, String)> =
+        (0..usize::BITS as usize).filter(|b| blade >> b & 1 == 1).map(generator).collect();
+    gens.sort_unstable();
+    let names: Vec<String> = gens.into_iter().map(|(_, name)| name).collect();
+    match names.as_slice() {
+        [x, y] => {
+            match x.len() > 1 || y.len() > 1 {
+                true => format!("e{x}_{y}"),
+                false => format!("e{x}{y}"),
+            }
+        }
+        _ => "?".into(),
     }
 }
 
 /// Is this plane compact — does its generator TURN rather than boost?
-/// `B² < 0` for the six that avoid `e₋`, and `e₋² = −1` is what makes the
-/// other four hyperbolic (54.7).
+/// `B² < 0` for the planes that avoid `e₋`, and `e₋² = −1` is what makes the
+/// others hyperbolic (54.7).
 pub const fn plane_is_harmonic(blade: usize) -> bool {
     blade & EM == 0
 }
 
 /// D1 — WHICH PLANES THE ENGINE ACTUALLY POPULATES (68).
 ///
-/// Ten counters, one per bivector plane, so a recut can be read for
-/// DIMENSIONAL CAPACITY rather than for throughput. A corpus that turns
-/// only on `e₁e₂` and boosts only on `e₁e₋` is using two of ten planes,
-/// and no aggregate count says so — it reports a busy engine occupying a
-/// line.
+/// One counter per bivector plane of the algebra the transitions live in,
+/// so a recut can be read for DIMENSIONAL CAPACITY rather than for
+/// throughput. A corpus that turns only on `e₁e₂` and boosts only on
+/// `e₁e₋` is using two of its planes, and no aggregate count says so — it
+/// reports a busy engine occupying a line.
 ///
 /// This is the Anti-Flattening Law's clause 5 made observable: declaring
 /// capacity and never populating it is the same defect as not declaring
 /// it, and until now nothing could tell the two apart.
-#[derive(Default, Clone, Copy, Debug)]
+///
+/// THE CENSUS IS AS WIDE AS THE ALGEBRA IT READS (71.2(3)): its `n` is the
+/// largest of the transitions noted, and its planes are generated from it.
+#[derive(Default, Clone, Debug)]
 pub struct PlaneTally {
-    /// Non-zero occupancy per plane, indexed by [`BIVECTOR_PLANES`] — so
-    /// `0..6` is the harmonic half and `6..10` the luminal one.
-    pub planes: [u64; 10],
+    /// The algebra the census is read in.
+    pub n: u8,
+    /// Non-zero occupancy per plane, keyed by the plane's own blade.
+    pub planes: crate::network::nerve::Keyed<u64>,
     /// Generators read, and those carrying content in BOTH halves — a
     /// screw, which is where `I₂ ≠ 0` can live (59.7).
     pub read: u64,
@@ -102,64 +134,76 @@ pub struct PlaneTally {
 }
 
 thread_local! {
-    static PLANES: std::cell::Cell<PlaneTally> =
-        const { std::cell::Cell::new(PlaneTally { planes: [0; 10], read: 0, coupled: 0 }) };
+    static PLANES: std::cell::RefCell<PlaneTally> = std::cell::RefCell::new(PlaneTally::default());
+}
+
+/// A plane's key in the tally: its blade, written out.
+fn plane_key(blade: usize) -> [u8; 8] {
+    (blade as u64).to_be_bytes()
 }
 
 /// THE ROTOR'S SIX PLANES, WHICH THE CARRIAGE CANNOT CARRY.
 ///
 /// A transition is `D(ρ)·T(t)·R` and the two halves live in DIFFERENT
-/// ALGEBRAS (L11e): the carriage in `Cl(3,1)`, the rotor over all six
-/// planes of `Cl(4,0)`. A census of the carriage alone therefore reads
-/// ZERO on the entire harmonic half, structurally — which is what the
-/// first cut of this did, and the corpus obligingly reported every
-/// harmonic plane empty.
+/// ALGEBRAS (L11e): the carriage in the conformal algebra, the rotor over
+/// the six planes of the letters' `Cl(4,0)` chart (law 6: the seventeen are
+/// written on it and do not change with `n`). A census of the carriage
+/// alone therefore reads ZERO on the entire harmonic half, structurally.
 ///
-/// `Cl(4,0)`'s six bivector blades are the pairs of `{e₀,e₁,e₂,e₃}`, and
-/// 51.2 fixes the rotor chart's correspondence: `(0,1)`, `(0,3)`, `(1,3)`
-/// are `e₁e₂`, `e₁e₃`, `e₂e₃`. The remaining three are the chart's
-/// off-plane channels, which is where orders outside `{1,2,4}` live (65.6)
-/// — so a corpus using them is turning off the sensor plane, and one that
-/// never does is flat however busy it looks.
-/// ONE TRANSITION, BOTH HALVES, ONE COUNT. A transition is `D(ρ)·T(t)·R`
-/// and it is ONE generator however many carriers hold it, so `read`
-/// increments once and `coupled` can see both halves at once — which a
-/// per-carrier call could not.
+/// 51.2 fixes the rotor chart's correspondence onto the carriage's planes:
+/// `(0,1)`, `(0,3)`, `(1,3)` are `e₁e₂`, `e₁e₃`, `e₂e₃`, and the chart's
+/// three off-plane channels land on `e₁e₊`, `e₂e₊`, `e₃e₊` — which is where
+/// orders outside `{1,2,4}` live (65.6).
+///
+/// ONE TRANSITION, BOTH HALVES, ONE COUNT, so `read` increments once and
+/// `coupled` can see both halves at once.
 pub fn note_transition(r: &crate::transducer::alphabet::Rotor, carriage: &Mv) {
-    // The six grade-2 masks of `Cl(4,0)`, in the chart's own order.
-    const ROTOR_PLANES: [usize; 6] = [0b0011, 0b0101, 0b1001, 0b0110, 0b1010, 0b1100];
-    let mut seen = [0u64; 10];
+    // The letters' chart, each of its six planes with the carriage plane it
+    // is read as.
+    const ROTOR_PLANES: [(usize, usize); 6] = [
+        (0b0011, 0b00011),
+        (0b0101, 0b00101),
+        (0b1001, 0b00110),
+        (0b0110, 0b01001),
+        (0b1010, 0b01010),
+        (0b1100, 0b01100),
+    ];
+    let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let mut harmonic = false;
-    for (i, &mask) in ROTOR_PLANES.iter().enumerate() {
-        if !r.coeff(mask).is_zero() {
-            seen[i] = 1;
+    for &(rotor_mask, plane) in &ROTOR_PLANES {
+        if !r.coeff(rotor_mask).is_zero() {
+            seen.insert(plane_key(plane), ());
             harmonic = true;
         }
     }
-    // The carriage contributes the LUMINAL four and the three `e_i∧e₊`
-    // the rotor chart does not reach; both are read off its own blades.
+    // The carriage contributes the luminal planes and the `eᵢ∧e₊` the rotor
+    // chart does not reach; all are read off its own blades, at its own `n`.
     let b = carriage.grade(2);
     let mut luminal = false;
-    for (i, &plane) in BIVECTOR_PLANES.iter().enumerate() {
-        if !b.c[plane].is_zero() {
-            seen[i] = 1;
+    for plane in bivector_planes(carriage.n()) {
+        if !b.coeff(plane).is_zero() {
+            seen.insert(plane_key(plane), ());
             if !plane_is_harmonic(plane) {
                 luminal = true;
             }
         }
     }
     PLANES.with(|c| {
-        let mut t = c.get();
+        let mut t = c.borrow_mut();
         t.read += 1;
-        for (slot, s) in t.planes.iter_mut().zip(seen.iter()) {
-            *slot += s;
+        t.n = t.n.max(carriage.n());
+        for (k, ()) in seen.scoped() {
+            let now = match t.planes.get(&k) {
+                Some(&v) => v + 1,
+                None => 1,
+            };
+            t.planes.insert(k, now);
         }
         // A SCREW: content in both halves at once, which is where `I₂ ≠ 0`
         // can live (59.7). Neither half alone can produce it.
         if harmonic && luminal {
             t.coupled += 1;
         }
-        c.set(t);
     });
 }
 
@@ -171,30 +215,44 @@ pub fn take_plane_tally() -> PlaneTally {
 /// The census without clearing, for a per-form line beside a running
 /// total (law 12: only one reader may take).
 pub fn plane_tally() -> PlaneTally {
-    PLANES.with(|c| c.get())
+    PLANES.with(|c| c.borrow().clone())
 }
 
 impl PlaneTally {
-    /// THE CAPACITY LINE — every plane by its own name, the two halves
-    /// kept apart, and how many generators coupled them.
+    /// How often one plane was populated.
+    pub fn count(&self, blade: usize) -> u64 {
+        match self.planes.get(&plane_key(blade)) {
+            Some(&v) => v,
+            None => 0,
+        }
+    }
+
+    /// THE CAPACITY LINE — every plane of the census's algebra by its own
+    /// name, the two halves kept apart, and how many generators coupled
+    /// them.
     pub fn line(&self) -> String {
-        let half = |r: std::ops::Range<usize>| {
-            r.map(|i| format!("{} {}", plane_name(BIVECTOR_PLANES[i]), self.planes[i]))
+        let half = |planes: Vec<usize>| {
+            planes
+                .into_iter()
+                .map(|p| format!("{} {}", plane_name(p), self.count(p)))
                 .collect::<Vec<_>>()
                 .join(" ")
         };
+        // A census that has read nothing is read in the corpus's algebra,
+        // so an idle line names the planes a busy one would.
+        let n = self.n.max(super::multivector::wire_n());
         format!(
             "read {} | harmonic: {} | luminal: {} | coupled {}",
             self.read,
-            half(0..6),
-            half(6..10),
+            half(harmonic_planes(n)),
+            half(transvection_planes(n)),
             self.coupled
         )
     }
 
-    /// How many of the ten planes carry anything at all. The single number
-    /// that says whether declared capacity is being used.
+    /// How many planes carry anything at all. The single number that says
+    /// whether declared capacity is being used.
     pub fn occupied(&self) -> usize {
-        self.planes.iter().filter(|&&n| n > 0).count()
+        self.planes.scoped().filter(|(_, &n)| n > 0).count()
     }
 }

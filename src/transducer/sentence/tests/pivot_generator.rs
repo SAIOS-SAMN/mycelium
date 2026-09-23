@@ -270,7 +270,7 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
 
     // THE MOVE REACHES THE CARRIER, which is the whole claim: the old arm
     // wrote `f.word` and left this reading bit-identical.
-    let by = PivotBy::Word { face: chord, word: before.clone(), side: Side::Right };
+    let by = PivotBy::Word { face: chord, word: Box::new(before.clone()), side: Side::Right };
     apply_by(&mut f.faces, &by);
     let read = |faces: &[FormFace], vs: &[Vertex]| {
         let loops = Form::loops_of(faces, vs);
@@ -288,7 +288,7 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
     // backward, so its composite is the edge's inverse and the move that
     // closes it composes on the left.
     unapply_by(&mut f.faces, &by);
-    let closing = PivotBy::Word { face: chord, word: before.clone(), side: Side::Left };
+    let closing = PivotBy::Word { face: chord, word: Box::new(before.clone()), side: Side::Left };
     apply_by(&mut f.faces, &closing);
     let closed = read(&f.faces, &f.vertices);
     assert!(

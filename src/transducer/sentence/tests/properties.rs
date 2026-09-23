@@ -264,7 +264,7 @@ fn evidence_is_not_identity() {
         after: ClassVector::of_word(&Word::identity()).expect("identity is a versor").class_key(),
         rank_move: RankMove::Discharged { from: RankAxis::Torsion },
         mu: Mu::Unmeasured,
-        by: PivotBy::Word { face: 0, word: Word::identity(), side: Side::Left },
+        by: PivotBy::Word { face: 0, word: Box::new(Word::identity()), side: Side::Left },
     };
     c.certificates.insert(cert.key(), cert);
     assert_eq!(c.certificates.len(), 1, "the fixture carries a certificate");

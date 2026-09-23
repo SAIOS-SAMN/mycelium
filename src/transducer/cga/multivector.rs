@@ -1,29 +1,105 @@
-//! A4 — the multivector of `Cl(4,1)` over ℚ: its thirty-two blades, the
-//! geometric product, and the canonical writing a key is built from.
+//! A4, BQ3, 71.2(3), (4) — THE MULTIVECTOR OF `Cl(n+1, 1)` OVER ℚ: the
+//! conformal model of ℚⁿ, with `n` carried by the value and the geometric
+//! product written once for every `n`.
+//!
+//! THE GENERATORS KEEP THEIR BITS AS `n` GROWS. `e₊` is bit 3 and `e₋` is
+//! bit 4 at every `n`; the first three base axes are bits 0, 1, 2, and a
+//! fourth base axis onward takes bit 5 onward ([`base_axis`]). So at `n ≤ 3`
+//! every mask, the canonical order (the first non-zero coefficient in mask
+//! order) and the thirty-two coefficients on the wire are what the fixed
+//! `Cl(4,1)` carrier wrote, and the oracle it left (`tests/oracle.golden`)
+//! is reproduced reading for reading. At `n = 4` there are `2⁶` blades and
+//! the first thirty-two are the `n = 3` algebra's own.
+//!
+//! THE VALUE CARRIES ITS `n`, AND TWO VALUES OF DIFFERENT `n` COMPOSE IN THE
+//! LARGER. Because no generator moves, a value of the smaller algebra is the
+//! same value in the larger one: ℚⁿ ⊂ ℚᵐ with the extra coordinates zero,
+//! an exact inclusion and never a reading of one as the other. A value's
+//! `n` is the smallest algebra holding its generators: a scalar is `n = 0`,
+//! an element of every algebra.
+//!
+//! THE METRIC IS THE SIGNATURE'S, NOT A LIST: `e₋` squares to −1 and every
+//! other generator to +1, which is `Cl(n+1, 1)` for every `n`.
 
 use super::group::{is_versor, projective_ratio};
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{One, Signed, Zero};
 
-/// Basis-vector masks over `{e1, e2, e3, e+, e-}`: the three base axes —
-/// row, column, frame — and the two null-cone generators.
+/// The first three base axes — row, column, frame at the corpus's `n = 3` —
+/// and the two generators that close the conformal model, `e₊` (square +1)
+/// and `e₋` (square −1). These are generators, not counts: a fourth base
+/// axis is [`base_axis`]`(4)`.
 pub const E1: usize = 0b00001;
 pub const E2: usize = 0b00010;
 pub const E3: usize = 0b00100;
-pub const EP: usize = 0b01000; // e+  (square +1)
-pub const EM: usize = 0b10000; // e-  (square −1)
-/// The unit pseudoscalar `e1 e2 e3 e+ e-`.
-pub const PSEUDO: usize = 0b11111;
-/// The blades of the algebra: `2⁵`.
-pub const BLADES: usize = 32;
-const MASK: usize = BLADES - 1;
+pub const EP: usize = 0b01000;
+pub const EM: usize = 0b10000;
 
-/// An exact multivector of `Cl(4,1)`: 32 blade coefficients over ℚ.
-/// Equality is projective (`λ ∈ ℚ×`); coefficient identity is [`Mv::canonical`].
+/// The mask of base axis `i`, counted from 1: bits 0–2 for the first three,
+/// and bit `i + 1` from the fourth on, so `e₊` and `e₋` never move.
+pub fn base_axis(i: usize) -> usize {
+    match i {
+        1..=3 => 1 << (i - 1),
+        _ => 1 << (i + 1),
+    }
+}
+
+/// How many coefficient slots the carrier holds at `n`: the masks reach bit
+/// `n + 1` once `n ≥ 3`, and bit 4 before that.
+pub fn slots(n: u8) -> usize {
+    1usize << (usize::from(n.max(3)) + 2)
+}
+
+/// The blades of `Cl(n+1, 1)`: `2^{n+2}`.
+pub fn blades(n: u8) -> usize {
+    1usize << (usize::from(n) + 2)
+}
+
+/// The unit pseudoscalar at `n`: every base axis, `e₊` and `e₋`.
+pub fn pseudo(n: u8) -> usize {
+    (1..=usize::from(n)).fold(EP | EM, |m, i| m | base_axis(i))
+}
+
+/// The smallest `n` whose algebra holds every generator of `mask`: the
+/// highest base axis it names.
+fn n_of_mask(mask: usize) -> u8 {
+    let mut n = 0usize;
+    let mut bit = 0usize;
+    let mut rest = mask;
+    while rest != 0 {
+        if rest & 1 == 1 {
+            let axis = match bit {
+                0..=2 => bit + 1,
+                3 | 4 => 0,
+                b => b - 1,
+            };
+            n = n.max(axis);
+        }
+        rest >>= 1;
+        bit += 1;
+    }
+    // A mask is a machine word, so its highest axis is below 64 and is a
+    // `u8` exactly.
+    n as u8
+}
+
+/// THE `n` THE WIRE IS READ AT, UNTIL BQ1 WRITES `n` FIRST ON EVERY ADDRESS
+/// (71.2(1)). A versor on the wire today carries no `n` of its own, and every
+/// codec that reads one without an address asks here, so the one site BQ1
+/// changes is this one. It is the corpus's `n`, and the thirty-two slots it
+/// implies are the fixed carrier's wire, unchanged.
+pub fn wire_n() -> u8 {
+    3
+}
+
+/// An exact multivector of `Cl(n+1, 1)`: its `n` and one coefficient over ℚ
+/// per slot. Equality is projective (`λ ∈ ℚ×`); coefficient identity is
+/// [`Mv::canonical`].
 #[derive(Debug, Clone)]
 pub struct Mv {
-    pub(super) c: [BigRational; BLADES],
+    n: u8,
+    c: Vec<BigRational>,
 }
 
 impl PartialEq for Mv {
@@ -43,6 +119,10 @@ pub(super) fn half() -> BigRational {
     BigRational::new(BigInt::from(1), BigInt::from(2))
 }
 
+/// The zero a slot outside a value's algebra reads as: that value has no
+/// coefficient there, which is zero in every larger algebra holding it.
+static ZERO: std::sync::LazyLock<BigRational> = std::sync::LazyLock::new(BigRational::zero);
+
 /// The parity of the number of transpositions needed to sort the concatenation
 /// of blade `a` before blade `b` into canonical ascending order: +1 even, −1 odd.
 fn reorder_sign(a: usize, b: usize) -> i64 {
@@ -59,10 +139,10 @@ fn reorder_sign(a: usize, b: usize) -> i64 {
     }
 }
 
-/// The metric sign of squaring the shared generators of two blades: only `e-`
-/// squares to −1; `e1, e2, e3, e+` square to +1. (No null generators in the
-/// orthonormal basis — the null cone is DERIVED — so a blade product never
-/// vanishes by metric, only by sign.)
+/// The signature's sign on the generators two blades share: only `e₋`
+/// squares to −1. No generator of the orthonormal basis is null — the null
+/// cone is derived — so a blade product never vanishes by metric, only by
+/// sign.
 fn metric_sign(shared: usize) -> i64 {
     if (shared & EM) != 0 {
         -1
@@ -72,8 +152,14 @@ fn metric_sign(shared: usize) -> i64 {
 }
 
 impl Mv {
+    /// The zero: `n = 0`, an element of every algebra.
     pub fn zero() -> Self {
-        Self { c: std::array::from_fn(|_| zero()) }
+        Self::zero_at(0)
+    }
+
+    /// The zero of `Cl(n+1, 1)`.
+    pub fn zero_at(n: u8) -> Self {
+        Self { n, c: vec![zero(); slots(n)] }
     }
 
     pub fn scalar(v: BigRational) -> Self {
@@ -82,15 +168,46 @@ impl Mv {
         m
     }
 
-    /// A single basis blade with coefficient `v`.
+    /// A single basis blade with coefficient `v`, in the smallest algebra
+    /// holding its generators.
     pub fn blade(mask: usize, v: BigRational) -> Self {
-        let mut m = Self::zero();
-        m.c[mask & MASK] = v;
+        let mut m = Self::zero_at(n_of_mask(mask));
+        m.c[mask] = v;
         m
     }
 
+    /// The `n` this value belongs to: the smallest algebra holding it.
+    pub fn n(&self) -> u8 {
+        self.n
+    }
+
+    /// How many coefficient slots the value holds.
+    pub fn slot_count(&self) -> usize {
+        self.c.len()
+    }
+
+    /// The same value in the algebra at `m ≥ n`: the inclusion ℚⁿ ⊂ ℚᵐ, the
+    /// new slots zero. A value is never narrowed.
+    pub fn widened(&self, m: u8) -> Self {
+        if m <= self.n {
+            return self.clone();
+        }
+        let mut c = self.c.clone();
+        c.resize(slots(m), zero());
+        Self { n: m, c }
+    }
+
+    /// The two operands in one algebra: the larger `n` of the two.
+    pub(super) fn common(&self, o: &Self) -> (Self, Self) {
+        let n = self.n.max(o.n);
+        (self.widened(n), o.widened(n))
+    }
+
     pub fn coeff(&self, mask: usize) -> &BigRational {
-        &self.c[mask & MASK]
+        match self.c.get(mask) {
+            Some(v) => v,
+            None => &ZERO,
+        }
     }
 
     pub fn scalar_part(&self) -> BigRational {
@@ -103,7 +220,7 @@ impl Mv {
 
     /// A4: divide by |first nonzero|, negate so that coefficient is +1.
     pub fn canonical(&self) -> Option<Mv> {
-        let i = (0..BLADES).find(|&i| !self.c[i].is_zero())?;
+        let i = (0..self.c.len()).find(|&i| !self.c[i].is_zero())?;
         let mut r = self.scale(&(one() / self.c[i].abs()));
         if r.c[i].is_negative() {
             r = r.scale(&-one());
@@ -146,31 +263,34 @@ impl Mv {
     }
 
     pub fn add(&self, o: &Self) -> Self {
-        Self { c: std::array::from_fn(|i| &self.c[i] + &o.c[i]) }
+        let (a, b) = self.common(o);
+        Self { n: a.n, c: a.c.iter().zip(&b.c).map(|(x, y)| x + y).collect() }
     }
 
     pub fn sub(&self, o: &Self) -> Self {
-        Self { c: std::array::from_fn(|i| &self.c[i] - &o.c[i]) }
+        let (a, b) = self.common(o);
+        Self { n: a.n, c: a.c.iter().zip(&b.c).map(|(x, y)| x - y).collect() }
     }
 
     pub fn scale(&self, s: &BigRational) -> Self {
-        Self { c: std::array::from_fn(|i| &self.c[i] * s) }
+        Self { n: self.n, c: self.c.iter().map(|x| x * s).collect() }
     }
 
-    /// THE GEOMETRIC PRODUCT — the whole algebra. `result[i⊕j] += sign · metric ·
-    /// a_i · b_j` over every pair of populated blades.
+    /// THE GEOMETRIC PRODUCT — the whole algebra, for every `n`. `result[i⊕j]
+    /// += sign · metric · a_i · b_j` over every pair of populated blades.
     pub fn geo(&self, o: &Self) -> Self {
-        let mut r = Self::zero();
-        for i in 0..BLADES {
-            if self.c[i].is_zero() {
+        let (a, b) = self.common(o);
+        let mut r = Self::zero_at(a.n);
+        for (i, x) in a.c.iter().enumerate() {
+            if x.is_zero() {
                 continue;
             }
-            for j in 0..BLADES {
-                if o.c[j].is_zero() {
+            for (j, y) in b.c.iter().enumerate() {
+                if y.is_zero() {
                     continue;
                 }
                 let sign = reorder_sign(i, j) * metric_sign(i & j);
-                let term = &self.c[i] * &o.c[j];
+                let term = x * y;
                 let out = i ^ j;
                 if sign >= 0 {
                     r.c[out] = &r.c[out] + &term;
@@ -185,14 +305,20 @@ impl Mv {
     /// The reverse `~M`: blade of grade g gets sign `(−1)^{g(g−1)/2}`.
     pub fn reverse(&self) -> Self {
         Self {
-            c: std::array::from_fn(|i| {
-                let g = (i as u32).count_ones();
-                if (g * (g.wrapping_sub(1)) / 2) & 1 == 0 {
-                    self.c[i].clone()
-                } else {
-                    -self.c[i].clone()
-                }
-            }),
+            n: self.n,
+            c: self
+                .c
+                .iter()
+                .enumerate()
+                .map(|(i, v)| {
+                    let g = (i as u32).count_ones();
+                    if (g * (g.wrapping_sub(1)) / 2) & 1 == 0 {
+                        v.clone()
+                    } else {
+                        -v.clone()
+                    }
+                })
+                .collect(),
         }
     }
 
@@ -205,15 +331,14 @@ impl Mv {
     ///
     /// GRASSMANN TERMINATES IT AND NO GUARD DOES. `v ∧ v = 0`, so a point
     /// already on the round contributes nothing; a point conformally
-    /// dependent on the round gives zero the same way; and `⋀⁶(ℚ^{4,1}) ≡
-    /// 0`, so a sixth point vanishes identically. Dimensional exhaustion is
-    /// exterior-algebra arithmetic, never a `grade > MAX` branch.
+    /// dependent on the round gives zero the same way; and past grade
+    /// `n + 2` the exterior algebra of `ℚ^{n+1,1}` is identically zero, so
+    /// one point too many vanishes. Dimensional exhaustion is exterior-
+    /// algebra arithmetic, never a `grade > MAX` branch.
     ///
-    /// `Cl(4,1)` is this tree's conformal algebra — five generators
-    /// `{e1, e2, e3, e+, e-}`, 32 blades, the conformal model of 3-space —
-    /// so the ladder of rounds is: grade 2 a point pair (0-sphere), grade 3
-    /// a circle (1-sphere), grade 4 a sphere (2-sphere), grade 5 the
-    /// pseudoscalar, grade 6 identically zero.
+    /// At the corpus's `n = 3` the ladder of rounds is: grade 2 a point pair
+    /// (0-sphere), grade 3 a circle (1-sphere), grade 4 a sphere (2-sphere),
+    /// grade 5 the pseudoscalar, grade 6 identically zero.
     pub fn wedge_vector(&self, g: u32, v: &Self) -> Self {
         self.geo(v).grade(g + 1)
     }
@@ -222,11 +347,11 @@ impl Mv {
     /// GENERATOR (54.7, as ruled 2026-09-21).
     ///
     /// A transition is `Ω = R · T(τ)` and its generator is the bivector
-    /// `B = ⟨Ω⟩₂`. In `Cl(4,1)` that bivector is NOT one kind of thing:
+    /// `B = ⟨Ω⟩₂`. In `Cl(n+1,1)` that bivector is NOT one kind of thing:
     ///
     /// ```text
-    ///     B = B_ell + B_hyp ,   B_ell = Σ b_ij (eᵢ∧eⱼ)   1 ≤ i<j ≤ 3
-    ///                           B_hyp = Σ b_i₋ (eᵢ∧e₋)   1 ≤ i ≤ 3
+    ///     B = B_ell + B_hyp ,   B_ell = Σ b_ij (eᵢ∧eⱼ)
+    ///                           B_hyp = Σ b_i₋ (eᵢ∧e₋)
     /// ```
     ///
     /// `B_ell` generates an ELLIPTIC rotation stabilising a timelike
@@ -246,18 +371,13 @@ impl Mv {
     /// bivector components. That is not an oversight there: `Cl(4,0)` is
     /// POSITIVE DEFINITE, every bivector squares negative, every plane is
     /// carried to every other by a conjugation, and the conjugacy classes of
-    /// `Spin(4)` genuinely are the two angles alone. The planes are the
-    /// rotation's position, not its class, so reading grade 2 in `Cl(4,0)`
-    /// would add nothing.
+    /// `Spin(4)` genuinely are the two angles alone.
     ///
-    /// It adds everything here. Under the signature `(+,+,+,+,−)` the sign
+    /// It adds everything here. Under a signature with `e₋² = −1` the sign
     /// of `I₁` is a real coordinate, and a rotation, a boost and a limit
-    /// rotation are three classes rather than one. `Cl(4,0)` could not hold
-    /// that distinction because it has no absolute to be hyperbolic about —
-    /// which is why the transition's two halves must be composed into ONE
-    /// element of `Spin(4,1)` before the class is taken, rather than a rotor
-    /// classified in a flat algebra beside a carriage classified in a curved
-    /// one.
+    /// rotation are three classes rather than one — which is why the
+    /// transition's two halves must be composed into ONE element before the
+    /// class is taken.
     ///
     /// ```text
     ///     I₂ = ‖⟨B²⟩₄‖²      the screw coupling, 2(B_ell · B_hyp) squared
@@ -268,10 +388,8 @@ impl Mv {
     ///
     /// EXACT AND SCALE-FREE. `B ↦ λB` sends `⟨B²⟩₀ ↦ λ²⟨B²⟩₀` and
     /// `w = ΩΩ̃ ↦ λ²w`, so `I₁/w` is invariant; `‖⟨B²⟩₄‖² ↦ λ⁴‖·‖²`, so
-    /// `I₂/w²` is. Both are quadratic in `B`, so neither depends on the
-    /// ray's sign — `−Ω` and `Ω` are one transition and read alike. `None`
-    /// when `Ω` is not a versor, which is a refusal and never a zero class
-    /// (rule 11).
+    /// `I₂/w²` is. `None` when `Ω` is not a versor, which is a refusal and
+    /// never a zero class (rule 11).
     pub fn class_invariants(
         &self,
     ) -> Option<(BigRational, BigRational, crate::network::nerve::coord::BivectorKind)> {
@@ -284,33 +402,16 @@ impl Mv {
         let i1 = bb.scalar_part() / &w;
         let quad = bb.grade(4);
         let i2 = quad.geo(&quad.reverse()).scalar_part() / (&w * &w);
-        // THE SIGN IS THE TYPE, and it is the reading this whole function
-        // exists for. Computed, not assumed — with `eᵢ² = +1` for
-        // `i ∈ {1,2,3,+}` and `e₋² = −1`, all anticommuting:
+        // THE SIGN IS THE TYPE. With `eᵢ² = +1` for every generator but
+        // `e₋² = −1`, all anticommuting:
         //
-        //   ELLIPTIC   B = e₁∧e₂ :  B² = e₁e₂e₁e₂ = −e₁e₁e₂e₂ = −1  < 0
-        //   HYPERBOLIC B = eᵢ∧e₋ :  B² = eᵢe₋eᵢe₋ = −eᵢeᵢe₋e₋ = +1  > 0
-        //   PARABOLIC  B = −½ d e_∞ : e_∞² = e₋² + e₊² = 0 and d ⊥ e_∞,
-        //              so B² = −¼ d² e_∞² = 0
+        //   ELLIPTIC   B = e₁∧e₂ :  B² = −1  < 0
+        //   HYPERBOLIC B = eᵢ∧e₋ :  B² = +1  > 0
+        //   PARABOLIC  B = −½ d e_∞ : e_∞² = 0 and d ⊥ e_∞, so B² = 0
         //
-        // A first cut had elliptic and hyperbolic the wrong way round. The
-        // parabolic case is the one that names the absolute: the CONFORMAL
-        // translator `T(d) = 1 − ½ d e_∞` has a NULL bivector and fixes the
-        // point at infinity, which is what makes the flat embedding the
-        // wrong geometry for a manifold with curvature. On the hyperboloid
-        // there is no `e_∞` to fix, and a geodesic translation is a true
-        // transvection `eᵢ∧e₋` with `B² = +1`.
-        // 54.7 — TRIVIAL IS NOT PARABOLIC, and collapsing them put every
-        // identity loop in the same class as every null shear.
-        //
-        //   TRIVIAL     B = 0            — the identity, Ω = 1, turns nothing
-        //   ELLIPTIC    ⟨B²⟩₀ < 0        — a rotation, eᵢ∧eⱼ or eᵢ∧e₊
-        //   HYPERBOLIC  ⟨B²⟩₀ > 0        — a transvection, eᵢ∧e₋
-        //   PARABOLIC   B ≠ 0, ⟨B²⟩₀ = 0 — a genuine null shear on e₊∧e₋
-        //
-        // The first three are readings of a motion; the fourth is too, and
-        // the identity is the absence of one. `I₁ = 0` alone cannot tell
-        // the last two apart, so the bivector itself is asked.
+        // TRIVIAL IS NOT PARABOLIC (54.7): the identity turns nothing, and
+        // `I₁ = 0` alone cannot tell the two apart, so the bivector itself
+        // is asked.
         use crate::network::nerve::coord::BivectorKind;
         let kind = if b.is_zero() {
             BivectorKind::Trivial
@@ -325,35 +426,13 @@ impl Mv {
     }
 
     /// 54.7 R4 — THE HOLONOMY CLASS OF A MOTION, AS THE COORDINATE THE
-    /// TORSION AND AXIS CARRIERS ANSWER.
-    ///
-    /// The same bytes as [`Mv::class_key`], declared as `coord::Holonomy`.
-    /// This is the producer that replaces `Rotor::class_key` beneath
-    /// `Rotor::holonomy_key`: the outer type is unchanged, so every carrier
-    /// typed in R5 — `Form.torsion`, `Form.axes`, `Element.filing`,
-    /// `Idea.torsion` — keeps its signature and its call sites.
-    ///
-    /// WHAT CHANGES IS WHAT THE CLASS CAN SAY. In `Cl(4,0)` the metric is
-    /// positive definite, so for every bivector `B = B⁺ + B⁻`,
-    ///
-    /// ```text
-    ///     ⟨B²⟩₀ = −(‖B⁺‖² + ‖B⁻‖²) ≤ 0
-    /// ```
-    ///
-    /// with equality only at `B = 0`. A `Cl(4,0)` rotor therefore has
-    /// exactly one bivector type — elliptic — and a holonomy class read
-    /// from it cannot distinguish a rotation from a geodesic translation,
-    /// because it cannot represent the translation at all. Here `⋀²ℚ^{4,1}`
-    /// is ten-dimensional and the trichotomy is a reading: `eᵢ∧eⱼ` and
-    /// `eᵢ∧e₊` elliptic (`I₁ < 0`), `eᵢ∧e₋` hyperbolic transvections
-    /// (`I₁ > 0`), `e₊∧e₋` parabolic (`I₁ = 0`).
+    /// TORSION AND AXIS CARRIERS ANSWER. The same bytes as
+    /// [`Mv::class_key`], declared as `coord::Holonomy`.
     pub fn holonomy_key(&self) -> Option<crate::network::nerve::coord::Holonomy> {
         let (i1, i2, kind) = self.class_invariants()?;
         Some(crate::network::nerve::coord::Holonomy { i1, i2, kind })
     }
 
-    /// The class as canonical coordinates (A21, law 2): the two invariants
-    /// written out and the bivector's type, never a digest.
     /// The class as canonical coordinates — written by the coordinate
     /// itself, so the bytes here and the bytes a carrier is keyed by are
     /// one construction and not two agreeing (rule 12).
@@ -368,13 +447,16 @@ impl Mv {
     /// The grade-`g` part.
     pub fn grade(&self, g: u32) -> Self {
         Self {
-            c: std::array::from_fn(|i| {
-                if (i as u32).count_ones() == g {
-                    self.c[i].clone()
-                } else {
-                    zero()
-                }
-            }),
+            n: self.n,
+            c: self
+                .c
+                .iter()
+                .enumerate()
+                .map(|(i, v)| match (i as u32).count_ones() == g {
+                    true => v.clone(),
+                    false => zero(),
+                })
+                .collect(),
         }
     }
 
@@ -415,11 +497,12 @@ impl Mv {
 }
 
 impl Mv {
-    /// Serialize the 32 exact coefficients: per coefficient `[sign u8][nlen
-    /// u32][numerator][dlen u32][denominator]`, little-endian magnitudes.
+    /// Serialize every slot's exact coefficient: per coefficient `[sign u8]
+    /// [nlen u32][numerator][dlen u32][denominator]`, little-endian
+    /// magnitudes, in mask order. At `n ≤ 3` that is thirty-two, the fixed
+    /// carrier's wire exactly.
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        for mask in 0..BLADES {
-            let v = &self.c[mask];
+        for v in &self.c {
             let (ns, nb) = v.numer().to_bytes_le();
             let db = v.denom().to_bytes_le().1;
             out.push(match ns {
@@ -434,9 +517,16 @@ impl Mv {
         }
     }
 
+    /// A versor off the wire at [`wire_n`], which is where every versor on
+    /// the wire stands until BQ1 writes `n` on the address.
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Mv> {
-        let mut m = Mv::zero();
-        for mask in 0..BLADES {
+        Mv::from_bytes_at(b, pos, wire_n())
+    }
+
+    /// The inverse of [`Mv::to_bytes`] at `n`: `slots(n)` coefficients.
+    pub fn from_bytes_at(b: &[u8], pos: &mut usize, n: u8) -> Option<Mv> {
+        let mut m = Mv::zero_at(n);
+        for slot in m.c.iter_mut() {
             let sign = *b.get(*pos)?;
             *pos += 1;
             let nl = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
@@ -457,7 +547,7 @@ impl Mv {
             if denom.is_zero() {
                 return None;
             }
-            m.c[mask] = BigRational::new(numer, denom);
+            *slot = BigRational::new(numer, denom);
         }
         Some(m)
     }

@@ -125,6 +125,7 @@ fn the_sandwich_rotates_the_whole_body() {
 #[test]
 fn the_body_projects_to_a_boundary() {
     let s = sphere(&q(2), &q(1), &q(0), &q(4));
-    let d = boundary_dual(&s).expect("the pseudoscalar is invertible");
+    // Read in the corpus's space, n = 3, named.
+    let d = boundary_dual(&s, 3).expect("the pseudoscalar is invertible");
     assert!(!d.is_zero(), "the boundary projection carries the body's dual");
 }

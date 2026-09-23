@@ -3,7 +3,7 @@
 
 use super::group::is_versor;
 use super::multivector::{one, Mv, E1, E2, E3, EM, EP};
-use super::planes::TRANSVECTION_PLANES;
+use super::planes::{is_transvection_plane, transvection_planes};
 use num_rational::BigRational;
 use num_traits::{Signed, Zero};
 
@@ -348,10 +348,10 @@ pub fn bivector_is_simple(m: &Mv) -> bool {
 /// a transvection and has no inverse. `is_versor` also refuses an `Ω Ω̃`
 /// that is not a pure scalar, which no hand-written norm can see at all.
 ///
-/// `plane` is one of [`TRANSVECTION_PLANES`]; any other blade is not a
-/// hyperbolic generator and is refused.
+/// `plane` is a hyperbolic generator `eₐ ∧ e₋` (read off its own bits, at
+/// every `n`); any other blade is refused.
 pub fn transvection(a: &BigRational, b: &BigRational, plane: usize) -> Option<Mv> {
-    if !TRANSVECTION_PLANES.contains(&plane) {
+    if !is_transvection_plane(plane) {
         return None;
     }
     let omega = Mv::scalar(a.clone()).add(&Mv::blade(plane, b.clone()));
@@ -359,9 +359,10 @@ pub fn transvection(a: &BigRational, b: &BigRational, plane: usize) -> Option<Mv
     Some(omega)
 }
 
-/// THE COMPOSITE GEODESIC MOTION ALONG EVERY AXIS OF ℍ⁴ — one transvection
-/// per generator of [`TRANSVECTION_PLANES`], composed by the geometric
-/// product in the generators' own order.
+/// THE COMPOSITE GEODESIC MOTION ALONG EVERY AXIS OF ℍⁿ⁺¹ — one
+/// transvection per hyperbolic generator of the algebra, composed by the
+/// geometric product in the generators' own order. The algebra is the one
+/// the axes name: `n + 1` of them are the `n + 1` boosts of `Cl(n+1, 1)`.
 ///
 /// Unlike the conformal translators `eᵢ ∧ e_∞`, which commute because that
 /// reading is of a flat lattice base (51.2), these do NOT commute: their
@@ -369,13 +370,13 @@ pub fn transvection(a: &BigRational, b: &BigRational, plane: usize) -> Option<Mv
 /// to commute IS the curvature, which is why the order is the algebra's and
 /// not a caller's, and why `K` is read off a remainder rather than carried
 /// as a constant (51.2, Anti-Flattening clause 7).
-pub fn transvection_along(axes: [(&BigRational, &BigRational); 4]) -> Option<Mv> {
+pub fn transvection_along(axes: &[(&BigRational, &BigRational)]) -> Option<Mv> {
+    let n = u8::try_from(axes.len().checked_sub(1)?).ok()?;
     let mut out = Mv::scalar(one());
     // index: this algebra's own hyperbolic generators, in the order the
-    // blades are numbered — the carrier's declaration, never a search.
-    for (i, plane) in TRANSVECTION_PLANES.iter().enumerate() {
-        let (a, b) = axes.get(i)?;
-        out = out.geo(&transvection(a, b, *plane)?);
+    // blades are numbered — generated from `n`, never a search.
+    for ((a, b), plane) in axes.iter().zip(transvection_planes(n)) {
+        out = out.geo(&transvection(a, b, plane)?);
     }
     is_versor(&out)?;
     Some(out)

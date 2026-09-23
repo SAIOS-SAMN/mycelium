@@ -951,7 +951,7 @@ impl Form {
                         axis,
                         by: PivotBy::Word {
                             face: chord as u16,
-                            word: crate::transducer::alphabet::PlaneForm::sheet_word(),
+                            word: Box::new(crate::transducer::alphabet::PlaneForm::sheet_word()),
                             side: Side::Right,
                         },
                     });
@@ -1006,7 +1006,7 @@ impl Form {
                                     axis,
                                     by: PivotBy::Word {
                                         face: chord as u16,
-                                        word: w.clone(),
+                                        word: Box::new(w.clone()),
                                         side,
                                     },
                                 });

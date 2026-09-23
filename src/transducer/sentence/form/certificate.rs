@@ -21,8 +21,10 @@ pub enum Side {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PivotBy {
     /// A held word written onto the chord face `face` as the relation the
-    /// bundle was missing on that loop.
-    Word { face: u16, word: Word, side: Side },
+    /// bundle was missing on that loop. Boxed: a word is a kilobyte inline,
+    /// and since the versor carrier holds its coefficients on the heap
+    /// (BQ3) it is the one large variant here.
+    Word { face: u16, word: Box<Word>, side: Side },
     /// The translator residue of the holonomy carriage (A4).
     Placement {
         face: u16,
@@ -227,7 +229,7 @@ impl PivotCertificate {
                     _ => return None,
                 };
                 *pos += 1;
-                let word = Word::from_bytes(b, pos)?;
+                let word = Box::new(Word::from_bytes(b, pos)?);
                 PivotBy::Word { face, word, side }
             }
             1 => {
