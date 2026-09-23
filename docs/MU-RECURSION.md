@@ -9537,6 +9537,24 @@ engine's — `M` and `⟨M⟩₂` — read per mode rather than as a scalar, and
 no new axiom is needed for that. What needs an axiom is the conjugate
 generator, A.13. What stays open is the pull (73.3).
 
+**Two formulas held back before anything is built on them (the
+implementor, 2026-09-23; ruled).** (1) The inversion is a VECTOR, never
+the bivector `e_o ∧ e_∞`: sandwiching by that bivector's versor RESCALES
+the two poles — it is the dilation's generator — and does not exchange
+them. Inversion in the unit sphere is reflection in the dual sphere
+`s = e_o − ½e_∞`, with `s² = 1`, and in general reflection in a dual
+sphere `s` with `s² = r² > 0`; that is the form A.13's conjugate `K_i =
+s T_i s⁻¹` takes, and a relayed `I = e_o ∧ e_∞` is refused. (2) The
+per-mode relator `B_i · (I B_i I⁻¹) = −B_i²`, equivalently `I B_i I⁻¹
+= −B_i`, is a CONJECTURE until probed: it holds for the dilation mode
+about the sphere's own centre, where the inversion exchanges `e_o` and
+`e_∞`, and for a general hyperbolic mode it can hold only for the
+inversion in the sphere whose poles are that mode's, which is what "the
+inversion exchanging them" in the table means. A probe under §6.4
+states it on both cases before HC1 or PW1 rely on it. And a reviewer's
+"approved" approves nothing: A.13's first clause is the operator's
+ruling, written here before the conjugate is built (§9).
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
