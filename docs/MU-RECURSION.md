@@ -10620,6 +10620,135 @@ and whether the fibre's orbit is closed or open by which mode — so
 another mind replays it from its own constructors and agrees on the
 class (C2a) or refuses. That is the POW++ shape.
 
+### 78.14 The constructors' Gram form: shape, closure and congruence read off the nuclei (ruled 2026-09-23 after the coordinator–implementor discussion)
+
+Reached by direct discussion between the coordinator and the implementor
+on the operator's word, with the Gram probe of every certified cell of the
+corpus in hand. Where the two disagreed the algebra decided, and three of
+the coordinator's first statements were wrong and are corrected here.
+
+**The record is the nuclei; the Gram form and the meet are two readings of
+it.** A cell carries its constructors (landed 5c4dbd79). Its GRAM FORM
+`G_ab = ⟨s_a s_b⟩₀` is rational, no root taken; it is invariant under
+every isometry applied to all the nuclei at once, so it is the
+configuration's SHAPE up to motion — the pairwise strain regimes of 65,
+the diagonal's spacelike / timelike / null reading, the rank, the
+signature by congruent symmetric elimination over ℚ. The MEET `M = s₀ ∧ …
+∧ s_k` is a blade IN THE FRAME: where the round is, not only its shape;
+`M M̃ = ± det G` is its weight and not its position. Both stay as readings
+(law 12 forbids storing either beside the nuclei). The Gram form is the
+carrier of shape: rank one is a sphere, rank two a pencil (elliptic — a
+shared circle, a toroid's core; parabolic — tangent; hyperbolic —
+nested, a shell), rank three and up a bundle; its diagonal form over ℚ
+is a sphere where every ratio is one, an ellipsoid where not (the ratios
+the eccentricities, ratios of squares, no root), a cylinder where a zero
+stands, a hyperboloid where a negative does.
+
+**Rank deficiency has two sources, and only one is affine.** The
+coordinator's "singular = affine" was wrong. A singular Gram arises from
+(i) linear dependence — more nuclei than the span's dimension, or
+coplanar normals — or (ii) degeneracy — a null direction in the span's
+own metric. Only (ii) is affine. Counter-example: the three roots of
+`A₂` with obtuse signs give `G = [[2,−1,−1],[−1,2,−1],[−1,−1,2]]`,
+singular, positive semidefinite, crystallographic — and the group is the
+FINITE dihedral group of order six, because the third reflection is
+already in the first two's group. The reading is the SPAN SIGNATURE:
+Gram signature `(p, q, z)` beside the vector rank `r`; the degenerate
+dimensions are `r − (p + q)` and dependency accounts for the rest of
+`z`. A cell above the algebra's grade (a 7-cell at `n = 4`) has `z ≥ 1`
+from dependency alone and says nothing affine; its meet is zero, read
+`NoRound`, and the span signature replaces it.
+
+**Closure: certain refusals from the Gram form, acceptance by a Coxeter
+system or the check.** (a) The crystallographic test needs no angle:
+`δ² = G_ab² / (G_aa G_bb)` — the inversive strain's own carrier `(num,
+den2)`, law 11 untouched — and the pair's product has finite order iff
+`δ² ∈ {0, 1/4, 1/2, 3/4}` (`m = 2, 3, 4, 6`). `δ² = 1` is tangent or
+parallel: parabolic, infinite. `δ² > 1` or `δ² < 0` (a real sphere
+against an imaginary one, not orthogonal) is a boost; any other value in
+`(0, 1)` is a rosette. These are CERTAIN refusals with no iteration. (b)
+The coordinator's "any negative direction is open" was wrong: `e₁` and
+`e₋` orthogonal give `G = diag(1, −1)`, indefinite, and the group is
+`ℤ₂ × ℤ₂`, finite; the pairwise `δ²` already reads imaginary spheres (it
+is `≤ 0` for a real–imaginary pair, `0` exactly when orthogonal), so it is
+the pairwise test, not the signature, that names open. (c) Global
+FINITENESS from the Gram form needs a Coxeter SYSTEM — the constructors
+the walls of a chamber, `G_ab = −cos(π/m_ab)` after a sign choice — and
+an arbitrary set of constructors is not one (`A₂` above). Whether
+pairwise crystallographic plus a definite span suffices in general is
+HELD AS A CONJECTURE. So: refusals come from `G` without iteration
+(GR1); ACCEPTANCE as finite comes from a Coxeter system recognised by an
+exact sign-balance test on `G`'s off-diagonal entries — chooses nothing,
+unique up to a global sign per component (GR2) — or, where the
+constructors are not a simple system, from the worklist as the
+CERTIFYING CHECK, its one remaining job; the worklist is never the
+reading. The orbit-closure conjecture stays refused as a per-generator
+reading (two quarter turns at `cos θ = 2/3`: every mode elliptic of order
+four, the group infinite — `δ² = 4/9` and `4/5` against the mirrors, a
+rosette by (a)); read on the group it is Schur's theorem and held open.
+
+**The probe, recorded: the nuclei do not generate the grid.** On the
+corpus every certified cell (seven 1-cells, one 2-cell) reads
+non-crystallographic: five 1-cells have `δ² > 1` — two unit-cube bodies
+touching at a corner have nuclei of radius² `1/6` whose centres are `√3`
+apart, disjoint spheres, `δ² = 25`, a boost — and two have `δ² < 1` at a
+rosette; no Gram is singular, no span degenerate; by Coxeter every cell
+is OPEN. The grid's affine group is generated by the BASE'S MIRRORS, the
+hyperplanes `x_i = k`: planes, constructors through `e_∞`, with `δ² ∈
+{0, 1}` among them. Reading squares from circles stands — the circles
+that give the squares are the base's mirrors, circles through infinity —
+and the bodies' nuclei are a SECOND configuration placed within that
+mirror group. Coxeter reads each set, and how the nuclei sit relative to
+the mirror group is the content (MG1).
+
+**Member versus body, corrected twice.** The coordinator's "the nucleus is
+the body's coordinate" was wrong: the nucleus is the tower's order-0 and
+order-1 reading (A.11: scale, no orientation), a projection — a ring and
+a dot inside it with matching centroid and radius² share a nucleus and
+would collide as member keys did. A body's coordinate is its PIECE: its
+support, canonical, which the piece address encodes and which is small
+(C3; R6's objection was to copying FORM addresses). Cells are keyed by
+their bodies' piece coordinates written inline and framed; the carrier
+holds the nuclei for the algebra. The walk has no body: `FormFace`
+carries its two vertices, its word, its places and its interface, no
+body and no nucleus; `named_incidence` knows the body pair at
+face-build time. The face's body pair rides an in-memory side carrier on
+the form now (face index → body pair, like `cells`) and the tape at the
+recut (BD2).
+
+**Congruence, corrected: the ray permutes the constructors.** The
+coordinator's "the ray preserves `G`" is vacuous at EVERY grade — a versor
+is an isometry, so carried nuclei always keep their pairwise products.
+Two exact readings stand, both kept: KEEPS THE ROUND, `Ω M Ω⁻¹ ∼ M`, the
+commutator landed in CG1, vacuous at the top grade (the pseudoscalar);
+KEEPS THE CONSTRUCTORS, a permutation `π` with `Ω s_a Ω⁻¹ ∼ s_π(a)`,
+found by keyed lookup of each carried nucleus's canonical ray, no search,
+not vacuous at any grade. Permutes ⇒ keeps the span ⇒ `Ω M Ω⁻¹ = ±M`; the
+converse fails (a turn inside the span keeps `M` and moves every
+nucleus). And `Ω M Ω⁻¹ = −M`, the round reversed, is the held `ℤ₂`'s arm,
+named apart and never called incongruent (CG1b).
+
+**Pencils, held as a projection by name.** Collapsing a geoid to one
+sphere is a representative (r). The generalisation is the BLOCK Gram
+form: every constructor of every body, grouped by body; within-block
+entries the pencil's own intersection structure, between-block the
+bodies' mutual products; signature, rank and the pairwise test read it
+with nothing chosen. The harmonic tower does not yet produce spheres —
+its second and fourth harmonics are tensors in the base and their
+conformal lift to a pencil of constructors is not built — so until HL1
+a body's constructor is its nucleus, and that is a PROJECTION named here,
+not a truth. Luminal rays as agreed: points are null, what the sensor
+sees is the versor's action on the cone; constructors are spacelike or
+timelike; comprehension is the factorisation into reflections; the lift
+from a centroid to a nucleus is the body's own extent.
+
+**CS1 asks a different question from Coxeter, and both stand.** The
+constructors' orbit under the CIRCUITS' holonomies (built from the whole
+path's constructors) is CS1's; the group the cell's OWN reflections
+generate, `W(cell)`, is the Coxeter reading. CG1 asks whether each
+circuit's mode rays lie in the symmetry of the cell's configuration —
+keeps-the-constructors — which is the bridge between the two.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
