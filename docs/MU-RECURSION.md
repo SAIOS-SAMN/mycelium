@@ -8410,6 +8410,60 @@ transducer/alphabet/        F, the constructor on the voice, host-written
                             until depth 5–6 make it content
 ```
 
+### 70.6 Contact is the shared boundary of two cube complexes; its content is conformal (ruled 2026-09-23)
+
+The operator's reading of H2b: the corner test is flat. It reads two
+coordinates, `|Δr| = 1` and `|Δc| = 1` within one frame, so the frame
+axis, the gauge and every luminal direction play no part in whether two
+bodies touch, and a body-pair relation read on two coordinates is
+checklist (m) written into contact. The implementor's proposal in reply —
+contact as the bivector `S_a ∧ S_b` of the two bodies' conformal spheres,
+touching where its square is zero — is refused where it stands, because
+59.4 already rules it: exact tangency of two rational spheres is
+measure-zero over ℚ and can never be the test, which is why the strain
+band had to exist and why it turned away touching bodies (69.2). WHETHER
+two bodies touch is topological and WHAT their contact is like is
+conformal (69.3), and the two are inflated separately.
+
+**Whether: the cube complex, in three coordinates.** A body's support is
+a cube complex on `(r, c, k)` (51.3), and two distinct hue-blind bodies
+never share a face of a cube, since sharing one they would be one body
+(70.4). They touch where their complexes share an EDGE or a CORNER: the
+twelve edge-adjacencies of a cube — four in the frame, which is the
+diagonal H2b reads, and eight across consecutive frames, `(r ± 1, c, k ± 1)`
+and `(r, c ± 1, k ± 1)` — and the eight corner-adjacencies, all three
+coordinates differing by one. That is the whole shared boundary a cube
+complex has left once its faces are interior, it is exact and integer, it
+is read off the occupancy in canonical order exactly as `incidence_of_3d`
+and `incidence_diagonal_3d` are, and it consults no extent, no sphere and
+no band. Contact across frames is the frame axis entering contact, and it
+is where a body that moves between frames meets a body that stands.
+
+**One face per body pair.** A corner names two sites and each site names
+its occupants; the contact is between the two BODIES, one per site under
+70.4, and the face is offered once per body pair with the members'
+readings riding it as N1's set. Relating every occupant of one site to
+every occupant of the other, as H2b landed it, is the join of two
+occupancy simplices written as a clique — the same shape the site pass
+refuses in its own comment — and is corrected (row C1).
+
+**What: the face's content, in ten planes.** The dimensions the corner
+test does not read are the face's to carry, and every one already has a
+row: the edge transport `g_ab = (θ_bθ_a⁻¹)·γ_ab` in `Cl(4,1)` (60.1),
+read or refused by name (H2c); the strain sector of the two spheres as a
+keyed coordinate of the pair, never a band (T3), which is where
+`S_a ∧ S_b` belongs — as the content of a contact the topology already
+found, not as the test for it; the hue gauge as the face's fibre (H3). A
+contact face whose transport refuses is a zero-dimensional relation, and
+that, not the corner test, is the flatness the 21 unread cycles measure.
+
+```
+sentence/chain.rs        incidence_diagonal_3d → the twenty shared-boundary
+                         adjacencies of the cube complex on (r, c, k)
+family/pairing.rs        named_faces — one face per body pair at a corner
+blade/strain.rs          the sector, a coordinate of the pair (T3)
+```
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
