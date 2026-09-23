@@ -10,9 +10,10 @@
 //! does not map integer coordinates to integers.
 //!
 //! Continuous support correspondence relates bodies by their exact algebraic
-//! moments in ℚ: volume/shell, centroid, deviatoric quadrupole Casimir invariant |H₂|²,
-//! and hexadecapole Casimir invariant |H₄|². Under a conformal versor V = D(ρ)·R·T,
-//! these invariants transform polynomially and are verified in closed form.
+//! moments in ℚ: volume/shell, centroid, and the harmonics themselves — the
+//! deviatoric quadrupole `H₂` and the hexadecapole `H₄` as vectors, carried
+//! whole. Under a rotor the harmonics are TURNED by it and compared, never
+//! reduced to their squared norms first (SQ1-b4, Axiom C as tightened).
 
 use crate::transducer::alphabet::{Rotor, SLOT_PLANES_SIX};
 use crate::transducer::blade::body::Shape;
@@ -29,10 +30,12 @@ pub struct ContinuousSupport {
     /// Inertia tensor moments in the blade's order (`inertia_pairs(n)`:
     /// Ixx, Iyy, Ixy, Izz, Ixz, Iyz at `n = 3`).
     pub inertia: Vec<BigRational>,
-    /// Casimir invariant of the deviatoric quadrupole: |H₂|² = (Ixx - Iyy)² + 4 Ixy² in ℚ.
-    pub h2_casimir: BigRational,
-    /// Casimir invariant of the hexadecapole / spin-4 moment in ℚ.
-    pub h4_casimir: BigRational,
+    /// The deviatoric quadrupole `H₂ = (Ixx − Iyy, 2Ixy)` on the grid plane,
+    /// carried whole: it turns at twice the body's angle.
+    pub h2: [BigRational; 2],
+    /// The hexadecapole `H₄` on the grid plane, carried whole: it turns at
+    /// four times the body's angle.
+    pub h4: [BigRational; 2],
     /// Scale-free anisotropy ratio det(I)/tr(I)² in ℚ (invariant under both rotation and dilation).
     pub anisotropy: BigRational,
     /// Spread per area tr(I)/n² in ℚ.
@@ -49,13 +52,9 @@ impl ContinuousSupport {
         // On the sensor's plane, named (BQ4): the support's correspondence
         // is the planar reading its callers compare.
         let plane = crate::transducer::base::GRID_PLANE;
-        // Casimir invariant of H2: invariant under SO(2) rotation, scales as ρ⁸ under dilation.
+        // The two harmonics, carried as the vectors they are (SQ1-b4).
         let h2 = shape.blade.harmonic_on_plane(plane, false)?;
-        let h2_casimir = &h2[0] * &h2[0] + &h2[1] * &h2[1];
-
-        // Casimir invariant of H4: scales as ρ¹⁶ under dilation.
         let h4 = shape.blade.harmonic4_on(plane, false)?;
-        let h4_casimir = &h4[0] * &h4[0] + &h4[1] * &h4[1];
 
         let (ixx, iyy, ixy) = (&inertia[0], &inertia[1], &inertia[2]);
         let tr = ixx + iyy;
@@ -75,8 +74,8 @@ impl ContinuousSupport {
             shell,
             centroid,
             inertia,
-            h2_casimir,
-            h4_casimir,
+            h2,
+            h4,
             anisotropy,
             spread,
         })
@@ -98,17 +97,41 @@ impl ContinuousSupport {
         true
     }
 
-    /// Check if two continuous supports have matching orientation invariants
-    /// under a Cl(4,0) Rotor across turned planes.
+    /// DOES THE ROTOR CARRY THIS BODY'S HARMONICS ONTO THE OTHER'S (SQ1-b4).
+    ///
+    /// The rotor is IN HAND, so it is applied: its block on the grid plane is
+    /// `B = w·Rot(θ)` with `det B = w²`, `H₂` turns at `2θ` and `H₄` at `4θ`,
+    /// and the comparisons are exact with no weight divided and no norm:
+    ///
+    /// ```text
+    ///     det(B)  · H₂(other) = B² · H₂(self)
+    ///     det(B)² · H₄(other) = B⁴ · H₄(self)
+    /// ```
+    ///
+    /// This compared `|H₂|²` and `|H₄|²`, the squared norms, with the rotor
+    /// beside it unused — a turn by ANY angle passed, since a norm cannot see
+    /// the angle. A rotor that moves the grid plane out of itself has no block
+    /// there, and relates no harmonics read on it: refused.
     pub fn matches_rotor(&self, other: &Self, rotor: &Rotor) -> bool {
         // Isometry: shell must match
         if self.shell != other.shell {
             return false;
         }
-        if self.h2_casimir != other.h2_casimir {
+        let grid = (crate::transducer::alphabet::PLANE_ROW, crate::transducer::alphabet::PLANE_COL);
+        let Some(b) = crate::transducer::alphabet::rotor_block_on(rotor, grid) else {
+            return false;
+        };
+        let apply = |m: &[[BigRational; 2]; 2], v: &[BigRational; 2]| -> [BigRational; 2] {
+            [&m[0][0] * &v[0] + &m[0][1] * &v[1], &m[1][0] * &v[0] + &m[1][1] * &v[1]]
+        };
+        let det = &b[0][0] * &b[1][1] - &b[0][1] * &b[1][0];
+        let scaled = |k: &BigRational, v: &[BigRational; 2]| [k * &v[0], k * &v[1]];
+        let turn2 = |v: &[BigRational; 2]| apply(&b, &apply(&b, v));
+        let turn4 = |v: &[BigRational; 2]| turn2(&turn2(v));
+        if scaled(&det, &other.h2) != turn2(&self.h2) {
             return false;
         }
-        if self.h4_casimir != other.h4_casimir {
+        if scaled(&(&det * &det), &other.h4) != turn4(&self.h4) {
             return false;
         }
 

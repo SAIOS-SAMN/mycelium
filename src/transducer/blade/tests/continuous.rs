@@ -14,8 +14,8 @@ fn continuous_support_invariants_in_closed_form() {
     // Shell = 4 in Q
     assert_eq!(cs.shell, BigRational::from_integer(4.into()));
 
-    // Casimir invariant |H2|^2 must be non-zero for anisotropic bar
-    assert!(cs.h2_casimir > BigRational::from_integer(0.into()));
+    // An anisotropic bar carries a second harmonic: H2 is not the zero vector.
+    assert!(cs.h2.iter().any(|x| *x != BigRational::from_integer(0.into())));
 
     // Exact similarity under dilation 2: shell scales by 4, H2 by 256
     let dilated = super::common::dilate(&s.blade.support, 2);
@@ -33,12 +33,20 @@ fn continuous_support_pythagorean_rotor_holonomy() {
     let w = Word::from_letters(&[(p5, false)]);
     let r = w.rotor();
 
-    let bar = super::common::sites(&[(0, 0, 0), (0, 1, 0), (0, 2, 0)]);
-    let s = shape_of(&bar);
-    let cs = ContinuousSupport::of(&s).expect("support");
-
-    // Rotated continuous support preserves Casimir invariants and volume
-    assert!(cs.matches_rotor(&cs, &r));
+    // SQ1-b4 — THE ROTOR IS APPLIED TO THE HARMONICS, NOT COMPARED BY NORM.
+    // A bar along the row and the same bar along the column are one quarter
+    // turn apart: the quarter-turn rotor carries the one's harmonics onto
+    // the other's. The (3,4,5) rotor does not — and the norm comparison this
+    // replaces accepted it (and accepted a body "matching itself" under any
+    // turn), because a squared norm cannot see the angle.
+    let row_bar = super::common::sites(&[(0, 0, 0), (0, 1, 0), (0, 2, 0)]);
+    let col_bar = super::common::sites(&[(0, 0, 0), (1, 0, 0), (2, 0, 0)]);
+    let cs = ContinuousSupport::of(&shape_of(&row_bar)).expect("support");
+    let turned = ContinuousSupport::of(&shape_of(&col_bar)).expect("support");
+    let quarter = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter on (0, 1)"), false)]).rotor();
+    assert!(cs.matches_rotor(&turned, &quarter), "the quarter turn carries the row bar onto the column bar");
+    assert!(!cs.matches_rotor(&turned, &r), "the (3,4,5) turn does not");
+    assert!(!cs.matches_rotor(&cs, &r), "and a body does not match itself under a turn it is not symmetric by");
 
     // The holonomy word evaluates to OrbitRow::Free with non-zero exponent
     let row = orbit_row(&w).expect("orbit row");
