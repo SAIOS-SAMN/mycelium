@@ -426,7 +426,10 @@ impl Exchange {
                                 admitted = admit_peer_receipt(&kernel, &mesh, &reply);
                             }
                         }
-                        tally.note(admitted);
+                        // The signer is the key the digest names; a digest
+                        // that admitted but does not decode names none.
+                        let signer = dialogue::decode_cover_digest(&reply).map(|c| c.vk);
+                        tally.note(signer, admitted);
                         let Some(dialogue::CoverDigest {
                             cover_roots, ruled_root, vk: vk_peer, ..
                         }) = dialogue::decode_cover_digest(&reply)

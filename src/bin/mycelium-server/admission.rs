@@ -245,38 +245,83 @@ pub(crate) struct AdmissionTally {
 }
 
 impl AdmissionTally {
-    pub(crate) fn note(&mut self, r: Result<mycelium::court::admission::Admitted, NoAdmission>) {
+    /// THE ONE CLASSIFICATION OF A PEER'S FRAME: counted on this cycle's
+    /// line and, on the same arm, on the observer's replication reading
+    /// under the signer the digest named (CV5) — one match, so the two
+    /// cannot read the frame differently (law 12). The axes are named in
+    /// `observe::rep`, beside the one statement of their order.
+    pub(crate) fn note(
+        &mut self,
+        signer: Option<[u8; 32]>,
+        r: Result<mycelium::court::admission::Admitted, NoAdmission>,
+    ) {
         use mycelium::court::admission::Admitted;
-        match r {
-            Ok(Admitted::Parent(_)) => self.parent += 1,
+        use mycelium::observe::rep;
+        let axis = match r {
+            Ok(Admitted::Parent(_)) => {
+                self.parent += 1;
+                rep::PARENT
+            }
             // A gap in one signer's chain and a citation of another signer
             // this node does not hold are both holes, and the back-fill
             // chases both; the tally reads them as one.
-            Ok(Admitted::Gap { .. }) | Ok(Admitted::MissingParent(_)) => self.gap += 1,
-            Ok(Admitted::Stale) => self.stale += 1,
-            Ok(Admitted::Equivocation { .. }) => self.equivocation += 1,
+            Ok(Admitted::Gap { .. }) | Ok(Admitted::MissingParent(_)) => {
+                self.gap += 1;
+                rep::GAP
+            }
+            Ok(Admitted::Stale) => {
+                self.stale += 1;
+                rep::STALE
+            }
+            Ok(Admitted::Equivocation { .. }) => {
+                self.equivocation += 1;
+                rep::EQUIVOCATION
+            }
             Ok(Admitted::Refused(why)) => {
                 if why == mycelium::court::admission::REFUSE_ORIGIN {
                     self.origin += 1;
+                    rep::REFUSED_ORIGIN
                 } else if why == mycelium::court::admission::REFUSE_RECEIPT {
                     self.receipt += 1;
+                    rep::REFUSED_RECEIPT
                 } else {
                     self.signature += 1;
+                    rep::REFUSED_SIGNATURE
                 }
             }
-            Err(NoAdmission::NoSection) => self.no_section += 1,
-            Err(NoAdmission::Malformed) => self.malformed += 1,
-            Err(NoAdmission::NoOrigin) => self.no_origin += 1,
-        }
+            Err(NoAdmission::NoSection) => {
+                self.no_section += 1;
+                rep::NO_SECTION
+            }
+            Err(NoAdmission::Malformed) => {
+                self.malformed += 1;
+                rep::MALFORMED
+            }
+            Err(NoAdmission::NoOrigin) => {
+                self.no_origin += 1;
+                rep::NO_ORIGIN
+            }
+        };
+        mycelium::observe::note_replication(signer, axis, 1);
     }
 
-    /// A digest refused before any receipt could be read out of it.
+    /// A digest refused before any receipt could be read out of it. No
+    /// signer can be read off a digest that did not open, so it is counted
+    /// unattributed.
     pub(crate) fn note_digest(&mut self, r: Result<(), NoDigest>) {
-        match r {
-            Ok(()) => {}
-            Err(NoDigest::Unreadable) => self.digest_unreadable += 1,
-            Err(NoDigest::Signature) => self.digest_signature += 1,
-        }
+        use mycelium::observe::rep;
+        let axis = match r {
+            Ok(()) => return,
+            Err(NoDigest::Unreadable) => {
+                self.digest_unreadable += 1;
+                rep::DIGEST_UNREADABLE
+            }
+            Err(NoDigest::Signature) => {
+                self.digest_signature += 1;
+                rep::DIGEST_SIGNATURE
+            }
+        };
+        mycelium::observe::note_replication(None, axis, 1);
     }
 
     pub(crate) fn line(&self) -> String {

@@ -123,6 +123,8 @@ pub(crate) fn pages(kernel: &Mutex<Kernel>, mesh: &Mesh, dest: &str, vk: [u8; 32
                 None => String::new(),
             }
         );
+        // CV5: the receipts of `who` this page admitted, on the observer.
+        mycelium::observe::note_replication(Some(who), mycelium::observe::rep::BACKFILL, n as u64);
         // Anything admitted is progress the known set KEEPS, so the next
         // exchange resumes past it whatever this pass does next.
         if n > 0 {

@@ -132,6 +132,92 @@ pub fn served() -> Vec<(u8, u64)> {
         .collect()
 }
 
+/// REPLICATION, counted where the exchange and the back-fill classify each
+/// frame (CV5): per signer by its key, and apart for a frame no signer
+/// could be read off.
+static REPLICATION: LazyLock<Mutex<Keyed<[u64; 13]>>> = LazyLock::new(|| Mutex::new(Keyed::new()));
+static UNATTRIBUTED: [AtomicU64; 13] = [const { AtomicU64::new(0) }; 13];
+
+/// Count `n` on one axis of [`super::REPLICATION_AXES`] for `signer`, or
+/// unattributed where the frame named none. An axis past the list is no
+/// axis and counts nothing.
+pub fn note_replication(signer: Option<[u8; 32]>, axis: usize, n: u64) {
+    match signer {
+        None => {
+            if let Some(a) = UNATTRIBUTED.get(axis) {
+                a.fetch_add(n, Ordering::Relaxed);
+            }
+        }
+        Some(vk) => {
+            let Ok(mut r) = REPLICATION.lock() else { return };
+            if r.get(&vk).is_none() {
+                r.insert(vk, [0; 13]);
+            }
+            if let Some(slot) = r.get_mut(&vk).and_then(|a| a.get_mut(axis)) {
+                *slot += n;
+            }
+        }
+    }
+}
+
+/// The replication this process has counted, per signer in key order.
+pub fn replication() -> super::Replication {
+    let signers = match REPLICATION.lock() {
+        Ok(r) => r
+            .scoped()
+            .filter_map(|(k, a)| Some((<[u8; 32]>::try_from(k.as_slice()).ok()?, *a)))
+            .collect(),
+        Err(_) => Vec::new(),
+    };
+    let unattributed = std::array::from_fn(|i| UNATTRIBUTED[i].load(Ordering::Relaxed));
+    super::Replication { signers, unattributed }
+}
+
+/// ONE SENTENCE'S VERDICT at a court, as the adjudication reading counts it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Verdict {
+    Ratified,
+    Stood,
+    Awaiting,
+    /// The door deferred the act; nothing was heard.
+    Deferred,
+    /// Refused, by the refusal's own kind (`RefusalKind::to_byte`).
+    Refused(u8),
+}
+
+static VERDICTS: [AtomicU64; 4] = [const { AtomicU64::new(0) }; 4];
+static REFUSED: [AtomicU64; 256] = [const { AtomicU64::new(0) }; 256];
+
+/// Count one verdict, where the court reaches it.
+pub fn note_verdict(v: Verdict) {
+    let at = match v {
+        Verdict::Ratified => 0,
+        Verdict::Stood => 1,
+        Verdict::Awaiting => 2,
+        Verdict::Deferred => 3,
+        Verdict::Refused(kind) => {
+            REFUSED[usize::from(kind)].fetch_add(1, Ordering::Relaxed);
+            return;
+        }
+    };
+    VERDICTS[at].fetch_add(1, Ordering::Relaxed);
+}
+
+/// The verdicts this process has counted.
+pub fn adjudication() -> super::Adjudication {
+    let v = |i: usize| VERDICTS[i].load(Ordering::Relaxed);
+    super::Adjudication {
+        ratified: v(0),
+        stood: v(1),
+        awaiting: v(2),
+        deferred: v(3),
+        refused: (0..=u8::MAX)
+            .map(|k| (k, REFUSED[usize::from(k)].load(Ordering::Relaxed)))
+            .filter(|&(_, n)| n > 0)
+            .collect(),
+    }
+}
+
 /// THE ACT, decoded.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ObserveAct {

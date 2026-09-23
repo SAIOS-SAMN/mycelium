@@ -5,6 +5,18 @@ use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
+/// One adjudication counted on the observer by its verdict (CV5).
+fn note_verdict_of(a: &crate::anastome::dialogue::Adjudication) {
+    use crate::anastome::dialogue::Adjudication;
+    use crate::observe::{note_verdict, Verdict};
+    note_verdict(match a {
+        Adjudication::Ratified { .. } => Verdict::Ratified,
+        Adjudication::Stood { .. } => Verdict::Stood,
+        Adjudication::Awaiting { .. } => Verdict::Awaiting,
+        Adjudication::Refused { kind, .. } => Verdict::Refused(kind.to_byte()),
+    });
+}
+
 impl Kernel {
     /// PERCEIVE A FAMILY'S SPEECH — the one door an utterance has (law 8,
     /// ruled 2026-09-10) — read as codes: `SPEECH_STOOD` for a sentence
@@ -45,11 +57,13 @@ impl Kernel {
         let mut next = heard.into_iter();
         for i in 0..act.sentences.len() {
             if unparsed.contains(&i) {
-                out.push(Adjudication::Refused {
+                let refused = Adjudication::Refused {
                     kind: RefusalKind::MalformedComplex,
                     at: At::Tape(Address::new(Vec::new())),
                     receipt,
-                });
+                };
+                note_verdict_of(&refused);
+                out.push(refused);
                 continue;
             }
             match next.next() {
@@ -101,7 +115,18 @@ impl Kernel {
     ) -> Result<Vec<crate::anastome::dialogue::Adjudication>, [u64; 4]> {
         let mut out = Vec::with_capacity(spoken.len());
         for (s, cited) in spoken {
-            out.push(self.adjudicate_one(voice, task, s, cited.as_ref())?);
+            // CV5 — EVERY VERDICT COUNTED WHERE IT IS REACHED, by its kind,
+            // for the observer's adjudication reading.
+            match self.adjudicate_one(voice, task, s, cited.as_ref()) {
+                Ok(a) => {
+                    note_verdict_of(&a);
+                    out.push(a);
+                }
+                Err(lanes) => {
+                    crate::observe::note_verdict(crate::observe::Verdict::Deferred);
+                    return Err(lanes);
+                }
+            }
         }
         Ok(out)
     }

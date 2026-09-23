@@ -34,6 +34,11 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                 }
                 observe::replace(own, Reading::Court(court));
             }
+            // CV5: what this court did with each signer's receipts, and its
+            // verdicts by kind, read at the question from the counters the
+            // exchange, the back-fill and the adjudication keep.
+            observe::replace(own, Reading::Replication(observe::replication()));
+            observe::replace(own, Reading::Adjudication(observe::adjudication()));
             // The body's share of the frame, exact, as `rows` reads it.
             let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(64) else {
                 return;

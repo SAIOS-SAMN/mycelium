@@ -21,6 +21,8 @@ pub const TAG_PLANES: u8 = 1;
 pub const TAG_LOSS: u8 = 2;
 pub const TAG_MEMORY: u8 = 3;
 pub const TAG_COURT: u8 = 4;
+pub const TAG_REPLICATION: u8 = 5;
+pub const TAG_ADJUDICATION: u8 = 6;
 
 fn put_u64(out: &mut Vec<u8>, v: u64) {
     out.extend_from_slice(&v.to_le_bytes());
@@ -346,6 +348,130 @@ impl Court {
     }
 }
 
+/// THE AXES OF [`Replication`], in its writing's order (CV5): what a court
+/// did with the receipts of one signer. The ONE statement of the order
+/// (law 12), read by the counters, the codec and every renderer.
+pub const REPLICATION_AXES: [(&str, &str); 13] = [
+    ("parent", "receipts admitted from a digest, cited as a parent"),
+    ("backfill", "receipts admitted by back-fill, page by page"),
+    ("gap", "frames that reported a hole in a chain (the back-fill chases it)"),
+    ("stale", "frames at a K already held with the same hash"),
+    ("equivocation", "two hashes at one K on one chain (47.4)"),
+    ("refused_origin", "receipts of another genesis"),
+    ("refused_signature", "receipts whose signature did not verify"),
+    ("refused_receipt", "receipts refused on their chain"),
+    ("no_section", "digests carrying no receipt section"),
+    ("malformed", "receipt sections that did not parse whole"),
+    ("no_origin", "frames heard before this court adopted an origin"),
+    ("digest_unreadable", "digests that were not one cover digest"),
+    ("digest_signature", "digests whose cover signature did not verify"),
+];
+
+/// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
+pub mod rep {
+    pub const PARENT: usize = 0;
+    pub const BACKFILL: usize = 1;
+    pub const GAP: usize = 2;
+    pub const STALE: usize = 3;
+    pub const EQUIVOCATION: usize = 4;
+    pub const REFUSED_ORIGIN: usize = 5;
+    pub const REFUSED_SIGNATURE: usize = 6;
+    pub const REFUSED_RECEIPT: usize = 7;
+    pub const NO_SECTION: usize = 8;
+    pub const MALFORMED: usize = 9;
+    pub const NO_ORIGIN: usize = 10;
+    pub const DIGEST_UNREADABLE: usize = 11;
+    pub const DIGEST_SIGNATURE: usize = 12;
+}
+
+/// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,
+/// with what it did with that signer's receipts on every axis of
+/// [`REPLICATION_AXES`]; and the frames no signer could be read off,
+/// apart, never attributed to one.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Replication {
+    pub signers: Vec<([u8; 32], [u64; 13])>,
+    pub unattributed: [u64; 13],
+}
+
+impl Replication {
+    fn put(&self, out: &mut Vec<u8>) {
+        out.push(REPLICATION_AXES.len() as u8);
+        out.extend_from_slice(&(self.signers.len() as u32).to_le_bytes());
+        for (vk, axes) in &self.signers {
+            out.extend_from_slice(vk);
+            for v in axes {
+                put_u64(out, *v);
+            }
+        }
+        for v in &self.unattributed {
+            put_u64(out, *v);
+        }
+    }
+
+    fn take(b: &[u8], p: &mut usize) -> Option<Replication> {
+        if usize::from(take_u8(b, p)?) != REPLICATION_AXES.len() {
+            return None;
+        }
+        let m = take_u32(b, p)? as usize;
+        if !holds(b, *p, m, 32 + 8 * 13) {
+            return None;
+        }
+        let axes = |b: &[u8], p: &mut usize| -> Option<[u64; 13]> {
+            let mut a = [0u64; 13];
+            for v in a.iter_mut() {
+                *v = take_u64(b, p)?;
+            }
+            Some(a)
+        };
+        let mut signers = Vec::with_capacity(m);
+        for _ in 0..m {
+            let vk: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+            *p += 32;
+            signers.push((vk, axes(b, p)?));
+        }
+        Some(Replication { signers, unattributed: axes(b, p)? })
+    }
+}
+
+/// ADJUDICATION BY KIND (CV5): the sentences this court ratified, stood,
+/// docketed to await a citation, and deferred, and those it refused by the
+/// refusal's own kind (`RefusalKind::to_byte`), ascending.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Adjudication {
+    pub ratified: u64,
+    pub stood: u64,
+    pub awaiting: u64,
+    pub deferred: u64,
+    pub refused: Vec<(u8, u64)>,
+}
+
+impl Adjudication {
+    fn put(&self, out: &mut Vec<u8>) {
+        for v in [self.ratified, self.stood, self.awaiting, self.deferred] {
+            put_u64(out, v);
+        }
+        out.extend_from_slice(&(self.refused.len() as u32).to_le_bytes());
+        for &(kind, n) in &self.refused {
+            out.push(kind);
+            put_u64(out, n);
+        }
+    }
+
+    fn take(b: &[u8], p: &mut usize) -> Option<Adjudication> {
+        let (ratified, stood, awaiting, deferred) = (take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?);
+        let m = take_u32(b, p)? as usize;
+        if !holds(b, *p, m, 9) {
+            return None;
+        }
+        let mut refused = Vec::with_capacity(m);
+        for _ in 0..m {
+            refused.push((take_u8(b, p)?, take_u64(b, p)?));
+        }
+        Some(Adjudication { ratified, stood, awaiting, deferred, refused })
+    }
+}
+
 /// ONE READING, tagged by what it answers.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Reading {
@@ -353,6 +479,8 @@ pub enum Reading {
     Loss(Loss),
     Memory(Memory),
     Court(Court),
+    Replication(Replication),
+    Adjudication(Adjudication),
 }
 
 impl Reading {
@@ -362,6 +490,8 @@ impl Reading {
             Reading::Loss(_) => TAG_LOSS,
             Reading::Memory(_) => TAG_MEMORY,
             Reading::Court(_) => TAG_COURT,
+            Reading::Replication(_) => TAG_REPLICATION,
+            Reading::Adjudication(_) => TAG_ADJUDICATION,
         }
     }
 
@@ -373,7 +503,11 @@ impl Reading {
             (Reading::Planes(a), Reading::Planes(b)) => a.absorb(b),
             (Reading::Loss(a), Reading::Loss(b)) => a.absorb(b),
             (Reading::Memory(a), Reading::Memory(b)) => a.absorb(b),
+            // A court's standing, its replication and its adjudications are
+            // read whole at the question; the later reading stands.
             (Reading::Court(a), Reading::Court(b)) => *a = b.clone(),
+            (Reading::Replication(a), Reading::Replication(b)) => *a = b.clone(),
+            (Reading::Adjudication(a), Reading::Adjudication(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -387,6 +521,8 @@ impl Reading {
             Reading::Loss(r) => r.put(out),
             Reading::Memory(r) => r.put(out),
             Reading::Court(r) => r.put(out),
+            Reading::Replication(r) => r.put(out),
+            Reading::Adjudication(r) => r.put(out),
         }
     }
 
@@ -398,6 +534,8 @@ impl Reading {
             TAG_LOSS => Some(Reading::Loss(Loss::take(b, p)?)),
             TAG_MEMORY => Some(Reading::Memory(Memory::take(b, p)?)),
             TAG_COURT => Some(Reading::Court(Court::take(b, p)?)),
+            TAG_REPLICATION => Some(Reading::Replication(Replication::take(b, p)?)),
+            TAG_ADJUDICATION => Some(Reading::Adjudication(Adjudication::take(b, p)?)),
             _ => None,
         }
     }

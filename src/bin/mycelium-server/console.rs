@@ -105,6 +105,8 @@ pub(crate) fn render(addr: &str, total: u32, held: &[observe::Held]) -> Vec<Stri
                 Reading::Planes(p) => dimensions(p),
                 Reading::Loss(l) => loss(l),
                 Reading::Memory(m) => memory(m),
+                Reading::Replication(r) => replication(r),
+                Reading::Adjudication(a) => adjudication(a),
             });
         }
     }
@@ -182,6 +184,73 @@ fn loss(l: &Loss) -> Vec<String> {
         out.push(format!("    {DIM}zero: {}{RESET}", zero.join(" ")));
     }
     out
+}
+
+/// The non-zero axes of one row of counters, each by its name, and a dim
+/// note naming how many read zero.
+fn axes_line(names: &[(&str, &str)], values: &[u64]) -> String {
+    let set: Vec<String> = names
+        .iter()
+        .zip(values)
+        .filter(|(_, &v)| v > 0)
+        .map(|((name, _), v)| format!("{name} {v}"))
+        .collect();
+    match set.is_empty() {
+        true => format!("{DIM}nothing counted{RESET}"),
+        false => set.join("  "),
+    }
+}
+
+/// REPLICATION PER SIGNER (CV5): what this court did with each signer's
+/// receipts, by axis, and what no signer could be read off.
+fn replication(r: &observe::Replication) -> Vec<String> {
+    use observe::{rep, REPLICATION_AXES};
+    let mut out = vec![format!("  {BOLD}replication{RESET} {} signers heard", r.signers.len())];
+    for (vk, axes) in &r.signers {
+        let admitted = axes[rep::PARENT] + axes[rep::BACKFILL];
+        let colour = match admitted {
+            0 => YELLOW,
+            _ => GREEN,
+        };
+        out.push(format!(
+            "    {colour}{}{RESET}  admitted {admitted}  {}",
+            short(vk),
+            axes_line(&REPLICATION_AXES, axes)
+        ));
+    }
+    if r.unattributed.iter().any(|&v| v > 0) {
+        out.push(format!(
+            "    {YELLOW}no signer{RESET}  {}",
+            axes_line(&REPLICATION_AXES, &r.unattributed)
+        ));
+    }
+    out
+}
+
+/// ADJUDICATION BY KIND (CV5): the verdicts, and the refusals by their own
+/// kind's name.
+fn adjudication(a: &observe::Adjudication) -> Vec<String> {
+    let refused: Vec<String> = a
+        .refused
+        .iter()
+        .map(|&(kind, n)| match mycelium::transducer::sentence::RefusalKind::from_byte(kind) {
+            Some(k) => format!("{} {n}", k.label()),
+            None => format!("kind {kind:#04x} {n}"),
+        })
+        .collect();
+    vec![
+        format!(
+            "  {BOLD}adjudication{RESET} ratified {}  stood {}  awaiting {}  deferred {}",
+            a.ratified, a.stood, a.awaiting, a.deferred
+        ),
+        format!(
+            "    refused  {}",
+            match refused.is_empty() {
+                true => format!("{DIM}nothing{RESET}"),
+                false => format!("{YELLOW}{}{RESET}", refused.join("  ")),
+            }
+        ),
+    ]
 }
 
 /// THE ALLOCATOR OVER THE SOURCE'S OWN CLOCK, and the growth per `K`.

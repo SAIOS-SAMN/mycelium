@@ -49,6 +49,47 @@ fn every_reading_reads_back_as_itself_through_the_act() {
     assert_eq!(decode_act(&encode_query(&[1, 2])), Some(ObserveAct::Query(vec![1, 2])));
 }
 
+/// CV5 — replication per signer and adjudication by kind travel whole.
+#[test]
+fn replication_and_adjudication_read_back_as_themselves() {
+    let mut axes = [0u64; 13];
+    axes[rep::BACKFILL] = 7;
+    axes[rep::STALE] = 2;
+    let mut unattributed = [0u64; 13];
+    unattributed[rep::DIGEST_UNREADABLE] = 1;
+    let all = vec![
+        Reading::Replication(Replication { signers: vec![(vk(3), axes), (vk(4), [0; 13])], unattributed }),
+        Reading::Adjudication(Adjudication { ratified: 5, stood: 9, awaiting: 1, deferred: 2, refused: vec![(0, 3), (2, 4)] }),
+    ];
+    let push = encode_push(&vk(8), &all);
+    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), all)));
+    assert_eq!(REPLICATION_AXES.len(), 13, "the axes and the counters agree");
+}
+
+/// The replication counters keep each signer apart, and a frame that named
+/// no signer apart from all of them; the verdicts count by kind.
+#[test]
+fn replication_counts_per_signer_and_verdicts_by_kind() {
+    let signer = vk(0xb1);
+    let before = replication();
+    let held = |r: &Replication| r.signers.iter().find(|(k, _)| *k == signer).map(|(_, a)| a[rep::BACKFILL]);
+    note_replication(Some(signer), rep::BACKFILL, 4);
+    note_replication(Some(signer), rep::BACKFILL, 1);
+    note_replication(None, rep::DIGEST_SIGNATURE, 1);
+    let after = replication();
+    assert_eq!(held(&after), Some(held(&before).map_or(5, |b| b + 5)));
+    assert!(after.unattributed[rep::DIGEST_SIGNATURE] > before.unattributed[rep::DIGEST_SIGNATURE]);
+    note_replication(Some(signer), 99, 1);
+    assert_eq!(held(&replication()), held(&after), "an axis past the list counts nothing");
+    let a0 = adjudication();
+    note_verdict(Verdict::Ratified);
+    note_verdict(Verdict::Refused(6));
+    let a1 = adjudication();
+    assert_eq!(a1.ratified, a0.ratified + 1);
+    let refused = |a: &Adjudication| a.refused.iter().find(|(k, _)| *k == 6).map_or(0, |(_, n)| *n);
+    assert_eq!(refused(&a1), refused(&a0) + 1, "a refusal counts under its own kind");
+}
+
 /// A key names its source and what the reading answers.
 #[test]
 fn a_key_names_its_source_and_its_reading() {
