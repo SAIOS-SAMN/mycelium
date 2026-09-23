@@ -166,6 +166,77 @@ fn the_store_folds_its_own_readings_and_holds_pushed_ones_as_they_stand() {
     assert_eq!(l.axes[0], 5, "a pushed total stands, it is not folded twice");
 }
 
+/// PL1 — THE CIRCUITS TRAVEL WHOLE, every arm of a step by name: read with
+/// its ray, class, modes and composite; unread; on the cone. A later
+/// percept's circuits stand, and the three owed fields are named by row.
+#[test]
+fn the_circuits_read_back_whole_step_by_step() {
+    use crate::network::nerve::coord::BivectorKind;
+    use crate::transducer::sentence::ModesRead;
+    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
+    let read = |kind, modes| Carried::Read {
+        ray: vec![(0, q(1, 1)), (0b00011, q(-7, 3))],
+        kind: Some(kind),
+        modes,
+        after: None,
+    };
+    let circuits = Circuits {
+        circuits: vec![
+            Circuit {
+                chord: 4,
+                steps: vec![
+                    CircuitStep {
+                        face: 1,
+                        forward: true,
+                        refracted: false,
+                        carried: read(BivectorKind::Elliptic, ModesRead::Split(vec![(BivectorKind::Elliptic, 1, Some(4))])),
+                    },
+                    CircuitStep {
+                        face: 9,
+                        forward: false,
+                        refracted: true,
+                        carried: read(
+                            BivectorKind::Hyperbolic,
+                            ModesRead::Undecomposed(cga::Undecomposed::Irrational(2)),
+                        ),
+                    },
+                    CircuitStep { face: 2, forward: true, refracted: false, carried: Carried::Cone },
+                ],
+            },
+            Circuit {
+                chord: 7,
+                steps: vec![
+                    CircuitStep { face: 3, forward: false, refracted: false, carried: Carried::Unread },
+                    CircuitStep {
+                        face: 5,
+                        forward: true,
+                        refracted: false,
+                        carried: read(BivectorKind::Trivial, ModesRead::NoChart),
+                    },
+                    CircuitStep {
+                        face: 6,
+                        forward: true,
+                        refracted: false,
+                        carried: read(BivectorKind::Parabolic, ModesRead::Undecomposed(cga::Undecomposed::Defective)),
+                    },
+                ],
+            },
+        ],
+    };
+    let push = encode_push(&vk(3), &[Reading::Circuit(circuits.clone())]);
+    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(3), vec![Reading::Circuit(circuits.clone())])));
+    assert_eq!(circuits.circuits[0].first_refraction(), Some(1), "the refracting step is named");
+    assert_eq!(circuits.circuits[1].first_refraction(), None);
+    let mut earlier = Reading::Circuit(Circuits::default());
+    assert!(earlier.absorb(&Reading::Circuit(circuits.clone())), "one kind folds");
+    assert_eq!(earlier, Reading::Circuit(circuits), "the later percept's circuits stand");
+    assert_eq!(
+        CIRCUIT_OWED.map(|(field, _)| field),
+        ["constructors composed", "round carried", "lane drawn"],
+        "the fields no producer reads are owed by their rows, never zero"
+    );
+}
+
 /// LC1 — THE CURVE TRAVELS WHOLE, A LATER ONE STANDS, AND A FRESH MIND READS
 /// ZERO HONESTLY: every field measured and zero, the five owed named by row.
 #[test]

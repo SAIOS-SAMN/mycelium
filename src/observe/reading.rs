@@ -16,6 +16,8 @@
 //!   acts it has served by kind.
 //! - [`super::Learning`] — WHAT A MIND HAS LEARNED (LC1): its curve at its
 //!   own `K`, honest at zero, the fields still owed named by their rows.
+//! - [`super::Circuits`] — HOW A CIRCUIT IS BUILT (PL1): every kept circuit
+//!   of the last percept, step by step.
 
 /// A reading's tag, the first byte of its writing and the last byte of its
 /// key.
@@ -26,6 +28,7 @@ pub const TAG_COURT: u8 = 4;
 pub const TAG_REPLICATION: u8 = 5;
 pub const TAG_ADJUDICATION: u8 = 6;
 pub const TAG_LEARNING: u8 = 7;
+pub const TAG_CIRCUIT: u8 = 8;
 
 fn put_u64(out: &mut Vec<u8>, v: u64) {
     out.extend_from_slice(&v.to_le_bytes());
@@ -524,6 +527,8 @@ pub enum Reading {
     Adjudication(Adjudication),
     /// LC1 — the learning curve of one mind (78.1).
     Learning(super::Learning),
+    /// PL1 — the circuits of the last percept, step by step (78.12(4)).
+    Circuit(super::Circuits),
 }
 
 impl Reading {
@@ -536,6 +541,7 @@ impl Reading {
             Reading::Replication(_) => TAG_REPLICATION,
             Reading::Adjudication(_) => TAG_ADJUDICATION,
             Reading::Learning(_) => TAG_LEARNING,
+            Reading::Circuit(_) => TAG_CIRCUIT,
         }
     }
 
@@ -554,6 +560,8 @@ impl Reading {
             (Reading::Adjudication(a), Reading::Adjudication(b)) => *a = b.clone(),
             // A mind's curve is what it holds at its latest `K`.
             (Reading::Learning(a), Reading::Learning(b)) => *a = b.clone(),
+            // The circuits are the last percept's; the later percept stands.
+            (Reading::Circuit(a), Reading::Circuit(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -570,6 +578,7 @@ impl Reading {
             Reading::Replication(r) => r.put(out),
             Reading::Adjudication(r) => r.put(out),
             Reading::Learning(r) => r.put(out),
+            Reading::Circuit(r) => r.put(out),
         }
     }
 
@@ -584,6 +593,7 @@ impl Reading {
             TAG_REPLICATION => Some(Reading::Replication(Replication::take(b, p)?)),
             TAG_ADJUDICATION => Some(Reading::Adjudication(Adjudication::take(b, p)?)),
             TAG_LEARNING => Some(Reading::Learning(super::Learning::take(b, p)?)),
+            TAG_CIRCUIT => Some(Reading::Circuit(super::Circuits::take(b, p)?)),
             _ => None,
         }
     }

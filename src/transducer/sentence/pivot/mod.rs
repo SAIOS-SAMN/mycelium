@@ -9,6 +9,7 @@ pub mod drive;
 pub mod moves;
 pub mod orbits;
 pub mod snap;
+pub mod trajectory;
 pub mod trial;
 pub mod walk;
 pub mod words;
@@ -16,6 +17,7 @@ pub mod words;
 pub use census::*;
 pub use moves::*;
 pub use snap::*;
+pub use trajectory::take_circuits;
 pub(crate) use walk::*;
 pub use words::*;
 

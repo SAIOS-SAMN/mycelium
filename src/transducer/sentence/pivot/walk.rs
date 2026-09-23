@@ -106,7 +106,12 @@ pub(crate) struct PathCarried {
     /// coupling belongs at the orbit, where `Π Ω_e` already evaluates it.
     /// Over the whole group `μ > 0` is hyperbolic, `μ < 0` elliptic
     /// (`−sin²(θ/2)`), `μ = 0` trivial — `I₁`'s own sign convention.
-    pub(crate) steps: Vec<element::Versor>,
+    ///
+    /// PL1 — EVERY STEP, IN BOUNDARY ORDER: the face crossed, which way, and
+    /// the transport the step carried where it was read. The charge above is
+    /// read off each step's carriage by `step_charge`; the circuit's reading
+    /// (`trajectory::read_circuit`) is the same steps read whole.
+    pub(crate) steps: Vec<Step>,
     /// WHY THE EDGE HALF WAS REFUSED, where it was (H2c, rule 11). The face
     /// composite can stand while the edge composite does not, and the two
     /// refusals are different facts. `NotRigid` is a real face carrying no
@@ -114,6 +119,16 @@ pub(crate) struct PathCarried {
     /// `Cone` is a face crossed against its orientation whose transport has
     /// no inverse (`MM̃ = 0`, 57.4).
     pub(crate) edge_refused: Option<Unread>,
+}
+
+/// PL1 — ONE STEP OF A CIRCUIT: the face it crosses, whether along the
+/// face's own orientation, and what it carried — `None` where the step's
+/// transport was not read (rule 11: unread is not flat).
+#[derive(Clone, Debug)]
+pub(crate) struct Step {
+    pub(crate) face: u16,
+    pub(crate) forward: bool,
+    pub(crate) transport: Option<Transport>,
 }
 
 /// WHY A TRANSPORT WAS NOT READ (H2c, rule 11). One `unread` counter could
@@ -372,19 +387,20 @@ pub(crate) fn paths_carried_why(
             (_, None) => None,
         };
         // THE STEP ITSELF, before it is folded into the product and its
-        // identity is lost. The TRANSVECTION factor this step carries is
-        // kept whole; a step whose transport was never read contributes
-        // nothing rather than an identity, because unread is not flat
-        // (rule 11) — and `acc.edge` below goes `None` for it, so the
-        // whole boundary is already refused.
-        // `step_charge` reads exactly where the carriage is a versor, so it
-        // is the one test of whether the step is kept.
-        if let Some(t) = step.as_ref() {
-            if let Some(mu) = step_charge(&t.carriage) {
-                note_step_charge(&mu);
-                acc.steps.push(t.carriage.clone());
-            }
+        // identity is lost. Every step is kept, in boundary order, with the
+        // face it crosses and which way — a step whose transport was never
+        // read is kept as unread rather than as an identity, because unread
+        // is not flat (rule 11) — and `acc.edge` below goes `None` for it,
+        // so the whole boundary is already refused. The charge is noted
+        // where `step_charge` reads one: where the carriage is a versor.
+        if let Some(mu) = step.as_ref().and_then(|t| step_charge(&t.carriage)) {
+            note_step_charge(&mu);
         }
+        acc.steps.push(Step {
+            face: fi,
+            forward,
+            transport: step.clone(),
+        });
         // WHY THE EDGE HALF GOES, at the face that loses it (H2c): a real
         // face with a place and no edge is not rigid, and a transport whose
         // inverse does not exist is on the light cone. The first refusal is

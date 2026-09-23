@@ -21,6 +21,8 @@
 //! - COURT — the court's `K`, basis, treasury and the acts it served.
 //! - LEARNING — a mind's curve at its `K` (LC1): dialect span, cover, what
 //!   its closures did, and every field still owed, by its row.
+//! - CIRCUITS — the last percept's kept circuits step by step (PL1): the
+//!   bricks a holonomy is built of, and its first refraction named.
 
 use mycelium::observe::{self, Court, Loss, Memory, Planes, Reading, Source, LOSS_AXES};
 use mycelium::transducer::cga;
@@ -110,6 +112,7 @@ pub(crate) fn render(addr: &str, total: u32, held: &[observe::Held]) -> Vec<Stri
                 Reading::Replication(r) => replication(r),
                 Reading::Adjudication(a) => adjudication(a),
                 Reading::Learning(l) => learning(l),
+                Reading::Circuit(c) => circuits(c),
             });
         }
     }
@@ -288,6 +291,60 @@ fn learning(l: &observe::Learning) -> Vec<String> {
         ),
         format!("    {DIM}owed: {}{RESET}", owed.join("  ")),
     ]
+}
+
+/// PL1 — THE CIRCUITS OF THE LAST PERCEPT, STEP BY STEP (78.12(4)): each
+/// circuit by its chord with the class its steps compose to and its first
+/// refraction named, then every step — the face and which way, `|` where
+/// the face refracts, the step's class, its modes, the class composed
+/// through it and its ray — and the fields still owed, by their rows.
+fn circuits(c: &observe::Circuits) -> Vec<String> {
+    let kind = |k: Option<mycelium::network::nerve::coord::BivectorKind>| match k {
+        Some(k) => format!("{k:?}").to_lowercase(),
+        None => "unread".into(),
+    };
+    let owed: Vec<String> = observe::CIRCUIT_OWED.iter().map(|(field, row)| format!("{field} ({row})")).collect();
+    let mut out = vec![format!("  {BOLD}circuits{RESET}    {} kept by the last percept", c.circuits.len())];
+    for circuit in &c.circuits {
+        let holonomy = match circuit.steps.as_slice() {
+            [.., observe::CircuitStep { carried: observe::Carried::Read { after, .. }, .. }] => kind(*after),
+            _ => "unread".into(),
+        };
+        let refraction = match circuit.first_refraction() {
+            Some(i) => format!("{YELLOW}first refraction at step {} (face {}){RESET}", i + 1, circuit.steps[i].face),
+            None => format!("{DIM}no step refracts{RESET}"),
+        };
+        out.push(format!(
+            "    chord {}  {} steps  holonomy {holonomy}  {refraction}",
+            circuit.chord,
+            circuit.steps.len()
+        ));
+        for (i, s) in circuit.steps.iter().enumerate() {
+            let way = match (s.forward, s.refracted) {
+                (true, false) => "→",
+                (false, false) => "←",
+                (true, true) => "|→",
+                (false, true) => "|←",
+            };
+            let read = match &s.carried {
+                observe::Carried::Unread => format!("{YELLOW}unread{RESET}"),
+                observe::Carried::Cone => format!("{YELLOW}on the cone{RESET}"),
+                observe::Carried::Read { ray, kind: k, modes, after } => {
+                    let ray: Vec<String> = ray.iter().map(|(b, q)| format!("{} {q}", cga::blade_name(usize::from(*b)))).collect();
+                    format!(
+                        "{}  modes [{}]  ⇒ {}  {DIM}ray [{}]{RESET}",
+                        kind(*k),
+                        modes.label(),
+                        kind(*after),
+                        ray.join(", ")
+                    )
+                }
+            };
+            out.push(format!("      {:>2} face {}{way}  {read}", i + 1, s.face));
+        }
+    }
+    out.push(format!("    {DIM}owed: {}{RESET}", owed.join("  ")));
+    out
 }
 
 /// THE ALLOCATOR OVER THE SOURCE'S OWN CLOCK, and the growth per `K`.

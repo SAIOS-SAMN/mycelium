@@ -27,6 +27,11 @@ impl Entity {
         }
         // LC1 — THE CURVE, read off this mind's own genome at its own `K`.
         observe::publish(me, Reading::Learning(observe::Learning::of(&self.epigenome, self.own_k())));
+        // PL1 — THE LAST PERCEPT'S CIRCUITS, step by step, where a percept
+        // read any since the last push; otherwise the circuits held stand.
+        if let Some(c) = crate::transducer::sentence::take_circuits() {
+            observe::publish(me, Reading::Circuit(c));
+        }
         let totals: Vec<Reading> = observe::readings(&me.prefix()).into_iter().map(|(_, r)| r).collect();
         match self.session.speak_keyed(&voice, observe::encode_push(&voice, &totals)) {
             Ok(body) => body.as_slice() == [1],

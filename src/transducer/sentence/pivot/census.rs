@@ -66,7 +66,7 @@ pub(super) fn note_closure(carried: &Keyed<PathCarried>) {
     // back from a scalar written beside them (LAW-0, law 12: one producer).
     let mut charges: Vec<num_rational::BigRational> = Vec::new();
     for (_, c) in carried.scoped() {
-        charges.extend(c.steps.iter().filter_map(step_charge));
+        charges.extend(c.steps.iter().filter_map(|s| s.transport.as_ref().and_then(|t| step_charge(&t.carriage))));
     }
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let charged: Vec<num_rational::BigRational> =
@@ -383,7 +383,8 @@ impl ModesRead {
         }
     }
 
-    fn label(&self) -> String {
+    /// The modes by name, for the orbit's line and the circuit's steps.
+    pub fn label(&self) -> String {
         match self {
             ModesRead::Split(ms) if ms.is_empty() => "none".into(),
             ModesRead::Split(ms) => ms
@@ -491,6 +492,8 @@ thread_local! {
 /// A reader starts listening: the orbits read from here are kept for it.
 pub fn arm_orbits() {
     ORBITS.with(|o| *o.borrow_mut() = Some(Vec::new()));
+    // PL1 — and the same orbits' circuits, step by step.
+    super::trajectory::arm_circuits();
 }
 
 /// File one orbit's reading, where a reader is listening.

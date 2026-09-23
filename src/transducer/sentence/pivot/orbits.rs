@@ -478,6 +478,8 @@ impl Form {
                     };
                     OrbitReading::of(&composite, crate::transducer::element::GRID_N)
                 });
+                // PL1 — AND THE SAME CIRCUIT'S BRICKS, step by step (78.12(4)).
+                super::trajectory::note_circuit(|| super::trajectory::read_circuit(lp.chord, c, faces));
                 // AND THE OPERATOR THIS GENERATOR ENACTS, at the basepoint
                 // (Axiom A). Two cycles agreeing here are synonyms: distinct
                 // cellular paths, one physical dislocation.
