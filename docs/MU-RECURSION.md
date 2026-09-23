@@ -10311,6 +10311,32 @@ link, each link a producer that exists or is added (78.8):
    conjecture until LK1's probe: signed crossings against the linking
    number on a circle at `n = 3` and a 2-sphere round at `n = 4`, and
    the puncture that moves with the tube across sections (A13).
+   **LK1's probe, recorded (2026-09-23, exact over ℚ, not committed).** A
+   codimension-2 round — a circle at `n = 3`, a 2-sphere at `n = 4` — is
+   the meet `S ∧ Π` of two spheres of its pencil, and a point's inversive
+   product with it is NOT a scalar: `W · (S ∧ Π) = (W·S) Π − (W·Π) S`,
+   the sphere of the round's pencil through `W`. So (A) the signed
+   crossings of ONE inversive distance `W·S` read zero on every loop,
+   linked or not — the witness enters and leaves the sphere and the
+   crossings cancel — and that reading is REFUSED by name: one inversive
+   distance cannot see a codimension-2 round. (B) THE WINDING OF THE
+   PENCIL PAIR `(W·S, W·Π)` about the origin, the crossing number of the
+   polygon of pairs along the witness's trajectory, reads the linking
+   number exactly: threading the disk once 1, not linking 0, the loop
+   run twice 2 at `n = 3`; threading 1, not linking 0 at `n = 4`. It
+   chooses nothing: another basis of the pencil acts linearly on the
+   pair and changes the winding only by that basis change's sign, the
+   round's own orientation (`S ∧ Π` against `Π ∧ S`); no cap and no
+   Seifert surface. The formula holds for any codimension-2 round at any
+   `n`. Its condition: the discrete trajectory is read on its CHORDS in
+   the vector space — the pair is linear in `W`, so the chord polygon is
+   exact and canonical — and equals the continuous orbit's linking
+   where each step turns the pair by less than `π`; a step of `π` or more
+   is refused by name, never counted. Carrying the round instead of the
+   witness gives the same pairs, `W_i · M₀ = W₀ · (G_i⁻¹ M₀ G_i)`. HELD
+   OPEN: a round carried across sections, where the pencil moves with
+   each step and the reading is the winding of `(W_i·S_i, W_i·Π_i)` —
+   A13's inter-frame carriage, not built.
 8. **The held `ℤ₂`, collapsed by the algebra.** Two candidates of a
    held coset that generate the same `𝔥` with the same brackets on `M`
    are one gauge freedom and stay held; candidates that differ in `𝔥`
