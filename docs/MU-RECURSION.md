@@ -8908,7 +8908,18 @@ its row.
    never been read as a momentum; A13 builds it, so a body carries its
    pose and its motion together.
 3. **The span is a stratum of `e₃`, and it is content before it is a
-   reading.** The answer to "intrinsic or observer-relative" is both,
+   reading** (amended 2026-09-23 on the implementor's three questions,
+   FR2: a stratum here is a keyed FIBER of `e₃` coordinates, a set of
+   sections, not a contiguous prefix; a cycle's span is the INTERSECTION
+   of its vertices' sections, the sections on which every transport it
+   composes exists, since a transport between two members exists only
+   where both stand (51.4) — the union of what its vertices touch is the
+   cycle's reach, a different reading; the span is DERIVED from
+   `Form.sections` at the read and never stored beside it (law 12); and a
+   demand names a stratum through its bodies' own sections, so `Demand`
+   gains no field — where a reading proves a demand needs a span its
+   bodies do not carry, that is a tape change at the recut and the
+   operator's). The answer to "intrinsic or observer-relative" is both,
    split the way the document already splits content from reading. The
    span a relation closes over is CONTENT read from the form: a cycle's
    span is the sections its holonomy is read over, an orbit's is its
@@ -9660,7 +9671,20 @@ count scaling as `ρ²` is a sensor-side fact standing as a gate (rule 2,
 checklist (q)) and goes with `is_similar_to`; where a count of laminae is
 a reading it is `M₀`, the tower's normaliser (A.12), and never a gate.
 
-**Two formulas held back before anything is built on them (the
+**FR1 as landed (4116b96), one correction.** The tube reader is exact:
+the odd moment's Krylov columns under the second moment, a flat body's
+frame completed by its dual, `R` solved by one elimination and checked
+orthogonal and tower-carrying, the versor from rational reflections —
+no eigenvector, no root, no candidate table. One departure is refused:
+on the tube a symmetric body (odd moment zero, no column) reads
+`Unoriented`, a PERMANENT arm (67.1), where at one section the same body
+reads `HalfOpen`, a held `ℤ₂` freedom (57.3, 59.5). That is a
+superposition written as a permanent refusal — the first tell of
+curvature-is-content — and the tube keeps `HalfOpen` for a body whose
+even tower orients it up to the half turn, with `Unoriented` for a body
+no order orients (FR1b).
+
+ (the
 implementor, 2026-09-23; ruled).** (1) The inversion is a VECTOR, never
 the bivector `e_o ∧ e_∞`: sandwiching by that bivector's versor RESCALES
 the two poles — it is the dilation's generator — and does not exchange
