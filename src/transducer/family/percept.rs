@@ -72,6 +72,10 @@ struct ClassRead {
 pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::physics::Budget) -> Percept {
     use crate::transducer::sentence::face_pair_key;
     trace::trace("extract/0 frames", trace::Wrote::Nothing, Some(budget));
+    // OR1 — THE ORBITS THIS PERCEPT READS are kept for its cycles line. A
+    // percept that returns before the line leaves the list to the next arm,
+    // which replaces it: at most one percept's orbits are ever held.
+    crate::transducer::sentence::arm_orbits();
     let n = family.len();
     let mut unreached: Vec<usize> = Vec::new();
     let mut ins: Vec<Body> = Vec::new();
@@ -1126,6 +1130,12 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         drops.contact_offered,
         drops.contact_built
     );
+    // OR1, 73.1 — EACH ORBIT THIS PERCEPT READ, beside the cycles line: its
+    // type, its class, the planes its precession turns in, the precession's
+    // canonical coordinates, and its centre read or refused by name.
+    for orbit in crate::transducer::sentence::take_orbits() {
+        eprintln!("  {}", orbit.line());
+    }
     trace::trace("extract/2 faces", trace::Wrote::Nothing, Some(budget));
     Percept { form, sections, varying, unreached }
 }

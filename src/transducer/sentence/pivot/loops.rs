@@ -468,6 +468,16 @@ impl Form {
                 // THE DEFECT THIS CYCLE CARRIES, read once per member path
                 // off the transport it composes (§8.1).
                 note_defect(c);
+                // OR1 — AND THE ORBIT IT IS (73.1, 73.2), read off the same
+                // composite where a reader is listening, in the corpus's
+                // algebra at least.
+                note_orbit(|| {
+                    let composite = match &c.edge {
+                        Some(e) => e.carriage.geo(&c.face.carriage),
+                        None => c.face.carriage.clone(),
+                    };
+                    OrbitReading::of(&composite, crate::transducer::element::GRID_N)
+                });
                 // AND THE OPERATOR THIS GENERATOR ENACTS, at the basepoint
                 // (Axiom A). Two cycles agreeing here are synonyms: distinct
                 // cellular paths, one physical dislocation.

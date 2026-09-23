@@ -85,18 +85,25 @@ fn generator(bit: usize) -> (usize, String) {
 /// axis index of two digits is set apart, `e1_10`, so a name never reads as
 /// another plane's.
 pub fn plane_name(blade: usize) -> String {
+    match blade.count_ones() {
+        2 => blade_name(blade),
+        _ => "?".into(),
+    }
+}
+
+/// ANY BLADE'S OWN NAME, read off its generators in the algebra's order:
+/// `1` for the scalar, `e12`, `e1p`, `e123pm`; an axis index of two digits
+/// sets every name apart, `e1_10`, so a name never reads as another
+/// blade's. The one producer of a blade's name, [`plane_name`] included.
+pub fn blade_name(blade: usize) -> String {
     let mut gens: Vec<(usize, String)> =
         (0..usize::BITS as usize).filter(|b| blade >> b & 1 == 1).map(generator).collect();
     gens.sort_unstable();
     let names: Vec<String> = gens.into_iter().map(|(_, name)| name).collect();
-    match names.as_slice() {
-        [x, y] => {
-            match x.len() > 1 || y.len() > 1 {
-                true => format!("e{x}_{y}"),
-                false => format!("e{x}{y}"),
-            }
-        }
-        _ => "?".into(),
+    match (names.is_empty(), names.iter().any(|x| x.len() > 1)) {
+        (true, _) => "1".into(),
+        (false, true) => format!("e{}", names.join("_")),
+        (false, false) => format!("e{}", names.concat()),
     }
 }
 

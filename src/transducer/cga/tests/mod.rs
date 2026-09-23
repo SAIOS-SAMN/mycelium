@@ -2,6 +2,7 @@
 
 mod bivector;
 mod common;
+mod fixed;
 mod generic;
 mod group;
 mod hyperboloid;

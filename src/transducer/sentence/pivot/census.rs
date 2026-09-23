@@ -328,6 +328,141 @@ pub fn reset_loop_defects() {
     DEFECTS.with(|c| c.set((0, 0, 0, 0, 0)));
 }
 
+/// 73.1, 73.2, OR1 — ONE ORBIT AS IT IS READ: today's class beside the
+/// orbit's type, the planes of its algebra the precession turns in, the
+/// precession in its canonical coordinates, and its centre read or refused
+/// by name. A reading only; nothing decides on it (§8.1).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OrbitReading {
+    /// Today's class (`class_invariants`), `None` where it is unread.
+    pub class: Option<crate::network::nerve::coord::BivectorKind>,
+    /// 73.1's type, read from the class and the spectrum.
+    pub kind: &'static str,
+    /// The finite order of a resonant orbit.
+    pub period: Option<u32>,
+    /// A dispiration: the precession turns and slips at once.
+    pub coupled: bool,
+    /// The algebra the orbit is read in.
+    pub n: u8,
+    /// The planes of `Cl(n+1, 1)` the precession's bivector part occupies.
+    pub planes: Vec<usize>,
+    /// The precession's canonical coordinates: each non-zero blade and its
+    /// exact coefficient, the first `+1` (A4). Never an angle.
+    pub precession: Vec<(usize, num_rational::BigRational)>,
+    pub centre: crate::transducer::cga::Centre,
+}
+
+impl OrbitReading {
+    /// ONE ORBIT READ FROM ITS HOLONOMY `M`, in the algebra of the form it
+    /// stands on.
+    pub fn of(m: &element::Versor, n: u8) -> OrbitReading {
+        use crate::network::nerve::coord::BivectorKind;
+        use crate::transducer::cga::{self, Spectrum};
+        let class = m.class_invariants().map(|(_, _, k)| k);
+        let spectrum = cga::compact_period(m);
+        let (kind, period) = match (class, &spectrum) {
+            (None, _) => ("unread", None),
+            (Some(BivectorKind::Trivial), _) => ("closed, no precession", None),
+            (Some(BivectorKind::Elliptic), Spectrum::Closes(t)) => ("resonant", t.plane_1.map(|p| p.get())),
+            (Some(BivectorKind::Elliptic), Spectrum::Open) => ("rosette", None),
+            (Some(BivectorKind::Elliptic), Spectrum::Undecomposed) => ("elliptic, undecomposed over Q", None),
+            (Some(BivectorKind::Elliptic), Spectrum::Isoclinic) => ("elliptic, isoclinic", None),
+            (Some(BivectorKind::Parabolic), _) => ("escape (parabolic)", None),
+            (Some(BivectorKind::Hyperbolic), _) => ("unbound (hyperbolic)", None),
+        };
+        let n = n.max(m.n());
+        let canonical = m.canonical();
+        let precession: Vec<(usize, num_rational::BigRational)> = match &canonical {
+            Some(c) => (0..c.slot_count())
+                .filter(|&b| !num_traits::Zero::is_zero(c.coeff(b)))
+                .map(|b| (b, c.coeff(b).clone()))
+                .collect(),
+            None => Vec::new(),
+        };
+        let planes: Vec<usize> = match &canonical {
+            Some(c) => cga::bivector_planes(n)
+                .into_iter()
+                .filter(|&p| !num_traits::Zero::is_zero(c.coeff(p)))
+                .collect(),
+            None => Vec::new(),
+        };
+        OrbitReading {
+            class,
+            kind,
+            period,
+            coupled: !cga::bivector_is_simple(m),
+            n,
+            planes,
+            precession,
+            centre: cga::centre_of(m, n),
+        }
+    }
+
+    /// The orbit's line, for the cycles reading beside it.
+    pub fn line(&self) -> String {
+        use crate::transducer::cga::{blade_name, plane_name};
+        let class = match self.class {
+            Some(k) => format!("{k:?}").to_lowercase(),
+            None => "unread".into(),
+        };
+        let kind = match self.period {
+            Some(p) => format!("{} {p}", self.kind),
+            None => self.kind.to_string(),
+        };
+        let planes: Vec<String> = self.planes.iter().map(|&p| plane_name(p)).collect();
+        let precession: Vec<String> =
+            self.precession.iter().map(|(b, q)| format!("{} {q}", blade_name(*b))).collect();
+        format!(
+            "orbit {kind}{} | class {class} | n {} planes [{}] | precession [{}] | centre {}",
+            if self.coupled { ", coupled" } else { "" },
+            self.n,
+            planes.join(" "),
+            precession.join(", "),
+            self.centre.label()
+        )
+    }
+}
+
+thread_local! {
+    /// The orbits read since a reader armed the list, in the order the walk
+    /// read them; `None` while no reader is listening. `loops_of` runs at
+    /// every decode and replay, so a list nobody takes would grow for the
+    /// life of a court: it collects only between [`arm_orbits`] and
+    /// [`take_orbits`].
+    static ORBITS: std::cell::RefCell<Option<Vec<OrbitReading>>> = const { std::cell::RefCell::new(None) };
+}
+
+/// A reader starts listening: the orbits read from here are kept for it.
+pub fn arm_orbits() {
+    ORBITS.with(|o| *o.borrow_mut() = Some(Vec::new()));
+}
+
+/// File one orbit's reading, where a reader is listening.
+pub(super) fn note_orbit(r: impl FnOnce() -> OrbitReading) {
+    ORBITS.with(|o| {
+        if let Some(held) = o.borrow_mut().as_mut() {
+            held.push(r());
+        }
+    });
+}
+
+/// The orbits read since [`arm_orbits`], and stop listening (one reader
+/// takes). Empty where nobody armed it.
+pub fn take_orbits() -> Vec<OrbitReading> {
+    // Nobody listening read no orbit: the empty list is that reading.
+    ORBITS.with(|o| {
+        #[expect(
+            clippy::manual_unwrap_or_default,
+            reason = "rule 11 — the empty list is the reading of a list nobody armed, written as a match so it stays named"
+        )]
+        let read = match o.borrow_mut().take() {
+            Some(read) => read,
+            None => Vec::new(),
+        };
+        read
+    })
+}
+
 /// Classify one kept cycle by THE WHOLE TRANSPORT IT COMPOSES.
 ///
 /// A first cut read `PathCarried::face.carriage` alone and every one of 545
