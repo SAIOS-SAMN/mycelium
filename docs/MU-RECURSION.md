@@ -8556,6 +8556,38 @@ only), the unread gate split by cause, the address carrying the interface
 at the recut. Only what the face holds, how the pair is named, and what
 the transport is measured through are corrected.
 
+**Amended 2026-09-23 on the implementor's reading of the physics: the
+face's content is the field's own, and nothing is invented for it.** The
+engine already carries the interface conformally. `Interface::between(a,
+b)` is the whole product of the two nuclei split by grade: grade 0 is the
+strain `(num, den2)`, exact and never rooted (59.3, 63.1), and grade 2 is
+the coaxal pencil `s_a ∧ s_b`, the blade the two spheres share their
+boundary through (59.2). The edge is refraction, `g_ab = (θ_b θ_a⁻¹)·γ_ab`
+(60.1, 64.3), the relative frame off the two towers composed with the
+transvection between the nuclei; where `θ` refuses, `NoFrame` names the
+arm and only `Oblique` is a demand (67.1). So "the interface is lifted
+once" means: the lattice reads WHETHER two bodies meet and on which
+shared cell (71.2(2)); the face then carries `Interface::between` — the
+strain and the pencil blade — as its content and `g_ab` as its edge, with
+the refusal named on the line. The lattice set of shared elements is the
+finding of whether and enters no address; the address keys the pencil
+blade's coordinates (A21) and the contact's grade. Phase C's doubled
+centres were a second, Euclidean carrier of what `Interface::between`
+already holds (law 12), and they go with BQ5. The field's pair loop (F1)
+dissolves in the same move: the strain, the pencil and the frame are read
+on the pairs the lattice names and on no others, so the band no longer
+gates whether (69.2's size disparity) and T3's sector becomes a
+coordinate of a contact rather than a cure for a loop. What stays open
+and is written as open: A.10 asks that two manifolds share a boundary
+through a null gradient and the corpus's meets read timelike (57.4,
+55.7) — whether a contact's pencil is ever luminal is a measurement, at
+`μ = 0` (59.7); and A.13 is docketed and not built — every motion the
+engine expresses fixes infinity because the special conformal half is
+missing — which is the most direct statement in the tree of where the
+mathematics is still pinned to a Euclidean origin, and it is the next
+axiom row after Phase N. `Strain::between` reads three centroid
+coordinates today; it goes to `n` with BQ4.
+
 ```
 family/pairing.rs        the twenty adjacencies read at the sensor; the
                          interface lifted there, once
