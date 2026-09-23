@@ -10044,6 +10044,81 @@ at zero. Three rulings, so that E1's reading can move on this corpus:
    court codes and the mint's `Withheld` comes to the coordinator for
    ruling row by row, as SQ1's did.
 
+### 78.7 Bending faces: the pivot under pressure reads a plane's viscosity (ruled 2026-09-23)
+
+**The operator's word.** Start bending faces to certify the viscosity of
+the dimensional plane, instead of looking for new connections across
+crystallized geoids or their sub-structures. **The implementor's
+proposal** (relayed the same day): vary a face's transport along a
+bivector direction, carry the variation round every circuit through the
+face, read the linear map from bends to holonomy changes as the form's
+stiffness per plane, and the commutator of two bends carried round as the
+plane's viscosity; resolve a held `ℤ₂` by bending each candidate.
+
+**What it is in the document's nouns.** A bend of a face is a PIVOT —
+the only motion in this engine — on the axis of the face's held loop's
+class vector, and its trial is one move and one re-read (12.2, 62). The
+response is the class vector after against before: what would have to
+change for the circuit to close, read exactly. Bending faces is the pivot
+machine applied to a form that STANDS, under 76's measured pressure, and
+that is the point of the operator's word: the content is in what the
+form holds and resists, not in an edge not yet formed. E1 is reordered
+so: NB1 and CG1 first (the cells' own content and the coboundary at
+every grade), then VS1 (this section), then BQ5a's contact edge.
+
+**Four corrections to the proposal, each a law.**
+
+1. **No `ε`, no tangent.** `g_f · Cayley(εB)` with a small `ε` is a dial
+   (rule 5) and a Euclidean tangent laid on the group (checklist (m)).
+   The bend is the exact pivot: the face's transport composed with a
+   generator of the algebra on the pair of planes named, over ℚ, whole.
+2. **The response is read in the CLASS, never in `H`.** To first order a
+   bend changes a circuit's holonomy by the generator conjugated by the
+   circuit's suffix — an invertible map — so every bend is "felt" in `H`
+   and a stiffness read there is a change of basis reading nothing. The
+   reading is the holonomy's class invariants — the per-mode split, the
+   inversive strain `(num, den2)`, the plane and the pole — and a bend
+   that moves `H` within its conjugacy class is GAUGE: the inviscid
+   direction. That is "curvature is content" and the class vector's own
+   definition.
+3. **The commutator of two generators is the algebra's, not the form's.**
+   `[B₁, B₂]` is a structure constant of `so(n+1,1)` and reads the same
+   on every form; a viscosity built from it certifies the algebra. Path
+   dependence of a deformation is the holonomy of the CLOSED loop the
+   deformation traces — bend, bend, unbend, unbend — and on the complex
+   that loop is a 2-cell, whose content the coboundary reads at its own
+   grade (NB1, CG1). Nothing is probed that the cell does not carry.
+4. **A held `ℤ₂` is collapsed by T5's kernel, not by a bend.** Two
+   candidates respond differently in `H` always and identically in class
+   only where the generator commutes with the half-turn; the exact test
+   is the coboundary condition over `𝔽₂` (59.5), which reads the whole
+   circuit at once. The coset rides the edge (78.6(1)) until then.
+
+**The physics, and what viscosity is here.** Stress is the change of the
+holonomy's class under a pivot; rate is per stroke, the mind's own clock
+(72.1e, A18); their ratio per plane and per lane is the plane's
+VISCOSITY, a reading and never a constant. Three arms, read per pair of
+planes and per lane, never summed (law 5): INVISCID — the pivot is gauge,
+the class does not move, a free axis the form has not used; ELASTIC — the
+class moves and the inverse pivot restores it, the lane's draw restored,
+no entropy booked; VISCOUS — the class moves and the inverse does not
+restore it, the difference booked as the lane's entropy (metabolism,
+`cauterized`/`released`), the deformation's irreversible part. Repeated
+viscous work on one fibre is 72.1d's CALLOUSING: the fibre hardens into a
+tether, a relation in the genome — PLASTIC deformation is memory, and it
+is the mechanism by which a mind's own work moves its elements (78.1,
+LC2). So the viscosity of a plane is the multi-dimensional ledger read on
+a deformation: the elastic response is thought (epigenome, volatile), the
+plastic response is learning (genome, on disk), and the entropy between
+them is what the mind paid. It is pressure the minds read (76) and never
+a target a row lowers; a bend that lowers curvature toward anything is
+the scalar optimizer the founding law forbids.
+
+**Fixtures.** A flat form reads inviscid or elastic on every pair of
+planes with no entropy; a screw reads its `I₂` on the third plane of the
+2-cell its two bends trace; a held `ℤ₂` reads unchanged by any bend and
+is left to T5.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
