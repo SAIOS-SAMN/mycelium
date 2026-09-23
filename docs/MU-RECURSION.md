@@ -10176,7 +10176,20 @@ gauge `𝒢` and temporal `𝒯` have no plane to bend on and read "no bend on
 this lane" by name, never zero. A flat form reads inviscid or elastic
 everywhere with zero entropy by construction; a screw reads curved on
 the plane the loop's `K` turns in, verified by fixture; a held `ℤ₂`'s
-fixture checks that no bend changes which candidate stands.
+fixture checks that no bend changes which candidate stands. **VS1
+landed (e6af61c4) with two departures ruled:** the viscous arm's live
+fixture cannot be built with these generators — every ruled bend is
+invertible and writes only a face's carriage or word, so no bend on `𝒮`
+or `𝒽` reaches the ledger, and the arm's zero is the algebra's own; a
+bend reaches the ledger only through a producer that writes it, the
+pivot pair's `descend` and drain at the family pole (P3, Phase P), and
+the live fixture lands there; the held `ℤ₂` fixture waits on BQ5a's
+coset edge. The corpus's first reading: the one form whose circuits read
+is inviscid or elastic on every pair of planes on both lanes with zero
+entropy; the two forms whose circuits are unread (OR3) read `no-class`,
+never inviscid; a screw fixture reads curved on the plane its loop turns
+in and on the pairs coupled to it, not on the boosts it does not couple
+to.
 
 ### 78.8 The provenance of a constant (ruled 2026-09-23, the operator's word)
 
