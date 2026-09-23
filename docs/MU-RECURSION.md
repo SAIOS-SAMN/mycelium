@@ -8919,6 +8919,47 @@ budget.rs` (the draw), `bubble/` (the fibres held), `server/cognition/
 book/` (the tether ruled), `client/sdk/epigenome/` (the callus, Stood →
 Ruled at the relation).
 
+### 72.1e Three clocks, and where the pose lives (ruled 2026-09-23)
+
+**Three things that are not one.** The implementor's mapping of 72.1d
+onto the tree holds, and one sentence in it is refused: "`k` is the
+mind's own orbit index." Three coordinates are being named there and
+they are kept apart by law 9 and chapter 51: `e₃`, the succession axis of
+the BASE, is the corpus's own coordinate — the position of a section in
+the family, content, never a clock (51.1); the mind's **orbit** is its
+local time, circuits of its own carriers beside its `K` (45.7, `Orbit`);
+and **TUniversal** is the mesh's height, read from receipts (45.2). The
+`T` lane of μ⃗ stays what law 9 says: temporal extent counted in
+receipts, a cost, never a coordinate. So a proposal that the `T` lane
+advance per cauterized orbit, or that a section at `k` become a stratum
+of an orbit ledger, is refused: orbits PACE how much of `e₃` a mind reads
+per stroke (72.1d), they do not become its coordinate. What the proposal
+rightly wants — a parked read resuming at a cauterization rather than a
+count — is PH4.
+
+**Metabolic relativity (A.18).** Content never depends on hardware; only
+rate does. A.9 applied to time: two minds at two reserve sizes reach the
+same forms in the same order, the larger reaching more of them per
+wall-second, and a test runs one family at two reserve sizes and asserts
+identical forms and orbits in content.
+
+**The callus (A.19).** A relation is a fibre until its torsion is
+discharged into coherence (`torse_relief`, the physics of the
+transition) and re-derived on two vantages (law 6); then it is a tether,
+and the court's install is the callus. A tether that drains deposits its
+record or returns to vacuum, never silently (A.8). The fixture runs
+fibre → torse → second vantage → tether, then drain → deposit (MEM1).
+
+**Where the pose lives.** The pose of 72.1c is the BODY's: its
+orientation with its placement, read on its tube, carried by its word
+vertex (rotor and carriage) in the dialect while Stood and in the genome
+once Ruled. It is neither the fibre nor the tether. The fibre rides over
+the body (its gauge, its sections); the tether between two bodies
+carries the RELATIVE pose `θ_bθ_a⁻¹` composed with `V`. So the tube
+reading sits on the body from the moment it is perceived, the relative
+pose enters the tether when the tether is minted, and both harden with
+what carries them: the word by ratification, the tether by the callus.
+
 ### 72.2 What the rows carry
 
 - **Refraction on the pairs the topology names** (BQ5a). The strain,
