@@ -68,10 +68,10 @@ use crate::transducer::base::Site;
 /// second disagreed with the first (law 12).
 ///
 /// The form's chart is one body — the union of every cell its chords
-/// stand on — so `centroid()` is `P` and the trace of `inertia` is the
-/// scale. The trace is used HERE and only here, as a radius: it is an
-/// `SO(2)` invariant and carries no orientation (A.11), which is what
-/// the frame rotor is for and not this.
+/// stand on — so `centroid()` is `P` and the trace of `inertia` on every
+/// axis is the scale. The trace is used HERE and only here, as a radius:
+/// it is an `SO(n)` invariant and carries no orientation (A.11), which is
+/// what the frame rotor is for and not this.
 pub(super) fn form_chart(
     meet_chords: &[super::covered::MeetChord],
 ) -> (Vec<num_rational::BigRational>, num_rational::BigRational) {
@@ -101,7 +101,16 @@ pub(super) fn form_chart(
                 // given; rule 11's refusal is FR2's to carry).
                 None => Vec::new(),
             };
-            (origin, one + (&b.inertia[0] + &b.inertia[1]))
+            // THE TRACE ON EVERY AXIS THE BODY HAS (audit N-4). The bound
+            // above is `|c − P|² ≤ S` for a centre read on every axis, and
+            // `S` must be the second moment on every axis for it to hold: it
+            // read `inertia[0] + inertia[1]`, the grid plane by layout
+            // index, so two footprints apart along the frame could leave the
+            // sheet and be counted `tau_refused` for the quantum's defect.
+            let trace = (0..b.n())
+                .filter_map(|i| b.moment2(i, i))
+                .fold(num_rational::BigRational::from_integer(num_bigint::BigInt::from(0)), |s, m| s + m);
+            (origin, one + trace)
         }
     }
 }

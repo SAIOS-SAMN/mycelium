@@ -105,19 +105,22 @@ pub fn rotor_and_placement_between(
 
     let mut total_rotor = Rotor::identity();
     // THE BODY'S OWN PLANES, generated from its `n` (BQ4), each read in the
-    // rotor chart's slots (51.2). A plane whose axes the alphabet has no
-    // slot for carries no letter and is not turned here (71.2(3)).
-    for (plane, slot) in a
-        .blade
-        .planes()
-        .into_iter()
-        .filter_map(|p| crate::transducer::alphabet::slot_plane(p).map(|s| (p, s)))
-    {
-        let Some(ha) = a.blade.harmonic_on_plane(plane, false) else { continue };
-        let Some(hb) = b.blade.harmonic_on_plane(plane, false) else { continue };
+    // rotor chart's slots (51.2).
+    //
+    // NOTHING IS PASSED OVER UNREAD (audit N-4). A plane `b` does not have is
+    // no rotor between the two, and refuses. A plane on which either body is
+    // isotropic has no orientation to turn, which is a reading. A plane that
+    // orients both and has no slot in the letters' chart carries a turn the
+    // seventeen cannot write (71.2(3)), and REFUSES: this `filter_map`ped
+    // such planes away and minted the rotor of the rest, a turn dropped and
+    // the result presented as whole.
+    for plane in a.blade.planes() {
+        let ha = a.blade.harmonic_on_plane(plane, false)?;
+        let hb = b.blade.harmonic_on_plane(plane, false)?;
         if (ha[0].is_zero() && ha[1].is_zero()) || (hb[0].is_zero() && hb[1].is_zero()) {
             continue;
         }
+        let slot = crate::transducer::alphabet::slot_plane(plane)?;
         if let Some((s, bv)) = rotor_between(&ha, &hb) {
             let (s, bv) = match (s.is_zero(), bv.is_zero()) {
                 (true, true) => (q(0), q(1)),

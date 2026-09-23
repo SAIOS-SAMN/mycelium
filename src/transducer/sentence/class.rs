@@ -534,10 +534,20 @@ impl ClassVector {
         // exactly what law 5 refuses of the covers.
         let placement = |c: &Versor| -> Option<(num_rational::BigRational, num_rational::BigRational, num_rational::BigRational)> {
             // The class's placement is the alphabet's three base axes (its
-            // key's Burgers segment is three rationals, 51.2).
+            // key's Burgers segment is three rationals, 51.2). It is read on
+            // EVERY axis the carriage has, and a component past the third
+            // REFUSES — which reads here as a rise, so the move is refused —
+            // rather than being cut off unseen (audit N-4; the key's own
+            // recut is BQ5b's).
             let rho = element::rho_of(c)?;
-            let img = crate::transducer::cga::base_at(&c.sandwich(&crate::transducer::cga::point_at(&[])), 3)?;
-            Some((&img[0] / &rho, &img[1] / &rho, &img[2] / &rho))
+            let at = usize::from(c.n()).max(3);
+            let img = crate::transducer::cga::base_at(&c.sandwich(&crate::transducer::cga::point_at(&[])), at)?;
+            match img.as_slice() {
+                [x, y, z, rest @ ..] if rest.iter().all(num_traits::Zero::is_zero) => {
+                    Some((x / &rho, y / &rho, z / &rho))
+                }
+                _ => None,
+            }
         };
         // ONE FIBER OR TWO. The placements compatible with a rotation `R`
         // are constrained by `R` — `T(p − Rp)` is a base point under one
