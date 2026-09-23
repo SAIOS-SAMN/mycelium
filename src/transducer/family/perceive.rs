@@ -386,7 +386,7 @@ impl DemandTally {
 ///
 /// THE THREE GATES, AND EVERY ONE OF THEM CAN REFUSE:
 ///
-/// 1. [`blade::NoFrame::Oblique`] and nothing else. `Mirrored` is
+/// 1. [`blade::NoPose::Oblique`] and nothing else. `Mirrored` is
 ///    improper and `Incongruent` is the crystallographic restriction —
 ///    both permanent, and a demand minted from either would ask the court
 ///    to adjoin a generator for a relation that HAS no rotor. That is the
@@ -402,7 +402,10 @@ impl DemandTally {
 ///
 /// THE PLANE IS THE SENSOR'S OWN. `deviatoric` reads `(Ixx−Iyy, 2Ixy)`,
 /// which is `harmonic_on_plane((PLANE_ROW, PLANE_COL))` — the arc turns
-/// in `e₁e₂` and the demand says so rather than defaulting.
+/// in `e₁e₂` and the demand says so rather than defaulting. It stays the
+/// sensor's after FR1: `Oblique` is the square base's question and the
+/// witness a Gaussian arc in that plane, so the pose over the tube
+/// ([`blade::relative_pose`]) does not replace it here.
 fn oblique_demand(a: &Body, b: &Body, chart: &Invariant) -> Option<Demanded> {
     use crate::transducer::alphabet::{PLANE_COL, PLANE_ROW};
     use crate::transducer::blade;
@@ -410,7 +413,7 @@ fn oblique_demand(a: &Body, b: &Body, chart: &Invariant) -> Option<Demanded> {
     // THE PLANE IS THE SENSOR'S OWN, named once for the frame, the arc and
     // the demand (BQ4).
     let sensor = crate::transducer::base::GRID_PLANE;
-    if blade::relative_rotor(&a.shape.blade, &b.shape.blade, sensor).err() != Some(blade::NoFrame::Oblique) {
+    if blade::relative_rotor(&a.shape.blade, &b.shape.blade, sensor).err() != Some(blade::NoPose::Oblique) {
         note_demand(|t| t.permanent += 1);
         return None;
     }

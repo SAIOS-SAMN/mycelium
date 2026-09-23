@@ -23,7 +23,7 @@ use super::*;
 /// that actually spoke and left links were never classified at all.
 ///
 /// THE TWO ARMS DIFFER IN PERMANENCE, which is the same distinction V1
-/// drew for `NoFrame` one dimension down:
+/// drew for `NoPose` one dimension down:
 ///
 /// ```text
 ///   OrbitObstruction   δ¹ ≠ 0 — an orbit carries non-trivial holonomy, a

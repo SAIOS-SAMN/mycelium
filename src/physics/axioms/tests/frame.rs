@@ -53,7 +53,7 @@ fn the_half_turn_is_determined_between_a_body_and_its_dilate() {
     assert_ne!(l.blade.support.len(), l2.blade.support.len(), "four against sixteen");
     let frame = blade::relative_rotor(&l.blade, &l2.blade).expect("a turn");
     assert!(
-        matches!(frame, blade::Frame::Turn(_)),
+        matches!(frame, blade::Pose::Turn(_)),
         "determined across a dilation, not HalfOpen: {frame:?}"
     );
 }
@@ -98,7 +98,7 @@ fn v1_an_unlike_pair_is_permanently_unturned() {
     let s = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
     assert_eq!(
         blade::relative_rotor(&l.blade, &s.blade).err(),
-        Some(blade::NoFrame::Incongruent),
+        Some(blade::NoPose::Incongruent),
         "an invariant separates them, so no vocabulary reaches them"
     );
 }
@@ -137,7 +137,7 @@ fn v1_the_open_arm_needs_both_gates_and_a_dilate_passes_only_one() {
     );
     assert_eq!(
         blade::relative_rotor(&l.blade, &j.blade).err(),
-        Some(blade::NoFrame::Mirrored),
+        Some(blade::NoPose::Mirrored),
         "and the odd gate is what refuses it"
     );
 }
@@ -195,7 +195,7 @@ fn v1_a_reflection_is_proved_improper_across_a_dilation() {
     assert_ne!(j.blade.support.len(), l2.blade.support.len(), "four against sixteen");
     assert_eq!(
         blade::relative_rotor(&j.blade, &l2.blade).err(),
-        Some(blade::NoFrame::Mirrored),
+        Some(blade::NoPose::Mirrored),
         "improper across a dilation, which no cell test can reach"
     );
 }
@@ -222,7 +222,7 @@ fn v1_an_achiral_pair_is_still_refused_by_the_scale_certificate() {
     assert!(!blade::dilation_certified(&d2.blade, &l3.blade), "not similar");
     assert_eq!(
         blade::relative_rotor(&d2.blade, &l3.blade).err(),
-        Some(blade::NoFrame::Incongruent),
+        Some(blade::NoPose::Incongruent),
         "chirality permits it; the tower refuses it; the tower wins"
     );
 }
@@ -262,9 +262,9 @@ fn v1_the_refusals_of_the_oblique_branch_stay_apart() {
     assert_eq!(
         read,
         [
-            Some(blade::NoFrame::Mirrored),
-            Some(blade::NoFrame::Incongruent),
-            Some(blade::NoFrame::Incongruent),
+            Some(blade::NoPose::Mirrored),
+            Some(blade::NoPose::Incongruent),
+            Some(blade::NoPose::Incongruent),
             None,
         ],
         "improper, unlike, unlike, and a turn across a dilation"

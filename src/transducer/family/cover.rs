@@ -129,6 +129,10 @@ pub struct CoverTally {
     /// defect as reporting "never fired" and "fired and was identity"
     /// together.
     pub frame_half_open: u64,
+    /// FR1 — the pieces whose own pose was read on the tube, the domain or
+    /// the codomain extending off the sensor's plane. The regime, beside the
+    /// three outcomes above, not a fourth.
+    pub pose_tube: u64,
     pub tau_unfooted: u64,
     pub tau_met: u64,
     pub tau_refused: u64,
@@ -242,7 +246,7 @@ pub(crate) struct Supports {
 /// IT CARRIED ONLY THE CODOMAIN (56.5, ruled 2026-09-22). `placed` held
 /// `Supports { domain, codomain }` and was consumed locally to build the
 /// meets index, so the domain was computed and dropped. A chart's FRAME
-/// is how that chart turned under carrying — `θ = relative_rotor(domain,
+/// is how that chart turned under carrying — `θ = relative_pose(domain,
 /// codomain)`, the piece against ITSELF — and with only the landing in
 /// hand no interface could ask it. Comparing one piece's landing to
 /// another's asks whether two different pieces are congruent, which is a

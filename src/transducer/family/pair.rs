@@ -76,7 +76,7 @@ pub(crate) fn meet_edge(
     // meets — a reading of the pipeline, not of the scene.
     //
     // ```text
-    //     θ_x  = relative_rotor(domain_x, codomain_x)    the piece's OWN turn
+    //     θ_x  = relative_pose(domain_x, codomain_x)     the piece's OWN pose
     //     g_ab = (θ_b · θ_a⁻¹) · γ
     // ```
     //
@@ -98,13 +98,17 @@ pub(crate) fn meet_edge(
     // the same on the line, which is the defect that let `ℓ = 1` pass as
     // a measurement of the scene.
     let own_turn = |s: &crate::transducer::family::cover::Supports| {
-        // Read on the sensor's plane, named (BQ4); the pose over the
-        // piece's tube is FR1's.
-        crate::transducer::blade::relative_rotor(
-            &crate::transducer::blade::shape_of(&s.domain).blade,
-            &crate::transducer::blade::shape_of(&s.codomain).blade,
-            crate::transducer::base::GRID_PLANE,
-        )
+        // The pose over the piece's tube (FR1, 72.1c): the sensor's plane
+        // where domain and codomain stand in one section, every axis where
+        // either extends off it.
+        let (d, c) = (
+            crate::transducer::blade::shape_of(&s.domain).blade,
+            crate::transducer::blade::shape_of(&s.codomain).blade,
+        );
+        if crate::transducer::blade::on_tube(&d, &c) {
+            crate::transducer::family::cover::tally(|t| t.pose_tube += 1);
+        }
+        crate::transducer::blade::relative_pose(&d, &c)
     };
     let framed = match (own_turn(supa), own_turn(supb)) {
         (Ok(ta), Ok(tb)) => match ta.rotor().versor_inverse() {
@@ -115,8 +119,8 @@ pub(crate) fn meet_edge(
                 // a projective class and not a determined rotor.
                 let open = matches!(
                     (&ta, &tb),
-                    (crate::transducer::blade::Frame::HalfOpen(_), _)
-                        | (_, crate::transducer::blade::Frame::HalfOpen(_))
+                    (crate::transducer::blade::Pose::HalfOpen(_), _)
+                        | (_, crate::transducer::blade::Pose::HalfOpen(_))
                 );
                 crate::transducer::family::cover::tally(|t| match open {
                     true => t.frame_half_open += 1,

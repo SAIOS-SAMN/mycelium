@@ -82,15 +82,23 @@ pub struct FieldTally {
     /// permanent, and kept apart from `mirrored` because a corpus of
     /// handed pairs and a corpus of unlike ones want different answers.
     pub incongruent: u64,
+    /// FR1 — a pair on the tube whose scale `ρ²` is not a rational square:
+    /// no versor over ℚ relates them, and nothing is claimed about whether
+    /// they are alike.
+    pub irrational: u64,
     pub half_open: u64,
     pub condensed: u64,
+    /// FR1 — THE PAIRS WHOSE POSE WAS READ ON THE TUBE, either body
+    /// extending off the sensor's plane. The regime, not an outcome: each of
+    /// these also lands in one arm above or in `condensed`.
+    pub tube: u64,
 }
 
 thread_local! {
     static FIELD: Cell<FieldTally> = const { Cell::new(FieldTally {
         offered: 0, unlifted: 0, apart: 0, contained: 0, sheared: 0,
         bodiless: 0, isotropy: 0, unoriented: 0, oblique: 0, mirrored: 0,
-        incongruent: 0, half_open: 0, condensed: 0,
+        incongruent: 0, irrational: 0, half_open: 0, condensed: 0, tube: 0,
     }) };
 }
 
@@ -121,24 +129,27 @@ impl FieldTally {
     /// A valve that is starved and a valve that is closed look the same on
     /// a total; they do not here. `offered` is what arrived, each named
     /// count is what one valve turned away, and `condensed` is what came
-    /// out the far end. The seven frame arms are the six `NoFrame`
-    /// refusals plus the parity class, because a refusal that does not say
+    /// out the far end. The eight pose arms are the seven `NoPose`
+    /// refusals plus the parity class, and `tube` beside them is the regime
+    /// they were read in (FR1), because a refusal that does not say
     /// which refusal it is answers nothing (rule 11).
     pub fn line(&self) -> String {
         format!(
             "offered {} unlifted {} | horizon: apart {} contained {} \
-             | frame: bodiless {} isotropy {} unoriented {} oblique {} \
-             mirrored {} incongruent {} half-open {} | CONDENSED {}",
+             | pose: tube {} | bodiless {} isotropy {} unoriented {} oblique {} \
+             mirrored {} incongruent {} irrational {} half-open {} | CONDENSED {}",
             self.offered,
             self.unlifted,
             self.apart,
             self.contained,
+            self.tube,
             self.bodiless,
             self.isotropy,
             self.unoriented,
             self.oblique,
             self.mirrored,
             self.incongruent,
+            self.irrational,
             self.half_open,
             self.condensed,
         )
@@ -573,12 +584,17 @@ pub(crate) fn named_faces(
             //     let an unoriented reflection pass without paying. It
             //     refuses until the odd harmonic `m = 3` exists to resolve
             //     the half turn (57.3, 65.6).
-            // On the sensor's plane, named (BQ4); FR1 reads the pose.
-            match blade::relative_rotor(ba, bb, crate::transducer::base::GRID_PLANE) {
-                Ok(blade::Frame::Turn(_)) => {}
+            // The pose over the two tubes (FR1, 72.1c): the sensor's plane
+            // where both stand in one section, every axis where either
+            // extends off it.
+            if blade::on_tube(ba, bb) {
+                note_field(|t| t.tube += 1);
+            }
+            match blade::relative_pose(ba, bb) {
+                Ok(blade::Pose::Turn(_)) => {}
                 // A ROTOR EXISTS AND ITS PARITY DOES NOT. This is the
                 // `m = 3` gap: a projective class, not a determined turn.
-                Ok(blade::Frame::HalfOpen(_)) => {
+                Ok(blade::Pose::HalfOpen(_)) => {
                     note_field(|t| t.half_open += 1);
                     continue;
                 }
@@ -587,12 +603,13 @@ pub(crate) fn named_faces(
                 // exists and the alphabet cannot spell it, which is 37.7.
                 Err(why) => {
                     note_field(|t| match why {
-                        blade::NoFrame::Bodiless => t.bodiless += 1,
-                        blade::NoFrame::Isotropy => t.isotropy += 1,
-                        blade::NoFrame::Unoriented => t.unoriented += 1,
-                        blade::NoFrame::Oblique => t.oblique += 1,
-                        blade::NoFrame::Mirrored => t.mirrored += 1,
-                        blade::NoFrame::Incongruent => t.incongruent += 1,
+                        blade::NoPose::Bodiless => t.bodiless += 1,
+                        blade::NoPose::Isotropy => t.isotropy += 1,
+                        blade::NoPose::Unoriented => t.unoriented += 1,
+                        blade::NoPose::Oblique => t.oblique += 1,
+                        blade::NoPose::Mirrored => t.mirrored += 1,
+                        blade::NoPose::Incongruent => t.incongruent += 1,
+                        blade::NoPose::Irrational => t.irrational += 1,
                     });
                     continue;
                 }

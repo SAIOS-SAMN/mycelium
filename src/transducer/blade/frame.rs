@@ -188,7 +188,10 @@ fn handedness(a: &Blade, b: &Blade, plane: (usize, usize)) -> Handedness {
     }
 }
 
-/// A CHART'S FRAME, and whether its half turn is settled (56.5).
+/// A RELATIVE POSE, and whether its half turn is settled (56.5; named
+/// `Frame` until FR1 — 72.1c keeps "frame" for 1.4's sense, the sensor's
+/// plane with a carriage, and a body's orientation with its placement is
+/// its POSE).
 ///
 /// `Turn` is a rotor the SUPPORT confirmed. `HalfOpen` is one the even
 /// moments fixed only mod `π`: `u` and `h₄` satisfy `u(−x) = u(x)`, so no
@@ -208,17 +211,17 @@ fn handedness(a: &Blade, b: &Blade, plane: (usize, usize)) -> Handedness {
 /// Closing it locally instead needs an odd invariant (a third harmonic, a
 /// directed contour), which is not carried here.
 #[derive(Clone, Debug)]
-pub enum Frame {
+pub enum Pose {
     Turn(Mv),
     HalfOpen(Mv),
 }
 
-impl Frame {
+impl Pose {
     /// The rotor either way — the caller that only needs to act takes
     /// this; the caller that must not confuse the two matches instead.
     pub fn rotor(&self) -> &Mv {
         match self {
-            Frame::Turn(r) | Frame::HalfOpen(r) => r,
+            Pose::Turn(r) | Pose::HalfOpen(r) => r,
         }
     }
 }
@@ -249,7 +252,7 @@ impl Frame {
 /// say whether the corpus is full of unspellable turns — 37.7's condition,
 /// live — or of bodies that simply do not orient.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum NoFrame {
+pub enum NoPose {
     /// A body with no support. Nothing to orient.
     Bodiless,
     /// One body has a principal axis and the other does not, so no turn of
@@ -289,10 +292,19 @@ pub enum NoFrame {
     /// agreed far enough to get here and the cells then disagreed: a
     /// genuine difference of shape, which no turn and no mirror repairs.
     ///
-    /// Permanent, like [`NoFrame::Mirrored`], but for a different reason,
+    /// Permanent, like [`NoPose::Mirrored`], but for a different reason,
     /// and the two are kept apart because a census that merges them cannot
     /// say whether a corpus is full of handed pairs or of unlike ones.
     Incongruent,
+    /// FR1 — THE TUBES' SCALE IS NOT RATIONAL. On the tube the scale is
+    /// read from the two bodies' second moments, `ρ² = tr M_b / tr M_a`,
+    /// and where `ρ²` is not a rational square no versor over ℚ carries one
+    /// tube onto the other: a dilator needs `ρ`. Refused by its cause (rule
+    /// 4), and NOT a claim that the tubes are unlike — whether a similarity
+    /// stands at that scale is not read, so this is neither `Incongruent`
+    /// nor `Oblique` (whose question is the square base's turns, one
+    /// section's).
+    Irrational,
 }
 
 /// THE ORIENTATION VECTORS OF A PAIR. The second harmonic where the body
@@ -314,16 +326,16 @@ fn orientation_of(
     a: &Blade,
     b: &Blade,
     plane: (usize, usize),
-) -> Result<(u8, [BigRational; 2], [BigRational; 2]), NoFrame> {
+) -> Result<(u8, [BigRational; 2], [BigRational; 2]), NoPose> {
     match (deviatoric(a, plane), deviatoric(b, plane)) {
         (Some(ua), Some(ub)) => Ok((2, ua, ub)),
         (None, None) => match (quartic_harmonic(a, plane), quartic_harmonic(b, plane)) {
             (Some(qa), Some(qb)) => Ok((4, qa, qb)),
-            _ => Err(NoFrame::Unoriented),
+            _ => Err(NoPose::Unoriented),
         },
         // One has a principal axis and the other does not: no turn of one
         // is the other, whatever their sizes.
-        _ => Err(NoFrame::Isotropy),
+        _ => Err(NoPose::Isotropy),
     }
 }
 
@@ -346,7 +358,7 @@ fn orientation_of(
 /// ```
 ///
 /// Those two are precisely the `wedge == 0` branches of
-/// [`relative_rotor`]; everything else lands on [`NoFrame::Oblique`].
+/// [`relative_rotor`]; everything else lands on [`NoPose::Oblique`].
 ///
 /// PRIMITIVE, AND THAT IS NOT COSMETIC. The court reads the factor as
 /// `π_p = gcd_{ℤ[i]}(s + t·i, p)` and refuses a witness whose gcd is not
@@ -396,10 +408,11 @@ pub fn oblique_arc(a: &Blade, b: &Blade, plane: (usize, usize)) -> Option<(BigIn
 /// its odd invariant and its refusal are all read in that plane's own
 /// coordinates, and the rotor is that plane's bivector. Which planes a
 /// relation between two bodies turns across — the pose over their tubes —
-/// is FR1's reading; this answers one plane.
-pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Frame, NoFrame> {
+/// is [`super::relative_pose`]'s reading (FR1); this answers one plane, and
+/// is what the pose reads where both bodies stand in one section.
+pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pose, NoPose> {
     if a.support.is_empty() || b.support.is_empty() {
-        return Err(NoFrame::Bodiless);
+        return Err(NoPose::Bodiless);
     }
     let (order, oa, ob) = orientation_of(a, b, plane)?;
     // SIGNS ONLY, WHICH IS WHAT MAKES IT SCALE-FREE. Under a dilation by
@@ -478,15 +491,15 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Fra
         // no chirality reading at all, so it proves nothing on its own and
         // leans entirely on the certificate.
         return Err(match (handedness(a, b, plane), dilation_certified(a, b, plane)) {
-            (Handedness::Improper, _) => NoFrame::Mirrored,
-            (Handedness::Unrelated, _) | (_, false) => NoFrame::Incongruent,
-            _ => NoFrame::Oblique,
+            (Handedness::Improper, _) => NoPose::Mirrored,
+            (Handedness::Unrelated, _) | (_, false) => NoPose::Incongruent,
+            _ => NoPose::Oblique,
         });
     };
     // A BODY WITH NO CENTROID HAS NO MOMENTS, so the odd harmonic below
     // cannot be read and the pair is bodiless rather than unturned.
     if a.centroid().is_none() || b.centroid().is_none() {
-        return Err(NoFrame::Bodiless);
+        return Err(NoPose::Bodiless);
     }
     // THE HALF TURN IS A PARITY OBSTRUCTION, AND AN ODD HARMONIC CLOSES
     // IT (68, ruled 2026-09-22).
@@ -512,13 +525,13 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Fra
     // measurement this reader failed to take.
     let turns = quarter_turns(plane);
     let Some(phi) = relative_turn_ray(a, b, plane) else {
-        return Ok(Frame::HalfOpen(turns[turn_pair[0]].2.clone()));
+        return Ok(Pose::HalfOpen(turns[turn_pair[0]].2.clone()));
     };
     let q = |n: i64| BigRational::from_integer(BigInt::from(n));
     for &ix in turn_pair {
         let (cos, sin, rotor) = &turns[ix];
         if same_ray(&phi, &(q(*cos), q(*sin))) {
-            return Ok(Frame::Turn(rotor.clone()));
+            return Ok(Pose::Turn(rotor.clone()));
         }
     }
     // `φ` is determined and is not one of the candidates: the bodies are
@@ -527,8 +540,8 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Fra
     // above, asked here too, because a ruling applies to every site of its
     // shape and not only to the one that reported it.
     Err(match (handedness(a, b, plane), dilation_certified(a, b, plane)) {
-        (Handedness::Improper, _) => NoFrame::Mirrored,
-        (Handedness::Unrelated, _) | (_, false) => NoFrame::Incongruent,
-        _ => NoFrame::Oblique,
+        (Handedness::Improper, _) => NoPose::Mirrored,
+        (Handedness::Unrelated, _) | (_, false) => NoPose::Incongruent,
+        _ => NoPose::Oblique,
     })
 }

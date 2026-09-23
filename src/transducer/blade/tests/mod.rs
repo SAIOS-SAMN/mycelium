@@ -6,4 +6,5 @@ pub mod common;
 mod body;
 mod continuous;
 mod moduli;
+mod pose;
 mod surgery;

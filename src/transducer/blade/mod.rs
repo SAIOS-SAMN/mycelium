@@ -11,6 +11,7 @@ pub mod shells;
 pub mod surgery;
 pub mod continuous;
 pub mod frame;
+pub mod pose;
 pub mod strain;
 pub mod tower;
 
@@ -20,6 +21,7 @@ pub use shells::*;
 pub use surgery::*;
 pub use continuous::*;
 pub use frame::*;
+pub use pose::*;
 pub use strain::*;
 pub use tower::*;
 
@@ -42,7 +44,7 @@ pub mod sensor_plane {
     use num_bigint::BigInt;
     use num_rational::BigRational;
 
-    pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Frame, NoFrame> {
+    pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Pose, NoPose> {
         super::relative_rotor(a, b, P)
     }
     pub fn oblique_arc(a: &Blade, b: &Blade) -> Option<(BigInt, BigInt)> {

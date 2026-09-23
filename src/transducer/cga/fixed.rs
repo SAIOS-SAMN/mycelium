@@ -188,7 +188,9 @@ pub fn centre_of(m: &Mv, n: u8) -> Centre {
 /// A BASIS OF THE KERNEL of a square matrix over ℚ, by Gauss–Jordan
 /// elimination: the columns that take no pivot are the free coordinates,
 /// and each gives one kernel vector. Exact, no division by zero, no root.
-fn nullspace(mut rows: Vec<Vec<BigRational>>, cols: usize) -> Vec<Vec<BigRational>> {
+/// Any number of rows; the relative pose (FR1) solves and ranks with it, so
+/// the tree holds one elimination.
+pub fn nullspace(mut rows: Vec<Vec<BigRational>>, cols: usize) -> Vec<Vec<BigRational>> {
     let mut pivot_col: Vec<usize> = Vec::new();
     let mut r = 0usize;
     for c in 0..cols {

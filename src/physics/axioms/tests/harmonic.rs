@@ -67,7 +67,7 @@ fn a11_a_quarter_turn_mints_an_order_four_rotor() {
     let theta = blade::relative_rotor(&upright.blade, &turned.blade)
         .expect("one proper turn carries an L onto its quarter turn");
     assert!(
-        matches!(theta, blade::Frame::Turn(_)),
+        matches!(theta, blade::Pose::Turn(_)),
         "equal cardinality: the support settles the half turn, got {theta:?}"
     );
     assert!(
@@ -127,7 +127,7 @@ fn a11_a_dilated_body_keeps_its_frame() {
     let theta = blade::relative_rotor(&domino.blade, &doubled.blade)
         .expect("a dilation is a similarity and its rotation is defined");
     assert!(
-        matches!(theta, blade::Frame::HalfOpen(_)),
+        matches!(theta, blade::Pose::HalfOpen(_)),
         "a 2-fold symmetric body leaves the half turn open, got {theta:?}"
     );
     assert!(
@@ -168,7 +168,7 @@ fn a11_a_mirrored_body_mints_no_rotor() {
     // compared, which nothing in this file had ever looked at.
     assert_eq!(
         blade::relative_rotor(&l.blade, &j.blade).err(),
-        Some(blade::NoFrame::Mirrored),
+        Some(blade::NoPose::Mirrored),
         "a reflection is proved improper by the cells, not left oblique"
     );
 }
@@ -246,7 +246,7 @@ fn a11_the_even_suite_covers_the_square_lattices_whole_order_set() {
 /// and its point reflection through the centroid carry the SAME
 /// deviatoric and the SAME quartic. This is independent of the order
 /// set — it holds for `C₁` bodies on a square lattice, which is most of
-/// them — and it is why `Frame::HalfOpen` exists.
+/// them — and it is why `Pose::HalfOpen` exists.
 ///
 /// Closing it needs an ODD invariant. The 3rd harmonic is the candidate,
 /// and the reason it works is NOT that bodies have three-fold symmetry

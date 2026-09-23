@@ -380,10 +380,10 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         "  lift over {forms} corpus forms: meets {} ({} carried an edge) \
          → chords {}, within one class {}, unclassed {} \
          | axiom B: geodesic {} off-sheet {} \
-         | frames: {} framed {} half-open {} unframed \
+         | poses: {} framed {} half-open {} unframed, {} on the tube \
          | field: {} offered, {} unlifted | horizon: {} apart, {} contained \
-         | frame: {} bodiless, {} isotropy, {} unoriented, {} OBLIQUE, \
-         {} mirrored, {} half-open | {} CONDENSED \
+         | pose: {} on the tube | {} bodiless, {} isotropy, {} unoriented, {} OBLIQUE, \
+         {} mirrored, {} irrational, {} half-open | {} CONDENSED \
          | forms carrying an orbit: {with_orbits}",
         t.meets,
         t.edges,
@@ -395,15 +395,18 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         t.framed,
         t.frame_half_open,
         t.unframed,
+        t.pose_tube,
         f.offered,
         f.unlifted,
         f.apart,
         f.contained,
+        f.tube,
         f.bodiless,
         f.isotropy,
         f.unoriented,
         f.oblique,
         f.mirrored,
+        f.irrational,
         f.half_open,
         f.condensed
     );
