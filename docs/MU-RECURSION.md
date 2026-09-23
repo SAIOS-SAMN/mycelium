@@ -10999,6 +10999,43 @@ the recut after. The fleet's size for the recut — three client units on
 this host against the five minds the doctrine names — is the operator's
 decision, still open.
 
+### 78.17 The first soak after the recut: epoch 98 (2026-09-23)
+
+The operator recut the whole fleet at ff5821fe — eight units at once, no
+restarts, every mesh at its stratum, the console query by source and by
+kind live — and the fleet reads for the first time what Stage 22 built.
+E0 is ON THE FLEET (78.3). The first readings at about five minutes,
+through the console and never a grep:
+
+| reading | per voice, five voices |
+|---|---|
+| spend (SP1) | 99–139 percepts; perception 1 200–1 670 reads, orbit modes 0–145, cells 0–39, circuit modes 0–100, viscosity 540–3 501; perception left 0 frames unreached on every voice; viscosity left 0–699 trials unbounded |
+| progress (PG1), summed | contact cycles 68, curved 0, unread 31 (OR3); grade 1: 813 cells, round kept 37, every group infinite, every cell a dual frame; grade 2: 105 cells, round kept 0 |
+| courts | refused speech 2 / 3 / 2 on the three courts: a vertex not carrying its body onto its image, a glued boundary standing |
+
+**Two findings, ruled.** (1) VISCOSITY IS MOST OF THE STROKE — 28 to 67
+per cent of each voice's reads — and on a percept whose only contact
+cycle is unread every one of its 180 trials was `no-class`: the trial
+spends its read before it knows the loop has a class. Ruled (VS1b, rule
+10 and rule 11 together): a held loop's classes are read ONCE before the
+trials, and where none reads the pair is counted `no-class` without a
+read spent; the trials stay last in the percept, so a spent stroke
+leaves the instrument unread and never perception (SP1 is the proof,
+per voice). No share of the stroke is set for the instrument: a share is
+a dial. (2) THE FLEET HAS NOT READ ONE CONTACT CYCLE WITH NON-TRIVIAL
+HOLONOMY: 31 of 68 are unread through OR3 and the rest read trivial,
+and the round is kept on 37 of 813 1-cells and on no 2-cell. This is the
+baseline E1's landing reading is measured against, and it is exactly
+what the doctrine predicted: the contact step lacks its producer until
+BQ5a lands (78.6, 78.13); nothing here is a defect. EN1, BQ5a with CV1,
+SQ1 and CT1, then CT2 land in the tree during this soak and ride the
+recut after, and E1's done-when is read on the fleet then.
+
+**Owed from this window.** The five minds' curves themselves (LC1:
+dialect span, adjoined-by-closure, installed, closing) and the courts'
+phase lines with `adjoined-by-closure` at the same window are the
+landing reading of E0 and are recorded here when quoted.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
