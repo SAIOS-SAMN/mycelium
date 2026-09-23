@@ -574,6 +574,8 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         // before the recut (NB1, 78.6 choice (c)): a form read back from its
         // tape holds none.
         cells: Keyed::new(),
+        // Nor the faces' body pairs (BD2), until the recut.
+        face_bodies: Keyed::new(),
     };
     form.reindex();
     // THE CYCLE BASIS IS A THEOREM OF THE INCIDENCE, proved here the same

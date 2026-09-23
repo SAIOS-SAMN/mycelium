@@ -628,10 +628,12 @@ impl Orbit {
 
 
 /// NB1, 78.2 — ONE CERTIFIED CELL OF THE CONTACT COMPLEX: the bodies
-/// standing together at one element of the base, each by the member keys
-/// standing on it — the coordinates the supports are keyed by, never a copy
-/// of the body's address (NB1's return) — in their own coordinate order;
-/// every element standing under exactly them,
+/// standing together at one element of the base, each by its PIECE — its
+/// support, canonical, the coordinate a body has (78.14, BD2; C3): a member
+/// key names a vertex on a chart, whose support can fall into several
+/// bodies, and a nucleus is the body's order-0 and order-1 reading, a
+/// projection — in their own coordinate order; every element standing
+/// under exactly them,
 /// its witnesses; and the MEET of their nuclei — the round the bodies
 /// share, at the grade their number gives (`k + 1` bodies, a `k`-cell).
 ///
@@ -642,7 +644,7 @@ impl Orbit {
 /// it (`Complex::ascend`), in the circuit's own order (NB1 choice (b)).
 #[derive(Debug, Clone)]
 pub struct FormCell {
-    pub bodies: Vec<Vec<Vec<u8>>>,
+    pub bodies: Vec<Vec<u8>>,
     pub witnesses: Vec<crate::transducer::base::Site>,
     /// CS1 — THE CELL'S CONSTRUCTORS: its bodies' nuclei, in the bodies'
     /// order, each a reflection. `None` where a body's nucleus did not read
@@ -813,9 +815,15 @@ pub struct Form {
     /// sentence to one demand vertex per pair. Written by `reindex`.
     pub demands: Keyed<u16, coord::DemandVertex>,
     /// NB1 — THE CONTACT COMPLEX'S CERTIFIED CELLS, keyed by their bodies'
-    /// addresses written in order: one per standing set, read by perception
-    /// and held in memory only (see [`FormCell`]).
+    /// pieces written inline, each framed: one per standing set, read by
+    /// perception and held in memory only (see [`FormCell`]).
     pub cells: Keyed<FormCell>,
+    /// BD2 — THE BODY PAIR EACH CONTACT FACE RUNS BETWEEN, by face index:
+    /// the two bodies' pieces, the lesser first. `FormFace` carries no body,
+    /// so a circuit's step reads its body off the face it crosses here —
+    /// never off its member (checklist (m)). In memory only; the tape at the
+    /// recut (BQ5b).
+    pub face_bodies: Keyed<(Vec<u8>, Vec<u8>)>,
 }
 
 impl Default for Form {
@@ -845,6 +853,7 @@ impl Default for Form {
             by_unfolded: Keyed::new(),
             demands: Keyed::new(),
             cells: Keyed::new(),
+            face_bodies: Keyed::new(),
         }
     }
 }

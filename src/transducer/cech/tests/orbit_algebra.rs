@@ -47,7 +47,54 @@ fn a_turn_that_carries_the_round_refuses_with_grade_mode_and_plane() {
     assert_eq!(*grade, 2, "the failing grade rides the refusal");
     let [f] = failures.as_slice() else { panic!("one failing mode: {failures:?}") };
     assert_eq!((f.circuit, f.mode, f.kind, f.plane.clone()), (1, 0, BivectorKind::Elliptic, vec![E2 | E3]));
-    assert!(!f.bracket.is_zero(), "the bracket is the direction the round is carried");
+    assert!(
+        matches!(&f.round, RoundKept::Carried(bracket) if !bracket.is_zero()),
+        "the bracket is the direction the round is carried: {:?}",
+        f.round
+    );
+}
+
+/// CG1b — A TURN INSIDE THE SPAN KEEPS THE ROUND AND MOVES THE CONSTRUCTORS:
+/// the quarter turn in `e₁₂` keeps `e₁ ∧ e₂` and carries `e₁` onto `e₂`'s
+/// ray — a permutation of the two. A turn by `(3, 4, 5)` in the same plane
+/// keeps the round and carries every nucleus off the set.
+#[test]
+fn a_turn_inside_the_span_keeps_the_round_and_not_the_constructors() {
+    let (m, nuclei) = round();
+    let quarter = read_cell(1, Some(&m), Some(&nuclei), &[Some(cga::rotator(&q(1, 1), &q(1, 1)))], &mut stroke());
+    assert_eq!((quarter.congruence.clone(), quarter.permutes.clone()), (Congruence::Congruent, Permutes::All));
+    assert_eq!(quarter.modes[0].permutation, Some(vec![1, 0]), "e₁ ↦ e₂, e₂ ↦ −e₁: the swap, as rays");
+    let rosette = read_cell(1, Some(&m), Some(&nuclei), &[Some(cga::rotator(&q(3, 1), &q(4, 1)))], &mut stroke());
+    assert_eq!(rosette.congruence, Congruence::Congruent, "the round is kept");
+    assert_eq!(rosette.permutes, Permutes::Moves(vec![(0, 0)]), "and the constructors are not");
+}
+
+/// CG1b — THE ROUND REVERSED IS THE HELD ℤ₂, NEVER INCONGRUENT: a half turn
+/// in `e₂₃` carries `e₁ ∧ e₂` to `−e₁ ∧ e₂`, and it permutes the
+/// constructors (`e₁` fixed, `e₂` onto its own ray).
+#[test]
+fn a_reversed_round_reads_the_held_z2() {
+    let (m, nuclei) = round();
+    let half = Mv::blade(E2 | E3, q(1, 1));
+    let cell = read_cell(1, Some(&m), Some(&nuclei), &[Some(half)], &mut stroke());
+    assert_eq!(cell.modes[0].round, RoundKept::Reversed);
+    assert_eq!(cell.congruence, Congruence::HeldZ2 { reversed: 1 });
+    assert_eq!(cell.permutes, Permutes::All);
+}
+
+/// A ZERO MEET IS NO ROUND: five nuclei in a four-dimensional span wedge to
+/// zero, which commutes with everything — degeneration, not invariance. The
+/// Gram form reads the configuration in its place.
+#[test]
+fn a_zero_meet_is_no_round_and_the_gram_reads_in_its_place() {
+    let nuclei: Vec<Mv> = [E1, E2, E3, cga::EP, E1].iter().enumerate().map(|(i, &m)| Mv::blade(m, q(i as i64 + 1, 1))).collect();
+    let m = meet_of(&nuclei).expect("the nuclei wedge");
+    assert!(m.is_zero(), "dependent nuclei: the meet vanishes");
+    let turn = cga::rotator(&q(1, 1), &q(1, 1));
+    let cell = read_cell(4, Some(&m), Some(&nuclei), &[Some(turn)], &mut stroke());
+    assert_eq!(cell.congruence, Congruence::NoRound, "never Congruent");
+    let g = cell.gram.expect("the Gram form reads");
+    assert_eq!((g.rank, g.dependent()), (4, 1), "four directions, one dependence");
 }
 
 /// COHERENCE IS JOINT: a rosette leaves the cell quasi-periodic and HELD,

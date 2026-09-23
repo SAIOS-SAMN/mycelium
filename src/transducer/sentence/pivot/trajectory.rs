@@ -18,9 +18,6 @@ struct PendingStep {
 
 pub(super) struct PendingCircuit {
     chord: u16,
-    /// The circuit's members, in walk order — where a cell reads whether the
-    /// circuit crosses it (CG1).
-    members: Vec<Vec<u8>>,
     /// Its whole transport by the one composite reader, `None` where the
     /// edge half was refused (OR3).
     composite: Option<element::Versor>,
@@ -52,12 +49,14 @@ pub(super) fn note_circuit(r: impl FnOnce() -> PendingCircuit) {
     });
 }
 
-/// THE CIRCUITS THE PERCEPT WALKED, each by its members and its composite —
-/// what a cell's orbit algebra reads (CG1), taken off the walk that already
-/// ran and never by walking again. Empty where nobody armed the list.
-pub fn walked_circuits() -> Vec<(Vec<Vec<u8>>, Option<element::Versor>)> {
+/// THE CIRCUITS THE PERCEPT WALKED, each by the faces its steps crossed and
+/// its composite — what a cell's orbit algebra reads (CG1): a step's body
+/// is read off the face it crosses (BD2), never derived from its member.
+/// Taken off the walk that already ran, never by walking again; empty where
+/// nobody armed the list.
+pub fn walked_circuits() -> Vec<(Vec<u16>, Option<element::Versor>)> {
     PENDING.with(|c| match c.borrow().as_ref() {
-        Some(held) => held.iter().map(|p| (p.members.clone(), p.composite.clone())).collect(),
+        Some(held) => held.iter().map(|p| (p.steps.iter().map(|s| s.face).collect(), p.composite.clone())).collect(),
         None => Vec::new(),
     })
 }
@@ -106,12 +105,7 @@ pub fn take_circuits() -> Option<Circuits> {
 /// oriented the way the circuit runs before it is read; the composite runs
 /// on through it, and a step that is unread or on the cone leaves every
 /// later composite unread (rule 11).
-pub(super) fn read_circuit(
-    chord: u16,
-    members: &[Vec<u8>],
-    carried: &PathCarried,
-    faces: &[FormFace],
-) -> PendingCircuit {
+pub(super) fn read_circuit(chord: u16, carried: &PathCarried, faces: &[FormFace]) -> PendingCircuit {
     let mut composite: Option<element::Versor> = Some(element::identity_versor());
     let steps = carried
         .steps
@@ -131,7 +125,7 @@ pub(super) fn read_circuit(
             PendingStep { face: s.face, forward: s.forward, refracted, oriented, after }
         })
         .collect();
-    PendingCircuit { chord, members: members.to_vec(), composite: carried.composite(), steps }
+    PendingCircuit { chord, composite: carried.composite(), steps }
 }
 
 /// A versor's ray in its canonical coordinates, each non-zero blade and its

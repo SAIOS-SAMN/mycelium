@@ -275,12 +275,28 @@ pub(crate) fn read_body_pair_key(k: &[u8]) -> Option<(coord::Piece, coord::Piece
 }
 
 /// A CONTACT BETWEEN TWO BODIES, AS THE CORNER PASS GATHERS IT: the shared
-/// boundary elements, and the members standing at each side of them.
+/// boundary elements, the members standing at each side of them, and the
+/// two bodies' pieces, the lesser first (BD2).
 #[derive(Default)]
 struct Gathered {
     elements: Vec<Site>,
     left: Vec<Vec<u8>>,
     right: Vec<Vec<u8>>,
+    bodies: (Vec<u8>, Vec<u8>),
+}
+
+/// BD2 — THE BODY PAIR EACH CONTACT RUNS BETWEEN, keyed by its interface
+/// ([`interface_key`]): the two bodies' pieces, the lesser first.
+pub(crate) type ContactBodies = crate::network::nerve::Keyed<(Vec<u8>, Vec<u8>)>;
+
+/// An interface's key: its elements' own coordinates, each framed, in the
+/// interface's order.
+pub(crate) fn interface_key(interface: &[Site]) -> Vec<u8> {
+    let mut k = Vec::new();
+    for s in interface {
+        crate::transducer::address::put_bytes(&mut k, &s.key());
+    }
+    k
 }
 
 /// Faces the bundle names: star from the Frame (when the form carries one),
@@ -319,12 +335,18 @@ pub(crate) fn named_faces(
     named_incidence(frame, supports).0
 }
 
-/// THE FACES THE BUNDLE NAMES, and the CONTACT COMPLEX'S CERTIFIED CELLS read
-/// on the same pass (NB1): one reading of the occupancy, never two.
+/// WHAT ONE READ OF THE OCCUPANCY NAMES: the faces, the contact complex's
+/// certified cells, and each contact's body pair.
+pub(crate) type SceneIncidence =
+    (Vec<NamedFace>, crate::network::nerve::Keyed<crate::transducer::sentence::FormCell>, ContactBodies);
+
+/// THE FACES THE BUNDLE NAMES, the CONTACT COMPLEX'S CERTIFIED CELLS, and
+/// each contact's body pair, read on the same pass (NB1, BD2): one reading
+/// of the occupancy, never two.
 pub(crate) fn named_incidence(
     frame: Option<&[u8]>,
     supports: &crate::network::nerve::Keyed<Vec<Site>>,
-) -> (Vec<NamedFace>, crate::network::nerve::Keyed<crate::transducer::sentence::FormCell>) {
+) -> SceneIncidence {
     let mut related: crate::network::nerve::Keyed<Named> = crate::network::nerve::Keyed::new();
     if let Some(frame) = frame {
         for (mk, _) in supports.scoped() {
@@ -473,56 +495,39 @@ pub(crate) fn named_incidence(
                 .and_then(|n| crate::transducer::cech::meet_of(&n))
         },
     );
-    // NB1's return (coordinates, not keys) — EACH BODY BY ITS MEMBERS: the
-    // member keys standing on its sites, the coordinates `supports` is keyed
-    // by. A body's address is located through them and never copied into a
-    // cell or its key.
-    let mut members_of: Vec<Vec<Vec<u8>>> = vec![Vec::new(); positions.len()];
-    for (at, &root) in body.iter().enumerate() {
-        if let (Some(o), Some(ms)) = (held.get(at), members_of.get_mut(root)) {
-            ms.extend(o.members.iter().cloned());
-        }
-    }
-    for ms in members_of.iter_mut() {
-        ms.sort_unstable();
-        ms.dedup();
-    }
+    // 78.14, BD2 — EACH BODY BY ITS PIECE: its support, canonical, the
+    // coordinate a body has. A member key names a vertex on a chart whose
+    // support can fall into several bodies (measured on the corpus: keyed by
+    // member keys alone, a 2-cell and two 1-cells of one form collided and
+    // were lost), and a nucleus is the body's order-0 and order-1 reading,
+    // a projection that two bodies can share. A piece is small (C3); the
+    // cell holds its bodies' pieces and its key writes them inline, framed.
     let mut cells: crate::network::nerve::Keyed<crate::transducer::sentence::FormCell> =
         crate::network::nerve::Keyed::new();
     for c in certified {
-        // Each body with its nucleus, filed by the body's member keys written
-        // inline and framed, so the bodies — and the constructors riding
-        // them — stand in their own coordinate order, the order the cell's
-        // key writes; two bodies whose members concatenate alike key apart.
-        //
-        // AND BY ITS ADDRESS, FRAMED BESIDE THEM: one member's support can
-        // fall into several bodies (measured on the corpus: a 2-cell and two
-        // 1-cells of one form stood under shared member keys), so member
-        // keys alone do not name a body, and keyed by them alone those cells
-        // collided and were lost. The address names the body in the key and
-        // is never carried in the cell (C3, NB1's return).
-        let mut by_body: crate::network::nerve::Keyed<(Vec<Vec<u8>>, Option<crate::transducer::cga::Mv>)> =
+        // Each body with its nucleus, filed by its framed piece, so the bodies
+        // — and the constructors riding them — stand in their own coordinate
+        // order, the order the cell's key writes.
+        let mut by_body: crate::network::nerve::Keyed<(Vec<u8>, Option<crate::transducer::cga::Mv>)> =
             crate::network::nerve::Keyed::new();
         for &m in &c.members {
-            let (Some(ms), Some(address)) = (members_of.get(m), address_of.get(m)) else { continue };
-            let mut body_key: Vec<u8> = (ms.len() as u32).to_le_bytes().to_vec();
-            for mk in ms {
-                crate::transducer::address::put_bytes(&mut body_key, mk);
-            }
-            crate::transducer::address::put_bytes(&mut body_key, address);
-            by_body.insert(&body_key, (ms.clone(), nucleus_of.get(m).cloned().flatten()));
+            let Some(piece) = address_of.get(m) else { continue };
+            let mut body_key: Vec<u8> = Vec::new();
+            crate::transducer::address::put_bytes(&mut body_key, piece);
+            by_body.insert(&body_key, (piece.clone(), nucleus_of.get(m).cloned().flatten()));
         }
         if by_body.len() != c.members.len() {
             continue;
         }
         let key: Vec<u8> = by_body.scoped().flat_map(|(k, _)| k.to_vec()).collect();
-        let (bodies, nuclei): (Vec<Vec<Vec<u8>>>, Vec<Option<crate::transducer::cga::Mv>>) =
+        let (bodies, nuclei): (Vec<Vec<u8>>, Vec<Option<crate::transducer::cga::Mv>>) =
             by_body.scoped().map(|(_, (b, s))| (b.clone(), s.clone())).unzip();
         let nuclei: Option<Vec<crate::transducer::cga::Mv>> = nuclei.into_iter().collect();
         let witnesses = c.witnesses.into_iter().map(|l| l.site).collect();
         cells.insert(&key, crate::transducer::sentence::FormCell { bodies, witnesses, nuclei });
     }
     let mut contacts: crate::network::nerve::Keyed<Gathered> = crate::network::nerve::Keyed::new();
+    let mut contact_bodies: ContactBodies = crate::network::nerve::Keyed::new();
     for crate::transducer::sentence::SharedCell { i, j, .. } in
         crate::transducer::sentence::contact_cells(&positions)
     {
@@ -544,7 +549,7 @@ pub(crate) fn named_incidence(
         // of the same base.
         let Some(element) = px.site.offset(py.site.axes()) else { continue };
         if contacts.get(&k).is_none() {
-            contacts.insert(k.clone(), Gathered::default());
+            contacts.insert(k.clone(), Gathered { bodies: (ax.clone(), ay.clone()), ..Gathered::default() });
         }
         let Some(g) = contacts.get_mut(&k) else { continue };
         g.elements.push(element);
@@ -569,6 +574,9 @@ pub(crate) fn named_incidence(
             _ => None,
         };
         let Some((a, b)) = ends else { continue };
+        // BD2 — the contact's body pair, by its interface: the face built
+        // along this interface runs between these two bodies.
+        contact_bodies.insert(interface_key(&elements), g.bodies.clone());
         relate(&mut related, member_pair_key(a, b), Incidence::Contact, Some(elements));
     }
     // T4 — THE CONDENSATION PASS, WHERE THE STENCIL WAS (66, ruled
@@ -746,7 +754,7 @@ pub(crate) fn named_incidence(
             read_member_pair_key(&k).map(|(a, b)| NamedFace { a, b, named: named.clone() })
         })
         .collect();
-    (faces, cells)
+    (faces, cells, contact_bodies)
 }
 
 /// Physical size of the hue carrier. Index by hue, never search.

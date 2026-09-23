@@ -5,6 +5,7 @@ mod common;
 mod constructors;
 mod fixed;
 mod generic;
+mod gram;
 mod group;
 mod hyperboloid;
 mod modes;

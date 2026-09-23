@@ -861,7 +861,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     let mut offers: Vec<Offer> = Vec::new();
     // NB1 — the faces and the contact complex's certified cells, one read of
     // the occupancy; the cells ride the form in memory (78.6, choice (c)).
-    let (named, cells) = named_incidence(frame_member.as_deref(), &scenery.supports);
+    let (named, cells, contact_bodies) = named_incidence(frame_member.as_deref(), &scenery.supports);
     form.cells = cells;
     for nf in named {
         let (a, b, hows) = (nf.a, nf.b, nf.named.hows);
@@ -920,6 +920,10 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         };
         let mut at = Keyed::new();
         at.insert(face_pair_key(&ci, &cj), place);
+        // BD2 — a contact face's body pair, on the form's side carrier.
+        if let Some(pair) = contact_bodies.get(&super::pairing::interface_key(&interface)) {
+            form.face_bodies.insert((form.faces.len() as u32).to_be_bytes(), pair.clone());
+        }
         form.faces.push(FormFace { i, j, word, at, pairs, interface });
         drops.built += 1;
         if contact {

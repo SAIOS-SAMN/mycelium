@@ -37,7 +37,7 @@ fn one(cells: Vec<crate::transducer::sentence::FormCell>, what: &str) -> crate::
 #[test]
 fn three_bodies_meeting_at_a_corner_mint_one_two_cell_carrying_their_meet() {
     let three = bodies(&[vec![0, 0, 0], vec![1, 1, 0], vec![1, 0, 1]]);
-    let (_, cells) = named_incidence(None, &three);
+    let (_, cells, _) = named_incidence(None, &three);
     let c = one(by_grade(&cells, 2), "one 2-cell");
     assert_eq!(c.witnesses, vec![Site::new(vec![2, 2, 2])], "the corner all three stand in");
     let meet = c.meet().expect("each nucleus reads");
@@ -45,7 +45,7 @@ fn three_bodies_meeting_at_a_corner_mint_one_two_cell_carrying_their_meet() {
     assert_eq!(by_grade(&cells, 1).len(), 3, "and its three faces stand as the pairs' own cells");
 
     let four = bodies(&[vec![0, 0, 0], vec![1, 1, 0], vec![1, 0, 1], vec![0, 1, 1]]);
-    let (_, cells) = named_incidence(None, &four);
+    let (_, cells, _) = named_incidence(None, &four);
     let c = one(by_grade(&cells, 3), "one 3-cell");
     assert_eq!(c.bodies.len(), 4, "four bodies at one corner are ONE cell, not four triples");
     assert!(by_grade(&cells, 2).is_empty(), "its 2-faces are read off it, never minted as subsets");
@@ -53,20 +53,47 @@ fn three_bodies_meeting_at_a_corner_mint_one_two_cell_carrying_their_meet() {
 
 /// ONE MEMBER, TWO BODIES, ONE CELL: a member whose cubes touch only along
 /// an edge stands as two bodies, and with a third member's cube at their
-/// shared corner the three bodies mint one 2-cell. Two of its bodies carry
-/// the same member keys, so member keys alone do not name a body; the cell
-/// is kept, never dropped for the collision (NB1's return, measured on the
-/// corpus).
+/// shared corner the three bodies mint one 2-cell. Keyed by member keys the
+/// member's two bodies collided (measured on the corpus); keyed by their
+/// pieces they stand apart (BD2).
 #[test]
 fn two_bodies_of_one_member_stand_in_one_cell_apart() {
     let mut k = crate::network::nerve::Keyed::new();
     k.insert(member(1), vec![Site::new(vec![0, 0, 0]), Site::new(vec![1, 1, 0])]);
     k.insert(member(2), vec![Site::new(vec![1, 0, 1])]);
-    let (_, cells) = named_incidence(None, &k);
+    let (_, cells, _) = named_incidence(None, &k);
     let c = one(by_grade(&cells, 2), "one 2-cell over three bodies");
     assert_eq!(c.bodies.len(), 3, "three bodies, two of them one member's");
-    assert_eq!(c.bodies.iter().filter(|b| **b == vec![member(1)]).count(), 2, "that member stands as two bodies");
+    let mut pieces = c.bodies.clone();
+    pieces.dedup();
+    assert_eq!(pieces.len(), 3, "three distinct pieces: the member's two bodies stand apart");
     assert!(c.meet().is_some_and(|m| !m.is_zero()), "and the cell carries its meet");
+}
+
+/// BD2 — A STEP'S BODY IS READ OFF THE FACE IT CROSSES: a circuit crossing
+/// the contact face between the cell's two bodies is the cell's; one
+/// crossing a face with no body pair on the carrier, or a pair outside the
+/// cell, is not — whatever members it visits.
+#[test]
+fn a_circuit_crosses_a_cell_by_the_body_pair_of_the_face_it_steps_over() {
+    use crate::transducer::cga::{self, Mv};
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let (p, r, s) = (vec![1u8], vec![2u8], vec![3u8]);
+    let mut form = crate::transducer::sentence::Form::default();
+    let nuclei = vec![Mv::blade(cga::E1, q(1)), Mv::blade(cga::E2, q(1))];
+    let cell = crate::transducer::sentence::FormCell { bodies: vec![p.clone(), r.clone()], witnesses: Vec::new(), nuclei: Some(nuclei) };
+    form.cells.insert([0u8], cell);
+    form.face_bodies.insert(0u32.to_be_bytes(), (p.clone(), r.clone()));
+    form.face_bodies.insert(2u32.to_be_bytes(), (p, s));
+    let turn = cga::rotator(&q(1), &q(1));
+    let walked = vec![
+        (vec![1u16, 0], Some(turn.clone())),
+        (vec![1u16, 3], Some(turn.clone())),
+        (vec![2u16], Some(turn)),
+    ];
+    let cells = crate::transducer::family::comprehend::cell_algebras(&form, &walked, &mut crate::physics::Physics::default().stroke_n(1 << 16));
+    let [c] = cells.as_slice() else { panic!("one cell") };
+    assert_eq!(c.circuits, 1, "only the circuit over face 0, between the cell's two bodies, crosses it");
 }
 
 /// THE PAIRWISE READING OF THE SAME THREE CARRIES NO GRADE-3 CONTENT
@@ -91,7 +118,7 @@ fn a_pairwise_loop_of_the_same_three_reads_no_grade_three_content() {
 #[test]
 fn at_four_axes_four_bodies_at_one_element_mint_a_three_cell() {
     let four = bodies(&[vec![0, 0, 0, 0], vec![1, 1, 0, 0], vec![1, 0, 1, 0], vec![1, 0, 0, 1]]);
-    let (_, cells) = named_incidence(None, &four);
+    let (_, cells, _) = named_incidence(None, &four);
     let c = one(by_grade(&cells, 3), "one 3-cell at n = 4");
     assert_eq!(c.witnesses, vec![Site::new(vec![2, 2, 2, 2])], "the corner of ℤ⁴ the four share");
     assert!(!c.meet().expect("each nucleus reads").grade(4).is_zero(), "their meet is a grade-4 blade");

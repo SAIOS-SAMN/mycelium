@@ -8,6 +8,7 @@
 mod constructors;
 mod embedding;
 mod fixed;
+mod gram;
 mod group;
 mod hyperboloid;
 mod modes;
@@ -23,6 +24,7 @@ pub use embedding::{
     rotator_on_blade, sphere_at, translator_at,
 };
 pub use fixed::{centre_of, nullspace, Centre, PoleAt};
+pub use gram::{gram_form, pair_regime, read_gram, signature, vector_rank, GramReading, PairRegime};
 pub use group::{dilator, is_versor, projective_ratio, reflector};
 pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_lamina, hyperboloid_pole};
 pub use modes::{mode_order, modes, Mode, Undecomposed};
