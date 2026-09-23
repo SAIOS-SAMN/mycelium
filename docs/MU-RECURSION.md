@@ -10944,6 +10944,61 @@ inversive product, it carries a sign and has no side to take a root of.
 odd products extend MR1 (MR1b) rather than open a row; the whole rides
 with GR2, whose second half it is.
 
+### 78.16 The recut checklist, and the instruments that ride it (ruled 2026-09-23 on the implementor's pre-recut findings)
+
+The operator asked whether the fleet is ready to recut and soak on the
+live wire. The recut is the operator's (§10, 78.3); what the doctrine
+rules is what must be true before one, and what the fleet must be able
+to say after it. Four checks and four instruments, from the
+implementor's findings.
+
+**Checks, before any recut.** (C1) The recut builds from HEAD in a clean
+worktree, never from the implementor's tree: BQ5a's contact code is
+uncommitted there and would ship half-finished. (C2) The whole fleet is
+recut at once, console included: the wire's decoders fail whole on an
+unknown reading tag (tags 8 and 9 are new since E0), so a mixed mesh
+loses pushes and console replies; and since VS1's item 6 the court's
+replay refuses a certificate whose move has no inverse where the old
+court skipped it, so mixed courts could disagree on one certificate. A
+rolling recut is refused. (C3) NOTHING PRINTS PER EPOCH ON THE FLEET
+(PL1's ruling, applied at every site): the percept prints the cells line
+and the viscosity line at every percept today, which is per-epoch
+stderr on the fleet. Ruled without a mode flag: the percept holds its
+typed readings and prints neither line; the census test reads the typed
+readings and prints its own lines from them; the fleet reads them on
+the observer only. (C4) Tape compatibility is verified read-only against
+a form the running fleet wrote before the recut: E1 touched neither the
+tape nor the addresses (cells and face bodies are in memory), and that
+is checked, not believed.
+
+**Instruments, one commit before EN1, typed and served on demand.**
+(D1) `Reading::Viscosity` — VS1's arms per plane pair per lane with
+refused, unread and no-class, the entropy by lane, `𝒢` and `𝒯` named as
+having no bend: the census's viscosity line moved to the observer. (D2)
+`Reading::Spend` — per stroke, the reads each reader spent (perception,
+the orbit and circuit mode readings, the cells' Coxeter readings and
+products, VS1's trials) and BD1's `Unbounded` refusals by reader, off
+the stroke's own counters and never a clock (law 9): the fleet's proof,
+per voice, that comprehension does not starve perception — the finding
+GR2 measured locally, confirmed live. (D3) `Reading::Progress` — E1's
+done-when per voice: contact cycles with non-trivial holonomy, certified
+cells by grade with round kept, closure class and dual frame, refusals
+typed by grade — off the readings already produced, no new producer;
+LC1's owed field "coboundary agreement per grade" is produced by it and
+leaves the owed list (law 12). (D4) A console query by source and by
+reading kind through the existing prefix key, so the large Cells and
+Circuit readings are not cut by the reply's frame budget.
+
+**Order.** D1–D4 with C3 in one commit before EN1; C1, C2 and C4 as the
+checklist; the recut on the operator's word, the whole fleet at once;
+then the soak read through the console. The fleet after this recut reads
+E0's five curves for the first time, the circuits step by step, the
+cells with their Gram forms, and viscosity per plane pair — honest
+zeros and unread arms where BQ5a has not landed; BQ5a, EN1 and CT1 ride
+the recut after. The fleet's size for the recut — three client units on
+this host against the five minds the doctrine names — is the operator's
+decision, still open.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
