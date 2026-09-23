@@ -342,11 +342,11 @@ pub fn lift(comp: &[Lamina]) -> Blade {
 ///
 /// INTER-BODY CONTACT IS NOT FACE-ADJACENCY ANY MORE, and cannot be: two
 /// distinct bodies sharing a face would be ONE body by maximality.
-/// [`crate::transducer::sentence::incidence_diagonal_3d`] carries it
-/// instead (70.6) — exact, integer, and in this same idiom.
+/// [`crate::transducer::sentence::contact_cells`] carries it instead
+/// (70.6) — the cells of lower grade, off the same reader.
 pub fn components(laminae: &[Lamina]) -> Vec<Vec<Lamina>> {
     // The support in canonical order; its 1-skeleton read off the ordering
-    // (sentence::incidence_of_3d), never a distance test against every
+    // (sentence::face_incidence), never a distance test against every
     // lamina. Every adjacency joins, because hue no longer decides
     // identity.
     let mut sorted: Vec<Lamina> = laminae.to_vec();
@@ -354,7 +354,7 @@ pub fn components(laminae: &[Lamina]) -> Vec<Vec<Lamina>> {
     sorted.dedup_by(|a, b| a.site == b.site);
     let positions: Vec<Site> = sorted.iter().map(|l| l.site.clone()).collect();
     let edges: Vec<(usize, usize)> =
-        crate::transducer::sentence::incidence_of_3d(&positions);
+        crate::transducer::sentence::face_incidence(&positions);
     let roots = crate::transducer::sentence::components(sorted.len(), &edges);
     let mut out: Vec<(usize, Vec<Lamina>)> = Vec::new();
     for (i, lamina) in sorted.into_iter().enumerate() {
@@ -554,7 +554,7 @@ fn topology_at_three(sites: &[Site], sorted: &[[i64; 3]]) -> (u64, u64, u64) {
         return (0, 0, 0);
     }
     let held = |r: i64, c: i64, k: i64| sorted.binary_search(&[r, c, k]).is_ok();
-    let edges = crate::transducer::sentence::incidence_of_3d(sites);
+    let edges = crate::transducer::sentence::face_incidence(sites);
     let mut roots = crate::transducer::sentence::components(sites.len(), &edges);
     roots.sort_unstable();
     roots.dedup();

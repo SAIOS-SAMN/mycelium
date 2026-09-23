@@ -533,7 +533,7 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
 ///
 /// A body is a maximal hue-blind region of the 6-incidence, so two bodies
 /// never share an edge of the base; what relates two of them is the
-/// corner, `incidence_diagonal_3d`. This reads the contact graph on it —
+/// cell of lower grade, `contact_cells`. This reads the contact graph on it —
 /// vertices the BODIES, edges the distinct body pairs that meet at a
 /// corner — and takes `V`, `E`, `C` and `b₁ = E − V + C`, with the bodies
 /// that touch nothing counted apart so a sparse scene is not read as a
@@ -551,7 +551,7 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
 /// and the counts are the SIZE of a reading, not the reading (rule 2).
 #[test]
 fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
-    use crate::transducer::sentence::{components, incidence_diagonal_3d, incidence_of_3d};
+    use crate::transducer::sentence::{components, contact_cells, face_incidence};
     let Ok(dir) = std::fs::read_dir(CORPUS) else {
         eprintln!("  a14: {CORPUS} does not read — no corpus, no reading");
         return;
@@ -590,7 +590,7 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
             let positions: Vec<crate::transducer::base::Site> =
                 laminae.iter().map(|x| x.site.clone()).collect();
             // THE BODIES: hue-blind components of the 6-incidence (70.4).
-            let all = incidence_of_3d(&positions);
+            let all = face_incidence(&positions);
             let roots = components(laminae.len(), &all);
             // The 6-incidence edges across two hues lie INSIDE one body now:
             // they are its gauge seams, H3's content, and never contact.
@@ -602,9 +602,9 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
             }
             // THE CONTACTS: corner incidences between two DIFFERENT bodies,
             // named by their roots. A corner inside one body is its interior.
-            let mut pairs: Vec<(usize, usize)> = incidence_diagonal_3d(&positions)
+            let mut pairs: Vec<(usize, usize)> = contact_cells(&positions)
                 .into_iter()
-                .map(|(i, j, _)| (roots[i], roots[j]))
+                .map(|c| (roots[c.i], roots[c.j]))
                 .filter(|(a, b)| a != b)
                 .map(|(a, b)| if a <= b { (a, b) } else { (b, a) })
                 .collect();
@@ -716,6 +716,20 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
     let (mut families, mut fv, mut fe, mut fc, mut fb1) = (0usize, 0usize, 0usize, 0usize, 0usize);
     let (mut e_in, mut e_across, mut e_both) = (0usize, 0usize, 0usize);
     let (mut elements_in, mut elements_across) = (0usize, 0usize);
+    // BQ2 — BY GRADE. A body pair's contact is the grade of the LARGEST cell
+    // it shares (71.2(2)); a shared cell is counted at its own grade and by
+    // the axes it differs on. Keyed by the grade and by the axis set, so no
+    // count of grades is written down here.
+    let mut pairs_by_grade: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+    let mut cells_by_grade: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+    let mut cells_by_axes: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+    let bump = |k: &mut crate::network::nerve::Keyed<usize>, key: Vec<u8>| match k.get_mut(&key) {
+        Some(n) => *n += 1,
+        None => {
+            k.insert(key, 1);
+        }
+    };
+    let axes_key = |axes: &[usize]| -> Vec<u8> { axes.iter().map(|&a| a as u8).collect() };
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
@@ -735,28 +749,32 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
         laminae.sort_unstable();
         laminae.dedup_by(|x, y| x.site == y.site);
         let positions: Vec<crate::transducer::base::Site> = laminae.iter().map(|x| x.site.clone()).collect();
-        let roots = components(positions.len(), &incidence_of_3d(&positions));
-        // Each body pair with the frame span of its elements: `(in, across)`.
-        let mut span: crate::network::nerve::Keyed<(bool, bool)> = crate::network::nerve::Keyed::new();
-        for (i, j, d) in incidence_diagonal_3d(&positions) {
-            let (a, b) = (roots[i].min(roots[j]), roots[i].max(roots[j]));
+        let roots = components(positions.len(), &face_incidence(&positions));
+        // Each body pair with the fibre of its cells — `e₃ ∉ axes`,
+        // `e₃ ∈ axes` — and the grade of the largest cell it shares.
+        let mut span: crate::network::nerve::Keyed<(bool, bool, usize)> = crate::network::nerve::Keyed::new();
+        for cell in contact_cells(&positions) {
+            let (a, b) = (roots[cell.i].min(roots[cell.j]), roots[cell.i].max(roots[cell.j]));
             if a == b {
                 continue;
             }
-            let within = d.get(2) == Some(&0);
+            let within = !cell.crosses(crate::transducer::base::FRAME_AXIS);
             match within {
                 true => elements_in += 1,
                 false => elements_across += 1,
             }
+            bump(&mut cells_by_grade, vec![cell.grade as u8]);
+            bump(&mut cells_by_axes, axes_key(&cell.axes));
             let mut k = (a as u64).to_le_bytes().to_vec();
             k.extend_from_slice(&(b as u64).to_le_bytes());
             // A pair first met here spans nothing yet; one met before carries
-            // what it spanned.
-            let (was_in, was_across) = match span.get(&k) {
+            // what it spanned and the largest cell it shared.
+            let (was_in, was_across, was_grade) = match span.get(&k) {
                 Some(&held) => held,
-                None => (false, false),
+                None => (false, false, cell.grade),
             };
-            span.insert(k, (was_in || within, was_across || !within));
+            let grade = if cell.grade > was_grade { cell.grade } else { was_grade };
+            span.insert(k, (was_in || within, was_across || !within, grade));
         }
         let mut root_ids: Vec<usize> = roots.clone();
         root_ids.sort_unstable();
@@ -766,12 +784,13 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
             Err(_) => panic!("every root is one of the root ids it was read from"),
         };
         let mut cg: Vec<(usize, usize)> = Vec::new();
-        for (k, &(inf, acr)) in span.scoped() {
+        for (k, &(inf, acr, grade)) in span.scoped() {
             match (inf, acr) {
                 (true, false) => e_in += 1,
                 (false, true) => e_across += 1,
                 _ => e_both += 1,
             }
+            bump(&mut pairs_by_grade, vec![grade as u8]);
             let (Ok(a), Ok(b)) = (
                 <[u8; 8]>::try_from(&k[..8]).map(u64::from_le_bytes),
                 <[u8; 8]>::try_from(&k[8..]).map(u64::from_le_bytes),
@@ -796,9 +815,31 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
     }
     eprintln!(
         "  a14 with the frame axis over {families} families: V {fv} bodies E {fe} contacts \
-         (in one frame {e_in}, across frames {e_across}, both {e_both}) C {fc} b₁ {fb1} \
-         | shared elements in one frame {elements_in}, across frames {elements_across}"
+         (e₃ ∉ axes {e_in}, e₃ ∈ axes {e_across}, both {e_both}) C {fc} b₁ {fb1} \
+         | shared cells e₃ ∉ axes {elements_in}, e₃ ∈ axes {elements_across}"
     );
+    let listed = |k: &crate::network::nerve::Keyed<usize>, name: &dyn Fn(&[u8]) -> String| -> String {
+        k.scoped().map(|(key, n)| format!("{} {n}", name(&key))).collect::<Vec<_>>().join(" ")
+    };
+    // A grade key is the grade's one byte, written above.
+    let grade_name = |key: &[u8]| format!("g{}", key.iter().map(|g| g.to_string()).collect::<String>());
+    let axes_name = |key: &[u8]| {
+        format!("{{{}}}", key.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(","))
+    };
+    eprintln!(
+        "  a14 by grade: contacts by their largest shared cell {} | shared cells by grade {} \
+         | by differing axes {}",
+        listed(&pairs_by_grade, &grade_name),
+        listed(&cells_by_grade, &grade_name),
+        listed(&cells_by_axes, &axes_name),
+    );
+    // THE RELATION, NOT A COUNT (BQ2): every contact has one grade, the
+    // largest cell it shares, so the contacts by grade sum to the contacts;
+    // and every shared cell has one grade and one axis set.
+    let total = |k: &crate::network::nerve::Keyed<usize>| k.scoped().map(|(_, n)| *n).sum::<usize>();
+    assert_eq!(total(&pairs_by_grade), fe, "the contacts are the sum over grades");
+    assert_eq!(total(&cells_by_grade), elements_in + elements_across, "each shared cell has one grade");
+    assert_eq!(total(&cells_by_axes), elements_in + elements_across, "and one set of differing axes");
 }
 
 /// 70 — THE DEMAND-KIND CENSUS: how many demands can GROW LANGUAGE.

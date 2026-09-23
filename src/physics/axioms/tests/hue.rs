@@ -41,7 +41,7 @@ fn h1_a_two_coloured_object_is_one_body() {
 /// the component relation it would swallow the contact it exposes.
 #[test]
 fn h2_two_bodies_meet_at_a_corner_without_becoming_one() {
-    use crate::transducer::sentence::incidence_diagonal_3d;
+    use crate::transducer::sentence::contact_cells;
     let scene = laminae(&[(0, 0, 0, 1u8), (1, 1, 0, 2)]);
     // Still two bodies: the diagonal is NOT in the component relation.
     assert_eq!(
@@ -52,62 +52,95 @@ fn h2_two_bodies_meet_at_a_corner_without_becoming_one() {
     // And they ARE in contact, by the relation that carries contact.
     let positions = sites(&[(0, 0, 0), (1, 1, 0)]);
     assert_eq!(
-        incidence_diagonal_3d(&positions).len(),
+        contact_cells(&positions).len(),
         1,
         "the corner meeting is one contact edge"
     );
     // The anti-diagonal is read too, and needs its own ordering.
     let anti = sites(&[(0, 1, 0), (1, 0, 0)]);
     assert_eq!(
-        incidence_diagonal_3d(&anti).len(),
+        contact_cells(&anti).len(),
         1,
         "(r+1, c-1) is a corner meeting as much as (r+1, c+1)"
     );
     // A 4-adjacent pair is NOT a diagonal contact: interior, not contact.
     let side = sites(&[(0, 0, 0), (0, 1, 0)]);
     assert!(
-        incidence_diagonal_3d(&side).is_empty(),
+        contact_cells(&side).is_empty(),
         "an edge-sharing pair is one body's interior, never a contact"
     );
 }
 
-/// C2, 70.6 — A CUBE SHARES A BOUNDARY WITH TWENTY OF ITS TWENTY-SIX
-/// NEIGHBOURS WITHOUT SHARING A FACE. The six it shares a face with make a
-/// body and are [`incidence_of_3d`]'s. The twelve it shares an edge with and
-/// the eight it shares a corner with are contact, and each comes back once,
-/// with the direction from the lesser site to the greater. The frame axis
-/// is among them: sixteen of the twenty change `k`.
+/// Every site of the block `{−1, 0, 1}ⁿ` about the origin, sorted.
+fn block(n: usize) -> Vec<Site> {
+    let mut out: Vec<Vec<i64>> = vec![Vec::new()];
+    for _ in 0..n {
+        out = out.into_iter().flat_map(|p| (-1..=1i64).map(move |x| [p.clone(), vec![x]].concat())).collect();
+    }
+    let mut sites: Vec<Site> = out.into_iter().map(Site::new).collect();
+    sites.sort_unstable();
+    sites
+}
+
+/// C2, 70.6, BQ2 — A CUBE SHARES A CELL WITH EVERY NEIGHBOUR, AND THE CELL
+/// IS READ OFF THE PAIR. Read about the centre of the block `{−1,0,1}ⁿ` at
+/// `n = 3` and `n = 4`: each of the `3ⁿ − 1` neighbours comes back once,
+/// carrying its offset, the axes it differs on, and the grade `n − m` of
+/// the cell the two cubes share. The shared faces are the body's
+/// ([`face_incidence`]); every other grade is contact ([`contact_cells`]);
+/// and a cell lies across the frame axis exactly where the frame is among
+/// its axes. Nothing here is a count of a neighbourhood written down: the
+/// relation is asserted pair by pair.
 ///
-/// [`incidence_of_3d`]: crate::transducer::sentence::incidence_of_3d
+/// [`face_incidence`]: crate::transducer::sentence::face_incidence
+/// [`contact_cells`]: crate::transducer::sentence::contact_cells
 #[test]
-fn a_cube_shares_boundary_with_twenty_of_its_twenty_six_neighbours() {
-    use crate::transducer::sentence::{incidence_diagonal_3d, incidence_of_3d};
-    let mut positions: Vec<Site> = Vec::new();
-    for dr in -1..=1i64 {
-        for dc in -1..=1i64 {
-            for dk in -1..=1i64 {
-                positions.push(Site::from((dr, dc, dk)));
-            }
+fn a_cube_shares_a_cell_of_its_own_grade_with_every_neighbour() {
+    use crate::transducer::base::FRAME_AXIS;
+    use crate::transducer::sentence::{contact_cells, face_incidence, shared_cells};
+    for n in [3usize, 4] {
+        let positions = block(n);
+        let centre = positions.binary_search(&Site::new(vec![0; n])).expect("the centre is in its block");
+        let about: Vec<_> = shared_cells(&positions).into_iter().filter(|c| c.i == centre || c.j == centre).collect();
+        assert_eq!(about.len() + 1, 3usize.pow(n as u32), "every neighbour once, at n = {n}");
+        for c in &about {
+            let (p, q) = (&positions[c.i], &positions[c.j]);
+            let offset: Vec<i64> = q.axes().iter().zip(p.axes()).map(|(a, b)| a - b).collect();
+            assert_eq!(offset, c.d, "the offset is the pair's own coordinates");
+            let differ: Vec<usize> = (0..n).filter(|&i| offset[i] != 0).collect();
+            assert_eq!(c.axes, differ, "the axes are the ones the two sites differ on");
+            assert_eq!(c.grade, n - differ.len(), "the grade is n − m");
+            assert_eq!(c.is_face(), c.grade == n - 1, "a face is the cell of grade n − 1");
+            assert_eq!(c.crosses(FRAME_AXIS), offset[FRAME_AXIS] != 0, "across the frames iff the frame differs");
+        }
+        let faces = face_incidence(&positions);
+        let contacts = contact_cells(&positions);
+        for c in &about {
+            let pair = (c.i, c.j);
+            assert_eq!(faces.contains(&pair), c.is_face(), "a face feeds the body relation and nothing else");
+            assert_eq!(contacts.contains(c), !c.is_face(), "every lower grade is contact");
         }
     }
-    let centre = positions.binary_search(&Site::from((0, 0, 0))).expect("the centre is one of the 27");
-    let touching = |pairs: Vec<(usize, usize)>| pairs.into_iter().filter(|&(i, j)| i == centre || j == centre).count();
-    let shared: Vec<(usize, usize, Vec<i64>)> = incidence_diagonal_3d(&positions)
-        .into_iter()
-        .filter(|(i, j, _)| *i == centre || *j == centre)
-        .collect();
-    assert_eq!(shared.len(), 20, "twenty shared edges and corners, each once");
-    assert_eq!(
-        touching(incidence_of_3d(&positions)),
-        6,
-        "and the six shared faces are the body's, not contact"
-    );
-    // Every pair carries the offset from its first site to its second.
-    for (i, j, d) in &shared {
-        let (p, q) = (&positions[*i], &positions[*j]);
-        let offset: Vec<i64> = q.axes().iter().zip(p.axes()).map(|(a, b)| a - b).collect();
-        assert_eq!(&offset, d, "the direction is the adjacency's own coordinates");
-    }
-    let across = shared.iter().filter(|(_, _, d)| d.get(2) != Some(&0)).count();
-    assert_eq!(across, 16, "eight edges and eight corners across the frames, four edges within one: {across}");
+}
+
+/// 71.2(2), BQ2 — A CONTACT IS THE GRADE OF THE SHARED CELL. Two bodies
+/// meeting at an edge within a frame, at an edge across two frames and at a
+/// corner read grades 1, 1 and 0 at `n = 3`; lifted into `n = 4` by the
+/// inclusion (the fourth coordinate zero), the same two sites share a cell
+/// one grade higher, since the cubes now also agree on the new axis. The
+/// grade is the contact's own, read off the pair, never a kind looked up.
+#[test]
+fn a_contact_is_the_grade_of_the_shared_cell() {
+    use crate::transducer::sentence::contact_cells;
+    let grade = |a: Vec<i64>, b: Vec<i64>| -> Vec<usize> {
+        contact_cells(&[Site::new(a), Site::new(b)]).into_iter().map(|c| c.grade).collect()
+    };
+    assert_eq!(grade(vec![0, 0, 0], vec![1, 1, 0]), vec![1], "an edge within a frame is grade 1");
+    assert_eq!(grade(vec![0, 0, 0], vec![0, 1, 1]), vec![1], "an edge across two frames is grade 1");
+    assert_eq!(grade(vec![0, 0, 0], vec![1, 1, 1]), vec![0], "a corner is grade 0");
+    assert_eq!(grade(vec![0, 0, 0, 0], vec![1, 1, 0, 0]), vec![2], "at n = 4 the same pair shares a 2-cell");
+    assert_eq!(grade(vec![0, 0, 0, 0], vec![1, 1, 1, 0]), vec![1], "and the corner of n = 3 is an edge of n = 4");
+    assert_eq!(grade(vec![0, 0, 0, 0], vec![1, 1, 1, 1]), vec![0], "the corner of n = 4 is grade 0");
+    assert!(grade(vec![0, 0, 0], vec![0, 1, 0]).is_empty(), "a shared face is no contact: it is one body");
+    assert!(grade(vec![0, 0, 0], vec![2, 2, 0]).is_empty(), "and cubes a cell apart share nothing");
 }

@@ -226,47 +226,12 @@ pub fn incidence_of(positions: &[(i64, i64)]) -> Vec<(usize, usize)> {
     edges
 }
 
-/// THE FACE INCIDENCE of a support of sites (51.3, 71.2(2)): two cubes
-/// share a face where exactly one coordinate differs, by one. Read one axis
-/// at a time: the sites ordered by every other coordinate and then by that
-/// axis, so the two ends of every such adjacency are successors. The grid's
-/// two axes are read first — columns, then rows — and every axis off the
-/// grid after them, so at the corpus's `n = 3` the passes and the edges'
-/// order are the ones the three fixed passes made: `(k, r, c)`, `(k, c, r)`,
-/// `(r, c, k)`. Two sites of different `n` are never adjacent.
-pub fn incidence_of_3d(positions: &[crate::transducer::base::Site]) -> Vec<(usize, usize)> {
-    use crate::transducer::base::{is_grid_axis, GRID_AXES};
-    let mut edges = Vec::new();
-    let n = positions.iter().map(|s| s.n()).fold(0, usize::max);
-    let off_grid: Vec<usize> = (0..n).filter(|i| !is_grid_axis(*i)).collect();
-    let mut passes: Vec<usize> = vec![GRID_AXES[1], GRID_AXES[0]];
-    passes.extend(off_grid.iter().copied());
-    for a in passes.into_iter().filter(|&a| a < n) {
-        // The order this axis's adjacencies are successors in: the other
-        // axes off the grid, then the other grid axes, then this one.
-        let mut order: Vec<usize> = off_grid.iter().copied().filter(|&i| i != a).collect();
-        order.extend(GRID_AXES.iter().copied().filter(|&i| i != a && i < n));
-        order.push(a);
-        let key = |s: &crate::transducer::base::Site| -> Vec<i64> {
-            order.iter().map(|&i| s.axis(i)).collect::<Option<Vec<i64>>>().into_iter().flatten().collect()
-        };
-        let mut by: Vec<usize> = (0..positions.len()).collect();
-        by.sort_by_cached_key(|&i| (positions[i].n(), key(&positions[i])));
-        for w in by.windows(2) {
-            let (p, q) = (&positions[w[0]], &positions[w[1]]);
-            if p.n() != q.n() {
-                continue;
-            }
-            let adjacent = p.axes().iter().zip(q.axes()).enumerate().all(|(i, (x, y))| match i == a {
-                true => x + 1 == *y,
-                false => x == y,
-            });
-            if adjacent {
-                edges.push((w[0], w[1]));
-            }
-        }
-    }
-    edges
+/// THE FACE INCIDENCE of a support of sites (51.3, 71.2(2)): the pairs of
+/// [`shared_cells`] of grade `n − 1`, whose cubes share a face — exactly one
+/// coordinate differs, by one. This is the relation that makes a body, and
+/// it feeds [`components`]; every lower grade is contact.
+pub fn face_incidence(positions: &[crate::transducer::base::Site]) -> Vec<(usize, usize)> {
+    shared_cells(positions).into_iter().filter(SharedCell::is_face).map(|c| (c.i, c.j)).collect()
 }
 
 /// The connected components of `n` sites under an incidence: each site's
@@ -554,41 +519,76 @@ pub fn is_flat(cycle: &[Versor]) -> bool {
 /// neither is in the relation that formed them, so this is exactly the
 /// relation the six face-adjacencies leave available.
 ///
-/// KEPT APART FROM [`incidence_of_3d`] ON PURPOSE. If the diagonal ever
+/// KEPT APART FROM [`face_incidence`] ON PURPOSE. If the diagonal ever
 /// entered the component relation it would merge bodies that only touch
 /// at a corner, and the base would swallow the contact it is meant to
-/// expose. One primitive defines bodies; the other relates them.
+/// expose. One relation defines bodies; the other relates them — and both
+/// are read off ONE reader, [`shared_cells`], by grade (71.2(2), BQ2).
 ///
-/// C2, 70.6 — THE WHOLE SHARED BOUNDARY OF A CUBE COMPLEX ON `(r, c, k)`.
-/// The corner in one frame is four of the twenty. Two cubes that share no
-/// face can still share an EDGE or a CORNER. The twelve edge-adjacencies
-/// are the four in the frame, `(r ± 1, c ± 1, k)`, and the eight across
-/// consecutive frames, `(r ± 1, c, k ± 1)` and `(r, c ± 1, k ± 1)`. The
-/// eight corner-adjacencies differ by one in all three coordinates. The six
-/// face-adjacencies are [`incidence_of_3d`]'s, and they make a body.
+/// These are the shared cells of grade below `n − 1`: an edge, a corner,
+/// and at `n > 3` every cell between.
+pub fn contact_cells(positions: &[crate::transducer::base::Site]) -> Vec<SharedCell> {
+    shared_cells(positions).into_iter().filter(|c| !c.is_face()).collect()
+}
+
+/// 71.2(2), BQ2 — ONE CELL TWO CUBES SHARE: the two sites, the offset
+/// `q − p` between them, the AXES ON WHICH THEY DIFFER, and the GRADE of the
+/// cell they share, `n − m` for `m` differing axes. Two unit cubes of ℤⁿ
+/// whose sites differ by one on `m` axes and agree on the rest share exactly
+/// the cell spanned by the `n − m` axes they agree on: a face at `m = 1`
+/// (grade `n − 1`), an edge at `n − 2`, down to a corner at grade `0`.
 ///
-/// The twenty neighbours are ten DIRECTIONS up to sign, and each direction
-/// is one canonical order, as in the rest of this file. `d` is written with
-/// its first non-zero coordinate `+1`. Along `d` that coordinate, `t`,
-/// is the parameter of the line, and the other two less `d`'s share of `t`
-/// stay constant. So ordering by those two invariants and then by `t` puts the
-/// two ends of every such adjacency next to each other, and the test is
-/// `t + 1`. The result is exact and integer, with no extent and no
-/// distance test against every lamina.
+/// THE GRADE IS THE CONTACT (71.2(2)). It is read off the pair, never
+/// assigned by a table of neighbour kinds: at `n = 3` the six faces, twelve
+/// edges and eight corners are what the grades come to, and at `n = 4` the
+/// same reader gives the eight faces, twenty-four 2-cells, thirty-two edges
+/// and sixteen corners without a line changing.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SharedCell {
+    pub i: usize,
+    pub j: usize,
+    /// `q − p`, its first non-zero coordinate `+1`.
+    pub d: Vec<i64>,
+    /// The axes the two sites differ on, ascending: `m` of them.
+    pub axes: Vec<usize>,
+    /// The dimension of the shared cell, `n − m`.
+    pub grade: usize,
+}
+
+impl SharedCell {
+    /// A face: one differing axis. The cell that makes a body.
+    pub fn is_face(&self) -> bool {
+        matches!(self.axes.as_slice(), [_])
+    }
+
+    /// Does the shared cell lie across axis `a` — do the two sites differ
+    /// on it? At the frame axis, a contact between two frames (51.3).
+    pub fn crosses(&self, a: usize) -> bool {
+        self.axes.contains(&a)
+    }
+}
+
+/// THE ONE READER OF THE NEIGHBOURHOOD (71.2(2), BQ2): every pair of sites
+/// whose unit cubes share a cell of the boundary, with its offset, its
+/// differing axes and its grade.
 ///
-/// EACH PAIR CARRIES ITS DIRECTION, `q − p = d`. That is content, the
-/// coordinates of the adjacency itself, and not a label: `d` zero on the
-/// frame axis is contact within one frame, and `±1` there is the frame axis
-/// entering contact.
+/// The neighbourhood is GENERATED: [`neighbourhood`]`(n)` is `{−1,0,1}ⁿ ∖ 0`
+/// up to sign, one direction per pair of opposite neighbours. Each direction
+/// is one canonical order, as in the rest of this file: along `d` its first
+/// non-zero coordinate `t` is the parameter of the line and the rest less
+/// `d`'s share of `t` stay constant, so ordering by those invariants and
+/// then by `t` puts the two ends of every adjacency along `d` next to each
+/// other, and the test is `t + 1`. Exact and integer, with no extent and no
+/// distance test against every lamina — the directions are walked, the
+/// sites are ordered, and nothing is searched.
 ///
-/// THE DIRECTIONS ARE GENERATED FROM `n` (71.2(2)): every `d ∈ {−1,0,1}ⁿ`
-/// with two or more non-zero coordinates, the first of them `+1` — by how
-/// many differ, then by which axes, then by the signs. At the corpus's
-/// `n = 3` that is the ten, in the order the fixed list had them.
-pub fn incidence_diagonal_3d(positions: &[crate::transducer::base::Site]) -> Vec<(usize, usize, Vec<i64>)> {
+/// Two sites of different `n` share no cell: a cell is of one base.
+pub fn shared_cells(positions: &[crate::transducer::base::Site]) -> Vec<SharedCell> {
     let mut edges = Vec::new();
     let n = positions.iter().map(|s| s.n()).fold(0, usize::max);
-    for d in shared_boundary_directions(n) {
+    for d in neighbourhood(n) {
+        let axes: Vec<usize> = d.iter().enumerate().filter(|(_, x)| **x != 0).map(|(i, _)| i).collect();
+        let grade = n - axes.len();
         // `t` is the coordinate `d` leads with. The invariants are the
         // coordinates less `d`'s share of `t`, so they are constant along
         // `d`.
@@ -615,21 +615,21 @@ pub fn incidence_diagonal_3d(positions: &[crate::transducer::base::Site]) -> Vec
         for w in along.windows(2) {
             let ((np, lp, tp), (nq, lq, tq)) = (line(&positions[w[0]]), line(&positions[w[1]]));
             if np == n && nq == n && lp == lq && tp + 1 == tq {
-                edges.push((w[0], w[1], d.clone()));
+                edges.push(SharedCell { i: w[0], j: w[1], d: d.clone(), axes: axes.clone(), grade });
             }
         }
     }
     edges
 }
 
-/// The directions of the shared boundary of a cube of ℤⁿ that is not a
-/// face: every `d ∈ {−1,0,1}ⁿ` with two or more non-zero coordinates, the
-/// first of them `+1`, one per pair of opposite neighbours. By how many
-/// coordinates differ, then by which axes (in order), then by the signs of
-/// the axes after the first, `+` before `−`.
-pub fn shared_boundary_directions(n: usize) -> Vec<Vec<i64>> {
+/// THE NEIGHBOURHOOD OF A CUBE OF ℤⁿ, GENERATED (71.2(2)): every
+/// `d ∈ {−1,0,1}ⁿ ∖ 0` with its first non-zero coordinate `+1`, one per pair
+/// of opposite neighbours — `(3ⁿ − 1)/2` of them. In canonical order: by how
+/// many coordinates differ (`m`, so the faces first), then by which axes (in
+/// order), then by the signs of the axes after the first, `+` before `−`.
+pub fn neighbourhood(n: usize) -> Vec<Vec<i64>> {
     let mut out = Vec::new();
-    for m in 2..=n {
+    for m in 1..=n {
         // The axis sets of size m, in lexicographic order.
         let mut sets: Vec<Vec<usize>> = vec![Vec::new()];
         for i in 0..n {

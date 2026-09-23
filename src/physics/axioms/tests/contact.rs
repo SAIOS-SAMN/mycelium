@@ -99,15 +99,35 @@ fn the_adjacency_band_against_a_size_mismatch() {
 /// the directional second moment `r²(v) = (v·I·v)/((v·v)·M₀)` along
 /// the separation `v`, exact over ℚ with no root — the ratio of two
 /// quadratics never forms `‖v‖`.
+///
+/// PH3, 69.3 as ruled — THE OBLIGATION IS MET BY THE LATTICE. No finite
+/// tower of two bodies taken separately recovers a boundary; contact is
+/// the cell the two cubes share, read by grade (BQ2). That reading is what
+/// is asserted constant on the family; the rank-1 and rank-2 columns stay
+/// printed as the record of why the towers could not carry it.
 #[test]
 fn a14_the_pair_reading_must_be_constant_on_a_contact_family() {
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let mut rank1: Vec<String> = Vec::new();
     let mut rank2: Vec<String> = Vec::new();
+    // PH3 (69.3, 70.6, BQ2) — THE READING A.14 OWES IS THE LATTICE'S: the
+    // grades of the cells the two bodies share, read by `shared_cells` over
+    // their union and kept where one end is in each.
+    let mut by_grade: Vec<Vec<usize>> = Vec::new();
     for n in 1..=6i64 {
         let bar: Vec<_> = (0..n).map(|c| (0i64, c, 0i64)).collect();
         let cell = vec![(0i64, -1i64, 0i64)];
         let (a, b) = (blade::shape_of(&cell), blade::shape_of(&bar));
+        let union: Vec<crate::transducer::base::Site> =
+            cell.iter().chain(bar.iter()).map(|&t| t.into()).collect();
+        let in_a = |i: usize| i < cell.len();
+        let mut grades: Vec<usize> = crate::transducer::sentence::shared_cells(&union)
+            .into_iter()
+            .filter(|c| in_a(c.i) != in_a(c.j))
+            .map(|c| c.grade)
+            .collect();
+        grades.sort_unstable();
+        by_grade.push(grades);
         let (ba, bb) = (&a.blade, &b.blade);
         // RANK 1 — what the horizon reads today.
         let face = blade::Interface::between(ba, bb).expect("an interface");
@@ -139,14 +159,19 @@ fn a14_the_pair_reading_must_be_constant_on_a_contact_family() {
         rank1.iter().any(|x| x != &rank1[0]),
         "if this ever passes, the rank-1 reading became constant and A.14 is moot"
     );
-    // AND THE OBLIGATION IS RECORDED AS THE THING A.14 OWES: whichever
-    // carrier replaces the nucleus must make this vector constant.
-    // Asserted here only as the measurement it is, so the row cannot
-    // be closed by an implementation that does not achieve it.
+    // THE RANK-2 COLUMN STAYS AS THE RECORD OF WHY (69.3): no finite-order
+    // tower of two bodies taken separately recovers a boundary, so this
+    // is printed and not owed.
     let rank2_constant = rank2.iter().all(|x| x == &rank2[0]);
-    eprintln!(
-        "    rank-2 constant on the family: {rank2_constant} \
-         — A.14 is satisfied only when this reads true"
+    eprintln!("    rank-2 constant on the family: {rank2_constant} (the record of 69.3, not the obligation)");
+    // AND THE OBLIGATION IS ASSERTED (PH3): contact is the lattice's, met
+    // by construction because the reading never consults extent. The
+    // shared cells by grade are one reading on every member of the family.
+    eprintln!("    shared cells by grade (the lattice's reading): {by_grade:?}");
+    assert!(!by_grade[0].is_empty(), "a cell edge to edge with a bar shares a cell with it");
+    assert!(
+        by_grade.iter().all(|g| g == &by_grade[0]),
+        "A.14's obligation: the pair reading is constant on the contact family: {by_grade:?}"
     );
 }
 

@@ -466,11 +466,10 @@ assert!(
     "an odd doubled frame coordinate is an element across two frames"
 );
 // And the corner in one frame alone names nothing here.
-let in_frame: Vec<_> =
-    crate::transducer::sentence::incidence_diagonal_3d(&sites(&[(0i64, 0i64, 0i64), (0, 1, 1)]))
-        .into_iter()
-        .filter(|(_, _, d)| d.get(2) == Some(&0))
-        .collect();
+let in_frame: Vec<_> = crate::transducer::sentence::contact_cells(&sites(&[(0i64, 0i64, 0i64), (0, 1, 1)]))
+    .into_iter()
+    .filter(|c| !c.crosses(crate::transducer::base::FRAME_AXIS))
+    .collect();
 assert!(in_frame.is_empty(), "no in-frame adjacency relates them: {in_frame:?}");
 }
 

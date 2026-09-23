@@ -333,14 +333,14 @@ pub(crate) fn named_faces(
     // C1, C2, 70.6 — CONTACT IS THE SHARED BOUNDARY OF TWO CUBE COMPLEXES.
     // Two hue-blind bodies never share a face of a cube, since sharing one
     // they would be one body (70.4). Where two distinct bodies touch, their
-    // complexes share an edge or a corner. `incidence_diagonal_3d` reads all
-    // twenty such adjacencies off the distinct occupied sites, in its own
-    // canonical order. The frame axis is among them, and the reading is
-    // exact and integer, with no extent consulted and no band.
+    // complexes share a cell of lower grade. `contact_cells` reads every
+    // such cell off the distinct occupied sites, in its own canonical order
+    // (BQ2: the grade is the contact). The frame axis is among them, and
+    // the reading is exact and integer, with no extent consulted and no band.
     //
-    // THE BODIES ARE THE OCCUPANCY'S OWN COMPONENTS. The six
-    // face-adjacencies make a body, so the occupied sites fall into bodies
-    // under `incidence_of_3d`. A boundary element between two sites of one
+    // THE BODIES ARE THE OCCUPANCY'S OWN COMPONENTS. The shared faces make
+    // a body, so the occupied sites fall into bodies under
+    // `face_incidence`. A boundary element between two sites of one
     // body is that body's interior and is not contact.
     //
     // ONE FACE PER BODY PAIR (C1). A corner names two sites, and each site
@@ -364,10 +364,12 @@ pub(crate) fn named_faces(
     let positions: Vec<Site> = held.iter().map(|o| o.site.clone()).collect();
     let body = crate::transducer::sentence::components(
         positions.len(),
-        &crate::transducer::sentence::incidence_of_3d(&positions),
+        &crate::transducer::sentence::face_incidence(&positions),
     );
     let mut contacts: crate::network::nerve::Keyed<Gathered> = crate::network::nerve::Keyed::new();
-    for (i, j, _) in crate::transducer::sentence::incidence_diagonal_3d(&positions) {
+    for crate::transducer::sentence::SharedCell { i, j, .. } in
+        crate::transducer::sentence::contact_cells(&positions)
+    {
         let (Some(&bi), Some(&bj)) = (body.get(i), body.get(j)) else { continue };
         if bi == bj {
             continue;
