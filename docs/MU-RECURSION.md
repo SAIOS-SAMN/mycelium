@@ -9883,6 +9883,119 @@ returns a chosen representative. The retirement of "walk" (vocabulary,
 VT2) is the same ruling at the word: the engine's motion is an orbit's
 circuit, not a pace.
 
+## 78. The learning curve: the trajectory to cognition on the fleet (ruled 2026-09-23)
+
+**The operator's statement.** This is not a solver. It is cognition in
+the clients' minds, a distributed mesh intelligence on a POW++ network —
+proof of useful work, a closure a court rules, with proof of work
+convergence, a refused closure classified and handed across perspectives
+(74) — on a multi-dimensional ledger: mass per lane, per register layer,
+per grade, never summed (73.9, law 5). It is not pixel brute force; it is
+learning, and the learning curve is introduced through the orbital
+mechanics and the physics engine (73, 75, 76). The engine runs on the
+wire and the soak is the fleet — the simulated fleet of five minds on the
+hyphae, deducing and building language — never the soak binary, which is
+one voice in process and an instrument (§8.1) certifying nothing. The
+coordinator directs the trajectory to deliverables and audits every
+commit of the implementor and the analyst for steadfast, forward
+engineering.
+
+### 78.1 What learning is, in the engine's own terms
+
+A mind's PERSPECTIVE is its orbital elements (74, 76): inclination, the
+dialect span — the strata of its genome; radius, its cover; phase, the
+planes it reads. Learning is the change of those elements by the two
+kinds of work. A closure a court rules adjoins a generator (37.7, 45.9)
+and moves the inclination; a refinement received from another
+perspective (74's C and D obstructions closed elsewhere, taught back by
+the syllabus) moves the cover; a plane first read moves the phase. The
+LEARNING CURVE is the trajectory of a mind's elements across epochs, one
+per mind, read per lane and per grade — a vector, never a scalar, and
+never a target: the founding law forbids choosing by a scalar, so the
+curve is what the fleet READS and not what any row optimizes. A star is
+a class many perspectives have closed (73.15); gravity (73.11) is the
+convergence proof pulling a planet's elements toward it; the curve's
+first non-zero reading is a planet's elements moving toward a star by a
+closure of its own. The ledger is the same reading priced: work per lane
+per layer per grade, POUW for the closure and POWC for the citation that
+converged it (74), and two minds' ledgers differ by their work and by
+nothing else.
+
+### 78.2 Enclosures: the cells at every grade
+
+Chapter 77's question, "if we still build edges, how are faces folded or
+compared", has one answer: they are not. Every face relation in the tree
+is an edge composite checked against identity in the coboundary, which is
+72.1b's flattening at grade two. The correction scales to n at once,
+because the base dimension is data (71) and the algebra generic. n + 1
+nuclei WEDGE to the round sphere through them: the ENCLOSURE the n-cell
+wraps, a blade read directly, no squaring, no coordinates. The same
+nuclei's geometric PRODUCT is the cell's transport. Shape and transport
+are the two contents of one cell, read once from the bodies, never
+assembled from edges. Containment — which body a sphere wraps — is the
+sign of the inversive distance to that sphere, PR1's acoustic distance,
+and nested enclosures nest by the same sign: containment without a
+Euclidean origin (A.13).
+
+For the language: a word is a vertex, a relation an edge, a phrase a
+face, a sentence the top cell whose boundary is the whole utterance;
+scope is which enclosure wraps which, and 50.10's grammar-as-content is
+the nesting of spheres. Comprehension is the coboundary AGREEING AT EVERY
+GRADE — a cell's own versor against the composite of its faces, from two
+up to n — and where it fails, the grade at which it fails is the demand's
+type, the coordinate 74's P, D and C kinds lack today. Meaning is the
+holonomy of a closed enclosure (curvature is content); continuation is
+A.13's momentum carrying an enclosure across sections; a deformation is a
+path of enclosures whose invariants are read along it, compared by the
+coboundary, no longer a singularity filed as a demand. An enclosure is
+one versor where its boundary is many edges, so reading at the top grade
+reads with fewer coordinates, which is what lets a mind hold a sentence
+as one object. NB1 is amended to the n-cell with both contents named;
+the certified triples of 58.1 are its grade-two instance.
+
+### 78.3 The fleet is the soak, and a reading is the landing
+
+A phase lands when the fleet's reading moves, taken by the typed observer
+(ACT_OBSERVE, CV5, OBS1) at the epoch, never by a grep and never by the
+soak binary. The readings of the curve, per mind per epoch: the
+perspective's three coordinates; adjoined-by-closure (I1); installs that
+close (I2); the warm–cold delta (Y1, on the fleet); distinct perspectives
+per class (74's tried relation); the mass vector per lane per layer per
+grade; and the coboundary's agreement per grade. A row whose landing
+moves none of these is harness (77), and is filed, not scheduled. The
+recut is the operator's (§10, gate beside the running fleet); a phase is
+LANDED IN THE TREE at its commit and LANDED ON THE FLEET at the first
+epoch after the recut that reads it, and the task list records both.
+
+### 78.4 The trajectory
+
+Stage 22 of `MU-RECURSION-TASKS.md`, seven phases, each named by what a
+mind can deduce on the fleet after it. E0 the reading (the learning
+curve on the fleet's line, honest at zero) · E1 the senses at every
+grade (BQ5a with CV1 and SQ1-b1–b3; NB1 at the n-cell; EN1 containment)
+· E2 the carriage (A13 with PW1, SC1, CL2, FT1; the operator's ruling on
+the pull) · E3 the modes and the held stabilizer (MD1, RP1, FR1c) · E4
+convergence, POWC across minds (CV2, CV3, CV4, OA1, CR1, CV5 whole) · E5
+the ledger, POUW with POWC priced per lane per layer per grade (Phase P,
+PH4 with A18 and LR1, W2, W1) · E6 the cluster (76: star formation and
+re-organization, MEM1). Readers, gates and sweeps ride inside the phase
+whose reading they serve or wait; the vocabulary sweep (VT1, VT2, OR2d)
+lands at a quiet point between phases and never inside one.
+
+### 78.5 The audit standard for the analyst's and the implementor's code
+
+Every commit: read whole; suite and gate reproduced under `target/gate`
+and quoted; the fleet reading before and after, quoted, where the phase
+claims one; checklist (a)–(r) and chapter 77's test — what can a mind
+deduce after it. FORWARD ENGINEERED means: every carrier general in n and
+in grade, with no arity written in (rule 1, law 11); no row the next row
+must undo; no representative, order or table chosen for the minds (r);
+instruments typed and read by the system; the physics the only producer
+(p); nothing on the fleet that the doctrine has not ruled. STEADFAST
+means: a row landed is not re-opened by vocabulary; a ruling applies at
+every site of its shape; a reading recorded with its numbers, and a
+reading at zero recorded as zero.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
