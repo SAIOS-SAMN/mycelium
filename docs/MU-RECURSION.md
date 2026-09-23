@@ -10450,6 +10450,55 @@ bivector, so such an element compares unequal to itself; two rays are
 equal iff their coefficient vectors are proportional, read by cross
 multiplication, exact, and `==` is that.
 
+### 78.13 A refusal is a coordinate to reconnect from (ruled 2026-09-23, the operator's word)
+
+The eighteen unread contact steps (78.12, OR3) are not failures that a
+new mechanism must fix; they are the KEY to try the connections the
+engine already holds and has not composed. The operator's word: try
+novel ways to solve these problems by connecting the pieces we have,
+never by assuming the failure calls for something added. A refusal is
+precise — a step, a face, a member pair, a reason (`NotRigid`, `Cone`,
+…) — a location in the complex with a type attached, which is what 74
+calls an obstruction and what the pivot moves on: a pivot is one move on
+one axis of the class vector, and crossing the same wall on another
+fibre IS a pivot, on a new orbit (62.5: never the circuit that exited).
+Three reconnections exist today, each a keyed read and never a search:
+
+1. **Another carrier on the same pair — the tether.** `NotRigid` says no
+   one versor carries the union; the tether `V = s_b s_a` always exists
+   between two nuclei, and BQ5a's refraction `g = (θ_bθ_a⁻¹)·V` is that
+   carrier on the same face at the same member pair.
+2. **Another fibre on the same face.** A face holds a place per chart
+   pair (`face.at`); the circuit crossed at one member pair, and every
+   other chart pair at the same two vertices is a different circuit of
+   the member complex with its own transport — listed by one read of the
+   face's own `at`.
+3. **Another circuit through the same cell.** NB1's cell holds every
+   member standing at its witness; the other circuits through it that
+   cross the contact on another fibre or by the tether are the
+   generators CG1's algebra combines, and they can close around the
+   same wall.
+
+**What must not happen.** The connection that reads is never reported
+as the circuit's holonomy (checklist (r)): that is OR3's fallback one
+level up, an unread contact replaced by a convenient read. Each
+reconnection is its own circuit with its own reading, kept BESIDE the
+refusal, and HOW THEY DISAGREE IS THE CLASSIFICATION: read by another
+fibre or the tether — cover-relative (C), content the mind already
+held; read only by another mind's charts — dialect-relative (D),
+offered across the mesh (74, CV4); refused by every carrier at every
+fibre — permanent (P), a wall, and a wall is where content could stand
+(78.12(4)). This is 74 made operational inside one mind before the
+mesh: a mind's own charts are its first other perspectives.
+
+**Instrument first (RC1).** A probe over the eighteen, per contact
+face: how many other member pairs the face holds at that vertex pair;
+whether the tether refraction reads it; how many other circuits of its
+witness cell cross it. Its table comes to the coordinator before any
+offering mechanism is built; the reading says whether the eighteen are
+mostly cover-relative — a reconnection is real content — or permanent
+walls.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
