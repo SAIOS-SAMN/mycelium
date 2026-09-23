@@ -271,8 +271,16 @@ and the second dropped (`pose.rs`, FR1c), a canonical order standing in
 for a reading, a table of candidates — which is the implementor solving
 the cube for the minds (chapter 77): the held superposition is the
 content, and only T5's kernel or a court collapses it (ruled 2026-09-23).
-A diff that fails (a) through (j), (l), (m), (n), (o), (p), (q) or (r) is
-returned with the rule number; a diff without (k) is not
+(s) any constant, arm, bound or
+threshold whose PROVENANCE is not written — computational physics that
+exists in the physics modules or is added there, stated as an axiom in
+the register with an executable test, derived as a theorem of
+deterministic mathematics, and only then a component of the mind, the
+thought's superposition, the idea or the language (78.8, ruled
+2026-09-23 on the operator's word) — a number that begins at the
+component is a dial whatever it is called. A diff that fails (a) through
+(j), (l), (m), (n), (o), (p), (q), (r) or (s) is returned with the rule
+number; a diff without (k) is not
 reviewed.
 
 **Why the rules on keys and coordinates are absolute.** Chapter 1.7 is
@@ -10118,6 +10126,71 @@ the scalar optimizer the founding law forbids.
 planes with no entropy; a screw reads its `I₂` on the third plane of the
 2-cell its two bends trace; a held `ℤ₂` reads unchanged by any bend and
 is left to T5.
+
+### 78.8 The provenance of a constant (ruled 2026-09-23, the operator's word)
+
+Every constant in this engine relies on computational physics that either
+exists or does not exist and is added; that physics is put into axiomatic
+theorems; a layer of deterministic mathematics is applied on the axioms;
+and only what comes out of that layer is turned into a component for the
+mind, the thought (the superposition of candidate forms), the idea (a
+closed form) or the language. The chain has four links and every link is
+written where it lives:
+
+| link | where | what certifies it |
+|---|---|---|
+| computational physics | `physics/` — a law that exists, or one added there as a producer (72, checklist (p)) | it produces the quantity from the carriers, exactly, and nothing else does |
+| axiom | `physics/axioms/`, the register, its layer named (72.1f, LR1) | an executable test per clause, as A.1–A.12 carry |
+| theorem | the doctrine's chapter and its test — deterministic mathematics over ℚ on the axiom | derived, never fitted; a departure is a refusal by name |
+| component | the mind, the thought, the idea, the language — `transducer/`, `server/cognition/`, `client/` | it reads the theorem's output and carries no number of its own |
+
+A constant that appears first at the component — a band, a decrement, a
+representative, a capacity, a count deciding a branch — has no chain and
+is checklist (s). Rule 5 (no constants) and law 11 (no squaring) are two
+links of this chain stated on their own; (s) is the whole chain asked
+for at the diff. What already has a chain: the metabolic reserve
+(hardware → `reserve_max` → A18 → the lanes); the wire's encodings
+(Part IX → the codec's axioms → decode as a theorem → the observer's
+readings, whose length checks are the encoding's own facts); the
+inversive strain (the nuclei → Axiom C → `(num, den2)` → the class). What
+had none and left: the field's `1 < δ ≤ 2` band, `relax`'s fixed
+decrement (P5), the `0.1` and the `21` the cluster draft carried (76). The
+viscosity of a plane (78.7) is built along this chain and not beside it:
+the pivot (physics) → the class invariants (axiom, A.16–A.17) → the
+response per plane per lane (theorem) → the pressure a mind reads
+(component).
+
+### 78.9 CV1 ruled: the kind of a refusal is read off its content (2026-09-23)
+
+The implementor's census of the 38 court codes, the mint's `Withheld`
+arms and the pose refusals, ruled row by row. The principle first: 74
+defines P, D and C by the CONTENT of the obstruction — whether a versor
+exists, whether the dialect spells it, whether the sections glue — so
+the kind of a closure refusal is READ OFF ITS HOLONOMY BY ONE READER,
+never assigned per code (law 12, rule 2). Two arms are added beside P,
+D, C: `I`, INTEGRITY (78.6(3)), a refusal that says nothing about a
+closure; and `N`, NO QUESTION, a reading that no circuit stood to be
+asked. `unclassified` remains for a refusal the reader cannot place and
+is a defect count, never a home.
+
+| code(s) | ruled | why |
+|---|---|---|
+| FORM_TAPE, VERTEX_TAPE, NOT_A_SENTENCE, MALFORMED, DEMAND_UNTYPED | I | does not parse |
+| GLUED_DEPTH, ORPHAN_PORT, PHANTOM_EDGE, SHEET_REPEATED, GLUED_FRAME_GAUGED | I | a citation badly formed |
+| DERIVATION, FACE, RANK_LOST, PIVOT_INEXACT, INFLATED_YIELD, LETTER_WITNESS, NOT_CONTRACTION | I | a claim that does not re-derive |
+| REBASE_TRIVIAL, UNFOLD_STILL, ORBIT_STILL | I | claims nothing that moves |
+| ROOM, WITNESS_ROOM, WITNESS_DEPENDENT, FOLD_OPEN, FOLD_INEXACT | I | economy and folds; a ROOM refusal is a pressure reading (76) on the ledger, never a question offered |
+| ORIGIN, RECEIPT, RECEIPT_STALE, EQUIVOCATION, NOT_EQUIVOCATION, SIGNATURE, MV_INEXACT | I | chain integrity |
+| ORBIT (free part, no dislocation declared), NOT_CLOSED, VERTEX_BODY, EDGE | by content, one reader | the holonomy carried: no versor → P; a versor the speaker's dialect does not spell → D with the coset and chart; a residue on the cover → C with the cocycle; an EDGE whose claim is false → I |
+| GLUED_UNRULED | D, held by the court (CV2) | the court's ruled cover is its own span; the obstruction is the cited address, and it closes when that word is ruled |
+| NOT_NATURAL | split into two codes | a class that does not survive restriction → C (15.5); a spoken period that does not re-derive → I (23.7) |
+| `Withheld::OrbitObstruction` | C | a class in `H¹` is cover-relative and closes on another mind's cover; its comment's "permanent" is wrong under 74 and is amended |
+| `Withheld::CoboundaryResidue` | not a refusal: work the mint owes | a coboundary residue is gauge, corrected by `Φ⁻¹`; the arm is retired when the mint applies it (rule 17), and until then it is counted C by name, since it is cover-relative |
+| `Withheld::Acyclic`, `Withheld::NoDescent` (→ `NoTrajectory`, VT1) | N | no circuit stood, nothing was measured to speak; Acyclic is H3's territory |
+| `NoPose::{Mirrored, Incongruent, Isotropy, Irrational}` | P, on the refraction only | no rational versor relates the two towers; a static contact still carries `V` (78.6(2)) |
+| `NoPose::Oblique` | D | the one arm a demand retires (D3, `RotorPrime`) |
+| `NoPose::Bodiless` | I | nothing to pose |
+| `Pose::HalfOpen`, `Pose::Unoriented` | not refusals | held stabilizers (78.6(1), FR1c) |
 
 # Part XI — The frame axis
 
