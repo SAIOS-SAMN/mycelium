@@ -8823,6 +8823,61 @@ content (NB1), the fibres riding every cell. BQ5b's face holds `V`
 whole, as written. The nerve's certified triples (58.1, read 0 on 252
 forms) are the 2-cells NB1 mints wherever three bodies mutually meet.
 
+### 72.1c A frame is a section over a stratum of the base, never a still (ruled 2026-09-23)
+
+The operator's reading: a step of `k` in `T` gives one "frame", and a
+body already in motion is then frozen at that instant in two dimensions,
+where the topology asked for should be examined instead. Measured, the
+freeze is in the frame reader: `blade::Frame` and `relative_rotor` read a
+body's orientation from planar harmonics of `x + iy` alone, so `θ` can
+only ever be a turn in `e₁₂`; nothing is read across `e₃`; the plane
+census lights the planes containing the succession axis almost never
+(`e₁₃ 1, e₂₃ 0, e₃₊ 0, e₃₋ 0`); and 52.5 already found and fixed this
+once for the EDGE — a quotient at one frame has no `e₃` extent and its
+loops read flat — while the frame reader never received the same fix. A
+moving world measured through its stills.
+
+**The word.** "Frame" keeps 1.4's sense: the sensor's plane in its
+conformal model, with a carriage — the place a form acts. A slice of the
+base at one `k` is a **section at `k`** (51.4), and a body's orientation
+with its placement is its **pose** (vocabulary). `blade::Frame`, the
+relative-orientation reading, is the relative pose and is renamed with
+its row.
+
+**The ruling.**
+
+1. **A body is its tube, not its slice.** Along `e₃` a family is one body
+   on `(r, c, k)` (51.3, 51.4). Its pose is read on the whole tube: `θ`
+   is a versor over every plane the tube occupies — the planes containing
+   `e₃` and the boost planes among them — read from the tower on `n` axes
+   (BQ4, A.11 on `n` axes), never a planar turn.
+2. **The motion is part of the body's state.** A.13 names it: momentum
+   is the inertia paired with the carriage between sections, `Π =
+   I · g_{k→k+1}`, the `S` lane against the `T` lane between frames.
+   `Quotient { frame, car, … }` already carries that transition and has
+   never been read as a momentum; A13 builds it, so a body carries its
+   pose and its motion together.
+3. **The span is a stratum of `e₃`, and it is content before it is a
+   reading.** The answer to "intrinsic or observer-relative" is both,
+   split the way the document already splits content from reading. The
+   span a relation closes over is CONTENT read from the form: a cycle's
+   span is the sections its holonomy is read over, an orbit's is its
+   period `ℓ`, a contact's is the sections its interface spans; it is a
+   prefix of the base's `e₃` coordinate, a stratum (A21), read as a
+   keyed fibre and never by walking `k` by `k`. What a mind or a court
+   ASKS about is a reading of that content at a stratum — a demand may
+   name a stratum (53.3), the horizon is spellability per mind (59.6) —
+   and a reading never changes the content (law 12): where a cell's own
+   span exceeds the stratum asked, the reading holds (rule 15) or refuses
+   by name, and never truncates the tube to the still that was asked
+   for. A fixed span, one `k` or any other constant, is refused (rule 5).
+4. **The relative pose of two moving bodies is the transport between
+   their tubes** over the span, in one exact lift, composed with the
+   tether and with the `n`-body versor as before. The inter-section
+   carriage then supplies what the frozen `θ` could not: the second
+   Casimir from a turn against a displacement along `e₃`, which is
+   exactly what makes a screw (60.4, the harmonic axiom test).
+
 ### 72.2 What the rows carry
 
 - **Refraction on the pairs the topology names** (BQ5a). The strain,
