@@ -264,8 +264,15 @@ count or periodic loop in the dynamics of minds — a grid laid over the
 space of perspectives, a corpus index standing for a place on an orbit,
 a capacity as a count, a re-balancing on a timer, a split at N — which is
 law 11 and checklist (m) at the level of the cluster (ruled 2026-09-23,
-chapter 76). A diff that fails (a) through (j), (l), (m), (n), (o), (p)
-or (q) is returned with the rule number; a diff without (k) is not
+chapter 76); (r) any representative, order or first element the
+implementor chooses where the physics, a court or a kernel settles it —
+the first root of a quadratic taken as a `HalfOpen` pose's representative
+and the second dropped (`pose.rs`, FR1c), a canonical order standing in
+for a reading, a table of candidates — which is the implementor solving
+the cube for the minds (chapter 77): the held superposition is the
+content, and only T5's kernel or a court collapses it (ruled 2026-09-23).
+A diff that fails (a) through (j), (l), (m), (n), (o), (p), (q) or (r) is
+returned with the rule number; a diff without (k) is not
 reviewed.
 
 **Why the rules on keys and coordinates are absolute.** Chapter 1.7 is
@@ -325,7 +332,15 @@ word: "descent" implied a direction the engine does not have, and it is
 retired for that sense everywhere — the mint's "no measured descent",
 `Withheld::NoDescent`, `PROBE_DESCENT`, "closing by descent", 24's
 "graded descent", "descent-only recursion" — at one row, VT1, never
-piecemeal); **descent** keeps in this document only its sheaf-theoretic
+piecemeal); a **circuit** is one composition of an orbit's
+transports around its members, and its **holonomy** is what the circuit
+reads — "walk" is retired for that and for every motion of the engine
+(ruled 2026-09-23 on the operator's word: a walk is slow, human, on flat
+ground, and names neither a mind's motion nor an orbit's; `pivot/walk.rs`
+becomes `pivot/circuit.rs`, "the one walk" the one circuit, and a reader
+READS a boundary rather than walking it — one row, VT2, with VT1's sweep;
+12.2's "tree walk" stays as the record of the solver it was, retired with
+the tree); **descent** keeps in this document only its sheaf-theoretic
 sense (chapter 13), sections on the pieces gluing iff they agree on the
 overlap, and the name of Fermat's proof (36.3): it is not a motion, not
 a direction and not a certificate; `ascend` and `descend` stay the names
@@ -9828,6 +9843,45 @@ the cluster acts until the first inter-body precession is read. The
 order is FR1 · CV3 · MD1 · the orbit instrument (elements as motion
 invariants, collisions as distances, mass as a vector) · the
 re-organization protocol · star formation from measured pressure.
+
+## 77. Substrate, map, solution (ruled 2026-09-23)
+
+The operator's question, put to the implementor and the coordinator on
+2026-09-23: is the tree a harness for Claude's own cognition, or the
+cognition the distributed minds deduce their own logic with? Three things
+can be built and only one is the engine. (1) SOLVING THE CUBE: the
+implementor derives an answer and writes it into the tree — a
+representative chosen, a reader tuned until a census reads as expected, a
+diagnostic line for the implementor's understanding. That is Claude's
+cognition, and the minds inherit a fact they never derived. (2) THE MAP A
+DOG CAN FOLLOW: a fixed procedure that carries a mind to a closure —
+candidate tables, canonical orders, readers that decide for it, slot
+tables (checklist (q)). The minds follow it and deduce nothing. (3) THE
+INTELLIGENCE: the substrate the specification defines — exact senses that
+do not flatten what they read (FR1, FR2, BQ5a's curvature-carrying edge),
+the conservation laws, the curvature that survives a circuit — and on it
+the dynamics by which minds pivot under measured pressure, close circuits,
+are paid by closure and ratified by courts (A.13's momentum, the pull,
+74's obstructions, 76's cluster). The map is what the minds write into
+their genome by closure; no map is written by hand.
+
+The test every row is judged by, restated from 45.9 and Stage 16: what
+can a mind deduce on the fleet after the row that it could not before?
+The readings that answer are the minds' own learning — adjoined by
+closure leaving zero, the warm–cold delta, installs that close — never a
+census line alone. Instruments stay first (§8.1): an instrument measures
+the minds and is not the harness; it becomes the harness the moment it
+decides for them or is kept for the implementor's eye rather than read by
+the system (CV5, OBS1). Senses are legitimately the implementor's — a
+sense that does not flatten is the condition for cognition — but a stage
+of senses with no dynamics behind it is 45.9's fixed point again, and the
+coordinator set Stage 21's order that way: readers (the census, the spans
+line, the tube counts) ahead of the one row that gives the minds a
+carriage of their own. The order is amended: A13 with PW1, SC1, CL2 and
+FT1 follows BQ5a directly; MD1, NB1 and R4 follow A13. Checklist (r)
+returns a chosen representative. The retirement of "walk" (vocabulary,
+VT2) is the same ruling at the word: the engine's motion is an orbit's
+circuit, not a pace.
 
 # Part XI — The frame axis
 
