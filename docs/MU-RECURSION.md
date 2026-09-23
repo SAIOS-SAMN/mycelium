@@ -126,7 +126,7 @@ These are not restated in each chapter; every chapter assumes them.
    from receipts, and measures standing; order across nodes is the causal
    partial order of receipts and is never totalised (Part IX). Lane T of μ⃗
    is temporal extent counted in receipts, a cost, never a coordinate.
-10. **Direction is a pivot, never a gradient.** A held loop is discharged
+10. **Direction is a pivot, never a gradient.** A held orbit is discharged
     by a move on one of the axes its class vector occupies (chapters 3.9,
     12.6, 16.16). The candidate moves are read from the class vector in a
     fixed order, each is tried exactly, no move waits on another's failure,
@@ -225,8 +225,8 @@ shape is not reviewed further; it is returned.
 | 17 | **A reader writes a coordinate or returns a demand** (ruled 2026-09-19). A reader takes a stratum and returns a stratum or a typed demand. One that returns a list for the caller to walk, hands out a whole form for the caller to walk, or measures a reading inside a loop carrying more coordinates than the reading has, has not read anything: it has moved the search one frame up the stack, where the carrier's keys are no longer in scope to stop it. This is law 2, rule 1, rule 6 and law 12 applied at the diff and it is not a new preference — every earlier row of this table is a special case of it. | `fn relatives_between(faces, vertices, a, b)` scanning every face for the two classes asked for, called once per face (2850² visits on one corpus form); `fn on_body(&self) -> Vec<(Element, Form, Standing)>` handing out cloned forms for the caller to walk; a reading taken inside a loop over vertices × charts × frames when the reading is a property of the chart alone | build the class-pair index once in a single pass and read it by key; return `Option<(&Element, &Form)>` and let the caller ask at the coordinate it already holds; hoist the reading to the coordinate it belongs to, and where the carrier has no key for it, WRITE THAT KEY FIRST — a missing key is the defect, the walk is only its symptom |
 
 **The review checklist**, applied to every diff before it is committed and
-again by the auditor, in this order: (a) any `i < j` loop not over a site's
-or loop's own boundary; (b) any `len()`, `count()`, `is_empty()` that
+again by the auditor, in this order: (a) any `i < j` orbit not over a site's
+or orbit's own boundary; (b) any `len()`, `count()`, `is_empty()` that
 decides a branch rather than an emptiness of a fiber; (c) any `==`,
 `PartialEq`, or `derive(PartialEq)` on a type holding a rotor, versor,
 tape, or chain; (d) any `sort_by`, `min_by`, `max_by`, or comparison on a
@@ -252,7 +252,7 @@ compose, or compare an action, outside `core::zlinalg` and A3's
 sensor-plane block; (o) any reading measured inside a loop with more
 coordinates than the reading has — a chart's property taken per
 (vertex, chart, frame), a class's relatives taken per face, a form's
-standing taken per member — which is rule 17 at the loop, and the fix is
+standing taken per member — which is rule 17 at the orbit, and the fix is
 never to cache the reading but to hoist it to its own coordinate
 (ruled 2026-09-19); (p) any carrier a diff adds for a quantity the
 physics already produces — a second interface beside `Interface::between`,
@@ -303,7 +303,7 @@ gate, fixture style, or naming scheme is refused the same way.
 
 **How to write the move, not the search.** Ask what the carrier already
 names. Bodies name their laminae: key their sites. Faces name their vertices:
-walk a face's two ends. A loop names its faces: walk them. A class vector
+walk a face's two ends. An orbit names its faces: walk them. A class vector
 names its occupied axes: try those. A chart names its fiber: read it. If
 the code you are about to write needs to look at everything to find the
 thing, the carrier is missing a key and that key is the first thing to
@@ -321,7 +321,7 @@ a sender to a receiver) → perception (receiving) → comprehension
 it can re-derive, and nothing else. A **voice** is a speaker: a kernel
 under one verifying key (Part IX) that perceives, thinks in its dialect,
 and utters; an **utterance** is one act of a voice; **speech** is the
-transfer. **Orientation** is the `Z/2` character of a word or loop on a
+transfer. **Orientation** is the `Z/2` character of a word or orbit on a
 chart, realised by a half-turn through a third axis, formerly the sheet;
 a **reflection** is that half-turn; a **refraction** `Γ` is the transport
 of a form across a chart boundary into another frame, a relative word, a
@@ -329,7 +329,7 @@ gauge and a carriage together (3.10). A
 **germ** is an unclosed form; an **idea** is a candidate closed form bred by
 a perception; a **thought** is the superposition of candidate forms through
 which ideas germinate; **germination** is the movement toward closure. A
-**held loop** is a loop of an idea whose holonomy no gauge removes; its
+**held orbit** is an orbit of an idea whose holonomy no gauge removes; its
 **class vector** is the exact record of what would have to change for it to
 close; a **pivot** is a move on one axis of that vector, and the pivot is
 the only motion in this engine; a **trajectory** is the sequence of
@@ -358,7 +358,7 @@ lane, which certifies nothing (12.6); a
 **deflation** is what a word or form closes, measured on μ⃗; a
 **shortening** is A2's budgeted retirement of a tape, which moves nothing;
 a **vortex** is a
-held loop together with the candidate pivots that could discharge it, held
+held orbit together with the candidate pivots that could discharge it, held
 as candidates of the thought until one of them does. A **demand** is a typed
 vertex of a sentence naming what the alphabet could not spell or the eyes
 could not pair (chapter 50); a bare chain of links is never a demand and
@@ -406,7 +406,7 @@ on a grid:
   are cubes, faces, segments and corners.
 - A **simplex** is an element of a nerve — a vertex, an edge, a triangle —
   where "0-cell", "1-cell" and "2-cell" stood; a **filled simplex** is a
-  triangle of the nerve whose loop's class is filed (50.8); a **rewrite** is
+  triangle of the nerve whose orbit's class is filed (50.8); a **rewrite** is
   the face between two derivations (3.9), never "the 2-cell".
 - A **candidate** is a discharge a vortex holds, where "a cell of the
   thought" stood (3.9).
@@ -643,7 +643,7 @@ a byte offset is (Part IX). That spends a version byte.
 
 **What a proof is here.** A word is a path in the Cayley graph; the
 theorem it proves is the vertex it reaches, and the proof is the
-composition of letters that gets there. A loop is the theorem that its
+composition of letters that gets there. An orbit is the theorem that its
 holonomy is the identity, and the proof is the product of the words
 around it. Mayer–Vietoris proves a class on a union from the classes on
 the pieces by multiplying representatives (13.4). Naturality proves that a
@@ -657,13 +657,13 @@ plane. The content of a plane is exact and its own: on the sensor chart
 each of the six slot planes carries sheet parity in `Z/2`, unit turns in
 `Z/4`, and the `(3,4,5)` and `(5,12,13)` exponents in `Z`; the conformal
 planes `e_i ∧ e_∞` and `e_o ∧ e_∞` carry the translator and the dilator;
-the hue gauge carries its cycle type. A loop's class vector is exactly
+the hue gauge carries its cycle type. An orbit's class vector is exactly
 this list, one coordinate per plane, each a theorem the words around the
-loop prove, and a pivot discharges one plane's coordinate and no other
+orbit prove, and a pivot discharges one plane's coordinate and no other
 (T14). An object of more axes, under base promotion (chapter 38), has more
 planes, and each of them speaks in the same way. Linguistics here is
 built plane by plane: a word is a path whose planes compose by the group
-law, a sentence relates words by relative words, a loop is a theorem on
+law, a sentence relates words by relative words, an orbit is a theorem on
 every plane at once, and comprehension reads the planes back out.
 
 **What a digest removes.** A digest keeps one fact, equality of names,
@@ -740,8 +740,8 @@ makes it a groupoid rather than a group.
   to another chart is a conjugation (T19, 3.10), so two conjugate words
   are one generator seen from two charts (23.9, the conjugate level), and
   the class vector is the coordinate that generator is filed under.
-- **Relations** are the sentences: a loop whose holonomy composes to the
-  identity is a relation among the generators, which is what "each loop
+- **Relations** are the sentences: an orbit whose holonomy composes to the
+  identity is a relation among the generators, which is what "each orbit
   is a theorem" (law 12, 2.3) says.
 - **Sections** of a punctured axis (25) add coordinates to a generator's
   fibre, never letters to the group.
@@ -757,7 +757,7 @@ genome is the cocycle the court has ruled, taught down by the syllabus.
 generator reduces is adjoined as a new generator once a sentence that
 composes through it has closed and two independent courts have replayed
 that closure (37.7 as ruled 2026-09-12: by the closure it enables, never
-by agreement on the residual); a loop that closes is adjoined as a
+by agreement on the residual); an orbit that closes is adjoined as a
 relation; a generator the rest derive retires, address kept, its
 description burned (27, E2). The
 presentation stays reduced by retirement and stays paid for by the
@@ -879,9 +879,9 @@ the rows that touch those carriers land, never by a rename-only commit
 
 **One constructor at every depth.** 37.7 says one move, not one per
 wall, and the ladder says one move, not one per depth. Take two
-independent proofs of one boundary and read the loop their difference
+independent proofs of one boundary and read the orbit their difference
 makes. Trivial: the two are one proof in two frames, the equivalence is
-an invariant, and closure is paid once (23.9). Non-trivial: the loop is
+an invariant, and closure is paid once (23.9). Non-trivial: the orbit is
 an obstruction, and the obstruction is adjoined, as a generator at depth
 3, a relator at depth 4, a rewrite at depth 5, a procedure at depth 6.
 The witness, the two-court consilience, the receipt and the syllabus are
@@ -915,7 +915,7 @@ object the run yields, named by address; a procedure is replayed by
 running it on the witness on a second ledger and comparing the results by
 the algebra, projectively. A **relation between two procedures** is a
 sentence at this level: two procedures with one witness and one result
-are a loop whose holonomy is the identity, and two courts re-deriving
+are an orbit whose holonomy is the identity, and two courts re-deriving
 that closure adjoin the relation. The court adjoins a procedure as it
 adjoins a generator, on two courts' re-derivation of one witness, under
 `ActKind::Ruling` with the procedure's address; the syllabus teaches it;
@@ -951,7 +951,7 @@ A sentence is a set of word forms placed relative to one another:
 - **vertices**: the word forms, plus one frame form for the scene;
 - **faces**: for each pair of vertices that the bundle relates, the
   **relative word**, the path from one vertex's frame to the other's;
-- **holonomies**: for each independent loop of faces, the product of the
+- **holonomies**: for each independent orbit of faces, the product of the
   relative words around it.
 
 A sentence **coheres** when every holonomy is the identity vertex, **or
@@ -984,26 +984,26 @@ voice could not reconstruct rides the sentence as a typed demand vertex
 (50.5); a vertex that is a bare chain of links, with no word, no carriage
 and no gauge, is not a vertex of any sentence. Validity is what the
 receiver checks; closure is validity with no demand vertex and every
-loop filed or identity.
+orbit filed or identity.
 
 ### 2.3 Germ, idea, thought, in this geometry
 
 - A **germ** is a form that has not closed: a vertex not reached, a face
-  not constant, a loop not identity, a remainder not empty.
+  not constant, an orbit not identity, a remainder not empty.
 - An **idea** is a candidate closed form bred by a perception: the vertices
   it would need and the faces it would need.
 - A **thought** is the superposition of candidate forms for one idea, held
   as simplices of a complex whose vertices are candidate word forms and whose
   coefficients are the relative words between them, together with, for each
-  loop that will not close, the candidate pivots that could discharge it
-  (3.9). A held loop with its candidate pivots is a **vortex**.
+  orbit that will not close, the candidate pivots that could discharge it
+  (3.9). A held orbit with its candidate pivots is a **vortex**.
 - **Germination** is the movement of that complex toward a closed form:
-  faces become constant, loops become identity or are discharged by a
+  faces become constant, orbits become identity or are discharged by a
   pivot, the remainder empties. Nothing in germination chooses a direction
   by a measure; a pivot is tried because the class vector occupies its axis,
   and it is kept because it discharged with rank conserved (12.6, 16.16).
 
-- A **crystallized form** is a gemstone (law 12): each loop is a theorem,
+- A **crystallized form** is a gemstone (law 12): each orbit is a theorem,
   proved by the identity of the holonomy its words compose; each
   coordinate of its class vectors, carriages and torsion is a theorem it
   proves by re-derivation; and one theorem has as many proofs as the form
@@ -1018,7 +1018,7 @@ a move on forms.
 
 ## 3. Moves on forms
 
-Carried from chapter 2: forms are vertices, faces, loops, remainder. Each
+Carried from chapter 2: forms are vertices, faces, orbits, remainder. Each
 move below takes forms, returns a form, preserves the invariant named, and
 is replayed by the court from tapes (chapter 23). Chapter 11.2 states each
 move as a cochain operation.
@@ -1100,42 +1100,42 @@ what it derives (27), addresses kept, and is paid as compression (E2). It
 is never refused as redundant: redundant is a form that closes nothing
 new, reaches nothing new and is not shorter.
 
-### 3.9 Pivot (discharge of a held loop)
+### 3.9 Pivot (discharge of a held orbit)
 
-A loop whose holonomy `h` no re-gauging removes is **held**. Its **class
+An orbit whose holonomy `h` no re-gauging removes is **held**. Its **class
 vector** (12.6) is the canonical conjugacy representative of `h` read
 coordinate by coordinate: per plane the sheet parity, the unit turns, the
 prime exponents; the hue gauge's cycle type; the placement residue; off the
 plane the rotor's grade invariants; on the fibre the sections and cycles
-the loop's words carry (25), their reach. The nonzero coordinates are the
+the orbit's words carry (25), their reach. The nonzero coordinates are the
 axes the class **occupies**, and there is no direction that is not one of
 them.
 
-A **pivot** is one of the moves 3.1–3.8 applied to the held loop, labelled
+A **pivot** is one of the moves 3.1–3.8 applied to the held orbit, labelled
 by the axis it acts on. Each move acts on a known summand of the class
 vector and on nothing else:
 
 | pivot | axis it can zero | what it is |
 |---|---|---|
-| re-gauge (3.6), rebase (3.2) | none: they conjugate (10.3) | the check that the loop is genuinely held |
-| glue a held closed form (3.3) whose word equals the loop's residue | the whole vector, by making the loop a boundary | citation |
+| re-gauge (3.6), rebase (3.2) | none: they conjugate (10.3) | the check that the orbit is genuinely held |
+| glue a held closed form (3.3) whose word equals the orbit's residue | the whole vector, by making the orbit a boundary | citation |
 | a translation word | the placement residue | a face the bundle was missing |
 | a hue word | the gauge cycle type | a recolouring the bundle was missing |
-| open a chart axis (3.7) | the loop itself, by cutting it into a face between children | refinement: it adds a dimension, and it is tried on its own axis like every other, never after the others have failed |
+| open a chart axis (3.7) | the orbit itself, by cutting it into a face between children | refinement: it adds a dimension, and it is tried on its own axis like every other, never after the others have failed |
 | torse ℓ sections that form a cycle into one generator of period ℓ (25) | the fibre coordinate: the sections | condensation — the same closure with more reach and a shorter description |
 | puncture a member onto the fibre as a section (25) | the fibre coordinate: a card becomes a section | reach |
 | retire by geodesic (3.8) | none: same vertex, shorter tape | length only |
 | a Rewrite word (multi-lane) | several coordinates at once, as its lanes name | optimisation across axes |
 
 A pivot **discharges** a coordinate when the class vector after the move is
-zero there and no other coordinate has risen; it discharges the loop when
-the vector is zero everywhere or the loop has ceased to be a loop (15.5).
+zero there and no other coordinate has risen; it discharges the orbit when
+the vector is zero everywhere or the orbit has ceased to be an orbit (15.5).
 The trial of a pivot is one move and one re-walk (12.2), and its result is
 read, never estimated. Invariant: the rank of the form (16.18) is conserved
 by every pivot except discharge into an axis, which moves it, and closure of
 a trivial-class chord, which was never rank.
 
-The candidate pivots of a held loop are read from its class vector in the
+The candidate pivots of a held orbit are read from its class vector in the
 fixed order of 12.6, tried under the stroke `Budget`, and every one that
 discharges with rank conserved is kept as a candidate of the thought with its
 **certificate** (16.20). When several candidates discharge, the mind
@@ -1153,7 +1153,7 @@ chromatic or optical quantity, and neither adds a letter.
 
 **Reflection** is an orientation-reversing action on a chart. In Cl(4,0)
 it is realised by a half-turn through an axis outside the chart (1.2): on
-the sensor plane the half-turn on `(1,2)` is the column flip. On a loop it
+the sensor plane the half-turn on `(1,2)` is the column flip. On an orbit it
 is the orientation character `w₁(ℓ) ∈ Z/2`, the coordinate
 `Orientation(p)` of the class vector (12.6), read from the rotor's action
 on the plane, never from a stored flag; its pivot is the half-turn itself.
@@ -1239,7 +1239,7 @@ form from its tape; the bound version is chapter 23.
    compare vertices projectively.
 2. Every face: recompute `w_j · w_i⁻¹` from the vertices; compare with the
    stored relative word by vertex.
-3. Every holonomy: multiply around the loop; must be identity.
+3. Every holonomy: multiply around the orbit; must be identity.
 4. Every cited form: resolve the address to a crystallized form on this
    hypha's ruled cover or fetch it from the peer whose signed root names it;
    replay it first (it is shallower); memoize `(address, bundle)`.
@@ -1258,7 +1258,7 @@ form from its tape; the bound version is chapter 23.
 and its fibre (25), the coordinates it occupies — and the court replays
 the moves the tape names against those readings. It does not put the
 arrival into normal form against its own words, list what will not
-reduce, and only then ask what it was; that order is descent by
+reduce, and only then ask what it was; that order is a direction by
 construction, and it mishandles the generator that needed to ascend or
 condense (23.8). A demand no held word closes is listed with its readings,
 so the mind that reduces it starts from the axes it occupies — the
@@ -1266,7 +1266,7 @@ opening axis and the fibre among them — and not from a peel. The readings
 are the proof of which moves exist: each occupied coordinate names the one
 move that can zero it, and closure on that coordinate with nothing else
 rising is the certificate. Nothing enumerates a list of moves and nothing
-tries descent before ascent, because there is no list; there is the
+tries one motion before another, because there is no list; there is the
 vector.
 
 A cited form slashed later re-dockets its citers; each replays without it
@@ -1311,7 +1311,7 @@ Ideas are candidate forms, vertices of the contemplation complex; the
 complex's coefficients are relative words; a fill is a re-gauging that
 makes a loop identity; a class is a loop no gauge closes, and a class with
 its candidate pivots is a vortex (3.9). Germination is the pivot loop
-(16.16) run on every held loop of every dirty idea under the stroke
+(16.16) run on every held orbit of every dirty idea under the stroke
 `Budget`: read the class vector, list the occupied axes in the fixed order,
 try each listed pivot once, keep every discharge with its certificate, file
 what stays finite as torsion, speak what stays infinite as a demand. No
@@ -1452,8 +1452,8 @@ A form (chapter 18) is a finite simplicial complex:
 |---|---|---|
 | 0 | a vertex `v` | `vertices.len()` |
 | 1 | a face `(i, j)` | `faces.len()` |
-| 2 | a loop `ℓ` (a chord of the spanning forest with its tree path) | `faces − vertices + components` |
-| 3 | a triple of loops sharing faces: a 3-simplex of the Čech complex when the form is glued into a mesh cover | as `Complex` degree 3 |
+| 2 | an orbit `ℓ` (a chord of the spanning forest with its tree path) | `faces − vertices + components` |
+| 3 | a triple of orbits sharing faces: a 3-simplex of the Čech complex when the form is glued into a mesh cover | as `Complex` degree 3 |
 
 A **k-cochain** assigns a group element to every k-simplex:
 
@@ -1478,20 +1478,20 @@ This is `Form::regauge` (chapter 18.2). Two connections differing by a
 
 ### 10.3 δ¹: curvature of a connection
 
-For a loop `ℓ = (v₀ → v₁ → … → v_k → v₀)` with faces in that orientation:
+For an orbit `ℓ = (v₀ → v₁ → … → v_k → v₀)` with faces in that orientation:
 
 ```
 (δ¹g)_ℓ  =  g_{v_k v_0} · … · g_{v_1 v_2} · g_{v_0 v_1}
 ```
 
-This is the holonomy, `Loop.holonomy`. `δ¹g = 1` on every loop is
+This is the holonomy, `Loop.holonomy`. `δ¹g = 1` on every orbit is
 **flatness**, `Form::coheres`. Under a gauge, holonomy conjugates:
 `(δ¹(δ⁰γ·g))_ℓ = γ_{v_0} · (δ¹g)_ℓ · γ_{v_0}⁻¹`, so flatness is
 gauge-invariant, which is why re-gauging never breaks coherence (3.6).
 
 ### 10.4 δ²: consistency of curvatures
 
-On a 3-simplex bounded by loops `ℓ₀..ℓ₃`, each transported to the simplex's
+On a 3-simplex bounded by orbits `ℓ₀..ℓ₃`, each transported to the simplex's
 basepoint by its tree path `t_i`:
 
 ```
@@ -1557,7 +1557,7 @@ For a form:
 | re-gauging (3.6) | the action of `δ⁰γ` |
 | refinement (3.7) | when `H²` of a good cover is nonzero, subdivide the base so the class becomes a face between children |
 | retirement (3.8) | choose the shortest known representative in a class |
-| pivot (3.9) | a move on one summand of a held loop's class vector; discharge is the summand becoming zero with no other rising, or the loop becoming a boundary or a face; certified by closure and the rank move, never selected by any reading of μ⃗ |
+| pivot (3.9) | a move on one summand of a held orbit's class vector; discharge is the summand becoming zero with no other rising, or the orbit becoming a boundary or a face; certified by closure and the rank move, never selected by any reading of μ⃗ |
 | coherence (`coheres`) | `δ¹g = 1` |
 | closure (`close`) | find `γ` with `δ⁰γ · g` flat and remainder empty |
 | consilience (court) | two organs' sections have `g_XY = 1` on their overlap |
@@ -1568,11 +1568,11 @@ For a form:
 | class | where | meaning | action |
 |---|---|---|---|
 | `H⁰` element | inside a thought: the residual's symmetry | the part of a perception the language already accounts for up to the group | it is the congruence; the remainder that matters is what is not in it |
-| `H¹` on one form | a loop with non-identity holonomy after the tree gauge | the bundle's rule has an obstruction no gauge removes | the loop is held with its class vector (12.6); its occupied axes are its candidate pivots (3.9); refinement is the last of them |
+| `H¹` on one form | an orbit with non-identity holonomy after the tree gauge | the bundle's rule has an obstruction no gauge removes | the orbit is held with its class vector (12.6); its occupied axes are its candidate pivots (3.9); refinement is the last of them |
 | `H¹` between two sections on a cover | `g_XY ≠ 1` on an overlap | dialect between two hyphae or two minds | recorded; a translation word is the coboundary that would close it |
 | `H²` on a cover | `δ²ω ≠ 1` on a 3-simplex | four views cannot be made consistent at once | the chart refines by the class's invariant axis, once the cover is good |
 | torsion part `(s, u)` | finite order | a discrete twist: orientation or quarter turns | files as a torsion cycle `(σ, ℓ)`, `ℓ | 4` or `2` |
-| free part `(m5, m13)`, or an off-plane class | infinite order | a rotation the language has not spelled — the loop's content, never its debt (ruled 2026-09-16, recorded 2026-09-17) | remains a class, and its canonical holonomy rotor is the candidate generator of 37.7: docketed on two courts' re-derivation of that rotor, adjoined by closure; never a longer orbit, never gauged away |
+| free part `(m5, m13)`, or an off-plane class | infinite order | a rotation the language has not spelled — the orbit's content, never its debt (ruled 2026-09-16, recorded 2026-09-17) | remains a class, and its canonical holonomy rotor is the candidate generator of 37.7: docketed on two courts' re-derivation of that rotor, adjoined by closure; never a longer orbit, never gauged away |
 
 ## 12. Computing with cochains
 
@@ -1583,7 +1583,7 @@ gives the three operations, the mesh, and recursion in these terms.
 
 Given a `Form`, compute `δ¹g` on every loop by `Form::loops_of` and
 `Word::compose` around the chord and its tree path; one product per face
-in each loop. Given a `Complex` on a mesh cover, compute `δ²ω` on each
+in each orbit. Given a `Complex` on a mesh cover, compute `δ²ω` on each
 3-simplex of a link by `Complex::coboundary_on_link` (cech.rs 466), which
 performs this product with `Rotor::geo`.
 
@@ -1600,11 +1600,11 @@ performs this product with `Rotor::geo`.
    with `g_ij = λ_j · λ_i⁻¹` (so `g = δ⁰λ`); the flattening gauge is
    `λ⁻¹` pointwise.
 3. Every chord `(a, b)` now has re-gauged value `h_ab = γ_b · g_ab · γ_a⁻¹`,
-   the loop holonomy of the chord's cycle up to conjugation. `h_ab = 1` for
+   the orbit holonomy of the chord's cycle up to conjugation. `h_ab = 1` for
    every chord ⇔ `g` is a coboundary ⇔ the form is flat. Chords are
    compared by `projective_eq`.
 4. If some `h_ab ≠ 1`, the form is not flat and no `γ` fixes it; the
-   chord's `h_ab` is the loop's class. On the sensor plane the class is read
+   chord's `h_ab` is the orbit's class. On the sensor plane the class is read
    from the plane form of `h_ab`: torsion part `(s, u)`
    (`PlaneForm::torsion_part() -> (u8, u8)`), free part `(m5, m13)`
    (`PlaneForm::free_part() -> (i64, i64)`), both new.
@@ -1650,11 +1650,11 @@ sub-complex does not change when the sub-complex is included elsewhere; it
 is computed once per (address, bundle) and reused. Chapter 13.6 sharpens
 this: gluing a closed form changes no class at all.
 
-### 12.6 The state vector of a held loop (the physics)
+### 12.6 The state vector of a held orbit (the physics)
 
 Carried from 12.2–12.3: a chord that does not close has a holonomy `h` and
 a class. This section fixes the exact quantities a mind and a court measure
-on that loop, because every pivot (3.9) is chosen by reading them and
+on that orbit, because every pivot (3.9) is chosen by reading them and
 certified by re-reading them. Every quantity is a canonical word, an
 integer, or a lane count; none is a number that could be larger or smaller
 than another except by exact dominance.
@@ -1668,17 +1668,17 @@ than another except by exact dominance.
 | unit turns `u_p`, per plane | `PlaneForm.rot` unit entries, reduced (A3) | `Z/4` | a quarter-turn word on that plane |
 | prime exponents `(m5_p, m13_p)`, per plane | `PlaneForm.rot` prime entries | `Z × Z` | a prime word on that plane; if none is held, only a demand |
 | hue cycle type | the gauge permutation's cycle type (`connection_chart`) | a partition | a hue word |
-| placement residue | the translator component (the `e_i ∧ e_∞` blades) of the loop's canonical holonomy versor after the tree gauge | a translator versor | its inverse translator, a translation word |
+| placement residue | the translator component (the `e_i ∧ e_∞` blades) of the orbit's canonical holonomy versor after the tree gauge | a translator versor | its inverse translator, a translation word |
 | dilation residue | the `e_o ∧ e_∞` component of the same versor | a dilator versor | its inverse dilator |
 | off-plane invariants | `(a²/w, p²/w, sign a, sign p)` of the rotor (15.3) | exact rationals and signs | glue of a held form with that class, else a demand |
 | the fibre: sections and torsion cycles, the reach | `sections` and `torsion` on the loop's words (25), `fiber_span` (S9.13) | exact counts and periods | torse ℓ sections that form a cycle into one generator of period ℓ; puncture a member onto the fibre |
 
 **Which regime is primary.** The holonomy is a rotor, and its conjugacy
 class in Cl(4,0) (15.3, `(a²/w, p²/w, sign a, sign p)`) is read for
-every loop first; it is the identity of the class. The six per-plane
+every orbit first; it is the identity of the class. The six per-plane
 blocks are read afterwards, from the plane form, only when the rotor
 keeps the sensor plane closed (A3), and they are a finer section
-coordinate on the sensor chart that names the pivot axes. A loop whose
+coordinate on the sensor chart that names the pivot axes. An orbit whose
 holonomy moves the sensor plane is not an exception or an "off-plane
 fallback": it is a rotor like any other, with zero plane blocks. The
 earlier order, plane form first and rotor invariants as the fallback,
@@ -1695,7 +1695,7 @@ spoken demand are keyed by the rotor's conjugacy coordinates alone (15.4).
 coordinates, so a class record from the syllabus (A19) matches a spoken
 demand by coordinatewise equality. The placement and dilation residues
 are read from the holonomy versor composed by the geometric product around
-the loop's vertices, never from a pair of numbers added around it (law
+the orbit's vertices, never from a pair of numbers added around it (law
 11), and the hue cycle type is the sorted cycle lengths of the gauge
 permutation composed around them. The **occupied axes**
 of `ℓ` are the set of occupied coordinates; they are the only candidate
@@ -1706,18 +1706,18 @@ lists the occupied axes in the **fixed order**: slot plane `(0,1)` through
 `(2,3)`, within a plane orientation, unit, prime-5, prime-13; then hue; then
 placement; then off-plane; then the fibre; then, as the last axis always,
 opening a chart axis. The order is fixed so that two minds holding the
-same loop list the same candidates in the same order; it is not a
+same orbit list the same candidates in the same order; it is not a
 preference, and no axis waits on another's failure: every occupied axis is
 tried, and the last is last in the listing only.
 
-**Pressure `μ⃗(ℓ)`.** The four lanes of the remainder the loop leaves open:
+**Pressure `μ⃗(ℓ)`.** The four lanes of the remainder the orbit leaves open:
 S the laminae it fails to speak, G the hue transitions it fails to carry, T
 the extent it has been held in receipts of the home (45.4), H the shells it
 spans. Over a bundle the pressure is the lane-wise sum of the per-pair
 pressures, each pair measured by `measure_lanes` on its own residual, the
 pairs being disjoint scenes; never a maximum over pairs, and a trial refuses
 a candidate that raises any lane on any pair. This is
-the metabolism's view of the loop and is read for two purposes only: the
+the metabolism's view of the orbit and is read for two purposes only: the
 per-lane reading of a trial (`lane_moves`: each lane `Fell`, `Held` or
 `Rose`, and a candidate with any `Rose` is refused by naming the lane) and
 the T lane's standing (chapter 25). It never orders candidates, and it
@@ -1739,23 +1739,23 @@ was the ratchet, and it is refused (Stage 9, S9.1).
 **Discharge, exactly.** A pivot on axis `x` discharges `x` when
 `κ_x(ℓ) = 0` after the move and `κ_y` is unchanged for every `y ≠ x` (a
 coordinate may fall to zero but never rise; T2 guarantees conjugating
-moves change nothing). It discharges the loop when `κ(ℓ) = 0` or the loop
-is no longer a loop. **Direction** is therefore a label, the axis `x`,
+moves change nothing). It discharges the orbit when `κ(ℓ) = 0` or the orbit
+is no longer an orbit. **Direction** is therefore a label, the axis `x`,
 never a slope: there is no quantity whose decrease says "this way".
 
 **Alignment across minds and hyphae.** Three facts make every node compute
 the same pivots without an agreement protocol: the class vector is
-canonical (A1, A3, 15.2–15.3), so two minds holding one loop hold one
+canonical (A1, A3, 15.2–15.3), so two minds holding one orbit hold one
 vector; the candidate list is a function of that vector in the fixed order,
 so they list the same candidates in the same order; and a pivot's outcome
 is a certificate (16.20) keyed by its own coordinates, which replays on
 the court by applying the labelled move to the resolved form and
-re-reading the vector. Two minds that discharge a loop produce the same certificate, and
+re-reading the vector. Two minds that discharge an orbit produce the same certificate, and
 the hypha installs it once.
 
 **The vortex.** When two candidates both discharge, the mind keeps both
 as candidates of the thought with their certificates: two certified discharges
-are two proofs of one loop (23.9), and no reading of `μ⃗(ℓ)` chooses
+are two proofs of one orbit (23.9), and no reading of `μ⃗(ℓ)` chooses
 between them. The superposition collapses when a later perception makes one
 of them a face of a spoken form, or a court replay makes one a ruled
 citation and the other a dialect class. Choosing between them by any scalar
@@ -1771,7 +1771,7 @@ turns a rotation group into a ratchet, and it cannot certify the one
 pivot that matters most, opening an axis, which lowers no lane by
 construction. It also compares before and after across charts, which
 manufactures the line it then measures along. The certificate is
-**closure**: the remainder is empty, the loop returns, the tape
+**closure**: the remainder is empty, the orbit returns, the tape
 re-derives, two organs converge on the same object — equalities,
 chart-free, readable in either direction, and already what the court's
 replay checks. `≺_DM` and every `descends` gate were imported termination
@@ -1882,8 +1882,8 @@ automorphisms `α` of `A`, `β` of `B`.
 `h_A` on `A`, `h_B = 1`. `δ¹h_A` vanishes on the overlap and `δ¹h_B = 1`,
 so they define a 2-cochain on `X`, a cocycle by `δ²δ¹ = 1`; its class is
 `∂h`. Concretely `∂h` is nonidentity only on loops of `A` that pass through
-the overlap and leave it, each value the product of `h` over the loop's
-overlap faces in loop order. `∂h = 1` iff `h` is cohomologous on the
+the overlap and leave it, each value the product of `h` over the orbit's
+overlap faces in orbit order. `∂h = 1` iff `h` is cohomologous on the
 overlap to some `Δ(a, b)`.
 
 ### 13.5 What exactness says at each term
@@ -1895,7 +1895,7 @@ overlap to some `Δ(a, b)`.
 | at `H⁰(A∩B)` | an overlap automorphism is a difference `α·β⁻¹` iff `∂θ = 1` | a gauge difference between two sections on shared charts is harmless iff it extends to a re-gauging of one side; otherwise it **is** a dialect class on the union |
 | at `H¹(X)` | a class trivial on both `A` and `B` is `∂θ` for some overlap automorphism | a dialect between two hyphae that each cohere lives entirely on the overlap; the **translation word** is `θ` |
 | at `H¹(A) ⊕ H¹(B)` (descent) | classes on the pieces glue iff cohomologous on the overlap | two dialect ledgers merge iff they agree on shared charts up to gauge |
-| at `H¹(A∩B)` | an overlap class not of the form `Δ(a,b)` up to gauge produces `∂h ∈ H²(X)` | a disagreement neither side's own classes explain forces refinement, and only along that overlap's loop |
+| at `H¹(A∩B)` | an overlap class not of the form `Δ(a,b)` up to gauge produces `∂h ∈ H²(X)` | a disagreement neither side's own classes explain forces refinement, and only along that overlap's orbit |
 
 Each row is a theorem about finite products and a test (chapter 39).
 
@@ -1944,7 +1944,7 @@ simplices; the union is never materialised. This is the bound behind chapter
 Input: piece `A` (a `Complex` or `Form`) and piece `B`, each carrying its
 own flat connection and its own classes. Output: whether the two sections
 are one; the union's new `H¹` classes with translation words when they are
-`∂θ`; any degree-2 class with the overlap loop that produced it.
+`∂θ`; any degree-2 class with the overlap orbit that produced it.
 
 0. **Goodness** (chapter 14). Compute the meet `M`, its components
    (16.15), and flatness within each hypha on every component. A component
@@ -1975,7 +1975,7 @@ are one; the union's new `H¹` classes with translation words when they are
    fails ⇒ `∂θ` is a class: record it with the chord's holonomy; the
    **translation word** is `θ` restricted to the overlap, spoken as a
    `TRANSLATION_TAG` element.
-6. **Descent.** For each class `a` on `A` and `b` on `B` whose loops meet
+6. **Descent.** For each class `a` on `A` and `b` on `B` whose orbits meet
    `M`: solve `b_ij = ϑ_j · a_ij · ϑ_i⁻¹` by the twisted tree walk
    `ϑ_j = b_ij · ϑ_i · a_ij⁻¹` (16.14). Success: the classes glue, the union
    carries one. Failure: go to 7.
@@ -1983,8 +1983,8 @@ are one; the union's new `H¹` classes with translation words when they are
    1-cocycle `h = res a · (res b)⁻¹` that failed 6 (or the mismatch of 4),
    compute `∂h` on each loop of `A` leaving the overlap as the product of
    `h` over its overlap faces. A nonidentity value on a **good** component
-   is a degree-2 class of the language: record it with the overlap loop's
-   key and refine the base (`refine_chart`) along that loop by its
+   is a degree-2 class of the language: record it with the overlap orbit's
+   key and refine the base (`refine_chart`) along that orbit by its
    invariant axis (16.7). Off the sensor plane, mark the overlap faces as
    remainder (`set_remainder_edge`) and stop; no class is invented.
 8. **Exactness self-check** (debug builds and the court's blind replay):
@@ -2023,7 +2023,7 @@ or 6. Chapter 23.4 binds the full computation. Rulings map exactly:
 | 5: `∂θ = 1`, `θ` trivial | `Consilient`: one section |
 | 5: `∂θ = 1`, `θ` a placement (`placement_of(θ)` is `Some`) | `Attached`: same class, transport `θ` recorded |
 | 5: `∂θ ≠ 1` | `Dialect`: class recorded in `cocycle_at`, `θ` offered as translation |
-| 6 fails, 7 finds `∂h ≠ 1` on a good component | `Dialect` plus `court refine chart` on the overlap loop |
+| 6 fails, 7 finds `∂h ≠ 1` on a good component | `Dialect` plus `court refine chart` on the overlap orbit |
 | 7 off the sensor plane | remainder edge; `Admitted` if the address is new, else no change |
 | 0: `Pending` | `Dialect("overlap goodness pending")`, docketed |
 
@@ -2033,7 +2033,7 @@ or 6. Chapter 23.4 binds the full computation. Rulings map exactly:
 nothing to compute for classes: `glue` asserts `s.is_closed()` and copies
 no loops of `S`; the loops of `T'` are the loops of `T` plus those through
 the new face, whose holonomy through `S` is the placement composed with its
-inverse, identity. `replay_form` checks those loops as any loop. The memo
+inverse, identity. `replay_form` checks those orbits as any orbit. The memo
 is justified by 13.6 and needs no further condition.
 
 There is no Mayer–Vietoris computation at this level in comprehension
@@ -2045,7 +2045,7 @@ absent but the mind holds a closed form of the cited chart under another
 address (`Crystal::on_class` over the working atlas), the citation is
 understood through every such form, each recorded as `(held address,
 standing)` in `Understood`; the court resolves the cited address itself. A
-citer's own held loop is not a comprehension outcome but an idea (chapter
+citer's own held orbit is not a comprehension outcome but an idea (chapter
 25), and `Comprehension::Dialect` is the connection arm's outcome (M6 step
 3), never a sentence form's.
 
@@ -2107,7 +2107,7 @@ base's in either direction:
   independent ones; a dialect on one component is hidden by consilience on
   another, or a consilience reported as dialect because two components were
   compared as one;
-- a **cyclic** overlap (`H¹(U_X ∩ U_Y) ≠ 1`: a loop of charts inside the
+- a **cyclic** overlap (`H¹(U_X ∩ U_Y) ≠ 1`: an orbit of charts inside the
   shared region whose holonomy is not identity within `X`'s own language)
   puts a class of `X`'s own into the edge `(X, Y)`: the nerve reports a
   cross-hypha dialect that is intra-hypha, and its value depends on which
@@ -2144,7 +2144,7 @@ The overlap is acyclic for the coefficient system iff
   the keyed union-find of 16.15 over the induced faces, read once from the
   forms' `Face` lists, never from a pair loop over charts.
 - **(A1) flat within each hypha**: for `Z ∈ {X, Y}` the tree walk (12.2) on
-  `Z`'s induced faces over `M` closes every chord: every loop of charts in
+  `Z`'s induced faces over `M` closes every chord: every orbit of charts in
   the shared region has identity holonomy in `Z`'s own language;
   `H¹(U_X ∩ U_Y; Z's sections) = 1`.
 - **(A2)**: vacuous. Within one hypha every 2-cochain on the overlap is
@@ -2194,7 +2194,7 @@ component of the (k+1)-fold overlap. This is the Čech complex of the cover
 ### 14.8 (A1) fails: refine the cover, never the base
 
 A cyclic overlap means hypha `Z` holds, over the shared region, two ruled
-forms between the same charts not gauge-related, or a loop of charts with
+forms between the same charts not gauge-related, or an orbit of charts with
 non-identity holonomy: an **intra-hypha dialect** on that region. Refining
 the base does not help: the base's topology is unchanged and the overlap
 region is the same. What must shrink is the cover element.
@@ -2206,7 +2206,7 @@ ruled cover on that lane (`Cover::retract`, 687); `Z`'s sections on it
 become attached copies (`Ruling::Attached` to the home's section), not Čech
 sections. If `Z` is the home of both, the chart with the greater key is
 retracted and rehomed to `Y` (`Cover::rehome`, 700). Retracting one chart
-of a chord cuts that loop; rerun the check and reapply until (A1) holds,
+of a chord cuts that orbit; rerun the check and reapply until (A1) holds,
 which terminates because each step removes a chart from a finite set. The
 intra-hypha class itself is `Z`'s own dialect: recorded under `cocycle_at`
 with `a = b = Z` (chapter 23.5 amends `push_cocycle` to accept it) and
@@ -2237,9 +2237,9 @@ and makes the Mayer–Vietoris ladder commute, connecting map included.
 |---|---|---|
 | **inclusion** `A ⊆ A'` (a form into its citer, a hypha's region into a union) | restriction `res` | `res δ = δ res`; `res ∂ = ∂ res` on the ladder for `(A,B) ⊆ (A',B')` |
 | **re-gauging** by `γ` (10.2) | `g ↦ δ⁰γ · g`, `ω ↦ γ·ω·γ⁻¹` on loops | `δ¹(δ⁰γ·g) = γ·δ¹g·γ⁻¹`; MV outcomes unchanged up to conjugation of `theta` and `holonomy` |
-| **change of basepoint** (3.2) | conjugation of every loop value by the tree path | class keys (15.4) unchanged |
+| **change of basepoint** (3.2) | conjugation of every orbit value by the tree path | class keys (15.4) unchanged |
 | **refinement of the cover** (admit / retract / rehome; splitting by components) | `r : N(𝒱) → N(𝒰)` sends each finer simplex to the coarser simplex containing it; `r*` reads the coarse coefficient on the fine simplex | for good covers `r*` is an isomorphism on `H^k` (14.2); class keys unchanged; representatives change |
-| **refinement of the base** (`refine_chart`) | restriction of sections and faces to each child | each class is **carried** (same key on the child whose forms support the loop) or **discharged** (its loop's vertices fall into different children; it becomes a face between children), 15.5 |
+| **refinement of the base** (`refine_chart`) | restriction of sections and faces to each child | each class is **carried** (same key on the child whose forms support the orbit) or **discharged** (its orbit's vertices fall into different children; it becomes a face between children), 15.5 |
 | **pullback to a mind** (`Epigenome::comprehend`, `learn`) | the mind's copy of a ruled form and its faces | the mind's `coheres` agrees with the court's `replay_form` on the same tapes; the memo relies on it |
 
 A violation of a commutation identity is not a class; it is inconsistent
@@ -2314,8 +2314,8 @@ T3 cite and the one the commutator and relator reductions consult.
 
 ### 15.4 Key of a class
 
-A degree-1 class is a loop with a holonomy. Its **class key** is the
-loop's canonical simplex key (the sorted vertex keys concatenated, as
+A degree-1 class is an orbit with a holonomy. Its **class key** is the
+orbit's canonical simplex key (the sorted vertex keys concatenated, as
 `simplex_key` does) followed by the holonomy's conjugacy invariants written
 out: the four plane formulas of 15.2 on the plane, `(a²/w, p²/w, sign a,
 sign p)` off it. A degree-2 class is keyed by its 3-simplex's key and its
@@ -2327,15 +2327,15 @@ image: every map of 15.1 acts on it by the group law of 9.1, so
 connecting maps of 13.4 are products of what the keys carry. A digest
 would satisfy neither, which is why none is taken. Equal keys are
 necessary for two classes to be the
-same; sufficiency for a single loop follows from 15.2–15.3, and for a system
-of loops the exact test is `solve_gauge_between` (16.14).
+same; sufficiency for a single orbit follows from 15.2–15.3, and for a system
+of orbits the exact test is `solve_gauge_between` (16.14).
 
 ### 15.5 Naturality under refinement of the base
 
 `Kernel::refine_chart` (cognition.rs) today clones the chart's `Complex`
 into both children and rekeys `cocycle_at` entries to the two children
 (`rekey_cocycles`). Both violate naturality: a class is asserted on a child
-whose forms may not support its loop, with a coefficient never recomputed
+whose forms may not support its orbit, with a coefficient never recomputed
 on the child's simplices. Required:
 
 1. After `split_stratum` has assigned every ruled address on `inv` to a
@@ -2345,10 +2345,10 @@ on the child's simplices. Required:
    sections (the axis that was opened), written as degree-1 simplices over
    the pair of children. Nothing is cloned.
 2. For each recorded class on `inv` (each `cocycle_at` entry and each
-   `Fill::Class` simplex): recompute its loop on the child holding all its
+   `Fill::Class` simplex): recompute its orbit on the child holding all its
    vertices. One child holds them all: recompute the holonomy from the same
    tapes; its class key must equal the parent's; write it under the child
-   (`court class carried`). The loop's vertices are split: the loop no
+   (`court class carried`). The orbit's vertices are split: the orbit no
    longer exists; the class is **discharged** (`court class discharged by
    refinement`) and its holonomy becomes the face between the children's
    sections it separated. The refining axis being the class's own
@@ -2372,7 +2372,7 @@ representatives. Required:
   still exist among the remaining pairs; when the retracted hypha was one
   side of the only representative, the class is re-represented on another
   pair of the same component by the tree walk (key unchanged), or, if no
-  other pair spans the loop, the class was a property of that hypha's
+  other pair spans the orbit, the class was a property of that hypha's
   presence and the cover was not good: chapter 14 applies retroactively
   (`court class orphaned`, goodness rerun).
 - Admitting a hypha whose region makes an overlap non-acyclic triggers
@@ -2527,7 +2527,7 @@ lamina of the sensor, and the sensor refuses to carry it (law 11).
    order, A21), never a digest; the versor is read back from its key.
    `to_bytes` on the wire may carry any scaling; the receiver
    canonicalises. The **carriage** of a word form (1.4) is one such versor,
-   `dilator(ρ) · translator(d)`, and the translator of a face or of a loop
+   `dilator(ρ) · translator(d)`, and the translator of a face or of an orbit
    residue is its `e_i ∧ e_∞` part; no function outside `extract_rule_with`,
    `speak_rule`, and `orbit` reads `d` as a pair (law 11).
 
@@ -2809,9 +2809,9 @@ the descent step of 13.9.
 
 ### 16.16 A16 — The pivot loop (multi-axial discharge of held loops)
 
-Input: an idea's form `F` (vertices, faces, loops), the mind's working atlas
+Input: an idea's form `F` (vertices, faces, orbits), the mind's working atlas
 (chapter 24.1) as the source of held words and forms, the `horizon`
-(16.19), `budget`. Output: `F` with every loop either closed, discharged by
+(16.19), `budget`. Output: `F` with every orbit either closed, discharged by
 a certified pivot, filed as torsion, or spoken as a demand; the certificates
 (16.20) of every discharge; the candidates of every vortex still open.
 
@@ -2821,11 +2821,11 @@ vector names.
 
 1. **Tree walk** (12.2) on `F`'s faces. Chords whose re-gauged holonomy is
    identity are closed; apply the solver's gauge (`Form::regauge`). Chords
-   that remain are **held loops**.
-2. **Class vector.** For each held loop `ℓ` read `κ(ℓ) =
+   that remain are **held orbits**.
+2. **Class vector.** For each held orbit `ℓ` read `κ(ℓ) =
    F.class_vector(ℓ)` (12.6) and its occupied axes in the fixed order
    (`ClassVector::occupied`), the fibre coordinate among them (the sections
-   and cycles the loop's words carry, 25). This reading comes first and is
+   and cycles the orbit's words carry, 25). This reading comes first and is
    the whole of the decision: nothing is reduced, peeled or factored before
    it, and reduction — the glue of a held closed form — is one of the moves
    it names (ruled 2026-09-08). If a coordinate's class key is `Held` in the
@@ -2834,7 +2834,7 @@ vector names.
 3. **Candidate pivots.** For each occupied axis `x` of `ℓ`, in the fixed
    order, the candidates are exactly the moves of the 3.9 table that can
    zero `x`, instantiated from what the mind holds:
-   - for a plane coordinate: the held words on the loop's charts whose plane
+   - for a plane coordinate: the held words on the orbit's charts whose plane
      form has that coordinate nonzero (read through `working_atlas` fibers,
      never by scanning the genome), each as a gauge word on the loop's
      vertices;
@@ -2847,7 +2847,7 @@ vector names.
      into one generator of period ℓ, or the puncture of a member onto the
      fibre as a section (25), each a condensation certified by the same
      closure with the reach on its certificate (S9.13);
-   - for the last axis: opening a chart axis on the loop's class (3.7),
+   - for the last axis: opening a chart axis on the orbit's class (3.7),
      tried on its own axis like every other and never gated on the others
      having failed (14.8 says what the opened axis is). Reading taken
      2026-09-08 (Stage 11 I6, ruling asked): the opening axis is read for a
@@ -2873,19 +2873,19 @@ vector names.
 5. **Keep.** Every discharging candidate is kept as a candidate of the
    thought with its certificate (16.20) and logged `pivot {idea} loop {ℓ}
    axis {x} discharged {key}→{key'}`. If exactly one candidate discharges
-   the whole loop, apply it to `F`. If several discharge, apply none: the
-   loop is a **vortex**, its candidates stay in the thought (`vortex
+   the whole orbit, apply it to `F`. If several discharge, apply none: the
+   orbit is a **vortex**, its candidates stay in the thought (`vortex
    {idea} loop {ℓ} {n}
    candidates held`), and it collapses when a later perception, a glue, or
    a court replay makes one candidate a face of a spoken form (25.1). No
    reading of `μ⃗(ℓ)` chooses among certified discharges; a candidate that
    raises a lane on any pair was already refused in step 4 by the lane
    reading, which names the lane.
-6. **File or demand.** A held loop with no discharging candidate: if
+6. **File or demand.** A held orbit with no discharging candidate: if
    `κ(ℓ)` has zero free part and finite order, hand it to A17 (torsion); if
    it has a nonzero free part, speak the canonical remainder as a demand
    (17.6 step 5) unless its key is `Held` — and the demand carries the
-   loop's canonical holonomy rotor as its witness, because that rotor IS
+   orbit's canonical holonomy rotor as its witness, because that rotor IS
    the generator 37.7 names (ruled 2026-09-17): a 2×2 block is the sensor
    shadow of an off-plane holonomy and cannot witness it (checklist (m)).
 7. **Iterate.** A discharge changes `F`; go to 1. Stop when every loop is
@@ -2893,9 +2893,9 @@ vector names.
    the next stroke recomputes from the current `F`.
 
 Termination (T4): each application in step 5 strictly reduces the number
-of occupied coordinates over all held loops and, by T2, raises none; the
-candidate list of a loop is finite (at most the occupied axes times the
-held words on them); so the loop makes at most (occupied coordinates)
+of occupied coordinates over all held orbits and, by T2, raises none; the
+candidate list of an orbit is finite (at most the occupied axes times the
+held words on them); so the orbit makes at most (occupied coordinates)
 applications and (candidates) trials per application, all under `Budget`.
 Cost per trial is one move and one tree walk. Binding:
 `Contemplation::pivot_on` and `expand_all` (bubble/drive.rs) call
@@ -2905,10 +2905,10 @@ budget: &mut Budget) -> Vec<PivotCertificate>` **new** in sentence.rs;
 reads.
 
 **Why the pivot machinery sat idle (ruled 2026-09-18).** A form produced by the
-cover's descent to single-pixel laminae carries no held loop: its rank is zero,
+cover's refinement to single-pixel laminae carries no held orbit: its rank is zero,
 every meet is flat or dissolved into pixels, and `AxisIndex::on_axis` answers 0
 on 123 of 123 reads because closed pixel forms occupy no coordinate. The pivot
-loop never fires because it is never offered an occupied axis. Truncating the
+orbit never fires because it is never offered an occupied axis. Truncating the
 cover at perceived bodies (51.3) holds the uncarried motion as an open demand,
 which becomes the vortex of Chapter 25; that vortex is what feeds candidate
 pivots into A16.
@@ -2916,13 +2916,13 @@ pivots into A16.
 ### 16.17 A17 — Torsion filing and witness
 
 Input: a chord with finite-order holonomy `h` (`order ℓ`) on a form `F`
-whose loop A16 could not close. Output: a torsion cycle `(σ, ℓ)` on `F`, or
+whose orbit A16 could not close. Output: a torsion cycle `(σ, ℓ)` on `F`, or
 a refusal.
 
 1. Read the torsion part of `h` on the plane (`PlaneForm::torsion_part`,
    12.2): `σ` the sheet parity and unit turns; the free part must be zero,
    else the chord is not torsion and goes to M6 as a demand.
-2. Walk the loop's fibre from its base assignment at most `ℓ` steps
+2. Walk the orbit's fibre from its base assignment at most `ℓ` steps
    (`toroid::witness_stored`): the walk returns at exactly step `ℓ` →
    `HolonomicLoopWitness::Closed{period: ℓ}`; it returns earlier or later,
    or not within `ℓ` → `Open`.
@@ -2935,7 +2935,7 @@ a refusal.
    not re-derive"` are the refusals.
 
 A filed cycle is a memory: it records exactly the twist the language holds
-on that loop without forcing it to identity. An infinite-order class is
+on that orbit without forcing it to identity. An infinite-order class is
 never filed with a large period: it is filed at period `0`, A19's spelling
 of infinite order, with its Cayley bivector as its content (52.3, ruled
 2026-09-17), and its want of a spelling is the demand of 37.7 where no
@@ -3007,21 +3007,21 @@ pub struct PivotCertificate {                          // sentence/pivot.rs
 }
 ```
 
-`OpenAxis { face, seed }` (Stage 11 I6) opens a chart axis over the loop
-whose chord is `face`, seeded by the loop's holonomy versor: the form
+`OpenAxis { face, seed }` (Stage 11 I6) opens a chart axis over the orbit
+whose chord is `face`, seeded by the orbit's holonomy versor: the form
 gains the relation (`Form.axes`, the holonomy's class key → the chord of
-the loop that is its section; nothing else is stored, the seed and A7's
-refinement coordinate re-derive from that loop on every read, law 12),
-the loop reads zero, and the rank moves one unit from the row the loop
+the orbit that is its section; nothing else is stored, the seed and A7's
+refinement coordinate re-derive from that orbit on every read, law 12),
+the orbit reads zero, and the rank moves one unit from the row the orbit
 occupied into `axes`. The court replays it by removing the relation,
-reading the loop's class vector before and after, and refusing a seed that
-is not the re-walked loop's own holonomy versor.
+reading the orbit's class vector before and after, and refusing a seed that
+is not the re-walked orbit's own holonomy versor.
 
 1. **Key.** The certificate's own coordinates written out (A21): `chord ‖
    axis ‖ before ‖ after ‖ rank_before ‖ rank_after ‖ the move in `by``,
    the move being the word's A1 coordinates with its face and side, the
    translator versor's coordinates, or the hue listing. `mu` is never in
-   the key, and no digest is taken. Two minds that discharge one loop by
+   the key, and no digest is taken. Two minds that discharge one orbit by
    one move produce one key, and the court reads `before` and `after` off
    the key as vectors, which is what lets it check T14 coordinate by
    coordinate.
@@ -3029,7 +3029,7 @@ is not the re-walked loop's own holonomy versor.
    tape (chapter 19), one per discharge that the form's crystallization
    depended on. They are not a separate act on the wire.
 3. **Replay.** The court, holding the resolved form, applies `by` to the
-   loop, re-walks, reads `κ'` and `rank'`, and requires `class_key(κ') =
+   orbit, re-walks, reads `κ'` and `rank'`, and requires `class_key(κ') =
    after`, `rank' = rank_after`, and the discharge condition of 12.6. Any
    mismatch is `REFUSE_PIVOT_INEXACT`. A certificate whose `before` does not
    match the court's own reading of the form before the move is refused the
@@ -3189,7 +3189,7 @@ spelling, serialisation, and scaling.
 3. Sentence form: per germ in order, M1 key of its word ‖ A4 canonical
    versor ‖ kind byte; per face, M1 key of `g_ij` ‖ A4 canonical versor.
    `vertex_address` (sentence.rs 1144) writes raw versor bytes today; it
-   writes A4 outputs. Loops are never written.
+   writes A4 outputs. Orbits are never written.
 4. The address is these bytes, each field length-prefixed (A21), never a
    digest of them; the form is read back from its address. The field list
    of chapter 1.5 is this procedure. A signature over a frame that carries
@@ -3371,7 +3371,7 @@ class the mesh already holds.
    moves its occupied axes name, keep every certified discharge, hold a
    vortex when several discharge), A17 (file what stays finite),
    M6 step 5 for what stays free. No step orders candidates by a measure.
-2. Cauterize: when every loop is identity or filed torsion and the remainder
+2. Cauterize: when every orbit is identity or filed torsion and the remainder
    is empty, crystallize (`as_element` with the torsion section, M2 address,
    dialect `Stood`, spoken once by the chapter 26 dedupe). No re-gauge
    touches a crystallized form; a later gauge is a new form.
@@ -3444,7 +3444,7 @@ it always named:
 
 ## 18. The form types
 
-Carried from Part I: a form is vertices, faces, loops, remainder.
+Carried from Part I: a form is vertices, faces, orbits, remainder.
 
 ### 18.1 `/opt/mycelium-v0.1.0/src/transducer/alphabet/`
 
@@ -3507,7 +3507,7 @@ pub enum Mu { Measured { before: [u64; 4], after: [u64; 4] }, Unmeasured }  // �
 
 pub struct Transport { pub word: Word, pub carriage: Versor, pub gauge: Vec<(u8, u8)> }  // relative word, relative carriage versor and hue map from i to j: the transport class of 21 step 1
 pub struct FormFace { pub i: u16, pub j: u16, pub transport: Transport }
-pub struct Loop { pub vertices: Vec<u16>, pub faces: Vec<u16>, pub chord: u16, pub holonomy: Word, pub carriage: Versor }  // the closed walk, its faces, the chord (never a star face), the oriented holonomy and the carriage composed around it
+pub struct Orbit { pub vertices: Vec<u16>, pub faces: Vec<u16>, pub chord: u16, pub holonomy: Word, pub carriage: Versor }  // the closed walk, its faces, the chord (never a star face), the oriented holonomy and the carriage composed around it
 pub enum PivotBy { Word { face: u16, word: Word, side: Side }, Placement { face: u16, translator: Versor }, Hue { face: u16, gauge: Vec<(u8, u8)> } }
 
 pub struct Form {                                       // replaces Nerve as the stored object
@@ -3638,14 +3638,14 @@ n_vertices u16, then per vertex:
   Rebased: by u16 ‖ of u16 ‖ carriage Versor bytes ‖ gauge len16 + pairs ‖ class len16 + axes
   Unfolded: measure u8 (0 occupied, 1 remainder, 2 ring) ‖ anchor u16 (ring only)
 n_faces u16, then per face: i u16 ‖ j u16 ‖ word bytes ‖ carriage Versor bytes ‖ gauge len16 + pairs
-n_loops u16, then per loop: n_vertices u16 ‖ vertex indices u16… ‖ n_faces u16 ‖ face indices u16… ‖ chord u16 ‖ holonomy Word bytes ‖ carriage Versor bytes
+n_loops u16, then per orbit: n_vertices u16 ‖ vertex indices u16… ‖ n_faces u16 ‖ face indices u16… ‖ chord u16 ‖ holonomy Word bytes ‖ carriage Versor bytes
 remainder len32 + links (r i64 ‖ c i64 ‖ before u8 ‖ after u8)
 depth u16
 n_certificates u16, then per certificate (A20): chord u16 ‖ axis u8 ‖ before len16 + ClassVector bytes ‖ after len16 + ClassVector bytes ‖ rank_move: 0 (Equal) | 1 ‖ from u8 (Discharged) | 2 ‖ delta 4×i64 (Inadmissible) ‖ mu: 0 | 1 ‖ before 4×u64 ‖ after 4×u64 ‖ by: 0 ‖ face u16 ‖ side u8 ‖ Word bytes | 1 ‖ face u16 ‖ translator Versor bytes | 2 ‖ face u16 ‖ gauge len16 + pairs | 3 ‖ face u16 ‖ seed Versor bytes
 ratio 4×u16 (h_out, h_in, w_out, w_in; a zero denominator refuses)
 n_sections u16, then per section: class key len16 + bytes ‖ len16 + vertex indices u16…
 n_torsion u16, then per cycle: class key len16 + bytes ‖ len16 + σ pairs ‖ ℓ u32 ‖ chord u16
-n_axes u16, then per opened axis: class key len16 + bytes ‖ chord u16 (the seed and A7's refinement coordinate are not on the tape: they re-derive from the loop, law 12)
+n_axes u16, then per opened axis: class key len16 + bytes ‖ chord u16 (the seed and A7's refinement coordinate are not on the tape: they re-derive from the orbit, law 12)
 ```
 
 The remainder's links are the one place a coordinate pair is written: a
@@ -3653,9 +3653,9 @@ remainder is a demand addressed to the sensor, and the sensor speaks in
 laminae (law 11).
 
 Hue maps are not on the tape: they are derived from the `Word` vertices by
-`reindex`, and a class whose vertices carry two gauges has no map. Loops
+`reindex`, and a class whose vertices carry two gauges has no map. Orbits
 are on the tape only to be checked: the court re-walks the forest and
-refuses `REFUSE_RANK_LOST` when the stored loops sit below it.
+refuses `REFUSE_RANK_LOST` when the stored orbits sit below it.
 `as_element_form` serialises the `Form` and derives nothing from laminae;
 `from_element_form` reconstructs it and `Word` vertices derive the rotor
 lazily through `Word::rotor`; the carriage is on the tape as a versor and
@@ -3710,7 +3710,7 @@ no versor carries or no rotor spells (50.5); no vertex ever carries the
 identity word for a body it does not reconstruct (ruled 2026-09-09; the
 body-only vertex of the earlier text was the second seam of 50.6). Faces
 for every related pair through `face_of`, each carrying the edge transport
-of 50.3 beside its placement; loops through `loops_of`. Shells (`peel::peel_body_scaled`)
+of 50.3 beside its placement; orbits through `loops_of`. Shells (`peel::peel_body_scaled`)
 remain pairing candidates and are never vertices. Candidates are bucketed by
 `moduli.key()` over exact axes (A6) as an index only; the decider is that a
 carriage exists, never the bucket. "Laminae read once" is a memo keyed by the
@@ -3800,7 +3800,7 @@ Inside `extract_rule_with`, in order:
    **A `Glued` vertex is the form-level case of a derivation citation**
    (ruled 2026-09-10). Both cite a held form by address and claim its
    verdict; they differ only in what is cited. `Glued` cites the whole
-   form and its placement, and the citer's loops close because the cited
+   form and its placement, and the citer's orbits close because the cited
    form's do (13.6). A word vertex's derivation (50.2 step 2) cites a
    `Word` vertex *inside* a held form and composes its rotor. So the
    court treats them alike and must: the same replay resolves the cited
@@ -3844,7 +3844,7 @@ Inside `extract_rule_with`, in order:
    (3.5).
 7. **Coherence.** `coheres` on the rule; if false, `solve_coboundary` gives
    `γ` and `regauge`; still false → the rule is held with the offending
-   loop (12.2 step 4).
+   orbit (12.2 step 4).
 
 No pass reads laminae; every comparison is M1.
 
@@ -3906,10 +3906,10 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8;32]) -> Option<Form>,
    (`REFUSE_FACE`, at the face's two addresses, 50.9); its edge transport re-derived as 50.3 states it, on
    the union of the two bodies over the family, whatever the order of its
    word (`REFUSE_EDGE` where the re-derivation differs; never for the
-   order, 52.3); or the face is the chord of a loop whose class key
-   is filed on torsion with the filed order, in which case the loop's
+   order, 52.3); or the face is the chord of an orbit whose class key
+   is filed on torsion with the filed order, in which case the orbit's
    holonomy is what the chord carries.
-5. Each loop: holonomy recomputed as the product of the edge transports
+5. Each orbit: holonomy recomputed as the product of the edge transports
    read in the base body's stabilizer up to conjugacy (50.3),
    projectively identity, or an opened axis that re-derives, or filed
    under its class at the period the court re-derives — `0` for infinite
@@ -4053,7 +4053,7 @@ never pivots: it replays and files.
 
 **Certificates.** For each `PivotCertificate` on the spoken form's tape
 (A20), the court, holding the resolved form before the move, reads the
-loop's class vector and requires its key to equal `before`; applies `by`;
+orbit's class vector and requires its key to equal `before`; applies `by`;
 re-walks; requires `class_key(κ') = after`, `rank' = rank_after`, and the
 discharge condition of 12.6. Success logs `court pivot certified {addr}
 loop {i} axis {label} {before}→{after}`; any mismatch is
@@ -4152,7 +4152,7 @@ the description, invert for the solution").
 - **Each utterance is a proof check, alone.** The court replays the tape
   against the demand it claims to close: does this tape close this
   description. Closure is the certificate — the remainder is empty, the
-  loop returns, the tape re-derives — equalities, chart-free, readable in
+  orbit returns, the tape re-derives — equalities, chart-free, readable in
   either direction. Nothing is compared with another mind's word.
 - **Convergence is read at the demand.** A conclusion is language when
   independent lineages have closed it, independence being read from the
@@ -4172,7 +4172,7 @@ the description, invert for the solution").
   representative of 15.2–15.3, the third equality of law 3; the transition
   on a face is the conjugating element, and order is a conjugacy invariant.
   Sentences are nerves whose vertices carry words and whose faces carry the
-  conjugations between them; a loop's holonomy is a word and κ(ℓ) is its
+  conjugations between them; an orbit's holonomy is a word and κ(ℓ) is its
   class. Two proofs made of conjugate words are one proof in two frames,
   and E2 pays it once — that is the conjugate level, and it is the whole of
   what "transport equivalence" decides. Two proofs whose words are not
@@ -4208,7 +4208,7 @@ gluing of 23.8 is pairwise — a representative against a spoken word, one
 transition per pair, a dialect row where the transition is not the
 identity. The question 23.9 asks is not pairwise: given the proofs of one
 conclusion from independent lineages, compose the transitions between
-them around the loop, `g_ab · g_bc · g_ca`, exactly as `holonomy` composes
+them around the orbit, `g_ab · g_bc · g_ca`, exactly as `holonomy` composes
 the versors around a Čech simplex (13, `cech/simplex.rs`). The minds are the
 cover, their proofs the sections, the transitions the cocycle. Holonomy
 trivial: the proofs are one proof seen from several frames — the conjugate
@@ -4325,7 +4325,7 @@ stand, utter. A word reaches the wire only after it stands in the
 dialect, and a mind that has stood nothing utters nothing but a percept.
 
 - Three local producers stand sentences (ruled 2026-09-09, chapter 50).
-  (1) A closed form (every body reconstructed, every loop filed or
+  (1) A closed form (every body reconstructed, every orbit filed or
   identity) stands through `speak` and is uttered once. (2) A withheld
   form (some body not reconstructed) is stood in the dialect as
   `withheld: true` with its open coordinates (24.2) and held as an idea
@@ -4379,7 +4379,7 @@ dialect, and a mind that has stood nothing utters nothing but a percept.
   `outcome == [0; 4]` on every mode, with no threshold other than zero.
   The dwell is per lane: each lane's dwell is that lane's surface in the
   last reply, in strokes — the door's reserve deficit and the entropic
-  flux (`yield_surface`), each a calibrated reading — and the loop dwells
+  flux (`yield_surface`), each a calibrated reading — and the orbit dwells
   for the lanes it needs to expand next, never for the most-pressured
   lane; there is no `max` over lanes and no clamp against the aperture
   cycle. The open-demand backlog is not on the surface: pressure is a
@@ -4417,7 +4417,7 @@ minds is the court's, 23.9, and a different cover).
 - the **holonomic** eye reads the transitions between bodies — within one
   grid by contact and orbit (3.5), across a pair by the versor that
   carries a body of `a` onto a body of `b` (`versor_between`,
-  `cech::transition`) — and composes them around every loop of bodies
+  `cech::transition`) — and composes them around every orbit of bodies
   (`cech::holonomy`).
 
 Today these run as a pipeline: the luminal eye produces bodies, the
@@ -4439,10 +4439,10 @@ the cocycle:
   harmonics(b)` exactly when some versor carries `a` onto `b`, so the
   harmonic eye decides whether the luminal pairing is a pairing at all,
   before any word is sought;
-- around every loop of bodies `a → b → c → a`, the transitions compose to
+- around every orbit of bodies `a → b → c → a`, the transitions compose to
   the identity, `g_ab · g_bc · g_ca = 1`, read by the same `holonomy` the
-  Čech simplex uses; a loop that does not close is a residual localised to
-  that loop, with the class of its holonomy named (12.6).
+  Čech simplex uses; an orbit that does not close is a residual localised to
+  that orbit, with the class of its holonomy named (12.6).
 
 Congruence is a reading, never a gate: it is the residual of the cocycle,
 per overlap and per lane, and it is zero or it says where and on which
@@ -4457,7 +4457,7 @@ the verdict every percept carries before it leaves the mind:
 | Recognised | harmonics agree, the transition is a held word or the identity | the percept is a form; nothing is listed |
 | Reflection | harmonics agree, the transition's orientation character `w₁` is odd (3.10) | a reflection word; the form is spoken with it |
 | Transposition | harmonics agree, the transition is a placement or dilation versor | attaches to the held word as a section (25) |
-| Novel | harmonics disagree on named axes, no versor carries a body, a rotor block does not spell, or a loop's holonomy is non-trivial with a class no held word discharges | a typed demand (50.5): `TopologicalDeformation`, `Source` or `Creation`, `RotorPrime` or `Standing`, or the loop's class; the only verdict that becomes a listing, and it is listed under its kind |
+| Novel | harmonics disagree on named axes, no versor carries a body, a rotor block does not spell, or an orbit's holonomy is non-trivial with a class no held word discharges | a typed demand (50.5): `TopologicalDeformation`, `Source` or `Creation`, `RotorPrime` or `Standing`, or the orbit's class; the only verdict that becomes a listing, and it is listed under its kind |
 
 **What leaves the mind.** An utterance carries a percept with its verdict,
 its residual per overlap and the axes it names. The hypha's book lists
@@ -4470,7 +4470,7 @@ congruent percept still cannot say).
 
 **Cost.** Every eye is exact and every check is finite: the harmonic
 comparison is coordinatewise equality of invariants, the holonomy is one
-geometric product per loop, and the loops are those of the pair's nerve —
+geometric product per orbit, and the orbits are those of the pair's nerve —
 no search, no threshold, no vote among senses. The eyes compound; they
 never compete.
 
@@ -4625,7 +4625,7 @@ mind stops holding when the room is spent (24.1); `tape.rs` the THT codec
 idea under the stroke `Budget`:
 `idea.form.pivot_loop(&entity.working_atlas(), &self.horizon, budget)`
 (A16). Every discharge is logged with its certificate; A18's rank is
-asserted before and after each applied pivot (R2). A loop with several
+asserted before and after each applied pivot (R2). An orbit with several
 discharging candidates stays a vortex: its candidates remain in
 `Bubble.nerve` (the thought complex), each carrying its certificate, and
 the idea is not `dirty`-cleared. A vortex collapses when: a later
@@ -4637,7 +4637,7 @@ candidate, rules it (the mind learns the ruling through the working atlas
 and applies the same). A chord A16 hands to A17 is filed on the idea's form
 or left open with `torsion open`; a free chord is spoken as `Novel(g_rem)`
 through M6 step 5 unless its key is `Held` in `horizon`. Nothing in this
-loop orders candidates by a scalar; the fixed axis order of 12.6 is the
+orbit orders candidates by a scalar; the fixed axis order of 12.6 is the
 order of trial, not a preference, no axis waits on another's failure, and
 a candidate is applied only because it was the only one that discharged.
 
@@ -4650,7 +4650,7 @@ only while `glued_by` is non-empty).
 
 **25.3 Wrap.** `Contemplation::bundle` and `pivot_on` glue crystallized
 forms into ideas on meeting charts as `Glued` vertices; the glued form's
-loops are not re-pivoted (T6). Depth grows by one per wrap.
+orbits are not re-pivoted (T6). Depth grows by one per wrap.
 
 **25.4 Horizon.** `Bubble.horizon: Keyed<(Rotor, u8)>` (89) becomes
 `Keyed<(Rotor, Order, Standing)>` keyed by class key; `seed_horizon` (A19)
@@ -4696,19 +4696,19 @@ empty on every restore, which is the tree saying it carried nothing.
 needs no cursor and no budget, because it is a keyed read of one fibre and
 not a traversal of anything.
 
-**25.6 A loop is filed under the class it is judged by (ruled 2026-09-13).**
+**25.6 An orbit is filed under the class it is judged by (ruled 2026-09-13).**
 A face's word is the coboundary `w_j ∘ w_i⁻¹` and a product of coboundaries
 around a cycle telescopes to the identity for every input, so a loop over
 coboundary faces is flat on the word whatever its bodies do. Its EDGE
 composites (50.3) do not telescope. `class_vector` has read the edge
 composite since Y5; `pivot_loop` read `lp.holonomy` for the horizon key and
 for the order that selects the discharge branch, and `file_loop` filed
-torsion under the word's class — so a loop was judged by one object and
+torsion under the word's class — so an orbit was judged by one object and
 filed under another. Measured at e98e8a2: 6535 pair forms, 70 311 loops,
 word holonomy flat 70 311, edge composites finite non-identity on 284 paths,
 torsion filed 0. `holonomy_words_on` is the choice, made once (law 12): the
-edge composite where a path has one, the loop's word where it does not.
-`file_loop` files one class per member path, since a loop whose faces relate
+edge composite where a path has one, the orbit's word where it does not.
+`file_loop` files one class per member path, since an orbit whose faces relate
 several pairs of bodies has one composite per path and each is its own
 obstruction.
 
@@ -4735,12 +4735,12 @@ A demand vertex declares LINKS and exempts nothing else: the voice asked
 only whether any demand vertex existed, so a form declaring one link and
 leaving twenty was minted and refused.
 
-**25.8 The metabolism reads the loop's true holonomy (ruled 2026-09-14).**
-The court charges the physics off `Form::loop_words`: a loop of FINITE order
-raises pressure by its period, a loop of INFINITE order charges TORSION —
-what will not close. That reader returned `lp.holonomy`, the loop's WORD,
-which telescopes to the identity over coboundary faces, so every loop read
-`Finite(1)`, every sentence raised one unit of pressure per loop, and the
+**25.8 The metabolism reads the orbit's true holonomy (ruled 2026-09-14).**
+The court charges the physics off `Form::loop_words`: an orbit of FINITE order
+raises pressure by its period, an orbit of INFINITE order charges TORSION —
+what will not close. That reader returned `lp.holonomy`, the orbit's WORD,
+which telescopes to the identity over coboundary faces, so every orbit read
+`Finite(1)`, every sentence raised one unit of pressure per orbit, and the
 torsion branch was unreachable BY CONSTRUCTION. `Physics.torsion` therefore
 stayed `[0,0,0,0]`, `order_flux = syntropic − torsion` was `syntropic − 0`,
 and `yield_surface` — the per-lane dwell a reply carries — never saw a
@@ -4778,7 +4778,7 @@ of the charge, "the demand for a new fiber". The three readings that asked
 the wrong question: torsion charged only on `Order::Infinite`, of which this
 corpus produces NONE (measured at e9399c4: 12 187 flat and 256 finite edge
 holonomies, infinite zero, against 200 filed cycles); a stored cycle charged
-only when its witness was `Open`; and "a Closed loop is proven monodromy and
+only when its witness was `Open`; and "a Closed orbit is proven monodromy and
 charges nothing", which reads a correctly-LABELLED cycle as a settled one.
 
 A stored cycle now charges torsion whatever its witness, and the witness
@@ -4813,7 +4813,7 @@ A candidate's monodromy over the frames the family measured is the product of it
 The ambient gauge connection $\gamma^c$ lives on the carried charts of the family bundle that occupy $\ge 2$ frames, never on the deformation demand's own chart (a demand is a singularity where moduli changed, so its chart does not persist across frames by construction).
 The monodromy is evaluated over the bundle's connection-bearing charts using exact algebraic order (`Rotor::order()`):
 - $\text{Order::Finite}(1)$: Flat. $V$ commutes with the ambient connection $\gamma^c$ and stands on chart $c$.
-- $\text{Order::Finite}(\ell \ge 2)$: Torsion. Fiber twisted by $\ell$, closing after $\ell$ circuits. Filed into `Bubble.torsion` (and `Form.torsion`) under $M^c$'s class key with period $\ell$ and `chord = 0` (bundle connection loop). $V$ stands on chart $c$.
+- $\text{Order::Finite}(\ell \ge 2)$: Torsion. Fiber twisted by $\ell$, closing after $\ell$ circuits. Filed into `Bubble.torsion` (and `Form.torsion`) under $M^c$'s class key with period $\ell$ and `chord = 0` (bundle connection orbit). $V$ stands on chart $c$.
 - $\text{Order::Infinite}$: Rupture. Fails to close on chart $c$. Chart $c$ leaves $V$'s sub-cover.
 
 A candidate stands on the sub-cover of connection charts where its order is finite. It dissolves from `Bubble.candidates` if and only if its sub-cover is empty (ruptured to `Infinite` on every measured connection chart in the bundle). A bubble with no measured connection charts in its bundle leaves every candidate standing (rule 11: nothing dies on an unmeasured monodromy).
@@ -5054,7 +5054,7 @@ alphabet/rotor.rs  Rotor::normalised (sign step), Rotor::projective_eq (either s
 cga/multivector.rs  Mv::canonical NEW, Mv::projective_eq NEW, Mv::key NEW, derive(PartialEq) REMOVED
 element/       canonical_chain(&[Link]) -> Vec<Link> NEW (A5), Element::same_vertex NEW, PartialEq REMOVED,
               form_key_bytes uses the M1 key, depth field, GEN2 depth after mag
-sentence.rs   Vertex/Face/Loop/Form NEW (18.2), Form::{face_of, delta1, coheres, is_closed, depth_of, regauge, glue, retract_vertices, rebase, unfold, loops_of},
+sentence.rs   Vertex/Face/Orbit/Form NEW (18.2), Form::{face_of, delta1, coheres, is_closed, depth_of, regauge, glue, retract_vertices, rebase, unfold, loops_of},
               as_element/from_element v2 (19), vertex_address writes Mv::canonical, from_element recomputes germ addresses,
               chart_of on reduced forms, SentenceRule { form, sections, ratio } (31), Nerve/Germ/Cycle REMOVED (30)
 family/       word_form, frame_vertex, scene_form, Crystal, extract_rule (the family's percept and moves 3–7, 52.5), speak_rule on Form, rule_replays_family shares, orbit/OrbitEnd
@@ -5245,7 +5245,7 @@ pub const REFUSE_GLUED_UNRULED: &str = "glued form not ruled";
 pub const REFUSE_GLUED_FRAME_GAUGED: &str = "glued form frame is not identity";
 pub const REFUSE_VERTEX_TAPE: &str = "vertex does not re-derive from its tape";
 pub const REFUSE_FACE: &str = "face does not re-derive from its vertices";
-pub const REFUSE_LOOP: &str = "loop holonomy is not identity";
+pub const REFUSE_LOOP: &str = "orbit holonomy is not identity";
 pub const REFUSE_REBASE_TRIVIAL: &str = "rebased form equals its base";
 pub const REFUSE_UNFOLD_STILL: &str = "unfolding measure does not move";
 pub const REFUSE_ORBIT_STILL: &str = "orbit does not move";
@@ -5600,9 +5600,9 @@ Checked by tests, greppable by the auditor:
   hypha's class on a chart is in the `horizon` of every voice that quoted
   that chart within one aperture (M9 invariant).
 - No pivot is selected by a measure: every `pivot … discharged` line names
-  an axis the loop's class vector occupied, every applied pivot has a
+  an axis the orbit's class vector occupied, every applied pivot has a
   certificate that replays on the court, and a `vortex … held` line is never
-  followed by an applied pivot on that loop without a `collapsed by` line
+  followed by an applied pivot on that orbit without a `collapsed by` line
   naming the perception, glue, or ruling that collapsed it (law 10).
 - No `SystemTime`, `Instant`, or `Duration` is named in a kernel, court,
   ledger, physics, or transducer file; every duration is a stroke count or
@@ -5854,7 +5854,7 @@ reading over what failed: it certifies that two organs read one
 obstruction exactly, and it says nothing about whether the language can
 now say anything it could not. The document's own words keep the two
 apart — congruence is agreement on an overlap (11.2, 24.4), coherence is
-a form whose loops close (2.2, 11.2) — and a language is formed on what
+a form whose orbits close (2.2, 11.2) — and a language is formed on what
 closes. The fleet reading that forced the ruling: eighty-three demands,
 none comprehended, and the presentation grown by nothing but names for
 what it could not spell.
@@ -5878,7 +5878,7 @@ was not. What is adjoined at the higher rungs of 1.9 — a relator, a
 rewrite, a procedure — enters by the same condition: a closure two courts
 replayed composes through it. The refusals of chapter 44 stand.
 
-**The rotor level is a level (ruled 2026-09-17).** A loop whose class has
+**The rotor level is a level (ruled 2026-09-17).** An orbit whose class has
 a free part — a prime exponent, or an off-plane class of infinite order —
 is a remainder at the rotor's own level: its canonical holonomy rotor is
 the candidate, carrying itself as witness, and `3 + e₀₁ + e₀₂` (weight 11,
@@ -5902,7 +5902,7 @@ computes:
 |---|---|---|---|
 | the ring | A22's peel over one plane block | the Gaussian factor, `a + b·e_ij` with `a² + b² = p`, `a > b > 0` | A1 (16.1) and `core::gaussian` |
 | the presentation | A12 over the stratum's generators | the HNF residue, unique under the row order | A12 step 5 |
-| the cover | the pieces' nerve does not glue | the filled simplex over the meet's loop, `Fill::Class(ℓ)` | `cech::extend` (50.8) |
+| the cover | the pieces' nerve does not glue | the filled simplex over the meet's orbit, `Fill::Class(ℓ)` | `cech::extend` (50.8) |
 | the relations | two proofs of one vertex do not commute | the composite holonomy `g⁻¹ ∘ f` around the proofs, keyed by 15.4 | `cech::holonomy`, the membrane of 23.9 |
 
 The last row adjoins a **relation**, not a generator: two proofs of one
@@ -5945,7 +5945,7 @@ action, which is what the seventeen cannot spell — Frame plus vertex,
 no faces, closed and coherent vacuously, as a generator should be.
 
 **Depth 4 and depth 5 use carriers the tree already has** (ruled
-2026-09-10, L17). At depth 4 the object is the holonomy of a loop two
+2026-09-10, L17). At depth 4 the object is the holonomy of an orbit two
 derivations of one vertex make through their two frames, read in the
 stabilizer with rotor coefficients (23.9, `cech::holonomy`); trivial,
 it is one proof in two frames and the closure is paid once; non-trivial
@@ -5953,7 +5953,7 @@ and of finite order, it is the torsion class chapter 25 already files
 (`FiledLoop`, `Closure::Class`, `Fill::Class(ℓ)`), and the adjunction
 is that class ruled on two courts' re-derivation of the same A1
 canonical rotor and order, under `ActKind::Ruling`, taught by the
-syllabus, and cited by any later form whose loop carries it; of
+syllabus, and cited by any later form whose orbit carries it; of
 infinite order it is not a relator but a generator, and it takes the
 ring level's path. At depth 5 the object is a rewrite between two
 derivations of one vertex, and the kinds are the ones `rewrite.rs`
@@ -6127,7 +6127,7 @@ writes laminae with `t ≠ 0` and `spell` receives 4×4 blocks closed on the
 A bundle's pairs become one chain with `t` running over the examples
 (inputs at even `t`, outputs at `t+1`, or a sequence's steps in order). The
 carriage between a body and its image is a rotor whose `(·,3)` components
-carry the frame step; faces are relative words as now; loops now run in the
+carry the frame step; faces are relative words as now; orbits now run in the
 frame direction too, and their identity holonomy is the statement that the
 rule is the same rule at every frame. Nothing in `Form`, `coheres`,
 `close`, `replay_form`, or the court changes.
@@ -6235,7 +6235,7 @@ cloned; children's simplex counts sum to the parent's minus straddling);
 `verdict::tests::translation_across_cyclic_overlap_refused`.
 
 **Forms (Part IV).**
-1. `sentence::tests::form_tape_v2_round_trips` (Frame, Word, Glued, Rebased, Unfolded, contact word, faces, loops).
+1. `sentence::tests::form_tape_v2_round_trips` (Frame, Word, Glued, Rebased, Unfolded, contact word, faces, orbits).
 2. `sentence::tests::depth_is_one_plus_max_glued` and refusal at equal depth.
 3. `alphabet::tests::rebase_is_normal_form_and_contact_in_key`.
 4. `family::tests::pair_form_reads_laminae_once` (second call touches no lamina; work counter).
@@ -6331,7 +6331,7 @@ the clock gate of `MU-ENGINEERING.md` §7 as a build failure on
 **Inverse derivation (Part XII).** The claims 52.6 names, each a
 re-derivation and never an outcome: the chart read in either direction on
 the tree's own versors and refused at its boundary; the rational addition
-law on one plane and its failure across two; a loop of infinite order
+law on one plane and its failure across two; an orbit of infinite order
 filed at period `0`, cohering on the voice and replaying on the court; a
 face not refused for its edge word's order; 51.10's proofs 1 and 2.
 
@@ -6419,7 +6419,7 @@ servers and five minds.
   sensor plane: exactly one `class1` line naming the same chord on every
   hypha (order independence across the three logs), one `cocycle_at` entry
   per hypha, no `refine` line.
-- Two hyphae whose covers share a loop of charts with mismatched
+- Two hyphae whose covers share an orbit of charts with mismatched
   transitions on the sensor plane, on a good component: exactly one `class2
   … → refine` line per hypha for the same loop key, then `court refine
   chart`.
@@ -6442,20 +6442,20 @@ servers and five minds.
   outcome on the same simplices.
 
 **Torsion bridge (M9).**
-- One idea with one held loop whose class vector occupies a unit turn on
+- One idea with one held orbit whose class vector occupies a unit turn on
   the sensor plane and a placement residue, with the mind holding a
   quarter-turn word and the translation: two `pivot … discharged` lines
   naming axes `Unit(0)` and `Placement`, in that order → one `vortex … 2
-  candidates held` line and no applied pivot on that loop
+  candidates held` line and no applied pivot on that orbit
   in that stroke; on the next perception that adds the translation face,
   `vortex … collapsed by perception to axis Placement`, then `form spoken …
   torsion 0` with two certificates on the tape, and the hypha's `court pivot
   certified` twice for that address.
-- One idea with a held loop whose only occupied axis is an infinite prime
+- One idea with a held orbit whose only occupied axis is an infinite prime
   exponent the mind has no word for: no `pivot … discharged` line, one
   `demand spoken … order ∞`, and `torsion filed … (σ,∞)` for the same
-  loop — filed at period `0` under its class (52.3), never at a period.
-- One idea with a held loop of finite order no held word discharges:
+  orbit — filed at period `0` under its class (52.3), never at a period.
+- One idea with a held orbit of finite order no held word discharges:
   `pivot … no discharge` for each occupied axis, then `torsion filed …
   (σ,ℓ)`, then `form spoken … torsion 1`.
 - The crystallized form logs `form spoken … torsion {n}` with `n` equal to
@@ -6678,9 +6678,9 @@ of the rotor's class invariants (15.3, ruled 2026-09-09). Code:
 `goodness_cyclic_reports_chord`, `infinite_class_is_never_filed`.
 
 **T4 The pivot loop terminates.** Every applied pivot zeroes one occupied
-coordinate of one held loop and by T2 raises none, so the total number of
-occupied coordinates over all held loops strictly decreases with each
-application; the candidate list of a loop is finite (its occupied axes times
+coordinate of one held orbit and by T2 raises none, so the total number of
+occupied coordinates over all held orbits strictly decreases with each
+application; the candidate list of an orbit is finite (its occupied axes times
 the held words on them); therefore A16 makes at most (occupied coordinates)
 applications and finitely many trials per application, all under `Budget`.
 Code: `Form::pivot_loop`, `Form::class_vector`, `Contemplation::pivot_on`
@@ -6689,7 +6689,7 @@ Code: `Form::pivot_loop`, `Form::class_vector`, `Contemplation::pivot_on`
 `pivot … discharged` lines for an idea never exceeds the occupied
 coordinates of its first class vectors in that stroke.
 
-**T5 A filed period is believed only when the loop closes at that period.**
+**T5 A filed period is believed only when the orbit closes at that period.**
 A torsion cycle `(σ, ℓ)` is witnessed iff the fibre walk returns at step
 `ℓ` and not before (A17). Code: `Element::record_torsion`,
 `toroid::witness_stored`, `HolonomicLoopWitness`, in `blind_replay` and
@@ -6747,9 +6747,9 @@ genome is the same word because M1 is injective on projective classes
 `m2_two_spellings_one_address`, trace `promoted {addr} dialect → genome`.
 
 **T13 μ⃗ neither certifies nor selects.** The candidate list of a held
-loop is a function of its class vector and the held words on its charts
+orbit is a function of its class vector and the held words on its charts
 (12.6, A16 step 3); the applied pivot is a function of which candidates
-discharge with an admissible rank move, and a loop with several certified
+discharge with an admissible rank move, and an orbit with several certified
 discharges is a vortex. `μ⃗(ℓ)` enters a trial only as the per-lane reading
 that refuses a candidate raising a lane, never as a comparison between
 candidates. Therefore permuting the lanes of the remainder's `μ⃗`, or
@@ -6758,7 +6758,7 @@ candidate is applied, and two minds with the same vector and the same held
 words apply the same pivot or hold the same vortex. Code:
 `Form::pivot_loop`, `economy::lane_moves`. Proof:
 `mu_neither_certifies_nor_selects`, `certificate_key_equal_across_two_minds`;
-trace: identical `pivot … discharged` sequences for one loop on two voices
+trace: identical `pivot … discharged` sequences for one orbit on two voices
 holding the same words.
 
 **T14 A pivot changes exactly its axis.** For each move of the 3.9 table
@@ -6767,8 +6767,8 @@ coordinate unchanged or zeroes it, and it zeroes only the coordinate it is
 labelled with: a gauge or hue word on plane `p` acts on `(s_p, u_p, m5_p,
 m13_p)` or on the hue cycle type by the group law of 9.1 and leaves every
 other plane's coordinates and the placement fixed; a translation word acts
-on the placement residue alone; a glue of a closed form makes the loop a
-boundary and zeroes the whole vector (T6); opening an axis removes the loop
+on the placement residue alone; a glue of a closed form makes the orbit a
+boundary and zeroes the whole vector (T6); opening an axis removes the orbit
 (15.5). Code: `Form::class_vector` before and after each move. Proof:
 `pivot_discharges_only_its_axis_and_raises_none`; the debug assertion of
 A18 on every trial.
@@ -6910,7 +6910,7 @@ auditor reproduces.
 ### 42.4 Termination theorems, collected
 
 - A16 terminates in at most (occupied coordinates) applications and
-  finitely many trials each (T4); a vortex is not a loop of A16, it is a
+  finitely many trials each (T4); a vortex is not an orbit of A16, it is a
   held state that only an external event collapses (25.1).
 - A17's witness walk terminates in at most `ℓ` steps.
 - A2's shortening terminates by `Budget`; run reduction by strict shortening.
@@ -6944,7 +6944,7 @@ word's conjugation (`face_of`), and composes the gauges as permutations on
 the union of hues with absence as identity; it is associative, `Γ_ii` is
 the identity, and `Γ_ji = Transport::inverse(Γ_ij)`, which refuses off the
 plane. No component composes on its own: `(V, W, γ)` taken as a product
-group is not the transport. The holonomy of a loop is the composite around
+group is not the transport. The holonomy of an orbit is the composite around
 it, and its class (15.4) is invariant under change of basepoint (3.2) and
 re-gauging (3.6). Code: `Transport::{compose, inverse, refract}`,
 `Form::face_of`, `Form::delta1`. Proof: `transport_composition_is_associative`,
@@ -6954,9 +6954,9 @@ re-gauging (3.6). Code: `Transport::{compose, inverse, refract}`,
 list: the holonomy rotor's conjugacy invariants (15.3) first; the six
 plane blocks `(o_p, u_p, m5_p, m13_p)` when the plane form exists (A3),
 as the sensor section; the hue cycle type, a partition; the translator
-and dilator residues of the loop's carriage; nothing else. Two loops have
+and dilator residues of the orbit's carriage; nothing else. Two orbits have
 equal `κ` iff their holonomies are conjugate under the moves of 15.1, `κ`
-commutes with restriction and refinement, and `κ = 0` iff the loop is
+commutes with restriction and refinement, and `κ = 0` iff the orbit is
 closed: holonomy projectively identity, carriage identity, gauge identity.
 No direct sum of plane groups and no `Z^{|𝒢|}` appears; the coordinates are
 invariants, not group elements. Code: `ClassVector::read`, `key`,
@@ -6968,7 +6968,7 @@ is certified iff (i) `κ_x' = 0`; (ii) `κ_y' = κ_y` for every `y ≠ x`,
 unchanged, since `≤` is undefined on `Z/4` or a partition; (iii) `rank'`
 equals `rank` or moves exactly one unit from torsion, free or off-plane
 into axes (A18); (iv) on every pair of the bundle no lane rises, read per
-lane (`lane_moves` with no `Rose`), strictness not required and no descent
+lane (`lane_moves` with no `Rose`), strictness not required and no direction
 asked. Every clause is decided exactly and replays on the court from the
 certificate (A20). T14 is the corollary that a move changes exactly its
 axis. Code: `pivot_loop`, `Rank::moved`, `economy::lane_moves`,
@@ -6976,8 +6976,8 @@ axis. Code: `pivot_loop`, `Rank::moved`, `economy::lane_moves`,
 `pivot_discharges_only_its_axis_and_raises_none`,
 `pivot_certificate_replays_or_refuses`, `rank_lost_refused`.
 
-**T22 The vortex is two certified discharges.** If two trials on one loop
-are both certified by T21, the loop is a vortex: both are held as candidates of
+**T22 The vortex is two certified discharges.** If two trials on one orbit
+are both certified by T21, the orbit is a vortex: both are held as candidates of
 the thought with their certificates, no scalar and no reading of `μ⃗`
 selects between them, and the vortex collapses only when a perception adds a face one candidate predicted, a
 glued or taught form's class equals one candidate's `after`, or a court
@@ -7039,7 +7039,7 @@ is the polytonic law applied to cost, and the four are the four lanes of
 |---|---|---|---|---|
 | the atlas | the language | strata (class vectors as prefixes) | a demand is reduced against the generators of one stratum, never the language; a stratum that cannot resolve is split by refinement | the stratum's population; the refinement, never a constant |
 | the fibre | a word | its sections and torsion cycles (25) | the harmonic and holonomic readings are taken per section, never once for the bundle (24.4) | sections held; a period-ℓ cycle speaks ℓ for the price of one generator |
-| the nerve | a sample, a sentence, the proofs of one conclusion | overlaps | a cocycle is one geometric product per loop (24.4, 23.9) | the nerve's dimension: eyes minus one, bodies minus one, lineages minus one; there is no other maximum on cochains |
+| the nerve | a sample, a sentence, the proofs of one conclusion | overlaps | a cocycle is one geometric product per orbit (24.4, 23.9) | the nerve's dimension: eyes minus one, bodies minus one, lineages minus one; there is no other maximum on cochains |
 | the mesh | the atlas | hyphae holding covers (4, 47) | a demand goes to the hyphae covering its stratum; adding hyphae adds coverage and never coordination; convergence is read from independent lineages on the ledger, never counted | the number of covering hyphae; the height is the only extent the mesh shares (45.7) |
 
 **The stratum is per lane, and so is the reduction** (amended 2026-09-11,
@@ -7053,27 +7053,27 @@ presentation rather than by the union of all four. Reducing against the
 union is not a wider search that happens to terminate: it is a basis no
 lane has, and a generator it cites is a generator on some other lane.
 
-**A meet is read ACROSS lanes, never within one.** The loop of an
+**A meet is read ACROSS lanes, never within one.** The orbit of an
 intersection is the product of what each lane's basis contributes to it,
 taken in the fixed order of the class vector (12.6) and read in the base
 body's stabilizer up to conjugacy (50.3). Never a first lane, never a sum
 across lanes, never a count of components deciding a branch (rules 2, 4,
 law 5).
 
-**The cross-lane loop.** The holonomy of a loop that passes through strata
+**The cross-lane orbit.** The holonomy of an orbit that passes through strata
 of different lanes is read with ROTOR coefficients — the one product all
 four covers share, because every cover is a cover of the same derivations.
 Within a lane the coefficients are that lane's own counts and they add;
 across lanes nothing adds. A monodromy that would permute the lanes — a
 Möbius or a 4-cycle on S, G, T, H — is refused by law 5 and by the table
 above before any cohomology is read: the four covers are independent and a
-lane is never carried into another. The twist a cross-lane loop CAN carry
+lane is never carried into another. The twist a cross-lane orbit CAN carry
 lies in the rotor group, where the orientation reversal and the quarter
 turn are already words of the seventeen; only a cross-lane holonomy
 outside their span is an obstruction, and it is a RELATION for the depth-4
 adjunction (37.7's fourth row), never a new dimension. Congruence of the
 four lanes on a derivation is `H¹` of the product cover vanishing on its
-cross-lane loops after adjunction: the four covers then cover one object.
+cross-lane orbits after adjunction: the four covers then cover one object.
 
 **Which axis of κ(ℓ) lies on which lane** (ruled 2026-09-11, so that a
 basis per lane can be read at all). The assignment is not chosen; it is
@@ -7086,7 +7086,7 @@ scaling table above (the atlas is S, the fibre G, the nerve H, the mesh T):
 |---|---|---|
 | S, spatial | placement residue, dilation residue | the atlas: where and how large on the base |
 | G, gauge | hue cycle type; the fibre's sections and torsion cycles; opened axes | the fibre over the word |
-| H, holonomic | orientation per plane, unit turns per plane, prime exponents per plane, off-plane invariants of the rotor | the nerve: what the loop turns by |
+| H, holonomic | orientation per plane, unit turns per plane, prime exponents per plane, off-plane invariants of the rotor | the nerve: what the orbit turns by |
 | T, temporal | none | the mesh: extent is read from receipts, never from a class vector |
 
 So the S stratum of a word is its placement and dilation, the G stratum
@@ -7097,7 +7097,7 @@ lane is the fiber of the generator index under that lane's axes alone;
 the meet read is the intersection of the three, T contributing nothing.
 
 The covers meet only on overlaps — a demand's stratum on a hypha's
-cover, a section's harmonics on a loop, a proof's transition on another's
+cover, a section's harmonics on an orbit, a proof's transition on another's
 — and the overlap is where a cocycle is read, which is why a meeting
 costs a geometric product and not a join. The work counters of chapter 42
 and MU-ENGINEERING §7 are this section's proofs: one fetched vertex, one
@@ -7156,7 +7156,7 @@ market only as a typed demand vertex of a sentence (50.5), never as a
 listing, a citation or a genome entry. No complete rewriting
 system for the mixed-plane group, no Knuth–Bendix run, no claim of
 minimality for an off-plane tape beyond what a completed search depth
-proves. No gradient and no greedy: a held loop is never closed by picking
+proves. No gradient and no greedy: a held orbit is never closed by picking
 the chord with the lowest torsion order, the smallest remainder, or any
 other scalar first; that rule, once written into an earlier version of this
 document as the "twist loop, loosest first", is retired, and the pivot loop
@@ -7816,7 +7816,7 @@ whether.
 # Part X — Language formation
 
 Written 2026-09-09 against d6e19a1. Carried from Parts I–IX: words are
-paths in the Cayley graph, forms are vertices, faces and loops, the court
+paths in the Cayley graph, forms are vertices, faces and orbits, the court
 replays, the mind comprehends, and time is the receipt ledger. This part
 says what a voice speaks — a sentence, composed — and how a receiver takes
 it apart — factored, replayed — so that meaning is derived and never
@@ -7850,7 +7850,7 @@ permutation `γ_k` of the hues; each directed edge carrying the transport
    product of the edge transports, read in the base body's stabilizer up
    to conjugacy (50.3), is the class the sentence files: the identity, or
    a torsion class filed with its period (A17). A cycle whose product is
-   neither is a held loop with its class vector (12.6), and the sentence
+   neither is a held orbit with its class vector (12.6), and the sentence
    is valid but not closed.
 
 A vertex that reconstructs nothing — a bare chain of links with no word,
@@ -7953,7 +7953,7 @@ and what the eyes cannot pair ride the sentence as typed demand vertices
    are primes beyond it.
 3. Connect. For every edge the eyes admit, `Γ_ij` by 50.3; a pair with
    no rigid versor is a remainder edge.
-4. Form loops. The holonomy of every cycle of `E`, read in the base
+4. Form orbits. The holonomy of every cycle of `E`, read in the base
    body's stabilizer up to conjugacy; filed as torsion or held with its
    class vector.
 5. Emit the composed sentence, its demand vertices riding on it, one per
@@ -7970,7 +7970,7 @@ only reading of an utterance; its answer is the adjudication of 50.9.
    factorization of `V_k` is compared with the speaker's by the class
    vector (15.4, 12.6) — conjugacy in the group, never equality of tapes.
 4. Coherence. The holonomy of every cycle as 50.1 step 2; a sentence
-   whose loops close is integrated into the working dialect as an active
+   whose orbits close is integrated into the working dialect as an active
    theorem (24.1, 25.2), and a sentence with demand vertices is stood
    withheld with them.
 
@@ -7998,7 +7998,7 @@ meaning. The edge transport is:
 - A pair with no `V_ij` is a **remainder edge** (`set_remainder_edge`,
   13.9 step 7): the two bodies are two charts, the split is
   Mayer–Vietoris (13.9), and no loop through that edge is evaluated.
-- The **loop holonomy** is the product of `Γ` around a cycle, valued in
+- The **orbit holonomy** is the product of `Γ` around a cycle, valued in
   the base body's stabilizer and certified up to conjugacy by the class
   vector (15.4); stabilizer cosets do not telescope, which is why this
   product carries what the coboundary could not. It is filed under its
@@ -8060,7 +8060,7 @@ one case of the rule, not the rule.
 
 | `Demand::Source(B_out, chart, multiplicity)` | say which input body an output body is the image of | the output body's chart and the number of input charts a versor carries onto it, every one standing as a section, none first-found |
 | `Demand::Creation(B_out, chart)` | find any input body carrying onto `B_out` | the output body's chart |
-| `Demand::TopologicalDeformation(B_in, B_out)` | find any element of `Cl(4,1)(ℚ)` carrying `B_in` onto `B_out` — the harmonics differ | both charts and the axes on which they differ; answered by the cover of 50.8 — pieces each carried, the loop of their meet, the simplex the court fills — through Mayer–Vietoris boundary splitting (13.9), never held for a rotor that cannot exist |
+| `Demand::TopologicalDeformation(B_in, B_out)` | find any element of `Cl(4,1)(ℚ)` carrying `B_in` onto `B_out` — the harmonics differ | both charts and the axes on which they differ; answered by the cover of 50.8 — pieces each carried, the orbit of their meet, the simplex the court fills — through Mayer–Vietoris boundary splitting (13.9), never held for a rotor that cannot exist |
 | `Demand::Chart { reading, chart, links }` (ruled 2026-09-19, chapter 53) | close the rule of one chart of the scene cover under one reading | the reading, the chart's own key — its support written out — and the links the chart leaves; keyed by (reading, chart key) and deduplicated by that key, never by a count; the one demand the registry dispatches as a sub-problem another mind may take (53.3) |
 
 Demands ride the sentence as vertices (`Vertex::Demand`), aggregated per
@@ -8175,7 +8175,7 @@ every voice that learned the page spells the same word.
 
 **The topology of the bodies — `TopologicalDeformation`.** No versor
 carries a body onto an image with different harmonics; but a body is a
-union of pieces, and pieces carry. The cover does not descend below a body
+union of pieces, and pieces carry. The cover does not refine below a body
 (51.3 as ruled 2026-09-18): a piece is a word vertex only if it is a body
 under 51.3's definition (one hue, 6-adjacent across the whole family).
 Under no circumstances does `cover.rs` or `peel_body_scaled` shatter a body
@@ -8190,23 +8190,23 @@ overlap:
 2. **A pair of pieces with no `V_ij`.** A remainder edge (50.3): the two
    pieces are two charts, the sentence is split by Mayer–Vietoris (13.9),
    and it is valid with the split and no demand.
-3. **A loop through the meet.** Where two pieces' meet has more than one
+3. **An orbit through the meet.** Where two pieces' meet has more than one
    component (13.9 step 0; the arcs of a ring, the arms of a fork), the
    pieces' nerve has a cycle, and the product of `Γ` around it, read in
    the base piece's stabilizer up to conjugacy, is the deformation's own
    holonomy. Finite order (15.3): `cech::extend` files the 2-simplex whose
-   boundary is that loop, `Fill::Class(ℓ)`, and the sentence carries the
+   boundary is that orbit, `Fill::Class(ℓ)`, and the sentence carries the
    class as its theorem (law 12) — the filled simplex is a constructor the
-   mind glues by (25.3), the degree-2 class of 15.4 keyed by the loop and
+   mind glues by (25.3), the degree-2 class of 15.4 keyed by the orbit and
    the holonomy's invariants, carried or discharged under refinement
    (15.5), and 13.9 step 7 finds the same class at the court. Infinite
-   order: `Fill::Open`, the loop is held with its class vector (12.6), and
+   order: `Fill::Open`, the orbit is held with its class vector (12.6), and
    the `TopologicalDeformation` vertex stands as 50.5 says.
 4. **Laminae of `B_out` no piece reaches, or of `B_in` no piece carries.**
    `Source` or `Creation` vertices ride beside (50.5): a hole that opens
    or closes is those laminae, not a holonomy, and is never a class.
 
-Nothing chooses the cover: the pieces are the peel's shells, the loop is
+Nothing chooses the cover: the pieces are the peel's shells, the orbit is
 the meet's, the order is the class's, and the court re-derives all three.
 `court simplex filled` (34.2) is the line at the court and `simplex filled
 {addr} class {ℓ}` at the voice.
@@ -8216,8 +8216,8 @@ the pair into pieces and speaks them (`pieces_of` NEW over
 `peel_body_scaled` and `blade::components`); `family/pair.rs`: contact
 faces between pieces with their edges; `cech/simplex.rs` `extend`
 unchanged; `sentence/form/carrier.rs`: the filled simplex on the form's
-tape beside its loops (tape v7, one recut with 37.7's escape byte);
-`court/verdict/replay.rs`: the filled simplex replayed as any loop
+tape beside its orbits (tape v7, one recut with 37.7's escape byte);
+`court/verdict/replay.rs`: the filled simplex replayed as any orbit
 (`REFUSE_SIMPLEX_ORDER` when the loop's order is not the filed `ℓ`). Tests:
 `a_deformed_body_is_spoken_as_pieces_that_carry`,
 `a_loop_of_pieces_with_finite_holonomy_fills_a_simplex`,
@@ -8239,7 +8239,7 @@ the walls, so it stands here. A refusal that does not change the
 speaker's state transition is an inert log line, not a protocol: a voice
 that utters a sentence, receives a refusal and re-emits the same tape on
 the next stroke is deaf, and a mesh of such voices is an echo chamber.
-The feedback loop is an algebraic contraction on the held form, certified
+The feedback orbit is an algebraic contraction on the held form, certified
 like a pivot (A20) and verified by the court like any move.
 
 **The judicial reply.** The court never returns an opaque byte. Its
@@ -8318,7 +8318,7 @@ so the loop is well founded:
 6. `FaceDerivation` at `Face(a, b)` (ruled 2026-09-17, night): the face
    between `a` and `b` does not re-derive from its vertices — its word is
    not their coboundary and it is no loop's chord. The face leaves the
-   form and the two vertices stand without it; a loop through it
+   form and the two vertices stand without it; an orbit through it
    dissolves, and the closed sub-complex loses one face.
 
 Each move is a form rewrite with a certificate, `Contraction { kind, at,
@@ -8437,7 +8437,7 @@ does not carry, and that is read before anything is changed (row W2).
 
 **Grammar is content, and the interpreter is not.** How words are put
 into sentences — which pairs are related, by what transport, under which
-relators the loops must close, which rewrites carry one derivation to
+relators the orbits must close, which rewrites carry one derivation to
 another — is the presentation of 1.8 and the upper rungs of 1.9: relators
 at depth 4, rewrites at depth 5, procedures over the crystals at depth 6,
 each adjoined by two courts on one witness and taught by the syllabus,
@@ -8454,7 +8454,7 @@ as 37.7 fires at each depth, never by a commit that makes the grammar a
 table.
 
 **Order.** Words are hardened as one-vertex sentences now (W1), on the
-corpus, without waiting for a loop; faces and loops enter as H2c and H3
+corpus, without waiting for an orbit; faces and orbits enter as H2c and H3
 make their transports readable; the first generator adjoined by closure
 is the gate on depths 4–6, and nothing at those depths is authored by hand
 before it.
@@ -8639,7 +8639,7 @@ already holds (law 12), and they go with BQ5. The field's pair loop (F1)
 dissolves in the same move: the strain, the pencil and the frame are read
 on the pairs the lattice names and on no others, so the band no longer
 gates whether (69.2's size disparity) and T3's sector becomes a
-coordinate of a contact rather than a cure for a loop. What stays open
+coordinate of a contact rather than a cure for an orbit. What stays open
 and is written as open: A.10 asks that two manifolds share a boundary
 through a null gradient and the corpus's meets read timelike (57.4,
 55.7) — whether a contact's pencil is ever luminal is a measurement, at
@@ -8804,7 +8804,7 @@ expects to move, measured before and after.
   `Interface::between` computes before it splits it by grade; the split
   into a strain and a blade was the flattening, and `V` is held instead.
   `V`'s kind is read the way every versor's is, by its class invariants
-  and the defect classification the loop reader already runs (trivial,
+  and the defect classification the orbit reader already runs (trivial,
   elliptic, hyperbolic, parabolic, non-simple): around intersecting
   spheres it turns about their common circle, at tangency it is
   parabolic, between separated spheres it is a boost or a dilation. So:
@@ -8870,7 +8870,7 @@ two-dimensional thinking, every relation between two things — and going
 around the triangle it revisited each sphere, so `s_c s_c` appeared and a
 sphere times itself is its square, `r_c²`. The flatness was PRODUCED by
 that squaring (law 11), not found in the geometry: a body revisited is a
-body squared, and a pairwise loop always telescopes to a scalar. The
+body squared, and a pairwise orbit always telescopes to a scalar. The
 sentence is withdrawn.
 
 **The rule.** An `n`-body relation is one object of the grade its
@@ -8894,7 +8894,7 @@ condition (14.6).
 
 **Curvature, re-read.** It is not only holonomy around 1-cycles. It
 includes what the higher-grade parts carry that no boundary of pairs
-reproduces; the 1-skeleton loops read so far are the flattened shadow of
+reproduces; the 1-skeleton orbits read so far are the flattened shadow of
 that. Around a 1-cycle the tether alone telescopes, and the holonomy
 that survives is the frame against the inversion — `g_ab =
 (θ_bθ_a⁻¹)·(s_b s_a)`, where `θ` and `s` do not commute — which is 60.4
@@ -8902,7 +8902,7 @@ met from the other side: the harmonic core and the luminal tether are
 both required, and neither alone bends anything. O1's fifteen trivial
 classes are those edges carrying no `θ`. A cycle's holonomy has two
 parts, a geometric part (`θ` against `s`) and a gauge part (the fibre
-permutation around the loop), read together and never summed (law 5).
+permutation around the orbit), read together and never summed (law 5).
 
 **Consequences for the rows.** BQ5a composes the frame with the tether,
 or every contact cycle reads flat, and it is not enough alone: where
@@ -8998,11 +8998,11 @@ and works in the others (`Depleted`).
 **The ladder of memory, in the document's nouns.** Congruence forms in
 the crystals: sections that agree on a stratum (23.9, 45.9). The
 connection of fibres is then measured through torsion — what will not
-close, filed at its period (A17, 25.5) — and where the loops close the
+close, filed at its period (A17, 25.5) — and where the orbits close the
 form is coherent (2.2, 10.3). Coherence hardens by consilience: two
 courts replay the closure (37.7, law 6). At that hardening a FIBRE
 becomes a TETHER. The fibre is vertical and held — a body's gauge, its
-sections, its held loops, in the contemplation and the dialect, the
+sections, its held orbits, in the contemplation and the dialect, the
 epigenome, short-term memory (25 as ruled 2026-09-19) — and the tether is
 horizontal and ruled — the relation between two bodies, `V` with its
 frame, a 1-cell of the genome, long-term memory on disk. The callus is
@@ -9172,10 +9172,10 @@ ruled twice:
   named refusal.
 - **The physics at `n`** (P6, inside Phase N as BQ4 and PH2).
 
-## 73. The orbit, not the loop (ruled 2026-09-23)
+## 73. The orbit, not the orbit (ruled 2026-09-23)
 
 **Origin, the operator's words recorded verbatim.** What the engine
-calls a loop is an imperfect orbit, "repelled/propelled by the gravity of
+calls an orbit is an imperfect orbit, "repelled/propelled by the gravity of
 the axioms that the mathematics orbits". What the engine reads is how the
 path fails to close, never whether it closes. The implementor's proposal
 of the same day is adopted as this chapter with the reconciliations of
@@ -9429,7 +9429,7 @@ layers with one core.
    curvature.
 4. **The twist of a mind is `τ = [E, D]`**, the tide acting on the mind's
    shape by the bivector commutator, exact; a round mind feels none.
-5. **The shear between the loop and the ellipse** is two exact readings
+5. **The shear between the orbit and the ellipse** is two exact readings
    per orbit: its eccentricity (73.2(4)) and its precession (73.2(1)),
    zero exactly when the orbit closes, each read per plane and priced per
    lane (73.8), never summed.
@@ -9774,7 +9774,7 @@ table of orbital slots (a grid over the space of perspectives; filling it
 is a search, rule 3); a phase read as a corpus index (a frame number
 standing for a place on an orbit); a radius read as a stratum COUNT; a
 capacity per star as a count; periodic re-balancing (a clock-driven
-frame loop, law 9); a star split at `N` planets (a dialled constant, rule
+frame orbit, law 9); a star split at `N` planets (a dialled constant, rule
 5). Checklist (q) returns any of them. This corrects 74's own
 amendment of the same day, which placed a new planet "at an empty orbit
 taken in the canonical order of the elements": a slot, retracted.
@@ -10079,7 +10079,7 @@ stiffness per plane, and the commutator of two bends carried round as the
 plane's viscosity; resolve a held `ℤ₂` by bending each candidate.
 
 **What it is in the document's nouns.** A bend of a face is a PIVOT —
-the only motion in this engine — on the axis of the face's held loop's
+the only motion in this engine — on the axis of the face's held orbit's
 class vector, and its trial is one move and one re-read (12.2, 62). The
 response is the class vector after against before: what would have to
 change for the circuit to close, read exactly. Bending faces is the pivot
@@ -10107,9 +10107,9 @@ every grade), then VS1 (this section), then BQ5a's contact edge.
 3. **The commutator of two generators is the algebra's, not the form's.**
    `[B₁, B₂]` is a structure constant of `so(n+1,1)` and reads the same
    on every form; a viscosity built from it certifies the algebra. Path
-   dependence of a deformation is the holonomy of the CLOSED loop the
+   dependence of a deformation is the holonomy of the CLOSED orbit the
    deformation traces — bend, bend, unbend, unbend — and on the complex
-   that loop is a 2-cell, whose content the coboundary reads at its own
+   that orbit is a 2-cell, whose content the coboundary reads at its own
    grade (NB1, CG1). Nothing is probed that the cell does not carry.
 4. **A held `ℤ₂` is collapsed by T5's kernel, not by a bend.** Two
    candidates respond differently in `H` always and identically in class
@@ -10154,13 +10154,13 @@ e_ij` on an elliptic plane, and on a hyperbolic plane — where `1 + B`
 is null and every rational boost carries a dial — the plane's blade,
 its half turn; no parameter enters (rule 5, 78.8). (2) THE RESPONSE PER
 PAIR OF PLANES is the class of the circuit's holonomy after the two-bend
-loop set against the class the same loop gives on a flat form — the
+orbit set against the class the same orbit gives on a flat form — the
 class of `K` alone — so the algebra's commutator is subtracted and what
 remains is the FORM's contribution (C2a, exact). (3) FOUR ARMS, per pair
 and per lane, never summed: INVISCID — neither bend moves the class, a
 gauge direction; ELASTIC — a bend moves the class and the loop reads
 exactly the flat form's `K`, the algebra's own stiffness; CURVED — the
-loop reads a class `K` alone does not, the form's own curvature felt
+orbit reads a class `K` alone does not, the form's own curvature felt
 through the bend, content and reversible (the unbend restores it);
 VISCOUS — the bend or the loop triggers an IRREVERSIBLE event of the
 ledger (a drain or cauterization, a sealed cell released, a demand filed,
@@ -10175,7 +10175,7 @@ spatial `𝒮` (`PivotBy::Placement`), the word is holonomic `𝒽`
 gauge `𝒢` and temporal `𝒯` have no plane to bend on and read "no bend on
 this lane" by name, never zero. A flat form reads inviscid or elastic
 everywhere with zero entropy by construction; a screw reads curved on
-the plane the loop's `K` turns in, verified by fixture; a held `ℤ₂`'s
+the plane the orbit's `K` turns in, verified by fixture; a held `ℤ₂`'s
 fixture checks that no bend changes which candidate stands. **VS1
 landed (e6af61c4) with two departures ruled:** the viscous arm's live
 fixture cannot be built with these generators — every ruled bend is
@@ -10187,7 +10187,7 @@ the live fixture lands there; the held `ℤ₂` fixture waits on BQ5a's
 coset edge. The corpus's first reading: the one form whose circuits read
 is inviscid or elastic on every pair of planes on both lanes with zero
 entropy; the two forms whose circuits are unread (OR3) read `no-class`,
-never inviscid; a screw fixture reads curved on the plane its loop turns
+never inviscid; a screw fixture reads curved on the plane its orbit turns
 in and on the pairs coupled to it, not on the boosts it does not couple
 to.
 
@@ -10298,7 +10298,7 @@ the tether holonomy telescopes to a scalar for every triple; and the
 one candidate that could fail — `H M H̃ ∝ M`, the boundary holonomy
 carrying the round onto itself — is, on the operator's word, too basic:
 one group element asked one question, a flat frame. The engine is not on
-simple loops. A circuit's holonomy is a composite motion whose modes are
+simple orbits. A circuit's holonomy is a composite motion whose modes are
 each an orbit on their own plane — elliptic modes ellipses, parabolic
 escapes, hyperbolic pole pairs (75) — several planets circulating a star,
 and the mode through `e₃` runs its own congruent orbit that a single
@@ -10310,7 +10310,7 @@ which no sandwich can see.
 **The structure: the ORBIT ALGEBRA of a cell.** Exact over ℚ at every
 link, each link a producer that exists or is added (78.8):
 
-1. **Circuits, not a loop.** Every circuit `c` bounding the cell — its
+1. **Circuits, not an orbit.** Every circuit `c` bounding the cell — its
    boundary, each candidate of a held coset, each circuit across a
    section — is composed member by member into `H_c` (the circuit reader,
    VT2), each kept, none merged.
@@ -10334,7 +10334,7 @@ link, each link a producer that exists or is added (78.8):
    derived part `[𝔥, 𝔥]` is the coupling between planets, the precession
    62.5's first draft misplaced on the pivot pair (Thomas precession
    lives here, between modes). A cell whose circuits generate a
-   one-dimensional `𝔥` IS on a simple loop, and says so by rank.
+   one-dimensional `𝔥` IS on a simple orbit, and says so by rank.
 5. **Congruence, per mode, by bracket.** The round `M` is congruent
    with a mode where `[B_{c,j}, M] = 0` — the commutator, linear and
    exact, no sandwich, no square: the mode's orbit keeps the round the
@@ -10367,13 +10367,13 @@ link, each link a producer that exists or is added (78.8):
    the meet `S ∧ Π` of two spheres of its pencil, and a point's inversive
    product with it is NOT a scalar: `W · (S ∧ Π) = (W·S) Π − (W·Π) S`,
    the sphere of the round's pencil through `W`. So (A) the signed
-   crossings of ONE inversive distance `W·S` read zero on every loop,
+   crossings of ONE inversive distance `W·S` read zero on every orbit,
    linked or not — the witness enters and leaves the sphere and the
    crossings cancel — and that reading is REFUSED by name: one inversive
    distance cannot see a codimension-2 round. (B) THE WINDING OF THE
    PENCIL PAIR `(W·S, W·Π)` about the origin, the crossing number of the
    polygon of pairs along the witness's trajectory, reads the linking
-   number exactly: threading the disk once 1, not linking 0, the loop
+   number exactly: threading the disk once 1, not linking 0, the orbit
    run twice 2 at `n = 3`; threading 1, not linking 0 at `n = 4`. It
    chooses nothing: another basis of the pencil acts linearly on the
    pair and changes the winding only by that basis change's sign, the
@@ -10616,7 +10616,7 @@ of POW++ (74): useful work, and work that converges.
 - **R4 · Curvature is holonomy.** A 2-cell's curvature is the transport
   of its ordered boundary, `F(σ) = T(∂σ)`; `σ` is flat iff `F(σ)` is the
   identity ray (`±1` one ray, EQ1).
-- **R5 · Basing.** Every loop is carried to the basepoint by the tree
+- **R5 · Basing.** Every orbit is carried to the basepoint by the tree
   transport `θ` (Axiom A, 54.7), `ρ(ℓ) = θ T(ℓ) θ⁻¹`.
 
 ### 79.2 Theorems
@@ -11042,8 +11042,8 @@ through the console and never a grep:
 **Two findings, ruled.** (1) VISCOSITY IS MOST OF THE STROKE — 28 to 67
 per cent of each voice's reads — and on a percept whose only contact
 cycle is unread every one of its 180 trials was `no-class`: the trial
-spends its read before it knows the loop has a class. Ruled (VS1b, rule
-10 and rule 11 together): a held loop's classes are read ONCE before the
+spends its read before it knows the orbit has a class. Ruled (VS1b, rule
+10 and rule 11 together): a held orbit's classes are read ONCE before the
 trials, and where none reads the pair is counted `no-class` without a
 read spent; the trials stay last in the percept, so a spent stroke
 leaves the instrument unread and never perception (SP1 is the proof,
@@ -11124,7 +11124,7 @@ and the union-rigidity path is out of the contact edge at every site.
 Every refusal carries its kind through ONE reader of what the refusing
 reader carried (CV1), the interface and the band are gone (SQ1), the
 reuse ladder is a reading (CT1) with nothing left to test on this
-corpus, and VS1's held-`ℤ₂` fixture stands: a coset loop is unchanged by
+corpus, and VS1's held-`ℤ₂` fixture stands: a coset orbit is unchanged by
 any bend. VT1's two `keyed/` comment edits rode this commit.
 
 **Four design points, ruled.** (a) A MIXED contact — one member
@@ -11159,7 +11159,7 @@ route — a tether `V = s_y s_x` of the lost face's two bodies' nuclei
 from the witness cells holding both, and that tether carried by each
 other constructor the cells hold, `s_k V s_k⁻¹` — and T1 is read on the
 two routes between the lost face's bodies, the constructed one against
-the rest of the circuit, which reduces to the completed loop against the
+the rest of the circuit, which reduces to the completed orbit against the
 identity ray: flat or curved with its holonomy. A circuit only a
 constructed route reads is a CANDIDATE, its offers (arm, face,
 constructor ray, verdict, holonomy ray, modes) volatile on the circuit
@@ -11219,7 +11219,7 @@ let perception write on them."
 Today `k` is the position of a pair in `task.train`. That is a member
 named by its position in a carrier — rule 15's own shape — and "all pairs
 agree" is then a correspondence search across forms that were perceived
-separately, which is L8v's cost and L20's loop. The whole of this chapter
+separately, which is L8v's cost and L20's orbit. The whole of this chapter
 is one move: `k` stops being a position and becomes a coordinate.
 
 ### 51.1 The coordinate
@@ -11349,14 +11349,14 @@ is the section as ruled.
   bodies on two axes still distinguishes them on three.
 - **The harmonics** are read on the support as they are now. A family of
   three identical pairs has a body that is PERIODIC along `e₃` with
-  period one; its periodicity is read by 51.5's loop, not by an axis, and
+  period one; its periodicity is read by 51.5's orbit, not by an axis, and
   its chart says only what its moments and boundary say.
 - **The sheet plane's role is unchanged.** `(1,2)` is still where
   orientation lives; nothing in 51.3 puts a site coordinate on `e₂`.
 - **A piece is a word vertex only if it is a body (ruled 2026-09-18).** A piece
   is a word vertex only if it is a body under 51.3's definition: a connected
   component of one hue, 6-adjacent across the whole family. The cover does not
-  descend below a body; under no circumstances does `cover.rs` or `peel_body_scaled`
+  refine below a body; under no circumstances does `cover.rs` or `peel_body_scaled`
   shatter a body into single-pixel laminae or concentric peel rings to force a
   carriage. What no single versor carries whole is not a listing of pieces but one
   demand of the kind its reading types (50.5, 50.8). Cited from 50.8 and 23.1 step 6.
@@ -11387,7 +11387,7 @@ vertices across them by transport class. With one body:
 - **Agreement across pairs is the body's symmetry along `e₃`.** A rule
   that holds in every pair is a translation along `e₃` that carries the
   body onto itself: a versor on a plane touching `e₃`, read as holonomy
-  around the loop that translation closes. That is ONE loop check, on one
+  around the orbit that translation closes. That is ONE orbit check, on one
   form, by the machinery 12.2 already has.
 - **Which of the seven moves survive.**
   1. *Correspondence by transport class* — GONE. It exists to match
@@ -11417,7 +11417,7 @@ vertices across them by transport class. With one body:
   minimal path by a scalar** — chapter 44's refusals stand here as they
   stand at L17.
 - **This is why it bounds.** A search over `m` forms is the compiler's own
-  cost (L8v); a loop check on one form is bounded by the form. That is
+  cost (L8v); an orbit check on one form is bounded by the form. That is
   the claim, and 51.10 is how it is proved rather than argued.
 - **What a section along `e₃` carries, and what pairs the bodies**, is
   ruled in 52.5 (2026-09-17, night): the pairing is the chart's fiber and
@@ -11517,7 +11517,7 @@ Three claims, in process, with no corpus in the first two:
 1. **A family whose rule is one translation along `e₃`.** Construct a
    family of three pairs where each output is the input translated by a
    fixed vector. As one body this is a body with a translational symmetry
-   along `e₃`; extraction reads it as ONE loop whose holonomy is that
+   along `e₃`; extraction reads it as ONE orbit whose holonomy is that
    translation, and the trace shows no correspondence pass ran — move 1
    is not merely fast, it is absent.
 2. **The same address on two courts.** Two kernels of distinct identity,
@@ -11566,7 +11566,7 @@ in `network/`.
 
 Ruled 2026-09-17, night, on the operator's word, against 4a8f10c and the
 recut of epoch 64. Carried from Parts X and XI: a word vertex carries its
-derivation and re-derives its rotor; a loop's holonomy is content; the
+derivation and re-derives its rotor; an orbit's holonomy is content; the
 family is one body on `(r, c, k)`. This part rules how a versor is derived
 from its own bivector — exactly, in either direction, by the algebra's
 products and nothing else — and what that retires: the finite-order gates
@@ -11634,41 +11634,41 @@ add, the ordered product is the whole statement, and a rule that added
 bivectors across planes would be the first-order approximation rule 11
 refuses.
 
-A 2-cell of a form — a loop of faces — is closed when the ordered product
+A 2-cell of a form — an orbit of faces — is closed when the ordered product
 of its face holonomies around it is the identity: `F = 0` on that cell.
 That is the discrete non-abelian Stokes theorem, it is what
 `form_loops_replay` reads, and it is not `div ⋆F = 0`, which is a source
 condition and admits curvature. A cell whose product is not the identity
 carries an obstruction, and 52.3 says what the obstruction is.
 
-### 52.3 A loop's obstruction is its bivector; a period is a reading
+### 52.3 An orbit's obstruction is its bivector; a period is a reading
 
-A loop whose edge holonomy (50.3) is a versor `V ≢ 1` has as its
+An orbit whose edge holonomy (50.3) is a versor `V ≢ 1` has as its
 obstruction the Cayley bivector `B` of `V`: 12.6's blade decomposition of
 the canonical holonomy versor, written projectively so that it is content
 and not a spelling. Its placement residue and its dilation residue are
 the `e_i∧e_∞` and `e_o∧e_∞` components of `B`; its discharge on its own
 plane is the inverse parameter `−B`; and the axis I6 opens over it
-(16.20) is seeded by the loop's holonomy versor as it is, with `B` as the
+(16.20) is seeded by the orbit's holonomy versor as it is, with `B` as the
 coordinate the seed re-derives.
 
 **The finite-order gates are retired.** 50.3 as ruled 2026-09-09 filed a
 finite holonomy as torsion `(σ, ℓ)` and held an infinite one; 23.1 step 4
 refused a face whose edge word has infinite order and step 5 refused a
-loop of infinite order however it was filed; A17 called an infinite-order
+orbit of infinite order however it was filed; A17 called an infinite-order
 class a demand. Read against the chart, a finite order is the case where
 the flow on one plane returns — a periodic angle — and the gate that
 refused every other holonomy was trigonometry: it forced the hyperbolic
 flow of 51.2's asserted algebra, and every Pythagorean rotor, into a
 compact order they do not have. Ruled:
 
-1. **A loop of any order is filed under its class key** (15.4): finite at
+1. **An orbit of any order is filed under its class key** (15.4): finite at
    its period `ℓ`, infinite at period `0`, which is A19's spelling of
    infinite order on the class ledger already. The tape admits the filed
    zero; the codec's refusal of `0` as malformed is retired. S9.13's reach
    (`fibre_volume`) counts finite periods only: an infinite class
    condenses no members and is priced nowhere as a reach.
-2. **The court replays a filed loop of any order by one reading**: the
+2. **The court replays a filed orbit of any order by one reading**: the
    identity, or an opened axis that re-derives, or filed under its class at
    the period the court re-derives — `Rotor::order` (15.3) reading
    infinite is the period `0`. A face whose edge word has infinite order is
@@ -11677,12 +11677,12 @@ compact order they do not have. Ruled:
    that remains.
 3. **What still refuses**: a holonomy that is not a versor, which has no
    class; a filed period that does not re-derive; a seed that is not the
-   re-walked loop's own; and a form whose loop is neither identity, nor
+   re-walked orbit's own; and a form whose orbit is neither identity, nor
    filed, nor opened is held and not spoken — valid, not closed, as 50.1
    step 2 says.
 4. **The voice files by the same rule.** `edge_coheres`, `is_cauterized`
    and the pivot's filing after `NoneDischarged` read an order as a
-   period to file, never as a gate. A loop of infinite order whose
+   period to file, never as a gate. An orbit of infinite order whose
    holonomy neither the seventeen nor the held generators spell still
    speaks its `Standing` demand (37.7, N4): that is the language's want
    of a generator, and it rides beside the filing, not instead of it. The
@@ -11759,8 +11759,8 @@ correspondence, a candidate list or a nearest match (50.2).
    quotient also refuses is 50.5's demand — `Source` with the fiber's
    multiplicity, `Creation`, `TopologicalDeformation` — held, never chosen
    (rule 15).
-4. **Faces, loops, gluing.** Faces are 50.3's, on the union shapes of the
-   two vertices' fibers; loops are filed by 52.3; gluing (move 3) is
+4. **Faces, orbits, gluing.** Faces are 50.3's, on the union shapes of the
+   two vertices' fibers; orbits are filed by 52.3; gluing (move 3) is
    unchanged. Move 1 does not exist: `extract/1 correspondence`, the
    matching by transport class, and `pair_form` per pair are deleted
    rather than kept, and the memo holds one form per task.
@@ -11820,7 +11820,7 @@ operator reads with the rest:**
 7. **Lanes are multi-axial coordinate spaces, never scalar counts** (ruled
    2026-09-18): no scalars on lanes. $\{S, G, T, H\}$ is a 4-dimensional
    rotor coordinate space (`lane_charts_of`). Expansion velocity and
-   recursion are contained by circuit loop-back (`Orbit::period`),
+   recursion are contained by circuit orbit-back (`Orbit::period`),
    projective ray singularity condensation ($\nabla(V) \cup -\nabla(V)$
    congruence via $V \sim -V$), and stratum depth bounds.
 8. **The ambient connection of a deformation lives on the family bundle, not the defect chart** (ruled
@@ -11834,7 +11834,7 @@ transducer/cayley/tests/chart.rs  the claims of 39 under Part XII
 sentence/form/carrier.rs        FiledLoop.period: 0 is infinite order (A19); fibre_volume counts finite periods; is_cauterized files any order
 sentence/pivot/walk.rs          edge_coheres reads any order; the filing keyed by class at the re-derived period
 sentence/pivot/trial.rs         file_loop files at any period, 0 included
-sentence/pivot/drive.rs         NoneDischarged files a loop of any order; the Standing demand rides beside the filing
+sentence/pivot/drive.rs         NoneDischarged files an orbit of any order; the Standing demand rides beside the filing
 sentence/tape.rs                the filed zero admitted
 court/verdict/replay.rs         no face refused for an edge word's order; loop_reading_replays reads any order
 family/percept.rs               52.5: the frames perceived once, the fiber quotient per frame, the sections along e₃, the covers and demands, the faces
@@ -11978,8 +11978,8 @@ vertices of the family's form. A cover is what one chart's quotient
 refused, and it is carried as **one vertex per cover** — the deformation
 on that chart — whose nerve, meets and filed classes are the cover's own
 content, held below that vertex in the chart's fiber and reached by key
-when the form is spoken or replayed. The loops the form walks are the
-loops among its charts; the loops among a cover's pieces are classified
+when the form is spoken or replayed. The orbits the form walks are the
+orbits among its charts; the orbits among a cover's pieces are classified
 once inside the cover and filed as torsion on the cover's vertex (50.8
 case 3), never lifted to the form. Pieces correspond across frames by the
 chart coordinate along `e₃` (51.3, 52.5 reading 1), so a piece at frame k
@@ -11995,7 +11995,7 @@ on; a chart on which one class carries two pieces by two different
 carriages is 50.5's multiplicity, a `Source` demand on that chart, never
 two vertices and never two members; the cover's meets are faces between
 those members through the incidence the form already builds on supports;
-the loops among pieces are classified inside the cover and filed as
+the orbits among pieces are classified inside the cover and filed as
 torsion by class, where the form already files them. No vertex kind, no
 tape field and no address of an unchanged form moves; the version byte
 stays K3's.
@@ -12056,7 +12056,7 @@ nothing else is a coordinate (rule 17):
    by A12 (50.2 step 2): the citations and the residue.
 7. **The form.** One `Word` vertex per transport class on the charts it acts
    on (52.5, 53.6); faces between members by the incidence (21 step 2);
-   loops by 12.2; sections along `e₃` at their frames (51.4, 51.8);
+   orbits by 12.2; sections along `e₃` at their frames (51.4, 51.8);
    demands one per kind and chart (50.5).
 8. **The key.** A21: the coordinates of 5 and 7 written in a fixed order,
    length-prefixed, a prefix a coarser stratum; the address is M2's
@@ -12085,8 +12085,8 @@ evidence: it is what the form does not close.
 ### 54.3 The inverse
 
 `Form::from_address` is A21's inverse and the only decoder: it reads the
-key and re-derives the form's vertices, faces, loops, sections, demands
-and axes, with `loops_of` run on the faces read (loops are never written).
+key and re-derives the form's vertices, faces, orbits, sections, demands
+and axes, with `loops_of` run on the faces read (orbits are never written).
 The A21 property `from_address(address(f)) ≡ f` — same vertices by
 `same_vertex`, same faces by their words and places, same sections and
 demands — is a property test over generated forms, and it is the test of
@@ -12824,7 +12824,7 @@ meets                  186                       2
 chords                 186                       2
 geodesic / off-sheet   186 / 0                   2 / 0
 frames                 184 framed 2 half-open    0 framed 2 half-open 0 unframed
-forms carrying a loop  14                        2
+forms carrying an orbit  14                        2
 lib suite              510 s                     289 s
 ```
 
@@ -12990,7 +12990,7 @@ that disagreement is content the court arbitrates rather than noise.
 For a null generator `Omega = 1 + B`, `Omega Omega~ = 1 - B^2 = 1` and
 `<Omega>_0 = 1`, so `mu = 0` — IDENTICAL TO THE IDENTITY. That is why
 `BivectorKind` carries a type byte, and why collapsing Trivial into
-Parabolic "put every identity loop in the same class as every dislocation".
+Parabolic "put every identity orbit in the same class as every dislocation".
 The scalar charge cannot see the luminal sector at all.
 
 What separates them is the second Casimir `I_2 = ||<B^2>_4||^2 / w^2`, and
@@ -13057,7 +13057,7 @@ only one of the two that is not a search over the scene.
 ### 59.9 The mind carries the same defect, and this is measured
 
 "Perceptions of thoughts through ideas" is `family_percept` (harmonic
-multipoles) -> the form's loops (hyperbolic transport) -> `Bubble` (the
+multipoles) -> the form's orbits (hyperbolic transport) -> `Bubble` (the
 mind's own cover), read downward.
 
 `Bubble` ALREADY CARRIES BOTH HALVES OF THE TETHER. `remainder:
@@ -13208,7 +13208,7 @@ defects over the corpus, AFTER the cover's ring was purged
 THE ONLY PLACE A RING IS DILATED. `family/pairing.rs:116`, inside
 `star_and_site_faces`, walks `ring_of_support(supp)` and relates every
 member standing at a site one 4-step out. The form's own faces — and
-therefore its loops, its `b_1`, and every `loop_defects` reading above —
+therefore its orbits, its `b_1`, and every `loop_defects` reading above —
 are built on that dilation.
 
 So the accounting is:
@@ -13229,14 +13229,14 @@ now a comment; the other is this.
 ### 60.5b T1 landed, and the collapse did not come (measured 2026-09-22)
 
 `pairing.rs`'s third pass is deleted and `ring_of_support` with it. The
-expectation on both sides of the ruling was that faces and loops would
+expectation on both sides of the ruling was that faces and orbits would
 collapse as the meets did and that the three non-simple defects would
 vanish. THEY DID NOT.
 
 ```
 over the 36 corpus forms of the lift        before T1      after T1
 faces (cover meets + star)                  128            118
-scene loops                                 2              2
+scene orbits                                 2              2
 defects, cumulative: hyperbolic             6              6
 defects, cumulative: non-simple             3              3
 meets / chords / frames / geodesic          unchanged      unchanged
@@ -13245,11 +13245,11 @@ meets / chords / frames / geodesic          unchanged      unchanged
 T1 removed TEN FACES OF 128 and changed no loop and no defect. The
 ring-built faces in this corpus were not closing cycles: the dramatic
 collapse had already happened at 58.3, where the meets went 186 to 2 and
-the forms carrying a loop went 14 to 2, and what `pairing.rs` was adding on
+the forms carrying an orbit went 14 to 2, and what `pairing.rs` was adding on
 top of that was a thin margin that bounded nothing.
 
 SO THE THREE NON-SIMPLE DEFECTS ARE NOT STENCIL ARTIFACTS. They survive
-both purges, they arise on the two genuine loops the corpus still carries,
+both purges, they arise on the two genuine orbits the corpus still carries,
 and they are the only places where `I_2 != 0`. 60.5's own caveat — "no
 claim about Layer 2 may rest on them before that" — is now discharged in
 the candidates' favour, which is the opposite of what it anticipated.
@@ -13268,7 +13268,7 @@ defects and no loop to hold them.
 
 THE FIX IS NOT TO MAKE THE COUNTERS AGREE ON SCOPE (corrected the same
 day). A first reading of this called it two scopes on one line and asked
-for one scope, and that is wrong about what a defect IS. A loop count is a
+for one scope, and that is wrong about what a defect IS. An orbit count is a
 property of a FORM. A defect is a CAUTERIZATION EVENT in a trajectory —
 the moment a loop was terminated by being read — and the process-level
 total is the honest carrier for it. The two scopes are correct and
@@ -13428,26 +13428,26 @@ what make `REFUSE_EDGE` an organ rather than a formality.
 
 A loop is not walked out of; it is TERMINATED BY BEING READ.
 `rebase.rs` already says it for the stabilizer orbit — "the engine does not
-step out of the loop, it EVALUATES the loop, and the loop becomes a class
+step out of the orbit, it EVALUATES the orbit, and the orbit becomes a class
 the form carries" — and the same holds for every cycle the complex stands.
 `classify` is the cauterization: `Filled`, `Congruent`, `Class`,
-`Unspellable` each convert a walk into content and stop it. A loop with no
-classifier is a loop that runs forever.
+`Unspellable` each convert a walk into content and stop it. An orbit with no
+classifier is an orbit that runs forever.
 
 THIS IS A THIRD KIND OF TERMINATION. Law 1 admits two — an integer measure,
-or a `Budget` — and a cauterized loop is neither. It ends because it was
+or a `Budget` — and a cauterized orbit is neither. It ends because it was
 READ, not because a counter was spent, and that is why a stroke can be cut
 mid-cover without leaving a half-evaluated cycle: the reading is atomic
 even where the walk is not.
 
 So `loop_defects` accumulating across a process is not an instrument
 sloppiness. It is the ledger of cauterizations along a trajectory, and it
-grows because the engine keeps exiting loops and entering others. What it
+grows because the engine keeps exiting orbits and entering others. What it
 must not do is print beside a per-form count without naming its scope.
 
 ### 62.5 A pivot changes dimension because re-entry is forbidden
 
-YOU CANNOT ENTER THE SAME DIMENSIONAL LOOP FROM THE LOOP YOU JUST EXITED.
+YOU CANNOT ENTER THE SAME DIMENSIONAL Orbit FROM THE Orbit YOU JUST EXITED.
 That is the condition that makes a pivot a pivot: having cauterized a
 cycle, the walk cannot resume it, so the only move available is out of the
 dimension it stood in. `ascend` takes a cauterized 1-cycle to a 2-cell;
@@ -13555,7 +13555,7 @@ claiming a neighbour the complex cannot evaluate.
 
 THE HUE CYCLE OF A 1-CELL IS `Identity`, and that is a theorem rather than a
 default. A 1-simplex is contractible, `pi_1(I) = 0`, so it accumulates no
-fibre permutation; a permutation lives in the LOOP and the edge carries only
+fibre permutation; a permutation lives in the Orbit and the edge carries only
 the connection. It is the same statement `close_stabilizer_orbit` makes when
 it files an empty `sigma` for an orbit at one vertex.
 
@@ -13675,7 +13675,7 @@ isoclinic tilt (60.4).
 
 A first statement of this said the projective weights "cancel out" around a
 closed circuit. They do not. Each edge carries its own `lambda_i`, and the
-loop product `Omega = g_ca g_bc g_ab` accumulates `lambda_a lambda_b
+orbit product `Omega = g_ca g_bc g_ab` accumulates `lambda_a lambda_b
 lambda_c` as ONE overall scale. What removes it is the COMPARISON:
 `same_versor` is `projective_ratio(a,b).is_some()`, an exact rational ratio
 over `Q^x`, so the reading is taken on the ray and the scale is quotiented
@@ -14248,7 +14248,7 @@ where it mattered: a form with a positional residue is withheld on a branch
 ABOVE it.
 
 `Withheld` makes the classification a structure: `LoopObstruction` (a class
-in `H¹`, permanent), `CoboundaryResidue` (the loops close and the cochain
+in `H¹`, permanent), `CoboundaryResidue` (the orbits close and the cochain
 does not), `Acyclic`, `NoDescent`.
 
 THE FOURTH ARM IS THE VACUITY FIX. The first cut folded `Acyclic` into
@@ -14353,7 +14353,7 @@ INTERNAL GAUGE STRUCTURE of 732 visual objects. Its edges are colour
 seams inside objects; its components ARE the objects.
 
 Which corrects 69's own reading. `b₁ = 188` is NOT inter-object cycle
-structure. Those are loops WITHIN multi-coloured objects — a ring of one
+structure. Those are orbits WITHIN multi-coloured objects — a ring of one
 colour about a centre of another. They were reported as the manifold
 gaining cycles; they were never between objects at all.
 
@@ -14525,8 +14525,8 @@ the base to keep a count up.
 ```
 
 THE LOSS IS H1b'S, AND THE PROBE SAYS SO. With the per-hue split restored,
-the loops come back, 48 against 45 before, along with the meets (51) and
-both COBOUNDARY verdicts. Every loop, chord and cover meet the corpus
+the orbits come back, 48 against 45 before, along with the meets (51) and
+both COBOUNDARY verdicts. Every orbit, chord and cover meet the corpus
 carried came from a boundary between two hues inside one body. That is
 exactly what 70.1 measured in advance. Under 70.4 those boundaries are the
 body's gauge seams (1635 of them, 70.4) and H3 reads them. Until H3 lands
