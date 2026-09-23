@@ -625,6 +625,54 @@ pub fn shared_cells(positions: &[crate::transducer::base::Site]) -> Vec<SharedCe
     edges
 }
 
+/// NB1, 78.2 — THE ELEMENTS OF THE BASE AND WHAT STANDS IN EACH: every cell
+/// of every unit cube's closure, named by its centre doubled, with the
+/// positions whose cube holds it, ascending, in the elements' own
+/// coordinate order.
+///
+/// A cube at `p` covers `[p, p + 1]ⁿ`; its closure's cells are the doubled
+/// centres `2p + o` for `o ∈ {0, 1, 2}ⁿ` — generated from `n`, `3ⁿ` of them
+/// — the interior at `o = 1ⁿ`, a face where one axis is `0` or `2`, down to
+/// the corners. One read of the base: an element standing in several cubes
+/// is ONE element, which the pairwise [`shared_cells`] cannot say, since it
+/// names each pair by its own largest shared cell. Three cubes meeting only
+/// at a corner stand together here, at that corner.
+pub fn elements_standing(positions: &[crate::transducer::base::Site]) -> Vec<(crate::transducer::base::Site, Vec<usize>)> {
+    let mut held: crate::network::nerve::Keyed<(crate::transducer::base::Site, Vec<usize>)> =
+        crate::network::nerve::Keyed::new();
+    for (ix, p) in positions.iter().enumerate() {
+        let n = p.n();
+        // `o` counts through `{0,1,2}ⁿ` as the digits of `0 .. 3ⁿ`, least
+        // axis first: generated, never tabled.
+        let Some(count) = 3usize.checked_pow(n as u32) else { continue };
+        for code in 0..count {
+            let mut rest = code;
+            let axes: Vec<i64> = p
+                .axes()
+                .iter()
+                .map(|&x| {
+                    let o = (rest % 3) as i64;
+                    rest /= 3;
+                    2 * x + o
+                })
+                .collect();
+            let element = crate::transducer::base::Site::new(axes);
+            let key = element.key();
+            match held.get_mut(&key) {
+                Some((_, standing)) => {
+                    if let Err(at) = standing.binary_search(&ix) {
+                        standing.insert(at, ix);
+                    }
+                }
+                None => {
+                    held.insert(&key, (element, vec![ix]));
+                }
+            }
+        }
+    }
+    held.scoped().map(|(_, v)| v.clone()).collect()
+}
+
 /// THE NEIGHBOURHOOD OF A CUBE OF ℤⁿ, GENERATED (71.2(2)): every
 /// `d ∈ {−1,0,1}ⁿ ∖ 0` with its first non-zero coordinate `+1`, one per pair
 /// of opposite neighbours — `(3ⁿ − 1)/2` of them. In canonical order: by how

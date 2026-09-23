@@ -570,6 +570,10 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         by_rebased: Keyed::new(),
         by_unfolded: Keyed::new(),
         demands: Keyed::new(),
+        // A certified cell is perception's reading, never on the tape
+        // before the recut (NB1, 78.6 choice (c)): a form read back from its
+        // tape holds none.
+        cells: Keyed::new(),
     };
     form.reindex();
     // THE CYCLE BASIS IS A THEOREM OF THE INCIDENCE, proved here the same

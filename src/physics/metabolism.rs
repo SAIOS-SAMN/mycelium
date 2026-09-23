@@ -42,6 +42,10 @@ pub struct Metabolism {
     pub cauterized: u64,
     /// ENTROPY at dimension 2 — a descent that released a fill.
     pub released: u64,
+    /// SYNTROPY at dimension 2 — an ascent that sealed a cell (AD1). Kept
+    /// beside `released`, never netted against it: the pair is history
+    /// (62.5 as amended), and a seal and a release are two events.
+    pub sealed: u64,
     /// Metabolic draw per lane (𝒮, 𝒢, 𝒯, 𝒽) — the flux itself.
     pub drawn: [u64; 4],
     /// Returned to the reserve: `draw`'s conjugate, and the half that says
@@ -64,7 +68,7 @@ pub struct Metabolism {
 thread_local! {
     static METABOLISM: std::cell::Cell<Metabolism> =
         const { std::cell::Cell::new(Metabolism {
-            cauterized: 0, released: 0, drawn: [0; 4], restored: [0; 4],
+            cauterized: 0, released: 0, sealed: 0, drawn: [0; 4], restored: [0; 4],
             depleted: 0, orbit_finite: 0, orbit_sum: 0, orbit_infinite: 0,
         }) };
 }
@@ -85,6 +89,11 @@ pub fn note_cauterized() {
 /// An irreversible termination at dimension 2 (`Descended::Released`).
 pub fn note_released() {
     note(|m| m.released += 1);
+}
+
+/// A cell sealed at dimension 2 by `ascend` (AD1).
+pub fn note_sealed() {
+    note(|m| m.sealed += 1);
 }
 
 /// One draw against the reserve, per lane, and whether it was afforded.
@@ -138,10 +147,11 @@ impl Metabolism {
     /// counter by the caller rather than duplicated here.
     pub fn line(&self) -> String {
         format!(
-            "entropy: cauterized {} released {} | orbit: closed {} Σℓ {} walking {} \
+            "entropy: cauterized {} released {} | sealed {} | orbit: closed {} Σℓ {} walking {} \
              | draw {:?} restore {:?} depleted {}",
             self.cauterized,
             self.released,
+            self.sealed,
             self.orbit_finite,
             self.orbit_sum,
             self.orbit_infinite,

@@ -311,10 +311,20 @@ struct Gathered {
 /// walking it is reading it (rule 1); a count of the integers with a keyed
 /// read inside finds nothing for a vertex with no support and says nothing
 /// about one the index holds and the count does not reach.
+#[cfg(test)]
 pub(crate) fn named_faces(
     frame: Option<&[u8]>,
     supports: &crate::network::nerve::Keyed<Vec<Site>>,
 ) -> Vec<NamedFace> {
+    named_incidence(frame, supports).0
+}
+
+/// THE FACES THE BUNDLE NAMES, and the CONTACT COMPLEX'S CERTIFIED CELLS read
+/// on the same pass (NB1): one reading of the occupancy, never two.
+pub(crate) fn named_incidence(
+    frame: Option<&[u8]>,
+    supports: &crate::network::nerve::Keyed<Vec<Site>>,
+) -> (Vec<NamedFace>, crate::network::nerve::Keyed<crate::transducer::sentence::FormCell>) {
     let mut related: crate::network::nerve::Keyed<Named> = crate::network::nerve::Keyed::new();
     if let Some(frame) = frame {
         for (mk, _) in supports.scoped() {
@@ -420,6 +430,15 @@ pub(crate) fn named_faces(
             sup.push(s.clone());
         }
     }
+    // Each body's nucleus, read once from its support (NB1): the cells below
+    // carry the meet of their bodies' nuclei.
+    let nucleus_of: Vec<Option<crate::transducer::cga::Mv>> = support_of
+        .iter()
+        .map(|sup| match sup.is_empty() {
+            true => None,
+            false => blade::shape_of(sup).blade.nucleus(),
+        })
+        .collect();
     let address_of: Vec<Vec<u8>> = support_of
         .into_iter()
         .map(|mut sup| {
@@ -427,6 +446,45 @@ pub(crate) fn named_faces(
             super::pieces::piece_at(crate::transducer::peel::ShellKind::Whole, &sup).encode().as_bytes().to_vec()
         })
         .collect();
+    // NB1, 78.2 — THE CONTACT COMPLEX'S CELLS, read off the base's elements:
+    // each element with the BODIES standing in it (a body is its union-find
+    // root here, read once per element), one certified cell per standing
+    // set of two or more, every element under exactly those bodies a
+    // witness, and the meet of their nuclei as the cell's content. No pair
+    // is walked and no subset minted; the faces of a cell are read off it.
+    let standing: Vec<(Site, Vec<usize>)> = crate::transducer::sentence::elements_standing(&positions)
+        .into_iter()
+        .map(|(element, at)| {
+            let mut bodies: Vec<usize> = at.iter().filter_map(|&p| body.get(p).copied()).collect();
+            bodies.sort_unstable();
+            bodies.dedup();
+            (element, bodies)
+        })
+        .collect();
+    let certified = crate::transducer::cech::cells_over(
+        standing.iter().map(|(element, bodies)| {
+            (crate::network::nerve::coord::Lamina { site: element.clone() }, bodies.as_slice())
+        }),
+        |members| {
+            members
+                .iter()
+                .map(|&m| nucleus_of.get(m).cloned().flatten())
+                .collect::<Option<Vec<crate::transducer::cga::Mv>>>()
+                .and_then(|n| crate::transducer::cech::meet_of(&n))
+        },
+    );
+    let mut cells: crate::network::nerve::Keyed<crate::transducer::sentence::FormCell> =
+        crate::network::nerve::Keyed::new();
+    for c in certified {
+        let mut bodies: Vec<Vec<u8>> = c.members.iter().filter_map(|&m| address_of.get(m).cloned()).collect();
+        if bodies.len() != c.members.len() {
+            continue;
+        }
+        bodies.sort_unstable();
+        let key: Vec<u8> = bodies.concat();
+        let witnesses = c.witnesses.into_iter().map(|l| l.site).collect();
+        cells.insert(&key, crate::transducer::sentence::FormCell { bodies, witnesses, meet: c.meet });
+    }
     let mut contacts: crate::network::nerve::Keyed<Gathered> = crate::network::nerve::Keyed::new();
     for crate::transducer::sentence::SharedCell { i, j, .. } in
         crate::transducer::sentence::contact_cells(&positions)
@@ -645,12 +703,13 @@ pub(crate) fn named_faces(
     //
     // `ring_of_support` has no caller left and is deleted with this pass, so
     // the class cannot silently return.
-    related
+    let faces = related
         .scoped()
         .filter_map(|(k, named)| {
             read_member_pair_key(&k).map(|(a, b)| NamedFace { a, b, named: named.clone() })
         })
-        .collect()
+        .collect();
+    (faces, cells)
 }
 
 /// Physical size of the hue carrier. Index by hue, never search.

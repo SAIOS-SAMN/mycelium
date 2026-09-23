@@ -167,7 +167,7 @@ fn the_store_folds_its_own_readings_and_holds_pushed_ones_as_they_stand() {
 }
 
 /// LC1 — THE CURVE TRAVELS WHOLE, A LATER ONE STANDS, AND A FRESH MIND READS
-/// ZERO HONESTLY: every field measured and zero, the four owed named by row.
+/// ZERO HONESTLY: every field measured and zero, the five owed named by row.
 #[test]
 fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
     let curve = Learning {

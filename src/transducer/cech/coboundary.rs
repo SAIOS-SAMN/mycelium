@@ -493,6 +493,55 @@ impl Complex {
         }
     }
 
+    /// AD1 — `ascend`, THE INVERSE OF `descend` ON CONTENT (62.5 as amended
+    /// at 8fa57ce).
+    ///
+    /// `descend` releases a sealed cell and hands its fill back, leaving the
+    /// boundary standing with its transports. `ascend` is the other half: a
+    /// cell of grade two or more whose boundary stands is re-minted from that
+    /// boundary — its coefficient the coboundary of its faces, never an
+    /// identity check on its edges — and sealed by the one `fill`, so a
+    /// released boundary that still closes re-seals the SAME content. What
+    /// does not return is the trajectory and the ledger: re-entry stays
+    /// forbidden, the circuit resumes at a later `K`, and the ledger keeps
+    /// the pair as history — syntropy here, the release's reading at
+    /// `descend`.
+    ///
+    /// The four outcomes are four facts. [`Ascended::Sealed`] carries the
+    /// fill; [`Ascended::Open`] is a boundary read and not closing, so the
+    /// cell stands open by name; [`Ascended::AlreadySealed`] changed
+    /// nothing; [`Ascended::Absent`] is a boundary that does not stand — an
+    /// edge missing or a remainder — or a set of fewer than three vertices.
+    pub fn ascend(&mut self, verts: &[Vec<u8>]) -> Ascended {
+        let verts = sorted_verts(verts);
+        if verts.len() < 3 || !self.faces_ready(&verts) {
+            return Ascended::Absent;
+        }
+        for i in 0..verts.len() {
+            for j in i + 1..verts.len() {
+                if self.is_remainder(&sorted_verts([&verts[i], &verts[j]])) {
+                    return Ascended::Absent;
+                }
+            }
+        }
+        let key = simplex_key(&verts);
+        if self.degree_of(key.as_bytes()).is_none() {
+            let Some((coefficient, carriage)) = self.coboundary_coeff(&verts) else {
+                return Ascended::Absent;
+            };
+            self.remember(Simplex { vertices: verts, coefficient, carriage, volume: [1, 0, 0, 0], fill: Fill::Open });
+        }
+        match self.fill(key.as_bytes()) {
+            CoboundaryOutcome::Attached(Fill::Open) => Ascended::Open,
+            CoboundaryOutcome::Attached(fill) => {
+                crate::physics::metabolism::note_sealed();
+                Ascended::Sealed(fill)
+            }
+            CoboundaryOutcome::AlreadyFilled => Ascended::AlreadySealed,
+            CoboundaryOutcome::Absent => Ascended::Absent,
+        }
+    }
+
     /// Unbind one simplex from every carrier that names it. The inverse of
     /// `remember`, and it must touch the same three: the degree layer, the
     /// degree index, and each vertex's star. A cell dropped from one and

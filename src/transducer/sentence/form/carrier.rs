@@ -627,6 +627,32 @@ impl Orbit {
 }
 
 
+/// NB1, 78.2 — ONE CERTIFIED CELL OF THE CONTACT COMPLEX: the bodies
+/// standing together at one element of the base, by their addresses in
+/// their own coordinate order; every element standing under exactly them,
+/// its witnesses; and the MEET of their nuclei — the round the bodies
+/// share, at the grade their number gives (`k + 1` bodies, a `k`-cell).
+///
+/// Perception's reading, a fibre of the epigenome: held on the form in
+/// memory and never written to the tape; a cell a circuit seals is a tether
+/// of the genome and reaches the tape at the recut (78.6, NB1 choice (c)).
+/// It carries no transport: that is deposited by the circuit that closes on
+/// it (`Complex::ascend`), in the circuit's own order (NB1 choice (b)).
+#[derive(Debug, Clone)]
+pub struct FormCell {
+    pub bodies: Vec<Vec<u8>>,
+    pub witnesses: Vec<crate::transducer::base::Site>,
+    /// `None` where a body's nucleus did not read back (rule 11).
+    pub meet: Option<crate::transducer::cga::Mv>,
+}
+
+impl FormCell {
+    /// `k + 1` bodies make a `k`-cell; a cell is minted over two or more.
+    pub fn grade(&self) -> usize {
+        self.bodies.len() - 1
+    }
+}
+
 /// A sentence as vertices, faces, orbits, remainder.
 #[derive(Debug, Clone)]
 pub struct Form {
@@ -776,6 +802,10 @@ pub struct Form {
     /// Demand vertex keyed by (kind, chart) (50.5): the read that keeps a
     /// sentence to one demand vertex per pair. Written by `reindex`.
     pub demands: Keyed<u16, coord::DemandVertex>,
+    /// NB1 — THE CONTACT COMPLEX'S CERTIFIED CELLS, keyed by their bodies'
+    /// addresses written in order: one per standing set, read by perception
+    /// and held in memory only (see [`FormCell`]).
+    pub cells: Keyed<FormCell>,
 }
 
 impl Default for Form {
@@ -804,6 +834,7 @@ impl Default for Form {
             by_rebased: Keyed::new(),
             by_unfolded: Keyed::new(),
             demands: Keyed::new(),
+            cells: Keyed::new(),
         }
     }
 }

@@ -859,7 +859,11 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         interface: Vec<Site>,
     }
     let mut offers: Vec<Offer> = Vec::new();
-    for nf in named_faces(frame_member.as_deref(), &scenery.supports) {
+    // NB1 — the faces and the contact complex's certified cells, one read of
+    // the occupancy; the cells ride the form in memory (78.6, choice (c)).
+    let (named, cells) = named_incidence(frame_member.as_deref(), &scenery.supports);
+    form.cells = cells;
+    for nf in named {
         let (a, b, hows) = (nf.a, nf.b, nf.named.hows);
         match nf.named.interfaces.as_slice() {
             [] => offers.push(Offer { a, b, edge: None, hows, interface: Vec::new() }),
@@ -1004,6 +1008,23 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // fifteen forms crystallized at `orbits 0` and this line never fired
     // once. A reading suppressed in the failure case is not a reading.
     let unread_why = crate::transducer::sentence::Form::unread_gates();
+    // NB1 — THE CONTACT COMPLEX'S CERTIFIED CELLS BY GRADE: `(grade, cells,
+    // cells whose meet is not the zero blade)`, read off the form's own
+    // carrier.
+    let contact_cells_by_grade = {
+        let mut out: Vec<(usize, u64, u64)> = Vec::new();
+        for (_, c) in form.cells.scoped() {
+            let live = u64::from(c.meet.as_ref().is_some_and(|m| !m.is_zero()));
+            match out.binary_search_by_key(&c.grade(), |&(g, _, _)| g) {
+                Ok(at) => {
+                    out[at].1 += 1;
+                    out[at].2 += live;
+                }
+                Err(at) => out.insert(at, (c.grade(), 1, live)),
+            }
+        }
+        out
+    };
     // BQ1, audit N-3 — WHAT PERCEPTION PASSED OVER, always printed: bodies
     // `body_of` refused (counted at `body_of`, whoever asked), laminae with
     // no section (counted at `on_grid`), and sections filed at their `n`
@@ -1030,8 +1051,9 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
          | mint: {} \
          | metabolism: {} syntropy {} \
          | nerve/source: {} charts over {} cells, {} shared by two or more, \
-         {} certified triples, {} refused \
-         | nerve/image: {} charts over {} cells, {} shared, {} triples \
+         certified cells (grade cells meet≠0) {:?}, {} refused \
+         | contact complex: certified cells (grade cells meet≠0) {:?} \
+         | nerve/image: {} charts over {} cells, {} shared, certified cells {:?} \
          | phase: {} finite {} infinite {} unread, periods {:?} \
          | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {} \
          | contact faces offered {} built {}",
@@ -1110,12 +1132,13 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         source.charts,
         source.cells,
         source.shared,
-        source.triples.len(),
+        source.by_grade(),
         source.refused.len(),
+        contact_cells_by_grade,
         image.charts,
         image.cells,
         image.shared,
-        image.triples.len(),
+        image.by_grade(),
         spectrum.0,
         spectrum.1,
         spectrum.2,

@@ -191,6 +191,20 @@ pub enum Descended {
     Absent,
 }
 
+/// WHAT AN `ascend` DID — [`Descended`]'s inverse on content (AD1, 62.5 as
+/// amended).
+#[derive(Clone, Debug)]
+pub enum Ascended {
+    /// The boundary closes and the cell is sealed with this fill.
+    Sealed(Fill),
+    /// The boundary was read and does not close: the cell stands open.
+    Open,
+    /// The cell was already sealed; nothing changed.
+    AlreadySealed,
+    /// No boundary stands to seal over.
+    Absent,
+}
+
 impl Descended {
     /// The class a sealed membrane handed back, where there was one.
     pub fn released(&self) -> Option<&Fill> {
