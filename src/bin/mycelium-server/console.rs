@@ -113,6 +113,7 @@ pub(crate) fn render(addr: &str, total: u32, held: &[observe::Held]) -> Vec<Stri
                 Reading::Adjudication(a) => adjudication(a),
                 Reading::Learning(l) => learning(l),
                 Reading::Circuit(c) => circuits(c),
+                Reading::Cells(c) => cells(c),
             });
         }
     }
@@ -344,6 +345,70 @@ fn circuits(c: &observe::Circuits) -> Vec<String> {
         }
     }
     out.push(format!("    {DIM}owed: {}{RESET}", owed.join("  ")));
+    out
+}
+
+/// CO1 — THE CELLS OF THE LAST PERCEPT AS THEIR ORBIT ALGEBRAS (78.14, 78.15):
+/// the form's mirrors and their group, then each cell — its grade, its Gram
+/// form's signature and pairs, its group with the nuclei and with the polars
+/// as mirrors, its dual frame, each product kept with the blade its sealing
+/// step deposits, and each nucleus against the mirrors it stands between.
+fn cells(c: &observe::Cells) -> Vec<String> {
+    let closure = |c: Option<observe::CellClosure>| match c {
+        Some(c) => c.label().to_string(),
+        None => "unread".into(),
+    };
+    let regime = |r: &cga::PairRegime| match r {
+        cga::PairRegime::Finite(m) => format!("m={m}"),
+        cga::PairRegime::Parabolic => "parabolic".into(),
+        cga::PairRegime::Boost => "boost".into(),
+        cga::PairRegime::Rosette => "rosette".into(),
+        cga::PairRegime::Null => "null".into(),
+    };
+    let mut out = vec![format!(
+        "  {BOLD}cells{RESET}       {} certified | mirrors {} planes, group {}",
+        c.cells.len(),
+        c.mirror_planes,
+        closure(c.mirror_group)
+    )];
+    for (i, cell) in c.cells.iter().enumerate() {
+        let sig = match cell.signature {
+            Some(((p, q, z), r)) => format!("({p},{q},{z}) rank {r}"),
+            None => "unread".into(),
+        };
+        let dual = match cell.dual {
+            Some(observe::CellDual::Frame) => "frame",
+            Some(observe::CellDual::Redundant) => "redundant",
+            Some(observe::CellDual::Degenerate) => "degenerate",
+            None => "unread",
+        };
+        out.push(format!(
+            "    #{i} grade {}  gram {sig}  pairs [{}]  group {}  polars {}  dual {dual}  classes {}",
+            cell.grade,
+            cell.pairs.iter().map(regime).collect::<Vec<_>>().join(", "),
+            closure(cell.coxeter),
+            closure(cell.polars),
+            cell.classes
+        ));
+        for p in &cell.products {
+            let blade: Vec<String> = p.seal.iter().map(|(b, q)| format!("{} {q}", cga::blade_name(usize::from(*b)))).collect();
+            let det = match p.det {
+                Some(d) => format!("det {d}"),
+                None => "det unread".into(),
+            };
+            out.push(format!(
+                "      product order {:?} grades {:?} {det}{}  {DIM}seal [{}]{RESET}",
+                p.order,
+                p.grades,
+                if p.classed { " classed" } else { "" },
+                blade.join(", ")
+            ));
+        }
+        for (s, ms) in cell.mirrors.iter().enumerate() {
+            let on: Vec<String> = ms.iter().map(|(axis, k, d2, r)| format!("x{axis}={k}: δ² {d2} {}", regime(r))).collect();
+            out.push(format!("      {DIM}nucleus {s} on mirrors [{}]{RESET}", on.join("; ")));
+        }
+    }
     out
 }
 

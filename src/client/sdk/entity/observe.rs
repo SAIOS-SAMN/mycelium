@@ -32,6 +32,10 @@ impl Entity {
         if let Some(c) = crate::transducer::sentence::take_circuits() {
             observe::publish(me, Reading::Circuit(c));
         }
+        // CO1 — AND ITS CELLS, as their orbit algebras read them.
+        if let Some(c) = crate::transducer::family::take_cells() {
+            observe::publish(me, Reading::Cells(c));
+        }
         let totals: Vec<Reading> = observe::readings(&me.prefix()).into_iter().map(|(_, r)| r).collect();
         match self.session.speak_keyed(&voice, observe::encode_push(&voice, &totals)) {
             Ok(body) => body.as_slice() == [1],

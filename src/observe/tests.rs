@@ -237,6 +237,53 @@ fn the_circuits_read_back_whole_step_by_step() {
     );
 }
 
+/// CO1 — THE CELLS TRAVEL WHOLE: every closure, every dual arm, a product
+/// with its seal blade, each nucleus's mirrors; a later percept's stand.
+#[test]
+fn the_cells_read_back_whole() {
+    use crate::transducer::cga::PairRegime;
+    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
+    let cells = Cells {
+        mirror_planes: 5,
+        mirror_group: Some(CellClosure::Affine),
+        cells: vec![
+            CellEntry {
+                grade: 1,
+                signature: Some(((1, 1, 0), 2)),
+                pairs: vec![PairRegime::Boost],
+                coxeter: Some(CellClosure::Hyperbolic),
+                polars: Some(CellClosure::InfiniteByPair),
+                dual: Some(CellDual::Frame),
+                products: vec![CellProduct {
+                    order: vec![1, 0],
+                    grades: vec![0, 2],
+                    det: Some(1),
+                    classed: false,
+                    seal: vec![(0b00011, q(-7, 3))],
+                }],
+                classes: 0,
+                mirrors: vec![vec![(1, q(0, 1), q(1, 4), PairRegime::Finite(3))], vec![]],
+            },
+            CellEntry {
+                grade: 2,
+                signature: None,
+                pairs: vec![PairRegime::Rosette, PairRegime::Finite(6), PairRegime::Parabolic],
+                coxeter: Some(CellClosure::FiniteByCheck),
+                polars: None,
+                dual: Some(CellDual::Redundant),
+                products: vec![CellProduct { order: vec![0, 1, 2], grades: vec![1, 3], det: Some(-1), classed: true, seal: vec![] }],
+                classes: 1,
+                mirrors: vec![],
+            },
+        ],
+    };
+    let push = encode_push(&vk(4), &[Reading::Cells(cells.clone())]);
+    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(4), vec![Reading::Cells(cells.clone())])));
+    let mut earlier = Reading::Cells(Cells::default());
+    assert!(earlier.absorb(&Reading::Cells(cells.clone())), "one kind folds");
+    assert_eq!(earlier, Reading::Cells(cells), "the later percept's cells stand");
+}
+
 /// LC1 — THE CURVE TRAVELS WHOLE, A LATER ONE STANDS, AND A FRESH MIND READS
 /// ZERO HONESTLY: every field measured and zero, the five owed named by row.
 #[test]

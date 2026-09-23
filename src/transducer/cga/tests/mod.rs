@@ -8,6 +8,7 @@ mod generic;
 mod gram;
 mod group;
 mod hyperboloid;
+mod mirrors;
 mod modes;
 mod motion;
 mod roots;

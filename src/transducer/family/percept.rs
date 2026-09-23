@@ -1160,7 +1160,10 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // the circuits this percept walked; then the circuits read for the
     // observer.
     let walked = crate::transducer::sentence::walked_circuits();
-    eprintln!("  {}", super::comprehend::CellTally::of(&super::comprehend::cell_algebras(&form, &walked, budget)).line());
+    let comprehension = super::comprehend::comprehend(&form, &walked, budget);
+    eprintln!("  {}", super::comprehend::CellTally::of(&comprehension).line());
+    // CO1 — and the same cells, typed, held for the observer.
+    super::comprehend::hold_cells(super::comprehend::cells_reading(&comprehension));
     crate::transducer::sentence::finish_circuits(budget);
     // FR2, 72.1c(3) — AND WHERE EACH CYCLE STANDS ALONG `e₃`: its span, the
     // meet of its members' sections, read here from the sections the percept

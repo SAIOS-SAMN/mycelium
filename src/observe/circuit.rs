@@ -99,19 +99,19 @@ fn take_kind(b: &[u8], p: &mut usize) -> Option<Option<BivectorKind>> {
     }
 }
 
-fn take_u8(b: &[u8], p: &mut usize) -> Option<u8> {
+pub(super) fn take_u8(b: &[u8], p: &mut usize) -> Option<u8> {
     let v = *b.get(*p)?;
     *p += 1;
     Some(v)
 }
 
-fn take_u16(b: &[u8], p: &mut usize) -> Option<u16> {
+pub(super) fn take_u16(b: &[u8], p: &mut usize) -> Option<u16> {
     let v = u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?);
     *p += 2;
     Some(v)
 }
 
-fn take_u32(b: &[u8], p: &mut usize) -> Option<usize> {
+pub(super) fn take_u32(b: &[u8], p: &mut usize) -> Option<usize> {
     let v = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
     *p += 4;
     Some(v as usize)
@@ -119,20 +119,20 @@ fn take_u32(b: &[u8], p: &mut usize) -> Option<usize> {
 
 /// A count the body cannot hold at `least` bytes an entry is refused before
 /// anything is reserved for it.
-fn holds(b: &[u8], p: usize, m: usize, least: usize) -> bool {
+pub(super) fn holds(b: &[u8], p: usize, m: usize, least: usize) -> bool {
     match (b.len().checked_sub(p), m.checked_mul(least)) {
         (Some(rest), Some(need)) => rest >= need,
         _ => false,
     }
 }
 
-fn put_int(out: &mut Vec<u8>, v: &BigInt) {
+pub(super) fn put_int(out: &mut Vec<u8>, v: &BigInt) {
     let bytes = v.to_signed_bytes_le();
     out.extend_from_slice(&(bytes.len() as u32).to_le_bytes());
     out.extend_from_slice(&bytes);
 }
 
-fn take_int(b: &[u8], p: &mut usize) -> Option<BigInt> {
+pub(super) fn take_int(b: &[u8], p: &mut usize) -> Option<BigInt> {
     let len = take_u32(b, p)?;
     let v = BigInt::from_signed_bytes_le(b.get(*p..p.checked_add(len)?)?);
     *p += len;

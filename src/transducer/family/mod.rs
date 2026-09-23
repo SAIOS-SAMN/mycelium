@@ -7,6 +7,7 @@
 
 mod chord;
 mod comprehend;
+pub use comprehend::take_cells;
 pub mod contact;
 pub mod correspondence;
 pub mod cover;

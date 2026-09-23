@@ -29,6 +29,7 @@ pub const TAG_REPLICATION: u8 = 5;
 pub const TAG_ADJUDICATION: u8 = 6;
 pub const TAG_LEARNING: u8 = 7;
 pub const TAG_CIRCUIT: u8 = 8;
+pub const TAG_CELLS: u8 = 9;
 
 fn put_u64(out: &mut Vec<u8>, v: u64) {
     out.extend_from_slice(&v.to_le_bytes());
@@ -529,6 +530,8 @@ pub enum Reading {
     Learning(super::Learning),
     /// PL1 — the circuits of the last percept, step by step (78.12(4)).
     Circuit(super::Circuits),
+    /// CO1 — the cells of the last percept as their orbit algebras (78.15).
+    Cells(super::Cells),
 }
 
 impl Reading {
@@ -542,6 +545,7 @@ impl Reading {
             Reading::Adjudication(_) => TAG_ADJUDICATION,
             Reading::Learning(_) => TAG_LEARNING,
             Reading::Circuit(_) => TAG_CIRCUIT,
+            Reading::Cells(_) => TAG_CELLS,
         }
     }
 
@@ -562,6 +566,7 @@ impl Reading {
             (Reading::Learning(a), Reading::Learning(b)) => *a = b.clone(),
             // The circuits are the last percept's; the later percept stands.
             (Reading::Circuit(a), Reading::Circuit(b)) => *a = b.clone(),
+            (Reading::Cells(a), Reading::Cells(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -579,6 +584,7 @@ impl Reading {
             Reading::Adjudication(r) => r.put(out),
             Reading::Learning(r) => r.put(out),
             Reading::Circuit(r) => r.put(out),
+            Reading::Cells(r) => r.put(out),
         }
     }
 
@@ -594,6 +600,7 @@ impl Reading {
             TAG_ADJUDICATION => Some(Reading::Adjudication(Adjudication::take(b, p)?)),
             TAG_LEARNING => Some(Reading::Learning(super::Learning::take(b, p)?)),
             TAG_CIRCUIT => Some(Reading::Circuit(super::Circuits::take(b, p)?)),
+            TAG_CELLS => Some(Reading::Cells(super::Cells::take(b, p)?)),
             _ => None,
         }
     }
