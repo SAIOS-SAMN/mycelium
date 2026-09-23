@@ -9482,6 +9482,61 @@ and permanent questions by row and chart, the closing perspective, the
 distinct perspectives per class, replication per peer, adjudication by
 kind — which replace the grep lines of `scripts/readings`.
 
+## 75. Closures per mode: parabolic and hyperbolic orbits as measurements (ruled 2026-09-23)
+
+**What was proposed and what the probe said.** The implementor proposed
+to weigh a parabolic orbit and close a hyperbolic one by the inversive
+self-strain of a body against its own image after `k` circuits, `δ_k`,
+and a three-term recurrence on it whose coefficient `c` names the type.
+The probe (`scratchpad/probe_strain.rs.kept`, run on the code and then
+removed) confirmed the arithmetic exactly — a translation by `(2, 0, 0)`
+reads `c = 1` with second difference `|d|²/r² = 24`, a `(3,4,5)` turn
+`c = −7/25`, a dilation by 2 `c = 5/4` with poles at 2 and 1/2, a boost
+`5 + 3e₁e₋` `c = 17/8` with poles at 4 and 1/4, the weight divided out
+as `S_k² = w^{2k} S²` — and it settled the question against the proposal:
+**`c = 1 + 2μ` exactly.** The recurrence's coefficient is the scalar part
+of `M`, the charge the engine already reads; the whole sequence `δ_k` is
+a shadow of `⟨M⟩₀`, the grade-0 part of `S_k S` with `S_k ∧ S` thrown
+away, and the only thing it adds is a parabolic magnitude `|d|²/r²`
+that has lost the direction of the slip. The analyst's objections hold
+on every count: the wedge discarded, the vector `d` collapsed to a
+square, planes reconstructed by fitting a recurrence to a scalar — the
+pipeline run backwards — and the relator `M · IMI⁻¹ = 1` false for a
+compound motion. It is 72.1's scalar strain brought back, and it is
+withdrawn by the implementor and refused here. No self-strain line, no
+recurrence fitting.
+
+**The ruling: closure and weight are read per mode of the Cayley
+bivector.** The carrier is `M` and its bivector `B = ⟨M⟩₂ ∈ so(n+1, 1)`
+(52.1). `B` splits into commuting 2-blades `B₁ + … + B_m` (50.4's
+commuting pairs, `cga::bivector_split` generalised from two parts to
+`m`), and each mode is classified by its own signature, exactly:
+
+| mode | signature | closure | weight |
+|---|---|---|---|
+| elliptic | `B_i² < 0` | a finite period `ℓ` (A17, A19) or a rosette | its class |
+| parabolic | `B_i² = 0`, a directed `d_i ∧ e_∞` | a limit at its pole, `e_∞` held (OR1's `AtInfinity`) | the full product `(d_i ∧ e_∞)·(d_i ∧ e_o)` with its inversion conjugate, held whole; its grade-0 part `∝ |d_i|²` a reading, never the weight |
+| hyperbolic | `B_i² > 0` | two poles on the boundary, exact when `c_i² − 1` is a rational square and named `poles in ℚ(√(c_i² − 1))` otherwise; the inversion exchanging them; the relator `B_i + I B_i I⁻¹ = 0` PER MODE, never for `M` | its class |
+| trivial | `B = 0` | nothing needed | none |
+
+A split that would need a root refuses by name (`undecomposed` stays a
+refusal, never a fit). The number of modes `m` is read off `B`, never
+off a recurrence. PC1's occupancy already keeps each slip's direction
+per axis; what is missing is the conjugate `d ∧ e_o` and the product —
+A.13's first build (PW1), so no parabolic weight is computed before A.13
+is ruled. The metabolism's orbit counter reads the connection's own
+class and period, never the letter rotor's order, so an unbound motion
+is never counted closed (MC1). OR1's `Centre::Scales` refusal is
+overbroad — a dilation's poles at `ρ` and `1/ρ` are rational — and is
+corrected per mode (HC1). One trap the probe found: `Blade::sandwiched`
+never divides the weight out, so `radius2` is off by `w²` under any
+versor of weight `≠ 1`; no production caller today (TR1).
+
+**Fix the axis, not the physics.** The measurement is already the
+engine's — `M` and `⟨M⟩₂` — read per mode rather than as a scalar, and
+no new axiom is needed for that. What needs an axiom is the conjugate
+generator, A.13. What stays open is the pull (73.3).
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
