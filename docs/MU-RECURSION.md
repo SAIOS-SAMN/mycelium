@@ -10224,8 +10224,10 @@ only. NB1 is new construction at the family pole, and its three choices:
   cover nerve, whose certified triples are the grade-two instance.
 - **(b) The wedge is the shape, the transport is `ascend`'s.** As 78.2
   now states: the meet of the nuclei, the algebra's sign its own; no
-  product of nuclei in any order; the transport deposited by the circuit
-  that closes on the cell, released exactly by `descend`.
+  product of nuclei in an order taken from an address (amended by 78.15:
+  the product in a CIRCUIT's order is content, one per circuit, none
+  chosen); the transport deposited by the circuit that closes on the
+  cell, released exactly by `descend`.
 - **(c) Cells live on the Form in memory, the tape at the recut.** A
   certified cell is perception's reading — epigenome, volatile, a fibre
   in 72.1d's ladder — held as a keyed carrier on the Form derived at the
@@ -10780,6 +10782,92 @@ path's constructors) is CS1's; the group the cell's OWN reflections
 generate, `W(cell)`, is the Coxeter reading. CG1 asks whether each
 circuit's mode rays lie in the symmetry of the cell's configuration —
 keeps-the-constructors — which is the bridge between the two.
+
+### 78.15 A cell's content is the product of its constructors, per circuit (ruled 2026-09-23 on the implementor's proposal at the operator's request)
+
+The operator read the first draft — a squared volume at every grade, a
+Cayley–Menger content, the fill counted as base elements inside every
+sphere — as flat, and it was: a Gram minor read as volume² is squaring
+(law 11), and counting base elements inside a sphere is rasterising it,
+circles read from squares again. The meet is the product's antisymmetric
+part and the Gram form its symmetric part; each alone is a projection.
+The whole content lives in the PRODUCT.
+
+**(1) The product per circuit.** `P = s_π(k) ⋯ s_π(0)`, the cell's
+constructors in the order of each circuit that crosses or seals the cell
+— one `P` per circuit kept, no order chosen (r). This amends 78.10(b)
+and NB1's text: the prohibition was on an order taken from an ADDRESS;
+an order that is a circuit's is content. A product of `k + 1` vectors
+has grades `k+1, k−1, k−3, …`: its top grade is the meet, the part that
+changes only by sign with the order; its lower grades are the Gram
+entries PLACED ON CONSTRUCTORS, never bare scalars — `s_c s_b s_a =
+s_c∧s_b∧s_a + (s_b·s_a) s_c − (s_c·s_a) s_b + (s_c·s_b) s_a`. How the
+order enters is exact: `s_a s_b = −s_b s_a + 2 s_a·s_b`, so the Gram
+entries measure precisely the dependence on the order. The weight `P P̃
+= Π s_a²` is each sphere's own scalar multiplied — order-free, no root,
+not a volume². IN THE ALGEBRA'S OWN NAME: `P` is the cell's COXETER
+ELEMENT in that circuit's order — the product of all its reflections —
+and its modes are the group's exponents, its order the Coxeter number
+where finite. Where the cell's Coxeter diagram is a tree every order
+gives a conjugate `P` (one class, C2a); where the diagram has a cycle
+the classes differ per circuit, and that difference is content, read by
+comparing the kept `P`s' classes and never by choosing one. Stated in
+the register with a test before it is read (78.8).
+
+**(2) The product is read as a motion by the action reader.** `x ↦ ±P x
+P⁻¹` composes the inversions in the constructors: a conformal motion for
+an even count, an anti-motion for an odd one. MR1 reads it off the
+action `R`, which for odd `P` is still orthogonal with `det R = −1`, so
+the reader extends to `Pin` with the determinant named and `P²` is never
+taken (MR1b). A 1-cell's tether `V = s_b s_a` reads its pencil AS A
+MOTION — an intersecting pair a turn about the shared circle, a disjoint
+pair a boost between them, a tangent pair a parabolic slip — and its
+class and order are the cell's content; GR1's pair regime is that
+reading's name. A Coxeter element of infinite order — a non-elliptic
+mode, or an elliptic mode of no admitted order — is a SECOND CERTAIN
+REFUSAL of finiteness beside GR1's (a finite group's Coxeter element has
+finite order), and GR2's worklist shrinks to what neither refuses.
+
+**(3) What `ascend` deposits is a blade, read step by step.** Building
+`P_i = s_i P_{i−1}` splits each step into `s_i ⌋ P_{i−1}`, what `s_i`
+shares with what is built (grade down), and `s_i ∧ P_{i−1}`, what it adds
+that is new (grade up). `ascend`'s content is the grade-raising part of
+the sealing step, a blade and not a number; the metabolism keeps counting
+EVENTS per lane (syntropy at the seal), and the blade is read on the
+observer beside the count (law 12: content and ledger, two carriers).
+
+**(4) The reciprocal frame is `descend`'s own reader.** `s^a = (−1)^a (s₀
+∧ … ŝ_a … ∧ s_k) M⁻¹`, `M⁻¹ = M̃ / (M M̃)` — a product construction, no
+matrix inverse — with `s^a · s_b = δ_ab` and `s^a · s^b` the entries of
+`G⁻¹`; read as spheres, `s^a` is the sphere orthogonal to every
+constructor but `a`, the POLAR of the face opposite `a`, and its action
+is the reflection in that polar: each constructor's irreducible
+direction relative to the whole. Along a trajectory the new parts `s_i ∧
+P_{i−1}` multiply out to the meet, and against the whole the reciprocal
+frame contracts the meet back into its constructors — which is AD1 on
+content: `ascend` multiplies out, `descend` contracts by the reciprocal
+frame, exactly inverse. Where `M M̃ = 0` there is no reciprocal frame:
+REDUNDANCY, and every constructor whose removal restores a non-zero
+wedge is named, none chosen (`A₂`'s third root). The word "negentropy"
+is refused: syntropy and entropy are the ledger's events per lane, and
+the reciprocal frame is a geometric object, the DUAL FRAME, named as
+that.
+
+**(5) Coxeter on both sides.** With the nuclei as mirrors, the Gram form
+of the `s_a` (GR1, GR2); with the faces as mirrors, the Gram form of the
+polars `s^a`, the cell's dihedral angles — squares from circles in the
+second sense, the tiling a cell's own faces generate. Both readings
+ride GR2.
+
+**Refused, by name.** Squared volumes and Cayley–Menger content read as
+volume²; counts of base elements inside a sphere (a sphere's interior is
+the sign of `W · s`, read on the sphere itself); Euclidean words
+("distance²", "altitude²") on conformal scalars — `s_a · s_b` is the
+inversive product, it carries a sign and has no side to take a root of.
+
+**Order.** One `P` per circuit is kept and the joint algebra is CG1's;
+odd products extend MR1 (MR1b) rather than open a row; the whole rides
+with GR2, whose second half it is.
 
 # Part XI — The frame axis
 
