@@ -10142,6 +10142,42 @@ planes with no entropy; a screw reads its `I₂` on the third plane of the
 2-cell its two bends trace; a held `ℤ₂` reads unchanged by any bend and
 is left to T5.
 
+**Amended 2026-09-23 on the implementor's design finding, before VS1 is
+coded.** A bend writes only the face's transport and the orbits are a
+function of the faces, so a bend followed by its exact inverse ALWAYS
+restores the class: pure geometry is never viscous, and the only
+geometric irreversibility is the loop of two bends `A, B, A⁻¹, B⁻¹`,
+which multiplies the face by the algebra's own `K = B⁻¹A⁻¹BA` —
+correction 3's warning exactly. Four things follow. (1) THE BEND'S
+GENERATOR is the plane's own parameter-free ray: the quarter turn `1 +
+e_ij` on an elliptic plane, and on a hyperbolic plane — where `1 + B`
+is null and every rational boost carries a dial — the plane's blade,
+its half turn; no parameter enters (rule 5, 78.8). (2) THE RESPONSE PER
+PAIR OF PLANES is the class of the circuit's holonomy after the two-bend
+loop set against the class the same loop gives on a flat form — the
+class of `K` alone — so the algebra's commutator is subtracted and what
+remains is the FORM's contribution (C2a, exact). (3) FOUR ARMS, per pair
+and per lane, never summed: INVISCID — neither bend moves the class, a
+gauge direction; ELASTIC — a bend moves the class and the loop reads
+exactly the flat form's `K`, the algebra's own stiffness; CURVED — the
+loop reads a class `K` alone does not, the form's own curvature felt
+through the bend, content and reversible (the unbend restores it);
+VISCOUS — the bend or the loop triggers an IRREVERSIBLE event of the
+ledger (a drain or cauterization, a sealed cell released, a demand filed,
+a re-entry forbidden), read by the metabolism's counters before and
+after and booked as the lane's entropy — viscosity is the ledger's,
+never the geometry's; and PLASTIC, named toward MEM1: a tether condensed
+by the bend, the callousing. The first draft's "viscous" arm was the
+curved arm misnamed. (4) THE LANES a bend occupies are the lanes of the
+quantity bent, by the physics module's own names: the carriage is
+spatial `𝒮` (`PivotBy::Placement`), the word is holonomic `𝒽`
+(`PivotBy::Word`, the quarter-turn letter on the six rotor planes);
+gauge `𝒢` and temporal `𝒯` have no plane to bend on and read "no bend on
+this lane" by name, never zero. A flat form reads inviscid or elastic
+everywhere with zero entropy by construction; a screw reads curved on
+the plane the loop's `K` turns in, verified by fixture; a held `ℤ₂`'s
+fixture checks that no bend changes which candidate stands.
+
 ### 78.8 The provenance of a constant (ruled 2026-09-23, the operator's word)
 
 Every constant in this engine relies on computational physics that either
