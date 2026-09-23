@@ -4,6 +4,7 @@
 //! versor sandwich, so the quotient between two scene states exists.
 
 mod embedding;
+pub mod generic;
 mod group;
 mod hyperboloid;
 mod multivector;
