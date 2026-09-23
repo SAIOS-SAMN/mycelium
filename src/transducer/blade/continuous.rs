@@ -36,10 +36,6 @@ pub struct ContinuousSupport {
     /// The hexadecapole `H₄` on the grid plane, carried whole: it turns at
     /// four times the body's angle.
     pub h4: [BigRational; 2],
-    /// Scale-free anisotropy ratio det(I)/tr(I)² in ℚ (invariant under both rotation and dilation).
-    pub anisotropy: BigRational,
-    /// Spread per area tr(I)/n² in ℚ.
-    pub spread: BigRational,
 }
 
 impl ContinuousSupport {
@@ -55,46 +51,11 @@ impl ContinuousSupport {
         // The two harmonics, carried as the vectors they are (SQ1-b4).
         let h2 = shape.blade.harmonic_on_plane(plane, false)?;
         let h4 = shape.blade.harmonic4_on(plane, false)?;
-
-        let (ixx, iyy, ixy) = (&inertia[0], &inertia[1], &inertia[2]);
-        let tr = ixx + iyy;
-        let det = ixx * iyy - ixy * ixy;
-        let anisotropy = if tr.is_zero() {
-            BigRational::zero()
-        } else {
-            &det / (&tr * &tr)
-        };
-        let spread = if shell.is_zero() {
-            BigRational::zero()
-        } else {
-            &tr / (&shell * &shell)
-        };
-
-        Some(ContinuousSupport {
-            shell,
-            centroid,
-            inertia,
-            h2,
-            h4,
-            anisotropy,
-            spread,
-        })
-    }
-
-    /// Exact similarity correspondence under scaling factor ρ in ℚ.
-    pub fn is_similar_to(&self, other: &Self, rho: &BigRational) -> bool {
-        let rho2 = rho * rho;
-        // Volume scales as ρ² in 2D
-        if other.shell != &self.shell * &rho2 {
-            return false;
-        }
-
-        // Scale-free anisotropy ratio det(I)/tr(I)² is invariant
-        if other.anisotropy != self.anisotropy {
-            return false;
-        }
-
-        true
+        // SQ1-b5: the scale-free ratio det(I)/tr(I)² and the spread tr(I)/n²
+        // were carried here only for `is_similar_to`'s prefilter, which is
+        // deleted — with ρ in hand, `versor_coset` applies D(ρ) to the support
+        // and `carries` reads whether it lands. A ratio is not the relation.
+        Some(ContinuousSupport { shell, centroid, inertia, h2, h4 })
     }
 
     /// DOES THE ROTOR CARRY THIS BODY'S HARMONICS ONTO THE OTHER'S (SQ1-b4).
@@ -112,11 +73,11 @@ impl ContinuousSupport {
     /// beside it unused — a turn by ANY angle passed, since a norm cannot see
     /// the angle. A rotor that moves the grid plane out of itself has no block
     /// there, and relates no harmonics read on it: refused.
+    ///
+    /// No lamina count gates it (SQ1-b5): the count is the sensor's unit
+    /// squares, a reading (M₀, the tower's normaliser), never a gate (rule 2,
+    /// checklist (q)). The harmonics carry the body; the rotor is applied.
     pub fn matches_rotor(&self, other: &Self, rotor: &Rotor) -> bool {
-        // Isometry: shell must match
-        if self.shell != other.shell {
-            return false;
-        }
         let grid = (crate::transducer::alphabet::PLANE_ROW, crate::transducer::alphabet::PLANE_COL);
         let Some(b) = crate::transducer::alphabet::rotor_block_on(rotor, grid) else {
             return false;

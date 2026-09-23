@@ -17,13 +17,13 @@ fn continuous_support_invariants_in_closed_form() {
     // An anisotropic bar carries a second harmonic: H2 is not the zero vector.
     assert!(cs.h2.iter().any(|x| *x != BigRational::from_integer(0.into())));
 
-    // Exact similarity under dilation 2: shell scales by 4, H2 by 256
+    // SQ1-b5 — similarity is the dilation APPLIED, not a scalar prefilter:
+    // the coset carrying the bar onto its double is non-empty, and each of
+    // its versors carries the one support onto the other.
     let dilated = super::common::dilate(&s.blade.support, 2);
     let s_dil = shape_of(&dilated);
-    let cs_dil = ContinuousSupport::of(&s_dil).expect("dilated support");
-
-    let rho = BigRational::from_integer(2.into());
-    assert!(cs.is_similar_to(&cs_dil, &rho));
+    let coset = versor_coset(&s, &s_dil);
+    assert!(!coset.is_empty(), "D(2) carries the bar onto its double");
 }
 
 #[test]

@@ -199,17 +199,10 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
             None => return coset,
         },
     };
-    let (supp_a, supp_b) = (
-        crate::transducer::blade::continuous::ContinuousSupport::of(a),
-        crate::transducer::blade::continuous::ContinuousSupport::of(b),
-    );
-    if let (Some(sa), Some(sb)) = (&supp_a, &supp_b) {
-        if !sa.is_similar_to(sb, &rho) {
-            return coset;
-        }
-    } else if b.blade.shell != &a.blade.shell * &rho * &rho {
-        return coset; // the lamina counts do not scale as ρ²: not similar
-    }
+    // SQ1-b5: no scalar prefilter stands between ρ and the versor. With ρ in
+    // hand, D(ρ) is built and applied below, and `carries` reads whether the
+    // support lands; the lamina count scaling as ρ² is the sensor's unit
+    // squares, a reading (M₀), never a gate (rule 2, checklist (q)).
     // The bodies stand in their frames: the transport returns the frame
     // coordinate as it does the two of the plane.
     let to_origin = cga::translator_at(&ca.iter().map(|x| -x).collect::<Vec<_>>());
