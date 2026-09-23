@@ -25,15 +25,53 @@ fn a_turn_about_a_point_holds_that_point() {
 }
 
 /// A translation holds nothing finite and holds `e_∞`: its centre is at
-/// infinity. A dilation holds directions and scales both its poles: refused.
-/// A multivector that is no versor has no action: refused.
+/// infinity. A multivector that is no versor has no action: refused.
 #[test]
-fn a_translation_is_centred_at_infinity_and_a_dilation_is_refused() {
+fn a_translation_is_centred_at_infinity() {
     let slide = cga::translator_at(&[q(2), q(0), q(0)]);
     assert!(matches!(cga::centre_of(&slide, 3), Centre::AtInfinity { .. }), "{:?}", cga::centre_of(&slide, 3));
-    assert_eq!(cga::centre_of(&cga::dilator(&q(2)), 3), Centre::Scales);
     let not_a_versor = Mv::scalar(q(1)).add(&Mv::blade(cga::E1, q(1)));
     assert_eq!(cga::centre_of(&not_a_versor, 3), Centre::Unread);
+}
+
+/// HC1, 75 — A HYPERBOLIC MODE'S POLES ARE READ WHEN THEY ARE RATIONAL.
+/// OR1 refused every scaling motion "as a root"; a dilation by 2 holds the
+/// origin and infinity at 2 and 1/2, and the boost `5 + 3 e₁e₋` holds
+/// `(±1, 0, 0)` at 4 and 1/4 — both exact. A mode whose poles want a root
+/// refuses by that name: `3 + (e₁ + e₂)∧e₋` squares to 2 and its
+/// `c² − 1 = 72/49` is no rational square.
+#[test]
+fn a_hyperbolic_modes_poles_are_read_when_rational_and_named_when_not() {
+    use crate::transducer::cga::PoleAt;
+    let origin = PoleAt::Point(vec![q(0), q(0), q(0)]);
+    match cga::centre_of(&cga::dilator(&q(2)), 3) {
+        Centre::Poles { ratio, at_ratio, at_inverse } => {
+            assert_eq!(ratio, q(2), "a dilation by 2 reads 2 and 1/2");
+            let poles = [at_ratio, at_inverse];
+            assert!(poles.contains(&origin) && poles.contains(&PoleAt::Infinity), "{poles:?}");
+        }
+        other => panic!("a dilation's poles are rational: {}", other.label()),
+    }
+    let boost = Mv::scalar(q(5)).add(&Mv::blade(cga::E1 | cga::EM, q(3)));
+    match cga::centre_of(&boost, 3) {
+        Centre::Poles { ratio, at_ratio, at_inverse } => {
+            assert_eq!(ratio, q(4), "the boost 5 + 3e1e- reads 4 and 1/4");
+            let poles = [at_ratio, at_inverse];
+            let plus = PoleAt::Point(vec![q(1), q(0), q(0)]);
+            let minus = PoleAt::Point(vec![q(-1), q(0), q(0)]);
+            assert!(poles.contains(&plus) && poles.contains(&minus), "{poles:?}");
+        }
+        other => panic!("the boost's poles are rational: {}", other.label()),
+    }
+    let tilted = Mv::scalar(q(3))
+        .add(&Mv::blade(cga::E1 | cga::EM, q(1)))
+        .add(&Mv::blade(cga::E2 | cga::EM, q(1)));
+    assert_eq!(
+        cga::centre_of(&tilted, 3),
+        Centre::Irrational { disc: BigRational::new(72.into(), 49.into()) },
+        "poles in Q(√72/49), refused by that name"
+    );
+    assert!(cga::centre_of(&tilted, 3).label().contains("Q(√72/49)"));
 }
 
 /// 73.1 — AN ORBIT IS READ WHOLE: a turn on the grid plane is a resonant

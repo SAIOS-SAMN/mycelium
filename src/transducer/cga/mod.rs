@@ -18,7 +18,7 @@ pub use embedding::{
     base_at, base_vector, boundary_dual, e_inf, e_o, hyperbolic_point, on_sphere, point_at, rotator,
     rotator_on_blade, sphere_at, translator_at,
 };
-pub use fixed::{centre_of, Centre};
+pub use fixed::{centre_of, Centre, PoleAt};
 pub use group::{dilator, is_versor, projective_ratio, reflector};
 pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_lamina, hyperboloid_pole};
 pub use multivector::{base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP};

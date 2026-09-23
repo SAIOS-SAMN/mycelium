@@ -10,16 +10,45 @@
 //!
 //! a linear system over ℚ in `n + 2` unknowns. Its kernel is the flat the
 //! motion fixes: a rotation about a point holds that point and `e_∞`, a
-//! turn about an axis holds the axis, a translation holds `e_∞` alone. A
-//! motion whose fixed points SCALE — a dilation, a boost — holds them at an
-//! eigenvalue other than `w`, a root of the characteristic polynomial, and
-//! that is refused by name, never solved for (law 1, rule 11).
+//! turn about an axis holds the axis, a translation holds `e_∞` alone.
+//!
+//! HC1, 75 — A MOTION WHOSE FIXED POINTS SCALE (a dilation, a boost: one
+//! hyperbolic mode) holds its two POLES at the eigenvalues `w·λ±`, where
+//! `λ± = c ± √(c² − 1)` and `c = 2⟨M⟩₀²/w − 1` is the mode's own. They are
+//! exact whenever `c² − 1` is a rational square — a dilation by `ρ` has
+//! `λ± = ρ, 1/ρ` — and refused BY THAT NAME, `poles in ℚ(√(c² − 1))`, only
+//! when it is not. A motion that scales in more than one mode is refused
+//! until the per-mode split (MD1) reads each mode alone. OR1 refused every
+//! scaling motion as "a root", including the rational ones (corrected here).
+//!
+//! A KERNEL VECTOR THAT IS NOT NULL IS A ROUND, not a point. Where `e_∞` is
+//! held, a fixed sphere's whole pencil `S + t e_∞` is fixed and its null
+//! member, the centre, is a fixed point. Where it is not, the sphere is held
+//! and its centre is not: a boost on `e₁∧e₋` holds the unit sphere and moves
+//! the origin. OR1 read the centre of any such vector as a fixed point.
 
 use super::embedding::{base_at, e_inf};
 use super::group::is_versor;
 use super::multivector::{base_axis, one, Mv, EM, EP};
 use num_rational::BigRational;
 use num_traits::Zero;
+
+/// ONE POLE OF A SCALING MOTION: a point of the base, or the point at
+/// infinity.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PoleAt {
+    Point(Vec<BigRational>),
+    Infinity,
+}
+
+impl PoleAt {
+    fn label(&self) -> String {
+        match self {
+            PoleAt::Point(p) => format!("({})", p.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ")),
+            PoleAt::Infinity => "∞".into(),
+        }
+    }
+}
 
 /// WHAT A MOTION HOLDS STILL.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -31,8 +60,17 @@ pub enum Centre {
     /// motion, whose centre is at infinity — a reading — with the `dim`
     /// vectors it holds (`e_∞` and the directions it does not move).
     AtInfinity { dim: usize },
-    /// Nothing is fixed at the weight: the fixed points scale, at an
-    /// eigenvalue the equation would have to root. Refused.
+    /// HC1 — ONE HYPERBOLIC MODE: its two poles, each with the ratio `λ` it
+    /// is held at (`M P M̃ = w·λ·P`), `λ₊ = c + √(c² − 1)` and its inverse.
+    /// The pencil the two poles span is the set of spheres whose inversion
+    /// exchanges them; which one exchanges `M` with `M⁻¹` (the per-mode
+    /// relator) is a conjecture until probed (75), and is not asserted.
+    Poles { ratio: BigRational, at_ratio: PoleAt, at_inverse: PoleAt },
+    /// One hyperbolic mode whose poles want a root: `c² − 1` is not a
+    /// rational square. Refused by that name, with the discriminant.
+    Irrational { disc: BigRational },
+    /// The fixed points scale in more than one mode, or at eigenvalues no
+    /// single mode names: the per-mode split is MD1's. Refused.
     Scales,
     /// The motion is not a versor, so it has no action to fix anything by.
     Unread,
@@ -46,7 +84,14 @@ impl Centre {
                 format!("fixed flat of {dim} through ({})", coords.join(", "))
             }
             Centre::AtInfinity { dim } => format!("at infinity (holds {dim})"),
-            Centre::Scales => "refused: the fixed points scale (a root)".into(),
+            Centre::Poles { ratio, at_ratio, at_inverse } => format!(
+                "poles {} at {ratio} and {} at {}",
+                at_ratio.label(),
+                at_inverse.label(),
+                BigRational::from_integer(1.into()) / ratio
+            ),
+            Centre::Irrational { disc } => format!("refused: poles in Q(√{disc})"),
+            Centre::Scales => "refused: the fixed points scale in more than one mode (MD1's split)".into(),
             Centre::Unread => "refused: not a versor".into(),
         }
     }
@@ -58,50 +103,85 @@ pub fn centre_of(m: &Mv, n: u8) -> Centre {
     let Some(w) = is_versor(m) else { return Centre::Unread };
     let n = n.max(m.n());
     let gens: Vec<usize> = (1..=usize::from(n)).map(base_axis).chain([EP, EM]).collect();
-    // THE MATRIX, column by column: the image of each generator, read on
-    // every generator, less the weight on the diagonal.
+    // THE ACTION, column by column: the image of each generator, read on
+    // every generator.
     let images: Vec<Mv> = gens.iter().map(|&g| m.sandwich(&Mv::blade(g, one()))).collect();
-    let rows: Vec<Vec<BigRational>> = gens
-        .iter()
-        .enumerate()
-        .map(|(a, &ga)| {
-            images
-                .iter()
-                .enumerate()
-                .map(|(b, img)| match a == b {
-                    true => img.coeff(ga) - &w,
-                    false => img.coeff(ga).clone(),
-                })
-                .collect()
-        })
-        .collect();
-    let kernel = nullspace(rows, gens.len());
-    if kernel.is_empty() {
+    // The vectors held at eigenvalue `eigen`: the kernel of `L − eigen`.
+    let held_at = |eigen: &BigRational| -> Vec<Mv> {
+        let rows: Vec<Vec<BigRational>> = gens
+            .iter()
+            .enumerate()
+            .map(|(a, &ga)| {
+                images
+                    .iter()
+                    .enumerate()
+                    .map(|(b, img)| match a == b {
+                        true => img.coeff(ga) - eigen,
+                        false => img.coeff(ga).clone(),
+                    })
+                    .collect()
+            })
+            .collect();
+        nullspace(rows, gens.len())
+            .iter()
+            .map(|v| gens.iter().zip(v).fold(Mv::zero(), |acc, (&g, x)| acc.add(&Mv::blade(g, x.clone()))))
+            .collect()
+    };
+    let has_origin_weight = |x: &Mv| !(-x.geo(&e_inf()).scalar_part()).is_zero();
+    let basis = held_at(&w);
+    let holds_infinity = m.sandwich(&e_inf()).sub(&e_inf().scale(&w)).is_zero();
+    // A FINITE FIXED POINT. Where `e_∞` is held, any held vector with
+    // weight on `e_o` is a round whose whole pencil `S + t e_∞` is held, so
+    // its null member — the centre `base_at` reads — is a fixed point.
+    // Where it is not, only a NULL held vector is a point; a round held
+    // without `e_∞` holds its sphere and not its centre. The basis is in the
+    // elimination's own order — its free columns, ascending by generator —
+    // so the point read is the content's and not an arrival's (rule 15).
+    let point = basis.iter().find_map(|x| {
+        let is_point = has_origin_weight(x) && (holds_infinity || x.norm2().is_zero());
+        match is_point {
+            true => base_at(x, usize::from(n)),
+            false => None,
+        }
+    });
+    match (point, holds_infinity) {
+        (Some(point), _) => return Centre::Fixed { dim: basis.len(), point },
+        (None, true) => return Centre::AtInfinity { dim: basis.len() },
+        (None, false) => {}
+    }
+    // HC1 — NO POINT AND NOT INFINITY AT THE WEIGHT: THE POLES OF ONE
+    // HYPERBOLIC MODE, read at `w·λ±` when `c² − 1` is a rational square.
+    if !super::spin::bivector_is_simple(m) {
         return Centre::Scales;
     }
-    let vector = |v: &[BigRational]| {
-        gens.iter().zip(v).fold(Mv::zero(), |acc, (&g, x)| acc.add(&Mv::blade(g, x.clone())))
+    let s0 = m.scalar_part();
+    let c = BigRational::from_integer(2.into()) * &s0 * &s0 / &w - one();
+    let disc = &c * &c - one();
+    if disc <= BigRational::zero() {
+        return Centre::Scales;
+    }
+    let Some(root) = crate::transducer::blade::rational_sqrt(&disc) else {
+        return Centre::Irrational { disc };
     };
-    let basis: Vec<Mv> = kernel.iter().map(|v| vector(v)).collect();
-    // A FINITE POINT is a kernel vector with weight on `e_o`, `−(x·e_∞) ≠ 0`;
-    // its base point is read by `base_at`, which a multiple of `e_∞` added
-    // to it does not move. The basis is in the elimination's own order —
-    // its free columns, ascending by generator — so the point read is the
-    // content's and not an arrival's (rule 15).
-    let point = basis.iter().find_map(|x| match (-x.geo(&e_inf()).scalar_part()).is_zero() {
-        true => None,
-        false => base_at(x, usize::from(n)),
-    });
-    // THE FIXED SET HAS NO FINITE POINT. A motion that holds `e_∞` at its
-    // weight — a translation, a parabolic motion — holds its centre at
-    // infinity, and the planes it holds are the directions it does not
-    // move. One that does not hold `e_∞` either scales its fixed points
-    // (a dilation holds directions and moves both its poles by `ρ`).
-    let holds_infinity = m.sandwich(&e_inf()).sub(&e_inf().scale(&w)).is_zero();
-    match (point, holds_infinity) {
-        (Some(point), _) => Centre::Fixed { dim: basis.len(), point },
-        (None, true) => Centre::AtInfinity { dim: basis.len() },
-        (None, false) => Centre::Scales,
+    let ratio = &c + &root;
+    // ONE POLE AT ONE EIGENVALUE: a null held vector with weight on `e_o` is
+    // a point; `e_∞` held there is the pole at infinity.
+    let pole_at = |lambda: &BigRational| -> Option<PoleAt> {
+        let eigen = &w * lambda;
+        let held = held_at(&eigen);
+        if m.sandwich(&e_inf()).sub(&e_inf().scale(&eigen)).is_zero() {
+            return Some(PoleAt::Infinity);
+        }
+        held.iter().find_map(|x| match has_origin_weight(x) && x.norm2().is_zero() {
+            true => base_at(x, usize::from(n)).map(PoleAt::Point),
+            false => None,
+        })
+    };
+    match (pole_at(&ratio), pole_at(&(one() / &ratio))) {
+        (Some(at_ratio), Some(at_inverse)) => Centre::Poles { ratio, at_ratio, at_inverse },
+        // The eigenvalues the mode names hold no pole: the motion scales in
+        // a way one mode does not describe.
+        _ => Centre::Scales,
     }
 }
 
