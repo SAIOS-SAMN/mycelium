@@ -582,40 +582,43 @@ impl SharedCell {
 /// distance test against every lamina — the directions are walked, the
 /// sites are ordered, and nothing is searched.
 ///
-/// Two sites of different `n` share no cell: a cell is of one base.
+/// Two sites of different `n` share no cell: a cell is of one base. EVERY
+/// BASE PRESENT IS READ AT ITS OWN `n`: the sites of each base meet each
+/// other under that base's own neighbourhood, so a support holding two
+/// bases loses the cells of neither.
 pub fn shared_cells(positions: &[crate::transducer::base::Site]) -> Vec<SharedCell> {
     let mut edges = Vec::new();
-    let n = positions.iter().map(|s| s.n()).fold(0, usize::max);
-    for d in neighbourhood(n) {
-        let axes: Vec<usize> = d.iter().enumerate().filter(|(_, x)| **x != 0).map(|(i, _)| i).collect();
-        let grade = n - axes.len();
-        // `t` is the coordinate `d` leads with. The invariants are the
-        // coordinates less `d`'s share of `t`, so they are constant along
-        // `d`.
-        let lead = match d.iter().position(|&x| x != 0) {
-            Some(i) => i,
-            None => continue,
-        };
-        let line = |p: &crate::transducer::base::Site| -> (usize, Vec<i64>, i64) {
-            #[expect(
-                clippy::manual_unwrap_or_default,
-                reason = "the inclusion ℚᵐ ⊂ ℚⁿ (71): an axis a smaller base lacks is zero in the larger, measured and not defaulted"
-            )]
-            let t = match p.axis(lead) {
-                Some(t) => t,
-                None => 0,
-            };
-            let inv = p.axes().iter().zip(&d).map(|(x, dx)| x - dx * t).collect();
-            (p.n(), inv, t)
-        };
-        let mut along: Vec<usize> = (0..positions.len()).collect();
-        // Canonical key order (rule 4): the line along d, then the
-        // parameter on it, is where a neighbour along d is a successor.
-        along.sort_by_cached_key(|&i| line(&positions[i]));
-        for w in along.windows(2) {
-            let ((np, lp, tp), (nq, lq, tq)) = (line(&positions[w[0]]), line(&positions[w[1]]));
-            if np == n && nq == n && lp == lq && tp + 1 == tq {
-                edges.push(SharedCell { i: w[0], j: w[1], d: d.clone(), axes: axes.clone(), grade });
+    let mut bases: Vec<usize> = positions.iter().map(|s| s.n()).collect();
+    bases.sort_unstable();
+    bases.dedup();
+    for n in bases {
+        let of_base: Vec<usize> = (0..positions.len()).filter(|&i| positions[i].n() == n).collect();
+        for d in neighbourhood(n) {
+            let axes: Vec<usize> = d.iter().enumerate().filter(|(_, x)| **x != 0).map(|(i, _)| i).collect();
+            let grade = n - axes.len();
+            // `t` is the coordinate `d` leads with — its first axis — and the
+            // invariants are the coordinates less `d`'s share of `t`, so they
+            // are constant along `d`.
+            let [lead, ..] = axes.as_slice() else { continue };
+            // THE CANONICAL KEY ITSELF, written beside each site's index
+            // (rule 4): the line along d, then the parameter on it, is where
+            // a neighbour along d is a successor. The key is the order, so
+            // the sort is the key's own and chooses nothing.
+            // Every site of this base has the axis `d` leads with, `lead < n`.
+            let mut along: Vec<(Vec<i64>, i64, usize)> = of_base
+                .iter()
+                .map(|&i| {
+                    let p = positions[i].axes();
+                    let t = p[*lead];
+                    (p.iter().zip(&d).map(|(x, dx)| x - dx * t).collect(), t, i)
+                })
+                .collect();
+            along.sort_unstable();
+            for w in along.windows(2) {
+                let [(lp, tp, i), (lq, tq, j)] = w else { continue };
+                if lp == lq && tp + 1 == *tq {
+                    edges.push(SharedCell { i: *i, j: *j, d: d.clone(), axes: axes.clone(), grade });
+                }
             }
         }
     }

@@ -136,14 +136,13 @@ impl Blade {
     /// The second moment `I_ij` about the centroid, `i ≤ j` or either
     /// order. `None` for an axis the body's base does not have.
     pub fn moment2(&self, i: usize, j: usize) -> Option<&BigRational> {
-        let (lo, hi) = if i <= j { (i, j) } else { (j, i) };
-        inertia_pairs(hi + 1).iter().position(|&p| p == (lo, hi)).and_then(|at| self.inertia.get(at))
+        self.inertia.get(pair_index(i, j))
     }
 
     /// The fourth-moment triple on a plane `(i, j)`, `i < j`. `None` for a
     /// plane the body's base does not have.
     pub fn quartic_on(&self, plane: (usize, usize)) -> Option<&[BigRational; 3]> {
-        self.planes().iter().position(|&p| p == plane).and_then(|at| self.quartic.get(at))
+        self.quartic.get(crate::transducer::base::plane_index(plane)?)
     }
 
     /// THE SECOND HARMONIC ON A PLANE `(i, j)`: `(I_ii − I_jj, 2 I_ij)`, a
@@ -188,6 +187,20 @@ fn inertia_pairs(n: usize) -> Vec<(usize, usize)> {
         }
     }
     out
+}
+
+/// A PAIR'S PLACE IN [`inertia_pairs`], read off its two axes in either
+/// order: the block of the larger axis `j` starts after the `C(j+1, 2)`
+/// pairs below it, its diagonal first and then each smaller axis `i`. A
+/// coordinate, never a search of the list (rule 3); the same at every `n`,
+/// since the order is prefix-stable. A pair past the body's `n` indexes past
+/// its inertia and reads as absent there.
+fn pair_index(i: usize, j: usize) -> usize {
+    let (lo, hi) = if i <= j { (i, j) } else { (j, i) };
+    match lo == hi {
+        true => hi * (hi + 1) / 2,
+        false => hi * (hi + 1) / 2 + 1 + lo,
+    }
 }
 
 /// THE LAMINA'S OWN MOMENTS ALONG ONE AXIS, `∫uᵖ` for p = 1…4, at offset
@@ -275,9 +288,11 @@ pub fn lift(comp: &[Lamina]) -> Blade {
     // Extent r² = the per-unit-mass polar second moment on the grid plane,
     // with the unit square's own polar moment (1/6) in it, so r² > 0 even
     // for a single lamina — off the null cone, invertible.
+    // A grid axis the base lacks has no moment there, which is zero by the
+    // inclusion ℚᵐ ⊂ ℚⁿ, as `coord` reads it.
     let diag = |i: usize| -> BigRational {
-        match pairs.iter().position(|&p| p == (i, i)) {
-            Some(at) => inertia[at].clone(),
+        match inertia.get(pair_index(i, i)) {
+            Some(m) => m.clone(),
             None => q(0),
         }
     };

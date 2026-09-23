@@ -30,6 +30,18 @@ pub fn planes(n: usize) -> Vec<(usize, usize)> {
     (0..n).flat_map(|j| (0..j).map(move |i| (i, j))).collect()
 }
 
+/// A PLANE'S PLACE IN [`planes`], read off its two axes: the planes of the
+/// larger axis `j` start after the `C(j, 2)` planes below it, and `i` is the
+/// place among them. A coordinate, never a search of the list (rule 3).
+/// `None` for a pair that is no plane (`i ≥ j`). The place is the same at
+/// every `n` that has the plane, since the order is prefix-stable.
+pub fn plane_index((i, j): (usize, usize)) -> Option<usize> {
+    match i < j {
+        true => Some(j * (j - 1) / 2 + i),
+        false => None,
+    }
+}
+
 /// THE AXIS A FAMILY'S FRAMES STAND ALONG (51.3): the third coordinate the
 /// grid presents, a frame's place in its family. A section is the laminae
 /// of one value of it, and the frame rides on the pose (16.5).
