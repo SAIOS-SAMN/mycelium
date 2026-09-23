@@ -26,12 +26,13 @@ use crate::client::sdk::Epigenome;
 /// owes it. The ONE statement of what is owed (law 12), read by every
 /// renderer: a row that lands its producer moves its field into
 /// [`Learning`] and off this list.
-pub const OWED: [(&str, &str); 5] = [
+/// The coboundary's agreement per grade is PG1's (`Progress`, the round kept
+/// per grade), read beside this one and never copied into it (law 12).
+pub const OWED: [(&str, &str); 4] = [
     ("cover", "53.2's readings per mind: K4, K5 widen the roster past Bands"),
     ("warm-cold delta", "Y1, re-taken on the fleet"),
     ("distinct perspectives per class", "CV3"),
     ("mass per lane per layer per grade", "E5 (MS1, Phase P)"),
-    ("coboundary agreement per grade", "CG1"),
 ];
 
 /// ONE MIND'S CURVE AT ONE `K`.

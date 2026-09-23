@@ -273,24 +273,47 @@ pub fn read_viscosity(form: &Form, budget: &mut crate::physics::Budget) -> Vec<P
     out
 }
 
-/// THE VISCOSITY LINE: per lane, the pairs read with their arms, and the
-/// lanes with no bend named.
-pub fn viscosity_line(readings: &[PairViscosity]) -> String {
-    let lane = |l: BendLane, name: &str| -> String {
-        let pairs: Vec<String> = readings
+/// VO1 — THE TYPED READING THE OBSERVER SERVES: every pair on which a trial
+/// ran, by its lane's index, and the ledger's entropy by lane as it stands.
+pub fn viscosity_reading(readings: &[PairViscosity]) -> crate::observe::Viscosity {
+    crate::observe::Viscosity {
+        pairs: readings
             .iter()
-            .filter(|r| r.lane == l && (r.arms.iter().any(|&a| a > 0) || r.refused > 0 || r.unread > 0 || r.no_class > 0))
+            .filter(|r| r.arms.iter().any(|&a| a > 0) || r.refused > 0 || r.unread > 0 || r.no_class > 0)
+            .map(|r| crate::observe::ViscosityPair {
+                lane: r.lane.index() as u8,
+                planes: (r.planes.0 as u16, r.planes.1 as u16),
+                arms: r.arms,
+                refused: r.refused,
+                unread: r.unread,
+                no_class: r.no_class,
+            })
+            .collect(),
+        entropy: crate::physics::metabolism::metabolism().viscous,
+    }
+}
+
+/// A bent plane's name on its lane (by the lane's index): the algebra's
+/// plane on `𝒮`, the rotor plane on `𝒽`.
+pub fn bend_plane_name(lane: u8, plane: u16) -> String {
+    let p = usize::from(plane);
+    match (usize::from(lane) == BendLane::Holonomic.index(), ROTOR_PLANES.get(p)) {
+        (false, _) => crate::transducer::cga::plane_name(p),
+        (true, Some(r)) => format!("r{r:?}"),
+        (true, None) => format!("r#{p}"),
+    }
+}
+
+/// THE VISCOSITY LINE, off the typed reading: per lane, the pairs read with
+/// their arms, and the lanes with no bend named.
+pub fn viscosity_line(v: &crate::observe::Viscosity) -> String {
+    let lane = |l: BendLane, name: &str| -> String {
+        let pairs: Vec<String> = v
+            .pairs
+            .iter()
+            .filter(|r| usize::from(r.lane) == l.index())
             .map(|r| {
-                let (a, b) = match l {
-                    BendLane::Spatial => (
-                        crate::transducer::cga::plane_name(r.planes.0),
-                        crate::transducer::cga::plane_name(r.planes.1),
-                    ),
-                    BendLane::Holonomic => (
-                        format!("r{:?}", ROTOR_PLANES[r.planes.0]),
-                        format!("r{:?}", ROTOR_PLANES[r.planes.1]),
-                    ),
-                };
+                let (a, b) = (bend_plane_name(r.lane, r.planes.0), bend_plane_name(r.lane, r.planes.1));
                 format!(
                     "{a}·{b} inviscid {} elastic {} curved {} viscous {} refused {} unread {} no-class {}",
                     r.arms[0], r.arms[1], r.arms[2], r.arms[3], r.refused, r.unread, r.no_class
@@ -302,10 +325,10 @@ pub fn viscosity_line(readings: &[PairViscosity]) -> String {
             false => format!("{name}: {}", pairs.join(", ")),
         }
     };
-    let entropy = crate::physics::metabolism::metabolism().viscous;
     format!(
-        "viscosity: {} | {} | 𝒢: no bend on this lane | 𝒯: no bend on this lane | entropy by lane {entropy:?}",
+        "viscosity: {} | {} | 𝒢: no bend on this lane | 𝒯: no bend on this lane | entropy by lane {:?}",
         lane(BendLane::Spatial, "𝒮"),
-        lane(BendLane::Holonomic, "𝒽")
+        lane(BendLane::Holonomic, "𝒽"),
+        v.entropy
     )
 }

@@ -18,9 +18,12 @@
 //! the observer serves on demand ([`take_cells`]).
 
 use crate::network::nerve::Keyed;
-use crate::observe::{CellClosure, CellDual, CellEntry, CellProduct, Cells};
+use crate::observe::{
+    CellClosure, CellCoherence, CellDual, CellEntry, CellOrbit, CellPermutes, CellProduct, CellRound, Cells,
+    GradeProgress, Progress, Spend, Viscosity,
+};
 use crate::transducer::cech::{CellAlgebra, Closure, Coherence, Congruence, CoxeterReading, Permutes, Refusal};
-use crate::transducer::cga::{self, ConstructorOrbit, DualFrame, MirrorReading, Mv, PairRegime};
+use crate::transducer::cga::{self, ConstructorOrbit, DualFrame, MirrorReading, Mv};
 use crate::transducer::sentence::Form;
 
 /// ONE FORM'S CELLS, COMPREHENDED: each cell's orbit algebra, each cell's
@@ -96,6 +99,34 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
         .zip(&c.mirrors)
         .map(|(a, ms)| CellEntry {
             grade: a.grade as u8,
+            round: match a.congruence {
+                Congruence::Congruent => CellRound::Kept,
+                Congruence::HeldZ2 { .. } => CellRound::HeldZ2,
+                Congruence::Incongruent { .. } => CellRound::Carried,
+                Congruence::Unread { .. } => CellRound::Unread,
+                Congruence::NoRound => CellRound::NoRound,
+                Congruence::NoCircuit => CellRound::NoCircuit,
+            },
+            permutes: match a.permutes {
+                Permutes::All => CellPermutes::All,
+                Permutes::Moves(_) => CellPermutes::Moves,
+                Permutes::Unread { .. } => CellPermutes::Unread,
+                Permutes::NoConstructors => CellPermutes::NoConstructors,
+                Permutes::NoCircuit => CellPermutes::NoCircuit,
+            },
+            coherence: match a.coherence {
+                Coherence::Closes(_) => CellCoherence::Closes,
+                Coherence::Held => CellCoherence::Held,
+                Coherence::Open(_) => CellCoherence::Open,
+                Coherence::Unread => CellCoherence::Unread,
+            },
+            capacity: a.capacity.map(|k| k as u32),
+            orbit: match a.constructors {
+                ConstructorOrbit::Closed { .. } => CellOrbit::Closed,
+                ConstructorOrbit::Open { .. } => CellOrbit::Open,
+                ConstructorOrbit::Unbounded { .. } => CellOrbit::Unbounded,
+                ConstructorOrbit::Unread => CellOrbit::Unread,
+            },
             signature: a.gram.as_ref().map(|g| ((g.signature.0 as u8, g.signature.1 as u8, g.signature.2 as u8), g.rank as u8)),
             pairs: a.gram.iter().flat_map(|g| g.pairs.iter().map(|(_, _, _, r)| *r)).collect(),
             coxeter: a.coxeter.as_ref().map(cell_closure),
@@ -126,20 +157,170 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
     Cells { mirror_planes: c.planes as u32, mirror_group: c.mirror_group.as_ref().map(cell_closure), cells }
 }
 
-thread_local! {
-    /// The last percept's cells, read whole, until the observer takes them.
-    static LAST: std::cell::RefCell<Option<Cells>> = const { std::cell::RefCell::new(None) };
+/// PG1 — THE PERCEPT'S PROGRESS toward E1's done-when: the circuits that
+/// cross a contact face, those whose whole transport reads and is not
+/// trivial, those unread (OR3); and the certified cells by grade, off the
+/// typed cells.
+pub(crate) fn progress(form: &Form, walked: &[crate::transducer::sentence::WalkedCircuit], cells: &Cells) -> Progress {
+    use crate::network::nerve::coord::BivectorKind;
+    let mut p = Progress { percepts: 1, ..Progress::default() };
+    for (steps, composite) in walked {
+        let contact =
+            steps.iter().any(|&(f, _)| form.faces.get(usize::from(f)).is_some_and(|x| !x.interface.is_empty()));
+        if !contact {
+            continue;
+        }
+        p.contact_cycles += 1;
+        match composite.as_ref().map(|m| m.class_invariants()) {
+            None => p.contact_cycles_unread += 1,
+            Some(Some((_, _, BivectorKind::Trivial))) => {}
+            Some(Some(_)) => p.contact_cycles_curved += 1,
+            // A composite whose class does not read is unread, never flat.
+            Some(None) => p.contact_cycles_unread += 1,
+        }
+    }
+    for c in &cells.cells {
+        let at = match p.grades.binary_search_by_key(&c.grade, |g| g.grade) {
+            Ok(at) => at,
+            Err(at) => {
+                p.grades.insert(at, GradeProgress { grade: c.grade, ..GradeProgress::default() });
+                at
+            }
+        };
+        let g = &mut p.grades[at];
+        g.cells += 1;
+        match c.round {
+            CellRound::Kept => g.round_kept += 1,
+            CellRound::HeldZ2 => g.held_z2 += 1,
+            CellRound::Carried => g.refused += 1,
+            CellRound::Unread | CellRound::NoRound | CellRound::NoCircuit => {}
+        }
+        match c.coxeter {
+            Some(CellClosure::FiniteByTheorem | CellClosure::FiniteByCheck) => g.finite += 1,
+            Some(CellClosure::Affine) => g.affine += 1,
+            Some(CellClosure::InfiniteByPair | CellClosure::Hyperbolic | CellClosure::InfiniteByProduct) => {
+                g.infinite += 1
+            }
+            Some(CellClosure::Unbounded | CellClosure::Unread) | None => {}
+        }
+        if c.dual == Some(CellDual::Frame) {
+            g.dual_frames += 1;
+        }
+    }
+    p
 }
 
-/// Hold the last percept's cells for the observer.
-pub(crate) fn hold_cells(cells: Cells) {
-    LAST.with(|l| *l.borrow_mut() = Some(cells));
+/// THE PERCEPT'S READERS AFTER ITS FORM, each held typed for the observer
+/// and none of it printed but the orbits' lines (RC2): each kept orbit
+/// (OR1), each certified cell as its orbit algebra off the circuits this
+/// percept walked (CG1, CO1), the circuits step by step (PL1), each held
+/// loop's faces bent per pair of planes per lane (VS1, VO1), and the
+/// percept's progress (PG1). SP1 — each reader's spend is the stroke's own
+/// count before and after it, never a clock (law 9); perception's spend and
+/// the frames it left unreached are the caller's.
+pub(crate) fn read_and_hold(form: &Form, budget: &mut crate::physics::Budget, perceived: u64, unreached: u64) {
+    use crate::transducer::cga::Undecomposed;
+    use crate::transducer::sentence::{ModesRead, OrbitLine};
+    let mut spend = Spend { percepts: 1, ..Spend::default() };
+    spend.reads[0] = perceived;
+    spend.unbounded[0] = unreached;
+    let at = budget.remaining();
+    for orbit in crate::transducer::sentence::take_orbits(budget) {
+        if let OrbitLine::Read(r) = &orbit {
+            if let ModesRead::Undecomposed(Undecomposed::Unbounded(_)) = r.modes {
+                spend.unbounded[1] += 1;
+            }
+        }
+        eprintln!("  {}", orbit.line());
+    }
+    spend.reads[1] = (at - budget.remaining()) as u64;
+    let at = budget.remaining();
+    let walked = crate::transducer::sentence::walked_circuits();
+    let cells = cells_reading(&comprehend(form, &walked, budget));
+    spend.reads[2] = (at - budget.remaining()) as u64;
+    spend.unbounded[2] = cells_unbounded(&cells);
+    let at = budget.remaining();
+    spend.unbounded[3] = crate::transducer::sentence::finish_circuits(budget);
+    spend.reads[3] = (at - budget.remaining()) as u64;
+    let at = budget.remaining();
+    let viscosity = crate::transducer::sentence::read_viscosity(form, budget);
+    spend.reads[4] = (at - budget.remaining()) as u64;
+    spend.unbounded[4] = viscosity.iter().map(|p| p.unread).sum();
+    let progress = progress(form, &walked, &cells);
+    hold(cells, crate::transducer::sentence::viscosity_reading(&viscosity), spend, progress);
+}
+
+/// The readings a cell's comprehension left unbounded by a spent stroke: a
+/// group whose closure the check did not finish, an orbit of constructors
+/// not closed within the stroke.
+pub(crate) fn cells_unbounded(cells: &Cells) -> u64 {
+    cells
+        .cells
+        .iter()
+        .map(|c| {
+            u64::from(c.coxeter == Some(CellClosure::Unbounded))
+                + u64::from(c.polars == Some(CellClosure::Unbounded))
+                + u64::from(c.orbit == CellOrbit::Unbounded)
+        })
+        .sum::<u64>()
+        + u64::from(cells.mirror_group == Some(CellClosure::Unbounded))
+}
+
+/// THE PERCEPT'S TYPED READINGS, held until the observer takes them: the
+/// last percept's cells (each percept's replaces the last), and the
+/// viscosity, spend and progress summed over every percept since the last
+/// take (78.16, RC2 — the percept prints none of them).
+#[derive(Default)]
+struct Held {
+    cells: Option<Cells>,
+    viscosity: Option<Viscosity>,
+    spend: Option<Spend>,
+    progress: Option<Progress>,
+}
+
+thread_local! {
+    static HELD: std::cell::RefCell<Held> = std::cell::RefCell::new(Held::default());
+}
+
+/// Hold one percept's readings for the observer.
+pub(crate) fn hold(cells: Cells, viscosity: Viscosity, spend: Spend, progress: Progress) {
+    HELD.with(|h| {
+        let mut h = h.borrow_mut();
+        h.cells = Some(cells);
+        match h.viscosity.as_mut() {
+            Some(v) => v.absorb(&viscosity),
+            None => h.viscosity = Some(viscosity),
+        }
+        match h.spend.as_mut() {
+            Some(s) => s.absorb(&spend),
+            None => h.spend = Some(spend),
+        }
+        match h.progress.as_mut() {
+            Some(p) => p.absorb(&progress),
+            None => h.progress = Some(progress),
+        }
+    });
 }
 
 /// The last percept's cells, and stop holding them. `None` where no percept
 /// read any since the last take — a reading not taken, never an empty one.
 pub fn take_cells() -> Option<Cells> {
-    LAST.with(|l| l.borrow_mut().take())
+    HELD.with(|h| h.borrow_mut().cells.take())
+}
+
+/// VO1 — the viscosity read since the last take.
+pub fn take_viscosity() -> Option<Viscosity> {
+    HELD.with(|h| h.borrow_mut().viscosity.take())
+}
+
+/// SP1 — the stroke by reader since the last take.
+pub fn take_spend() -> Option<Spend> {
+    HELD.with(|h| h.borrow_mut().spend.take())
+}
+
+/// PG1 — the progress read since the last take.
+pub fn take_progress() -> Option<Progress> {
+    HELD.with(|h| h.borrow_mut().progress.take())
 }
 
 /// EVERY CERTIFIED CELL OF `form`, READ AS ITS ORBIT ALGEBRA, under the
@@ -203,171 +384,3 @@ pub(crate) fn cell_algebras(
         .collect()
 }
 
-/// ONE GRADE'S ROW OF THE CELLS' READING.
-#[derive(Default)]
-struct GradeRow {
-    grade: usize,
-    /// congruent, held ℤ₂, incongruent, unread, no round, no circuit.
-    congruence: [u64; 6],
-    /// all, moves, unread, no constructors, no circuit.
-    permutes: [u64; 5],
-    /// closes, held, open, unread.
-    coherence: [u64; 4],
-    capacity: Vec<usize>,
-    /// closed, open, unbounded, unread.
-    constructors: [u64; 4],
-    /// The span signatures `(p, q, z)` read, with the vector rank.
-    signatures: Vec<((usize, usize, usize), usize)>,
-    /// Pairs by regime: finite, parabolic, boost, rosette, null.
-    pairs: [u64; 5],
-    /// GR2, by closure: finite by the theorem, finite by the check, infinite
-    /// by a pair, affine, hyperbolic, by a product; unbounded; unread — the
-    /// nuclei as mirrors, then the polars as mirrors.
-    coxeter: [u64; 8],
-    polars: [u64; 8],
-    /// DF1: a dual frame, redundant, degenerate.
-    dual: [u64; 3],
-    /// CX1: per cell, the products kept and their distinct classes.
-    products: Vec<(usize, usize)>,
-    /// MG1: each nucleus against each bracketing mirror — through its
-    /// centre, cutting it, tangent, apart.
-    mirrors: [u64; 4],
-}
-
-/// The tally's axis for a group's closure, off the one mapping
-/// (`cell_closure`); an unread reading on the last axis.
-fn closure_axis(r: &Option<CoxeterReading>) -> usize {
-    match r.as_ref().map(cell_closure) {
-        Some(CellClosure::FiniteByTheorem) => 0,
-        Some(CellClosure::FiniteByCheck) => 1,
-        Some(CellClosure::InfiniteByPair) => 2,
-        Some(CellClosure::Affine) => 3,
-        Some(CellClosure::Hyperbolic) => 4,
-        Some(CellClosure::InfiniteByProduct) => 5,
-        Some(CellClosure::Unbounded) => 6,
-        Some(CellClosure::Unread) | None => 7,
-    }
-}
-
-/// THE CELLS' READING BY GRADE, one row per grade, ascending, and the
-/// form's mirrors.
-#[derive(Default)]
-pub(crate) struct CellTally {
-    rows: Vec<GradeRow>,
-    planes: usize,
-    mirror_group: Option<CellClosure>,
-}
-
-impl CellTally {
-    pub(crate) fn of(comprehension: &Comprehension) -> CellTally {
-        let mut t = CellTally {
-            planes: comprehension.planes,
-            mirror_group: comprehension.mirror_group.as_ref().map(cell_closure),
-            ..CellTally::default()
-        };
-        for (c, nuclei) in comprehension.algebras.iter().zip(&comprehension.mirrors) {
-            let at = match t.rows.binary_search_by_key(&c.grade, |r| r.grade) {
-                Ok(at) => at,
-                Err(at) => {
-                    t.rows.insert(at, GradeRow { grade: c.grade, ..GradeRow::default() });
-                    at
-                }
-            };
-            let row = &mut t.rows[at];
-            row.congruence[match c.congruence {
-                Congruence::Congruent => 0,
-                Congruence::HeldZ2 { .. } => 1,
-                Congruence::Incongruent { .. } => 2,
-                Congruence::Unread { .. } => 3,
-                Congruence::NoRound => 4,
-                Congruence::NoCircuit => 5,
-            }] += 1;
-            row.permutes[match c.permutes {
-                Permutes::All => 0,
-                Permutes::Moves(_) => 1,
-                Permutes::Unread { .. } => 2,
-                Permutes::NoConstructors => 3,
-                Permutes::NoCircuit => 4,
-            }] += 1;
-            row.coherence[match c.coherence {
-                Coherence::Closes(_) => 0,
-                Coherence::Held => 1,
-                Coherence::Open(_) => 2,
-                Coherence::Unread => 3,
-            }] += 1;
-            if let Some(k) = c.capacity {
-                row.capacity.push(k);
-            }
-            row.constructors[match c.constructors {
-                ConstructorOrbit::Closed { .. } => 0,
-                ConstructorOrbit::Open { .. } => 1,
-                ConstructorOrbit::Unbounded { .. } => 2,
-                ConstructorOrbit::Unread => 3,
-            }] += 1;
-            row.coxeter[closure_axis(&c.coxeter)] += 1;
-            if c.polars.is_some() {
-                row.polars[closure_axis(&c.polars)] += 1;
-            }
-            match &c.dual {
-                Some(crate::transducer::cga::DualFrame::Frame(_)) => row.dual[0] += 1,
-                Some(crate::transducer::cga::DualFrame::Redundant(_)) => row.dual[1] += 1,
-                Some(crate::transducer::cga::DualFrame::Degenerate) => row.dual[2] += 1,
-                None => {}
-            }
-            row.products.push((c.products.len(), c.classes));
-            for m in nuclei.iter().flatten() {
-                row.mirrors[match m.regime {
-                    PairRegime::Finite(2) => 0,
-                    PairRegime::Parabolic => 2,
-                    PairRegime::Boost => 3,
-                    _ => 1,
-                }] += 1;
-            }
-            if let Some(g) = &c.gram {
-                row.signatures.push((g.signature, g.rank));
-                for (_, _, _, r) in &g.pairs {
-                    row.pairs[match r {
-                        PairRegime::Finite(_) => 0,
-                        PairRegime::Parabolic => 1,
-                        PairRegime::Boost => 2,
-                        PairRegime::Rosette => 3,
-                        PairRegime::Null => 4,
-                    }] += 1;
-                }
-            }
-        }
-        t
-    }
-
-    /// The census line's segment.
-    pub(crate) fn line(&self) -> String {
-        let rows: Vec<String> = self
-            .rows
-            .iter()
-            .map(|r| {
-                let (cg, pm, ch, co, pr) = (r.congruence, r.permutes, r.coherence, r.constructors, r.pairs);
-                let axes = |x: &[u64; 8]| {
-                    format!(
-                        "finite(theorem) {} finite(check) {} infinite(pair) {} affine {} hyperbolic {} infinite(product) {} unbounded {} unread {}",
-                        x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]
-                    )
-                };
-                format!(
-                    "grade {}: round kept {} held-z2 {} carried {} unread {} no-round {} no-circuit {} | constructors kept {} moved {} unread {} | coherence closes {} held {} open {} unread {} | capacity {:?} | orbit closed {} open {} unbounded {} unread {} | gram (sig, rank) {:?} pairs finite {} parabolic {} boost {} rosette {} null {} | coxeter {} | polars {} | dual frame {} redundant {} degenerate {} | products (kept, classes) {:?} | nuclei on mirrors: through {} cut {} tangent {} apart {}",
-                    r.grade, cg[0], cg[1], cg[2], cg[3], cg[4], cg[5], pm[0], pm[1], pm[2], ch[0], ch[1], ch[2], ch[3],
-                    r.capacity, co[0], co[1], co[2], co[3], r.signatures, pr[0], pr[1], pr[2], pr[3], pr[4],
-                    axes(&r.coxeter), axes(&r.polars), r.dual[0], r.dual[1], r.dual[2], r.products,
-                    r.mirrors[0], r.mirrors[1], r.mirrors[2], r.mirrors[3]
-                )
-            })
-            .collect();
-        let mirrors = match self.mirror_group {
-            Some(g) => format!("mirrors: {} planes, group {}", self.planes, g.label()),
-            None => "mirrors: none".into(),
-        };
-        match rows.is_empty() {
-            true => "cells: none certified".into(),
-            false => format!("cells: {} | {mirrors}", rows.join(" ; ")),
-        }
-    }
-}

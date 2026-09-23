@@ -100,6 +100,49 @@ fn a_circuit_crosses_a_cell_by_the_body_pair_of_the_face_it_steps_over() {
     assert_eq!(p.order, vec![1, 0], "the circuit's own order, read off the step's way");
 }
 
+/// PG1, RC2 — THE PERCEPT'S TYPED READINGS AGREE WITH ONE ANOTHER AND ARE
+/// HELD UNTIL TAKEN: the progress's cells by grade are the typed cells'
+/// own, and the census's tally is read off the same cells; a second
+/// percept's cells replace the first's while its spend and progress sum
+/// onto them, reader by reader and grade by grade (78.16).
+#[test]
+fn the_percepts_readings_agree_and_are_held_until_taken() {
+    use crate::transducer::cga::{self, Mv};
+    use crate::transducer::family::comprehend;
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let (p, r) = (vec![1u8], vec![2u8]);
+    let mut form = crate::transducer::sentence::Form::default();
+    let nuclei = vec![Mv::blade(cga::E1, q(1)), Mv::blade(cga::E2, q(1))];
+    let cell = crate::transducer::sentence::FormCell { bodies: vec![p.clone(), r.clone()], witnesses: Vec::new(), nuclei: Some(nuclei) };
+    form.cells.insert([0u8], cell);
+    form.face_bodies.insert(0u32.to_be_bytes(), (p, r));
+    let walked = vec![(vec![(0u16, true)], Some(cga::rotator(&q(1), &q(1)))), (vec![(0u16, false)], None)];
+    let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
+    let comprehension = comprehend::comprehend(&form, &walked, &mut stroke);
+    let cells = comprehend::cells_reading(&comprehension);
+    let progress = comprehend::progress(&form, &walked, &cells);
+    let [g] = progress.grades.as_slice() else { panic!("one grade: {:?}", progress.grades) };
+    assert_eq!((g.grade, g.cells), (1, 1), "the progress's cells are the typed cells'");
+    let kept = cells.cells.iter().filter(|c| c.round == crate::observe::CellRound::Kept).count() as u64;
+    assert_eq!(g.round_kept, kept, "the round kept is the typed cells' own arm");
+    assert_eq!(progress.contact_cycles, 0, "a circuit over no contact face is no contact cycle");
+    assert!(super::tally::CellTally::of(&cells).line().starts_with("cells: grade 1: "), "the census reads the same cells");
+
+    let spend = |reads| crate::observe::Spend { percepts: 1, reads, unbounded: [0; 5] };
+    let _ = crate::transducer::family::take_cells();
+    let _ = crate::transducer::family::take_spend();
+    let _ = crate::transducer::family::take_progress();
+    let _ = crate::transducer::family::take_viscosity();
+    comprehend::hold(crate::observe::Cells::default(), Default::default(), spend([1, 2, 3, 4, 5]), progress.clone());
+    comprehend::hold(cells.clone(), Default::default(), spend([10, 0, 0, 0, 1]), progress);
+    assert_eq!(crate::transducer::family::take_cells(), Some(cells), "the last percept's cells stand");
+    let held = crate::transducer::family::take_spend().expect("a spend held");
+    assert_eq!((held.percepts, held.reads), (2, [11, 2, 3, 4, 6]), "spend sums reader by reader");
+    let held = crate::transducer::family::take_progress().expect("a progress held");
+    assert_eq!((held.percepts, held.grades[0].cells), (2, 2), "progress sums grade by grade");
+    assert_eq!(crate::transducer::family::take_spend(), None, "a taken reading is no longer held");
+}
+
 /// THE PAIRWISE READING OF THE SAME THREE CARRIES NO GRADE-3 CONTENT
 /// (72.1b): each body taken once per tether and revisited around the loop,
 /// `V_ca V_bc V_ab = s_a s_c s_c s_b s_b s_a` is a scalar — the square the

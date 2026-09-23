@@ -71,9 +71,10 @@ pub fn walked_circuits() -> Vec<WalkedCircuit> {
 /// READ THE CIRCUITS THE PERCEPT WALKED, each step's modes under the
 /// stroke's budget (BD1), and hold them for the observer; stop listening.
 /// A percept that armed nothing reads nothing and leaves what is held.
-pub fn finish_circuits(budget: &mut crate::physics::Budget) {
-    let Some(pending) = PENDING.with(|c| c.borrow_mut().take()) else { return };
-    let circuits = pending
+/// Returns the steps whose modes the stroke left unbounded (SP1).
+pub fn finish_circuits(budget: &mut crate::physics::Budget) -> u64 {
+    let Some(pending) = PENDING.with(|c| c.borrow_mut().take()) else { return 0 };
+    let circuits: Vec<Circuit> = pending
         .into_iter()
         .map(|p| Circuit {
             chord: p.chord,
@@ -98,7 +99,18 @@ pub fn finish_circuits(budget: &mut crate::physics::Budget) {
                 .collect(),
         })
         .collect();
+    let unbounded = circuits
+        .iter()
+        .flat_map(|c| &c.steps)
+        .filter(|s| {
+            matches!(
+                s.carried,
+                Carried::Read { modes: ModesRead::Undecomposed(crate::transducer::cga::Undecomposed::Unbounded(_)), .. }
+            )
+        })
+        .count() as u64;
     READ.with(|r| *r.borrow_mut() = Some(Circuits { circuits }));
+    unbounded
 }
 
 /// The circuits of the last percept, and stop holding them. `None` where no

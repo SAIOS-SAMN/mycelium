@@ -12,6 +12,7 @@
 
 mod cells;
 mod circuit;
+mod fleet;
 mod learning;
 mod reading;
 mod store;
@@ -20,6 +21,7 @@ mod tests;
 
 pub use cells::*;
 pub use circuit::*;
+pub use fleet::*;
 pub use learning::*;
 pub use reading::*;
 pub use store::*;

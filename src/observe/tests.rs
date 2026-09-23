@@ -249,6 +249,11 @@ fn the_cells_read_back_whole() {
         cells: vec![
             CellEntry {
                 grade: 1,
+                round: CellRound::HeldZ2,
+                permutes: CellPermutes::Moves,
+                coherence: CellCoherence::Closes,
+                capacity: Some(3),
+                orbit: CellOrbit::Unbounded,
                 signature: Some(((1, 1, 0), 2)),
                 pairs: vec![PairRegime::Boost],
                 coxeter: Some(CellClosure::Hyperbolic),
@@ -266,6 +271,11 @@ fn the_cells_read_back_whole() {
             },
             CellEntry {
                 grade: 2,
+                round: CellRound::Carried,
+                permutes: CellPermutes::NoCircuit,
+                coherence: CellCoherence::Unread,
+                capacity: None,
+                orbit: CellOrbit::Closed,
                 signature: None,
                 pairs: vec![PairRegime::Rosette, PairRegime::Finite(6), PairRegime::Parabolic],
                 coxeter: Some(CellClosure::FiniteByCheck),
@@ -285,7 +295,7 @@ fn the_cells_read_back_whole() {
 }
 
 /// LC1 — THE CURVE TRAVELS WHOLE, A LATER ONE STANDS, AND A FRESH MIND READS
-/// ZERO HONESTLY: every field measured and zero, the five owed named by row.
+/// ZERO HONESTLY: every field measured and zero, the four owed named by row.
 #[test]
 fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
     let curve = Learning {
@@ -314,8 +324,45 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
             "warm-cold delta",
             "distinct perspectives per class",
             "mass per lane per layer per grade",
-            "coboundary agreement per grade"
         ],
-        "the fields no producer reads are owed by their rows, never zero"
+        "the fields no producer reads are owed by their rows, never zero; the coboundary's agreement is PG1's"
     );
+}
+
+/// VO1, SP1, PG1 — THE LIVE FLEET'S READINGS TRAVEL WHOLE AND SUM PER AXIS: a
+/// voice's viscosity pair by pair (a new pair filed in order, the ledger's
+/// entropy the later), its spend reader by reader, its progress grade by
+/// grade — never across axes (law 5).
+#[test]
+fn viscosity_spend_and_progress_read_back_whole_and_sum_per_axis() {
+    let pair = |lane, planes, arms| ViscosityPair { lane, planes, arms, refused: 1, unread: 0, no_class: 2 };
+    let v = Viscosity { pairs: vec![pair(0, (3, 5), [1, 2, 0, 0]), pair(3, (0, 1), [0, 0, 4, 1])], entropy: [0, 0, 0, 1] };
+    let s = Spend { percepts: 1, reads: [10, 2, 30, 4, 50], unbounded: [0, 1, 0, 0, 3] };
+    let g = GradeProgress { grade: 2, cells: 3, round_kept: 1, held_z2: 1, refused: 1, finite: 1, affine: 1, infinite: 0, dual_frames: 2 };
+    let p = Progress { percepts: 1, contact_cycles: 5, contact_cycles_curved: 2, contact_cycles_unread: 1, grades: vec![g.clone()] };
+    let all = [Reading::Viscosity(v.clone()), Reading::Spend(s.clone()), Reading::Progress(p.clone())];
+    let push = encode_push(&vk(9), &all);
+    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(9), all.to_vec())));
+
+    let mut held = Reading::Viscosity(v.clone());
+    let later = Viscosity { pairs: vec![pair(0, (1, 2), [1, 0, 0, 0]), pair(0, (3, 5), [1, 0, 0, 0])], entropy: [0, 0, 0, 2] };
+    assert!(held.absorb(&Reading::Viscosity(later)));
+    let Reading::Viscosity(held) = held else { panic!("one kind folds into its own kind") };
+    assert_eq!(held.pairs.iter().map(|q| (q.lane, q.planes, q.arms)).collect::<Vec<_>>(), [
+        (0, (1, 2), [1, 0, 0, 0]),
+        (0, (3, 5), [2, 2, 0, 0]),
+        (3, (0, 1), [0, 0, 4, 1])
+    ]);
+    assert_eq!(held.entropy, [0, 0, 0, 2], "the ledger's entropy is cumulative: the later stands");
+
+    let mut spent = Reading::Spend(s.clone());
+    assert!(spent.absorb(&Reading::Spend(s)));
+    assert_eq!(spent, Reading::Spend(Spend { percepts: 2, reads: [20, 4, 60, 8, 100], unbounded: [0, 2, 0, 0, 6] }));
+
+    let mut progressed = Reading::Progress(p.clone());
+    let other = Progress { percepts: 1, grades: vec![GradeProgress { grade: 1, cells: 1, ..GradeProgress::default() }, g], ..Progress::default() };
+    assert!(progressed.absorb(&Reading::Progress(other)));
+    let Reading::Progress(progressed) = progressed else { panic!("one kind folds into its own kind") };
+    assert_eq!((progressed.percepts, progressed.contact_cycles), (2, 5));
+    assert_eq!(progressed.grades.iter().map(|g| (g.grade, g.cells, g.round_kept)).collect::<Vec<_>>(), [(1, 1, 0), (2, 6, 2)]);
 }

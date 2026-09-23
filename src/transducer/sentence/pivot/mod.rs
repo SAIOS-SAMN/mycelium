@@ -19,7 +19,9 @@ pub use census::*;
 pub use moves::*;
 pub use snap::*;
 pub use trajectory::{finish_circuits, take_circuits, walked_circuits, WalkedCircuit};
-pub use viscosity::{read_viscosity, viscosity_line, Arm, BendLane, PairViscosity};
+pub use viscosity::{
+    bend_plane_name, read_viscosity, viscosity_line, viscosity_reading, Arm, BendLane, PairViscosity,
+};
 pub(crate) use walk::*;
 pub use words::*;
 

@@ -15,6 +15,19 @@ fn per_mille(part: usize, whole: usize) -> String {
     }
 }
 
+/// RC2 — THE PERCEPT'S OWN LINES, printed here off the typed readings it
+/// held: its cells by grade and its bends' viscosity, each the observer's
+/// reading, never a second one (78.16). A percept that did not run (a
+/// memoised family) held nothing and prints nothing.
+fn percept_lines() {
+    if let Some(cells) = crate::transducer::family::take_cells() {
+        eprintln!("  {}", super::tally::CellTally::of(&cells).line());
+    }
+    if let Some(v) = crate::transducer::family::take_viscosity() {
+        eprintln!("  {}", crate::transducer::sentence::viscosity_line(&v));
+    }
+}
+
 /// GRADE 0 ON THE CORPUS — how many vertices are not one 0-cell, and does
 /// that account for what `face_rederives` has been refusing (L37).
 ///
@@ -65,10 +78,9 @@ fn grade_zero_over_the_corpus_and_what_it_accounts_for() {
         let Some(task) = crate::arc::parse_task(&json) else { continue };
         let mut budget =
             physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
-        let Some(rule) = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
-        else {
-            continue;
-        };
+        let rule = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget);
+        percept_lines();
+        let Some(rule) = rule else { continue };
         let f = &rule.form;
         forms += 1;
         for v in &f.vertices {
@@ -173,10 +185,9 @@ fn the_corpus_spectrum() {
         let Some(task) = crate::arc::parse_task(&json) else { continue };
         let mut budget =
             physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
-        let Some(rule) = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
-        else {
-            continue;
-        };
+        let rule = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget);
+        percept_lines();
+        let Some(rule) = rule else { continue };
         forms += 1;
         let s = rule.form.spectrum();
         gauge += s.gauge_cycles.len();
@@ -261,10 +272,9 @@ fn where_the_corpus_goes_silent() {
         let Some(task) = crate::arc::parse_task(&json) else { continue };
         let mut budget =
             physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
-        let Some(rule) = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
-        else {
-            continue;
-        };
+        let rule = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget);
+        percept_lines();
+        let Some(rule) = rule else { continue };
         let f = &rule.form;
         forms += 1;
         verts += f.vertices.len();
@@ -361,10 +371,9 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         let Some(task) = crate::arc::parse_task(&json) else { continue };
         let mut budget =
             physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
-        let Some(rule) = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
-        else {
-            continue;
-        };
+        let rule = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget);
+        percept_lines();
+        let Some(rule) = rule else { continue };
         forms += 1;
         if !rule.form.orbits.is_empty() {
             with_orbits += 1;
@@ -483,11 +492,9 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
         let Some(task) = crate::arc::parse_task(&json) else { continue };
         let mut budget =
             physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
-        let Some(rule) =
-            crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
-        else {
-            continue;
-        };
+        let rule = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget);
+        percept_lines();
+        let Some(rule) = rule else { continue };
         extracted += 1;
         // IS THE DISCRIMINATOR EVEN ASKABLE? `δ¹` reads the orbit
         // holonomies, so a form with NO ORBITS has an empty `delta1()` and
@@ -887,11 +894,9 @@ fn the_demand_kind_census_says_whether_language_can_grow() {
         let Some(task) = crate::arc::parse_task(&json) else { continue };
         let mut budget =
             physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
-        let Some(rule) =
-            crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget)
-        else {
-            continue;
-        };
+        let rule = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget);
+        percept_lines();
+        let Some(rule) = rule else { continue };
         forms += 1;
         let mut any = false;
         for (_, kind, _, _) in rule.form.demand_vertices() {

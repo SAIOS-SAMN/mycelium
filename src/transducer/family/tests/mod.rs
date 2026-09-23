@@ -19,3 +19,4 @@ mod span;
 mod perception;
 mod retract;
 mod speech;
+mod tally;

@@ -30,6 +30,26 @@ pub const TAG_ADJUDICATION: u8 = 6;
 pub const TAG_LEARNING: u8 = 7;
 pub const TAG_CIRCUIT: u8 = 8;
 pub const TAG_CELLS: u8 = 9;
+pub const TAG_VISCOSITY: u8 = 10;
+pub const TAG_SPEND: u8 = 11;
+pub const TAG_PROGRESS: u8 = 12;
+
+/// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
+/// `--reading NAME` is read against (law 12).
+pub const READING_NAMES: [(&str, u8); 12] = [
+    ("planes", TAG_PLANES),
+    ("loss", TAG_LOSS),
+    ("memory", TAG_MEMORY),
+    ("court", TAG_COURT),
+    ("replication", TAG_REPLICATION),
+    ("adjudication", TAG_ADJUDICATION),
+    ("learning", TAG_LEARNING),
+    ("circuits", TAG_CIRCUIT),
+    ("cells", TAG_CELLS),
+    ("viscosity", TAG_VISCOSITY),
+    ("spend", TAG_SPEND),
+    ("progress", TAG_PROGRESS),
+];
 
 fn put_u64(out: &mut Vec<u8>, v: u64) {
     out.extend_from_slice(&v.to_le_bytes());
@@ -532,6 +552,12 @@ pub enum Reading {
     Circuit(super::Circuits),
     /// CO1 — the cells of the last percept as their orbit algebras (78.15).
     Cells(super::Cells),
+    /// VO1 — VS1's arms per pair of planes per lane (78.16).
+    Viscosity(super::Viscosity),
+    /// SP1 — the stroke by reader (78.16).
+    Spend(super::Spend),
+    /// PG1 — E1's done-when (78.16).
+    Progress(super::Progress),
 }
 
 impl Reading {
@@ -546,6 +572,9 @@ impl Reading {
             Reading::Learning(_) => TAG_LEARNING,
             Reading::Circuit(_) => TAG_CIRCUIT,
             Reading::Cells(_) => TAG_CELLS,
+            Reading::Viscosity(_) => TAG_VISCOSITY,
+            Reading::Spend(_) => TAG_SPEND,
+            Reading::Progress(_) => TAG_PROGRESS,
         }
     }
 
@@ -567,6 +596,11 @@ impl Reading {
             // The circuits are the last percept's; the later percept stands.
             (Reading::Circuit(a), Reading::Circuit(b)) => *a = b.clone(),
             (Reading::Cells(a), Reading::Cells(b)) => *a = b.clone(),
+            // A voice's viscosity, spend and progress accumulate over its
+            // percepts, each count on its own axis.
+            (Reading::Viscosity(a), Reading::Viscosity(b)) => a.absorb(b),
+            (Reading::Spend(a), Reading::Spend(b)) => a.absorb(b),
+            (Reading::Progress(a), Reading::Progress(b)) => a.absorb(b),
             _ => return false,
         }
         true
@@ -585,6 +619,9 @@ impl Reading {
             Reading::Learning(r) => r.put(out),
             Reading::Circuit(r) => r.put(out),
             Reading::Cells(r) => r.put(out),
+            Reading::Viscosity(r) => r.put(out),
+            Reading::Spend(r) => r.put(out),
+            Reading::Progress(r) => r.put(out),
         }
     }
 
@@ -601,6 +638,9 @@ impl Reading {
             TAG_LEARNING => Some(Reading::Learning(super::Learning::take(b, p)?)),
             TAG_CIRCUIT => Some(Reading::Circuit(super::Circuits::take(b, p)?)),
             TAG_CELLS => Some(Reading::Cells(super::Cells::take(b, p)?)),
+            TAG_VISCOSITY => Some(Reading::Viscosity(super::Viscosity::take(b, p)?)),
+            TAG_SPEND => Some(Reading::Spend(super::Spend::take(b, p)?)),
+            TAG_PROGRESS => Some(Reading::Progress(super::Progress::take(b, p)?)),
             _ => None,
         }
     }

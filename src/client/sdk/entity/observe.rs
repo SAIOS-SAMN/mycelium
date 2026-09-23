@@ -36,6 +36,17 @@ impl Entity {
         if let Some(c) = crate::transducer::family::take_cells() {
             observe::publish(me, Reading::Cells(c));
         }
+        // VO1, SP1, PG1 — AND ITS BENDS' VISCOSITY, THE STROKE BY READER AND
+        // ITS PROGRESS, each summed over this voice's percepts per axis.
+        if let Some(v) = crate::transducer::family::take_viscosity() {
+            observe::publish(me, Reading::Viscosity(v));
+        }
+        if let Some(s) = crate::transducer::family::take_spend() {
+            observe::publish(me, Reading::Spend(s));
+        }
+        if let Some(p) = crate::transducer::family::take_progress() {
+            observe::publish(me, Reading::Progress(p));
+        }
         let totals: Vec<Reading> = observe::readings(&me.prefix()).into_iter().map(|(_, r)| r).collect();
         match self.session.speak_keyed(&voice, observe::encode_push(&voice, &totals)) {
             Ok(body) => body.as_slice() == [1],

@@ -46,7 +46,12 @@ fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
 fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     let mut i = 1;
     while i < args.len() {
-        if args[i] == "--home" || args[i] == "--at" {
+        if args[i] == "--home"
+            || args[i] == "--at"
+            || args[i] == "--voice"
+            || args[i] == "--court"
+            || args[i] == "--reading"
+        {
             i += 2;
             continue;
         }
@@ -243,7 +248,12 @@ fn main() {
     // check does: it reads a hypha (this home's own bind, or `--at`) and
     // starts nothing here.
     if args.iter().any(|a| a == "--console") {
-        console::run(&home, flag(&args, "--at"));
+        let ask = console::Ask {
+            voice: flag(&args, "--voice"),
+            court: flag(&args, "--court"),
+            reading: flag(&args, "--reading"),
+        };
+        console::run(&home, flag(&args, "--at"), &ask);
     }
     let _ = std::fs::create_dir_all(&home);
     let _ = std::fs::create_dir_all(home.join("corpora"));

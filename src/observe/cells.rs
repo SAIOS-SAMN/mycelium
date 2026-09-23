@@ -66,6 +66,80 @@ impl CellClosure {
     }
 }
 
+/// A coded axis's byte: its place in the axis's own list of arms.
+fn code_in<T: PartialEq + Copy>(all: &[T], x: T) -> u8 {
+    all.iter().position(|&a| a == x).map_or(NONE, |i| i as u8)
+}
+
+fn take_coded<T: Copy>(all: &[T], b: &[u8], p: &mut usize) -> Option<T> {
+    all.get(usize::from(take_u8(b, p)?)).copied()
+}
+
+/// HOW THE CELL'S ROUND FARES UNDER ITS CIRCUITS (CG1): kept by every
+/// circuit and mode, reversed (held ℤ₂), carried off by a mode ray (the
+/// refusal at this grade), unread, no round, no circuit.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CellRound {
+    Kept,
+    HeldZ2,
+    Carried,
+    Unread,
+    NoRound,
+    NoCircuit,
+}
+
+impl CellRound {
+    pub const ALL: [CellRound; 6] =
+        [CellRound::Kept, CellRound::HeldZ2, CellRound::Carried, CellRound::Unread, CellRound::NoRound, CellRound::NoCircuit];
+}
+
+/// WHETHER THE CIRCUITS KEEP THE CELL'S CONSTRUCTORS (CG1b).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CellPermutes {
+    All,
+    Moves,
+    Unread,
+    NoConstructors,
+    NoCircuit,
+}
+
+impl CellPermutes {
+    pub const ALL: [CellPermutes; 5] = [
+        CellPermutes::All,
+        CellPermutes::Moves,
+        CellPermutes::Unread,
+        CellPermutes::NoConstructors,
+        CellPermutes::NoCircuit,
+    ];
+}
+
+/// WHETHER THE CIRCUITS' ALGEBRA CLOSES ON THE CELL (CG1b).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CellCoherence {
+    Closes,
+    Held,
+    Open,
+    Unread,
+}
+
+impl CellCoherence {
+    pub const ALL: [CellCoherence; 4] =
+        [CellCoherence::Closes, CellCoherence::Held, CellCoherence::Open, CellCoherence::Unread];
+}
+
+/// HOW THE CONSTRUCTORS' ORBIT UNDER THE CIRCUITS CLOSES (CG1b).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CellOrbit {
+    Closed,
+    Open,
+    Unbounded,
+    Unread,
+}
+
+impl CellOrbit {
+    pub const ALL: [CellOrbit; 4] = [CellOrbit::Closed, CellOrbit::Open, CellOrbit::Unbounded, CellOrbit::Unread];
+}
+
 /// WHETHER A CELL HAS A DUAL FRAME (DF1).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CellDual {
@@ -91,6 +165,12 @@ pub struct CellProduct {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CellEntry {
     pub grade: u8,
+    pub round: CellRound,
+    pub permutes: CellPermutes,
+    pub coherence: CellCoherence,
+    /// The circuits' bracket-closed algebra's rank; `None` where unread.
+    pub capacity: Option<u32>,
+    pub orbit: CellOrbit,
     /// The Gram form's span signature `(p, q, z)` and the vector rank;
     /// `None` where the nuclei did not read.
     pub signature: Option<((u8, u8, u8), u8)>,
@@ -180,6 +260,17 @@ impl Cells {
         out.extend_from_slice(&(self.cells.len() as u32).to_le_bytes());
         for c in &self.cells {
             out.push(c.grade);
+            out.push(code_in(&CellRound::ALL, c.round));
+            out.push(code_in(&CellPermutes::ALL, c.permutes));
+            out.push(code_in(&CellCoherence::ALL, c.coherence));
+            match c.capacity {
+                Some(k) => {
+                    out.push(1);
+                    out.extend_from_slice(&k.to_le_bytes());
+                }
+                None => out.push(0),
+            }
+            out.push(code_in(&CellOrbit::ALL, c.orbit));
             match c.signature {
                 Some(((p, q, z), r)) => out.extend_from_slice(&[1, p, q, z, r]),
                 None => out.push(0),
@@ -236,6 +327,15 @@ impl Cells {
         let mut cells = Vec::with_capacity(m);
         for _ in 0..m {
             let grade = take_u8(b, p)?;
+            let round = take_coded(&CellRound::ALL, b, p)?;
+            let permutes = take_coded(&CellPermutes::ALL, b, p)?;
+            let coherence = take_coded(&CellCoherence::ALL, b, p)?;
+            let capacity = match take_u8(b, p)? {
+                0 => None,
+                1 => Some(take_u32(b, p)? as u32),
+                _ => return None,
+            };
+            let orbit = take_coded(&CellOrbit::ALL, b, p)?;
             let signature = match take_u8(b, p)? {
                 0 => None,
                 1 => Some(((take_u8(b, p)?, take_u8(b, p)?, take_u8(b, p)?), take_u8(b, p)?)),
@@ -297,7 +397,22 @@ impl Cells {
                 }
                 mirrors.push(ms);
             }
-            cells.push(CellEntry { grade, signature, pairs, coxeter, polars, dual, products, classes, mirrors });
+            cells.push(CellEntry {
+                grade,
+                round,
+                permutes,
+                coherence,
+                capacity,
+                orbit,
+                signature,
+                pairs,
+                coxeter,
+                polars,
+                dual,
+                products,
+                classes,
+                mirrors,
+            });
         }
         Some(Cells { mirror_planes, mirror_group, cells })
     }

@@ -71,6 +71,7 @@ struct ClassRead {
 /// as the demands of `finish` and says so.
 pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::physics::Budget) -> Percept {
     use crate::transducer::sentence::face_pair_key;
+    let entry = budget.remaining();
     trace::trace("extract/0 frames", trace::Wrote::Nothing, Some(budget));
     // OR1 — THE ORBITS THIS PERCEPT READS are kept for its cycles line. A
     // percept that returns before the line leaves the list to the next arm,
@@ -1153,23 +1154,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // type, its class, the planes its precession turns in, the precession's
     // canonical coordinates, and its centre read or refused by name — the
     // modes under this stroke's budget (BD1), and the circuits' with them.
-    for orbit in crate::transducer::sentence::take_orbits(budget) {
-        eprintln!("  {}", orbit.line());
-    }
-    // CG1, CS1 — AND EACH CERTIFIED CELL AS ITS ORBIT ALGEBRA, by grade, off
-    // the circuits this percept walked; then the circuits read for the
-    // observer.
-    let walked = crate::transducer::sentence::walked_circuits();
-    let comprehension = super::comprehend::comprehend(&form, &walked, budget);
-    eprintln!("  {}", super::comprehend::CellTally::of(&comprehension).line());
-    // CO1 — and the same cells, typed, held for the observer.
-    super::comprehend::hold_cells(super::comprehend::cells_reading(&comprehension));
-    crate::transducer::sentence::finish_circuits(budget);
-    // VS1 — AND EACH HELD LOOP'S FACES BENT, per pair of planes per lane.
-    eprintln!(
-        "  {}",
-        crate::transducer::sentence::viscosity_line(&crate::transducer::sentence::read_viscosity(&form, budget))
-    );
+    // Then its cells, circuits and bends, each held typed (78.16).
+    super::comprehend::read_and_hold(&form, budget, (entry - budget.remaining()) as u64, unreached.len() as u64);
     // FR2, 72.1c(3) — AND WHERE EACH CYCLE STANDS ALONG `e₃`: its span, the
     // meet of its members' sections, read here from the sections the percept
     // carries and never stored beside them.

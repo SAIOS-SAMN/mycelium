@@ -1,7 +1,8 @@
 // §8.1 — THE DIAGNOSTIC CONSOLE: any hypha reads what a hypha holds about
 // itself and its voices, and renders it whole.
 //
-//! `mycelium-server --console [--at ADDR] [--home DIR]` asks one hypha (the
+//! `mycelium-server --console [--at ADDR] [--home DIR] [--voice HEX | --court
+//! HEX] [--reading NAME]` asks one hypha (the
 //! home's own bind by default) for every reading it holds, renders it once
 //! and exits. It reads no clock (law 9): a live view is the operator's
 //! `watch -n 5 mycelium-server --console`, and each frame is one question.
@@ -23,6 +24,13 @@
 //!   its closures did, and every field still owed, by its row.
 //! - CIRCUITS — the last percept's kept circuits step by step (PL1): the
 //!   bricks a holonomy is built of, and its first refraction named.
+//! - CELLS, VISCOSITY, SPEND, PROGRESS — the last percept's cells (CO1),
+//!   and summed over the voice's percepts its bends' arms (VO1), the stroke
+//!   by reader (SP1) and E1's done-when (PG1).
+//!
+//! CQ1 — `--voice HEX` or `--court HEX` (a key or a hex prefix of it) asks
+//! one source's fiber, and `--reading NAME` one kind of reading: the hypha
+//! serves only the prefix asked, and the console reads nothing else.
 
 use mycelium::observe::{self, Court, Loss, Memory, Planes, Reading, Source, LOSS_AXES};
 use mycelium::transducer::cga;
@@ -48,21 +56,90 @@ fn address(home: &Path, at: Option<&str>) -> Option<String> {
     rec.bind
 }
 
+/// CQ1 — WHAT THE OPERATOR ASKS: one voice or one court by its key or a hex
+/// prefix of it, and one kind of reading by its name.
+pub(crate) struct Ask<'a> {
+    pub(crate) voice: Option<&'a str>,
+    pub(crate) court: Option<&'a str>,
+    pub(crate) reading: Option<&'a str>,
+}
+
+/// A key's hex prefix as bytes: an even count of hex digits, at most 32
+/// bytes' worth. `None` for anything else, refused by name at the caller.
+fn hex_prefix(s: &str) -> Option<Vec<u8>> {
+    let s = s.trim().as_bytes();
+    if s.len() % 2 != 0 || s.len() > 64 {
+        return None;
+    }
+    s.chunks(2).map(|d| u8::from_str_radix(std::str::from_utf8(d).ok()?, 16).ok()).collect()
+}
+
+impl Ask<'_> {
+    /// The query's prefix — the source's kind and key bytes, and the
+    /// reading's tag where the key is whole — and the tag to keep where the
+    /// key is only a prefix. `Err` names what was not read.
+    fn prefix(&self) -> Result<(Vec<u8>, Option<u8>), String> {
+        let tag = match self.reading {
+            None => None,
+            Some(name) => match observe::READING_NAMES.iter().find(|(n, _)| *n == name) {
+                Some(&(_, t)) => Some(t),
+                None => {
+                    let names: Vec<&str> = observe::READING_NAMES.iter().map(|(n, _)| *n).collect();
+                    return Err(format!("no reading named {name}: one of {}", names.join(", ")));
+                }
+            },
+        };
+        let (kind, hex) = match (self.voice, self.court) {
+            (Some(_), Some(_)) => return Err("ask one source: --voice or --court, not both".into()),
+            (Some(v), None) => (observe::SOURCE_VOICE, v),
+            (None, Some(c)) => (observe::SOURCE_COURT, c),
+            (None, None) => return Ok((Vec::new(), tag)),
+        };
+        let Some(key) = hex_prefix(hex) else {
+            return Err(format!("{hex} is not a key's hex prefix (an even count of hex digits, at most 64)"));
+        };
+        let mut prefix = vec![kind];
+        prefix.extend_from_slice(&key);
+        match (key.len(), tag) {
+            (32, Some(t)) => {
+                prefix.push(t);
+                Ok((prefix, None))
+            }
+            _ => Ok((prefix, tag)),
+        }
+    }
+}
+
 /// ASK, RENDER, EXIT. Exit 0 with a rendering, 2 where no hypha answered —
 /// the rendering then says why, so a `watch` shows the refusal in place.
-pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
+/// CQ1 — the question is the prefix the operator names; the hypha serves
+/// only that fiber.
+pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
+    let (prefix, keep) = match ask.prefix() {
+        Ok(p) => p,
+        Err(why) => {
+            println!("{RED}{why}{RESET}");
+            std::process::exit(2)
+        }
+    };
     let Some(addr) = address(home, at) else {
         println!("{RED}no address to ask{RESET}: pass --at ADDR, or --home a home whose mesh names its bind");
         std::process::exit(2)
     };
-    let Some((reply, _)) = crate::transport::tell_peer(&addr, observe::encode_query(&[])) else {
+    let Some((reply, _)) = crate::transport::tell_peer(&addr, observe::encode_query(&prefix)) else {
         println!("{RED}{addr} did not answer{RESET}");
         std::process::exit(2)
     };
-    let Some((total, held)) = observe::decode_reply(&reply) else {
+    let Some((total, mut held)) = observe::decode_reply(&reply) else {
         println!("{RED}{addr} answered with no reading this build reads{RESET} ({} bytes)", reply.len());
         std::process::exit(2)
     };
+    // What the frame budget cut stays said after the kind is kept.
+    let cut = total.abs_diff(held.len() as u32);
+    if let Some(t) = keep {
+        held.retain(|(k, _)| Source::of_key(k).is_some_and(|(_, tag)| tag == t));
+    }
+    let total = held.len() as u32 + cut;
     for line in render(&addr, total, &held) {
         println!("{line}");
     }
@@ -114,6 +191,9 @@ pub(crate) fn render(addr: &str, total: u32, held: &[observe::Held]) -> Vec<Stri
                 Reading::Learning(l) => learning(l),
                 Reading::Circuit(c) => circuits(c),
                 Reading::Cells(c) => cells(c),
+                Reading::Viscosity(v) => viscosity(v),
+                Reading::Spend(s) => spend(s),
+                Reading::Progress(p) => progress(p),
             });
         }
     }
@@ -408,6 +488,89 @@ fn cells(c: &observe::Cells) -> Vec<String> {
             let on: Vec<String> = ms.iter().map(|(axis, k, d2, r)| format!("x{axis}={k}: δ² {d2} {}", regime(r))).collect();
             out.push(format!("      {DIM}nucleus {s} on mirrors [{}]{RESET}", on.join("; ")));
         }
+    }
+    out
+}
+
+/// VO1 — THE VISCOSITY A VOICE'S BENDS READ (78.7 as amended): per lane,
+/// each pair of planes a trial ran on with its four arms; the lanes that
+/// carry no bend named; the ledger's entropy by lane.
+fn viscosity(v: &observe::Viscosity) -> Vec<String> {
+    use mycelium::transducer::sentence::{bend_plane_name, BendLane};
+    let mut out = vec![format!("  {BOLD}viscosity{RESET}   entropy by lane (𝒮, 𝒢, 𝒯, 𝒽) {:?}", v.entropy)];
+    for (lane, name) in [(BendLane::Spatial, "𝒮"), (BendLane::Holonomic, "𝒽")] {
+        let pairs: Vec<&observe::ViscosityPair> = v.pairs.iter().filter(|p| usize::from(p.lane) == lane.index()).collect();
+        if pairs.is_empty() {
+            out.push(format!("    {name}  {DIM}no held loop{RESET}"));
+        }
+        for p in pairs {
+            let colour = match (p.arms[3], p.arms[2]) {
+                (0, 0) => DIM,
+                (0, _) => GREEN,
+                _ => YELLOW,
+            };
+            out.push(format!(
+                "    {name}  {colour}{}·{}{RESET}  inviscid {}  elastic {}  curved {}  viscous {}  {DIM}refused {} unread {} no-class {}{RESET}",
+                bend_plane_name(p.lane, p.planes.0),
+                bend_plane_name(p.lane, p.planes.1),
+                p.arms[0],
+                p.arms[1],
+                p.arms[2],
+                p.arms[3],
+                p.refused,
+                p.unread,
+                p.no_class
+            ));
+        }
+    }
+    out.push(format!("    {DIM}𝒢, 𝒯: no bend on this lane{RESET}"));
+    out
+}
+
+/// SP1 — THE STROKE BY READER: what each reader spent over the voice's
+/// percepts, and what each left unbounded — whether comprehension starves
+/// perception, on the stroke's own counters.
+fn spend(s: &observe::Spend) -> Vec<String> {
+    let total: u64 = s.reads.iter().sum();
+    let mut out = vec![format!("  {BOLD}spend{RESET}       {} percepts, {total} reads", s.percepts)];
+    for (((name, meaning), reads), unbounded) in observe::SPEND_READERS.iter().zip(s.reads).zip(s.unbounded) {
+        let left = match unbounded {
+            0 => String::new(),
+            u => format!("  {YELLOW}unbounded {u}{RESET}"),
+        };
+        out.push(format!("    {name:<14} {reads:>10}{left}  {DIM}{meaning}{RESET}"));
+    }
+    out
+}
+
+/// PG1 — E1'S DONE-WHEN: contact cycles and those carrying holonomy; the
+/// certified cells by grade with the round kept (the coboundary's agreement
+/// at the grade), reversed or carried, their groups and dual frames.
+fn progress(p: &observe::Progress) -> Vec<String> {
+    let mut out = vec![
+        format!("  {BOLD}progress{RESET}    {} percepts", p.percepts),
+        format!(
+            "    contact cycles {}  curved {}  {DIM}unread {}{RESET}",
+            p.contact_cycles, p.contact_cycles_curved, p.contact_cycles_unread
+        ),
+    ];
+    if p.grades.is_empty() {
+        out.push(format!("    {DIM}no cell certified{RESET}"));
+    }
+    for g in &p.grades {
+        out.push(format!(
+            "    grade {}  cells {}  round kept {}  held-z2 {}  {}carried {}{RESET}  group finite {} affine {} infinite {}  dual frames {}",
+            g.grade,
+            g.cells,
+            g.round_kept,
+            g.held_z2,
+            if g.refused > 0 { YELLOW } else { DIM },
+            g.refused,
+            g.finite,
+            g.affine,
+            g.infinite,
+            g.dual_frames
+        ));
     }
     out
 }
