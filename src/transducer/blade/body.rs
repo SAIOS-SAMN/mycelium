@@ -654,13 +654,27 @@ pub fn moduli(b: &Blade) -> Option<Vec<crate::transducer::stalk::ChartAxis>> {
 /// refused the section is filed at the coarsest stratum it honestly has —
 /// its base's `n`, the chart's first axis — and nothing below it is
 /// invented. The physics decides what the section is; the chart only finds
-/// the candidates.
+/// the candidates. EACH COARSE FILING IS COUNTED on [`take_coarse`] (audit
+/// N-3): a stratum ruled honest is still a reading the fleet must see.
 pub fn section_moduli(sites: &[(i64, i64)]) -> Vec<crate::transducer::stalk::ChartAxis> {
     let shape = shape_of_section(sites);
     match moduli(&shape.blade) {
         Some(axes) => axes,
-        None => vec![crate::transducer::stalk::ChartAxis::Count(shape.blade.n() as u64)],
+        None => {
+            COARSE.with(|c| c.set(c.get() + 1));
+            vec![crate::transducer::stalk::ChartAxis::Count(shape.blade.n() as u64)]
+        }
     }
+}
+
+thread_local! {
+    static COARSE: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+/// Sections filed at their base's `n` alone because their topology was
+/// refused ([`section_moduli`]), since the last take.
+pub fn take_coarse() -> u64 {
+    COARSE.with(|c| c.replace(0))
 }
 
 /// A body as the carrier a transport is solved on and verified against.

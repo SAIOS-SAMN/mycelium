@@ -1000,12 +1000,16 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // fifteen forms crystallized at `loops 0` and this line never fired
     // once. A reading suppressed in the failure case is not a reading.
     let unread_why = crate::transducer::sentence::Form::unread_gates();
-    // BQ1 — BODIES NOT HEARD AT THEIR `n`, always printed: `body_of` refuses
-    // past `n = 3` (38.2 is BQ4's), and the perceivers count each refusal
-    // rather than dropping it. Zero while intake reads the grid's three.
+    // BQ1, audit N-3 — WHAT PERCEPTION PASSED OVER, always printed: bodies
+    // `body_of` refused (counted at `body_of`, whoever asked), laminae with
+    // no section (counted at `on_grid`), and sections filed at their `n`
+    // alone (counted at `section_moduli`). Zero while intake reads the
+    // grid's three.
     eprintln!(
-        "  perceive unheard {}: components whose moduli are not read at their n",
-        crate::transducer::family::perceive::take_unheard()
+        "  perceive unheard {}: components whose moduli are not read at their n | sectionless {} | coarse sections {}",
+        crate::transducer::family::perceive::take_unheard(),
+        crate::transducer::family::perceive::take_sectionless(),
+        crate::transducer::blade::take_coarse(),
     );
     eprintln!(
         "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} loops \

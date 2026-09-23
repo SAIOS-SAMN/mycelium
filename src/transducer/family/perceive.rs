@@ -116,9 +116,17 @@ pub struct Body {
 /// they carry — sorted. `None` where the moduli are not read at the
 /// support's `n` (the topology past `n = 3` is 38.2's, BQ4): no chart is
 /// invented for a body the harmonics cannot hear.
+///
+/// EVERY REFUSAL IS COUNTED HERE, at the one producer of a body, on
+/// [`take_unheard`] (audit N-3): a caller that passes over a refused body
+/// passes over a counted one, whichever caller it is.
 pub fn body_of(comp: Vec<Lamina>) -> Option<Body> {
     let shape = blade::shape_of(&sites_of(&comp));
-    let moduli = Invariant(blade::moduli(&shape.blade)?);
+    let Some(axes) = blade::moduli(&shape.blade) else {
+        UNHEARD.with(|c| c.set(c.get() + 1));
+        return None;
+    };
+    let moduli = Invariant(axes);
     let mut laminae = comp;
     laminae.sort_unstable();
     laminae.dedup();
@@ -136,28 +144,27 @@ pub(crate) fn sites_of(laminae: &[Lamina]) -> Vec<Site> {
 thread_local! {
     static SENSOR_READS: Cell<u64> = const { Cell::new(0) };
     static UNHEARD: Cell<u64> = const { Cell::new(0) };
+    static SECTIONLESS: Cell<u64> = const { Cell::new(0) };
 }
 
-/// Components the perceivers found whose moduli are not read at their `n`
-/// (`body_of`'s refusal), since the last take. Zero while intake reads
-/// `n = 3`; the line that says so where it is not (BQ4).
+/// Components whose moduli are not read at their `n` (`body_of`'s
+/// refusal), wherever `body_of` was asked, since the last take. Zero while
+/// intake reads `n = 3`; the line that says so where it is not (BQ4).
 pub fn take_unheard() -> u64 {
     UNHEARD.with(|c| c.replace(0))
 }
 
-/// The bodies of a perceiver's components, each refusal counted on
-/// [`take_unheard`] rather than dropped unseen.
+/// Sites asked for their section that have none — a base with fewer than
+/// the two grid axes ([`on_grid`]'s refusal) — since the last take. Every
+/// caller that leaves such a lamina out of a chain leaves a counted one.
+pub fn take_sectionless() -> u64 {
+    SECTIONLESS.with(|c| c.replace(0))
+}
+
+/// The bodies of a perceiver's components; a refused one is counted by
+/// [`body_of`] itself.
 fn bodies_of(laminae: &[Lamina]) -> Vec<Body> {
-    blade::components(laminae)
-        .into_iter()
-        .filter_map(|comp| {
-            let body = body_of(comp);
-            if body.is_none() {
-                UNHEARD.with(|c| c.set(c.get() + 1));
-            }
-            body
-        })
-        .collect()
+    blade::components(laminae).into_iter().filter_map(body_of).collect()
 }
 
 /// Grid sites visited by [`perceive`] since the last reset.
@@ -275,10 +282,18 @@ pub(crate) fn landed_hue(v: &Versor, site: &Site, dst: &Body) -> Option<u8> {
 
 /// A site's coordinates on the grid axes — the section's planar token
 /// (16.5); every other axis rides on the pose. `None` for a site of a base
-/// with fewer than the two grid axes, which has no section.
+/// with fewer than the two grid axes, which has no section — COUNTED here on
+/// [`take_sectionless`], the one producer every chain builder reads through,
+/// so no caller drops such a lamina unseen (audit N-3).
 pub(crate) fn on_grid(s: &Site) -> Option<(i64, i64)> {
     let [ga, gb] = crate::transducer::base::GRID_AXES;
-    Some((s.axis(ga)?, s.axis(gb)?))
+    match (s.axis(ga), s.axis(gb)) {
+        (Some(r), Some(c)) => Some((r, c)),
+        _ => {
+            SECTIONLESS.with(|c| c.set(c.get() + 1));
+            None
+        }
+    }
 }
 
 pub(crate) fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
