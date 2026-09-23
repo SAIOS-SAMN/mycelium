@@ -11031,10 +11031,37 @@ BQ5a lands (78.6, 78.13); nothing here is a defect. EN1, BQ5a with CV1,
 SQ1 and CT1, then CT2 land in the tree during this soak and ride the
 recut after, and E1's done-when is read on the fleet then.
 
-**Owed from this window.** The five minds' curves themselves (LC1:
-dialect span, adjoined-by-closure, installed, closing) and the courts'
-phase lines with `adjoined-by-closure` at the same window are the
-landing reading of E0 and are recorded here when quoted.
+**E0's landing reading, recorded (window ending 23:33, about eight
+minutes after the fleet came up).** ADJOINED-BY-CLOSURE READS 0 on every
+voice and on every court phase line since the recut — a 100 lines, b 60,
+c 62 — the one number 45.9 calls decisive, on the fleet's own line for
+the first time, and honestly zero.
+
+| mind (hypha) | K | dialect span | adjoined-by-closure | installed | closing |
+|---|---|---|---|---|---|
+| 37f2c7f1 (a) | 86 | 2 strata, 38 words | 0 | 38 | 4 |
+| dd8980f6 (a) | 141 | 2 strata, 38 words | 0 | 38 | 4 |
+| 1e14fb3e (b) | 101 | 2 strata, 41 words | 0 | 41 | 4 |
+| ee234447 (b) | 112 | 2 strata, 41 words | 0 | 41 | 4 |
+| c7899440 (c) | 86 | 2 strata, 39 words | 0 | 39 | 4 |
+
+Owed on every voice, by row: the cover (53.2), the warm–cold delta
+(Y1), distinct perspectives per class (CV3), mass per lane per layer per
+grade (E5). The courts at the window: a at K 968 (basis 21, treasury
+22) `comprehension 0/1 congruence 1/2 lineages 0 installed +1 −0
+adjoined-by-closure 0`; b at K 13 174 (24, 31) `0/0 1/2 0 +0 −0 0`; c at
+K 289 (23, 28) `0/1 1/2 0 +1 −0 0`. Flagged, not explained: the two
+voices on one hypha read identical span, installed and closing at
+different K, which fits one court's syllabus installing the same words
+into both and is to be checked against the genomes (a reading, not a
+finding, until it is). The court phase is a printed line and not a typed
+reading: `Reading::Phase` (PH5) puts it on the console beside the curves.
+
+This is the tree's true state, read on the wire: five minds each holding
+two strata and about forty installed words, four of them closing, and
+NOT ONE generator adjoined by closure — the same zero 45.9 named on
+2026-09-12, now measured where it counts instead of assumed. Every row
+of E1 that lands from here is judged by whether this table moves.
 
 # Part XI — The frame axis
 
