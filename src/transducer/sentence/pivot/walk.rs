@@ -305,6 +305,18 @@ pub(crate) fn paths_carried(
     paths_carried_why(faces, vertices, lp).ok()
 }
 
+/// VS1 — THE SAME WALK, READ QUIETLY: no step's charge is noted. A reader
+/// that re-walks a circuit under a trial move (a bend) reads what the move
+/// does and must not write the census's cumulative counters, or the counters
+/// would count the trial's walks as the corpus's.
+pub(crate) fn paths_carried_quiet(
+    faces: &[FormFace],
+    vertices: &[Vertex],
+    lp: &Orbit,
+) -> Option<Keyed<PathCarried>> {
+    walk(faces, vertices, lp, false).ok()
+}
+
 /// THE ONE WALK, SAYING WHY IT REFUSED (H2c). [`paths_carried`] is this read
 /// with the reason dropped. `orbits_of` asks here, so the `unread` gate is
 /// counted by what refused it.
@@ -313,6 +325,11 @@ pub(crate) fn paths_carried_why(
     vertices: &[Vertex],
     lp: &Orbit,
 ) -> Result<Keyed<PathCarried>, Unread> {
+    walk(faces, vertices, lp, true)
+}
+
+/// The walk itself; `note` files each step's charge on the census counters.
+fn walk(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> Result<Keyed<PathCarried>, Unread> {
     // THE EDGE COMPOSITE OPENS AT THE IDENTITY AND EVERY STEP CONTRIBUTES.
     // It used to open at `None` unless the orbit crossed a face between two
     // bodies, because the star faces contributed nothing and a star-only
@@ -420,7 +437,7 @@ pub(crate) fn paths_carried_why(
         // is not flat (rule 11) — and `acc.edge` below goes `None` for it,
         // so the whole boundary is already refused. The charge is noted
         // where `step_charge` reads one: where the carriage is a versor.
-        if let Some(mu) = step.as_ref().and_then(|t| step_charge(&t.carriage)) {
+        if let Some(mu) = step.as_ref().and_then(|t| step_charge(&t.carriage)).filter(|_| note) {
             note_step_charge(&mu);
         }
         acc.steps.push(Step {

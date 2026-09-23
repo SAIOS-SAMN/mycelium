@@ -17,10 +17,15 @@ impl Form {
     }
 
     /// The inverse of [`Form::apply_move`]: the court's un-pivot (A20 step 3).
-    pub fn unapply_move(&mut self, by: &PivotBy) {
+    /// `false` where the move has no inverse — a placement whose translator
+    /// is on the light cone — and nothing was written (VS1's ruling, item 6:
+    /// no inverse, no un-pivot, refused by name and never skipped).
+    #[must_use]
+    pub fn unapply_move(&mut self, by: &PivotBy) -> bool {
         match by {
             PivotBy::OpenAxis { face, .. } => {
                 let _ = self.close_axis_on(*face);
+                true
             }
             _ => unapply_by(&mut self.faces, by),
         }
@@ -85,7 +90,12 @@ pub(crate) fn apply_by(faces: &mut [FormFace], by: &PivotBy) {
     }
 }
 
-pub(crate) fn unapply_by(faces: &mut [FormFace], by: &PivotBy) {
+/// The inverse of [`apply_by`]. `false` where the move has no inverse (a
+/// placement's translator on the light cone): it was the defect VS1 named —
+/// the un-pivot silently skipped and the caller read a form it believed
+/// restored — and it now refuses by name, writing nothing.
+#[must_use]
+pub(crate) fn unapply_by(faces: &mut [FormFace], by: &PivotBy) -> bool {
     match by {
         PivotBy::OpenAxis { .. } => {}
         // The mirror of `apply_by`'s word arm, carrier for carrier — or a
@@ -102,13 +112,12 @@ pub(crate) fn unapply_by(faces: &mut [FormFace], by: &PivotBy) {
             }
         }
         PivotBy::Placement { face, translator } => {
+            let Some(inv) = translator.versor_inverse() else { return false };
             if let Some(f) = faces.get_mut(*face as usize) {
-                if let Some(inv) = translator.versor_inverse() {
-                    let pairs: Vec<Vec<u8>> = f.at.scoped().map(|(k, _)| k).collect();
-                    for k in pairs {
-                        if let Some(p) = f.at.get_mut(&k) {
-                            p.carriage = inv.geo(&p.carriage);
-                        }
+                let pairs: Vec<Vec<u8>> = f.at.scoped().map(|(k, _)| k).collect();
+                for k in pairs {
+                    if let Some(p) = f.at.get_mut(&k) {
+                        p.carriage = inv.geo(&p.carriage);
                     }
                 }
             }
@@ -125,6 +134,7 @@ pub(crate) fn unapply_by(faces: &mut [FormFace], by: &PivotBy) {
             }
         }
     }
+    true
 }
 
 pub fn pivoted_face(g: &Word, w: &Word, side: Side) -> Word {

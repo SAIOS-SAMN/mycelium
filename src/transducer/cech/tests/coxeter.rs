@@ -66,6 +66,25 @@ fn a_cube_corner_reads_finite_and_its_six_faces_read_affine() {
     assert!(matches!(r.closure, Closure::Infinite(Refusal::Affine(_))));
 }
 
+/// MG1b — A PARALLEL FAMILY READS AFFINE `Ã₁`, its translation `2·gcd` of
+/// its spacings, no generator pair chosen: mirrors at 0, 1, 2 step 2; at 0,
+/// 1/2, 1 step 1; a mirror written at another scale reads the same.
+#[test]
+fn a_parallel_family_reads_affine_with_twice_the_gcd_of_its_spacings() {
+    let at = |ks: &[(i64, i64)]| -> Vec<Mv> {
+        ks.iter().map(|&(n, d)| Mv::blade(E1, q(1, 1)).add(&cga::e_inf().scale(&q(n, d)))).collect()
+    };
+    let r = read_coxeter(&at(&[(0, 1), (1, 1), (2, 1)]), &[], &mut stroke());
+    assert_eq!(r.components, vec![(vec![0, 1, 2], ComponentClass::Affine)]);
+    assert_eq!(r.parallel, vec![(vec![0, 1, 2], q(2, 1))]);
+    assert!(matches!(r.closure, Closure::Infinite(Refusal::Affine(_))), "affine precedes the parabolic pair");
+    let half = read_coxeter(&at(&[(0, 1), (1, 2), (1, 1)]), &[], &mut stroke());
+    assert_eq!(half.parallel, vec![(vec![0, 1, 2], q(1, 1))]);
+    let mut scaled = at(&[(0, 1), (1, 1), (2, 1)]);
+    scaled[1] = scaled[1].scale(&q(-3, 1));
+    assert_eq!(read_coxeter(&scaled, &[], &mut stroke()).parallel, vec![(vec![0, 1, 2], q(2, 1))], "the ray, not its writing");
+}
+
 /// A ROSETTE PAIR IS REFUSED BY ITS PAIR AND BY ITS PRODUCT: `δ² = 1/5`, and
 /// the product of the two reflections is a turn of no admitted order.
 #[test]

@@ -67,13 +67,17 @@ pub struct Metabolism {
     /// from `ℓ = 0`, because A19 spells infinite order that way and the
     /// two readings are opposite (53.6).
     pub orbit_infinite: u64,
+    /// VS1 — ENTROPY BY LANE: bends whose trial triggered an irreversible
+    /// event of the ledger or lost a reading (78.7 as amended), per lane
+    /// (𝒮, 𝒢, 𝒯, 𝒽), never summed.
+    pub viscous: [u64; 4],
 }
 
 thread_local! {
     static METABOLISM: std::cell::Cell<Metabolism> =
         const { std::cell::Cell::new(Metabolism {
             cauterized: 0, released: 0, sealed: 0, drawn: [0; 4], restored: [0; 4],
-            depleted: 0, orbit_finite: 0, orbit_sum: 0, orbit_infinite: 0,
+            depleted: 0, orbit_finite: 0, orbit_sum: 0, orbit_infinite: 0, viscous: [0; 4],
         }) };
 }
 
@@ -98,6 +102,16 @@ pub fn note_released() {
 /// A cell sealed at dimension 2 by `ascend` (AD1).
 pub fn note_sealed() {
     note(|m| m.sealed += 1);
+}
+
+/// VS1 — a viscous bend on lane `lane` (𝒮 0, 𝒢 1, 𝒯 2, 𝒽 3): the lane's
+/// entropy.
+pub fn note_viscous(lane: usize) {
+    note(|m| {
+        if let Some(slot) = m.viscous.get_mut(lane) {
+            *slot = slot.saturating_add(1);
+        }
+    });
 }
 
 /// One draw against the reserve, per lane, and whether it was afforded.

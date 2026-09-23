@@ -906,7 +906,12 @@ pub(crate) fn replay_certificates(
             return Some(REFUSE_PIVOT_INEXACT);
         };
         let mut pre = f.clone();
-        pre.unapply_move(&cert.by);
+        // A move with no inverse cannot be un-pivoted: the certificate does
+        // not re-walk, and it is refused rather than read against a form the
+        // skip left unrestored (VS1's ruling, item 6).
+        if !pre.unapply_move(&cert.by) {
+            return Some(REFUSE_PIVOT_INEXACT);
+        }
         pre.orbits = Form::orbits_of(&pre.faces, &pre.vertices);
         // An opened axis (I6) is seeded by the orbit's own holonomy versor
         // (16.20): the court re-derives the seed from the orbit it re-walked

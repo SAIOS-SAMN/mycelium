@@ -20,6 +20,7 @@ mod stratum;
 mod symmetry;
 mod tape;
 mod trajectory;
+mod viscosity;
 mod nerve;
 mod properties;
 mod receipts;

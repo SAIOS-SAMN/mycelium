@@ -287,7 +287,7 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
     // AND THE CANCELLING DIRECTION ZEROES IT. The orbit runs the chord
     // backward, so its composite is the edge's inverse and the move that
     // closes it composes on the left.
-    unapply_by(&mut f.faces, &by);
+    assert!(unapply_by(&mut f.faces, &by), "a word move inverts");
     let closing = PivotBy::Word { face: chord, word: Box::new(before.clone()), side: Side::Left };
     apply_by(&mut f.faces, &closing);
     let closed = read(&f.faces, &f.vertices);
@@ -296,7 +296,7 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
         "the composite cancels its own inverse on the carrier, got {:?}",
         closed.rotor()
     );
-    unapply_by(&mut f.faces, &closing);
+    assert!(unapply_by(&mut f.faces, &closing), "a word move inverts");
 
     // AND THE UNAPPLY RESTORED IT, carrier for carrier, or a refused
     // candidate leaves the edge composite moved for the next one.

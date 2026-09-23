@@ -1165,6 +1165,11 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // CO1 — and the same cells, typed, held for the observer.
     super::comprehend::hold_cells(super::comprehend::cells_reading(&comprehension));
     crate::transducer::sentence::finish_circuits(budget);
+    // VS1 — AND EACH HELD LOOP'S FACES BENT, per pair of planes per lane.
+    eprintln!(
+        "  {}",
+        crate::transducer::sentence::viscosity_line(&crate::transducer::sentence::read_viscosity(&form, budget))
+    );
     // FR2, 72.1c(3) — AND WHERE EACH CYCLE STANDS ALONG `e₃`: its span, the
     // meet of its members' sections, read here from the sections the percept
     // carries and never stored beside them.
