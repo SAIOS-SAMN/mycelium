@@ -9509,6 +9509,42 @@ the closure, and an open question accrues as standing work on `T`
 (MU-PRODUCT). Law 8 holds throughout: the court holds and offers the
 question, and never composes an answer.
 
+**Orbital elements are the perspective coordinates (the operator's
+word, 2026-09-23).** Planets on one orbital path collide: epoch 97 read
+five voices on one plane, `e12`, with one plane census and the same
+thirty orbits, working one corpus — 74's redundancy, observed. The
+distance from the star and the orbit's elements are what make
+perspectives differ, and they map onto 74's coordinates without a
+metaphor added:
+
+| element | perspective coordinate | read from |
+|---|---|---|
+| inclination, the orbit's plane | the planes the mind reads first (`e12`, `e13`, `e23`, …) | FR1's pose on the generated planes; today every inclination is 0 and the orbits are coplanar |
+| radius, the distance from the star | how close to the core the mind works: the stratum depth of its charts, coarse near the star, fine further out | the A21 prefixes of its genome's charts, content (73.15) |
+| phase, where on the orbit it is | where in the corpus the mind starts its circuit | the voice's own feed and bundle circuit cursor |
+
+A **perspective collision** is two planets with equal elements: they do
+the same mathematics and return the same opinion. It is a different fact
+from 73.15's escrow collision (two orbits on one lane with overlapping
+spans) and is named apart. Three constraints keep it physics and not a
+dial: (1) elements come from content and from the star map, never from a
+random number or a constant (rule 5) — the mesh reads the occupied
+elements as keyed coordinates on the star map and PLACES a new planet at
+an empty orbit taken in the canonical order of the elements (rule 4
+permits a canonical key order, never a measurement); radius and phase
+are the planet's own content, and inclination is the one element the
+placement chooses, from the fiber of what is empty; (2) different
+perspectives, one law — planets differ in what they read first, never in
+what counts as true, every closure ruled by the same court under the
+same G1 register, which is what makes a cross-perspective closure mean
+anything (CV4); (3) the mesh places and never steers (73.15): an
+existing planet moves only by its own content — its genome's strata, its
+cursor — and is never re-assigned. Inclination needs FR1 first, or an
+assigned plane is a label with no reading behind it. Many distinct
+orbits around one G1 star are the federation the doctrine takes before a
+second star: distinct perspectives without a second register (73.9(5)).
+Row OA1.
+
 **Binding.** Rows CV1–CV5 (the implementor's OB1–OB5, renamed because
 OB1 already names the oracle's writer): CV1 every court and mint refusal
 names its row — P with its proof, D with its coset representative and
