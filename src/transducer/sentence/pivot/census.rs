@@ -344,8 +344,11 @@ pub struct OrbitReading {
     pub coupled: bool,
     /// The algebra the orbit is read in.
     pub n: u8,
-    /// The planes of `Cl(n+1, 1)` the precession's bivector part occupies.
+    /// The planes of `Cl(n+1, 1)` the precession's bivector part occupies,
+    /// and its null bivectors, each one parabolic plane (PC1) — read by
+    /// `cga::occupancy`, the census's own reader.
     pub planes: Vec<usize>,
+    pub parabolic: Vec<(usize, crate::transducer::cga::Pole)>,
     /// The precession's canonical coordinates: each non-zero blade and its
     /// exact coefficient, the first `+1` (A4). Never an angle.
     pub precession: Vec<(usize, num_rational::BigRational)>,
@@ -379,12 +382,9 @@ impl OrbitReading {
                 .collect(),
             None => Vec::new(),
         };
-        let planes: Vec<usize> = match &canonical {
-            Some(c) => cga::bivector_planes(n)
-                .into_iter()
-                .filter(|&p| !num_traits::Zero::is_zero(c.coeff(p)))
-                .collect(),
-            None => Vec::new(),
+        let cga::Occupancy { planes, parabolic } = match &canonical {
+            Some(c) => cga::occupancy(c, n),
+            None => cga::Occupancy::default(),
         };
         OrbitReading {
             class,
@@ -393,6 +393,7 @@ impl OrbitReading {
             coupled: !cga::bivector_is_simple(m),
             n,
             planes,
+            parabolic,
             precession,
             centre: cga::centre_of(m, n),
         }
@@ -400,7 +401,7 @@ impl OrbitReading {
 
     /// The orbit's line, for the cycles reading beside it.
     pub fn line(&self) -> String {
-        use crate::transducer::cga::{blade_name, plane_name};
+        use crate::transducer::cga::{blade_name, parabolic_name, plane_name};
         let class = match self.class {
             Some(k) => format!("{k:?}").to_lowercase(),
             None => "unread".into(),
@@ -409,7 +410,12 @@ impl OrbitReading {
             Some(p) => format!("{} {p}", self.kind),
             None => self.kind.to_string(),
         };
-        let planes: Vec<String> = self.planes.iter().map(|&p| plane_name(p)).collect();
+        let planes: Vec<String> = self
+            .planes
+            .iter()
+            .map(|&p| plane_name(p))
+            .chain(self.parabolic.iter().map(|&(i, q)| parabolic_name(i, q)))
+            .collect();
         let precession: Vec<String> =
             self.precession.iter().map(|(b, q)| format!("{} {q}", blade_name(*b))).collect();
         format!(

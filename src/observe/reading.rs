@@ -65,11 +65,16 @@ pub struct Planes {
     pub read: u64,
     pub coupled: u64,
     pub counts: Vec<(u64, u64)>,
+    /// PC1 — each populated PARABOLIC plane, `(base axis, pole, count)`,
+    /// ascending: a null bivector counted once, never as a turn beside a
+    /// boost.
+    pub parabolic: Vec<(u8, u8, u64)>,
 }
 
 impl Planes {
     /// The census a tally holds, read over the planes of its own algebra.
     pub fn of(t: &crate::transducer::cga::PlaneTally) -> Planes {
+        use crate::transducer::cga::Pole;
         let n = t.algebra();
         let mut counts: Vec<(u64, u64)> = crate::transducer::cga::bivector_planes(n)
             .into_iter()
@@ -77,13 +82,26 @@ impl Planes {
             .filter(|&(_, c)| c > 0)
             .collect();
         counts.sort_unstable();
-        Planes { n, read: t.read, coupled: t.coupled, counts }
+        let parabolic: Vec<(u8, u8, u64)> = (1..=n)
+            .flat_map(|i| [Pole::Infinity, Pole::Origin].map(|p| (i, p)))
+            .map(|(i, p)| (i, p.as_u8(), t.count_parabolic(usize::from(i), p)))
+            .filter(|&(_, _, c)| c > 0)
+            .collect();
+        Planes { n, read: t.read, coupled: t.coupled, counts, parabolic }
     }
 
     /// How often one plane was populated.
     pub fn count(&self, blade: usize) -> u64 {
         match self.counts.binary_search_by_key(&(blade as u64), |&(b, _)| b) {
             Ok(at) => self.counts[at].1,
+            Err(_) => 0,
+        }
+    }
+
+    /// How often one parabolic plane was populated.
+    pub fn count_parabolic(&self, axis: u8, pole: crate::transducer::cga::Pole) -> u64 {
+        match self.parabolic.binary_search_by_key(&(axis, pole.as_u8()), |&(a, p, _)| (a, p)) {
+            Ok(at) => self.parabolic[at].2,
             Err(_) => 0,
         }
     }
@@ -100,6 +118,12 @@ impl Planes {
                 Err(at) => self.counts.insert(at, (blade, c)),
             }
         }
+        for &(axis, pole, c) in &o.parabolic {
+            match self.parabolic.binary_search_by_key(&(axis, pole), |&(a, p, _)| (a, p)) {
+                Ok(at) => self.parabolic[at].2 += c,
+                Err(at) => self.parabolic.insert(at, (axis, pole, c)),
+            }
+        }
     }
 
     fn put(&self, out: &mut Vec<u8>) {
@@ -109,6 +133,12 @@ impl Planes {
         out.extend_from_slice(&(self.counts.len() as u32).to_le_bytes());
         for &(blade, c) in &self.counts {
             put_u64(out, blade);
+            put_u64(out, c);
+        }
+        out.extend_from_slice(&(self.parabolic.len() as u32).to_le_bytes());
+        for &(axis, pole, c) in &self.parabolic {
+            out.push(axis);
+            out.push(pole);
             put_u64(out, c);
         }
     }
@@ -126,7 +156,15 @@ impl Planes {
         for _ in 0..m {
             counts.push((take_u64(b, p)?, take_u64(b, p)?));
         }
-        Some(Planes { n, read, coupled, counts })
+        let m = take_u32(b, p)? as usize;
+        if !holds(b, *p, m, 10) {
+            return None;
+        }
+        let mut parabolic = Vec::with_capacity(m);
+        for _ in 0..m {
+            parabolic.push((take_u8(b, p)?, take_u8(b, p)?, take_u64(b, p)?));
+        }
+        Some(Planes { n, read, coupled, counts, parabolic })
     }
 }
 

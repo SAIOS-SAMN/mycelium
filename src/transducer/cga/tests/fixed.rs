@@ -50,4 +50,8 @@ fn an_orbit_reads_its_type_plane_precession_and_centre() {
     let slide = OrbitReading::of(&cga::translator_at(&[q(1), q(0), q(0)]), 3);
     assert!(slide.kind.starts_with("escape"), "{}", slide.line());
     assert!(matches!(slide.centre, Centre::AtInfinity { .. }), "{}", slide.line());
+    // PC1: its precession occupies one parabolic plane, read by the census's
+    // own reader, and no turn.
+    assert!(slide.planes.is_empty(), "{}", slide.line());
+    assert_eq!(slide.parabolic, vec![(1, cga::Pole::Infinity)], "{}", slide.line());
 }

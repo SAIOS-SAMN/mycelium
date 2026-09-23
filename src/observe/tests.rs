@@ -11,7 +11,13 @@ fn vk(b: u8) -> [u8; 32] {
 /// a query reply carry them whole.
 #[test]
 fn every_reading_reads_back_as_itself_through_the_act() {
-    let planes = Planes { n: 3, read: 7, coupled: 1, counts: vec![(0b00011, 5), (0b11000, 2)] };
+    let planes = Planes {
+        n: 3,
+        read: 7,
+        coupled: 1,
+        counts: vec![(0b00011, 5), (0b11000, 2)],
+        parabolic: vec![(1, 0, 4), (2, 1, 1)],
+    };
     let mut loss = Loss::default();
     loss.axes[1] = 4;
     loss.axes[17] = 2;
@@ -103,14 +109,24 @@ fn a_key_names_its_source_and_its_reading() {
 /// adds one plane's count to another's (law 5).
 #[test]
 fn the_plane_census_folds_plane_by_plane() {
-    let mut a = Planes { n: 3, read: 2, coupled: 0, counts: vec![(0b00011, 2)] };
-    let b = Planes { n: 4, read: 3, coupled: 1, counts: vec![(0b00011, 1), (0b10001, 3)] };
+    use crate::transducer::cga::Pole;
+    let mut a = Planes { n: 3, read: 2, coupled: 0, counts: vec![(0b00011, 2)], parabolic: vec![(1, 0, 2)] };
+    let b = Planes {
+        n: 4,
+        read: 3,
+        coupled: 1,
+        counts: vec![(0b00011, 1), (0b10001, 3)],
+        parabolic: vec![(1, 0, 1), (4, 1, 5)],
+    };
     a.absorb(&b);
     assert_eq!(a.n, 4);
     assert_eq!((a.read, a.coupled), (5, 1));
     assert_eq!(a.count(0b00011), 3);
     assert_eq!(a.count(0b10001), 3);
     assert_eq!(a.count(0b00101), 0, "a plane never turned reads zero");
+    assert_eq!(a.count_parabolic(1, Pole::Infinity), 3, "a parabolic plane folds onto its own");
+    assert_eq!(a.count_parabolic(4, Pole::Origin), 5);
+    assert_eq!(a.count_parabolic(1, Pole::Origin), 0, "and never onto its other pole");
 }
 
 /// The census of a tally carries the plane each transition turned, by its

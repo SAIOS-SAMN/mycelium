@@ -107,6 +107,84 @@ pub fn blade_name(blade: usize) -> String {
     }
 }
 
+/// THE TWO NULL DIRECTIONS OF THE CONFORMAL PAIR: `e_∞ = e₋ + e₊` and
+/// `e_o = ½(e₋ − e₊)`. A bivector `eᵢ ∧ e_∞` is a translation's, `eᵢ ∧ e_o`
+/// a transversion's; both square to zero.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Pole {
+    Infinity,
+    Origin,
+}
+
+impl Pole {
+    pub fn as_u8(self) -> u8 {
+        match self {
+            Pole::Infinity => 0,
+            Pole::Origin => 1,
+        }
+    }
+
+    pub fn from_u8(b: u8) -> Option<Pole> {
+        match b {
+            0 => Some(Pole::Infinity),
+            1 => Some(Pole::Origin),
+            _ => None,
+        }
+    }
+}
+
+/// A parabolic plane's name: its base axis and its pole, `e1∞`, `e2o`.
+pub fn parabolic_name(axis: usize, pole: Pole) -> String {
+    let p = match pole {
+        Pole::Infinity => "∞",
+        Pole::Origin => "o",
+    };
+    match axis > 9 {
+        true => format!("e{axis}_{p}"),
+        false => format!("e{axis}{p}"),
+    }
+}
+
+/// WHICH PLANES A BIVECTOR OCCUPIES (PC1, D1, 68.1, 70.3), the one reader
+/// the plane census and the orbit's precession both read (law 12).
+///
+/// A NULL BIVECTOR IS ONE PARABOLIC PLANE. On each base axis `eᵢ` the pair
+/// `p eᵢe₊ + m eᵢe₋` squares to `m² − p²`. Where that is zero and the pair is
+/// not, it is `eᵢ ∧ e_∞` (`p = m`, a translator's `−½ d e_∞`) or `eᵢ ∧ e_o`
+/// (`p = −m`, a transversion's): ONE null plane, counted once, never as a
+/// turn on `eᵢe₊` beside a boost on `eᵢe₋`. Every other pair, and every
+/// other plane, is counted blade by blade as the algebra writes it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Occupancy {
+    /// The planes, by blade, in [`bivector_planes`] order.
+    pub planes: Vec<usize>,
+    /// The parabolic planes, by base axis (counted from 1) and pole.
+    pub parabolic: Vec<(usize, Pole)>,
+}
+
+/// The planes `b`'s bivector part occupies in the algebra of `n` base axes.
+pub fn occupancy(b: &Mv, n: u8) -> Occupancy {
+    let b = b.grade(2);
+    let mut null_pairs: Vec<usize> = Vec::new();
+    let mut parabolic: Vec<(usize, Pole)> = Vec::new();
+    for i in 1..=usize::from(n) {
+        let (p, m) = (b.coeff(base_axis(i) | EP), b.coeff(base_axis(i) | EM));
+        if p.is_zero() || p * p != m * m {
+            continue;
+        }
+        // The stored blades past the third axis are `e₊eᵢ` and `e₋eᵢ`, both
+        // the negatives of `eᵢe₊`, `eᵢe₋`; the ratio `p/m` is unchanged.
+        parabolic.push((i, if p == m { Pole::Infinity } else { Pole::Origin }));
+        null_pairs.push(base_axis(i) | EP);
+        null_pairs.push(base_axis(i) | EM);
+    }
+    let planes = bivector_planes(n)
+        .into_iter()
+        .filter(|p| !b.coeff(*p).is_zero() && !null_pairs.contains(p))
+        .collect();
+    Occupancy { planes, parabolic }
+}
+
 /// Is this plane compact — does its generator TURN rather than boost?
 /// `B² < 0` for the planes that avoid `e₋`, and `e₋² = −1` is what makes the
 /// others hyperbolic (54.7).
@@ -134,6 +212,9 @@ pub struct PlaneTally {
     pub n: u8,
     /// Non-zero occupancy per plane, keyed by the plane's own blade.
     pub planes: crate::network::nerve::Keyed<u64>,
+    /// Occupancy per PARABOLIC plane (PC1), keyed by its base axis and
+    /// pole ([`parabolic_key`]): a null bivector counted once.
+    pub parabolic: crate::network::nerve::Keyed<u64>,
     /// Generators read, and those carrying content in BOTH halves — a
     /// screw, which is where `I₂ ≠ 0` can live (59.7).
     pub read: u64,
@@ -147,6 +228,14 @@ thread_local! {
 /// A plane's key in the tally: its blade, written out.
 fn plane_key(blade: usize) -> [u8; 8] {
     (blade as u64).to_be_bytes()
+}
+
+/// A parabolic plane's key: its base axis, written out, then its pole.
+fn parabolic_key(axis: usize, pole: Pole) -> [u8; 9] {
+    let mut k = [0u8; 9];
+    k[..8].copy_from_slice(&(axis as u64).to_be_bytes());
+    k[8] = pole.as_u8();
+    k
 }
 
 /// THE CONFORMAL GENERATOR A SLOT OF THE LETTERS' CHART IS READ AS (51.2):
@@ -188,32 +277,44 @@ pub fn note_transition(r: &crate::transducer::alphabet::Rotor, carriage: &Mv) {
             harmonic = true;
         }
     }
-    // The carriage contributes the luminal planes and the `eᵢ∧e₊` the rotor
-    // chart does not reach; all are read off its own blades, at its own `n`.
-    let b = carriage.grade(2);
+    // The carriage contributes the luminal planes, the `eᵢ∧e₊` the rotor
+    // chart does not reach, and — PC1 — its null bivectors, each ONE
+    // parabolic plane: all read by `occupancy`, at the carriage's own `n`. A
+    // translator's `eᵢ ∧ e_∞` was counted as a turn on `eᵢe₊` and a boost on
+    // `eᵢe₋`, and epoch 97's census read every translation twice.
+    let occupied = occupancy(carriage, carriage.n());
     let mut luminal = false;
-    for plane in bivector_planes(carriage.n()) {
-        if !b.coeff(plane).is_zero() {
-            seen.insert(plane_key(plane), ());
-            if !plane_is_harmonic(plane) {
-                luminal = true;
-            }
+    for &plane in &occupied.planes {
+        seen.insert(plane_key(plane), ());
+        if !plane_is_harmonic(plane) {
+            luminal = true;
         }
     }
+    let mut par: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for &(axis, pole) in &occupied.parabolic {
+        par.insert(parabolic_key(axis, pole), ());
+    }
+    let bump = |carrier: &mut crate::network::nerve::Keyed<u64>, k: Vec<u8>| {
+        let now = match carrier.get(&k) {
+            Some(&v) => v + 1,
+            None => 1,
+        };
+        carrier.insert(k, now);
+    };
     PLANES.with(|c| {
         let mut t = c.borrow_mut();
         t.read += 1;
         t.n = t.n.max(carriage.n());
         for (k, ()) in seen.scoped() {
-            let now = match t.planes.get(&k) {
-                Some(&v) => v + 1,
-                None => 1,
-            };
-            t.planes.insert(k, now);
+            bump(&mut t.planes, k);
         }
-        // A SCREW: content in both halves at once, which is where `I₂ ≠ 0`
-        // can live (59.7). Neither half alone can produce it.
-        if harmonic && luminal {
+        for (k, ()) in par.scoped() {
+            bump(&mut t.parabolic, k);
+        }
+        // A SCREW: a turn beside a motion off the harmonic half — a boost
+        // or a slip — which is where `I₂ ≠ 0` can live (59.7). Neither half
+        // alone can produce it.
+        if harmonic && (luminal || !occupied.parabolic.is_empty()) {
             t.coupled += 1;
         }
     });
@@ -248,9 +349,17 @@ impl PlaneTally {
         }
     }
 
+    /// How often one parabolic plane was populated (PC1).
+    pub fn count_parabolic(&self, axis: usize, pole: Pole) -> u64 {
+        match self.parabolic.get(&parabolic_key(axis, pole)) {
+            Some(&v) => v,
+            None => 0,
+        }
+    }
+
     /// THE CAPACITY LINE — every plane of the census's algebra by its own
-    /// name, the two halves kept apart, and how many generators coupled
-    /// them.
+    /// name, the two halves kept apart, the parabolic planes beside them,
+    /// and how many generators coupled a turn to anything else.
     pub fn line(&self) -> String {
         let half = |planes: Vec<usize>| {
             planes
@@ -260,18 +369,24 @@ impl PlaneTally {
                 .join(" ")
         };
         let n = self.algebra();
+        let parabolic: Vec<String> = (1..=usize::from(n))
+            .flat_map(|i| [Pole::Infinity, Pole::Origin].map(|p| (i, p)))
+            .map(|(i, p)| format!("{} {}", parabolic_name(i, p), self.count_parabolic(i, p)))
+            .collect();
         format!(
-            "read {} | harmonic: {} | luminal: {} | coupled {}",
+            "read {} | harmonic: {} | luminal: {} | parabolic: {} | coupled {}",
             self.read,
             half(harmonic_planes(n)),
             half(transvection_planes(n)),
+            parabolic.join(" "),
             self.coupled
         )
     }
 
-    /// How many planes carry anything at all. The single number that says
-    /// whether declared capacity is being used.
+    /// How many planes carry anything at all, parabolic ones among them.
+    /// The single number that says whether declared capacity is being used.
     pub fn occupied(&self) -> usize {
         self.planes.scoped().filter(|(_, &n)| n > 0).count()
+            + self.parabolic.scoped().filter(|(_, &n)| n > 0).count()
     }
 }

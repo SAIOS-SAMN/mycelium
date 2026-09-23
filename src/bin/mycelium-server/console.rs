@@ -138,12 +138,25 @@ fn dimensions(p: &Planes) -> Vec<String> {
             .join("  ")
     };
     let (harmonic, luminal) = (cga::harmonic_planes(p.n), cga::transvection_planes(p.n));
+    // PC1 — the parabolic planes the algebra declares, each a null bivector
+    // counted once: every base axis with each of the two poles.
+    let parabolic: Vec<(u8, cga::Pole)> =
+        (1..=p.n).flat_map(|i| [cga::Pole::Infinity, cga::Pole::Origin].map(|q| (i, q))).collect();
+    let parabolic_row = parabolic
+        .iter()
+        .map(|&(i, q)| match p.count_parabolic(i, q) {
+            0 => format!("{DIM}{} 0{RESET}", cga::parabolic_name(usize::from(i), q)),
+            c => format!("{GREEN}{} {c}{RESET}", cga::parabolic_name(usize::from(i), q)),
+        })
+        .collect::<Vec<_>>()
+        .join("  ");
+    let parabolic_used = parabolic.iter().filter(|&&(i, q)| p.count_parabolic(i, q) > 0).count();
     let used = |planes: &[usize]| planes.iter().filter(|&&b| p.count(b) > 0).count();
     let grid = cga::E1 | cga::E2;
     let turned: Vec<usize> = harmonic.iter().copied().filter(|&b| p.count(b) > 0).collect();
     let verdict = match (p.read, turned.as_slice()) {
         (0, _) => format!("{DIM}no transition read yet{RESET}"),
-        (_, []) => format!("{YELLOW}nothing turned: every transition was a boost or the identity{RESET}"),
+        (_, []) => format!("{YELLOW}nothing turned: every transition was a boost, a slip or the identity{RESET}"),
         (_, [only]) if *only == grid => format!(
             "{RED}{BOLD}FLATTENED{RESET}{RED} — every turn stands on the sensor's plane {}; {} other harmonic planes declared and never turned{RESET}",
             cga::plane_name(grid),
@@ -153,7 +166,7 @@ fn dimensions(p: &Planes) -> Vec<String> {
     };
     vec![
         format!(
-            "  {BOLD}dimensions{RESET}  n {}  Cl({},1)  read {}  coupled {}  harmonic {}/{}  luminal {}/{}",
+            "  {BOLD}dimensions{RESET}  n {}  Cl({},1)  read {}  coupled {}  harmonic {}/{}  luminal {}/{}  parabolic {}/{}",
             p.n,
             u32::from(p.n) + 1,
             p.read,
@@ -161,10 +174,13 @@ fn dimensions(p: &Planes) -> Vec<String> {
             used(&harmonic),
             harmonic.len(),
             used(&luminal),
-            luminal.len()
+            luminal.len(),
+            parabolic_used,
+            parabolic.len()
         ),
         format!("    harmonic  {}", row(&harmonic)),
         format!("    luminal   {}", row(&luminal)),
+        format!("    parabolic {parabolic_row}"),
         format!("    {verdict}"),
     ]
 }

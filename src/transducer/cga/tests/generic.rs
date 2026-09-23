@@ -61,6 +61,36 @@ fn the_algebra_at_n4_has_its_own_count_and_holds_n3_inside_it() {
     assert!(!at5.contains(&21), "{at5:?}");
 }
 
+/// PC1 — A TRANSLATION IS ONE PARABOLIC PLANE, NOT A TURN AND A BOOST. The
+/// translator `1 − ½ d e_∞` carries `eᵢ ∧ e_∞`, which fills `eᵢe₊` and
+/// `eᵢe₋` equally; epoch 97's census counted it on both and read every
+/// slip as a turn on `e1p`. A boost on `e1m` alone is still a boost, and a
+/// transversion `eᵢ ∧ e_o` is the other pole.
+#[test]
+fn a_translation_is_one_parabolic_plane_in_the_census() {
+    use crate::transducer::alphabet::Rotor;
+    use crate::transducer::cga::Pole;
+    let identity = Rotor::scalar(q(1, 1));
+    let _ = cga::take_plane_tally();
+    cga::note_transition(&identity, &cga::translator_at(&[q(2, 1), q(0, 1), q(0, 1)]));
+    let t = cga::take_plane_tally();
+    assert_eq!(t.count_parabolic(1, Pole::Infinity), 1, "one parabolic plane, e1∞");
+    assert_eq!(t.count(base_axis(1) | EP), 0, "not a turn on e1p");
+    assert_eq!(t.count(base_axis(1) | EM), 0, "not a boost on e1m");
+    assert_eq!(t.occupied(), 1, "one plane in all: {}", t.line());
+    // A pure boost `e1 ∧ e₋` is not null: it stays on its luminal plane.
+    let _ = cga::take_plane_tally();
+    let boost = Mv::scalar(q(2, 1)).add(&Mv::blade(base_axis(1) | EM, q(1, 1)));
+    cga::note_transition(&identity, &boost);
+    let t = cga::take_plane_tally();
+    assert_eq!(t.count(base_axis(1) | EM), 1, "a boost is a boost");
+    assert_eq!(t.count_parabolic(1, Pole::Infinity), 0);
+    // `e1 ∧ e_o` — the other pole.
+    let o = cga::occupancy(&Mv::blade(base_axis(1) | EM, q(1, 1)).sub(&Mv::blade(base_axis(1) | EP, q(1, 1))), 3);
+    assert_eq!(o.parabolic, vec![(1, Pole::Origin)], "{o:?}");
+    assert!(o.planes.is_empty(), "{o:?}");
+}
+
 /// 51.2, audit N-2 — THE CENSUS FILES A TURN UNDER THE PLANE IT TURNS. The
 /// letters' `e0e3` is the base's (row, frame) plane, which the carriage
 /// calls `e₁e₃`; `e1e3` is (column, frame), `e₂e₃`; the off-plane `e0e2`

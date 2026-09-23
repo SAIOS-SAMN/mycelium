@@ -24,8 +24,9 @@ pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_lamina
 pub use multivector::{base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP};
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
 pub use planes::{
-    bivector_planes, blade_name, harmonic_planes, is_transvection_plane, note_transition, plane_is_harmonic,
-    plane_name, plane_tally, take_plane_tally, transvection_planes, PlaneTally,
+    bivector_planes, blade_name, harmonic_planes, is_transvection_plane, note_transition, occupancy,
+    parabolic_name, plane_is_harmonic, plane_name, plane_tally, take_plane_tally, transvection_planes,
+    Occupancy, PlaneTally, Pole,
 };
 pub use spin::{
     bivector_is_simple, bivector_split, cayley, inverse_even, reflector_vector, transvection,

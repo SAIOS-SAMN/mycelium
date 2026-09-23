@@ -15,8 +15,17 @@ fn rendered(readings: Vec<Reading>) -> String {
 #[test]
 fn a_census_turning_only_on_the_grid_plane_is_named_flattened() {
     let grid = (cga::E1 | cga::E2) as u64;
-    let out = rendered(vec![Reading::Planes(Planes { n: 3, read: 9, coupled: 0, counts: vec![(grid, 9)] })]);
+    // PC1: nine translations are one parabolic plane, `e1∞`, and do not
+    // count as turns — the census still reads FLATTENED.
+    let out = rendered(vec![Reading::Planes(Planes {
+        n: 3,
+        read: 18,
+        coupled: 0,
+        counts: vec![(grid, 9)],
+        parabolic: vec![(1, cga::Pole::Infinity.as_u8(), 9)],
+    })]);
     assert!(out.contains("FLATTENED"), "{out}");
+    assert!(out.contains("e1∞ 9") && out.contains("parabolic 1/6"), "{out}");
     for p in cga::bivector_planes(3) {
         assert!(out.contains(&cga::plane_name(p)), "every declared plane is shown: {}", cga::plane_name(p));
     }
@@ -25,6 +34,7 @@ fn a_census_turning_only_on_the_grid_plane_is_named_flattened() {
         read: 9,
         coupled: 0,
         counts: vec![(grid, 5), ((cga::E1 | cga::E3) as u64, 4)],
+        parabolic: Vec::new(),
     })]);
     assert!(!two.contains("FLATTENED") && two.contains("turns on 2 of 6"), "{two}");
 }
