@@ -9,6 +9,7 @@ mod embedding;
 mod fixed;
 mod group;
 mod hyperboloid;
+mod modes;
 mod multivector;
 mod period;
 mod planes;
@@ -21,6 +22,7 @@ pub use embedding::{
 pub use fixed::{centre_of, nullspace, Centre, PoleAt};
 pub use group::{dilator, is_versor, projective_ratio, reflector};
 pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_lamina, hyperboloid_pole};
+pub use modes::{mode_order, modes, Mode, Undecomposed};
 pub use multivector::{base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP};
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
 pub use planes::{
@@ -29,7 +31,7 @@ pub use planes::{
     Occupancy, PlaneTally, Pole,
 };
 pub use spin::{
-    bivector_is_simple, bivector_split, cayley, inverse_even, reflector_vector, transvection,
+    bivector_is_simple, bivector_split, cayley, cayley_inverse, inverse_even, reflector_vector, transvection,
     transvection_along, transvection_commutator, versor_of_reflections,
 };
 

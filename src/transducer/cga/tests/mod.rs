@@ -6,5 +6,6 @@ mod fixed;
 mod generic;
 mod group;
 mod hyperboloid;
+mod modes;
 mod oracle;
 mod period;

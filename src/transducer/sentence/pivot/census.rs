@@ -353,6 +353,54 @@ pub struct OrbitReading {
     /// exact coefficient, the first `+1` (A4). Never an angle.
     pub precession: Vec<(usize, num_rational::BigRational)>,
     pub centre: crate::transducer::cga::Centre,
+    /// MD1 — THE ORBIT'S MODES (75, 78.11): its generator through the
+    /// inverse Cayley chart, split into commuting modes at every exponent,
+    /// each with its class, its planes and its own closure.
+    pub modes: ModesRead,
+}
+
+/// WHAT THE MODE SPLIT READ OFF AN ORBIT, each arm by name (rule 11).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ModesRead {
+    /// `(class, planes, order)` per mode, the order where an elliptic mode
+    /// closes; a parabolic or hyperbolic mode, or a rosette, reads `None`.
+    Split(Vec<(crate::network::nerve::coord::BivectorKind, usize, Option<u32>)>),
+    /// The generator's modes lie in an extension of ℚ.
+    Undecomposed(crate::transducer::cga::Undecomposed),
+    /// The motion has no rational chart point: its weight is not a rational
+    /// square, or `1 + Ω` does not invert — the held `ℤ₂` arm by name.
+    NoChart,
+}
+
+impl ModesRead {
+    /// THE ONE READER of an orbit's modes, from its holonomy.
+    pub fn of(m: &element::Versor) -> ModesRead {
+        use crate::transducer::cga;
+        let Some(generator) = cga::cayley_inverse(m) else { return ModesRead::NoChart };
+        match cga::modes(&generator) {
+            Ok(ms) => ModesRead::Split(ms.iter().map(|x| (x.kind, x.planes, cga::mode_order(m, x))).collect()),
+            Err(e) => ModesRead::Undecomposed(e),
+        }
+    }
+
+    fn label(&self) -> String {
+        match self {
+            ModesRead::Split(ms) if ms.is_empty() => "none".into(),
+            ModesRead::Split(ms) => ms
+                .iter()
+                .map(|(k, planes, order)| {
+                    let closure = match order {
+                        Some(l) => format!("closes {l}"),
+                        None => "open".into(),
+                    };
+                    format!("{}×{planes} {closure}", format!("{k:?}").to_lowercase())
+                })
+                .collect::<Vec<_>>()
+                .join(", "),
+            ModesRead::Undecomposed(e) => format!("undecomposed {e:?}"),
+            ModesRead::NoChart => "no chart".into(),
+        }
+    }
 }
 
 impl OrbitReading {
@@ -396,6 +444,7 @@ impl OrbitReading {
             parabolic,
             precession,
             centre: cga::centre_of(m, n),
+            modes: ModesRead::of(m),
         }
     }
 
@@ -419,12 +468,13 @@ impl OrbitReading {
         let precession: Vec<String> =
             self.precession.iter().map(|(b, q)| format!("{} {q}", blade_name(*b))).collect();
         format!(
-            "orbit {kind}{} | class {class} | n {} planes [{}] | precession [{}] | centre {}",
+            "orbit {kind}{} | class {class} | n {} planes [{}] | precession [{}] | centre {} | modes [{}]",
             if self.coupled { ", coupled" } else { "" },
             self.n,
             planes.join(" "),
             precession.join(", "),
-            self.centre.label()
+            self.centre.label(),
+            self.modes.label()
         )
     }
 }

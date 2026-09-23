@@ -129,6 +129,37 @@ pub fn cayley(b: &Mv) -> Option<Mv> {
     Some(omega)
 }
 
+/// THE INVERSE CHART: a motion's generator, `B = (1 − Ω)(1 + Ω)⁻¹` (78.11
+/// link 2, beside [`cayley`]).
+///
+/// A holonomy is a RAY — `H` and `λH` are one motion — so the chart is read
+/// at the ray's canonical writing (A4: the first non-zero coefficient `+1`),
+/// normalised by its weight `H H̃`, which must be a positive rational square
+/// for `H` to be in the chart's image at all. Cayley is an involution on the
+/// commuting pair, so the same two products and one even inverse that take
+/// `B` to `Ω` take `Ω` back.
+///
+/// `None` by name, never approximated (rule 11): `H` not a versor of
+/// positive weight; a weight whose root is not rational (no rational chart
+/// point on this ray); `1 + Ω` not invertible, the chart's pole; or a result
+/// that is not a pure bivector.
+pub fn cayley_inverse(h: &Mv) -> Option<Mv> {
+    let ray = h.canonical()?;
+    let w = ray.geo(&ray.reverse());
+    let ws = w.scalar_part();
+    if !ws.is_positive() || !w.sub(&Mv::scalar(ws.clone())).is_zero() {
+        return None;
+    }
+    let lambda = crate::transducer::alphabet::rational_sqrt(&ws)?;
+    let omega = ray.scale(&(one() / &lambda));
+    let one_mv = Mv::scalar(one());
+    let b = one_mv.sub(&omega).geo(&inverse_even(&one_mv.add(&omega))?);
+    match b.sub(&b.grade(2)).is_zero() {
+        true => Some(b.grade(2)),
+        false => None,
+    }
+}
+
 /// THE EXACT INVERSE OF AN EVEN ELEMENT `u = ⟨u⟩₀ + ⟨u⟩₂ + ⟨u⟩₄`.
 ///
 /// `versor_inverse` is `ũ / (u ũ)` and needs `u ũ` to be a pure SCALAR —
@@ -225,6 +256,18 @@ pub fn inverse_even(u: &Mv) -> Option<Mv> {
 /// trivially: one part is `B`, the other is zero, and which is which is the
 /// sign of `⟨B²⟩₀`.
 pub fn bivector_split(m: &Mv) -> Option<(Mv, Mv)> {
+    // MD1 — ONE PRODUCER OF THE SPLIT (law 12). The modes are read at every
+    // exponent by `modes`; this is their two-part reading, the compact half
+    // the elliptic modes summed and the open half the rest, as the closed
+    // form below always filed a null generator.
+    if let Ok(parts) = super::modes::modes(m) {
+        use crate::network::nerve::coord::BivectorKind;
+        let (ell, hyp) = parts.iter().fold((Mv::zero(), Mv::zero()), |(e, h), mode| match mode.kind {
+            BivectorKind::Elliptic => (e.add(&mode.blade), h),
+            _ => (e, h.add(&mode.blade)),
+        });
+        return Some((ell, hyp));
+    }
     let b = m.grade(2);
     let bb = b.geo(&b);
     let i1 = bb.scalar_part();
