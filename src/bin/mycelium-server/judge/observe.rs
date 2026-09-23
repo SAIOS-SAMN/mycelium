@@ -28,6 +28,10 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                 treasury: k.treasury_entry_count() as u64,
                 served: observe::served(),
             });
+            // PH5 — and its phase, the last window it wrote.
+            if let Some(p) = observe::last_phase() {
+                observe::replace(own, Reading::Phase(p));
+            }
             if let Some(court) = standing {
                 if let Some(m) = Memory::now(court.k) {
                     observe::publish(own, Reading::Memory(m));

@@ -3,6 +3,7 @@
 mod bivector;
 mod common;
 mod constructors;
+mod enclosure;
 mod fixed;
 mod generic;
 mod gram;

@@ -152,6 +152,71 @@ impl Spend {
     }
 }
 
+/// PH5 — A COURT'S PHASE (45.9, I1): its last window's coordinates as the
+/// court wrote them — comprehension, congruence, lineages, installed,
+/// adjoined-by-closure, expansion — and the windows written. Read whole at
+/// the question; the later stands.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Phase {
+    pub windows: u64,
+    pub h0: u64,
+    pub h1: u64,
+    pub deflated: u64,
+    pub held: u64,
+    pub sections: u64,
+    pub strata: u64,
+    pub lineages: u64,
+    pub installed: u64,
+    pub retired: u64,
+    pub adjoined_by_closure: u64,
+    pub axes: u64,
+    pub splits: u64,
+}
+
+impl Phase {
+    fn fields(&self) -> [u64; 13] {
+        [
+            self.windows,
+            self.h0,
+            self.h1,
+            self.deflated,
+            self.held,
+            self.sections,
+            self.strata,
+            self.lineages,
+            self.installed,
+            self.retired,
+            self.adjoined_by_closure,
+            self.axes,
+            self.splits,
+        ]
+    }
+
+    pub(crate) fn put(&self, out: &mut Vec<u8>) {
+        put_u64s(out, &self.fields());
+    }
+
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Phase> {
+        let [windows, h0, h1, deflated, held, sections, strata, lineages, installed, retired, adjoined_by_closure, axes, splits] =
+            take_u64s::<13>(b, p)?;
+        Some(Phase {
+            windows,
+            h0,
+            h1,
+            deflated,
+            held,
+            sections,
+            strata,
+            lineages,
+            installed,
+            retired,
+            adjoined_by_closure,
+            axes,
+            splits,
+        })
+    }
+}
+
 /// ONE GRADE OF CERTIFIED CELLS (PG1).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GradeProgress {

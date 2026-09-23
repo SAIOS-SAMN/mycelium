@@ -140,6 +140,16 @@ impl CellOrbit {
     pub const ALL: [CellOrbit; 4] = [CellOrbit::Closed, CellOrbit::Open, CellOrbit::Unbounded, CellOrbit::Unread];
 }
 
+/// EN1 — A CELL'S ENCLOSURE: the round its bodies' centres join is FLAT (no
+/// round, nothing to be inside), or a round against which every other body
+/// of the form stands — inside, on, apart, wrapping it, unread — with the
+/// cell whose enclosure wraps it most closely (the parse, 50.10).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum CellEnclosure {
+    Flat,
+    Round { bodies: [u32; 5], within: Option<u32> },
+}
+
 /// WHETHER A CELL HAS A DUAL FRAME (DF1).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CellDual {
@@ -183,6 +193,8 @@ pub struct CellEntry {
     pub classes: u8,
     /// MG1 — per nucleus, each bracketing mirror: `(axis, k, δ², regime)`.
     pub mirrors: Vec<Vec<(u8, BigRational, BigRational, PairRegime)>>,
+    /// EN1 — its enclosure; `None` where its nuclei did not read.
+    pub enclosure: Option<CellEnclosure>,
 }
 
 /// THE CELLS OF THE LAST PERCEPT, and the form's own mirror group (MG1): how
@@ -314,6 +326,23 @@ impl Cells {
                     put_regime(out, *r);
                 }
             }
+            match &c.enclosure {
+                None => out.push(NONE),
+                Some(CellEnclosure::Flat) => out.push(0),
+                Some(CellEnclosure::Round { bodies, within }) => {
+                    out.push(1);
+                    for b in bodies {
+                        out.extend_from_slice(&b.to_le_bytes());
+                    }
+                    match within {
+                        Some(w) => {
+                            out.push(1);
+                            out.extend_from_slice(&w.to_le_bytes());
+                        }
+                        None => out.push(0),
+                    }
+                }
+            }
         }
     }
 
@@ -397,7 +426,25 @@ impl Cells {
                 }
                 mirrors.push(ms);
             }
+            let enclosure = match take_u8(b, p)? {
+                NONE => None,
+                0 => Some(CellEnclosure::Flat),
+                1 => {
+                    let mut bodies = [0u32; 5];
+                    for v in bodies.iter_mut() {
+                        *v = take_u32(b, p)? as u32;
+                    }
+                    let within = match take_u8(b, p)? {
+                        0 => None,
+                        1 => Some(take_u32(b, p)? as u32),
+                        _ => return None,
+                    };
+                    Some(CellEnclosure::Round { bodies, within })
+                }
+                _ => return None,
+            };
             cells.push(CellEntry {
+                enclosure,
                 grade,
                 round,
                 permutes,

@@ -19,11 +19,11 @@
 
 use crate::network::nerve::Keyed;
 use crate::observe::{
-    CellClosure, CellCoherence, CellDual, CellEntry, CellOrbit, CellPermutes, CellProduct, CellRound, Cells,
+    CellClosure, CellCoherence, CellDual, CellEnclosure, CellEntry, CellOrbit, CellPermutes, CellProduct, CellRound, Cells,
     GradeProgress, Progress, Spend, Viscosity,
 };
 use crate::transducer::cech::{CellAlgebra, Closure, Coherence, Congruence, CoxeterReading, Permutes, Refusal};
-use crate::transducer::cga::{self, ConstructorOrbit, DualFrame, MirrorReading, Mv};
+use crate::transducer::cga::{self, Containment, ConstructorOrbit, DualFrame, MirrorReading, Mv};
 use crate::transducer::sentence::Form;
 
 /// ONE FORM'S CELLS, COMPREHENDED: each cell's orbit algebra, each cell's
@@ -34,6 +34,61 @@ pub(crate) struct Comprehension {
     pub(crate) mirrors: Vec<Vec<Vec<MirrorReading>>>,
     pub(crate) planes: usize,
     pub(crate) mirror_group: Option<CoxeterReading>,
+    /// EN1 — each cell's enclosure, in the cells' key order.
+    pub(crate) enclosures: Vec<Option<CellEnclosure>>,
+}
+
+/// EN1 — EVERY CELL'S ENCLOSURE READ AGAINST THE FORM'S OTHER BODIES: the
+/// round its bodies' centres join (flat by name where they span none), each
+/// body of the form outside the cell by containment against it, and the
+/// cells' enclosures parsed by nesting. A body is one piece, its nucleus
+/// read once, whichever cells it stands in.
+pub(crate) fn read_enclosures(form: &Form) -> Vec<Option<CellEnclosure>> {
+    let mut nucleus_of: Keyed<Mv> = Keyed::new();
+    for (_, cell) in form.cells.scoped() {
+        if let Some(nuclei) = &cell.nuclei {
+            for (piece, s) in cell.bodies.iter().zip(nuclei) {
+                if !nucleus_of.contains(piece) {
+                    nucleus_of.insert(piece, s.clone());
+                }
+            }
+        }
+    }
+    let rounds: Vec<Option<Option<Mv>>> =
+        form.cells.scoped().map(|(_, c)| c.nuclei.as_ref().map(|ns| cga::enclosure(ns))).collect();
+    // The parse over the cells whose enclosure is a round, by cell index.
+    let standing: Vec<(usize, Mv)> =
+        rounds.iter().enumerate().filter_map(|(i, r)| Some((i, r.clone()??))).collect();
+    let parents = cga::nesting(&standing.iter().map(|(_, e)| e.clone()).collect::<Vec<_>>());
+    let within = |i: usize| -> Option<u32> {
+        let at = standing.iter().position(|(j, _)| *j == i)?;
+        parents[at].map(|p| standing[p].0 as u32)
+    };
+    form.cells
+        .scoped()
+        .zip(&rounds)
+        .enumerate()
+        .map(|(i, ((_, cell), round))| match round {
+            None => None,
+            Some(None) => Some(CellEnclosure::Flat),
+            Some(Some(e)) => {
+                let mut bodies = [0u32; 5];
+                for (piece, s) in nucleus_of.scoped() {
+                    if cell.bodies.contains(&piece) {
+                        continue;
+                    }
+                    bodies[match cga::containment(s, e) {
+                        Containment::Inside => 0,
+                        Containment::On => 1,
+                        Containment::Apart => 2,
+                        Containment::Wraps => 3,
+                        Containment::Unread => 4,
+                    }] += 1;
+                }
+                Some(CellEnclosure::Round { bodies, within: within(i) })
+            }
+        })
+        .collect()
 }
 
 /// COMPREHEND A FORM'S CELLS (CG1, MG1), under the stroke's budget.
@@ -65,7 +120,7 @@ pub(crate) fn comprehend(
         true => None,
         false => Some(crate::transducer::cech::read_coxeter(&plane_list, &[], budget)),
     };
-    Comprehension { algebras, mirrors, planes: plane_list.len(), mirror_group }
+    Comprehension { algebras, mirrors, planes: plane_list.len(), mirror_group, enclosures: read_enclosures(form) }
 }
 
 fn cell_closure(r: &CoxeterReading) -> CellClosure {
@@ -97,7 +152,9 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
         .algebras
         .iter()
         .zip(&c.mirrors)
-        .map(|(a, ms)| CellEntry {
+        .zip(&c.enclosures)
+        .map(|((a, ms), enclosure)| CellEntry {
+            enclosure: enclosure.clone(),
             grade: a.grade as u8,
             round: match a.congruence {
                 Congruence::Congruent => CellRound::Kept,

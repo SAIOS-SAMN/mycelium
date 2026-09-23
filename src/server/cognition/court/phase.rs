@@ -202,6 +202,23 @@ impl Kernel {
                 let mut phase = phase_over(&receipts[k0..k1], &at_h0, &now, h0, h1);
                 phase.adjoined_by_closure = self.adjoined();
                 eprintln!("{}", phase.line());
+                // PH5 — and the same window handed to the observer, the
+                // instrument's copy; the court keeps no phase (78.17).
+                crate::observe::note_phase(crate::observe::Phase {
+                    windows: 0,
+                    h0: phase.h0,
+                    h1: phase.h1,
+                    deflated: phase.deflated,
+                    held: phase.held,
+                    sections: phase.sections,
+                    strata: phase.strata,
+                    lineages: phase.lineages,
+                    installed: phase.installed,
+                    retired: phase.retired,
+                    adjoined_by_closure: phase.adjoined_by_closure,
+                    axes: phase.axes,
+                    splits: phase.splits,
+                });
                 read = true;
             }
         }

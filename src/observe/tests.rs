@@ -268,6 +268,7 @@ fn the_cells_read_back_whole() {
                 }],
                 classes: 0,
                 mirrors: vec![vec![(1, q(0, 1), q(1, 4), PairRegime::Finite(3))], vec![]],
+                enclosure: Some(CellEnclosure::Round { bodies: [1, 2, 0, 1, 0], within: Some(1) }),
             },
             CellEntry {
                 grade: 2,
@@ -284,6 +285,7 @@ fn the_cells_read_back_whole() {
                 products: vec![CellProduct { order: vec![0, 1, 2], grades: vec![1, 3], det: Some(-1), classed: true, seal: vec![] }],
                 classes: 1,
                 mirrors: vec![],
+                enclosure: Some(CellEnclosure::Flat),
             },
         ],
     };
@@ -340,7 +342,14 @@ fn viscosity_spend_and_progress_read_back_whole_and_sum_per_axis() {
     let s = Spend { percepts: 1, reads: [10, 2, 30, 4, 50], unbounded: [0, 1, 0, 0, 3] };
     let g = GradeProgress { grade: 2, cells: 3, round_kept: 1, held_z2: 1, refused: 1, finite: 1, affine: 1, infinite: 0, dual_frames: 2 };
     let p = Progress { percepts: 1, contact_cycles: 5, contact_cycles_curved: 2, contact_cycles_unread: 1, grades: vec![g.clone()] };
-    let all = [Reading::Viscosity(v.clone()), Reading::Spend(s.clone()), Reading::Progress(p.clone())];
+    // PH5 — a court's phase travels whole beside them.
+    let phase = Phase { windows: 3, h0: 986, h1: 989, held: 1, sections: 1, strata: 2, installed: 1, ..Phase::default() };
+    let all = [
+        Reading::Viscosity(v.clone()),
+        Reading::Spend(s.clone()),
+        Reading::Progress(p.clone()),
+        Reading::Phase(phase.clone()),
+    ];
     let push = encode_push(&vk(9), &all);
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(9), all.to_vec())));
 

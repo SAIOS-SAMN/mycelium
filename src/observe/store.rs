@@ -132,6 +132,23 @@ pub fn served() -> Vec<(u8, u64)> {
         .collect()
 }
 
+/// PH5 — THE LAST PHASE WINDOW THIS PROCESS'S COURT WROTE, and the windows
+/// written: the instrument's copy, handed over where the court writes its
+/// line, so the court itself keeps no phase (45.9).
+static PHASE: LazyLock<Mutex<Option<super::Phase>>> = LazyLock::new(|| Mutex::new(None));
+
+/// Hold one written window, counting it.
+pub fn note_phase(mut p: super::Phase) {
+    let Ok(mut held) = PHASE.lock() else { return };
+    p.windows = held.as_ref().map_or(0, |h| h.windows) + 1;
+    *held = Some(p);
+}
+
+/// The last window written; `None` before the first.
+pub fn last_phase() -> Option<super::Phase> {
+    PHASE.lock().ok()?.clone()
+}
+
 /// REPLICATION, counted where the exchange and the back-fill classify each
 /// frame (CV5): per signer by its key, and apart for a frame no signer
 /// could be read off.

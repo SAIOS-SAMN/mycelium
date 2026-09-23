@@ -33,10 +33,11 @@ pub const TAG_CELLS: u8 = 9;
 pub const TAG_VISCOSITY: u8 = 10;
 pub const TAG_SPEND: u8 = 11;
 pub const TAG_PROGRESS: u8 = 12;
+pub const TAG_PHASE: u8 = 13;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 12] = [
+pub const READING_NAMES: [(&str, u8); 13] = [
     ("planes", TAG_PLANES),
     ("loss", TAG_LOSS),
     ("memory", TAG_MEMORY),
@@ -49,6 +50,7 @@ pub const READING_NAMES: [(&str, u8); 12] = [
     ("viscosity", TAG_VISCOSITY),
     ("spend", TAG_SPEND),
     ("progress", TAG_PROGRESS),
+    ("phase", TAG_PHASE),
 ];
 
 fn put_u64(out: &mut Vec<u8>, v: u64) {
@@ -558,6 +560,8 @@ pub enum Reading {
     Spend(super::Spend),
     /// PG1 — E1's done-when (78.16).
     Progress(super::Progress),
+    /// PH5 — a court's last phase window (78.17).
+    Phase(super::Phase),
 }
 
 impl Reading {
@@ -575,6 +579,7 @@ impl Reading {
             Reading::Viscosity(_) => TAG_VISCOSITY,
             Reading::Spend(_) => TAG_SPEND,
             Reading::Progress(_) => TAG_PROGRESS,
+            Reading::Phase(_) => TAG_PHASE,
         }
     }
 
@@ -601,6 +606,8 @@ impl Reading {
             (Reading::Viscosity(a), Reading::Viscosity(b)) => a.absorb(b),
             (Reading::Spend(a), Reading::Spend(b)) => a.absorb(b),
             (Reading::Progress(a), Reading::Progress(b)) => a.absorb(b),
+            // A court's phase is its last window; the later stands.
+            (Reading::Phase(a), Reading::Phase(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -622,6 +629,7 @@ impl Reading {
             Reading::Viscosity(r) => r.put(out),
             Reading::Spend(r) => r.put(out),
             Reading::Progress(r) => r.put(out),
+            Reading::Phase(r) => r.put(out),
         }
     }
 
@@ -641,6 +649,7 @@ impl Reading {
             TAG_VISCOSITY => Some(Reading::Viscosity(super::Viscosity::take(b, p)?)),
             TAG_SPEND => Some(Reading::Spend(super::Spend::take(b, p)?)),
             TAG_PROGRESS => Some(Reading::Progress(super::Progress::take(b, p)?)),
+            TAG_PHASE => Some(Reading::Phase(super::Phase::take(b, p)?)),
             _ => None,
         }
     }

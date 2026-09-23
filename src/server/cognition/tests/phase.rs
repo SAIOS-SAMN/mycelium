@@ -124,6 +124,13 @@ fn the_court_reads_the_phase_once_per_circuit_and_stores_no_phase() {
     let f = vec![(0, 0, 6u8), (0, 1, 6)];
     assert_eq!(speak_pair(&mut k, &e, &f, [3; 32]), Outcome::GermPending);
     assert!(k.read_phase(), "a receipt in the window is a measurement");
+    // PH5 — THE WINDOW WRITTEN IS HANDED TO THE OBSERVER, never kept by the
+    // court: the observer's copy reads this window's heights (78.17). The
+    // store is the process's, so another court's window may have landed in
+    // between; the heights are this chain's own.
+    let held = crate::observe::last_phase().expect("a window written is held for the observer");
+    assert!(held.windows >= 1, "the windows are counted");
+    assert!(held.h1 >= held.h0, "a window's heights run forward");
 }
 
 /// R7 (45.9): the window is an aperture of docket circuits. A docket that

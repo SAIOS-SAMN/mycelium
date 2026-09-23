@@ -143,6 +143,41 @@ fn the_percepts_readings_agree_and_are_held_until_taken() {
     assert_eq!(crate::transducer::family::take_spend(), None, "a taken reading is no longer held");
 }
 
+/// EN1 — EACH CELL'S ENCLOSURE AGAINST THE FORM'S OTHER BODIES: the cell of
+/// three bodies at `(0,0,0), (2,0,0), (0,2,0)` joins the round about
+/// `(1,1,0)`, `ρ² = 2`; of the form's other bodies the small one at
+/// `(1,½,0)` is inside it and the rest apart. The pair cell of that small
+/// body and one at `(10,0,0)` joins the round on their diameter, about
+/// `(11/2,¼,0)`: `(2,0,0)` is inside it. The two rounds cut, so neither is
+/// parsed within the other; three collinear centres span no round.
+#[test]
+fn each_cell_reads_its_enclosure_against_the_forms_other_bodies() {
+    use crate::observe::CellEnclosure;
+    use crate::transducer::cga::sphere_at;
+    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
+    let body = |x: i64, y: i64, r2| sphere_at(&[q(x, 1), q(y, 1), q(0, 1)], &r2);
+    let cell = |pieces: &[u8], nuclei: Vec<crate::transducer::cga::Mv>| crate::transducer::sentence::FormCell {
+        bodies: pieces.iter().map(|&p| vec![p]).collect(),
+        witnesses: Vec::new(),
+        nuclei: Some(nuclei),
+    };
+    let quarter = q(1, 4);
+    let mut form = crate::transducer::sentence::Form::default();
+    form.cells.insert([0u8], cell(&[1, 2, 3], vec![body(0, 0, quarter.clone()), body(2, 0, quarter.clone()), body(0, 2, quarter.clone())]));
+    let small = sphere_at(&[q(1, 1), q(1, 2), q(0, 1)], &q(1, 100));
+    form.cells.insert([1u8], cell(&[4, 5], vec![small, body(10, 0, quarter.clone())]));
+    form.cells.insert([2u8], cell(&[6, 7, 8], vec![body(0, 5, quarter.clone()), body(1, 5, quarter.clone()), body(2, 5, quarter)]));
+    let read = crate::transducer::family::comprehend::read_enclosures(&form);
+    assert_eq!(
+        read,
+        vec![
+            Some(CellEnclosure::Round { bodies: [1, 0, 4, 0, 0], within: None }),
+            Some(CellEnclosure::Round { bodies: [1, 0, 5, 0, 0], within: None }),
+            Some(CellEnclosure::Flat),
+        ]
+    );
+}
+
 /// THE PAIRWISE READING OF THE SAME THREE CARRIES NO GRADE-3 CONTENT
 /// (72.1b): each body taken once per tether and revisited around the loop,
 /// `V_ca V_bc V_ab = s_a s_c s_c s_b s_b s_a` is a scalar — the square the

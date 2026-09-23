@@ -1,7 +1,7 @@
 // 78.16, RC2 — THE CENSUS'S CELLS LINE, read off the typed cells the percept
 // held for the observer: one reading, the line a test's own (C3).
 
-use crate::observe::{CellClosure, CellCoherence, CellDual, CellOrbit, CellPermutes, CellRound, Cells};
+use crate::observe::{CellClosure, CellCoherence, CellDual, CellEnclosure, CellOrbit, CellPermutes, CellRound, Cells};
 use crate::transducer::cga::PairRegime;
 
 /// ONE GRADE'S ROW OF THE CELLS' READING.
@@ -33,6 +33,10 @@ struct GradeRow {
     /// MG1: each nucleus against each bracketing mirror — through its
     /// centre, cutting it, tangent, apart.
     mirrors: [u64; 4],
+    /// EN1: enclosures flat, round; the form's other bodies against the
+    /// rounds — inside, on, apart, wrapping, unread; rounds nested in
+    /// another cell's.
+    enclosure: [u64; 8],
 }
 
 /// The tally's axis for a group's closure; an unread reading on the last
@@ -101,6 +105,17 @@ impl CellTally {
                 None => {}
             }
             row.products.push((c.products.len(), usize::from(c.classes)));
+            match &c.enclosure {
+                Some(CellEnclosure::Flat) => row.enclosure[0] += 1,
+                Some(CellEnclosure::Round { bodies, within }) => {
+                    row.enclosure[1] += 1;
+                    for (slot, n) in row.enclosure[2..7].iter_mut().zip(bodies) {
+                        *slot += u64::from(*n);
+                    }
+                    row.enclosure[7] += u64::from(within.is_some());
+                }
+                None => {}
+            }
             for (_, _, _, regime) in c.mirrors.iter().flatten() {
                 row.mirrors[match regime {
                     PairRegime::Finite(2) => 0,
@@ -138,12 +153,17 @@ impl CellTally {
                         x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]
                     )
                 };
-                format!(
+                let en = r.enclosure;
+                let head = format!(
                     "grade {}: round kept {} held-z2 {} carried {} unread {} no-round {} no-circuit {} | constructors kept {} moved {} unread {} | coherence closes {} held {} open {} unread {} | capacity {:?} | orbit closed {} open {} unbounded {} unread {} | gram (sig, rank) {:?} pairs finite {} parabolic {} boost {} rosette {} null {} | coxeter {} | polars {} | dual frame {} redundant {} degenerate {} | products (kept, classes) {:?} | nuclei on mirrors: through {} cut {} tangent {} apart {}",
                     r.grade, cg[0], cg[1], cg[2], cg[3], cg[4], cg[5], pm[0], pm[1], pm[2], ch[0], ch[1], ch[2], ch[3],
                     r.capacity, co[0], co[1], co[2], co[3], r.signatures, pr[0], pr[1], pr[2], pr[3], pr[4],
                     axes(&r.coxeter), axes(&r.polars), r.dual[0], r.dual[1], r.dual[2], r.products,
                     r.mirrors[0], r.mirrors[1], r.mirrors[2], r.mirrors[3]
+                );
+                format!(
+                    "{head} | enclosures flat {} round {}: bodies inside {} on {} apart {} wraps {} unread {}, nested {}",
+                    en[0], en[1], en[2], en[3], en[4], en[5], en[6], en[7]
                 )
             })
             .collect();

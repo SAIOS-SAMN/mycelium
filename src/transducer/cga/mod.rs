@@ -8,6 +8,7 @@
 mod constructors;
 mod dual;
 mod embedding;
+mod enclosure;
 mod fixed;
 mod gram;
 mod group;
@@ -26,6 +27,7 @@ pub use embedding::{
     base_at, base_vector, boundary_dual, e_inf, e_o, hyperbolic_point, on_sphere, point_at, rotator,
     rotator_on_blade, sphere_at, translator_at,
 };
+pub use enclosure::{centre_point, containment, enclosure, nesting, Containment};
 pub use fixed::{centre_of, nullspace, Centre, PoleAt};
 pub use gram::{gram_form, pair_regime, read_gram, signature, vector_rank, GramReading, PairRegime};
 pub use group::{dilator, is_versor, projective_ratio, reflector};

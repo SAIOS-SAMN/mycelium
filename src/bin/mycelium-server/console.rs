@@ -20,6 +20,7 @@
 //!   the growth per `K` between them, and the peak: a leak is growth over
 //!   the source's own clock.
 //! - COURT — the court's `K`, basis, treasury and the acts it served.
+//! - PHASE — the court's last phase window and adjoined-by-closure (PH5).
 //! - LEARNING — a mind's curve at its `K` (LC1): dialect span, cover, what
 //!   its closures did, and every field still owed, by its row.
 //! - CIRCUITS — the last percept's kept circuits step by step (PL1): the
@@ -194,6 +195,7 @@ pub(crate) fn render(addr: &str, total: u32, held: &[observe::Held]) -> Vec<Stri
                 Reading::Viscosity(v) => viscosity(v),
                 Reading::Spend(s) => spend(s),
                 Reading::Progress(p) => progress(p),
+                Reading::Phase(p) => phase(p),
             });
         }
     }
@@ -484,6 +486,22 @@ fn cells(c: &observe::Cells) -> Vec<String> {
                 blade.join(", ")
             ));
         }
+        match &cell.enclosure {
+            Some(observe::CellEnclosure::Flat) => out.push(format!("      {DIM}enclosure flat: the centres span no round{RESET}")),
+            Some(observe::CellEnclosure::Round { bodies, within }) => out.push(format!(
+                "      enclosure  bodies inside {}  on {}  apart {}  wraps {}  unread {}  {}",
+                bodies[0],
+                bodies[1],
+                bodies[2],
+                bodies[3],
+                bodies[4],
+                match within {
+                    Some(w) => format!("within #{w}"),
+                    None => "a root of the parse".into(),
+                }
+            )),
+            None => {}
+        }
         for (s, ms) in cell.mirrors.iter().enumerate() {
             let on: Vec<String> = ms.iter().map(|(axis, k, d2, r)| format!("x{axis}={k}: δ² {d2} {}", regime(r))).collect();
             out.push(format!("      {DIM}nucleus {s} on mirrors [{}]{RESET}", on.join("; ")));
@@ -573,6 +591,24 @@ fn progress(p: &observe::Progress) -> Vec<String> {
         ));
     }
     out
+}
+
+/// PH5 — A COURT'S PHASE (45.9): its last window's coordinates as it wrote
+/// them, adjoined-by-closure (I1) — the one number that bears on the
+/// architecture — named on its own line.
+fn phase(p: &observe::Phase) -> Vec<String> {
+    let adjoined = match p.adjoined_by_closure {
+        0 => format!("{DIM}adjoined-by-closure 0{RESET}"),
+        n => format!("{GREEN}{BOLD}adjoined-by-closure {n}{RESET}"),
+    };
+    vec![
+        format!("  {BOLD}phase{RESET}       h {}..{}  ({} windows written)", p.h0, p.h1, p.windows),
+        format!(
+            "    comprehension {}/{}  congruence {}/{}  lineages {}  installed +{} -{}  expansion {}/{}",
+            p.deflated, p.held, p.sections, p.strata, p.lineages, p.installed, p.retired, p.axes, p.splits
+        ),
+        format!("    {adjoined}"),
+    ]
 }
 
 /// THE ALLOCATOR OVER THE SOURCE'S OWN CLOCK, and the growth per `K`.
