@@ -455,7 +455,7 @@ fn even_pose(ta: &Tower, tb: &Tower, ca: &[Vec<Q>], wb: &[Vec<Q>], rho2: &Q, n: 
     }
     match (proper.as_slice(), improper) {
         ([r], _) => Ok(Pose::Turn(versor_of(r, n))),
-        ([r, _], _) => Ok(Pose::HalfOpen(versor_of(r, n))),
+        ([r, s], _) => Ok(Pose::HalfOpen(vec![versor_of(r, n), versor_of(s, n)])),
         ([], true) => Err(NoPose::Mirrored),
         ([], false) => Err(NoPose::Incongruent),
         _ => Err(NoPose::Unoriented),

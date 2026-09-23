@@ -9,6 +9,12 @@ fn member(i: u16) -> Vec<u8> {
     crate::transducer::family::member_key(i, crate::transducer::stalk::Invariant::default().key().as_bytes())
 }
 
+/// A walked circuit by its steps and composite, through no held coset and
+/// no static contact.
+fn walk(steps: Vec<(u16, bool)>, composite: Option<crate::transducer::cga::Mv>) -> crate::transducer::sentence::WalkedCircuit {
+    crate::transducer::sentence::WalkedCircuit { steps, composite, coset: None, gauge_static: false }
+}
+
 /// One body per member, each a single cube at `site`.
 fn bodies(sites: &[Vec<i64>]) -> crate::network::nerve::Keyed<Vec<Site>> {
     let mut k = crate::network::nerve::Keyed::new();
@@ -87,9 +93,9 @@ fn a_circuit_crosses_a_cell_by_the_body_pair_of_the_face_it_steps_over() {
     form.face_bodies.insert(2u32.to_be_bytes(), (p, s));
     let turn = cga::rotator(&q(1), &q(1));
     let walked = vec![
-        (vec![(1u16, true), (0, false)], Some(turn.clone())),
-        (vec![(1u16, true), (3, true)], Some(turn.clone())),
-        (vec![(2u16, true)], Some(turn)),
+        walk(vec![(1u16, true), (0, false)], Some(turn.clone())),
+        walk(vec![(1u16, true), (3, true)], Some(turn.clone())),
+        walk(vec![(2u16, true)], Some(turn)),
     ];
     let cells = crate::transducer::family::comprehend::cell_algebras(&form, &walked, &mut crate::physics::Physics::default().stroke_n(1 << 16));
     let [c] = cells.as_slice() else { panic!("one cell") };
@@ -116,7 +122,7 @@ fn the_percepts_readings_agree_and_are_held_until_taken() {
     let cell = crate::transducer::sentence::FormCell { bodies: vec![p.clone(), r.clone()], witnesses: Vec::new(), nuclei: Some(nuclei) };
     form.cells.insert([0u8], cell);
     form.face_bodies.insert(0u32.to_be_bytes(), (p, r));
-    let walked = vec![(vec![(0u16, true)], Some(cga::rotator(&q(1), &q(1)))), (vec![(0u16, false)], None)];
+    let walked = vec![walk(vec![(0u16, true)], Some(cga::rotator(&q(1), &q(1)))), walk(vec![(0u16, false)], None)];
     let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
     let comprehension = comprehend::comprehend(&form, &walked, &mut stroke);
     let cells = comprehend::cells_reading(&comprehension);

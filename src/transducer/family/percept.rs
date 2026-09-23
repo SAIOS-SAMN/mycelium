@@ -899,9 +899,21 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         // THE CHORD'S OWN TRANSITION WINS where it has one: the meet
         // measured `V_b ∘ V_a⁻¹` between the two pieces' frames, and the
         // bodies at one member cannot say what the transition between two
-        // of its sections is. Where the chord carries none, the reading off
-        // the bodies stands.
-        let edge = chord_edge.or(measured);
+        // of its sections is. A CONTACT carries its refraction and nothing
+        // else — the rigidity of the two bodies' union is not what their
+        // contact is (BQ5a), so where the refraction was refused the face
+        // stands with no edge and the contact line names why. Every other
+        // face reads its edge off the bodies.
+        let (edge, refraction) = match (contact, chord_edge) {
+            (true, Some(e)) => (Some(e), None),
+            (true, None) => super::pairing::members_contact_edge(
+                &unions,
+                &scenery.supports,
+                member_key(i, &cik),
+                member_key(j, &cjk),
+            ),
+            (false, chord_edge) => (chord_edge.or(measured), None),
+        };
         let (Some(vi), Some(vj)) = (form.vertices.get(i as usize), form.vertices.get(j as usize))
         else {
             drops.vertex += 1;
@@ -915,10 +927,11 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             drops.word += 1;
             continue;
         };
-        let Some(place) = form.face_place(i, &ci, j, &cj, edge) else {
+        let Some(mut place) = form.face_place(i, &ci, j, &cj, edge) else {
             drops.place += 1;
             continue;
         };
+        place.refraction = refraction;
         let mut at = Keyed::new();
         at.insert(face_pair_key(&ci, &cj), place);
         // BD2 — a contact face's body pair, on the form's side carrier, in
@@ -1022,6 +1035,9 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // own carrier by the nerve's one reader (law 12).
     let contact_cells_by_grade =
         crate::transducer::cech::cells_by_grade(form.cells.scoped().map(|(_, c)| (c.grade(), c.meet())));
+    // BQ5a's guard (77, 78.4 E1): the circuits that cross a contact face, by
+    // arm.
+    let contact_circuits = super::pairing::contact_circuits(&form);
     // BQ1, audit N-3 — WHAT PERCEPTION PASSED OVER, always printed: bodies
     // `body_of` refused (counted at `body_of`, whoever asked), laminae with
     // no section (counted at `on_grid`), and sections filed at their `n`
@@ -1037,13 +1053,13 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} orbits \
          | edges asked: measured {}, unspelled {}, unread {}, not rigid {} \
          | chords {} offered {} | cycles: reflexive {} no-tree-path {} unread {} \
-         (cone {} no place {} not rigid {} no face {} two ways {}; edge refused: cone {} not rigid {}) \
+         (cone {} no place {} not rigid {} no face {} two ways {}; edge refused: cone {} not rigid {} unrefracted {}) \
          trivial {} (vacuum {} resonant {} over {} charged edges; \
          μ read on {} steps, {} of them non-zero) \
          | defects: trivial {} elliptic {} hyperbolic {} parabolic {} non-simple {} \
          | spectra: closes {} open {} undecomposed {} isoclinic {} \
          | ρ: |im| {} |conj| {} of {} generators, {} in ker | this form: b₁ {} |im| {} \
-         | field: {} \
+         | contacts: {} \
          | planes: {} \
          | mint: {} \
          | metabolism: {} syntropy {} \
@@ -1053,7 +1069,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
          | nerve/image: {} charts over {} cells, {} shared, certified cells {:?} \
          | phase: {} finite {} infinite {} unread, periods {:?} \
          | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {} \
-         | contact faces offered {} built {}",
+         | contact faces offered {} built {} | contact circuits: curved {} (gauge static {}) \
+         coset closed {} modulo-held {} open {} unread {}",
         form.faces.len(),
         // The site+ring faces COUNTED as they were built, not the total
         // less the meets: a subtraction floored at zero invents a value
@@ -1079,6 +1096,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         unread_why.0.two_ways,
         unread_why.1.cone,
         unread_why.1.not_rigid,
+        unread_why.1.unrefracted,
         crate::transducer::sentence::Form::orbit_gates().3,
         // HOW THE CLOSURES DIVIDE. `trivial` above counts every cycle whose
         // boundary product is the identity; these two say whether that
@@ -1103,13 +1121,11 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         crate::transducer::sentence::orbit_synonyms().3,
         form.orbits.len(),
         crate::transducer::sentence::form_operators(&form),
-        // THE VALVES, ON THE FLEET'S OWN LINE (66). The field tally was
-        // printed only by a corpus test, so a recut would have run blind:
-        // every voice would have condensed or starved with nothing in the
-        // journal to say which valve held. Read WITHOUT clearing — the
-        // corpus test takes the total, this prints the running state, and
-        // only one reader may take (law 12).
-        crate::transducer::family::pairing::field_tally().line(),
+        // THE CONTACTS, ON THE FLEET'S OWN LINE (66, BQ5a): what each
+        // contact the topology named carried, and why an edge did not form.
+        // Read WITHOUT clearing — the corpus test takes the total, this
+        // prints the running state, and only one reader may take (law 12).
+        crate::transducer::family::pairing::contact_tally().line(),
         // D1 — DIMENSIONAL CAPACITY, PER FORM. Ten planes by name, the
         // harmonic six and the luminal four kept apart, and how many
         // generators coupled the halves (a screw, where `I₂ ≠ 0` lives).
@@ -1121,11 +1137,11 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         crate::transducer::family::perceive::demand_tally().line(),
         // D2 — THE THERMODYNAMIC LEDGER. Entropy is the cauterizations,
         // the orbit structure is `ℓ`, and the rate is the reserve's own
-        // per-lane draw. SYNTROPY IS READ FROM THE FIELD'S COUNTER, not
+        // per-lane draw. SYNTROPY IS READ FROM THE CONTACTS' COUNTER, not
         // duplicated: condensations are already counted there, and a
         // second counter for one fact is law 12 inside one carrier.
         crate::physics::metabolism::metabolism().line(),
-        crate::transducer::family::pairing::field_tally().condensed,
+        crate::transducer::family::pairing::contact_tally().condensed,
         source.charts,
         source.cells,
         source.shared,
@@ -1148,7 +1164,13 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         drops.word,
         drops.place,
         drops.contact_offered,
-        drops.contact_built
+        drops.contact_built,
+        contact_circuits[0],
+        contact_circuits[1],
+        contact_circuits[2],
+        contact_circuits[3],
+        contact_circuits[4],
+        contact_circuits[5]
     );
     // OR1, 73.1 — EACH ORBIT THIS PERCEPT READ, beside the cycles line: its
     // type, its class, the planes its precession turns in, the precession's

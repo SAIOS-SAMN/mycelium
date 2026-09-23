@@ -37,18 +37,23 @@ fn fr1b_a_symmetric_body_reads_half_open_at_one_section_and_on_the_tube() {
     // never a permanent refusal.
     let standing = body(&S4.map(|(r, c, k)| (-k, c, r)));
     assert!(on_tube(&s, &standing));
-    let Ok(Pose::HalfOpen(v)) = relative_pose(&s, &standing) else {
+    let Ok(Pose::HalfOpen(candidates)) = relative_pose(&s, &standing) else {
         panic!("the tube holds the half turn: {:?}", relative_pose(&s, &standing));
     };
-    // The representative is one of the two turns the `ℤ₂` holds — the
-    // quarter turn in `e₁₃`, or it composed with the half turn in the S's
-    // own plane — so the column axis stays on its line, either way along it.
+    // BOTH turns the `ℤ₂` holds are carried, never a representative
+    // (78.6(1)) — the quarter turn in `e₁₃`, and it composed with the half
+    // turn in the S's own plane — and each keeps the column axis on its
+    // line, either way along it.
+    assert_eq!(candidates.len(), 2, "the held ℤ₂'s two candidates");
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
-    let image = v.sandwich(&cga::Mv::blade(E2, q(1)));
-    assert!(
-        (0..image.slot_count()).all(|m| m == E2 || *image.coeff(m) == q(0)) && *image.coeff(E2) != q(0),
-        "the column axis stays on its line: {v:?}"
-    );
+    for v in &candidates {
+        let image = v.sandwich(&cga::Mv::blade(E2, q(1)));
+        assert!(
+            (0..image.slot_count()).all(|m| m == E2 || *image.coeff(m) == q(0)) && *image.coeff(E2) != q(0),
+            "the column axis stays on its line: {v:?}"
+        );
+    }
+    assert!(!candidates[0].projective_eq(&candidates[1]), "two candidates, two turns");
     // And the standing body against itself: held, not a turn chosen.
     assert!(matches!(relative_pose(&standing, &standing), Ok(Pose::HalfOpen(_))));
 }

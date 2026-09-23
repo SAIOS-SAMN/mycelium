@@ -323,6 +323,7 @@ fn the_metabolism_reads_the_orbits_true_holonomy_not_its_coboundary() {
                     carriage: element::identity_versor(),
                     gauge: Vec::new(),
                 }),
+                refraction: None,
             },
         );
         f.faces.push(face);

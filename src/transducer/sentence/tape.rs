@@ -437,7 +437,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 }
                 _ => return None,
             };
-            at.insert(pk.as_bytes(), FacePlace { carriage, gauge, edge });
+            at.insert(pk.as_bytes(), FacePlace { carriage, gauge, edge, refraction: None });
         }
         let pairs = match *b.get(*pos)? {
             0 => {

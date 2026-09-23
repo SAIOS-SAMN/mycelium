@@ -26,6 +26,31 @@ fn percept_lines() {
     if let Some(v) = crate::transducer::family::take_viscosity() {
         eprintln!("  {}", crate::transducer::sentence::viscosity_line(&v));
     }
+    // CT1 — THE REUSE LADDER, per circuit, by class (79.3): asserted, never
+    // hand-probed. This ladder produces neither D nor a candidate — those
+    // are read across the mesh and by construction (CV4, CT2).
+    if let Some(c) = crate::transducer::sentence::take_circuits() {
+        use crate::observe::CircuitClass;
+        let mut by_class = [0usize; 6];
+        let mut untested = 0usize;
+        for circuit in &c.circuits {
+            match &circuit.test {
+                Some(t) => {
+                    assert!(!t.arms.is_empty() || t.class == CircuitClass::Flat, "a test records the arms it ran: {t:?}");
+                    by_class[CircuitClass::ALL.iter().position(|&k| k == t.class).expect("a class of the six")] += 1;
+                }
+                None => untested += 1,
+            }
+        }
+        assert_eq!((by_class[3], by_class[4]), (0, 0), "the ladder reads neither D nor a candidate");
+        let classes: Vec<String> =
+            CircuitClass::ALL.iter().zip(by_class).map(|(k, n)| format!("{} {n}", k.label())).collect();
+        eprintln!(
+            "  circuit tests (CT1): {} | untested (a class of their own or a coset) {untested} of {}",
+            classes.join(" "),
+            c.circuits.len()
+        );
+    }
 }
 
 /// GRADE 0 ON THE CORPUS — how many vertices are not one 0-cell, and does
@@ -380,17 +405,17 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         }
     }
     let t = crate::transducer::family::cover::take_cover_tally();
-    // T4 — AND WHAT THE CONDENSATION FIELD DID, per gate. A census that
-    // reads `0 condensed` says nothing until it says WHICH gate refused:
-    // "every pair was refused" and "the pass never ran" are the same
-    // silence otherwise, which is the vacuous-truth defect (§8.1).
-    let f = crate::transducer::family::pairing::take_field_tally();
+    // BQ5a — AND WHAT EACH CONTACT THE TOPOLOGY NAMED CARRIED. A census
+    // that reads `0 condensed` says nothing until it says WHICH arm refused
+    // (§8.1); the field and its band are gone, so what is read is the
+    // contacts themselves.
+    let f = crate::transducer::family::pairing::take_contact_tally();
     eprintln!(
         "  lift over {forms} corpus forms: meets {} ({} carried an edge) \
          → chords {}, within one class {}, unclassed {} \
          | axiom B: geodesic {} off-sheet {} \
          | poses: {} framed {} half-open {} unframed, {} on the tube \
-         | field: {} offered, {} unlifted | horizon: {} apart, {} contained \
+         | contacts: {} offered, {} unlifted | tether: {} apart, {} contained \
          | pose: {} on the tube | {} bodiless, {} isotropy, {} unoriented, {} OBLIQUE, \
          {} mirrored, {} irrational, {} half-open | {} CONDENSED \
          | forms carrying an orbit: {with_orbits}",
@@ -487,6 +512,7 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
     let (mut orbits_total, mut acyclic) = (0usize, 0usize);
     let mut acyclic_residue = 0usize;
     let mut pairs_hist: [usize; 8] = [0; 8];
+    let mut kinds = [0usize; 6];
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
@@ -507,8 +533,11 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
         }
         let (_mag, remainders) =
             crate::transducer::family::form_deflation(&rule.form, &task.train, &epi);
-        // The arm this form would be withheld on, if it is withheld at all.
-        match withheld_of(&rule.form, &remainders) {
+        // The arm this form would be withheld on, if it is withheld at all,
+        // and its kind (CV1, 78.9).
+        let withheld = withheld_of(&rule.form, &remainders);
+        kinds[withheld.obstruction_kind().index()] += 1;
+        match withheld {
             Withheld::OrbitObstruction { .. } => obstructed += 1,
             Withheld::CoboundaryResidue { pairs, .. } => {
                 coboundary += 1;
@@ -531,6 +560,12 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
         names.len()
     );
     eprintln!("  coboundary residue by train pairs failed: {pairs_hist:?}");
+    let by_kind: Vec<String> = crate::transducer::sentence::ObstructionKind::ALL
+        .iter()
+        .zip(kinds)
+        .map(|(k, n)| format!("{} {n}", k.label()))
+        .collect();
+    eprintln!("  withheld by kind (CV1): {}", by_kind.join(" "));
     eprintln!(
         "  IS THE DISCRIMINATOR ASKABLE: {acyclic}/{extracted} forms carry NO orbits \
          ({orbits_total} orbits in total) — on those, delta1 is empty and H1 cannot be read"

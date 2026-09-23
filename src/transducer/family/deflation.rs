@@ -41,11 +41,16 @@ use super::*;
 /// A form whose orbits do not close has no perspective to shift into.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Withheld {
-    /// A class in `H¹`: permanent, and no generator or vantage retires it.
+    /// A class in `H¹` of THIS cover. Not permanent (78.9, amending what
+    /// this said): under 74 a class in `H¹` is cover-relative — C — and
+    /// closes on another mind's cover; no generator of this dialect retires
+    /// it, and another vantage may.
     OrbitObstruction { orbit_ix: u16, key: [u8; 2] },
     /// Off by a coboundary: the form CARRIES ORBITS, every one of them
     /// closes, and the cochain still disagrees. The thought stands and the
-    /// perspective does not — `Φ⁻¹` is the correction.
+    /// perspective does not — `Φ⁻¹` is the correction. NOT A REFUSAL
+    /// (78.9): work the mint owes, retired when the mint applies `Φ⁻¹`
+    /// (rule 17); counted C by name until then, since it is cover-relative.
     CoboundaryResidue { links: usize, pairs: usize },
     /// THE QUESTION WAS NOT ASKABLE. The form carries NO ORBITS, so
     /// `delta1()` is empty and `H¹` has nothing to obstruct — the form is
@@ -80,6 +85,17 @@ impl Withheld {
     /// arms without this cannot tell an empty arm from an unreachable one.
     pub fn is_askable(&self) -> bool {
         !matches!(self, Withheld::Acyclic { .. })
+    }
+
+    /// CV1 — THE KIND OF WHAT THE MINT WITHHELD (78.9): a class in `H¹` and
+    /// a coboundary residue are cover-relative, C; an acyclic form and one
+    /// with no descent asked no question, N.
+    pub fn obstruction_kind(&self) -> crate::transducer::sentence::ObstructionKind {
+        use crate::transducer::sentence::ObstructionKind;
+        match self {
+            Withheld::OrbitObstruction { .. } | Withheld::CoboundaryResidue { .. } => ObstructionKind::C,
+            Withheld::Acyclic { .. } | Withheld::NoDescent => ObstructionKind::N,
+        }
     }
 
     /// A stable token for the journal, so a reading counts arms rather

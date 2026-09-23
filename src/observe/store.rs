@@ -204,6 +204,14 @@ pub enum Verdict {
 
 static VERDICTS: [AtomicU64; 4] = [const { AtomicU64::new(0) }; 4];
 static REFUSED: [AtomicU64; 256] = [const { AtomicU64::new(0) }; 256];
+/// CV1 — the court's refusals by the kind of obstruction (78.9), on
+/// `ObstructionKind::index`'s axes.
+static OBSTRUCTED: [AtomicU64; 6] = [const { AtomicU64::new(0) }; 6];
+
+/// Count one refusal by its kind, where the court refuses.
+pub fn note_obstruction(kind: crate::transducer::sentence::ObstructionKind) {
+    OBSTRUCTED[kind.index()].fetch_add(1, Ordering::Relaxed);
+}
 
 /// Count one verdict, where the court reaches it.
 pub fn note_verdict(v: Verdict) {
@@ -232,6 +240,7 @@ pub fn adjudication() -> super::Adjudication {
             .map(|k| (k, REFUSED[usize::from(k)].load(Ordering::Relaxed)))
             .filter(|&(_, n)| n > 0)
             .collect(),
+        obstructed: std::array::from_fn(|i| OBSTRUCTED[i].load(Ordering::Relaxed)),
     }
 }
 

@@ -476,7 +476,13 @@ impl Form {
                 // refused is UNREAD at its step, never classed off the face
                 // half alone.
                 let composite = c.composite();
-                note_orbit(|| OrbitNote { composite: composite.clone(), at: c.edge_lost_at, why: c.edge_refused });
+                note_orbit(|| OrbitNote {
+                    composite: composite.clone(),
+                    at: c.edge_lost_at,
+                    why: c.edge_refused,
+                    gauge_static: c.gauge_static(),
+                    coset: c.coset().and_then(|(cands, held)| Some((c.coset_closure()?, held, cands.len()))),
+                });
                 // PL1 — AND THE SAME CIRCUIT'S BRICKS, step by step (78.12(4)).
                 super::trajectory::note_circuit(|| super::trajectory::read_circuit(lp.chord, c, faces));
                 // AND THE OPERATOR THIS GENERATOR ENACTS, at the basepoint

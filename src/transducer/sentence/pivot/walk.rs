@@ -122,15 +122,116 @@ pub(crate) struct PathCarried {
     /// OR3 — THE STEP, counted from one, at which the edge half was lost:
     /// where the circuit went unread, whatever refused it.
     pub(crate) edge_lost_at: Option<usize>,
+    /// BQ5a — THE EDGE HALF THROUGH A CONTACT THAT IS NOT ONE TRANSPORT
+    /// (78.6): from the first coset or static step on, one candidate per
+    /// assignment of the held stabilizers crossed, each its geometric
+    /// composite and its gauge composite apart — the gauge `None` once a
+    /// static step left it unread. `edge` is `None` then; this is the edge
+    /// half, never a refusal of it.
+    pub(crate) refracted: Option<Vec<EdgeCandidate>>,
+    /// The held (coset) and static contact steps the edge half crossed.
+    pub(crate) held_steps: u32,
+    pub(crate) static_steps: u32,
+}
+
+/// ONE CANDIDATE OF A REFRACTED EDGE HALF: its geometric composite, and its
+/// gauge composite (word and hue) where every step read one (NB1: the two
+/// read apart and never summed).
+#[derive(Clone, Debug)]
+pub(crate) struct EdgeCandidate {
+    pub(crate) carriage: element::Versor,
+    pub(crate) gauge: Option<(Word, Vec<(u8, u8)>)>,
+}
+
+/// HOW A CIRCUIT THROUGH A HELD COSET CLOSES (78.6(1)).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CosetClosure {
+    /// One candidate, the identity: the held subgroup is trivial here.
+    Closed,
+    /// The coset contains the identity: closed modulo the held `ℤ₂ᵏ`.
+    ClosedModuloHeld,
+    /// No candidate is the identity.
+    Open,
 }
 
 impl PathCarried {
     /// OR3 — THE CIRCUIT'S WHOLE TRANSPORT, `Ω_edge · Ω_face`: the one reader
     /// every orbit reading takes it through (law 12). `None` where the edge
     /// half is refused — the face half alone is part of the transport, and
-    /// read as the whole it classed unread circuits trivial (rule 11).
+    /// read as the whole it classed unread circuits trivial (rule 11) — and
+    /// where it rides a held coset: several candidates, none chosen. A
+    /// circuit through static contacts only has ONE candidate, and its
+    /// geometric composite — the tether holonomy — is read here; its gauge
+    /// half is static, read by [`PathCarried::gauge_static`].
     pub(crate) fn composite(&self) -> Option<element::Versor> {
-        self.edge.as_ref().map(|e| e.carriage.geo(&self.face.carriage))
+        match (&self.edge, self.refracted.as_deref()) {
+            (Some(e), _) => Some(e.carriage.geo(&self.face.carriage)),
+            (None, Some([one])) => Some(one.carriage.geo(&self.face.carriage)),
+            _ => None,
+        }
+    }
+
+    /// 78.6(1) — EVERY CANDIDATE'S WHOLE TRANSPORT through a held coset, and
+    /// the held steps crossed; `None` where the edge half holds one candidate
+    /// or none.
+    pub(crate) fn coset(&self) -> Option<(Vec<element::Versor>, u32)> {
+        match self.refracted.as_deref() {
+            Some(cands) if cands.len() > 1 => {
+                Some((cands.iter().map(|c| c.carriage.geo(&self.face.carriage)).collect(), self.held_steps))
+            }
+            _ => None,
+        }
+    }
+
+    /// HOW THE CIRCUIT CLOSES through its held coset, read against the
+    /// identity ray (EQ1); `None` where it holds no coset.
+    pub(crate) fn coset_closure(&self) -> Option<CosetClosure> {
+        let (cands, _) = self.coset()?;
+        let identity = element::identity_versor();
+        let closes: Vec<bool> = cands.iter().map(|c| element::same_versor(c, &identity)).collect();
+        Some(match (closes.iter().all(|&b| b), closes.iter().any(|&b| b)) {
+            // Every candidate the identity: the held subgroup acts trivially
+            // around this circuit.
+            (true, _) => CosetClosure::Closed,
+            (false, true) => CosetClosure::ClosedModuloHeld,
+            (false, false) => CosetClosure::Open,
+        })
+    }
+
+    /// 78.6(2) — the gauge half unread by name: a static contact crossed.
+    pub(crate) fn gauge_static(&self) -> bool {
+        self.refracted.as_ref().is_some_and(|cs| cs.iter().any(|c| c.gauge.is_none()))
+    }
+}
+
+/// Apply one refracted contact step to every candidate, the way the circuit
+/// crosses it; `None` where a step it must invert has no inverse (the cone).
+fn refract(candidates: Vec<EdgeCandidate>, r: &Refraction, forward: bool) -> Option<Vec<EdgeCandidate>> {
+    match r {
+        Refraction::Static(v) => {
+            let v = match forward {
+                true => v.clone(),
+                false => v.versor_inverse()?,
+            };
+            Some(candidates.into_iter().map(|c| EdgeCandidate { carriage: v.geo(&c.carriage), gauge: None }).collect())
+        }
+        Refraction::Coset(coset) => {
+            let steps: Vec<Transport> = match forward {
+                true => coset.clone(),
+                false => coset.iter().map(Transport::inverse).collect::<Option<Vec<_>>>()?,
+            };
+            Some(
+                candidates
+                    .iter()
+                    .flat_map(|c| {
+                        steps.iter().map(move |t| EdgeCandidate {
+                            carriage: t.carriage.geo(&c.carriage),
+                            gauge: c.gauge.as_ref().map(|(w, h)| (t.word.compose(w), compose_gauge(&t.gauge, h))),
+                        })
+                    })
+                    .collect(),
+            )
+        }
     }
 }
 
@@ -157,6 +258,10 @@ pub(crate) enum Unread {
     /// A face between two bodies that carries no edge, because no versor
     /// carries their union (50.3's `NotRigid`).
     NotRigid,
+    /// BQ5a — A CONTACT FACE whose refraction `g = (θ_bθ_a⁻¹)·V` was refused:
+    /// the pose or the peel said no, and the contact line names the arm. Not
+    /// `NotRigid` — a contact's edge is never the rigidity of the union.
+    Unrefracted,
     /// The cycle names a face the form does not hold, or a member key that
     /// does not read. The cycle and the incidence disagree.
     NoFace,
@@ -171,6 +276,7 @@ pub struct UnreadTally {
     pub cone: u64,
     pub no_place: u64,
     pub not_rigid: u64,
+    pub unrefracted: u64,
     pub no_face: u64,
     pub two_ways: u64,
 }
@@ -182,6 +288,7 @@ impl Unread {
             Unread::Cone => "cone",
             Unread::NoPlace => "no place",
             Unread::NotRigid => "not rigid",
+            Unread::Unrefracted => "unrefracted",
             Unread::NoFace => "no face",
             Unread::TwoWays => "two ways",
         }
@@ -194,6 +301,7 @@ impl UnreadTally {
             Unread::Cone => self.cone += 1,
             Unread::NoPlace => self.no_place += 1,
             Unread::NotRigid => self.not_rigid += 1,
+            Unread::Unrefracted => self.unrefracted += 1,
             Unread::NoFace => self.no_face += 1,
             Unread::TwoWays => self.two_ways += 1,
         }
@@ -353,6 +461,9 @@ fn walk(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> Resu
         steps: Vec::with_capacity(lp.faces.len()),
         edge_refused: None,
         edge_lost_at: None,
+        refracted: None,
+        held_steps: 0,
+        static_steps: 0,
     };
     let mut charts: Vec<Vec<u8>> = Vec::with_capacity(lp.members.len());
     for (win, &fi) in lp.members.windows(2).zip(&lp.faces) {
@@ -449,37 +560,73 @@ fn walk(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> Resu
         // face with a place and no edge is not rigid, and a transport whose
         // inverse does not exist is on the light cone. The first refusal is
         // the one that stands.
-        let lost = match (&step, place.is_some()) {
-            (None, true) => Some(Unread::NotRigid),
+        // BQ5a — A CONTACT WHOSE EDGE IS NOT ONE TRANSPORT (78.6): the held
+        // coset or the static tether its place carries, where no edge formed.
+        let refraction = match (&step, place.as_ref()) {
+            (None, Some(p)) if !f.interface.is_empty() => p.refraction.clone(),
             _ => None,
         };
-        acc.edge = match (acc.edge.take(), step) {
-            (Some(held), Some(step)) => {
-                let step = match forward {
-                    true => Some(step),
-                    false => step.inverse(),
-                };
+        let lost = match (&step, place.is_some(), f.interface.is_empty(), &refraction) {
+            (None, true, true, _) => Some(Unread::NotRigid),
+            (None, true, false, None) => Some(Unread::Unrefracted),
+            _ => None,
+        };
+        let inverted = |step: Transport| match forward {
+            true => Some(step),
+            false => step.inverse(),
+        };
+        match (acc.edge.take(), acc.refracted.take(), step, &refraction) {
+            (Some(held), _, Some(step), _) => {
+                let step = inverted(step);
                 if step.is_none() && acc.edge_refused.is_none() {
                     acc.edge_refused = Some(Unread::Cone);
                 }
-                step.map(|step| Transport {
+                acc.edge = step.map(|step| Transport {
                     carriage: step.carriage.geo(&held.carriage),
                     word: step.word.compose(&held.word),
                     gauge: compose_gauge(&step.gauge, &held.gauge),
-                })
+                });
             }
-            _ => None,
-        };
+            // THE FIRST REFRACTED STEP: the edge composite so far becomes
+            // the one candidate every later step multiplies.
+            (Some(held), _, None, Some(r)) => {
+                let one = vec![EdgeCandidate { carriage: held.carriage, gauge: Some((held.word, held.gauge)) }];
+                acc.refracted = refract(one, r, forward);
+            }
+            (None, Some(cands), Some(step), _) => {
+                acc.refracted = inverted(step).map(|t| {
+                    cands
+                        .into_iter()
+                        .map(|c| EdgeCandidate {
+                            carriage: t.carriage.geo(&c.carriage),
+                            gauge: c.gauge.map(|(w, h)| (t.word.compose(&w), compose_gauge(&t.gauge, &h))),
+                        })
+                        .collect()
+                });
+            }
+            (None, Some(cands), None, Some(r)) => acc.refracted = refract(cands, r, forward),
+            _ => {}
+        }
+        match &refraction {
+            Some(Refraction::Static(_)) => acc.static_steps += 1,
+            Some(Refraction::Coset(_)) => acc.held_steps += 1,
+            None => {}
+        }
         if acc.edge_refused.is_none() {
             acc.edge_refused = lost;
         }
-        if acc.edge.is_none() && acc.edge_lost_at.is_none() {
+        if acc.edge.is_none() && acc.refracted.is_none() && acc.edge_lost_at.is_none() {
             acc.edge_lost_at = Some(acc.steps.len());
         }
     }
     acc.face.word = acc.face.word.normal_form();
     if let Some(e) = acc.edge.as_mut() {
         e.word = e.word.normal_form();
+    }
+    for c in acc.refracted.iter_mut().flatten() {
+        if let Some((w, _)) = c.gauge.as_mut() {
+            *w = w.normal_form();
+        }
     }
     let mut out = Keyed::new();
     out.insert(Orbit::path_key(&charts), acc);
@@ -772,6 +919,11 @@ pub(crate) fn orbit_is_trivial(
         .any(|&fi| faces.get(fi as usize).is_some_and(|f| !touches_frame(vertices, f)));
     let mut any_edge = false;
     for (_, c) in carried.scoped() {
+        // BQ5a — a refracted edge half is read, and never flat: its gauge
+        // half is static or held (78.6).
+        if c.refracted.is_some() {
+            return false;
+        }
         if let Some(e) = &c.edge {
             any_edge = true;
             if !flat(e) {

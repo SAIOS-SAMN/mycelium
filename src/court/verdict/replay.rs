@@ -236,10 +236,10 @@ fn derivations_compose(
         match derivation.verify_with(&held) {
             Verified::Composes => {}
             Verified::Differs => {
-                return Some(Refusal {
-                    reason: REFUSE_DERIVATION,
-                    at: sentence::At::Vertex { address: address.clone(), chart: class.clone() },
-                })
+                return Some(Refusal::new(
+                    REFUSE_DERIVATION,
+                    sentence::At::Vertex { address: address.clone(), chart: class.clone() },
+                ))
             }
             // The door (`hear_sentence`) decides the WAIT before any
             // replay runs, so an unruled cited FORM never reaches here.
@@ -248,10 +248,10 @@ fn derivations_compose(
             // not in it — which is a claim about the tape and a refusal
             // at the vertex that made it, not a deferral.
             Verified::Unresolved { .. } => {
-                return Some(Refusal {
-                    reason: REFUSE_DERIVATION,
-                    at: sentence::At::Vertex { address: address.clone(), chart: class.clone() },
-                })
+                return Some(Refusal::new(
+                    REFUSE_DERIVATION,
+                    sentence::At::Vertex { address: address.clone(), chart: class.clone() },
+                ))
             }
         }
     }
@@ -274,10 +274,10 @@ fn witnesses_carry_their_primes(f: &Form) -> Option<Refusal> {
             crate::core::gaussian::prime_factor(&w, &num_bigint::BigInt::from(*prime)).is_some()
         });
         if !carries {
-            return Some(Refusal {
-                reason: REFUSE_LETTER_WITNESS,
-                at: sentence::At::Vertex { address: kind.key(), chart: chart.clone() },
-            });
+            return Some(Refusal::new(
+                REFUSE_LETTER_WITNESS,
+                sentence::At::Vertex { address: kind.key(), chart: chart.clone() },
+            ));
         }
     }
     None
@@ -345,12 +345,14 @@ pub fn replay_form_on(
         // of the atlas rather than at the boundary that is open.
         let Vertex::Glued { chart, .. } = v else { continue };
         let site = crate::transducer::sentence::vertex_bytes(v);
-        let at = |reason| Refusal {
-            reason,
-            at: sentence::At::Vertex {
-                address: crate::transducer::address::Address::new(site.clone()),
-                chart: chart.clone(),
-            },
+        let at = |reason| {
+            Refusal::new(
+                reason,
+                sentence::At::Vertex {
+                    address: crate::transducer::address::Address::new(site.clone()),
+                    chart: chart.clone(),
+                },
+            )
         };
         // A MULTI-SHEETED SEAM IS ADMISSIBLE, A REPEATED SHEET IS NOT.
         // Several edges at one site is a junction between several charts —
@@ -384,10 +386,7 @@ pub fn replay_form_on(
             matches!(v, Vertex::Glued { .. })
                 && crate::transducer::sentence::vertex_bytes(v) == host.as_bytes()
         }) {
-            return Some(Refusal {
-                reason: REFUSE_PHANTOM_EDGE,
-                at: sentence::At::Vertex { address: host, chart: e.chart.clone() },
-            });
+            return Some(Refusal::new(REFUSE_PHANTOM_EDGE, sentence::At::Vertex { address: host, chart: e.chart.clone() }));
         }
     }
     // THE CITATIONS ARE THE NERVE'S 1-SIMPLICES, READ FROM THE ENVELOPE
@@ -518,7 +517,18 @@ pub fn replay_form_on(
     // THE SPOKEN WORD'S OWN ATTESTATION, checked against the forest the
     // court just walked (54.5).
     if !form_orbits_replay(&walked) {
-        return Some(tape(REFUSE_ORBIT));
+        // CV1 — the orbit's whole transport, read by the one reader (78.9):
+        // no versor is P, a versor the dialect does not spell is D, one it
+        // spells whose closure still refused is C.
+        let composite = walked.incoherent_orbit().and_then(|lp| {
+            let carried = crate::transducer::sentence::walk::paths_carried(&walked.faces, &walked.vertices, lp)?;
+            carried.scoped().find_map(|(_, c)| c.composite())
+        });
+        return Some(Refusal::closure(
+            REFUSE_ORBIT,
+            sentence::At::Tape(spoken.address()),
+            sentence::Content::Holonomy { versor: composite.as_ref(), chart: None, proof: "the orbit's transport lifts to no versor" },
+        ));
     }
     // AND THE SPEAKER'S CLAIM, CHECKED AGAINST THE GEOMETRY THE COURT JUST
     // WALKED (54.5). The terrain is priced above; this is the labour, and
@@ -622,15 +632,22 @@ pub fn replay_form_on(
             // false, and that is the refusal it owes; contracting its
             // silence while leaving the falsehood would mint an address
             // that refuses again.
+            // CV1 — A REMAINDER IS A RESIDUE ON THE COVER: its links are the
+            // cocycle, read by the one reader (78.9).
             if !wrong.is_empty() {
+                let content = sentence::Content::Residue(&wrong);
+                let obstruction = sentence::read_obstruction(content);
                 return Some(Refusal {
                     reason: REFUSE_NOT_CLOSED,
                     at: sentence::At::Chart(stalk::invariant(&wrong), wrong),
+                    obstruction,
                 });
             }
+            let obstruction = sentence::read_obstruction(sentence::Content::Residue(&silent));
             return Some(Refusal {
                 reason: REFUSE_NOT_CLOSED,
                 at: sentence::At::Chart(stalk::invariant(&silent), silent),
+                obstruction,
             });
         }
     }
@@ -652,7 +669,7 @@ fn face_at(f: &Form, face: &crate::transducer::sentence::FormFace, spoken: &Elem
         _ => None,
     };
     match (addr_of(face.i), addr_of(face.j)) {
-        (Some(a), Some(b)) => Refusal { reason: REFUSE_FACE, at: sentence::At::Face(a, b) },
+        (Some(a), Some(b)) => Refusal::new(REFUSE_FACE, sentence::At::Face(a, b)),
         _ => Refusal::of_tape(REFUSE_FACE, spoken),
     }
 }
@@ -687,10 +704,9 @@ pub(crate) fn vertex_tape_and_moves(
                 }
                 if contact.is_some() {
                     let still = || match v.face_chart() {
-                        Some(chart) => Refusal {
-                            reason: REFUSE_ORBIT_STILL,
-                            at: sentence::At::Vertex { address: address.clone(), chart },
-                        },
+                        Some(chart) => {
+                            Refusal::new(REFUSE_ORBIT_STILL, sentence::At::Vertex { address: address.clone(), chart })
+                        }
                         None => tape(REFUSE_ORBIT_STILL),
                     };
                     if derivation.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {

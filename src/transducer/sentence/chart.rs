@@ -175,6 +175,7 @@ impl Form {
                         carriage: gv.geo(&p.carriage).geo(&inv),
                         gauge: p.gauge.clone(),
                         edge: p.edge.clone(),
+                        refraction: p.refraction.clone(),
                     },
                 );
             }

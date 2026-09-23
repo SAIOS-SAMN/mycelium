@@ -250,6 +250,7 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
             carriage: element::identity_versor(),
             gauge: Vec::new(),
         }),
+        refraction: None,
     };
     let mut f = Form::default();
     f.vertices.push(word_vertex(1));
@@ -522,6 +523,7 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
             carriage: element::identity_versor(),
             gauge: Vec::new(),
         }),
+        refraction: None,
     };
     let mut f = Form::default();
     f.vertices.push(word_vertex(1));
@@ -904,6 +906,7 @@ fn face_words_and_edge_transports_admit_bidirectionally_on_member_charts() {
         carriage: element::translator_versor(1, 1),
         gauge: Vec::new(),
         edge: Some(edge_transport),
+        refraction: None,
     };
     face.at.insert(
         crate::transducer::sentence::face_pair_key(&chart_a, &chart_b),

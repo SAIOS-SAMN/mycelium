@@ -124,6 +124,98 @@ fn an_orbit_whose_edge_half_is_refused_reads_unread_at_its_step() {
     assert_eq!(orbit_defects(), (0, 0, 0, 0, 0), "no class filed off the face half");
 }
 
+/// Two bodies on the Frame's star and a chord carrying no edge, with `extra`
+/// written on the chord beside the pair the walk crosses; the circuits read.
+fn refused_circuits(extra: Option<(Vec<u8>, FacePlace)>) -> Vec<Circuit> {
+    let mut f = Form::default();
+    for n in 1..=2u8 {
+        f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
+    }
+    f.faces.push(f.face_of(0, 1).expect("star a"));
+    f.faces.push(f.face_of(0, 2).expect("star b"));
+    let mut chord = f.face_carrying(1, 2, order4()).expect("a chord carrying no edge");
+    if let Some((k, place)) = extra {
+        chord.at.insert(k, place);
+    }
+    f.faces.push(chord);
+    arm_orbits();
+    let orbits = Form::orbits_of(&f.faces, &f.vertices);
+    assert_eq!(orbits.len(), 1, "the word keeps the orbit, or nothing is tested");
+    let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
+    let _ = take_orbits(&mut stroke);
+    finish_circuits(&mut stroke);
+    take_circuits().expect("the circuits were armed").circuits
+}
+
+/// CT1, 79.3 — THE LADDER RUNS ON A REFUSED CIRCUIT BY ITS REFUSAL'S TYPE:
+/// a chord that is not rigid asks its other chart pairs and its tether; with
+/// neither, every arm refuses by name and the circuit is P, a wall. With a
+/// second chart pair on the chord carrying an edge, a reused fibre reads what
+/// the circuit's own route could not: C. A circuit that reads a class of its
+/// own is not tested at all.
+#[test]
+fn the_reuse_ladder_classes_a_refused_circuit_by_how_its_arms_read() {
+    use crate::observe::{ArmRead, CircuitClass, TestArm};
+    let [c] = refused_circuits(None).try_into().expect("one circuit");
+    let t = c.test.expect("a refused circuit is tested");
+    assert_eq!(t.arms, vec![(TestArm::OtherPairs, ArmRead::Empty), (TestArm::Tether, ArmRead::Empty)]);
+    assert_eq!(t.class, CircuitClass::P, "every arm refuses: a wall");
+
+    let other = FacePlace {
+        carriage: crate::transducer::element::identity_versor(),
+        gauge: Vec::new(),
+        edge: Some(Transport::from_word(order4())),
+        refraction: None,
+    };
+    let [c] = refused_circuits(Some((vec![9, 9], other))).try_into().expect("one circuit");
+    let t = c.test.expect("tested");
+    assert_eq!(t.arms[0], (TestArm::OtherPairs, ArmRead::Reads(1)), "the other chart pair carries an edge");
+    assert_eq!(t.class, CircuitClass::C, "only a reused fibre reads it: cover-relative");
+
+    let [c] = circuits(false).try_into().expect("one circuit");
+    assert_eq!(c.test, None, "a circuit with a class of its own triggers nothing");
+}
+
+/// CT1 — HOW THE ARMS DISAGREE: two routes disagreeing certify curvature
+/// whatever else ran; a trivial circuit whose other routes agree is flat.
+#[test]
+fn disagreeing_routes_are_curved_and_agreeing_trivial_ones_flat() {
+    use crate::observe::{ArmRead, CircuitClass, CircuitTest, TestArm};
+    let routes = |agree, disagree| vec![(TestArm::OtherCircuits, ArmRead::Routes { agree, disagree })];
+    assert_eq!(CircuitTest::classify(routes(1, 1), true).class, CircuitClass::Curved);
+    assert_eq!(CircuitTest::classify(routes(2, 0), true).class, CircuitClass::Flat);
+    assert_eq!(CircuitTest::classify(vec![(TestArm::Cone, ArmRead::Permanent)], false).class, CircuitClass::P);
+}
+
+/// 78.6(2) — A CIRCUIT THROUGH A STATIC CONTACT READS ITS TETHER HOLONOMY,
+/// its gauge half static by name: the orbit line reads the geometric class
+/// and names the gauge static, never the identity.
+#[test]
+fn a_circuit_through_a_static_contact_reads_its_tether_holonomy_with_the_gauge_static() {
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let mut f = Form::default();
+    for n in 1..=2u8 {
+        f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
+    }
+    f.faces.push(f.face_of(0, 1).expect("star a"));
+    f.faces.push(f.face_of(0, 2).expect("star b"));
+    let mut chord = f.face_carrying_with_edge(1, 2, Word::identity(), None).expect("a chord");
+    chord.interface = [(1i64, 1i64, 0i64)].map(Site::from).to_vec();
+    let a = crate::transducer::cga::sphere_at(&[q(0), q(0), q(0)], &q(1));
+    let b = crate::transducer::cga::sphere_at(&[q(3), q(0), q(0)], &q(1));
+    set_face_place(&mut chord, |p| p.refraction = Some(Refraction::Static(b.geo(&a))));
+    f.faces.push(chord);
+    arm_orbits();
+    let orbits = Form::orbits_of(&f.faces, &f.vertices);
+    assert_eq!(orbits.len(), 1, "a static edge keeps its loop: its gauge is never flat");
+    let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
+    let lines = take_orbits(&mut stroke);
+    finish_circuits(&mut stroke);
+    let _ = take_circuits();
+    let [OrbitLine::Static(r)] = lines.as_slice() else { panic!("one orbit, static: {lines:?}") };
+    assert_eq!(r.class, Some(BivectorKind::Hyperbolic), "two spheres apart compose a boost: the tether's class");
+}
+
 /// A READING NOT TAKEN IS NOT AN EMPTY ONE: once taken, the circuits are
 /// gone until the next percept arms them.
 #[test]

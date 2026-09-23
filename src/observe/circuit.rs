@@ -34,11 +34,166 @@ pub struct Circuits {
     pub circuits: Vec<Circuit>,
 }
 
-/// ONE CIRCUIT: the chord that closes it and its steps in boundary order.
+/// ONE CIRCUIT: the chord that closes it and its steps in boundary order,
+/// and the reuse ladder's test where one ran (CT1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Circuit {
     pub chord: u16,
     pub steps: Vec<CircuitStep>,
+    /// `None` where the circuit read a class of its own that is not trivial,
+    /// or rides a held coset: nothing triggered the ladder (79.3).
+    pub test: Option<CircuitTest>,
+}
+
+/// CT1, 79.3 — ONE ARM OF THE REUSE LADDER, chosen by the refusal's own type:
+/// a typed conditional, each arm one keyed read, never a search.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TestArm {
+    /// Any refusal: the other chart pairs of the face the circuit lost.
+    OtherPairs,
+    /// `NotRigid`: the tether carrier `g = (θ_bθ_a⁻¹)·V` (BQ5a).
+    Tether,
+    /// `Unrefracted`, half-open: the coset edge (78.6(1)).
+    Coset,
+    /// `Unrefracted`, static: `V` with the refraction static (78.6(2)).
+    Static,
+    /// Read and trivial: the other circuits crossing the circuit's faces.
+    OtherCircuits,
+    /// `Cone`: nothing, permanent at this grade by name.
+    Cone,
+}
+
+/// WHAT ONE ARM READ.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ArmRead {
+    /// No such route: nothing for the arm to reuse.
+    Empty,
+    /// Routes carried by a reused fibre or carrier where the circuit's own
+    /// reading refused: how many.
+    Reads(u32),
+    /// Other routes read against the circuit's own: agreeing, disagreeing.
+    Routes { agree: u32, disagree: u32 },
+    /// Refused by name, permanent at this grade.
+    Permanent,
+}
+
+/// HOW THE ARMS DISAGREE (79.3), in 78.9's arms.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CircuitClass {
+    /// Every readable route agrees: the corollary holds here.
+    Flat,
+    /// Two routes disagree: the enclosed cell's holonomy is certified content.
+    Curved,
+    /// Only a reused fibre or carrier reads it: cover-relative.
+    C,
+    /// Only another mind's charts read it (CV4).
+    D,
+    /// Only a constructed fibre reads it (CT2).
+    Candidate,
+    /// Every arm refuses, each by name: a wall.
+    P,
+}
+
+impl CircuitClass {
+    pub const ALL: [CircuitClass; 6] =
+        [CircuitClass::Flat, CircuitClass::Curved, CircuitClass::C, CircuitClass::D, CircuitClass::Candidate, CircuitClass::P];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            CircuitClass::Flat => "flat",
+            CircuitClass::Curved => "curved",
+            CircuitClass::C => "C",
+            CircuitClass::D => "D",
+            CircuitClass::Candidate => "candidate",
+            CircuitClass::P => "P",
+        }
+    }
+}
+
+impl TestArm {
+    pub const ALL: [TestArm; 6] =
+        [TestArm::OtherPairs, TestArm::Tether, TestArm::Coset, TestArm::Static, TestArm::OtherCircuits, TestArm::Cone];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            TestArm::OtherPairs => "other chart pairs",
+            TestArm::Tether => "tether carrier",
+            TestArm::Coset => "coset edge",
+            TestArm::Static => "static tether",
+            TestArm::OtherCircuits => "other circuits",
+            TestArm::Cone => "cone",
+        }
+    }
+}
+
+/// CT1 — THE LADDER'S RECORD FOR ONE CIRCUIT: every arm that ran and what it
+/// read, and the class their disagreement gives. No arm is the route
+/// (checklist (r)).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CircuitTest {
+    pub arms: Vec<(TestArm, ArmRead)>,
+    pub class: CircuitClass,
+}
+
+impl CircuitTest {
+    /// THE CLASS BY HOW THE ARMS DISAGREE (79.3): two routes disagreeing are
+    /// curved; a trivial circuit whose readable routes agree is flat; a
+    /// refused one that a reused fibre or carrier reads is C; one every arm
+    /// refuses is P. D and candidate are read across the mesh and by
+    /// construction (CV4, CT2), never by this ladder.
+    pub fn classify(arms: Vec<(TestArm, ArmRead)>, trivial: bool) -> CircuitTest {
+        let disagree = arms.iter().any(|(_, r)| matches!(r, ArmRead::Routes { disagree, .. } if *disagree > 0));
+        let reads = arms.iter().any(|(_, r)| matches!(r, ArmRead::Reads(n) if *n > 0));
+        let class = match (disagree, trivial, reads) {
+            (true, _, _) => CircuitClass::Curved,
+            (false, true, _) => CircuitClass::Flat,
+            (false, false, true) => CircuitClass::C,
+            (false, false, false) => CircuitClass::P,
+        };
+        CircuitTest { arms, class }
+    }
+
+    fn put(&self, out: &mut Vec<u8>) {
+        out.push(CircuitClass::ALL.iter().position(|&c| c == self.class).map_or(0xff, |i| i as u8));
+        out.extend_from_slice(&(self.arms.len() as u32).to_le_bytes());
+        for (arm, read) in &self.arms {
+            out.push(TestArm::ALL.iter().position(|a| a == arm).map_or(0xff, |i| i as u8));
+            match read {
+                ArmRead::Empty => out.push(0),
+                ArmRead::Reads(n) => {
+                    out.push(1);
+                    out.extend_from_slice(&n.to_le_bytes());
+                }
+                ArmRead::Routes { agree, disagree } => {
+                    out.push(2);
+                    out.extend_from_slice(&agree.to_le_bytes());
+                    out.extend_from_slice(&disagree.to_le_bytes());
+                }
+                ArmRead::Permanent => out.push(3),
+            }
+        }
+    }
+
+    fn take(b: &[u8], p: &mut usize) -> Option<CircuitTest> {
+        let class = *CircuitClass::ALL.get(usize::from(take_u8(b, p)?))?;
+        let m = take_u32(b, p)?;
+        if !holds(b, *p, m, 2) {
+            return None;
+        }
+        let mut arms = Vec::with_capacity(m);
+        for _ in 0..m {
+            let arm = *TestArm::ALL.get(usize::from(take_u8(b, p)?))?;
+            let read = match take_u8(b, p)? {
+                0 => ArmRead::Empty,
+                1 => ArmRead::Reads(take_u32(b, p)? as u32),
+                2 => ArmRead::Routes { agree: take_u32(b, p)? as u32, disagree: take_u32(b, p)? as u32 },
+                3 => ArmRead::Permanent,
+                _ => return None,
+            };
+            arms.push((arm, read));
+        }
+        Some(CircuitTest { arms, class })
+    }
 }
 
 impl Circuit {
@@ -262,13 +417,20 @@ impl Circuits {
             for s in &c.steps {
                 s.put(out);
             }
+            match &c.test {
+                Some(t) => {
+                    out.push(1);
+                    t.put(out);
+                }
+                None => out.push(0),
+            }
         }
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Circuits> {
         let m = take_u32(b, p)?;
-        // A circuit is at least its chord and its step count.
-        if !holds(b, *p, m, 6) {
+        // A circuit is at least its chord, its step count and its test flag.
+        if !holds(b, *p, m, 7) {
             return None;
         }
         let mut circuits = Vec::with_capacity(m);
@@ -283,7 +445,12 @@ impl Circuits {
             for _ in 0..k {
                 steps.push(CircuitStep::take(b, p)?);
             }
-            circuits.push(Circuit { chord, steps });
+            let test = match take_u8(b, p)? {
+                0 => None,
+                1 => Some(CircuitTest::take(b, p)?),
+                _ => return None,
+            };
+            circuits.push(Circuit { chord, steps, test });
         }
         Some(Circuits { circuits })
     }

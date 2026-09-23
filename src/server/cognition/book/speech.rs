@@ -63,6 +63,8 @@ impl Kernel {
                     receipt,
                 };
                 note_verdict_of(&refused);
+                // CV1 — a tape that does not parse is integrity (78.9).
+                crate::observe::note_obstruction(crate::transducer::sentence::ObstructionKind::I);
                 out.push(refused);
                 continue;
             }
@@ -326,7 +328,18 @@ impl Kernel {
             crate::court::verdict::blind_replay_at(s, &|a| self.resolve_form(a), family.as_deref(), self)
         {
             let a = s.address();
-            eprintln!("  court refuse speech {:02x}{:02x}…: {} at {}", a[0], a[1], refusal.reason, refusal.at.label());
+            // CV1 — EVERY REFUSAL ON THE FLEET LINE CARRIES ITS KIND (78.9),
+            // and the observer counts it by kind.
+            let kind = refusal.obstruction.kind();
+            eprintln!(
+                "  court refuse speech {:02x}{:02x}…: {} at {} [{}]",
+                a[0],
+                a[1],
+                refusal.reason,
+                refusal.at.label(),
+                kind.label()
+            );
+            crate::observe::note_obstruction(kind);
             return Err(refusal);
         }
         let out = self.list_sentence(s, voice);

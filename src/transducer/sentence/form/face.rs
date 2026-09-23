@@ -56,7 +56,7 @@ impl Form {
         let conjugated = wv.geo(&ca).geo(&inv);
         let carriage = cb.geo(&conjugated.versor_inverse()?);
         let gauge = relative_gauge(&vertex_gauge_at(va, ci), &vertex_gauge_at(vb, cj));
-        Some(FacePlace { carriage, gauge, edge })
+        Some(FacePlace { carriage, gauge, edge, refraction: None })
     }
 
     /// THE FACE BETWEEN TWO VERTICES, AT THE MEMBER PAIRS THE INCIDENCE NAMES.

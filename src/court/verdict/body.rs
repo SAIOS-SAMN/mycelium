@@ -365,10 +365,20 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
                     "  court vertex body {at}… frame {frame} of {}: {why} [class_sec: {class_sec}, member_sec: {member_sec}]",
                     family.len()
                 );
-                return Some(Refusal {
-                    reason: REFUSE_VERTEX_BODY,
-                    at: sentence::At::Vertex { address: address.clone(), chart },
-                });
+                // CV1 — THE VERTEX'S OWN VERSOR ON THE CHART, read by the one
+                // reader (78.9): none lifted is P with the fault's name.
+                let versor = match (v, v.acting_on(&chart)) {
+                    (Vertex::Word { derivation, .. }, Some(acting)) if why != FAIL_NO_VERSOR => {
+                        element::conformal_of_rotor(&derivation.rotor(), &acting.carriage)
+                    }
+                    _ => None,
+                };
+                let key = chart.key();
+                return Some(Refusal::closure(
+                    REFUSE_VERTEX_BODY,
+                    sentence::At::Vertex { address: address.clone(), chart: chart.clone() },
+                    sentence::Content::Holonomy { versor: versor.as_ref(), chart: Some(key.as_bytes()), proof: why },
+                ));
             }
         }
     }
@@ -419,7 +429,17 @@ pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
             continue;
         };
         let (ri, rj) = (di.rotor(), dj.rotor());
-        let refused = || Refusal { reason: REFUSE_EDGE, at: sentence::At::Face(ai.clone(), aj.clone()) };
+        // CV1 — BY CONTENT (78.9): where no versor carries what the edge
+        // relates, the one reader reads P with the refusing reader's own
+        // reason; where the claimed edge is false — it does not lift, or the
+        // re-measured transport differs — the claim is I.
+        let refused = |o: sentence::ClosureObstruction| Refusal {
+            reason: REFUSE_EDGE,
+            at: sentence::At::Face(ai.clone(), aj.clone()),
+            obstruction: o,
+        };
+        let none = |proof| sentence::read_obstruction(sentence::Content::Holonomy { versor: None, chart: None, proof });
+        let false_claim = sentence::ClosureObstruction::Integrity;
         // EVERY MEMBER PAIR OF THE FACE, each re-measured on ITS OWN two
         // bodies (D10 item 8). The edge is measured on the union of two bodies,
         // so a face relating several pairs carries an edge at each, and this
@@ -442,12 +462,12 @@ pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
         let (class_i, class_j) = (&class_i, &class_j);
         let (ci, cj) = (&mi.carriage, &mj.carriage);
         let Some(expected) = element::conformal_of(&edge.word, &edge.carriage) else {
-            return Some(refused());
+            return Some(refused(false_claim));
         };
         let (Some(v_i), Some(v_j)) =
             (element::conformal_of_rotor(&ri, ci), element::conformal_of_rotor(&rj, cj))
         else {
-            return Some(refused());
+            return Some(refused(none("a vertex's rotor and carriage lift to no versor")));
         };
         for (frame, at) in frames.iter().enumerate() {
             // A FACE IS ASKED FOR THE FRAMES ITS WORD WAS MEASURED AT. 21
@@ -469,19 +489,19 @@ pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
                 continue;
             };
             let (Some(bi), Some(bj)) = (image_body(a_i, &v_i, at), image_body(a_j, &v_j, at)) else {
-                return Some(refused());
+                return Some(refused(none("a body carries to no body of the image")));
             };
             let Some(v_ij) = crate::transducer::blade::versor_between(
                 &union_shape(a_i, a_j),
                 &union_shape(bi, bj),
             ) else {
-                return Some(refused());
+                return Some(refused(none("no versor carries the union onto its image")));
             };
             let Some(inv) = v_i.versor_inverse() else {
-                return Some(refused());
+                return Some(refused(none("the vertex's versor has no inverse")));
             };
             if !element::same_versor(&inv.geo(&v_ij), &expected) {
-                return Some(refused());
+                return Some(refused(false_claim));
             }
         }
         }

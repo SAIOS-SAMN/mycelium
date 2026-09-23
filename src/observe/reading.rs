@@ -511,6 +511,9 @@ pub struct Adjudication {
     pub awaiting: u64,
     pub deferred: u64,
     pub refused: Vec<(u8, u64)>,
+    /// CV1 — the same refusals by the kind of obstruction (78.9): P, D, C,
+    /// I, N, unclassified.
+    pub obstructed: [u64; 6],
 }
 
 impl Adjudication {
@@ -522,6 +525,9 @@ impl Adjudication {
         for &(kind, n) in &self.refused {
             out.push(kind);
             put_u64(out, n);
+        }
+        for v in self.obstructed {
+            put_u64(out, v);
         }
     }
 
@@ -535,7 +541,11 @@ impl Adjudication {
         for _ in 0..m {
             refused.push((take_u8(b, p)?, take_u64(b, p)?));
         }
-        Some(Adjudication { ratified, stood, awaiting, deferred, refused })
+        let mut obstructed = [0u64; 6];
+        for v in obstructed.iter_mut() {
+            *v = take_u64(b, p)?;
+        }
+        Some(Adjudication { ratified, stood, awaiting, deferred, refused, obstructed })
     }
 }
 

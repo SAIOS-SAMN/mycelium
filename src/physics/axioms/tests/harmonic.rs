@@ -385,11 +385,13 @@ fn the_smallest_body_still_holds_its_nucleus_off_the_cone() {
     );
 
     // A point-mass reading would put this at zero. It does not, so the
-    // nucleus is spacelike and `den2` for a pair of them is bounded
-    // away from zero.
-    let s = blade::Strain::between(&one, &one).expect("a centroid");
-    assert!(s.den2 >= q(4) * &sixth * &sixth, "den2 = 4 r_a² r_b² is bounded below");
-    assert!(s.den2 > q(0), "so the horizon is always defined");
+    // nucleus is spacelike and a tether between two of them has a weight
+    // `⟨VṼ⟩₀ = r_a² r_b²` bounded away from zero: its regime is always
+    // read.
+    let v = blade::tether(&one, &one).expect("a centroid");
+    let w = v.geo(&v.reverse()).scalar_part();
+    assert!(w >= &sixth * &sixth, "the tether's weight r_a² r_b² is bounded below");
+    assert!(w > q(0), "so the regime is always defined");
 }
 
 /// THE GAUGE FREQUENCY IS THE SCALE EXPONENT — MEASURED (65.6).

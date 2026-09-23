@@ -102,6 +102,7 @@ fn form_tape_v6_round_trips() {
             carriage: element::identity_versor(),
             gauge: Vec::new(),
             edge: Some(Transport::from_word(w.clone())),
+            refraction: None,
         },
     );
     f.faces.push(edged);

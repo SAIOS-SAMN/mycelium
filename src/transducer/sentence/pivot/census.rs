@@ -486,6 +486,12 @@ impl OrbitReading {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum OrbitLine {
     Read(Box<OrbitReading>),
+    /// 78.6(2) — through static contacts: the tether holonomy read, the
+    /// gauge half static by name.
+    Static(Box<OrbitReading>),
+    /// 78.6(1) — through a held coset: how the coset closes, the held steps
+    /// crossed and the candidates carried, none chosen.
+    Coset { closure: super::walk::CosetClosure, held: u32, candidates: usize },
     /// The step, counted from one, and the refusal where one was named.
     Unread { at: Option<usize>, why: Option<Unread> },
 }
@@ -495,6 +501,15 @@ impl OrbitLine {
     pub(crate) fn line(&self) -> String {
         match self {
             OrbitLine::Read(r) => r.line(),
+            OrbitLine::Static(r) => format!("{} | gauge static (the refraction unread at a contact of one frame)", r.line()),
+            OrbitLine::Coset { closure, held, candidates } => format!(
+                "orbit coset {} | {held} held steps, {candidates} candidates, no representative",
+                match closure {
+                    super::walk::CosetClosure::Closed => "closed",
+                    super::walk::CosetClosure::ClosedModuloHeld => "closed modulo the held ℤ₂ᵏ",
+                    super::walk::CosetClosure::Open => "open",
+                }
+            ),
             OrbitLine::Unread { at, why } => {
                 let at = match at {
                     Some(k) => format!("at step {k}"),
@@ -517,6 +532,10 @@ pub(super) struct OrbitNote {
     pub(super) composite: Option<element::Versor>,
     pub(super) at: Option<usize>,
     pub(super) why: Option<Unread>,
+    /// 78.6 — the gauge half static, or the held coset with its closure,
+    /// its held steps and its candidates.
+    pub(super) gauge_static: bool,
+    pub(super) coset: Option<(super::walk::CosetClosure, u32, usize)>,
 }
 
 thread_local! {
@@ -562,9 +581,16 @@ pub(crate) fn take_orbits(budget: &mut crate::physics::Budget) -> Vec<OrbitLine>
     });
     notes
         .into_iter()
-        .map(|note| match note.composite {
-            Some(m) => OrbitLine::Read(Box::new(OrbitReading::of(&m, crate::transducer::element::GRID_N, budget))),
-            None => OrbitLine::Unread { at: note.at, why: note.why },
+        .map(|note| match (note.composite, note.coset) {
+            (Some(m), _) => {
+                let r = Box::new(OrbitReading::of(&m, crate::transducer::element::GRID_N, budget));
+                match note.gauge_static {
+                    true => OrbitLine::Static(r),
+                    false => OrbitLine::Read(r),
+                }
+            }
+            (None, Some((closure, held, candidates))) => OrbitLine::Coset { closure, held, candidates },
+            (None, None) => OrbitLine::Unread { at: note.at, why: note.why },
         })
         .collect()
 }

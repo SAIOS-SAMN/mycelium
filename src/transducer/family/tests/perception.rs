@@ -379,17 +379,18 @@ assert!(
 );
 }
 
-/// N1 — A PAIR THE DIAGONAL AND THE FIELD BOTH NAME IS ONE FACE CARRYING
-/// BOTH READINGS, and neither pass is first.
+/// N1, BQ5a — A PAIR THE TOPOLOGY NAMES IS ONE FACE, CARRYING ITS
+/// REFRACTION.
 ///
 /// Two L pentominoes, the one the other turned a half turn, hooked so they
 /// meet at two corners and share no edge. The diagonal names them: they
-/// touch at `(1,0)–(0,1)` and `(3,2)–(2,3)`. The field names them too: their
-/// spheres stand at `δ² = (d² − r₁² − r₂²)² / 4r₁²r₂²` inside the contact
-/// band `1 < δ ≤ 2`, and a half turn carries the one onto the other. One
-/// pair comes back, with both incidences on it.
+/// touch at `(1,0)–(0,1)` and `(3,2)–(2,3)`. The condensation field named
+/// them a second time, through a band on `δ`; the band is gone and whether
+/// is the topology's alone, so one incidence names the pair. What the
+/// contact carries is read where the face is built, each member against its
+/// own transition (`pairing::contact_edge`).
 #[test]
-fn a_pair_the_diagonal_and_the_field_both_name_carries_both() {
+fn a_pair_the_topology_names_is_one_face_carrying_its_refraction() {
 let supports = supports_at(&[
     vec![],
     vec![(1, 0), (2, 0), (3, 0), (3, 1), (3, 2)],
@@ -402,11 +403,7 @@ let ends = (
     crate::transducer::family::read_member_key(&nf.b).map(|(j, _)| j),
 );
 assert_eq!(ends, (Some(1), Some(2)), "between the two L's");
-assert_eq!(
-    nf.named.hows,
-    vec![Incidence::Contact, Incidence::Field],
-    "the corner and the strain band both read on the one face"
-);
+assert_eq!(nf.named.hows, vec![Incidence::Contact], "the corner alone names the pair");
 // AND THE INTERFACE IS THE TWO CORNERS, as a set (C2): `(1,0)+(0,1)` and
 // `(3,2)+(2,3)`, each element at its doubled centre.
 assert_eq!(nf.named.interfaces, vec![sites(&[(1i64, 1i64, 0i64), (5, 5, 0)])], "the two corners the L's share");

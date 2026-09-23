@@ -39,11 +39,17 @@ impl Form {
     /// `edge_coheres` is untouched and still holds on every orbit: an edge
     /// that does not re-derive is a broken transport, not curvature.
     pub fn coheres(&self) -> bool {
-        self.orbits.iter().all(|lp| {
-            (lp.holonomy.rotor().projective_eq(&Rotor::identity())
+        self.incoherent_orbit().is_none()
+    }
+
+    /// CV1 — THE FIRST ORBIT THAT DOES NOT COHERE, the one reader `coheres`
+    /// asks, so a refusal can carry the holonomy that refused (78.9).
+    pub fn incoherent_orbit(&self) -> Option<&Orbit> {
+        self.orbits.iter().find(|lp| {
+            !((lp.holonomy.rotor().projective_eq(&Rotor::identity())
                 || self.opened_axis_of(lp).is_some_and(|chord| self.axis_rederives(lp, chord))
                 || self.orbit_is_congruent(lp))
-                && self.edge_coheres(lp)
+                && self.edge_coheres(lp))
         })
     }
 

@@ -3,7 +3,7 @@
 // class and modes, and the class of the transport composed through it.
 
 use super::*;
-use crate::observe::{Carried, Circuit, CircuitStep, Circuits};
+use crate::observe::{ArmRead, Carried, Circuit, CircuitStep, CircuitTest, Circuits, TestArm};
 
 /// ONE STEP AS THE WALK LEFT IT: oriented, its composite's class read, its
 /// modes owed to the reader that holds the stroke's budget (BD1).
@@ -19,9 +19,54 @@ struct PendingStep {
 pub(super) struct PendingCircuit {
     chord: u16,
     /// Its whole transport by the one composite reader, `None` where the
-    /// edge half was refused (OR3).
+    /// edge half was refused (OR3) or rides a held coset.
     composite: Option<element::Versor>,
+    /// 78.6 — how its held coset closes, and whether its gauge is static.
+    coset: Option<super::walk::CosetClosure>,
+    gauge_static: bool,
     steps: Vec<PendingStep>,
+    /// CT1 — the reuse ladder's arms read off the faces, and whether the
+    /// circuit read trivial; `None` where nothing triggered the ladder.
+    ladder: Option<(Vec<(TestArm, ArmRead)>, bool)>,
+}
+
+/// CT1, 79.3 — THE LADDER ON ONE CIRCUIT, by its refusal's own type, each
+/// arm one keyed read of the faces: a refused circuit's lost face — its other
+/// chart pairs, its tether, its coset or static refraction — or, on a cone,
+/// nothing and permanently. A trivial circuit is seeded empty; its arm, the
+/// other circuits crossing its faces, is read over every circuit kept.
+/// `None` for a circuit that read a class of its own or rides a coset.
+fn ladder_of(carried: &PathCarried, faces: &[FormFace]) -> Option<(Vec<(TestArm, ArmRead)>, bool)> {
+    let composite = carried.composite();
+    let identity = element::identity_versor();
+    if let Some(m) = &composite {
+        return element::same_versor(m, &identity).then(|| (Vec::new(), true));
+    }
+    if carried.coset().is_some() {
+        return None;
+    }
+    if carried.edge_refused == Some(Unread::Cone) {
+        return Some((vec![(TestArm::Cone, ArmRead::Permanent)], false));
+    }
+    let lost = carried
+        .edge_lost_at
+        .and_then(|k| carried.steps.get(k.checked_sub(1)?))
+        .and_then(|s| faces.get(usize::from(s.face)));
+    let reads = |n: usize| match n {
+        0 => ArmRead::Empty,
+        n => ArmRead::Reads(n as u32),
+    };
+    let places = |pred: &dyn Fn(&FacePlace) -> bool| lost.map_or(0, |f| f.at.scoped().filter(|(_, p)| pred(p)).count());
+    let mut arms = vec![(TestArm::OtherPairs, reads(places(&|p| p.edge.is_some())))];
+    match carried.edge_refused {
+        Some(Unread::NotRigid) => arms.push((TestArm::Tether, reads(places(&|p| p.refraction.is_some())))),
+        Some(Unread::Unrefracted) => {
+            arms.push((TestArm::Coset, reads(places(&|p| matches!(p.refraction, Some(Refraction::Coset(_)))))));
+            arms.push((TestArm::Static, reads(places(&|p| matches!(p.refraction, Some(Refraction::Static(_)))))));
+        }
+        _ => {}
+    }
+    Some((arms, false))
 }
 
 thread_local! {
@@ -50,8 +95,15 @@ pub(super) fn note_circuit(r: impl FnOnce() -> PendingCircuit) {
 }
 
 /// ONE WALKED CIRCUIT: each step's face and whether it was crossed along the
-/// face's orientation, and the circuit's composite (OR3).
-pub type WalkedCircuit = (Vec<(u16, bool)>, Option<element::Versor>);
+/// face's orientation, the circuit's composite (OR3), how its held coset
+/// closes where it rides one, and whether its gauge half is static (78.6).
+#[derive(Clone, Debug)]
+pub struct WalkedCircuit {
+    pub steps: Vec<(u16, bool)>,
+    pub composite: Option<element::Versor>,
+    pub coset: Option<super::walk::CosetClosure>,
+    pub gauge_static: bool,
+}
 
 /// THE CIRCUITS THE PERCEPT WALKED, each by the faces its steps crossed and
 /// its composite — what a cell's orbit algebra reads (CG1): a step's body
@@ -62,7 +114,12 @@ pub fn walked_circuits() -> Vec<WalkedCircuit> {
     PENDING.with(|c| match c.borrow().as_ref() {
         Some(held) => held
             .iter()
-            .map(|p| (p.steps.iter().map(|s| (s.face, s.forward)).collect(), p.composite.clone()))
+            .map(|p| WalkedCircuit {
+                steps: p.steps.iter().map(|s| (s.face, s.forward)).collect(),
+                composite: p.composite.clone(),
+                coset: p.coset,
+                gauge_static: p.gauge_static,
+            })
             .collect(),
         None => Vec::new(),
     })
@@ -74,9 +131,41 @@ pub fn walked_circuits() -> Vec<WalkedCircuit> {
 /// Returns the steps whose modes the stroke left unbounded (SP1).
 pub fn finish_circuits(budget: &mut crate::physics::Budget) -> u64 {
     let Some(pending) = PENDING.with(|c| c.borrow_mut().take()) else { return 0 };
+    // CT1 — EACH TRIGGERED CIRCUIT'S LADDER, finished: a trivial one's other
+    // routes are the other kept circuits crossing any of its faces, each read
+    // against the identity; an unread one is no route (79.3).
+    let identity = element::identity_versor();
+    let tests: Vec<Option<CircuitTest>> = pending
+        .iter()
+        .enumerate()
+        .map(|(i, p)| {
+            let (mut arms, trivial) = p.ladder.clone()?;
+            if trivial {
+                let (mut agree, mut disagree) = (0u32, 0u32);
+                for (j, q) in pending.iter().enumerate() {
+                    if j == i || !q.steps.iter().any(|s| p.steps.iter().any(|t| t.face == s.face)) {
+                        continue;
+                    }
+                    match &q.composite {
+                        Some(m) if element::same_versor(m, &identity) => agree += 1,
+                        Some(_) => disagree += 1,
+                        None => {}
+                    }
+                }
+                let read = match agree + disagree {
+                    0 => ArmRead::Empty,
+                    _ => ArmRead::Routes { agree, disagree },
+                };
+                arms.push((TestArm::OtherCircuits, read));
+            }
+            Some(CircuitTest::classify(arms, trivial))
+        })
+        .collect();
     let circuits: Vec<Circuit> = pending
         .into_iter()
-        .map(|p| Circuit {
+        .zip(tests)
+        .map(|(p, test)| Circuit {
+            test,
             chord: p.chord,
             steps: p
                 .steps
@@ -144,7 +233,14 @@ pub(super) fn read_circuit(chord: u16, carried: &PathCarried, faces: &[FormFace]
             PendingStep { face: s.face, forward: s.forward, refracted, oriented, after }
         })
         .collect();
-    PendingCircuit { chord, composite: carried.composite(), steps }
+    PendingCircuit {
+        chord,
+        composite: carried.composite(),
+        coset: carried.coset_closure(),
+        gauge_static: carried.gauge_static(),
+        steps,
+        ladder: ladder_of(carried, faces),
+    }
 }
 
 /// A versor's ray in its canonical coordinates, each non-zero blade and its

@@ -327,7 +327,7 @@ impl Kernel {
     /// persists.
     /// Match spoken torsion cycles against the chart's Congruent simplices.
     /// Same class key and ℓ is consilience; same key different ℓ is
-    /// [`crate::verdict::REFUSE_NOT_NATURAL`]; a new finite key files.
+    /// [`crate::verdict::REFUSE_PERIOD_UNDERIVED`]; a new finite key files.
     /// A v2 form reads `Form.torsion` (keyed by the filed orbit's class);
     /// a residual word still reads the element's cycles.
     pub(crate) fn court_torsion(
@@ -378,7 +378,9 @@ impl Kernel {
                         "  court torsion refused {:?}/{} ℓ {ell}",
                         class.kind, class.i1
                     );
-                    return Some(crate::verdict::REFUSE_NOT_NATURAL);
+                    // CV1, 78.9 — a spoken period that does not re-derive
+                    // against the class held is a claim, I, its own code.
+                    return Some(crate::verdict::REFUSE_PERIOD_UNDERIVED);
                 }
                 (None, false) => {
                     eprintln!(
@@ -431,7 +433,7 @@ impl Kernel {
         //
         // What it should have asked all along is the complex. This is the
         // COURT deciding whether a class it holds at one period is being
-        // spoken at another (`REFUSE_NOT_NATURAL`) — a question about
+        // spoken at another (`REFUSE_PERIOD_UNDERIVED`) — a question about
         // geometry — and taking the period from the speaker's own filing
         // let the claimant supply the evidence against itself. The
         // speaker's attestation is checked separately, against this same

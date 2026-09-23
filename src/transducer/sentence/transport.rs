@@ -33,6 +33,27 @@ pub struct FacePlace {
     pub carriage: Versor,
     pub gauge: Vec<(u8, u8)>,
     pub edge: Option<Transport>,
+    /// BQ5a — WHAT A CONTACT'S EDGE HALF HOLDS WHERE NO SINGLE TRANSPORT
+    /// FORMED (78.6): the held coset, or the tether at one frame. `None` on
+    /// every face that is not a contact, and on a contact whose edge formed
+    /// or was refused by name. In memory only, like the form's cells; the
+    /// tape at the recut (BQ5b).
+    pub refraction: Option<Refraction>,
+}
+
+/// BQ5a — A CONTACT EDGE THAT IS NOT ONE TRANSPORT, by what it holds (78.6).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Refraction {
+    /// 78.6(1) — A HELD STABILIZER RIDES THE EDGE AS A COSET: one transport
+    /// per candidate of the bodies' held poses, `(θ_bθ_a⁻¹)·V` for each,
+    /// never a representative (checklist (r)).
+    Coset(Vec<Transport>),
+    /// 78.6(2) — A PIECE AT ONE FRAME: the tether `V = s_b s_a` is content
+    /// there and is carried; the refraction `θ_bθ_a⁻¹` is content across a
+    /// transition the piece does not have, so it is unread BY NAME — the
+    /// gauge half reads `static`, never the identity and never the union's
+    /// rigidity (rule 11, checklist (m)).
+    Static(Versor),
 }
 
 /// The key a member pair is filed under on a face: the two charts' own keys,

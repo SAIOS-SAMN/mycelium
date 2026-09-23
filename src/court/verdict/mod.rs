@@ -24,9 +24,12 @@ use crate::transducer::sentence::{self, Form, Vertex};
 use crate::transducer::stalk::{self, Stalks};
 use crate::transducer::torsion_witness::{self, HolonomicOrbitWitness};
 
-/// A class that does not survive restriction (15.5), or a spoken torsion
-/// period that does not re-derive against the mesh's class (23.7).
+/// A class that does not survive restriction (15.5): cover-relative, C.
 pub const REFUSE_NOT_NATURAL: &str = "class key changes under restriction";
+/// CV1, 78.9 — NOT_NATURAL SPLIT: a spoken torsion period that does not
+/// re-derive against the mesh's class (23.7) is a claim that does not
+/// re-derive, integrity (I), and is its own code.
+pub const REFUSE_PERIOD_UNDERIVED: &str = "spoken torsion period does not re-derive against the held class";
 /// Refusals of a crystallized form's replay (chapter 34.1).
 pub const REFUSE_FORM_TAPE: &str = "form does not parse from its tape";
 pub const REFUSE_GLUED_DEPTH: &str = "glued form depth not below sentence depth";
@@ -127,12 +130,58 @@ pub const REFUSE_NOT_CONTRACTION: &str = "sentence is not the contraction of the
 pub struct Refusal {
     pub reason: &'static str,
     pub at: sentence::At,
+    /// CV1 — what kind of obstruction the refusal is, with its content
+    /// (78.9): read off what the refusing reader carried by the one reader
+    /// where the refusal is a closure's, the ruled arm where it is not.
+    pub obstruction: sentence::ClosureObstruction,
+}
+
+/// CV1, 78.9 — THE RULED ARMS OF THE CODES THAT ARE NOT A CLOSURE'S: the
+/// integrity codes (does not parse, a citation badly formed, a claim that
+/// does not re-derive, a claim of nothing that moves, economy and folds,
+/// the chain's own integrity) are I; a cited word the court has not ruled
+/// is D, held by the court (CV2); a class that does not survive
+/// restriction is C (15.5). The four closure codes — ORBIT, NOT_CLOSED,
+/// VERTEX_BODY, EDGE — are read by content at their sites
+/// ([`Refusal::closure`]); reaching here with one is a refusal no reader
+/// placed, UNCLASSIFIED and counted as the defect it is.
+pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {
+    use sentence::ClosureObstruction as O;
+    match reason {
+        REFUSE_FORM_TAPE | REFUSE_VERTEX_TAPE | REFUSE_NOT_A_SENTENCE | REFUSE_MALFORMED | REFUSE_DEMAND_UNTYPED => {
+            O::Integrity
+        }
+        REFUSE_GLUED_DEPTH | REFUSE_ORPHAN_PORT | REFUSE_PHANTOM_EDGE | REFUSE_SHEET_REPEATED
+        | REFUSE_GLUED_FRAME_GAUGED => O::Integrity,
+        REFUSE_DERIVATION | REFUSE_FACE | REFUSE_RANK_LOST | REFUSE_PIVOT_INEXACT | REFUSE_INFLATED_YIELD
+        | REFUSE_LETTER_WITNESS | REFUSE_NOT_CONTRACTION | REFUSE_PERIOD_UNDERIVED => O::Integrity,
+        REFUSE_REBASE_TRIVIAL | REFUSE_UNFOLD_STILL | REFUSE_ORBIT_STILL => O::Integrity,
+        REFUSE_ROOM | REFUSE_WITNESS_ROOM | REFUSE_WITNESS_DEPENDENT | REFUSE_FOLD_OPEN | REFUSE_FOLD_INEXACT => {
+            O::Integrity
+        }
+        REFUSE_ORIGIN | REFUSE_RECEIPT | REFUSE_RECEIPT_STALE | REFUSE_EQUIVOCATION | REFUSE_NOT_EQUIVOCATION
+        | REFUSE_SIGNATURE | REFUSE_MV_INEXACT => O::Integrity,
+        REFUSE_GLUED_UNRULED => O::Dialect { coset: Vec::new(), chart: None },
+        REFUSE_NOT_NATURAL => O::Cover { cocycle: Vec::new() },
+        _ => O::Unclassified,
+    }
 }
 
 impl Refusal {
+    /// A refusal whose kind is its code's ruled arm.
+    pub fn new(reason: &'static str, at: sentence::At) -> Refusal {
+        Refusal { reason, at, obstruction: ruled_obstruction(reason) }
+    }
+
+    /// A CLOSURE'S REFUSAL, its kind read off what the refusing reader
+    /// carried by the one reader (78.9).
+    pub fn closure(reason: &'static str, at: sentence::At, content: sentence::Content) -> Refusal {
+        Refusal { reason, at, obstruction: sentence::read_obstruction(content) }
+    }
+
     /// A refusal of the whole tape.
     pub fn of_tape(reason: &'static str, spoken: &Element) -> Refusal {
-        Refusal { reason, at: sentence::At::Tape(spoken.address()) }
+        Refusal::new(reason, sentence::At::Tape(spoken.address()))
     }
 
     /// The kind the reason travels as (34.1, 50.9): `VertexBody` is

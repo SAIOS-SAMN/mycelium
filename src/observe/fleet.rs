@@ -244,6 +244,11 @@ pub struct Progress {
     pub contact_cycles: u64,
     pub contact_cycles_curved: u64,
     pub contact_cycles_unread: u64,
+    /// 78.6 — of the read ones, those whose gauge half is static; and the
+    /// cycles through a held coset, by how it closes: closed, closed modulo
+    /// the held `ℤ₂ᵏ`, open.
+    pub contact_cycles_static: u64,
+    pub contact_cycles_coset: [u64; 3],
     pub grades: Vec<GradeProgress>,
 }
 
@@ -253,6 +258,10 @@ impl Progress {
         self.contact_cycles += o.contact_cycles;
         self.contact_cycles_curved += o.contact_cycles_curved;
         self.contact_cycles_unread += o.contact_cycles_unread;
+        self.contact_cycles_static += o.contact_cycles_static;
+        for (a, b) in self.contact_cycles_coset.iter_mut().zip(o.contact_cycles_coset) {
+            *a += b;
+        }
         for g in &o.grades {
             match self.grades.binary_search_by_key(&g.grade, |h| h.grade) {
                 Ok(at) => {
@@ -273,6 +282,8 @@ impl Progress {
 
     pub(crate) fn put(&self, out: &mut Vec<u8>) {
         put_u64s(out, &[self.percepts, self.contact_cycles, self.contact_cycles_curved, self.contact_cycles_unread]);
+        put_u64s(out, &[self.contact_cycles_static]);
+        put_u64s(out, &self.contact_cycles_coset);
         out.extend_from_slice(&(self.grades.len() as u32).to_le_bytes());
         for g in &self.grades {
             out.push(g.grade);
@@ -282,6 +293,8 @@ impl Progress {
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Progress> {
         let [percepts, contact_cycles, contact_cycles_curved, contact_cycles_unread] = take_u64s::<4>(b, p)?;
+        let contact_cycles_static = take_u64(b, p)?;
+        let contact_cycles_coset = take_u64s::<3>(b, p)?;
         let m = take_u32(b, p)?;
         if !holds(b, *p, m, 1 + 8 * 8) {
             return None;
@@ -292,6 +305,14 @@ impl Progress {
             let [cells, round_kept, held_z2, refused, finite, affine, infinite, dual_frames] = take_u64s::<8>(b, p)?;
             grades.push(GradeProgress { grade, cells, round_kept, held_z2, refused, finite, affine, infinite, dual_frames });
         }
-        Some(Progress { percepts, contact_cycles, contact_cycles_curved, contact_cycles_unread, grades })
+        Some(Progress {
+            percepts,
+            contact_cycles,
+            contact_cycles_curved,
+            contact_cycles_unread,
+            contact_cycles_static,
+            contact_cycles_coset,
+            grades,
+        })
     }
 }

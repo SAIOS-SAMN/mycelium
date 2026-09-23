@@ -65,7 +65,14 @@ fn replication_and_adjudication_read_back_as_themselves() {
     unattributed[rep::DIGEST_UNREADABLE] = 1;
     let all = vec![
         Reading::Replication(Replication { signers: vec![(vk(3), axes), (vk(4), [0; 13])], unattributed }),
-        Reading::Adjudication(Adjudication { ratified: 5, stood: 9, awaiting: 1, deferred: 2, refused: vec![(0, 3), (2, 4)] }),
+        Reading::Adjudication(Adjudication {
+            ratified: 5,
+            stood: 9,
+            awaiting: 1,
+            deferred: 2,
+            refused: vec![(0, 3), (2, 4)],
+            obstructed: [1, 0, 3, 2, 0, 1],
+        }),
     ];
     let push = encode_push(&vk(8), &all);
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), all)));
@@ -184,6 +191,10 @@ fn the_circuits_read_back_whole_step_by_step() {
         circuits: vec![
             Circuit {
                 chord: 4,
+                test: Some(CircuitTest {
+                    arms: vec![(TestArm::OtherPairs, ArmRead::Reads(2)), (TestArm::Coset, ArmRead::Empty)],
+                    class: CircuitClass::C,
+                }),
                 steps: vec![
                     CircuitStep {
                         face: 1,
@@ -205,6 +216,13 @@ fn the_circuits_read_back_whole_step_by_step() {
             },
             Circuit {
                 chord: 7,
+                test: Some(CircuitTest {
+                    arms: vec![
+                        (TestArm::OtherCircuits, ArmRead::Routes { agree: 1, disagree: 2 }),
+                        (TestArm::Cone, ArmRead::Permanent),
+                    ],
+                    class: CircuitClass::Curved,
+                }),
                 steps: vec![
                     CircuitStep { face: 3, forward: false, refracted: false, carried: Carried::Unread },
                     CircuitStep {
@@ -341,7 +359,15 @@ fn viscosity_spend_and_progress_read_back_whole_and_sum_per_axis() {
     let v = Viscosity { pairs: vec![pair(0, (3, 5), [1, 2, 0, 0]), pair(3, (0, 1), [0, 0, 4, 1])], entropy: [0, 0, 0, 1] };
     let s = Spend { percepts: 1, reads: [10, 2, 30, 4, 50], unbounded: [0, 1, 0, 0, 3] };
     let g = GradeProgress { grade: 2, cells: 3, round_kept: 1, held_z2: 1, refused: 1, finite: 1, affine: 1, infinite: 0, dual_frames: 2 };
-    let p = Progress { percepts: 1, contact_cycles: 5, contact_cycles_curved: 2, contact_cycles_unread: 1, grades: vec![g.clone()] };
+    let p = Progress {
+        percepts: 1,
+        contact_cycles: 5,
+        contact_cycles_curved: 2,
+        contact_cycles_unread: 1,
+        contact_cycles_static: 1,
+        contact_cycles_coset: [0, 1, 1],
+        grades: vec![g.clone()],
+    };
     // PH5 — a court's phase travels whole beside them.
     let phase = Phase { windows: 3, h0: 986, h1: 989, held: 1, sections: 1, strata: 2, installed: 1, ..Phase::default() };
     let all = [

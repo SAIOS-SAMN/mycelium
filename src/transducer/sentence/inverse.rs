@@ -207,7 +207,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
                 }
                 _ => return None,
             };
-            at.insert(&pk, FacePlace { carriage, gauge, edge });
+            at.insert(&pk, FacePlace { carriage, gauge, edge, refraction: None });
         }
         let pairs = match *k.get(p)? {
             0 => {

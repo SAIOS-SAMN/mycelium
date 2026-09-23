@@ -221,19 +221,30 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
 pub(crate) fn progress(form: &Form, walked: &[crate::transducer::sentence::WalkedCircuit], cells: &Cells) -> Progress {
     use crate::network::nerve::coord::BivectorKind;
     let mut p = Progress { percepts: 1, ..Progress::default() };
-    for (steps, composite) in walked {
+    for w in walked {
         let contact =
-            steps.iter().any(|&(f, _)| form.faces.get(usize::from(f)).is_some_and(|x| !x.interface.is_empty()));
+            w.steps.iter().any(|&(f, _)| form.faces.get(usize::from(f)).is_some_and(|x| !x.interface.is_empty()));
         if !contact {
             continue;
         }
         p.contact_cycles += 1;
-        match composite.as_ref().map(|m| m.class_invariants()) {
+        if let Some(closure) = w.coset {
+            p.contact_cycles_coset[match closure {
+                crate::transducer::sentence::walk::CosetClosure::Closed => 0,
+                crate::transducer::sentence::walk::CosetClosure::ClosedModuloHeld => 1,
+                crate::transducer::sentence::walk::CosetClosure::Open => 2,
+            }] += 1;
+            continue;
+        }
+        match w.composite.as_ref().map(|m| m.class_invariants()) {
             None => p.contact_cycles_unread += 1,
             Some(Some((_, _, BivectorKind::Trivial))) => {}
             Some(Some(_)) => p.contact_cycles_curved += 1,
             // A composite whose class does not read is unread, never flat.
             Some(None) => p.contact_cycles_unread += 1,
+        }
+        if w.composite.is_some() && w.gauge_static {
+            p.contact_cycles_static += 1;
         }
     }
     for c in &cells.cells {
@@ -283,7 +294,7 @@ pub(crate) fn read_and_hold(form: &Form, budget: &mut crate::physics::Budget, pe
     spend.unbounded[0] = unreached;
     let at = budget.remaining();
     for orbit in crate::transducer::sentence::take_orbits(budget) {
-        if let OrbitLine::Read(r) = &orbit {
+        if let OrbitLine::Read(r) | OrbitLine::Static(r) = &orbit {
             if let ModesRead::Undecomposed(Undecomposed::Unbounded(_)) = r.modes {
                 spend.unbounded[1] += 1;
             }
@@ -409,7 +420,7 @@ pub(crate) fn cell_algebras(
             };
             let mut circuits: Vec<Option<Mv>> = Vec::new();
             let mut orders: Vec<Option<Vec<usize>>> = Vec::new();
-            for (steps, composite) in walked {
+            for crate::transducer::sentence::WalkedCircuit { steps, composite, .. } in walked {
                 // CX1 — the circuit's order of the cell's bodies: each body
                 // as the circuit's crossings first reach it; `None` where the
                 // circuit does not reach every body of the cell.

@@ -38,7 +38,7 @@ fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
     let mut at = Keyed::new();
     at.insert(
         face_pair_key(&a, &b),
-        FacePlace { carriage: element::translator_versor(3, 0), gauge: Vec::new(), edge: None },
+        FacePlace { carriage: element::translator_versor(3, 0), gauge: Vec::new(), edge: None, refraction: None },
     );
     f.faces.push(FormFace { i: 1, j: 1, word: Word::identity(), at, pairs: None, interface: Vec::new() });
     Form::reset_orbit_gates();
@@ -645,6 +645,7 @@ fn an_orbit_flat_on_the_word_files_under_its_edge_composite() {
             carriage: element::identity_versor(),
             gauge: Vec::new(),
         }),
+        refraction: None,
     };
     // `Form::default` already seeds the Frame at 0; the words are 1 and 2.
     let mut f = Form::default();

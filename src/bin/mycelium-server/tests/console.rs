@@ -48,7 +48,14 @@ fn replication_and_adjudication_are_read_by_signer_and_by_kind() {
     axes[rep::BACKFILL] = 12;
     let out = rendered(vec![
         Reading::Replication(Replication { signers: vec![([9; 32], axes)], unattributed: [0; 13] }),
-        Reading::Adjudication(Adjudication { ratified: 4, stood: 7, awaiting: 0, deferred: 1, refused: vec![(0, 2)] }),
+        Reading::Adjudication(Adjudication {
+            ratified: 4,
+            stood: 7,
+            awaiting: 0,
+            deferred: 1,
+            refused: vec![(0, 2)],
+            obstructed: [0, 0, 1, 1, 0, 0],
+        }),
     ]);
     assert!(out.contains("admitted 12") && out.contains("backfill 12"), "{out}");
     let vertex = mycelium::transducer::sentence::RefusalKind::VertexBody.label();

@@ -25,47 +25,33 @@ pub(crate) fn face_work() -> u64 {
     FACE_WORK.with(|c| c.get())
 }
 
-/// T4 — WHAT THE CONDENSATION FIELD DID, COUNTED AT THE STEP THAT DECIDED
-/// (§8.1, 66).
+/// BQ5a — WHAT EACH CONTACT THE TOPOLOGY NAMED CARRIED, counted where its
+/// edge is read (§8.1, 72.2).
 ///
-/// The first census read `0 condensed` over the whole corpus, and a zero is
-/// not a reading: "every gate refused" and "the pass never ran" are
-/// indistinguishable from the outside, which is the vacuous-truth defect
-/// exactly. Each gate counts its own refusals, so the zero says WHICH.
+/// This was the condensation FIELD's tally: a pair loop over every two
+/// members, a dialled band `1 < δ ≤ 2` deciding whether a face was written,
+/// then the pose. The loop and the band are gone (SQ1 item 2, 75): whether
+/// two bodies touch is topological (A.14, `contact_cells`), and a contact is
+/// read only on the pairs that pass names.
 ///
-/// `offered` is every ordered pair the field evaluated. `unlifted` is a
-/// pair whose nuclei did not read back. The three gates then refuse in
-/// order, and `condensed` is what reached `C¹`.
+/// `offered` is every contact read. `unlifted` is one whose tether did not
+/// read back. The regime of the tether is CONTENT — which class of motion
+/// relates the two nuclei — counted beside the rest and never a gate. The
+/// pose arms then say why an edge was not formed, and `condensed` is every
+/// contact that carries its refraction `g = (θ_bθ_a⁻¹)·V` into `C¹`.
 #[derive(Default, Clone, Copy, Debug)]
-pub struct FieldTally {
+pub struct ContactTally {
     pub offered: u64,
     pub unlifted: u64,
-    /// THE METRIC REFUSAL, SPLIT BY POLE. `|δ| ≤ 2` is antipodally
-    /// symmetric and a single `off_horizon` counter is NOT: it fused
-    /// `Apart` (`δ > 2`, the bodies are too far) with `Contained`
-    /// (`δ < −2`, one is nested deep inside the other), which are opposite
-    /// diagnoses with opposite repairs. `Contact`'s five arms exist
-    /// precisely so the involution's two poles stay apart (65.2), and
-    /// fusing them here threw that away at the measurement.
+    /// The tether's regime, `Contact::of(V)`: apart, tangent from outside,
+    /// intersecting, tangent from inside, contained.
     pub apart: u64,
+    pub tangent_external: u64,
+    pub intersecting: u64,
+    pub tangent_internal: u64,
     pub contained: u64,
-    pub sheared: u64,
-    /// THE TWO WAYS A FRAME IS NOT A DETERMINED TURN, kept apart because
-    /// they are different facts and one count reports them as one.
-    ///
-    /// `unturned` is `relative_rotor` answering NONE: no rotor exists at
-    /// all, because the two bodies' harmonic towers do not correspond and
-    /// a turn between them is not defined. `half_open` is `HalfOpen`: a
-    /// rotor DOES exist as a projective class and only its parity is
-    /// undetermined, which is what `m = 3` would resolve.
-    ///
-    /// Lumped together they said "the parity gap blocks everything" when
-    /// the reading may be "no relative frame exists between dissimilar
-    /// bodies at all" — a far larger claim, and a different repair.
-    /// THE SIX WAYS NO FRAME IS DETERMINED, each at its own name. The
-    /// census read `89 unturned` under one counter and could not say
-    /// whether the corpus is full of UNSPELLABLE TURNS — 37.7's condition,
-    /// live — or of bodies that do not orient at all.
+    /// THE WAYS NO POSE IS DETERMINED, each at its own name (66, V1): a
+    /// refusal that does not say which refusal it is answers nothing.
     pub bodiless: u64,
     pub isotropy: u64,
     pub unoriented: u64,
@@ -87,60 +73,70 @@ pub struct FieldTally {
     /// they are alike.
     pub irrational: u64,
     pub half_open: u64,
+    /// A relative turn the peel does not spell: 37.7's candidate, the
+    /// demand typed and counted, never an edge invented for it.
+    pub unspelled: u64,
+    /// A relative turn the peel reads nothing from.
+    pub unread: u64,
+    /// 78.6(2) — A CONTACT WHOSE MEMBER STANDS AT ONE FRAME: no transition
+    /// to read its pose from, so its edge is the tether with the refraction
+    /// unread by name — `static`, an edge formed, never a refusal.
+    pub statics: u64,
+    /// 78.6(1) — A CONTACT WHOSE POSE IS A HELD STABILIZER: its edge is the
+    /// coset of candidates, formed, never a representative.
+    pub cosets: u64,
     pub condensed: u64,
-    /// FR1 — THE PAIRS WHOSE POSE WAS READ ON THE TUBE, either body
-    /// extending off the sensor's plane. The regime, not an outcome: each of
-    /// these also lands in one arm above or in `condensed`.
+    /// FR1 — THE CONTACTS WHOSE POSE WAS READ ON THE TUBE. The regime, not
+    /// an outcome: each also lands in one arm above or in `condensed`.
     pub tube: u64,
 }
 
 thread_local! {
-    static FIELD: Cell<FieldTally> = const { Cell::new(FieldTally {
-        offered: 0, unlifted: 0, apart: 0, contained: 0, sheared: 0,
-        bodiless: 0, isotropy: 0, unoriented: 0, oblique: 0, mirrored: 0,
-        incongruent: 0, irrational: 0, half_open: 0, condensed: 0, tube: 0,
+    static CONTACTS: Cell<ContactTally> = const { Cell::new(ContactTally {
+        offered: 0, unlifted: 0, apart: 0, tangent_external: 0, intersecting: 0,
+        tangent_internal: 0, contained: 0, bodiless: 0, isotropy: 0, unoriented: 0,
+        oblique: 0, mirrored: 0, incongruent: 0, irrational: 0, half_open: 0,
+        unspelled: 0, unread: 0, statics: 0, cosets: 0, condensed: 0, tube: 0,
     }) };
 }
 
-pub(crate) fn note_field(f: impl Fn(&mut FieldTally)) {
-    FIELD.with(|c| {
+pub(crate) fn note_contact(f: impl Fn(&mut ContactTally)) {
+    CONTACTS.with(|c| {
         let mut v = c.get();
         f(&mut v);
         c.set(v);
     });
 }
 
-/// Read the field's tally and clear it, as the cover's is taken.
-pub fn take_field_tally() -> FieldTally {
-    FIELD.with(|c| c.replace(FieldTally::default()))
+/// Read the contacts' tally and clear it, as the cover's is taken.
+pub fn take_contact_tally() -> ContactTally {
+    CONTACTS.with(|c| c.replace(ContactTally::default()))
 }
 
-/// THE FIELD WITHOUT CLEARING IT, for a reader that prints per form while
-/// a whole-run total is still accumulating. Two readers of one counter,
-/// and only one of them may take it (law 12: the take is the clear).
-pub fn field_tally() -> FieldTally {
-    FIELD.with(|c| c.get())
+/// THE CONTACTS WITHOUT CLEARING THEM, for a reader that prints per form
+/// while a whole-run total is still accumulating. Two readers of one
+/// counter, and only one of them may take it (law 12: the take is the
+/// clear).
+pub fn contact_tally() -> ContactTally {
+    CONTACTS.with(|c| c.get())
 }
 
-impl FieldTally {
-    /// THE VALVE LINE — every gate, in the order the field passes them, so
-    /// a reader sees WHERE the flow stops rather than only that it did.
-    ///
-    /// A valve that is starved and a valve that is closed look the same on
-    /// a total; they do not here. `offered` is what arrived, each named
-    /// count is what one valve turned away, and `condensed` is what came
-    /// out the far end. The eight pose arms are the seven `NoPose`
-    /// refusals plus the parity class, and `tube` beside them is the regime
-    /// they were read in (FR1), because a refusal that does not say
-    /// which refusal it is answers nothing (rule 11).
+impl ContactTally {
+    /// THE CONTACT LINE — what the contacts were, then why an edge did not
+    /// form, then what condensed. The regime is read, never gated on.
     pub fn line(&self) -> String {
         format!(
-            "offered {} unlifted {} | horizon: apart {} contained {} \
-             | pose: tube {} | bodiless {} isotropy {} unoriented {} oblique {} \
-             mirrored {} incongruent {} irrational {} half-open {} | CONDENSED {}",
+            "offered {} unlifted {} | tether: apart {} tangent-out {} intersecting {} \
+             tangent-in {} contained {} | pose: tube {} | bodiless {} isotropy {} \
+             unoriented {} oblique {} mirrored {} incongruent {} irrational {} \
+             half-open {} | unspelled {} unread {} | FORMED: CONDENSED {} coset {} static {} \
+             | pose refusals by kind: P {} D {} I {}",
             self.offered,
             self.unlifted,
             self.apart,
+            self.tangent_external,
+            self.intersecting,
+            self.tangent_internal,
             self.contained,
             self.tube,
             self.bodiless,
@@ -151,45 +147,59 @@ impl FieldTally {
             self.incongruent,
             self.irrational,
             self.half_open,
+            self.unspelled,
+            self.unread,
             self.condensed,
+            self.cosets,
+            self.statics,
+            self.kinds()[0],
+            self.kinds()[1],
+            self.kinds()[3],
         )
+    }
+
+    /// CV1 — THE POSE REFUSALS BY KIND (78.9), each arm through
+    /// `NoPose::obstruction_kind`, the one table: P, D, C, I, N,
+    /// unclassified. An unoriented pair is a held stabilizer and counts in
+    /// none.
+    pub fn kinds(&self) -> [u64; 6] {
+        use crate::transducer::blade::NoPose;
+        let mut out = [0u64; 6];
+        for (arm, n) in [
+            (NoPose::Bodiless, self.bodiless),
+            (NoPose::Isotropy, self.isotropy),
+            (NoPose::Unoriented, self.unoriented),
+            (NoPose::Oblique, self.oblique),
+            (NoPose::Mirrored, self.mirrored),
+            (NoPose::Incongruent, self.incongruent),
+            (NoPose::Irrational, self.irrational),
+        ] {
+            if let Some(k) = arm.obstruction_kind() {
+                out[k.index()] += n;
+            }
+        }
+        out
     }
 
     /// WHAT A DEMAND COULD RETIRE, against what it never will. `oblique`
     /// is the mutable half — a proper turn the alphabet is merely short of
-    /// — and the two permanent arms are the geometry's own answer. The
-    /// ratio is the one number that says whether adjoining generators can
-    /// move this corpus at all.
+    /// — and the two permanent arms are the geometry's own answer.
     pub fn mutable_over_permanent(&self) -> (u64, u64) {
         (self.oblique, self.mirrored + self.incongruent)
-    }
-
-    /// WHAT THE VALVE PASSED, AGAINST WHAT REACHED IT. A field that
-    /// refuses everything and a field nothing reached both read `condensed
-    /// 0`, and the pair tells them apart.
-    ///
-    /// The three arms are exclusive by construction, so they never sum past
-    /// `offered`. Where they do, the instrument contradicts itself, and that
-    /// reads `None` — a refusal — never a zero floored in its place
-    /// (rule 11).
-    pub fn reached_contact(&self) -> Option<u64> {
-        self.offered
-            .checked_sub(self.unlifted)?
-            .checked_sub(self.apart)?
-            .checked_sub(self.contained)
     }
 }
 
 /// WHICH INCIDENCE NAMED A PAIR (70.4): the Frame's star, a site two
-/// members share, a corner two bodies meet at, or the condensation field.
-/// Carried with the pair so the face built from it is counted where it came
-/// from; a pair two incidences name is one face carrying both (N1).
+/// members share, or a corner two bodies meet at. Carried with the pair so
+/// the face built from it is counted where it came from; a pair two
+/// incidences name is one face carrying both (N1). The condensation field
+/// that was a fourth is gone with its band (BQ5a, SQ1 item 2): contact is
+/// the topology's to name.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum Incidence {
     Star,
     Site,
     Contact,
-    Field,
 }
 
 /// A SITE OF THE OCCUPANCY: its own coordinates, and the members standing
@@ -253,6 +263,221 @@ pub(crate) fn body_pair_key(lo: &[u8], hi: &[u8]) -> Vec<u8> {
     k.extend_from_slice(lo);
     k.extend_from_slice(hi);
     k
+}
+
+/// BQ5a — THE CONTACT EDGE IS REFRACTION, NEVER RIGIDITY (72.1, 72.1b, 72.2,
+/// A.16).
+///
+/// Two bodies the topology names as touching are related by
+///
+/// ```text
+///     g_ab = (θ_bθ_a⁻¹) · V_ab,     V_ab = s_b s_a
+/// ```
+///
+/// where `θ_x` is body `x`'s OWN pose across the transition — its union
+/// before against its union after, FR1's reading on its tube — and `V` the
+/// tether the two bodies' nuclei make before it, carried WHOLE in the
+/// carriage. `θ` and `V` do not commute, so a circuit of such edges keeps the
+/// curvature a product of tethers alone telescopes away (72.1b); the word is
+/// the peel of `θ_bθ_a⁻¹`, a reading of the turn, and the carriage holds `g`
+/// entire so no product splits it by lane.
+///
+/// EACH BODY IS COMPARED WITH ITSELF, NEVER WITH THE OTHER (as `meet_edge`
+/// reads a meet's pieces, 56.5). A first cut read `relative_pose(a, b)`
+/// between the two touching bodies, and on the corpus every contact refused
+/// — four `Isotropy`, one `Irrational`, none condensed — because touching
+/// pieces are functional complements and almost never congruent: the same
+/// famine the retired field's harmonic certificate made. `θ_bθ_a⁻¹` is how
+/// `b` turned against how `a` turned, which two unlike bodies both have.
+///
+/// It replaces `edge_between`'s test on the two bodies' UNION for a contact:
+/// whether the pair moved rigidly asks whether two touching puzzle pieces are
+/// one piece, and is not what their contact is.
+///
+/// TWO ARMS FORM WHAT ONE TRANSPORT CANNOT (78.6). A body whose pose is a
+/// HELD STABILIZER (`HalfOpen`) rides the edge as its COSET: every candidate
+/// `θ_b θ_a⁻¹` over the two bodies' candidates, each with `V`, distinct
+/// rays kept, never a representative (checklist (r)). A body AT ONE FRAME
+/// has no transition to read a pose across: the edge is STATIC — `V` carried
+/// and the refraction unread by name, never the union's rigidity and never
+/// the identity.
+///
+/// Every refusal is counted at its own name on the contact line: an unread
+/// tether, each `NoPose` arm of either body's pose, a turn the peel does not
+/// spell (37.7's candidate) or reads nothing from. [`ContactEdge::Refused`]
+/// then; the face still stands, because whether is topology.
+pub(crate) fn contact_edge(
+    (a, a_after): (&blade::Blade, Option<&blade::Blade>),
+    (b, b_after): (&blade::Blade, Option<&blade::Blade>),
+) -> ContactEdge {
+    use crate::transducer::sentence::{Refraction, Transport};
+    note_contact(|t| t.offered += 1);
+    let Some(v) = blade::tether(a, b) else {
+        note_contact(|t| t.unlifted += 1);
+        return ContactEdge::Refused;
+    };
+    match blade::Contact::of(&v) {
+        Some(blade::Contact::Apart) => note_contact(|t| t.apart += 1),
+        Some(blade::Contact::TangentExternal) => note_contact(|t| t.tangent_external += 1),
+        Some(blade::Contact::Intersecting) => note_contact(|t| t.intersecting += 1),
+        Some(blade::Contact::TangentInternal) => note_contact(|t| t.tangent_internal += 1),
+        Some(blade::Contact::Contained) => note_contact(|t| t.contained += 1),
+        None => {
+            note_contact(|t| t.unlifted += 1);
+            return ContactEdge::Refused;
+        }
+    }
+    let (Some(a_after), Some(b_after)) = (a_after, b_after) else {
+        note_contact(|t| t.statics += 1);
+        return ContactEdge::Held(Refraction::Static(v));
+    };
+    if blade::on_tube(a, a_after) || blade::on_tube(b, b_after) {
+        note_contact(|t| t.tube += 1);
+    }
+    let pose = |before: &blade::Blade, after: &blade::Blade| match blade::relative_pose(before, after) {
+        Ok(blade::Pose::Turn(r)) => Some(vec![r]),
+        Ok(blade::Pose::HalfOpen(candidates)) => {
+            note_contact(|t| t.half_open += 1);
+            Some(candidates)
+        }
+        Err(why) => {
+            note_contact(|t| match why {
+                blade::NoPose::Bodiless => t.bodiless += 1,
+                blade::NoPose::Isotropy => t.isotropy += 1,
+                blade::NoPose::Unoriented => t.unoriented += 1,
+                blade::NoPose::Oblique => t.oblique += 1,
+                blade::NoPose::Mirrored => t.mirrored += 1,
+                blade::NoPose::Incongruent => t.incongruent += 1,
+                blade::NoPose::Irrational => t.irrational += 1,
+            });
+            None
+        }
+    };
+    let (Some(thetas_a), Some(thetas_b)) = (pose(a, a_after), pose(b, b_after)) else {
+        return ContactEdge::Refused;
+    };
+    // Every candidate refraction, each ray once.
+    let mut thetas: Vec<crate::transducer::cga::Mv> = Vec::new();
+    for theta_a in &thetas_a {
+        let Some(inv) = theta_a.versor_inverse() else {
+            note_contact(|t| t.unread += 1);
+            return ContactEdge::Refused;
+        };
+        for theta_b in &thetas_b {
+            let theta = theta_b.geo(&inv);
+            if !thetas.iter().any(|t| t.projective_eq(&theta)) {
+                thetas.push(theta);
+            }
+        }
+    }
+    let mut edges: Vec<Transport> = Vec::with_capacity(thetas.len());
+    for theta in thetas {
+        let word = match super::derivation::peel_versor(&theta) {
+            Some(Ok(w)) => w,
+            Some(Err(_)) => {
+                note_contact(|t| t.unspelled += 1);
+                return ContactEdge::Refused;
+            }
+            None => {
+                note_contact(|t| t.unread += 1);
+                return ContactEdge::Refused;
+            }
+        };
+        edges.push(Transport { word, carriage: theta.geo(&v), gauge: Vec::new() });
+    }
+    match <[Transport; 1]>::try_from(edges) {
+        Ok([edge]) => {
+            note_contact(|t| t.condensed += 1);
+            ContactEdge::Formed(Box::new(edge))
+        }
+        Err(coset) => {
+            note_contact(|t| t.cosets += 1);
+            ContactEdge::Held(Refraction::Coset(coset))
+        }
+    }
+}
+
+/// BQ5a — THE CONTACT'S REFRACTION BETWEEN TWO MEMBERS, each read against
+/// its own transition: its union before and after. A member at one frame
+/// has none, and is read where it stands — its edge is the static tether
+/// (78.6(2)). The edge where one formed, or the refraction the face's place
+/// carries instead; neither where it was refused by name.
+pub(crate) fn members_contact_edge(
+    unions: &crate::network::nerve::Keyed<(super::perceive::Body, super::perceive::Body, crate::transducer::element::Versor)>,
+    supports: &crate::network::nerve::Keyed<Vec<Site>>,
+    a: Vec<u8>,
+    b: Vec<u8>,
+) -> (Option<crate::transducer::sentence::Transport>, Option<crate::transducer::sentence::Refraction>) {
+    let lifted = |key: &[u8]| -> Option<(blade::Blade, Option<blade::Blade>)> {
+        match unions.get(key) {
+            Some((before, after, _)) => Some((
+                blade::shape_of(&super::perceive::support_of(before)).blade,
+                Some(blade::shape_of(&super::perceive::support_of(after)).blade),
+            )),
+            None => supports.get(key).map(|s| (blade::shape_of(s).blade, None)),
+        }
+    };
+    match (lifted(&a), lifted(&b)) {
+        (Some((ai, bi)), Some((aj, bj))) => match contact_edge((&ai, bi.as_ref()), (&aj, bj.as_ref())) {
+            ContactEdge::Formed(t) => (Some(*t), None),
+            ContactEdge::Held(r) => (None, Some(r)),
+            ContactEdge::Refused => (None, None),
+        },
+        _ => {
+            note_contact(|t| t.unlifted += 1);
+            (None, None)
+        }
+    }
+}
+
+/// BQ5a's guard (77, 78.4 E1) — THE CIRCUITS THAT CROSS A CONTACT FACE, a
+/// face the topology named, carrying its interface, each by its arm through
+/// the one walk (78.6): CURVED where a member path's whole transport reads
+/// and is not the identity ray — of them, those whose gauge half is static;
+/// through a held coset, by how it closes; UNREAD where no member path read,
+/// so the circuit survives `orbits_of` for being unread (rule 11), never for
+/// carrying anything. In that order: curved, gauge static, coset closed,
+/// modulo held, open, unread.
+pub(crate) fn contact_circuits(form: &crate::transducer::sentence::Form) -> [usize; 6] {
+    use crate::transducer::sentence::walk::{paths_carried, CosetClosure};
+    let identity = crate::transducer::element::identity_versor();
+    let mut t = [0usize; 6];
+    for o in &form.orbits {
+        if !o.faces.iter().any(|&fi| form.faces.get(usize::from(fi)).is_some_and(|f| !f.interface.is_empty())) {
+            continue;
+        }
+        let Some(carried) = paths_carried(&form.faces, &form.vertices, o) else {
+            t[5] += 1;
+            continue;
+        };
+        let curved = |c: &&crate::transducer::sentence::walk::PathCarried| {
+            c.composite().is_some_and(|m| !crate::transducer::element::same_versor(&m, &identity))
+        };
+        let paths: Vec<_> = carried.scoped().map(|(_, c)| c.clone()).collect();
+        let closures: Vec<CosetClosure> = paths.iter().filter_map(|c| c.coset_closure()).collect();
+        match (paths.iter().filter(curved).count(), closures.as_slice()) {
+            (0, []) if paths.iter().all(|c| c.composite().is_none()) => t[5] += 1,
+            (0, []) => {}
+            (0, cs) if cs.contains(&CosetClosure::Open) => t[4] += 1,
+            (0, cs) if cs.contains(&CosetClosure::ClosedModuloHeld) => t[3] += 1,
+            (0, _) => t[2] += 1,
+            _ => {
+                t[0] += 1;
+                if paths.iter().filter(curved).any(|c| c.gauge_static()) {
+                    t[1] += 1;
+                }
+            }
+        }
+    }
+    t
+}
+
+/// WHAT A CONTACT'S EDGE IS (78.6): one transport, the held coset or the
+/// static tether, or refused by the name its tally counted.
+pub(crate) enum ContactEdge {
+    Formed(Box<crate::transducer::sentence::Transport>),
+    Held(crate::transducer::sentence::Refraction),
+    Refused,
 }
 
 /// The two bodies a pair key names, read back as their addresses (A21).
@@ -582,148 +807,13 @@ pub(crate) fn named_incidence(
         contact_bodies.insert(interface_key(&elements), (g.bodies.clone(), left.clone()));
         relate(&mut related, member_pair_key(a, b), Incidence::Contact, Some(elements));
     }
-    // T4 — THE CONDENSATION PASS, WHERE THE STENCIL WAS (66, ruled
-    // 2026-09-22). Incidence between two bodies is the exact conformal
-    // strain between their nuclei, gated by three certificates and never by
-    // a dilation of coordinates.
-    //
-    // THE METRIC GATE IS DERIVED, NOT DIALLED. Two supports sharing an EDGE
-    // read `δ² = 4` exactly, at every size — an n×n block has `r² = n²/6`,
-    // so `num = 2n²/3`, `den2 = n⁴/9`, `δ² = 4` independent of `n`, because
-    // `δ` is a similarity invariant and adjacent n-blocks are similar to
-    // adjacent unit cells. A corner neighbour reads 25 and a one-cell gap
-    // reads 121. So `δ² ≤ 4` admits edge adjacency and refuses corner
-    // adjacency, which is 51.3's own four-neighbour convention ARRIVING
-    // FROM THE METRIC instead of from a stencil.
-    //
-    // AND IT IS WRITTEN ANTIPODALLY. `num² ≤ 4·den2` is `|δ| ≤ 2`, which
-    // the involution `σ: s ↦ −s` fixes. Writing it as `num ≤ 0 ∨ num² ≤
-    // 4·den2` would admit arbitrarily deep containment while refusing its
-    // antipode — a half-spectrum silently admitted, which is the same shape
-    // as the three-arm `Contact` collapse (65.1).
-    // THE BLADES ARE LIFTED ONCE PER MEMBER, not once per pair. `shape_of`
-    // integrates every lamina of a support, so computing it inside the pair
-    // loop would lift each body `N` times — `O(N²·cells)` where `O(N·cells)`
-    // is the whole cost. The field is a pair loop; the LIFT is not.
-    let bodies: Vec<(Vec<u8>, blade::Blade)> = supports
-        .scoped()
-        .filter(|(mk, _)| Some(mk.as_slice()) != frame)
-        .map(|(mk, supp)| (mk, blade::shape_of(supp).blade))
-        .collect();
-    for i in 0..bodies.len() {
-        for j in (i + 1)..bodies.len() {
-            // ORDERED, so each pair is read once and the reading does not
-            // depend on the order the members were offered.
-            let ((ak, ba), (bk, bb)) = (&bodies[i], &bodies[j]);
-            // THE FIELD'S COST IS NOT FACE WORK. `note_face_work` gauges
-            // the OCCUPANCY-driven builder, whose whole claim is that it
-            // is linear in occupied sites; the field is a pair loop over
-            // members and counting it there fused two costs and broke the
-            // gauge (36 against 528). `FieldTally::offered` is the field's
-            // own carrier (law 12).
-            note_field(|t| t.offered += 1);
-            let Some(face) = blade::Interface::between(ba, bb) else {
-                note_field(|t| t.unlifted += 1);
-                continue;
-            };
-            // (1) THE METRIC GATE, antipodally symmetric.
-            // THE CONTACT BAND IS `1 < δ ≤ 2`, NOT `|δ| ≤ 2`.
-            //
-            // `δ ≤ 1` is OVERLAP — the two bodies share support — and that
-            // incidence already has a producer: the occupancy pass above,
-            // which relates a site's occupants in a spanning CHAIN
-            // precisely because they span a simplex and writing all
-            // `k(k−1)/2` pairs would hand `orbits_of` a cycle basis with
-            // nothing to fill. Admitting overlap here rebuilt exactly that
-            // clique: eight bodies on one site condensed 28 faces where
-            // the chain writes 7 (law 12, two producers of one fact).
-            //
-            // So the two operators divide by regime, as ruled: overlap is
-            // the occupancy pass's, `1 < δ ≤ 2` is the field's, and it is
-            // the band the ring stencil used to cover — genuine contact
-            // WITHOUT shared support.
-            //
-            // AND THE BAND IS ONE-SIDED ON PURPOSE. Its antipode under
-            // `σ` is `−2 ≤ δ < −1`, which is nesting, a DIFFERENT relation
-            // wanting a different operator (65.3). The involution is
-            // honoured by every regime having an operator, not by one gate
-            // swallowing both poles.
-            let four = crate::core::Q::from_integer(4.into());
-            let sq = &face.strain.num * &face.strain.num;
-            let adjacent = face.strain.num > crate::core::Q::from_integer(0.into())
-                && sq > face.strain.den2
-                && sq <= four * &face.strain.den2;
-            if !adjacent {
-                // WHICH POLE. `Apart` is `δ > 2` — too far to touch;
-                // anything at or below `δ = 1` is overlap or nesting and
-                // belongs to another producer.
-                match face.strain.side() {
-                    blade::Contact::Apart => note_field(|t| t.apart += 1),
-                    _ => note_field(|t| t.contained += 1),
-                }
-                continue;
-            }
-            // THE HARMONIC CERTIFICATE STOOD HERE AND WAS IN THE WRONG SEAT
-            // (66, measured 2026-09-22). It asked whether the two bodies
-            // are DILATES of one another, and the census answered without
-            // ambiguity:
-            //
-            //     308 offered, 0 unlifted, 190 off-horizon,
-            //     118 SHEARED, 0 half-open, 0 condensed
-            //
-            // Every one of the 118 pairs that the metric gate found in
-            // contact was then refused for not being a scaled copy of its
-            // neighbour. In an ARC scene adjacent bodies are FUNCTIONAL
-            // COMPLEMENTS — a line meeting a frame, an agent against an
-            // obstacle, an L abutting a block — and are almost never
-            // homothetic. The gate was requiring two touching puzzle pieces
-            // to be the same shape before permitting them to touch.
-            //
-            // `dilation_certified` is an equivalence test for
-            // REPRESENTATIONAL BLOAT — two cells that are one thing said
-            // twice — and it belongs to the quotient operator, gated on a
-            // free face, not to contact. A square may touch a rectangle.
-            //
-            // (2) THE PARITY GATE. A 1-cell may not enter `C¹` carrying a
-            //     `±1` gauge ambiguity: `Frame::HalfOpen` is a projective
-            //     class and not a determined rotor, and admitting it would
-            //     let an unoriented reflection pass without paying. It
-            //     refuses until the odd harmonic `m = 3` exists to resolve
-            //     the half turn (57.3, 65.6).
-            // The pose over the two tubes (FR1, 72.1c): the sensor's plane
-            // where both stand in one section, every axis where either
-            // extends off it.
-            if blade::on_tube(ba, bb) {
-                note_field(|t| t.tube += 1);
-            }
-            match blade::relative_pose(ba, bb) {
-                Ok(blade::Pose::Turn(_)) => {}
-                // A ROTOR EXISTS AND ITS PARITY DOES NOT. This is the
-                // `m = 3` gap: a projective class, not a determined turn.
-                Ok(blade::Pose::HalfOpen(_)) => {
-                    note_field(|t| t.half_open += 1);
-                    continue;
-                }
-                // AND THE FIVE REFUSALS, EACH AT ITS OWN NAME. `Oblique`
-                // in particular is NOT a failure: the relative orientation
-                // exists and the alphabet cannot spell it, which is 37.7.
-                Err(why) => {
-                    note_field(|t| match why {
-                        blade::NoPose::Bodiless => t.bodiless += 1,
-                        blade::NoPose::Isotropy => t.isotropy += 1,
-                        blade::NoPose::Unoriented => t.unoriented += 1,
-                        blade::NoPose::Oblique => t.oblique += 1,
-                        blade::NoPose::Mirrored => t.mirrored += 1,
-                        blade::NoPose::Incongruent => t.incongruent += 1,
-                        blade::NoPose::Irrational => t.irrational += 1,
-                    });
-                    continue;
-                }
-            }
-            note_field(|t| t.condensed += 1);
-            relate(&mut related, member_pair_key(ak, bk), Incidence::Field, None);
-        }
-    }
+    // THE CONDENSATION FIELD IS GONE — BQ5a, SQ1 item 2 (72.2, 75). A pair
+    // loop over every two members stood here, the tether's scalar split
+    // gated by a dialled band `1 < δ ≤ 2`, then the pose. Whether two bodies
+    // touch is the topology's (the contact pass above, A.14); what they
+    // carry is read on exactly those pairs, in `contact_edge`, where the
+    // face is built and each member's transition is in hand. No band
+    // decides anything, and no pair loop runs.
 
     // THE RING IS GONE — T1, THE LAST INCIDENCE STENCIL (60.5, ruled
     // 2026-09-22). A third pass stood here: each member's support dilated by

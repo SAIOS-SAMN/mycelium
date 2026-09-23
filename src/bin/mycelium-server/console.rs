@@ -355,6 +355,16 @@ fn adjudication(a: &observe::Adjudication) -> Vec<String> {
                 false => format!("{YELLOW}{}{RESET}", refused.join("  ")),
             }
         ),
+        // CV1 — the same refusals by the kind of obstruction (78.9).
+        format!(
+            "    by kind  {}",
+            mycelium::transducer::sentence::ObstructionKind::ALL
+                .iter()
+                .zip(a.obstructed)
+                .map(|(k, n)| format!("{} {n}", k.label()))
+                .collect::<Vec<_>>()
+                .join("  ")
+        ),
     ]
 }
 
@@ -424,6 +434,24 @@ fn circuits(c: &observe::Circuits) -> Vec<String> {
                 }
             };
             out.push(format!("      {:>2} face {}{way}  {read}", i + 1, s.face));
+        }
+        // CT1 — the reuse ladder's record: every arm that ran, what it read,
+        // and the class their disagreement gives (79.3).
+        if let Some(t) = &circuit.test {
+            let arms: Vec<String> = t
+                .arms
+                .iter()
+                .map(|(arm, read)| {
+                    let r = match read {
+                        observe::ArmRead::Empty => "empty".to_string(),
+                        observe::ArmRead::Reads(n) => format!("reads {n}"),
+                        observe::ArmRead::Routes { agree, disagree } => format!("agree {agree} disagree {disagree}"),
+                        observe::ArmRead::Permanent => "permanent".to_string(),
+                    };
+                    format!("{}: {r}", arm.label())
+                })
+                .collect();
+            out.push(format!("      {BOLD}test{RESET} {}  {DIM}[{}]{RESET}", t.class.label(), arms.join("; ")));
         }
     }
     out.push(format!("    {DIM}owed: {}{RESET}", owed.join("  ")));
@@ -568,8 +596,14 @@ fn progress(p: &observe::Progress) -> Vec<String> {
     let mut out = vec![
         format!("  {BOLD}progress{RESET}    {} percepts", p.percepts),
         format!(
-            "    contact cycles {}  curved {}  {DIM}unread {}{RESET}",
-            p.contact_cycles, p.contact_cycles_curved, p.contact_cycles_unread
+            "    contact cycles {}  curved {} (gauge static {})  coset closed {} mod-held {} open {}  {DIM}unread {}{RESET}",
+            p.contact_cycles,
+            p.contact_cycles_curved,
+            p.contact_cycles_static,
+            p.contact_cycles_coset[0],
+            p.contact_cycles_coset[1],
+            p.contact_cycles_coset[2],
+            p.contact_cycles_unread
         ),
     ];
     if p.grades.is_empty() {

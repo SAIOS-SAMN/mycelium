@@ -12,7 +12,7 @@ pub mod surgery;
 pub mod continuous;
 pub mod frame;
 pub mod pose;
-pub mod strain;
+pub mod tether;
 pub mod tower;
 
 pub use body::*;
@@ -22,7 +22,7 @@ pub use surgery::*;
 pub use continuous::*;
 pub use frame::*;
 pub use pose::*;
-pub use strain::*;
+pub use tether::*;
 pub use tower::*;
 
 use crate::transducer::cga::{self, Mv};

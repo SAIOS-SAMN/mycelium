@@ -443,9 +443,14 @@ impl<V, C: Coordinate> Keyed<V, C> {
         self.n == 0
     }
 
-    /// Keys present in both carriers. Simultaneous PATRICIA descent (A13):
-    /// subtrees that share no prefix are pruned; cost is the shared
-    /// structure, never a product of the two fibers.
+    /// KEYS PRESENT IN BOTH CARRIERS — their meet, read along the
+    /// trajectory the two keys' own coordinates trace together (A13). A key
+    /// is its path, so where the two tries' paths part they share nothing
+    /// below and that branch is not read; the cost is the structure the two
+    /// share, never a product of the two fibers. The trajectory has no
+    /// preferred direction and chooses nothing: it follows whichever branches
+    /// both carriers hold, and the meet is the same set in any order of
+    /// reading.
     pub fn meet<W, D: Coordinate>(&self, other: &Keyed<W, D>) -> Keyed<()> {
         let mut out = Keyed::new();
         meet_nodes(self.root.as_deref(), other.root.as_deref(), &mut out);

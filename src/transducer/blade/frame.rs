@@ -197,9 +197,11 @@ fn handedness(a: &Blade, b: &Blade, plane: (usize, usize)) -> Handedness {
 /// moments fixed only mod `π`: `u` and `h₄` satisfy `u(−x) = u(x)`, so no
 /// even-rank moment distinguishes `φ` from `φ + π`, and where the two
 /// bodies differ in cardinality — a transmuted carry — no cell test can
-/// settle it either. The representative is carried and the openness is
-/// carried WITH it, so a reader cannot mistake a projective class for a
-/// determined rotor.
+/// settle it either. EVERY CANDIDATE is carried — the held stabilizer's
+/// coset, never a representative (78.6(1), checklist (r)) — so a reader
+/// cannot mistake a projective class for a determined rotor. Two
+/// candidates are the held `ℤ₂`; the quartic's four the held `ℤ₄` the
+/// same carriage names (FR1c).
 ///
 /// WHY NOT JUST PICK ONE. Choosing a sign per edge injects EXTRINSIC
 /// PARITY into the 1-skeleton: three edges of a cycle guessed
@@ -213,15 +215,19 @@ fn handedness(a: &Blade, b: &Blade, plane: (usize, usize)) -> Handedness {
 #[derive(Clone, Debug)]
 pub enum Pose {
     Turn(Mv),
-    HalfOpen(Mv),
+    /// The candidates, in the reader's own order; never fewer than two.
+    HalfOpen(Vec<Mv>),
 }
 
 impl Pose {
     /// The rotor either way — the caller that only needs to act takes
-    /// this; the caller that must not confuse the two matches instead.
+    /// this, the first candidate of a held coset; the caller that must not
+    /// confuse the two matches instead, and a contact edge never takes it
+    /// (78.6(1)).
     pub fn rotor(&self) -> &Mv {
         match self {
-            Pose::Turn(r) | Pose::HalfOpen(r) => r,
+            Pose::Turn(r) => r,
+            Pose::HalfOpen(c) => &c[0],
         }
     }
 }
@@ -305,6 +311,24 @@ pub enum NoPose {
     /// nor `Oblique` (whose question is the square base's turns, one
     /// section's).
     Irrational,
+}
+
+impl NoPose {
+    /// CV1 — THE KIND OF A POSE REFUSAL (78.9), on the REFRACTION only: a
+    /// static contact still carries its tether (78.6(2)). No rational versor
+    /// relates the two towers — mirrored, incongruent, isotropic, irrational
+    /// — is P; the one arm a demand retires (D3, `RotorPrime`), oblique, is
+    /// D; a bodiless pair has nothing to pose, I. An unoriented pair is a
+    /// held stabilizer beyond `ℤ₂` (FR1c), NOT a refusal: `None`.
+    pub fn obstruction_kind(self) -> Option<crate::transducer::sentence::ObstructionKind> {
+        use crate::transducer::sentence::ObstructionKind;
+        match self {
+            NoPose::Mirrored | NoPose::Incongruent | NoPose::Isotropy | NoPose::Irrational => Some(ObstructionKind::P),
+            NoPose::Oblique => Some(ObstructionKind::D),
+            NoPose::Bodiless => Some(ObstructionKind::I),
+            NoPose::Unoriented => None,
+        }
+    }
 }
 
 /// THE ORIENTATION VECTORS OF A PAIR. The second harmonic where the body
@@ -525,7 +549,7 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     // measurement this reader failed to take.
     let turns = quarter_turns(plane);
     let Some(phi) = relative_turn_ray(a, b, plane) else {
-        return Ok(Pose::HalfOpen(turns[turn_pair[0]].2.clone()));
+        return Ok(Pose::HalfOpen(turn_pair.iter().map(|&ix| turns[ix].2.clone()).collect()));
     };
     let q = |n: i64| BigRational::from_integer(BigInt::from(n));
     for &ix in turn_pair {

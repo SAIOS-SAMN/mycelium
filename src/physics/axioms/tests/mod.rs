@@ -9,4 +9,4 @@ mod metabolism;
 mod mint;
 mod refused;
 mod routes;
-mod strain;
+mod tether;

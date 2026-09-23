@@ -12,8 +12,9 @@
 //!              termination: a loop that cannot be re-entered from the
 //!              loop it just left, which is what makes the record it
 //!              leaves a record and not a state.
-//!   SYNTROPY   a condensation — order minted, a tether the field closed.
-//!              NOT counted here: `FieldTally::condensed` already carries
+//!   SYNTROPY   a condensation — order minted, a contact carrying its
+//!              refraction (BQ5a). NOT counted here:
+//!              `ContactTally::condensed` already carries
 //!              it, and a second counter for one fact is law 12's defect
 //!              inside a single carrier. It is READ beside this line.
 //!              AT DIMENSION 2 IT IS COUNTED HERE: `sealed`, an ascent

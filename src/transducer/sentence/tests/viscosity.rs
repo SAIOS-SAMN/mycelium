@@ -94,6 +94,60 @@ fn a_loop_without_a_class_spends_no_read_on_viscosity() {
     }
 }
 
+/// Two bodies on the Frame's star and a CONTACT chord between them whose
+/// edge is a held `ℤ₂`'s coset: the identity and the half turn in `e₁₂`.
+fn held_coset() -> Form {
+    let mut f = Form::default();
+    for n in 1..=2u8 {
+        f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
+    }
+    f.faces.push(f.face_of(0, 1).expect("star a"));
+    f.faces.push(f.face_of(0, 2).expect("star b"));
+    let mut chord = f.face_carrying_with_edge(1, 2, Word::identity(), None).expect("a chord");
+    chord.interface = vec![crate::transducer::base::Site::new(vec![1, 1, 0])];
+    let candidate = |carriage| Transport { word: Word::identity(), carriage, gauge: Vec::new() };
+    set_face_place(&mut chord, |p| {
+        p.refraction = Some(Refraction::Coset(vec![
+            candidate(crate::transducer::element::identity_versor()),
+            candidate(cga::rotator(&q(0), &q(1))),
+        ]))
+    });
+    f.faces.push(chord);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    assert_eq!(f.orbits.len(), 1, "the coset keeps its loop: a held edge is never flat");
+    f
+}
+
+/// The loop's paths' held cosets: how each closes, and its candidates.
+fn cosets(form: &Form) -> Vec<(Option<CosetClosure>, usize)> {
+    let carried = crate::transducer::sentence::walk::paths_carried(&form.faces, &form.vertices, &form.orbits[0])
+        .expect("the loop walks");
+    carried.scoped().map(|(_, c)| (c.coset_closure(), c.coset().map_or(0, |(cs, _)| cs.len()))).collect()
+}
+
+/// 78.7(4), 78.6(1) — A HELD `ℤ₂` READS UNCHANGED BY ANY BEND: the loop
+/// through the coset edge holds both candidates and reads closed modulo the
+/// held; no bend classes it (its class does not read — no candidate stands)
+/// and none spends a read (VS1b); a bend applied leaves both candidates
+/// standing — which one stands is T5's kernel, never a bend's.
+#[test]
+fn a_held_half_turn_reads_unchanged_by_any_bend() {
+    let mut form = held_coset();
+    let before = cosets(&form);
+    assert!(!before.is_empty() && before.iter().all(|c| *c == (Some(CosetClosure::ClosedModuloHeld), 2)), "{before:?}");
+    let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
+    let remaining = stroke.remaining();
+    let rs = read_viscosity(&form, &mut stroke);
+    assert_eq!(stroke.remaining(), remaining, "no read spent: no candidate stands to class");
+    for lane in [BendLane::Spatial, BendLane::Holonomic] {
+        assert_eq!(totals(&rs, lane), [0; 4], "{lane:?}: no arm classed off a coset");
+    }
+    let quarter = Mv::scalar(q(1)).add(&Mv::blade(cga::E1 | cga::E3, q(1)));
+    form.apply_move(&PivotBy::Placement { face: 0, translator: quarter });
+    let after = cosets(&form);
+    assert!(after.iter().all(|&(_, n)| n == 2), "both candidates stand after the bend: {after:?}");
+}
+
 /// ITEM 6 — A BEND WITH NO INVERSE IS REFUSED BY NAME: the un-pivot of a
 /// placement whose translator is on the light cone writes nothing and says
 /// so, where it used to skip silently.
