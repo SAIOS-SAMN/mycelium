@@ -10499,6 +10499,127 @@ offering mechanism is built; the reading says whether the eighteen are
 mostly cover-relative — a reconnection is real content — or permanent
 walls.
 
+## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
+
+**RC1's probe, recorded.** The "thirty" are FIVE circuits on four forms,
+each read six times by the six census tests over one corpus; the finding
+is three of five unread at HEAD, and with BQ5a's tree every contact
+refuses `Unrefracted` for the two reasons 78.6 already ruled — half-open
+(the held `ℤ₂` coset rides the edge) and static (the tether with its
+refraction unread by name). On this corpus every contact face is a
+self-face with exactly one chart pair, and no other kept circuit crosses
+any contact face: the "other fibre" and "other circuit" routes are EMPTY
+here, the tether is the only route, and it waits on BQ5a's code, not on
+a ruling. The census counts each circuit once per test; the orbit line
+counts forms once, so OR3's expected reading is per single perception:
+two read and three unread at HEAD, five unread by name under BQ5a until
+78.6's arms land, then read or refused by arm.
+
+**The operator's question.** What conditional operations test a circuit
+so that no one hand-codes a probe again — reuse fibres, or construct
+new ones — because the fibres and tethers built as tests of circuitry
+are what prove a COROLLARY. And whether the corollary runs one-to-many
+or many-to-one. Both, and they are dual: 1→n is RESOLUTION, one circuit
+against many routes, what a cell contains — the mind's own thought;
+n→1 is CONVERGENCE, many routes or perspectives reaching one class,
+what they agree on — the court's and the mesh's. They are the two halves
+of POW++ (74): useful work, and work that converges.
+
+### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
+
+- **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`
+  read as a ray; a constructor is a rational vector `v`, `v² ∈ ℚ*`, odd
+  (78.12(3)). A route's transport is the ordered product of its steps,
+  `T(r) = g_k ⋯ g_1`; the reversed route carries the inverse.
+- **R2 · Constructors build.** Every generator is a product of
+  constructors (54.7 R4); `Ω v Ω̃` is a constructor again.
+- **R3 · Locality.** Routes are compared inside one cell — the members
+  standing at one witness (NB1) — a finite complex; never across the
+  whole form.
+- **R4 · Curvature is holonomy.** A 2-cell's curvature is the transport
+  of its ordered boundary, `F(σ) = T(∂σ)`; `σ` is flat iff `F(σ)` is the
+  identity ray (`±1` one ray, EQ1).
+- **R5 · Basing.** Every loop is carried to the basepoint by the tree
+  transport `θ` (Axiom A, 54.7), `ρ(ℓ) = θ T(ℓ) θ⁻¹`.
+
+### 79.2 Theorems
+
+- **T1 · Two routes (1–1).** For routes `r, s` with the same endpoints,
+  `H(r, s) = T(s)⁻¹ T(r)` is the holonomy of `s⁻¹ r`, and `T(r) ∼ T(s)`
+  iff `H(r, s) ∼ 1`. Algebra.
+- **T2 · Discrete non-abelian Stokes.** Where `s⁻¹ r` bounds 2-cells
+  `σ₁ … σ_m` of the cell, `H(r, s) = ∏ᵢ γᵢ F(σᵢ) γᵢ⁻¹`, each curvature
+  conjugated by its lasso to the basepoint, in the boundary's order; so
+  flat enclosed cells give agreeing routes. THE CONVERSE FAILS: non-trivial
+  curvatures can multiply to the identity — a RELATOR, the resonant
+  closure `gate(3)` could not tell from vacuum — so routes agreeing never
+  proves the enclosed cells flat. Stated with the lasso order on a
+  two-cell fixture.
+- **C1 · 1→n, resolution.** Fix a reference route `r₀` and alternatives
+  `r₁ … r_n`, `Hᵢ = H(rᵢ, r₀)`. (a) `H(rᵢ, rⱼ) = Hⱼ⁻¹ Hᵢ`: `n` readings
+  give every pair, no pairwise walk (rule 3). (b) The circuit's content
+  is route-independent iff every `Hᵢ ∼ 1`. (c) The `Hᵢ` generate the
+  cell's holonomy group at the basepoint and the rank of the ℚ-algebra
+  of their actions is its capacity (78.11–78.12). (d) Within one
+  generator the same shape is the mode split (MD1, MR1).
+- **C2 · n→1, convergence.** (a) Conjugation preserves `I₁`, `I₂` and
+  the kind, so `n` minds basing one circuit at their own points agree
+  on its CLASS exactly when the invariants agree (the existing test
+  `basing_a_cycle_conjugates_it_and_preserves_both_casimirs`); agreeing
+  on the operator needs a shared basepoint. (b) Cartan–Dieudonné: every
+  versor is a product of at most `n + 2` reflections, so many
+  constructor chains compose to one generator — synonyms, one theorem
+  with many proofs (13.10). (c) A broadcast fibre replayed by `m` minds
+  from their own constructors converges iff their classes agree; on the
+  factorization only where they share constructors — open.
+
+**Conjectures, by name.** The held constructors produce a second route
+inside every single-route cell (where they do not, the wall is
+permanent); the constructor orbit closes iff every mode is elliptic of
+finite order (78.12(3), readable after MR1 and CG1, not yet a theorem);
+a sign difference between two routes is the held `ℤ₂`, a reading.
+
+### 79.3 The conditional operations: reuse, then construct (CT1, CT2)
+
+A finite ladder chosen by the refusal's own type — a typed conditional,
+each arm one keyed read, never a search tree — run on a refused step or
+on a circuit that reads trivial, under the stroke budget (rule 10),
+inside the cell (R3). REUSE first: `NoPlace` or any refusal → the other
+chart pairs of the same face (`face.at`); `NotRigid` → the tether
+carrier `g = (θ_bθ_a⁻¹)·V` (BQ5a); `Unrefracted: half-open` → the coset
+edge; `Unrefracted: static` → `V` with the refraction `static` (78.6);
+read and trivial → the other circuits of the witness cell crossing the
+face (NB1); `Cone` → nothing, permanent at this grade by name. CONSTRUCT
+only when every reuse arm is empty: a new fibre, a member carried by a
+constructor the mind holds (`Ω v Ω̃`, a new chart pair and face place);
+a new tether, `V = s_b s_a` between two nuclei of the cell not yet
+paired. Both built from held reflections, never parameters (CS1). A
+constructed fibre is a CANDIDATE OF THE THOUGHT — the superposition,
+volatile in the epigenome — and reaches the genome only by a court.
+
+**What each test records, and nothing chosen.** Every arm that ran and
+what it read, per circuit, as a `CircuitTest` inside `Reading::Circuit`
+(PL1); no arm is "the" route (checklist (r)). The circuit is CLASSIFIED
+BY HOW THE ARMS DISAGREE, in 78.9's arms: FLAT, every readable route
+agrees (C1b) — the corollary holds here; CURVED, two routes disagree
+and the enclosed cell's holonomy is certified content — E1's reading
+found by comparison; C, cover-relative — only a reused fibre or carrier
+reads it; D, dialect-relative — only another mind's charts read it,
+offered across the mesh (CV4); CANDIDATE — only a constructed fibre
+reads it, C once a court ratifies; P, permanent — every arm refuses,
+each by name: a wall. The census asserts on these counts and the console
+shows the arms; no hand probe again.
+
+**Detect, produce, broadcast.** The trigger is a circuit with a single
+route, refused or trivial — nothing joins its endpoints to compare
+against. Producing a fibre proves nothing; the proof is T1 on the pair
+of routes. What is broadcast is the CERTIFIED READING, an offer and
+never an install: the fibre's coordinates (its constructor and the
+chart pair it lands on), the two routes, the verdict with its holonomy,
+and whether the fibre's orbit is closed or open by which mode — so
+another mind replays it from its own constructors and agrees on the
+class (C2a) or refuses. That is the POW++ shape.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
