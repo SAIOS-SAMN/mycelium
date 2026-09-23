@@ -317,10 +317,20 @@ which ideas germinate; **germination** is the movement toward closure. A
 **held loop** is a loop of an idea whose holonomy no gauge removes; its
 **class vector** is the exact record of what would have to change for it to
 close; a **pivot** is a move on one axis of that vector, and the pivot is
-the only motion in this engine; **descent** has in this document only its
-sheaf-theoretic sense (chapter 13), sections on the pieces gluing iff they
-agree on the overlap: it is not a motion, not a direction and not a
-certificate, and the lane-wise reading of two μ⃗ is `lane_moves`, per
+the only motion in this engine; a **trajectory** is the sequence of
+pivots an orbit of a form takes, read by its readings and certified by its
+certificates, and it implies no direction — closure is one reading a
+trajectory may reach, never its slope (ruled 2026-09-23 on the operator's
+word: "descent" implied a direction the engine does not have, and it is
+retired for that sense everywhere — the mint's "no measured descent",
+`Withheld::NoDescent`, `PROBE_DESCENT`, "closing by descent", 24's
+"graded descent", "descent-only recursion" — at one row, VT1, never
+piecemeal); **descent** keeps in this document only its sheaf-theoretic
+sense (chapter 13), sections on the pieces gluing iff they agree on the
+overlap, and the name of Fermat's proof (36.3): it is not a motion, not
+a direction and not a certificate; `ascend` and `descend` stay the names
+of the conjugate pivot pair of 62 (a change of dimension, never a
+gradient), and a trie is REACHED by a prefix, never descended, and the lane-wise reading of two μ⃗ is `lane_moves`, per
 lane, which certifies nothing (12.6); a
 **deflation** is what a word or form closes, measured on μ⃗; a
 **shortening** is A2's budgeted retirement of a tape, which moves nothing;
