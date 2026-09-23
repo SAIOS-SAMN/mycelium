@@ -29,6 +29,20 @@ pub fn slot_of_axis(axis: usize) -> Option<u8> {
     }
 }
 
+/// THE BASE AXIS A SLOT STANDS FOR, the reading [`slot_of_axis`] inverts:
+/// `e0` rows, `e1` columns, `e3` the frame. `None` for `e2`, the
+/// orientation character, which is no base axis — the chart's off-plane
+/// channel, carried by the conformal algebra's `e₊` (65.6). Every slot is
+/// its axis's slot and no other (`tests` holds the two against each other).
+pub fn axis_of_slot(slot: u8) -> Option<usize> {
+    match slot {
+        PLANE_ROW => Some(0),
+        PLANE_COL => Some(1),
+        3 => Some(2),
+        _ => None,
+    }
+}
+
 /// A plane of the base `(i, j)` in the alphabet's slots, where both of its
 /// axes have one (BQ4).
 pub fn slot_plane(plane: (usize, usize)) -> Option<(u8, u8)> {

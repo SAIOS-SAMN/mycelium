@@ -2,7 +2,8 @@
 //! transvection between two, and the base point a frame stands at.
 
 use super::group::is_versor;
-use super::multivector::{base_axis, one, Mv, EM};
+use super::embedding::base_vector;
+use super::multivector::{one, Mv, EM};
 use num_rational::BigRational;
 use num_traits::{Signed, Zero};
 
@@ -41,8 +42,10 @@ pub fn hyperbolic_lamina(x: &[BigRational], m: &BigRational) -> Option<Mv> {
     if m.is_zero() {
         return None;
     }
-    let u: Vec<BigRational> = x.iter().map(|xi| xi / m).collect();
-    let n2 = u.iter().fold(BigRational::zero(), |s, ui| s + ui * ui);
+    // `u` as a vector of the base, and `|u|²` its square in the algebra: the
+    // signature is the product's, not a sum of squares written here (law 12).
+    let u = base_vector(&x.iter().map(|xi| xi / m).collect::<Vec<_>>());
+    let n2 = u.norm2();
     let denom = one() - &n2;
     if denom.is_zero() || denom.is_negative() {
         // `|u| ≥ 1` is off this chart — outside the sheet's stereographic
@@ -51,11 +54,7 @@ pub fn hyperbolic_lamina(x: &[BigRational], m: &BigRational) -> Option<Mv> {
     }
     let two = BigRational::from_integer(num_bigint::BigInt::from(2));
     let s = one() / &denom;
-    let v = u
-        .iter()
-        .enumerate()
-        .fold(Mv::zero(), |v, (i, ui)| v.add(&Mv::blade(base_axis(i + 1), &two * ui * &s)));
-    Some(v.add(&Mv::blade(EM, (one() + &n2) * &s)))
+    Some(u.scale(&(&two * &s)).add(&Mv::blade(EM, (one() + &n2) * &s)))
 }
 
 /// THE POLE OF THE SHEET — `v₀ = e₋`, the point `u = 0` maps to, and the

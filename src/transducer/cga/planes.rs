@@ -142,6 +142,16 @@ fn plane_key(blade: usize) -> [u8; 8] {
     (blade as u64).to_be_bytes()
 }
 
+/// THE CONFORMAL GENERATOR A SLOT OF THE LETTERS' CHART IS READ AS (51.2):
+/// the base axis the slot stands for ([`crate::transducer::alphabet::axis_of_slot`]),
+/// and `e₊` for the off-plane slot, which stands for no base axis.
+fn carriage_generator(slot: u8) -> usize {
+    match crate::transducer::alphabet::axis_of_slot(slot) {
+        Some(axis) => base_axis(axis + 1),
+        None => EP,
+    }
+}
+
 /// THE ROTOR'S SIX PLANES, WHICH THE CARRIAGE CANNOT CARRY.
 ///
 /// A transition is `D(ρ)·T(t)·R` and the two halves live in DIFFERENT
@@ -150,29 +160,24 @@ fn plane_key(blade: usize) -> [u8; 8] {
 /// written on it and do not change with `n`). A census of the carriage
 /// alone therefore reads ZERO on the entire harmonic half, structurally.
 ///
-/// 51.2 fixes the rotor chart's correspondence onto the carriage's planes:
-/// `(0,1)`, `(0,3)`, `(1,3)` are `e₁e₂`, `e₁e₃`, `e₂e₃`, and the chart's
-/// three off-plane channels land on `e₁e₊`, `e₂e₊`, `e₃e₊` — which is where
-/// orders outside `{1,2,4}` live (65.6).
+/// 51.2 fixes the rotor chart's correspondence onto the carriage's planes,
+/// and it is READ from the alphabet's own slots ([`carriage_generator`]),
+/// never tabled beside them: `(0,1)`, `(0,3)`, `(1,3)` are `e₁e₂`, `e₁e₃`,
+/// `e₂e₃`, and the chart's three off-plane channels, through `e2`, land on
+/// `e₁e₊`, `e₂e₊`, `e₃e₊` — which is where orders outside `{1,2,4}` live
+/// (65.6). A hand table stood here and filed `(0,3)` as `e₂e₃`, `(1,3)` as
+/// `e₂e₊` and `(0,2)` as `e₁e₃` (law 12: two producers of one
+/// correspondence, and they disagreed).
 ///
 /// ONE TRANSITION, BOTH HALVES, ONE COUNT, so `read` increments once and
 /// `coupled` can see both halves at once.
 pub fn note_transition(r: &crate::transducer::alphabet::Rotor, carriage: &Mv) {
-    // The letters' chart, each of its six planes with the carriage plane it
-    // is read as.
-    const ROTOR_PLANES: [(usize, usize); 6] = [
-        (0b0011, 0b00011),
-        (0b0101, 0b00101),
-        (0b1001, 0b00110),
-        (0b0110, 0b01001),
-        (0b1010, 0b01010),
-        (0b1100, 0b01100),
-    ];
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let mut harmonic = false;
-    for &(rotor_mask, plane) in &ROTOR_PLANES {
+    for &(s, t) in &crate::transducer::alphabet::SLOT_PLANES_SIX {
+        let rotor_mask = (1usize << s) | (1usize << t);
         if !r.coeff(rotor_mask).is_zero() {
-            seen.insert(plane_key(plane), ());
+            seen.insert(plane_key(carriage_generator(s) | carriage_generator(t)), ());
             harmonic = true;
         }
     }

@@ -53,3 +53,30 @@ fn the_algebra_at_n4_has_its_own_count_and_holds_n3_inside_it() {
     assert_eq!(cga::cyclotomic_orders(4), cga::cyclotomic_orders(3));
     assert!(cga::cyclotomic_orders(5).contains(&7) && cga::cyclotomic_orders(5).contains(&9));
 }
+
+/// 51.2, audit N-2 — THE CENSUS FILES A TURN UNDER THE PLANE IT TURNS. The
+/// letters' `e0e3` is the base's (row, frame) plane, which the carriage
+/// calls `e₁e₃`; `e1e3` is (column, frame), `e₂e₃`; the off-plane `e0e2`
+/// lands on `e₁e₊`. A hand table filed these as `e₂e₃`, `e₂e₊` and `e₁e₃`.
+#[test]
+fn the_plane_census_reads_the_rotor_chart_through_the_alphabets_slots() {
+    use crate::transducer::alphabet::{axis_of_slot, slot_of_axis, Rotor};
+    for axis in 0..3 {
+        let slot = slot_of_axis(axis).expect("the grid's three axes have slots");
+        assert_eq!(axis_of_slot(slot), Some(axis), "a slot stands for its own axis");
+    }
+    assert_eq!(axis_of_slot(2), None, "e2 is the orientation character, no base axis");
+    let cases: [(usize, usize); 3] = [
+        (0b1001, base_axis(1) | base_axis(3)),
+        (0b1010, base_axis(2) | base_axis(3)),
+        (0b0101, base_axis(1) | EP),
+    ];
+    for (rotor_mask, plane) in cases {
+        let _ = cga::take_plane_tally();
+        let turn = Rotor::scalar(q(3, 5)).add(&Rotor::blade(rotor_mask, q(4, 5)));
+        cga::note_transition(&turn, &Mv::scalar(BigRational::one()));
+        let t = cga::take_plane_tally();
+        assert_eq!(t.count(plane), 1, "rotor {rotor_mask:#06b} is filed as {}", cga::plane_name(plane));
+        assert_eq!(t.occupied(), 1, "and under no other plane");
+    }
+}

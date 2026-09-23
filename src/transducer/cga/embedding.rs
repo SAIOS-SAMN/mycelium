@@ -19,17 +19,22 @@ pub fn e_inf() -> Mv {
 /// with `x = Σ xᵢ eᵢ` over the point's own coordinates (71.2(3)). The ONE
 /// producer of a conformal point, at every `n` (PH2: no fixed arity).
 ///
-/// `‖x‖²` is the base's own metric on its coordinates — every base axis
-/// squares to `+1` — written as the sum of their squares, and that sum is
-/// the scalar part of `x x` exactly.
+/// `‖x‖²` is READ FROM THE ALGEBRA, `⟨x x⟩₀`, so the signature that squares
+/// every base axis to `+1` is the product's own (`metric_sign`) and is not
+/// written a second time here as a sum of squares (law 12; audit N-2).
 pub fn point_at(x: &[BigRational]) -> Mv {
-    let x2n = x.iter().fold(zero(), |s, xi| s + xi * xi);
-    let mut m = x
-        .iter()
+    let v = base_vector(x);
+    let x2n = v.norm2();
+    v.add(&e_inf().scale(&(half() * x2n))).add(&e_o())
+}
+
+/// THE BASE VECTOR `x = Σ xᵢ eᵢ` of a point's own coordinates, each on its
+/// own base axis: the ONE producer of the vector the embeddings, the
+/// translator and the sheet are built on.
+pub fn base_vector(x: &[BigRational]) -> Mv {
+    x.iter()
         .enumerate()
-        .fold(Mv::zero(), |m, (i, xi)| m.add(&Mv::blade(super::multivector::base_axis(i + 1), xi.clone())));
-    m = m.add(&e_inf().scale(&(half() * x2n)));
-    m.add(&e_o())
+        .fold(Mv::zero(), |m, (i, xi)| m.add(&Mv::blade(super::multivector::base_axis(i + 1), xi.clone())))
 }
 
 /// A CHART BASE POINT ON THE NULL CONE OF A NON-EUCLIDEAN SPACE (54.7 B8,
@@ -71,18 +76,17 @@ pub fn point_at(x: &[BigRational]) -> Mv {
 /// ON THE BASE'S OWN `n` COORDINATES (PH2): `x` holds every base
 /// coordinate, and the condition is `‖x‖² − x₀² = −R²` at that `n`.
 pub fn hyperbolic_point(x: &[BigRational], x0: &BigRational, r: &BigRational) -> Option<Mv> {
-    let x2n = x.iter().fold(zero(), |s, xi| s + xi * xi);
-    if x2n - x0 * x0 + r * r != zero() {
-        return None;
-    }
     if *x0 <= zero() {
         return None;
     }
-    let base = x
-        .iter()
-        .enumerate()
-        .fold(Mv::zero(), |m, (i, xi)| m.add(&Mv::blade(super::multivector::base_axis(i + 1), xi.clone())));
-    Some(base.add(&Mv::blade(EM, x0.clone())).add(&Mv::blade(EP, r.clone())))
+    // THE CONDITION IS THE POINT'S OWN SQUARE, `p² = 0`, read from the
+    // product: `e₋² = −1` and `e₊² = +1` are the signature's, not a formula
+    // written beside it (law 12).
+    let p = base_vector(x).add(&Mv::blade(EM, x0.clone())).add(&Mv::blade(EP, r.clone()));
+    match p.norm2().is_zero() {
+        true => Some(p),
+        false => None,
+    }
 }
 
 /// The dual sphere of ℚⁿ, `S = X(c) − ½ r² e_∞`, about a centre of the
@@ -116,11 +120,7 @@ pub fn base_at(p: &Mv, n: usize) -> Option<Vec<BigRational>> {
 /// not zero. [`transvection`] is the geodesic motion that has no such
 /// fixed point.
 pub fn translator_at(d: &[BigRational]) -> Mv {
-    let d = d
-        .iter()
-        .enumerate()
-        .fold(Mv::zero(), |m, (i, di)| m.add(&Mv::blade(super::multivector::base_axis(i + 1), di.clone())));
-    let d_einf = d.geo(&e_inf());
+    let d_einf = base_vector(d).geo(&e_inf());
     Mv::scalar(one()).sub(&d_einf.scale(&half()))
 }
 

@@ -14,7 +14,7 @@ mod planes;
 mod spin;
 
 pub use embedding::{
-    base_at, boundary_dual, e_inf, e_o, hyperbolic_point, on_sphere, point_at, rotator,
+    base_at, base_vector, boundary_dual, e_inf, e_o, hyperbolic_point, on_sphere, point_at, rotator,
     rotator_on_blade, sphere_at, translator_at,
 };
 pub use group::{dilator, is_versor, projective_ratio, reflector};

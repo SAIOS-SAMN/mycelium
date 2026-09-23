@@ -232,17 +232,17 @@ pub fn transvection_of(v: &Versor) -> Option<Versor> {
     // It is also the second half of why the corpus reads `parabolic 0`:
     // the luminal sector is not merely unbuilt (55.7), it is actively
     // refused here whenever a displacement reaches it.
-    let norm2 = t.iter().fold(Q::zero(), |s, x| s + x * x);
-    if norm2 == Q::one() {
+    //
+    // THE GENERATOR IS THE PRODUCT `u e₋` (`u ⊥ e₋`, so `u e₋ = u ∧ e₋`),
+    // one boost per coordinate on its own base axis, and `B² = |u|²` is read
+    // from it: the signature is the algebra's, never a sum of squares written
+    // here (law 12, audit N-2). Written as a blade mask it took the stored
+    // blade's orientation, which past the third axis is `e₋ eᵢ = −eᵢ ∧ e₋`.
+    use crate::transducer::cga::EM;
+    let generator = crate::transducer::cga::base_vector(&t).geo(&Versor::blade(EM, Q::one()));
+    if generator.norm2() == Q::one() {
         return None;
     }
-    // One boost `eᵢ ∧ e₋` per coordinate of the displacement, on that
-    // coordinate's own base axis.
-    use crate::transducer::cga::{base_axis, EM};
-    let generator = t
-        .into_iter()
-        .enumerate()
-        .fold(Versor::zero(), |g, (i, t)| g.add(&Versor::blade(base_axis(i + 1) | EM, t)));
     crate::transducer::cga::cayley(&generator)
 }
 
