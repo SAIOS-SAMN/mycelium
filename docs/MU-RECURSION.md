@@ -9073,6 +9073,117 @@ ruled twice:
   named refusal.
 - **The physics at `n`** (P6, inside Phase N as BQ4 and PH2).
 
+## 73. The orbit, not the loop (ruled 2026-09-23)
+
+**Origin, the operator's words recorded verbatim.** What the engine
+calls a loop is an imperfect orbit, "repelled/propelled by the gravity of
+the axioms that the mathematics orbits". What the engine reads is how the
+path fails to close, never whether it closes. The implementor's proposal
+of the same day is adopted as this chapter with the reconciliations of
+73.7.
+
+### 73.1 The reading
+
+A cycle of carried transports is an **orbit**. Its holonomy `M = ∏
+g_{k,k+1}` is the displacement per circuit — the **precession** — and an
+exactly closed path is the exceptional case; every other reading is
+content. The holonomy classes the engine already reads are the orbit's
+type:
+
+| class | orbit |
+|---|---|
+| elliptic, finite order `ℓ` | resonant: closes after `ℓ` circuits — the filed torsion at period `ℓ` (A17, A.8) |
+| elliptic, infinite order | a rosette: bound and never closing |
+| parabolic | escape at the threshold |
+| hyperbolic | unbound: deflected and not returning |
+| trivial | closes with no precession — the exception, not the rule |
+
+A refusal — `not rigid`, `no place`, `cone`, `unspelled` — is not an
+orbit. It is a transport never carried, and it stays named as a refusal
+(A.17).
+
+### 73.2 What is measured on each orbit
+
+Exact over ℚ or refused; no angle, no root, no scalar potential (law 1,
+law 11, rule 11, Axiom C):
+
+1. **Precession**: the holonomy versor in its canonical coordinates (A1,
+   A4); never converted to an angle.
+2. **Plane**: the plane or planes of `Cl(n+1, 1)`, generated from `n`
+   (71.2(3)), the precession turns in.
+3. **Type**: bound or unbound, from the class invariants the engine
+   already reads (15.3, `loop_defects`).
+4. **Shape**: the orbit's eccentricity as an equal-degree ratio of the
+   second-moment invariants of its path in that plane — the coefficients
+   of the characteristic polynomial, never its roots.
+5. **Centre**: the flat or round the holonomy fixes, from its fixed-point
+   equation over ℚ; refused by name where the equation wants a root.
+
+### 73.3 The gravity of the axioms is not yet defined
+
+For an orbit to be repelled or propelled, something must pull. Today the
+axioms are checked and exert nothing, and the metabolism prices lanes,
+not positions among forms. Three questions, open for the operator's
+ruling: what is an axiom's mass or charge; how does proximity to it
+enter a transport — as a versor applied, never as a scalar potential;
+and how does an orbit's precession measure the pull. The document's own
+candidate, recorded as a candidate and not a ruling: what pulls a path
+in this engine is what the mind HOLDS — F factors a derivation through
+the held generators and spells only the residue (1.8, 50.2), and the
+horizon is spellability per mind (59.6) — so a generator's mass would be
+read from its uses (E2's credit, `use_credit`), proximity would be the
+relative motor's membership of the spellable neighbourhood (the strain
+tests: "proximity is membership of the relative motor in the alphabet's
+spellable neighbourhood"), and precession would measure how far the
+residue bends the path the held generators would have closed. The
+crystals — the axioms proper — exert nothing, which is why "the gravity
+of the axioms" is read as the gravity of the presentation built on them.
+The proposed carrier is A.13's conjugate pair `K_i = e_i ∧ e_o`: a path
+bending around a centre is an inversion-type motion that transports
+fixing infinity cannot express. 73.3 becomes A.13's first clause,
+doctrine first, a test per clause, no value changed before the ruling.
+
+### 73.4 Refused
+
+A cycle read only as closed or open; a precession reported as an angle
+or a magnitude; an orbit's plane assumed to be `e₁₂`; an attraction
+written as a free constant (rule 5); an orbit's elements read from
+flattened transports.
+
+### 73.5 Evidence and dependencies
+
+O1 read 18 cycles: 3 vacuum, 15 classified with trivial class vectors, 9
+edges refused `not rigid`. Under 73.1 the 15 are orbits whose precession
+was never measured: their transports were built before orientation left
+the sensor plane (the `x + iy` tower, FR1) and before refraction was
+carried (the rigidity test on the union, BQ5a). The readings depend on
+BQ4 and FR1 (turns on the planes generated from `n`), BQ5a (refraction
+on the face) and A.13 (the centre and the pull).
+
+### 73.6 Rows
+
+OR1, the instrument first (§8.1): the cycles line prints each orbit's
+type, plane(s) and precession coordinates beside today's class, and
+whether its centre is read or refused; readings only. OR2, the
+vocabulary: "loop" becomes "orbit" in the doctrine and the tree at one
+row, never piecemeal — `Form.loops`, the cycles line, the unread gates.
+A.13 clause 1, doctrine first.
+
+### 73.7 Reconciliations
+
+- **One word, two objects.** 45.7 already names an "orbit": the circuits
+  a stroke ring completes over its carrier, the mind's local time
+  (`physics::Orbit`, `court orbit docket`). That is a CIRCUIT, and OR2
+  renames it so: `Circuits`, `court circuit docket`, "circuit" in 45.7
+  and 72.1d. The geometric orbit of 73.1 keeps the word.
+- **Bertrand is an analogy, not a premise.** The doctrine rests on the
+  class invariants, not on a theorem of continuum mechanics; the sentence
+  that closed orbits are the exception is a reading of 15.3, where the
+  trivial class is one class among five.
+- **Order.** OR1 lands after Phase N and before Phase R, so that every
+  Phase R row is measured against an orbit reading and not a
+  closed-or-open bit; OR2 lands with it.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
