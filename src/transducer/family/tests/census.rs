@@ -604,7 +604,7 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
             // named by their roots. A corner inside one body is its interior.
             let mut pairs: Vec<(usize, usize)> = incidence_diagonal_3d(&positions)
                 .into_iter()
-                .map(|(i, j)| (roots[i], roots[j]))
+                .map(|(i, j, _)| (roots[i], roots[j]))
                 .filter(|(a, b)| a != b)
                 .map(|(a, b)| if a <= b { (a, b) } else { (b, a) })
                 .collect();
@@ -705,6 +705,98 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
     assert_eq!(
         perceived, bodies_total,
         "perception's bodies are the hue-blind regions, one for one (H1)"
+    );
+
+    // C2, 70.6 — THE FRAME AXIS IN CONTACT. One scene is one frame, so the
+    // reading above can hold no contact across frames. A family is its
+    // frames stacked along `e₃` (51.3): each train input at its own `k`.
+    // On that complex the twenty adjacencies are read whole, and a contact
+    // is counted by the frames its elements span: within one frame, across
+    // two, or both along one interface.
+    let (mut families, mut fv, mut fe, mut fc, mut fb1) = (0usize, 0usize, 0usize, 0usize, 0usize);
+    let (mut e_in, mut e_across, mut e_both) = (0usize, 0usize, 0usize);
+    let (mut elements_in, mut elements_across) = (0usize, 0usize);
+    for name in &names {
+        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let mut laminae: Vec<crate::transducer::blade::Lamina> = Vec::new();
+        for (k, (input, _)) in task.train.iter().enumerate() {
+            for (r, row) in input.iter().enumerate() {
+                for (c, &h) in row.iter().enumerate() {
+                    if h != 0 {
+                        laminae.push((r as i64, c as i64, k as i64, h));
+                    }
+                }
+            }
+        }
+        if laminae.is_empty() {
+            continue;
+        }
+        laminae.sort_unstable();
+        laminae.dedup_by_key(|x| (x.0, x.1, x.2));
+        let positions: Vec<(i64, i64, i64)> = laminae.iter().map(|x| (x.0, x.1, x.2)).collect();
+        let roots = components(positions.len(), &incidence_of_3d(&positions));
+        // Each body pair with the frame span of its elements: `(in, across)`.
+        let mut span: crate::network::nerve::Keyed<(bool, bool)> = crate::network::nerve::Keyed::new();
+        for (i, j, d) in incidence_diagonal_3d(&positions) {
+            let (a, b) = (roots[i].min(roots[j]), roots[i].max(roots[j]));
+            if a == b {
+                continue;
+            }
+            match d.2 {
+                0 => elements_in += 1,
+                _ => elements_across += 1,
+            }
+            let mut k = (a as u64).to_le_bytes().to_vec();
+            k.extend_from_slice(&(b as u64).to_le_bytes());
+            // A pair first met here spans nothing yet; one met before carries
+            // what it spanned.
+            let (was_in, was_across) = match span.get(&k) {
+                Some(&held) => held,
+                None => (false, false),
+            };
+            span.insert(k, (was_in || d.2 == 0, was_across || d.2 != 0));
+        }
+        let mut root_ids: Vec<usize> = roots.clone();
+        root_ids.sort_unstable();
+        root_ids.dedup();
+        let ix = |r: usize| match root_ids.binary_search(&r) {
+            Ok(i) => i,
+            Err(_) => panic!("every root is one of the root ids it was read from"),
+        };
+        let mut cg: Vec<(usize, usize)> = Vec::new();
+        for (k, &(inf, acr)) in span.scoped() {
+            match (inf, acr) {
+                (true, false) => e_in += 1,
+                (false, true) => e_across += 1,
+                _ => e_both += 1,
+            }
+            let (Ok(a), Ok(b)) = (
+                <[u8; 8]>::try_from(&k[..8]).map(u64::from_le_bytes),
+                <[u8; 8]>::try_from(&k[8..]).map(u64::from_le_bytes),
+            ) else {
+                panic!("a body pair key is two roots")
+            };
+            cg.push((ix(a as usize), ix(b as usize)));
+        }
+        let n_comp = {
+            let mut c = components(root_ids.len(), &cg);
+            c.sort_unstable();
+            c.dedup();
+            c.len()
+        };
+        families += 1;
+        fv += root_ids.len();
+        fe += cg.len();
+        fc += n_comp;
+        fb1 += (cg.len() + n_comp)
+            .checked_sub(root_ids.len())
+            .expect("b₁ = E − V + C is never negative");
+    }
+    eprintln!(
+        "  a14 with the frame axis over {families} families: V {fv} bodies E {fe} contacts \
+         (in one frame {e_in}, across frames {e_across}, both {e_both}) C {fc} b₁ {fb1} \
+         | shared elements in one frame {elements_in}, across frames {elements_across}"
     );
 }
 

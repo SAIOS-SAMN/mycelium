@@ -559,55 +559,78 @@ pub fn is_flat(cycle: &[Versor]) -> bool {
 /// ONE body. 4-adjacency therefore stops being the inter-body relation
 /// and becomes strictly interior, and contact needs its own primitive.
 ///
-/// It is the corner meeting — `|Δr| = 1` AND `|Δc| = 1` within one frame.
-/// Two maximal regions CAN meet diagonally without merging, because
-/// diagonal adjacency is not in the relation that formed them, so this
-/// is exactly the relation 4-adjacency leaves available.
+/// It is the shared boundary that is not a face. Two maximal regions CAN
+/// meet at an edge or a corner of their cubes without merging, because
+/// neither is in the relation that formed them, so this is exactly the
+/// relation the six face-adjacencies leave available.
 ///
 /// KEPT APART FROM [`incidence_of_3d`] ON PURPOSE. If the diagonal ever
 /// entered the component relation it would merge bodies that only touch
 /// at a corner, and the base would swallow the contact it is meant to
 /// expose. One primitive defines bodies; the other relates them.
 ///
-/// Both diagonals, in this file's own idiom: a canonical sort and a
-/// windowed successor test, never a distance test against every lamina.
-/// The anti-diagonal needs its own ordering because `(r+1, c−1)` is not a
-/// successor of `(r, c)` in any order that puts `(r+1, c+1)` next to it.
-pub fn incidence_diagonal_3d(positions: &[(i64, i64, i64)]) -> Vec<(usize, usize)> {
+/// C2, 70.6 — THE WHOLE SHARED BOUNDARY OF A CUBE COMPLEX ON `(r, c, k)`.
+/// The corner in one frame is four of the twenty. Two cubes that share no
+/// face can still share an EDGE or a CORNER. The twelve edge-adjacencies
+/// are the four in the frame, `(r ± 1, c ± 1, k)`, and the eight across
+/// consecutive frames, `(r ± 1, c, k ± 1)` and `(r, c ± 1, k ± 1)`. The
+/// eight corner-adjacencies differ by one in all three coordinates. The six
+/// face-adjacencies are [`incidence_of_3d`]'s, and they make a body.
+///
+/// The twenty neighbours are ten DIRECTIONS up to sign, and each direction
+/// is one canonical order, as in the rest of this file. `d` is written with
+/// its first non-zero coordinate `+1`. Along `d` that coordinate, `t`,
+/// is the parameter of the line, and the other two less `d`'s share of `t`
+/// stay constant. So ordering by those two invariants and then by `t` puts the
+/// two ends of every such adjacency next to each other, and the test is
+/// `t + 1`. The result is exact and integer, with no extent and no
+/// distance test against every lamina.
+///
+/// EACH PAIR CARRIES ITS DIRECTION, `q − p = d`. That is content, the
+/// coordinates of the adjacency itself, and not a label: `d.2 = 0` is
+/// contact within one frame, and `d.2 = ±1` is the frame axis entering
+/// contact.
+pub fn incidence_diagonal_3d(positions: &[(i64, i64, i64)]) -> Vec<(usize, usize, (i64, i64, i64))> {
+    // The ten directions of a cube's twenty edge and corner neighbours,
+    // each written with its first non-zero coordinate `+1`.
+    const DIRECTIONS: [(i64, i64, i64); 10] = [
+        (1, 1, 0),
+        (1, -1, 0),
+        (1, 0, 1),
+        (1, 0, -1),
+        (0, 1, 1),
+        (0, 1, -1),
+        (1, 1, 1),
+        (1, 1, -1),
+        (1, -1, 1),
+        (1, -1, -1),
+    ];
     let mut edges = Vec::new();
     if positions.is_empty() {
         return edges;
     }
-    // MAIN DIAGONAL `(r+1, c+1)`: constant `r − c` within a frame, so
-    // ordering by `(k, r−c, r)` puts the two ends of every such step
-    // adjacent, and the step is `r + 1`.
-    let mut by_main: Vec<usize> = (0..positions.len()).collect();
-    #[expect(
-        clippy::disallowed_methods,
-        reason = "rule 4 — canonical key order: (k, r−c, r) is where a main-diagonal step is a successor"
-    )]
-    by_main.sort_unstable_by_key(|&i| {
-        (positions[i].2, positions[i].0 - positions[i].1, positions[i].0)
-    });
-    for w in by_main.windows(2) {
-        let (p, q) = (positions[w[0]], positions[w[1]]);
-        if p.2 == q.2 && p.0 - p.1 == q.0 - q.1 && p.0 + 1 == q.0 {
-            edges.push((w[0], w[1]));
-        }
-    }
-    // ANTI-DIAGONAL `(r+1, c−1)`: constant `r + c`, ordered by `(k, r+c, r)`.
-    let mut by_anti: Vec<usize> = (0..positions.len()).collect();
-    #[expect(
-        clippy::disallowed_methods,
-        reason = "rule 4 — canonical key order: (k, r+c, r) is where an anti-diagonal step is a successor"
-    )]
-    by_anti.sort_unstable_by_key(|&i| {
-        (positions[i].2, positions[i].0 + positions[i].1, positions[i].0)
-    });
-    for w in by_anti.windows(2) {
-        let (p, q) = (positions[w[0]], positions[w[1]]);
-        if p.2 == q.2 && p.0 + p.1 == q.0 + q.1 && p.0 + 1 == q.0 {
-            edges.push((w[0], w[1]));
+    for d in DIRECTIONS {
+        // `t` is the coordinate `d` leads with. The invariants are the
+        // coordinates less `d`'s share of `t`, so they are constant along
+        // `d`.
+        let line = |p: (i64, i64, i64)| -> ((i64, i64, i64), i64) {
+            let t = match d.0 {
+                0 => p.1,
+                _ => p.0,
+            };
+            ((p.0 - d.0 * t, p.1 - d.1 * t, p.2 - d.2 * t), t)
+        };
+        let mut along: Vec<usize> = (0..positions.len()).collect();
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 4 — canonical key order: the line along d, then the parameter on it, is where a neighbour along d is a successor"
+        )]
+        along.sort_unstable_by_key(|&i| line(positions[i]));
+        for w in along.windows(2) {
+            let ((lp, tp), (lq, tq)) = (line(positions[w[0]]), line(positions[w[1]]));
+            if lp == lq && tp + 1 == tq {
+                edges.push((w[0], w[1], d));
+            }
         }
     }
     edges

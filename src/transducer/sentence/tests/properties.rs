@@ -578,3 +578,23 @@ fn the_filer_reaches_the_fixed_point_gate() {
         "a screw fixes no point and is non-compact: it files at 0, never at the rotor's order"
     );
 }
+
+/// C2, 70.6 — THE INTERFACE IS IN THE ADDRESS. A contact face's
+/// coordinates are the set of boundary elements it runs along, so the key
+/// writes them and the inverse returns them. Two faces that differ only in
+/// their interface are two forms: a flat interface and a ridged one between
+/// one pair are two contacts.
+#[test]
+fn a_face_carries_its_interface_through_its_address() {
+    let mut f = star_form(2, vec![(1, 2, Word::identity())]);
+    let chord = f.faces.len() - 1;
+    f.faces[chord].interface = vec![(1, 1, 0), (3, 3, 0), (5, 5, 1)];
+    let back = from_address(&form_vertex_key(&f)).expect("the address parses");
+    assert!(same_form(&f, &back), "the form comes back");
+    let interfaces: Vec<&Vec<(i64, i64, i64)>> =
+        back.faces.iter().map(|x| &x.interface).filter(|i| !i.is_empty()).collect();
+    assert_eq!(interfaces, vec![&vec![(1, 1, 0), (3, 3, 0), (5, 5, 1)]], "with its interface, element by element");
+    let mut ridged = f.clone();
+    ridged.faces[chord].interface = vec![(1, 1, 0), (3, 5, 0), (5, 5, 1)];
+    assert_ne!(form_vertex_key(&f), form_vertex_key(&ridged), "another interface is another form");
+}

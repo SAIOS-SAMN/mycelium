@@ -197,7 +197,7 @@ pub(crate) fn classify_cover(
             let Some(place) = piece_form.face_place(i, &ci, j, &cj, edge) else { continue };
             let mut at = Keyed::new();
             at.insert(face_pair_key(&ci, &cj), place);
-            piece_form.faces.push(FormFace { i, j, word, at, pairs: None });
+            piece_form.faces.push(FormFace { i, j, word, at, pairs: None, interface: Vec::new() });
             // AND THE CHORD IT NAMES BETWEEN TWO CLASSES. Two pieces of ONE
             // class meet inside that class and close nothing the scene can
             // see, so only a meet between DISTINCT classes is a chord. Named

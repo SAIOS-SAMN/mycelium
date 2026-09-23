@@ -99,6 +99,7 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
             word: taken.word,
             at: taken.at,
             pairs: bad.faces[0].pairs.clone(),
+            interface: bad.faces[0].interface.clone(),
         }
     };
     let bad_e = as_element_form(&bad, [1, 0, 0, 0]).expect("tampered tape");

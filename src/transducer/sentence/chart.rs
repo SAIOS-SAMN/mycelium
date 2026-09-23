@@ -71,6 +71,7 @@ impl Form {
                 word: f.word.clone(),
                 at: f.at.clone(),
                 pairs: f.pairs.clone(),
+                interface: f.interface.clone(),
             });
         }
         // RENUMBERING A FORM TOUCHES EVERY CARRIER IT HAS. Each of the four
@@ -502,6 +503,17 @@ fn put_face(buf: &mut Vec<u8>, face: &FormFace, at: &[u16]) {
                     buf.extend_from_slice(&m);
                 }
             }
+        }
+        // C2, 70.6 — THE INTERFACE IS THE CONTACT FACE'S OWN COORDINATES.
+        // A flat interface and a ridged one between the same two members
+        // are two contacts, and the address is what says so. Written as its
+        // count and then each element's doubled centre, in the sorted order
+        // the face holds. A face that is not a contact writes a zero count.
+        buf.extend_from_slice(&(face.interface.len() as u32).to_le_bytes());
+        for &(r, c, k) in &face.interface {
+            buf.extend_from_slice(&r.to_le_bytes());
+            buf.extend_from_slice(&c.to_le_bytes());
+            buf.extend_from_slice(&k.to_le_bytes());
         }
     }
 }

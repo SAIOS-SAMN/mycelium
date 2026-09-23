@@ -107,6 +107,51 @@ pub(crate) struct PathCarried {
     /// Over the whole group `μ > 0` is hyperbolic, `μ < 0` elliptic
     /// (`−sin²(θ/2)`), `μ = 0` trivial — `I₁`'s own sign convention.
     pub(crate) steps: Vec<element::Versor>,
+    /// WHY THE EDGE HALF WAS REFUSED, where it was (H2c, rule 11). The face
+    /// composite can stand while the edge composite does not, and the two
+    /// refusals are different facts. `NotRigid` is a real face carrying no
+    /// edge, a remainder edge where no versor carried the union (50.3).
+    /// `Cone` is a face crossed against its orientation whose transport has
+    /// no inverse (`MM̃ = 0`, 57.4).
+    pub(crate) edge_refused: Option<Unread>,
+}
+
+/// WHY A TRANSPORT WAS NOT READ (H2c, rule 11). One `unread` counter could
+/// not say which, and the three are different facts wanting different
+/// rulings.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Unread {
+    /// A carriage on the light cone: `MM̃ = 0` and the inverse does not
+    /// exist (57.4).
+    Cone,
+    /// The face holds no member pair at the two members the walk names.
+    NoPlace,
+    /// A face between two bodies that carries no edge, because no versor
+    /// carries their union (50.3's `NotRigid`).
+    NotRigid,
+    /// The cycle names a face the form does not hold, or a member key that
+    /// does not read. The cycle and the incidence disagree.
+    NoFace,
+}
+
+/// THE UNREAD READINGS, split by why (H2c). A measurement and never a gate.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct UnreadTally {
+    pub cone: u64,
+    pub no_place: u64,
+    pub not_rigid: u64,
+    pub no_face: u64,
+}
+
+impl UnreadTally {
+    pub(crate) fn note(&mut self, why: Unread) {
+        match why {
+            Unread::Cone => self.cone += 1,
+            Unread::NoPlace => self.no_place += 1,
+            Unread::NotRigid => self.not_rigid += 1,
+            Unread::NoFace => self.no_face += 1,
+        }
+    }
 }
 
 /// THE ONE WALK — and it is a WALK now, not a search (54.5, as ruled
@@ -165,6 +210,17 @@ pub(crate) fn paths_carried(
     vertices: &[Vertex],
     lp: &Loop,
 ) -> Option<Keyed<PathCarried>> {
+    paths_carried_why(faces, vertices, lp).ok()
+}
+
+/// THE ONE WALK, SAYING WHY IT REFUSED (H2c). [`paths_carried`] is this read
+/// with the reason dropped. `loops_of` asks here, so the `unread` gate is
+/// counted by what refused it.
+pub(crate) fn paths_carried_why(
+    faces: &[FormFace],
+    vertices: &[Vertex],
+    lp: &Loop,
+) -> Result<Keyed<PathCarried>, Unread> {
     // THE EDGE COMPOSITE OPENS AT THE IDENTITY AND EVERY STEP CONTRIBUTES.
     // It used to open at `None` unless the loop crossed a face between two
     // bodies, because the star faces contributed nothing and a star-only
@@ -186,16 +242,17 @@ pub(crate) fn paths_carried(
             gauge: Vec::new(),
         }),
         steps: Vec::with_capacity(lp.faces.len()),
+        edge_refused: None,
     };
     let mut charts: Vec<Vec<u8>> = Vec::with_capacity(lp.members.len());
     for (win, &fi) in lp.members.windows(2).zip(&lp.faces) {
-        let f = faces.get(fi as usize)?;
+        let f = faces.get(fi as usize).ok_or(Unread::NoFace)?;
         // THE STEP IS NAMED BY ITS TWO MEMBERS. Each carries its vertex and
         // its chart, so the face's pair is read off the members rather than
         // guessed from the face's endpoints — which is the whole of what
         // the projection lost.
-        let (vi, ci) = crate::transducer::family::read_member_key(&win[0])?;
-        let (vj, cj) = crate::transducer::family::read_member_key(&win[1])?;
+        let (vi, ci) = crate::transducer::family::read_member_key(&win[0]).ok_or(Unread::NoFace)?;
+        let (vj, cj) = crate::transducer::family::read_member_key(&win[1]).ok_or(Unread::NoFace)?;
         let forward = f.i == vi && f.j == vj;
         let pk = match forward {
             true => pair_key_bytes(&ci, &cj),
@@ -207,7 +264,7 @@ pub(crate) fn paths_carried(
         let place = match f.at.get(&pk) {
             Some(p) => Some(p.clone()),
             None if ci.is_empty() && cj.is_empty() => None,
-            None => return None,
+            None => return Err(Unread::NoPlace),
         };
         charts.push(ci);
         let word_step = match forward {
@@ -218,7 +275,10 @@ pub(crate) fn paths_carried(
         if let Some(place) = &place {
             let (carriage, gauge) = match forward {
                 true => (place.carriage.clone(), place.gauge.clone()),
-                false => (place.carriage.versor_inverse()?, gauge_invert(&place.gauge)),
+                false => (
+                    place.carriage.versor_inverse().ok_or(Unread::Cone)?,
+                    gauge_invert(&place.gauge),
+                ),
             };
             acc.face.carriage = carriage.geo(&acc.face.carriage);
             acc.face.gauge = compose_gauge(&gauge, &acc.face.gauge);
@@ -276,12 +336,23 @@ pub(crate) fn paths_carried(
                 acc.steps.push(t.carriage.clone());
             }
         }
+        // WHY THE EDGE HALF GOES, at the face that loses it (H2c): a real
+        // face with a place and no edge is not rigid, and a transport whose
+        // inverse does not exist is on the light cone. The first refusal is
+        // the one that stands.
+        let lost = match (&step, place.is_some()) {
+            (None, true) => Some(Unread::NotRigid),
+            _ => None,
+        };
         acc.edge = match (acc.edge.take(), step) {
             (Some(held), Some(step)) => {
                 let step = match forward {
                     true => Some(step),
                     false => step.inverse(),
                 };
+                if step.is_none() && acc.edge_refused.is_none() {
+                    acc.edge_refused = Some(Unread::Cone);
+                }
                 step.map(|step| Transport {
                     carriage: step.carriage.geo(&held.carriage),
                     word: step.word.compose(&held.word),
@@ -290,6 +361,9 @@ pub(crate) fn paths_carried(
             }
             _ => None,
         };
+        if acc.edge_refused.is_none() {
+            acc.edge_refused = lost;
+        }
     }
     acc.face.word = acc.face.word.normal_form();
     if let Some(e) = acc.edge.as_mut() {
@@ -297,7 +371,7 @@ pub(crate) fn paths_carried(
     }
     let mut out = Keyed::new();
     out.insert(Loop::path_key(&charts), acc);
-    Some(out)
+    Ok(out)
 }
 
 /// The face-pair key of two chart keys, as `face_pair_key` writes it from

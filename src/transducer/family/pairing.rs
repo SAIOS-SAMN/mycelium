@@ -188,27 +188,64 @@ struct Occupied {
     members: Vec<Vec<u8>>,
 }
 
+/// WHAT THE INCIDENCE NAMED BETWEEN TWO MEMBERS: every incidence that named
+/// the pair (N1), and each interface a contact between them runs along
+/// (C2, 70.6). The interfaces are sets of shared boundary elements. Two
+/// different ones between one pair are two contacts, so they are held
+/// apart and never merged into one set.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Named {
+    pub(crate) hows: Vec<Incidence>,
+    pub(crate) interfaces: Vec<Vec<(i64, i64, i64)>>,
+}
+
+/// ONE PAIR THE INCIDENCE NAMES: its two members and what named them.
+#[derive(Clone, Debug)]
+pub(crate) struct NamedFace {
+    pub(crate) a: Vec<u8>,
+    pub(crate) b: Vec<u8>,
+    pub(crate) named: Named,
+}
+
 /// A PAIR IS ONE FACE, AND EVERY INCIDENCE THAT NAMES IT RIDES ON IT (N1,
 /// rule 15). A second incidence over the same two members is the same face
 /// and never another, and it is not dropped either: the diagonal and the
 /// field naming one pair are two readings held together, in the enum's own
-/// order, so no pass is first.
-fn relate(related: &mut crate::network::nerve::Keyed<Vec<Incidence>>, key: Vec<u8>, how: Incidence) {
-    match related.get_mut(&key) {
-        Some(hows) => {
-            if let Err(at) = hows.binary_search(&how) {
-                hows.insert(at, how);
-            }
-        }
-        None => {
-            related.insert(key, vec![how]);
+/// order, so no pass is first. An interface a contact brings is held the
+/// same way: once, beside any other the pair already carries.
+fn relate(
+    related: &mut crate::network::nerve::Keyed<Named>,
+    key: Vec<u8>,
+    how: Incidence,
+    interface: Option<Vec<(i64, i64, i64)>>,
+) {
+    if related.get(&key).is_none() {
+        related.insert(key.clone(), Named::default());
+    }
+    let Some(named) = related.get_mut(&key) else { return };
+    if let Err(at) = named.hows.binary_search(&how) {
+        named.hows.insert(at, how);
+    }
+    if let Some(i) = interface {
+        if let Err(at) = named.interfaces.binary_search(&i) {
+            named.interfaces.insert(at, i);
         }
     }
 }
 
+/// A CONTACT BETWEEN TWO BODIES, AS THE CORNER PASS GATHERS IT: the shared
+/// boundary elements, and the members standing at each side of them.
+#[derive(Default)]
+struct Gathered {
+    elements: Vec<(i64, i64, i64)>,
+    left: Vec<Vec<u8>>,
+    right: Vec<Vec<u8>>,
+}
+
 /// Faces the bundle names: star from the Frame (when the form carries one),
-/// pairs whose supports share a site, and pairs of bodies that meet at a
-/// corner (70.4). Occupancy is keyed by site; related pairs are a Keyed set.
+/// pairs whose supports share a site, and one pair for each two bodies whose
+/// cube complexes share an edge or a corner, carrying the interface (70.6).
+/// Occupancy is keyed by site; related pairs are a Keyed set.
 ///
 /// COST IS THE SITES, NOT THE BODIES ON THEM. A site with k occupants
 /// contributes k−1 faces, not k(k−1)/2 — see the chain below for why the
@@ -236,14 +273,14 @@ fn relate(related: &mut crate::network::nerve::Keyed<Vec<Incidence>>, key: Vec<u
 pub(crate) fn named_faces(
     frame: Option<&[u8]>,
     supports: &crate::network::nerve::Keyed<Vec<(i64, i64, i64)>>,
-) -> Vec<(Vec<u8>, Vec<u8>, Vec<Incidence>)> {
-    let mut related: crate::network::nerve::Keyed<Vec<Incidence>> = crate::network::nerve::Keyed::new();
+) -> Vec<NamedFace> {
+    let mut related: crate::network::nerve::Keyed<Named> = crate::network::nerve::Keyed::new();
     if let Some(frame) = frame {
         for (mk, _) in supports.scoped() {
             if mk == frame {
                 continue;
             }
-            relate(&mut related, member_pair_key(frame, &mk), Incidence::Star);
+            relate(&mut related, member_pair_key(frame, &mk), Incidence::Star, None);
         }
     }
     // Site → the site's own coordinates and its occupants. The coordinates
@@ -290,33 +327,89 @@ pub(crate) fn named_faces(
         for w in o.members.windows(2) {
             let [a, b] = w else { continue };
             note_face_work();
-            relate(&mut related, member_pair_key(a, b), Incidence::Site);
+            relate(&mut related, member_pair_key(a, b), Incidence::Site, None);
         }
     }
-    // H2b, 70.4 — CONTACT IS THE CORNER. Two hue-blind bodies can never
-    // share an edge of the base — sharing one they would be one body — so
-    // where two distinct bodies touch, they touch diagonally: `|Δr| = 1`
-    // and `|Δc| = 1` within one frame. `incidence_diagonal_3d` reads that
-    // off the distinct occupied sites in its own canonical order, exact and
-    // integer, with no extent consulted and no band (A.14).
+    // C1, C2, 70.6 — CONTACT IS THE SHARED BOUNDARY OF TWO CUBE COMPLEXES.
+    // Two hue-blind bodies never share a face of a cube, since sharing one
+    // they would be one body (70.4). Where two distinct bodies touch, their
+    // complexes share an edge or a corner. `incidence_diagonal_3d` reads all
+    // twenty such adjacencies off the distinct occupied sites, in its own
+    // canonical order. The frame axis is among them, and the reading is
+    // exact and integer, with no extent consulted and no band.
     //
-    // The two sites of a corner name their occupants, and each occupant of
-    // one is related to each occupant of the other: the walk is the two
-    // sites' own occupants and nothing wider (rule 1). A member meeting
-    // itself at a corner of its own support is its interior, not a contact.
+    // THE BODIES ARE THE OCCUPANCY'S OWN COMPONENTS. The six
+    // face-adjacencies make a body, so the occupied sites fall into bodies
+    // under `incidence_of_3d`. A boundary element between two sites of one
+    // body is that body's interior and is not contact.
+    //
+    // ONE FACE PER BODY PAIR (C1). A corner names two sites, and each site
+    // names its occupants. Relating every occupant of one to every occupant
+    // of the other was the join of two occupancy simplices written as a
+    // clique, the shape the site pass above refuses in its own comment. The
+    // contact is between the two BODIES. It is gathered whole, and offered
+    // once, between the least member standing at each side. That is the
+    // form's own vertex coordinate, which is content order, as the chain
+    // above reads a site's occupants. A body pair whose two sides have only
+    // one member between them is that member's interior, and no face is
+    // offered.
+    //
+    // THE INTERFACE IS A SET (C2). Each shared element is written as its
+    // centre doubled, `p + q`, which is exact and integer and names the
+    // element itself: two pairs of cubes sharing one edge name it once. The
+    // parity says what the element is. An odd third coordinate is an element
+    // across two frames. The set rides the face as its coordinates, never
+    // as a tally.
     let held: Vec<&Occupied> = occ.scoped().map(|(_, o)| o).collect();
     let positions: Vec<(i64, i64, i64)> = held.iter().map(|o| o.site).collect();
-    for (i, j) in crate::transducer::sentence::incidence_diagonal_3d(&positions) {
-        let (Some(left), Some(right)) = (held.get(i), held.get(j)) else { continue };
-        for a in &left.members {
-            for b in &right.members {
-                if a == b {
-                    continue;
-                }
-                note_face_work();
-                relate(&mut related, member_pair_key(a, b), Incidence::Contact);
-            }
+    let body = crate::transducer::sentence::components(
+        positions.len(),
+        &crate::transducer::sentence::incidence_of_3d(&positions),
+    );
+    let mut contacts: crate::network::nerve::Keyed<Gathered> = crate::network::nerve::Keyed::new();
+    for (i, j, _) in crate::transducer::sentence::incidence_diagonal_3d(&positions) {
+        let (Some(&bi), Some(&bj)) = (body.get(i), body.get(j)) else { continue };
+        if bi == bj {
+            continue;
         }
+        let (Some(&ri), Some(&rj)) = (positions.get(bi), positions.get(bj)) else { continue };
+        // The body pair is keyed by its two bodies' root sites, the lesser
+        // first, and the element's sides are read in the same orientation.
+        let ((x, rx), (y, ry)) = match ri <= rj {
+            true => ((i, ri), (j, rj)),
+            false => ((j, rj), (i, ri)),
+        };
+        let (Some(px), Some(py)) = (held.get(x), held.get(y)) else { continue };
+        note_face_work();
+        let mut k = base_key(rx.0, rx.1, rx.2).to_vec();
+        k.extend_from_slice(&base_key(ry.0, ry.1, ry.2));
+        if contacts.get(&k).is_none() {
+            contacts.insert(k.clone(), Gathered::default());
+        }
+        let Some(g) = contacts.get_mut(&k) else { continue };
+        g.elements.push((px.site.0 + py.site.0, px.site.1 + py.site.1, px.site.2 + py.site.2));
+        g.left.extend(px.members.iter().cloned());
+        g.right.extend(py.members.iter().cloned());
+    }
+    for (_k, g) in contacts.scoped() {
+        let mut elements = g.elements.clone();
+        elements.sort_unstable();
+        elements.dedup();
+        let (mut left, mut right) = (g.left.clone(), g.right.clone());
+        left.sort_unstable();
+        left.dedup();
+        right.sort_unstable();
+        right.dedup();
+        // The least member at each side; where it is one member, the next
+        // on the other side stands for it. A member meeting only itself is
+        // its interior.
+        let ends = match (left.as_slice(), right.as_slice()) {
+            ([a, ..], [b, ..]) if a != b => Some((a, b)),
+            ([a, ..], [_, b, ..]) | ([_, b, ..], [a, ..]) => Some((a, b)),
+            _ => None,
+        };
+        let Some((a, b)) = ends else { continue };
+        relate(&mut related, member_pair_key(a, b), Incidence::Contact, Some(elements));
     }
     // T4 — THE CONDENSATION PASS, WHERE THE STENCIL WAS (66, ruled
     // 2026-09-22). Incidence between two bodies is the exact conformal
@@ -450,7 +543,7 @@ pub(crate) fn named_faces(
                 }
             }
             note_field(|t| t.condensed += 1);
-            relate(&mut related, member_pair_key(ak, bk), Incidence::Field);
+            relate(&mut related, member_pair_key(ak, bk), Incidence::Field, None);
         }
     }
 
@@ -482,7 +575,9 @@ pub(crate) fn named_faces(
     // the class cannot silently return.
     related
         .scoped()
-        .filter_map(|(k, hows)| read_member_pair_key(&k).map(|(a, b)| (a, b, hows.clone())))
+        .filter_map(|(k, named)| {
+            read_member_pair_key(&k).map(|(a, b)| NamedFace { a, b, named: named.clone() })
+        })
         .collect()
 }
 

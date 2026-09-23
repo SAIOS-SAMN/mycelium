@@ -912,11 +912,39 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // CHORD brings the one its meet measured, because `edge_between` is
     // keyed by `(vertex, chart)` and cannot re-derive a transition between
     // two sections of one member.
-    for (ak, bk, chord_edge, how) in named_faces(frame_member.as_deref(), &scenery.supports)
-        .into_iter()
-        .map(|(a, b, hows)| (a, b, None, hows))
-        .chain(chord_pairs.into_iter().map(|(a, b, e)| (a, b, e, Vec::new())))
-    {
+    //
+    // A PAIR BECOMES ONE FACE PER INTERFACE IT RUNS ALONG (C2, 70.6): a flat
+    // interface and a ridged one between one pair are two contacts. A pair
+    // no contact named carries no interface and is one face.
+    struct Offer {
+        a: Vec<u8>,
+        b: Vec<u8>,
+        edge: Option<crate::transducer::sentence::Transport>,
+        hows: Vec<Incidence>,
+        interface: Vec<(i64, i64, i64)>,
+    }
+    let mut offers: Vec<Offer> = Vec::new();
+    for nf in named_faces(frame_member.as_deref(), &scenery.supports) {
+        let (a, b, hows) = (nf.a, nf.b, nf.named.hows);
+        match nf.named.interfaces.as_slice() {
+            [] => offers.push(Offer { a, b, edge: None, hows, interface: Vec::new() }),
+            each => offers.extend(each.iter().map(|i| Offer {
+                a: a.clone(),
+                b: b.clone(),
+                edge: None,
+                hows: hows.clone(),
+                interface: i.clone(),
+            })),
+        }
+    }
+    offers.extend(chord_pairs.into_iter().map(|(a, b, edge)| Offer {
+        a,
+        b,
+        edge,
+        hows: Vec::new(),
+        interface: Vec::new(),
+    }));
+    for Offer { a: ak, b: bk, edge: chord_edge, hows: how, interface } in offers {
         drops.offered += 1;
         let contact = how.contains(&Incidence::Contact);
         if contact {
@@ -953,7 +981,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         };
         let mut at = Keyed::new();
         at.insert(face_pair_key(&ci, &cj), place);
-        form.faces.push(FormFace { i, j, word, at, pairs });
+        form.faces.push(FormFace { i, j, word, at, pairs, interface });
         drops.built += 1;
         if contact {
             drops.contact_built += 1;
@@ -1040,10 +1068,12 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // why a form is empty was printed only when the form was not empty:
     // fifteen forms crystallized at `loops 0` and this line never fired
     // once. A reading suppressed in the failure case is not a reading.
+    let unread_why = crate::transducer::sentence::Form::unread_gates();
     eprintln!(
         "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} loops \
          | edges asked: measured {}, unspelled {}, unread {}, not rigid {} \
          | chords {} offered {} | cycles: reflexive {} no-tree-path {} unread {} \
+         (cone {} no place {} not rigid {} no face {}; edge refused: cone {} not rigid {}) \
          trivial {} (vacuum {} resonant {} over {} charged edges; \
          μ read on {} steps, {} of them non-zero) \
          | defects: trivial {} elliptic {} hyperbolic {} parabolic {} non-simple {} \
@@ -1075,6 +1105,14 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         crate::transducer::sentence::Form::loop_gates().0,
         crate::transducer::sentence::Form::loop_gates().1,
         crate::transducer::sentence::Form::loop_gates().2,
+        // H2c — the unread gate by what refused it, and the read cycles
+        // whose edge half was refused.
+        unread_why.0.cone,
+        unread_why.0.no_place,
+        unread_why.0.not_rigid,
+        unread_why.0.no_face,
+        unread_why.1.cone,
+        unread_why.1.not_rigid,
         crate::transducer::sentence::Form::loop_gates().3,
         // HOW THE CLOSURES DIVIDE. `trivial` above counts every cycle whose
         // boundary product is the identity; these two say whether that

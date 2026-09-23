@@ -9,6 +9,20 @@ thread_local! {
     /// cycle of the member complex and a `Loop` on the form.
     static CYCLES: std::cell::Cell<(u64, u64, u64, u64)> =
         const { std::cell::Cell::new((0, 0, 0, 0)) };
+    /// H2c — the `unread` gate split by what refused it, and the cycles
+    /// that were read but whose edge half was refused, split the same way.
+    static UNREAD: std::cell::Cell<(UnreadTally, UnreadTally)> =
+        std::cell::Cell::new((UnreadTally::default(), UnreadTally::default()));
+}
+
+/// Count one refusal on the `unread` gate, by what refused it (H2c).
+fn unread(why: Unread) {
+    gate(2);
+    UNREAD.with(|c| {
+        let mut t = c.get();
+        t.0.note(why);
+        c.set(t);
+    });
 }
 
 /// AXIOM A — THE TRANSPORT FROM EACH COMPONENT'S BASEPOINT TO EVERY NODE
@@ -38,16 +52,17 @@ thread_local! {
 /// The refusal is counted on the `unread` gate, every node beyond it takes
 /// no `θ`, and a cycle with an end there reads unread rather than flat: an
 /// identity written for a transport that was never read would be a
-/// refusal recorded as a value (rule 11).
+/// refusal recorded as a value (rule 11). A node beyond it carries the
+/// refusal's own reason, so a cycle ending there is counted by it (H2c).
 fn tree_transports(
     faces: &[FormFace],
     vertices: &[Vertex],
     adj: &[Vec<(usize, usize)>],
     node_vertex: &[u16],
     node_chart: &[Vec<u8>],
-) -> Vec<Option<element::Versor>> {
+) -> Vec<Result<element::Versor, Unread>> {
     let n = node_vertex.len();
-    let mut theta: Vec<Option<element::Versor>> = vec![Some(element::identity_versor()); n];
+    let mut theta: Vec<Result<element::Versor, Unread>> = vec![Ok(element::identity_versor()); n];
     let mut seen = vec![false; n];
     // index: the forest's own nodes, each visited once (rule 1).
     for root in 0..n {
@@ -63,12 +78,12 @@ fn tree_transports(
                 }
                 seen[c] = true;
                 let step = tree_step(faces, vertices, node_vertex, node_chart, p, c, fi);
-                if step.is_none() {
-                    gate(2);
+                if let Err(why) = &step {
+                    unread(*why);
                 }
-                theta[c] = match (&theta[p], step) {
-                    (Some(held), Some(step)) => Some(held.geo(&step)),
-                    _ => None,
+                theta[c] = match (&theta[p], &step) {
+                    (Ok(held), Ok(step)) => Ok(held.geo(step)),
+                    (Err(why), _) | (_, Err(why)) => Err(*why),
                 };
                 frontier.push(c);
             }
@@ -85,10 +100,10 @@ fn tree_transports(
 /// Identity where the face carries no transport at that pair, which is a
 /// face relating no member and is a real sector of the complex.
 ///
-/// `None` where the inverse does not exist: `versor_inverse` fails only at
+/// `Cone` where the inverse does not exist: `versor_inverse` fails only at
 /// `MM̃ = 0`, a carriage on the light cone (57.4), and that transport was
-/// never read. A face the forest names and the form does not hold refuses
-/// the same way.
+/// never read. `NoFace` where the forest names a face the form does not
+/// hold.
 fn tree_step(
     faces: &[FormFace],
     vertices: &[Vertex],
@@ -97,8 +112,8 @@ fn tree_step(
     p: usize,
     c: usize,
     fi: usize,
-) -> Option<element::Versor> {
-    let f = faces.get(fi)?;
+) -> Result<element::Versor, Unread> {
+    let f = faces.get(fi).ok_or(Unread::NoFace)?;
     let _ = vertices;
     let (vp, cp) = (node_vertex[p], &node_chart[p]);
     let (vc, cc) = (node_vertex[c], &node_chart[c]);
@@ -107,10 +122,10 @@ fn tree_step(
         true => pair_key_bytes(cp, cc),
         false => pair_key_bytes(cc, cp),
     };
-    let Some(place) = f.at.get(&pk) else { return Some(element::identity_versor()) };
+    let Some(place) = f.at.get(&pk) else { return Ok(element::identity_versor()) };
     match forward {
-        true => Some(place.carriage.clone()),
-        false => place.carriage.versor_inverse(),
+        true => Ok(place.carriage.clone()),
+        false => place.carriage.versor_inverse().ok_or(Unread::Cone),
     }
 }
 
@@ -148,6 +163,15 @@ impl Form {
 
     pub fn reset_loop_gates() {
         CYCLES.with(|c| c.set((0, 0, 0, 0)));
+        UNREAD.with(|c| c.set((UnreadTally::default(), UnreadTally::default())));
+    }
+
+    /// H2c — WHY THE CYCLES WENT UNREAD, and why the edge half of a cycle
+    /// that was read was refused. The first sums to the `unread` gate. The
+    /// second counts cycles that passed that gate with their edge composite
+    /// refused. A measurement, never a gate.
+    pub fn unread_gates() -> (UnreadTally, UnreadTally) {
+        UNREAD.with(|c| c.get())
     }
 
     pub fn loops_of(faces: &[FormFace], vertices: &[Vertex]) -> Vec<Loop> {
@@ -371,9 +395,12 @@ impl Form {
             // basepoint transport, or the one across its forest path, crossed
             // a carriage on the light cone (57.4), and a loop based through
             // an unread transport is not a flat one (rule 11).
-            let (Some(theta_a), Some(_)) = (theta[a].clone(), theta[b].as_ref()) else {
-                gate(2);
-                continue;
+            let theta_a = match (&theta[a], &theta[b]) {
+                (Ok(t), Ok(_)) => t.clone(),
+                (Err(why), _) | (_, Err(why)) => {
+                    unread(*why);
+                    continue;
+                }
             };
             let holonomy = form_named_holonomy(faces, &path, &walked);
             // THE CARRIAGES ARE THE TRANSPORT COMPOSITE'S, read from the one
@@ -407,10 +434,24 @@ impl Form {
             // ONE WALK, read twice. `loop_is_trivial` and the carriages
             // are two readings of the same frontier, and calling the two
             // readers would walk it again for each.
-            let Some(carried) = paths_carried(faces, vertices, &lp) else {
-                gate(2);
-                continue;
+            let carried = match paths_carried_why(faces, vertices, &lp) {
+                Ok(c) => c,
+                Err(why) => {
+                    unread(why);
+                    continue;
+                }
             };
+            // A CYCLE READ WITH ITS EDGE HALF REFUSED is not unread, and it is
+            // counted apart by what refused it (H2c).
+            for (_, c) in carried.scoped() {
+                if let Some(why) = c.edge_refused {
+                    UNREAD.with(|u| {
+                        let mut t = u.get();
+                        t.1.note(why);
+                        u.set(t);
+                    });
+                }
+            }
             if loop_is_trivial(faces, vertices, &lp, &carried) {
                 gate(3);
                 // OBSERVE ONLY: the gate is unchanged, but a closure that

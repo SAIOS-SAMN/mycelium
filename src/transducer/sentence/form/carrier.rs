@@ -433,6 +433,16 @@ pub struct FormFace {
     /// through `retract_vertices` with the face it describes, and the court
     /// reads it where it stands.
     pub pairs: Option<Keyed<()>>,
+    /// C2, 70.6 — THE INTERFACE A CONTACT FACE RUNS ALONG: the set of
+    /// boundary elements the two bodies' cube complexes share, each written
+    /// as its centre doubled, `p + q`, so it is exact and integer. Sorted,
+    /// and empty on every face that is not a contact.
+    ///
+    /// It is the face's own coordinates, never a tally (69.3). A flat
+    /// interface and a ridged one between the same two members are two
+    /// faces, and the address says so. [`FormFace::interface_tower`] lifts
+    /// it as a support, so A.11's tower reads the interface's shape.
+    pub interface: Vec<(i64, i64, i64)>,
 }
 
 /// A FRAME AS A COORDINATE (51.1, 51.8): the frame index along `e₃`,
@@ -476,7 +486,23 @@ impl FormFace {
     /// no section is the unrestricted claim, which is what every face made
     /// before sections existed.
     pub fn new(i: u16, j: u16, word: Word) -> FormFace {
-        FormFace { i, j, word, at: Keyed::new(), pairs: None }
+        FormFace { i, j, word, at: Keyed::new(), pairs: None, interface: Vec::new() }
+    }
+
+    /// THE INTERFACE'S SHAPE (70.6, A.11): the interface lifted as a
+    /// support. Each element stands at its doubled centre, so the tower is
+    /// that of the elements' own arrangement, read at twice the scale. That
+    /// is a similarity, and the tower is covariant under it: a straight seam
+    /// reads its deviatoric along one axis, and a bent or ridged one reads
+    /// it in the higher harmonics. Exact over ℚ, with no root and no fit.
+    /// `None` on a face that is not a contact.
+    pub fn interface_tower(&self) -> Option<crate::transducer::blade::Blade> {
+        if self.interface.is_empty() {
+            return None;
+        }
+        let laminae: Vec<crate::transducer::blade::Lamina> =
+            self.interface.iter().map(|&(r, c, k)| (r, c, k, 0)).collect();
+        Some(crate::transducer::blade::lift(&laminae))
     }
 
     /// Is this face's word measured at `frame` of the family's one body

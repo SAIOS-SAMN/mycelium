@@ -63,3 +63,43 @@ fn h2_two_bodies_meet_at_a_corner_without_becoming_one() {
         "an edge-sharing pair is one body's interior, never a contact"
     );
 }
+
+/// C2, 70.6 — A CUBE SHARES A BOUNDARY WITH TWENTY OF ITS TWENTY-SIX
+/// NEIGHBOURS WITHOUT SHARING A FACE. The six it shares a face with make a
+/// body and are [`incidence_of_3d`]'s. The twelve it shares an edge with and
+/// the eight it shares a corner with are contact, and each comes back once,
+/// with the direction from the lesser site to the greater. The frame axis
+/// is among them: sixteen of the twenty change `k`.
+///
+/// [`incidence_of_3d`]: crate::transducer::sentence::incidence_of_3d
+#[test]
+fn a_cube_shares_boundary_with_twenty_of_its_twenty_six_neighbours() {
+    use crate::transducer::sentence::{incidence_diagonal_3d, incidence_of_3d};
+    let mut positions: Vec<(i64, i64, i64)> = Vec::new();
+    for dr in -1..=1i64 {
+        for dc in -1..=1i64 {
+            for dk in -1..=1i64 {
+                positions.push((dr, dc, dk));
+            }
+        }
+    }
+    let centre = positions.binary_search(&(0, 0, 0)).expect("the centre is one of the 27");
+    let touching = |pairs: Vec<(usize, usize)>| pairs.into_iter().filter(|&(i, j)| i == centre || j == centre).count();
+    let shared: Vec<(usize, usize, (i64, i64, i64))> = incidence_diagonal_3d(&positions)
+        .into_iter()
+        .filter(|&(i, j, _)| i == centre || j == centre)
+        .collect();
+    assert_eq!(shared.len(), 20, "twenty shared edges and corners, each once");
+    assert_eq!(
+        touching(incidence_of_3d(&positions)),
+        6,
+        "and the six shared faces are the body's, not contact"
+    );
+    // Every pair carries the offset from its first site to its second.
+    for &(i, j, d) in &shared {
+        let (p, q) = (positions[i], positions[j]);
+        assert_eq!((q.0 - p.0, q.1 - p.1, q.2 - p.2), d, "the direction is the adjacency's own coordinates");
+    }
+    let across = shared.iter().filter(|&&(_, _, d)| d.2 != 0).count();
+    assert_eq!(across, 16, "eight edges and eight corners across the frames, four edges within one: {across}");
+}

@@ -11810,6 +11810,73 @@ the light cone, with no member pair at the node, or not rigid. Row H2c
 splits it. This is the first place in this corpus where a holonomy between
 two bodies could be hard to spell. It is read before anything is fixed.
 
+**Re-taken on Phase C (rows C1, C2, H2c).** The same instruments, on one
+commit, after contact became the twenty shared-boundary adjacencies and
+one face per body pair.
+
+A.14, scene by scene, is unchanged, because one scene is one frame: V 732,
+E 389, C 405, b₁ 62 over 21 scenes, 328 isolated. Every one of the 389 is
+within one frame. The frame axis enters when a family is read as its
+frames stacked along `e₃`, one train input at each `k`:
+
+```
+    over 40 families              V 402 bodies   E 348 contacts   C 158   b₁ 104
+      contacts in one frame only       89
+      contacts across frames only     160
+      contacts both                    99
+    shared elements                in one frame 264, across frames 773
+```
+
+So 259 of the 348 body pairs touch across a frame boundary, and 160 of
+them touch nowhere else. The corner in one frame could not see those.
+
+On the form, beside Phase H's figures:
+
+```
+                                        Phase H      Phase C
+    contact faces offered (corpus)      42           36
+      form lines carrying them          12 of 216    24 of 216
+    faces (carrying a 50.3 edge)        72 (2)       71 (3)
+    unread cycles, last form            21           18
+```
+
+C1 takes the clique out: a contact is one face per body pair. The frame
+axis adds the pairs that touch across frames. The count falls from 42 to
+36 while twice as many forms carry a contact. Every other reading in the
+Phase H table stands unchanged at this commit: loops 0, planes 155, orbit
+155 / 165, field 158, COBOUNDARY 0, grade 0 22.
+
+THE UNREAD CYCLES, NAMED (H2c). The `unread` gate is split on the cycles
+line as `cone`, `no place`, `not rigid` and `no face`. Beside it, `edge
+refused` splits the cycles that were read but whose edge half was refused.
+Over the corpus:
+
+```
+    unread 18 = cone 0 · no place 18 · not rigid 0 · no face 0
+    edge refused: cone 0 · not rigid 0
+```
+
+Every unread cycle is `no place`. The walk reaches a face and does not
+find a member pair at the two members it names. None of them is on the
+light cone, and none is a contact the transport refuses as not rigid. A
+`not rigid` edge never reaches the `unread` gate by construction: the walk
+reads the face composite and drops only the edge half, which `edge
+refused` counts, and it reads 0.
+
+A probe, run once in a detached worktree as §6.4 permits, printed each
+`no place` refusal: all of them, 18 on the withhold census and 108 over the
+seven census tests, are CONTACT faces between two members of ONE vertex,
+`i = j`, and the pair key read in the other orientation is held on the
+face. The walk decides which way it crosses a face by `f.i == v_i && f.j == v_j`.
+On a face whose two ends are one vertex that is always true, so the walk
+reads the pair key backwards half the time. That is the orientation 437d253
+lost under the vertex projection, returned at the walk on the faces C1 and
+C2 offer between two charts of one vertex. So what refuses is not the
+contact. The face holds a place for the pair, and the walk reads its key
+in the wrong direction. Whether the transport reads once the key is read
+the right way round is not measured here. No fix is in this row; the
+ruling follows the reading.
+
 ```
 blade/body.rs           components() — the filter line that is the ruling
 sentence/chain.rs       incidence_of_3d — 6-incidence; diagonal is the addition

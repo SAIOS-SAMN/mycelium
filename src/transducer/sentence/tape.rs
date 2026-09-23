@@ -176,6 +176,14 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                 }
             }
         }
+        // THE INTERFACE A CONTACT FACE RUNS ALONG (C2, 70.6), as the address
+        // writes it: a count, then each element's doubled centre.
+        out.extend_from_slice(&(u32::try_from(face.interface.len()).ok()?).to_le_bytes());
+        for &(r, c, k) in &face.interface {
+            out.extend_from_slice(&r.to_le_bytes());
+            out.extend_from_slice(&c.to_le_bytes());
+            out.extend_from_slice(&k.to_le_bytes());
+        }
     }
     // THE LOOPS ARE NOT ON THE TAPE (54.5, as ruled 2026-09-20). §1.5 has
     // said since it was written that "loops and holonomies are derived and
@@ -443,7 +451,16 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             }
             _ => return None,
         };
-        faces.push(FormFace { i, j, word, at, pairs });
+        let ni = take_count(b, *pos, take_u32(b, pos)? as usize, 24)?;
+        let mut interface = Vec::with_capacity(ni);
+        for _ in 0..ni {
+            let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+            let c = i64::from_le_bytes(b.get(*pos + 8..*pos + 16)?.try_into().ok()?);
+            let k = i64::from_le_bytes(b.get(*pos + 16..*pos + 24)?.try_into().ok()?);
+            *pos += 24;
+            interface.push((r, c, k));
+        }
+        faces.push(FormFace { i, j, word, at, pairs, interface });
     }
     // THE LOOPS ARE RE-DERIVED, NOT READ (§1.5, 54.5). Nothing is taken
     // from the tape here because the writer puts nothing there; the cycle

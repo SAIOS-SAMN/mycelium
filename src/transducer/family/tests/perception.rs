@@ -263,7 +263,7 @@ fn named_pairs(
     frame: Option<&[u8]>,
     supports: &crate::network::nerve::Keyed<Vec<(i64, i64, i64)>>,
 ) -> Vec<(Vec<u8>, Vec<u8>)> {
-    named_faces(frame, supports).into_iter().map(|(a, b, _)| (a, b)).collect()
+    named_faces(frame, supports).into_iter().map(|nf| (nf.a, nf.b)).collect()
 }
 
 /// T1 — THREE TOUCHING BODIES HAVE NO ADJACENCY FACE, AND THE ABSENCE IS
@@ -357,10 +357,10 @@ let named = named_faces(Some(&root_member(0)), &supports);
 let ends = |how: Incidence| -> Vec<(u16, u16)> {
     named
         .iter()
-        .filter(|(_, _, hows)| hows.contains(&how))
-        .filter_map(|(a, b, _)| {
-            let (i, _) = crate::transducer::family::read_member_key(a)?;
-            let (j, _) = crate::transducer::family::read_member_key(b)?;
+        .filter(|nf| nf.named.hows.contains(&how))
+        .filter_map(|nf| {
+            let (i, _) = crate::transducer::family::read_member_key(&nf.a)?;
+            let (j, _) = crate::transducer::family::read_member_key(&nf.b)?;
             Some((i.min(j), i.max(j)))
         })
         .collect()
@@ -390,18 +390,122 @@ let supports = supports_at(&[
     vec![(2, 3), (1, 3), (0, 3), (0, 2), (0, 1)],
 ]);
 let named = named_faces(None, &supports);
-assert_eq!(named.len(), 1, "one pair, one face: {named:?}");
-let (a, b, hows) = &named[0];
+let [nf] = named.as_slice() else { panic!("one pair, one face: {named:?}") };
 let ends = (
-    crate::transducer::family::read_member_key(a).map(|(i, _)| i),
-    crate::transducer::family::read_member_key(b).map(|(j, _)| j),
+    crate::transducer::family::read_member_key(&nf.a).map(|(i, _)| i),
+    crate::transducer::family::read_member_key(&nf.b).map(|(j, _)| j),
 );
 assert_eq!(ends, (Some(1), Some(2)), "between the two L's");
 assert_eq!(
-    hows,
-    &vec![Incidence::Contact, Incidence::Field],
+    nf.named.hows,
+    vec![Incidence::Contact, Incidence::Field],
     "the corner and the strain band both read on the one face"
 );
+// AND THE INTERFACE IS THE TWO CORNERS, as a set (C2): `(1,0)+(0,1)` and
+// `(3,2)+(2,3)`, each element at its doubled centre.
+assert_eq!(nf.named.interfaces, vec![vec![(1, 1, 0), (5, 5, 0)]], "the two corners the L's share");
+}
+
+/// C1, 70.6 — A CORNER BETWEEN TWO BODIES OF SEVERAL MEMBERS OFFERS ONE
+/// FACE. Two members stand on one cell and two on the cell diagonal to it.
+/// H2b related every occupant of one site to every occupant of the other,
+/// four faces for one contact: the join of two occupancy simplices written
+/// as a clique. The contact is between the two bodies, so it is one face,
+/// between the least member at each side. The site chain still joins each
+/// side's own occupants.
+#[test]
+fn a_corner_between_two_bodies_of_several_members_offers_one_face() {
+let supports = supports_at(&[
+    vec![],
+    vec![(0, 0)],
+    vec![(0, 0)],
+    vec![(1, 1)],
+    vec![(1, 1)],
+]);
+let named = named_faces(None, &supports);
+let ends = |how: Incidence| -> Vec<(u16, u16)> {
+    named
+        .iter()
+        .filter(|nf| nf.named.hows.contains(&how))
+        .filter_map(|nf| {
+            let (i, _) = crate::transducer::family::read_member_key(&nf.a)?;
+            let (j, _) = crate::transducer::family::read_member_key(&nf.b)?;
+            Some((i.min(j), i.max(j)))
+        })
+        .collect()
+};
+assert_eq!(ends(Incidence::Contact), vec![(1, 3)], "one contact face for one body pair, not four");
+assert_eq!(ends(Incidence::Site), vec![(1, 2), (3, 4)], "each side's occupants chained on their site");
+}
+
+/// C2, 70.6 — A BODY MOVING BETWEEN FRAMES TOUCHES THE BODY THAT STOOD.
+/// One body stood at `(0, 0)` in frame 0. The other stands at `(0, 2)` in
+/// frame 0 and reaches `(0, 1)` in frame 1, beside where the first stood.
+/// In no single frame do the two share an edge or a corner. Across frames,
+/// `(0, 1, 1)` and `(0, 0, 0)` share an edge of their cubes, so the frame
+/// axis relates them. The corner of one frame could not see it, and the
+/// twenty adjacencies do.
+#[test]
+fn a_body_moving_between_frames_touches_the_body_that_stood() {
+let mut supports = crate::network::nerve::Keyed::new();
+supports.insert(root_member(1), vec![(0i64, 0i64, 0i64)]);
+supports.insert(root_member(2), vec![(0, 2, 0), (0, 2, 1), (0, 1, 1)]);
+let named = named_faces(None, &supports);
+let [nf] = named.as_slice() else { panic!("one pair, the contact across frames: {named:?}") };
+assert_eq!(nf.named.hows, vec![Incidence::Contact], "the frame axis enters contact");
+let [interface] = nf.named.interfaces.as_slice() else { panic!("one interface: {nf:?}") };
+assert_eq!(interface, &vec![(0, 1, 1)], "one shared edge, between frames 0 and 1");
+assert!(
+    interface.iter().all(|&(_, _, k)| k % 2 != 0),
+    "an odd doubled frame coordinate is an element across two frames"
+);
+// And the corner in one frame alone names nothing here.
+let in_frame: Vec<_> = crate::transducer::sentence::incidence_diagonal_3d(&[(0, 0, 0), (0, 1, 1)])
+    .into_iter()
+    .filter(|&(_, _, d)| d.2 == 0)
+    .collect();
+assert!(in_frame.is_empty(), "no in-frame adjacency relates them: {in_frame:?}");
+}
+
+/// C2, 70.6 — THE INTERFACE IS A SET WITH A SHAPE, AND TWO SHAPES ARE TWO
+/// FACES. One pair of members covers two pairs of bodies. Each pair stands
+/// in two consecutive frames, the second body one row down and so never
+/// sharing a face with the first. A bar over a bar meets along a straight
+/// seam, and an L over an L along a seam that turns. Both are named on the
+/// one member pair as two interfaces, never merged into one set. Lifted,
+/// their towers differ.
+#[test]
+fn a_straight_seam_and_a_bent_one_are_two_interfaces() {
+let mut supports = crate::network::nerve::Keyed::new();
+supports.insert(
+    root_member(1),
+    vec![
+        // A bar in frame 0.
+        (0i64, 0i64, 0i64), (0, 1, 0), (0, 2, 0), (0, 3, 0),
+        // An L in frame 0, far from it.
+        (10, 0, 0), (10, 1, 0), (10, 2, 0), (11, 0, 0), (12, 0, 0),
+    ],
+);
+supports.insert(
+    root_member(2),
+    vec![
+        // A bar in frame 1, one row down: every site meets the frame-0 bar
+        // at an edge or a corner across the frames.
+        (1, 0, 1), (1, 1, 1), (1, 2, 1), (1, 3, 1),
+        // The L in frame 1, one row and one column in: the seam turns.
+        (11, 1, 1), (11, 2, 1), (11, 3, 1), (12, 1, 1), (13, 1, 1),
+    ],
+);
+let named = named_faces(None, &supports);
+let contacts: Vec<_> = named.iter().filter(|nf| nf.named.hows.contains(&Incidence::Contact)).collect();
+let [nf] = contacts.as_slice() else { panic!("one member pair: {named:?}") };
+assert_eq!(nf.named.interfaces.len(), 2, "two interfaces between the one pair: {nf:?}");
+let tower = |i: &Vec<(i64, i64, i64)>| {
+    let laminae: Vec<crate::transducer::blade::Lamina> = i.iter().map(|&(r, c, k)| (r, c, k, 0)).collect();
+    crate::transducer::blade::lift(&laminae)
+};
+let (a, b) = (tower(&nf.named.interfaces[0]), tower(&nf.named.interfaces[1]));
+assert_ne!(a.inertia, b.inertia, "a straight seam and a bent one lift to two towers");
 }
 
 /// Occupancy + ring probes scale with sites, not with n².

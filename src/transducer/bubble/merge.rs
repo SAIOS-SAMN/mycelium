@@ -37,6 +37,9 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
             // The section is the BUNDLE's, and the shift moves vertices,
             // so it crosses the merge unchanged with the face it names.
             pairs: face.pairs.clone(),
+            // The interface is the two bodies', and it crosses the merge
+            // with the face that runs along it.
+            interface: face.interface.clone(),
         });
     }
     // The join is taken in the SCENE, where the two chains actually sit,
