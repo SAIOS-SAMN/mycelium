@@ -8484,6 +8484,89 @@ family/pairing.rs        named_faces — one face per body pair at a corner
 blade/strain.rs          the sector, a coordinate of the pair (T3)
 ```
 
+### 70.7 The interface is a chart, and a contact is a 2-simplex (ruled 2026-09-23)
+
+The operator's reading of Phase C: the engine has flattened again. The
+tree spent its last two weeks getting out of the crystal's rigidity and
+into the manifold — the conformal sphere for a body, the ten planes for a
+transport, curvature as content — and Phase C answers "where do two
+bodies meet" with the boundary of a cube complex on an integer lattice and
+carries the answer as a list of sites. The lattice is right where it is
+read and wrong where it is held. What is corrected:
+
+**The lattice is the retina; nothing above the sensor holds it.** Reading
+the twenty shared-boundary adjacencies off the occupancy is a sensor
+reading under law 11: it is exact, it is the only place the pixel grid is
+allowed to decide anything, and it decides one thing — WHICH bodies meet,
+and WHERE on the base. That reading ends at the sensor boundary. What
+crosses the boundary into the form is not the site list: a face that
+holds `Vec<(i64, i64, i64)>` is a form holding the sensor's coordinates as
+cognition (law 11, checklist (f′)), a projection carried as the primary
+object (checklist (m)). The interface is LIFTED at the boundary, once,
+exactly as a body is: its shared elements are its support, `blade::lift`
+gives it a blade — nucleus, tower, sphere — and its chart is
+`Harmonics::axes` of that blade. The face carries the interface's chart
+and its address (the support written out, A21, so the lift re-derives,
+law 12), never a count and never a list the mind computes on. Phase C's
+`interface_tower` is the lift; the site list beside it goes.
+
+**The interface is a chart of the cover.** The interface has a support, a
+blade and a chart, which is what a chart of the cover is (53.1), and it
+lies in both bodies' closures. A contact is therefore not an edge between
+two vertices with a payload; it is the 2-simplex `A – I – B` of the
+nerve: three charts, three transitions, and the cocycle condition
+`g_AI · g_IB · g_BA = 1` on the triple (13.9, 58.1). That is the 2-cell
+this corpus has never had — `read_nerve` certified 0 triples on 252 forms
+because no two charts of a cover ever shared a third — and it is where
+the ten planes enter: `g_AI` and `g_IB` are transports in `Cl(4,1)` read
+by 60.1's interface versor with the interface's own frame as the middle
+term, and the holonomy of the triangle is curvature between two bodies
+measured at their meeting rather than along a chord through empty space
+(55.2's scalar collapse, the pure boost between two centroids, is
+exactly what a centroid-to-centroid transport re-commits).
+
+**"Against the interface" means through it.** The edge transport of a
+contact factors through the interface chart: `g_AB = g_AI · g_IB`, each
+factor a transport between a body's frame `θ` and the interface's frame
+`θ_I` read off the interface's deviatoric and higher harmonics, the
+basepoint transvection between the body's nucleus and the interface's.
+A flat seam has `θ_I` along one axis; a ridged one carries its bumps in
+the tower; the gauge cocycle `δ⁰θ` is read across the laminae of the
+interface set (H3). Nothing here is a chord, a centroid pair or a band.
+
+**Identity by address, never by a site.** Phase C keys a body pair by the
+two bodies' root sites and reads the element's sides in that order. A
+site is a position of the base (vocabulary, "site"); a body's identity is
+its address, the support written out (`coord::Piece`). The pair is keyed
+by the two addresses in canonical order, the interface by its own address,
+and no position enters a key (rule 6, law 11).
+
+**The orientation defect is fixed at every site of its shape.** All 18
+unread cycles are `no place`: on a contact face between two members of
+one vertex the walk's direction test `f.i == v_i && f.j == v_j` is
+always true and the pair key is read backwards half the time. That is
+437d253's defect at a second site, and a ruling is applied at every site
+of its shape (backtrack ledger, 2026-09-07): the walk orients a face by
+its member pair, never by its vertex pair, and the 18 cycles are re-read
+after the fix as the first inter-body holonomies of this corpus (O1).
+
+**What Phase C got right stands.** The twenty adjacencies, one face per
+body pair, the frame axis in contact (160 pairs that touch across frames
+only), the unread gate split by cause, the address carrying the interface
+at the recut. Only what the face holds, how the pair is named, and what
+the transport is measured through are corrected.
+
+```
+family/pairing.rs        the twenty adjacencies read at the sensor; the
+                         interface lifted there, once
+sentence/form/face.rs    FormFace.interface → the interface's chart and
+                         address, never Vec<(i64,i64,i64)>
+family/cover.rs          the interface as a chart of the cover; the
+                         contact as the 2-simplex A – I – B
+cech/nerve.rs            read_nerve certifies the triple
+sentence/pivot/walk.rs   orientation by member pair (O1)
+```
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
