@@ -27,6 +27,7 @@ pub mod rebase;
 pub mod refine;
 pub mod scene;
 pub mod pieces;
+pub mod span;
 pub mod speak;
 pub mod trace;
 mod witness;

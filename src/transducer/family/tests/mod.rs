@@ -14,6 +14,7 @@ mod lanes;
 mod orbit;
 mod pairing;
 mod scene;
+mod span;
 mod perception;
 mod retract;
 mod speech;

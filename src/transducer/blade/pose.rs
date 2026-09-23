@@ -81,8 +81,11 @@ pub fn on_tube(a: &Blade, b: &Blade) -> bool {
 ///   other), or a solved `R` that is not orthogonal or does not carry `M`;
 /// - [`NoPose::Isotropy`] the columns span different dimensions — one body
 ///   orients where the other does not, and no motion changes that;
-/// - [`NoPose::Unoriented`] the columns span fewer than `n − 1` dimensions
-///   on both: the tower at these orders leaves a continuous turn free;
+/// - where the columns span fewer than `n − 1` dimensions on both, the even
+///   tower reads the pose ([`even_pose`], FR1b): a symmetric body is
+///   [`Pose::HalfOpen`], its `ℤ₂` held as it is at one section;
+/// - [`NoPose::Unoriented`] only where no order orients: a stabilizer the
+///   even tower leaves beyond `ℤ₂`;
 /// - [`NoPose::Irrational`] `ρ²` is not a rational square;
 /// - [`NoPose::Mirrored`] an improper `R` carries the tower and no proper
 ///   one does.
@@ -100,12 +103,15 @@ pub fn relative_pose(a: &Blade, b: &Blade) -> Result<Pose, NoPose> {
     }
 }
 
-/// A BODY'S POINT TOWER ON `n` AXES: the second moment `M` and the odd
-/// moment `t` about the sites' mean, each normalised by the count (A.12), and
-/// `tr M`, the scale's reading.
+/// A BODY'S POINT TOWER ON `n` AXES: the second moment `M`, the odd moment
+/// `t` and the fourth order's symmetric part `N = ⟨d dᵀ |d|²⟩` about the
+/// sites' mean, each normalised by the count (A.12), and `tr M`, the scale's
+/// reading. `M` and `N` are the EVEN tower: they turn with the body and
+/// cannot see a half turn.
 struct Tower {
     m: Vec<Vec<Q>>,
     t: Vec<Q>,
+    n4: Vec<Vec<Q>>,
     tr: Q,
 }
 
@@ -122,19 +128,22 @@ fn tower(b: &Blade, n: usize) -> Option<Tower> {
     }
     let mut m = vec![vec![Q::zero(); n]; n];
     let mut t = vec![Q::zero(); n];
+    let mut n4 = vec![vec![Q::zero(); n]; n];
     for s in &b.support {
         let d: Vec<Q> = mean.iter().enumerate().map(|(i, c)| s.axis(i).map(|v| q(v) - c)).collect::<Option<_>>()?;
         let r2 = d.iter().fold(Q::zero(), |acc, x| acc + x * x);
-        for (row, di) in m.iter_mut().zip(&d) {
-            for (x, dj) in row.iter_mut().zip(&d) {
-                *x += di * dj;
+        for ((row, row4), di) in m.iter_mut().zip(n4.iter_mut()).zip(&d) {
+            for ((x, x4), dj) in row.iter_mut().zip(row4.iter_mut()).zip(&d) {
+                let p = di * dj;
+                *x4 += &p * &r2;
+                *x += p;
             }
         }
         for (x, di) in t.iter_mut().zip(&d) {
             *x += di * &r2;
         }
     }
-    for row in m.iter_mut() {
+    for row in m.iter_mut().chain(n4.iter_mut()) {
         for x in row.iter_mut() {
             *x = &*x / &count;
         }
@@ -143,7 +152,7 @@ fn tower(b: &Blade, n: usize) -> Option<Tower> {
         *x = &*x / &count;
     }
     let tr = m.iter().enumerate().fold(Q::zero(), |acc, (i, row)| acc + &row[i]);
-    Some(Tower { m, t, tr })
+    Some(Tower { m, t, n4, tr })
 }
 
 fn apply(m: &[Vec<Q>], v: &[Q]) -> Vec<Q> {
@@ -310,9 +319,6 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
     if ca.len() != cb.len() {
         return Err(NoPose::Isotropy);
     }
-    if ca.len() + 1 < n {
-        return Err(NoPose::Unoriented);
-    }
     if ta.tr.is_zero() {
         return Err(NoPose::Unoriented);
     }
@@ -327,6 +333,11 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
     for c in &cb {
         wb.push(c.iter().map(|x| x / &scale).collect());
         scale = &scale * &rho2;
+    }
+    // FR1b — TOO FEW COLUMNS IS A SYMMETRY, NOT A REFUSAL: the even tower
+    // reads what the odd one cannot.
+    if ca.len() + 1 < n {
+        return even_pose(&ta, &tb, &ca, &wb, &rho2, n);
     }
     let mut wa = ca.clone();
     // A FLAT BODY'S FRAME OF COLUMNS IS COMPLETED BY THEIR DUAL, the proper
@@ -357,4 +368,162 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
         true => Err(NoPose::Mirrored),
         false => Ok(Pose::Turn(versor_of(&r, n))),
     }
+}
+
+/// FR1b — THE POSE FROM THE EVEN TOWER, where the odd columns are too few to
+/// fix the turn (57.3, 59.5, 67.1).
+///
+/// A body whose odd moment vanishes — a centrosymmetric body, or a flat one
+/// symmetric by a half turn in its own plane — has no column, and at one
+/// section the planar reader holds it `HalfOpen`: a `ℤ₂` freedom its own
+/// symmetry makes real. The tube holds it the same way. The turn is read
+/// from the matrices that INTERTWINE the even tower,
+///
+/// ```text
+///     X M_a = (M_b / ρ²) X,     X N_a = (N_b / ρ⁴) X,
+/// ```
+///
+/// linear in `X` and solved by one elimination: its kernel is `R · C` for
+/// `C` in the tower's commutant, so its dimension says how much the even
+/// tower leaves free. The orthogonal elements are then found exactly —
+///
+/// - one line: the turn up to sign, and the sign is the orientation;
+/// - two lines: the elements `a X₁ + b X₂` with `XᵀX ∝ 1`, the roots of one
+///   binary quadratic, rational or refused as [`NoPose::Irrational`];
+/// - three or more, or a pencil of solutions: a stabilizer beyond `ℤ₂` —
+///   a line's continuous turn about itself, or a rectangle's three half
+///   turns — which this reader does not name a representative for:
+///   [`NoPose::Unoriented`].
+///
+/// Each candidate, and its negative, is kept where it is proper and carries
+/// the tower and every odd column there is. One proper turn is a
+/// [`Pose::Turn`]; two are the held `ℤ₂`, [`Pose::HalfOpen`], its
+/// representative the first in the quadratic's own root order.
+fn even_pose(ta: &Tower, tb: &Tower, ca: &[Vec<Q>], wb: &[Vec<Q>], rho2: &Q, n: usize) -> Result<Pose, NoPose> {
+    let rho4 = rho2 * rho2;
+    let scaled = |m: &[Vec<Q>], s: &Q| -> Vec<Vec<Q>> { m.iter().map(|row| row.iter().map(|x| x / s).collect()).collect() };
+    let (mb, nb) = (scaled(&tb.m, rho2), scaled(&tb.n4, &rho4));
+    // `X A_a − A_b X = 0`, entry `(p, q)`, over the unknowns `X[p][r]` at
+    // `p·n + r`.
+    let mut rows: Vec<Vec<Q>> = Vec::new();
+    for (aa, ab) in [(&ta.m, &mb), (&ta.n4, &nb)] {
+        for p in 0..n {
+            for qq in 0..n {
+                let mut row = vec![Q::zero(); n * n];
+                for r in 0..n {
+                    row[p * n + r] += &aa[r][qq];
+                    row[r * n + qq] -= &ab[p][r];
+                }
+                rows.push(row);
+            }
+        }
+    }
+    let kernel: Vec<Vec<Vec<Q>>> =
+        cga::nullspace(rows, n * n).into_iter().map(|v| v.chunks(n).map(<[Q]>::to_vec).collect()).collect();
+    let lines: Vec<Vec<Vec<Q>>> = match kernel.as_slice() {
+        [] => return Err(NoPose::Incongruent),
+        [x] => vec![x.clone()],
+        [x1, x2] => match orthogonal_lines(x1, x2, n) {
+            Lines::Found(l) => l,
+            Lines::Irrational => return Err(NoPose::Irrational),
+            Lines::Pencil => return Err(NoPose::Unoriented),
+        },
+        _ => return Err(NoPose::Unoriented),
+    };
+    // `N` is carried by any orthogonal element of the kernel, by
+    // construction; `M` is checked as the column reader checks it, and every
+    // odd column there is must land.
+    let carries =
+        |r: &[Vec<Q>]| carries_tower(r, ta, tb, rho2, n) && ca.iter().zip(wb).all(|(wa, wb)| apply(r, wa) == *wb);
+    let (mut proper, mut improper) = (Vec::new(), false);
+    for x in &lines {
+        let g = (0..n).fold(Q::zero(), |acc, k| acc + &x[k][0] * &x[k][0]);
+        let Some(lambda) = rational_sqrt(&g) else { continue };
+        if lambda.is_zero() {
+            continue;
+        }
+        for sign in [Q::one(), -Q::one()] {
+            let r: Vec<Vec<Q>> = x.iter().map(|row| row.iter().map(|v| v * &sign / &lambda).collect()).collect();
+            if !carries(&r) {
+                continue;
+            }
+            match det(r.clone()) < Q::zero() {
+                true => improper = true,
+                false => proper.push(r),
+            }
+        }
+    }
+    match (proper.as_slice(), improper) {
+        ([r], _) => Ok(Pose::Turn(versor_of(r, n))),
+        ([r, _], _) => Ok(Pose::HalfOpen(versor_of(r, n))),
+        ([], true) => Err(NoPose::Mirrored),
+        ([], false) => Err(NoPose::Incongruent),
+        _ => Err(NoPose::Unoriented),
+    }
+}
+
+/// The orthogonal lines of a two-dimensional kernel, or why there are none.
+enum Lines {
+    Found(Vec<Vec<Vec<Q>>>),
+    Irrational,
+    Pencil,
+}
+
+/// THE ELEMENTS `a X₁ + b X₂` WITH `XᵀX ∝ 1`. `G(a, b) = a² G₁₁ + ab (G₁₂ +
+/// G₂₁) + b² G₂₂`; each off-diagonal entry, and each diagonal entry against
+/// the first, is a binary quadratic in `(a, b)` that must vanish. The first
+/// that is not identically zero — in entry order, the matrix's own — gives
+/// the candidate ratios, exact where its discriminant is a rational square;
+/// each candidate is kept only where every quadratic vanishes on it. All of
+/// them identically zero is a pencil: every element is orthogonal, a
+/// continuous freedom.
+fn orthogonal_lines(x1: &[Vec<Q>], x2: &[Vec<Q>], n: usize) -> Lines {
+    let gram = |x: &[Vec<Q>], y: &[Vec<Q>], i: usize, j: usize| (0..n).fold(Q::zero(), |acc, k| acc + &x[k][i] * &y[k][j]);
+    let form = |i: usize, j: usize| -> [Q; 3] {
+        [gram(x1, x1, i, j), gram(x1, x2, i, j) + gram(x2, x1, i, j), gram(x2, x2, i, j)]
+    };
+    let mut forms: Vec<[Q; 3]> = Vec::new();
+    for i in 0..n {
+        for j in (i + 1)..n {
+            forms.push(form(i, j));
+        }
+        if i > 0 {
+            let (d, d0) = (form(i, i), form(0, 0));
+            forms.push([&d[0] - &d0[0], &d[1] - &d0[1], &d[2] - &d0[2]]);
+        }
+    }
+    let Some([a2, ab, b2]) = forms.iter().find(|f| f.iter().any(|c| !c.is_zero())).cloned() else {
+        return Lines::Pencil;
+    };
+    let roots: Vec<(Q, Q)> = match a2.is_zero() {
+        // `b (ab·a + b2·b) = 0`.
+        true => match ab.is_zero() {
+            true => vec![(Q::one(), Q::zero())],
+            false => vec![(Q::one(), Q::zero()), (-b2.clone(), ab.clone())],
+        },
+        false => {
+            let disc = &ab * &ab - q(4) * &a2 * &b2;
+            let Some(s) = rational_sqrt(&disc) else {
+                return Lines::Irrational;
+            };
+            let two_a = q(2) * &a2;
+            match s.is_zero() {
+                true => vec![(-ab.clone(), two_a)],
+                false => vec![(-&ab + &s, two_a.clone()), (-&ab - &s, two_a)],
+            }
+        }
+    };
+    let vanishes = |(a, b): &(Q, Q)| forms.iter().all(|[f0, f1, f2]| (a * a * f0 + a * b * f1 + b * b * f2).is_zero());
+    Lines::Found(
+        roots
+            .iter()
+            .filter(|r| vanishes(r))
+            .map(|(a, b)| {
+                x1.iter()
+                    .zip(x2)
+                    .map(|(r1, r2)| r1.iter().zip(r2).map(|(u, v)| a * u + b * v).collect())
+                    .collect()
+            })
+            .collect(),
+    )
 }

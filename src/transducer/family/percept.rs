@@ -1136,6 +1136,10 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     for orbit in crate::transducer::sentence::take_orbits() {
         eprintln!("  {}", orbit.line());
     }
+    // FR2, 72.1c(3) — AND WHERE EACH CYCLE STANDS ALONG `e₃`: its span, the
+    // meet of its members' sections, read here from the sections the percept
+    // carries and never stored beside them.
+    eprintln!("  {}", super::span::SpanTally::of(&form.vertices, &sections, &form.orbits).line());
     trace::trace("extract/2 faces", trace::Wrote::Nothing, Some(budget));
     Percept { form, sections, varying, unreached }
 }

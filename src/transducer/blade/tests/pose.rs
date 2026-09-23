@@ -22,6 +22,51 @@ fn sends(v: &cga::Mv, from: usize, to: usize) -> bool {
 
 const L4: [(i64, i64, i64); 4] = [(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)];
 
+/// The S-tetromino: symmetric by a half turn in its own plane, so its odd
+/// moment vanishes and no column orients it.
+const S4: [(i64, i64, i64); 4] = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)];
+
+#[test]
+fn fr1b_a_symmetric_body_reads_half_open_at_one_section_and_on_the_tube() {
+    let s = body(&S4);
+    // At one section, against its own quarter turn: the planar reader.
+    let turned = body(&S4.map(|(r, c, k)| (-c, r, k)));
+    assert!(matches!(relative_pose(&s, &turned), Ok(Pose::HalfOpen(_))), "{:?}", relative_pose(&s, &turned));
+    // On the tube, against itself turned a quarter into the plane of the row
+    // and the succession axis, `(x₁, x₃) ↦ (−x₃, x₁)`: the same held `ℤ₂`,
+    // never a permanent refusal.
+    let standing = body(&S4.map(|(r, c, k)| (-k, c, r)));
+    assert!(on_tube(&s, &standing));
+    let Ok(Pose::HalfOpen(v)) = relative_pose(&s, &standing) else {
+        panic!("the tube holds the half turn: {:?}", relative_pose(&s, &standing));
+    };
+    // The representative is one of the two turns the `ℤ₂` holds — the
+    // quarter turn in `e₁₃`, or it composed with the half turn in the S's
+    // own plane — so the column axis stays on its line, either way along it.
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let image = v.sandwich(&cga::Mv::blade(E2, q(1)));
+    assert!(
+        (0..image.slot_count()).all(|m| m == E2 || *image.coeff(m) == q(0)) && *image.coeff(E2) != q(0),
+        "the column axis stays on its line: {v:?}"
+    );
+    // And the standing body against itself: held, not a turn chosen.
+    assert!(matches!(relative_pose(&standing, &standing), Ok(Pose::HalfOpen(_))));
+}
+
+#[test]
+fn fr1b_a_centrosymmetric_solid_is_turned_not_held() {
+    // Symmetric by the point reflection `−1`, which at `n = 3` is improper:
+    // the proper turn relating it to its turn is unique, so the even tower
+    // determines it.
+    let solid = [(0, 0, 0), (1, 0, 0), (0, 2, 0), (0, 0, 3), (-1, 0, 0), (0, -2, 0), (0, 0, -3), (1, 1, 1), (-1, -1, -1)];
+    let a = body(&solid);
+    let turned = body(&solid.map(|(r, c, k)| (r, -k, c)));
+    let Ok(Pose::Turn(v)) = relative_pose(&a, &turned) else {
+        panic!("a determined turn: {:?}", relative_pose(&a, &turned));
+    };
+    assert!(sends(&v, E2, E3) && sends(&v, E1, E1), "the turn is in e23: {v:?}");
+}
+
 #[test]
 fn at_one_section_the_pose_is_the_sensor_planes_reading() {
     let l = body(&L4);
