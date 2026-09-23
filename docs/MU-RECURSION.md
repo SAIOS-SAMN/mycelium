@@ -9169,7 +9169,101 @@ vocabulary: "loop" becomes "orbit" in the doctrine and the tree at one
 row, never piecemeal — `Form.loops`, the cycles line, the unread gates.
 A.13 clause 1, doctrine first.
 
-### 73.7 Reconciliations
+### 73.7 The cluster (the operator's model, 2026-09-23, verbatim)
+
+"A multi-star cluster, where a set of axioms is on each star, and the
+client has entities that exist on the orbiting planets around those
+stars; the entities on each planet communicate coherently between each
+other via anastome cohesiveness; we can add celestial bodies by mass,
+distance, pressure in order to modify the effects of the known physics
+on the celestial bodies to fine tune the system and the orbits."
+
+In the document's nouns: a **star** is an axiom register — the core
+every star shares (LR1) plus the layer that makes it this star; a
+**planet** is a mind's held complex, its forms and contemplation, in
+orbit under the star whose axioms it obeys; an **entity** is a voice on
+that planet and the words it holds; **anastomosis** is `src/anastome`
+and reconciliation by stratum (13) — how planets speak coherently; a
+**celestial body added** is growth by closure, a generator adjoined
+(37.7) or a tether ruled (MEM1), never a dial; an **orbit** is 73.1's
+reading, one circuit per `k`-step (73.8). One caution recorded: entities
+on one planet speak to one another today only through a court's docket
+(law 8); speech between voices is not yet ruled, and CL3's crossing
+between stars goes through courts until it is.
+
+### 73.8 The circuit, the coordinates, and what a state is
+
+- **The circuit is the `k`-step** (PH4, 72.1d): one circuit of the
+  planet's own carriers, paced by its reserve, never a frame per second.
+- **The coordinates are three and stay three** (72.1e): the mind's
+  circuits, its local time beside `K`; TUniversal, the mesh's height;
+  `e₃`, the base's succession axis, content. The `T` lane is temporal
+  extent counted in receipts, a cost (law 9). The draft's "event
+  coordinate `(TUniversal, S, G, T = k-step)`" is TRAJECTORY.md's item
+  3, a historical document superseded by Part IX, and is not adopted.
+- **A planet's state at a circuit** is its held complex — its forms,
+  their orbits and each orbit's precession read per plane generated from
+  `n` (73.2) — and μ⃗ is what that state COSTS per lane, never its
+  coordinates. The four lanes are one polytonic carrier (law 5, 12.6):
+  `S` what the state fails to speak, `G` the hue transitions it fails to
+  carry, `T` the extent it has been held, `H` the shells it spans; 65.4
+  names what each lane pays for — scale, gauge, translation, fibre —
+  which is a mapping of costs and not a state space. "Quantum state" is
+  not a noun of this document: what is held open without a weight is a
+  vortex (3.9, 59.5), and a probability is refused (law 1). Precession is
+  read per plane and priced per lane (P2), never summed across lanes.
+- **Loop versus orbit.** A perfect circle that opens and closes is the
+  trivial class; the `k`-step orbit is everything else.
+
+### 73.9 Mass, distance and pressure are read, never dialled
+
+"Fine-tuning by adding bodies" is lawful only where each body's mass,
+distance and pressure are quantities the physics produces (rule 5,
+checklist (p)). **Distance** between two nuclei is their conformal inner
+product, `−2 X·Y` on the null embedding, exact over ℚ with no root.
+**Pressure** is the metabolism's per-lane pressure and syntropy read on
+the lane a contact occupies (P2, P3). **Mass** is undefined and open for
+the operator's ruling, with the candidates recorded: for a body its
+lamina count `M₀`, already the tower's normaliser; for a held complex
+the escrow μ⃗ it draws per lane; for a star the forms whose closure its
+axioms rule, or the replays that stood under it — which is 73.3's
+candidate, a generator's uses. A constant chosen to make an orbit close
+is refused; the system is tuned by what is added and measured.
+
+### 73.10 More than one star
+
+The engine has one register. For planets under different stars to
+anastomose: (1) every star shares LR1's core, so two courts replaying
+one another agree on the interpreter and on the signature written first
+on the address (71.2(4)); (2) a word crosses from one star's orbit to
+another's by reconciliation by stratum (13), with the cross-register
+case written — a word valid under one star's layer reaches another
+star's planet only through the shared core, and otherwise stands there
+as a demand; (3) a star's layer EXTENDS the core and never contradicts
+it, since a court could not otherwise re-derive the word (law 6); two
+layers may differ from each other, and their difference is what
+reconciliation reads.
+
+### 73.11 The gravity of a star
+
+A star pulls its planets' orbits. Which star a planet is under, and how
+strongly, enters a transport as a versor applied, never as a scalar
+potential; the carrier is A.13's `K_i = e_i ∧ e_o`, motion about a
+centre; the precession a planet reads per circuit is the measure of the
+pull, compared across stars at equal degree (Axiom C). 73.3's three
+questions and A.13's first clause stand as written.
+
+### 73.12 Rows of the cluster
+
+CL1, instrument first: per voice, the stroke line prints the star (the
+register layer) it runs under and, per circuit, the precession on each
+plane priced on each lane; readings only. CL2, doctrine: 73.9's mass
+ruled, with a test that adding a body changes a measured orbit and that
+no constant appears. CL3, doctrine then build: 73.10's rules, then the
+cross-register case of reconciliation, tested by two voices under two
+layers with one core.
+
+### 73.13 Reconciliations of the first draft
 
 - **One word, two objects.** 45.7 already names an "orbit": the circuits
   a stroke ring completes over its carrier, the mind's local time
