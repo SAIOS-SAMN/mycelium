@@ -10805,14 +10805,16 @@ s_c∧s_b∧s_a + (s_b·s_a) s_c − (s_c·s_a) s_b + (s_c·s_b) s_a`. How the
 order enters is exact: `s_a s_b = −s_b s_a + 2 s_a·s_b`, so the Gram
 entries measure precisely the dependence on the order. The weight `P P̃
 = Π s_a²` is each sphere's own scalar multiplied — order-free, no root,
-not a volume². IN THE ALGEBRA'S OWN NAME: `P` is the cell's COXETER
-ELEMENT in that circuit's order — the product of all its reflections —
-and its modes are the group's exponents, its order the Coxeter number
-where finite. Where the cell's Coxeter diagram is a tree every order
-gives a conjugate `P` (one class, C2a); where the diagram has a cycle
-the classes differ per circuit, and that difference is content, read by
-comparing the kept `P`s' classes and never by choosing one. Stated in
-the register with a test before it is read (78.8).
+not a volume². `P` is the product of the cell's reflections in the
+circuit's order. It is NAMED the cell's COXETER ELEMENT — its modes the
+group's exponents, its order the Coxeter number, every order giving a
+conjugate `P` where the diagram is a tree and differing classes per
+circuit where it has a cycle — ONLY where GR2 recognises the
+constructors as a Coxeter SYSTEM (corrected 2026-09-23 on the
+implementor's objection: for an arbitrary set `P` is the product of its
+reflections and no more, its order no Coxeter number, the tree theorem
+not applicable). What stands for every set is the refusal below. The
+register states the conjugacy for recognised systems, with a test.
 
 **(2) The product is read as a motion by the action reader.** `x ↦ ±P x
 P⁻¹` composes the inversions in the constructors: a conformal motion for
@@ -10823,10 +10825,11 @@ taken (MR1b). A 1-cell's tether `V = s_b s_a` reads its pencil AS A
 MOTION — an intersecting pair a turn about the shared circle, a disjoint
 pair a boost between them, a tangent pair a parabolic slip — and its
 class and order are the cell's content; GR1's pair regime is that
-reading's name. A Coxeter element of infinite order — a non-elliptic
-mode, or an elliptic mode of no admitted order — is a SECOND CERTAIN
-REFUSAL of finiteness beside GR1's (a finite group's Coxeter element has
-finite order), and GR2's worklist shrinks to what neither refuses.
+reading's name. A `P` of infinite order — a non-elliptic mode, or an
+elliptic mode of no admitted order — is a SECOND CERTAIN REFUSAL of
+finiteness beside GR1's, for every set, simple or not (every element of
+a finite group has finite order), and GR2's worklist shrinks to what
+neither refuses.
 
 **(3) What `ascend` deposits is a blade, read step by step.** Building
 `P_i = s_i P_{i−1}` splits each step into `s_i ⌋ P_{i−1}`, what `s_i`
@@ -10844,11 +10847,18 @@ constructor but `a`, the POLAR of the face opposite `a`, and its action
 is the reflection in that polar: each constructor's irreducible
 direction relative to the whole. Along a trajectory the new parts `s_i ∧
 P_{i−1}` multiply out to the meet, and against the whole the reciprocal
-frame contracts the meet back into its constructors — which is AD1 on
-content: `ascend` multiplies out, `descend` contracts by the reciprocal
-frame, exactly inverse. Where `M M̃ = 0` there is no reciprocal frame:
-REDUNDANCY, and every constructor whose removal restores a non-zero
-wedge is named, none chosen (`A₂`'s third root). The word "negentropy"
+frame contracts the meet back into its FACES — `s^a ⌋ M = ±(s₀ ∧ … ŝ_a …
+∧ s_k)`, the face opposite `a`, never `s_a` itself (the meet knows the
+span, not the frame; a constructor is recovered only through the Gram
+form, `s_a = Σ_b (s_a·s_b) s^b`, i.e. from the constructors themselves;
+corrected 2026-09-23 on the implementor's objection). That is exactly
+`descend`'s shape: a release leaves the boundary standing and the
+boundary is the faces — `ascend` takes a face wedge a new part to `M`,
+`descend` takes `s^a ⌋ M` back to the face, exact inverses on content
+(AD1). Where `M M̃ = 0` there is no reciprocal frame: REDUNDANCY, and
+every constructor whose removal restores a non-zero wedge is named, none
+chosen — for `A₂` all three roots, its minimal dependent set, since
+removing any one restores the wedge. The word "negentropy"
 is refused: syntropy and entropy are the ledger's events per lane, and
 the reciprocal frame is a geometric object, the DUAL FRAME, named as
 that.
