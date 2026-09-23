@@ -10,6 +10,7 @@ mod fixed;
 mod group;
 mod hyperboloid;
 mod modes;
+mod motion;
 mod multivector;
 mod period;
 mod planes;
@@ -23,6 +24,7 @@ pub use fixed::{centre_of, nullspace, Centre, PoleAt};
 pub use group::{dilator, is_versor, projective_ratio, reflector};
 pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_lamina, hyperboloid_pole};
 pub use modes::{mode_order, modes, Mode, Undecomposed};
+pub use motion::{motion_modes, MotionMode};
 pub use multivector::{base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP};
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
 pub use planes::{

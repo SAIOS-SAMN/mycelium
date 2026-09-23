@@ -88,6 +88,38 @@ fn the_first_step_whose_face_refracts_is_named() {
     assert_eq!(c.steps.iter().filter(|s| s.refracted).count(), 1, "and it is the only one");
 }
 
+/// OR3 — AN ORBIT WHOSE EDGE HALF IS REFUSED IS UNREAD, NEVER TRIVIAL. The
+/// chord turns by its word and carries no edge: the orbit is kept, its
+/// line reads unread at the chord's step, not rigid, and no defect class is
+/// filed off the face half alone.
+#[test]
+fn an_orbit_whose_edge_half_is_refused_reads_unread_at_its_step() {
+    let mut f = Form::default();
+    for n in 1..=2u8 {
+        f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
+    }
+    f.faces.push(f.face_of(0, 1).expect("star a"));
+    f.faces.push(f.face_of(0, 2).expect("star b"));
+    f.faces.push(f.face_carrying(1, 2, order4()).expect("a chord carrying no edge"));
+    reset_orbit_defects();
+    arm_orbits();
+    let orbits = Form::orbits_of(&f.faces, &f.vertices);
+    assert_eq!(orbits.len(), 1, "the word keeps the orbit, or nothing is tested");
+    let lines = take_orbits();
+    let _ = take_circuits();
+    let [OrbitLine::Unread { at: Some(at), why: Some(why) }] = lines.as_slice() else {
+        panic!("one unread orbit: {lines:?}")
+    };
+    assert_eq!(why.label(), "not rigid");
+    let chord = (f.faces.len() - 1) as u16;
+    let carried = paths_carried(&f.faces, &f.vertices, &orbits[0]).expect("the walk reads the cycle");
+    assert!(
+        carried.scoped().all(|(_, c)| c.edge_lost_at == Some(*at) && c.steps[*at - 1].face == chord),
+        "lost at the chord's step, {at}"
+    );
+    assert_eq!(orbit_defects(), (0, 0, 0, 0, 0), "no class filed off the face half");
+}
+
 /// A READING NOT TAKEN IS NOT AN EMPTY ONE: once taken, the circuits are
 /// gone until the next percept arms them.
 #[test]

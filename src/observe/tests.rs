@@ -211,7 +211,7 @@ fn the_circuits_read_back_whole_step_by_step() {
                         face: 5,
                         forward: true,
                         refracted: false,
-                        carried: read(BivectorKind::Trivial, ModesRead::NoChart),
+                        carried: read(BivectorKind::Trivial, ModesRead::Unread),
                     },
                     CircuitStep {
                         face: 6,

@@ -119,6 +119,19 @@ pub(crate) struct PathCarried {
     /// `Cone` is a face crossed against its orientation whose transport has
     /// no inverse (`MM̃ = 0`, 57.4).
     pub(crate) edge_refused: Option<Unread>,
+    /// OR3 — THE STEP, counted from one, at which the edge half was lost:
+    /// where the circuit went unread, whatever refused it.
+    pub(crate) edge_lost_at: Option<usize>,
+}
+
+impl PathCarried {
+    /// OR3 — THE CIRCUIT'S WHOLE TRANSPORT, `Ω_edge · Ω_face`: the one reader
+    /// every orbit reading takes it through (law 12). `None` where the edge
+    /// half is refused — the face half alone is part of the transport, and
+    /// read as the whole it classed unread circuits trivial (rule 11).
+    pub(crate) fn composite(&self) -> Option<element::Versor> {
+        self.edge.as_ref().map(|e| e.carriage.geo(&self.face.carriage))
+    }
 }
 
 /// PL1 — ONE STEP OF A CIRCUIT: the face it crosses, whether along the
@@ -160,6 +173,19 @@ pub struct UnreadTally {
     pub not_rigid: u64,
     pub no_face: u64,
     pub two_ways: u64,
+}
+
+impl Unread {
+    /// The refusal by name, for the lines that read it.
+    pub(crate) fn label(self) -> &'static str {
+        match self {
+            Unread::Cone => "cone",
+            Unread::NoPlace => "no place",
+            Unread::NotRigid => "not rigid",
+            Unread::NoFace => "no face",
+            Unread::TwoWays => "two ways",
+        }
+    }
 }
 
 impl UnreadTally {
@@ -309,6 +335,7 @@ pub(crate) fn paths_carried_why(
         }),
         steps: Vec::with_capacity(lp.faces.len()),
         edge_refused: None,
+        edge_lost_at: None,
     };
     let mut charts: Vec<Vec<u8>> = Vec::with_capacity(lp.members.len());
     for (win, &fi) in lp.members.windows(2).zip(&lp.faces) {
@@ -428,6 +455,9 @@ pub(crate) fn paths_carried_why(
         };
         if acc.edge_refused.is_none() {
             acc.edge_refused = lost;
+        }
+        if acc.edge.is_none() && acc.edge_lost_at.is_none() {
+            acc.edge_lost_at = Some(acc.steps.len());
         }
     }
     acc.face.word = acc.face.word.normal_form();

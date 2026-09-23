@@ -21,9 +21,12 @@
 //! EXACT OR REFUSED (rule 4, rule 11). A factor of the characteristic
 //! polynomial with no rational root leaves the split undone over ℚ, and it is
 //! refused by name with the factor's degree — never rounded onto a nearby
-//! split. Two roots are read exactly (a rational square discriminant); a
-//! factor of degree three or more that has not already split is refused by
-//! its degree, a named departure until a ruling reads it.
+//! split. Every rational root is read by the rational root theorem at any
+//! degree (MD1b), so three planes at `n = 4` read three values; only what is
+//! left without one is refused.
+//!
+//! A MOTION's modes are read off its own action by [`super::motion`] (MR1)
+//! with the same machinery; this file reads a GENERATOR's.
 
 use super::multivector::{one, Mv};
 use crate::network::nerve::coord::BivectorKind;
@@ -57,7 +60,7 @@ pub enum Undecomposed {
 /// The generators of the algebra `B` lives in, as masks in ascending bit
 /// order — the base axes, `e₊` and `e₋`, `n + 2` of them — so a product of
 /// two in this order is the blade the carrier writes.
-fn generators(n: u8) -> Vec<usize> {
+pub(super) fn generators(n: u8) -> Vec<usize> {
     let mut masks: Vec<usize> = (1..=usize::from(n)).map(super::base_axis).collect();
     masks.push(super::EP);
     masks.push(super::EM);
@@ -65,23 +68,23 @@ fn generators(n: u8) -> Vec<usize> {
     masks
 }
 
-fn column(v: &Mv, masks: &[usize]) -> Vec<Q> {
+pub(super) fn column(v: &Mv, masks: &[usize]) -> Vec<Q> {
     masks.iter().map(|&m| v.coeff(m).clone()).collect()
 }
 
-fn mul(a: &[Vec<Q>], b: &[Vec<Q>]) -> Vec<Vec<Q>> {
+pub(super) fn mul(a: &[Vec<Q>], b: &[Vec<Q>]) -> Vec<Vec<Q>> {
     let d = a.len();
     (0..d).map(|i| (0..d).map(|j| (0..d).fold(Q::zero(), |acc, k| acc + &a[i][k] * &b[k][j])).collect()).collect()
 }
 
-fn identity(d: usize) -> Vec<Vec<Q>> {
+pub(super) fn identity(d: usize) -> Vec<Vec<Q>> {
     (0..d).map(|i| (0..d).map(|j| if i == j { one() } else { Q::zero() }).collect()).collect()
 }
 
 /// THE SCALAR INVARIANTS OF `A` AT EVERY EXPONENT: its characteristic
 /// polynomial `det(x − A)`, coefficients low to high, by Faddeev–LeVerrier —
 /// `cₖ` from `tr(A Mₖ)`, exact over ℚ, no root taken.
-fn characteristic(a: &[Vec<Q>]) -> Vec<Q> {
+pub(super) fn characteristic(a: &[Vec<Q>]) -> Vec<Q> {
     let d = a.len();
     let mut coeff = vec![Q::zero(); d + 1];
     coeff[d] = one();
@@ -163,33 +166,86 @@ fn quotient(p: &[Q], q: &[Q]) -> Vec<Q> {
     trim(out)
 }
 
-/// THE DISTINCT NON-ZERO ROOTS of `p`, exact, or the degree of the factor
-/// that has none over ℚ. `p` is taken square-free (`p / gcd(p, p′)`) and
-/// stripped of its root at zero first, so each value is read once.
-fn nonzero_roots(p: &[Q]) -> Result<Vec<Q>, Undecomposed> {
+/// The positive divisors of `n ≠ 0`, from its prime factors by trial
+/// division — the finite set the rational root theorem names.
+fn divisors(n: &num_bigint::BigInt) -> Vec<num_bigint::BigInt> {
+    use num_bigint::BigInt;
+    let mut rest = n.abs();
+    let mut out = vec![BigInt::from(1)];
+    let mut p = BigInt::from(2);
+    while &p * &p <= rest {
+        let mut power = 0usize;
+        while (&rest % &p).is_zero() {
+            rest /= &p;
+            power += 1;
+        }
+        let base = out.clone();
+        let mut factor = BigInt::from(1);
+        for _ in 0..power {
+            factor *= &p;
+            out.extend(base.iter().map(|d| d * &factor));
+        }
+        p += 1;
+    }
+    if rest > BigInt::from(1) {
+        let base = out.clone();
+        out.extend(base.iter().map(|d| d * &rest));
+    }
+    out
+}
+
+/// THE DISTINCT RATIONAL ROOTS of `p`, zero among them, exact — or the
+/// degree of what remains when none of its roots is rational (MD1b, 78.12(1)).
+///
+/// `p` is taken square-free (`p / gcd(p, p′)`), so each value is read once.
+/// Its rational roots are read by THE RATIONAL ROOT THEOREM: with the
+/// denominators cleared to integer coefficients `a₀ … a_m`, every rational
+/// root `r/s` in lowest terms has `r | a₀` and `s | a_m`, a finite set named
+/// by the theorem, each candidate tested exactly and divided out. What is
+/// left has no rational root: its values lie in an extension of ℚ, and it
+/// is refused by its degree — never rounded onto a nearby split.
+pub(super) fn rational_roots(p: &[Q]) -> Result<Vec<Q>, Undecomposed> {
+    use num_bigint::BigInt;
     let p = trim(p.to_vec());
-    let derivative: Vec<Q> = p
-        .iter()
-        .enumerate()
-        .skip(1)
-        .map(|(i, c)| c * Q::from_integer(num_bigint::BigInt::from(i)))
-        .collect();
+    let derivative: Vec<Q> =
+        p.iter().enumerate().skip(1).map(|(i, c)| c * Q::from_integer(BigInt::from(i))).collect();
     let free = quotient(&p, &gcd(&p, &derivative));
+    let mut roots: Vec<Q> = Vec::new();
     // The root at zero divided out: the leading zero coefficients dropped.
-    let q: Vec<Q> = free.iter().skip_while(|c| c.is_zero()).cloned().collect();
-    match q.as_slice() {
-        [_] => Ok(Vec::new()),
-        [c0, c1] => Ok(vec![-c0 / c1]),
-        [c0, c1, c2] => {
-            let disc = c1 * c1 - Q::from_integer(4.into()) * c2 * c0;
-            let s = crate::transducer::alphabet::rational_sqrt(&disc).ok_or(Undecomposed::Irrational(2))?;
-            let two_a = Q::from_integer(2.into()) * c2;
-            let mut roots = vec![(-c1 - &s) / &two_a, (-c1 + &s) / &two_a];
+    let mut rest: Vec<Q> = free.iter().skip_while(|c| c.is_zero()).cloned().collect();
+    if rest.len() < free.len() {
+        roots.push(Q::zero());
+    }
+    // Denominators cleared: every coefficient times their lcm is integral.
+    let lcm = rest.iter().fold(BigInt::from(1), |l, c| num_integer::Integer::lcm(&l, c.denom()));
+    let ints: Vec<BigInt> = rest.iter().map(|c| (c * Q::from_integer(lcm.clone())).to_integer()).collect();
+    if let ([a0, ..], [.., am]) = (ints.as_slice(), ints.as_slice()) {
+        if ints.len() > 1 {
+            for r in divisors(a0) {
+                for s in divisors(am) {
+                    for candidate in [Q::new(r.clone(), s.clone()), -Q::new(r.clone(), s.clone())] {
+                        let value = rest.iter().rev().fold(Q::zero(), |acc, c| acc * &candidate + c);
+                        if value.is_zero() && !roots.contains(&candidate) {
+                            rest = quotient(&rest, &[-candidate.clone(), one()]);
+                            roots.push(candidate);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    match rest.len() {
+        0 | 1 => {
             roots.sort();
             Ok(roots)
         }
-        more => Err(Undecomposed::Irrational(more.len() - 1)),
+        more => Err(Undecomposed::Irrational(more - 1)),
     }
+}
+
+/// The distinct non-zero rational roots of `p`: a generator's mode values.
+fn nonzero_roots(p: &[Q]) -> Result<Vec<Q>, Undecomposed> {
+    Ok(rational_roots(p)?.into_iter().filter(|r| !r.is_zero()).collect())
 }
 
 /// `A` as the columns of a basis of `ker(A − λ)`.
@@ -202,7 +258,7 @@ fn eigenspace(a: &[Vec<Q>], lambda: &Q) -> Vec<Vec<Q>> {
 
 /// The inverse of an invertible matrix, column by column through the one
 /// elimination (`nullspace`).
-fn invert(t: &[Vec<Q>]) -> Option<Vec<Vec<Q>>> {
+pub(super) fn invert(t: &[Vec<Q>]) -> Option<Vec<Vec<Q>>> {
     let d = t.len();
     let mut cols: Vec<Vec<Q>> = Vec::with_capacity(d);
     for j in 0..d {
@@ -239,7 +295,7 @@ fn project(b: &Mv, p: &[Vec<Q>], masks: &[usize]) -> Mv {
     out
 }
 
-fn kind_of(blade: &Mv) -> BivectorKind {
+pub(super) fn kind_of(blade: &Mv) -> BivectorKind {
     let s = blade.geo(blade).scalar_part();
     match (blade.is_zero(), s.is_negative(), s.is_positive()) {
         (true, _, _) => BivectorKind::Trivial,
@@ -267,6 +323,14 @@ pub fn mode_order(motion: &Mv, mode: &Mode) -> Option<u32> {
         .map(|m| Mv::blade(m, one()).geo(&mode.blade).grade(1))
         .filter(|v| !v.is_zero())
         .collect();
+    order_on(motion, &plane)
+}
+
+/// The least order of the algebra's cyclotomic set at which `motion^ℓ` fixes
+/// every vector of `plane`, read on the motion's own action; `None` where no
+/// admitted order closes it, or the motion does not invert.
+pub(super) fn order_on(motion: &Mv, plane: &[Mv]) -> Option<u32> {
+    let n = plane.iter().fold(motion.n(), |n, v| n.max(v.n()));
     let inverse = motion.versor_inverse()?;
     let orders = super::cyclotomic_orders(n);
     let bound = orders.iter().copied().fold(1, u32::max);

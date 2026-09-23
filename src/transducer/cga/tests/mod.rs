@@ -7,5 +7,7 @@ mod generic;
 mod group;
 mod hyperboloid;
 mod modes;
+mod motion;
+mod roots;
 mod oracle;
 mod period;

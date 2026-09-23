@@ -471,24 +471,22 @@ impl Form {
                 // OR1 — AND THE ORBIT IT IS (73.1, 73.2), read off the same
                 // composite where a reader is listening, in the corpus's
                 // algebra at least.
-                note_orbit(|| {
-                    let composite = match &c.edge {
-                        Some(e) => e.carriage.geo(&c.face.carriage),
-                        None => c.face.carriage.clone(),
-                    };
-                    OrbitReading::of(&composite, crate::transducer::element::GRID_N)
+                //
+                // OR3 — through the one reader: a cycle whose edge half is
+                // refused is UNREAD at its step, never classed off the face
+                // half alone.
+                let composite = c.composite();
+                note_orbit(|| match &composite {
+                    Some(m) => OrbitLine::Read(Box::new(OrbitReading::of(m, crate::transducer::element::GRID_N))),
+                    None => OrbitLine::Unread { at: c.edge_lost_at, why: c.edge_refused },
                 });
                 // PL1 — AND THE SAME CIRCUIT'S BRICKS, step by step (78.12(4)).
                 super::trajectory::note_circuit(|| super::trajectory::read_circuit(lp.chord, c, faces));
                 // AND THE OPERATOR THIS GENERATOR ENACTS, at the basepoint
                 // (Axiom A). Two cycles agreeing here are synonyms: distinct
                 // cellular paths, one physical dislocation.
-                if let Some(inv) = lp.based_at.versor_inverse() {
-                    let composite = match &c.edge {
-                        Some(e) => e.carriage.geo(&c.face.carriage),
-                        None => c.face.carriage.clone(),
-                    };
-                    note_synonym(&lp.based_at.geo(&composite).geo(&inv));
+                if let (Some(inv), Some(composite)) = (lp.based_at.versor_inverse(), &composite) {
+                    note_synonym(&lp.based_at.geo(composite).geo(&inv));
                 }
                 // AND WHETHER ITS ORBIT CLOSES — asked of the CONNECTION,
                 // not of the alphabet (54.7).
@@ -508,21 +506,19 @@ impl Form {
                 // left the four parabolics completely unchanged, which is
                 // what proves the null generator is sealed inside `edge` at
                 // the moment `meet_edge` evaluates `V_b ∘ V_a⁻¹`.
-                let composite = match &c.edge {
-                    Some(e) => e.carriage.geo(&c.face.carriage),
-                    None => c.face.carriage.clone(),
-                };
-                SPECTRA.with(|s| {
-                    use crate::transducer::cga::Spectrum;
-                    let mut t = s.get();
-                    match crate::transducer::cga::compact_period(&composite) {
-                        Spectrum::Closes(_) => t.0 += 1,
-                        Spectrum::Open => t.1 += 1,
-                        Spectrum::Undecomposed => t.2 += 1,
-                        Spectrum::Isoclinic => t.3 += 1,
-                    }
-                    s.set(t);
-                });
+                if let Some(composite) = &composite {
+                    SPECTRA.with(|s| {
+                        use crate::transducer::cga::Spectrum;
+                        let mut t = s.get();
+                        match crate::transducer::cga::compact_period(composite) {
+                            Spectrum::Closes(_) => t.0 += 1,
+                            Spectrum::Open => t.1 += 1,
+                            Spectrum::Undecomposed => t.2 += 1,
+                            Spectrum::Isoclinic => t.3 += 1,
+                        }
+                        s.set(t);
+                    });
+                }
                 lp.carriages.insert(&k, c.face.carriage.clone());
             }
             orbits.push(lp);

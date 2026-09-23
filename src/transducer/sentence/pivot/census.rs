@@ -353,9 +353,9 @@ pub struct OrbitReading {
     /// exact coefficient, the first `+1` (A4). Never an angle.
     pub precession: Vec<(usize, num_rational::BigRational)>,
     pub centre: crate::transducer::cga::Centre,
-    /// MD1 — THE ORBIT'S MODES (75, 78.11): its generator through the
-    /// inverse Cayley chart, split into commuting modes at every exponent,
-    /// each with its class, its planes and its own closure.
+    /// MD1, MR1 — THE ORBIT'S MODES (75, 78.11, 78.12(2)): read off the
+    /// holonomy's own action, each with its class, its planes and its own
+    /// closure — never through a chart.
     pub modes: ModesRead,
 }
 
@@ -365,21 +365,20 @@ pub enum ModesRead {
     /// `(class, planes, order)` per mode, the order where an elliptic mode
     /// closes; a parabolic or hyperbolic mode, or a rosette, reads `None`.
     Split(Vec<(crate::network::nerve::coord::BivectorKind, usize, Option<u32>)>),
-    /// The generator's modes lie in an extension of ℚ.
+    /// The motion's modes lie in an extension of ℚ, or its action does not
+    /// split into commuting rays that multiply back to it.
     Undecomposed(crate::transducer::cga::Undecomposed),
-    /// The motion has no rational chart point: its weight is not a rational
-    /// square, or `1 + Ω` does not invert — the held `ℤ₂` arm by name.
-    NoChart,
+    /// The element is not a versor: it has no action to read.
+    Unread,
 }
 
 impl ModesRead {
-    /// THE ONE READER of an orbit's modes, from its holonomy.
+    /// THE ONE READER of an orbit's modes, from its holonomy's action (MR1).
     pub fn of(m: &element::Versor) -> ModesRead {
-        use crate::transducer::cga;
-        let Some(generator) = cga::cayley_inverse(m) else { return ModesRead::NoChart };
-        match cga::modes(&generator) {
-            Ok(ms) => ModesRead::Split(ms.iter().map(|x| (x.kind, x.planes, cga::mode_order(m, x))).collect()),
-            Err(e) => ModesRead::Undecomposed(e),
+        match crate::transducer::cga::motion_modes(m) {
+            None => ModesRead::Unread,
+            Some(Ok(ms)) => ModesRead::Split(ms.iter().map(|x| (x.kind, x.planes, x.order)).collect()),
+            Some(Err(e)) => ModesRead::Undecomposed(e),
         }
     }
 
@@ -399,7 +398,7 @@ impl ModesRead {
                 .collect::<Vec<_>>()
                 .join(", "),
             ModesRead::Undecomposed(e) => format!("undecomposed {e:?}"),
-            ModesRead::NoChart => "no chart".into(),
+            ModesRead::Unread => "unread".into(),
         }
     }
 }
@@ -480,13 +479,43 @@ impl OrbitReading {
     }
 }
 
+/// OR1, OR3 — ONE KEPT ORBIT AS ITS LINE READS IT: off its whole transport,
+/// or UNREAD at the step where its edge half was lost, by what refused it —
+/// never classed off the face half alone (rule 11).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum OrbitLine {
+    Read(Box<OrbitReading>),
+    /// The step, counted from one, and the refusal where one was named.
+    Unread { at: Option<usize>, why: Option<Unread> },
+}
+
+impl OrbitLine {
+    /// The orbit's line, for the cycles reading beside it.
+    pub(crate) fn line(&self) -> String {
+        match self {
+            OrbitLine::Read(r) => r.line(),
+            OrbitLine::Unread { at, why } => {
+                let at = match at {
+                    Some(k) => format!("at step {k}"),
+                    None => "at no named step".into(),
+                };
+                let why = match why {
+                    Some(w) => w.label(),
+                    None => "unnamed",
+                };
+                format!("orbit unread {at} ({why}) | its edge half refused, no class read")
+            }
+        }
+    }
+}
+
 thread_local! {
     /// The orbits read since a reader armed the list, in the order the walk
     /// read them; `None` while no reader is listening. `orbits_of` runs at
     /// every decode and replay, so a list nobody takes would grow for the
     /// life of a court: it collects only between [`arm_orbits`] and
     /// [`take_orbits`].
-    static ORBITS: std::cell::RefCell<Option<Vec<OrbitReading>>> = const { std::cell::RefCell::new(None) };
+    static ORBITS: std::cell::RefCell<Option<Vec<OrbitLine>>> = const { std::cell::RefCell::new(None) };
 }
 
 /// A reader starts listening: the orbits read from here are kept for it.
@@ -497,7 +526,7 @@ pub fn arm_orbits() {
 }
 
 /// File one orbit's reading, where a reader is listening.
-pub(super) fn note_orbit(r: impl FnOnce() -> OrbitReading) {
+pub(super) fn note_orbit(r: impl FnOnce() -> OrbitLine) {
     ORBITS.with(|o| {
         if let Some(held) = o.borrow_mut().as_mut() {
             held.push(r());
@@ -507,7 +536,7 @@ pub(super) fn note_orbit(r: impl FnOnce() -> OrbitReading) {
 
 /// The orbits read since [`arm_orbits`], and stop listening (one reader
 /// takes). Empty where nobody armed it.
-pub fn take_orbits() -> Vec<OrbitReading> {
+pub(crate) fn take_orbits() -> Vec<OrbitLine> {
     // Nobody listening read no orbit: the empty list is that reading.
     ORBITS.with(|o| {
         #[expect(
@@ -533,12 +562,13 @@ pub fn take_orbits() -> Vec<OrbitReading> {
 ///
 /// The cycle's holonomy is the composite of both, which is what
 /// `Ω_∂e² = 𝒫 ∏ Ω_e` means.
+///
+/// OR3 — A CYCLE WHOSE EDGE HALF IS REFUSED CLASSES NOTHING: its face half is
+/// part of the transport, and filed as the whole it counted unread cycles
+/// trivial. It is counted apart, on the cycles line's `edge refused` axes.
 pub(super) fn note_defect(carried: &PathCarried) {
     use crate::network::nerve::coord::BivectorKind;
-    let composite = match &carried.edge {
-        Some(e) => e.carriage.geo(&carried.face.carriage),
-        None => carried.face.carriage.clone(),
-    };
+    let Some(composite) = carried.composite() else { return };
     let Some((_, _, kind)) = composite.class_invariants() else { return };
     DEFECTS.with(|c| {
         let mut t = c.get();

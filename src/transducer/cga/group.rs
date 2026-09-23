@@ -48,47 +48,24 @@ pub fn is_versor(m: &Mv) -> Option<BigRational> {
     Some(s)
 }
 
-/// PROJECTIVE EQUALITY of two blades: `a = λ b` for some λ ∈ ℚ×. The test is
-/// `a b̃` having a scalar part only, nonzero; returns λ. This is the exact
-/// closed-form check replay and verification run — never a wedge, never a
-/// rasterization.
+/// PROJECTIVE EQUALITY — TWO RAYS ARE EQUAL BY PROPORTION (EQ1, 78.12):
+/// `a = λ b` for some `λ ∈ ℚ×`, read as proportionality of the two
+/// coefficient vectors by cross multiplication, `a_i b_k = a_k b_i` against
+/// one pivot slot `k`, exact; returns λ.
+///
+/// It read `a b̃` having a scalar part only, which holds for a blade and a
+/// versor and FAILS for a non-simple bivector — `b b̃` carries a grade-4
+/// part there, so such an element compared unequal to itself. Proportion is
+/// the definition of one ray, for every element; no product is taken.
 pub fn projective_ratio(a: &Mv, b: &Mv) -> Option<BigRational> {
-    let bb = b.norm2();
-    if bb.is_zero() {
-        // A null blade: `a b̃` has no scalar part at all, so the reverse
-        // product decides nothing here. Exact componentwise proportionality
-        // is what projective equality is for these.
-        return proportional(a, b);
-    }
-    let prod = a.geo(&b.reverse());
-    let s = prod.scalar_part();
-    if s.is_zero() || !prod.sub(&Mv::scalar(s.clone())).is_zero() {
-        return None;
-    }
-    Some(s / bb)
-}
-
-/// Exact componentwise proportionality `a = λ b` (λ ≠ 0), for null blades
-/// where the reverse product carries no scalar.
-fn proportional(a: &Mv, b: &Mv) -> Option<BigRational> {
-    let mut lambda: Option<BigRational> = None;
     // Both in one algebra, the larger of the two, so every slot either
     // holds is read.
     let (a, b) = a.common(b);
-    for mask in 0..a.slot_count() {
-        let (x, y) = (a.coeff(mask), b.coeff(mask));
-        match (x.is_zero(), y.is_zero()) {
-            (true, true) => continue,
-            (true, false) | (false, true) => return None,
-            (false, false) => {
-                let l = x / y;
-                match &lambda {
-                    None => lambda = Some(l),
-                    Some(k) if *k == l => {}
-                    Some(_) => return None,
-                }
-            }
-        }
+    let pivot = (0..b.slot_count()).find(|&k| !b.coeff(k).is_zero())?;
+    let (ak, bk) = (a.coeff(pivot), b.coeff(pivot));
+    if ak.is_zero() {
+        return None;
     }
-    lambda
+    let proportional = (0..a.slot_count()).all(|i| a.coeff(i) * bk == ak * b.coeff(i));
+    proportional.then(|| ak / bk)
 }
