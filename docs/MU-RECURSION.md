@@ -7490,8 +7490,10 @@ count deciding a branch (rule 2) with the implementor as the effector,
 which is the fault 37.7's adjunction exists to remove. Whether a corpus's
 families close is that corpus's score and measures the **cognition**;
 whether the presentation grows, converges, and comprehends more per
-generator measures the **engine**, and it is `growth` and `comprehension`
-below that read it. The one number that bears on the architecture is
+generator measures the **engine**, and it is `installed` and
+`comprehension` below that read it (I2, 2026-09-23: the line's counter was
+named `growth` and read as adjunction; it counts words installed per ruled
+stratum, and prints as `installed +x -y` beside `adjoined-by-closure n`). The one number that bears on the architecture is
 generators adjoined **by closure** at run time with no commit — each one
 cited by a sentence that closed on its family and replayed on two courts
 (37.7 as ruled 2026-09-12) — read beside comprehension and against
@@ -7522,8 +7524,11 @@ gates nothing. Four coordinates, each read from the receipt kinds (45.1)
 and the ruled cover at the window's ends: **comprehension**, listings a
 held word deflated against listings held, read as the difference above; **congruence**, strata holding
 more than one section and installs reached by independent lineages
-(23.9); **growth**, generators adjoined against retirements (E2), the
-language's description length against what it comprehends; **expansion**,
+(23.9); **installed**, words installed against retired per ruled stratum
+(formerly `growth`, I2) — read apart from generators adjoined by closure
+against retirements (E2, I1), which is the number this section names and
+prints beside it — the language's description length against what it
+comprehends; **expansion**,
 axes opened and strata split (3.7). The regimes these name — ooze,
 congruence, presentation, equilibrium — are words for readings, not
 states of the mesh, and two nodes holding the same receipts read the
@@ -9902,13 +9907,19 @@ engineering.
 
 ### 78.1 What learning is, in the engine's own terms
 
-A mind's PERSPECTIVE is its orbital elements (74, 76): inclination, the
-dialect span — the strata of its genome; radius, its cover; phase, the
-planes it reads. Learning is the change of those elements by the two
-kinds of work. A closure a court rules adjoins a generator (37.7, 45.9)
-and moves the inclination; a refinement received from another
+A mind's PERSPECTIVE is its orbital elements as 74's table assigns
+them (corrected 2026-09-23 on the implementor's reading; the first draft
+of this paragraph had them permuted): inclination, the planes it reads;
+radius, the stratum depth of its genome's charts — its dialect span as
+A21 prefixes; phase, where on its circuit of the corpus it is; and beside
+the elements the cover, the planet's own reading (53.2), which 74 names
+as a coordinate of perspective. LC1 names its fields by content and
+carries no orbital label. Learning is the change of those coordinates by
+the two kinds of work. A closure a court rules adjoins a generator (37.7,
+45.9) and moves the radius; a refinement received from another
 perspective (74's C and D obstructions closed elsewhere, taught back by
-the syllabus) moves the cover; a plane first read moves the phase. The
+the syllabus) moves the cover; a plane first read moves the inclination.
+The
 LEARNING CURVE is the trajectory of a mind's elements across epochs, one
 per mind, read per lane and per grade — a vector, never a scalar, and
 never a target: the founding law forbids choosing by a scalar, so the
@@ -9995,6 +10006,43 @@ instruments typed and read by the system; the physics the only producer
 means: a row landed is not re-opened by vocabulary; a ruling applies at
 every site of its shape; a reading recorded with its numbers, and a
 reading at zero recorded as zero.
+
+### 78.6 E1's first reading and three rulings (2026-09-23)
+
+BQ5a built and measured honestly, uncommitted: with the contact edge
+`g = (θ_bθ_a⁻¹)·V`, `θ` each body's pose against its OWN transition (as a
+meet reads it), the corpus's six contact edges form none — three are
+STATIC, a piece standing at one frame with no transition to read a pose
+from; three are HALF-OPEN, each body's pose a held `ℤ₂`. The two "curved"
+circuits HEAD read were the union-rigidity edge's, a relation BQ5a rules
+is not the contact's, so the honest before is zero and the guard stands
+at zero. Three rulings, so that E1's reading can move on this corpus:
+
+1. **A held `ℤ₂` rides the edge as a coset.** The edge carries `θ·H`,
+   `H = {1, r}`, never a representative (checklist (r)); cosets compose,
+   so a circuit's holonomy is a coset of the subgroup its held half-turns
+   generate, and the circuit reads by arm: CLOSED (the coset is `H`'s
+   identity coset with `H` trivial), CLOSED MODULO THE HELD `ℤ₂ᵏ` (the
+   coset contains the identity), OPEN (it does not). Carrying needs no
+   kernel; collapsing the `2^k` to the consistent assignments is T5's
+   kernel over `𝔽₂` (59.5), which the operator orders. FR1c (E3) is the
+   same carriage for a finite stabilizer larger than `ℤ₂`; E1 does not
+   wait on it.
+2. **A static contact carries its tether.** `V = s_b s_a` is content AT
+   ONE FRAME — the two nuclei's inversions composed — and the refraction
+   `θ_bθ_a⁻¹` is content ACROSS A TRANSITION. A piece at one frame forms
+   its edge with `V` and the refraction UNREAD BY NAME (`static`), never
+   read from the union's rigidity path per frame and never set to the
+   identity (rule 11, checklist (m)). NB1's clause applies: the geometric
+   and gauge parts of a circuit's holonomy are read apart and never
+   summed, so a circuit of static contacts reads its tether holonomy and
+   its gauge holonomy as `static`.
+3. **Integrity is not an obstruction.** A refusal for signature, receipt,
+   fold or room refuses nothing about a closure; it is a fourth arm, `I`,
+   never offered to another perspective and never counted as unclassified.
+   P, D and C classify the closure refusals; the census table of the 38
+   court codes and the mint's `Withheld` comes to the coordinator for
+   ruling row by row, as SQ1's did.
 
 # Part XI — The frame axis
 
