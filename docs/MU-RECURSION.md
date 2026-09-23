@@ -8665,6 +8665,37 @@ axes were declared rather than read.
    axis; a test that asserts `20`, `26`, `32` or `10` as a property of
    the geometry rather than of the corpus's `n`.
 
+6. **Topology at any `n` is exact homology by ranks, and the chart is a
+   locator** (ruled 2026-09-23, with the implementor's four corrections).
+   The complex is named: a support's cube complex is the CLOSED UNION of
+   its unit cubes on ℤⁿ, a finite complex whose boundary maps have
+   coefficients in `{0, ±1}`; its Betti numbers are `βₖ = dim Cₖ −
+   rank ∂ₖ − rank ∂ₖ₊₁`, the ranks exact over ℤ by fraction-free
+   elimination in `core::lattice`, refusing on overflow — the one place a
+   matrix is allowed, because it holds an integer rank and nothing else
+   (A18). That retires `β₁ = β₀ + β₂ − χ`, a formula true on a 3-complex
+   only, and the mixed complex it read. A boundary map has as many
+   columns as the complex has cells, so beside `z_rank<const N>` a
+   sparse, variable-width exact rank is written once (row BQ4). Under
+   ranks the chart's `β₀` is the union's `H₀`: two parts touching only
+   at an edge or a corner count as one, and the `n = 3` charts move
+   wherever that happens, mainly on the fibre unions — the census reads
+   the move before and after, named with the number. BODIES STAY DEFINED
+   BY FACE ADJACENCY (70.4, 71.2(2)); the chart's topology is the
+   union's. Cost is measured, never assumed: the census wall time
+   before and after is the instrument, and free-face collapse is the
+   known reduction if it is needed. STRATA OF DIFFERENT `n` ARE
+   DISJOINT BY CONSTRUCTION: the address writes `n` first, so a chart at
+   `n = 3` is never a prefix of one at `n = 4`, and the count axes are
+   generated from `n` (`β₀ … β_{n−1}`, then the rest) without being
+   prefix-stable across `n`; within one `n` A21's prefix rule holds as
+   before. A claim that the `n = 3` block is a prefix of the `n = 4`
+   block is refused. AND THE CHART IS A LOCATOR: the physics decides
+   congruence and contact — the tower, the frame, the tether — and the
+   chart only finds the candidates a reader then measures (53.1, 59.4);
+   Betti numbers are acceptable in the chart only under that sentence,
+   which is the answer to the flat-shadow concern.
+
 ### 71.3 What this costs, and the order
 
 It touches the crystal's carrier (`Mv`), the lamina, the site codecs and
@@ -9212,6 +9243,11 @@ between stars goes through courts until it is.
   not a noun of this document: what is held open without a weight is a
   vortex (3.9, 59.5), and a probability is refused (law 1). Precession is
   read per plane and priced per lane (P2), never summed across lanes.
+  **The honest object under "a point in TUniversal divided among four
+  lanes"** is the escrow vector a hold draws per lane for the span it
+  occupies ahead of the clock (25 as ruled, Z4d): occupancy of the
+  ledger's space, what the state costs, and the mind's link to the
+  universal clock — never its position.
 - **Loop versus orbit.** A perfect circle that opens and closes is the
   trivial class; the `k`-step orbit is everything else.
 
@@ -9314,6 +9350,18 @@ span on TUniversal — and each stratum is served by the node that homes it
 **collision** is two orbits on one lane with overlapping spans; the
 second claim is withheld and docketed, never evicted (23.8, rule 15). The
 server places orbits and keeps them apart; it never steers one (law 8).
+
+**Organize by genomes (the operator's word, 2026-09-23).** A planet's
+star is never assigned; it is re-derived at the read from the planet's
+own content: a mind's genome is the ruled language it holds, every ruled
+word carries its chart, a chart is an A21 prefix, and the strata of the
+library a genome lies in ARE its position in the star map (law 12). The
+cover trie already homes by chart prefix, so the map of star, planet and
+orbit is derived from the genomes' strata and kept as no assignment; a
+client that learns new strata moves without anyone moving it. An escrow
+keyed by that position is therefore re-keyed when the planet moves: the
+move renews the escrow at the new position under the same collision rule
+— withheld, never evicting — and carries no old claim over.
 
 ### 73.16 Perspective
 
