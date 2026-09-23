@@ -9280,6 +9280,48 @@ axioms rule, or the replays that stood under it — which is 73.3's
 candidate, a generator's uses. A constant chosen to make an orbit close
 is refused; the system is tuned by what is added and measured.
 
+**Mass, ruled (the operator's word, 2026-09-23).** Mass is the work a
+planet does, relative to the axioms the work runs under, and new stars
+form from the work. Under the laws:
+
+1. **Mass is a vector, never a scalar** (law 5): a planet's mass is its
+   work per lane `(S, G, T, H)`, and per axiom of the register. Summing
+   it would trade one axiom's load against another's and hide which
+   axioms carry the work — and that per-axiom profile is the signal a
+   star forms from.
+2. **Mass has both dimensions of 74.** Useful work: the closures a court
+   ruled and the cited generators E2 pays (73.3's candidate, uses).
+   Convergence work: the questions closed across perspectives (CV2–CV4).
+   Counting closures alone would weigh a mind that repeats itself as one
+   that settles what others could not.
+3. **Per axiom means per register layer until crystals are cited.** A
+   closure's derivation cites generators, not axioms; the axioms a piece
+   of work ran under are the register layer it ran under (LR1), and the
+   finer attribution — which crystals the work composed through — is
+   read from the slot citations of depth 6 (1.9), when procedures are
+   content. Until then the profile is per layer and per lane, which is
+   what exists.
+4. **G1 is the uniform star class.** Every star today carries the same
+   register — the shared core and nothing star-specific — and is named
+   G1; a later star is "G1 plus the layer the work required", which is
+   how a star forms from the work. Formation is READ, never declared: a
+   star forms where the mass profile concentrates under a subset of the
+   register, read as the fiber of that subset (a stratum, A21), never a
+   threshold on a count (rule 5).
+5. **Federation is deferred** until three measured things hold: FR1
+   lights the frame planes so minds can turn differently; CV3 writes
+   each mind's perspective as coordinates; the observer shows the
+   perspectives diverging on real work. Splitting one perspective across
+   several stars today would copy it, cost the star map and the
+   segmentation, and learn nothing (74: identical perspectives return
+   identical opinions; epoch 97 read one angle fleet-wide).
+6. **Mass is a reading before it is a force** (§8.1). What mass DOES —
+   the pull of 73.3, orbital speed, a body's spin — waits on the pull's
+   ruling and on FR1, since a spin or a speed read on the grid plane
+   alone would be a flattened reading recorded as fact. CL2 closes as
+   ruled here; its test — a body added changes a measured orbit with no
+   constant — rides FT1.
+
 ### 73.10 More than one star
 
 The engine has one register. For planets under different stars to
