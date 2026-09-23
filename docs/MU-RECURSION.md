@@ -9622,6 +9622,44 @@ engine's — `M` and `⟨M⟩₂` — read per mode rather than as a scalar, and
 no new axiom is needed for that. What needs an axiom is the conjugate
 generator, A.13. What stays open is the pull (73.3).
 
+**The squaring census, ruled site by site (SQ1, 2026-09-23, on the
+implementor's census at 820c89b, `scratchpad/SQ1-census.md`).**
+Seventeen sites are (a) and stand: the class readings of a versor (`μ`,
+`I₂`, HC1's `c`, PC1's null test), the algebra's own structure (the
+conformal point, null tests, projective equality, invertibility), the
+exactness tests (`rational_sqrt`, `half_rotor`), the body's own moment
+tensors, and the chart's locator axes. Five are (b), and each is ruled:
+
+1. `Interface { strain, blade }` and `Strain::between` — the relation of
+   two nuclei split by grade. Replaced by carrying `V = s_b s_a` whole;
+   `δ² = num²/den2` stays as a reading of `V`'s class where a side or a
+   regime is asked, never a carrier. Lands with BQ5a, never alone.
+2. The pairing field's `1 < δ ≤ 2` band — a dialled gate on whether a
+   face is written. Deleted: whether is topological (`contact_cells`,
+   A.14), and `V` rides the face as content. With BQ5a.
+3. `condense` and `within(μ_c)` — the same dialled horizon, test-only
+   today (M2). Deleted with the band. With BQ5a.
+4. `matches_rotor`'s `|H₂|²`, `|H₄|²` gates, with the rotor in hand —
+   replaced by applying the rotor to one body's harmonics and comparing
+   with the other's, no norm field kept. Its own commit, first, with a
+   census diff.
+5. `is_similar_to`'s scalar prefilter, with `ρ` in hand — deleted;
+   `carries` already applies the versor to the support. Its own commit,
+   second.
+
+The three (?) sites: `dilation_certified` is (a) — a class question
+asked of a would-be versor, and the refusal it names (`Incongruent`, a
+quantity no conformal motion changes) is rule 11's refusal by name and
+67.1's permanent arm, not a choice by a scalar; under A.17 the arm
+carries WHICH order refused as content. `coset_representative` is (a)
+by 50.2 step 1 as already ruled — the coset's canonical representative
+is the greatest `a²/w`, ties by least A21 key — a NAMING of the class's
+representative like A1's sign step, every member kept and carried
+(`versor_coset_ordered`), never a choice among candidates. The lamina
+count scaling as `ρ²` is a sensor-side fact standing as a gate (rule 2,
+checklist (q)) and goes with `is_similar_to`; where a count of laminae is
+a reading it is `M₀`, the tower's normaliser (A.12), and never a gate.
+
 **Two formulas held back before anything is built on them (the
 implementor, 2026-09-23; ruled).** (1) The inversion is a VECTOR, never
 the bivector `e_o ∧ e_∞`: sandwiching by that bivector's versor RESCALES
