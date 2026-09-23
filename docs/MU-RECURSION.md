@@ -10421,6 +10421,23 @@ thirty trivial holonomies are then read for what they are: a sequence
 of tethers whose bricks telescope, and the first step where a
 refraction enters is where a wall could stand.
 
+**The thirty, read as their bricks (PL1 landed e912724, audited).** Every
+one of the thirty `modes [none]` orbits is three steps: two star steps
+carrying the identity ray, then the contact chord, refracted, crossed
+backward — the first refraction at step three on all thirty. At that
+step twelve read the identity ray, a flat contact edge, and the circuit
+telescopes honestly; EIGHTEEN ARE UNREAD — the contact carries no edge —
+and the orbit was still classed trivial, because `note_defect` and
+`note_orbit` fall back to the face carriage when the edge half is
+refused: the face half read as though it were the whole, rule 11 at the
+orbit reader. Ruled (OR3): ONE reader of a circuit's composite,
+`PathCarried::composite() → Option<Versor>`, `None` where the edge half
+is refused; an orbit with no composite is not classed — it reads
+`unread at step k` with the edge's refusal reason (`Unread::NotRigid`,
+`Cone`, …) on the orbit line, counted apart from the trivial: the
+corpus reads 12 trivial and 18 unread, and BQ5a's refraction is the
+producer those eighteen steps lack. Lands with MR1, in the same reader.
+
 **RP1 recorded (75 amended).** `s B s⁻¹ = −B` holds for the dilation
 mode about the unit sphere and, for a hyperbolic mode, for EVERY
 non-null vector in the mode's own plane — the whole pencil through its
