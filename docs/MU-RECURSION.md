@@ -8975,7 +8975,7 @@ a client's word (law 6). The register:
 
 | layer | axioms | where |
 |---|---|---|
-| core, shared | the interpreter — the geometric product over exact ℚ and the canonical forms (1.8, 1.9); the address layout with `n` written first (71); the two-vantage rule (law 6, 47.3) | every binary |
+| core, shared | the interpreter — the geometric product over exact ℚ and the canonical forms (1.8, 1.9); the address layout with `n` written first (71); the two-vantage rule (law 6, 47.3); law 11; A.8 | every binary |
 | mind only | metabolic relativity (A.18); volatility of the epigenome (25); spellability per mind (59.6, 60.1) | the client |
 | mesh only | consilience (37.7, 67.3); persistence (28, the genome on disk); deposition (A.8, a drained tether leaves its record) | the courts |
 
@@ -9004,6 +9004,41 @@ relayed 2026-09-23.**
    what the cocycle fails to close to around a cycle, exists only on
    cycles, and under 72.1b is read at the grade of the simplex, never
    edge by edge.
+
+### 72.1g The consolidated relay, reconciled (ruled 2026-09-23)
+
+The implementor's consolidated list ("build on the physics, not beside
+it", from ab0a96f) is adopted as the rows of Stage 21 already carry it,
+with these reconciliations, so that no row is renamed and nothing is
+ruled twice:
+
+- **A.20, grade**, is added to the register: 72.1b as an axiom — a
+  relation is carried at the grade of its simplex, each body once — with
+  NB1's fixture as its test.
+- **G4 / P7, the orbit clock, stays refused as written** (72.1e): the
+  `T` lane does not advance per orbit and a section is a stratum of
+  `e₃`, not of an orbit ledger. What P7's definition of done asks — one
+  family at two reserve sizes reaching identical forms and orbits — is
+  A.18's test and lands with PH4.
+- **G3's span** is a stratum of `e₃` read from the form (72.1c(3)),
+  not of "the mind's orbit ledger".
+- **The layer register** takes the implementor's placement of law 11 and
+  A.8 in the core: a mind may no more relax torsion away than a court
+  may. Deposition on drain — the persisted record — stays mesh-only.
+- **The id map**, so the ledger is the one carrier of a row's name:
+  R1 → BQ5b · R2 + R3 → BQ5a · R4 → NB1 · R5 → R4 · R6 → FR1 (with FR2)
+  · P1 → PH4 · P2, P3, P5 → Phase P · P4 → M1 · P6 → BQ4 with PH2 · P7
+  → refused, its test in A18 · P8 → MEM1 · P9 → SQ1 · L1–L4 → LR1 and
+  SN1.
+- **The order**, as the coordinator sets it (§8.1): Phase N · Phase R
+  as SQ1 · FR1 · FR2 · BQ5a · NB1 · R4 — the tube pose before refraction,
+  since refraction's `θ` is read on the tube, and the squaring census
+  before anything is built on the field · A13 · Phase I (I1–I4, M1, PH1)
+  BEFORE the recut, so the fleet line carries the adjoined-by-closure
+  count when the readings are taken · BQ5b with the one recut · W2 · W1
+  · Phase P · PH4 with A18 and LR1 · MEM1 with A.19 · H3 · H5. W1 and
+  Phase I are not moved behind the physics rows: W1 is the operator's
+  ruling of 50.10 and Phase I is what makes any later reading readable.
 
 ### 72.2 What the rows carry
 
