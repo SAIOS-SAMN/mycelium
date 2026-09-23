@@ -9946,12 +9946,27 @@ Chapter 77's question, "if we still build edges, how are faces folded or
 compared", has one answer: they are not. Every face relation in the tree
 is an edge composite checked against identity in the coboundary, which is
 72.1b's flattening at grade two. The correction scales to n at once,
-because the base dimension is data (71) and the algebra generic. n + 1
-nuclei WEDGE to the round sphere through them: the ENCLOSURE the n-cell
-wraps, a blade read directly, no squaring, no coordinates. The same
-nuclei's geometric PRODUCT is the cell's transport. Shape and transport
-are the two contents of one cell, read once from the bodies, never
-assembled from edges. Containment — which body a sphere wraps — is the
+because the base dimension is data (71) and the algebra generic. A
+nucleus is a SPHERE vector (`Blade::nucleus`, `sphere_at(centroid,
+radius2)`, Axiom C), so k + 1 nuclei WEDGE to their MEET — the cell the k
++ 1 bodies share, at its own grade, the algebra's reading of the grade
+pass's shared cell — a blade read directly, no squaring, no coordinates
+(corrected 2026-09-23: the first draft said "the round sphere through
+them", which is the wedge of the CENTRES as null points, the JOIN — the
+ENCLOSURE that wraps the bodies, the circumsphere of the cluster, and it
+is EN1's carrier for containment, not the cell's shape). The cell's
+TRANSPORT is not a product of nuclei: inversions do not commute, so
+`s_a s_b s_c` depends on the order taken and an order taken from the
+address is a representative (checklist (r)); the transport is deposited
+by `ascend` from the circuit that CLOSED on the cell, in that circuit's
+own order, and reversed exactly by `descend` (62.5 as amended). A cell
+certified by a witness and closed by no circuit carries its meet and no
+transport, `Open` by name. Shape and transport are the two contents of one
+cell, never assembled from edges; the theorem relating the meet's own
+versor (a blade is the composite of reflections in its orthogonal
+factors) to the holonomy of the cell's boundary is stated in the register
+with its test BEFORE CG1 reads agreement by it (78.8: theorem before
+component). Containment — which body a sphere wraps — is the
 sign of the inversive distance to that sphere, PR1's acoustic distance,
 and nested enclosures nest by the same sign: containment without a
 Euclidean origin (A.13).
@@ -10191,6 +10206,37 @@ is a defect count, never a home.
 | `NoPose::Oblique` | D | the one arm a demand retires (D3, `RotorPrime`) |
 | `NoPose::Bodiless` | I | nothing to pose |
 | `Pose::HalfOpen`, `Pose::Unoriented` | not refusals | held stabilizers (78.6(1), FR1c) |
+
+### 78.10 NB1 ruled: the producer, the content, the carrier (2026-09-23)
+
+The implementor's finding stands: the Čech complex is the court's and the
+mind's, over word sections, `ascend` there is `coboundary_on_link` (62.1)
+and the family pole has no cells above grade one — pairwise contacts
+only. NB1 is new construction at the family pole, and its three choices:
+
+- **(a) One cell per witness, faces derived.** Each element of the base
+  in which k + 1 bodies' cells stand certifies ONE k-cell, the maximal
+  standing set, keyed by its bodies' coordinates (A21) with the witness
+  elements a keyed fibre of that key; a cell standing in two elements is
+  one cell with two witnesses. Its faces are read off it (law 12), never
+  minted as subsets — the 2^m enumeration 58.1 refused. The base's
+  elements are read once, one carrier (rule 1); the same read serves the
+  cover nerve, whose certified triples are the grade-two instance.
+- **(b) The wedge is the shape, the transport is `ascend`'s.** As 78.2
+  now states: the meet of the nuclei, the algebra's sign its own; no
+  product of nuclei in any order; the transport deposited by the circuit
+  that closes on the cell, released exactly by `descend`.
+- **(c) Cells live on the Form in memory, the tape at the recut.** A
+  certified cell is perception's reading — epigenome, volatile, a fibre
+  in 72.1d's ladder — held as a keyed carrier on the Form derived at the
+  read; a cell `ascend` sealed is a relation of the genome — a tether —
+  and goes to the tape with the operator's recut (BQ5b), never before.
+- **The reading.** The `nerve/source` line reads certified cells by
+  grade and, of them, those whose meet is non-zero, in place of the
+  triples count; fixtures: three mutually touching bodies mint a 2-cell
+  with `s_a ∧ s_b ∧ s_c ≠ 0`; a pairwise circuit of the same three reads
+  no grade-three content; four bodies at one element at n = 4 mint a
+  3-cell with no arity written.
 
 # Part XI — The frame axis
 
@@ -12463,6 +12509,23 @@ and their commutator is a rotation that neither of them is.
 So a conjugate pair is well-formed exactly when its two halves fail to
 commute, and the commutator is what the pivot RETURNS. A pair that
 round-trips is not a component; it is a no-op written twice.
+
+**Amended 2026-09-23 on the operator's word: `ascend` IS THE INVERSE OF
+`descend`.** The paragraphs above conflated two things. ON CONTENT the
+pair is an exact inverse: `descend` of the cell `ascend` sealed hands back
+the fill that was sealed, exactly, and leaves the boundary 1-cells
+standing with their transports unchanged; `ascend` of a released boundary
+that still closes re-seals the same content. `[ascend, descend] = 0` in
+the algebra, and a pair that does not invert on content is a ratchet with
+a sign error, not curvature. What does NOT return is the TRAJECTORY and
+the LEDGER: re-entry stays forbidden — the circuit resumes at a later `K`
+on a new orbit, never the one it exited — and the ledger keeps the pair as
+history, syntropy booked at `ascend`, and at `descend` the reading of
+78.7: ELASTIC where the class is restored and the lane's draw returns,
+VISCOUS where it is not and the difference is entropy. The content the
+first draft put in the commutator lives there, on the class and the
+ledger, and the Thomas-precession analogy was two boosts, not a pivot and
+its inverse; it is withdrawn. Row AD1 tests the inverse on both poles.
 
 ## 63. T2 landed — the tether and its release (ruled 2026-09-22)
 
