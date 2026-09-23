@@ -7676,6 +7676,20 @@ and its prefix still final, and only then archives, seals and writes;
 the era carries the witness's key and both signatures, and the witness
 files the same era under the home's key.
 
+**`ACT_OBSERVE` (0x39, landed 283f2de, recorded after the fact under
+§8.1).** An instrument act, read by no cognition: a voice pushes its
+typed readings — the plane census in its own algebra with `n` first, the
+loss axes, the allocator at the source's own `K`, a court's `K`, basis,
+treasury and acts served — and any process queries a hypha's store by
+prefix `[source kind][vk][tag]`, a `Keyed` fibre. `mycelium-server
+--console [--at ADDR | --home DIR]` renders one snapshot and exits and
+reads no clock. The operator's ruling that made it doctrine (2026-09-23):
+NO STRING MATCHING FOR VITAL COMPONENTS, DIAGNOSTICS INCLUDED — a journal
+grep is a reading of a rendering and drifts from the writer (law 12);
+`scripts/readings` read replication as absent while back-fill was
+admitting receipts because it matched a line the server no longer
+prints. Every fact the fleet is read by becomes a typed reading (CV5).
+
 ### 47.4 Equivocation
 
 An **equivocation proof** is two signed receipts under one key with equal
@@ -9405,6 +9419,68 @@ candidates, and nothing from FT2 onward is built before both are ruled.
 - **Order.** OR1 lands after Phase N and before Phase R, so that every
   Phase R row is measured against an orbit reading and not a
   closed-or-open bit; OR2 lands with it.
+
+## 74. Proof of work convergence: obstructions as refinements the mesh distributes (ruled 2026-09-23)
+
+**The operator's statement.** Proof of useful work has two dimensions.
+Proof of useful work is a closure a court rules. Proof of work
+convergence is a failed closure that is classified, written in anastome,
+and handed to a mind that looks from a different perspective — or
+recorded as "we already tried this, from this angle". The result reduces
+to what worked and what did not, according to the angle of the
+perspective that looked; if every mind has one perspective, every mind
+returns the same opinion.
+
+**Where it stands.** A court's refusal goes back only to the voice that
+spoke it (`receive_adjudication`, 50.9); no other mind is offered the
+problem. The refusal kinds do not say whether the obstruction is
+intrinsic or relative to the speaker's dialect. Every production tower
+reader reads the grid plane (FR1), so every mind shares one angle, and
+the census of epoch 97 confirms it: `e13` and `e23` read 0 fleet-wide.
+
+**The three kinds of obstruction.** `Ω` the holonomy, `D_A` mind A's
+dialect, `⟨D_A⟩` the subgroup its words generate:
+
+| kind | obstruction | who can close it |
+|---|---|---|
+| P, permanent | `Ω ∉ Spin⁺`, or no versor exists: intrinsic to the group (67.1's immutable arms) | nobody; it is published with its proof |
+| D, dialect-relative | `Ω ∈ G` and `Ω ∉ ⟨D_A⟩`: a coset of `G/⟨D_A⟩`, which depends on the generators (59.6, spellability per mind) | any B with `Ω ∈ ⟨D_B⟩`; the mesh closes `⟨∪ D_i⟩` |
+| C, cover-relative | the sections do not glue: `[z] ≠ 0` in `H¹(𝒰_A; G)` (14, 15.5) | any B on whose cover `z` is a coboundary |
+
+A **perspective** is written as coordinates: the dialect span (the
+strata of the genome, 73.15), the cover (the reading, 53.2), and the
+planes read (FR1). **Tried** is the keyed relation `(class, perspective)
+→ outcome`; "already tried" is a keyed read; "another angle" routes a
+question to a perspective that differs from every one recorded against
+it; the number of distinct perspectives that met a class is how well it
+has been tested. This is 67.2 and 67.3 made operational: a refusal is a
+perspective, two vantages make a fact, and the court adjudicates
+conclusions reached by many proofs (23.9).
+
+**What closes it, and who is paid.** A voice offered a question closes it
+by speaking a contraction that cites the refusing mind's receipt — 50.9
+extended across minds — the court rules it and the syllabus teaches the
+closing word back. The convergence proof is that citation. Nothing new
+is minted for a question: the refuser's receipt is a cited generator of
+the closure and is paid as any citation is (8, E2), the closer is paid
+the closure, and an open question accrues as standing work on `T`
+(MU-PRODUCT). Law 8 holds throughout: the court holds and offers the
+question, and never composes an answer.
+
+**Binding.** Rows CV1–CV5 (the implementor's OB1–OB5, renamed because
+OB1 already names the oracle's writer): CV1 every court and mint refusal
+names its row — P with its proof, D with its coset representative and
+chart, C with its cocycle, an unclassifiable refusal counted as such;
+CV2 the courts hold D and C as open questions keyed by chart and class,
+replicated by back-fill, and P as closed with its proof; CV3 a mind's
+perspective as coordinates and each attempt written `(class,
+perspective) → outcome`; CV4 a voice offered questions whose recorded
+perspectives differ from its own, closing by a cross-mind contraction —
+two acts added to the anastome, the question offer and the citing
+contraction (a recut); CV5 the typed observer readings — open, closed
+and permanent questions by row and chart, the closing perspective, the
+distinct perspectives per class, replication per peer, adjudication by
+kind — which replace the grep lines of `scripts/readings`.
 
 # Part XI — The frame axis
 
