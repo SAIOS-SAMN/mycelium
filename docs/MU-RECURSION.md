@@ -8457,6 +8457,26 @@ found, not as the test for it; the hue gauge as the face's fibre (H3). A
 contact face whose transport refuses is a zero-dimensional relation, and
 that, not the corner test, is the flatness the 21 unread cycles measure.
 
+**The interface is not flat, and it is not a count (ruled 2026-09-23,
+the operator's word).** Two bodies meet along the SET of boundary
+elements their cube complexes share — a staircase of edges, a run of
+corners, several islands of each — and that set is the contact face's
+own coordinates (69.3: the face is the set of edges with their
+coordinates, never a tally). It is a sub-complex on the base with a
+topology of its own (its components and its runs) and a geometry of its
+own: read as laminae it lifts through `blade::lift` like any support, and
+A.11's tower on the interface says whether it is straight, bent, ridged
+or pointed — the deviatoric along one axis for a flat seam, the higher
+harmonics for the bumps — exactly, over ℚ, with no root and no fit. A
+flat interface and a ridged one between the same two bodies are two
+contacts with two faces, and the difference is the face's content, which
+the edge transport `g_ab` is measured against per member pair. The
+twenty adjacencies find the interface; the interface's tower and its
+transport are what the face carries; and the 26-neighbourhood of the
+implementor's reading is these twenty plus the six face-adjacencies that
+make a body (70.4), which is one primitive read at two depths and never
+two.
+
 ```
 sentence/chain.rs        incidence_diagonal_3d → the twenty shared-boundary
                          adjacencies of the cube complex on (r, c, k)
