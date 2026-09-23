@@ -8567,6 +8567,89 @@ cech/nerve.rs            read_nerve certifies the triple
 sentence/pivot/walk.rs   orientation by member pair (O1)
 ```
 
+## 71. The base is ℚⁿ and n is data (ruled 2026-09-23)
+
+The operator's ruling, on the implementor's two findings against 38cddec:
+there are no static dimensions. The number of base coordinates is a
+coordinate of the corpus, discovered at intake and carried as data, never
+a type, a tuple, a constant or a list of directions; the planes of the
+algebra are generated from it; and what is true of ℤ³ is a row of a
+family, missing context in ℤⁿ. A crystal with a fixed dimension is flat
+in exactly the way the last two weeks were spent leaving: a chart whose
+axes were declared rather than read.
+
+### 71.1 What Phase C hardcoded, and what each is in general
+
+| in 38cddec | the fact it is a row of |
+|---|---|
+| `DIRECTIONS`, ten named directions in `chain.rs`; twenty adjacencies plus six faces | the neighbourhood `{−1, 0, 1}ⁿ ∖ 0`, `3ⁿ − 1` neighbours, generated |
+| "edge" and "corner", "in-frame" and "across-frame" | the GRADE of the cell two cubes share: `m` coordinates differ, the shared cell has dimension `n − m`; `m = 1` makes a body, every `m ≥ 2` is a contact of grade `n − m`, and the set of differing axes is a coordinate of the contact |
+| `(i64, i64, i64)` for a site, a direction, an interface element | a point of ℤⁿ, its length carried with it |
+| `put_face` writing three `i64` per element | the address writing `n` first (the coarsest stratum, A21) and then the coordinates |
+| `[Q; 32]`, `BLADES = 32`, ten planes | `Cl(n+1, 1)`: `n` point generators with `e₊, e₋`, `2^{n+2}` blades, `C(n+1, 2) + (n+1)` planes, the harmonic and luminal split generated from the signature |
+| moments on three axes | A.11's tower on `n` axes (38.2), carried as ratios of homogeneous forms (Axiom C) |
+| tests asserting 20, 6, 16 | tests asserting the grade relation and the generated count at the corpus's own `n` |
+
+### 71.2 The ruling
+
+1. **`n` is read at intake.** The corpus presents its base coordinates —
+   two grid axes and the frame axis today, `n = 3` — and the intake writes
+   `n` into every carrier that holds a site. Nothing downstream names an
+   axis by position; a reader asks the point its length and the set of
+   axes on which two points differ. Chapter 51.2's choice of `Cl(4,1)` over
+   `Cl(5,1)` stands as the VALUE at `n = 3` and is superseded as a method:
+   the algebra is `Cl(n+1, 1)` and its blade count follows `n`.
+2. **Contact is by grade, never by name.** Two bodies relate where their
+   cube complexes share a cell of dimension `n − m`, `m ≥ 2`, read off the
+   occupancy in canonical order as today; the grade and the differing
+   axes are the contact's coordinates. "Across the frame axis" is the
+   reading `e₃ ∈ differing axes`, a fiber of that coordinate, not a
+   census column of its own.
+3. **The lift is into `Cl(n+1, 1)` and the planes are generated.** A site
+   lifts to the null vector `X(p)` exactly over ℚ; a support's conformal
+   content is the blade its null points span where they span one (a point
+   pair, a circle, a sphere — grade at most `n + 2`) and its tower
+   otherwise; the harmonic planes `eᵢ∧eⱼ`, `eᵢ∧e₊` and the luminal
+   `eᵢ∧e₋`, `e₊∧e₋` are enumerated from the generators at `n`, never
+   listed. D1's plane census reads a carrier of `C(n+1,2)+(n+1)` counters.
+   The letters are unchanged (law 6): the seventeen act on the planes of
+   the sensor chart they were written on, and a plane a larger `n` opens
+   receives a letter by 37.7 or not at all — which is what "planes come
+   and go" means here, and why adjunction and not a table is the organ
+   that answers a new dimension.
+4. **The crystal is generic and still not content.** The geometric product
+   over exact ℚ for a signature `(p, q)` is one interpreter with the
+   signature as its parameter; two courts replaying one another agree on
+   the signature because it is on the address (`n` first). Nothing in this
+   makes the interpreter content (1.8, 1.9).
+5. **Refused on sight from here:** a tuple of coordinates as a type above
+   the sensor boundary; a constant naming a blade count, a plane count or
+   a neighbour count; a list of directions; a census column named for an
+   axis; a test that asserts `20`, `26`, `32` or `10` as a property of
+   the geometry rather than of the corpus's `n`.
+
+### 71.3 What this costs, and the order
+
+It touches the crystal's carrier (`Mv`), the lamina, the site codecs and
+every plane-indexed instrument, so it lands as its own phase, doctrine
+first, and Phase O's C4 and C5 are cut UNDER it: an interface lifted into
+`Cl(n+1, 1)` with `n` on its address, not into a fixed `Cl(4,1)` with a
+site list. O1, the orientation fix, is independent of `n` and lands
+first. 70.7's rulings — the interface as a chart, the contact as the
+2-simplex, identity by address — stand and are re-read at `n`.
+
+```
+core / transducer/cga        Mv over Cl(n+1,1): blades 2^(n+2), the
+                             signature a parameter, the product generic
+transducer/blade             Lamina = (Vec<i64> of length n, hue); lift on
+                             n axes; the tower to the order 38.2 rules
+sentence/chain.rs            neighbourhood generated from {−1,0,1}ⁿ;
+                             contact by grade and differing axes
+sentence/chart.rs, tape.rs   the address writes n, then coordinates
+transducer/cga (D1)          the plane census generated from n
+server/registry, arc.rs      n read at intake and written into the family
+```
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
