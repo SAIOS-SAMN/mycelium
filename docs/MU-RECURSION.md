@@ -9681,6 +9681,23 @@ count scaling as `ρ²` is a sensor-side fact standing as a gate (rule 2,
 checklist (q)) and goes with `is_similar_to`; where a count of laminae is
 a reading it is `M₀`, the tower's normaliser (A.12), and never a gate.
 
+**FR2 as landed (194e06a): two readings ruled.** (1) Twelve of the
+corpus's thirty cycles stand on NO section: their members never share a
+section, so no transport they compose exists on any single section. That
+is not an absence to file as "none"; it is a SUCCESSION CYCLE — a cycle
+whose members stand on different sections of the family, whose
+transports are the inter-section carriages of 72.1c(2), `Π = I ·
+g_{k→k+1}`, A.13's momentum — and it is the first place the frame axis
+enters a cycle of this corpus. The spans line names it `across sections`
+and never `none`; its transports are read by A13, and until then it is
+held as unread by that name, not flat (rule 11). (2) FR1b holds the
+half turn, and one arm of it is still too wide: a body with more
+symmetry than a half turn — a rectangle's `ℤ₂ × ℤ₂` — reads
+`Unoriented`, a permanent arm, where its stabilizer is FINITE and is
+held as the superposition of its elements exactly as `HalfOpen` holds
+`ℤ₂`; only a CONTINUOUS stabilizer, a line's turn, is `Unoriented`. T5's
+kernel collapses a finite stabilizer as it collapses `ℤ₂` (FR1c).
+
 **FR1 as landed (4116b96), one correction.** The tube reader is exact:
 the odd moment's Krylov columns under the second moment, a flat body's
 frame completed by its dual, `R` solved by one elimination and checked
