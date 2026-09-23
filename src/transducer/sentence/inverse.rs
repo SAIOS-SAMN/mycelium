@@ -100,7 +100,10 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
         [tag, ..] if *tag == crate::transducer::address::TAG_FORM => p += 1,
         _ => return None,
     }
-    let mut f = Form::default();
+    // 71.2(1), BQ1 — the base's `n`, written first.
+    let n = *k.get(p)?;
+    p += 1;
+    let mut f = Form { n, ..Form::default() };
     // `Form::default()` opens with its Frame vertex; the key writes every
     // vertex the form has, that one included, so the vertices are taken
     // from the key alone and not appended to what the default seeded.
@@ -223,15 +226,11 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
             _ => return None,
         };
         // C2, 70.6 — the interface, as `put_face` writes it: a count, then
-        // each element's doubled centre.
+        // each element's doubled centre, a site with its `n`.
         let ni = take_u32(k, &mut p)? as usize;
         let mut interface = Vec::with_capacity(ni.min(k.len()));
         for _ in 0..ni {
-            let r = i64::from_le_bytes(k.get(p..p + 8)?.try_into().ok()?);
-            let c = i64::from_le_bytes(k.get(p + 8..p + 16)?.try_into().ok()?);
-            let kk = i64::from_le_bytes(k.get(p + 16..p + 24)?.try_into().ok()?);
-            p += 24;
-            interface.push((r, c, kk));
+            interface.push(crate::transducer::base::Site::take(k, &mut p)?);
         }
         f.faces.push(FormFace { i, j, word, at, pairs, interface });
     }

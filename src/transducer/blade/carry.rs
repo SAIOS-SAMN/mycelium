@@ -324,19 +324,17 @@ pub fn versor_coset_ordered(a: &Shape, b: &Shape) -> Vec<Mv> {
 /// listing body (24.1, 50.1 step 1). A versor with no inverse carries
 /// nothing.
 pub fn carries(v: &Mv, a: &Shape, b: &Shape) -> bool {
-    let lands = |v: &Mv, (r, c, k): (i64, i64, i64), held: &[(i64, i64, i64)]| -> bool {
-        match crate::transducer::element::carry_center(v, r, c, k) {
-            // A centre that lands off the base lands on no held lamina.
-            Some(p) => match crate::transducer::element::site_of(&p) {
-                Some(site) => held.binary_search(&site).is_ok(),
-                None => false,
-            },
+    use crate::transducer::base::Site;
+    // A centre that lands at infinity or off the base lands on no held lamina.
+    let lands = |v: &Mv, site: &Site, held: &[Site]| -> bool {
+        match crate::transducer::element::carry_site(v, site) {
+            Some(s) => held.binary_search(&s).is_ok(),
             None => false,
         }
     };
     let Some(inv) = v.versor_inverse() else { return false };
-    a.blade.support.iter().all(|&site| lands(v, site, &b.blade.support))
-        && b.blade.support.iter().all(|&site| lands(&inv, site, &a.blade.support))
+    a.blade.support.iter().all(|site| lands(v, site, &b.blade.support))
+        && b.blade.support.iter().all(|site| lands(&inv, site, &a.blade.support))
 }
 
 /// THE CARRIAGE OF A GIVEN LINEAR ACTION between two bodies (24.1 as ruled

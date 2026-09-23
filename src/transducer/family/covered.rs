@@ -76,7 +76,7 @@ pub(crate) type PendingTorsion = (
 /// transvection, `B = eᵢ∧e₋`, `I₁ > 0`, carrying a Burgers vector. A
 /// coordinate excluded from IDENTITY, correctly, and then excluded from
 /// INCIDENCE, which does not follow.
-pub(crate) type ChordEnd = (TransportClass, Invariant, Versor, Vec<(i64, i64, i64)>);
+pub(crate) type ChordEnd = (TransportClass, Invariant, Versor, Vec<crate::transducer::base::Site>);
 
 pub(crate) type MeetChord = (
     ChordEnd,
@@ -269,7 +269,7 @@ pub(crate) fn classify_cover(
                 let site = |t: &TransportClass,
                             c: &Invariant,
                             phi: &Versor,
-                            d: &[(i64, i64, i64)]| {
+                            d: &[crate::transducer::base::Site]| {
                     let mut k = Vec::new();
                     crate::transducer::address::put_bytes(
                         &mut k,
@@ -277,10 +277,8 @@ pub(crate) fn classify_cover(
                     );
                     crate::transducer::address::put_bytes(&mut k, c.key().as_bytes());
                     phi.put_canonical(&mut k);
-                    for (r, col, f) in d {
-                        k.extend_from_slice(&r.to_le_bytes());
-                        k.extend_from_slice(&col.to_le_bytes());
-                        k.extend_from_slice(&f.to_le_bytes());
+                    for s in d {
+                        s.put(&mut k);
                     }
                     k
                 };

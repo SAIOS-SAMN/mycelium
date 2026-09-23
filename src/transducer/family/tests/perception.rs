@@ -2,6 +2,7 @@
 // adjacency of a scene's bodies is.
 
 use super::common::*;
+use crate::transducer::base::Site;
 use crate::transducer::family::*;
 
 /// Perception writes the form once. A second call on the same grids
@@ -235,17 +236,22 @@ assert_eq!(declared.len(), 4, "the four created links are the declared remainder
 /// vertex's own coordinate. A test writes them in vertex order because
 /// that is what it is asserting about; the reader is keyed, so a vertex
 /// with no support simply has no entry.
-fn supports_at(rows: &[Vec<(i64, i64)>]) -> crate::network::nerve::Keyed<Vec<(i64, i64, i64)>> {
+fn supports_at(rows: &[Vec<(i64, i64)>]) -> crate::network::nerve::Keyed<Vec<Site>> {
     let mut k = crate::network::nerve::Keyed::new();
     // KEYED BY MEMBER — vertex and chart (D10). These fixtures put every body
     // on the root stratum, which is one chart per vertex, so the member key is
     // the vertex's with that chart's; every support stands in frame 0.
     for (i, s) in rows.iter().enumerate() {
         if !s.is_empty() {
-            k.insert(root_member(i as u16), s.iter().map(|&(r, c)| (r, c, 0)).collect());
+            k.insert(root_member(i as u16), s.iter().map(|&(r, c)| Site::from((r, c, 0))).collect());
         }
     }
     k
+}
+
+/// Sites as the sensor hands them over (71.2(1)).
+fn sites<T: Copy + Into<Site>>(v: &[T]) -> Vec<Site> {
+    v.iter().map(|&t| t.into()).collect()
 }
 
 /// The member key of vertex `i` standing at the root stratum.
@@ -261,7 +267,7 @@ fn root_member(i: u16) -> Vec<u8> {
 /// with the tests that read it).
 fn named_pairs(
     frame: Option<&[u8]>,
-    supports: &crate::network::nerve::Keyed<Vec<(i64, i64, i64)>>,
+    supports: &crate::network::nerve::Keyed<Vec<Site>>,
 ) -> Vec<(Vec<u8>, Vec<u8>)> {
     named_faces(frame, supports).into_iter().map(|nf| (nf.a, nf.b)).collect()
 }
@@ -403,7 +409,7 @@ assert_eq!(
 );
 // AND THE INTERFACE IS THE TWO CORNERS, as a set (C2): `(1,0)+(0,1)` and
 // `(3,2)+(2,3)`, each element at its doubled centre.
-assert_eq!(nf.named.interfaces, vec![vec![(1, 1, 0), (5, 5, 0)]], "the two corners the L's share");
+assert_eq!(nf.named.interfaces, vec![sites(&[(1i64, 1i64, 0i64), (5, 5, 0)])], "the two corners the L's share");
 }
 
 /// C1, 70.6 — A CORNER BETWEEN TWO BODIES OF SEVERAL MEMBERS OFFERS ONE
@@ -448,22 +454,23 @@ assert_eq!(ends(Incidence::Site), vec![(1, 2), (3, 4)], "each side's occupants c
 #[test]
 fn a_body_moving_between_frames_touches_the_body_that_stood() {
 let mut supports = crate::network::nerve::Keyed::new();
-supports.insert(root_member(1), vec![(0i64, 0i64, 0i64)]);
-supports.insert(root_member(2), vec![(0, 2, 0), (0, 2, 1), (0, 1, 1)]);
+supports.insert(root_member(1), sites(&[(0i64, 0i64, 0i64)]));
+supports.insert(root_member(2), sites(&[(0i64, 2i64, 0i64), (0, 2, 1), (0, 1, 1)]));
 let named = named_faces(None, &supports);
 let [nf] = named.as_slice() else { panic!("one pair, the contact across frames: {named:?}") };
 assert_eq!(nf.named.hows, vec![Incidence::Contact], "the frame axis enters contact");
 let [interface] = nf.named.interfaces.as_slice() else { panic!("one interface: {nf:?}") };
-assert_eq!(interface, &vec![(0, 1, 1)], "one shared edge, between frames 0 and 1");
+assert_eq!(interface, &sites(&[(0i64, 1i64, 1i64)]), "one shared edge, between frames 0 and 1");
 assert!(
-    interface.iter().all(|&(_, _, k)| k % 2 != 0),
+    interface.iter().all(|s| s.axis(2).is_some_and(|k| k % 2 != 0)),
     "an odd doubled frame coordinate is an element across two frames"
 );
 // And the corner in one frame alone names nothing here.
-let in_frame: Vec<_> = crate::transducer::sentence::incidence_diagonal_3d(&[(0, 0, 0), (0, 1, 1)])
-    .into_iter()
-    .filter(|&(_, _, d)| d.2 == 0)
-    .collect();
+let in_frame: Vec<_> =
+    crate::transducer::sentence::incidence_diagonal_3d(&sites(&[(0i64, 0i64, 0i64), (0, 1, 1)]))
+        .into_iter()
+        .filter(|(_, _, d)| d.get(2) == Some(&0))
+        .collect();
 assert!(in_frame.is_empty(), "no in-frame adjacency relates them: {in_frame:?}");
 }
 
@@ -479,29 +486,30 @@ fn a_straight_seam_and_a_bent_one_are_two_interfaces() {
 let mut supports = crate::network::nerve::Keyed::new();
 supports.insert(
     root_member(1),
-    vec![
+    sites(&[
         // A bar in frame 0.
         (0i64, 0i64, 0i64), (0, 1, 0), (0, 2, 0), (0, 3, 0),
         // An L in frame 0, far from it.
         (10, 0, 0), (10, 1, 0), (10, 2, 0), (11, 0, 0), (12, 0, 0),
-    ],
+    ]),
 );
 supports.insert(
     root_member(2),
-    vec![
+    sites(&[
         // A bar in frame 1, one row down: every site meets the frame-0 bar
         // at an edge or a corner across the frames.
-        (1, 0, 1), (1, 1, 1), (1, 2, 1), (1, 3, 1),
+        (1i64, 0i64, 1i64), (1, 1, 1), (1, 2, 1), (1, 3, 1),
         // The L in frame 1, one row and one column in: the seam turns.
         (11, 1, 1), (11, 2, 1), (11, 3, 1), (12, 1, 1), (13, 1, 1),
-    ],
+    ]),
 );
 let named = named_faces(None, &supports);
 let contacts: Vec<_> = named.iter().filter(|nf| nf.named.hows.contains(&Incidence::Contact)).collect();
 let [nf] = contacts.as_slice() else { panic!("one member pair: {named:?}") };
 assert_eq!(nf.named.interfaces.len(), 2, "two interfaces between the one pair: {nf:?}");
-let tower = |i: &Vec<(i64, i64, i64)>| {
-    let laminae: Vec<crate::transducer::blade::Lamina> = i.iter().map(|&(r, c, k)| (r, c, k, 0)).collect();
+let tower = |i: &Vec<Site>| {
+    let laminae: Vec<crate::transducer::blade::Lamina> =
+        i.iter().map(|s| crate::transducer::blade::Lamina { site: s.clone(), hue: 0 }).collect();
     crate::transducer::blade::lift(&laminae)
 };
 let (a, b) = (tower(&nf.named.interfaces[0]), tower(&nf.named.interfaces[1]));
@@ -677,7 +685,7 @@ fn a_scene_of_five_bodies_on_three_charts_answers_the_chart_whose_fiber_holds_on
     let fibers = crate::transducer::family::perceive::bodies_by_chart(&bodies);
     assert_eq!(fibers.len(), 3, "three charts represented: {fibers:?}");
 
-    let dot = bodies.iter().find(|b| b.laminae == vec![(4, 2, 0, 5)]).expect("the dot");
+    let dot = bodies.iter().find(|b| b.laminae == vec![Lamina::from((4i64, 2i64, 0i64, 5u8))]).expect("the dot");
     let chart = crate::transducer::family::perceive::chart_holding_one(&bodies)
         .expect("unique chart holding one body");
     assert_eq!(chart, dot.moduli, "answers the chart whose fiber holds one");
@@ -738,19 +746,18 @@ fn a_family_whose_rule_selects_that_body_extracts_a_rule_vertex_where_it_extract
 /// and the same chart as the square in frame 0.
 #[test]
 fn perception_3d_coordinates_preserve_frame_and_moments() {
-    let laminae: Vec<Lamina> = vec![
-        (0, 0, 1, 1),
-        (0, 1, 1, 1),
-        (1, 0, 1, 1),
-        (1, 1, 1, 1),
-    ];
-    let b3d = body_of(laminae);
+    let laminae: Vec<Lamina> =
+        [(0i64, 0i64, 1i64, 1u8), (0, 1, 1, 1), (1, 0, 1, 1), (1, 1, 1, 1)].map(Lamina::from).to_vec();
+    let b3d = body_of(laminae).expect("a square is heard at n = 3");
     assert_eq!(b3d.laminae.len(), 4);
-    assert!(b3d.laminae.iter().all(|c| c.2 == 1), "the support stands in its frame");
+    assert!(b3d.laminae.iter().all(|c| c.site.axis(2) == Some(1)), "the support stands in its frame");
     assert_eq!(b3d.shape.blade.inertia.len(), 6);
     let c3 = b3d.shape.blade.centroid().expect("3d centroid");
     assert_eq!(c3.2, num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)));
-    let at_zero = body_of(vec![(0, 0, 0, 1), (0, 1, 0, 1), (1, 0, 0, 1), (1, 1, 0, 1)]);
+    let at_zero = body_of(
+        [(0i64, 0i64, 0i64, 1u8), (0, 1, 0, 1), (1, 0, 0, 1), (1, 1, 0, 1)].map(Lamina::from).to_vec(),
+    )
+    .expect("a square is heard at n = 3");
     assert_eq!(at_zero.moduli, b3d.moduli, "a frame carries no meaning on the chart (51.1)");
     assert!(carriage(&at_zero, &b3d).is_some(), "and the translation along e₃ carries one onto the other");
 }

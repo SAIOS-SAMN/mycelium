@@ -39,6 +39,9 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
     // repeated citation IN KIND is 53.4's quantified citation, one citation
     // per fiber, which is K2's. Bytes repeated across tapes are storage and
     // are not chased; identity is not shortened.
+    //
+    // 71.2(1), BQ1 — the base's `n` first, as the address writes it.
+    out.push(f.n);
     out.extend_from_slice(&(f.vertices.len() as u16).to_le_bytes());
     for v in &f.vertices {
         match v {
@@ -177,12 +180,11 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
             }
         }
         // THE INTERFACE A CONTACT FACE RUNS ALONG (C2, 70.6), as the address
-        // writes it: a count, then each element's doubled centre.
+        // writes it: a count, then each element's doubled centre, a site
+        // with its `n`.
         out.extend_from_slice(&(u32::try_from(face.interface.len()).ok()?).to_le_bytes());
-        for &(r, c, k) in &face.interface {
-            out.extend_from_slice(&r.to_le_bytes());
-            out.extend_from_slice(&c.to_le_bytes());
-            out.extend_from_slice(&k.to_le_bytes());
+        for s in &face.interface {
+            s.put(out);
         }
     }
     // THE LOOPS ARE NOT ON THE TAPE (54.5, as ruled 2026-09-20). §1.5 has
@@ -282,6 +284,8 @@ fn take_transport(b: &[u8], pos: &mut usize) -> Option<Transport> {
 }
 
 pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
+    let base_n = *b.get(*pos)?;
+    *pos += 1;
     let nv = take_count(b, *pos, take_u16(b, pos)? as usize, 1)?;
     if nv == 0 {
         return None;
@@ -451,14 +455,10 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             }
             _ => return None,
         };
-        let ni = take_count(b, *pos, take_u32(b, pos)? as usize, 24)?;
+        let ni = take_count(b, *pos, take_u32(b, pos)? as usize, 4)?;
         let mut interface = Vec::with_capacity(ni);
         for _ in 0..ni {
-            let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-            let c = i64::from_le_bytes(b.get(*pos + 8..*pos + 16)?.try_into().ok()?);
-            let k = i64::from_le_bytes(b.get(*pos + 16..*pos + 24)?.try_into().ok()?);
-            *pos += 24;
-            interface.push((r, c, k));
+            interface.push(crate::transducer::base::Site::take(b, pos)?);
         }
         faces.push(FormFace { i, j, word, at, pairs, interface });
     }
@@ -539,6 +539,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     }
     // `glued` is `reindex`'s to build (law 12), and `reindex` runs below.
     let mut form = Form {
+        n: base_n,
         vertices,
         faces,
         // Re-derived below, from the faces just parsed (§1.5, 54.5).
@@ -615,7 +616,14 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
 /// Version 10 is the three-coordinate base (51.7): supports as sites of
 /// three coordinates, versors of thirty-two components, the sections
 /// placed, and a loop's period filed as `0` for infinite order (52.3).
-pub const FORM_TAPE_VERSION: u8 = 14;
+///
+/// 14 → 15 IS BQ1'S, AND IT BREAKS "NEVER AGAIN" BY NAME. 71.2(1) puts `n`
+/// on every site and on the address: the form's `n` opens the tape, every
+/// versor carries its own `n` ahead of its coefficients, and an interface
+/// element is a site with its count. The bytes changed, and a byte that did
+/// not would refuse nothing — which is the defect 12 → 13 names. It lands
+/// with the address's own layout change, at the one recut Phase N rides.
+pub const FORM_TAPE_VERSION: u8 = 15;
 
 /// 37.7 — MINT A GENERATOR FROM A ROTOR, the one construction that turns a
 /// measured action the alphabet cannot spell into a word the language holds.

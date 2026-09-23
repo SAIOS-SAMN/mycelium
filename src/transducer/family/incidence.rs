@@ -56,12 +56,10 @@ pub(crate) fn union_quotient(
     ins.dedup();
     outs.sort_unstable();
     outs.dedup();
-    let a = body_of(ins);
-    let b = body_of(outs);
-    for &(r, c, k, _) in &a.laminae {
-        let p = element::carry_center(v, r, c, k)?;
-        let (tr, tc, tk) = element::site_of(&p)?;
-        b.laminae.binary_search_by(|x| (x.0, x.1, x.2).cmp(&(tr, tc, tk))).ok()?;
+    let a = body_of(ins)?;
+    let b = body_of(outs)?;
+    for l in &a.laminae {
+        super::perceive::landed_hue(v, &l.site, &b)?;
     }
     Some((a, b, v.clone()))
 }

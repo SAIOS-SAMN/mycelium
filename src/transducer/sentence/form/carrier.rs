@@ -441,8 +441,9 @@ pub struct FormFace {
     /// It is the face's own coordinates, never a tally (69.3). A flat
     /// interface and a ridged one between the same two members are two
     /// faces, and the address says so. [`FormFace::interface_tower`] lifts
-    /// it as a support, so A.11's tower reads the interface's shape.
-    pub interface: Vec<(i64, i64, i64)>,
+    /// it as a support, so A.11's tower reads the interface's shape. Each
+    /// element is a site of the base's own `n` (71).
+    pub interface: Vec<crate::transducer::base::Site>,
 }
 
 /// A FRAME AS A COORDINATE (51.1, 51.8): the frame index along `e₃`,
@@ -500,8 +501,11 @@ impl FormFace {
         if self.interface.is_empty() {
             return None;
         }
-        let laminae: Vec<crate::transducer::blade::Lamina> =
-            self.interface.iter().map(|&(r, c, k)| (r, c, k, 0)).collect();
+        let laminae: Vec<crate::transducer::blade::Lamina> = self
+            .interface
+            .iter()
+            .map(|s| crate::transducer::blade::Lamina { site: s.clone(), hue: 0 })
+            .collect();
         Some(crate::transducer::blade::lift(&laminae))
     }
 
@@ -626,6 +630,12 @@ impl Loop {
 /// A sentence as vertices, faces, loops, remainder.
 #[derive(Debug, Clone)]
 pub struct Form {
+    /// 71.2(1) — THE `n` OF THE BASE THE FORM WAS READ ON: the count of a
+    /// site's coordinates, read at intake, and the algebra `Cl(n+1, 1)`
+    /// every versor the form carries stands in. The coarsest coordinate of
+    /// the form, so it is written FIRST on its address and a reader takes
+    /// every versor after it at this `n`.
+    pub n: u8,
     pub vertices: Vec<Vertex>,
     pub faces: Vec<FormFace>,
     pub loops: Vec<Loop>,
@@ -771,6 +781,7 @@ pub struct Form {
 impl Default for Form {
     fn default() -> Self {
         Form {
+            n: crate::transducer::element::GRID_N,
             vertices: vec![Vertex::Frame],
             faces: Vec::new(),
             loops: Vec::new(),

@@ -97,12 +97,14 @@ fn ring_answer(
     };
     // The demand's bodies are one section's links (16.5), read in the
     // section's own frame.
-    let before: Vec<Lamina> = bodies.iter().filter(|c| c.2 != 0).map(|c| (c.0, c.1, 0, c.2)).collect();
-    let after: Vec<Lamina> = bodies.iter().filter(|c| c.3 != 0).map(|c| (c.0, c.1, 0, c.3)).collect();
+    let before: Vec<Lamina> =
+        bodies.iter().filter(|c| c.2 != 0).map(|c| Lamina::from((c.0, c.1, 0, c.2))).collect();
+    let after: Vec<Lamina> =
+        bodies.iter().filter(|c| c.3 != 0).map(|c| Lamina::from((c.0, c.1, 0, c.3))).collect();
     if before.is_empty() || after.is_empty() {
         return None;
     }
-    let (a, b) = (body_of(before), body_of(after));
+    let (a, b) = (body_of(before)?, body_of(after)?);
     let car = carriage(&a, &b)?;
     // The carriage's OWN hue map is the gauge: this demand's target
     // recolours exactly where `sigma` is not the identity, so the `𝒢` lane

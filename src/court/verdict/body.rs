@@ -10,7 +10,7 @@
 //! chart, the face's two addresses, the chart with the links read.
 
 use super::*;
-use crate::transducer::family::{perceive, Body, Grid, Lamina};
+use crate::transducer::family::{on_grid, perceive, Body, Grid, Lamina};
 use crate::transducer::sentence::frame_key;
 
 /// What one vertex does at one frame of the family's one body.
@@ -87,8 +87,8 @@ impl<'a> Frame<'a> {
         }
         let mut image_at: Keyed<usize> = Keyed::new();
         for (i, b) in images.iter().enumerate() {
-            for &(r, c, k, _) in &b.laminae {
-                image_at.insert(crate::transducer::sentence::base_key(r, c, k), i);
+            for l in &b.laminae {
+                image_at.insert(l.site.key(), i);
             }
         }
         Frame { y, bodies, images, by_chart, image_at }
@@ -103,8 +103,8 @@ impl<'a> Frame<'a> {
     }
 
     /// The image of `y` standing on a base site, if one does.
-    pub(crate) fn image_at(&self, (r, c, k): (i64, i64, i64)) -> Option<&Body> {
-        self.images.get(*self.image_at.get(&crate::transducer::sentence::base_key(r, c, k))?)
+    pub(crate) fn image_at(&self, site: &crate::transducer::base::Site) -> Option<&Body> {
+        self.images.get(*self.image_at.get(&site.key())?)
     }
 }
 
@@ -171,8 +171,9 @@ pub(crate) fn vertex_carries_frame(
         }
         spoke = true;
         for body in fiber {
-            for &(r, c, k, h) in &body.laminae {
-                let Some(p) = element::carry_center(&versor, r, c, k) else {
+            for l in &body.laminae {
+                let h = l.hue;
+                let Some(p) = element::carry_site_center(&versor, &l.site) else {
                     return Carried::Fails(FAIL_NO_CARRY, at());
                 };
 
@@ -180,12 +181,12 @@ pub(crate) fn vertex_carries_frame(
                 // (W6) — the transport left the sensor's own geometry — and
                 // a centre carried into another frame is no lamina of the
                 // grid this frame is replayed against.
-                let Some((tr, tc, tk)) = element::site_of(&p) else {
+                let Some(t) = element::site_at(&p) else {
                     return Carried::Fails(FAIL_NO_LAMINA, at());
                 };
-                if tk != k {
+                let (Some((tr, tc)), true) = (on_grid(&t), same_frame(&t, &l.site)) else {
                     return Carried::Fails(FAIL_NO_LAMINA, at());
-                }
+                };
                 // Before the origin, and past the extent, are two different
                 // statements about the rule: the first about its placement,
                 // the second about its scale.
@@ -218,8 +219,9 @@ pub(crate) fn vertex_carries_frame(
     // cover it between them, and asking per member would call that coverage
     // a part.
     for image in &here.images {
-        let touched = image.laminae.iter().any(|&(r, c, _, _)| landed.contains(&site_key(r, c)));
-        if touched && !image.laminae.iter().all(|&(r, c, _, _)| landed.contains(&site_key(r, c))) {
+        let landed_on = |l: &Lamina| on_grid(&l.site).is_some_and(|(r, c)| landed.contains(&site_key(r, c)));
+        let touched = image.laminae.iter().any(landed_on);
+        if touched && !image.laminae.iter().all(landed_on) {
             // The image body is reached in part BY THE FIBRE AS A WHOLE, so the
             // chart named is the image's own: no one member is at fault and the
             // court says which image it is, which is the coordinate 50.9 wants.
@@ -268,19 +270,32 @@ fn form_covers_laminae(
             }
             let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else { continue; };
             for b in at.on_chart(&member.chart) {
-                for &(r, c, k, h) in &b.laminae {
-                    let Some(p) = element::carry_center(&versor, r, c, k) else { continue; };
-                    let Some((tr, tc, tk)) = element::site_of(&p) else { continue; };
-                    if tk != k {
+                for l in &b.laminae {
+                    let Some(t) = element::carry_site(&versor, &l.site) else { continue; };
+                    let (Some((tr, tc)), true) = (on_grid(&t), same_frame(&t, &l.site)) else {
                         continue;
-                    }
-                    let Some(want) = crate::transducer::sentence::hue_of(&member.gauge, h) else { continue; };
+                    };
+                    let Some(want) = crate::transducer::sentence::hue_of(&member.gauge, l.hue) else { continue; };
                     covered.insert(site_key(tr, tc), want);
                 }
             }
         }
     }
-    laminae.iter().all(|&(r, c, _, h)| covered.get(&site_key(r, c)).is_some_and(|&w| w == h))
+    laminae.iter().all(|l| {
+        on_grid(&l.site).is_some_and(|(r, c)| covered.get(&site_key(r, c)).is_some_and(|&w| w == l.hue))
+    })
+}
+
+/// Do two sites stand in one frame — every coordinate off the grid axes
+/// equal? A lamina carried into another frame is no lamina of the grid this
+/// frame is replayed against.
+fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Site) -> bool {
+    a.n() == b.n()
+        && a.axes()
+            .iter()
+            .zip(b.axes())
+            .enumerate()
+            .all(|(i, (x, y))| crate::transducer::base::is_grid_axis(i) || x == y)
 }
 
 /// 23.1 step 3 ALONG `e₃` (51.8): `REFUSE_VERTEX_BODY` at the vertex, with
@@ -365,16 +380,15 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
 /// anchor is the least lamina in the body's own order — a coordinate of
 /// the body, never a choice among its laminae.
 fn image_body<'a>(body: &Body, versor: &Versor, at: &'a Frame<'_>) -> Option<&'a Body> {
-    let [(r, c, k, _), ..] = body.laminae.as_slice() else {
+    let [anchor, ..] = body.laminae.as_slice() else {
         return None;
     };
-    let (r, c, k) = (*r, *c, *k);
-    at.image_at(element::site_of(&element::carry_center(versor, r, c, k)?)?)
+    at.image_at(&element::carry_site(versor, &anchor.site)?)
 }
 
 fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
-    let mut pos: Vec<(i64, i64, i64)> =
-        a.laminae.iter().chain(b.laminae.iter()).map(|&(r, c, k, _)| (r, c, k)).collect();
+    let mut pos: Vec<crate::transducer::base::Site> =
+        a.laminae.iter().chain(b.laminae.iter()).map(|l| l.site.clone()).collect();
     pos.sort_unstable();
     pos.dedup();
     crate::transducer::blade::shape_of(&pos)

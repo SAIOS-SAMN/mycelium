@@ -254,8 +254,8 @@ fn a_body_turned_about_itself_files_though_its_carriage_is_not_flat() {
     use crate::transducer::element::{base_rotor_of, dilator_of, translator_of};
     // An L, and the same L under `(r, c) → (c, −r)` carried back onto the
     // non-negative quadrant: a genuine quarter turn between two bodies.
-    let l: Vec<(i64, i64, i64)> = vec![(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)];
-    let turned: Vec<(i64, i64, i64)> = vec![(0, 0, 0), (0, 1, 0), (0, 2, 0), (1, 0, 0)];
+    let l = vec![(0i64, 0i64, 0i64), (1, 0, 0), (2, 0, 0), (2, 1, 0)];
+    let turned = vec![(0i64, 0i64, 0i64), (0, 1, 0), (0, 2, 0), (1, 0, 0)];
     let (a, b) = (shape_of(&l), shape_of(&turned));
     let members = versor_coset_ordered(&a, &b);
     assert!(!members.is_empty(), "a quarter turn carries the L onto its image");

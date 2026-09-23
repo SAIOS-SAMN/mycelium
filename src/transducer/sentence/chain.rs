@@ -226,51 +226,44 @@ pub fn incidence_of(positions: &[(i64, i64)]) -> Vec<(usize, usize)> {
     edges
 }
 
-/// The 6-incidence of a support of three coordinates given as sites in
-/// canonical order (sorted, deduplicated): 4-adjacency on (r, c) within
-/// each frame k, and adjacency along `e₃` between consecutive frames at
-/// the same (r, c) (51.3).
-pub fn incidence_of_3d(positions: &[(i64, i64, i64)]) -> Vec<(usize, usize)> {
+/// THE FACE INCIDENCE of a support of sites (51.3, 71.2(2)): two cubes
+/// share a face where exactly one coordinate differs, by one. Read one axis
+/// at a time: the sites ordered by every other coordinate and then by that
+/// axis, so the two ends of every such adjacency are successors. The grid's
+/// two axes are read first — columns, then rows — and every axis off the
+/// grid after them, so at the corpus's `n = 3` the passes and the edges'
+/// order are the ones the three fixed passes made: `(k, r, c)`, `(k, c, r)`,
+/// `(r, c, k)`. Two sites of different `n` are never adjacent.
+pub fn incidence_of_3d(positions: &[crate::transducer::base::Site]) -> Vec<(usize, usize)> {
+    use crate::transducer::base::{is_grid_axis, GRID_AXES};
     let mut edges = Vec::new();
-    if positions.is_empty() {
-        return edges;
-    }
-    let mut by_k_row_col: Vec<usize> = (0..positions.len()).collect();
-    #[expect(
-        clippy::disallowed_methods,
-        reason = "rule 4 — canonical key order: (k, r, c) order for column adjacency within frame"
-    )]
-    by_k_row_col.sort_unstable_by_key(|&i| (positions[i].2, positions[i].0, positions[i].1));
-    for w in by_k_row_col.windows(2) {
-        let (p, q) = (positions[w[0]], positions[w[1]]);
-        if p.2 == q.2 && p.0 == q.0 && p.1 + 1 == q.1 {
-            edges.push((w[0], w[1]));
-        }
-    }
-
-    let mut by_k_col_row: Vec<usize> = (0..positions.len()).collect();
-    #[expect(
-        clippy::disallowed_methods,
-        reason = "rule 4 — canonical key order: (k, c, r) order for row adjacency within frame"
-    )]
-    by_k_col_row.sort_unstable_by_key(|&i| (positions[i].2, positions[i].1, positions[i].0));
-    for w in by_k_col_row.windows(2) {
-        let (p, q) = (positions[w[0]], positions[w[1]]);
-        if p.2 == q.2 && p.1 == q.1 && p.0 + 1 == q.0 {
-            edges.push((w[0], w[1]));
-        }
-    }
-
-    let mut by_row_col_k: Vec<usize> = (0..positions.len()).collect();
-    #[expect(
-        clippy::disallowed_methods,
-        reason = "rule 4 — canonical key order: (r, c, k) order for frame adjacency"
-    )]
-    by_row_col_k.sort_unstable_by_key(|&i| (positions[i].0, positions[i].1, positions[i].2));
-    for w in by_row_col_k.windows(2) {
-        let (p, q) = (positions[w[0]], positions[w[1]]);
-        if p.0 == q.0 && p.1 == q.1 && p.2 + 1 == q.2 {
-            edges.push((w[0], w[1]));
+    let n = positions.iter().map(|s| s.n()).fold(0, usize::max);
+    let off_grid: Vec<usize> = (0..n).filter(|i| !is_grid_axis(*i)).collect();
+    let mut passes: Vec<usize> = vec![GRID_AXES[1], GRID_AXES[0]];
+    passes.extend(off_grid.iter().copied());
+    for a in passes.into_iter().filter(|&a| a < n) {
+        // The order this axis's adjacencies are successors in: the other
+        // axes off the grid, then the other grid axes, then this one.
+        let mut order: Vec<usize> = off_grid.iter().copied().filter(|&i| i != a).collect();
+        order.extend(GRID_AXES.iter().copied().filter(|&i| i != a && i < n));
+        order.push(a);
+        let key = |s: &crate::transducer::base::Site| -> Vec<i64> {
+            order.iter().map(|&i| s.axis(i)).collect::<Option<Vec<i64>>>().into_iter().flatten().collect()
+        };
+        let mut by: Vec<usize> = (0..positions.len()).collect();
+        by.sort_by_cached_key(|&i| (positions[i].n(), key(&positions[i])));
+        for w in by.windows(2) {
+            let (p, q) = (&positions[w[0]], &positions[w[1]]);
+            if p.n() != q.n() {
+                continue;
+            }
+            let adjacent = p.axes().iter().zip(q.axes()).enumerate().all(|(i, (x, y))| match i == a {
+                true => x + 1 == *y,
+                false => x == y,
+            });
+            if adjacent {
+                edges.push((w[0], w[1]));
+            }
         }
     }
     edges
@@ -338,14 +331,11 @@ pub fn replay_at<'a>(word_at: &impl Fn(&[u8]) -> Option<&'a Element>, cites: &[C
     replay_operators(&ops, target)
 }
 
-/// The key of a site on the three coordinates of the base: its position
-/// written out. A section's sites stand in frame `0`, their own (16.5).
-pub(crate) fn base_key(r: i64, c: i64, k: i64) -> [u8; 32] {
-    let mut key = [0u8; 32];
-    key[..8].copy_from_slice(&r.to_le_bytes());
-    key[8..16].copy_from_slice(&c.to_le_bytes());
-    key[16..24].copy_from_slice(&k.to_le_bytes());
-    key
+/// The key of a section's site: a section's sites stand in frame `0`, their
+/// own (16.5), and the key is that site's own ([`Site::key`], `n` first). A
+/// site of any other base is keyed by `Site::key` directly.
+pub(crate) fn section_site_key(r: i64, c: i64) -> Vec<u8> {
+    crate::transducer::base::Site::from((r, c, 0)).key()
 }
 
 /// THE REPLAY OF OPERATORS: each operator is a body (the word's links in
@@ -356,7 +346,7 @@ pub(crate) fn base_key(r: i64, c: i64, k: i64) -> [u8; 32] {
 pub fn replay_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Link> {
     let mut at: Keyed<Link> = Keyed::new();
     for &link in target {
-        at.insert(base_key(link.0, link.1, 0), link);
+        at.insert(section_site_key(link.0, link.1), link);
     }
     let mut spoken: Keyed<()> = Keyed::new();
     let mut over: Vec<Link> = Vec::new();
@@ -367,7 +357,7 @@ pub fn replay_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Lin
                 if tk != 0 {
                     continue;
                 }
-                let k = base_key(tr, tc, 0);
+                let k = section_site_key(tr, tc);
                 match at.get(&k) {
                     Some(t) if (t.2, t.3) == (wb, wa) => {
                         spoken.insert(k, ());
@@ -400,7 +390,7 @@ pub fn replay_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Lin
 pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<usize> {
     let mut at: Keyed<Link> = Keyed::new();
     for &link in target {
-        at.insert(base_key(link.0, link.1, 0), link);
+        at.insert(section_site_key(link.0, link.1), link);
     }
     let pos = element::positions(word.sub());
     let landed: Vec<(u8, u8)> = pos
@@ -411,7 +401,7 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<usize> {
             if tk != 0 {
                 return None;
             }
-            let t = at.get(&base_key(tr, tc, 0))?;
+            let t = at.get(&section_site_key(tr, tc))?;
             Some((t.2, t.3))
         })
         .collect();
@@ -430,7 +420,7 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<usize> {
             if tk != 0 {
                 return true;
             }
-            match at.get(&base_key(tr, tc, 0)) {
+            match at.get(&section_site_key(tr, tc)) {
                 Some(t) => (t.2, t.3) == (wb, wa),
                 None => true,
             }
@@ -463,7 +453,7 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Ve
     let mut conflict: Keyed<()> = Keyed::new();
     let mut at: Keyed<Link> = Keyed::new();
     for &link in target {
-        at.insert(base_key(link.0, link.1, 0), link);
+        at.insert(section_site_key(link.0, link.1), link);
     }
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
@@ -472,7 +462,7 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Ve
             if tk != 0 {
                 continue;
             }
-            let k = base_key(tr, tc, 0);
+            let k = section_site_key(tr, tc);
             if at.get(&k).is_none() {
                 continue;
             }
@@ -587,51 +577,87 @@ pub fn is_flat(cycle: &[Versor]) -> bool {
 /// distance test against every lamina.
 ///
 /// EACH PAIR CARRIES ITS DIRECTION, `q − p = d`. That is content, the
-/// coordinates of the adjacency itself, and not a label: `d.2 = 0` is
-/// contact within one frame, and `d.2 = ±1` is the frame axis entering
-/// contact.
-pub fn incidence_diagonal_3d(positions: &[(i64, i64, i64)]) -> Vec<(usize, usize, (i64, i64, i64))> {
-    // The ten directions of a cube's twenty edge and corner neighbours,
-    // each written with its first non-zero coordinate `+1`.
-    const DIRECTIONS: [(i64, i64, i64); 10] = [
-        (1, 1, 0),
-        (1, -1, 0),
-        (1, 0, 1),
-        (1, 0, -1),
-        (0, 1, 1),
-        (0, 1, -1),
-        (1, 1, 1),
-        (1, 1, -1),
-        (1, -1, 1),
-        (1, -1, -1),
-    ];
+/// coordinates of the adjacency itself, and not a label: `d` zero on the
+/// frame axis is contact within one frame, and `±1` there is the frame axis
+/// entering contact.
+///
+/// THE DIRECTIONS ARE GENERATED FROM `n` (71.2(2)): every `d ∈ {−1,0,1}ⁿ`
+/// with two or more non-zero coordinates, the first of them `+1` — by how
+/// many differ, then by which axes, then by the signs. At the corpus's
+/// `n = 3` that is the ten, in the order the fixed list had them.
+pub fn incidence_diagonal_3d(positions: &[crate::transducer::base::Site]) -> Vec<(usize, usize, Vec<i64>)> {
     let mut edges = Vec::new();
-    if positions.is_empty() {
-        return edges;
-    }
-    for d in DIRECTIONS {
+    let n = positions.iter().map(|s| s.n()).fold(0, usize::max);
+    for d in shared_boundary_directions(n) {
         // `t` is the coordinate `d` leads with. The invariants are the
         // coordinates less `d`'s share of `t`, so they are constant along
         // `d`.
-        let line = |p: (i64, i64, i64)| -> ((i64, i64, i64), i64) {
-            let t = match d.0 {
-                0 => p.1,
-                _ => p.0,
+        let lead = match d.iter().position(|&x| x != 0) {
+            Some(i) => i,
+            None => continue,
+        };
+        let line = |p: &crate::transducer::base::Site| -> (usize, Vec<i64>, i64) {
+            #[expect(
+                clippy::manual_unwrap_or_default,
+                reason = "the inclusion ℚᵐ ⊂ ℚⁿ (71): an axis a smaller base lacks is zero in the larger, measured and not defaulted"
+            )]
+            let t = match p.axis(lead) {
+                Some(t) => t,
+                None => 0,
             };
-            ((p.0 - d.0 * t, p.1 - d.1 * t, p.2 - d.2 * t), t)
+            let inv = p.axes().iter().zip(&d).map(|(x, dx)| x - dx * t).collect();
+            (p.n(), inv, t)
         };
         let mut along: Vec<usize> = (0..positions.len()).collect();
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "rule 4 — canonical key order: the line along d, then the parameter on it, is where a neighbour along d is a successor"
-        )]
-        along.sort_unstable_by_key(|&i| line(positions[i]));
+        // Canonical key order (rule 4): the line along d, then the
+        // parameter on it, is where a neighbour along d is a successor.
+        along.sort_by_cached_key(|&i| line(&positions[i]));
         for w in along.windows(2) {
-            let ((lp, tp), (lq, tq)) = (line(positions[w[0]]), line(positions[w[1]]));
-            if lp == lq && tp + 1 == tq {
-                edges.push((w[0], w[1], d));
+            let ((np, lp, tp), (nq, lq, tq)) = (line(&positions[w[0]]), line(&positions[w[1]]));
+            if np == n && nq == n && lp == lq && tp + 1 == tq {
+                edges.push((w[0], w[1], d.clone()));
             }
         }
     }
     edges
+}
+
+/// The directions of the shared boundary of a cube of ℤⁿ that is not a
+/// face: every `d ∈ {−1,0,1}ⁿ` with two or more non-zero coordinates, the
+/// first of them `+1`, one per pair of opposite neighbours. By how many
+/// coordinates differ, then by which axes (in order), then by the signs of
+/// the axes after the first, `+` before `−`.
+pub fn shared_boundary_directions(n: usize) -> Vec<Vec<i64>> {
+    let mut out = Vec::new();
+    for m in 2..=n {
+        // The axis sets of size m, in lexicographic order.
+        let mut sets: Vec<Vec<usize>> = vec![Vec::new()];
+        for i in 0..n {
+            let mut next = Vec::new();
+            for s in &sets {
+                next.push(s.clone());
+                if s.len() < m {
+                    let mut t = s.clone();
+                    t.push(i);
+                    next.push(t);
+                }
+            }
+            sets = next;
+        }
+        let mut sets: Vec<Vec<usize>> = sets.into_iter().filter(|s| s.len() == m).collect();
+        sets.sort_unstable();
+        for axes in sets {
+            // The signs of the axes after the first: m − 1 of them, + first.
+            for code in 0..(1usize << (m - 1)) {
+                let mut d = vec![0i64; n];
+                d[axes[0]] = 1;
+                for (b, &ax) in axes[1..].iter().enumerate() {
+                    let minus = (code >> (m - 2 - b)) & 1 == 1;
+                    d[ax] = if minus { -1 } else { 1 };
+                }
+                out.push(d);
+            }
+        }
+    }
+    out
 }

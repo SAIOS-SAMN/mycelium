@@ -4,7 +4,7 @@ use crate::network::nerve::keyed::coord;
 use crate::transducer::cech::{certified_triples, support_of_cover};
 
 fn cell(row: i64, col: i64, frame: i64) -> coord::Lamina {
-    coord::Lamina { row, col, frame }
+    coord::Lamina { site: crate::transducer::base::Site::from((row, col, frame)) }
 }
 
 /// THE PORE CASE — the whole reason the walk is over the base.
@@ -52,9 +52,9 @@ fn three_charts_ringing_a_pore_certify_no_simplex() {
 fn a_cell_standing_in_three_charts_certifies_one_simplex() {
     let shared = cell(4, 2, 3);
     let charts = vec![
-        vec![cell(0, 0, 0), shared],
-        vec![cell(9, 9, 1), shared],
-        vec![shared, cell(7, 7, 2)],
+        vec![cell(0, 0, 0), shared.clone()],
+        vec![cell(9, 9, 1), shared.clone()],
+        vec![shared.clone(), cell(7, 7, 2)],
     ];
 
     let (triples, refused) = certified_triples(&charts);

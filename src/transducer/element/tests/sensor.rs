@@ -62,12 +62,12 @@ fn a_shrink_carries_one_lamina_to_none_and_a_block_as_a_body_to_one() {
     let half = cga::dilator(&qn(1, 2));
     assert_eq!(carry_lamina(&half, 0, 0, 0), None, "a fractional image is no lamina");
     assert_eq!(carry_lamina(&half, 4, 4, 0), None, "even where its centre lands in one");
-    let block = shape_of(&[(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0)]);
-    let one = shape_of(&[(0, 0, 0)]);
+    let block = shape_of(&[(0i64, 0i64, 0i64), (0, 1, 0), (1, 0, 0), (1, 1, 0)]);
+    let one = shape_of(&[(0i64, 0i64, 0i64)]);
     let v = versor_between(&block, &one).expect("a shrink by one half carries the block onto the lamina");
     assert!(carries(&v, &block, &one), "verified lamina by lamina, both ways");
-    for &(r, c, k) in &block.blade.support {
-        assert_eq!(carry_lamina(&v, r, c, k), None, "no lamina of the block is carried alone: ({r}, {c})");
+    for s in &block.blade.support {
+        assert_eq!(carry_lamina_site(&v, s), None, "no lamina of the block is carried alone: {s:?}");
     }
 }
 

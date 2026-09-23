@@ -254,7 +254,7 @@ pub(crate) fn bundle_connections(bundle: &[crate::transducer::family::TrainPair]
         }
         let Some(at) = by_chart.get_mut(&ck) else { continue };
         match at.get_mut(&frame_key(k)) {
-            Some(l) => l.extend(b.laminae.iter().copied()),
+            Some(l) => l.extend(b.laminae.iter().cloned()),
             None => {
                 at.insert(frame_key(k), b.laminae.to_vec());
             }
@@ -274,10 +274,12 @@ pub(crate) fn bundle_connections(bundle: &[crate::transducer::family::TrainPair]
         let mut image: [u8; 10] = std::array::from_fn(|i| i as u8);
         for w in occupied.windows(2) {
             let [la, lb] = w else { continue };
-            let (a, b) = (
+            let (Some(a), Some(b)) = (
                 crate::transducer::family::body_of(la.clone()),
                 crate::transducer::family::body_of(lb.clone()),
-            );
+            ) else {
+                continue;
+            };
             let Some(car) = crate::transducer::family::carriage(&a, &b) else {
                 continue;
             };

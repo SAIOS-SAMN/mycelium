@@ -21,18 +21,16 @@ pub(super) fn fiber_frame_of_key(k: &[u8]) -> Option<i64> {
 
 /// A body's address as content: its laminae written out (A21).
 pub(super) fn body_key(b: &Body) -> Vec<u8> {
-    let mut k = Vec::with_capacity(b.laminae.len() * 25);
-    for &(r, c, f, h) in &b.laminae {
-        k.extend_from_slice(&r.to_le_bytes());
-        k.extend_from_slice(&c.to_le_bytes());
-        k.extend_from_slice(&f.to_le_bytes());
-        k.push(h);
+    let mut k = Vec::with_capacity(b.laminae.len() * 29);
+    for l in &b.laminae {
+        l.site.put(&mut k);
+        k.push(l.hue);
     }
     k
 }
 
 pub(super) fn laminae_of(bodies: &[Body]) -> Vec<Lamina> {
-    bodies.iter().flat_map(|b| b.laminae.iter().copied()).collect()
+    bodies.iter().flat_map(|b| b.laminae.iter().cloned()).collect()
 }
 
 /// THE FIBERS OF A SIDE: chart key → the chart, and frame → the sections
@@ -76,28 +74,32 @@ pub(super) fn unreached_demands(
     n_in: u32,
 ) -> Vec<Demanded> {
     let mut out_links: Vec<Link> = Vec::new();
-    for &(r, c, f, h) in &b0.laminae {
-        if !reached.contains(&base_key(r, c, f)) {
-            out_links.push((r, c, 0, h));
+    for l in &b0.laminae {
+        if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
+            out_links.push((r, c, 0, l.hue));
         }
     }
     let mut out = Vec::new();
     let mut gone: Keyed<()> = Keyed::new();
     if out_links.is_empty() {
         for body in instances {
-            let untouched = body.laminae.iter().all(|&(r, c, _, _)| !reached.contains(&base_key(r, c, 0)));
+            // The instance read in its frame's own coordinates, where the
+            // cover measured (16.5).
+            let at_zero = super::perceive::at_frame_zero(&body.laminae);
+            let untouched = at_zero.iter().all(|l| !reached.contains(&l.site.key()));
             if untouched {
                 out.push(vanished(body));
-                for &(r, c, _, _) in &body.laminae {
-                    gone.insert(base_key(r, c, 0), ());
+                for l in &at_zero {
+                    gone.insert(l.site.key(), ());
                 }
             }
         }
     }
     let mut links: Vec<Link> = out_links;
-    for &(r, c, f, h) in &a0.laminae {
-        if !reached.contains(&base_key(r, c, f)) && !gone.contains(&base_key(r, c, f)) {
-            links.push((r, c, h, 0));
+    for l in &a0.laminae {
+        let k = l.site.key();
+        if let (false, false, Some((r, c))) = (reached.contains(&k), gone.contains(&k), on_grid(&l.site)) {
+            links.push((r, c, l.hue, 0));
         }
     }
     links.sort_unstable();
@@ -111,6 +113,10 @@ pub(super) fn unreached_demands(
 /// A body that vanished: the empty chart on every axis (50.5).
 pub(super) fn vanished(body: &Body) -> Demanded {
     let axes: Vec<u16> = (0..body.moduli.0.len() as u16).collect();
-    let links: Vec<Link> = body.laminae.iter().map(|&(r, c, _, h)| (r, c, h, 0u8)).collect();
+    let links: Vec<Link> = body
+        .laminae
+        .iter()
+        .filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, l.hue, 0u8)))
+        .collect();
     (Demand::TopologicalDeformation { image: Invariant(Vec::new()), axes }, body.moduli.clone(), links)
 }

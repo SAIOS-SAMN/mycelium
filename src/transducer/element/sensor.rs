@@ -1,86 +1,154 @@
-// Law 11 — THE SENSOR: the readers permitted the base's coordinates, which
-// read the three of them (51.1) exactly or refuse.
+// Law 11, 71 — THE SENSOR: the readers permitted the base's coordinates,
+// which read a site of ℚⁿ exactly or refuse.
 //
-//! The four functions permitted a site's coordinates: a conformal point
-//! read to the site whose lamina holds it, a lamina's center and a whole
-//! lamina carried by a versor, and a sibling's assignment pulled back onto
-//! a base's sites. A lamina (16.4) is the unit square standing in its
-//! frame at a site, with its center carried at `(r + ½, c + ½, k)`.
+//! The functions permitted a site's coordinates: a conformal point read to
+//! the site whose lamina holds it, a lamina's center and a whole lamina
+//! carried by a versor, and a sibling's assignment pulled back onto a base's
+//! sites. A lamina (16.4) is the unit square standing on the grid axes at a
+//! site, with its center carried at the site plus ½ on each grid axis and
+//! the site's own coordinate on every other axis.
+//!
+//! THIS IS THE BOUNDARY WHERE THE CORPUS'S COORDINATES BECOME SITES (71.2(1)).
+//! The grid reads three of them — row, column, frame — and they enter the
+//! base here, as a [`Site`] carrying its `n`; above this file no tuple of
+//! coordinates is carried. The readers below take and return sites; the
+//! tuple forms are kept for the sensor's own callers that read a grid.
 
 use num_bigint::BigInt;
 use super::*;
+use crate::transducer::base::{is_grid_axis, Site};
 
-/// A point of the base, `(r, c, k)` in ℚ³ (51.1).
+/// THE `n` THE GRID PRESENTS (71.2(1)): row, column and frame. It is read
+/// here, at intake, and every site the sensor hands over carries it; a form
+/// extracted from grids stands on this base.
+pub const GRID_N: u8 = 3;
+
+/// A point of the base, `(r, c, k)` in ℚ³ (51.1): the corpus's three
+/// coordinates as the grid presents them.
 pub type Point = (num_rational::BigRational, num_rational::BigRational, num_rational::BigRational);
 
+/// THE CORPUS'S THREE COORDINATES AS A SITE: row, column, frame, read at the
+/// sensor and carried from here as a site of `n = 3`.
+impl From<(i64, i64, i64)> for Site {
+    fn from((r, c, k): (i64, i64, i64)) -> Site {
+        Site::new(vec![r, c, k])
+    }
+}
+
+/// A LAMINA AS THE GRID PRESENTS IT: row, column, frame and the hue it
+/// carries, read at the sensor.
+impl From<(i64, i64, i64, u8)> for crate::transducer::blade::Lamina {
+    fn from((r, c, k, hue): (i64, i64, i64, u8)) -> Self {
+        crate::transducer::blade::Lamina { site: Site::new(vec![r, c, k]), hue }
+    }
+}
+
 /// The site whose lamina holds a rational point of the base — exact
-/// containment on the sensor's own base (the floor of a rational is an
-/// exact integer, not a rounding) on the two plane axes, and the frame the
-/// point stands in along `e₃`. `None` where a coordinate does not fit the
-/// base (W6): a site it could not convert is a site it did not read.
+/// containment (the floor of a rational is an exact integer, not a
+/// rounding) on every axis. `None` where a coordinate does not fit the base
+/// (W6): a site it could not convert is a site it did not read.
+pub fn site_at(p: &[num_rational::BigRational]) -> Option<Site> {
+    p.iter()
+        .map(|x| i64::try_from(x.floor().to_integer()).ok())
+        .collect::<Option<Vec<i64>>>()
+        .map(Site::new)
+}
+
+/// The same reading for a point of the corpus's three coordinates.
 pub fn site_of(p: &Point) -> Option<(i64, i64, i64)> {
-    let f = |x: &num_rational::BigRational| -> Option<i64> {
-        i64::try_from(x.floor().to_integer()).ok()
-    };
-    Some((f(&p.0)?, f(&p.1)?, f(&p.2)?))
+    let s = site_at(&[p.0.clone(), p.1.clone(), p.2.clone()])?;
+    match s.axes() {
+        [r, c, k] => Some((*r, *c, *k)),
+        _ => None,
+    }
 }
 
 /// Carry a lamina's center by V and read the base point back (None at
-/// infinity). The center stands at `(r + ½, c + ½, k)`: the frame axis's
-/// origin lies at the laminae's centers (16.4), so a dilator about a point
-/// of the frame fixes the frame.
-pub fn carry_center(v: &Versor, r: i64, c: i64, k: i64) -> Option<Point> {
+/// infinity). The center stands at the site plus ½ on each grid axis: the
+/// other axes' origins lie at the laminae's centers (16.4), so a dilator
+/// about a point of the frame fixes the frame. At the site's own `n`.
+pub fn carry_site_center(v: &Versor, s: &Site) -> Option<Vec<num_rational::BigRational>> {
     let half = num_rational::BigRational::new(BigInt::from(1), BigInt::from(2));
-    let x = num_rational::BigRational::from_integer(BigInt::from(r)) + &half;
-    let y = num_rational::BigRational::from_integer(BigInt::from(c)) + &half;
-    let z = num_rational::BigRational::from_integer(BigInt::from(k));
-    crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&x, &y, &z)))
+    let x: Vec<num_rational::BigRational> = s
+        .axes()
+        .iter()
+        .enumerate()
+        .map(|(i, a)| {
+            let q = num_rational::BigRational::from_integer(BigInt::from(*a));
+            match is_grid_axis(i) {
+                true => q + &half,
+                false => q,
+            }
+        })
+        .collect();
+    crate::transducer::cga::base_at(&v.sandwich(&crate::transducer::cga::point_at(&x)), s.n())
 }
 
-/// Carry a whole lamina by V — its unit square standing in its frame — and
-/// read back the block of laminae its image IS: the sites whose squares
+/// The site a lamina's carried center lands in.
+pub fn carry_site(v: &Versor, s: &Site) -> Option<Site> {
+    site_at(&carry_site_center(v, s)?)
+}
+
+/// Carry a lamina's center at the corpus's three coordinates.
+pub fn carry_center(v: &Versor, r: i64, c: i64, k: i64) -> Option<Point> {
+    match carry_site_center(v, &Site::new(vec![r, c, k]))?.as_slice() {
+        [x, y, z] => Some((x.clone(), y.clone(), z.clone())),
+        _ => None,
+    }
+}
+
+/// Carry a whole lamina by V — its unit square standing on the grid axes —
+/// and read back the block of laminae its image IS: the sites whose squares
 /// tile it exactly. The square is carried by its four corners, and the
 /// image is a block of the sensor only where the corners land on the
-/// base's vertices, in one frame, as an axis-aligned square of integer
-/// side: one site under an isometry, an s×s block under a dilation by an
-/// integer s. Everything else is no lamina of the sensor and is refused
-/// (law 11): a tilted image (a rotor off the quarter turns), a fractional
-/// image (a shrink, a dilation by a ratio), a square standing across the
-/// frames (a versor turning `e₃` into the plane, 16.4), a corner at
-/// infinity or off the base (W6). Nothing is read off a span of centres:
-/// which laminae a carried square covers is its corners' to say, and a
-/// square whose corners fall between vertices covers no lamina exactly. A
-/// body a versor shrinks is carried as a body, by `blade::carries`, which
-/// reads where each lamina's centre lands; that reading is the body's and
-/// never the lamina's.
-pub fn carry_lamina(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64, i64, i64)>> {
-    let z = num_rational::BigRational::from_integer(BigInt::from(k));
-    // A corner carried onto a vertex of the base, or nothing: a coordinate
-    // between two vertices, or one that does not fit the base, is a square
-    // no laminae tile.
-    let corner = |dr: i64, dc: i64| -> Option<(i64, i64, i64)> {
-        let x = num_rational::BigRational::from_integer(BigInt::from(r + dr));
-        let y = num_rational::BigRational::from_integer(BigInt::from(c + dc));
-        let p = crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&x, &y, &z)))?;
-        if !(p.0.is_integer() && p.1.is_integer() && p.2.is_integer()) {
-            return None;
-        }
-        Some((
-            i64::try_from(p.0.to_integer()).ok()?,
-            i64::try_from(p.1.to_integer()).ok()?,
-            i64::try_from(p.2.to_integer()).ok()?,
-        ))
+/// base's vertices, with every non-grid coordinate shared by all four, as
+/// an axis-aligned square of integer side: one site under an isometry, an
+/// s×s block under a dilation by an integer s. Everything else is no lamina
+/// of the sensor and is refused (law 11): a tilted image (a rotor off the
+/// quarter turns), a fractional image (a shrink, a dilation by a ratio), a
+/// square standing across the frames (a versor turning a non-grid axis into
+/// the plane, 16.4), a corner at infinity or off the base (W6). Nothing is
+/// read off a span of centres.
+pub fn carry_lamina_site(v: &Versor, s: &Site) -> Option<Vec<Site>> {
+    let [ga, gb] = crate::transducer::base::GRID_AXES;
+    // A corner carried onto a vertex of the base, or nothing.
+    let corner = |da: i64, db: i64| -> Option<Vec<i64>> {
+        let x: Vec<num_rational::BigRational> = s
+            .axes()
+            .iter()
+            .enumerate()
+            .map(|(i, a)| {
+                let d = match i {
+                    i if i == ga => da,
+                    i if i == gb => db,
+                    _ => 0,
+                };
+                num_rational::BigRational::from_integer(BigInt::from(a + d))
+            })
+            .collect();
+        let p = crate::transducer::cga::base_at(
+            &v.sandwich(&crate::transducer::cga::point_at(&x)),
+            s.n(),
+        )?;
+        p.iter()
+            .map(|q| match q.is_integer() {
+                true => i64::try_from(q.to_integer()).ok(),
+                false => None,
+            })
+            .collect()
     };
     let (p00, p10, p01, p11) = (corner(0, 0)?, corner(1, 0)?, corner(0, 1)?, corner(1, 1)?);
-    if p10.2 != p00.2 || p01.2 != p00.2 || p11.2 != p00.2 {
+    // Every non-grid coordinate is one for all four corners: the image
+    // stands in one frame.
+    let off_grid_equal = |p: &[i64]| {
+        p.iter().enumerate().all(|(i, a)| is_grid_axis(i) || p00.get(i) == Some(a))
+    };
+    if !(off_grid_equal(&p10) && off_grid_equal(&p01) && off_grid_equal(&p11)) {
         return None;
     }
-    // The image's two edges from the carried origin corner. A block's
-    // square has each edge along one axis, the two along different axes
-    // and of one length, and its fourth corner where the two edges meet
-    // again.
-    let a = (p10.0 - p00.0, p10.1 - p00.1);
-    let b = (p01.0 - p00.0, p01.1 - p00.1);
+    let at = |p: &[i64], i: usize| p.get(i).copied();
+    let a = (at(&p10, ga)? - at(&p00, ga)?, at(&p10, gb)? - at(&p00, gb)?);
+    let b = (at(&p01, ga)? - at(&p00, ga)?, at(&p01, gb)? - at(&p00, gb)?);
     let along = |d: (i64, i64)| -> Option<(bool, i64)> {
         match (d.0 == 0, d.1 == 0) {
             (false, true) => Some((true, d.0.abs())),
@@ -93,20 +161,35 @@ pub fn carry_lamina(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64, i64,
     if a_rows == b_rows || side != side_b {
         return None;
     }
-    if p11 != (p00.0 + a.0 + b.0, p00.1 + a.1 + b.1, p00.2) {
+    if at(&p11, ga)? != at(&p00, ga)? + a.0 + b.0 || at(&p11, gb)? != at(&p00, gb)? + a.1 + b.1 {
         return None;
     }
     // The block: `side` rows and `side` columns from the image's lowest
-    // corner, each read off the sign of the edge along that axis.
-    let r0 = if a.0 + b.0 < 0 { p00.0 - side } else { p00.0 };
-    let c0 = if a.1 + b.1 < 0 { p00.1 - side } else { p00.1 };
+    // corner, each read off the sign of the edge along that axis, at the
+    // image's own non-grid coordinates.
+    let r0 = if a.0 + b.0 < 0 { at(&p00, ga)? - side } else { at(&p00, ga)? };
+    let c0 = if a.1 + b.1 < 0 { at(&p00, gb)? - side } else { at(&p00, gb)? };
     let mut out = Vec::new();
     for i in r0..r0 + side {
         for j in c0..c0 + side {
-            out.push((i, j, p00.2));
+            let mut axes = p00.clone();
+            axes[ga] = i;
+            axes[gb] = j;
+            out.push(Site::new(axes));
         }
     }
     Some(out)
+}
+
+/// A whole lamina carried at the corpus's three coordinates.
+pub fn carry_lamina(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64, i64, i64)>> {
+    carry_lamina_site(v, &Site::new(vec![r, c, k]))?
+        .iter()
+        .map(|s| match s.axes() {
+            [r, c, k] => Some((*r, *c, *k)),
+            _ => None,
+        })
+        .collect()
 }
 
 /// THE PULLBACK of a sibling's assignment onto a base support through the

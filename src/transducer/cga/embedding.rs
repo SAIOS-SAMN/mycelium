@@ -15,13 +15,27 @@ pub fn e_inf() -> Mv {
     Mv::blade(EM, one()).add(&Mv::blade(EP, one()))
 }
 
+/// Embed a base point of ℚⁿ on the null cone: `X(x) = x + ½‖x‖² e_∞ + e_o`,
+/// with `x = Σ xᵢ eᵢ` over the point's own coordinates (71.2(3)). The ONE
+/// producer of a conformal point; [`point`] is its reading at three.
+///
+/// `‖x‖²` is the base's own metric on its coordinates — every base axis
+/// squares to `+1` — written as the sum of their squares, and that sum is
+/// the scalar part of `x x` exactly.
+pub fn point_at(x: &[BigRational]) -> Mv {
+    let x2n = x.iter().fold(zero(), |s, xi| s + xi * xi);
+    let mut m = x
+        .iter()
+        .enumerate()
+        .fold(Mv::zero(), |m, (i, xi)| m.add(&Mv::blade(super::multivector::base_axis(i + 1), xi.clone())));
+    m = m.add(&e_inf().scale(&(half() * x2n)));
+    m.add(&e_o())
+}
+
 /// Embed a base point on the null cone: `X(x) = x + ½‖x‖² e_∞ + e_o`, with
 /// `x = x1 e1 + x2 e2 + x3 e3` — row, column, frame.
 pub fn point(x1: &BigRational, x2: &BigRational, x3: &BigRational) -> Mv {
-    let x2n = x1 * x1 + x2 * x2 + x3 * x3;
-    let mut m = Mv::blade(E1, x1.clone()).add(&Mv::blade(E2, x2.clone())).add(&Mv::blade(E3, x3.clone()));
-    m = m.add(&e_inf().scale(&(half() * x2n)));
-    m.add(&e_o())
+    point_at(&[x1.clone(), x2.clone(), x3.clone()])
 }
 
 /// A CHART BASE POINT ON THE NULL CONE OF A NON-EUCLIDEAN SPACE (54.7 B8,
@@ -84,7 +98,24 @@ pub fn hyperbolic_point(
 /// The dual sphere `S = X(c) − ½ r² e_∞`: a point at squared-distance `r2` from
 /// `c`. `r2 = 0` recovers the point (a volumeless sphere). Off-cone iff r²≠0.
 pub fn sphere(c1: &BigRational, c2: &BigRational, c3: &BigRational, r2: &BigRational) -> Mv {
-    point(c1, c2, c3).sub(&e_inf().scale(&(half() * r2)))
+    sphere_at(&[c1.clone(), c2.clone(), c3.clone()], r2)
+}
+
+/// The dual sphere of ℚⁿ, `S = X(c) − ½ r² e_∞`, about a centre of the
+/// base's own `n` coordinates: the ONE producer of a sphere.
+pub fn sphere_at(c: &[BigRational], r2: &BigRational) -> Mv {
+    point_at(c).sub(&e_inf().scale(&(half() * r2)))
+}
+
+/// The base point back out of a conformal point or sphere at `n`: the scale
+/// is `α = −(P·e_∞)`, then `xᵢ = P_{eᵢ}/α` for every base axis. `None` at
+/// infinity (`α = 0`).
+pub fn base_at(p: &Mv, n: usize) -> Option<Vec<BigRational>> {
+    let alpha = -p.geo(&e_inf()).scalar_part();
+    if alpha.is_zero() {
+        return None;
+    }
+    Some((1..=n).map(|i| p.coeff(super::multivector::base_axis(i)) / &alpha).collect())
 }
 
 /// The translation versor `T(d) = 1 − ½ d e_∞`, `d = d1 e1 + d2 e2 + d3 e3`.

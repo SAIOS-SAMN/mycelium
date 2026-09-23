@@ -28,8 +28,8 @@ fn the_adjacency_band_against_a_size_mismatch() {
     for n in 1..=6i64 {
         // A bar of `n` cells along the row, and one cell touching its
         // left end edge-to-edge. Both are genuinely in contact.
-        let bar: Vec<(i64, i64, i64)> = (0..n).map(|c| (0, c, 0)).collect();
-        let cell = vec![(0, -1, 0)];
+        let bar: Vec<_> = (0..n).map(|c| (0i64, c, 0i64)).collect();
+        let cell = vec![(0i64, -1i64, 0i64)];
         let (a, b) = (blade::shape_of(&cell), blade::shape_of(&bar));
         let Some(face) = blade::Interface::between(&a.blade, &b.blade) else {
             rows.push(format!("n={n}: no interface"));
@@ -105,8 +105,8 @@ fn a14_the_pair_reading_must_be_constant_on_a_contact_family() {
     let mut rank1: Vec<String> = Vec::new();
     let mut rank2: Vec<String> = Vec::new();
     for n in 1..=6i64 {
-        let bar: Vec<(i64, i64, i64)> = (0..n).map(|c| (0, c, 0)).collect();
-        let cell = vec![(0, -1, 0)];
+        let bar: Vec<_> = (0..n).map(|c| (0i64, c, 0i64)).collect();
+        let cell = vec![(0i64, -1i64, 0i64)];
         let (a, b) = (blade::shape_of(&cell), blade::shape_of(&bar));
         let (ba, bb) = (&a.blade, &b.blade);
         // RANK 1 — what the horizon reads today.

@@ -26,8 +26,9 @@ pub struct ContinuousSupport {
     pub shell: BigRational,
     /// Exact 3D centroid (r̄, c̄, k̄) in ℚ³.
     pub centroid: (BigRational, BigRational, BigRational),
-    /// Inertia tensor moments [Ixx, Iyy, Ixy, Izz, Ixz, Iyz] in ℚ⁶.
-    pub inertia: [BigRational; 6],
+    /// Inertia tensor moments in the blade's order (`inertia_pairs(n)`:
+    /// Ixx, Iyy, Ixy, Izz, Ixz, Iyz at `n = 3`).
+    pub inertia: Vec<BigRational>,
     /// Casimir invariant of the deviatoric quadrupole: |H₂|² = (Ixx - Iyy)² + 4 Ixy² in ℚ.
     pub h2_casimir: BigRational,
     /// Casimir invariant of the hexadecapole / spin-4 moment in ℚ.

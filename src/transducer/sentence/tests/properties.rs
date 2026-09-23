@@ -588,13 +588,15 @@ fn the_filer_reaches_the_fixed_point_gate() {
 fn a_face_carries_its_interface_through_its_address() {
     let mut f = star_form(2, vec![(1, 2, Word::identity())]);
     let chord = f.faces.len() - 1;
-    f.faces[chord].interface = vec![(1, 1, 0), (3, 3, 0), (5, 5, 1)];
+    use crate::transducer::base::Site;
+    let flat = [(1i64, 1i64, 0i64), (3, 3, 0), (5, 5, 1)].map(Site::from).to_vec();
+    f.faces[chord].interface = flat.clone();
     let back = from_address(&form_vertex_key(&f)).expect("the address parses");
     assert!(same_form(&f, &back), "the form comes back");
-    let interfaces: Vec<&Vec<(i64, i64, i64)>> =
+    let interfaces: Vec<&Vec<Site>> =
         back.faces.iter().map(|x| &x.interface).filter(|i| !i.is_empty()).collect();
-    assert_eq!(interfaces, vec![&vec![(1, 1, 0), (3, 3, 0), (5, 5, 1)]], "with its interface, element by element");
+    assert_eq!(interfaces, vec![&flat], "with its interface, element by element");
     let mut ridged = f.clone();
-    ridged.faces[chord].interface = vec![(1, 1, 0), (3, 5, 0), (5, 5, 1)];
+    ridged.faces[chord].interface = [(1i64, 1i64, 0i64), (3, 5, 0), (5, 5, 1)].map(Site::from).to_vec();
     assert_ne!(form_vertex_key(&f), form_vertex_key(&ridged), "another interface is another form");
 }

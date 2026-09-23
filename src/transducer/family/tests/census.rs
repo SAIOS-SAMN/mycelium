@@ -578,7 +578,7 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
             for (r, row) in input.iter().enumerate() {
                 for (c, &h) in row.iter().enumerate() {
                     if h != 0 {
-                        laminae.push((r as i64, c as i64, 0, h));
+                        laminae.push(crate::transducer::blade::Lamina::from((r as i64, c as i64, 0i64, h)));
                     }
                 }
             }
@@ -586,16 +586,16 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
                 continue;
             }
             laminae.sort_unstable();
-            laminae.dedup_by_key(|x| (x.0, x.1, x.2));
-            let positions: Vec<(i64, i64, i64)> =
-                laminae.iter().map(|x| (x.0, x.1, x.2)).collect();
+            laminae.dedup_by(|x, y| x.site == y.site);
+            let positions: Vec<crate::transducer::base::Site> =
+                laminae.iter().map(|x| x.site.clone()).collect();
             // THE BODIES: hue-blind components of the 6-incidence (70.4).
             let all = incidence_of_3d(&positions);
             let roots = components(laminae.len(), &all);
             // The 6-incidence edges across two hues lie INSIDE one body now:
             // they are its gauge seams, H3's content, and never contact.
             for &(i, j) in &all {
-                match laminae[i].3 == laminae[j].3 {
+                match laminae[i].hue == laminae[j].hue {
                     true => interior += 1,
                     false => seams += 1,
                 }
@@ -724,7 +724,7 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
             for (r, row) in input.iter().enumerate() {
                 for (c, &h) in row.iter().enumerate() {
                     if h != 0 {
-                        laminae.push((r as i64, c as i64, k as i64, h));
+                        laminae.push(crate::transducer::blade::Lamina::from((r as i64, c as i64, k as i64, h)));
                     }
                 }
             }
@@ -733,8 +733,8 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
             continue;
         }
         laminae.sort_unstable();
-        laminae.dedup_by_key(|x| (x.0, x.1, x.2));
-        let positions: Vec<(i64, i64, i64)> = laminae.iter().map(|x| (x.0, x.1, x.2)).collect();
+        laminae.dedup_by(|x, y| x.site == y.site);
+        let positions: Vec<crate::transducer::base::Site> = laminae.iter().map(|x| x.site.clone()).collect();
         let roots = components(positions.len(), &incidence_of_3d(&positions));
         // Each body pair with the frame span of its elements: `(in, across)`.
         let mut span: crate::network::nerve::Keyed<(bool, bool)> = crate::network::nerve::Keyed::new();
@@ -743,9 +743,10 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
             if a == b {
                 continue;
             }
-            match d.2 {
-                0 => elements_in += 1,
-                _ => elements_across += 1,
+            let within = d.get(2) == Some(&0);
+            match within {
+                true => elements_in += 1,
+                false => elements_across += 1,
             }
             let mut k = (a as u64).to_le_bytes().to_vec();
             k.extend_from_slice(&(b as u64).to_le_bytes());
@@ -755,7 +756,7 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
                 Some(&held) => held,
                 None => (false, false),
             };
-            span.insert(k, (was_in || d.2 == 0, was_across || d.2 != 0));
+            span.insert(k, (was_in || within, was_across || !within));
         }
         let mut root_ids: Vec<usize> = roots.clone();
         root_ids.sort_unstable();

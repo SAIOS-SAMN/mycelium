@@ -324,6 +324,10 @@ pub fn rule_of_form(mut form: Form) -> SentenceRule {
 
 pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     let mut buf = vec![crate::transducer::address::TAG_FORM];
+    // 71.2(1), BQ1 — THE BASE'S `n` FIRST. It is the coarsest coordinate a
+    // form has: two forms read on bases of two `n` share no stratum below
+    // the tag, and every form of one base shares this prefix.
+    buf.push(f.n);
     // THE COUNT IS OF WHAT IS WRITTEN, and until 54.5 it was not.
     //
     // It read `f.vertices.len()` while the body below walks
@@ -508,12 +512,11 @@ fn put_face(buf: &mut Vec<u8>, face: &FormFace, at: &[u16]) {
         // A flat interface and a ridged one between the same two members
         // are two contacts, and the address is what says so. Written as its
         // count and then each element's doubled centre, in the sorted order
-        // the face holds. A face that is not a contact writes a zero count.
+        // the face holds, each a site with its `n` (71). A face that is not
+        // a contact writes a zero count.
         buf.extend_from_slice(&(face.interface.len() as u32).to_le_bytes());
-        for &(r, c, k) in &face.interface {
-            buf.extend_from_slice(&r.to_le_bytes());
-            buf.extend_from_slice(&c.to_le_bytes());
-            buf.extend_from_slice(&k.to_le_bytes());
+        for s in &face.interface {
+            s.put(buf);
         }
     }
 }

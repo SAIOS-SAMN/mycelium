@@ -14,12 +14,12 @@ mod planes;
 mod spin;
 
 pub use embedding::{
-    base, boundary_dual, e_inf, e_o, hyperbolic_point, on_sphere, point, rotator,
-    rotator_on_blade, sphere, translator,
+    base, base_at, boundary_dual, e_inf, e_o, hyperbolic_point, on_sphere, point, point_at, rotator,
+    rotator_on_blade, sphere, sphere_at, translator,
 };
 pub use group::{dilator, is_versor, projective_ratio, reflector};
 pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_lamina, hyperboloid_pole};
-pub use multivector::{base_axis, blades, pseudo, slots, wire_n, Mv, E1, E2, E3, EM, EP};
+pub use multivector::{base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP};
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
 pub use planes::{
     bivector_planes, harmonic_planes, is_transvection_plane, note_transition, plane_is_harmonic,

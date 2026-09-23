@@ -181,7 +181,7 @@ fn triples_over(cells: &[(coord::Lamina, &Vec<usize>)]) -> Vec<Certified> {
                         continue;
                     }
                     seen.insert(&key, ());
-                    out.push(Certified { charts, witness: *cell });
+                    out.push(Certified { charts, witness: cell.clone() });
                 }
             }
         }

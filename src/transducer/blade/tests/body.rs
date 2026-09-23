@@ -9,15 +9,15 @@ use crate::transducer::blade::*;
 /// carry the numbers first, and a dilation keeps them.
 #[test]
 fn topology_counts_components_and_holes_exactly() {
-    assert_eq!(topology(&rect(0, 0, 2, 2)), (1, 0, 0));
+    assert_eq!(topology(&rect(0, 0, 2, 2)), Some((1, 0, 0)));
     let ring = at_frame_0(&[(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]);
-    assert_eq!(topology(&ring), (1, 1, 0));
+    assert_eq!(topology(&ring), Some((1, 1, 0)));
     let two = at_frame_0(&[(0, 0), (0, 1), (5, 5), (5, 6)]);
-    assert_eq!(topology(&two), (2, 0, 0));
-    let m = moduli(&shape_of(&ring).blade);
+    assert_eq!(topology(&two), Some((2, 0, 0)));
+    let m = moduli(&shape_of(&ring).blade).expect("a ring is heard at n = 3");
     use crate::transducer::stalk::ChartAxis::Count;
     assert_eq!((m[0].clone(), m[1].clone(), m[2].clone(), m[3].clone()), (Count(1), Count(1), Count(0), Count(8)));
-    assert_eq!(moduli(&shape_of(&dilate(&ring, 2)).blade), m, "a dilated ring reads the same moduli");
+    assert_eq!(moduli(&shape_of(&dilate(&ring, 2)).blade), Some(m), "a dilated ring reads the same moduli");
     // The fourth-order axis separates bodies the inertia cannot: an
     // L-tetromino and a T-tetromino... share a lamina count; the moduli
     // differ.
@@ -71,7 +71,7 @@ fn components_join_by_adjacency_whatever_the_hue() {
     assert_eq!(same.len(), 1, "adjacent laminae of one hue are one body");
     let apart = components(&laminae(&[(0, 0, 1), (0, 5, 1)]));
     assert_eq!(apart.len(), 2, "a gap separates bodies");
-    let across = components(&[(0, 0, 0, 1), (0, 0, 1, 1)]);
+    let across = components(&sites_with_hue(&[(0, 0, 0, 1), (0, 0, 1, 1)]));
     assert_eq!(across.len(), 1, "one site in two consecutive frames is one body (51.3)");
     // THE HUE IS NOT LOST, IT MOVES TO THE FIBER. `Blade.gauge` carries it
     // as sorted `(hue, count)` relations — which is where every reader
@@ -80,7 +80,7 @@ fn components_join_by_adjacency_whatever_the_hue() {
     assert_eq!(body.gauge.len(), 2, "both hues carried as gauge: {:?}", body.gauge);
     // AND THE DIAGONAL DOES NOT JOIN. H2 gives it to contact; if it
     // entered here it would merge the bodies it is meant to relate.
-    let corner = components(&[(0, 0, 0, 1), (1, 1, 0, 1)]);
+    let corner = components(&sites_with_hue(&[(0, 0, 0, 1), (1, 1, 0, 1)]));
     assert_eq!(corner.len(), 2, "a corner meeting is contact, never one body");
 }
 
@@ -90,7 +90,7 @@ fn components_join_by_adjacency_whatever_the_hue() {
 #[test]
 fn a_translate_shares_the_invariant() {
     let a = lift(&laminae(&[(0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)]));
-    let b = lift(&[(4, 7, 1, 1), (4, 8, 1, 1), (5, 7, 1, 1), (5, 8, 1, 1)]);
+    let b = lift(&sites_with_hue(&[(4, 7, 1, 1), (4, 8, 1, 1), (5, 7, 1, 1), (5, 8, 1, 1)]));
     assert_eq!(a.invariant(), b.invariant(), "a translate is the same orbit");
 }
 
@@ -99,12 +99,7 @@ fn a_translate_shares_the_invariant() {
 /// the off-plane harmonic is readable.
 #[test]
 fn volumetric_blade_3d_lift_computes_six_moments_and_3d_centroid() {
-    let comp3 = vec![
-        (0, 0, 0, 1u8),
-        (0, 2, 0, 1u8),
-        (0, 0, 2, 1u8),
-        (0, 2, 2, 1u8),
-    ];
+    let comp3 = sites_with_hue(&[(0, 0, 0, 1u8), (0, 2, 0, 1u8), (0, 0, 2, 1u8), (0, 2, 2, 1u8)]);
     let b = lift(&comp3);
     assert_eq!(b.shell, q(4));
     let c3 = b.centroid().expect("3D centroid");

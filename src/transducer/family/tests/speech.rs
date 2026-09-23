@@ -417,7 +417,10 @@ assert_eq!(
 #[test]
 fn the_open_section_is_carried_at_its_own_frame_and_a_tilt_is_refused() {
     use crate::transducer::family::{body_of, emit_carried};
-    let bar = |k: i64| body_of(vec![(0, 0, k, 1u8), (0, 1, k, 1u8)]);
+    let bar = |k: i64| {
+        body_of(vec![Lamina::from((0i64, 0i64, k, 1u8)), Lamina::from((0i64, 1i64, k, 1u8))])
+            .expect("a bar is heard at n = 3")
+    };
     let shift = element::translator_versor(2, 0);
     let mut at_zero = Vec::new();
     let mut rem_zero = Vec::new();

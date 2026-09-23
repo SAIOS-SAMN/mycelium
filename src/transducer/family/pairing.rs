@@ -184,7 +184,7 @@ pub(crate) enum Incidence {
 /// A SITE OF THE OCCUPANCY: its own coordinates, and the members standing
 /// on it in the order they were offered.
 struct Occupied {
-    site: (i64, i64, i64),
+    site: Site,
     members: Vec<Vec<u8>>,
 }
 
@@ -196,7 +196,7 @@ struct Occupied {
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Named {
     pub(crate) hows: Vec<Incidence>,
-    pub(crate) interfaces: Vec<Vec<(i64, i64, i64)>>,
+    pub(crate) interfaces: Vec<Vec<Site>>,
 }
 
 /// ONE PAIR THE INCIDENCE NAMES: its two members and what named them.
@@ -217,7 +217,7 @@ fn relate(
     related: &mut crate::network::nerve::Keyed<Named>,
     key: Vec<u8>,
     how: Incidence,
-    interface: Option<Vec<(i64, i64, i64)>>,
+    interface: Option<Vec<Site>>,
 ) {
     if related.get(&key).is_none() {
         related.insert(key.clone(), Named::default());
@@ -237,7 +237,7 @@ fn relate(
 /// boundary elements, and the members standing at each side of them.
 #[derive(Default)]
 struct Gathered {
-    elements: Vec<(i64, i64, i64)>,
+    elements: Vec<Site>,
     left: Vec<Vec<u8>>,
     right: Vec<Vec<u8>>,
 }
@@ -272,7 +272,7 @@ struct Gathered {
 /// about one the index holds and the count does not reach.
 pub(crate) fn named_faces(
     frame: Option<&[u8]>,
-    supports: &crate::network::nerve::Keyed<Vec<(i64, i64, i64)>>,
+    supports: &crate::network::nerve::Keyed<Vec<Site>>,
 ) -> Vec<NamedFace> {
     let mut related: crate::network::nerve::Keyed<Named> = crate::network::nerve::Keyed::new();
     if let Some(frame) = frame {
@@ -291,9 +291,9 @@ pub(crate) fn named_faces(
         if Some(mk.as_slice()) == frame {
             continue;
         }
-        for &(r, c, f) in supp {
+        for s in supp {
             note_face_work();
-            let k = base_key(r, c, f);
+            let k = s.key();
             match occ.get_mut(&k) {
                 // The members ascend in key order and a member is offered its
                 // own support once, so a repeat can only be the one just
@@ -305,7 +305,7 @@ pub(crate) fn named_faces(
                     _ => o.members.push(mk.clone()),
                 },
                 None => {
-                    occ.insert(k, Occupied { site: (r, c, f), members: vec![mk.clone()] });
+                    occ.insert(k, Occupied { site: s.clone(), members: vec![mk.clone()] });
                 }
             }
         }
@@ -361,7 +361,7 @@ pub(crate) fn named_faces(
     // across two frames. The set rides the face as its coordinates, never
     // as a tally.
     let held: Vec<&Occupied> = occ.scoped().map(|(_, o)| o).collect();
-    let positions: Vec<(i64, i64, i64)> = held.iter().map(|o| o.site).collect();
+    let positions: Vec<Site> = held.iter().map(|o| o.site.clone()).collect();
     let body = crate::transducer::sentence::components(
         positions.len(),
         &crate::transducer::sentence::incidence_of_3d(&positions),
@@ -372,7 +372,7 @@ pub(crate) fn named_faces(
         if bi == bj {
             continue;
         }
-        let (Some(&ri), Some(&rj)) = (positions.get(bi), positions.get(bj)) else { continue };
+        let (Some(ri), Some(rj)) = (positions.get(bi), positions.get(bj)) else { continue };
         // The body pair is keyed by its two bodies' root sites, the lesser
         // first, and the element's sides are read in the same orientation.
         let ((x, rx), (y, ry)) = match ri <= rj {
@@ -381,13 +381,16 @@ pub(crate) fn named_faces(
         };
         let (Some(px), Some(py)) = (held.get(x), held.get(y)) else { continue };
         note_face_work();
-        let mut k = base_key(rx.0, rx.1, rx.2).to_vec();
-        k.extend_from_slice(&base_key(ry.0, ry.1, ry.2));
+        let mut k = rx.key();
+        ry.put(&mut k);
+        // The element's centre doubled, `p + q`: exact, integer, and a site
+        // of the same base.
+        let Some(element) = px.site.offset(py.site.axes()) else { continue };
         if contacts.get(&k).is_none() {
             contacts.insert(k.clone(), Gathered::default());
         }
         let Some(g) = contacts.get_mut(&k) else { continue };
-        g.elements.push((px.site.0 + py.site.0, px.site.1 + py.site.1, px.site.2 + py.site.2));
+        g.elements.push(element);
         g.left.extend(px.members.iter().cloned());
         g.right.extend(py.members.iter().cloned());
     }

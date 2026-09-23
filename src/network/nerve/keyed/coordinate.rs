@@ -302,8 +302,10 @@ pub mod coord {
     /// and could not: a cover piece is of ONE hue by construction and
     /// carries it on [`Piece`], which is why the base a cover is read over
     /// is three spatial axes and the palette is a coordinate of the chart.
-    /// The bytes are unchanged — three `i64` after the tag — so this is a
-    /// key that now says what it always spelled.
+    /// 71.2(1), BQ1 — the cell IS a site of the base, `n` coordinates with
+    /// `n` written first ([`Site::put`](crate::transducer::base::Site::put)):
+    /// row, column and frame at the corpus's `n = 3`, and whatever the base
+    /// has at any other.
     ///
     /// It exists so the nerve's overlaps can be derived by WALKING THE
     /// BASE. A 2-simplex of a cover is certified by a WITNESS: a cell
@@ -319,11 +321,9 @@ pub mod coord {
     /// combinatorial scan over triples, which is a search (rule 3); the
     /// base walk is `O(cells · valence)` and derives the simplex from the
     /// cover the engine already built.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Lamina {
-        pub row: i64,
-        pub col: i64,
-        pub frame: i64,
+        pub site: crate::transducer::base::Site,
     }
 
     impl Coordinate for Lamina {
@@ -332,9 +332,7 @@ pub mod coord {
 
         fn encode(&self) -> CompactBytes {
             let mut buf = vec![7u8];
-            buf.extend_from_slice(&self.row.to_le_bytes());
-            buf.extend_from_slice(&self.col.to_le_bytes());
-            buf.extend_from_slice(&self.frame.to_le_bytes());
+            self.site.put(&mut buf);
             CompactBytes::written(buf)
         }
 
@@ -343,19 +341,17 @@ pub mod coord {
             reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
         )]
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
-            let axis = |i: usize| -> Result<i64, CoordinateError> {
-                let at = 1 + i * 8;
-                let eight: [u8; 8] = bytes
-                    .get(at..at + 8)
-                    .and_then(|s| s.try_into().ok())
-                    .ok_or_else(|| Self::refuse("a lamina cell is a tag byte and three i64"))?;
-                Ok(i64::from_le_bytes(eight))
-            };
+            let refuse = || Self::refuse("a lamina cell is a tag byte and a site, n first");
             match bytes.first() {
-                Some(7u8) if bytes.len() == 25 => {
-                    Ok(Lamina { row: axis(0)?, col: axis(1)?, frame: axis(2)? })
+                Some(7u8) => {
+                    let mut pos = 1usize;
+                    let site = crate::transducer::base::Site::take(bytes, &mut pos).ok_or_else(refuse)?;
+                    match pos == bytes.len() {
+                        true => Ok(Lamina { site }),
+                        false => Err(refuse()),
+                    }
                 }
-                _ => Err(Self::refuse("a lamina cell is a tag byte and three i64")),
+                _ => Err(refuse()),
             }
         }
     }
@@ -823,40 +819,33 @@ pub mod coord {
     /// length-delimited, and the two passes agree because both sides are
     /// lists — not because one collapses to the other's shape.
     ///
-    /// A cell of the base carried into a support is `(row, col, frame)`,
-    /// where FRAME is the sensor's third axis. It is not the hue, and the hue
+    /// A cell of the base carried into a support is a site with its `n` —
+    /// `(row, col, frame)` at the corpus's three, FRAME the sensor's third axis. It is not the hue, and the hue
     /// is not on this address either: a piece is a HUE-BLIND component
     /// (70.4), its colours are the gauge its laminae carry, and nothing reads
     /// a colour back off a piece's key, so none is written there (law 12).
     #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Piece {
         pub kind: crate::transducer::peel::ShellKind,
-        pub support: Vec<(i64, i64, i64)>,
+        pub support: Vec<crate::transducer::base::Site>,
     }
 
-    /// Three `i64` written and read back in one place, so the support's
-    /// layout has ONE producer and cannot drift between the three
-    /// coordinates that share it (law 12).
-    fn put_support(buf: &mut Vec<u8>, support: &[(i64, i64, i64)]) {
+    /// A support written and read back in one place, so its layout has ONE
+    /// producer and cannot drift between the coordinates that share it (law
+    /// 12): the count, then each site with its `n` (71.2(1)).
+    fn put_support(buf: &mut Vec<u8>, support: &[crate::transducer::base::Site]) {
         buf.extend_from_slice(&(support.len() as u32).to_le_bytes());
-        for &(r, c, f) in support {
-            buf.extend_from_slice(&r.to_le_bytes());
-            buf.extend_from_slice(&c.to_le_bytes());
-            buf.extend_from_slice(&f.to_le_bytes());
+        for s in support {
+            s.put(buf);
         }
     }
 
-    fn take_support(bytes: &[u8], pos: &mut usize) -> Option<Vec<(i64, i64, i64)>> {
+    fn take_support(bytes: &[u8], pos: &mut usize) -> Option<Vec<crate::transducer::base::Site>> {
         let n = u32::from_le_bytes(bytes.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
         *pos += 4;
-        let mut out = Vec::with_capacity(n);
+        let mut out = Vec::with_capacity(n.min(bytes.len()));
         for _ in 0..n {
-            let axis = |i: usize| -> Option<i64> {
-                let at = *pos + i * 8;
-                Some(i64::from_le_bytes(bytes.get(at..at + 8)?.try_into().ok()?))
-            };
-            out.push((axis(0)?, axis(1)?, axis(2)?));
-            *pos += 24;
+            out.push(crate::transducer::base::Site::take(bytes, pos)?);
         }
         Some(out)
     }

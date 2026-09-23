@@ -225,9 +225,11 @@ pub fn third_harmonic(blade: &Blade) -> Option<[BigRational; 2]> {
         BigRational::from_integer(BigInt::from(0)),
         BigRational::from_integer(BigInt::from(0)),
     );
-    for &(r, c, _) in &blade.support {
-        let a = BigRational::from_integer(BigInt::from(r)) - &cx;
-        let b = BigRational::from_integer(BigInt::from(c)) - &cy;
+    // On the grid plane, where `h₃` turns (BQ4 generalises the plane).
+    let [ga, gb] = crate::transducer::base::GRID_AXES;
+    for site in &blade.support {
+        let a = BigRational::from_integer(BigInt::from(site.axis(ga)?)) - &cx;
+        let b = BigRational::from_integer(BigInt::from(site.axis(gb)?)) - &cy;
         let (a2, b2) = (&a * &a, &b * &b);
         re += &a * &a2 - &three * &a * &b2;
         im += &three * &a2 * &b - &b * &b2;

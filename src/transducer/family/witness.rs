@@ -57,12 +57,12 @@ use crate::transducer::cech::{read_nerve, NerveTotals};
 // The two readings come back as the carriers that hold them — the source's
 // and the image's `NerveTotals` — and the line reads them by field.
 pub(super) fn cover_nerves(covers: &[Covered]) -> (NerveTotals, NerveTotals) {
-    // `support_of` writes `(row, col, frame)` — the three SPATIAL axes,
-    // the third being the corpus's own `e₃`. The hue never reaches here:
-    // it is the gauge a piece's laminae carry, a fibre coordinate, and the
-    // nerve is read on the base (70.4).
-    let cells_of = |sup: &[(i64, i64, i64)]| -> Vec<coord::Lamina> {
-        sup.iter().map(|&(row, col, frame)| coord::Lamina { row, col, frame }).collect()
+    // `support_of` writes the sites of the base — the SPATIAL axes, the
+    // third being the corpus's own `e₃`. The hue never reaches here: it is
+    // the gauge a piece's laminae carry, a fibre coordinate, and the nerve
+    // is read on the base (70.4).
+    let cells_of = |sup: &[crate::transducer::base::Site]| -> Vec<coord::Lamina> {
+        sup.iter().map(|s| coord::Lamina { site: s.clone() }).collect()
     };
     let mut src = NerveTotals::default();
     let mut img = NerveTotals::default();

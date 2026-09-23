@@ -320,8 +320,7 @@ pub fn invariant(chain: &[Link]) -> Invariant {
     if sites.is_empty() {
         return Invariant(Vec::new());
     }
-    let shape = crate::transducer::blade::shape_of_section(&sites);
-    Invariant(crate::transducer::blade::moduli(&shape.blade))
+    Invariant(crate::transducer::blade::section_moduli(&sites))
 }
 
 /// THE INVARIANT OF A WORD, read on its kind. A residual word (a chain) is

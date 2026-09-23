@@ -198,11 +198,11 @@ let x = grid(&["330000", "000000", "001000", "000000", "000000", "000000"]);
 let bodies = perceive(&x);
 let a = bodies
     .iter()
-    .find(|b| b.laminae.iter().any(|c| c.3 == 1))
+    .find(|b| b.laminae.iter().any(|c| c.hue == 1))
     .expect("body A");
 let b = bodies
     .iter()
-    .find(|b| b.laminae.iter().any(|c| c.3 == 3))
+    .find(|b| b.laminae.iter().any(|c| c.hue == 3))
     .expect("body B");
 assert_ne!(a.moduli, b.moduli, "two shapes, two charts");
 // Form::default() carries the Frame at index 0.
@@ -882,7 +882,7 @@ assert_eq!(merged.len(), 1, "the output is one body: {}", merged.len());
 // `shape_of`, which writes hue `0` at every site — the shape has ALWAYS
 // been hue-blind, and only `components()` ever used hue. The body's
 // colours ride on its laminae, which is where H3 reads the seam.
-let mut hues: Vec<u8> = merged[0].laminae.iter().map(|&(_, _, _, h)| h).collect();
+let mut hues: Vec<u8> = merged[0].laminae.iter().map(|l| l.hue).collect();
 hues.sort_unstable();
 hues.dedup();
 assert_eq!(hues.len(), 2, "the merged body carries both hues: {hues:?}");
@@ -915,7 +915,7 @@ fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
     use crate::network::nerve::Keyed;
     use crate::transducer::family::{body_of, occupied_frames};
     use crate::transducer::sentence::vertex_ix_key;
-    let body = || body_of(vec![(0i64, 0i64, 0i64, 1u8)]);
+    let body = || body_of(vec![Lamina::from((0i64, 0i64, 0i64, 1u8))]).expect("one lamina is heard");
     let v = crate::transducer::element::identity_versor();
     let mut at: Keyed<(
         crate::transducer::family::Body,
@@ -968,20 +968,27 @@ fn a_members_fiber_reads_as_one_union_body_or_not_at_all() {
     use crate::transducer::family::union_quotient;
     // Three frames, each a bar translated by the same vector: one motion
     // over the whole fiber.
-    let ins: Vec<Lamina> = vec![
-        (0, 0, 0, 1),
+    let ins: Vec<Lamina> = [
+        (0i64, 0i64, 0i64, 1u8),
         (0, 1, 0, 1),
         (1, 0, 1, 1),
         (1, 1, 1, 1),
         (2, 0, 2, 1),
         (2, 1, 2, 1),
-    ];
-    let outs: Vec<Lamina> = ins.iter().map(|&(r, c, k, h)| (r, c + 2, k, h)).collect();
+    ]
+    .map(Lamina::from)
+    .to_vec();
+    // Moved along the column axis by `d`, frame by frame.
+    let moved = |l: &Lamina, d: i64| Lamina {
+        site: l.site.offset(&[0, d, 0]).expect("a small move stays on the base"),
+        hue: l.hue,
+    };
+    let outs: Vec<Lamina> = ins.iter().map(|l| moved(l, 2)).collect();
     let shift = element::translator_versor(0, 2);
     let (a, b, v) =
         union_quotient(ins.clone(), outs, &shift).expect("one motion carries the whole fiber");
     let frames: Vec<i64> = {
-        let mut f: Vec<i64> = a.laminae.iter().map(|&(_, _, k, _)| k).collect();
+        let mut f: Vec<i64> = a.laminae.iter().filter_map(|l| l.site.axis(2)).collect();
         f.sort_unstable();
         f.dedup();
         f
@@ -996,7 +1003,7 @@ fn a_members_fiber_reads_as_one_union_body_or_not_at_all() {
     // single motion carries the union.
     let mixed: Vec<Lamina> = ins
         .iter()
-        .map(|&(r, c, k, h)| if k == 1 { (r, c + 3, k, h) } else { (r, c + 2, k, h) })
+        .map(|l| if l.site.axis(2) == Some(1) { moved(l, 3) } else { moved(l, 2) })
         .collect();
     assert!(
         union_quotient(ins, mixed, &shift).is_none(),

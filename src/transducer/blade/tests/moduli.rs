@@ -48,7 +48,10 @@ fn moduli_and_transport_are_exact_and_similarity_invariant() {
     // is oriented by the fourth harmonic: its quarter-turn image carries.
     let pin = at_frame_0(&[(1, 1), (1, 2), (2, 2), (0, 1), (1, 0), (2, 1), (1, 3), (3, 2), (0, 3)]);
     let pin_shape = shape_of(&pin);
-    let pin_rot: Vec<(i64, i64, i64)> = pin.iter().map(|&(r, c, k)| (c, -r, k)).collect();
+    let pin_rot: Vec<crate::transducer::base::Site> = pin
+        .iter()
+        .map(|s| crate::transducer::base::Site::new(vec![s.axes()[1], -s.axes()[0], s.axes()[2]]))
+        .collect();
     assert_eq!(moduli(&pin_shape.blade), moduli(&shape_of(&pin_rot).blade));
     assert!(versor_between(&pin_shape, &shape_of(&pin_rot)).is_some(), "a quarter turn found");
 }
@@ -138,7 +141,8 @@ fn a_chart_prefix_is_the_topological_stratum() {
     use crate::transducer::stalk::{Invariant, Stalks};
     let bar_support = rect(0, 0, 2, 3);
     let plank_support = rect(0, 0, 2, 5);
-    let (a, b) = (moduli(&shape_of(&bar_support).blade), moduli(&shape_of(&plank_support).blade));
+    let heard = |s: &[crate::transducer::base::Site]| moduli(&shape_of(s).blade).expect("heard at n = 3");
+    let (a, b) = (heard(&bar_support), heard(&plank_support));
     assert_ne!(a, b, "different proportions, different charts");
     assert_eq!(a[..4], b[..4], "one topology: components, holes, cavities and turns lead the chart");
     assert_eq!(
@@ -146,9 +150,9 @@ fn a_chart_prefix_is_the_topological_stratum() {
         [1u64, 0, 0, 4].map(crate::transducer::stalk::ChartAxis::Count),
         "one component, no hole, no cavity, four turns"
     );
-    let word_of = |support: &[(i64, i64, i64)]| {
+    let word_of = |support: &[crate::transducer::base::Site]| {
         let raw: Vec<(i64, i64, u8, u8)> =
-            support.iter().map(|&(r, c, _)| (r, c, 1u8, 2u8)).collect();
+            support.iter().map(|s| (s.axes()[0], s.axes()[1], 1u8, 2u8)).collect();
         let chain = crate::transducer::element::canonical_chain(&raw)
             .expect("one entry per site is A5's chain");
         crate::transducer::element::from_canonical(&chain).address()

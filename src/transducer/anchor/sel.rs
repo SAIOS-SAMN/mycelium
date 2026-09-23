@@ -56,6 +56,18 @@ pub(crate) fn has(s: &[(i64, i64)], p: (i64, i64)) -> bool {
     s.binary_search(&p).is_ok()
 }
 
+/// The connected components of a planar support, each sorted: the scene is
+/// one grid's, so its sites stand in frame 0 and are handed to the base as
+/// laminae there.
+pub(crate) fn planar_components(sup: &[(i64, i64)]) -> Vec<Vec<(i64, i64)>> {
+    use crate::transducer::blade::Lamina;
+    let laminae: Vec<Lamina> = sup.iter().map(|&(r, c)| Lamina::from((r, c, 0, 0u8))).collect();
+    components(&laminae)
+        .into_iter()
+        .map(|c| sorted(c.iter().filter_map(|l| crate::transducer::family::on_grid(&l.site)).collect()))
+        .collect()
+}
+
 pub(crate) fn neighbours((r, c): (i64, i64)) -> [(i64, i64); 4] {
     [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
 }
@@ -85,11 +97,7 @@ impl Sel {
             Sel::Comp(e, k) => {
                 let sup = e.eval(scene);
                 // The scene is one grid's: its sites stand in frame 0.
-                let laminae: Vec<(i64, i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0, 0)).collect();
-                let mut comps: Vec<Vec<(i64, i64)>> = components(&laminae)
-                    .into_iter()
-                    .map(|c| sorted(c.into_iter().map(|(r, c, _, _)| (r, c)).collect()))
-                    .collect();
+                let mut comps: Vec<Vec<(i64, i64)>> = planar_components(&sup);
                 // A component IS its least site, in the coordinate order the
                 // support is already written in; a component with no site
                 // has no least one and sorts after those that do.
@@ -156,11 +164,7 @@ impl Sel {
             }
             Sel::ArgExt(e, code) => {
                 let sup = e.eval(scene);
-                let laminae: Vec<(i64, i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0, 0)).collect();
-                let comps: Vec<Vec<(i64, i64)>> = components(&laminae)
-                    .into_iter()
-                    .map(|c| sorted(c.into_iter().map(|(r, c, _, _)| (r, c)).collect()))
-                    .collect();
+                let comps: Vec<Vec<(i64, i64)>> = planar_components(&sup);
                 if comps.is_empty() {
                     return Vec::new();
                 }

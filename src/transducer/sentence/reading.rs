@@ -8,7 +8,7 @@ use crate::network::nerve::Keyed;
 use crate::transducer::blade::{self, Shape};
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::chain::{
-    base_key, gauge_of, pieces, replay_at, replay_operators, Cite, HeldCite, Link, Located, Puncture, Sentence,
+    gauge_of, pieces, section_site_key, replay_at, replay_operators, Cite, HeldCite, Link, Located, Puncture, Sentence,
 };
 use crate::transducer::sentence::form::Vertex;
 use crate::transducer::stalk::{self, Stalks};
@@ -95,7 +95,7 @@ fn vertex_cites_by(
             before.push((r, c, b));
         }
         if a != 0 {
-            after.insert(base_key(r, c, 0), a);
+            after.insert(section_site_key(r, c), a);
             out_support.push((r, c));
         }
     }
@@ -117,7 +117,7 @@ fn vertex_cites_by(
         if tk != 0 {
             return None;
         }
-        let landed = *after.get(&base_key(tr, tc, 0))?;
+        let landed = *after.get(&section_site_key(tr, tc))?;
         if Some(landed) != super::hue_of(gauge, h) {
             return None;
         }

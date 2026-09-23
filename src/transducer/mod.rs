@@ -4,6 +4,8 @@
 //! word: blades lifted from laminae, versors that carry one shape onto
 //! another, words, forms, and the charts they are filed under.
 
+/// 71 — the base is ℚⁿ: a site and the count of its coordinates.
+pub mod base;
 /// 16.4 — the conformal model every transport is written in.
 pub mod cga;
 /// 52 — the Cayley chart: a versor's derivation is its bivector.

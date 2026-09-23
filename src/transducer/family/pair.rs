@@ -20,7 +20,7 @@ pub(crate) struct Scenery {
     pub(crate) vertices: Vec<Vertex>,
     /// The support of each MEMBER — vertex and chart (D10) — because a
     /// face relates two BODIES and the support is a body's sites.
-    pub(crate) supports: crate::network::nerve::Keyed<Vec<(i64, i64, i64)>>,
+    pub(crate) supports: crate::network::nerve::Keyed<Vec<Site>>,
 }
 
 impl Scenery {
@@ -33,7 +33,7 @@ impl Scenery {
     /// rather than computing it from a length. A vertex standing at one
     /// chart files its support under that member; a vertex acting on
     /// several charts is filed by the caller, one support per member.
-    pub(crate) fn place(&mut self, vertex: Vertex, support: Vec<(i64, i64, i64)>) -> u16 {
+    pub(crate) fn place(&mut self, vertex: Vertex, support: Vec<Site>) -> u16 {
         let ix = self.vertices.len() as u16;
         let member = vertex.face_chart().map(|c| member_key(ix, c.key().as_bytes()));
         self.vertices.push(vertex);
@@ -185,26 +185,28 @@ pub(crate) struct Covered {
 /// each with the hue before and after (0 where a body has no lamina).
 pub(crate) fn delta_links(a: &Body, b: &Body) -> Vec<Link> {
     let mut before: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, f, h) in &a.laminae {
-        before.insert(base_key(r, c, f), h);
+    for l in &a.laminae {
+        before.insert(l.site.key(), l.hue);
     }
     let mut after: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, f, h) in &b.laminae {
-        after.insert(base_key(r, c, f), h);
+    for l in &b.laminae {
+        after.insert(l.site.key(), l.hue);
     }
     let mut links: Vec<Link> = Vec::new();
-    for &(r, c, f, h) in &a.laminae {
+    for l in &a.laminae {
         // A site the image does not hold is absent there, and hue 0 IS
         // absence in this encoding.
-        let gone = match after.get(&base_key(r, c, f)) {
+        let gone = match after.get(&l.site.key()) {
             Some(h2) => *h2,
             None => 0,
         };
-        links.push((r, c, h, gone));
+        if let Some((r, c)) = on_grid(&l.site) {
+            links.push((r, c, l.hue, gone));
+        }
     }
-    for &(r, c, f, h) in &b.laminae {
-        if !before.contains(&base_key(r, c, f)) {
-            links.push((r, c, 0, h));
+    for l in &b.laminae {
+        if let (false, Some((r, c))) = (before.contains(&l.site.key()), on_grid(&l.site)) {
+            links.push((r, c, 0, l.hue));
         }
     }
     links.sort_unstable();

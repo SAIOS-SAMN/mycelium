@@ -73,19 +73,17 @@ thread_local! {
 /// sensor boundary, which is the one place bytes may be a key (rule 6) and
 /// is where the percept memo beside this one is already keyed.
 pub(crate) fn deformation_key(
-    input: &[(i64, i64, i64, u8)],
-    image: &[(i64, i64, i64, u8)],
+    input: &[super::Lamina],
+    image: &[super::Lamina],
     scale: Option<((usize, usize), (usize, usize))>,
 ) -> Vec<u8> {
-    let mut k = Vec::with_capacity((input.len() + image.len()) * 25 + 40);
+    let mut k = Vec::with_capacity((input.len() + image.len()) * 29 + 40);
     for (tag, laminae) in [(0u8, input), (1u8, image)] {
         k.push(tag);
         k.extend_from_slice(&(laminae.len() as u32).to_le_bytes());
-        for &(r, c, f, h) in laminae {
-            k.extend_from_slice(&r.to_le_bytes());
-            k.extend_from_slice(&c.to_le_bytes());
-            k.extend_from_slice(&f.to_le_bytes());
-            k.push(h);
+        for l in laminae {
+            l.site.put(&mut k);
+            k.push(l.hue);
         }
     }
     match scale {

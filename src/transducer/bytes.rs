@@ -78,7 +78,11 @@ impl Bytes for crate::transducer::blade::Blade {
             + self.quartic.iter().map(bytes_q).sum::<usize>()
             + self.gauge.iter().map(|(_, q)| 1 + bytes_q(q)).sum::<usize>()
             + bytes_q(&self.shell)
-            + self.support.len() * std::mem::size_of::<(i64, i64, i64)>()
+            + self
+                .support
+                .iter()
+                .map(|s| std::mem::size_of_val(s) + s.n() * std::mem::size_of::<i64>())
+                .sum::<usize>()
     }
 }
 

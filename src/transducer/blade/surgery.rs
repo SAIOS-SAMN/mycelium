@@ -11,9 +11,11 @@
 //! Any non-homeomorphic transformation factors as Φ = V ∘ S, where S is the
 //! topological surgery matching Betti numbers, and V is the conformal versor
 //! aligning the resulting homeomorphic core. The support is the stack, on
-//! the three coordinates of the base (51.3).
+//! the sites of the base (51.3, 71); a support whose topology is not read at
+//! its `n` has no surgery detected on it (38.2, BQ4).
 
 use super::body::{shape_of, topology, Shape};
+use crate::transducer::base::Site;
 use crate::transducer::cga::Mv;
 
 /// The elementary topological surgery operations on the cube complex of a
@@ -35,12 +37,12 @@ pub enum SurgeryKind {
 pub struct Surgery {
     pub kind: SurgeryKind,
     pub delta_betti: (i64, i64),
-    pub support_delta: Vec<(i64, i64, i64)>,
+    pub support_delta: Vec<Site>,
 }
 
 impl Surgery {
     /// Construct a hole-filling surgery from the sites of the hole.
-    pub fn fill_hole(hole: Vec<(i64, i64, i64)>) -> Self {
+    pub fn fill_hole(hole: Vec<Site>) -> Self {
         let mut delta = hole;
         delta.sort_unstable();
         delta.dedup();
@@ -52,7 +54,7 @@ impl Surgery {
     }
 
     /// Construct a puncture surgery from the sites removed.
-    pub fn puncture(removed: Vec<(i64, i64, i64)>) -> Self {
+    pub fn puncture(removed: Vec<Site>) -> Self {
         let mut delta = removed;
         delta.sort_unstable();
         delta.dedup();
@@ -64,7 +66,7 @@ impl Surgery {
     }
 
     /// Construct a bridge-merge surgery from the sites of the bridge.
-    pub fn bridge_merge(bridge: Vec<(i64, i64, i64)>) -> Self {
+    pub fn bridge_merge(bridge: Vec<Site>) -> Self {
         let mut delta = bridge;
         delta.sort_unstable();
         delta.dedup();
@@ -76,7 +78,7 @@ impl Surgery {
     }
 
     /// Construct a split-cut surgery from the sites of the cut.
-    pub fn split_cut(cut: Vec<(i64, i64, i64)>) -> Self {
+    pub fn split_cut(cut: Vec<Site>) -> Self {
         let mut delta = cut;
         delta.sort_unstable();
         delta.dedup();
@@ -88,7 +90,7 @@ impl Surgery {
     }
 
     /// Apply the surgery to a support, producing the modified support.
-    pub fn apply(&self, support: &[(i64, i64, i64)]) -> Vec<(i64, i64, i64)> {
+    pub fn apply(&self, support: &[Site]) -> Vec<Site> {
         match self.kind {
             SurgeryKind::FillHole | SurgeryKind::BridgeMerge => {
                 let mut out = support.to_vec();
@@ -101,7 +103,7 @@ impl Surgery {
                 let mut out = Vec::with_capacity(support.len());
                 for c in support {
                     if self.support_delta.binary_search(c).is_err() {
-                        out.push(*c);
+                        out.push(c.clone());
                     }
                 }
                 out
@@ -126,24 +128,23 @@ impl Surgery {
     }
 
     /// Detect surgery between two supports by exact Betti number analysis.
-    pub fn detect(src: &[(i64, i64, i64)], dst: &[(i64, i64, i64)]) -> Option<Self> {
-        let t_src = topology(src);
-        let t_dst = topology(dst);
+    pub fn detect(src: &[Site], dst: &[Site]) -> Option<Self> {
+        let t_src = topology(src)?;
+        let t_dst = topology(dst)?;
         let d_b0 = t_dst.0 as i64 - t_src.0 as i64;
         let d_b1 = t_dst.1 as i64 - t_src.1 as i64;
 
         if d_b0 == 0 && d_b1 == 0 {
             return None;
         }
+        // The sites of one support the other does not hold.
+        let missing = |from: &[Site], held: &[Site]| -> Vec<Site> {
+            from.iter().filter(|c| held.binary_search(c).is_err()).cloned().collect()
+        };
 
         if d_b1 < 0 {
             // Hole filled: sites in dst not in src
-            let mut diff = Vec::new();
-            for c in dst {
-                if src.binary_search(c).is_err() {
-                    diff.push(*c);
-                }
-            }
+            let diff = missing(dst, src);
             if !diff.is_empty() {
                 return Some(Surgery {
                     kind: SurgeryKind::FillHole,
@@ -153,12 +154,7 @@ impl Surgery {
             }
         } else if d_b1 > 0 {
             // Puncture: sites in src not in dst
-            let mut diff = Vec::new();
-            for c in src {
-                if dst.binary_search(c).is_err() {
-                    diff.push(*c);
-                }
-            }
+            let diff = missing(src, dst);
             if !diff.is_empty() {
                 return Some(Surgery {
                     kind: SurgeryKind::Puncture,
@@ -168,29 +164,17 @@ impl Surgery {
             }
         } else if d_b0 < 0 {
             // Merge: sites in dst not in src connecting components
-            let mut diff = Vec::new();
-            for c in dst {
-                if src.binary_search(c).is_err() {
-                    diff.push(*c);
-                }
-            }
             return Some(Surgery {
                 kind: SurgeryKind::BridgeMerge,
                 delta_betti: (d_b0, d_b1),
-                support_delta: diff,
+                support_delta: missing(dst, src),
             });
         } else if d_b0 > 0 {
             // Split: sites removed to disconnect
-            let mut diff = Vec::new();
-            for c in src {
-                if dst.binary_search(c).is_err() {
-                    diff.push(*c);
-                }
-            }
             return Some(Surgery {
                 kind: SurgeryKind::SplitCut,
                 delta_betti: (d_b0, d_b1),
-                support_delta: diff,
+                support_delta: missing(src, dst),
             });
         }
 

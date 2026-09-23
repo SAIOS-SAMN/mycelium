@@ -230,8 +230,8 @@ pub(crate) fn tally(f: impl Fn(&mut CoverTally)) {
 /// Reading only the codomain leaves the nerve discrete.
 #[derive(Clone)]
 pub(crate) struct Supports {
-    pub(crate) domain: Vec<(i64, i64, i64)>,
-    pub(crate) codomain: Vec<(i64, i64, i64)>,
+    pub(crate) domain: Vec<crate::transducer::base::Site>,
+    pub(crate) codomain: Vec<crate::transducer::base::Site>,
 }
 
 /// ONE PIECE THE COVER CARRIED: the word vertex it became, the versor
@@ -386,8 +386,8 @@ pub(crate) fn cover_deformation(
         crate::network::nerve::Keyed::new();
     let (in_pieces, in_refused) = ins.decoded();
     for (k, p) in &in_pieces {
-        for &(r, c, f, _) in &p.body.laminae {
-            occ_in.insert(base_key(r, c, f), k.clone());
+        for l in &p.body.laminae {
+            occ_in.insert(l.site.key(), k.clone());
         }
     }
 
@@ -433,8 +433,8 @@ pub(crate) fn cover_deformation(
         // sites, deduped by their address and read in key order.
         let mut named: crate::network::nerve::Keyed<(), coord::Piece> =
             crate::network::nerve::Keyed::new();
-        for &(r, c, f, _) in &op.body.laminae {
-            if let Some(ki) = occ_in.get(&base_key(r, c, f)) {
+        for l in &op.body.laminae {
+            if let Some(ki) = occ_in.get(&l.site.key()) {
                 named.put(ki, ());
             }
         }
@@ -455,7 +455,7 @@ pub(crate) fn cover_deformation(
         }
         // No preimage is no piece to carry, not a piece that failed to
         // carry (rule 11): nothing is reached and nothing is consumed.
-        let Some(pre) = (!laminae.is_empty()).then(|| body_of(laminae)) else {
+        let Some(pre) = (!laminae.is_empty()).then(|| body_of(laminae)).flatten() else {
             break 'piece;
         };
         // SETTLED? The preimage is a function of this piece's own sites, so
@@ -488,8 +488,8 @@ pub(crate) fn cover_deformation(
             // reader can factor, which is unmeasured and not a demand.
             None => break 'piece,
         };
-        for &(r, c, f, _) in pre.laminae.iter().chain(op.body.laminae.iter()) {
-            reached.insert(base_key(r, c, f), ());
+        for l in pre.laminae.iter().chain(op.body.laminae.iter()) {
+            reached.insert(l.site.key(), ());
         }
         for ki in &parts {
             consumed.put(ki, ());
@@ -518,8 +518,8 @@ pub(crate) fn cover_deformation(
     let mut occ_out: crate::network::nerve::Keyed<coord::Piece> =
         crate::network::nerve::Keyed::new();
     for (k, p) in &out_pieces {
-        for &(r, c, f, _) in &p.body.laminae {
-            occ_out.insert(base_key(r, c, f), k.clone());
+        for l in &p.body.laminae {
+            occ_out.insert(l.site.key(), k.clone());
         }
     }
     // THE DISTINCT PLACED VERSORS, by their own address. Two carriages that
@@ -549,10 +549,9 @@ pub(crate) fn cover_deformation(
             // reader did not carry (W6) and names nothing.
             let mut named: crate::network::nerve::Keyed<(), coord::Piece> =
                 crate::network::nerve::Keyed::new();
-            for &(r, c, f, _) in &ip.body.laminae {
-                let Some(p) = element::carry_center(pv, r, c, f) else { continue };
-                let Some((tr, tc, tf)) = element::site_of(&p) else { continue };
-                if let Some(ko) = occ_out.get(&base_key(tr, tc, tf)) {
+            for l in &ip.body.laminae {
+                let Some(t) = element::carry_site(pv, &l.site) else { continue };
+                if let Some(ko) = occ_out.get(&t.key()) {
                     named.put(ko, ());
                 }
             }
@@ -574,7 +573,7 @@ pub(crate) fn cover_deformation(
             }
             // No image is no piece to carry by this versor, not a piece that
             // failed to carry (rule 11).
-            let Some(img) = (!laminae.is_empty()).then(|| body_of(laminae)) else {
+            let Some(img) = (!laminae.is_empty()).then(|| body_of(laminae)).flatten() else {
                 continue;
             };
             // A carriage already placed between this piece and this image is
@@ -609,8 +608,8 @@ pub(crate) fn cover_deformation(
                 }
                 None => continue,
             };
-            for &(r, c, f, _) in ip.body.laminae.iter().chain(img.laminae.iter()) {
-                reached.insert(base_key(r, c, f), ());
+            for l in ip.body.laminae.iter().chain(img.laminae.iter()) {
+                reached.insert(l.site.key(), ());
             }
             consumed.put(ki, ());
             let supports =
@@ -625,14 +624,14 @@ pub(crate) fn cover_deformation(
     // input's laminae no piece carried, and the image's laminae no piece
     // reached.
     let mut left: Vec<Link> = Vec::new();
-    for &(r, c, f, h) in &input.laminae {
-        if !reached.contains(&base_key(r, c, f)) {
-            left.push((r, c, h, 0));
+    for l in &input.laminae {
+        if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
+            left.push((r, c, l.hue, 0));
         }
     }
-    for &(r, c, f, h) in &image.laminae {
-        if !reached.contains(&base_key(r, c, f)) {
-            left.push((r, c, 0, h));
+    for l in &image.laminae {
+        if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
+            left.push((r, c, 0, l.hue));
         }
     }
     cover.uncarried = element::measure_lanes(&left);
@@ -685,9 +684,9 @@ pub(crate) fn cover_deformation(
     }
     for (k, p) in &placed_carriages {
         for (side, support) in [(0u8, &p.domain), (1u8, &p.codomain)] {
-            for &(r, c, f) in support.iter() {
+            for s in support.iter() {
                 let mut pos = vec![side];
-                pos.extend_from_slice(&base_key(r, c, f));
+                s.put(&mut pos);
                 match occ.get_mut(&pos) {
                     // `support_of` dedups, and one piece's sites are offered
                     // contiguously — the walk above is per piece — so a

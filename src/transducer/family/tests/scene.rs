@@ -57,14 +57,14 @@ fn a_banded_scene_is_covered_by_its_charts_and_recomposed_by_the_coboundary() {
     let banded_cover = cover(&banded, Reading::Bands).expect("Bands deduces a cover");
     let keys: Vec<Vec<u8>> = banded_cover.scoped().map(|(k, _)| k).collect();
     assert_eq!(keys.len(), 2, "one uniform row cuts this scene into two bands");
-    let mut sites: Vec<(i64, i64, i64)> = Vec::new();
+    let mut sites: Vec<crate::transducer::base::Site> = Vec::new();
     for (_, chart) in banded_cover.scoped() {
         sites.extend_from_slice(&chart.support);
     }
     sites.sort_unstable();
     assert_eq!(
         sites,
-        vec![(0, 0, 0), (0, 1, 0), (2, 0, 0), (2, 1, 0)],
+        [(0i64, 0i64, 0i64), (0, 1, 0), (2, 0, 0), (2, 1, 0)].map(crate::transducer::base::Site::from).to_vec(),
         "the separator's own row is in no chart: nothing of the scene crosses it"
     );
     // The restriction is the chart's own extent, read at its origin.

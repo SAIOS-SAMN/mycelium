@@ -60,7 +60,13 @@ fn four_bodies_one_left() -> (Grid, Grid) {
 /// and reads its bodies back out with `pieces_of`; a fixture of one body
 /// has nothing for it to cover (51.3).
 fn composite(g: &Grid) -> Body {
-    body_of(perceive(g).iter().flat_map(|b| b.laminae.iter().copied()).collect::<Vec<_>>())
+    body_of(perceive(g).iter().flat_map(|b| b.laminae.iter().cloned()).collect::<Vec<_>>())
+        .expect("a composite of heard bodies is heard at n = 3")
+}
+
+/// Laminae as the sensor hands them over (71.2(1)).
+fn laminae<T: Copy + Into<Lamina>>(v: &[T]) -> Vec<Lamina> {
+    v.iter().map(|&t| t.into()).collect()
 }
 
 /// P9 — A DEMAND'S CANDIDATE TRANSPORT IS RE-DERIVED FROM ITS OWN BODIES.
@@ -193,7 +199,7 @@ fn one_body_that_does_not_carry_whole_is_a_demand_and_not_a_listing() {
 #[test]
 fn a_polychrome_body_is_one_piece_of_the_cover() {
     use crate::network::nerve::{coord, Coordinate};
-    let block: Vec<Lamina> = vec![(0, 0, 0, 1), (1, 0, 0, 1), (0, 1, 0, 2), (1, 1, 0, 2)];
+    let block = laminae(&[(0, 0, 0, 1u8), (1, 0, 0, 1), (0, 1, 0, 2), (1, 1, 0, 2)]);
     let pieces = crate::transducer::family::pieces::pieces_of(&block);
     let held: Vec<(coord::Piece, Vec<Lamina>)> = pieces
         .decoded()
@@ -201,11 +207,11 @@ fn a_polychrome_body_is_one_piece_of_the_cover() {
         .into_iter()
         .map(|(k, p)| (k, p.body.laminae.clone()))
         .collect();
-    let [(address, laminae)] = held.as_slice() else {
+    let [(address, held_laminae)] = held.as_slice() else {
         panic!("a two-coloured body is one piece of the cover, got {}", held.len())
     };
     assert_eq!(address.support.len(), 4, "the piece stands on the whole body");
-    let mut hues: Vec<u8> = laminae.iter().map(|&(_, _, _, h)| h).collect();
+    let mut hues: Vec<u8> = held_laminae.iter().map(|l| l.hue).collect();
     hues.sort_unstable();
     hues.dedup();
     assert_eq!(hues, vec![1, 2], "and carries both colours as its gauge");
@@ -215,7 +221,7 @@ fn a_polychrome_body_is_one_piece_of_the_cover() {
         "an address of kind and support alone decodes back to itself"
     );
 
-    let corner: Vec<Lamina> = vec![(0, 0, 0, 1), (1, 1, 0, 1)];
+    let corner = laminae(&[(0, 0, 0, 1u8), (1, 1, 0, 1)]);
     assert_eq!(
         crate::transducer::family::pieces::pieces_of(&corner).decoded().0.len(),
         2,
@@ -240,13 +246,14 @@ fn a_polychrome_body_is_one_piece_of_the_cover() {
 fn a_meets_address_gives_back_its_two_ends() {
     use crate::network::nerve::{coord, Coordinate};
     use crate::transducer::peel::ShellKind;
-    let piece = |kind, support: &[(i64, i64, i64)]| coord::Piece { kind, support: support.to_vec() };
+    use crate::transducer::base::Site;
+    let piece = |kind, support: Vec<Site>| coord::Piece { kind, support };
     // A PIECE WITH NO SUPPORT, one with a support, and one whose support
     // length bytes are the shape a length prefix has: the cases the byte
     // pair had to be checked against by hand.
-    let a = piece(ShellKind::Whole, &[]);
-    let b = piece(ShellKind::Outline, &[(1, 2, 0), (4, 0, 0)]);
-    let c = piece(ShellKind::Magnified, &[(0, 0, 0)]);
+    let a = piece(ShellKind::Whole, Vec::new());
+    let b = piece(ShellKind::Outline, [(1i64, 2i64, 0i64), (4, 0, 0)].map(Site::from).to_vec());
+    let c = piece(ShellKind::Magnified, vec![Site::from((0i64, 0i64, 0i64))]);
     for p in [&a, &b, &c] {
         assert_eq!(
             coord::Piece::decode(p.encode().as_bytes()).as_ref(),

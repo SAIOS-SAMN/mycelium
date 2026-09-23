@@ -41,9 +41,14 @@ pub struct Harmonics {
 }
 
 impl Harmonics {
-    /// Hear a body.
-    pub fn of(b: &Blade) -> Harmonics {
-        let (components, holes, cavities) = blade::topology(&b.support);
+    /// Hear a body. `None` where its topology is not read at its `n` (38.2,
+    /// BQ4): no harmonics are invented for it.
+    pub fn of(b: &Blade) -> Option<Harmonics> {
+        Some(Harmonics::with_topology(b, blade::topology(&b.support)?))
+    }
+
+    /// Hear a body whose topology is already read.
+    pub(crate) fn with_topology(b: &Blade, (components, holes, cavities): (u64, u64, u64)) -> Harmonics {
         let n = b.shell.clone();
         let count = |v: usize| BigRational::from_integer(num_bigint::BigInt::from(v as i64));
         let edges = count(blade::boundary_length(&b.support));
@@ -103,7 +108,7 @@ impl Harmonics {
 /// the eye and read its harmonics. None for an empty body.
 pub fn hear(body: &[(i64, i64, u8, u8)]) -> Option<Harmonics> {
     let shape = crate::transducer::element::shape_of_chain(body)?;
-    Some(Harmonics::of(&shape.blade))
+    Harmonics::of(&shape.blade)
 }
 
 #[cfg(test)]
@@ -139,14 +144,15 @@ mod tests {
     /// bar standing along `e₃` reads no chart a section reads.
     #[test]
     fn a_stack_reads_its_own_topology_and_not_its_shadows() {
-        let section: Vec<(i64, i64, i64)> = vec![(0, 0, 0), (0, 1, 0), (1, 0, 0)];
-        let stack: Vec<(i64, i64, i64)> =
-            (0..3).flat_map(|k| section.iter().map(move |&(r, c, _)| (r, c, k))).collect();
-        let spaced: Vec<(i64, i64, i64)> =
-            (0..3).flat_map(|k| section.iter().map(move |&(r, c, _)| (r, c, 2 * k))).collect();
-        let one = Harmonics::of(&blade::shape_of(&section).blade);
-        let three = Harmonics::of(&blade::shape_of(&stack).blade);
-        let apart = Harmonics::of(&blade::shape_of(&spaced).blade);
+        use crate::transducer::base::Site;
+        let section: Vec<Site> = [(0, 0, 0), (0, 1, 0), (1, 0, 0)].into_iter().map(Site::from).collect();
+        let at_frame = |k: i64| -> Vec<Site> {
+            section.iter().map(|s| Site::new(vec![s.axes()[0], s.axes()[1], k])).collect()
+        };
+        let stack: Vec<Site> = (0..3).flat_map(at_frame).collect();
+        let spaced: Vec<Site> = (0..3).flat_map(|k| at_frame(2 * k)).collect();
+        let hear = |s: &[Site]| Harmonics::of(&blade::shape_of(s).blade).expect("a body at n = 3");
+        let (one, three, apart) = (hear(&section), hear(&stack), hear(&spaced));
         assert_eq!(three.components, 1, "consecutive frames join along e₃");
         assert_eq!(apart.components, 3, "frames apart do not");
         assert_eq!(three.turns, 3 * one.turns, "each section turns as it turns alone");
@@ -157,17 +163,18 @@ mod tests {
             BigRational::from_integer(6.into()),
             "Izz is the offsets alone: three sections one frame from the middle"
         );
-        let bar_along_k: Vec<(i64, i64, i64)> = vec![(0, 0, 0), (0, 0, 1), (0, 0, 2)];
-        let bar_in_plane: Vec<(i64, i64, i64)> = vec![(0, 0, 0), (0, 1, 0), (0, 2, 0)];
+        let bar_along_k = [(0, 0, 0), (0, 0, 1), (0, 0, 2)];
+        let bar_in_plane = [(0, 0, 0), (0, 1, 0), (0, 2, 0)];
         assert_ne!(
             blade::moduli(&blade::shape_of(&bar_along_k).blade),
             blade::moduli(&blade::shape_of(&bar_in_plane).blade),
             "a bar standing along e₃ is not a bar lying in a frame"
         );
-        let hollow: Vec<(i64, i64, i64)> = (0..3)
+        let hollow: Vec<Site> = (0..3)
             .flat_map(|r| (0..3).flat_map(move |c| (0..3).map(move |k| (r, c, k))))
             .filter(|&p| p != (1, 1, 1))
+            .map(Site::from)
             .collect();
-        assert_eq!(blade::topology(&hollow), (1, 0, 1), "a hollow cube encloses one cavity");
+        assert_eq!(blade::topology(&hollow), Some((1, 0, 1)), "a hollow cube encloses one cavity");
     }
 }

@@ -84,15 +84,6 @@ fn n_of_mask(mask: usize) -> u8 {
     n as u8
 }
 
-/// THE `n` THE WIRE IS READ AT, UNTIL BQ1 WRITES `n` FIRST ON EVERY ADDRESS
-/// (71.2(1)). A versor on the wire today carries no `n` of its own, and every
-/// codec that reads one without an address asks here, so the one site BQ1
-/// changes is this one. It is the corpus's `n`, and the thirty-two slots it
-/// implies are the fixed carrier's wire, unchanged.
-pub fn wire_n() -> u8 {
-    3
-}
-
 /// An exact multivector of `Cl(n+1, 1)`: its `n` and one coefficient over ℚ
 /// per slot. Equality is projective (`λ ∈ ℚ×`); coefficient identity is
 /// [`Mv::canonical`].
@@ -497,11 +488,44 @@ impl Mv {
 }
 
 impl Mv {
-    /// Serialize every slot's exact coefficient: per coefficient `[sign u8]
-    /// [nlen u32][numerator][dlen u32][denominator]`, little-endian
-    /// magnitudes, in mask order. At `n ≤ 3` that is thirty-two, the fixed
-    /// carrier's wire exactly.
+    /// The same value in the smallest algebra holding its non-zero
+    /// coefficients: the inverse of [`Mv::widened`], exact, since every slot
+    /// it drops is zero. The zero narrows to `n = 0`.
+    pub fn narrowed(&self) -> Self {
+        let n = self
+            .c
+            .iter()
+            .enumerate()
+            .filter(|(_, v)| !v.is_zero())
+            .fold(0u8, |n, (mask, _)| {
+                let m = n_of_mask(mask);
+                if m > n {
+                    m
+                } else {
+                    n
+                }
+            });
+        let mut c = self.c.clone();
+        c.truncate(slots(n));
+        Self { n, c }
+    }
+
+    /// THE VALUE ON THE WIRE, ITS `n` FIRST (71.2(1), BQ1): the `n` of the
+    /// smallest algebra holding it, one byte, then [`Mv::put_coefficients`]
+    /// at that `n`. A value and its widening are one value, so they write
+    /// one run of bytes; a reader takes the `n` off the bytes and never
+    /// assumes one.
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
+        let m = self.narrowed();
+        out.push(m.n);
+        m.put_coefficients(out);
+    }
+
+    /// Every slot's exact coefficient: per coefficient `[sign u8][nlen u32]
+    /// [numerator][dlen u32][denominator]`, little-endian magnitudes, in
+    /// mask order. At `n ≤ 3` that is thirty-two, the fixed carrier's
+    /// coefficients exactly.
+    pub fn put_coefficients(&self, out: &mut Vec<u8>) {
         for v in &self.c {
             let (ns, nb) = v.numer().to_bytes_le();
             let db = v.denom().to_bytes_le().1;
@@ -517,14 +541,17 @@ impl Mv {
         }
     }
 
-    /// A versor off the wire at [`wire_n`], which is where every versor on
-    /// the wire stands until BQ1 writes `n` on the address.
+    /// The inverse of [`Mv::to_bytes`]: the value's `n`, then its
+    /// coefficients at that `n`. `None` where the bytes do not hold them.
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Mv> {
-        Mv::from_bytes_at(b, pos, wire_n())
+        let n = *b.get(*pos)?;
+        *pos += 1;
+        Mv::coefficients_at(b, pos, n)
     }
 
-    /// The inverse of [`Mv::to_bytes`] at `n`: `slots(n)` coefficients.
-    pub fn from_bytes_at(b: &[u8], pos: &mut usize, n: u8) -> Option<Mv> {
+    /// The inverse of [`Mv::put_coefficients`] at `n`: `slots(n)`
+    /// coefficients.
+    pub fn coefficients_at(b: &[u8], pos: &mut usize, n: u8) -> Option<Mv> {
         let mut m = Mv::zero_at(n);
         for slot in m.c.iter_mut() {
             let sign = *b.get(*pos)?;

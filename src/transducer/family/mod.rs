@@ -58,7 +58,8 @@ use crate::network::nerve::{coord, Coordinate};
 
 use super::blade::{self, Shape};
 use super::element::{self, Element, Versor};
-use super::sentence::{base_key, Form, FormFace, Link, Vertex};
+use super::base::Site;
+use super::sentence::{Form, FormFace, Link, Vertex};
 use super::stalk::{Invariant, Standing};
 use std::cell::Cell;
 
@@ -269,13 +270,11 @@ pub fn frame_vertex() -> Vertex {
 }
 
 /// The key of a site of one section — a grid's or a chain's, the sensor's
-/// planar token (16.5): its position written out. A site of the base on
-/// its three coordinates is keyed by `sentence::base_key`.
-pub(crate) fn site_key(r: i64, c: i64) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[..8].copy_from_slice(&r.to_le_bytes());
-    k[8..16].copy_from_slice(&c.to_le_bytes());
-    k
+/// planar token (16.5). One producer with `sentence::section_site_key` (law
+/// 12): the section's site at frame `0`, keyed by `Site::key`; a site of
+/// the base is keyed by `Site::key` directly.
+pub(crate) fn site_key(r: i64, c: i64) -> Vec<u8> {
+    crate::transducer::sentence::section_site_key(r, c)
 }
 
 /// A MEMBER OF THE SCENE'S COMPLEX: a vertex and the chart it stands at
@@ -368,15 +367,9 @@ pub struct Carriage {
 pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
     let v = blade::versor_between(&a.shape, &b.shape)?;
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, k, h) in &a.laminae {
-        let p = element::carry_center(&v, r, c, k)?;
-        let (tr, tc, tk) = element::site_of(&p)?;
-        let h2 = b
-            .laminae
-            .binary_search_by(|x| (x.0, x.1, x.2).cmp(&(tr, tc, tk)))
-            .ok()
-            .map(|i| b.laminae[i].3)?;
-        let key = super::element::hue_pair_key(h, 0);
+    for l in &a.laminae {
+        let h2 = landed_hue(&v, &l.site, b)?;
+        let key = super::element::hue_pair_key(l.hue, 0);
         match sigma.get(&key) {
             Some(t) if *t != h2 => return None,
             Some(_) => {}
@@ -408,11 +401,9 @@ pub fn carriage_with_core(a: &Body, b: &Body) -> Option<Carriage> {
         | crate::transducer::blade::surgery::SurgeryKind::SplitCut => {}
     }
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for &(r, c, k, h) in &a.laminae {
-        let Some(p) = element::carry_center(&v, r, c, k) else { continue };
-        let Some((tr, tc, tk)) = element::site_of(&p) else { continue };
-        let Some(h2) = b.laminae.binary_search_by(|x| (x.0, x.1, x.2).cmp(&(tr, tc, tk))).ok().map(|i| b.laminae[i].3) else { continue };
-        let k = super::element::hue_pair_key(h, 0);
+    for l in &a.laminae {
+        let Some(h2) = landed_hue(&v, &l.site, b) else { continue };
+        let k = super::element::hue_pair_key(l.hue, 0);
         match sigma.get(&k) {
             Some(t) if *t != h2 => return None,
             Some(_) => {}

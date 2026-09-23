@@ -240,7 +240,7 @@ impl PlaneTally {
         };
         // A census that has read nothing is read in the corpus's algebra,
         // so an idle line names the planes a busy one would.
-        let n = self.n.max(super::multivector::wire_n());
+        let n = self.n.max(crate::transducer::element::GRID_N);
         format!(
             "read {} | harmonic: {} | luminal: {} | coupled {}",
             self.read,

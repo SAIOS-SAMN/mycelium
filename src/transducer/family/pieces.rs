@@ -55,7 +55,7 @@ pub(crate) struct Piece {
 /// [`coord::Meet`]: crate::network::nerve::coord::Meet
 pub(crate) fn piece_at(
     kind: ShellKind,
-    support: &[(i64, i64, i64)],
+    support: &[crate::transducer::base::Site],
 ) -> crate::network::nerve::coord::Piece {
     crate::network::nerve::coord::Piece { kind, support: support.to_vec() }
 }
@@ -94,7 +94,9 @@ pub(crate) fn pieces_of(
         if comp.is_empty() {
             continue;
         }
-        let body = body_of(comp);
+        // A component whose moduli are not read at its `n` is no piece
+        // (38.2, BQ4); the perceivers count such a body where it arises.
+        let Some(body) = body_of(comp) else { continue };
         let k = piece_at(ShellKind::Whole, &support_of(&body));
         out.put(&k, Piece { body });
     }

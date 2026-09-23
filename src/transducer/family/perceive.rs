@@ -8,6 +8,7 @@
 //! counts what the sensor was asked for.
 
 use super::*;
+use crate::transducer::base::{Site, FRAME_AXIS};
 
 pub type Grid = Vec<Vec<u8>>;
 
@@ -15,8 +16,7 @@ pub type Grid = Vec<Vec<u8>>;
 /// `(row, col, hue)`.
 pub(crate) type Painted = (i64, i64, u8);
 
-/// A lamina of a body's support, on the three coordinates of the base
-/// (51.3): `(row, col, frame, hue)`.
+/// A lamina of a body's support: a site of the base and its hue (51.3, 71).
 pub type Lamina = crate::transducer::blade::Lamina;
 
 /// A scene of painted sites as a grid, origin at the scene's min-corner.
@@ -113,21 +113,51 @@ pub struct Body {
 
 /// The body of one hue-blind connected component: its shape lifted from
 /// its support, its moduli read off the shape, its laminae — and the hues
-/// they carry — sorted.
-pub fn body_of(comp: Vec<Lamina>) -> Body {
-    let mut pos: Vec<(i64, i64, i64)> = comp.iter().map(|&(r, c, k, _)| (r, c, k)).collect();
-    pos.sort_unstable();
-    pos.dedup();
-    let shape = blade::shape_of(&pos);
-    let moduli = Invariant(blade::moduli(&shape.blade));
+/// they carry — sorted. `None` where the moduli are not read at the
+/// support's `n` (the topology past `n = 3` is 38.2's, BQ4): no chart is
+/// invented for a body the harmonics cannot hear.
+pub fn body_of(comp: Vec<Lamina>) -> Option<Body> {
+    let shape = blade::shape_of(&sites_of(&comp));
+    let moduli = Invariant(blade::moduli(&shape.blade)?);
     let mut laminae = comp;
     laminae.sort_unstable();
     laminae.dedup();
-    Body { laminae, shape, moduli }
+    Some(Body { laminae, shape, moduli })
+}
+
+/// The sites laminae stand at, sorted, each once.
+pub(crate) fn sites_of(laminae: &[Lamina]) -> Vec<Site> {
+    let mut s: Vec<Site> = laminae.iter().map(|l| l.site.clone()).collect();
+    s.sort_unstable();
+    s.dedup();
+    s
 }
 
 thread_local! {
     static SENSOR_READS: Cell<u64> = const { Cell::new(0) };
+    static UNHEARD: Cell<u64> = const { Cell::new(0) };
+}
+
+/// Components the perceivers found whose moduli are not read at their `n`
+/// (`body_of`'s refusal), since the last take. Zero while intake reads
+/// `n = 3`; the line that says so where it is not (BQ4).
+pub fn take_unheard() -> u64 {
+    UNHEARD.with(|c| c.replace(0))
+}
+
+/// The bodies of a perceiver's components, each refusal counted on
+/// [`take_unheard`] rather than dropped unseen.
+fn bodies_of(laminae: &[Lamina]) -> Vec<Body> {
+    blade::components(laminae)
+        .into_iter()
+        .filter_map(|comp| {
+            let body = body_of(comp);
+            if body.is_none() {
+                UNHEARD.with(|c| c.set(c.get() + 1));
+            }
+            body
+        })
+        .collect()
 }
 
 /// Grid sites visited by [`perceive`] since the last reset.
@@ -171,11 +201,11 @@ pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
         for (c, &h) in row.iter().enumerate() {
             note_sensor_read();
             if h != 0 {
-                laminae.push((r as i64, c as i64, k, h));
+                laminae.push(Lamina::from((r as i64, c as i64, k, h)));
             }
         }
     }
-    blade::components(&laminae).into_iter().map(body_of).collect()
+    bodies_of(&laminae)
 }
 
 /// Perceive a family's frames as bodies on `(r, c, k)`: hue-blind
@@ -188,12 +218,12 @@ pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
             for (c, &h) in row.iter().enumerate() {
                 note_sensor_read();
                 if h != 0 {
-                    laminae.push((r as i64, c as i64, k as i64, h));
+                    laminae.push(Lamina::from((r as i64, c as i64, k as i64, h)));
                 }
             }
         }
     }
-    blade::components(&laminae).into_iter().map(body_of).collect()
+    bodies_of(&laminae)
 }
 
 /// THE CHAIN OF ONE SECTION between two bodies: each lamina of the source
@@ -206,35 +236,49 @@ pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i
     let mut chain = Vec::new();
     match (a, b) {
         (Some(src), Some(dst)) => {
-            for &(r, c, k, h) in &src.laminae {
-                let h2 = element::carry_center(v, r, c, k)
-                    .and_then(|p| {
-                        let (tr, tc, tk) = element::site_of(&p)?;
-                        dst.laminae
-                            .binary_search_by(|x| (x.0, x.1, x.2).cmp(&(tr, tc, tk)))
-                            .ok()
-                            .map(|i| dst.laminae[i].3)
-                    })
-                    // A lamina the carriage lands nowhere in the image keeps
-                    // its own hue: nothing moved it.
-                    .map_or(h, |found| found);
-                chain.push((r, c, h, h2));
+            for l in &src.laminae {
+                // A lamina the carriage lands nowhere in the image keeps
+                // its own hue: nothing moved it.
+                let h2 = landed_hue(v, &l.site, dst).map_or(l.hue, |found| found);
+                if let Some((r, c)) = on_grid(&l.site) {
+                    chain.push((r, c, l.hue, h2));
+                }
             }
         }
         (None, Some(dst)) => {
-            for &(r, c, _, h) in &dst.laminae {
-                chain.push((r, c, 0, h));
+            for l in &dst.laminae {
+                if let Some((r, c)) = on_grid(&l.site) {
+                    chain.push((r, c, 0, l.hue));
+                }
             }
         }
         (Some(src), None) => {
-            for &(r, c, _, h) in &src.laminae {
-                chain.push((r, c, h, 0));
+            for l in &src.laminae {
+                if let Some((r, c)) = on_grid(&l.site) {
+                    chain.push((r, c, l.hue, 0));
+                }
             }
         }
         (None, None) => {}
     }
     chain.sort_unstable();
     chain
+}
+
+/// The hue of the lamina of `dst` that `v` carries the lamina at `site`
+/// onto: its centre carried and read back as a site. `None` where it lands
+/// at infinity, off the base, or on no lamina of `dst`.
+pub(crate) fn landed_hue(v: &Versor, site: &Site, dst: &Body) -> Option<u8> {
+    let t = element::carry_site(v, site)?;
+    dst.laminae.binary_search_by(|x| x.site.cmp(&t)).ok().map(|i| dst.laminae[i].hue)
+}
+
+/// A site's coordinates on the grid axes — the section's planar token
+/// (16.5); every other axis rides on the pose. `None` for a site of a base
+/// with fewer than the two grid axes, which has no section.
+pub(crate) fn on_grid(s: &Site) -> Option<(i64, i64)> {
+    let [ga, gb] = crate::transducer::base::GRID_AXES;
+    Some((s.axis(ga)?, s.axis(gb)?))
 }
 
 pub(crate) fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
@@ -465,7 +509,8 @@ pub(crate) fn word_vertex_on_chart(
 /// stand in several frames: the sections `perceive_at` yields stand in one.
 pub(crate) fn frame_of_body(b: &Body) -> Option<i64> {
     let mut at: Option<i64> = None;
-    for &(_, _, k, _) in &b.laminae {
+    for l in &b.laminae {
+        let k = l.site.axis(FRAME_AXIS)?;
         match at {
             None => at = Some(k),
             Some(f) if f == k => {}
@@ -478,16 +523,28 @@ pub(crate) fn frame_of_body(b: &Body) -> Option<i64> {
 /// The same laminae read in their frame's own coordinates, at `k = 0`:
 /// the frame rides on the pose (16.5, 52.5), so a quotient measured here
 /// is the one the vertex carries and the one a frame perceived alone reads.
+/// A lamina with no frame axis stands in no frame and is carried as it is.
 pub(crate) fn at_frame_zero(laminae: &[Lamina]) -> Vec<Lamina> {
-    laminae.iter().map(|&(r, c, _, h)| (r, c, 0, h)).collect()
+    at_frame(laminae, 0)
+}
+
+/// Laminae moved to frame `k`, every other coordinate kept.
+fn at_frame(laminae: &[Lamina], k: i64) -> Vec<Lamina> {
+    laminae
+        .iter()
+        .map(|l| Lamina {
+            site: match l.site.with_axis(FRAME_AXIS, k) {
+                Some(s) => s,
+                None => l.site.clone(),
+            },
+            hue: l.hue,
+        })
+        .collect()
 }
 
 /// A support read back at frame `k`, from laminae at frame zero.
-pub(crate) fn support_at(laminae: &[Lamina], k: i64) -> Vec<(i64, i64, i64)> {
-    let mut s: Vec<(i64, i64, i64)> = laminae.iter().map(|&(r, c, _, _)| (r, c, k)).collect();
-    s.sort_unstable();
-    s.dedup();
-    s
+pub(crate) fn support_at(laminae: &[Lamina], k: i64) -> Vec<Site> {
+    sites_of(&at_frame(laminae, k))
 }
 
 /// The axes on which two charts differ, by position; an axis one chart
@@ -622,11 +679,8 @@ pub(crate) fn edge_transport(
     b_j: &Body,
 ) -> Result<crate::transducer::sentence::Transport, Vec<EdgeRefusal>> {
     let union = |x: &Body, y: &Body| -> Shape {
-        let mut pos: Vec<(i64, i64, i64)> =
-            x.laminae.iter().chain(y.laminae.iter()).map(|&(r, c, k, _)| (r, c, k)).collect();
-        pos.sort_unstable();
-        pos.dedup();
-        blade::shape_of(&pos)
+        let laminae: Vec<Lamina> = x.laminae.iter().chain(y.laminae.iter()).cloned().collect();
+        blade::shape_of(&sites_of(&laminae))
     };
     let members = blade::versor_coset_ordered(&union(a_i, a_j), &union(b_i, b_j));
     let inv = v_i.versor_inverse().ok_or_else(|| vec![EdgeRefusal::NoReading])?;
@@ -646,12 +700,9 @@ pub(crate) fn edge_transport(
     Err(refusals)
 }
 
-/// A body's support on the three coordinates of the base, sorted.
-pub(crate) fn support_of(body: &Body) -> Vec<(i64, i64, i64)> {
-    let mut s: Vec<(i64, i64, i64)> = body.laminae.iter().map(|&(r, c, k, _)| (r, c, k)).collect();
-    s.sort_unstable();
-    s.dedup();
-    s
+/// A body's support on the sites of the base, sorted.
+pub(crate) fn support_of(body: &Body) -> Vec<Site> {
+    sites_of(&body.laminae)
 }
 
 // `ring_of_support` STOOD HERE AND IS DELETED — T1 (60.5, ruled

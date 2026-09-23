@@ -182,10 +182,15 @@ pub(crate) fn candidates_over(bodies: &[Link]) -> Keyed<Rotor> {
     }
     let lift = |links: &[Link]| {
         crate::transducer::family::body_of(
-            links.iter().map(|&(r, c, _, h)| (r, c, 0i64, h)).collect::<Vec<_>>(),
+            links
+                .iter()
+                .map(|&(r, c, _, h)| crate::transducer::blade::Lamina::from((r, c, 0i64, h)))
+                .collect::<Vec<_>>(),
         )
     };
-    let (a, b) = (lift(&before), lift(&after));
+    let (Some(a), Some(b)) = (lift(&before), lift(&after)) else {
+        return out;
+    };
     let Some(car) = crate::transducer::family::carriage_with_core(&a, &b) else {
         return out;
     };

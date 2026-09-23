@@ -17,8 +17,9 @@
 //! order, every cover that closes is kept, and the caller holds
 //! incomparable ones rather than taking the first that answers.
 
-use super::perceive::{frame_of, Grid};
+use super::perceive::{frame_of, on_grid, Grid};
 use crate::network::nerve::Keyed;
+use crate::transducer::base::Site;
 use crate::transducer::peel::ShellKind;
 
 /// A WAY THE SENSOR PLANE IS CUT (53.2). The roster is fixed and grows
@@ -47,13 +48,13 @@ impl Reading {
     }
 }
 
-/// A REGION OF THE SENSOR PLANE, by its support on the three coordinates
-/// of the base (51.3). A chart is itself a scene and is covered again;
-/// what ends the recursion is 53.1's identity of coordinates, below.
+/// A REGION OF THE SENSOR PLANE, by its support on the sites of the base
+/// (51.3, 71). A chart is itself a scene and is covered again; what ends
+/// the recursion is 53.1's identity of coordinates, below.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Chart {
     /// The sites the chart holds, in coordinate order.
-    pub support: Vec<(i64, i64, i64)>,
+    pub support: Vec<Site>,
 }
 
 /// THE CHARTS OF ONE READING, keyed by their own coordinates.
@@ -70,7 +71,7 @@ pub type Cover = Keyed<Chart>;
 /// the enum says. A reading that cut by something beyond the region would
 /// write it after its own tag, which leads the key, so its charts key apart
 /// from these without a second key family (rule 6).
-pub fn chart_key(reading: Reading, support: &[(i64, i64, i64)]) -> Vec<u8> {
+pub fn chart_key(reading: Reading, support: &[Site]) -> Vec<u8> {
     let mut k = vec![reading.tag()];
     use crate::network::nerve::Coordinate;
     k.extend_from_slice(super::pieces::piece_at(ShellKind::Frame, support).encode().as_bytes());
@@ -104,12 +105,12 @@ pub fn scene_chart(scene: &[Grid]) -> Option<Chart> {
 /// THE SITES OF A RECTANGULAR BLOCK, in coordinate order. Frame `0`: a
 /// chart is a region of the sensor plane and the frame rides on the pose
 /// (16.5), so the cut is one reading for every frame of the family.
-fn block(r0: i64, r1: i64, c0: i64, c1: i64) -> Vec<(i64, i64, i64)> {
+fn block(r0: i64, r1: i64, c0: i64, c1: i64) -> Vec<Site> {
     let mut out = Vec::new();
     // index: the block's own sites, which are what it IS
     for r in r0..r1 {
         for c in c0..c1 {
-            out.push((r, c, 0));
+            out.push(Site::from((r, c, 0)));
         }
     }
     out
@@ -238,9 +239,13 @@ fn bands(scene: &[Grid]) -> Option<Cover> {
 /// one scene restricted against another's extent, which is not a reading
 /// of anything (rule 11).
 pub fn restrict(g: &Grid, chart: &Chart) -> Option<Grid> {
-    let [(r0, c0, _), ..] = chart.support.as_slice() else { return None };
-    let (mut r1, mut c1) = (*r0, *c0);
-    for &(r, c, _) in &chart.support {
+    // The chart's sites on the grid axes: a chart is a region of the
+    // sensor plane (16.5).
+    let plane: Vec<(i64, i64)> = chart.support.iter().map(on_grid).collect::<Option<_>>()?;
+    let [(r0, c0), ..] = plane.as_slice() else { return None };
+    let (r0, c0) = (*r0, *c0);
+    let (mut r1, mut c1) = (r0, c0);
+    for &(r, c) in &plane {
         if r > r1 {
             r1 = r;
         }
@@ -250,7 +255,7 @@ pub fn restrict(g: &Grid, chart: &Chart) -> Option<Grid> {
     }
     let (h, w) = ((r1 - r0 + 1) as usize, (c1 - c0 + 1) as usize);
     let mut out = vec![vec![0u8; w]; h];
-    for &(r, c, _) in &chart.support {
+    for &(r, c) in &plane {
         let hue = *g.get(r as usize).and_then(|row| row.get(c as usize))?;
         let (dr, dc) = ((r - r0) as usize, (c - c0) as usize);
         *out.get_mut(dr).and_then(|row| row.get_mut(dc))? = hue;

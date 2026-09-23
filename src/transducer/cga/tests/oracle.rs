@@ -26,10 +26,15 @@ fn q(n: i64, d: i64) -> BigRational {
     BigRational::new(n.into(), d.into())
 }
 
-/// A versor written exactly: the hex of its canonical bytes.
+/// A versor written exactly: the hex of its canonical coefficients — the
+/// value itself, without the `n` the wire frames it with (BQ1), so the
+/// oracle the fixed carrier left is read against values and not a layout.
 fn hex(m: &Mv) -> String {
     let mut b = Vec::new();
-    m.put_canonical(&mut b);
+    match m.canonical() {
+        Some(c) => c.put_coefficients(&mut b),
+        None => m.put_coefficients(&mut b),
+    }
     b.iter().map(|x| format!("{x:02x}")).collect()
 }
 
@@ -102,7 +107,7 @@ fn harvest() -> Vec<(String, Mv)> {
     let mut hold = |m: &Mv| {
         if let Some(c) = m.canonical() {
             let mut k = Vec::new();
-            c.to_bytes(&mut k);
+            c.put_coefficients(&mut k);
             held.insert(k, c);
         }
     };

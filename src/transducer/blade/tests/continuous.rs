@@ -7,7 +7,7 @@ use num_rational::BigRational;
 
 #[test]
 fn continuous_support_invariants_in_closed_form() {
-    let bar: Vec<(i64, i64, i64)> = vec![(0, 0, 0), (0, 1, 0), (0, 2, 0), (0, 3, 0)];
+    let bar = super::common::sites(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (0, 3, 0)]);
     let s = shape_of(&bar);
     let cs = ContinuousSupport::of(&s).expect("continuous support");
 
@@ -18,9 +18,7 @@ fn continuous_support_invariants_in_closed_form() {
     assert!(cs.h2_casimir > BigRational::from_integer(0.into()));
 
     // Exact similarity under dilation 2: shell scales by 4, H2 by 256
-    let dilated: Vec<(i64, i64, i64)> = s.blade.support.iter()
-        .flat_map(|&(r, c, k)| vec![(2*r, 2*c, k), (2*r+1, 2*c, k), (2*r, 2*c+1, k), (2*r+1, 2*c+1, k)])
-        .collect();
+    let dilated = super::common::dilate(&s.blade.support, 2);
     let s_dil = shape_of(&dilated);
     let cs_dil = ContinuousSupport::of(&s_dil).expect("dilated support");
 
@@ -35,7 +33,7 @@ fn continuous_support_pythagorean_rotor_holonomy() {
     let w = Word::from_letters(&[(p5, false)]);
     let r = w.rotor();
 
-    let bar: Vec<(i64, i64, i64)> = vec![(0, 0, 0), (0, 1, 0), (0, 2, 0)];
+    let bar = super::common::sites(&[(0, 0, 0), (0, 1, 0), (0, 2, 0)]);
     let s = shape_of(&bar);
     let cs = ContinuousSupport::of(&s).expect("support");
 

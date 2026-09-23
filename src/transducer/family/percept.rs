@@ -51,7 +51,7 @@ struct Member {
     acting: Acting,
     frames: Vec<u16>,
     at: Vec<(u16, Body, Body, Versor)>,
-    support: Vec<(i64, i64, i64)>,
+    support: Vec<Site>,
     union: Option<(Body, Body, Versor)>,
     section_words: Vec<(crate::transducer::alphabet::Word, Vec<u16>)>,
 }
@@ -100,8 +100,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     let mut out_at_site: Keyed<Vec<u8>> = Keyed::new();
     for b in &outs {
         let bk = body_key(b);
-        for &(r, c, f, _) in &b.laminae {
-            out_at_site.insert(base_key(r, c, f), bk.clone());
+        for l in &b.laminae {
+            out_at_site.insert(l.site.key(), bk.clone());
         }
         out_bodies.insert(bk, b.clone());
     }
@@ -161,10 +161,17 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             let mut ak = ck.clone();
             ak.extend_from_slice(&fiber_key(k));
             attempted.insert(&ak, ());
-            let a_k = body_of(laminae_of(ai));
-            let b_k = body_of(laminae_of(bo));
-            let a0 = body_of(at_frame_zero(&laminae_of(ai)));
-            let b0 = body_of(at_frame_zero(&laminae_of(bo)));
+            // The fiber's bodies were heard when they were perceived, and a
+            // union of heard sections at their `n` is heard; a union that is
+            // not is no quotient to read (38.2, BQ4).
+            let (Some(a_k), Some(b_k), Some(a0), Some(b0)) = (
+                body_of(laminae_of(ai)),
+                body_of(laminae_of(bo)),
+                body_of(at_frame_zero(&laminae_of(ai))),
+                body_of(at_frame_zero(&laminae_of(bo))),
+            ) else {
+                continue;
+            };
             match carriage(&a0, &b0) {
                 Some(car) => {
                     if let Some(qc) = quotient_charts.get_mut(k as usize) {
@@ -182,7 +189,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                 None => match cover_deformation(&a0, &b0, Some(scale), budget) {
                     Ok(cover) => {
                         for b in bo {
-                            if b.laminae.iter().all(|&(r, cc, _, _)| cover.reached.contains(&base_key(r, cc, 0))) {
+                            if at_frame_zero(&b.laminae).iter().all(|l| cover.reached.contains(&l.site.key())) {
                                 out_reached.insert(body_key(b), ());
                             }
                         }
@@ -272,7 +279,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             // is not claimed on — its placement varies (move 6).
             let mut frames: Vec<u16> = Vec::new();
             let mut at: Vec<(u16, Body, Body, Versor)> = Vec::new();
-            let mut support: Vec<(i64, i64, i64)> = Vec::new();
+            let mut support: Vec<Site> = Vec::new();
             // THE LAMINAE OF THE MEMBER'S UNION SHAPE (52.5), gathered at
             // their own frames as the frames are claimed: the union is the
             // fiber the member actually stands on, so a frame the gauge
@@ -402,8 +409,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                 }
                 // The outputs this body stands under, of other charts.
                 let mut meets: Keyed<()> = Keyed::new();
-                for &(r, c, f, _) in &body.laminae {
-                    if let Some(bk) = out_at_site.get(&base_key(r, c, f)) {
+                for l in &body.laminae {
+                    if let Some(bk) = out_at_site.get(&l.site.key()) {
                         meets.insert(bk, ());
                     }
                 }
@@ -412,8 +419,13 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                     let Some(image) = out_bodies.get(&bk) else { continue };
                     any = true;
                     imaged.insert(&bk, ());
-                    let a0 = body_of(at_frame_zero(&body.laminae));
-                    let b0 = body_of(at_frame_zero(&image.laminae));
+                    // Both were heard as perceived; moved to frame zero they
+                    // are the same bodies (38.2, BQ4 for any other reading).
+                    let (Some(a0), Some(b0)) =
+                        (body_of(at_frame_zero(&body.laminae)), body_of(at_frame_zero(&image.laminae)))
+                    else {
+                        continue;
+                    };
                     let axes = differing_axes(&body.moduli, &image.moduli);
                     let demand = (
                         Demand::TopologicalDeformation { image: image.moduli.clone(), axes },
@@ -443,7 +455,11 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                 if fib_in.get(&ck).is_some_and(|(_, f)| f.contains(&fk)) {
                     continue;
                 }
-                let links: Vec<Link> = body.laminae.iter().map(|&(r, c, _, h)| (r, c, 0u8, h)).collect();
+                let links: Vec<Link> = body
+                    .laminae
+                    .iter()
+                    .filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, 0u8, l.hue)))
+                    .collect();
                 demanded.push((Demand::Creation, body.moduli.clone(), links));
             }
         }
@@ -514,8 +530,13 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             let (Some(chart), Some(tc)) = (v.face_chart(), transport_class(v)) else { continue };
             let Some(acting) = v.acting_on(&chart) else { continue };
             let Vertex::Word { address, derivation, .. } = v else { continue };
-            let support: Vec<(i64, i64, i64)> =
-                codomain.iter().map(|&(r, cc, _)| (r, cc, c.frame)).collect();
+            let support: Vec<Site> = codomain
+                .iter()
+                .map(|s| match s.with_axis(crate::transducer::base::FRAME_AXIS, c.frame) {
+                    Some(at) => at,
+                    None => s.clone(),
+                })
+                .collect();
             // One class, one chart, two carriages: the multiplicity.
             // The class opens a member coordinate — class ‖ chart — and the
             // transport coordinate is left behind where the extension begins.
@@ -525,8 +546,10 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             acting.carriage.put_canonical(&mut carriage);
             match piece_seen.get(&mk) {
                 Some(held) if held != &carriage => {
-                    let links: Vec<Link> =
-                        support.iter().map(|&(r, cc, _)| (r, cc, 0u8, 0u8)).collect();
+                    let links: Vec<Link> = support
+                        .iter()
+                        .filter_map(|s| on_grid(s).map(|(r, cc)| (r, cc, 0u8, 0u8)))
+                        .collect();
                     demanded.push((Demand::Source { multiplicity: 2 }, chart.clone(), links));
                     continue;
                 }
@@ -754,99 +777,9 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // differ is the member key, which is the pair `(vertex, chart)`.
     type OfferedChord = (Vec<u8>, Vec<u8>, Option<crate::transducer::sentence::Transport>);
 
-    // AXIOM B's QUANTUM `M(X)` — THE FORM'S OWN LATTICE SCALE, and one
-    // chart for every chord of this percept.
-    //
-    // `M` must be a property of the form, not of a chord: two edges of one
-    // cycle computing their own `M` would be transitions between DIFFERENT
-    // stereographic charts, and composing them around the loop would be
-    // composing maps with no common domain — the holonomy would read as
-    // curvature that is only a change of ruler.
-    //
-    // The scene's extent bounds every centre of mass it can hold: a cell
-    // stands at `0 ≤ r < rows`, `0 ≤ c < cols`, `0 ≤ k < hues`, so any
-    // centroid has `|p|² < rows² + cols² + hues²`. Taking
-    // `M = 1 + rows + cols + hues` gives `M² > rows² + cols² + hues² > |p|²`
-    // strictly, so `|u| = |p|/M < 1` and every footprint of this form lands
-    // inside the stereographic image of the sheet. Derived from the scene
-    // rather than chosen, so a bigger scene gets a bigger ruler and the
-    // hyperbolic distances stay comparable within the form.
-    // AXIOM B's CHART FOR THIS FORM — its own origin `P(X)` and quantum
-    // `M(X)`, one stereographic chart for every chord it carries.
-    //
-    // Two earlier cuts were both flat. The first took `M = 1 + rows + cols
-    // + 256`; the second replaced the 256 with the scene's hue extent. Both
-    // are the AXIS-ALIGNED BOUNDING BOX of the corpus — `max` along each
-    // axis in turn — carried past the sensor boundary into the connection,
-    // and both SUM INCOMMENSURABLE AXES, adding a palette index to two
-    // lattice positions as though a hue were a length.
-    //
-    // Worse, the lamina was fed ABSOLUTE `(r, c, k)`. The same form drawn
-    // at the origin and at the far corner of a grid then lands on different
-    // sheet points and reads as different geometry — position standing in
-    // for coordinate (rule 15), inside the connection itself.
-    //
-    // Both dissolve into one construction. The form's centre and its total
-    // second moment:
-    //
-    // ```text
-    //     P = (1/N) Σ pᵢ            translation-equivariant: P(g·X) = g·P(X)
-    //     S = Σ |pᵢ − P|²           one scalar, rotation-invariant, no max
-    //     M = 1 + S
-    // ```
-    //
-    // `S` is a MOMENT, not an EXTENT: every cell enters symmetrically and
-    // no axis is privileged, so there is no box. The chart bound comes
-    // free — a sub-domain's centre lies in the convex hull of the whole, so
-    // `|c − P|² ≤ maxᵢ|pᵢ − P|² ≤ S`, and `M ≥ 1` gives `M² ≥ M > S`
-    // strictly. Every footprint of this form therefore lands inside the
-    // stereographic image of the sheet, and feeding `c(D) − P` rather than
-    // `c(D)` makes the reading invariant under where the scene was drawn.
-    //
-    // OPEN, and flagged rather than silently decided: the third axis is
-    // HUE, and a hue is not a length. The `(row, col, hue)` lamina is the
-    // sensor's existing convention (`blade::shells`), so the moment mixes a
-    // palette index into a spatial scale. This predates the chart and is
-    // not repaired here; it wants a ruling on whether hue is a coordinate
-    // of the base or of the fibre.
-    // A.11's SINGLE PRODUCER (56.3, ruled 2026-09-22). This summed the
-    // cells a second time — a SHADOW PRODUCER of moments `blade::lift`
-    // already computes exactly, and a lossy one: it took each cell as a
-    // POINT MASS at integer coordinates, where `lift` integrates the
-    // lamina's own unit square and carries the parallel-axis term
-    // `N/12` at every order. Two producers of one quantity, and the
-    // second disagreed with the first (law 12).
-    //
-    // The form's chart is one body — the union of every cell its chords
-    // stand on — so `centroid()` is `P` and the trace of `inertia` is the
-    // scale. The trace is used HERE and only here, as a radius: it is an
-    // `SO(2)` invariant and carries no orientation (A.11), which is what
-    // the frame rotor is for and not this.
-    let (origin, quantum) = {
-        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
-        let mut cells: Vec<(i64, i64, i64)> = Vec::new();
-        for ((_, _, _, da), (_, _, _, db), _) in meet_chords.iter() {
-            cells.extend(da.iter().copied());
-            cells.extend(db.iter().copied());
-        }
-        cells.sort_unstable();
-        cells.dedup();
-        match crate::transducer::blade::shape_of(&cells).blade {
-            // A form whose chords stand on nothing has no chart to speak
-            // of; the pole and unit scale are the honest empty reading.
-            b if b.support.is_empty() => ([zero.clone(), zero.clone(), zero], one),
-            b => {
-                let (c1, c2, c3) = match b.centroid() {
-                    Some(p) => p,
-                    // A body whose centroid does not read back is refused
-                    // rather than defaulted (rule 11).
-                    None => (zero.clone(), zero.clone(), zero.clone()),
-                };
-                ([c1, c2, c3], one + (&b.inertia[0] + &b.inertia[1]))
-            }
-        }
-    };
+    // AXIOM B's CHART FOR THIS FORM — one origin and one quantum for every
+    // chord it carries (`chord::form_chart`, where the construction is read).
+    let (origin, quantum) = super::chord::form_chart(&meet_chords);
     let (source, image) = cover_nerves(&covers);
     let spectrum = phase_spectrum(&meet_chords);
     let chord_pairs: Vec<OfferedChord> = meet_chords
@@ -855,7 +788,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             let at = |t: &TransportClass,
                       c: &Invariant,
                       phi: &crate::transducer::element::Versor,
-                      d: &[(i64, i64, i64)]|
+                      d: &[Site]|
              -> Option<Vec<u8>> {
                 // A class stands at one or more vertices and any of them
                 // names the same class, so the slice pattern reads one
@@ -875,10 +808,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                     [] => return None,
                 };
                 let mut k = section_key(ix, c.key().as_bytes(), phi);
-                for (r, col, f) in d {
-                    k.extend_from_slice(&r.to_le_bytes());
-                    k.extend_from_slice(&col.to_le_bytes());
-                    k.extend_from_slice(&f.to_le_bytes());
+                for s in d {
+                    s.put(&mut k);
                 }
                 Some(k)
             };
@@ -921,7 +852,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         b: Vec<u8>,
         edge: Option<crate::transducer::sentence::Transport>,
         hows: Vec<Incidence>,
-        interface: Vec<(i64, i64, i64)>,
+        interface: Vec<Site>,
     }
     let mut offers: Vec<Offer> = Vec::new();
     for nf in named_faces(frame_member.as_deref(), &scenery.supports) {
@@ -1069,6 +1000,13 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // fifteen forms crystallized at `loops 0` and this line never fired
     // once. A reading suppressed in the failure case is not a reading.
     let unread_why = crate::transducer::sentence::Form::unread_gates();
+    // BQ1 — BODIES NOT HEARD AT THEIR `n`, always printed: `body_of` refuses
+    // past `n = 3` (38.2 is BQ4's), and the perceivers count each refusal
+    // rather than dropping it. Zero while intake reads the grid's three.
+    eprintln!(
+        "  perceive unheard {}: components whose moduli are not read at their n",
+        crate::transducer::family::perceive::take_unheard()
+    );
     eprintln!(
         "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} loops \
          | edges asked: measured {}, unspelled {}, unread {}, not rigid {} \
