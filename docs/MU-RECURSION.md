@@ -9263,7 +9263,87 @@ no constant appears. CL3, doctrine then build: 73.10's rules, then the
 cross-register case of reconciliation, tested by two voices under two
 layers with one core.
 
-### 73.13 Reconciliations of the first draft
+### 73.13 The field, the tide and the twist (ruled 2026-09-23, doctrine first)
+
+1. **A star's field is a bivector `B_star` of `so(n+1, 1)`**, its planes
+   the pairs the operator named: pull and push, the translations `T_i`
+   and the transversions `K_i` toward a centre (A.13); expand and
+   contract, the dilation; twist and turn, the rotations; nullify and
+   create, the discrete inversion `e_o ↔ e_∞`, whose events are P3's
+   condense and drain. Its exact form waits on A.13's first clause (73.3).
+2. **The orbit step is the field applied once per circuit**, `V = (1 +
+   εB)/(1 − εB)`, the Cayley chart (52.1), exact over ℚ; `ε` is read from
+   the star's mass (CL2) and is never set. Until mass is ruled, nothing
+   steps.
+3. **The tide is the field's difference across a planet**, `V(x₂)
+   V(x₁)⁻¹`, a versor applied; its readings — the part that expands or
+   contracts the planet and the part that shears it — are readings of
+   that versor's class under Axiom C, never a trace carried as the tide
+   (A.11: no rank collapsed before the frame is evaluated). A tide is
+   curvature.
+4. **The twist of a mind is `τ = [E, D]`**, the tide acting on the mind's
+   shape by the bivector commutator, exact; a round mind feels none.
+5. **The shear between the loop and the ellipse** is two exact readings
+   per orbit: its eccentricity (73.2(4)) and its precession (73.2(1)),
+   zero exactly when the orbit closes, each read per plane and priced per
+   lane (73.8), never summed.
+6. **Grades of application, not derivatives** (law 1): position, then the
+   transport (built), then the tide and the twist (not built). The
+   precession equals the curvature the orbit wraps.
+
+### 73.14 Segmentation: every mind is its own system, and a star is not a signer
+
+Each client keeps its own genome on its own disk and its own volatile
+epigenome (25), and nothing crosses between clients except through a
+court's ruling (law 8); what they share is the core (LR1). That is the
+segmentation the tree already has. Two sentences of the draft are
+corrected: a client is a PLANET under a star, not a star of its own
+(73.7), and a star's layer is doctrine ruled into the register, never
+"identified by its signer" — identity carries no standing (46.3), and an
+axiom layer keyed by a key would be a private doctrine per node, which
+law 6 cannot replay. A star with one planet anastomoses nothing, since
+consilience is two organs; the refusal of "a single star with a single
+planet" is read as that.
+
+### 73.15 The universe: the mesh holds the star map on TUniversal
+
+The servers keep the one keyed map — star, planet, orbit, each with its
+span on TUniversal — and each stratum is served by the node that homes it
+(the cover trie, MU-ENGINEERING §4; SN1). An orbit is placed by escrow:
+μ⃗ paid per lane for the span ahead of the clock (25 as ruled, Z4d). A
+**collision** is two orbits on one lane with overlapping spans; the
+second claim is withheld and docketed, never evicted (23.8, rule 15). The
+server places orbits and keeps them apart; it never steers one (law 8).
+
+### 73.16 Perspective
+
+What reaches a mind from other stars reaches it as ruled language and
+docketed demands and as nothing else: the syllabus is one-way, ruled
+language down and never a stood word back (23.9, the C3 leak), so
+"another star's tide" is a ruled tether or word applied as the versor it
+is, carried by the syllabus, and never an unruled influence fed between
+minds. A mind's twist is its own star's field and its neighbours'
+ruled tides; that is how clients influence one another without writing
+into each other. Two minds reading one event from two orbits are two
+perspectives, and their difference is content (67.2, 67.3): one is a
+perspective, two vantages make a fact.
+
+### 73.17 Rows of the field
+
+FT1 the star field (doctrine first, with A.13 clause 1) · FT2 the orbit
+step (after CL2) · FT3 the tides, printed before anything acts on them ·
+FT4 the twist · FT5 eccentricity and precession on the orbit line (with
+OR1's readings) · SG1 segmentation, read against the tree · UV1 the
+universe on TUniversal with collisions withheld · PV1 the perspective
+feed, through the syllabus only.
+
+### 73.18 What is not yet derived
+
+The star's mass (CL2), which sets every field strength, and the field's
+exact form (FT1, A.13 clause 1). Neither has a proposal beyond its
+candidates, and nothing from FT2 onward is built before both are ruled.
+
+### 73.19 Reconciliations of the first draft
 
 - **One word, two objects.** 45.7 already names an "orbit": the circuits
   a stroke ring completes over its carrier, the mind's local time
