@@ -194,6 +194,14 @@ fn the_circuits_read_back_whole_step_by_step() {
                 test: Some(CircuitTest {
                     arms: vec![(TestArm::OtherPairs, ArmRead::Reads(2)), (TestArm::Coset, ArmRead::Empty)],
                     class: CircuitClass::C,
+                    offers: vec![Offer {
+                        arm: TestArm::ConstructedFibre,
+                        face: 9,
+                        constructor: vec![(0b00001, q(1, 1)), (0b10000, q(-1, 2))],
+                        flat: false,
+                        holonomy: vec![(0, q(3, 1)), (0b00011, q(4, 1))],
+                        modes: ModesRead::Split(vec![(BivectorKind::Elliptic, 1, None)]),
+                    }],
                 }),
                 steps: vec![
                     CircuitStep {
@@ -222,6 +230,7 @@ fn the_circuits_read_back_whole_step_by_step() {
                         (TestArm::Cone, ArmRead::Permanent),
                     ],
                     class: CircuitClass::Curved,
+                    offers: Vec::new(),
                 }),
                 steps: vec![
                     CircuitStep { face: 3, forward: false, refracted: false, carried: Carried::Unread },

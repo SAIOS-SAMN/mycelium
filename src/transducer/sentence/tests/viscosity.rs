@@ -122,7 +122,14 @@ fn held_coset() -> Form {
 fn cosets(form: &Form) -> Vec<(Option<CosetClosure>, usize)> {
     let carried = crate::transducer::sentence::walk::paths_carried(&form.faces, &form.vertices, &form.orbits[0])
         .expect("the loop walks");
-    carried.scoped().map(|(_, c)| (c.coset_closure(), c.coset().map_or(0, |(cs, _)| cs.len()))).collect()
+    let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
+    carried
+        .scoped()
+        .map(|(_, c)| match c.coset(&mut stroke) {
+            Some(Ok((cs, _))) => (Some(crate::transducer::sentence::refracted::closure_of(&cs)), cs.len()),
+            _ => (None, 0),
+        })
+        .collect()
 }
 
 /// 78.7(4), 78.6(1) — A HELD `ℤ₂` READS UNCHANGED BY ANY BEND: the loop
@@ -146,6 +153,25 @@ fn a_held_half_turn_reads_unchanged_by_any_bend() {
     form.apply_move(&PivotBy::Placement { face: 0, translator: quarter });
     let after = cosets(&form);
     assert!(after.iter().all(|&(_, n)| n == 2), "both candidates stand after the bend: {after:?}");
+}
+
+/// 78.18, RULE 10 — A COSET'S CANDIDATES ARE FORMED UNDER THE STROKE: one
+/// read spent per candidate formed; a stroke of one read cannot form the held
+/// ℤ₂'s two, and the reading is UNBOUNDED by name — never a representative,
+/// never a partial coset read as closed.
+#[test]
+fn a_cosets_candidates_spend_the_stroke_and_refuse_unbounded_when_spent() {
+    let form = held_coset();
+    let carried = crate::transducer::sentence::walk::paths_carried(&form.faces, &form.vertices, &form.orbits[0])
+        .expect("the loop walks");
+    for (_, c) in carried.scoped() {
+        let mut roomy = crate::physics::Physics::default().stroke_n(1 << 16);
+        let before = roomy.remaining();
+        assert!(matches!(c.coset(&mut roomy), Some(Ok((ref cs, 1))) if cs.len() == 2), "two candidates, one held step");
+        assert_eq!(before - roomy.remaining(), 2, "one read per candidate formed");
+        let mut spent = crate::physics::Physics::default().stroke_n(1);
+        assert_eq!(c.coset_closure(&mut spent), Some(CosetClosure::Unbounded), "spent before the last: unbounded");
+    }
 }
 
 /// ITEM 6 — A BEND WITH NO INVERSE IS REFUSED BY NAME: the un-pivot of a

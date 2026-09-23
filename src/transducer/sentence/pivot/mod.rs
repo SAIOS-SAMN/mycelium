@@ -8,6 +8,7 @@ pub mod census;
 pub mod drive;
 pub mod moves;
 pub mod orbits;
+pub mod refracted;
 pub mod snap;
 pub mod trajectory;
 pub mod trial;
@@ -18,7 +19,7 @@ pub mod words;
 pub use census::*;
 pub use moves::*;
 pub use snap::*;
-pub use trajectory::{finish_circuits, take_circuits, walked_circuits, WalkedCircuit};
+pub use trajectory::{construct_routes, finish_circuits, take_circuits, walked_circuits, WalkedCircuit};
 pub use viscosity::{
     bend_plane_name, read_viscosity, viscosity_line, viscosity_reading, Arm, BendLane, PairViscosity,
 };

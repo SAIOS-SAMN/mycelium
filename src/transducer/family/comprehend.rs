@@ -229,11 +229,14 @@ pub(crate) fn progress(form: &Form, walked: &[crate::transducer::sentence::Walke
         }
         p.contact_cycles += 1;
         if let Some(closure) = w.coset {
-            p.contact_cycles_coset[match closure {
-                crate::transducer::sentence::walk::CosetClosure::Closed => 0,
-                crate::transducer::sentence::walk::CosetClosure::ClosedModuloHeld => 1,
-                crate::transducer::sentence::walk::CosetClosure::Open => 2,
-            }] += 1;
+            use crate::transducer::sentence::walk::CosetClosure;
+            match closure {
+                CosetClosure::Closed => p.contact_cycles_coset[0] += 1,
+                CosetClosure::ClosedModuloHeld => p.contact_cycles_coset[1] += 1,
+                CosetClosure::Open => p.contact_cycles_coset[2] += 1,
+                // The stroke spent forming its candidates: unread by name.
+                CosetClosure::Unbounded => p.contact_cycles_unread += 1,
+            }
             continue;
         }
         match w.composite.as_ref().map(|m| m.class_invariants()) {
@@ -303,11 +306,13 @@ pub(crate) fn read_and_hold(form: &Form, budget: &mut crate::physics::Budget, pe
     }
     spend.reads[1] = (at - budget.remaining()) as u64;
     let at = budget.remaining();
-    let walked = crate::transducer::sentence::walked_circuits();
+    let walked = crate::transducer::sentence::walked_circuits(budget);
     let cells = cells_reading(&comprehend(form, &walked, budget));
     spend.reads[2] = (at - budget.remaining()) as u64;
     spend.unbounded[2] = cells_unbounded(&cells);
     let at = budget.remaining();
+    // CT2 — where every reuse arm was empty, the constructed routes (79.3).
+    crate::transducer::sentence::construct_routes(form, budget);
     spend.unbounded[3] = crate::transducer::sentence::finish_circuits(budget);
     spend.reads[3] = (at - budget.remaining()) as u64;
     let at = budget.remaining();

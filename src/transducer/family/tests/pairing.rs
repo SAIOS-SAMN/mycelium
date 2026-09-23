@@ -4,10 +4,15 @@
 
 use crate::transducer::blade::{self, Contact};
 use crate::transducer::family::pairing::{contact_edge, take_contact_tally, ContactEdge};
-use crate::transducer::sentence::Refraction;
+use crate::transducer::sentence::{HeldPose, Refraction};
 
 fn body(cells: &[(i64, i64, i64)]) -> blade::Blade {
     blade::shape_of(cells).blade
+}
+
+/// A body's nucleus: the face's body pair carries it (BD2, 78.18(c)).
+fn nucleus(b: &blade::Blade) -> crate::transducer::cga::Mv {
+    b.nucleus().expect("the body's nucleus reads")
 }
 
 fn pose(before: &blade::Blade, after: &blade::Blade) -> crate::transducer::cga::Mv {
@@ -39,7 +44,9 @@ fn a_contact_edge_is_refraction_never_rigidity() {
     assert!(d2 > crate::core::Q::from_integer(4.into()), "outside the retired band: δ² = {d2}");
     let (theta_a, theta_b) = (pose(&a, &a_after), pose(&b, &b));
     let relative = theta_b.geo(&theta_a.versor_inverse().expect("a turn inverts"));
-    let ContactEdge::Formed(edge) = contact_edge((&a, Some(&a_after)), (&b, Some(&b))) else {
+    let ContactEdge::Formed(edge) =
+        contact_edge((&nucleus(&a), &nucleus(&b)), Some((&a, &a_after)), Some((&b, &b)))
+    else {
         panic!("the band gates nothing: the contact carries its edge");
     };
     assert!(edge.carriage.projective_eq(&relative.geo(&v)), "the carriage is (θ_bθ_a⁻¹)·V, whole");
@@ -56,7 +63,10 @@ fn a_contact_edge_is_refraction_never_rigidity() {
     let bar = body(&[(3, 0, 0), (4, 0, 0), (5, 0, 0), (5, 1, 0)]);
     assert!(blade::relative_pose(&a, &bar).is_err(), "an L-tromino and an L-tetromino are not one turn apart");
     assert!(
-        matches!(contact_edge((&a, Some(&a)), (&bar, Some(&bar))), ContactEdge::Formed(_)),
+        matches!(
+            contact_edge((&nucleus(&a), &nucleus(&bar)), Some((&a, &a)), Some((&bar, &bar))),
+            ContactEdge::Formed(_)
+        ),
         "yet their contact is read, never refused for unlikeness"
     );
 
@@ -66,7 +76,10 @@ fn a_contact_edge_is_refraction_never_rigidity() {
     let j_after = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
     let _ = take_contact_tally();
     assert!(
-        matches!(contact_edge((&j, Some(&j_after)), (&bar, Some(&bar))), ContactEdge::Refused),
+        matches!(
+            contact_edge((&nucleus(&j), &nucleus(&bar)), Some((&j, &j_after)), Some((&bar, &bar))),
+            ContactEdge::Refused
+        ),
         "a mirrored transition carries no refraction"
     );
     let t = take_contact_tally();
@@ -88,7 +101,9 @@ fn a_held_half_turn_rides_the_contact_edge_as_a_coset() {
     let b = body(&[(4, 0, 0), (5, 0, 0), (4, 1, 0)]);
     let v = blade::tether(&s, &b).expect("both nuclei read");
     let _ = take_contact_tally();
-    let ContactEdge::Held(Refraction::Coset(coset)) = contact_edge((&s, Some(&turned)), (&b, Some(&b))) else {
+    let ContactEdge::Held(Refraction::Coset(coset)) =
+        contact_edge((&nucleus(&s), &nucleus(&b)), Some((&s, &turned)), Some((&b, &b)))
+    else {
         panic!("a held pose is a coset edge");
     };
     assert_eq!(coset.len(), 2, "both candidates of the held ℤ₂");
@@ -101,19 +116,27 @@ fn a_held_half_turn_rides_the_contact_edge_as_a_coset() {
     assert_eq!((t.half_open, t.cosets, t.condensed), (1, 1, 0), "a coset formed, no representative condensed");
 }
 
-/// 78.6(2) — A PIECE AT ONE FRAME CARRIES ITS TETHER: no transition, so no
-/// pose is read and none is refused; the edge is `V = s_b s_a` with the
-/// refraction unread by name — static — never the identity.
+/// 78.6(2), 78.18(a) — A PIECE AT ONE FRAME CARRIES ITS TETHER: the edge is
+/// `V = s_b s_a` of the two BODIES' nuclei with the refraction unread by name
+/// — static — never the identity; the member that did transit keeps its pose
+/// on the edge by name and the one at one frame is named so, so a later
+/// fibre can complete the refraction. No refraction is asked, and none
+/// refused.
 #[test]
-fn a_static_contact_carries_its_tether_with_the_refraction_unread() {
+fn a_static_contact_carries_its_tether_and_the_pose_it_read() {
     let a = body(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]);
     let b = body(&[(2, 1, 0), (3, 1, 0), (2, 2, 0)]);
+    let b_after = body(&[(2, 1, 0), (2, 2, 0), (1, 1, 0)]);
     let v = blade::tether(&a, &b).expect("both nuclei read");
     let _ = take_contact_tally();
-    let ContactEdge::Held(Refraction::Static(tether)) = contact_edge((&a, None), (&b, Some(&b))) else {
+    let ContactEdge::Held(Refraction::Static { tether, poses }) =
+        contact_edge((&nucleus(&a), &nucleus(&b)), None, Some((&b, &b_after)))
+    else {
         panic!("a piece at one frame is a static edge");
     };
-    assert_eq!(tether, v, "the tether, whole");
+    assert_eq!(tether, v, "the tether of the two bodies, whole");
+    let [HeldPose::OneFrame, HeldPose::Read(theta_b)] = &poses else { panic!("the poses as read: {poses:?}") };
+    assert!(theta_b[0].projective_eq(&pose(&b, &b_after)), "the transited end's pose, kept");
     let t = take_contact_tally();
-    assert_eq!((t.statics, t.half_open, t.condensed, t.mirrored), (1, 0, 0, 0), "static by name, no pose asked");
+    assert_eq!((t.statics, t.half_open, t.condensed, t.mirrored), (1, 0, 0, 0), "static by name, no refraction asked");
 }

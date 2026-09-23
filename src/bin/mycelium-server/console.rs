@@ -452,6 +452,21 @@ fn circuits(c: &observe::Circuits) -> Vec<String> {
                 })
                 .collect();
             out.push(format!("      {BOLD}test{RESET} {}  {DIM}[{}]{RESET}", t.class.label(), arms.join("; ")));
+            // CT2 — each construction offered: a candidate, never installed.
+            for o in &t.offers {
+                let ray = |r: &[(u16, num_rational::BigRational)]| {
+                    r.iter().map(|(b, q)| format!("{} {q}", cga::blade_name(usize::from(*b)))).collect::<Vec<_>>().join(", ")
+                };
+                out.push(format!(
+                    "        {YELLOW}offer{RESET} {} at face {}: {}  modes [{}]  {DIM}constructor [{}] holonomy [{}]{RESET}",
+                    o.arm.label(),
+                    o.face,
+                    if o.flat { "flat" } else { "curved" },
+                    o.modes.label(),
+                    ray(&o.constructor),
+                    ray(&o.holonomy)
+                ));
+            }
         }
     }
     out.push(format!("    {DIM}owed: {}{RESET}", owed.join("  ")));

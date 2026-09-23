@@ -61,6 +61,37 @@ pub enum TestArm {
     OtherCircuits,
     /// `Cone`: nothing, permanent at this grade by name.
     Cone,
+    /// CT2 — every reuse arm empty: a tether constructed between the lost
+    /// face's two bodies from the cell's nuclei.
+    ConstructedTether,
+    /// CT2 — the same tether carried by a constructor the cell holds, `Ω v Ω̃`:
+    /// a fibre landing the pair on its image chart pair.
+    ConstructedFibre,
+}
+
+impl TestArm {
+    /// Whether the arm CONSTRUCTS what it reads (CT2), never reuses it.
+    pub fn constructs(self) -> bool {
+        matches!(self, TestArm::ConstructedTether | TestArm::ConstructedFibre)
+    }
+}
+
+/// CT2, 79.3 — ONE CONSTRUCTED ROUTE, AS OFFERED: a candidate of the thought,
+/// volatile, ratified only by a court. Its constructor and the face it lands
+/// on, the verdict of T1 on the two routes with the holonomy of the loop they
+/// close, and whether that orbit closes or opens, by mode.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Offer {
+    pub arm: TestArm,
+    /// The face the constructed route crosses in the circuit's place.
+    pub face: u16,
+    /// The constructed carrier's ray: the tether, or the constructor that
+    /// carried it.
+    pub constructor: Vec<(u16, BigRational)>,
+    /// T1: the two routes agree — the completed loop is the identity ray.
+    pub flat: bool,
+    pub holonomy: Vec<(u16, BigRational)>,
+    pub modes: ModesRead,
 }
 
 /// WHAT ONE ARM READ.
@@ -111,8 +142,16 @@ impl CircuitClass {
 }
 
 impl TestArm {
-    pub const ALL: [TestArm; 6] =
-        [TestArm::OtherPairs, TestArm::Tether, TestArm::Coset, TestArm::Static, TestArm::OtherCircuits, TestArm::Cone];
+    pub const ALL: [TestArm; 8] = [
+        TestArm::OtherPairs,
+        TestArm::Tether,
+        TestArm::Coset,
+        TestArm::Static,
+        TestArm::OtherCircuits,
+        TestArm::Cone,
+        TestArm::ConstructedTether,
+        TestArm::ConstructedFibre,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
@@ -122,6 +161,8 @@ impl TestArm {
             TestArm::Static => "static tether",
             TestArm::OtherCircuits => "other circuits",
             TestArm::Cone => "cone",
+            TestArm::ConstructedTether => "constructed tether",
+            TestArm::ConstructedFibre => "constructed fibre",
         }
     }
 }
@@ -133,24 +174,33 @@ impl TestArm {
 pub struct CircuitTest {
     pub arms: Vec<(TestArm, ArmRead)>,
     pub class: CircuitClass,
+    /// CT2 — the constructed routes offered, one per construction read.
+    pub offers: Vec<Offer>,
 }
 
 impl CircuitTest {
-    /// THE CLASS BY HOW THE ARMS DISAGREE (79.3): two routes disagreeing are
-    /// curved; a trivial circuit whose readable routes agree is flat; a
-    /// refused one that a reused fibre or carrier reads is C; one every arm
-    /// refuses is P. D and candidate are read across the mesh and by
-    /// construction (CV4, CT2), never by this ladder.
-    pub fn classify(arms: Vec<(TestArm, ArmRead)>, trivial: bool) -> CircuitTest {
-        let disagree = arms.iter().any(|(_, r)| matches!(r, ArmRead::Routes { disagree, .. } if *disagree > 0));
-        let reads = arms.iter().any(|(_, r)| matches!(r, ArmRead::Reads(n) if *n > 0));
-        let class = match (disagree, trivial, reads) {
-            (true, _, _) => CircuitClass::Curved,
-            (false, true, _) => CircuitClass::Flat,
-            (false, false, true) => CircuitClass::C,
-            (false, false, false) => CircuitClass::P,
+    /// THE CLASS BY HOW THE ARMS DISAGREE (79.3): two REUSED routes
+    /// disagreeing are curved; a trivial circuit whose readable routes agree
+    /// is flat; a refused one that a reused fibre or carrier reads is C; one
+    /// only a CONSTRUCTED route reads is a CANDIDATE (CT2) — flat or curved
+    /// by T1 in its offer, C once a court ratifies; one every arm refuses is
+    /// P. D is read across the mesh (CV4), never by this ladder.
+    pub fn classify(arms: Vec<(TestArm, ArmRead)>, trivial: bool, offers: Vec<Offer>) -> CircuitTest {
+        let reused = |a: &TestArm| !a.constructs();
+        let disagree =
+            arms.iter().any(|(a, r)| reused(a) && matches!(r, ArmRead::Routes { disagree, .. } if *disagree > 0));
+        let reads = arms.iter().any(|(a, r)| reused(a) && matches!(r, ArmRead::Reads(n) if *n > 0));
+        let constructed = arms
+            .iter()
+            .any(|(a, r)| a.constructs() && matches!(r, ArmRead::Routes { agree, disagree } if agree + disagree > 0));
+        let class = match (disagree, trivial, reads, constructed) {
+            (true, _, _, _) => CircuitClass::Curved,
+            (false, true, _, _) => CircuitClass::Flat,
+            (false, false, true, _) => CircuitClass::C,
+            (false, false, false, true) => CircuitClass::Candidate,
+            (false, false, false, false) => CircuitClass::P,
         };
-        CircuitTest { arms, class }
+        CircuitTest { arms, class, offers }
     }
 
     fn put(&self, out: &mut Vec<u8>) {
@@ -172,6 +222,15 @@ impl CircuitTest {
                 ArmRead::Permanent => out.push(3),
             }
         }
+        out.extend_from_slice(&(self.offers.len() as u32).to_le_bytes());
+        for o in &self.offers {
+            out.push(TestArm::ALL.iter().position(|a| *a == o.arm).map_or(0xff, |i| i as u8));
+            out.extend_from_slice(&o.face.to_le_bytes());
+            put_ray(out, &o.constructor);
+            out.push(u8::from(o.flat));
+            put_ray(out, &o.holonomy);
+            put_modes(out, &o.modes);
+        }
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<CircuitTest> {
@@ -192,8 +251,53 @@ impl CircuitTest {
             };
             arms.push((arm, read));
         }
-        Some(CircuitTest { arms, class })
+        let n = take_u32(b, p)?;
+        if !holds(b, *p, n, 12) {
+            return None;
+        }
+        let mut offers = Vec::with_capacity(n);
+        for _ in 0..n {
+            let arm = *TestArm::ALL.get(usize::from(take_u8(b, p)?))?;
+            let face = take_u16(b, p)?;
+            let constructor = take_ray(b, p)?;
+            let flat = match take_u8(b, p)? {
+                0 => false,
+                1 => true,
+                _ => return None,
+            };
+            let holonomy = take_ray(b, p)?;
+            let modes = take_modes(b, p)?;
+            offers.push(Offer { arm, face, constructor, flat, holonomy, modes });
+        }
+        Some(CircuitTest { arms, class, offers })
     }
+}
+
+/// A ray in its canonical coordinates, each blade and its exact coefficient.
+fn put_ray(out: &mut Vec<u8>, ray: &[(u16, BigRational)]) {
+    out.extend_from_slice(&(ray.len() as u32).to_le_bytes());
+    for (blade, c) in ray {
+        out.extend_from_slice(&blade.to_le_bytes());
+        put_int(out, c.numer());
+        put_int(out, c.denom());
+    }
+}
+
+fn take_ray(b: &[u8], p: &mut usize) -> Option<Vec<(u16, BigRational)>> {
+    let m = take_u32(b, p)?;
+    if !holds(b, *p, m, 10) {
+        return None;
+    }
+    let mut ray = Vec::with_capacity(m);
+    for _ in 0..m {
+        let blade = take_u16(b, p)?;
+        let (numer, denom) = (take_int(b, p)?, take_int(b, p)?);
+        if num_traits::Zero::is_zero(&denom) {
+            return None;
+        }
+        ray.push((blade, BigRational::new(numer, denom)));
+    }
+    Some(ray)
 }
 
 impl Circuit {

@@ -508,6 +508,7 @@ impl OrbitLine {
                     super::walk::CosetClosure::Closed => "closed",
                     super::walk::CosetClosure::ClosedModuloHeld => "closed modulo the held ℤ₂ᵏ",
                     super::walk::CosetClosure::Open => "open",
+                    super::walk::CosetClosure::Unbounded => "unbounded (the stroke spent forming its candidates)",
                 }
             ),
             OrbitLine::Unread { at, why } => {
@@ -532,10 +533,10 @@ pub(super) struct OrbitNote {
     pub(super) composite: Option<element::Versor>,
     pub(super) at: Option<usize>,
     pub(super) why: Option<Unread>,
-    /// 78.6 — the gauge half static, or the held coset with its closure,
-    /// its held steps and its candidates.
+    /// 78.6 — the gauge half static; and the path through a held coset,
+    /// whose candidates the reader holding the stroke forms (rule 10).
     pub(super) gauge_static: bool,
-    pub(super) coset: Option<(super::walk::CosetClosure, u32, usize)>,
+    pub(super) coset: Option<super::walk::PathCarried>,
 }
 
 thread_local! {
@@ -589,7 +590,17 @@ pub(crate) fn take_orbits(budget: &mut crate::physics::Budget) -> Vec<OrbitLine>
                     false => OrbitLine::Read(r),
                 }
             }
-            (None, Some((closure, held, candidates))) => OrbitLine::Coset { closure, held, candidates },
+            (None, Some(path)) => match path.coset(budget) {
+                Some(Ok((cands, held))) => {
+                    OrbitLine::Coset { closure: super::refracted::closure_of(&cands), held, candidates: cands.len() }
+                }
+                Some(Err(_)) => OrbitLine::Coset {
+                    closure: super::walk::CosetClosure::Unbounded,
+                    held: path.refracted.as_ref().map_or(0, |r| r.held_steps()),
+                    candidates: 0,
+                },
+                None => OrbitLine::Unread { at: note.at, why: note.why },
+            },
             (None, None) => OrbitLine::Unread { at: note.at, why: note.why },
         })
         .collect()

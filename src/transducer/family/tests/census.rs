@@ -26,27 +26,30 @@ fn percept_lines() {
     if let Some(v) = crate::transducer::family::take_viscosity() {
         eprintln!("  {}", crate::transducer::sentence::viscosity_line(&v));
     }
-    // CT1 — THE REUSE LADDER, per circuit, by class (79.3): asserted, never
-    // hand-probed. This ladder produces neither D nor a candidate — those
-    // are read across the mesh and by construction (CV4, CT2).
+    // CT1, CT2 — THE LADDER, per circuit, by class (79.3): asserted, never
+    // hand-probed. D is read across the mesh (CV4), never here; a candidate
+    // is exactly a circuit whose constructions were offered.
     if let Some(c) = crate::transducer::sentence::take_circuits() {
         use crate::observe::CircuitClass;
         let mut by_class = [0usize; 6];
-        let mut untested = 0usize;
+        let (mut untested, mut offers, mut flat_offers) = (0usize, 0usize, 0usize);
         for circuit in &c.circuits {
             match &circuit.test {
                 Some(t) => {
                     assert!(!t.arms.is_empty() || t.class == CircuitClass::Flat, "a test records the arms it ran: {t:?}");
+                    assert_eq!(t.class == CircuitClass::Candidate, !t.offers.is_empty(), "a candidate is what was offered");
                     by_class[CircuitClass::ALL.iter().position(|&k| k == t.class).expect("a class of the six")] += 1;
+                    offers += t.offers.len();
+                    flat_offers += t.offers.iter().filter(|o| o.flat).count();
                 }
                 None => untested += 1,
             }
         }
-        assert_eq!((by_class[3], by_class[4]), (0, 0), "the ladder reads neither D nor a candidate");
+        assert_eq!(by_class[3], 0, "the ladder reads no D");
         let classes: Vec<String> =
             CircuitClass::ALL.iter().zip(by_class).map(|(k, n)| format!("{} {n}", k.label())).collect();
         eprintln!(
-            "  circuit tests (CT1): {} | untested (a class of their own or a coset) {untested} of {}",
+            "  circuit tests (CT1, CT2): {} | offers {offers} ({flat_offers} flat) | untested (a class of their own or a coset) {untested} of {}",
             classes.join(" "),
             c.circuits.len()
         );

@@ -481,7 +481,7 @@ impl Form {
                     at: c.edge_lost_at,
                     why: c.edge_refused,
                     gauge_static: c.gauge_static(),
-                    coset: c.coset().and_then(|(cands, held)| Some((c.coset_closure()?, held, cands.len()))),
+                    coset: c.holds_coset().then(|| c.clone()),
                 });
                 // PL1 — AND THE SAME CIRCUIT'S BRICKS, step by step (78.12(4)).
                 super::trajectory::note_circuit(|| super::trajectory::read_circuit(lp.chord, c, faces));

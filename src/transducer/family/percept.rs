@@ -904,11 +904,20 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         // contact is (BQ5a), so where the refraction was refused the face
         // stands with no edge and the contact line names why. Every other
         // face reads its edge off the bodies.
+        // BD2 — a contact face's body pair, in the face's own orientation —
+        // the body at its `i` end first — with the two bodies' nuclei, whose
+        // tether the contact carries (78.18(c)).
+        let body_pair = contact_bodies.get(&super::pairing::interface_key(&interface)).map(|p| {
+            match p.left.contains(&ak) {
+                true => (p.bodies.clone(), p.nuclei.clone()),
+                false => ((p.bodies.1.clone(), p.bodies.0.clone()), (p.nuclei.1.clone(), p.nuclei.0.clone())),
+            }
+        });
         let (edge, refraction) = match (contact, chord_edge) {
             (true, Some(e)) => (Some(e), None),
             (true, None) => super::pairing::members_contact_edge(
                 &unions,
-                &scenery.supports,
+                body_pair.as_ref().and_then(|(_, (x, y))| Some((x.as_ref()?, y.as_ref()?))),
                 member_key(i, &cik),
                 member_key(j, &cjk),
             ),
@@ -934,13 +943,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         place.refraction = refraction;
         let mut at = Keyed::new();
         at.insert(face_pair_key(&ci, &cj), place);
-        // BD2 — a contact face's body pair, on the form's side carrier, in
-        // the face's own orientation: the body at its `i` end first.
-        if let Some(((x, y), left)) = contact_bodies.get(&super::pairing::interface_key(&interface)) {
-            let pair = match left.contains(&ak) {
-                true => (x.clone(), y.clone()),
-                false => (y.clone(), x.clone()),
-            };
+        // BD2 — and the pair on the form's side carrier.
+        if let Some((pair, _)) = body_pair {
             form.face_bodies.insert((form.faces.len() as u32).to_be_bytes(), pair);
         }
         form.faces.push(FormFace { i, j, word, at, pairs, interface });
@@ -1037,7 +1041,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         crate::transducer::cech::cells_by_grade(form.cells.scoped().map(|(_, c)| (c.grade(), c.meet())));
     // BQ5a's guard (77, 78.4 E1): the circuits that cross a contact face, by
     // arm.
-    let contact_circuits = super::pairing::contact_circuits(&form);
+    let contact_circuits = super::pairing::contact_circuits(&form, budget);
     // BQ1, audit N-3 — WHAT PERCEPTION PASSED OVER, always printed: bodies
     // `body_of` refused (counted at `body_of`, whoever asked), laminae with
     // no section (counted at `on_grid`), and sections filed at their `n`

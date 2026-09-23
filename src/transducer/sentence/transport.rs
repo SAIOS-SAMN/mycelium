@@ -48,12 +48,27 @@ pub enum Refraction {
     /// per candidate of the bodies' held poses, `(θ_bθ_a⁻¹)·V` for each,
     /// never a representative (checklist (r)).
     Coset(Vec<Transport>),
-    /// 78.6(2) — A PIECE AT ONE FRAME: the tether `V = s_b s_a` is content
-    /// there and is carried; the refraction `θ_bθ_a⁻¹` is content across a
-    /// transition the piece does not have, so it is unread BY NAME — the
-    /// gauge half reads `static`, never the identity and never the union's
-    /// rigidity (rule 11, checklist (m)).
-    Static(Versor),
+    /// 78.6(2) — A PIECE AT ONE FRAME: the tether `V = s_b s_a` between the
+    /// face's two BODIES is content there and is carried; the refraction
+    /// `θ_bθ_a⁻¹` is content across a transition the piece does not have,
+    /// so it is unread BY NAME — the gauge half reads `static`, never the
+    /// identity and never the union's rigidity (rule 11, checklist (m)).
+    /// 78.18(a) — each end's pose as far as it was read: a member that did
+    /// transit keeps its pose on the edge by name, the one at one frame is
+    /// named so, and a later fibre can complete the refraction.
+    Static { tether: Versor, poses: [HeldPose; 2] },
+}
+
+/// 78.18(a) — ONE END'S POSE ON A STATIC EDGE, by what was read of it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HeldPose {
+    /// The member stands at one frame: no transition to read a pose across.
+    OneFrame,
+    /// The member transited: its pose's candidates (one for a turn, the held
+    /// coset's for a held stabilizer).
+    Read(Vec<Versor>),
+    /// The member transited and its pose refused, by name.
+    Refused(crate::transducer::blade::NoPose),
 }
 
 /// The key a member pair is filed under on a face: the two charts' own keys,

@@ -306,16 +306,21 @@ pub(crate) fn body_pair_key(lo: &[u8], hi: &[u8]) -> Vec<u8> {
 /// tether, each `NoPose` arm of either body's pose, a turn the peel does not
 /// spell (37.7's candidate) or reads nothing from. [`ContactEdge::Refused`]
 /// then; the face still stands, because whether is topology.
+///
+/// 78.18(c) — THE TETHER IS BETWEEN THE FACE'S TWO BODIES, `V = s_b s_a` of
+/// their nuclei (BD2's pieces), at every arm — never a member's union, whose
+/// support can fall into several bodies (checklist (m)); each member's POSE is
+/// its own, read across its own transition. 78.18(a) — a static edge keeps
+/// each end's pose as far as it was read, the transited end's by name and the
+/// one at one frame named so.
 pub(crate) fn contact_edge(
-    (a, a_after): (&blade::Blade, Option<&blade::Blade>),
-    (b, b_after): (&blade::Blade, Option<&blade::Blade>),
+    (s_a, s_b): (&crate::transducer::cga::Mv, &crate::transducer::cga::Mv),
+    a: Option<(&blade::Blade, &blade::Blade)>,
+    b: Option<(&blade::Blade, &blade::Blade)>,
 ) -> ContactEdge {
-    use crate::transducer::sentence::{Refraction, Transport};
+    use crate::transducer::sentence::{HeldPose, Refraction, Transport};
     note_contact(|t| t.offered += 1);
-    let Some(v) = blade::tether(a, b) else {
-        note_contact(|t| t.unlifted += 1);
-        return ContactEdge::Refused;
-    };
+    let v = s_b.geo(s_a);
     match blade::Contact::of(&v) {
         Some(blade::Contact::Apart) => note_contact(|t| t.apart += 1),
         Some(blade::Contact::TangentExternal) => note_contact(|t| t.tangent_external += 1),
@@ -327,9 +332,17 @@ pub(crate) fn contact_edge(
             return ContactEdge::Refused;
         }
     }
-    let (Some(a_after), Some(b_after)) = (a_after, b_after) else {
+    let (Some((a, a_after)), Some((b, b_after))) = (a, b) else {
+        let held = |m: Option<(&blade::Blade, &blade::Blade)>| match m {
+            None => HeldPose::OneFrame,
+            Some((before, after)) => match blade::relative_pose(before, after) {
+                Ok(blade::Pose::Turn(r)) => HeldPose::Read(vec![r]),
+                Ok(blade::Pose::HalfOpen(candidates)) => HeldPose::Read(candidates),
+                Err(why) => HeldPose::Refused(why),
+            },
+        };
         note_contact(|t| t.statics += 1);
-        return ContactEdge::Held(Refraction::Static(v));
+        return ContactEdge::Held(Refraction::Static { tether: v, poses: [held(a), held(b)] });
     };
     if blade::on_tube(a, a_after) || blade::on_tube(b, b_after) {
         note_contact(|t| t.tube += 1);
@@ -404,29 +417,30 @@ pub(crate) fn contact_edge(
 /// carries instead; neither where it was refused by name.
 pub(crate) fn members_contact_edge(
     unions: &crate::network::nerve::Keyed<(super::perceive::Body, super::perceive::Body, crate::transducer::element::Versor)>,
-    supports: &crate::network::nerve::Keyed<Vec<Site>>,
+    nuclei: Option<(&crate::transducer::cga::Mv, &crate::transducer::cga::Mv)>,
     a: Vec<u8>,
     b: Vec<u8>,
 ) -> (Option<crate::transducer::sentence::Transport>, Option<crate::transducer::sentence::Refraction>) {
-    let lifted = |key: &[u8]| -> Option<(blade::Blade, Option<blade::Blade>)> {
-        match unions.get(key) {
-            Some((before, after, _)) => Some((
+    // Each member's own transition, where it has one: its union before and
+    // after. A member at one frame has none.
+    let transit = |key: &[u8]| -> Option<(blade::Blade, blade::Blade)> {
+        unions.get(key).map(|(before, after, _)| {
+            (
                 blade::shape_of(&super::perceive::support_of(before)).blade,
-                Some(blade::shape_of(&super::perceive::support_of(after)).blade),
-            )),
-            None => supports.get(key).map(|s| (blade::shape_of(s).blade, None)),
-        }
+                blade::shape_of(&super::perceive::support_of(after)).blade,
+            )
+        })
     };
-    match (lifted(&a), lifted(&b)) {
-        (Some((ai, bi)), Some((aj, bj))) => match contact_edge((&ai, bi.as_ref()), (&aj, bj.as_ref())) {
-            ContactEdge::Formed(t) => (Some(*t), None),
-            ContactEdge::Held(r) => (None, Some(r)),
-            ContactEdge::Refused => (None, None),
-        },
-        _ => {
-            note_contact(|t| t.unlifted += 1);
-            (None, None)
-        }
+    let Some(nuclei) = nuclei else {
+        // The face's body pair carries no nucleus to tether: nothing lifts.
+        note_contact(|t| t.unlifted += 1);
+        return (None, None);
+    };
+    let (ta, tb) = (transit(&a), transit(&b));
+    match contact_edge(nuclei, ta.as_ref().map(|(x, y)| (x, y)), tb.as_ref().map(|(x, y)| (x, y))) {
+        ContactEdge::Formed(t) => (Some(*t), None),
+        ContactEdge::Held(r) => (None, Some(r)),
+        ContactEdge::Refused => (None, None),
     }
 }
 
@@ -438,7 +452,7 @@ pub(crate) fn members_contact_edge(
 /// so the circuit survives `orbits_of` for being unread (rule 11), never for
 /// carrying anything. In that order: curved, gauge static, coset closed,
 /// modulo held, open, unread.
-pub(crate) fn contact_circuits(form: &crate::transducer::sentence::Form) -> [usize; 6] {
+pub(crate) fn contact_circuits(form: &crate::transducer::sentence::Form, budget: &mut crate::physics::Budget) -> [usize; 6] {
     use crate::transducer::sentence::walk::{paths_carried, CosetClosure};
     let identity = crate::transducer::element::identity_versor();
     let mut t = [0usize; 6];
@@ -454,13 +468,16 @@ pub(crate) fn contact_circuits(form: &crate::transducer::sentence::Form) -> [usi
             c.composite().is_some_and(|m| !crate::transducer::element::same_versor(&m, &identity))
         };
         let paths: Vec<_> = carried.scoped().map(|(_, c)| c.clone()).collect();
-        let closures: Vec<CosetClosure> = paths.iter().filter_map(|c| c.coset_closure()).collect();
+        let closures: Vec<CosetClosure> = paths.iter().filter_map(|c| c.coset_closure(budget)).collect();
         match (paths.iter().filter(curved).count(), closures.as_slice()) {
             (0, []) if paths.iter().all(|c| c.composite().is_none()) => t[5] += 1,
             (0, []) => {}
             (0, cs) if cs.contains(&CosetClosure::Open) => t[4] += 1,
             (0, cs) if cs.contains(&CosetClosure::ClosedModuloHeld) => t[3] += 1,
-            (0, _) => t[2] += 1,
+            (0, cs) if cs.contains(&CosetClosure::Closed) => t[2] += 1,
+            // The stroke spent before a coset's candidates were formed: unread
+            // by name (rule 10).
+            (0, _) => t[5] += 1,
             _ => {
                 t[0] += 1;
                 if paths.iter().filter(curved).any(|c| c.gauge_static()) {
@@ -508,14 +525,24 @@ struct Gathered {
     left: Vec<Vec<u8>>,
     right: Vec<Vec<u8>>,
     bodies: (Vec<u8>, Vec<u8>),
+    nuclei: (Option<crate::transducer::cga::Mv>, Option<crate::transducer::cga::Mv>),
 }
 
-/// BD2 — THE BODY PAIR EACH CONTACT RUNS BETWEEN, keyed by its interface
-/// ([`interface_key`]): the two bodies' pieces, the lesser first, and the
-/// members standing on the lesser's side — so a face built between two
-/// members reads which body stands at each of its ends (CX1: a circuit's
-/// order of a cell's bodies runs with its steps).
-pub(crate) type ContactBodies = crate::network::nerve::Keyed<((Vec<u8>, Vec<u8>), Vec<Vec<u8>>)>;
+/// BD2 — THE BODY PAIR ONE CONTACT RUNS BETWEEN: the two bodies' pieces, the
+/// lesser first, their nuclei in the same order — the tether is theirs,
+/// two BODIES' (78.18(c)), never a member's union — and the members
+/// standing on the lesser's side, so a face built between two members reads
+/// which body stands at each of its ends (CX1: a circuit's order of a cell's
+/// bodies runs with its steps).
+#[derive(Clone, Debug)]
+pub(crate) struct ContactPair {
+    pub(crate) bodies: (Vec<u8>, Vec<u8>),
+    pub(crate) left: Vec<Vec<u8>>,
+    pub(crate) nuclei: (Option<crate::transducer::cga::Mv>, Option<crate::transducer::cga::Mv>),
+}
+
+/// Every contact's body pair, keyed by its interface ([`interface_key`]).
+pub(crate) type ContactBodies = crate::network::nerve::Keyed<ContactPair>;
 
 /// An interface's key: its elements' own coordinates, each framed, in the
 /// interface's order.
@@ -766,9 +793,9 @@ pub(crate) fn named_incidence(
         let (Some(ai), Some(aj)) = (address_of.get(bi), address_of.get(bj)) else { continue };
         // The body pair is keyed by its two bodies' addresses, the lesser
         // first, and the element's sides are read in the same orientation.
-        let ((x, ax), (y, ay)) = match ai <= aj {
-            true => ((i, ai), (j, aj)),
-            false => ((j, aj), (i, ai)),
+        let ((x, ax, bx), (y, ay, by)) = match ai <= aj {
+            true => ((i, ai, bi), (j, aj, bj)),
+            false => ((j, aj, bj), (i, ai, bi)),
         };
         let (Some(px), Some(py)) = (held.get(x), held.get(y)) else { continue };
         note_face_work();
@@ -777,7 +804,14 @@ pub(crate) fn named_incidence(
         // of the same base.
         let Some(element) = px.site.offset(py.site.axes()) else { continue };
         if contacts.get(&k).is_none() {
-            contacts.insert(k.clone(), Gathered { bodies: (ax.clone(), ay.clone()), ..Gathered::default() });
+            contacts.insert(
+                k.clone(),
+                Gathered {
+                    bodies: (ax.clone(), ay.clone()),
+                    nuclei: (nucleus_of.get(bx).cloned().flatten(), nucleus_of.get(by).cloned().flatten()),
+                    ..Gathered::default()
+                },
+            );
         }
         let Some(g) = contacts.get_mut(&k) else { continue };
         g.elements.push(element);
@@ -804,7 +838,10 @@ pub(crate) fn named_incidence(
         let Some((a, b)) = ends else { continue };
         // BD2 — the contact's body pair, by its interface: the face built
         // along this interface runs between these two bodies.
-        contact_bodies.insert(interface_key(&elements), (g.bodies.clone(), left.clone()));
+        contact_bodies.insert(
+            interface_key(&elements),
+            ContactPair { bodies: g.bodies.clone(), left: left.clone(), nuclei: g.nuclei.clone() },
+        );
         relate(&mut related, member_pair_key(a, b), Incidence::Contact, Some(elements));
     }
     // THE CONDENSATION FIELD IS GONE — BQ5a, SQ1 item 2 (72.2, 75). A pair

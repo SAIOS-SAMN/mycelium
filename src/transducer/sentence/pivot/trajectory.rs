@@ -3,7 +3,7 @@
 // class and modes, and the class of the transport composed through it.
 
 use super::*;
-use crate::observe::{ArmRead, Carried, Circuit, CircuitStep, CircuitTest, Circuits, TestArm};
+use crate::observe::{ArmRead, Carried, Circuit, CircuitStep, CircuitTest, Circuits, Offer, TestArm};
 
 /// ONE STEP AS THE WALK LEFT IT: oriented, its composite's class read, its
 /// modes owed to the reader that holds the stroke's budget (BD1).
@@ -21,13 +21,130 @@ pub(super) struct PendingCircuit {
     /// Its whole transport by the one composite reader, `None` where the
     /// edge half was refused (OR3) or rides a held coset.
     composite: Option<element::Versor>,
-    /// 78.6 — how its held coset closes, and whether its gauge is static.
-    coset: Option<super::walk::CosetClosure>,
+    /// 78.6 — its path through a held coset, whose candidates the reader
+    /// holding the stroke forms (rule 10), and whether its gauge is static.
+    coset: Option<PathCarried>,
     gauge_static: bool,
     steps: Vec<PendingStep>,
     /// CT1 — the reuse ladder's arms read off the faces, and whether the
     /// circuit read trivial; `None` where nothing triggered the ladder.
     ladder: Option<(Vec<(TestArm, ArmRead)>, bool)>,
+    /// The step, counted from one, where the edge half was lost (OR3).
+    lost: Option<usize>,
+    /// CT2 — the constructed routes offered.
+    offers: Vec<Offer>,
+}
+
+/// CT2, 79.3 — CONSTRUCT, ONLY WHERE EVERY REUSE ARM IS EMPTY: on each kept
+/// circuit the ladder left refused with every reuse arm empty (never a cone,
+/// permanent by name), the lost step is completed by a CONSTRUCTED route and
+/// T1 read on the two routes between the lost face's two bodies — the
+/// constructed one and the rest of the circuit, read. Two constructions,
+/// both from held reflections and never a parameter (CS1):
+///
+/// - a TETHER, `V = s_y s_x` of the two bodies' nuclei, from the witness
+///   cells that hold both (R3: inside the cell);
+/// - a FIBRE, that tether carried by each other constructor `s_k` the cells
+///   hold, `s_k V s_k⁻¹` — `Ω v Ω̃`, the pair landed on its image chart pair.
+///
+/// T1 reduces to the completed loop `A · route · B` against the identity ray
+/// (EQ1): flat where the routes agree, curved where they disagree, its
+/// holonomy the verdict's. Each construction spends one read of the stroke.
+/// What reads is a CANDIDATE of the thought — volatile, offered with its
+/// constructor, face, verdict, holonomy and modes, ratified only by a court.
+pub fn construct_routes(form: &Form, budget: &mut crate::physics::Budget) {
+    PENDING.with(|c| {
+        let mut held = c.borrow_mut();
+        let Some(pending) = held.as_mut() else { return };
+        for p in pending.iter_mut() {
+            let Some((arms, false)) = p.ladder.as_ref() else { continue };
+            if !arms.iter().all(|(a, r)| !a.constructs() && *r == ArmRead::Empty) {
+                continue;
+            }
+            let (tether, fibre, offers) = constructed(form, p, budget);
+            if let Some((arms, _)) = p.ladder.as_mut() {
+                arms.push((TestArm::ConstructedTether, tether));
+                arms.push((TestArm::ConstructedFibre, fibre));
+            }
+            p.offers = offers;
+        }
+    });
+}
+
+/// One circuit's constructions: each arm's agreeing and disagreeing routes,
+/// and the offers.
+fn constructed(form: &Form, p: &PendingCircuit, budget: &mut crate::physics::Budget) -> (ArmRead, ArmRead, Vec<Offer>) {
+    let nothing = (ArmRead::Empty, ArmRead::Empty, Vec::new());
+    let Some(step) = p.lost.and_then(|k| p.steps.get(k.checked_sub(1)?)) else { return nothing };
+    // THE REST OF THE CIRCUIT, read: every other step's oriented transport,
+    // those before the lost one and those after, in the circuit's order.
+    let identity = element::identity_versor();
+    let (mut before, mut after) = (identity.clone(), identity.clone());
+    let lost = p.steps.iter().position(|s| std::ptr::eq(s, step));
+    for (k, s) in p.steps.iter().enumerate() {
+        if Some(k) == lost {
+            continue;
+        }
+        let Some(Some(g)) = &s.oriented else { return nothing };
+        match Some(k) < lost {
+            true => before = g.geo(&before),
+            false => after = g.geo(&after),
+        }
+    }
+    // THE LOST FACE'S TWO BODIES, the way the circuit crosses it, and their
+    // nuclei from the witness cells holding both.
+    let Some((i_end, j_end)) = form.face_bodies.get(&u32::from(step.face).to_be_bytes()) else { return nothing };
+    let (x, y) = match step.forward {
+        true => (i_end, j_end),
+        false => (j_end, i_end),
+    };
+    let cells: Vec<&FormCell> =
+        form.cells.scoped().map(|(_, c)| c).filter(|c| c.bodies.contains(x) && c.bodies.contains(y)).collect();
+    let nucleus = |piece: &Vec<u8>| {
+        cells.iter().find_map(|c| c.nuclei.as_ref()?.get(c.bodies.iter().position(|b| b == piece)?).cloned())
+    };
+    let (Some(sx), Some(sy)) = (nucleus(x), nucleus(y)) else { return nothing };
+    let v = sy.geo(&sx);
+    let read = |arm: TestArm, constructor: &element::Versor, route: &element::Versor, budget: &mut crate::physics::Budget| {
+        let closed = after.geo(route).geo(&before);
+        Offer {
+            arm,
+            face: step.face,
+            constructor: ray_of(constructor),
+            flat: element::same_versor(&closed, &identity),
+            holonomy: ray_of(&closed),
+            modes: ModesRead::of(&closed, budget),
+        }
+    };
+    let mut offers = Vec::new();
+    if budget.spend() {
+        offers.push(read(TestArm::ConstructedTether, &v, &v, budget));
+    }
+    'fibres: for c in &cells {
+        let Some(nuclei) = &c.nuclei else { continue };
+        for (piece, s) in c.bodies.iter().zip(nuclei) {
+            if piece == x || piece == y {
+                continue;
+            }
+            let Some(inv) = s.versor_inverse() else { continue };
+            if !budget.spend() {
+                break 'fibres;
+            }
+            let carried = s.geo(&v).geo(&inv);
+            offers.push(read(TestArm::ConstructedFibre, s, &carried, budget));
+        }
+    }
+    let routes = |arm: TestArm| {
+        let (agree, disagree) = offers.iter().filter(|o| o.arm == arm).fold((0u32, 0u32), |(a, d), o| match o.flat {
+            true => (a + 1, d),
+            false => (a, d + 1),
+        });
+        match agree + disagree {
+            0 => ArmRead::Empty,
+            _ => ArmRead::Routes { agree, disagree },
+        }
+    };
+    (routes(TestArm::ConstructedTether), routes(TestArm::ConstructedFibre), offers)
 }
 
 /// CT1, 79.3 — THE LADDER ON ONE CIRCUIT, by its refusal's own type, each
@@ -42,7 +159,7 @@ fn ladder_of(carried: &PathCarried, faces: &[FormFace]) -> Option<(Vec<(TestArm,
     if let Some(m) = &composite {
         return element::same_versor(m, &identity).then(|| (Vec::new(), true));
     }
-    if carried.coset().is_some() {
+    if carried.holds_coset() {
         return None;
     }
     if carried.edge_refused == Some(Unread::Cone) {
@@ -62,7 +179,7 @@ fn ladder_of(carried: &PathCarried, faces: &[FormFace]) -> Option<(Vec<(TestArm,
         Some(Unread::NotRigid) => arms.push((TestArm::Tether, reads(places(&|p| p.refraction.is_some())))),
         Some(Unread::Unrefracted) => {
             arms.push((TestArm::Coset, reads(places(&|p| matches!(p.refraction, Some(Refraction::Coset(_)))))));
-            arms.push((TestArm::Static, reads(places(&|p| matches!(p.refraction, Some(Refraction::Static(_)))))));
+            arms.push((TestArm::Static, reads(places(&|p| matches!(p.refraction, Some(Refraction::Static { .. }))))));
         }
         _ => {}
     }
@@ -109,15 +226,16 @@ pub struct WalkedCircuit {
 /// its composite — what a cell's orbit algebra reads (CG1): a step's body
 /// is read off the face it crosses (BD2), never derived from its member.
 /// Taken off the walk that already ran, never by walking again; empty where
-/// nobody armed the list.
-pub fn walked_circuits() -> Vec<WalkedCircuit> {
+/// nobody armed the list. A circuit through a held coset has its closure
+/// read here, its candidates formed under the stroke (rule 10).
+pub fn walked_circuits(budget: &mut crate::physics::Budget) -> Vec<WalkedCircuit> {
     PENDING.with(|c| match c.borrow().as_ref() {
         Some(held) => held
             .iter()
             .map(|p| WalkedCircuit {
                 steps: p.steps.iter().map(|s| (s.face, s.forward)).collect(),
                 composite: p.composite.clone(),
-                coset: p.coset,
+                coset: p.coset.as_ref().and_then(|path| path.coset_closure(budget)),
                 gauge_static: p.gauge_static,
             })
             .collect(),
@@ -158,7 +276,7 @@ pub fn finish_circuits(budget: &mut crate::physics::Budget) -> u64 {
                 };
                 arms.push((TestArm::OtherCircuits, read));
             }
-            Some(CircuitTest::classify(arms, trivial))
+            Some(CircuitTest::classify(arms, trivial, p.offers.clone()))
         })
         .collect();
     let circuits: Vec<Circuit> = pending
@@ -236,10 +354,12 @@ pub(super) fn read_circuit(chord: u16, carried: &PathCarried, faces: &[FormFace]
     PendingCircuit {
         chord,
         composite: carried.composite(),
-        coset: carried.coset_closure(),
+        coset: carried.holds_coset().then(|| carried.clone()),
         gauge_static: carried.gauge_static(),
         steps,
         ladder: ladder_of(carried, faces),
+        lost: carried.edge_lost_at,
+        offers: Vec::new(),
     }
 }
 

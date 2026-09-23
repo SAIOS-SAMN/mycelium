@@ -182,9 +182,15 @@ fn the_reuse_ladder_classes_a_refused_circuit_by_how_its_arms_read() {
 fn disagreeing_routes_are_curved_and_agreeing_trivial_ones_flat() {
     use crate::observe::{ArmRead, CircuitClass, CircuitTest, TestArm};
     let routes = |agree, disagree| vec![(TestArm::OtherCircuits, ArmRead::Routes { agree, disagree })];
-    assert_eq!(CircuitTest::classify(routes(1, 1), true).class, CircuitClass::Curved);
-    assert_eq!(CircuitTest::classify(routes(2, 0), true).class, CircuitClass::Flat);
-    assert_eq!(CircuitTest::classify(vec![(TestArm::Cone, ArmRead::Permanent)], false).class, CircuitClass::P);
+    assert_eq!(CircuitTest::classify(routes(1, 1), true, Vec::new()).class, CircuitClass::Curved);
+    assert_eq!(CircuitTest::classify(routes(2, 0), true, Vec::new()).class, CircuitClass::Flat);
+    assert_eq!(CircuitTest::classify(vec![(TestArm::Cone, ArmRead::Permanent)], false, Vec::new()).class, CircuitClass::P);
+    // CT2 — only a constructed route reads it: a candidate, whatever T1 says.
+    let constructed = vec![
+        (TestArm::OtherPairs, ArmRead::Empty),
+        (TestArm::ConstructedTether, ArmRead::Routes { agree: 0, disagree: 1 }),
+    ];
+    assert_eq!(CircuitTest::classify(constructed, false, Vec::new()).class, CircuitClass::Candidate);
 }
 
 /// 78.6(2) — A CIRCUIT THROUGH A STATIC CONTACT READS ITS TETHER HOLONOMY,
@@ -203,7 +209,9 @@ fn a_circuit_through_a_static_contact_reads_its_tether_holonomy_with_the_gauge_s
     chord.interface = [(1i64, 1i64, 0i64)].map(Site::from).to_vec();
     let a = crate::transducer::cga::sphere_at(&[q(0), q(0), q(0)], &q(1));
     let b = crate::transducer::cga::sphere_at(&[q(3), q(0), q(0)], &q(1));
-    set_face_place(&mut chord, |p| p.refraction = Some(Refraction::Static(b.geo(&a))));
+    set_face_place(&mut chord, |p| {
+        p.refraction = Some(Refraction::Static { tether: b.geo(&a), poses: [HeldPose::OneFrame, HeldPose::OneFrame] })
+    });
     f.faces.push(chord);
     arm_orbits();
     let orbits = Form::orbits_of(&f.faces, &f.vertices);
@@ -214,6 +222,68 @@ fn a_circuit_through_a_static_contact_reads_its_tether_holonomy_with_the_gauge_s
     let _ = take_circuits();
     let [OrbitLine::Static(r)] = lines.as_slice() else { panic!("one orbit, static: {lines:?}") };
     assert_eq!(r.class, Some(BivectorKind::Hyperbolic), "two spheres apart compose a boost: the tether's class");
+}
+
+/// The single-route cell of 79.3, by hand: two bodies on the Frame's star
+/// and a CONTACT chord between them whose refraction refused — no edge, no
+/// coset, no static tether, one chart pair — so every reuse arm is empty;
+/// the chord's bodies `p`, `r` and a third body `s` stand in one cell, each
+/// with its nucleus. The circuits read with the routes CT2 constructs.
+fn single_route_cell(nuclei: [crate::transducer::cga::Mv; 3]) -> Vec<Circuit> {
+    let mut f = Form::default();
+    for n in 1..=2u8 {
+        f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
+    }
+    f.faces.push(f.face_of(0, 1).expect("star a"));
+    f.faces.push(f.face_of(0, 2).expect("star b"));
+    let mut chord = f.face_carrying(1, 2, order4()).expect("a chord carrying no edge");
+    chord.interface = [(1i64, 1i64, 0i64)].map(Site::from).to_vec();
+    let chord_ix = f.faces.len() as u32;
+    f.faces.push(chord);
+    let (p, r, s) = (vec![1u8], vec![2u8], vec![3u8]);
+    f.face_bodies.insert(chord_ix.to_be_bytes(), (p.clone(), r.clone()));
+    f.cells.insert([0u8], FormCell { bodies: vec![p, r, s], witnesses: Vec::new(), nuclei: Some(nuclei.to_vec()) });
+    arm_orbits();
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    assert_eq!(f.orbits.len(), 1, "the word keeps the orbit, or nothing is tested");
+    let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
+    let _ = take_orbits(&mut stroke);
+    construct_routes(&f, &mut stroke);
+    finish_circuits(&mut stroke);
+    take_circuits().expect("the circuits were armed").circuits
+}
+
+/// CT2, 79.3 — WHERE EVERY REUSE ARM IS EMPTY, CONSTRUCT, AND READ T1: the
+/// tether between the lost face's two bodies completes the circuit, and so
+/// does that tether carried by the cell's third constructor; two spheres
+/// apart compose a boost, so the completed loop is not the identity and T1
+/// reads the routes as disagreeing — curved — while only a constructed route
+/// reads it: the circuit is a CANDIDATE, each construction offered with its
+/// constructor, verdict, holonomy and modes, nothing installed. Where the two
+/// bodies' nuclei coincide, the tether is the identity ray and T1 reads flat.
+#[test]
+fn every_reuse_arm_empty_constructs_a_candidate_and_reads_t1() {
+    use crate::observe::{ArmRead, CircuitClass, TestArm};
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let sphere = |x: i64| crate::transducer::cga::sphere_at(&[q(x), q(0), q(0)], &q(1));
+    let [c] = single_route_cell([sphere(0), sphere(3), sphere(0)]).try_into().expect("one circuit");
+    let t = c.test.expect("a refused circuit is tested");
+    assert!(
+        t.arms.iter().filter(|(a, _)| !a.constructs()).all(|(_, r)| *r == ArmRead::Empty),
+        "every reuse arm is empty: {:?}",
+        t.arms
+    );
+    assert!(t.arms.contains(&(TestArm::ConstructedTether, ArmRead::Routes { agree: 0, disagree: 1 })), "{:?}", t.arms);
+    assert!(t.arms.contains(&(TestArm::ConstructedFibre, ArmRead::Routes { agree: 0, disagree: 1 })), "{:?}", t.arms);
+    assert_eq!(t.class, CircuitClass::Candidate, "only a constructed route reads it");
+    assert_eq!(t.offers.len(), 2, "each construction offered");
+    assert!(t.offers.iter().all(|o| !o.flat && !o.holonomy.is_empty()), "curved, with its holonomy");
+
+    let [c] = single_route_cell([sphere(0), sphere(0), sphere(5)]).try_into().expect("one circuit");
+    let t = c.test.expect("tested");
+    let tether = t.offers.iter().find(|o| o.arm == TestArm::ConstructedTether).expect("the tether offered");
+    assert!(tether.flat, "coincident nuclei: the tether is the identity ray, the routes agree");
+    assert_eq!(t.class, CircuitClass::Candidate, "still a candidate: only a construction reads it");
 }
 
 /// A READING NOT TAKEN IS NOT AN EMPTY ONE: once taken, the circuits are
