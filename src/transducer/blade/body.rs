@@ -97,18 +97,16 @@ impl Blade {
         self.spatial.versor_inverse().is_some()
     }
 
-    /// Apply a spatial versor to the SPATIAL lane only — a rigid motion moves the
-    /// body coherently (`V σ Ṽ`) while gauge and topology pass through.
-    pub fn sandwiched(&self, v: &Mv) -> Blade {
-        Blade {
-            spatial: v.sandwich(&self.spatial),
-            inertia: self.inertia.clone(),
-            quartic: self.quartic.clone(),
-            gauge: self.gauge.clone(),
-            shell: self.shell.clone(),
-            support: self.support.clone(),
-        }
-    }
+    // `sandwiched` STOOD HERE AND IS DELETED — TR1 (75, ruled 2026-09-23).
+    // It carried the spatial lane by `V σ Ṽ` without dividing out the
+    // versor's weight `w = ⟨VṼ⟩₀`, so `radius2` read `w²·r²` under any versor
+    // of weight other than one, and the strain read on a body so carried
+    // disagreed with the exact inner product under a (3,4,5) turn of weight
+    // 25, a dilation and a boost (the probe of 75). It had no caller, in the
+    // tree or its tests; a carrier that misreads its own lane and waits for a caller
+    // is deleted, not repaired, so it cannot return. A body is carried by
+    // the versor applied to its nucleus (`nucleus`, law 12) where a reader
+    // needs it, the weight read off the versor at that site.
 
     /// The rigid-motion invariant key — strictly preserved by translations,
     /// rotations AND reflections, so it correspond-pairs bodies with zero spatial
