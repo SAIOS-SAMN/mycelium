@@ -233,6 +233,36 @@ fn relate(
     }
 }
 
+/// THE KEY OF A BODY PAIR (C3, 70.7): the two bodies' addresses — each a
+/// `coord::Piece`, its support written out — the lesser first. Each address
+/// is self-delimiting, so the key reads back into the two it was written
+/// from ([`read_body_pair_key`]) and no position of the base enters it.
+pub(crate) fn body_pair_key(lo: &[u8], hi: &[u8]) -> Vec<u8> {
+    let mut k = Vec::with_capacity(lo.len() + hi.len());
+    k.extend_from_slice(lo);
+    k.extend_from_slice(hi);
+    k
+}
+
+/// The two bodies a pair key names, read back as their addresses (A21).
+/// `None` for bytes that are not two addresses exactly. The A21 property's
+/// reader: the builder needs no read-back, because the pair's two sides ride
+/// the gathered contact itself.
+#[cfg(test)]
+pub(crate) fn read_body_pair_key(k: &[u8]) -> Option<(coord::Piece, coord::Piece)> {
+    // The first address's extent is read off its own layout — its tag, its
+    // kind, its count of sites, and each site's own `n` — never searched
+    // for: the second address starts where the first ends.
+    let mut pos = 2usize;
+    let count = u32::from_le_bytes(k.get(pos..pos + 4)?.try_into().ok()?);
+    pos += 4;
+    for _ in 0..count {
+        crate::transducer::base::Site::take(k, &mut pos)?;
+    }
+    let (a, b) = k.split_at(pos);
+    Some((coord::Piece::decode(a).ok()?, coord::Piece::decode(b).ok()?))
+}
+
 /// A CONTACT BETWEEN TWO BODIES, AS THE CORNER PASS GATHERS IT: the shared
 /// boundary elements, and the members standing at each side of them.
 #[derive(Default)]
@@ -366,6 +396,26 @@ pub(crate) fn named_faces(
         positions.len(),
         &crate::transducer::sentence::face_incidence(&positions),
     );
+    // C3, 70.7 — A BODY IS NAMED BY ITS ADDRESS, NEVER BY A SITE. Each body
+    // of the occupancy is written out once as its `coord::Piece` — its
+    // support, the one producer `piece_at` — and a body pair is keyed by the
+    // two addresses in canonical order (rule 6, law 11). It was keyed by the
+    // two bodies' ROOT SITES, a position of the base standing for an
+    // identity: the root is whichever site the union-find left on top, so
+    // the key named a place in the pixel grid rather than the body.
+    let mut support_of: Vec<Vec<Site>> = vec![Vec::new(); positions.len()];
+    for (at, &root) in body.iter().enumerate() {
+        if let (Some(s), Some(sup)) = (positions.get(at), support_of.get_mut(root)) {
+            sup.push(s.clone());
+        }
+    }
+    let address_of: Vec<Vec<u8>> = support_of
+        .into_iter()
+        .map(|mut sup| {
+            sup.sort_unstable();
+            super::pieces::piece_at(crate::transducer::peel::ShellKind::Whole, &sup).encode().as_bytes().to_vec()
+        })
+        .collect();
     let mut contacts: crate::network::nerve::Keyed<Gathered> = crate::network::nerve::Keyed::new();
     for crate::transducer::sentence::SharedCell { i, j, .. } in
         crate::transducer::sentence::contact_cells(&positions)
@@ -374,17 +424,16 @@ pub(crate) fn named_faces(
         if bi == bj {
             continue;
         }
-        let (Some(ri), Some(rj)) = (positions.get(bi), positions.get(bj)) else { continue };
-        // The body pair is keyed by its two bodies' root sites, the lesser
+        let (Some(ai), Some(aj)) = (address_of.get(bi), address_of.get(bj)) else { continue };
+        // The body pair is keyed by its two bodies' addresses, the lesser
         // first, and the element's sides are read in the same orientation.
-        let ((x, rx), (y, ry)) = match ri <= rj {
-            true => ((i, ri), (j, rj)),
-            false => ((j, rj), (i, ri)),
+        let ((x, ax), (y, ay)) = match ai <= aj {
+            true => ((i, ai), (j, aj)),
+            false => ((j, aj), (i, ai)),
         };
         let (Some(px), Some(py)) = (held.get(x), held.get(y)) else { continue };
         note_face_work();
-        let mut k = rx.key();
-        ry.put(&mut k);
+        let k = body_pair_key(ax, ay);
         // The element's centre doubled, `p + q`: exact, integer, and a site
         // of the same base.
         let Some(element) = px.site.offset(py.site.axes()) else { continue };

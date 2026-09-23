@@ -515,6 +515,32 @@ let (a, b) = (tower(&nf.named.interfaces[0]), tower(&nf.named.interfaces[1]));
 assert_ne!(a.inertia, b.inertia, "a straight seam and a bent one lift to two towers");
 }
 
+/// C3, 70.7 — A BODY PAIR IS KEYED BY TWO ADDRESSES, NEVER TWO SITES. The
+/// key is the two bodies' `coord::Piece`s written out, the lesser first, and
+/// it reads back into exactly those two (A21): no position of the base
+/// stands for a body.
+#[test]
+fn a_body_pair_is_keyed_by_two_addresses_and_reads_back_as_them() {
+    use crate::transducer::family::pairing::{body_pair_key, read_body_pair_key};
+    use crate::transducer::peel::ShellKind;
+    let piece = |s: &[(i64, i64, i64)]| {
+        let mut sup = sites(s);
+        sup.sort_unstable();
+        crate::network::nerve::coord::Piece { kind: ShellKind::Whole, support: sup }
+    };
+    let (a, b) = (piece(&[(0, 0, 0), (0, 1, 0)]), piece(&[(1, 2, 0)]));
+    let enc = |p: &crate::network::nerve::coord::Piece| p.encode().as_bytes().to_vec();
+    let (lo, hi) = match enc(&a) <= enc(&b) {
+        true => (a.clone(), b.clone()),
+        false => (b.clone(), a.clone()),
+    };
+    let k = body_pair_key(&enc(&lo), &enc(&hi));
+    assert_eq!(read_body_pair_key(&k), Some((lo, hi)), "the key is the two addresses, read back");
+    let mut long = k.clone();
+    long.push(0);
+    assert_eq!(read_body_pair_key(&long), None, "and nothing past them");
+}
+
 /// Occupancy + ring probes scale with sites, not with n².
 #[test]
 fn face_work_is_linear_in_occupied_sites() {
