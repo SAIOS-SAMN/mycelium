@@ -1305,6 +1305,20 @@ kernel over, and the corpus has two. T6 last of the engine rows and only
 after the hue ruling. T8 is a reading, not a build, and closes when T1 and
 T4 have both landed.
 
+**The combined sequence of the star system (ruled 2026-09-23, the
+implementor's reconciliation of the orbit amendment with the reviewer's
+ratification, adopted).** Divergence is ARRANGED by the mesh, not
+awaited: five voices fed one corpus from one starting point stay
+collided after FR1 unless placement gives them distinct elements, so the
+order is SQ1 with TR1 · FR1 (inclination becomes a reading) · CV3
+(elements as coordinates) · the orbit instrument — MS1's mass vector and
+OA1's elements and collisions on the observer, readings only · OA1's
+placement by occupancy, only once collisions are measured · federation
+(SN1), only once mass concentration and divergence both show. A random or
+configured orbit is an invented perspective and is refused (rule 5). For
+the record: HC1's exact square root is `blade::carry::rational_sqrt`;
+the per-mode relator stays a conjecture and RP1 rides MD1.
+
 **Epoch 97 (283f2de, the operator's instruction, 2026-09-23).** The
 epoch-96 ledgers refused on the layout change and were wiped; genesis
 rewritten on `a`; eight units, ~45 minutes, 0 restarts; stopped. Read
@@ -1773,7 +1787,7 @@ are read before anything is fixed.
 | A18 | **Metabolic relativity (72.1e, A.9 applied to time).** Content never depends on hardware, only rate does: one family run at two reserve sizes reaches identical forms and orbits in content, the larger reaching more per wall-second. Stated in the register with that test | 72.1d, 72.1e, A.9, law 9 | `physics/axioms/`, `bin/mycelium-soak/` | **open — with PH4** | the two-reserve fixture green; the register carries A.18 |
 | LR1 | **The layer register in the axiom register (72.1f).** Each entry of `physics/axioms/` names its layer — core (shared), mind or mesh — and a test asserts that the core is what every binary compiles against and that no mind-only or mesh-only axiom is read across the boundary | 72.1f, law 6, 1.8 | `physics/axioms/mod.rs` | **open — with A18** | the register prints its layers; the boundary test green |
 | SN1 | **Specialized nodes as stratum servers (72.1f).** A hypha serves one region of the library as a keyed fibre by chart or class prefix, which the cover trie already keys; parked until the language exists to be served | 72.1f, MU-ENGINEERING §4, A21 | `network/nerve/cover.rs`, `server/` | **parked — a second star forms only where MS1's profile concentrates under a subset of the register, after FR1 and CV3 (73.9(4), (5))** | a hypha homing one stratum answers by prefix and refuses outside it |
-| RP1 | **The relator probe (75).** In a detached worktree under §6.4: state `s B_i s⁻¹ = −B_i` for the dilation mode about the unit sphere `s = e_o − ½e_∞` and for a general hyperbolic mode about the sphere whose poles are that mode's; record which member of the poles' pencil conjugates the mode to its inverse, or that none does. The probe file kept in the scratchpad, the result written into 75 before HC1's line or PW1 relies on it | 75, §6.4 | scratch, `docs/MU-RECURSION.md` 75 | **open — now, before SQ1** | the two cases stated, exact, and 75 amended with the result |
+| RP1 | **The relator probe (75).** In a detached worktree under §6.4: state `s B_i s⁻¹ = −B_i` for the dilation mode about the unit sphere `s = e_o − ½e_∞` and for a general hyperbolic mode about the sphere whose poles are that mode's; record which member of the poles' pencil conjugates the mode to its inverse, or that none does. The probe file kept in the scratchpad, the result written into 75 before HC1's line or PW1 relies on it | 75, §6.4 | scratch, `docs/MU-RECURSION.md` 75 | **open — with MD1, before its line asserts the relator** (sequenced behind SQ1 on the implementor's reading; nothing asserts the relator until MD1) | the two cases stated, exact, and 75 amended with the result |
 | MS1 | **Mass as a reading (73.9, §8.1).** The observer carries each planet's work per lane and per register layer, in both dimensions of 74 — closures ruled and cited, questions closed across perspectives — and the console renders it beside the G1 star; readings only, nothing acts on it | 73.9, 74, law 5, §8.1 | `src/observe/`, `bin/mycelium-server/console.rs`, `server/cognition/book/` | **open — after CV5's next part, before CL1** | the mass reading on the fleet per voice; no scalar |
 | CL1 | **The cluster instrument (73.12, §8.1).** Per voice, the stroke line prints the register layer it runs under and, per circuit, each orbit's precession on the planes generated from `n`, priced on the lanes; readings only | 73.7, 73.8, §8.1 | `bin/mycelium-client/main.rs`, `sentence/pivot/census.rs` | **open — after OR1 and PH4** | the line on the fleet; one voice's lanes over ten circuits |
 | CL2 | **Mass ruled (73.9), doctrine first.** The operator rules among the candidates; the register states it with a test that adding a body changes a measured orbit and that no constant appears | 73.9, 73.3, A.13 clause 1, rule 5 | `physics/axioms/` | **ruled (73.9 as amended 2026-09-23)** — mass is work per lane and per register layer, both dimensions of 74; its test rides FT1 | the test named |
@@ -1835,5 +1849,5 @@ not, and `pieces_of` stands as a second site of the shape the ruling
 names. 926f3e5 is an instrument and is accepted; its finding is recorded in
 70.5. No test was deleted; ten were re-derived and their claims named.
 
-Order (72.1g): G1 · G2 · Phase C · O1 (done) · Phase N (done, AN1) · CV5's replication and adjudication readings · C3 · OR1 · OR2 · PC1 (done) · HC1 (done) · RP1 · Phase R (SQ1 with TR1 · FR1 · FR2 · BQ5a with CV1 · MD1 · NB1 with A.20 · R4; A.14, A.16, A.17 with it) · A13 with PW1, CL2 and FT1 (doctrine first) · Phase I (I1 · I2 · I3 · I4 · M1 with P4 · PH1 · OB1) · BQ5b with A.10 and the recut (U9) · CV2 · CV3 · OA1 · CV4 (a recut) · CV5 whole · W2 · W1 · Phase P (P2 · P3 · P5 · MC1) · PH4 with A18 and LR1 · MS1 · FT2 · CL1 · FT3 · FT4 with FT5 · SG1 · CL3 · UV1 · PV1 · MEM1 with A.19 · H3 · H5 · K7 at the recut · M2 with T3 · SN1 parked
+Order (72.1g): G1 · G2 · Phase C · O1 (done) · Phase N (done, AN1) · CV5's replication and adjudication readings · C3 · OR1 · OR2 · PC1 (done) · HC1 (done) · Phase R (SQ1 with TR1 · FR1 · FR2 · BQ5a with CV1 · MD1 with RP1 · NB1 with A.20 · R4; A.14, A.16, A.17 with it) · A13 with PW1, CL2 and FT1 (doctrine first) · Phase I (I1 · I2 · I3 · I4 · M1 with P4 · PH1 · OB1) · BQ5b with A.10 and the recut (U9) · CV2 · CV3 · OA1 · CV4 (a recut) · CV5 whole · W2 · W1 · Phase P (P2 · P3 · P5 · MC1) · PH4 with A18 and LR1 · MS1 · FT2 · CL1 · FT3 · FT4 with FT5 · SG1 · CL3 · UV1 · PV1 · MEM1 with A.19 · H3 · H5 · K7 at the recut · M2 with T3 · SN1 parked
 T3–T5 and V2 as the operator orders them.
