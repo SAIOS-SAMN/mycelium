@@ -26,10 +26,10 @@ use super::*;
 /// drew for `NoFrame` one dimension down:
 ///
 /// ```text
-///   LoopObstruction    δ¹ ≠ 0 — a loop carries non-trivial holonomy, a
+///   OrbitObstruction   δ¹ ≠ 0 — an orbit carries non-trivial holonomy, a
 ///                      genuine class in H¹. NO change of perspective
 ///                      removes it. PERMANENT: shed it at once.
-///   CoboundaryResidue  δ¹ = 0 and the cochain still disagrees. The loops
+///   CoboundaryResidue  δ¹ = 0 and the cochain still disagrees. The orbits
 ///                      all close; the form is off by a COBOUNDARY. The
 ///                      thought stands and the PERSPECTIVE does not.
 ///                      MUTABLE: Φ⁻¹ is the exact correction, and this is
@@ -38,22 +38,22 @@ use super::*;
 ///
 /// Order is not arbitrary: `δ¹` is asked FIRST, because a residue means
 /// something different under an obstruction than under a closed cocycle.
-/// A form whose loops do not close has no perspective to shift into.
+/// A form whose orbits do not close has no perspective to shift into.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Withheld {
     /// A class in `H¹`: permanent, and no generator or vantage retires it.
-    LoopObstruction { loop_ix: u16, key: [u8; 2] },
-    /// Off by a coboundary: the form CARRIES LOOPS, every one of them
+    OrbitObstruction { orbit_ix: u16, key: [u8; 2] },
+    /// Off by a coboundary: the form CARRIES ORBITS, every one of them
     /// closes, and the cochain still disagrees. The thought stands and the
     /// perspective does not — `Φ⁻¹` is the correction.
     CoboundaryResidue { links: usize, pairs: usize },
-    /// THE QUESTION WAS NOT ASKABLE. The form carries NO LOOPS, so
+    /// THE QUESTION WAS NOT ASKABLE. The form carries NO ORBITS, so
     /// `delta1()` is empty and `H¹` has nothing to obstruct — the form is
     /// a tree, and every cochain on a tree is a coboundary TRIVIALLY.
     ///
     /// This arm is the vacuity fix (69, ruled 2026-09-22). The first cut
-    /// folded it into `CoboundaryResidue`, which asserted "the loops all
-    /// close" of a form with no loops — a vacuous truth wearing the
+    /// folded it into `CoboundaryResidue`, which asserted "the orbits all
+    /// close" of a form with no orbits — a vacuous truth wearing the
     /// stronger arm's name. Measured, it read `COBOUNDARY 34` on a corpus
     /// slice where 34 of 36 forms were acyclic, and a retention policy
     /// built on it would have called every one of them reachable.
@@ -86,7 +86,7 @@ impl Withheld {
     /// than parsing prose.
     pub fn arm(&self) -> &'static str {
         match self {
-            Withheld::LoopObstruction { .. } => "H1-OBSTRUCTION",
+            Withheld::OrbitObstruction { .. } => "H1-OBSTRUCTION",
             Withheld::CoboundaryResidue { .. } => "COBOUNDARY",
             Withheld::Acyclic { .. } => "ACYCLIC-UNASKABLE",
             Withheld::NoDescent => "NO-DESCENT",
@@ -103,17 +103,17 @@ pub fn withheld_of(
     let held = cocycle
         .iter()
         .find(|(_, w)| !w.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()));
-    if let Some((loop_ix, w)) = held {
+    if let Some((orbit_ix, w)) = held {
         let k = w.key();
-        return Withheld::LoopObstruction { loop_ix: *loop_ix, key: [k[0], k[1]] };
+        return Withheld::OrbitObstruction { orbit_ix: *orbit_ix, key: [k[0], k[1]] };
     }
     let links: usize = remainders.iter().map(|r| r.len()).sum::<usize>() + form.remainder.len();
     let pairs = remainders.iter().filter(|r| !r.is_empty()).count();
     if links == 0 {
         return Withheld::NoDescent;
     }
-    // THE ASKABILITY GATE. `held` being `None` means "no loop carries a
-    // non-trivial holonomy" — which is a PROOF when there are loops to
+    // THE ASKABILITY GATE. `held` being `None` means "no orbit carries a
+    // non-trivial holonomy" — which is a PROOF when there are orbits to
     // check and a VACUITY when there are none. A tree has `H¹ = 0` by
     // construction, so its cochain is a coboundary trivially and the
     // reading says nothing about whether a perspective exists.
@@ -338,7 +338,7 @@ pub fn declare_unspoken(
 /// 12, 23.1 step 3), and the court still re-derives it.
 ///
 /// Lane 𝒯 is the span in receipts the bundle stood over — the quantity
-/// `pivot_loop` takes and `bundle_pressure` writes to `sum[2]` — and it is
+/// `pivot_orbit` takes and `bundle_pressure` writes to `sum[2]` — and it is
 /// measured here (law 5). A form minted in the stroke it was extracted in
 /// stood over no receipts and measures zero, which is a reading.
 pub fn sentence_measure(

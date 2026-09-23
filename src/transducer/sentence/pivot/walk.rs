@@ -1,20 +1,20 @@
-// 50.3, 54.5 — THE ONE WALK of a loop's member path: what it carries on the
+// 50.3, 54.5 — THE ONE WALK of an orbit's member path: what it carries on the
 // faces and on the edges, and every reader of it — the edge holonomies and
 // their classes, the face transport, coherence, and triviality.
 
 use super::*;
 
 impl Form {
-    /// THE HOLONOMY OF THE EDGE TRANSPORTS around a loop (50.3), ONE PER
-    /// MEMBER PATH: the product of the face edges along the loop's faces, in
+    /// THE HOLONOMY OF THE EDGE TRANSPORTS around an orbit (50.3), ONE PER
+    /// MEMBER PATH: the product of the face edges along the orbit's faces, in
     /// the base body's stabilizer or exchange; stabilizer cosets do not
     /// telescope, which is what makes it a reading.
     ///
     /// A path carrying a remainder edge anywhere on it is not evaluated and is
-    /// absent from the result (13.9); an empty result is "no path of this loop
-    /// is evaluated", which is what `None` used to say for the whole loop.
-    /// `None` itself is now only a loop naming a face this form does not have.
-    pub fn edge_holonomies(&self, lp: &Loop) -> Option<Keyed<Transport>> {
+    /// absent from the result (13.9); an empty result is "no path of this orbit
+    /// is evaluated", which is what `None` used to say for the whole orbit.
+    /// `None` itself is now only an orbit naming a face this form does not have.
+    pub fn edge_holonomies(&self, lp: &Orbit) -> Option<Keyed<Transport>> {
         edge_holonomies_on(&self.faces, &self.vertices, lp)
     }
 }
@@ -34,13 +34,13 @@ fn touches_frame(vertices: &[Vertex], f: &FormFace) -> bool {
 /// WHAT ONE MEMBER PATH CARRIES: the face composite and the edge composite,
 /// read in ONE walk of the frontier.
 ///
-/// `loop_transport_on` and `edge_holonomies_on` walked the same frontier
+/// `orbit_transport_on` and `edge_holonomies_on` walked the same frontier
 /// twice — same `live`, same branch on `f.at`, same `step_charts`, same
 /// `extend`, same `closed_key` — accumulating different fields. This file
 /// already records that correction being made once, for `path_carriages`:
 /// "the same frontier, the same `step_charts`, the same `closed_key` — so
 /// one quantity had two carriers (law 12) and the walk that produces it ran
-/// twice per loop." It was never applied to this pair, which is the same
+/// twice per orbit." It was never applied to this pair, which is the same
 /// two facts about the same structure.
 ///
 /// THE TWO FAIL INDEPENDENTLY, which is why they are two fields and not one
@@ -103,7 +103,7 @@ pub(crate) struct PathCarried {
     /// `0`. On the canonical normalisation `w = 2⟨R⟩₀` the two agree. It
     /// reads the TRANSVECTION factor, not the composed step: the identity
     /// is exact only where no rotation contributes cross-terms, and the
-    /// coupling belongs at the loop, where `Π Ω_e` already evaluates it.
+    /// coupling belongs at the orbit, where `Π Ω_e` already evaluates it.
     /// Over the whole group `μ > 0` is hyperbolic, `μ < 0` elliptic
     /// (`−sin²(θ/2)`), `μ = 0` trivial — `I₁`'s own sign convention.
     pub(crate) steps: Vec<element::Versor>,
@@ -210,19 +210,19 @@ pub(super) fn crossing(f: &FormFace, from: (u16, &[u8]), to: (u16, &[u8])) -> Cr
 ///
 /// This was a frontier: seed with every member of the first face, extend
 /// through each face's `at` by whichever members continued the path, keep
-/// whatever closed. That search existed because `Loop` named its nodes by
+/// whatever closed. That search existed because `Orbit` named its nodes by
 /// VERTEX INDEX and the member coordinates had been projected away, so the
-/// walker had to reconstruct what `loops_of` already knew.
+/// walker had to reconstruct what `orbits_of` already knew.
 ///
 /// It also could not always reconstruct it. Under the projection a 1-cell
 /// between two charts at one vertex, `((v,c_a),(v,c_b))`, becomes `(v,v)`
-/// and loses its orientation — 62 of 62 live loops broke there, one step
+/// and loses its orientation — 62 of 62 live orbits broke there, one step
 /// from closing, and `437d253` patched it by trying both directions.
 ///
-/// `Loop.members` carries the cycle, so there is nothing to search for and
+/// `Orbit.members` carries the cycle, so there is nothing to search for and
 /// nothing to guess: the walk steps the members it was given, reads each
 /// face at the pair those two members name, and composes. ONE path per
-/// loop, always, because a cycle is one cycle.
+/// orbit, always, because a cycle is one cycle.
 ///
 /// THE STAR FACES ARE SKIPPED IN THE EDGE HALF, and the reason written here
 /// was wrong (corrected 2026-09-20). It read "a star face is the
@@ -244,7 +244,7 @@ pub(super) fn crossing(f: &FormFace, from: (u16, &[u8]), to: (u16, &[u8])) -> Cr
 /// only the second.
 ///
 /// WHAT IS NOT ESTABLISHED, and is not claimed here. The star faces are the
-/// spanning forest's first pass, so a loop's star faces are tree edges —
+/// spanning forest's first pass, so an orbit's star faces are tree edges —
 /// but nothing in this walk checks that, and a star face reached as a CHORD
 /// would be skipped too. A chord is where the holonomy is; gauging one away
 /// would delete the obstruction rather than move it.
@@ -253,32 +253,32 @@ pub(super) fn crossing(f: &FormFace, from: (u16, &[u8]), to: (u16, &[u8])) -> Cr
 /// `None` there — answering "identity" would report a measurement never
 /// taken.
 ///
-/// `None` is a loop naming a face this form does not have, or a member pair
+/// `None` is an orbit naming a face this form does not have, or a member pair
 /// the face does not relate: the cycle and the incidence disagree, which is
 /// a refusal and not a zero (rule 11).
 pub(crate) fn paths_carried(
     faces: &[FormFace],
     vertices: &[Vertex],
-    lp: &Loop,
+    lp: &Orbit,
 ) -> Option<Keyed<PathCarried>> {
     paths_carried_why(faces, vertices, lp).ok()
 }
 
 /// THE ONE WALK, SAYING WHY IT REFUSED (H2c). [`paths_carried`] is this read
-/// with the reason dropped. `loops_of` asks here, so the `unread` gate is
+/// with the reason dropped. `orbits_of` asks here, so the `unread` gate is
 /// counted by what refused it.
 pub(crate) fn paths_carried_why(
     faces: &[FormFace],
     vertices: &[Vertex],
-    lp: &Loop,
+    lp: &Orbit,
 ) -> Result<Keyed<PathCarried>, Unread> {
     // THE EDGE COMPOSITE OPENS AT THE IDENTITY AND EVERY STEP CONTRIBUTES.
-    // It used to open at `None` unless the loop crossed a face between two
+    // It used to open at `None` unless the orbit crossed a face between two
     // bodies, because the star faces contributed nothing and a star-only
-    // loop would then have reported "identity" for a measurement never
+    // orbit would then have reported "identity" for a measurement never
     // taken. Under the hybrid rule below every face carries a transport —
     // the stabilizer between bodies, the member's carriage to the Frame —
-    // so a star-only loop measures its own equivocation instead of
+    // so a star-only orbit measures its own equivocation instead of
     // vanishing, and `None` now means a step whose transport is genuinely
     // unread (rule 11).
     let mut acc = PathCarried {
@@ -360,7 +360,7 @@ pub(crate) fn paths_carried_why(
             // THE STAR STEP IS THE FACE'S WHOLE TRANSPORT, word included.
             // §3.6's `γ` is a WORD — a re-gauging is `γ_j · g_ij · γ_i⁻¹`
             // — so a star step that contributed the identity word would
-            // erase the word-holonomy of every loop whose bodies measured
+            // erase the word-holonomy of every orbit whose bodies measured
             // no stabilizer edge, replacing a real obstruction with
             // nothing. What the face measured is what it contributes.
             (true, Some(p)) => Some(Transport {
@@ -419,7 +419,7 @@ pub(crate) fn paths_carried_why(
         e.word = e.word.normal_form();
     }
     let mut out = Keyed::new();
-    out.insert(Loop::path_key(&charts), acc);
+    out.insert(Orbit::path_key(&charts), acc);
     Ok(out)
 }
 
@@ -433,13 +433,13 @@ pub(super) fn pair_key_bytes(ci: &[u8], cj: &[u8]) -> Vec<u8> {
     buf
 }
 
-/// THE HOLONOMY OF THE EDGE TRANSPORTS around a loop (50.3), one per member
+/// THE HOLONOMY OF THE EDGE TRANSPORTS around an orbit (50.3), one per member
 /// path: a reader of the one walk. A path with no edge reading is absent,
 /// which is what "not evaluated" means (13.9).
 pub(crate) fn edge_holonomies_on(
     faces: &[FormFace],
     vertices: &[Vertex],
-    lp: &Loop,
+    lp: &Orbit,
 ) -> Option<Keyed<Transport>> {
     let carried = paths_carried(faces, vertices, lp)?;
     let mut out = Keyed::new();
@@ -454,11 +454,11 @@ pub(crate) fn edge_holonomies_on(
 impl Form {
     /// The classes the edge holonomies belong to (15.4), read up to conjugacy,
     /// one per member path that is evaluated. Keyed by the path, so a caller
-    /// asking "what class did this loop file" gets an answer per path and not
+    /// asking "what class did this orbit file" gets an answer per path and not
     /// one path's answer for all of them.
     pub fn edge_classes(
         &self,
-        lp: &Loop,
+        lp: &Orbit,
     ) -> Keyed<crate::network::nerve::coord::Holonomy> {
         let mut out = Keyed::new();
         let Some(hs) = self.edge_holonomies(lp) else {
@@ -474,21 +474,21 @@ impl Form {
         out
     }
 
-    /// THE CLASS VECTOR OF A LOOP'S EDGE HOLONOMY (12.6 over 50.3): the
+    /// THE CLASS VECTOR OF AN ORBIT'S EDGE HOLONOMY (12.6 over 50.3): the
     /// four coordinates of the stabilizer composite, as `class_vector`
-    /// gives them for the transport composite. A loop carries BOTH and
-    /// neither replaces the other — an extraction's loop can hold a half
+    /// gives them for the transport composite. An orbit carries BOTH and
+    /// neither replaces the other — an extraction's orbit can hold a half
     /// turn on its transports while its edges compose to the identity, and
-    /// a cover's loop is the other way round, since every word it composes
+    /// a cover's orbit is the other way round, since every word it composes
     /// is a sensor-plane word and those commute.
     ///
     /// This is the reading that can occupy `𝒮`: the edge's carriage
     /// composes `D(ρ)` with `T(t)`, which do not commute, so a triangle of
     /// placements is a genuine commutator where a triangle of words is not.
     ///
-    /// `None` when the loop is not evaluated (a remainder edge anywhere on
+    /// `None` when the orbit is not evaluated (a remainder edge anywhere on
     /// it) or the holonomy is not a versor.
-    pub fn edge_class_vectors(&self, lp: &Loop) -> Keyed<ClassVector> {
+    pub fn edge_class_vectors(&self, lp: &Orbit) -> Keyed<ClassVector> {
         let mut out = Keyed::new();
         let Some(hs) = self.edge_holonomies(lp) else {
             return out;
@@ -503,13 +503,13 @@ impl Form {
         out
     }
 
-    /// A loop's edge holonomy coheres when EVERY EVALUATED MEMBER PATH is the
+    /// An orbit's edge holonomy coheres when EVERY EVALUATED MEMBER PATH is the
     /// identity or is filed under its class at the period its order reads —
     /// `0` for infinite order, A19's spelling of it (50.1 step 2, A17, 52.3).
     /// A path that is not evaluated — a remainder edge on it — holds nothing
     /// against the form and is absent; a holonomy with no class files
     /// nowhere and does not cohere.
-    pub(crate) fn edge_coheres(&self, lp: &Loop) -> bool {
+    pub(crate) fn edge_coheres(&self, lp: &Orbit) -> bool {
         let Some(hs) = self.edge_holonomies(lp) else {
             return true;
         };
@@ -517,15 +517,15 @@ impl Form {
         // ruled 2026-09-20). Two defects stood here and they compounded.
         //
         // THE WRONG READER (law 12, the fourth site of one ruling).
-        // `loop_classes` states its own contract: "ONE READER FOR THREE
-        // CALLERS — `file_loop` writes these rows, `Form::coheres` asks
+        // `orbit_classes` states its own contract: "ONE READER FOR THREE
+        // CALLERS — `file_orbit` writes these rows, `Form::coheres` asks
         // whether they are all compact, and `Form::is_cauterized` asks
         // whether what is filed agrees with them", and it names this exact
         // fault as fixed at the third: "a screw was filed at 0 by the first
         // and demanded at 4 by the third." The unification reached
-        // `file_loop`, `loop_is_congruent` and `is_cauterized`. It did not
+        // `file_orbit`, `orbit_is_congruent` and `is_cauterized`. It did not
         // reach here. This read `h.word.order()` — the BARE ROTOR ORDER,
-        // with no carriage and no fixed-point test — while `file_loop`
+        // with no carriage and no fixed-point test — while `file_orbit`
         // derives the period through `cech::classify`, which gates on the
         // fixed point and files a screw at `0`. So a screw was filed at 0
         // and demanded at 4. Never equal, so the form never cohered.
@@ -537,22 +537,22 @@ impl Form {
         // COHERENCE IS GEOMETRY AND CONSULTS NO FILING (54.5, as ruled
         // 2026-09-20). Two faults stood here and they compounded.
         //
-        // THE WRONG READER. `loop_classes` derives a period through
+        // THE WRONG READER. `orbit_classes` derives a period through
         // `cech::classify`, which GATES ON THE FIXED POINT and gives a
         // screw `0`; this read `h.word.order()` — the bare rotor order,
         // with no carriage and no fixed-point test — and demanded a filing
         // match THAT. A screw was filed at 0 and demanded at 4. Never
-        // equal, so no curved form ever cohered. `loop_classes` names this
+        // equal, so no curved form ever cohered. `orbit_classes` names this
         // exact fault as fixed at its third caller — "a screw was filed at
         // 0 by the first and demanded at 4 by the third" — and this was its
         // fourth site (law 12).
         //
         // AND COHERENCE IS NOT A PERMIT. Even with the right reader this
         // demanded that an ENTRY EXIST, which asks whether a stroke has got
-        // around to the loop. Every field of a `FiledLoop` is DERIVABLE:
-        // `loop_classes` computes the class from `holonomy_words_on`, the
-        // period from `cech::classify`, σ from `loop_transport_on`, and the
-        // chord is the loop's own. Law 12 says a derivable fact is
+        // around to the orbit. Every field of a `FiledOrbit` is DERIVABLE:
+        // `orbit_classes` computes the class from `holonomy_words_on`, the
+        // period from `cech::classify`, σ from `orbit_transport_on`, and the
+        // chord is the orbit's own. Law 12 says a derivable fact is
         // re-derived and never stored beside the coordinates that determine
         // it — so an annotation's PRESENCE cannot be a geometric property,
         // and a predicate reading it made an open dislocation look like a
@@ -560,7 +560,7 @@ impl Form {
         //
         // WHAT COHERES, on the complex and nothing else: identity, a class
         // of FINITE order about a fixed point — `ℤ/ℓℤ`, which is content
-        // (law 7) — or an axis the form opened over this loop. A screw
+        // (law 7) — or an axis the form opened over this orbit. A screw
         // walks and never returns: `g^ℓ = T(ℓτ)` with `τ ∈ ker(I − R)`, so
         // there is no period at which the circuit closes. It is not an
         // error and it is not coherence; it is a `Demand::Dislocation`,
@@ -575,7 +575,7 @@ impl Form {
         if self.opened_axis_of(lp).is_some_and(|chord| self.axis_rederives(lp, chord)) {
             return true;
         }
-        let compact = self.loop_classes(lp);
+        let compact = self.orbit_classes(lp);
         hs.scoped().all(|(_, h)| {
             if h.word.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
                 return true;
@@ -585,18 +585,18 @@ impl Form {
             let Some(class) = h.word.rotor().holonomy_key() else {
                 return false;
             };
-            // A path `loop_classes` produced no row for carries no measured
+            // A path `orbit_classes` produced no row for carries no measured
             // transport, and a reading that was not taken holds nothing
             // against the form (rule 11, 13.9 step 7). A row with period 0
             // is the screw: non-compact, and owed a dislocation.
             match compact.iter().find(|row| row.class == class) {
                 // COMPACT IS BOTH PLANES CLOSING. It read `period > 0` on
                 // the `lcm`, which is non-zero whenever EITHER factor is a
-                // root of unity — so a loop with one plane turning forever
+                // root of unity — so an orbit with one plane turning forever
                 // read as compact and was never owed a dislocation (54.7).
                 Some(row) if row.periods.closes() => true,
                 // A FREE PART THE FORM DECLARES IS CARRIED, NOT HIDDEN
-                // (54.5, Directive 4). `REFUSE_LOOP` reads "a free part and
+                // (54.5, Directive 4). `REFUSE_ORBIT` reads "a free part and
                 // NO DISLOCATION DECLARES IT", and this is the clause that
                 // makes the second half true.
                 //
@@ -618,8 +618,8 @@ impl Form {
     }
 }
 
-pub(crate) fn loop_transport(form: &Form, lp: &Loop) -> Keyed<Transport> {
-    loop_transport_on(&form.faces, &form.vertices, lp)
+pub(crate) fn orbit_transport(form: &Form, lp: &Orbit) -> Keyed<Transport> {
+    orbit_transport_on(&form.faces, &form.vertices, lp)
 }
 
 /// The face composite of every member path: a reader of the one walk.
@@ -627,10 +627,10 @@ pub(crate) fn loop_transport(form: &Form, lp: &Loop) -> Keyed<Transport> {
 /// It walked the frontier itself, beside `edge_holonomies_on` walking the
 /// identical frontier for the other half. `vertices` is taken because the
 /// star-face rule belongs to the walk, not to its readers.
-pub(crate) fn loop_transport_on(
+pub(crate) fn orbit_transport_on(
     faces: &[FormFace],
     vertices: &[Vertex],
-    lp: &Loop,
+    lp: &Orbit,
 ) -> Keyed<Transport> {
     let Some(carried) = paths_carried(faces, vertices, lp) else {
         return Keyed::new();
@@ -645,28 +645,28 @@ pub(crate) fn loop_transport_on(
 /// IS THIS CYCLE ALGEBRAICALLY TRIVIAL — identity word holonomy, and every
 /// member path's transport exactly `(1, 0, ∅)`?
 ///
-/// `Form::loops_of` is union-find over faces and returns `b₁` of a graph:
+/// `Form::orbits_of` is union-find over faces and returns `b₁` of a graph:
 /// every redundant path is a cycle, and a form carried 16 546 of them in
 /// ten minutes while 292 reached a classifier. A cycle that encloses
 /// nothing occupies no axis of 12.6 and can drive no pivot.
 ///
-/// THE FILTER IS HERE AND NOT IN `loops_of`. `Form.loops` carries two
+/// THE FILTER IS HERE AND NOT IN `orbits_of`. `Form.orbits` carries two
 /// readings: the cycle set of the 1-skeleton — a structural fact about
 /// which faces closed, asserted by `the_1_skeleton_is_not_a_star_tree` and
 /// `the_triangle_among_the_bodies_closes` — and the obstructions a pivot
 /// discharges. Dropping trivial cycles at construction served the second
 /// and destroyed the first: fifteen tests, two of them asserting incidence
-/// structure through `loops.len()`.
+/// structure through `orbits.len()`.
 ///
-/// It is also NOT the whole of `coheres`. A loop can carry an identity
+/// It is also NOT the whole of `coheres`. An orbit can carry an identity
 /// WORD holonomy over edges that compose to a rotation, and `edge_coheres`
 /// accepts that only where the class is filed in the form's `torsion`. A
 /// cycle carrying any edge transport is not trivial by this reader and
 /// reaches every reading that holds it to account.
-pub(crate) fn loop_is_trivial(
+pub(crate) fn orbit_is_trivial(
     faces: &[FormFace],
     vertices: &[Vertex],
-    lp: &Loop,
+    lp: &Orbit,
     carried: &Keyed<PathCarried>,
 ) -> bool {
     use crate::transducer::alphabet::Rotor;
@@ -675,16 +675,16 @@ pub(crate) fn loop_is_trivial(
             && element::same_versor(&t.carriage, &element::identity_versor())
             && t.gauge.is_empty()
     };
-    // THE EDGE IS A THIRD CARRIER. `loop_transport_on` composes the
+    // THE EDGE IS A THIRD CARRIER. `orbit_transport_on` composes the
     // faces' words and the members' carriage and gauge;
     // `edge_holonomies_on` reads 50.3's edge transport, which
-    // `class_vectors_on` and `edge_coheres` both turn on. A loop whose
+    // `class_vectors_on` and `edge_coheres` both turn on. An orbit whose
     // word telescopes to the identity over edges that compose to a
     // rotation is an obstruction, and reading only the first two carriers
     // would prune it.
-    // AN UNREAD LOOP IS NOT A FLAT ONE (rule 11). `loop_transport_on`
+    // AN UNREAD ORBIT IS NOT A FLAT ONE (rule 11). `orbit_transport_on`
     // answers empty where no member path CLOSES, and `all(..)` on nothing
-    // is true — so a loop whose paths do not join up read as trivial and
+    // is true — so an orbit whose paths do not join up read as trivial and
     // was pruned, which is a refusal reported as a measurement. A cycle
     // is trivial only where a path was read and every one of them is
     // flat.
@@ -698,10 +698,10 @@ pub(crate) fn loop_is_trivial(
     }
     // THE EDGE READING, AND WHAT AN EMPTY ONE MEANS. `edge_holonomies_on`
     // answers empty in two different situations and the difference decides:
-    // a loop of nothing but star faces crossed no edge, and its reading is
-    // the faces' WORDS, already taken above; a loop that DOES cross a real
+    // an orbit of nothing but star faces crossed no edge, and its reading is
+    // the faces' WORDS, already taken above; an orbit that DOES cross a real
     // face and still answers empty had every path dropped on a remainder
-    // edge, which is unread, not flat (rule 11). `None` is a loop naming a
+    // edge, which is unread, not flat (rule 11). `None` is an orbit naming a
     // face this form does not have, and that is unread too.
     let crosses_a_real_face = lp
         .faces

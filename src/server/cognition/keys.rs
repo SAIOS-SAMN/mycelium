@@ -11,7 +11,7 @@ pub(crate) fn chart_simplex_key(inv: &crate::transducer::stalk::Invariant, sim: 
     buf
 }
 
-pub(crate) fn loop_key(chart: &crate::transducer::stalk::Invariant, voice: &[u8; 32]) -> Vec<u8> {
+pub(crate) fn orbit_key(chart: &crate::transducer::stalk::Invariant, voice: &[u8; 32]) -> Vec<u8> {
     let mut buf = Vec::new();
     crate::transducer::address::put_bytes(&mut buf, &chart.key());
     buf.extend_from_slice(voice);

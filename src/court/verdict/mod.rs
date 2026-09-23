@@ -22,7 +22,7 @@ use crate::transducer::cech;
 use crate::transducer::element::{self, Element, Versor};
 use crate::transducer::sentence::{self, Form, Vertex};
 use crate::transducer::stalk::{self, Stalks};
-use crate::transducer::torsion_witness::{self, HolonomicLoopWitness};
+use crate::transducer::torsion_witness::{self, HolonomicOrbitWitness};
 
 /// A class that does not survive restriction (15.5), or a spoken torsion
 /// period that does not re-derive against the mesh's class (23.7).
@@ -81,7 +81,7 @@ pub const REFUSE_FACE: &str = "face does not re-derive from its vertices";
 /// torsion, which is content (law 7); what refuses is a free part, a
 /// circuit that walks and never closes, and a form owes that a
 /// `Demand::Dislocation` rather than a filing.
-pub const REFUSE_LOOP: &str = "loop holonomy is a free part and no dislocation declares it";
+pub const REFUSE_ORBIT: &str = "orbit holonomy is a free part and no dislocation declares it";
 /// 54.5 — PERJURY ABOUT THE TERRAIN, which is the one thing in a receipt
 /// the complex can contradict.
 ///

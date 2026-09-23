@@ -1,5 +1,5 @@
-// 16.16 step 6, 50.5 — THE LOOP'S DEMAND REACHES THE HELD FORM: both of
-// the drive's pivot paths write a held loop of infinite order onto the
+// 16.16 step 6, 50.5 — THE ORBIT'S DEMAND REACHES THE HELD FORM: both of
+// the drive's pivot paths write a held orbit of infinite order onto the
 // bubble's form as the demand the peel types its holonomy as.
 
 use crate::transducer::alphabet::{Rotor, Word, Q};
@@ -20,11 +20,11 @@ fn eleven() -> Rotor {
 /// (54.5). 50.5 stands one demand per `(kind, chart)`, and `edge_chord_form`
 /// built its two chord ends with identical coordinates — one rotor, one
 /// chart, one carriage, one gauge — so §1.5 made them ONE vertex and the
-/// loop stood on ONE chart. Two ends of a chord are two SITES, which is the
+/// orbit stood on ONE chart. Two ends of a chord are two SITES, which is the
 /// note `chord_form` has carried since 54.2, and with the ends separated the
-/// loop runs through two charts and stands a demand at each. That is the
+/// orbit runs through two charts and stands a demand at each. That is the
 /// doctrine, not a regression: what the claim is about is that every demand
-/// carries the loop's holonomy, on a chart the loop actually stands on.
+/// carries the orbit's holonomy, on a chart the orbit actually stands on.
 fn standing_demands(f: &crate::transducer::sentence::Form) -> Vec<(Rotor, Invariant)> {
     let found: Vec<(Rotor, Invariant)> = f
         .demand_vertices()
@@ -37,7 +37,7 @@ fn standing_demands(f: &crate::transducer::sentence::Form) -> Vec<(Rotor, Invari
     found
 }
 
-/// Every demand the loop stood, checked against the holonomy and the charts
+/// Every demand the orbit stood, checked against the holonomy and the charts
 /// its own vertices stand at.
 fn each_demand_carries(
     f: &crate::transducer::sentence::Form,
@@ -52,21 +52,21 @@ fn each_demand_carries(
         assert_eq!(
             got.class_key(),
             rotor.class_key(),
-            "the witness is the loop's holonomy, by class"
+            "the witness is the orbit's holonomy, by class"
         );
         assert!(
             charts.contains(&chart),
-            "on a chart the loop's vertices stand at, got {chart:?} of {charts:?}"
+            "on a chart the orbit's vertices stand at, got {chart:?} of {charts:?}"
         );
     }
 }
 
-/// THE EXPAND PATH: a bubble holding a form whose one loop carries the
+/// THE EXPAND PATH: a bubble holding a form whose one orbit carries the
 /// weight-11 rotor on its edge, expanded over an empty atlas against a
 /// crystal holding nothing, leaves the form it takes back with a `Standing`
-/// vertex on the loop's chart, in the holonomy's class.
+/// vertex on the orbit's chart, in the holonomy's class.
 #[test]
-fn an_expanded_bubble_stands_its_loops_demand_on_the_form_it_takes() {
+fn an_expanded_bubble_stands_its_orbits_demand_on_the_form_it_takes() {
     let form = edge_chord_form(&[Word::formed(eleven())]);
     let mut b = Bubble { form: Some(form), ..Default::default() };
     let atlas = Stalks::default();
@@ -82,7 +82,7 @@ fn an_expanded_bubble_stands_its_loops_demand_on_the_form_it_takes() {
 /// by a word at its chart writes the same vertex, so the two paths are one
 /// reading (law 12).
 #[test]
-fn a_pivoted_on_bubble_stands_its_loops_demand_on_the_form_it_takes() {
+fn a_pivoted_on_bubble_stands_its_orbits_demand_on_the_form_it_takes() {
     use crate::transducer::element::{canonical_chain, from_canonical};
     let form = edge_chord_form(&[Word::formed(eleven())]);
     let rem = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];

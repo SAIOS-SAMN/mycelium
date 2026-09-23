@@ -1,4 +1,4 @@
-// A16 — THE PIVOT LOOP: the one move that opens a chart's axis, and the
+// A16 — THE PIVOT ORBIT: the one move that opens a chart's axis, and the
 // candidates it reads off the form.
 //
 //! Candidates are read from the axes already occupied, never enumerated. A
@@ -18,7 +18,7 @@ fn period_written(ell: u64) -> String {
 }
 
 /// WHAT A TRIAL IS MEASURED AGAINST: the form's standing before any
-/// candidate is applied — the loop rows and the rank they carry, the
+/// candidate is applied — the orbit rows and the rank they carry, the
 /// crystal the axes are read in, the bundle and its T extent, and the μ⃗ the
 /// bundle stood at. Constant across every candidate of one stroke, which is
 /// why it is read once and lent to each trial rather than passed six times.
@@ -35,8 +35,8 @@ pub(crate) struct Prior<'a> {
     pub(crate) mu_before: Option<(Vec<[u64; 4]>, [u64; 4])>,
 }
 
-/// THE CLASS VECTORS OF ONE LOOP, ONE PER MEMBER PATH, read off the faces it
-/// runs over and the form's axis carrier — the two things a loop's class is a
+/// THE CLASS VECTORS OF ONE ORBIT, ONE PER MEMBER PATH, read off the faces it
+/// runs over and the form's axis carrier — the two things an orbit's class is a
 /// function of. A trial that has written one face reads its own answer here
 /// without a form to read it from.
 ///
@@ -44,43 +44,43 @@ pub(crate) struct Prior<'a> {
 /// same on every path, because a word is a vertex coordinate. The PLACEMENT and
 /// DILATION residues come from the carriage and the hue cycle from the gauge,
 /// both member coordinates, so they are read per path (D10, item 7). An opened
-/// axis zeroes the loop on every path: the holonomy IS the transition on that
+/// axis zeroes the orbit on every path: the holonomy IS the transition on that
 /// axis and no longer a defect (I6, 15.5, T14).
 pub(crate) fn class_vectors_on(
     faces: &[FormFace],
     vertices: &[Vertex],
     axes: &crate::network::nerve::Keyed<u16, crate::network::nerve::coord::Holonomy>,
-    lp: &Loop,
+    lp: &Orbit,
 ) -> crate::network::nerve::Keyed<ClassVector> {
     let mut out = crate::network::nerve::Keyed::new();
     if crate::transducer::sentence::opened_axis_on(faces, vertices, axes, lp).is_some() {
         for (k, _) in lp.carriages.scoped() {
             out.insert(&k, ClassVector::zero());
         }
-        // A loop with no closed member path and an opened axis still reads as
-        // zero on the path the axis was opened over, which is the loop itself.
+        // An orbit with no closed member path and an opened axis still reads as
+        // zero on the path the axis was opened over, which is the orbit itself.
         if out.is_empty() {
             out.insert(Vec::new(), ClassVector::zero());
         }
         return out;
     }
     // THE HOLONOMIC COORDINATE IS THE EDGE COMPOSITE'S, NOT THE WORD'S, and
-    // reading it off the word made 12.6's `𝒽` identically zero on every loop
+    // reading it off the word made 12.6's `𝒽` identically zero on every orbit
     // this engine has ever perceived. A face's word is the coboundary
     // `w_j ∘ w_i⁻¹` of its two vertices' own words, and a product of
     // coboundaries around a cycle telescopes to the identity for EVERY input
-    // — `loop_transport_on` says so in its own comment ("the words are vertex
+    // — `orbit_transport_on` says so in its own comment ("the words are vertex
     // coordinates and telescope identically whichever bodies the path runs
-    // through"). Measured over 837 pair forms: 22 140 loops, 22 140 of them
+    // through"). Measured over 837 pair forms: 22 140 orbits, 22 140 of them
     // flat on the word and not one of finite non-identity order, while the
-    // edge composites over the same loops close at finite non-identity order
+    // edge composites over the same orbits close at finite non-identity order
     // on 93 paths. The curvature was there; the coordinate that decides was
     // reading the one place it cannot appear.
     //
     // The carriage and the gauge were already the member path's own. Only the
-    // rotor was taken from the loop.
+    // rotor was taken from the orbit.
     let words = holonomy_words_on(faces, vertices, lp);
-    for (k, t) in loop_transport_on(faces, vertices, lp).scoped() {
+    for (k, t) in orbit_transport_on(faces, vertices, lp).scoped() {
         let Some(w) = words.get(&k) else {
             continue;
         };
@@ -91,48 +91,48 @@ pub(crate) fn class_vectors_on(
     out
 }
 
-/// THE HOLONOMY WORD EACH MEMBER PATH OF A LOOP CARRIES: the edge
-/// composite's word where the path has one, the loop's own word where it
+/// THE HOLONOMY WORD EACH MEMBER PATH OF AN ORBIT CARRIES: the edge
+/// composite's word where the path has one, the orbit's own word where it
 /// does not.
 ///
 /// ONE CARRIER FOR THE CHOICE (law 12). `class_vectors_on` made it and the
-/// filing decision did not: `pivot_loop` read `lp.holonomy` directly for the
+/// filing decision did not: `pivot_orbit` read `lp.holonomy` directly for the
 /// horizon key and for the order that selects the `Discharge` branch, and
-/// `file_loop` filed torsion under `lp.holonomy.rotor().class_key()`. So the
-/// class a loop was JUDGED by came off the edges and the class it was FILED
+/// `file_orbit` filed torsion under `lp.holonomy.rotor().class_key()`. So the
+/// class an orbit was JUDGED by came off the edges and the class it was FILED
 /// under came off the word, and those are different objects.
 ///
 /// A face's word is the coboundary `w_j ∘ w_i⁻¹` of its two vertices' words,
 /// and a product of coboundaries around a cycle telescopes to the identity,
-/// so a loop over coboundary faces alone is flat on the word for every
-/// input. Measured on the fleet at e98e8a2: 6535 pair forms, 70311 loops,
+/// so an orbit over coboundary faces alone is flat on the word for every
+/// input. Measured on the fleet at e98e8a2: 6535 pair forms, 70311 orbits,
 /// word holonomy flat 70311 — all of them — against 284 finite non-identity
-/// edge composites over the same loops. The filer was keyed to the one
+/// edge composites over the same orbits. The filer was keyed to the one
 /// place the curvature cannot appear, so nothing was ever filed.
 ///
 /// The word is NOT a constant by construction and is not removable: a
 /// section face (21 step 2, S12.2) carries a word that is deliberately not
-/// that coboundary, and a loop over one is curved on the word while its
+/// that coboundary, and an orbit over one is curved on the word while its
 /// edges compose to the identity. Both carriers are real; the path decides
 /// which it has.
 pub(crate) fn holonomy_words_on(
     faces: &[FormFace],
     vertices: &[Vertex],
-    lp: &Loop,
+    lp: &Orbit,
 ) -> crate::network::nerve::Keyed<Word> {
     let edges = edge_holonomies_on(faces, vertices, lp);
     let mut out = crate::network::nerve::Keyed::new();
-    for (k, t) in loop_transport_on(faces, vertices, lp).scoped() {
-        // THE FALLBACK IS THE PATH'S OWN WORD, NOT THE LOOP'S (54.5, as
+    for (k, t) in orbit_transport_on(faces, vertices, lp).scoped() {
+        // THE FALLBACK IS THE PATH'S OWN WORD, NOT THE ORBIT'S (54.5, as
         // ruled 2026-09-20). It read `None => lp.holonomy.clone()`, and
-        // `lp.holonomy` is `form_named_holonomy` over the loop's PROJECTED
+        // `lp.holonomy` is `form_named_holonomy` over the orbit's PROJECTED
         // vertex path — a base-space object composed without the members
         // the transport lives on. `t.word` is the composite this path
         // actually walked, member by member.
         //
         // The fallback itself stays, and stripping it was wrong: a section
         // face (21 step 2, S12.2) carries a word that is DELIBERATELY not
-        // the coboundary `w_j ∘ w_i⁻¹`, so a loop over one is curved on the
+        // the coboundary `w_j ∘ w_i⁻¹`, so an orbit over one is curved on the
         // word while its edges compose to the identity. Both carriers are
         // real and the path decides which it has — removing either deletes
         // an obstruction the engine measured.
@@ -145,43 +145,43 @@ pub(crate) fn holonomy_words_on(
     out
 }
 
-/// THE ONE HOLONOMY A LOOP HAS, where every member path agrees on it: the
-/// edge composite wherever a path carries one, the loop's own word where it
+/// THE ONE HOLONOMY AN ORBIT HAS, where every member path agrees on it: the
+/// edge composite wherever a path carries one, the orbit's own word where it
 /// does not (R8's reading, applied to the whole `OpenAxis` pipeline).
 ///
 /// `lp.holonomy` is the WORD, and a face's word is the coboundary
 /// `w_j ∘ w_i⁻¹` of its two vertices' words. A product of coboundaries
 /// around a cycle telescopes to the identity for EVERY input — `∏ (w_j ∘
-/// w_i⁻¹) ≡ 1`, an exact Čech coboundary, `δw = 0` — so a loop over
+/// w_i⁻¹) ≡ 1`, an exact Čech coboundary, `δw = 0` — so an orbit over
 /// coboundary faces alone is flat on the word whatever it actually turns by.
-/// Measured at e98e8a2: 70311 of 70311 loops flat on the word against 284
-/// finite non-identity edge composites over those same loops.
+/// Measured at e98e8a2: 70311 of 70311 orbits flat on the word against 284
+/// finite non-identity edge composites over those same orbits.
 ///
-/// `file_loop` was keyed to the word and filed nothing until R8 moved it
+/// `file_orbit` was keyed to the word and filed nothing until R8 moved it
 /// here. The `OpenAxis` pipeline was keyed to the word too and refused every
 /// widening for the same reason: its gate is `!lp.holonomy.is_identity()`,
 /// which is false by algebra on a coboundary cycle. Measured at f3a76ec:
-/// `opens 1` on 133 loops — the single one whose word did not cancel —
+/// `opens 1` on 133 orbits — the single one whose word did not cancel —
 /// against 92 torsion classes filed off the edge composite in the same five
 /// minutes. The curvature and the gate were reading different carriers.
 ///
 /// Agreement is PROJECTIVE equality of the rotors (1.5), not equality of the
-/// tapes: `q` and `q·q·q` are one vertex spelled twice, and a loop is not
+/// tapes: `q` and `q·q·q` are one vertex spelled twice, and an orbit is not
 /// two obstructions for having been reached two ways. `None` where the paths
-/// disagree — the loop then has no single holonomy and a caller that keyed a
+/// disagree — the orbit then has no single holonomy and a caller that keyed a
 /// carrier by one path's answer would be asserting the rest (rule 11).
-/// A LOOP CARRYING NO MEMBER PATH ANSWERS THE WORD. `holonomy_words_on`
+/// AN ORBIT CARRYING NO MEMBER PATH ANSWERS THE WORD. `holonomy_words_on`
 /// already rules that a path with no edge composite carries the word — "the
-/// only holonomy it has is the word's, which is the reading of a loop whose
-/// faces are all coboundaries, not a default standing in for one" — and a
-/// loop with no path at all has no edge composite anywhere, so the same
+/// only holonomy it has is the word's, which is the reading of an orbit whose
+/// faces are all coboundaries, not a default standing in for one" — and an
+/// orbit with no path at all has no edge composite anywhere, so the same
 /// reading applies with nothing to read it over. Returning `None` there made
 /// the RANK unmeasured on every such form: `rank_offplane_is_its_own_lane`
 /// went from a measured `(offplane 1, free 0)` to no rank at all.
-pub(crate) fn loop_holonomy_on(
+pub(crate) fn orbit_holonomy_on(
     faces: &[FormFace],
     vertices: &[Vertex],
-    lp: &Loop,
+    lp: &Orbit,
 ) -> Option<Word> {
     let ws = holonomy_words_on(faces, vertices, lp);
     let mut held: Option<Word> = None;
@@ -192,9 +192,9 @@ pub(crate) fn loop_holonomy_on(
             Some(_) => {}
         }
     }
-    // Written as the two readings they are, not as a fallback: a loop with
-    // member paths answers what those paths agree on, and a loop with none
-    // answers its word, because a loop with no path has no edge composite to
+    // Written as the two readings they are, not as a fallback: an orbit with
+    // member paths answers what those paths agree on, and an orbit with none
+    // answers its word, because an orbit with no path has no edge composite to
     // answer instead (rule 11 — this is not a default for a missing value).
     match held {
         Some(w) => Some(w),
@@ -203,34 +203,34 @@ pub(crate) fn loop_holonomy_on(
 }
 
 impl Form {
-    /// The class vector of loop `idx` (12.6): plane coordinates from the
+    /// The class vector of orbit `idx` (12.6): plane coordinates from the
     /// oriented holonomy; placement and hue from the carriage and gauge
-    /// composed around `lp.vertices` (A4). A loop whose class is an axis
+    /// composed around `lp.vertices` (A4). An orbit whose class is an axis
     /// the form opened reads as the zero vector: its holonomy is the
     /// transition on that axis and no longer a defect (I6, 15.5, T14).
-    /// THE TRANSPORT COMPOSITE, which is one of a loop's two obstructions
+    /// THE TRANSPORT COMPOSITE, which is one of an orbit's two obstructions
     /// and not the only one. `FormFace.edge` carries the other — 50.3's
     /// stabilizer element — and it is read by [`Form::edge_class_vector`].
     /// Measured: reading the edge HERE instead zeroed the class of the one
-    /// loop in the tree the pivot actually fires on (a turned L across two
+    /// orbit in the tree the pivot actually fires on (a turned L across two
     /// pairs, occupying `Unit(0)`), because an extraction's faces carry an
     /// edge whose composite is the identity while their transports carry
     /// the half turn. They are two objects and neither replaces the other.
     /// ONE PER MEMBER PATH (D10 item 7), keyed by the path.
     pub fn class_vectors(&self, idx: usize) -> crate::network::nerve::Keyed<ClassVector> {
-        match self.loops.get(idx) {
+        match self.orbits.get(idx) {
             Some(lp) => class_vectors_on(&self.faces, &self.vertices, &self.axes, lp),
             None => crate::network::nerve::Keyed::new(),
         }
     }
 
-    /// THE LOOP'S CLASS WHERE EVERY MEMBER PATH AGREES ON IT, which is what a
-    /// caller asking "is this loop a defect" is asking: a loop is a defect if
+    /// THE ORBIT'S CLASS WHERE EVERY MEMBER PATH AGREES ON IT, which is what a
+    /// caller asking "is this orbit a defect" is asking: an orbit is a defect if
     /// ANY path of it carries an unfiled class, and the readings differ only in
     /// the placement and dilation residues.
     ///
-    /// `None` when the paths disagree — the loop then has no single class and
-    /// a caller that treated one path's answer as the loop's would be making
+    /// `None` when the paths disagree — the orbit then has no single class and
+    /// a caller that treated one path's answer as the orbit's would be making
     /// exactly the assertion D10 removes — or when no path closes.
     pub fn class_vector(&self, idx: usize) -> Option<ClassVector> {
         let vs = self.class_vectors(idx);
@@ -245,30 +245,30 @@ impl Form {
         held
     }
 
-    /// THE HOLONOMY WORD EVERY MEMBER PATH OF LOOP `idx` AGREES ON, by the
+    /// THE HOLONOMY WORD EVERY MEMBER PATH OF ORBIT `idx` AGREES ON, by the
     /// same rule [`Form::class_vector`] collapses the class vectors: the
     /// paths' own readings, and absence where they differ.
     ///
     /// Agreement is projective equality of the rotors (1.5) and not equality
     /// of the tapes, because `q` and `q·q·q` are one vertex spelled twice and
-    /// a loop is not two obstructions for having been reached two ways.
+    /// an orbit is not two obstructions for having been reached two ways.
     pub fn holonomy_word(&self, idx: usize) -> Option<Word> {
-        loop_holonomy_on(&self.faces, &self.vertices, self.loops.get(idx)?)
+        orbit_holonomy_on(&self.faces, &self.vertices, self.orbits.get(idx)?)
     }
 
     /// Write a certified move onto the form — the chord face's transport,
-    /// or an axis opened over the loop — and re-walk. Vertices are not
+    /// or an axis opened over the orbit — and re-walk. Vertices are not
     /// written.
     pub fn apply_pivot(&mut self, cert: &PivotCertificate) {
         self.apply_move(&cert.by);
-        self.loops = Self::loops_of(&self.faces, &self.vertices);
+        self.orbits = Self::orbits_of(&self.faces, &self.vertices);
         self.reindex();
     }
 
     /// A16 on the form. Certificates and vortex live here.
     /// `bundle` is the pairs the idea germinated from; `t_extent` is how
-    /// long the loop has been held on the bubble's clock.
-    pub fn pivot_loop(
+    /// long the orbit has been held on the bubble's clock.
+    pub fn pivot_orbit(
         &mut self,
         idea: impl AsRef<[u8]>,
         horizon: &Keyed<(Rotor, Order, Standing)>,
@@ -293,9 +293,9 @@ impl Form {
             if budget.remaining() == 0 {
                 break;
             }
-            self.loops = Self::loops_of(&self.faces, &self.vertices);
+            self.orbits = Self::orbits_of(&self.faces, &self.vertices);
             let mut pending: Keyed<Order, crate::network::nerve::coord::VertexIx> = Keyed::new();
-            for lp in &self.loops {
+            for lp in &self.orbits {
                 if self
                     .faces
                     .get(lp.chord as usize)
@@ -345,7 +345,7 @@ impl Form {
                     break;
                 }
             }
-            for (idx, lp) in self.loops.iter().enumerate() {
+            for (idx, lp) in self.orbits.iter().enumerate() {
                 let Some(&order) = pending.at(&vertex_ix_key(lp.chord)) else {
                     continue;
                 };
@@ -358,8 +358,8 @@ impl Form {
                         chord: idx,
                         order,
                     });
-                    // §8.1, measurement only: what the loop's EDGES read
-                    // (50.3) on a loop the gauge closed on the word. The
+                    // §8.1, measurement only: what the orbit's EDGES read
+                    // (50.3) on an orbit the gauge closed on the word. The
                     // gauge conjugates face words and copies the edges, so
                     // a non-flat edge here is curvature the word never held.
                     let (mut flat, mut finite, mut infinite) = (0usize, 0usize, 0usize);
@@ -381,13 +381,13 @@ impl Form {
                         }
                     }
                     eprintln!(
-                        "  pivot {:02x}{:02x}… loop {idx} closed by the tree gauge, edges flat {flat} finite {finite} infinite {infinite}{classes}",
+                        "  pivot {:02x}{:02x}… orbit {idx} closed by the tree gauge, edges flat {flat} finite {finite} infinite {infinite}{classes}",
                         idea[0], idea[1]
                     );
                 }
             }
             let open: Vec<usize> = self
-                .loops
+                .orbits
                 .iter()
                 .enumerate()
                 .filter(|(i, _)| self.class_vector(*i).is_some_and(|k| !k.is_zero()))
@@ -396,10 +396,10 @@ impl Form {
             if open.is_empty() {
                 break;
             }
-            // A loop whose holonomy is not a versor has no row (15.3): the
+            // An orbit whose holonomy is not a versor has no row (15.3): the
             // audit is unmeasured and the form is held, never counted
             // under a key of the rotor's bytes.
-            let Some(rows) = self.loop_rows() else {
+            let Some(rows) = self.orbit_rows() else {
                 eprintln!(
                     "  pivot {:02x}{:02x}… held, rank unmeasured",
                     idea[0], idea[1]
@@ -432,13 +432,13 @@ impl Form {
                 let Some(kappa) = self.class_vector(idx) else {
                     continue;
                 };
-                let loop_k = vertex_ix_key(idx as u16);
-                if handled.holds(&loop_k) {
+                let orbit_k = vertex_ix_key(idx as u16);
+                if handled.holds(&orbit_k) {
                     continue;
                 }
                 // The holonomy the member paths carry — the edge composite
-                // wherever a path has one — is the class the loop is judged
-                // and filed by (law 12); `open` holds only loops whose paths
+                // wherever a path has one — is the class the orbit is judged
+                // and filed by (law 12); `open` holds only orbits whose paths
                 // agree on it, so `holonomy_word` answers one class.
                 let Some(hw) = self.holonomy_word(idx) else {
                     continue;
@@ -457,8 +457,8 @@ impl Form {
                 let cands = self.candidates_for(idx, &kappa, crystal, held, &published);
                 // The span reading, measured and never branched on: `held`
                 // counts the words `crystal.on_axis` answered — the basis's
-                // reach on the loop's occupied axes; `opens` the puncture,
-                // offered on a free part; `self` the loop's own inverses,
+                // reach on the orbit's occupied axes; `opens` the puncture,
+                // offered on a free part; `self` the orbit's own inverses,
                 // which say nothing about what the mind holds. `unreached`
                 // and `starved` say whether the fixed axis order of 12.6 let
                 // the budget reach every candidate.
@@ -471,9 +471,9 @@ impl Form {
                 let opens = cands.iter().filter(|c| kind(c) == 1).count();
                 let self_moves = cands.iter().filter(|c| kind(c) == 2).count();
                 // `ruled` says whether the mesh holds the class (A19) — a
-                // loop on the horizon neither demands nor widens, it waits
+                // orbit on the horizon neither demands nor widens, it waits
                 // for the held form — and `occupies` names the coordinates
-                // the loop stands on, so an empty candidate list is read by
+                // the orbit stands on, so an empty candidate list is read by
                 // its cause: `Hue` with no member path, or an axis the
                 // crystal holds no word on.
                 let occupied = kappa.coordinates();
@@ -483,7 +483,7 @@ impl Form {
                 let mut eliminated = 0usize;
                 for cand in &cands {
                     // The zero-spend eliminator: whether a held word can
-                    // cancel this loop's rotor is exact arithmetic in the
+                    // cancel this orbit's rotor is exact arithmetic in the
                     // even subalgebra and spends nothing. It eliminates and
                     // never decides — a candidate it admits still runs the
                     // whole trial, which reads the carriage and the gauge no
@@ -514,7 +514,7 @@ impl Form {
                         discharging.push(cert);
                     } else {
                         eprintln!(
-                            "  pivot {:02x}{:02x}… loop {idx} axis {:?} no discharge",
+                            "  pivot {:02x}{:02x}… orbit {idx} axis {:?} no discharge",
                             idea[0], idea[1], cand.axis
                         );
                     }
@@ -524,7 +524,7 @@ impl Form {
                 // not a floor at zero (rule 11).
                 let unreached = cands.len() - tried;
                 eprintln!(
-                    "  pivot candidates {:02x}{:02x}… loop {idx} total {} held {held_gens} \
+                    "  pivot candidates {:02x}{:02x}… orbit {idx} total {} held {held_gens} \
                      self {self_moves} opens {opens} tried {tried} unreached {unreached} \
                      discharged {} starved {starved} eliminated {eliminated} span {} \
                      ruled {held} order {order:?} occupies {occupied:?}",
@@ -537,7 +537,7 @@ impl Form {
                     // factors through the basis. `novel`: none does and the
                     // puncture is offered, so the residue is outside the span
                     // and opening a dimension is the only algebraic move
-                    // left. `closed`: neither — the loop's coordinates are
+                    // left. `closed`: neither — the orbit's coordinates are
                     // all self-derived and no pivot reaches it by any route.
                     match (held_gens, opens) {
                         (0, 0) => "closed",
@@ -545,9 +545,9 @@ impl Form {
                         _ => "understood",
                     }
                 );
-                // 37.7 from the loop's own residue: the basis reached no
-                // coordinate this loop occupies, the class was published and
-                // nothing answered, so the rotor the loop measured is carried
+                // 37.7 from the orbit's own residue: the basis reached no
+                // coordinate this orbit occupies, the class was published and
+                // nothing answered, so the rotor the orbit measured is carried
                 // out to be adjoined — beside the widening, never instead of
                 // it. Minting is the entity's, since a form does not hold the
                 // language; it stands in the dialect, `Stood` not `Ruled`, so
@@ -557,9 +557,9 @@ impl Form {
                     && !hw.rotor().is_identity()
                     && hw.rotor().holonomy_key().is_some_and(|k| published.at(&k).is_some())
                 {
-                    // Every chart the loop stands on (rule 15): a loop through
+                    // Every chart the orbit stands on (rule 15): an orbit through
                     // vertices on two charts is an obstruction on both.
-                    let charts = self.charts_of_loop(idx);
+                    let charts = self.charts_of_orbit(idx);
                     for chart in &charts {
                         snaps.push(Snap::Adjoin {
                             chord: idx,
@@ -569,7 +569,7 @@ impl Form {
                     }
                     if !charts.is_empty() {
                         eprintln!(
-                            "  adjoin from residue {:02x}{:02x}… loop {idx} charts {}",
+                            "  adjoin from residue {:02x}{:02x}… orbit {idx} charts {}",
                             idea[0],
                             idea[1],
                             charts.len()
@@ -582,7 +582,7 @@ impl Form {
                 let moves = one_per_move(&discharging);
                 if moves.len() != discharging.len() {
                     eprintln!(
-                        "  pivot {:02x}{:02x}… loop {idx} {} certificates spell {} moves",
+                        "  pivot {:02x}{:02x}… orbit {idx} {} certificates spell {} moves",
                         idea[0],
                         idea[1],
                         discharging.len(),
@@ -594,18 +594,18 @@ impl Form {
                         self.apply_pivot(&cert);
                         // A18, T21 (iii): the applied pivot makes the move
                         // its certificate claims, certified here (law 10).
-                        // On disagreement the loop holds — no snap, no
+                        // On disagreement the orbit holds — no snap, no
                         // certificate — and nothing downstream rests on an
                         // uncertified move.
                         if self.rank().map(|r| Rank::moved(rank_before, r)) != Some(cert.rank_move) {
                             eprintln!(
-                                "  pivot {:02x}{:02x}… loop {idx} held, the applied pivot did not make the move its certificate claims",
+                                "  pivot {:02x}{:02x}… orbit {idx} held, the applied pivot did not make the move its certificate claims",
                                 idea[0], idea[1]
                             );
                             break;
                         }
                         eprintln!(
-                            "  pivot {:02x}{:02x}… loop {idx} axis {:?} discharged {:02x}{:02x}…→{:02x}{:02x}…",
+                            "  pivot {:02x}{:02x}… orbit {idx} axis {:?} discharged {:02x}{:02x}…→{:02x}{:02x}…",
                             idea[0], idea[1], cert.axis, cert.before[0], cert.before[1], cert.after[0], cert.after[1]
                         );
                         let ck = cert.key();
@@ -614,7 +614,7 @@ impl Form {
                             chord: idx,
                             certificate: cert,
                         });
-                        handled.put(&loop_k, ());
+                        handled.put(&orbit_k, ());
                         applied = true;
                         break;
                     }
@@ -625,7 +625,7 @@ impl Form {
                         if prior.mu_before.is_some() {
                             let between = obstructions(&held_certs);
                             eprintln!(
-                                "  vortex {:02x}{:02x}… loop {idx} {} candidates held, axes {:?}",
+                                "  vortex {:02x}{:02x}… orbit {idx} {} candidates held, axes {:?}",
                                 idea[0],
                                 idea[1],
                                 held_certs.len(),
@@ -638,7 +638,7 @@ impl Form {
                             });
                         } else {
                             eprintln!(
-                                "  vortex {:02x}{:02x}… loop {idx} {} candidates unmeasured",
+                                "  vortex {:02x}{:02x}… orbit {idx} {} candidates unmeasured",
                                 idea[0],
                                 idea[1],
                                 held_certs.len()
@@ -648,30 +648,30 @@ impl Form {
                                 held: held_certs,
                             });
                         }
-                        handled.put(&loop_k, ());
+                        handled.put(&orbit_k, ());
                     }
                     // THE STROKE ENDED, NOT THE SEARCH. Nothing is spoken,
                     // filed or widened on an evaluation that did not
-                    // happen: the loop is held and the next stroke reaches
+                    // happen: the orbit is held and the next stroke reaches
                     // the candidates this one could not.
                     Discharge::Starved => {
                         eprintln!(
-                            "  pivot {:02x}{:02x}… loop {idx} held, the candidate search was cut short at {tried} of {}",
+                            "  pivot {:02x}{:02x}… orbit {idx} held, the candidate search was cut short at {tried} of {}",
                             idea[0],
                             idea[1],
                             cands.len()
                         );
-                        handled.put(&loop_k, ());
+                        handled.put(&orbit_k, ());
                     }
                     Discharge::NoneDischarged => {
                         let infinite = matches!(order, Order::Infinite);
                         if infinite && !held {
-                            // One standing demand per chart the loop
+                            // One standing demand per chart the orbit
                             // stands on, carrying the holonomy rotor as
                             // its witness (16.16 step 6): the language's
                             // want of a generator, spoken beside the
                             // filing below and never instead of it (52.3).
-                            let charts = self.charts_of_loop(idx);
+                            let charts = self.charts_of_orbit(idx);
                             for chart in &charts {
                                 snaps.push(Snap::Demand {
                                     chord: idx,
@@ -694,7 +694,7 @@ impl Form {
                         // `τ ∈ ker(I − R)`, so `g^ℓ = T(ℓτ)` and no power
                         // returns: there is no period that closes it and no
                         // filing that can. `edge_coheres` refuses such a
-                        // loop unless the form DECLARES it, and this is
+                        // orbit unless the form DECLARES it, and this is
                         // what declares it — the obstruction converted from
                         // something hidden in a side-table into a vertex in
                         // the key, saying what the shear is and what would
@@ -708,13 +708,13 @@ impl Form {
                         // chart does not answer for another. 50.5 already
                         // stands one demand per `(kind, chart)`, and
                         // `demand_key` keys on both, so each boundary the
-                        // loop fails to close gets its own cell.
+                        // orbit fails to close gets its own cell.
                         //
                         // A ZERO TWIST MOUNTS NOTHING: that circuit RETURNS
                         // and is a congruence, and a demand for it would be
                         // a coordinate standing for no obstruction
                         // (T21(iii), `Demand::typed`).
-                        for (chart, tau) in self.loop_slips(idx) {
+                        for (chart, tau) in self.orbit_slips(idx) {
                             self.stand_demand(
                                 crate::transducer::sentence::Demand::Dislocation {
                                     chart: chart.clone(),
@@ -728,7 +728,7 @@ impl Form {
                                 idea[0], idea[1]
                             );
                         }
-                        // A loop of any order files under its class at its
+                        // An orbit of any order files under its class at its
                         // period, `0` for infinite order (52.3, A19).
                         //
                         // THE PERIOD IS THE FILER'S, NOT THIS CALLER'S. It
@@ -739,7 +739,7 @@ impl Form {
                         // filer solves for the fixed point exactly and
                         // answers what each member path actually closes at,
                         // and the snap now carries THAT (54.3).
-                        let periods = self.file_loop(idx);
+                        let periods = self.file_orbit(idx);
                         if !periods.is_empty() {
                             if !held {
                                 for ell in &periods {
@@ -759,7 +759,7 @@ impl Form {
                                 idea[0], idea[1]
                             );
                         }
-                        handled.put(&loop_k, ());
+                        handled.put(&orbit_k, ());
                     }
                 }
             }
@@ -794,7 +794,7 @@ impl Form {
         self.reindex();
     }
 
-    /// 54.5, Directive 4 — THE SHEARS A LOOP LEAVES, ONE PER CHART.
+    /// 54.5, Directive 4 — THE SHEARS AN ORBIT LEAVES, ONE PER CHART.
     ///
     /// `screw_of` splits a transport exactly over ℚ by the normal equations
     /// `AᵀA p = Aᵀt`: the centre is where the bend holds still, on
@@ -805,7 +805,7 @@ impl Form {
     ///
     /// A TWIST IS READ IN A FRAME, so this pairs each with the chart it was
     /// measured on. Under a transition `g_AB = D(ρ)·T(t)·R` a slip
-    /// transforms as `τ_B = ρ·R(τ_A)`; carrying one τ for a loop that
+    /// transforms as `τ_B = ρ·R(τ_A)`; carrying one τ for an orbit that
     /// crosses several charts would assert an ambient vector the geometry
     /// does not have.
     ///
@@ -813,14 +813,14 @@ impl Form {
     /// returns — a congruence, filed at its period — and it owes no
     /// declaration (T21(iii): a coordinate is earned by retiring an
     /// obstruction, never by naming one that is not there).
-    fn loop_slips(&self, idx: usize) -> Vec<(stalk::Invariant, [crate::core::Q; 3])> {
-        let Some(lp) = self.loops.get(idx) else {
+    fn orbit_slips(&self, idx: usize) -> Vec<(stalk::Invariant, [crate::core::Q; 3])> {
+        let Some(lp) = self.orbits.get(idx) else {
             return Vec::new();
         };
         let Some(hs) = self.edge_holonomies(lp) else {
             return Vec::new();
         };
-        let charts = self.charts_of_loop(idx);
+        let charts = self.charts_of_orbit(idx);
         let mut out = Vec::new();
         for (_, h) in hs.scoped() {
             let Some(screw) =
@@ -838,15 +838,15 @@ impl Form {
         out
     }
 
-    /// Every chart a loop stands on, once each, in key order: the charts of
+    /// Every chart an orbit stands on, once each, in key order: the charts of
     /// its vertices, never one of them by position (rule 15).
-    pub(crate) fn charts_of_loop_at(&self, idx: usize) -> Vec<stalk::Invariant> {
-        self.charts_of_loop(idx)
+    pub(crate) fn charts_of_orbit_at(&self, idx: usize) -> Vec<stalk::Invariant> {
+        self.charts_of_orbit(idx)
     }
 
-    fn charts_of_loop(&self, idx: usize) -> Vec<stalk::Invariant> {
+    fn charts_of_orbit(&self, idx: usize) -> Vec<stalk::Invariant> {
         let mut at: Keyed<stalk::Invariant> = Keyed::new();
-        if let Some(lp) = self.loops.get(idx) {
+        if let Some(lp) = self.orbits.get(idx) {
             for vi in &lp.vertices {
                 let Some(v) = self.vertices.get(*vi as usize) else {
                     continue;
@@ -859,14 +859,14 @@ impl Form {
         at.scoped().map(|(_, c)| c.clone()).collect()
     }
 
-    /// The candidate pivots of a held loop (16.16 step 3), read off its
+    /// The candidate pivots of a held orbit (16.16 step 3), read off its
     /// class vector in the fixed order, each instantiated from what the
     /// crystal holds. `held` is the horizon's word: the mesh holds this
     /// class already (A19), so the mind neither demands it nor opens an
     /// axis on it; it is still discharged by a held form when one arrives.
     /// `published` is what this form had FILED BEFORE THIS STROKE BEGAN — a
-    /// parameter and not a read of `self.torsion`, because `file_loop`
-    /// files by class and a second loop of one class would otherwise read
+    /// parameter and not a read of `self.torsion`, because `file_orbit`
+    /// files by class and a second orbit of one class would otherwise read
     /// its own stroke's filing as an unanswered demand and widen on it. A
     /// demand nobody has had a stroke to answer is not an unanswered demand.
     pub(crate) fn candidates_for(
@@ -875,9 +875,9 @@ impl Form {
         kappa: &ClassVector,
         crystal: &dyn Crystal,
         held: bool,
-        published: &Keyed<FiledLoop, crate::network::nerve::coord::Holonomy>,
+        published: &Keyed<FiledOrbit, crate::network::nerve::coord::Holonomy>,
     ) -> Vec<Candidate> {
-        let Some(lp) = self.loops.get(idx) else {
+        let Some(lp) = self.orbits.get(idx) else {
             return Vec::new();
         };
         let chord = lp.chord as usize;
@@ -892,8 +892,8 @@ impl Form {
             for vi in [f.i, f.j] {
                 if let Some(v) = self.vertices.get(vi as usize) {
                     // EVERY CHART THE VERTEX STANDS AT, so a vertex acting on
-                    // two contributes both and the loop's chart set is the
-                    // whole of what the loop passes through.
+                    // two contributes both and the orbit's chart set is the
+                    // whole of what the orbit passes through.
                     for chart in v.charts() {
                         charts.insert(chart.key(), chart);
                     }
@@ -957,12 +957,12 @@ impl Form {
                     });
                 }
                 // ONE HUE CANDIDATE PER MEMBER PATH. The gauge the move
-                // carries is the loop's composite hue map, which is a member
-                // coordinate, so a loop running through two pairs of bodies
+                // carries is the orbit's composite hue map, which is a member
+                // coordinate, so an orbit running through two pairs of bodies
                 // offers the move each of them names. Offering one and
                 // skipping the rest is a move never offered on the others.
                 Axis::Hue => {
-                    for (_, t) in loop_transport(self, lp).scoped() {
+                    for (_, t) in orbit_transport(self, lp).scoped() {
                         out.push(Candidate {
                             axis,
                             by: PivotBy::Hue {
@@ -1016,27 +1016,27 @@ impl Form {
                 }
             }
         }
-        // THE OPENING AXIS (12.6, 16.16 step 3, 3.7; I6): a loop whose
+        // THE OPENING AXIS (12.6, 16.16 step 3, 3.7; I6): an orbit whose
         // class has a free part, or whose class was published and not
         // answered while the basis reaches none of its coordinates, opens a
         // chart axis seeded by its own holonomy, and the class becomes a
-        // coordinate of the form the court re-derives from the loop. The
+        // coordinate of the form the court re-derives from the orbit. The
         // condition is the fibre's, `kappa.free_part()`, never another
         // candidate's absence — 12.6 offers the candidates and orders
         // nothing. The order is reduce, publish, then widen: `asked` reads
         // `published`, the filings as they stood before this stroke, keyed
-        // by the member paths' own classes (law 12); a finite-order loop no
+        // by the member paths' own classes (law 12); a finite-order orbit no
         // word reaches files first (step 6, A17) and widens once the mesh
         // has not answered. The gate and the seed are the edge composite's
-        // (`loop_holonomy_on`), never the word's, which telescopes on any
+        // (`orbit_holonomy_on`), never the word's, which telescopes on any
         // coboundary cycle. The rank audit admits the move as it stands:
-        // `LoopRow::Opened` moves `torsion −1, axes +1`.
+        // `OrbitRow::Opened` moves `torsion −1, axes +1`.
         let asked = |h: &Word| {
             h.rotor()
                 .holonomy_key()
                 .is_some_and(|k| published.at(&k).is_some())
         };
-        if let Some(h) = loop_holonomy_on(&self.faces, &self.vertices, lp) {
+        if let Some(h) = orbit_holonomy_on(&self.faces, &self.vertices, lp) {
             if !held && !h.is_identity() && (kappa.free_part() || (!reached && asked(&h))) {
                 if let Some(seed) = element::versor_of_word(&h) {
                     // §8.1, measurement only: the seed is the holonomy's
@@ -1051,7 +1051,7 @@ impl Form {
                         ))
                         .len();
                     if off > 0 {
-                        eprintln!("  pivot open seed loop {idx} off-plane blades {off}");
+                        eprintln!("  pivot open seed orbit {idx} off-plane blades {off}");
                     }
                     out.push(Candidate {
                         axis: Axis::Open,

@@ -30,7 +30,7 @@ impl Kernel {
     /// XOR distance on the address bytes, which is not where a chart is
     /// homed and never named a hypha the transport had measured.
     ///
-    /// THE LAPSE IS AN ORBIT, NOT A SWEEP (45.7, rule 10). It walked the
+    /// THE LAPSE IS A CIRCUIT, NOT A SWEEP (45.7, rule 10). It walked the
     /// whole `pending` fiber with no budget, collected every expired
     /// address into a `Vec`, and then ran a second unbudgeted loop that
     /// revoked an escrow, unlisted a draw and — since I10 — sealed a
@@ -47,7 +47,7 @@ impl Kernel {
     /// when it was measured, not a second read guarded by `unwrap_or(now)`
     /// — a default standing in for a height (checklist (i)).
     /// THE SWEEP TAKES NO BUDGET FROM ITS CALLER. It was handed
-    /// `court_stroke`'s one stroke, after the docket orbit had already
+    /// `court_stroke`'s one stroke, after the docket circuit had already
     /// spent from it, so on a busy court the eviction walk reached no
     /// listing at all — a book whose only sink competes with whatever ran
     /// before it in the same function has no sink.
@@ -84,8 +84,8 @@ impl Kernel {
         let over = held > crate::physics::book_ceiling();
         // THE SWEEP HAS ITS OWN QUOTA, AND THE QUOTA IS THE BACKLOG.
         //
-        // `court_stroke` built ONE stroke and handed it to the docket orbit
-        // first, then here, then to the fills, so on a busy court the orbit
+        // `court_stroke` built ONE stroke and handed it to the docket circuit
+        // first, then here, then to the fills, so on a busy court the circuit
         // spent it and the eviction walk reached no listing at all. Giving
         // the sweep its own stroke removed the COMPETITION and left the
         // RATE: three spends a pass against an inflow of some 250 listings
@@ -134,7 +134,7 @@ impl Kernel {
                 //
                 // AND ABOVE THE CEILING THE HORIZON COLLAPSES. A book past
                 // what this node's memory can carry evicts whatever has
-                // stood at all, oldest reached first as the orbit walks it:
+                // stood at all, oldest reached first as the circuit walks it:
                 // the manifold is finite and the book is not entitled to
                 // exceed it whatever Λ says.
                 // AND THE TWO REFUSING ARMS ARE TWO FACTS (law 5).

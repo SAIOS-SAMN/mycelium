@@ -35,7 +35,7 @@
 //! `π₁(X¹, x₀)`. Under another tree an edge that was a chord becomes a
 //! branch and its displacement is absorbed into other chords' solders, so
 //! the GENERATING SET differs. `form_operators` counts distinct based
-//! operators over that basis, so `|im(ρ_F)| = 1` on every looped form and
+//! operators over that basis, so `|im(ρ_F)| = 1` on every orbited form and
 //! the `13 = 14 − 1` operator count are BASIS-DEPENDENT readings. Axiom A
 //! fixes the basepoint and the trie fixes the basis; they are two
 //! different jobs and both are required for those numbers to mean
@@ -90,7 +90,7 @@ fn reading(cx: &mut Complex) -> (String, Vec<String>) {
         CoboundaryOutcome::AlreadyFilled => "already".to_string(),
         CoboundaryOutcome::Absent => "absent".to_string(),
     };
-    (outcome, cx.loops_of(key).iter().map(show).collect())
+    (outcome, cx.orbits_of(key).iter().map(show).collect())
 }
 
 /// EVERY INSERTION ORDER REACHES THE SAME GAUGE — the same fill, and the
@@ -129,10 +129,10 @@ fn the_gauge_does_not_depend_on_the_order_the_edges_arrived_in() {
 #[test]
 fn the_fixture_carries_a_chord_that_stands() {
     let mut cx = triangle_in(&[0, 1, 2]);
-    let (_, loops) = reading(&mut cx);
+    let (_, orbits) = reading(&mut cx);
     assert!(
-        !loops.is_empty(),
-        "a triangle whose legs disagree files a loop; with none, the order test \
+        !orbits.is_empty(),
+        "a triangle whose legs disagree files an orbit; with none, the order test \
          compares nothing"
     );
 }

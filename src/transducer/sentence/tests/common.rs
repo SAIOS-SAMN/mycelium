@@ -89,7 +89,7 @@ pub fn word_vertex(addr: u8, word: Word) -> Vertex {
 /// This builds ONE vertex and says nothing about distinctness; a fixture
 /// that needs two says how they differ. [`chord_form`] does, on the chart,
 /// because two ends of a chord are two SITES; separating them on the
-/// carriage would put a placement component into every loop those tests
+/// carriage would put a placement component into every orbit those tests
 /// read, which is a different measurement, not a truer one.
 pub fn word_vertex_on(addr: u8, word: Word, chart: stalk::Invariant) -> Vertex {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -130,12 +130,12 @@ pub fn star_form(n_words: usize, extra: Vec<(u16, u16, Word)>) -> Form {
         ));
         f.faces.push(f.face_of(0, j).expect("star"));
     }
-    // A CHORD CARRIES ITS PLACEMENTS as well as its word, or the loop it
+    // A CHORD CARRIES ITS PLACEMENTS as well as its word, or the orbit it
     // closes has no member path and no carriage (D10).
     for (i, j, w) in extra {
         f.faces.push(f.face_carrying(i, j, w).expect("a chord between two placed vertices"));
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     f
 }
@@ -173,15 +173,15 @@ pub fn chord_form(chords: &[Word]) -> Form {
         f.faces.push(f.face_of(0, b).expect("star b"));
         f.faces.push(f.face_carrying(a, b, w.clone()).expect("a chord between two bodies"));
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     f
 }
 
 /// A chord whose EDGE carries the word (50.3): the face's own word is the
-/// identity and the loop's holonomy is the stabilizer composite. This is
+/// identity and the orbit's holonomy is the stabilizer composite. This is
 /// the carrier an off-plane rotor stands on — a face word with no sensor
-/// action places no member pair, and a loop with no member path has no
+/// action places no member pair, and an orbit with no member path has no
 /// class to read.
 pub fn edge_chord_form(edges: &[Word]) -> Form {
     let mut f = Form::default();
@@ -201,7 +201,7 @@ pub fn edge_chord_form(edges: &[Word]) -> Form {
                 .expect("a chord between two bodies"),
         );
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     f
 }
@@ -215,7 +215,7 @@ pub fn coboundary_chord_form() -> Form {
     for (i, j, w) in [(0u16, 1u16, r.clone()), (0, 2, Word::identity()), (1, 2, r.inverse())] {
         f.faces.push(f.face_carrying(i, j, w).expect("two placed vertices and the Frame"));
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     f
 }

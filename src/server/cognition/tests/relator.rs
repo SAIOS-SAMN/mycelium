@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 // L17 DEPTH 4, 1.9, 12, 23.9 — THE RELATOR A TRIANGLE OF CHARTS LEAVES.
-// Three charts, three transports, one loop: the holonomy is the product
+// Three charts, three transports, one orbit: the holonomy is the product
 // around the triangle, read after the tree gauge of 12.2. Trivial, the
 // charts glue and the proof is one proof in three frames with nothing
 // adjoined; non-trivial, the product IS the relator, and its order is the
@@ -115,7 +115,7 @@ fn three_charts_whose_transports_close_are_one_proof_and_adjoin_nothing() {
     assert!(r.is_identity(), "and the relator it leaves is the identity: {r:?}");
     assert_eq!(r.order(), Some(Order::Finite(1)), "order 1 is no relation at all");
 
-    // CLOSURE PAID ONCE. Nothing is opened on any court by a loop that
+    // CLOSURE PAID ONCE. Nothing is opened on any court by an orbit that
     // closes, and the three courts agree without being introduced.
     for k in three_courts() {
         assert_eq!(
@@ -154,7 +154,7 @@ fn three_charts_that_do_not_close_leave_a_relator_of_order_two() {
     );
     assert!(
         r.projective_eq(&quarter(2).rotor()),
-        "the relator is q², read off the loop and not named by the fixture"
+        "the relator is q², read off the orbit and not named by the fixture"
     );
 
     // ONE CLASS ON THREE COURTS. The key is read from the relator's rotor,
@@ -175,12 +175,12 @@ fn three_charts_that_do_not_close_leave_a_relator_of_order_two() {
 /// FILED, at its own order, on more than one court, and the two courts'
 /// filings agree.
 ///
-/// A form whose loop holonomy is the relator files it as a `FiledLoop`
+/// A form whose orbit holonomy is the relator files it as a `FiledOrbit`
 /// under the relator's class key; `court_torsion` files it on the first
 /// hearing and is CONSILIENT on the second, which is what "closure paid
 /// once" means at the court. A court that already holds that class at a
 /// DIFFERENT period refuses it as not natural — the relation is a fact
-/// about the loop and two courts cannot hold two periods for one class.
+/// about the orbit and two courts cannot hold two periods for one class.
 ///
 /// THE RELATOR IS NOT AN ADJOINED LETTER, and the difference is the whole
 /// of depth 4 against depth 3: `q²` is spelled by the seventeen, so
@@ -198,8 +198,8 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     let relator = relator_of(&holonomy(&t_ab, &t_bc, &t_ca)).rotor();
     let class = relator.class_key().expect("its class");
 
-    // THE FORM THAT CARRIES THE LOOP: two chart vertices and a chord whose
-    // transport is the relator, so the loop's holonomy IS the triangle's.
+    // THE FORM THAT CARRIES THE ORBIT: two chart vertices and a chord whose
+    // transport is the relator, so the orbit's holonomy IS the triangle's.
     let q1 = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let q0 = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
@@ -219,8 +219,8 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     // fixture chose: it is `quarter(2)` because that is what the holonomy
     // above read, asserted there.
     f.faces.push(f.face_carrying(1, 2, quarter(2)).expect("a chord between two bodies"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    let _ = f.pivot_loop(
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    let _ = f.pivot_orbit(
         [31; 32],
         &crate::network::nerve::Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -250,15 +250,15 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     );
 
     // AND THE COURT READS IT WITH NO CHORD SPECIAL CASE. `torsion_chord_
-    // carries` asked whether the chord's own word equalled the loop's
+    // carries` asked whether the chord's own word equalled the orbit's
     // transport composite — a clause about the chord and no other face. It
     // asks only what 23.1 step 4 asks now: the chord is the one face that
-    // is not `face_of`, and the loop's reading is the loop's. The period-2
+    // is not `face_of`, and the orbit's reading is the orbit's. The period-2
     // class above is what replays.
     assert_eq!(
         crate::court::verdict::blind_replay(&e),
         None,
-        "the filed relator replays on the loop's own reading"
+        "the filed relator replays on the orbit's own reading"
     );
 
     // TWO COURTS, NEVER INTRODUCED. Each files on its first hearing and is
@@ -284,7 +284,7 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     }
 
     // 54.7 — A THIRD COURT CANNOT HOLD THE SAME CLASS AT ANOTHER PERIOD.
-    // The period is the loop's order and not the court's opinion of it, and
+    // The period is the orbit's order and not the court's opinion of it, and
     // that is now true by construction rather than by refusal: the spectrum
     // is re-derived from the held ROTOR, so the `99` below reaches no
     // reader. `class_key` and `plane_periods` are both functions of `(a, p)`

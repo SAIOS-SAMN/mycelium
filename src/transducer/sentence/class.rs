@@ -1,8 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 12.6, A18 — THE STATE VECTOR OF A HELD LOOP: its axes, the hue cycle
+//! 12.6, A18 — THE STATE VECTOR OF A HELD ORBIT: its axes, the hue cycle
 //! type, the placement and dilation residues, and the rank audit read one
-//! loop at a time.
+//! orbit at a time.
 
 use super::transport::{gauge_image, gauge_keyed, hue_key};
 use crate::core::lattice::z_rank;
@@ -12,7 +12,7 @@ use crate::transducer::element::{self, Versor};
 
 pub use super::axis::{Axis, Rank, RankAxis, RankMove};
 
-/// The state vector of a held loop (12.6). Rotor conjugacy invariants (15.3)
+/// The state vector of a held orbit (12.6). Rotor conjugacy invariants (15.3)
 /// are read for every holonomy first; the six plane blocks are the sensor
 /// section, present only when `Word::form()` exists. Placement and dilation
 /// residues are the translator and dilator of the holonomy carriage, never
@@ -23,7 +23,7 @@ pub struct ClassVector {
     plane: Option<[(bool, u32, i64, i64); alphabet::PAIR_PLANES]>,
     /// Holonomy carriage after the tree gauge (A4).
     pub(crate) carriage: Versor,
-    /// Composed gauge around the loop (A4).
+    /// Composed gauge around the orbit (A4).
     pub(crate) hue: CycleType,
     /// Rotor conjugacy invariants `(a²/w, p²/w, sign p)` (15.3). Always
     /// read; identity is the zero vector. The signs are the RAY's, not a
@@ -40,7 +40,7 @@ pub struct ClassVector {
     /// the ROTOR is in hand, because `(I − R)p = t` cannot be split without
     /// `R` and this vector does not carry one.
     ///
-    /// WHAT A LOOP'S TRANSLATION IS, which is not how big it is. A rotation
+    /// WHAT AN ORBIT'S TRANSLATION IS, which is not how big it is. A rotation
     /// about `p` carries `T(p − Rp)`: that translation is WHERE THE TURN
     /// STANDS, a choice of origin, and zeroing it moves the frame rather
     /// than discharging anything. A translation with no such `p` is a walk
@@ -50,7 +50,7 @@ pub struct ClassVector {
     /// identity` and could not tell the two apart, so every turn about a
     /// point off the origin published a placement demand. `classify` had
     /// already solved `(I − R)p = t` for the same carriage and filed the
-    /// loop `Congruent`: two readers, one carriage, opposite answers
+    /// orbit `Congruent`: two readers, one carriage, opposite answers
     /// (law 12).
     ///
     /// AND THEN IT WAS A THREE-VALUED ENUM — `Zero | FixedPoint | Residue`
@@ -68,7 +68,7 @@ pub struct ClassVector {
     placement: [num_rational::BigRational; 3],
 }
 
-/// The hue cycle type of a loop: sorted cycle lengths of the composed
+/// The hue cycle type of an orbit: sorted cycle lengths of the composed
 /// permutation around its vertices. The listing itself lives on
 /// `PivotBy::Hue`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -326,7 +326,7 @@ impl ClassVector {
     /// The four coordinates are the four `class_key` writes, in that order,
     /// and the first of them is exactly what [`Rotor::class_key`] writes —
     /// tag, the two invariants, the ray's sign byte. That is why a rotor's
-    /// conjugacy class is the depth-one projection of a loop's state vector
+    /// conjugacy class is the depth-one projection of an orbit's state vector
     /// and not a second key that happens to agree: `class_schema` parses
     /// the boundary out of the bytes the writer wrote, and
     /// `the_rotor_class_is_the_first_stratum_of_the_class_vector` asserts
@@ -381,7 +381,7 @@ impl ClassVector {
 
     /// The coordinate an axis names, as "nonzero". `Open` is never a
     /// coordinate of the vector: it is a move on the form's cover, and the
-    /// form's `axes` carrier says whether it was taken — a loop whose class
+    /// form's `axes` carrier says whether it was taken — an orbit whose class
     /// is an opened axis reads as the zero vector (`Form::class_vector`,
     /// I6). Off-plane is occupied when the holonomy has no plane section,
     /// not as a fallback from a missing form.
@@ -474,7 +474,7 @@ impl ClassVector {
     }
 
     /// The occupied axes: the coordinates, then `Open` last whenever the
-    /// loop is held at all (the one move that is not a coordinate).
+    /// orbit is held at all (the one move that is not a coordinate).
     pub fn occupied(&self) -> Vec<Axis> {
         let mut out = self.coordinates();
         if !out.is_empty() {
@@ -495,7 +495,7 @@ impl ClassVector {
     /// own doc line said the opposite — "a coordinate may fall to zero,
     /// none may rise or move" — and law 10 says the summand becomes zero
     /// "with no other rising". A pivot writes a face carrier that every
-    /// loop through that face reads, so a move that zeroes its target
+    /// orbit through that face reads, so a move that zeroes its target
     /// routinely moves other coordinates too, and every one that FELL was
     /// refused by the identity test. One predicate, one carrier (law 12):
     /// that reader is deleted rather than kept beside this one.
@@ -690,7 +690,7 @@ impl ClassVector {
     }
 
     /// The free part: a prime exponent, or an off-plane class (infinite
-    /// order). A loop with a free part is a demand, never filed torsion.
+    /// order). An orbit with a free part is a demand, never filed torsion.
     pub fn free_part(&self) -> bool {
         self.occupies(Axis::OffPlane)
             || self
@@ -850,22 +850,22 @@ fn free_row(h: &Word) -> Option<[i64; FREE_ROW]> {
     Some(row)
 }
 
-/// What one loop contributes to rank (A18): read once per loop, so a trial
-/// that changes one loop's holonomy swaps one row instead of re-reading the
+/// What one orbit contributes to rank (A18): read once per orbit, so a trial
+/// that changes one orbit's holonomy swaps one row instead of re-reading the
 /// nerve.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum LoopRow {
+pub enum OrbitRow {
     Closed,
-    /// The loop's finite-order class. CARRIED, because the audit counts
-    /// torsion by class and not by loop — see [`rank_of_rows`].
+    /// The orbit's finite-order class. CARRIED, because the audit counts
+    /// torsion by class and not by orbit — see [`rank_of_rows`].
     Torsion(crate::network::nerve::coord::Holonomy),
     Free([i64; FREE_ROW]),
     OffPlane(crate::network::nerve::coord::Holonomy),
-    /// The loop's class is a chart axis the form opened (I6, 15.5): its
+    /// The orbit's class is a chart axis the form opened (I6, 15.5): its
     /// holonomy is the transition on that axis, so it counts on `axes`
     /// and on no other coordinate. The class is carried for the same
     /// reason `Torsion` carries it: the axis carrier is keyed by class, so
-    /// one opening opens every loop of that class and they are one axis.
+    /// one opening opens every orbit of that class and they are one axis.
     Opened(crate::network::nerve::coord::Holonomy),
 }
 
@@ -873,9 +873,9 @@ pub enum LoopRow {
 /// it has no row in the audit and the rank is unmeasured. It was keyed by
 /// its rotor's bytes in place of the class it lacks, which is 0.12b's
 /// refused fallback (rule 11).
-pub fn loop_row(h: &Word) -> Option<LoopRow> {
+pub fn orbit_row(h: &Word) -> Option<OrbitRow> {
     if h.is_identity() {
-        return Some(LoopRow::Closed);
+        return Some(OrbitRow::Closed);
     }
     Some(match free_row(h) {
         // The zero row is FREE_ROW wide, which is the width `free_row`
@@ -887,23 +887,23 @@ pub fn loop_row(h: &Word) -> Option<LoopRow> {
         // the carriers these rows are filed into are read at
         // `holonomy_key` — two producers of one fact (law 12), which is the
         // R1 shape. Both ends ask the same function now.
-        Some(row) if row == [0i64; FREE_ROW] => LoopRow::Torsion(h.rotor().holonomy_key()?),
-        Some(row) => LoopRow::Free(row),
-        None => LoopRow::OffPlane(h.rotor().holonomy_key()?),
+        Some(row) if row == [0i64; FREE_ROW] => OrbitRow::Torsion(h.rotor().holonomy_key()?),
+        Some(row) => OrbitRow::Free(row),
+        None => OrbitRow::OffPlane(h.rotor().holonomy_key()?),
     })
 }
 
-/// A18 over the rows of a nerve's cycles or a form's loops.
+/// A18 over the rows of a nerve's cycles or a form's orbits.
 ///
 /// EVERY COORDINATE COUNTS BY CLASS. A rank is the dimension of a module —
-/// the number of INDEPENDENT generators — never a tally of the loops that
+/// the number of INDEPENDENT generators — never a tally of the orbits that
 /// exhibit them, and two of these four already read it that way: `free` is
 /// `z_rank`, a matrix rank over the free rows, and `offplane` is a keyed set
-/// taking each class once. `torsion` and `axes` counted per loop.
+/// taking each class once. `torsion` and `axes` counted per orbit.
 ///
-/// Mixing the two breaks the rank delta itself. Two loops of one finite
+/// Mixing the two breaks the rank delta itself. Two orbits of one finite
 /// class are ONE obstruction seen twice; the axis carrier is keyed by class,
-/// so opening it opens both, and counted by loop that single attachment
+/// so opening it opens both, and counted by orbit that single attachment
 /// would read `torsion −2, axes +2` while the same object contributes 1 to
 /// `offplane`, and T21 (iii) would refuse an elementary attachment as
 /// non-elementary. Counted by class the attachment reads `torsion −1, axes
@@ -912,9 +912,9 @@ pub fn loop_row(h: &Word) -> Option<LoopRow> {
 ///
 /// A CLASS CANNOT BE BOTH. A key present in `axes` is an opened chart axis
 /// and no longer a defect (I6, 15.5), so it is not also counted in torsion;
-/// the rows already say which, because `loop_row_on` answers `Opened` for a
-/// loop whose class the carrier holds and never `Torsion`.
-pub fn rank_of_rows(rows: &[LoopRow]) -> Option<Rank> {
+/// the rows already say which, because `orbit_row_on` answers `Opened` for an
+/// orbit whose class the carrier holds and never `Torsion`.
+pub fn rank_of_rows(rows: &[OrbitRow]) -> Option<Rank> {
     // A18 COUNTS DISTINCT CLASSES, so each lane is a carrier keyed by the
     // holonomy class itself — the coordinate, not bytes standing for it.
     let mut torsion: Keyed<(), crate::network::nerve::coord::Holonomy> = Keyed::new();
@@ -923,15 +923,15 @@ pub fn rank_of_rows(rows: &[LoopRow]) -> Option<Rank> {
     let mut free: Vec<[i64; FREE_ROW]> = Vec::new();
     for r in rows {
         match r {
-            LoopRow::Closed => {}
-            LoopRow::Torsion(k) => {
+            OrbitRow::Closed => {}
+            OrbitRow::Torsion(k) => {
                 torsion.put(k, ());
             }
-            LoopRow::Free(row) => free.push(*row),
-            LoopRow::OffPlane(k) => {
+            OrbitRow::Free(row) => free.push(*row),
+            OrbitRow::OffPlane(k) => {
                 offplane.put(k, ());
             }
-            LoopRow::Opened(k) => {
+            OrbitRow::Opened(k) => {
                 axes.put(k, ());
             }
         }

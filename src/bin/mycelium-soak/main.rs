@@ -67,7 +67,7 @@ struct Reading {
     comprehended: u64,
     /// 50.8 — simplices filled, read from the forms this mind holds exactly
     /// as a court reads them off its ruled cover: a form carrying a
-    /// `FiledLoop` has closed a simplex of its cover.
+    /// `FiledOrbit` has closed a simplex of its cover.
     simplices_filled: u64,
     /// 50.8 — what the covers of this walk read, taken from the cover's
     /// own instrument at the end of the walk.

@@ -19,7 +19,7 @@ impl Kernel {
         {
             // Resumed, never restarted at the first key (rule 10, S13.3):
             // a head that refills faster than one budget no longer starves
-            // the tail, and the orbit reaches every simplex.
+            // the tail, and the circuit reaches every simplex.
             let from = self.fill_cursor.clone();
             let mut cur = self.unfilled.cursor(from.as_deref(), budget);
             for (_, v) in &mut cur {

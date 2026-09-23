@@ -423,7 +423,7 @@ pub struct Epigenome {
     ///
     /// The glue asks the crystal at a perceived body's moduli, and the
     /// atlas files a sentence under `chart_of_form`: `[2, vertices, faces,
-    /// loops, …]` against `[components, …harmonics…]`, two coordinate
+    /// orbits, …]` against `[components, …harmonics…]`, two coordinate
     /// systems that meet only at the empty root. Read there, `on_class`
     /// answered the empty vector to every question the glue could ask, so
     /// no rule ever cited a held form, no citation was ever a use, and

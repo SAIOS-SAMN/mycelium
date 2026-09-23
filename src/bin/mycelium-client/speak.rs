@@ -24,7 +24,7 @@ use mycelium::sdk::{Entity};
 /// minting is skipped.
 /// Speak a rule as its crystallized form (chapter 30 step 4): the v2 tape
 /// carrying the descent the form measures over the bundle through the
-/// voice's working atlas. A form with a held loop, a remainder, or no
+/// voice's working atlas. A form with a held orbit, a remainder, or no
 /// measured descent is withheld and held as thought; the wire never sees
 /// a nerve.
 /// THE FAMILY ID AS THE JOURNAL PRINTS IT, and it is FOUR bytes, not two.
@@ -57,7 +57,7 @@ pub(crate) fn speak_form(
             .into_iter()
             .find(|(_, w)| !w.rotor().projective_eq(&Rotor::identity()));
         if let Some((i, w)) = held {
-            format!("loop {i} holonomy {:02x}{:02x}…", w.key()[0], w.key()[1])
+            format!("orbit {i} holonomy {:02x}{:02x}…", w.key()[0], w.key()[1])
         } else if !form.remainder.is_empty() {
             format!("remainder {} links", form.remainder.len())
         } else {
@@ -174,13 +174,13 @@ pub(crate) fn speak_form(
 /// `false` and let the form go: the mint's refusal and the court's. So a
 /// form carrying demand vertices — which is exactly a form with unfinished
 /// work on it — was the one shape the engine threw away, while a form with
-/// no demands became an idea the pivot loop would see next stroke (30.2).
+/// no demands became an idea the pivot orbit would see next stroke (30.2).
 ///
 /// Measured on the fleet at fbfebd4 over twenty minutes: 2690 forms down
 /// this arm's dropping branch against 67 down `speak_form`'s holding one —
 /// **97.6% of every withheld form**. That is why the contemplation carries
-/// tens of ideas where it carried scores, and why `pivot_loop` fires on
-/// nothing: the ideas that would carry a curved loop are in the 97.6%.
+/// tens of ideas where it carried scores, and why `pivot_orbit` fires on
+/// nothing: the ideas that would carry a curved orbit are in the 97.6%.
 ///
 /// The asymmetry predates D5 and D6 — they raised the traffic through it
 /// from 43/min to 134.5/min, they did not create it. `remainders` rides in
@@ -233,7 +233,7 @@ fn speak_with_demands(
             [mycelium::anastome::dialogue::SPEECH_REFUSED] => {
                 // The court refused it. The work it names is still open, so
                 // it is held: the refusal names a coordinate (50.9) and the
-                // pivot loop is what acts on it.
+                // pivot orbit is what acts on it.
                 entity.hold_form(form.clone(), train, remainders);
                 eprintln!("[{tag}] sentence withheld: family {fam} refused on the wire");
                 None
@@ -250,11 +250,11 @@ fn speak_with_demands(
                     })
                     .count();
                 eprintln!(
-                    "[{tag}] sentence spoken: {} vertices {} demands {demands} loops {} \
+                    "[{tag}] sentence spoken: {} vertices {} demands {demands} orbits {} \
                      remainder edges {remainder_edges} deliberation {} span {}",
                     hx(addr.as_bytes()),
                     form.vertices.len(),
-                    form.loops.len(),
+                    form.orbits.len(),
                     deliberation.label(),
                     deliberation.span()
                 );

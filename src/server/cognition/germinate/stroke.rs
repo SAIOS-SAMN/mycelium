@@ -33,7 +33,7 @@ impl Kernel {
         let mut budget = self.physics.stroke();
         let mut jobs: Vec<(crate::transducer::stalk::Invariant, [bool; 4])> = Vec::new();
         // index: budgeted cursor over the open docket, resumed from the
-        // last stroke (rule 10, S13.3) — an orbit, so a docket beyond one
+        // last stroke (rule 10, S13.3) — a circuit, so a docket beyond one
         // budget is read whole across strokes and never only its head.
         {
             let from = self.syntropic_cursor.clone();
@@ -203,7 +203,7 @@ impl Kernel {
     /// bundle: its sections/cycles carry family volume no other word speaks).
     pub(crate) fn condense_stroke(&mut self) -> Option<crate::transducer::address::Address> {
         let mut budget = self.physics.stroke();
-        // The cursor orbits the basis (S13.3): past the last word it
+        // The cursor circuits the basis (S13.3): past the last word it
         // continues from the first, so `None` here is an empty basis.
         let Some((addr, word)) = self.basis.cursor(self.optimize_cursor.as_deref(), &mut budget).next()
         else {

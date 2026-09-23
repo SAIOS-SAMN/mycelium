@@ -38,7 +38,7 @@ assert_eq!(f1.faces.len(), f2.faces.len());
 /// Two touching bodies translated together: the pair-body carries rigidly,
 /// `V_ij = V_i`, and the edge between them is the identity. One of them
 /// moved alone: no versor carries the pair, and the edge is a remainder
-/// edge, never a loop's face.
+/// edge, never an orbit's face.
 #[test]
 fn a_rigid_scene_has_identity_edges_and_a_relative_motion_does_not() {
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
@@ -325,11 +325,11 @@ let faces: Vec<FormFace> = ends
     .collect();
 // THE 1-SKELETON IS NOT A STAR TREE, and that is arithmetic on the
 // generator's own output (54.5, as ruled 2026-09-20). It was read through
-// `loops_of`, which no longer answers it: these faces are `FormFace::new`
+// `orbits_of`, which no longer answers it: these faces are `FormFace::new`
 // — no member pair, identity word — so every cycle over them encloses
 // nothing and is pruned as trivial. It could not be pruned before only
 // because `paths_carried` searched a frontier with nothing to step onto
-// and answered EMPTY, and an unread loop is not a flat one. The walk reads
+// and answered EMPTY, and an unread orbit is not a flat one. The walk reads
 // the cycle now and says what it is.
 //
 // AND NOW THE STAR AND SITE FACES DO FORM A TREE. The cycle rank `E − V +
@@ -600,24 +600,24 @@ assert_eq!(adj, 7, "eight bodies on one site chain in seven faces, not 28: {adj}
 assert_eq!(all, 15, "plus the eight-body Frame star: {all}");
 let (_, adj4, w4) = run(32);
 assert_eq!(adj4, 31, "and thirty-two chain in thirty-one, not 496: {adj4}");
-// THE LOOPS ARE LINEAR IN THE OCCUPANTS, WHICH IS THE WHOLE POINT. The
+// THE ORBITS ARE LINEAR IN THE OCCUPANTS, WHICH IS THE WHOLE POINT. The
 // Frame star already spans every vertex, so each intra-site face is a
-// chord and carries one loop: Frame → a → b → Frame, whose reading is the
+// chord and carries one orbit: Frame → a → b → Frame, whose reading is the
 // cocycle condition between two placements — `edge_holonomy` skips the
 // star faces, so what it measures is the meet, and that is a real
 // obstruction the pivot exists to discharge.
 //
-// So the chain does not abolish this site's loops; it abolishes the
-// DEPENDENT ones. k(k−1)/2 chords carry k(k−1)/2 loops of which only k−1
+// So the chain does not abolish this site's orbits; it abolishes the
+// DEPENDENT ones. k(k−1)/2 chords carry k(k−1)/2 orbits of which only k−1
 // are independent, and the rest are sums of those — fake homology inside
 // one contractible site. k−1 in, k−1 out.
 // THE COUNT IS THE FACE GENERATOR'S, AND IT IS READ THERE (54.5, as ruled
-// 2026-09-20). It was read through `loops_of`, which no longer answers it:
+// 2026-09-20). It was read through `orbits_of`, which no longer answers it:
 // these faces are `FormFace::new`, carrying no member pair and an identity
-// word, so every cycle over them encloses nothing and `loop_is_trivial`
+// word, so every cycle over them encloses nothing and `orbit_is_trivial`
 // prunes it. It could not prune them before only because `paths_carried`
 // searched a frontier that had nothing to step onto and answered EMPTY —
-// and an unread loop is not a flat one, so the loop was kept. The walk
+// and an unread orbit is not a flat one, so the orbit was kept. The walk
 // reads the cycle now and says what it is: trivial.
 //
 // The claim this test carries is about the CHAIN, not about homology —

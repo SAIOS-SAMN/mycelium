@@ -35,7 +35,7 @@ impl Kernel {
         let mut budget = self.physics.stroke();
         let mut keys: Vec<Vec<u8>> = Vec::new();
         // index: budgeted keyed cursor over the open docket, resumed from
-        // the last stroke (rule 10, S13.3) — an orbit, so the drain reads
+        // the last stroke (rule 10, S13.3) — a circuit, so the drain reads
         // a docket beyond one budget whole across strokes.
         {
             let from = self.drain_cursor.clone();
@@ -152,7 +152,7 @@ impl Kernel {
         self.forget_spoken(addr);
         self.quote_frontier.remove(addr);
         self.on_page.remove(addr);
-        self.flat_loops.remove(addr);
+        self.flat_orbits.remove(addr);
         self.book_gen += 1;
     }
 
@@ -377,7 +377,7 @@ impl Kernel {
         // word speak one rewrite. `last()` read whichever cycle the Vec
         // happened to end on, and the fallback invented an empty sigma with
         // the torse span standing in for a period that was never witnessed
-        // (A17: a period is believed only when the loop closes at it, T5).
+        // (A17: a period is believed only when the orbit closes at it, T5).
         // A word carrying no filed cycle has no torse to speak (rule 8).
         let Some((sigma, period)) = after
             .torsion()
@@ -411,7 +411,7 @@ impl Kernel {
     /// THE STRATUM IS NOT THE SCOPE. This read `stalks.fiber(&inv)` — every
     /// member of the stratum — which was invisibly cheap only because the
     /// chart was the object serialised and every form was a stratum of one.
-    /// With a chart that is the rank and the loop classes (A21 §2), a tree
+    /// With a chart that is the rank and the orbit classes (A21 §2), a tree
     /// form shares its stratum with every other tree form, and a scope of
     /// "the stratum" is the whole basis against every install: the
     /// cartesian product law 3 and rule 1 refuse. A stratum ROUTES and does
@@ -631,7 +631,7 @@ impl Kernel {
             // A WORD IS FILED WHERE IT ACTS. This filed at `inv`, the
             // SENTENCE's own chart — `chart_of_form`, leading `2`, a
             // projection of what the form holds — while `candidates_for`
-            // asks under the charts a loop's face vertices act on, which
+            // asks under the charts an orbit's face vertices act on, which
             // are body charts leading `1`. No prefix bridges the two, and
             // `on_axis_of` peels rather than descending a fiber, so
             // everything this court filed was unreachable by the one

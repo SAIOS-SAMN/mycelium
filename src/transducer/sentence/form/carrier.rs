@@ -1,36 +1,36 @@
-// 18.2 — THE FORM: vertices, faces, loops, and the reads that walk them.
+// 18.2 — THE FORM: vertices, faces, orbits, and the reads that walk them.
 //
-//! A face is constant in the word between its two vertices; a loop is a
-//! cycle of faces; the holonomy of a loop is the composite around it. All
+//! A face is constant in the word between its two vertices; an orbit is a
+//! cycle of faces; the holonomy of an orbit is the composite around it. All
 //! three are structure, walked and never searched.
 
 use super::*;
 
 impl Form {
-    /// THE WORDS A SENTENCE IS MADE OF — one holonomy per loop, with the
+    /// THE WORDS A SENTENCE IS MADE OF — one holonomy per orbit, with the
     /// class it belongs to.
     ///
     /// A sentence has no single spelling: it is a NERVE of germs whose
     /// vertices carry words and whose faces carry the conjugations between
     /// them (18.2). Asking it for `Element::letters` is a level error —
     /// letters spell a word, and a sentence is one level above a word. What
-    /// it does have is a word per loop, its holonomy, already composed on
+    /// it does have is a word per orbit, its holonomy, already composed on
     /// the carrier, and the class that word belongs to.
     ///
     /// Order is a CONJUGACY invariant (15.2, 15.3): "closes in p steps" is a
     /// fact about the class, never about the spelling, which is why the
     /// class travels beside the word here and not the tape.
     /// ONE ENTRY PER MEMBER PATH, carrying the holonomy that path actually
-    /// has: the edge composite where it has one, the loop's own word where it
+    /// has: the edge composite where it has one, the orbit's own word where it
     /// does not — `holonomy_words_on`, the same carrier the filer reads.
     ///
     /// THIS RETURNED `lp.holonomy` AND IT IS THE COURT'S METABOLISM THAT READ
-    /// IT. `germinate/listing.rs` charges the physics off this: a loop of
-    /// FINITE order raises pressure by its period, and a loop of INFINITE
+    /// IT. `germinate/listing.rs` charges the physics off this: an orbit of
+    /// FINITE order raises pressure by its period, and an orbit of INFINITE
     /// order charges TORSION — "what will not close". A face's word is the
     /// coboundary `w_j ∘ w_i⁻¹` and a product of coboundaries around a cycle
-    /// telescopes to the identity, so every loop read `Finite(1)`, every
-    /// sentence raised one unit of pressure per loop, and the branch that
+    /// telescopes to the identity, so every orbit read `Finite(1)`, every
+    /// sentence raised one unit of pressure per orbit, and the branch that
     /// charges torsion was unreachable by construction.
     ///
     /// So `Physics.torsion` stayed `[0, 0, 0, 0]`, `order_flux` was
@@ -40,15 +40,15 @@ impl Form {
     ///
     /// D1 put the FILER on the true carrier and did not reach here; this is
     /// the same defect at the metabolism's own reader.
-    pub fn loop_words(&self) -> Vec<(crate::transducer::alphabet::Word, Option<ClassVector>)> {
+    pub fn orbit_words(&self) -> Vec<(crate::transducer::alphabet::Word, Option<ClassVector>)> {
         let mut out = Vec::new();
-        for i in 0..self.loops.len() {
-            let Some(lp) = self.loops.get(i) else {
+        for i in 0..self.orbits.len() {
+            let Some(lp) = self.orbits.get(i) else {
                 continue;
             };
             let cvs = self.class_vectors(i);
             // One holonomy per member path, each its own obstruction, paired
-            // with that path's own class vector rather than the loop's
+            // with that path's own class vector rather than the orbit's
             // collapsed one.
             let ws = crate::transducer::sentence::pivot::drive::holonomy_words_on(
                 &self.faces,
@@ -72,9 +72,9 @@ pub enum Measure {
     Ring { anchor: u16 },
 }
 
-/// A FILED LOOP: a torsion cycle of a FORM, keyed by the class of the loop
+/// A FILED ORBIT: a torsion cycle of a FORM, keyed by the class of the orbit
 /// that carries it. The same three members as an element's `TorsionCycle`
-/// with one difference that matters — the third is the CHORD the loop closes
+/// with one difference that matters — the third is the CHORD the orbit closes
 /// on, an index into `faces`, not a fibre index. As one tuple the two were
 /// interchangeable by type and only ever kept apart by which file was being
 /// read.
@@ -110,7 +110,7 @@ impl ToralPeriod {
         }
     }
 
-    /// Neither plane turns forever, so the loop closes — and the pair is
+    /// Neither plane turns forever, so the orbit closes — and the pair is
     /// its beat, not one number.
     pub fn closes(&self) -> bool {
         self.plane_1.is_some() && self.plane_2.is_some()
@@ -144,8 +144,8 @@ impl ToralPeriod {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FiledLoop {
-    /// The hue-map generator: the permutation one step around the loop.
+pub struct FiledOrbit {
+    /// The hue-map generator: the permutation one step around the orbit.
     pub sigma: Vec<(u8, u8)>,
     /// THE TWO PLANE PERIODS OF THE HOLONOMY (54.7, as ruled 2026-09-21).
     ///
@@ -172,7 +172,7 @@ pub struct FiledLoop {
     ///
     ///   RESONANCE — commensurate periods beat at `|ℓ₁ − ℓ₂|⁻¹` under an
     ///   envelope of `lcm(ℓ₁, ℓ₂)`. Storing the envelope alone discards the
-    ///   beat, and two loops cannot resonate because no reader can compare
+    ///   beat, and two orbits cannot resonate because no reader can compare
     ///   their harmonic ratio.
     ///
     /// `None` on a plane is infinite order — that factor turns forever —
@@ -554,25 +554,25 @@ impl FormFace {
     }
 }
 
-/// Independent loop of a form: the closed vertex walk, the faces along it,
+/// Independent orbit of a form: the closed vertex walk, the faces along it,
 /// the chord (never a star face), and the oriented holonomy.
 ///
 /// The HOLONOMY is a word and is the product of the faces' words around the
-/// loop, which are vertex coordinates, so it is one word per loop and does
+/// orbit, which are vertex coordinates, so it is one word per orbit and does
 /// not fibre. The CARRIAGE is the product of the faces' carriages, which are
 /// member coordinates, so it is one versor PER MEMBER PATH — the sequence of
-/// charts the loop passes through, keyed by those charts in walk order.
+/// charts the orbit passes through, keyed by those charts in walk order.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Loop {
+pub struct Orbit {
     /// THE CYCLE ITSELF, as an element of `Z₁(M)`: the MEMBER at each node,
     /// `member_key(vertex, chart)`, in walk order and closing on its first.
     ///
     /// `vertices` below is `π` of this — the projection that forgets the
-    /// chart — and it is kept because every reader of a loop asks the form
+    /// chart — and it is kept because every reader of an orbit asks the form
     /// for a vertex. It is not the cycle. Under `π` a 1-cell between two
     /// charts AT ONE VERTEX, `((v,c_a),(v,c_b))`, collapses to the
     /// degenerate self-loop `(v,v)` and loses its orientation, which is
-    /// exactly the defect that broke 62 of 62 live loops at `437d253`: the
+    /// exactly the defect that broke 62 of 62 live orbits at `437d253`: the
     /// walker could not tell which way it ran because the projection had
     /// thrown the answer away.
     ///
@@ -613,9 +613,9 @@ pub struct Loop {
     pub based_at: Versor,
 }
 
-impl Loop {
+impl Orbit {
     /// The key a member path is filed under: the chart key at each vertex of
-    /// the loop, in walk order, each length-delimited. Content, so the same
+    /// the orbit, in walk order, each length-delimited. Content, so the same
     /// path reads the same on every node.
     pub fn path_key(charts: &[Vec<u8>]) -> Vec<u8> {
         let mut buf = Vec::new();
@@ -627,7 +627,7 @@ impl Loop {
 }
 
 
-/// A sentence as vertices, faces, loops, remainder.
+/// A sentence as vertices, faces, orbits, remainder.
 #[derive(Debug, Clone)]
 pub struct Form {
     /// 71.2(1) — THE `n` OF THE BASE THE FORM WAS READ ON: the count of a
@@ -638,7 +638,7 @@ pub struct Form {
     pub n: u8,
     pub vertices: Vec<Vertex>,
     pub faces: Vec<FormFace>,
-    pub loops: Vec<Loop>,
+    pub orbits: Vec<Orbit>,
     /// A5's chain and the translator that places it (§2.1, 19). The proof
     /// rides the coordinate: a tape whose remainder puts two transitions on
     /// one site does not parse, and that refusal is the decoder's under
@@ -675,11 +675,11 @@ pub struct Form {
     /// organ holding a word reads the form it decoded at admission
     /// (`Held::form`, L16). `Element::adopt_torsion` copied it into the
     /// element's own `torsion` field and is deleted.
-    pub torsion: Keyed<FiledLoop, coord::Holonomy>,
-    /// CHART AXES OPENED OVER HELD LOOPS (3.7, 15.5, 16.16 step 3; I6):
-    /// the holonomy class opened on → the chord of the loop that is its
+    pub torsion: Keyed<FiledOrbit, coord::Holonomy>,
+    /// CHART AXES OPENED OVER HELD ORBITS (3.7, 15.5, 16.16 step 3; I6):
+    /// the holonomy class opened on → the chord of the orbit that is its
     /// section. The relation is all the form carries; the seed versor and
-    /// A7's coordinate are re-derived from that loop on every read (law
+    /// A7's coordinate are re-derived from that orbit on every read (law
     /// 12), never stored beside it. On the tape and in the address.
     pub axes: Keyed<u16, coord::Holonomy>,
     /// SITE → glued vertex index. Written by [`Form::glue`] and rebuilt by
@@ -784,7 +784,7 @@ impl Default for Form {
             n: crate::transducer::element::GRID_N,
             vertices: vec![Vertex::Frame],
             faces: Vec::new(),
-            loops: Vec::new(),
+            orbits: Vec::new(),
             remainder: crate::transducer::element::PlacedChain::default(),
             depth: 0,
             hue_maps: Keyed::new(),

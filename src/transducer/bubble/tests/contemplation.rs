@@ -128,7 +128,7 @@ fn wrap_glues_crystallized_form() {
 
 /// A form with Glued vertices and empty remainder is held as the form.
 #[test]
-fn hold_form_keeps_a_glued_open_loop() {
+fn hold_form_keeps_a_glued_open_orbit() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::{Form, Vertex};
     let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
@@ -145,7 +145,7 @@ fn hold_form_keeps_a_glued_open_loop() {
             None,
         ));
         f.faces.push(f.face_of(0, 1).expect("vertices"));
-        f.loops = Form::loops_of(&f.faces, &f.vertices);
+        f.orbits = Form::orbits_of(&f.faces, &f.vertices);
         f
     };
     let mut outer = Form::default();
@@ -186,10 +186,10 @@ fn hold_form_keeps_a_glued_open_loop() {
     open.faces.push(open.face_of(0, 1).expect("star 1"));
     open.faces.push(open.face_of(0, 2).expect("star 2"));
     open.faces.push(open.face_carrying(1, 2, w.clone()).expect("a chord between two bodies"));
-    open.loops = Form::loops_of(&open.faces, &open.vertices);
+    open.orbits = Form::orbits_of(&open.faces, &open.vertices);
     assert!(
-        open.loops.iter().any(|lp| !lp.holonomy.is_identity()),
-        "the held form has an open loop"
+        open.orbits.iter().any(|lp| !lp.holonomy.is_identity()),
+        "the held form has an open orbit"
     );
     let mut c2 = Contemplation::new();
     c2.hold_form(open.clone(), &[], &[], [0; 4]);
@@ -413,13 +413,13 @@ fn work_of_one_thought_is_independent_of_n() {
     assert_eq!(a, b, "4N differs by zero: {a:?} vs {b:?}");
 }
 
-/// 45.7, S13.3 — THE DIRTY RING IS AN ORBIT: three held thoughts, one
+/// 45.7, S13.3 — THE DIRTY RING IS A CIRCUIT: three held thoughts, one
 /// bubble per stroke under a budget of one read, and the fourth stroke
 /// continues past the last bubble from the first and reports one circuit
 /// with a period of four strokes — where the cursor that stopped at the
 /// end of the ring left every later stroke expanding nothing.
 #[test]
-fn the_dirty_ring_orbits_and_reports_its_period() {
+fn the_dirty_ring_circuits_and_reports_its_period() {
     use crate::transducer::bubble::drive::Expanded;
     use crate::transducer::family::NoCrystal;
     let mut c = Contemplation::new();
@@ -435,8 +435,8 @@ fn the_dirty_ring_orbits_and_reports_its_period() {
     let mut visited: Vec<Option<Vec<u8>>> = Vec::new();
     for stroke in 1..=3 {
         let mut budget = crate::physics::Physics::default().stroke_n(1);
-        let Expanded { orbit, .. } = c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
-        assert_eq!(orbit, None, "stroke {stroke}: three bubbles at one per stroke is no circuit yet");
+        let Expanded { circuit, .. } = c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
+        assert_eq!(circuit, None, "stroke {stroke}: three bubbles at one per stroke is no circuit yet");
         visited.push(c.expand_cursor.clone());
     }
     assert!(
@@ -445,8 +445,8 @@ fn the_dirty_ring_orbits_and_reports_its_period() {
     );
     assert_eq!(c.dirty.len(), 3, "a bubble the budget did not reach stays on the ring");
     let mut budget = crate::physics::Physics::default().stroke_n(1);
-    let Expanded { orbit, .. } = c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
-    assert_eq!(orbit, Some((1, 4)), "the fourth stroke passes the end of the ring: one circuit in four strokes");
+    let Expanded { circuit, .. } = c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
+    assert_eq!(circuit, Some((1, 4)), "the fourth stroke passes the end of the ring: one circuit in four strokes");
     assert_eq!(c.expand_cursor, visited[0], "and continues from the first bubble");
     assert_eq!(c.ring.circuits(), 1);
 }

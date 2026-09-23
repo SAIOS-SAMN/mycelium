@@ -278,12 +278,12 @@ fn congruent_is_read_by_class_key() {
     let q = quarter();
     let ck = q.class_key().expect("quarter class");
     c.file_congruent(v(1), v(2), q.clone(), 4);
-    // The index is keyed by the loop's WHOLE class key and asked here by
+    // The index is keyed by the orbit's WHOLE class key and asked here by
     // the rotor's conjugacy key, which is that key's depth-one stratum:
-    // the answer is the fiber under it, holding the one loop filed.
+    // the answer is the fiber under it, holding the one orbit filed.
     let got = c.congruent(ck.as_bytes());
     let [(rotor, ell)] = got.as_slice() else {
-        panic!("one Congruent loop stands under the quarter's conjugacy class, got {got:?}")
+        panic!("one Congruent orbit stands under the quarter's conjugacy class, got {got:?}")
     };
     assert_eq!(*ell, 4);
     assert!(rotor.projective_eq(&q), "the index holds the rotor that was filed");

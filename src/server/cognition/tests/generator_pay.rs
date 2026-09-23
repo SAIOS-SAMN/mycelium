@@ -26,7 +26,7 @@ fn sentence_at(d: Derivation, tag: u8, mag: [u64; 4]) -> Element {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("star"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     as_element_form(&f, mag).expect("a tape")
 }

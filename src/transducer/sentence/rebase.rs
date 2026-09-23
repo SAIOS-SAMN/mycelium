@@ -33,14 +33,14 @@ impl Form {
     /// - `Δ` of finite order `ℓ` with no residue — the cycle carries
     ///   discrete holonomy and is FILLED by a 2-simplex: the class is filed on
     ///   this form's own torsion carrier at period `ℓ`, on the chord that
-    ///   closes it. That is the same `FiledLoop` a loop over a cover files
+    ///   closes it. That is the same `FiledOrbit` an orbit over a cover files
     ///   (50.8 case 3); the cycle becomes content instead of a walk.
     /// - anything else — the obstruction stands and nothing is invented for
     ///   it (rule 11). The vertex is unchanged either way.
     ///
     /// `chord` is the face the caller walked to get here — the face that
     /// closes the cycle. It is passed in and never searched for: the caller
-    /// holds it, and a filed loop names a live face or it names nothing
+    /// holds it, and a filed orbit names a live face or it names nothing
     /// (15.5).
     ///
     /// The chain is WALKED, not just the one step: a `by` two hops away
@@ -148,7 +148,7 @@ impl Form {
     /// `cech::classify`'s, the one classifier both organs use.
     ///
     /// Filing it here is what turns the walk into content: the engine does
-    /// not step out of the loop, it EVALUATES the loop, and the loop
+    /// not step out of the orbit, it EVALUATES the orbit, and the orbit
     /// becomes a class the form carries. A chord that names no live face
     /// files nothing.
     fn close_stabilizer_orbit(&mut self, of: u16, delta: &Versor, chord: u16) {
@@ -182,7 +182,7 @@ impl Form {
             // closed it.
             self.torsion.put(
                 &class,
-                crate::transducer::sentence::FiledLoop {
+                crate::transducer::sentence::FiledOrbit {
                     sigma: Vec::new(),
                     periods: g.toral_period(),
                     chord,

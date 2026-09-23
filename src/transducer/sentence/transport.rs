@@ -97,7 +97,7 @@ impl Form {
         f.rebase_by_word(&gamma.word);
         f.regauge_listing(&gamma.gauge);
         f.compose_carriages(&gamma.carriage);
-        f.loops = Form::loops_of(&f.faces, &f.vertices);
+        f.orbits = Form::orbits_of(&f.faces, &f.vertices);
         f.reindex();
         let mut addr = crate::transducer::address::Address::new(Vec::new());
         for v in &self.vertices {
@@ -238,7 +238,7 @@ impl Form {
             }
         }
         // EVERY MEMBER PAIR'S CARRIAGE, and every MEMBER PATH's around each
-        // loop: a change of frame moves the placement wherever there is one.
+        // orbit: a change of frame moves the placement wherever there is one.
         for face in &mut self.faces {
             let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
             for k in pairs {
@@ -247,7 +247,7 @@ impl Form {
                 }
             }
         }
-        for lp in &mut self.loops {
+        for lp in &mut self.orbits {
             let paths: Vec<Vec<u8>> = lp.carriages.scoped().map(|(k, _)| k).collect();
             for k in paths {
                 if let Some(v) = lp.carriages.get_mut(&k) {

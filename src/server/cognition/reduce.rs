@@ -11,15 +11,15 @@
 use super::*;
 
 /// The holonomy of a fiber of transitions: the geometric product around it.
-/// `None` when the fiber is not a loop — a singleton has nothing to close.
-/// The loop closes iff this is projectively the identity (10.3); the value
+/// `None` when the fiber is not an orbit — a singleton has nothing to close.
+/// The orbit closes iff this is projectively the identity (10.3); the value
 /// itself is the obstruction when it is not, and it is what a germ is bred
 /// from. Reading a member of the fiber instead made the obstruction depend
 /// on which transition the fiber happened to list last, and two nodes
-/// holding one loop in two insertion orders bred two different germs from
+/// holding one orbit in two insertion orders bred two different germs from
 /// identical mathematics.
 pub(crate) fn fiber_holonomy(vs: &[element::Versor]) -> Option<element::Versor> {
-    // The fiber holds more than one transition; a singleton is not a loop.
+    // The fiber holds more than one transition; a singleton is not an orbit.
     if vs.len() < 2 {
         return None;
     }

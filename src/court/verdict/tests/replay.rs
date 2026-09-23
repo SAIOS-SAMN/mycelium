@@ -56,7 +56,7 @@ fn closed_turn_form() -> Form {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("vertices"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits =Form::orbits_of(&f.faces, &f.vertices);
     // A form off the tape is indexed by the decoder; one built by hand
     // must be indexed too, or its `by_address` answers nothing and a
     // citation into it reads as unheld (50.2 step 2).
@@ -113,7 +113,7 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     assert_eq!(face_refusal.kind(), crate::transducer::sentence::RefusalKind::FaceDerivation);
     assert!(matches!(face_refusal.at, crate::transducer::sentence::At::Tape(_)), "a star face has one address to name");
     // S9.4 — A ZERO MAGNITUDE IS NOT A REFUSAL. This tape replays: its
-    // loops return, its faces re-derive, its citation resolves. It was
+    // orbits return, its faces re-derive, its citation resolves. It was
     // refused for measuring nothing, which made the court an economist —
     // μ⃗ is a cost, not a score, and a word that costs nothing to say has
     // still said it. What closes the family is checked where the family is
@@ -206,26 +206,26 @@ fn a_form_whose_tape_does_not_parse_is_refused_by_name() {
     );
 }
 
-/// 15.3, 16.17, rule 11 (I5): a loop whose holonomy is not a versor has
+/// 15.3, 16.17, rule 11 (I5): an orbit whose holonomy is not a versor has
 /// no class. It is never keyed by its rotor's bytes in place of the class
 /// it lacks: the rank audit is unmeasured, the form is not cauterized, and
-/// the loop does not replay. The fallback this refuses survived 0.12b under
+/// the orbit does not replay. The fallback this refuses survived 0.12b under
 /// the name `class_or_rotor_key`.
 #[test]
-fn a_loop_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
+fn an_orbit_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
     use crate::transducer::alphabet::{Rotor, Word};
     let mut f = closed_turn_form();
-    assert!(f.loops.is_empty() && f.rank().is_some(), "a tree has a rank, and it is zero");
+    assert!(f.orbits.is_empty() && f.rank().is_some(), "a tree has a rank, and it is zero");
     // THE NON-VERSOR HOLONOMY GOES ON THE FACE, which is where a holonomy
     // comes from (54.5, as ruled 2026-09-20). It was written onto
-    // `Loop.holonomy` alone — a composite cached on the projected vertex
+    // `Orbit.holonomy` alone — a composite cached on the projected vertex
     // path — and `holonomy_words_on` reads the composite THIS PATH walked
     // now, member by member, so a value parked on that field is not what
     // the class is read from. The face carries it and the walk composes it.
     if let Some(face) = f.faces.first_mut() {
         face.word = Word::formed(Rotor::zero());
     }
-    f.loops.push(crate::transducer::sentence::Loop {
+    f.orbits.push(crate::transducer::sentence::Orbit {
         // The cycle names its members; `vertices` is π of them. This one is
         // hand-built to carry a holonomy that is not a versor, so its nodes
         // are the two vertices at no named chart.
@@ -243,10 +243,10 @@ fn a_loop_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
         // so its tree transport is the identity (54.7 Axiom A).
         based_at: crate::transducer::element::identity_versor(),
     });
-    assert!(f.loops[0].holonomy.rotor().class_key().is_none(), "a zero rotor is not a class");
+    assert!(f.orbits[0].holonomy.rotor().class_key().is_none(), "a zero rotor is not a class");
     assert!(f.rank().is_none(), "the audit is unmeasured, not counted under a rotor key");
     assert!(!f.is_cauterized(), "nothing files what has no class");
-    assert!(!form_loops_replay(&f), "and the loop does not replay");
+    assert!(!form_orbits_replay(&f), "and the orbit does not replay");
 }
 
 /// A20: a certificate that does not un-pivot to the tape's before/after
@@ -289,7 +289,7 @@ fn pivot_certificate_replays_or_refuses() {
     );
 }
 
-/// A18: the tape's stored loops may not claim a rank below the forest
+/// A18: the tape's stored orbits may not claim a rank below the forest
 /// the faces re-derive.
 #[test]
 fn rank_lost_refused() {
@@ -314,8 +314,8 @@ fn rank_lost_refused() {
     f.faces.push(f.face_of(0, 1).expect("star 1"));
     f.faces.push(f.face_of(0, 2).expect("star 2"));
     f.faces.push(f.face_carrying(1, 2, sheet).expect("a chord between two placed bodies"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    let _ = f.pivot_loop(
+    f.orbits =Form::orbits_of(&f.faces, &f.vertices);
+    let _ = f.pivot_orbit(
         [0x18; 32],
         &crate::network::nerve::Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -331,42 +331,42 @@ fn rank_lost_refused() {
     assert_eq!(replay_form(&e, &|_| None), None, "filed torsion replays");
     // S9.2'S FORGERY CANNOT BE BUILT ANY MORE (54.5, as ruled 2026-09-20).
     //
-    // This went on to strip the tape's loops, then to add a loop of a class
+    // This went on to strip the tape's orbits, then to add an orbit of a class
     // the walk does not derive, then to duplicate one — three tapes whose
     // STORED forest disagreed with the one the faces prove, each checked
     // against `REFUSE_RANK_LOST`. The tape no longer carries a forest. The
-    // decoder runs `loops_of` on the faces it parsed, so `f.loops` IS the
+    // decoder runs `orbits_of` on the faces it parsed, so `f.orbits` IS the
     // walk and `Rank::moved(taped, derived)` compared a call with itself.
     //
     // The three attacks are not unguarded; they are unconstructible. A
     // forger can forge FACES, and `face_rederives` reads those. There is
     // nothing left to claim a rank with.
     let mut gone = crate::transducer::sentence::from_element_form(&e).expect("v2");
-    gone.loops.clear();
+    gone.orbits.clear();
     // RE-MINTED BY THE SAME SPEAKER (54.5 Road (d)). `as_element_form` takes
     // the attestation off the form, and a form that came out of an ADDRESS
     // carries none — so this minted a word that filed nothing and refused on
-    // the filing rather than on the loops, which is not the claim. The
+    // the filing rather than on the orbits, which is not the claim. The
     // forgery being tested is about the FOREST, so everything else is held
     // fixed and `remint_form` is what holds it.
     let bad = crate::transducer::sentence::remint_form(&gone, [1, 0, 0, 0], &e)
-        .expect("a tape from a form with no loops");
+        .expect("a tape from a form with no orbits");
     assert_eq!(
         crate::transducer::sentence::from_element_form(&bad)
             .expect("it decodes")
-            .loops
+            .orbits
             .len(),
-        f.loops.len(),
-        "clearing the loops changes no byte of the tape: they were never on it"
+        f.orbits.len(),
+        "clearing the orbits changes no byte of the tape: they were never on it"
     );
     assert_eq!(replay_form(&bad, &|_| None), None, "so the same form replays");
 
     // WHAT `REFUSE_RANK_LOST` STILL MEANS, and it is the reading that was
-    // always underneath: the rank is UNMEASURABLE. A loop whose holonomy is
+    // always underneath: the rank is UNMEASURABLE. An orbit whose holonomy is
     // not a versor has no class (15.3), `rank()` answers `None`, and the
     // court refuses rather than counting it under a key of the rotor's
     // bytes — which is
-    // `a_loop_whose_holonomy_is_not_a_versor_is_refused_not_keyed`.
+    // `an_orbit_whose_holonomy_is_not_a_versor_is_refused_not_keyed`.
     assert!(f.rank().is_some(), "this form's rank is measurable");
 }
 
@@ -413,7 +413,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         Vec::new(),
     ));
     re.faces.push(re.face_of(0, 1).expect("vertices"));
-    re.loops = Form::loops_of(&re.faces, &re.vertices);
+    re.orbits =Form::orbits_of(&re.faces, &re.vertices);
     let re_e = as_element_form(&re, [1, 0, 0, 0]).expect("rebased tape");
     assert_eq!(
         replay_form(&re_e, &|_| None),
@@ -424,7 +424,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     let mut un = Form::default();
     un.unfold(Measure::Remainder);
     un.faces.push(FormFace::new(0, 0, Word::identity(),));
-    un.loops = Form::loops_of(&un.faces, &un.vertices);
+    un.orbits =Form::orbits_of(&un.faces, &un.vertices);
     let un_e = as_element_form(&un, [1, 0, 0, 0]).expect("unfold tape");
     assert_eq!(
         replay_form(&un_e, &|_| None),
@@ -441,7 +441,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 1 }),
     ));
     orb.faces.push(orb.face_of(0, 1).expect("vertices"));
-    orb.loops = Form::loops_of(&orb.faces, &orb.vertices);
+    orb.orbits =Form::orbits_of(&orb.faces, &orb.vertices);
     let orb_e = as_element_form(&orb, [1, 0, 0, 0]).expect("orbit tape");
     assert_eq!(
         replay_form(&orb_e, &|_| None),
@@ -531,16 +531,16 @@ fn a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order() {
     assert_eq!(replay_form(&fine_e, &|_| None), None, "a quarter turn on an edge is a stabilizer element and replays");
 }
 
-/// 52.3 — A LOOP OF INFINITE ORDER REPLAYS ON ITS FILING. The transports
+/// 52.3 — AN ORBIT OF INFINITE ORDER REPLAYS ON ITS FILING. The transports
 /// are coboundaries and compose to the identity while the body face carries
-/// a (3,4,5) rotor as its edge: unfiled, the loop does not replay; filed
+/// a (3,4,5) rotor as its edge: unfiled, the orbit does not replay; filed
 /// under the edge holonomy's class at period 0, A19's spelling of infinite
 /// order, it replays — through the tape, where the court reads the zero —
-/// and at a period the loop does not have it is refused by name.
+/// and at a period the orbit does not have it is refused by name.
 #[test]
-fn a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not() {
+fn a_filed_orbit_of_infinite_order_replays_and_a_wrong_period_does_not() {
     use crate::transducer::alphabet::{LetterId, Order, Word};
-    use crate::transducer::sentence::{as_element_form, FiledLoop, Form, FormFace, Transport};
+    use crate::transducer::sentence::{as_element_form, FiledOrbit, Form, FormFace, Transport};
     let p5 = LetterId::pythagorean_5((0, 1)).expect("(3,4,5)");
     let tilt = Word::from_letters(&[(p5, false)]);
     let edge_of = |w: &Word| Transport {
@@ -574,33 +574,33 @@ fn a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not() {
     }
     let face = f.face_of(1, 2).expect("a coboundary");
     f.faces.push(with_edge(face, edge_of(&tilt)));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits =Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
-    let [lp, ..] = f.loops.as_slice() else { panic!("the triangle closes") };
+    let [lp, ..] = f.orbits.as_slice() else { panic!("the triangle closes") };
     assert!(lp.holonomy.is_identity(), "the transport composite is flat");
-    let es = f.edge_holonomies(lp).expect("the loop names live faces");
+    let es = f.edge_holonomies(lp).expect("the orbit names live faces");
     let [(_, e)] = es.scoped().collect::<Vec<_>>()[..] else { panic!("one member path") };
     assert_eq!(e.word.order(), Order::Infinite, "and its edge holonomy has no period");
     // A FREE PART DOES NOT REPLAY, AND A FILING DOES NOT CHANGE THAT
     // (54.5, as ruled 2026-09-20). The edge holonomy has NO period: `g^ℓ`
     // is never the identity, so the circuit walks. It read that filing the
-    // class at 0 made the loop replay, which is a permit deciding a
-    // geometric question — every field of a `FiledLoop` is derivable
-    // (`loop_classes`), so by law 12 the annotation carries no fact the
+    // class at 0 made the orbit replay, which is a permit deciding a
+    // geometric question — every field of a `FiledOrbit` is derivable
+    // (`orbit_classes`), so by law 12 the annotation carries no fact the
     // complex does not already determine.
-    assert!(!form_loops_replay(&f), "a free part does not replay");
+    assert!(!form_orbits_replay(&f), "a free part does not replay");
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
     let mut filed = f.clone();
     filed.torsion.put(
         class,
-        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
     );
-    assert!(!form_loops_replay(&filed), "and filing it as open does not close a circuit that walks");
+    assert!(!form_orbits_replay(&filed), "and filing it as open does not close a circuit that walks");
     let filed_e = as_element_form(&filed, [1, 0, 0, 0]).expect("the tape carries the filed zero");
     assert_eq!(
         replay_form(&filed_e, &|_| None),
-        Some(REFUSE_LOOP),
+        Some(REFUSE_ORBIT),
         "the court refuses it on the geometry, by name"
     );
     // AND THE RECEIPT IS PRICED SEPARATELY. The complex derives 0 for this
@@ -610,7 +610,7 @@ fn a_filed_loop_of_infinite_order_replays_and_a_wrong_period_does_not() {
     let mut wrong = f.clone();
     wrong.torsion.put(
         class,
-        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::from_pair(4, 4), chord: lp.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::from_pair(4, 4), chord: lp.chord },
     );
     assert_eq!(
         receipts_price_the_terrain(&wrong, &wrong.torsion),
@@ -685,7 +685,7 @@ fn citing_form(
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("vertices"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits =Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     f
 }
@@ -785,8 +785,8 @@ fn a_derivation_that_does_not_compose_to_its_word_is_refused_at_the_vertex() {
     );
 }
 
-/// 50.3, 23.1 step 4 — THE COURT READS THE LOOP THE VOICE EVALUATED. A
-/// loop has two obstructions: the TRANSPORT composite the pivot discharges
+/// 50.3, 23.1 step 4 — THE COURT READS THE ORBIT THE VOICE EVALUATED. An
+/// orbit has two obstructions: the TRANSPORT composite the pivot discharges
 /// and files, and the EDGE HOLONOMY the cover classifies and files (50.3).
 /// The court read the first alone, so the class a cover actually filed was
 /// never looked for — and the transport composite telescopes over the
@@ -794,12 +794,12 @@ fn a_derivation_that_does_not_compose_to_its_word_is_refused_at_the_vertex() {
 /// the scene is.
 ///
 /// Here the transports are pure coboundaries and compose to the identity,
-/// while the faces carry a half-turn edge: the loop is flat on the reading
+/// while the faces carry a half-turn edge: the orbit is flat on the reading
 /// the court had and curved on the one the voice made.
 #[test]
 fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     use crate::transducer::alphabet::{LetterId, Word};
-    use crate::transducer::sentence::{FiledLoop, Form, FormFace, Transport};
+    use crate::transducer::sentence::{FiledOrbit, Form, FormFace, Transport};
     let q = LetterId::quarter((0, 1)).expect("the sensor plane");
     let half = Word::from_letters(&[(q, false), (q, false)]);
     let edge_of = |w: &Word| Transport {
@@ -838,14 +838,14 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     }
     let face = f.face_of(1, 2).expect("a coboundary");
     f.faces.push(with_edge(face, edge_of(&half)));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits =Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
-    let [lp, ..] = f.loops.as_slice() else { panic!("the triangle closes") };
+    let [lp, ..] = f.orbits.as_slice() else { panic!("the triangle closes") };
     assert!(
         lp.holonomy.is_identity(),
         "the transport composite is flat: every face is a coboundary"
     );
-    let es = f.edge_holonomies(lp).expect("the loop names live faces");
+    let es = f.edge_holonomies(lp).expect("the orbit names live faces");
     let [(_, e)] = es.scoped().collect::<Vec<_>>()[..] else {
         panic!("one member path, since each vertex stands at one chart")
     };
@@ -855,13 +855,13 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     // 2026-09-20). The half turn returns after two circuits about a fixed
     // point: `ℤ/2ℤ`, which is torsion, and torsion is content (law 7).
     //
-    // This asserted the loop did NOT replay until a class was filed, which
+    // This asserted the orbit did NOT replay until a class was filed, which
     // made an annotation's presence a geometric property. What the
     // transport reading still cannot say is the interesting half, and it
-    // stands: on the transport composite this loop is FLAT, and only the
+    // stands: on the transport composite this orbit is FLAT, and only the
     // edge holonomy sees the half turn (50.3, `edge_class_vector`).
     assert!(
-        form_loops_replay(&f),
+        form_orbits_replay(&f),
         "a compact edge holonomy replays unfiled: ℤ/2ℤ is a resonance, not a debt"
     );
     // One member path here, so one class — said by the slice pattern.
@@ -873,40 +873,40 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     let mut filed = f.clone();
     filed.torsion.put(
         &class,
-        FiledLoop {
+        FiledOrbit {
             // THE SPECTRUM THE COMPLEX ITSELF DERIVES (54.7). Not the
-            // loop's holonomy rotor: `loop_classes` reads the period off
+            // orbit's holonomy rotor: `orbit_classes` reads the period off
             // each MEMBER PATH's word, and a receipt is honest when it
             // matches what the terrain derives — which is the whole point
-            // of the terrain/labour split. Taking it from the loop's
+            // of the terrain/labour split. Taking it from the orbit's
             // composite instead was filing one rotor's spectrum against
             // another's, and `REFUSE_INFLATED_YIELD` caught it, correctly.
             sigma: Vec::new(),
-            periods: match f.loop_classes(lp).as_slice() {
+            periods: match f.orbit_classes(lp).as_slice() {
                 [row, ..] => row.periods,
-                [] => panic!("the loop carries a class"),
+                [] => panic!("the orbit carries a class"),
             },
             chord: lp.chord,
         },
     );
-    assert!(form_loops_replay(&filed), "and filing it says nothing the geometry did not");
+    assert!(form_orbits_replay(&filed), "and filing it says nothing the geometry did not");
     assert_eq!(
         receipts_price_the_terrain(&filed, &filed.torsion),
         None,
         "a receipt whose period the complex derives is honest labour"
     );
     // THE TWO HALVES SEPARATE HERE, and this is the whole point of the
-    // split. At the wrong period the GEOMETRY is unchanged — the loop is
+    // split. At the wrong period the GEOMETRY is unchanged — the orbit is
     // still a compact ℤ/2ℤ and still replays — while the RECEIPT is now a
     // claim about the terrain that the terrain contradicts. The period is
-    // the loop's order, not the filer's opinion of it (A17), and it is the
+    // the orbit's order, not the filer's opinion of it (A17), and it is the
     // one lie in an envelope the court can catch.
     let mut wrong = f.clone();
     wrong.torsion.put(
         &class,
-        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::from_pair(3, 3), chord: lp.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::from_pair(3, 3), chord: lp.chord },
     );
-    assert!(form_loops_replay(&wrong), "the terrain is what it is, whatever is claimed of it");
+    assert!(form_orbits_replay(&wrong), "the terrain is what it is, whatever is claimed of it");
     assert_eq!(
         receipts_price_the_terrain(&wrong, &wrong.torsion),
         Some(REFUSE_INFLATED_YIELD),
@@ -935,7 +935,7 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     let mut colliding = f.clone();
     colliding.torsion.put(
         &class,
-        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::from_pair(12, 1), chord: lp.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::from_pair(12, 1), chord: lp.chord },
     );
     assert_eq!(
         receipts_price_the_terrain(&colliding, &colliding.torsion),

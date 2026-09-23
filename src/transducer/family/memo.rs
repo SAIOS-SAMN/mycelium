@@ -134,7 +134,7 @@ pub fn rule_replays_family(
 /// task id the voice had ever pulled, and that is the fleet's OOM.
 /// Measured on voice 4 of the 2026-09-19 recut, 18 minutes in: 89 pulls,
 /// 54 distinct families, task arm +522 MB net — **9.7 MB per stored rule**,
-/// which is a `Form`'s vertices, faces, loops and carriers. The training
+/// which is a `Form`'s vertices, faces, orbits and carriers. The training
 /// corpus is 1001 tasks, so a voice that sees it once holds **9.4 GB**, and
 /// five voices share 15 GB. Every voice OOMed; survival was 1 h 33 m to
 /// 4 h 53 m and the arm was recorded as unattributed. It is this.

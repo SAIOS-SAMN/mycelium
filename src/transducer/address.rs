@@ -38,7 +38,7 @@ pub const TAG_DEMAND_AT: u8 = 18;
 ///
 /// It shared `TAG_FORM` with the closed forms, and the two are different
 /// algebraic objects: a form is a graded cell complex whose faces and
-/// loops satisfy `δ¹g = 1`, written in the vertex-key layout; a residual
+/// orbits satisfy `δ¹g = 1`, written in the vertex-key layout; a residual
 /// is an unclosed chain, `∂c ≠ 0`, written as its own bytes. One tag over
 /// both meant `from_address` could not tell which layout it held, so a
 /// master equation needed a second decoder beside it — and

@@ -225,12 +225,12 @@ fn the_corpus_spectrum() {
 /// over the corpus; this says which step produced nothing, because "no
 /// curvature" has three different causes and three different repairs.
 ///
-///   NO LOOPS — the complex is a tree. There is no 1-cycle, so there is
+///   NO ORBITS — the complex is a tree. There is no 1-cycle, so there is
 ///   nothing to be flat OR curved: a single fibration between two nodes
 ///   carries no constraint. The repair is more incidence, not a better
 ///   classifier.
 ///
-///   LOOPS, NO EVALUATED PATH — `edge_holonomies` answers `None` or an
+///   ORBITS, NO EVALUATED PATH — `edge_holonomies` answers `None` or an
 ///   empty listing: a remainder edge lies on the cycle and the transport
 ///   between two bodies was never measured (13.9 step 7). The repair is at
 ///   the EDGE measurement — 50.3's stabilizer — and the classifier would
@@ -253,7 +253,7 @@ fn where_the_corpus_goes_silent() {
 
     let epi = crate::client::sdk::Epigenome::new();
     let mut physics = crate::physics::Physics::default();
-    let (mut forms, mut with_loops, mut loops, mut faces, mut verts) = (0usize, 0usize, 0usize, 0usize, 0usize);
+    let (mut forms, mut with_orbits, mut orbits, mut faces, mut verts) = (0usize, 0usize, 0usize, 0usize, 0usize);
     let (mut unread, mut no_path, mut paths, mut ident, mut live) = (0usize, 0usize, 0usize, 0usize, 0usize);
     let (mut faces_with_edge, mut word_live) = (0usize, 0usize);
     for name in &names {
@@ -270,11 +270,11 @@ fn where_the_corpus_goes_silent() {
         verts += f.vertices.len();
         faces += f.faces.len();
         faces_with_edge += f.faces.iter().filter(|x| x.has_edge()).count();
-        if !f.loops.is_empty() {
-            with_loops += 1;
+        if !f.orbits.is_empty() {
+            with_orbits += 1;
         }
-        for lp in &f.loops {
-            loops += 1;
+        for lp in &f.orbits {
+            orbits += 1;
             // THE WORD HALF, for comparison: the transport composite.
             if !lp.holonomy.is_identity() {
                 word_live += 1;
@@ -299,12 +299,12 @@ fn where_the_corpus_goes_silent() {
     }
     eprintln!(
         "  silence: {forms} forms · {verts} vertices · {faces} faces ({faces_with_edge} carrying a \
-         50.3 edge) · {with_loops} forms with loops · {loops} loops"
+         50.3 edge) · {with_orbits} forms with orbits · {orbits} orbits"
     );
     eprintln!(
-        "  silence: loops — unread {unread} · no evaluated path {no_path} · with paths {} ; \
+        "  silence: orbits — unread {unread} · no evaluated path {no_path} · with paths {} ; \
          paths {paths} — identity {ident}, live {live}; word holonomy non-identity {word_live}",
-        loops - unread - no_path
+        orbits - unread - no_path
     );
 }
 
@@ -331,7 +331,7 @@ fn where_the_corpus_goes_silent() {
 ///
 ///   `unclassed` — `transport_class` answered `None` for a piece, so the
 ///   meet cannot be lifted whatever its geometry. It answers only for
-///   `Vertex::Word`, and it gates the loops' ENDS by the same predicate, so
+///   `Vertex::Word`, and it gates the orbits' ENDS by the same predicate, so
 ///   this counter reads a blockage that stops the chord and the torsion
 ///   chord together.
 ///
@@ -355,7 +355,7 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
     let _ = crate::transducer::family::cover::take_cover_tally();
     let epi = crate::client::sdk::Epigenome::new();
     let mut physics = crate::physics::Physics::default();
-    let (mut forms, mut with_loops) = (0usize, 0usize);
+    let (mut forms, mut with_orbits) = (0usize, 0usize);
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
@@ -366,8 +366,8 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
             continue;
         };
         forms += 1;
-        if !rule.form.loops.is_empty() {
-            with_loops += 1;
+        if !rule.form.orbits.is_empty() {
+            with_orbits += 1;
         }
     }
     let t = crate::transducer::family::cover::take_cover_tally();
@@ -384,7 +384,7 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
          | field: {} offered, {} unlifted | horizon: {} apart, {} contained \
          | frame: {} bodiless, {} isotropy, {} unoriented, {} OBLIQUE, \
          {} mirrored, {} half-open | {} CONDENSED \
-         | forms carrying a loop: {with_loops}",
+         | forms carrying an orbit: {with_orbits}",
         t.meets,
         t.edges,
         t.chords,
@@ -410,7 +410,7 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
     // THE ANTIPODAL TEST (54.7): the operators of each Casimir class, and
     // whether a class of exactly two is a mutually inverse pair — one
     // geodesic channel read forward and backward.
-    let classes = crate::transducer::sentence::loop_class_report();
+    let classes = crate::transducer::sentence::orbit_class_report();
     let pairs = classes.iter().filter(|(n, _)| *n == 2).count();
     let inverse = classes.iter().filter(|(_, inv)| *inv).count();
     eprintln!(
@@ -472,7 +472,7 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
     let mut physics = crate::physics::Physics::default();
     let (mut extracted, mut spoke) = (0usize, 0usize);
     let (mut obstructed, mut coboundary, mut no_descent) = (0usize, 0usize, 0usize);
-    let (mut loops_total, mut acyclic) = (0usize, 0usize);
+    let (mut orbits_total, mut acyclic) = (0usize, 0usize);
     let mut acyclic_residue = 0usize;
     let mut pairs_hist: [usize; 8] = [0; 8];
     for name in &names {
@@ -486,20 +486,20 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
             continue;
         };
         extracted += 1;
-        // IS THE DISCRIMINATOR EVEN ASKABLE? `δ¹` reads the loop
-        // holonomies, so a form with NO LOOPS has an empty `delta1()` and
+        // IS THE DISCRIMINATOR EVEN ASKABLE? `δ¹` reads the orbit
+        // holonomies, so a form with NO ORBITS has an empty `delta1()` and
         // can never classify as an obstruction — not because it carries
         // none, but because there is no cycle to carry one. A census that
         // reports `H1 0` without this is a vacuous truth (the pivot rule).
-        loops_total += rule.form.loops.len();
-        if rule.form.loops.is_empty() {
+        orbits_total += rule.form.orbits.len();
+        if rule.form.orbits.is_empty() {
             acyclic += 1;
         }
         let (_mag, remainders) =
             crate::transducer::family::form_deflation(&rule.form, &task.train, &epi);
         // The arm this form would be withheld on, if it is withheld at all.
         match withheld_of(&rule.form, &remainders) {
-            Withheld::LoopObstruction { .. } => obstructed += 1,
+            Withheld::OrbitObstruction { .. } => obstructed += 1,
             Withheld::CoboundaryResidue { pairs, .. } => {
                 coboundary += 1;
                 pairs_hist[pairs.min(7)] += 1;
@@ -522,8 +522,8 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
     );
     eprintln!("  coboundary residue by train pairs failed: {pairs_hist:?}");
     eprintln!(
-        "  IS THE DISCRIMINATOR ASKABLE: {acyclic}/{extracted} forms carry NO loops \
-         ({loops_total} loops in total) — on those, delta1 is empty and H1 cannot be read"
+        "  IS THE DISCRIMINATOR ASKABLE: {acyclic}/{extracted} forms carry NO orbits \
+         ({orbits_total} orbits in total) — on those, delta1 is empty and H1 cannot be read"
     );
     // A reading over no extraction is not a reading (rule 11).
     assert!(extracted > 0, "no form extracted from the corpus: nothing to classify");

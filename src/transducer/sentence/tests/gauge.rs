@@ -1,4 +1,4 @@
-// 10 — THE GAUGE and its coboundary: the hue permutation around a loop,
+// 10 — THE GAUGE and its coboundary: the hue permutation around an orbit,
 // the spanning forest that solves it, and the residue a placement leaves.
 
 use super::common::*;
@@ -14,16 +14,16 @@ fn placement_residue_is_the_affine_translation() {
     for fa in &mut f.faces {
         set_face_place(fa, |p| p.gauge.clear());
     }
-    let chord = f.loops[0].chord as usize;
+    let chord = f.orbits[0].chord as usize;
     set_face_place(&mut f.faces[chord], |p| {
         p.carriage = element::carriage(&q1(), &(q1(), q0()));
     });
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    // THE LOOP THE FIXTURE SET UP, by the chord it wrote — not index 0.
-    // A trivial cycle no longer stands in `loops`, so the position of a
-    // loop is not its identity and never was (rule 15).
-    let at = f.loop_of_chord(chord as u16).expect("the chord's loop");
-    let kappa = f.class_vector(at).expect("loop");
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    // THE ORBIT THE FIXTURE SET UP, by the chord it wrote — not index 0.
+    // A trivial cycle no longer stands in `orbits`, so the position of an
+    // orbit is not its identity and never was (rule 15).
+    let at = f.orbit_of_chord(chord as u16).expect("the chord's orbit");
+    let kappa = f.class_vector(at).expect("orbit");
     assert!(
         kappa.occupies(Axis::Placement),
         "a nonzero composed shift occupies Placement"
@@ -33,7 +33,7 @@ fn placement_residue_is_the_affine_translation() {
             .is_some_and(|t| !element::same_versor(&t, &element::identity_versor())),
         "the residue is the translator of the holonomy versor"
     );
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0xa4; 32],
         &Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -45,7 +45,7 @@ fn placement_residue_is_the_affine_translation() {
         snaps.iter().any(|s| matches!(s, Snap::Discharged { certificate, .. } if certificate.axis == Axis::Placement)),
         "the residue discharges on Placement: {snaps:?}"
     );
-    let after = f.class_vector(at).expect("loop remains");
+    let after = f.class_vector(at).expect("orbit remains");
     assert!(
         !after.occupies(Axis::Placement),
         "Placement is zero after the pivot"
@@ -53,25 +53,25 @@ fn placement_residue_is_the_affine_translation() {
 }
 
 #[test]
-fn hue_cycle_type_composes_around_the_loop() {
+fn hue_cycle_type_composes_around_the_orbit() {
     let mut f = chord_form(&[Word::identity()]);
     for fa in &mut f.faces {
         set_face_place(fa, |p| p.gauge.clear());
     }
-    let chord = f.loops[0].chord as usize;
+    let chord = f.orbits[0].chord as usize;
     set_face_place(&mut f.faces[chord], |p| p.gauge = vec![(3, 4), (4, 3)]);
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    // THE LOOP THE FIXTURE SET UP, by the chord it wrote — not index 0.
-    // A trivial cycle no longer stands in `loops`, so the position of a
-    // loop is not its identity and never was (rule 15).
-    let at = f.loop_of_chord(chord as u16).expect("the chord's loop");
-    let kappa = f.class_vector(at).expect("loop");
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    // THE ORBIT THE FIXTURE SET UP, by the chord it wrote — not index 0.
+    // A trivial cycle no longer stands in `orbits`, so the position of an
+    // orbit is not its identity and never was (rule 15).
+    let at = f.orbit_of_chord(chord as u16).expect("the chord's orbit");
+    let kappa = f.class_vector(at).expect("orbit");
     assert!(
         kappa.occupies(Axis::Hue),
         "a non-identity composed gauge occupies Hue, got {:?}",
         kappa.hue
     );
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0xa5; 32],
         &Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -83,7 +83,7 @@ fn hue_cycle_type_composes_around_the_loop() {
         snaps.iter().any(|s| matches!(s, Snap::Discharged { certificate, .. } if certificate.axis == Axis::Hue)),
         "the cycle type discharges on Hue: {snaps:?}"
     );
-    let after = f.class_vector(at).expect("loop remains");
+    let after = f.class_vector(at).expect("orbit remains");
     assert!(!after.occupies(Axis::Hue), "Hue is identity after the pivot");
 }
 
@@ -184,19 +184,19 @@ fn holonomy_is_oriented() {
     fwd.faces.push(fwd.face_of(0, 1).expect("star"));
     fwd.faces.push(fwd.face_of(0, 2).expect("star"));
     fwd.faces.push(fwd.face_carrying(1, 2, w.clone()).expect("a chord between two bodies"));
-    fwd.loops = Form::loops_of(&fwd.faces, &fwd.vertices);
+    fwd.orbits = Form::orbits_of(&fwd.faces, &fwd.vertices);
     let mut rev = Form::default();
     rev.vertices.push(word_vertex(1, Word::identity()));
     rev.vertices.push(word_vertex(2, Word::identity()));
     rev.faces.push(rev.face_of(0, 1).expect("star"));
     rev.faces.push(rev.face_of(0, 2).expect("star"));
     rev.faces.push(rev.face_carrying(2, 1, w.inverse()).expect("a chord between two bodies"));
-    rev.loops = Form::loops_of(&rev.faces, &rev.vertices);
-    assert_eq!(fwd.loops.len(), 1);
-    assert_eq!(rev.loops.len(), 1);
+    rev.orbits = Form::orbits_of(&rev.faces, &rev.vertices);
+    assert_eq!(fwd.orbits.len(), 1);
+    assert_eq!(rev.orbits.len(), 1);
     assert_eq!(
-        fwd.loops[0].holonomy.class_key(),
-        rev.loops[0].holonomy.class_key(),
+        fwd.orbits[0].holonomy.class_key(),
+        rev.orbits[0].holonomy.class_key(),
         "a reversed chord stores the inverse word and the same class"
     );
 }

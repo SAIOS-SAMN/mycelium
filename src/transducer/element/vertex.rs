@@ -160,7 +160,7 @@ impl Element {
     /// so. That is `Bubble::rotor`'s rule exactly, and it is the rule
     /// because a representative picked from several would be a different
     /// motion on a node that took the bodies in another order (rule 15).
-    /// A form's loop holonomies are a different object and stay where they
+    /// A form's orbit holonomies are a different object and stay where they
     /// are: they are the curvature AROUND a cycle, not the transport this
     /// sentence IS.
     pub fn carried_rotor(&self) -> Option<crate::transducer::alphabet::Rotor> {
@@ -231,7 +231,7 @@ impl Element {
     /// is unchanged.
     ///
     /// Only where BOTH operands carry a tape. A sentence carries none by
-    /// construction — its rotations are its loop holonomies, plural — so a
+    /// construction — its rotations are its orbit holonomies, plural — so a
     /// transition between two sentences still answers no single rotor, and
     /// that is the court's path-holonomy question, not this one.
     pub fn compose(&self, other: &Element) -> Element {

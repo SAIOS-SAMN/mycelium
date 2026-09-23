@@ -29,7 +29,7 @@ fn closed_form_and_body_chart() -> (Element, crate::transducer::stalk::Invariant
 
 /// 21 step 3: "Crystal is indexed by the section coordinate (moduli)". The
 /// glue asks `on_class(body moduli)` and a stood sentence was filed under
-/// `chart_of_form` — `[2, vertices, faces, loops, …]` against a body's
+/// `chart_of_form` — `[2, vertices, faces, orbits, …]` against a body's
 /// `[components, …harmonics…]`, two coordinate systems that meet only at
 /// the empty root. The crystal answered the empty vector to every question
 /// the glue could ask, so no rule ever cited a held form and no citation

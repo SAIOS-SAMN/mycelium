@@ -174,10 +174,10 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         }
         println!(
             "  mint {name} handed: pairs {} | vertices words {words} glued {glued} demands {demands} \
-             | faces {} loops {} | closed {} | Form.remainder empty {} links {} | ratio {:?}",
+             | faces {} orbits {} | closed {} | Form.remainder empty {} links {} | ratio {:?}",
             task.train.len(),
             rule.form.faces.len(),
-            rule.form.loops.len(),
+            rule.form.orbits.len(),
             u8::from(rule.form.is_closed()),
             u8::from(rule.form.remainder.is_empty()),
             rule.form.remainder.placed().len(),
@@ -469,16 +469,16 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         "  mint rule_open Form.remainder: empty on {open_rem_empty} of {open_seen}, \
          {open_rem_links} links across the rest"
     );
-    // WHAT THE COVERS' LOOPS CLASSIFIED AS. `tally_loop` has recorded this
+    // WHAT THE COVERS' ORBITS CLASSIFIED AS. `tally_orbit` has recorded this
     // all along and only the soak read it, so the mint sweep could say how
-    // many loops a scene has and not what any of them turned out to be.
+    // many orbits a scene has and not what any of them turned out to be.
     // `classify` files a cycle only where the carriage is the IDENTITY
-    // (`cech::classify`), so a loop with a finite non-identity rotor carried by
+    // (`cech::classify`), so an orbit with a finite non-identity rotor carried by
     // a non-identity versor stands as a class rather than filing as torsion.
     // This line is what says which of those two the corpus produces.
     let t = mycelium::transducer::family::cover::take_cover_tally();
     println!(
-        "  mint cover loops: edges {} flat {} filed {} standing {} unspellable {} \
+        "  mint cover orbits: edges {} flat {} filed {} standing {} unspellable {} \
          | covers measured {} unmeasured {} carried {}",
         t.edges, t.flat, t.filed, t.standing, t.unspellable, t.measured, t.unmeasured, t.carried
     );

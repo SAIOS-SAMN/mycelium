@@ -27,7 +27,7 @@
 //!
 //! WHY MORE FIBRATIONS MEAN MORE COHERENCE, and why a boolean inverted it.
 //! Under `P₁ ∧ P₂ ∧ … ∧ Pₙ` every additional cycle is another way to fail,
-//! so the gate rewarded impoverished one-loop trees. A single fibration
+//! so the gate rewarded impoverished one-orbit trees. A single fibration
 //! between two nodes carries no constraint at all — there is no cycle and
 //! nothing to check. Two create an interference pattern. Dozens
 //! OVERDETERMINE the geometry, and over exact ℚ an overdetermined system
@@ -126,7 +126,7 @@ impl Form {
     /// THE FORM'S SPECTRUM, derived and never stored (law 12).
     ///
     /// Nothing here consults a filing. Every note is a theorem of the
-    /// complex: `loop_classes` walks the holonomy and classifies it
+    /// complex: `orbit_classes` walks the holonomy and classifies it
     /// through `cech::classify`'s fixed-point gate, `plane_periods` splits
     /// the rotor into its two commuting factors, and `fiber_holonomy`
     /// reads the vertical transitions. A `Form.torsion` entry records that
@@ -155,7 +155,7 @@ impl Form {
                 _ => None,
             })
             .collect();
-        for lp in &self.loops {
+        for lp in &self.orbits {
             let Some(hs) = self.edge_holonomies(lp) else {
                 continue;
             };

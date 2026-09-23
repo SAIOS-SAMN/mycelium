@@ -9,7 +9,7 @@ use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self};
 
 /// 52.3 AS AMENDED (54.5, ruled 2026-09-20) — A FILED ZERO IS LABOUR, NOT
-/// CLOSURE. A loop whose edge is a (3,4,5) rotor files at period 0, A19's
+/// CLOSURE. An orbit whose edge is a (3,4,5) rotor files at period 0, A19's
 /// spelling of infinite order; the filing rides the SPEAKER'S word and the
 /// form does not cohere on it, because a circuit that walks is not closed
 /// by anyone writing down that it walks.
@@ -17,13 +17,13 @@ use crate::transducer::stalk::{self};
 fn the_tape_carries_a_filed_zero_as_infinite_order() {
     let w = infinite();
     let mut f = edge_chord_form(std::slice::from_ref(&w));
-    let loops = f.loops.clone();
-    let [lp] = loops.as_slice() else { panic!("one chord closes one loop") };
+    let orbits = f.orbits.clone();
+    let [lp] = orbits.as_slice() else { panic!("one chord closes one orbit") };
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
     f.torsion.put(
         class,
-        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
     );
     // THE FILING IS THE SPEAKER'S AND IT DOES NOT CLOSE THE CIRCUIT (54.5,
     // as ruled 2026-09-20). This asserted `f.coheres()` — that writing "0"
@@ -57,7 +57,7 @@ fn the_tape_carries_a_filed_zero_as_infinite_order() {
 
 /// SENTENCE_TAG v6 round-trips Frame, Word (with contact), Glued,
 /// Rebased, Unfolded, Demand (50.5), faces with their edge transport
-/// (50.3), and loops.
+/// (50.3), and orbits.
 #[test]
 fn form_tape_v6_round_trips() {
     let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
@@ -105,7 +105,7 @@ fn form_tape_v6_round_trips() {
         },
     );
     f.faces.push(edged);
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.remainder = crate::transducer::element::place_chain(&[(9, 9, 1, 0)])
         .expect("one link is A5's chain");
     f.reindex();
@@ -127,7 +127,7 @@ fn form_tape_v6_round_trips() {
     let back = crate::transducer::sentence::from_element_form(&e).expect("decode");
     assert_eq!(back.vertices.len(), f.vertices.len());
     assert_eq!(back.faces.len(), f.faces.len());
-    assert_eq!(back.loops.len(), f.loops.len());
+    assert_eq!(back.orbits.len(), f.orbits.len());
     // The remainder rides the tape as it sits in the scene, so the chain
     // and the placement both survive the round trip.
     assert_eq!(back.remainder.placed(), f.remainder.placed());
@@ -386,7 +386,7 @@ fn a_sentence_round_trips_its_nerve() {
     let back = crate::transducer::sentence::from_element_form(&e).expect("the form survives the tape");
     assert_eq!(back.vertices.len(), f.vertices.len());
     assert_eq!(back.faces.len(), f.faces.len());
-    assert_eq!(back.loops.len(), f.loops.len());
+    assert_eq!(back.orbits.len(), f.orbits.len());
 }
 
 /// 1.5 AND 1.7 — A CITATION IS THE CITED FORM'S ADDRESS, WRITTEN WHOLE,

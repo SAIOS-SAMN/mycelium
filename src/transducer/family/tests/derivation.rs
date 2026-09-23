@@ -28,7 +28,7 @@ fn sentence_of(w: Word, tag: u8) -> (Address, Form) {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("star"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     (Address::from_bytes([TAG_FORM, tag]), f)
 }
@@ -197,7 +197,7 @@ fn letter_of(a: i64, b: i64, tag: u8) -> (Address, Form) {
     ));
     // No star face: the face would be the letter's own action, which the
     // seventeen cannot spell (L11 (2/2)).
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     (Address::from_bytes([TAG_FORM, tag]), f)
 }
@@ -370,7 +370,7 @@ fn adjoined_basis_discovers_generators_on_offplane_channels() {
         Vec::new(),
         None,
     ));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
 
     let mut index = crate::transducer::sentence::GeneratorIndex::new();

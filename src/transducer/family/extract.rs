@@ -152,7 +152,7 @@ pub fn extract_rule_with(
     // second walk; a pass that cited without retracting still appended
     // faces and walks them here.
     if retract.is_empty() {
-        form.loops = Form::loops_of(&form.faces, &form.vertices);
+        form.orbits = Form::orbits_of(&form.faces, &form.vertices);
         form.reindex();
     } else {
         form.retract_vertices(&retract);
@@ -177,7 +177,7 @@ pub fn extract_rule_with(
     }
     trace::trace_carriage("extract/6 contact", &measured, &form);
     trace::trace("extract/7 coherence", trace::Wrote::Nothing, Some(budget));
-    // 7. Coherence: tree gauge, else hold the loops.
+    // 7. Coherence: tree gauge, else hold the orbits.
     if !form.coheres() {
         if let Some(gamma) = form.solve_coboundary() {
             let _ = form.regauge(&gamma);

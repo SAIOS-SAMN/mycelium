@@ -144,7 +144,7 @@ fn a_retired_remainder_is_kept_as_a_cavity_chart() {
 
 /// L7b, law 9: the potential's T lane is the receipts since the idea's
 /// charts last moved, and it is zero at the stroke it was held — not
-/// floored to one so that a gate would pass. The pivot loop runs on the
+/// floored to one so that a gate would pass. The pivot orbit runs on the
 /// idea regardless (25.1): a form with no remainder expands and files on
 /// the very stroke it is held.
 #[test]
@@ -244,14 +244,14 @@ fn two_vertices_whose_carriages_differ_by_sign_hold_one_section() {
 
 /// EXPANSION 4 — A RULED WORD THAT IS ONE CANDIDATE OF A HELD VORTEX
 /// COLLAPSES IT ON PIVOT, AND THE SYMMETRY IS CARRIED OUT. A vortex holds
-/// two certified discharges of one loop; when a word whose rotor is one
+/// two certified discharges of one orbit; when a word whose rotor is one
 /// candidate arrives (a ruled word, learned), `pivot_on` collapses the
 /// vortex by that candidate and the difference `w_a⁻¹·w_b` — a rotation
 /// the mind measured (37.7) — rides out as an adjunction candidate rather
 /// than being forgotten with the loser.
 ///
-/// THE VORTEX IS HELD UNDER THE LOOP'S AFTER-CLASS, which here is the zero
-/// class — both candidates closed the loop — and the arriving word's rotor
+/// THE VORTEX IS HELD UNDER THE ORBIT'S AFTER-CLASS, which here is the zero
+/// class — both candidates closed the orbit — and the arriving word's rotor
 /// has a class of its own. The collapse is read at the CANDIDATE's key, so
 /// the after-class is not a coordinate the word has to know; read at the
 /// rotor's class it would find nothing.
@@ -280,11 +280,11 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
         ));
     }
     f.faces.push(f.face_carrying(1, 2, a.clone()).expect("a chord between two placed vertices"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
 
-    // The vortex: two candidates that discharge ONE loop, so they share
-    // that loop's class vector as their `before` and differ only in the
+    // The vortex: two candidates that discharge ONE orbit, so they share
+    // that orbit's class vector as their `before` and differ only in the
     // move. Both closed it, so the class after is the zero class — which
     // is why filing under `after` put every closed vortex in the tree
     // under one key and left nothing for a deciding word to find.
@@ -292,7 +292,7 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
         .expect("a quarter turn has a class vector")
         .class_key();
     let after = ClassVector::zero().class_key();
-    assert_ne!(after, before, "a closed loop's class is not the class it stood in");
+    assert_ne!(after, before, "a closed orbit's class is not the class it stood in");
     let cert = |w: &Word| PivotCertificate {
         chord: 0,
         axis: Axis::Open,
@@ -314,7 +314,7 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     // form, as a ruled letter arrives from the syllabus — whose chart is a
     // form chart and shares no prefix with the bubble's cover of body
     // charts. The collapse is read at the candidate's own key, so the
-    // bubble is found whatever it covers and whatever class the loop was
+    // bubble is found whatever it covers and whatever class the orbit was
     // left in.
     let word = crate::transducer::sentence::generator_form(&a.rotor(), &Invariant::counts(&[3, 5]), &[])
         .expect("a rotor mints a generator");
@@ -335,7 +335,7 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     assert_eq!(
         before.as_bytes().get(..end),
         Some(stratum.as_bytes()),
-        "the deciding word's class IS the loop class's first coordinate"
+        "the deciding word's class IS the orbit class's first coordinate"
     );
     // Same claim, read through the ordinal the index now holds (Z4 item 2).
     let filed_here = c.by_vortex.get(stratum.as_bytes()).is_some_and(|m| {
@@ -347,7 +347,7 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     assert!(filed_here, "the vortex is filed at its conjugacy stratum");
     assert!(
         c.by_vortex.get(after.as_bytes()).is_none(),
-        "and not at the class the move would leave the loop in"
+        "and not at the class the move would leave the orbit in"
     );
 
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);

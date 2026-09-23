@@ -9,7 +9,7 @@ use crate::transducer::base::Site;
 ///
 /// `M` must be a property of the form, not of a chord: two edges of one
 /// cycle computing their own `M` would be transitions between DIFFERENT
-/// stereographic charts, and composing them around the loop would be
+/// stereographic charts, and composing them around the orbit would be
 /// composing maps with no common domain — the holonomy would read as
 /// curvature that is only a change of ruler.
 ///

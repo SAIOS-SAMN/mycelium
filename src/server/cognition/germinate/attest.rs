@@ -20,8 +20,8 @@ impl Kernel {
         let surface = crate::economy::yield_surface(&self.physics);
         let mut priced = Vec::new();
         let mut budget = self.physics.stroke();
-        // Resumed from the last quote (rule 10, S13.3): the page is an
-        // orbit, so a page beyond one budget is served whole across quotes
+        // Resumed from the last quote (rule 10, S13.3): the page is a
+        // circuit, so a page beyond one budget is served whole across quotes
         // rather than its head on every one.
         let from = self.quote_cursor.clone();
         let mut cur = self.on_page.cursor(from.as_deref(), &mut budget);

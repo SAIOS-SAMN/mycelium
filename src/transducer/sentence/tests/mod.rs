@@ -13,7 +13,7 @@ mod letters;
 mod pivot;
 mod pivot_demand;
 mod pivot_generator;
-mod pivot_loop;
+mod pivot_orbit;
 mod refraction;
 mod rotor_class;
 mod stratum;

@@ -171,7 +171,7 @@ assert_eq!(
 /// and `Bubble.moved_k` reads "TUniversal when this bubble's charts last
 /// moved"; both were stamped from `session.voice().k()`. Everything
 /// downstream is a span between two of those stamps —
-/// `held_since(now_k, moved_k)` is `pivot_loop`'s `t_extent`, `span_of` is
+/// `held_since(now_k, moved_k)` is `pivot_orbit`'s `t_extent`, `span_of` is
 /// lane 𝒯 of a minted word, `retire_on_t` is the T-room — so all three
 /// measured a span of the wrong clock. A span in a voice's own K is not
 /// comparable across voices; TUniversal is the shared coordinate.

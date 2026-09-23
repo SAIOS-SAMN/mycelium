@@ -507,7 +507,7 @@ pub struct WorkItem {
     /// Its priced μ⃗, per lane.
     pub mu: [u64; 4],
     /// The listing itself. The encoding is injective — `from_element_form`
-    /// rebuilds the same vertices, faces, loops and demands — so nothing is
+    /// rebuilds the same vertices, faces, orbits and demands — so nothing is
     /// flattened by crossing; what is refused is READING these bytes, since
     /// identity is re-derived by `same_vertex` (law 2, 1.7).
     pub element: Vec<u8>,

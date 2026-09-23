@@ -343,8 +343,8 @@ pub(crate) fn named_faces(
     // A SITE'S OCCUPANTS ARE A SIMPLEX, NOT A CLIQUE. Every vertex on this
     // site meets every other ON IT, so the subcomplex they span is a simplex
     // — contractible, and every cycle inside it is a boundary. Writing all
-    // k(k−1)/2 of those pairs as faces would hand `loops_of` a cycle basis
-    // of the 1-skeleton with nothing to fill k(k−1)/2 − (k−1) loops that
+    // k(k−1)/2 of those pairs as faces would hand `orbits_of` a cycle basis
+    // of the 1-skeleton with nothing to fill k(k−1)/2 − (k−1) orbits that
     // bound by construction, and the pivot drive would clone the whole form
     // once per candidate against each one.
     //
@@ -516,7 +516,7 @@ pub(crate) fn named_faces(
             // incidence already has a producer: the occupancy pass above,
             // which relates a site's occupants in a spanning CHAIN
             // precisely because they span a simplex and writing all
-            // `k(k−1)/2` pairs would hand `loops_of` a cycle basis with
+            // `k(k−1)/2` pairs would hand `orbits_of` a cycle basis with
             // nothing to fill. Admitting overlap here rebuilt exactly that
             // clique: eight bodies on one site condensed 28 faces where
             // the chain writes 7 (law 12, two producers of one fact).
@@ -610,7 +610,7 @@ pub(crate) fn named_faces(
     // 58.3 purged the same call from the cover's meet index and the corpus
     // went from 186 meets to 2, from 184 determined frames to 0. It did not
     // move the defect spectrum, because the FORM's faces were built here and
-    // this dilation still ran: `b₁`, `loop_defects`, the spectra, and the
+    // this dilation still ran: `b₁`, `orbit_defects`, the spectra, and the
     // `non-simple 3` that 59.7 named as the corpus's only luminal candidates
     // were all readings of a second stencil. A stenciled screw is not chiral
     // torsion between two bodies — it is a raster array inflated until two

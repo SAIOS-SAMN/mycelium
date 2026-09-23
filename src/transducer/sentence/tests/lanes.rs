@@ -140,7 +140,7 @@ fn a_lane_chart_is_that_lanes_axes_and_the_four_are_disjoint() {
 /// moves the frame to the origin and closes no curvature, so the loop spent
 /// itself on a discharge that cannot happen and never reached the rest of
 /// the fan. `classify` had meanwhile solved `(I − R)p = t` for the SAME
-/// carriage and filed the loop `Congruent` — two readers, one carriage,
+/// carriage and filed the orbit `Congruent` — two readers, one carriage,
 /// opposite answers (law 12).
 #[test]
 fn a_turns_base_point_occupies_no_placement_and_a_screw_does() {

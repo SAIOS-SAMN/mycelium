@@ -55,7 +55,7 @@ impl Scenery {
 /// the loop above blind on that lane before it is classified.
 ///
 /// A refusal is a remainder edge and says which (`EdgeRefusal`): that meet's
-/// loop is not evaluated, which is what `edge_holonomy` answers `None` for.
+/// orbit is not evaluated, which is what `edge_holonomy` answers `None` for.
 /// A rotor the seventeen cannot spell is 37.7's business and not an edge
 /// to invent one for (rule 11).
 pub(crate) fn meet_edge(
@@ -176,7 +176,7 @@ pub(crate) fn meet_edge(
 /// A DEFORMATION AND THE COVER THAT READ IT, at the frame it was read on.
 /// The two travel together because the demand's fate is not decided here:
 /// whether it dissolves depends on what the FORM reads off the cover's
-/// loops, and the form is built by the extraction.
+/// orbits, and the form is built by the extraction.
 pub(crate) struct Covered {
     pub(crate) demand: Demanded,
     pub(crate) cover: crate::transducer::family::cover::Cover,

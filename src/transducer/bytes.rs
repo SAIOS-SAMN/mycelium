@@ -132,7 +132,7 @@ impl Bytes for Form {
                 n += ps.key_bytes();
             }
         }
-        for lp in &self.loops {
+        for lp in &self.orbits {
             n += std::mem::size_of_val(lp)
                 + lp.vertices.len() * 2
                 + lp.faces.len() * 2

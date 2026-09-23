@@ -1,13 +1,13 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! A16, A20 — THE PIVOT LOOP: the candidates a form's occupied axes offer,
-//! the trial that opens one axis, the discharge it certifies, and the loops
+//! A16, A20 — THE PIVOT ORBIT: the candidates a form's occupied axes offer,
+//! the trial that opens one axis, the discharge it certifies, and the orbits
 //! and axis index the move is read and written on.
 
 pub mod census;
 pub mod drive;
-pub mod loops;
 pub mod moves;
+pub mod orbits;
 pub mod snap;
 pub mod trial;
 pub mod walk;

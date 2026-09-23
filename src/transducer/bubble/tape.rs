@@ -166,7 +166,7 @@ impl Contemplation {
                 }
             }
             let mut torsion: Keyed<
-                crate::transducer::sentence::FiledLoop,
+                crate::transducer::sentence::FiledOrbit,
                 crate::network::nerve::coord::Holonomy,
             > = Keyed::new();
             let mut certificates = Keyed::new();
@@ -193,9 +193,9 @@ impl Contemplation {
                     *pos += 4;
                     let p2 = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
                     *pos += 4;
-                    // A17: a loop is filed at the period it CLOSES at, so a
-                    // filed zero is a malformed record and not a loop of no
-                    // extent — and BOTH planes must close, since a loop
+                    // A17: an orbit is filed at the period it CLOSES at, so a
+                    // filed zero is a malformed record and not an orbit of no
+                    // extent — and BOTH planes must close, since an orbit
                     // closes when its orbit on the 2-torus does (54.7).
                     let periods = crate::transducer::sentence::ToralPeriod::from_pair(p1, p2);
                     if !periods.closes() {
@@ -207,7 +207,7 @@ impl Contemplation {
                         &<crate::network::nerve::coord::Holonomy
                             as crate::network::nerve::Coordinate>::decode(&tk)
                             .ok()?,
-                        crate::transducer::sentence::FiledLoop { sigma, periods, chord },
+                        crate::transducer::sentence::FiledOrbit { sigma, periods, chord },
                     );
                 }
                 let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;

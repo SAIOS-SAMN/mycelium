@@ -3,7 +3,7 @@
 
 use super::common::*;
 use crate::network::nerve::Keyed;
-use super::pivot_loop::Hold;
+use super::pivot_orbit::Hold;
 use crate::transducer::alphabet::{Order, Word};
 use crate::transducer::element;
 use crate::transducer::sentence::*;
@@ -146,7 +146,7 @@ fn mu_neither_certifies_nor_selects() {
         None,
     );
     let bundle = vec![(x, y)];
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0xde; 32],
         &Keyed::new(),
         &Hold(vec![q.clone(), qinv]),
@@ -157,7 +157,7 @@ fn mu_neither_certifies_nor_selects() {
     let Some(Snap::Vortex { held, between, .. }) =
         snaps.iter().find(|s| matches!(s, Snap::Vortex { .. }))
     else {
-        panic!("two discharges on one loop are a vortex: {snaps:?}");
+        panic!("two discharges on one orbit are a vortex: {snaps:?}");
     };
     assert!(held.len() >= 2, "q and q⁻¹ both discharge: {held:?}");
     let (mu0, mu1) = match (&held[0].mu, &held[1].mu) {
@@ -186,16 +186,16 @@ fn mu_neither_certifies_nor_selects() {
     assert_eq!(o.axes, (held[0].axis, held[1].axis), "the axes are the obstruction");
 }
 
-/// 54.2 — A LOOP THAT CLOSES WITH MONODROMY IS CLOSED, and one that walks
+/// 54.2 — AN ORBIT THAT CLOSES WITH MONODROMY IS CLOSED, and one that walks
 /// is not.
 ///
-/// This opened `assert!(!f.is_closed())` on a form whose single loop is a
+/// This opened `assert!(!f.is_closed())` on a form whose single orbit is a
 /// quarter turn about a fixed point — a `ℤ/4ℤ` class, the most ordinary
 /// torsion there is — and that assertion was the whole defect in one line.
-/// `coheres` demanded holonomy ≡ 1 on every loop, which is `H¹ = 0`, and
+/// `coheres` demanded holonomy ≡ 1 on every orbit, which is `H¹ = 0`, and
 /// since only closed forms are stood and only closed forms survive the
 /// court, curvature could not enter the genome. Measured on the fleet:
-/// 1 870 extracted forms carried loops, filed torsion was 0 bytes on every
+/// 1 870 extracted forms carried orbits, filed torsion was 0 bytes on every
 /// voice, `REFUSE_NOT_CLOSED` was 36 of 39 wire refusals.
 ///
 /// Both arms are asserted now, so admitting curvature cannot be mistaken
@@ -214,7 +214,7 @@ fn cauterize_filed_torsion_crystallizes() {
         !chord_form(&[infinite()]).is_closed(),
         "and an infinite-order holonomy is not compact: it walks, and the form stands open"
     );
-    let _ = f.pivot_loop(
+    let _ = f.pivot_orbit(
         [0xca; 32],
         &crate::network::nerve::Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -231,14 +231,14 @@ fn cauterize_filed_torsion_crystallizes() {
 }
 
 #[test]
-fn two_loops_of_one_class_are_both_filed_or_discharged() {
+fn two_orbits_of_one_class_are_both_filed_or_discharged() {
     let w = order4();
     fn two_chords(w: &Word) -> Form {
         chord_form(&[w.clone(), w.clone()])
     }
     let mut f = two_chords(&w);
-    assert_eq!(f.loops.len(), 2, "two independent chords");
-    let snaps = f.pivot_loop(
+    assert_eq!(f.orbits.len(), 2, "two independent chords");
+    let snaps = f.pivot_orbit(
         [0xa3; 32],
         &Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -250,11 +250,11 @@ fn two_loops_of_one_class_are_both_filed_or_discharged() {
         .iter()
         .filter(|s| matches!(s, Snap::TorsionFiled { .. }))
         .count();
-    assert_eq!(filed, 2, "both loops of one class file: {snaps:?}");
+    assert_eq!(filed, 2, "both orbits of one class file: {snaps:?}");
 
     let q = order4();
     let mut f = two_chords(&q);
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0xa3; 32],
         &Keyed::new(),
         &Hold(vec![q.clone()]),
@@ -266,13 +266,13 @@ fn two_loops_of_one_class_are_both_filed_or_discharged() {
         .iter()
         .filter(|s| matches!(s, Snap::Discharged { .. }))
         .count();
-    assert_eq!(disc, 2, "both loops discharge: {snaps:?}");
+    assert_eq!(disc, 2, "both orbits discharge: {snaps:?}");
 }
 
 #[test]
 fn pivot_never_reopens_a_closed_chord() {
     let mut cob = coboundary_chord_form();
-    let cob_snaps = cob.pivot_loop(
+    let cob_snaps = cob.pivot_orbit(
         [0xcd; 32],
         &crate::network::nerve::Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -285,10 +285,10 @@ fn pivot_never_reopens_a_closed_chord() {
         "a coboundary chord closes by the tree gauge: {cob_snaps:?}"
     );
     assert!(
-        cob.loops.iter().all(|lp| lp.holonomy.is_identity()),
+        cob.orbits.iter().all(|lp| lp.holonomy.is_identity()),
         "T2: the closed chord stays closed"
     );
-    let again = cob.pivot_loop(
+    let again = cob.pivot_orbit(
         [0xcd; 32],
         &crate::network::nerve::Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -303,7 +303,7 @@ fn pivot_never_reopens_a_closed_chord() {
 
     let mut f = chord_form(&[order2(), order4()]);
     let mut budget = crate::physics::Physics::default().stroke_n(16);
-    let first = f.pivot_loop(
+    let first = f.pivot_orbit(
         [0xcd; 32],
         &crate::network::nerve::Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -323,7 +323,7 @@ fn pivot_never_reopens_a_closed_chord() {
         })
         .collect();
     let mut budget = crate::physics::Physics::default().stroke_n(16);
-    let second = f.pivot_loop(
+    let second = f.pivot_orbit(
         [0xcd; 32],
         &crate::network::nerve::Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -336,11 +336,11 @@ fn pivot_never_reopens_a_closed_chord() {
             !second.iter().any(|s| matches!(s, Snap::Demand { .. })) || o > 0,
             "a closed finite chord is not demanded"
         );
-        let still = f.loops.iter().any(|lp| {
+        let still = f.orbits.iter().any(|lp| {
             !lp.holonomy.is_identity() && matches!(lp.holonomy.order(), Order::Finite(ell) if u64::from(ell) == o)
         });
         // THE SPECTRUM, not the envelope: a filing whose `lcm` matches and
-        // whose planes do not is a different loop (54.7).
+        // whose planes do not is a different orbit (54.7).
         let filed = f
             .torsion
             .scoped()
@@ -368,7 +368,7 @@ fn a_rank_move_is_one_unit_or_none() {
     // A18's step, from each coordinate it can leave: one unit, whether or
     // not the discharge opened a chart axis for it to land in. Both shapes
     // are asserted; since R14 counted `axes` by class, the first is what an
-    // opening over a class two loops share now makes.
+    // opening over a class two orbits share now makes.
     for (after, from) in [
         (Rank { torsion: 2, free: 2, offplane: 1, axes: 1 }, RankAxis::Torsion),
         (Rank { torsion: 2, free: 2, offplane: 1, axes: 0 }, RankAxis::Torsion),

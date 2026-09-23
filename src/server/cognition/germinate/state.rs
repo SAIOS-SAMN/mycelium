@@ -26,7 +26,7 @@ impl Kernel {
     /// below already did and this did not. A sentence's cycles are on its FORM;
     /// `Element::fibre_volume` sums the element's own two fields, which a
     /// minted sentence leaves empty. So every sentence in the basis contributed
-    /// 0 to the volume however many loops its form had filed — the ruling at
+    /// 0 to the volume however many orbits its form had filed — the ruling at
     /// `court_torsion_on_v2_form_is_consilient_or_filed_or_refused` ("the court
     /// reads Form.torsion by the filed loop's class key, never the element's
     /// empty section") held at one site of its shape and not at its neighbour
@@ -50,7 +50,7 @@ impl Kernel {
             .map(|(_, t)| match t.form() {
                 // THE CLASS FROM THE RECEIPT, THE PERIOD FROM THE COMPLEX
                 // (54.5). `Form::fibre_volume` takes the speaker's filing and
-                // prices it against the periods the form's own loops derive,
+                // prices it against the periods the form's own orbits derive,
                 // so a word cannot be paid for capacity its geometry does not
                 // carry. The filing rides the ELEMENT the organ holds; a form
                 // recovered from an address files nothing.

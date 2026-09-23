@@ -206,16 +206,16 @@ fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {
 }
 
 /// 24.1, 18.2 — THE SENTENCE ARM. A sentence has no single spelling: it is
-/// a nerve one level above a word, and its words are its loop holonomies.
+/// a nerve one level above a word, and its words are its orbit holonomies.
 /// Under a depleted lane it reaches the open-demand arm with no stored
-/// cycle, and the arm charges the ORDERS OF THOSE LOOPS' CLASSES rather
+/// cycle, and the arm charges the ORDERS OF THOSE ORBITS' CLASSES rather
 /// than reading `letters()` — a question one level below the carrier — and
 /// charging the whole nerve as a bare chain.
 ///
-/// The form is a triangle, so it has a loop; a tree has none and charges
+/// The form is a triangle, so it has an orbit; a tree has none and charges
 /// nothing, which is correct and is why this fixture is three vertices.
 #[test]
-fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
+fn a_depleted_lane_charges_a_sentence_by_its_orbit_words() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::{as_element_form, Form, Vertex};
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -235,22 +235,22 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
     for (i, j) in [(0u16, 1u16), (1, 2), (0, 2)] {
         f.faces.push(f.face_of(i, j).expect("face"));
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    assert!(!f.loops.is_empty(), "a triangle closes a loop");
-    assert!(!f.loop_words().is_empty(), "and the loop carries a holonomy word");
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    assert!(!f.orbits.is_empty(), "a triangle closes an orbit");
+    assert!(!f.orbit_words().is_empty(), "and the orbit carries a holonomy word");
     let spoken = as_element_form(&f, [1, 1, 0, 0]).expect("a sentence tape");
     assert!(spoken.letters().is_none(), "a sentence is not a word: it has no letters");
     let decoded = crate::transducer::sentence::from_element_form(&spoken)
         .expect("and it decodes to the nerve its words live in");
     let steps: u64 = decoded
-        .loop_words()
+        .orbit_words()
         .iter()
         .map(|(w, _)| match w.order() {
             crate::transducer::alphabet::Order::Finite(p) => p as u64,
             crate::transducer::alphabet::Order::Infinite => w.len() as u64,
         })
         .sum();
-    assert!(steps > 0, "the loops name a charge");
+    assert!(steps > 0, "the orbits name a charge");
 
     let mut k = Kernel::new();
     // Admission is room (23.8, S9.6): this fixture bypasses the replay to
@@ -270,20 +270,20 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
     let after = k.physics().pressure;
     assert!(
         after[0] > before[0],
-        "the sentence is charged by its loops' orders, not by a chain it does not have: \
+        "the sentence is charged by its orbits' orders, not by a chain it does not have: \
          {before:?} then {after:?}"
     );
 }
 
-/// THE HOLONOMY THE METABOLISM CHARGES ON IS THE ONE THE LOOP CARRIES.
+/// THE HOLONOMY THE METABOLISM CHARGES ON IS THE ONE THE ORBIT CARRIES.
 ///
-/// `germinate/listing.rs` charges the physics off `Form::loop_words`: a loop
-/// of FINITE order raises pressure by its period, a loop of INFINITE order
+/// `germinate/listing.rs` charges the physics off `Form::orbit_words`: an orbit
+/// of FINITE order raises pressure by its period, an orbit of INFINITE order
 /// charges TORSION — "what will not close". That reader returned
-/// `lp.holonomy`, the loop's WORD, and a face's word is the coboundary
+/// `lp.holonomy`, the orbit's WORD, and a face's word is the coboundary
 /// `w_j ∘ w_i⁻¹` whose product around a cycle telescopes to the identity. So
-/// every loop read `Finite(1)`, every sentence raised one unit of pressure
-/// per loop, and the torsion branch was unreachable by construction —
+/// every orbit read `Finite(1)`, every sentence raised one unit of pressure
+/// per orbit, and the torsion branch was unreachable by construction —
 /// `Physics.torsion` stayed zero, `order_flux` was `syntropic − 0`, and the
 /// `yield_surface` a reply carries never saw a cycle. Measured at 7582ada:
 /// 196 cycles filed by the voices, 0 charged on any court.
@@ -293,7 +293,7 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
 /// on the edge — and it asserts the reader reports the turn's period and not
 /// the identity's.
 #[test]
-fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
+fn the_metabolism_reads_the_orbits_true_holonomy_not_its_coboundary() {
     use crate::transducer::alphabet::{Derivation, LetterId, Order, Word};
     use crate::transducer::sentence::{face_pair_key, FacePlace, Form, FormFace, Transport, Vertex};
     let chart = crate::transducer::stalk::Invariant::counts(&[3, 5]);
@@ -327,15 +327,15 @@ fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
         );
         f.faces.push(face);
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    assert_eq!(f.loops.len(), 1, "the triangle closes one loop");
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    assert_eq!(f.orbits.len(), 1, "the triangle closes one orbit");
     assert_eq!(
-        f.loops[0].holonomy.order(),
+        f.orbits[0].holonomy.order(),
         Order::Finite(1),
         "the WORD holonomy is the identity, as a product of coboundaries always is"
     );
-    let words = f.loop_words();
-    assert!(!words.is_empty(), "the loop reports a holonomy per member path");
+    let words = f.orbit_words();
+    assert!(!words.is_empty(), "the orbit reports a holonomy per member path");
     assert!(
         words.iter().any(|(w, _)| matches!(w.order(), Order::Finite(4))),
         "and what it reports is the edge composite's quarter turn, not the identity: {:?}",
@@ -359,35 +359,35 @@ fn the_metabolism_reads_the_loops_true_holonomy_not_its_coboundary() {
     // is refused at the gate for free.
     let mut filed = f.clone();
     // The period is the FILER'S now, derived through the fixed-point
-    // gate, so this reads what the loop closes at rather than handing it in.
-    // 54.7 — THE YIELD IS BOTH PLANES. `file_loop` returns the labour the
+    // gate, so this reads what the orbit closes at rather than handing it in.
+    // 54.7 — THE YIELD IS BOTH PLANES. `file_orbit` returns the labour the
     // filing earns, and that is `(ℓ₁ − 1) + (ℓ₂ − 1)` across the two
     // invariant planes of the double rotation, not `lcm − 1`. A quarter
     // turn is isoclinic here — `[4, 4]` — so it earns `3 + 3 = 6`, where
     // the envelope said `4`. The two planes are doing the work; the
     // envelope was never either plane's.
     assert_eq!(
-        filed.file_loop(0),
+        filed.file_orbit(0),
         vec![6],
-        "the loop files under its holonomy's class, at the period it closes at"
+        "the orbit files under its holonomy's class, at the period it closes at"
     );
     let bare = crate::transducer::sentence::as_element_form(&filed, [1, 1, 0, 0])
         .expect("a sentence tape");
     // THE FILING RIDES THE SPEAKER'S WORD, AND THE CYCLE RE-DERIVES FROM
     // THE GEOMETRY (54.5). This read the DECODED form's `torsion`, which is
     // empty by construction: `from_address` recovers the complex and a
-    // filing is not part of it (law 12 — `loop_classes` derives the class
+    // filing is not part of it (law 12 — `orbit_classes` derives the class
     // and the period from the faces).
     assert!(!bare.filing().is_empty(), "the filed cycle rides the word that made it");
     let back = crate::transducer::sentence::from_element_form(&bare).expect("its address decodes");
     assert!(
-        back.loops.iter().any(|lp| !back.loop_classes(lp).is_empty()),
+        back.orbits.iter().any(|lp| !back.orbit_classes(lp).is_empty()),
         "and the cycle itself re-derives from the complex, with no filing consulted"
     );
 
     // The charge is read on a DEPLETED lane (23.8): a court with reserve to
     // spare dockets the listing and charges nothing, so the reserve is spent
-    // first exactly as `a_depleted_lane_charges_a_sentence_by_its_loop_words`
+    // first exactly as `a_depleted_lane_charges_a_sentence_by_its_orbit_words`
     // spends it.
     let depleted = || {
         let mut k = Kernel::new();

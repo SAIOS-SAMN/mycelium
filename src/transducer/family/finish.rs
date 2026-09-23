@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 21, 50.5 — EXTRACTION FINISH: the frames the budget did not reach ride
-//! the rule as demands, and the form is closed with its depth, loops, ratio
+//! the rule as demands, and the form is closed with its depth, orbits, ratio
 //! and sections.
 
 use super::perceive::{frame_of, Grid};
@@ -46,7 +46,7 @@ pub fn extraction_spend(family: &[(Grid, Grid)]) -> usize {
 }
 
 /// The tail of an extraction: the unreached frames ride the rule as the
-/// demands of 50.5, and the form is closed out with its depth, loops, ratio
+/// demands of 50.5, and the form is closed out with its depth, orbits, ratio
 /// and sections.
 pub(crate) fn finish(
     mut form: Form,
@@ -65,7 +65,7 @@ pub(crate) fn finish(
         form.stand_demand(kind, &chart, germ.to_vec());
     }
     form.depth = form.depth_of();
-    form.loops = Form::loops_of(&form.faces, &form.vertices);
+    form.orbits = Form::orbits_of(&form.faces, &form.vertices);
     form.ratio = scale;
     form.sections = sections;
     form.hue_maps = hue_maps_of_form(&form);

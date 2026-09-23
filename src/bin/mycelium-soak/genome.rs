@@ -208,7 +208,7 @@ pub(crate) fn reconcile(path: &str) {
     let mut total = mycelium::transducer::sentence::TapeParts::default();
     let mut read = 0usize;
     // The sentences themselves, kept for the homotopy reading below: it
-    // asks each form for its loops and its rank, which the byte accounting
+    // asks each form for its orbits and its rank, which the byte accounting
     // does not carry.
     let mut held: Vec<((), Element)> = Vec::new();
     for _ in 0..n {
@@ -232,7 +232,7 @@ pub(crate) fn reconcile(path: &str) {
         total.charts += p.charts;
         total.sections += p.sections;
         total.faces += p.faces;
-        total.loops += p.loops;
+        total.orbits += p.orbits;
         total.rotor += p.rotor;
         total.certs += p.certs;
         total.demands += p.demands;
@@ -267,12 +267,12 @@ pub(crate) fn reconcile(path: &str) {
     println!("    the tape's own decomposition over {read} sentences:");
     let t = total.total.max(1);
     // DERIVED means `from_address` recomputes it and the file need not
-    // hold it: the loops and their carriages come from `loops_of` on the
+    // hold it: the orbits and their carriages come from `orbits_of` on the
     // faces the key carries (§1.5: "loops and holonomies are derived and
     // never keyed"), and the certificates are evidence (54.2).
     for (name, v, derived) in [
         ("glued addresses", total.addr_glued, false),
-        ("loops + carriages", total.loops, true),
+        ("orbits + carriages", total.orbits, true),
         ("member carriages", total.carriage, false),
         ("charts", total.charts, false),
         ("sections", total.sections, false),
@@ -330,34 +330,34 @@ pub(crate) fn reconcile(path: &str) {
     // Four lanes, never summed with each other (law 5): the rank's torsion,
     // free, off-plane and axes coordinates, each totalled over the words
     // that have a rank at all. `curved` counts the sentences holding at
-    // least one loop whose holonomy is not the identity — the number that is
+    // least one orbit whose holonomy is not the identity — the number that is
     // zero exactly when the genome is flat.
-    let (mut looped, mut curved, mut ranked) = (0usize, 0usize, 0usize);
+    let (mut orbited, mut curved, mut ranked) = (0usize, 0usize, 0usize);
     let (mut paths, mut classed) = (0usize, 0usize);
-    let (mut star_loops, mut real_loops) = (0usize, 0usize);
+    let (mut star_orbits, mut real_orbits) = (0usize, 0usize);
     let (mut chain_broke, mut chain_closed, mut chain_open, mut chain_break_step) = (0usize, 0usize, 0usize, 0usize);
-    let (mut tape_loops, mut rederived_loops) = (0usize, 0usize);
+    let (mut tape_orbits, mut rederived_orbits) = (0usize, 0usize);
     let mut dumped = 0usize;
-    let (mut edged_loops, mut edgeless_loops) = (0usize, 0usize);
-    let (mut torn_loops, mut unchained_loops) = (0usize, 0usize);
-    let (mut split_loops, mut verts, mut members, mut split_verts) = (0usize, 0usize, 0usize, 0usize);
+    let (mut edged_orbits, mut edgeless_orbits) = (0usize, 0usize);
+    let (mut torn_orbits, mut unchained_orbits) = (0usize, 0usize);
+    let (mut split_orbits, mut verts, mut members, mut split_verts) = (0usize, 0usize, 0usize, 0usize);
     let mut rank = [0u64; 4];
     for (_, e) in &held {
         let held_word = mycelium::transducer::element::Held::of(e.clone());
         let Some(f) = held_word.form() else { continue };
-        if f.loops.is_empty() {
+        if f.orbits.is_empty() {
             continue;
         }
-        looped += 1;
+        orbited += 1;
         // `lp.holonomy` IS A COBOUNDARY AND CANNOT BE ASKED THIS. A face's
         // word is `w_j ∘ w_i⁻¹`, so a product of them around a cycle
         // telescopes to the identity: `delta1` reads `Finite(1)` on every
-        // loop of every form, always, and a reading taken off it says only
-        // that `δ∘δ = 0`. `Form::loop_words` is the true carrier — the EDGE
+        // orbit of every form, always, and a reading taken off it says only
+        // that `δ∘δ = 0`. `Form::orbit_words` is the true carrier — the EDGE
         // composite where a member path has one, the word where it does not
         // — which is what R8/D1 moved the FILER onto and what `coheres`
-        // reaches through `loop_is_congruent`.
-        let words = f.loop_words();
+        // reaches through `orbit_is_congruent`.
+        let words = f.orbit_words();
         if words.iter().any(|(w, _)| {
             !w.rotor().projective_eq(&mycelium::transducer::alphabet::Rotor::identity())
         }) {
@@ -365,39 +365,39 @@ pub(crate) fn reconcile(path: &str) {
         }
         paths += words.len();
         classed += words.iter().filter(|(_, k)| k.as_ref().is_some_and(|k| !k.is_zero())).count();
-        // A LOOP OF FRAME STAR FACES CARRIES NOTHING BY CONSTRUCTION.
-        // `paths_carried` seeds a loop's edge half only where the loop
+        // AN ORBIT OF FRAME STAR FACES CARRIES NOTHING BY CONSTRUCTION.
+        // `paths_carried` seeds an orbit's edge half only where the orbit
         // crosses a face that does NOT touch the Frame, and 18 puts the
-        // Frame at vertex zero by the form's own shape. A loop every face
+        // Frame at vertex zero by the form's own shape. An orbit every face
         // of which is a star face is a cycle through the basepoint and
         // relates no two bodies to each other, so it has no member path to
-        // carry a holonomy — which is a different fact from a real loop
+        // carry a holonomy — which is a different fact from a real orbit
         // whose bodies fail to close around it, and the two are what this
         // pair of counts tells apart.
-        // THE LOOPS THE TAPE CARRIES, AND THE LOOPS THE FACES PROVE. The
-        // tape writes `Loop` whole and the decoder reads it back, so a
-        // genome word's loops are whatever the build that MINTED it
+        // THE ORBITS THE TAPE CARRIES, AND THE ORBITS THE FACES PROVE. The
+        // tape writes `Orbit` whole and the decoder reads it back, so a
+        // genome word's orbits are whatever the build that MINTED it
         // computed. Re-deriving them from the same form's faces says
-        // whether the two agree; if they do not, the loops on the tape are
+        // whether the two agree; if they do not, the orbits on the tape are
         // a second statement of the incidence (law 12), gone stale.
-        tape_loops += f.loops.len();
-        rederived_loops += mycelium::transducer::sentence::Form::loops_of(&f.faces, &f.vertices).len();
-        for lp in &f.loops {
+        tape_orbits += f.orbits.len();
+        rederived_orbits += mycelium::transducer::sentence::Form::orbits_of(&f.faces, &f.vertices).len();
+        for lp in &f.orbits {
             let star = lp.faces.iter().all(|&fi| {
                 f.faces.get(fi as usize).is_some_and(|fa| fa.i == 0 || fa.j == 0)
             });
             if star {
-                star_loops += 1;
+                star_orbits += 1;
                 continue;
             }
-            real_loops += 1;
-            // WHERE THE WALK DIES, on a loop that crosses between bodies.
+            real_orbits += 1;
+            // WHERE THE WALK DIES, on an orbit that crosses between bodies.
             // `paths_carried` steps a member from face to face and keeps the
             // paths that return to the chart they began at (`closed_key`
             // compares CHARTS, not carrier state — it does not demand flat
             // holonomy). So there are exactly two ways to get no path:
             //
-            //   the loop has a face with NO MEMBER PAIR, and the walk has
+            //   the orbit has a face with NO MEMBER PAIR, and the walk has
             //   nothing to step onto there — a tear in the cover; or
             //
             //   every face carries a pair and the CHARTS DO NOT CHAIN: the
@@ -409,20 +409,20 @@ pub(crate) fn reconcile(path: &str) {
             match lp.faces.iter().any(|&fi| {
                 f.faces.get(fi as usize).is_some_and(|fa| fa.at.is_empty())
             }) {
-                true => torn_loops += 1,
-                false => unchained_loops += 1,
+                true => torn_orbits += 1,
+                false => unchained_orbits += 1,
             }
-            // DOES THE LOOP EVEN PASS THROUGH A VERTEX THAT SPLITS? A cycle
+            // DOES THE ORBIT EVEN PASS THROUGH A VERTEX THAT SPLITS? A cycle
             // of the vertex graph lifts to the member graph only where each
             // vertex it passes through contributes ONE member; a vertex
             // acting on several charts is several nodes to the face builder
             // and one node to the cycle basis, and that is where the lift
-            // has to break. If no loop passed through such a vertex the
+            // has to break. If no orbit passed through such a vertex the
             // account would be wrong, so it is counted rather than assumed.
             if lp.vertices.iter().any(|&vi| {
                 f.vertices.get(vi as usize).is_some_and(|v| v.charts().len() > 1)
             }) {
-                split_loops += 1;
+                split_orbits += 1;
             }
             // WHERE THE CHART CHAIN BREAKS, walked the way `paths_carried`
             // walks it: at each step the face's pair must relate the chart
@@ -472,7 +472,7 @@ pub(crate) fn reconcile(path: &str) {
                     chain_break_step += 1;
                     if dumped < 1 {
                         dumped += 1;
-                        println!("      --- one broken loop ---");
+                        println!("      --- one broken orbit ---");
                         println!("      vertices {:?} faces {:?}", lp.vertices, lp.faces);
                         println!("      standing at {:?}", at.as_ref().map(|a| &a[..a.len().min(6)]));
                         for (w2, &f2) in lp.vertices.windows(2).zip(&lp.faces) {
@@ -487,21 +487,21 @@ pub(crate) fn reconcile(path: &str) {
                     break;
                 }
             }
-            // DOES THE LOOP CARRY 50.3'S EDGE AT ALL? `holonomy_words_on`
+            // DOES THE ORBIT CARRY 50.3'S EDGE AT ALL? `holonomy_words_on`
             // composes the EDGE transport where a member path has one and
-            // falls back to the loop's own WORD where it does not — and the
+            // falls back to the orbit's own WORD where it does not — and the
             // word is the coboundary `w_j ∘ w_i⁻¹`, which telescopes to the
-            // identity around any cycle. So a loop whose faces carry no
+            // identity around any cycle. So an orbit whose faces carry no
             // edge is flat by algebra whatever it turns by, and this is
-            // what tells that apart from a loop that is genuinely flat.
+            // what tells that apart from an orbit that is genuinely flat.
             // ON THE REAL FACES ONLY. A STAR FACE HAS NO EDGE BY DESIGN:
             // it is the trivialization every body is read against (2.2),
             // `edge_between` measures nothing across it because the Frame
             // carries no body at any frame, and `paths_carried` composes
             // the identity through it. Demanding one there reported "0
-            // loops carry the edge" on every voice — which was a fact
-            // about this check, since every loop's spanning tree is built
-            // star-first and so every loop has star faces.
+            // orbits carry the edge" on every voice — which was a fact
+            // about this check, since every orbit's spanning tree is built
+            // star-first and so every orbit has star faces.
             match lp.faces.iter().all(|&fi| {
                 f.faces.get(fi as usize).is_some_and(|fa| {
                     let star = [fa.i, fa.j].iter().any(|&v| {
@@ -513,8 +513,8 @@ pub(crate) fn reconcile(path: &str) {
                     star || fa.at.scoped().all(|(_, pl)| pl.edge.is_some())
                 })
             }) {
-                true => edged_loops += 1,
-                false => edgeless_loops += 1,
+                true => edged_orbits += 1,
+                false => edgeless_orbits += 1,
             }
             match (broke, first == at) {
                 (true, _) => chain_broke += 1,
@@ -541,31 +541,31 @@ pub(crate) fn reconcile(path: &str) {
     println!();
     println!("    the homotopy the genome holds, over the same {read} sentences:");
     println!(
-        "      {looped} carry a loop, {curved} carry a loop with NON-IDENTITY holonomy"
+        "      {orbited} carry an orbit, {curved} carry an orbit with NON-IDENTITY holonomy"
     );
     println!(
         "      {paths} member paths in all, {classed} of them standing at a NON-ZERO class"
     );
     println!(
-        "      {star_loops} loops through the Frame alone, {real_loops} crossing a face between two bodies"
+        "      {star_orbits} orbits through the Frame alone, {real_orbits} crossing a face between two bodies"
     );
     println!(
-        "      of the {real_loops}: {torn_loops} carry a face with NO member pair, {unchained_loops} carry a pair on every face"
+        "      of the {real_orbits}: {torn_orbits} carry a face with NO member pair, {unchained_orbits} carry a pair on every face"
     );
     println!(
         "      {verts} vertices carry {members} members; {split_verts} act on more than one chart"
     );
     println!(
-        "      {split_loops} loops pass through a vertex that splits into several members"
+        "      {split_orbits} orbits pass through a vertex that splits into several members"
     );
     println!(
         "      the chart chain: {chain_closed} close, {chain_open} walk but do not return,          {chain_broke} break mid-walk ({chain_break_step} on a face with no matching pair)"
     );
     println!(
-        "      {tape_loops} loops on the tapes, {rederived_loops} re-derived from the same faces"
+        "      {tape_orbits} orbits on the tapes, {rederived_orbits} re-derived from the same faces"
     );
     println!(
-        "      50.3's edge: {edged_loops} loops carry it on every REAL face, {edgeless_loops} do not"
+        "      50.3's edge: {edged_orbits} orbits carry it on every REAL face, {edgeless_orbits} do not"
     );
     println!(
         "      rank over the {ranked} that have one: torsion {} free {} off-plane {} axes {}",
@@ -576,7 +576,7 @@ pub(crate) fn reconcile(path: &str) {
 /// 54.5 — THE CITATION NERVE, WALKED AS A COMPLEX.
 ///
 /// Every reading this session looked for curvature INSIDE a form and found
-/// none: 36 corpus forms carry 361 vertices, 126 faces and ZERO loops —
+/// none: 36 corpus forms carry 361 vertices, 126 faces and ZERO orbits —
 /// `E − V + C = 126 − 361 + 235 = 0`, a forest by edge starvation. Grade 1
 /// is silent because there is no 1-cycle to be flat or curved.
 ///

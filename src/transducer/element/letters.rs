@@ -316,7 +316,7 @@ pub fn turn_base_point(
 ///
 ///   CENTRE — `p` solving `(I − R) p = t` on `Im(I − R)`. The rotation is
 ///   invertible there, and `p` is the point the bend holds still. This is
-///   CURVATURE: `R` turning about `p`, angular defect around the loop.
+///   CURVATURE: `R` turning about `p`, angular defect around the orbit.
 ///
 ///   TWIST — `t − (I − R) p`, which lies in `ker(I − R)`: the plane the
 ///   rotor leaves POINTWISE FIXED, along which no choice of origin can
@@ -519,8 +519,8 @@ impl Element {
     /// byte 1 is the version where a spelling would be. It used to be
     /// admitted by this guard and then fail silently on that byte, which
     /// read as "this sentence has no letters" when the truth is that the
-    /// question does not apply to it. A sentence's words are its loop
-    /// holonomies: `Form::loop_words`.
+    /// question does not apply to it. A sentence's words are its orbit
+    /// holonomies: `Form::orbit_words`.
     pub fn letters(&self) -> Option<Letters> {
         use crate::transducer::alphabet::Spelling;
         let b = &self.description;

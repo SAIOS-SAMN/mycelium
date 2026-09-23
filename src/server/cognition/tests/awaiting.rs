@@ -28,7 +28,7 @@ fn sentence_with(d: Derivation, tag: u8) -> Element {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("star"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     as_element_form(&f, [1, 0, 0, 0]).expect("a tape")
 }
@@ -208,8 +208,8 @@ fn a_ruling_that_did_not_happen_rehears_nothing() {
 ///
 /// `ruled_admit` filed at `invariant_of(w)` — the sentence's own chart,
 /// `chart_of_form`, which leads with `2` and is a projection of what the
-/// form holds. `candidates_for` asks the crystal under the charts a
-/// loop's face vertices act on, which are body charts leading `1`, and
+/// form holds. `candidates_for` asks the crystal under the charts an
+/// orbit's face vertices act on, which are body charts leading `1`, and
 /// `on_axis_of` peels rather than descending a fiber, so no peel from a
 /// body chart can ever reach a form chart. Everything this court filed
 /// was unreachable by the only reader of the carrier.
@@ -233,7 +233,7 @@ fn a_ruled_word_is_filed_at_the_chart_its_vertex_acts_on() {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("star"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     let sentence = as_element_form(&f, [1, 0, 0, 0]).expect("a tape");
 

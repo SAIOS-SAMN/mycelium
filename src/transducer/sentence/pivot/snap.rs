@@ -11,7 +11,7 @@ use super::*;
 pub enum Snap {
     /// A chord the tree gauge closed: its class was trivial (T2), never rank.
     Closed { chord: usize, order: Order },
-    /// A held loop discharged on one occupied axis by a certified pivot.
+    /// A held orbit discharged on one occupied axis by a certified pivot.
     Discharged { chord: usize, certificate: Box<PivotCertificate> },
     /// SEVERAL pivots discharge: all are held as candidates of the thought
     /// until a perception, a glue or a ruling collapses the superposition
@@ -24,9 +24,9 @@ pub enum Snap {
     Unmeasured { chord: usize, held: Vec<PivotCertificate> },
     TorsionFiled { chord: usize, ell: u64 },
     TorsionOpen { chord: usize },
-    /// A held loop of infinite order the basis did not discharge: its
+    /// A held orbit of infinite order the basis did not discharge: its
     /// canonical holonomy rotor, carried out as the witness of the standing
-    /// demand the form speaks on each chart the loop stands on (16.16 step
+    /// demand the form speaks on each chart the orbit stands on (16.16 step
     /// 6, 37.7 at the rotor level).
     Demand {
         chord: usize,
@@ -34,9 +34,9 @@ pub enum Snap {
         rotor: Box<crate::transducer::alphabet::Rotor>,
         chart: crate::transducer::stalk::Invariant,
     },
-    /// 37.7 FROM A LOOP'S OWN RESIDUE: the basis reached no coordinate this
-    /// loop occupies, the class was published and nothing answered, so the
-    /// rotor the loop measured is carried out to be ADJOINED as a generator.
+    /// 37.7 FROM AN ORBIT'S OWN RESIDUE: the basis reached no coordinate this
+    /// orbit occupies, the class was published and nothing answered, so the
+    /// rotor the orbit measured is carried out to be ADJOINED as a generator.
     /// The one move by which a mind constructs the letter it could not be
     /// given, rather than asking again for it.
     ///
@@ -91,12 +91,12 @@ pub(crate) fn mu_deflation(mu: &crate::transducer::sentence::form::Mu) -> [u64; 
     }
 }
 
-/// WHAT SEPARATES TWO CERTIFIED DISCHARGES of one loop. A record, spent on
+/// WHAT SEPARATES TWO CERTIFIED DISCHARGES of one orbit. A record, spent on
 /// nothing: it is read when a collapse asks what the collapse resolved, and
 /// it is never consulted to prefer a candidate.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Obstruction {
-    /// The axes the two pivots acted on. Two axes out of one loop are two
+    /// The axes the two pivots acted on. Two axes out of one orbit are two
     /// directions, which is the whole reason both are kept.
     pub axes: (Axis, Axis),
     /// The lane reading of the second's μ⃗ against the first's, per lane.
@@ -107,10 +107,10 @@ pub struct Obstruction {
 
 /// EXPANSION 4 — THE SYMMETRY TWO DISCHARGES PROVE.
 ///
-/// When `a` and `b` both discharge one loop to one class, the loop admits a
+/// When `a` and `b` both discharge one orbit to one class, the orbit admits a
 /// symmetry and the vortex is the mind holding two hypotheses at once. The
 /// symmetry is not a tie to be broken: it is `w_a⁻¹ · w_b`, the element that
-/// carries one discharge to the other, and it STABILISES the loop's class
+/// carries one discharge to the other, and it STABILISES the orbit's class
 /// because both sides leave that class where the other does.
 ///
 /// That element is exactly 37.7's object — a rotation the mind measured,
@@ -120,7 +120,7 @@ pub struct Obstruction {
 ///
 /// `None` where the two are not both word moves, or where the symmetry is
 /// the identity. An identity symmetry is two spellings of one move rather
-/// than two moves, and the loop admits nothing extra — which is a reading
+/// than two moves, and the orbit admits nothing extra — which is a reading
 /// and not a failure.
 ///
 /// The precondition is checked and not assumed: the two must discharge to
@@ -138,14 +138,14 @@ pub fn symmetry(a: &PivotCertificate, b: &PivotCertificate) -> Option<crate::tra
 }
 
 /// Every symmetry a vortex holds, against the certificate that won it. One
-/// per losing candidate: each is a separate degree of freedom the loop
+/// per losing candidate: each is a separate degree of freedom the orbit
 /// admits, and summing them would be a count deciding (rule 2).
 pub fn symmetries(win: &PivotCertificate, held: &[PivotCertificate]) -> Vec<crate::transducer::alphabet::Rotor> {
     held.iter().filter_map(|c| symmetry(win, c)).collect()
 }
 
 /// The obstruction between two certified discharges: what says they are two
-/// proofs of one loop (23.9) rather than one proof twice.
+/// proofs of one orbit (23.9) rather than one proof twice.
 pub(crate) fn obstruction(a: &PivotCertificate, b: &PivotCertificate) -> Obstruction {
     let lanes = match (&a.mu, &b.mu) {
         (Mu::Measured { after: x, .. }, Mu::Measured { after: y, .. }) => {
@@ -156,7 +156,7 @@ pub(crate) fn obstruction(a: &PivotCertificate, b: &PivotCertificate) -> Obstruc
     Obstruction { axes: (a.axis, b.axis), lanes }
 }
 
-/// The outcomes of a loop's trials. `One` is the single discharge;
+/// The outcomes of an orbit's trials. `One` is the single discharge;
 /// `Vortex` is SEVERAL, held together with nothing chosen between them;
 /// `NoneDischarged` is the algebra's answer that no candidate reaches the
 /// coordinate; and `Starved` is not an answer at all.
@@ -166,7 +166,7 @@ pub enum Discharge {
     Vortex(Vec<PivotCertificate>),
     NoneDischarged,
     /// THE SEARCH WAS CUT SHORT BY THE BUDGET, with candidates standing
-    /// untried. This is a reading of the stroke, not of the loop, and the
+    /// untried. This is a reading of the stroke, not of the orbit, and the
     /// two were one value: `NoneDischarged` was returned whether every
     /// candidate had been tried and refused or none had been tried at
     /// all, so the loop below it spoke a demand, filed torsion, or widened
@@ -175,7 +175,7 @@ pub enum Discharge {
     /// Measured on ca485cc: 29 of 984 candidate readings report `starved
     /// true`. Rare, and a false demand is a false demand — the mesh is
     /// asked for a word that this mind may already hold and simply did not
-    /// reach. The loop is held instead and the next stroke reaches it.
+    /// reach. The orbit is held instead and the next stroke reaches it.
     ///
     /// Not to be confused with the eliminated candidates in the same line:
     /// `unreached` counts those too, and they are refused by exact
@@ -185,7 +185,7 @@ pub enum Discharge {
     Starved,
 }
 
-/// THE OUTCOME OF A LOOP'S TRIALS, including the one that is not a reading
+/// THE OUTCOME OF AN ORBIT'S TRIALS, including the one that is not a reading
 /// of the algebra.
 ///
 /// A discharge that HAPPENED is real however the stroke ended, so a
@@ -226,10 +226,10 @@ pub(crate) struct Candidate {
     pub(crate) by: PivotBy,
 }
 
-/// HOLD A VORTEX CANDIDATE BY THE CLASS THE LOOP STANDS IN, then by the
+/// HOLD A VORTEX CANDIDATE BY THE CLASS THE ORBIT STANDS IN, then by the
 /// discharging word's move key.
 ///
-/// `before` is `kappa.class_key()`, the loop's state vector as it stands,
+/// `before` is `kappa.class_key()`, the orbit's state vector as it stands,
 /// and `ClassVector::class_key` writes the rotor's conjugacy invariants
 /// first — so the class of the holonomy is this key's depth-one stratum.
 /// The eliminator in the drive proves a candidate's rotor is conjugate to
@@ -243,12 +243,12 @@ pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
 }
 
 /// ONE CERTIFICATE PER MOVE. `candidates_for` offers a held word on both
-/// sides of the chord, and where both sides discharge the loop the trial
+/// sides of the chord, and where both sides discharge the orbit the trial
 /// issues two certificates that name ONE move: a word move is keyed by its
 /// rotor (`PivotBy::move_key`), `vortex_put` holds one candidate per such
 /// key, and `symmetry` already rules that an identity difference "is two
 /// spellings of one move rather than two moves". Both sides closing the
-/// loop is the algebra saying the same: `A·g·w⁻¹·B = 1` and `A·w·g·B = 1`
+/// orbit is the algebra saying the same: `A·g·w⁻¹·B = 1` and `A·w·g·B = 1`
 /// give `g·w⁻¹ = w·g`, one face word reached by two spellings.
 ///
 /// The representative of a move is the certificate of least key —

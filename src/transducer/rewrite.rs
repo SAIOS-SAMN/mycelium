@@ -198,7 +198,7 @@ impl Rewrite {
                 }
                 let period = u32::from_le_bytes(b.get(pos..pos + 4)?.try_into().ok()?);
                 // A17, as at every other tape: a torsion is believed only
-                // where the loop closes at ℓ, so a filed zero is malformed.
+                // where the orbit closes at ℓ, so a filed zero is malformed.
                 if period == 0 {
                     return None;
                 }
@@ -269,7 +269,7 @@ impl Rewrite {
             }
             RewritePayload::Torse { period, .. } => {
                 // A torsion of period ℓ closes ℓ − 1. A17 believes a period
-                // only where the loop closes at it and the tape refuses a
+                // only where the orbit closes at it and the tape refuses a
                 // zero, so ℓ ≥ 1 and the subtraction is total.
                 mu[LANE_SHELL] = *period as u64 - 1;
             }

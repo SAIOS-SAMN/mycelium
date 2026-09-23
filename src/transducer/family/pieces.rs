@@ -69,7 +69,7 @@ pub(crate) fn piece_at(
 /// 2026-09-18). This peeled the body into concentric shells first and took
 /// the components of each shell, so a body no single versor carried whole
 /// became one word vertex per shell component rather than one demand: 1 655
-/// vertices, 11 762 faces and 10 118 loops on one 22×22 family of epoch 65.
+/// vertices, 11 762 faces and 10 118 orbits on one 22×22 family of epoch 65.
 /// Two readings followed from that shape and neither was a separate defect.
 /// The form's address is its vertex key, so 1 655 pieces made it 9 990 312
 /// bytes, and every index naming the idea copied it (R6). And a shell

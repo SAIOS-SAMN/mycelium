@@ -1,4 +1,4 @@
-// 54.7 — THE LOOP CENSUS: the charge each step carries, how closing cycles
+// 54.7 — THE ORBIT CENSUS: the charge each step carries, how closing cycles
 // divide, the defect and spectrum of each kept cycle, and the operators its
 // generators enact.
 
@@ -14,8 +14,8 @@ thread_local! {
     /// whose non-zero shears cancel around the perimeter. The first
     /// quotients nothing; the second is a relator of `π₁`.
     ///
-    /// OBSERVATIONAL ONLY. `loop_is_trivial` keeps pruning exactly what it
-    /// pruned before, so `loops.len()` and the tests asserting incidence
+    /// OBSERVATIONAL ONLY. `orbit_is_trivial` keeps pruning exactly what it
+    /// pruned before, so `orbits.len()` and the tests asserting incidence
     /// through it are untouched. Both kinds genuinely belong to `ker(ρ)` —
     /// neither deposits net holonomic shear at `x₀` — so the gate is right
     /// and only the reporting was blind.
@@ -84,11 +84,11 @@ pub(super) fn note_closure(carried: &Keyed<PathCarried>) {
 }
 
 /// `(vacuum closures, resonant closures, the resonant charges)`.
-pub fn loop_resonance() -> (u64, u64, Vec<num_rational::BigRational>, u64, u64) {
+pub fn orbit_resonance() -> (u64, u64, Vec<num_rational::BigRational>, u64, u64) {
     RESONANCE.with(|r| r.borrow().clone())
 }
 
-pub fn reset_loop_resonance() {
+pub fn reset_orbit_resonance() {
     RESONANCE.with(|r| *r.borrow_mut() = (0, 0, Vec::new(), 0, 0));
 }
 
@@ -97,7 +97,7 @@ thread_local! {
     /// composite: `(trivial, elliptic, hyperbolic, parabolic, non-simple)`.
     ///
     /// A cycle's class is not a label the builder assigns; it is
-    /// `class_invariants` of the versor the loop's own faces compose, so
+    /// `class_invariants` of the versor the orbit's own faces compose, so
     /// the distribution is a reading of the corpus and not of this code.
     static DEFECTS: std::cell::Cell<(u64, u64, u64, u64, u64)> =
         const { std::cell::Cell::new((0, 0, 0, 0, 0)) };
@@ -187,7 +187,7 @@ thread_local! {
 /// inverse pair)` for every Casimir class, in the carrier's own key order.
 /// A class of two whose product is projectively the identity is one
 /// geodesic line read forward and backward.
-pub fn loop_class_report() -> Vec<(usize, bool)> {
+pub fn orbit_class_report() -> Vec<(usize, bool)> {
     CLASS_OPS.with(|c| {
         c.borrow()
             .scoped()
@@ -213,7 +213,7 @@ pub fn loop_class_report() -> Vec<(usize, bool)> {
     })
 }
 
-pub fn reset_loop_class_ops() {
+pub fn reset_orbit_class_ops() {
     CLASS_OPS.with(|c| *c.borrow_mut() = Keyed::new());
 }
 
@@ -225,12 +225,12 @@ pub fn reset_loop_class_ops() {
 /// compound — an unresolved sentence rather than a letter — and the
 /// distinction between alphabet and grammar depends on which it is.
 ///
-/// Computed where it is reported, from the form's own loops, so there is
+/// Computed where it is reported, from the form's own orbits, so there is
 /// no cumulative state to reset and no way for one form's reading to leak
 /// into another's.
 pub fn form_operators(f: &Form) -> usize {
     let mut ops: Keyed<()> = Keyed::new();
-    for lp in &f.loops {
+    for lp in &f.orbits {
         let Some(inv) = lp.based_at.versor_inverse() else { continue };
         for (_, omega) in lp.carriages.scoped() {
             let based = lp.based_at.geo(omega).geo(&inv);
@@ -249,14 +249,14 @@ pub fn form_operators(f: &Form) -> usize {
 /// enacting one physical displacement. `|im(ρ)| / |Conj|` is the
 /// directional dispersion — how many distinct Burgers vectors the corpus
 /// spans within each kinematic class.
-pub fn loop_synonyms() -> (u64, u64, u64, u64) {
+pub fn orbit_synonyms() -> (u64, u64, u64, u64) {
     SYNONYMS.with(|s| {
         let b = s.borrow();
         (b.0.len() as u64, b.1.len() as u64, b.2, b.3)
     })
 }
 
-pub fn reset_loop_synonyms() {
+pub fn reset_orbit_synonyms() {
     SYNONYMS.with(|s| *s.borrow_mut() = (Keyed::new(), Keyed::new(), 0, 0));
 }
 
@@ -311,20 +311,20 @@ pub(super) fn note_synonym(based: &element::Versor) {
 }
 
 /// `(closes, open, undecomposed over ℚ, isoclinic)`.
-pub fn loop_spectra() -> (u64, u64, u64, u64) {
+pub fn orbit_spectra() -> (u64, u64, u64, u64) {
     SPECTRA.with(|c| c.get())
 }
 
-pub fn reset_loop_spectra() {
+pub fn reset_orbit_spectra() {
     SPECTRA.with(|c| c.set((0, 0, 0, 0)));
 }
 
 /// The defect distribution of every cycle kept since the last reset.
-pub fn loop_defects() -> (u64, u64, u64, u64, u64) {
+pub fn orbit_defects() -> (u64, u64, u64, u64, u64) {
     DEFECTS.with(|c| c.get())
 }
 
-pub fn reset_loop_defects() {
+pub fn reset_orbit_defects() {
     DEFECTS.with(|c| c.set((0, 0, 0, 0, 0)));
 }
 
@@ -425,7 +425,7 @@ impl OrbitReading {
 
 thread_local! {
     /// The orbits read since a reader armed the list, in the order the walk
-    /// read them; `None` while no reader is listening. `loops_of` runs at
+    /// read them; `None` while no reader is listening. `orbits_of` runs at
     /// every decode and replay, so a list nobody takes would grow for the
     /// life of a court: it collects only between [`arm_orbits`] and
     /// [`take_orbits`].
@@ -466,7 +466,7 @@ pub fn take_orbits() -> Vec<OrbitReading> {
 /// Classify one kept cycle by THE WHOLE TRANSPORT IT COMPOSES.
 ///
 /// A first cut read `PathCarried::face.carriage` alone and every one of 545
-/// cycles came back Trivial — while `loop_is_trivial` had KEPT them, which
+/// cycles came back Trivial — while `orbit_is_trivial` had KEPT them, which
 /// can only happen when something non-flat is present. The chord's
 /// dislocation rides in 50.3's EDGE transport, not in the member carriage:
 /// two sections under one carriage have `φ_b φ_a⁻¹ = 1` by construction,

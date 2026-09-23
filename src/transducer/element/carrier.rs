@@ -121,18 +121,18 @@ pub struct Element {
     /// thus ℤ^r ⊕ ⊕ᵢ ℤ/tᵢ — free sections ⊕ torsion cycles.
     pub(crate) torsion: Vec<TorsionCycle>,
     /// THE SPEAKER'S ATTESTATION ABOUT THIS WORD'S CYCLES (54.5, as ruled
-    /// 2026-09-20): class ↦ `(σ, ℓ, chord)`, the loops a mind's own pivot
+    /// 2026-09-20): class ↦ `(σ, ℓ, chord)`, the orbits a mind's own pivot
     /// stroke filed before it spoke.
     ///
     /// It lived on `Form.torsion`, and a form is GEOMETRY — the same
-    /// complex whatever mind holds it. A filing is not: `pivot_loop` takes
+    /// complex whatever mind holds it. A filing is not: `pivot_orbit` takes
     /// the mesh horizon, the mind's crystal and a budget, and files only in
     /// its `NoneDischarged` branch, so two minds holding one form at
     /// different budgets file differently. The map does not factor through
     /// the form, which is exactly why `from_address` cannot rebuild it and
     /// why keying it would make a pivot RENAME its own word.
     ///
-    /// Its type is `Address × Signer → FiledLoop`, and an element is a word
+    /// Its type is `Address × Signer → FiledOrbit`, and an element is a word
     /// as one mind minted it — the smallest carrier that has both. The
     /// court reads it here as the speaker's CLAIM and checks it against the
     /// geometry it re-derives itself, instead of asking a form to vouch for
@@ -143,7 +143,7 @@ pub struct Element {
     /// this one's is a chord of the form's faces, and carrying either
     /// across as the other invents a coordinate the source never held.
     pub(crate) filing: crate::network::nerve::Keyed<
-        crate::transducer::sentence::FiledLoop,
+        crate::transducer::sentence::FiledOrbit,
         crate::network::nerve::coord::Holonomy,
     >,
     /// THE RECEIPTS ENVELOPE (54.5 Road (d)): the graded nerve incidence
@@ -224,7 +224,7 @@ impl Element {
     ///
     /// This pushed unconditionally. `germinated` has no remover anywhere in
     /// the tree, its writer `Basis::germinate_fibre` is ungated and fires
-    /// once per stroke per address for as long as a held loop stands
+    /// once per stroke per address for as long as a held orbit stands
     /// unclosed on a Twisted chart, and every push re-mints the address and
     /// is copied by `compose`, by `solution`, and by the court on every
     /// ruling. A versor is sixteen exact rationals. So one word could carry
@@ -373,7 +373,7 @@ impl Element {
     /// The torsion cycles of the axis: `(generator σ, period ℓ)` each.
     /// The speaker's filing: class ↦ `(σ, ℓ, chord)`.
     pub fn filing(&self) -> &crate::network::nerve::Keyed<
-        crate::transducer::sentence::FiledLoop,
+        crate::transducer::sentence::FiledOrbit,
         crate::network::nerve::coord::Holonomy,
     > {
         &self.filing
@@ -490,7 +490,7 @@ impl Element {
             let spanned: Vec<usize> = (0..self.sections.len())
                 .filter(|&i| orbit.contains(&self.sections[i]))
                 .collect();
-            // Only a CLOSED orbit is a cycle (σ^t = id on its support, the loop
+            // Only a CLOSED orbit is a cycle (σ^t = id on its support, the orbit
             // witnessed at the mint): it condenses the sections it spans, even
             // one (a swap). An orbit that leaves its domain is not filed under
             // a period — those sections stay free; the open walk is the

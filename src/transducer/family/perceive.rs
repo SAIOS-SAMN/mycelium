@@ -662,7 +662,7 @@ pub(crate) fn edge_of(gamma: &Versor) -> Result<crate::transducer::sentence::Tra
     // MEASURED, before the change: dropping the member carriage from the
     // cycle composite left those four completely unchanged, which is what
     // proves the null generator was sealed in HERE rather than accumulated
-    // from poses around the loop.
+    // from poses around the orbit.
     //
     // 51.2 holds both readings in one algebra: a lattice POSE keeps the
     // conformal translator, which commutes and is derived; a CONNECTION
@@ -729,7 +729,7 @@ pub(crate) fn support_of(body: &Body) -> Vec<Site> {
 // `star_and_site_faces`, purged with this. Between them they were the
 // engine's entire notion of incidence, and both were reading the dilation
 // rather than the corpus — 184 of 186 meets, and every `b₁`,
-// `loop_defects` and spectrum taken through the form's faces.
+// `orbit_defects` and spectrum taken through the form's faces.
 //
 // It is deleted rather than left unused so that combinatorial pixel
 // inflation cannot silently return: a stencil with no caller is a stencil

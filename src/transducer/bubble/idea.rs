@@ -162,8 +162,8 @@ pub struct Bubble {
     pub glues: Keyed<()>,
     /// Ideas that glued this bubble; a non-empty set is not shed.
     pub glued_by: Keyed<()>,
-    /// Filed torsion `(σ, ℓ, chord)` keyed by class, written from `pivot_loop`.
-    pub torsion: Keyed<crate::transducer::sentence::FiledLoop, coord::Holonomy>,
+    /// Filed torsion `(σ, ℓ, chord)` keyed by class, written from `pivot_orbit`.
+    pub torsion: Keyed<crate::transducer::sentence::FiledOrbit, coord::Holonomy>,
     /// Certified discharges this idea's crystallization rests on (A20).
     pub certificates: Keyed<PivotCertificate>,
     /// Incomparable discharges held as candidates (25.1) until a glue or
@@ -176,7 +176,7 @@ pub struct Bubble {
     ///
     /// NOT `vortex`, which holds `PivotCertificate`s. A certificate asserts
     /// a chord, an axis, a before and after class, a `RankMove` and a μ⃗
-    /// measured over a bundle — a closed loop's discharge. An open demand
+    /// measured over a bundle — a closed orbit's discharge. An open demand
     /// has closed nothing and has none of them, so putting a candidate
     /// there means writing those fields with values nothing measured (rule
     /// 8, rule 11). The two carriers hold two different objects: a
@@ -269,8 +269,8 @@ pub(crate) fn bundle_connections(bundle: &[crate::transducer::family::TrainPair]
         }
         let mut rotors = Vec::new();
         // THE GAUGE COMPOSED AROUND THE CYCLE, not discarded and not filed
-        // empty: each connection carries its own hue map and the loop's is
-        // their composition, which is what a filed loop's σ IS (52.3).
+        // empty: each connection carries its own hue map and the orbit's is
+        // their composition, which is what a filed orbit's σ IS (52.3).
         let mut image: [u8; 10] = std::array::from_fn(|i| i as u8);
         for w in occupied.windows(2) {
             let [la, lb] = w else { continue };
@@ -565,7 +565,7 @@ impl Bubble {
         if budget.remaining() > 0 {
             if let Some(mut form) = self.form.clone() {
                 let key = self.key();
-                let snaps = form.pivot_loop(
+                let snaps = form.pivot_orbit(
                     key,
                     &self.horizon,
                     crystal,
@@ -579,13 +579,13 @@ impl Bubble {
                         pivoted[i] = pivoted[i].saturating_add(m[i]);
                     }
                     match s {
-                        // 37.7 from the loop's own residue, joining the
+                        // 37.7 from the orbit's own residue, joining the
                         // cover's own candidates on the way out; the entity
                         // mints it through the one construction.
                         crate::transducer::sentence::Snap::Adjoin { rotor, chart, .. } => {
                             adjoined.push((rotor.as_ref().clone(), chart.clone()));
                         }
-                        // A held loop of infinite order the basis did not
+                        // A held orbit of infinite order the basis did not
                         // discharge stands on the form as the demand the
                         // peel types its holonomy as — the prime it lacks,
                         // or the rotor it cannot spell, carried as witness
@@ -656,7 +656,7 @@ impl Bubble {
     /// one candidate before this runs.
     ///
     /// OWED: a `Finite(ℓ ≥ 2)` period is content and wants filing on
-    /// `Bubble.torsion`, which is keyed by class and holds a `FiledLoop`
+    /// `Bubble.torsion`, which is keyed by class and holds a `FiledOrbit`
     /// whose `chord` is a face index — and a demand's form has no faces for
     /// it to point at. The period is read and the candidate stands on it;
     /// where it is filed is the operator's to rule.
@@ -674,7 +674,7 @@ impl Bubble {
                 continue;
             };
             let mut dying: Vec<(Vec<u8>, Rotor)> = Vec::new();
-            let mut filing: Vec<(coord::Holonomy, crate::transducer::sentence::FiledLoop)> =
+            let mut filing: Vec<(coord::Holonomy, crate::transducer::sentence::FiledOrbit)> =
                 Vec::new();
             for (rk, v) in here.scoped() {
                 // THE SUB-COVER: the charts whose monodromy closes at some
@@ -701,7 +701,7 @@ impl Bubble {
                             if let Some(class) = m.holonomy_key() {
                                 filing.push((
                                     class,
-                                    crate::transducer::sentence::FiledLoop {
+                                    crate::transducer::sentence::FiledOrbit {
                                         sigma: sigma.clone(),
                                         periods: m.toral_period(),
                                         chord: 0,
@@ -720,10 +720,10 @@ impl Bubble {
                     dying.push((rk, m));
                 }
             }
-            for (class, loop_at) in filing {
-                self.torsion.put(&class, loop_at.clone());
+            for (class, orbit_at) in filing {
+                self.torsion.put(&class, orbit_at.clone());
                 if let Some(f) = self.form.as_mut() {
-                    f.torsion.put(&class, loop_at);
+                    f.torsion.put(&class, orbit_at);
                 }
             }
             let Some(here) = self.candidates.get_mut(&ck) else {
@@ -752,10 +752,10 @@ impl Bubble {
 
     /// THE VORTEX HERE STANDING AT A CONJUGACY STRATUM AND HOLDING `word`.
     ///
-    /// A vortex is filed under the loop's own class vector (`vortex_put`),
+    /// A vortex is filed under the orbit's own class vector (`vortex_put`),
     /// whose depth-one coordinate is the holonomy rotor's conjugacy class.
     /// A deciding word knows that stratum and nothing finer: not the
-    /// carriage the loop stood at, not its hue. So the boundary is parsed
+    /// carriage the orbit stood at, not its hue. So the boundary is parsed
     /// out of each key through the class schema and compared at depth one
     /// — never a byte count, and never the whole key.
     ///
@@ -780,7 +780,7 @@ impl Bubble {
     }
 
     /// A glue or a syllabus class standing at the stratum a held vortex's
-    /// loop stands in applies the certificate keyed by the deciding move;
+    /// orbit stands in applies the certificate keyed by the deciding move;
     /// the others of that vortex are not applied (dialect candidates).
     pub(crate) fn collapse_vortex(
         &mut self,
@@ -797,8 +797,8 @@ impl Bubble {
             return None;
         };
         // EXPANSION 4 — THE LOSERS ARE A SYMMETRY, NOT A TIE BROKEN. Two
-        // candidates that both discharge one loop to one class prove the
-        // loop admits `w_a⁻¹·w_b`, an element that stabilises that class
+        // candidates that both discharge one orbit to one class prove the
+        // orbit admits `w_a⁻¹·w_b`, an element that stabilises that class
         // because each leaves it where the other does. That is a rotation
         // the mind MEASURED, which is 37.7's object exactly, and a collapse
         // that only cleared the vortex would throw it away — the mind

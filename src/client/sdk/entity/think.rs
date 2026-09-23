@@ -40,7 +40,7 @@ impl Entity {
         self.hold_form(f, &[], &[]);
     }
 
-    /// Hold a withheld form as an idea so the pivot loop sees it next
+    /// Hold a withheld form as an idea so the pivot orbit sees it next
     /// stroke (30.2). The contemplation is the one carrier of held forms
     /// (24.1 as ruled 2026-09-09): its remainders stay on the bubble as
     /// what the form does not speak, and its words are read at a chart
@@ -294,12 +294,12 @@ impl Entity {
     /// Expand dirty ideas once per syntropic phase (25.1): each dirty idea
     /// expands over the working atlas — genome and dialect, read as one
     /// atlas, the held word's rotor read by address — and runs the pivot
-    /// loop with the epigenome as its crystal (the closed forms it holds,
+    /// orbit with the epigenome as its crystal (the closed forms it holds,
     /// ruled or stood; an idea is glued only once it has closed and stood,
     /// 13.6). An idea that closes crystallizes (25.2), stands in the
     /// dialect and is uttered once (24.3). Returns the lane measure of the
     /// A16 snaps (Discharged, Vortex, TorsionFiled) and the dirty ring's
-    /// orbit reading — circuits and period in strokes — when this stroke
+    /// circuit reading — circuits and period in strokes — when this stroke
     /// completed a circuit (45.7, S13.3).
     pub fn expand_ideas(&mut self) -> ([u64; 4], Option<(u64, u64)>) {
         let mut budget = self.physics.stroke();
@@ -314,7 +314,7 @@ impl Entity {
         // one clock."
         //
         // Everything downstream of `now_k` is a span in TUniversal:
-        // `held_since(now_k, moved_k)` is `pivot_loop`'s `t_extent`,
+        // `held_since(now_k, moved_k)` is `pivot_orbit`'s `t_extent`,
         // `span_of` is lane 𝒯 of a minted word (R2), and `retire_on_t` is
         // the T-room. All three were reading a span between two stamps of
         // the wrong clock.
@@ -323,7 +323,7 @@ impl Entity {
         let crate::transducer::bubble::drive::Expanded {
             pivoted,
             crystallized,
-            orbit,
+            circuit,
             adjoined,
             ..
         } = {
@@ -353,7 +353,7 @@ impl Entity {
         //
         // The generator stands in the DIALECT, not the genome: it is this
         // mind's own, memory only, until a court rules it (24.1). That is
-        // also why it does not suppress a demand — `pivot_loop` defers on
+        // also why it does not suppress a demand — `pivot_orbit` defers on
         // `Standing::Ruled` alone — so the mind adjoins the letter AND keeps
         // asking the mesh for one, and whichever arrives first closes the
         // loop.
@@ -361,12 +361,12 @@ impl Entity {
         for e in &crystallized {
             self.stand_crystallized(e);
         }
-        (pivoted, orbit)
+        (pivoted, circuit)
     }
 
     /// 37.7 — MINT AND STAND WHAT THE PIVOT COULD NOT SPELL.
     ///
-    /// ONE READER FOR BOTH PATHS. The drive runs `pivot_loop` from two
+    /// ONE READER FOR BOTH PATHS. The drive runs `pivot_orbit` from two
     /// places — the expand ring and `pivot_on` — and this was written into
     /// the first only, so a stroke that pivoted through the second adjoined
     /// nothing. Measured at 1d98080: `adjoin from residue` 8, every drain
@@ -375,7 +375,7 @@ impl Entity {
     ///
     /// The letter stands in the DIALECT: it is this mind's own, memory only,
     /// until a court rules it (24.1), which is also why it does not suppress
-    /// the demand — `pivot_loop` defers on `Standing::Ruled` alone since R11.
+    /// the demand — `pivot_orbit` defers on `Standing::Ruled` alone since R11.
     pub(crate) fn adjoin_letters(&mut self, adjoined: &crate::transducer::bubble::drive::Adjoined) {
         for (rotor, chart) in adjoined {
             // WHY A CANDIDATE MINTS NOTHING (§8.1, measurement only). Measured

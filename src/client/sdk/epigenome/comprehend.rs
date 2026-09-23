@@ -50,7 +50,7 @@ impl Epigenome {
     /// understanding into the epigenome — expression weights rise on the cited
     /// words, the sentence joins the recollections. The genome is untouched.
     pub fn comprehend(&mut self, utterance: &Element) -> Comprehension {
-        // A taught sentence is re-derived as a form: vertices, faces, loops.
+        // A taught sentence is re-derived as a form: vertices, faces, orbits.
         // Understanding is re-deriving its cochain, not matching its bytes.
         if utterance.is_sentence() {
             // AN UTTERANCE, not a word this mind holds: the decode is named

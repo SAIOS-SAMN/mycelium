@@ -508,11 +508,11 @@ impl Kernel {
         if charts.is_empty() {
             charts.push(crate::transducer::stalk::invariant(listing.sub()));
         }
-        // The transport a flat loop is recorded under is the composite of
+        // The transport a flat orbit is recorded under is the composite of
         // the cites that flattened it, by the geometric product, not the
         // first cite's versor with the identity invented when there are
         // none. A versor invented where no transport exists is a claim the
-        // court cannot replay (rule 11); `None` records no loop at all.
+        // court cannot replay (rule 11); `None` records no orbit at all.
         let cite_g: Option<element::Versor> = cites
             .iter()
             .map(|c| c.transport.clone())
@@ -595,7 +595,7 @@ impl Kernel {
         // a word claiming more than the chain supports, which is what stops
         // a voice inflating its own measure; a court that wrote a count of
         // leftover links into a lane would slash its own listing on the
-        // next orbit, and every listing a voice made progress on would be
+        // next circuit, and every listing a voice made progress on would be
         // destroyed by the court's own write. Three laws say so: `𝒽` is
         // boundary topology and the rotor's own coordinates (16.16, 42.6),
         // never a tally of links; the field already holds the residual, and

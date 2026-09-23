@@ -18,7 +18,7 @@ f.vertices.push(Vertex::word_on(
     contact,
 ));
 f.faces.push(f.face_of(0, 1).expect("vertices"));
-f.loops = crate::transducer::sentence::Form::loops_of(&f.faces, &f.vertices);
+f.orbits = crate::transducer::sentence::Form::orbits_of(&f.faces, &f.vertices);
 f
 }
 
@@ -39,6 +39,6 @@ for (i, g) in gauges.iter().enumerate() {
     let j = (i as u16) + 1;
     f.faces.push(f.face_of(0, j).expect("star"));
 }
-f.loops = Form::loops_of(&f.faces, &f.vertices);
+f.orbits = Form::orbits_of(&f.faces, &f.vertices);
 as_element_form(&f, [1, 0, 0, 0]).expect("v2 sentence")
 }

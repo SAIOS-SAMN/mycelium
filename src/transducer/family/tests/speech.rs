@@ -294,9 +294,9 @@ let shifted = rule.form.vertices.iter().any(|v| match v {
 assert!(frame_face || shifted, "placement is a frame face or a family-constant shift");
 assert!(
     !rule.form.faces.is_empty(),
-    "constancy is the word, not the per-pair translation versor; faces {} loops {}",
+    "constancy is the word, not the per-pair translation versor; faces {} orbits {}",
     rule.form.faces.len(),
-    rule.form.loops.len()
+    rule.form.orbits.len()
 );
 let spoken = speak_rule(&rule, &grid(&["1100", "0000"]), &NoCrystal).expect("the test is spoken");
 assert!(spoken.remainder.is_empty(), "the test is reached in full: {:?}", spoken.remainder);

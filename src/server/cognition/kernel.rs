@@ -93,7 +93,7 @@ pub struct Kernel {
     /// read to serve a K-range fetch or a court's replay of an era.
     pub(crate) archive: Vec<crate::chronometry::Era>,
     /// The fold awaiting a witness (47.3): the reading proposed on the
-    /// syntropic orbit, carried to a bonded peer by the exchange, sealed
+    /// syntropic circuit, carried to a bonded peer by the exchange, sealed
     /// only on both signatures.
     pub(crate) fold_pending: Option<crate::cognition::court::fold::Proposal>,
     /// The head hash of the court's chain as last ruled to this hypha —
@@ -141,7 +141,7 @@ pub struct Kernel {
     pub(crate) on_page: crate::network::nerve::Keyed<()>,
 
     /// Voices that have closed a chart of a listing, keyed by chart then voice.
-    pub(crate) flat_loops: crate::network::nerve::Keyed<crate::network::nerve::Keyed<(crate::transducer::stalk::Invariant, element::Versor)>>,
+    pub(crate) flat_orbits: crate::network::nerve::Keyed<crate::network::nerve::Keyed<(crate::transducer::stalk::Invariant, element::Versor)>>,
     /// Atlas of listings and cavities: admitted under the base chart at
     /// list and under every face in the field. Drain never removes from here.
     pub(crate) listing_atlas: crate::transducer::stalk::Stalks,
@@ -350,16 +350,17 @@ pub struct Kernel {
     pub(crate) open: crate::network::nerve::Keyed<()>,
     /// Keyed cursor into `open` for court_stroke.
     pub(crate) open_cursor: Option<Vec<u8>>,
-    /// Keyed cursor into `pending` for the lapse (45.7): the stroke's orbit
+    /// Keyed cursor into `pending` for the lapse (45.7): the stroke's circuit
     /// over the docket resumes where the last one left off, so a book that
     /// outgrows one stroke's budget is still walked whole across strokes.
     pub(crate) lapse_cursor: Option<Vec<u8>>,
-    /// The docket's orbit (45.7, S13.3): the circuits of `open` the court
+    /// The docket's circuits (45.7, S13.3): the circuits of `open` the court
     /// stroke completed and the strokes the last one took, written once
-    /// per circuit as `court orbit docket` — the court's local time beside K.
-    pub(crate) docket_orbit: crate::physics::Orbit,
+    /// per circuit as `court circuit docket` — the court's local time
+    /// beside K.
+    pub(crate) docket_circuits: crate::physics::Circuits,
     /// Where the phase's next window starts (45.9, S13.7): the chain
-    /// length and the cover reading at the last docket orbit. A reading
+    /// length and the cover reading at the last docket circuit. A reading
     /// of the carriers, never a phase — the phase is computed and written.
     pub(crate) phase_mark: Option<(usize, crate::cognition::court::phase::CoverReading)>,
     /// Keyed cursors into `unfilled` and `pending_refine` for `stroke_fills`

@@ -16,7 +16,7 @@
 //!
 //! WHAT IS COMPARED is the whole complex, not the bytes: the vertex kinds
 //! and count, the faces with their ends and member pairs, the member
-//! cycles, and each loop's holonomy word up to projective equality (§1.5 —
+//! cycles, and each orbit's holonomy word up to projective equality (§1.5 —
 //! byte-exactness is not identity). A decode that "succeeds" and returns a
 //! poorer complex is the failure this exists to catch.
 
@@ -83,8 +83,8 @@ fn same_complex(a: &Form, b: &Form) -> Result<(), String> {
     if edges(a) != edges(b) {
         return Err(format!("faces carrying 50.3's edge {} vs {}", edges(a), edges(b)));
     }
-    if a.loops.len() != b.loops.len() {
-        return Err(format!("loops {} vs {}", a.loops.len(), b.loops.len()));
+    if a.orbits.len() != b.orbits.len() {
+        return Err(format!("orbits {} vs {}", a.orbits.len(), b.orbits.len()));
     }
     // THE TWO CHAIN-ADDRESS SITES. A `Demand`'s bodies and the A5 remainder
     // are the only coordinates the key carries as another object's ADDRESS,
@@ -145,7 +145,7 @@ fn from_address_retracts_every_corpus_form() {
 
     let epi = crate::client::sdk::Epigenome::new();
     let mut physics = crate::physics::Physics::default();
-    let (mut seen, mut with_loops) = (0usize, 0usize);
+    let (mut seen, mut with_orbits) = (0usize, 0usize);
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
@@ -157,8 +157,8 @@ fn from_address_retracts_every_corpus_form() {
         };
         let f = &rule.form;
         seen += 1;
-        if !f.loops.is_empty() {
-            with_loops += 1;
+        if !f.orbits.is_empty() {
+            with_orbits += 1;
         }
         let key = form_vertex_key(f);
         let Some(back) = from_address(&key) else {
@@ -199,7 +199,7 @@ fn from_address_retracts_every_corpus_form() {
     }
     // THE READING THE TEST TOOK, so a pass over nothing cannot look like a
     // pass over the corpus (rule 13).
-    eprintln!("  retract: {seen} corpus forms round-tripped, {with_loops} of them carrying a loop");
+    eprintln!("  retract: {seen} corpus forms round-tripped, {with_orbits} of them carrying an orbit");
     assert!(seen > 0, "no task of the slice extracted a rule; the property ran over nothing");
 }
 
@@ -289,8 +289,8 @@ fn the_address_and_the_tape_agree_on_every_reading_the_court_makes() {
             note("the citation depth differs", &mut why);
             bad = true;
         }
-        if f.loop_words().len() != back.loop_words().len() {
-            note("the loops carry a different number of member paths", &mut why);
+        if f.orbit_words().len() != back.orbit_words().len() {
+            note("the orbits carry a different number of member paths", &mut why);
             bad = true;
         }
         if bad {

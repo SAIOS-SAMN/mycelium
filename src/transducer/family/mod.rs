@@ -82,7 +82,7 @@ pub trait Crystal {
     /// call that does not hold the crystal.
     fn by_address(&self, addr: &[u8]) -> Option<(&Element, &Form)>;
     /// Held words on `chart` whose class vector occupies `axis` (12.6): the
-    /// vocabulary a pivot may write onto a loop on that chart. One keyed read
+    /// vocabulary a pivot may write onto an orbit on that chart. One keyed read
     /// of the axis index the crystal filled when the word was admitted.
     fn on_axis(&self, chart: &Invariant, axis: super::sentence::Axis) -> Vec<super::alphabet::Word>;
     /// 1.8, 50.2 step 2 — THE PRESENTATION ON A CHART: the generators
@@ -304,7 +304,7 @@ pub(crate) fn member_key(vertex: u16, chart: &[u8]) -> Vec<u8> {
 /// `named_faces`'s chain over `windows(2)` had nothing to pair.
 ///
 /// Measured before this: 186 meets over the 36 corpus forms, every one
-/// `within one class` and on one chart, `0 loops` on every form.
+/// `within one class` and on one chart, `0 orbits` on every form.
 ///
 /// THE MEMBER IS A PREFIX, so `read_member_key` reads the vertex and the
 /// chart and stops — every reader that wants the base point still gets it,

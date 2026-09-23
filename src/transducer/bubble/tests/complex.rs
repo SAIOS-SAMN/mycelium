@@ -67,10 +67,10 @@ fn two_pivots_without_a_new_word_leave_fills() {
 }
 
 /// 25.1: a syllabus class standing at the conjugacy stratum of a held
-/// vortex's loop applies the certificate whose move is that class's
+/// vortex's orbit applies the certificate whose move is that class's
 /// representative; the other candidate is not applied.
 ///
-/// THE TWO CANDIDATES SHARE `before`, because they discharge ONE loop, and
+/// THE TWO CANDIDATES SHARE `before`, because they discharge ONE orbit, and
 /// that is the coordinate a candidate hangs under; a placeholder there is
 /// only invisible until the coordinate is read.
 #[test]
@@ -83,7 +83,7 @@ fn vortex_collapses_by_glue_or_ruling() {
     let w = Word::from_letters(&[(q, false)]);
     let r = w.rotor();
     let stratum = r.class_key().expect("quarter class");
-    // The loop's own state vector, whose first coordinate is that stratum.
+    // The orbit's own state vector, whose first coordinate is that stratum.
     let before = ClassVector::of_word(&w).expect("a quarter turn has a class vector").class_key();
     let after = ClassVector::zero().class_key();
     let hit = PivotCertificate {
@@ -104,7 +104,7 @@ fn vortex_collapses_by_glue_or_ruling() {
         rot: [0; crate::transducer::alphabet::CAYLEY_ALPHABET_LEN],
     }
     .to_word();
-    assert_ne!(w.key(), sheet.key(), "two words, one loop");
+    assert_ne!(w.key(), sheet.key(), "two words, one orbit");
     let other = PivotCertificate {
         chord: 0,
         axis: Axis::Hue,

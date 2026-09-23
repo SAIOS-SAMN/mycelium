@@ -73,8 +73,8 @@ for tag in [2u8, 3u8] {
 f.faces.push(f.face_of(0, 1).expect("star 1"));
 f.faces.push(f.face_of(0, 2).expect("star 2"));
 f.faces.push(f.face_carrying(1, 2, order4).expect("a chord between two bodies"));
-f.loops = Form::loops_of(&f.faces, &f.vertices);
-let _ = f.pivot_loop(
+f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+let _ = f.pivot_orbit(
     [0xca; 32],
     &crate::network::nerve::Keyed::new(),
     &crate::transducer::family::NoCrystal,
@@ -94,10 +94,10 @@ let class = form_torsion(&e)
 }
 
 /// Chapter 23.7 on a v2 form: the court reads Form.torsion by the
-/// filed loop's class key, never the element's empty section.
+/// filed orbit's class key, never the element's empty section.
 #[test]
 fn court_torsion_on_v2_form_is_consilient_or_filed_or_refused() {
-use crate::transducer::sentence::{carries_torsion, torsion_loop_rotor};
+use crate::transducer::sentence::{carries_torsion, torsion_orbit_rotor};
 let (spoken, inv, class) = filed_v2_form();
 assert!(
     spoken.torsion().is_empty(),
@@ -109,7 +109,7 @@ assert_ne!(
     crate::transducer::alphabet::Rotor::identity()
         .holonomy_key()
         .expect("identity class"),
-    "the class is the loop's, not the identity"
+    "the class is the orbit's, not the identity"
 );
 // 54.7 — AND THE IDENTITY READS AS TRIVIAL, NOT PARABOLIC. `B = 0` turns
 // nothing; a parabolic has `B ≠ 0` and `B² = 0`. They shared a byte.
@@ -136,14 +136,14 @@ let filed = k
         !cx.congruent(crate::network::nerve::Coordinate::encode(&class).as_bytes())
             .is_empty()
     });
-assert!(filed, "court torsion filed by the loop's class key");
+assert!(filed, "court torsion filed by the orbit's class key");
 assert_eq!(
     k.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
     None,
     "second hearing is consilient"
 );
 let f = crate::transducer::sentence::from_element_form(&spoken).expect("v2 form");
-let rep = torsion_loop_rotor(&f, &class).expect("the loop names the class");
+let rep = torsion_orbit_rotor(&f, &class).expect("the orbit names the class");
 let mut k2 = Kernel::new();
 let mut cx = crate::transducer::cech::Complex::new();
 // 54.7 — A COURT CANNOT HOLD ONE CLASS AT ANOTHER PERIOD ANY MORE, and
@@ -194,13 +194,13 @@ fn a_filed_form_cycle_is_volume_the_basis_counts() {
     // THE PERIOD IS THE COMPLEX'S (54.5). This read it off the decoded
     // form's `torsion`, which is empty: a form recovered from its address
     // files nothing, because a filing is not geometry. The period the
-    // cycle closes at is a theorem of the faces (`loop_classes`).
+    // cycle closes at is a theorem of the faces (`orbit_classes`).
     let ell = f
-        .loops
+        .orbits
         .iter()
-        .find_map(|lp| match f.loop_classes(lp).as_slice() {
-            // THE LEAST CLASS THIS LOOP DERIVES, and the slice pattern says
-            // so: `loop_classes` walks the member paths out of a `Keyed`, so
+        .find_map(|lp| match f.orbit_classes(lp).as_slice() {
+            // THE LEAST CLASS THIS ORBIT DERIVES, and the slice pattern says
+            // so: `orbit_classes` walks the member paths out of a `Keyed`, so
             // the order is the path keys' own and the first is CONTENT, not
             // arrival (rule 15).
             [row, ..] => Some(row.periods),
@@ -264,7 +264,7 @@ assert!(
 );
 }
 
-/// G4b. A loop's obstruction is the product around it (10.3), never a
+/// G4b. An orbit's obstruction is the product around it (10.3), never a
 /// transition read off the end of the fiber. The distinction is not
 /// cosmetic on a distributed mesh: the geometric product is not
 /// commutative, so a member picked by position is a different object on
@@ -278,15 +278,15 @@ let one = rotor_versor(&Word::from_letters(&[(q, false)]).rotor()).expect("verso
 let inv = rotor_versor(&Word::from_letters(&[(q, true)]).rotor()).expect("inverse versor");
 let id = element::identity_versor();
 
-assert!(fiber_holonomy(std::slice::from_ref(&one)).is_none(), "a singleton is not a loop");
-assert!(fiber_holonomy(&[]).is_none(), "an empty fiber is not a loop");
+assert!(fiber_holonomy(std::slice::from_ref(&one)).is_none(), "a singleton is not an orbit");
+assert!(fiber_holonomy(&[]).is_none(), "an empty fiber is not an orbit");
 
-let closed = fiber_holonomy(&[one.clone(), inv]).expect("a loop");
+let closed = fiber_holonomy(&[one.clone(), inv]).expect("an orbit");
 assert!(closed.projective_eq(&id), "q then q-inverse closes");
 
 // Four quarter turns on one plane: the product is the obstruction,
 // and it is not any member of the fiber.
-let held = fiber_holonomy(&[one.clone(), one.clone(), one.clone()]).expect("a loop");
+let held = fiber_holonomy(&[one.clone(), one.clone(), one.clone()]).expect("an orbit");
 assert!(!held.projective_eq(&id), "three quarter turns do not close");
 assert!(
     !held.projective_eq(&one),

@@ -248,7 +248,7 @@ impl Epigenome {
     }
 
     /// THE NEXT WORD AFTER A COORDINATE, wrapping to the first — the
-    /// trie's own orbit, which is how a cursor walks a carrier whose size
+    /// trie's own circuit, which is how a cursor walks a carrier whose size
     /// changes under it (45.7, X3). `None` from a genome that holds
     /// nothing; from `None` it starts at the first coordinate.
     /// Z12's reading, SPREAD ALONG THE TRIE and not along arrival. Three
@@ -278,16 +278,16 @@ impl Epigenome {
             .collect()
     }
 
-    /// THE ORBIT FROM A COORDINATE: every genome address once, starting
+    /// THE CIRCUIT FROM A COORDINATE: every genome address once, starting
     /// after `at` and wrapping to close on it (45.7). This is what a walk
     /// `for offset in 0..len { (start + offset) % len }` was reaching for
-    /// — with the difference that an orbit over coordinates does not
+    /// — with the difference that a circuit over coordinates does not
     /// renumber itself when a word is admitted or retired mid-walk.
-    pub fn genome_orbit_from(&self, at: Option<&[u8]>) -> Vec<Vec<u8>> {
+    pub fn genome_circuit_from(&self, at: Option<&[u8]>) -> Vec<Vec<u8>> {
         let all: Vec<Vec<u8>> = self.genome.scoped().map(|(k, _)| k).collect();
         let Some(at) = at else { return all };
         match all.iter().position(|k| k.as_slice() == at) {
-            // The cursor's word has retired; the orbit starts where the
+            // The cursor's word has retired; the circuit starts where the
             // carrier now starts rather than at an invented offset.
             None => all,
             Some(i) => {
@@ -313,7 +313,7 @@ impl Epigenome {
             }
         }
         // Past the last coordinate, or the cursor named a word that has
-        // since retired: the orbit closes on the first.
+        // since retired: the circuit closes on the first.
         first
     }
 

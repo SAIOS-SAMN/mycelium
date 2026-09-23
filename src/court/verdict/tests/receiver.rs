@@ -175,7 +175,7 @@ fn a_hue_seam_carries_no_edge_without_the_stencil() {
     //
     // The tampered edge above is the case in one line, and the READING IS
     // TAKEN AT THE MOVE, not at the verdict: a tampered edge is a real
-    // defect and the form is refused for it by the loop-holonomy check too,
+    // defect and the form is refused for it by the orbit-holonomy check too,
     // so asserting a whole replay here would pass with the section ignored.
     // `edges_rederive_frames` is the organ that changed, and it is what was
     // asked (§3.2).

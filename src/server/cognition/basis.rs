@@ -449,10 +449,10 @@ impl Kernel {
         let mut torse = false;
         for (_, vs) in asgs.scoped() {
             match fiber_holonomy(vs) {
-                // Closed: the loop is torsion the language already carries.
+                // Closed: the orbit is torsion the language already carries.
                 Some(h) if h.projective_eq(&element::identity_versor()) => torse = true,
                 // Held: the germ is the holonomy itself, the exact thing the
-                // loop failed to close by, not a transition read off the end
+                // orbit failed to close by, not a transition read off the end
                 // of the fiber.
                 Some(h) if twisted => germinate = Some(h),
                 _ => {}

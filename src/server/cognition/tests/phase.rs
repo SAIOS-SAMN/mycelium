@@ -79,13 +79,13 @@ fn the_phase_is_read_off_the_kinds_and_the_cover_at_the_windows_ends() {
     assert_eq!(p.line(), format!("  court phase h 0..{h1} comprehension 2/3 congruence 1/4 lineages 1 growth +3 -1 expansion 1/1"));
 }
 
-/// The court writes the phase once per docket orbit and keeps only the
+/// The court writes the phase once per docket circuit and keeps only the
 /// cover reading the next window starts from: the chain length and the
 /// strata, never a phase.
 #[test]
-fn the_court_reads_the_phase_once_per_orbit_and_stores_no_phase() {
+fn the_court_reads_the_phase_once_per_circuit_and_stores_no_phase() {
     let mut k = Kernel::new();
-    assert!(k.phase_mark.is_none(), "nothing before the first orbit");
+    assert!(k.phase_mark.is_none(), "nothing before the first circuit");
     let a = vec![(0, 0, 1u8), (0, 1, 1)];
     let b = vec![(0, 0, 2u8), (0, 1, 2)];
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
@@ -105,7 +105,7 @@ fn the_court_reads_the_phase_once_per_orbit_and_stores_no_phase() {
     // so. Nothing has been admitted since the call above, so the window is
     // `k1..k1` and `phase_over` would report zero out of zero over `h N..N` —
     // the vacuous assertion at the instrument. Hypha a wrote 25 598 of those
-    // in nine minutes at e98e8a2 because its caller paces on docket orbits
+    // in nine minutes at e98e8a2 because its caller paces on docket circuits
     // and a docket that fits one budget completes one every stroke.
     assert!(!k.read_phase(), "no receipt admitted, so nothing is measured");
     let (k2, _) = k.phase_mark.clone().expect("and the mark still advances");
@@ -117,12 +117,12 @@ fn the_court_reads_the_phase_once_per_orbit_and_stores_no_phase() {
     assert!(k.read_phase(), "a receipt in the window is a measurement");
 }
 
-/// R7 (45.9): the window is an aperture of docket orbits. A docket that
+/// R7 (45.9): the window is an aperture of docket circuits. A docket that
 /// fits one budget completes a circuit per stroke, and read per circuit
 /// its window was one receipt or none; the court stroke takes the reading
 /// when the circuit count crosses a multiple of `aperture_cycle()`.
 #[test]
-fn the_phase_window_is_an_aperture_of_docket_orbits() {
+fn the_phase_window_is_an_aperture_of_docket_circuits() {
     use super::common::one_stroke_transport;
     let mut k = Kernel::new();
     let w = crate::transducer::element::from_connection(
@@ -142,9 +142,9 @@ fn the_phase_window_is_an_aperture_of_docket_orbits() {
             .checked_mul(2)
             .and_then(|n| n.checked_add(2))
             .expect("two apertures fit the clock this test runs on");
-        assert!(strokes <= bound, "a one-listing docket circuits every stroke: {:?}", k.docket_orbit());
+        assert!(strokes <= bound, "a one-listing docket circuits every stroke: {:?}", k.docket_circuits());
         k.court_stroke(one_stroke_transport);
-        let c = k.docket_orbit().circuits();
+        let c = k.docket_circuits().circuits();
         if c < aperture {
             assert!(k.phase_mark.is_none(), "no reading below the aperture: circuits {c} of {aperture}");
         } else {

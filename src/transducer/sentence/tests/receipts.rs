@@ -42,7 +42,7 @@ fn an_envelope_rides_the_record_and_reads_back() {
     let mut host = Form::default();
     host.glue_append_under(&a, a_at.clone(), Word::identity(), [0, 0, 0, 1], shift(3, 0))
         .expect("host cites a");
-    host.loops = Form::loops_of(&host.faces, &host.vertices);
+    host.orbits = Form::orbits_of(&host.faces, &host.vertices);
     host.reindex();
 
     let e = as_element_form(&host, [1, 0, 0, 0]).expect("mint");
@@ -73,7 +73,7 @@ fn evidence_does_not_rename_the_word() {
     let mut host = Form::default();
     host.glue_append_under(&a, a_at, Word::identity(), [0, 0, 0, 1], shift(1, 0))
         .expect("host cites a");
-    host.loops = Form::loops_of(&host.faces, &host.vertices);
+    host.orbits = Form::orbits_of(&host.faces, &host.vertices);
     host.reindex();
 
     let plain = as_element_form(&host, [1, 0, 0, 0]).expect("mint");
@@ -99,7 +99,7 @@ fn evidence_does_not_rename_the_word() {
 /// An inter-chart transition is a space-group element `g_ij = T(τ)·R`. An
 /// edge that kept only `R` would force every chart overlap to be concentric
 /// and throw the translational solder form away — the same collapse that
-/// made every intra-form loop read flat.
+/// made every intra-form orbit read flat.
 ///
 /// The reading is the CARTAN SPLIT: `screw_of` solves `(I − R)p = t` by the
 /// normal equations over ℚ, exactly. Here `R` is the identity, so `I − R` is
@@ -114,7 +114,7 @@ fn a_citation_carries_its_slip_and_not_only_its_bend() {
     let mut host = Form::default();
     host.glue_append_under(&a, a_at, Word::identity(), [0, 0, 0, 1], shift(3, 0))
         .expect("host cites a");
-    host.loops = Form::loops_of(&host.faces, &host.vertices);
+    host.orbits = Form::orbits_of(&host.faces, &host.vertices);
     host.reindex();
 
     let e = as_element_form(&host, [1, 0, 0, 0]).expect("mint");
@@ -166,7 +166,7 @@ fn an_edge_stands_at_a_site_and_not_at_an_index() {
             host.glue_append_under(f, at, Word::identity(), [0, 0, 0, 1], shift(2, 0))
                 .expect("cite");
         }
-        host.loops = Form::loops_of(&host.faces, &host.vertices);
+        host.orbits = Form::orbits_of(&host.faces, &host.vertices);
         host.reindex();
         let e = as_element_form(&host, [1, 0, 0, 0]).expect("mint");
         e.receipts().nerve.iter().map(NerveEdge::host).collect::<Vec<_>>()
@@ -345,7 +345,7 @@ fn two_hosts_citing_two_forms_reach_one_coordinate() {
         let mut host = Form::default();
         host.glue_append_under(f, at, Word::identity(), [0, 0, 0, 1], shift(2, 0))
             .expect("cite");
-        host.loops = Form::loops_of(&host.faces, &host.vertices);
+        host.orbits = Form::orbits_of(&host.faces, &host.vertices);
         host.reindex();
         host
     };
@@ -391,7 +391,7 @@ fn a_citation_does_not_grow_with_what_it_cites() {
         let mut host = Form::default();
         host.glue_append_under(f, at, Word::identity(), [0, 0, 0, 1], shift(2, 0))
             .expect("cite");
-        host.loops = Form::loops_of(&host.faces, &host.vertices);
+        host.orbits = Form::orbits_of(&host.faces, &host.vertices);
         host.reindex();
         host
     };

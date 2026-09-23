@@ -21,7 +21,7 @@ pub(crate) fn axis_slot(axis: Axis) -> Vec<u8> {
 /// the identity hue occupies no `Placement`, no `Dilation` and no `Hue` —
 /// three of the nine coordinates of 12.6 — so the axis index could not
 /// hold a word on any of them, and the pivot asks the index for exactly
-/// the axis a loop stands on. A loop standing on a placement was answered
+/// the axis an orbit stands on. An orbit standing on a placement was answered
 /// `0` not because the mind held no word that places but because the
 /// filing could not say so.
 ///
@@ -78,15 +78,15 @@ pub fn acting_of_element(e: &Element) -> Vec<Transport> {
 ///
 /// `admit_words` files under ONE chart for the whole element, and
 /// `axis_admit` supplied `invariant_of(element)` — for a sentence that is
-/// `chart_of_form`, `[2, rank, loop classes]`, a projection of what the FORM
-/// HOLDS. `candidates_for` asks under the charts a loop's face vertices act
+/// `chart_of_form`, `[2, rank, orbit classes]`, a projection of what the FORM
+/// HOLDS. `candidates_for` asks under the charts an orbit's face vertices act
 /// on, which `Vertex::charts` answers and `body_charts_of` already uses for
 /// `by_moduli`: `[1, moduli]`, a statement about the BODY A WORD ACTS ON.
 /// Both charts are well formed and they answer different questions, so the
 /// index was filed under the answer to one and read under the answer to the
 /// other. Measured across the fleet: `crystal.on_axis` answered 0 on 123 of
 /// 123 reads, and 75 of 76 admits filed on no axis at all because the forms
-/// admitted are closed — `[2, 0, 0, 0, 0]`, rank zero, no loops — so their
+/// admitted are closed — `[2, 0, 0, 0, 0]`, rank zero, no orbits — so their
 /// words occupy no coordinate.
 ///
 /// A word is filed where it ACTS. That is the question the pivot asks: not
@@ -263,7 +263,7 @@ fn acted_class(t: &Transport) -> Option<ClassVector> {
 /// `ClassVector::of_word`, which is the word at the IDENTITY carriage and
 /// the IDENTITY hue, so `Axis::Placement`, `Axis::Dilation` and `Axis::Hue`
 /// were three coordinates nothing admitted could ever occupy — while the
-/// pivot asks `on_axis_of` for whichever axis the loop it is trying to
+/// pivot asks `on_axis_of` for whichever axis the orbit it is trying to
 /// discharge stands on, those three included.
 pub fn admit_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Transport]) {
     let ck = chart.key();
@@ -318,7 +318,7 @@ pub fn retract_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[T
 /// What the prefilter does NOT do is decide. A word this returns is a
 /// CANDIDATE: the trial applies it, re-reads the class vectors off the
 /// written faces and refuses unless every member path discharges the axis
-/// exactly, so a word offered from a coarser stratum than the loop stands on
+/// exactly, so a word offered from a coarser stratum than the orbit stands on
 /// is confirmed by the plane arithmetic or it is refused there. The index
 /// narrows the search; it never certifies a match.
 pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Vec<Word> {
@@ -330,8 +330,8 @@ pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Ve
     //
     // The walk is bounded by the base's own width, which `chart_of_form`
     // now fixes at five coordinates whatever the form holds. It was
-    // bounded by five PLUS one coordinate per distinct loop class, so a
-    // form with n loops re-entered at the root up to n times to answer one
+    // bounded by five PLUS one coordinate per distinct orbit class, so a
+    // form with n orbits re-entered at the root up to n times to answer one
     // axis: `n·d` where the bundle says `d + n` (A21 §2, and `link`'s own
     // reading of the nested trie).
     let mut at = chart.clone();

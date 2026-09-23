@@ -478,7 +478,7 @@ pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &
     out
 }
 
-/// THE HOLONOMY of a cycle of transports: their product around the loop.
+/// THE HOLONOMY of a cycle of transports: their product around the orbit.
 /// WHAT LOCATING A BODY RETURNS: the citation if the atlas holds the word,
 /// the puncture if it holds the geometry under another assignment, and the
 /// stratum's multiplicity — the measurement, never a search width (A8).
@@ -502,7 +502,7 @@ pub fn holonomy(cycle: &[Versor]) -> Versor {
 }
 
 /// A connection is flat around a cycle when its holonomy is the identity
-/// up to the projective scale — the loop closes with no stress.
+/// up to the projective scale — the orbit closes with no stress.
 pub fn is_flat(cycle: &[Versor]) -> bool {
     element::same_versor(&holonomy(cycle), &element::identity_versor())
 }

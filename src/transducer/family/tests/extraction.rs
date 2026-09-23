@@ -36,15 +36,15 @@ assert!(
 );
 }
 
-/// 21 step 2, 25, 12.6, Stage 12 S12.2 — FORMS WITH LOOPS. A body carried
+/// 21 step 2, 25, 12.6, Stage 12 S12.2 — FORMS WITH ORBITS. A body carried
 /// by a quarter turn in one pair and by its inverse in the other is one
 /// transport class (the two words are conjugate), so the rule has one
 /// vertex for it; the face word from the Frame differs per pair and is KEPT
-/// as two sections over the pairs, never dropped. The form then has a loop
+/// as two sections over the pairs, never dropped. The form then has an orbit
 /// whose holonomy is the transition between the sections — a half turn —
-/// held with a class vector the pivot loop reads on its unit axis.
+/// held with a class vector the pivot orbit reads on its unit axis.
 #[test]
-fn a_face_that_varies_across_the_pairs_is_kept_as_sections_and_holds_a_loop() {
+fn a_face_that_varies_across_the_pairs_is_kept_as_sections_and_holds_an_orbit() {
 let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
 let cw = ["111000", "100000", "000000", "000000", "000550", "000000"];
 let ccw = ["001000", "111000", "000000", "000000", "000550", "000000"];
@@ -85,12 +85,12 @@ assert!(
     rule.form.faces.len()
 );
 assert!(rule.section_count() > 0, "the two words of one face are sections over the pairs");
-assert!(!rule.form.loops.is_empty(), "the second section closes a loop");
-let held: Vec<_> = (0..rule.form.loops.len())
+assert!(!rule.form.orbits.is_empty(), "the second section closes an orbit");
+let held: Vec<_> = (0..rule.form.orbits.len())
     .filter_map(|i| rule.form.class_vector(i))
     .filter(|cv| !cv.is_zero())
     .collect();
-assert!(!held.is_empty(), "a held loop with a class vector");
+assert!(!held.is_empty(), "a held orbit with a class vector");
 assert!(
     held.iter().any(|cv| cv.occupied().contains(&crate::transducer::sentence::Axis::Unit(0))),
     "the half turn occupies the unit axis of the sensor plane: {:?}",
@@ -98,8 +98,8 @@ assert!(
 );
 let mut form = rule.form.clone();
 let mut budget = crate::physics::Physics::default().stroke();
-let snaps = form.pivot_loop(b"idea", &crate::network::nerve::Keyed::new(), &NoCrystal, &mut budget, None, 0);
-assert!(!snaps.is_empty(), "the pivot loop reads the held loop and answers");
+let snaps = form.pivot_orbit(b"idea", &crate::network::nerve::Keyed::new(), &NoCrystal, &mut budget, None, 0);
+assert!(!snaps.is_empty(), "the pivot orbit reads the held orbit and answers");
 }
 
 /// 51.10 PROOF 1, 52.5 — A FAMILY WHOSE RULE IS ONE TRANSLATION. Three
@@ -498,7 +498,7 @@ fn the_glue_speaks_a_cited_form_once_per_placement_and_asks_once_per_chart() {
 /// Z2 — THE GLUE PASS RETRACTS ONCE, AND A CITATION IS NEVER CLONED.
 ///
 /// Both halves were measured before they were written. `Form::glue` ran
-/// `loops_of` and `reindex` per citation, and `retract_vertices` — which
+/// `orbits_of` and `reindex` per citation, and `retract_vertices` — which
 /// rebuilds the vertices, the faces, the cycle basis and every index —
 /// ran per citation too: on `1d0a4b61` that is 578 rebuilds over 2 850
 /// faces, 4.9 s of a 16.8 s pull on the instrument. And `Crystal::by_address`
@@ -624,7 +624,7 @@ assert!(budget.remaining() < left, "a new atlas generation re-extracts");
 /// It was a `Keyed` with no eviction, one whole `SentenceRule` per task id
 /// the voice had ever pulled. Measured on voice 4 of the 2026-09-19 recut,
 /// 18 minutes in: 89 pulls, 54 distinct families, task arm +522 MB net —
-/// 9.7 MB per stored rule, which is a `Form`'s vertices, faces, loops and
+/// 9.7 MB per stored rule, which is a `Form`'s vertices, faces, orbits and
 /// carriers. The training corpus is 1001 tasks, so a voice that sees it
 /// once holds 9.4 GB.
 ///

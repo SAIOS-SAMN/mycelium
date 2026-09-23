@@ -119,7 +119,7 @@ impl Form {
     /// vertices name. This is what `FormFace::new` was for — a section face, or
     /// a chord — except that `new` recorded the word and left the placement
     /// empty, and a face with no placement contributes no member path to any
-    /// loop, so every loop through it lost its carriage.
+    /// orbit, so every orbit through it lost its carriage.
     pub fn face_carrying(&self, i: u16, j: u16, word: Word) -> Option<FormFace> {
         self.face_carrying_with_edge(i, j, word, None)
     }
@@ -175,7 +175,7 @@ impl Form {
     }
 
     pub fn delta1(&self) -> Vec<(u16, Word)> {
-        self.loops
+        self.orbits
             .iter()
             .enumerate()
             .map(|(i, lp)| (i as u16, lp.holonomy.clone()))
@@ -186,7 +186,7 @@ impl Form {
 
 /// §8.1, measurement only: a face whose word has no sensor action places
 /// no member pair — `face_place_by` derives each pair's carriage through
-/// `versor_of_word`, one plane by construction (51.2) — and every loop
+/// `versor_of_word`, one plane by construction (51.2) — and every orbit
 /// through it has no member path and no class. Said once per face, against
 /// the pairs the incidence named.
 fn note_unplaced(i: u16, j: u16, word: &Word, named: usize, placed: usize) {

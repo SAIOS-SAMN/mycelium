@@ -5,7 +5,7 @@
 //! stroke: the peers with room on some lane, in key order, until one
 //! co-signs. A refusal names its 34.1 constant and is written; an
 //! unmeasured answer is silence and the proposal stands for the next
-//! orbit.
+//! circuit.
 
 use crate::exchange::Mesh;
 use crate::transport::{note_rtt_ok, note_rtt_timeout, rtt_floor, tell_peer_within};

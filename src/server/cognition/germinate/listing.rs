@@ -212,7 +212,7 @@ impl Kernel {
     /// nothing docketed, drawn, escrowed or sealed; admitted, it is listed
     /// on the open book with its demands, escrowed to its parties, docketed
     /// and Offered. On a depleted lane it is listed and charged by its
-    /// loops' orders, and the install waits for the reserve (E3).
+    /// orbits' orders, and the install waits for the reserve (E3).
     pub(crate) fn list_sentence(&mut self, word: &Element, voice: [u8; 32]) -> Outcome {
         let addr = word.address();
         let mag = word.magnitude();
@@ -334,7 +334,7 @@ impl Kernel {
     fn list_charged(&mut self, word: &Element, voice: [u8; 32]) -> Outcome {
         let addr = word.address();
         let mag = word.magnitude();
-        self.charge_loops(word, &mag);
+        self.charge_orbits(word, &mag);
         self.convergence.used_by(addr.as_bytes(), voice);
         if !self.pending.contains(&addr) {
             let k_now = self.k_step();
@@ -349,13 +349,13 @@ impl Kernel {
     /// THE TORSION SOURCE (12.6, 18.2): the charge is read at the level the
     /// carrier is on. A stored cycle is the conjugate level already — an
     /// Open walk pivots the lanes the sentence occupies and bumps them for
-    /// the length it walked; a Closed loop is proven monodromy and charges
-    /// nothing. With no stored cycle a sentence's words are its loop
+    /// the length it walked; a Closed orbit is proven monodromy and charges
+    /// nothing. With no stored cycle a sentence's words are its orbit
     /// holonomies, each closing in the order of its class: a finite order
-    /// bumps that many times, per loop and never summed; a loop that never
+    /// bumps that many times, per orbit and never summed; an orbit that never
     /// closes is an open walk and is charged as one.
     ///
-    /// AND A LOOP THE SENTENCE FILED IS CHARGED AS ONE TOO, BUT ONLY WHERE
+    /// AND AN ORBIT THE SENTENCE FILED IS CHARGED AS ONE TOO, BUT ONLY WHERE
     /// THE SPEAKER DEMANDED ADJUDICATION OVER IT (ruled 2026-09-14,
     /// inverting D10 of the same day).
     ///
@@ -380,7 +380,7 @@ impl Kernel {
     /// DEMAND VERTEX (50.5): the sentence saying out loud what it could not
     /// close and asking the market to answer it. Claiming the stroke is what
     /// costs; failing to close is not.
-    fn charge_loops(&mut self, word: &Element, mag: &[u64; 4]) {
+    fn charge_orbits(&mut self, word: &Element, mag: &[u64; 4]) {
         // THE GATE: did this sentence ask for adjudication over what it
         // could not close? A form with no demand vertex claims nothing and
         // its cycles fall through free.
@@ -392,21 +392,21 @@ impl Kernel {
                 return;
             };
             // THE PERIODS THE COMPLEX DERIVES, by class — one reader
-            // (`loop_classes`), the same one `file_loop` writes through.
+            // (`orbit_classes`), the same one `file_orbit` writes through.
             let mut derived: crate::network::nerve::Keyed<
                 crate::transducer::sentence::ToralPeriod,
                 crate::network::nerve::coord::Holonomy,
             > =
                 crate::network::nerve::Keyed::new();
-            for lp in &f.loops {
-                for row in f.loop_classes(lp) {
+            for lp in &f.orbits {
+                for row in f.orbit_classes(lp) {
                     derived.put(&row.class, row.periods);
                 }
             }
-            for (w, _) in f.loop_words() {
+            for (w, _) in f.orbit_words() {
                 // A CYCLE THIS SENTENCE FILED is one the speaker could not
-                // discharge: `file_loop` writes `Form.torsion` only where no
-                // candidate discharged the loop, so it stands as a class
+                // discharge: `file_orbit` writes `Form.torsion` only where no
+                // candidate discharged the orbit, so it stands as a class
                 // awaiting a word — which is exactly what `Physics::pivot`
                 // calls "the demand for a new fiber". It is keyed by the
                 // holonomy's class, the same key this reader has in hand.
@@ -446,11 +446,11 @@ impl Kernel {
                 // NOT THE ROTOR'S. `w.order()` is the bare rotor order with
                 // no carriage and no fixed-point test: a screw has a finite
                 // rotor order and closes at nothing, so this read `Finite`
-                // and called a circuit that walks closed. `loop_classes`
+                // and called a circuit that walks closed. `orbit_classes`
                 // gates on the fixed point and gives it `0`.
                 // THE CYCLE CLOSED, WHICH IS BOTH PLANES. It read
                 // `ell > 0` on the `lcm`, true whenever either factor is
-                // a root of unity, so a loop with one plane turning
+                // a root of unity, so an orbit with one plane turning
                 // forever read as closed and was never charged as
                 // torsion (54.7).
                 let closes = w
@@ -474,11 +474,11 @@ impl Kernel {
             }
             return;
         }
-        // A STORED CYCLE IS ONE NO CANDIDATE DISCHARGED — `file_loop` runs
+        // A STORED CYCLE IS ONE NO CANDIDATE DISCHARGED — `file_orbit` runs
         // only under `Discharge::NoneDischarged` — so by construction every
         // one of them is a cycle this mind has no word for. D10 read that as
         // grounds to charge whatever the witness said, on the argument that
-        // "a Closed loop is proven monodromy and charges nothing" asks about
+        // "a Closed orbit is proven monodromy and charges nothing" asks about
         // the OBJECT instead of the MIND. The reading is right and the
         // conclusion was not: having no word for a cycle is the ordinary
         // condition of a voice searching, and billing it taxes the search.
@@ -496,10 +496,10 @@ impl Kernel {
                 self.physics.pivot(crate::physics::Physics::lanes_of(mag));
             }
             let steps = match w {
-                crate::transducer::torsion_witness::HolonomicLoopWitness::Open { walked } => {
+                crate::transducer::torsion_witness::HolonomicOrbitWitness::Open { walked } => {
                     u64::from(*walked)
                 }
-                crate::transducer::torsion_witness::HolonomicLoopWitness::Closed {
+                crate::transducer::torsion_witness::HolonomicOrbitWitness::Closed {
                     period, ..
                 } => u64::from(*period),
             };

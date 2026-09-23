@@ -117,10 +117,10 @@ pub struct Contemplation {
     /// The ring's resume cursor: `None` is a walk that has not started,
     /// which is an absence and not an empty key (rule 11, X3).
     pub(crate) expand_cursor: Option<Vec<u8>>,
-    /// The dirty ring's orbit (45.7, S13.3): the circuits `expand_all`
+    /// The dirty ring's circuits (45.7, S13.3): the circuits `expand_all`
     /// completed and the strokes the last one took — the mind's local time
-    /// beside K, written once per circuit as `[{tag}] orbit ring`.
-    pub(crate) ring: crate::physics::Orbit,
+    /// beside K, written once per circuit as `[{tag}] circuit ring`.
+    pub(crate) ring: crate::physics::Circuits,
     pub fills: u64,
     pub torsion_merges: u64,
     pub classes: u64,
@@ -145,7 +145,7 @@ pub struct Contemplation {
     /// EXPANSION 4 — THE VORTICES BY THEIR CONJUGACY STRATUM: the
     /// depth-one coordinate of the class vector a vortex is filed under →
     /// the bubbles standing there. A vortex is decided by a ruled word
-    /// whose rotor is conjugate to the loop's holonomy, and a word knows
+    /// whose rotor is conjugate to the orbit's holonomy, and a word knows
     /// its own conjugacy class and nothing finer, so that class IS the
     /// coordinate this index is keyed by: a keyed read, never a walk of
     /// every bubble asking each (rule 1).
@@ -210,7 +210,7 @@ impl Contemplation {
 
     /// WHERE A SPEAKING FORM CAME FROM, and how long it deliberated: the span
     /// its idea has stood over, in receipts — lane 𝒯, the same
-    /// `held_since(now, moved_k)` that `expand_with` hands `pivot_loop` as
+    /// `held_since(now, moved_k)` that `expand_with` hands `pivot_orbit` as
     /// its `t_extent`. One quantity, one reader (law 12).
     ///
     /// A form this contemplation does not hold stood over NO receipts: it
@@ -340,7 +340,7 @@ impl Contemplation {
     ///   versor is 1024 bytes (`Acting::carriage`).
     /// - `nerve` simplices across every degree, each carrying a `Rotor`.
     /// - `horizon` — one `(Rotor, Order, Standing)` per class the idea met,
-    ///   and `paint_standing` writes one per standing loop of every form
+    ///   and `paint_standing` writes one per standing orbit of every form
     ///   held. A rotor is sixteen `BigRational`, each of them heap.
     /// - `bundle` — the training pairs, COPIED per bubble.
     /// - `certificates` and `vortex`, which hold certificates carrying class
@@ -461,7 +461,7 @@ impl Contemplation {
     }
 
     /// EXPANSION 4 — COLLAPSE EVERY VORTEX A ROTOR IS A CANDIDATE OF. A
-    /// vortex holds several certified discharges of one loop; a ruled word
+    /// vortex holds several certified discharges of one orbit; a ruled word
     /// whose rotor is one of its candidates decides it, and the differences
     /// between that candidate and the others — rotations the mind measured
     /// (37.7) — ride out to be adjoined, each with the chart the deciding
@@ -469,10 +469,10 @@ impl Contemplation {
     ///
     /// Read at the ROTOR'S OWN CONJUGACY CLASS, which is the depth-one
     /// coordinate of the class vector a vortex is filed under: the
-    /// candidate is filed at the loop's own class (`vortex_put`), and the
+    /// candidate is filed at the orbit's own class (`vortex_put`), and the
     /// deciding word's class key is that key's stratum, so this is a
     /// projection and not a guess. Neither the arriving word's chart, nor
-    /// the loop's AFTER-class — the zero class for a closing candidate —
+    /// the orbit's AFTER-class — the zero class for a closing candidate —
     /// nor the candidate's own element key, which is an identity and not a
     /// coordinate, would meet one.
     pub(crate) fn collapse_on(
@@ -801,7 +801,7 @@ impl Contemplation {
         let cover = cover_of(&inv);
         // The volume is the remainder's own measure (L7b): a T extent of
         // zero is zero, and no lane is floored so that a gate downstream
-        // would pass — the pivot loop runs on every dirty idea (25.1), T
+        // would pass — the pivot orbit runs on every dirty idea (25.1), T
         // paces nothing (law 9).
         let volume = element::measure_lanes(&remainder);
         let mut horizon = Keyed::new();
@@ -917,7 +917,7 @@ impl Contemplation {
         sentence::as_element_form(f, mag)
     }
 
-    /// CAUTERIZE (25.2): an idea whose form is closed — every loop the
+    /// CAUTERIZE (25.2): an idea whose form is closed — every orbit the
     /// identity, filed torsion or an opened axis, every remainder empty —
     /// crystallizes. The tape carries its torsion, certificates and axes,
     /// M2 fixes the address, and its magnitude is the descent it measures
@@ -947,8 +947,8 @@ impl Contemplation {
             None => form_mag(f),
         };
         let e = sentence::as_element_form(f, mag)?;
-        let (loops, torsion, certificates, axes) =
-            (f.loops.len(), f.torsion.len(), f.certificates.len(), f.axes.len());
+        let (orbits, torsion, certificates, axes) =
+            (f.orbits.len(), f.torsion.len(), f.certificates.len(), f.axes.len());
         let retire = b.glued_by.is_empty();
         if retire {
             let old = b.clone();
@@ -958,7 +958,7 @@ impl Contemplation {
         }
         self.formed += 1;
         eprintln!(
-            "  form crystallized {:02x}{:02x}… loops {loops} torsion {torsion} certificates {certificates} axes {axes} carried {mag:?}",
+            "  form crystallized {:02x}{:02x}… orbits {orbits} torsion {torsion} certificates {certificates} axes {axes} carried {mag:?}",
             e.address()[0],
             e.address()[1]
         );

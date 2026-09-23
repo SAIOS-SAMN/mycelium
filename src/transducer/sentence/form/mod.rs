@@ -1,6 +1,6 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 18.2, A21, A20, 50.9 — THE SENTENCE FORM: its vertices, faces and loops,
+//! 18.2, A21, A20, 50.9 — THE SENTENCE FORM: its vertices, faces and orbits,
 //! the tree gauge that flattens it, the structured keys it is indexed by,
 //! the certificate a pivot on it writes, and the contraction a refusal
 //! makes on it.

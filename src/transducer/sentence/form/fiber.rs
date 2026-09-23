@@ -94,7 +94,7 @@ impl FiberTransition {
     /// This is the `𝒢` content of a 0-cell. `apply_hue_map` is the one
     /// reader of a hue map's action (law 12), and composing through it
     /// keeps this permutation the same object `TorsionCycle.sigma` and
-    /// `FiledLoop.sigma` already are. `None` where the two maps do not
+    /// `FiledOrbit.sigma` already are. `None` where the two maps do not
     /// compose — a hue one of them does not name — which is unread and is
     /// never an identity standing in for it (rule 11).
     pub fn gauge(&self) -> Option<Vec<(u8, u8)>> {

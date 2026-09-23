@@ -235,7 +235,7 @@ impl Kernel {
                 }
             }
             eprintln!(
-                "  court pivot certified {:02x}{:02x}… loop {} axis {} {:02x}{:02x}→{:02x}{:02x}",
+                "  court pivot certified {:02x}{:02x}… orbit {} axis {} {:02x}{:02x}→{:02x}{:02x}",
                 addr[0],
                 addr[1],
                 cert.chord,

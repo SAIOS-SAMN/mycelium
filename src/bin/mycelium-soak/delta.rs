@@ -55,10 +55,10 @@ pub(crate) struct TaskWalk {
     /// TopologicalDeformation — which names what the alphabet could not
     /// spell and the eyes could not pair.
     kinds: [u64; 5],
-    /// THE LOOPS BY READING, in the words the court reads them with
-    /// (`loop_reading_replays`): an identity holonomy is FLAT, a finite
+    /// THE ORBITS BY READING, in the words the court reads them with
+    /// (`orbit_reading_replays`): an identity holonomy is FLAT, a finite
     /// order is TORSION the cover can file, an infinite order is OPEN and
-    /// files nothing, and a loop the form opened an axis over is I6's AXIS.
+    /// files nothing, and an orbit the form opened an axis over is I6's AXIS.
     flat: u64,
     torsion: u64,
     open: u64,
@@ -96,7 +96,7 @@ impl TaskWalk {
                 _ => {}
             }
         }
-        for lp in &rule.form.loops {
+        for lp in &rule.form.orbits {
             if rule.form.opened_axis_of(lp).is_some() {
                 w.axis += 1;
                 continue;
@@ -295,7 +295,7 @@ pub(crate) fn report(slice: &Slice) {
     let mut moved = 0u64;
     for p in pairs {
         println!(
-            "  delta {} {} {} {} {} | loops {} {} {} {} | closed {}{} | extracted {}{}",
+            "  delta {} {} {} {} {} | orbits {} {} {} {} | closed {}{} | extracted {}{}",
             p.name,
             side("words", p.cold.words, p.warm.words),
             side("glued", p.cold.glued, p.warm.glued),

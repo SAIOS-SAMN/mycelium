@@ -8,20 +8,20 @@ use crate::transducer::element::{self};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self, Standing};
 
-/// 12.6, 16.16 step 3, 3.7 (I6): a loop whose class has a free part and
+/// 12.6, 16.16 step 3, 3.7 (I6): an orbit whose class has a free part and
 /// which no held word discharges OPENS A CHART AXIS seeded by its own
 /// holonomy — the residual measured how narrow the cover was, and the
-/// cover grew an axis along which it is a section. The loop then reads
+/// cover grew an axis along which it is a section. The orbit then reads
 /// zero, the rank moves one unit from `free` into `axes`, the form coheres
 /// on the refined cover, and it is never filed as torsion (T3). The
 /// certificate replays on the court, which re-derives the seed from the
-/// loop; a tape whose axis was struck out is refused on that loop.
+/// orbit; a tape whose axis was struck out is refused on that orbit.
 #[test]
 fn an_infinite_class_no_word_discharges_opens_an_axis_and_is_never_filed() {
     let mut f = chord_form(&[infinite()]);
     let before = f.rank().expect("rank");
-    assert_eq!((before.free, before.axes), (1, 0), "one free loop, no axis yet");
-    let snaps = f.pivot_loop(
+    assert_eq!((before.free, before.axes), (1, 0), "one free orbit, no axis yet");
+    let snaps = f.pivot_orbit(
         [0x11; 32],
         &crate::network::nerve::Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -37,7 +37,7 @@ fn an_infinite_class_no_word_discharges_opens_an_axis_and_is_never_filed() {
         })
         .collect();
     let [certificate] = discharged[..] else {
-        panic!("the opening axis discharges the loop once: {snaps:?}");
+        panic!("the opening axis discharges the orbit once: {snaps:?}");
     };
     assert_eq!(certificate.axis, Axis::Open, "on the opening axis");
     assert_eq!(
@@ -54,28 +54,28 @@ fn an_infinite_class_no_word_discharges_opens_an_axis_and_is_never_filed() {
     assert_eq!(f.axes.len(), 1, "the form carries the opened axis");
     let after = f.rank().expect("rank");
     assert_eq!((after.free, after.axes), (0, 1), "the free unit is an axis now");
-    assert!(f.coheres(), "the loop is the transition on the opened axis");
+    assert!(f.coheres(), "the orbit is the transition on the opened axis");
     assert!(
         f.class_vector(0).is_some_and(|k| k.is_zero()),
         "and it reads as the zero vector"
     );
 
-    // The court replays the opened axis from the tape and the loop.
+    // The court replays the opened axis from the tape and the orbit.
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("crystallizes");
     let back = crate::transducer::sentence::from_element_form(&e).expect("tape");
     assert_eq!(back.axes.len(), 1, "the axis rides the tape");
     assert_eq!(
         crate::court::verdict::blind_replay(&e),
         None,
-        "the court re-derives the seed from the loop and the certificate re-walks"
+        "the court re-derives the seed from the orbit and the certificate re-walks"
     );
     let mut struck = back.clone();
     struck.axes = Keyed::new();
     let bad = as_element_form(&struck, [1, 0, 0, 0]).expect("tape without its axis");
     assert_eq!(
         crate::court::verdict::blind_replay(&bad),
-        Some(crate::court::verdict::REFUSE_LOOP),
-        "without the axis the loop is a free class again, and it does not replay"
+        Some(crate::court::verdict::REFUSE_ORBIT),
+        "without the axis the orbit is a free class again, and it does not replay"
     );
 }
 
@@ -89,14 +89,14 @@ fn torsion_filed_only_when_witnessed_at_period() {
     let ws = crate::transducer::torsion_witness::witness_stored(&t);
     assert!(
         ws.iter().any(|(ell, w)| *ell == 3
-            && matches!(w, crate::transducer::torsion_witness::HolonomicLoopWitness::Closed { period: 3, .. })),
+            && matches!(w, crate::transducer::torsion_witness::HolonomicOrbitWitness::Closed { period: 3, .. })),
         "period 3 is witnessed closed: {ws:?}"
     );
     t.record_torsion(vec![(1, 9)], 8, crate::transducer::element::FIBER_SPATIAL);
     let ws = crate::transducer::torsion_witness::witness_stored(&t);
     assert!(
         ws.iter().any(|(ell, w)| *ell == 8
-            && matches!(w, crate::transducer::torsion_witness::HolonomicLoopWitness::Open { .. })),
+            && matches!(w, crate::transducer::torsion_witness::HolonomicOrbitWitness::Open { .. })),
         "an unclosed walk is not believed: {ws:?}"
     );
 }
@@ -118,17 +118,17 @@ fn rank_offplane_is_its_own_lane() {
     // ruled 2026-09-20). This stood on `chord_form`, which puts the rotor
     // in the face's WORD — and a word with no sensor action places no
     // member pair, which `edge_chord_form`'s own doc has said since it was
-    // written: "a loop with no member path has no class to read".
+    // written: "an orbit with no member path has no class to read".
     //
     // It passed anyway because the cycle basis was built on the VERTEX
     // graph, where a face joins its two vertices whether or not it relates
-    // any bodies, and `loop_holonomy_on` then fell back to the word. Built
+    // any bodies, and `orbit_holonomy_on` then fell back to the word. Built
     // on the MEMBER complex the cycle does not exist, and that is correct:
     // no body can be carried across a face that places none.
     //
     // `edge_chord_form` is the carrier the codebase already names for this
     // — an identity face word, which DOES place its pair, with the
-    // off-plane rotor on 50.3's edge transport — so the loop is a cycle of
+    // off-plane rotor on 50.3's edge transport — so the orbit is a cycle of
     // the member complex and its composite is off-plane where it belongs.
     let two = edge_chord_form(&[w.clone(), w.clone()]);
     let r = two.rank().expect("rank");
@@ -146,11 +146,11 @@ fn rank_offplane_is_its_own_lane() {
 
 /// Chapter 23.1 step 4: a filed torsion chord replays; a chord that is
 /// not the holonomy refuses the face; a missing torsion entry refuses
-/// the loop.
+/// the orbit.
 #[test]
 fn filed_torsion_chord_replays_or_refuses() {
     let mut f0 = chord_form(&[order4()]);
-    let _ = f0.pivot_loop(
+    let _ = f0.pivot_orbit(
         [0xca; 32],
         &crate::network::nerve::Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -172,19 +172,19 @@ fn filed_torsion_chord_replays_or_refuses() {
     // THE CLASS AND THE CHORD ARE DERIVED, NOT FILED (54.5). This read
     // them off `keyed.torsion`, and a form recovered from its address files
     // nothing — the filing rides `Element::filing`, and the class and
-    // period are theorems of the complex (`loop_classes`).
+    // period are theorems of the complex (`orbit_classes`).
     let (class, chord) = keyed
-        .loops
+        .orbits
         .iter()
-        .find_map(|lp| match keyed.loop_classes(lp).as_slice() {
-            // The least class the loop derives; `loop_classes` walks a
+        .find_map(|lp| match keyed.orbit_classes(lp).as_slice() {
+            // The least class the orbit derives; `orbit_classes` walks a
             // `Keyed`, so the order is the member paths' own (rule 15).
             [row, ..] => Some((row.class.clone(), lp.chord)),
             [] => None,
         })
         .expect("the complex derives its own class");
     assert_eq!(
-        torsion_loop_rotor(&keyed, &class).and_then(|r| r.holonomy_key()),
+        torsion_orbit_rotor(&keyed, &class).and_then(|r| r.holonomy_key()),
         Some(class),
         "the chord face is the keyed representative"
     );
@@ -209,8 +209,8 @@ fn filed_torsion_chord_replays_or_refuses() {
     f.faces[ci].word = order2();
     let bad = as_element_form(&f, mag).expect("tampered chord");
     // A TAMPERED CHORD NAMES A DIFFERENT WORD (54.5, as ruled 2026-09-20).
-    // This expected `REFUSE_LOOP` — "a chord whose holonomy is not the FILED
-    // class refuses the loop" — which prices geometry against an annotation.
+    // This expected `REFUSE_ORBIT` — "a chord whose holonomy is not the FILED
+    // class refuses the orbit" — which prices geometry against an annotation.
     // Coherence asks the complex now, so a chord whose new holonomy is still
     // a compact resonance coheres, and the court says so honestly. What the
     // forger cannot do is keep the name: a face's word is in the key (A21).
@@ -223,11 +223,11 @@ fn filed_torsion_chord_replays_or_refuses() {
     // 2026-09-20) — the same reading `rank_lost_refused` already carries
     // one carrier up.
     //
-    // This stripped `Form.torsion` and expected `REFUSE_LOOP`: a filed
+    // This stripped `Form.torsion` and expected `REFUSE_ORBIT`: a filed
     // chord without its entry refuses. Two things have to be true for that
     // attack to exist, and neither is. A form recovered from its ADDRESS
     // files nothing to begin with, so there is no entry to remove; and
-    // coherence asks `loop_classes` rather than the filing, so removing one
+    // coherence asks `orbit_classes` rather than the filing, so removing one
     // would change no answer if there were.
     //
     // What a forger can still move is a FACE, and `face_rederives` reads
@@ -255,7 +255,7 @@ fn horizon_seeded_infinite_is_not_demanded() {
     let r = infinite().rotor();
     let mut horizon = crate::network::nerve::Keyed::new();
     horizon.insert(r.class_key().expect("infinite class"), (r, Order::Infinite, Standing::Held));
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0x5e; 32],
         &horizon,
         &crate::transducer::family::NoCrystal,
@@ -294,7 +294,7 @@ fn offplane_word_refuses_to_act_on_a_translation() {
 }
 
 /// A1: a (0,2) quarter to the fourth power is projectively identity and
-/// closed to coheres, pivot_loop, is_cauterized, and the court. The
+/// closed to coheres, pivot_orbit, is_cauterized, and the court. The
 /// sensor-plane abelianisation does not see it.
 #[test]
 fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
@@ -316,7 +316,7 @@ fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
     f.faces.push(f.face_of(0, 1).expect("star 1"));
     f.faces.push(f.face_of(0, 2).expect("star 2"));
     f.faces.push(f.face_carrying(1, 2, w).expect("a chord between two bodies"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     assert!(f.coheres(), "coheres reads projective identity");
     assert!(
@@ -324,10 +324,10 @@ fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
         "is_cauterized reads projective identity"
     );
     assert!(
-        f.loops.iter().all(|lp| lp.holonomy.is_identity()),
+        f.orbits.iter().all(|lp| lp.holonomy.is_identity()),
         "the chord holonomy is A1 identity"
     );
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0xa1; 32],
         &Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -340,7 +340,7 @@ fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
             s,
             Snap::Demand { .. } | Snap::TorsionOpen { .. } | Snap::TorsionFiled { .. }
         )),
-        "pivot_loop does not demand a projective identity: {snaps:?}"
+        "pivot_orbit does not demand a projective identity: {snaps:?}"
     );
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("the identity chord crystallizes");
     assert_eq!(
@@ -446,17 +446,17 @@ fn orientation_is_the_third_axis_half_turn() {
 }
 
 #[test]
-fn a_loop_residue_is_the_translator_of_its_holonomy_versor() {
+fn an_orbit_residue_is_the_translator_of_its_holonomy_versor() {
     let mut f = chord_form(&[Word::identity()]);
     for fa in &mut f.faces {
         set_face_place(fa, |p| p.gauge.clear());
     }
-    let chord = f.loops[0].chord as usize;
+    let chord = f.orbits[0].chord as usize;
     set_face_place(&mut f.faces[chord], |p| {
         p.carriage = element::carriage(&q1(), &(q1(), q0()));
     });
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    let kappa = f.class_vector(0).expect("loop");
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    let kappa = f.class_vector(0).expect("orbit");
     assert!(kappa.occupies(Axis::Placement));
     let t = element::translator_of(&kappa.carriage).expect("translator");
     assert!(

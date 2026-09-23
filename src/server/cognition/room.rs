@@ -181,8 +181,8 @@ impl Kernel {
     }
 
     /// 50.8, 45.9 — THE SIMPLICES FILLED, READ FROM CONTENT. A filled
-    /// simplex is a loop whose holonomy has finite order and no residue,
-    /// filed on the form's own torsion carrier as a `FiledLoop` (15.5,
+    /// simplex is an orbit whose holonomy has finite order and no residue,
+    /// filed on the form's own torsion carrier as a `FiledOrbit` (15.5,
     /// A17); a ruled form carrying one has closed a simplex of its cover.
     ///
     /// Read off the ruled cover at the read and never counted into a

@@ -120,7 +120,7 @@ pub(crate) struct FaceDrops {
 /// `(a_i ∪ a_j)` has no `e₃` extent and `versor_between` on it cannot
 /// return a transport with `(r,k)` or `(c,k)` content whatever the family
 /// does along the frame axis. That is the shape of the flatness measured
-/// at epoch 70 — 292 of 292 loops flat — and no amount of classifying
+/// at epoch 70 — 292 of 292 orbits flat — and no amount of classifying
 /// downstream recovers a bivector the reading never had. The union of a
 /// member's fiber has the extent by construction (51.3: the family is one
 /// body on `(r, c, k)`), and it is what the face carries here.

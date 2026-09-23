@@ -1,12 +1,12 @@
-// 12.2, 18.2 — THE LOOPS of a form: the cycle basis on the member complex,
-// each cycle based by Axiom A, and the gates it passes to become a `Loop`.
+// 12.2, 18.2 — THE ORBITS of a form: the cycle basis on the member complex,
+// each cycle based by Axiom A, and the gates it passes to become an `Orbit`.
 
 use super::*;
 
 thread_local! {
     /// `(reflexive cells seen, dropped at tree_path, dropped at
     /// paths_carried, dropped as trivial)` — the three gates between a
-    /// cycle of the member complex and a `Loop` on the form.
+    /// cycle of the member complex and an `Orbit` on the form.
     static CYCLES: std::cell::Cell<(u64, u64, u64, u64)> =
         const { std::cell::Cell::new((0, 0, 0, 0)) };
     /// H2c — the `unread` gate split by what refused it, and the cycles
@@ -148,23 +148,23 @@ fn gate(which: usize) {
 impl Form {
     /// THE CYCLES OF THE 1-SKELETON, less the ones that enclose nothing.
     ///
-    /// Takes the VERTICES and not a count: `loop_is_trivial` reads the
-    /// edge holonomies to decide, and `edge_holonomies_on` needs them. A
-    /// loop flat on its WORD can carry a real edge composite — that is
-    /// what `a_loop_flat_on_the_word_files_under_its_edge_composite`
+    /// Takes the VERTICES and not a count: `orbit_is_trivial` reads the
+    /// edge holonomies to decide, and `edge_holonomies_on` needs them. An
+    /// orbit flat on its WORD can carry a real edge composite — that is
+    /// what `an_orbit_flat_on_the_word_files_under_its_edge_composite`
     /// asserts — and a predicate blind to edges would prune the
     /// obstruction along with the noise.
     /// WHERE A CYCLE DIES BETWEEN THE BASIS AND THE FORM (§8.1).
     ///
     /// `b₁` stayed at zero while the chords reached the face builder, and
     /// three gates stand between a cycle of the member complex and a
-    /// `Loop` on the form. A reading that says only "0 loops" cannot say
+    /// `Orbit` on the form. A reading that says only "0 orbits" cannot say
     /// which, so each is counted at the step that decides it.
-    pub fn loop_gates() -> (u64, u64, u64, u64) {
+    pub fn orbit_gates() -> (u64, u64, u64, u64) {
         CYCLES.with(|c| c.get())
     }
 
-    pub fn reset_loop_gates() {
+    pub fn reset_orbit_gates() {
         CYCLES.with(|c| c.set((0, 0, 0, 0)));
         UNREAD.with(|c| c.set((UnreadTally::default(), UnreadTally::default())));
     }
@@ -177,7 +177,7 @@ impl Form {
         UNREAD.with(|c| c.get())
     }
 
-    pub fn loops_of(faces: &[FormFace], vertices: &[Vertex]) -> Vec<Loop> {
+    pub fn orbits_of(faces: &[FormFace], vertices: &[Vertex]) -> Vec<Orbit> {
         // THE CYCLE BASIS IS BUILT ON THE MEMBER COMPLEX, NOT ON THE VERTEX
         // INDICES (54.4, as ruled 2026-09-20).
         //
@@ -204,12 +204,12 @@ impl Form {
         // as the same empty answer.
         //
         // MEASURED, before the change, on three voices of a live fleet:
-        // 281 real loops (crossing a face between two bodies rather than
+        // 281 real orbits (crossing a face between two bodies rather than
         // the Frame), every face of every one of them carrying a member
         // pair — 0 tears — and 0 closed member paths. 96 of 96, 97 of 97,
         // 88 of 88 passed through a vertex that splits into several
         // members, which is where the lift has to break. And exactly
-        // `members − vertices` of the loops ran through the Frame alone —
+        // `members − vertices` of the orbits ran through the Frame alone —
         // 285 = 860 − 575, 266 = 702 − 436, 300 = 769 − 469, exact on all
         // three — because `k` charts on one vertex are `k` parallel
         // Frame-edges in V and `k − 1` spurious cycles that enclose
@@ -229,7 +229,7 @@ impl Form {
         // holonomy that moves the sensor plane places no member pair —
         // `face_place_by` derives each pair's carriage through
         // `versor_of_word`, one plane by construction (51.2) — so every
-        // off-plane loop lives here, and `Rank.offplane` is a lane that
+        // off-plane orbit lives here, and `Rank.offplane` is a lane that
         // could never be non-zero if these faces were dropped
         // (`rank_offplane_is_its_own_lane`).
         //
@@ -310,14 +310,14 @@ impl Form {
             x
         };
         let mut adj: Vec<Vec<(usize, usize)>> = vec![Vec::new(); n];
-        let mut loops = Vec::new();
+        let mut orbits = Vec::new();
         // AXIOM A — THE FOREST IS BUILT WHOLE BEFORE ANY CHORD IS CLOSED.
         //
         // This ran one pass: a tree edge extended `adj`, a chord closed a
         // cycle, in the order the edges happened to arrive. A cycle closed
         // early therefore saw a PARTIAL tree, and its transport from the
-        // basepoint could not be known — so every loop was based wherever
-        // its own chord sat, in that node's frame, and two loops of one
+        // basepoint could not be known — so every orbit was based wherever
+        // its own chord sat, in that node's frame, and two orbits of one
         // form were operators on different tangent spaces.
         //
         // Two passes: the spanning forest first, then `θ` by descent from
@@ -372,9 +372,9 @@ impl Form {
                 gate(1);
                 continue;
             };
-            // THE CYCLE PROJECTED TO ITS VERTICES. `Loop` names its nodes
+            // THE CYCLE PROJECTED TO ITS VERTICES. `Orbit` names its nodes
             // by vertex index because every reader of it — the holonomy
-            // composite, the charts of a loop, the face-direction test in
+            // composite, the charts of an orbit, the face-direction test in
             // `paths_carried` — asks the form for a vertex. The CHART at
             // each step is carried by the faces the cycle walks, which is
             // where the transport is; the projection loses nothing the
@@ -382,7 +382,7 @@ impl Form {
             // named by.
             // THE CYCLE, NAMED BY ITS MEMBERS, and the projection beside
             // it. The members are the cycle; `vertices` is `π` of them,
-            // kept because every reader of a loop asks the form for a
+            // kept because every reader of an orbit asks the form for a
             // vertex, and lossy at exactly the edge between two charts of
             // one vertex.
             let mut members: Vec<Vec<u8>> = path
@@ -396,7 +396,7 @@ impl Form {
             walked.push(fi);
             // A CYCLE WITH AN END THE FOREST COULD NOT GAUGE IS UNREAD. Its
             // basepoint transport, or the one across its forest path, crossed
-            // a carriage on the light cone (57.4), and a loop based through
+            // a carriage on the light cone (57.4), and an orbit based through
             // an unread transport is not a flat one (rule 11).
             let theta_a = match (&theta[a], &theta[b]) {
                 (Ok(t), Ok(_)) => t.clone(),
@@ -408,15 +408,15 @@ impl Form {
             let holonomy = form_named_holonomy(faces, &path, &walked);
             // THE CARRIAGES ARE THE TRANSPORT COMPOSITE'S, read from the one
             // walk that computes them. `path_carriages` stood here and walked
-            // the loop's member paths accumulating `place.carriage` —
-            // step for step the same walk `loop_transport_on` makes, with the
+            // the orbit's member paths accumulating `place.carriage` —
+            // step for step the same walk `orbit_transport_on` makes, with the
             // word and the gauge thrown away. Two carriers for one quantity
             // (law 12), and the expensive half: the walk is combinatorial over
-            // each face's member pairs, and it ran once per loop at
-            // construction and again per loop at every class reading. On the
-            // fleet at e98e8a2 that is 70311 loops walked twice, and one pair
+            // each face's member pairs, and it ran once per orbit at
+            // construction and again per orbit at every class reading. On the
+            // fleet at e98e8a2 that is 70311 orbits walked twice, and one pair
             // form carried 3361 of them.
-            let mut lp = Loop {
+            let mut lp = Orbit {
                 members,
                 vertices: path.into_iter().map(|x| x as u16).collect(),
                 faces: walked.into_iter().map(|x| x as u16).collect(),
@@ -428,13 +428,13 @@ impl Form {
                 // the form's basepoint.
                 based_at: theta_a,
             };
-            // A CHORD THAT ENCLOSES NOTHING IS NOT A LOOP (ruled
-            // 2026-09-18). `loop_is_trivial` states the predicate once;
+            // A CHORD THAT ENCLOSES NOTHING IS NOT AN ORBIT (ruled
+            // 2026-09-18). `orbit_is_trivial` states the predicate once;
             // a cycle that encloses no rotation, no placement and no hue
             // occupies no axis of 12.6, drives no pivot, and was walked by
-            // every reader of `loops` for nothing — 16 546 of them on 174
+            // every reader of `orbits` for nothing — 16 546 of them on 174
             // forms in ten minutes.
-            // ONE WALK, read twice. `loop_is_trivial` and the carriages
+            // ONE WALK, read twice. `orbit_is_trivial` and the carriages
             // are two readings of the same frontier, and calling the two
             // readers would walk it again for each.
             let carried = match paths_carried_why(faces, vertices, &lp) {
@@ -455,7 +455,7 @@ impl Form {
                     });
                 }
             }
-            if loop_is_trivial(faces, vertices, &lp, &carried) {
+            if orbit_is_trivial(faces, vertices, &lp, &carried) {
                 gate(3);
                 // OBSERVE ONLY: the gate is unchanged, but a closure that
                 // cancelled real charge is a relator and a closure over an
@@ -523,22 +523,22 @@ impl Form {
                 });
                 lp.carriages.insert(&k, c.face.carriage.clone());
             }
-            loops.push(lp);
+            orbits.push(lp);
         }
-        loops
+        orbits
     }
 }
 
-// `path_carriages(faces, path, walked)` stood here: a walk of the loop's
+// `path_carriages(faces, path, walked)` stood here: a walk of the orbit's
 // member paths accumulating each face's `place.carriage`, keyed by the path.
-// It is `loop_transport_on` with the word and the gauge discarded — the same
+// It is `orbit_transport_on` with the word and the gauge discarded — the same
 // frontier, the same `step_charts`, the same `closed_key`, the same
 // `carriage.geo(&acc)` — so one quantity had two carriers (law 12) and the
-// walk that produces it ran twice per loop: once at `loops_of` to fill
-// `Loop.carriages`, and again at every class reading through
-// `loop_transport_on`. `loops_of` fills the field from that one walk now.
+// walk that produces it ran twice per orbit: once at `orbits_of` to fill
+// `Orbit.carriages`, and again at every class reading through
+// `orbit_transport_on`. `orbits_of` fills the field from that one walk now.
 //
-// The doc it carried is true of `loop_transport_on` and belongs to it: the
+// The doc it carried is true of `orbit_transport_on` and belongs to it: the
 // paths are walked FROM THE FACES and not taken as a product of the vertices'
 // fibres, because each face's `at` keys are its member pairs; a step extends a
 // partial path only where the face relates the chart the path stands at to the
@@ -549,8 +549,8 @@ impl Form {
 // `PartialPath` STOOD HERE and is gone with the search it was the state of
 // (54.5, as ruled 2026-09-20). It held a frontier's charts, the chart it
 // stood AT, the chart it began at, and the accumulator — the machinery for
-// reconstructing a member path that `loops_of` already had and threw away
+// reconstructing a member path that `orbits_of` already had and threw away
 // when it projected the cycle onto vertex indices to fit the tape.
 //
-// `Loop.members` carries the cycle, `paths_carried` walks it, and there is
+// `Orbit.members` carries the cycle, `paths_carried` walks it, and there is
 // no frontier to keep the state of.

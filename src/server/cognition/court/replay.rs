@@ -160,10 +160,10 @@ impl Kernel {
         let mut budget = self.physics.stroke();
         let mut keys: Vec<Vec<u8>> = Vec::new();
         let from = self.open_cursor.clone();
-        // index: budgeted keyed cursor over the open docket — an orbit
+        // index: budgeted keyed cursor over the open docket — a circuit
         // (45.7, S13.3): it continues past the last key from the first, so
         // a listing admitted below the cursor is ruled on the next circuit,
-        // and the circuit it completes is the docket's orbit.
+        // and the circuit it completes is the docket's.
         let circuit = {
             let mut cur = self.open.cursor(from.as_deref(), &mut budget);
             for (addr, _) in &mut cur {
@@ -174,7 +174,7 @@ impl Kernel {
             }
             cur.circuit()
         };
-        if let Some((n, period)) = self.docket_orbit.stroke(u64::from(circuit)) {
+        if let Some((n, period)) = self.docket_circuits.stroke(u64::from(circuit)) {
             // ONCE PER APERTURE, NOT PER CIRCUIT. A docket that fits one
             // budget completes a circuit every stroke, so "written once
             // per circuit" was written every stroke: 43,596 of these in
@@ -182,7 +182,7 @@ impl Kernel {
             let _ = period;
             // 45.9, S13.7, R7: the phase over the window, read off the
             // receipts and the cover and written; nothing stores or gates
-            // on it. The window is an aperture of docket orbits, so the
+            // on it. The window is an aperture of docket circuits, so the
             // reading is taken when the circuit count crosses a multiple
             // of the aperture — a docket that fits one budget completes a
             // circuit per stroke, and read per circuit its window was one
@@ -197,7 +197,7 @@ impl Kernel {
                 return;
             };
             let window = n / aperture != before / aperture;
-            // AND THE ORBIT LINE RIDES THE PHASE'S OWN WINDOW. The aperture
+            // AND THE CIRCUIT LINE RIDES THE PHASE'S OWN WINDOW. The aperture
             // above paces on CIRCUITS, and a docket that fits one budget
             // completes a circuit every stroke, so circuits count strokes and
             // the aperture only divides that by a constant. `read_phase`
@@ -206,15 +206,15 @@ impl Kernel {
             // about, so both are written when it is true and neither when it
             // is not.
             if window && self.read_phase() {
-                eprintln!("  court orbit docket {n} period {period}");
+                eprintln!("  court circuit docket {n} period {period}");
             }
-            // 45.8, S13.9, S13.10: an orbit that completes while a lane is
+            // 45.8, S13.9, S13.10: a circuit that completes while a lane is
             // short is the syntropic phase, and the fold is the ledger's
             // consolidation stroke in it — proposed here, carried to a
             // witness by the exchange, sealed on both signatures (47.3). A
             // prefix that is not final proposes nothing and writes no line.
             //
-            // ONCE PER APERTURE OF ORBITS, NOT ONCE PER ORBIT. A docket
+            // ONCE PER APERTURE OF CIRCUITS, NOT ONCE PER CIRCUIT. A docket
             // that fits one budget completes a circuit every stroke, so
             // this proposed a fold on every one of them where any lane was
             // short — which is most of them. Measured at epoch 12: 374
@@ -223,7 +223,7 @@ impl Kernel {
             // a root filesystem with 13 GiB left. An era is a
             // consolidation of the ledger, not a per-stroke act, and it is
             // paced by the same window the phase reading is — the aperture
-            // of docket orbits this court has actually completed.
+            // of docket circuits this court has actually completed.
             if window
                 && self.fold_pending.is_none()
                 && !crate::economy::lanes_short(&self.physics.reserve_shortfall([true; 4])).is_empty()
@@ -232,7 +232,7 @@ impl Kernel {
             }
         }
         for addr in keys {
-            // R1 (45.7): the orbit rules what is not yet ruled. A listing on
+            // R1 (45.7): the circuit rules what is not yet ruled. A listing on
             // the ruled cover or in the cavity is passed over — its standing
             // moves by a verdict or a lapse, never by the circuit. Replayed
             // on every circuit, one word was sectioned 20,800 times and
@@ -268,10 +268,10 @@ impl Kernel {
         self.stroke_fills(&mut budget);
     }
 
-    /// The docket's orbit reading (45.7): circuits completed and the
+    /// The docket's circuit reading (45.7): circuits completed and the
     /// strokes the last one took, the court's local time beside K.
-    pub fn docket_orbit(&self) -> crate::physics::Orbit {
-        self.docket_orbit
+    pub fn docket_circuits(&self) -> crate::physics::Circuits {
+        self.docket_circuits
     }
 
     /// A gauge from Extended between two hyphas is a translation: minted
@@ -328,7 +328,7 @@ impl Kernel {
     /// Match spoken torsion cycles against the chart's Congruent simplices.
     /// Same class key and ℓ is consilience; same key different ℓ is
     /// [`crate::verdict::REFUSE_NOT_NATURAL`]; a new finite key files.
-    /// A v2 form reads `Form.torsion` (keyed by the filed loop's class);
+    /// A v2 form reads `Form.torsion` (keyed by the filed orbit's class);
     /// a residual word still reads the element's cycles.
     pub(crate) fn court_torsion(
         &mut self,
@@ -343,9 +343,9 @@ impl Kernel {
         }
         for (class, ell_periods, rep) in cycles {
             // THE WHOLE FIBER UNDER THE ROTOR'S CONJUGACY CLASS, not one
-            // member of it. `congruent` is keyed by the loop's full class
+            // member of it. `congruent` is keyed by the orbit's full class
             // key now and `class` is its depth-one stratum, so the ask
-            // returns every filed loop of that conjugacy class at whatever
+            // returns every filed orbit of that conjugacy class at whatever
             // finer coordinates it stands. A period that any of them
             // disagrees with is a refusal: the chart holds that class at
             // another period, whichever member says so. It read one entry,
@@ -414,17 +414,17 @@ impl Kernel {
     }
 
     /// Torsion cycles a spoken word names: class key, period, representative
-    /// rotor of the filed loop. Residual germs keep the element's section.
+    /// rotor of the filed orbit. Residual germs keep the element's section.
     pub(crate) fn spoken_torsion_cycles(
         spoken: &Element,
     ) -> Vec<(crate::network::nerve::coord::Holonomy, crate::transducer::sentence::ToralPeriod, Option<crate::transducer::alphabet::Rotor>)> {
-        use crate::transducer::sentence::torsion_loop_rotor;
+        use crate::transducer::sentence::torsion_orbit_rotor;
         // THE CYCLES COME FROM THE GEOMETRY, THE PERIODS WITH THEM (54.5,
         // as ruled 2026-09-20).
         //
         // This read `from_element_form(spoken).torsion` — the DECODED
         // form's filing. A form recovered from its address carries none:
-        // every field of a `FiledLoop` is derivable (`loop_classes`
+        // every field of a `FiledOrbit` is derivable (`orbit_classes`
         // computes the class, the period through `cech::classify`, σ from
         // the transports), so law 12 keeps it out of the key, and after B4
         // this walk returned empty for every word in the tree.
@@ -439,9 +439,9 @@ impl Kernel {
         if let Some(f) = crate::transducer::sentence::from_element_form(spoken) {
             let mut rows: Vec<(crate::network::nerve::coord::Holonomy, crate::transducer::sentence::ToralPeriod, Option<crate::transducer::alphabet::Rotor>)> =
                 Vec::new();
-            for lp in &f.loops {
-                for row in f.loop_classes(lp) {
-                    let rotor = torsion_loop_rotor(&f, &row.class);
+            for lp in &f.orbits {
+                for row in f.orbit_classes(lp) {
+                    let rotor = torsion_orbit_rotor(&f, &row.class);
                     rows.push((row.class, row.periods, rotor));
                 }
             }

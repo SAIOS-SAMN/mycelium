@@ -220,12 +220,12 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
     let left = budget.remaining();
     match &rule {
         Some(r) => println!(
-            "  regime pull {}.{:03}s rule {} vertices {} faces {} loops sections {} | budget left {left} of {spend}",
+            "  regime pull {}.{:03}s rule {} vertices {} faces {} orbits sections {} | budget left {left} of {spend}",
             pull_s.as_secs(),
             pull_s.subsec_millis(),
             r.form.vertices.len(),
             r.form.faces.len(),
-            r.form.loops.len(),
+            r.form.orbits.len(),
             r.section_count()
         ),
         None => println!(

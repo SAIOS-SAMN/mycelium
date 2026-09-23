@@ -293,7 +293,7 @@ impl Invariant {
 }
 
 /// Closure of one chart a thought has been probed through. Never a number:
-/// the loop closed (Flat), returned twisted (Twisted), a Čech class on the
+/// the orbit closed (Flat), returned twisted (Twisted), a Čech class on the
 /// nerve (Class — the same coefficient the cochains speak), or found no
 /// section (Cavity). Magnitudes are read from remainders, never stored here.
 #[derive(Debug, Clone, PartialEq, Eq)]

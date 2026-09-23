@@ -187,18 +187,18 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
             s.put(out);
         }
     }
-    // THE LOOPS ARE NOT ON THE TAPE (54.5, as ruled 2026-09-20). §1.5 has
+    // THE ORBITS ARE NOT ON THE TAPE (54.5, as ruled 2026-09-20). §1.5 has
     // said since it was written that "loops and holonomies are derived and
     // never keyed", and the tape carried them anyway — a second statement
     // of the incidence the faces above already are (law 12).
     //
     // Measured, it was the WHOLE of what the tape held beyond the key: 2
-    // parts in 10 000, `loops + carriages`, everything else either in the
+    // parts in 10 000, `orbits + carriages`, everything else either in the
     // key or empty. So this block was the tape's entire reason to exist,
-    // and it was reason for nothing: `loops_of` re-derives it from the
+    // and it was reason for nothing: `orbits_of` re-derives it from the
     // faces deterministically.
     //
-    // AND IT COST THE GEOMETRY. `Loop.vertices` is a list of VERTEX
+    // AND IT COST THE GEOMETRY. `Orbit.vertices` is a list of VERTEX
     // INDICES because that is what the tape could carry cheaply, so a
     // cycle of the member complex had to be projected down to the base to
     // be written — and under that projection a 1-cell between two charts
@@ -243,7 +243,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
         }
     }
     out.extend_from_slice(&(f.torsion.len() as u16).to_le_bytes());
-    for (k, FiledLoop { sigma, periods, chord }) in f.torsion.scoped() {
+    for (k, FiledOrbit { sigma, periods, chord }) in f.torsion.scoped() {
         crate::transducer::address::put_addr(out, &k);
         out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
         for &(a, b) in sigma {
@@ -462,9 +462,9 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         }
         faces.push(FormFace { i, j, word, at, pairs, interface });
     }
-    // THE LOOPS ARE RE-DERIVED, NOT READ (§1.5, 54.5). Nothing is taken
+    // THE ORBITS ARE RE-DERIVED, NOT READ (§1.5, 54.5). Nothing is taken
     // from the tape here because the writer puts nothing there; the cycle
-    // basis is a theorem of the faces just parsed, and `loops_of` proves
+    // basis is a theorem of the faces just parsed, and `orbits_of` proves
     // it the same way for a decoded form as for an extracted one. It runs
     // below, once the vertices are in hand.
     let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
@@ -508,7 +508,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         sections.put(&at, section_of_frames(ix));
     }
     let nt = take_u16(b, pos)? as usize;
-    let mut torsion: Keyed<FiledLoop, crate::network::nerve::coord::Holonomy> = Keyed::new();
+    let mut torsion: Keyed<FiledOrbit, crate::network::nerve::coord::Holonomy> = Keyed::new();
     for _ in 0..nt {
         let k = crate::transducer::address::take_addr(b, pos)?;
         let nsig = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
@@ -527,7 +527,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         // in gets the coordinate and never the bytes.
         torsion.put(
             &crate::network::nerve::coord::Holonomy::decode(&k).ok()?,
-            FiledLoop { sigma, periods, chord },
+            FiledOrbit { sigma, periods, chord },
         );
     }
     let na = take_count(b, *pos, take_u16(b, pos)? as usize, 4)?;
@@ -543,7 +543,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         vertices,
         faces,
         // Re-derived below, from the faces just parsed (§1.5, 54.5).
-        loops: Vec::new(),
+        orbits: Vec::new(),
         remainder,
         depth,
         hue_maps: Keyed::new(),
@@ -575,14 +575,14 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     // THE CYCLE BASIS IS A THEOREM OF THE INCIDENCE, proved here the same
     // way the extractor proves it, rather than read back from a carrier
     // that would be a second statement of the faces (law 12, §1.5).
-    form.loops = Form::loops_of(&form.faces, &form.vertices);
+    form.orbits = Form::orbits_of(&form.faces, &form.vertices);
     Some(form)
 }
 
 /// THE TAPE'S LAST VERSION (54.5). 14, and the byte is never bumped for the
 /// form again.
 ///
-/// 13 → 14 REMOVES the loop block, and is the only bump this file will take
+/// 13 → 14 REMOVES the orbit block, and is the only bump this file will take
 /// that makes the tape SMALLER. §1.5 has always said "loops and holonomies
 /// are derived and never keyed"; the tape carried them anyway, and measured
 /// they were the whole of `Tape ∖ Key` — 2 parts in 10 000, with every
@@ -615,7 +615,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
 /// this is the last one the form's tape takes.
 /// Version 10 is the three-coordinate base (51.7): supports as sites of
 /// three coordinates, versors of thirty-two components, the sections
-/// placed, and a loop's period filed as `0` for infinite order (52.3).
+/// placed, and an orbit's period filed as `0` for infinite order (52.3).
 ///
 /// 14 → 15 IS BQ1'S, AND IT BREAKS "NEVER AGAIN" BY NAME. 71.2(1) puts `n`
 /// on every site and on the address: the form's `n` opens the tape, every
@@ -641,7 +641,7 @@ pub const FORM_TAPE_VERSION: u8 = 15;
 /// seventeen cannot spell; `face_of` refuses it and is right to. A letter is
 /// not a placed body: it is the carrier of an action, with no placement to
 /// take a coboundary of. Its form is a Frame and the vertex, no faces, no
-/// loops — which coheres vacuously and is closed, as a generator should be.
+/// orbits — which coheres vacuously and is closed, as a generator should be.
 ///
 /// `None` where the rotor has no weight: a rotor that is not a versor is not
 /// a generator (15.3), and that is a refusal rather than a generator of
@@ -666,7 +666,7 @@ pub fn generator_form(
         Vec::new(),
         None,
     ));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     // What the language could not say without it: the demand's own bodies,
     // measured lane-wise, the same measure a remainder takes. A mint with no
@@ -844,15 +844,15 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // here, so the two were one cycle with a byte run at the centre.
     // Switching it failed 20 tests with a single cause — a form decoded
     // from its address arrived with its FILED CYCLES gone, and
-    // `form_loops_replay` refused it.
+    // `form_orbits_replay` refused it.
     //
-    // The filing was never the form's to carry. `pivot_loop` takes the mesh
+    // The filing was never the form's to carry. `pivot_orbit` takes the mesh
     // horizon, the mind's crystal and a budget and files only in its
     // `NoneDischarged` branch, so the map does not factor through the form:
     // two minds holding one complex at different budgets file differently.
     // Keying it would make a pivot RENAME its own word and orphan every
     // citation of it. It is an attestation, `Address × Signer →
-    // FiledLoop`, and it rides `Element.filing` — the word as one mind
+    // FiledOrbit`, and it rides `Element.filing` — the word as one mind
     // minted it, which is the smallest carrier that has both indices.
     //
     // So a decoded form holds its member complex, its faces and its derived
@@ -866,7 +866,7 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // `from_address` is a faithful retract of the GEOMETRY:
     // `the_address_and_the_tape_agree_on_every_reading_the_court_makes`
     // runs both decoders over 36 corpus forms and finds no divergence on
-    // face words, the rank audit, closure, citation depth or the loops'
+    // face words, the rank audit, closure, citation depth or the orbits'
     // member paths. Four real defects were fixed getting there — a
     // defaulted citation chart, a byte-exact carriage comparison, a face
     // word read off a presentation rather than an action, and an underived
@@ -938,8 +938,8 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
 ///
 /// WHY THE FILING SURVIVES THE MOVE, which is a theorem and not a
 /// convenience. A re-gauge conjugates: §3.6 rewrites every face word as
-/// `γ_j · w · γ_i⁻¹`, so a loop's holonomy becomes `Ω' = γ_0 Ω γ_0⁻¹`. A
-/// `FiledLoop` is keyed by the CLASS key, which is a conjugacy invariant,
+/// `γ_j · w · γ_i⁻¹`, so an orbit's holonomy becomes `Ω' = γ_0 Ω γ_0⁻¹`. A
+/// `FiledOrbit` is keyed by the CLASS key, which is a conjugacy invariant,
 /// so the classes are the same classes and the periods are the same
 /// periods. Carrying the filing across is carrying it to the same keys.
 ///
@@ -964,7 +964,7 @@ pub fn remint_form(f: &Form, mag: [u64; 4], from: &Element) -> Option<Element> {
 ///
 /// IT READS `Element.filing` AND NOT THE FORM (54.5, the other half of
 /// `df1eeaa`). The filing moved off `Form.torsion` because it does not
-/// factor through the geometry — `pivot_loop` takes the mesh horizon, the
+/// factor through the geometry — `pivot_orbit` takes the mesh horizon, the
 /// mind's crystal and a budget, so two minds holding one complex at
 /// different budgets file differently — and the court was re-pointed to
 /// `Element::filing` then. These two public readers were not, and went on
@@ -977,20 +977,20 @@ pub fn remint_form(f: &Form, mag: [u64; 4], from: &Element) -> Option<Element> {
 /// that was made at the court and not at its readers.
 pub fn form_torsion(
     e: &Element,
-) -> Keyed<FiledLoop, crate::network::nerve::coord::Holonomy> {
+) -> Keyed<FiledOrbit, crate::network::nerve::coord::Holonomy> {
     e.filing().clone()
 }
 
 /// Whether a spoken word carries a torsion cycle: the speaker's filing
 /// first, then the residual element's own section, so a word whose cycles
-/// live on the axis rather than on a form's loops still reads as a bundle.
+/// live on the axis rather than on a form's orbits still reads as a bundle.
 pub fn carries_torsion(e: &Element) -> bool {
     !e.filing().is_empty() || !e.torsion().is_empty()
 }
 
 /// The rotor a filed torsion cycle names: the chord face stored on the
 /// class key. None when that face is missing — never an identity rotor.
-pub fn torsion_loop_rotor(
+pub fn torsion_orbit_rotor(
     f: &Form,
     class: &crate::network::nerve::coord::Holonomy,
 ) -> Option<Rotor> {
@@ -999,12 +999,12 @@ pub fn torsion_loop_rotor(
     // chord — and a form recovered from its address files nothing, so it
     // answered `None` for every word in the tree after B4.
     //
-    // It never needed the filing. A loop's class is a theorem of its faces
-    // (`loop_classes`, through `cech::classify`), so the loop carrying this
+    // It never needed the filing. An orbit's class is a theorem of its faces
+    // (`orbit_classes`, through `cech::classify`), so the orbit carrying this
     // class is found by asking the geometry which one does. The filing only
     // ever memoized that answer, and law 12 keeps a theorem out of storage.
-    for lp in &f.loops {
-        if f.loop_classes(lp).iter().any(|row| &row.class == class) {
+    for lp in &f.orbits {
+        if f.orbit_classes(lp).iter().any(|row| &row.class == class) {
             return f.faces.get(lp.chord as usize).map(|face| face.word.rotor());
         }
     }

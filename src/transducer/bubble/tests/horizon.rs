@@ -23,7 +23,7 @@ fn horizon_seeded_class_is_not_rederived() {
     // `Standing::Held` is what this mind's OWN obstructions go under —
     // `paint_standing` and `Fill::Class` both write it — and the pivot's A19
     // suppression could not tell the two apart while the syllabus used it
-    // too, so every loop deferred to a horizon entry it had written itself.
+    // too, so every orbit deferred to a horizon entry it had written itself.
     assert_eq!(*st, Standing::Ruled);
 }
 

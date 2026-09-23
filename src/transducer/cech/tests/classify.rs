@@ -87,7 +87,7 @@ fn a_residue_free_quarter_turn_files_at_its_period() {
     };
     assert!(
         !kappa.coordinates().is_empty(),
-        "and it files WITH its class vector: 11.3 holds the loop with it, and 3.9 reads \
+        "and it files WITH its class vector: 11.3 holds the orbit with it, and 3.9 reads \
          the candidate pivots off the axes it occupies — a period alone has none"
     );
     assert_eq!(ell, 4, "a quarter turn closes at four");
@@ -127,7 +127,7 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
     // AND THE PLACEMENT AXIS DOES NOT OCCUPY. This assertion stood the
     // other way up and asserted the defect: a base point is WHERE THE TURN
     // STANDS, so 3.9's translation word would move the frame and discharge
-    // nothing. `classify` filing this loop `Congruent` while `occupies`
+    // nothing. `classify` filing this orbit `Congruent` while `occupies`
     // called its carriage an obstruction was two readers of one carriage
     // disagreeing (law 12).
     assert!(

@@ -12,7 +12,7 @@ impl Entity {
     /// is a virtual rollout (zero mutation); the hypha's deterministic
     /// replay, not this discovery, decides retirement.
     /// ADVANCE THE REFINEMENT WALK BY ONE COORDINATE, wrapping at the end
-    /// of the trie — the carrier's own orbit (45.7), not `% len`. A genome
+    /// of the trie — the carrier's own circuit (45.7), not `% len`. A genome
     /// of fewer than two words has no redundancy to seek.
     fn advance_refine_cursor(&mut self) -> Option<Vec<u8>> {
         if self.epigenome.genome_len() < 2 {

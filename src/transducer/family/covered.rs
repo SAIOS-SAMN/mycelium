@@ -1,15 +1,15 @@
-// 53.6 — THE COVER'S OWN FORM: its pieces, their meets, and the loops it
+// 53.6 — THE COVER'S OWN FORM: its pieces, their meets, and the orbits it
 // stands, classified and discarded.
 //
 //! A piece is a reading inside a cover, not an idea the scene holds. Its
 //! CLASS is the scene's vertex (53.6 item 1), its meets are incidence the
-//! scene builds on supports (item 3), and what its loops carry is a
+//! scene builds on supports (item 3), and what its orbits carry is a
 //! torsion class the scene files by class (item 4).
 //!
 //! So the pieces get a form of their own, here, whose only purpose is to
-//! carry their loops long enough to classify them. Placed into the scene's
+//! carry their orbits long enough to classify them. Placed into the scene's
 //! form instead, a cover of two thousand pieces WAS a form of two thousand
-//! vertices — `484b58aa` read 2 055 vertices, 11 167 faces and 3 986 loops
+//! vertices — `484b58aa` read 2 055 vertices, 11 167 faces and 3 986 orbits
 //! — and every carrier the engine has is multiplied by that count.
 //!
 //! Split from `extract.rs` at the §1.1 1200-line reading bound; the item
@@ -21,12 +21,12 @@ use super::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::sentence::{face_pair_key, vertex_ix_key, Form, FormFace};
 
-/// One filed loop of a cover, awaiting a chord the SCENE can name: the
-/// holonomy's class key, the loop as filed, and the transport classes its
+/// One filed orbit of a cover, awaiting a chord the SCENE can name: the
+/// holonomy's class key, the orbit as filed, and the transport classes its
 /// ends belong to.
 pub(crate) type PendingTorsion = (
     crate::network::nerve::coord::Holonomy,
-    crate::transducer::sentence::FiledLoop,
+    crate::transducer::sentence::FiledOrbit,
     Vec<TransportClass>,
     crate::transducer::alphabet::Rotor,
 );
@@ -59,7 +59,7 @@ pub(crate) type PendingTorsion = (
 ///
 /// Widening the class to separate them would fix the count and destroy
 /// correspondence. The translation belongs at the member level, which is
-/// where `loops_of` already builds: `every_loop_lifts_to_the_member_complex`.
+/// where `orbits_of` already builds: `every_orbit_lifts_to_the_member_complex`.
 /// THE FOOTPRINT RIDES THE CHORD (54.7, ruled 2026-09-21).
 ///
 /// MEASURED: `classify_cover`'s gate keys a meet's end by
@@ -84,9 +84,9 @@ pub(crate) type MeetChord = (
     Option<crate::transducer::sentence::Transport>,
 );
 
-/// Build the pieces' form, classify its loops, and return what the scene
+/// Build the pieces' form, classify its orbits, and return what the scene
 /// keeps: the chords its meets name between classes, how many meet faces
-/// stood, the torsion each loop filed, and the classes standing per cover.
+/// stood, the torsion each orbit filed, and the classes standing per cover.
 pub(crate) fn classify_cover(
     covers: &[Covered],
     edges: &mut EdgeTally,
@@ -103,10 +103,10 @@ pub(crate) fn classify_cover(
     // thousand vertices. A piece is a reading inside a cover, not an idea
     // the scene holds: its class is already a vertex (item 1), its meets
     // are already incidence the form builds on supports (item 3), and what
-    // its loops carry is a torsion class the form files by class (item 4).
+    // its orbits carry is a torsion class the form files by class (item 4).
     //
     // So the pieces get a form of their own, here, whose only purpose is to
-    // carry their loops long enough to classify them. Nothing downstream
+    // carry their orbits long enough to classify them. Nothing downstream
     // ever sees it.
     let mut piece_form = Form::default();
     let mut cover_vertex: Keyed<u16, crate::network::nerve::coord::Carriage> = Keyed::new();
@@ -133,7 +133,7 @@ pub(crate) fn classify_cover(
     // THE COVER'S MEETS ARE FACES OF THE PIECES' OWN FORM (50.3), not of
     // the scene's. Between the CLASS vertices the meets become incidence
     // the form already builds on supports (53.6 item 3), which is where a
-    // meet between two ideas belongs; here they are only what the loops
+    // meet between two ideas belongs; here they are only what the orbits
     // below are read around.
     // 53.6 item 3 — THE MEETS, LIFTED TO THE CLASSES THEY RELATE.
     //
@@ -148,13 +148,13 @@ pub(crate) fn classify_cover(
     // spanning DISTINCT sites". Those cycles are exactly what a meet
     // between two classes would close, and nothing offered one.
     //
-    // So b₁ = E − V + C = 0 identically, every form carried `0 loops`, and
-    // everything downstream of a cycle — `pivot_loop`, the stand, the
+    // So b₁ = E − V + C = 0 identically, every form carried `0 orbits`, and
+    // everything downstream of a cycle — `pivot_orbit`, the stand, the
     // close, the torsion filing, the court's basis — was starved rather
     // than broken. Measured at epoch 94: `pivoted [0,0,0,0]` on all five
     // voices, `court basis 0` on all three courts.
     //
-    // The lift already existed for the loops' ENDS, one screen down: a
+    // The lift already existed for the orbits' ENDS, one screen down: a
     // piece's `transport_class` is the coordinate the scene files vertices
     // under. It was never applied to the meets themselves.
     let mut chords: Vec<MeetChord> = Vec::new();
@@ -225,7 +225,7 @@ pub(crate) fn classify_cover(
                 //
                 // Gated on `(class, chart)` it admitted nothing: 186 meets
                 // over the 36 corpus forms, 186 of them `within one class`,
-                // `0 loops` on every form. That is what 53.6 item 1 IS —
+                // `0 orbits` on every form. That is what 53.6 item 1 IS —
                 // two pieces of one rotor class quotient to one base vertex,
                 // and on one chart they are one member. The meet is not in
                 // the base; it is in the TOTAL space, between two sections
@@ -308,8 +308,8 @@ pub(crate) fn classify_cover(
                         // The scene's face cannot re-derive it:
                         // `edge_between` is keyed by `(vertex, chart)`,
                         // which is identical at both ends of a section
-                        // chord, so it answers nothing and the loop stands
-                        // with no holonomy to read. A loop that exists and
+                        // chord, so it answers nothing and the orbit stands
+                        // with no holonomy to read. An orbit that exists and
                         // cannot be evaluated is the empty-answer defect —
                         // "there is no lift" and "there is no holonomy"
                         // returned as one silence — so the measurement
@@ -331,15 +331,15 @@ pub(crate) fn classify_cover(
         }
     }
     let meet_faces = piece_form.faces.len();
-    piece_form.loops = Form::loops_of(&piece_form.faces, &piece_form.vertices);
-    // EACH LOOP OVER CARRIED PIECES, CLASSIFIED ONCE (50.8 case 3), by the
+    piece_form.orbits = Form::orbits_of(&piece_form.faces, &piece_form.vertices);
+    // EACH ORBIT OVER CARRIED PIECES, CLASSIFIED ONCE (50.8 case 3), by the
     // one classifier both organs use, on its edge holonomy per member path.
     let mut stood: Keyed<Vec<crate::transducer::sentence::ClassVector>> = Keyed::new();
-    // The cover's filed loops, held until the scene has faces to name a
+    // The cover's filed orbits, held until the scene has faces to name a
     // chord in (53.6 item 4).
     let mut pending_torsion: Vec<PendingTorsion> = Vec::new();
-    for lp in piece_form.loops.clone() {
-        // THE LOOP'S COVER: the one cover that placed every vertex of it —
+    for lp in piece_form.orbits.clone() {
+        // THE ORBIT'S COVER: the one cover that placed every vertex of it —
         // a vertex two covers' pieces became is in both — and none where a
         // vertex belongs to no cover or the vertices to different ones.
         let mut common: Option<Keyed<()>> = None;
@@ -361,27 +361,27 @@ pub(crate) fn classify_cover(
                 }
             });
         }
-        // PHASE B — THE LOOP BELONGS TO THE FORM, NOT TO ONE COVER.
+        // PHASE B — THE ORBIT BELONGS TO THE FORM, NOT TO ONE COVER.
         //
         // `owner` holds an entry only for a COVER PIECE, and each piece
         // carries the singleton index of the `Covered { demand, cover,
-        // frame }` it came from. A loop reaching a word vertex or a demand
+        // frame }` it came from. An orbit reaching a word vertex or a demand
         // vertex therefore met `owner.get(..) == None` and was dropped at
-        // `common`; a loop spanning two covers or two frames met an empty
-        // intersection and was dropped at `[ok]`. What passed both was a
-        // loop confined to ONE cover snapshot at ONE frame — a single
+        // `common`; an orbit spanning two covers or two frames met an empty
+        // intersection and was dropped at `[ok]`. What passed both was an
+        // orbit confined to ONE cover snapshot at ONE frame — a single
         // coordinate patch, whose transitions were already solved
         // consistent when the cover was read.
         //
-        // Measured on that gate: 16 546 loops on 174 forms in ten minutes,
+        // Measured on that gate: 16 546 orbits on 174 forms in ten minutes,
         // 292 classified, and 292 of 292 FLAT. Curvature lives on the
         // overlaps — `g_AB · g_BC · g_CA` around a cycle crossing charts —
         // and the gate admitted only the interiors.
         //
         // The cover index is now read where it is USED and no longer
-        // gates the reading: every loop is classified and tallied, and a
+        // gates the reading: every orbit is classified and tallied, and a
         // `Congruent` fill files its torsion by CLASS, which needs no
-        // cover. `stood` is keyed by cover index, so a loop with no single
+        // cover. `stood` is keyed by cover index, so an orbit with no single
         // owner has no cover to be attributed to and is classified without
         // one — the reading is taken, and the carrier that cannot hold it
         // is not written with an invented index (rule 11).
@@ -397,7 +397,7 @@ pub(crate) fn classify_cover(
             let hue = crate::transducer::sentence::CycleType::of(&e.gauge);
             let sigma = e.gauge.clone();
             let fill = crate::transducer::cech::classify(&e.word.rotor(), &e.carriage, hue);
-            crate::transducer::family::cover::tally_loop(&fill);
+            crate::transducer::family::cover::tally_orbit(&fill);
             match fill {
                 crate::transducer::cech::Fill::Congruent(_, g, ell) => {
                     let Some(class) = g.holonomy_key() else { continue };
@@ -405,13 +405,13 @@ pub(crate) fn classify_cover(
                     // bytes are: the line carried a digest of a key and now
                     // carries the bivector reading the class IS (rule 2).
                     eprintln!("  simplex filled {:?} class {ell}", class.kind);
-                    // 53.6 item 4: the loop is classified HERE, inside the
+                    // 53.6 item 4: the orbit is classified HERE, inside the
                     // cover, and filed by class where the form files
                     // torsion — but its chord indexes the PIECES' form,
                     // which is discarded. A chord is a coordinate of the
-                    // form that holds the loop, so the scene's chord is
+                    // form that holds the orbit, so the scene's chord is
                     // resolved after the scene's faces exist, between the
-                    // two CLASS vertices the loop's ends belong to. Filed
+                    // two CLASS vertices the orbit's ends belong to. Filed
                     // with a piece index it would name a face nothing has
                     // (rule 11).
                     let ends: Vec<TransportClass> = lp
@@ -422,7 +422,7 @@ pub(crate) fn classify_cover(
                         .collect();
                     pending_torsion.push((
                         class,
-                        crate::transducer::sentence::FiledLoop {
+                        crate::transducer::sentence::FiledOrbit {
                             sigma,
                             periods: g.toral_period(),
                             chord: 0,
@@ -433,7 +433,7 @@ pub(crate) fn classify_cover(
                 }
                 crate::transducer::cech::Fill::Class(kappa, _) => {
                     // A standing class is filed under the cover it stands
-                    // on. An interface loop stands on no single cover:
+                    // on. An interface orbit stands on no single cover:
                     // it is classified and counted, and no cover is
                     // invented to file it under.
                     if let Some(ci) = ci {

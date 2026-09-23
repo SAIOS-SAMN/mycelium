@@ -600,7 +600,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
         let from = from.map(|f| f.to_vec());
         Cursor {
             keyed: self,
-            // THE ORBIT IS THE WHOLE CARRIER BY DESIGN (45.7) and its bound
+            // THE CIRCUIT IS THE WHOLE CARRIER BY DESIGN (45.7) and its bound
             // is the Budget in its signature, not a prefix: that is what
             // makes a carrier larger than one stroke legible across strokes
             // instead of walked at once (rule 10).

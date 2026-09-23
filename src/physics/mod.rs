@@ -78,22 +78,23 @@ pub mod budget;
 pub mod metabolism;
 pub use budget::{Budget, Depleted, Reserve};
 
-/// A CARRIER'S ORBIT (45.7): the circuits a stroke ring has completed and
-/// the period of the last one in strokes — the kernel's local time beside
-/// K, read off the walk and never a clock. One per carrier: the court's
-/// docket, the exchange to one peer, the mind's dirty ring.
+/// A CARRIER'S CIRCUITS (45.7; named so at OR2, 73.7: the circuit is the
+/// clock, the orbit is the word): the circuits a stroke ring has completed
+/// and the period of the last one in strokes — the kernel's local time
+/// beside K, read off the walk and never a clock. One per carrier: the
+/// court's docket, the exchange to one peer, the mind's dirty ring.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct Orbit {
+pub struct Circuits {
     strokes: u64,
     circuits: u64,
     at: u64,
     period: u64,
 }
 
-impl Orbit {
+impl Circuits {
     /// One stroke over the carrier, with the circuits it completed. The
     /// reading — circuits so far and the strokes the last one took — is
-    /// returned when a circuit completed, so the caller writes its orbit
+    /// returned when a circuit completed, so the caller writes its circuit
     /// line once per circuit (34.2, 34.3) and never per stroke.
     pub fn stroke(&mut self, circuits: u64) -> Option<(u64, u64)> {
         self.strokes = self.strokes.saturating_add(1);
@@ -708,15 +709,16 @@ mod tests {
         assert_eq!(StrokeOutcome::default().moved(), [false; 4], "a stroke that moved nothing");
     }
 
-    /// 45.7 — an orbit is read in circuits and its period in strokes, off
-    /// the walk: three strokes to the first circuit, one to the next.
+    /// 45.7 — a carrier's circuits are read in circuits and their period in
+    /// strokes, off the walk: three strokes to the first circuit, one to the
+    /// next.
     #[test]
-    fn an_orbit_is_read_in_circuits_and_strokes() {
-        let mut o = Orbit::default();
+    fn a_carriers_circuits_are_read_in_circuits_and_strokes() {
+        let mut o = Circuits::default();
         assert_eq!(o.stroke(0), None, "no circuit, no reading");
         assert_eq!(o.stroke(0), None);
         assert_eq!(o.stroke(1), Some((1, 3)), "the first circuit took three strokes");
-        assert_eq!(o.stroke(1), Some((2, 1)), "a budget that covers the carrier orbits every stroke");
+        assert_eq!(o.stroke(1), Some((2, 1)), "a budget that covers the carrier circles it every stroke");
         assert_eq!(o.stroke(2), Some((4, 1)), "two circuits in one stroke are two");
         assert_eq!((o.circuits(), o.period()), (4, 1));
     }

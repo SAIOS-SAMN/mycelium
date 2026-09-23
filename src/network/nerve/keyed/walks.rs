@@ -74,14 +74,14 @@ impl<T> Keyed<Keyed<T>> {
     }
 }
 
-/// Budgeted ORBIT in key order from `from`, consuming a
+/// Budgeted CIRCUIT in key order from `from`, consuming a
 /// [`crate::physics::Budget`] (45.7, S9.14). The walk continues past the
 /// last key from the first and ends where it began, so a carrier larger
 /// than one budget is walked whole across strokes and a key admitted below
 /// the resume point is reached on the next circuit; a cursor that stopped
 /// at the end of the key order had walked off the edge of its book.
 /// `circuit` reports that the walk passed the end of the order — one
-/// completed circuit of the carrier, which the stroke counts as its orbit.
+/// completed circuit of the carrier, which the stroke counts as its circuit.
 pub struct Cursor<'a, V, C: Coordinate = coord::Any> {
     pub(crate) keyed: &'a Keyed<V, C>,
     pub(crate) fiber: Fiber<'a, V>,

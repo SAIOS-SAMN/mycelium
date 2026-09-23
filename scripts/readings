@@ -96,7 +96,7 @@ for h in "${HYPHAE[@]}"; do
   printf '    cover read        '; lines "$u" 'court cover read'
   printf '    exchange admitted '; lines "$u" 'court exchange admitted'
   printf '    court basis       '; lines "$u" 'court basis='
-  printf '    orbit docket      '; lines "$u" 'court orbit docket'
+  printf '    circuit docket    '; lines "$u" 'court circuit docket'
   # WHAT THE COURT REFUSED, BY REASON. The fleet's dominant fact after the
   # recut of 649a4ac was that every speech is refused and nothing at all is
   # admitted, and this file had no line for it: the readings counted what

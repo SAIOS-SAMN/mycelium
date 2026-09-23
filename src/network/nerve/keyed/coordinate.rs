@@ -206,7 +206,7 @@ pub mod coord {
     /// `Parabolic`: `B = 0` is the identity, which turns nothing, while a
     /// genuine parabolic has `B ≠ 0` and `B² = 0` — a null shear that
     /// displaces along its own null direction. Collapsing them put every
-    /// identity loop in the same class as every dislocation.
+    /// identity orbit in the same class as every dislocation.
     #[derive(Clone, Debug, PartialEq, Eq)]
     pub struct Holonomy {
         pub i1: crate::transducer::alphabet::Q,

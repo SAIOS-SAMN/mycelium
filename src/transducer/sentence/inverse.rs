@@ -68,7 +68,7 @@ fn take_chain_address(k: &[u8], p: &mut usize) -> Option<Vec<Link>> {
 /// WHAT THE KEY DETERMINES, THIS POPULATES. Vertex kinds and their
 /// coordinates, the members each acts through, the faces and their
 /// incidence, the sections along `e₃`, the opened axes and the frame
-/// ratio. Loops and holonomies are DERIVED and never keyed (§1.5), so
+/// ratio. Orbits and holonomies are DERIVED and never keyed (§1.5), so
 /// they are re-derived here by the form's own reader rather than read.
 ///
 /// WHAT THE KEY DOES NOT DETERMINE IS NOT INVENTED (rule 11). Three
@@ -277,12 +277,12 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     if !rem.is_empty() {
         f.remainder = crate::transducer::element::place_chain(&rem)?;
     }
-    // LOOPS AND HOLONOMIES ARE DERIVED AND NEVER KEYED (§1.5), so they are
+    // ORBITS AND HOLONOMIES ARE DERIVED AND NEVER KEYED (§1.5), so they are
     // re-derived from the incidence just read, by the same reader the
     // extractor uses — not read back from a carrier that would be a second
     // statement of the faces (law 12).
     f.reindex();
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     // AND THE DEPTH, which is `one more than the deepest citation` and so a
     // reading of the `Glued` vertices the key just wrote (law 12). It was
     // left at `Form::default()`'s zero, and the court checks `f.depth ==
@@ -293,20 +293,20 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     // AND NOT A PREFERENCE (54.3, measured 2026-09-20).
     //
     // `Form.torsion` is not in the key, so the obvious move is to re-derive
-    // it the way the loops above are re-derived: walk each loop, classify
+    // it the way the orbits above are re-derived: walk each orbit, classify
     // its holonomy, file what closes. That was written and it is WRONG,
     // because filing is not a function of the incidence.
     //
-    // `pivot::drive` files a loop in ONE of its four branches —
-    // `NoneDischarged`. A loop the stroke DISCHARGED leaves no filing
-    // because the obstruction is gone; a loop that went to `Vortex`, and a
-    // loop whose `Starved` budget ran out before its candidates were
+    // `pivot::drive` files an orbit in ONE of its four branches —
+    // `NoneDischarged`. An orbit the stroke DISCHARGED leaves no filing
+    // because the obstruction is gone; an orbit that went to `Vortex`, and an
+    // orbit whose `Starved` budget ran out before its candidates were
     // reached, stand UNFILED with their holonomy intact. So two forms with
-    // the same faces, the same vertices and the same loops carry different
+    // the same faces, the same vertices and the same orbits carry different
     // filings depending on what a stroke could afford, and a derivation
     // from the incidence alone would hand a starved form the filing its
     // stroke never made. `from_address(address(f)) ≡ f` failed on the very
-    // first fixture that has a loop and has never run a stroke, which is
+    // first fixture that has an orbit and has never run a stroke, which is
     // the reading.
     //
     // SO THE KEY DOES NOT DETERMINE THE FILING, and this says so rather
@@ -316,7 +316,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     // therefore a recut, or 54.5's value carries it — and neither is taken
     // by a decoder inventing a theorem (rule 11).
     //
-    // What DID move is the filer itself: `file_loop` no longer takes its
+    // What DID move is the filer itself: `file_orbit` no longer takes its
     // period as a parameter, so a screw is no longer filed at its rotor's
     // order. See `the_filer_reaches_the_fixed_point_gate`.
     Some(f)

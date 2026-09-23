@@ -192,16 +192,16 @@ impl Kernel {
     /// ratifying voice is the discoverer of record — real provenance, no
     /// sentinel identity.
     pub fn install_adopted(&mut self, word: &Element, ratifier: [u8; 32]) -> Adoption {
-        // The loop check at the mint: an arriving word's torsion cycles are
-        // walked before they enter the genome. Only a witnessed closed loop
+        // The orbit check at the mint: an arriving word's torsion cycles are
+        // walked before they enter the genome. Only a witnessed closed orbit
         // at the spoken period is believed.
         for (stored, witness) in crate::transducer::torsion_witness::witness_stored(word) {
             match witness {
-                crate::transducer::torsion_witness::HolonomicLoopWitness::Closed { period, .. } if period == stored => {}
-                crate::transducer::torsion_witness::HolonomicLoopWitness::Closed { .. } => {
+                crate::transducer::torsion_witness::HolonomicOrbitWitness::Closed { period, .. } if period == stored => {}
+                crate::transducer::torsion_witness::HolonomicOrbitWitness::Closed { .. } => {
                     return Adoption::Refused("torsion period does not re-derive — the winding was misspoken")
                 }
-                crate::transducer::torsion_witness::HolonomicLoopWitness::Open { .. } => {
+                crate::transducer::torsion_witness::HolonomicOrbitWitness::Open { .. } => {
                     return Adoption::Refused("torsion cycle does not close — the period was a filing")
                 }
             }

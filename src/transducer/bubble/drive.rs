@@ -2,9 +2,9 @@
 // closed one becomes.
 //
 //! `expand_all` spends a budget opening axes on the bubbles that have room
-//! and runs the pivot loop of A16 over each; an idea whose form closes
+//! and runs the pivot orbit of A16 over each; an idea whose form closes
 //! crystallizes (25.2) and is returned to the mind to stand and utter.
-//! `pivot_on` runs the pivot loop over the ideas a word meets and files
+//! `pivot_on` runs the pivot orbit over the ideas a word meets and files
 //! what it obstructs. Neither searches: each walks what the complex already
 //! names.
 
@@ -12,7 +12,7 @@ use super::*;
 
 /// What one stroke of `expand_all` did: the charts spent, the lane measure
 /// of the A16 snaps, the forms that crystallized (25.2) in bubble key
-/// order, and the ring's orbit reading — circuits and period in strokes —
+/// order, and the ring's circuit reading — circuits and period in strokes —
 /// when the stroke completed a circuit (45.7).
 /// 37.7's ADJUNCTION CANDIDATES: a rotor the seventeen cannot spell and the
 /// chart it was met on. Named because BOTH of the drive's paths produce them
@@ -24,7 +24,8 @@ pub struct Expanded {
     pub spent: usize,
     pub pivoted: [u64; 4],
     pub crystallized: Vec<Element>,
-    pub orbit: Option<(u64, u64)>,
+    /// The ring's circuit completed this stroke, `(circuits, period)`.
+    pub circuit: Option<(u64, u64)>,
     /// 37.7's ADJUNCTION CANDIDATES: the rotors this stroke's cover meets
     /// produced that the seventeen cannot spell, each with the chart it was
     /// met on. They are carried rather than minted here because minting
@@ -52,7 +53,7 @@ impl Contemplation {
         let began = self.expand_cursor.clone();
         let mut from = began.clone();
         let mut wraps = 0u64;
-        // index: budgeted keyed cursor over dirty bubbles — an orbit (45.7,
+        // index: budgeted keyed cursor over dirty bubbles — a circuit (45.7,
         // S13.3): past the last key it continues from the first, so a ring
         // whose last key was reached no longer stalls every later stroke;
         // the stroke stops where it began, one circuit of the ring, and
@@ -114,8 +115,8 @@ impl Contemplation {
                 crystallized.push(e);
             }
         }
-        let orbit = self.ring.stroke(u64::from(wraps > 0));
-        Expanded { spent, pivoted, crystallized, orbit, adjoined }
+        let circuit = self.ring.stroke(u64::from(wraps > 0));
+        Expanded { spent, pivoted, crystallized, circuit, adjoined }
     }
 
     /// Attempt fill on the link of bubbles at `word`'s chart and prefixes.
@@ -128,7 +129,7 @@ impl Contemplation {
         budget: &mut Budget,
     ) -> (u64, u64, u64, Vec<Element>, Adjoined) {
         // 37.7's candidates from this path, carried out as `expand_all`
-        // carries its own. Both paths run `pivot_loop` and both must report
+        // carries its own. Both paths run `pivot_orbit` and both must report
         // what it adjoined, or the mint is wired to whichever one the stroke
         // happened to take.
         let mut adjoined: Adjoined = Vec::new();
@@ -201,16 +202,16 @@ impl Contemplation {
             let horizon = b.horizon.clone();
             let bundle = b.bundle.clone();
             // A bubble marked above this clock has no measurable extent, and
-            // the pivot loop is not paced by a count that went backwards.
+            // the pivot orbit is not paced by a count that went backwards.
             let Some(t) = super::idea::held_since(self.now_k, b.moved_k) else {
                 continue;
             };
             if let Some(mut form) = b.form.clone() {
                 // Every snap this pivot makes is read: the adjunction is
-                // carried out, and a loop's standing demand is written on
+                // carried out, and an orbit's standing demand is written on
                 // the form (16.16 step 6). Both pivot paths read the same
                 // snaps (law 12).
-                let snaps = form.pivot_loop(bk, &horizon, crystal, budget, bundle.as_deref(), t);
+                let snaps = form.pivot_orbit(bk, &horizon, crystal, budget, bundle.as_deref(), t);
                 for s in &snaps {
                     match s {
                         crate::transducer::sentence::Snap::Adjoin { rotor, chart, .. } => {
@@ -233,7 +234,7 @@ impl Contemplation {
         // THE COLLAPSE, READ AT THE VORTEX'S OWN CLASS and not under the
         // word's chart: every bubble holding a vortex of a carried rotor's
         // class is asked, whatever chart it covers. The symmetries the
-        // collapse kept join this path's adjunction candidates — a loop that
+        // collapse kept join this path's adjunction candidates — an orbit that
         // admitted two discharges admits their difference, a rotor the mind
         // measured (Expansion 4, 37.7).
         {

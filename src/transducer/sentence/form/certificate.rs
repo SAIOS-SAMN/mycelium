@@ -9,7 +9,7 @@ use crate::transducer::sentence::class::{RankAxis, RankMove};
 
 /// Which side of the chord face a held word is written on: the face word
 /// `g` becomes `g · w⁻¹` (Right) or `w · g` (Left). Both are the relation
-/// "the loop's holonomy is this held word"; on a non-abelian chart they are
+/// "the orbit's holonomy is this held word"; on a non-abelian chart they are
 /// two vertices and two candidates.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Side {
@@ -21,7 +21,7 @@ pub enum Side {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PivotBy {
     /// A held word written onto the chord face `face` as the relation the
-    /// bundle was missing on that loop. Boxed: a word is a kilobyte inline,
+    /// bundle was missing on that orbit. Boxed: a word is a kilobyte inline,
     /// and since the versor carrier holds its coefficients on the heap
     /// (BQ3) it is the one large variant here.
     Word { face: u16, word: Box<Word>, side: Side },
@@ -32,8 +32,8 @@ pub enum PivotBy {
     },
     /// The hue cycle type, composed as inverse onto the chord gauge (A4).
     Hue { face: u16, gauge: Vec<(u8, u8)> },
-    /// A chart axis opened over the loop closing on `face`, seeded by the
-    /// loop's holonomy versor (3.7, 16.16 step 3; I6). The move writes no
+    /// A chart axis opened over the orbit closing on `face`, seeded by the
+    /// orbit's holonomy versor (3.7, 16.16 step 3; I6). The move writes no
     /// face: it makes the holonomy a coordinate of the form.
     OpenAxis { face: u16, seed: Versor },
 }
@@ -86,13 +86,13 @@ pub enum Mu {
 }
 
 /// A certified discharge of one occupied axis (A20). Content-addressed:
-/// two minds that discharge one loop by one move produce one key.
+/// two minds that discharge one orbit by one move produce one key.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PivotCertificate {
-    /// The loop's index in the walk before the move.
+    /// The orbit's index in the walk before the move.
     pub chord: u16,
     pub axis: Axis,
-    /// Class key of κ(ℓ) before, and after (zero vector when the loop closed).
+    /// Class key of κ(ℓ) before, and after (zero vector when the orbit closed).
     pub before: crate::transducer::address::Address,
     pub after: crate::transducer::address::Address,
     /// WHAT THE PIVOT DID TO THE RANK (S9.1): the move itself, not the two

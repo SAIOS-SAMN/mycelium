@@ -61,7 +61,7 @@ impl Axis {
     ///   reads `[false, true, false, false]`.
     /// - The plane slots — orientation, unit, and the two prime exponents
     ///   on each of the six planes — and `OffPlane` are the ROTOR's own
-    ///   coordinates (15.3). What the loop turns by is the nerve: `𝒽`.
+    ///   coordinates (15.3). What the orbit turns by is the nerve: `𝒽`.
     /// - `Open` is an OPENED AXIS, and 42.6's table puts it on `𝒢` with
     ///   the fibre's sections and torsion cycles: the gauge cover is the
     ///   fibre over the word, and opening an axis widens that fibre. It is
@@ -103,7 +103,7 @@ impl Axis {
 }
 
 /// A18: the dimension audit of a nerve or form, a vector never summed.
-/// `torsion` counts the open finite-order loops; `free` is the ℤ-rank of
+/// `torsion` counts the open finite-order orbits; `free` is the ℤ-rank of
 /// the plane free parts alone; `offplane` is the number of distinct open
 /// off-plane rotor classes; `axes` the chart axes opened by discharge.
 #[derive(Clone, Copy, Debug, Default)]
@@ -144,7 +144,7 @@ pub enum RankMove {
     ///
     /// `axes` rises by that unit when the discharge OPENED a chart axis, and
     /// holds when it did not — a held word written onto a chord closes the
-    /// loop without widening the form's scope. Both are this arm: the unit
+    /// orbit without widening the form's scope. Both are this arm: the unit
     /// left `from`, and where it went is the destination's business.
     ///
     /// FINDING (S9.1, 2026-09-08): `rank_of_rows` writes `axes: 0`

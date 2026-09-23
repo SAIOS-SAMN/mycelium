@@ -8,7 +8,7 @@ use super::common::*;
 /// ONE SEAT PER OPENED AXIS, HOWEVER OFTEN IT IS OPENED.
 ///
 /// `germinated` has no remover anywhere in the tree and its live writer is
-/// ungated: it fires once per stroke per address while a held loop stands
+/// ungated: it fires once per stroke per address while a held orbit stands
 /// unclosed on a Twisted chart. So the same versor could take a new seat
 /// on every stroke, each push re-minting the address, and the list is
 /// copied by `compose`, by `solution` and by the court on every ruling.

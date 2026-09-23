@@ -115,7 +115,7 @@ fn two_charts_may_cite_each_other() {
 /// `φ_ij · φ_jk · φ_ki = 1`.
 ///
 /// This is what replaces the depth refusal. A cycle is not forbidden; it is
-/// MEASURED, and what it measures is the holonomy of the loop it closes. A
+/// MEASURED, and what it measures is the holonomy of the orbit it closes. A
 /// triangle whose composite transition is the identity versor GLUES — the
 /// three charts agree on their triple overlap and carry one section — and
 /// one whose composite is not the identity carries that composite as its
@@ -287,12 +287,12 @@ fn a_citation_truncated_to_its_chart_names_two_forms() {
     );
 }
 
-/// 54.4 — EVERY LOOP LIFTS, because the cycle basis is built where the
+/// 54.4 — EVERY ORBIT LIFTS, because the cycle basis is built where the
 /// transport is.
 ///
-/// This is the property that was false on the whole fleet: 281 real loops
+/// This is the property that was false on the whole fleet: 281 real orbits
 /// across three voices, every face of every one carrying a member pair — no
-/// tears — and ZERO closed member paths. `loops_of` built its spanning tree
+/// tears — and ZERO closed member paths. `orbits_of` built its spanning tree
 /// and fundamental cycles over the VERTEX graph, `adj` indexed by `f.i`,
 /// while `extract.rs` built the faces over the MEMBER graph, whose nodes are
 /// `member_key(vertex, chart)`. A vertex acting on several charts is several
@@ -303,13 +303,13 @@ fn a_citation_truncated_to_its_chart_names_two_forms() {
 ///
 /// Built on the member complex the lift exists BY CONSTRUCTION: the arrival
 /// chart at each node is the departure chart, because the node IS the chart.
-/// So every loop has at least one closed member path, and the composite the
+/// So every orbit has at least one closed member path, and the composite the
 /// classifier reads is never empty for want of one.
 ///
-/// `loop_words` yields one entry per (loop, member path), so a loop with no
+/// `orbit_words` yields one entry per (orbit, member path), so an orbit with no
 /// path contributes nothing and the count is the test.
 #[test]
-fn every_loop_lifts_to_the_member_complex() {
+fn every_orbit_lifts_to_the_member_complex() {
     let cases: Vec<(&str, Form)> = vec![
         ("a chord with a quarter turn", chord_form(&[order4()])),
         ("two chords of one class", chord_form(&[order4(), order4()])),
@@ -318,13 +318,13 @@ fn every_loop_lifts_to_the_member_complex() {
         ("an infinite-order chord", chord_form(&[infinite()])),
     ];
     for (what, f) in cases {
-        assert!(!f.loops.is_empty(), "{what}: the fixture must have a loop");
+        assert!(!f.orbits.is_empty(), "{what}: the fixture must have an orbit");
         assert!(
-            f.loop_words().len() >= f.loops.len(),
-            "{what}: {} loops carry only {} member paths — a loop with no lift is a loop \
+            f.orbit_words().len() >= f.orbits.len(),
+            "{what}: {} orbits carry only {} member paths — an orbit with no lift is an orbit \
              of the wrong complex",
-            f.loops.len(),
-            f.loop_words().len()
+            f.orbits.len(),
+            f.orbit_words().len()
         );
     }
 }
@@ -332,7 +332,7 @@ fn every_loop_lifts_to_the_member_complex() {
 /// AND THE SPURIOUS CYCLES ARE GONE. `k` charts on one vertex are `k`
 /// parallel Frame-edges in the vertex graph and `k − 1` fundamental cycles
 /// that enclose nothing — measured on the fleet as an exact identity, the
-/// count of Frame-only loops equalling `members − vertices` on all three
+/// count of Frame-only orbits equalling `members − vertices` on all three
 /// voices (285 = 860 − 575, 266 = 702 − 436, 300 = 769 − 469).
 ///
 /// In the member complex `Frame → (v, c₁)` and `Frame → (v, c₂)` is a PATH
@@ -348,21 +348,21 @@ fn two_charts_of_one_vertex_are_not_a_cycle() {
     f.vertices.push(word_vertex_on(2, Word::identity(), stalk::Invariant::counts(&[2])));
     f.faces.push(f.face_of(0, 1).expect("star one"));
     f.faces.push(f.face_of(0, 2).expect("star two"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     assert!(
-        f.loops.is_empty(),
+        f.orbits.is_empty(),
         "a star of two members encloses nothing; the vertex graph counted {} cycles",
-        f.loops.len()
+        f.orbits.len()
     );
 }
 
 /// 54.4 — A VERTEX ON TWO CHARTS, AND THE CYCLE THROUGH BOTH OF THEM.
 ///
-/// `every_loop_lifts_to_the_member_complex` runs on fixtures whose vertices
+/// `every_orbit_lifts_to_the_member_complex` runs on fixtures whose vertices
 /// each act on ONE chart, where the member complex and the vertex graph
 /// coincide and the property is true for free. This is the shape the fleet
-/// actually has — 140 members on 74 vertices, every real loop passing
+/// actually has — 140 members on 74 vertices, every real orbit passing
 /// through one that splits — and it is the shape that has to lift.
 ///
 /// Two bodies, each standing on two charts, related by faces that cross
@@ -406,14 +406,14 @@ fn a_cycle_through_a_split_vertex_lifts() {
         face.at.insert(face_pair_key(ci, cj), place);
         f.faces.push(face);
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
 
-    assert!(!f.loops.is_empty(), "two faces between two members are a cycle of M");
+    assert!(!f.orbits.is_empty(), "two faces between two members are a cycle of M");
     assert!(
-        f.loop_words().len() >= f.loops.len(),
-        "{} loops through a split vertex carry only {} member paths",
-        f.loops.len(),
-        f.loop_words().len()
+        f.orbit_words().len() >= f.orbits.len(),
+        "{} orbits through a split vertex carry only {} member paths",
+        f.orbits.len(),
+        f.orbit_words().len()
     );
 }

@@ -59,10 +59,10 @@ pub(crate) fn find_id(dir: &str, names: &[String], want: &str) {
         let mut b = physics.stroke_n(extraction_spend(&task.train));
         match extract_rule_with(&task.train, &epi, &mut b) {
             Some(r) => println!(
-                "  id {hx} = {file}: {} vertices {} faces {} loops",
+                "  id {hx} = {file}: {} vertices {} faces {} orbits",
                 r.form.vertices.len(),
                 r.form.faces.len(),
-                r.form.loops.len()
+                r.form.orbits.len()
             ),
             None => println!("  id {hx} = {file}: withheld"),
         }

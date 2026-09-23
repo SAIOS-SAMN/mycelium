@@ -2,7 +2,7 @@
 //
 //! 18.2, 50.5 — WHAT A VERTEX SPEAKS: the word it contributes to a face,
 //! the chart it stands on, and the depth it carries. A demand vertex
-//! speaks no word, so no face reaches it and it enters no loop.
+//! speaks no word, so no face reaches it and it enters no orbit.
 //!
 //! Split from `carrier.rs` at the §1.1 600-line reading bound; the items
 //! are moved, not rewritten (§1.6). The rebase chain in `word_in` is
@@ -53,7 +53,7 @@ impl Vertex {
     }
 
     /// The word a vertex speaks; a demand vertex speaks none (50.5), so no
-    /// face reaches it and it enters no loop.
+    /// face reaches it and it enters no orbit.
     pub fn word_in(&self, form: &Form) -> Option<Word> {
         match self {
             Vertex::Frame | Vertex::Unfolded { .. } => Some(Word::identity()),
@@ -124,8 +124,8 @@ impl Vertex {
     /// EVERY CHART THIS VERTEX STANDS AT.
     ///
     /// It was `class() -> Invariant`, one chart, and its one caller builds a
-    /// keyed set of the charts around a loop — so a vertex acting on two
-    /// charts contributed one of them and the loop's chart set was short by
+    /// keyed set of the charts around an orbit — so a vertex acting on two
+    /// charts contributed one of them and the orbit's chart set was short by
     /// the rest. A word vertex acting on no chart stands at the root stratum,
     /// which is the Frame's answer and not a chart invented for it.
     pub fn charts(&self) -> Vec<stalk::Invariant> {
@@ -138,7 +138,7 @@ impl Vertex {
                 // SECTION. A vertex with two carriages on one chart reported
                 // that chart twice, and `face_pairs` then read `(many,
                 // many)` where the incidence is `([one], many)` and answered
-                // `None`: the face lost every member pair, so every loop
+                // `None`: the face lost every member pair, so every orbit
                 // through it lost its carriage.
                 //
                 // Deduped through a `Keyed` on the chart's own key, so the
@@ -252,7 +252,7 @@ impl Vertex {
     /// and their classes instead, because that is where the coordinate is.
     ///
     /// Coherence is GRADED and the engine had it at one grade. `coheres`,
-    /// `edge_coheres` and `is_cauterized` all read LOOPS — 1-cycles — and
+    /// `edge_coheres` and `is_cauterized` all read ORBITS — 1-cycles — and
     /// nothing read a 0-cell at all, so a vertex could assert any set of
     /// members and no reader could disagree.
     ///

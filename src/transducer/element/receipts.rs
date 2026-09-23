@@ -33,7 +33,7 @@
 //! ```
 //!
 //! evaluates on a TRIPLE overlap, and with no carrier for a 2-simplex that
-//! composite has nowhere to be registered. `cech::complex::loops_of` can
+//! composite has nowhere to be registered. `cech::complex::orbits_of` can
 //! already produce `Fill::Congruent` at a triple overlap and nothing
 //! converts it into a coordinate of the cover: `H²` has a detector and no
 //! carrier. [`NerveRound`] is that carrier — and it is a CONFORMAL ROUND
@@ -51,7 +51,7 @@
 //! `R_ij ∈ Spin(4,0)` is the bend, `τ_ij` the relative displacement of the
 //! two charts' origins. An edge carrying a bare rotor forces every chart
 //! overlap to be CONCENTRIC and throws away the translational solder form —
-//! the same dimensional collapse that made every intra-form loop read flat.
+//! the same dimensional collapse that made every intra-form orbit read flat.
 //! So an edge carries `placement` (the rotor half) and `carriage` (`D(ρ)·T(t)`,
 //! the placement and dilation half), which is exactly what `Vertex::Glued`
 //! already holds and exactly how [`crate::transducer::cech::Simplex`] splits

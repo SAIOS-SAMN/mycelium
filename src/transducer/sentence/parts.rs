@@ -73,8 +73,8 @@ pub struct TapeParts {
     pub sections: usize,
     /// The filed torsion classes.
     pub torsion: usize,
-    /// The loops: their vertex and face lists, holonomies and carriages.
-    pub loops: usize,
+    /// The orbits: their vertex and face lists, holonomies and carriages.
+    pub orbits: usize,
     /// The A5 remainder the form carries.
     pub remainder: usize,
     /// THE DEMAND VERTICES' BODIES (50.5): eighteen bytes a link, and the
@@ -88,7 +88,7 @@ pub struct TapeParts {
     /// tape carries WHOLE. This was the reading's first large gap: 35% of
     /// the tape sat in `rest` until the certificates were named.
     pub certs: usize,
-    /// The chart axes opened over held loops (3.7, 15.5).
+    /// The chart axes opened over held orbits (3.7, 15.5).
     pub axes: usize,
     /// The tape's fixed frame: the count ahead of each carrier and the
     /// per-item tags between them.
@@ -191,12 +191,12 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
             p.sections += ps.len() * 2;
         }
     }
-    for lp in &f.loops {
-        p.loops += lp.vertices.len() * 2 + lp.faces.len() * 2 + 2;
-        p.loops += bytes_of(|b| lp.holonomy.to_bytes(b));
+    for lp in &f.orbits {
+        p.orbits += lp.vertices.len() * 2 + lp.faces.len() * 2 + 2;
+        p.orbits += bytes_of(|b| lp.holonomy.to_bytes(b));
         for (k, c) in lp.carriages.scoped() {
-            p.loops += k.len();
-            p.loops += bytes_of(|b| c.to_bytes(b));
+            p.orbits += k.len();
+            p.orbits += bytes_of(|b| c.to_bytes(b));
         }
     }
     for (k, v) in f.sections.scoped() {
@@ -221,7 +221,7 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
     // reading of what is MISSING and not of what was never counted.
     p.frame = 2 + f.vertices.len()
         + 2 + f.faces.len() * 7
-        + 2 + f.loops.len() * 8
+        + 2 + f.orbits.len() * 8
         + 2 + 2 + 8 + 2 + 2 + 2;
     for v in &f.vertices {
         if let Vertex::Word { derivation, acts, contact, .. } = v {
@@ -252,7 +252,7 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
         + p.faces
         + p.sections
         + p.torsion
-        + p.loops
+        + p.orbits
         + p.remainder
         + p.demands
         + p.glue_body
@@ -271,7 +271,7 @@ impl TapeParts {
         format!(
             "z12 word {id}… verts {verts} \
              tape {} = addrW {} addrG {} glued {}/{} rotor {} cites {}/{} carriage {} gauge {} \
-             charts {} faces {} sections {} torsion {} loops {} rem {} \
+             charts {} faces {} sections {} torsion {} orbits {} rem {} \
              certs {} axes {} demands {} glue {} frame {} rest {} | key {} cited {}",
             self.total,
             self.addr_word,
@@ -287,7 +287,7 @@ impl TapeParts {
             self.faces,
             self.sections,
             self.torsion,
-            self.loops,
+            self.orbits,
             self.remainder,
             self.certs,
             self.axes,

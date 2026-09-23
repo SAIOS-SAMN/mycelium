@@ -56,7 +56,7 @@ fn same_torsion(a: &Form, b: &Form) -> bool {
     true
 }
 
-/// The forms this property runs over: a word form, a chord with a loop, a
+/// The forms this property runs over: a word form, a chord with an orbit, a
 /// form that GLUES (a nested citation), one carrying a DEMAND with its
 /// bodies, and one carrying an A5 remainder. 54.3 names nested citations
 /// and demands specifically, because those were the two the key did not
@@ -92,7 +92,7 @@ fn generated() -> Vec<(&'static str, Form)> {
 
     vec![
         ("a word form", inner),
-        ("a chord with a loop", chord_form(&[order4()])),
+        ("a chord with an orbit", chord_form(&[order4()])),
         ("a glued citation", glued),
         ("a nested citation", nested),
         ("a demand with its bodies", demanding),
@@ -129,7 +129,7 @@ fn two_vertices_at_one_coordinate_are_one_vertex() {
         let j = (f.vertices.len() - 1) as u16;
         f.faces.push(f.face_of(0, j).expect("star"));
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     assert_eq!(f.vertices.len(), 4, "the form was built holding one coordinate three times");
 
@@ -480,17 +480,17 @@ fn a_form_and_a_residual_refuse_each_others_decoder() {
 ///
 /// THE ADDRESS DOES NOT DETERMINE THE FILING, and this is the reading that
 /// says so. `Form.torsion` is not in the key, and the obvious repair — have
-/// `from_address` re-derive it the way it re-derives the loops — was
+/// `from_address` re-derive it the way it re-derives the orbits — was
 /// written and is wrong, because filing is not a function of the incidence.
 ///
-/// `pivot::drive` files in ONE of its four branches, `NoneDischarged`. A
-/// loop the stroke DISCHARGED leaves no filing, because the obstruction is
-/// gone; a loop that went to `Vortex`, and a loop whose `Starved` budget ran
+/// `pivot::drive` files in ONE of its four branches, `NoneDischarged`. An
+/// orbit the stroke DISCHARGED leaves no filing, because the obstruction is
+/// gone; an orbit that went to `Vortex`, and an orbit whose `Starved` budget ran
 /// out before its candidates were reached, stand UNFILED with their
-/// holonomy intact. Two forms with the same vertices, faces and loops
+/// holonomy intact. Two forms with the same vertices, faces and orbits
 /// therefore carry different filings depending on what a stroke could
 /// afford. A derivation from the incidence alone hands a starved form the
-/// filing its stroke never made, and the first fixture that HAS a loop and
+/// filing its stroke never made, and the first fixture that HAS an orbit and
 /// has never run a stroke is where that shows.
 ///
 /// So the two are held apart and BOTH are asserted: the address round-trips
@@ -501,12 +501,12 @@ fn a_form_and_a_residual_refuse_each_others_decoder() {
 #[test]
 fn the_address_does_not_carry_the_filing() {
     let mut f = chord_form(&[order4()]);
-    assert!(!f.loops.is_empty(), "the fixture must have a loop, or nothing is being tested");
+    assert!(!f.orbits.is_empty(), "the fixture must have an orbit, or nothing is being tested");
     let mut filed = 0usize;
-    for idx in 0..f.loops.len() {
-        filed += f.file_loop(idx).len();
+    for idx in 0..f.orbits.len() {
+        filed += f.file_orbit(idx).len();
     }
-    assert!(filed > 0, "the fixture's loop must file, or nothing is being measured");
+    assert!(filed > 0, "the fixture's orbit must file, or nothing is being measured");
     assert!(!f.torsion.is_empty(), "and the filing lands on the form");
 
     // THE FILING IS NOT IN THE ADDRESS: a form that has filed and the same
@@ -516,7 +516,7 @@ fn the_address_does_not_carry_the_filing() {
     assert_eq!(
         form_vertex_key(&f),
         form_vertex_key(&before),
-        "filing a loop does not move the form's address — torsion is not keyed"
+        "filing an orbit does not move the form's address — torsion is not keyed"
     );
 
     // AND THE INVERSE RETURNS THE FORM THE KEY NAMES, which is the unfiled
@@ -535,13 +535,13 @@ fn the_address_does_not_carry_the_filing() {
     );
 }
 
-/// 54.3 — AND THE PERIOD IT FILES AT IS THE ONE THE LOOP CLOSES AT.
+/// 54.3 — AND THE PERIOD IT FILES AT IS THE ONE THE ORBIT CLOSES AT.
 ///
-/// `file_loop` took its period as a PARAMETER and `drive.rs` passed
+/// `file_orbit` took its period as a PARAMETER and `drive.rs` passed
 /// `hw.order()` — the rotor's order alone. A quarter turn carried along a
 /// translation has the rotor order of one about a fixed point and closes at
 /// neither: the screw walks, generating a non-compact ℤ rather than a
-/// compact ℤ/4ℤ. Filed at four, a theorem stood on the loop that the loop
+/// compact ℤ/4ℤ. Filed at four, a theorem stood on the orbit that the orbit
 /// does not satisfy, and `from_address` asserting `torsion == torsion`
 /// would have certified it.
 ///

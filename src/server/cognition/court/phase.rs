@@ -4,7 +4,7 @@
 //
 //! `phase_over` is a pure function of a slice of receipts and two cover
 //! readings; the court writes `court phase …` once per window — an
-//! aperture of docket orbits (34.2, R7) — and keeps only the cover
+//! aperture of docket circuits (34.2, R7) — and keeps only the cover
 //! reading the next window starts from.
 //! The regimes the words name — ooze, congruence, presentation,
 //! equilibrium — are readings, and two nodes holding the same receipts
@@ -37,7 +37,7 @@ pub struct Phase {
 }
 
 impl Phase {
-    /// The line 34.2 writes, once per window of docket orbits.
+    /// The line 34.2 writes, once per window of docket circuits.
     pub fn line(&self) -> String {
         format!(
             "  court phase h {}..{} comprehension {}/{} congruence {}/{} lineages {} growth +{} -{} expansion {}/{}",
@@ -159,7 +159,7 @@ impl Kernel {
     }
 
     /// The phase over the window since the last reading (45.9), written
-    /// once per window — the court stroke takes it when the docket orbit
+    /// once per window — the court stroke takes it when the docket circuit
     /// count crosses a multiple of `aperture_cycle()` (R7); the reading
     /// the next window starts from is kept, the phase is not.
     /// A READING OVER AN EMPTY WINDOW IS NOT A READING, and returning
@@ -171,8 +171,8 @@ impl Kernel {
     /// zero, which is the vacuous assertion at the instrument and not a
     /// measurement of anything. Hypha a wrote 25 598 of those in nine
     /// minutes on the fleet at e98e8a2, 62 a second, because its caller
-    /// paces on ORBITS and a docket small enough to fit one budget completes
-    /// an orbit every stroke — so the pacing quantity was counting strokes,
+    /// paces on CIRCUITS and a docket small enough to fit one budget completes
+    /// a circuit every stroke — so the pacing quantity was counting strokes,
     /// not work. The caller's own comment records that exact failure being
     /// fixed once by adding the aperture; the aperture is keyed to the same
     /// quantity, so it moved rather than closed.

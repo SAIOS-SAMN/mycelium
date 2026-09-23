@@ -60,9 +60,9 @@ pub(crate) struct Mesh {
     pub(crate) asked_at: Arc<Mutex<Keyed<u64>>>,
     /// The exchange to each peer as a carrier (45.7, S13.3): every cycle
     /// strokes it, each ask is one circuit, and the period is this court's
-    /// cycles between asks, written once per ask as `court orbit exchange`.
+    /// cycles between asks, written once per ask as `court circuit exchange`.
     /// Taken one at a time, like `rtt_window`.
-    pub(crate) orbits: Arc<Mutex<Keyed<mycelium::physics::Orbit>>>,
+    pub(crate) circuits: Arc<Mutex<Keyed<mycelium::physics::Circuits>>>,
     /// The door's per-lane reserve deficit, snapshotted from the kernel on
     /// every court stroke so the listener can say it without the kernel
     /// (23.8, S13.4): the deferral carries it and the asker dwells on it.
@@ -88,7 +88,7 @@ impl Clone for Mesh {
             rtt_window: Arc::clone(&self.rtt_window),
             last_roots: Arc::clone(&self.last_roots),
             asked_at: Arc::clone(&self.asked_at),
-            orbits: Arc::clone(&self.orbits),
+            circuits: Arc::clone(&self.circuits),
             deficit: Arc::clone(&self.deficit),
             origin: Arc::clone(&self.origin),
         }
@@ -349,8 +349,8 @@ impl Exchange {
                 // asked for its digest again only when its Λ, read from the
                 // round trips this court measured to it, has elapsed since
                 // the last ask on this court's own K, or this court's own
-                // roots moved. Asked on every orbit, one hypha ran 131,072
-                // orbits and 100,000 deferrals in one reading (2026-09-09):
+                // roots moved. Asked on every circuit, one hypha ran 131,072
+                // circuits and 100,000 deferrals in one reading (2026-09-09):
                 // the poll filled the peers' reflex pools and nothing was
                 // admitted. A peer silent since boot has no Λ and is asked
                 // again when these roots move.
@@ -376,11 +376,11 @@ impl Exchange {
                 // circuit is one ask; every cycle strokes it, so its period
                 // is read in this court's cycles between asks — velocity in
                 // kernel coordinates, beside K on the ask line.
-                let orbit = mesh.orbits.lock().ok().and_then(|mut o| {
+                let circuit = mesh.circuits.lock().ok().and_then(|mut o| {
                     if o.get(&pid).is_none() {
-                        o.insert(&pid, mycelium::physics::Orbit::default());
+                        o.insert(&pid, mycelium::physics::Circuits::default());
                     }
-                    o.get_mut(&pid).and_then(|orb| orb.stroke(u64::from(due)))
+                    o.get_mut(&pid).and_then(|c| c.stroke(u64::from(due)))
                 });
                 if !due {
                     continue;
@@ -390,8 +390,8 @@ impl Exchange {
                 }
                 asked_any = true;
                 eprintln!("  court exchange asked {d} K {k_now}");
-                if let Some((n, period)) = orbit {
-                    eprintln!("  court orbit exchange {d} {n} period {period}");
+                if let Some((n, period)) = circuit {
+                    eprintln!("  court circuit exchange {d} {n} period {period}");
                 }
                 organ_budget -= 1;
                 match tell_peer(&d, req.clone()) {
@@ -647,12 +647,12 @@ impl Exchange {
                 }
             }
             crate::offer::offer_round(&kernel, &mesh);
-            // 47.3, S13.10: a fold proposed on the docket orbit is carried
+            // 47.3, S13.10: a fold proposed on the docket circuit is carried
             // to a witness here and sealed on its co-signature.
             crate::fold::fold_round(&kernel, &mesh);
-            // 45.7, S13.1: an orbit that asked no peer spends the tick, as
-            // the orbit with no destination does, so the loop paces on the
-            // court's own stroke; `idle` counts those orbits on the cycle
+            // 45.7, S13.1: a circuit that asked no peer spends the tick, as
+            // the circuit with no destination does, so the loop paces on the
+            // court's own stroke; `idle` counts those circuits on the cycle
             // line.
             if !asked_any {
                 // The same tick, and the same ruling: no peer was due, so

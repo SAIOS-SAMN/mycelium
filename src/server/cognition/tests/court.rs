@@ -226,14 +226,14 @@ assert_eq!(k.listings_on(&inv).len(), 1, "the flat field and the other chart's f
 assert_eq!(k.volume_of_simplex(&Invariant::counts(&[9])), [0; 4], "a chart with no open listing has no volume");
 }
 
-/// 45.7, S9.14, S13.3 — THE DOCKET IS AN ORBIT: a docket of more listings
+/// 45.7, S9.14, S13.3 — THE DOCKET IS A CIRCUIT: a docket of more listings
 /// than one budget is ruled whole across strokes, the stroke whose walk
 /// passes the end of the key order reports the circuit and its period,
 /// and a listing admitted below the resume point is ruled on the next
 /// circuit — where a cursor that resumed after the last key it served and
 /// stopped at the end of the order never reached it.
 #[test]
-fn the_docket_is_an_orbit_and_reaches_a_listing_admitted_below_the_cursor() {
+fn the_docket_is_a_circuit_and_reaches_a_listing_admitted_below_the_cursor() {
 use crate::transducer::element::from_connection;
 fn conn(shift: i64) -> Element {
     from_connection(
@@ -251,7 +251,7 @@ for i in 0..(cap + 1) {
     assert!(matches!(k.install_adopted(&conn(2 * (i as i64 + 1)), [1; 32]), Adoption::Installed));
 }
 k.court_stroke(one_stroke_transport);
-assert_eq!(k.docket_orbit().circuits(), 0, "one stroke over cap + 1 listings is not a circuit");
+assert_eq!(k.docket_circuits().circuits(), 0, "one stroke over cap + 1 listings is not a circuit");
 // The stroke above yielded keys, so the docket's cursor stands.
 let resume = k.open_cursor.clone().expect("one stroke over the docket set the cursor");
 // A listing whose address sorts below the resume point, found among the
@@ -263,7 +263,7 @@ let below = (0..cap as i64 + 2)
 let addr = below.address();
 assert!(matches!(k.install_adopted(&below, [1; 32]), Adoption::Installed));
 assert!(!k.ruled_contains(addr.as_bytes()), "admitted, not yet ruled");
-// The orbit reaches it before the walk returns to where it began: the
+// The circuit reaches it before the walk returns to where it began: the
 // tail, then past the end from the first key.
 let mut strokes = 0;
 while !k.ruled_contains(addr.as_bytes()) {
@@ -271,9 +271,9 @@ while !k.ruled_contains(addr.as_bytes()) {
     assert!(strokes <= 3, "the listing below the cursor is ruled within one circuit");
     k.court_stroke(one_stroke_transport);
 }
-let orbit = k.docket_orbit();
-assert!(orbit.circuits() >= 1, "the walk passed the end of the docket: {orbit:?}");
-assert!(orbit.period() >= 1, "the period is measured in strokes: {orbit:?}");
+let docket = k.docket_circuits();
+assert!(docket.circuits() >= 1, "the walk passed the end of the docket: {docket:?}");
+assert!(docket.period() >= 1, "the period is measured in strokes: {docket:?}");
 }
 
 /// The home installs when a peer's ruled digest holds the stratum.
@@ -513,7 +513,7 @@ fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
             vec![(1, 2)],
             None,
         ));
-        f.loops = Form::loops_of(&f.faces, &f.vertices);
+        f.orbits = Form::orbits_of(&f.faces, &f.vertices);
         f.reindex();
         as_element_form(&f, [0, 0, 0, 1]).expect("a recolouring section has a tape")
     };

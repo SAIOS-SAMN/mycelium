@@ -5,21 +5,21 @@
 //! eliminated, and how acting words are filed.
 
 use super::common::*;
-use super::pivot_loop::Hold;
+use super::pivot_orbit::Hold;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Word;
 use crate::transducer::element;
 use crate::transducer::sentence::*;
 
-/// 37.7 FROM A LOOP'S OWN RESIDUE — THE PIVOT ADJOINS WHAT NOTHING REACHED.
+/// 37.7 FROM AN ORBIT'S OWN RESIDUE — THE PIVOT ADJOINS WHAT NOTHING REACHED.
 ///
-/// The basis reached no coordinate the loop occupies, the class was
+/// The basis reached no coordinate the orbit occupies, the class was
 /// published on an earlier stroke and nothing answered, and the mesh has not
 /// ruled it. Asking again asks the same question of the same basis. The move
-/// left is to adjoin the rotor the loop measured, which is the one
+/// left is to adjoin the rotor the orbit measured, which is the one
 /// construction by which a mind gets a generator it was not given.
 ///
-/// Both directions, because an adjunction on a loop the basis CAN divide
+/// Both directions, because an adjunction on an orbit the basis CAN divide
 /// would mint a duplicate of a word the mind already holds: an empty crystal
 /// with the class published adjoins, and a crystal holding the word does
 /// not.
@@ -29,14 +29,14 @@ fn a_published_residue_no_generator_reaches_is_adjoined() {
 
     // PUBLISHED AND UNANSWERED, with nothing in the basis: adjoin.
     let mut f = chord_form(std::slice::from_ref(&q));
-    // 54.7 — THE YIELD IS BOTH PLANES. `file_loop` returns the labour the
+    // 54.7 — THE YIELD IS BOTH PLANES. `file_orbit` returns the labour the
     // filing earns, and that is `(ℓ₁ − 1) + (ℓ₂ − 1)` across the two
     // invariant planes of the double rotation, not `lcm − 1`. A quarter
     // turn is isoclinic here — `[4, 4]` — so it earns `3 + 3 = 6`, where
     // the envelope said `4`. The two planes are doing the work; the
     // envelope was never either plane's.
-    assert_eq!(f.file_loop(0), vec![6], "the class is published first, at its own spectrum");
-    let snaps = f.pivot_loop(
+    assert_eq!(f.file_orbit(0), vec![6], "the class is published first, at its own spectrum");
+    let snaps = f.pivot_orbit(
         [0x9a; 32],
         &Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -51,7 +51,7 @@ fn a_published_residue_no_generator_reaches_is_adjoined() {
     };
     assert!(
         !rotor.is_identity(),
-        "the adjoined rotor is the one the loop measured, and it turns"
+        "the adjoined rotor is the one the orbit measured, and it turns"
     );
 
     // THE BASIS REACHES IT: no adjunction, because the mind already holds
@@ -59,8 +59,8 @@ fn a_published_residue_no_generator_reaches_is_adjoined() {
     let mut g = chord_form(std::slice::from_ref(&q));
     // 54.7 — `(ℓ₁ − 1) + (ℓ₂ − 1)`: a quarter turn is isoclinic, `[4, 4]`,
     // so it earns `3 + 3 = 6` where the envelope said `4`.
-    assert_eq!(g.file_loop(0), vec![6]);
-    let snaps = g.pivot_loop(
+    assert_eq!(g.file_orbit(0), vec![6]);
+    let snaps = g.pivot_orbit(
         [0x9b; 32],
         &Keyed::new(),
         &Hold(vec![q.clone()]),
@@ -102,7 +102,7 @@ fn a_minted_generator_is_filed_and_answerable_on_its_own_coordinates() {
     let f = from_element_form(&e).expect("the minted letter decodes to its form");
     assert!(
         f.is_closed(),
-        "a letter is a Frame and one vertex, no faces and no loops — closed vacuously"
+        "a letter is a Frame and one vertex, no faces and no orbits — closed vacuously"
     );
 
     // THE VERTEX CARRIES THE ROTOR, not a spelling of it: a `Word` travels
@@ -142,9 +142,9 @@ fn a_minted_generator_is_filed_and_answerable_on_its_own_coordinates() {
 
 /// 15.3, rule 11 — THE ELIMINATOR REFUSES ONLY WHAT THE ALGEBRA REFUSES.
 ///
-/// Whether a held word can cancel a loop's rotor is exact rational
+/// Whether a held word can cancel an orbit's rotor is exact rational
 /// arithmetic and needs no trial, no face write and no budget. Every
-/// candidate used to pay a `faces.clone()`, a `loops_of` walk and a full
+/// candidate used to pay a `faces.clone()`, an `orbits_of` walk and a full
 /// `class_vectors_on` read to discover it.
 ///
 /// THE TEST IS CONJUGACY. Composing the candidate onto the composite
@@ -157,7 +157,7 @@ fn a_minted_generator_is_filed_and_answerable_on_its_own_coordinates() {
 /// therefore conjugate to it; on the left, conjugate to `hw⁻¹`.
 ///
 /// Both directions are asserted, because an eliminator that refuses a real
-/// discharge is worse than none: the word of the loop's own class survives
+/// discharge is worse than none: the word of the orbit's own class survives
 /// and still discharges, and a word of a different class is refused without
 /// a write.
 #[test]
@@ -173,7 +173,7 @@ fn the_eliminator_keeps_every_word_that_can_cancel_and_drops_the_rest() {
     // THE CLASS THAT CAN CANCEL still discharges, through the whole drive
     // and with the eliminator in the path.
     let mut f = chord_form(std::slice::from_ref(&q));
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0x7a; 32],
         &Keyed::new(),
         &Hold(vec![q.clone()]),
@@ -183,15 +183,15 @@ fn the_eliminator_keeps_every_word_that_can_cancel_and_drops_the_rest() {
     );
     assert!(
         snaps.iter().any(|s| matches!(s, Snap::Discharged { .. })),
-        "the loop's own class is not eliminated: {snaps:?}"
+        "the orbit's own class is not eliminated: {snaps:?}"
     );
 
-    // A CLASS THAT CANNOT is refused, and the loop files instead. The half
-    // turn occupies an axis the quarter's loop does not discharge on, so no
-    // positioning of it closes the loop and the algebra says so before any
+    // A CLASS THAT CANNOT is refused, and the orbit files instead. The half
+    // turn occupies an axis the quarter's orbit does not discharge on, so no
+    // positioning of it closes the orbit and the algebra says so before any
     // face is written.
     let mut g = chord_form(std::slice::from_ref(&q));
-    let snaps = g.pivot_loop(
+    let snaps = g.pivot_orbit(
         [0x7b; 32],
         &Keyed::new(),
         &Hold(vec![half]),
@@ -216,10 +216,10 @@ fn the_eliminator_keeps_every_word_that_can_cancel_and_drops_the_rest() {
 /// Measured on the wire: `Placement` moves discharge and `Word` moves do
 /// not — `axis Orientation(0) no discharge`, every occurrence, in every
 /// window. `Placement` and `Hue` write `p.carriage` and `p.gauge`, which
-/// `loop_transport_on` composes and `ClassVector::read` takes; the word arm
+/// `orbit_transport_on` composes and `ClassVector::read` takes; the word arm
 /// wrote the one carrier the reading skips.
 ///
-/// This fixture is a loop whose path HAS an edge composite, which is the
+/// This fixture is an orbit whose path HAS an edge composite, which is the
 /// case the old arm could not move: the quarter turn lives on the edge and
 /// the face words are identity.
 #[test]
@@ -259,10 +259,10 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
         face.at.insert(pair.clone(), place(edge));
         f.faces.push(face);
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    let [lp, ..] = f.loops.as_slice() else { panic!("one loop") };
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    let [lp, ..] = f.orbits.as_slice() else { panic!("one orbit") };
     let chord = lp.chord;
-    let before = f.loop_holonomy(lp).expect("one holonomy");
+    let before = f.orbit_holonomy(lp).expect("one holonomy");
     assert!(
         !before.rotor().is_identity(),
         "the class is read off the edge composite, which turns"
@@ -273,9 +273,9 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
     let by = PivotBy::Word { face: chord, word: Box::new(before.clone()), side: Side::Right };
     apply_by(&mut f.faces, &by);
     let read = |faces: &[FormFace], vs: &[Vertex]| {
-        let loops = Form::loops_of(faces, vs);
-        let [lp, ..] = loops.as_slice() else { panic!("one loop") };
-        crate::transducer::sentence::pivot::drive::loop_holonomy_on(faces, vs, lp)
+        let orbits = Form::orbits_of(faces, vs);
+        let [lp, ..] = orbits.as_slice() else { panic!("one orbit") };
+        crate::transducer::sentence::pivot::drive::orbit_holonomy_on(faces, vs, lp)
             .expect("one holonomy")
     };
     let after = read(&f.faces, &f.vertices);
@@ -284,7 +284,7 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
         "the move moved the carrier the class is read from; it used to leave it untouched"
     );
 
-    // AND THE CANCELLING DIRECTION ZEROES IT. The loop runs the chord
+    // AND THE CANCELLING DIRECTION ZEROES IT. The orbit runs the chord
     // backward, so its composite is the edge's inverse and the move that
     // closes it composes on the left.
     unapply_by(&mut f.faces, &by);
@@ -314,8 +314,8 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
 /// IDENTITY carriage and the IDENTITY hue. `Placement`, `Dilation` and
 /// `Hue` are read off exactly those two coordinates, so three of the nine
 /// axes of 12.6 held nothing however many words were admitted — while
-/// `Pivot::candidates_for` asks `on_axis_of` for whichever axis the loop
-/// it is discharging stands on, those three among them. A loop standing on
+/// `Pivot::candidates_for` asks `on_axis_of` for whichever axis the orbit
+/// it is discharging stands on, those three among them. An orbit standing on
 /// a placement was answered `0` not because the mind held no word that
 /// places but because the filing could not say one did.
 ///
@@ -386,9 +386,9 @@ fn a_word_is_filed_under_the_carriage_and_the_gauge_it_acts_by() {
 /// PREFILTER.
 ///
 /// `axis_admit` filed a sentence's words under `invariant_of(element)`,
-/// which for a sentence is `chart_of_form` — `[2, rank, loop classes]`, a
+/// which for a sentence is `chart_of_form` — `[2, rank, orbit classes]`, a
 /// projection of what the FORM HOLDS. `candidates_for` asks under the charts
-/// a loop's face vertices act on — `[1, moduli]`, a statement about the BODY
+/// an orbit's face vertices act on — `[1, moduli]`, a statement about the BODY
 /// A WORD ACTS ON. Both charts are well formed and answer different
 /// questions, so the index was filed under one answer and read under the
 /// other: measured across the fleet, `crystal.on_axis` returned 0 on 123 of
@@ -439,7 +439,7 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
         );
     }
 
-    // AND THE CHART COARSENS. A loop standing on a finer stratum than the
+    // AND THE CHART COARSENS. An orbit standing on a finer stratum than the
     // word was filed at asks a narrower question; the read widens it one
     // axis at a time rather than answering nothing.
     let finer = Invariant::counts(&[1, 7, 4, 9, 2]);
@@ -482,22 +482,22 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
 /// it asked whether a boundary was non-trivial, which it never is.
 ///
 /// The consequences were not one bug but four, each in a different organ:
-/// `candidates_for`'s gate refused the widening on every coboundary loop;
+/// `candidates_for`'s gate refused the widening on every coboundary orbit;
 /// the seed was `versor_of_word(identity)`, an axis standing for nothing the
-/// loop turns by; `open_axis_on` filed under the identity's class; and
+/// orbit turns by; `open_axis_on` filed under the identity's class; and
 /// `opened_axis_on` looked the axis up under the identity's class, so the
 /// audit could not see an opening that HAD been made. Measured at f3a76ec:
-/// `opens 1` on 133 loops, the single one whose word did not cancel, against
+/// `opens 1` on 133 orbits, the single one whose word did not cancel, against
 /// 92 torsion classes filed off the edge composite in the same five minutes.
 ///
 /// This fixture is the disagreement itself: three coboundary faces, so the
 /// word holonomy is the identity, and a quarter turn on the one face that
-/// does not touch the Frame. Every site is asserted on that one loop — the
+/// does not touch the Frame. Every site is asserted on that one orbit — the
 /// keying invariant is total or it is not an invariant.
 #[test]
 fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
     use crate::transducer::alphabet::Derivation;
-    use crate::transducer::sentence::{loop_row_on, opened_axis_on};
+    use crate::transducer::sentence::{opened_axis_on, orbit_row_on};
     use crate::transducer::stalk::Invariant;
     let chart = Invariant::counts(&[3, 5]);
     let pair = face_pair_key(&chart, &chart);
@@ -531,8 +531,8 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
         face.at.insert(pair.clone(), place(edge));
         f.faces.push(face);
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    let [lp, ..] = f.loops.as_slice() else { panic!("three faces close one loop") };
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    let [lp, ..] = f.orbits.as_slice() else { panic!("three faces close one orbit") };
     let chord = lp.chord;
 
     // THE TWO CARRIERS DISAGREE, which is the precondition for the rest.
@@ -540,7 +540,7 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
         lp.holonomy.rotor().is_identity(),
         "the word holonomy telescopes flat, as a product of coboundaries always does"
     );
-    let composite = f.loop_holonomy(lp).expect("the paths agree on one holonomy");
+    let composite = f.orbit_holonomy(lp).expect("the paths agree on one holonomy");
     assert!(
         !composite.rotor().is_identity(),
         "the edge composite carries the quarter the word cancelled"
@@ -553,7 +553,7 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
         "seeded from the word this was the identity versor, standing for nothing"
     );
 
-    // THE WRITER AND THE READER AGREE. An axis opened over this loop is
+    // THE WRITER AND THE READER AGREE. An axis opened over this orbit is
     // found again by the reader that has to count it — keyed to the word,
     // `open_axis_on` filed under the identity's class and `opened_axis_on`
     // looked under it too, so the opening was invisible to the audit the one
@@ -564,26 +564,26 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
     );
     let mut opened = f.clone();
     opened.open_axis_on(chord).expect("the axis opens over the composite's class");
-    let [olp, ..] = opened.loops.as_slice() else { panic!("one loop") };
+    let [olp, ..] = opened.orbits.as_slice() else { panic!("one orbit") };
     assert_eq!(
         opened_axis_on(&opened.faces, &opened.vertices, &opened.axes, olp),
         Some(chord),
         "the reader finds the axis the writer filed"
     );
     assert_eq!(
-        loop_row_on(&opened.faces, &opened.vertices, &opened.axes, olp),
-        Some(LoopRow::Opened(
+        orbit_row_on(&opened.faces, &opened.vertices, &opened.axes, olp),
+        Some(OrbitRow::Opened(
             composite.rotor().holonomy_key().expect("the composite has a class")
         )),
-        "and the audit counts the loop as opened under the composite's class, \
+        "and the audit counts the orbit as opened under the composite's class, \
          not as the defect it was"
     );
 
     // AND THE INVERSE REMOVES WHAT THE OPENING WROTE. Keyed to the word,
-    // `close_axis_on` removed nothing and the axis stood with no loop
+    // `close_axis_on` removed nothing and the axis stood with no orbit
     // claiming it.
     opened.close_axis_on(chord).expect("the axis closes under the same class");
-    let [clp, ..] = opened.loops.as_slice() else { panic!("one loop") };
+    let [clp, ..] = opened.orbits.as_slice() else { panic!("one orbit") };
     assert!(
         opened_axis_on(&opened.faces, &opened.vertices, &opened.axes, clp).is_none(),
         "the un-pivot removes the axis the pivot opened"
@@ -591,14 +591,14 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
 }
 
 /// A18, T21 (iii) — AN OPENING'S RANK IS READ OVER EVERY ROW, because the
-/// axis carrier is keyed by CLASS and not by loop.
+/// axis carrier is keyed by CLASS and not by orbit.
 ///
-/// `axes.insert(class, face)` files the opening under the loop's holonomy
-/// class, and `opened_axis_on` answers `Opened` for ANY loop whose composite
-/// class equals it. So a second loop of the same class is opened by the same
-/// write, and a rank-after that substituted only the trialled loop's row
+/// `axes.insert(class, face)` files the opening under the orbit's holonomy
+/// class, and `opened_axis_on` answers `Opened` for ANY orbit whose composite
+/// class equals it. So a second orbit of the same class is opened by the same
+/// write, and a rank-after that substituted only the trialled orbit's row
 /// certified a move the form does not make. The drive catches the mismatch
-/// at `apply_pivot` and holds the loop — which is right, and is also a
+/// at `apply_pivot` and holds the orbit — which is right, and is also a
 /// certificate that should never have been written.
 ///
 /// Measured at 551c609, fifteen minutes: 11 `axis Open discharged` against 6
@@ -608,7 +608,7 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
 /// keyed to the flat word.
 ///
 /// A `Word`, `Placement` or `Hue` move writes one face's transport, so
-/// exactly one loop's holonomy moves and the substitution is the whole truth
+/// exactly one orbit's holonomy moves and the substitution is the whole truth
 /// for those. This asserts the certificate against the form for both kinds.
 ///
 /// AND THE SAME HOLDS FOR EVERY MOVE, not only an opening — see
@@ -618,19 +618,19 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
 fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
     let q = order4();
     let f = chord_form(&[q.clone(), q.clone()]);
-    assert_eq!(f.loops.len(), 2, "two chords of one class close two loops");
-    let [a, b] = f.loops.as_slice() else { panic!("two loops") };
+    assert_eq!(f.orbits.len(), 2, "two chords of one class close two orbits");
+    let [a, b] = f.orbits.as_slice() else { panic!("two orbits") };
     assert_eq!(
-        f.loop_holonomy(a).and_then(|h| h.rotor().class_key()),
-        f.loop_holonomy(b).and_then(|h| h.rotor().class_key()),
-        "the two loops carry ONE class, which is what the axis is keyed by"
+        f.orbit_holonomy(a).and_then(|h| h.rotor().class_key()),
+        f.orbit_holonomy(b).and_then(|h| h.rotor().class_key()),
+        "the two orbits carry ONE class, which is what the axis is keyed by"
     );
 
-    let rows = f.loop_rows().expect("rows");
+    let rows = f.orbit_rows().expect("rows");
     let rank_before = rank_of_rows(&rows).expect("rank");
-    // Loop 0 by the slice pattern, not by `first()`: the index IS content
-    // here, because `trial` is asked about that loop and no other (rule 15).
-    let [lp, ..] = f.loops.as_slice() else { panic!("two loops") };
+    // Orbit 0 by the slice pattern, not by `first()`: the index IS content
+    // here, because `trial` is asked about that orbit and no other (rule 15).
+    let [lp, ..] = f.orbits.as_slice() else { panic!("two orbits") };
     let chord = lp.chord;
     let seed = f.axis_seed_of(lp).expect("the composite seeds the axis");
     let cand = Candidate {
@@ -644,10 +644,10 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
         t_extent: 0,
         mu_before: None,
     };
-    // ONE AXIS OVER A CLASS TWO LOOPS SHARE IS ONE STEP. The axis carrier is
-    // keyed by class, so this write opens both loops; counted by class, as
+    // ONE AXIS OVER A CLASS TWO ORBITS SHARE IS ONE STEP. The axis carrier is
+    // keyed by class, so this write opens both orbits; counted by class, as
     // every coordinate of A18 is, that is `torsion −1, axes +1` and the
-    // certificate states it. Counted by loop it would read `[-2, 0, 0, +2]`
+    // certificate states it. Counted by orbit it would read `[-2, 0, 0, +2]`
     // and T21 (iii) would refuse an elementary attachment as non-elementary.
     let mut f = f;
     let before = f.rank().expect("rank");
@@ -666,19 +666,19 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
         "the applied opening makes the move its certificate claims"
     );
     // AND IT KILLED BOTH REPRESENTATIVES, which is what opening by class
-    // means: neither loop is a defect any more.
-    for i in 0..f.loops.len() {
+    // means: neither orbit is a defect any more.
+    for i in 0..f.orbits.len() {
         assert!(
             f.class_vector(i).is_some_and(|k| k.is_zero()),
-            "loop {i} of the opened class reads as a coordinate, not a defect"
+            "orbit {i} of the opened class reads as a coordinate, not a defect"
         );
     }
 
-    // AND A ONE-LOOP FORM CERTIFIES THE SAME ONE STEP.
+    // AND A ONE-ORBIT FORM CERTIFIES THE SAME ONE STEP.
     let mut one = chord_form(std::slice::from_ref(&q));
-    let rows = one.loop_rows().expect("rows");
+    let rows = one.orbit_rows().expect("rows");
     let rank_before = rank_of_rows(&rows).expect("rank");
-    let [lp, ..] = one.loops.as_slice() else { panic!("one loop") };
+    let [lp, ..] = one.orbits.as_slice() else { panic!("one orbit") };
     let cand = Candidate {
         axis: Axis::Open,
         by: PivotBy::OpenAxis {
@@ -695,7 +695,7 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
     };
     let cert = one
         .trial(0, &cand, &one.class_vector(0).expect("class"), &prior)
-        .expect("one loop of one class opens in one unit");
+        .expect("one orbit of one class opens in one unit");
     one.apply_pivot(&cert);
     assert_eq!(
         one.rank().map(|r| Rank::moved(rank_before, r)),
@@ -717,7 +717,7 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
 /// The second is 12.6 step 6: file the class, which puts it to the mesh for
 /// a mind that CAN divide it. Widening first buries the defect under a
 /// wider cover and asks nobody, and it also pre-empts the filing outright —
-/// a discharging expansion wins `select_discharge` and the loop never
+/// a discharging expansion wins `select_discharge` and the orbit never
 /// reaches the filing arm. Measured: offered on irreducibility alone, six
 /// fixtures that file a finite holonomy against an empty crystal stopped
 /// filing and the whole filed-torsion path went dead.
@@ -725,7 +725,7 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
 /// `kappa.free_part()` alone gated the widening, and a free part is ONE way
 /// a cover can be too narrow, not the only one. A quarter turn is finite
 /// order — torsion, no prime exponent, not off-plane — so it has no free
-/// part and never saw the move at all. On the fleet at 769a17c every loop
+/// part and never saw the move at all. On the fleet at 769a17c every orbit
 /// with no candidate occupied `[Unit(0)]`, 60 of 60, every crystal read
 /// answered 0, 123 of 123, and not one had a free part.
 ///
@@ -735,7 +735,7 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
 fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_is_not() {
     let q = order4();
     let mut f = chord_form(std::slice::from_ref(&q));
-    let kappa = f.class_vector(0).expect("the chord closes one loop");
+    let kappa = f.class_vector(0).expect("the chord closes one orbit");
     assert!(
         !kappa.free_part(),
         "a quarter turn is torsion: no prime exponent and not off-plane, so \
@@ -745,7 +745,7 @@ fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_
 
     // FIRST: the basis divides it. There is something to reduce by, so the
     // contraction is offered and the widening is not.
-    let unpublished: Keyed<FiledLoop, crate::network::nerve::coord::Holonomy> = Keyed::new();
+    let unpublished: Keyed<FiledOrbit, crate::network::nerve::coord::Holonomy> = Keyed::new();
     let reducible = f.candidates_for(0, &kappa, &Hold(vec![q.clone()]), false, &unpublished);
     assert!(
         reducible.iter().any(|c| c.axis != Axis::Open),
@@ -774,14 +774,14 @@ fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_
     // reduction's inverse. The filing is read as the PREVIOUS stroke's,
     // which is what the drive hands down: a class filed by this stroke is
     // not a demand anyone has had a stroke to answer.
-    // 54.7 — THE YIELD IS BOTH PLANES. `file_loop` returns the labour the
+    // 54.7 — THE YIELD IS BOTH PLANES. `file_orbit` returns the labour the
     // filing earns, and that is `(ℓ₁ − 1) + (ℓ₂ − 1)` across the two
     // invariant planes of the double rotation, not `lcm − 1`. A quarter
     // turn is isoclinic here — `[4, 4]` — so it earns `3 + 3 = 6`, where
     // the envelope said `4`. The two planes are doing the work; the
     // envelope was never either plane's.
     assert_eq!(
-        f.file_loop(0),
+        f.file_orbit(0),
         vec![6],
         "the finite holonomy files under its class at four"
     );
@@ -806,15 +806,15 @@ fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_
 }
 
 /// A18, T21 (iii) — A WORD MOVE'S CERTIFIED RANK COUNTS THE SIBLINGS IT
-/// MOVED, because no move a pivot makes is confined to one loop.
+/// MOVED, because no move a pivot makes is confined to one orbit.
 ///
 /// `trial` substituted row `idx` alone for `Word`, `Placement` and `Hue`,
 /// on the ground that such a move writes one face's transport so exactly one
-/// loop's holonomy moves. The premise fails wherever two loops SHARE that
-/// face: the write is on the face, and every loop through it reads the
+/// orbit's holonomy moves. The premise fails wherever two orbits SHARE that
+/// face: the write is on the face, and every orbit through it reads the
 /// carrier that moved. R13 found this for `OpenAxis` and fixed only that
 /// arm; R16 made it unmissable for `Word`, because a word move now writes
-/// the EDGE transports, which is exactly where a sibling loop reads its
+/// the EDGE transports, which is exactly where a sibling orbit reads its
 /// class from.
 ///
 /// MEASURED at d1d84ca, the first soak with the whole block live: 50
@@ -823,21 +823,21 @@ fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_
 /// sibling row counted at its old value.
 ///
 /// The fixture is two chords sharing the Frame's star faces, so a write on
-/// one chord's face is read by both loops. The assertion is the one the
+/// one chord's face is read by both orbits. The assertion is the one the
 /// drive makes at `apply_pivot`: whatever the trial certifies, the form
 /// makes.
 #[test]
 fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
     let q = order4();
     let f = chord_form(&[q.clone(), q.clone()]);
-    assert_eq!(f.loops.len(), 2, "two chords close two loops");
-    let rows = f.loop_rows().expect("rows");
+    assert_eq!(f.orbits.len(), 2, "two chords close two orbits");
+    let rows = f.orbit_rows().expect("rows");
     let rank_before = rank_of_rows(&rows).expect("rank");
-    let [lp, ..] = f.loops.as_slice() else { panic!("two loops") };
+    let [lp, ..] = f.orbits.as_slice() else { panic!("two orbits") };
     let chord = lp.chord;
     let kappa = f.class_vector(0).expect("class");
 
-    // Every candidate the drive would offer on this loop, trialled exactly as
+    // Every candidate the drive would offer on this orbit, trialled exactly as
     // the drive trials it — and every certificate any of them writes must
     // state the move the form actually makes.
     let prior = crate::transducer::sentence::pivot::drive::Prior {
@@ -847,7 +847,7 @@ fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
         t_extent: 0,
         mu_before: None,
     };
-    let unpublished: Keyed<FiledLoop, crate::network::nerve::coord::Holonomy> = Keyed::new();
+    let unpublished: Keyed<FiledOrbit, crate::network::nerve::coord::Holonomy> = Keyed::new();
     let cands = f.candidates_for(0, &kappa, &Hold(vec![q.clone()]), false, &unpublished);
     assert!(
         cands.iter().any(|c| matches!(c.by, PivotBy::Word { .. })),

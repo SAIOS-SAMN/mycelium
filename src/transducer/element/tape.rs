@@ -225,7 +225,7 @@ impl Element {
         };
         let nfil = u32_at(b, pos)? as usize;
         let mut filing: crate::network::nerve::Keyed<
-            crate::transducer::sentence::FiledLoop,
+            crate::transducer::sentence::FiledOrbit,
             crate::network::nerve::coord::Holonomy,
         > = crate::network::nerve::Keyed::new();
         for _ in 0..nfil {
@@ -245,7 +245,7 @@ impl Element {
                 &<crate::network::nerve::coord::Holonomy
                     as crate::network::nerve::Coordinate>::decode(&class)
                     .ok()?,
-                crate::transducer::sentence::FiledLoop { sigma, periods, chord },
+                crate::transducer::sentence::FiledOrbit { sigma, periods, chord },
             );
         }
         // THE RECEIPTS ENVELOPE (54.5 Road (d)), framed, so a malformed one
@@ -316,7 +316,7 @@ impl Element {
                 sigma.push((f, t));
             }
             let l = u32_at(b, pos)?;
-            // A17: a cycle is believed only when the loop CLOSES at its
+            // A17: a cycle is believed only when the orbit CLOSES at its
             // period, so a filed period of zero is not a cycle with no
             // extent — it is a malformed tape, and every reader downstream
             // may then take `ℓ − 1` whole.

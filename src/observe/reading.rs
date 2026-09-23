@@ -143,7 +143,7 @@ pub const LOSS_AXES: [(&str, &str); 18] = [
     ("tau_refused", "footprint displacements the Cayley chart could not carry"),
     ("unframed", "meets no proper turn relates"),
     ("half_open", "frames whose half turn nothing closes (a projective class)"),
-    ("unspellable", "loops whose holonomy the seventeen do not spell"),
+    ("unspellable", "orbits whose holonomy the seventeen do not spell"),
     ("refused", "pieces carried whose rotor the seventeen do not spell"),
     ("unclassed", "meets whose piece carries no transport class"),
     ("undecodable", "keys this reader wrote and could not read back"),

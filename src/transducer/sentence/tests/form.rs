@@ -11,14 +11,14 @@ use crate::transducer::germinate::germinate;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self, Stalks};
 
-/// 50.3 — THE EDGE HOLONOMY DOES NOT TELESCOPE. The face transports of a
-/// loop are the coboundary of the placements and compose to the identity
+/// 50.3 — THE EDGE HOLONOMY DOES NOT TELESCOPE. The face transports of an
+/// orbit are the coboundary of the placements and compose to the identity
 /// by construction; the edge transports are stabilizer elements, and two
 /// quarter turns around a triangle compose to the half turn, a class the
-/// loop holds until it is filed. A loop through a remainder edge is not
+/// orbit holds until it is filed. An orbit through a remainder edge is not
 /// evaluated.
 #[test]
-fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
+fn orbit_holonomy_in_the_stabilizer_does_not_telescope() {
     let qw = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
     let mut f = Form::default();
     for k in 1..=3u8 {
@@ -33,23 +33,23 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
             None,
         ));
     }
-    // The faces among the bodies only: the loop 1-2-3 closes on the chord
+    // The faces among the bodies only: the orbit 1-2-3 closes on the chord
     // 1-3 without passing the Frame.
     for (i, j) in [(1u16, 2u16), (2, 3), (1, 3)] {
         f.faces.push(f.face_of(i, j).expect("vertices"));
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    // THE LOOP STANDS BEFORE ITS EDGES ARE WRITTEN. Its faces are real —
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    // THE ORBIT STANDS BEFORE ITS EDGES ARE WRITTEN. Its faces are real —
     // between bodies, not star — and carry no edge yet, so every member
-    // path drops on a remainder edge and the loop is UNREAD rather than
+    // path drops on a remainder edge and the orbit is UNREAD rather than
     // flat; a trivial-cycle filter that read an empty edge answer as a flat
     // one would prune it (rule 11).
-    assert_eq!(f.loops.len(), 1, "one loop among three bodies");
-    assert!(f.coheres(), "the coboundary of the placements telescopes: every loop is the identity");
+    assert_eq!(f.orbits.len(), 1, "one orbit among three bodies");
+    assert!(f.coheres(), "the coboundary of the placements telescopes: every orbit is the identity");
     let at = |f: &Form, i: u16, j: u16| f.faces.iter().position(|fc| (fc.i, fc.j) == (i, j)).expect("face");
     let (e12, e23, e13) = (at(&f, 1, 2), at(&f, 2, 3), at(&f, 1, 3));
     // THE EDGE IS SET AT EVERY MEMBER PAIR of the face. Each of these vertices
-    // stands at one chart, so each face has one pair and the loop has one
+    // stands at one chart, so each face has one pair and the orbit has one
     // member path — which is what lets this read a single holonomy below.
     let set_edge = |f: &mut Form, fi: usize, edge: Option<Transport>| {
         let pairs: Vec<Vec<u8>> = f.faces[fi].at.scoped().map(|(k, _)| k).collect();
@@ -63,20 +63,20 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     set_edge(&mut f, e12, Some(Transport::from_word(qw.clone())));
     set_edge(&mut f, e23, Some(Transport::from_word(qw.clone())));
     set_edge(&mut f, e13, Some(Transport::from_word(Word::identity())));
-    // A face write invalidates the loops — `apply_move` says so in its own
+    // A face write invalidates the orbits — `apply_move` says so in its own
     // line — and the cycle stands now that its edges compose to a half turn.
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    let [triangle, ..] = f.loops.as_slice() else { panic!("the loop 1-2-3 among the bodies") };
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    let [triangle, ..] = f.orbits.as_slice() else { panic!("the orbit 1-2-3 among the bodies") };
     // ONE MEMBER PATH, so one holonomy — and the slice pattern says so rather
     // than taking the first of several.
-    let one_holonomy = |f: &Form, lp: &Loop| -> Option<Transport> {
+    let one_holonomy = |f: &Form, lp: &Orbit| -> Option<Transport> {
         let hs = f.edge_holonomies(lp)?;
         let [(_, h)] = hs.scoped().collect::<Vec<_>>()[..] else {
             return None;
         };
         Some(h.clone())
     };
-    let h = one_holonomy(&f, triangle).expect("every edge of the loop is carried");
+    let h = one_holonomy(&f, triangle).expect("every edge of the orbit is carried");
     let half = qw.compose(&qw);
     assert!(h.word.rotor().projective_eq(&half.rotor()), "quarter, quarter, identity compose to the half turn: {:?}", h.word);
     assert_eq!(
@@ -87,14 +87,14 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     // A COMPACT HOLONOMY IS CONTENT AND COHERES (54.5, as ruled
     // 2026-09-20). This read `!f.coheres()` and then filed a period to
     // make it true, which asserted that an ANNOTATION'S PRESENCE changes a
-    // geometric property. Every field of a `FiledLoop` is derivable —
-    // `loop_classes` computes the class, the period through
+    // geometric property. Every field of a `FiledOrbit` is derivable —
+    // `orbit_classes` computes the class, the period through
     // `cech::classify`, σ from the transports — so law 12 forbids storing
     // one beside the coordinates that determine it, and a predicate
-    // reading it was asking "has a stroke got around to this loop".
+    // reading it was asking "has a stroke got around to this orbit".
     //
     // The half turn returns after two circuits about a fixed point. That
-    // is `ℤ/2ℤ` torsion, and torsion is content (law 7): the loop coheres
+    // is `ℤ/2ℤ` torsion, and torsion is content (law 7): the orbit coheres
     // BECAUSE it is compact, not because anyone wrote it down.
     assert!(f.coheres(), "a half turn returns: ℤ/2ℤ is a compact resonance, and it coheres");
     // AND THE FILING CHANGES NOTHING HERE. It is the speaker's
@@ -107,28 +107,28 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     // what the rotor says.
     f.torsion.put(
         &half.rotor().holonomy_key().expect("class"),
-        FiledLoop { sigma: Vec::new(), periods: half.rotor().toral_period(), chord: triangle.chord },
+        FiledOrbit { sigma: Vec::new(), periods: half.rotor().toral_period(), chord: triangle.chord },
     );
     assert!(f.coheres(), "and filing it says nothing the geometry did not already say");
     // NO RE-WALK HERE. `edge_holonomies` reads `self.faces` live, so the
-    // `Loop` — its vertices, its faces, its chord — stays valid across an
+    // `Orbit` — its vertices, its faces, its chord — stays valid across an
     // edge write; re-walking would drop this cycle, because `q, q⁻¹, 1`
-    // composes to the identity and a cycle that encloses nothing is not a
-    // loop. The reading being asserted is exactly that identity.
+    // composes to the identity and a cycle that encloses nothing is not an
+    // orbit. The reading being asserted is exactly that identity.
     set_edge(&mut f, e23, Some(Transport::from_word(qw.inverse())));
-    let [triangle, ..] = f.loops.as_slice() else { panic!("the loop") };
+    let [triangle, ..] = f.orbits.as_slice() else { panic!("the orbit") };
     let h = one_holonomy(&f, triangle).expect("carried");
     assert!(h.word.rotor().projective_eq(&alphabet::Rotor::identity()), "quarter, quarter inverse, identity is the identity");
     set_edge(&mut f, e13, None);
-    let [triangle, ..] = f.loops.as_slice() else { panic!("the loop") };
+    let [triangle, ..] = f.orbits.as_slice() else { panic!("the orbit") };
     assert!(
         f.edge_holonomies(triangle).is_some_and(|hs| hs.is_empty()),
-        "a loop through a remainder edge is not evaluated on any path"
+        "an orbit through a remainder edge is not evaluated on any path"
     );
     assert!(f.coheres(), "and holds nothing against the form");
 }
 
-/// 52.3 AS AMENDED (54.5, ruled 2026-09-20) — A LOOP OF ANY ORDER FILES,
+/// 52.3 AS AMENDED (54.5, ruled 2026-09-20) — AN ORBIT OF ANY ORDER FILES,
 /// AND FILING IS NOT COHERING.
 ///
 /// A (3,4,5) rotor on a chord's edge is a holonomy with NO PERIOD: `g^ℓ`
@@ -138,10 +138,10 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
 /// side-table.
 ///
 /// This test asserted the opposite for four commits: that filing the class
-/// at period 0 made the loop COHERE. That is procedural compliance wearing
+/// at period 0 made the orbit COHERE. That is procedural compliance wearing
 /// geometry's clothes, and it let an open dislocation read as a closed
-/// manifold. Every field of a `FiledLoop` is derivable from the complex
-/// (`loop_classes`), so by law 12 the annotation carries no fact the
+/// manifold. Every field of a `FiledOrbit` is derivable from the complex
+/// (`orbit_classes`), so by law 12 the annotation carries no fact the
 /// geometry does not already determine — it records that a stroke looked.
 ///
 /// What remains true, and is what the filing is FOR: the stroke reads the
@@ -149,45 +149,45 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
 /// speaker's attestation, where it prices the yield and says whether the
 /// stroke finished.
 #[test]
-fn a_loop_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
+fn an_orbit_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
     let w = infinite();
     assert_eq!(w.order(), alphabet::Order::Infinite, "the (3,4,5) rotor has no period");
     let mut f = edge_chord_form(std::slice::from_ref(&w));
-    let loops = f.loops.clone();
-    let [lp] = loops.as_slice() else { panic!("one chord closes one loop") };
+    let orbits = f.orbits.clone();
+    let [lp] = orbits.as_slice() else { panic!("one chord closes one orbit") };
     assert!(!f.edge_coheres(lp), "an edge of infinite order holds against the form");
     assert!(!f.coheres());
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
     // A FILING DOES NOT CLOSE A CIRCUIT THAT WALKS (54.5, as ruled
     // 2026-09-20). This filed period 0 — A19's spelling of infinite order
-    // — and then asserted the loop COHERED, which made an open dislocation
+    // — and then asserted the orbit COHERED, which made an open dislocation
     // read as a closed manifold. A (3,4,5) rotor has no period: `g^ℓ` is
     // never the identity, the circuit never returns, and no annotation
     // changes that. Writing "0" in a notebook records that the stroke
     // looked; it does not make the geometry close.
     f.torsion.put(
         class,
-        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
     );
     assert!(!f.edge_coheres(lp), "filed or unfiled, a free part is not a compact resonance");
     assert!(!f.coheres());
-    // A SPECTRUM THE LOOP DOES NOT HAVE. `[4, 4]` is an isoclinic quarter
-    // turn and this loop is a free part; naming it is not a filing.
+    // A SPECTRUM THE ORBIT DOES NOT HAVE. `[4, 4]` is an isoclinic quarter
+    // turn and this orbit is a free part; naming it is not a filing.
     f.torsion.put(
         class,
-        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::from_pair(4, 4), chord: lp.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::from_pair(4, 4), chord: lp.chord },
     );
-    assert!(!f.coheres(), "and a period the loop does not have is not a filing either");
+    assert!(!f.coheres(), "and a period the orbit does not have is not a filing either");
 
     let mut g = chord_form(std::slice::from_ref(&w));
-    let loops = g.loops.clone();
-    let [gl] = loops.as_slice() else { panic!("one chord closes one loop") };
+    let orbits = g.orbits.clone();
+    let [gl] = orbits.as_slice() else { panic!("one chord closes one orbit") };
     assert!(!gl.holonomy.is_identity(), "the transport composite carries the rotor");
     assert!(!g.is_cauterized(), "unfiled on the word, the form is not cauterized");
     g.torsion.put(
         &gl.holonomy.rotor().holonomy_key().expect("a class"),
-        FiledLoop { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: gl.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: gl.chord },
     );
     assert!(g.is_cauterized(), "filed as open under the holonomy's class, it is");
 }
@@ -489,7 +489,7 @@ fn deconstruct_multiplicity_is_per_body() {
 
 /// The receiving direction: two citations carrying different words
 /// onto the same sites are a seam defect the replay alone would miss;
-/// a transport and its inverse are a flat loop, two translations are
+/// a transport and its inverse are a flat orbit, two translations are
 /// not.
 #[test]
 fn seams_and_holonomy_are_located_exactly() {
@@ -514,7 +514,7 @@ fn seams_and_holonomy_are_located_exactly() {
     let t = element::translator_versor(3, 0);
     assert!(is_flat(&[t.clone(), t.versor_inverse().unwrap()]));
     assert!(!is_flat(&[t.clone(), element::translator_versor(0, 2)]));
-    assert!(is_flat(&[]), "the empty loop is flat");
+    assert!(is_flat(&[]), "the empty orbit is flat");
 }
 
 /// Two word vertices and the frame star are a tree; the coboundary is exact.
@@ -523,7 +523,7 @@ fn a_two_germ_nerve_is_a_tree_and_closes() {
     let f = star_form(2, Vec::new());
     assert_eq!(f.vertices.len(), 3, "frame plus two words");
     assert!(!f.faces.is_empty(), "the frame star has faces");
-    assert!(f.loops.is_empty(), "a tree has no independent cycle");
+    assert!(f.orbits.is_empty(), "a tree has no independent cycle");
     assert!(f.solve_coboundary().is_some(), "a tree 1-cochain is exact");
     assert!(f.coheres(), "a tree coheres");
 }
@@ -542,7 +542,7 @@ fn a_row_of_three_has_faces_by_constancy() {
     let touching = star_form(3, vec![(1, 2, Word::identity()), (2, 3, Word::identity())]);
     let adj = touching.faces.iter().filter(|fa| fa.i != 0 && fa.j != 0).count();
     assert_eq!(adj, 2, "two adjacency faces on a touching row, got {adj}");
-    assert!(!touching.loops.is_empty(), "the 1-skeleton is not a star tree");
+    assert!(!touching.orbits.is_empty(), "the 1-skeleton is not a star tree");
 }
 
 /// A21 §2 — THE CHART LEADS WITH ITS KIND AND THEN ITS RANK. The leading
@@ -572,7 +572,7 @@ fn a_sentence_chart_leads_with_axis_two_then_its_rank() {
         ),
         "the kind, then the rank: {inv:?}"
     );
-    // A star tree closes no loop, so there is no class after the rank.
+    // A star tree closes no orbit, so there is no class after the rank.
     assert_eq!(inv.0.len(), 5, "and nothing per vertex: {inv:?}");
 
     // THE SAME OBJECT WITH MORE VERTICES SITS ON THE SAME CHART. Six
@@ -600,8 +600,8 @@ fn face_constancy_is_the_word_not_the_versor() {
 #[test]
 fn word_constant_triangle_keeps_its_cycle() {
     let f = star_form(3, vec![(1, 2, Word::identity()), (2, 3, Word::identity()), (1, 3, Word::identity())]);
-    assert!(!f.loops.is_empty(), "a triangle has a loop");
-    assert!(f.loops.iter().all(|lp| lp.holonomy.is_identity()));
+    assert!(!f.orbits.is_empty(), "a triangle has an orbit");
+    assert!(f.orbits.iter().all(|lp| lp.holonomy.is_identity()));
     let _ = as_element_form(&f, [1, 0, 0, 0]).expect("rule element");
 }
 
@@ -648,8 +648,8 @@ fn axis_index_admit_is_linear_on_axis_is_constant() {
 #[test]
 fn chord_is_never_a_star_face() {
     let f = chord_form(&[order4(), order2()]);
-    assert_eq!(f.loops.len(), 2, "two chords, two loops");
-    for lp in &f.loops {
+    assert_eq!(f.orbits.len(), 2, "two chords, two orbits");
+    for lp in &f.orbits {
         let ch = &f.faces[lp.chord as usize];
         assert!(
             ch.i != 0 && ch.j != 0,
@@ -779,7 +779,7 @@ fn a_transport_class_names_the_word_vertices_of_that_class() {
 fn a_pivot_derives_the_address_meet_it_reads() {
     let mut f = chord_form(&[order4()]);
     f.by_address = Keyed::new();
-    let _ = f.pivot_loop(
+    let _ = f.pivot_orbit(
         [0x2a; 32],
         &Keyed::new(),
         &crate::transducer::family::NoCrystal,

@@ -6,7 +6,7 @@
 //! Rather than treating vocabulary as an unorganized heap of monolithic tokens and
 //! issuing crude deletions, the bundle synthesis engine extracts the connection geometry:
 //! 1. Change of Basepoint / Conjugate Overlay (Reanchor): groups sections sharing the same
-//!    conjugacy class or loop holonomies, solves for connecting gauge transitions γ ∈ Spin(4,0),
+//!    conjugacy class or orbit holonomies, solves for connecting gauge transitions γ ∈ Spin(4,0),
 //!    and emits RewritePayload::Reanchor to earn metabolic yield on LANE_SPATIAL.
 //! 2. Fiber Section Condensation (Condense): folds sibling forms projecting to the same
 //!    base cycle into sections of a single punctured bundle, emitting RewritePayload::Condense
@@ -52,20 +52,20 @@ impl Entity {
         &mut self,
         mut budget: crate::physics::Budget,
     ) -> Option<(Element, Vec<Address>, Option<Element>)> {
-        // THE ORBIT AS COORDINATES (45.7): every genome word once from
+        // THE CIRCUIT AS COORDINATES (45.7): every genome word once from
         // where this walk last stood, wrapping to close on it.
-        let orbit = self.epigenome.genome_orbit_from(self.bundle_cursor.as_deref());
-        // Where this walk now stands: the orbit's opening coordinate, which
+        let circuit = self.epigenome.genome_circuit_from(self.bundle_cursor.as_deref());
+        // Where this walk now stands: the circuit's opening coordinate, which
         // is the trie's own successor to the last and is content, not a
         // member picked out of an arrival order.
-        let [from, ..] = orbit.as_slice() else { return None };
+        let [from, ..] = circuit.as_slice() else { return None };
         self.bundle_cursor = Some(from.clone());
 
         // 1. Coboundary gauge transitions on sentence forms:
         // A sentence whose 1-cochain is exact has gauge frame transitions γ in Spin(4,0)
-        // connecting its loop frames to a single basepoint.
+        // connecting its orbit frames to a single basepoint.
         // Regauging extracts the connection and aligns the local sections.
-        for at in &orbit {
+        for at in &circuit {
             if !budget.spend() {
                 break;
             }
@@ -99,7 +99,7 @@ impl Entity {
         // 2. Word pairs sharing the same conjugacy class (class_key):
         // For words w1, w2 with w1.class_key() == w2.class_key(),
         // solve for connecting gauge rotor γ such that w2 = γ * w1 * γ^-1.
-        for at in &orbit {
+        for at in &circuit {
             if !budget.spend() {
                 break;
             }
@@ -185,14 +185,14 @@ impl Entity {
         if self.epigenome.genome_len() < 2 {
             return None;
         }
-        let orbit = self.epigenome.genome_orbit_from(self.bundle_cursor.as_deref());
-        // Where this walk now stands: the orbit's opening coordinate, which
+        let circuit = self.epigenome.genome_circuit_from(self.bundle_cursor.as_deref());
+        // Where this walk now stands: the circuit's opening coordinate, which
         // is the trie's own successor to the last and is content, not a
         // member picked out of an arrival order.
-        let [from, ..] = orbit.as_slice() else { return None };
+        let [from, ..] = circuit.as_slice() else { return None };
         self.bundle_cursor = Some(from.clone());
 
-        for at in &orbit {
+        for at in &circuit {
             if !budget.spend() {
                 break;
             }

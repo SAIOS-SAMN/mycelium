@@ -36,13 +36,13 @@ fn a_still_orbit_contracts_its_contact_word_to_a_demand() {
 }
 
 /// 50.9 move 6 — A FACE THAT DOES NOT RE-DERIVE IS DROPPED. The chord between
-/// two words leaves the form, the loop through it dissolves, both words
+/// two words leaves the form, the orbit through it dissolves, both words
 /// still act, the court's reader finds no face between the two, and the
 /// same coordinate contracts nothing a second time.
 #[test]
 fn a_face_that_does_not_rederive_is_dropped_by_its_contraction() {
     let mut f = chord_form(&[order4()]);
-    assert_eq!(f.loops.len(), 1, "the chord closes one loop");
+    assert_eq!(f.orbits.len(), 1, "the chord closes one orbit");
     // THE FACE IS NAMED BY ITS ENDS' OWN ADDRESSES (54.2). It was named by
     // `form_addr(1)`/`form_addr(2)` — coordinates fabricated by the test —
     // which named the vertices only because a caller used to hand a vertex
@@ -57,7 +57,7 @@ fn a_face_that_does_not_rederive_is_dropped_by_its_contraction() {
         !f.faces.iter().any(|face| (face.i == 1 && face.j == 2) || (face.i == 2 && face.j == 1)),
         "no face stands between the two words"
     );
-    assert!(f.loops.is_empty(), "the loop through the chord dissolved");
+    assert!(f.orbits.is_empty(), "the orbit through the chord dissolved");
     assert!(f.acts(), "both words still act");
     assert!(f.is_contraction_at(RefusalKind::FaceDerivation, &at), "the court finds no face between them");
     assert_eq!(f.contract(RefusalKind::FaceDerivation, &at, &[]), None, "a face already gone contracts nothing");

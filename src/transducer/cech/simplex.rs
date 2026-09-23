@@ -86,15 +86,15 @@ pub enum Fill {
     /// boxed, as every other variant's carriers are: a `Rotor` is sixteen
     /// rationals and an unboxed one here sized the whole enum.
     Filled(Box<Rotor>, Box<Versor>),
-    /// A loop that CLOSES, held with its class vector and the period it
-    /// closes at. Three objects, because 11.3 holds an `H¹` loop "with its
+    /// An orbit that CLOSES, held with its class vector and the period it
+    /// closes at. Three objects, because 11.3 holds an `H¹` orbit "with its
     /// class vector (12.6)" and 3.9 reads the candidate pivots off the
-    /// axes that vector occupies — so `(rotor, ℓ)` alone was a loop that
+    /// axes that vector occupies — so `(rotor, ℓ)` alone was an orbit that
     /// filed and then had nothing to say. The period is the TORSION PART
     /// of 11.3, filed beside the coordinates and never instead of them,
     /// and it is itself an axis with a move of its own (the fibre row of
     /// the 3.9 table): filing at ℓ opens a candidate, it does not close
-    /// the loop.
+    /// the orbit.
     Congruent(Box<crate::transducer::sentence::ClassVector>, Box<Rotor>, u32),
     /// A standing class: the class vector of 12.6 AND the rotor it was read
     /// from. Both, because they are different objects — the vector holds
@@ -284,7 +284,7 @@ pub fn classify(
     // reader of a filed period may take `ℓ − 1` whole.
     if let (true, Some(Order::Finite(ell @ 1..))) = (fixed, rotor.order()) {
         // The class vector is read HERE, on the way to filing, so the
-        // filed loop carries the axes 3.9 instantiates its candidate moves
+        // filed orbit carries the axes 3.9 instantiates its candidate moves
         // from. A rotor with no conjugacy invariants is not a versor
         // (15.3) and files nothing: it falls through to the readings
         // below rather than filing a period with no coordinates.

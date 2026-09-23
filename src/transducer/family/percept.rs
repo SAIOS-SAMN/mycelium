@@ -515,7 +515,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // in the cover, one member per chart the class carries a piece on.
     //
     // Each piece was its own vertex. That is what made a form of thousands:
-    // `484b58aa` read 2 055 vertices, 11 167 faces and 3 986 loops, and
+    // `484b58aa` read 2 055 vertices, 11 167 faces and 3 986 orbits, and
     // every carrier the engine has is multiplied by that count — the
     // address, the indexes, the genome entry, the resident hold. A piece is
     // not an idea; the CLASS that carries the pieces is, and 21 step 1
@@ -664,16 +664,16 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     let mut form = Form { vertices: scenery.vertices.clone(), ..Form::default() };
     trace::trace("percept/3 meets", trace::Wrote::Nothing, Some(budget));
     // 53.6 items 3 and 4, in their own organ: the pieces' form is built,
-    // its loops are classified, and it is discarded. What comes back is
-    // what the SCENE keeps — the torsion each loop filed, awaiting a chord
+    // its orbits are classified, and it is discarded. What comes back is
+    // what the SCENE keeps — the torsion each orbit filed, awaiting a chord
     // this form can name, and the classes standing per cover.
     let mut edges = EdgeTally::default();
     let (meet_chords, meet_faces, pending_torsion, stood) =
         crate::transducer::family::covered::classify_cover(&covers, &mut edges);
-    trace::trace("percept/4 loops+classify", trace::Wrote::Nothing, Some(budget));
+    trace::trace("percept/4 orbits+classify", trace::Wrote::Nothing, Some(budget));
     // THE DEMANDS, one vertex per (kind, chart) (50.5), in key order. A
     // deformation dissolves when every lamina of both bodies is carried AND
-    // no loop over its pieces stands (50.8).
+    // no orbit over its pieces stands (50.8).
     let mut by_demand: Keyed<Demanded, coord::DemandVertex> = Keyed::new();
     let mut declare = |kind: Demand, chart: Invariant, links: Vec<Link>| {
         let key = crate::transducer::sentence::demand_key(&kind, &chart);
@@ -735,8 +735,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     //
     //     b₁ = E − V + C = 0
     //
-    // identically. `0 loops` everywhere, and with no cycle there is no
-    // held obstruction, so `pivot_loop` had nothing to discharge:
+    // identically. `0 orbits` everywhere, and with no cycle there is no
+    // held obstruction, so `pivot_orbit` had nothing to discharge:
     // `pivoted [0,0,0,0]` on all five voices at epoch 94, `stood` and
     // `closed` likewise, and `court basis 0` on all three courts. Descent
     // worked because descent asks whether the genome already holds a word
@@ -744,7 +744,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // grade 0 consumes H₁ and H₁ was empty.
     //
     // The chords are the meets lifted to classes by `transport_class`, the
-    // same lift the loops' ENDS already used one screen down. They are
+    // same lift the orbits' ENDS already used one screen down. They are
     // offered to THIS builder and not pushed as faces directly, so a meet
     // is subject to every reading a face is — the word must re-derive, the
     // place must exist — and a chord that cannot be built is counted in
@@ -930,21 +930,21 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         face.pairs = Some(section_of_frames(fr));
         form.faces.push(face);
     }
-    form.loops = Form::loops_of(&form.faces, &form.vertices);
+    form.orbits = Form::orbits_of(&form.faces, &form.vertices);
     form.hue_maps = hue_maps;
     form.reindex();
-    // 53.6 item 4 — THE COVER'S FILED LOOPS TAKE A CHORD OF THE SCENE.
+    // 53.6 item 4 — THE COVER'S FILED ORBITS TAKE A CHORD OF THE SCENE.
     // Each was classified inside the cover; its chord there indexed the
     // pieces' own form. Here it takes the face between the two CLASS
     // vertices its ends belong to, which is a coordinate this form has. A
-    // loop whose classes the scene relates by no face is NOT filed: there
+    // orbit whose classes the scene relates by no face is NOT filed: there
     // is no chord to name and none is invented (rule 11).
     let mut standing_demands: Vec<(Demand, Invariant)> = Vec::new();
     for (class, mut filed, ends, rotor) in pending_torsion {
         let ixs: Vec<u16> = ends
             .iter()
             .filter_map(|tc| form.by_transport.at(&tc.key()))
-            // A class stands at one or more vertices; the loop's end is
+            // A class stands at one or more vertices; the orbit's end is
             // the class, so any vertex of it names the same class and the
             // slice pattern reads one rather than choosing among them.
             .filter_map(|on| match on.as_slice() {
@@ -964,7 +964,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                 form.torsion.put(&class, filed);
             }
             // A MEASURED CLASS IS NEVER DISCARDED (law 7, rule 11). The
-            // loop was classified inside the cover and its class is a
+            // orbit was classified inside the cover and its class is a
             // reading the engine made; the scene simply has no face
             // between the two classes to name a chord in, which is a fact
             // about this form's incidence and not about the class. So it
@@ -999,9 +999,9 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     }
     form.reindex();
     // READ WHETHER OR NOT ANYTHING CLOSED. It was gated on
-    // `!form.loops.is_empty() || meet_faces > 0`, so the one row that says
+    // `!form.orbits.is_empty() || meet_faces > 0`, so the one row that says
     // why a form is empty was printed only when the form was not empty:
-    // fifteen forms crystallized at `loops 0` and this line never fired
+    // fifteen forms crystallized at `orbits 0` and this line never fired
     // once. A reading suppressed in the failure case is not a reading.
     let unread_why = crate::transducer::sentence::Form::unread_gates();
     // BQ1, audit N-3 — WHAT PERCEPTION PASSED OVER, always printed: bodies
@@ -1016,7 +1016,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         crate::transducer::blade::take_coarse(),
     );
     eprintln!(
-        "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} loops \
+        "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} orbits \
          | edges asked: measured {}, unspelled {}, unread {}, not rigid {} \
          | chords {} offered {} | cycles: reflexive {} no-tree-path {} unread {} \
          (cone {} no place {} not rigid {} no face {} two ways {}; edge refused: cone {} not rigid {}) \
@@ -1041,16 +1041,16 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         // where the two carriers disagree (rule 11), and `drops.built` is
         // the measurement this label was reaching for.
         drops.built,
-        form.loops.len(),
+        form.orbits.len(),
         edges.measured,
         edges.unspelled,
         edges.unread,
         edges.not_rigid,
         meet_chords.len(),
         n_chords,
-        crate::transducer::sentence::Form::loop_gates().0,
-        crate::transducer::sentence::Form::loop_gates().1,
-        crate::transducer::sentence::Form::loop_gates().2,
+        crate::transducer::sentence::Form::orbit_gates().0,
+        crate::transducer::sentence::Form::orbit_gates().1,
+        crate::transducer::sentence::Form::orbit_gates().2,
         // H2c — the unread gate by what refused it, and the read cycles
         // whose edge half was refused.
         unread_why.0.cone,
@@ -1060,29 +1060,29 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         unread_why.0.two_ways,
         unread_why.1.cone,
         unread_why.1.not_rigid,
-        crate::transducer::sentence::Form::loop_gates().3,
+        crate::transducer::sentence::Form::orbit_gates().3,
         // HOW THE CLOSURES DIVIDE. `trivial` above counts every cycle whose
         // boundary product is the identity; these two say whether that
         // identity was a cancellation or an absence (54.7).
-        crate::transducer::sentence::loop_resonance().0,
-        crate::transducer::sentence::loop_resonance().1,
-        crate::transducer::sentence::loop_resonance().2.len(),
-        crate::transducer::sentence::loop_resonance().3,
-        crate::transducer::sentence::loop_resonance().4,
-        crate::transducer::sentence::loop_defects().0,
-        crate::transducer::sentence::loop_defects().1,
-        crate::transducer::sentence::loop_defects().2,
-        crate::transducer::sentence::loop_defects().3,
-        crate::transducer::sentence::loop_defects().4,
-        crate::transducer::sentence::loop_spectra().0,
-        crate::transducer::sentence::loop_spectra().1,
-        crate::transducer::sentence::loop_spectra().2,
-        crate::transducer::sentence::loop_spectra().3,
-        crate::transducer::sentence::loop_synonyms().0,
-        crate::transducer::sentence::loop_synonyms().1,
-        crate::transducer::sentence::loop_synonyms().2,
-        crate::transducer::sentence::loop_synonyms().3,
-        form.loops.len(),
+        crate::transducer::sentence::orbit_resonance().0,
+        crate::transducer::sentence::orbit_resonance().1,
+        crate::transducer::sentence::orbit_resonance().2.len(),
+        crate::transducer::sentence::orbit_resonance().3,
+        crate::transducer::sentence::orbit_resonance().4,
+        crate::transducer::sentence::orbit_defects().0,
+        crate::transducer::sentence::orbit_defects().1,
+        crate::transducer::sentence::orbit_defects().2,
+        crate::transducer::sentence::orbit_defects().3,
+        crate::transducer::sentence::orbit_defects().4,
+        crate::transducer::sentence::orbit_spectra().0,
+        crate::transducer::sentence::orbit_spectra().1,
+        crate::transducer::sentence::orbit_spectra().2,
+        crate::transducer::sentence::orbit_spectra().3,
+        crate::transducer::sentence::orbit_synonyms().0,
+        crate::transducer::sentence::orbit_synonyms().1,
+        crate::transducer::sentence::orbit_synonyms().2,
+        crate::transducer::sentence::orbit_synonyms().3,
+        form.orbits.len(),
         crate::transducer::sentence::form_operators(&form),
         // THE VALVES, ON THE FLEET'S OWN LINE (66). The field tally was
         // printed only by a corpus test, so a recut would have run blind:

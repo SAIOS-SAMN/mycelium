@@ -1,4 +1,4 @@
-// 12.6, A20 — THE PIVOT LOOP: what a pivot discharges, what it holds as
+// 12.6, A20 — THE PIVOT ORBIT: what a pivot discharges, what it holds as
 // a vortex, and what it writes.
 
 use super::common::*;
@@ -20,7 +20,7 @@ use crate::transducer::stalk::{self, Standing};
 /// On the vertex pair, `f.i == v && f.j == v` holds whichever way the cycle
 /// runs. The walk read the key `(b, a)`, which the face does not hold, and
 /// refused the cycle as `no place`. Read off the member pair, the crossing
-/// is backward on `(a, b)`, the translation is inverted, and the loop
+/// is backward on `(a, b)`, the translation is inverted, and the orbit
 /// stands with nothing unread.
 #[test]
 fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
@@ -41,19 +41,19 @@ fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
         FacePlace { carriage: element::translator_versor(3, 0), gauge: Vec::new(), edge: None },
     );
     f.faces.push(FormFace { i: 1, j: 1, word: Word::identity(), at, pairs: None, interface: Vec::new() });
-    Form::reset_loop_gates();
-    let loops = Form::loops_of(&f.faces, &f.vertices);
-    let (_, _, unread, _) = Form::loop_gates();
+    Form::reset_orbit_gates();
+    let orbits = Form::orbits_of(&f.faces, &f.vertices);
+    let (_, _, unread, _) = Form::orbit_gates();
     assert_eq!(unread, 0, "nothing is unread: the pair is held, one way round");
-    assert_eq!(loops.len(), 1, "the cycle through the self-face stands as a loop");
-    let carried = paths_carried(&f.faces, &f.vertices, &loops[0]).expect("the walk reads the cycle");
+    assert_eq!(orbits.len(), 1, "the cycle through the self-face stands as an orbit");
+    let carried = paths_carried(&f.faces, &f.vertices, &orbits[0]).expect("the walk reads the cycle");
     assert!(
         carried.scoped().all(|(_, c)| !element::same_versor(&c.face.carriage, &element::identity_versor())),
         "and it carries the translation, read across the face against its orientation"
     );
 }
 
-/// 57.4, G2 — A CARRIAGE ON THE LIGHT CONE LEAVES ITS LOOP UNREAD.
+/// 57.4, G2 — A CARRIAGE ON THE LIGHT CONE LEAVES ITS ORBIT UNREAD.
 ///
 /// The Frame reaches `c` through one star face written from `c`, so the
 /// forest runs against it and the transport across it is the INVERSE of
@@ -65,12 +65,12 @@ fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
 /// the cycle's own faces reads every transport it meets. What the cone
 /// takes away is the BASING: an identity written for the refused inverse
 /// would base the triangle as though the Frame's edge were flat, and the
-/// loop would stand. The tree refuses instead, counts the edge on the
+/// orbit would stand. The tree refuses instead, counts the edge on the
 /// `unread` gate, and the cycle with its ends beyond it is unread too. The
-/// same fixture with the carriage the face derived keeps its loop, so the
+/// same fixture with the carriage the face derived keeps its orbit, so the
 /// refusal is the cone's and nothing else's.
 #[test]
-fn a_carriage_on_the_light_cone_leaves_its_loop_unread() {
+fn a_carriage_on_the_light_cone_leaves_its_orbit_unread() {
     use crate::transducer::cga::{Mv, E1, EM};
     let build = |on_the_cone: bool| {
         let mut f = Form::default();
@@ -101,16 +101,16 @@ fn a_carriage_on_the_light_cone_leaves_its_loop_unread() {
 
     let flat = build(false);
     assert_eq!(
-        Form::loops_of(&flat.faces, &flat.vertices).len(),
+        Form::orbits_of(&flat.faces, &flat.vertices).len(),
         1,
-        "with a readable carriage the chord closes one loop"
+        "with a readable carriage the chord closes one orbit"
     );
 
     let cone = build(true);
-    Form::reset_loop_gates();
-    let loops = Form::loops_of(&cone.faces, &cone.vertices);
-    assert!(loops.is_empty(), "a loop based through an unread transport is not a loop: {loops:?}");
-    let (_, _, unread, trivial) = Form::loop_gates();
+    Form::reset_orbit_gates();
+    let orbits = Form::orbits_of(&cone.faces, &cone.vertices);
+    assert!(orbits.is_empty(), "an orbit based through an unread transport is not an orbit: {orbits:?}");
+    let (_, _, unread, trivial) = Form::orbit_gates();
     assert_eq!(unread, 2, "the refused tree edge and the cycle beyond it are both counted unread");
     assert_eq!(trivial, 0, "and nothing was read as flat");
 }
@@ -133,7 +133,7 @@ fn basing_a_cycle_conjugates_it_and_preserves_both_casimirs() {
     let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
     let w = Word::from_letters(&[(q, false)]);
     let f = edge_chord_form(std::slice::from_ref(&w));
-    let [lp] = f.loops.as_slice() else { panic!("one chord closes one loop") };
+    let [lp] = f.orbits.as_slice() else { panic!("one chord closes one orbit") };
 
     // THE TRANSPORT IS A VERSOR, whatever it is — an unnormalised entry in
     // the tree is exactly the failure mode this guards.
@@ -143,7 +143,7 @@ fn basing_a_cycle_conjugates_it_and_preserves_both_casimirs() {
         "θ is a versor of Spin⁺(3,1)(ℚ), or the conjugation is not an isometry"
     );
 
-    // AND CONJUGATION BY IT MOVES NEITHER CASIMIR. Read on the loop's own
+    // AND CONJUGATION BY IT MOVES NEITHER CASIMIR. Read on the orbit's own
     // carriages, which is what `paths_carried` composed.
     let inv = theta.versor_inverse().expect("a versor inverts");
     for (_, omega) in lp.carriages.scoped() {
@@ -176,8 +176,8 @@ fn every_cycle_carries_a_transport_to_the_forms_basepoint() {
         Word::from_letters(&[(q, false)]),
         Word::from_letters(&[(h, false)]),
     ]);
-    assert!(!f.loops.is_empty(), "the fixture must close, or nothing is tested");
-    for lp in &f.loops {
+    assert!(!f.orbits.is_empty(), "the fixture must close, or nothing is tested");
+    for lp in &f.orbits {
         // EVERY cycle has a transport, and it composes: `θ · Ω · θ⁻¹` is a
         // versor of the same group, so the based operators multiply.
         let theta = &lp.based_at;
@@ -196,7 +196,7 @@ fn every_cycle_carries_a_transport_to_the_forms_basepoint() {
     // meaningless — two operators on different tangent spaces — so the
     // assertion is that it is now a versor at all.
     let based: Vec<element::Versor> = f
-        .loops
+        .orbits
         .iter()
         .filter_map(|lp| {
             let theta = &lp.based_at;
@@ -222,8 +222,8 @@ fn every_cycle_carries_a_transport_to_the_forms_basepoint() {
     }
 }
 
-/// The crystal both pivot files hand the loop: the words a mind holds on
-/// an axis. It lives here with the tests that exercise the loop; `pivot.rs`
+/// The crystal both pivot files hand the orbit: the words a mind holds on
+/// an axis. It lives here with the tests that exercise the orbit; `pivot.rs`
 /// reads it across the split.
 pub(super) struct Hold(pub Vec<Word>);
 impl crate::transducer::family::Crystal for Hold {
@@ -275,11 +275,11 @@ impl crate::transducer::family::Crystal for Hold {
 }
 
 #[test]
-fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
+fn pivot_orbit_discharges_held_word_and_vortices_a_pair() {
     let q = order4();
     let qinv = q.inverse();
     let mut f = chord_form(std::slice::from_ref(&q));
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0x11; 32],
         &Keyed::new(),
         &Hold(vec![q.clone()]),
@@ -303,7 +303,7 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
     assert_eq!(
         certificate.rank_move,
         RankMove::Discharged { from: RankAxis::Torsion },
-        "the loop's finite order left torsion and an axis opened"
+        "the orbit's finite order left torsion and an axis opened"
     );
     assert!(
         f.certificates.contains(&certificate.key()),
@@ -337,10 +337,10 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
     // TAMPERING A CERTIFIED FACE NAMES A DIFFERENT WORD (54.5, as ruled
     // 2026-09-20), and that is the stronger property.
     //
-    // This expected `REFUSE_LOOP` — the tamper "re-opens an UNFILED loop" —
-    // which is the permit reading: the loop was refused for lacking an
+    // This expected `REFUSE_ORBIT` — the tamper "re-opens an UNFILED orbit" —
+    // which is the permit reading: the orbit was refused for lacking an
     // entry rather than for its geometry. Coherence no longer asks for a
-    // filing, so a tampered face whose loop is still a compact resonance
+    // filing, so a tampered face whose orbit is still a compact resonance
     // still coheres, and the court says so honestly.
     //
     // What the forger cannot do is keep the word's NAME. A face's word is
@@ -354,7 +354,7 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
     );
 
     let mut f = chord_form(std::slice::from_ref(&q));
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0x22; 32],
         &Keyed::new(),
         &Hold(vec![q.clone(), qinv]),
@@ -376,7 +376,7 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
     let mut horizon = Keyed::new();
     let r = q.rotor();
     horizon.insert(r.class_key().expect("q class"), (r, q.order(), Standing::Ruled));
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0x33; 32],
         &horizon,
         &crate::transducer::family::NoCrystal,
@@ -392,17 +392,17 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
 
     // AND THE SAME CLASS AT `Held` DOES NOT SUPPRESS IT. `Standing::Held` is
     // "an idea this mind is holding, not yet a word" — the mind's OWN
-    // obstruction — and `hold_form` paints every standing loop's own class
+    // obstruction — and `hold_form` paints every standing orbit's own class
     // onto the horizon at that standing through `paint_standing`. Read as
-    // presence alone this made every loop defer to itself: no demand, no
+    // presence alone this made every orbit defer to itself: no demand, no
     // announced filing, and no widening, all three closed by an entry the
     // mind wrote about its own defect. Measured at 7e73a1d — `held true` on
-    // 108 of 108 loops against zero `horizon … seeded` lines in two hours.
+    // 108 of 108 orbits against zero `horizon … seeded` lines in two hours.
     let mut f = chord_form(std::slice::from_ref(&q));
     let mut mine = Keyed::new();
     let r = q.rotor();
     mine.insert(r.class_key().expect("q class"), (r, q.order(), Standing::Held));
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0x34; 32],
         &mine,
         &crate::transducer::family::NoCrystal,
@@ -421,8 +421,8 @@ fn pivot_writes_the_chord_transport_only() {
     let q = order4();
     let mut f = chord_form(std::slice::from_ref(&q));
     let verts_before = f.vertices.clone();
-    let chord = f.loops[0].chord;
-    let snaps = f.pivot_loop(
+    let chord = f.orbits[0].chord;
+    let snaps = f.pivot_orbit(
         [0xc0; 32],
         &Keyed::new(),
         &Hold(vec![q.clone()]),
@@ -457,17 +457,17 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     for fa in &mut f.faces {
         set_face_place(fa, |p| p.gauge.clear());
     }
-    let chord = f.loops[0].chord as usize;
+    let chord = f.orbits[0].chord as usize;
     set_face_place(&mut f.faces[chord], |p| {
         p.carriage = element::carriage(&q1(), &(q1(), q0()));
     });
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    // The loop the fixture wrote, by its chord — a trivial cycle no longer
-    // stands in `loops`, so position is not identity (rule 15).
-    let at = f.loop_of_chord(chord as u16).expect("the chord's loop");
-    let before = f.class_vector(at).expect("loop");
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    // The orbit the fixture wrote, by its chord — a trivial cycle no longer
+    // stands in `orbits`, so position is not identity (rule 15).
+    let at = f.orbit_of_chord(chord as u16).expect("the chord's orbit");
+    let before = f.class_vector(at).expect("orbit");
     assert!(before.occupies(Axis::Placement));
-    let _ = f.pivot_loop(
+    let _ = f.pivot_orbit(
         [0xb4; 32],
         &Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -475,7 +475,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
         None,
         0,
     );
-    let after = f.class_vector(at).expect("loop remains");
+    let after = f.class_vector(at).expect("orbit remains");
     assert!(!after.occupies(Axis::Placement), "Placement zeroes");
     assert!(
         !after.rises_against(&before, Axis::Placement),
@@ -487,14 +487,14 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     for fa in &mut f.faces {
         set_face_place(fa, |p| p.gauge.clear());
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    // The loop by its chord, and the chord read by destructuring rather
-    // than by position: one loop stands here and the pattern says so.
-    let [only, ..] = f.loops.as_slice() else { panic!("one loop stands") };
-    let at = f.loop_of_chord(only.chord).expect("its index");
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    // The orbit by its chord, and the chord read by destructuring rather
+    // than by position: one orbit stands here and the pattern says so.
+    let [only, ..] = f.orbits.as_slice() else { panic!("one orbit stands") };
+    let at = f.orbit_of_chord(only.chord).expect("its index");
     let before = f.class_vector(at).expect("ori");
     assert!(before.occupies(Axis::Orientation(0)), "got {:?}", before.coordinates());
-    let _ = f.pivot_loop(
+    let _ = f.pivot_orbit(
         [0xb5; 32],
         &Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -515,20 +515,20 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     for fa in &mut f.faces {
         set_face_place(fa, |p| p.gauge.clear());
     }
-    let chord = f.loops[0].chord as usize;
+    let chord = f.orbits[0].chord as usize;
     let two = num_rational::BigRational::from_integer(num_bigint::BigInt::from(2));
     set_face_place(&mut f.faces[chord], |p| {
         p.carriage = element::carriage(&two, &(q0(), q0()));
     });
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    let at = f.loop_of_chord(chord as u16).expect("the chord's loop");
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    let at = f.orbit_of_chord(chord as u16).expect("the chord's orbit");
     let before = f.class_vector(at).expect("dil");
     assert!(
         before.occupies(Axis::Dilation),
         "a dilator residue occupies Dilation, got {:?}",
         before.coordinates()
     );
-    let _ = f.pivot_loop(
+    let _ = f.pivot_orbit(
         [0xb6; 32],
         &Keyed::new(),
         &crate::transducer::family::NoCrystal,
@@ -541,10 +541,10 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     assert!(!after.rises_against(&before, Axis::Dilation));
 }
 
-/// A16 — A LOOP'S READINGS ARE A FUNCTION OF ITS FACES AND THE FORM'S AXIS
+/// A16 — AN ORBIT'S READINGS ARE A FUNCTION OF ITS FACES AND THE FORM'S AXIS
 /// CARRIER, and of nothing else the form holds. That is why a trial reads
 /// its own answer without copying a form for every candidate: it writes the
-/// one face the move names, walks the loops those faces close into, and
+/// one face the move names, walks the orbits those faces close into, and
 /// reads the class and the row off them.
 ///
 /// The two entry points must therefore answer alike on a live form — the
@@ -552,12 +552,12 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
 /// the trial uses. A trial that answered differently from the form it
 /// trials would certify a move the form does not make.
 #[test]
-fn a_loops_class_and_row_read_off_its_faces_and_the_axis_carrier() {
+fn an_orbits_class_and_row_read_off_its_faces_and_the_axis_carrier() {
     use crate::transducer::sentence::pivot::drive::class_vectors_on;
-    use crate::transducer::sentence::{loop_row_on, opened_axis_on};
+    use crate::transducer::sentence::{orbit_row_on, opened_axis_on};
     let f = chord_form(&[order4(), order2(), Word::identity()]);
-    assert!(f.loops.len() >= 3, "three chords close three loops: {}", f.loops.len());
-    for (i, lp) in f.loops.iter().enumerate() {
+    assert!(f.orbits.len() >= 3, "three chords close three orbits: {}", f.orbits.len());
+    for (i, lp) in f.orbits.iter().enumerate() {
         // EVERY MEMBER PATH, compared path for path: the trial and the form
         // read the same paths and the same vector on each, so a trial that
         // agreed on one path and differed on another is caught.
@@ -566,26 +566,26 @@ fn a_loops_class_and_row_read_off_its_faces_and_the_axis_carrier() {
         assert_eq!(
             cvs_a.scoped().map(|(k, v)| (k, v.class_key())).collect::<Vec<_>>(),
             cvs_b.scoped().map(|(k, v)| (k, v.class_key())).collect::<Vec<_>>(),
-            "the classes the trial reads are the classes the form reads, loop {i}"
+            "the classes the trial reads are the classes the form reads, orbit {i}"
         );
         assert_eq!(
-            loop_row_on(&f.faces, &f.vertices, &f.axes, lp),
-            f.loop_row_at(i),
-            "and so is the rank row, loop {i}"
+            orbit_row_on(&f.faces, &f.vertices, &f.axes, lp),
+            f.orbit_row_at(i),
+            "and so is the rank row, orbit {i}"
         );
         assert_eq!(
             opened_axis_on(&f.faces, &f.vertices, &f.axes, lp),
             f.opened_axis_of(lp),
-            "and the axis it reads as opened, loop {i}"
+            "and the axis it reads as opened, orbit {i}"
         );
     }
     // AND WITH AN AXIS OPEN. The carrier is what the readings consult, so
-    // a trial holding its own copy of it reads the opened loop as opened.
+    // a trial holding its own copy of it reads the opened orbit as opened.
     let mut opened = f.clone();
-    let [lp, ..] = f.loops.as_slice() else { panic!("three chords close three loops") };
+    let [lp, ..] = f.orbits.as_slice() else { panic!("three chords close three orbits") };
     let chord = lp.chord;
     if opened.open_axis_on(chord).is_some() {
-        for (i, lp) in opened.loops.iter().enumerate() {
+        for (i, lp) in opened.orbits.iter().enumerate() {
             let cvs_a = class_vectors_on(&opened.faces, &opened.vertices, &opened.axes, lp);
             let cvs_b = opened.class_vectors(i);
             assert_eq!(
@@ -593,33 +593,33 @@ fn a_loops_class_and_row_read_off_its_faces_and_the_axis_carrier() {
                 cvs_b.scoped().map(|(k, v)| (k, v.class_key())).collect::<Vec<_>>()
             );
             assert_eq!(
-                loop_row_on(&opened.faces, &opened.vertices, &opened.axes, lp),
-                opened.loop_row_at(i)
+                orbit_row_on(&opened.faces, &opened.vertices, &opened.axes, lp),
+                opened.orbit_row_at(i)
             );
         }
     }
 }
 
-/// THE LOOP IS FILED UNDER THE CLASS IT IS JUDGED BY. A face's word is the
+/// THE ORBIT IS FILED UNDER THE CLASS IT IS JUDGED BY. A face's word is the
 /// coboundary `w_j ∘ w_i⁻¹`, and a product of coboundaries around a cycle
-/// telescopes to the identity for every input, so a loop over coboundary
+/// telescopes to the identity for every input, so an orbit over coboundary
 /// faces is flat on the word whatever its bodies do. Its EDGE composites
 /// (50.3) do not telescope — `edge_holonomies_on` says so in its own doc —
 /// and they are where a cover's curvature lives.
 ///
 /// `class_vector` has read the edge composite since Y5. The filing decision
-/// did not: `pivot_loop` took `lp.holonomy` for the horizon key and for the
-/// order that selects the `Discharge` branch, and `file_loop` filed under
-/// `lp.holonomy.rotor().class_key()`. A loop was judged by one object and
-/// filed under another, and on the fleet at e98e8a2 that meant 70311 loops
-/// flat on the word, 284 finite edge composites over the same loops, and
+/// did not: `pivot_orbit` took `lp.holonomy` for the horizon key and for the
+/// order that selects the `Discharge` branch, and `file_orbit` filed under
+/// `lp.holonomy.rotor().class_key()`. An orbit was judged by one object and
+/// filed under another, and on the fleet at e98e8a2 that meant 70311 orbits
+/// flat on the word, 284 finite edge composites over the same orbits, and
 /// zero torsion filed.
 ///
 /// This fixture is exactly that disagreement: three coboundary faces, so
 /// the word holonomy is the identity, and a quarter turn on the one face
 /// that does not touch the Frame.
 #[test]
-fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
+fn an_orbit_flat_on_the_word_files_under_its_edge_composite() {
     use crate::transducer::alphabet::Derivation;
     use crate::transducer::stalk::Invariant;
     let chart = Invariant::counts(&[3, 5]);
@@ -657,15 +657,15 @@ fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
         face.at.insert(pair.clone(), place(edge));
         f.faces.push(face);
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    assert_eq!(f.loops.len(), 1, "three faces on three vertices close one loop");
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    assert_eq!(f.orbits.len(), 1, "three faces on three vertices close one orbit");
     assert!(
-        f.loops[0].holonomy.rotor().is_identity(),
+        f.orbits[0].holonomy.rotor().is_identity(),
         "the word holonomy is flat, as a product of coboundaries always is"
     );
 
     let hw = f.holonomy_word(0).expect("the paths agree on one holonomy");
-    // The loop runs the chord backward, so the composite is `q⁻¹`. It is the
+    // The orbit runs the chord backward, so the composite is `q⁻¹`. It is the
     // same CLASS as `q` — conjugate, and one class key since a class is read
     // off the ray and not off a lift — and the class is what torsion is filed
     // under, so that is what is asserted.
@@ -683,40 +683,40 @@ fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
     // And the filing follows the judging: the class written is the edge's,
     // and the identity's class — which is what the word would have filed —
     // is not.
-    // 54.7 — THE YIELD IS BOTH PLANES. `file_loop` returns the labour the
+    // 54.7 — THE YIELD IS BOTH PLANES. `file_orbit` returns the labour the
     // filing earns, and that is `(ℓ₁ − 1) + (ℓ₂ − 1)` across the two
     // invariant planes of the double rotation, not `lcm − 1`. A quarter
     // turn is isoclinic here — `[4, 4]` — so it earns `3 + 3 = 6`, where
     // the envelope said `4`. The two planes are doing the work; the
     // envelope was never either plane's.
-    assert_eq!(f.file_loop(0), vec![6], "a path with a class files, at its own spectrum");
+    assert_eq!(f.file_orbit(0), vec![6], "a path with a class files, at its own spectrum");
     let edge_class = q.rotor().holonomy_key().expect("the quarter turn has a class");
     let flat_class = crate::transducer::alphabet::Rotor::identity()
         .holonomy_key()
         .expect("the identity has a class");
     assert!(
         f.torsion.holds(&edge_class),
-        "filed under the class the loop is judged by"
+        "filed under the class the orbit is judged by"
     );
     assert!(
         !f.torsion.holds(&flat_class),
         "and not under the identity the word holonomy reports"
     );
 
-    // D2: `Loop.carriages` IS the transport composite's carriage, path for
+    // D2: `Orbit.carriages` IS the transport composite's carriage, path for
     // path. `path_carriages` computed it in a second walk — the same
     // frontier, the same steps, the same closing rule, with the word and the
-    // gauge discarded — so the walk ran once at `loops_of` and again at every
+    // gauge discarded — so the walk ran once at `orbits_of` and again at every
     // class reading. One carrier now; this asserts they were the same thing.
-    let lp = &f.loops[0];
-    let transport = loop_transport(&f, lp);
+    let lp = &f.orbits[0];
+    let transport = orbit_transport(&f, lp);
     assert_eq!(
         lp.carriages.len(),
         transport.len(),
         "one carriage per closed member path, and the same paths"
     );
     for (k, t) in transport.scoped() {
-        let held = lp.carriages.get(&k).expect("the loop carries this path");
+        let held = lp.carriages.get(&k).expect("the orbit carries this path");
         assert!(
             element::same_versor(held, &t.carriage),
             "the stored carriage is the transport composite's"
@@ -724,14 +724,14 @@ fn a_loop_flat_on_the_word_files_under_its_edge_composite() {
     }
 }
 
-/// Y2 (16.16, 12.6, 3.9, 25.1): A held loop with a held word on that axis discharges
+/// Y2 (16.16, 12.6, 3.9, 25.1): A held orbit with a held word on that axis discharges
 /// and certifies on a constructed family.
 #[test]
-fn a_held_loop_with_a_held_word_discharges_and_certifies() {
+fn a_held_orbit_with_a_held_word_discharges_and_certifies() {
     let q = order4();
     let mut f = chord_form(std::slice::from_ref(&q));
     let family = vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])];
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0x11; 32],
         &Keyed::new(),
         &Hold(vec![q.clone()]),
@@ -755,7 +755,7 @@ fn a_held_loop_with_a_held_word_discharges_and_certifies() {
     assert_eq!(
         certificate.rank_move,
         RankMove::Discharged { from: RankAxis::Torsion },
-        "the loop's finite order left torsion and an axis opened"
+        "the orbit's finite order left torsion and an axis opened"
     );
     assert!(
         matches!(certificate.mu, Mu::Measured { .. }),
@@ -767,7 +767,7 @@ fn a_held_loop_with_a_held_word_discharges_and_certifies() {
     );
 }
 
-/// Y2 (16.16, 12.6, 3.9, 25.1): Two candidate words discharging the loop are held as a vortex
+/// Y2 (16.16, 12.6, 3.9, 25.1): Two candidate words discharging the orbit are held as a vortex
 /// on a constructed family.
 #[test]
 fn two_certified_discharges_are_held_as_a_vortex() {
@@ -775,7 +775,7 @@ fn two_certified_discharges_are_held_as_a_vortex() {
     let qinv = q.inverse();
     let mut f = chord_form(std::slice::from_ref(&q));
     let family = vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])];
-    let snaps = f.pivot_loop(
+    let snaps = f.pivot_orbit(
         [0x22; 32],
         &Keyed::new(),
         &Hold(vec![q.clone(), qinv]),
@@ -804,18 +804,18 @@ fn two_certified_discharges_are_held_as_a_vortex() {
 
 /// A21 §2, R6 — THE BASE IS THE RANK, AND ITS WIDTH DOES NOT GROW WITH THE
 /// FORM. π: P → B, so a form's chart is five coordinates whatever it holds
-/// and the loops inhabit the fiber over it.
+/// and the orbits inhabit the fiber over it.
 ///
-/// The chart appended one packed coordinate per distinct loop class. Key
-/// width grew with the loop count, every `Keyed` entry naming the chart
+/// The chart appended one packed coordinate per distinct orbit class. Key
+/// width grew with the orbit count, every `Keyed` entry naming the chart
 /// copied that width (R6), and `on_axis_of` re-entered the trie at the root
 /// once per coordinate it coarsened through — `n·d` descents to answer one
 /// axis, over an index whose own type is the bundle.
 #[test]
-fn a_forms_base_chart_is_five_coordinates_however_many_loops_it_holds() {
+fn a_forms_base_chart_is_five_coordinates_however_many_orbits_it_holds() {
     use crate::transducer::sentence::chart_of_form;
     let many = chord_form(&[order4(), order2(), Word::identity()]);
-    assert!(many.loops.len() >= 3, "a form carrying several loops: {}", many.loops.len());
+    assert!(many.orbits.len() >= 3, "a form carrying several orbits: {}", many.orbits.len());
     let one = chord_form(&[order4()]);
     let base = chart_of_form(&many).expect("a measured rank is a base point");
     assert_eq!(base.0.len(), 5, "the tag and the four rank coordinates, and nothing else");
@@ -828,11 +828,11 @@ fn a_forms_base_chart_is_five_coordinates_however_many_loops_it_holds() {
         assert_eq!(
             single.0.len(),
             base.0.len(),
-            "and a form with fewer loops is charted at the same width, not a shorter key"
+            "and a form with fewer orbits is charted at the same width, not a shorter key"
         );
     }
     // `peel` reaches the root in five steps, bounded by the base and never
-    // by the loop count: that is the coarsening walk `on_axis_of` makes.
+    // by the orbit count: that is the coarsening walk `on_axis_of` makes.
     let mut at = base.clone();
     let mut steps = 0usize;
     while !at.0.is_empty() {
@@ -849,7 +849,7 @@ fn a_forms_base_chart_is_five_coordinates_however_many_loops_it_holds() {
 /// fall to zero", so the reader and its description disagreed and the
 /// reader won.
 ///
-/// A pivot writes a face carrier that every loop through that face reads,
+/// A pivot writes a face carrier that every orbit through that face reads,
 /// so a move zeroing its target routinely carries other coordinates down
 /// with it. The first assertion here is exactly that move: admitted now,
 /// refused before.

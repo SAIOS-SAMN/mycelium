@@ -2,7 +2,7 @@
 
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::blade::{continuous::ContinuousSupport, *};
-use crate::transducer::sentence::class::{loop_row, LoopRow, FREE_ROW};
+use crate::transducer::sentence::class::{orbit_row, OrbitRow, FREE_ROW};
 use num_rational::BigRational;
 
 #[test]
@@ -40,13 +40,13 @@ fn continuous_support_pythagorean_rotor_holonomy() {
     // Rotated continuous support preserves Casimir invariants and volume
     assert!(cs.matches_rotor(&cs, &r));
 
-    // The holonomy word evaluates to LoopRow::Free with non-zero exponent
-    let row = loop_row(&w).expect("loop row");
+    // The holonomy word evaluates to OrbitRow::Free with non-zero exponent
+    let row = orbit_row(&w).expect("orbit row");
     match row {
-        LoopRow::Free(vec) => {
+        OrbitRow::Free(vec) => {
             assert_ne!(vec, [0i64; FREE_ROW]);
             assert_eq!(vec[0], 1, "m5 exponent on plane (0, 1)");
         }
-        other => panic!("expected LoopRow::Free, got: {other:?}"),
+        other => panic!("expected OrbitRow::Free, got: {other:?}"),
     }
 }

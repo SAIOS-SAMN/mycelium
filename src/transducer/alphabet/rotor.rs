@@ -299,7 +299,7 @@ impl Rotor {
     /// even subalgebra `⟨1, e₀₁, e₀₃, e₁₃⟩`, four of the eight even blades.
     /// It is partial by design and answers `None` for a rotor carrying `e₂`
     /// onto a base axis — which is exactly the OFF-PLANE class. Every
-    /// off-plane loop lost its class, `loop_row` refused, and `Form::rank`
+    /// off-plane orbit lost its class, `orbit_row` refused, and `Form::rank`
     /// returned `None` for eight suites. A projection cannot be the primary
     /// reading (MU-RECURSION checklist (m)); an embedding can.
     ///
@@ -335,7 +335,7 @@ impl Rotor {
     /// a byte prefix of the fine one and `Complex::congruent`'s fiber read
     /// keeps working.
     ///
-    /// §10 — IT IS A LAYOUT CHANGE. Every filed loop, opened axis and
+    /// §10 — IT IS A LAYOUT CHANGE. Every filed orbit, opened axis and
     /// class vector is keyed by these bytes, so the corpus on disk is
     /// keyed by the old producer until a recut.
     pub fn holonomy_key(&self) -> Option<crate::network::nerve::coord::Holonomy> {
@@ -585,7 +585,7 @@ impl Rotor {
     /// their stabilisers and fixed-point sets differ; an incommensurate
     /// pair never closes and an integer envelope reports it as closed; and
     /// the beat `|ℓ₁ − ℓ₂|⁻¹` is thrown away, so no reader can compare two
-    /// loops' harmonic ratio.
+    /// orbits' harmonic ratio.
     ///
     /// `None` on a plane is that factor turning forever.
     pub fn toral_period(&self) -> crate::transducer::sentence::ToralPeriod {

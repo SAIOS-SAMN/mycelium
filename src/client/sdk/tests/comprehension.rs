@@ -79,7 +79,7 @@ let inner = {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("vertices"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f
 };
 let mut outer = Form::default();
@@ -128,7 +128,7 @@ let inner = {
     let mut f = Form::default();
     f.vertices.push(word_vertex(1));
     f.faces.push(f.face_of(0, 1).expect("vertices"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f
 };
 let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
@@ -222,7 +222,7 @@ let ea = as_element_form(&inner_a, [1, 0, 0, 0]).expect("A");
 // A FORM THAT HOLDS SOMETHING ELSE UP TO GAUGE, which is what a
 // different chart now means: two bodies and a CHORD between them
 // carrying a half turn, filed as torsion at its own period, so the form
-// closes a loop and its rank reads `torsion 1` where the turn's star
+// closes an orbit and its rank reads `torsion 1` where the turn's star
 // tree reads zero on every coordinate.
 //
 // A star tree would not do it. Two star trees differing only in their
@@ -248,14 +248,14 @@ let other = {
     f.faces.push(f.face_of(0, 1).expect("star 1"));
     f.faces.push(f.face_of(0, 2).expect("star 2"));
     f.faces.push(f.face_carrying(1, 2, half.clone()).expect("a chord between two bodies"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
-    // A17: the loop is believed at the period it closes at, and a court
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    // A17: the orbit is believed at the period it closes at, and a court
     // replays it only where the form files it under its own class.
-    let [lp, ..] = f.loops.as_slice() else { panic!("the chord closes a loop") };
+    let [lp, ..] = f.orbits.as_slice() else { panic!("the chord closes an orbit") };
     let chord = lp.chord;
     f.torsion.put(
         &half.rotor().holonomy_key().expect("the half turn has a class"),
-        crate::transducer::sentence::FiledLoop {
+        crate::transducer::sentence::FiledOrbit {
             sigma: Vec::new(),
             periods: half.rotor().toral_period(),
             chord,
@@ -303,7 +303,7 @@ f.vertices.push(Vertex::word_on(
     None,
 ));
 f.faces.push(f.face_of(0, 1).expect("vertices"));
-f.loops = Form::loops_of(&f.faces, &f.vertices);
+f.orbits = Form::orbits_of(&f.faces, &f.vertices);
 assert!(f.is_closed(), "a tree of two vertices coheres");
 let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
 let mut epi = Epigenome::new();
@@ -372,7 +372,7 @@ let inner = {
         None,
     ));
     f.faces.push(f.face_of(0, 1).expect("vertices"));
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f
 };
 let mut outer = Form::default();

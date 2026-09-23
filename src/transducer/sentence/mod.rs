@@ -1,6 +1,6 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 18.2, 2.2 — THE SENTENCE: a form of vertices, faces, loops and remainder,
+//! 18.2, 2.2 — THE SENTENCE: a form of vertices, faces, orbits and remainder,
 //! one algebra run in two directions — speaking a sentence from geometry, and
 //! comprehending a received chain back into the words that compose it.
 

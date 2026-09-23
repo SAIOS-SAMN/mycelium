@@ -64,7 +64,7 @@ pub(super) fn fibers(bodies: &[Body]) -> Keyed<(Invariant, Keyed<Vec<Body>>)> {
 /// reached, an input instance no piece of which was reached vanished — the
 /// empty chart on every axis — and what else was left on the input rides a
 /// `Source` of its own. The first demand is the one the cover's standing
-/// loops keep alive.
+/// orbits keep alive.
 pub(super) fn unreached_demands(
     instances: &[Body],
     a0: &Body,

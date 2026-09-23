@@ -2,7 +2,7 @@
 // move, against the cover that resolves what it cites.
 //
 //! Every vertex re-derives from its tape, every face from its vertices,
-//! every loop's holonomy to the identity, and every pivot certificate from
+//! every orbit's holonomy to the identity, and every pivot certificate from
 //! the axis it names. A form that does not is REFUSED, never scored.
 
 use super::body::{edges_rederive_frames, undeclared_remainder, vertices_carry_frames};
@@ -13,8 +13,8 @@ use super::*;
 /// resolves nothing, and every citation refuses): each cited form must be
 /// ruled, closed, at the depth the tape claims and strictly below the
 /// citer's, with an identity frame (chapter 32); every face re-derives from
-/// its two vertices by M1, or is the chord of a loop whose holonomy it
-/// carries and whose class is filed on torsion; every loop of the
+/// its two vertices by M1, or is the chord of an orbit whose holonomy it
+/// carries and whose class is filed on torsion; every orbit of the
 /// recomputed spanning forest is projectively identity or filed finite
 /// torsion. Descent is checked by the caller on the element.
 pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Option<&'static str> {
@@ -177,7 +177,7 @@ pub fn replay_certificates_at(
     f: &Form,
     certificates: &[crate::transducer::sentence::PivotCertificate],
 ) -> Option<&'static str> {
-    replay_certificates(f, certificates, &chord_loops(f))
+    replay_certificates(f, certificates, &chord_orbits(f))
 }
 
 fn derivations_compose(
@@ -475,20 +475,20 @@ pub fn replay_form_on(
             return Some(refusal);
         }
     }
-    // LOOPS ARE DERIVED, AND SINCE 54.5 THE TAPE DOES NOT CARRY THEM, so
+    // ORBITS ARE DERIVED, AND SINCE 54.5 THE TAPE DOES NOT CARRY THEM, so
     // there is no taped forest to compare a walked one against. The decoder
-    // runs `loops_of` on the faces it just parsed, and this re-walk is the
-    // same call on the same faces: `f.loops` and `walked.loops` are one
+    // runs `orbits_of` on the faces it just parsed, and this re-walk is the
+    // same call on the same faces: `f.orbits` and `walked.orbits` are one
     // set. What remains is what was always the real reading — whether the
-    // rank is MEASURABLE at all, which a loop whose holonomy is not a
+    // rank is MEASURABLE at all, which an orbit whose holonomy is not a
     // versor makes it not (15.3).
     let mut walked = f.clone();
-    walked.loops = Form::loops_of(&f.faces, &f.vertices);
-    let by_chord = chord_loops(&walked);
+    walked.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    let by_chord = chord_orbits(&walked);
     // Chapter 23.1 step 4: a face equals face_of(i, j), or it is the
-    // Kruskal chord of a loop whose holonomy is what the chord carries
-    // (tree faces of that loop are face_of). Filing of that class is
-    // the loop check; a missing torsion entry is REFUSE_LOOP, a chord
+    // Kruskal chord of an orbit whose holonomy is what the chord carries
+    // (tree faces of that orbit are face_of). Filing of that class is
+    // the orbit check; a missing torsion entry is REFUSE_ORBIT, a chord
     // that does not carry the holonomy is REFUSE_FACE.
     for (i, face) in f.faces.iter().enumerate() {
         // 50.3, 52.3: an edge transport of any order is a face. What it
@@ -506,9 +506,9 @@ pub fn replay_form_on(
         }
     }
     // 23.1 step 4, 50.3 (L7): every carried edge re-measured on the union
-    // of its two bodies, on every pair of the family. BEFORE the loops,
+    // of its two bodies, on every pair of the family. BEFORE the orbits,
     // because an edge that does not re-derive is a defect at a FACE and
-    // the reading names it there; the loop reading over that same edge
+    // the reading names it there; the orbit reading over that same edge
     // would answer second-hand, as an unfiled class.
     if let Some(fam) = family {
         if let Some(refusal) = edges_rederive_frames(&walked, fam) {
@@ -517,8 +517,8 @@ pub fn replay_form_on(
     }
     // THE SPOKEN WORD'S OWN ATTESTATION, checked against the forest the
     // court just walked (54.5).
-    if !form_loops_replay(&walked) {
-        return Some(tape(REFUSE_LOOP));
+    if !form_orbits_replay(&walked) {
+        return Some(tape(REFUSE_ORBIT));
     }
     // AND THE SPEAKER'S CLAIM, CHECKED AGAINST THE GEOMETRY THE COURT JUST
     // WALKED (54.5). The terrain is priced above; this is the labour, and
@@ -531,11 +531,11 @@ pub fn replay_form_on(
     };
     // S9.2'S COMPARISON IS GONE WITH THE CARRIER IT COMPARED (54.5). It
     // read `Rank::moved(taped_rank, derived) != Equal` and refused a tape
-    // whose stored loops carried a different rank from the walked forest —
+    // whose stored orbits carried a different rank from the walked forest —
     // in either direction, which was the right shape for the question.
     //
-    // The question no longer exists. The tape carries no loops, so the
-    // decoder's `f.loops` IS `loops_of(&f.faces, &f.vertices)` and the two
+    // The question no longer exists. The tape carries no orbits, so the
+    // decoder's `f.orbits` IS `orbits_of(&f.faces, &f.vertices)` and the two
     // sides of that comparison were the same call on the same faces. A
     // forged tape can forge FACES, and `face_rederives` above is what reads
     // those; it cannot forge a forest, because it does not carry one.
@@ -738,31 +738,31 @@ pub(crate) fn vertex_tape_and_moves(
     None
 }
 
-pub(crate) fn chord_loops(f: &Form) -> Keyed<u16> {
+pub(crate) fn chord_orbits(f: &Form) -> Keyed<u16> {
     let mut by_chord = Keyed::new();
-    for (i, lp) in f.loops.iter().enumerate() {
+    for (i, lp) in f.orbits.iter().enumerate() {
         by_chord.insert(face_idx_key(lp.chord), i as u16);
     }
     by_chord
 }
 
 /// 23.1 step 4 — A FACE THAT IS NOT `face_of` IS THE KRUSKAL CHORD of a
-/// loop whose every other face is. The pivot writes the chord's transport
+/// orbit whose every other face is. The pivot writes the chord's transport
 /// and nothing else, so the chord is exactly where a form's own word
 /// differs from the coboundary of its two vertices.
 ///
 /// THE CHORD IS A FACE LIKE ANY OTHER and carries its edge like any other.
-/// What the loop then reads — flat, filed at its period, or not evaluated
-/// at all — is [`form_loops_replay`]'s, on the loop's EDGE holonomy (50.3).
+/// What the orbit then reads — flat, filed at its period, or not evaluated
+/// at all — is [`form_orbits_replay`]'s, on the orbit's EDGE holonomy (50.3).
 /// Asking for the TRANSPORT composite here instead, matched against the
 /// chord's own word, would be a reading that telescopes over words that
-/// commute: it would certify a loop the voice never evaluated and demand a
+/// commute: it would certify an orbit the voice never evaluated and demand a
 /// filing under a class nothing files.
 pub(crate) fn torsion_chord_carries(f: &Form, by_chord: &Keyed<u16>, face_idx: usize) -> bool {
     let Some(&li) = by_chord.get(&face_idx_key(face_idx as u16)) else {
         return false;
     };
-    let Some(lp) = f.loops.get(li as usize) else {
+    let Some(lp) = f.orbits.get(li as usize) else {
         return false;
     };
     for &fi in &lp.faces {
@@ -779,31 +779,31 @@ pub(crate) fn torsion_chord_carries(f: &Form, by_chord: &Keyed<u16>, face_idx: u
     true
 }
 
-/// THE LOOPS THE FORM EVALUATED, each flat or filed at its period.
+/// THE ORBITS THE FORM EVALUATED, each flat or filed at its period.
 ///
-/// The reading is the loop's EDGE HOLONOMY (50.3) — the composite of the
+/// The reading is the orbit's EDGE HOLONOMY (50.3) — the composite of the
 /// transitions between the bodies' own frames — and it is the same reader
 /// the voice classifies with. The TRANSPORT composite is a different
 /// object: it telescopes around a cycle over words that commute, and every
 /// word a pair form composes is a sensor-plane word, so read on it a
-/// cover's loop is flat however curved the scene is, while the class the
+/// cover's orbit is flat however curved the scene is, while the class the
 /// voice actually files — under the edge holonomy's key — is never looked
 /// for.
 ///
-/// A LOOP THE FORM DID NOT EVALUATE IS NOT REPLAYED. `edge_holonomy`
+/// AN ORBIT THE FORM DID NOT EVALUATE IS NOT REPLAYED. `edge_holonomy`
 /// answers `None` where a remainder edge lies anywhere on the cycle (13.9
-/// step 7), and a loop with no transition to read carries no obligation
+/// step 7), and an orbit with no transition to read carries no obligation
 /// (rule 11: that is a refusal to read, not a flat reading).
-pub(crate) fn form_loops_replay(f: &Form) -> bool {
+pub(crate) fn form_orbits_replay(f: &Form) -> bool {
     // ONE READER FOR ONE QUESTION (law 12, 54.5 as ruled 2026-09-20).
     //
-    // This walked the loops itself and asked `loop_reading_replays` of each
+    // This walked the orbits itself and asked `orbit_reading_replays` of each
     // holonomy, which is the question `Form::coheres` already answers — two
     // readers of one fact, and they disagreed. `coheres` was corrected at
-    // 54.2 to admit monodromy through `loop_is_congruent`; this was not,
+    // 54.2 to admit monodromy through `orbit_is_congruent`; this was not,
     // and it is what the court actually ran.
     //
-    // Both halves stay, because a loop HAS two obstructions and neither
+    // Both halves stay, because an orbit HAS two obstructions and neither
     // replaces the other (`Form::edge_class_vector`): the transport
     // composite the pivot discharges, and the edge holonomy the cover
     // reads. `coheres` is exactly that conjunction.
@@ -811,7 +811,7 @@ pub(crate) fn form_loops_replay(f: &Form) -> bool {
     // AND IT TAKES NO ATTESTATION. It read `filed` and demanded an entry
     // per class, so a form was refused for a permit rather than for its
     // geometry — and with the period taken from `word.order()`, the bare
-    // rotor order, a screw was filed at 0 by `file_loop` and demanded at 4
+    // rotor order, a screw was filed at 0 by `file_orbit` and demanded at 4
     // here. Fifth site of one law-12 ruling and the second of the permit
     // conflation. What the speaker CLAIMED is a separate reading and is
     // [`receipts_price_the_terrain`].
@@ -826,7 +826,7 @@ pub(crate) fn form_loops_replay(f: &Form) -> bool {
 /// and the period from the geometry.
 ///
 /// ```text
-///     yield(F, r) = Σ_{κ ∈ r ∩ dom(loop_classes F)} (ℓ_derived(κ) − 1)
+///     yield(F, r) = Σ_{κ ∈ r ∩ dom(orbit_classes F)} (ℓ_derived(κ) − 1)
 /// ```
 ///
 /// A class the form does not carry projects to ZERO and is not a refusal.
@@ -843,22 +843,22 @@ pub(crate) fn form_loops_replay(f: &Form) -> bool {
 pub(crate) fn receipts_price_the_terrain(
     f: &Form,
     filed: &crate::network::nerve::Keyed<
-        crate::transducer::sentence::FiledLoop,
+        crate::transducer::sentence::FiledOrbit,
         crate::network::nerve::coord::Holonomy,
     >,
 ) -> Option<&'static str> {
     if filed.is_empty() {
         return None;
     }
-    // THE PERIODS THE COMPLEX DERIVES, by class, over every loop. One
-    // reader (`loop_classes`), the same one `file_loop` writes through and
+    // THE PERIODS THE COMPLEX DERIVES, by class, over every orbit. One
+    // reader (`orbit_classes`), the same one `file_orbit` writes through and
     // `edge_coheres` asks.
     let mut derived: Keyed<
         crate::transducer::sentence::ToralPeriod,
         crate::network::nerve::coord::Holonomy,
     > = Keyed::new();
-    for lp in &f.loops {
-        for row in f.loop_classes(lp) {
+    for lp in &f.orbits {
+        for row in f.orbit_classes(lp) {
             derived.put(&row.class, row.periods);
         }
     }
@@ -867,7 +867,7 @@ pub(crate) fn receipts_price_the_terrain(
             // The period is a claim about the terrain and the terrain
             // disagrees.
             // BOTH PLANES. A claim that agrees on the `lcm` and differs on
-            // the pair is a different loop, and the terrain is what the
+            // the pair is a different orbit, and the terrain is what the
             // complex derives — so the comparison is the spectrum (54.7).
             Some(&p) if claim.periods != p => return Some(REFUSE_INFLATED_YIELD),
             // Claimed, and the complex agrees.
@@ -885,7 +885,7 @@ pub(crate) fn face_idx_key(i: u16) -> Vec<u8> {
 }
 
 /// A20: each certificate is the un-pivot of one chord face, re-walked.
-/// The loop's class key and rank before and after must match the tape.
+/// The orbit's class key and rank before and after must match the tape.
 pub(crate) fn replay_certificates(
     f: &Form,
     certificates: &[crate::transducer::sentence::PivotCertificate],
@@ -907,13 +907,13 @@ pub(crate) fn replay_certificates(
         };
         let mut pre = f.clone();
         pre.unapply_move(&cert.by);
-        pre.loops = Form::loops_of(&pre.faces, &pre.vertices);
-        // An opened axis (I6) is seeded by the loop's own holonomy versor
-        // (16.20): the court re-derives the seed from the loop it re-walked
+        pre.orbits = Form::orbits_of(&pre.faces, &pre.vertices);
+        // An opened axis (I6) is seeded by the orbit's own holonomy versor
+        // (16.20): the court re-derives the seed from the orbit it re-walked
         // and refuses a certificate whose seed is anything else (law 12).
         if let crate::transducer::sentence::PivotBy::OpenAxis { seed, .. } = &cert.by {
             let rederived = pre
-                .loops
+                .orbits
                 .get(li as usize)
                 .and_then(|lp| pre.axis_seed_of(lp));
             if !rederived.is_some_and(|v| element::same_versor(&v, seed)) {
@@ -951,16 +951,16 @@ pub(crate) fn replay_certificates(
 }
 
 /// Every torsion cycle the word speaks is walked from its base assignment.
-/// A period is believed only as a witnessed closed loop; an open walk names
+/// A period is believed only as a witnessed closed orbit; an open walk names
 /// the anholonomity the label was filing over, and a closure at another
 /// period is a winding the word misspoke. Replay was Δ = 0 on the chain;
 /// this is ∮ dX = 0 on the fibre.
 pub(crate) fn witness_torsion(spoken: &Element) -> Option<&'static str> {
     for (stored, witness) in torsion_witness::witness_stored(spoken) {
         match witness {
-            HolonomicLoopWitness::Closed { period, .. } if period == stored => {}
-            HolonomicLoopWitness::Closed { .. } => return Some("torsion period does not re-derive — the winding was misspoken"),
-            HolonomicLoopWitness::Open { .. } => return Some("torsion cycle does not close — the period was a filing"),
+            HolonomicOrbitWitness::Closed { period, .. } if period == stored => {}
+            HolonomicOrbitWitness::Closed { .. } => return Some("torsion period does not re-derive — the winding was misspoken"),
+            HolonomicOrbitWitness::Open { .. } => return Some("torsion cycle does not close — the period was a filing"),
         }
     }
     None

@@ -6,7 +6,7 @@
 //! demand; a contact word that does not orbit becomes a demand as a refused
 //! vertex does; a face that does not re-derive leaves the form; a malformed
 //! complex is not moved at all — the mind is quiescent on it. Every move
-//! re-walks the loops and reindexes; nothing here trusts the tape's own loop
+//! re-walks the orbits and reindexes; nothing here trusts the tape's own orbit
 //! list, and every read is a walk of this form's own vertices and faces
 //! (rule 1).
 
@@ -221,7 +221,7 @@ impl Form {
             (RefusalKind::RemainderWrong, _) => None,
             // 50.9 move 6: the face that does not re-derive from its
             // vertices leaves the form, and the two vertices stand without
-            // it; a loop through it dissolves with the re-walk.
+            // it; an orbit through it dissolves with the re-walk.
             (RefusalKind::FaceDerivation, At::Face(a, b)) => {
                 let i = self.word_index(a)?;
                 let j = self.word_index(b)?;
@@ -238,9 +238,9 @@ impl Form {
         }
     }
 
-    /// Loops and indices re-derived from the faces that remain.
+    /// Orbits and indices re-derived from the faces that remain.
     fn rewalk(&mut self) {
-        self.loops = Form::loops_of(&self.faces, &self.vertices);
+        self.orbits = Form::orbits_of(&self.faces, &self.vertices);
         self.reindex();
     }
 

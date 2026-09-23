@@ -5,8 +5,8 @@ use super::*;
 
 impl Form {
     /// Apply a certified move (A20 `by`) to this form: a write onto the
-    /// chord face's transport, or a chart axis opened over the loop that
-    /// closes on the face (I6). Loops are re-walked by the caller.
+    /// chord face's transport, or a chart axis opened over the orbit that
+    /// closes on the face (I6). Orbits are re-walked by the caller.
     pub fn apply_move(&mut self, by: &PivotBy) {
         match by {
             PivotBy::OpenAxis { face, .. } => {
@@ -30,7 +30,7 @@ impl Form {
 pub(crate) fn apply_by(faces: &mut [FormFace], by: &PivotBy) {
     match by {
         PivotBy::OpenAxis { .. } => {}
-        // A WORD MOVE WRITES BOTH OF A FACE'S CARRIERS, because a loop's
+        // A WORD MOVE WRITES BOTH OF A FACE'S CARRIERS, because an orbit's
         // holonomy is read from whichever one its path has. `holonomy_words_on`
         // answers the EDGE COMPOSITE where a member path carries one and the
         // face word where it does not, so a move that wrote `f.word` alone
@@ -40,9 +40,9 @@ pub(crate) fn apply_by(faces: &mut [FormFace], by: &PivotBy) {
         // Measured: `Placement` and `Hue` moves discharge on the wire and
         // `Word` moves do not — `axis Orientation(0) no discharge`, every
         // occurrence, across every window. Those two write `p.carriage` and
-        // `p.gauge`, which `loop_transport_on` composes and `ClassVector::read`
+        // `p.gauge`, which `orbit_transport_on` composes and `ClassVector::read`
         // takes; the word arm wrote the one carrier the reading skips. This is
-        // the same split R8 removed from `file_loop` and R12 from the
+        // the same split R8 removed from `file_orbit` and R12 from the
         // `OpenAxis` pipeline, at the site that makes the move.
         //
         // Both are written with the SAME composition, so a path reading either

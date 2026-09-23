@@ -1,4 +1,4 @@
-// 2.2, 50.1, 10.3 — WHAT MAKES A FORM CLOSED: coherence on its loops, the
+// 2.2, 50.1, 10.3 — WHAT MAKES A FORM CLOSED: coherence on its orbits, the
 // demands it stands with, its depth, its fibre's reach, and cauterization.
 //
 //! Split from `carrier.rs` at the §1.1 1200-line reading bound; the items
@@ -9,12 +9,12 @@
 use super::*;
 
 impl Form {
-    /// `δ¹g = 1` on every loop (10.3), where a loop whose class is an axis
+    /// `δ¹g = 1` on every orbit (10.3), where an orbit whose class is an axis
     /// the form opened is coherent on the refined cover: its holonomy is
-    /// the transition on that axis, re-derived from the loop (I6, 15.5).
+    /// the transition on that axis, re-derived from the orbit (I6, 15.5).
     ///
-    /// AND A LOOP THAT CLOSES WITH MONODROMY IS CLOSED (54.2, as ruled
-    /// 2026-09-20). This read holonomy ≡ 1 on EVERY loop, which is not the
+    /// AND AN ORBIT THAT CLOSES WITH MONODROMY IS CLOSED (54.2, as ruled
+    /// 2026-09-20). This read holonomy ≡ 1 on EVERY orbit, which is not the
     /// cocycle condition — that lives on the triple overlaps of the nerve,
     /// `g_ij g_jk g_ki = 1` — but the strictly stronger claim that every
     /// 1-cycle has trivial holonomy. In one word: `H¹ = 0`. And
@@ -22,27 +22,27 @@ impl Form {
     /// (`epigenome::crystal`) and only closed forms survive the court
     /// (`REFUSE_NOT_CLOSED`), so the genome was by construction the
     /// subspace where there is nothing to measure. Measured on the fleet:
-    /// 1 870 extracted forms carried one to nine loops, filed torsion was
+    /// 1 870 extracted forms carried one to nine orbits, filed torsion was
     /// 0 bytes on every voice, and `REFUSE_NOT_CLOSED` was 36 of 39
     /// refusals on the wire.
     ///
     /// A closed cycle does not mean a trivial one. The holonomy around a
-    /// loop IS its curvature, and a finite-order rotation about a fixed
+    /// orbit IS its curvature, and a finite-order rotation about a fixed
     /// point RETURNS: it closes at ℓ, carrying a `ℤ/ℓℤ` class, which is
     /// torsion and is content (law 7, `curvature is content`).
-    /// [`Form::loop_is_congruent`] is that test, through
+    /// [`Form::orbit_is_congruent`] is that test, through
     /// [`crate::transducer::cech::classify`]'s fixed-point gate, so a
     /// screw — which walks and never returns — is NOT admitted here: a
     /// non-compact free part is an obstruction the form has not resolved,
     /// and that is what a demand is for (52.3).
     ///
-    /// `edge_coheres` is untouched and still holds on every loop: an edge
+    /// `edge_coheres` is untouched and still holds on every orbit: an edge
     /// that does not re-derive is a broken transport, not curvature.
     pub fn coheres(&self) -> bool {
-        self.loops.iter().all(|lp| {
+        self.orbits.iter().all(|lp| {
             (lp.holonomy.rotor().projective_eq(&Rotor::identity())
                 || self.opened_axis_of(lp).is_some_and(|chord| self.axis_rederives(lp, chord))
-                || self.loop_is_congruent(lp))
+                || self.orbit_is_congruent(lp))
                 && self.edge_coheres(lp)
         })
     }
@@ -80,7 +80,7 @@ impl Form {
     ) -> bool {
         use crate::transducer::sentence::Demand;
         let mut owed: Vec<(stalk::Invariant, [crate::core::Q; 3])> = Vec::new();
-        for (i, lp) in self.loops.iter().enumerate() {
+        for (i, lp) in self.orbits.iter().enumerate() {
             let Some(hs) = self.edge_holonomies(lp) else { continue };
             for (_, h) in hs.scoped() {
                 let rotor = h.word.rotor();
@@ -93,7 +93,7 @@ impl Form {
                 if s.twist.iter().all(num_traits::Zero::is_zero) {
                     continue;
                 }
-                for chart in self.charts_of_loop_at(i) {
+                for chart in self.charts_of_orbit_at(i) {
                     owed.push((chart, s.twist.clone()));
                 }
             }
@@ -101,7 +101,7 @@ impl Form {
         if owed.is_empty() {
             return false;
         }
-        // EVERY BOUNDARY, NOT ONE OF THEM. A loop crossing two charts owes
+        // EVERY BOUNDARY, NOT ONE OF THEM. An orbit crossing two charts owes
         // two declarations, and answering `true` on the first would admit a
         // form that named one of its shears and hid the other.
         owed.iter().all(|(chart, tau)| {
@@ -203,7 +203,7 @@ impl Form {
     /// as the second is the fault a rename row is owed on. A form's free part
     /// is absent, not zero.
     ///
-    /// A finite period is exact and at least one (A17 — a loop is filed at
+    /// A finite period is exact and at least one (A17 — an orbit is filed at
     /// the period it CLOSES at), so the subtraction is total; a class of
     /// infinite order, filed at `0` (52.3), condenses no members and reaches
     /// nothing here. No rounding, nothing saturating: this is a sum over an
@@ -212,7 +212,7 @@ impl Form {
     /// as ruled 2026-09-20):
     ///
     /// ```text
-    ///     yield(F, r) = Σ_{κ ∈ r ∩ dom(loop_classes F)} (ℓ_derived(κ) − 1)
+    ///     yield(F, r) = Σ_{κ ∈ r ∩ dom(orbit_classes F)} (ℓ_derived(κ) − 1)
     /// ```
     ///
     /// This summed `(ℓ − 1)` over `self.torsion` — the form's own filing —
@@ -235,14 +235,14 @@ impl Form {
     /// no members and reaches nothing.
     pub fn fibre_volume(
         &self,
-        filed: &Keyed<FiledLoop, crate::network::nerve::coord::Holonomy>,
+        filed: &Keyed<FiledOrbit, crate::network::nerve::coord::Holonomy>,
     ) -> usize {
         let mut derived: Keyed<
             crate::transducer::sentence::ToralPeriod,
             crate::network::nerve::coord::Holonomy,
         > = Keyed::new();
-        for lp in &self.loops {
-            for row in self.loop_classes(lp) {
+        for lp in &self.orbits {
+            for row in self.orbit_classes(lp) {
                 derived.put(&row.class, row.periods);
             }
         }
@@ -264,7 +264,7 @@ impl Form {
         if !self.remainder.is_empty() || self.demand_vertices().next().is_some() {
             return false;
         }
-        for lp in &self.loops {
+        for lp in &self.orbits {
             if lp.holonomy.is_identity() {
                 continue;
             }
@@ -282,19 +282,19 @@ impl Form {
             //
             // THE PERIOD IS ASKED OF THE FILER'S OWN READER (law 12). This
             // read `lp.holonomy.order()` — the ROTOR'S order, with no
-            // fixed-point test — while `file_loop` derives the period
+            // fixed-point test — while `file_orbit` derives the period
             // through `cech::classify`. A screw files at 0 there and was
             // demanded at 4 here, so a correctly filed form read as
             // uncauterized and a wrongly filed one read as cauterized.
-            // Two readers of one loop, and this was the stale one.
-            let rows = self.loop_classes(lp);
+            // Two readers of one orbit, and this was the stale one.
+            let rows = self.orbit_classes(lp);
             if rows.is_empty() {
                 return false;
             }
             for row in rows {
                 match self.torsion.at(&row.class) {
                     // BOTH PLANES, not the envelope: a claim that agrees on
-                    // `lcm` and disagrees on the pair is a different loop
+                    // `lcm` and disagrees on the pair is a different orbit
                     // (54.7).
                     Some(filed) if filed.periods == row.periods => {}
                     _ => return false,

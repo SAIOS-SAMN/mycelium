@@ -36,7 +36,7 @@ pub fn reset_retractions() {
 
 impl Form {
     /// Drop the named vertices (keyed by old index), drop faces that touched
-    /// them, remap surviving faces through the old-to-new map, rebuild loops.
+    /// them, remap surviving faces through the old-to-new map, rebuild orbits.
     pub fn retract_vertices(&mut self, drop: &Keyed<(), crate::network::nerve::coord::VertexIx>) {
         RETRACTIONS.with(|c| c.set(c.get().saturating_add(1)));
         let n = self.vertices.len();
@@ -116,8 +116,8 @@ impl Form {
         // rather than wrong, and dropping it by an index arithmetic that
         // does not apply is the only way to be wrong here.
         let sections = self.sections.clone();
-        let mut torsion: Keyed<FiledLoop, crate::network::nerve::coord::Holonomy> = Keyed::new();
-        for (k, FiledLoop { sigma, periods, chord }) in self.torsion.entries() {
+        let mut torsion: Keyed<FiledOrbit, crate::network::nerve::coord::Holonomy> = Keyed::new();
+        for (k, FiledOrbit { sigma, periods, chord }) in self.torsion.entries() {
             let Some(&Some(nc)) = face_old_to_new.get(*chord as usize) else {
                 continue;
             };
@@ -125,10 +125,10 @@ impl Form {
             // generator — a permutation of HUES — and this ran every entry
             // through `old_to_new`, the VERTEX table: colours relabelled as
             // if they were vertices, and any cycle naming a hue above the
-            // vertex count dropped the whole filed loop through the
+            // vertex count dropped the whole filed orbit through the
             // `else { continue }`. Renumbering a form's vertices moves no
             // hue. The chord is a face index and is remapped, above.
-            torsion.put(&k, FiledLoop { sigma: sigma.clone(), periods: *periods, chord: nc });
+            torsion.put(&k, FiledOrbit { sigma: sigma.clone(), periods: *periods, chord: nc });
         }
         let mut axes: Keyed<u16, crate::network::nerve::coord::Holonomy> = Keyed::new();
         for (k, chord) in self.axes.entries() {
@@ -143,7 +143,7 @@ impl Form {
         self.sections = sections;
         self.torsion = torsion;
         self.axes = axes;
-        self.loops = Self::loops_of(&self.faces, &self.vertices);
+        self.orbits = Self::orbits_of(&self.faces, &self.vertices);
         self.depth = self.depth_of();
         self.reindex();
     }
@@ -184,7 +184,7 @@ impl Form {
             f.word = word;
             f.at = at;
         }
-        self.loops = Self::loops_of(&self.faces, &self.vertices);
+        self.orbits = Self::orbits_of(&self.faces, &self.vertices);
         Some(())
     }
 
@@ -635,11 +635,11 @@ fn corner_of(chain: &[crate::transducer::sentence::Link]) -> (i64, i64) {
 /// one tree walk behind the leading tag. Five coordinates, always, whatever
 /// the form holds.
 ///
-/// π: P → B. The loops' classes are the FIBER over this base, not deeper
+/// π: P → B. The orbits' classes are the FIBER over this base, not deeper
 /// coordinates of it. They were appended here, one packed `u64` per
-/// distinct loop, which made the base key grow with the loop count and put
-/// every fiber element on its own leaf: a reader wanting the loops of one
-/// form descended the trie once per loop and coarsened back through the
+/// distinct orbit, which made the base key grow with the orbit count and put
+/// every fiber element on its own leaf: a reader wanting the orbits of one
+/// form descended the trie once per orbit and coarsened back through the
 /// root between them, `n·d` where the bundle says `d + n`. The R6 failure
 /// is the same shape — a key that grows with the object, copied by every
 /// entry that names it.
@@ -649,11 +649,11 @@ fn corner_of(chain: &[crate::transducer::sentence::Link]) -> (i64, i64) {
 /// true a fortiori of this one. Many complexes compose by rank (R5 — the
 /// rank of a union is the sum of the parts) and never by enumeration.
 ///
-/// `None` where the RANK is unmeasured. It also refused where any loop's
+/// `None` where the RANK is unmeasured. It also refused where any orbit's
 /// class was unmeasured, which is now the fiber's refusal to make where
 /// the class is read (15.3): a form whose rank is measured has a base
-/// point, and whether a loop over it carries a class is a fact about that
-/// loop.
+/// point, and whether an orbit over it carries a class is a fact about that
+/// orbit.
 pub(crate) fn chart_of_form(f: &Form) -> Option<crate::transducer::stalk::Invariant> {
     let r = f.rank()?;
     Some(crate::transducer::stalk::Invariant(

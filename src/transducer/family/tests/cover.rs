@@ -2,7 +2,7 @@
 //
 //! 50.8, L11c, L23(c) — THE COVER ONTO THE FORM. The pieces a cover
 //! carries are vertices of the form, their meets are its faces, and the
-//! class of a cycle of those faces is the form's loop holonomy.
+//! class of a cycle of those faces is the form's orbit holonomy.
 //!
 //! These are claims the cover could not make while it classified its own
 //! meets into carriers nothing read: 161 carriages and 3 964 meets over
@@ -26,7 +26,7 @@ fn notched() -> (Grid, Grid) {
 
 /// FOUR BODIES OF ONE HUE, THE FOURTH SLID ONE COLUMN. The cover's pieces
 /// are bodies (51.3 as ruled 2026-09-18), so a fixture that exercises the
-/// pullback, the meets and their loops needs SEVERAL bodies. These tests
+/// pullback, the meets and their orbits needs SEVERAL bodies. These tests
 /// stood on one body peeled into shells, which the peel no longer produces
 /// and which `notched` now demonstrates the absence of.
 ///
@@ -305,29 +305,29 @@ fn a_meets_address_gives_back_its_two_ends() {
 /// SCENE'S.
 ///
 /// The old claim was that a cover's meets become faces of the scene's form
-/// and close into its loops. They do not any more: between the CLASS
+/// and close into its orbits. They do not any more: between the CLASS
 /// vertices a meet is incidence the form already builds on supports, and
 /// the pieces' meets are faces of a form built inside the cover and
-/// discarded once its loops are classified.
+/// discarded once its orbits are classified.
 ///
 /// What survives, and is asserted here, is that the scene's form still has
-/// faces and that every loop it does stand names a live chord over at
+/// faces and that every orbit it does stand names a live chord over at
 /// least two vertices — the structural claim, on the form the scene keeps.
 #[test]
 fn the_scenes_faces_are_its_own_incidence_not_the_covers_meets() {
     let (a, b) = four_bodies();
     let f = measured(&a, &b);
     assert!(!f.faces.is_empty(), "the scene's form carries its own incidence");
-    for lp in &f.loops {
+    for lp in &f.orbits {
         assert!(
             f.faces.get(lp.chord as usize).is_some(),
-            "every loop's chord names a live face: {lp:?}"
+            "every orbit's chord names a live face: {lp:?}"
         );
-        assert!(lp.vertices.len() >= 2, "a loop runs over at least two vertices: {lp:?}");
+        assert!(lp.vertices.len() >= 2, "an orbit runs over at least two vertices: {lp:?}");
     }
 }
 
-// `every_loop_of_a_pair_form_is_flat_because_every_face_is_a_coboundary`
+// `every_orbit_of_a_pair_form_is_flat_because_every_face_is_a_coboundary`
 // was here and is DELETED, with its reasoning, because both were wrong.
 //
 // Its argument was that a cycle of `face_of` transports telescopes:
@@ -338,7 +338,7 @@ fn the_scenes_faces_are_its_own_incidence_not_the_covers_meets() {
 //
 // And the fixture proved nothing either way: `notched` is a pure
 // translation, so every vertex's rotor is the identity, every `face_of`
-// word is the identity, and every loop is flat for the most trivial
+// word is the identity, and every orbit is flat for the most trivial
 // reason there is. It confirmed what it was written to confirm.
 //
 // THE MEASURED FACT IT WAS REACHING FOR is narrower and stands on the
@@ -354,30 +354,30 @@ fn the_scenes_faces_are_its_own_incidence_not_the_covers_meets() {
 /// rotation closes at and the chord it closes on. Nothing else is a filled
 /// simplex, and a form that filled none carries none.
 #[test]
-fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
+fn a_filled_simplex_is_a_filed_orbit_at_its_own_period() {
     let (a, b) = four_bodies();
     let f = measured(&a, &b);
     // WHAT THIS FIXTURE ACTUALLY CONTAINS, asserted, because every check below
     // is inside a walk of `f.torsion` and that carrier is EMPTY here — a test
     // that only walked it would pass by iterating nothing while its name
-    // claimed a filed loop. An empty carrier is the expected state and not a
+    // claimed a filed orbit. An empty carrier is the expected state and not a
     // surprise, which is exactly why the content has to be asserted instead
     // of walked.
     //
-    // On this fixture: 3 loops, each carrying evaluated member paths whose
+    // On this fixture: 3 orbits, each carrying evaluated member paths whose
     // edge holonomy is the identity — flat, and 50.8 case 3 files nothing
     // there because there is nothing to fill — and none unevaluated. The
     // four bodies are carried by translations, so the engine is right and
     // the fixture is not curved.
     //
     // 50.8 CASE 3'S FILING PATH THEREFORE HAS NO TEST. Exercising it needs a
-    // cover whose meet loop composes to a finite NON-identity rotor — three
+    // cover whose meet orbit composes to a finite NON-identity rotor — three
     // bodies whose pairwise frame transitions do not telescope — which is a
     // fixture to build and not a line to write, so it is named here rather
     // than implied by a green test.
     let (mut flat, mut unevaluated) = (0usize, 0usize);
-    for lp in &f.loops {
-        // A loop with no member path and a loop whose paths evaluate to
+    for lp in &f.orbits {
+        // An orbit with no member path and an orbit whose paths evaluate to
         // nothing are one reading here — no edge holonomy was measured on it —
         // and neither is a default standing in for an absent one.
         let hs = match f.edge_holonomies(lp) {
@@ -393,34 +393,34 @@ fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
             flat += 1;
         }
     }
-    // EVERY LOOP IS EVALUATED, AND THEY ARE NO LONGER ALL FLAT (54.7, as
+    // EVERY ORBIT IS EVALUATED, AND THEY ARE NO LONGER ALL FLAT (54.7, as
     // ruled 2026-09-21).
     //
-    // 53.6 MOVED WHERE THE COVER'S LOOPS LIVE and the assertion before that
-    // — `!f.loops.is_empty()`, "the cover stands loops" — became false on
-    // the scene's form: a cover's loops are classified inside the cover, on
+    // 53.6 MOVED WHERE THE COVER'S ORBITS LIVE and the assertion before that
+    // — `!f.orbits.is_empty()`, "the cover stands orbits" — became false on
+    // the scene's form: a cover's orbits are classified inside the cover, on
     // a form of its pieces that is discarded, and the scene's form walked
-    // loops among its CLASS vertices only.
+    // orbits among its CLASS vertices only.
     //
     // It walked NONE. The scene's faces were the Frame's star, a spanning
     // chain of each site's occupants and the ring pairs — a forest by
-    // construction, `b₁ = E − V + C = 0` identically, `0 loops` on all 36
+    // construction, `b₁ = E − V + C = 0` identically, `0 orbits` on all 36
     // corpus forms and `pivoted [0,0,0,0]` on every voice of the fleet.
-    // This reading asserted `flat == f.loops.len()` and passed because both
+    // This reading asserted `flat == f.orbits.len()` and passed because both
     // sides were zero.
     //
     // The cover's meets are now offered to the face builder as chords
-    // between SECTIONS, so the scene stands a loop of its own — and that
-    // loop is NOT flat: its holonomy is the transition across the interface
+    // between SECTIONS, so the scene stands an orbit of its own — and that
+    // orbit is NOT flat: its holonomy is the transition across the interface
     // the meet names, which is what a cover meet is for. `(0, 1)` where
     // this once read `(1, 0)`.
     //
-    // So the claim is the one that was always meant: every loop the scene
-    // stands is EVALUATED. A loop with no reading is the defect —
+    // So the claim is the one that was always meant: every orbit the scene
+    // stands is EVALUATED. An orbit with no reading is the defect —
     // `paths_carried` answering "there is no lift" and "there is no
     // holonomy" as one empty answer — and flatness is a verdict, not a
     // precondition.
-    assert_eq!(unevaluated, 0, "every loop the scene stands is evaluated");
+    assert_eq!(unevaluated, 0, "every orbit the scene stands is evaluated");
     let _ = flat;
     assert!(
         f.torsion.is_empty(),
@@ -428,7 +428,7 @@ fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
     );
     for (class, filed) in f.torsion.entries() {
         // A FILED SPECTRUM IS A REAL ROTATION'S, and a plane of period one
-        // is an idle plane, not a turn. Where the loop closes, at least one
+        // is an idle plane, not a turn. Where the orbit closes, at least one
         // plane must do work (54.7).
         assert!(
             filed.periods.yield_units().is_none_or(|u| u >= 1),
@@ -441,12 +441,12 @@ fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
         assert_ne!(
             class.kind,
             crate::network::nerve::coord::BivectorKind::Trivial,
-            "a filed loop's class is a motion, never the identity"
+            "a filed orbit's class is a motion, never the identity"
         );
-        // The filed class is re-derivable from the loop the chord names,
+        // The filed class is re-derivable from the orbit the chord names,
         // which is what the court replays (23.1 step 4).
         assert!(
-            crate::transducer::sentence::torsion_loop_rotor(&f, &class).is_some(),
+            crate::transducer::sentence::torsion_orbit_rotor(&f, &class).is_some(),
             "the chord face carries the holonomy it was filed under"
         );
     }
@@ -455,7 +455,7 @@ fn a_filled_simplex_is_a_filed_loop_at_its_own_period() {
 /// 50.8 CASE 4 — WHAT NO PIECE CARRIED KEEPS THE DEMAND ALIVE. The notched
 /// block leaves laminae no carriage reaches, so the deformation stands; it
 /// dissolves only when the uncarried volume is the zero vector on every
-/// lane AND no loop over its pieces stands.
+/// lane AND no orbit over its pieces stands.
 #[test]
 fn an_uncarried_remainder_leaves_the_deformation_standing() {
     let (a, b) = notched();
@@ -557,7 +557,7 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
 }
 
 /// THE COVER CLASSIFIES NOTHING (L23c): the reading is the form's, so it
-/// is a function of the form's loops and not of the order the cover
+/// is a function of the form's orbits and not of the order the cover
 /// happened to walk its meets in. Two builds of one pair agree exactly.
 #[test]
 fn the_reading_is_the_forms_and_is_stable() {
@@ -570,7 +570,7 @@ fn the_reading_is_the_forms_and_is_stable() {
     assert_eq!(keys(&one), keys(&two), "the same filed classes, in the same key order");
     assert_eq!(one.vertices.len(), two.vertices.len(), "the same vertices");
     assert_eq!(one.faces.len(), two.faces.len(), "the same faces");
-    assert_eq!(one.loops.len(), two.loops.len(), "the same loops");
+    assert_eq!(one.orbits.len(), two.orbits.len(), "the same orbits");
 }
 
 /// One cover run to the end of its pieces: the cover, its tally, and how
@@ -661,7 +661,7 @@ fn cover_attempts_are_placed_times_unplaced() {
     );
 }
 
-/// 13.9 STEP 7, 50.3 — A PURE-COBOUNDARY FORM YIELDS NO EVALUATED LOOP.
+/// 13.9 STEP 7, 50.3 — A PURE-COBOUNDARY FORM YIELDS NO EVALUATED ORBIT.
 /// A face whose two pieces the cover did not both carry has no transition
 /// between their frames to write, so it carries `edge: None`; a cycle
 /// through such a face has no edge holonomy, and `edge_holonomy` answers
@@ -669,12 +669,12 @@ fn cover_attempts_are_placed_times_unplaced() {
 ///
 /// That `None` is a REFUSAL TO READ and not a flat reading, and it is what
 /// both organs skip on: `pair.rs` classifies nothing there, so nothing is
-/// filed, and the court demands nothing of a loop the voice never
-/// evaluated. Reading the transport composite instead answers for such a
-/// loop anyway — it telescopes over the sensor-plane words a pair form
+/// filed, and the court demands nothing of an orbit the voice never
+/// evaluated. Reading the transport composite instead answers for such an
+/// orbit anyway — it telescopes over the sensor-plane words a pair form
 /// composes — which is the flat reading this refuses to make.
 #[test]
-fn a_pure_coboundary_form_yields_no_evaluated_loop() {
+fn a_pure_coboundary_form_yields_no_evaluated_orbit() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::Form;
     let mut f = Form::default();
@@ -694,19 +694,19 @@ fn a_pure_coboundary_form_yields_no_evaluated_loop() {
     for (i, j) in [(0u16, 1u16), (0, 2), (0, 3), (1, 2), (2, 3), (1, 3)] {
         f.faces.push(f.face_of(i, j).expect("a coboundary of two vertices"));
     }
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     // THE TRIANGLE STANDS. Its faces are real — between bodies, not star —
     // and carry no edge, so every member path drops on a remainder edge and
-    // the loop is UNREAD rather than flat. A trivial-cycle filter that took
-    // an empty edge reading for a flat one would prune exactly the loops
+    // the orbit is UNREAD rather than flat. A trivial-cycle filter that took
+    // an empty edge reading for a flat one would prune exactly the orbits
     // this test is about (rule 11).
-    assert!(!f.loops.is_empty(), "the triangle among the bodies closes");
-    for lp in &f.loops {
+    assert!(!f.orbits.is_empty(), "the triangle among the bodies closes");
+    for lp in &f.orbits {
         // NO MEMBER PATH IS EVALUATED, which is what "not evaluated" means once
-        // a loop has one reading per path: a path carrying a remainder edge
+        // an orbit has one reading per path: a path carrying a remainder edge
         // anywhere on it is absent from the result, so an empty result is the
-        // whole loop unevaluated.
+        // whole orbit unevaluated.
         assert!(
             f.edge_holonomies(lp).is_some_and(|hs| hs.is_empty()),
             "a cycle through a face with no edge is not evaluated on any path: {lp:?}"
@@ -716,7 +716,7 @@ fn a_pure_coboundary_form_yields_no_evaluated_loop() {
     }
     assert!(
         f.torsion.scoped().next().is_none(),
-        "the voice files nothing on a form it evaluated no loop of"
+        "the voice files nothing on a form it evaluated no orbit of"
     );
 }
 
@@ -727,7 +727,7 @@ fn a_pure_coboundary_form_yields_no_evaluated_loop() {
 /// times the readings, plus one per demand kind and chart. A cover of `n`
 /// pieces used to be `n` vertices, so the form grew with the cut rather
 /// than with what the cut FOUND — `484b58aa` read 2 055 vertices, 11 167
-/// faces and 3 986 loops, and every carrier the engine has is multiplied
+/// faces and 3 986 orbits, and every carrier the engine has is multiplied
 /// by that count.
 ///
 /// This is the bound asked of the form directly: no two Word vertices
@@ -759,12 +759,12 @@ fn a_forms_word_vertices_are_bounded_by_its_transport_classes() {
     assert_eq!(classes.len(), words, "every word vertex is bounded by a class it carries");
 }
 
-/// 53.6 item 4 AS AMENDED — A CLASSIFIED LOOP THE SCENE CANNOT GIVE A
+/// 53.6 item 4 AS AMENDED — A CLASSIFIED ORBIT THE SCENE CANNOT GIVE A
 /// CHORD TO LEAVES AS THE DEMAND IT IS, never dropped.
 ///
-/// A cover's loop is classified inside the cover, on a form of its pieces
+/// A cover's orbit is classified inside the cover, on a form of its pieces
 /// that is discarded. Its chord indexes THAT form, so the scene resolves a
-/// chord of its own between the two class vertices the loop's ends belong
+/// chord of its own between the two class vertices the orbit's ends belong
 /// to. Where the scene relates those classes by no face there is no chord
 /// to name — and the first cut of 53.6 dropped the reading there, which is
 /// a measured class discarded (law 7, rule 11).
@@ -774,7 +774,7 @@ fn a_forms_word_vertices_are_bounded_by_its_transport_classes() {
 /// turns, or it is not a standing reading at all — and that the rotor it
 /// carries is the one measured and not a representative.
 #[test]
-fn a_filed_loop_with_no_chord_leaves_as_a_standing_demand() {
+fn a_filed_orbit_with_no_chord_leaves_as_a_standing_demand() {
     use crate::transducer::alphabet::{standing_of, LetterId, Word};
     use crate::transducer::sentence::Demand;
     // The quarter turn is a versor that turns, so it has a standing

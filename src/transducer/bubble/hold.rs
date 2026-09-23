@@ -158,10 +158,10 @@ impl Contemplation {
         mark("vertex walk");
         let mut horizon = Keyed::new();
         self.paint_seeded(&mut horizon);
-        // THE FORM'S OWN STANDING LOOPS ENTER THE HORIZON (L24). The pivot
-        // reads the horizon it is given, so a loop this form carries — a
+        // THE FORM'S OWN STANDING ORBITS ENTER THE HORIZON (L24). The pivot
+        // reads the horizon it is given, so an orbit this form carries — a
         // cover's meet cycle whose edge holonomy stands — has to be on it,
-        // or the class the perception just measured reaches `pivot_loop`
+        // or the class the perception just measured reaches `pivot_orbit`
         // as nothing at all.
         //
         // `Bubble::expand_with` does exactly this for a simplex it meets on
@@ -170,7 +170,7 @@ impl Contemplation {
         // obstruction and a contemplated one are one kind of object.
         //
         // `Standing::Held`, as the atlas arm writes: the class is met and
-        // not ruled. A loop whose class vector occupies nothing is not a
+        // not ruled. An orbit whose class vector occupies nothing is not a
         // horizon member — there is nothing to discharge — and a rotor
         // with no order or no class key is refused by `horizon_put`.
         self.paint_standing(&f, &mut horizon);

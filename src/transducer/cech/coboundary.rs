@@ -20,7 +20,7 @@ pub struct Gauge {
     pub sections: Vec<(Rotor, Versor)>,
     /// Ω on each chord that disagrees: `(i, j, γ_j γ_i⁻¹ g⁻¹, …)` on both
     /// halves. This is H¹ — the curvature of the 1-skeleton, measured on a
-    /// closed loop — and it is the content of the disagreement, not a
+    /// closed orbit — and it is the content of the disagreement, not a
     /// symptom of one.
     pub holonomy: Vec<(usize, usize, Rotor, Versor)>,
 }
@@ -28,7 +28,7 @@ pub struct Gauge {
 /// Tree-plus-chord solver for δγ = ω on a transition's BOTH halves — the
 /// rotor in `Cl(4,0)` and the carriage in `Cl(3,1)` (L11e). A forest
 /// 1-cochain is exact; a chord that does not match the tree path closes a
-/// loop, and what it carries round that loop is returned.
+/// orbit, and what it carries round that orbit is returned.
 ///
 /// IT COMPUTED THE HOLONOMY AND THREW IT AWAY. The disagreement test was
 /// `γ_j γ_i⁻¹ ≠ g`, which is `Ω = γ_j γ_i⁻¹ g⁻¹ ≠ 1` with `Ω` formed
@@ -108,7 +108,7 @@ pub fn solve_gauge(n: usize, edges: &[(usize, usize, Rotor, Versor)]) -> Option<
         if path_r == *g && same_versor(&path_c, c) {
             continue;
         }
-        // `Ω = (tree path) · (chord)⁻¹` on each half: what the loop
+        // `Ω = (tree path) · (chord)⁻¹` on each half: what the orbit
         // through the tree and back along the chord carries. Both halves,
         // for the reason the test above is on both.
         let (gc, cc) = (g.inverse()?, c.versor_inverse()?);
@@ -323,7 +323,7 @@ impl Complex {
     ///
     /// CAUTERIZATION PINS THE EDGE. An edge lying in the boundary of a
     /// simplex that has been READ — any coface of degree ≥ 1 whose fill is
-    /// not `Open` — cannot drain. Once a loop is walked, classified and
+    /// not `Open` — cannot drain. Once an orbit is walked, classified and
     /// cauterized into a class the form carries, that reading is historical:
     /// draining an edge beneath it would retroactively invalidate a class
     /// already recorded, and observation is a one-way phase transition from
@@ -564,22 +564,22 @@ impl Complex {
                     }
                     return CoboundaryOutcome::Attached(filled);
                 }
-                // THE CHORDS CARRY CLASSES — one per loop, each filed at
+                // THE CHORDS CARRY CLASSES — one per orbit, each filed at
                 // its own coordinate. The sections are NOT placed: a
                 // forest its own chords contradict is not a gauge, and
                 // writing it onto the sections would publish a frame the
                 // complex does not have.
                 //
                 // Each `Ω` is classified alone, by the one classifier
-                // (L23b), and written at `loop_key`. It COMPOSED them and
+                // (L23b), and written at `orbit_key`. It COMPOSED them and
                 // classified the product: the product of holonomies around
-                // different loops is the holonomy of none of them, and two
+                // different orbits is the holonomy of none of them, and two
                 // chords of opposite class multiplied to the identity — two
                 // real classes reading as "nothing curved". Before that it
-                // returned `None` and the loops were not read at all.
+                // returned `None` and the orbits were not read at all.
                 //
                 // The simplex's own fill still comes from `extend` below:
-                // this adds the loops beside it and takes nothing away.
+                // this adds the orbits beside it and takes nothing away.
                 for (i, j, gr, gc) in &gauge.holonomy {
                     let (Some(vi), Some(vj)) = (verts.get(*i), verts.get(*j)) else {
                         continue;
@@ -590,8 +590,8 @@ impl Complex {
                         continue;
                     }
                     self.index_congruent(&outcome);
-                    let lk = crate::transducer::cech::complex::loop_key(key, vi, vj);
-                    self.loops.insert(lk, outcome);
+                    let lk = crate::transducer::cech::complex::orbit_key(key, vi, vj);
+                    self.orbits.insert(lk, outcome);
                 }
             }
         }
@@ -655,12 +655,12 @@ impl Complex {
                     out.push((kappa.as_ref().clone(), r.as_ref().clone(), d));
                 }
             }
-            // AND THE LOOPS ON IT, each one its own standing class (11.3:
-            // an `H¹` loop is held with its class vector). Read as the
+            // AND THE ORBITS ON IT, each one its own standing class (11.3:
+            // an `H¹` orbit is held with its class vector). Read as the
             // fiber under the simplex's key, at the degree the simplex
-            // already carries — the loops were stored and unread, which is
+            // already carries — the orbits were stored and unread, which is
             // inert (24), and folding them was worse.
-            for fill in self.loops_of(&k) {
+            for fill in self.orbits_of(&k) {
                 if let Fill::Class(kappa, r) = fill {
                     out.push((*kappa, *r, d));
                 }

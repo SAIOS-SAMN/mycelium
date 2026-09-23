@@ -52,7 +52,7 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
         return false;
     };
     f.remainder = joined;
-    f.loops = Form::loops_of(&f.faces, &f.vertices);
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     match f.solve_coboundary() {
         Some(gamma) => {
             let _ = f.regauge(&gamma);
@@ -232,7 +232,7 @@ impl Contemplation {
         let mut cover = Keyed::new();
         let mut nerve = Complex::new();
         let mut horizon: Keyed<(Rotor, Order, Standing)> = Keyed::new();
-        let mut torsion: Keyed<sentence::FiledLoop, crate::network::nerve::coord::Holonomy> =
+        let mut torsion: Keyed<sentence::FiledOrbit, crate::network::nerve::coord::Holonomy> =
             Keyed::new();
         let mut certificates = Keyed::new();
         let mut vortex = Keyed::new();

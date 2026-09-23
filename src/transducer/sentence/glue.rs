@@ -20,7 +20,7 @@ use crate::transducer::alphabet::Word;
 use crate::transducer::element;
 
 impl Form {
-    /// Glue a closed form in as one vertex, and walk the loops and the
+    /// Glue a closed form in as one vertex, and walk the orbits and the
     /// index for it. The single-citation reader; a PASS of citations calls
     /// [`Form::glue_append`] and walks once at the end (Z2 item 1).
     pub fn glue(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
@@ -40,24 +40,24 @@ impl Form {
         phi: element::Versor,
     ) -> Option<u16> {
         let idx = self.glue_append_under(s, s_addr, placement, magnitude, phi)?;
-        self.loops = Self::loops_of(&self.faces, &self.vertices);
+        self.orbits = Self::orbits_of(&self.faces, &self.vertices);
         self.reindex();
         Some(idx)
     }
 
     /// THE CITATION APPENDED AND NOTHING WALKED (Z2 item 1): the `Glued`
     /// vertex, its placement face, the glue index and the depth — every
-    /// coordinate the citation itself writes — and neither `loops_of` nor
+    /// coordinate the citation itself writes — and neither `orbits_of` nor
     /// `reindex`.
     ///
     /// The glue pass of `extract_rule_with` cited one form 578 times on
     /// `1d0a4b61`, and each citation rebuilt the cycle basis over 2 850
     /// faces and reindexed the whole form. Measured on the instrument: 4.9 s
-    /// of `face_at` inside `loops_of`, on a 16.8 s pull.
+    /// of `face_at` inside `orbits_of`, on a 16.8 s pull.
     ///
     /// AN APPEND CANNOT INVALIDATE WHAT THE PASS READS. A `Glued` vertex
     /// carries no transport class, so `by_transport` — the index the pass
-    /// asks for the vertices to retract — is untouched by it; the loops the
+    /// asks for the vertices to retract — is untouched by it; the orbits the
     /// appended face closes are read once after the pass, with the
     /// retractions, which rebuilds them anyway.
     pub fn glue_append(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
@@ -177,7 +177,7 @@ impl Form {
         // THE PLACEMENT FACE CARRIES ITS PLACEMENT. A Glued vertex stands at
         // the cited form's chart and the Frame at the root, so there is one
         // member pair and `face_carrying` names it; `FormFace::new` left it
-        // empty and the loop through this face had no member path.
+        // empty and the orbit through this face had no member path.
         match self.face_carrying(0, idx, placement.clone()) {
             Some(face) => self.faces.push(face),
             None => self.faces.push(FormFace::new(0, idx, placement)),

@@ -30,7 +30,7 @@
 //! beside the first would put two readings under one name in one carrier,
 //! which is exactly the defect A.12 was raised to fix in the harmonic
 //! tower. `μ`'s SIGN is already read as the four-way holonomy class
-//! (`loop_defects`), and its structure is the orbit period counted here.
+//! (`orbit_defects`), and its structure is the orbit period counted here.
 
 /// Per-lane and per-event metabolic reading, taken where the event
 /// happens. Arrays, never a summed scalar (#34): a lane's flux is that

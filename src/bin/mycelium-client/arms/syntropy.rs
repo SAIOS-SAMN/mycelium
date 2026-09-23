@@ -42,9 +42,10 @@ if sync_due {
     let (pivoted_mu, ring) = entity.expand_ideas();
     StrokeOutcome::add(&mut outcome.pivoted, &pivoted_mu);
     // 45.7, S13.3: the mind's stroke ring, once per completed circuit —
-    // the orbit count and period beside K, velocity in kernel coordinates.
+    // the circuit count and period beside K, velocity in kernel
+    // coordinates (73.7: the circuit is the clock).
     if let Some((n, period)) = ring {
-        eprintln!("[{tag}] orbit ring {n} period {period}");
+        eprintln!("[{tag}] circuit ring {n} period {period}");
     }
     let pivoted = entity.pivot_thoughts();
     if pivoted > 0 {

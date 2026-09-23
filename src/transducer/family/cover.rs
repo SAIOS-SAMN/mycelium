@@ -26,7 +26,7 @@
 //! the preimage stands on.
 //!
 //! Nothing is added to the tape. `Form.torsion` already carries a filled
-//! simplex as `FiledLoop { sigma, period, chord }` and the court already
+//! simplex as `FiledOrbit { sigma, period, chord }` and the court already
 //! replays it (23.1 step 4).
 //!
 //! Nothing is keyed by position. A piece is addressed by its content —
@@ -73,7 +73,7 @@ pub struct CoverTally {
     pub meets: u64,
     /// MEETS THAT BECAME A FACE CARRYING 50.3's EDGE — the transition
     /// between the two pieces' own frames. Counted because `flat` alone
-    /// cannot tell a loop that was evaluated and found flat from a loop
+    /// cannot tell an orbit that was evaluated and found flat from an orbit
     /// whose faces carry no edge to evaluate: without this, wiring the
     /// edge and not wiring it read the same on the line.
     pub edges: u64,
@@ -132,13 +132,13 @@ pub struct CoverTally {
     pub tau_unfooted: u64,
     pub tau_met: u64,
     pub tau_refused: u64,
-    /// THE LOOPS THE FORM CLASSIFIED over those carriages, by their
+    /// THE ORBITS THE FORM CLASSIFIED over those carriages, by their
     /// reading. They are counted where they are read — on the form, over a
     /// whole cycle — and not in the cover, which classifies nothing.
     pub flat: u64,
     pub filed: u64,
     pub standing: u64,
-    /// Loops whose holonomy the seventeen do not spell (37.7).
+    /// Orbits whose holonomy the seventeen do not spell (37.7).
     pub unspellable: u64,
     /// Pieces carried geometrically whose rotor the seventeen do not
     /// spell — the adjunction candidates the cover used to discard.
@@ -161,7 +161,7 @@ pub struct CoverTally {
     ///
     ///   `unclassed` — a piece carries no transport class at all, so the
     ///   meet cannot be lifted whatever its geometry. `transport_class`
-    ///   answers only for `Vertex::Word`, and it gates the loops' ENDS by
+    ///   answers only for `Vertex::Word`, and it gates the orbits' ENDS by
     ///   the same predicate, so this counter reads a blockage that stops
     ///   the chord and the torsion chord together.
     ///
@@ -197,9 +197,9 @@ pub fn take_cover_tally() -> CoverTally {
     t
 }
 
-/// Count one loop the FORM classified over the cover's carriages. Called
+/// Count one orbit the FORM classified over the cover's carriages. Called
 /// where the reading happens, which is no longer here.
-pub(crate) fn tally_loop(fill: &crate::transducer::cech::Fill) {
+pub(crate) fn tally_orbit(fill: &crate::transducer::cech::Fill) {
     use crate::transducer::cech::Fill;
     tally(|t| match fill {
         Fill::Filled(..) => t.flat += 1,
@@ -257,9 +257,9 @@ pub(crate) type CarriedPiece = (Vertex, Versor, Supports);
 /// standing classes into carriers that `pair.rs` never read, so the whole
 /// reading died here and only a tally survived it. A transition between
 /// two pieces is a FACE of the form they are vertices of, and the class of
-/// a cycle of faces is the form's loop holonomy. The cover hands over the
+/// a cycle of faces is the form's orbit holonomy. The cover hands over the
 /// pieces and the meets; the form makes them vertices and faces, runs
-/// `loops_of`, and classifies each loop once.
+/// `orbits_of`, and classifies each orbit once.
 ///
 /// X3: A COVER IS ONE DEFORMATION'S, and its carriers are read with
 /// `scoped`. `carried`, `meets` and `refused` hold what THIS pass placed,
@@ -350,7 +350,7 @@ impl Cover {
 ///
 /// - identity: the pieces agree across the seam and there is nothing to
 ///   fill.
-/// - no versor: a remainder edge (13.9 step 7, 50.3), and no loop through
+/// - no versor: a remainder edge (13.9 step 7, 50.3), and no orbit through
 ///   it is evaluated.
 /// - finite order `ℓ`: the class is FILED as torsion at its period.
 /// - infinite order: the demand stands, carrying that class.
@@ -732,7 +732,7 @@ pub(crate) fn cover_deformation(
                 // overlap; that is a 1-simplex of the nerve and nothing
                 // more. The transition between them is the FACE of the two
                 // vertices they become, and the class of a cycle of faces
-                // is the form's loop holonomy — both the form's to compute,
+                // is the form's orbit holonomy — both the form's to compute,
                 // over the whole cycle rather than edge by edge here.
                 cover.meets.put(&key, ());
             }

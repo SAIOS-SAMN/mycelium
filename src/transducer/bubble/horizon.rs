@@ -25,13 +25,13 @@ impl Contemplation {
     /// them and can supply the word. The mind's own obstructions go under
     /// `Held` — "an idea this mind is holding, not yet a word" —
     /// `paint_standing` for the classes a form arrives with, `Fill::Class`
-    /// for a simplex it cannot close — and `pivot_loop`'s A19 suppression
-    /// tells the two apart; under one standing every loop would defer to
+    /// for a simplex it cannot close — and `pivot_orbit`'s A19 suppression
+    /// tells the two apart; under one standing every orbit would defer to
     /// itself.
     ///
     /// The symmetries every collapse kept ride out beside the count. A
     /// ruling that collapses a vortex resolves the mind's superposition, and
-    /// the hypothesis it did not take is the loop's symmetry — a measured
+    /// the hypothesis it did not take is the orbit's symmetry — a measured
     /// rotor, and 37.7's object (Expansion 4). It is carried rather than
     /// minted here for the reason every adjunction is: the language is the
     /// entity's.
@@ -104,8 +104,8 @@ impl Contemplation {
         }
     }
 
-    /// THE CLASSES A FORM ARRIVED WITH (L24). `pivot_loop` reads the horizon
-    /// it is given, so a loop the form already carries — a cover's meet
+    /// THE CLASSES A FORM ARRIVED WITH (L24). `pivot_orbit` reads the horizon
+    /// it is given, so an orbit the form already carries — a cover's meet
     /// cycle whose holonomy stands — has to be on it, or the class the
     /// perception just measured reaches the pivot as nothing at all.
     ///
@@ -114,14 +114,14 @@ impl Contemplation {
     /// admission for the classes that arrive on the form, so a perceived
     /// obstruction and a contemplated one are one kind of object.
     ///
-    /// BOTH OF A LOOP'S OBSTRUCTIONS are admitted. The transport composite
-    /// and 50.3's edge composite are different objects and a loop can
-    /// stand on either: an extraction's loop holds its turn on the
+    /// BOTH OF AN ORBIT'S OBSTRUCTIONS are admitted. The transport composite
+    /// and 50.3's edge composite are different objects and an orbit can
+    /// stand on either: an extraction's orbit holds its turn on the
     /// transports while its edges compose to the identity, and a cover's
-    /// loop is the other way round, since every word a pair form composes
+    /// orbit is the other way round, since every word a pair form composes
     /// is a sensor-plane word and those commute.
     ///
-    /// `Standing::Held`, as the atlas arm writes: met, not ruled. A loop
+    /// `Standing::Held`, as the atlas arm writes: met, not ruled. An orbit
     /// occupying no coordinate is not a member — there is nothing to
     /// discharge — and a rotor with no order or no class key is refused by
     /// `horizon_put` itself.
@@ -130,15 +130,15 @@ impl Contemplation {
         f: &crate::transducer::sentence::Form,
         horizon: &mut Keyed<(Rotor, Order, Standing)>,
     ) {
-        for (i, lp) in f.loops.iter().enumerate() {
-            // The loop's own class, on ANY member path that occupies a
+        for (i, lp) in f.orbits.iter().enumerate() {
+            // The orbit's own class, on ANY member path that occupies a
             // coordinate: the holonomy is one word, so the horizon takes it
             // once, but whether it stands is a reading per path.
             if f.class_vectors(i).scoped().any(|(_, cv)| !cv.coordinates().is_empty()) {
                 horizon_put(horizon, lp.holonomy.rotor(), Standing::Held);
             }
             // EVERY MEMBER PATH whose edge holonomy occupies a coordinate puts
-            // its rotor on the horizon. A loop running through two pairs of
+            // its rotor on the horizon. An orbit running through two pairs of
             // bodies can stand on one and be flat on the other, and reading one
             // put the other's obstruction nowhere.
             let stands = f.edge_class_vectors(lp);

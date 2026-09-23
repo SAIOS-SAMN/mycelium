@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! EXPANSION 4 — THE SYMMETRY A VORTEX HOLDS: two discharges of one loop
-//! prove the loop admits their difference, and that difference is a measured
+//! EXPANSION 4 — THE SYMMETRY A VORTEX HOLDS: two discharges of one orbit
+//! prove the orbit admits their difference, and that difference is a measured
 //! rotor rather than a losing candidate.
 
 use super::common::*;
@@ -20,12 +20,12 @@ fn cert(axis: Axis, word: Word, after: crate::transducer::address::Address) -> P
     }
 }
 
-/// TWO DISCHARGES OF ONE LOOP PROVE A SYMMETRY. `w_a⁻¹ · w_b` carries one
-/// discharge to the other, and it STABILISES the loop's class because each
+/// TWO DISCHARGES OF ONE ORBIT PROVE A SYMMETRY. `w_a⁻¹ · w_b` carries one
+/// discharge to the other, and it STABILISES the orbit's class because each
 /// leaves that class where the other does. It is a rotation the mind
 /// measured — 37.7's object — and it is what the collapse used to clear.
 #[test]
-fn two_discharges_of_one_loop_name_the_symmetry_between_them() {
+fn two_discharges_of_one_orbit_name_the_symmetry_between_them() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
     let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
     let s = PlaneForm::sheet_word();
@@ -62,7 +62,7 @@ fn discharges_to_two_classes_name_no_symmetry() {
 }
 
 /// ONE MOVE SPELLED TWICE IS NOT TWO MOVES. An identity symmetry means the
-/// loop admits nothing extra — a reading, not a failure — so it is refused
+/// orbit admits nothing extra — a reading, not a failure — so it is refused
 /// rather than adjoined as a generator that turns by nothing.
 #[test]
 fn one_move_spelled_twice_admits_no_freedom() {
@@ -84,7 +84,7 @@ fn one_move_spelled_twice_admits_no_freedom() {
 /// offers a held word on both sides of the chord; where both sides
 /// discharge, the two certificates name one move — the vortex would hold
 /// them as one candidate (`vortex_put` keys by the move) and `symmetry`
-/// reads their difference as the identity — so the loop discharges on it
+/// reads their difference as the identity — so the orbit discharges on it
 /// rather than being held under a superposition of one hypothesis, which
 /// nothing could collapse. Two different words on the same axis are still
 /// two.
@@ -110,7 +110,7 @@ fn a_word_discharging_on_both_sides_is_one_discharge_and_two_words_are_a_vortex(
     );
     assert!(
         matches!(select_discharge(&moves), Discharge::One(_)),
-        "so the loop discharges on it"
+        "so the orbit discharges on it"
     );
 
     let two_words = [sided(&q, Side::Right), sided(&s, Side::Right)];

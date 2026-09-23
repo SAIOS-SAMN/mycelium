@@ -92,7 +92,7 @@ pub(crate) fn blind_replay_on_inner(
             return Some(reason);
         }
         // S9.4 — WHAT CERTIFIES IS CLOSURE. `replay_form_with` above is the
-        // certificate: the loops return, every face re-derives, the
+        // certificate: the orbits return, every face re-derives, the
         // certificates re-walk, and with a family the form closes it. A
         // sentence is not refused here for carrying a zero magnitude,
         // which is not a defect in the word — μ⃗ is a COST, not a score, and

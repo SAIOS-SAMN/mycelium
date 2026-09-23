@@ -54,7 +54,7 @@ fn the_rotor_class_is_the_first_stratum_of_the_class_vector() {
 /// the carrier says which is which rather than letting a caller ask for one
 /// and receive the other's empty answer.
 ///
-/// Two loops of one conjugacy class standing at different carriages are one
+/// Two orbits of one conjugacy class standing at different carriages are one
 /// stratum and two entries. Read at depth one both answer; read whole, each
 /// answers itself.
 #[test]
