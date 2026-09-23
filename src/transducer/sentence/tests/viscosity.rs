@@ -13,13 +13,19 @@ fn q(n: i64) -> num_rational::BigRational {
 
 /// Two bodies on the Frame's star and a chord between them carrying `edge`.
 fn held(edge: Transport) -> Form {
+    held_with(Some(edge))
+}
+
+/// The same, with the chord's edge transport as given — `None` refuses the
+/// edge half, so no class of the loop reads (OR3).
+fn held_with(edge: Option<Transport>) -> Form {
     let mut f = Form::default();
     for n in 1..=2u8 {
         f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
     }
     f.faces.push(f.face_of(0, 1).expect("star a"));
     f.faces.push(f.face_of(0, 2).expect("star b"));
-    f.faces.push(f.face_carrying_with_edge(1, 2, Word::identity(), Some(edge)).expect("a chord"));
+    f.faces.push(f.face_carrying_with_edge(1, 2, Word::identity(), edge).expect("a chord"));
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     assert_eq!(f.orbits.len(), 1, "the fixture must hold one loop, or nothing is tested");
     f
@@ -70,6 +76,22 @@ fn a_screw_reads_curved_on_the_plane_its_loop_turns_in() {
     assert_eq!(arms(E1 | EM, E2 | EM)[2], 0, "two boosts the screw does not couple to: not curved");
     assert_eq!(totals(&rs, BendLane::Spatial)[3], 0, "curved is not viscous");
     assert_eq!(crate::physics::metabolism::metabolism().viscous, before, "no entropy booked");
+}
+
+/// VS1b — A LOOP WHOSE CLASS DOES NOT READ SPENDS NOTHING: its edge half is
+/// refused, so no bend has a class to move; every trial is counted no-class
+/// and the stroke is exactly where it was (78.17).
+#[test]
+fn a_loop_without_a_class_spends_no_read_on_viscosity() {
+    let form = held_with(None);
+    let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
+    let before = stroke.remaining();
+    let rs = read_viscosity(&form, &mut stroke);
+    assert_eq!(stroke.remaining(), before, "no read spent on a loop with no class");
+    for lane in [BendLane::Spatial, BendLane::Holonomic] {
+        assert_eq!(totals(&rs, lane), [0; 4], "{lane:?}: no arm classed off a class that is not there");
+        assert!(rs.iter().filter(|r| r.lane == lane).all(|r| r.no_class > 0 && r.unread == 0), "{lane:?}: every pair no-class, none unread");
+    }
 }
 
 /// ITEM 6 — A BEND WITH NO INVERSE IS REFUSED BY NAME: the un-pivot of a

@@ -169,10 +169,9 @@ fn respond(
     faces: &[FormFace],
     vertices: &[Vertex],
     lp: &Orbit,
-    a: &PivotBy,
-    b: &PivotBy,
+    before: &Keyed<Class>,
+    (a, b): (&PivotBy, &PivotBy),
 ) -> Option<Vec<Arm>> {
-    let before = read(lane, faces, vertices, lp)?;
     let ledger_before = ledger();
     let mut work = faces.to_vec();
     apply_by(&mut work, a);
@@ -221,17 +220,36 @@ fn respond(
 /// defined on, read over every face of every held loop, and the viscous
 /// arms booked as their lane's entropy. Each trial spends one read of the
 /// stroke; a trial the stroke does not reach is counted unread.
+///
+/// VS1b (78.17) — EACH HELD LOOP'S CLASSES ARE READ ONCE PER LANE, BEFORE
+/// ANY TRIAL. A loop none of whose member paths reads a class (OR3's unread
+/// circuits) has nothing a bend could move: each of its trials is counted
+/// no-class, path by path as a trial would count it, and spends no read. No
+/// share of the stroke is set; the percept runs these trials last, so a
+/// spent stroke leaves this instrument unread and never perception.
 pub fn read_viscosity(form: &Form, budget: &mut crate::physics::Budget) -> Vec<PairViscosity> {
     let spatial: Vec<usize> = crate::transducer::cga::bivector_planes(form.n);
     let lanes: [(BendLane, Vec<usize>); 2] =
         [(BendLane::Spatial, spatial), (BendLane::Holonomic, (0..ROTOR_PLANES.len()).collect())];
     let mut out: Vec<PairViscosity> = Vec::new();
     for (lane, planes) in &lanes {
+        // The loops' classes on this lane, read once: `None` where the walk
+        // itself refuses, and with the count of paths no class reads on.
+        let before: Vec<Option<(Keyed<Class>, u64, bool)>> = form
+            .orbits
+            .iter()
+            .map(|lp| {
+                let classes = read(*lane, &form.faces, &form.vertices, lp)?;
+                let paths = classes.scoped().count() as u64;
+                let any = classes.scoped().any(|(_, c)| !unread(c));
+                Some((classes, paths, any))
+            })
+            .collect();
         for (i, &pa) in planes.iter().enumerate() {
             for &pb in planes.iter().skip(i + 1) {
                 let mut reading =
                     PairViscosity { lane: *lane, planes: (pa, pb), arms: [0; 4], refused: 0, unread: 0, no_class: 0 };
-                for lp in &form.orbits {
+                for (lp, read_before) in form.orbits.iter().zip(&before) {
                     let mut seen: Vec<u16> = Vec::new();
                     for &f in &lp.faces {
                         if seen.contains(&f) {
@@ -239,11 +257,21 @@ pub fn read_viscosity(form: &Form, budget: &mut crate::physics::Budget) -> Vec<P
                         }
                         seen.push(f);
                         let (Some(a), Some(b)) = (bend(*lane, f, pa), bend(*lane, f, pb)) else { continue };
+                        let Some((classes, paths, any)) = read_before else {
+                            // The loop does not walk: the trial would be
+                            // refused before it bent anything.
+                            reading.refused += 1;
+                            continue;
+                        };
+                        if !any {
+                            reading.no_class += paths;
+                            continue;
+                        }
                         if !budget.spend() {
                             reading.unread += 1;
                             continue;
                         }
-                        match respond(*lane, &form.faces, &form.vertices, lp, &a, &b) {
+                        match respond(*lane, &form.faces, &form.vertices, lp, classes, (&a, &b)) {
                             None => reading.refused += 1,
                             Some(arms) => {
                                 for arm in arms {
