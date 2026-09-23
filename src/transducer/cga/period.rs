@@ -55,13 +55,43 @@ use super::multivector::{one, Mv};
 /// which happens exactly when `√Δ ∉ ℚ`. Pentagonal and dodecagonal
 /// symmetry are therefore not forbidden; they live in `ℚ(√Δ)`.
 ///
-/// THE SEARCH FOR CANDIDATES IS BOUNDED BY A THEOREM, not a constant:
-/// `φ(ℓ) ≥ √(ℓ/2)`, so `φ(ℓ) ≤ d` forces `ℓ ≤ 2d²`, and every `ℓ` up to
-/// that bound is read once.
+/// THE ORDER IS THE LCM OF THE EIGENVALUES' ORDERS (audit N-5). The minimal
+/// polynomial is a product of DISTINCT cyclotomics `Φ_ℓᵢ`, their degrees
+/// summing to at most `d = n + 1`, and the motion closes at
+/// `lcm(ℓ₁, ℓ₂, …)` — not at an `ℓ` of its own with `φ(ℓ) ≤ d`. The two
+/// readings agree up to `d = 5`; at `d = 6` the eigenvalues of orders 3
+/// and 5 fit (`φ = 2 + 4`) and the motion closes at 15, where `φ(15) = 8`:
+/// a reader over single `ℓ` would call it Open, a false reading and not a
+/// refusal (rule 11). So the candidates are every lcm of a set of atoms
+/// within the degree, generated from `n`.
+///
+/// THE ATOMS ARE BOUNDED BY A THEOREM, not a constant: `φ(ℓ) ≥ √(ℓ/2)`, so
+/// `φ(ℓ) ≤ d` forces `ℓ ≤ 2d²`, and every `ℓ` up to that bound is read once.
+/// Each atom enters a set once (a repeated factor adds degree and no
+/// order), and a set is kept at the least degree its lcm needs.
 pub fn cyclotomic_orders(n: u8) -> Vec<u32> {
     let d = u32::from(n) + 1;
     let totient = |l: u32| (1..=l).filter(|&k| gcd(k, l) == 1).count() as u32;
-    (1..=2 * d * d).filter(|&l| totient(l) <= d).collect()
+    // `(order, degree)`: the lcm a set of atoms closes at and the degree it
+    // spends. The empty set closes at 1 and spends nothing.
+    let mut reach: Vec<(u32, u32)> = vec![(1, 0)];
+    for l in 2..=2 * d * d {
+        let phi = totient(l);
+        if phi > d {
+            continue;
+        }
+        let grown: Vec<(u32, u32)> = reach
+            .iter()
+            .filter(|&&(_, used)| used + phi <= d)
+            .map(|&(order, used)| (order / gcd(order, l) * l, used + phi))
+            .collect();
+        reach.extend(grown);
+        // The canonical order: by order, then by degree, so the first of
+        // each order is its least degree and the rest are dropped.
+        reach.sort_unstable();
+        reach.dedup_by_key(|&mut (order, _)| order);
+    }
+    reach.into_iter().map(|(order, _)| order).collect()
 }
 
 fn gcd(mut a: u32, mut b: u32) -> u32 {

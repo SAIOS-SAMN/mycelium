@@ -52,6 +52,13 @@ fn the_algebra_at_n4_has_its_own_count_and_holds_n3_inside_it() {
     assert_eq!(cga::cyclotomic_orders(3), vec![1, 2, 3, 4, 5, 6, 8, 10, 12]);
     assert_eq!(cga::cyclotomic_orders(4), cga::cyclotomic_orders(3));
     assert!(cga::cyclotomic_orders(5).contains(&7) && cga::cyclotomic_orders(5).contains(&9));
+    // Audit N-5 — THE ORDER IS AN LCM: at d = 6 the eigenvalues of orders 3
+    // and 5 fit (φ = 2 + 4) and close at 15, though φ(15) = 8 > 6; orders 4
+    // and 5 close at 20 the same way. Order 21 needs φ = 2 + 6 and does not
+    // fit.
+    let at5 = cga::cyclotomic_orders(5);
+    assert!(at5.contains(&15) && at5.contains(&20), "{at5:?}");
+    assert!(!at5.contains(&21), "{at5:?}");
 }
 
 /// 51.2, audit N-2 — THE CENSUS FILES A TURN UNDER THE PLANE IT TURNS. The
