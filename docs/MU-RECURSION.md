@@ -8701,14 +8701,40 @@ expects to move, measured before and after.
 
 ### 72.1 The register, amended
 
-- **A.10, restated.** For two nuclei `(s_a ∧ s_b)² = (s_a·s_b)² − s_a²s_b²
-  = (num² − den2)/4`, so the interface pencil is null exactly at tangency
-  `|δ| = 1`, negative for an intersecting pencil and positive for apart or
-  contained. Co-occupation is governed by the TYPE of the interface
-  pencil, and the luminal pencil is its boundary — which ties A.10 to the
-  five regimes (65.1) and to 59.4's measure-zero ruling instead of
-  recording an absence. Whether any contact of the corpus is luminal
-  stays a measurement.
+- **A.10, restated — and the first statement retracted (2026-09-23, the
+  operator's word).** A first restatement squared the pencil,
+  `(s_a ∧ s_b)² = (num² − den2)/4`, and read the interface off the sign of
+  that scalar. That is law 11 in the form the law names: a square looked
+  for inside a circle, a remainder (`√(r_a²r_b²)`) that never closes over
+  ℚ, and the pencil of two spheres collapsed to a number. It is
+  retracted. The manifold way is to act, never evaluate. Each nucleus
+  has `s² = r² ≠ 0`, so it is an invertible vector, which is a versor:
+  the inversion in that sphere. Two nuclei are related by the conformal
+  motion their two inversions compose, **`V = s_b s_a`**, carried whole
+  and applied by the sandwich `V X Ṽ` to whatever crosses the interface —
+  a body, a transport, a cycle. `V` is exactly the whole product
+  `Interface::between` computes before it splits it by grade; the split
+  into a strain and a blade was the flattening, and `V` is held instead.
+  `V`'s kind is read the way every versor's is, by its class invariants
+  and the defect classification the loop reader already runs (trivial,
+  elliptic, hyperbolic, parabolic, non-simple): around intersecting
+  spheres it turns about their common circle, at tangency it is
+  parabolic, between separated spheres it is a boost or a dilation. So:
+  two bodies co-occupy through the conformal motion their inversions
+  compose, carried as a versor and applied, never squared into a scalar;
+  the luminal case is `V` parabolic, read from what `V` does. Curvature
+  is where a cycle of such motions fails to return, read as holonomy —
+  the triangle `V_AI · V_IB · V_BA` of the contact 2-simplex (70.7).
+- **Axiom C, tightened.** A relation is carried as the versor that
+  performs it, and applied; a ratio of homogeneous forms of equal degree
+  is read only where a classification is asked of a versor — its class,
+  its order, its side — and never carried as the relation, never a gate.
+  `δ² = num²/den2` and `μ = ⟨Ω⟩₀²/⟨ΩΩ̃⟩₀ − 1` are the same projective
+  reading of `V`, Study's condition on a ray, and they stay as readings
+  of `V`'s class where one is asked; every site that carries or gates on
+  such a square instead of on `V` is censused and ruled site by site (row
+  SQ1), since some are the projective comparison Axiom C permits and some
+  are squares standing where a versor belongs.
 - **A.11, extended.** The tower carries the odd harmonic `m = 3` (68.3),
   and is stated on `n` axes as the traceless symmetric moments of each
   order, which at `n = 2` are the complex `h_m` (38.2).
@@ -8742,14 +8768,16 @@ carrier, by (p).
 
 - **Refraction on the pairs the topology names** (BQ5a). The strain,
   the pencil and the frame are read only on the body pairs the grade
-  pass names, at the cost of the occupied sites; the edge is `g_ab`
+  pass names, at the cost of the occupied sites; the edge is
+  `g_ab = (θ_bθ_a⁻¹)·V`, the frame composed with the inversions' motion,
+  the displacement carried by `V` and never a chord between centroids,
   with `NoFrame` named on the face, `Oblique` minting through D3's
   chain, the permanent arms recorded. F1 closes; the 9 edges O1 left
   refused as `not rigid` are re-read.
-- **The face holds the field's interface** (BQ5b). The strain's side and
-  `δ²` and the pencil blade; the lattice set only as the witness of
-  whether; `interface_tower` deleted; the address change at the one
-  recut (U9).
+- **The face holds the field's interface** (BQ5b). The versor
+  `V = s_b s_a` whole, never a strain-and-blade pair of scalars; the
+  lattice set only as the witness of whether; `interface_tower` deleted;
+  the address change at the one recut (U9).
 - **Flat cycles sorted by charge** (R4). The per-face kinematic charge
   `μ` tells a relator from vacuum; vacuum drains, a relator is held, the
   line names both.
