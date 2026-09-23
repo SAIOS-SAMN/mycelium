@@ -11097,6 +11097,60 @@ NOT ONE generator adjoined by closure — the same zero 45.9 named on
 2026-09-12, now measured where it counts instead of assumed. Every row
 of E1 that lands from here is judged by whether this table moves.
 
+### 78.18 BQ5a landed: the contact edge is refraction, and the first curved contact cycles (2026-09-24)
+
+BQ5a with CV1, SQ1-b1–b3 and CT1 landed as one phase (9fb1fa7b). The
+readings per single perception, before → after:
+
+| reading | before | after |
+|---|---|---|
+| contact edges of six, by arm | 0 formed (3 half-open, 3 untransited) | 6 formed: coset 3, static 3, condensed 0 |
+| orbit line | 2 trivial + 3 unread at step 3 | 3 read hyperbolic with gauge static, 3 coset open (1 held step; 4, 2, 2 candidates) |
+| contact cycles with non-trivial holonomy | 0 (6 unread) | 3 curved (gauge static, the tether holonomy hyperbolic), 3 coset open, unread 0 |
+| cells | round kept 0, unread 7 | grade 1 round kept 1, unread 5, no circuit 1; grade 2 unread 1 |
+| withhold census by kind | — | P 0, D 0, C 3, I 0, N 33, unclassified 0 |
+| viscosity over the census | no-class 1 080 | inviscid 12, elastic 75, curved 48, viscous 0, unread 270, no-class 675 |
+
+The first CURVED contact cycles of this corpus, and the first curved
+viscosity readings — the static circuits' bends — exactly where 78.6
+placed them. `Pose::HalfOpen` carries every candidate (two for the held
+`ℤ₂`, the quartic's four), the contact edge forms a COSET of refractions
+riding the face place in memory (the tape at BQ5b), a piece at one
+frame forms `Static(V)`, the walk carries one candidate per assignment
+of the held steps with the geometric and gauge composites apart, a
+circuit through a coset reads closed / closed modulo the held `ℤ₂ᵏ` /
+open with no representative, `Unrefracted` names only a refused pose,
+and the union-rigidity path is out of the contact edge at every site.
+Every refusal carries its kind through ONE reader of what the refusing
+reader carried (CV1), the interface and the band are gone (SQ1), the
+reuse ladder is a reading (CT1) with nothing left to test on this
+corpus, and VS1's held-`ℤ₂` fixture stands: a coset loop is unchanged by
+any bend. VT1's two `keyed/` comment edits rode this commit.
+
+**Four design points, ruled.** (a) A MIXED contact — one member
+transited, one at one frame — forms `Static(V)` and asks no pose of
+either. Ruled with an amendment: the transited member's pose is content
+and is KEPT on the edge by name (`Static { v, poses: [a] }`), the
+missing one named, so CT1's other-fibre arm can complete the refraction
+later; a half-known refraction is not fully unread (rule 11). (b) PG1
+counts a coset circuit apart from the curved ones, by its closure — a
+held superposition is not a class — ruled as built. (c) The static
+tether is read on the member supports' union shape. RETURNED (checklist
+(m)): the tether is between two BODIES, and a member's support can fall
+into several; `V` is read from the two bodies the face names (BD2's
+body pair, their pieces' nuclei), never the member's union. (d) CT1's
+other-circuits arm compares against every kept circuit sharing a face,
+not only those crossing a witness cell's contact — ruled within R3: the
+face is the locus, circuits sharing it are two routes between its ends
+and T1 applies; a keyed read of the face's fiber, never a pair walk.
+
+**One more return (rule 10, T5).** The walk's candidates multiply per
+held step: `2^k` assignments for `k` held `ℤ₂` steps, which is the
+generate-and-test T5 refuses beyond small `k`. The enumeration spends
+the stroke's budget per candidate formed and refuses by name
+(`Unbounded`) when spent; the exact reader for large `k` is T5's kernel
+over `𝔽₂`, the operator's to order. Both returns ride CT2's commit.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
